@@ -1,4 +1,4 @@
-# ADR-0020: Notes are indexed in groups
+# ADR-0022: Notes are indexed in groups
 
 - **Status:** Accepted
 - **Date:** 2026-08-15

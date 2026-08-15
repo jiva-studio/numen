@@ -33,8 +33,8 @@ Read these first; everything else is derived from them.
 - [ADR-0017 — How the desktop application is tested](0017-how-the-desktop-application-is-tested.md)
 - [ADR-0018 — A scan runs in the background, and there is one writer](0018-a-scan-runs-in-the-background.md)
 - [ADR-0019 — Performance targets for indexing and search](0019-performance-targets.md)
-- [ADR-0020 — Notes are indexed in groups](0020-notes-are-indexed-in-groups.md)
 - [ADR-0021 — The index measures itself after a scan](0021-the-index-measures-itself.md)
+- [ADR-0022 — Notes are indexed in groups](0022-notes-are-indexed-in-groups.md)
 
 ## The note file
 
