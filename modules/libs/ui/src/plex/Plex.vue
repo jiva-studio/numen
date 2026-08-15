@@ -174,6 +174,7 @@ defineExpose({ moving: toRef(moving) })
 
 .plex-frame__overflow {
   position: absolute;
+  user-select: none;
   inset-block-end: 8px;
   inset-inline-start: 12px;
   color: var(--numen-edge-label);

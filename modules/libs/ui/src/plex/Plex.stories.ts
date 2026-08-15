@@ -363,6 +363,12 @@ export const MakingOne: Story = {
     const handle = canvasElement.querySelector('.plex__handle')
     await expect(handle).not.toBeNull()
 
+    // Nothing the hand crosses on the way is text to select — the labels a
+    // connection carries least of all, since a gesture passes right over them.
+    await expect(
+      getComputedStyle(canvasElement.querySelector('.plex__edge-label')!).userSelect,
+    ).toBe('none')
+
     // Reaching upwards, where the parents are. Only a browser can answer this:
     // pointer capture, a real matrix, and the drawing that follows the pointer.
     const above = { clientX: box.x + box.width / 2, clientY: box.y - 220 }
