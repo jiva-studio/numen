@@ -41,6 +41,11 @@ func Parse(ref domain.FileRef, raw []byte) domain.Note {
 	n.Body = string(body)
 	n.Headings = headings(body)
 	n.Title = title(n, ref.Path)
+	n.ID, _ = n.Frontmatter["id"].(string)
+
+	annotated, problems := frontmatterLinks(n.Frontmatter)
+	n.Links = mergeLinks(annotated, bodyLinks(body))
+	n.Problems = problems
 	return n
 }
 

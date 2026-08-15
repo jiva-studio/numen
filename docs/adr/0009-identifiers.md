@@ -1,4 +1,4 @@
-# ADR-0009: Identifiers — two levels of addressing
+# ADR-0009: Identifiers for notes and blocks
 
 - **Status:** Accepted
 - **Date:** 2026-08-15

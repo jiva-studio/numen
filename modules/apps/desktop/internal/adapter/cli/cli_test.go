@@ -69,7 +69,7 @@ func TestAddScanSearch(t *testing.T) {
 	}
 
 	scanned := s.mustRun("scan", "demo")
-	if !strings.Contains(scanned, "7 notes: 7 indexed") {
+	if !strings.Contains(scanned, "8 notes: 8 indexed") {
 		t.Errorf("scan said:\n%s", scanned)
 	}
 
@@ -85,7 +85,7 @@ func TestSecondScanChangesNothing(t *testing.T) {
 	s.mustRun("scan", "demo")
 
 	again := s.mustRun("scan", "demo")
-	if !strings.Contains(again, "0 indexed") || !strings.Contains(again, "7 unchanged") {
+	if !strings.Contains(again, "0 indexed") || !strings.Contains(again, "8 unchanged") {
 		t.Errorf("rescanning an untouched vault reindexed something:\n%s", again)
 	}
 }
@@ -232,5 +232,28 @@ func TestAMovedVaultIsRecognisedRatherThanRefused(t *testing.T) {
 	// still the right one.
 	if !strings.Contains(s.mustRun("scan", "moved"), "0 indexed") {
 		t.Error("the moved vault was reindexed from scratch")
+	}
+}
+
+func TestLinksShowsBothDirections(t *testing.T) {
+	s := newSession(t)
+	s.mustRun("vault", "add", s.vault, "--name", "demo")
+	s.mustRun("scan", "demo")
+
+	out := s.mustRun("links", "demo", "notes/Entropy.md")
+	// Thermodynamics names it as a child and mentions it in prose; the fixture
+	// is what says so.
+	if !strings.Contains(out, "pointed at by:") || !strings.Contains(out, "Thermodynamics.md") {
+		t.Errorf("links said:\n%s", out)
+	}
+
+	from := s.mustRun("links", "demo", "Thermodynamics.md")
+	if !strings.Contains(from, "points at:") {
+		t.Errorf("links said:\n%s", from)
+	}
+	// A link that answers to nothing says so rather than being left out.
+	broken := s.mustRun("links", "demo", "edge/broken-links.md")
+	if !strings.Contains(broken, "nothing by that name") {
+		t.Errorf("a dangling link was not reported:\n%s", broken)
 	}
 }

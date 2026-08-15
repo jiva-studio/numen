@@ -57,10 +57,10 @@ func TestScanIndexesEveryNoteOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Seen != 7 {
-		t.Errorf("saw %d markdown files, want 7 — check what the walk skipped", res.Seen)
+	if res.Seen != 8 {
+		t.Errorf("saw %d markdown files, want 8 — check what the walk skipped", res.Seen)
 	}
-	if res.Indexed != 7 || res.Unchanged != 0 || res.Removed != 0 {
+	if res.Indexed != 8 || res.Unchanged != 0 || res.Removed != 0 {
 		t.Errorf("first scan: %+v", res)
 	}
 
@@ -68,8 +68,8 @@ func TestScanIndexesEveryNoteOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if summary.Notes != 7 {
-		t.Errorf("index holds %d notes, want 7", summary.Notes)
+	if summary.Notes != 8 {
+		t.Errorf("index holds %d notes, want 8", summary.Notes)
 	}
 }
 

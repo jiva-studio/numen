@@ -38,3 +38,6 @@ func (i *Index) Queries() port.NoteQueries    { return i.db.NoteQueries() }
 // Path is where the database file is, which a load test needs in order to say
 // how large the index got.
 func (i *Index) Path() string { return i.path }
+
+// Links answers what points where.
+func (i *Index) Links() port.LinkQueries { return i.db.NoteQueries() }

@@ -61,7 +61,8 @@ func (r *Repository) Save(ctx context.Context, vaultID string, n domain.Note) er
 	if problem != "" {
 		frontmatterErr = problem
 	}
-	if err := exec(ctx, tx, "save", vaultID, n.Ref.Path, n.Title, frontmatter, frontmatterErr); err != nil {
+	if err := exec(ctx, tx, "save", vaultID, n.Ref.Path, n.Title, frontmatter, frontmatterErr,
+		nullable(n.ID), basename(n.Ref.Path)); err != nil {
 		return err
 	}
 
@@ -75,8 +76,10 @@ func (r *Repository) Save(ctx context.Context, vaultID string, n domain.Note) er
 
 	// Derived rows are replaced wholesale: diffing them against what was there
 	// costs more than rewriting a handful of rows.
-	if err := exec(ctx, tx, "clear_headings", vaultID, n.Ref.Path); err != nil {
-		return err
+	for _, name := range []string{"clear_headings", "clear_links", "clear_problems"} {
+		if err := exec(ctx, tx, name, vaultID, n.Ref.Path); err != nil {
+			return err
+		}
 	}
 	if err := exec(ctx, tx, "clear_fts", rowID); err != nil {
 		return err
@@ -84,6 +87,18 @@ func (r *Repository) Save(ctx context.Context, vaultID string, n domain.Note) er
 	for _, h := range n.Headings {
 		if _, err := tx.ExecContext(ctx, stmt.Get("insert_heading"),
 			vaultID, n.Ref.Path, h.Level, h.Text, h.Pos); err != nil {
+			return err
+		}
+	}
+	for i, l := range n.Links {
+		if err := exec(ctx, tx, "insert_link", vaultID, n.Ref.Path,
+			l.Target.Scheme, l.Target.Value, string(l.Role),
+			nullable(l.Type), nullable(l.Note), nullable(l.Label), i); err != nil {
+			return err
+		}
+	}
+	for _, detail := range n.Problems {
+		if err := exec(ctx, tx, "insert_problem", vaultID, n.Ref.Path, detail); err != nil {
 			return err
 		}
 	}
@@ -111,7 +126,7 @@ func (r *Repository) Remove(ctx context.Context, vaultID string, paths []string)
 		if err := exec(ctx, tx, "clear_fts", rowID); err != nil {
 			return err
 		}
-		for _, name := range []string{"clear_headings", "delete", "delete_file"} {
+		for _, name := range []string{"clear_headings", "clear_links", "clear_problems", "delete", "delete_file"} {
 			if err := exec(ctx, tx, name, vaultID, path); err != nil {
 				return err
 			}
@@ -147,4 +162,25 @@ func noteRowID(ctx context.Context, tx *sql.Tx, vaultID, path string) (int64, er
 		return 0, nil
 	}
 	return rowID, err
+}
+
+// nullable keeps an empty string out of the database, so that "nothing was
+// written" and "an empty value was written" stay different questions.
+func nullable(s string) any {
+	if s == "" {
+		return nil
+	}
+	return s
+}
+
+// basename is the name a note is found by when a link is written by name.
+func basename(path string) string {
+	name := path
+	if i := strings.LastIndexByte(name, '/'); i >= 0 {
+		name = name[i+1:]
+	}
+	if i := strings.LastIndexByte(name, '.'); i > 0 {
+		name = name[:i]
+	}
+	return name
 }

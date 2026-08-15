@@ -55,15 +55,14 @@ The frontmatter is shared, not owned:
 | Key | Meaning | Decided in |
 | --- | --- | --- |
 | `title` | The name a note is shown by. Read, never written: the application does not add one and does not rewrite one it finds. | ADR-0012 |
+| `id` | The identity of the note, a ULID. Written when the application creates or edits it, never backfilled. | ADR-0009 |
+| `links` | Links that carry a role, and optionally a type and an argument. | ADR-0003 |
 
 A note with no `title` is named by its first level-one heading, else by its
 filename. The order is fixed so that a name does not move between versions.
 
-The note identifier will live here too — that placement is settled (ADR-0012).
-Its format, when it is written, and what happens on rename are not
-(ADR-0009). The links block is
-likewise expected here and not yet defined
-(ADR-0003).
+A note carrying no `id` is indexed in full and simply cannot be a *target*:
+nothing points at it with `note://`, and nothing is attached to it (ADR-0009).
 
 ## What the application may add
 
@@ -73,7 +72,7 @@ markdown editor and stay readable to a human.
 | Addition | Where | Status |
 | --- | --- | --- |
 | YAML frontmatter | top of file | allowed; key set not yet fixed |
-| `[[wikilink]]` | body | allowed; resolution rules not yet fixed (ADR-0011) |
+| `[[wikilink]]` | body | a link with the role `ref`, resolved by name (ADR-0011) |
 | `^anchor` | end of a line | allowed; syntax and scope not yet fixed (ADR-0009) |
 
 Nothing else is permitted: no custom fences, no HTML comments carrying data, no
@@ -102,11 +101,8 @@ below should be implemented from guesswork.
 
 | Question | Where it is decided |
 | --- | --- |
-| Which frontmatter keys the application owns, and how collisions with the user's own keys are handled | ADR-0003, ADR-0009 |
-| How a note is identified, and whether that identity lives in the file | ADR-0009 |
-| The shape of the links block, and the roles and types a link carries | ADR-0003 |
-| How a `[[wikilink]]` resolves to a target, and what happens when it is ambiguous | ADR-0011 |
-| Anchor syntax, alphabet, and whether the user may name anchors | ADR-0009 |
 | Card syntax in the body, and how a card keeps its identity across edits | ADR-0008 |
-| How attachments are referenced | ADR-0010 |
 | What a submodule may write into the service folder | ADR-0004 |
+
+Anchors are decided (ADR-0009) and not yet read: nothing attaches to a block, so
+the parser leaves `^anchor` as the text it is.

@@ -1,4 +1,4 @@
-# ADR-0010: An attachment is a link, not a place on disk
+# ADR-0010: Attachments are links
 
 - **Status:** Accepted
 - **Date:** 2026-08-15
