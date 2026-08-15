@@ -41,6 +41,10 @@ Read these first; everything else is derived from them.
 - [ADR-0012 — A note is plain markdown any editor can open](0012-a-note-is-plain-markdown.md)
 - Format specification: [note-format.md](../note-format.md)
 
+## The interface
+
+- [ADR-0020 — How an interface component is built](0020-how-an-interface-component-is-built.md)
+
 ## Links and addressing
 
 - [ADR-0003 — A link is one object carrying a role and an optional type](0003-a-link-carries-a-role.md)

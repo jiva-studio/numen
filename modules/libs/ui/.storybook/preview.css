@@ -1,0 +1,11 @@
+/* Storybook's own frame, not the library's. Nothing here ships. */
+html,
+body,
+#storybook-root {
+  block-size: 100%;
+  margin: 0;
+}
+
+#storybook-root {
+  background: var(--numen-surface);
+}
