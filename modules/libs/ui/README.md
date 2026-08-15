@@ -64,3 +64,25 @@ through a move" a value with a test rather than a screenshot to be caught.
 else — a radial mind map is another implementation, not a branch inside this
 one. `Environment` is the clock, so a movement is stepped by hand in a test and
 by the browser everywhere else.
+
+## Reaching out from a node
+
+Every node offers a handle when a pointer is over it. Dragging from it and
+letting go on empty space asks for a new node; letting go on another node asks
+for a link between the two. Which seat either lands in comes from the direction
+the gesture went, read off the arrangement's own `direction` — so inverting the
+plex inverts the gesture with it. Escape gives up; a click without travel asks
+for one more child, which is what anyone reaches for.
+
+**The role is decided when the gesture ends, not when it begins.** TheBrain
+does the opposite: it has a gate per role, and which one you grab settles it.
+Deciding at the end means the reader cannot know what they will get, which is
+why the gesture draws the seat it would land in as it goes. Recorded here
+rather than in an ADR because it is a decision about an interaction, not about
+how components are built.
+
+The plex reports and does not act: `create` and `link` carry identifiers and a
+seat, and what a parent *means* — what gets written, whether it is allowed —
+belongs to whoever answers. A sibling is another of the parent's children
+rather than something anyone makes directly, so it is left out of `creatable`
+by default; that default is the caller's to change.

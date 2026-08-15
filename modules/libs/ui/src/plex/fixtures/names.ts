@@ -86,3 +86,13 @@ function hash(text: string): number {
  */
 export const nameFor = (seed: string, index: number): string =>
   NAMES[(hash(seed) + index) % NAMES.length]!
+
+/**
+ * A name for a node made just now, seeded by the moment it was made.
+ *
+ * Something to call a node the instant it exists, so nothing is ever
+ * nameless and nothing has to be typed to finish a gesture. What a new node
+ * should really be called is the application's to decide; this is what a
+ * story uses in its place.
+ */
+export const nameNow = (): string => nameFor(String(Date.now()), 0)
