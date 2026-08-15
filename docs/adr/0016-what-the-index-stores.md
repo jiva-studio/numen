@@ -33,11 +33,9 @@ Nothing else. In particular, a scan does not invent categories the vault format
 has not defined — no tags, no inline fields, no derived collections — and does
 not resolve links or anchors, whose meaning is still undecided.
 
-**A title is derived, not stored as a fact about the note.** It is the
-frontmatter `title`, else the first level-one heading, else the filename. That
-order is a display convention rather than a property of the file, and it is
-recorded here because the parser must not be free to change it quietly: a note
-whose title moves between versions is a note the user cannot find twice.
+**The title is stored, not decided here.** What a note is called and how that is
+worked out belongs to the note format (ADR-0012); the index keeps the answer so
+that a list of results does not have to reopen every file to label itself.
 
 ### Headings are the one entry admitted early
 

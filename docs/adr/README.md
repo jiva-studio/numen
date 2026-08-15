@@ -29,6 +29,8 @@ Read these first; everything else is derived from them.
 - [ADR-0013 — Vault identity, the service folder, and application state](0013-vault-identity-and-application-state.md)
 - [ADR-0014 — One binary, hexagonal core in Go](0014-one-binary-hexagonal-core-in-go.md)
 - [ADR-0015 — A schema change migrates the index instead of rebuilding it](0015-schema-changes-are-migrations.md)
+- [ADR-0016 — What a scan stores about a note](0016-what-the-index-stores.md)
+- [ADR-0017 — How the desktop application is tested](0017-how-the-desktop-application-is-tested.md)
 
 ## The note file
 
