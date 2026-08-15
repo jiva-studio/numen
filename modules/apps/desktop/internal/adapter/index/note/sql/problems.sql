@@ -1,8 +1,9 @@
-SELECT p.path, p.detail
+SELECT n.path, p.detail
 FROM problems p
-WHERE p.vault_id = ?
+JOIN notes n ON n.id = p.note_id
+WHERE n.vault_id = ?
 UNION ALL
-SELECT n.path, 'frontmatter: ' || n.frontmatter_err
-FROM notes n
-WHERE n.vault_id = ? AND n.frontmatter_err IS NOT NULL
+SELECT path, 'frontmatter: ' || frontmatter_error
+FROM notes
+WHERE vault_id = ? AND frontmatter_error IS NOT NULL
 ORDER BY 1;

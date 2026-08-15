@@ -1,1 +1,1 @@
-DELETE FROM problems WHERE vault_id = ? AND path = ?;
+DELETE FROM problems WHERE note_id = ?;

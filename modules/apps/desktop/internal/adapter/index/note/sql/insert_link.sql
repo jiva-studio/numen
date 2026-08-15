@@ -1,2 +1,2 @@
-INSERT INTO links (vault_id, from_path, scheme, value, role, type, note, label, value_base, position)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO links (note_id, position, scheme, value, value_base, role, type, reason, label)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);

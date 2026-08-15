@@ -2,6 +2,7 @@ package note
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 )
@@ -13,7 +14,15 @@ import (
 // it broke, so it is stored on the note; everything else is a list. Reading them
 // together is what makes them one view.
 func (q *Queries) Problems(ctx context.Context, vaultID string) ([]domain.VaultProblem, error) {
-	rows, err := q.db.QueryContext(ctx, stmt.Get("problems"), vaultID, vaultID)
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.db.QueryContext(ctx, stmt.Get("problems"), vault, vault)
 	if err != nil {
 		return nil, err
 	}

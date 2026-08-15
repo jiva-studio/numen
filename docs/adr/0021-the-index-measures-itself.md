@@ -7,91 +7,68 @@
 
 ## Context
 
-Asking which notes point at a given one took 58 ms on a vault of ten thousand,
-and grew with the vault. The indexes for it exist and the query is written as
-single-index lookups, deliberately, because the first version was slow for
-exactly the reason a chain of `OR`s is slow.
-
-The plans said the indexes were being used. They were being read from a database
-that had been measured — and a database filled by a scan never has been.
-
 SQLite chooses between the ways it could answer a question from what it knows
-about how much is stored and how it is spread. Knowing nothing, it falls back on
-rules of thumb, and the rule of thumb here picks the index that narrows to the
-vault and then reads every link in it — seventy thousand rows to find twenty.
-That is not a full table scan and does not look like one: it reports itself as
-a search, through a real index, and is invisible in a plan unless the index is
-named.
+about how much is stored and how it is spread. Knowing nothing, it chooses by
+rule of thumb, and the rule of thumb for "which notes point at this one" is to
+narrow to the vault and then read every link in it.
 
-Nothing in the application ever measured the database. Nothing had decided to.
+A database filled by a scan knows nothing. Nothing in the application ever asked
+it to measure itself, because nothing had decided that it should.
+
+That failure is invisible in a query plan unless the plan is read closely: it is
+not a table scan, it is a search through a real index, and it looks reasonable.
 
 ## Decision
 
 **A scan that changed the index measures it afterwards.**
 
-The core states the need — the index has changed enough to be worth measuring
-again — and the adapter knows how a database is measured. A scan that indexed
-and removed nothing does not measure, because an unchanged vault is scanned at
-every startup and that path has a budget of its own (ADR-0019).
+The core states the need — the index has changed wholesale — and the adapter
+knows how a database is measured. A scan that indexed and removed nothing does
+not measure, because an unchanged vault is scanned at every startup and that
+path has a budget of its own (ADR-0019).
 
-The measurement covers the whole database rather than only the tables the
-scanning connection happened to read from, and it samples a large table rather
-than reading all of it.
+The measurement samples large tables rather than reading them, and covers the
+whole database rather than only the tables the scanning connection read from. A
+scan writes and asks nothing, on whichever pooled connection was free, so what
+that connection has read is an accident.
 
-Whole-database is insurance and not more than that: measured, a scan's own
-connection already flags the tables it touched, and the plans come out the same
-either way. But a scan writes and asks nothing, on whichever pooled connection
-was free, so what that connection has read is an accident, and the cost of
-covering everything is small enough not to depend on the accident.
-
-Sampling is not insurance. Reading every row of every index is fifteen times
-the work at thirty thousand notes and grows with the vault, while sampling does
-not, and the two produce the same plans.
-
-**A plan is asserted by the index it uses, not by the absence of a scan.** The
-failure this decision exists to prevent passes any test that only forbids
-reading a whole table. Tests that check query plans name the index each question
-has to be answered through, and they measure the database the way the
-application does rather than measuring it themselves — a test that measures on
-its own behalf certifies a plan that never reaches a user.
+**A plan is asserted by the index it uses, not by the absence of a scan.** Tests
+that check query plans name the index each question has to be answered through,
+and they measure the database the way the application does. A test that measures
+on its own behalf certifies a plan that never reaches a user.
 
 ## Consequences
 
 **Positive**
 
-- Backlinks went from 58 ms to 1.8 ms on ten thousand notes, and stopped growing
-  with the vault: 1.7 ms on one thousand, 1.8 ms on ten.
-- The indexes that already existed are now actually used, which is worth more
-  than adding another one would have been.
+- Backlinks are answered in about a millisecond and do not grow with the vault.
+- The indexes that already existed are used, which is worth more than adding
+  another would have been.
 
 **Negative**
 
-- A scan does something at the end that has nothing to do with what it found, so
-  a use case now depends on a port that exists for the sake of speed rather than
-  meaning.
-- The measurement is a write, so it queues behind the same single writer as
+- A scan ends with something that has nothing to do with what it found, so a use
+  case depends on a port that exists for speed rather than for meaning.
+- The measurement is a write, and queues behind the same single writer as
   everything else.
-- It is a sample, not a survey, and a vault whose shape changes without its size
-  changing can go unnoticed until the next scan that stores something.
-- Which bits of the request are set is a constant no test can defend: the plans
-  come out right under several of them, and only a measurement tells the cheap
-  spelling from the expensive one.
+- It is a sample, so a vault whose shape changes without its size changing can
+  go unnoticed until the next scan that stores something.
+- Which parts of the measurement are requested is a constant no test can defend:
+  several spellings produce the same plans, and only a measurement tells the
+  cheap one from the expensive one.
 
 ## Alternatives considered
 
-**Measuring when the database is opened.** Rejected: at that moment the last
-scan's changes are already in place and unmeasured, so the first session after a
-rebuild would answer badly for the whole of its life.
+**Measuring when the database is opened.** Rejected: the last scan's changes are
+already in place and unmeasured by then, so the first session after a rebuild
+would answer badly for the whole of its life.
 
 **Measuring on a timer.** Rejected: it makes a background thread out of
-something that has one natural moment — the end of the scan that caused it.
+something with one natural moment.
 
-**Another index.** Rejected as the first thing to try, and this is the point of
-the ADR. The indexes were right; what was missing was the knowledge that they
-helped. Two earlier guesses at this problem made it slower, and the fix was
-found by reading plans rather than by adding structure.
+**Another index.** Rejected, and this is the point of the ADR: the indexes were
+right, and what was missing was the knowledge that they help.
 
-**Storing where each link resolves instead of resolving on the way in.**
-Rejected here, and not by this ADR: resolution is a query rather than stored
-state because a file appearing or disappearing changes the answer (ADR-0011).
-That decision holds, and it is what makes the plan for this query matter.
+**Storing where each link resolves.** Rejected elsewhere and not by this ADR:
+resolution is a query because a file appearing or disappearing changes the
+answer (ADR-0011). That is what makes the plan for this question matter.

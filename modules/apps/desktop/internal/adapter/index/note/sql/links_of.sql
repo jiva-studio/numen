@@ -1,4 +1,4 @@
-SELECT scheme, value, role, COALESCE(type, ''), COALESCE(note, ''), COALESCE(label, '')
+SELECT scheme, value, role, COALESCE(type, ''), COALESCE(reason, ''), COALESCE(label, '')
 FROM links
-WHERE vault_id = ? AND from_path = ?
+WHERE note_id = ?
 ORDER BY position;

@@ -12,7 +12,24 @@ import (
 
 // Links returns the links written in one note, resolved.
 func (q *Queries) Links(ctx context.Context, vaultID, from string) ([]domain.ResolvedLink, error) {
-	rows, err := q.db.QueryContext(ctx, stmt.Get("links_of"), vaultID, from)
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	var id int64
+	err = q.db.QueryRowContext(ctx, stmt.Get("identify"), vault, from).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.db.QueryContext(ctx, stmt.Get("links_of"), id)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +52,7 @@ func (q *Queries) Links(ctx context.Context, vaultID, from string) ([]domain.Res
 
 	for i := range out {
 		out[i].From = from
-		if err := q.resolve(ctx, vaultID, from, &out[i]); err != nil {
+		if err := q.resolve(ctx, vault, vaultID, from, &out[i]); err != nil {
 			return nil, err
 		}
 	}
@@ -44,7 +61,7 @@ func (q *Queries) Links(ctx context.Context, vaultID, from string) ([]domain.Res
 
 // dedupe folds links that turn out to point at the same note, which the same
 // note written two ways does: [[notes/Entropy]] in the links block and
-// [[Entropy]] in prose are one link, and the described one wins (ADR-0003).
+// [[Entropy]] in prose are one link, and the described one wins.
 //
 // It happens here rather than at parse time because only resolution knows that
 // two different strings mean one note.
@@ -72,13 +89,13 @@ func dedupe(links []domain.ResolvedLink) []domain.ResolvedLink {
 	return out
 }
 
-func (q *Queries) resolve(ctx context.Context, vaultID, from string, r *domain.ResolvedLink) error {
+func (q *Queries) resolve(ctx context.Context, vault int64, vaultID, from string, r *domain.ResolvedLink) error {
 	switch r.Target.Scheme {
 	case domain.SchemeNote:
 		// An identifier names one note in the world, so this lookup is not
 		// scoped to a vault — the one deliberate exception to the rule that a
-		// query without a vault is a leak (ADR-0011).
-		err := q.db.QueryRowContext(ctx, stmt.Get("note_by_id"), r.Target.Value).
+		// query without a vault reads someone else's notes.
+		err := q.db.QueryRowContext(ctx, stmt.Get("note_by_identifier"), r.Target.Value).
 			Scan(&r.ToVault, &r.To)
 		if errors.Is(err, sql.ErrNoRows) {
 			// Not dangling and not resolved: no connected vault holds this note.
@@ -89,7 +106,7 @@ func (q *Queries) resolve(ctx context.Context, vaultID, from string, r *domain.R
 		}
 		return err
 	case domain.SchemeName:
-		candidates, err := q.candidates(ctx, vaultID, r.Target.Value)
+		candidates, err := q.candidates(ctx, vault, r.Target.Value)
 		if err != nil {
 			return err
 		}
@@ -105,7 +122,7 @@ func (q *Queries) resolve(ctx context.Context, vaultID, from string, r *domain.R
 	}
 }
 
-func (q *Queries) candidates(ctx context.Context, vaultID, name string) ([]string, error) {
+func (q *Queries) candidates(ctx context.Context, vault int64, name string) ([]string, error) {
 	// Four shapes of the same question, so one query answers all of them: the
 	// name as a path with and without an extension, and as a filename.
 	withExt := name
@@ -115,7 +132,7 @@ func (q *Queries) candidates(ctx context.Context, vaultID, name string) ([]strin
 	base := strings.TrimSuffix(path.Base(name), path.Ext(name))
 
 	rows, err := q.db.QueryContext(ctx, stmt.Get("candidates"),
-		vaultID, name, vaultID, withExt, vaultID, base)
+		vault, name, vault, withExt, vault, base)
 	if err != nil {
 		return nil, err
 	}
@@ -132,10 +149,11 @@ func (q *Queries) candidates(ctx context.Context, vaultID, name string) ([]strin
 	return out, rows.Err()
 }
 
-// pick applies the priority in ADR-0011: an exact path from the root, then a
-// path relative to the note the link is written in, then a single match by
-// name. Several matches are ambiguous rather than dangling — the link resolves
-// to the nearest one in the tree, and the ambiguity is something to show.
+// pick applies the priority a name resolves by: an exact path from the root,
+// then a path relative to the note the link is written in, then a single match
+// by name. Several matches are ambiguous rather than dangling — the link
+// resolves to the nearest one in the tree, and the ambiguity is something to
+// show.
 func pick(from, name string, candidates []string) (chosen string, ambiguous bool) {
 	if len(candidates) == 0 {
 		return "", false
@@ -191,8 +209,18 @@ func sharedPrefix(a, b string) int {
 // resolution the forward direction uses, and only the ones that land here are
 // kept.
 func (q *Queries) Backlinks(ctx context.Context, vaultID, to string) ([]domain.ResolvedLink, error) {
-	var noteID, base string
-	err := q.db.QueryRowContext(ctx, stmt.Get("addressing"), vaultID, to).Scan(&noteID, &base)
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	var id int64
+	var identifier, base string
+	err = q.db.QueryRowContext(ctx, stmt.Get("addressing"), vault, to).
+		Scan(&id, &identifier, &base)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -201,7 +229,7 @@ func (q *Queries) Backlinks(ctx context.Context, vaultID, to string) ([]domain.R
 	}
 
 	rows, err := q.db.QueryContext(ctx, stmt.Get("backlink_candidates"),
-		vaultID, noteID, vaultID, base)
+		identifier, vault, base, vault)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +253,7 @@ func (q *Queries) Backlinks(ctx context.Context, vaultID, to string) ([]domain.R
 
 	var out []domain.ResolvedLink
 	for _, c := range candidates {
-		if err := q.resolve(ctx, vaultID, c.From, &c); err != nil {
+		if err := q.resolve(ctx, vault, vaultID, c.From, &c); err != nil {
 			return nil, err
 		}
 		if c.To == to {
