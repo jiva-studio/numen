@@ -26,7 +26,7 @@ A scan stores what has a consumer today, and nothing else:
 | --- | --- |
 | Path, size, modification time | The invalidation key. Without it every scan reads every file. |
 | Frontmatter, parsed | The application's own keys will live here (ADR-0009), and a query needs them without reopening the file. A parse error is stored rather than repaired. |
-| Body text | What full-text search matches against. |
+| The body, indexed and not kept | What full-text search matches against. The index holds no copy of the text: a result is a title and a path, and the text is on disk where it was read from. |
 | Headings, with level and position | The outline of a note, and the boundaries structural chunking will cut on. |
 | The note identifier, when the file carries one | What a link written as `note://` points at, across vaults (ADR-0009, ADR-0011). An identifier that is not a ULID is a reported problem rather than a target. |
 | The filename without its extension | What a link written by name is matched against. Stored rather than computed, because resolution asks for it on every link. |
@@ -54,6 +54,25 @@ to go stale.
 **The title is stored, not decided here.** What a note is called and how that is
 worked out belongs to the note format (ADR-0012); the index keeps the answer so
 that a list of results does not have to reopen every file to label itself.
+
+### A note is addressed by a number
+
+Inside the index a note is a number. Its headings, its links, what could not be
+acted on and its place in the full-text index are all stored against that
+number. A vault is a number too, and the ULID it carries in the world is stored
+once.
+
+The path is one of the things stored about a note. It is what the vault calls
+the note, not what the index calls it.
+
+What the index calls a note is not visible outside it: the ports speak in vaults
+and paths, and the translation happens once per question asked.
+
+### A search result is a title and a path
+
+Nothing quotes the matching text back, so the full-text index keeps no copy of
+what it indexed. Anything that wants a fragment of a matched note reads the
+file.
 
 ### Headings are the one entry admitted early
 

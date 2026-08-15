@@ -19,10 +19,12 @@ var expectedPlans = []struct {
 	// itself, and the name changes when a constraint is added.
 	through []string
 }{
-	{"candidates", []any{"v", "a", "v", "b", "v", "c"}, []string{"notes_by_basename"}},
-	{"backlink_candidates", []any{"v", "id", "v", "base"}, []string{"links_by_target", "links_by_name"}},
-	{"note_by_id", []any{"id"}, []string{"notes_by_id"}},
-	{"links_of", []any{"v", "p"}, []string{"(vault_id=? AND from_path=?)"}},
+	{"candidates", []any{1, "a", 1, "b", 1, "c"}, []string{"notes_by_basename"}},
+	{"backlink_candidates", []any{"id", 1, "base", 1}, []string{"links_by_target", "links_by_name"}},
+	{"note_by_identifier", []any{"id"}, []string{"notes_by_identifier"}},
+	{"links_of", []any{1}, []string{"(note_id=?)"}},
+	{"identify", []any{1, "p"}, []string{"(vault_id=? AND path=?)"}},
+	{"search", []any{"entropy", 1, 20}, []string{"notes_fts"}},
 }
 
 // TestResolutionUsesIndexes asks the database how it intends to answer.
@@ -49,9 +51,17 @@ func TestResolutionUsesIndexes(t *testing.T) {
 				t.Errorf("%s is not answered through %s", q.name, want)
 			}
 		}
+		// Only notes and links grow with the vault. A full-text match always
+		// reports itself as a scan of the virtual table, and there are never
+		// many vaults.
 		for _, step := range plan {
-			if strings.HasPrefix(step, "SCAN") {
-				t.Errorf("%s reads a whole table: %s", q.name, step)
+			if !strings.HasPrefix(step, "SCAN") {
+				continue
+			}
+			for _, growing := range []string{"notes", "links"} {
+				if strings.HasPrefix(step, "SCAN "+growing+" ") {
+					t.Errorf("%s reads every %s: %s", q.name, growing, step)
+				}
 			}
 		}
 	}
@@ -67,26 +77,23 @@ func populated(t *testing.T) *DB {
 	t.Cleanup(func() { db.Close() })
 
 	if _, err := db.write.ExecContext(ctx,
-		`INSERT INTO vaults (id, name, path) VALUES ('v', 'v', '/v')`); err != nil {
+		`INSERT INTO vaults (id, identifier, name, path) VALUES (1, 'v', 'v', '/v')`); err != nil {
 		t.Fatal(err)
 	}
 	for i := range 3000 {
 		name := fmt.Sprintf("note-%05d", i)
 		path := "folder/" + name + ".md"
 		if _, err := db.write.ExecContext(ctx,
-			`INSERT INTO files (vault_id, path, size, mtime) VALUES ('v', ?, 1, 1)`, path); err != nil {
-			t.Fatal(err)
-		}
-		if _, err := db.write.ExecContext(ctx,
-			`INSERT INTO notes (vault_id, path, title, basename, note_id) VALUES ('v', ?, ?, ?, ?)`,
-			path, name, name, fmt.Sprintf("01M%023d", i)); err != nil {
+			`INSERT INTO notes (id, vault_id, path, basename, title, identifier, size, modified_at)
+			 VALUES (?, 1, ?, ?, ?, ?, 1, 1)`,
+			i+1, path, name, name, fmt.Sprintf("01M%023d", i)); err != nil {
 			t.Fatal(err)
 		}
 		for j := range 3 {
 			target := fmt.Sprintf("note-%05d", (i+j+1)%3000)
 			if _, err := db.write.ExecContext(ctx,
-				`INSERT INTO links (vault_id, from_path, scheme, value, role, value_base, position)
-				 VALUES ('v', ?, 'name', ?, 'ref', ?, ?)`, path, target, target, j); err != nil {
+				`INSERT INTO links (note_id, position, scheme, value, value_base, role)
+				 VALUES (?, ?, 'name', ?, ?, 'ref')`, i+1, j, target, target); err != nil {
 				t.Fatal(err)
 			}
 		}

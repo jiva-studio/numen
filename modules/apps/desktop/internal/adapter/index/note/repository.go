@@ -39,9 +39,9 @@ func exec(ctx context.Context, tx *sql.Tx, name string, args ...any) error {
 
 // Save writes a group of notes in one transaction.
 //
-// A note and the fingerprint that dates it are stored together or not at all,
-// so an interrupted scan leaves files to be read again rather than rows to be
-// trusted.
+// A note and the size and date that call it up to date are stored together or
+// not at all, so an interrupted scan leaves files to be read again rather than
+// rows to be trusted.
 func (r *Repository) Save(ctx context.Context, vaultID string, notes []domain.Note) error {
 	if len(notes) == 0 {
 		return nil
@@ -52,8 +52,12 @@ func (r *Repository) Save(ctx context.Context, vaultID string, notes []domain.No
 	}
 	defer tx.Rollback()
 
+	vault, err := vaultRow(ctx, tx, vaultID)
+	if err != nil {
+		return err
+	}
 	for _, n := range notes {
-		if err := saveNote(ctx, tx, vaultID, n); err != nil {
+		if err := saveNote(ctx, tx, vault, n); err != nil {
 			return fmt.Errorf("%s: %w", n.Ref.Path, err)
 		}
 	}
@@ -63,11 +67,7 @@ func (r *Repository) Save(ctx context.Context, vaultID string, notes []domain.No
 	return nil
 }
 
-func saveNote(ctx context.Context, tx *sql.Tx, vaultID string, n domain.Note) error {
-	if err := exec(ctx, tx, "save_file", vaultID, n.Ref.Path, n.Ref.Size, n.Ref.MTime); err != nil {
-		return err
-	}
-
+func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note) error {
 	frontmatter, storeErr := encodeFrontmatter(n)
 	problem := n.FrontmatterErr
 	if storeErr != "" {
@@ -77,36 +77,23 @@ func saveNote(ctx context.Context, tx *sql.Tx, vaultID string, n domain.Note) er
 		// than ending the scan of the whole vault.
 		problem = strings.TrimSpace(problem + "\n" + storeErr)
 	}
-	var frontmatterErr any
-	if problem != "" {
-		frontmatterErr = problem
-	}
-	if err := exec(ctx, tx, "save", vaultID, n.Ref.Path, n.Title, frontmatter, frontmatterErr,
-		nullable(n.ID), basename(n.Ref.Path)); err != nil {
-		return err
-	}
 
-	// The full-text row is addressed by the note's own rowid. An FTS5 table has
-	// no other key: matching on the columns instead scans the entire index, and
-	// doing that once per note saved makes a rebuild quadratic.
-	rowID, err := noteRowID(ctx, tx, vaultID, n.Ref.Path)
-	if err != nil {
-		return err
+	var id int64
+	if err := tx.QueryRowContext(ctx, stmt.Get("save"),
+		vault, n.Ref.Path, basename(n.Ref.Path), n.Title, nullable(n.ID),
+		frontmatter, nullable(problem), n.Ref.Size, n.Ref.MTime).Scan(&id); err != nil {
+		return fmt.Errorf("save: %w", err)
 	}
 
 	// Derived rows are replaced wholesale: diffing them against what was there
 	// costs more than rewriting a handful of rows.
 	for _, name := range []string{"clear_headings", "clear_links", "clear_problems"} {
-		if err := exec(ctx, tx, name, vaultID, n.Ref.Path); err != nil {
+		if err := exec(ctx, tx, name, id); err != nil {
 			return err
 		}
 	}
-	if err := exec(ctx, tx, "clear_fts", rowID); err != nil {
-		return err
-	}
 	for _, h := range n.Headings {
-		if _, err := tx.ExecContext(ctx, stmt.Get("insert_heading"),
-			vaultID, n.Ref.Path, h.Level, h.Text, h.Pos); err != nil {
+		if err := exec(ctx, tx, "insert_heading", id, h.Pos, h.Level, h.Text); err != nil {
 			return err
 		}
 	}
@@ -117,20 +104,20 @@ func saveNote(ctx context.Context, tx *sql.Tx, vaultID string, n domain.Note) er
 		}
 		defer insert.Close()
 		for i, l := range n.Links {
-			if _, err := insert.ExecContext(ctx, vaultID, n.Ref.Path,
-				l.Target.Scheme, l.Target.Value, string(l.Role),
-				nullable(l.Type), nullable(l.Note), nullable(l.Label),
-				basename(l.Target.Value), i); err != nil {
+			if _, err := insert.ExecContext(ctx, id, i,
+				l.Target.Scheme, l.Target.Value, basename(l.Target.Value),
+				string(l.Role), nullable(l.Type), nullable(l.Note), nullable(l.Label),
+			); err != nil {
 				return fmt.Errorf("insert_link: %w", err)
 			}
 		}
 	}
 	for _, detail := range n.Problems {
-		if err := exec(ctx, tx, "insert_problem", vaultID, n.Ref.Path, detail); err != nil {
+		if err := exec(ctx, tx, "insert_problem", id, detail); err != nil {
 			return err
 		}
 	}
-	return exec(ctx, tx, "insert_fts", rowID, n.Title, n.Body, vaultID, n.Ref.Path)
+	return exec(ctx, tx, "save_fts", id, n.Title, n.Body)
 }
 
 func (r *Repository) Remove(ctx context.Context, vaultID string, paths []string) error {
@@ -139,25 +126,34 @@ func (r *Repository) Remove(ctx context.Context, vaultID string, paths []string)
 	}
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("begin: %w", err)
 	}
 	defer tx.Rollback()
 
+	vault, err := vaultRow(ctx, tx, vaultID)
+	if err != nil {
+		return err
+	}
 	for _, path := range paths {
-		rowID, err := noteRowID(ctx, tx, vaultID, path)
+		var id int64
+		err := tx.QueryRowContext(ctx, stmt.Get("identify"), vault, path).Scan(&id)
+		if errors.Is(err, sql.ErrNoRows) {
+			continue
+		}
 		if err != nil {
+			return fmt.Errorf("identify %s: %w", path, err)
+		}
+		if err := exec(ctx, tx, "delete_fts", id); err != nil {
 			return err
 		}
-		if err := exec(ctx, tx, "clear_fts", rowID); err != nil {
+		if err := exec(ctx, tx, "delete", id); err != nil {
 			return err
-		}
-		for _, name := range []string{"clear_headings", "clear_links", "clear_problems", "delete", "delete_file"} {
-			if err := exec(ctx, tx, name, vaultID, path); err != nil {
-				return err
-			}
 		}
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit: %w", err)
+	}
+	return nil
 }
 
 // encodeFrontmatter stores what was found as JSON, or nothing when there was no
@@ -175,18 +171,6 @@ func encodeFrontmatter(n domain.Note) (value any, problem string) {
 		return nil, "frontmatter could not be stored: " + err.Error()
 	}
 	return string(raw), ""
-}
-
-// noteRowID is the identity of a note inside this database, and therefore the
-// identity of its full-text row. A note that has never been saved has none yet,
-// in which case there is nothing to clear.
-func noteRowID(ctx context.Context, tx *sql.Tx, vaultID, path string) (int64, error) {
-	var rowID int64
-	err := tx.QueryRowContext(ctx, stmt.Get("rowid"), vaultID, path).Scan(&rowID)
-	if errors.Is(err, sql.ErrNoRows) {
-		return 0, nil
-	}
-	return rowID, err
 }
 
 // nullable keeps an empty string out of the database, so that "nothing was
