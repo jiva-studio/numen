@@ -1,11 +1,10 @@
-// Package usecase holds the business scenarios. Each one orchestrates ports and
-// entities and knows no more about a filesystem or a database than the domain
-// does.
 package vault
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io/fs"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/markdown"
@@ -27,11 +26,16 @@ type ScanResult struct {
 	Indexed   int // parsed and written, because they were new or had changed
 	Unchanged int // skipped on size and modification time alone
 	Removed   int // in the index, no longer on disk
+	Vanished  int // walked, but gone by the time it was read
 }
 
 func (r ScanResult) String() string {
-	return fmt.Sprintf("%d notes: %d indexed, %d unchanged, %d removed",
+	s := fmt.Sprintf("%d notes: %d indexed, %d unchanged, %d removed",
 		r.Seen, r.Indexed, r.Unchanged, r.Removed)
+	if r.Vanished > 0 {
+		s += fmt.Sprintf(", %d gone before they could be read", r.Vanished)
+	}
+	return s
 }
 
 // Execute walks the vault once.
@@ -66,6 +70,15 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 		}
 
 		raw, err := reader.Read(ctx, ref.Path)
+		if errors.Is(err, fs.ErrNotExist) {
+			// The vault is edited while it is read — that is what it means for
+			// files to be the source of truth. A note saved, moved or deleted
+			// during a scan must not end the scan; the next one will see
+			// whatever it became.
+			res.Vanished++
+			delete(seen, ref.Path)
+			return nil
+		}
 		if err != nil {
 			return fmt.Errorf("read %s: %w", ref.Path, err)
 		}

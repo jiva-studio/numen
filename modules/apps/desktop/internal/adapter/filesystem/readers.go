@@ -7,8 +7,8 @@ import (
 
 // Readers opens vaults from the filesystem. It is what a use case is handed when
 // the vault it works on is chosen while it runs.
-type Readers struct{ ServiceDir string }
+type Readers struct{ Options Options }
 
 func (r Readers) Open(v domain.Vault) (port.VaultReader, error) {
-	return Open(v.Path, r.ServiceDir)
+	return Open(v.Path, r.Options)
 }

@@ -176,3 +176,29 @@ func identity(output string) string {
 	}
 	return ""
 }
+
+func TestACopiedVaultIsRefusedRatherThanIndexed(t *testing.T) {
+	// Copying a vault folder copies its identity, and two folders claiming one
+	// identity cannot be told apart. Indexing either would write one vault's
+	// notes under the other's rows, so adding the second is refused and the
+	// error says what to do about it.
+	s := newSession(t)
+	s.mustRun("vault", "add", s.vault, "--name", "original")
+
+	copied := testsupport.CopyVault(t)
+	out, err := s.run("vault", "add", copied, "--name", "copy")
+	if err == nil {
+		t.Fatalf("a copy with the same identity was accepted:\n%s", out)
+	}
+	for _, want := range []string{copied, s.vault, "delete"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("the error does not mention %q: %v", want, err)
+		}
+	}
+
+	// The first vault is untouched, and still the only one.
+	listed := s.mustRun("vault", "list")
+	if strings.Count(listed, "path ") > 1 || !strings.Contains(listed, "original") {
+		t.Errorf("vault list after the refusal:\n%s", listed)
+	}
+}

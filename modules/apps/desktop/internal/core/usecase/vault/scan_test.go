@@ -2,13 +2,14 @@ package vault_test
 
 import (
 	"context"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
@@ -24,12 +25,12 @@ func vaultAt(t *testing.T, root string) (domain.Vault, port.VaultReaders) {
 		t.Fatalf("fixture vault has no identity: %v", err)
 	}
 	return domain.Vault{ID: cfg.ID, Name: "fixture", Path: root},
-		filesystem.Readers{ServiceDir: filesystem.DefaultServiceDir}
+		filesystem.Readers{}
 }
 
-func openIndex(t *testing.T) *index.DB {
+func openIndex(t *testing.T) *container.Index {
 	t.Helper()
-	db, err := index.Open(t.Context(), filepath.Join(t.TempDir(), "index.db"))
+	db, err := container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}.OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,12 +38,12 @@ func openIndex(t *testing.T) *index.DB {
 	return db
 }
 
-func scanner(readers port.VaultReaders, db *index.DB) usecase.Scan {
+func scanner(readers port.VaultReaders, db *container.Index) usecase.Scan {
 	return usecase.Scan{
 		Readers: readers,
 		Vaults:  db.Vaults(),
 		Notes:   db.Notes(),
-		Known:   db.NoteQueries(),
+		Known:   db.Queries(),
 	}
 }
 
@@ -62,7 +63,7 @@ func TestScanIndexesEveryNoteOnce(t *testing.T) {
 		t.Errorf("first scan: %+v", res)
 	}
 
-	summary, err := db.NoteQueries().Summary(ctx, v.ID)
+	summary, err := db.Queries().Summary(ctx, v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +80,7 @@ func TestScanSkipsWhatIsNotVaultContent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	matches, err := db.NoteQueries().Search(ctx, v.ID, "hidden", 10)
+	matches, err := db.Queries().Search(ctx, v.ID, "hidden", 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,7 +153,7 @@ func TestEditedNoteIsReindexedAndDeletedNoteDisappears(t *testing.T) {
 		t.Errorf("removed %d notes, want 1", res.Removed)
 	}
 
-	queries := db.NoteQueries()
+	queries := db.Queries()
 	matches, err := queries.Search(ctx, v.ID, "crystallography", 10)
 	if err != nil {
 		t.Fatal(err)
@@ -210,7 +211,7 @@ func TestSearchNeverCrossesVaults(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	queries := db.NoteQueries()
+	queries := db.Queries()
 
 	// The two vaults hold disjoint words, so a query that forgets its vault
 	// shows up as a match that cannot belong to the vault being searched. This
@@ -238,5 +239,132 @@ func TestSearchNeverCrossesVaults(t *testing.T) {
 	}
 	if len(own) != 1 || own[0].Path != "quasar.md" {
 		t.Errorf("the second vault cannot find its own note: %+v", own)
+	}
+}
+
+func TestFingerprintsAndSummaryNeverCrossVaults(t *testing.T) {
+	ctx := t.Context()
+	db := openIndex(t)
+
+	// Two vaults holding a note at the same path is not a corner case: copying
+	// a vault folder produces exactly that. If Fingerprints leaks, the second
+	// vault's note looks unchanged and is never indexed — silently, with the
+	// scan reporting success.
+	shared := "notes/Entropy.md"
+	first := testsupport.NewVault(t, map[string]string{
+		shared: "# Entropy\n\nthe first vault\n",
+	})
+	second := testsupport.NewVault(t, map[string]string{
+		shared:     "# Entropy\n\nthe second vault\n",
+		"extra.md": "# Extra\n\nonly the second vault has this\n",
+	})
+	readers := filesystem.Readers{}
+
+	if _, err := scanner(readers, db).Execute(ctx, first); err != nil {
+		t.Fatal(err)
+	}
+	result, err := scanner(readers, db).Execute(ctx, second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Indexed != 2 {
+		t.Errorf("the second vault indexed %d notes, want 2 — a shared path was taken for already known", result.Indexed)
+	}
+
+	queries := db.Queries()
+
+	known, err := queries.Fingerprints(ctx, first.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(known) != 1 {
+		t.Errorf("the first vault knows %d files, want 1: %v", len(known), known)
+	}
+	if _, leaked := known["extra.md"]; leaked {
+		t.Error("the first vault knows a file that belongs to the second")
+	}
+
+	summary, err := queries.Summary(ctx, first.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if summary.Notes != 1 {
+		t.Errorf("the first vault summarises %d notes, want 1", summary.Notes)
+	}
+}
+
+// vanishingReader reports a file that is gone by the time it is read, which is
+// what happens when the user saves, moves or deletes a note during a scan.
+type vanishingReader struct {
+	port.VaultReader
+	gone string
+}
+
+func (v vanishingReader) Read(ctx context.Context, path string) ([]byte, error) {
+	if path == v.gone {
+		return nil, fs.ErrNotExist
+	}
+	return v.VaultReader.Read(ctx, path)
+}
+
+type vanishingReaders struct {
+	port.VaultReaders
+	gone string
+}
+
+func (v vanishingReaders) Open(vault domain.Vault) (port.VaultReader, error) {
+	reader, err := v.VaultReaders.Open(vault)
+	if err != nil {
+		return nil, err
+	}
+	return vanishingReader{VaultReader: reader, gone: v.gone}, nil
+}
+
+func TestAFileThatDisappearsDuringAScanDoesNotStopIt(t *testing.T) {
+	ctx := t.Context()
+	v, readers := vaultAt(t, testsupport.VaultDir(t))
+	db := openIndex(t)
+
+	scan := scanner(vanishingReaders{VaultReaders: readers, gone: "notes/Entropy.md"}, db)
+	res, err := scan.Execute(ctx, v)
+	if err != nil {
+		t.Fatalf("one vanished file ended the scan: %v", err)
+	}
+	if res.Vanished != 1 {
+		t.Errorf("vanished = %d, want 1", res.Vanished)
+	}
+	if res.Indexed != res.Seen-1 {
+		t.Errorf("indexed %d of %d seen", res.Indexed, res.Seen)
+	}
+
+	// The file is not in the index, and it is not recorded as removed either:
+	// nobody deleted it as far as this scan knows.
+	known, err := db.Queries().Fingerprints(ctx, v.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, indexed := known["notes/Entropy.md"]; indexed {
+		t.Error("a file that could not be read was indexed anyway")
+	}
+}
+
+func TestFrontmatterThatCannotBeStoredDoesNotFailTheScan(t *testing.T) {
+	ctx := t.Context()
+	db := openIndex(t)
+	// `.nan` is valid YAML and not representable in JSON. The note is still a
+	// note, so it must still be indexed.
+	v := testsupport.NewVault(t, map[string]string{
+		"odd.md": "---\nvalue: .nan\n---\n\n# Odd\n\nsearchable all the same\n",
+	})
+
+	if _, err := scanner(filesystem.Readers{}, db).Execute(ctx, v); err != nil {
+		t.Fatalf("a note with unstorable frontmatter ended the scan: %v", err)
+	}
+	matches, err := db.Queries().Search(ctx, v.ID, "searchable", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(matches) != 1 {
+		t.Errorf("the note was not indexed: %+v", matches)
 	}
 }

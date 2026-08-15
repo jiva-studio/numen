@@ -131,3 +131,35 @@ func TestWriteDoesNotLeaveATemporaryFileBehind(t *testing.T) {
 		t.Errorf("directory holds %v, want only the registry", entries)
 	}
 }
+
+func TestAFailedSaveLeavesTheOldRegistryIntact(t *testing.T) {
+	// The registry is the one thing here whose loss costs the user manual work,
+	// so a half-written file is the failure worth defending against. The write
+	// goes through a temporary file and a rename; this makes the temporary write
+	// fail and checks that what was already there survived.
+	dir := t.TempDir()
+	path := filepath.Join(dir, "vaults.json")
+	r := appstate.At(path)
+
+	original := domain.Vault{ID: "01AAA", Name: "personal", Path: "/notes"}
+	if err := r.Save(original); err != nil {
+		t.Fatal(err)
+	}
+
+	// A directory where the temporary file wants to be: the write fails, the
+	// rename never happens.
+	if err := os.Mkdir(path+".tmp", 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Save(domain.Vault{ID: "01BBB", Name: "work", Path: "/work"}); err == nil {
+		t.Fatal("a save that could not write reported success")
+	}
+
+	after, err := r.All()
+	if err != nil {
+		t.Fatalf("the registry is unreadable after a failed save: %v", err)
+	}
+	if len(after) != 1 || after[0] != original {
+		t.Errorf("the previous registry did not survive: %+v", after)
+	}
+}

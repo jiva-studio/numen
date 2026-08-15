@@ -17,7 +17,7 @@ import (
 
 func walkPaths(t *testing.T, root string) []string {
 	t.Helper()
-	src, err := filesystem.Open(root, filesystem.DefaultServiceDir)
+	src, err := filesystem.Open(root, filesystem.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +72,7 @@ func TestWalkPathsAreRelativeAndSlashed(t *testing.T) {
 }
 
 func TestWalkReportsSizeAndTime(t *testing.T) {
-	src, err := filesystem.Open(testsupport.VaultDir(t), filesystem.DefaultServiceDir)
+	src, err := filesystem.Open(testsupport.VaultDir(t), filesystem.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,16 +90,16 @@ func TestWalkReportsSizeAndTime(t *testing.T) {
 }
 
 func TestOpenRejectsWhatIsNotAFolder(t *testing.T) {
-	if _, err := filesystem.Open(filepath.Join(testsupport.VaultDir(t), "Thermodynamics.md"), ""); err == nil {
+	if _, err := filesystem.Open(filepath.Join(testsupport.VaultDir(t), "Thermodynamics.md"), filesystem.Options{}); err == nil {
 		t.Error("a file was accepted as a vault")
 	}
-	if _, err := filesystem.Open(filepath.Join(t.TempDir(), "nope"), ""); err == nil {
+	if _, err := filesystem.Open(filepath.Join(t.TempDir(), "nope"), filesystem.Options{}); err == nil {
 		t.Error("a missing folder was accepted as a vault")
 	}
 }
 
 func TestReadReturnsTheFile(t *testing.T) {
-	src, err := filesystem.Open(testsupport.VaultDir(t), "")
+	src, err := filesystem.Open(testsupport.VaultDir(t), filesystem.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,7 +116,7 @@ func TestOpenDoesNotWriteIntoTheFolder(t *testing.T) {
 	// Scanning a folder and adding a vault are different acts, and only the
 	// second may write.
 	dir := t.TempDir()
-	if _, err := filesystem.Open(dir, ""); err != nil {
+	if _, err := filesystem.Open(dir, filesystem.Options{}); err != nil {
 		t.Fatal(err)
 	}
 	entries, err := os.ReadDir(dir)
@@ -199,4 +199,62 @@ func TestReadConfigDistinguishesMissingFromCorrupt(t *testing.T) {
 	if !errors.Is(err, ulid.ErrInvalid) {
 		t.Errorf("error does not say what is wrong: %v", err)
 	}
+}
+
+func TestWhichExtensionsCountIsASetting(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{"a.md", "b.markdown", "c.txt"} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("# x\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// The default is markdown alone: a default that guesses widely indexes what
+	// the user did not mean.
+	if got := walked(t, dir, filesystem.Options{}); !slices.Equal(got, []string{"a.md"}) {
+		t.Errorf("default found %v, want [a.md]", got)
+	}
+
+	got := walked(t, dir, filesystem.Options{Extensions: []string{".md", ".markdown"}})
+	if !slices.Equal(got, []string{"a.md", "b.markdown"}) {
+		t.Errorf("configured found %v", got)
+	}
+}
+
+func TestTheConfiguredServiceFolderIsSkippedEvenWithoutALeadingDot(t *testing.T) {
+	// The name is a setting because a leading dot is not free — some sync tools
+	// skip hidden directories — so a service folder called _numen must be
+	// skipped by its name rather than by its shape.
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, "_numen"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "_numen", "notes.md"), []byte("# ours\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "real.md"), []byte("# theirs\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	got := walked(t, dir, filesystem.Options{ServiceDir: "_numen"})
+	if !slices.Equal(got, []string{"real.md"}) {
+		t.Errorf("walk found %v, want [real.md]", got)
+	}
+}
+
+func walked(t *testing.T, root string, opts filesystem.Options) []string {
+	t.Helper()
+	src, err := filesystem.Open(root, opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	if err := src.Walk(t.Context(), func(r domain.FileRef) error {
+		got = append(got, r.Path)
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	slices.Sort(got)
+	return got
 }

@@ -1,10 +1,7 @@
 # Code
 
-Inside a fence neither headings nor tags count:
+Inside a fence, headings do not count:
 
 ```markdown
 # Not a heading
-Not a tag: #fake
 ```
-
-This one is real: #genuine

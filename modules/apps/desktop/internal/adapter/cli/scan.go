@@ -20,7 +20,7 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args 
 	if err != nil {
 		return err
 	}
-	db, err := cfg.Index(ctx)
+	db, err := cfg.OpenIndex(ctx)
 	if err != nil {
 		return err
 	}
@@ -31,12 +31,12 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args 
 		Readers: cfg.VaultReaders(),
 		Vaults:  db.Vaults(),
 		Notes:   db.Notes(),
-		Known:   db.NoteQueries(),
+		Known:   db.Queries(),
 	}.Execute(ctx, v)
 	if err != nil {
 		return err
 	}
-	summary, err := db.NoteQueries().Summary(ctx, v.ID)
+	summary, err := db.Queries().Summary(ctx, v.ID)
 	if err != nil {
 		return err
 	}

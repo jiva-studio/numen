@@ -13,14 +13,14 @@ import (
 
 // VaultReader reads one vault from disk.
 type VaultReader struct {
-	root       string
-	serviceDir string
+	root string
+	opts Options
 }
 
 // Open prepares a vault for reading. It does not write anything: looking at a
 // folder and adding a vault are different acts, and only the second may touch
 // the user's files.
-func Open(root, serviceDir string) (*VaultReader, error) {
+func Open(root string, opts Options) (*VaultReader, error) {
 	abs, err := filepath.Abs(root)
 	if err != nil {
 		return nil, err
@@ -32,10 +32,7 @@ func Open(root, serviceDir string) (*VaultReader, error) {
 	if !info.IsDir() {
 		return nil, fmt.Errorf("%s is not a directory", abs)
 	}
-	if serviceDir == "" {
-		serviceDir = DefaultServiceDir
-	}
-	return &VaultReader{root: abs, serviceDir: serviceDir}, nil
+	return &VaultReader{root: abs, opts: opts}, nil
 }
 
 func (s *VaultReader) Root() string { return s.root }
@@ -59,12 +56,12 @@ func (s *VaultReader) Walk(ctx context.Context, fn func(domain.FileRef) error) e
 			if p == s.root {
 				return nil
 			}
-			if name == s.serviceDir || strings.HasPrefix(name, ".") {
+			if name == s.opts.serviceDir() || strings.HasPrefix(name, ".") {
 				return fs.SkipDir
 			}
 			return nil
 		}
-		if !strings.EqualFold(filepath.Ext(name), ".md") {
+		if !s.opts.isNote(name) {
 			return nil
 		}
 		info, err := d.Info()

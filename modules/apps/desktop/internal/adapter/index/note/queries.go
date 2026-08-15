@@ -3,6 +3,7 @@ package note
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 )
@@ -33,7 +34,10 @@ func (q *Queries) Fingerprints(ctx context.Context, vaultID string) (map[string]
 
 func (q *Queries) Search(ctx context.Context, vaultID, query string, limit int) ([]domain.NoteMatch, error) {
 	if limit <= 0 {
-		limit = 20
+		// How many results a person wants is not something a database adapter
+		// knows. The caller decides; arriving here without one is a mistake in
+		// the caller rather than something to paper over with a number.
+		return nil, fmt.Errorf("search limit must be positive, got %d", limit)
 	}
 	expression := ftsExpression(query)
 	if expression == "" {

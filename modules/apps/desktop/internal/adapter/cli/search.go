@@ -18,13 +18,13 @@ func searchCommand(ctx context.Context, out io.Writer, cfg container.Config, arg
 	if err != nil {
 		return err
 	}
-	db, err := cfg.Index(ctx)
+	db, err := cfg.OpenIndex(ctx)
 	if err != nil {
 		return err
 	}
 	defer db.Close()
 
-	matches, err := note.Search{Notes: db.NoteQueries()}.Execute(ctx, v, args[1])
+	matches, err := note.Search{Notes: db.Queries()}.Execute(ctx, v, args[1])
 	if err != nil {
 		return err
 	}

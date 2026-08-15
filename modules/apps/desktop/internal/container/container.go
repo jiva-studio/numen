@@ -7,13 +7,11 @@
 package container
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
@@ -23,6 +21,9 @@ type Config struct {
 	IndexPath    string
 	RegistryPath string
 	ServiceDir   string
+	// Extensions are the file extensions treated as notes. Empty means the
+	// default, which is markdown alone.
+	Extensions []string
 }
 
 // Registry is the list of vaults this installation knows: application state,
@@ -36,29 +37,18 @@ func (c Config) Registry() (port.VaultRegistry, error) {
 
 // VaultReaders opens vaults for reading.
 func (c Config) VaultReaders() port.VaultReaders {
-	return filesystem.Readers{ServiceDir: c.serviceDir()}
+	return filesystem.Readers{Options: c.vaultOptions()}
 }
 
 // VaultIdentity gives folders their identity.
 func (c Config) VaultIdentity() port.VaultIdentity {
-	return filesystem.Identity{ServiceDir: c.serviceDir()}
+	return filesystem.Identity{Options: c.vaultOptions()}
 }
 
-// Index opens the cache. Closing it belongs to the caller, which is what knows
-// when it is finished.
-func (c Config) Index(ctx context.Context) (*index.DB, error) {
-	path, err := c.indexPath()
-	if err != nil {
-		return nil, err
-	}
-	return index.Open(ctx, path)
-}
-
-func (c Config) serviceDir() string {
-	if c.ServiceDir == "" {
-		return filesystem.DefaultServiceDir
-	}
-	return c.ServiceDir
+// vaultOptions is how a vault on disk is read: which folder is ours, and which
+// files count as notes.
+func (c Config) vaultOptions() filesystem.Options {
+	return filesystem.Options{ServiceDir: c.ServiceDir, Extensions: c.Extensions}
 }
 
 // indexPath defaults to the platform cache directory. The index is a cache in

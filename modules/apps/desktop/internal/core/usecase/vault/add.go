@@ -37,6 +37,21 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		return domain.Vault{}, fmt.Errorf("give %s an identity: %w", root, err)
 	}
 
+	// Two folders carrying one identity cannot be told apart, so indexing either
+	// would write one vault's notes under the other's rows. Only the user knows
+	// whether the second folder is a copy or a move.
+	existing, found, err := u.Registry.Find(id)
+	if err != nil {
+		return domain.Vault{}, err
+	}
+	if found && existing.Path != root {
+		return domain.Vault{}, fmt.Errorf(
+			"%s carries the same identity as %s; they are copies of one vault and "+
+				"cannot both be indexed. To make this a separate vault, delete its "+
+				"service folder and add it again",
+			root, existing.Path)
+	}
+
 	v := domain.Vault{ID: id, Name: name, Path: root}
 	if v.Name == "" {
 		// The folder name is what the user already calls this collection.
