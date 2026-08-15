@@ -54,7 +54,7 @@ jobs:
         with:
           go-version: "1.26"
           cache-dependency-path: modules/apps/desktop/go.sum
-      - name: Cross-compile the command line tool
+      - name: Cross-compile
         run: |
           for target in darwin/arm64 windows/amd64 linux/arm64; do
             GOOS=${target%/*} GOARCH=${target#*/} CGO_ENABLED=0 go build -o /dev/null ./cmd/numen

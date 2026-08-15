@@ -50,7 +50,7 @@ jobs:
       # it. Adding one does not, which is why this compares rather than forbids.
       # There is nothing to compare against until the schema is on the branch
       # being merged into.
-      - name: Compatible with what is already there
+      - name: Breaking changes
         if: github.event_name == 'pull_request'
         run: |
           if git cat-file -e "origin/${{ github.base_ref }}:modules/libs/protocol/buf.yaml" 2>/dev/null; then
@@ -61,7 +61,7 @@ jobs:
 
       # The generated code is committed so that an ordinary build needs none of
       # the tools above. This is what proves it is still what the schema says.
-      - name: Generated code is current
+      - name: Codegen
         run: |
           buf generate
           git diff --exit-code -- . || {
