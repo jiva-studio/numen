@@ -16,11 +16,11 @@ import (
 // Scan brings the index up to date with one vault. The vault is
 // authoritative: whatever the scan finds is what the index says afterwards.
 type Scan struct {
-	Readers    port.VaultReaders
-	Vaults     port.VaultRepository
-	Notes      port.NoteRepository
-	Known      port.NoteQueries
-	Statistics port.IndexStatistics
+	Readers     port.VaultReaders
+	Vaults      port.VaultRepository
+	Notes       port.NoteRepository
+	Known       port.NoteQueries
+	Maintenance port.IndexMaintenance
 
 	// OnProgress, if set, is called each time a group of notes is written. A
 	// scan of a large vault takes a minute, and something has to be able to say
@@ -28,17 +28,9 @@ type Scan struct {
 	OnProgress func(ScanResult)
 }
 
-// Notes are written in groups rather than one at a time, because the cost of
-// storing a note is mostly the cost of the boundary around it.
-//
-// The count is where the gain flattens out: measured on a vault of ten thousand
-// notes, groups of fifty take less than half the time of one note at a time,
-// groups of five hundred a third, and ten times that buys almost nothing more.
-//
-// The size is a second bound for the same group, and it is the one that matters
-// on a vault this was not sized for: a folder of long transcripts would
-// otherwise hold five hundred whole documents in memory before writing any of
-// them.
+// A group of notes is one write. The count is where the gain flattens out; the
+// size bounds what a vault of long files holds in memory before writing any of
+// it.
 const (
 	notesPerWrite = 500
 	bytesPerWrite = 8 << 20
@@ -96,7 +88,9 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 			return nil
 		}
 		if err := u.Notes.Save(ctx, v.ID, pending); err != nil {
-			return fmt.Errorf("index: %w", err)
+			// The failure is somewhere in a group, so say which one.
+			return fmt.Errorf("index %d notes of %s, %s to %s: %w",
+				len(pending), v.Name, pending[0].Ref.Path, pending[len(pending)-1].Ref.Path, err)
 		}
 		res.Indexed += len(pending)
 		pending, pendingBytes = pending[:0], 0
@@ -158,11 +152,11 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	}
 	res.Removed = len(gone)
 
-	// A scan that changed nothing changed nothing to measure, and a scan of an
-	// unchanged vault has to stay cheap enough to run at startup.
+	// A scan that stored nothing changed nothing, and a scan of an unchanged
+	// vault has to stay cheap enough to run at startup.
 	if res.Indexed > 0 || res.Removed > 0 {
-		if err := u.Statistics.Update(ctx); err != nil {
-			return res, fmt.Errorf("measure index: %w", err)
+		if err := u.Maintenance.Changed(ctx); err != nil {
+			return res, fmt.Errorf("index upkeep for %s: %w", v.Name, err)
 		}
 	}
 

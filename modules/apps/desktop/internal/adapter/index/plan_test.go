@@ -11,46 +11,40 @@ import (
 )
 
 // The questions link resolution asks, and the index each one has to be answered
-// through. Naming the index rather than merely forbidding a full scan is the
-// point of the test: the wrong choice here is not a scan, it is the index that
-// narrows to the vault and then reads every link in it — which reports itself
-// as a search, looks entirely reasonable in a plan, and grows with the vault.
+// through.
 var expectedPlans = []struct {
-	name    string
-	args    []any
-	indexes []string
+	name string
+	args []any
+	// An index name, or the columns for a primary key: SQLite names those
+	// itself, and the name changes when a constraint is added.
+	through []string
 }{
 	{"candidates", []any{"v", "a", "v", "b", "v", "c"}, []string{"notes_by_basename"}},
 	{"backlink_candidates", []any{"v", "id", "v", "base"}, []string{"links_by_target", "links_by_name"}},
 	{"note_by_id", []any{"id"}, []string{"notes_by_id"}},
-	{"links_of", []any{"v", "p"}, []string{"sqlite_autoindex_links_1"}},
+	{"links_of", []any{"v", "p"}, []string{"(vault_id=? AND from_path=?)"}},
 }
 
-// TestResolutionUsesIndexes asks the database how it intends to answer the
-// questions link resolution asks. The wrong plan is paid once per link, on
-// every note opened, and is invisible until a vault is large enough for
-// someone to complain.
+// TestResolutionUsesIndexes asks the database how it intends to answer.
 //
-// The schema comes from the migrations rather than from a copy in this file,
-// the database is populated because an empty one is answered from rules of
-// thumb, and it is measured through the same call a scan makes — a test that
-// measured the database itself would be certifying a plan the application never
-// gets.
+// The schema comes from the migrations, the database is populated because an
+// empty one is answered from rules of thumb, and it is measured through the
+// call a scan makes.
 func TestResolutionUsesIndexes(t *testing.T) {
 	ctx := t.Context()
 	db := populated(t)
 
-	if err := (Statistics{db.write}).Update(ctx); err != nil {
+	if err := (Statistics{db.write}).Changed(ctx); err != nil {
 		t.Fatal(err)
 	}
 
 	statements := note.Statements()
 	for _, q := range expectedPlans {
-		plan := planFor(t, db, statements[q.name], q.args)
+		plan := planFor(ctx, t, db, statements[q.name], q.args)
 		t.Logf("%s:\n    %s", q.name, strings.Join(plan, "\n    "))
 
 		joined := strings.Join(plan, "\n")
-		for _, want := range q.indexes {
+		for _, want := range q.through {
 			if !strings.Contains(joined, want) {
 				t.Errorf("%s is not answered through %s", q.name, want)
 			}
@@ -100,9 +94,9 @@ func populated(t *testing.T) *DB {
 	return db
 }
 
-func planFor(t *testing.T, db *DB, statement string, args []any) []string {
+func planFor(ctx context.Context, t *testing.T, db *DB, statement string, args []any) []string {
 	t.Helper()
-	rows, err := db.read.QueryContext(context.Background(), "EXPLAIN QUERY PLAN "+statement, args...)
+	rows, err := db.read.QueryContext(ctx, "EXPLAIN QUERY PLAN "+statement, args...)
 	if err != nil {
 		t.Fatal(err)
 	}

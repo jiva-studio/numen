@@ -35,9 +35,18 @@ and removed nothing does not measure, because an unchanged vault is scanned at
 every startup and that path has a budget of its own (ADR-0019).
 
 The measurement covers the whole database rather than only the tables the
-scanning connection happened to read from. A scan writes and does not ask
-questions, so a decision scoped to what this connection has read would find
-nothing worth measuring and leave the index exactly as slow as before.
+scanning connection happened to read from, and it samples a large table rather
+than reading all of it.
+
+Whole-database is insurance and not more than that: measured, a scan's own
+connection already flags the tables it touched, and the plans come out the same
+either way. But a scan writes and asks nothing, on whichever pooled connection
+was free, so what that connection has read is an accident, and the cost of
+covering everything is small enough not to depend on the accident.
+
+Sampling is not insurance. Reading every row of every index is fifteen times
+the work at thirty thousand notes and grows with the vault, while sampling does
+not, and the two produce the same plans.
 
 **A plan is asserted by the index it uses, not by the absence of a scan.** The
 failure this decision exists to prevent passes any test that only forbids
@@ -64,6 +73,9 @@ its own behalf certifies a plan that never reaches a user.
   everything else.
 - It is a sample, not a survey, and a vault whose shape changes without its size
   changing can go unnoticed until the next scan that stores something.
+- Which bits of the request are set is a constant no test can defend: the plans
+  come out right under several of them, and only a measurement tells the cheap
+  spelling from the expensive one.
 
 ## Alternatives considered
 

@@ -39,19 +39,16 @@ func exec(ctx context.Context, tx *sql.Tx, name string, args ...any) error {
 
 // Save writes a group of notes in one transaction.
 //
-// One transaction rather than one per note: a commit writes to the log and then
-// walks the page cache, and that work is the same size whether one note or five
-// hundred went into it. It is also what makes a interrupted scan harmless —
-// either a note and the fingerprint that dates it are both stored, or neither
-// is, so the next scan reads the file again instead of trusting a row that was
-// never finished.
+// A note and the fingerprint that dates it are stored together or not at all,
+// so an interrupted scan leaves files to be read again rather than rows to be
+// trusted.
 func (r *Repository) Save(ctx context.Context, vaultID string, notes []domain.Note) error {
 	if len(notes) == 0 {
 		return nil
 	}
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("begin: %w", err)
 	}
 	defer tx.Rollback()
 
@@ -60,7 +57,10 @@ func (r *Repository) Save(ctx context.Context, vaultID string, notes []domain.No
 			return fmt.Errorf("%s: %w", n.Ref.Path, err)
 		}
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit: %w", err)
+	}
+	return nil
 }
 
 func saveNote(ctx context.Context, tx *sql.Tx, vaultID string, n domain.Note) error {

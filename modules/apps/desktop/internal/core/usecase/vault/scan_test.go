@@ -41,11 +41,11 @@ func openIndex(t *testing.T) *container.Index {
 
 func scanner(readers port.VaultReaders, db *container.Index) usecase.Scan {
 	return usecase.Scan{
-		Readers:    readers,
-		Vaults:     db.Vaults(),
-		Notes:      db.Notes(),
-		Known:      db.Queries(),
-		Statistics: db.Statistics(),
+		Readers:     readers,
+		Vaults:      db.Vaults(),
+		Notes:       db.Notes(),
+		Known:       db.Queries(),
+		Maintenance: db.Maintenance(),
 	}
 }
 
@@ -417,9 +417,8 @@ func TestNewestNotesAreIndexedFirst(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Asked of the order the notes reach the index in, rather than of the index
-	// afterwards: notes are written in groups, so what the index holds part-way
-	// through is whole groups and says nothing about the order inside one.
+	// Asked of the order the notes reach the index in: what the index holds
+	// part-way through is whole groups, which says nothing about order.
 	written := &groupedWrites{}
 	scan := scanner(readers, db)
 	scan.Notes = written
@@ -433,9 +432,10 @@ func TestNewestNotesAreIndexedFirst(t *testing.T) {
 }
 
 // TestScanStopsWhenCancelled. A cancelled scan keeps what it committed and
-// loses the group it was filling: the notes in it were parsed but never
-// written, and the dates that would call them up to date were never written
-// either, so the next scan reads those files again.
+// loses the group it was filling, whose files are read again next time.
+//
+// Asserted on how far the walk got, not on the error: the next read refuses a
+// cancelled context by itself, so the error arrives either way.
 func TestScanStopsWhenCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	v := testsupport.GenerateVault(t, 600)
@@ -444,9 +444,12 @@ func TestScanStopsWhenCancelled(t *testing.T) {
 	scan := scanner(filesystem.Readers{}, db)
 	scan.OnProgress = func(usecase.ScanResult) { cancel() }
 
-	_, err := scan.Execute(ctx, v)
+	res, err := scan.Execute(ctx, v)
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("a cancelled scan returned %v", err)
+	}
+	if res.Seen != 500 {
+		t.Errorf("a cancelled scan walked %d files, want the 500 it had reached", res.Seen)
 	}
 
 	known, err := db.Queries().Fingerprints(t.Context(), v.ID)
@@ -455,5 +458,29 @@ func TestScanStopsWhenCancelled(t *testing.T) {
 	}
 	if len(known) != 500 {
 		t.Errorf("a cancelled scan left %d notes indexed, want the 500 it committed", len(known))
+	}
+}
+
+// TestAWarmScanStopsWhenCancelled is the case the check in the loop exists for.
+// A warm scan opens no file, so nothing refuses the cancelled context on the
+// scan's behalf and it has to notice by itself.
+func TestAWarmScanStopsWhenCancelled(t *testing.T) {
+	v := testsupport.GenerateVault(t, 600)
+	db := openIndex(t)
+	scan := scanner(filesystem.Readers{}, db)
+
+	if _, err := scan.Execute(t.Context(), v); err != nil {
+		t.Fatal(err)
+	}
+
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+
+	res, err := scan.Execute(ctx, v)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("a cancelled warm scan returned %v", err)
+	}
+	if res.Seen != 0 {
+		t.Errorf("a warm scan cancelled before it began walked %d files", res.Seen)
 	}
 }

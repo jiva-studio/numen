@@ -5,23 +5,25 @@ import (
 	"database/sql"
 )
 
-// Statistics keeps the database's picture of its own contents current.
-//
-// Without it the database answers "who points at this note" by narrowing to the
-// vault and then reading every link in it, because with nothing measured it has
-// no reason to believe the narrower index is worth using. The indexes are there
-// either way; what is missing is the knowledge that they help.
+// Statistics keeps the database's picture of its own contents current, which is
+// what it chooses between indexes by.
 type Statistics struct{ db *sql.DB }
 
-// Update re-measures.
+// Every bit is named because naming any turns off the ones left out.
 //
-// The mask asks for every table rather than only the ones this connection has
-// read from, which is what a scan needs: it writes and does not query, so a
-// connection-scoped decision would find nothing worth measuring and leave the
-// index exactly as slow as before. The database limits how much of a large
-// table it samples, so this stays a moment's work rather than a second pass
-// over the vault.
-func (s Statistics) Update(ctx context.Context) error {
-	_, err := s.db.ExecContext(ctx, "PRAGMA optimize = 0x10002")
+//	0x00010  sample a large table rather than read all of it
+//	0x00002  measure the tables that would benefit from it
+//	0x10000  include tables this connection has not read from
+//
+// The last one is what a scan needs: it writes and asks nothing, on whichever
+// pooled connection was free.
+//
+// A pragma configures the connection rather than asking it anything, so it
+// belongs here beside the ones in db.go rather than in a file of SQL.
+const measure = "PRAGMA optimize = 0x10012"
+
+// Changed says what the database knows about itself is out of date.
+func (s Statistics) Changed(ctx context.Context) error {
+	_, err := s.db.ExecContext(ctx, measure)
 	return err
 }
