@@ -182,25 +182,73 @@ func TestAnAttachmentIsALinkAndResolvesToNoNote(t *testing.T) {
 	}
 }
 
-func TestLinksFollowTheVaultTheyAreWrittenIn(t *testing.T) {
-	// A link resolves inside its own vault. Another vault holding a note by the
-	// same name is not an answer, and there is no syntax for asking it.
+func TestANameNeverLeavesItsVault(t *testing.T) {
+	// A name means something only inside one vault. Another vault holding a note
+	// by the same name is not an answer, and there is no way to ask it for one.
 	db, first := indexed(t, map[string]string{
 		"source.md": "Points at [[Entropy]].\n",
 	})
-	second := testsupport.NewVault(t, map[string]string{"Entropy.md": "# Elsewhere\n"})
+	addVault(t, db, testsupport.NewVault(t, map[string]string{"Entropy.md": "# Elsewhere\n"}))
+
+	c := connections(t, db, first, "source.md")
+	if c.Links[0].To != "" {
+		t.Errorf("a name resolved into another vault: %q", c.Links[0].To)
+	}
+}
+
+func TestAnIdentifierCrossesIntoAConnectedVault(t *testing.T) {
+	// The seam the user put there on purpose: a link written by identifier finds
+	// its note wherever that note is, and says which vault that turned out to be.
+	const id = "01M02DTC80PABQQW3XS3XWDVHW"
+	db, first := indexed(t, map[string]string{
+		"source.md": "---\nlinks:\n  - to: \"note://" + id + "\"\n    role: jump\n---\n\nbody\n",
+	})
+	other := addVault(t, db, testsupport.NewVault(t, map[string]string{
+		"elsewhere.md": "---\nid: " + id + "\n---\n\n# In the other vault\n",
+	}))
+
+	c := connections(t, db, first, "source.md")
+	if c.Links[0].To != "elsewhere.md" {
+		t.Fatalf("resolved to %q", c.Links[0].To)
+	}
+	vault, crossed := c.Links[0].InVault(first.ID)
+	if !crossed || vault != other.ID {
+		t.Errorf("landed in vault %q, crossed=%v", vault, crossed)
+	}
+}
+
+func TestAnIdentifierInAVaultThatIsNotConnectedIsNeitherResolvedNorBroken(t *testing.T) {
+	// Nothing here can tell a deleted note from one in a vault the user has not
+	// added, and calling it broken would report a link that is fine on the
+	// machine where both vaults are open.
+	db, v := indexed(t, map[string]string{
+		"source.md": "---\nlinks:\n  - to: \"note://01M02DTC80PABQQW3XS3XWDVHW\"\n    role: jump\n---\n\nbody\n",
+	})
+
+	c := connections(t, db, v, "source.md")
+	if len(c.Links) != 1 {
+		t.Fatalf("got %+v", c.Links)
+	}
+	if c.Links[0].To != "" || c.Links[0].ToVault != "" {
+		t.Errorf("something resolved: %+v", c.Links[0])
+	}
+	if c.Links[0].Ambiguous {
+		t.Error("an unreachable note is not an ambiguity")
+	}
+}
+
+// addVault indexes a second vault into the same database, which is what makes
+// a link across vaults possible at all.
+func addVault(t *testing.T, db *container.Index, v domain.Vault) domain.Vault {
+	t.Helper()
 	scan := usecase.Scan{
 		Readers: filesystem.Readers{},
 		Vaults:  db.Vaults(),
 		Notes:   db.Notes(),
 		Known:   db.Queries(),
 	}
-	if _, err := scan.Execute(t.Context(), second); err != nil {
+	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-
-	c := connections(t, db, first, "source.md")
-	if c.Links[0].To != "" {
-		t.Errorf("a link resolved into another vault: %q", c.Links[0].To)
-	}
+	return v
 }

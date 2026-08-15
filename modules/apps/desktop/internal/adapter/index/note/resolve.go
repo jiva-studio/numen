@@ -45,11 +45,16 @@ func (q *Queries) Links(ctx context.Context, vaultID, from string) ([]domain.Res
 func (q *Queries) resolve(ctx context.Context, vaultID, from string, r *domain.ResolvedLink) error {
 	switch r.Target.Scheme {
 	case domain.SchemeNote:
-		err := q.db.QueryRowContext(ctx, stmt.Get("note_by_id"), vaultID, r.Target.Value).Scan(&r.To)
+		// An identifier names one note in the world, so this lookup is not
+		// scoped to a vault — the one deliberate exception to the rule that a
+		// query without a vault is a leak (ADR-0011).
+		err := q.db.QueryRowContext(ctx, stmt.Get("note_by_id"), r.Target.Value).
+			Scan(&r.ToVault, &r.To)
 		if errors.Is(err, sql.ErrNoRows) {
-			// An identifier that matches nothing is dangling, which is a state to
-			// show rather than an error: the note may be in a vault that is not
-			// open, or may have been deleted.
+			// Not dangling and not resolved: no connected vault holds this note.
+			// Whether it was deleted or simply lives in a vault the user has not
+			// added, nothing here can tell, and guessing would report a link as
+			// broken that is fine on the machine where both vaults are open.
 			return nil
 		}
 		return err
@@ -59,6 +64,10 @@ func (q *Queries) resolve(ctx context.Context, vaultID, from string, r *domain.R
 			return err
 		}
 		r.To, r.Ambiguous = pick(from, r.Target.Value, candidates)
+		if r.To != "" {
+			// A name means something only inside the vault it was written in.
+			r.ToVault = vaultID
+		}
 		return nil
 	default:
 		// An asset or a URL: not a note, so no note resolves it.

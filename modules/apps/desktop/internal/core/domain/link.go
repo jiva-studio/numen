@@ -114,7 +114,22 @@ type ResolvedLink struct {
 	From string
 	To   string
 
+	// ToVault is the vault the target turned out to be in. Empty when the link
+	// resolved to nothing, and equal to the vault the link was written in for
+	// every ordinary link.
+	ToVault string
+
 	// Ambiguous is set when several notes answer to the name. The link still
 	// resolves — to the nearest one — but the vault has a question in it.
 	Ambiguous bool
+}
+
+// InVault is the vault the link resolved into, which is not always the vault it
+// was written in: an identifier names one note in the world, so a link may cross
+// a boundary the user put there on purpose.
+func (r ResolvedLink) InVault(writtenIn string) (vault string, crossed bool) {
+	if r.ToVault == "" || r.ToVault == writtenIn {
+		return writtenIn, false
+	}
+	return r.ToVault, true
 }

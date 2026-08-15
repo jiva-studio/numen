@@ -86,17 +86,34 @@ that was dangling, and deleting one can break a link that worked. The index
 stores what was written and what it currently resolves to, and the second is
 recomputed rather than trusted.
 
-### A link stays inside its vault
+### A link by name stays inside its vault; a link by identifier does not
 
-A link resolves within the vault that contains it. There is no syntax for
-addressing a note in another vault, and none is invented here.
+A **name** means something only within one vault. Two vaults may each hold an
+`Entropy.md`, and neither is the other's answer, so a name resolves against the
+vault the link was written in and nowhere else.
 
-Identifiers are globally unique, so such a form is technically possible — and
-that is not the hard part. The hard part is what a link means when the vault it
-points into is not connected on this machine: it cannot be resolved, cannot be
-reported as dangling, and cannot be repaired. Vaults exist to keep contexts
-apart, so the first question is whether linking across them is wanted at all,
-and that has not been asked by anything real yet.
+An **identifier** is globally unique, so it needs no new syntax to point across
+a boundary: `note://…` already names one note in the world. A link written that
+way resolves in whichever connected vault holds that note, and the vault it
+landed in travels with the answer.
+
+This is the one place where a query deliberately looks past the vault it was
+asked about. Everywhere else a missing `vault_id` is the silent bug ADR-0002
+warns about; here it is the point, and it is spelled out in one query rather
+than left to a filter someone forgot.
+
+**A note in a vault that is not connected has a third state.** Not resolved, and
+not dangling either — the application cannot tell a deleted note from one in a
+vault it cannot see, and pretending otherwise would report a broken link that is
+perfectly fine on the machine where both vaults are open. The state carries its
+own reason: *no connected vault holds this note*.
+
+Nothing else follows from it. There is no server, no federation and no fetching:
+a link into a vault the user has not added is text with a known shape, and the
+interface says so rather than guessing.
+
+The link is only created deliberately — by pointing at a note the user has open
+in another vault — so the seam between vaults exists exactly where they put it.
 
 ### Renaming a note
 
