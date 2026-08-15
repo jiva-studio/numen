@@ -1,0 +1,23 @@
+version: 2
+updates:
+  # Commit-message tooling. Tiny surface, but it is the thing that gates every
+  # commit, so a broken version should surface as a PR rather than as a mystery.
+  - package-ecosystem: npm
+    directory: /modules/tools/git-hooks
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "build(deps)"
+    groups:
+      commitlint:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "ci(deps)"
+    groups:
+      actions:
+        patterns: ["*"]

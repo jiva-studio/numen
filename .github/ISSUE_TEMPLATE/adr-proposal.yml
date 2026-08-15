@@ -1,0 +1,83 @@
+name: ADR proposal
+description: Propose an architecture decision, or supersede an accepted one
+title: "ADR: "
+labels: ["adr"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One decision per issue. The sections below are the sections of the final
+        file — filling them in here means the ADR is mostly written by the time
+        it is accepted.
+
+        Accepted decisions are not reopened. Changing one means **superseding**
+        it: a new ADR, with the old file kept and marked.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What forces the decision. State the problem, not the solution.
+      placeholder: |
+        What is true today, what breaks because of it, and what constraints apply.
+    validations:
+      required: true
+
+  - type: textarea
+    id: decision
+    attributes:
+      label: Decision
+      description: What we are going to do, stated in the present tense.
+    validations:
+      required: true
+
+  - type: textarea
+    id: consequences
+    attributes:
+      label: Consequences
+      description: |
+        Both directions. The negative half is the one that matters — an ADR with
+        no costs listed has not been thought through.
+      value: |
+        **Positive**
+
+        -
+
+        **Negative / costs**
+
+        -
+
+        **Implementation requirements**
+
+        -
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: |
+        Each with the reason it was rejected. "None" is not an acceptable answer —
+        if nothing else was possible, this is not a decision and does not need
+        an ADR.
+      placeholder: |
+        **<alternative>.** Rejected because ...
+    validations:
+      required: true
+
+  - type: input
+    id: related
+    attributes:
+      label: Related ADRs
+      placeholder: "ADR-0003, ADR-0009"
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options:
+        - New decision
+        - Supersedes an accepted ADR
+    validations:
+      required: true
