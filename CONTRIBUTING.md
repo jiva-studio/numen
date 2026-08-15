@@ -48,9 +48,13 @@ someone forgets to remove it.
 ## Commit messages
 
 [Conventional Commits](https://www.conventionalcommits.org). The format is
-checked twice: locally by the `commit-msg` hook, and in CI over every commit in a
-pull request — so a clone that skipped `npm install` still gets caught before
-merge.
+checked in three places: locally by the `commit-msg` hook, in CI over every
+commit in a pull request — so a clone that skipped `npm install` is still caught
+before merge — and on the **pull request title**.
+
+The title matters because merges are squash-only: the title becomes the subject
+of the single commit that lands in `main`. A tidy branch behind a sloppy title
+still produces a sloppy history.
 
 ```
 <type>(<scope>): <subject>

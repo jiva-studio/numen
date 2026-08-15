@@ -36,3 +36,16 @@ jobs:
           else
             npx commitlint --last --verbose
           fi
+
+      # Merges are squash-only and take their subject from the pull request
+      # title, so the title is what actually lands in main's history — it has to
+      # pass the same check as any commit message.
+      #
+      # The title goes through an environment variable rather than straight into
+      # the script: it is attacker-controlled text on a fork pull request, and
+      # inlining it would splice it into the shell.
+      - name: Validate pull request title
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: echo "$PR_TITLE" | npx commitlint --verbose
