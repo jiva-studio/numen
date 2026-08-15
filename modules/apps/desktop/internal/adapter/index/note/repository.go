@@ -37,13 +37,33 @@ func exec(ctx context.Context, tx *sql.Tx, name string, args ...any) error {
 	return nil
 }
 
-func (r *Repository) Save(ctx context.Context, vaultID string, n domain.Note) error {
+// Save writes a group of notes in one transaction.
+//
+// One transaction rather than one per note: a commit writes to the log and then
+// walks the page cache, and that work is the same size whether one note or five
+// hundred went into it. It is also what makes a interrupted scan harmless —
+// either a note and the fingerprint that dates it are both stored, or neither
+// is, so the next scan reads the file again instead of trusting a row that was
+// never finished.
+func (r *Repository) Save(ctx context.Context, vaultID string, notes []domain.Note) error {
+	if len(notes) == 0 {
+		return nil
+	}
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
+	for _, n := range notes {
+		if err := saveNote(ctx, tx, vaultID, n); err != nil {
+			return fmt.Errorf("%s: %w", n.Ref.Path, err)
+		}
+	}
+	return tx.Commit()
+}
+
+func saveNote(ctx context.Context, tx *sql.Tx, vaultID string, n domain.Note) error {
 	if err := exec(ctx, tx, "save_file", vaultID, n.Ref.Path, n.Ref.Size, n.Ref.MTime); err != nil {
 		return err
 	}
@@ -110,10 +130,7 @@ func (r *Repository) Save(ctx context.Context, vaultID string, n domain.Note) er
 			return err
 		}
 	}
-	if err := exec(ctx, tx, "insert_fts", rowID, n.Title, n.Body, vaultID, n.Ref.Path); err != nil {
-		return err
-	}
-	return tx.Commit()
+	return exec(ctx, tx, "insert_fts", rowID, n.Title, n.Body, vaultID, n.Ref.Path)
 }
 
 func (r *Repository) Remove(ctx context.Context, vaultID string, paths []string) error {

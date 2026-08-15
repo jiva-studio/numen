@@ -54,10 +54,11 @@ func TestLoad(t *testing.T) {
 	defer db.Close()
 
 	scan := usecase.Scan{
-		Readers: filesystem.Readers{},
-		Vaults:  db.Vaults(),
-		Notes:   db.Notes(),
-		Known:   db.Queries(),
+		Readers:    filesystem.Readers{},
+		Vaults:     db.Vaults(),
+		Notes:      db.Notes(),
+		Known:      db.Queries(),
+		Statistics: db.Statistics(),
 	}
 
 	cold := time.Now()

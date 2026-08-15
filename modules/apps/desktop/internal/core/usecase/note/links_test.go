@@ -26,10 +26,11 @@ func indexed(t *testing.T, notes map[string]string) (*container.Index, domain.Va
 	t.Cleanup(func() { db.Close() })
 
 	scan := usecase.Scan{
-		Readers: filesystem.Readers{},
-		Vaults:  db.Vaults(),
-		Notes:   db.Notes(),
-		Known:   db.Queries(),
+		Readers:    filesystem.Readers{},
+		Vaults:     db.Vaults(),
+		Notes:      db.Notes(),
+		Known:      db.Queries(),
+		Statistics: db.Statistics(),
 	}
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
@@ -241,10 +242,11 @@ func TestAnIdentifierInAVaultThatIsNotConnectedIsNeitherResolvedNorBroken(t *tes
 func addVault(t *testing.T, db *container.Index, v domain.Vault) domain.Vault {
 	t.Helper()
 	scan := usecase.Scan{
-		Readers: filesystem.Readers{},
-		Vaults:  db.Vaults(),
-		Notes:   db.Notes(),
-		Known:   db.Queries(),
+		Readers:    filesystem.Readers{},
+		Vaults:     db.Vaults(),
+		Notes:      db.Notes(),
+		Known:      db.Queries(),
+		Statistics: db.Statistics(),
 	}
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)

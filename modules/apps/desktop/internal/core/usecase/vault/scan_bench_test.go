@@ -34,10 +34,11 @@ func openIndexFor(b *testing.B) *container.Index {
 
 func scanFor(db *container.Index) usecase.Scan {
 	return usecase.Scan{
-		Readers: filesystem.Readers{},
-		Vaults:  db.Vaults(),
-		Notes:   db.Notes(),
-		Known:   db.Queries(),
+		Readers:    filesystem.Readers{},
+		Vaults:     db.Vaults(),
+		Notes:      db.Notes(),
+		Known:      db.Queries(),
+		Statistics: db.Statistics(),
 	}
 }
 

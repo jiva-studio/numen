@@ -16,16 +16,33 @@ import (
 // Scan brings the index up to date with one vault. The vault is
 // authoritative: whatever the scan finds is what the index says afterwards.
 type Scan struct {
-	Readers port.VaultReaders
-	Vaults  port.VaultRepository
-	Notes   port.NoteRepository
-	Known   port.NoteQueries
+	Readers    port.VaultReaders
+	Vaults     port.VaultRepository
+	Notes      port.NoteRepository
+	Known      port.NoteQueries
+	Statistics port.IndexStatistics
 
-	// OnProgress, if set, is called after each note is written. A scan of a
-	// large vault takes a minute, and something has to be able to say so while
-	// it happens. What is done with that is the caller's business.
+	// OnProgress, if set, is called each time a group of notes is written. A
+	// scan of a large vault takes a minute, and something has to be able to say
+	// so while it happens. What is done with that is the caller's business.
 	OnProgress func(ScanResult)
 }
+
+// Notes are written in groups rather than one at a time, because the cost of
+// storing a note is mostly the cost of the boundary around it.
+//
+// The count is where the gain flattens out: measured on a vault of ten thousand
+// notes, groups of fifty take less than half the time of one note at a time,
+// groups of five hundred a third, and ten times that buys almost nothing more.
+//
+// The size is a second bound for the same group, and it is the one that matters
+// on a vault this was not sized for: a folder of long transcripts would
+// otherwise hold five hundred whole documents in memory before writing any of
+// them.
+const (
+	notesPerWrite = 500
+	bytesPerWrite = 8 << 20
+)
 
 // ScanResult reports what a scan did, in the terms the user cares about.
 type ScanResult struct {
@@ -70,6 +87,25 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	}
 	slices.SortFunc(found, func(a, b domain.FileRef) int { return cmp.Compare(b.MTime, a.MTime) })
 
+	var (
+		pending      []domain.Note
+		pendingBytes int
+	)
+	write := func() error {
+		if len(pending) == 0 {
+			return nil
+		}
+		if err := u.Notes.Save(ctx, v.ID, pending); err != nil {
+			return fmt.Errorf("index: %w", err)
+		}
+		res.Indexed += len(pending)
+		pending, pendingBytes = pending[:0], 0
+		if u.OnProgress != nil {
+			u.OnProgress(res)
+		}
+		return nil
+	}
+
 	seen := make(map[string]bool, len(known))
 	for _, ref := range found {
 		if err := ctx.Err(); err != nil {
@@ -99,13 +135,16 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 		if err != nil {
 			return res, fmt.Errorf("read %s: %w", ref.Path, err)
 		}
-		if err := u.Notes.Save(ctx, v.ID, markdown.Parse(ref, raw)); err != nil {
-			return res, fmt.Errorf("index %s: %w", ref.Path, err)
+		pending = append(pending, markdown.Parse(ref, raw))
+		pendingBytes += len(raw)
+		if len(pending) >= notesPerWrite || pendingBytes >= bytesPerWrite {
+			if err := write(); err != nil {
+				return res, err
+			}
 		}
-		res.Indexed++
-		if u.OnProgress != nil {
-			u.OnProgress(res)
-		}
+	}
+	if err := write(); err != nil {
+		return res, err
 	}
 
 	var gone []string
@@ -118,6 +157,14 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 		return res, fmt.Errorf("remove deleted notes: %w", err)
 	}
 	res.Removed = len(gone)
+
+	// A scan that changed nothing changed nothing to measure, and a scan of an
+	// unchanged vault has to stay cheap enough to run at startup.
+	if res.Indexed > 0 || res.Removed > 0 {
+		if err := u.Statistics.Update(ctx); err != nil {
+			return res, fmt.Errorf("measure index: %w", err)
+		}
+	}
 
 	return res, nil
 }
