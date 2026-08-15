@@ -80,7 +80,7 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note) error
 
 	var id int64
 	if err := tx.QueryRowContext(ctx, stmt.Get("save"),
-		vault, n.Ref.Path, basename(n.Ref.Path), n.Title, nullable(n.ID),
+		vault, n.Ref.Path, domain.Basename(n.Ref.Path), n.Title, nullable(n.ID),
 		frontmatter, nullable(problem), n.Ref.Size, n.Ref.MTime).Scan(&id); err != nil {
 		return fmt.Errorf("save: %w", err)
 	}
@@ -105,7 +105,7 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note) error
 		defer insert.Close()
 		for i, l := range n.Links {
 			if _, err := insert.ExecContext(ctx, id, i,
-				l.Target.Scheme, l.Target.Value, basename(l.Target.Value),
+				l.Target.Scheme, l.Target.Value, domain.Basename(l.Target.Value),
 				string(l.Role), nullable(l.Type), nullable(l.Note), nullable(l.Label),
 			); err != nil {
 				return fmt.Errorf("insert_link: %w", err)
@@ -180,16 +180,4 @@ func nullable(s string) any {
 		return nil
 	}
 	return s
-}
-
-// basename is the name a note is found by when a link is written by name.
-func basename(path string) string {
-	name := path
-	if i := strings.LastIndexByte(name, '/'); i >= 0 {
-		name = name[i+1:]
-	}
-	if i := strings.LastIndexByte(name, '.'); i > 0 {
-		name = name[:i]
-	}
-	return name
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/testsupport"
 )
 
 // seatsOf renders a neighbourhood as `seat path` lines, which is what these
@@ -81,6 +82,46 @@ func TestANoteTakesOneSeat(t *testing.T) {
 	}
 }
 
+// TestTheHigherSeatWins is the other half of taking one seat: which one.
+//
+// Written from the mirrored end, so the child arrives first and the parent
+// second. Keeping whichever was seen first would seat it as a child; the rule
+// is that a parent outranks one.
+func TestTheHigherSeatWins(t *testing.T) {
+	n := neighbourhoodOf(t, map[string]string{
+		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: child\n---\n\n# Chicken\n",
+		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: child\n---\n\n# Egg\n",
+	}, "Chicken.md")
+
+	if got := seatsOf(n); !slices.Equal(got, []string{"parent Egg.md"}) {
+		t.Errorf("got %v, want parent — it outranks the child seat the same pair also earns", got)
+	}
+}
+
+// TestANeighbourhoodStaysInsideItsVault. A link by identifier resolves in
+// whichever connected vault holds the note, so a neighbourhood that does not
+// check where one landed draws a note from somewhere else — or, when the two
+// vaults file a note at the same path, the wrong note under the right name.
+func TestANeighbourhoodStaysInsideItsVault(t *testing.T) {
+	const shared = "notes/Entropy.md"
+	db, here := indexed(t, map[string]string{
+		shared:    "---\ntitle: Entropy here\nid: 01M02ACGM0FYMSXNDP29C90JN1\n---\n\n# Entropy here\n",
+		"Area.md": "---\ntitle: Area\nlinks:\n  - to: \"note://01M02ACGM0FYMSXNDP29C90JN2\"\n    role: child\n---\n\n# Area\n",
+	})
+	addVault(t, db, testsupport.NewVault(t, map[string]string{
+		shared: "---\ntitle: Entropy elsewhere\nid: 01M02ACGM0FYMSXNDP29C90JN2\n---\n\n# Entropy elsewhere\n",
+	}))
+
+	n, err := note.ShowNeighbourhood{Links: db.Links(), Notes: db.Queries()}.
+		Execute(t.Context(), here, "Area.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := seatsOf(n); len(got) != 0 {
+		t.Errorf("got %v — the note that identifier names is in another vault", got)
+	}
+}
+
 // TestOnlyNavigableLinksTakeASeat. A wikilink in prose and an attachment are
 // links, and neither is a place in the hierarchy.
 func TestOnlyNavigableLinksTakeASeat(t *testing.T) {
@@ -111,17 +152,23 @@ func TestADanglingLinkHasNoSeat(t *testing.T) {
 }
 
 // TestTheSameVaultDrawsTheSameWayTwice.
+//
+// Every note is called the same thing, on purpose. A picture ordered by what a
+// note is called is ordered by nothing at all when they share a name, and the
+// vault where that is true is the one a person notices it in: twelve daily
+// notes, twelve chapters, twelve "Notes".
 func TestTheSameVaultDrawsTheSameWayTwice(t *testing.T) {
 	files := map[string]string{"Area.md": "---\ntitle: Area\n---\n\n# Area\n"}
 	for i := range 12 {
 		files[fmt.Sprintf("Child%02d.md", i)] = fmt.Sprintf(
-			"---\ntitle: Child %02d\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n---\n\n# Child %02d\n", i, i)
+			"---\ntitle: Notes\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n---\n\n# Notes %02d\n", i)
 	}
 
 	first := seatsOf(neighbourhoodOf(t, files, "Area.md"))
-	second := seatsOf(neighbourhoodOf(t, files, "Area.md"))
-	if !slices.Equal(first, second) {
-		t.Errorf("two runs disagree:\n  %v\n  %v", first, second)
+	for range 8 {
+		if again := seatsOf(neighbourhoodOf(t, files, "Area.md")); !slices.Equal(first, again) {
+			t.Fatalf("two runs disagree:\n  %v\n  %v", first, again)
+		}
 	}
 	if len(first) != 12 {
 		t.Errorf("%d children, want 12", len(first))

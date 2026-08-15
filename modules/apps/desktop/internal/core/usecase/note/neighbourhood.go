@@ -2,7 +2,6 @@ package note
 
 import (
 	"context"
-	"sort"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
@@ -21,35 +20,42 @@ type ShowNeighbourhood struct {
 func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path string) (domain.Neighbourhood, error) {
 	var out domain.Neighbourhood
 
-	seats, err := u.around(ctx, v, path)
+	around, err := u.around(ctx, v, path)
 	if err != nil {
 		return out, err
 	}
 
 	// The other children of every parent, which is the whole of what a sibling
-	// is. Asked of each parent in turn, because the question is about them.
-	for target, seat := range seats {
-		if seat != domain.SeatParent {
+	// is. Asked of each parent in turn, because the question is about them, and
+	// the parent it came through is kept with it: that is the note the
+	// relationship runs from.
+	for _, parent := range around.all() {
+		if parent.Seat != domain.SeatParent {
 			continue
 		}
-		theirs, err := u.around(ctx, v, target)
+		theirs, err := u.around(ctx, v, parent.Path)
 		if err != nil {
 			return out, err
 		}
-		for sibling, theirSeat := range theirs {
-			if theirSeat == domain.SeatChild {
-				if _, taken := seats[sibling]; !taken {
-					seats[sibling] = domain.SeatSibling
-				}
+		for _, sibling := range theirs.all() {
+			if sibling.Seat != domain.SeatChild {
+				continue
 			}
+			around.take(domain.Seated{
+				NoteRef: domain.NoteRef{Path: sibling.Path},
+				Seat:    domain.SeatSibling,
+				Label:   sibling.Label,
+				Through: parent.Path,
+			})
 		}
 	}
-	delete(seats, path)
+	around.drop(path)
 
-	paths := make([]string, 0, len(seats)+1)
+	seated := around.all()
+	paths := make([]string, 0, len(seated)+1)
 	paths = append(paths, path)
-	for target := range seats {
-		paths = append(paths, target)
+	for _, s := range seated {
+		paths = append(paths, s.Path)
 	}
 	notes, err := u.Notes.Notes(ctx, v.ID, paths)
 	if err != nil {
@@ -61,19 +67,11 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 		return out, nil
 	}
 	out.Focus = focus
-	for target, seat := range seats {
-		if note, known := notes[target]; known {
-			out.Take(note, seat)
+	for _, s := range seated {
+		if note, known := notes[s.Path]; known {
+			out.Take(note, s)
 		}
 	}
-
-	// A picture is not a set: the same vault must draw the same way twice.
-	sort.SliceStable(out.Related, func(i, j int) bool {
-		if out.Related[i].Seat != out.Related[j].Seat {
-			return domain.SeatRank(out.Related[i].Seat) < domain.SeatRank(out.Related[j].Seat)
-		}
-		return out.Related[i].Title < out.Related[j].Title
-	})
 	return out, nil
 }
 
@@ -82,8 +80,8 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 // Which end a link was written at says nothing about the shape of the graph:
 // `parent: B` in A and `child: A` in B are the same edge, so the answer has to
 // read the role together with the direction it was found in.
-func (u ShowNeighbourhood) around(ctx context.Context, v domain.Vault, path string) (map[string]domain.Seat, error) {
-	seats := map[string]domain.Seat{}
+func (u ShowNeighbourhood) around(ctx context.Context, v domain.Vault, path string) (*seating, error) {
+	seats := &seating{}
 
 	links, err := u.Links.Links(ctx, v.ID, path)
 	if err != nil {
@@ -95,13 +93,12 @@ func (u ShowNeighbourhood) around(ctx context.Context, v domain.Vault, path stri
 			// there is nothing to draw and nowhere to go.
 			continue
 		}
-		switch l.Role {
-		case domain.RoleParent:
-			take(seats, l.To, domain.SeatParent)
-		case domain.RoleChild:
-			take(seats, l.To, domain.SeatChild)
-		case domain.RoleJump:
-			take(seats, l.To, domain.SeatJump)
+		if seat, navigable := seatFor(l.Role); navigable {
+			seats.take(domain.Seated{
+				NoteRef: domain.NoteRef{Path: l.To},
+				Seat:    seat,
+				Label:   l.Label,
+			})
 		}
 	}
 
@@ -110,21 +107,80 @@ func (u ShowNeighbourhood) around(ctx context.Context, v domain.Vault, path stri
 		return nil, err
 	}
 	for _, l := range backlinks {
-		switch l.Role {
-		case domain.RoleParent:
-			// They call this note their parent, so they are its child.
-			take(seats, l.From, domain.SeatChild)
-		case domain.RoleChild:
-			take(seats, l.From, domain.SeatParent)
-		case domain.RoleJump:
-			take(seats, l.From, domain.SeatJump)
+		// The role is read from the other end, so it means the opposite: a note
+		// that calls this one its parent is its child.
+		if seat, navigable := seatFor(mirror(l.Role)); navigable {
+			seats.take(domain.Seated{
+				NoteRef: domain.NoteRef{Path: l.From},
+				Seat:    seat,
+				Label:   l.Label,
+			})
 		}
 	}
 	return seats, nil
 }
 
-func take(seats map[string]domain.Seat, path string, seat domain.Seat) {
-	if already, taken := seats[path]; !taken || domain.SeatRank(seat) < domain.SeatRank(already) {
-		seats[path] = seat
+func seatFor(role domain.LinkRole) (domain.Seat, bool) {
+	switch role {
+	case domain.RoleParent:
+		return domain.SeatParent, true
+	case domain.RoleChild:
+		return domain.SeatChild, true
+	case domain.RoleJump:
+		return domain.SeatJump, true
+	}
+	// A wikilink in prose and an attachment are links, and neither is a place
+	// in the hierarchy.
+	return "", false
+}
+
+func mirror(role domain.LinkRole) domain.LinkRole {
+	switch role {
+	case domain.RoleParent:
+		return domain.RoleChild
+	case domain.RoleChild:
+		return domain.RoleParent
+	}
+	return role
+}
+
+// seating collects notes in the order they were found, which is the order the
+// links were written in. The order is part of the answer: it is what the
+// picture is drawn in.
+type seating struct {
+	order []domain.Seated
+	at    map[string]int
+}
+
+// take keeps the first seat a note qualifies for, so that a pair who are each
+// other's parent is drawn once rather than twice.
+func (s *seating) take(seated domain.Seated) {
+	if s.at == nil {
+		s.at = map[string]int{}
+	}
+	i, taken := s.at[seated.Path]
+	if !taken {
+		s.at[seated.Path] = len(s.order)
+		s.order = append(s.order, seated)
+		return
+	}
+	if domain.SeatRank(seated.Seat) < domain.SeatRank(s.order[i].Seat) {
+		s.order[i] = seated
 	}
 }
+
+func (s *seating) drop(path string) {
+	i, taken := s.at[path]
+	if !taken {
+		return
+	}
+	delete(s.at, path)
+	s.order = append(s.order[:i], s.order[i+1:]...)
+	for p, at := range s.at {
+		if at > i {
+			s.at[p] = at - 1
+		}
+	}
+}
+
+func (s *seating) all() []domain.Seated { return s.order }

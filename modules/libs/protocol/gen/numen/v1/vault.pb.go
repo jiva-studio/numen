@@ -152,9 +152,14 @@ func (x *Note) GetIdentifier() string {
 }
 
 type Seated struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Note          *Note                  `protobuf:"bytes,1,opt,name=note,proto3" json:"note,omitempty"`
-	Seat          Seat                   `protobuf:"varint,2,opt,name=seat,proto3,enum=numen.v1.Seat" json:"seat,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Note  *Note                  `protobuf:"bytes,1,opt,name=note,proto3" json:"note,omitempty"`
+	Seat  Seat                   `protobuf:"varint,2,opt,name=seat,proto3,enum=numen.v1.Seat" json:"seat,omitempty"`
+	// What the person wrote on the link, when they wrote anything.
+	Label string `protobuf:"bytes,3,opt,name=label,proto3" json:"label,omitempty"`
+	// The note the relationship runs from, when that is not the one in focus: a
+	// sibling is another child of a shared parent, and this is that parent.
+	Through       string `protobuf:"bytes,4,opt,name=through,proto3" json:"through,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -203,6 +208,20 @@ func (x *Seated) GetSeat() Seat {
 	return Seat_SEAT_UNSPECIFIED
 }
 
+func (x *Seated) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *Seated) GetThrough() string {
+	if x != nil {
+		return x.Through
+	}
+	return ""
+}
+
 type StateRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -246,7 +265,10 @@ type StateResponse struct {
 	// Indexed is how many notes the running scan has stored.
 	Indexed int64 `protobuf:"varint,3,opt,name=indexed,proto3" json:"indexed,omitempty"`
 	// Ready is set when the scan has finished.
-	Ready         bool `protobuf:"varint,4,opt,name=ready,proto3" json:"ready,omitempty"`
+	Ready bool `protobuf:"varint,4,opt,name=ready,proto3" json:"ready,omitempty"`
+	// Why the scan stopped, when it stopped for a reason. A vault that could
+	// not be read is not an empty one.
+	Failed        string `protobuf:"bytes,5,opt,name=failed,proto3" json:"failed,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -307,6 +329,13 @@ func (x *StateResponse) GetReady() bool {
 		return x.Ready
 	}
 	return false
+}
+
+func (x *StateResponse) GetFailed() string {
+	if x != nil {
+		return x.Failed
+	}
+	return ""
 }
 
 type OpeningRequest struct {
@@ -497,16 +526,19 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1e\n" +
 	"\n" +
 	"identifier\x18\x03 \x01(\tR\n" +
-	"identifier\"P\n" +
+	"identifier\"\x80\x01\n" +
 	"\x06Seated\x12\"\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04note\x12\"\n" +
-	"\x04seat\x18\x02 \x01(\x0e2\x0e.numen.v1.SeatR\x04seat\"\x0e\n" +
-	"\fStateRequest\"g\n" +
+	"\x04seat\x18\x02 \x01(\x0e2\x0e.numen.v1.SeatR\x04seat\x12\x14\n" +
+	"\x05label\x18\x03 \x01(\tR\x05label\x12\x18\n" +
+	"\athrough\x18\x04 \x01(\tR\athrough\"\x0e\n" +
+	"\fStateRequest\"\x7f\n" +
 	"\rStateResponse\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x18\n" +
 	"\aindexed\x18\x03 \x01(\x03R\aindexed\x12\x14\n" +
-	"\x05ready\x18\x04 \x01(\bR\x05ready\"\x10\n" +
+	"\x05ready\x18\x04 \x01(\bR\x05ready\x12\x16\n" +
+	"\x06failed\x18\x05 \x01(\tR\x06failed\"\x10\n" +
 	"\x0eOpeningRequest\"C\n" +
 	"\x0fOpeningResponse\x12'\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteH\x00R\x04note\x88\x01\x01B\a\n" +

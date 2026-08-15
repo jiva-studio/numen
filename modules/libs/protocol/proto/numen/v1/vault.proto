@@ -48,6 +48,12 @@ enum Seat {
 message Seated {
   Note note = 1;
   Seat seat = 2;
+  // What the person wrote on the link, when they wrote anything.
+  string label = 3;
+
+  // The note the relationship runs from, when that is not the one in focus: a
+  // sibling is another child of a shared parent, and this is that parent.
+  string through = 4;
 }
 
 message StateRequest {}
@@ -59,6 +65,10 @@ message StateResponse {
   int64 indexed = 3;
   // Ready is set when the scan has finished.
   bool ready = 4;
+
+  // Why the scan stopped, when it stopped for a reason. A vault that could
+  // not be read is not an empty one.
+  string failed = 5;
 }
 
 message OpeningRequest {}

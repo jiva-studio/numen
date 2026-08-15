@@ -2,6 +2,7 @@ package filesystem
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -45,6 +46,12 @@ func (s *VaultReader) Root() string { return s.root }
 // is a setting, and a name without a leading dot must still be skipped.
 func (s *VaultReader) Walk(ctx context.Context, fn func(domain.FileRef) error) error {
 	return filepath.WalkDir(s.root, func(p string, d fs.DirEntry, err error) error {
+		if errors.Is(err, fs.ErrNotExist) {
+			// The vault is edited while it is walked. A file or folder that has
+			// gone between reading the directory and reaching it is not an
+			// error: the next scan sees whatever it became.
+			return nil
+		}
 		if err != nil {
 			return err
 		}
@@ -65,6 +72,9 @@ func (s *VaultReader) Walk(ctx context.Context, fn func(domain.FileRef) error) e
 			return nil
 		}
 		info, err := d.Info()
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil
+		}
 		if err != nil {
 			return err
 		}

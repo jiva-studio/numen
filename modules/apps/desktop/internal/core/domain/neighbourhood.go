@@ -42,10 +42,18 @@ type NoteRef struct {
 	ID string
 }
 
-// Seated is a note and where it sits.
+// Seated is a note, where it sits, and what the link that seated it says.
 type Seated struct {
 	NoteRef
 	Seat Seat
+
+	// Label is what the person wrote on the link.
+	Label string
+
+	// Through is the note the relationship runs from, when that is not the one
+	// in focus. A sibling is another child of a shared parent, and which parent
+	// is a fact about the vault rather than a choice for whoever draws it.
+	Through string
 }
 
 // Neighbourhood is one note and everything joined to it, seen from that note.
@@ -54,19 +62,11 @@ type Neighbourhood struct {
 	Related []Seated
 }
 
-// Take gives a note a seat, keeping the first one it qualifies for.
-func (n *Neighbourhood) Take(note NoteRef, seat Seat) {
+// Take seats a note. The focus is not related to itself.
+func (n *Neighbourhood) Take(note NoteRef, seated Seated) {
 	if note.Path == n.Focus.Path {
 		return
 	}
-	for i, already := range n.Related {
-		if already.Path != note.Path {
-			continue
-		}
-		if SeatRank(seat) < SeatRank(already.Seat) {
-			n.Related[i].Seat = seat
-		}
-		return
-	}
-	n.Related = append(n.Related, Seated{NoteRef: note, Seat: seat})
+	seated.NoteRef = note
+	n.Related = append(n.Related, seated)
 }

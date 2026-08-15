@@ -25,10 +25,18 @@ type API struct {
 	Notes port.NoteQueries
 	Links port.LinkQueries
 
-	// Indexed counts what the scan has stored so far, and Ready is set when it
-	// has finished. Both are read while the scan writes them.
+	// Indexed counts what the scan has stored so far. Ready is set when it
+	// finished, Failed when it could not — a vault that could not be read is
+	// not an empty one, and the interface has to be able to tell them apart.
 	Indexed atomic.Int64
 	Ready   atomic.Bool
+	Failed  atomic.Value
+}
+
+// failure is what stopped the scan, or empty while nothing has.
+func (a *API) failure() string {
+	reason, _ := a.Failed.Load().(string)
+	return reason
 }
 
 func (a *API) State(context.Context, *connect.Request[v1.StateRequest]) (*connect.Response[v1.StateResponse], error) {
@@ -37,6 +45,7 @@ func (a *API) State(context.Context, *connect.Request[v1.StateRequest]) (*connec
 		Path:    a.Vault.Path,
 		Indexed: a.Indexed.Load(),
 		Ready:   a.Ready.Load(),
+		Failed:  a.failure(),
 	}), nil
 }
 
@@ -62,8 +71,10 @@ func (a *API) Neighbourhood(ctx context.Context, r *connect.Request[v1.Neighbour
 	out := &v1.NeighbourhoodResponse{Focus: noteOf(found.Focus)}
 	for _, related := range found.Related {
 		out.Related = append(out.Related, &v1.Seated{
-			Note: noteOf(related.NoteRef),
-			Seat: seatOf(related.Seat),
+			Note:    noteOf(related.NoteRef),
+			Seat:    seatOf(related.Seat),
+			Label:   related.Label,
+			Through: related.Through,
 		})
 	}
 	return connect.NewResponse(out), nil

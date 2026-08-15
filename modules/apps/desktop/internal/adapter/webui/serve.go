@@ -2,6 +2,7 @@ package webui
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -16,6 +17,9 @@ import (
 // The scan is started rather than waited for. A vault of a hundred thousand
 // notes takes a minute and a half, and the first note is answerable long before
 // that.
+//
+// Closing stops the scan, waits for it, and then closes the database — in that
+// order, because the database is what the scan writes to.
 func Open(ctx context.Context, cfg container.Config, out io.Writer) (*API, func() error, error) {
 	registry, err := cfg.Registry()
 	if err != nil {
@@ -34,6 +38,7 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*API, func(
 		return nil, nil, err
 	}
 
+	scanning, stop := context.WithCancel(ctx)
 	api := &API{Vault: vaults[0], Notes: db.Queries(), Links: db.Links()}
 	scan := usecase.Scan{
 		Readers:     cfg.VaultReaders(),
@@ -45,19 +50,30 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*API, func(
 			api.Indexed.Store(int64(res.Indexed))
 		},
 	}
+
+	done := make(chan struct{})
 	go func() {
-		result, err := scan.Execute(ctx, api.Vault)
-		if err != nil {
-			fmt.Fprintf(out, "scan: %v\n", err)
-		} else {
-			fmt.Fprintf(out, "%s: %d notes\n", api.Vault.Name, result.Seen)
-		}
+		defer close(done)
+		result, err := scan.Execute(scanning, api.Vault)
 		api.Indexed.Store(int64(result.Indexed))
-		api.Ready.Store(true)
+		switch {
+		case err == nil:
+			fmt.Fprintf(out, "%s: %d notes\n", api.Vault.Name, result.Seen)
+			api.Ready.Store(true)
+		case errors.Is(err, context.Canceled):
+			// Asked to stop. What it stored is correct as far as it got, and
+			// there is nothing to report.
+		default:
+			api.Failed.Store(err.Error())
+		}
 	}()
 
-	return api, db.Close, nil
+	return api, func() error {
+		stop()
+		<-done
+		return db.Close()
+	}, nil
 }
 
-// Vault is what the window is showing.
+// Showing is the vault the window has open.
 func (a *API) Showing() domain.Vault { return a.Vault }
