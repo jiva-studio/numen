@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-15
+- **Applies to:** the product — every application in this repository
 - **Related:** ADR-0000, ADR-0002
 
 ## Context

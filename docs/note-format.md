@@ -10,9 +10,12 @@ when the decisions it depends on exist.
 
 ## What a note is
 
-A UTF-8 markdown file with the `.md` extension, in any folder of the vault the
-user likes, except the service folder — `.numen` by default — which is not part
-of the vault's content and is skipped entirely (ADR-0013). The application
+A UTF-8 file whose extension is one of those configured as notes, in any folder
+of the vault the user likes. The default is `.md` alone (ADR-0012).
+
+Two places are never notes: the service folder — `.numen` by default (ADR-0013) —
+and any directory whose name begins with a dot, which holds some tool state
+rather than anything a person wrote. Both are skipped whole. The application
 neither imposes nor rearranges layout (ADR-0001).
 
 A markdown file written by anything else — vim, a script, another editor — is a
@@ -42,7 +45,7 @@ The frontmatter is shared, not owned:
 - Keys the application does not own are **preserved verbatim**, in their original
   order, including keys it may own in a future version.
 - Owned keys are a **closed set**, and each is introduced by an ADR that defines
-  its meaning. The set is listed below and is currently empty.
+  its meaning. The set is listed below.
 - A **collision is the user's win**: if a user key has the name of an owned key,
   the application reports the conflict rather than overwriting or reinterpreting
   it.
@@ -51,9 +54,12 @@ The frontmatter is shared, not owned:
 
 | Key | Meaning | Decided in |
 | --- | --- | --- |
-| — | none yet | |
+| `title` | The name a note is shown by. Read, never written: the application does not add one and does not rewrite one it finds. | ADR-0012 |
 
-The note's identifier will live here — that placement is settled (ADR-0012).
+A note with no `title` is named by its first level-one heading, else by its
+filename. The order is fixed so that a name does not move between versions.
+
+The note identifier will live here too — that placement is settled (ADR-0012).
 Its format, when it is written, and what happens on rename are not
 (ADR-0009). The links block is
 likewise expected here and not yet defined

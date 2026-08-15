@@ -2,7 +2,8 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-15
-- **Related:** ADR-0001, ADR-0002, ADR-0013
+- **Applies to:** `modules/apps/desktop`
+- **Related:** ADR-0001, ADR-0002, ADR-0013, ADR-0015
 
 ## Context
 
@@ -41,13 +42,76 @@ desktop shell will be the second. The core knows about neither, and no decision
 about the interface is made here — the CLI exists because a scan has to be
 runnable, not because the product is a command-line tool.
 
-### One Go module for the repository
+### A Go module per application
 
-A single `go.mod`; `modules/libs/*` and `modules/apps/*` are directories of
-packages, not modules of their own. Splitting into separate modules buys
-independent versioning, which is worth having when there is a second consumer and
-is pure overhead until then. Nothing is extracted into a shared library on
-speculation.
+The repository holds several applications, so each one is its own module with its
+own `go.mod` beside its code. There is no module at the repository root: the root
+is not a project, and a manifest there would claim otherwise.
+
+`modules/libs/` exists for code two applications genuinely share, and stays empty
+until that happens. Extracting a library because code might one day be shared
+buys nothing and costs a versioned boundary through the middle of a codebase that
+has one consumer.
+
+### Layout inside an application
+
+```
+modules/apps/<app>/
+  go.mod
+  cmd/<binary>/main.go       entry point, and nothing else
+  internal/
+    core/
+      domain/                one file per type: vault.go, note.go, ...
+      port/                  one file per port: vault_reader.go, note_queries.go
+      usecase/<aggregate>/   one file per scenario: add.go, scan.go, find.go
+      markdown/              the note format, parsed
+    ulid/                    identifiers
+    testsupport/             fixtures and generated vaults, for tests only
+    adapter/
+      cli/                   driving: arguments in, text out
+      filesystem/            driven: a vault on disk
+      index/                 driven: the cache, a folder per aggregate
+        <aggregate>/         repository.go, queries.go, sql/*.sql
+        migration/           numbered schema changes
+      appstate/              driven: the list of vaults
+    container/               composition root: adapter to port
+```
+
+**The unit of organisation is the thing, not the kind of thing.** An aggregate is
+a folder holding its repository, its queries and its SQL together; a use case is
+a file named after the scenario. One file per type, one folder per aggregate. A
+directory that collects every file of one kind — all the entities, all the
+statements — reads fine at five files and is a heap at fifty, and that heap is
+what tells you a codebase stopped being designed and started being accumulated.
+
+**Repositories and queries are different things.** A repository is a collection
+of aggregates: put one in, take one out, remove one. Anything answering a
+question across many of them, in a shape that is not an aggregate — a search
+result, a count, a fingerprint of every file — is a query, and it lives beside
+the repository rather than on it. A repository that has grown a `Search` is a
+service under a repository name, and the name stops carrying information the
+moment that is allowed.
+
+Three things in this are Go rather than architecture in general, and they are the
+reason it does not look like the same diagram drawn in another language:
+
+- **`internal/` is enforced by the compiler.** Nothing outside the application
+  can import any of it, so the boundary is a fact rather than a convention. This
+  is why the layers do not need to be separate modules to stay separate.
+- **Interfaces belong to whoever needs them, not to whoever satisfies them.** The
+  ports are declared in `core/port` because the core is what needs them; the
+  adapters never mention the interface they implement, and Go checks the fit
+  without either side saying so.
+- **Ports are named after the need, adapters after the technology.** The core
+  asks for a `VaultReader`; that the answer is a filesystem, and that the index
+  is SQLite, is knowledge confined to `adapter/` and `container/`.
+
+### SQL lives in files, not in string literals
+
+Schema and queries are `.sql` files embedded into the binary, one statement per
+file, loaded by name. SQL is a language of its own, and burying it in Go string
+literals hides it from anything that reads, formats or checks SQL — including the
+person reviewing a change to it.
 
 ### SQLite driver: pure Go for now, behind a port
 
@@ -61,16 +125,6 @@ rather than as right. The driver lives behind the index port, so replacing it is
 one adapter. It should be replaced if a benchmark on a vault at target scale —
 100k notes, full rebuild, incremental update, full-text query — shows the cgo
 driver clearing a budget the pure-Go one misses.
-
-### Schema version, not migrations
-
-ADR-0002 says a model change drops the tables and replays from the vault, so
-there are no migration scripts. What is needed instead is a version stored in the
-database and one rule: if it does not match the version the binary expects, the
-index is dropped and rebuilt.
-
-The rebuild is minutes at target scale, so it is a visible event with progress,
-not a silent stall on startup.
 
 ## Consequences
 
@@ -91,8 +145,9 @@ not a silent stall on startup.
   churn.
 - The pure-Go driver is a bet on portability over speed, taken before there is
   anything to measure. It is recorded as such, and the measurement is defined.
-- One module means every package shares one dependency set. That is fine at this
-  size and will need revisiting if a mobile client ever shares code.
+- A module per application means a dependency shared by two of them is declared
+  twice until it is worth extracting. That is the price of not drawing a library
+  boundary before there is a second consumer.
 
 ## Alternatives considered
 
@@ -101,8 +156,13 @@ protocol before it demands a feature. Reconsider when something outside the
 binary needs the core — a mobile client is the obvious candidate, and it is out
 of scope.
 
-**A module per directory.** Rejected until there is a second consumer.
-Independent versioning of packages nobody imports twice is bookkeeping.
+**One module for the whole repository.** Rejected: the repository holds several
+applications rather than one, and a single manifest at the root would make the
+root a project it is not.
+
+**A shared library from the start.** Rejected: nothing is shared yet. A library
+extracted on speculation is a versioned boundary through a codebase with one
+consumer.
 
 **`mattn/go-sqlite3`** (cgo). Not rejected on merit — it is the faster and more
 mature driver. Deferred because cgo turns cross-compilation into a build matrix,

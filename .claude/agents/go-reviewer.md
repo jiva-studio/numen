@@ -89,6 +89,25 @@ interface that has one implementation and no test double. Structure introduced
 say so when you see it, and say so equally when a genuinely needed seam is
 missing.
 
+**A repository is a collection, not a service.** Put an aggregate in, take one
+out, remove one. The moment it also searches, counts, or returns rows in a shape
+that is not an aggregate, it has become a service keeping a repository's name,
+and the name has stopped telling the reader anything. Those belong in queries
+beside it. Check the method list of anything called a repository: if it reads
+like a menu, that is the finding.
+
+**Nothing exists that no decision asked for.** For every field parsed, column
+stored, syntax accepted or option offered, there is a decision that wants it. If
+you cannot find one, that is a finding regardless of how harmless the code looks
+— the parsing rules for something nobody specified were invented by whoever wrote
+them, and once a vault is full of what they accept, the guess is permanent. This
+applies most to things that look free: a tag, an extra frontmatter key, a
+convenience flag.
+
+**A folder is a heap when it collects a kind rather than a thing.** Every entity
+in one file, every statement in one directory, every use case in one package:
+readable at five, unreadable at fifty, and the moment to say so is at five.
+
 Also worth flagging: a new dependency inside `core/`, and anything that makes
 the same fact true in two places.
 
@@ -159,6 +178,11 @@ they rot the moment a number changes.
 
 - Behaviour, not implementation. A test that would still pass after the bug is
   reintroduced is worth saying so about.
+- **Ask of every test that guards something important: would it fail if that
+  thing were broken?** Then break it and see — remove the filter, invert the
+  condition, delete the guard clause. A test that passes either way is worse
+  than no test, because it is counted as protection. This is the check that
+  catches the tests nobody will look at again.
 - `t.TempDir`, `t.Context`, `t.Cleanup` — never the machine's real home, config
   or cache directory, and never the network.
 - Fixtures under `tests/`, treated as read-only; a test that writes works on a

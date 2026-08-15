@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-15
+- **Applies to:** any application that keeps an index; today `modules/apps/desktop`
 - **Related:** ADR-0000, ADR-0001, ADR-0004
 
 ## Context
@@ -124,8 +125,9 @@ only guarantees that dropping it is a supported outcome rather than a defect.
 
 **Positive**
 
-- Schema migrations are not a category of work: a model change drops tables and
-  replays from the vault and its artifacts.
+- A model change can always be answered by dropping the tables and replaying from
+  the vault and its artifacts, because nothing here is a source of truth. How a
+  schema change is actually applied is ADR-0015.
 - Corruption is a rebuild, not a loss.
 - The schema can be denormalised for query speed without anybody worrying about
   the truth drifting, because it is not the truth.

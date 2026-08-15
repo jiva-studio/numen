@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-15
+- **Applies to:** the vault format and application state — every application
 - **Related:** ADR-0000, ADR-0001, ADR-0002
 
 ## Context
@@ -94,11 +95,20 @@ which happens by default, since it lives inside it.
 - A folder appears inside the user's vault. It is one folder, it is named
   honestly, and it holds data that would otherwise have nowhere to live — but it
   is still ours in their space.
-- **Copying a vault produces two vaults with the same identity.** Duplicating the
-  folder duplicates `config.json`, and the application will see one vault in two
-  places. This must be detected — same id, two paths — and put to the user, who
-  is the only one who knows whether they meant a copy or a move. It cannot be
-  resolved automatically: picking either answer silently is wrong half the time.
+- **Copying a vault produces two folders with the same identity.** Duplicating
+  the folder duplicates `config.json`, and both copies then claim to be the same
+  vault.
+
+  There is nothing to work out here: the identities are equal, so the
+  application cannot tell which folder is meant, and guessing would index one
+  vault's contents under the other's rows. **Adding a folder whose identity is
+  already registered at a different path is refused, with an error naming both
+  paths.** Indexing stops rather than proceeding on a coin toss.
+
+  The remedy is the user's and it is one line: delete `.numen/config.json` from
+  the copy and add it again, and it becomes a vault in its own right with a new
+  identity. That is a decision only they can make — whether the second folder is
+  a separate vault or a stale duplicate — and the error says so.
 
 ## Alternatives considered
 

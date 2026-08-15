@@ -1,0 +1,38 @@
+name: go
+
+on:
+  pull_request:
+    paths:
+      - "modules/apps/desktop/**"
+      - "tests/**"
+      - ".github/workflows/go.yml"
+  push:
+    branches: [main]
+
+defaults:
+  run:
+    working-directory: modules/apps/desktop
+
+jobs:
+  desktop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache-dependency-path: modules/apps/desktop/go.sum
+
+      - name: Formatting
+        run: |
+          unformatted=$(gofmt -l ./cmd ./internal)
+          if [ -n "$unformatted" ]; then
+            echo "not gofmt-ed:"; echo "$unformatted"; exit 1
+          fi
+
+      - run: go vet ./...
+
+      # -race because a scan will grow concurrent, and the cheapest time to find
+      # that out is before it does.
+      - run: go test -race ./...

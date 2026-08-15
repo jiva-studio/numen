@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-15
+- **Applies to:** the vault format — every application that reads or writes one
 - **Related:** ADR-0000, ADR-0001
 
 ## Context
@@ -25,6 +26,20 @@ the index for the order to read them in.
 **A note is a UTF-8 markdown file. Everything the application adds must stay
 inside what a third-party markdown editor renders without complaint and a human
 reads without a manual.**
+
+### Which files count as notes
+
+The extensions treated as notes are a setting, and the default is `.md` alone.
+It is a setting because markdown is written under several names — `.markdown`,
+and whatever a user's other tools produce — and because the answer is a
+preference rather than a property of the format. It defaults to one extension
+because a default that guesses widely is a default that indexes things the user
+did not mean.
+
+Two places are never notes, whatever the setting says: the service folder, which
+is the application's own (ADR-0013), and any directory whose name begins with a
+dot, which holds some tool's state rather than anything a person wrote. Both are
+skipped whole, without descending into them.
 
 The complete list of permitted additions:
 
@@ -50,6 +65,21 @@ should be read as prejudging them. The reason to fix the placement early is that
 it is a property of the file format rather than of identity: an identifier in the
 body would be a token in the middle of prose, and every reader of that note would
 have to look at it forever.
+
+**`title` is the first owned key.** A note is shown by a name, and the choice is
+between deciding that name from the file and letting the user state it. Both are
+needed: a note usually has a level-one heading and sometimes deliberately does
+not, and a file called `2026-08-15.md` has a name nobody wants to read in a list.
+
+So the name of a note is the frontmatter `title` if there is one, else the first
+level-one heading, else the filename. The order matters more than the choice —
+a note whose displayed name moves between versions is a note the user cannot
+find twice.
+
+The key is **read and never written**. The application does not add a `title` to
+a note that has none and does not rewrite one it finds, so claiming this key
+costs the user nothing except the word itself, which they were already using for
+this purpose in every other tool.
 
 The frontmatter is shared with the user, not owned by the application, and three
 rules follow:
