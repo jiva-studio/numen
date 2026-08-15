@@ -1,0 +1,7 @@
+# git runs hooks from the repo root; commitlint lives in a subdirectory,
+# so resolve the message path to absolute before changing directory.
+msg="$1"
+case "$msg" in /*) ;; *) msg="$PWD/$msg" ;; esac
+
+cd modules/tools/git-hooks
+npx --no-install commitlint --edit "$msg"

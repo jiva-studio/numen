@@ -1,0 +1,14 @@
+{
+  "name": "@numen/git-hooks",
+  "private": true,
+  "description": "Commit message validation. Lives here so the repo root stays free of language-specific tooling; nothing else in the repo depends on Node because of it.",
+  "scripts": {
+    "prepare": "cd ../../.. && husky modules/tools/git-hooks/.husky && git config commit.template \"$(git rev-parse --show-toplevel)/modules/tools/git-hooks/.gitmessage\"",
+    "commitlint": "commitlint --edit"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.6.0",
+    "@commitlint/config-conventional": "^19.6.0",
+    "husky": "^9.1.7"
+  }
+}
