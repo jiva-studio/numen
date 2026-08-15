@@ -32,7 +32,6 @@ The complete list of permitted additions:
 | --- | --- | --- |
 | YAML frontmatter | top of file | machine-owned fields |
 | `[[wikilink]]` | body | link to another note |
-| `key:: value` | body | inline field on a line |
 | `^anchor` | end of a line | a name for that line |
 
 Nothing else. No custom fences, no HTML comments carrying data, no sidecar
@@ -72,8 +71,8 @@ addition renders as broken markup, or the note stops being readable prose, it is
 rejected. If it renders as slightly unusual but plain text, it is allowed.
 
 That is the whole line, and it is deliberately drawn at *legibility*, not at
-*standards compliance*. `key:: value` and `^anchor` are not part of CommonMark;
-in a plain renderer they appear as literal text. Literal text a human can read is
+*standards compliance*. `^anchor` is not part of CommonMark; in a plain renderer
+it appears as literal text at the end of a line. Literal text a human can read is
 acceptable. Markup that renders as garbage is not.
 
 ## Consequences
