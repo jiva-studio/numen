@@ -40,10 +40,15 @@ func run(cfg container.Config) error {
 	}
 	defer closeIndex()
 
+	pages, err := webui.Pages()
+	if err != nil {
+		return err
+	}
+
 	app := application.New(application.Options{
 		Name: "numen",
 		Assets: application.AssetOptions{
-			Handler: api.Serving(webui.Pages()),
+			Handler: api.Serving(pages),
 		},
 	})
 

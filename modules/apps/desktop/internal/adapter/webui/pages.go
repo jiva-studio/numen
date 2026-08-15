@@ -2,6 +2,7 @@ package webui
 
 import (
 	"embed"
+	"fmt"
 	"io/fs"
 	"net/http"
 	"strings"
@@ -13,13 +14,17 @@ import (
 var pages embed.FS
 
 // Pages is the interface itself, built by `make interface` and carried inside
-// the binary.
-func Pages() http.Handler {
-	built, err := fs.Sub(pages, "pages")
+// the binary. A binary built without it says so rather than opening a window
+// onto nothing.
+func Pages() (http.Handler, error) {
+	built, err := fs.Sub(pages, "pages/app")
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("no interface in this binary — run: make interface")
 	}
-	return http.FileServerFS(built)
+	if _, err := fs.Stat(built, "index.html"); err != nil {
+		return nil, fmt.Errorf("no interface in this binary — run: make interface")
+	}
+	return http.FileServerFS(built), nil
 }
 
 // Serving puts the questions in front of the pages, so that a window and a

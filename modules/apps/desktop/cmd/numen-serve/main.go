@@ -34,7 +34,12 @@ func main() {
 	defer closeIndex()
 
 	fmt.Printf("http://%s — showing %s\n", *address, api.Showing().Name)
-	server := &http.Server{Addr: *address, Handler: api.Serving(webui.Pages())}
+	pages, err := webui.Pages()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "numen-serve:", err)
+		os.Exit(1)
+	}
+	server := &http.Server{Addr: *address, Handler: api.Serving(pages)}
 	go func() {
 		<-ctx.Done()
 		server.Close()
