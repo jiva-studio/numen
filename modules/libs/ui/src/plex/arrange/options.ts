@@ -47,9 +47,20 @@ export interface MotionOptions {
   readonly leaveBefore: number
 }
 
+export interface GestureOptions {
+  /**
+   * How much further sideways than vertical a gesture may go and still count
+   * as up or down. Rows are wide and columns narrow, so the wedge that means
+   * a parent or a child is wider than a quarter turn — at one, the outermost
+   * child of a wide row would be read as something off to the side.
+   */
+  readonly verticalBias: number
+}
+
 export interface PlexOptions extends BoxOptions, LimitOptions {
   readonly routing: RoutingOptions
   readonly motion: MotionOptions
+  readonly gesture: GestureOptions
   readonly direction: Readonly<Record<PlexRelatedRole, Direction>>
   /**
    * The window the plex is drawn in. Given one, a row too wide for it wraps
@@ -75,14 +86,16 @@ export const DEFAULT_OPTIONS: PlexOptions = {
   maxLines: 4,
   routing: { curvature: 0.55, minReach: 22 },
   motion: { arriveAfter: 0.35, leaveBefore: 0.45 },
+  gesture: { verticalBias: 4 },
   direction: DEFAULT_DIRECTION,
 }
 
 /** What a caller may pass: any subset, one level deep. */
 export type PlexOptionsInput = Partial<
-  Omit<PlexOptions, 'routing' | 'motion'> & {
+  Omit<PlexOptions, 'routing' | 'motion' | 'gesture'> & {
     routing: Partial<RoutingOptions>
     motion: Partial<MotionOptions>
+    gesture: Partial<GestureOptions>
   }
 >
 
@@ -93,6 +106,7 @@ export function resolveOptions(options?: PlexOptionsInput): PlexOptions {
     ...options,
     routing: { ...DEFAULT_OPTIONS.routing, ...options.routing },
     motion: { ...DEFAULT_OPTIONS.motion, ...options.motion },
+    gesture: { ...DEFAULT_OPTIONS.gesture, ...options.gesture },
     direction: { ...DEFAULT_DIRECTION, ...options.direction },
   }
 }
