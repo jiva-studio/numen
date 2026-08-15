@@ -193,6 +193,7 @@ const ghost = computed<PlacedNode | null>(() => {
   block-size: 100%;
   background: var(--numen-surface);
   font-family: var(--numen-font-sans);
+  user-select: none;
 }
 
 .plex__edge {
