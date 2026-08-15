@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/vault.proto.
  */
 export const file_numen_v1_vault: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiNwoETm90ZRIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJEhIKCmlkZW50aWZpZXIYAyABKAkiRAoGU2VhdGVkEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEhwKBHNlYXQYAiABKA4yDi5udW1lbi52MS5TZWF0Ig4KDFN0YXRlUmVxdWVzdCJLCg1TdGF0ZVJlc3BvbnNlEgwKBG5hbWUYASABKAkSDAoEcGF0aBgCIAEoCRIPCgdpbmRleGVkGAMgASgDEg0KBXJlYWR5GAQgASgIIhAKDk9wZW5pbmdSZXF1ZXN0Ij0KD09wZW5pbmdSZXNwb25zZRIhCgRub3RlGAEgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBQgcKBV9ub3RlIiQKFE5laWdoYm91cmhvb2RSZXF1ZXN0EgwKBHBhdGgYASABKAkiWQoVTmVpZ2hib3VyaG9vZFJlc3BvbnNlEh0KBWZvY3VzGAEgASgLMg4ubnVtZW4udjEuTm90ZRIhCgdyZWxhdGVkGAIgAygLMhAubnVtZW4udjEuU2VhdGVkKl4KBFNlYXQSFAoQU0VBVF9VTlNQRUNJRklFRBAAEg8KC1NFQVRfUEFSRU5UEAESDgoKU0VBVF9DSElMRBACEg0KCVNFQVRfSlVNUBADEhAKDFNFQVRfU0lCTElORxAEMtMBCgVWYXVsdBI4CgVTdGF0ZRIWLm51bWVuLnYxLlN0YXRlUmVxdWVzdBoXLm51bWVuLnYxLlN0YXRlUmVzcG9uc2USPgoHT3BlbmluZxIYLm51bWVuLnYxLk9wZW5pbmdSZXF1ZXN0GhkubnVtZW4udjEuT3BlbmluZ1Jlc3BvbnNlElAKDU5laWdoYm91cmhvb2QSHi5udW1lbi52MS5OZWlnaGJvdXJob29kUmVxdWVzdBofLm51bWVuLnYxLk5laWdoYm91cmhvb2RSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiNwoETm90ZRIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJEhIKCmlkZW50aWZpZXIYAyABKAkiRAoGU2VhdGVkEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEhwKBHNlYXQYAiABKA4yDi5udW1lbi52MS5TZWF0Ig4KDFN0YXRlUmVxdWVzdCJLCg1TdGF0ZVJlc3BvbnNlEgwKBG5hbWUYASABKAkSDAoEcGF0aBgCIAEoCRIPCgdpbmRleGVkGAMgASgDEg0KBXJlYWR5GAQgASgIIhAKDk9wZW5pbmdSZXF1ZXN0Ij0KD09wZW5pbmdSZXNwb25zZRIhCgRub3RlGAEgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBQgcKBV9ub3RlIiQKFE5laWdoYm91cmhvb2RSZXF1ZXN0EgwKBHBhdGgYASABKAkiWQoVTmVpZ2hib3VyaG9vZFJlc3BvbnNlEh0KBWZvY3VzGAEgASgLMg4ubnVtZW4udjEuTm90ZRIhCgdyZWxhdGVkGAIgAygLMhAubnVtZW4udjEuU2VhdGVkKl4KBFNlYXQSFAoQU0VBVF9VTlNQRUNJRklFRBAAEg8KC1NFQVRfUEFSRU5UEAESDgoKU0VBVF9DSElMRBACEg0KCVNFQVRfSlVNUBADEhAKDFNFQVRfU0lCTElORxAEMtoBCgxWYXVsdFNlcnZpY2USOAoFU3RhdGUSFi5udW1lbi52MS5TdGF0ZVJlcXVlc3QaFy5udW1lbi52MS5TdGF0ZVJlc3BvbnNlEj4KB09wZW5pbmcSGC5udW1lbi52MS5PcGVuaW5nUmVxdWVzdBoZLm51bWVuLnYxLk9wZW5pbmdSZXNwb25zZRJQCg1OZWlnaGJvdXJob29kEh4ubnVtZW4udjEuTmVpZ2hib3VyaG9vZFJlcXVlc3QaHy5udW1lbi52MS5OZWlnaGJvdXJob29kUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * Note is a note as something else refers to it.
@@ -238,15 +238,15 @@ export const SeatSchema: GenEnum<Seat> = /*@__PURE__*/
   enumDesc(file_numen_v1_vault, 0);
 
 /**
- * Vault answers questions about the one vault a client is looking at.
+ * VaultService answers questions about the one vault a client is looking at.
  *
- * @generated from service numen.v1.Vault
+ * @generated from service numen.v1.VaultService
  */
-export const Vault: GenService<{
+export const VaultService: GenService<{
   /**
    * State is what the vault is and how far reading it has got.
    *
-   * @generated from rpc numen.v1.Vault.State
+   * @generated from rpc numen.v1.VaultService.State
    */
   state: {
     methodKind: "unary";
@@ -257,7 +257,7 @@ export const Vault: GenService<{
    * Opening is the note to show when nothing else has been chosen. It answers
    * with nothing until a scan has stored something.
    *
-   * @generated from rpc numen.v1.Vault.Opening
+   * @generated from rpc numen.v1.VaultService.Opening
    */
   opening: {
     methodKind: "unary";
@@ -267,7 +267,7 @@ export const Vault: GenService<{
   /**
    * Neighbourhood is one note and everything joined to it.
    *
-   * @generated from rpc numen.v1.Vault.Neighbourhood
+   * @generated from rpc numen.v1.VaultService.Neighbourhood
    */
   neighbourhood: {
     methodKind: "unary";

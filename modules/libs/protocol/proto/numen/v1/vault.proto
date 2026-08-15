@@ -12,8 +12,8 @@ package numen.v1;
 
 option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
 
-// Vault answers questions about the one vault a client is looking at.
-service Vault {
+// VaultService answers questions about the one vault a client is looking at.
+service VaultService {
   // State is what the vault is and how far reading it has got.
   rpc State(StateRequest) returns (StateResponse);
 

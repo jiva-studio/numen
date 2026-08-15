@@ -1,5 +1,0 @@
-# The interface is built here by `make interface`. It is derived from the
-# sources beside it and is not committed; the placeholder is, because a Go
-# package cannot embed a folder that does not exist.
-*
-!.gitignore

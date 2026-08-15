@@ -25,7 +25,7 @@ func Pages() http.Handler {
 // Serving puts the questions in front of the pages, so that a window and a
 // browser are answered by one handler.
 func (a *API) Serving(files http.Handler) http.Handler {
-	route, questions := numenv1connect.NewVaultHandler(a)
+	route, questions := numenv1connect.NewVaultServiceHandler(a)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, route) {
 			questions.ServeHTTP(w, r)

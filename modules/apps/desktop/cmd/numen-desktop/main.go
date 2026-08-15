@@ -56,4 +56,3 @@ func run(cfg container.Config) error {
 
 	return app.Run()
 }
-

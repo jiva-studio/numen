@@ -522,8 +522,8 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\n" +
 	"SEAT_CHILD\x10\x02\x12\r\n" +
 	"\tSEAT_JUMP\x10\x03\x12\x10\n" +
-	"\fSEAT_SIBLING\x10\x042\xd3\x01\n" +
-	"\x05Vault\x128\n" +
+	"\fSEAT_SIBLING\x10\x042\xda\x01\n" +
+	"\fVaultService\x128\n" +
 	"\x05State\x12\x16.numen.v1.StateRequest\x1a\x17.numen.v1.StateResponse\x12>\n" +
 	"\aOpening\x12\x18.numen.v1.OpeningRequest\x1a\x19.numen.v1.OpeningResponse\x12P\n" +
 	"\rNeighbourhood\x12\x1e.numen.v1.NeighbourhoodRequest\x1a\x1f.numen.v1.NeighbourhoodResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
@@ -559,12 +559,12 @@ var file_numen_v1_vault_proto_depIdxs = []int32{
 	1, // 2: numen.v1.OpeningResponse.note:type_name -> numen.v1.Note
 	1, // 3: numen.v1.NeighbourhoodResponse.focus:type_name -> numen.v1.Note
 	2, // 4: numen.v1.NeighbourhoodResponse.related:type_name -> numen.v1.Seated
-	3, // 5: numen.v1.Vault.State:input_type -> numen.v1.StateRequest
-	5, // 6: numen.v1.Vault.Opening:input_type -> numen.v1.OpeningRequest
-	7, // 7: numen.v1.Vault.Neighbourhood:input_type -> numen.v1.NeighbourhoodRequest
-	4, // 8: numen.v1.Vault.State:output_type -> numen.v1.StateResponse
-	6, // 9: numen.v1.Vault.Opening:output_type -> numen.v1.OpeningResponse
-	8, // 10: numen.v1.Vault.Neighbourhood:output_type -> numen.v1.NeighbourhoodResponse
+	3, // 5: numen.v1.VaultService.State:input_type -> numen.v1.StateRequest
+	5, // 6: numen.v1.VaultService.Opening:input_type -> numen.v1.OpeningRequest
+	7, // 7: numen.v1.VaultService.Neighbourhood:input_type -> numen.v1.NeighbourhoodRequest
+	4, // 8: numen.v1.VaultService.State:output_type -> numen.v1.StateResponse
+	6, // 9: numen.v1.VaultService.Opening:output_type -> numen.v1.OpeningResponse
+	8, // 10: numen.v1.VaultService.Neighbourhood:output_type -> numen.v1.NeighbourhoodResponse
 	8, // [8:11] is the sub-list for method output_type
 	5, // [5:8] is the sub-list for method input_type
 	5, // [5:5] is the sub-list for extension type_name

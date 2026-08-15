@@ -29,8 +29,8 @@ import (
 const _ = connect.IsAtLeastVersion1_13_0
 
 const (
-	// VaultName is the fully-qualified name of the Vault service.
-	VaultName = "numen.v1.Vault"
+	// VaultServiceName is the fully-qualified name of the VaultService service.
+	VaultServiceName = "numen.v1.VaultService"
 )
 
 // These constants are the fully-qualified names of the RPCs defined in this package. They're
@@ -41,16 +41,17 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// VaultStateProcedure is the fully-qualified name of the Vault's State RPC.
-	VaultStateProcedure = "/numen.v1.Vault/State"
-	// VaultOpeningProcedure is the fully-qualified name of the Vault's Opening RPC.
-	VaultOpeningProcedure = "/numen.v1.Vault/Opening"
-	// VaultNeighbourhoodProcedure is the fully-qualified name of the Vault's Neighbourhood RPC.
-	VaultNeighbourhoodProcedure = "/numen.v1.Vault/Neighbourhood"
+	// VaultServiceStateProcedure is the fully-qualified name of the VaultService's State RPC.
+	VaultServiceStateProcedure = "/numen.v1.VaultService/State"
+	// VaultServiceOpeningProcedure is the fully-qualified name of the VaultService's Opening RPC.
+	VaultServiceOpeningProcedure = "/numen.v1.VaultService/Opening"
+	// VaultServiceNeighbourhoodProcedure is the fully-qualified name of the VaultService's
+	// Neighbourhood RPC.
+	VaultServiceNeighbourhoodProcedure = "/numen.v1.VaultService/Neighbourhood"
 )
 
-// VaultClient is a client for the numen.v1.Vault service.
-type VaultClient interface {
+// VaultServiceClient is a client for the numen.v1.VaultService service.
+type VaultServiceClient interface {
 	// State is what the vault is and how far reading it has got.
 	State(context.Context, *connect.Request[v1.StateRequest]) (*connect.Response[v1.StateResponse], error)
 	// Opening is the note to show when nothing else has been chosen. It answers
@@ -60,62 +61,62 @@ type VaultClient interface {
 	Neighbourhood(context.Context, *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error)
 }
 
-// NewVaultClient constructs a client for the numen.v1.Vault service. By default, it uses the
-// Connect protocol with the binary Protobuf Codec, asks for gzipped responses, and sends
+// NewVaultServiceClient constructs a client for the numen.v1.VaultService service. By default, it
+// uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses, and sends
 // uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or
 // connect.WithGRPCWeb() options.
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewVaultClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) VaultClient {
+func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) VaultServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
-	vaultMethods := v1.File_numen_v1_vault_proto.Services().ByName("Vault").Methods()
-	return &vaultClient{
+	vaultServiceMethods := v1.File_numen_v1_vault_proto.Services().ByName("VaultService").Methods()
+	return &vaultServiceClient{
 		state: connect.NewClient[v1.StateRequest, v1.StateResponse](
 			httpClient,
-			baseURL+VaultStateProcedure,
-			connect.WithSchema(vaultMethods.ByName("State")),
+			baseURL+VaultServiceStateProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("State")),
 			connect.WithClientOptions(opts...),
 		),
 		opening: connect.NewClient[v1.OpeningRequest, v1.OpeningResponse](
 			httpClient,
-			baseURL+VaultOpeningProcedure,
-			connect.WithSchema(vaultMethods.ByName("Opening")),
+			baseURL+VaultServiceOpeningProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Opening")),
 			connect.WithClientOptions(opts...),
 		),
 		neighbourhood: connect.NewClient[v1.NeighbourhoodRequest, v1.NeighbourhoodResponse](
 			httpClient,
-			baseURL+VaultNeighbourhoodProcedure,
-			connect.WithSchema(vaultMethods.ByName("Neighbourhood")),
+			baseURL+VaultServiceNeighbourhoodProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Neighbourhood")),
 			connect.WithClientOptions(opts...),
 		),
 	}
 }
 
-// vaultClient implements VaultClient.
-type vaultClient struct {
+// vaultServiceClient implements VaultServiceClient.
+type vaultServiceClient struct {
 	state         *connect.Client[v1.StateRequest, v1.StateResponse]
 	opening       *connect.Client[v1.OpeningRequest, v1.OpeningResponse]
 	neighbourhood *connect.Client[v1.NeighbourhoodRequest, v1.NeighbourhoodResponse]
 }
 
-// State calls numen.v1.Vault.State.
-func (c *vaultClient) State(ctx context.Context, req *connect.Request[v1.StateRequest]) (*connect.Response[v1.StateResponse], error) {
+// State calls numen.v1.VaultService.State.
+func (c *vaultServiceClient) State(ctx context.Context, req *connect.Request[v1.StateRequest]) (*connect.Response[v1.StateResponse], error) {
 	return c.state.CallUnary(ctx, req)
 }
 
-// Opening calls numen.v1.Vault.Opening.
-func (c *vaultClient) Opening(ctx context.Context, req *connect.Request[v1.OpeningRequest]) (*connect.Response[v1.OpeningResponse], error) {
+// Opening calls numen.v1.VaultService.Opening.
+func (c *vaultServiceClient) Opening(ctx context.Context, req *connect.Request[v1.OpeningRequest]) (*connect.Response[v1.OpeningResponse], error) {
 	return c.opening.CallUnary(ctx, req)
 }
 
-// Neighbourhood calls numen.v1.Vault.Neighbourhood.
-func (c *vaultClient) Neighbourhood(ctx context.Context, req *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error) {
+// Neighbourhood calls numen.v1.VaultService.Neighbourhood.
+func (c *vaultServiceClient) Neighbourhood(ctx context.Context, req *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error) {
 	return c.neighbourhood.CallUnary(ctx, req)
 }
 
-// VaultHandler is an implementation of the numen.v1.Vault service.
-type VaultHandler interface {
+// VaultServiceHandler is an implementation of the numen.v1.VaultService service.
+type VaultServiceHandler interface {
 	// State is what the vault is and how far reading it has got.
 	State(context.Context, *connect.Request[v1.StateRequest]) (*connect.Response[v1.StateResponse], error)
 	// Opening is the note to show when nothing else has been chosen. It answers
@@ -125,56 +126,56 @@ type VaultHandler interface {
 	Neighbourhood(context.Context, *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error)
 }
 
-// NewVaultHandler builds an HTTP handler from the service implementation. It returns the path on
-// which to mount the handler and the handler itself.
+// NewVaultServiceHandler builds an HTTP handler from the service implementation. It returns the
+// path on which to mount the handler and the handler itself.
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewVaultHandler(svc VaultHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	vaultMethods := v1.File_numen_v1_vault_proto.Services().ByName("Vault").Methods()
-	vaultStateHandler := connect.NewUnaryHandler(
-		VaultStateProcedure,
+func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	vaultServiceMethods := v1.File_numen_v1_vault_proto.Services().ByName("VaultService").Methods()
+	vaultServiceStateHandler := connect.NewUnaryHandler(
+		VaultServiceStateProcedure,
 		svc.State,
-		connect.WithSchema(vaultMethods.ByName("State")),
+		connect.WithSchema(vaultServiceMethods.ByName("State")),
 		connect.WithHandlerOptions(opts...),
 	)
-	vaultOpeningHandler := connect.NewUnaryHandler(
-		VaultOpeningProcedure,
+	vaultServiceOpeningHandler := connect.NewUnaryHandler(
+		VaultServiceOpeningProcedure,
 		svc.Opening,
-		connect.WithSchema(vaultMethods.ByName("Opening")),
+		connect.WithSchema(vaultServiceMethods.ByName("Opening")),
 		connect.WithHandlerOptions(opts...),
 	)
-	vaultNeighbourhoodHandler := connect.NewUnaryHandler(
-		VaultNeighbourhoodProcedure,
+	vaultServiceNeighbourhoodHandler := connect.NewUnaryHandler(
+		VaultServiceNeighbourhoodProcedure,
 		svc.Neighbourhood,
-		connect.WithSchema(vaultMethods.ByName("Neighbourhood")),
+		connect.WithSchema(vaultServiceMethods.ByName("Neighbourhood")),
 		connect.WithHandlerOptions(opts...),
 	)
-	return "/numen.v1.Vault/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return "/numen.v1.VaultService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case VaultStateProcedure:
-			vaultStateHandler.ServeHTTP(w, r)
-		case VaultOpeningProcedure:
-			vaultOpeningHandler.ServeHTTP(w, r)
-		case VaultNeighbourhoodProcedure:
-			vaultNeighbourhoodHandler.ServeHTTP(w, r)
+		case VaultServiceStateProcedure:
+			vaultServiceStateHandler.ServeHTTP(w, r)
+		case VaultServiceOpeningProcedure:
+			vaultServiceOpeningHandler.ServeHTTP(w, r)
+		case VaultServiceNeighbourhoodProcedure:
+			vaultServiceNeighbourhoodHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
 	})
 }
 
-// UnimplementedVaultHandler returns CodeUnimplemented from all methods.
-type UnimplementedVaultHandler struct{}
+// UnimplementedVaultServiceHandler returns CodeUnimplemented from all methods.
+type UnimplementedVaultServiceHandler struct{}
 
-func (UnimplementedVaultHandler) State(context.Context, *connect.Request[v1.StateRequest]) (*connect.Response[v1.StateResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.Vault.State is not implemented"))
+func (UnimplementedVaultServiceHandler) State(context.Context, *connect.Request[v1.StateRequest]) (*connect.Response[v1.StateResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.State is not implemented"))
 }
 
-func (UnimplementedVaultHandler) Opening(context.Context, *connect.Request[v1.OpeningRequest]) (*connect.Response[v1.OpeningResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.Vault.Opening is not implemented"))
+func (UnimplementedVaultServiceHandler) Opening(context.Context, *connect.Request[v1.OpeningRequest]) (*connect.Response[v1.OpeningResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Opening is not implemented"))
 }
 
-func (UnimplementedVaultHandler) Neighbourhood(context.Context, *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.Vault.Neighbourhood is not implemented"))
+func (UnimplementedVaultServiceHandler) Neighbourhood(context.Context, *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Neighbourhood is not implemented"))
 }

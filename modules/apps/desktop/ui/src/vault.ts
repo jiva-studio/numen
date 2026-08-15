@@ -9,11 +9,11 @@
  */
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
-import { Seat, Vault, type NeighbourhoodResponse } from '@numen/protocol'
+import { Seat, VaultService, type NeighbourhoodResponse } from '@numen/protocol'
 import type { PlexNeighbourhood, PlexNode, PlexRole } from '@numen/ui'
 
 export const vault = createClient(
-  Vault,
+  VaultService,
   createConnectTransport({ baseUrl: window.location.origin }),
 )
 
