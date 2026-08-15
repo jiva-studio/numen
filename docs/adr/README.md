@@ -22,6 +22,7 @@ Read these first; everything else is derived from them.
 
 - [ADR-0013 — Vault identity, the service folder, and application state](0013-vault-identity-and-application-state.md)
 - [ADR-0014 — One binary, hexagonal core in Go](0014-one-binary-hexagonal-core-in-go.md)
+- [ADR-0015 — The index is migrated, not rebuilt](0015-the-index-is-migrated.md)
 
 ## The note file
 
