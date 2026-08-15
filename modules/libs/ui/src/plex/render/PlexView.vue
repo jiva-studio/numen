@@ -8,14 +8,7 @@
  */
 import { computed, useTemplateRef } from 'vue'
 import PlexNodeView from './PlexNodeView.vue'
-import {
-  handleIn,
-  midpointOf,
-  type PlacedEdge,
-  type PlacedNode,
-  type PlexFrame,
-  type Point,
-} from '../model'
+import { handleIn, midpointOf, type PlacedEdge, type PlexFrame, type Point } from '../model'
 import type { Drop } from '../arrange'
 
 const props = withDefaults(
@@ -27,8 +20,9 @@ const props = withDefaults(
     nodeSize: { width: number; height: number }
     /** Draw the label a typed relationship carries. */
     showEdgeLabels?: boolean
-    /** The node a pointer is over, so its handle can be offered. */
-    hovered?: string | null
+    /** Whether reaching out is allowed at all, and so whether any node may
+     *  offer a handle. */
+    mayReach?: boolean
     /** A gesture in progress: where it started, where it is, what it means. */
     gestureFrom?: string | null
     gestureAt?: Point | null
@@ -36,7 +30,7 @@ const props = withDefaults(
   }>(),
   {
     showEdgeLabels: true,
-    hovered: null,
+    mayReach: true,
     gestureFrom: null,
     gestureAt: null,
     gestureOutcome: null,
@@ -48,7 +42,6 @@ const emit = defineEmits<{
   (event: 'activate', id: string): void
   /** A gesture began at a node's handle. */
   (event: 'reach', id: string, pointer: PointerEvent): void
-  (event: 'hover', id: string | null): void
 }>()
 
 const svg = useTemplateRef<SVGSVGElement>('svg')
@@ -73,9 +66,12 @@ const path = (edge: PlacedEdge) =>
   ` ${edge.control2.x} ${edge.control2.y}` +
   ` ${edge.toPoint.x} ${edge.toPoint.y}`
 
-const offering = (node: PlacedNode) =>
-  props.gestureFrom === node.id ||
-  (props.gestureFrom === null && props.hovered === node.id && node.opacity >= 1)
+/**
+ * While a gesture is running, only the node it left from has a handle: the
+ * hand is somewhere else entirely, and a second one under it would offer to
+ * start a gesture that is already under way.
+ */
+const mayReachNow = computed(() => props.mayReach && props.gestureFrom === null)
 
 /** The line a gesture drags behind it, from the handle to the pointer. */
 const thread = computed(() => {
@@ -142,12 +138,14 @@ const aimedAt = computed(() =>
       v-for="node in frame.nodes"
       :key="node.id"
       :node="node"
-      :offering="offering(node)"
+      :may-reach="mayReachNow"
+      :reaching="gestureFrom === node.id"
       :aimed="aimedAt === node.id"
       @activate="emit('activate', node.id)"
       @reach="emit('reach', node.id, $event)"
-      @hover="emit('hover', $event ? node.id : null)"
-    />
+    >
+      <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
+    </PlexNodeView>
 
     <!-- The gesture itself, drawn over everything it may land on. -->
     <g v-if="thread" class="plex__reach" aria-hidden="true">

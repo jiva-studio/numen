@@ -20,13 +20,27 @@ interface Knobs {
   height: number
   /** Below one, a node is on its way in or out and cannot be chosen. */
   opacity: number
-  offering: boolean
+  mayReach: boolean
+  reaching: boolean
   aimed: boolean
+  /** Fill the icon slot. What goes in it is the application's, not the plex's. */
+  icon: boolean
 
   onActivate: () => void
   onReach: (pointer: PointerEvent) => void
-  onHover: (over: boolean) => void
 }
+
+/**
+ * Something to put in the slot. Any markup will do — a node has no idea what
+ * it is being handed, which is the whole reason it is a slot.
+ */
+const GLYPH = `
+  <svg viewBox="0 0 16 16" width="13" height="13" fill="none"
+       stroke="currentColor" stroke-width="1.4" stroke-linejoin="round">
+    <path d="M4 2h5l3 3v9H4z" />
+    <path d="M9 2v3h3" />
+  </svg>
+`
 
 const nodeFrom = (a: Knobs, over: Partial<PlacedNode> = {}): PlacedNode => ({
   id: 'one',
@@ -52,7 +66,7 @@ const on =
   (scene: (args: Knobs) => readonly PlacedNode[], window = { width: 480, height: 200 }) =>
   (args: Knobs) => ({
     components: { PlexNodeView },
-    setup: () => ({ args, window, scene: computed(() => scene(args)) }),
+    setup: () => ({ args, window, glyph: GLYPH, scene: computed(() => scene(args)) }),
     template: `
       <div style="height:100vh;display:grid;place-items:center;background:var(--numen-surface)">
         <svg
@@ -64,12 +78,14 @@ const on =
             v-for="node in scene"
             :key="node.id"
             :node="node"
-            :offering="args.offering"
+            :may-reach="args.mayReach"
+            :reaching="args.reaching"
             :aimed="args.aimed"
             @activate="args.onActivate"
             @reach="args.onReach"
-            @hover="args.onHover"
-          />
+          >
+            <template v-if="args.icon" #icon><span v-html="glyph" /></template>
+          </PlexNodeView>
         </svg>
       </div>
     `,
@@ -90,13 +106,17 @@ const meta: Meta<Knobs> = {
   component: PlexNodeView,
   parameters: {
     layout: 'fullscreen',
+    // The node is assembled from the knobs below, so the panel's own editor
+    // for it would be a second answer to the same question.
+    controls: { exclude: ['node'] },
     docs: {
       description: {
         component:
           'A box, a label and the handle to reach out from. Everything it ' +
-          'draws with is already on the node it was handed; the two things it ' +
-          'cannot know — whether a handle is worth offering here, and whether ' +
-          'a gesture would land a link on it — arrive as answers.',
+          'draws with is already on the node it was handed, and whether a ' +
+          'pointer is over it is its own affair — hover it and the handle ' +
+          'appears. What it cannot know is whether reaching out is allowed ' +
+          'here at all, and whether a gesture would land a link on it.',
       },
     },
   },
@@ -107,12 +127,13 @@ const meta: Meta<Knobs> = {
     width: range(64, 320, 4),
     height: range(20, 96, 2),
     opacity: range(0, 1, 0.05),
-    offering: { control: 'boolean' },
+    icon: { control: 'boolean' },
+    mayReach: { control: 'boolean' },
+    reaching: { control: 'boolean' },
     aimed: { control: 'boolean' },
 
     onActivate: { table: { disable: true } },
     onReach: { table: { disable: true } },
-    onHover: { table: { disable: true } },
   },
 
   args: {
@@ -121,11 +142,12 @@ const meta: Meta<Knobs> = {
     width: 144,
     height: 36,
     opacity: 1,
-    offering: false,
+    icon: false,
+    mayReach: true,
+    reaching: false,
     aimed: false,
     onActivate: fn(),
     onReach: fn(),
-    onHover: fn(),
   },
 
   render: on((args) => [nodeFrom(args)]),
@@ -158,21 +180,24 @@ export const EverySeat: Story = {
 }
 
 /**
- * The handle, and the one thing about it that is easy to get wrong: it sits
- * inside a node that navigates when clicked, so pressing it must start a
- * gesture and must not also choose the node underneath.
+ * The handle: absent until a hand is over the node, and gone again after.
+ *
+ * The thing about it that is easy to get wrong is that it sits inside a node
+ * which navigates when clicked, so pressing it must start a gesture and must
+ * not also choose the node underneath.
  */
 export const Reaching: Story = {
-  args: { offering: true },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const node = canvas.getByLabelText('A thought, child')
+    const handle = () => canvasElement.querySelector('.plex__handle')
 
+    await expect(handle()).toBeNull()
     await userEvent.hover(node)
-    await expect(args.onHover).toHaveBeenLastCalledWith(true)
+    await expect(handle()).not.toBeNull()
 
-    // Pressing the handle: a gesture begins and the node is left where it is.
-    await userEvent.pointer([{ keys: '[MouseLeft]', target: canvas.getByLabelText(/^Reach out/) }])
+    // Pressing it: a gesture begins and the node is left where it is.
+    await userEvent.pointer([{ keys: '[MouseLeft]', target: handle()! }])
     await expect(args.onReach).toHaveBeenCalledTimes(1)
     await expect(args.onActivate).not.toHaveBeenCalled()
 
@@ -181,7 +206,12 @@ export const Reaching: Story = {
     await expect(args.onActivate).toHaveBeenCalledTimes(1)
 
     await userEvent.unhover(node)
-    await expect(args.onHover).toHaveBeenLastCalledWith(false)
+    await expect(handle()).toBeNull()
+
+    // A drag across a label is a drag that meant to reach somewhere, so the
+    // text must not come away highlighted under it.
+    const label = node.querySelector('.plex__label')!
+    await expect(getComputedStyle(label).userSelect).toBe('none')
   },
 }
 
@@ -215,11 +245,13 @@ export const AwkwardLabels: Story = {
       await expect(text.width).toBeLessThanOrEqual(box.width)
     }
 
-    // The one with nothing to break at is clamped rather than shrunk to fit.
-    const label = canvas
-      .getByLabelText(/^Supercalifragilistic/)
-      .querySelector('.plex__label-text')!
-    await expect(label.scrollHeight).toBeGreaterThan(label.clientHeight)
+    // One line and an ellipsis, never two. The first of these has room to
+    // break and the second has none, and neither is any taller for it.
+    for (const tooLong of [/^Заметка/, /^Supercalifragilistic/]) {
+      const label = canvas.getByLabelText(tooLong).querySelector('.plex__label-text')!
+      await expect(label.scrollWidth).toBeGreaterThan(label.clientWidth)
+      await expect(label.scrollHeight).toBe(label.clientHeight)
+    }
   },
 }
 

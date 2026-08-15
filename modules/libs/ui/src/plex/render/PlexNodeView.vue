@@ -2,26 +2,29 @@
 /**
  * One node: its box, its label, and the handle to reach out from.
  *
- * Every number it draws with is already on the node it was handed. The two
- * things it cannot know are whether a handle is worth offering here and
- * whether a link would land here — both depend on the rest of the picture, so
- * they arrive as answers rather than being worked out.
+ * Every number it draws with is already on the node it was handed. Whether a
+ * pointer is over it is its own affair, so the handle appears under the hand
+ * without anything above being told; what it cannot know is whether reaching
+ * out is allowed here at all, and whether a gesture would land a link on it.
  *
- * The label goes through a `foreignObject`: SVG text cannot wrap, cannot
- * ellipsise and does not reorder a right-to-left run.
+ * The label goes through a `foreignObject`: SVG text cannot ellipsise and does
+ * not reorder a right-to-left run.
  */
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { handleIn, isReachable, nameOf, type PlacedNode } from '../model'
 
 const props = withDefaults(
   defineProps<{
     node: PlacedNode
-    /** Draw the handle: a pointer is over this node, or a gesture began here. */
-    offering?: boolean
+    /** Whether reaching out from here is allowed at all. */
+    mayReach?: boolean
+    /** A gesture is already under way from here: the hand has moved on, and
+     *  the handle it left from stays where it was. */
+    reaching?: boolean
     /** A gesture in progress would land a link on this node. */
     aimed?: boolean
   }>(),
-  { offering: false, aimed: false },
+  { mayReach: true, reaching: false, aimed: false },
 )
 
 const emit = defineEmits<{
@@ -29,8 +32,9 @@ const emit = defineEmits<{
   (event: 'activate'): void
   /** A gesture began at the handle. */
   (event: 'reach', pointer: PointerEvent): void
-  (event: 'hover', over: boolean): void
 }>()
+
+const over = ref(false)
 
 const activate = () => {
   if (isReachable(props.node)) emit('activate')
@@ -49,6 +53,16 @@ const reach = (event: PointerEvent) => {
   emit('reach', event)
 }
 
+/**
+ * When there is a handle to press. Under the hand, or held there for as long
+ * as the gesture that left from it lasts. A node on its way in or out offers
+ * nothing: it is about to be somewhere else.
+ */
+const offering = computed(
+  () =>
+    props.node.opacity >= 1 && (props.reaching || (props.mayReach && over.value)),
+)
+
 /** Read three times by the drawing: the circle, and the two strokes on it. */
 const handle = computed(() => handleIn(props.node))
 </script>
@@ -66,8 +80,8 @@ const handle = computed(() => handleIn(props.node))
     :aria-label="nameOf(node)"
     @click="activate"
     @keydown="onKey"
-    @pointerenter="emit('hover', true)"
-    @pointerleave="emit('hover', false)"
+    @pointerenter="over = true"
+    @pointerleave="over = false"
   >
     <rect
       class="plex__box"
@@ -83,12 +97,17 @@ const handle = computed(() => handleIn(props.node))
       :height="node.height"
     >
       <div class="plex__label">
+        <!-- Whatever stands for the thing a node addresses. The plex has no
+             way to know what that is, so it is handed one. -->
+        <span v-if="$slots.icon" class="plex__icon" aria-hidden="true">
+          <slot name="icon" />
+        </span>
         <span class="plex__label-text">{{ node.label }}</span>
       </div>
     </foreignObject>
 
-    <!-- Reach out from here to make something. Offered on hover so it is
-         there when wanted and out of the way when not. -->
+    <!-- Reach out from here to make something. Under the hand so it is there
+         when wanted and out of the way when not. -->
     <template v-if="offering">
       <circle
         class="plex__handle"
@@ -138,11 +157,16 @@ const handle = computed(() => handleIn(props.node))
     stroke var(--numen-plex-move) var(--numen-easing);
 }
 
+/* Icon then label, centred together in a box of a size the arrangement chose.
+
+   Not selectable: a label is something to look at and press, and a drag that
+   paints it blue is a drag that was meant to reach somewhere. */
 .plex__label {
   block-size: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   padding-inline: 10px;
   box-sizing: border-box;
   color: var(--numen-node-fg);
@@ -150,19 +174,25 @@ const handle = computed(() => handleIn(props.node))
   font-size: var(--numen-font-size);
   line-height: var(--numen-line-height);
   pointer-events: none;
+  user-select: none;
   transition: color var(--numen-plex-move) var(--numen-easing);
 }
 
-/* Two lines, then an ellipsis: a title is a sentence often enough that one
-   line throws away what distinguishes it from its neighbours. */
+.plex__icon {
+  flex: none;
+  display: flex;
+  align-items: center;
+  color: var(--numen-role-hue, var(--numen-node-fg));
+}
+
+/* One line, then an ellipsis. Two lines cost as much height again for a title
+   that is a sentence, and a box that grows is a box the arrangement did not
+   plan for. */
 .plex__label-text {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+  min-inline-size: 0;
   overflow: hidden;
-  overflow-wrap: anywhere;
-  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .plex__handle {
@@ -202,6 +232,5 @@ const handle = computed(() => handleIn(props.node))
 
 .plex__node--focus .plex__label {
   color: var(--numen-focus-fg);
-  font-weight: 600;
 }
 </style>

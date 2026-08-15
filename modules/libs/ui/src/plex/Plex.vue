@@ -83,13 +83,12 @@ const { frame, moving } = usePlexTransition(
   props.environment,
 )
 
-const hovered = ref<string | null>(null)
-
 /**
- * Where a handle is worth offering. A caller that allows no seat at all has
- * turned the gesture off, and a handle that can come to nothing is a lie.
+ * A caller that allows no seat at all has turned the gesture off, and a handle
+ * that can come to nothing is a lie. Where a pointer happens to be is the
+ * node's own affair, and never reaches this far.
  */
-const reachable = computed(() => (props.creatable.length ? hovered.value : null))
+const mayReach = computed(() => props.creatable.length > 0)
 
 /** Settled once and read by both the gesture and the drawing. */
 const options = computed(() => resolveOptions({ ...props.options, viewport: viewport.value }))
@@ -138,14 +137,15 @@ defineExpose({ moving: toRef(moving) })
       :viewport="viewport"
       :node-size="options.nodeSize"
       :show-edge-labels="showEdgeLabels"
-      :hovered="reachable"
+      :may-reach="mayReach"
       :gesture-from="gesture.from.value"
       :gesture-at="gesture.at.value"
       :gesture-outcome="gesture.outcome.value"
       @activate="emit('activate', $event)"
-      @hover="hovered = $event"
       @reach="gesture.begin"
-    />
+    >
+      <template v-if="$slots.icon" #icon="{ node }"><slot name="icon" :node="node" /></template>
+    </PlexView>
     <div v-if="overflow.length" class="plex-frame__overflow" role="status">
       <slot name="overflow" :overflow="overflow">
         {{ overflow.map(([role, count]) => countOf(role, count)).join(', ') }} not shown

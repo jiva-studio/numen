@@ -20,8 +20,14 @@ const nodeAt = (over: Partial<PlacedNode> = {}): PlacedNode => ({
   ...over,
 })
 
-const mountNode = (over: Partial<PlacedNode> = {}, offering = false) =>
-  mount(PlexNodeView, { props: { node: nodeAt(over), offering } })
+const mountNode = (over: Partial<PlacedNode> = {}) =>
+  mount(PlexNodeView, { props: { node: nodeAt(over) } })
+
+/** A pointer arrives, which is the only thing that offers a handle. */
+const hover = async (node: ReturnType<typeof mountNode>) => {
+  await node.trigger('pointerenter')
+  return node
+}
 
 describe('a node that is not fully there', () => {
   const halfway = { opacity: 0.4 }
@@ -91,31 +97,47 @@ describe('a node that can be chosen', () => {
 })
 
 describe('the handle', () => {
-  it('is drawn only when the node is told to offer one', () => {
-    expect(mountNode().find('.plex__handle').exists()).toBe(false)
-    expect(mountNode({}, true).find('.plex__handle').exists()).toBe(true)
+  it('is not there until a pointer is, and goes when it leaves', async () => {
+    const node = mountNode()
+    expect(node.find('.plex__handle').exists()).toBe(false)
+
+    await hover(node)
+    expect(node.find('.plex__handle').exists()).toBe(true)
+
+    await node.trigger('pointerleave')
+    expect(node.find('.plex__handle').exists()).toBe(false)
+  })
+
+  it('is not offered where reaching out is not allowed', async () => {
+    const node = mount(PlexNodeView, { props: { node: nodeAt(), mayReach: false } })
+    await node.trigger('pointerenter')
+    expect(node.find('.plex__handle').exists()).toBe(false)
+  })
+
+  it('is not offered by a node that is on its way in or out', async () => {
+    const node = await hover(mountNode({ opacity: 0.4 }))
+    expect(node.find('.plex__handle').exists()).toBe(false)
+  })
+
+  it('stays put once a gesture has left from it, hand or no hand', () => {
+    // The pointer is somewhere else entirely by then, dragging the thread.
+    const node = mount(PlexNodeView, {
+      props: { node: nodeAt(), mayReach: false, reaching: true },
+    })
+    expect(node.find('.plex__handle').exists()).toBe(true)
   })
 
   it('starts a gesture rather than choosing the node it sits on', async () => {
-    const node = mountNode({}, true)
+    const node = await hover(mountNode())
     await node.get('.plex__handle').trigger('pointerdown')
     expect(node.emitted('reach')).toHaveLength(1)
     expect(node.emitted('activate')).toBeUndefined()
   })
 
-  it('sits on the trailing edge, halfway down', () => {
-    const handle = mountNode({ width: 144 }, true).get('.plex__handle')
+  it('sits on the trailing edge, halfway down', async () => {
+    const handle = (await hover(mountNode({ width: 144 }))).get('.plex__handle')
     expect(Number(handle.attributes('cx'))).toBe(72)
     expect(Number(handle.attributes('cy'))).toBe(0)
-  })
-})
-
-describe('what a node says about a pointer', () => {
-  it('reports arriving and leaving, so the plex knows where one is', async () => {
-    const node = mountNode()
-    await node.trigger('pointerenter')
-    await node.trigger('pointerleave')
-    expect(node.emitted('hover')).toStrictEqual([[true], [false]])
   })
 })
 

@@ -45,8 +45,8 @@ const mountView = () =>
 
 /**
  * What a node decides for itself is tested where it lives, next to the node.
- * What is left here is the translation: a node says only that it was chosen or
- * that a pointer arrived, and the view says which node that was.
+ * What is left here is the translation: a node says only that it was chosen,
+ * and the view says which node that was.
  */
 describe('what a node says, and who it was', () => {
   it('names the node that was chosen', async () => {
@@ -55,13 +55,24 @@ describe('what a node says, and who it was', () => {
     await view.get('[aria-label^="Start"]').trigger('click')
     expect(view.emitted('activate')).toStrictEqual([['focus']])
   })
+})
 
-  it('names the node a pointer arrived at, and nothing once it leaves', async () => {
-    const view = mountView()
-    const staying = view.get('[aria-label^="Staying"]')
-    await staying.trigger('pointerenter')
-    await staying.trigger('pointerleave')
-    expect(view.emitted('hover')).toStrictEqual([['staying'], [null]])
+describe('a handle while a gesture is running', () => {
+  it('is offered by the node the gesture left from, and by no other', async () => {
+    const view = mount(PlexView, {
+      props: {
+        frame: arrangePlex(before),
+        viewport: VIEWPORT,
+        nodeSize: DEFAULT_OPTIONS.nodeSize,
+        gestureFrom: 'staying',
+      },
+    })
+    // A hand that has moved on and come to rest over some other node must not
+    // be offered a second gesture while the first is still under way.
+    await view.get('[aria-label^="Going"]').trigger('pointerenter')
+    const handles = view.findAll('.plex__handle')
+    expect(handles).toHaveLength(1)
+    expect(view.get('[aria-label^="Staying"]').find('.plex__handle').exists()).toBe(true)
   })
 })
 
