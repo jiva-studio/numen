@@ -337,14 +337,45 @@ func TestAFileThatDisappearsDuringAScanDoesNotStopIt(t *testing.T) {
 		t.Errorf("indexed %d of %d seen", res.Indexed, res.Seen)
 	}
 
-	// The file is not in the index, and it is not recorded as removed either:
-	// nobody deleted it as far as this scan knows.
+	if res.Removed != 0 {
+		t.Errorf("removed %d notes: a file that could not be read is not a deletion", res.Removed)
+	}
+}
+
+func TestAVanishedFileKeepsWhatTheIndexAlreadyHad(t *testing.T) {
+	// Saving through a temporary file and a rename makes a note briefly absent.
+	// A scan that catches that moment must not take the note out of search
+	// until the next one.
+	ctx := t.Context()
+	v, readers := vaultAt(t, testsupport.VaultDir(t))
+	db := openIndex(t)
+
+	if _, err := scanner(readers, db).Execute(ctx, v); err != nil {
+		t.Fatal(err)
+	}
+
+	gone := "notes/Entropy.md"
+	res, err := scanner(vanishingReaders{VaultReaders: readers, gone: gone}, db).Execute(ctx, v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Removed != 0 {
+		t.Errorf("removed %d notes, want 0", res.Removed)
+	}
+
 	known, err := db.Queries().Fingerprints(ctx, v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, indexed := known["notes/Entropy.md"]; indexed {
-		t.Error("a file that could not be read was indexed anyway")
+	if _, kept := known[gone]; !kept {
+		t.Error("a note that was briefly absent was dropped from the index")
+	}
+	matches, err := db.Queries().Search(ctx, v.ID, "uncertainty", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(matches) != 1 {
+		t.Errorf("the note is no longer searchable: %+v", matches)
 	}
 }
 

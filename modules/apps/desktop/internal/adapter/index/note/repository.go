@@ -9,6 +9,7 @@ import (
 	"embed"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index/sqlfile"
@@ -26,6 +27,16 @@ type Repository struct{ db *sql.DB }
 
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 
+// exec runs a named statement and says which one failed. A bare driver error
+// from one of six statements in a transaction is a schema mistake nobody can
+// locate.
+func exec(ctx context.Context, tx *sql.Tx, name string, args ...any) error {
+	if _, err := tx.ExecContext(ctx, stmt.Get(name), args...); err != nil {
+		return fmt.Errorf("%s: %w", name, err)
+	}
+	return nil
+}
+
 func (r *Repository) Save(ctx context.Context, vaultID string, n domain.Note) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -33,8 +44,7 @@ func (r *Repository) Save(ctx context.Context, vaultID string, n domain.Note) er
 	}
 	defer tx.Rollback()
 
-	if _, err := tx.ExecContext(ctx, stmt.Get("save_file"),
-		vaultID, n.Ref.Path, n.Ref.Size, n.Ref.MTime); err != nil {
+	if err := exec(ctx, tx, "save_file", vaultID, n.Ref.Path, n.Ref.Size, n.Ref.MTime); err != nil {
 		return err
 	}
 
@@ -51,8 +61,7 @@ func (r *Repository) Save(ctx context.Context, vaultID string, n domain.Note) er
 	if problem != "" {
 		frontmatterErr = problem
 	}
-	if _, err := tx.ExecContext(ctx, stmt.Get("save"),
-		vaultID, n.Ref.Path, n.Title, frontmatter, frontmatterErr); err != nil {
+	if err := exec(ctx, tx, "save", vaultID, n.Ref.Path, n.Title, frontmatter, frontmatterErr); err != nil {
 		return err
 	}
 
@@ -66,10 +75,10 @@ func (r *Repository) Save(ctx context.Context, vaultID string, n domain.Note) er
 
 	// Derived rows are replaced wholesale: diffing them against what was there
 	// costs more than rewriting a handful of rows.
-	if _, err := tx.ExecContext(ctx, stmt.Get("clear_headings"), vaultID, n.Ref.Path); err != nil {
+	if err := exec(ctx, tx, "clear_headings", vaultID, n.Ref.Path); err != nil {
 		return err
 	}
-	if _, err := tx.ExecContext(ctx, stmt.Get("clear_fts"), rowID); err != nil {
+	if err := exec(ctx, tx, "clear_fts", rowID); err != nil {
 		return err
 	}
 	for _, h := range n.Headings {
@@ -78,8 +87,7 @@ func (r *Repository) Save(ctx context.Context, vaultID string, n domain.Note) er
 			return err
 		}
 	}
-	if _, err := tx.ExecContext(ctx, stmt.Get("insert_fts"),
-		rowID, n.Title, n.Body, vaultID, n.Ref.Path); err != nil {
+	if err := exec(ctx, tx, "insert_fts", rowID, n.Title, n.Body, vaultID, n.Ref.Path); err != nil {
 		return err
 	}
 	return tx.Commit()
@@ -100,11 +108,11 @@ func (r *Repository) Remove(ctx context.Context, vaultID string, paths []string)
 		if err != nil {
 			return err
 		}
-		if _, err := tx.ExecContext(ctx, stmt.Get("clear_fts"), rowID); err != nil {
+		if err := exec(ctx, tx, "clear_fts", rowID); err != nil {
 			return err
 		}
 		for _, name := range []string{"clear_headings", "delete", "delete_file"} {
-			if _, err := tx.ExecContext(ctx, stmt.Get(name), vaultID, path); err != nil {
+			if err := exec(ctx, tx, name, vaultID, path); err != nil {
 				return err
 			}
 		}

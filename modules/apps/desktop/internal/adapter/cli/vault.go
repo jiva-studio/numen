@@ -48,6 +48,11 @@ func vaultAdd(out io.Writer, cfg container.Config, args []string) error {
 	if err != nil {
 		return err
 	}
+	// Reached through a symlink, the same folder has two names, and the second
+	// one would look like a copy of itself.
+	if resolved, err := filepath.EvalSymlinks(root); err == nil {
+		root = resolved
+	}
 
 	v, err := vault.Add{
 		Identity: cfg.VaultIdentity(),

@@ -29,15 +29,6 @@ type ScanResult struct {
 	Vanished  int // walked, but gone by the time it was read
 }
 
-func (r ScanResult) String() string {
-	s := fmt.Sprintf("%d notes: %d indexed, %d unchanged, %d removed",
-		r.Seen, r.Indexed, r.Unchanged, r.Removed)
-	if r.Vanished > 0 {
-		s += fmt.Sprintf(", %d gone before they could be read", r.Vanished)
-	}
-	return s
-}
-
 // Execute walks the vault once.
 //
 // Only files whose size or modification time differ from what the index holds
@@ -75,8 +66,11 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 			// files to be the source of truth. A note saved, moved or deleted
 			// during a scan must not end the scan; the next one will see
 			// whatever it became.
+			// The path stays in `seen`: a file that was there a moment ago and
+			// is briefly absent is what every editor that saves through a
+			// temporary file looks like. Removing its row would take the note
+			// out of search until the next scan.
 			res.Vanished++
-			delete(seen, ref.Path)
 			return nil
 		}
 		if err != nil {

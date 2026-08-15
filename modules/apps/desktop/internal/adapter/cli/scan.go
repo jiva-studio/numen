@@ -9,7 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
+	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 )
 
 func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
@@ -27,7 +27,7 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args 
 	defer db.Close()
 
 	started := time.Now()
-	result, err := vault.Scan{
+	result, err := usecase.Scan{
 		Readers: cfg.VaultReaders(),
 		Vaults:  db.Vaults(),
 		Notes:   db.Notes(),
@@ -40,7 +40,7 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args 
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(out, "%s in %s\n", result, time.Since(started).Round(time.Millisecond))
+	fmt.Fprintf(out, "%s in %s\n", describe(result), time.Since(started).Round(time.Millisecond))
 	fmt.Fprintf(out, "index now holds %d notes and %d headings\n", summary.Notes, summary.Headings)
 	return nil
 }
@@ -53,9 +53,21 @@ func findVault(cfg container.Config, nameOrPath string) (domain.Vault, error) {
 	if err != nil {
 		return domain.Vault{}, err
 	}
-	v, err := vault.Find{Registry: registry}.Execute(nameOrPath)
+	v, err := usecase.Find{Registry: registry}.Execute(nameOrPath)
 	if err != nil {
 		return domain.Vault{}, fmt.Errorf("%w — add it with: numen vault add %s", err, nameOrPath)
 	}
 	return v, nil
+}
+
+// describe puts a scan into words. The use case counts; how that is said to a
+// person belongs to this adapter, and a graphical shell will say it differently
+// or not at all.
+func describe(r usecase.ScanResult) string {
+	s := fmt.Sprintf("%d notes: %d indexed, %d unchanged, %d removed",
+		r.Seen, r.Indexed, r.Unchanged, r.Removed)
+	if r.Vanished > 0 {
+		s += fmt.Sprintf(", %d gone before they could be read", r.Vanished)
+	}
+	return s
 }

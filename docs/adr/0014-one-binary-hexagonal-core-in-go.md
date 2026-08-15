@@ -65,6 +65,8 @@ modules/apps/<app>/
       port/                  one file per port: vault_reader.go, note_queries.go
       usecase/<aggregate>/   one file per scenario: add.go, scan.go, find.go
       markdown/              the note format, parsed
+    ulid/                    identifiers
+    testsupport/             fixtures and generated vaults, for tests only
     adapter/
       cli/                   driving: arguments in, text out
       filesystem/            driven: a vault on disk

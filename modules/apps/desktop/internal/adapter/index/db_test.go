@@ -25,6 +25,7 @@ func TestEveryConnectionGetsThePragmas(t *testing.T) {
 	var wg sync.WaitGroup
 	foreignKeys := make([]int, connections)
 	busyTimeout := make([]int, connections)
+	synchronous := make([]int, connections)
 	release := make(chan struct{})
 
 	for i := range connections {
@@ -42,6 +43,10 @@ func TestEveryConnectionGetsThePragmas(t *testing.T) {
 				return
 			}
 			if err := conn.QueryRowContext(ctx, "PRAGMA busy_timeout").Scan(&busyTimeout[i]); err != nil {
+				t.Error(err)
+				return
+			}
+			if err := conn.QueryRowContext(ctx, "PRAGMA synchronous").Scan(&synchronous[i]); err != nil {
 				t.Error(err)
 				return
 			}
@@ -63,12 +68,17 @@ func TestEveryConnectionGetsThePragmas(t *testing.T) {
 		if busyTimeout[i] != 5000 {
 			t.Errorf("connection %d has busy_timeout = %d, want 5000", i, busyTimeout[i])
 		}
+		// NORMAL is 1. Losing it costs eight times the rebuild, measured, and
+		// nothing else in the suite notices.
+		if synchronous[i] != 1 {
+			t.Errorf("connection %d has synchronous = %d, want 1 (NORMAL)", i, synchronous[i])
+		}
 	}
 }
 
 func TestDSNCarriesEveryPragma(t *testing.T) {
 	got := dsn("/tmp/index.db")
-	for _, want := range []string{"foreign_keys%281%29", "busy_timeout%285000%29", "journal_mode%28WAL%29"} {
+	for _, want := range []string{"foreign_keys%281%29", "busy_timeout%285000%29", "journal_mode%28WAL%29", "synchronous%28NORMAL%29"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("dsn %q is missing %s", got, want)
 		}

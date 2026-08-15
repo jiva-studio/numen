@@ -8,14 +8,18 @@ it ships rather than after someone complains that the application feels slow.
 
 ```
 cd modules/apps/desktop
-go test ./internal/core/usecase/vault/ -run XXX -bench . -benchtime 1x
+go test ./internal/core/usecase/vault/ -run XXX -bench ColdScan -benchtime 1x
+go test ./internal/core/usecase/vault/ -run XXX -bench 'WarmScan|Incremental|Search'
 ```
 
 The vault is generated, not downloaded: `testsupport.GenerateVault` writes notes
 of varying length across fifty folders, from a fixed seed, so two runs measure
-the same work. `-benchtime 1x` because a cold scan of ten thousand notes is not
-something to repeat for statistics; use `-benchtime 5x` when comparing two
-implementations that are close.
+the same work.
+
+Only the cold scan is pinned to a single iteration — it takes seconds, and
+repeating it measures patience. The other three cost milliseconds and run to the
+default duration, which is what makes their figures worth quoting: a single
+sample of a millisecond-scale benchmark varies by tens of percent.
 
 ## Baseline
 
@@ -24,10 +28,10 @@ Recorded 2026-08-15 on an AMD Ryzen 7 6800U, `modernc.org/sqlite`, WAL with
 
 | | 1 000 notes | 10 000 notes | per note |
 | --- | --- | --- | --- |
-| Cold scan — every note read, parsed, written | 0.73 s | 7.75 s | 0.75 ms |
-| Warm scan — nothing changed, no file opened | 3.9 ms | 43 ms | 4 µs |
-| Incremental — one note edited | 4.8 ms | 55 ms | — |
-| Search — two terms, twenty results | 8.4 ms | 39 ms | — |
+| Cold scan — every note read, parsed, written | 0.71 s (1 run) | 7.58 s (1 run) | 0.76 ms |
+| Warm scan — nothing changed, no file opened | 5.1 ms (268 runs) | 55 ms (24) | 5 µs |
+| Incremental — one note edited | 5.6 ms (235) | 50 ms (24) | — |
+| Search — two terms, twenty results | 8.2 ms (156) | 55 ms (19) | — |
 
 Extrapolated to the 100k notes ADR-0002 designs for: a cold scan is about 75
 seconds, against a budget of single-digit minutes. A warm scan is under half a
@@ -44,6 +48,10 @@ query that matches a handful of notes.
 one edited note still costs a `stat` of every file in the vault. A file watcher
 would reindex the one path it was told about, and the 100 ms budget in ADR-0002
 is written for that path rather than this one.
+
+**The cold scan reads notes this same process wrote seconds earlier**, so the
+read side is measured against a warm page cache. On a real vault that has been
+sitting on disk, the extrapolation to 100k is optimistic about I/O.
 
 **Nothing here measures a cold start of the application**, only of the scan.
 

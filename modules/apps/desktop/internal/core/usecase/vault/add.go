@@ -37,19 +37,31 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		return domain.Vault{}, fmt.Errorf("give %s an identity: %w", root, err)
 	}
 
-	// Two folders carrying one identity cannot be told apart, so indexing either
-	// would write one vault's notes under the other's rows. Only the user knows
-	// whether the second folder is a copy or a move.
+	// This identity may already be registered somewhere else, and that is either
+	// a move or a copy. A move is ordinary and the whole reason identity does
+	// not depend on the path; a copy cannot be indexed, because two folders
+	// claiming one identity would write each other's notes under the same rows.
+	//
+	// They are told apart by looking: if the old location still carries this
+	// identity, both exist and it is a copy.
 	existing, found, err := u.Registry.Find(id)
 	if err != nil {
 		return domain.Vault{}, err
 	}
 	if found && existing.Path != root {
-		return domain.Vault{}, fmt.Errorf(
-			"%s carries the same identity as %s; they are copies of one vault and "+
-				"cannot both be indexed. To make this a separate vault, delete its "+
-				"service folder and add it again",
-			root, existing.Path)
+		stillThere, carriesIt, err := u.Identity.Of(existing.Path)
+		if err != nil {
+			return domain.Vault{}, err
+		}
+		if carriesIt && stillThere == id {
+			return domain.Vault{}, fmt.Errorf(
+				"%s and %s both carry the identity %s, so they are copies of one "+
+					"vault and cannot both be indexed. To make this a separate "+
+					"vault, delete its service folder and add it again",
+				root, existing.Path, id)
+		}
+		// The old location is gone, or is no longer this vault: the folder
+		// moved, and the registry is what has to catch up.
 	}
 
 	v := domain.Vault{ID: id, Name: name, Path: root}

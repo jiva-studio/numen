@@ -9,6 +9,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
@@ -28,6 +29,7 @@ options:
   --index <path>        where the index lives (default: platform cache directory)
   --registry <path>     where the vault list lives (default: platform config directory)
   --service-dir <name>  the folder a vault keeps its identity in (default: .numen)
+  --note-extensions <list>  which files are notes (default: .md)
 `
 
 // Main runs the command line and returns a process exit code.
@@ -48,6 +50,8 @@ func Run(ctx context.Context, out io.Writer, args []string) error {
 	fs.StringVar(&cfg.IndexPath, "index", "", "path to the index database")
 	fs.StringVar(&cfg.RegistryPath, "registry", "", "path to the vault list")
 	fs.StringVar(&cfg.ServiceDir, "service-dir", filesystem.DefaultServiceDir, "vault service folder")
+	extensions := fs.String("note-extensions", strings.Join(filesystem.DefaultExtensions, ","),
+		"comma-separated file extensions treated as notes")
 
 	// Deliberately a plain parse: it stops at the first argument that is not a
 	// flag, which is the command. Anything after that belongs to the command and
@@ -56,6 +60,8 @@ func Run(ctx context.Context, out io.Writer, args []string) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
+	cfg.Extensions = strings.Split(*extensions, ",")
+
 	rest := fs.Args()
 	if len(rest) == 0 {
 		fmt.Fprint(out, usage)

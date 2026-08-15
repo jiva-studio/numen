@@ -9,6 +9,10 @@ type VaultIdentity interface {
 	// Readable reports whether the folder can be read as a vault, writing
 	// nothing. Looking and adding are different acts.
 	Readable(root string) error
+	// Of returns the identity a folder already carries, and whether it carries
+	// one. It never creates an identity, which is what makes it usable for
+	// asking whether a folder is still the vault it used to be.
+	Of(root string) (string, bool, error)
 	// Ensure returns the identity the folder carries, creating one if it has
 	// none. An existing identity is never replaced: it is what every row in the
 	// index points at.

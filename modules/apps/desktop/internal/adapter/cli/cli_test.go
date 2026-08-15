@@ -198,7 +198,39 @@ func TestACopiedVaultIsRefusedRatherThanIndexed(t *testing.T) {
 
 	// The first vault is untouched, and still the only one.
 	listed := s.mustRun("vault", "list")
-	if strings.Count(listed, "path ") > 1 || !strings.Contains(listed, "original") {
+	if strings.Count(listed, s.vault) != 1 || strings.Contains(listed, copied) {
 		t.Errorf("vault list after the refusal:\n%s", listed)
+	}
+}
+
+func TestAMovedVaultIsRecognisedRatherThanRefused(t *testing.T) {
+	// Identity does not depend on the path precisely so that a folder can move.
+	// The registry is what has to catch up.
+	s := newSession(t)
+	s.mustRun("vault", "add", s.vault, "--name", "moved")
+	s.mustRun("scan", "moved")
+
+	moved := filepath.Join(filepath.Dir(s.vault), "somewhere-else")
+	if err := os.Rename(s.vault, moved); err != nil {
+		t.Fatal(err)
+	}
+
+	out, err := s.run("vault", "add", moved, "--name", "moved")
+	if err != nil {
+		t.Fatalf("a moved vault was refused: %v\n%s", err, out)
+	}
+
+	listed := s.mustRun("vault", "list")
+	if strings.Count(listed, "moved") != 1 {
+		t.Errorf("the move produced a second entry:\n%s", listed)
+	}
+	if !strings.Contains(listed, moved) {
+		t.Errorf("the registry still points at the old location:\n%s", listed)
+	}
+
+	// The identity travelled with the folder, so the index it already built is
+	// still the right one.
+	if !strings.Contains(s.mustRun("scan", "moved"), "0 indexed") {
+		t.Error("the moved vault was reindexed from scratch")
 	}
 }

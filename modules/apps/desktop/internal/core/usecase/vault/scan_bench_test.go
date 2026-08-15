@@ -60,7 +60,6 @@ func BenchmarkColdScan(b *testing.B) {
 					b.Fatalf("indexed %d of %d", res.Indexed, notes)
 				}
 			}
-			b.ReportMetric(float64(notes), "notes")
 		})
 	}
 }

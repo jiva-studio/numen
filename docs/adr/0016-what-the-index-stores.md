@@ -25,9 +25,17 @@ A scan stores exactly four things, and each has a consumer today:
 | Stored | Why it exists |
 | --- | --- |
 | Path, size, modification time | The invalidation key. Without it every scan reads every file. |
-| Frontmatter, verbatim | The user's own keys must survive round-trips (ADR-0012), and the application's own keys will live here (ADR-0009). Kept as found, including a parse error, which is reported rather than repaired. |
+| Frontmatter, parsed | The application's own keys will live here (ADR-0009), and a query needs them without reopening the file. A parse error is stored rather than repaired. |
 | Body text | What full-text search matches against. |
 | Headings, with level and position | The outline of a note, and the boundaries structural chunking will cut on. |
+
+**The parsed frontmatter is a projection, not the record.** JSON has no key
+order, no duplicate keys and no YAML timestamps, so what the index holds is what
+could be represented rather than what was written. That is enough for querying
+and not enough for writing back: the file remains the only verbatim copy, and
+anything that edits frontmatter reads the file rather than the index. ADR-0012
+requires unknown keys to survive a round-trip through the *file*, which this
+does not weaken and does not satisfy either.
 
 Nothing else. In particular, a scan does not invent categories the vault format
 has not defined — no tags, no inline fields, no derived collections — and does
