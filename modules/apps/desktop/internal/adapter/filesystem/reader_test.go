@@ -38,6 +38,7 @@ func TestWalkReportsEveryNoteAndNothingElse(t *testing.T) {
 		"Thermodynamics.md",
 		"daily/2026-08-15.md",
 		"edge/broken-frontmatter.md",
+		"edge/broken-links.md",
 		"edge/code-fence.md",
 		"edge/crlf.md",
 		"edge/unicode.md",

@@ -1,3 +1,1 @@
-SELECT path, size, mtime
-FROM files
-WHERE vault_id = ?;
+SELECT path, size, modified_at FROM notes WHERE vault_id = ?;

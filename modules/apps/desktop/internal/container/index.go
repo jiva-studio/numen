@@ -35,6 +35,15 @@ func (i *Index) Vaults() port.VaultRepository { return i.db.Vaults() }
 func (i *Index) Notes() port.NoteRepository   { return i.db.Notes() }
 func (i *Index) Queries() port.NoteQueries    { return i.db.NoteQueries() }
 
+// Maintenance is how the index is told that it has changed wholesale.
+func (i *Index) Maintenance() port.IndexMaintenance { return i.db.Statistics() }
+
 // Path is where the database file is, which a load test needs in order to say
 // how large the index got.
 func (i *Index) Path() string { return i.path }
+
+// Links answers what points where.
+func (i *Index) Links() port.LinkQueries { return i.db.NoteQueries() }
+
+// Problems reports what a scan could not act on.
+func (i *Index) Problems() port.ProblemQueries { return i.db.NoteQueries() }

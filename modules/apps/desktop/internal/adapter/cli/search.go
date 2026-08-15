@@ -33,7 +33,7 @@ func searchCommand(ctx context.Context, out io.Writer, cfg container.Config, arg
 		return nil
 	}
 	for _, m := range matches {
-		fmt.Fprintf(out, "%s\n  %s\n  %s\n", m.Title, m.Path, m.Snippet)
+		fmt.Fprintf(out, "%s\n  %s\n", m.Title, m.Path)
 	}
 	return nil
 }

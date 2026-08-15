@@ -1,2 +1,1 @@
-INSERT INTO headings (vault_id, path, level, text, pos)
-VALUES (?, ?, ?, ?, ?);
+INSERT INTO headings (note_id, position, level, text) VALUES (?, ?, ?, ?);

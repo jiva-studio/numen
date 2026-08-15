@@ -34,10 +34,11 @@ func openIndexFor(b *testing.B) *container.Index {
 
 func scanFor(db *container.Index) usecase.Scan {
 	return usecase.Scan{
-		Readers: filesystem.Readers{},
-		Vaults:  db.Vaults(),
-		Notes:   db.Notes(),
-		Known:   db.Queries(),
+		Readers:     filesystem.Readers{},
+		Vaults:      db.Vaults(),
+		Notes:       db.Notes(),
+		Known:       db.Queries(),
+		Maintenance: db.Maintenance(),
 	}
 }
 
@@ -215,4 +216,56 @@ func touchAll(root string) error {
 		}
 		return os.Chtimes(p, at, at)
 	})
+}
+
+// BenchmarkLinks measures resolution, which is where the cost of links actually
+// lands: storing them is a handful of rows per note, but every link is resolved
+// again each time it is asked for, because resolution is a query rather than a
+// stored fact.
+func BenchmarkLinks(b *testing.B) {
+	for _, notes := range []int{1_000, 10_000} {
+		b.Run(fmt.Sprint(notes), func(b *testing.B) {
+			v := testsupport.GenerateVault(b, notes)
+			db := openIndexFor(b)
+			if _, err := scanFor(db).Execute(b.Context(), v); err != nil {
+				b.Fatal(err)
+			}
+			links := db.Links()
+			const of = "00/note-000000.md"
+
+			b.ResetTimer()
+			for range b.N {
+				resolved, err := links.Links(b.Context(), v.ID, of)
+				if err != nil {
+					b.Fatal(err)
+				}
+				if len(resolved) == 0 {
+					b.Fatal("the generated vault has no links to resolve")
+				}
+			}
+		})
+	}
+}
+
+// BenchmarkBacklinks measures the other direction, which is the one that has to
+// look at every link in the vault rather than at one note's worth.
+func BenchmarkBacklinks(b *testing.B) {
+	for _, notes := range []int{1_000, 10_000} {
+		b.Run(fmt.Sprint(notes), func(b *testing.B) {
+			v := testsupport.GenerateVault(b, notes)
+			db := openIndexFor(b)
+			if _, err := scanFor(db).Execute(b.Context(), v); err != nil {
+				b.Fatal(err)
+			}
+			links := db.Links()
+			const to = "00/note-000000.md"
+
+			b.ResetTimer()
+			for range b.N {
+				if _, err := links.Backlinks(b.Context(), v.ID, to); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
 }

@@ -3,6 +3,7 @@ package note
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
@@ -15,7 +16,15 @@ type Queries struct{ db *sql.DB }
 func NewQueries(db *sql.DB) *Queries { return &Queries{db: db} }
 
 func (q *Queries) Fingerprints(ctx context.Context, vaultID string) (map[string]domain.FileRef, error) {
-	rows, err := q.db.QueryContext(ctx, stmt.Get("fingerprints"), vaultID)
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return map[string]domain.FileRef{}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.db.QueryContext(ctx, stmt.Get("fingerprints"), vault)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +52,15 @@ func (q *Queries) Search(ctx context.Context, vaultID, query string, limit int) 
 	if expression == "" {
 		return nil, nil
 	}
-	rows, err := q.db.QueryContext(ctx, stmt.Get("search"), expression, vaultID, limit)
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.db.QueryContext(ctx, stmt.Get("search"), expression, vault, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +69,7 @@ func (q *Queries) Search(ctx context.Context, vaultID, query string, limit int) 
 	var out []domain.NoteMatch
 	for rows.Next() {
 		var m domain.NoteMatch
-		if err := rows.Scan(&m.Path, &m.Title, &m.Snippet); err != nil {
+		if err := rows.Scan(&m.Path, &m.Title); err != nil {
 			return nil, err
 		}
 		out = append(out, m)
@@ -62,7 +79,19 @@ func (q *Queries) Search(ctx context.Context, vaultID, query string, limit int) 
 
 func (q *Queries) Summary(ctx context.Context, vaultID string) (domain.VaultSummary, error) {
 	var s domain.VaultSummary
-	err := q.db.QueryRowContext(ctx, stmt.Get("summary"), vaultID, vaultID).
-		Scan(&s.Notes, &s.Headings)
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return s, nil
+	}
+	if err != nil {
+		return s, err
+	}
+	err = q.db.QueryRowContext(ctx, stmt.Get("summary"), vault, vault).Scan(&s.Notes, &s.Headings)
 	return s, err
 }
+
+// Statements exposes the SQL this package runs, so that a test can ask the
+// database how it intends to answer each one. A plan is not something a package
+// can check about itself: it needs a migrated database, and that lives one level
+// up.
+func Statements() map[string]string { return stmt }

@@ -19,16 +19,18 @@ measurements, targets, and a way for anyone to check both.
 
 ### The targets
 
-| | Target | Measured at 100k |
-| --- | --- | --- |
-| Cold scan — every note read, parsed, indexed | under 3 minutes | 1 m 32 s |
-| Warm scan — nothing changed; what a startup pays | under 1 second | 0.78 s |
-| Search, ordinary query, while a scan is writing | p95 under 50 ms | 7 ms |
-| Index size | under 5 MB per thousand notes | 3.2 MB |
+| | Target |
+| --- | --- |
+| Cold scan — every note read, parsed, indexed | under 3 minutes |
+| Warm scan — nothing changed; what a startup pays | under 1 second |
+| Search, ordinary query, while a scan is writing | p95 under 50 ms |
+| Index size | under 5 MB per thousand notes |
 
-Measured on an AMD Ryzen 7 6800U with an SSD, `modernc.org/sqlite`, WAL and
-`synchronous = NORMAL`, four concurrent readers against a scan that rewrites the
-whole vault continuously.
+**What these currently measure is in docs/performance.md, and only there.** The
+numbers that justified these targets were written here as well, and by the
+second time the load test ran they were wrong in both directions — the scan
+faster than recorded, the index larger. A target is a decision and belongs in an
+ADR; a measurement has a date on it and belongs where it is taken.
 
 The targets are deliberately looser than the measurements. A target that equals
 today's number turns every ordinary change into a failure, and one that is
@@ -66,9 +68,10 @@ hand. The numbers go in docs/performance.md, where a person compares them with
 what was there before.
 
 Run it before a release, and after any change to how notes are read, stored or
-queried. The two findings that have moved these numbers so far — an FTS delete
-that scanned the whole index, and an fsync per note — were both invisible in
-review and obvious in a measurement.
+queried. Every finding that has moved these numbers so far was invisible in
+review and obvious in a measurement; docs/performance.md keeps the list, and the
+two most recent were a transaction boundary per note and a database nothing had
+ever asked to measure itself.
 
 ## Consequences
 

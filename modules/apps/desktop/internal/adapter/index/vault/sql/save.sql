@@ -1,5 +1,5 @@
-INSERT INTO vaults (id, name, path)
+INSERT INTO vaults (identifier, name, path)
 VALUES (?, ?, ?)
-ON CONFLICT (id) DO UPDATE SET
+ON CONFLICT (identifier) DO UPDATE SET
     name = excluded.name,
     path = excluded.path;

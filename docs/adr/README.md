@@ -33,6 +33,8 @@ Read these first; everything else is derived from them.
 - [ADR-0017 — How the desktop application is tested](0017-how-the-desktop-application-is-tested.md)
 - [ADR-0018 — A scan runs in the background, and there is one writer](0018-a-scan-runs-in-the-background.md)
 - [ADR-0019 — Performance targets for indexing and search](0019-performance-targets.md)
+- [ADR-0020 — Notes are indexed in groups](0020-notes-are-indexed-in-groups.md)
+- [ADR-0021 — The index measures itself after a scan](0021-the-index-measures-itself.md)
 
 ## The note file
 
@@ -45,12 +47,10 @@ Read these first; everything else is derived from them.
 
 ## Links and addressing
 
-Not yet written.
-
-- ADR-0003 — A link is one object with a role and an optional type ([#4](https://github.com/jiva-studio/numen/issues/4))
-- ADR-0009 — Identifiers: two levels of addressing ([#10](https://github.com/jiva-studio/numen/issues/10))
-- ADR-0010 — An attachment is a link, not a place on disk ([#11](https://github.com/jiva-studio/numen/issues/11))
-- ADR-0011 — Links are written by name; `note://` is the auxiliary form ([#12](https://github.com/jiva-studio/numen/issues/12))
+- [ADR-0003 — A link is one object carrying a role and an optional type](0003-a-link-carries-a-role.md)
+- [ADR-0009 — Identifiers for notes and blocks](0009-identifiers.md)
+- [ADR-0010 — Attachments are links](0010-attachments-are-links.md)
+- [ADR-0011 — Links are written by name; `note://` is the auxiliary form](0011-links-are-written-by-name.md)
 
 ## Vault layout and sources
 

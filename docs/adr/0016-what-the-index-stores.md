@@ -20,14 +20,18 @@ of what it accepts.
 
 ## Decision
 
-A scan stores exactly four things, and each has a consumer today:
+A scan stores what has a consumer today, and nothing else:
 
 | Stored | Why it exists |
 | --- | --- |
 | Path, size, modification time | The invalidation key. Without it every scan reads every file. |
 | Frontmatter, parsed | The application's own keys will live here (ADR-0009), and a query needs them without reopening the file. A parse error is stored rather than repaired. |
-| Body text | What full-text search matches against. |
+| The body, indexed and not kept | What full-text search matches against. The index holds no copy of the text: a result is a title and a path, and the text is on disk where it was read from. |
 | Headings, with level and position | The outline of a note, and the boundaries structural chunking will cut on. |
+| The note identifier, when the file carries one | What a link written as `note://` points at, across vaults (ADR-0009, ADR-0011). An identifier that is not a ULID is a reported problem rather than a target. |
+| The filename without its extension | What a link written by name is matched against. Stored rather than computed, because resolution asks for it on every link. |
+| Links, as written | The edges of the graph (ADR-0003). Stored as written; where each one points is worked out when asked, so adding a file resolves a link that was dangling without touching a row. |
+| What could not be acted on | A link with no role, a role nobody decided on, frontmatter that will not parse. Read by `numen problems`, which is what makes storing it allowed. |
 
 **The parsed frontmatter is a projection, not the record.** JSON has no key
 order, no duplicate keys and no YAML timestamps, so what the index holds is what
@@ -39,11 +43,36 @@ does not weaken and does not satisfy either.
 
 Nothing else. In particular, a scan does not invent categories the vault format
 has not defined — no tags, no inline fields, no derived collections — and does
-not resolve links or anchors, whose meaning is still undecided.
+not read anchors, which are decided (ADR-0009) and have nothing attaching to them
+yet.
+
+**Resolution is not stored.** A link is kept as it was written, and what it
+points at is worked out when the question is asked. That is what lets adding a
+file mend a link that was dangling, and it is why there is no "resolved" column
+to go stale.
 
 **The title is stored, not decided here.** What a note is called and how that is
 worked out belongs to the note format (ADR-0012); the index keeps the answer so
 that a list of results does not have to reopen every file to label itself.
+
+### A note is addressed by a number
+
+Inside the index a note is a number. Its headings, its links, what could not be
+acted on and its place in the full-text index are all stored against that
+number. A vault is a number too, and the ULID it carries in the world is stored
+once.
+
+The path is one of the things stored about a note. It is what the vault calls
+the note, not what the index calls it.
+
+What the index calls a note is not visible outside it: the ports speak in vaults
+and paths, and the translation happens once per question asked.
+
+### A search result is a title and a path
+
+Nothing quotes the matching text back, so the full-text index keeps no copy of
+what it indexed. Anything that wants a fragment of a matched note reads the
+file.
 
 ### Headings are the one entry admitted early
 

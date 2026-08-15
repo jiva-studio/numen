@@ -77,7 +77,7 @@ func TestReopeningAppliesNothingAndKeepsData(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := first.write.ExecContext(ctx,
-		`INSERT INTO vaults (id, name, path) VALUES ('01AAA', 'x', '/tmp/x')`); err != nil {
+		`INSERT INTO vaults (identifier, name, path) VALUES ('01AAA', 'x', '/tmp/x')`); err != nil {
 		t.Fatal(err)
 	}
 	if err := first.Close(); err != nil {
@@ -132,5 +132,58 @@ func TestMigrationsRunInOneTransactionEach(t *testing.T) {
 	}
 	if tables != 0 {
 		t.Error("the first half of a failed migration was left behind")
+	}
+}
+
+func TestAnOlderIndexIsMigratedRatherThanRebuilt(t *testing.T) {
+	// The point of migrations: a schema change must not cost the user a rescan
+	// of every vault. This builds a database at version 1, puts a row in it, and
+	// checks the row survives the upgrade.
+	ctx := t.Context()
+	path := filepath.Join(t.TempDir(), "index.db")
+
+	db, err := sql.Open("sqlite", dsn(path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	available, err := loadMigrations()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(available) < 2 {
+		t.Skip("only one migration so far, nothing to upgrade from")
+	}
+	if err := apply(ctx, db, available[0]); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx,
+		`INSERT INTO vaults (identifier, name, path) VALUES ('01AAA', 'kept', '/notes')`); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	upgraded, err := Open(ctx, path)
+	if err != nil {
+		t.Fatalf("migrating a version-1 index: %v", err)
+	}
+	defer upgraded.Close()
+
+	var name string
+	if err := upgraded.write.QueryRowContext(ctx,
+		`SELECT name FROM vaults WHERE identifier = '01AAA'`).Scan(&name); err != nil {
+		t.Fatalf("the row did not survive the migration: %v", err)
+	}
+	if name != "kept" {
+		t.Errorf("name = %q", name)
+	}
+
+	var version int
+	if err := upgraded.write.QueryRowContext(ctx, "PRAGMA user_version").Scan(&version); err != nil {
+		t.Fatal(err)
+	}
+	if want := available[len(available)-1].version; version != want {
+		t.Errorf("version = %d, want %d", version, want)
 	}
 }

@@ -1,8 +1,7 @@
 # Performance
 
-The budgets are in [ADR-0002](adr/0002-sqlite-is-a-cache.md). This page is what
-they measure to, so that a change which quietly costs a second is visible before
-it ships rather than after someone complains that the application feels slow.
+The targets are in [ADR-0019](adr/0019-performance-targets.md). This page is
+what they measure to.
 
 ## Running it
 
@@ -10,59 +9,65 @@ it ships rather than after someone complains that the application feels slow.
 cd modules/apps/desktop
 go test ./internal/core/usecase/vault/ -run XXX -bench ColdScan -benchtime 1x
 go test ./internal/core/usecase/vault/ -run XXX -bench 'WarmScan|Incremental|Search'
+go test ./internal/core/usecase/vault/ -run XXX -bench 'Links|Backlinks' -benchtime 300x
+NUMEN_LOAD=1 go test ./internal/core/usecase/vault/ -run TestLoad -v -timeout 40m
 ```
 
 The vault is generated, not downloaded: `testsupport.GenerateVault` writes notes
-of varying length across fifty folders, from a fixed seed, so two runs measure
-the same work.
+of varying length across fifty folders, each naming a parent and pointing at a
+few others, from a fixed seed.
 
 Only the cold scan is pinned to a single iteration — it takes seconds, and
-repeating it measures patience. The other three cost milliseconds and run to the
-default duration, which is what makes their figures worth quoting: a single
-sample of a millisecond-scale benchmark varies by tens of percent.
+repeating it measures patience. The rest run many times: a single sample of a
+millisecond-scale benchmark varies by tens of percent, and the link benchmarks
+read a single-figure answer out of a large table, where one run measures the
+page cache.
 
 ## At the size this is designed for
 
-A hundred thousand notes, from the load test. The targets these are compared
-against are in [ADR-0019](adr/0019-performance-targets.md).
+A hundred thousand notes, from the load test.
 
 | | Measured | Target |
 | --- | --- | --- |
-| Cold scan | 1 m 32 s (0.92 ms/note, 1090 notes/s) | under 3 minutes |
-| Warm scan — what a startup pays | 0.78 s | under 1 second |
-| Index size | 316 MB (3.2 MB per thousand notes) | under 5 MB per thousand |
-| Search, rare term, under load | p50 4 ms · p95 7 ms · p99 9 ms · max 14 ms | p95 under 50 ms |
-| Search, term matching every note | p50 2.08 s · p95 2.27 s | not covered |
+| Cold scan | 1 m 22 s (0.82 ms/note, 1216 notes/s) | under 3 minutes |
+| Warm scan — what a startup pays | 0.52 s | under 1 second |
+| Index size | 162 MB (1.6 MB per thousand notes) | under 5 MB per thousand |
+| Search, rare term, under load | p50 2 ms · p95 4 ms · p99 5 ms · max 42 ms | p95 under 50 ms |
+| Search, term matching every note | p50 0.90 s · p95 1.01 s | not covered |
 
 Both search rows come from four concurrent readers running against a scan that
 rewrote the whole vault continuously. The difference between them is not the
-database: it is that one query matches a hundred notes and the other matches all
-hundred thousand, and ranking a hundred thousand matches is linear work. Real
-queries look like the first row; a vault generated from twenty words produces
-only the second, which is why the load test asks both.
+database: one query matches a hundred notes and the other matches all hundred
+thousand, and ranking a hundred thousand matches is linear work. Real queries
+look like the first row; a vault generated from twenty words produces only the
+second, which is why the load test asks both.
+
+The vault itself is 164 MB of markdown, so the index is about the size of the
+text it describes.
 
 ## Baseline
 
 Recorded 2026-08-15 on an AMD Ryzen 7 6800U, `modernc.org/sqlite`, WAL with
 `synchronous = NORMAL`.
 
-| | 1 000 notes | 10 000 notes | per note |
-| --- | --- | --- | --- |
-| Cold scan — every note read, parsed, written | 0.71 s (1 run) | 7.58 s (1 run) | 0.76 ms |
-| Warm scan — nothing changed, no file opened | 5.1 ms (268 runs) | 55 ms (24) | 5 µs |
-| Incremental — one note edited | 5.6 ms (235) | 50 ms (24) | — |
-| Search — two terms, twenty results | 8.2 ms (156) | 55 ms (19) | — |
-| Search while a scan is writing | — | 64 ms (57) | — |
+| | 1 000 notes | 10 000 notes |
+| --- | --- | --- |
+| Cold scan — every note read, parsed, written | 0.46 s (1 run) | 5.9 s (3 runs) |
+| Warm scan — nothing changed, no file opened | 4.7 ms (231 runs) | 50 ms (10) |
+| Incremental — one note edited | 8.0 ms (139) | 55 ms (19) |
+| Search — two terms, twenty results | 2.5 ms (300) | 20 ms (300) |
+| Search while a scan is writing | — | 60 ms (21) |
+| Resolving one note's links | 0.18 ms (300) | 0.18 ms (300) |
+| Backlinks of one note | 0.88 ms (300) | 1.11 ms (300) |
+| Index size | 1.6 MB | 15.5 MB |
+
+Neither link figure grows with the vault: the two columns are ten times apart in
+size and within a fraction of a millisecond of each other.
 
 A search costs about a third more while a scan is continuously rewriting the
-index — 64 ms against 48 ms for the same query on a quiet database. That is the
-number ADR-0018 exists to keep honest: WAL lets a reader answer without waiting
-for the writer, and the write pool is capped at one connection so writers queue
-in Go rather than collide in SQLite.
-
-Extrapolated to the 100k notes ADR-0002 designs for: a cold scan is about 75
-seconds, against a budget of single-digit minutes. A warm scan is under half a
-second, against two seconds to interactive.
+index. That is the number ADR-0018 exists to keep honest: WAL lets a reader
+answer without waiting for the writer, and the write pool is capped at one
+connection so writers queue in Go rather than collide in SQLite.
 
 ## What these numbers are not
 
@@ -78,22 +83,52 @@ is written for that path rather than this one.
 
 **The cold scan reads notes this same process wrote seconds earlier**, so the
 read side is measured against a warm page cache. On a real vault that has been
-sitting on disk, the extrapolation to 100k is optimistic about I/O.
+sitting on disk, this is optimistic about I/O.
 
 **Nothing here measures a cold start of the application**, only of the scan.
 
-## What was learned changing them
+## Where the time goes
 
-Two findings account for every large number that has moved so far, and both are
-worth remembering because neither was visible in the code.
+A cold scan, by profile: 1 % reading the files, 5 % parsing them, 77 % storing
+what was parsed — of which the transaction boundaries are the largest single
+part. Parsing in parallel is therefore worth at most a few percent, and has been
+measured and left alone.
+
+The full-text index accounts for about 45 % of what a write costs.
+
+A warm scan of ten thousand notes is 50 ms: 13 ms asking the index what it knows
+about every file, and 34 ms walking the vault and asking the file system. The
+walk stats one file per note and nothing else — the extension is checked from
+the directory entry, before anything is opened — so that half is the cost of
+looking at a whole vault at all, and is what a file watcher removes rather than
+what a faster walk would.
+
+## What does not work
+
+Measured, on ten thousand notes written in groups of five hundred.
+
+| | |
+| --- | --- |
+| Turning off the full-text index's background merging during a bulk load | 1.7× slower |
+| Larger full-text page size (`pgsz = 8000`) | 1.7× slower |
+| Merge thresholds either way (`automerge` 8 and 16, `crisismerge` 8) | no difference |
+| Page cache of 4 MB, 64 MB, 256 MB | no difference |
+| Reusing prepared statements across a group | no difference |
+| `synchronous = OFF` | 13 % faster, and the file can be corrupt rather than merely stale |
+
+The first two are what a search returns for "slow SQLite inserts".
+
+## Two things that were invisible in review
 
 **Deleting a full-text row by its columns scans the whole index.** An FTS5 table
-has no key but its rowid, and `Save` deletes before it inserts, so the cost of
-writing one note grew with the size of the index: a rebuild was quadratic. Fixed
-by addressing the row by the note's own rowid, which is now asserted by a test.
+has no key but its rowid, so a rebuild that addresses the row any other way is
+quadratic in the number of notes. A test asserts the statements address it by
+rowid.
 
-**An fsync per note dominated everything else.** With `synchronous = FULL`, a
-cold scan of a thousand notes took 5.8 seconds; with `NORMAL` it takes 0.73. The
-index is a cache, so the durability being paid for protects nothing: a crash
-costs a rescan of files that are still on disk, which is the same thing that
-happens when the index is deleted on purpose.
+**A database that has never been measured answers by rule of thumb.** SQLite
+picks between indexes from what it knows about how much is stored, and a
+database filled by a scan has never been asked. The rule of thumb for backlinks
+is to narrow to the vault and read every link in it. A scan measures the index
+when it changed it, and a test asserts the index each question is answered
+through — a test that only forbids reading a whole table passes on the slow
+plan, because reading every link in a vault is an index search.
