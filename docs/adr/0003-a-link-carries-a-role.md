@@ -27,7 +27,13 @@ role.**
 | `to` | yes | a link target (ADR-0011) | what it points at |
 | `role` | yes | `parent` \| `child` \| `jump` \| `ref` \| `attachment` | navigation and rendering |
 | `type` | no | open vocabulary (`requires`, …) | semantics a particular feature reads |
+| `label` | no | a few words | what the relationship is called, written on the line that draws it |
 | `note` | no | a short string, or a link to a note about the link | why it exists |
+
+`label` and `type` answer different questions and are not alternatives. A type
+is a category code reads — one feature, one type. A label is a few words the
+person wrote for themselves, drawn along the line between the two notes and read
+by nobody but them. A link may carry either, both or neither.
 
 `role` is a **closed** list: navigation and rendering read it, so an unknown role
 has no behaviour. `type` is open, and governed by one rule:

@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+// What a client may ask about a vault.
+//
+// This file is the contract, and the only place it is written down. The Go that
+// answers and the TypeScript that asks are both generated from it, so a field
+// that changes here fails to compile on the side that has not caught up.
+//
+// Nothing of the index is described here: a note is addressed by the path it is
+// filed under, which is what the vault calls it.
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// VaultService answers questions about the one vault a client is looking at.
+service VaultService {
+  // State is what the vault is and how far reading it has got.
+  rpc State(StateRequest) returns (StateResponse);
+
+  // Opening is the note to show when nothing else has been chosen. It answers
+  // with nothing until a scan has stored something.
+  rpc Opening(OpeningRequest) returns (OpeningResponse);
+
+  // Neighbourhood is one note and everything joined to it.
+  rpc Neighbourhood(NeighbourhoodRequest) returns (NeighbourhoodResponse);
+}
+
+// Note is a note as something else refers to it.
+message Note {
+  // Path is what the vault calls the note, and how it is asked for again.
+  string path = 1;
+  string title = 2;
+  // Identifier is what the file carries, empty for a note made outside the
+  // application.
+  string identifier = 3;
+}
+
+// Seat is where a note sits relative to the one in focus. A sibling is written
+// nowhere: it is another child of a shared parent.
+enum Seat {
+  SEAT_UNSPECIFIED = 0;
+  SEAT_PARENT = 1;
+  SEAT_CHILD = 2;
+  SEAT_JUMP = 3;
+  SEAT_SIBLING = 4;
+}
+
+message Seated {
+  Note note = 1;
+  Seat seat = 2;
+  // What the person wrote on the link, when they wrote anything.
+  string label = 3;
+
+  // The note the relationship runs from, when that is not the one in focus: a
+  // sibling is another child of a shared parent, and this is that parent.
+  string through = 4;
+}
+
+message StateRequest {}
+
+message StateResponse {
+  string name = 1;
+  string path = 2;
+  // Indexed is how many notes the running scan has stored.
+  int64 indexed = 3;
+  // Ready is set when the scan has finished.
+  bool ready = 4;
+
+  // Why the scan stopped, when it stopped for a reason. A vault that could
+  // not be read is not an empty one.
+  string failed = 5;
+}
+
+message OpeningRequest {}
+
+message OpeningResponse {
+  // Absent while a scan has stored nothing, and for a vault that holds no
+  // notes.
+  optional Note note = 1;
+}
+
+message NeighbourhoodRequest {
+  string path = 1;
+}
+
+message NeighbourhoodResponse {
+  Note focus = 1;
+  repeated Seated related = 2;
+}

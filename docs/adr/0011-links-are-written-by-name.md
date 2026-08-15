@@ -42,22 +42,19 @@ itself:
 The second is the only case where an identifier is genuinely *needed* rather
 than merely convenient.
 
-### `label` for readability
+### An address is the only thing that says where a link goes
 
-An identifier link may carry a label for whoever reads the file:
+Two forms, and no third: a name in brackets, or an identifier. Nothing beside
+the address is read when a link is followed, and no field carries a copy of the
+target's name for whoever opens the file.
 
-```yaml
-links:
-  - to: "note://01J9K4M5N6PQRSTVWXY7"
-    label: "Thermodynamics"
-    role: parent
-```
+Such a copy would have to be kept current on every rename, which makes it a
+cache, and a cache does not belong in the file that is the source of truth
+(ADR-0000). Where a link should read as something other than its target, the
+wikilink already says so: `[[Entropy|entropy's]]`.
 
-`label` takes **no part in resolution** and is not the source of truth for
-anything. A stale label is not an error — the address is an identifier, so the
-link still goes where it should, and the application refreshes the label the next
-time it writes that file. This has to be said out loud, or someone eventually
-writes code that falls back to resolving by label when `note://` misses.
+`label` on a link means something else entirely — what the relationship is
+called (ADR-0003) — and is written by the person, not by the application.
 
 ### `name://` never appears in a file
 

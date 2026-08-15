@@ -1,0 +1,19 @@
+version: v2
+
+# Generated code is committed. An ordinary build therefore needs none of these
+# plugins; only a change to the schema does, and the check in CI is what proves
+# what is committed still matches.
+plugins:
+  - local: protoc-gen-go
+    out: gen
+    opt: paths=source_relative
+
+  - local: protoc-gen-connect-go
+    out: gen
+    opt: paths=source_relative
+
+  - local: ./node_modules/.bin/protoc-gen-es
+    out: src
+    opt:
+      - target=ts
+      - import_extension=js

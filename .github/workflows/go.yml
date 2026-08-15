@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "modules/apps/desktop/**"
+      - "modules/libs/protocol/**"
       - "tests/**"
       - ".github/workflows/go.yml"
   push:
@@ -24,6 +25,12 @@ jobs:
           go-version: "1.26"
           cache-dependency-path: modules/apps/desktop/go.sum
 
+      # The window links against the system's own browser, so the machine that
+      # compiles it needs that browser's headers. The command line tool needs
+      # none of this, which is why it is a separate binary.
+      - name: Webview
+        run: sudo apt-get update && sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev
+
       - name: Formatting
         run: |
           unformatted=$(gofmt -l ./cmd ./internal)
@@ -36,3 +43,19 @@ jobs:
       # -race because a scan will grow concurrent, and the cheapest time to find
       # that out is before it does.
       - run: go test -race ./...
+
+  # The other half of the promise the two binaries make: this one is built for
+  # a machine it is not being built on.
+  portable:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache-dependency-path: modules/apps/desktop/go.sum
+      - name: Cross-compile
+        run: |
+          for target in darwin/arm64 windows/amd64 linux/arm64; do
+            GOOS=${target%/*} GOARCH=${target#*/} CGO_ENABLED=0 go build -o /dev/null ./cmd/numen
+          done

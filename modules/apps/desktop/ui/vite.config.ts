@@ -1,0 +1,9 @@
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+
+export default defineConfig({
+  plugins: [vue()],
+  // Built into the Go package that serves it: what is embedded has to sit
+  // beside the code that embeds it.
+  build: { outDir: '../internal/adapter/webui/pages/app', emptyOutDir: true },
+})

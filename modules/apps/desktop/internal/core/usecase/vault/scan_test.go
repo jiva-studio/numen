@@ -173,6 +173,35 @@ func TestEditedNoteIsReindexedAndDeletedNoteDisappears(t *testing.T) {
 	}
 }
 
+// cancellingReaders stops the scan the moment the walk is over.
+//
+// Not during it: the reader refuses a cancelled context itself, so a scan that
+// never looked at one would still stop there. What is left unguarded by anyone
+// else is the pass over what the walk found, which is the whole of a warm scan.
+type cancellingReaders struct {
+	port.VaultReaders
+	cancel context.CancelFunc
+}
+
+func (c *cancellingReaders) Open(v domain.Vault) (port.VaultReader, error) {
+	reader, err := c.VaultReaders.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return &cancellingReader{VaultReader: reader, parent: c}, nil
+}
+
+type cancellingReader struct {
+	port.VaultReader
+	parent *cancellingReaders
+}
+
+func (c *cancellingReader) Walk(ctx context.Context, fn func(domain.FileRef) error) error {
+	err := c.VaultReader.Walk(ctx, fn)
+	c.parent.cancel()
+	return err
+}
+
 // countingReaders records how many files a scan actually opened.
 type countingReaders struct {
 	port.VaultReaders
@@ -464,6 +493,10 @@ func TestScanStopsWhenCancelled(t *testing.T) {
 // TestAWarmScanStopsWhenCancelled is the case the check in the loop exists for.
 // A warm scan opens no file, so nothing refuses the cancelled context on the
 // scan's behalf and it has to notice by itself.
+//
+// Cancelled part-way rather than before it starts: cancelled up front, the
+// first query refuses and the loop is never reached, so the check it is written
+// for is never the thing that stopped it.
 func TestAWarmScanStopsWhenCancelled(t *testing.T) {
 	v := testsupport.GenerateVault(t, 600)
 	db := openIndex(t)
@@ -474,13 +507,13 @@ func TestAWarmScanStopsWhenCancelled(t *testing.T) {
 	}
 
 	ctx, cancel := context.WithCancel(t.Context())
-	cancel()
+	warm := scanner(&cancellingReaders{VaultReaders: filesystem.Readers{}, cancel: cancel}, db)
 
-	res, err := scan.Execute(ctx, v)
+	res, err := warm.Execute(ctx, v)
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("a cancelled warm scan returned %v", err)
 	}
 	if res.Seen != 0 {
-		t.Errorf("a warm scan cancelled before it began walked %d files", res.Seen)
+		t.Errorf("a warm scan cancelled before its first note looked at %d of 600", res.Seen)
 	}
 }

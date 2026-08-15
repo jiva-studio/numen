@@ -13,6 +13,15 @@ type NoteQueries interface {
 	Fingerprints(ctx context.Context, vaultID string) (map[string]domain.FileRef, error)
 	Search(ctx context.Context, vaultID, query string, limit int) ([]domain.NoteMatch, error)
 	Summary(ctx context.Context, vaultID string) (domain.VaultSummary, error)
+
+	// Notes returns what is needed to show a note, for the paths asked about.
+	// Paths that name nothing are absent rather than an error: a link resolves
+	// as of now, and what it resolved to a moment ago may be gone.
+	Notes(ctx context.Context, vaultID string, paths []string) (map[string]domain.NoteRef, error)
+
+	// Opening is the note to show when nothing else has been chosen. False when
+	// the vault holds none.
+	Opening(ctx context.Context, vaultID string) (domain.NoteRef, bool, error)
 }
 
 // LinkQueries answers what points where. It is separate from NoteQueries

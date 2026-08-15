@@ -129,7 +129,7 @@ func (q *Queries) candidates(ctx context.Context, vault int64, name string) ([]s
 	if path.Ext(withExt) == "" {
 		withExt += ".md"
 	}
-	base := strings.TrimSuffix(path.Base(name), path.Ext(name))
+	base := domain.Basename(name)
 
 	rows, err := q.db.QueryContext(ctx, stmt.Get("candidates"),
 		vault, name, vault, withExt, vault, base)
@@ -256,7 +256,10 @@ func (q *Queries) Backlinks(ctx context.Context, vaultID, to string) ([]domain.R
 		if err := q.resolve(ctx, vault, vaultID, c.From, &c); err != nil {
 			return nil, err
 		}
-		if c.To == to {
+		// A candidate belongs here when it landed on this path in this vault.
+		// An identifier resolves without regard to vault, and two vaults may
+		// file a note at the same path.
+		if c.To == to && c.ToVault == vaultID {
 			out = append(out, c)
 		}
 	}
