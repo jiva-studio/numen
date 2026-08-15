@@ -20,3 +20,6 @@ package-lock.json  linguist-generated=true -diff
 *.m4a binary
 *.wav binary
 *.gz  binary
+
+# fixture vault bytes are the test: never normalised
+tests/** -text
