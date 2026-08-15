@@ -8,7 +8,8 @@
 import { onMounted, ref } from 'vue'
 import { Plex } from '@numen/ui'
 import '@numen/ui/tokens.css'
-import { asPlex, vault, type Neighbourhood } from './vault'
+import { vault } from './vault'
+import { asPlex, type Neighbourhood } from './plex'
 
 const neighbourhood = ref<Neighbourhood | null>(null)
 const name = ref<string>('')
