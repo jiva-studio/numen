@@ -18,10 +18,25 @@
   --numen-stroke: 1px;
   --numen-ring-width: 2px;
 
+  /* Inside a node: the clearance around its label, and between an icon and it. */
+  --numen-node-padding: 10px;
+  --numen-node-gap: 6px;
+  /* The handle a gesture is reached out from: the disc, and the cross on it.
+     The arms read as a plus sign at about half the radius. */
+  --numen-handle-radius: 9px;
+  --numen-handle-arm: 4px;
+  --numen-handle-stroke: 1.5px;
+  /* Set wider than a sentence, for the few words that are set in capitals. */
+  --numen-caps-tracking: 0.08em;
+
   --numen-edge-width: 1.25px;
   --numen-edge-label-size: 10px;
   /* The halo that keeps an edge label legible where it crosses its own line. */
   --numen-edge-label-halo: 3px;
+  /* Two dashed things, told apart by their stroke: the thread a gesture drags
+     behind it, and the outline of the node letting go would make. */
+  --numen-thread-dash: 4 4;
+  --numen-ghost-dash: 6 4;
 
   --numen-surface: light-dark(#fbfbfa, #17181a);
   --numen-node-bg: light-dark(#ffffff, #23262a);
@@ -57,6 +72,7 @@
   :where(:root),
   :where(.numen) {
     --numen-motion: 0ms;
+    --numen-motion-hover: 0ms;
     --numen-plex-move: 0ms;
   }
 }

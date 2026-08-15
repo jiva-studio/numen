@@ -45,8 +45,8 @@ const mountView = () =>
 
 /**
  * What a node decides for itself is tested where it lives, next to the node.
- * What is left here is the translation: a node says only that it was chosen or
- * that a pointer arrived, and the view says which node that was.
+ * What is left here is the translation: a node says only that it was chosen,
+ * and the view says which node that was.
  */
 describe('what a node says, and who it was', () => {
   it('names the node that was chosen', async () => {
@@ -55,13 +55,48 @@ describe('what a node says, and who it was', () => {
     await view.get('[aria-label^="Start"]').trigger('click')
     expect(view.emitted('activate')).toStrictEqual([['focus']])
   })
+})
 
-  it('names the node a pointer arrived at, and nothing once it leaves', async () => {
-    const view = mountView()
-    const staying = view.get('[aria-label^="Staying"]')
-    await staying.trigger('pointerenter')
-    await staying.trigger('pointerleave')
-    expect(view.emitted('hover')).toStrictEqual([['staying'], [null]])
+describe('what each node is to a gesture', () => {
+  const mountDuring = (props: Record<string, unknown>) =>
+    mount(PlexView, {
+      props: {
+        frame: arrangePlex(before),
+        viewport: VIEWPORT,
+        nodeSize: DEFAULT_OPTIONS.nodeSize,
+        ...props,
+      },
+    })
+
+  it('offers a handle from the node it left from, and from no other', async () => {
+    const view = mountDuring({ gestureFrom: 'staying' })
+    // A hand that has moved on and come to rest over some other node must not
+    // be offered a second gesture while the first is still under way.
+    await view.get('[aria-label^="Going"]').trigger('pointerenter')
+    expect(view.findAll('.plex__handle')).toHaveLength(1)
+    expect(view.get('[aria-label^="Staying"]').find('.plex__handle').exists()).toBe(true)
+  })
+
+  it('marks the node a link would be made to, and only that one', () => {
+    const view = mountDuring({
+      gestureFrom: 'focus',
+      gestureAt: { x: 0, y: 200 },
+      gestureOutcome: { kind: 'link', from: 'focus', to: 'going', role: 'child' },
+    })
+    expect(view.findAll('.plex__node--target')).toHaveLength(1)
+    expect(view.get('[aria-label^="Going"]').classes()).toContain('plex__node--target')
+  })
+
+  it('draws the node it would make where the pointer is, saying which seat', () => {
+    const view = mountDuring({
+      gestureFrom: 'focus',
+      gestureAt: { x: 40, y: -200 },
+      gestureOutcome: { kind: 'create', from: 'focus', role: 'parent' },
+    })
+    const ghost = view.get('.plex__node--ghost')
+    expect(ghost.attributes('transform')).toBe('translate(40 -200)')
+    expect(ghost.get('.plex__label-text').text()).toBe('parent')
+    expect(Number(ghost.get('rect').attributes('width'))).toBe(DEFAULT_OPTIONS.nodeSize.width)
   })
 })
 

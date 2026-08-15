@@ -38,6 +38,21 @@ export interface PlacedNode extends PlexNode {
 export const isReachable = (node: PlacedNode): boolean =>
   node.role !== 'focus' && node.opacity >= 1
 
+/**
+ * What a node is to a gesture, beyond a box with a label.
+ *
+ * One value rather than a flag each, because a node is only ever one of these:
+ * a hand cannot be reaching out of a node and aiming at it at once, and a node
+ * that is not there yet is none of them.
+ *
+ * - `open` — nothing is under way, and a hand over it may reach out from it
+ * - `closed` — reaching out from here is not on offer
+ * - `source` — the gesture under way left from here
+ * - `target` — letting go now would link the gesture to this node
+ * - `ghost` — not a node yet: the shape of what letting go here would make
+ */
+export type NodeStanding = 'open' | 'closed' | 'source' | 'target' | 'ghost'
+
 /** A label may be empty; an accessible name may not. */
 export const nameOf = (node: PlexNode): string =>
   `${node.label || 'Untitled'}, ${node.role}`

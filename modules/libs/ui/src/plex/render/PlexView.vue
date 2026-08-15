@@ -11,9 +11,12 @@ import PlexNodeView from './PlexNodeView.vue'
 import {
   handleIn,
   midpointOf,
+  seatOf,
+  type NodeStanding,
   type PlacedEdge,
   type PlacedNode,
   type PlexFrame,
+  type PlexRelatedRole,
   type Point,
 } from '../model'
 import type { Drop } from '../arrange'
@@ -27,8 +30,14 @@ const props = withDefaults(
     nodeSize: { width: number; height: number }
     /** Draw the label a typed relationship carries. */
     showEdgeLabels?: boolean
-    /** The node a pointer is over, so its handle can be offered. */
-    hovered?: string | null
+    /** Whether reaching out is allowed at all, and so whether any node may
+     *  offer a handle. */
+    mayReach?: boolean
+    /**
+     * What to call a seat, for the one place a seat has to be written into the
+     * picture: the outline a gesture draws says which one it would take.
+     */
+    seatName?: (role: PlexRelatedRole) => string
     /** A gesture in progress: where it started, where it is, what it means. */
     gestureFrom?: string | null
     gestureAt?: Point | null
@@ -36,7 +45,8 @@ const props = withDefaults(
   }>(),
   {
     showEdgeLabels: true,
-    hovered: null,
+    mayReach: true,
+    seatName: seatOf,
     gestureFrom: null,
     gestureAt: null,
     gestureOutcome: null,
@@ -48,7 +58,8 @@ const emit = defineEmits<{
   (event: 'activate', id: string): void
   /** A gesture began at a node's handle. */
   (event: 'reach', id: string, pointer: PointerEvent): void
-  (event: 'hover', id: string | null): void
+  /** A handle was pressed from the keyboard, where there is nowhere to drag. */
+  (event: 'ask', id: string): void
 }>()
 
 const svg = useTemplateRef<SVGSVGElement>('svg')
@@ -73,9 +84,17 @@ const path = (edge: PlacedEdge) =>
   ` ${edge.control2.x} ${edge.control2.y}` +
   ` ${edge.toPoint.x} ${edge.toPoint.y}`
 
-const offering = (node: PlacedNode) =>
-  props.gestureFrom === node.id ||
-  (props.gestureFrom === null && props.hovered === node.id && node.opacity >= 1)
+/**
+ * What each node is to the gesture. Only the node it left from keeps a handle
+ * while one is running: the hand is somewhere else entirely, and a second
+ * handle under it would offer to start a gesture already under way.
+ */
+const standingOf = (node: PlacedNode): NodeStanding => {
+  const outcome = props.gestureOutcome
+  if (outcome?.kind === 'link' && outcome.to === node.id) return 'target'
+  if (props.gestureFrom === node.id) return 'source'
+  return props.mayReach && props.gestureFrom === null ? 'open' : 'closed'
+}
 
 /** The line a gesture drags behind it, from the handle to the pointer. */
 const thread = computed(() => {
@@ -91,18 +110,27 @@ const thread = computed(() => {
   )
 })
 
-/** Where a new node would appear, so the reader sees it before letting go. */
-const ghost = computed(() => {
+/**
+ * The node a gesture would make, drawn where it would appear so the reader
+ * sees it before letting go. A node like any other, so it is the same box in
+ * the same place at the same size — it is only that it has no name yet, and
+ * says the seat it would take instead, in whatever words it was given.
+ */
+const ghost = computed<PlacedNode | null>(() => {
   const outcome = props.gestureOutcome
   const to = props.gestureAt
   if (outcome?.kind !== 'create' || !to) return null
-  return { role: outcome.role, x: to.x, y: to.y, ...props.nodeSize }
+  return {
+    id: 'ghost',
+    label: props.seatName(outcome.role),
+    role: outcome.role,
+    x: to.x,
+    y: to.y,
+    ...props.nodeSize,
+    order: 0,
+    opacity: 1,
+  }
 })
-
-/** The node a link would be made to, so it can be shown as the target. */
-const aimedAt = computed(() =>
-  props.gestureOutcome?.kind === 'link' ? props.gestureOutcome.to : null,
-)
 </script>
 
 <template>
@@ -142,33 +170,18 @@ const aimedAt = computed(() =>
       v-for="node in frame.nodes"
       :key="node.id"
       :node="node"
-      :offering="offering(node)"
-      :aimed="aimedAt === node.id"
+      :standing="standingOf(node)"
       @activate="emit('activate', node.id)"
       @reach="emit('reach', node.id, $event)"
-      @hover="emit('hover', $event ? node.id : null)"
-    />
+      @ask="emit('ask', node.id)"
+    >
+      <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
+    </PlexNodeView>
 
     <!-- The gesture itself, drawn over everything it may land on. -->
-    <g v-if="thread" class="plex__reach" aria-hidden="true">
-      <path class="plex__thread" :d="thread" />
-      <rect
-        v-if="ghost"
-        class="plex__ghost"
-        :style="{ '--numen-role-hue': `var(--numen-role-${ghost.role})` }"
-        :x="ghost.x - ghost.width / 2"
-        :y="ghost.y - ghost.height / 2"
-        :width="ghost.width"
-        :height="ghost.height"
-      />
-      <text
-        v-if="ghost"
-        class="plex__ghost-role"
-        :x="ghost.x"
-        :y="ghost.y"
-        text-anchor="middle"
-        dominant-baseline="central"
-      >{{ ghost.role }}</text>
+    <g v-if="thread" class="plex__reach">
+      <path class="plex__thread" :d="thread" aria-hidden="true" />
+      <PlexNodeView v-if="ghost" :node="ghost" standing="ghost" />
     </g>
   </svg>
 </template>
@@ -206,21 +219,6 @@ const aimedAt = computed(() =>
   fill: none;
   stroke: var(--numen-ring);
   stroke-width: var(--numen-edge-width);
-  stroke-dasharray: 4 4;
-}
-
-.plex__ghost {
-  rx: var(--numen-radius);
-  fill: none;
-  stroke: var(--numen-role-hue, var(--numen-ring));
-  stroke-width: var(--numen-stroke);
-  stroke-dasharray: 6 4;
-}
-
-.plex__ghost-role {
-  fill: var(--numen-edge-label);
-  font-size: var(--numen-edge-label-size);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  stroke-dasharray: var(--numen-thread-dash);
 }
 </style>

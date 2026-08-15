@@ -11,7 +11,7 @@ import { computed, onMounted, onScopeDispose, ref, toRef, useTemplateRef } from 
 import PlexView from './render/PlexView.vue'
 import { usePlexTransition, browserEnvironment, type Environment } from './transition'
 import type { Placement, PlexOptionsInput } from './arrange'
-import { countOf, type PlexNeighbourhood, type PlexRelatedRole } from './model'
+import { countOf, seatOf, type PlexNeighbourhood, type PlexRelatedRole } from './model'
 import { resolveOptions } from './arrange'
 import { usePlexGesture } from './gesture'
 
@@ -34,6 +34,13 @@ const props = withDefaults(
     creatable?: readonly PlexRelatedRole[]
     /** How far a gesture travels before it is a drag and not a click. */
     dragThreshold?: number
+    /**
+     * What to call a seat. The plex has to write one into the picture — the
+     * outline a gesture draws says which seat it would take — and the words
+     * for it belong to whoever renders the plex, as they do for the overflow
+     * line. English by default, because something has to be drawn.
+     */
+    seatName?: (role: PlexRelatedRole) => string
   }>(),
   {
     showEdgeLabels: true,
@@ -41,6 +48,7 @@ const props = withDefaults(
     environment: () => browserEnvironment,
     creatable: () => ['parent', 'child', 'jump'],
     dragThreshold: 8,
+    seatName: seatOf,
   },
 )
 
@@ -83,13 +91,12 @@ const { frame, moving } = usePlexTransition(
   props.environment,
 )
 
-const hovered = ref<string | null>(null)
-
 /**
- * Where a handle is worth offering. A caller that allows no seat at all has
- * turned the gesture off, and a handle that can come to nothing is a lie.
+ * A caller that allows no seat at all has turned the gesture off, and a handle
+ * that can come to nothing is a lie. Where a pointer happens to be is the
+ * node's own affair, and never reaches this far.
  */
-const reachable = computed(() => (props.creatable.length ? hovered.value : null))
+const mayReach = computed(() => props.creatable.length > 0)
 
 /** Settled once and read by both the gesture and the drawing. */
 const options = computed(() => resolveOptions({ ...props.options, viewport: viewport.value }))
@@ -138,14 +145,17 @@ defineExpose({ moving: toRef(moving) })
       :viewport="viewport"
       :node-size="options.nodeSize"
       :show-edge-labels="showEdgeLabels"
-      :hovered="reachable"
+      :may-reach="mayReach"
+      :seat-name="seatName"
       :gesture-from="gesture.from.value"
       :gesture-at="gesture.at.value"
       :gesture-outcome="gesture.outcome.value"
       @activate="emit('activate', $event)"
-      @hover="hovered = $event"
       @reach="gesture.begin"
-    />
+      @ask="gesture.ask"
+    >
+      <template v-if="$slots.icon" #icon="{ node }"><slot name="icon" :node="node" /></template>
+    </PlexView>
     <div v-if="overflow.length" class="plex-frame__overflow" role="status">
       <slot name="overflow" :overflow="overflow">
         {{ overflow.map(([role, count]) => countOf(role, count)).join(', ') }} not shown

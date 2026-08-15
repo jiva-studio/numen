@@ -37,9 +37,11 @@ function stubMatrix(element: SVGSVGElement) {
   element.releasePointerCapture = vi.fn()
 }
 
-const mountPlex = (creatable?: readonly PlexRelatedRole[]) => {
+type PlexProps = InstanceType<typeof Plex>['$props']
+
+const mountPlex = (props: Partial<PlexProps> = {}) => {
   const plex = mount(Plex, {
-    props: { neighbourhood: NEIGHBOURHOOD, duration: 0, ...(creatable ? { creatable } : {}) },
+    props: { neighbourhood: NEIGHBOURHOOD, duration: 0, ...props },
     attachTo: document.body,
   })
   const svg = plex.find('svg').element as SVGSVGElement
@@ -87,7 +89,7 @@ describe('the handle', () => {
   })
 
   it('is not offered when the caller allows no seat at all', async () => {
-    const { plex } = mountPlex([])
+    const { plex } = mountPlex({ creatable: [] })
     await plex.get('[aria-label^="A thought"]').trigger('pointerenter')
     expect(plex.find('.plex__handle').exists()).toBe(false)
   })
@@ -137,7 +139,7 @@ describe('letting go', () => {
   it('asks for the first seat there is when a child is not one of them', async () => {
     // A click has no direction to read, so it falls back on what the caller
     // does allow rather than inventing a seat they ruled out.
-    const { plex, svg } = mountPlex(['jump', 'parent'])
+    const { plex, svg } = mountPlex({ creatable: ['jump', 'parent'] })
     await takeHold(plex, 'A thought')
 
     svg.dispatchEvent(pointer('pointerup', 600, 400))
@@ -210,8 +212,22 @@ describe('while a gesture is under way', () => {
     svg.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
 
-    expect(plex.find('.plex__ghost').exists()).toBe(true)
-    expect(plex.get('.plex__ghost-role').text()).toBe('parent')
+    expect(plex.find('.plex__node--ghost').exists()).toBe(true)
+    expect(plex.get('.plex__node--ghost .plex__label-text').text()).toBe('parent')
+  })
+
+  it('says it in the words it was given, not in its own', async () => {
+    // The one seat the plex has to write into the picture, and the words for
+    // it are the caller's, as they are for the overflow line.
+    const { plex, svg } = mountPlex({
+      seatName: (role: PlexRelatedRole) => `→ ${role.toUpperCase()}`,
+    })
+    await takeHold(plex, 'A thought')
+
+    svg.dispatchEvent(pointer('pointermove', 600, 40))
+    await plex.vm.$nextTick()
+
+    expect(plex.get('.plex__node--ghost .plex__label-text').text()).toBe('→ PARENT')
   })
 
   it('marks the node a link would be made to instead', async () => {
@@ -223,7 +239,7 @@ describe('while a gesture is under way', () => {
     svg.dispatchEvent(pointer('pointermove', 600 + at[0]!, 400 + at[1]!))
     await plex.vm.$nextTick()
 
-    expect(plex.find('.plex__ghost').exists()).toBe(false)
-    expect(plex.findAll('.plex__node--aimed')).toHaveLength(1)
+    expect(plex.find('.plex__node--ghost').exists()).toBe(false)
+    expect(plex.findAll('.plex__node--target')).toHaveLength(1)
   })
 })

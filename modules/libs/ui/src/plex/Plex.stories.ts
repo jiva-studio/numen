@@ -375,7 +375,9 @@ export const MakingOne: Story = {
       { target: surface, coords: above },
     ])
     await expect(canvasElement.querySelector('.plex__thread')).not.toBeNull()
-    await expect(canvasElement.querySelector('.plex__ghost-role')?.textContent).toBe('parent')
+    await expect(
+      canvasElement.querySelector('.plex__node--ghost .plex__label-text')?.textContent,
+    ).toBe('parent')
 
     // Let go by hand: a second `userEvent.pointer` call does not know a button
     // is still down from the first, so its release is a no-op.
@@ -383,6 +385,11 @@ export const MakingOne: Story = {
       new PointerEvent('pointerup', { ...above, pointerId: 1, bubbles: true }),
     )
     await expect(args.onCreate).toHaveBeenCalledWith(expect.any(String), 'parent')
+
+    // No handle is left behind on the node it came from. Only a browser can
+    // answer it: whether letting go of a captured pointer somewhere else says
+    // so to the node it was captured from.
+    await expect(canvasElement.querySelector('.plex__handle')).toBeNull()
 
     // The story answers by seating the node, already called what its own
     // naming said to call it. Nothing is asked for and nothing is typed.
@@ -442,9 +449,16 @@ export const Walk: Story = {
 
     // Where it ends up is what a browser is needed for: that a click on an SVG
     // group lands, and that the plex settles with the chosen node centred.
+    //
+    // Measured on the box rather than the group around it: a node that has
+    // just been clicked holds the focus, and so wears a handle that hangs off
+    // its trailing edge and would count towards the group's width.
     await waitFor(
       async () => {
-        const focus = canvas.getByLabelText('Domain, focus').getBoundingClientRect()
+        const focus = canvas
+          .getByLabelText('Domain, focus')
+          .querySelector('.plex__box')!
+          .getBoundingClientRect()
         const centre = focus.x + focus.width / 2
         await expect(Math.abs(centre - (middle.x + middle.width / 2))).toBeLessThan(2)
       },

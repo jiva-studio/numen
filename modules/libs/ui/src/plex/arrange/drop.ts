@@ -20,6 +20,19 @@ export type Drop =
     }
 
 /**
+ * The seat a gesture that went nowhere asks for.
+ *
+ * One more child, because that is what anyone reaches for; failing that, the
+ * first seat the caller allows. A gesture goes nowhere when it is a press
+ * rather than a drag — from a trackpad, from a hand that cannot hold a button
+ * down, or from the keyboard, where there is no direction to read at all.
+ */
+export const seatWithoutDirection = (
+  allowed: readonly PlexRelatedRole[],
+): PlexRelatedRole | null =>
+  allowed.includes('child') ? 'child' : (allowed[0] ?? null)
+
+/**
  * Which way a point lies from another.
  *
  * Not simply the axis it lies furthest along: rows are wide and columns are
