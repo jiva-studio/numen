@@ -17,7 +17,7 @@ import (
 // checks SQL. The files are embedded, so the binary carries no runtime
 // dependency on the source tree.
 //
-//go:embed migration/*.sql query/*.sql
+//go:embed migration/*.sql
 var files embed.FS
 
 // A migration is one numbered file, applied once, in order.
@@ -145,33 +145,4 @@ func withoutComments(s string) string {
 		}
 	}
 	return b.String()
-}
-
-// queries holds one statement per file, keyed by filename without extension.
-var queries = mustLoadQueries()
-
-func mustLoadQueries() map[string]string {
-	entries, err := fs.ReadDir(files, "query")
-	if err != nil {
-		panic("sqlite: cannot read embedded queries: " + err.Error())
-	}
-	out := make(map[string]string, len(entries))
-	for _, e := range entries {
-		raw, err := files.ReadFile(path.Join("query", e.Name()))
-		if err != nil {
-			panic("sqlite: cannot read " + e.Name() + ": " + err.Error())
-		}
-		out[strings.TrimSuffix(e.Name(), ".sql")] = string(raw)
-	}
-	return out
-}
-
-// q returns a statement by name. A missing name is a programming error, caught
-// on the first call rather than as a confusing SQL error later.
-func q(name string) string {
-	stmt, ok := queries[name]
-	if !ok {
-		panic("sqlite: no query named " + name)
-	}
-	return stmt
 }

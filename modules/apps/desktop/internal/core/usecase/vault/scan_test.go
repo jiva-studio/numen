@@ -1,4 +1,4 @@
-package usecase_test
+package vault_test
 
 import (
 	"context"
@@ -11,13 +11,12 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase"
+	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/testsupport"
 )
 
 // The fixture vault is deliberately awkward: a note with no frontmatter, broken
-// YAML, CRLF line endings, text that is not Latin, a PDF, and a folder that
-// belongs to another tool.
+// YAML, CRLF line endings, text that is not Latin, a PDF, and a hidden folder.
 func vaultAt(t *testing.T, root string) (domain.Vault, port.VaultReaders) {
 	t.Helper()
 	cfg, err := filesystem.ReadConfig(root, filesystem.DefaultServiceDir)
@@ -28,22 +27,31 @@ func vaultAt(t *testing.T, root string) (domain.Vault, port.VaultReaders) {
 		filesystem.Readers{ServiceDir: filesystem.DefaultServiceDir}
 }
 
-func openIndex(t *testing.T) *index.NoteRepository {
+func openIndex(t *testing.T) *index.DB {
 	t.Helper()
-	repo, err := index.Open(t.Context(), filepath.Join(t.TempDir(), "index.db"))
+	db, err := index.Open(t.Context(), filepath.Join(t.TempDir(), "index.db"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { repo.Close() })
-	return repo
+	t.Cleanup(func() { db.Close() })
+	return db
+}
+
+func scanner(readers port.VaultReaders, db *index.DB) usecase.Scan {
+	return usecase.Scan{
+		Readers: readers,
+		Vaults:  db.Vaults(),
+		Notes:   db.Notes(),
+		Known:   db.NoteQueries(),
+	}
 }
 
 func TestScanIndexesEveryNoteOnce(t *testing.T) {
 	ctx := t.Context()
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
-	notes := openIndex(t)
+	db := openIndex(t)
 
-	res, err := usecase.ScanVault{Vaults: readers, Notes: notes}.Execute(ctx, v)
+	res, err := scanner(readers, db).Execute(ctx, v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,32 +62,30 @@ func TestScanIndexesEveryNoteOnce(t *testing.T) {
 		t.Errorf("first scan: %+v", res)
 	}
 
-	stats, err := notes.Stats(ctx, v.ID)
+	summary, err := db.NoteQueries().Summary(ctx, v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if stats.Notes != 7 {
-		t.Errorf("index holds %d notes, want 7", stats.Notes)
+	if summary.Notes != 7 {
+		t.Errorf("index holds %d notes, want 7", summary.Notes)
 	}
 }
 
 func TestScanSkipsWhatIsNotVaultContent(t *testing.T) {
 	ctx := t.Context()
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
-	notes := openIndex(t)
-	if _, err := (usecase.ScanVault{Vaults: readers, Notes: notes}).Execute(ctx, v); err != nil {
+	db := openIndex(t)
+	if _, err := scanner(readers, db).Execute(ctx, v); err != nil {
 		t.Fatal(err)
 	}
 
-	// The service folder is ours and .obsidian belongs to another tool; a note
-	// in either is not something the user wrote for us.
-	hits, err := usecase.SearchNotes{Notes: notes}.Execute(ctx, v, "folder")
+	matches, err := db.NoteQueries().Search(ctx, v.ID, "hidden", 10)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, h := range hits {
-		if h.Path == ".obsidian/note-in-a-hidden-folder.md" {
-			t.Errorf("indexed a file from another tool's folder: %+v", h)
+	for _, m := range matches {
+		if m.Path == ".obsidian/note-in-a-hidden-folder.md" {
+			t.Errorf("indexed a file from a hidden folder: %+v", m)
 		}
 	}
 }
@@ -87,14 +93,14 @@ func TestScanSkipsWhatIsNotVaultContent(t *testing.T) {
 func TestSecondScanOpensNoFiles(t *testing.T) {
 	ctx := t.Context()
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
-	notes := openIndex(t)
+	db := openIndex(t)
 
-	if _, err := (usecase.ScanVault{Vaults: readers, Notes: notes}).Execute(ctx, v); err != nil {
+	if _, err := scanner(readers, db).Execute(ctx, v); err != nil {
 		t.Fatal(err)
 	}
 
 	counter := &countingReaders{VaultReaders: readers}
-	second, err := usecase.ScanVault{Vaults: counter, Notes: notes}.Execute(ctx, v)
+	second, err := scanner(counter, db).Execute(ctx, v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,8 +120,8 @@ func TestEditedNoteIsReindexedAndDeletedNoteDisappears(t *testing.T) {
 	// exactly as committed.
 	root := testsupport.CopyVault(t)
 	v, readers := vaultAt(t, root)
-	notes := openIndex(t)
-	scan := usecase.ScanVault{Vaults: readers, Notes: notes}
+	db := openIndex(t)
+	scan := scanner(readers, db)
 
 	if _, err := scan.Execute(ctx, v); err != nil {
 		t.Fatal(err)
@@ -146,53 +152,21 @@ func TestEditedNoteIsReindexedAndDeletedNoteDisappears(t *testing.T) {
 		t.Errorf("removed %d notes, want 1", res.Removed)
 	}
 
-	search := usecase.SearchNotes{Notes: notes}
-	hits, err := search.Execute(ctx, v, "crystallography")
+	queries := db.NoteQueries()
+	matches, err := queries.Search(ctx, v.ID, "crystallography", 10)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(hits) != 1 {
-		t.Errorf("new text not searchable: %+v", hits)
+	if len(matches) != 1 {
+		t.Errorf("new text not searchable: %+v", matches)
 	}
 	// The vault is authoritative: what is not on disk is not in the index.
-	stale, err := search.Execute(ctx, v, "windows")
+	stale, err := queries.Search(ctx, v.ID, "windows", 10)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(stale) != 0 {
 		t.Errorf("deleted note still searchable: %+v", stale)
-	}
-}
-
-func TestSearchIsScopedToOneVault(t *testing.T) {
-	ctx := t.Context()
-	first, readers := vaultAt(t, testsupport.VaultDir(t))
-	notes := openIndex(t)
-
-	// One database holds every vault, so the leak this guards against is
-	// invisible to any test that uses a single one.
-	second := domain.Vault{ID: "01M02DTC80PABQQW3XS3XWDVHW", Name: "second", Path: first.Path}
-	scan := usecase.ScanVault{Vaults: readers, Notes: notes}
-	if _, err := scan.Execute(ctx, first); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := scan.Execute(ctx, second); err != nil {
-		t.Fatal(err)
-	}
-
-	hits, err := usecase.SearchNotes{Notes: notes}.Execute(ctx, first, "entropy")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(hits) == 0 {
-		t.Fatal("no hits at all — the query is wrong, not the scoping")
-	}
-	stats, err := notes.Stats(ctx, first.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(hits) > stats.Notes {
-		t.Errorf("%d hits from a vault holding %d notes: results crossed vaults", len(hits), stats.Notes)
 	}
 }
 
@@ -218,4 +192,51 @@ type countingReader struct {
 func (c *countingReader) Read(ctx context.Context, path string) ([]byte, error) {
 	c.parent.reads++
 	return c.VaultReader.Read(ctx, path)
+}
+
+func TestSearchNeverCrossesVaults(t *testing.T) {
+	ctx := t.Context()
+	db := openIndex(t)
+
+	first, readers := vaultAt(t, testsupport.VaultDir(t))
+	second := testsupport.NewVault(t, map[string]string{
+		"quasar.md": "# Quasar\n\nA word that exists in no other vault.\n",
+	})
+
+	if _, err := scanner(readers, db).Execute(ctx, first); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := scanner(readers, db).Execute(ctx, second); err != nil {
+		t.Fatal(err)
+	}
+
+	queries := db.NoteQueries()
+
+	// The two vaults hold disjoint words, so a query that forgets its vault
+	// shows up as a match that cannot belong to the vault being searched. This
+	// is the one failure ADR-0002 calls invisible by construction, and a test
+	// that shares content between the vaults cannot see it either.
+	leaked, err := queries.Search(ctx, first.ID, "quasar", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(leaked) != 0 {
+		t.Errorf("searching the first vault returned the second vault's notes: %+v", leaked)
+	}
+
+	other, err := queries.Search(ctx, second.ID, "entropy", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(other) != 0 {
+		t.Errorf("searching the second vault returned the first vault's notes: %+v", other)
+	}
+
+	own, err := queries.Search(ctx, second.ID, "quasar", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(own) != 1 || own[0].Path != "quasar.md" {
+		t.Errorf("the second vault cannot find its own note: %+v", own)
+	}
 }

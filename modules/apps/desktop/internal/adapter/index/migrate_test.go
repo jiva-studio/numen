@@ -47,11 +47,11 @@ func TestFreshDatabaseIsAtTheNewestVersion(t *testing.T) {
 	ctx := t.Context()
 	path := filepath.Join(t.TempDir(), "index.db")
 
-	repo, err := Open(ctx, path)
+	db, err := Open(ctx, path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer repo.Close()
+	defer db.Close()
 
 	available, err := loadMigrations()
 	if err != nil {
@@ -60,7 +60,7 @@ func TestFreshDatabaseIsAtTheNewestVersion(t *testing.T) {
 	newest := available[len(available)-1].version
 
 	var version int
-	if err := repo.db.QueryRowContext(ctx, "PRAGMA user_version").Scan(&version); err != nil {
+	if err := db.db.QueryRowContext(ctx, "PRAGMA user_version").Scan(&version); err != nil {
 		t.Fatal(err)
 	}
 	if version != newest {
@@ -132,19 +132,5 @@ func TestMigrationsRunInOneTransactionEach(t *testing.T) {
 	}
 	if tables != 0 {
 		t.Error("the first half of a failed migration was left behind")
-	}
-}
-
-func TestEveryQueryUsedByTheRepositoryExists(t *testing.T) {
-	// q panics on a missing name, and these are the names the repository uses.
-	for _, name := range []string{
-		"register_vault", "known_files", "put_file", "put_note",
-		"clear_headings", "clear_tags", "clear_fts",
-		"insert_heading", "insert_tag", "insert_fts",
-		"delete_note", "delete_file", "search", "stats",
-	} {
-		if q(name) == "" {
-			t.Errorf("query %q is empty", name)
-		}
 	}
 }

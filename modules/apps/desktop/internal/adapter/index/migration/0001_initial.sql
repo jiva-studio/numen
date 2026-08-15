@@ -35,15 +35,6 @@ CREATE TABLE headings (
 
 CREATE INDEX headings_by_note ON headings (vault_id, path);
 
-CREATE TABLE tags (
-    vault_id TEXT NOT NULL,
-    path     TEXT NOT NULL,
-    tag      TEXT NOT NULL,
-    PRIMARY KEY (vault_id, path, tag)
-);
-
-CREATE INDEX tags_by_name ON tags (vault_id, tag);
-
 -- vault_id and path are stored but not tokenised: they scope and locate a hit
 -- rather than being something to match against.
 CREATE VIRTUAL TABLE notes_fts USING fts5 (

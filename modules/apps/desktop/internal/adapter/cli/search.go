@@ -7,7 +7,7 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 )
 
 func searchCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
@@ -18,22 +18,22 @@ func searchCommand(ctx context.Context, out io.Writer, cfg container.Config, arg
 	if err != nil {
 		return err
 	}
-	notes, err := cfg.Notes(ctx)
+	db, err := cfg.Index(ctx)
 	if err != nil {
 		return err
 	}
-	defer notes.Close()
+	defer db.Close()
 
-	hits, err := usecase.SearchNotes{Notes: notes}.Execute(ctx, v, args[1])
+	matches, err := note.Search{Notes: db.NoteQueries()}.Execute(ctx, v, args[1])
 	if err != nil {
 		return err
 	}
-	if len(hits) == 0 {
+	if len(matches) == 0 {
 		fmt.Fprintln(out, "nothing found")
 		return nil
 	}
-	for _, h := range hits {
-		fmt.Fprintf(out, "%s\n  %s\n  %s\n", h.Title, h.Path, h.Snippet)
+	for _, m := range matches {
+		fmt.Fprintf(out, "%s\n  %s\n  %s\n", m.Title, m.Path, m.Snippet)
 	}
 	return nil
 }

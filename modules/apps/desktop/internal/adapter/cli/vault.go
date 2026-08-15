@@ -7,10 +7,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 )
 
 func vaultCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
@@ -43,11 +44,16 @@ func vaultAdd(out io.Writer, cfg container.Config, args []string) error {
 	if err != nil {
 		return err
 	}
-	v, err := usecase.AddVault{
+	root, err := filepath.Abs(rest[0])
+	if err != nil {
+		return err
+	}
+
+	v, err := vault.Add{
 		Identity: cfg.VaultIdentity(),
 		Registry: registry,
 		Now:      time.Now,
-	}.Execute(rest[0], *name)
+	}.Execute(root, *name)
 	if err != nil {
 		return err
 	}
@@ -61,7 +67,7 @@ func vaultList(out io.Writer, cfg container.Config) error {
 	if err != nil {
 		return err
 	}
-	known, err := usecase.ListVaults{Registry: registry}.Execute()
+	known, err := vault.List{Registry: registry}.Execute()
 	if err != nil {
 		return err
 	}

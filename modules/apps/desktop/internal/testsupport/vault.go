@@ -7,6 +7,10 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 )
 
 // VaultDir returns the fixture vault every test scans.
@@ -45,4 +49,25 @@ func CopyVault(t *testing.T) string {
 		t.Fatal(err)
 	}
 	return dst
+}
+
+// NewVault writes a vault with the given notes and gives it an identity, for
+// tests that need a second vault whose content is nothing like the fixture's.
+func NewVault(t *testing.T, notes map[string]string) domain.Vault {
+	t.Helper()
+	root := t.TempDir()
+	for name, body := range notes {
+		path := filepath.Join(root, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	cfg, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return domain.Vault{ID: cfg.ID, Name: filepath.Base(root), Path: root}
 }

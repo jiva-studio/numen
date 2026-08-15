@@ -1,6 +1,7 @@
-// Package service holds the use cases. It orchestrates ports and knows no more
-// about a filesystem or a database than the domain does.
-package usecase
+// Package usecase holds the business scenarios. Each one orchestrates ports and
+// entities and knows no more about a filesystem or a database than the domain
+// does.
+package vault
 
 import (
 	"context"
@@ -11,11 +12,13 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
-// ScanVault brings the index up to date with one vault. The vault is
+// Scan brings the index up to date with one vault. The vault is
 // authoritative: whatever the scan finds is what the index says afterwards.
-type ScanVault struct {
-	Vaults port.VaultReaders
-	Notes  port.NoteRepository
+type Scan struct {
+	Readers port.VaultReaders
+	Vaults  port.VaultRepository
+	Notes   port.NoteRepository
+	Known   port.NoteQueries
 }
 
 // ScanResult reports what a scan did, in the terms the user cares about.
@@ -31,24 +34,23 @@ func (r ScanResult) String() string {
 		r.Seen, r.Indexed, r.Unchanged, r.Removed)
 }
 
-// Scan walks the vault once.
+// Execute walks the vault once.
 //
 // Only files whose size or modification time differ from what the index holds
 // are read and parsed; the rest are not opened at all. That is what keeps a scan
 // of an unchanged vault cheap enough to run at startup.
-func (u ScanVault) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
+func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	var res ScanResult
 
-	reader, err := u.Vaults.Open(v)
+	reader, err := u.Readers.Open(v)
 	if err != nil {
 		return res, err
 	}
-
-	if err := u.Notes.RegisterVault(ctx, v); err != nil {
+	if err := u.Vaults.Save(ctx, v); err != nil {
 		return res, fmt.Errorf("register vault: %w", err)
 	}
 
-	known, err := u.Notes.Known(ctx, v.ID)
+	known, err := u.Known.Fingerprints(ctx, v.ID)
 	if err != nil {
 		return res, fmt.Errorf("read index: %w", err)
 	}
@@ -58,7 +60,7 @@ func (u ScanVault) Execute(ctx context.Context, v domain.Vault) (ScanResult, err
 		res.Seen++
 		seen[ref.Path] = true
 
-		if prev, ok := known[ref.Path]; ok && prev.Unchanged(ref) {
+		if previous, ok := known[ref.Path]; ok && previous.Unchanged(ref) {
 			res.Unchanged++
 			return nil
 		}
@@ -67,7 +69,7 @@ func (u ScanVault) Execute(ctx context.Context, v domain.Vault) (ScanResult, err
 		if err != nil {
 			return fmt.Errorf("read %s: %w", ref.Path, err)
 		}
-		if err := u.Notes.Put(ctx, v.ID, markdown.Parse(ref, raw)); err != nil {
+		if err := u.Notes.Save(ctx, v.ID, markdown.Parse(ref, raw)); err != nil {
 			return fmt.Errorf("index %s: %w", ref.Path, err)
 		}
 		res.Indexed++
@@ -83,7 +85,7 @@ func (u ScanVault) Execute(ctx context.Context, v domain.Vault) (ScanResult, err
 			gone = append(gone, path)
 		}
 	}
-	if err := u.Notes.Delete(ctx, v.ID, gone); err != nil {
+	if err := u.Notes.Remove(ctx, v.ID, gone); err != nil {
 		return res, fmt.Errorf("remove deleted notes: %w", err)
 	}
 	res.Removed = len(gone)

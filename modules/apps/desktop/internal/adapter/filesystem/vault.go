@@ -1,5 +1,5 @@
-// Package vaultfs reads a vault from the filesystem and manages the identity a
-// vault carries inside itself.
+// Package filesystem reads a vault from disk and manages the identity a vault
+// carries inside itself.
 package filesystem
 
 import (
@@ -30,7 +30,7 @@ type Config struct {
 	ID string `json:"id"`
 }
 
-// Source reads one vault.
+// VaultReader reads one vault from disk.
 type VaultReader struct {
 	root       string
 	serviceDir string
@@ -61,8 +61,10 @@ func (s *VaultReader) Root() string { return s.root }
 
 // Walk reports every markdown file in the vault.
 //
-// Directories whose name begins with a dot are skipped whole: they hold tool
-// state rather than notes the user wrote.
+// The service folder is skipped because it is not vault content, and so is any
+// directory whose name begins with a dot: those hold tool state rather than
+// notes the user wrote. The service folder is named separately because its name
+// is a setting, and a name without a leading dot must still be skipped.
 func (s *VaultReader) Walk(ctx context.Context, fn func(domain.FileRef) error) error {
 	return filepath.WalkDir(s.root, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -76,7 +78,7 @@ func (s *VaultReader) Walk(ctx context.Context, fn func(domain.FileRef) error) e
 			if p == s.root {
 				return nil
 			}
-			if strings.HasPrefix(name, ".") {
+			if name == s.serviceDir || strings.HasPrefix(name, ".") {
 				return fs.SkipDir
 			}
 			return nil

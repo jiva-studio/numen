@@ -9,7 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 )
 
 func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
@@ -20,24 +20,28 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args 
 	if err != nil {
 		return err
 	}
-	notes, err := cfg.Notes(ctx)
+	db, err := cfg.Index(ctx)
 	if err != nil {
 		return err
 	}
-	defer notes.Close()
+	defer db.Close()
 
 	started := time.Now()
-	res, err := usecase.ScanVault{Vaults: cfg.VaultReaders(), Notes: notes}.Execute(ctx, v)
+	result, err := vault.Scan{
+		Readers: cfg.VaultReaders(),
+		Vaults:  db.Vaults(),
+		Notes:   db.Notes(),
+		Known:   db.NoteQueries(),
+	}.Execute(ctx, v)
 	if err != nil {
 		return err
 	}
-	stats, err := notes.Stats(ctx, v.ID)
+	summary, err := db.NoteQueries().Summary(ctx, v.ID)
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(out, "%s in %s\n", res, time.Since(started).Round(time.Millisecond))
-	fmt.Fprintf(out, "index now holds %d notes, %d headings, %d tags\n",
-		stats.Notes, stats.Headings, stats.Tags)
+	fmt.Fprintf(out, "%s in %s\n", result, time.Since(started).Round(time.Millisecond))
+	fmt.Fprintf(out, "index now holds %d notes and %d headings\n", summary.Notes, summary.Headings)
 	return nil
 }
 
@@ -49,7 +53,7 @@ func findVault(cfg container.Config, nameOrPath string) (domain.Vault, error) {
 	if err != nil {
 		return domain.Vault{}, err
 	}
-	v, err := usecase.FindVault{Registry: registry}.Execute(nameOrPath)
+	v, err := vault.Find{Registry: registry}.Execute(nameOrPath)
 	if err != nil {
 		return domain.Vault{}, fmt.Errorf("%w — add it with: numen vault add %s", err, nameOrPath)
 	}

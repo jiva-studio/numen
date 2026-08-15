@@ -75,15 +75,15 @@ func (r *VaultRegistry) save(f file) error {
 	return os.Rename(tmp, r.path)
 }
 
-func (r *VaultRegistry) List() ([]domain.Vault, error) {
+func (r *VaultRegistry) All() ([]domain.Vault, error) {
 	f, err := r.load()
 	return f.Vaults, err
 }
 
-// Add records a vault. Re-adding the same identity updates its path, which is
+// Save records a vault. Re-adding the same identity updates its path, which is
 // how a moved vault is recognised: the identity travels with the folder, the
 // registry only remembers where it was last seen.
-func (r *VaultRegistry) Add(v domain.Vault) error {
+func (r *VaultRegistry) Save(v domain.Vault) error {
 	f, err := r.load()
 	if err != nil {
 		return err

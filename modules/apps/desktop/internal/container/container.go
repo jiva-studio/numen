@@ -44,9 +44,9 @@ func (c Config) VaultIdentity() port.VaultIdentity {
 	return filesystem.Identity{ServiceDir: c.serviceDir()}
 }
 
-// Notes opens the index. Closing it belongs to the caller, which is what knows
+// Index opens the cache. Closing it belongs to the caller, which is what knows
 // when it is finished.
-func (c Config) Notes(ctx context.Context) (*index.NoteRepository, error) {
+func (c Config) Index(ctx context.Context) (*index.DB, error) {
 	path, err := c.indexPath()
 	if err != nil {
 		return nil, err

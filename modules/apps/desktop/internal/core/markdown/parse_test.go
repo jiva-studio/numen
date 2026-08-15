@@ -77,44 +77,12 @@ func TestHeadingsAreCollectedInOrder(t *testing.T) {
 	}
 }
 
-func TestTagsComeFromFrontmatterAndBody(t *testing.T) {
-	n := parseFile(t, "Thermodynamics.md")
-	for _, want := range []string{"physics", "thermo", "conservation"} {
-		if !slices.Contains(n.Tags, want) {
-			t.Errorf("tags %v missing %q", n.Tags, want)
-		}
-	}
-}
-
-func TestHashFollowedByDigitIsNotATag(t *testing.T) {
-	n := parseFile(t, "daily/2026-08-15.md")
-	if slices.Contains(n.Tags, "3") {
-		t.Errorf("a room number became a tag: %v", n.Tags)
-	}
-	if !slices.Contains(n.Tags, "journal") {
-		t.Errorf("tags = %v, want journal", n.Tags)
-	}
-}
-
-func TestHeadingIsNotATag(t *testing.T) {
-	n := parseFile(t, "daily/2026-08-15.md")
-	if slices.Contains(n.Tags, "Journal") {
-		t.Errorf("the heading was collected as a tag: %v", n.Tags)
-	}
-}
-
 func TestFencedCodeIsNotParsedAsContent(t *testing.T) {
 	n := parseFile(t, "edge/code-fence.md")
 	for _, h := range n.Headings {
 		if h.Text == "Not a heading" {
 			t.Error("a heading inside a code fence was collected")
 		}
-	}
-	if slices.Contains(n.Tags, "fake") {
-		t.Errorf("a tag inside a code fence was collected: %v", n.Tags)
-	}
-	if !slices.Contains(n.Tags, "genuine") {
-		t.Errorf("the tag outside the fence was missed: %v", n.Tags)
 	}
 }
 
@@ -140,9 +108,6 @@ func TestCarriageReturnsDoNotLeakIntoParsedValues(t *testing.T) {
 	}
 	if len(n.Headings) != 1 || n.Headings[0].Text != "CRLF" {
 		t.Errorf("headings = %v", n.Headings)
-	}
-	if !slices.Contains(n.Tags, "crlf") {
-		t.Errorf("tags = %v, want crlf", n.Tags)
 	}
 }
 
@@ -184,15 +149,7 @@ func TestEmptyFileIsANote(t *testing.T) {
 	if n.Title != "empty" {
 		t.Errorf("title = %q", n.Title)
 	}
-	if len(n.Headings) != 0 || len(n.Tags) != 0 {
-		t.Errorf("empty file produced %v / %v", n.Headings, n.Tags)
-	}
-}
-
-func TestTagsAsOneString(t *testing.T) {
-	// Both `tags: [a, b]` and `tags: a b` are what people write.
-	n := markdown.Parse(domain.FileRef{Path: "x.md"}, []byte("---\ntags: alpha, beta\n---\n\nbody\n"))
-	if !slices.Contains(n.Tags, "alpha") || !slices.Contains(n.Tags, "beta") {
-		t.Errorf("tags = %v", n.Tags)
+	if len(n.Headings) != 0 {
+		t.Errorf("empty file produced %v", n.Headings)
 	}
 }
