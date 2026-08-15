@@ -1,0 +1,63 @@
+name: protocol
+
+on:
+  pull_request:
+    paths:
+      - "modules/libs/protocol/**"
+      - ".github/workflows/protocol.yml"
+  push:
+    branches: [main]
+
+defaults:
+  run:
+    working-directory: modules/libs/protocol
+
+jobs:
+  schema:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # buf compares the schema against what is on the branch this will
+          # merge into, which it cannot do from a shallow clone.
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache-dependency-path: modules/libs/protocol/go.sum
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: modules/libs/protocol/package-lock.json
+
+      - uses: bufbuild/buf-action@v1
+        with:
+          setup_only: true
+
+      - name: Plugins
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11
+          go install connectrpc.com/connect/cmd/protoc-gen-connect-go@v1.20.0
+          npm ci
+
+      - name: Lint
+        run: buf lint
+
+      # A field removed or renumbered breaks every client already built against
+      # it. Adding one does not, which is why this compares rather than forbids.
+      - name: Compatible with what is already on main
+        if: github.event_name == 'pull_request'
+        run: buf breaking --against ".git#branch=origin/${{ github.base_ref }},subdir=modules/libs/protocol"
+
+      # The generated code is committed so that an ordinary build needs none of
+      # the tools above. This is what proves it is still what the schema says.
+      - name: Generated code is current
+        run: |
+          buf generate
+          git diff --exit-code -- . || {
+            echo "::error::the schema changed and the generated code was not regenerated — run: make generate"
+            exit 1
+          }
