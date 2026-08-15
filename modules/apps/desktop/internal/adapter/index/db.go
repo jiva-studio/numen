@@ -18,10 +18,18 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index/vault"
 )
 
-// DB owns the connection. The repositories share one pool because they share
-// one database — separating them is about what each may be asked to do, not
-// about how many files there are.
-type DB struct{ db *sql.DB }
+// DB owns the connections.
+//
+// There are two pools, because SQLite has one writer and any number of readers.
+// The write pool is capped at a single connection so that writers queue in Go,
+// where waiting is cheap and ordered, rather than in SQLite, where they compete
+// for a lock and give up on a timeout. The read pool is unrestricted: in WAL
+// mode a reader never waits for the writer, which is what lets a search answer
+// while a scan is still running.
+type DB struct {
+	write *sql.DB
+	read  *sql.DB
+}
 
 // pragmas are carried in the connection string rather than executed after
 // opening, because `sql.Open` returns a pool and executing a PRAGMA statement
@@ -44,22 +52,40 @@ var pragmas = []string{
 }
 
 func Open(ctx context.Context, path string) (*DB, error) {
-	db, err := sql.Open("sqlite", dsn(path))
+	write, err := sql.Open("sqlite", dsn(path))
 	if err != nil {
 		return nil, err
 	}
-	if err := migrate(ctx, db); err != nil {
-		db.Close()
+	// One writer. More connections would only mean more of them failing on a
+	// busy lock.
+	write.SetMaxOpenConns(1)
+
+	if err := migrate(ctx, write); err != nil {
+		write.Close()
 		return nil, err
 	}
-	return &DB{db: db}, nil
+
+	read, err := sql.Open("sqlite", dsn(path))
+	if err != nil {
+		write.Close()
+		return nil, err
+	}
+	return &DB{write: write, read: read}, nil
 }
 
-func (d *DB) Close() error { return d.db.Close() }
+func (d *DB) Close() error {
+	readErr := d.read.Close()
+	if err := d.write.Close(); err != nil {
+		return err
+	}
+	return readErr
+}
 
-func (d *DB) Vaults() *vault.Repository  { return vault.NewRepository(d.db) }
-func (d *DB) Notes() *note.Repository    { return note.NewRepository(d.db) }
-func (d *DB) NoteQueries() *note.Queries { return note.NewQueries(d.db) }
+func (d *DB) Vaults() *vault.Repository { return vault.NewRepository(d.write) }
+func (d *DB) Notes() *note.Repository   { return note.NewRepository(d.write) }
+
+// NoteQueries reads, so it takes the pool that does not wait for the writer.
+func (d *DB) NoteQueries() *note.Queries { return note.NewQueries(d.read) }
 
 func dsn(path string) string {
 	q := url.Values{}

@@ -32,6 +32,13 @@ Recorded 2026-08-15 on an AMD Ryzen 7 6800U, `modernc.org/sqlite`, WAL with
 | Warm scan — nothing changed, no file opened | 5.1 ms (268 runs) | 55 ms (24) | 5 µs |
 | Incremental — one note edited | 5.6 ms (235) | 50 ms (24) | — |
 | Search — two terms, twenty results | 8.2 ms (156) | 55 ms (19) | — |
+| Search while a scan is writing | — | 64 ms (57) | — |
+
+A search costs about a third more while a scan is continuously rewriting the
+index — 64 ms against 48 ms for the same query on a quiet database. That is the
+number ADR-0018 exists to keep honest: WAL lets a reader answer without waiting
+for the writer, and the write pool is capped at one connection so writers queue
+in Go rather than collide in SQLite.
 
 Extrapolated to the 100k notes ADR-0002 designs for: a cold scan is about 75
 seconds, against a budget of single-digit minutes. A warm scan is under half a

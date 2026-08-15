@@ -20,7 +20,7 @@ func TestEveryConnectionGetsThePragmas(t *testing.T) {
 	defer db.Close()
 
 	const connections = 8
-	db.db.SetMaxOpenConns(connections)
+	db.read.SetMaxOpenConns(connections)
 
 	var wg sync.WaitGroup
 	foreignKeys := make([]int, connections)
@@ -32,7 +32,7 @@ func TestEveryConnectionGetsThePragmas(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			conn, err := db.db.Conn(ctx)
+			conn, err := db.read.Conn(ctx)
 			if err != nil {
 				t.Error(err)
 				return

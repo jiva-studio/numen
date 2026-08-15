@@ -1,6 +1,7 @@
 package vault_test
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -153,4 +154,65 @@ func touch(b *testing.B, path string, seed int) {
 	if err := os.Chtimes(path, at, at); err != nil {
 		b.Fatal(err)
 	}
+}
+
+// BenchmarkSearchDuringScan is the question a concurrency decision has to
+// answer with a number: what a search costs while the index is being written.
+//
+// A scan runs in the background over a vault big enough to take seconds, and
+// searches run against the same database throughout. WAL is what makes this
+// possible at all — a reader never waits for the writer — and the write pool is
+// capped at one connection so writers queue instead of colliding.
+func BenchmarkSearchDuringScan(b *testing.B) {
+	const notes = 10_000
+	v := testsupport.GenerateVault(b, notes)
+	db := openIndexFor(b)
+
+	ctx, cancel := context.WithCancel(b.Context())
+	defer cancel()
+
+	// Fill the index first. Searching an empty one is fast, and a benchmark
+	// that starts there sizes itself against a measurement of nothing.
+	if _, err := scanFor(db).Execute(ctx, v); err != nil {
+		b.Fatal(err)
+	}
+
+	scanning := make(chan struct{})
+	go func() {
+		defer close(scanning)
+		for {
+			if _, err := scanFor(db).Execute(ctx, v); err != nil {
+				return // cancelled at the end of the benchmark
+			}
+			if ctx.Err() != nil {
+				return
+			}
+			// Keep writing for as long as the benchmark reads: reindex from
+			// scratch rather than measuring against an index that is finished.
+			if err := touchAll(v.Path); err != nil {
+				return
+			}
+		}
+	}()
+
+	queries := db.Queries()
+	b.ResetTimer()
+	for range b.N {
+		if _, err := queries.Search(ctx, v.ID, "entropy observer", 20); err != nil {
+			b.Fatal(err)
+		}
+	}
+	b.StopTimer()
+	cancel()
+	<-scanning
+}
+
+func touchAll(root string) error {
+	at := time.Now()
+	return filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		return os.Chtimes(p, at, at)
+	})
 }
