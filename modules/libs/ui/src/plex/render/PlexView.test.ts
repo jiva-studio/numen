@@ -43,33 +43,25 @@ const mountView = () =>
     },
   })
 
-describe('a node that is not fully there', () => {
-  it('cannot be chosen by clicking it', async () => {
-    const view = mountView()
-    await view.get('[aria-label^="Going"]').trigger('click')
-    await view.get('[aria-label^="Arriving"]').trigger('click')
-    expect(view.emitted('activate')).toBeUndefined()
-  })
-
-  it('cannot be chosen from the keyboard either', async () => {
-    const view = mountView()
-    await view.get('[aria-label^="Going"]').trigger('keydown', { key: 'Enter' })
-    expect(view.emitted('activate')).toBeUndefined()
-  })
-
-  it('is not stopped at by tab, and is not announced', () => {
-    const going = mountView().get('[aria-label^="Going"]')
-    expect(going.attributes('tabindex')).toBe('-1')
-    expect(going.attributes('aria-hidden')).toBe('true')
-  })
-})
-
-describe('a node that is fully there', () => {
-  it('can still be chosen while the rest of the picture is moving', async () => {
-    // Only what is fading is out of bounds, not everything during a move.
+/**
+ * What a node decides for itself is tested where it lives, next to the node.
+ * What is left here is the translation: a node says only that it was chosen or
+ * that a pointer arrived, and the view says which node that was.
+ */
+describe('what a node says, and who it was', () => {
+  it('names the node that was chosen', async () => {
+    // Also that only what is fading is out of bounds, not everything mid-move.
     const view = mountView()
     await view.get('[aria-label^="Start"]').trigger('click')
     expect(view.emitted('activate')).toStrictEqual([['focus']])
+  })
+
+  it('names the node a pointer arrived at, and nothing once it leaves', async () => {
+    const view = mountView()
+    const staying = view.get('[aria-label^="Staying"]')
+    await staying.trigger('pointerenter')
+    await staying.trigger('pointerleave')
+    expect(view.emitted('hover')).toStrictEqual([['staying'], [null]])
   })
 })
 
