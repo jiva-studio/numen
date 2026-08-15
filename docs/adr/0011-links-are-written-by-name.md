@@ -62,8 +62,13 @@ writes code that falls back to resolving by label when `note://` misses.
 ### `name://` never appears in a file
 
 It is the internal representation, the value stored in the index. The parser sees
-`[[Thermodynamics]]` and normalises it to `name://thermodynamics` so that **every
+`[[Thermodynamics]]` and stores it as `name://Thermodynamics` so that **every
 stored address has a scheme**.
+
+The name is stored exactly as written — a rename has to preserve the form the
+user chose — and **compared without regard to case**, because people type
+`[[entropy]]` and the file is called `Entropy.md`. Folding at comparison rather
+than at parse keeps both.
 
 The prefix is not there to mark something as a name; it is there so parsing is
 always a split on `://`, with no rule of the form "no known prefix means a name".

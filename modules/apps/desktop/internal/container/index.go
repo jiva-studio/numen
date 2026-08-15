@@ -41,3 +41,6 @@ func (i *Index) Path() string { return i.path }
 
 // Links answers what points where.
 func (i *Index) Links() port.LinkQueries { return i.db.NoteQueries() }
+
+// Problems reports what a scan could not act on.
+func (i *Index) Problems() port.ProblemQueries { return i.db.NoteQueries() }

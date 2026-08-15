@@ -66,3 +66,9 @@ func (q *Queries) Summary(ctx context.Context, vaultID string) (domain.VaultSumm
 		Scan(&s.Notes, &s.Headings)
 	return s, err
 }
+
+// Statements exposes the SQL this package runs, so that a test can ask the
+// database how it intends to answer each one. A plan is not something a package
+// can check about itself: it needs a migrated database, and that lives one level
+// up.
+func Statements() map[string]string { return stmt }

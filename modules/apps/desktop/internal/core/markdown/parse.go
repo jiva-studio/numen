@@ -16,6 +16,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/ulid"
 )
 
 var headingRe = regexp.MustCompile(`^(#{1,6})\s+(.+?)\s*#*\s*$`)
@@ -41,10 +42,22 @@ func Parse(ref domain.FileRef, raw []byte) domain.Note {
 	n.Body = string(body)
 	n.Headings = headings(body)
 	n.Title = title(n, ref.Path)
-	n.ID, _ = n.Frontmatter["id"].(string)
-
 	annotated, problems := frontmatterLinks(n.Frontmatter)
 	n.Links = mergeLinks(annotated, bodyLinks(body))
+
+	// An identifier is what other notes point at, across vaults, so anything
+	// that is not one is reported rather than quietly becoming addressable.
+	if raw, present := n.Frontmatter["id"]; present {
+		id, isText := raw.(string)
+		switch {
+		case !isText:
+			problems = append(problems, "id is not text")
+		case ulid.Valid(id):
+			n.ID = id
+		default:
+			problems = append(problems, "id "+id+" is not a ULID")
+		}
+	}
 	n.Problems = problems
 	return n
 }

@@ -39,7 +39,37 @@ func (q *Queries) Links(ctx context.Context, vaultID, from string) ([]domain.Res
 			return nil, err
 		}
 	}
-	return out, nil
+	return dedupe(out), nil
+}
+
+// dedupe folds links that turn out to point at the same note, which the same
+// note written two ways does: [[notes/Entropy]] in the links block and
+// [[Entropy]] in prose are one link, and the described one wins (ADR-0003).
+//
+// It happens here rather than at parse time because only resolution knows that
+// two different strings mean one note.
+func dedupe(links []domain.ResolvedLink) []domain.ResolvedLink {
+	seen := map[string]int{}
+	var out []domain.ResolvedLink
+	for _, l := range links {
+		key := l.To
+		if key == "" {
+			// Unresolved links are only the same when written the same: nothing
+			// here knows what they would have meant.
+			key = "\x00" + l.Target.String()
+		}
+		at, known := seen[key]
+		if !known {
+			seen[key] = len(out)
+			out = append(out, l)
+			continue
+		}
+		if out[at].Role == domain.RoleRef && l.Role != domain.RoleRef {
+			// A mention in prose gives way to the record that carries a role.
+			out[at] = l
+		}
+	}
+	return out
 }
 
 func (q *Queries) resolve(ctx context.Context, vaultID, from string, r *domain.ResolvedLink) error {
@@ -85,7 +115,7 @@ func (q *Queries) candidates(ctx context.Context, vaultID, name string) ([]strin
 	base := strings.TrimSuffix(path.Base(name), path.Ext(name))
 
 	rows, err := q.db.QueryContext(ctx, stmt.Get("candidates"),
-		vaultID, name, withExt, base, path.Base(name))
+		vaultID, name, vaultID, withExt, vaultID, base)
 	if err != nil {
 		return nil, err
 	}
@@ -116,14 +146,14 @@ func pick(from, name string, candidates []string) (chosen string, ambiguous bool
 		wanted += ".md"
 	}
 	for _, c := range candidates {
-		if c == wanted {
+		if strings.EqualFold(c, wanted) {
 			return c, false
 		}
 	}
 
 	relative := path.Join(path.Dir(from), wanted)
 	for _, c := range candidates {
-		if c == relative {
+		if strings.EqualFold(c, relative) {
 			return c, false
 		}
 	}
@@ -152,34 +182,55 @@ func sharedPrefix(a, b string) int {
 	return n
 }
 
-// Backlinks returns the notes pointing at one note, by whichever form was
-// written: its identifier, or a name that resolves to it.
+// Backlinks returns the notes that point at one note.
+//
+// A link is a backlink because it *resolves* here, not because its text looks
+// like this note. Those differ in both directions: a link written as a path
+// never matches by name, and a link written as a bare name may resolve to a
+// nearer note of the same name. So every candidate goes through the same
+// resolution the forward direction uses, and only the ones that land here are
+// kept.
 func (q *Queries) Backlinks(ctx context.Context, vaultID, to string) ([]domain.ResolvedLink, error) {
-	var noteID string
-	var basename string
-	if err := q.db.QueryRowContext(ctx,
-		stmt.Get("addressing"),
-		vaultID, to).Scan(&noteID, &basename); errors.Is(err, sql.ErrNoRows) {
+	var noteID, base string
+	err := q.db.QueryRowContext(ctx, stmt.Get("addressing"), vaultID, to).Scan(&noteID, &base)
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
-	} else if err != nil {
+	}
+	if err != nil {
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("backlinks"), vaultID, noteID, basename, basename)
+	rows, err := q.db.QueryContext(ctx, stmt.Get("backlink_candidates"),
+		vaultID, noteID, vaultID, base)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var out []domain.ResolvedLink
+	var candidates []domain.ResolvedLink
 	for rows.Next() {
 		var r domain.ResolvedLink
 		var role string
-		if err := rows.Scan(&r.From, &role, &r.Type); err != nil {
+		var position int
+		if err := rows.Scan(&r.From, &r.Target.Scheme, &r.Target.Value, &role,
+			&r.Type, &r.Note, &r.Label, &position); err != nil {
 			return nil, err
 		}
 		r.Role = domain.LinkRole(role)
-		out = append(out, r)
+		candidates = append(candidates, r)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	var out []domain.ResolvedLink
+	for _, c := range candidates {
+		if err := q.resolve(ctx, vaultID, c.From, &c); err != nil {
+			return nil, err
+		}
+		if c.To == to {
+			out = append(out, c)
+		}
+	}
+	return out, nil
 }

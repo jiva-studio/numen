@@ -24,3 +24,8 @@ type LinkQueries interface {
 	// written: its identifier, or a name that resolves to it.
 	Backlinks(ctx context.Context, vaultID, to string) ([]domain.ResolvedLink, error)
 }
+
+// ProblemQueries reports what a vault contains that could not be acted on.
+type ProblemQueries interface {
+	Problems(ctx context.Context, vaultID string) ([]domain.VaultProblem, error)
+}

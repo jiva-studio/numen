@@ -23,6 +23,7 @@ usage:
   numen scan <vault>                       bring the index up to date with a vault
   numen search <vault> <query>             full-text search within one vault
   numen links <vault> <note>               what a note points at, and what points at it
+  numen problems <vault>                   what a scan could not act on
 
 A vault is named by its name, its path, or its identity.
 
@@ -78,6 +79,8 @@ func Run(ctx context.Context, out io.Writer, args []string) error {
 		return searchCommand(ctx, out, cfg, rest[1:])
 	case "links":
 		return linksCommand(ctx, out, cfg, rest[1:])
+	case "problems":
+		return problemsCommand(ctx, out, cfg, rest[1:])
 	case "help", "-h", "--help":
 		fmt.Fprint(out, usage)
 		return nil

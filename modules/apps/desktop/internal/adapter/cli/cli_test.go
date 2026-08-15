@@ -243,8 +243,10 @@ func TestLinksShowsBothDirections(t *testing.T) {
 	out := s.mustRun("links", "demo", "notes/Entropy.md")
 	// Thermodynamics names it as a child and mentions it in prose; the fixture
 	// is what says so.
-	if !strings.Contains(out, "pointed at by:") || !strings.Contains(out, "Thermodynamics.md") {
-		t.Errorf("links said:\n%s", out)
+	// The child edge is the one that makes the hierarchy, and it is written as a
+	// path — which is exactly the form a text match misses.
+	if !strings.Contains(out, "child      Thermodynamics.md") {
+		t.Errorf("the child edge is missing:\n%s", out)
 	}
 
 	from := s.mustRun("links", "demo", "Thermodynamics.md")
@@ -255,5 +257,21 @@ func TestLinksShowsBothDirections(t *testing.T) {
 	broken := s.mustRun("links", "demo", "edge/broken-links.md")
 	if !strings.Contains(broken, "nothing by that name") {
 		t.Errorf("a dangling link was not reported:\n%s", broken)
+	}
+}
+
+func TestProblemsReportsWhatWasNotGuessedAt(t *testing.T) {
+	s := newSession(t)
+	s.mustRun("vault", "add", s.vault, "--name", "demo")
+	s.mustRun("scan", "demo")
+
+	out := s.mustRun("problems", "demo")
+	// The fixture has a note with three unusable link entries and one with
+	// frontmatter that will not parse. None of it stopped the scan, and none of
+	// it is invisible.
+	for _, want := range []string{"broken-links.md", "no role", "sideways", "broken-frontmatter.md"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("problems did not mention %q:\n%s", want, out)
+		}
 	}
 }

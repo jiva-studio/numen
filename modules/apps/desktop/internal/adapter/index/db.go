@@ -49,6 +49,7 @@ var pragmas = []string{
 	// The index is a cache: a crash costs a rescan, never data. Paying an fsync
 	// per commit to protect it buys nothing and dominates a rebuild.
 	"synchronous(NORMAL)",
+	"cache_size(-65536)",
 }
 
 func Open(ctx context.Context, path string) (*DB, error) {

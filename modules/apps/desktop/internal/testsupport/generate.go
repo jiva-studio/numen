@@ -32,8 +32,8 @@ func GenerateVault(tb testing.TB, n int) domain.Vault {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			tb.Fatal(err)
 		}
-		path := filepath.Join(dir, fmt.Sprintf("note-%06d.md", i))
-		if err := os.WriteFile(path, []byte(note(r, i)), 0o644); err != nil {
+		path := filepath.Join(dir, name(i)+".md")
+		if err := os.WriteFile(path, []byte(note(r, i, n)), 0o644); err != nil {
 			tb.Fatal(err)
 		}
 	}
@@ -52,9 +52,19 @@ var vocabulary = strings.Fields(`entropy thermodynamics shannon information meas
 	system description observer probability distribution ensemble equilibrium
 	temperature energy conservation reversible irreversible statistical mechanics`)
 
-func note(r *rand.Rand, i int) string {
+func note(r *rand.Rand, i, total int) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "---\ntitle: Note %d\nstatus: generated\n---\n\n# Note %d\n\n", i, i)
+
+	// A note that links to nothing exercises none of the link path, and a vault
+	// of them would report a parser and an index that are faster than the real
+	// ones. Every note names a parent and points at a few others, which is what
+	// a vault actually looks like.
+	fmt.Fprintf(&b, "---\ntitle: Note %d\nstatus: generated\n", i)
+	if i > 0 {
+		fmt.Fprintf(&b, "links:\n  - to: \"[[%s]]\"\n    role: parent\n", name(i/10))
+	}
+	b.WriteString("---\n\n")
+	fmt.Fprintf(&b, "# Note %d\n\n", i)
 
 	// One note in a thousand carries a word no other note has. Every generated
 	// note otherwise draws on the same twenty words, so a query matches the
@@ -73,7 +83,16 @@ func note(r *rand.Rand, i int) string {
 			b.WriteString(vocabulary[r.IntN(len(vocabulary))])
 			b.WriteByte(' ')
 		}
+		// Two or three references into the rest of the vault, spread far enough
+		// apart that resolution is not answering from one page of the index.
+		for range 2 + r.IntN(2) {
+			fmt.Fprintf(&b, "see [[%s]] ", name(r.IntN(total)))
+		}
 		b.WriteString("\n\n")
 	}
 	return b.String()
 }
+
+// name is what a note is called, and therefore what a link by name has to
+// resolve.
+func name(i int) string { return fmt.Sprintf("note-%06d", i) }

@@ -90,11 +90,19 @@ func (r *Repository) Save(ctx context.Context, vaultID string, n domain.Note) er
 			return err
 		}
 	}
-	for i, l := range n.Links {
-		if err := exec(ctx, tx, "insert_link", vaultID, n.Ref.Path,
-			l.Target.Scheme, l.Target.Value, string(l.Role),
-			nullable(l.Type), nullable(l.Note), nullable(l.Label), i); err != nil {
-			return err
+	if len(n.Links) > 0 {
+		insert, err := tx.PrepareContext(ctx, stmt.Get("insert_link"))
+		if err != nil {
+			return fmt.Errorf("insert_link: %w", err)
+		}
+		defer insert.Close()
+		for i, l := range n.Links {
+			if _, err := insert.ExecContext(ctx, vaultID, n.Ref.Path,
+				l.Target.Scheme, l.Target.Value, string(l.Role),
+				nullable(l.Type), nullable(l.Note), nullable(l.Label),
+				basename(l.Target.Value), i); err != nil {
+				return fmt.Errorf("insert_link: %w", err)
+			}
 		}
 	}
 	for _, detail := range n.Problems {

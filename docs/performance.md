@@ -41,6 +41,33 @@ hundred thousand, and ranking a hundred thousand matches is linear work. Real
 queries look like the first row; a vault generated from twenty words produces
 only the second, which is why the load test asks both.
 
+## What links cost
+
+Generated notes now carry links — a parent in frontmatter and two or three
+references in prose — because a vault of notes that link to nothing measures a
+parser and an index that are faster than the real ones.
+
+| | before links | with links |
+| --- | --- | --- |
+| Cold scan, 10 000 notes | 7.6 s | 20.8 s |
+| Resolving one note's links, 10 000 | — | 0.17 ms |
+| Backlinks of one note, 10 000 | — | 67 ms |
+
+**The scan got three times slower and that is the honest cost of the feature**:
+four more rows per note and three more indexes to maintain. Extrapolated to
+100k it is about 3.5 minutes, against the 3-minute target in ADR-0019 — over it,
+and recorded here rather than quietly rounded down.
+
+**Resolution went from 20 ms to 0.17 ms** on the way. The first version narrowed
+to the vault and then read every note in it, once per link, because an `OR`
+across columns leaves SQLite able to use only the leading one. Splitting each
+question into a union of single-index lookups is what fixed it — found by
+reading query plans, not by guessing, after two guesses made it worse.
+
+**Backlinks are the remaining hot spot.** Still growing with the size of the
+vault; the candidate lookup is an index search, so the cost is somewhere after
+it, and finding out needs a profile rather than another guess.
+
 ## Baseline
 
 Recorded 2026-08-15 on an AMD Ryzen 7 6800U, `modernc.org/sqlite`, WAL with

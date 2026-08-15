@@ -57,7 +57,7 @@ func frontmatterLinks(frontmatter map[string]any) ([]domain.Link, []string) {
 
 	var out []domain.Link
 	var problems []string
-	for i, entry := range raw {
+	for _, entry := range raw {
 		fields, ok := entry.(map[string]any)
 		if !ok {
 			problems = append(problems, "links: entry is not a mapping")
@@ -79,7 +79,6 @@ func frontmatterLinks(frontmatter map[string]any) ([]domain.Link, []string) {
 			problems = append(problems, "links: "+to+" has an unknown role "+string(role))
 			continue
 		}
-		_ = i
 		out = append(out, domain.Link{
 			Target: domain.ParseAddress(to),
 			Role:   role,

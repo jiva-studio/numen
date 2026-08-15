@@ -35,3 +35,11 @@ type Heading struct {
 	Text  string
 	Pos   int
 }
+
+// VaultProblem is something in a file that could not be acted on and was not
+// guessed at. It is shown rather than repaired, because repairing means deciding
+// what the user meant.
+type VaultProblem struct {
+	Path   string
+	Detail string
+}

@@ -42,8 +42,15 @@ obligation the moment a vault is full of it.
 ## Rules of the model
 
 - **`parent` and `child` are one edge.** `parent: B` written in A and `child: A`
-  written in B describe the same thing. The index normalises to one direction
-  and deduplicates, so the user writes whichever end is convenient.
+  written in B describe the same thing, and the user writes whichever end is
+  convenient.
+
+  Both ends are visible today because a link is answered in both directions: what
+  a note points at, and what points at it. **Folding them into one stored
+  direction is deliberately deferred** until a traversal needs it — a graph walk
+  is what turns "the same thing written twice" into a problem, and there is no
+  traversal yet. When one arrives, this is where the canonical direction gets
+  decided.
 - **Multiple parents are ordinary.** The hierarchy is a DAG, not a tree.
 - **Cycles in `parent` edges are forbidden**, and arrive anyway. Created inside
   the application, a cycle is refused; arriving from an external edit, it must
@@ -60,7 +67,9 @@ obligation the moment a vault is full of it.
   parser and never hand-authored as markup.
 - **The same link written twice is one link**, and the annotated record wins: a
   wikilink in the body that is also described in `links:` keeps the role, type
-  and note from `links:`.
+  and note from `links:`. Sameness is decided by where the links resolve, not by
+  how they were typed — `[[notes/Entropy]]` and `[[Entropy]]` are one link when
+  they land on one note.
 - **`role='attachment'`** points at something that is not a note (ADR-0010). It
   takes no part in the hierarchy and is excluded from cycle checking.
 

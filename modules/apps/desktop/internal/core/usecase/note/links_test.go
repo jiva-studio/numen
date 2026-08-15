@@ -1,7 +1,6 @@
 package note_test
 
 import (
-	"context"
 	"path/filepath"
 	"testing"
 
@@ -40,7 +39,7 @@ func indexed(t *testing.T, notes map[string]string) (*container.Index, domain.Va
 
 func connections(t *testing.T, db *container.Index, v domain.Vault, path string) note.Connections {
 	t.Helper()
-	c, err := note.ShowConnections{Links: db.Links()}.Execute(context.Background(), v, path)
+	c, err := note.ShowConnections{Links: db.Links()}.Execute(t.Context(), v, path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -251,4 +250,104 @@ func addVault(t *testing.T, db *container.Index, v domain.Vault) domain.Vault {
 		t.Fatal(err)
 	}
 	return v
+}
+
+func TestALinkWrittenAsAPathIsStillABacklink(t *testing.T) {
+	// A backlink is a link that resolves here, not one whose text looks like
+	// this note. Written as a path, it never matches by name.
+	db, v := indexed(t, map[string]string{
+		"source.md":        "---\nlinks:\n  - to: \"[[notes/Entropy]]\"\n    role: child\n---\n\nbody\n",
+		"notes/Entropy.md": "# Entropy\n",
+	})
+
+	c := connections(t, db, v, "notes/Entropy.md")
+	if len(c.Backlinks) != 1 {
+		t.Fatalf("backlinks = %+v", c.Backlinks)
+	}
+	if c.Backlinks[0].Role != domain.RoleChild {
+		t.Errorf("role = %q, want child — the edge that makes the hierarchy", c.Backlinks[0].Role)
+	}
+}
+
+func TestALinkThatResolvesElsewhereIsNotABacklink(t *testing.T) {
+	// Two notes answer to the name, and the link resolves to the near one. The
+	// far one must not claim it.
+	db, v := indexed(t, map[string]string{
+		"projects/source.md":  "Points at [[Entropy]].\n",
+		"projects/Entropy.md": "# The one it means\n",
+		"archive/Entropy.md":  "# The one it does not\n",
+	})
+
+	near := connections(t, db, v, "projects/Entropy.md")
+	if len(near.Backlinks) != 1 {
+		t.Errorf("the note the link resolves to has %d backlinks", len(near.Backlinks))
+	}
+	far := connections(t, db, v, "archive/Entropy.md")
+	if len(far.Backlinks) != 0 {
+		t.Errorf("a note claimed a link that resolves elsewhere: %+v", far.Backlinks)
+	}
+}
+
+func TestBacklinksNeverCrossVaults(t *testing.T) {
+	// The bug class ADR-0002 calls invisible by construction, asked of the
+	// direction that has to look at every link in the vault.
+	db, first := indexed(t, map[string]string{
+		"target.md": "# Target\n",
+		"source.md": "Points at [[target]].\n",
+	})
+	second := addVault(t, db, testsupport.NewVault(t, map[string]string{
+		"target.md":    "# A different target\n",
+		"elsewhere.md": "Points at [[target]].\n",
+	}))
+
+	c := connections(t, db, first, "target.md")
+	if len(c.Backlinks) != 1 || c.Backlinks[0].From != "source.md" {
+		t.Errorf("first vault backlinks = %+v", c.Backlinks)
+	}
+	other := connections(t, db, second, "target.md")
+	if len(other.Backlinks) != 1 || other.Backlinks[0].From != "elsewhere.md" {
+		t.Errorf("second vault backlinks = %+v", other.Backlinks)
+	}
+}
+
+func TestOneNoteWrittenTwoWaysIsOneLink(t *testing.T) {
+	// The links block names it by path, the prose names it by name. Both mean
+	// the same note, so there is one link, and the described one wins.
+	db, v := indexed(t, map[string]string{
+		"source.md":        "---\nlinks:\n  - to: \"[[notes/Entropy]]\"\n    role: child\n---\n\nAlso mentioned as [[Entropy]].\n",
+		"notes/Entropy.md": "# Entropy\n",
+	})
+
+	c := connections(t, db, v, "source.md")
+	if len(c.Links) != 1 {
+		t.Fatalf("got %d links, want one: %+v", len(c.Links), c.Links)
+	}
+	if c.Links[0].Role != domain.RoleChild {
+		t.Errorf("role = %q, want the described one", c.Links[0].Role)
+	}
+}
+
+func TestTwoUnresolvedLinksAreOnlyTheSameWhenWrittenTheSame(t *testing.T) {
+	// Nothing here knows what a name that answers to nothing would have meant,
+	// so two of them stay two.
+	db, v := indexed(t, map[string]string{
+		"source.md": "Points at [[Nowhere]] and [[Elsewhere]].\n",
+	})
+
+	c := connections(t, db, v, "source.md")
+	if len(c.Links) != 2 {
+		t.Errorf("got %+v", c.Links)
+	}
+}
+
+func TestANameMatchesWhateverCaseItWasTypedIn(t *testing.T) {
+	db, v := indexed(t, map[string]string{
+		"source.md":  "Points at [[entropy]].\n",
+		"Entropy.md": "# Entropy\n",
+	})
+
+	c := connections(t, db, v, "source.md")
+	if c.Links[0].To != "Entropy.md" {
+		t.Errorf("resolved to %q — people type lowercase", c.Links[0].To)
+	}
 }
