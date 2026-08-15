@@ -18,10 +18,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/ulid"
 )
 
-// DefaultServiceDir is the one folder the application writes into a vault. It is
-// named after the application so that it cannot collide with another tool that
-// had the same idea — a vault opened by both ends up with .numen beside
-// .obsidian.
+// DefaultServiceDir is the one folder the application writes into a vault.
 const DefaultServiceDir = ".numen"
 
 const configName = "config.json"
@@ -64,11 +61,8 @@ func (s *VaultReader) Root() string { return s.root }
 
 // Walk reports every markdown file in the vault.
 //
-// Directories whose name begins with a dot are skipped whole. The service
-// folder is skipped because it is not vault content; the rest are
-// skipped because a hidden directory at the top of a vault belongs to some
-// tool — .git, .obsidian — and indexing another tool's state as if the user had
-// written it is worse than missing a note nobody keeps there.
+// Directories whose name begins with a dot are skipped whole: they hold tool
+// state rather than notes the user wrote.
 func (s *VaultReader) Walk(ctx context.Context, fn func(domain.FileRef) error) error {
 	return filepath.WalkDir(s.root, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
