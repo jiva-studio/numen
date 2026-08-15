@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-15
+- **Applies to:** the vault format and application state — every application
 - **Related:** ADR-0000, ADR-0001, ADR-0002
 
 ## Context

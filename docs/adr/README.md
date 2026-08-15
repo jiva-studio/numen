@@ -6,6 +6,12 @@ whatever order the work demands, which is rarely the order they are best read in
 
 **This page is the reading order.** The numbers on the files are not.
 
+**Every ADR says what it applies to.** This repository holds several
+applications, and a decision about one of them is not a decision about the
+product. The header of each says which: the product as a whole, the vault
+format, or a named application. Without that line a reader has to guess whether
+a rule binds them, and guessing wrong in either direction is expensive.
+
 To change an accepted decision, write a new ADR that supersedes it and mark the
 old one `Superseded by ADR-NNNN`. Do not edit the old file into agreement with
 the new one — the point of the record is that it shows what was believed and why.
@@ -22,7 +28,7 @@ Read these first; everything else is derived from them.
 
 - [ADR-0013 — Vault identity, the service folder, and application state](0013-vault-identity-and-application-state.md)
 - [ADR-0014 — One binary, hexagonal core in Go](0014-one-binary-hexagonal-core-in-go.md)
-- [ADR-0015 — The index is migrated, not rebuilt](0015-the-index-is-migrated.md)
+- [ADR-0015 — A schema change migrates the index instead of rebuilding it](0015-schema-changes-are-migrations.md)
 
 ## The note file
 

@@ -1,7 +1,8 @@
-# ADR-0015: The index is migrated, not rebuilt
+# ADR-0015: A schema change migrates the index instead of rebuilding it
 
 - **Status:** Accepted
 - **Date:** 2026-08-15
+- **Applies to:** any application that keeps an index; today `modules/apps/desktop`
 - **Related:** ADR-0000, ADR-0002, ADR-0014
 
 ## Context

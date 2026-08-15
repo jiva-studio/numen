@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-15
+- **Applies to:** any application that keeps an index; today `modules/apps/desktop`
 - **Related:** ADR-0000, ADR-0001, ADR-0004
 
 ## Context
