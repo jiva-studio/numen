@@ -210,8 +210,8 @@ describe('while a gesture is under way', () => {
     svg.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
 
-    expect(plex.find('.plex__ghost').exists()).toBe(true)
-    expect(plex.get('.plex__ghost-role').text()).toBe('parent')
+    expect(plex.find('.plex__node--ghost').exists()).toBe(true)
+    expect(plex.get('.plex__node--ghost .plex__label-text').text()).toBe('parent')
   })
 
   it('marks the node a link would be made to instead', async () => {
@@ -223,7 +223,7 @@ describe('while a gesture is under way', () => {
     svg.dispatchEvent(pointer('pointermove', 600 + at[0]!, 400 + at[1]!))
     await plex.vm.$nextTick()
 
-    expect(plex.find('.plex__ghost').exists()).toBe(false)
-    expect(plex.findAll('.plex__node--aimed')).toHaveLength(1)
+    expect(plex.find('.plex__node--ghost').exists()).toBe(false)
+    expect(plex.findAll('.plex__node--target')).toHaveLength(1)
   })
 })

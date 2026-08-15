@@ -8,7 +8,15 @@
  */
 import { computed, useTemplateRef } from 'vue'
 import PlexNodeView from './PlexNodeView.vue'
-import { handleIn, midpointOf, type PlacedEdge, type PlexFrame, type Point } from '../model'
+import {
+  handleIn,
+  midpointOf,
+  type NodeStanding,
+  type PlacedEdge,
+  type PlacedNode,
+  type PlexFrame,
+  type Point,
+} from '../model'
 import type { Drop } from '../arrange'
 
 const props = withDefaults(
@@ -67,11 +75,16 @@ const path = (edge: PlacedEdge) =>
   ` ${edge.toPoint.x} ${edge.toPoint.y}`
 
 /**
- * While a gesture is running, only the node it left from has a handle: the
- * hand is somewhere else entirely, and a second one under it would offer to
- * start a gesture that is already under way.
+ * What each node is to the gesture. Only the node it left from keeps a handle
+ * while one is running: the hand is somewhere else entirely, and a second
+ * handle under it would offer to start a gesture already under way.
  */
-const mayReachNow = computed(() => props.mayReach && props.gestureFrom === null)
+const standingOf = (node: PlacedNode): NodeStanding => {
+  const outcome = props.gestureOutcome
+  if (outcome?.kind === 'link' && outcome.to === node.id) return 'target'
+  if (props.gestureFrom === node.id) return 'source'
+  return props.mayReach && props.gestureFrom === null ? 'open' : 'closed'
+}
 
 /** The line a gesture drags behind it, from the handle to the pointer. */
 const thread = computed(() => {
@@ -87,18 +100,27 @@ const thread = computed(() => {
   )
 })
 
-/** Where a new node would appear, so the reader sees it before letting go. */
-const ghost = computed(() => {
+/**
+ * The node a gesture would make, drawn where it would appear so the reader
+ * sees it before letting go. A node like any other, so it is the same box in
+ * the same place at the same size — it is only that it has no name yet, and
+ * says the seat it would take instead.
+ */
+const ghost = computed<PlacedNode | null>(() => {
   const outcome = props.gestureOutcome
   const to = props.gestureAt
   if (outcome?.kind !== 'create' || !to) return null
-  return { role: outcome.role, x: to.x, y: to.y, ...props.nodeSize }
+  return {
+    id: 'ghost',
+    label: outcome.role,
+    role: outcome.role,
+    x: to.x,
+    y: to.y,
+    ...props.nodeSize,
+    order: 0,
+    opacity: 1,
+  }
 })
-
-/** The node a link would be made to, so it can be shown as the target. */
-const aimedAt = computed(() =>
-  props.gestureOutcome?.kind === 'link' ? props.gestureOutcome.to : null,
-)
 </script>
 
 <template>
@@ -138,9 +160,7 @@ const aimedAt = computed(() =>
       v-for="node in frame.nodes"
       :key="node.id"
       :node="node"
-      :may-reach="mayReachNow"
-      :reaching="gestureFrom === node.id"
-      :aimed="aimedAt === node.id"
+      :standing="standingOf(node)"
       @activate="emit('activate', node.id)"
       @reach="emit('reach', node.id, $event)"
     >
@@ -148,25 +168,9 @@ const aimedAt = computed(() =>
     </PlexNodeView>
 
     <!-- The gesture itself, drawn over everything it may land on. -->
-    <g v-if="thread" class="plex__reach" aria-hidden="true">
-      <path class="plex__thread" :d="thread" />
-      <rect
-        v-if="ghost"
-        class="plex__ghost"
-        :style="{ '--numen-role-hue': `var(--numen-role-${ghost.role})` }"
-        :x="ghost.x - ghost.width / 2"
-        :y="ghost.y - ghost.height / 2"
-        :width="ghost.width"
-        :height="ghost.height"
-      />
-      <text
-        v-if="ghost"
-        class="plex__ghost-role"
-        :x="ghost.x"
-        :y="ghost.y"
-        text-anchor="middle"
-        dominant-baseline="central"
-      >{{ ghost.role }}</text>
+    <g v-if="thread" class="plex__reach">
+      <path class="plex__thread" :d="thread" aria-hidden="true" />
+      <PlexNodeView v-if="ghost" :node="ghost" standing="ghost" />
     </g>
   </svg>
 </template>
@@ -205,20 +209,5 @@ const aimedAt = computed(() =>
   stroke: var(--numen-ring);
   stroke-width: var(--numen-edge-width);
   stroke-dasharray: 4 4;
-}
-
-.plex__ghost {
-  rx: var(--numen-radius);
-  fill: none;
-  stroke: var(--numen-role-hue, var(--numen-ring));
-  stroke-width: var(--numen-stroke);
-  stroke-dasharray: 6 4;
-}
-
-.plex__ghost-role {
-  fill: var(--numen-edge-label);
-  font-size: var(--numen-edge-label-size);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
 }
 </style>

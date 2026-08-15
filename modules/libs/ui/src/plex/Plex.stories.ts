@@ -375,7 +375,9 @@ export const MakingOne: Story = {
       { target: surface, coords: above },
     ])
     await expect(canvasElement.querySelector('.plex__thread')).not.toBeNull()
-    await expect(canvasElement.querySelector('.plex__ghost-role')?.textContent).toBe('parent')
+    await expect(
+      canvasElement.querySelector('.plex__node--ghost .plex__label-text')?.textContent,
+    ).toBe('parent')
 
     // Let go by hand: a second `userEvent.pointer` call does not know a button
     // is still down from the first, so its release is a no-op.

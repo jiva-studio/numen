@@ -11,7 +11,12 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 import { computed } from 'vue'
 import PlexNodeView from './PlexNodeView.vue'
 import { awkwardLabels } from '../fixtures/neighbourhoods'
-import { RELATED_ROLES, type PlacedNode, type PlexRole } from '../model'
+import {
+  RELATED_ROLES,
+  type NodeStanding,
+  type PlacedNode,
+  type PlexRole,
+} from '../model'
 
 interface Knobs {
   label: string
@@ -20,15 +25,16 @@ interface Knobs {
   height: number
   /** Below one, a node is on its way in or out and cannot be chosen. */
   opacity: number
-  mayReach: boolean
-  reaching: boolean
-  aimed: boolean
+  /** What the node is to a gesture. One setting, because it is one of these. */
+  standing: NodeStanding
   /** Fill the icon slot. What goes in it is the application's, not the plex's. */
   icon: boolean
 
   onActivate: () => void
   onReach: (pointer: PointerEvent) => void
 }
+
+const STANDINGS: readonly NodeStanding[] = ['open', 'closed', 'source', 'target', 'ghost']
 
 /**
  * Something to put in the slot. Any markup will do — a node has no idea what
@@ -78,9 +84,7 @@ const on =
             v-for="node in scene"
             :key="node.id"
             :node="node"
-            :may-reach="args.mayReach"
-            :reaching="args.reaching"
-            :aimed="args.aimed"
+            :standing="args.standing"
             @activate="args.onActivate"
             @reach="args.onReach"
           >
@@ -115,8 +119,8 @@ const meta: Meta<Knobs> = {
           'A box, a label and the handle to reach out from. Everything it ' +
           'draws with is already on the node it was handed, and whether a ' +
           'pointer is over it is its own affair — hover it and the handle ' +
-          'appears. What it cannot know is whether reaching out is allowed ' +
-          'here at all, and whether a gesture would land a link on it.',
+          'appears. The one thing it cannot work out is what it is to a ' +
+          'gesture, which arrives as its standing.',
       },
     },
   },
@@ -128,9 +132,7 @@ const meta: Meta<Knobs> = {
     height: range(20, 96, 2),
     opacity: range(0, 1, 0.05),
     icon: { control: 'boolean' },
-    mayReach: { control: 'boolean' },
-    reaching: { control: 'boolean' },
-    aimed: { control: 'boolean' },
+    standing: { control: 'select', options: STANDINGS },
 
     onActivate: { table: { disable: true } },
     onReach: { table: { disable: true } },
@@ -143,9 +145,7 @@ const meta: Meta<Knobs> = {
     height: 36,
     opacity: 1,
     icon: false,
-    mayReach: true,
-    reaching: false,
-    aimed: false,
+    standing: 'open',
     onActivate: fn(),
     onReach: fn(),
   },

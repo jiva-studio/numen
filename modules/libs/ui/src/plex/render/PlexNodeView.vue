@@ -11,20 +11,15 @@
  * not reorder a right-to-left run.
  */
 import { computed, ref } from 'vue'
-import { handleIn, isReachable, nameOf, type PlacedNode } from '../model'
+import { handleIn, isReachable, nameOf, type NodeStanding, type PlacedNode } from '../model'
 
 const props = withDefaults(
   defineProps<{
     node: PlacedNode
-    /** Whether reaching out from here is allowed at all. */
-    mayReach?: boolean
-    /** A gesture is already under way from here: the hand has moved on, and
-     *  the handle it left from stays where it was. */
-    reaching?: boolean
-    /** A gesture in progress would land a link on this node. */
-    aimed?: boolean
+    /** What this node is to the gesture. The one thing it cannot work out. */
+    standing?: NodeStanding
   }>(),
-  { mayReach: true, reaching: false, aimed: false },
+  { standing: 'open' },
 )
 
 const emit = defineEmits<{
@@ -36,8 +31,19 @@ const emit = defineEmits<{
 
 const over = ref(false)
 
+/** Not a node yet, so nothing may be done to it and nothing is told about it. */
+const ghost = computed(() => props.standing === 'ghost')
+
+/** One predicate, because the rule decides the click and the tab stop both. */
+const reachable = computed(() => !ghost.value && isReachable(props.node))
+
+/** The focus is announced although it cannot be chosen: it is where you are. */
+const announced = computed(
+  () => !ghost.value && (isReachable(props.node) || props.node.role === 'focus'),
+)
+
 const activate = () => {
-  if (isReachable(props.node)) emit('activate')
+  if (reachable.value) emit('activate')
 }
 
 const onKey = (event: KeyboardEvent) => {
@@ -60,7 +66,8 @@ const reach = (event: PointerEvent) => {
  */
 const offering = computed(
   () =>
-    props.node.opacity >= 1 && (props.reaching || (props.mayReach && over.value)),
+    props.node.opacity >= 1 &&
+    (props.standing === 'source' || (props.standing === 'open' && over.value)),
 )
 
 /** Read three times by the drawing: the circle, and the two strokes on it. */
@@ -73,11 +80,11 @@ const handle = computed(() => handleIn(props.node))
     :style="{ '--numen-role-hue': `var(--numen-role-${node.role})` }"
     :transform="`translate(${node.x} ${node.y})`"
     :opacity="node.opacity"
-    :tabindex="isReachable(node) ? 0 : -1"
-    :aria-hidden="isReachable(node) || node.role === 'focus' ? undefined : 'true'"
-    :role="node.role === 'focus' ? 'img' : 'button'"
-    :class="[`plex__node--${node.role}`, { 'plex__node--aimed': aimed }]"
-    :aria-label="nameOf(node)"
+    :tabindex="reachable ? 0 : -1"
+    :aria-hidden="announced ? undefined : 'true'"
+    :role="ghost ? undefined : node.role === 'focus' ? 'img' : 'button'"
+    :class="[`plex__node--${node.role}`, `plex__node--${standing}`]"
+    :aria-label="ghost ? undefined : nameOf(node)"
     @click="activate"
     @keydown="onKey"
     @pointerenter="over = true"
@@ -210,9 +217,31 @@ const handle = computed(() => handleIn(props.node))
 }
 
 /* The node a link would be made to, while the pointer is still on it. */
-.plex__node--aimed .plex__box {
+.plex__node--target .plex__box {
   stroke: var(--numen-ring);
   stroke-width: var(--numen-ring-width);
+}
+
+/* Not there yet: an outline where a node would appear, and out of the way of
+   everything under it — including the gesture still looking for somewhere to
+   land. What it says is the seat, not a name, because it has none. */
+.plex__node--ghost {
+  cursor: default;
+  pointer-events: none;
+}
+
+.plex__node--ghost .plex__box {
+  fill: none;
+  stroke: var(--numen-role-hue, var(--numen-ring));
+  stroke-dasharray: 6 4;
+  transition: none;
+}
+
+.plex__node--ghost .plex__label {
+  color: var(--numen-edge-label);
+  font-size: var(--numen-edge-label-size);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .plex__node:focus-visible {
