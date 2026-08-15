@@ -11,10 +11,12 @@ import PlexNodeView from './PlexNodeView.vue'
 import {
   handleIn,
   midpointOf,
+  seatOf,
   type NodeStanding,
   type PlacedEdge,
   type PlacedNode,
   type PlexFrame,
+  type PlexRelatedRole,
   type Point,
 } from '../model'
 import type { Drop } from '../arrange'
@@ -31,6 +33,11 @@ const props = withDefaults(
     /** Whether reaching out is allowed at all, and so whether any node may
      *  offer a handle. */
     mayReach?: boolean
+    /**
+     * What to call a seat, for the one place a seat has to be written into the
+     * picture: the outline a gesture draws says which one it would take.
+     */
+    seatName?: (role: PlexRelatedRole) => string
     /** A gesture in progress: where it started, where it is, what it means. */
     gestureFrom?: string | null
     gestureAt?: Point | null
@@ -39,6 +46,7 @@ const props = withDefaults(
   {
     showEdgeLabels: true,
     mayReach: true,
+    seatName: seatOf,
     gestureFrom: null,
     gestureAt: null,
     gestureOutcome: null,
@@ -106,7 +114,7 @@ const thread = computed(() => {
  * The node a gesture would make, drawn where it would appear so the reader
  * sees it before letting go. A node like any other, so it is the same box in
  * the same place at the same size — it is only that it has no name yet, and
- * says the seat it would take instead.
+ * says the seat it would take instead, in whatever words it was given.
  */
 const ghost = computed<PlacedNode | null>(() => {
   const outcome = props.gestureOutcome
@@ -114,7 +122,7 @@ const ghost = computed<PlacedNode | null>(() => {
   if (outcome?.kind !== 'create' || !to) return null
   return {
     id: 'ghost',
-    label: outcome.role,
+    label: props.seatName(outcome.role),
     role: outcome.role,
     x: to.x,
     y: to.y,

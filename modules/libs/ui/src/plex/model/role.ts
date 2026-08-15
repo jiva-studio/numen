@@ -23,6 +23,9 @@ export type PlexRole = 'focus' | PlexRelatedRole
 
 export const RELATED_ROLES = Object.keys(ROLES) as readonly PlexRelatedRole[]
 
+/** One seat, by name: `parent`, `jump`. */
+export const seatOf = (role: PlexRelatedRole): string => ROLES[role].plural[0]
+
 /** `3 children`, `1 jump`. */
 export const countOf = (role: PlexRelatedRole, count: number): string =>
   `${count} ${ROLES[role].plural[count === 1 ? 0 : 1]}`

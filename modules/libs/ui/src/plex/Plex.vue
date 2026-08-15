@@ -11,7 +11,7 @@ import { computed, onMounted, onScopeDispose, ref, toRef, useTemplateRef } from 
 import PlexView from './render/PlexView.vue'
 import { usePlexTransition, browserEnvironment, type Environment } from './transition'
 import type { Placement, PlexOptionsInput } from './arrange'
-import { countOf, type PlexNeighbourhood, type PlexRelatedRole } from './model'
+import { countOf, seatOf, type PlexNeighbourhood, type PlexRelatedRole } from './model'
 import { resolveOptions } from './arrange'
 import { usePlexGesture } from './gesture'
 
@@ -34,6 +34,13 @@ const props = withDefaults(
     creatable?: readonly PlexRelatedRole[]
     /** How far a gesture travels before it is a drag and not a click. */
     dragThreshold?: number
+    /**
+     * What to call a seat. The plex has to write one into the picture — the
+     * outline a gesture draws says which seat it would take — and the words
+     * for it belong to whoever renders the plex, as they do for the overflow
+     * line. English by default, because something has to be drawn.
+     */
+    seatName?: (role: PlexRelatedRole) => string
   }>(),
   {
     showEdgeLabels: true,
@@ -41,6 +48,7 @@ const props = withDefaults(
     environment: () => browserEnvironment,
     creatable: () => ['parent', 'child', 'jump'],
     dragThreshold: 8,
+    seatName: seatOf,
   },
 )
 
@@ -138,6 +146,7 @@ defineExpose({ moving: toRef(moving) })
       :node-size="options.nodeSize"
       :show-edge-labels="showEdgeLabels"
       :may-reach="mayReach"
+      :seat-name="seatName"
       :gesture-from="gesture.from.value"
       :gesture-at="gesture.at.value"
       :gesture-outcome="gesture.outcome.value"
