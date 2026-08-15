@@ -32,6 +32,7 @@ Read these first; everything else is derived from them.
 - [ADR-0016 — What a scan stores about a note](0016-what-the-index-stores.md)
 - [ADR-0017 — How the desktop application is tested](0017-how-the-desktop-application-is-tested.md)
 - [ADR-0018 — A scan runs in the background, and there is one writer](0018-a-scan-runs-in-the-background.md)
+- [ADR-0019 — Performance targets for indexing and search](0019-performance-targets.md)
 
 ## The note file
 

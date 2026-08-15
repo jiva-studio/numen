@@ -21,6 +21,26 @@ repeating it measures patience. The other three cost milliseconds and run to the
 default duration, which is what makes their figures worth quoting: a single
 sample of a millisecond-scale benchmark varies by tens of percent.
 
+## At the size this is designed for
+
+A hundred thousand notes, from the load test. The targets these are compared
+against are in [ADR-0019](adr/0019-performance-targets.md).
+
+| | Measured | Target |
+| --- | --- | --- |
+| Cold scan | 1 m 32 s (0.92 ms/note, 1090 notes/s) | under 3 minutes |
+| Warm scan — what a startup pays | 0.78 s | under 1 second |
+| Index size | 316 MB (3.2 MB per thousand notes) | under 5 MB per thousand |
+| Search, rare term, under load | p50 4 ms · p95 7 ms · p99 9 ms · max 14 ms | p95 under 50 ms |
+| Search, term matching every note | p50 2.08 s · p95 2.27 s | not covered |
+
+Both search rows come from four concurrent readers running against a scan that
+rewrote the whole vault continuously. The difference between them is not the
+database: it is that one query matches a hundred notes and the other matches all
+hundred thousand, and ranking a hundred thousand matches is linear work. Real
+queries look like the first row; a vault generated from twenty words produces
+only the second, which is why the load test asks both.
+
 ## Baseline
 
 Recorded 2026-08-15 on an AMD Ryzen 7 6800U, `modernc.org/sqlite`, WAL with
