@@ -3,7 +3,7 @@
 - **Status:** Accepted, except where noted below
 - **Date:** 2026-08-15
 - **Applies to:** `modules/apps/desktop`
-- **Partly superseded by:** ADR-0020 — everything here about the size of a
+- **Partly superseded by:** ADR-0022 — everything here about the size of a
   transaction, in the decision, the consequences and the alternatives
 - **Related:** ADR-0001, ADR-0002, ADR-0014
 
@@ -38,7 +38,7 @@ nothing else to do. That is a property of that adapter, not of the use case.
 
 ### Partial results are usable, so notes are committed one at a time
 
-> **Superseded by [ADR-0020](0020-notes-are-indexed-in-groups.md).** The
+> **Superseded by [ADR-0022](0022-notes-are-indexed-in-groups.md).** The
 > condition this section named — that the cost of not batching is affordable —
 > stopped holding once notes carried links. Notes are now written in groups.
 
