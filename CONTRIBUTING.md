@@ -89,9 +89,6 @@ cd modules/tools/git-hooks && npx commitlint --last --verbose
 
 ## Architecture decisions
 
-Accepted decisions live in `docs/adr/` as `NNNN-kebab-slug.md`. They are not
-reopened casually — a change to one is a new ADR that supersedes it, with the old
-file kept and marked `Superseded by ADR-NNNN`.
-
-The initial set and its status is tracked in
+Decisions live in [`docs/adr/`](docs/adr/README.md) — the index has the reading
+order and the rules for adding one. Progress is tracked in
 [issue #13](https://github.com/jiva-studio/numen/issues/13).
