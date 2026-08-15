@@ -78,7 +78,7 @@ func TestScanSkipsWhatIsNotVaultContent(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, h := range hits {
-		if h.Path == ".obsidian/note-in-tool-folder.md" {
+		if h.Path == ".obsidian/note-in-a-hidden-folder.md" {
 			t.Errorf("indexed a file from another tool's folder: %+v", h)
 		}
 	}
