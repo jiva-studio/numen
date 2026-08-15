@@ -23,6 +23,7 @@ export {
 export type {
   ArrangeInput,
   Direction,
+  Drop,
   Placement,
   PlexOptions,
   PlexOptionsInput,

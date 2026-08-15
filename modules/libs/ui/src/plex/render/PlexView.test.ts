@@ -2,7 +2,7 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import PlexView from './PlexView.vue'
-import { arrangePlex, interpolatePlex } from '../arrange'
+import { arrangePlex, DEFAULT_OPTIONS, interpolatePlex } from '../arrange'
 import type { PlexNeighbourhood } from '../model'
 
 const before: PlexNeighbourhood = {
@@ -35,7 +35,13 @@ const midMove = interpolatePlex(arrangePlex(before), arrangePlex(after), 0.3)
 const VIEWPORT = { width: 1200, height: 800 }
 
 const mountView = () =>
-  mount(PlexView, { props: { frame: midMove, viewport: VIEWPORT } })
+  mount(PlexView, {
+    props: {
+      frame: midMove,
+      viewport: VIEWPORT,
+      nodeSize: DEFAULT_OPTIONS.nodeSize,
+    },
+  })
 
 describe('a node that is not fully there', () => {
   it('cannot be chosen by clicking it', async () => {
@@ -69,7 +75,9 @@ describe('a node that is fully there', () => {
 
 describe('the window onto the drawing', () => {
   const boxOf = (frame = arrangePlex(before)) => {
-    const view = mount(PlexView, { props: { frame, viewport: VIEWPORT } })
+    const view = mount(PlexView, {
+      props: { frame, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
+    })
     const [x, y, w, h] = view.get('svg').attributes('viewBox')!.split(' ').map(Number)
     return { x: x!, y: y!, w: w!, h: h! }
   }
@@ -104,7 +112,9 @@ describe('the window onto the drawing', () => {
 
   it('draws a box at the size the arrangement asked for, in pixels', () => {
     const frame = arrangePlex(before)
-    const view = mount(PlexView, { props: { frame, viewport: VIEWPORT } })
+    const view = mount(PlexView, {
+      props: { frame, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
+    })
     const focus = frame.nodes.find((n) => n.role === 'focus')!
     const rect = view.get('[aria-label^="Start"] rect')
     expect(Number(rect.attributes('width'))).toBe(focus.width)
