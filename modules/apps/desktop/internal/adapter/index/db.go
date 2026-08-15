@@ -38,6 +38,9 @@ var pragmas = []string{
 	"foreign_keys(1)",
 	// Wait for a writer instead of failing immediately with SQLITE_BUSY.
 	"busy_timeout(5000)",
+	// The index is a cache: a crash costs a rescan, never data. Paying an fsync
+	// per commit to protect it buys nothing and dominates a rebuild.
+	"synchronous(NORMAL)",
 }
 
 func Open(ctx context.Context, path string) (*DB, error) {
