@@ -18,6 +18,11 @@ Read these first; everything else is derived from them.
 - [ADR-0001 — Files on disk are the source of truth](0001-files-are-the-source-of-truth.md)
 - [ADR-0002 — SQLite is a cache, one database for all vaults](0002-sqlite-is-a-cache.md)
 
+## Vaults and code
+
+- [ADR-0013 — Vault identity, the service folder, and application state](0013-vault-identity-and-application-state.md)
+- [ADR-0014 — One binary, hexagonal core in Go](0014-one-binary-hexagonal-core-in-go.md)
+
 ## The note file
 
 - [ADR-0012 — A note is plain markdown any editor can open](0012-a-note-is-plain-markdown.md)

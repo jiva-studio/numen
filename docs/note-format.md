@@ -11,7 +11,9 @@ when the decisions it depends on exist.
 ## What a note is
 
 A UTF-8 markdown file with the `.md` extension, in any folder of the vault the
-user likes. The application neither imposes nor rearranges layout (ADR-0001).
+user likes, except the service folder — `.numen` by default — which is not part
+of the vault's content and is skipped entirely (ADR-0013). The application
+neither imposes nor rearranges layout (ADR-0001).
 
 A markdown file written by anything else — vim, a script, another editor — is a
 valid note from the first byte. Nothing has to be registered, imported or
@@ -101,4 +103,4 @@ below should be implemented from guesswork.
 | Anchor syntax, alphabet, and whether the user may name anchors | ADR-0009 |
 | Card syntax in the body, and how a card keeps its identity across edits | ADR-0008 |
 | How attachments are referenced | ADR-0010 |
-| Which files in the vault are notes and which are service data | ADR-0004 |
+| What a submodule may write into the service folder | ADR-0004 |
