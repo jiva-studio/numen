@@ -4,6 +4,8 @@ go 1.26
 
 require (
 	connectrpc.com/connect v1.20.0
+	github.com/rjeczalik/notify v0.9.3
+	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/wailsapp/wails/v3 v3.0.0-beta.8
 	gopkg.in/yaml.v3 v3.0.1
 	modernc.org/sqlite v1.44.3

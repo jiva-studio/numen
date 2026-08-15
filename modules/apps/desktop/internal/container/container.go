@@ -37,17 +37,17 @@ func (c Config) Registry() (port.VaultRegistry, error) {
 
 // VaultReaders opens vaults for reading.
 func (c Config) VaultReaders() port.VaultReaders {
-	return filesystem.Readers{Options: c.vaultOptions()}
+	return filesystem.Readers{Options: c.VaultOptions()}
 }
 
 // VaultIdentity gives folders their identity.
 func (c Config) VaultIdentity() port.VaultIdentity {
-	return filesystem.Identity{Options: c.vaultOptions()}
+	return filesystem.Identity{Options: c.VaultOptions()}
 }
 
-// vaultOptions is how a vault on disk is read: which folder is ours, and which
-// files count as notes.
-func (c Config) vaultOptions() filesystem.Options {
+// VaultOptions is how a vault on disk is read: which folder is ours, and which
+// files count as notes. The same answer for whatever looks at it.
+func (c Config) VaultOptions() filesystem.Options {
 	return filesystem.Options{ServiceDir: c.ServiceDir, Extensions: c.Extensions}
 }
 

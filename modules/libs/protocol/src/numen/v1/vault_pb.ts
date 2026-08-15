@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/vault.proto.
  */
 export const file_numen_v1_vault: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiNwoETm90ZRIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJEhIKCmlkZW50aWZpZXIYAyABKAkiZAoGU2VhdGVkEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEhwKBHNlYXQYAiABKA4yDi5udW1lbi52MS5TZWF0Eg0KBWxhYmVsGAMgASgJEg8KB3Rocm91Z2gYBCABKAkiDgoMU3RhdGVSZXF1ZXN0IlsKDVN0YXRlUmVzcG9uc2USDAoEbmFtZRgBIAEoCRIMCgRwYXRoGAIgASgJEg8KB2luZGV4ZWQYAyABKAMSDQoFcmVhZHkYBCABKAgSDgoGZmFpbGVkGAUgASgJIhAKDk9wZW5pbmdSZXF1ZXN0Ij0KD09wZW5pbmdSZXNwb25zZRIhCgRub3RlGAEgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBQgcKBV9ub3RlIiQKFE5laWdoYm91cmhvb2RSZXF1ZXN0EgwKBHBhdGgYASABKAkiWQoVTmVpZ2hib3VyaG9vZFJlc3BvbnNlEh0KBWZvY3VzGAEgASgLMg4ubnVtZW4udjEuTm90ZRIhCgdyZWxhdGVkGAIgAygLMhAubnVtZW4udjEuU2VhdGVkKl4KBFNlYXQSFAoQU0VBVF9VTlNQRUNJRklFRBAAEg8KC1NFQVRfUEFSRU5UEAESDgoKU0VBVF9DSElMRBACEg0KCVNFQVRfSlVNUBADEhAKDFNFQVRfU0lCTElORxAEMtoBCgxWYXVsdFNlcnZpY2USOAoFU3RhdGUSFi5udW1lbi52MS5TdGF0ZVJlcXVlc3QaFy5udW1lbi52MS5TdGF0ZVJlc3BvbnNlEj4KB09wZW5pbmcSGC5udW1lbi52MS5PcGVuaW5nUmVxdWVzdBoZLm51bWVuLnYxLk9wZW5pbmdSZXNwb25zZRJQCg1OZWlnaGJvdXJob29kEh4ubnVtZW4udjEuTmVpZ2hib3VyaG9vZFJlcXVlc3QaHy5udW1lbi52MS5OZWlnaGJvdXJob29kUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiNwoETm90ZRIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJEhIKCmlkZW50aWZpZXIYAyABKAkiZAoGU2VhdGVkEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEhwKBHNlYXQYAiABKA4yDi5udW1lbi52MS5TZWF0Eg0KBWxhYmVsGAMgASgJEg8KB3Rocm91Z2gYBCABKAkiDgoMU3RhdGVSZXF1ZXN0Im4KDVN0YXRlUmVzcG9uc2USDAoEbmFtZRgBIAEoCRIMCgRwYXRoGAIgASgJEg8KB2luZGV4ZWQYAyABKAMSDQoFcmVhZHkYBCABKAgSDgoGZmFpbGVkGAUgASgJEhEKCXVud2F0Y2hlZBgGIAEoCSIQCg5PcGVuaW5nUmVxdWVzdCI9Cg9PcGVuaW5nUmVzcG9uc2USIQoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGVIAIgBAUIHCgVfbm90ZSIQCg5DaGFuZ2VzUmVxdWVzdCIwCg9DaGFuZ2VzUmVzcG9uc2USDQoFcGF0aHMYASADKAkSDgoGcmVsb2FkGAIgASgIIiQKFE5laWdoYm91cmhvb2RSZXF1ZXN0EgwKBHBhdGgYASABKAkiWQoVTmVpZ2hib3VyaG9vZFJlc3BvbnNlEh0KBWZvY3VzGAEgASgLMg4ubnVtZW4udjEuTm90ZRIhCgdyZWxhdGVkGAIgAygLMhAubnVtZW4udjEuU2VhdGVkKl4KBFNlYXQSFAoQU0VBVF9VTlNQRUNJRklFRBAAEg8KC1NFQVRfUEFSRU5UEAESDgoKU0VBVF9DSElMRBACEg0KCVNFQVRfSlVNUBADEhAKDFNFQVRfU0lCTElORxAEMpwCCgxWYXVsdFNlcnZpY2USOAoFU3RhdGUSFi5udW1lbi52MS5TdGF0ZVJlcXVlc3QaFy5udW1lbi52MS5TdGF0ZVJlc3BvbnNlEj4KB09wZW5pbmcSGC5udW1lbi52MS5PcGVuaW5nUmVxdWVzdBoZLm51bWVuLnYxLk9wZW5pbmdSZXNwb25zZRJQCg1OZWlnaGJvdXJob29kEh4ubnVtZW4udjEuTmVpZ2hib3VyaG9vZFJlcXVlc3QaHy5udW1lbi52MS5OZWlnaGJvdXJob29kUmVzcG9uc2USQAoHQ2hhbmdlcxIYLm51bWVuLnYxLkNoYW5nZXNSZXF1ZXN0GhkubnVtZW4udjEuQ2hhbmdlc1Jlc3BvbnNlMAFCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * Note is a note as something else refers to it.
@@ -140,6 +140,14 @@ export type StateResponse = Message<"numen.v1.StateResponse"> & {
    * @generated from field: string failed = 5;
    */
   failed: string;
+
+  /**
+   * Why the vault is not being followed, when it is not. Changes will only
+   * appear when something asks for them again.
+   *
+   * @generated from field: string unwatched = 6;
+   */
+  unwatched: string;
 };
 
 /**
@@ -183,6 +191,47 @@ export const OpeningResponseSchema: GenMessage<OpeningResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 5);
 
 /**
+ * @generated from message numen.v1.ChangesRequest
+ */
+export type ChangesRequest = Message<"numen.v1.ChangesRequest"> & {
+};
+
+/**
+ * Describes the message numen.v1.ChangesRequest.
+ * Use `create(ChangesRequestSchema)` to create a new message.
+ */
+export const ChangesRequestSchema: GenMessage<ChangesRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 6);
+
+/**
+ * @generated from message numen.v1.ChangesResponse
+ */
+export type ChangesResponse = Message<"numen.v1.ChangesResponse"> & {
+  /**
+   * Paths of the notes that changed. A note that was removed is named here
+   * too: what changed about it is that it is gone.
+   *
+   * @generated from field: repeated string paths = 1;
+   */
+  paths: string[];
+
+  /**
+   * Set when the vault has to be read again rather than followed — more
+   * changed at once than could be reported.
+   *
+   * @generated from field: bool reload = 2;
+   */
+  reload: boolean;
+};
+
+/**
+ * Describes the message numen.v1.ChangesResponse.
+ * Use `create(ChangesResponseSchema)` to create a new message.
+ */
+export const ChangesResponseSchema: GenMessage<ChangesResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 7);
+
+/**
  * @generated from message numen.v1.NeighbourhoodRequest
  */
 export type NeighbourhoodRequest = Message<"numen.v1.NeighbourhoodRequest"> & {
@@ -197,7 +246,7 @@ export type NeighbourhoodRequest = Message<"numen.v1.NeighbourhoodRequest"> & {
  * Use `create(NeighbourhoodRequestSchema)` to create a new message.
  */
 export const NeighbourhoodRequestSchema: GenMessage<NeighbourhoodRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 6);
+  messageDesc(file_numen_v1_vault, 8);
 
 /**
  * @generated from message numen.v1.NeighbourhoodResponse
@@ -219,7 +268,7 @@ export type NeighbourhoodResponse = Message<"numen.v1.NeighbourhoodResponse"> & 
  * Use `create(NeighbourhoodResponseSchema)` to create a new message.
  */
 export const NeighbourhoodResponseSchema: GenMessage<NeighbourhoodResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 7);
+  messageDesc(file_numen_v1_vault, 9);
 
 /**
  * Seat is where a note sits relative to the one in focus. A sibling is written
@@ -296,6 +345,18 @@ export const VaultService: GenService<{
     methodKind: "unary";
     input: typeof NeighbourhoodRequestSchema;
     output: typeof NeighbourhoodResponseSchema;
+  },
+  /**
+   * Changes reports the notes that changed on disk, for as long as the caller
+   * listens. It says which notes, and nothing about them: the caller knows
+   * what it is showing and asks for what it needs.
+   *
+   * @generated from rpc numen.v1.VaultService.Changes
+   */
+  changes: {
+    methodKind: "server_streaming";
+    input: typeof ChangesRequestSchema;
+    output: typeof ChangesResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_vault, 0);

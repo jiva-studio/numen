@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sync"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
@@ -38,7 +40,7 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*API, func(
 		return nil, nil, err
 	}
 
-	scanning, stop := context.WithCancel(ctx)
+	watching, stop := context.WithCancel(ctx)
 	api := &API{Vault: vaults[0], Notes: db.Queries(), Links: db.Links()}
 	scan := usecase.Scan{
 		Readers:     cfg.VaultReaders(),
@@ -50,11 +52,30 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*API, func(
 			api.Indexed.Store(int64(res.Indexed))
 		},
 	}
+	refresh := usecase.Refresh{Readers: cfg.VaultReaders(), Notes: db.Notes()}
+	api.Scan = scan.Execute
+	api.Index = refresh.Execute
 
-	done := make(chan struct{})
+	// Watching starts before the scan does, so that an edit made while the
+	// vault is being read is held rather than missed. Acting on those events
+	// waits: a scan holds notes in memory and writes them in groups, so a
+	// reindex overtaking one would be overwritten by the older copy, with the
+	// date that makes the next scan skip the file.
+	//
+	// A vault that cannot be watched is still a vault: the application keeps
+	// working, and says that changes will not appear by themselves.
+	watch, err := filesystem.Watch(watching, api.Vault, cfg.VaultOptions())
+	if err != nil {
+		fmt.Fprintf(out, "not watching %s: %v\n", api.Vault.Name, err)
+		api.Unwatched.Store(err.Error())
+	}
+
+	var running sync.WaitGroup
+	running.Add(1)
 	go func() {
-		defer close(done)
-		result, err := scan.Execute(scanning, api.Vault)
+		defer running.Done()
+
+		result, err := scan.Execute(watching, api.Vault)
 		api.Indexed.Store(int64(result.Indexed))
 		switch {
 		case err == nil:
@@ -63,14 +84,20 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*API, func(
 		case errors.Is(err, context.Canceled):
 			// Asked to stop. What it stored is correct as far as it got, and
 			// there is nothing to report.
+			return
 		default:
 			api.Failed.Store(err.Error())
+			return
+		}
+
+		if watch != nil {
+			api.follow(watching, watch.Changes, watch.Lost)
 		}
 	}()
 
 	return api, func() error {
 		stop()
-		<-done
+		running.Wait()
 		return db.Close()
 	}, nil
 }

@@ -15,6 +15,10 @@ type VaultReader interface {
 	Walk(ctx context.Context, fn func(domain.FileRef) error) error
 	// Read returns the bytes of one file, addressed by a path a walk reported.
 	Read(ctx context.Context, path string) ([]byte, error)
+	// Stat answers what a walk would have reported about one path: its size and
+	// when it changed. fs.ErrNotExist when the vault does not hold it, which
+	// includes a path the vault's rules say to ignore.
+	Stat(ctx context.Context, path string) (domain.FileRef, error)
 }
 
 // VaultReaders opens a reader for a given vault. A use case is handed this
