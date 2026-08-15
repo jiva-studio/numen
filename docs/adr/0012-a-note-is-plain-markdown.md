@@ -38,6 +38,33 @@ The complete list of permitted additions:
 Nothing else. No custom fences, no HTML comments carrying data, no sidecar
 files, no private file extension.
 
+### Frontmatter is where machine-owned fields live
+
+The body is prose a human wrote. The frontmatter is a place for fields the
+application owns. Anything the application needs to record about the note as a
+whole goes there, not into the text.
+
+That includes the note's identifier, if it has one. **This ADR settles only that
+the identifier belongs in frontmatter** — what it looks like, when it is written,
+and what happens to it when the file is renamed are ADR-0009's, and nothing here
+should be read as prejudging them. The reason to fix the placement early is that
+it is a property of the file format rather than of identity: an identifier in the
+body would be a token in the middle of prose, and every reader of that note would
+have to look at it forever.
+
+The frontmatter is shared with the user, not owned by the application, and three
+rules follow:
+
+- **Keys the application does not own are preserved verbatim** — including their
+  order, and including keys it may want to own in a future version. It reads what
+  it knows and leaves the rest alone.
+- **Owned keys are a closed, documented set.** Each one is introduced by an ADR
+  that says what it means. A key nobody decided on does not get written.
+- **A collision is the user's win.** If a user's own key has the same name as one
+  the application wants, the application does not overwrite it and does not
+  silently reinterpret it: it reports the conflict, the same way ADR-0003 treats
+  contradictory data as something to show rather than resolve.
+
 ### The test to apply to anything proposed later
 
 Open the file in an editor that has never heard of this application. If the

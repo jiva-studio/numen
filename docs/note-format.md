@@ -29,6 +29,34 @@ converted (ADR-0012).
 
 Frontmatter is optional. A note with no frontmatter is a normal note.
 
+## Frontmatter
+
+Fields the application owns live here rather than in the body (ADR-0012). The
+body is prose the user wrote; the frontmatter is where machine-readable facts
+about the note as a whole belong.
+
+The frontmatter is shared, not owned:
+
+- Keys the application does not own are **preserved verbatim**, in their original
+  order, including keys it may own in a future version.
+- Owned keys are a **closed set**, and each is introduced by an ADR that defines
+  its meaning. The set is listed below and is currently empty.
+- A **collision is the user's win**: if a user key has the name of an owned key,
+  the application reports the conflict rather than overwriting or reinterpreting
+  it.
+
+### Owned keys
+
+| Key | Meaning | Decided in |
+| --- | --- | --- |
+| — | none yet | |
+
+The note's identifier will live here — that placement is settled (ADR-0012).
+Its format, when it is written, and what happens on rename are not
+(ADR-0009). The links block is
+likewise expected here and not yet defined
+(ADR-0003).
+
 ## What the application may add
 
 The complete permitted set, from ADR-0012. Everything must survive a third-party
@@ -37,9 +65,8 @@ markdown editor and stay readable to a human.
 | Addition | Where | Status |
 | --- | --- | --- |
 | YAML frontmatter | top of file | allowed; key set not yet fixed |
-| `[[wikilink]]` | body | allowed; resolution rules not yet fixed ([#12](https://github.com/jiva-studio/numen/issues/12)) |
-| `key:: value` | body | allowed; no consumer defined yet |
-| `^anchor` | end of a line | allowed; syntax and scope not yet fixed ([#10](https://github.com/jiva-studio/numen/issues/10)) |
+| `[[wikilink]]` | body | allowed; resolution rules not yet fixed (ADR-0011) |
+| `^anchor` | end of a line | allowed; syntax and scope not yet fixed (ADR-0009) |
 
 Nothing else is permitted: no custom fences, no HTML comments carrying data, no
 sidecar files, no private extension.
@@ -67,11 +94,11 @@ below should be implemented from guesswork.
 
 | Question | Where it is decided |
 | --- | --- |
-| Which frontmatter keys the application owns, and how collisions with the user's own keys are handled | [#4](https://github.com/jiva-studio/numen/issues/4), [#10](https://github.com/jiva-studio/numen/issues/10) |
-| How a note is identified, and whether that identity lives in the file | [#10](https://github.com/jiva-studio/numen/issues/10) |
-| The shape of the links block, and the roles and types a link carries | [#4](https://github.com/jiva-studio/numen/issues/4) |
-| How a `[[wikilink]]` resolves to a target, and what happens when it is ambiguous | [#12](https://github.com/jiva-studio/numen/issues/12) |
-| Anchor syntax, alphabet, and whether the user may name anchors | [#10](https://github.com/jiva-studio/numen/issues/10) |
-| Card syntax in the body, and how a card keeps its identity across edits | [#9](https://github.com/jiva-studio/numen/issues/9) |
-| How attachments are referenced | [#11](https://github.com/jiva-studio/numen/issues/11) |
-| Which files in the vault are notes and which are service data | [#5](https://github.com/jiva-studio/numen/issues/5) |
+| Which frontmatter keys the application owns, and how collisions with the user's own keys are handled | ADR-0003, ADR-0009 |
+| How a note is identified, and whether that identity lives in the file | ADR-0009 |
+| The shape of the links block, and the roles and types a link carries | ADR-0003 |
+| How a `[[wikilink]]` resolves to a target, and what happens when it is ambiguous | ADR-0011 |
+| Anchor syntax, alphabet, and whether the user may name anchors | ADR-0009 |
+| Card syntax in the body, and how a card keeps its identity across edits | ADR-0008 |
+| How attachments are referenced | ADR-0010 |
+| Which files in the vault are notes and which are service data | ADR-0004 |
