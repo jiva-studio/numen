@@ -143,6 +143,7 @@ defineExpose({ moving: toRef(moving) })
       :gesture-outcome="gesture.outcome.value"
       @activate="emit('activate', $event)"
       @reach="gesture.begin"
+      @ask="gesture.ask"
     >
       <template v-if="$slots.icon" #icon="{ node }"><slot name="icon" :node="node" /></template>
     </PlexView>

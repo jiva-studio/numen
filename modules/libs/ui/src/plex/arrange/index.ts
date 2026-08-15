@@ -1,7 +1,14 @@
 /** The decisions, as values: no DOM, no Vue, no clock. */
 export { arrangePlex, type ArrangeInput } from './arrange'
 export { limitsFor, type Limits, type RoleLimits } from './limits'
-export { nodeAt, resolveDrop, roleTowards, type Drop, type DropInput } from './drop'
+export {
+  nodeAt,
+  resolveDrop,
+  roleTowards,
+  seatWithoutDirection,
+  type Drop,
+  type DropInput,
+} from './drop'
 export { interpolatePlex } from './interpolate'
 export { rowsAndColumns, type Placement, type Seating } from './placement'
 export { routeEdge, routeEdges, routingFor, type Axis, type Routing } from './routing'

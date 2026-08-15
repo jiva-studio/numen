@@ -2,15 +2,17 @@
 /**
  * One node: its box, its label, and the handle to reach out from.
  *
- * Every number it draws with is already on the node it was handed. Whether a
- * pointer is over it is its own affair, so the handle appears under the hand
- * without anything above being told; what it cannot know is whether reaching
- * out is allowed here at all, and whether a gesture would land a link on it.
+ * Every number it draws with is already on the node it was handed. Where the
+ * hand and the keyboard are is its own affair — the handle appears under
+ * either — and the one thing it cannot work out is what it is to a gesture,
+ * which arrives as its standing.
  *
  * The label goes through a `foreignObject`: SVG text cannot ellipsise and does
  * not reorder a right-to-left run.
  */
 import { computed, ref } from 'vue'
+import PlexNodeHandle from './PlexNodeHandle.vue'
+import { isPress } from './keys'
 import { handleIn, isReachable, nameOf, type NodeStanding, type PlacedNode } from '../model'
 
 const props = withDefaults(
@@ -25,11 +27,14 @@ const props = withDefaults(
 const emit = defineEmits<{
   /** Chosen, by click or by keyboard. Which node it was is the caller's to say. */
   (event: 'activate'): void
-  /** A gesture began at the handle. */
+  /** A gesture began at the handle, and a pointer is dragging it somewhere. */
   (event: 'reach', pointer: PointerEvent): void
+  /** The handle was pressed from the keyboard, where there is nowhere to drag. */
+  (event: 'ask'): void
 }>()
 
 const over = ref(false)
+const attended = ref(false)
 
 /** Not a node yet, so nothing may be done to it and nothing is told about it. */
 const ghost = computed(() => props.standing === 'ghost')
@@ -39,7 +44,7 @@ const reachable = computed(() => !ghost.value && isReachable(props.node))
 
 /** The focus is announced although it cannot be chosen: it is where you are. */
 const announced = computed(
-  () => !ghost.value && (isReachable(props.node) || props.node.role === 'focus'),
+  () => reachable.value || (!ghost.value && props.node.role === 'focus'),
 )
 
 const activate = () => {
@@ -47,37 +52,52 @@ const activate = () => {
 }
 
 const onKey = (event: KeyboardEvent) => {
-  if (event.key !== 'Enter' && event.key !== ' ') return
+  if (!isPress(event)) return
   event.preventDefault()
   activate()
 }
 
-const reach = (event: PointerEvent) => {
-  // The handle is inside the node, which navigates when clicked.
-  event.stopPropagation()
-  event.preventDefault()
-  emit('reach', event)
+/**
+ * Where the attention is, whichever way it arrived. `focusout` carries where
+ * it went, so moving from the node onto its own handle is not leaving.
+ */
+const attend = (event: FocusEvent) => {
+  const within = event.currentTarget as Element
+  const next = event.relatedTarget as Node | null
+  attended.value = event.type === 'focusin' || !!(next && within.contains(next))
 }
 
 /**
- * When there is a handle to press. Under the hand, or held there for as long
- * as the gesture that left from it lasts. A node on its way in or out offers
- * nothing: it is about to be somewhere else.
+ * When there is a handle to press. Under the hand or under the keyboard, or
+ * held there for as long as the gesture that left from it lasts. A node on
+ * its way in or out offers nothing: it is about to be somewhere else.
  */
 const offering = computed(
   () =>
     props.node.opacity >= 1 &&
-    (props.standing === 'source' || (props.standing === 'open' && over.value)),
+    (props.standing === 'source' ||
+      (props.standing === 'open' && (over.value || attended.value))),
 )
 
-/** Read three times by the drawing: the circle, and the two strokes on it. */
+/** Where the handle sits. What it is made of is all sizes, and so all tokens. */
 const handle = computed(() => handleIn(props.node))
+
+/**
+ * One hue per role, from a token named after it.
+ *
+ * There is no token for the focus, so on it this resolves to nothing and every
+ * rule that reads the hue takes its fallback — which is how the focus comes to
+ * wear its own colours rather than a role's.
+ */
+const hue = computed(() => ({
+  '--numen-role-hue': `var(--numen-role-${props.node.role})`,
+}))
 </script>
 
 <template>
   <g
     class="plex__node"
-    :style="{ '--numen-role-hue': `var(--numen-role-${node.role})` }"
+    :style="hue"
     :transform="`translate(${node.x} ${node.y})`"
     :opacity="node.opacity"
     :tabindex="reachable ? 0 : -1"
@@ -89,6 +109,8 @@ const handle = computed(() => handleIn(props.node))
     @keydown="onKey"
     @pointerenter="over = true"
     @pointerleave="over = false"
+    @focusin="attend"
+    @focusout="attend"
   >
     <rect
       class="plex__box"
@@ -113,25 +135,14 @@ const handle = computed(() => handleIn(props.node))
       </div>
     </foreignObject>
 
-    <!-- Reach out from here to make something. Under the hand so it is there
-         when wanted and out of the way when not. -->
-    <template v-if="offering">
-      <circle
-        class="plex__handle"
-        :cx="handle.x"
-        :cy="handle.y"
-        r="9"
-        role="button"
-        aria-label="Reach out from here"
-        @pointerdown="reach"
-        @click.stop
-      />
-      <path
-        class="plex__handle-mark"
-        :d="`M ${handle.x - 4} ${handle.y} h 8 M ${handle.x} ${handle.y - 4} v 8`"
-        aria-hidden="true"
-      />
-    </template>
+    <!-- Reach out from here to make something. Under the hand or under the
+         keyboard, so it is there when wanted and out of the way when not. -->
+    <PlexNodeHandle
+      v-if="offering"
+      :at="handle"
+      @reach="emit('reach', $event)"
+      @ask="emit('ask')"
+    />
   </g>
 </template>
 
@@ -173,8 +184,8 @@ const handle = computed(() => handleIn(props.node))
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding-inline: 10px;
+  gap: var(--numen-node-gap);
+  padding-inline: var(--numen-node-padding);
   box-sizing: border-box;
   color: var(--numen-node-fg);
   font-family: var(--numen-font-sans);
@@ -202,20 +213,6 @@ const handle = computed(() => handleIn(props.node))
   white-space: nowrap;
 }
 
-.plex__handle {
-  fill: var(--numen-node-bg);
-  stroke: var(--numen-role-hue, var(--numen-node-border));
-  stroke-width: var(--numen-stroke);
-  cursor: crosshair;
-}
-
-.plex__handle-mark {
-  stroke: var(--numen-node-fg);
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  pointer-events: none;
-}
-
 /* The node a link would be made to, while the pointer is still on it. */
 .plex__node--target .plex__box {
   stroke: var(--numen-ring);
@@ -233,7 +230,7 @@ const handle = computed(() => handleIn(props.node))
 .plex__node--ghost .plex__box {
   fill: none;
   stroke: var(--numen-role-hue, var(--numen-ring));
-  stroke-dasharray: 6 4;
+  stroke-dasharray: var(--numen-ghost-dash);
   transition: none;
 }
 
@@ -241,7 +238,7 @@ const handle = computed(() => handleIn(props.node))
   color: var(--numen-edge-label);
   font-size: var(--numen-edge-label-size);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--numen-caps-tracking);
 }
 
 .plex__node:focus-visible {

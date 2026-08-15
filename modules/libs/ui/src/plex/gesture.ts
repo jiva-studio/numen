@@ -3,7 +3,7 @@
  * what a gesture *means* is worked out in `arrange/drop.ts`, as a value.
  */
 import { computed, ref, type Ref } from 'vue'
-import { resolveDrop, type Drop } from './arrange'
+import { resolveDrop, seatWithoutDirection, type Drop } from './arrange'
 import type { PlexOptions } from './arrange'
 import type { PlexFrame, PlexRelatedRole, Point } from './model'
 
@@ -18,6 +18,12 @@ export interface Gesture {
 
 export interface GestureHandlers {
   readonly begin: (from: string, event: PointerEvent) => void
+  /**
+   * Reach out from a node with nowhere to point — from the keyboard, where
+   * there is no direction to read. It comes to what a press that never
+   * travelled comes to, and is over as soon as it is asked for.
+   */
+  readonly ask: (from: string) => void
   readonly cancel: () => void
 }
 
@@ -71,12 +77,10 @@ export function usePlexGesture(
     const point = at.value
     if (!source || !point) return null
 
-    // A gesture that has not travelled is a click, and a click has its own
-    // rule rather than a direction: one more child, because that is what
-    // anyone reaches for. Faking a point to run it through the same
-    // arithmetic would only land inside the node it started from.
+    // A gesture that has not travelled is a press, and a press has a rule
+    // rather than a direction.
     if (!travelled(point)) {
-      const role = allowed().includes('child') ? 'child' : allowed()[0]
+      const role = seatWithoutDirection(allowed())
       return role ? { kind: 'create', from: source, role } : null
     }
 
@@ -116,6 +120,11 @@ export function usePlexGesture(
   }
 
   const cancel = () => stop(svg())
+
+  const ask = (source: string) => {
+    const role = seatWithoutDirection(allowed())
+    if (role) settle({ kind: 'create', from: source, role })
+  }
 
   const begin = (source: string, event: PointerEvent) => {
     // The element comes with the event rather than through a chain of template
@@ -167,5 +176,5 @@ export function usePlexGesture(
     window.addEventListener('keydown', onKey)
   }
 
-  return { from, at, outcome, begin, cancel }
+  return { from, at, outcome, begin, ask, cancel }
 }

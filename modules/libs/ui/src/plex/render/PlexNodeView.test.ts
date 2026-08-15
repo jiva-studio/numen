@@ -133,9 +133,24 @@ describe('the handle', () => {
   })
 
   it('sits on the trailing edge, halfway down', async () => {
-    const handle = (await hover(mountNode({ width: 144 }))).get('.plex__handle')
-    expect(Number(handle.attributes('cx'))).toBe(72)
-    expect(Number(handle.attributes('cy'))).toBe(0)
+    const at = (await hover(mountNode({ width: 144 }))).get('.plex__handle-at')
+    expect(at.attributes('transform')).toBe('translate(72 0)')
+  })
+})
+
+describe('the icon', () => {
+  it('is whatever the slot was handed, and sits beside the label', () => {
+    const node = mount(PlexNodeView, {
+      props: { node: nodeAt() },
+      slots: { icon: '<i class="glyph" />' },
+    })
+    const label = node.get('.plex__label')
+    expect(label.find('.plex__icon .glyph').exists()).toBe(true)
+    expect(label.get('.plex__label-text').text()).toBe('A thought')
+  })
+
+  it('takes up no room at all when the slot is left empty', () => {
+    expect(mountNode().find('.plex__icon').exists()).toBe(false)
   })
 })
 

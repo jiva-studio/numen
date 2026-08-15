@@ -7,7 +7,7 @@
  * a window with the origin in the middle of it, and nothing else.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, fn, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { computed } from 'vue'
 import PlexNodeView from './PlexNodeView.vue'
 import { awkwardLabels } from '../fixtures/neighbourhoods'
@@ -32,6 +32,7 @@ interface Knobs {
 
   onActivate: () => void
   onReach: (pointer: PointerEvent) => void
+  onAsk: () => void
 }
 
 const STANDINGS: readonly NodeStanding[] = ['open', 'closed', 'source', 'target', 'ghost']
@@ -87,6 +88,7 @@ const on =
             :standing="args.standing"
             @activate="args.onActivate"
             @reach="args.onReach"
+            @ask="args.onAsk"
           >
             <template v-if="args.icon" #icon><span v-html="glyph" /></template>
           </PlexNodeView>
@@ -136,6 +138,7 @@ const meta: Meta<Knobs> = {
 
     onActivate: { table: { disable: true } },
     onReach: { table: { disable: true } },
+    onAsk: { table: { disable: true } },
   },
 
   args: {
@@ -148,6 +151,7 @@ const meta: Meta<Knobs> = {
     standing: 'open',
     onActivate: fn(),
     onReach: fn(),
+    onAsk: fn(),
   },
 
   render: on((args) => [nodeFrom(args)]),
@@ -180,11 +184,14 @@ export const EverySeat: Story = {
 }
 
 /**
- * The handle: absent until a hand is over the node, and gone again after.
+ * The handle: absent until the node has a hand or the keyboard on it.
  *
  * The thing about it that is easy to get wrong is that it sits inside a node
- * which navigates when clicked, so pressing it must start a gesture and must
- * not also choose the node underneath.
+ * which navigates when pressed, so pressing the handle must start a gesture
+ * and must not also choose the node underneath.
+ *
+ * Only a browser can answer any of it: what tab actually stops on inside an
+ * SVG, and whether preventing a pointer's default really keeps focus off.
  */
 export const Reaching: Story = {
   play: async ({ args, canvasElement }) => {
@@ -192,21 +199,41 @@ export const Reaching: Story = {
     const node = canvas.getByLabelText('A thought, child')
     const handle = () => canvasElement.querySelector('.plex__handle')
 
+    // Under the hand, and gone again when it leaves.
     await expect(handle()).toBeNull()
     await userEvent.hover(node)
     await expect(handle()).not.toBeNull()
 
-    // Pressing it: a gesture begins and the node is left where it is.
+    // Its disc and its cross are sized by CSS geometry properties, so a token
+    // that never arrives is a handle of no size rather than a default one.
+    const drawn = handle()!.getBoundingClientRect()
+    await expect(drawn.width).toBeGreaterThan(0)
+    await expect(canvasElement.querySelector('.plex__handle-mark')!.getBoundingClientRect()
+      .width).toBeGreaterThan(0)
+
+    // Pressing it: a gesture begins, and the node is neither chosen nor left
+    // holding the focus a press would otherwise give it.
     await userEvent.pointer([{ keys: '[MouseLeft]', target: handle()! }])
     await expect(args.onReach).toHaveBeenCalledTimes(1)
+    await expect(args.onActivate).not.toHaveBeenCalled()
+    await userEvent.unhover(node)
+    await expect(handle()).toBeNull()
+
+    // Under the keyboard as well, or there would be no way to reach out
+    // without a pointer at all. Tab stops at the node, then at its handle.
+    await userEvent.tab()
+    await expect(node).toHaveFocus()
+    await waitFor(async () => await expect(handle()).not.toBeNull())
+
+    await userEvent.tab()
+    await expect(handle()).toHaveFocus()
+    await userEvent.keyboard('{Enter}')
+    await expect(args.onAsk).toHaveBeenCalledTimes(1)
     await expect(args.onActivate).not.toHaveBeenCalled()
 
     // Pressing the box itself still chooses it.
     await userEvent.click(node)
     await expect(args.onActivate).toHaveBeenCalledTimes(1)
-
-    await userEvent.unhover(node)
-    await expect(handle()).toBeNull()
 
     // A drag across a label is a drag that meant to reach somewhere, so the
     // text must not come away highlighted under it.

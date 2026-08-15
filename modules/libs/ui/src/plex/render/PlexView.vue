@@ -50,6 +50,8 @@ const emit = defineEmits<{
   (event: 'activate', id: string): void
   /** A gesture began at a node's handle. */
   (event: 'reach', id: string, pointer: PointerEvent): void
+  /** A handle was pressed from the keyboard, where there is nowhere to drag. */
+  (event: 'ask', id: string): void
 }>()
 
 const svg = useTemplateRef<SVGSVGElement>('svg')
@@ -163,6 +165,7 @@ const ghost = computed<PlacedNode | null>(() => {
       :standing="standingOf(node)"
       @activate="emit('activate', node.id)"
       @reach="emit('reach', node.id, $event)"
+      @ask="emit('ask', node.id)"
     >
       <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
     </PlexNodeView>
@@ -208,6 +211,6 @@ const ghost = computed<PlacedNode | null>(() => {
   fill: none;
   stroke: var(--numen-ring);
   stroke-width: var(--numen-edge-width);
-  stroke-dasharray: 4 4;
+  stroke-dasharray: var(--numen-thread-dash);
 }
 </style>
