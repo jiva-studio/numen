@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
+	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 )
 
 // API is the vault a client is looking at and what can be asked about it.
@@ -25,27 +26,37 @@ type API struct {
 	Notes port.NoteQueries
 	Links port.LinkQueries
 
+	// Index brings named notes up to date; Scan reads the whole vault.
+	Index     func(context.Context, domain.Vault, []string) (usecase.RefreshResult, error)
+	Scan      func(context.Context, domain.Vault) (usecase.ScanResult, error)
+	Listeners audience
+
 	// Indexed counts what the scan has stored so far. Ready is set when it
 	// finished, Failed when it could not — a vault that could not be read is
 	// not an empty one, and the interface has to be able to tell them apart.
 	Indexed atomic.Int64
 	Ready   atomic.Bool
 	Failed  atomic.Value
+	// Unwatched is why the vault is not being followed, when it is not.
+	Unwatched atomic.Value
 }
 
 // failure is what stopped the scan, or empty while nothing has.
-func (a *API) failure() string {
-	reason, _ := a.Failed.Load().(string)
-	return reason
+func (a *API) failure() string { return text(&a.Failed) }
+
+func text(v *atomic.Value) string {
+	s, _ := v.Load().(string)
+	return s
 }
 
 func (a *API) State(context.Context, *connect.Request[v1.StateRequest]) (*connect.Response[v1.StateResponse], error) {
 	return connect.NewResponse(&v1.StateResponse{
-		Name:    a.Vault.Name,
-		Path:    a.Vault.Path,
-		Indexed: a.Indexed.Load(),
-		Ready:   a.Ready.Load(),
-		Failed:  a.failure(),
+		Name:      a.Vault.Name,
+		Path:      a.Vault.Path,
+		Indexed:   a.Indexed.Load(),
+		Ready:     a.Ready.Load(),
+		Failed:    a.failure(),
+		Unwatched: text(&a.Unwatched),
 	}), nil
 }
 
@@ -78,6 +89,37 @@ func (a *API) Neighbourhood(ctx context.Context, r *connect.Request[v1.Neighbour
 		})
 	}
 	return connect.NewResponse(out), nil
+}
+
+// Changes reports what moved, for as long as the caller listens.
+func (a *API) Changes(
+	ctx context.Context,
+	_ *connect.Request[v1.ChangesRequest],
+	out *connect.ServerStream[v1.ChangesResponse],
+) error {
+	line, done := a.Listeners.listen()
+	defer done()
+
+	// Named as following before anything has changed. A stream that says
+	// nothing until the vault moves is indistinguishable from one that never
+	// opened, and a caller waiting on its first message waits for an edit.
+	if err := out.Send(&v1.ChangesResponse{}); err != nil {
+		return err
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case what, open := <-line:
+			if !open {
+				return nil
+			}
+			if err := out.Send(&v1.ChangesResponse{Paths: what.paths, Reload: what.reload}); err != nil {
+				return err
+			}
+		}
+	}
 }
 
 func noteOf(n domain.NoteRef) *v1.Note {

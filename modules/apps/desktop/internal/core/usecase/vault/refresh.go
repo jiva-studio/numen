@@ -1,0 +1,81 @@
+package vault
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io/fs"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/markdown"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
+)
+
+// Refresh brings named notes up to date, for when something says which ones
+// changed. A scan asks the whole vault what it looks like; this asks a handful
+// of files.
+type Refresh struct {
+	Readers port.VaultReaders
+	Notes   port.NoteRepository
+}
+
+// RefreshResult is what happened, in the terms a caller acts on: the notes that
+// are now different from what was shown.
+type RefreshResult struct {
+	Indexed []string
+	Removed []string
+}
+
+// Changed is every note the caller may need to look at again.
+func (r RefreshResult) Changed() []string {
+	return append(append([]string(nil), r.Indexed...), r.Removed...)
+}
+
+func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (RefreshResult, error) {
+	var res RefreshResult
+	if len(paths) == 0 {
+		return res, nil
+	}
+
+	reader, err := u.Readers.Open(v)
+	if err != nil {
+		return res, err
+	}
+
+	var notes []domain.Note
+	for _, path := range paths {
+		if err := ctx.Err(); err != nil {
+			return res, err
+		}
+		ref, err := reader.Stat(ctx, path)
+		if errors.Is(err, fs.ErrNotExist) {
+			res.Removed = append(res.Removed, path)
+			continue
+		}
+		if err != nil {
+			return res, fmt.Errorf("look at %s: %w", path, err)
+		}
+		raw, err := reader.Read(ctx, path)
+		if errors.Is(err, fs.ErrNotExist) {
+			// It was there a moment ago, when it was looked at. A file that
+			// briefly disappears between the two is what an editor saving
+			// through a temporary file looks like, and taking the note out of
+			// the index would take it out of search until something put it
+			// back. The save that follows arrives as its own event.
+			continue
+		}
+		if err != nil {
+			return res, fmt.Errorf("read %s: %w", path, err)
+		}
+		notes = append(notes, markdown.Parse(ref, raw))
+		res.Indexed = append(res.Indexed, path)
+	}
+
+	if err := u.Notes.Save(ctx, v.ID, notes); err != nil {
+		return res, fmt.Errorf("index: %w", err)
+	}
+	if err := u.Notes.Remove(ctx, v.ID, res.Removed); err != nil {
+		return res, fmt.Errorf("remove: %w", err)
+	}
+	return res, nil
+}

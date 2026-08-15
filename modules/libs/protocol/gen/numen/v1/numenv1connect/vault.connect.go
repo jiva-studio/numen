@@ -48,6 +48,8 @@ const (
 	// VaultServiceNeighbourhoodProcedure is the fully-qualified name of the VaultService's
 	// Neighbourhood RPC.
 	VaultServiceNeighbourhoodProcedure = "/numen.v1.VaultService/Neighbourhood"
+	// VaultServiceChangesProcedure is the fully-qualified name of the VaultService's Changes RPC.
+	VaultServiceChangesProcedure = "/numen.v1.VaultService/Changes"
 )
 
 // VaultServiceClient is a client for the numen.v1.VaultService service.
@@ -59,6 +61,10 @@ type VaultServiceClient interface {
 	Opening(context.Context, *connect.Request[v1.OpeningRequest]) (*connect.Response[v1.OpeningResponse], error)
 	// Neighbourhood is one note and everything joined to it.
 	Neighbourhood(context.Context, *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error)
+	// Changes reports the notes that changed on disk, for as long as the caller
+	// listens. It says which notes, and nothing about them: the caller knows
+	// what it is showing and asks for what it needs.
+	Changes(context.Context, *connect.Request[v1.ChangesRequest]) (*connect.ServerStreamForClient[v1.ChangesResponse], error)
 }
 
 // NewVaultServiceClient constructs a client for the numen.v1.VaultService service. By default, it
@@ -90,6 +96,12 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(vaultServiceMethods.ByName("Neighbourhood")),
 			connect.WithClientOptions(opts...),
 		),
+		changes: connect.NewClient[v1.ChangesRequest, v1.ChangesResponse](
+			httpClient,
+			baseURL+VaultServiceChangesProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Changes")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -98,6 +110,7 @@ type vaultServiceClient struct {
 	state         *connect.Client[v1.StateRequest, v1.StateResponse]
 	opening       *connect.Client[v1.OpeningRequest, v1.OpeningResponse]
 	neighbourhood *connect.Client[v1.NeighbourhoodRequest, v1.NeighbourhoodResponse]
+	changes       *connect.Client[v1.ChangesRequest, v1.ChangesResponse]
 }
 
 // State calls numen.v1.VaultService.State.
@@ -115,6 +128,11 @@ func (c *vaultServiceClient) Neighbourhood(ctx context.Context, req *connect.Req
 	return c.neighbourhood.CallUnary(ctx, req)
 }
 
+// Changes calls numen.v1.VaultService.Changes.
+func (c *vaultServiceClient) Changes(ctx context.Context, req *connect.Request[v1.ChangesRequest]) (*connect.ServerStreamForClient[v1.ChangesResponse], error) {
+	return c.changes.CallServerStream(ctx, req)
+}
+
 // VaultServiceHandler is an implementation of the numen.v1.VaultService service.
 type VaultServiceHandler interface {
 	// State is what the vault is and how far reading it has got.
@@ -124,6 +142,10 @@ type VaultServiceHandler interface {
 	Opening(context.Context, *connect.Request[v1.OpeningRequest]) (*connect.Response[v1.OpeningResponse], error)
 	// Neighbourhood is one note and everything joined to it.
 	Neighbourhood(context.Context, *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error)
+	// Changes reports the notes that changed on disk, for as long as the caller
+	// listens. It says which notes, and nothing about them: the caller knows
+	// what it is showing and asks for what it needs.
+	Changes(context.Context, *connect.Request[v1.ChangesRequest], *connect.ServerStream[v1.ChangesResponse]) error
 }
 
 // NewVaultServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -151,6 +173,12 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(vaultServiceMethods.ByName("Neighbourhood")),
 		connect.WithHandlerOptions(opts...),
 	)
+	vaultServiceChangesHandler := connect.NewServerStreamHandler(
+		VaultServiceChangesProcedure,
+		svc.Changes,
+		connect.WithSchema(vaultServiceMethods.ByName("Changes")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.VaultService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case VaultServiceStateProcedure:
@@ -159,6 +187,8 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 			vaultServiceOpeningHandler.ServeHTTP(w, r)
 		case VaultServiceNeighbourhoodProcedure:
 			vaultServiceNeighbourhoodHandler.ServeHTTP(w, r)
+		case VaultServiceChangesProcedure:
+			vaultServiceChangesHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -178,4 +208,8 @@ func (UnimplementedVaultServiceHandler) Opening(context.Context, *connect.Reques
 
 func (UnimplementedVaultServiceHandler) Neighbourhood(context.Context, *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Neighbourhood is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) Changes(context.Context, *connect.Request[v1.ChangesRequest], *connect.ServerStream[v1.ChangesResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Changes is not implemented"))
 }

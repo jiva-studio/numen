@@ -24,6 +24,22 @@ async function go(path: string) {
   }
 }
 
+/**
+ * Follow the vault.
+ *
+ * Every change asks for the picture again, including changes to notes that are
+ * nowhere on it: a link is written at one end and shows at both, so a note
+ * being edited somewhere else is exactly how a new parent arrives. What is on
+ * screen cannot answer whether a change reaches it.
+ */
+async function follow() {
+  for await (const change of vault.changes({})) {
+    if (change.paths.length === 0 && !change.reload) continue
+    const here = neighbourhood.value?.focus?.path
+    if (here) await go(here)
+  }
+}
+
 /** Waits for the scan to have stored something, then shows the first note. */
 async function start() {
   try {
@@ -34,6 +50,7 @@ async function start() {
       if (note) {
         indexing.value = false
         await go(note.path)
+        void follow()
         return
       }
       if (state.ready) {

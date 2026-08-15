@@ -23,6 +23,11 @@ service VaultService {
 
   // Neighbourhood is one note and everything joined to it.
   rpc Neighbourhood(NeighbourhoodRequest) returns (NeighbourhoodResponse);
+
+  // Changes reports the notes that changed on disk, for as long as the caller
+  // listens. It says which notes, and nothing about them: the caller knows
+  // what it is showing and asks for what it needs.
+  rpc Changes(ChangesRequest) returns (stream ChangesResponse);
 }
 
 // Note is a note as something else refers to it.
@@ -69,6 +74,10 @@ message StateResponse {
   // Why the scan stopped, when it stopped for a reason. A vault that could
   // not be read is not an empty one.
   string failed = 5;
+
+  // Why the vault is not being followed, when it is not. Changes will only
+  // appear when something asks for them again.
+  string unwatched = 6;
 }
 
 message OpeningRequest {}
@@ -77,6 +86,18 @@ message OpeningResponse {
   // Absent while a scan has stored nothing, and for a vault that holds no
   // notes.
   optional Note note = 1;
+}
+
+message ChangesRequest {}
+
+message ChangesResponse {
+  // Paths of the notes that changed. A note that was removed is named here
+  // too: what changed about it is that it is gone.
+  repeated string paths = 1;
+
+  // Set when the vault has to be read again rather than followed — more
+  // changed at once than could be reported.
+  bool reload = 2;
 }
 
 message NeighbourhoodRequest {

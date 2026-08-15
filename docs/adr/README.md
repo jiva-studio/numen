@@ -35,6 +35,7 @@ Read these first; everything else is derived from them.
 - [ADR-0019 — Performance targets for indexing and search](0019-performance-targets.md)
 - [ADR-0021 — The index measures itself after a scan](0021-the-index-measures-itself.md)
 - [ADR-0022 — Notes are indexed in groups](0022-notes-are-indexed-in-groups.md)
+- [ADR-0023 — The vault is watched](0023-the-vault-is-watched.md)
 
 ## The note file
 
