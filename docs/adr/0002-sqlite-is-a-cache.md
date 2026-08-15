@@ -3,7 +3,6 @@
 - **Status:** Accepted
 - **Date:** 2026-08-15
 - **Related:** ADR-0000, ADR-0001, ADR-0004
-- **Amended by:** [ADR-0015](0015-the-index-is-migrated.md) — how a schema change is applied
 
 ## Context
 

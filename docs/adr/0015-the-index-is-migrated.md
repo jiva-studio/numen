@@ -2,24 +2,21 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-15
-- **Supersedes:** the "no migrations" rule in ADR-0002
 - **Related:** ADR-0000, ADR-0002, ADR-0014
 
 ## Context
 
-ADR-0002 concluded that migrations were not a category of work: the index is a
-cache, the vaults are the truth, so a schema change could drop every table and
-let the next scan refill them.
+The index is a cache: the vaults are the truth, and anything in the database can
+be produced again by scanning them. Its schema will change as the application
+grows — a column for a new feature, an index to make a query faster.
 
-That reasoning is correct about safety and wrong about cost. A rebuild at the
-sizes this is built for is minutes of work, and the schema will change for
-reasons that have nothing to do with the user — a column added for a feature
-they do not use, an index added to make a query faster. Charging every user a
-full re-scan of every vault for that is a bad trade, and it is a trade made
-repeatedly, on every update.
+The question is what happens to the index already sitting on a user's machine
+when that change ships. Refilling it is always available and always correct, and
+it costs minutes at the sizes this is built for. Most schema changes have nothing
+to do with the user: charging them that wait on every update, for a column
+belonging to a feature they do not use, is the wrong default.
 
-The safety argument survives: nothing here is irreplaceable. What changes is that
-being *able* to rebuild is not a reason to *always* rebuild.
+Being *able* to rebuild is not a reason to *always* rebuild.
 
 ## Decision
 
@@ -68,8 +65,8 @@ changed.
 
 ## Alternatives considered
 
-**Drop and rebuild on any schema change** — the previous decision. Rejected on
-cost, not on safety: it is the correct fallback and the wrong default.
+**Drop and rebuild on any schema change.** Rejected on cost, not on safety: it
+is the correct fallback and the wrong default.
 
 **Migrate the schema, keep no version** (detect the shape of the database and
 adapt). Rejected: schema detection is guesswork that grows with every change, and
