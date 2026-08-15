@@ -57,20 +57,37 @@ has one consumer.
 ```
 modules/apps/<app>/
   go.mod
-  cmd/<binary>/main.go     entry point, and nothing else
+  cmd/<binary>/main.go       entry point, and nothing else
   internal/
     core/
-      domain/              entities
-      port/                the interfaces the core needs from outside
-      service/             use cases
-      markdown/            the note format, parsed
+      domain/                one file per type: vault.go, note.go, ...
+      port/                  one file per port: vault_reader.go, note_queries.go
+      usecase/<aggregate>/   one file per scenario: add.go, scan.go, find.go
+      markdown/              the note format, parsed
     adapter/
-      cli/                 driving: arguments in, text out
-      filesystem/          driven: a vault on disk
-      index/               driven: the cache the notes are queried from
-      appstate/            driven: the list of vaults
-    container/             composition root: which adapter satisfies which port
+      cli/                   driving: arguments in, text out
+      filesystem/            driven: a vault on disk
+      index/                 driven: the cache, a folder per aggregate
+        <aggregate>/         repository.go, queries.go, sql/*.sql
+        migration/           numbered schema changes
+      appstate/              driven: the list of vaults
+    container/               composition root: adapter to port
 ```
+
+**The unit of organisation is the thing, not the kind of thing.** An aggregate is
+a folder holding its repository, its queries and its SQL together; a use case is
+a file named after the scenario. One file per type, one folder per aggregate. A
+directory that collects every file of one kind — all the entities, all the
+statements — reads fine at five files and is a heap at fifty, and that heap is
+what tells you a codebase stopped being designed and started being accumulated.
+
+**Repositories and queries are different things.** A repository is a collection
+of aggregates: put one in, take one out, remove one. Anything answering a
+question across many of them, in a shape that is not an aggregate — a search
+result, a count, a fingerprint of every file — is a query, and it lives beside
+the repository rather than on it. A repository that has grown a `Search` is a
+service under a repository name, and the name stops carrying information the
+moment that is allowed.
 
 Three things in this are Go rather than architecture in general, and they are the
 reason it does not look like the same diagram drawn in another language:
