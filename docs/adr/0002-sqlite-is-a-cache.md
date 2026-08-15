@@ -144,6 +144,9 @@ only guarantees that dropping it is a supported outcome rather than a defect.
 
 **Budgets**
 
+Stated here as design constraints; the numbers they are measured against, and
+the procedure, are ADR-0019.
+
 | Operation | Budget |
 | --- | --- |
 | Startup on a warm cache | under 2 s to interactive, independent of vault size |

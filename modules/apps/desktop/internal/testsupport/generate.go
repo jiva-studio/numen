@@ -45,6 +45,9 @@ func GenerateVault(tb testing.TB, n int) domain.Vault {
 	return domain.Vault{ID: cfg.ID, Name: "generated", Path: root}
 }
 
+// RareTerm appears in one generated note in a thousand.
+const RareTerm = "hapaxlegomenon"
+
 var vocabulary = strings.Fields(`entropy thermodynamics shannon information measure
 	system description observer probability distribution ensemble equilibrium
 	temperature energy conservation reversible irreversible statistical mechanics`)
@@ -52,6 +55,14 @@ var vocabulary = strings.Fields(`entropy thermodynamics shannon information meas
 func note(r *rand.Rand, i int) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "---\ntitle: Note %d\nstatus: generated\n---\n\n# Note %d\n\n", i, i)
+
+	// One note in a thousand carries a word no other note has. Every generated
+	// note otherwise draws on the same twenty words, so a query matches the
+	// whole corpus — which measures ranking, not searching. A real vault has a
+	// long tail, and RareTerm is how a benchmark can ask for it.
+	if i%1000 == 0 {
+		b.WriteString(RareTerm + "\n\n")
+	}
 
 	// Between roughly 40 and 400 words, in a few sections: real vaults are not
 	// made of one note repeated.

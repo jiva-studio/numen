@@ -60,7 +60,7 @@ func TestFreshDatabaseIsAtTheNewestVersion(t *testing.T) {
 	newest := available[len(available)-1].version
 
 	var version int
-	if err := db.db.QueryRowContext(ctx, "PRAGMA user_version").Scan(&version); err != nil {
+	if err := db.write.QueryRowContext(ctx, "PRAGMA user_version").Scan(&version); err != nil {
 		t.Fatal(err)
 	}
 	if version != newest {
@@ -76,7 +76,7 @@ func TestReopeningAppliesNothingAndKeepsData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := first.db.ExecContext(ctx,
+	if _, err := first.write.ExecContext(ctx,
 		`INSERT INTO vaults (id, name, path) VALUES ('01AAA', 'x', '/tmp/x')`); err != nil {
 		t.Fatal(err)
 	}
@@ -93,7 +93,7 @@ func TestReopeningAppliesNothingAndKeepsData(t *testing.T) {
 	defer second.Close()
 
 	var count int
-	if err := second.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM vaults`).Scan(&count); err != nil {
+	if err := second.write.QueryRowContext(ctx, `SELECT COUNT(*) FROM vaults`).Scan(&count); err != nil {
 		t.Fatal(err)
 	}
 	if count != 1 {

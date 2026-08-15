@@ -2,6 +2,7 @@ package vault_test
 
 import (
 	"context"
+	"errors"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -397,5 +398,70 @@ func TestFrontmatterThatCannotBeStoredDoesNotFailTheScan(t *testing.T) {
 	}
 	if len(matches) != 1 {
 		t.Errorf("the note was not indexed: %+v", matches)
+	}
+}
+
+func TestNewestNotesAreIndexedFirst(t *testing.T) {
+	// A vault has a working set and an archive. While a scan runs, what the
+	// person is looking for is what they touched recently, so that is what the
+	// index gets first.
+	ctx := t.Context()
+	root := testsupport.CopyVault(t)
+	v, readers := vaultAt(t, root)
+	db := openIndex(t)
+
+	newest := filepath.Join(root, "edge", "unicode.md")
+	at := time.Now().Add(time.Hour)
+	if err := os.Chtimes(newest, at, at); err != nil {
+		t.Fatal(err)
+	}
+
+	var order []string
+	scan := scanner(readers, db)
+	scan.OnProgress = func(res usecase.ScanResult) {
+		known, err := db.Queries().Fingerprints(ctx, v.ID)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if len(order) == 0 {
+			for path := range known {
+				order = append(order, path)
+			}
+		}
+	}
+	if _, err := scan.Execute(ctx, v); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(order) != 1 || order[0] != "edge/unicode.md" {
+		t.Errorf("first note indexed was %v, want edge/unicode.md", order)
+	}
+}
+
+func TestScanStopsWhenCancelled(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	v, readers := vaultAt(t, testsupport.VaultDir(t))
+	db := openIndex(t)
+
+	scan := scanner(readers, db)
+	scan.OnProgress = func(res usecase.ScanResult) {
+		if res.Indexed == 2 {
+			cancel()
+		}
+	}
+	_, err := scan.Execute(ctx, v)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("a cancelled scan returned %v", err)
+	}
+
+	// What it managed to index is correct as far as it got: the next scan
+	// continues from what is on disk rather than starting again.
+	known, err := db.Queries().Fingerprints(t.Context(), v.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(known) != 2 {
+		t.Errorf("a cancelled scan left %d notes indexed, want the 2 it finished", len(known))
 	}
 }

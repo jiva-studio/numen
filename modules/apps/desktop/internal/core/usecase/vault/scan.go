@@ -1,10 +1,12 @@
 package vault
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
 	"io/fs"
+	"slices"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/markdown"
@@ -18,6 +20,11 @@ type Scan struct {
 	Vaults  port.VaultRepository
 	Notes   port.NoteRepository
 	Known   port.NoteQueries
+
+	// OnProgress, if set, is called after each note is written. A scan of a
+	// large vault takes a minute, and something has to be able to say so while
+	// it happens. What is done with that is the caller's business.
+	OnProgress func(ScanResult)
 }
 
 // ScanResult reports what a scan did, in the terms the user cares about.
@@ -50,14 +57,30 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 		return res, fmt.Errorf("read index: %w", err)
 	}
 
+	// The walk is collected before anything is read, so that the order can be
+	// chosen. A vault has a working set and an archive, and they are not the
+	// same size: notes touched recently are what the person is looking for while
+	// the scan runs, so they are indexed first.
+	var found []domain.FileRef
+	if err := reader.Walk(ctx, func(ref domain.FileRef) error {
+		found = append(found, ref)
+		return nil
+	}); err != nil {
+		return res, err
+	}
+	slices.SortFunc(found, func(a, b domain.FileRef) int { return cmp.Compare(b.MTime, a.MTime) })
+
 	seen := make(map[string]bool, len(known))
-	walkErr := reader.Walk(ctx, func(ref domain.FileRef) error {
+	for _, ref := range found {
+		if err := ctx.Err(); err != nil {
+			return res, err
+		}
 		res.Seen++
 		seen[ref.Path] = true
 
 		if previous, ok := known[ref.Path]; ok && previous.Unchanged(ref) {
 			res.Unchanged++
-			return nil
+			continue
 		}
 
 		raw, err := reader.Read(ctx, ref.Path)
@@ -71,19 +94,18 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 			// temporary file looks like. Removing its row would take the note
 			// out of search until the next scan.
 			res.Vanished++
-			return nil
+			continue
 		}
 		if err != nil {
-			return fmt.Errorf("read %s: %w", ref.Path, err)
+			return res, fmt.Errorf("read %s: %w", ref.Path, err)
 		}
 		if err := u.Notes.Save(ctx, v.ID, markdown.Parse(ref, raw)); err != nil {
-			return fmt.Errorf("index %s: %w", ref.Path, err)
+			return res, fmt.Errorf("index %s: %w", ref.Path, err)
 		}
 		res.Indexed++
-		return nil
-	})
-	if walkErr != nil {
-		return res, walkErr
+		if u.OnProgress != nil {
+			u.OnProgress(res)
+		}
 	}
 
 	var gone []string
