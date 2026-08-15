@@ -1,0 +1,39 @@
+name: Task
+description: A unit of implementation work
+title: ""
+labels: ["task"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What to do
+      description: One task per issue. If it needs an "and", it is probably two.
+    validations:
+      required: true
+
+  - type: input
+    id: adr
+    attributes:
+      label: Follows from
+      description: |
+        Which accepted decision this implements. Leave empty only if the task
+        genuinely follows from no ADR — that is usually a sign the decision has
+        not been made yet.
+      placeholder: "ADR-0009"
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - "1 — core (parser, index, links, sources, FTS5, vault format, submodules, MCP)"
+        - "2 — Anki layer and semantics (SRS, vector index, prerequisite scheduler)"
+        - "neither — tooling, repo, docs"
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: How we know it is finished. Skip if it is obvious from the task.
