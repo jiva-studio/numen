@@ -1,0 +1,178 @@
+package cli_test
+
+import (
+	"bytes"
+	"context"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/cli"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/testsupport"
+)
+
+// session is one installation: its own registry and index, so a test never
+// touches the machine the tests run on.
+type session struct {
+	t     *testing.T
+	vault string
+	base  []string
+}
+
+func newSession(t *testing.T) *session {
+	t.Helper()
+	dir := t.TempDir()
+	return &session{
+		t:     t,
+		vault: testsupport.CopyVault(t),
+		base: []string{
+			"--registry", filepath.Join(dir, "vaults.json"),
+			"--index", filepath.Join(dir, "index.db"),
+		},
+	}
+}
+
+func (s *session) run(args ...string) (string, error) {
+	s.t.Helper()
+	var out bytes.Buffer
+	err := cli.Run(context.Background(), &out, append(s.base, args...))
+	return out.String(), err
+}
+
+func (s *session) mustRun(args ...string) string {
+	s.t.Helper()
+	out, err := s.run(args...)
+	if err != nil {
+		s.t.Fatalf("numen %s: %v\n%s", strings.Join(args, " "), err, out)
+	}
+	return out
+}
+
+func TestAddScanSearch(t *testing.T) {
+	s := newSession(t)
+
+	added := s.mustRun("vault", "add", s.vault, "--name", "demo")
+	if !strings.Contains(added, "added demo") {
+		t.Errorf("vault add said:\n%s", added)
+	}
+
+	// The identity is written into the vault, which is what makes the folder a
+	// vault rather than a folder.
+	if _, err := os.Stat(filepath.Join(s.vault, ".numen", "config.json")); err != nil {
+		t.Errorf("vault has no identity after being added: %v", err)
+	}
+
+	listed := s.mustRun("vault", "list")
+	if !strings.Contains(listed, "demo") {
+		t.Errorf("vault list said:\n%s", listed)
+	}
+
+	scanned := s.mustRun("scan", "demo")
+	if !strings.Contains(scanned, "7 notes: 7 indexed") {
+		t.Errorf("scan said:\n%s", scanned)
+	}
+
+	found := s.mustRun("search", "demo", "entropy")
+	if !strings.Contains(found, "Entropy") {
+		t.Errorf("search said:\n%s", found)
+	}
+}
+
+func TestSecondScanChangesNothing(t *testing.T) {
+	s := newSession(t)
+	s.mustRun("vault", "add", s.vault, "--name", "demo")
+	s.mustRun("scan", "demo")
+
+	again := s.mustRun("scan", "demo")
+	if !strings.Contains(again, "0 indexed") || !strings.Contains(again, "7 unchanged") {
+		t.Errorf("rescanning an untouched vault reindexed something:\n%s", again)
+	}
+}
+
+func TestFlagsAreAcceptedAfterThePath(t *testing.T) {
+	// `vault add <path> --name x` is the order people type, and the standard
+	// flag package stops parsing at the first positional argument.
+	s := newSession(t)
+	out := s.mustRun("vault", "add", s.vault, "--name", "chosen")
+	if !strings.Contains(out, "added chosen") {
+		t.Errorf("the name flag after the path was dropped:\n%s", out)
+	}
+}
+
+func TestSearchFindsNothingWithoutFailing(t *testing.T) {
+	s := newSession(t)
+	s.mustRun("vault", "add", s.vault, "--name", "demo")
+	s.mustRun("scan", "demo")
+
+	out := s.mustRun("search", "demo", "quagmire")
+	if !strings.Contains(out, "nothing found") {
+		t.Errorf("search said:\n%s", out)
+	}
+}
+
+func TestUnknownVaultSaysWhatToDo(t *testing.T) {
+	s := newSession(t)
+	_, err := s.run("scan", "missing")
+	if err == nil {
+		t.Fatal("scanning an unknown vault succeeded")
+	}
+	if !strings.Contains(err.Error(), "numen vault add") {
+		t.Errorf("error does not say how to fix it: %v", err)
+	}
+}
+
+func TestListBeforeAnythingIsAdded(t *testing.T) {
+	s := newSession(t)
+	out := s.mustRun("vault", "list")
+	if !strings.Contains(out, "no vaults yet") {
+		t.Errorf("vault list said:\n%s", out)
+	}
+}
+
+func TestUsageIsShownWhenNothingIsAsked(t *testing.T) {
+	s := newSession(t)
+	out, err := s.run()
+	if err == nil {
+		t.Error("running with no command reported success")
+	}
+	if !strings.Contains(out, "usage:") {
+		t.Errorf("no usage was printed:\n%s", out)
+	}
+}
+
+func TestUnknownCommandIsRejected(t *testing.T) {
+	s := newSession(t)
+	if _, err := s.run("frobnicate"); err == nil {
+		t.Error("an unknown command was accepted")
+	}
+	if _, err := s.run("vault", "frobnicate"); err == nil {
+		t.Error("an unknown vault subcommand was accepted")
+	}
+}
+
+func TestAddingAFileRatherThanAFolderFails(t *testing.T) {
+	s := newSession(t)
+	_, err := s.run("vault", "add", filepath.Join(s.vault, "Thermodynamics.md"))
+	if err == nil {
+		t.Error("a file was accepted as a vault")
+	}
+}
+
+func TestReaddingAVaultKeepsItsIdentity(t *testing.T) {
+	s := newSession(t)
+	first := s.mustRun("vault", "add", s.vault, "--name", "demo")
+	second := s.mustRun("vault", "add", s.vault, "--name", "demo")
+	if identity(first) != identity(second) {
+		t.Errorf("identity changed on re-adding:\n%s\n%s", first, second)
+	}
+}
+
+func identity(output string) string {
+	for _, line := range strings.Split(output, "\n") {
+		if id, ok := strings.CutPrefix(strings.TrimSpace(line), "id "); ok {
+			return strings.TrimSpace(id)
+		}
+	}
+	return ""
+}
