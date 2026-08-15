@@ -28,18 +28,16 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args 
 
 	started := time.Now()
 	scan := usecase.Scan{
-		Readers: cfg.VaultReaders(),
-		Vaults:  db.Vaults(),
-		Notes:   db.Notes(),
-		Known:   db.Queries(),
+		Readers:     cfg.VaultReaders(),
+		Vaults:      db.Vaults(),
+		Notes:       db.Notes(),
+		Known:       db.Queries(),
+		Maintenance: db.Maintenance(),
 	}
-	// A scan of a large vault takes a minute; a terminal that prints nothing for
-	// a minute looks broken. One line per hundred notes is enough to show it is
-	// alive without scrolling the screen away.
+	// A terminal that prints nothing for a minute looks broken. One group is
+	// about half a second, and the line rewrites itself.
 	scan.OnProgress = func(res usecase.ScanResult) {
-		if res.Indexed%100 == 0 {
-			fmt.Fprintf(out, "  %d indexed\r", res.Indexed)
-		}
+		fmt.Fprintf(out, "  %d indexed\r", res.Indexed)
 	}
 	result, err := scan.Execute(ctx, v)
 	if err != nil {

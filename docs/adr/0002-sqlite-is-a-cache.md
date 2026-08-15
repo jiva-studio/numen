@@ -30,7 +30,8 @@ carries an index along.
 ### One database for all vaults
 
 The application holds several vaults and switches between them. All of their
-caches live in a single database file; every row carries a `vault_id`.
+caches live in a single database file, and every row belongs to a vault — a note
+by carrying it, and everything stored about a note by belonging to the note.
 
 The alternative — a database file per vault — was considered and rejected. It
 makes anything that spans vaults into a feature that has to be built: a dashboard
@@ -41,9 +42,9 @@ only by recompiling SQLite. One file makes all of it an ordinary query.
 
 The arguments that pointed the other way do not survive contact:
 
-- **Full-text scoping.** Filtering is a plain `WHERE`: `vault_id` sits in the
-  table as an `UNINDEXED` column. The match runs across every vault and the
-  filter discards the rest, so the cost is rows visited, not correctness. BM25
+- **Full-text scoping.** Filtering is a plain `WHERE` on the note a match
+  belongs to. The match runs across every vault and the filter discards the
+  rest, so the cost is rows visited, not correctness. BM25
   does draw its term statistics from the whole table, so weights are averaged
   across corpora and per-vault ranking shifts slightly — small between personal
   corpora, and fixable with separate full-text tables inside the same file. It
@@ -56,7 +57,8 @@ The arguments that pointed the other way do not survive contact:
   one index is the idiom, and it is faster than an unpartitioned one.
 - **Corruption.** The index is disposable by construction. Corruption costs a
   rebuild of every vault instead of one — an inconvenience, not a loss.
-- **Deleting a vault.** One `DELETE ... WHERE vault_id = ?` in a transaction.
+- **Deleting a vault.** One `DELETE` of the vault's own row; everything filed
+  under it goes with it, because the schema says so.
 
 What does survive is **leakage**: a query that forgets its `vault_id` does not
 crash, it silently returns another vault's notes in search, another vault's cards
@@ -65,8 +67,8 @@ test that uses one vault.
 
 That is a real risk and it is handled structurally rather than by care:
 
-- Every table that holds vault-scoped rows has a `vault_id` column, and it is
-  part of the primary key wherever that is meaningful.
+- A note carries its vault, and everything else reaches a vault through the note
+  it belongs to. A row that belongs to nothing cannot be written.
 - Base tables are never queried directly by feature code. Access goes through a
   layer that binds `vault_id` itself, so omitting it is not expressible.
 - The test suite runs with two vaults populated, not one. A single-vault suite

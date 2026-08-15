@@ -1,1 +1,1 @@
-INSERT INTO problems (vault_id, path, detail) VALUES (?, ?, ?);
+INSERT INTO problems (note_id, detail) VALUES (?, ?);

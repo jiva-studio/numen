@@ -77,7 +77,7 @@ func TestReopeningAppliesNothingAndKeepsData(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := first.write.ExecContext(ctx,
-		`INSERT INTO vaults (id, name, path) VALUES ('01AAA', 'x', '/tmp/x')`); err != nil {
+		`INSERT INTO vaults (identifier, name, path) VALUES ('01AAA', 'x', '/tmp/x')`); err != nil {
 		t.Fatal(err)
 	}
 	if err := first.Close(); err != nil {
@@ -157,7 +157,7 @@ func TestAnOlderIndexIsMigratedRatherThanRebuilt(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := db.ExecContext(ctx,
-		`INSERT INTO vaults (id, name, path) VALUES ('01AAA', 'kept', '/notes')`); err != nil {
+		`INSERT INTO vaults (identifier, name, path) VALUES ('01AAA', 'kept', '/notes')`); err != nil {
 		t.Fatal(err)
 	}
 	if err := db.Close(); err != nil {
@@ -172,7 +172,7 @@ func TestAnOlderIndexIsMigratedRatherThanRebuilt(t *testing.T) {
 
 	var name string
 	if err := upgraded.write.QueryRowContext(ctx,
-		`SELECT name FROM vaults WHERE id = '01AAA'`).Scan(&name); err != nil {
+		`SELECT name FROM vaults WHERE identifier = '01AAA'`).Scan(&name); err != nil {
 		t.Fatalf("the row did not survive the migration: %v", err)
 	}
 	if name != "kept" {

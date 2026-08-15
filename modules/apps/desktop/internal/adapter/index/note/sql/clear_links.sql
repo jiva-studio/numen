@@ -1,1 +1,1 @@
-DELETE FROM links WHERE vault_id = ? AND from_path = ?;
+DELETE FROM links WHERE note_id = ?;
