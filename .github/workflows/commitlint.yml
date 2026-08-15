@@ -2,6 +2,10 @@ name: commitlint
 
 on:
   pull_request:
+    # `edited` is not a default type. Without it, renaming a pull request after
+    # the check has passed slips a bad title past the gate — and the title is
+    # what the squash merge writes into main.
+    types: [opened, synchronize, reopened, edited]
   push:
     branches: [main]
 
