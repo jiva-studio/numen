@@ -40,7 +40,9 @@ src/
   plex/              the focused-neighbourhood view
     model/           what a plex is made of, as plain values
       role.ts          every seat, declared once — a new role starts here
-      node.ts          a node, placed or not; whether it can be chosen
+      node.ts          a node, placed or not; what is true of one wherever
+                       it is drawn — its name, whether it can be chosen,
+                       where its handle sits
       edge.ts          an edge, routed or not
       neighbourhood.ts the input, and the two things it must be true about
       frame.ts         everything to be drawn, at one moment
@@ -51,6 +53,9 @@ src/
       arrange.ts       admit, place, route
       interpolate.ts   one frame between two arrangements
     render/          the drawing, and nothing else
+      PlexView.vue     the picture between the nodes: the window, the edges,
+                       and the gesture crossing them
+      PlexNodeView.vue one node: its box, its label, its handle
     transition.ts    the clock, behind a port
     Plex.vue         the composition root
 ```

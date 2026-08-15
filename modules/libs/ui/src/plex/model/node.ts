@@ -41,3 +41,11 @@ export const isReachable = (node: PlacedNode): boolean =>
 /** A label may be empty; an accessible name may not. */
 export const nameOf = (node: PlexNode): string =>
   `${node.label || 'Untitled'}, ${node.role}`
+
+/**
+ * Where the handle sits within a node: on its trailing edge, halfway down.
+ *
+ * Here rather than in either drawing because both need the same answer — the
+ * node draws the handle there, and the plex starts the gesture's thread there.
+ */
+export const handleIn = (node: PlacedNode): Point => ({ x: node.width / 2, y: 0 })

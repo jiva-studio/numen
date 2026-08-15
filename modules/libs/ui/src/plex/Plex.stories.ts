@@ -403,36 +403,15 @@ export const Overcrowded: Story = {
 }
 
 /**
- * Not Latin, far too long, nothing to break at, and nothing at all.
+ * Not Latin, far too long, nothing to break at, and nothing at all — the whole
+ * arrangement made of them, to see that text nothing fits into still leaves a
+ * plex rather than a pile.
  *
- * Only a browser can answer this one: jsdom lays out no text, so every label
- * is the same size to it and an overflowing one looks identical to a fitting
- * one.
+ * Whether a label stays inside its own box is the node's affair and is checked
+ * on the node, against the same corpus.
  */
 export const AwkwardLabels: Story = {
   args: { neighbourhood: neighbourhoods.awkwardLabels },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const long = 'Supercalifragilisticexpialidociousandthensomemore'
-
-    const node = canvas.getByLabelText(`${long}, child`)
-    const box = node.querySelector('rect')!
-    const label = node.querySelector('.plex__label-text')!
-
-    // Clamped rather than spilling: what is drawn is shorter than the text.
-    await expect(label.scrollHeight).toBeGreaterThan(label.clientHeight)
-    await expect(label.getBoundingClientRect().width).toBeLessThanOrEqual(
-      box.getBoundingClientRect().width,
-    )
-
-    // Devanagari, Arabic and an empty label all stay inside their boxes.
-    for (const name of ['भगवद्गीता, parent', 'الفهرس, parent', 'Untitled, child']) {
-      const other = canvas.getByLabelText(name)
-      const rect = other.querySelector('rect')!.getBoundingClientRect()
-      const text = other.querySelector('.plex__label-text')!.getBoundingClientRect()
-      await expect(text.width).toBeLessThanOrEqual(rect.width)
-    }
-  },
 }
 
 /**

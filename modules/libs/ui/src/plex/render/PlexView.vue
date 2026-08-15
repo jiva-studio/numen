@@ -2,14 +2,15 @@
 /**
  * The drawing, and nothing else. Every number here came from `arrange/`.
  *
- * Labels go through a `foreignObject`: SVG text cannot wrap, cannot ellipsise
- * and does not reorder a right-to-left run.
+ * What it draws itself is the picture between the nodes: the window, the
+ * edges, and the gesture crossing them. A node draws itself, and is told the
+ * two things about it that only the whole picture knows.
  */
 import { computed, useTemplateRef } from 'vue'
+import PlexNodeView from './PlexNodeView.vue'
 import {
-  isReachable,
+  handleIn,
   midpointOf,
-  nameOf,
   type PlacedEdge,
   type PlacedNode,
   type PlexFrame,
@@ -72,29 +73,9 @@ const path = (edge: PlacedEdge) =>
   ` ${edge.control2.x} ${edge.control2.y}` +
   ` ${edge.toPoint.x} ${edge.toPoint.y}`
 
-const activate = (node: PlacedNode) => {
-  if (isReachable(node)) emit('activate', node.id)
-}
-
-const onKey = (event: KeyboardEvent, node: PlacedNode) => {
-  if (event.key !== 'Enter' && event.key !== ' ') return
-  event.preventDefault()
-  activate(node)
-}
-
-/** Where the handle sits within a node: on its trailing edge, halfway down. */
-const handleIn = (node: PlacedNode): Point => ({ x: node.width / 2, y: 0 })
-
 const offering = (node: PlacedNode) =>
   props.gestureFrom === node.id ||
   (props.gestureFrom === null && props.hovered === node.id && node.opacity >= 1)
-
-const reach = (node: PlacedNode, event: PointerEvent) => {
-  // The handle is inside the node, which navigates when clicked.
-  event.stopPropagation()
-  event.preventDefault()
-  emit('reach', node.id, event)
-}
 
 /** The line a gesture drags behind it, from the handle to the pointer. */
 const thread = computed(() => {
@@ -157,61 +138,16 @@ const aimedAt = computed(() =>
       </template>
     </g>
 
-    <g
+    <PlexNodeView
       v-for="node in frame.nodes"
       :key="node.id"
-      class="plex__node"
-      :style="{ '--numen-role-hue': `var(--numen-role-${node.role})` }"
-      :transform="`translate(${node.x} ${node.y})`"
-      :opacity="node.opacity"
-      :tabindex="isReachable(node) ? 0 : -1"
-      :aria-hidden="isReachable(node) || node.role === 'focus' ? undefined : 'true'"
-      :role="node.role === 'focus' ? 'img' : 'button'"
-      :class="[`plex__node--${node.role}`, { 'plex__node--aimed': aimedAt === node.id }]"
-      :aria-label="nameOf(node)"
-      @click="activate(node)"
-      @keydown="onKey($event, node)"
-      @pointerenter="emit('hover', node.id)"
-      @pointerleave="emit('hover', null)"
-    >
-      <rect
-        class="plex__box"
-        :x="-node.width / 2"
-        :y="-node.height / 2"
-        :width="node.width"
-        :height="node.height"
-      />
-      <foreignObject
-        :x="-node.width / 2"
-        :y="-node.height / 2"
-        :width="node.width"
-        :height="node.height"
-      >
-        <div class="plex__label">
-          <span class="plex__label-text">{{ node.label }}</span>
-        </div>
-      </foreignObject>
-
-      <!-- Reach out from here to make something. Offered on hover so it is
-           there when wanted and out of the way when not. -->
-      <template v-if="offering(node)">
-        <circle
-          class="plex__handle"
-          :cx="handleIn(node).x"
-          :cy="handleIn(node).y"
-          r="9"
-          role="button"
-          aria-label="Reach out from here"
-          @pointerdown="reach(node, $event)"
-          @click.stop
-        />
-        <path
-          class="plex__handle-mark"
-          :d="`M ${handleIn(node).x - 4} ${handleIn(node).y} h 8 M ${handleIn(node).x} ${handleIn(node).y - 4} v 8`"
-          aria-hidden="true"
-        />
-      </template>
-    </g>
+      :node="node"
+      :offering="offering(node)"
+      :aimed="aimedAt === node.id"
+      @activate="emit('activate', node.id)"
+      @reach="emit('reach', node.id, $event)"
+      @hover="emit('hover', $event ? node.id : null)"
+    />
 
     <!-- The gesture itself, drawn over everything it may land on. -->
     <g v-if="thread" class="plex__reach" aria-hidden="true">
@@ -262,41 +198,6 @@ const aimedAt = computed(() =>
   stroke-linejoin: round;
 }
 
-/* No transition on the position — it comes from the frame, and a CSS one here
-   would race it. Hover is a filter because fill is spoken for by the role. */
-.plex__node {
-  cursor: pointer;
-  transition: filter var(--numen-motion-hover) var(--numen-easing);
-}
-
-.plex__node:hover {
-  filter: brightness(var(--numen-hover-brightness));
-}
-
-.plex__node--focus {
-  cursor: default;
-}
-
-.plex__handle {
-  fill: var(--numen-node-bg);
-  stroke: var(--numen-role-hue, var(--numen-node-border));
-  stroke-width: var(--numen-stroke);
-  cursor: crosshair;
-}
-
-.plex__handle-mark {
-  stroke: var(--numen-node-fg);
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  pointer-events: none;
-}
-
-/* The node a link would be made to, while the pointer is still on it. */
-.plex__node--aimed .plex__box {
-  stroke: var(--numen-ring);
-  stroke-width: var(--numen-ring-width);
-}
-
 .plex__reach {
   pointer-events: none;
 }
@@ -321,65 +222,5 @@ const aimedAt = computed(() =>
   font-size: var(--numen-edge-label-size);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-}
-
-/* The hue comes from the node's own role, so a new role needs a token and
-   nothing here. It changes over the length of the move that changes the role,
-   or a node would wear the focus colours while still halfway there. */
-.plex__box {
-  rx: var(--numen-radius);
-  fill: var(--numen-node-bg);
-  stroke: var(--numen-role-hue, var(--numen-node-border));
-  stroke-width: var(--numen-stroke);
-  transition:
-    fill var(--numen-plex-move) var(--numen-easing),
-    stroke var(--numen-plex-move) var(--numen-easing);
-}
-
-.plex__label {
-  block-size: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-inline: 10px;
-  box-sizing: border-box;
-  color: var(--numen-node-fg);
-  font-family: var(--numen-font-sans);
-  font-size: var(--numen-font-size);
-  line-height: var(--numen-line-height);
-  pointer-events: none;
-  transition: color var(--numen-plex-move) var(--numen-easing);
-}
-
-/* Two lines, then an ellipsis: a title is a sentence often enough that one
-   line throws away what distinguishes it from its neighbours. */
-.plex__label-text {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  overflow: hidden;
-  overflow-wrap: anywhere;
-  text-align: center;
-}
-
-.plex__node:focus-visible {
-  outline: none;
-}
-
-.plex__node:focus-visible .plex__box {
-  stroke: var(--numen-ring);
-  stroke-width: var(--numen-ring-width);
-}
-
-.plex__node--focus .plex__box {
-  rx: var(--numen-radius-focus);
-  fill: var(--numen-focus-bg);
-  stroke: var(--numen-focus-border);
-}
-
-.plex__node--focus .plex__label {
-  color: var(--numen-focus-fg);
-  font-weight: 600;
 }
 </style>
