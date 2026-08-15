@@ -8,6 +8,7 @@ modules/apps/desktop/        desktop client
 modules/apps/mobile/         mobile client
 modules/libs/domain/         domain model
 modules/libs/protocol/       wire/vault protocol
+modules/libs/ui/             shared interface components
 modules/tools/git-hooks/     repo-level tooling (commit validation)
 ```
 
@@ -35,8 +36,8 @@ Two dimensions, and nothing else. A label answers *what this is* or *what part o
 the repo it touches* — never *when it should be done*.
 
 - **Type**, exactly one: `adr`, `task`, `bug`, `epic`.
-- **Area**, zero or more: `desktop`, `mobile`, `domain`, `protocol`, `vault`,
-  `repo`. These are the same words as the commit scopes, on purpose — one
+- **Area**, zero or more: `desktop`, `mobile`, `domain`, `protocol`, `ui`,
+  `vault`, `repo`. These are the same words as the commit scopes, on purpose — one
   vocabulary for commits, issues and pull requests.
 - **`needs-decision`** — the only exception: the issue is blocked on a decision,
   not on work.
@@ -68,7 +69,7 @@ still produces a sloppy history.
 - **types** — `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`,
   `chore`, `revert`.
 - **scopes** — follow the module layout: `desktop`, `mobile`, `domain`,
-  `protocol`, `adr`, `docs`, `vault`, `ci`, `deps`, `repo`. An unlisted scope is
+  `protocol`, `ui`, `adr`, `docs`, `vault`, `ci`, `deps`, `repo`. An unlisted scope is
   a **warning**, not an error: adding a module should never be blocked by a
   forgotten line in `modules/tools/git-hooks/commitlint.config.mjs` — but a typo
   still shows up.
