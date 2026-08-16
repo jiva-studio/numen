@@ -45,6 +45,7 @@ Read these first; everything else is derived from them.
 ## The interface
 
 - [ADR-0020 — How an interface component is built](0020-how-an-interface-component-is-built.md)
+- [ADR-0025 — A client talks to the core through a schema](0025-a-client-talks-to-the-core-through-a-schema.md)
 
 ## Links and addressing
 

@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-08-15
 - **Applies to:** `modules/apps/desktop`
-- **Related:** ADR-0001, ADR-0002, ADR-0013, ADR-0015
+- **Related:** ADR-0001, ADR-0002, ADR-0013, ADR-0015, ADR-0025
 
 ## Context
 
@@ -24,6 +24,10 @@ other clients later. Neither is needed to scan a folder, and both cost a protoco
 to design, version and debug before a single note has been read. The protocol
 layer stays empty until something outside the binary genuinely needs to talk to
 the core.
+
+What a client needs is a separate question, answered by ADR-0025: a client is
+written in another language, so there is a boundary to describe whether or not
+it is in another process.
 
 ### Hexagonal: the domain knows nothing that has a lifetime
 
