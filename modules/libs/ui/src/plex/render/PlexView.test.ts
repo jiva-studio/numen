@@ -167,3 +167,25 @@ describe('what the drawing does with an opacity', () => {
     expect(faded.some((value) => value > 0 && value < 1)).toBe(true)
   })
 })
+
+describe('a node keeps its own drawing across a change', () => {
+  it('is the same element after the ones around it move', async () => {
+    // A node holds state of its own — whether a hand is over it, whether the
+    // keyboard is on it — and the browser holds focus on an element. Drawn by
+    // position rather than by name, one node inherits another's element, and
+    // both follow whatever happens to be in that place.
+    const view = mount(PlexView, {
+      props: {
+        frame: arrangePlex(before),
+        viewport: VIEWPORT,
+        nodeSize: DEFAULT_OPTIONS.nodeSize,
+      },
+    })
+    const was = view.get('[aria-label^="Going"]').element
+
+    // Departing nodes are appended after arriving ones, so positions shift.
+    await view.setProps({ frame: midMove })
+
+    expect(view.get('[aria-label^="Going"]').element).toBe(was)
+  })
+})

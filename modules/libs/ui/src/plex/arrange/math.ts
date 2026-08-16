@@ -3,8 +3,15 @@ import type { Extent } from '../model'
 export const lerp = (from: number, to: number, t: number): number =>
   from + (to - from) * t
 
+/**
+ * A fraction of the way through, and never anything else.
+ *
+ * Not a number is caught here rather than left to a comparison, which says
+ * false to both and lets it through: it reaches a transform as `opacity="NaN"`
+ * and the node is simply not drawn, with nothing to say why.
+ */
 export const clamp01 = (value: number): number =>
-  value < 0 ? 0 : value > 1 ? 1 : value
+  Number.isNaN(value) ? 1 : value < 0 ? 0 : value > 1 ? 1 : value
 
 export function lerpExtent(from: Extent, to: Extent, t: number): Extent {
   return {

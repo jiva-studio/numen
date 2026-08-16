@@ -2,7 +2,7 @@
  * The pointer. Everything that knows about events and screen pixels is here;
  * what a gesture *means* is worked out in `arrange/drop.ts`, as a value.
  */
-import { computed, ref, type Ref } from 'vue'
+import { computed, onScopeDispose, ref, type Ref } from 'vue'
 import { resolveDrop, seatWithoutDirection, type Drop } from './arrange'
 import type { PlexOptions } from './arrange'
 import type { PlexFrame, PlexRelatedRole, Point } from './model'
@@ -93,7 +93,15 @@ export function usePlexGesture(
     })
   })
 
+  /** What the gesture under way installed on the window, if anything. */
+  let detach: (() => void) | null = null
+
   const stop = (element: SVGSVGElement | null) => {
+    // Every way a gesture ends comes through here, so this is the one place
+    // that has to let go of everything: a listener left behind goes on
+    // answering for a gesture nobody is making.
+    detach?.()
+    detach = null
     if (element && pointer.value !== null) {
       try {
         element.releasePointerCapture?.(pointer.value)
@@ -155,26 +163,42 @@ export function usePlexGesture(
     // Followed on the window rather than on the drawing. A gesture is let go
     // of wherever the hand happens to be, which is often past the edge of the
     // plex, and capture is a courtesy the browser may decline.
-    const done = () => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-      window.removeEventListener('keydown', onKey)
+    //
+    // One pointer at a time: a second finger arriving is not this gesture, and
+    // its release is not this gesture's release.
+    const mine = (moved: PointerEvent) => moved.pointerId === pointer.value
+
+    const onMove = (moved: PointerEvent) => {
+      if (mine(moved)) move(moved)
     }
-    const onMove = (moved: PointerEvent) => move(moved)
-    const onUp = () => {
-      done()
-      finish()
+    const onUp = (up: PointerEvent) => {
+      if (mine(up)) finish()
+    }
+    // The browser takes the pointer away — a drag the system turned into a
+    // scroll, a pen lifted out of range. No `pointerup` follows, so without
+    // this the thread stays drawn and the next release anywhere makes a node.
+    const onLost = (lost: PointerEvent) => {
+      if (mine(lost)) cancel()
     }
     const onKey = (key: KeyboardEvent) => {
-      if (key.key !== 'Escape') return
-      done()
-      cancel()
+      if (key.key === 'Escape') cancel()
+    }
+
+    detach = () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onLost)
+      window.removeEventListener('keydown', onKey)
     }
 
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onLost)
     window.addEventListener('keydown', onKey)
   }
+
+  // A plex can go while a hand is still on it.
+  onScopeDispose(() => stop(svg()))
 
   return { from, at, outcome, begin, ask, cancel }
 }

@@ -210,6 +210,32 @@ describe('the shape of the movement is a setting', () => {
   })
 })
 
+describe('a line whose ends swap', () => {
+  it('stays drawn all the way across', () => {
+    // A jump is the same relationship from either end, so travelling along one
+    // turns `there → here` into `here → there`. Read as two lines, the one the
+    // reader is following is the one that fades out.
+    const here: PlexNeighbourhood = {
+      nodes: [
+        { id: 'here', label: 'Here', role: 'focus' },
+        { id: 'across', label: 'Across', role: 'jump' },
+      ],
+      edges: [{ from: 'across', to: 'here' }],
+    }
+    const across: PlexNeighbourhood = {
+      nodes: [
+        { id: 'across', label: 'Across', role: 'focus' },
+        { id: 'here', label: 'Here', role: 'jump' },
+      ],
+      edges: [{ from: 'here', to: 'across' }],
+    }
+
+    const moving = interpolatePlex(arrangePlex(here), arrangePlex(across), 0.5)
+    expect(moving.edges).toHaveLength(1)
+    expect(moving.edges[0]?.opacity).toBe(1)
+  })
+})
+
 describe('the easing', () => {
   it('starts and ends where it should', () => {
     expect(easeOut(0)).toBe(0)

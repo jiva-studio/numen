@@ -7,11 +7,22 @@ import { neighbourhoods } from '../fixtures/neighbourhoods'
 import { build } from '../fixtures/build'
 import type { PlexFrame } from '../model'
 
-const escapes = (frame: PlexFrame, viewport: { width: number; height: number }) =>
+/**
+ * Anything that reaches past what the window leaves it.
+ *
+ * The margin counts, on both axes: it is what the setting means, and comparing
+ * against the bare half-window lets a row run flush to the top of the screen
+ * with nothing to say so.
+ */
+const escapes = (
+  frame: PlexFrame,
+  viewport: { width: number; height: number },
+  margin = DEFAULT_OPTIONS.margin,
+) =>
   frame.nodes.filter(
     (node) =>
-      Math.abs(node.x) + node.width / 2 > viewport.width / 2 ||
-      Math.abs(node.y) + node.height / 2 > viewport.height / 2,
+      Math.abs(node.x) + node.width / 2 > viewport.width / 2 - margin ||
+      Math.abs(node.y) + node.height / 2 > viewport.height / 2 - margin,
   )
 
 const WINDOWS = [
@@ -19,6 +30,11 @@ const WINDOWS = [
   { width: 1400, height: 900 },
   { width: 1200, height: 800 },
   { width: 900, height: 700 },
+  // A window narrow enough that a column has to be given up rather than drawn
+  // past the edge.
+  { width: 700, height: 600 },
+  { width: 600, height: 520 },
+  { width: 560, height: 480 },
 ]
 
 describe('nothing reaches past the edge', () => {
@@ -140,6 +156,31 @@ describe('the margin is a setting, not a number in the source', () => {
     const tight = limitsFor({ ...DEFAULT_OPTIONS, viewport, margin: 200 }, counts)
     const loose = limitsFor({ ...DEFAULT_OPTIONS, viewport, margin: 0 }, counts)
     expect(tight.child.perLine).toBeLessThan(loose.child.perLine)
+  })
+})
+
+describe('how many lines a column may run to', () => {
+  it('is the number it was allowed, whatever the window makes room for', () => {
+    // A wide window has room for more columns than the setting permits, and the
+    // setting is what says how deep the picture is allowed to get. Without this
+    // a side wraps into as many columns as will fit and reports no overflow.
+    const viewport = { width: 2400, height: 1400 }
+    const counts = { parent: 2, child: 2, jump: 60, sibling: 60 }
+
+    for (const maxLines of [1, 2, 3]) {
+      const limits = limitsFor({ ...DEFAULT_OPTIONS, viewport, maxLines }, counts)
+      expect(limits.jump.lines).toBeLessThanOrEqual(maxLines)
+      expect(limits.sibling.lines).toBeLessThanOrEqual(maxLines)
+    }
+  })
+
+  it('is none at all when the window leaves no room beside the rows', () => {
+    // Reported as overflow, which the reader can act on. Drawn past the edge of
+    // the window, which they cannot.
+    const viewport = { width: 420, height: 700 }
+    const counts = { parent: 0, child: 6, jump: 4, sibling: 0 }
+    const limits = limitsFor({ ...DEFAULT_OPTIONS, viewport }, counts)
+    expect(limits.jump.lines).toBe(0)
   })
 })
 
