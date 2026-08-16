@@ -244,8 +244,6 @@ func addNoteTools(server *sdk.Server, core Core) {
 				"a call writing %d bytes is more than this carries at once, which is %d", size, maxBytes)
 		}
 
-		// A batch is not a transaction: the ninth note can fail on its own — a
-		// name already taken, a folder that is not there.
 		res := out{Created: make([]CreateOutcome, 0, len(in.Notes))}
 		for _, want := range in.Notes {
 			if err := ctx.Err(); err != nil {
@@ -331,12 +329,11 @@ func addNoteTools(server *sdk.Server, core Core) {
 		if len(in.Paths) > maxRefs {
 			return nil, out{}, fmt.Errorf("move at most %d notes at a time", maxRefs)
 		}
-		// The filesystem offers no transaction over many files: the twenty-ninth
-		// rename can fail on its own. So what happened to each is reported, and
-		// the call does not present itself as all-or-nothing — a partial failure
-		// that looked total would have somebody undoing work that succeeded.
 		res := out{Moved: make([]MoveOutcome, 0, len(in.Paths))}
 		for _, path := range in.Paths {
+			if err := ctx.Err(); err != nil {
+				return nil, out{}, err
+			}
 			moved, err := core.Move.Execute(ctx, core.Vault, path, note.Into(in.Folder, path))
 			outcome := MoveOutcome{Moved: moved}
 			if err != nil {
@@ -367,6 +364,9 @@ func addNoteTools(server *sdk.Server, core Core) {
 		}
 		res := out{Removed: make([]RemoveOutcome, 0, len(in.Paths))}
 		for _, path := range in.Paths {
+			if err := ctx.Err(); err != nil {
+				return nil, out{}, err
+			}
 			var removed note.Removed
 			var err error
 			if in.Destroy {
@@ -428,9 +428,13 @@ func parseFingerprint(s string) (domain.FileRef, error) {
 	return ref, nil
 }
 
+// Many files are many operations, and the filesystem offers no transaction over
+// them: the twenty-ninth can fail on its own. So a batch reports what happened
+// to each rather than presenting itself as all-or-nothing, and a caller reading
+// one refusal does not undo the work that landed. These are those reports.
+
 // MoveOutcome is what happened to one note in a batch. Refused is empty when it
-// moved: many files are many operations, and a caller has to be able to tell
-// which of them landed.
+// moved.
 type MoveOutcome struct {
 	note.Moved
 	Refused string `json:"refused,omitempty" jsonschema:"why this one did not move, empty when it did"`
