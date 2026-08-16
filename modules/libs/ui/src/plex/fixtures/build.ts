@@ -65,15 +65,15 @@ export function around(
   // is answered here rather than by the plex.
   const firstParent = related.find((node) => node.seat === 'parent')?.id
 
-  const edges: PlexEdge[] = related.flatMap((node) => {
-    const title = RELATION[node.seat as PlexRelatedSeat]
+  const edges: PlexEdge[] = related.flatMap((node): PlexEdge[] => {
+    const label = RELATION[node.seat as PlexRelatedSeat]
     if (node.seat === 'parent' || node.seat === 'jump') {
-      return [{ from: node.id, to: focus.id, title }]
+      return [{ from: node.id, to: focus.id, label }]
     }
     if (node.seat === 'sibling') {
-      return firstParent ? [{ from: firstParent, to: node.id, title }] : []
+      return firstParent ? [{ from: firstParent, to: node.id, label }] : []
     }
-    return [{ from: focus.id, to: node.id, title }]
+    return [{ from: focus.id, to: node.id, label }]
   })
 
   return {

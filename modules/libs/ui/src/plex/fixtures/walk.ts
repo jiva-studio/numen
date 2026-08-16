@@ -6,7 +6,7 @@
  * domain. It exists because the movement can only be judged by walking a real
  * graph back and forth.
  */
-import type { PlexNeighbourhood, PlexNode } from '../model'
+import type { PlexEdge, PlexNeighbourhood, PlexNode } from '../model'
 
 interface Named {
   readonly title: string
@@ -96,10 +96,10 @@ export function neighbourhoodOf(id: string): PlexNeighbourhood {
 
   return {
     nodes: [{ id, title: focus.title, seat: 'focus' }, ...related],
-    edges: related.flatMap((node) => {
-      if (node.seat === 'parent') return [{ from: node.id, to: id, title: 'is a' }]
-      if (node.seat === 'jump') return [{ from: node.id, to: id, title: 'see also' }]
-      if (node.seat === 'child') return [{ from: id, to: node.id, title: 'contains' }]
+    edges: related.flatMap((node): PlexEdge[] => {
+      if (node.seat === 'parent') return [{ from: node.id, to: id, label: 'is a' }]
+      if (node.seat === 'jump') return [{ from: node.id, to: id, label: 'see also' }]
+      if (node.seat === 'child') return [{ from: id, to: node.id, label: 'contains' }]
 
       // A sibling hangs off the parent it shares with the focus, not off the
       // focus. Working out which parent is a question about relationships, so
@@ -107,7 +107,7 @@ export function neighbourhoodOf(id: string): PlexNeighbourhood {
       const shared = parentsOf(id).find((parent) =>
         parentsOf(node.id).includes(parent),
       )
-      return shared ? [{ from: shared, to: node.id, title: 'contains' }] : []
+      return shared ? [{ from: shared, to: node.id, label: 'contains' }] : []
     }),
   }
 }
