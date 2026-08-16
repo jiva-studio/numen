@@ -30,14 +30,18 @@ type Linking struct {
 // Add writes relationships into a note, in one read and one write. A link to
 // the same place with the same role is already there, and adding it again
 // changes nothing.
-func (u Linking) Add(ctx context.Context, v domain.Vault, from string, add ...domain.Link) error {
-	for _, link := range add {
+// One link is named on its own so that there is always at least one: adding
+// nothing would still read the note and write it back, and a note that carries
+// no identifier would come away with one it never asked for.
+func (u Linking) Add(ctx context.Context, v domain.Vault, from string, add domain.Link, more ...domain.Link) error {
+	links := append([]domain.Link{add}, more...)
+	for _, link := range links {
 		if err := Writable(link); err != nil {
 			return err
 		}
 	}
 	return u.editing().apply(ctx, v, from, func(doc *markdown.Document) error {
-		for _, link := range add {
+		for _, link := range links {
 			if err := doc.AddLink(link); err != nil {
 				return err
 			}

@@ -93,20 +93,20 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 	if err := writer.Create(ctx, path, content); err != nil {
 		return Created{}, err
 	}
-	if err := u.index(ctx, v, path); err != nil {
-		return Created{}, err
-	}
 
+	// The note is on disk from here on, so everything after it answers with
+	// where it is. Told only that it failed, a caller would write the note a
+	// second time and be refused the name it already holds.
+	made := Created{Path: path, Identifier: identifier, Title: in.Title}
+	if err := u.index(ctx, v, path); err != nil {
+		return made, err
+	}
 	shares, err := u.Names.Named(ctx, v.ID, domain.Basename(path))
 	if err != nil {
-		return Created{}, err
+		return made, err
 	}
-	return Created{
-		Path:       path,
-		Identifier: identifier,
-		Title:      in.Title,
-		Shares:     without(shares, path),
-	}, nil
+	made.Shares = without(shares, path)
+	return made, nil
 }
 
 // joined writes relationships into frontmatter that has just been made, through

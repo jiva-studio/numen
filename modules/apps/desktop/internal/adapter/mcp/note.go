@@ -25,13 +25,18 @@ const (
 	maxMatches = 100
 )
 
-// maxBytes is the largest note this surface will carry, either way.
+// maxBytes is the most one call will carry in either direction, whether that is
+// one note or a batch of them.
 //
 // A note is prose somebody wrote, and a megabyte of it is a quarter of a
 // million words. Something larger is a pasted export or a mistake, and reading
 // it would put the whole of it in a context window and a copy of it in memory
 // several times over. The size is checked before the file is opened rather than
 // after, which is the difference between refusing and running out of memory.
+//
+// What a link says is measured with the prose: it is shorter, but it lands in
+// the same file, and a batch is bounded by what it will write rather than by
+// which field the bytes arrived in.
 const maxBytes = 1 << 20
 
 // Note is a note as every tool reports it: the address it is asked for by, what
@@ -225,26 +230,36 @@ func addNoteTools(server *sdk.Server, core Core) {
 		if len(in.Notes) > maxRefs {
 			return nil, out{}, fmt.Errorf("make at most %d notes at a time", maxRefs)
 		}
-		// One file at a time: the ninth note can fail on its own — a name
-		// already taken, a folder that is not there — and what happened to
-		// each is reported, so a caller does not undo the eight that landed.
+		// Asked of the whole call, before a file is opened: a batch that is too
+		// large to write is refused whole rather than half made.
+		size := 0
+		for _, want := range in.Notes {
+			size += len(want.Body)
+			for _, l := range want.Links {
+				size += carried(l)
+			}
+		}
+		if size > maxBytes {
+			return nil, out{}, fmt.Errorf(
+				"a call writing %d bytes is more than this carries at once, which is %d", size, maxBytes)
+		}
+
+		// A batch is not a transaction: the ninth note can fail on its own — a
+		// name already taken, a folder that is not there.
 		res := out{Created: make([]CreateOutcome, 0, len(in.Notes))}
 		for _, want := range in.Notes {
-			outcome := CreateOutcome{}
-			if len(want.Body) > maxBytes {
-				outcome.Created = note.Created{Title: want.Title}
-				outcome.Refused = fmt.Sprintf("a body of %d bytes is more than this can carry, which is %d",
-					len(want.Body), maxBytes)
-				res.Created = append(res.Created, outcome)
-				continue
+			if err := ctx.Err(); err != nil {
+				return nil, out{}, err
 			}
 			created, err := core.Create.Execute(ctx, core.Vault, note.NewNote{
 				Title: want.Title, Body: want.Body, Folder: want.Folder,
 				Links: written(want.Links),
 			})
-			outcome.Created = created
+			// A path alongside a refusal means the file was written and
+			// something after it was not; the note is there under that name.
+			outcome := CreateOutcome{Created: created}
 			if err != nil {
-				outcome.Created = note.Created{Title: want.Title}
+				outcome.Created.Title = want.Title
 				outcome.Refused = err.Error()
 			}
 			res.Created = append(res.Created, outcome)
@@ -444,22 +459,32 @@ type CreateOutcome struct {
 	Refused string `json:"refused,omitempty" jsonschema:"why this one was not made, empty when it was"`
 }
 
-// written turns what was asked for into what the core writes.
+// writes turns what was asked for into what the core writes.
+func writes(l NewLink) domain.Link {
+	return domain.Link{
+		Target: domain.ParseAddress(l.To),
+		Role:   domain.LinkRole(l.Role),
+		Type:   l.Type,
+		Label:  l.Label,
+		Note:   l.Note,
+	}
+}
+
 func written(links []NewLink) []domain.Link {
 	if len(links) == 0 {
 		return nil
 	}
 	out := make([]domain.Link, 0, len(links))
 	for _, l := range links {
-		out = append(out, domain.Link{
-			Target: domain.ParseAddress(l.To),
-			Role:   domain.LinkRole(l.Role),
-			Type:   l.Type,
-			Label:  l.Label,
-			Note:   l.Note,
-		})
+		out = append(out, writes(l))
 	}
 	return out
+}
+
+// carried is how many bytes a link will put in a file. Every field of one is
+// written into the frontmatter, so every field is measured.
+func carried(l NewLink) int {
+	return len(l.To) + len(l.Role) + len(l.Type) + len(l.Label) + len(l.Note)
 }
 
 // RemoveOutcome is the same for removing.

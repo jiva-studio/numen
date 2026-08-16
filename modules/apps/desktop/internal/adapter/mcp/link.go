@@ -21,41 +21,55 @@ func addLinkTools(server *sdk.Server, core Core) {
 			"the person sees once. A note being made takes its links in note_create " +
 			"instead, so that it never exists unjoined.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		Links []Join `json:"links" jsonschema:"the relationships to write"`
+		Links []Addition `json:"links" jsonschema:"the relationships to write"`
 	}) (*sdk.CallToolResult, struct {
-		Added []JoinOutcome `json:"added"`
+		Added []AddOutcome `json:"added"`
 	}, error) {
 		type out = struct {
-			Added []JoinOutcome `json:"added"`
+			Added []AddOutcome `json:"added"`
 		}
 		if len(in.Links) > maxRefs {
 			return nil, out{}, fmt.Errorf("write at most %d links at a time", maxRefs)
 		}
+		// Asked of the whole call, before a file is opened. What a link says
+		// lands in the frontmatter, so it is bounded like prose is.
+		size := 0
+		for _, add := range in.Links {
+			size += carried(add.NewLink)
+		}
+		if size > maxBytes {
+			return nil, out{}, fmt.Errorf(
+				"a call writing %d bytes is more than this carries at once, which is %d", size, maxBytes)
+		}
 
-		res := out{Added: make([]JoinOutcome, 0, len(in.Links))}
+		res := out{Added: make([]AddOutcome, 0, len(in.Links))}
 		// A malformed link is set aside before the grouping, so it costs only
 		// itself. What is left is grouped: links sharing a note share a write.
 		var order []string
 		batches := map[string][]domain.Link{}
 		at := map[string][]int{}
-		for i, join := range in.Links {
-			res.Added = append(res.Added, JoinOutcome{From: join.From, To: join.To})
-			link := written([]NewLink{join.NewLink})[0]
+		for i, add := range in.Links {
+			res.Added = append(res.Added, AddOutcome{From: add.From, To: add.To})
+			link := writes(add.NewLink)
 			if err := note.Writable(link); err != nil {
 				res.Added[i].Refused = err.Error()
 				continue
 			}
-			if _, seen := batches[join.From]; !seen {
-				order = append(order, join.From)
+			if _, seen := batches[add.From]; !seen {
+				order = append(order, add.From)
 			}
-			batches[join.From] = append(batches[join.From], link)
-			at[join.From] = append(at[join.From], i)
+			batches[add.From] = append(batches[add.From], link)
+			at[add.From] = append(at[add.From], i)
 		}
 
 		// One note's links are one write: they land or fail together, and each
 		// carries the same reason. Another note's write is untouched by it.
 		for _, from := range order {
-			err := core.Linking.Add(ctx, core.Vault, from, batches[from]...)
+			if err := ctx.Err(); err != nil {
+				return nil, out{}, err
+			}
+			group := batches[from]
+			err := core.Linking.Add(ctx, core.Vault, from, group[0], group[1:]...)
 			if err == nil {
 				continue
 			}
@@ -160,15 +174,15 @@ type Done struct {
 	Path string `json:"path"`
 }
 
-// Join is one relationship to write, and the note it is written in.
-type Join struct {
+// Addition is one relationship to write, and the note it is written in.
+type Addition struct {
 	From string `json:"from" jsonschema:"the path of the note the link is written in"`
 	NewLink
 }
 
-// JoinOutcome is what happened to one link in a batch. Refused is empty when it
+// AddOutcome is what happened to one link in a batch. Refused is empty when it
 // was written.
-type JoinOutcome struct {
+type AddOutcome struct {
 	From    string `json:"from"`
 	To      string `json:"to"`
 	Refused string `json:"refused,omitempty" jsonschema:"why this one was not written, empty when it was"`

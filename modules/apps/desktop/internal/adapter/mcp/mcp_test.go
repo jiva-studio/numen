@@ -3,6 +3,9 @@ package mcp_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"io/fs"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -24,7 +27,12 @@ import (
 func connected(t *testing.T, notes map[string]string) (*sdk.ClientSession, domain.Vault) {
 	t.Helper()
 	v, core := built(t, notes)
+	return connectedTo(t, core), v
+}
 
+// connectedTo is the same session over tools a test has adjusted.
+func connectedTo(t *testing.T, core mcp.Core) *sdk.ClientSession {
+	t.Helper()
 	server := mcp.New(core)
 	here, there := sdk.NewInMemoryTransports()
 	if _, err := server.Connect(t.Context(), here, nil); err != nil {
@@ -36,7 +44,7 @@ func connected(t *testing.T, notes map[string]string) (*sdk.ClientSession, domai
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { session.Close() })
-	return session, v
+	return session
 }
 
 // served is a vault whose tools are built but not connected, for the questions
@@ -218,7 +226,7 @@ func TestANoteIsMadeAlreadyJoined(t *testing.T) {
 // made must not take the others down with it — nor be reported as though it
 // had been made.
 func TestOneNoteRefusedLeavesTheRestMade(t *testing.T) {
-	session, _ := connected(t, nil)
+	session, vault := connected(t, nil)
 
 	made := created(t, session,
 		map[string]any{"title": "Impulse"},
@@ -240,13 +248,11 @@ func TestOneNoteRefusedLeavesTheRestMade(t *testing.T) {
 		t.Errorf("a note that was not made came back with a path: %+v", made[1])
 	}
 
-	// The refused one left nothing behind: a half-made note would be found by
-	// the next search and by the person looking at the folder.
-	got := call[struct {
-		Missing []string `json:"missing"`
-	}](t, session, "note_get", map[string]any{"paths": []string{"Momentum.md"}})
-	if len(got.Missing) != 1 {
-		t.Errorf("a refused note left a file behind: %+v", got)
+	// The folder is asked, not the index. A file written and then not indexed
+	// is absent from the index either way, so only the disk can say whether
+	// the refusal left a note behind for the person to find.
+	if _, err := os.Stat(filepath.Join(vault.Path, "Momentum.md")); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("a refused note left a file in the vault: %v", err)
 	}
 }
 
@@ -384,10 +390,51 @@ func TestLinksGoWhereTheyBelongAndABadOneCostsOnlyItself(t *testing.T) {
 	}
 }
 
-func added(t *testing.T, session *sdk.ClientSession, links ...map[string]any) []mcp.JoinOutcome {
+// A note that reached the disk says where it is even when the step after the
+// write did not finish. Told only that it failed, a caller writes it again and
+// is refused the name it already holds.
+func TestANoteOnDiskComesBackWithItsPath(t *testing.T) {
+	v, core := built(t, nil)
+	core.Create.Index = func(context.Context, domain.Vault, []string) error {
+		return errors.New("the index is not level")
+	}
+	session := connectedTo(t, core)
+
+	made := created(t, session, map[string]any{"title": "Entropy"})
+	if len(made) != 1 || made[0].Refused == "" {
+		t.Fatalf("want the failure reported: %+v", made)
+	}
+	if made[0].Path != "Entropy.md" {
+		t.Errorf("the note is on disk and its path was not returned: %+v", made[0])
+	}
+	if _, err := os.Stat(filepath.Join(v.Path, "Entropy.md")); err != nil {
+		t.Fatalf("the note this is about is not on disk: %v", err)
+	}
+}
+
+// Every field of a link lands in the frontmatter, so the cap has to measure
+// them. A body under the cap with an enormous label is a write over it.
+func TestALinkTooLargeToWriteIsRefusedBeforeAnythingIsWritten(t *testing.T) {
+	session, vault := connected(t, nil)
+
+	huge := strings.Repeat("x", (1<<20)+1)
+	if got := failing(t, session, "note_create", map[string]any{
+		"notes": []map[string]any{{
+			"title": "Entropy",
+			"links": []map[string]any{{"to": "Heat", "role": "ref", "label": huge}},
+		}},
+	}); !strings.Contains(got, "carries at once") {
+		t.Errorf("want a refusal naming the size, got %q", got)
+	}
+	if _, err := os.Stat(filepath.Join(vault.Path, "Entropy.md")); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("a call refused for its size wrote a note anyway: %v", err)
+	}
+}
+
+func added(t *testing.T, session *sdk.ClientSession, links ...map[string]any) []mcp.AddOutcome {
 	t.Helper()
 	return call[struct {
-		Added []mcp.JoinOutcome `json:"added"`
+		Added []mcp.AddOutcome `json:"added"`
 	}](t, session, "link_add", map[string]any{"links": links}).Added
 }
 
