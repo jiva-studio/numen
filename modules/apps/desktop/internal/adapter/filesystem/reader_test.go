@@ -259,3 +259,94 @@ func walked(t *testing.T, root string, opts filesystem.Options) []string {
 	slices.Sort(got)
 	return got
 }
+
+// A path that leaves the vault is refused rather than resolved. `filepath.Join`
+// would clean the dot-dots away and read whatever it landed on, and a caller
+// from outside the application is exactly who would try.
+func TestAPathThatLeavesTheVaultIsRefused(t *testing.T) {
+	outside := t.TempDir()
+	if err := os.WriteFile(filepath.Join(outside, "secret.md"), []byte("not yours"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	root := filepath.Join(outside, "vault")
+	if err := os.Mkdir(root, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	reader, err := filesystem.Open(root, filesystem.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, path := range []string{
+		"../secret.md",
+		"notes/../../secret.md",
+		"./notes/../../secret.md",
+	} {
+		if _, err := reader.Read(t.Context(), path); !errors.Is(err, filesystem.ErrOutside) {
+			t.Errorf("read %q: want ErrOutside, got %v", path, err)
+		}
+		if _, err := reader.Stat(t.Context(), path); err == nil {
+			t.Errorf("stat %q: want a refusal", path)
+		}
+	}
+}
+
+// The writer holds the same rules the reader does. Without that, an agent could
+// remove the vault's attachments, another tool's state, or the repository the
+// vault is kept in — while the reader was already saying those paths do not
+// exist.
+func TestTheWriterOnlyTouchesNotes(t *testing.T) {
+	root := t.TempDir()
+	for _, path := range []string{".git/config", "photo.png", "notes/keep.md"} {
+		if err := os.MkdirAll(filepath.Join(root, filepath.Dir(path)), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(root, path), []byte("theirs"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	writer, err := filesystem.OpenForWriting(root, filesystem.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, path := range []string{".git/config", "photo.png"} {
+		if err := writer.Write(t.Context(), path, []byte("mine"), domain.FileRef{}); !errors.Is(err, filesystem.ErrNotANote) {
+			t.Errorf("write %s: want ErrNotANote, got %v", path, err)
+		}
+		if err := writer.Remove(t.Context(), path); !errors.Is(err, filesystem.ErrNotANote) {
+			t.Errorf("remove %s: want ErrNotANote, got %v", path, err)
+		}
+		if kept, _ := os.ReadFile(filepath.Join(root, filepath.FromSlash(path))); string(kept) != "theirs" {
+			t.Errorf("%s was written to anyway", path)
+		}
+	}
+
+	if err := writer.Write(t.Context(), "notes/keep.md", []byte("mine"), domain.FileRef{}); err != nil {
+		t.Errorf("a note is still writable: %v", err)
+	}
+}
+
+// A folder inside the vault may be a link to somewhere else, and a write
+// through it lands outside. The text of the path says nothing about that.
+func TestAWriteDoesNotFollowALinkOutOfTheVault(t *testing.T) {
+	outside := t.TempDir()
+	if err := os.WriteFile(filepath.Join(outside, "secret.md"), []byte("not yours"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	root := t.TempDir()
+	if err := os.Symlink(outside, filepath.Join(root, "linked")); err != nil {
+		t.Skipf("this filesystem does not do symlinks: %v", err)
+	}
+	writer, err := filesystem.OpenForWriting(root, filesystem.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := writer.Write(t.Context(), "linked/secret.md", []byte("mine"), domain.FileRef{}); !errors.Is(err, filesystem.ErrOutside) {
+		t.Errorf("want ErrOutside, got %v", err)
+	}
+	if kept, _ := os.ReadFile(filepath.Join(outside, "secret.md")); string(kept) != "not yours" {
+		t.Error("a file outside the vault was written")
+	}
+}

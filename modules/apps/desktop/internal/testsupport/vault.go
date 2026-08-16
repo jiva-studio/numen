@@ -53,7 +53,7 @@ func CopyVault(t *testing.T) string {
 
 // NewVault writes a vault with the given notes and gives it an identity, for
 // tests that need a second vault whose content is nothing like the fixture's.
-func NewVault(t *testing.T, notes map[string]string) domain.Vault {
+func NewVault(t testing.TB, notes map[string]string) domain.Vault {
 	t.Helper()
 	root := t.TempDir()
 	for name, body := range notes {

@@ -7,12 +7,13 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lint"
 )
 
 func problemsCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
-	if len(args) != 1 {
-		return errors.New("usage: numen problems <vault>")
+	if len(args) < 1 {
+		return errors.New("usage: numen-cli problems <vault> [<check>...]")
 	}
 	v, err := findVault(cfg, args[0])
 	if err != nil {
@@ -24,7 +25,12 @@ func problemsCommand(ctx context.Context, out io.Writer, cfg container.Config, a
 	}
 	defer db.Close()
 
-	found, err := note.ListProblems{Problems: db.Problems()}.Execute(ctx, v)
+	var named []domain.Check
+	for _, name := range args[1:] {
+		named = append(named, domain.Check(name))
+	}
+
+	found, err := lint.Standard(db.Problems()).Run(ctx, v, named...)
 	if err != nil {
 		return err
 	}
@@ -33,7 +39,7 @@ func problemsCommand(ctx context.Context, out io.Writer, cfg container.Config, a
 		return nil
 	}
 	for _, p := range found {
-		fmt.Fprintf(out, "%s\n  %s\n", p.Path, p.Detail)
+		fmt.Fprintf(out, "%s\n  %s: %s\n", p.Path, p.Check, p.Detail)
 	}
 	return nil
 }

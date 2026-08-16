@@ -12,7 +12,7 @@ import (
 
 func searchCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
 	if len(args) < 2 {
-		return errors.New("usage: numen search <vault> <query>")
+		return errors.New("usage: numen-cli search <vault> <query>")
 	}
 	v, err := findVault(cfg, args[0])
 	if err != nil {

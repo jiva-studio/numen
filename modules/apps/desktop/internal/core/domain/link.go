@@ -135,3 +135,30 @@ func (r ResolvedLink) InVault(writtenIn string) (vault string, crossed bool) {
 	}
 	return r.ToVault, true
 }
+
+// AmbiguousLink is a link that several notes answer to. It resolved to the
+// nearest of them, and the rest are what makes it worth showing: which one it
+// means is a fact about where the notes sit rather than about the link.
+type AmbiguousLink struct {
+	ResolvedLink
+	// Candidates is every note that answers to the name, the chosen one among them.
+	Candidates []string
+}
+
+// Nameable reports whether a filename can be written as an address that reaches
+// it back.
+//
+// A file may be called almost anything, and an address may not. `#` starts a
+// fragment, `|` starts an alias, `://` starts a scheme and `]]` ends a
+// wikilink, so a note named with any of them cannot be reached by its name —
+// and writing one into a link would change what the link says rather than where
+// it goes. Such a note is addressed by its identifier or not at all.
+func Nameable(name string) bool {
+	if strings.TrimSpace(name) != name || name == "" || strings.ContainsAny(name, "\n\r") {
+		return false
+	}
+	if strings.Contains(name, "[[") || strings.Contains(name, "]]") {
+		return false
+	}
+	return ParseAddress(name) == Address{Scheme: SchemeName, Value: name}
+}

@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 
 	ignore "github.com/sabhiram/go-gitignore"
-	"strings"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 )
@@ -106,7 +105,11 @@ func (s *VaultReader) Read(ctx context.Context, path string) ([]byte, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
-	return os.ReadFile(filepath.Join(s.root, filepath.FromSlash(path)))
+	target, err := inside(s.root, path, s.opts.serviceDir())
+	if err != nil {
+		return nil, err
+	}
+	return os.ReadFile(target)
 }
 
 // Stat answers the same question about one path that Walk answers about all of
@@ -134,7 +137,7 @@ func (s *VaultReader) Stat(ctx context.Context, path string) (domain.FileRef, er
 
 // holds reports whether a path inside this vault is one a walk would report.
 func (s *VaultReader) holds(path string) bool {
-	if path == "" || strings.HasPrefix(path, "../") || filepath.IsAbs(path) {
+	if _, err := inside(s.root, path, s.opts.serviceDir()); err != nil {
 		return false
 	}
 	if !s.opts.isNote(pathpkg.Base(path)) {

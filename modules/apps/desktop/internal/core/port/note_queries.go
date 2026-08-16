@@ -22,6 +22,10 @@ type NoteQueries interface {
 	// Opening is the note to show when nothing else has been chosen. False when
 	// the vault holds none.
 	Opening(ctx context.Context, vaultID string) (domain.NoteRef, bool, error)
+
+	// Named is the paths of every note filed under one name. More than one is
+	// what makes a link written by that name ambiguous.
+	Named(ctx context.Context, vaultID, name string) ([]string, error)
 }
 
 // LinkQueries answers what points where. It is separate from NoteQueries
@@ -32,9 +36,4 @@ type LinkQueries interface {
 	// Backlinks returns what points at one note, by whichever address form was
 	// written: its identifier, or a name that resolves to it.
 	Backlinks(ctx context.Context, vaultID, to string) ([]domain.ResolvedLink, error)
-}
-
-// ProblemQueries reports what a vault contains that could not be acted on.
-type ProblemQueries interface {
-	Problems(ctx context.Context, vaultID string) ([]domain.VaultProblem, error)
 }
