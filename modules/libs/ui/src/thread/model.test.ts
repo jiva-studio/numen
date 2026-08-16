@@ -45,24 +45,6 @@ describe('placing the turns', () => {
     expect(placeTurns([back('1')])[0]?.voice).toBe(VOICES.answered)
   })
 
-  it('puts the caret on an answer still arriving at the end', () => {
-    const placed = placeTurns([said('1'), back('2', 'half a s', 'arriving')])
-    expect(placed[1]?.caret).toBe(true)
-  })
-
-  it('withholds the caret from an arriving turn that something follows', () => {
-    const placed = placeTurns([back('1', 'left behind', 'arriving'), said('2')])
-    expect(placed[0]?.caret).toBe(false)
-  })
-
-  it('withholds the caret from a turn that settled', () => {
-    expect(placeTurns([back('1')])[0]?.caret).toBe(false)
-  })
-
-  it('withholds the caret from a turn that failed', () => {
-    expect(placeTurns([back('1', 'gone', 'failed')])[0]?.caret).toBe(false)
-  })
-
   it('places a turn with no text at all', () => {
     const placed = placeTurns([said('1', '')])
     expect(placed).toHaveLength(1)

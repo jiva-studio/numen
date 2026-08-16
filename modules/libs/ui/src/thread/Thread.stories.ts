@@ -62,8 +62,7 @@ export const Playground: Story = {
   ]),
 }
 
-/** An answer still arriving, with the caret on its last line, and a turn that
- *  did not go. */
+/** An answer still arriving, and a turn that did not go. */
 export const InFlight: Story = {
   render: framed([
     said('1', 'And the seats?', 'failed'),
@@ -82,6 +81,24 @@ export const AwkwardText: Story = {
     back('4', RUSSIAN),
     said('5', ARABIC),
     said('6', ''),
+  ]),
+}
+
+/**
+ * An agent at work: what it reached for sits between what it said, and the
+ * prose is read as it was marked up rather than shown with its marks.
+ */
+export const Working: Story = {
+  render: framed([
+    said('1', 'Add ten children to this note.'),
+    back('2', "I'll look at **Harmonic oscillator** first."),
+    { id: '3', voice: 'doing', text: 'note_neighbourhood' },
+    { id: '4', voice: 'doing', text: 'note_read' },
+    back(
+      '5',
+      'The style is clear:\n\n- a `# Title` line\n- one evocative sentence\n- a `part of` link to the parent\n\nCreating the ten children now.',
+    ),
+    { id: '6', voice: 'doing', text: 'note_create', state: 'arriving' },
   ]),
 }
 

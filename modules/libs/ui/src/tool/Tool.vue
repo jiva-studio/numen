@@ -1,0 +1,44 @@
+<script setup lang="ts">
+/**
+ * A tool in hand, in the thread where it was reached for.
+ *
+ * A line about work: quieter than what is said, and marked.
+ */
+import Dots from '../dots/Dots.vue'
+
+withDefaults(
+  defineProps<{
+    /** What the tool is called, in the words it is to be shown by. */
+    tool: string
+    /** What it is working on, when that is worth saying. */
+    about?: string
+    /** Still in hand. */
+    working?: boolean
+  }>(),
+  { about: '', working: false },
+)
+</script>
+
+<template>
+  <p class="tool numen flex items-baseline gap-2 font-sans text-small text-hushed">
+    <span class="tool__mark" :data-working="working || undefined" />
+    <span class="tool__name min-w-0 truncate">{{ tool }}</span>
+    <span v-if="about" class="tool__about min-w-0 flex-1 truncate opacity-70">{{ about }}</span>
+    <Dots v-if="working" class="tool__dots" />
+  </p>
+</template>
+
+<style scoped>
+.tool__mark {
+  flex: none;
+  inline-size: 0.4em;
+  block-size: 0.4em;
+  border-radius: var(--numen-radius-pill);
+  background: currentColor;
+  opacity: 0.5;
+}
+
+.tool__mark[data-working] {
+  opacity: 1;
+}
+</style>

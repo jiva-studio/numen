@@ -4,7 +4,7 @@
  * Narrower than what the module contains: the easing curve, the routing and
  * the arithmetic are how a plex is built, not how it is used.
  */
-import './tokens/tokens.css'
+import './tokens/theme.css'
 
 export { default as Plex } from './plex/Plex.vue'
 export { browserEnvironment } from './plex/transition'
@@ -41,6 +41,11 @@ export { default as Dots } from './dots/Dots.vue'
 export { default as Thread } from './thread/Thread.vue'
 export { VOICES, VOICE_NAMES, placeTurns } from './thread/model'
 export type { PlacedTurn, Turn, TurnState, Voice } from './thread/model'
+
+export { default as Prose } from './prose/Prose.vue'
+export { default as Tool } from './tool/Tool.vue'
+
+export { default as AgentPanel } from './assembled/AgentPanel.vue'
 
 export type { Environment, PlexTransition } from './plex/transition'
 export type {

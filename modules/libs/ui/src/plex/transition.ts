@@ -24,9 +24,8 @@ export interface PlexTransition {
 }
 
 /**
- * Hold a frame that moves towards each new neighbourhood rather than jumping.
- * A neighbourhood arriving mid-movement re-aims from wherever the plex is,
- * instead of queueing behind the one in progress.
+ * Hold a frame that moves towards each new neighbourhood. One arriving
+ * mid-movement re-aims from wherever the plex has got to.
  */
 export function usePlexTransition(
   neighbourhood: () => PlexNeighbourhood,
