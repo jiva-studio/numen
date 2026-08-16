@@ -24,6 +24,10 @@ import (
 // opened is a vault with a window's worth of machinery behind it — the index,
 // the first scan, the watcher — and a client talking to it the way the window
 // does.
+//
+// What is asked here is the wire: that a change reaches a client over the
+// stream, in the shape the schema describes. What a change means is asked of
+// the use case, where no server is needed to ask it.
 func opened(t *testing.T, notes map[string]string) (numenv1connect.VaultServiceClient, string) {
 	t.Helper()
 	root := t.TempDir()

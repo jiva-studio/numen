@@ -1,7 +1,6 @@
 package webui
 
 import (
-	"context"
 	"sync"
 )
 
@@ -69,41 +68,6 @@ func (a *audience) tell(what changed) {
 			l.behind = false
 		default:
 			l.behind = true
-		}
-	}
-}
-
-// follow keeps the index level with the vault and tells everyone listening
-// which notes moved.
-func (a *API) follow(ctx context.Context, changes <-chan []string, lost <-chan struct{}) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-
-		case paths, open := <-changes:
-			if !open {
-				return
-			}
-			res, err := a.Index(ctx, a.Vault, paths)
-			if err != nil {
-				a.Failed.Store(err.Error())
-				continue
-			}
-			// What failed before and works now is no longer failing. A message
-			// left in place outlives what it described.
-			a.Failed.Store("")
-			a.Listeners.tell(changed{paths: res.Changed()})
-
-		case <-lost:
-			// More arrived at once than could be followed. Reading the vault
-			// again is the answer, and the client is told to ask again.
-			if _, err := a.Scan(ctx, a.Vault); err != nil {
-				a.Failed.Store(err.Error())
-				continue
-			}
-			a.Failed.Store("")
-			a.Listeners.tell(changed{reload: true})
 		}
 	}
 }
