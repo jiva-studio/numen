@@ -1,0 +1,40 @@
+name: interface
+
+on:
+  pull_request:
+    paths:
+      - "modules/libs/ui/**"
+      - "modules/apps/desktop/ui/**"
+      - "modules/libs/protocol/**"
+      - ".github/workflows/interface.yml"
+  push:
+    branches: [main]
+
+jobs:
+  # The shared components, and the window that arranges them. Both are typed
+  # against the schema, so a change to it fails here rather than on screen.
+  components:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install
+        run: |
+          cd modules/libs/ui && npm ci
+          cd ../../apps/desktop/ui && npm install
+
+      - name: Typecheck
+        run: |
+          cd modules/libs/ui && npm run typecheck
+          cd ../../apps/desktop/ui && npm run typecheck
+
+      # The window's tests import the built library, so it is built first for
+      # the same reason an ordinary build does it.
+      - name: Test
+        run: |
+          cd modules/libs/ui && npm run test:unit && npm run build
+          cd ../../apps/desktop/ui && npm test

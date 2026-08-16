@@ -3,69 +3,21 @@
  * The window: one vault, one note in focus, and the plex around it.
  *
  * Choosing a node asks for that note's neighbourhood and hands it back to the
- * plex, which travels there by itself.
+ * plex, which travels there by itself. What decides when to ask is in
+ * `showing.ts`.
  */
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import { Plex } from '@numen/ui'
 import '@numen/ui/tokens.css'
-import { vault } from './vault'
-import { asPlex, type Neighbourhood } from './plex'
+import { core } from './vault'
+import { showing } from './showing'
+import { asPlex } from './plex'
 
-const neighbourhood = ref<Neighbourhood | null>(null)
-const name = ref<string>('')
-const indexing = ref(true)
-const failure = ref<string>('')
+const window = showing(core)
+const { neighbourhood, name, indexing, failure, notice, trouble, unwatched, go } = window
 
-async function go(path: string) {
-  try {
-    neighbourhood.value = await vault.neighbourhood({ path })
-  } catch (error) {
-    failure.value = String(error)
-  }
-}
-
-/**
- * Follow the vault.
- *
- * Every change asks for the picture again, including changes to notes that are
- * nowhere on it: a link is written at one end and shows at both, so a note
- * being edited somewhere else is exactly how a new parent arrives. What is on
- * screen cannot answer whether a change reaches it.
- */
-async function follow() {
-  for await (const change of vault.changes({})) {
-    if (change.paths.length === 0 && !change.reload) continue
-    const here = neighbourhood.value?.focus?.path
-    if (here) await go(here)
-  }
-}
-
-/** Waits for the scan to have stored something, then shows the first note. */
-async function start() {
-  try {
-    for (;;) {
-      const state = await vault.state({})
-      name.value = state.name
-      const { note } = await vault.opening({})
-      if (note) {
-        indexing.value = false
-        await go(note.path)
-        void follow()
-        return
-      }
-      if (state.ready) {
-        indexing.value = false
-        return
-      }
-      await new Promise((wake) => setTimeout(wake, 100))
-    }
-  } catch (error) {
-    failure.value = String(error)
-    indexing.value = false
-  }
-}
-
-onMounted(start)
+onMounted(window.start)
+onUnmounted(window.close)
 </script>
 
 <template>
@@ -75,8 +27,13 @@ onMounted(start)
       <span v-if="neighbourhood" class="here">{{ neighbourhood.focus?.title }}</span>
     </header>
 
+    <p v-if="unwatched" class="warning">not following the vault — {{ unwatched }}</p>
+    <p v-if="trouble" class="warning">the vault could not be read — {{ trouble }}</p>
+    <p v-if="notice" class="warning">{{ notice }}</p>
+
     <p v-if="failure" class="failure">{{ failure }}</p>
     <p v-else-if="indexing" class="waiting">reading the vault…</p>
+    <p v-else-if="!neighbourhood && trouble" class="waiting">nothing was read</p>
     <p v-else-if="!neighbourhood" class="waiting">this vault holds no notes</p>
 
     <Plex
@@ -119,6 +76,14 @@ header {
   margin: auto;
   font: 0.9rem system-ui, sans-serif;
   opacity: 0.6;
+}
+
+.warning {
+  margin: 0;
+  padding: 0.4rem 1rem;
+  font: 0.8rem system-ui, sans-serif;
+  background: light-dark(#fff4e5, #3a2e1c);
+  color: light-dark(#7a4b00, #f0c890);
 }
 
 .failure {
