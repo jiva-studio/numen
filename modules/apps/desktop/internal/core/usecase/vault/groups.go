@@ -18,9 +18,9 @@ const (
 // neither what is held in memory nor the length of one write grows with the
 // number of notes handed to it.
 //
-// Here rather than in either caller because a walk of a whole vault and a
-// handful of named files are the same job at different sizes: a folder dropped
-// into a watched vault arrives as one event naming thousands of notes.
+// A walk of a whole vault and a handful of named files are the same job at
+// different sizes: a folder dropped into a watched vault arrives as one event
+// naming thousands of notes.
 type grouping struct {
 	write func(context.Context, []domain.Note) error
 

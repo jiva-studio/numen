@@ -22,8 +22,8 @@ type Follow struct {
 	// again. What is done with that is the caller's business.
 	Changed func(Moved)
 	// Trouble, if set, is called with what went wrong, and with nil when a
-	// later attempt succeeds. Both, so that what is reported is the state of
-	// things now rather than the worst it has ever been.
+	// later attempt succeeds. Both, so what is reported is the state of things
+	// now.
 	Trouble func(error)
 }
 
@@ -38,7 +38,7 @@ type Moved struct {
 // separate because they belong at different moments.
 //
 // The watch belongs before the first scan: an edit made while the vault is
-// being read is then held rather than missed. Run belongs after it: a scan
+// being read is then held. Run belongs after it: a scan
 // writes in groups from what it holds, so its copy of a note lands last however
 // early the note was read. Only the caller knows when its scan is done.
 func (u Follow) Begin(ctx context.Context, v domain.Vault) (*Following, error) {

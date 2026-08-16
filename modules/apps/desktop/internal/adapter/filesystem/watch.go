@@ -78,8 +78,7 @@ func fold(
 ) {
 	pending := map[string]bool{}
 	// ready is what the hold has already closed over, waiting to be taken. It
-	// keeps growing while nobody takes it, rather than a second batch waiting
-	// behind the first.
+	// keeps growing while nobody takes it: one batch, never two.
 	var ready []string
 	inReady := map[string]bool{}
 	var hold <-chan time.Time
@@ -127,7 +126,7 @@ func fold(
 			paths, whole := shape.concerns(event.Path())
 			if whole {
 				// A folder that is gone takes notes with it, and their paths
-				// are known to the index rather than to the disk.
+				// are known only to the index.
 				rescan()
 				continue
 			}
@@ -201,9 +200,9 @@ func (f *folders) forget(path string) {
 // it is established after the fact.
 //
 // `whole` is set when the answer cannot be worked out from the disk: a folder
-// that has gone took notes with it, and their paths are known to the index
-// rather than to anything still there. A path outside the vault is that case
-// too, which is what arrives when a watched folder is renamed away.
+// that has gone took notes with it, and their paths are known only to the
+// index. A path outside the vault is that case too, and is what arrives when a
+// watched folder is renamed away.
 func (f *folders) concerns(absolute string) (paths []string, whole bool) {
 	path, inside := f.reader.relative(absolute)
 	if !inside {

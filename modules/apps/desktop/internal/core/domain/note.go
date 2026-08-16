@@ -37,8 +37,8 @@ type Heading struct {
 }
 
 // VaultProblem is something in a vault that could not be acted on and was not
-// guessed at. It is shown rather than repaired, because repairing means deciding
-// what the user meant.
+// guessed at. It is shown to the person: repairing it means deciding what they
+// meant.
 //
 // Every problem belongs to one note: the file somebody would open to settle it.
 // For a link that reaches two notes that is the note the link is written in,
@@ -58,9 +58,8 @@ type VaultProblem struct {
 // Check is one thing that can be wrong with a vault, and the name of whatever
 // noticed it.
 //
-// It is on the problem so that a person tidying a vault can take one kind at a
-// time, and so that the next rule is a new name rather than a change to what
-// the old ones say.
+// It is on the problem so a person tidying a vault can take one kind at a
+// time. A new rule is a new name here.
 type Check string
 
 const (

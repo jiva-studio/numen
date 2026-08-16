@@ -1,7 +1,7 @@
 // Package ulid generates the identifiers a vault carries.
 //
-// ULID rather than UUID because its lexicographic order is its chronological
-// order, which comes free and is useful the moment anything is sorted or merged.
+// A ULID's lexicographic order is its chronological order, which tells the
+// moment anything is sorted or merged.
 package ulid
 
 import (

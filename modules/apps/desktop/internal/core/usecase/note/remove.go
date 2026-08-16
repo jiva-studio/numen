@@ -18,10 +18,10 @@ const TrashDir = ".trash"
 
 // Remove takes a note out of the vault.
 //
-// It moves rather than deletes. Everything the index knows is rebuilt from the
-// file, so losing the index costs a scan; a review log is not rebuilt from
-// anything, and removal is the one act that will eventually be
-// unrecoverable. The behaviour is settled while nothing yet depends on it.
+// It moves the file into the vault's trash. Everything the index knows is
+// rebuilt from the file, so losing the index costs a scan; a review log is not
+// rebuilt from anything, and removal is the one act that will eventually be
+// unrecoverable.
 type Remove struct {
 	Readers port.VaultReaders
 	Writers port.VaultWriters
@@ -81,7 +81,7 @@ func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (Remov
 	return res, nil
 }
 
-// Destroy removes the file rather than moving it. Nothing brings it back.
+// Destroy takes the file off the disk. Nothing brings it back.
 func (u Remove) Destroy(ctx context.Context, v domain.Vault, path string) (Removed, error) {
 	res := Removed{Path: path}
 
@@ -113,7 +113,7 @@ func (u Remove) index(ctx context.Context, v domain.Vault, paths ...string) erro
 }
 
 // withSuffix puts something before the extension: `note.md` and `-2` make
-// `note-2.md`, which reads as a copy rather than as a different kind of file.
+// `note-2.md`, which reads as a copy.
 func withSuffix(path, suffix string) string {
 	ext := pathpkg.Ext(path)
 	return path[:len(path)-len(ext)] + suffix + ext

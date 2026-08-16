@@ -6,8 +6,8 @@ import "context"
 // position to ask for. A cache holds an opinion about itself, formed from what
 // it contained when it last looked; filling it wholesale invalidates that.
 //
-// What the upkeep consists of is not the core's business, which is why this
-// says what changed rather than what to do about it.
+// This says what changed. What the upkeep consists of is the index's own
+// business.
 type IndexMaintenance interface {
 	Changed(ctx context.Context) error
 }

@@ -10,3 +10,7 @@ node_modules/
 # a checkout of this repository inside itself: where Claude Code puts the
 # worktrees it makes, which is the one place it can put them
 .claude/worktrees/
+
+# what a build leaves at the root
+/numen
+/numen-desktop

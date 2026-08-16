@@ -47,8 +47,7 @@ type Created struct {
 	Identifier string
 	Title      string
 	// Shares is the other notes already filed under this name. Creating one
-	// anyway is allowed and said out loud, because refusing would be an
-	// invariant the application cannot hold.
+	// anyway is allowed, and said out loud.
 	Shares []string
 }
 
@@ -87,9 +86,8 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 	if err != nil {
 		return Created{}, err
 	}
-	// Create rather than write: whether the path was free is the filesystem's
-	// to answer, once, rather than something asked beforehand and hoped to
-	// still be true.
+	// Whether the path was free is the filesystem's to answer, at the moment
+	// the file is made.
 	if err := writer.Create(ctx, path, content); err != nil {
 		return Created{}, err
 	}

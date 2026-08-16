@@ -44,8 +44,8 @@ func (q *Queries) Fingerprints(ctx context.Context, vaultID string) (map[string]
 func (q *Queries) Search(ctx context.Context, vaultID, query string, limit int) ([]domain.NoteMatch, error) {
 	if limit <= 0 {
 		// How many results a person wants is not something a database adapter
-		// knows. The caller decides; arriving here without one is a mistake in
-		// the caller rather than something to paper over with a number.
+		// knows. The caller decides, and arriving here without one is a
+		// mistake in the caller.
 		return nil, fmt.Errorf("search limit must be positive, got %d", limit)
 	}
 	expression := ftsExpression(query)

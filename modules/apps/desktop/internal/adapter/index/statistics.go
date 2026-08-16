@@ -11,15 +11,15 @@ type Statistics struct{ db *sql.DB }
 
 // Every bit is named because naming any turns off the ones left out.
 //
-//	0x00010  sample a large table rather than read all of it
-//	0x00002  measure the tables that would benefit from it
+//	0x00010  sample a large table, stopping short of reading all of it
+//	0x00002  measure the tables that stand to gain by it
 //	0x10000  include tables this connection has not read from
 //
 // The last one is what a scan needs: it writes and asks nothing, on whichever
 // pooled connection was free.
 //
-// A pragma configures the connection rather than asking it anything, so it
-// belongs here beside the ones in db.go rather than in a file of SQL.
+// A pragma configures the connection, so it belongs here beside the ones in
+// db.go.
 const measure = "PRAGMA optimize = 0x10012"
 
 // Changed says what the database knows about itself is out of date.

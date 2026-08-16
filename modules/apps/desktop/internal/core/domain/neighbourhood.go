@@ -52,7 +52,7 @@ type Seated struct {
 
 	// Through is the note the relationship runs from, when that is not the one
 	// in focus. A sibling is another child of a shared parent, and which parent
-	// is a fact about the vault rather than a choice for whoever draws it.
+	// is a fact about the vault.
 	Through string
 }
 

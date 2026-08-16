@@ -43,8 +43,8 @@ func Main(ctx context.Context, out, errOut io.Writer, args []string) int {
 	return 0
 }
 
-// Run is Main with its output injected and errors returned, so that what the
-// user sees is testable rather than only observable by hand.
+// Run is Main with its output injected and errors returned, so what the person
+// sees is testable.
 func Run(ctx context.Context, out io.Writer, args []string) error {
 	var cfg container.Config
 	fs := flag.NewFlagSet("numen-cli", flag.ContinueOnError)
@@ -55,10 +55,9 @@ func Run(ctx context.Context, out io.Writer, args []string) error {
 	extensions := fs.String("note-extensions", strings.Join(filesystem.DefaultExtensions, ","),
 		"comma-separated file extensions treated as notes")
 
-	// Deliberately a plain parse: it stops at the first argument that is not a
-	// flag, which is the command. Anything after that belongs to the command and
-	// is parsed by it — otherwise `vault add <path> --name x` would be read as a
-	// global flag that does not exist.
+	// A plain parse: it stops at the first argument that is not a flag, which
+	// is the command. Anything after that belongs to the command and is parsed
+	// by it, `--name` in `vault add <path> --name x` included.
 	if err := fs.Parse(args); err != nil {
 		return err
 	}

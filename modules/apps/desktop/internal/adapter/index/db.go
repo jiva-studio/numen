@@ -3,7 +3,7 @@
 //
 // It owns the connection and the schema, and hands out the repositories that
 // use them. Each aggregate lives in its own package beside its own SQL, so
-// adding one is a new folder rather than more files in this one.
+// adding one is a new folder.
 package index
 
 import (
@@ -21,9 +21,8 @@ import (
 // DB owns the connections.
 //
 // There are two pools, because SQLite has one writer and any number of readers.
-// The write pool is capped at a single connection so that writers queue in Go,
-// where waiting is cheap and ordered, rather than in SQLite, where they compete
-// for a lock and give up on a timeout. The read pool is unrestricted: in WAL
+// The write pool is capped at a single connection, so writers queue in Go,
+// where waiting is cheap and ordered. The read pool is unrestricted: in WAL
 // mode a reader never waits for the writer, which is what lets a search answer
 // while a scan is still running.
 type DB struct {
@@ -31,8 +30,8 @@ type DB struct {
 	read  *sql.DB
 }
 
-// pragmas are carried in the connection string rather than executed after
-// opening, because `sql.Open` returns a pool and executing a PRAGMA statement
+// pragmas are carried in the connection string, so every connection in the
+// pool opens with them. `sql.Open` returns a pool, and a PRAGMA statement
 // configures whichever single connection happened to serve it. Foreign keys and
 // the busy timeout are per-connection state, so a statement-based setup leaves
 // every other connection with foreign keys off — and no ordinary test can see
@@ -40,11 +39,11 @@ type DB struct {
 // configured.
 var pragmas = []string{
 	// WAL so a long scan does not block readers. This one is persisted in the
-	// database header rather than per connection, but it belongs with the rest.
+	// database header, and belongs with the rest all the same.
 	"journal_mode(WAL)",
 	// Foreign keys so removing a vault cannot leave rows pointing at nothing.
 	"foreign_keys(1)",
-	// Wait for a writer instead of failing immediately with SQLITE_BUSY.
+	// Wait for a writer, up to five seconds, before SQLITE_BUSY.
 	"busy_timeout(5000)",
 	// The index is a cache: a crash costs a rescan, never data. Paying an fsync
 	// per commit to protect it buys nothing and dominates a rebuild.
