@@ -26,8 +26,8 @@ type API struct {
 	Notes port.NoteQueries
 	Links port.LinkQueries
 
-	// Index brings named notes up to date; Scan reads the whole vault.
-	Index     func(context.Context, domain.Vault, []string) (usecase.RefreshResult, error)
+	// Scan reads the whole vault. Keeping it level afterwards is a use case,
+	// and what it produces arrives here through Listeners.
 	Scan      func(context.Context, domain.Vault) (usecase.ScanResult, error)
 	Listeners audience
 

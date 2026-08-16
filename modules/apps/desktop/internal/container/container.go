@@ -40,6 +40,11 @@ func (c Config) VaultReaders() port.VaultReaders {
 	return filesystem.Readers{Options: c.VaultOptions()}
 }
 
+// VaultWatcher follows vaults for changes the application did not make.
+func (c Config) VaultWatcher() port.VaultWatcher {
+	return filesystem.Watcher{Options: c.VaultOptions()}
+}
+
 // VaultIdentity gives folders their identity.
 func (c Config) VaultIdentity() port.VaultIdentity {
 	return filesystem.Identity{Options: c.VaultOptions()}

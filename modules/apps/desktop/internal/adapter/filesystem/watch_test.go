@@ -16,13 +16,13 @@ import (
 // batch of changed paths.
 func watching(t *testing.T, root string) func() []string {
 	t.Helper()
-	w, err := filesystem.Watch(t.Context(), domain.Vault{Path: root}, filesystem.Options{})
+	changes, _, err := filesystem.Watcher{}.Watch(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
 	return func() []string {
 		select {
-		case paths := <-w.Changes:
+		case paths := <-changes:
 			slices.Sort(paths)
 			return paths
 		case <-time.After(5 * time.Second):
@@ -48,8 +48,7 @@ func write(t *testing.T, root, name, body string) {
 // it, and nothing behind it.
 func TestOneSaveIsOneReport(t *testing.T) {
 	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
-	w, err := filesystem.Watch(t.Context(), domain.Vault{Path: root},
-		filesystem.Options{Window: 200 * time.Millisecond})
+	changes, _, err := filesystem.Watcher{Options: filesystem.Options{Window: 200 * time.Millisecond}}.Watch(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +58,7 @@ func TestOneSaveIsOneReport(t *testing.T) {
 	}
 
 	select {
-	case paths := <-w.Changes:
+	case paths := <-changes:
 		if !slices.Equal(paths, []string{"Note.md"}) {
 			t.Fatalf("reported %v", paths)
 		}
@@ -68,7 +67,7 @@ func TestOneSaveIsOneReport(t *testing.T) {
 	}
 
 	select {
-	case again := <-w.Changes:
+	case again := <-changes:
 		t.Errorf("a second batch followed: %v", again)
 	case <-time.After(300 * time.Millisecond):
 	}
@@ -83,7 +82,7 @@ func TestAFolderThatGoesAwayCannotBeAnsweredFromDisk(t *testing.T) {
 		"projects/Plan.md":   "# Plan\n",
 		"projects/deep/A.md": "# A\n",
 	}, nil)
-	w, err := filesystem.Watch(t.Context(), domain.Vault{Path: root}, filesystem.Options{})
+	changes, lost, err := filesystem.Watcher{}.Watch(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,8 +92,8 @@ func TestAFolderThatGoesAwayCannotBeAnsweredFromDisk(t *testing.T) {
 	}
 
 	select {
-	case <-w.Lost:
-	case paths := <-w.Changes:
+	case <-lost:
+	case paths := <-changes:
 		t.Fatalf("reported %v — the notes under a moved folder cannot be named from disk", paths)
 	case <-time.After(5 * time.Second):
 		t.Fatal("a folder left the vault and nothing was said")
@@ -109,7 +108,7 @@ func TestAFolderWithADotInItsNameIsStillAFolder(t *testing.T) {
 		"Note.md":              "# Note\n",
 		"2026.archive/Kept.md": "# Kept\n",
 	}, nil)
-	w, err := filesystem.Watch(t.Context(), domain.Vault{Path: root}, filesystem.Options{})
+	changes, lost, err := filesystem.Watcher{}.Watch(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -121,9 +120,9 @@ func TestAFolderWithADotInItsNameIsStillAFolder(t *testing.T) {
 	deadline := time.After(5 * time.Second)
 	for {
 		select {
-		case <-w.Lost:
+		case <-lost:
 			return
-		case paths := <-w.Changes:
+		case paths := <-changes:
 			// Removing the folder removes its notes first, and those it can
 			// name. The folder itself it cannot.
 			for _, path := range paths {
@@ -142,8 +141,7 @@ func TestAFolderWithADotInItsNameIsStillAFolder(t *testing.T) {
 // waited would stop emptying the backlog and lose what came after.
 func TestFoldingGoesOnWhileNobodyIsListening(t *testing.T) {
 	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
-	w, err := filesystem.Watch(t.Context(), domain.Vault{Path: root},
-		filesystem.Options{Window: 50 * time.Millisecond})
+	changes, _, err := filesystem.Watcher{Options: filesystem.Options{Window: 50 * time.Millisecond}}.Watch(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -155,7 +153,7 @@ func TestFoldingGoesOnWhileNobodyIsListening(t *testing.T) {
 	time.Sleep(400 * time.Millisecond)
 
 	select {
-	case paths := <-w.Changes:
+	case paths := <-changes:
 		slices.Sort(paths)
 		if !slices.Equal(paths, []string{"First.md", "Second.md"}) {
 			t.Fatalf("the first batch was %v — the second change was not folded into it", paths)

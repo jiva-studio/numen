@@ -7,7 +7,6 @@ import (
 	"io"
 	"sync"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
@@ -52,19 +51,33 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*API, func(
 			api.Indexed.Store(int64(res.Indexed))
 		},
 	}
-	refresh := usecase.Refresh{Readers: cfg.VaultReaders(), Notes: db.Notes()}
 	api.Scan = scan.Execute
-	api.Index = refresh.Execute
 
-	// Watching starts before the scan does, so that an edit made while the
-	// vault is being read is held rather than missed. Acting on those events
-	// waits: a scan holds notes in memory and writes them in groups, so a
-	// reindex overtaking one would be overwritten by the older copy, with the
-	// date that makes the next scan skip the file.
+	// Following the vault is a use case; this adapter only says who hears about
+	// it. Whatever a change turns out to mean is decided in one place, so a
+	// second way of showing a vault does not decide it again.
+	follow := usecase.Follow{
+		Watcher: cfg.VaultWatcher(),
+		Refresh: usecase.Refresh{Readers: cfg.VaultReaders(), Notes: db.Notes()},
+		Scan:    scan,
+		Changed: func(m usecase.Moved) {
+			api.Listeners.tell(changed{paths: m.Paths, reload: m.Reload})
+		},
+		Trouble: func(err error) {
+			if err == nil {
+				api.Failed.Store("")
+				return
+			}
+			api.Failed.Store(err.Error())
+		},
+	}
+
+	// Watching begins before the scan does, so that an edit made while the
+	// vault is being read is held rather than missed.
 	//
 	// A vault that cannot be watched is still a vault: the application keeps
 	// working, and says that changes will not appear by themselves.
-	watch, err := filesystem.Watch(watching, api.Vault, cfg.VaultOptions())
+	following, err := follow.Begin(watching, api.Vault)
 	if err != nil {
 		fmt.Fprintf(out, "not watching %s: %v\n", api.Vault.Name, err)
 		api.Unwatched.Store(err.Error())
@@ -90,8 +103,10 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*API, func(
 			return
 		}
 
-		if watch != nil {
-			api.follow(watching, watch.Changes, watch.Lost)
+		// The scan goes first. It writes in groups from what it holds, so its
+		// copy of a note lands last however early the note was read.
+		if following != nil {
+			following.Run(watching)
 		}
 	}()
 
