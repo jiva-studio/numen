@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -41,23 +42,30 @@ func (refuses) Watch(context.Context, domain.Vault) (<-chan []string, <-chan str
 }
 
 // sometimes is a set of readers that can be told to refuse, which is what a
-// permission or a device that went away looks like from here.
+// permission or a device that went away looks like from here. Told from one
+// goroutine and read in another, so the flag is an atomic one.
 type sometimes struct {
 	port.VaultReaders
-	refuse bool
+	refuse atomic.Bool
 }
 
 func (s *sometimes) Open(v domain.Vault) (port.VaultReader, error) {
-	if s.refuse {
+	if s.refuse.Load() {
 		return nil, errors.New("cannot open the vault")
 	}
 	return s.VaultReaders.Open(v)
 }
 
+// followed is a vault being watched: the vault itself, the index that is being
+// kept level with it, and what the following reported.
+type followed struct {
+	vault domain.Vault
+	index *container.Index
+	moved <-chan usecase.Moved
+}
+
 // following puts one vault, one index and a watcher a test drives together.
-func following(t *testing.T, notes map[string]string, watcher *hand) (
-	domain.Vault, *container.Index, <-chan usecase.Moved,
-) {
+func following(t *testing.T, notes map[string]string, watcher *hand) followed {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
 	db := openIndex(t)
@@ -78,7 +86,7 @@ func following(t *testing.T, notes map[string]string, watcher *hand) (
 		t.Fatal(err)
 	}
 	go started.Run(t.Context())
-	return v, db, moved
+	return followed{vault: v, index: db, moved: moved}
 }
 
 func next[T any](t *testing.T, from <-chan T) T {
@@ -96,20 +104,20 @@ func next[T any](t *testing.T, from <-chan T) T {
 // TestAChangedNoteIsBroughtUpToDateAndReported.
 func TestAChangedNoteIsBroughtUpToDateAndReported(t *testing.T) {
 	watcher := held()
-	v, db, moved := following(t, map[string]string{
+	f := following(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	}, watcher)
 
-	if err := os.WriteFile(filepath.Join(v.Path, "Note.md"),
+	if err := os.WriteFile(filepath.Join(f.vault.Path, "Note.md"),
 		[]byte("---\ntitle: Renamed\n---\n\n# Renamed\n\nentropy\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	watcher.changes <- []string{"Note.md"}
 
-	if got := next(t, moved); !slices.Equal(got.Paths, []string{"Note.md"}) {
+	if got := next(t, f.moved); !slices.Equal(got.Paths, []string{"Note.md"}) {
 		t.Errorf("reported %+v", got)
 	}
-	if got := titles(t, db, v, "entropy"); !slices.Equal(got, []string{"Renamed"}) {
+	if got := titles(t, f.index, f.vault, "entropy"); !slices.Equal(got, []string{"Renamed"}) {
 		t.Errorf("the index holds %v", got)
 	}
 }
@@ -119,17 +127,17 @@ func TestAChangedNoteIsBroughtUpToDateAndReported(t *testing.T) {
 // than told which notes moved.
 func TestWhatCannotBeFollowedIsRead(t *testing.T) {
 	watcher := held()
-	v, db, moved := following(t, map[string]string{
+	f := following(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	}, watcher)
 
-	if err := os.WriteFile(filepath.Join(v.Path, "Later.md"),
+	if err := os.WriteFile(filepath.Join(f.vault.Path, "Later.md"),
 		[]byte("---\ntitle: Later\n---\n\n# Later\n\nentropy\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	watcher.lost <- struct{}{}
 
-	got := next(t, moved)
+	got := next(t, f.moved)
 	if !got.Reload {
 		t.Fatalf("reported %+v, want the whole picture asked for again", got)
 	}
@@ -137,7 +145,7 @@ func TestWhatCannotBeFollowedIsRead(t *testing.T) {
 		t.Errorf("reported paths %v, which cannot be known", got.Paths)
 	}
 	// The scan ran, so a note nobody named is in the index anyway.
-	if got := titles(t, db, v, "entropy"); !slices.Contains(got, "Later") {
+	if got := titles(t, f.index, f.vault, "entropy"); !slices.Contains(got, "Later") {
 		t.Errorf("the index holds %v", got)
 	}
 }
@@ -168,13 +176,13 @@ func TestATroubleThatIsOverStopsBeingReported(t *testing.T) {
 	}
 	go started.Run(t.Context())
 
-	readers.refuse = true
+	readers.refuse.Store(true)
 	watcher.changes <- []string{"Note.md"}
 	if err := next(t, trouble); err == nil {
 		t.Fatal("a vault that could not be opened was reported as working")
 	}
 
-	readers.refuse = false
+	readers.refuse.Store(false)
 	watcher.changes <- []string{"Note.md"}
 	if err := next(t, trouble); err != nil {
 		t.Errorf("still reporting %v after it worked", err)
