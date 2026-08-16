@@ -20,10 +20,11 @@ type Refresh struct {
 }
 
 // RefreshResult is what happened, in the terms a caller acts on: the notes that
-// are now different from what was shown.
+// are now different from what was shown, and the ones that could not be read.
 type RefreshResult struct {
-	Indexed []string
-	Removed []string
+	Indexed    []string
+	Removed    []string
+	Unreadable []string
 }
 
 // Changed is every note the caller may need to look at again.
@@ -42,7 +43,13 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 		return res, err
 	}
 
-	var notes []domain.Note
+	// The same bounds a scan writes in. One event can name a whole folder — a
+	// checkout, a restore, a sync client unpacking an archive — so the number of
+	// paths handed here is not small because they were named individually.
+	group := grouping{write: func(ctx context.Context, notes []domain.Note) error {
+		return u.Notes.Save(ctx, v.ID, notes)
+	}}
+
 	for _, path := range paths {
 		if err := ctx.Err(); err != nil {
 			return res, err
@@ -53,7 +60,12 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 			continue
 		}
 		if err != nil {
-			return res, fmt.Errorf("look at %s: %w", path, err)
+			// One file nobody can read — a permission, a broken link, a device
+			// that went away — must not cost the others. A watcher's event
+			// arrives once, so anything dropped here is dropped until the next
+			// scan.
+			res.Unreadable = append(res.Unreadable, path)
+			continue
 		}
 		raw, err := reader.Read(ctx, path)
 		if errors.Is(err, fs.ErrNotExist) {
@@ -65,13 +77,16 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 			continue
 		}
 		if err != nil {
-			return res, fmt.Errorf("read %s: %w", path, err)
+			res.Unreadable = append(res.Unreadable, path)
+			continue
 		}
-		notes = append(notes, markdown.Parse(ref, raw))
+		if err := group.add(ctx, markdown.Parse(ref, raw), len(raw)); err != nil {
+			return res, fmt.Errorf("index: %w", err)
+		}
 		res.Indexed = append(res.Indexed, path)
 	}
 
-	if err := u.Notes.Save(ctx, v.ID, notes); err != nil {
+	if err := group.flush(ctx); err != nil {
 		return res, fmt.Errorf("index: %w", err)
 	}
 	if err := u.Notes.Remove(ctx, v.ID, res.Removed); err != nil {

@@ -1,6 +1,9 @@
 package vault_test
 
 import (
+	"context"
+	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
@@ -9,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/testsupport"
 )
@@ -84,6 +88,113 @@ func TestADeletedNoteLeavesTheIndex(t *testing.T) {
 		t.Errorf("the index holds %v", got)
 	}
 }
+
+// unreadableReaders answers one path with a failure that is not "gone" — a
+// permission, a broken link, a device that went away.
+type unreadableReaders struct {
+	port.VaultReaders
+	refuses string
+}
+
+func (u unreadableReaders) Open(vault domain.Vault) (port.VaultReader, error) {
+	reader, err := u.VaultReaders.Open(vault)
+	if err != nil {
+		return nil, err
+	}
+	return unreadableReader{VaultReader: reader, refuses: u.refuses}, nil
+}
+
+type unreadableReader struct {
+	port.VaultReader
+	refuses string
+}
+
+func (u unreadableReader) Read(ctx context.Context, path string) ([]byte, error) {
+	if path == u.refuses {
+		return nil, fs.ErrPermission
+	}
+	return u.VaultReader.Read(ctx, path)
+}
+
+// TestOneUnreadableFileDoesNotCostTheRest. A watcher's event arrives once, so
+// anything dropped alongside a failure is dropped until the next full scan.
+func TestOneUnreadableFileDoesNotCostTheRest(t *testing.T) {
+	refresh, db, v := refreshing(t, map[string]string{
+		"Locked.md": "---\ntitle: Locked\n---\n\n# Locked\n\nentropy\n",
+		"Note.md":   "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
+	})
+
+	for _, name := range []string{"Locked.md", "Note.md"} {
+		body := "---\ntitle: " + name + " edited\n---\n\n# Edited\n\nentropy\n"
+		if err := os.WriteFile(filepath.Join(v.Path, name), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	refresh.Readers = unreadableReaders{VaultReaders: filesystem.Readers{}, refuses: "Locked.md"}
+	res, err := refresh.Execute(t.Context(), v, []string{"Locked.md", "Note.md"})
+	if err != nil {
+		t.Fatalf("one unreadable file ended the refresh: %v", err)
+	}
+	if !slices.Equal(res.Unreadable, []string{"Locked.md"}) {
+		t.Errorf("unreadable %v", res.Unreadable)
+	}
+	if !slices.Equal(res.Indexed, []string{"Note.md"}) {
+		t.Errorf("indexed %v — the file that could be read was not", res.Indexed)
+	}
+	if got := titles(t, db, v, "entropy"); !slices.Equal(got, []string{"Locked", "Note.md edited"}) {
+		t.Errorf("the index holds %v", got)
+	}
+}
+
+// TestARefreshWritesInGroups. One event can name a whole folder, so the bound
+// on what is held in memory and on the length of one write is the same one a
+// scan keeps.
+func TestARefreshWritesInGroups(t *testing.T) {
+	notes := map[string]string{}
+	paths := make([]string, 0, 1200)
+	for i := range 1200 {
+		path := fmt.Sprintf("note-%04d.md", i)
+		notes[path] = fmt.Sprintf("---\ntitle: Note %d\n---\n\n# Note %d\n\nentropy\n", i, i)
+		paths = append(paths, path)
+	}
+
+	v := testsupport.NewVault(t, notes)
+	written := &countingNotes{}
+	refresh := usecase.Refresh{Readers: filesystem.Readers{}, Notes: written}
+
+	if _, err := refresh.Execute(t.Context(), v, paths); err != nil {
+		t.Fatal(err)
+	}
+	if written.groups < 3 {
+		t.Errorf("wrote %d notes in %d groups, want groups of at most 500",
+			written.notes, written.groups)
+	}
+	for _, size := range written.sizes {
+		if size > 500 {
+			t.Errorf("a group held %d notes", size)
+		}
+	}
+	if written.notes != 1200 {
+		t.Errorf("wrote %d notes of 1200", written.notes)
+	}
+}
+
+// countingNotes records how a repository was written to, and stores nothing.
+type countingNotes struct {
+	groups int
+	notes  int
+	sizes  []int
+}
+
+func (c *countingNotes) Save(_ context.Context, _ string, notes []domain.Note) error {
+	c.groups++
+	c.notes += len(notes)
+	c.sizes = append(c.sizes, len(notes))
+	return nil
+}
+
+func (c *countingNotes) Remove(context.Context, string, []string) error { return nil }
 
 // TestANoteThatVanishesMidReadKeepsItsRow. A file that is briefly absent is
 // what an editor saving through a temporary file looks like, and the save that
