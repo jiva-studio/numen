@@ -32,6 +32,7 @@ generate: ## compile the schema into Go and TypeScript
 
 .PHONY: generate-check
 generate-check: generate ## fail if what is committed is out of date
+	git add -AN -- $(PROTOCOL)
 	git diff --exit-code -- $(PROTOCOL)
 
 .PHONY: build
@@ -54,7 +55,7 @@ test: ## run every test
 	cd $(DESKTOP)/ui && npm test
 
 .PHONY: lint
-lint: ## the checks CI runs
+lint: generate-check ## the checks CI runs, less the one needing a base branch
 	cd $(DESKTOP) && gofmt -l ./cmd ./internal && go vet ./...
 	cd $(PROTOCOL) && $(GENERATE) 'buf lint'
 	cd $(UI) && npm run typecheck
