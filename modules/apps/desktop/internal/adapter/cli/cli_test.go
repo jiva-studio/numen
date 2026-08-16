@@ -44,7 +44,7 @@ func (s *session) mustRun(args ...string) string {
 	s.t.Helper()
 	out, err := s.run(args...)
 	if err != nil {
-		s.t.Fatalf("numen %s: %v\n%s", strings.Join(args, " "), err, out)
+		s.t.Fatalf("numen-cli %s: %v\n%s", strings.Join(args, " "), err, out)
 	}
 	return out
 }
@@ -117,7 +117,7 @@ func TestUnknownVaultSaysWhatToDo(t *testing.T) {
 	if err == nil {
 		t.Fatal("scanning an unknown vault succeeded")
 	}
-	if !strings.Contains(err.Error(), "numen vault add") {
+	if !strings.Contains(err.Error(), "numen-cli vault add") {
 		t.Errorf("error does not say how to fix it: %v", err)
 	}
 }

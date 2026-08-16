@@ -13,7 +13,9 @@ export interface Core {
   neighbourhood(path: string): Promise<Neighbourhood>
   opening(): Promise<{ path: string } | null>
   state(): Promise<{ name: string; ready: boolean; failed: string; unwatched: string }>
-  changes(): AsyncIterable<{ paths: string[]; reload: boolean }>
+  changes(signal: AbortSignal): AsyncIterable<{ paths: string[]; reload: boolean }>
+  /** The notes something else asked to be put in front of the person. */
+  focus(signal: AbortSignal): AsyncIterable<{ path: string }>
 }
 
 export function showing(core: Core, wait: (ms: number) => Promise<unknown> = sleep) {
@@ -42,6 +44,8 @@ export function showing(core: Core, wait: (ms: number) => Promise<unknown> = sle
    */
   let asked = 0
   let open = true
+  /** Let go of every stream the window is listening to. */
+  const listening = new AbortController()
 
   async function go(path: string) {
     const mine = ++asked
@@ -87,7 +91,7 @@ export function showing(core: Core, wait: (ms: number) => Promise<unknown> = sle
   async function follow() {
     while (open) {
       try {
-        for await (const change of core.changes()) {
+        for await (const change of core.changes(listening.signal)) {
           if (!open) return
           if (change.paths.length === 0 && !change.reload) continue
           if (here.value) {
@@ -97,6 +101,27 @@ export function showing(core: Core, wait: (ms: number) => Promise<unknown> = sle
             if (note) await go(note.path)
           }
           await ask()
+        }
+      } catch (error) {
+        if (!open) return
+        notice.value = String(error)
+      }
+      await wait(1000)
+    }
+  }
+
+  /**
+   * Travels to whatever is asked for while the window is open — an agent
+   * working the vault beside the person naming the note it is talking about.
+   *
+   * Taken up again the way following is, and for the same reason.
+   */
+  async function watch() {
+    while (open) {
+      try {
+        for await (const wanted of core.focus(listening.signal)) {
+          if (!open) return
+          if (wanted.path) await go(wanted.path)
         }
       } catch (error) {
         if (!open) return
@@ -116,6 +141,7 @@ export function showing(core: Core, wait: (ms: number) => Promise<unknown> = sle
           indexing.value = false
           await go(note.path)
           void follow()
+          void watch()
           return
         }
         // A vault that could not be read is not an empty one, and neither is
@@ -123,6 +149,7 @@ export function showing(core: Core, wait: (ms: number) => Promise<unknown> = sle
         if (state.failed || state.ready) {
           indexing.value = false
           void follow()
+          void watch()
           return
         }
         await wait(100)
@@ -145,8 +172,10 @@ export function showing(core: Core, wait: (ms: number) => Promise<unknown> = sle
     go,
     start,
     follow,
+    watch,
     close: () => {
       open = false
+      listening.abort()
     },
   }
 }

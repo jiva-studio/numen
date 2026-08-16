@@ -56,7 +56,7 @@ The frontmatter is shared, not owned:
 | --- | --- | --- |
 | `title` | The name a note is shown by. Read, never written: the application does not add one and does not rewrite one it finds. | ADR-0012 |
 | `id` | The identity of the note, a ULID. Written when the application creates or edits it, never backfilled. | ADR-0009 |
-| `links` | Links that carry a role, and optionally a type and an argument. | ADR-0003 |
+| `links` | Links that carry a role, and optionally a type, a label and a note. | ADR-0003 |
 
 A note with no `title` is named by its first level-one heading, else by its
 filename. The order is fixed so that a name does not move between versions.

@@ -8,7 +8,7 @@ import "strings"
 // is that FTS5 parses the bound string as an expression of its own. Left alone,
 // ordinary words fail — "state-function" is read as a column reference, "C++" as
 // a syntax error, a stray quote as an unterminated string — and the person
-// searching gets a database error instead of results.
+// searching gets a database error.
 //
 // Every word is therefore quoted into a literal, and the words are joined by
 // implicit AND. The cost is that FTS5's own operators are not available to the

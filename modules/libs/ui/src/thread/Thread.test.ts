@@ -48,20 +48,6 @@ describe('what is drawn', () => {
   })
 })
 
-describe('the caret', () => {
-  it('sits on an answer still arriving at the end', () => {
-    expect(thread([back('1', 'half a s', 'arriving')]).find('.thread__caret').exists()).toBe(true)
-  })
-
-  it('is not drawn on a turn that settled', () => {
-    expect(thread([back('1')]).find('.thread__caret').exists()).toBe(false)
-  })
-
-  it('is not drawn on an arriving turn that something follows', () => {
-    const wrapper = thread([back('1', 'left behind', 'arriving'), said('2')])
-    expect(wrapper.find('.thread__caret').exists()).toBe(false)
-  })
-})
 
 describe('a turn that failed', () => {
   it('says so', () => {

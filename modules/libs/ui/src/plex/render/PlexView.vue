@@ -68,10 +68,10 @@ defineExpose({ svg })
 /**
  * One plex unit is one pixel, origin at the middle of the window.
  *
- * Fitting the viewBox to the drawing would shrink every box and letter as
- * neighbours are added, and would centre the bounding box rather than the
- * focus. A neighbourhood too wide is clipped instead; that is what the
- * per-seat limits and the overflow count are for.
+ * The viewBox is a fixed window on the drawing, centred on the focus, so a box
+ * and a letter are one size however many neighbours arrive. A neighbourhood
+ * too wide is clipped, and the per-seat limits and the overflow count say how
+ * much.
  */
 const viewBox = computed(() => {
   const { width, height } = props.viewport

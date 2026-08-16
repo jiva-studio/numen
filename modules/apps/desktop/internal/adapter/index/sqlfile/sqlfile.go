@@ -1,8 +1,8 @@
 // Package sqlfile loads the SQL that lives beside each repository.
 //
-// Statements are files rather than string literals: SQL is a language of its
-// own, and burying it in Go hides it from anything that reads, formats or checks
-// SQL — including the person reviewing a change to it.
+// Statements are files: SQL is a language of its own, and anything that reads,
+// formats or checks SQL can see it there — the person reviewing a change to it
+// included.
 package sqlfile
 
 import (
@@ -13,9 +13,8 @@ import (
 // Statements is a set of statements keyed by filename without the extension.
 type Statements map[string]string
 
-// Load reads every .sql file in dir. It panics rather than returning an error:
-// the files are embedded in the binary, so a failure here is a build that should
-// not have been produced, not a condition to handle at runtime.
+// Load reads every .sql file in dir. It panics: the files are embedded in the
+// binary, so a failure here is a build that should not have been produced.
 func Load(fsys fs.FS, dir string) Statements {
 	out := Statements{}
 	err := fs.WalkDir(fsys, dir, func(p string, d fs.DirEntry, err error) error {
@@ -36,8 +35,8 @@ func Load(fsys fs.FS, dir string) Statements {
 	return out
 }
 
-// Get returns a statement by name. A missing name is a programming error, caught
-// on the first call rather than as a confusing SQL error later.
+// Get returns a statement by name. A missing name is a programming error,
+// caught on the first call.
 func (s Statements) Get(name string) string {
 	stmt, ok := s[name]
 	if !ok {

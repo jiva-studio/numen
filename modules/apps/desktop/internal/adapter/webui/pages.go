@@ -14,8 +14,7 @@ import (
 var pages embed.FS
 
 // Pages is the interface itself, built by `make interface` and carried inside
-// the binary. A binary built without it says so rather than opening a window
-// onto nothing.
+// the binary. A binary built without it says so.
 func Pages() (http.Handler, error) {
 	built, err := fs.Sub(pages, "pages/app")
 	if err != nil {
@@ -31,9 +30,14 @@ func Pages() (http.Handler, error) {
 // browser are answered by one handler.
 func (a *API) Serving(files http.Handler) http.Handler {
 	route, questions := numenv1connect.NewVaultServiceHandler(a)
+	asking, tasks := numenv1connect.NewAgentServiceHandler(a)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, route) {
 			questions.ServeHTTP(w, r)
+			return
+		}
+		if strings.HasPrefix(r.URL.Path, asking) {
+			tasks.ServeHTTP(w, r)
 			return
 		}
 		files.ServeHTTP(w, r)

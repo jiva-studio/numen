@@ -60,13 +60,13 @@ func opened(t *testing.T, notes map[string]string) (numenv1connect.VaultServiceC
 		t.Fatal(err)
 	}
 
-	api, closer, err := webui.Open(t.Context(), settings, os.Stderr)
+	opened, err := webui.Open(t.Context(), settings, os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { closer() })
+	t.Cleanup(func() { opened.Close() })
 
-	route, handler := numenv1connect.NewVaultServiceHandler(api)
+	route, handler := numenv1connect.NewVaultServiceHandler(opened.API)
 	mux := http.NewServeMux()
 	mux.Handle(route, handler)
 	server := httptest.NewUnstartedServer(mux)

@@ -1,0 +1,61 @@
+package webui
+
+import (
+	"context"
+	"errors"
+
+	"connectrpc.com/connect"
+
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agent"
+)
+
+// Ask hands the person's task to the agent and reports what it does for as long
+// as the client listens.
+//
+// The work is stopped on the way out, whether it finished, failed or the client
+// went away. Nothing outlives the panel it was asked from.
+func (a *API) Ask(ctx context.Context, r *connect.Request[v1.AskRequest], stream *connect.ServerStream[v1.AskResponse]) error {
+	if a.Agent == nil {
+		return connect.NewError(connect.CodeUnimplemented,
+			errors.New("no agent is set up for this vault"))
+	}
+
+	work, err := a.Agent.Take(ctx, agent.Task{Asked: r.Msg.GetAsked(), Focus: r.Msg.GetFocus()})
+	if err != nil {
+		return connect.NewError(connect.CodeInternal, err)
+	}
+	defer work.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case step, working := <-work.Steps():
+			if !working {
+				return nil
+			}
+			if err := stream.Send(stepOf(step)); err != nil {
+				return err
+			}
+			if step.Kind == agent.Stopped {
+				return nil
+			}
+		}
+	}
+}
+
+// stepOf says a step in the schema's words.
+func stepOf(step agent.Step) *v1.AskResponse {
+	switch step.Kind {
+	case agent.Calling:
+		return &v1.AskResponse{Step: &v1.AskResponse_Doing{
+			Doing: &v1.Doing{Tool: step.Tool, About: step.About},
+		}}
+	case agent.Stopped:
+		return &v1.AskResponse{Step: &v1.AskResponse_Stopped{Stopped: step.Failed}}
+	default:
+		return &v1.AskResponse{Step: &v1.AskResponse_Said{Said: step.Text}}
+	}
+}

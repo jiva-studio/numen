@@ -1,14 +1,14 @@
 <script setup lang="ts">
 /**
- * The conversation. What was said sits in a bubble; what came back is text on
- * the surface.
+ * The conversation. What was said sits in a bubble; what came back is prose on
+ * the surface; what the agent reached for is a quiet line between them.
  *
- * Scrolls on its own, and stays at the foot while an answer arrives — that is
- * the browser's scroll anchoring, so nothing here measures or moves it. What
- * a turn's text is made of belongs to whoever renders the thread: the default
- * keeps the line breaks and does nothing else with it.
+ * Scrolls on its own, and stays at the foot while an answer arrives: that is
+ * the browser's own scroll anchoring.
  */
 import { computed } from 'vue'
+import Prose from '../prose/Prose.vue'
+import Tool from '../tool/Tool.vue'
 import { placeTurns, type Turn } from './model'
 
 const props = defineProps<{
@@ -20,7 +20,7 @@ const placed = computed(() => placeTurns(props.turns))
 
 <template>
   <div
-    class="numen flex min-h-0 flex-col gap-turn overflow-y-auto overscroll-contain font-sans text-base"
+    class="thread numen flex min-h-0 flex-col gap-turn overflow-y-auto overscroll-contain font-sans text-base"
   >
     <p v-if="!placed.length" class="m-auto text-hushed">
       <slot name="silence">Nothing said yet</slot>
@@ -43,9 +43,15 @@ const placed = computed(() => placeTurns(props.turns))
         "
       >
         <slot name="turn" :turn="entry.turn" :state="entry.state">
-          <span class="thread__text">{{ entry.turn.text }}</span>
+          <Tool
+            v-if="entry.turn.voice === 'doing'"
+            :tool="entry.turn.text"
+            :about="entry.turn.about ?? ''"
+            :working="entry.state === 'arriving'"
+          />
+          <span v-else-if="entry.voice.bubble" class="thread__text">{{ entry.turn.text }}</span>
+          <Prose v-else :text="entry.turn.text" :arriving="entry.state === 'arriving'" />
         </slot>
-        <span v-if="entry.caret" class="thread__caret" />
       </div>
 
       <p v-if="entry.state === 'failed'" class="mt-1 text-small text-alarm">
@@ -63,20 +69,12 @@ const placed = computed(() => placeTurns(props.turns))
   overflow-wrap: anywhere;
 }
 
-/* Sits on the last line of what has arrived, so it moves with the text. */
-.thread__caret {
-  display: inline-block;
-  inline-size: 0.5em;
-  block-size: 1em;
-  margin-inline-start: 0.15em;
-  vertical-align: text-bottom;
-  background: currentColor;
-  animation: thread-caret 1s steps(2, start) infinite;
+/* Nothing is drawn to scroll with. */
+.thread {
+  scrollbar-width: none;
 }
 
-@keyframes thread-caret {
-  50% {
-    opacity: 0;
-  }
+.thread::-webkit-scrollbar {
+  display: none;
 }
 </style>

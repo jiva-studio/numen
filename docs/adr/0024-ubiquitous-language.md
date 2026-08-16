@@ -87,6 +87,15 @@ in one place, meaning the obvious thing, needs no entry.
 | problem | Something that could not be acted on and was not guessed at |
 | watch | Following a vault for changes the application did not make |
 | hold | How long events are kept before they are acted on |
+| trash | Where a removed note is kept: `.trash/` inside the vault (ADR-0027) |
+
+**What reaches a vault from outside**
+
+| Word | Means |
+|---|---|
+| agent | A program acting on a vault on a person's behalf, through tools (ADR-0026) |
+| tool | One operation an agent can call. Never a synonym for a use case |
+| client | A consumer of the schema that draws a vault (ADR-0025). Never an agent |
 
 **What is drawn**
 
@@ -133,6 +142,12 @@ word.
 
 **`position`.** An ordinal — which link, which heading. A line number is a
 *line*.
+
+**`remove`.** One act over different things keeps one verb: a note is removed
+and a link is removed, never deleted in one place and removed in the other. The
+constructive side is allowed two, because the acts differ and the noun already
+says which is meant: a note is *created* — a file appears — and a link is
+*added* — a record joins a list that was already there.
 
 **`note`, twice.** A note is a file. A link's `note` is why it exists. This one
 is kept: the key was chosen for the file format, where it is read by people and

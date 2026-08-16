@@ -67,8 +67,8 @@ const onKey = (event: KeyboardEvent) => {
   stroke-width: var(--numen-ring-width);
 }
 
-/* The cross, as two bars rather than a stroked path, so its length and its
-   thickness are sizes the theme sets and not numbers in a `d`. */
+/* The cross, as two bars: its length and its thickness are sizes the theme
+   sets. */
 .plex__handle-mark {
   fill: var(--numen-node-fg);
   rx: calc(var(--numen-handle-stroke) / 2);

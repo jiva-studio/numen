@@ -23,8 +23,8 @@ func (q *Queries) Notes(ctx context.Context, vaultID string, paths []string) (ma
 		return nil, err
 	}
 
-	// One prepared statement asked repeatedly, rather than a list bound into a
-	// query whose text changes with the number of paths.
+	// One prepared statement, asked repeatedly: the query's text is the same
+	// whatever number of paths arrive.
 	statement, err := q.db.PrepareContext(ctx, stmt.Get("notes_at"))
 	if err != nil {
 		return nil, err

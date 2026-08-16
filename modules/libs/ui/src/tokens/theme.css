@@ -9,6 +9,10 @@
 @import 'tailwindcss';
 @import './tokens.css';
 
+/* Marked-up prose is typeset by the typography plugin, told the same colours
+   as everything else. */
+@plugin '@tailwindcss/typography';
+
 @theme inline {
   --font-sans: var(--numen-font-sans);
 
@@ -55,4 +59,52 @@
   --shadow-panel: var(--numen-panel-shadow);
 
   --ease-numen: var(--numen-easing);
+}
+
+/* What the typography plugin paints with, in this product's colours. Applied
+   beside `prose`. */
+@utility prose-numen {
+  --tw-prose-body: var(--numen-answer-fg);
+  --tw-prose-headings: var(--numen-answer-fg);
+  --tw-prose-lead: var(--numen-answer-fg);
+  --tw-prose-links: var(--numen-answer-fg);
+  --tw-prose-bold: var(--numen-answer-fg);
+  --tw-prose-counters: var(--numen-edge-label);
+  --tw-prose-bullets: var(--numen-edge-label);
+  --tw-prose-hr: var(--numen-panel-border);
+  --tw-prose-quotes: var(--numen-edge-label);
+  --tw-prose-quote-borders: var(--numen-panel-border);
+  --tw-prose-captions: var(--numen-edge-label);
+  --tw-prose-code: var(--numen-answer-fg);
+  --tw-prose-pre-code: var(--numen-answer-fg);
+  --tw-prose-pre-bg: var(--numen-field-bg);
+  --tw-prose-th-borders: var(--numen-panel-border);
+  --tw-prose-td-borders: var(--numen-panel-border);
+}
+
+/* A word that has just arrived fades up where it lands. */
+@keyframes numen-word {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.prose--arriving .prose__word {
+  animation: numen-word var(--numen-motion) ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prose--arriving .prose__word {
+    animation: none;
+  }
+}
+
+/* A rule between passages is a breath. */
+.prose-numen :where(hr) {
+  margin-block: 1.5em;
+  border-color: var(--numen-panel-border);
+  opacity: 0.6;
 }

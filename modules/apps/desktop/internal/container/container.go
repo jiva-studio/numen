@@ -27,7 +27,7 @@ type Config struct {
 }
 
 // Registry is the list of vaults this installation knows: application state,
-// kept with the application rather than in any vault.
+// kept with the application.
 func (c Config) Registry() (port.VaultRegistry, error) {
 	if c.RegistryPath != "" {
 		return appstate.At(c.RegistryPath), nil
@@ -38,6 +38,12 @@ func (c Config) Registry() (port.VaultRegistry, error) {
 // VaultReaders opens vaults for reading.
 func (c Config) VaultReaders() port.VaultReaders {
 	return filesystem.Readers{Options: c.VaultOptions()}
+}
+
+// VaultWriters opens vaults for changing. It is a separate opener from the
+// readers because reading and writing a person's notes are different rights.
+func (c Config) VaultWriters() port.VaultWriters {
+	return filesystem.Writers{Options: c.VaultOptions()}
 }
 
 // VaultWatcher follows vaults for changes the application did not make.

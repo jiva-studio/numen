@@ -44,8 +44,8 @@ func (q *Queries) Fingerprints(ctx context.Context, vaultID string) (map[string]
 func (q *Queries) Search(ctx context.Context, vaultID, query string, limit int) ([]domain.NoteMatch, error) {
 	if limit <= 0 {
 		// How many results a person wants is not something a database adapter
-		// knows. The caller decides; arriving here without one is a mistake in
-		// the caller rather than something to paper over with a number.
+		// knows. The caller decides, and arriving here without one is a
+		// mistake in the caller.
 		return nil, fmt.Errorf("search limit must be positive, got %d", limit)
 	}
 	expression := ftsExpression(query)
@@ -95,3 +95,32 @@ func (q *Queries) Summary(ctx context.Context, vaultID string) (domain.VaultSumm
 // can check about itself: it needs a migrated database, and that lives one level
 // up.
 func Statements() map[string]string { return stmt }
+
+// Named is every note filed under one name. A name that answers for more than
+// one note is what makes a link written by that name ambiguous, and
+// is worth saying out loud before it surprises anyone.
+func (q *Queries) Named(ctx context.Context, vaultID, name string) ([]string, error) {
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.db.QueryContext(ctx, stmt.Get("named"), vault, name)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []string
+	for rows.Next() {
+		var path string
+		if err := rows.Scan(&path); err != nil {
+			return nil, err
+		}
+		out = append(out, path)
+	}
+	return out, rows.Err()
+}

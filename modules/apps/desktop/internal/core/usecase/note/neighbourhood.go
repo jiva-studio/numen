@@ -155,8 +155,8 @@ type seating struct {
 }
 
 // take keeps the highest-ranked seat a note qualifies for, replacing a lesser
-// one it was given earlier, so that a pair who are each other's parent is drawn
-// once rather than twice and always the same way round.
+// one it was given earlier: a pair who are each other's parent is drawn once,
+// and always the same way round.
 func (s *seating) take(seated domain.Seated) {
 	if s.at == nil {
 		s.at = map[string]int{}

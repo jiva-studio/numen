@@ -12,10 +12,9 @@ import (
 	"strings"
 )
 
-// SQL lives in .sql files rather than in string literals: it is a language of
-// its own, and burying it in Go hides it from anything that reads, formats or
-// checks SQL. The files are embedded, so the binary carries no runtime
-// dependency on the source tree.
+// SQL lives in .sql files: it is a language of its own, and anything that
+// reads, formats or checks SQL can see it there. The files are embedded, so
+// the binary carries no runtime dependency on the source tree.
 //
 //go:embed migration/*.sql
 var files embed.FS
@@ -27,8 +26,8 @@ var files embed.FS
 // work at the sizes this is built for, and an application update that silently
 // costs the user those minutes — every time — is not a good trade. A migration
 // that genuinely cannot preserve what it changes is free to empty the affected
-// tables; the next scan refills them, and that decision is then visible in the
-// file rather than implicit in the whole design.
+// tables; the next scan refills them, and the decision is written in the file
+// that made it.
 type migration struct {
 	version int
 	name    string
@@ -74,8 +73,7 @@ func apply(ctx context.Context, db *sql.DB, m migration) error {
 			return fmt.Errorf("%w\nin statement:\n%s", err, strings.TrimSpace(stmt))
 		}
 	}
-	// PRAGMA takes no parameters, and the number is the migration's own, so it
-	// is formatted rather than bound.
+	// PRAGMA takes no parameters, and the number is the migration's own.
 	if _, err := tx.ExecContext(ctx, fmt.Sprintf("PRAGMA user_version = %d", m.version)); err != nil {
 		return err
 	}

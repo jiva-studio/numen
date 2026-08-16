@@ -46,7 +46,7 @@ interface: ## build the window's page into the binary's assets
 
 .PHONY: desktop
 desktop: interface ## build the window
-	cd $(DESKTOP) && $(WEBVIEW) 'CGO_ENABLED=1 go build -o ../../../numen-desktop ./cmd/numen-desktop'
+	cd $(DESKTOP) && $(WEBVIEW) 'CGO_ENABLED=1 go build -o ../../../numen ./cmd/numen'
 
 .PHONY: test
 test: ## run every test

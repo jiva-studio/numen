@@ -47,8 +47,8 @@ func bodyLinks(body []byte) []domain.Link {
 // frontmatterLinks reads the `links:` block, which is where a link that carries
 // a role, a type or an argument is written.
 //
-// A malformed entry is skipped rather than failing the note: the file is still
-// readable, and refusing it would hide everything else in it.
+// A malformed entry is skipped and the rest of the note is read: everything
+// else in the file still shows.
 func frontmatterLinks(frontmatter map[string]any) ([]domain.Link, []string) {
 	raw, ok := frontmatter["links"].([]any)
 	if !ok {
@@ -75,7 +75,7 @@ func frontmatterLinks(frontmatter map[string]any) ([]domain.Link, []string) {
 		}
 		if !domain.KnownRole(role) {
 			// The list of roles is closed, so an unknown one has no behaviour.
-			// It is reported rather than stored as if it meant something.
+			// It is reported as a problem.
 			problems = append(problems, "links: "+to+" has an unknown role "+string(role))
 			continue
 		}

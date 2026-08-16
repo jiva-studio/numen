@@ -40,8 +40,7 @@ func exec(ctx context.Context, tx *sql.Tx, name string, args ...any) error {
 // Save writes a group of notes in one transaction.
 //
 // A note and the size and date that call it up to date are stored together or
-// not at all, so an interrupted scan leaves files to be read again rather than
-// rows to be trusted.
+// not at all, so an interrupted scan leaves files to be read again.
 func (r *Repository) Save(ctx context.Context, vaultID string, notes []domain.Note) error {
 	if len(notes) == 0 {
 		return nil
@@ -160,8 +159,8 @@ func (r *Repository) Remove(ctx context.Context, vaultID string, paths []string)
 // frontmatter at all — which is different from an empty one.
 //
 // YAML can hold things JSON cannot: a NaN, a non-string key, a value that
-// refers to itself. The note is still a note, so a failure here returns the
-// reason rather than an error, and the caller records it beside the note.
+// refers to itself. The note is still a note, so a failure here comes back as
+// a reason, and the caller records it beside the note.
 func encodeFrontmatter(n domain.Note) (value any, problem string) {
 	if n.Frontmatter == nil {
 		return nil, ""

@@ -36,10 +36,44 @@ type Heading struct {
 	Line  int
 }
 
-// VaultProblem is something in a file that could not be acted on and was not
-// guessed at. It is shown rather than repaired, because repairing means deciding
-// what the user meant.
+// VaultProblem is something in a vault that could not be acted on and was not
+// guessed at. It is shown to the person: repairing it means deciding what they
+// meant.
+//
+// Every problem belongs to one note: the file somebody would open to settle it.
+// For a link that reaches two notes that is the note the link is written in,
+// and neither of the notes it could mean.
 type VaultProblem struct {
-	Path   string
+	Path  string
+	Check Check
+	// Detail says what is wrong, in the terms the file itself uses.
 	Detail string
+
+	// Target is where the link goes, for the checks that are about one.
+	Target Address
+	// Candidates is what that link could mean, when several notes answer to it.
+	Candidates []string
 }
+
+// Check is one thing that can be wrong with a vault, and the name of whatever
+// noticed it.
+//
+// It is on the problem so a person tidying a vault can take one kind at a
+// time. A new rule is a new name here.
+type Check string
+
+const (
+	// CheckParse is what reading one file turned up: a link with no role, a role
+	// nobody decided on, an identifier that is not one.
+	CheckParse Check = "parse"
+	// CheckFrontmatter is a frontmatter block that is not YAML. The note is
+	// still indexed, and nothing may write to it until the block reads.
+	CheckFrontmatter Check = "frontmatter"
+	// CheckAmbiguous is a link that reaches more than one note. It is not
+	// broken — it reaches the nearest — but which one that is can change when
+	// either of them moves.
+	CheckAmbiguous Check = "ambiguous"
+	// CheckDangling is a link that reaches nothing. Legitimate while a note is
+	// being written and worth seeing afterwards.
+	CheckDangling Check = "dangling"
+)

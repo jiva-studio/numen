@@ -16,7 +16,7 @@
       "import": "./dist/numen-ui.js",
       "require": "./dist/numen-ui.umd.cjs"
     },
-    "./tokens.css": "./dist/numen-ui.css"
+    "./styles.css": "./dist/numen-ui.css"
   },
   "scripts": {
     "dev": "storybook dev -p 6006 --no-open",
@@ -54,8 +54,10 @@
     "vue-tsc": "^3.0.0"
   },
   "dependencies": {
+    "@tailwindcss/typography": "^0.5.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "markdown-it": "^15.0.0",
     "reka-ui": "^2.10.3",
     "tailwind-merge": "^3.6.0"
   }

@@ -16,7 +16,7 @@ import (
 
 func vaultCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
 	if len(args) == 0 {
-		return errors.New("usage: numen vault add <path> | numen vault list")
+		return errors.New("usage: numen-cli vault add <path> | numen-cli vault list")
 	}
 	switch args[0] {
 	case "add":
@@ -37,7 +37,7 @@ func vaultAdd(out io.Writer, cfg container.Config, args []string) error {
 		return err
 	}
 	if len(rest) != 1 {
-		return errors.New("usage: numen vault add <path> [--name <name>]")
+		return errors.New("usage: numen-cli vault add <path> [--name <name>]")
 	}
 
 	registry, err := cfg.Registry()
@@ -77,15 +77,14 @@ func vaultList(out io.Writer, cfg container.Config) error {
 		return err
 	}
 	if len(known) == 0 {
-		fmt.Fprintln(out, "no vaults yet — add one with: numen vault add <path>")
+		fmt.Fprintln(out, "no vaults yet — add one with: numen-cli vault add <path>")
 		return nil
 	}
 	for _, v := range known {
 		marker := " "
 		if _, err := os.Stat(v.Path); err != nil {
 			// The registry remembers where a vault was last seen; the vault
-			// carries the identity. A folder that is not there is worth saying
-			// out loud rather than failing on later.
+			// carries the identity. A folder that is not there is marked here.
 			marker = "?"
 		}
 		fmt.Fprintf(out, "%s %-20s %s\n  %s\n", marker, v.Name, v.ID, v.Path)

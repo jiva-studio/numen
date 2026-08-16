@@ -15,9 +15,8 @@ import (
 
 // VaultDir returns the fixture vault every test scans.
 //
-// It walks up from this file until it finds the repository, so that a test says
-// what it wants instead of counting parent directories — a chain of `../` is
-// both unreadable and wrong the moment a package moves.
+// It walks up from this file until it finds the repository, so a test says
+// what it wants and holds when its package moves.
 func VaultDir(t *testing.T) string {
 	t.Helper()
 
@@ -53,7 +52,7 @@ func CopyVault(t *testing.T) string {
 
 // NewVault writes a vault with the given notes and gives it an identity, for
 // tests that need a second vault whose content is nothing like the fixture's.
-func NewVault(t *testing.T, notes map[string]string) domain.Vault {
+func NewVault(t testing.TB, notes map[string]string) domain.Vault {
 	t.Helper()
 	root := t.TempDir()
 	for name, body := range notes {

@@ -16,6 +16,7 @@ export interface VoiceDescriptor {
 export const VOICES = {
   asked: { bubble: true, against: 'end' },
   answered: { bubble: false, against: 'start' },
+  doing: { bubble: false, against: 'start' },
 } as const satisfies Record<string, VoiceDescriptor>
 
 export type Voice = keyof typeof VOICES
@@ -30,6 +31,8 @@ export interface Turn {
   readonly id: string
   readonly voice: Voice
   readonly text: string
+  /** What the turn is about, for a voice that has something to be about. */
+  readonly about?: string
   readonly state?: TurnState
 }
 
@@ -38,22 +41,15 @@ export interface PlacedTurn {
   readonly turn: Turn
   readonly voice: VoiceDescriptor
   readonly state: TurnState
-  /** Where the caret goes: still arriving, and nothing follows it. */
-  readonly caret: boolean
 }
 
-/**
- * The turns, with what is true of each where it sits.
- *
- * Only the last turn carries the caret.
- */
+/** The turns, with what is true of each where it sits. */
 export const placeTurns = (turns: readonly Turn[]): readonly PlacedTurn[] =>
-  turns.map((turn, index) => {
+  turns.map((turn) => {
     const state = turn.state ?? 'settled'
     return {
       turn,
       voice: VOICES[turn.voice],
       state,
-      caret: state === 'arriving' && index === turns.length - 1,
     }
   })

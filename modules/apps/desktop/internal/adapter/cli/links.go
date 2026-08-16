@@ -13,7 +13,7 @@ import (
 
 func linksCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
 	if len(args) != 2 {
-		return errors.New("usage: numen links <vault> <note>")
+		return errors.New("usage: numen-cli links <vault> <note>")
 	}
 	v, err := findVault(cfg, args[0])
 	if err != nil {

@@ -12,9 +12,8 @@ import (
 // Add turns a folder into a vault this installation knows about.
 //
 // Two things happen, in this order and no other: the folder is given an
-// identity that stays with it, and that identity is remembered here. The order
-// matters — a folder recorded in the registry but carrying no identity would be
-// unrecognisable the moment it moved.
+// identity that stays with it, and that identity is remembered here. A folder
+// is recognised after it moves by the identity it carries.
 type Add struct {
 	Identity port.VaultIdentity
 	Registry port.VaultRegistry

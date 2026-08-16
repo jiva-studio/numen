@@ -28,8 +28,8 @@ const props = withDefaults(
     environment?: Environment
     /**
      * Seats a gesture may produce. A sibling is another of the parent's
-     * children rather than something anyone makes directly, so it is left out
-     * — but which relationships exist is the caller's to say, not the plex's.
+     * children, so it is left out; which relationships exist is the caller's
+     * to say.
      */
     creatable?: readonly PlexRelatedSeat[]
     /** How far a gesture travels before it is a drag and not a click. */
