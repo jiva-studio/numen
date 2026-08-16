@@ -1,0 +1,58 @@
+/*
+ * Tailwind, told what the colours are.
+ *
+ * Every name a utility paints with resolves to a token from `tokens.css`, so
+ * `bg-surface` and `var(--numen-surface)` are one value. A theme is chosen by
+ * `color-scheme`, which is what `light-dark()` in the tokens reads; no utility
+ * carries a `dark:` variant, and none may.
+ */
+@import 'tailwindcss';
+@import './tokens.css';
+
+@theme inline {
+  --font-sans: var(--numen-font-sans);
+
+  --text-base: var(--numen-font-size);
+  --text-base--line-height: var(--numen-line-height);
+  --text-small: var(--numen-edge-label-size);
+  --text-small--line-height: var(--numen-line-height);
+
+  --radius-node: var(--numen-radius);
+  --radius-panel: var(--numen-radius-panel);
+  --radius-bubble: var(--numen-radius-bubble);
+  --radius-field: var(--numen-radius-field);
+  --radius-pill: var(--numen-radius-pill);
+
+  --color-surface: var(--numen-surface);
+  --color-raised: var(--numen-node-bg);
+  --color-ink: var(--numen-node-fg);
+  --color-hushed: var(--numen-edge-label);
+  --color-rule: var(--numen-node-border);
+  --color-ring: var(--numen-ring);
+  --color-alarm: var(--numen-alarm);
+
+  --color-panel: var(--numen-panel-bg);
+  --color-panel-rule: var(--numen-panel-border);
+
+  --color-field: var(--numen-field-bg);
+  --color-field-rule: var(--numen-field-border);
+
+  --color-bubble: var(--numen-bubble-bg);
+  --color-bubble-ink: var(--numen-bubble-fg);
+  --color-answer-ink: var(--numen-answer-fg);
+
+  --color-accent: var(--numen-focus-bg);
+  --color-accent-ink: var(--numen-focus-fg);
+
+  --spacing-panel: var(--numen-panel-padding);
+  --spacing-gap: var(--numen-panel-gap);
+  --spacing-field: var(--numen-field-padding);
+  --spacing-action: var(--numen-action-size);
+  --spacing-turn: var(--numen-turn-gap);
+  --spacing-inset: var(--numen-inset);
+
+  --blur-panel: var(--numen-panel-blur);
+  --shadow-panel: var(--numen-panel-shadow);
+
+  --ease-numen: var(--numen-easing);
+}
