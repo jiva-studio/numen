@@ -10,17 +10,12 @@ export interface Environment {
   readonly now: () => number
   readonly schedule: (run: (now: number) => void) => number
   readonly cancel: (handle: number) => void
-  readonly reducedMotion: () => boolean
 }
 
 export const browserEnvironment: Environment = {
   now: () => performance.now(),
   schedule: (run) => requestAnimationFrame(run),
   cancel: (handle) => cancelAnimationFrame(handle),
-  reducedMotion: () =>
-    typeof window !== 'undefined' &&
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches,
 }
 
 export interface PlexTransition {
@@ -57,7 +52,7 @@ export function usePlexTransition(
 
     const from = frame.value
     const ms = duration()
-    if (ms <= 0 || environment.reducedMotion()) {
+    if (ms <= 0) {
       frame.value = to
       return
     }

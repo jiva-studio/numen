@@ -6,6 +6,8 @@ body,
   margin: 0;
 }
 
-#storybook-root {
+/* On the page itself, so it covers the canvas whatever layout a story asks
+   for. */
+html {
   background: var(--numen-surface);
 }

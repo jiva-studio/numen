@@ -163,10 +163,10 @@ Three levels, in descending order of how much they are worth.
 
 1. **The core, as plain functions.** No DOM. This is where the assertions that
    matter live, because this is where the decisions are.
-2. **The behaviour, with `@vue/test-utils` in jsdom.** What is emitted, what is
-   reachable by keyboard, what a screen reader is told. **The negatives belong
-   here** — what the component does *not* emit, what is *not* focusable — because
-   those are what fail silently and look right in every screenshot.
+2. **The behaviour, with `@vue/test-utils` in jsdom.** What is emitted, and what
+   is drawn from the props it was handed. **The negatives belong here** — what
+   the component does *not* emit, what is *not* drawn — because those are what
+   fail silently and look right in every screenshot.
 3. **The stories, run as tests.** Each story is rendered in a browser, so a
    story that stops rendering is a failing test rather than a surprise, and the
    fixture is written once instead of twice.
@@ -175,10 +175,6 @@ Three levels, in descending order of how much they are worth.
 be able to fail.** Break the rule, watch the test fail, put it back. It matters
 more here than in the core, because "the nodes were arranged" and "the component
 rendered" pass under almost any implementation — including a wrong one.
-
-Accessibility is part of the contract, not a later pass: reachable by keyboard,
-named for a screen reader, honouring `prefers-reduced-motion`. It is asserted at
-level 2 and therefore cannot quietly rot.
 
 ### What is deliberately not decided
 
