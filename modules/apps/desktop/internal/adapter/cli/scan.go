@@ -14,7 +14,7 @@ import (
 
 func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
 	if len(args) != 1 {
-		return errors.New("usage: numen scan <vault>")
+		return errors.New("usage: numen-cli scan <vault>")
 	}
 	v, err := findVault(cfg, args[0])
 	if err != nil {
@@ -62,7 +62,7 @@ func findVault(cfg container.Config, nameOrPath string) (domain.Vault, error) {
 	}
 	v, err := usecase.Find{Registry: registry}.Execute(nameOrPath)
 	if err != nil {
-		return domain.Vault{}, fmt.Errorf("%w — add it with: numen vault add %s", err, nameOrPath)
+		return domain.Vault{}, fmt.Errorf("%w — add it with: numen-cli vault add %s", err, nameOrPath)
 	}
 	return v, nil
 }

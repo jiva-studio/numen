@@ -104,6 +104,27 @@ the directory entry, before anything is opened — so that half is the cost of
 looking at a whole vault at all. It is what the watcher removes between scans
 rather than what a faster walk would.
 
+## Looking a vault over
+
+`BenchmarkRun` in `internal/core/lint`, on a vault where every name answers for
+many notes and every link is written by one — the worst case the ambiguity check
+has, because every link in it is a candidate.
+
+| | Measured |
+| --- | --- |
+| Every check that runs unasked, 1 000 notes | 2.1 ms |
+| Every check that runs unasked, 10 000 notes | 23 ms |
+| Dangling links alone, 10 000 notes | 53 ms |
+
+Two of the checks read rows a scan already stored. The other two work the whole
+vault out when they are asked, which is why they are not stored: what they
+answer stops being true when a note somewhere else moves.
+
+The number to watch is the second one, because it is the one that grows with the
+vault rather than with the number of duplicate names. A real vault has few
+shared names, so its ambiguity check does almost nothing; this one is what the
+shape costs when the answer is "all of them".
+
 ## What does not work
 
 Measured, on ten thousand notes written in groups of five hundred.

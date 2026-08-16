@@ -37,6 +37,7 @@ Read these first; everything else is derived from them.
 - [ADR-0021 — The index measures itself after a scan](0021-the-index-measures-itself.md)
 - [ADR-0022 — Notes are indexed in groups](0022-notes-are-indexed-in-groups.md)
 - [ADR-0023 — The vault is watched](0023-the-vault-is-watched.md)
+- [ADR-0027 — The application writes to the vault](0027-the-application-writes-to-the-vault.md)
 
 ## The note file
 
@@ -47,6 +48,10 @@ Read these first; everything else is derived from them.
 
 - [ADR-0020 — How an interface component is built](0020-how-an-interface-component-is-built.md)
 - [ADR-0025 — A client talks to the core through a schema](0025-a-client-talks-to-the-core-through-a-schema.md)
+
+## Agents
+
+- [ADR-0026 — An agent reaches the vault through tools](0026-an-agent-reaches-the-vault-through-tools.md)
 
 ## Links and addressing
 

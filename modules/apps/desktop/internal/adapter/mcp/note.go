@@ -1,0 +1,398 @@
+package mcp
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io/fs"
+	pathpkg "path"
+	"strconv"
+	"strings"
+
+	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/markdown"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
+)
+
+// How much one call may ask for. A tool with no ceiling is a way to put a whole
+// vault in a context window by accident, and a limit that truncates in silence
+// reads as "that is all there is" — so going over is refused and says so.
+const (
+	maxRefs    = 50
+	maxBodies  = 10
+	maxMatches = 100
+)
+
+// maxBytes is the largest note this surface will carry, either way.
+//
+// A note is prose somebody wrote, and a megabyte of it is a quarter of a
+// million words. Something larger is a pasted export or a mistake, and reading
+// it would put the whole of it in a context window and a copy of it in memory
+// several times over. The size is checked before the file is opened rather than
+// after, which is the difference between refusing and running out of memory.
+const maxBytes = 1 << 20
+
+// Note is a note as every tool reports it: the address it is asked for by, what
+// it is called, and the identifier if it carries one.
+type Note struct {
+	Path  string `json:"path" jsonschema:"the note's path relative to the vault folder"`
+	Title string `json:"title" jsonschema:"what the note is called"`
+	ID    string `json:"id,omitempty" jsonschema:"the note's stable identifier, absent for a note written outside the application"`
+}
+
+func noteOf(ref domain.NoteRef) Note {
+	return Note{Path: ref.Path, Title: ref.Title, ID: ref.ID}
+}
+
+func addNoteTools(server *sdk.Server, core Core) {
+	sdk.AddTool(server, &sdk.Tool{
+		Name: "note_search",
+		Description: "Search the vault by content and title. Returns matching notes, " +
+			"nearest first. Use this before assuming a note does or does not exist.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
+		Query string `json:"query" jsonschema:"words to look for"`
+		Limit int    `json:"limit,omitempty" jsonschema:"how many notes to return, 20 by default"`
+	}) (*sdk.CallToolResult, struct {
+		Matches []Note `json:"matches"`
+	}, error) {
+		type out = struct {
+			Matches []Note `json:"matches"`
+		}
+		limit := in.Limit
+		if limit <= 0 {
+			limit = 20
+		}
+		if limit > maxMatches {
+			return nil, out{}, fmt.Errorf("ask for at most %d notes at a time", maxMatches)
+		}
+		search := core.Search
+		search.Limit = limit
+		found, err := search.Execute(ctx, core.Vault, in.Query)
+		if err != nil {
+			return nil, out{}, err
+		}
+		matches := make([]Note, 0, len(found))
+		for _, m := range found {
+			matches = append(matches, Note{Path: m.Path, Title: m.Title})
+		}
+		return nil, out{Matches: matches}, nil
+	})
+
+	sdk.AddTool(server, &sdk.Tool{
+		Name: "note_get",
+		Description: "Look up notes by path, without their contents. Paths that name " +
+			"nothing come back under `missing` rather than as an error: a note may have " +
+			"been removed since you last saw it.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
+		Paths []string `json:"paths" jsonschema:"the paths to look up"`
+	}) (*sdk.CallToolResult, struct {
+		Notes   []Note   `json:"notes"`
+		Missing []string `json:"missing,omitempty"`
+	}, error) {
+		type out = struct {
+			Notes   []Note   `json:"notes"`
+			Missing []string `json:"missing,omitempty"`
+		}
+		if len(in.Paths) > maxRefs {
+			return nil, out{}, fmt.Errorf("ask about at most %d notes at a time", maxRefs)
+		}
+		found, err := core.Notes.Notes(ctx, core.Vault.ID, in.Paths)
+		if err != nil {
+			return nil, out{}, err
+		}
+		res := out{Notes: make([]Note, 0, len(found))}
+		for _, path := range in.Paths {
+			if ref, ok := found[path]; ok {
+				res.Notes = append(res.Notes, noteOf(ref))
+				continue
+			}
+			res.Missing = append(res.Missing, path)
+		}
+		return nil, res, nil
+	})
+
+	sdk.AddTool(server, &sdk.Tool{
+		Name: "note_read",
+		Description: "Read the prose of notes — the text below the frontmatter, which " +
+			"is exactly what `note_write` takes back. What a note is joined to is not " +
+			"in here; `link_list` answers that. The fingerprint that comes back is " +
+			"what `note_write` wants: hand it back and the write is refused if the " +
+			"person changed the note in the meantime.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
+		Paths []string `json:"paths" jsonschema:"the paths to read"`
+	}) (*sdk.CallToolResult, struct {
+		Notes   []Contents `json:"notes"`
+		Missing []string   `json:"missing,omitempty"`
+	}, error) {
+		type out = struct {
+			Notes   []Contents `json:"notes"`
+			Missing []string   `json:"missing,omitempty"`
+		}
+		if len(in.Paths) > maxBodies {
+			return nil, out{}, fmt.Errorf("read at most %d notes at a time", maxBodies)
+		}
+		reader, err := core.Readers.Open(core.Vault)
+		if err != nil {
+			return nil, out{}, err
+		}
+		res := out{Notes: make([]Contents, 0, len(in.Paths))}
+		for _, path := range in.Paths {
+			if before, err := reader.Stat(ctx, path); err == nil && before.Size > maxBytes {
+				return nil, out{}, fmt.Errorf(
+					"%s is %d bytes, larger than the %d this reads; open the file instead",
+					path, before.Size, maxBytes)
+			}
+			raw, err := reader.Read(ctx, path)
+			if errors.Is(err, fs.ErrNotExist) {
+				res.Missing = append(res.Missing, path)
+				continue
+			}
+			if err != nil {
+				return nil, out{}, fmt.Errorf("read %s: %w", path, err)
+			}
+			// Asked after the read, so the fingerprint describes the bytes just
+			// handed over. Asked before, a note changed in between would go out
+			// under a fingerprint that lets it be written over.
+			ref, err := reader.Stat(ctx, path)
+			if errors.Is(err, fs.ErrNotExist) {
+				res.Missing = append(res.Missing, path)
+				continue
+			}
+			if err != nil {
+				return nil, out{}, err
+			}
+			doc, err := markdown.Open(raw)
+			if err != nil {
+				return nil, out{}, fmt.Errorf("read %s: %w", path, err)
+			}
+			res.Notes = append(res.Notes, Contents{
+				Path:        path,
+				Body:        doc.Body(),
+				Fingerprint: fingerprintOf(ref),
+			})
+		}
+		return nil, res, nil
+	})
+
+	sdk.AddTool(server, &sdk.Tool{
+		Name: "note_neighbourhood",
+		Description: "One note and everything joined to it — its parents, children, " +
+			"siblings and jumps. This is the picture the person is looking at.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
+		Path string `json:"path" jsonschema:"the note to look out from"`
+	}) (*sdk.CallToolResult, struct {
+		Focus   Note     `json:"focus"`
+		Related []Seated `json:"related"`
+	}, error) {
+		type out = struct {
+			Focus   Note     `json:"focus"`
+			Related []Seated `json:"related"`
+		}
+		found, err := core.Neighbourhood.Execute(ctx, core.Vault, in.Path)
+		if err != nil {
+			return nil, out{}, err
+		}
+		res := out{Focus: noteOf(found.Focus)}
+		for _, related := range found.Related {
+			res.Related = append(res.Related, Seated{
+				Note:    noteOf(related.NoteRef),
+				Seat:    string(related.Seat),
+				Label:   related.Label,
+				Through: related.Through,
+			})
+		}
+		return nil, res, nil
+	})
+
+	sdk.AddTool(server, &sdk.Tool{
+		Name: "note_create",
+		Description: "Make a note. The file is named after the title, so choose a title " +
+			"that reads as a name. If other notes already answer to that name they come " +
+			"back under `shares`, and links written by the name will be ambiguous.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
+		Title  string `json:"title" jsonschema:"what the note is called"`
+		Body   string `json:"body,omitempty" jsonschema:"the markdown to start it with"`
+		Folder string `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
+	}) (*sdk.CallToolResult, note.Created, error) {
+		created, err := core.Create.Execute(ctx, core.Vault, note.NewNote{
+			Title: in.Title, Body: in.Body, Folder: in.Folder,
+		})
+		return nil, created, err
+	})
+
+	sdk.AddTool(server, &sdk.Tool{
+		Name: "note_write",
+		Description: "Replace the prose of a note. The frontmatter is left alone — use " +
+			"the link tools to change what a note is joined to. Pass the fingerprint from " +
+			"`note_read` so a write cannot land on top of an edit you did not see.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
+		Path        string `json:"path" jsonschema:"the note to write"`
+		Body        string `json:"body" jsonschema:"the markdown to put in it"`
+		Fingerprint string `json:"fingerprint,omitempty" jsonschema:"what note_read said the note was, to refuse a write over somebody else's edit"`
+	}) (*sdk.CallToolResult, struct {
+		Path string `json:"path"`
+	}, error) {
+		type out = struct {
+			Path string `json:"path"`
+		}
+		if len(in.Body) > maxBytes {
+			return nil, out{}, fmt.Errorf("a body of %d bytes is larger than the %d this writes",
+				len(in.Body), maxBytes)
+		}
+		ref, err := parseFingerprint(in.Fingerprint)
+		if err != nil {
+			return nil, out{}, err
+		}
+		if err := core.Write.Execute(ctx, core.Vault, in.Path, in.Body, ref); err != nil {
+			return nil, out{}, err
+		}
+		return nil, out{Path: in.Path}, nil
+	})
+
+	sdk.AddTool(server, &sdk.Tool{
+		Name: "note_rename",
+		Description: "Give a note a different name. The file is renamed with it. Links " +
+			"written by the old name are repaired only where they stopped resolving; " +
+			"anything that now means a different note comes back under `retargeted`.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
+		Path  string `json:"path" jsonschema:"the note to rename"`
+		Title string `json:"title" jsonschema:"what it is called from now on"`
+	}) (*sdk.CallToolResult, note.Moved, error) {
+		name, _ := domain.Filename(in.Title)
+		if name == "" {
+			return nil, note.Moved{}, errors.New("a note needs a title that can be a filename")
+		}
+		to := pathpkg.Join(pathpkg.Dir(in.Path), name+pathpkg.Ext(in.Path))
+		moved, err := core.Move.Execute(ctx, core.Vault, in.Path, to)
+		return nil, moved, err
+	})
+
+	sdk.AddTool(server, &sdk.Tool{
+		Name: "note_move",
+		Description: "File notes under a different folder, keeping their names. Folders " +
+			"are for how the files are arranged on disk and change nothing about the " +
+			"graph. Links written by name follow the note.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
+		Paths  []string `json:"paths" jsonschema:"the notes to move"`
+		Folder string   `json:"folder" jsonschema:"where they go, relative to the vault folder; empty is the root"`
+	}) (*sdk.CallToolResult, struct {
+		Moved []MoveOutcome `json:"moved"`
+	}, error) {
+		type out = struct {
+			Moved []MoveOutcome `json:"moved"`
+		}
+		if len(in.Paths) > maxRefs {
+			return nil, out{}, fmt.Errorf("move at most %d notes at a time", maxRefs)
+		}
+		// The filesystem offers no transaction over many files: the twenty-ninth
+		// rename can fail on its own. So what happened to each is reported, and
+		// the call does not present itself as all-or-nothing — a partial failure
+		// that looked total would have somebody undoing work that succeeded.
+		res := out{Moved: make([]MoveOutcome, 0, len(in.Paths))}
+		for _, path := range in.Paths {
+			moved, err := core.Move.Execute(ctx, core.Vault, path, note.Into(in.Folder, path))
+			outcome := MoveOutcome{Moved: moved}
+			if err != nil {
+				outcome.Moved = note.Moved{From: path}
+				outcome.Refused = err.Error()
+			}
+			res.Moved = append(res.Moved, outcome)
+		}
+		return nil, res, nil
+	})
+
+	sdk.AddTool(server, &sdk.Tool{
+		Name: "note_remove",
+		Description: "Take notes out of the vault. They go to the vault's trash folder " +
+			"and can be put back. Links that pointed at them are left as they are and " +
+			"come back under `dangling`: a link is not wrong because its note is gone.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
+		Paths   []string `json:"paths" jsonschema:"the notes to remove"`
+		Destroy bool     `json:"destroy,omitempty" jsonschema:"delete outright instead of moving to the trash; nothing brings these back"`
+	}) (*sdk.CallToolResult, struct {
+		Removed []RemoveOutcome `json:"removed"`
+	}, error) {
+		type out = struct {
+			Removed []RemoveOutcome `json:"removed"`
+		}
+		if len(in.Paths) > maxRefs {
+			return nil, out{}, fmt.Errorf("remove at most %d notes at a time", maxRefs)
+		}
+		res := out{Removed: make([]RemoveOutcome, 0, len(in.Paths))}
+		for _, path := range in.Paths {
+			var removed note.Removed
+			var err error
+			if in.Destroy {
+				removed, err = core.Remove.Destroy(ctx, core.Vault, path)
+			} else {
+				removed, err = core.Remove.Execute(ctx, core.Vault, path)
+			}
+			outcome := RemoveOutcome{Removed: removed}
+			if err != nil {
+				outcome.Removed = note.Removed{Path: path}
+				outcome.Refused = err.Error()
+			}
+			res.Removed = append(res.Removed, outcome)
+		}
+		return nil, res, nil
+	})
+}
+
+// Contents is a note as note_write takes it back: the prose, without the
+// frontmatter. Handing back the whole file would invite an agent to edit what
+// it was given and write that in, putting a second frontmatter block inside the
+// body.
+type Contents struct {
+	Path        string `json:"path"`
+	Body        string `json:"body" jsonschema:"the prose below the frontmatter, which is what note_write takes"`
+	Fingerprint string `json:"fingerprint" jsonschema:"hand this to note_write to refuse a write over an edit you did not see"`
+}
+
+// Seated is a note in the picture around another one.
+type Seated struct {
+	Note    Note   `json:"note"`
+	Seat    string `json:"seat" jsonschema:"parent, child, sibling or jump"`
+	Label   string `json:"label,omitempty" jsonschema:"what the person calls this relationship"`
+	Through string `json:"through,omitempty" jsonschema:"the note they share, when they are siblings"`
+}
+
+// fingerprintOf is what a note was when it was read, in a form an agent hands
+// back without having to understand it.
+func fingerprintOf(ref domain.FileRef) string {
+	return strconv.FormatInt(ref.Size, 10) + "-" + strconv.FormatInt(ref.MTime, 10)
+}
+
+func parseFingerprint(s string) (domain.FileRef, error) {
+	if s == "" {
+		return domain.FileRef{}, nil
+	}
+	size, mtime, found := strings.Cut(s, "-")
+	if !found {
+		return domain.FileRef{}, fmt.Errorf("%q is not a fingerprint note_read gave out", s)
+	}
+	ref := domain.FileRef{}
+	var err error
+	if ref.Size, err = strconv.ParseInt(size, 10, 64); err != nil {
+		return domain.FileRef{}, fmt.Errorf("%q is not a fingerprint note_read gave out", s)
+	}
+	if ref.MTime, err = strconv.ParseInt(mtime, 10, 64); err != nil {
+		return domain.FileRef{}, fmt.Errorf("%q is not a fingerprint note_read gave out", s)
+	}
+	return ref, nil
+}
+
+// MoveOutcome is what happened to one note in a batch. Refused is empty when it
+// moved: many files are many operations, and a caller has to be able to tell
+// which of them landed.
+type MoveOutcome struct {
+	note.Moved
+	Refused string `json:"refused,omitempty" jsonschema:"why this one did not move, empty when it did"`
+}
+
+// RemoveOutcome is the same for removing.
+type RemoveOutcome struct {
+	note.Removed
+	Refused string `json:"refused,omitempty" jsonschema:"why this one was not removed, empty when it was"`
+}

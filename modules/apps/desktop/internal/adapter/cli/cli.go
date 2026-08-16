@@ -15,15 +15,15 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 )
 
-const usage = `numen — notes with typed links and spaced repetition
+const usage = `numen-cli — notes with typed links and spaced repetition
 
 usage:
-  numen vault add <path> [--name <name>]   give a folder an identity and remember it
-  numen vault list                         show the vaults this installation knows
-  numen scan <vault>                       bring the index up to date with a vault
-  numen search <vault> <query>             full-text search within one vault
-  numen links <vault> <note>               what a note points at, and what points at it
-  numen problems <vault>                   what a scan could not act on
+  numen-cli vault add <path> [--name <name>]   give a folder an identity and remember it
+  numen-cli vault list                         show the vaults this installation knows
+  numen-cli scan <vault>                       bring the index up to date with a vault
+  numen-cli search <vault> <query>             full-text search within one vault
+  numen-cli links <vault> <note>               what a note points at, and what points at it
+  numen-cli problems <vault> [<check>...]      what the vault holds that was not guessed at
 
 A vault is named by its name, its path, or its identity.
 
@@ -37,7 +37,7 @@ options:
 // Main runs the command line and returns a process exit code.
 func Main(ctx context.Context, out, errOut io.Writer, args []string) int {
 	if err := Run(ctx, out, args); err != nil {
-		fmt.Fprintln(errOut, "numen:", err)
+		fmt.Fprintln(errOut, "numen-cli:", err)
 		return 1
 	}
 	return 0
@@ -47,7 +47,7 @@ func Main(ctx context.Context, out, errOut io.Writer, args []string) int {
 // user sees is testable rather than only observable by hand.
 func Run(ctx context.Context, out io.Writer, args []string) error {
 	var cfg container.Config
-	fs := flag.NewFlagSet("numen", flag.ContinueOnError)
+	fs := flag.NewFlagSet("numen-cli", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	fs.StringVar(&cfg.IndexPath, "index", "", "path to the index database")
 	fs.StringVar(&cfg.RegistryPath, "registry", "", "path to the vault list")

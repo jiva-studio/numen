@@ -95,3 +95,32 @@ func (q *Queries) Summary(ctx context.Context, vaultID string) (domain.VaultSumm
 // can check about itself: it needs a migrated database, and that lives one level
 // up.
 func Statements() map[string]string { return stmt }
+
+// Named is every note filed under one name. A name that answers for more than
+// one note is what makes a link written by that name ambiguous, and
+// is worth saying out loud before it surprises anyone.
+func (q *Queries) Named(ctx context.Context, vaultID, name string) ([]string, error) {
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.db.QueryContext(ctx, stmt.Get("named"), vault, name)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []string
+	for rows.Next() {
+		var path string
+		if err := rows.Scan(&path); err != nil {
+			return nil, err
+		}
+		out = append(out, path)
+	}
+	return out, rows.Err()
+}
