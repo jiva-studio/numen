@@ -1,8 +1,9 @@
 /**
  * The handle a gesture leaves from, on its own and blown up.
  *
- * Inside a plex it is nine pixels across and only there while a hand is over
- * the node, which is no way to judge a disc, a cross and a focus ring.
+ * Inside a plex it is a disc of nine pixels' radius, and only there while a
+ * hand is over the node, which is no way to judge a disc, a cross and a focus
+ * ring.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent } from 'storybook/test'

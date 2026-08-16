@@ -101,8 +101,9 @@ describe('the two sides are read as a pair', () => {
 
 describe('the row is measured against the window either way', () => {
   it('wraps a wide row even when nothing sits beside it', () => {
-    // The row used to be checked only against the room a column needed, so a
-    // plex with no jumps or siblings was never checked against the window.
+    // A row is measured against the window whether or not anything sits beside
+    // it: with no jumps and no siblings there is no column to make room for,
+    // and the row still has to fit.
     const viewport = { width: 700, height: 900 }
     const onlyChildren = build('A thought', { child: 12 })
     const frame = arrangePlex(onlyChildren, {

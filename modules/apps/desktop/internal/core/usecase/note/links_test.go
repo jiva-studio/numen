@@ -291,8 +291,9 @@ func TestALinkThatResolvesElsewhereIsNotABacklink(t *testing.T) {
 }
 
 func TestBacklinksNeverCrossVaults(t *testing.T) {
-	// The bug class ADR-0002 calls invisible by construction, asked of the
-	// direction that has to look at every link in the vault.
+	// One database for every vault makes a query that forgets its vault
+	// invisible by construction. Asked here of the direction that has to look
+	// at every link in the vault.
 	db, first := indexed(t, map[string]string{
 		"target.md": "# Target\n",
 		"source.md": "Points at [[target]].\n",

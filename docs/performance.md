@@ -76,10 +76,11 @@ twenty-word vocabulary, so a two-term query matches nearly every note and the
 ranking has to order all of them. A real vault has a long tail of terms and a
 query that matches a handful of notes.
 
-**The incremental figure is a full walk**, because that is all there is today:
-one edited note still costs a `stat` of every file in the vault. A file watcher
-would reindex the one path it was told about, and the 100 ms budget in ADR-0002
-is written for that path rather than this one.
+**The incremental figure is a full walk**: one edited note, found by asking
+every file in the vault what it looks like. That is what a scan at startup pays,
+and it is not what an edit costs while the application is running — the watcher
+names the path and only that path is read. The 100 ms budget is written for the
+watcher's path, which nothing here measures yet.
 
 **The cold scan reads notes this same process wrote seconds earlier**, so the
 read side is measured against a warm page cache. On a real vault that has been
@@ -100,8 +101,8 @@ A warm scan of ten thousand notes is 50 ms: 13 ms asking the index what it knows
 about every file, and 34 ms walking the vault and asking the file system. The
 walk stats one file per note and nothing else — the extension is checked from
 the directory entry, before anything is opened — so that half is the cost of
-looking at a whole vault at all, and is what a file watcher removes rather than
-what a faster walk would.
+looking at a whole vault at all. It is what the watcher removes between scans
+rather than what a faster walk would.
 
 ## What does not work
 

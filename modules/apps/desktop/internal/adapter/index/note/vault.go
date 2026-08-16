@@ -11,8 +11,8 @@ import (
 // answer — nothing — so callers turn this into an empty result.
 var errNoVault = errors.New("vault not in the index")
 
-// row is the anything that can answer a single-row query, so that this works
-// inside a transaction as well as outside one.
+// row is anything that can answer a single-row query, so that this works inside
+// a transaction as well as outside one.
 type row interface {
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }

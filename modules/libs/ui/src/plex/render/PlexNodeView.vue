@@ -39,7 +39,7 @@ const attended = ref(false)
 /** Not a node yet, so nothing may be done to it and nothing is told about it. */
 const ghost = computed(() => props.standing === 'ghost')
 
-/** One predicate, because the rule decides the click and the tab stop both. */
+/** One predicate: the same rule decides the click, the tab stop and the name. */
 const reachable = computed(() => !ghost.value && isReachable(props.node))
 
 /** The focus is announced although it cannot be chosen: it is where you are. */
@@ -148,7 +148,8 @@ const hue = computed(() => ({
 
 <style scoped>
 /* No transition on the position — it comes from the frame, and a CSS one here
-   would race it. Hover is a filter because fill is spoken for by the role. */
+   would race it. Hover is a filter so that it leaves the box's own colours
+   alone: the fill is a token and the outline carries the role's hue. */
 .plex__node {
   cursor: pointer;
   transition: filter var(--numen-motion-hover) var(--numen-easing);

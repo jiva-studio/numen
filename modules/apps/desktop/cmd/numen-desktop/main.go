@@ -1,7 +1,7 @@
 // numen-desktop is the window: one vault, one note, and the plex around it.
 //
 // It is a separate binary from the command line one because a webview links
-// against the system's own browser, and a binary carrying one can no longer be
+// against the system's own browser, and a binary that carries one cannot be
 // built for another machine from this one. Both are entry points onto the same
 // core.
 package main

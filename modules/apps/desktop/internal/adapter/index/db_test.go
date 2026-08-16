@@ -68,8 +68,9 @@ func TestEveryConnectionGetsThePragmas(t *testing.T) {
 		if busyTimeout[i] != 5000 {
 			t.Errorf("connection %d has busy_timeout = %d, want 5000", i, busyTimeout[i])
 		}
-		// NORMAL is 1. Losing it costs eight times the rebuild, measured, and
-		// nothing else in the suite notices.
+		// NORMAL is 1. FULL asks the disk to settle at every commit, which a
+		// rebuild does thousands of times, and nothing else in the suite
+		// notices which one is set.
 		if synchronous[i] != 1 {
 			t.Errorf("connection %d has synchronous = %d, want 1 (NORMAL)", i, synchronous[i])
 		}

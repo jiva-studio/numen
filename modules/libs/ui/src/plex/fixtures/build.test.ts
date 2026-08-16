@@ -20,8 +20,8 @@ describe('walking', () => {
   it('never seats the same node twice, however far it goes', () => {
     let here = build('A thought', COUNTS)
 
-    // Down, then back up, then down again — the path that used to invent the
-    // node you came from a second time.
+    // Down, then back up, then down again: the node you came from is already
+    // seated when you arrive back at it, and must not be seated a second time.
     for (let i = 0; i < 8; i++) {
       const child = here.nodes.find((node) => node.role === 'child')!
       here = step(here, child.id)

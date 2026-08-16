@@ -27,9 +27,11 @@ CREATE TABLE links (
 CREATE INDEX links_by_target ON links (scheme, value);
 CREATE INDEX links_by_name ON links (value_base);
 
--- What could not be repaired and is worth showing: a link with no role, an
--- unreadable frontmatter block. Kept beside the note so that a "vault problems"
--- view is a query rather than a rescan.
+-- What could not be acted on and is worth showing: a link with no role, a
+-- target nothing understands. A frontmatter block that could not be read is not
+-- here — it belongs to the note it broke, and is kept on the note itself. Both
+-- are read together, so a "vault problems" view is a query rather than a
+-- rescan.
 CREATE TABLE problems (
     note_id INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
     detail  TEXT NOT NULL

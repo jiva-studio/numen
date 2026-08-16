@@ -90,7 +90,7 @@ export const leaf: PlexNeighbourhood = neighbourhood('A passing thought', [
   { id: 'parent-0', label: 'Inbox', role: 'parent' },
 ])
 
-/** Right at the line-wrap threshold, where an off-by-one shows up. */
+/** One past what a side can hold, where an off-by-one in the overflow shows. */
 export const crowded: PlexNeighbourhood = neighbourhood('Verbs', [
   ...run('child', 21, (i) => `Child ${i + 1}`),
 ])

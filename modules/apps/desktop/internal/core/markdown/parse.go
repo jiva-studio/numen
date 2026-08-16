@@ -2,8 +2,9 @@
 // It is pure: no filesystem, no clock, no database.
 //
 // The permitted additions to markdown are frontmatter, wikilinks and line
-// anchors. Only frontmatter is read here — links and anchors have no decided
-// semantics yet, and anything written for them now would be rewritten.
+// anchors. Frontmatter and links are read: what a link is has been decided, so
+// both the annotated records and the mentions in prose are parsed. Anchors are
+// not, because what an anchor addresses has not.
 package markdown
 
 import (

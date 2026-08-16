@@ -74,8 +74,9 @@ func note(r *rand.Rand, i, total int) string {
 		b.WriteString(RareTerm + "\n\n")
 	}
 
-	// Between roughly 40 and 400 words, in a few sections: real vaults are not
-	// made of one note repeated.
+	// Between ten and four hundred words, in one to four sections: real vaults
+	// are not made of one note repeated, and the short ones are as real as the
+	// long ones.
 	sections := 1 + r.IntN(4)
 	for s := range sections {
 		fmt.Fprintf(&b, "## Section %d\n\n", s+1)
