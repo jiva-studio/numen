@@ -30,6 +30,18 @@ export type {
   Seating,
   Size,
 } from './plex/arrange'
+export { default as Panel } from './panel/Panel.vue'
+
+export { default as Composer } from './composer/Composer.vue'
+export { COMPOSER_STATES, composerState, keyIntent } from './composer/model'
+export type { ComposerState, KeyIntent } from './composer/model'
+
+export { default as Dots } from './dots/Dots.vue'
+
+export { default as Thread } from './thread/Thread.vue'
+export { VOICES, VOICE_NAMES, placeTurns } from './thread/model'
+export type { PlacedTurn, Turn, TurnState, Voice } from './thread/model'
+
 export type { Environment, PlexTransition } from './plex/transition'
 export type {
   Extent,
