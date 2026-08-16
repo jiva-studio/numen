@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+// What a client asks an agent, and what it hears back while the agent works.
+//
+// The window hands over a person's task and draws what arrives, a step at a
+// time. What the agent is and how it reaches the vault is the application's
+// business and is said nowhere here.
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// AgentService gives a task to the agent working this vault.
+service AgentService {
+  // Ask hands over a task and reports what the agent does, in the order it
+  // does it, until it finishes. Letting go of the stream stops the agent.
+  rpc Ask(AskRequest) returns (stream AskResponse);
+}
+
+message AskRequest {
+  // What the person wrote.
+  string asked = 1;
+  // The note in focus, for a task that says "this note". Empty when nothing
+  // is in focus.
+  string focus = 2;
+}
+
+// AskResponse is one step of the work: one thing the agent said, did, or
+// stopped for.
+message AskResponse {
+  oneof step {
+    // A piece of what the agent is saying, appended in the order it arrives.
+    string said = 1;
+    // A tool the agent is using.
+    Doing doing = 2;
+    // The agent has finished, and this is why it stopped. Empty when it
+    // stopped because it was done.
+    string stopped = 3;
+  }
+}
+
+// Doing is a tool in the agent's hands.
+message Doing {
+  // The tool, by the name it is called by whoever serves it.
+  string tool = 1;
+  // What it was called about — a note, a query — empty when the call says
+  // nothing worth showing.
+  string about = 2;
+}

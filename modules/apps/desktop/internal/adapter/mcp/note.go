@@ -29,10 +29,9 @@ const (
 // one note or a batch of them.
 //
 // A note is prose somebody wrote, and a megabyte of it is a quarter of a
-// million words. Something larger is a pasted export or a mistake, and reading
-// it would put the whole of it in a context window and a copy of it in memory
-// several times over. The size is checked before the file is opened rather than
-// after, which is the difference between refusing and running out of memory.
+// million words. Something larger is a pasted export or a mistake. The size is
+// checked before the file is opened, so a call over the bound is refused
+// without the bytes being read.
 //
 // What a link says is measured with the prose. It lands in the same file, and
 // the bound is on what a call writes.
@@ -52,7 +51,8 @@ func noteOf(ref domain.NoteRef) Note {
 
 func addNoteTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
-		Name: "note_search",
+		Name:  "note_search",
+		Title: "Search notes",
 		Description: "Search the vault by content and title. Returns matching notes, " +
 			"nearest first. Use this before assuming a note does or does not exist.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
@@ -85,7 +85,8 @@ func addNoteTools(server *sdk.Server, core Core) {
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
-		Name: "note_get",
+		Name:  "note_get",
+		Title: "Look up notes",
 		Description: "Look up notes by path, without their contents. Paths that name " +
 			"nothing come back under `missing` rather than as an error: a note may have " +
 			"been removed since you last saw it.",
@@ -118,7 +119,8 @@ func addNoteTools(server *sdk.Server, core Core) {
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
-		Name: "note_read",
+		Name:  "note_read",
+		Title: "Read notes",
 		Description: "Read the prose of notes — the text below the frontmatter, which " +
 			"is exactly what `note_write` takes back. What a note is joined to is not " +
 			"in here; `link_list` answers that. The fingerprint that comes back is " +
@@ -181,7 +183,8 @@ func addNoteTools(server *sdk.Server, core Core) {
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
-		Name: "note_neighbourhood",
+		Name:  "note_neighbourhood",
+		Title: "Show what a note is joined to",
 		Description: "One note and everything joined to it — its parents, children, " +
 			"siblings and jumps. This is the picture the person is looking at.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
@@ -211,7 +214,8 @@ func addNoteTools(server *sdk.Server, core Core) {
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
-		Name: "note_create",
+		Name:  "note_create",
+		Title: "Create a note",
 		Description: "Make notes. Each is named after its title, so choose titles that " +
 			"read as names. Give a note its `links` here rather than adding them " +
 			"afterwards: it is one write, and the person watching sees it arrive already " +
@@ -264,7 +268,8 @@ func addNoteTools(server *sdk.Server, core Core) {
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
-		Name: "note_write",
+		Name:  "note_write",
+		Title: "Write a note",
 		Description: "Replace the prose of a note. The frontmatter is left alone — use " +
 			"the link tools to change what a note is joined to. Pass the fingerprint from " +
 			"`note_read` so a write cannot land on top of an edit you did not see.",
@@ -293,7 +298,8 @@ func addNoteTools(server *sdk.Server, core Core) {
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
-		Name: "note_rename",
+		Name:  "note_rename",
+		Title: "Rename a note",
 		Description: "Give a note a different name. The file is renamed with it. Links " +
 			"written by the old name are repaired only where they stopped resolving; " +
 			"anything that now means a different note comes back under `retargeted`.",
@@ -311,7 +317,8 @@ func addNoteTools(server *sdk.Server, core Core) {
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
-		Name: "note_move",
+		Name:  "note_move",
+		Title: "Move a note",
 		Description: "File notes under a different folder, keeping their names. Folders " +
 			"are for how the files are arranged on disk and change nothing about the " +
 			"graph. Links written by name follow the note.",
@@ -344,7 +351,8 @@ func addNoteTools(server *sdk.Server, core Core) {
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
-		Name: "note_remove",
+		Name:  "note_remove",
+		Title: "Remove a note",
 		Description: "Take notes out of the vault. They go to the vault's trash folder " +
 			"and can be put back. Links that pointed at them are left as they are and " +
 			"come back under `dangling`: a link is not wrong because its note is gone.",

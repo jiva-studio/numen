@@ -28,6 +28,11 @@ service VaultService {
   // listens. It says which notes, and nothing about them: the caller knows
   // what it is showing and asks for what it needs.
   rpc Changes(ChangesRequest) returns (stream ChangesResponse);
+
+  // Focus reports the notes something else asked to be put in front of the
+  // person — an agent working the vault beside them — for as long as the
+  // caller listens. What travelling there looks like is the client's.
+  rpc Focus(FocusRequest) returns (stream FocusResponse);
 }
 
 // Note is a note as something else refers to it.
@@ -98,6 +103,13 @@ message ChangesResponse {
   // Set when the vault has to be read again rather than followed — more
   // changed at once than could be reported.
   bool reload = 2;
+}
+
+message FocusRequest {}
+
+message FocusResponse {
+  // The note to see the neighbourhood from.
+  string path = 1;
 }
 
 message NeighbourhoodRequest {

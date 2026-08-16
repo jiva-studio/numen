@@ -8,6 +8,7 @@ import (
 	"io"
 	"path/filepath"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/agent/claudecode"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/webui"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
@@ -36,7 +37,8 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 	if err != nil {
 		return nil, err
 	}
-	endpoint, err := mcp.ServeHTTP(ctx, opts.addr, secret, agentCore(cfg, opened, root),
+	core := agentCore(cfg, opened, root)
+	endpoint, err := mcp.ServeHTTP(ctx, opts.addr, secret, core,
 		func(err error) { fmt.Fprintln(out, "agents:", err) })
 	if err != nil {
 		return nil, err
@@ -51,10 +53,38 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 	if !mcp.Local(opts.addr) {
 		fmt.Fprintf(out, "agents: %s is reachable from the network, not only from this machine\n", opts.addr)
 	}
+
+	// What the window says about a call is what the tool declared about
+	// itself, asked for over the protocol an agent is answered by.
+	words, err := mcp.Vocabulary(ctx, core)
+	if err != nil {
+		fmt.Fprintln(out, "agents:", err)
+	}
+	opened.API.Agent = agent(root, endpoint.URL, secret, words, out)
+
 	return func() error {
 		forget()
 		return endpoint.Close()
 	}, nil
+}
+
+// agent is what the window asks on the person's behalf.
+//
+// It reaches the same tools over the same port as an agent somebody configured
+// themselves, and is given all of them: what it changes appears in the window
+// as it happens.
+func agent(root, url, secret string, served map[string]mcp.Words, out io.Writer) *claudecode.Agent {
+	words := make(map[string]claudecode.Words, len(served))
+	for name, said := range served {
+		words[claudecode.Tool(name)] = claudecode.Words{Title: said.Title, About: said.About}
+	}
+	return &claudecode.Agent{
+		Root:    root,
+		Tools:   claudecode.Endpoint{URL: url, Token: secret},
+		Allowed: []string{claudecode.Tool("*")},
+		Words:   words,
+		Trouble: func(err error) { fmt.Fprintln(out, "agent:", err) },
+	}
 }
 
 // agentCore wires the tools to the same use cases everything else uses. The
@@ -73,6 +103,7 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string) mcp.Core
 		Vault:   opened.Vault,
 		Root:    root,
 		Readers: readers,
+		View:    opened.API.Viewing(),
 		Notes:   queries,
 
 		Search:        note.Search{Notes: queries},

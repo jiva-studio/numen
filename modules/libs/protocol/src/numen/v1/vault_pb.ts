@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/vault.proto.
  */
 export const file_numen_v1_vault: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiNwoETm90ZRIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJEhIKCmlkZW50aWZpZXIYAyABKAkiZAoGU2VhdGVkEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEhwKBHNlYXQYAiABKA4yDi5udW1lbi52MS5TZWF0Eg0KBWxhYmVsGAMgASgJEg8KB3Rocm91Z2gYBCABKAkiDgoMU3RhdGVSZXF1ZXN0Im4KDVN0YXRlUmVzcG9uc2USDAoEbmFtZRgBIAEoCRIMCgRwYXRoGAIgASgJEg8KB2luZGV4ZWQYAyABKAMSDQoFcmVhZHkYBCABKAgSDgoGZmFpbGVkGAUgASgJEhEKCXVud2F0Y2hlZBgGIAEoCSIQCg5PcGVuaW5nUmVxdWVzdCI9Cg9PcGVuaW5nUmVzcG9uc2USIQoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGVIAIgBAUIHCgVfbm90ZSIQCg5DaGFuZ2VzUmVxdWVzdCIwCg9DaGFuZ2VzUmVzcG9uc2USDQoFcGF0aHMYASADKAkSDgoGcmVsb2FkGAIgASgIIiQKFE5laWdoYm91cmhvb2RSZXF1ZXN0EgwKBHBhdGgYASABKAkiWQoVTmVpZ2hib3VyaG9vZFJlc3BvbnNlEh0KBWZvY3VzGAEgASgLMg4ubnVtZW4udjEuTm90ZRIhCgdyZWxhdGVkGAIgAygLMhAubnVtZW4udjEuU2VhdGVkKl4KBFNlYXQSFAoQU0VBVF9VTlNQRUNJRklFRBAAEg8KC1NFQVRfUEFSRU5UEAESDgoKU0VBVF9DSElMRBACEg0KCVNFQVRfSlVNUBADEhAKDFNFQVRfU0lCTElORxAEMpwCCgxWYXVsdFNlcnZpY2USOAoFU3RhdGUSFi5udW1lbi52MS5TdGF0ZVJlcXVlc3QaFy5udW1lbi52MS5TdGF0ZVJlc3BvbnNlEj4KB09wZW5pbmcSGC5udW1lbi52MS5PcGVuaW5nUmVxdWVzdBoZLm51bWVuLnYxLk9wZW5pbmdSZXNwb25zZRJQCg1OZWlnaGJvdXJob29kEh4ubnVtZW4udjEuTmVpZ2hib3VyaG9vZFJlcXVlc3QaHy5udW1lbi52MS5OZWlnaGJvdXJob29kUmVzcG9uc2USQAoHQ2hhbmdlcxIYLm51bWVuLnYxLkNoYW5nZXNSZXF1ZXN0GhkubnVtZW4udjEuQ2hhbmdlc1Jlc3BvbnNlMAFCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiNwoETm90ZRIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJEhIKCmlkZW50aWZpZXIYAyABKAkiZAoGU2VhdGVkEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEhwKBHNlYXQYAiABKA4yDi5udW1lbi52MS5TZWF0Eg0KBWxhYmVsGAMgASgJEg8KB3Rocm91Z2gYBCABKAkiDgoMU3RhdGVSZXF1ZXN0Im4KDVN0YXRlUmVzcG9uc2USDAoEbmFtZRgBIAEoCRIMCgRwYXRoGAIgASgJEg8KB2luZGV4ZWQYAyABKAMSDQoFcmVhZHkYBCABKAgSDgoGZmFpbGVkGAUgASgJEhEKCXVud2F0Y2hlZBgGIAEoCSIQCg5PcGVuaW5nUmVxdWVzdCI9Cg9PcGVuaW5nUmVzcG9uc2USIQoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGVIAIgBAUIHCgVfbm90ZSIQCg5DaGFuZ2VzUmVxdWVzdCIwCg9DaGFuZ2VzUmVzcG9uc2USDQoFcGF0aHMYASADKAkSDgoGcmVsb2FkGAIgASgIIg4KDEZvY3VzUmVxdWVzdCIdCg1Gb2N1c1Jlc3BvbnNlEgwKBHBhdGgYASABKAkiJAoUTmVpZ2hib3VyaG9vZFJlcXVlc3QSDAoEcGF0aBgBIAEoCSJZChVOZWlnaGJvdXJob29kUmVzcG9uc2USHQoFZm9jdXMYASABKAsyDi5udW1lbi52MS5Ob3RlEiEKB3JlbGF0ZWQYAiADKAsyEC5udW1lbi52MS5TZWF0ZWQqXgoEU2VhdBIUChBTRUFUX1VOU1BFQ0lGSUVEEAASDwoLU0VBVF9QQVJFTlQQARIOCgpTRUFUX0NISUxEEAISDQoJU0VBVF9KVU1QEAMSEAoMU0VBVF9TSUJMSU5HEAQy2AIKDFZhdWx0U2VydmljZRI4CgVTdGF0ZRIWLm51bWVuLnYxLlN0YXRlUmVxdWVzdBoXLm51bWVuLnYxLlN0YXRlUmVzcG9uc2USPgoHT3BlbmluZxIYLm51bWVuLnYxLk9wZW5pbmdSZXF1ZXN0GhkubnVtZW4udjEuT3BlbmluZ1Jlc3BvbnNlElAKDU5laWdoYm91cmhvb2QSHi5udW1lbi52MS5OZWlnaGJvdXJob29kUmVxdWVzdBofLm51bWVuLnYxLk5laWdoYm91cmhvb2RSZXNwb25zZRJACgdDaGFuZ2VzEhgubnVtZW4udjEuQ2hhbmdlc1JlcXVlc3QaGS5udW1lbi52MS5DaGFuZ2VzUmVzcG9uc2UwARI6CgVGb2N1cxIWLm51bWVuLnYxLkZvY3VzUmVxdWVzdBoXLm51bWVuLnYxLkZvY3VzUmVzcG9uc2UwAUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * Note is a note as something else refers to it.
@@ -232,6 +232,38 @@ export const ChangesResponseSchema: GenMessage<ChangesResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 7);
 
 /**
+ * @generated from message numen.v1.FocusRequest
+ */
+export type FocusRequest = Message<"numen.v1.FocusRequest"> & {
+};
+
+/**
+ * Describes the message numen.v1.FocusRequest.
+ * Use `create(FocusRequestSchema)` to create a new message.
+ */
+export const FocusRequestSchema: GenMessage<FocusRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 8);
+
+/**
+ * @generated from message numen.v1.FocusResponse
+ */
+export type FocusResponse = Message<"numen.v1.FocusResponse"> & {
+  /**
+   * The note to see the neighbourhood from.
+   *
+   * @generated from field: string path = 1;
+   */
+  path: string;
+};
+
+/**
+ * Describes the message numen.v1.FocusResponse.
+ * Use `create(FocusResponseSchema)` to create a new message.
+ */
+export const FocusResponseSchema: GenMessage<FocusResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 9);
+
+/**
  * @generated from message numen.v1.NeighbourhoodRequest
  */
 export type NeighbourhoodRequest = Message<"numen.v1.NeighbourhoodRequest"> & {
@@ -246,7 +278,7 @@ export type NeighbourhoodRequest = Message<"numen.v1.NeighbourhoodRequest"> & {
  * Use `create(NeighbourhoodRequestSchema)` to create a new message.
  */
 export const NeighbourhoodRequestSchema: GenMessage<NeighbourhoodRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 8);
+  messageDesc(file_numen_v1_vault, 10);
 
 /**
  * @generated from message numen.v1.NeighbourhoodResponse
@@ -268,7 +300,7 @@ export type NeighbourhoodResponse = Message<"numen.v1.NeighbourhoodResponse"> & 
  * Use `create(NeighbourhoodResponseSchema)` to create a new message.
  */
 export const NeighbourhoodResponseSchema: GenMessage<NeighbourhoodResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 9);
+  messageDesc(file_numen_v1_vault, 11);
 
 /**
  * Seat is where a note sits relative to the one in focus. A sibling is written
@@ -357,6 +389,18 @@ export const VaultService: GenService<{
     methodKind: "server_streaming";
     input: typeof ChangesRequestSchema;
     output: typeof ChangesResponseSchema;
+  },
+  /**
+   * Focus reports the notes something else asked to be put in front of the
+   * person — an agent working the vault beside them — for as long as the
+   * caller listens. What travelling there looks like is the client's.
+   *
+   * @generated from rpc numen.v1.VaultService.Focus
+   */
+  focus: {
+    methodKind: "server_streaming";
+    input: typeof FocusRequestSchema;
+    output: typeof FocusResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_vault, 0);

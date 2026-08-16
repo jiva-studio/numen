@@ -522,6 +522,87 @@ func (x *ChangesResponse) GetReload() bool {
 	return false
 }
 
+type FocusRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FocusRequest) Reset() {
+	*x = FocusRequest{}
+	mi := &file_numen_v1_vault_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FocusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FocusRequest) ProtoMessage() {}
+
+func (x *FocusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_vault_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FocusRequest.ProtoReflect.Descriptor instead.
+func (*FocusRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{8}
+}
+
+type FocusResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The note to see the neighbourhood from.
+	Path          string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FocusResponse) Reset() {
+	*x = FocusResponse{}
+	mi := &file_numen_v1_vault_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FocusResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FocusResponse) ProtoMessage() {}
+
+func (x *FocusResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_vault_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FocusResponse.ProtoReflect.Descriptor instead.
+func (*FocusResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *FocusResponse) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
 type NeighbourhoodRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
@@ -531,7 +612,7 @@ type NeighbourhoodRequest struct {
 
 func (x *NeighbourhoodRequest) Reset() {
 	*x = NeighbourhoodRequest{}
-	mi := &file_numen_v1_vault_proto_msgTypes[8]
+	mi := &file_numen_v1_vault_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -543,7 +624,7 @@ func (x *NeighbourhoodRequest) String() string {
 func (*NeighbourhoodRequest) ProtoMessage() {}
 
 func (x *NeighbourhoodRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[8]
+	mi := &file_numen_v1_vault_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -556,7 +637,7 @@ func (x *NeighbourhoodRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NeighbourhoodRequest.ProtoReflect.Descriptor instead.
 func (*NeighbourhoodRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{8}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *NeighbourhoodRequest) GetPath() string {
@@ -576,7 +657,7 @@ type NeighbourhoodResponse struct {
 
 func (x *NeighbourhoodResponse) Reset() {
 	*x = NeighbourhoodResponse{}
-	mi := &file_numen_v1_vault_proto_msgTypes[9]
+	mi := &file_numen_v1_vault_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -588,7 +669,7 @@ func (x *NeighbourhoodResponse) String() string {
 func (*NeighbourhoodResponse) ProtoMessage() {}
 
 func (x *NeighbourhoodResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[9]
+	mi := &file_numen_v1_vault_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -601,7 +682,7 @@ func (x *NeighbourhoodResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NeighbourhoodResponse.ProtoReflect.Descriptor instead.
 func (*NeighbourhoodResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{9}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *NeighbourhoodResponse) GetFocus() *Note {
@@ -649,7 +730,10 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x0eChangesRequest\"?\n" +
 	"\x0fChangesResponse\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\x12\x16\n" +
-	"\x06reload\x18\x02 \x01(\bR\x06reload\"*\n" +
+	"\x06reload\x18\x02 \x01(\bR\x06reload\"\x0e\n" +
+	"\fFocusRequest\"#\n" +
+	"\rFocusResponse\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"*\n" +
 	"\x14NeighbourhoodRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"i\n" +
 	"\x15NeighbourhoodResponse\x12$\n" +
@@ -661,12 +745,13 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\n" +
 	"SEAT_CHILD\x10\x02\x12\r\n" +
 	"\tSEAT_JUMP\x10\x03\x12\x10\n" +
-	"\fSEAT_SIBLING\x10\x042\x9c\x02\n" +
+	"\fSEAT_SIBLING\x10\x042\xd8\x02\n" +
 	"\fVaultService\x128\n" +
 	"\x05State\x12\x16.numen.v1.StateRequest\x1a\x17.numen.v1.StateResponse\x12>\n" +
 	"\aOpening\x12\x18.numen.v1.OpeningRequest\x1a\x19.numen.v1.OpeningResponse\x12P\n" +
 	"\rNeighbourhood\x12\x1e.numen.v1.NeighbourhoodRequest\x1a\x1f.numen.v1.NeighbourhoodResponse\x12@\n" +
-	"\aChanges\x12\x18.numen.v1.ChangesRequest\x1a\x19.numen.v1.ChangesResponse0\x01BIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\aChanges\x12\x18.numen.v1.ChangesRequest\x1a\x19.numen.v1.ChangesResponse0\x01\x12:\n" +
+	"\x05Focus\x12\x16.numen.v1.FocusRequest\x1a\x17.numen.v1.FocusResponse0\x01BIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_vault_proto_rawDescOnce sync.Once
@@ -681,7 +766,7 @@ func file_numen_v1_vault_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_vault_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_vault_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_numen_v1_vault_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_numen_v1_vault_proto_goTypes = []any{
 	(Seat)(0),                     // 0: numen.v1.Seat
 	(*Note)(nil),                  // 1: numen.v1.Note
@@ -692,8 +777,10 @@ var file_numen_v1_vault_proto_goTypes = []any{
 	(*OpeningResponse)(nil),       // 6: numen.v1.OpeningResponse
 	(*ChangesRequest)(nil),        // 7: numen.v1.ChangesRequest
 	(*ChangesResponse)(nil),       // 8: numen.v1.ChangesResponse
-	(*NeighbourhoodRequest)(nil),  // 9: numen.v1.NeighbourhoodRequest
-	(*NeighbourhoodResponse)(nil), // 10: numen.v1.NeighbourhoodResponse
+	(*FocusRequest)(nil),          // 9: numen.v1.FocusRequest
+	(*FocusResponse)(nil),         // 10: numen.v1.FocusResponse
+	(*NeighbourhoodRequest)(nil),  // 11: numen.v1.NeighbourhoodRequest
+	(*NeighbourhoodResponse)(nil), // 12: numen.v1.NeighbourhoodResponse
 }
 var file_numen_v1_vault_proto_depIdxs = []int32{
 	1,  // 0: numen.v1.Seated.note:type_name -> numen.v1.Note
@@ -703,14 +790,16 @@ var file_numen_v1_vault_proto_depIdxs = []int32{
 	2,  // 4: numen.v1.NeighbourhoodResponse.related:type_name -> numen.v1.Seated
 	3,  // 5: numen.v1.VaultService.State:input_type -> numen.v1.StateRequest
 	5,  // 6: numen.v1.VaultService.Opening:input_type -> numen.v1.OpeningRequest
-	9,  // 7: numen.v1.VaultService.Neighbourhood:input_type -> numen.v1.NeighbourhoodRequest
+	11, // 7: numen.v1.VaultService.Neighbourhood:input_type -> numen.v1.NeighbourhoodRequest
 	7,  // 8: numen.v1.VaultService.Changes:input_type -> numen.v1.ChangesRequest
-	4,  // 9: numen.v1.VaultService.State:output_type -> numen.v1.StateResponse
-	6,  // 10: numen.v1.VaultService.Opening:output_type -> numen.v1.OpeningResponse
-	10, // 11: numen.v1.VaultService.Neighbourhood:output_type -> numen.v1.NeighbourhoodResponse
-	8,  // 12: numen.v1.VaultService.Changes:output_type -> numen.v1.ChangesResponse
-	9,  // [9:13] is the sub-list for method output_type
-	5,  // [5:9] is the sub-list for method input_type
+	9,  // 9: numen.v1.VaultService.Focus:input_type -> numen.v1.FocusRequest
+	4,  // 10: numen.v1.VaultService.State:output_type -> numen.v1.StateResponse
+	6,  // 11: numen.v1.VaultService.Opening:output_type -> numen.v1.OpeningResponse
+	12, // 12: numen.v1.VaultService.Neighbourhood:output_type -> numen.v1.NeighbourhoodResponse
+	8,  // 13: numen.v1.VaultService.Changes:output_type -> numen.v1.ChangesResponse
+	10, // 14: numen.v1.VaultService.Focus:output_type -> numen.v1.FocusResponse
+	10, // [10:15] is the sub-list for method output_type
+	5,  // [5:10] is the sub-list for method input_type
 	5,  // [5:5] is the sub-list for extension type_name
 	5,  // [5:5] is the sub-list for extension extendee
 	0,  // [0:5] is the sub-list for field type_name
@@ -728,7 +817,7 @@ func file_numen_v1_vault_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_vault_proto_rawDesc), len(file_numen_v1_vault_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   10,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

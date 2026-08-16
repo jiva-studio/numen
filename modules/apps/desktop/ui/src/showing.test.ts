@@ -30,6 +30,8 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     state: async () => settled,
     // eslint-disable-next-line require-yield
     changes: async function* () {},
+    // eslint-disable-next-line require-yield
+    focus: async function* () {},
     ...over,
   }
 }

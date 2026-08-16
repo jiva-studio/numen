@@ -28,9 +28,8 @@ type Opened struct {
 // Open puts together everything the window needs: the vault it shows, the
 // questions it may ask, and a scan running behind it.
 //
-// The scan is started rather than waited for. A vault of a hundred thousand
-// notes takes a minute and a half, and the first note is answerable long before
-// that.
+// The scan is started and left running. A vault of a hundred thousand notes
+// takes a minute and a half, and the first note is answerable long before that.
 //
 // Closing stops the scan, waits for it, and then closes the database — in that
 // order, because the database is what the scan writes to.
@@ -53,7 +52,13 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 	}
 
 	watching, stop := context.WithCancel(ctx)
-	api := &API{Vault: vaults[0], Notes: db.Queries(), Links: db.Links()}
+	api := &API{
+		Vault:     vaults[0],
+		Notes:     db.Queries(),
+		Links:     db.Links(),
+		Listeners: following(),
+		Watching:  focusing(),
+	}
 	scan := usecase.Scan{
 		Readers:     cfg.VaultReaders(),
 		Vaults:      db.Vaults(),
@@ -86,8 +91,8 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		},
 	}
 
-	// Watching begins before the scan does, so that an edit made while the
-	// vault is being read is held rather than missed.
+	// Watching begins before the scan does, so an edit made while the vault is
+	// being read is held.
 	//
 	// A vault that cannot be watched is still a vault: the application keeps
 	// working, and says that changes will not appear by themselves.

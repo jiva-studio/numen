@@ -2,9 +2,8 @@
 // on the core, and results into answers an agent can act on.
 //
 // It knows nothing of the window, of the webview toolkit or of the schema the
-// interface is generated from. That is what keeps serving these tools from a
-// binary of their own a matter of an entry point and a transport rather than a
-// redesign.
+// interface is generated from. Serving these tools from a binary of their own
+// is an entry point and a transport.
 package mcp
 
 import (
@@ -34,6 +33,10 @@ type Core struct {
 	Readers port.VaultReaders
 	Notes   port.NoteQueries
 
+	// View is the person's window, where there is one. Without it an agent is
+	// served the vault and nothing that puts a note in front of anybody.
+	View port.View
+
 	Search        note.Search
 	Neighbourhood note.ShowNeighbourhood
 	Links         note.ShowLinks
@@ -61,14 +64,14 @@ func New(core Core) *sdk.Server {
 	addNoteTools(server, core)
 	addLinkTools(server, core)
 	addVaultTools(server, core)
+	addViewTools(server, core)
 	return server
 }
 
 // instructions is what an agent is told once, before it calls anything.
 //
-// The vault's location lives here rather than in every answer. It is the same
-// string every time, a note has one address and not two, and an agent that
-// joins them itself pays for the root once instead of on every result.
+// The vault's location is said once, here. A note has one address, and an
+// agent that joins it to the root pays for the root once.
 func instructions(core Core) string {
 	var b strings.Builder
 	b.WriteString("These tools work on one numen vault: markdown notes in an ordinary folder, ")
