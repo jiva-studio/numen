@@ -101,6 +101,70 @@ func TestAFolderThatGoesAwayCannotBeAnsweredFromDisk(t *testing.T) {
 	}
 }
 
+// TestAFolderWithADotInItsNameIsStillAFolder. A name says nothing about what a
+// path was: `2026.archive` is a folder and `Note.md.tmp` is not, and only one of
+// them takes notes with it.
+func TestAFolderWithADotInItsNameIsStillAFolder(t *testing.T) {
+	root := vaultOf(t, map[string]string{
+		"Note.md":              "# Note\n",
+		"2026.archive/Kept.md": "# Kept\n",
+	}, nil)
+	w, err := filesystem.Watch(t.Context(), domain.Vault{Path: root}, filesystem.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.RemoveAll(filepath.Join(root, "2026.archive")); err != nil {
+		t.Fatal(err)
+	}
+
+	deadline := time.After(5 * time.Second)
+	for {
+		select {
+		case <-w.Lost:
+			return
+		case paths := <-w.Changes:
+			// Removing the folder removes its notes first, and those it can
+			// name. The folder itself it cannot.
+			for _, path := range paths {
+				if path == "2026.archive" {
+					t.Fatalf("reported %v — a folder is not a note", paths)
+				}
+			}
+		case <-deadline:
+			t.Fatal("a folder left the vault and nothing was said")
+		}
+	}
+}
+
+// TestFoldingGoesOnWhileNobodyIsListening. Whoever listens takes as long as a
+// reindex takes; the operating system does not wait for it, and a fold that
+// waited would stop emptying the backlog and lose what came after.
+func TestFoldingGoesOnWhileNobodyIsListening(t *testing.T) {
+	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
+	w, err := filesystem.Watch(t.Context(), domain.Vault{Path: root},
+		filesystem.Options{Window: 50 * time.Millisecond})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Two changes, well apart, and nothing reading in between.
+	write(t, root, "First.md", "# First\n")
+	time.Sleep(400 * time.Millisecond)
+	write(t, root, "Second.md", "# Second\n")
+	time.Sleep(400 * time.Millisecond)
+
+	select {
+	case paths := <-w.Changes:
+		slices.Sort(paths)
+		if !slices.Equal(paths, []string{"First.md", "Second.md"}) {
+			t.Fatalf("the first batch was %v — the second change was not folded into it", paths)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("nothing was reported")
+	}
+}
+
 // TestAnEditIsReported.
 func TestAnEditIsReported(t *testing.T) {
 	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)

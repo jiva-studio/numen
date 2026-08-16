@@ -28,14 +28,6 @@ type Scan struct {
 	OnProgress func(ScanResult)
 }
 
-// A group of notes is one write. The count is where the gain flattens out; the
-// size bounds what a vault of long files holds in memory before writing any of
-// it.
-const (
-	notesPerWrite = 500
-	bytesPerWrite = 8 << 20
-)
-
 // ScanResult reports what a scan did, in the terms the user cares about.
 type ScanResult struct {
 	Seen      int // markdown files found in the vault
@@ -79,26 +71,18 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	}
 	slices.SortFunc(found, func(a, b domain.FileRef) int { return cmp.Compare(b.MTime, a.MTime) })
 
-	var (
-		pending      []domain.Note
-		pendingBytes int
-	)
-	write := func() error {
-		if len(pending) == 0 {
-			return nil
-		}
-		if err := u.Notes.Save(ctx, v.ID, pending); err != nil {
+	group := grouping{write: func(ctx context.Context, notes []domain.Note) error {
+		if err := u.Notes.Save(ctx, v.ID, notes); err != nil {
 			// The failure is somewhere in a group, so say which one.
 			return fmt.Errorf("index %d notes of %s, %s to %s: %w",
-				len(pending), v.Name, pending[0].Ref.Path, pending[len(pending)-1].Ref.Path, err)
+				len(notes), v.Name, notes[0].Ref.Path, notes[len(notes)-1].Ref.Path, err)
 		}
-		res.Indexed += len(pending)
-		pending, pendingBytes = pending[:0], 0
+		res.Indexed += len(notes)
 		if u.OnProgress != nil {
 			u.OnProgress(res)
 		}
 		return nil
-	}
+	}}
 
 	seen := make(map[string]bool, len(known))
 	for _, ref := range found {
@@ -129,15 +113,11 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 		if err != nil {
 			return res, fmt.Errorf("read %s: %w", ref.Path, err)
 		}
-		pending = append(pending, markdown.Parse(ref, raw))
-		pendingBytes += len(raw)
-		if len(pending) >= notesPerWrite || pendingBytes >= bytesPerWrite {
-			if err := write(); err != nil {
-				return res, err
-			}
+		if err := group.add(ctx, markdown.Parse(ref, raw), len(raw)); err != nil {
+			return res, err
 		}
 	}
-	if err := write(); err != nil {
+	if err := group.flush(ctx); err != nil {
 		return res, err
 	}
 
