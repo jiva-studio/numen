@@ -22,19 +22,22 @@ jobs:
         with:
           node-version: "22"
 
+      # The window is typed against the schema and against the components, so
+      # both have to be there before anything is checked: the schema's own
+      # dependencies, and the components built into the shape a consumer sees.
       - name: Install
         run: |
-          cd modules/libs/ui && npm ci
-          cd ../../apps/desktop/ui && npm install
+          npm install --prefix modules/libs/protocol
+          npm ci --prefix modules/libs/ui
+          npm install --prefix modules/apps/desktop/ui
+
+      - name: Build the components
+        run: npm run build --prefix modules/libs/ui
 
       - name: Typecheck
-        run: |
-          cd modules/libs/ui && npm run typecheck
-          cd ../../apps/desktop/ui && npm run typecheck
+        run: npm run typecheck --prefix modules/apps/desktop/ui
 
-      # The window's tests import the built library, so it is built first for
-      # the same reason an ordinary build does it.
       - name: Test
         run: |
-          cd modules/libs/ui && npm run test:unit && npm run build
-          cd ../../apps/desktop/ui && npm test
+          npm run test:unit --prefix modules/libs/ui
+          npm test --prefix modules/apps/desktop/ui
