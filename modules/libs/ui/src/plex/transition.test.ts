@@ -118,7 +118,7 @@ describe('a movement stepped by hand', () => {
 
     world.tick(200)
     world.tick(600)
-    expect(at(frame.value.nodes, 'focus')?.label).toBe('Recursive CTE')
+    expect(at(frame.value.nodes, 'focus')?.title).toBe('Recursive CTE')
   })
 })
 

@@ -39,32 +39,32 @@ const WINDOWS = [
 
 describe('nothing reaches past the edge', () => {
   it.each(WINDOWS)('$width×$height, heavily populated', (viewport) => {
-    const heavy = build('A thought', { parent: 6, child: 21, jump: 7, sibling: 7 })
+    const heavy = build('A node', { parent: 6, child: 21, jump: 7, sibling: 7 })
     const frame = arrangePlex(heavy, { options: { viewport } })
-    expect(escapes(frame, viewport).map((n) => n.label)).toStrictEqual([])
+    expect(escapes(frame, viewport).map((n) => n.title)).toStrictEqual([])
   })
 
   it.each(WINDOWS)('$width×$height, past every limit', (viewport) => {
     const frame = arrangePlex(neighbourhoods.overcrowded, { options: { viewport } })
-    expect(escapes(frame, viewport).map((n) => n.label)).toStrictEqual([])
+    expect(escapes(frame, viewport).map((n) => n.title)).toStrictEqual([])
   })
 
   it.each(Object.entries(neighbourhoods))('%s', (_name, neighbourhood) => {
     const viewport = { width: 1200, height: 800 }
     const frame = arrangePlex(neighbourhood, { options: { viewport } })
-    expect(escapes(frame, viewport).map((n) => n.label)).toStrictEqual([])
+    expect(escapes(frame, viewport).map((n) => n.title)).toStrictEqual([])
   })
 })
 
 describe('the space above and below is used before anything is dropped', () => {
   it('wraps a wide row into more rows rather than hiding children', () => {
     const viewport = { width: 1400, height: 900 }
-    const many = build('A thought', { parent: 2, child: 15, jump: 3, sibling: 3 })
+    const many = build('A node', { parent: 2, child: 15, jump: 3, sibling: 3 })
     const frame = arrangePlex(many, { options: { viewport, maxPerLine: 9 } })
 
     expect(frame.overflow.child).toBeUndefined()
     const rows = new Set(
-      frame.nodes.filter((n) => n.role === 'child').map((n) => n.y),
+      frame.nodes.filter((n) => n.seat === 'child').map((n) => n.y),
     )
     expect(rows.size).toBeGreaterThan(1)
   })
@@ -73,11 +73,11 @@ describe('the space above and below is used before anything is dropped', () => {
     // maxPerLine is a rule about how wide a row gets. Applying it to a column
     // would waste the height, which is the space a plex has most of.
     const viewport = { width: 1400, height: 900 }
-    const sideHeavy = build('A thought', { child: 2, jump: 9 })
+    const sideHeavy = build('A node', { child: 2, jump: 9 })
     const frame = arrangePlex(sideHeavy, { options: { viewport, maxPerLine: 5 } })
 
     expect(frame.overflow.jump).toBeUndefined()
-    const columns = new Set(frame.nodes.filter((n) => n.role === 'jump').map((n) => n.x))
+    const columns = new Set(frame.nodes.filter((n) => n.seat === 'jump').map((n) => n.x))
     expect(columns.size).toBe(1)
   })
 })
@@ -86,14 +86,14 @@ describe('the two sides are read as a pair', () => {
   it('seats a short column as far out as a tall one', () => {
     // Worked out on its own reach, two jumps would sit nearer the focus than
     // seven siblings, and the plex would lean for a reason nobody can see.
-    const lopsided = build('A thought', { child: 6, jump: 2, sibling: 7 })
+    const lopsided = build('A node', { child: 6, jump: 2, sibling: 7 })
     const frame = arrangePlex(lopsided, {
       options: { viewport: { width: 1600, height: 1000 } },
     })
 
-    const near = (role: string) =>
+    const near = (seat: string) =>
       Math.min(
-        ...frame.nodes.filter((n) => n.role === role).map((n) => Math.abs(n.x)),
+        ...frame.nodes.filter((n) => n.seat === seat).map((n) => Math.abs(n.x)),
       )
     expect(near('jump')).toBe(near('sibling'))
   })
@@ -105,11 +105,11 @@ describe('the row is measured against the window either way', () => {
     // it: with no jumps and no siblings there is no column to make room for,
     // and the row still has to fit.
     const viewport = { width: 700, height: 900 }
-    const onlyChildren = build('A thought', { child: 12 })
+    const onlyChildren = build('A node', { child: 12 })
     const frame = arrangePlex(onlyChildren, {
       options: { viewport, maxPerLine: 9 },
     })
-    expect(escapes(frame, viewport).map((n) => n.label)).toStrictEqual([])
+    expect(escapes(frame, viewport).map((n) => n.title)).toStrictEqual([])
   })
 
 })
@@ -142,7 +142,7 @@ describe('the rows keep the room when it runs out', () => {
 describe('the margin is a setting, not a number in the source', () => {
   it('keeps the drawing that far clear of the edge', () => {
     const viewport = { width: 1400, height: 900 }
-    const many = build('A thought', { child: 20, jump: 4 })
+    const many = build('A node', { child: 20, jump: 4 })
 
     for (const margin of [0, 16, 120]) {
       const frame = arrangePlex(many, { options: { viewport, margin } })
@@ -193,8 +193,8 @@ describe('given no window', () => {
       jump: 3,
       sibling: 3,
     })
-    for (const role of ['parent', 'child', 'jump', 'sibling'] as const) {
-      expect(limits[role]).toStrictEqual({
+    for (const seat of ['parent', 'child', 'jump', 'sibling'] as const) {
+      expect(limits[seat]).toStrictEqual({
         perLine: DEFAULT_OPTIONS.maxPerLine,
         lines: DEFAULT_OPTIONS.maxLines,
       })

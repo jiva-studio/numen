@@ -8,12 +8,12 @@ What follows is where they live in this tree.
 ## The one rule
 
 **A component here knows nothing about the domain.** No import from
-`modules/libs/domain`, no wire types, no vault vocabulary — not in the
+the application's domain, no wire types, no vault vocabulary — not in the
 components, not in the stories, not in the fixtures. A component takes props it
 defines itself and emits events carrying opaque identifiers; whoever renders it
 translates the domain into that shape.
 
-This is why the plex talks about *nodes with a role* rather than about notes
+This is why the plex talks about *nodes with a seat* rather than about notes
 with links. What a link is is decided elsewhere; when it changes, the adapter in
 the application changes and nothing in this module does.
 
@@ -39,7 +39,7 @@ src/
   tokens/            the whole styling contract, as custom properties
   plex/              the focused-neighbourhood view
     model/           what a plex is made of, as plain values
-      role.ts          every seat, declared once — a new role starts here
+      seat.ts          every seat, declared once — a new seat starts here
       node.ts          a node, placed or not; what is true of one wherever
                        it is drawn — its name, whether it can be chosen,
                        where its handle sits
@@ -55,7 +55,7 @@ src/
     render/          the drawing, and nothing else
       PlexView.vue     the picture between the nodes: the window, the edges,
                        and the gesture crossing them
-      PlexNodeView.vue one node: its box, its label, its handle
+      PlexNodeView.vue one node: its box, its title, its handle
     transition.ts    the clock, behind a port
     Plex.vue         the composition root
 ```
@@ -79,8 +79,8 @@ the gesture went, read off the arrangement's own `direction` — so inverting th
 plex inverts the gesture with it. Escape gives up; a click without travel asks
 for one more child, which is what anyone reaches for.
 
-**The role is decided when the gesture ends, not when it begins.** TheBrain
-does the opposite: it has a gate per role, and which one you grab settles it.
+**The seat is decided when the gesture ends, not when it begins.** TheBrain
+does the opposite: it has a gate per seat, and which one you grab settles it.
 Deciding at the end means the reader cannot know what they will get, which is
 why the gesture draws the seat it would land in as it goes. Recorded here
 rather than in an ADR because it is a decision about an interaction, not about

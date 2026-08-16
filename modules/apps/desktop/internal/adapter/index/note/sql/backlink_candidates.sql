@@ -9,13 +9,13 @@
 -- was written and what else answers to it, so every candidate goes through the
 -- same resolution the forward direction uses.
 SELECT n.path, l.scheme, l.value, l.role,
-       COALESCE(l.type, ''), COALESCE(l.reason, ''), COALESCE(l.label, ''), l.position
+       COALESCE(l.type, ''), COALESCE(l.note, ''), COALESCE(l.label, ''), l.position
 FROM links l
 JOIN notes n ON n.id = l.note_id
 WHERE l.scheme = 'note' AND l.value = ? AND n.vault_id = ?
 UNION
 SELECT n.path, l.scheme, l.value, l.role,
-       COALESCE(l.type, ''), COALESCE(l.reason, ''), COALESCE(l.label, ''), l.position
+       COALESCE(l.type, ''), COALESCE(l.note, ''), COALESCE(l.label, ''), l.position
 FROM links l
 JOIN notes n ON n.id = l.note_id
 WHERE l.scheme = 'name' AND l.value_base = ? AND n.vault_id = ?

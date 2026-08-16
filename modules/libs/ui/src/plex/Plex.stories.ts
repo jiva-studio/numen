@@ -13,10 +13,10 @@ import Plex from './Plex.vue'
 import { rowsAndColumns, type Placement, type PlexOptionsInput } from './arrange'
 import { neighbourhoods } from './fixtures/neighbourhoods'
 import { neighbourhoodOf, walkStart } from './fixtures/walk'
-import { around, build, type Thought } from './fixtures/build'
+import { around, build, type Named } from './fixtures/build'
 import { nameNow } from './fixtures/names'
 import { ring } from './fixtures/ring'
-import type { PlexEdge, PlexNeighbourhood, PlexNode, PlexRelatedRole } from './model'
+import type { PlexEdge, PlexNeighbourhood, PlexNode, PlexRelatedSeat } from './model'
 import type { Environment } from './transition'
 
 interface Knobs {
@@ -25,8 +25,8 @@ interface Knobs {
   showEdgeLabels: boolean
   duration: number
   onActivate: (id: string) => void
-  onCreate: (from: string, role: PlexRelatedRole) => void
-  onLink: (from: string, to: string, role: PlexRelatedRole) => void
+  onCreate: (from: string, seat: PlexRelatedSeat) => void
+  onLink: (from: string, to: string, seat: PlexRelatedSeat) => void
 
   focusWidth: number
   focusHeight: number
@@ -46,17 +46,17 @@ interface Knobs {
   arriveAfter: number
   leaveBefore: number
 
-  /** Playground only: how many of each role to invent. */
+  /** Playground only: how many of each seat to invent. */
   parents: number
   children: number
   jumps: number
   siblings: number
-  label: string
+  title: string
 
   /**
    * What a node made by a gesture is called. Handed in rather than settled
    * here, because naming is the application's business and the plex never
-   * learns that a label is a name.
+   * learns that a title is a name.
    */
   naming: () => string
 
@@ -106,8 +106,8 @@ const countsFrom = (a: Knobs) => ({
 const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) => ({
   components: { Plex },
   setup() {
-    const focus = ref<Thought | null>(null)
-    const cameFrom = ref<Thought | null>(null)
+    const focus = ref<Named | null>(null)
+    const cameFrom = ref<Named | null>(null)
 
     /** What the application would keep: what has been made, and what is new. */
     const made = ref<PlexNode[]>([])
@@ -117,7 +117,7 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
       const base = focus.value
         ? around(focus.value, cameFrom.value, countsFrom(args))
         : start(args)
-      const here = focus.value?.id ?? base.nodes.find((n) => n.role === 'focus')?.id
+      const here = focus.value?.id ?? base.nodes.find((n) => n.seat === 'focus')?.id
       const mine = made.value.filter((node) =>
         links.value.some(
           (edge) =>
@@ -134,31 +134,31 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
     const chose = (id: string) => {
       const chosen = neighbourhood.value.nodes.find((node) => node.id === id)
       if (!chosen) return
-      const was = neighbourhood.value.nodes.find((node) => node.role === 'focus')
-      cameFrom.value = was ? { id: was.id, label: was.label } : null
-      focus.value = { id: chosen.id, label: chosen.label }
+      const was = neighbourhood.value.nodes.find((node) => node.seat === 'focus')
+      cameFrom.value = was ? { id: was.id, title: was.title } : null
+      focus.value = { id: chosen.id, title: chosen.title }
     }
 
     /**
      * A new node arrives finished: seated, linked and already called
      * something. The gesture ends where the hand let go, and what the node is
-     * really to be called is a later thought and somebody else's screen.
+     * really to be called is a later idea and somebody else's screen.
      */
-    const create = (from: string, role: PlexRelatedRole) => {
+    const create = (from: string, seat: PlexRelatedSeat) => {
       const id = `made/${made.value.length}`
-      made.value = [...made.value, { id, label: args.naming(), role }]
+      made.value = [...made.value, { id, title: args.naming(), seat }]
       links.value = [
         ...links.value,
-        role === 'parent' || role === 'jump'
-          ? { from: id, to: from, label: role === 'jump' ? 'see also' : 'is a' }
+        seat === 'parent' || seat === 'jump'
+          ? { from: id, to: from, label: seat === 'jump' ? 'see also' : 'is a' }
           : { from, to: id, label: 'contains' },
       ]
     }
 
-    const link = (from: string, to: string, role: PlexRelatedRole) => {
+    const link = (from: string, to: string, seat: PlexRelatedSeat) => {
       links.value = [
         ...links.value,
-        role === 'parent' || role === 'jump' ? { from: to, to: from } : { from, to },
+        seat === 'parent' || seat === 'jump' ? { from: to, to: from } : { from, to },
       ]
     }
 
@@ -180,8 +180,8 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
         :show-edge-labels="args.showEdgeLabels"
         :duration="args.duration"
         @activate="chose($event); args.onActivate($event)"
-        @create="(from, role) => { create(from, role); args.onCreate(from, role) }"
-        @link="(from, to, role) => { link(from, to, role); args.onLink(from, to, role) }"
+        @create="(from, seat) => { create(from, seat); args.onCreate(from, seat) }"
+        @link="(from, to, seat) => { link(from, to, seat); args.onLink(from, to, seat) }"
       />
     </div>
   `,
@@ -227,7 +227,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'One node in focus, everything else placed by its role: parents ' +
+          'One node in focus, everything else placed by its seat: parents ' +
           'above, children below, jumps to the left, siblings to the right. ' +
           'It takes a neighbourhood and emits an identifier when a node is ' +
           'chosen — it does not fetch anything and does not know what an ' +
@@ -274,7 +274,7 @@ const meta = {
     children: range(0, 30, 1, 'Playground'),
     jumps: range(0, 12, 1, 'Playground'),
     siblings: range(0, 12, 1, 'Playground'),
-    label: { control: 'text', table: { category: 'Playground' } },
+    title: { control: 'text', table: { category: 'Playground' } },
 
     // Not knobs: the input the caller builds, the clock a test replaces, what
     // it names the nodes it makes, and what the component reports back.
@@ -317,7 +317,7 @@ const meta = {
     children: 6,
     jumps: 3,
     siblings: 2,
-    label: 'A thought',
+    title: 'A node',
   },
 
   render: navigable((args) => args.neighbourhood),
@@ -332,7 +332,7 @@ type Story = StoryObj<typeof meta>
  */
 const invented = {
   args: { neighbourhood: neighbourhoods.typical, maxPerLine: 9 },
-  render: navigable((args: Knobs) => build(args.label, countsFrom(args))),
+  render: navigable((args: Knobs) => build(args.title, countsFrom(args))),
 }
 
 export const Playground: Story = invented
@@ -382,7 +382,7 @@ export const MakingOne: Story = {
     ])
     await expect(canvasElement.querySelector('.plex__thread')).not.toBeNull()
     await expect(
-      canvasElement.querySelector('.plex__node--ghost .plex__label-text')?.textContent,
+      canvasElement.querySelector('.plex__node--ghost .plex__title-text')?.textContent,
     ).toBe('parent')
 
     // Let go by hand: a second `userEvent.pointer` call does not know a button
@@ -420,7 +420,7 @@ export const Overcrowded: Story = {
  * arrangement made of them, to see that text nothing fits into still leaves a
  * plex rather than a pile.
  *
- * Whether a label stays inside its own box is the node's affair and is checked
+ * Whether a title stays inside its own box is the node's affair and is checked
  * on the node, against the same corpus.
  */
 export const AwkwardLabels: Story = {

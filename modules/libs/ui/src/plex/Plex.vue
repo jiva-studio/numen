@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The plex: one node in focus, everything else placed by its role.
+ * The plex: one node in focus, everything else placed by its seat.
  *
  * Takes a neighbourhood, gives back an identifier when one is chosen. It does
  * not fetch, does not know what an identifier addresses, and does not work out
@@ -11,7 +11,7 @@ import { computed, onMounted, onScopeDispose, ref, toRef, useTemplateRef } from 
 import PlexView from './render/PlexView.vue'
 import { usePlexTransition, browserEnvironment, type Environment } from './transition'
 import type { Placement, PlexOptionsInput } from './arrange'
-import { countOf, seatOf, type PlexNeighbourhood, type PlexRelatedRole } from './model'
+import { countOf, seatWord, type PlexNeighbourhood, type PlexRelatedSeat } from './model'
 import { resolveOptions } from './arrange'
 import { usePlexGesture } from './gesture'
 
@@ -31,7 +31,7 @@ const props = withDefaults(
      * children rather than something anyone makes directly, so it is left out
      * — but which relationships exist is the caller's to say, not the plex's.
      */
-    creatable?: readonly PlexRelatedRole[]
+    creatable?: readonly PlexRelatedSeat[]
     /** How far a gesture travels before it is a drag and not a click. */
     dragThreshold?: number
     /**
@@ -40,7 +40,7 @@ const props = withDefaults(
      * for it belong to whoever renders the plex, as they do for the overflow
      * line. English by default, because something has to be drawn.
      */
-    seatName?: (role: PlexRelatedRole) => string
+    seatName?: (seat: PlexRelatedSeat) => string
   }>(),
   {
     showEdgeLabels: true,
@@ -48,7 +48,7 @@ const props = withDefaults(
     environment: () => browserEnvironment,
     creatable: () => ['parent', 'child', 'jump'],
     dragThreshold: 8,
-    seatName: seatOf,
+    seatName: seatWord,
   },
 )
 
@@ -56,9 +56,9 @@ const emit = defineEmits<{
   /** A node other than the focus was chosen, by click or by keyboard. */
   (event: 'activate', id: string): void
   /** Reached out into empty space: make a node in this seat of that one. */
-  (event: 'create', from: string, role: PlexRelatedRole): void
+  (event: 'create', from: string, seat: PlexRelatedSeat): void
   /** Reached out onto another node: relate the two in this seat. */
-  (event: 'link', from: string, to: string, role: PlexRelatedRole): void
+  (event: 'link', from: string, to: string, seat: PlexRelatedSeat): void
 }>()
 
 /** What the window is taken to be until it has been measured. */
@@ -114,18 +114,18 @@ const gesture = usePlexGesture(
   () => props.creatable,
   () => props.dragThreshold,
   (drop) => {
-    if (drop.kind === 'create') emit('create', drop.from, drop.role)
-    else emit('link', drop.from, drop.to, drop.role)
+    if (drop.kind === 'create') emit('create', drop.from, drop.seat)
+    else emit('link', drop.from, drop.to, drop.seat)
   },
 )
 
 /**
- * What did not fit, as `[role, count]` pairs rather than a sentence — the
+ * What did not fit, as `[seat, count]` pairs rather than a sentence — the
  * words belong to whoever renders the plex, through the `overflow` slot.
  */
 const overflow = computed(
   () =>
-    (Object.entries(frame.value.overflow) as [PlexRelatedRole, number][]).filter(
+    (Object.entries(frame.value.overflow) as [PlexRelatedSeat, number][]).filter(
       ([, count]) => count > 0,
     ),
 )
@@ -158,7 +158,7 @@ defineExpose({ moving: toRef(moving) })
     </PlexView>
     <div v-if="overflow.length" class="plex-frame__overflow" role="status">
       <slot name="overflow" :overflow="overflow">
-        {{ overflow.map(([role, count]) => countOf(role, count)).join(', ') }} not shown
+        {{ overflow.map(([seat, count]) => countOf(seat, count)).join(', ') }} not shown
       </slot>
     </div>
   </div>

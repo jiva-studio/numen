@@ -1,9 +1,9 @@
-import type { PlacedNode, PlexNode, PlexRelatedRole } from '../model'
+import type { PlacedNode, PlexNode, PlexRelatedSeat } from '../model'
 import type { Limits, RoleLimits } from './limits'
 import { isVertical, type Direction, type PlexOptions } from './options'
 
 /** The nodes admitted to the picture, grouped by the seat they take. */
-export type Seating = Readonly<Partial<Record<PlexRelatedRole, readonly PlexNode[]>>>
+export type Seating = Readonly<Partial<Record<PlexRelatedSeat, readonly PlexNode[]>>>
 
 /**
  * Where the nodes go. A strategy, so a radial mind map is another
@@ -32,15 +32,15 @@ export const rowsAndColumns: Placement = {
 
     // Rows first. A row of children is as wide as the plex gets, so a column
     // at a fixed distance would sit on top of it once the row outgrew that
-    // distance. The sideways roles give way, because moving parents and
+    // distance. The sideways seats give way, because moving parents and
     // children would move the axis the plex is read on.
-    const seated = Object.entries(seating) as [PlexRelatedRole, readonly PlexNode[]][]
-    const rows = seated.filter(([role]) => isVertical(options.direction[role]))
-    const columns = seated.filter(([role]) => !isVertical(options.direction[role]))
+    const seated = Object.entries(seating) as [PlexRelatedSeat, readonly PlexNode[]][]
+    const rows = seated.filter(([seat]) => isVertical(options.direction[seat]))
+    const columns = seated.filter(([seat]) => !isVertical(options.direction[seat]))
 
-    for (const [role, nodes] of rows) {
+    for (const [seat, nodes] of rows) {
       placed.push(
-        ...line(nodes, options.direction[role], options, limits[role], focus.height / 2),
+        ...line(nodes, options.direction[seat], options, limits[seat], focus.height / 2),
       )
     }
 
@@ -54,13 +54,13 @@ export const rowsAndColumns: Placement = {
     const rowsPlaced = [...placed]
     const reach = Math.max(
       0,
-      ...columns.map(([role, nodes]) => reachOf(nodes.length, options, limits[role])),
+      ...columns.map(([seat, nodes]) => reachOf(nodes.length, options, limits[seat])),
     )
     const clearance = widestWithin(rowsPlaced, reach)
 
-    for (const [role, nodes] of columns) {
+    for (const [seat, nodes] of columns) {
       placed.push(
-        ...line(nodes, options.direction[role], options, limits[role], clearance),
+        ...line(nodes, options.direction[seat], options, limits[seat], clearance),
       )
     }
 
@@ -69,7 +69,7 @@ export const rowsAndColumns: Placement = {
 }
 
 /**
- * One role, in lines running away from the focus, each line centred on the
+ * One seat, in lines running away from the focus, each line centred on the
  * focus axis. `clearance` is what the first line has to clear.
  */
 function line(

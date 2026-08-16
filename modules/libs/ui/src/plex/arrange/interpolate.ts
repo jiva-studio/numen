@@ -32,7 +32,7 @@ export function interpolatePlex(
 
   // Arrivals unfold from where the new focus started, rather than fading in on
   // top of the picture.
-  const newFocus = to.nodes.find((node) => node.role === 'focus')
+  const newFocus = to.nodes.find((node) => node.seat === 'focus')
   const cameFrom = newFocus ? was.get(newFocus.id) : undefined
   const source = { x: cameFrom?.x ?? 0, y: cameFrom?.y ?? 0 }
 

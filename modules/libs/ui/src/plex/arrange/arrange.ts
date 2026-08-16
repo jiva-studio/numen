@@ -7,12 +7,12 @@
 import {
   assertNeighbourhood,
   extentOf,
-  RELATED_ROLES,
+  RELATED_SEATS,
   type PlacedNode,
   type PlexFrame,
   type PlexNeighbourhood,
   type PlexNode,
-  type PlexRelatedRole,
+  type PlexRelatedSeat,
 } from '../model'
 import { limitsFor, type Limits } from './limits'
 import { resolveOptions, type PlexOptionsInput } from './options'
@@ -42,7 +42,7 @@ export function arrangePlex(
     opacity: 1,
   }
 
-  const counts = countRoles(neighbourhood.nodes)
+  const counts = countSeats(neighbourhood.nodes)
   const limits = limitsFor(resolved, counts)
 
   const { seating, overflow } = admit(neighbourhood.nodes, limits)
@@ -54,36 +54,36 @@ export function arrangePlex(
   return { nodes, edges, extent: extentOf(nodes), overflow }
 }
 
-function countRoles(nodes: readonly PlexNode[]): Record<PlexRelatedRole, number> {
-  const counts = Object.fromEntries(RELATED_ROLES.map((role) => [role, 0])) as Record<
-    PlexRelatedRole,
+function countSeats(nodes: readonly PlexNode[]): Record<PlexRelatedSeat, number> {
+  const counts = Object.fromEntries(RELATED_SEATS.map((seat) => [seat, 0])) as Record<
+    PlexRelatedSeat,
     number
   >
   for (const node of nodes) {
-    if (node.role !== 'focus') counts[node.role] += 1
+    if (node.seat !== 'focus') counts[node.seat] += 1
   }
   return counts
 }
 
 /**
- * How much of each role the picture holds. Settled before a strategy is
+ * How much of each seat the picture holds. Settled before a strategy is
  * called, so the overflow count means the same thing whichever one draws it.
  */
 function admit(
   nodes: readonly PlexNode[],
   limits: Limits,
-): { seating: Seating; overflow: Partial<Record<PlexRelatedRole, number>> } {
-  const seating: Partial<Record<PlexRelatedRole, readonly PlexNode[]>> = {}
-  const overflow: Partial<Record<PlexRelatedRole, number>> = {}
+): { seating: Seating; overflow: Partial<Record<PlexRelatedSeat, number>> } {
+  const seating: Partial<Record<PlexRelatedSeat, readonly PlexNode[]>> = {}
+  const overflow: Partial<Record<PlexRelatedSeat, number>> = {}
 
-  for (const role of RELATED_ROLES) {
-    const ofRole = nodes.filter((node) => node.role === role)
-    if (ofRole.length === 0) continue
+  for (const seat of RELATED_SEATS) {
+    const ofSeat = nodes.filter((node) => node.seat === seat)
+    if (ofSeat.length === 0) continue
 
-    const capacity = limits[role].perLine * limits[role].lines
-    const shown = ofRole.slice(0, capacity)
-    if (ofRole.length > shown.length) overflow[role] = ofRole.length - shown.length
-    seating[role] = shown
+    const capacity = limits[seat].perLine * limits[seat].lines
+    const shown = ofSeat.slice(0, capacity)
+    if (ofSeat.length > shown.length) overflow[seat] = ofSeat.length - shown.length
+    seating[seat] = shown
   }
 
   return { seating, overflow }

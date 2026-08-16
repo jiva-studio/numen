@@ -1,14 +1,14 @@
-import type { PlexRelatedRole } from '../model'
-import { RELATED_ROLES } from '../model'
+import type { PlexRelatedSeat } from '../model'
+import { RELATED_SEATS } from '../model'
 import { isVertical, type PlexOptions } from './options'
 
-/** How one role wraps: how many along a line, and how many lines. */
+/** How one seat wraps: how many along a line, and how many lines. */
 export interface RoleLimits {
   readonly perLine: number
   readonly lines: number
 }
 
-export type Limits = Readonly<Record<PlexRelatedRole, RoleLimits>>
+export type Limits = Readonly<Record<PlexRelatedSeat, RoleLimits>>
 
 const clamp = (value: number, low: number, high: number) =>
   Math.max(low, Math.min(high, value))
@@ -18,7 +18,7 @@ const along = (room: number, size: number, gap: number) =>
   Math.floor((room + gap) / (size + gap))
 
 /**
- * How each role wraps, given the window.
+ * How each seat wraps, given the window.
  *
  * What gives is how many go on a line, not how many are shown: a row too wide
  * wraps sooner and runs deeper, into the space above and below. Rows are
@@ -27,20 +27,20 @@ const along = (room: number, size: number, gap: number) =>
  */
 export function limitsFor(
   options: PlexOptions,
-  counts: Readonly<Record<PlexRelatedRole, number>>,
+  counts: Readonly<Record<PlexRelatedSeat, number>>,
 ): Limits {
   const asked: RoleLimits = { perLine: options.maxPerLine, lines: options.maxLines }
   const { viewport } = options
-  if (!viewport) return everyRole(options, () => asked, () => asked)
+  if (!viewport) return everySeat(options, () => asked, () => asked)
 
   const halfWidth = viewport.width / 2 - options.margin
   const halfHeight = viewport.height / 2 - options.margin
   const { width, height } = options.nodeSize
 
-  const columnRoles = RELATED_ROLES.filter(
-    (role) => counts[role] > 0 && !isVertical(options.direction[role]),
+  const columnSeats = RELATED_SEATS.filter(
+    (seat) => counts[seat] > 0 && !isVertical(options.direction[seat]),
   )
-  const longestColumn = columnRoles.reduce((most, role) => Math.max(most, counts[role]), 0)
+  const longestColumn = columnSeats.reduce((most, seat) => Math.max(most, counts[seat]), 0)
   const hasColumns = longestColumn > 0
 
   // What a column has to clear, which is the row *or the focus*, whichever
@@ -68,7 +68,7 @@ export function limitsFor(
 
   const perColumn = Math.max(1, along(2 * halfHeight, height, options.gap))
 
-  return everyRole(
+  return everySeat(
     options,
     () => ({
       perLine: row,
@@ -102,15 +102,15 @@ function widestRow(most: number, fits: (perLine: number) => boolean): number {
   return 1
 }
 
-function everyRole(
+function everySeat(
   options: PlexOptions,
   forRows: () => RoleLimits,
   forColumns: () => RoleLimits,
 ): Limits {
   return Object.fromEntries(
-    RELATED_ROLES.map((role) => [
-      role,
-      isVertical(options.direction[role]) ? forRows() : forColumns(),
+    RELATED_SEATS.map((seat) => [
+      seat,
+      isVertical(options.direction[seat]) ? forRows() : forColumns(),
     ]),
   ) as Limits
 }

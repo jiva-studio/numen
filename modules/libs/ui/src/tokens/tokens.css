@@ -48,12 +48,12 @@
   --numen-focus-fg: light-dark(#fbfbfa, #17181a);
   --numen-focus-border: light-dark(#1d1f22, #e8eaee);
 
-  /* One hue per role, carrying the meaning the position already carries: the
+  /* One hue per seat, carrying the meaning the position already carries: the
      arrangement is what a reader learns, the colour is what they use first. */
-  --numen-role-parent: light-dark(#3f6ca8, #7aa7dd);
-  --numen-role-child: light-dark(#3d7f5f, #6fbd93);
-  --numen-role-jump: light-dark(#9a6a2f, #d6a463);
-  --numen-role-sibling: light-dark(#7a5490, #b48fcb);
+  --numen-seat-parent: light-dark(#3f6ca8, #7aa7dd);
+  --numen-seat-child: light-dark(#3d7f5f, #6fbd93);
+  --numen-seat-jump: light-dark(#9a6a2f, #d6a463);
+  --numen-seat-sibling: light-dark(#7a5490, #b48fcb);
 
   --numen-edge: light-dark(#c3c6cc, #3d424a);
   --numen-edge-label: light-dark(#7b7f87, #8b9098);
@@ -64,7 +64,7 @@
   --numen-motion-hover: 110ms;
   --numen-easing: cubic-bezier(0.32, 0.72, 0, 1);
   /* Overridden by the plex from its own `duration`, so colour that follows a
-     role changes over the time the role takes to change. */
+     seat changes over the time the seat takes to change. */
   --numen-plex-move: var(--numen-motion);
 }
 

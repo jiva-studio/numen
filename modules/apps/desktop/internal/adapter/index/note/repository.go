@@ -78,22 +78,22 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note) error
 		problem = strings.TrimSpace(problem + "\n" + storeErr)
 	}
 
-	var id int64
+	var row int64
 	if err := tx.QueryRowContext(ctx, stmt.Get("save"),
 		vault, n.Ref.Path, domain.Basename(n.Ref.Path), n.Title, nullable(n.ID),
-		frontmatter, nullable(problem), n.Ref.Size, n.Ref.MTime).Scan(&id); err != nil {
+		frontmatter, nullable(problem), n.Ref.Size, n.Ref.MTime).Scan(&row); err != nil {
 		return fmt.Errorf("save: %w", err)
 	}
 
 	// Derived rows are replaced wholesale: diffing them against what was there
 	// costs more than rewriting a handful of rows.
 	for _, name := range []string{"clear_headings", "clear_links", "clear_problems"} {
-		if err := exec(ctx, tx, name, id); err != nil {
+		if err := exec(ctx, tx, name, row); err != nil {
 			return err
 		}
 	}
 	for _, h := range n.Headings {
-		if err := exec(ctx, tx, "insert_heading", id, h.Pos, h.Level, h.Text); err != nil {
+		if err := exec(ctx, tx, "insert_heading", row, h.Line, h.Level, h.Text); err != nil {
 			return err
 		}
 	}
@@ -104,7 +104,7 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note) error
 		}
 		defer insert.Close()
 		for i, l := range n.Links {
-			if _, err := insert.ExecContext(ctx, id, i,
+			if _, err := insert.ExecContext(ctx, row, i,
 				l.Target.Scheme, l.Target.Value, domain.Basename(l.Target.Value),
 				string(l.Role), nullable(l.Type), nullable(l.Note), nullable(l.Label),
 			); err != nil {
@@ -113,11 +113,11 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note) error
 		}
 	}
 	for _, detail := range n.Problems {
-		if err := exec(ctx, tx, "insert_problem", id, detail); err != nil {
+		if err := exec(ctx, tx, "insert_problem", row, detail); err != nil {
 			return err
 		}
 	}
-	return exec(ctx, tx, "save_fts", id, n.Title, n.Body)
+	return exec(ctx, tx, "save_fts", row, n.Title, n.Body)
 }
 
 func (r *Repository) Remove(ctx context.Context, vaultID string, paths []string) error {
@@ -135,18 +135,18 @@ func (r *Repository) Remove(ctx context.Context, vaultID string, paths []string)
 		return err
 	}
 	for _, path := range paths {
-		var id int64
-		err := tx.QueryRowContext(ctx, stmt.Get("identify"), vault, path).Scan(&id)
+		var row int64
+		err := tx.QueryRowContext(ctx, stmt.Get("identify"), vault, path).Scan(&row)
 		if errors.Is(err, sql.ErrNoRows) {
 			continue
 		}
 		if err != nil {
 			return fmt.Errorf("identify %s: %w", path, err)
 		}
-		if err := exec(ctx, tx, "delete_fts", id); err != nil {
+		if err := exec(ctx, tx, "delete_fts", row); err != nil {
 			return err
 		}
-		if err := exec(ctx, tx, "delete", id); err != nil {
+		if err := exec(ctx, tx, "delete", row); err != nil {
 			return err
 		}
 	}

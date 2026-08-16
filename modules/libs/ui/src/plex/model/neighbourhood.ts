@@ -14,11 +14,11 @@ export interface PlexNeighbourhood {
 export function assertNeighbourhood(
   neighbourhood: PlexNeighbourhood,
 ): PlexNode {
-  const focused = neighbourhood.nodes.filter((node) => node.role === 'focus')
+  const focused = neighbourhood.nodes.filter((node) => node.seat === 'focus')
   const focus = focused[0]
 
   if (focus === undefined) {
-    throw new Error('A plex neighbourhood needs a node with the focus role')
+    throw new Error('A plex neighbourhood needs a node with the focus seat')
   }
   if (focused.length > 1) {
     throw new Error(

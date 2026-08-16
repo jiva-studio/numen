@@ -97,20 +97,20 @@ func headings(body []byte) []domain.Heading {
 	var out []domain.Heading
 	sc := bufio.NewScanner(bytes.NewReader(body))
 	sc.Buffer(make([]byte, 0, 64*1024), 4*1024*1024)
-	pos, fenced := 0, false
+	line, fenced := 0, false
 	for sc.Scan() {
-		line := strings.TrimRight(sc.Text(), "\r")
-		if isFence(line) {
+		text := strings.TrimRight(sc.Text(), "\r")
+		if isFence(text) {
 			fenced = !fenced
-			pos++
+			line++
 			continue
 		}
 		if !fenced {
-			if m := headingRe.FindStringSubmatch(line); m != nil {
-				out = append(out, domain.Heading{Level: len(m[1]), Text: m[2], Pos: pos})
+			if m := headingRe.FindStringSubmatch(text); m != nil {
+				out = append(out, domain.Heading{Level: len(m[1]), Text: m[2], Line: line})
 			}
 		}
-		pos++
+		line++
 	}
 	return out
 }

@@ -12,15 +12,15 @@ import { computed } from 'vue'
 import PlexNodeView from './PlexNodeView.vue'
 import { awkwardLabels } from '../fixtures/neighbourhoods'
 import {
-  RELATED_ROLES,
+  RELATED_SEATS,
   type NodeStanding,
   type PlacedNode,
-  type PlexRole,
+  type PlexSeat,
 } from '../model'
 
 interface Knobs {
-  label: string
-  role: PlexRole
+  title: string
+  seat: PlexSeat
   width: number
   height: number
   /** Below one, a node is on its way in or out and cannot be chosen. */
@@ -51,8 +51,8 @@ const GLYPH = `
 
 const nodeFrom = (a: Knobs, over: Partial<PlacedNode> = {}): PlacedNode => ({
   id: 'one',
-  label: a.label,
-  role: a.role,
+  title: a.title,
+  seat: a.seat,
   x: 0,
   y: 0,
   width: a.width,
@@ -118,7 +118,7 @@ const meta: Meta<Knobs> = {
     docs: {
       description: {
         component:
-          'A box, a label and the handle to reach out from. Everything it ' +
+          'A box, a title and the handle to reach out from. Everything it ' +
           'draws with is already on the node it was handed, and whether a ' +
           'pointer is over it is its own affair — hover it and the handle ' +
           'appears. The one thing it cannot work out is what it is to a ' +
@@ -128,8 +128,8 @@ const meta: Meta<Knobs> = {
   },
 
   argTypes: {
-    label: { control: 'text' },
-    role: { control: 'inline-radio', options: ['focus', ...RELATED_ROLES] },
+    title: { control: 'text' },
+    seat: { control: 'inline-radio', options: ['focus', ...RELATED_SEATS] },
     width: range(64, 320, 4),
     height: range(20, 96, 2),
     opacity: range(0, 1, 0.05),
@@ -142,8 +142,8 @@ const meta: Meta<Knobs> = {
   },
 
   args: {
-    label: 'A thought',
-    role: 'child',
+    title: 'A node',
+    seat: 'child',
     width: 144,
     height: 36,
     opacity: 1,
@@ -167,17 +167,17 @@ export const Playground: Story = {}
  * All five seats at once, each where it would sit around a focus.
  *
  * Not a knob turned five times: what is being judged is whether the hues tell
- * one role from another and whether the focus reads as somewhere the reader
+ * one seat from another and whether the focus reads as somewhere the reader
  * already is, and neither question can be asked of one node at a time.
  */
 export const EverySeat: Story = {
   render: on(
     (args) => [
-      nodeFrom(args, { id: 'focus', label: 'Where you are', role: 'focus', width: 176, height: 44 }),
-      nodeFrom(args, { id: 'parent', label: 'Above it', role: 'parent', y: -72 }),
-      nodeFrom(args, { id: 'child', label: 'Below it', role: 'child', y: 72 }),
-      nodeFrom(args, { id: 'jump', label: 'Off to the left', role: 'jump', x: -190 }),
-      nodeFrom(args, { id: 'sibling', label: 'Off to the right', role: 'sibling', x: 190 }),
+      nodeFrom(args, { id: 'focus', title: 'Where you are', seat: 'focus', width: 176, height: 44 }),
+      nodeFrom(args, { id: 'parent', title: 'Above it', seat: 'parent', y: -72 }),
+      nodeFrom(args, { id: 'child', title: 'Below it', seat: 'child', y: 72 }),
+      nodeFrom(args, { id: 'jump', title: 'Off to the left', seat: 'jump', x: -190 }),
+      nodeFrom(args, { id: 'sibling', title: 'Off to the right', seat: 'sibling', x: 190 }),
     ],
     { width: 560, height: 240 },
   ),
@@ -196,7 +196,7 @@ export const EverySeat: Story = {
 export const Reaching: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    const node = canvas.getByLabelText('A thought, child')
+    const node = canvas.getByLabelText('A node, child')
     const handle = () => canvasElement.querySelector('.plex__handle')
 
     // Under the hand, and gone again when it leaves.
@@ -235,10 +235,10 @@ export const Reaching: Story = {
     await userEvent.click(node)
     await expect(args.onActivate).toHaveBeenCalledTimes(1)
 
-    // A drag across a label is a drag that meant to reach somewhere, so the
+    // A drag across a title is a drag that meant to reach somewhere, so the
     // text must not come away highlighted under it.
-    const label = node.querySelector('.plex__label')!
-    await expect(getComputedStyle(label).userSelect).toBe('none')
+    const title = node.querySelector('.plex__title')!
+    await expect(getComputedStyle(title).userSelect).toBe('none')
   },
 }
 
@@ -247,7 +247,7 @@ export const Reaching: Story = {
  * corpus the plex is shown, laid out in a grid because these are being
  * compared rather than arranged.
  *
- * Only a browser can answer it: jsdom lays out no text, so every label is the
+ * Only a browser can answer it: jsdom lays out no text, so every title is the
  * same size to it and one that overflows looks identical to one that fits.
  */
 export const AwkwardLabels: Story = {
@@ -268,16 +268,16 @@ export const AwkwardLabels: Story = {
     // Nothing spills out of the box it was given, whatever the script.
     for (const node of Array.from(canvasElement.querySelectorAll('.plex__node'))) {
       const box = node.querySelector('rect')!.getBoundingClientRect()
-      const text = node.querySelector('.plex__label-text')!.getBoundingClientRect()
+      const text = node.querySelector('.plex__title-text')!.getBoundingClientRect()
       await expect(text.width).toBeLessThanOrEqual(box.width)
     }
 
     // One line and an ellipsis, never two. The first of these has room to
     // break and the second has none, and neither is any taller for it.
     for (const tooLong of [/^Заметка/, /^Supercalifragilistic/]) {
-      const label = canvas.getByLabelText(tooLong).querySelector('.plex__label-text')!
-      await expect(label.scrollWidth).toBeGreaterThan(label.clientWidth)
-      await expect(label.scrollHeight).toBe(label.clientHeight)
+      const title = canvas.getByLabelText(tooLong).querySelector('.plex__title-text')!
+      await expect(title.scrollWidth).toBeGreaterThan(title.clientWidth)
+      await expect(title.scrollHeight).toBe(title.clientHeight)
     }
   },
 }
@@ -292,7 +292,7 @@ export const AwkwardLabels: Story = {
  */
 export const PartWayThere: Story = {
   render: on((args) => [
-    nodeFrom(args, { id: 'staying', label: 'Staying', x: -84 }),
-    nodeFrom(args, { id: 'going', label: 'On its way out', x: 84, opacity: 0.35 }),
+    nodeFrom(args, { id: 'staying', title: 'Staying', x: -84 }),
+    nodeFrom(args, { id: 'going', title: 'On its way out', x: 84, opacity: 0.35 }),
   ]),
 }

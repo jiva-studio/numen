@@ -4,7 +4,7 @@ export { limitsFor, type Limits, type RoleLimits } from './limits'
 export {
   nodeAt,
   resolveDrop,
-  roleTowards,
+  seatTowards,
   seatWithoutDirection,
   type Drop,
   type DropInput,

@@ -11,19 +11,19 @@ import (
 // answer — nothing — so callers turn this into an empty result.
 var errNoVault = errors.New("vault not in the index")
 
-// row is anything that can answer a single-row query, so that this works inside
-// a transaction as well as outside one.
-type row interface {
+// querier is anything that can answer a single-row question, so that this works
+// inside a transaction as well as outside one.
+type querier interface {
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }
 
-// vaultRow turns the identity a vault carries in the world into the one this
-// database uses.
-func vaultRow(ctx context.Context, db row, identifier string) (int64, error) {
-	var id int64
-	err := db.QueryRowContext(ctx, stmt.Get("vault_row"), identifier).Scan(&id)
+// vaultRow turns the identifier a vault carries in the world into the row
+// number this database files it under.
+func vaultRow(ctx context.Context, db querier, identifier string) (int64, error) {
+	var row int64
+	err := db.QueryRowContext(ctx, stmt.Get("vault_row"), identifier).Scan(&row)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, errNoVault
 	}
-	return id, err
+	return row, err
 }

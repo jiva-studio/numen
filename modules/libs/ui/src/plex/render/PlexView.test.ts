@@ -7,9 +7,9 @@ import type { PlexNeighbourhood } from '../model'
 
 const before: PlexNeighbourhood = {
   nodes: [
-    { id: 'focus', label: 'Start', role: 'focus' },
-    { id: 'staying', label: 'Staying', role: 'child' },
-    { id: 'going', label: 'Going', role: 'child' },
+    { id: 'focus', title: 'Start', seat: 'focus' },
+    { id: 'staying', title: 'Staying', seat: 'child' },
+    { id: 'going', title: 'Going', seat: 'child' },
   ],
   edges: [
     { from: 'focus', to: 'staying' },
@@ -19,9 +19,9 @@ const before: PlexNeighbourhood = {
 
 const after: PlexNeighbourhood = {
   nodes: [
-    { id: 'staying', label: 'Staying', role: 'focus' },
-    { id: 'focus', label: 'Start', role: 'parent' },
-    { id: 'arriving', label: 'Arriving', role: 'child' },
+    { id: 'staying', title: 'Staying', seat: 'focus' },
+    { id: 'focus', title: 'Start', seat: 'parent' },
+    { id: 'arriving', title: 'Arriving', seat: 'child' },
   ],
   edges: [
     { from: 'focus', to: 'staying' },
@@ -81,7 +81,7 @@ describe('what each node is to a gesture', () => {
     const view = mountDuring({
       gestureFrom: 'focus',
       gestureAt: { x: 0, y: 200 },
-      gestureOutcome: { kind: 'link', from: 'focus', to: 'going', role: 'child' },
+      gestureOutcome: { kind: 'link', from: 'focus', to: 'going', seat: 'child' },
     })
     expect(view.findAll('.plex__node--target')).toHaveLength(1)
     expect(view.get('[aria-label^="Going"]').classes()).toContain('plex__node--target')
@@ -91,11 +91,11 @@ describe('what each node is to a gesture', () => {
     const view = mountDuring({
       gestureFrom: 'focus',
       gestureAt: { x: 40, y: -200 },
-      gestureOutcome: { kind: 'create', from: 'focus', role: 'parent' },
+      gestureOutcome: { kind: 'create', from: 'focus', seat: 'parent' },
     })
     const ghost = view.get('.plex__node--ghost')
     expect(ghost.attributes('transform')).toBe('translate(40 -200)')
-    expect(ghost.get('.plex__label-text').text()).toBe('parent')
+    expect(ghost.get('.plex__title-text').text()).toBe('parent')
     expect(Number(ghost.get('rect').attributes('width'))).toBe(DEFAULT_OPTIONS.nodeSize.width)
   })
 })
@@ -123,11 +123,11 @@ describe('the window onto the drawing', () => {
     const crowded = boxOf(
       arrangePlex({
         nodes: [
-          { id: 'focus', label: 'Start', role: 'focus' },
+          { id: 'focus', title: 'Start', seat: 'focus' },
           ...Array.from({ length: 40 }, (_, i) => ({
             id: `c${i}`,
-            label: `Child ${i}`,
-            role: 'child' as const,
+            title: `Child ${i}`,
+            seat: 'child' as const,
           })),
         ],
         edges: [],
@@ -142,7 +142,7 @@ describe('the window onto the drawing', () => {
     const view = mount(PlexView, {
       props: { frame, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
     })
-    const focus = frame.nodes.find((n) => n.role === 'focus')!
+    const focus = frame.nodes.find((n) => n.seat === 'focus')!
     const rect = view.get('[aria-label^="Start"] rect')
     expect(Number(rect.attributes('width'))).toBe(focus.width)
     expect(Number(rect.attributes('height'))).toBe(focus.height)

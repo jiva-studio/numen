@@ -1,5 +1,5 @@
-import type { PlexRelatedRole } from '../model'
-import { ROLES } from '../model'
+import type { PlexRelatedSeat } from '../model'
+import { SEATS } from '../model'
 
 export type Direction = 'up' | 'down' | 'left' | 'right'
 
@@ -15,7 +15,7 @@ export interface BoxOptions {
   readonly gap: number
   /** Between one line and the next, further from the focus. */
   readonly lineGap: number
-  /** Between the focus box and the first line of any role. */
+  /** Between the focus box and the first line of any seat. */
   readonly focusGap: number
   /** Kept clear of the window edge, so nothing sits flush against it. */
   readonly margin: number
@@ -24,7 +24,7 @@ export interface BoxOptions {
 export interface LimitOptions {
   /** How many nodes fit on one line before a second line is started. */
   readonly maxPerLine: number
-  /** Lines per role. Nodes past the last line are reported as overflow. */
+  /** Lines per seat. Nodes past the last line are reported as overflow. */
   readonly maxLines: number
 }
 
@@ -61,7 +61,7 @@ export interface PlexOptions extends BoxOptions, LimitOptions {
   readonly routing: RoutingOptions
   readonly motion: MotionOptions
   readonly gesture: GestureOptions
-  readonly direction: Readonly<Record<PlexRelatedRole, Direction>>
+  readonly direction: Readonly<Record<PlexRelatedSeat, Direction>>
   /**
    * The window the plex is drawn in. Given one, a row too wide for it wraps
    * sooner and runs deeper rather than reaching past the edge. Without one,
@@ -70,10 +70,10 @@ export interface PlexOptions extends BoxOptions, LimitOptions {
   readonly viewport?: Size | undefined
 }
 
-export const DEFAULT_DIRECTION: Readonly<Record<PlexRelatedRole, Direction>> =
+export const DEFAULT_DIRECTION: Readonly<Record<PlexRelatedSeat, Direction>> =
   Object.fromEntries(
-    Object.entries(ROLES).map(([role, descriptor]) => [role, descriptor.grows]),
-  ) as Record<PlexRelatedRole, Direction>
+    Object.entries(SEATS).map(([seat, descriptor]) => [seat, descriptor.grows]),
+  ) as Record<PlexRelatedSeat, Direction>
 
 export const DEFAULT_OPTIONS: PlexOptions = {
   focusSize: { width: 176, height: 44 },

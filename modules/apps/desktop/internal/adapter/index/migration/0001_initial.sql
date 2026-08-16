@@ -52,10 +52,10 @@ CREATE INDEX notes_by_identifier ON notes (identifier);
 
 CREATE TABLE headings (
     note_id  INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
-    position INTEGER NOT NULL,
+    line     INTEGER NOT NULL,
     level    INTEGER NOT NULL,
     text     TEXT NOT NULL,
-    PRIMARY KEY (note_id, position)
+    PRIMARY KEY (note_id, line)
 );
 
 -- The search index, and nothing else: `content=''` keeps no copy of what was

@@ -5,7 +5,7 @@
 import { computed, onScopeDispose, ref, type Ref } from 'vue'
 import { resolveDrop, seatWithoutDirection, type Drop } from './arrange'
 import type { PlexOptions } from './arrange'
-import type { PlexFrame, PlexRelatedRole, Point } from './model'
+import type { PlexFrame, PlexRelatedSeat, Point } from './model'
 
 export interface Gesture {
   /** The node it started from, while one is under way. */
@@ -54,7 +54,7 @@ function pointIn(svg: SVGSVGElement, event: PointerEvent): Point | null {
 export function usePlexGesture(
   frame: () => PlexFrame,
   options: () => PlexOptions,
-  allowed: () => readonly PlexRelatedRole[],
+  allowed: () => readonly PlexRelatedSeat[],
   threshold: () => number,
   settle: (drop: Drop) => void,
 ): Gesture & GestureHandlers {
@@ -80,8 +80,8 @@ export function usePlexGesture(
     // A gesture that has not travelled is a press, and a press has a rule
     // rather than a direction.
     if (!travelled(point)) {
-      const role = seatWithoutDirection(allowed())
-      return role ? { kind: 'create', from: source, role } : null
+      const seat = seatWithoutDirection(allowed())
+      return seat ? { kind: 'create', from: source, seat } : null
     }
 
     return resolveDrop({
@@ -130,8 +130,8 @@ export function usePlexGesture(
   const cancel = () => stop(svg())
 
   const ask = (source: string) => {
-    const role = seatWithoutDirection(allowed())
-    if (role) settle({ kind: 'create', from: source, role })
+    const seat = seatWithoutDirection(allowed())
+    if (seat) settle({ kind: 'create', from: source, seat })
   }
 
   const begin = (source: string, event: PointerEvent) => {

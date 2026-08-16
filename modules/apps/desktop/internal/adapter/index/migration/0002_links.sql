@@ -2,7 +2,7 @@
 -- joined with notes: adding a file can resolve a link that was dangling, and
 -- deleting one can break a link that worked.
 --
--- `reason` is what the person wrote about why the link exists.
+-- `note` is what the person wrote about why the link exists.
 CREATE TABLE links (
     note_id    INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
     position   INTEGER NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE links (
 
     role       TEXT NOT NULL,
     type       TEXT,
-    reason     TEXT,
+    note       TEXT,
     label      TEXT,
 
     PRIMARY KEY (note_id, position)

@@ -1,0 +1,178 @@
+# ADR-0024: Ubiquitous language
+
+- **Status:** Accepted
+- **Date:** 2026-08-16
+- **Applies to:** the product as a whole
+- **Related:** ADR-0003, ADR-0011, ADR-0014, ADR-0020
+
+## Context
+
+The same system is written down five times over: in the prose of these
+decisions, in the domain, in the storage, on the wire between the core and a
+window, and in what the person using it reads. Each was written at a different
+time, and nothing has required them to agree.
+
+They have not. One thing goes by several names, and one name means several
+things. Both cost the same thing: a reader crossing a boundary translates in
+their head, and a translation nobody wrote down is a translation nobody can
+check.
+
+The practice has a name — Evans's *ubiquitous language*: one language spoken by
+the code, the documents and the people talking about them, so that nothing has
+to be translated in order to be understood.
+
+## Decision
+
+### One word for one thing, and one thing for one word
+
+Two halves, and the second is the one that bites.
+
+**A concept has one name.** If the domain, the storage, the wire and the
+interface are talking about the same thing, they use the same word for it. A
+field renamed on the way across a boundary is a defect unless a rule requires
+the rename, and the rule is written here.
+
+**A word means one thing.** A word already spent is spent. Reusing it for a
+second concept is worse than inventing a synonym, because a synonym announces
+itself and a homonym does not: the reader carries the wrong meaning across and
+nothing tells them.
+
+### The language is one language
+
+The words below hold in every body of text — the decisions, the domain, the
+storage, the wire, the interface, and the strings a person reads. A word that
+cannot survive a boundary is the wrong word, not evidence that the boundary
+needs a dialect.
+
+There is one exception, and it is narrow: the interface may not know the vault
+(ADR-0020). Where a domain word would teach it something it must not know, it
+takes a word of its own — and that word is in this vocabulary too, meaning that
+one thing and nothing else.
+
+### The vocabulary
+
+Only words that cross a boundary or have been contested are listed. A word used
+in one place, meaning the obvious thing, needs no entry.
+
+**What the person writes**
+
+| Word | Means |
+|---|---|
+| vault | A folder the person added, carrying its own identity |
+| note | A markdown file in a vault |
+| asset | A file in a vault that is not a note |
+| title | The name a note is shown by |
+| link | One relationship, as written in a file |
+| role | What kind of relationship a link is: `parent`, `child`, `jump`, `ref`, `attachment`. Written by the person, closed list (ADR-0003) |
+| type | What a link is for, as a feature reads it. Open vocabulary |
+| label | The few words a person writes for what a relationship is called |
+| note (on a link) | Why the link exists, in the person's words. The one deliberate homonym; see below |
+| address | Scheme and value; the only thing that says where a link goes |
+| identifier | The ULID a note or a vault carries in the world |
+| anchor | An identifier marking a place in a note rather than a thing |
+
+**What the application keeps**
+
+| Word | Means |
+|---|---|
+| artifact | Data that cannot be reproduced locally, deterministically and for free. Lives in the vault |
+| cache | Data that can. Lives outside the vault |
+| index | The cache. Never a SQL index; that word belongs to SQL and stays in SQL |
+| registry | The list of vaults the installation knows |
+| scan | One walk of a whole vault |
+| refresh | Bringing named notes up to date. Never *reindex*, never *incremental* |
+| group | What a scan writes in: one transaction's worth |
+| fingerprint | Path, size and modification time — what says a note need not be read again |
+| backlink | A link that resolves here, whichever end wrote it |
+| problem | Something that could not be acted on and was not guessed at |
+| watch | Following a vault for changes the application did not make |
+| hold | How long events are kept before they are acted on |
+
+**What is drawn**
+
+| Word | Means |
+|---|---|
+| plex | The focused neighbourhood the product is named for |
+| neighbourhood | One note and everything joined to it, seen from that note |
+| focus | The note a neighbourhood is seen from. Never the keyboard's position |
+| node | What is drawn in place of a note |
+| edge | A line drawn between two nodes. Two links can be one edge (ADR-0003) |
+| seat | Where a node sits relative to the focus: `parent`, `child`, `jump`, `sibling` |
+| viewport | The area the plex is drawn into |
+| window | The application's window on screen, and nothing else |
+
+### Words that were spent twice, and how they are settled
+
+**`role` and `seat`.** A role is written in a file by a person and is one of
+five. A seat is where a node sits in the picture and is one of four —
+`sibling` among them, which no file ever carries, and without `ref` or
+`attachment`, which are not drawn. They are near enough to be confused and
+different enough to matter, so they keep different words. A seat is not a
+value that can be written to a note.
+
+**`link` and `edge`.** A link is a record in a file; an edge is a line in a
+picture, and one edge can be two links (`parent: B` in A and `child: A` in B).
+The fold from one to the other is the whole reason both words exist.
+*Connection* is neither: it is a connection to the database.
+
+**`identifier`.** The ULID a note or vault carries in the world. The number a
+row happens to have inside the index is not an identifier and is not called
+one; it does not leave the storage it belongs to.
+
+**`window`.** The application's window. How long the watcher holds events
+before acting on them is a *hold*; the area the plex draws into is a
+*viewport*.
+
+**`focus`.** The note a neighbourhood is seen from. Where the keyboard is has
+its own word, because a reader who sees `focus` in a stylesheet will guess
+wrong exactly once and be wrong everywhere after.
+
+**`label` and `title`.** A title names a note; a label names a relationship.
+Both are drawn, a few pixels apart, which is precisely why they cannot share a
+word.
+
+**`position`.** An ordinal — which link, which heading. A line number is a
+*line*.
+
+**`note`, twice.** A note is a file. A link's `note` is why it exists. This one
+is kept: the key was chosen for the file format, where it is read by people and
+reads naturally, and moving it now would break every vault for a word nobody
+outside the file ever says. It is the exception that is written down rather
+than the exception that is discovered.
+
+## Consequences
+
+**Positive**
+
+- A name is no longer a matter of taste at each new file. It is looked up.
+- A word that has to be translated at a boundary is now visible as a decision
+  with a reason, or as a defect.
+- A new concept that has no word is a signal: something is being built that was
+  never decided.
+
+**Negative**
+
+- Renaming reaches into the wire, which is a contract, and into storage, which
+  is a migration. Nothing is deployed, so the cost is paid now rather than
+  compounded.
+- Vocabulary drifts by default. Nothing enforces this but reading, and the
+  first thing to rot will be a word invented in a hurry and never brought back
+  here.
+- A decision written before its word existed will read oddly against this list
+  until it is amended.
+
+## Alternatives considered
+
+**Let each layer keep its own vocabulary and translate at the boundary.**
+Rejected: this is what happened, and it is why the same field is `Seat`, `seat`
+and `role` across three files that sit in one call chain. A translation is only
+safe when a rule forces it, and there was no rule.
+
+**A glossary file rather than a decision.** Rejected: a glossary describes, and
+a description that disagrees with the code loses. This binds, and the code is
+what changes.
+
+**Record the collisions and rename nothing.** Rejected: the point is not that
+the collisions are documented, it is that a reader never meets them. Two of
+them — a seat where a role is expected, an identifier where a row number is —
+are the shape of a real defect, not an inconvenience.

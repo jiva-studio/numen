@@ -23,6 +23,7 @@ Read these first; everything else is derived from them.
 - [ADR-0000 — Data is either artifact or cache](0000-artifact-vs-cache.md)
 - [ADR-0001 — Files on disk are the source of truth](0001-files-are-the-source-of-truth.md)
 - [ADR-0002 — SQLite is a cache, one database for all vaults](0002-sqlite-is-a-cache.md)
+- [ADR-0024 — Ubiquitous language](0024-ubiquitous-language.md)
 
 ## Vaults and code
 

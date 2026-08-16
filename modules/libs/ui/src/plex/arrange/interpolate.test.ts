@@ -8,10 +8,10 @@ import type { PlexFrame, PlexNeighbourhood } from '../model'
 /** Focus on `focus`, with two children and one parent. */
 const before: PlexNeighbourhood = {
   nodes: [
-    { id: 'focus', label: 'Start', role: 'focus' },
-    { id: 'up', label: 'Above', role: 'parent' },
-    { id: 'a', label: 'A', role: 'child' },
-    { id: 'b', label: 'B', role: 'child' },
+    { id: 'focus', title: 'Start', seat: 'focus' },
+    { id: 'up', title: 'Above', seat: 'parent' },
+    { id: 'a', title: 'A', seat: 'child' },
+    { id: 'b', title: 'B', seat: 'child' },
   ],
   edges: [
     { from: 'up', to: 'focus' },
@@ -26,11 +26,11 @@ const before: PlexNeighbourhood = {
  */
 const after: PlexNeighbourhood = {
   nodes: [
-    { id: 'a', label: 'A', role: 'focus' },
-    { id: 'focus', label: 'Start', role: 'parent' },
-    { id: 'a1', label: 'A one', role: 'child' },
-    { id: 'a2', label: 'A two', role: 'child' },
-    { id: 'a3', label: 'A three', role: 'child' },
+    { id: 'a', title: 'A', seat: 'focus' },
+    { id: 'focus', title: 'Start', seat: 'parent' },
+    { id: 'a1', title: 'A one', seat: 'child' },
+    { id: 'a2', title: 'A two', seat: 'child' },
+    { id: 'a3', title: 'A three', seat: 'child' },
   ],
   edges: [
     { from: 'focus', to: 'a' },
@@ -87,7 +87,7 @@ describe('a node that is in both pictures travels between its seats', () => {
     expect(half.y).toBe((start.y + end.y) / 2)
   })
 
-  it('grows and shrinks the box as the role changes', () => {
+  it('grows and shrinks the box as the seat changes', () => {
     const half = node(interpolatePlex(from, to, 0.5), 'a')
     expect(half.width).toBeGreaterThan(node(from, 'a').width)
     expect(half.width).toBeLessThan(node(to, 'a').width)
@@ -217,15 +217,15 @@ describe('a line whose ends swap', () => {
     // reader is following is the one that fades out.
     const here: PlexNeighbourhood = {
       nodes: [
-        { id: 'here', label: 'Here', role: 'focus' },
-        { id: 'across', label: 'Across', role: 'jump' },
+        { id: 'here', title: 'Here', seat: 'focus' },
+        { id: 'across', title: 'Across', seat: 'jump' },
       ],
       edges: [{ from: 'across', to: 'here' }],
     }
     const across: PlexNeighbourhood = {
       nodes: [
-        { id: 'across', label: 'Across', role: 'focus' },
-        { id: 'here', label: 'Here', role: 'jump' },
+        { id: 'across', title: 'Across', seat: 'focus' },
+        { id: 'here', title: 'Here', seat: 'jump' },
       ],
       edges: [{ from: 'here', to: 'across' }],
     }

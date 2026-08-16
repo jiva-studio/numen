@@ -61,10 +61,10 @@ func (w Watcher) Watch(
 	return folded, gone, nil
 }
 
-// fold collects events for a window and reports each path once.
+// fold collects events for a hold and reports each path once.
 //
 // Reading the events and delivering them are kept apart. Whoever listens takes
-// as long as it takes to reindex what it was told about, and the operating
+// as long as it takes to refresh what it was told about, and the operating
 // system goes on producing events meanwhile: a fold that waited for its listener
 // would stop emptying the backlog, and everything past the end of it is dropped
 // by the watcher with nothing said.
@@ -77,17 +77,17 @@ func fold(
 	lost chan<- struct{},
 ) {
 	pending := map[string]bool{}
-	// ready is what the window has already closed over, waiting to be taken. It
+	// ready is what the hold has already closed over, waiting to be taken. It
 	// keeps growing while nobody takes it, rather than a second batch waiting
 	// behind the first.
 	var ready []string
 	inReady := map[string]bool{}
-	var window <-chan time.Time
+	var hold <-chan time.Time
 
 	forget := func() {
 		clear(pending)
 		clear(inReady)
-		ready, window = nil, nil
+		ready, hold = nil, nil
 	}
 
 	rescan := func() {
@@ -137,12 +137,12 @@ func fold(
 			// Measured from the first event of a batch, not the last. A vault
 			// being written to continuously — a sync client, a checkout — never
 			// stops long enough for a deadline that moves with it.
-			if window == nil && len(pending) > 0 {
-				window = time.After(opts.window())
+			if hold == nil && len(pending) > 0 {
+				hold = time.After(opts.hold())
 			}
 
-		case <-window:
-			window = nil
+		case <-hold:
+			hold = nil
 			for path := range pending {
 				if !inReady[path] {
 					inReady[path] = true

@@ -1,5 +1,5 @@
-import type { PlacedNode, PlexFrame, PlexRelatedRole, Point } from '../model'
-import { RELATED_ROLES } from '../model'
+import type { PlacedNode, PlexFrame, PlexRelatedSeat, Point } from '../model'
+import { RELATED_SEATS } from '../model'
 import type { Direction, PlexOptions } from './options'
 
 /**
@@ -11,12 +11,12 @@ import type { Direction, PlexOptions } from './options'
  * — is the application's, which is why this reports rather than acts.
  */
 export type Drop =
-  | { readonly kind: 'create'; readonly from: string; readonly role: PlexRelatedRole }
+  | { readonly kind: 'create'; readonly from: string; readonly seat: PlexRelatedSeat }
   | {
       readonly kind: 'link'
       readonly from: string
       readonly to: string
-      readonly role: PlexRelatedRole
+      readonly seat: PlexRelatedSeat
     }
 
 /**
@@ -28,8 +28,8 @@ export type Drop =
  * down, or from the keyboard, where there is no direction to read at all.
  */
 export const seatWithoutDirection = (
-  allowed: readonly PlexRelatedRole[],
-): PlexRelatedRole | null =>
+  allowed: readonly PlexRelatedSeat[],
+): PlexRelatedSeat | null =>
   allowed.includes('child') ? 'child' : (allowed[0] ?? null)
 
 /**
@@ -55,18 +55,18 @@ function towards(dx: number, dy: number, bias: number): Direction | null {
 /**
  * The seat a direction stands for — the inverse of the arrangement's own map.
  *
- * Read off `direction` rather than assumed, because that is what put the roles
+ * Read off `direction` rather than assumed, because that is what put the seats
  * where they are: with parents sent down, dragging down means a parent, and a
  * rule written the other way would quietly contradict the drawing.
  */
-export function roleTowards(
+export function seatTowards(
   from: Point,
   to: Point,
   options: PlexOptions,
-): PlexRelatedRole | null {
+): PlexRelatedSeat | null {
   const heading = towards(to.x - from.x, to.y - from.y, options.gesture.verticalBias)
   if (!heading) return null
-  return RELATED_ROLES.find((role) => options.direction[role] === heading) ?? null
+  return RELATED_SEATS.find((seat) => options.direction[seat] === heading) ?? null
 }
 
 /**
@@ -98,7 +98,7 @@ export interface DropInput {
   /** Where it was let go, in the plex's own coordinates. */
   readonly at: Point
   /** Seats a gesture is allowed to produce. */
-  readonly allowed: readonly PlexRelatedRole[]
+  readonly allowed: readonly PlexRelatedSeat[]
 }
 
 /**
@@ -121,10 +121,10 @@ export function resolveDrop({
   if (landedOn?.id === from) return null
 
   const towardsPoint = landedOn ? { x: landedOn.x, y: landedOn.y } : at
-  const role = roleTowards(source, towardsPoint, options)
-  if (!role || !allowed.includes(role)) return null
+  const seat = seatTowards(source, towardsPoint, options)
+  if (!seat || !allowed.includes(seat)) return null
 
   return landedOn
-    ? { kind: 'link', from, to: landedOn.id, role }
-    : { kind: 'create', from, role }
+    ? { kind: 'link', from, to: landedOn.id, seat }
+    : { kind: 'create', from, seat }
 }
