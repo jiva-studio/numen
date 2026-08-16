@@ -19,11 +19,9 @@ import (
 // missed.
 const Backlog = 4096
 
-// Watching is a vault being followed. Changes carries the paths that changed,
-// folded, and Lost says the vault has to be read again.
-type Watching struct {
-	Changes <-chan []string
-	Lost    <-chan struct{}
+// Watcher follows vaults on disk.
+type Watcher struct {
+	Options Options
 }
 
 // Watch follows one vault and reports the notes that change in it.
@@ -31,11 +29,15 @@ type Watching struct {
 // The watch is on the tree, not on any file: editors save by writing a
 // temporary file and renaming it over the original, so the file a watch was
 // placed on stops existing at the first save.
-func Watch(ctx context.Context, v domain.Vault, opts Options) (*Watching, error) {
-	reader, err := Open(v.Path, opts)
+func (w Watcher) Watch(
+	ctx context.Context,
+	v domain.Vault,
+) (changes <-chan []string, lost <-chan struct{}, err error) {
+	reader, err := Open(v.Path, w.Options)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+	opts := w.Options
 
 	// The shape is taken before the first event, because the first event may be
 	// a folder leaving: what it was can only be known from before it went.
@@ -44,19 +46,19 @@ func Watch(ctx context.Context, v domain.Vault, opts Options) (*Watching, error)
 	raw := make(chan notify.EventInfo, Backlog)
 	tree := filepath.Join(reader.Root(), "...")
 	if err := notify.Watch(tree, raw, notify.All); err != nil {
-		return nil, fmt.Errorf("watch %s: %w", v.Path, err)
+		return nil, nil, fmt.Errorf("watch %s: %w", v.Path, err)
 	}
 
-	changes := make(chan []string)
-	lost := make(chan struct{}, 1)
+	folded := make(chan []string)
+	gone := make(chan struct{}, 1)
 
 	go func() {
 		defer notify.Stop(raw)
-		defer close(changes)
-		fold(ctx, shape, opts, raw, changes, lost)
+		defer close(folded)
+		fold(ctx, shape, opts, raw, folded, gone)
 	}()
 
-	return &Watching{Changes: changes, Lost: lost}, nil
+	return folded, gone, nil
 }
 
 // fold collects events for a window and reports each path once.
