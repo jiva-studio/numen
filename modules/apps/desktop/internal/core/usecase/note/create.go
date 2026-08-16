@@ -36,6 +36,9 @@ type NewNote struct {
 	// Folder is where in the vault it goes, relative to the root. Empty is the
 	// root itself: the application does not arrange anyone's folders.
 	Folder string
+	// Links are what it is joined to, written in the same breath as the note
+	// itself, so that it never exists as an island.
+	Links []domain.Link
 }
 
 // Created is the note that now exists.
@@ -56,6 +59,13 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 	}
 	path := pathpkg.Join(in.Folder, name+u.extension())
 
+	// Before anything is made: a link the note cannot carry leaves no file.
+	for _, link := range in.Links {
+		if err := Writable(link); err != nil {
+			return Created{}, err
+		}
+	}
+
 	identifier, err := ulid.New(u.now())
 	if err != nil {
 		return Created{}, err
@@ -68,6 +78,11 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 		body = "# " + in.Title + "\n\n" + body
 	}
 
+	content, err := joined(markdown.Create(identifier, body), in.Links)
+	if err != nil {
+		return Created{}, err
+	}
+
 	writer, err := u.Writers.Open(v)
 	if err != nil {
 		return Created{}, err
@@ -75,7 +90,7 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 	// Create rather than write: whether the path was free is the filesystem's
 	// to answer, once, rather than something asked beforehand and hoped to
 	// still be true.
-	if err := writer.Create(ctx, path, markdown.Create(identifier, body)); err != nil {
+	if err := writer.Create(ctx, path, content); err != nil {
 		return Created{}, err
 	}
 	if err := u.index(ctx, v, path); err != nil {
@@ -92,6 +107,24 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 		Title:      in.Title,
 		Shares:     without(shares, path),
 	}, nil
+}
+
+// joined writes relationships into frontmatter that has just been made, through
+// the splicing every other link goes through: one set of quoting rules, not two.
+func joined(content []byte, links []domain.Link) ([]byte, error) {
+	if len(links) == 0 {
+		return content, nil
+	}
+	doc, err := markdown.Open(content)
+	if err != nil {
+		return nil, err
+	}
+	for _, link := range links {
+		if err := doc.AddLink(link); err != nil {
+			return nil, err
+		}
+	}
+	return doc.Bytes(), nil
 }
 
 func (u Create) extension() string {

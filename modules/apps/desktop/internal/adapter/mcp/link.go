@@ -2,35 +2,68 @@ package mcp
 
 import (
 	"context"
+	"fmt"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 )
 
 func addLinkTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name: "link_add",
-		Description: "Join one note to another. The link is written in the note it goes " +
+		Description: "Join notes to other notes. A link is written in the note it goes " +
 			"from and shows at both ends. `parent` and `child` are the hierarchy the " +
 			"product draws; `jump` is a shortcut across it; `ref` is a plain mention. " +
-			"Write the target as the other note's name — a name follows a note that moves.",
+			"Write the target as the other note's name — a name follows a note that " +
+			"moves. Links going into the same note are written together, in one change " +
+			"the person sees once. A note being made takes its links in note_create " +
+			"instead, so that it never exists unjoined.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		From  string `json:"from" jsonschema:"the path of the note the link is written in"`
-		To    string `json:"to" jsonschema:"the other note's name, or note://<identifier> when the name is ambiguous"`
-		Role  string `json:"role" jsonschema:"what kind of relationship this is: parent, child, jump, ref or attachment"`
-		Type  string `json:"type,omitempty" jsonschema:"what the link is for, as a feature reads it"`
-		Label string `json:"label,omitempty" jsonschema:"a few words naming the relationship, shown along the line"`
-		Note  string `json:"note,omitempty" jsonschema:"why the link exists, in the person's words"`
-	}) (*sdk.CallToolResult, Done, error) {
-		err := core.Linking.Add(ctx, core.Vault, in.From, domain.Link{
-			Target: domain.ParseAddress(in.To),
-			Role:   domain.LinkRole(in.Role),
-			Type:   in.Type,
-			Label:  in.Label,
-			Note:   in.Note,
-		})
-		return nil, Done{Path: in.From}, err
+		Links []Join `json:"links" jsonschema:"the relationships to write"`
+	}) (*sdk.CallToolResult, struct {
+		Added []JoinOutcome `json:"added"`
+	}, error) {
+		type out = struct {
+			Added []JoinOutcome `json:"added"`
+		}
+		if len(in.Links) > maxRefs {
+			return nil, out{}, fmt.Errorf("write at most %d links at a time", maxRefs)
+		}
+
+		res := out{Added: make([]JoinOutcome, 0, len(in.Links))}
+		// A malformed link is set aside before the grouping, so it costs only
+		// itself. What is left is grouped: links sharing a note share a write.
+		var order []string
+		batches := map[string][]domain.Link{}
+		at := map[string][]int{}
+		for i, join := range in.Links {
+			res.Added = append(res.Added, JoinOutcome{From: join.From, To: join.To})
+			link := written([]NewLink{join.NewLink})[0]
+			if err := note.Writable(link); err != nil {
+				res.Added[i].Refused = err.Error()
+				continue
+			}
+			if _, seen := batches[join.From]; !seen {
+				order = append(order, join.From)
+			}
+			batches[join.From] = append(batches[join.From], link)
+			at[join.From] = append(at[join.From], i)
+		}
+
+		// One note's links are one write: they land or fail together, and each
+		// carries the same reason. Another note's write is untouched by it.
+		for _, from := range order {
+			err := core.Linking.Add(ctx, core.Vault, from, batches[from]...)
+			if err == nil {
+				continue
+			}
+			for _, i := range at[from] {
+				res.Added[i].Refused = err.Error()
+			}
+		}
+		return nil, res, nil
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
@@ -125,4 +158,18 @@ func linksOf(links []domain.ResolvedLink) []Link {
 // Done is what a tool that changed one note says: which note it was.
 type Done struct {
 	Path string `json:"path"`
+}
+
+// Join is one relationship to write, and the note it is written in.
+type Join struct {
+	From string `json:"from" jsonschema:"the path of the note the link is written in"`
+	NewLink
+}
+
+// JoinOutcome is what happened to one link in a batch. Refused is empty when it
+// was written.
+type JoinOutcome struct {
+	From    string `json:"from"`
+	To      string `json:"to"`
+	Refused string `json:"refused,omitempty" jsonschema:"why this one was not written, empty when it was"`
 }

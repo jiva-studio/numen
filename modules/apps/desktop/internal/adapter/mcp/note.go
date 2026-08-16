@@ -208,18 +208,48 @@ func addNoteTools(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name: "note_create",
-		Description: "Make a note. The file is named after the title, so choose a title " +
-			"that reads as a name. If other notes already answer to that name they come " +
-			"back under `shares`, and links written by the name will be ambiguous.",
+		Description: "Make notes. Each is named after its title, so choose titles that " +
+			"read as names. Give a note its `links` here rather than adding them " +
+			"afterwards: it is one write, and the person watching sees it arrive already " +
+			"joined instead of appearing loose and then jumping into place. If other " +
+			"notes already answer to a name they come back under `shares`, and links " +
+			"written by that name will be ambiguous.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		Title  string `json:"title" jsonschema:"what the note is called"`
-		Body   string `json:"body,omitempty" jsonschema:"the markdown to start it with"`
-		Folder string `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
-	}) (*sdk.CallToolResult, note.Created, error) {
-		created, err := core.Create.Execute(ctx, core.Vault, note.NewNote{
-			Title: in.Title, Body: in.Body, Folder: in.Folder,
-		})
-		return nil, created, err
+		Notes []NewNote `json:"notes" jsonschema:"the notes to make"`
+	}) (*sdk.CallToolResult, struct {
+		Created []CreateOutcome `json:"created"`
+	}, error) {
+		type out = struct {
+			Created []CreateOutcome `json:"created"`
+		}
+		if len(in.Notes) > maxRefs {
+			return nil, out{}, fmt.Errorf("make at most %d notes at a time", maxRefs)
+		}
+		// One file at a time: the ninth note can fail on its own — a name
+		// already taken, a folder that is not there — and what happened to
+		// each is reported, so a caller does not undo the eight that landed.
+		res := out{Created: make([]CreateOutcome, 0, len(in.Notes))}
+		for _, want := range in.Notes {
+			outcome := CreateOutcome{}
+			if len(want.Body) > maxBytes {
+				outcome.Created = note.Created{Title: want.Title}
+				outcome.Refused = fmt.Sprintf("a body of %d bytes is more than this can carry, which is %d",
+					len(want.Body), maxBytes)
+				res.Created = append(res.Created, outcome)
+				continue
+			}
+			created, err := core.Create.Execute(ctx, core.Vault, note.NewNote{
+				Title: want.Title, Body: want.Body, Folder: want.Folder,
+				Links: written(want.Links),
+			})
+			outcome.Created = created
+			if err != nil {
+				outcome.Created = note.Created{Title: want.Title}
+				outcome.Refused = err.Error()
+			}
+			res.Created = append(res.Created, outcome)
+		}
+		return nil, res, nil
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
@@ -389,6 +419,47 @@ func parseFingerprint(s string) (domain.FileRef, error) {
 type MoveOutcome struct {
 	note.Moved
 	Refused string `json:"refused,omitempty" jsonschema:"why this one did not move, empty when it did"`
+}
+
+// NewNote is one note a caller wants made, and what it should be joined to.
+type NewNote struct {
+	Title  string    `json:"title" jsonschema:"what the note is called"`
+	Body   string    `json:"body,omitempty" jsonschema:"the markdown to start it with"`
+	Folder string    `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
+	Links  []NewLink `json:"links,omitempty" jsonschema:"the relationships to write into it, so it arrives already joined"`
+}
+
+// NewLink is a relationship written into a note as it is made.
+type NewLink struct {
+	To    string `json:"to" jsonschema:"the other note's name, or note://<identifier> when the name is ambiguous"`
+	Role  string `json:"role" jsonschema:"what kind of relationship this is: parent, child, jump, ref or attachment"`
+	Type  string `json:"type,omitempty" jsonschema:"what the link is for, as a feature reads it"`
+	Label string `json:"label,omitempty" jsonschema:"a few words naming the relationship, shown along the line"`
+	Note  string `json:"note,omitempty" jsonschema:"why the link exists, in the person's words"`
+}
+
+// CreateOutcome is what happened to one note in a batch.
+type CreateOutcome struct {
+	note.Created
+	Refused string `json:"refused,omitempty" jsonschema:"why this one was not made, empty when it was"`
+}
+
+// written turns what was asked for into what the core writes.
+func written(links []NewLink) []domain.Link {
+	if len(links) == 0 {
+		return nil
+	}
+	out := make([]domain.Link, 0, len(links))
+	for _, l := range links {
+		out = append(out, domain.Link{
+			Target: domain.ParseAddress(l.To),
+			Role:   domain.LinkRole(l.Role),
+			Type:   l.Type,
+			Label:  l.Label,
+			Note:   l.Note,
+		})
+	}
+	return out
 }
 
 // RemoveOutcome is the same for removing.

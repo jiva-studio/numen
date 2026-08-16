@@ -27,17 +27,22 @@ type Linking struct {
 	Now     func() time.Time
 }
 
-// Add writes a relationship into a note. A link to the same place with the same
-// role is already there, and adding it again changes nothing.
-func (u Linking) Add(ctx context.Context, v domain.Vault, from string, add domain.Link) error {
-	if !domain.KnownRole(add.Role) {
-		return fmt.Errorf("%q is not a role a link can carry", add.Role)
-	}
-	if add.Target.Value == "" {
-		return errors.New("a link needs somewhere to go")
+// Add writes relationships into a note, in one read and one write. A link to
+// the same place with the same role is already there, and adding it again
+// changes nothing.
+func (u Linking) Add(ctx context.Context, v domain.Vault, from string, add ...domain.Link) error {
+	for _, link := range add {
+		if err := Writable(link); err != nil {
+			return err
+		}
 	}
 	return u.editing().apply(ctx, v, from, func(doc *markdown.Document) error {
-		return doc.AddLink(add)
+		for _, link := range add {
+			if err := doc.AddLink(link); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 }
 
@@ -73,6 +78,17 @@ func (u Linking) Remove(ctx context.Context, v domain.Vault, from string, to dom
 		}
 		return nil
 	})
+}
+
+// Writable is what a link must carry before anything will write it.
+func Writable(link domain.Link) error {
+	if !domain.KnownRole(link.Role) {
+		return fmt.Errorf("%q is not a role a link can carry", link.Role)
+	}
+	if link.Target.Value == "" {
+		return errors.New("a link needs somewhere to go")
+	}
+	return nil
 }
 
 func (u Linking) editing() editing {

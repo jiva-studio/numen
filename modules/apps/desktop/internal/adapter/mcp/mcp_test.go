@@ -169,19 +169,92 @@ func TestTheToolsAreNamedForWhatTheyWorkOn(t *testing.T) {
 func TestANoteIsMadeAndFoundThroughTheTools(t *testing.T) {
 	session, _ := connected(t, nil)
 
-	created := call[note.Created](t, session, "note_create", map[string]any{
+	made := created(t, session, map[string]any{
 		"title": "Entropy", "body": "A measure of disorder.\n",
 	})
-	if created.Path != "Entropy.md" {
-		t.Fatalf("want Entropy.md, got %s", created.Path)
+	if len(made) != 1 || made[0].Refused != "" {
+		t.Fatalf("want one note made: %+v", made)
+	}
+	if made[0].Path != "Entropy.md" {
+		t.Fatalf("want Entropy.md, got %s", made[0].Path)
 	}
 
 	found := call[struct {
 		Matches []mcp.Note `json:"matches"`
 	}](t, session, "note_search", map[string]any{"query": "disorder"})
-	if len(found.Matches) != 1 || found.Matches[0].Path != created.Path {
+	if len(found.Matches) != 1 || found.Matches[0].Path != made[0].Path {
 		t.Errorf("a note made through the tools is not searchable: %+v", found.Matches)
 	}
+}
+
+// A note asks to be joined as it is made, so that it never exists unattached —
+// which is the whole reason links are accepted here rather than only by
+// link_add.
+func TestANoteIsMadeAlreadyJoined(t *testing.T) {
+	session, _ := connected(t, map[string]string{"Momentum.md": "# Momentum\n"})
+
+	made := created(t, session, map[string]any{
+		"title": "Impulse",
+		"links": []map[string]any{
+			{"to": "Momentum", "role": "parent", "label": "part of"},
+		},
+	})
+	if len(made) != 1 || made[0].Refused != "" {
+		t.Fatalf("want one note made: %+v", made)
+	}
+
+	links := call[struct {
+		Links []mcp.Link `json:"links"`
+	}](t, session, "link_list", map[string]any{"path": made[0].Path})
+	if len(links.Links) != 1 {
+		t.Fatalf("want the link it was made with: %+v", links.Links)
+	}
+	if links.Links[0].To != "Momentum.md" || links.Links[0].Role != "parent" {
+		t.Errorf("want a parent link resolving to Momentum.md: %+v", links.Links[0])
+	}
+}
+
+// The filesystem has no transaction over many files, so one note that cannot be
+// made must not take the others down with it — nor be reported as though it
+// had been made.
+func TestOneNoteRefusedLeavesTheRestMade(t *testing.T) {
+	session, _ := connected(t, nil)
+
+	made := created(t, session,
+		map[string]any{"title": "Impulse"},
+		map[string]any{"title": "Momentum", "links": []map[string]any{
+			{"to": "Impulse", "role": "nonsense"},
+		}},
+		map[string]any{"title": "Work"},
+	)
+	if len(made) != 3 {
+		t.Fatalf("want an outcome for each: %+v", made)
+	}
+	if made[0].Refused != "" || made[2].Refused != "" {
+		t.Errorf("the notes that could be made were not: %+v", made)
+	}
+	if made[1].Refused == "" {
+		t.Fatal("a link carrying no known role was written anyway")
+	}
+	if made[1].Path != "" {
+		t.Errorf("a note that was not made came back with a path: %+v", made[1])
+	}
+
+	// The refused one left nothing behind: a half-made note would be found by
+	// the next search and by the person looking at the folder.
+	got := call[struct {
+		Missing []string `json:"missing"`
+	}](t, session, "note_get", map[string]any{"paths": []string{"Momentum.md"}})
+	if len(got.Missing) != 1 {
+		t.Errorf("a refused note left a file behind: %+v", got)
+	}
+}
+
+func created(t *testing.T, session *sdk.ClientSession, notes ...map[string]any) []mcp.CreateOutcome {
+	t.Helper()
+	return call[struct {
+		Created []mcp.CreateOutcome `json:"created"`
+	}](t, session, "note_create", map[string]any{"notes": notes}).Created
 }
 
 // A path that names nothing is an answer, not a failure: the note may have gone
@@ -245,13 +318,11 @@ func TestLinkingTwoNotesShowsAtBothEnds(t *testing.T) {
 		"Heat.md":    "# Heat\n",
 	})
 
-	if _, err := session.CallTool(t.Context(), &sdk.CallToolParams{
-		Name: "link_add",
-		Arguments: map[string]any{
-			"from": "Heat.md", "to": "Entropy", "role": "parent", "label": "follows from",
-		},
-	}); err != nil {
-		t.Fatal(err)
+	added := added(t, session, map[string]any{
+		"from": "Heat.md", "to": "Entropy", "role": "parent", "label": "follows from",
+	})
+	if len(added) != 1 || added[0].Refused != "" {
+		t.Fatalf("want the link written: %+v", added)
 	}
 
 	around := call[struct {
@@ -268,6 +339,56 @@ func TestLinkingTwoNotesShowsAtBothEnds(t *testing.T) {
 	if len(joined.Backlinks) != 1 || joined.Backlinks[0].From != "Heat.md" {
 		t.Errorf("want the note that points here: %+v", joined.Backlinks)
 	}
+}
+
+// Links reaching several notes in one call are each written where they belong,
+// and one that carries no known role costs only itself — not the links sharing
+// a note with it.
+func TestLinksGoWhereTheyBelongAndABadOneCostsOnlyItself(t *testing.T) {
+	session, _ := connected(t, map[string]string{
+		"Entropy.md": "# Entropy\n",
+		"Heat.md":    "# Heat\n",
+		"Work.md":    "# Work\n",
+	})
+
+	added := added(t, session,
+		map[string]any{"from": "Heat.md", "to": "Entropy", "role": "parent"},
+		map[string]any{"from": "Heat.md", "to": "Work", "role": "nonsense"},
+		map[string]any{"from": "Heat.md", "to": "Work", "role": "jump"},
+		map[string]any{"from": "Work.md", "to": "Entropy", "role": "ref"},
+	)
+	if len(added) != 4 {
+		t.Fatalf("want an outcome for each: %+v", added)
+	}
+	if added[1].Refused == "" {
+		t.Error("a link carrying no known role was written anyway")
+	}
+	for _, i := range []int{0, 2, 3} {
+		if added[i].Refused != "" {
+			t.Errorf("link %d shares a note with the bad one and was refused too: %+v", i, added[i])
+		}
+	}
+
+	from := call[struct {
+		Links []mcp.Link `json:"links"`
+	}](t, session, "link_list", map[string]any{"path": "Heat.md"})
+	if len(from.Links) != 2 {
+		t.Errorf("want both good links written into Heat: %+v", from.Links)
+	}
+
+	elsewhere := call[struct {
+		Links []mcp.Link `json:"links"`
+	}](t, session, "link_list", map[string]any{"path": "Work.md"})
+	if len(elsewhere.Links) != 1 {
+		t.Errorf("want the link belonging to the other note: %+v", elsewhere.Links)
+	}
+}
+
+func added(t *testing.T, session *sdk.ClientSession, links ...map[string]any) []mcp.JoinOutcome {
+	t.Helper()
+	return call[struct {
+		Added []mcp.JoinOutcome `json:"added"`
+	}](t, session, "link_add", map[string]any{"links": links}).Added
 }
 
 func TestRemovingIsReversible(t *testing.T) {
