@@ -1,0 +1,43 @@
+name: interface
+
+on:
+  pull_request:
+    paths:
+      - "modules/libs/ui/**"
+      - "modules/apps/desktop/ui/**"
+      - "modules/libs/protocol/**"
+      - ".github/workflows/interface.yml"
+  push:
+    branches: [main]
+
+jobs:
+  # The shared components, and the window that arranges them. Both are typed
+  # against the schema, so a change to it fails here rather than on screen.
+  components:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # The window is typed against the schema and against the components, so
+      # both have to be there before anything is checked: the schema's own
+      # dependencies, and the components built into the shape a consumer sees.
+      - name: Install
+        run: |
+          npm install --prefix modules/libs/protocol
+          npm ci --prefix modules/libs/ui
+          npm install --prefix modules/apps/desktop/ui
+
+      - name: Build the components
+        run: npm run build --prefix modules/libs/ui
+
+      - name: Typecheck
+        run: npm run typecheck --prefix modules/apps/desktop/ui
+
+      - name: Test
+        run: |
+          npm run test:unit --prefix modules/libs/ui
+          npm test --prefix modules/apps/desktop/ui

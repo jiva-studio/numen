@@ -51,6 +51,7 @@ desktop: interface ## build the window
 test: ## run every test
 	cd $(DESKTOP) && go test ./... -race
 	cd $(UI) && npm test
+	cd $(DESKTOP)/ui && npm test
 
 .PHONY: lint
 lint: ## the checks CI runs
