@@ -1,13 +1,13 @@
 <script setup lang="ts">
 /**
- * One node: its box, its label, and the handle to reach out from.
+ * One node: its box, its title, and the handle to reach out from.
  *
  * Every number it draws with is already on the node it was handed. Where the
  * hand and the keyboard are is its own affair — the handle appears under
  * either — and the one thing it cannot work out is what it is to a gesture,
  * which arrives as its standing.
  *
- * The label goes through a `foreignObject`: SVG text cannot ellipsise and does
+ * The title goes through a `foreignObject`: SVG text cannot ellipsise and does
  * not reorder a right-to-left run.
  */
 import { computed, ref } from 'vue'
@@ -44,7 +44,7 @@ const reachable = computed(() => !ghost.value && isReachable(props.node))
 
 /** The focus is announced although it cannot be chosen: it is where you are. */
 const announced = computed(
-  () => reachable.value || (!ghost.value && props.node.role === 'focus'),
+  () => reachable.value || (!ghost.value && props.node.seat === 'focus'),
 )
 
 const activate = () => {
@@ -83,14 +83,14 @@ const offering = computed(
 const handle = computed(() => handleIn(props.node))
 
 /**
- * One hue per role, from a token named after it.
+ * One hue per seat, from a token named after it.
  *
  * There is no token for the focus, so on it this resolves to nothing and every
  * rule that reads the hue takes its fallback — which is how the focus comes to
- * wear its own colours rather than a role's.
+ * wear its own colours rather than a seat's.
  */
 const hue = computed(() => ({
-  '--numen-role-hue': `var(--numen-role-${props.node.role})`,
+  '--numen-seat-hue': `var(--numen-seat-${props.node.seat})`,
 }))
 </script>
 
@@ -102,8 +102,8 @@ const hue = computed(() => ({
     :opacity="node.opacity"
     :tabindex="reachable ? 0 : -1"
     :aria-hidden="announced ? undefined : 'true'"
-    :role="ghost ? undefined : node.role === 'focus' ? 'img' : 'button'"
-    :class="[`plex__node--${node.role}`, `plex__node--${standing}`]"
+    :role="ghost ? undefined : node.seat === 'focus' ? 'img' : 'button'"
+    :class="[`plex__node--${node.seat}`, `plex__node--${standing}`]"
     :aria-label="ghost ? undefined : nameOf(node)"
     @click="activate"
     @keydown="onKey"
@@ -125,13 +125,13 @@ const hue = computed(() => ({
       :width="node.width"
       :height="node.height"
     >
-      <div class="plex__label">
+      <div class="plex__title">
         <!-- Whatever stands for the thing a node addresses. The plex has no
              way to know what that is, so it is handed one. -->
         <span v-if="$slots.icon" class="plex__icon" aria-hidden="true">
           <slot name="icon" />
         </span>
-        <span class="plex__label-text">{{ node.label }}</span>
+        <span class="plex__title-text">{{ node.title }}</span>
       </div>
     </foreignObject>
 
@@ -149,7 +149,7 @@ const hue = computed(() => ({
 <style scoped>
 /* No transition on the position — it comes from the frame, and a CSS one here
    would race it. Hover is a filter so that it leaves the box's own colours
-   alone: the fill is a token and the outline carries the role's hue. */
+   alone: the fill is a token and the outline carries the seat's hue. */
 .plex__node {
   cursor: pointer;
   transition: filter var(--numen-motion-hover) var(--numen-easing);
@@ -163,24 +163,24 @@ const hue = computed(() => ({
   cursor: default;
 }
 
-/* The hue comes from the node's own role, so a new role needs a token and
-   nothing here. It changes over the length of the move that changes the role,
+/* The hue comes from the node's own seat, so a new seat needs a token and
+   nothing here. It changes over the length of the move that changes the seat,
    or a node would wear the focus colours while still halfway there. */
 .plex__box {
   rx: var(--numen-radius);
   fill: var(--numen-node-bg);
-  stroke: var(--numen-role-hue, var(--numen-node-border));
+  stroke: var(--numen-seat-hue, var(--numen-node-border));
   stroke-width: var(--numen-stroke);
   transition:
     fill var(--numen-plex-move) var(--numen-easing),
     stroke var(--numen-plex-move) var(--numen-easing);
 }
 
-/* Icon then label, centred together in a box of a size the arrangement chose.
+/* Icon then title, centred together in a box of a size the arrangement chose.
 
-   Not selectable: a label is something to look at and press, and a drag that
+   Not selectable: a title is something to look at and press, and a drag that
    paints it blue is a drag that was meant to reach somewhere. */
-.plex__label {
+.plex__title {
   block-size: 100%;
   display: flex;
   align-items: center;
@@ -201,13 +201,13 @@ const hue = computed(() => ({
   flex: none;
   display: flex;
   align-items: center;
-  color: var(--numen-role-hue, var(--numen-node-fg));
+  color: var(--numen-seat-hue, var(--numen-node-fg));
 }
 
 /* One line, then an ellipsis. Two lines cost as much height again for a title
    that is a sentence, and a box that grows is a box the arrangement did not
    plan for. */
-.plex__label-text {
+.plex__title-text {
   min-inline-size: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -230,12 +230,12 @@ const hue = computed(() => ({
 
 .plex__node--ghost .plex__box {
   fill: none;
-  stroke: var(--numen-role-hue, var(--numen-ring));
+  stroke: var(--numen-seat-hue, var(--numen-ring));
   stroke-dasharray: var(--numen-ghost-dash);
   transition: none;
 }
 
-.plex__node--ghost .plex__label {
+.plex__node--ghost .plex__title {
   color: var(--numen-edge-label);
   font-size: var(--numen-edge-label-size);
   text-transform: uppercase;
@@ -257,7 +257,7 @@ const hue = computed(() => ({
   stroke: var(--numen-focus-border);
 }
 
-.plex__node--focus .plex__label {
+.plex__node--focus .plex__title {
   color: var(--numen-focus-fg);
 }
 </style>

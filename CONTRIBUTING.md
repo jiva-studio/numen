@@ -6,7 +6,6 @@
 docs/adr/                    architecture decision records
 modules/apps/desktop/        desktop client
 modules/apps/mobile/         mobile client
-modules/libs/domain/         domain model
 modules/libs/protocol/       wire/vault protocol
 modules/libs/ui/             shared interface components
 modules/tools/git-hooks/     repo-level tooling (commit validation)

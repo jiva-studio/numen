@@ -1,4 +1,4 @@
-import type { PlexRole } from './role'
+import type { PlexSeat } from './seat'
 
 export interface Point {
   readonly x: number
@@ -7,13 +7,13 @@ export interface Point {
 
 /**
  * A node as the caller describes it. The id is opaque: the plex has no way to
- * ask what it addresses, and the role is a position in the picture rather than
+ * ask what it addresses, and the seat is a position in the picture rather than
  * a claim about a graph.
  */
 export interface PlexNode {
   readonly id: string
-  readonly label: string
-  readonly role: PlexRole
+  readonly title: string
+  readonly seat: PlexSeat
 }
 
 /** A node placed on the canvas, in the plex's own coordinates. */
@@ -22,7 +22,7 @@ export interface PlacedNode extends PlexNode {
   readonly y: number
   readonly width: number
   readonly height: number
-  /** Rank within the node's own role, outward from the focus. */
+  /** Rank within the node's own seat, outward from the focus. */
   readonly order: number
   /** Always 1 except partway through a movement. */
   readonly opacity: number
@@ -36,10 +36,10 @@ export interface PlacedNode extends PlexNode {
  * would pick something the reader never saw.
  */
 export const isReachable = (node: PlacedNode): boolean =>
-  node.role !== 'focus' && node.opacity >= 1
+  node.seat !== 'focus' && node.opacity >= 1
 
 /**
- * What a node is to a gesture, beyond a box with a label.
+ * What a node is to a gesture, beyond a box with a title.
  *
  * One value rather than a flag each, because a node is only ever one of these:
  * a hand cannot be reaching out of a node and aiming at it at once, and a node
@@ -53,9 +53,9 @@ export const isReachable = (node: PlacedNode): boolean =>
  */
 export type NodeStanding = 'open' | 'closed' | 'source' | 'target' | 'ghost'
 
-/** A label may be empty; an accessible name may not. */
+/** A title may be empty; an accessible name may not. */
 export const nameOf = (node: PlexNode): string =>
-  `${node.label || 'Untitled'}, ${node.role}`
+  `${node.title || 'Untitled'}, ${node.seat}`
 
 /**
  * Where the handle sits within a node: on its trailing edge, halfway down.

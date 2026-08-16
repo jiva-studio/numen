@@ -58,7 +58,7 @@ header {
   gap: 0.75rem;
   align-items: baseline;
   padding: 0.6rem 1rem;
-  border-bottom: 1px solid var(--numen-edge, #d8d8d8);
+  border-bottom: 1px solid var(--numen-chrome-rule);
   font: 500 0.85rem system-ui, sans-serif;
 }
 

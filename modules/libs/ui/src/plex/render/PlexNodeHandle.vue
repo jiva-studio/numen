@@ -56,7 +56,7 @@ const onKey = (event: KeyboardEvent) => {
 .plex__handle {
   r: var(--numen-handle-radius);
   fill: var(--numen-node-bg);
-  stroke: var(--numen-role-hue, var(--numen-node-border));
+  stroke: var(--numen-seat-hue, var(--numen-node-border));
   stroke-width: var(--numen-stroke);
   cursor: crosshair;
 }

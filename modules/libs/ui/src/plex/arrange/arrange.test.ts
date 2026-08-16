@@ -3,16 +3,16 @@ import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { DEFAULT_OPTIONS } from './options'
 import { neighbourhoods } from '../fixtures/neighbourhoods'
-import type { PlacedNode, PlexNeighbourhood, PlexRole } from '../model'
+import type { PlacedNode, PlexNeighbourhood, PlexSeat } from '../model'
 import type { Placement } from './placement'
 
 const every = Object.entries(neighbourhoods)
 
-const withRole = (layout: { nodes: readonly PlacedNode[] }, role: PlexRole) =>
-  layout.nodes.filter((node) => node.role === role)
+const withSeat = (layout: { nodes: readonly PlacedNode[] }, seat: PlexSeat) =>
+  layout.nodes.filter((node) => node.seat === seat)
 
 const focusOf = (layout: { nodes: readonly PlacedNode[] }) => {
-  const focus = layout.nodes.find((node) => node.role === 'focus')
+  const focus = layout.nodes.find((node) => node.seat === 'focus')
   if (!focus) throw new Error('unreachable: every layout places a focus')
   return focus
 }
@@ -27,29 +27,29 @@ function overlaps(a: PlacedNode, b: PlacedNode): boolean {
 
 describe('the contract on the neighbourhood', () => {
   it('refuses a neighbourhood with no focus', () => {
-    const nodes = [{ id: 'a', label: 'A', role: 'child' as const }]
+    const nodes = [{ id: 'a', title: 'A', seat: 'child' as const }]
     expect(() => arrangePlex({ nodes, edges: [] })).toThrow(/needs a node with the focus/)
   })
 
   it('refuses a neighbourhood with two nodes in focus', () => {
     const nodes = [
-      { id: 'a', label: 'A', role: 'focus' as const },
-      { id: 'b', label: 'B', role: 'focus' as const },
+      { id: 'a', title: 'A', seat: 'focus' as const },
+      { id: 'b', title: 'B', seat: 'focus' as const },
     ]
     expect(() => arrangePlex({ nodes, edges: [] })).toThrow(/one focus, not 2/)
   })
 
   it('refuses the same identifier in two seats', () => {
     const nodes = [
-      { id: 'a', label: 'A', role: 'focus' as const },
-      { id: 'b', label: 'B', role: 'parent' as const },
-      { id: 'b', label: 'B again', role: 'child' as const },
+      { id: 'a', title: 'A', seat: 'focus' as const },
+      { id: 'b', title: 'B', seat: 'parent' as const },
+      { id: 'b', title: 'B again', seat: 'child' as const },
     ]
     expect(() => arrangePlex({ nodes, edges: [] })).toThrow(/appears more than once: b/)
   })
 })
 
-describe('where the roles sit', () => {
+describe('where the seats sit', () => {
   const layout = arrangePlex(neighbourhoods.typical)
   const focus = focusOf(layout)
 
@@ -59,7 +59,7 @@ describe('where the roles sit', () => {
   })
 
   it('puts every parent clear above the focus', () => {
-    const parents = withRole(layout, 'parent')
+    const parents = withSeat(layout, 'parent')
     expect(parents.length).toBeGreaterThan(0)
     for (const parent of parents) {
       expect(parent.y + parent.height / 2).toBeLessThan(-focus.height / 2)
@@ -67,7 +67,7 @@ describe('where the roles sit', () => {
   })
 
   it('puts every child clear below the focus', () => {
-    const children = withRole(layout, 'child')
+    const children = withSeat(layout, 'child')
     expect(children.length).toBeGreaterThan(0)
     for (const child of children) {
       expect(child.y - child.height / 2).toBeGreaterThan(focus.height / 2)
@@ -75,22 +75,22 @@ describe('where the roles sit', () => {
   })
 
   it('puts every jump clear to the left and every sibling clear to the right', () => {
-    for (const jump of withRole(layout, 'jump')) {
+    for (const jump of withSeat(layout, 'jump')) {
       expect(jump.x + jump.width / 2).toBeLessThan(-focus.width / 2)
     }
-    for (const sibling of withRole(layout, 'sibling')) {
+    for (const sibling of withSeat(layout, 'sibling')) {
       expect(sibling.x - sibling.width / 2).toBeGreaterThan(focus.width / 2)
     }
-    expect(withRole(layout, 'jump').length).toBeGreaterThan(0)
-    expect(withRole(layout, 'sibling').length).toBeGreaterThan(0)
+    expect(withSeat(layout, 'jump').length).toBeGreaterThan(0)
+    expect(withSeat(layout, 'sibling').length).toBeGreaterThan(0)
   })
 
   it('clears the rows a column runs alongside, and only those', () => {
     // A column at a fixed distance lands on a row once the row outgrows it.
     const wide = arrangePlex(neighbourhoods.overcrowded)
-    const columns = withRole(wide, 'jump')
+    const columns = withSeat(wide, 'jump')
     const columnReach = Math.max(...columns.map((n) => Math.abs(n.y) + n.height / 2))
-    const alongside = [...withRole(wide, 'parent'), ...withRole(wide, 'child')].filter(
+    const alongside = [...withSeat(wide, 'parent'), ...withSeat(wide, 'child')].filter(
       (n) => Math.abs(n.y) - n.height / 2 < columnReach,
     )
     expect(alongside.length).toBeGreaterThan(0)
@@ -100,9 +100,9 @@ describe('where the roles sit', () => {
     }
 
     // And a short column is not dragged out to a row it never comes near.
-    const short = Math.min(...withRole(layout, 'jump').map((n) => Math.abs(n.x)))
+    const short = Math.min(...withSeat(layout, 'jump').map((n) => Math.abs(n.x)))
     const childrenReach = Math.max(
-      ...withRole(layout, 'child').map((n) => Math.abs(n.x) + n.width / 2),
+      ...withSeat(layout, 'child').map((n) => Math.abs(n.x) + n.width / 2),
     )
     expect(short).toBeLessThan(childrenReach)
   })
@@ -127,29 +127,29 @@ describe('the same input gives the same numbers', () => {
     expect(arrangePlex(neighbourhood)).toStrictEqual(arrangePlex(neighbourhood))
   })
 
-  it('does not depend on the order the roles arrive in', () => {
+  it('does not depend on the order the seats arrive in', () => {
     const shuffled = {
       ...neighbourhoods.typical,
       nodes: [...neighbourhoods.typical.nodes].reverse(),
     }
-    const byRole = (n: PlexNeighbourhood) =>
-      arrangePlex(n).nodes.filter((node) => node.role === 'child').map((node) => node.id)
+    const bySeat = (n: PlexNeighbourhood) =>
+      arrangePlex(n).nodes.filter((node) => node.seat === 'child').map((node) => node.id)
     // Order follows the input rather than a sort; the set of seats is equal.
-    expect(byRole(shuffled)).toHaveLength(byRole(neighbourhoods.typical).length)
-    expect([...byRole(shuffled)].sort()).toStrictEqual([...byRole(neighbourhoods.typical)].sort())
+    expect(bySeat(shuffled)).toHaveLength(bySeat(neighbourhoods.typical).length)
+    expect([...bySeat(shuffled)].sort()).toStrictEqual([...bySeat(neighbourhoods.typical)].sort())
   })
 })
 
 describe('order along a line follows the order given', () => {
-  it('numbers each role outward from the focus', () => {
-    const children = withRole(arrangePlex(neighbourhoods.crowded), 'child')
+  it('numbers each seat outward from the focus', () => {
+    const children = withSeat(arrangePlex(neighbourhoods.crowded), 'child')
     expect(children.map((node) => node.order)).toStrictEqual(
       children.map((_, index) => index),
     )
   })
 
   it('lays a row out left to right', () => {
-    const children = withRole(arrangePlex(neighbourhoods.typical), 'child')
+    const children = withSeat(arrangePlex(neighbourhoods.typical), 'child')
     const firstLine = children.slice(0, DEFAULT_OPTIONS.maxPerLine)
     for (let i = 1; i < firstLine.length; i++) {
       const previous = firstLine[i - 1]
@@ -160,7 +160,7 @@ describe('order along a line follows the order given', () => {
   })
 
   it('puts the second line further from the focus than the first', () => {
-    const children = withRole(arrangePlex(neighbourhoods.crowded), 'child')
+    const children = withSeat(arrangePlex(neighbourhoods.crowded), 'child')
     const first = children[0]
     const onSecondLine = children[DEFAULT_OPTIONS.maxPerLine]
     expect(first).toBeDefined()
@@ -171,17 +171,17 @@ describe('order along a line follows the order given', () => {
   it('keeps the relative order when one more node arrives', () => {
     const before = neighbourhoods.typical
     const after: PlexNeighbourhood = {
-      nodes: [...before.nodes, { id: 'child-6', label: 'One more', role: 'child' }],
+      nodes: [...before.nodes, { id: 'child-6', title: 'One more', seat: 'child' }],
       edges: [...before.edges, { from: 'focus', to: 'child-6' }],
     }
     const ids = (n: PlexNeighbourhood) =>
-      withRole(arrangePlex(n), 'child').map((node) => node.id)
+      withSeat(arrangePlex(n), 'child').map((node) => node.id)
     expect(ids(after).slice(0, ids(before).length)).toStrictEqual(ids(before))
   })
 })
 
 describe('what does not fit is reported rather than dropped silently', () => {
-  it('counts the nodes past the last line, per role', () => {
+  it('counts the nodes past the last line, per seat', () => {
     const { maxPerLine, maxLines } = DEFAULT_OPTIONS
     const capacity = maxPerLine * maxLines
     const { overflow, nodes } = arrangePlex(neighbourhoods.overcrowded)
@@ -189,7 +189,7 @@ describe('what does not fit is reported rather than dropped silently', () => {
     expect(overflow.child).toBe(200 - capacity)
     expect(overflow.jump).toBe(40 - capacity)
     expect(overflow.parent).toBeUndefined() // nine parents fit in four lines of five
-    expect(nodes.filter((node) => node.role === 'child')).toHaveLength(capacity)
+    expect(nodes.filter((node) => node.seat === 'child')).toHaveLength(capacity)
   })
 
   it('reports nothing when everything fits', () => {
@@ -233,7 +233,7 @@ describe('the extent', () => {
 describe('the options are honoured', () => {
   it('lets the caller change how many fit on a line', () => {
     const narrow = arrangePlex(neighbourhoods.crowded, { options: { maxPerLine: 3 } })
-    const children = withRole(narrow, 'child')
+    const children = withSeat(narrow, 'child')
     const onFirstLine = children.filter((node) => node.y === children[0]!.y)
     expect(onFirstLine).toHaveLength(3)
   })
@@ -244,8 +244,8 @@ describe('the options are honoured', () => {
         direction: { parent: 'down', child: 'up', jump: 'left', sibling: 'right' },
       },
     })
-    for (const child of withRole(upside, 'child')) expect(child.y).toBeLessThan(0)
-    for (const parent of withRole(upside, 'parent')) expect(parent.y).toBeGreaterThan(0)
+    for (const child of withSeat(upside, 'child')) expect(child.y).toBeLessThan(0)
+    for (const parent of withSeat(upside, 'parent')) expect(parent.y).toBeGreaterThan(0)
   })
 
   it('takes a curve setting without being told the size of a box', () => {
@@ -261,7 +261,7 @@ describe('the options are honoured', () => {
 describe('the arrangement is a strategy, not a shape baked in', () => {
   it('uses rows and columns unless told otherwise', () => {
     const frame = arrangePlex(neighbourhoods.typical)
-    expect(withRole(frame, 'parent').every((n) => n.y < 0)).toBe(true)
+    expect(withSeat(frame, 'parent').every((n) => n.y < 0)).toBe(true)
   })
 
   it('lets another strategy place the nodes, and routes its edges anyway', () => {

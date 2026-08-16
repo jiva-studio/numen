@@ -1,5 +1,8 @@
 :root {
   color-scheme: light dark;
+  /* The window's own chrome. The plex owns its colours and none of them are
+     about the frame around it. */
+  --numen-chrome-rule: light-dark(#d8d9dd, #34383e);
 }
 
 * {

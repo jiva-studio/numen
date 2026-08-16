@@ -1,15 +1,15 @@
-import type { PlacedEdge, PlacedNode, PlexEdge, PlexRole, Point } from '../model'
+import type { PlacedEdge, PlacedNode, PlexEdge, PlexSeat, Point } from '../model'
 import { isVertical, type PlexOptions, type RoutingOptions } from './options'
 
 /** `auto` means take the axis from the geometry. */
 export type Axis = 'vertical' | 'horizontal' | 'auto'
 
 export interface Routing extends RoutingOptions {
-  readonly axisOf: (node: { role: PlexRole }) => Axis
+  readonly axisOf: (node: { seat: PlexSeat }) => Axis
 }
 
 /**
- * The axis is read off the role, not off the distance between the boxes: the
+ * The axis is read off the seat, not off the distance between the boxes: the
  * last child in a wide row is further sideways than it is down, and measuring
  * would send its edge out of the focus's side.
  */
@@ -17,9 +17,9 @@ export function routingFor(options: PlexOptions): Routing {
   return {
     ...options.routing,
     axisOf: (node) =>
-      node.role === 'focus'
+      node.seat === 'focus'
         ? 'auto'
-        : isVertical(options.direction[node.role])
+        : isVertical(options.direction[node.seat])
           ? 'vertical'
           : 'horizontal',
   }

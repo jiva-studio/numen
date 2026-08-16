@@ -10,10 +10,10 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import Plex from './Plex.vue'
 import { build } from './fixtures/build'
-import type { PlexRelatedRole } from './model'
+import type { PlexRelatedSeat } from './model'
 
-const NEIGHBOURHOOD = build('A thought', { parent: 1, child: 2, jump: 1 })
-const A_CHILD = NEIGHBOURHOOD.nodes.find((n) => n.role === 'child')!.label
+const NEIGHBOURHOOD = build('A node', { parent: 1, child: 2, jump: 1 })
+const A_CHILD = NEIGHBOURHOOD.nodes.find((n) => n.seat === 'child')!.title
 
 /**
  * One plex unit to the pixel, origin in the middle, as the browser draws it.
@@ -53,8 +53,8 @@ const pointer = (type: string, x: number, y: number) =>
   new PointerEvent(type, { clientX: x, clientY: y, pointerId: 1, bubbles: true })
 
 /** Offer the handle, then take hold of it. */
-async function takeHold(plex: ReturnType<typeof mountPlex>['plex'], label: string) {
-  const node = plex.get(`[aria-label^="${label}"]`)
+async function takeHold(plex: ReturnType<typeof mountPlex>['plex'], title: string) {
+  const node = plex.get(`[aria-label^="${title}"]`)
   await node.trigger('pointerenter')
   node.get('.plex__handle').element.dispatchEvent(pointer('pointerdown', 600, 400))
   await plex.vm.$nextTick()
@@ -66,10 +66,10 @@ describe('the handle', () => {
     const { plex } = mountPlex()
     expect(plex.find('.plex__handle').exists()).toBe(false)
 
-    await plex.get('[aria-label^="A thought"]').trigger('pointerenter')
+    await plex.get('[aria-label^="A node"]').trigger('pointerenter')
     expect(plex.find('.plex__handle').exists()).toBe(true)
 
-    await plex.get('[aria-label^="A thought"]').trigger('pointerleave')
+    await plex.get('[aria-label^="A node"]').trigger('pointerleave')
     expect(plex.find('.plex__handle').exists()).toBe(false)
   })
 
@@ -90,7 +90,7 @@ describe('the handle', () => {
 
   it('is not offered when the caller allows no seat at all', async () => {
     const { plex } = mountPlex({ creatable: [] })
-    await plex.get('[aria-label^="A thought"]').trigger('pointerenter')
+    await plex.get('[aria-label^="A node"]').trigger('pointerenter')
     expect(plex.find('.plex__handle').exists()).toBe(false)
   })
 })
@@ -98,7 +98,7 @@ describe('the handle', () => {
 describe('letting go', () => {
   it('asks for a node in the seat the gesture went towards', async () => {
     const { plex, svg } = mountPlex()
-    await takeHold(plex, 'A thought')
+    await takeHold(plex, 'A node')
 
     svg.dispatchEvent(pointer('pointermove', 600, 40))
     svg.dispatchEvent(pointer('pointerup', 600, 40))
@@ -113,7 +113,7 @@ describe('letting go', () => {
     const child = plex.get('[aria-label$=", child"]')
     const at = child.attributes('transform')!.match(/-?[\d.]+/g)!.map(Number)
 
-    await takeHold(plex, 'A thought')
+    await takeHold(plex, 'A node')
     svg.dispatchEvent(pointer('pointermove', 600 + at[0]!, 400 + at[1]!))
     svg.dispatchEvent(pointer('pointerup', 600 + at[0]!, 400 + at[1]!))
     await plex.vm.$nextTick()
@@ -128,7 +128,7 @@ describe('letting go', () => {
     // The commonest thing anyone wants is one more child, and demanding a drag
     // would put it out of reach of a trackpad.
     const { plex, svg } = mountPlex()
-    await takeHold(plex, 'A thought')
+    await takeHold(plex, 'A node')
 
     svg.dispatchEvent(pointer('pointerup', 600, 400))
     await plex.vm.$nextTick()
@@ -140,7 +140,7 @@ describe('letting go', () => {
     // A click has no direction to read, so it falls back on what the caller
     // does allow rather than inventing a seat they ruled out.
     const { plex, svg } = mountPlex({ creatable: ['jump', 'parent'] })
-    await takeHold(plex, 'A thought')
+    await takeHold(plex, 'A node')
 
     svg.dispatchEvent(pointer('pointerup', 600, 400))
     await plex.vm.$nextTick()
@@ -150,7 +150,7 @@ describe('letting go', () => {
 
   it('asks for nothing towards a seat the caller left out', async () => {
     const { plex, svg } = mountPlex()
-    await takeHold(plex, 'A thought')
+    await takeHold(plex, 'A node')
 
     // Rightwards is where siblings sit, and a sibling is not made directly.
     svg.dispatchEvent(pointer('pointermove', 1100, 400))
@@ -165,7 +165,7 @@ describe('letting go', () => {
 describe('giving up', () => {
   it('asks for nothing when Escape is pressed mid-gesture', async () => {
     const { plex, svg } = mountPlex()
-    await takeHold(plex, 'A thought')
+    await takeHold(plex, 'A node')
 
     svg.dispatchEvent(pointer('pointermove', 600, 40))
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
@@ -181,7 +181,7 @@ describe('giving up', () => {
     // the gesture impossible to hold while typing, and looks the same in a
     // test that only ever presses Escape.
     const { plex, svg } = mountPlex()
-    await takeHold(plex, 'A thought')
+    await takeHold(plex, 'A node')
 
     svg.dispatchEvent(pointer('pointermove', 600, 40))
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }))
@@ -197,7 +197,7 @@ describe('giving up', () => {
 describe('while a gesture is under way', () => {
   it('draws the thread it is dragging behind it', async () => {
     const { plex, svg } = mountPlex()
-    await takeHold(plex, 'A thought')
+    await takeHold(plex, 'A node')
     expect(plex.find('.plex__thread').exists()).toBe(true)
 
     svg.dispatchEvent(pointer('pointerup', 600, 400))
@@ -207,27 +207,27 @@ describe('while a gesture is under way', () => {
 
   it('shows where a new node would go, and says which seat', async () => {
     const { plex, svg } = mountPlex()
-    await takeHold(plex, 'A thought')
+    await takeHold(plex, 'A node')
 
     svg.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
 
     expect(plex.find('.plex__node--ghost').exists()).toBe(true)
-    expect(plex.get('.plex__node--ghost .plex__label-text').text()).toBe('parent')
+    expect(plex.get('.plex__node--ghost .plex__title-text').text()).toBe('parent')
   })
 
   it('says it in the words it was given, not in its own', async () => {
     // The one seat the plex has to write into the picture, and the words for
     // it are the caller's, as they are for the overflow line.
     const { plex, svg } = mountPlex({
-      seatName: (role: PlexRelatedRole) => `→ ${role.toUpperCase()}`,
+      seatName: (seat: PlexRelatedSeat) => `→ ${seat.toUpperCase()}`,
     })
-    await takeHold(plex, 'A thought')
+    await takeHold(plex, 'A node')
 
     svg.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
 
-    expect(plex.get('.plex__node--ghost .plex__label-text').text()).toBe('→ PARENT')
+    expect(plex.get('.plex__node--ghost .plex__title-text').text()).toBe('→ PARENT')
   })
 
   it('marks the node a link would be made to instead', async () => {
@@ -235,7 +235,7 @@ describe('while a gesture is under way', () => {
     const child = plex.get('[aria-label$=", child"]')
     const at = child.attributes('transform')!.match(/-?[\d.]+/g)!.map(Number)
 
-    await takeHold(plex, 'A thought')
+    await takeHold(plex, 'A node')
     svg.dispatchEvent(pointer('pointermove', 600 + at[0]!, 400 + at[1]!))
     await plex.vm.$nextTick()
 

@@ -6,11 +6,11 @@
  * says nothing about drawing.
  */
 import { Seat, type NeighbourhoodResponse } from '@numen/protocol'
-import { seatOf, type PlexEdge, type PlexNeighbourhood, type PlexNode, type PlexRelatedRole } from '@numen/ui'
+import type { PlexEdge, PlexNeighbourhood, PlexNode, PlexRelatedSeat } from '@numen/ui'
 
 export type Neighbourhood = NeighbourhoodResponse
 
-const seats: Record<Seat, PlexRelatedRole | null> = {
+const seats: Record<Seat, PlexRelatedSeat | null> = {
   [Seat.UNSPECIFIED]: null,
   [Seat.PARENT]: 'parent',
   [Seat.CHILD]: 'child',
@@ -30,33 +30,35 @@ const seats: Record<Seat, PlexRelatedRole | null> = {
 export function asPlex(neighbourhood: Neighbourhood): PlexNeighbourhood {
   const focus: PlexNode = {
     id: neighbourhood.focus?.path ?? '',
-    label: neighbourhood.focus?.title ?? '',
-    role: 'focus',
+    title: neighbourhood.focus?.title ?? '',
+    seat: 'focus',
   }
 
   const nodes: PlexNode[] = [focus]
-  const seated: { id: string; role: PlexRelatedRole; label: string; through: string }[] = []
+  const seated: { id: string; seat: PlexRelatedSeat; label: string; through: string }[] = []
   for (const related of neighbourhood.related) {
-    const role = seats[related.seat]
-    if (!role || !related.note) continue
-    nodes.push({ id: related.note.path, label: related.note.title, role })
+    const seat = seats[related.seat]
+    if (!seat || !related.note) continue
+    nodes.push({ id: related.note.path, title: related.note.title, seat })
     seated.push({
       id: related.note.path,
-      role,
-      // What the person wrote on the link, and the name of the seat when they
-      // wrote nothing.
-      label: related.label || seatOf(role),
+      seat,
+      // What the person wrote on the link. A line with nothing written on it
+      // carries nothing: a word put there by the application would be read as
+      // one they had written themselves.
+      label: related.label,
       through: related.through,
     })
   }
 
   const shown = new Set(nodes.map((node) => node.id))
-  const edges: PlexEdge[] = seated.flatMap(({ id, role, label, through }) => {
-    if (role === 'parent' || role === 'jump') return [{ from: id, to: focus.id, label }]
-    if (role === 'child') return [{ from: focus.id, to: id, label }]
+  const edges: PlexEdge[] = seated.flatMap(({ id, seat, label, through }) => {
+    const line = label ? { label } : {}
+    if (seat === 'parent' || seat === 'jump') return [{ from: id, to: focus.id, ...line }]
+    if (seat === 'child') return [{ from: focus.id, to: id, ...line }]
     // A sibling hangs off the parent it shares, which the answer names. With
     // that parent off the screen it hangs off nothing.
-    return shown.has(through) ? [{ from: through, to: id, label }] : []
+    return shown.has(through) ? [{ from: through, to: id, ...line }] : []
   })
 
   return { nodes, edges }

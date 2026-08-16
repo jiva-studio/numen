@@ -48,7 +48,7 @@ func write(t *testing.T, root, name, body string) {
 // it, and nothing behind it.
 func TestOneSaveIsOneReport(t *testing.T) {
 	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
-	changes, _, err := filesystem.Watcher{Options: filesystem.Options{Window: 200 * time.Millisecond}}.Watch(t.Context(), domain.Vault{Path: root})
+	changes, _, err := filesystem.Watcher{Options: filesystem.Options{Hold: 200 * time.Millisecond}}.Watch(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,7 +141,7 @@ func TestAFolderWithADotInItsNameIsStillAFolder(t *testing.T) {
 // waited would stop emptying the backlog and lose what came after.
 func TestFoldingGoesOnWhileNobodyIsListening(t *testing.T) {
 	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
-	changes, _, err := filesystem.Watcher{Options: filesystem.Options{Window: 50 * time.Millisecond}}.Watch(t.Context(), domain.Vault{Path: root})
+	changes, _, err := filesystem.Watcher{Options: filesystem.Options{Hold: 50 * time.Millisecond}}.Watch(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}

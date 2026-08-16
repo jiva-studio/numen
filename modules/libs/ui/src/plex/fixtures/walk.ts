@@ -8,37 +8,37 @@
  */
 import type { PlexNeighbourhood, PlexNode } from '../model'
 
-interface Thought {
-  readonly label: string
+interface Named {
+  readonly title: string
   readonly parents?: readonly string[]
-  /** Untyped by role: an association, not a place in the hierarchy. */
+  /** Untyped by seat: an association, not a place in the hierarchy. */
   readonly jumps?: readonly string[]
 }
 
-const GRAPH: Record<string, Thought> = {
-  architecture: { label: 'Architecture' },
-  storage: { label: 'Storage', parents: ['architecture'] },
-  interface: { label: 'Interface', parents: ['architecture'] },
+const GRAPH: Record<string, Named> = {
+  architecture: { title: 'Architecture' },
+  storage: { title: 'Storage', parents: ['architecture'] },
+  interface: { title: 'Interface', parents: ['architecture'] },
   hexagonal: {
-    label: 'Hexagonal architecture',
+    title: 'Hexagonal architecture',
     parents: ['architecture'],
     jumps: ['dependency-inversion'],
   },
 
-  sqlite: { label: 'SQLite', parents: ['storage'], jumps: ['index'] },
-  index: { label: 'The index', parents: ['storage'] },
-  migration: { label: 'Migration', parents: ['storage', 'sqlite'] },
-  fts: { label: 'Full-text search', parents: ['index', 'sqlite'] },
-  vectors: { label: 'Vector search', parents: ['index'] },
+  sqlite: { title: 'SQLite', parents: ['storage'], jumps: ['index'] },
+  index: { title: 'The index', parents: ['storage'] },
+  migration: { title: 'Migration', parents: ['storage', 'sqlite'] },
+  fts: { title: 'Full-text search', parents: ['index', 'sqlite'] },
+  vectors: { title: 'Vector search', parents: ['index'] },
 
-  plex: { label: 'The plex', parents: ['interface'], jumps: ['hexagonal'] },
-  editor: { label: 'Editor', parents: ['interface'] },
-  review: { label: 'Review session', parents: ['interface'] },
+  plex: { title: 'The plex', parents: ['interface'], jumps: ['hexagonal'] },
+  editor: { title: 'Editor', parents: ['interface'] },
+  review: { title: 'Review session', parents: ['interface'] },
 
-  domain: { label: 'Domain', parents: ['hexagonal'] },
-  port: { label: 'Port', parents: ['hexagonal'] },
-  adapter: { label: 'Adapter', parents: ['hexagonal', 'port'] },
-  'dependency-inversion': { label: 'Dependency inversion' },
+  domain: { title: 'Domain', parents: ['hexagonal'] },
+  port: { title: 'Port', parents: ['hexagonal'] },
+  adapter: { title: 'Adapter', parents: ['hexagonal', 'port'] },
+  'dependency-inversion': { title: 'Dependency inversion' },
 }
 
 const parentsOf = (id: string): readonly string[] => GRAPH[id]?.parents ?? []
@@ -70,12 +70,12 @@ export const walkStart = 'hexagonal'
 
 export function neighbourhoodOf(id: string): PlexNeighbourhood {
   const focus = GRAPH[id]
-  if (!focus) throw new Error(`no such thought: ${id}`)
+  if (!focus) throw new Error(`no such node: ${id}`)
 
-  const seat = (ids: readonly string[], role: PlexNode['role']): PlexNode[] =>
+  const seat = (ids: readonly string[], seat: PlexNode['seat']): PlexNode[] =>
     ids
       .filter((other) => other !== id && GRAPH[other] !== undefined)
-      .map((other) => ({ id: other, label: GRAPH[other]!.label, role }))
+      .map((other) => ({ id: other, title: GRAPH[other]!.title, seat }))
 
   // A node reachable two ways takes one seat, first match wins. The plex
   // refuses a neighbourhood that seats the same node twice.
@@ -95,11 +95,11 @@ export function neighbourhoodOf(id: string): PlexNeighbourhood {
   }
 
   return {
-    nodes: [{ id, label: focus.label, role: 'focus' }, ...related],
+    nodes: [{ id, title: focus.title, seat: 'focus' }, ...related],
     edges: related.flatMap((node) => {
-      if (node.role === 'parent') return [{ from: node.id, to: id, label: 'is a' }]
-      if (node.role === 'jump') return [{ from: node.id, to: id, label: 'see also' }]
-      if (node.role === 'child') return [{ from: id, to: node.id, label: 'contains' }]
+      if (node.seat === 'parent') return [{ from: node.id, to: id, title: 'is a' }]
+      if (node.seat === 'jump') return [{ from: node.id, to: id, title: 'see also' }]
+      if (node.seat === 'child') return [{ from: id, to: node.id, title: 'contains' }]
 
       // A sibling hangs off the parent it shares with the focus, not off the
       // focus. Working out which parent is a question about relationships, so
@@ -107,7 +107,7 @@ export function neighbourhoodOf(id: string): PlexNeighbourhood {
       const shared = parentsOf(id).find((parent) =>
         parentsOf(node.id).includes(parent),
       )
-      return shared ? [{ from: shared, to: node.id, label: 'contains' }] : []
+      return shared ? [{ from: shared, to: node.id, title: 'contains' }] : []
     }),
   }
 }

@@ -1,1 +1,1 @@
-INSERT INTO headings (note_id, position, level, text) VALUES (?, ?, ?, ?);
+INSERT INTO headings (note_id, line, level, text) VALUES (?, ?, ?, ?);

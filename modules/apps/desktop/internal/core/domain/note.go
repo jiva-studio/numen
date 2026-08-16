@@ -33,7 +33,7 @@ type Note struct {
 type Heading struct {
 	Level int
 	Text  string
-	Pos   int
+	Line  int
 }
 
 // VaultProblem is something in a file that could not be acted on and was not

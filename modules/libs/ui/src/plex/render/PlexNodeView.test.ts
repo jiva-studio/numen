@@ -5,12 +5,12 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import PlexNodeView from './PlexNodeView.vue'
-import type { PlacedNode, PlexRole } from '../model'
+import type { PlacedNode, PlexSeat } from '../model'
 
 const nodeAt = (over: Partial<PlacedNode> = {}): PlacedNode => ({
   id: 'one',
-  label: 'A thought',
-  role: 'child',
+  title: 'A node',
+  seat: 'child',
   x: 0,
   y: 0,
   width: 144,
@@ -53,14 +53,14 @@ describe('a node that is not fully there', () => {
 
 describe('the node in focus', () => {
   it('cannot be chosen, because it is where the reader already is', async () => {
-    const node = mountNode({ role: 'focus' })
+    const node = mountNode({ seat: 'focus' })
     await node.trigger('click')
     await node.trigger('keydown', { key: 'Enter' })
     expect(node.emitted('activate')).toBeUndefined()
   })
 
   it('is not a tab stop, but is still announced', () => {
-    const node = mountNode({ role: 'focus' })
+    const node = mountNode({ seat: 'focus' })
     expect(node.attributes('tabindex')).toBe('-1')
     expect(node.attributes('aria-hidden')).toBeUndefined()
     expect(node.attributes('role')).toBe('img')
@@ -92,7 +92,7 @@ describe('a node that can be chosen', () => {
     const node = mountNode()
     expect(node.attributes('tabindex')).toBe('0')
     expect(node.attributes('role')).toBe('button')
-    expect(node.attributes('aria-label')).toBe('A thought, child')
+    expect(node.attributes('aria-label')).toBe('A node, child')
   })
 })
 
@@ -139,14 +139,14 @@ describe('the handle', () => {
 })
 
 describe('the icon', () => {
-  it('is whatever the slot was handed, and sits beside the label', () => {
+  it('is whatever the slot was handed, and sits beside the title', () => {
     const node = mount(PlexNodeView, {
       props: { node: nodeAt() },
       slots: { icon: '<i class="glyph" />' },
     })
-    const label = node.get('.plex__label')
-    expect(label.find('.plex__icon .glyph').exists()).toBe(true)
-    expect(label.get('.plex__label-text').text()).toBe('A thought')
+    const title = node.get('.plex__title')
+    expect(title.find('.plex__icon .glyph').exists()).toBe(true)
+    expect(title.get('.plex__title-text').text()).toBe('A node')
   })
 
   it('takes up no room at all when the slot is left empty', () => {
@@ -157,7 +157,7 @@ describe('the icon', () => {
 describe('a node that is not there yet', () => {
   const mountGhost = () =>
     mount(PlexNodeView, {
-      props: { node: nodeAt({ label: 'parent', role: 'parent' }), standing: 'ghost' },
+      props: { node: nodeAt({ title: 'parent', seat: 'parent' }), standing: 'ghost' },
     })
 
   it('cannot be chosen, and is not a tab stop', async () => {
@@ -181,16 +181,16 @@ describe('a node that is not there yet', () => {
   })
 
   it('says the seat it would take, because it has nothing else to say', () => {
-    expect(mountGhost().get('.plex__label-text').text()).toBe('parent')
+    expect(mountGhost().get('.plex__title-text').text()).toBe('parent')
   })
 })
 
 describe('what a node is drawn as', () => {
-  it('carries its own role, as a class and as a hue', () => {
-    for (const role of ['focus', 'parent', 'child', 'jump', 'sibling'] as PlexRole[]) {
-      const node = mountNode({ role })
-      expect(node.classes()).toContain(`plex__node--${role}`)
-      expect(node.attributes('style')).toContain(`var(--numen-role-${role})`)
+  it('carries its own seat, as a class and as a hue', () => {
+    for (const seat of ['focus', 'parent', 'child', 'jump', 'sibling'] as PlexSeat[]) {
+      const node = mountNode({ seat })
+      expect(node.classes()).toContain(`plex__node--${seat}`)
+      expect(node.attributes('style')).toContain(`var(--numen-seat-${seat})`)
     }
   })
 
@@ -206,7 +206,7 @@ describe('what a node is drawn as', () => {
     expect(Number(rect.attributes('height'))).toBe(50)
   })
 
-  it('has a name for a screen reader even with no label at all', () => {
-    expect(mountNode({ label: '' }).attributes('aria-label')).toBe('Untitled, child')
+  it('has a name for a screen reader even with no title at all', () => {
+    expect(mountNode({ title: '' }).attributes('aria-label')).toBe('Untitled, child')
   })
 })

@@ -49,19 +49,19 @@ describe('what a screen reader and a keyboard are given', () => {
     expect(reachable).toHaveLength(neighbourhoods.typical.nodes.length - 1)
   })
 
-  it('names a node by its label and its role', () => {
+  it('names a node by its title and its seat', () => {
     const plex = mountPlex()
     expect(plex.find('[aria-label="Domain, child"]').exists()).toBe(true)
     expect(plex.find('[aria-label="Software architecture, parent"]').exists()).toBe(true)
     expect(plex.find('[aria-label="Onion architecture, jump"]').exists()).toBe(true)
   })
 
-  it('still names a node whose label is empty', () => {
+  it('still names a node whose title is empty', () => {
     const plex = mountPlex({ neighbourhood: neighbourhoods.awkwardLabels })
     expect(plex.find('[aria-label="Untitled, child"]').exists()).toBe(true)
   })
 
-  it('keeps the full label in the accessible name when the box truncates it', () => {
+  it('keeps the full title in the accessible name when the box truncates it', () => {
     const long = 'Supercalifragilisticexpialidociousandthensomemore'
     const plex = mountPlex({ neighbourhood: neighbourhoods.awkwardLabels })
     expect(plex.find(`[aria-label="${long}, child"]`).exists()).toBe(true)
@@ -75,8 +75,8 @@ describe('what did not fit', () => {
 
     // How much fits depends on the window, so the sentence is read against
     // what was actually drawn rather than against a number written here.
-    const drawn = (role: string) =>
-      plex.findAll('.plex__node').filter((n) => n.attributes('aria-label')?.endsWith(`, ${role}`))
+    const drawn = (seat: string) =>
+      plex.findAll('.plex__node').filter((n) => n.attributes('aria-label')?.endsWith(`, ${seat}`))
         .length
 
     expect(status).toContain(`${200 - drawn('child')} children`)

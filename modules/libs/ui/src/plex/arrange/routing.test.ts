@@ -2,13 +2,13 @@
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { neighbourhoods } from '../fixtures/neighbourhoods'
-import type { PlacedNode, PlexRole } from '../model'
+import type { PlacedNode, PlexSeat } from '../model'
 
-const withRole = (frame: { nodes: readonly PlacedNode[] }, role: PlexRole) =>
-  frame.nodes.filter((node) => node.role === role)
+const withSeat = (frame: { nodes: readonly PlacedNode[] }, seat: PlexSeat) =>
+  frame.nodes.filter((node) => node.seat === seat)
 
 const focusOf = (frame: { nodes: readonly PlacedNode[] }) => {
-  const focus = frame.nodes.find((node) => node.role === 'focus')
+  const focus = frame.nodes.find((node) => node.seat === 'focus')
   if (!focus) throw new Error('unreachable: every frame places a focus')
   return focus
 }
@@ -16,7 +16,7 @@ describe('edges', () => {
   it('leaves the focus by one gate and arrives at the top of each child', () => {
     const layout = arrangePlex(neighbourhoods.typical)
     const focus = focusOf(layout)
-    const children = withRole(layout, 'child')
+    const children = withSeat(layout, 'child')
 
     for (const child of children) {
       const edge = layout.edges.find((e) => e.to === child.id)
@@ -31,7 +31,7 @@ describe('edges', () => {
 
   it('sets off and arrives along the axis, never across it', () => {
     const layout = arrangePlex(neighbourhoods.typical)
-    const outermost = withRole(layout, 'child').reduce((a, b) =>
+    const outermost = withSeat(layout, 'child').reduce((a, b) =>
       Math.abs(a.x) > Math.abs(b.x) ? a : b,
     )
     const edge = layout.edges.find((e) => e.to === outermost.id)!
@@ -45,10 +45,10 @@ describe('edges', () => {
     expect(edge.control2.y).toBeLessThan(edge.toPoint.y)
   })
 
-  it('runs sideways for a role that is seated sideways', () => {
+  it('runs sideways for a seat that is seated sideways', () => {
     const layout = arrangePlex(neighbourhoods.typical)
     const focus = focusOf(layout)
-    const jump = withRole(layout, 'jump')[0]!
+    const jump = withSeat(layout, 'jump')[0]!
     const edge = layout.edges.find((e) => e.from === jump.id)!
 
     expect(edge.fromPoint).toStrictEqual({ x: jump.x + jump.width / 2, y: jump.y })
@@ -82,7 +82,7 @@ describe('edges', () => {
   })
 
   it('joins two nodes on the same line side to side, not under and back', () => {
-    // The role says vertical, but there is no vertical room between them.
+    // The seat says vertical, but there is no vertical room between them.
     const layout = arrangePlex(neighbourhoods.diamond)
     const edge = layout.edges.find(
       (e) => e.from === 'parent-0' && e.to === 'parent-1',
@@ -99,7 +99,7 @@ describe('edges', () => {
   })
 
   it('drops an edge from a node to itself', () => {
-    const nodes = [{ id: 'a', label: 'A', role: 'focus' as const }]
+    const nodes = [{ id: 'a', title: 'A', seat: 'focus' as const }]
     const layout = arrangePlex({ nodes, edges: [{ from: 'a', to: 'a' }] })
     expect(layout.edges).toHaveLength(0)
   })

@@ -19,16 +19,16 @@ func TestEveryConnectionGetsThePragmas(t *testing.T) {
 	}
 	defer db.Close()
 
-	const connections = 8
-	db.read.SetMaxOpenConns(connections)
+	const conns = 8
+	db.read.SetMaxOpenConns(conns)
 
 	var wg sync.WaitGroup
-	foreignKeys := make([]int, connections)
-	busyTimeout := make([]int, connections)
-	synchronous := make([]int, connections)
+	foreignKeys := make([]int, conns)
+	busyTimeout := make([]int, conns)
+	synchronous := make([]int, conns)
 	release := make(chan struct{})
 
-	for i := range connections {
+	for i := range conns {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -56,12 +56,12 @@ func TestEveryConnectionGetsThePragmas(t *testing.T) {
 		}()
 	}
 	// Give every goroutine time to take a distinct connection.
-	for range connections {
+	for range conns {
 		release <- struct{}{}
 	}
 	wg.Wait()
 
-	for i := range connections {
+	for i := range conns {
 		if foreignKeys[i] != 1 {
 			t.Errorf("connection %d has foreign_keys = %d, want 1", i, foreignKeys[i])
 		}

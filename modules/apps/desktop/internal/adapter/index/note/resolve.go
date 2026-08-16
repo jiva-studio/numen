@@ -20,8 +20,8 @@ func (q *Queries) Links(ctx context.Context, vaultID, from string) ([]domain.Res
 		return nil, err
 	}
 
-	var id int64
-	err = q.db.QueryRowContext(ctx, stmt.Get("identify"), vault, from).Scan(&id)
+	var row int64
+	err = q.db.QueryRowContext(ctx, stmt.Get("identify"), vault, from).Scan(&row)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -29,7 +29,7 @@ func (q *Queries) Links(ctx context.Context, vaultID, from string) ([]domain.Res
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("links_of"), id)
+	rows, err := q.db.QueryContext(ctx, stmt.Get("links_of"), row)
 	if err != nil {
 		return nil, err
 	}
@@ -217,10 +217,10 @@ func (q *Queries) Backlinks(ctx context.Context, vaultID, to string) ([]domain.R
 		return nil, err
 	}
 
-	var id int64
+	var row int64
 	var identifier, base string
 	err = q.db.QueryRowContext(ctx, stmt.Get("addressing"), vault, to).
-		Scan(&id, &identifier, &base)
+		Scan(&row, &identifier, &base)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}

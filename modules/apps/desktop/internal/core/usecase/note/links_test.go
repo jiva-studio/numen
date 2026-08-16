@@ -38,9 +38,9 @@ func indexed(t *testing.T, notes map[string]string) (*container.Index, domain.Va
 	return db, v
 }
 
-func connections(t *testing.T, db *container.Index, v domain.Vault, path string) note.Connections {
+func links(t *testing.T, db *container.Index, v domain.Vault, path string) note.NoteLinks {
 	t.Helper()
-	c, err := note.ShowConnections{Links: db.Links()}.Execute(t.Context(), v, path)
+	c, err := note.ShowLinks{Links: db.Links()}.Execute(t.Context(), v, path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +53,7 @@ func TestANameResolvesToTheNoteThatAnswersToIt(t *testing.T) {
 		"notes/Entropy.md": "# Entropy\n",
 	})
 
-	c := connections(t, db, v, "source.md")
+	c := links(t, db, v, "source.md")
 	if len(c.Links) != 1 {
 		t.Fatalf("got %+v", c.Links)
 	}
@@ -72,7 +72,7 @@ func TestAPathFromTheRootWinsOverAName(t *testing.T) {
 		"archive/Entropy.md": "# The one that was asked for\n",
 	})
 
-	c := connections(t, db, v, "source.md")
+	c := links(t, db, v, "source.md")
 	if c.Links[0].To != "archive/Entropy.md" {
 		t.Errorf("resolved to %q, want the path that was written", c.Links[0].To)
 	}
@@ -88,7 +88,7 @@ func TestTheFolderTheLinkWasWrittenInDecidesIt(t *testing.T) {
 		"archive/Entropy.md":  "# The stranger\n",
 	})
 
-	c := connections(t, db, v, "projects/source.md")
+	c := links(t, db, v, "projects/source.md")
 	if c.Links[0].To != "projects/Entropy.md" {
 		t.Errorf("resolved to %q", c.Links[0].To)
 	}
@@ -107,7 +107,7 @@ func TestSeveralNotesByOneNameAreAmbiguousAndStillResolve(t *testing.T) {
 		"archive/Entropy.md": "# The other\n",
 	})
 
-	c := connections(t, db, v, "projects/source.md")
+	c := links(t, db, v, "projects/source.md")
 	if !c.Links[0].Ambiguous {
 		t.Error("two notes answer to that name and nothing said so")
 	}
@@ -121,7 +121,7 @@ func TestALinkToNothingIsDanglingRatherThanAnError(t *testing.T) {
 		"source.md": "Points at [[Nothing At All]].\n",
 	})
 
-	c := connections(t, db, v, "source.md")
+	c := links(t, db, v, "source.md")
 	if len(c.Links) != 1 {
 		t.Fatalf("got %+v", c.Links)
 	}
@@ -138,7 +138,7 @@ func TestAnIdentifierResolvesWhateverTheFileIsCalled(t *testing.T) {
 		"renamed-since.md": "---\nid: 01M02ACGM0FYMSXNDP29C90JNR\n---\n\n# Still the same note\n",
 	})
 
-	c := connections(t, db, v, "source.md")
+	c := links(t, db, v, "source.md")
 	if len(c.Links) != 1 || c.Links[0].To != "renamed-since.md" {
 		t.Errorf("got %+v", c.Links)
 	}
@@ -152,7 +152,7 @@ func TestBacklinksFindBothFormsOfAddress(t *testing.T) {
 		"unrelated.md": "# Nothing to do with it\n",
 	})
 
-	c := connections(t, db, v, "target.md")
+	c := links(t, db, v, "target.md")
 	if len(c.Backlinks) != 2 {
 		t.Fatalf("backlinks = %+v", c.Backlinks)
 	}
@@ -170,7 +170,7 @@ func TestAnAttachmentIsALinkAndResolvesToNoNote(t *testing.T) {
 		"source.md": "---\nlinks:\n  - to: \"https://example.org/paper\"\n    role: attachment\n---\n\nbody\n",
 	})
 
-	c := connections(t, db, v, "source.md")
+	c := links(t, db, v, "source.md")
 	if len(c.Links) != 1 {
 		t.Fatalf("got %+v", c.Links)
 	}
@@ -190,7 +190,7 @@ func TestANameNeverLeavesItsVault(t *testing.T) {
 	})
 	addVault(t, db, testsupport.NewVault(t, map[string]string{"Entropy.md": "# Elsewhere\n"}))
 
-	c := connections(t, db, first, "source.md")
+	c := links(t, db, first, "source.md")
 	if c.Links[0].To != "" {
 		t.Errorf("a name resolved into another vault: %q", c.Links[0].To)
 	}
@@ -207,7 +207,7 @@ func TestAnIdentifierCrossesIntoAConnectedVault(t *testing.T) {
 		"elsewhere.md": "---\nid: " + id + "\n---\n\n# In the other vault\n",
 	}))
 
-	c := connections(t, db, first, "source.md")
+	c := links(t, db, first, "source.md")
 	if c.Links[0].To != "elsewhere.md" {
 		t.Fatalf("resolved to %q", c.Links[0].To)
 	}
@@ -225,7 +225,7 @@ func TestAnIdentifierInAVaultThatIsNotConnectedIsNeitherResolvedNorBroken(t *tes
 		"source.md": "---\nlinks:\n  - to: \"note://01M02DTC80PABQQW3XS3XWDVHW\"\n    role: jump\n---\n\nbody\n",
 	})
 
-	c := connections(t, db, v, "source.md")
+	c := links(t, db, v, "source.md")
 	if len(c.Links) != 1 {
 		t.Fatalf("got %+v", c.Links)
 	}
@@ -262,7 +262,7 @@ func TestALinkWrittenAsAPathIsStillABacklink(t *testing.T) {
 		"notes/Entropy.md": "# Entropy\n",
 	})
 
-	c := connections(t, db, v, "notes/Entropy.md")
+	c := links(t, db, v, "notes/Entropy.md")
 	if len(c.Backlinks) != 1 {
 		t.Fatalf("backlinks = %+v", c.Backlinks)
 	}
@@ -280,11 +280,11 @@ func TestALinkThatResolvesElsewhereIsNotABacklink(t *testing.T) {
 		"archive/Entropy.md":  "# The one it does not\n",
 	})
 
-	near := connections(t, db, v, "projects/Entropy.md")
+	near := links(t, db, v, "projects/Entropy.md")
 	if len(near.Backlinks) != 1 {
 		t.Errorf("the note the link resolves to has %d backlinks", len(near.Backlinks))
 	}
-	far := connections(t, db, v, "archive/Entropy.md")
+	far := links(t, db, v, "archive/Entropy.md")
 	if len(far.Backlinks) != 0 {
 		t.Errorf("a note claimed a link that resolves elsewhere: %+v", far.Backlinks)
 	}
@@ -303,11 +303,11 @@ func TestBacklinksNeverCrossVaults(t *testing.T) {
 		"elsewhere.md": "Points at [[target]].\n",
 	}))
 
-	c := connections(t, db, first, "target.md")
+	c := links(t, db, first, "target.md")
 	if len(c.Backlinks) != 1 || c.Backlinks[0].From != "source.md" {
 		t.Errorf("first vault backlinks = %+v", c.Backlinks)
 	}
-	other := connections(t, db, second, "target.md")
+	other := links(t, db, second, "target.md")
 	if len(other.Backlinks) != 1 || other.Backlinks[0].From != "elsewhere.md" {
 		t.Errorf("second vault backlinks = %+v", other.Backlinks)
 	}
@@ -321,7 +321,7 @@ func TestOneNoteWrittenTwoWaysIsOneLink(t *testing.T) {
 		"notes/Entropy.md": "# Entropy\n",
 	})
 
-	c := connections(t, db, v, "source.md")
+	c := links(t, db, v, "source.md")
 	if len(c.Links) != 1 {
 		t.Fatalf("got %d links, want one: %+v", len(c.Links), c.Links)
 	}
@@ -337,7 +337,7 @@ func TestTwoUnresolvedLinksAreOnlyTheSameWhenWrittenTheSame(t *testing.T) {
 		"source.md": "Points at [[Nowhere]] and [[Elsewhere]].\n",
 	})
 
-	c := connections(t, db, v, "source.md")
+	c := links(t, db, v, "source.md")
 	if len(c.Links) != 2 {
 		t.Errorf("got %+v", c.Links)
 	}
@@ -349,7 +349,7 @@ func TestANameMatchesWhateverCaseItWasTypedIn(t *testing.T) {
 		"Entropy.md": "# Entropy\n",
 	})
 
-	c := connections(t, db, v, "source.md")
+	c := links(t, db, v, "source.md")
 	if c.Links[0].To != "Entropy.md" {
 		t.Errorf("resolved to %q — people type lowercase", c.Links[0].To)
 	}

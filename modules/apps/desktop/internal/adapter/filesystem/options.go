@@ -18,14 +18,14 @@ type Options struct {
 	// Ignore is what the vault says not to look at, in the syntax of
 	// `.gitignore`. Empty means the default.
 	Ignore []string
-	// Window is how long changes are collected before they are reported. Zero
-	// means the default.
-	Window time.Duration
+	// Hold is how long changes are kept before they are reported. Zero means
+	// the default.
+	Hold time.Duration
 }
 
-// DefaultWindow is how long events are held before they are acted on. One save
+// DefaultHold is how long events are held before they are acted on. One save
 // is several events, and the same path arrives more than once inside it.
-const DefaultWindow = 50 * time.Millisecond
+const DefaultHold = 50 * time.Millisecond
 
 // ignored answers for files and folders alike, against the path from the vault
 // root, which is what the patterns are written in terms of.
@@ -37,11 +37,11 @@ func (o Options) ignored() *ignore.GitIgnore {
 	return ignore.CompileIgnoreLines(append(append([]string(nil), DefaultIgnore...), o.Ignore...)...)
 }
 
-func (o Options) window() time.Duration {
-	if o.Window <= 0 {
-		return DefaultWindow
+func (o Options) hold() time.Duration {
+	if o.Hold <= 0 {
+		return DefaultHold
 	}
-	return o.Window
+	return o.Hold
 }
 
 // DefaultExtensions is what counts as a note when nothing says otherwise. It is

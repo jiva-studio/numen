@@ -15,7 +15,9 @@ const around = (focus: string, related: [string, Seat, string, string][]) =>
   })
 
 const drawn = (neighbourhood: ReturnType<typeof around>) =>
-  asPlex(neighbourhood).edges.map((edge) => `${edge.from} -> ${edge.to} (${edge.label})`)
+  asPlex(neighbourhood).edges.map(
+    (edge) => `${edge.from} -> ${edge.to}${edge.label ? ` (${edge.label})` : ''}`,
+  )
 
 describe('what the plex is handed', () => {
   it('runs an edge the way the relationship runs', () => {
@@ -27,12 +29,13 @@ describe('what the plex is handed', () => {
           ['Across', Seat.JUMP, 'see also', ''],
         ]),
       ),
-    ).toEqual([
-      'Above -> Here (part of)',
-      // Nothing was written on this one, so the seat says what it is.
-      'Here -> Below (child)',
-      'Across -> Here (see also)',
-    ])
+    ).toEqual(['Above -> Here (part of)', 'Here -> Below', 'Across -> Here (see also)'])
+  })
+
+  it('writes nothing on a line the person wrote nothing on', () => {
+    // A word the application chose would be read as one they had written.
+    const [line] = asPlex(around('Here', [['Below', Seat.CHILD, '', '']])).edges
+    expect(line?.label).toBeUndefined()
   })
 
   it('hangs a sibling off the parent, not off the focus', () => {
@@ -43,7 +46,7 @@ describe('what the plex is handed', () => {
           ['Beside', Seat.SIBLING, '', 'Above'],
         ]),
       ),
-    ).toEqual(['Above -> Here (part of)', 'Above -> Beside (sibling)'])
+    ).toEqual(['Above -> Here (part of)', 'Above -> Beside'])
   })
 
   it('hangs each sibling off its own parent when there are two', () => {
@@ -60,10 +63,10 @@ describe('what the plex is handed', () => {
         ]),
       ),
     ).toEqual([
-      'Machine learning -> Here (parent)',
+      'Machine learning -> Here',
       'Eigenvector -> Here (needs)',
-      'Machine learning -> Clustering (sibling)',
-      'Eigenvector -> SVD (sibling)',
+      'Machine learning -> Clustering',
+      'Eigenvector -> SVD',
     ])
   })
 
@@ -81,7 +84,7 @@ describe('what the plex is handed', () => {
         ['Beside', Seat.SIBLING, '', 'Above'],
       ]),
     )
-    expect(plex.nodes.map((node) => `${node.role} ${node.id}`)).toEqual([
+    expect(plex.nodes.map((node) => `${node.seat} ${node.id}`)).toEqual([
       'focus Here',
       'parent Above',
       'child Below',

@@ -1,16 +1,16 @@
 /** What a drag away from a node comes to, worked out without a pointer. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
-import { nodeAt, resolveDrop, roleTowards } from './drop'
+import { nodeAt, resolveDrop, seatTowards } from './drop'
 import { DEFAULT_OPTIONS, resolveOptions } from './options'
 import { build } from '../fixtures/build'
-import type { PlexFrame, PlexRelatedRole } from '../model'
+import type { PlexFrame, PlexRelatedSeat } from '../model'
 
-const ALLOWED: readonly PlexRelatedRole[] = ['parent', 'child', 'jump']
+const ALLOWED: readonly PlexRelatedSeat[] = ['parent', 'child', 'jump']
 
-const frame = arrangePlex(build('A thought', { parent: 2, child: 4, jump: 2, sibling: 2 }))
-const focus = frame.nodes.find((n) => n.role === 'focus')!
-const child = frame.nodes.find((n) => n.role === 'child')!
+const frame = arrangePlex(build('A node', { parent: 2, child: 4, jump: 2, sibling: 2 }))
+const focus = frame.nodes.find((n) => n.seat === 'focus')!
+const child = frame.nodes.find((n) => n.seat === 'child')!
 
 const drop = (from: string, at: { x: number; y: number }, allowed = ALLOWED) =>
   resolveDrop({ frame, options: DEFAULT_OPTIONS, from, at, allowed })
@@ -22,20 +22,20 @@ describe('the seat a direction stands for', () => {
       direction: { parent: 'down', child: 'up', jump: 'left', sibling: 'right' },
     })
 
-    expect(roleTowards(origin, { x: 0, y: -300 }, DEFAULT_OPTIONS)).toBe('parent')
+    expect(seatTowards(origin, { x: 0, y: -300 }, DEFAULT_OPTIONS)).toBe('parent')
     // Same gesture, arrangement inverted: up is where the children went.
-    expect(roleTowards(origin, { x: 0, y: -300 }, upside)).toBe('child')
+    expect(seatTowards(origin, { x: 0, y: -300 }, upside)).toBe('child')
   })
 
   it('reads the axis a gesture went along, sideways being the harder ask', () => {
     const origin = { x: 0, y: 0 }
-    expect(roleTowards(origin, { x: 40, y: 300 }, DEFAULT_OPTIONS)).toBe('child')
-    expect(roleTowards(origin, { x: 300, y: 40 }, DEFAULT_OPTIONS)).toBe('sibling')
-    expect(roleTowards(origin, { x: -300, y: 40 }, DEFAULT_OPTIONS)).toBe('jump')
+    expect(seatTowards(origin, { x: 40, y: 300 }, DEFAULT_OPTIONS)).toBe('child')
+    expect(seatTowards(origin, { x: 300, y: 40 }, DEFAULT_OPTIONS)).toBe('sibling')
+    expect(seatTowards(origin, { x: -300, y: 40 }, DEFAULT_OPTIONS)).toBe('jump')
   })
 
   it('is nothing at all when the gesture went nowhere', () => {
-    expect(roleTowards({ x: 5, y: 5 }, { x: 5, y: 5 }, DEFAULT_OPTIONS)).toBeNull()
+    expect(seatTowards({ x: 5, y: 5 }, { x: 5, y: 5 }, DEFAULT_OPTIONS)).toBeNull()
   })
 
   it('counts a wide row as down, though it reaches further sideways', () => {
@@ -43,13 +43,13 @@ describe('the seat a direction stands for', () => {
     // is downwards. Splitting the space on the diagonal would name it a jump,
     // and dragging towards where the children plainly are would miss them.
     const leftmost = frame.nodes
-      .filter((n) => n.role === 'child')
+      .filter((n) => n.seat === 'child')
       .reduce((a, b) => (a.x <= b.x ? a : b))
     expect(Math.abs(leftmost.x)).toBeGreaterThan(Math.abs(leftmost.y))
-    expect(roleTowards(focus, leftmost, DEFAULT_OPTIONS)).toBe('child')
+    expect(seatTowards(focus, leftmost, DEFAULT_OPTIONS)).toBe('child')
 
     const flat = resolveOptions({ gesture: { verticalBias: 1 } })
-    expect(roleTowards(focus, leftmost, flat)).toBe('jump')
+    expect(seatTowards(focus, leftmost, flat)).toBe('jump')
   })
 })
 
@@ -75,12 +75,12 @@ describe('letting go on nothing makes a node', () => {
     expect(drop(focus.id, { x: 0, y: -4000 })).toStrictEqual({
       kind: 'create',
       from: focus.id,
-      role: 'parent',
+      seat: 'parent',
     })
     expect(drop(focus.id, { x: 0, y: 4000 })).toStrictEqual({
       kind: 'create',
       from: focus.id,
-      role: 'child',
+      seat: 'child',
     })
   })
 
@@ -91,7 +91,7 @@ describe('letting go on nothing makes a node', () => {
     expect(drop(child.id, above)).toStrictEqual({
       kind: 'create',
       from: child.id,
-      role: 'parent',
+      seat: 'parent',
     })
   })
 
@@ -102,7 +102,7 @@ describe('letting go on nothing makes a node', () => {
     expect(drop(focus.id, { x: 4000, y: 0 }, [...ALLOWED, 'sibling'])).toStrictEqual({
       kind: 'create',
       from: focus.id,
-      role: 'sibling',
+      seat: 'sibling',
     })
   })
 })
@@ -113,7 +113,7 @@ describe('letting go on a node makes a link', () => {
       kind: 'link',
       from: focus.id,
       to: child.id,
-      role: 'child',
+      seat: 'child',
     })
   })
 
@@ -140,8 +140,8 @@ describe('the node under the pointer', () => {
   const stacked = (...nodes: { id: string; opacity?: number }[]): PlexFrame => ({
     ...frame,
     nodes: nodes.map((node) => ({
-      role: 'child' as const,
-      label: node.id,
+      seat: 'child' as const,
+      title: node.id,
       x: 0,
       y: 0,
       width: 100,

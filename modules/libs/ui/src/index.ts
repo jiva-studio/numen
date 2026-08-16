@@ -8,7 +8,7 @@ import './tokens/tokens.css'
 
 export { default as Plex } from './plex/Plex.vue'
 export { browserEnvironment } from './plex/transition'
-export { countOf, seatOf, ROLES } from './plex/model'
+export { countOf, seatWord, SEATS } from './plex/model'
 
 /** For arranging without drawing, or drawing without this renderer. */
 export { default as PlexView } from './plex/render/PlexView.vue'
@@ -39,7 +39,7 @@ export type {
   PlexFrame,
   PlexNeighbourhood,
   PlexNode,
-  PlexRelatedRole,
-  PlexRole,
+  PlexRelatedSeat,
+  PlexSeat,
   Point,
 } from './plex/model'

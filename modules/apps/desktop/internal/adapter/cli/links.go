@@ -25,24 +25,24 @@ func linksCommand(ctx context.Context, out io.Writer, cfg container.Config, args
 	}
 	defer db.Close()
 
-	connections, err := note.ShowConnections{Links: db.Links()}.Execute(ctx, v, args[1])
+	links, err := note.ShowLinks{Links: db.Links()}.Execute(ctx, v, args[1])
 	if err != nil {
 		return err
 	}
 
-	if len(connections.Links) == 0 && len(connections.Backlinks) == 0 {
+	if len(links.Links) == 0 && len(links.Backlinks) == 0 {
 		fmt.Fprintln(out, "no links either way")
 		return nil
 	}
-	if len(connections.Links) > 0 {
+	if len(links.Links) > 0 {
 		fmt.Fprintln(out, "points at:")
-		for _, l := range connections.Links {
+		for _, l := range links.Links {
 			fmt.Fprintf(out, "  %s\n", describeLink(v, l))
 		}
 	}
-	if len(connections.Backlinks) > 0 {
+	if len(links.Backlinks) > 0 {
 		fmt.Fprintln(out, "pointed at by:")
-		for _, l := range connections.Backlinks {
+		for _, l := range links.Backlinks {
 			fmt.Fprintf(out, "  %-10s %s\n", l.Role, l.From)
 		}
 	}

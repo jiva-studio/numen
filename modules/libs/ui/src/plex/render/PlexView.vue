@@ -11,12 +11,12 @@ import PlexNodeView from './PlexNodeView.vue'
 import {
   handleIn,
   midpointOf,
-  seatOf,
+  seatWord,
   type NodeStanding,
   type PlacedEdge,
   type PlacedNode,
   type PlexFrame,
-  type PlexRelatedRole,
+  type PlexRelatedSeat,
   type Point,
 } from '../model'
 import type { Drop } from '../arrange'
@@ -28,7 +28,7 @@ const props = withDefaults(
     viewport: { width: number; height: number }
     /** How big a node the gesture would make, for the shape drawn under it. */
     nodeSize: { width: number; height: number }
-    /** Draw the label a typed relationship carries. */
+    /** Draw the title a typed relationship carries. */
     showEdgeLabels?: boolean
     /** Whether reaching out is allowed at all, and so whether any node may
      *  offer a handle. */
@@ -37,7 +37,7 @@ const props = withDefaults(
      * What to call a seat, for the one place a seat has to be written into the
      * picture: the outline a gesture draws says which one it would take.
      */
-    seatName?: (role: PlexRelatedRole) => string
+    seatName?: (seat: PlexRelatedSeat) => string
     /** A gesture in progress: where it started, where it is, what it means. */
     gestureFrom?: string | null
     gestureAt?: Point | null
@@ -46,7 +46,7 @@ const props = withDefaults(
   {
     showEdgeLabels: true,
     mayReach: true,
-    seatName: seatOf,
+    seatName: seatWord,
     gestureFrom: null,
     gestureAt: null,
     gestureOutcome: null,
@@ -71,7 +71,7 @@ defineExpose({ svg })
  * Fitting the viewBox to the drawing would shrink every box and letter as
  * neighbours are added, and would centre the bounding box rather than the
  * focus. A neighbourhood too wide is clipped instead; that is what the
- * per-role limits and the overflow count are for.
+ * per-seat limits and the overflow count are for.
  */
 const viewBox = computed(() => {
   const { width, height } = props.viewport
@@ -122,8 +122,8 @@ const ghost = computed<PlacedNode | null>(() => {
   if (outcome?.kind !== 'create' || !to) return null
   return {
     id: 'ghost',
-    label: props.seatName(outcome.role),
-    role: outcome.role,
+    title: props.seatName(outcome.seat),
+    seat: outcome.seat,
     x: to.x,
     y: to.y,
     ...props.nodeSize,
@@ -153,7 +153,7 @@ const ghost = computed<PlacedNode | null>(() => {
     </g>
 
     <g v-if="showEdgeLabels" aria-hidden="true">
-      <template v-for="edge in frame.edges" :key="`label:${edge.from}->${edge.to}`">
+      <template v-for="edge in frame.edges" :key="`title:${edge.from}->${edge.to}`">
         <text
           v-if="edge.label"
           class="plex__edge-label"

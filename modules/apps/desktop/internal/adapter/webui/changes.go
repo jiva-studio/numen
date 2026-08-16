@@ -14,7 +14,7 @@ type changed struct {
 // audience is everyone listening for changes.
 //
 // A listener that is not keeping up is not waited for: one slow listener must
-// not hold up the vault's own reindexing. It is not skipped either — a message
+// not hold up the vault's own refreshing. It is not skipped either — a message
 // that never arrives leaves a client showing something stale and certain it is
 // current. It is told to ask for everything again, which is the same answer the
 // watcher gives when more arrives at once than it can follow.

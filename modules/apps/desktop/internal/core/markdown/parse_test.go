@@ -72,7 +72,7 @@ func TestHeadingsAreCollectedInOrder(t *testing.T) {
 	if n.Headings[0].Level != 1 || n.Headings[1].Level != 2 {
 		t.Errorf("levels = %d, %d", n.Headings[0].Level, n.Headings[1].Level)
 	}
-	if !(n.Headings[0].Pos < n.Headings[1].Pos) {
+	if !(n.Headings[0].Line < n.Headings[1].Line) {
 		t.Error("positions are not in document order")
 	}
 }

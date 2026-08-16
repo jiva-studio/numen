@@ -1,16 +1,16 @@
-import type { PlexEdge, PlexNeighbourhood, PlexNode, PlexRelatedRole } from '../model'
-import { RELATED_ROLES } from '../model'
+import type { PlexEdge, PlexNeighbourhood, PlexNode, PlexRelatedSeat } from '../model'
+import { RELATED_SEATS } from '../model'
 import { nameFor } from './names'
 
-export type Counts = Readonly<Partial<Record<PlexRelatedRole, number>>>
+export type Counts = Readonly<Partial<Record<PlexRelatedSeat, number>>>
 
-export interface Thought {
+export interface Named {
   readonly id: string
-  readonly label: string
+  readonly title: string
 }
 
 /** What a typed relationship might be called, so the labels have something to say. */
-const RELATION: Record<PlexRelatedRole, string> = {
+const RELATION: Record<PlexRelatedSeat, string> = {
   parent: 'is a',
   child: 'contains',
   jump: 'see also',
@@ -18,8 +18,8 @@ const RELATION: Record<PlexRelatedRole, string> = {
 }
 
 /** A neighbourhood of the requested size, for turning knobs against. */
-export function build(label: string, counts: Counts): PlexNeighbourhood {
-  return around({ id: 'focus', label }, null, counts)
+export function build(title: string, counts: Counts): PlexNeighbourhood {
+  return around({ id: 'focus', title }, null, counts)
 }
 
 /**
@@ -31,16 +31,16 @@ export function build(label: string, counts: Counts): PlexNeighbourhood {
  * "Child 1, Child 2" says nothing about whether real titles wrap or collide.
  */
 export function around(
-  focus: Thought,
-  from: Thought | null,
+  focus: Named,
+  from: Named | null,
   counts: Counts,
 ): PlexNeighbourhood {
   let taken = 0
-  const invented: PlexNode[] = RELATED_ROLES.flatMap((role) =>
-    Array.from({ length: counts[role] ?? 0 }, (_, index) => ({
-      id: `${focus.id}/${role}-${index}`,
-      label: nameFor(focus.id, taken++),
-      role,
+  const invented: PlexNode[] = RELATED_SEATS.flatMap((seat) =>
+    Array.from({ length: counts[seat] ?? 0 }, (_, index) => ({
+      id: `${focus.id}/${seat}-${index}`,
+      title: nameFor(focus.id, taken++),
+      seat,
     })),
   )
 
@@ -54,30 +54,30 @@ export function around(
 
   const related: PlexNode[] = from
     ? [
-        { id: from.id, label: from.label, role: 'parent' },
-        ...others.filter((node) => node.role === 'parent').slice(1),
-        ...others.filter((node) => node.role !== 'parent'),
+        { id: from.id, title: from.title, seat: 'parent' },
+        ...others.filter((node) => node.seat === 'parent').slice(1),
+        ...others.filter((node) => node.seat !== 'parent'),
       ]
     : others
 
   // A sibling hangs off a parent, not off the focus — it is another of that
   // parent's children. Which parent is a question about relationships, so it
   // is answered here rather than by the plex.
-  const firstParent = related.find((node) => node.role === 'parent')?.id
+  const firstParent = related.find((node) => node.seat === 'parent')?.id
 
   const edges: PlexEdge[] = related.flatMap((node) => {
-    const label = RELATION[node.role as PlexRelatedRole]
-    if (node.role === 'parent' || node.role === 'jump') {
-      return [{ from: node.id, to: focus.id, label }]
+    const title = RELATION[node.seat as PlexRelatedSeat]
+    if (node.seat === 'parent' || node.seat === 'jump') {
+      return [{ from: node.id, to: focus.id, title }]
     }
-    if (node.role === 'sibling') {
-      return firstParent ? [{ from: firstParent, to: node.id, label }] : []
+    if (node.seat === 'sibling') {
+      return firstParent ? [{ from: firstParent, to: node.id, title }] : []
     }
-    return [{ from: focus.id, to: node.id, label }]
+    return [{ from: focus.id, to: node.id, title }]
   })
 
   return {
-    nodes: [{ id: focus.id, label: focus.label, role: 'focus' }, ...related],
+    nodes: [{ id: focus.id, title: focus.title, seat: 'focus' }, ...related],
     edges,
   }
 }
