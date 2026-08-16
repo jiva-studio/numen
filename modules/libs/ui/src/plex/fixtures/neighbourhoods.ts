@@ -6,7 +6,14 @@
  */
 import type { PlexEdge, PlexNeighbourhood, PlexNode, PlexRole } from '../model'
 
-/** Focus in, everything else out — the shape every fixture below is built as. */
+/**
+ * Focus in, everything else out — the shape every fixture below is built as.
+ *
+ * A sibling is the exception, and the shape that catches the most: it is
+ * another of a parent's children, so its line runs from that parent and never
+ * touches the focus. A fixture that drew it from the focus would be a shape no
+ * producer emits, and everything swept over these would be arranged against it.
+ */
 function neighbourhood(
   focus: string,
   related: readonly PlexNode[],
@@ -16,11 +23,16 @@ function neighbourhood(
     { id: 'focus', label: focus, role: 'focus' },
     ...related,
   ]
-  const edges: PlexEdge[] = related.map((node) =>
-    node.role === 'parent' || node.role === 'jump'
-      ? { from: node.id, to: 'focus' }
-      : { from: 'focus', to: node.id },
-  )
+  const parent = related.find((node) => node.role === 'parent')
+  const edges: PlexEdge[] = related.flatMap((node) => {
+    if (node.role === 'parent' || node.role === 'jump') {
+      return [{ from: node.id, to: 'focus' }]
+    }
+    if (node.role === 'sibling') {
+      return parent ? [{ from: parent.id, to: node.id }] : []
+    }
+    return [{ from: 'focus', to: node.id }]
+  })
   return { nodes, edges: [...edges, ...extra] }
 }
 

@@ -69,11 +69,17 @@ export function roleTowards(
   return RELATED_ROLES.find((role) => options.direction[role] === heading) ?? null
 }
 
-/** The node a point falls inside, if any. Later nodes win, as when drawn. */
+/**
+ * The node a point falls inside, if any. Later nodes win, as when drawn.
+ *
+ * A node that is not fully there is not a node to let go on: it is on its way
+ * in or out, and it would be a link to something the reader never saw. That is
+ * the same rule that decides the click and the tab stop.
+ */
 export function nodeAt(point: Point, frame: PlexFrame): PlacedNode | null {
   for (let i = frame.nodes.length - 1; i >= 0; i--) {
     const node = frame.nodes[i]
-    if (!node) continue
+    if (!node || node.opacity < 1) continue
     if (
       Math.abs(point.x - node.x) <= node.width / 2 &&
       Math.abs(point.y - node.y) <= node.height / 2

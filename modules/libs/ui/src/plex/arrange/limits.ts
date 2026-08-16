@@ -43,7 +43,15 @@ export function limitsFor(
   const longestColumn = columnRoles.reduce((most, role) => Math.max(most, counts[role]), 0)
   const hasColumns = longestColumn > 0
 
-  const rowHalf = (perLine: number) => (perLine * width + (perLine - 1) * options.gap) / 2
+  // What a column has to clear, which is the row *or the focus*, whichever
+  // reaches further. A row of one is narrower than the focus it sits above, and
+  // the arrangement clears the wider of the two — so modelling the row alone
+  // promises room that is not there and the column is drawn past the edge.
+  const rowHalf = (perLine: number) =>
+    Math.max(
+      options.focusSize.width / 2,
+      (perLine * width + (perLine - 1) * options.gap) / 2,
+    )
   const columnsBeside = (perLine: number) =>
     clamp(
       along(halfWidth - rowHalf(perLine) - options.focusGap, width, options.lineGap),
@@ -76,8 +84,11 @@ export function limitsFor(
     }),
     () => ({
       perLine: perColumn,
+      // No lines at all when nothing fits beside the rows. What cannot be
+      // drawn is reported as overflow, which is what the reader can act on;
+      // drawing it off the edge of the window is not.
       lines: hasColumns
-        ? Math.max(1, Math.min(columnsBeside(row), Math.ceil(longestColumn / perColumn)))
+        ? Math.min(columnsBeside(row), Math.ceil(longestColumn / perColumn))
         : 1,
     }),
   )

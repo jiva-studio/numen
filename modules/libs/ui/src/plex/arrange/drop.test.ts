@@ -4,7 +4,7 @@ import { arrangePlex } from './arrange'
 import { nodeAt, resolveDrop, roleTowards } from './drop'
 import { DEFAULT_OPTIONS, resolveOptions } from './options'
 import { build } from '../fixtures/build'
-import type { PlexRelatedRole } from '../model'
+import type { PlexFrame, PlexRelatedRole } from '../model'
 
 const ALLOWED: readonly PlexRelatedRole[] = ['parent', 'child', 'jump']
 
@@ -132,5 +132,36 @@ describe('letting go on a node makes a link', () => {
 describe('a gesture from a node that is not there', () => {
   it('comes to nothing', () => {
     expect(drop('nobody', { x: 0, y: 400 })).toBeNull()
+  })
+})
+
+describe('the node under the pointer', () => {
+  const origin = { x: 0, y: 0 }
+  const stacked = (...nodes: { id: string; opacity?: number }[]): PlexFrame => ({
+    ...frame,
+    nodes: nodes.map((node) => ({
+      role: 'child' as const,
+      label: node.id,
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 40,
+      order: 0,
+      opacity: 1,
+      ...node,
+    })),
+  })
+
+  it('is the last one drawn where two sit on top of each other', () => {
+    // Partway through a move a departing node and an arriving one occupy the
+    // same place. The one on top is the one the reader sees, so it is the one
+    // they meant.
+    expect(nodeAt(origin, stacked({ id: 'under' }, { id: 'over' }))?.id).toBe('over')
+  })
+
+  it('is not one on its way in or out, however squarely it is under it', () => {
+    // The rule that decides the click and the tab stop decides this too: a link
+    // to something the reader never saw is not what the gesture asked for.
+    expect(nodeAt(origin, stacked({ id: 'leaving', opacity: 0.4 }))).toBeNull()
   })
 })
