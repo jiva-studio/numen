@@ -22,7 +22,7 @@ const props = withDefaults(
     /** Rows and columns unless another arrangement is handed in. */
     placement?: Placement
     showEdgeLabels?: boolean
-    /** Milliseconds. Zero arrives instantly, as does reduced motion. */
+    /** Milliseconds. Zero arrives instantly. */
     duration?: number
     /** The clock. Browser by default; a test hands in its own. */
     environment?: Environment
@@ -175,10 +175,10 @@ defineExpose({ moving: toRef(moving) })
 .plex-frame__overflow {
   position: absolute;
   user-select: none;
-  inset-block-end: 8px;
-  inset-inline-start: 12px;
+  inset-block-end: var(--numen-inset);
+  inset-inline-start: var(--numen-inset-wide);
   color: var(--numen-edge-label);
   font-family: var(--numen-font-sans);
-  font-size: 11px;
+  font-size: var(--numen-edge-label-size);
 }
 </style>
