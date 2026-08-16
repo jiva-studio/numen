@@ -34,9 +34,8 @@ const (
 // several times over. The size is checked before the file is opened rather than
 // after, which is the difference between refusing and running out of memory.
 //
-// What a link says is measured with the prose: it is shorter, but it lands in
-// the same file, and a batch is bounded by what it will write rather than by
-// which field the bytes arrived in.
+// What a link says is measured with the prose. It lands in the same file, and
+// the bound is on what a call writes.
 const maxBytes = 1 << 20
 
 // Note is a note as every tool reports it: the address it is asked for by, what
@@ -230,8 +229,7 @@ func addNoteTools(server *sdk.Server, core Core) {
 		if len(in.Notes) > maxRefs {
 			return nil, out{}, fmt.Errorf("make at most %d notes at a time", maxRefs)
 		}
-		// Asked of the whole call, before a file is opened: a batch that is too
-		// large to write is refused whole rather than half made.
+		// Asked of the whole call, before a file is opened.
 		size := 0
 		for _, want := range in.Notes {
 			size += len(want.Body)
@@ -428,10 +426,8 @@ func parseFingerprint(s string) (domain.FileRef, error) {
 	return ref, nil
 }
 
-// Many files are many operations, and the filesystem offers no transaction over
-// them: the twenty-ninth can fail on its own. So a batch reports what happened
-// to each rather than presenting itself as all-or-nothing, and a caller reading
-// one refusal does not undo the work that landed. These are those reports.
+// The filesystem offers no transaction over many files: the twenty-ninth can
+// fail on its own. A batch says what happened to each.
 
 // MoveOutcome is what happened to one note in a batch. Refused is empty when it
 // moved.

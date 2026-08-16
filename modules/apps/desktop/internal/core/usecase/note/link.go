@@ -30,9 +30,9 @@ type Linking struct {
 // Add writes relationships into a note, in one read and one write. A link to
 // the same place with the same role is already there, and adding it again
 // changes nothing.
-// One link is named on its own so that there is always at least one: adding
-// nothing would still read the note and write it back, and a note that carries
-// no identifier would come away with one it never asked for.
+//
+// One link is named on its own, so there is always at least one: no links is
+// still a read and a write, and stamps an identifier into a note without one.
 func (u Linking) Add(ctx context.Context, v domain.Vault, from string, add domain.Link, more ...domain.Link) error {
 	links := append([]domain.Link{add}, more...)
 	for _, link := range links {

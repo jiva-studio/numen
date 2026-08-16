@@ -95,8 +95,7 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 	}
 
 	// The note is on disk from here on, so everything after it answers with
-	// where it is. Told only that it failed, a caller would write the note a
-	// second time and be refused the name it already holds.
+	// where it is, whether or not it succeeds.
 	made := Created{Path: path, Identifier: identifier, Title: in.Title}
 	if err := u.index(ctx, v, path); err != nil {
 		return made, err

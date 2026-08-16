@@ -31,8 +31,7 @@ func addLinkTools(server *sdk.Server, core Core) {
 		if len(in.Links) > maxRefs {
 			return nil, out{}, fmt.Errorf("write at most %d links at a time", maxRefs)
 		}
-		// Asked of the whole call, before a file is opened. What a link says
-		// lands in the frontmatter, so it is bounded like prose is.
+		// Asked of the whole call, before a file is opened.
 		size := 0
 		for _, add := range in.Links {
 			size += carried(add.NewLink)
