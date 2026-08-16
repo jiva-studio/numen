@@ -46,8 +46,8 @@ func Parse(ref domain.FileRef, raw []byte) domain.Note {
 	annotated, problems := frontmatterLinks(n.Frontmatter)
 	n.Links = mergeLinks(annotated, bodyLinks(body))
 
-	// An identifier is what other notes point at, across vaults, so anything
-	// that is not one is reported rather than quietly becoming addressable.
+	// An identifier is what other notes point at, across vaults. Anything that
+	// is not one is reported as a problem.
 	if raw, present := n.Frontmatter["id"]; present {
 		id, isText := raw.(string)
 		switch {

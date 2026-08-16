@@ -36,7 +36,19 @@ there, in isolation, before any application renders it.
 
 ```
 src/
-  tokens/            the whole styling contract, as custom properties
+  tokens/            the whole styling contract
+    tokens.css       every value, as custom properties
+    theme.css        Tailwind, told what those values are
+  lib/utils.ts       cn(), for joining class lists
+  components/ui/     what shadcn-vue supplies, and this module now owns
+  fixtures/          awkward text, and a backdrop for a panel to float over
+  panel/             the floating panel: a surface to put things on
+  composer/          the field a message is written in
+    model.ts         what state it is in, and what a key means
+  dots/              three dots rising in turn: something is being written
+  thread/            the conversation
+    model.ts         every voice, declared once — a new voice starts here
+  assembled/         the three of them in one piece, for Storybook
   plex/              the focused-neighbourhood view
     model/           what a plex is made of, as plain values
       seat.ts          every seat, declared once — a new seat starts here
@@ -69,6 +81,37 @@ through a move" a value with a test rather than a screenshot to be caught.
 else — a radial mind map is another implementation, not a branch inside this
 one. `Environment` is the clock, so a movement is stepped by hand in a test and
 by the browser everywhere else.
+
+## Styling
+
+**Two ways of writing a style, along one line.** A component made of DOM is
+styled with Tailwind utilities. The plex is styled with scoped CSS, because
+what it paints with — `rx`, `stroke-dasharray`, `paint-order`, `r` — are SVG
+attributes that no utility expresses.
+
+Both end at the same place: `tokens.css` holds every value, `theme.css` defines
+Tailwind's names in terms of those tokens, and `bg-surface` and
+`var(--numen-surface)` are one value.
+
+**A theme is chosen by `color-scheme`.** The tokens are `light-dark()` pairs,
+and that is the whole mechanism — Storybook's switch sets `color-scheme` and
+everything follows. It is declared on `:root` and **nowhere else**: an element
+that declares it again hands the choice back to the reader's system, and every
+token under that element resolves to the wrong half of its pair while the page
+looks like it asked for the other one. **No component writes a `dark:` class.**
+Tailwind's `dark:`
+variant reads a class or the OS setting, neither of which is what is being
+switched, so a component using one is stuck in whichever theme it was written
+in. Components taken from shadcn-vue have theirs removed on the way in.
+
+**Scoped CSS beats a utility.** Component styles are unlayered and Tailwind's
+are in `@layer`, so an unlayered rule wins whatever its specificity. A scoped
+block on a DOM component is therefore for what a utility cannot say — the
+composer's field and its copy sharing one grid cell — and never for what one
+can.
+
+**A component root carries `numen`.** The tokens are declared on `:root` and on
+`.numen` both, so a component works in a page that never set them.
 
 ## Reaching out from a node
 

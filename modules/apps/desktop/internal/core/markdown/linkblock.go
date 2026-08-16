@@ -12,12 +12,11 @@ import (
 
 // ErrNotOurs is what changing an entry says when the entry carries something
 // the application does not own. A collision is the person's win: their key is
-// reported rather than overwritten, and their link is left as they wrote it.
+// reported, and their link is left as they wrote it.
 var ErrNotOurs = fmt.Errorf("this link carries something the application does not own")
 
-// owned is every key an entry of the `links:` block may carry. Anything else in
-// there is the person's, and is a reason to leave the entry alone rather than a
-// field to drop on the way past.
+// owned is every key an entry of the `links:` block may carry. Anything else
+// in there is the person's, and the entry it sits in is left alone.
 var owned = map[string]bool{
 	"to": true, "role": true, "type": true, "note": true, "label": true,
 }
@@ -37,10 +36,9 @@ type entry struct {
 	readable bool
 	// ours is whether every key in it is one the application owns.
 	ours bool
-	// address is the node holding where the link goes, so that changing it is a
-	// change to that scalar rather than to whatever line happens to read like
-	// one. A key called `proto`, or the word `to:` inside somebody's sentence,
-	// both look the same to a search and are not this.
+	// address is the node holding where the link goes, so changing it is a
+	// change to that scalar. A key called `proto`, or the word `to:` inside
+	// somebody's sentence, both look the same to a search and are not this.
 	address *yaml.Node
 }
 
@@ -161,8 +159,7 @@ func (d *Document) RemoveLink(to domain.Address, role domain.LinkRole) (int, err
 }
 
 // UpdateLink changes what an entry says about itself without moving where it
-// goes. An entry carrying anything the application does not own is refused
-// rather than rewritten without it.
+// goes. An entry carrying anything the application does not own is refused.
 func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error) {
 	b, err := d.block()
 	if err != nil {
@@ -179,9 +176,8 @@ func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error
 			return 0, fmt.Errorf("%w: %s", ErrNotOurs, e.link.Target)
 		}
 		// What was not sent is kept. A caller changing a label has not asked
-		// for the person's own words about why the link exists to be dropped,
-		// and every field here behaves the same way so there is one rule to
-		// hold rather than an exception per field.
+		// for the person's own words about why the link exists to be dropped.
+		// Every field here behaves the same way, so there is one rule to hold.
 		next := e.link
 		if change.Role != "" {
 			next.Role = change.Role
@@ -212,9 +208,8 @@ func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error
 // was written and is visible as a problem.
 func (d *Document) PointLinksAt(from domain.Address, to string) (int, error) {
 	if !domain.Nameable(to) {
-		// Nothing a link could say would reach it. The link stays as it was
-		// written, and is visible as a problem rather than quietly made to mean
-		// something else.
+		// Nothing a link could say reaches it. The link stays as it was
+		// written, and shows as a problem.
 		return 0, nil
 	}
 	b, err := d.block()

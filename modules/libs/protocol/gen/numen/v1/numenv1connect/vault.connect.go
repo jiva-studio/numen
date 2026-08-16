@@ -50,6 +50,8 @@ const (
 	VaultServiceNeighbourhoodProcedure = "/numen.v1.VaultService/Neighbourhood"
 	// VaultServiceChangesProcedure is the fully-qualified name of the VaultService's Changes RPC.
 	VaultServiceChangesProcedure = "/numen.v1.VaultService/Changes"
+	// VaultServiceFocusProcedure is the fully-qualified name of the VaultService's Focus RPC.
+	VaultServiceFocusProcedure = "/numen.v1.VaultService/Focus"
 )
 
 // VaultServiceClient is a client for the numen.v1.VaultService service.
@@ -65,6 +67,10 @@ type VaultServiceClient interface {
 	// listens. It says which notes, and nothing about them: the caller knows
 	// what it is showing and asks for what it needs.
 	Changes(context.Context, *connect.Request[v1.ChangesRequest]) (*connect.ServerStreamForClient[v1.ChangesResponse], error)
+	// Focus reports the notes something else asked to be put in front of the
+	// person — an agent working the vault beside them — for as long as the
+	// caller listens. What travelling there looks like is the client's.
+	Focus(context.Context, *connect.Request[v1.FocusRequest]) (*connect.ServerStreamForClient[v1.FocusResponse], error)
 }
 
 // NewVaultServiceClient constructs a client for the numen.v1.VaultService service. By default, it
@@ -102,6 +108,12 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(vaultServiceMethods.ByName("Changes")),
 			connect.WithClientOptions(opts...),
 		),
+		focus: connect.NewClient[v1.FocusRequest, v1.FocusResponse](
+			httpClient,
+			baseURL+VaultServiceFocusProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Focus")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -111,6 +123,7 @@ type vaultServiceClient struct {
 	opening       *connect.Client[v1.OpeningRequest, v1.OpeningResponse]
 	neighbourhood *connect.Client[v1.NeighbourhoodRequest, v1.NeighbourhoodResponse]
 	changes       *connect.Client[v1.ChangesRequest, v1.ChangesResponse]
+	focus         *connect.Client[v1.FocusRequest, v1.FocusResponse]
 }
 
 // State calls numen.v1.VaultService.State.
@@ -133,6 +146,11 @@ func (c *vaultServiceClient) Changes(ctx context.Context, req *connect.Request[v
 	return c.changes.CallServerStream(ctx, req)
 }
 
+// Focus calls numen.v1.VaultService.Focus.
+func (c *vaultServiceClient) Focus(ctx context.Context, req *connect.Request[v1.FocusRequest]) (*connect.ServerStreamForClient[v1.FocusResponse], error) {
+	return c.focus.CallServerStream(ctx, req)
+}
+
 // VaultServiceHandler is an implementation of the numen.v1.VaultService service.
 type VaultServiceHandler interface {
 	// State is what the vault is and how far reading it has got.
@@ -146,6 +164,10 @@ type VaultServiceHandler interface {
 	// listens. It says which notes, and nothing about them: the caller knows
 	// what it is showing and asks for what it needs.
 	Changes(context.Context, *connect.Request[v1.ChangesRequest], *connect.ServerStream[v1.ChangesResponse]) error
+	// Focus reports the notes something else asked to be put in front of the
+	// person — an agent working the vault beside them — for as long as the
+	// caller listens. What travelling there looks like is the client's.
+	Focus(context.Context, *connect.Request[v1.FocusRequest], *connect.ServerStream[v1.FocusResponse]) error
 }
 
 // NewVaultServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -179,6 +201,12 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(vaultServiceMethods.ByName("Changes")),
 		connect.WithHandlerOptions(opts...),
 	)
+	vaultServiceFocusHandler := connect.NewServerStreamHandler(
+		VaultServiceFocusProcedure,
+		svc.Focus,
+		connect.WithSchema(vaultServiceMethods.ByName("Focus")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.VaultService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case VaultServiceStateProcedure:
@@ -189,6 +217,8 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 			vaultServiceNeighbourhoodHandler.ServeHTTP(w, r)
 		case VaultServiceChangesProcedure:
 			vaultServiceChangesHandler.ServeHTTP(w, r)
+		case VaultServiceFocusProcedure:
+			vaultServiceFocusHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -212,4 +242,8 @@ func (UnimplementedVaultServiceHandler) Neighbourhood(context.Context, *connect.
 
 func (UnimplementedVaultServiceHandler) Changes(context.Context, *connect.Request[v1.ChangesRequest], *connect.ServerStream[v1.ChangesResponse]) error {
 	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Changes is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) Focus(context.Context, *connect.Request[v1.FocusRequest], *connect.ServerStream[v1.FocusResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Focus is not implemented"))
 }

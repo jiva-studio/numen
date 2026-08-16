@@ -74,7 +74,7 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, fi
 		}
 	case errors.Is(err, fs.ErrNotExist):
 		// A note that is not there yet cannot have changed, and a caller that
-		// believed it was there is told so rather than quietly creating it.
+		// believed it was there is told so.
 		if fingerprint != (domain.FileRef{}) {
 			return fmt.Errorf("write %s: %w", path, port.ErrChanged)
 		}
@@ -246,9 +246,9 @@ func (w Writers) Open(v domain.Vault) (port.VaultWriter, error) {
 
 // Create writes a note where there is none, and refuses where there is one.
 //
-// The refusal comes from the filesystem rather than from a look beforehand:
-// O_EXCL either creates the file or does not, in one step, so two callers
-// racing cannot both be told the path was free.
+// The refusal comes from the filesystem: O_EXCL either creates the file or
+// does not, in one step, so two callers racing cannot both be told the path
+// was free.
 func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) error {
 	if ctx.Err() != nil {
 		return ctx.Err()

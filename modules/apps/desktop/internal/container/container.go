@@ -27,7 +27,7 @@ type Config struct {
 }
 
 // Registry is the list of vaults this installation knows: application state,
-// kept with the application rather than in any vault.
+// kept with the application.
 func (c Config) Registry() (port.VaultRegistry, error) {
 	if c.RegistryPath != "" {
 		return appstate.At(c.RegistryPath), nil

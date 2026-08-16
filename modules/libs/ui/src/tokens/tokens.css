@@ -3,10 +3,14 @@
  * here, and no component reaches past a token for a value.
  */
 
+/* Which half of every pair below is taken. On the root alone, so everything
+   the page contains inherits the page's answer. */
+:where(:root) {
+  color-scheme: light dark;
+}
+
 :where(:root),
 :where(.numen) {
-  color-scheme: light dark;
-
   --numen-font-sans:
     ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans',
     'Noto Sans Devanagari', 'Noto Sans Arabic', sans-serif;
@@ -58,6 +62,57 @@
   --numen-edge: light-dark(#c3c6cc, #3d424a);
   --numen-edge-label: light-dark(#7b7f87, #8b9098);
   --numen-ring: light-dark(#2f6fd0, #78a9ef);
+  --numen-alarm: light-dark(#a33a32, #e08b83);
+
+  /* The clearance a line of small print keeps from the corner it sits in. */
+  --numen-inset: 8px;
+  --numen-inset-wide: 12px;
+
+  /* A panel floats: rounded on every side, with what it covers showing
+     through it. The tint and the blur go together when transparency is
+     turned down. */
+  --numen-radius-panel: 12px;
+  --numen-panel-padding: 12px;
+  --numen-panel-gap: 10px;
+  --numen-panel-bg: light-dark(#ffffffcc, #23262acc);
+  --numen-panel-border: light-dark(#00000014, #ffffff1f);
+  --numen-panel-blur: 24px;
+  --numen-panel-shadow:
+    0 1px 2px light-dark(#0000001a, #00000047), 0 12px 32px
+    light-dark(#00000024, #00000059);
+
+  --numen-radius-pill: 999px;
+  /* A field at rest is one row tall. The row is what the button is drawn at
+     and what one line of typing is set to fill, so the two share a middle
+     without either being measured. */
+  --numen-action-size: 32px;
+  --numen-field-padding: 6px;
+  --numen-field-min: calc(var(--numen-action-size) + 2 * var(--numen-field-padding));
+  /* Half the height at rest: a lozenge while the field holds one line, a
+     rounded box once it grows. */
+  --numen-radius-field: calc(var(--numen-field-min) / 2);
+  /* The clearance the typing keeps from the ends, which is around the curve. */
+  --numen-field-text-inset: 14px;
+  --numen-field-bg: light-dark(#ffffff, #1d2023);
+  --numen-field-border: light-dark(#dcdde1, #383c43);
+  /* Lines of typing the field grows to before it scrolls. */
+  --numen-field-lines: 10;
+
+  /* Three dots saying something is being written. Each rises a third of a
+     cycle behind the one before it, so they read left to right. */
+  --numen-dot-size: 4px;
+  --numen-dot-gap: 3px;
+  --numen-dot-rise: 3px;
+  --numen-dot-cycle: 1200ms;
+
+  /* What was said is a bubble; what came back is text on the surface. */
+  --numen-bubble-bg: light-dark(#eceef2, #2b2f35);
+  --numen-bubble-fg: light-dark(#1d1f22, #dfe2e6);
+  --numen-answer-fg: light-dark(#1d1f22, #dfe2e6);
+  --numen-radius-bubble: 12px;
+  --numen-turn-gap: 16px;
+  /* How much of the width one bubble may take before it wraps. */
+  --numen-bubble-measure: 80%;
 
   --numen-motion: 220ms;
   /* A pointer answers now; it is not waiting on a navigation. */
@@ -66,13 +121,4 @@
   /* Overridden by the plex from its own `duration`, so colour that follows a
      seat changes over the time the seat takes to change. */
   --numen-plex-move: var(--numen-motion);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  :where(:root),
-  :where(.numen) {
-    --numen-motion: 0ms;
-    --numen-motion-hover: 0ms;
-    --numen-plex-move: 0ms;
-  }
 }

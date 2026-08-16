@@ -14,6 +14,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agent"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
@@ -29,7 +30,15 @@ type API struct {
 	// Scan reads the whole vault. Keeping it level afterwards is a use case,
 	// and what it produces arrives here through Listeners.
 	Scan      func(context.Context, domain.Vault) (usecase.ScanResult, error)
-	Listeners audience
+	Listeners audience[changed]
+
+	// Agent takes the tasks the panel sends. A vault without one answers that
+	// it has none, and the rest of the window works as it did.
+	Agent agent.Agent
+
+	// Watching is everyone drawing this vault, for when something asks that a
+	// note be put in front of the person.
+	Watching audience[string]
 
 	// Indexed counts what the scan has stored so far. Ready is set when it
 	// finished, Failed when it could not — a vault that could not be read is

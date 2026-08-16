@@ -6,27 +6,45 @@
  * plex, which travels there by itself. What decides when to ask is in
  * `showing.ts`.
  */
-import { onMounted, onUnmounted } from 'vue'
-import { Plex } from '@numen/ui'
-import '@numen/ui/tokens.css'
+import { onMounted, onUnmounted, ref } from 'vue'
+import { AgentPanel, Plex } from '@numen/ui'
+import '@numen/ui/styles.css'
 import { core } from './vault'
 import { showing } from './showing'
 import { asPlex } from './plex'
+import { core as agent } from './agent'
+import { conversation } from './conversation'
 
 const window = showing(core)
-const { neighbourhood, name, indexing, failure, notice, trouble, unwatched, go } = window
+const { neighbourhood, indexing, failure, notice, trouble, unwatched, go } = window
+
+/** Everything this window says in its own voice. */
+const words = {
+  ask: 'Ask about this note',
+  thinking: 'Thinking',
+  unreachable: 'The agent could not be reached.',
+  nothing: 'The agent finished without saying anything.',
+  unsent: 'Did not send',
+  stopped: 'The agent stopped here',
+}
+
+const { turns, working, ask, close } = conversation(agent, words)
+const asked = ref('')
+
+const send = (text: string) => {
+  asked.value = ''
+  void ask(text, neighbourhood.value?.focus?.path ?? '')
+}
 
 onMounted(window.start)
-onUnmounted(window.close)
+onUnmounted(() => {
+  window.close()
+  close()
+})
 </script>
 
 <template>
   <main>
-    <header>
-      <span class="vault">{{ name || 'numen' }}</span>
-      <span v-if="neighbourhood" class="here">{{ neighbourhood.focus?.title }}</span>
-    </header>
-
     <p v-if="unwatched" class="warning">not following the vault — {{ unwatched }}</p>
     <p v-if="trouble" class="warning">the vault could not be read — {{ trouble }}</p>
     <p v-if="notice" class="warning">{{ notice }}</p>
@@ -36,13 +54,29 @@ onUnmounted(window.close)
     <p v-else-if="!neighbourhood && trouble" class="waiting">nothing was read</p>
     <p v-else-if="!neighbourhood" class="waiting">this vault holds no notes</p>
 
-    <Plex
-      v-else
-      class="plex"
-      :neighbourhood="asPlex(neighbourhood)"
-      :creatable="[]"
-      @activate="go"
-    />
+    <div class="below">
+      <Plex
+        v-if="neighbourhood && !failure && !indexing"
+        class="plex"
+        :neighbourhood="asPlex(neighbourhood)"
+        :creatable="[]"
+        @activate="go"
+      />
+      <div v-else class="plex" />
+
+      <AgentPanel
+        v-model="asked"
+        class="agent"
+        :turns="turns"
+        :working="working"
+        :placeholder="words.ask"
+        @submit="send"
+      >
+        <template #failure="{ turn }">
+          {{ turn.voice === 'asked' ? words.unsent : words.stopped }}
+        </template>
+      </AgentPanel>
+    </div>
   </main>
 </template>
 
@@ -53,22 +87,23 @@ main {
   height: 100vh;
 }
 
-header {
+.below {
   display: flex;
-  gap: 0.75rem;
-  align-items: baseline;
-  padding: 0.6rem 1rem;
-  border-bottom: 1px solid var(--numen-chrome-rule);
-  font: 500 0.85rem system-ui, sans-serif;
-}
-
-.vault {
-  opacity: 0.55;
+  flex: 1;
+  min-height: 0;
 }
 
 .plex {
   flex: 1;
-  min-height: 0;
+  min-width: 0;
+}
+
+/* Floating: clear of the top, the bottom and the trailing edge. */
+.agent {
+  flex: none;
+  inline-size: clamp(24rem, 32vw, 40rem);
+  margin-block: var(--numen-inset-wide);
+  margin-inline-end: var(--numen-inset-wide);
 }
 
 .waiting,

@@ -15,9 +15,8 @@ import (
 //
 // The two are separate on purpose. The body is what the person wrote and is
 // replaced wholesale; the frontmatter is shared with them, and the keys the
-// application does not own survive because nothing here rewrites them. A
-// caller that could send the whole file would be deciding how somebody's YAML
-// is formatted.
+// application does not own survive because nothing here rewrites them. How
+// somebody's YAML is formatted stays theirs.
 type Write struct {
 	Readers port.VaultReaders
 	Writers port.VaultWriters

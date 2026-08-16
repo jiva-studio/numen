@@ -14,10 +14,9 @@ import (
 
 // announcement is where agents may reach this vault and what they must present.
 //
-// It is written where the application keeps its own state rather than in a
-// vault: it belongs to this installation and is worth nothing on another
-// machine. Configuring an agent is then reading a file rather than watching a
-// log.
+// It is written where the application keeps its own state: it belongs to this
+// installation and is worth nothing on another machine. Configuring an agent
+// is reading a file.
 type announcement struct {
 	URL   string `json:"url"`
 	Token string `json:"token"`

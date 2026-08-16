@@ -2,7 +2,7 @@
 // is the list of vaults. It is application state: not derivable from any vault,
 // and never stored inside one.
 //
-// JSON rather than a database, deliberately — it is a handful of entries whose
-// most important moment is when the application will not start, and a file a
-// human can open and fix beats a database that needs the application to read it.
+// JSON, deliberately: it is a handful of entries whose most important moment
+// is when the application will not start, and a person can open a file and fix
+// it with nothing running.
 package appstate

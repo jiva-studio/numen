@@ -21,9 +21,8 @@ var ErrNotANote = errors.New("not a note this vault holds")
 // inside turns a path from a vault root into a path on this machine, and
 // refuses one that leaves.
 //
-// The check is on the cleaned path rather than on the text. `notes/../../etc`
-// begins with neither a slash nor a dot-dot and reaches outside all the same,
-// and `filepath.Join` would clean it away without a word. Everything that
+// The check is on the cleaned path. `notes/../../etc` begins with neither a
+// slash nor a dot-dot and reaches outside all the same. Everything that
 // reaches a vault from outside the application arrives here first.
 func inside(root, path, serviceDir string) (string, error) {
 	if path == "" {

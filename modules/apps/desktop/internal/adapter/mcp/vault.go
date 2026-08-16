@@ -10,7 +10,8 @@ import (
 
 func addVaultTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
-		Name: "vault_get",
+		Name:  "vault_get",
+		Title: "Show the vault",
 		Description: "Where the vault is and how much of it has been read. The folder " +
 			"is the same one named in the instructions; ask again if you have lost it.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, _ struct{}) (*sdk.CallToolResult, struct {
@@ -41,7 +42,8 @@ func addVaultTools(server *sdk.Server, core Core) {
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
-		Name: "vault_problems",
+		Name:  "vault_problems",
+		Title: "List what a scan could not act on",
 		Description: "What the vault contains that could not be acted on and was not " +
 			"guessed at. Each problem names the note somebody would open to settle it, " +
 			"and the check that noticed it: `parse` for what one file got wrong, " +
@@ -89,7 +91,8 @@ func addVaultTools(server *sdk.Server, core Core) {
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
-		Name: "vault_named",
+		Name:  "vault_named",
+		Title: "Find notes by name",
 		Description: "Every note filed under one name. More than one means a link " +
 			"written by that name is ambiguous and reaches the nearest of them, which " +
 			"can change when either note is moved.",

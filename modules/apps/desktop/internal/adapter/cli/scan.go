@@ -52,9 +52,8 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args 
 	return nil
 }
 
-// findVault resolves what the user typed and, when it resolves to nothing, says
-// what to do about it — which is a matter of talking to a person, so it belongs
-// here rather than in the use case.
+// findVault resolves what the person typed and, when it resolves to nothing,
+// says what to do about it. Talking to a person belongs here.
 func findVault(cfg container.Config, nameOrPath string) (domain.Vault, error) {
 	registry, err := cfg.Registry()
 	if err != nil {

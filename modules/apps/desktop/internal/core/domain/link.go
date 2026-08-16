@@ -15,7 +15,7 @@ const (
 )
 
 // KnownRole reports whether a role is one the application acts on. An unknown
-// role in a file is a problem to show rather than a value to store.
+// role in a file is shown as a problem.
 func KnownRole(r LinkRole) bool {
 	switch r {
 	case RoleParent, RoleChild, RoleJump, RoleRef, RoleAttachment:
@@ -25,9 +25,8 @@ func KnownRole(r LinkRole) bool {
 }
 
 // Address is what a link points at. Every address has a scheme, so reading one
-// is always a split rather than a guess: a title like "Lecture 3: entropy" looks
-// like an unknown scheme, and a rule of the form "no prefix means a name" gets
-// it wrong.
+// is a split at the first colon: a title like "Lecture 3: entropy" carries one
+// of its own, and only a written scheme tells the two apart.
 type Address struct {
 	Scheme string
 	Value  string
@@ -138,7 +137,7 @@ func (r ResolvedLink) InVault(writtenIn string) (vault string, crossed bool) {
 
 // AmbiguousLink is a link that several notes answer to. It resolved to the
 // nearest of them, and the rest are what makes it worth showing: which one it
-// means is a fact about where the notes sit rather than about the link.
+// means is a fact about where the notes sit.
 type AmbiguousLink struct {
 	ResolvedLink
 	// Candidates is every note that answers to the name, the chosen one among them.
@@ -150,9 +149,9 @@ type AmbiguousLink struct {
 //
 // A file may be called almost anything, and an address may not. `#` starts a
 // fragment, `|` starts an alias, `://` starts a scheme and `]]` ends a
-// wikilink, so a note named with any of them cannot be reached by its name —
-// and writing one into a link would change what the link says rather than where
-// it goes. Such a note is addressed by its identifier or not at all.
+// wikilink, so a note named with any of them cannot be reached by its name:
+// the character is read as punctuation of the link. Such a note is addressed
+// by its identifier or not at all.
 func Nameable(name string) bool {
 	if strings.TrimSpace(name) != name || name == "" || strings.ContainsAny(name, "\n\r") {
 		return false

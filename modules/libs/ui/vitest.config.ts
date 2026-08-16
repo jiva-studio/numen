@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
+import tailwindcss from '@tailwindcss/vite'
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
 
 const src = fileURLToPath(new URL('./src', import.meta.url))
@@ -51,6 +52,7 @@ export default defineConfig({
       {
         plugins: [
           vue(),
+          tailwindcss(),
           storybookTest({
             configDir: fileURLToPath(new URL('./.storybook', import.meta.url)),
           }),

@@ -19,5 +19,6 @@ export const core: Core = {
   neighbourhood: (path) => vault.neighbourhood({ path }),
   opening: async () => (await vault.opening({})).note ?? null,
   state: () => vault.state({}),
-  changes: () => vault.changes({}),
+  changes: (signal) => vault.changes({}, { signal }),
+  focus: (signal) => vault.focus({}, { signal }),
 }

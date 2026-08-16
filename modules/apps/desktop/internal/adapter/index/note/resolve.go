@@ -63,16 +63,16 @@ func (q *Queries) Links(ctx context.Context, vaultID, from string) ([]domain.Res
 // note written two ways does: [[notes/Entropy]] in the links block and
 // [[Entropy]] in prose are one link, and the described one wins.
 //
-// It happens here rather than at parse time because only resolution knows that
-// two different strings mean one note.
+// It happens here because only resolution knows that two different strings
+// mean one note.
 func dedupe(links []domain.ResolvedLink) []domain.ResolvedLink {
 	seen := map[string]int{}
 	var out []domain.ResolvedLink
 	for _, l := range links {
 		key := l.To
 		if key == "" {
-			// Unresolved links are only the same when written the same: nothing
-			// here knows what they would have meant.
+			// Unresolved links are only the same when written the same:
+			// nothing here knows what they meant.
 			key = "\x00" + l.Target.String()
 		}
 		at, known := seen[key]
@@ -151,9 +151,8 @@ func (q *Queries) candidates(ctx context.Context, vault int64, name string) ([]s
 
 // pick applies the priority a name resolves by: an exact path from the root,
 // then a path relative to the note the link is written in, then a single match
-// by name. Several matches are ambiguous rather than dangling — the link
-// resolves to the nearest one in the tree, and the ambiguity is something to
-// show.
+// by name. Several matches are ambiguous: the link resolves to the nearest one
+// in the tree, and the ambiguity is shown.
 func pick(from, name string, candidates []string) (chosen string, ambiguous bool) {
 	if len(candidates) == 0 {
 		return "", false

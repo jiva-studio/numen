@@ -14,9 +14,8 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-// DefaultAddr is where an agent looks unless told otherwise. The port is fixed
-// rather than chosen at random because it goes in a configuration file the
-// person writes once and does not want to rewrite every morning.
+// DefaultAddr is where an agent looks when it is told nothing else. The port
+// is fixed: it goes in a configuration file the person writes once.
 const DefaultAddr = "127.0.0.1:7717"
 
 // Endpoint is a running server: where it is, and what an agent must present to
@@ -33,13 +32,11 @@ type Endpoint struct {
 
 // ServeHTTP starts the server and returns once it is listening.
 //
-// The listener is opened before returning so that a port already in use is an
-// error the person sees at startup, rather than an agent failing to connect an
-// hour later.
+// The listener is opened before returning, so a port already in use is an
+// error the person sees at startup.
 //
-// Trouble, if it is given, is called with whatever stops the server later.
-// Without it a server that died would be discovered by an agent that could not
-// connect, which is the wrong person to tell.
+// Trouble, if it is given, is called with whatever stops the server later. It
+// is how the person hears that it stopped.
 func ServeHTTP(ctx context.Context, addr, token string, core Core, trouble func(error)) (*Endpoint, error) {
 	if addr == "" {
 		addr = DefaultAddr

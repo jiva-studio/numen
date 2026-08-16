@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "description": "What a client may ask about a vault. Generated from proto/.",
-  "main": "./src/numen/v1/vault_pb.ts",
+  "main": "./index.ts",
   "exports": {
-    ".": "./src/numen/v1/vault_pb.ts"
+    ".": "./index.ts"
   },
   "scripts": {
     "generate": "buf generate"

@@ -30,9 +30,8 @@ const DefaultHold = 50 * time.Millisecond
 // ignored answers for files and folders alike, against the path from the vault
 // root, which is what the patterns are written in terms of.
 //
-// What a vault says is added to the defaults rather than put in their place: a
-// vault asking for its archive to be left alone is not asking for an editor's
-// lock files to be indexed.
+// What a vault says is added to the defaults: a vault asking for its archive
+// to be left alone is not asking for an editor's lock files to be indexed.
 func (o Options) ignored() *ignore.GitIgnore {
 	return ignore.CompileIgnoreLines(append(append([]string(nil), DefaultIgnore...), o.Ignore...)...)
 }
@@ -50,8 +49,8 @@ func (o Options) hold() time.Duration {
 var DefaultExtensions = []string{".md"}
 
 // DefaultIgnore is what no vault has to ask to be left out. A name beginning
-// with a dot belongs to a tool rather than to the person — an editor's lock, a
-// sync client's bookkeeping.
+// with a dot belongs to a tool — an editor's lock, a sync client's
+// bookkeeping.
 var DefaultIgnore = []string{".*"}
 
 func (o Options) serviceDir() string {

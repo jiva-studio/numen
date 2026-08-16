@@ -59,8 +59,8 @@ func ReadConfig(root, serviceDir string) (Config, error) {
 // This is the one write the application makes into a vault without being asked
 // to edit something, and it happens because the user added the vault.
 //
-// An existing configuration is returned untouched rather than replaced: the
-// identity is what every row in the index points at.
+// An existing configuration is returned untouched: the identity is what every
+// row in the index points at.
 func Initialize(root, serviceDir string, now time.Time) (Config, error) {
 	if serviceDir == "" {
 		serviceDir = DefaultServiceDir

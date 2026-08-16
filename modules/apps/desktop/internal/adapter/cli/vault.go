@@ -84,8 +84,7 @@ func vaultList(out io.Writer, cfg container.Config) error {
 		marker := " "
 		if _, err := os.Stat(v.Path); err != nil {
 			// The registry remembers where a vault was last seen; the vault
-			// carries the identity. A folder that is not there is worth saying
-			// out loud rather than failing on later.
+			// carries the identity. A folder that is not there is marked here.
 			marker = "?"
 		}
 		fmt.Fprintf(out, "%s %-20s %s\n  %s\n", marker, v.Name, v.ID, v.Path)

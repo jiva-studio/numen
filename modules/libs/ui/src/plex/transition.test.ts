@@ -6,7 +6,7 @@ import { neighbourhoods } from './fixtures/neighbourhoods'
 import type { PlacedNode, PlexNeighbourhood } from './model'
 
 /** A clock that only moves when a test says so. */
-function stubEnvironment(reducedMotion = false) {
+function stubEnvironment() {
   let clock = 0
   let next: ((now: number) => void) | null = null
   let handles = 0
@@ -22,7 +22,6 @@ function stubEnvironment(reducedMotion = false) {
       cancelled.push(handle)
       next = null
     },
-    reducedMotion: () => reducedMotion,
   }
 
   return {
@@ -123,11 +122,11 @@ describe('a movement stepped by hand', () => {
 })
 
 describe('when nothing should move', () => {
-  it('arrives at once for a reader who asked for no motion', async () => {
-    const world = stubEnvironment(true)
+  it('arrives at once when it is given no time to move in', async () => {
+    const world = stubEnvironment()
     const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
     const { frame, moving } = inScope(() =>
-      usePlexTransition(() => current.value, () => undefined, () => 400, world.environment),
+      usePlexTransition(() => current.value, () => undefined, () => 0, world.environment),
     )
 
     current.value = neighbourhoods.leaf

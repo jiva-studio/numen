@@ -21,7 +21,7 @@ var ErrOccupied = errors.New("a file is already there")
 // belongs in a note is the core's business, and where the bytes land is this.
 //
 // Every path is relative to the vault root, in the form a walk reports it.
-// A path that leaves the vault is refused rather than resolved.
+// A path that leaves the vault is refused.
 type VaultWriter interface {
 	// Write puts content at a path, replacing whatever is there and creating
 	// the folders above it. It is atomic: a reader sees the note as it was or
@@ -44,8 +44,8 @@ type VaultWriter interface {
 	// bytes do not change, so a note that carried no identifier still carries
 	// none afterwards.
 	//
-	// It refuses rather than overwriting: two notes arriving at one path is a
-	// question only whoever asked for the move can answer.
+	// A destination that is taken is refused: two notes arriving at one path
+	// is a question only whoever asked for the move can answer.
 	Move(ctx context.Context, from, to string) error
 
 	// Remove takes a file out of the vault for good. Putting a note in the
@@ -53,9 +53,8 @@ type VaultWriter interface {
 	Remove(ctx context.Context, path string) error
 }
 
-// VaultWriters opens a vault for writing. A use case is handed this rather than
-// a writer, for the same reason it is handed VaultReaders: which vault it works
-// on is decided while it runs.
+// VaultWriters opens a vault for writing. Which vault a use case works on is
+// decided while it runs.
 type VaultWriters interface {
 	Open(v domain.Vault) (VaultWriter, error)
 }

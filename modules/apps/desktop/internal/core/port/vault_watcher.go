@@ -11,12 +11,10 @@ import (
 type VaultWatcher interface {
 	// Watch reports the paths of notes that change, folded, until ctx is done.
 	//
-	// `lost` says the vault has to be read again rather than followed: more
-	// changed at once than could be reported, or something went that cannot be
-	// asked what it held.
+	// `lost` says the vault has to be read again: more changed at once than
+	// could be reported, or something went that cannot be asked what it held.
 	//
-	// Two channels rather than one value, so that whoever implements this never
-	// has to name this interface: Go checks the fit without either side saying
-	// so, and a shared struct would have to live somewhere both can import.
+	// Two channels: whoever implements this never has to name the interface,
+	// and Go checks the fit without either side saying so.
 	Watch(ctx context.Context, v domain.Vault) (changes <-chan []string, lost <-chan struct{}, err error)
 }

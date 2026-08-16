@@ -12,7 +12,8 @@ import (
 
 func addLinkTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
-		Name: "link_add",
+		Name:  "link_add",
+		Title: "Add links",
 		Description: "Join notes to other notes. A link is written in the note it goes " +
 			"from and shows at both ends. `parent` and `child` are the hierarchy the " +
 			"product draws; `jump` is a shortcut across it; `ref` is a plain mention. " +
@@ -80,7 +81,8 @@ func addLinkTools(server *sdk.Server, core Core) {
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
-		Name: "link_update",
+		Name:  "link_update",
+		Title: "Change links",
 		Description: "Change what an existing link says about itself — its role, its " +
 			"type, its label, why it exists — without changing where it goes. Fields " +
 			"left out are cleared; role left out is kept.",
@@ -102,7 +104,8 @@ func addLinkTools(server *sdk.Server, core Core) {
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
-		Name: "link_remove",
+		Name:  "link_remove",
+		Title: "Remove links",
 		Description: "Take a link out of the note it is written in. The note at the " +
 			"other end is untouched: what goes is one end's account of the relationship.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
@@ -116,7 +119,8 @@ func addLinkTools(server *sdk.Server, core Core) {
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
-		Name: "link_list",
+		Name:  "link_list",
+		Title: "List links",
 		Description: "What one note points at and what points at it. A link is a " +
 			"backlink because it resolves here, whichever end wrote it.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
