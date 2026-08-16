@@ -123,8 +123,8 @@ func (q *Queries) resolve(ctx context.Context, vault int64, vaultID, from string
 }
 
 func (q *Queries) candidates(ctx context.Context, vault int64, name string) ([]string, error) {
-	// Four shapes of the same question, so one query answers all of them: the
-	// name as a path with and without an extension, and as a filename.
+	// Three shapes of the same question, so one query answers all of them: the
+	// name as a path, as a path with an extension added, and as a filename.
 	withExt := name
 	if path.Ext(withExt) == "" {
 		withExt += ".md"

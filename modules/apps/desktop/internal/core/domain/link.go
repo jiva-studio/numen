@@ -98,8 +98,10 @@ type Link struct {
 	// Note is why the link exists, in the author's words.
 	Note string
 
-	// Label is what an identifier link shows to a human reading the file. It
-	// takes no part in resolution and is the source of truth for nothing.
+	// Label is what the person calls this relationship, in a few words, drawn
+	// along the line between the two notes. It is theirs, not a copy of
+	// anything: no field carries the target's name, because a name kept
+	// alongside an address is a cache in the file the address is written in.
 	Label string
 }
 

@@ -17,7 +17,7 @@ func parseFile(t *testing.T, rel string) domain.Note {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join(testsupport.VaultDir(t), rel))
 	if err != nil {
-		t.Fatalf("read testsupport.VaultDir(t): %v", err)
+		t.Fatalf("read %s: %v", rel, err)
 	}
 	return markdown.Parse(domain.FileRef{Path: rel, Size: int64(len(raw))}, raw)
 }
@@ -112,8 +112,8 @@ func TestCarriageReturnsDoNotLeakIntoParsedValues(t *testing.T) {
 }
 
 func TestNonLatinTextSurvivesParsing(t *testing.T) {
-	// The product's own content is largely not Latin, so this is the one thing
-	// the testsupport.VaultDir(t) keeps in another script deliberately.
+	// The product's own content is largely not Latin, so the fixture vault
+	// keeps one note in another script deliberately.
 	n := parseFile(t, "edge/unicode.md")
 	for _, want := range []string{"энтропия", "熱力学"} {
 		if !strings.Contains(n.Body, want) {

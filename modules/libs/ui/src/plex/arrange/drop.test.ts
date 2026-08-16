@@ -27,7 +27,7 @@ describe('the seat a direction stands for', () => {
     expect(roleTowards(origin, { x: 0, y: -300 }, upside)).toBe('child')
   })
 
-  it('takes the axis a gesture went furthest along', () => {
+  it('reads the axis a gesture went along, sideways being the harder ask', () => {
     const origin = { x: 0, y: 0 }
     expect(roleTowards(origin, { x: 40, y: 300 }, DEFAULT_OPTIONS)).toBe('child')
     expect(roleTowards(origin, { x: 300, y: 40 }, DEFAULT_OPTIONS)).toBe('sibling')

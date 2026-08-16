@@ -144,16 +144,19 @@ func mirror(role domain.LinkRole) domain.LinkRole {
 	return role
 }
 
-// seating collects notes in the order they were found, which is the order the
-// links were written in. The order is part of the answer: it is what the
-// picture is drawn in.
+// seating collects notes in the order they were found: the links this note
+// wrote, in the order it wrote them; then the links that point at it, in the
+// order the query returns; then the siblings each parent brings. The order is
+// part of the answer, because it is what the picture is drawn in — and it is
+// total, so the same vault gives the same picture twice.
 type seating struct {
 	order []domain.Seated
 	at    map[string]int
 }
 
-// take keeps the first seat a note qualifies for, so that a pair who are each
-// other's parent is drawn once rather than twice.
+// take keeps the highest-ranked seat a note qualifies for, replacing a lesser
+// one it was given earlier, so that a pair who are each other's parent is drawn
+// once rather than twice and always the same way round.
 func (s *seating) take(seated domain.Seated) {
 	if s.at == nil {
 		s.at = map[string]int{}

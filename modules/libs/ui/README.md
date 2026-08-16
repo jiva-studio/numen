@@ -14,8 +14,8 @@ defines itself and emits events carrying opaque identifiers; whoever renders it
 translates the domain into that shape.
 
 This is why the plex talks about *nodes with a role* rather than about notes
-with links. When ADR-0003 decides what a link actually is, the adapter in the
-application changes and nothing in this module does.
+with links. What a link is is decided elsewhere; when it changes, the adapter in
+the application changes and nothing in this module does.
 
 The dependency runs one way: `modules/apps/*` depends on `modules/libs/ui`.
 Never the reverse, and never sideways.

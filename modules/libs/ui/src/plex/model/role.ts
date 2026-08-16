@@ -1,6 +1,6 @@
 /**
- * Every seat a node can take, declared once (ADR-0020). Everything that varies
- * with a role — directions, wording, colour — is derived from this table.
+ * Every seat a node can take, declared once. Everything that varies with a
+ * role — directions, wording, colour — is derived from this table.
  */
 
 export interface RoleDescriptor {

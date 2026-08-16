@@ -61,7 +61,7 @@ const emit = defineEmits<{
   (event: 'link', from: string, to: string, role: PlexRelatedRole): void
 }>()
 
-/** Measured here and used twice: to wrap the arrangement, and to centre it. */
+/** What the window is taken to be until it has been measured. */
 const FALLBACK = { width: 1200, height: 800 }
 
 const frameElement = useTemplateRef<HTMLElement>('frame')

@@ -245,9 +245,9 @@ func TestSearchNeverCrossesVaults(t *testing.T) {
 	queries := db.Queries()
 
 	// The two vaults hold disjoint words, so a query that forgets its vault
-	// shows up as a match that cannot belong to the vault being searched. This
-	// is the one failure ADR-0002 calls invisible by construction, and a test
-	// that shares content between the vaults cannot see it either.
+	// shows up as a match that cannot belong to the vault being searched. One
+	// database for every vault makes that failure invisible by construction,
+	// and a test that shares content between the vaults cannot see it either.
 	leaked, err := queries.Search(ctx, first.ID, "quasar", 10)
 	if err != nil {
 		t.Fatal(err)

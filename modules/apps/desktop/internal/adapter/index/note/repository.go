@@ -28,8 +28,8 @@ type Repository struct{ db *sql.DB }
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 
 // exec runs a named statement and says which one failed. A bare driver error
-// from one of six statements in a transaction is a schema mistake nobody can
-// locate.
+// from one of the many statements in a transaction is a schema mistake nobody
+// can locate.
 func exec(ctx context.Context, tx *sql.Tx, name string, args ...any) error {
 	if _, err := tx.ExecContext(ctx, stmt.Get(name), args...); err != nil {
 		return fmt.Errorf("%s: %w", name, err)

@@ -17,11 +17,12 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/testsupport"
 )
 
-// The load test runs at the size ADR-0002 designs for, which no benchmark does:
-// a hundred thousand notes takes minutes and gigabytes, and putting that in the
-// ordinary suite would make everyone wait for something almost nobody needs.
+// The load test runs at the size the product is designed for, which no
+// benchmark does: a hundred thousand notes takes minutes and gigabytes, and
+// putting that in the ordinary suite would make everyone wait for something
+// almost nobody needs.
 //
-//	NUMEN_LOAD=1 go test ./internal/core/usecase/vault/ -run TestLoad -v -timeout 30m
+//	NUMEN_LOAD=1 go test ./internal/core/usecase/vault/ -run TestLoad -v -timeout 40m
 //	NUMEN_LOAD=1 NUMEN_LOAD_NOTES=10000 go test ...   # a smaller rehearsal
 //
 // It reports rather than asserts. A threshold that fails on a slower laptop

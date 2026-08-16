@@ -14,9 +14,11 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/testsupport"
 )
 
-// The budgets these measure against are in ADR-0002: a scan of an unchanged
-// vault fast enough to run at startup, an incremental update inside 100 ms, and
-// a full rebuild of 100k notes in single-digit minutes.
+// What these measure against: a scan of an unchanged vault fast enough to run
+// at startup, an update to a handful of notes inside 100 ms, and a full rebuild
+// of 100k notes in single-digit minutes. The numbers live beside the
+// measurements, in docs/performance.md, so that one place says what fast enough
+// means.
 //
 //	go test ./internal/core/usecase/vault/ -run XXX -bench . -benchtime 1x
 
@@ -93,7 +95,10 @@ func BenchmarkWarmScan(b *testing.B) {
 }
 
 // BenchmarkIncrementalScan is one edited note in a vault that is otherwise
-// untouched — the path a file watcher takes.
+// untouched: a whole walk, and a fingerprint of every note, for one file. It is
+// the cost of finding a change without being told about one, which is what a
+// scan at startup pays; a change the watcher names goes through Refresh and
+// touches only that path.
 func BenchmarkIncrementalScan(b *testing.B) {
 	for _, notes := range []int{1_000, 10_000} {
 		b.Run(fmt.Sprint(notes), func(b *testing.B) {
