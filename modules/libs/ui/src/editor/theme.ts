@@ -40,10 +40,24 @@ export const theme = EditorView.theme({
   '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--numen-node-fg)' },
   '.cm-line': { padding: '0 4px' },
   '.cm-placeholder': { color: 'var(--numen-edge-label)' },
-  '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection': {
-    backgroundColor: 'light-dark(#2f6fd029, #78a9ef2e)',
+  /* Selection, at the reach the editor's own base theme uses for it. That theme
+     is told neither light nor dark, so it paints a light ground under text this
+     one keeps on either. */
+  '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
+    backgroundColor: 'light-dark(#2f6fd038, #78a9ef42)',
   },
+  '&:not(.cm-focused) > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
+    backgroundColor: 'light-dark(#2f6fd01f, #78a9ef24)',
+  },
+  '.cm-selectionBackground, .cm-content ::selection': {
+    backgroundColor: 'light-dark(#2f6fd038, #78a9ef42)',
+  },
+
+  /* The ground the base theme lays under a line and a special character is the
+     one it picks for a light page. */
   '.cm-activeLine': { backgroundColor: 'transparent' },
+  '.cm-specialChar': { color: 'var(--editor-mark)' },
+  '.cm-selectionMatch': { backgroundColor: 'light-dark(#2f6fd01a, #78a9ef1f)' },
 
   /* A heading is set by its level, and nothing else about it changes. */
   '.cm-heading': {

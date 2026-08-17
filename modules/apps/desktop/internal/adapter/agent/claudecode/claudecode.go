@@ -163,16 +163,17 @@ func (a *Agent) Take(ctx context.Context, task agent.Task) (agent.Work, error) {
 	var said strings.Builder
 	cmd.Stderr = &said
 
-	if err := cmd.Start(); err != nil {
-		stop()
-		return nil, fmt.Errorf("start %s: %w", name, err)
-	}
-
+	// Held before it is started, so a close cannot pass between the two and
+	// leave a child nothing reaches.
 	w := &work{cmd: cmd, stop: stop, steps: make(chan agent.Step, 16)}
 	if !a.hold(w) {
 		stop()
-		_ = cmd.Wait()
 		return nil, errors.New("this agent is closing")
+	}
+	if err := cmd.Start(); err != nil {
+		a.letGo(w)
+		stop()
+		return nil, fmt.Errorf("start %s: %w", name, err)
 	}
 	w.reading.Add(1)
 	go func() {

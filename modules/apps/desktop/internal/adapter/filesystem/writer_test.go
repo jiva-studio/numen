@@ -187,3 +187,46 @@ func TestOneVaultIsHeldByOneWriterAtATime(t *testing.T) {
 	}
 	again()
 }
+
+// A note kept as a link may point at another note and nowhere else. The rule is
+// asked of where the bytes land, not only of the name they were asked for by.
+func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
+	for _, at := range []struct {
+		name  string
+		makes string
+	}{
+		{"the service folder", ".numen/vault.yml"},
+		{"another tool's folder", ".obsidian/workspace.json"},
+		{"a file that is not a note", "attachments/paper.pdf"},
+	} {
+		t.Run(at.name, func(t *testing.T) {
+			root := t.TempDir()
+			held := filepath.Join(root, filepath.FromSlash(at.makes))
+			if err := os.MkdirAll(filepath.Dir(held), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(held, []byte("what was there\n"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Symlink(filepath.FromSlash(at.makes), filepath.Join(root, "Note.md")); err != nil {
+				t.Fatal(err)
+			}
+
+			w, err := filesystem.Writers{}.Open(domain.Vault{Path: root})
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = w.Write(t.Context(), "Note.md", []byte("# Mine\n"), domain.FileRef{})
+			if !errors.Is(err, port.ErrNotANote) {
+				t.Errorf("writing through the link gave %v, want ErrNotANote", err)
+			}
+			raw, readErr := os.ReadFile(held)
+			if readErr != nil {
+				t.Fatal(readErr)
+			}
+			if string(raw) != "what was there\n" {
+				t.Errorf("%s was written: %q", at.makes, raw)
+			}
+		})
+	}
+}

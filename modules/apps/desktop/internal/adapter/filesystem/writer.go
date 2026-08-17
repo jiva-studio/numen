@@ -228,6 +228,16 @@ func (w *VaultWriter) file(path string) (string, error) {
 	if !w.holds(path) {
 		return "", fmt.Errorf("%s: %w", path, ErrNotANote)
 	}
+	// The rule is asked of where the bytes land as well as of the name they were
+	// asked for by. A link is a name for another place, and the place is what a
+	// rename replaces.
+	inside, err := filepath.Rel(w.root, real)
+	if err != nil {
+		return "", fmt.Errorf("%s: %w", path, ErrOutside)
+	}
+	if !w.holds(inside) {
+		return "", fmt.Errorf("%s: %w", inside, ErrNotANote)
+	}
 	return real, nil
 }
 

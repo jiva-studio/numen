@@ -75,6 +75,12 @@ func (u Write) Save(ctx context.Context, v domain.Vault, path, body string) erro
 	if len(body) > MaxBytes {
 		return fmt.Errorf("%w: %d bytes, and %d is the most", ErrTooLarge, len(body), MaxBytes)
 	}
+	// A body opening with the delimiter is read back as a frontmatter block, and
+	// then the prose it was is no longer the note's body.
+	if opening := strings.TrimPrefix(body, "\ufeff"); strings.HasPrefix(opening, "---\n") ||
+		strings.HasPrefix(opening, "---\r\n") {
+		return ErrBodyRefused
+	}
 	e := editing{
 		readers: u.Readers, writers: u.Writers, index: u.Index,
 		overwrite: true,

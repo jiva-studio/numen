@@ -47,16 +47,16 @@ describe('a document put in over another', () => {
     expect(state.update(replacing(state, 'fresh')).annotation(Transaction.addToHistory)).toBe(false)
   })
 
-  it('changes the lines that differ and no others', () => {
-    expect(changed(DOC, 'one\ntwo again\nthree\nfour')).toEqual([[3, 7, '\ntwo again']])
+  it('changes what differs and no more than that', () => {
+    expect(changed(DOC, 'one\ntwo again\nthree\nfour')).toEqual([[7, 7, ' again']])
   })
 
   it('changes the lines that were added at the end', () => {
     expect(changed(DOC, `${DOC}\nfive`)).toEqual([[18, 18, '\nfive']])
   })
 
-  it('changes the lines that were taken from the middle', () => {
-    expect(changed(DOC, 'one\nfour')).toEqual([[3, 13, '']])
+  it('changes what was taken from the middle', () => {
+    expect(changed(DOC, 'one\nfour')).toEqual([[4, 14, '']])
   })
 
   it('changes everything when the text shares no line with it', () => {
@@ -170,4 +170,27 @@ describe('a selection', () => {
       ],
     ])
   })
+})
+
+/**
+ * A note's body always ends with a line break, so a replacement whose shared
+ * lines reach the first line is the ordinary case and not a corner.
+ */
+describe('a document whose shared lines reach the first', () => {
+  const shapes: [string, string][] = [
+    ['', '# Title\n'],
+    ['a\nb\n', 'x\na\nb\n'],
+    ['draft\nHello\n', 'Hello\n'],
+    ['gone\n', ''],
+    ['one\ntwo\n', 'one\ntwo\nthree\n'],
+    ['x\n', 'x\n'],
+    ['a', 'b'],
+  ]
+
+  for (const [was, now] of shapes) {
+    it(`is ${JSON.stringify(now)} after ${JSON.stringify(was)}`, () => {
+      const state = EditorState.create({ doc: was })
+      expect(state.update(replacing(state, now)).state.doc.toString()).toBe(now)
+    })
+  }
 })

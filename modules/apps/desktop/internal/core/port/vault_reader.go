@@ -3,6 +3,7 @@ package port
 import (
 	"context"
 	"errors"
+	"io/fs"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 )
@@ -15,6 +16,16 @@ import (
 // with nothing at it are different facts, and a caller acts on them
 // differently.
 var ErrNotANote = errors.New("not a note this vault holds")
+
+// NoNote reports whether an error says there is no note at the path: nothing is
+// there, or something is there that the vault leaves alone.
+//
+// A caller with work to do on a note asks this. Which of the two it is matters
+// to a caller acting on the difference, and it is the difference the two
+// sentinels carry.
+func NoNote(err error) bool {
+	return errors.Is(err, fs.ErrNotExist) || errors.Is(err, ErrNotANote)
+}
 
 // VaultReader is one vault as seen from outside: something that can be walked
 // and read. The filesystem is one implementation; a fixture in memory is

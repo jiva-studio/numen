@@ -41,8 +41,8 @@ func (a *API) Write(ctx context.Context, r *connect.Request[v1.WriteRequest]) (*
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
+	defer a.Writing.done()
 	err := a.Saves.Save(ctx, a.Vault, r.Msg.GetPath(), r.Msg.GetBody())
-	a.Writing.done()
 	if err == nil {
 		return connect.NewResponse(&v1.WriteResponse{}), nil
 	}

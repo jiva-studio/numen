@@ -1,8 +1,8 @@
 /**
  * Putting a document in over the one that is there.
  *
- * The change covers the lines that differ and nothing else, so the lines
- * around it keep their positions and the view keeps its scroll offset.
+ * The change covers the stretch that differs and nothing else, so everything
+ * around it keeps its position and the view keeps its scroll offset.
  *
  * A position is held as a line and a column, and comes back at that line and
  * column. Where the line is shorter than the column, the position is the end
@@ -34,25 +34,43 @@ const positionOf = (doc: Text, place: Place): number => {
   return Math.min(line.from + place.column, line.to)
 }
 
-/** The stretch between the lines the two texts share, as one change. */
+/**
+ * The stretch the two texts differ over, as one change.
+ *
+ * Measured in characters from both ends, so what is replaced is the smallest
+ * run that differs and every position outside it is where it was.
+ */
 const difference = (was: Text, now: Text): ChangeSpec => {
-  const most = Math.min(was.lines, now.lines)
+  const before = was.toString()
+  const after = now.toString()
+  const most = Math.min(before.length, after.length)
 
   let head = 0
-  while (head < most && was.line(head + 1).text === now.line(head + 1).text) head += 1
+  while (head < most && before.charCodeAt(head) === after.charCodeAt(head)) head += 1
+  // A pair standing for one character is not cut between its halves.
+  if (head > 0 && lone(before.charCodeAt(head - 1))) head -= 1
 
   let tail = 0
-  while (tail < most - head && was.line(was.lines - tail).text === now.line(now.lines - tail).text) {
+  while (
+    tail < most - head &&
+    before.charCodeAt(before.length - tail - 1) === after.charCodeAt(after.length - tail - 1)
+  ) {
     tail += 1
   }
+  if (tail > 0 && paired(before.charCodeAt(before.length - tail))) tail -= 1
 
-  // The stretch runs from the end of the last line the two share to the break
-  // before the first of the lines they share again.
-  const opens = (doc: Text) => (head === 0 ? 0 : doc.line(head).to)
-  const closes = (doc: Text) => (tail === 0 ? doc.length : doc.line(doc.lines - tail + 1).from - 1)
-
-  return { from: opens(was), to: closes(was), insert: now.sliceString(opens(now), closes(now)) }
+  return {
+    from: head,
+    to: before.length - tail,
+    insert: after.slice(head, after.length - tail),
+  }
 }
+
+/** The leading half of a pair standing for one character. */
+const lone = (code: number) => code >= 0xd800 && code <= 0xdbff
+
+/** The trailing half of one. */
+const paired = (code: number) => code >= 0xdc00 && code <= 0xdfff
 
 /** The text of `fresh`, put in over what the state holds. */
 export const replacing = (state: EditorState, fresh: string): TransactionSpec => {

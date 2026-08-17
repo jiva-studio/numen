@@ -246,7 +246,11 @@ const drawn = (view: EditorView) => {
 export const wholeLines = StateField.define<DecorationSet>({
   create: (state) => blockMarks(state),
   update: (was, transaction) =>
-    transaction.docChanged || transaction.selection ? blockMarks(transaction.state) : was,
+    transaction.docChanged ||
+    transaction.selection ||
+    syntaxTree(transaction.startState) != syntaxTree(transaction.state)
+      ? blockMarks(transaction.state)
+      : was,
   provide: (field) => [
     EditorView.decorations.from(field),
     EditorView.atomicRanges.of((view) => view.state.field(field)),
@@ -262,7 +266,15 @@ export const live = ViewPlugin.fromClass(
     }
 
     update(update: ViewUpdate) {
-      if (update.docChanged || update.selectionSet || update.viewportChanged)
+      // A parse finishes in chunks, and the transaction that announces one
+      // changes neither the document nor the selection nor the viewport. Past
+      // the first chunk a note is drawn as it is written until this is asked.
+      if (
+        update.docChanged ||
+        update.selectionSet ||
+        update.viewportChanged ||
+        syntaxTree(update.startState) != syntaxTree(update.state)
+      )
         this.decorations = drawn(update.view)
     }
   },

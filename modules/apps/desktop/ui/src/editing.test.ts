@@ -264,3 +264,24 @@ describe('a core that cannot be reached', () => {
     expect(notes.shown('Heat.md').state).toBe('stuck')
   })
 })
+
+describe('a save that was refused', () => {
+  it('is said in words that outlive the tab it was refused on', async () => {
+    const { core, files } = fake({
+      write: async () => ({ body: '', refusal: 'bodyRefused' }),
+    })
+    files.set('Heat.md', 'one')
+    const notes = editing(core, quick)
+    notes.open('Heat.md')
+    await settle()
+
+    notes.typed('Heat.md', '---\nnot a body\n---\n')
+    await notes.shut('Heat.md')
+
+    // The tab is gone, and what could not be written is still on screen.
+    expect(notes.all()).toEqual([])
+    expect(notes.said.value).toBe(
+      'a note begins below its frontmatter, and this text begins with one',
+    )
+  })
+})

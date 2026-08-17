@@ -26,6 +26,8 @@ const window = showing(core, undefined, undefined, notes.changed)
 const going = leaving(core)
 going.holds(notes.flush)
 const { neighbourhood, indexing, failure, notice, trouble, unwatched, go } = window
+/** The plex reads one value, so what it is given changes when the vault does. */
+const plexed = computed(() => (neighbourhood.value ? asPlex(neighbourhood.value) : null))
 const { chunks, embedded, reading, embedding, books, booksRead, learning, rate } = window
 /** What the vault says about having work in hand. The counts do not say it. */
 const { working: reads } = window
@@ -164,6 +166,8 @@ onUnmounted(() => {
     <p v-if="trouble" class="warning">the vault could not be read — {{ trouble }}</p>
     <p v-if="notice" class="warning">{{ notice }}</p>
 
+    <p v-if="notes.said" role="alert" class="warning">{{ notes.said }}</p>
+
     <p v-if="failure" class="failure">{{ failure }}</p>
     <p v-else-if="indexing" class="waiting">reading the vault…</p>
     <p v-else-if="!neighbourhood && trouble" class="waiting">nothing was read</p>
@@ -172,8 +176,8 @@ onUnmounted(() => {
     <Workspace v-model="layout" class="below" :tabs="tabs" @close="shut">
       <template #tab="{ id }">
         <Plex
-          v-if="id === PLEX && neighbourhood && !failure && !indexing"
-          :neighbourhood="asPlex(neighbourhood)"
+          v-if="id === PLEX && plexed && !failure && !indexing"
+          :neighbourhood="plexed!"
           :creatable="[]"
           @activate="go"
           @menu="askMenu"
@@ -194,7 +198,7 @@ onUnmounted(() => {
         </Agent>
 
         <div v-else-if="notes.all().includes(id)" class="note">
-          <p v-if="notes.saying(id)" class="warning">{{ notes.saying(id) }}</p>
+          <p v-if="notes.saying(id)" role="alert" class="warning">{{ notes.saying(id) }}</p>
           <Editor
             :model-value="notes.shown(id).body"
             class="note__text"

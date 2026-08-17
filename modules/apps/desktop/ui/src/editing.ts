@@ -47,6 +47,8 @@ export function editing(core: Core, limits = waiting) {
 
   /** Who is waiting for a tab to finish going. */
   const closing = new Map<string, () => void>()
+  /** The last refusal a person was told about, which outlives its tab. */
+  const said = ref('')
 
   /** The person typed. */
   const typed = (path: string, body: string): void => {
@@ -107,6 +109,9 @@ export function editing(core: Core, limits = waiting) {
       case 'hold':
         return
       case 'say':
+        // Said where it outlives the tab: the words come from the model and the
+        // tab is about to go with them.
+        said.value = words[effect.refusal]
         return
       case 'close':
         forget(path)
@@ -179,7 +184,18 @@ export function editing(core: Core, limits = waiting) {
     await Promise.all(all().map(shut))
   }
 
-  return { open, shut, typed, changed, shown, all, saying: sayingOf, flush, tabs: tabs as Ref<Map<string, Tab>> }
+  return {
+    open,
+    shut,
+    typed,
+    changed,
+    shown,
+    all,
+    saying: sayingOf,
+    said,
+    flush,
+    tabs: tabs as Ref<Map<string, Tab>>,
+  }
 }
 
 /**
