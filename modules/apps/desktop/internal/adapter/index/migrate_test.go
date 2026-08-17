@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"path/filepath"
 	"testing"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 )
 
 func TestEveryMigrationIsNamedAndOrdered(t *testing.T) {
@@ -186,4 +188,109 @@ func TestAnOlderIndexIsMigratedRatherThanRebuilt(t *testing.T) {
 	if want := available[len(available)-1].version; version != want {
 		t.Errorf("version = %d, want %d", version, want)
 	}
+}
+
+// A version number says how many migrations ran, and nothing about which. An
+// index migrated by other texts under the same numbers has a schema its number
+// does not describe, and no later migration can be written to expect either one.
+//
+// This is what an edited migration leaves behind, and what a database written by
+// another build of this application looks like.
+func TestAnIndexMigratedByOtherMigrationsIsBuiltAgain(t *testing.T) {
+	ctx := t.Context()
+	path := filepath.Join(t.TempDir(), "index.db")
+
+	// A database that believes three migrations ran, holding a table none of
+	// this binary's migrations create and lacking every one they do.
+	raw, err := sql.Open("sqlite", dsn(path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, statement := range []string{
+		`CREATE TABLE strangers (id INTEGER PRIMARY KEY)`,
+		`CREATE TABLE applied (version INTEGER PRIMARY KEY, name TEXT NOT NULL, hash TEXT NOT NULL)`,
+		`INSERT INTO applied VALUES (1, '0001_initial.sql', 'another build wrote this')`,
+		`PRAGMA user_version = 3`,
+	} {
+		if _, err := raw.ExecContext(ctx, statement); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := raw.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	db, err := Open(ctx, path)
+	if err != nil {
+		t.Fatalf("an index of another build could not be opened: %v", err)
+	}
+	t.Cleanup(func() { db.Close() })
+
+	var version int
+	if err := db.write.QueryRowContext(ctx, "PRAGMA user_version").Scan(&version); err != nil {
+		t.Fatal(err)
+	}
+	if version != newest(t) {
+		t.Errorf("the index is at version %d", version)
+	}
+	// Built from the first migration, so what it holds is what they create.
+	for _, table := range []string{"vaults", "notes", "sources", "chunks", "vectors"} {
+		var held int
+		if err := db.write.QueryRowContext(ctx,
+			`SELECT count(*) FROM sqlite_master WHERE type='table' AND name = ?`, table).Scan(&held); err != nil {
+			t.Fatal(err)
+		}
+		if held != 1 {
+			t.Errorf("%s is not there", table)
+		}
+	}
+	var strangers int
+	if err := db.write.QueryRowContext(ctx,
+		`SELECT count(*) FROM sqlite_master WHERE type='table' AND name='strangers'`).Scan(&strangers); err != nil {
+		t.Fatal(err)
+	}
+	if strangers != 0 {
+		t.Error("a table no migration creates survived")
+	}
+}
+
+// An index this binary migrated is left where it is.
+func TestAnIndexOfItsOwnIsNotBuiltAgain(t *testing.T) {
+	ctx := t.Context()
+	path := filepath.Join(t.TempDir(), "index.db")
+
+	db, err := Open(ctx, path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Vaults().Save(ctx, domain.Vault{ID: "01KEPT", Name: "kept", Path: "/kept"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	again, err := Open(ctx, path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { again.Close() })
+
+	var vaults int
+	if err := again.write.QueryRowContext(ctx, `SELECT count(*) FROM vaults`).Scan(&vaults); err != nil {
+		t.Fatal(err)
+	}
+	if vaults != 1 {
+		t.Errorf("%d vaults survived opening the index a second time", vaults)
+	}
+}
+
+// newest is the version the migrations this binary holds reach.
+func newest(t *testing.T) int {
+	t.Helper()
+	available, err := loadMigrations()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return available[len(available)-1].version
 }
