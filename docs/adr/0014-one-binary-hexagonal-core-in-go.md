@@ -19,6 +19,10 @@ expensive to change once there is code in every corner of the answer.
 The core is compiled into whatever runs it. There is no background daemon and
 nothing talks to anything over a socket.
 
+> **Partly superseded by ADR-0026.** The binary serves tools on a loopback port
+> while a window is open, and starts an agent that reaches them (ADR-0031). One
+> binary, no daemon and no cgo all stand.
+
 A separate process would buy independent lifecycles and a wire protocol usable by
 other clients later. Neither is needed to scan a folder, and both cost a protocol
 to design, version and debug before a single note has been read. The protocol

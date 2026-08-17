@@ -70,6 +70,11 @@ and paths, and the translation happens once per question asked.
 
 ### A search result is a title and a path
 
+> **Partly superseded by ADR-0006 and ADR-0007.** A search answers with passages:
+> the text around a hit and where it came from. The rule that survives is the
+> second clause — the full-text index keeps no copy — and it is what makes showing
+> a passage a read of the file it belongs to.
+
 Nothing quotes the matching text back, so the full-text index keeps no copy of
 what it indexed. Anything that wants a fragment of a matched note reads the
 file.

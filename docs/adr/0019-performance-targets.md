@@ -1,8 +1,10 @@
 # ADR-0019: Performance targets for indexing and search
 
-- **Status:** Accepted
+- **Status:** Accepted, except where noted below
 - **Date:** 2026-08-15
 - **Applies to:** `modules/apps/desktop`
+- **Partly superseded by:** ADR-0030 — two rows of the table below, index size
+  and search latency, and nothing else
 - **Related:** ADR-0002, ADR-0015, ADR-0018
 
 ## Context
@@ -25,6 +27,11 @@ measurements, targets, and a way for anyone to check both.
 | Warm scan — nothing changed; what a startup pays | under 1 second |
 | Search, ordinary query, while a scan is writing | p95 under 50 ms |
 | Index size | under 5 MB per thousand notes |
+
+> **Two of these rows are superseded by
+> [ADR-0030](0030-index-size-and-approximate-search.md).** Index size is
+> rebudgeted, and the search target keeps its value while an exact scan of the
+> vector index stops meeting it. The other two rows are unaffected.
 
 **What these currently measure is in docs/performance.md, and only there.** The
 numbers that justified these targets were written here as well, and by the

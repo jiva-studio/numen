@@ -2,8 +2,9 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-16
+- **Extended:** 2026-08-17 — `source`, `chunk`, `location`, `passage` (ADR-0006)
 - **Applies to:** the product as a whole
-- **Related:** ADR-0003, ADR-0011, ADR-0014, ADR-0020
+- **Related:** ADR-0003, ADR-0006, ADR-0011, ADR-0014, ADR-0020
 
 ## Context
 
@@ -78,6 +79,10 @@ in one place, meaning the obvious thing, needs no entry.
 | artifact | Data that cannot be reproduced locally, deterministically and for free. Lives in the vault |
 | cache | Data that can. Lives outside the vault |
 | index | The cache. Never a SQL index; that word belongs to SQL and stays in SQL |
+| source | A thing the index holds text for. A note and a book are kinds of source (ADR-0006) |
+| chunk | One window of a source's text, as a row. Both of ADR-0007's sizes are chunks; the large one is the chunk with no parent (ADR-0006) |
+| location | Where a chunk sits, in the terms its own format uses. Nullable; `start` and `length` are the key and are not a location (ADR-0006) |
+| passage | What a search returns: the text around a hit, and where it came from (ADR-0006, ADR-0007) |
 | registry | The list of vaults the installation knows |
 | scan | One walk of a whole vault |
 | refresh | Bringing named notes up to date. Never *reindex*, never *incremental* |
@@ -96,6 +101,8 @@ in one place, meaning the obvious thing, needs no entry.
 | agent | A program acting on a vault on a person's behalf, through tools (ADR-0026) |
 | tool | One operation an agent can call. Never a synonym for a use case |
 | client | A consumer of the schema that draws a vault (ADR-0025). Never an agent |
+| step | One thing an agent said, did, or stopped for, as the panel is told about it |
+| settings | What a person configures about an installation, and the one file it is in |
 
 **What is drawn**
 
@@ -109,6 +116,9 @@ in one place, meaning the obvious thing, needs no entry.
 | seat | Where a node sits relative to the focus: `parent`, `child`, `jump`, `sibling` |
 | viewport | The area the plex is drawn into |
 | window | The application's window on screen, and nothing else |
+| panel | The column beside the plex where a person asks an agent something |
+| turn | One thing shown in the panel's thread: what was asked, what was answered, what is being done |
+| voice | Whose turn it is, and so how it is drawn |
 
 ### Words that were spent twice, and how they are settled
 
@@ -130,7 +140,21 @@ one; it does not leave the storage it belongs to.
 
 **`window`.** The application's window. How long the watcher holds events
 before acting on them is a *hold*; the area the plex draws into is a
-*viewport*.
+*viewport*; a span of a source's text is a *chunk*. Where ADR-0007 says window
+it means how large a chunk is cut.
+
+**`answered`.** Two things, and they are settled apart. A *step* named `answered`
+is a tool that has finished, which is what the agent's own stream reports. A
+*voice* named `answered` is the agent replying to the person. The first crosses
+the wire and belongs to an agent's work; the second never leaves the interface and
+belongs to a thread. Where both could be read, the step is *the tool answered* and
+the voice is *the agent's reply*.
+
+**`calling` and `doing`.** A step is `calling` in the core and `doing` on the
+wire, and this is the rename a boundary requires: the core says what the agent is
+doing, and the wire is read by something drawing a line about it. Every other
+step keeps its word across the boundary, and a third name for either of these is
+a defect.
 
 **`focus`.** The note a neighbourhood is seen from. Where the keyboard is has
 its own word, because a reader who sees `focus` in a stylesheet will guess
