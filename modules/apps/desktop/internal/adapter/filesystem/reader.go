@@ -116,21 +116,23 @@ func (s *VaultReader) Read(ctx context.Context, path string) ([]byte, error) {
 }
 
 // Stat answers the same question about one path that Walk answers about all of
-// them, and by the same rules: a path the vault ignores does not exist.
+// them, and by the same rules: a path the vault ignores holds no note. Where
+// something is there all the same, the answer names it as a file the vault
+// leaves alone.
 func (s *VaultReader) Stat(ctx context.Context, path string) (domain.FileRef, error) {
 	if ctx.Err() != nil {
 		return domain.FileRef{}, ctx.Err()
 	}
 	kind, held := s.holds(path)
 	if !held {
-		return domain.FileRef{}, fs.ErrNotExist
+		return domain.FileRef{}, s.leftAlone(path)
 	}
 	info, err := os.Stat(filepath.Join(s.root, filepath.FromSlash(path)))
 	if err != nil {
 		return domain.FileRef{}, err
 	}
 	if info.IsDir() {
-		return domain.FileRef{}, fs.ErrNotExist
+		return domain.FileRef{}, s.leftAlone(path)
 	}
 	return domain.FileRef{
 		Path:  path,
@@ -138,6 +140,22 @@ func (s *VaultReader) Stat(ctx context.Context, path string) (domain.FileRef, er
 		Size:  info.Size(),
 		MTime: info.ModTime().UnixNano(),
 	}, nil
+}
+
+// leftAlone is what a path the vault does not hold as a note is answered with.
+// Something at that path is ErrNotANote; nothing at it is fs.ErrNotExist.
+//
+// It costs a look at the file's metadata and never its bytes, which is what a
+// caller deciding whether to open a 400 MB export has to be able to ask.
+func (s *VaultReader) leftAlone(path string) error {
+	target, err := inside(s.root, path, s.opts.serviceDir())
+	if err != nil {
+		return fs.ErrNotExist
+	}
+	if _, err := os.Lstat(target); err != nil {
+		return fs.ErrNotExist
+	}
+	return fmt.Errorf("%s: %w", path, ErrNotANote)
 }
 
 // holds reports which kind of source a path inside this vault is, and whether a

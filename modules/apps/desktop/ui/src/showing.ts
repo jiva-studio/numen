@@ -36,12 +36,39 @@ export interface Core {
   changes(signal: AbortSignal): AsyncIterable<{ paths: string[]; reload: boolean }>
   /** The notes something else asked to be put in front of the person. */
   focus(signal: AbortSignal): AsyncIterable<{ path: string }>
+  /** The prose of a note, below its frontmatter. */
+  read(path: string): Promise<Answered>
+  /** Prose into a note, keeping the frontmatter the file has when it lands. */
+  write(path: string, body: string): Promise<Answered>
+  /**
+   * The window going, for as long as the client listens. The stream opens with
+   * the token this client answers under.
+   */
+  quitting(signal: AbortSignal): AsyncIterable<{ token: string; flush: boolean }>
+  /** Everything this client owed has been written. */
+  flushed(token: string): Promise<void>
 }
+
+/**
+ * What a read or a write came back with. A refusal carries no body, and the
+ * words for one belong to whatever shows it.
+ */
+export interface Answered {
+  body: string
+  refusal: Refused | null
+}
+
+export type Refused = 'missing' | 'notANote' | 'notText' | 'tooLarge' | 'bodyRefused' | 'unreadable'
 
 export function showing(
   core: Core,
   wait: (ms: number) => Promise<unknown> = sleep,
   now: () => number = () => Date.now(),
+  /**
+   * What else hears about a change. A change carrying no paths names nothing:
+   * everything showing the vault reads again.
+   */
+  told: (paths: readonly string[]) => void = () => {},
 ) {
   const neighbourhood = ref<Neighbourhood | null>(null)
   /**
@@ -241,6 +268,7 @@ export function showing(
         for await (const change of core.changes(listening.signal)) {
           if (!open) return
           if (change.paths.length === 0 && !change.reload) continue
+          told(change.reload ? [] : change.paths)
           if (here.value) {
             await go(here.value)
           } else {

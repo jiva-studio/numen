@@ -1,6 +1,7 @@
 package mcp_test
 
 import (
+	"context"
 	"net/http"
 	"strings"
 	"testing"
@@ -16,7 +17,7 @@ func TestNothingReachesTheVaultWithoutTheToken(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { endpoint.Close() })
+	t.Cleanup(func() { endpoint.Close(context.Background()) })
 
 	for name, header := range map[string]string{
 		"nothing":       "",
@@ -41,7 +42,7 @@ func TestAPageInABrowserIsTurnedAway(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { endpoint.Close() })
+	t.Cleanup(func() { endpoint.Close(context.Background()) })
 
 	res := ask(t, endpoint.URL, "Bearer the-token", "https://example.com")
 	if res.StatusCode == http.StatusOK {

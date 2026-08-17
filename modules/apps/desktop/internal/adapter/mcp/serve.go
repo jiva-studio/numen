@@ -24,10 +24,87 @@ type Endpoint struct {
 	URL string
 
 	server *http.Server
+	// calls is the tool calls taken and not yet answered.
+	calls working
 	// stop lets go of the goroutine waiting on the context, so that closing one
 	// endpoint does not leave a watcher behind until the application exits.
 	stop func()
 	once sync.Once
+}
+
+// errClosed is what a call asked for after the door is shut gets.
+var errClosed = errors.New("this vault is closing")
+
+// counting takes what an agent asks for, so that closing can wait for what it
+// is in the middle of.
+//
+// Every method an agent calls is bounded work — a tool call is a change to the
+// vault and to the index behind it. The stream a session holds open is not a
+// method and is not counted.
+func (e *Endpoint) counting(next sdk.MethodHandler) sdk.MethodHandler {
+	return func(ctx context.Context, method string, req sdk.Request) (sdk.Result, error) {
+		if !e.calls.begin() {
+			return nil, errClosed
+		}
+		defer e.calls.done()
+		return next(ctx, method, req)
+	}
+}
+
+// working is the calls taken and not yet answered.
+//
+// What is counted is the call itself, and not the answer travelling back to
+// the agent.
+type working struct {
+	mu     sync.Mutex
+	count  int
+	sealed bool
+	idle   chan struct{}
+	over   bool
+}
+
+// begin takes a call, and refuses one that arrives after the door is shut.
+func (w *working) begin() bool {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	if w.sealed {
+		return false
+	}
+	w.count++
+	return true
+}
+
+func (w *working) done() {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	w.count--
+	w.reckon()
+}
+
+// seal shuts the door on new calls and answers with what closes once the ones
+// already taken have finished. The set it waits on is therefore finite and
+// does not grow.
+func (w *working) seal() <-chan struct{} {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	w.sealed = true
+	if w.idle == nil {
+		w.idle = make(chan struct{})
+	}
+	w.reckon()
+	return w.idle
+}
+
+// reckon ends the wait once nothing is running. The lock is held.
+func (w *working) reckon() {
+	if !w.sealed || w.over || w.count > 0 {
+		return
+	}
+	w.over = true
+	close(w.idle)
 }
 
 // ServeHTTP starts the server and returns once it is listening.
@@ -45,7 +122,9 @@ func ServeHTTP(ctx context.Context, addr, token string, core Core, trouble func(
 		return nil, errors.New("a server an agent can reach needs a token to present")
 	}
 
+	endpoint := &Endpoint{}
 	server := New(core)
+	server.AddReceivingMiddleware(endpoint.counting)
 	handler := sdk.NewStreamableHTTPHandler(
 		func(*http.Request) *sdk.Server { return server },
 		&sdk.StreamableHTTPOptions{
@@ -61,12 +140,10 @@ func ServeHTTP(ctx context.Context, addr, token string, core Core, trouble func(
 		return nil, fmt.Errorf("listen on %s: %w", addr, err)
 	}
 
-	endpoint := &Endpoint{
-		URL: "http://" + listener.Addr().String() + "/mcp",
-		server: &http.Server{
-			Handler:           behind(token, handler),
-			ReadHeaderTimeout: 10 * time.Second,
-		},
+	endpoint.URL = "http://" + listener.Addr().String() + "/mcp"
+	endpoint.server = &http.Server{
+		Handler:           behind(token, handler),
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 	go func() {
 		err := endpoint.server.Serve(listener)
@@ -80,25 +157,33 @@ func ServeHTTP(ctx context.Context, addr, token string, core Core, trouble func(
 	go func() {
 		select {
 		case <-ctx.Done():
-			endpoint.Close()
+			// The context this was served under has ended, so the drain has no
+			// time left: the listener and the idle connections go at once, and
+			// the calls already running are still waited for.
+			endpoint.Close(ctx)
 		case <-stopped:
 		}
 	}()
 	return endpoint, nil
 }
 
-// Close stops answering. An agent in the middle of a call is cut off, which is
-// what closing the application means.
-func (e *Endpoint) Close() error {
+// Close stops answering and waits for the calls it has taken.
+//
+// The transport is cut off first, within the bound the caller gives: an agent
+// holding a session open is not a reason to keep the application running. What
+// was already running is then waited for with no bound, so that by the time
+// this answers nothing of an agent's is still changing the vault or the index
+// behind it.
+func (e *Endpoint) Close(ctx context.Context) error {
 	if e == nil || e.server == nil {
 		return nil
 	}
 	if e.stop != nil {
 		e.once.Do(e.stop)
 	}
-	shutdown, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	return e.server.Shutdown(shutdown)
+	err := e.server.Shutdown(ctx)
+	<-e.calls.seal()
+	return err
 }
 
 // Local reports whether this endpoint can only be reached from this machine.

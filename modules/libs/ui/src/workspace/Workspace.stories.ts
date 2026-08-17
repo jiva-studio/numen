@@ -10,8 +10,8 @@ import { expect, userEvent, within } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Workspace from './Workspace.vue'
 import Filling from './fixtures/Filling.vue'
-import { groupsOf, type TabLabel, type Workspace as State } from './model'
-import { crowded, deep, empty, oneStack, sideBySide } from './fixtures/build'
+import { panesOf, type Tab, type Workspace as State } from './model'
+import { crowded, deep, empty, oneStack, sideBySide, stack, workspaceOf } from './fixtures/build'
 
 const TITLES: Readonly<Record<string, string>> = {
   plex: 'Plex',
@@ -27,10 +27,10 @@ const TITLES: Readonly<Record<string, string>> = {
   eight: 'Eight',
 }
 
-const labelled = (state: State): readonly TabLabel[] =>
-  groupsOf(state.root)
-    .flatMap((group) => group.tabs)
-    .map((id) => ({ id, title: TITLES[id] ?? id }))
+const named = (state: State, marks: Readonly<Record<string, string>>): readonly Tab[] =>
+  panesOf(state.root)
+    .flatMap((pane) => pane.tabs)
+    .map((id) => ({ id, title: TITLES[id] ?? id, ...(marks[id] ? { mark: marks[id] } : {}) }))
 
 /** The arrangements a reader can start from. */
 const ARRANGEMENTS = {
@@ -39,6 +39,7 @@ const ARRANGEMENTS = {
   nested: deep,
   crowded,
   empty,
+  alone: () => workspaceOf(stack('main', 'plex')),
 } satisfies Record<string, () => State>
 
 type Arrangement = keyof typeof ARRANGEMENTS
@@ -47,6 +48,8 @@ interface Knobs {
   arrangement: Arrangement
   edge: number
   threshold: number
+  /** What each tab is carrying, by tab. */
+  marks: Readonly<Record<string, string>>
   /** Given by the story, and nothing a reader turns. */
   tabs?: never
   naming?: never
@@ -65,11 +68,12 @@ const meta: Meta<Knobs> = {
     },
     edge: { control: { type: 'range', min: 4, max: 80, step: 2 } },
     threshold: { control: { type: 'range', min: 0, max: 24, step: 1 } },
+    marks: { control: 'object' },
     tabs: { table: { disable: true } },
     naming: { table: { disable: true } },
     modelValue: { table: { disable: true } },
   },
-  args: { arrangement: 'side by side', edge: 22, threshold: 4 },
+  args: { arrangement: 'side by side', edge: 22, threshold: 4, marks: {} },
   render: (args) => ({
     components: { Workspace, Filling },
     setup() {
@@ -80,14 +84,14 @@ const meta: Meta<Knobs> = {
           held.value = ARRANGEMENTS[next]()
         },
       )
-      const titles = () => labelled(held.value)
-      return { held, args, titles }
+      const tabs = () => named(held.value, args.marks)
+      return { held, args, tabs }
     },
     template: `
       <div style="height: 100vh; padding: 0">
         <Workspace
           v-model="held"
-          :tabs="titles()"
+          :tabs="tabs()"
           :edge="args.edge"
           :threshold="args.threshold"
           :naming="() => 'made-' + Math.random().toString(36).slice(2, 8)"
@@ -117,6 +121,14 @@ export const Crowded: Story = { args: { arrangement: 'crowded' } }
 /** The last tab closed. */
 export const Empty: Story = { args: { arrangement: 'empty' } }
 
+/** Tabs carrying something: work not yet saved, and a tab that is stuck. */
+export const Marked: Story = {
+  args: { arrangement: 'crowded', marks: { one: 'unsaved', three: 'stuck' } },
+}
+
+/** One tab left in the workspace, which is offered no close. */
+export const Alone: Story = { args: { arrangement: 'alone' } }
+
 
 const boxOf = (element: Element) => element.getBoundingClientRect()
 
@@ -126,9 +138,9 @@ const tabIn = (canvas: HTMLElement, tab: string) => {
   return found
 }
 
-const groupBox = (canvas: HTMLElement, group: string) => {
-  const found = canvas.querySelector(`[data-workspace-group="${group}"]`)
-  if (!found) throw new Error(`no group called ${group}`)
+const paneBox = (canvas: HTMLElement, pane: string) => {
+  const found = canvas.querySelector(`[data-workspace-pane="${pane}"]`)
+  if (!found) throw new Error(`no pane called ${pane}`)
   return boxOf(found)
 }
 
@@ -145,22 +157,22 @@ async function dragTo(from: Element, to: { x: number; y: number }): Promise<void
   ])
 }
 
-/** Dragging a tab to the right edge of a group divides that group. */
+/** Dragging a tab to the right edge of a pane divides that pane. */
 export const DividesOnAnEdge: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
-    const before = groupBox(canvasElement, 'aside')
-    const main = groupBox(canvasElement, 'main')
+    const before = paneBox(canvasElement, 'aside')
+    const main = paneBox(canvasElement, 'main')
 
     await dragTo(tabIn(canvasElement, 'chat'), {
       x: main.right - main.width * 0.05,
       y: main.y + main.height / 2,
     })
 
-    // The group it came from held nothing else, so that group went and a fresh
+    // The pane it came from held nothing else, so that pane went and a fresh
     // one holds the chat.
-    const now = [...canvasElement.querySelectorAll('[data-workspace-group]')]
-    const named = now.map((group) => group.getAttribute('data-workspace-group'))
+    const now = [...canvasElement.querySelectorAll('[data-workspace-pane]')]
+    const named = now.map((pane) => pane.getAttribute('data-workspace-pane'))
 
     await expect(now).toHaveLength(2)
     await expect(named).toContain('main')
@@ -176,18 +188,18 @@ export const DividesOnAnEdge: Story = {
   },
 }
 
-/** Dragging a tab into the middle of another group joins its stack. */
+/** Dragging a tab into the middle of another pane joins its stack. */
 export const JoinsAStack: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
-    const main = groupBox(canvasElement, 'main')
+    const main = paneBox(canvasElement, 'main')
 
     await dragTo(tabIn(canvasElement, 'chat'), {
       x: main.x + main.width / 2,
       y: main.y + main.height / 2,
     })
 
-    await expect(canvasElement.querySelectorAll('[data-workspace-group]')).toHaveLength(1)
+    await expect(canvasElement.querySelectorAll('[data-workspace-pane]')).toHaveLength(1)
     await expect(canvasElement.querySelectorAll('[data-workspace-tab]')).toHaveLength(2)
   },
 }
@@ -197,20 +209,20 @@ export const StaysPut: Story = {
   tags: ['!dev'],
   args: { arrangement: 'side by side' },
   play: async ({ canvasElement }) => {
-    const before = [...canvasElement.querySelectorAll('[data-workspace-group]')].map((group) => [
-      group.getAttribute('data-workspace-group'),
-      boxOf(group).width,
+    const before = [...canvasElement.querySelectorAll('[data-workspace-pane]')].map((pane) => [
+      pane.getAttribute('data-workspace-pane'),
+      boxOf(pane).width,
     ])
 
-    const aside = groupBox(canvasElement, 'aside')
+    const aside = paneBox(canvasElement, 'aside')
     await dragTo(tabIn(canvasElement, 'chat'), {
       x: aside.x + aside.width / 2,
       y: aside.y + aside.height / 2,
     })
 
-    const after = [...canvasElement.querySelectorAll('[data-workspace-group]')].map((group) => [
-      group.getAttribute('data-workspace-group'),
-      boxOf(group).width,
+    const after = [...canvasElement.querySelectorAll('[data-workspace-pane]')].map((pane) => [
+      pane.getAttribute('data-workspace-pane'),
+      boxOf(pane).width,
     ])
     await expect(after).toStrictEqual(before)
   },
@@ -228,11 +240,11 @@ export const DividesTheWorkspace: Story = {
       y: frame.bottom - 6,
     })
 
-    const groups = [...canvasElement.querySelectorAll('[data-workspace-group]')].map(boxOf)
-    await expect(groups).toHaveLength(3)
+    const panes = [...canvasElement.querySelectorAll('[data-workspace-pane]')].map(boxOf)
+    await expect(panes).toHaveLength(3)
 
     // One of them runs the whole width along the foot.
-    const along = groups.filter((box) => Math.abs(box.width - frame.width) < 2)
+    const along = panes.filter((box) => Math.abs(box.width - frame.width) < 2)
     await expect(along).toHaveLength(1)
   },
 }
@@ -254,18 +266,50 @@ export const ReordersInAStrip: Story = {
   },
 }
 
-/** Closing the last tab of a group clears the group away. */
-export const ClosesAGroup: Story = {
+/** Closing the last tab of a pane clears the pane away. */
+export const ClosesAPane: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
-    const main = groupBox(canvasElement, 'main')
+    const main = paneBox(canvasElement, 'main')
     const close = within(tabIn(canvasElement, 'chat') as HTMLElement).getByRole('button')
 
     await userEvent.click(close)
 
-    const groups = [...canvasElement.querySelectorAll('[data-workspace-group]')]
-    await expect(groups).toHaveLength(1)
-    await expect(boxOf(groups[0] as Element).width).toBeGreaterThan(main.width)
+    const panes = [...canvasElement.querySelectorAll('[data-workspace-pane]')]
+    await expect(panes).toHaveLength(1)
+    await expect(boxOf(panes[0] as Element).width).toBeGreaterThan(main.width)
+  },
+}
+
+/** The strip is walked with the arrows, and what is reached is shown. */
+export const WalksWithTheKeyboard: Story = {
+  tags: ['!dev'],
+  args: { arrangement: 'crowded' },
+  play: async ({ canvasElement }) => {
+    const first = tabIn(canvasElement, 'one') as HTMLElement
+    first.focus()
+
+    await userEvent.keyboard('{ArrowRight}{ArrowRight}')
+
+    const showing = canvasElement.querySelector('[data-workspace-tab][aria-selected="true"]')
+    await expect(showing?.getAttribute('data-workspace-tab')).toBe('three')
+    await expect(document.activeElement).toBe(tabIn(canvasElement, 'three'))
+
+    await userEvent.keyboard('{Home}')
+    await expect(document.activeElement).toBe(tabIn(canvasElement, 'one'))
+  },
+}
+
+/** Escape in a panel comes back out to the tab the panel is held under. */
+export const LeavesAPanel: Story = {
+  tags: ['!dev'],
+  play: async ({ canvasElement }) => {
+    const panel = canvasElement.querySelector('[role="tabpanel"][data-showing]') as HTMLElement
+    panel.focus()
+
+    await userEvent.keyboard('{Escape}')
+
+    await expect(document.activeElement).toBe(tabIn(canvasElement, 'plex'))
   },
 }
 
@@ -273,7 +317,7 @@ export const ClosesAGroup: Story = {
 export const FollowsTheModel: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
-    const drawn = [...canvasElement.querySelectorAll('[data-workspace-group]')].map(boxOf)
+    const drawn = [...canvasElement.querySelectorAll('[data-workspace-pane]')].map(boxOf)
     const total = drawn.reduce((wide, box) => wide + box.width, 0)
     await expect((drawn[0]?.width ?? 0) / total).toBeCloseTo(0.72, 1)
   },

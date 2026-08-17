@@ -52,6 +52,14 @@ const (
 	VaultServiceChangesProcedure = "/numen.v1.VaultService/Changes"
 	// VaultServiceFocusProcedure is the fully-qualified name of the VaultService's Focus RPC.
 	VaultServiceFocusProcedure = "/numen.v1.VaultService/Focus"
+	// VaultServiceReadProcedure is the fully-qualified name of the VaultService's Read RPC.
+	VaultServiceReadProcedure = "/numen.v1.VaultService/Read"
+	// VaultServiceWriteProcedure is the fully-qualified name of the VaultService's Write RPC.
+	VaultServiceWriteProcedure = "/numen.v1.VaultService/Write"
+	// VaultServiceQuittingProcedure is the fully-qualified name of the VaultService's Quitting RPC.
+	VaultServiceQuittingProcedure = "/numen.v1.VaultService/Quitting"
+	// VaultServiceFlushedProcedure is the fully-qualified name of the VaultService's Flushed RPC.
+	VaultServiceFlushedProcedure = "/numen.v1.VaultService/Flushed"
 )
 
 // VaultServiceClient is a client for the numen.v1.VaultService service.
@@ -71,6 +79,19 @@ type VaultServiceClient interface {
 	// person — an agent working the vault beside them — for as long as the
 	// caller listens. What travelling there looks like is the client's.
 	Focus(context.Context, *connect.Request[v1.FocusRequest]) (*connect.ServerStreamForClient[v1.FocusResponse], error)
+	// Read answers with the prose of a note, below its frontmatter.
+	Read(context.Context, *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error)
+	// Write puts prose into a note, keeping the frontmatter the file has when the
+	// write lands and creating the file where there is none. What was on disk
+	// under an edit made elsewhere is replaced.
+	Write(context.Context, *connect.Request[v1.WriteRequest]) (*connect.Response[v1.WriteResponse], error)
+	// Quitting says the window is going, for as long as the caller listens. A
+	// caller holding work that is only in its own memory writes it now and
+	// answers with Flushed.
+	Quitting(context.Context, *connect.Request[v1.QuittingRequest]) (*connect.ServerStreamForClient[v1.QuittingResponse], error)
+	// Flushed says a caller has written everything it owed, and the window may
+	// go. A caller that never says it is waited for and then left behind.
+	Flushed(context.Context, *connect.Request[v1.FlushedRequest]) (*connect.Response[v1.FlushedResponse], error)
 }
 
 // NewVaultServiceClient constructs a client for the numen.v1.VaultService service. By default, it
@@ -114,6 +135,30 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(vaultServiceMethods.ByName("Focus")),
 			connect.WithClientOptions(opts...),
 		),
+		read: connect.NewClient[v1.ReadRequest, v1.ReadResponse](
+			httpClient,
+			baseURL+VaultServiceReadProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Read")),
+			connect.WithClientOptions(opts...),
+		),
+		write: connect.NewClient[v1.WriteRequest, v1.WriteResponse](
+			httpClient,
+			baseURL+VaultServiceWriteProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Write")),
+			connect.WithClientOptions(opts...),
+		),
+		quitting: connect.NewClient[v1.QuittingRequest, v1.QuittingResponse](
+			httpClient,
+			baseURL+VaultServiceQuittingProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Quitting")),
+			connect.WithClientOptions(opts...),
+		),
+		flushed: connect.NewClient[v1.FlushedRequest, v1.FlushedResponse](
+			httpClient,
+			baseURL+VaultServiceFlushedProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Flushed")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -124,6 +169,10 @@ type vaultServiceClient struct {
 	neighbourhood *connect.Client[v1.NeighbourhoodRequest, v1.NeighbourhoodResponse]
 	changes       *connect.Client[v1.ChangesRequest, v1.ChangesResponse]
 	focus         *connect.Client[v1.FocusRequest, v1.FocusResponse]
+	read          *connect.Client[v1.ReadRequest, v1.ReadResponse]
+	write         *connect.Client[v1.WriteRequest, v1.WriteResponse]
+	quitting      *connect.Client[v1.QuittingRequest, v1.QuittingResponse]
+	flushed       *connect.Client[v1.FlushedRequest, v1.FlushedResponse]
 }
 
 // State calls numen.v1.VaultService.State.
@@ -151,6 +200,26 @@ func (c *vaultServiceClient) Focus(ctx context.Context, req *connect.Request[v1.
 	return c.focus.CallServerStream(ctx, req)
 }
 
+// Read calls numen.v1.VaultService.Read.
+func (c *vaultServiceClient) Read(ctx context.Context, req *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error) {
+	return c.read.CallUnary(ctx, req)
+}
+
+// Write calls numen.v1.VaultService.Write.
+func (c *vaultServiceClient) Write(ctx context.Context, req *connect.Request[v1.WriteRequest]) (*connect.Response[v1.WriteResponse], error) {
+	return c.write.CallUnary(ctx, req)
+}
+
+// Quitting calls numen.v1.VaultService.Quitting.
+func (c *vaultServiceClient) Quitting(ctx context.Context, req *connect.Request[v1.QuittingRequest]) (*connect.ServerStreamForClient[v1.QuittingResponse], error) {
+	return c.quitting.CallServerStream(ctx, req)
+}
+
+// Flushed calls numen.v1.VaultService.Flushed.
+func (c *vaultServiceClient) Flushed(ctx context.Context, req *connect.Request[v1.FlushedRequest]) (*connect.Response[v1.FlushedResponse], error) {
+	return c.flushed.CallUnary(ctx, req)
+}
+
 // VaultServiceHandler is an implementation of the numen.v1.VaultService service.
 type VaultServiceHandler interface {
 	// State is what the vault is and how far reading it has got.
@@ -168,6 +237,19 @@ type VaultServiceHandler interface {
 	// person — an agent working the vault beside them — for as long as the
 	// caller listens. What travelling there looks like is the client's.
 	Focus(context.Context, *connect.Request[v1.FocusRequest], *connect.ServerStream[v1.FocusResponse]) error
+	// Read answers with the prose of a note, below its frontmatter.
+	Read(context.Context, *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error)
+	// Write puts prose into a note, keeping the frontmatter the file has when the
+	// write lands and creating the file where there is none. What was on disk
+	// under an edit made elsewhere is replaced.
+	Write(context.Context, *connect.Request[v1.WriteRequest]) (*connect.Response[v1.WriteResponse], error)
+	// Quitting says the window is going, for as long as the caller listens. A
+	// caller holding work that is only in its own memory writes it now and
+	// answers with Flushed.
+	Quitting(context.Context, *connect.Request[v1.QuittingRequest], *connect.ServerStream[v1.QuittingResponse]) error
+	// Flushed says a caller has written everything it owed, and the window may
+	// go. A caller that never says it is waited for and then left behind.
+	Flushed(context.Context, *connect.Request[v1.FlushedRequest]) (*connect.Response[v1.FlushedResponse], error)
 }
 
 // NewVaultServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -207,6 +289,30 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(vaultServiceMethods.ByName("Focus")),
 		connect.WithHandlerOptions(opts...),
 	)
+	vaultServiceReadHandler := connect.NewUnaryHandler(
+		VaultServiceReadProcedure,
+		svc.Read,
+		connect.WithSchema(vaultServiceMethods.ByName("Read")),
+		connect.WithHandlerOptions(opts...),
+	)
+	vaultServiceWriteHandler := connect.NewUnaryHandler(
+		VaultServiceWriteProcedure,
+		svc.Write,
+		connect.WithSchema(vaultServiceMethods.ByName("Write")),
+		connect.WithHandlerOptions(opts...),
+	)
+	vaultServiceQuittingHandler := connect.NewServerStreamHandler(
+		VaultServiceQuittingProcedure,
+		svc.Quitting,
+		connect.WithSchema(vaultServiceMethods.ByName("Quitting")),
+		connect.WithHandlerOptions(opts...),
+	)
+	vaultServiceFlushedHandler := connect.NewUnaryHandler(
+		VaultServiceFlushedProcedure,
+		svc.Flushed,
+		connect.WithSchema(vaultServiceMethods.ByName("Flushed")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.VaultService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case VaultServiceStateProcedure:
@@ -219,6 +325,14 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 			vaultServiceChangesHandler.ServeHTTP(w, r)
 		case VaultServiceFocusProcedure:
 			vaultServiceFocusHandler.ServeHTTP(w, r)
+		case VaultServiceReadProcedure:
+			vaultServiceReadHandler.ServeHTTP(w, r)
+		case VaultServiceWriteProcedure:
+			vaultServiceWriteHandler.ServeHTTP(w, r)
+		case VaultServiceQuittingProcedure:
+			vaultServiceQuittingHandler.ServeHTTP(w, r)
+		case VaultServiceFlushedProcedure:
+			vaultServiceFlushedHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -246,4 +360,20 @@ func (UnimplementedVaultServiceHandler) Changes(context.Context, *connect.Reques
 
 func (UnimplementedVaultServiceHandler) Focus(context.Context, *connect.Request[v1.FocusRequest], *connect.ServerStream[v1.FocusResponse]) error {
 	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Focus is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) Read(context.Context, *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Read is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) Write(context.Context, *connect.Request[v1.WriteRequest]) (*connect.Response[v1.WriteResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Write is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) Quitting(context.Context, *connect.Request[v1.QuittingRequest], *connect.ServerStream[v1.QuittingResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Quitting is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) Flushed(context.Context, *connect.Request[v1.FlushedRequest]) (*connect.Response[v1.FlushedResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Flushed is not implemented"))
 }

@@ -4,8 +4,8 @@
  */
 import { describe, expect, it } from 'vitest'
 import { normalize } from './normalize'
-import { group } from './node'
-import { isBranch, isGroup } from './tree'
+import { pane } from './node'
+import { isBranch, isPane } from './tree'
 import { arrangeWorkspace } from '../arrange'
 import { split, stack, workspaceOf } from '../fixtures/build'
 import { broken } from '../fixtures/invariants'
@@ -13,9 +13,9 @@ import { broken } from '../fixtures/invariants'
 const SCREEN = { x: 0, y: 0, width: 1280, height: 800 }
 
 describe('what does not draw is cleared away', () => {
-  it('takes out a group holding nothing', () => {
+  it('takes out a pane holding nothing', () => {
     const before = workspaceOf(
-      split('root', [stack('a', 'one'), group('gone', []), stack('b', 'two')]),
+      split('root', [stack('a', 'one'), pane('gone', []), stack('b', 'two')]),
       'horizontal',
       'a',
     )
@@ -29,22 +29,22 @@ describe('what does not draw is cleared away', () => {
     expect(broken(after)).toStrictEqual([])
   })
 
-  it('replaces a branch left with one group by that group', () => {
+  it('replaces a branch left with one pane by that pane', () => {
     const before = workspaceOf(split('root', [stack('only', 'one')]), 'horizontal', 'only')
     expect(normalize(before).root.id).toBe('only')
   })
 
   it('keeps a root that holds nothing, so there is always one', () => {
-    const before = workspaceOf(group('main', []))
+    const before = workspaceOf(pane('main', []))
     const after = normalize(before)
 
-    expect(after.root).toSatisfy(isGroup)
-    expect(isGroup(after.root) && after.root.tabs).toStrictEqual([])
+    expect(after.root).toSatisfy(isPane)
+    expect(isPane(after.root) && after.root.tabs).toStrictEqual([])
   })
 
   it('is idempotent', () => {
     const once = normalize(
-      workspaceOf(split('root', [stack('a', 'one'), group('gone', [])]), 'horizontal', 'a'),
+      workspaceOf(split('root', [stack('a', 'one'), pane('gone', [])]), 'horizontal', 'a'),
     )
     expect(normalize(once)).toStrictEqual(once)
   })
@@ -57,7 +57,7 @@ describe('a branch that keeps one child hands its grandchildren up', () => {
       'root',
       [
         stack('a', 'one'),
-        split('down', [group('gone', []), split('across', [stack('c', 'three'), stack('d', 'four')])]),
+        split('down', [pane('gone', []), split('across', [stack('c', 'three'), stack('d', 'four')])]),
       ],
       [0.5, 0.5],
     ),
@@ -112,7 +112,7 @@ describe('a root left with one child turns the axis with it', () => {
     expect(after.axis).toBe('vertical')
   })
 
-  it('draws every group in exactly the box it had', () => {
+  it('draws every pane in exactly the box it had', () => {
     const before = arrangeWorkspace(workspace, SCREEN)
     const after = arrangeWorkspace(normalize(workspace), SCREEN)
 

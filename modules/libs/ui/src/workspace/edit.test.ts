@@ -10,7 +10,7 @@ import {
   resizeBranch,
 } from './edit'
 import { arrangeWorkspace } from './arrange'
-import { groupWithTab, groupsOf, isBranch, isGroup, type Workspace } from './model'
+import { isBranch, isPane, paneWithTab, panesOf, type Workspace } from './model'
 import {
   deep,
   naming,
@@ -28,11 +28,11 @@ const SCREEN = { x: 0, y: 0, width: 1000, height: 600 }
 const ids = (workspace: Workspace) =>
   isBranch(workspace.root) ? workspace.root.children.map((child) => child.id) : [workspace.root.id]
 
-const tabsOf = (workspace: Workspace, group: string) =>
-  groupsOf(workspace.root).find((each) => each.id === group)?.tabs
+const tabsOf = (workspace: Workspace, pane: string) =>
+  panesOf(workspace.root).find((each) => each.id === pane)?.tabs
 
 describe('opening and showing', () => {
-  it('puts a new tab in the focused group', () => {
+  it('puts a new tab in the focused pane', () => {
     const after = openTab(sideBySide(), 'notes', 'aside')
     expect(tabsOf(after, 'aside')).toStrictEqual(['chat', 'notes'])
     expect(after.focus).toBe('aside')
@@ -47,12 +47,12 @@ describe('opening and showing', () => {
 
   it('moves the focus to whatever is shown', () => {
     const after = activateTab(oneStack(), 'chat')
-    expect(groupsOf(after.root)[0]?.active).toBe('chat')
+    expect(panesOf(after.root)[0]?.active).toBe('chat')
     expect(after.focus).toBe('main')
   })
 })
 
-describe('a tab let go beside a group', () => {
+describe('a tab let go beside a pane', () => {
   it('joins the parent when the parent already divides that way', () => {
     const after = dropTab(sideBySide(), { tab: 'chat', onto: 'main', side: 'left' }, naming())
 
@@ -62,7 +62,7 @@ describe('a tab let go beside a group', () => {
     expect(broken(after)).toStrictEqual([])
   })
 
-  it('wraps the group when the parent divides the other way', () => {
+  it('wraps the pane when the parent divides the other way', () => {
     const after = dropTab(withSpare(), { tab: 'notes', onto: 'main', side: 'bottom' }, naming())
 
     expect(ids(after)).toStrictEqual(['made-2', 'aside'])
@@ -82,7 +82,7 @@ describe('a tab let go beside a group', () => {
     expect(boxes.get('made-1')?.width).toBeCloseTo(500)
   })
 
-  it('turns the axis when the whole workspace is one group', () => {
+  it('turns the axis when the whole workspace is one pane', () => {
     const after = dropTab(oneStack(), { tab: 'chat', onto: 'main', side: 'top' }, naming())
 
     expect(after.axis).toBe('vertical')
@@ -99,19 +99,19 @@ describe('a tab let go beside a group', () => {
   })
 })
 
-describe('a tab let go in the middle of a group', () => {
+describe('a tab let go in the middle of a pane', () => {
   it('joins the stack and is shown', () => {
     const after = dropTab(sideBySide(), { tab: 'chat', onto: 'main', side: 'center' }, naming())
 
     expect(tabsOf(after, 'main')).toStrictEqual(['plex', 'chat'])
-    expect(groupsOf(after.root)).toHaveLength(1)
+    expect(panesOf(after.root)).toHaveLength(1)
     expect(after.root.id).toBe('main')
     expect(broken(after)).toStrictEqual([])
   })
 
-  it('clears away the group it came from', () => {
+  it('clears away the pane it came from', () => {
     const after = dropTab(sideBySide(), { tab: 'plex', onto: 'aside', side: 'center' }, naming())
-    expect(groupsOf(after.root).map((each) => each.id)).toStrictEqual(['aside'])
+    expect(panesOf(after.root).map((each) => each.id)).toStrictEqual(['aside'])
   })
 })
 
@@ -124,11 +124,11 @@ describe('a tab let go where it started', () => {
     expect(after.focus).toBe('aside')
   })
 
-  it('splits its own group when there are others with it', () => {
+  it('splits its own pane when there are others with it', () => {
     const after = dropTab(oneStack(), { tab: 'chat', onto: 'main', side: 'right' }, naming())
 
     expect(tabsOf(after, 'main')).toStrictEqual(['plex'])
-    expect(groupsOf(after.root)).toHaveLength(2)
+    expect(panesOf(after.root)).toHaveLength(2)
     expect(broken(after)).toStrictEqual([])
   })
 })
@@ -151,16 +151,16 @@ describe('a tab let go on the outer edge', () => {
 describe('closing', () => {
   it('shows the next tab along', () => {
     const after = closeTab(oneStack(), 'plex')
-    expect(groupsOf(after.root)[0]?.active).toBe('chat')
+    expect(panesOf(after.root)[0]?.active).toBe('chat')
     expect(broken(after)).toStrictEqual([])
   })
 
-  it('clears the group away and leaves the rest where they were', () => {
+  it('clears the pane away and leaves the rest where they were', () => {
     const before = deep()
     const boxes = arrangeWorkspace(before, SCREEN)
     const after = closeTab(before, 'four')
 
-    expect(groupWithTab(after.root, 'four')).toBeNull()
+    expect(paneWithTab(after.root, 'four')).toBeNull()
     expect(arrangeWorkspace(after, SCREEN).get('e')).toStrictEqual(boxes.get('again'))
     expect(arrangeWorkspace(after, SCREEN).get('a')).toStrictEqual(boxes.get('a'))
     expect(broken(after)).toStrictEqual([])
@@ -169,8 +169,8 @@ describe('closing', () => {
   it('leaves an empty workspace when the last tab goes', () => {
     const after = closeTab(closeTab(oneStack(), 'plex'), 'chat')
 
-    expect(isGroup(after.root) && after.root.tabs).toStrictEqual([])
-    expect(isGroup(after.root) && after.root.active).toBeNull()
+    expect(isPane(after.root) && after.root.tabs).toStrictEqual([])
+    expect(isPane(after.root) && after.root.active).toBeNull()
     expect(broken(after)).toStrictEqual([])
   })
 

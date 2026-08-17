@@ -33,6 +33,48 @@ service VaultService {
   // person — an agent working the vault beside them — for as long as the
   // caller listens. What travelling there looks like is the client's.
   rpc Focus(FocusRequest) returns (stream FocusResponse);
+
+  // Read answers with the prose of a note, below its frontmatter.
+  rpc Read(ReadRequest) returns (ReadResponse);
+
+  // Write puts prose into a note, keeping the frontmatter the file has when the
+  // write lands and creating the file where there is none. What was on disk
+  // under an edit made elsewhere is replaced.
+  rpc Write(WriteRequest) returns (WriteResponse);
+
+  // Quitting says the window is going, for as long as the caller listens. A
+  // caller holding work that is only in its own memory writes it now and
+  // answers with Flushed.
+  rpc Quitting(QuittingRequest) returns (stream QuittingResponse);
+
+  // Flushed says a caller has written everything it owed, and the window may
+  // go. A caller that never says it is waited for and then left behind.
+  rpc Flushed(FlushedRequest) returns (FlushedResponse);
+}
+
+// Refusal is why a note could not be read or written.
+enum Refusal {
+  REFUSAL_UNSPECIFIED = 0;
+
+  // Nothing is at the path. A read says so; a write creates the file.
+  REFUSAL_MISSING = 1;
+
+  // The file is in the vault and is not a note.
+  REFUSAL_NOT_A_NOTE = 2;
+
+  // The file is not text this can carry.
+  REFUSAL_NOT_TEXT = 3;
+
+  // The file is past the size a note is read at.
+  REFUSAL_TOO_LARGE = 4;
+
+  // The prose opens with a frontmatter delimiter, so writing it would put a
+  // second block inside the first.
+  REFUSAL_BODY_REFUSED = 5;
+
+  // The frontmatter cannot be read, so the note can be neither read nor written
+  // from here.
+  REFUSAL_UNREADABLE = 6;
 }
 
 // Note is a note as something else refers to it.
@@ -155,3 +197,46 @@ message NeighbourhoodResponse {
   Note focus = 1;
   repeated Seated related = 2;
 }
+
+message ReadRequest {
+  string path = 1;
+}
+
+message ReadResponse {
+  // The prose below the frontmatter, with line endings as LF. Empty when the
+  // note is refused.
+  string body = 1;
+
+  // Set when the note was not read, and why.
+  optional Refusal refusal = 2;
+}
+
+message WriteRequest {
+  string path = 1;
+
+  // The prose to put below the frontmatter, with line endings as LF.
+  string body = 2;
+}
+
+message WriteResponse {
+  // Set when nothing was written, and why.
+  optional Refusal refusal = 1;
+}
+
+message QuittingRequest {}
+
+message QuittingResponse {
+  // What this caller answers Flushed with. The stream opens by saying it, so
+  // a caller knows it is listening before anything is asked of it.
+  string token = 1;
+
+  // Set when the window is going and this caller's unwritten work has to land.
+  bool flush = 2;
+}
+
+message FlushedRequest {
+  // The token this caller was given when it began listening.
+  string token = 1;
+}
+
+message FlushedResponse {}

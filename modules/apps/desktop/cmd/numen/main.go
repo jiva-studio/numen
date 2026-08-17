@@ -15,8 +15,11 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"sync"
+	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/webui"
@@ -71,14 +74,33 @@ func run(cfg container.Config, agents agentOptions, zoom float64) error {
 		return err
 	}
 
+	// Registered last so that it runs first: what the page owes lands, then the
+	// agents are let go of, then the scan and the follower stop and the
+	// database closes.
+	going := &going{settle: opened.Settle}
+	defer going.wait()
+
 	app := application.New(application.Options{
 		Name: "numen",
 		Assets: application.AssetOptions{
 			Handler: opened.API.Serving(pages),
 		},
+		// A quit that does not come through the window is answered on the
+		// thread the page is served on, so the settling happens off it and the
+		// quit is asked for again once it is over.
+		ShouldQuit: func() bool {
+			if going.settled() {
+				return true
+			}
+			go func() {
+				going.wait()
+				application.Get().Quit()
+			}()
+			return false
+		},
 	})
 
-	app.Window.NewWithOptions(application.WebviewWindowOptions{
+	window := app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:  "numen — " + opened.API.Showing().Name,
 		Width:  1280,
 		Height: 860,
@@ -86,7 +108,55 @@ func run(cfg container.Config, agents agentOptions, zoom float64) error {
 		Zoom:   drawnAt(zoom, chosen.Appearance.Zoom),
 	})
 
+	// A hook runs before the window is destroyed and on a thread of its own, so
+	// the page is still drawn and still answered while what it owes is written.
+	window.RegisterHook(events.Common.WindowClosing, func(*application.WindowEvent) {
+		going.wait()
+	})
+
 	return app.Run()
+}
+
+// quitBound is how long the window waits for a page to write what only it
+// holds. A page whose script has stopped — a wedged webview, one already torn
+// down — answers never, and this is how long that costs.
+const quitBound = 3 * time.Second
+
+// going is the vault settling, once, whichever way the window is asked to go.
+type going struct {
+	settle func(context.Context)
+	once   sync.Once
+	over   chan struct{}
+}
+
+// wait settles the vault and returns when it has.
+func (g *going) wait() {
+	g.begin()
+	<-g.over
+}
+
+// settled reports whether there is nothing left owed.
+func (g *going) settled() bool {
+	g.begin()
+	select {
+	case <-g.over:
+		return true
+	default:
+		return false
+	}
+}
+
+func (g *going) begin() {
+	g.once.Do(func() {
+		g.over = make(chan struct{})
+		go func() {
+			defer close(g.over)
+
+			ctx, cancel := context.WithTimeout(context.Background(), quitBound)
+			defer cancel()
+			g.settle(ctx)
+		}()
+	})
 }
 
 // drawnAt is how large everything is drawn.

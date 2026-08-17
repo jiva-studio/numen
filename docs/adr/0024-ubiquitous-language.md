@@ -88,6 +88,7 @@ in one place, meaning the obvious thing, needs no entry.
 | refresh | Bringing named notes up to date. Never *reindex*, never *incremental* |
 | group | What a scan writes in: one transaction's worth |
 | fingerprint | Path, size and modification time — what says a note need not be read again |
+| changed | What a write answers when the note on disk is no longer the one the caller read (ADR-0027). Never a *conflict* |
 | backlink | A link that resolves here, whichever end wrote it |
 | problem | Something that could not be acted on and was not guessed at |
 | watch | Following a vault for changes the application did not make |
@@ -119,6 +120,12 @@ in one place, meaning the obvious thing, needs no entry.
 | panel | The column beside the plex where a person asks an agent something |
 | turn | One thing shown in the panel's thread: what was asked, what was answered, what is being done |
 | voice | Whose turn it is, and so how it is drawn |
+| workspace | Everything the window holds open, and how it is split |
+| branch | A split of the workspace, drawn as two parts side by side |
+| pane | One part of a branch, holding tabs and showing one of them |
+| tab | One thing a pane holds open, shown by its title |
+| menu | A list of things that can be done, opened on what they are done to |
+| unsaved | A tab whose text is not the text in its file |
 
 ### Words that were spent twice, and how they are settled
 
@@ -163,6 +170,19 @@ wrong exactly once and be wrong everywhere after.
 **`label` and `title`.** A title names a note; a label names a relationship.
 Both are drawn, a few pixels apart, which is precisely why they cannot share a
 word.
+
+**`group` and `pane`.** A group is what a scan writes in: one transaction's worth
+of notes (ADR-0022). A pane is one part of a split workspace. The workspace was
+written with the storage word and is renamed, because the two are read side by
+side in the same session and one of them is about the database.
+
+**`window` and `chunk`.** The window is the application's window. A span of a
+source's text cut for searching is a *chunk*, and how large one is cut is its
+size.
+
+**`unsaved` and `dirty`.** A tab whose text is not the text in its file is
+*unsaved*. `dirty` names the fraction of a chunk's words that are rubbish, and
+that reading is the one a person is shown.
 
 **`position`.** An ordinal — which link, which heading. A line number is a
 *line*.

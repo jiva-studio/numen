@@ -7,18 +7,24 @@
  * `showing.ts`; what each tab stands for is settled here and nowhere else.
  */
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { Activity, Agent, Plex, Workspace, remainingWord } from '@numen/ui'
-import type { WorkspaceLayout } from '@numen/ui'
+import { Activity, Agent, Editor, Menu, Plex, Workspace, closeTab, openTab, remainingWord } from '@numen/ui'
+import type { MenuItem, Tab, WorkspaceLayout } from '@numen/ui'
 import '@numen/ui/styles.css'
 import { core } from './vault'
 import { showing } from './showing'
 import { footOf, type Phase } from './foot'
+import { editing } from './editing'
+import { leaving } from './leaving'
 import { asPlex } from './plex'
 import { core as agent } from './agent'
 import { conversation } from './conversation'
 import { AGENT, PLEX, TABS, opening } from './workspace'
 
-const window = showing(core)
+const notes = editing(core)
+const window = showing(core, undefined, undefined, notes.changed)
+/** What the window answers when the application says it is going. */
+const going = leaving(core)
+going.holds(notes.flush)
 const { neighbourhood, indexing, failure, notice, trouble, unwatched, go } = window
 const { chunks, embedded, reading, embedding, books, booksRead, learning, rate } = window
 /** What the vault says about having work in hand. The counts do not say it. */
@@ -75,9 +81,79 @@ const send = (text: string) => {
   void ask(text, neighbourhood.value?.focus?.path ?? '')
 }
 
-onMounted(window.start)
+/** Every tab the window holds: the two it opens with, and one per open note. */
+const tabs = computed<readonly Tab[]>(() => [
+  ...TABS,
+  ...notes.all().map((path): Tab => {
+    const mark = marked(path)
+    return { id: path, title: titles.get(path) ?? path, ...(mark ? { mark } : {}) }
+  }),
+])
+
+/** What a note was called by the node it was opened from. */
+const titles = new Map<string, string>()
+
+const marked = (path: string): string | undefined => {
+  const state = notes.shown(path).state
+  return state === 'unsaved' || state === 'saving' ? 'unsaved' : state === 'stuck' ? 'stuck' : undefined
+}
+
+/** The menu on a node, and where it was asked for. */
+const menu = ref<{ path: string; at: { x: number; y: number }; from: HTMLElement | SVGElement | null } | null>(null)
+
+const items: readonly MenuItem[] = [
+  { id: 'open', text: 'Open in a tab' },
+  { id: 'ask', text: 'Ask the agent about this note' },
+  { id: 'copy', text: 'Copy path' },
+]
+
+const askMenu = (path: string, at: { x: number; y: number }, from: HTMLElement | SVGElement | null) => {
+  menu.value = { path, at, from }
+}
+
+const chose = (id: string) => {
+  const asking = menu.value
+  menu.value = null
+  if (!asking) return
+  if (id === 'open') return openNote(asking.path)
+  if (id === 'copy') return void navigator.clipboard?.writeText(asking.path)
+  if (id === 'ask') {
+    asked.value = asking.path + ' — '
+    layout.value = openTab(layout.value, AGENT)
+  }
+}
+
+/** A note opens in the pane the person is in, and the tab is shown. */
+const openNote = (path: string) => {
+  titles.set(path, nameOf(path))
+  notes.open(path)
+  layout.value = openTab(layout.value, path)
+}
+
+const nameOf = (path: string): string => {
+  const named = neighbourhood.value
+  if (named?.focus?.path === path && named.focus.title) return named.focus.title
+  const near = named?.related?.find((r) => r.note?.path === path)
+  return near?.note?.title || (path.split('/').pop() ?? path).replace(/\.md$/, '')
+}
+
+/** A tab that holds a note writes what it owes before it goes. */
+const shut = (id: string, hold: () => void) => {
+  if (!notes.all().includes(id)) return
+  hold()
+  void notes.shut(id).then(() => {
+    titles.delete(id)
+    layout.value = closeTab(layout.value, id)
+  })
+}
+
+onMounted(() => {
+  void window.start()
+  void going.start()
+})
 onUnmounted(() => {
   window.close()
+  going.close()
   close()
 })
 </script>
@@ -93,13 +169,15 @@ onUnmounted(() => {
     <p v-else-if="!neighbourhood && trouble" class="waiting">nothing was read</p>
     <p v-else-if="!neighbourhood" class="waiting">this vault holds no notes</p>
 
-    <Workspace v-model="layout" class="below" :tabs="TABS">
+    <Workspace v-model="layout" class="below" :tabs="tabs" @close="shut">
       <template #tab="{ id }">
         <Plex
           v-if="id === PLEX && neighbourhood && !failure && !indexing"
           :neighbourhood="asPlex(neighbourhood)"
           :creatable="[]"
           @activate="go"
+          @menu="askMenu"
+          @dismiss="menu = null"
         />
 
         <Agent
@@ -115,6 +193,15 @@ onUnmounted(() => {
           </template>
         </Agent>
 
+        <div v-else-if="notes.all().includes(id)" class="note">
+          <p v-if="notes.saying(id)" class="warning">{{ notes.saying(id) }}</p>
+          <Editor
+            :model-value="notes.shown(id).body"
+            class="prose"
+            @update:model-value="(body: string) => notes.typed(id, body)"
+          />
+        </div>
+
         <div v-else />
       </template>
     </Workspace>
@@ -126,6 +213,16 @@ onUnmounted(() => {
       :working="activity.working"
       :left="activity.left"
       :tally="activity.tally"
+    />
+
+    <Menu
+      v-if="menu"
+      :items="items"
+      :at="menu.at"
+      :from="menu.from"
+      open
+      @choose="chose"
+      @dismiss="menu = null"
     />
   </main>
 </template>

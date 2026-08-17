@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/fs"
 	pathpkg "path"
 	"strconv"
 	"strings"
@@ -12,7 +11,6 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/markdown"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 )
@@ -27,16 +25,11 @@ const (
 )
 
 // maxBytes is the most one call will carry in either direction, whether that is
-// one note or a batch of them.
-//
-// A note is prose somebody wrote, and a megabyte of it is a quarter of a
-// million words. Something larger is a pasted export or a mistake. The size is
-// checked before the file is opened, so a call over the bound is refused
-// without the bytes being read.
+// one note or a batch of them. It is the ceiling a read holds a note to.
 //
 // What a link says is measured with the prose. It lands in the same file, and
 // the bound is on what a call writes.
-const maxBytes = 1 << 20
+const maxBytes = note.MaxBytes
 
 // Note is a note as every tool reports it: the address it is asked for by, what
 // it is called, and the identifier if it carries one.
@@ -133,59 +126,49 @@ func addNoteTools(server *sdk.Server, core Core) {
 			"is exactly what `note_write` takes back. What a note is joined to is not " +
 			"in here; `link_list` answers that. The fingerprint that comes back is " +
 			"what `note_write` wants: hand it back and the write is refused if the " +
-			"person changed the note in the meantime.",
+			"person changed the note in the meantime. A path that could not be read " +
+			"comes back under `refused` saying why, and the rest of the batch still " +
+			"comes back.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Paths []string `json:"paths" jsonschema:"the paths to read"`
 	}) (*sdk.CallToolResult, struct {
 		Notes   []Contents `json:"notes"`
 		Missing []string   `json:"missing,omitempty"`
+		Refused []Refusal  `json:"refused,omitempty"`
 	}, error) {
 		type out = struct {
 			Notes   []Contents `json:"notes"`
 			Missing []string   `json:"missing,omitempty"`
+			Refused []Refusal  `json:"refused,omitempty"`
 		}
 		if len(in.Paths) > maxBodies {
 			return nil, out{}, fmt.Errorf("read at most %d notes at a time", maxBodies)
 		}
-		reader, err := core.Readers.Open(core.Vault)
-		if err != nil {
-			return nil, out{}, err
-		}
+		read := note.Read{Readers: core.Readers}
 		res := out{Notes: make([]Contents, 0, len(in.Paths))}
 		for _, path := range in.Paths {
-			if before, err := reader.Stat(ctx, path); err == nil && before.Size > maxBytes {
-				return nil, out{}, fmt.Errorf(
-					"%s is %d bytes, larger than the %d this reads; open the file instead",
-					path, before.Size, maxBytes)
+			if err := ctx.Err(); err != nil {
+				return nil, out{}, err
 			}
-			raw, err := reader.Read(ctx, path)
-			if errors.Is(err, fs.ErrNotExist) {
-				res.Missing = append(res.Missing, path)
-				continue
-			}
-			if err != nil {
-				return nil, out{}, fmt.Errorf("read %s: %w", path, err)
-			}
-			// Asked after the read, so the fingerprint describes the bytes just
-			// handed over. Asked before, a note changed in between would go out
-			// under a fingerprint that lets it be written over.
-			ref, err := reader.Stat(ctx, path)
-			if errors.Is(err, fs.ErrNotExist) {
-				res.Missing = append(res.Missing, path)
-				continue
-			}
+			contents, err := read.Execute(ctx, core.Vault, path)
 			if err != nil {
 				return nil, out{}, err
 			}
-			doc, err := markdown.Open(raw)
-			if err != nil {
-				return nil, out{}, fmt.Errorf("read %s: %w", path, err)
+			switch contents.Outcome {
+			case note.Ok:
+				res.Notes = append(res.Notes, Contents{
+					Path: path,
+					Body: contents.Body,
+					// What the file was when it was asked about, which is
+					// before its bytes were read. A write landing in between
+					// makes this stale, and the next write is refused.
+					Fingerprint: fingerprintOf(contents.Ref),
+				})
+			case note.Missing:
+				res.Missing = append(res.Missing, path)
+			default:
+				res.Refused = append(res.Refused, Refusal{Path: path, Why: why(contents)})
 			}
-			res.Notes = append(res.Notes, Contents{
-				Path:        path,
-				Body:        doc.Body(),
-				Fingerprint: fingerprintOf(ref),
-			})
 		}
 		return nil, res, nil
 	})
@@ -394,6 +377,29 @@ type Contents struct {
 	Path        string `json:"path"`
 	Body        string `json:"body" jsonschema:"the prose below the frontmatter, which is what note_write takes"`
 	Fingerprint string `json:"fingerprint" jsonschema:"hand this to note_write to refuse a write over an edit you did not see"`
+}
+
+// Refusal is one path that came back with no prose behind it, and what stopped
+// it. A batch of ten notes with one export among them comes back with nine.
+type Refusal struct {
+	Path string `json:"path"`
+	Why  string `json:"why" jsonschema:"why this one was not read"`
+}
+
+// why is a read's outcome in words an agent can act on.
+func why(c note.Contents) string {
+	switch c.Outcome {
+	case note.NotANote:
+		return "this is not a note the vault holds"
+	case note.NotText:
+		return "this file is not text: some of it is not valid UTF-8, so open it as a file"
+	case note.TooLarge:
+		return fmt.Sprintf("it is %d bytes, larger than the %d this reads; open the file instead",
+			c.Ref.Size, note.MaxBytes)
+	case note.Unreadable:
+		return "the frontmatter of this note cannot be read, so it can be neither read nor written from here"
+	}
+	return string(c.Outcome)
 }
 
 // Seated is a note in the picture around another one.

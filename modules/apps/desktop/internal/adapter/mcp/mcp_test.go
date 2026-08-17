@@ -597,6 +597,90 @@ func TestReadingGivesBackOnlyTheProse(t *testing.T) {
 	}
 }
 
+// read is one call of note_read, whole: what came back, what was not there and
+// what was refused.
+type reading struct {
+	Notes   []mcp.Contents `json:"notes"`
+	Missing []string       `json:"missing"`
+	Refused []mcp.Refusal  `json:"refused"`
+}
+
+// put writes a file into a vault that is already being served, for the ones a
+// scan would not index.
+func put(t *testing.T, v domain.Vault, path, raw string) {
+	t.Helper()
+	if err := os.WriteFile(filepath.Join(v.Path, filepath.FromSlash(path)), []byte(raw), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// The vault holds notes, and a folder holds whatever the person keeps in it. An
+// agent asking for a book gets the refusal and not the book.
+func TestReadingRefusesWhatIsNotANote(t *testing.T) {
+	session, v := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	put(t, v, "library.epub", "PK\x03\x04 chapters of somebody else's book")
+
+	got := call[reading](t, session, "note_read", map[string]any{
+		"paths": []string{"Entropy.md", "library.epub"},
+	})
+	if len(got.Notes) != 1 || got.Notes[0].Path != "Entropy.md" {
+		t.Fatalf("want the note and nothing else: %+v", got.Notes)
+	}
+	for _, c := range got.Notes {
+		if strings.Contains(c.Body, "chapters") {
+			t.Errorf("the bytes of a book were handed over:\n%s", c.Body)
+		}
+	}
+	if len(got.Refused) != 1 || got.Refused[0].Path != "library.epub" {
+		t.Fatalf("want the book refused by name: %+v", got.Refused)
+	}
+	if !strings.Contains(got.Refused[0].Why, "note") {
+		t.Errorf("the refusal does not say what is wrong: %q", got.Refused[0].Why)
+	}
+}
+
+// One byte that is not UTF-8 becomes U+FFFD wherever the answer is shown, and
+// the next write puts those characters where the person's bytes were.
+func TestReadingRefusesAFileThatIsNotText(t *testing.T) {
+	session, v := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	put(t, v, "Pasted.md", "# Pasted\n\xff\xfe from somewhere\n")
+
+	got := call[reading](t, session, "note_read", map[string]any{
+		"paths": []string{"Entropy.md", "Pasted.md"},
+	})
+	if len(got.Notes) != 1 || got.Notes[0].Path != "Entropy.md" {
+		t.Fatalf("want only the note that is text: %+v", got.Notes)
+	}
+	if len(got.Refused) != 1 || got.Refused[0].Path != "Pasted.md" {
+		t.Fatalf("want the file refused by name: %+v", got.Refused)
+	}
+	if !strings.Contains(got.Refused[0].Why, "text") {
+		t.Errorf("the refusal does not say what is wrong: %q", got.Refused[0].Why)
+	}
+}
+
+// One note nobody can carry does not cost the others their answer.
+func TestReadingSaysWhichNoteIsTooLargeAndCarriesOn(t *testing.T) {
+	session, v := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	put(t, v, "Export.md", "# Export\n"+strings.Repeat("pasted in from somewhere ", note.MaxBytes/20))
+
+	got := call[reading](t, session, "note_read", map[string]any{
+		"paths": []string{"Entropy.md", "Export.md", "gone.md"},
+	})
+	if len(got.Notes) != 1 || got.Notes[0].Path != "Entropy.md" {
+		t.Fatalf("the rest of the batch did not come back: %+v", got.Notes)
+	}
+	if len(got.Missing) != 1 || got.Missing[0] != "gone.md" {
+		t.Errorf("want the path with no file behind it: %+v", got.Missing)
+	}
+	if len(got.Refused) != 1 || got.Refused[0].Path != "Export.md" {
+		t.Fatalf("want the large note refused by name: %+v", got.Refused)
+	}
+	if !strings.Contains(got.Refused[0].Why, "open the file") {
+		t.Errorf("the refusal does not say what to do instead: %q", got.Refused[0].Why)
+	}
+}
+
 // A batch is many operations, not one. What happened to each has to come back,
 // or a caller recovering from a partial failure starts by undoing what worked.
 func TestABatchSaysWhatHappenedToEachNote(t *testing.T) {

@@ -12,8 +12,16 @@
  */
 import { computed, ref } from 'vue'
 import PlexNodeHandle from './PlexNodeHandle.vue'
-import { isPress } from './keys'
-import { handleIn, isReachable, nameOf, type NodeStanding, type PlacedNode } from '../model'
+import { isMenuKey, isPress } from './keys'
+import {
+  handleIn,
+  isReachable,
+  isStop,
+  nameOf,
+  type NodeStanding,
+  type PlacedNode,
+  type Point,
+} from '../model'
 
 const props = withDefaults(
   defineProps<{
@@ -31,6 +39,11 @@ const emit = defineEmits<{
   (event: 'reach', pointer: PointerEvent): void
   /** The handle was pressed from the keyboard, where there is nowhere to drag. */
   (event: 'ask'): void
+  /**
+   * A menu was asked for on this node: where it was asked, and the element it
+   * was asked from. A keypress carries no point, so it carries both.
+   */
+  (event: 'menu', at: Point, from: SVGGElement): void
 }>()
 
 const over = ref(false)
@@ -39,8 +52,11 @@ const attended = ref(false)
 /** Not a node yet, so nothing may be done to it and nothing is told about it. */
 const ghost = computed(() => props.standing === 'ghost')
 
-/** One predicate: the same rule decides the click, the tab stop and the name. */
+/** One predicate: the same rule decides the click and the name. */
 const reachable = computed(() => !ghost.value && isReachable(props.node))
+
+/** Where the keyboard stops: the focus too, and nothing on its way in or out. */
+const stop = computed(() => !ghost.value && isStop(props.node))
 
 /** The focus is announced although it cannot be chosen: it is where you are. */
 const announced = computed(
@@ -51,7 +67,31 @@ const activate = () => {
   if (reachable.value) emit('activate')
 }
 
+/** The middle of the node, for a press, which carries no point of its own. */
+const middleOf = (element: SVGGElement): Point => {
+  const box = element.getBoundingClientRect()
+  return { x: box.left + box.width / 2, y: box.top + box.height / 2 }
+}
+
+/** The webview draws a menu of its own over whatever does not refuse it. */
+const onContextMenu = (event: MouseEvent) => {
+  if (ghost.value) return
+  event.preventDefault()
+  emit(
+    'menu',
+    { x: event.clientX, y: event.clientY },
+    event.currentTarget as SVGGElement,
+  )
+}
+
 const onKey = (event: KeyboardEvent) => {
+  const group = event.currentTarget as SVGGElement
+  if (isMenuKey(event)) {
+    if (ghost.value) return
+    event.preventDefault()
+    emit('menu', middleOf(group), group)
+    return
+  }
   if (!isPress(event)) return
   event.preventDefault()
   activate()
@@ -100,12 +140,13 @@ const hue = computed(() => ({
     :style="hue"
     :transform="`translate(${node.x} ${node.y})`"
     :opacity="node.opacity"
-    :tabindex="reachable ? 0 : -1"
+    :tabindex="stop ? 0 : -1"
     :aria-hidden="announced ? undefined : 'true'"
     :role="ghost ? undefined : node.seat === 'focus' ? 'img' : 'button'"
     :class="[`plex__node--${node.seat}`, `plex__node--${standing}`]"
     :aria-label="ghost ? undefined : nameOf(node)"
     @click="activate"
+    @contextmenu="onContextMenu"
     @keydown="onKey"
     @pointerenter="over = true"
     @pointerleave="over = false"

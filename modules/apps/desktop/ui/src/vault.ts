@@ -6,8 +6,8 @@
  */
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
-import { VaultService } from '@numen/protocol'
-import type { Core } from './showing'
+import { Refusal, VaultService } from '@numen/protocol'
+import type { Answered, Core, Refused } from './showing'
 
 export const vault = createClient(
   VaultService,
@@ -21,4 +21,26 @@ export const core: Core = {
   state: () => vault.state({}),
   changes: (signal) => vault.changes({}, { signal }),
   focus: (signal) => vault.focus({}, { signal }),
+  read: async (path) => answered(await vault.read({ path })),
+  write: async (path, body) => answered(await vault.write({ path, body })),
+  quitting: (signal) => vault.quitting({}, { signal }),
+  flushed: async (token) => {
+    await vault.flushed({ token })
+  },
+}
+
+/** The schema's answer in the words the window uses. */
+const answered = (from: { body?: string | undefined; refusal?: Refusal | undefined }): Answered => ({
+  body: from.body ?? '',
+  refusal: from.refusal === undefined ? null : refused[from.refusal],
+})
+
+const refused: Record<Refusal, Refused> = {
+  [Refusal.UNSPECIFIED]: 'unreadable',
+  [Refusal.MISSING]: 'missing',
+  [Refusal.NOT_A_NOTE]: 'notANote',
+  [Refusal.NOT_TEXT]: 'notText',
+  [Refusal.TOO_LARGE]: 'tooLarge',
+  [Refusal.BODY_REFUSED]: 'bodyRefused',
+  [Refusal.UNREADABLE]: 'unreadable',
 }

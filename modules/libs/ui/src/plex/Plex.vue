@@ -7,11 +7,17 @@
  * who is related to whom. Answer `activate` with the next neighbourhood and it
  * travels there by itself.
  */
-import { computed, onMounted, onScopeDispose, ref, toRef, useTemplateRef } from 'vue'
+import { computed, onMounted, onScopeDispose, ref, toRef, useTemplateRef, watch } from 'vue'
 import PlexView from './render/PlexView.vue'
 import { usePlexTransition, browserEnvironment, type Environment } from './transition'
 import type { Placement, PlexOptionsInput } from './arrange'
-import { countOf, seatWord, type PlexNeighbourhood, type PlexRelatedSeat } from './model'
+import {
+  countOf,
+  seatWord,
+  type PlexNeighbourhood,
+  type PlexRelatedSeat,
+  type Point,
+} from './model'
 import { resolveOptions } from './arrange'
 import { usePlexGesture } from './gesture'
 
@@ -59,6 +65,17 @@ const emit = defineEmits<{
   (event: 'create', from: string, seat: PlexRelatedSeat): void
   /** Reached out onto another node: relate the two in this seat. */
   (event: 'link', from: string, to: string, seat: PlexRelatedSeat): void
+  /**
+   * A menu was asked for on a node. The point is in the coordinates of the
+   * screen; the element is what it was asked from, which is the only thing a
+   * keypress hands over.
+   *
+   * Every node answers this, the focus included. What the menu holds and what
+   * choosing an item does are the caller's.
+   */
+  (event: 'menu', id: string, at: Point, from: SVGGElement): void
+  /** A menu asked for on a node has nothing left to stand on. */
+  (event: 'dismiss'): void
 }>()
 
 /** What the window is taken to be until it has been measured. */
@@ -120,6 +137,16 @@ const gesture = usePlexGesture(
 )
 
 /**
+ * A neighbourhood is drawn from the node it is seen from, so every node walks
+ * to a new seat when another one arrives. A menu is anchored where one of them
+ * was.
+ */
+watch(
+  () => props.neighbourhood,
+  () => emit('dismiss'),
+)
+
+/**
  * What did not fit, as `[seat, count]` pairs rather than a sentence — the
  * words belong to whoever renders the plex, through the `overflow` slot.
  */
@@ -153,6 +180,7 @@ defineExpose({ moving: toRef(moving) })
       @activate="emit('activate', $event)"
       @reach="gesture.begin"
       @ask="gesture.ask"
+      @menu="(id, at, from) => emit('menu', id, at, from)"
     >
       <template v-if="$slots.icon" #icon="{ node }"><slot name="icon" :node="node" /></template>
     </PlexView>

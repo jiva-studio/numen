@@ -57,4 +57,12 @@ type VaultWriter interface {
 // decided while it runs.
 type VaultWriters interface {
 	Open(v domain.Vault) (VaultWriter, error)
+
+	// Hold takes one vault's write lock and answers with what gives it back.
+	// One write to a vault happens at a time, and a read-modify-write holds
+	// the lock from its read to its rename.
+	//
+	// A context that ends while the lock is waited for is answered with its
+	// error, and nothing is held.
+	Hold(ctx context.Context, v domain.Vault) (release func(), err error)
 }

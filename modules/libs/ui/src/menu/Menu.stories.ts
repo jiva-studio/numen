@@ -1,0 +1,316 @@
+/**
+ * Every situation the menu has to survive. Also the test corpus: each story is
+ * run in a browser by `@storybook/addon-vitest`, which is the only place the
+ * things this component exists for can fail — being clipped by what it stands
+ * inside, folding back at an edge, and holding the keyboard.
+ */
+import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
+import { onMounted, ref } from 'vue'
+import Menu from './Menu.vue'
+import type { MenuItem } from './model'
+import { ARABIC, DEVANAGARI, EMPTY, LINK, LONG, RUSSIAN, UNBREAKABLE } from '@/fixtures/prose'
+
+interface Knobs {
+  items: readonly MenuItem[]
+  at: { x: number; y: number }
+  margin: number
+  name: string
+  onChoose: (id: string) => void
+  onDismiss: () => void
+}
+
+/** What the plan asks a node for. Nothing here knows what any of them do. */
+const ITEMS: MenuItem[] = [
+  { id: 'open', text: 'Open' },
+  { id: 'child', text: 'New child note' },
+  { id: 'ask', text: 'Ask the agent about this note' },
+  { id: 'copy', text: 'Copy path' },
+]
+
+/** The menu's own list, so the placement is read off the element it decorates. */
+const menuElement = () => document.body.querySelector<HTMLElement>('.menu')
+
+/**
+ * A surface with something on it to ask a menu of. The menu opens where it was
+ * asked, and the story plays the caller's part: it holds whether the menu is
+ * open, and it puts it away when the menu says so.
+ */
+const asked = (args: Knobs) => ({
+  components: { Menu },
+  setup() {
+    const open = ref(true)
+    const at = ref(args.at)
+    const node = ref<HTMLElement | null>(null)
+    const from = ref<HTMLElement | null>(null)
+
+    onMounted(() => (from.value = node.value))
+
+    const ask = (event: MouseEvent) => {
+      event.preventDefault()
+      at.value = { x: event.clientX, y: event.clientY }
+      from.value = event.currentTarget as HTMLElement
+      open.value = true
+    }
+
+    return { args, open, at, node, from, ask }
+  },
+  template: `
+    <div class="numen" style="height:100vh;display:grid;place-items:center;background:var(--numen-surface)">
+      <button
+        ref="node"
+        type="button"
+        style="padding:10px 18px;border-radius:6px;border:1px solid var(--numen-node-border);background:var(--numen-node-bg);color:var(--numen-node-fg);font-family:var(--numen-font-sans)"
+        @contextmenu="ask"
+      >A node</button>
+      <Menu
+        :items="args.items"
+        :at="at"
+        :open="open"
+        :from="from"
+        :margin="args.margin"
+        :name="args.name"
+        @choose="args.onChoose"
+        @dismiss="open = false; args.onDismiss()"
+      />
+    </div>
+  `,
+})
+
+const meta = {
+  title: 'Generic/Menu',
+  component: Menu,
+  parameters: {
+    layout: 'fullscreen',
+    docs: {
+      description: {
+        component:
+          'A list of things that can be chosen, put where it was asked for. ' +
+          'It is drawn at the end of the document, so nothing it stands ' +
+          'inside can clip it, and it is placed against the area it is drawn ' +
+          'into. It takes items and a point and says which item was chosen — ' +
+          'what the items are and what choosing one does are the caller’s.',
+      },
+    },
+  },
+  argTypes: {
+    margin: { control: { type: 'range', min: 0, max: 48, step: 2 } },
+    name: { control: 'text' },
+    items: { table: { disable: true } },
+    at: { table: { disable: true } },
+    onChoose: { table: { disable: true } },
+    onDismiss: { table: { disable: true } },
+  },
+  args: {
+    items: ITEMS,
+    at: { x: 480, y: 300 },
+    margin: 8,
+    name: 'Menu',
+    onChoose: fn(),
+    onDismiss: fn(),
+  },
+  render: asked,
+} satisfies Meta<Knobs>
+
+export default meta
+type Story = StoryObj<typeof meta>
+
+/** Every setting, live, and a menu to ask for by right-clicking the node. */
+export const Playground: Story = {}
+
+/**
+ * Choosing one. The identifier is handed back as given, and the menu asks to
+ * be put away in the same breath.
+ */
+export const Choosing: Story = {
+  play: async ({ args }) => {
+    await userEvent.click(
+      within(menuElement()!).getByRole('menuitem', { name: 'New child note' }),
+    )
+    await expect(args.onChoose).toHaveBeenCalledWith('child')
+    await waitFor(async () => {
+      await expect(menuElement()).toBeNull()
+    })
+  },
+}
+
+/**
+ * Escape, and the keyboard goes back to the thing the menu was asked of.
+ *
+ * Only a browser can answer it: whether the keyboard actually lands on the
+ * first item of a list drawn at the far end of the document, and whether it
+ * finds its way back to an element the menu never contained.
+ */
+export const GivingItBack: Story = {
+  play: async ({ canvasElement }) => {
+    const node = within(canvasElement).getByRole('button', { name: 'A node' })
+    const named = (name: string) => within(menuElement()!).getByRole('menuitem', { name })
+
+    await expect(named('Open')).toHaveFocus()
+
+    await userEvent.keyboard('{Tab}')
+    await expect(named('New child note')).toHaveFocus()
+
+    await userEvent.keyboard('{Escape}')
+    await waitFor(async () => {
+      await expect(menuElement()).toBeNull()
+    })
+    await expect(node).toHaveFocus()
+  },
+}
+
+/**
+ * Asked for inside a box that clips everything in it, at the corner furthest
+ * from where a menu would like to open.
+ *
+ * This is the whole reason the menu is drawn where it is drawn. In jsdom
+ * nothing is laid out and nothing is clipped, so this can only fail here.
+ */
+export const NotClipped: Story = {
+  render: (args) => ({
+    components: { Menu },
+    setup() {
+      const open = ref(false)
+      const at = ref({ x: 0, y: 0 })
+      const from = ref<HTMLElement | null>(null)
+      const ask = (event: MouseEvent) => {
+        event.preventDefault()
+        at.value = { x: event.clientX, y: event.clientY }
+        from.value = event.currentTarget as HTMLElement
+        open.value = true
+      }
+      return { args, open, at, from, ask }
+    },
+    template: `
+      <div class="numen" style="height:100vh;display:grid;place-items:center;background:var(--numen-surface)">
+        <div
+          data-clipping
+          style="width:200px;height:110px;overflow:hidden;position:relative;outline:1px solid var(--numen-node-border)"
+        >
+          <button
+            type="button"
+            style="position:absolute;inset-block-end:6px;inset-inline-end:6px;padding:8px 14px;border-radius:6px;border:1px solid var(--numen-node-border);background:var(--numen-node-bg);color:var(--numen-node-fg);font-family:var(--numen-font-sans)"
+            @contextmenu="ask"
+          >A node at the corner</button>
+
+          <!-- Written where a menu would be written: inside the thing that
+               asked for it, which is the thing that clips. -->
+          <Menu :items="args.items" :at="at" :open="open" :from="from" :margin="args.margin" />
+        </div>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const node = within(canvasElement).getByRole('button', { name: 'A node at the corner' })
+    await userEvent.pointer({ keys: '[MouseRight]', target: node })
+
+    await waitFor(async () => {
+      await expect(menuElement()).not.toBeNull()
+    })
+    const menu = menuElement()!
+    const box = menu.getBoundingClientRect()
+    const clipping = canvasElement.querySelector('[data-clipping]')!
+
+    // Taller than the box it was asked from, and not standing inside it.
+    await expect(box.height).toBeGreaterThan(clipping.getBoundingClientRect().height)
+    await expect(clipping.contains(menu)).toBe(false)
+
+    // Whole where it stands: what is under its far edge is the menu itself,
+    // which is exactly what being clipped would take away.
+    const under = document.elementFromPoint(box.left + box.width / 2, box.bottom - 4)
+    await expect(menu.contains(under)).toBe(true)
+
+    // And inside the area it is placed in, on every side.
+    await expect(box.left).toBeGreaterThanOrEqual(0)
+    await expect(box.top).toBeGreaterThanOrEqual(0)
+    await expect(box.right).toBeLessThanOrEqual(window.innerWidth)
+    await expect(box.bottom).toBeLessThanOrEqual(window.innerHeight)
+  },
+}
+
+/** Nothing to choose at all. */
+export const Empty: Story = {
+  args: { items: [] },
+}
+
+/** One thing to choose. */
+export const One: Story = {
+  args: { items: [{ id: 'open', text: 'Open' }] },
+}
+
+/** Far more than fits: the list scrolls and the menu still stands on screen. */
+export const FarTooMany: Story = {
+  args: {
+    items: Array.from({ length: 60 }, (_, at) => ({
+      id: `item-${at}`,
+      text: `Something to do (${at + 1})`,
+    })),
+  },
+  play: async () => {
+    const menu = menuElement()!
+    await expect(menu.getBoundingClientRect().bottom).toBeLessThanOrEqual(window.innerHeight)
+    await expect(menu.scrollHeight).toBeGreaterThan(menu.clientHeight)
+  },
+}
+
+/** Not Latin, and not all in one direction. */
+export const NotLatin: Story = {
+  args: {
+    items: [
+      { id: 'devanagari', text: DEVANAGARI },
+      { id: 'arabic', text: ARABIC },
+      { id: 'russian', text: RUSSIAN },
+    ],
+  },
+}
+
+/** Far past any width a menu is drawn at. */
+export const FarTooLong: Story = {
+  args: {
+    items: [
+      { id: 'long', text: LONG },
+      { id: 'open', text: 'Open' },
+    ],
+  },
+}
+
+/** Nothing to break at: one word, and the URL anybody actually pastes. */
+export const NothingToBreakAt: Story = {
+  args: {
+    items: [
+      { id: 'word', text: UNBREAKABLE },
+      { id: 'link', text: LINK },
+    ],
+  },
+}
+
+/** No text at all, on an item that is still there and still choosable. */
+export const NoTextAtAll: Story = {
+  args: {
+    items: [
+      { id: 'nothing', text: EMPTY },
+      { id: 'open', text: 'Open' },
+    ],
+  },
+}
+
+/** An item that is drawn and announced, and cannot be chosen. */
+export const NotChoosable: Story = {
+  args: {
+    items: [
+      { id: 'open', text: 'Open' },
+      { id: 'ask', text: 'Ask the agent about this note', disabled: true },
+      { id: 'copy', text: 'Copy path' },
+    ],
+  },
+  play: async () => {
+    // The keyboard passes over it in both directions.
+    const named = (name: string) => within(menuElement()!).getByRole('menuitem', { name })
+
+    await expect(named('Open')).toHaveFocus()
+    await userEvent.keyboard('{ArrowDown}')
+    await expect(named('Copy path')).toHaveFocus()
+    await userEvent.keyboard('{ArrowUp}')
+    await expect(named('Open')).toHaveFocus()
+  },
+}

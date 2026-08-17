@@ -41,6 +41,7 @@ Read these first; everything else is derived from them.
 - [ADR-0030 — The index-size budget, and where an exact scan ends](0030-index-size-and-approximate-search.md)
 - [ADR-0031 — The agent this application starts, and what it may reach](0031-the-agent-this-application-starts.md)
 - [ADR-0027 — The application writes to the vault](0027-the-application-writes-to-the-vault.md)
+- [ADR-0032 — The window saves a note as it is typed](0032-the-window-saves-a-note-as-it-is-typed.md)
 
 ## The note file
 

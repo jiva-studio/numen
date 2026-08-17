@@ -1,17 +1,17 @@
 /** Finding a node in a workspace, and putting one back. */
 import { fit } from './shares'
-import type { Branch, Group, NodeId, TabId, WorkspaceNode } from './node'
+import type { Branch, NodeId, Pane, TabId, WorkspaceNode } from './node'
 
 /** Child indices from the root down to a node. The root's own path is empty. */
 export type Path = readonly number[]
 
 export const isBranch = (node: WorkspaceNode): node is Branch => node.kind === 'branch'
 
-export const isGroup = (node: WorkspaceNode): node is Group => node.kind === 'group'
+export const isPane = (node: WorkspaceNode): node is Pane => node.kind === 'pane'
 
-/** Every group in the tree, in the order they are drawn. */
-export function groupsOf(node: WorkspaceNode): readonly Group[] {
-  return isGroup(node) ? [node] : node.children.flatMap(groupsOf)
+/** Every pane in the tree, in the order they are drawn. */
+export function panesOf(node: WorkspaceNode): readonly Pane[] {
+  return isPane(node) ? [node] : node.children.flatMap(panesOf)
 }
 
 export function nodeAt(root: WorkspaceNode, path: Path): WorkspaceNode | null {
@@ -36,12 +36,12 @@ export function pathTo(root: WorkspaceNode, id: NodeId): Path | null {
   return null
 }
 
-export function groupById(root: WorkspaceNode, id: NodeId): Group | null {
-  return groupsOf(root).find((group) => group.id === id) ?? null
+export function paneById(root: WorkspaceNode, id: NodeId): Pane | null {
+  return panesOf(root).find((pane) => pane.id === id) ?? null
 }
 
-export function groupWithTab(root: WorkspaceNode, tab: TabId): Group | null {
-  return groupsOf(root).find((group) => group.tabs.includes(tab)) ?? null
+export function paneWithTab(root: WorkspaceNode, tab: TabId): Pane | null {
+  return panesOf(root).find((pane) => pane.tabs.includes(tab)) ?? null
 }
 
 /** A branch with different children, its shares made to sum to one. */

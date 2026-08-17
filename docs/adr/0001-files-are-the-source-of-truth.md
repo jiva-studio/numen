@@ -1,8 +1,10 @@
 # ADR-0001: Files on disk are the source of truth
 
-- **Status:** Accepted
+- **Status:** Accepted, except where noted below
 - **Date:** 2026-08-15
 - **Applies to:** the product — every application in this repository
+- **Partly superseded by:** ADR-0032 — item 4 of the list in the context, the
+  conflict copy and the rule that there is no silent winner
 - **Related:** ADR-0000, ADR-0002
 
 ## Context
@@ -53,6 +55,11 @@ problems, all of which have to be implemented:
    user; the application must reconcile rather than overwrite.
 4. **Conflict copies.** When the buffer is dirty *and* the file changed on disk,
    reconciliation is impossible and a conflict copy is written. No silent winner.
+
+   > **Superseded by [ADR-0032](0032-the-window-saves-a-note-as-it-is-typed.md).**
+   > The window's save overwrites and writes no copy. What that costs is stated
+   > there.
+
 5. **Metadata outliving its files.** Rows can survive the file they describe, so
    startup has to detect that.
 

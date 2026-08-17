@@ -8,7 +8,11 @@ import './tokens/theme.css'
 
 export { default as Plex } from './plex/Plex.vue'
 export { browserEnvironment } from './plex/transition'
-export { countOf, seatWord, SEATS } from './plex/model'
+export { countOf, isStop, seatWord, SEATS } from './plex/model'
+
+export { default as Menu } from './menu/Menu.vue'
+export { placeMenu, stepTo } from './menu/model'
+export type { MenuItem, MenuPlacement, MenuPlacing } from './menu/model'
 
 /** For arranging without drawing, or drawing without this renderer. */
 export { default as PlexView } from './plex/render/PlexView.vue'
@@ -31,6 +35,8 @@ export type {
   Size,
 } from './plex/arrange'
 export { default as Panel } from './panel/Panel.vue'
+
+export { default as Editor } from './editor/Editor.vue'
 
 export { default as Composer } from './composer/Composer.vue'
 export { COMPOSER_STATES, composerState, keyIntent } from './composer/model'
@@ -57,7 +63,7 @@ export {
   closeTab,
   dropOnEdge,
   dropTab,
-  focusGroup,
+  focusPane,
   moveTabWithin,
   openTab,
   resizeBranch,
@@ -69,25 +75,25 @@ export { arrangeWorkspace, DEFAULT_ARRANGE } from './workspace/arrange'
 export { DEFAULT_DROP, overlayFor, sideAt, slotAt } from './workspace/drop'
 export {
   branch,
-  group,
-  groupById,
-  groupWithTab,
-  groupsOf,
   isBranch,
-  isGroup,
+  isPane,
   normalize,
   orientationAt,
   orientationOf,
+  pane,
+  paneById,
+  panesOf,
+  paneWithTab,
 } from './workspace/model'
 export type {
   Branch as WorkspaceBranchNode,
-  Group as WorkspaceGroupNode,
   NodeId,
   Orientation,
+  Pane as WorkspacePaneNode,
   Rect,
   Side,
+  Tab,
   TabId,
-  TabLabel,
   Workspace as WorkspaceLayout,
   WorkspaceNode,
 } from './workspace/model'

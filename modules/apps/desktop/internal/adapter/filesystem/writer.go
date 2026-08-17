@@ -56,7 +56,7 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, fi
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	target, err := w.note(path)
+	target, err := w.file(path)
 	if err != nil {
 		return err
 	}
@@ -215,6 +215,20 @@ func (w *VaultWriter) note(path string) (string, error) {
 		return "", fmt.Errorf("%s: %w", path, ErrNotANote)
 	}
 	return target, nil
+}
+
+// file is where the bytes of a note are, by the same rules note goes by. A note
+// kept as a link to another file in the vault has its bytes at the other end,
+// and that is what a rename replaces.
+func (w *VaultWriter) file(path string) (string, error) {
+	real, err := followed(w.root, path, w.opts.serviceDir())
+	if err != nil {
+		return "", err
+	}
+	if !w.holds(path) {
+		return "", fmt.Errorf("%s: %w", path, ErrNotANote)
+	}
+	return real, nil
 }
 
 // inside is only that: somewhere in this vault. Where a note goes when it is

@@ -55,7 +55,7 @@ The frontmatter is shared, not owned:
 | Key | Meaning | Decided in |
 | --- | --- | --- |
 | `title` | The name a note is shown by. Read, never written: the application does not add one and does not rewrite one it finds. | ADR-0012 |
-| `id` | The identity of the note, a ULID. Written when the application creates or edits it, never backfilled. | ADR-0009 |
+| `id` | The identity of the note, a ULID. Written when the application creates a note, moves it or changes its links, never backfilled and never written by a person typing in it. | ADR-0009, ADR-0032 |
 | `links` | Links that carry a role, and optionally a type, a label and a note. | ADR-0003 |
 
 A note with no `title` is named by its first level-one heading, else by its
@@ -86,8 +86,9 @@ application is a guest in a file the user also edits.
 - **The application does not rewrite what it did not change.** Formatting,
   whitespace, key order in frontmatter and line endings are preserved as found.
   A save must not produce a diff the user did not ask for.
-- **Line endings are preserved per file.** A file that arrives with CRLF keeps
-  CRLF. New files are written with LF.
+- **Line endings are preserved per file.** A file whose endings are uniformly
+  CRLF keeps CRLF. New files are written with LF. A file whose endings are mixed
+  is written with LF, so it is made uniform the first time it is saved.
 - **Unknown frontmatter keys are preserved verbatim.** The application reads the
   keys it owns and leaves everything else untouched, including keys it will own
   in a future version.

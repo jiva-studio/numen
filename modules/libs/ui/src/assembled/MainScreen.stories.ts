@@ -11,7 +11,7 @@ import { onScopeDispose, ref } from 'vue'
 import Workspace from '@/workspace/Workspace.vue'
 import Plex from '@/plex/Plex.vue'
 import Agent from './Agent.vue'
-import { branch, group, type TabLabel, type Workspace as State } from '@/workspace/model'
+import { branch, pane, type Tab, type Workspace as State } from '@/workspace/model'
 import { neighbourhoods } from '@/plex/fixtures/neighbourhoods'
 import { LONG, MULTILINE } from '@/fixtures/prose'
 import type { PlexNeighbourhood } from '@/plex/model'
@@ -20,14 +20,14 @@ import type { Turn } from '@/thread/model'
 const PLEX = 'plex'
 const AGENT = 'agent'
 
-const TABS: readonly TabLabel[] = [
+const TABS: readonly Tab[] = [
   { id: PLEX, title: 'Plex' },
   { id: AGENT, title: 'Agent' },
 ]
 
 /** The plex with the room, and the agent along the trailing edge. */
 const opening = (): State => ({
-  root: branch('root', [group('main', [PLEX]), group('aside', [AGENT])], [0.72, 0.28]),
+  root: branch('root', [pane('main', [PLEX]), pane('aside', [AGENT])], [0.72, 0.28]),
   axis: 'horizontal',
   focus: 'main',
 })

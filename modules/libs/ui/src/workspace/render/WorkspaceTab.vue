@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * One tab in a strip: what it is called, whether it is the one showing, and
- * the handle it is dragged by.
+ * One tab in a strip: what it is called, what it is carrying, whether it is
+ * the one showing, and the handle it is dragged by.
  *
  * A press reports itself and waits. Whether it turns out to be a choice or the
  * start of a drag is settled by what the pointer does next, which the
@@ -13,17 +13,26 @@ withDefaults(
     /** Its identity, carried on the element for a drag to find it by. */
     tab: TabId
     title: string
-    /** The one its group is showing. */
+    /** What the tab is carrying besides its title, in a word. */
+    mark?: string | undefined
+    /** The one its pane is showing. */
     showing?: boolean
-    /** Showing, in the group a tab would open into. */
-    marked?: boolean
+    /** Showing, in the pane a tab would open into. */
+    focused?: boolean
+    /** Whether this tab is offered a way to be closed. */
+    closable?: boolean
   }>(),
-  { showing: false, marked: false },
+  { mark: undefined, showing: false, focused: false, closable: true },
 )
 
 const emit = defineEmits<{
   (event: 'lift', at: PointerEvent): void
   (event: 'close'): void
+}>()
+
+defineSlots<{
+  /** What a mark is drawn as. Given one, the caller draws its own. */
+  mark(props: { mark: string }): unknown
 }>()
 </script>
 
@@ -32,13 +41,21 @@ const emit = defineEmits<{
     class="tab numen flex min-w-0 max-w-56 shrink items-center gap-1.5 px-3 font-sans text-small text-hushed"
     role="tab"
     :aria-selected="showing"
+    :tabindex="showing ? 0 : -1"
     :data-workspace-tab="tab"
     :data-showing="showing || undefined"
-    :data-marked="marked || undefined"
+    :data-focused="focused || undefined"
     @pointerdown="emit('lift', $event)"
   >
-    <span class="min-w-0 truncate">{{ title }}</span>
+    <!-- The whole name is on the element, for a title too long to be drawn. -->
+    <span class="min-w-0 truncate" :title="title">{{ title }}</span>
+
+    <slot v-if="mark" name="mark" :mark="mark">
+      <span class="tab__mark shrink-0" role="img" :aria-label="mark" :title="mark" />
+    </slot>
+
     <button
+      v-if="closable"
       class="tab__close shrink-0 rounded-pill"
       type="button"
       :aria-label="`Close ${title}`"
@@ -52,7 +69,7 @@ const emit = defineEmits<{
 
 <style scoped>
 .tab {
-  /* How tall a strip stands, and how thick the mark along the top of the one
+  /* How tall a strip stands, and how thick the line along the top of the one
      showing is. */
   --height: 2.1rem;
   --lift: 2px;
@@ -70,9 +87,17 @@ const emit = defineEmits<{
   color: var(--numen-node-fg);
 }
 
-/* The mark along the top belongs to the group a tab would open into. */
-.tab[data-marked] {
+/* The line along the top belongs to the pane a tab would open into. */
+.tab[data-focused] {
   box-shadow: inset 0 var(--lift) 0 0 var(--numen-ring);
+}
+
+/* What the tab is carrying, drawn as a dot in the colour of the text. */
+.tab__mark {
+  inline-size: 0.45em;
+  block-size: 0.45em;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 .tab__close {

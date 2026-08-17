@@ -2,7 +2,6 @@ package filesystem_test
 
 import (
 	"errors"
-	"io/fs"
 	"maps"
 	"os"
 	"path/filepath"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/ulid"
 )
 
@@ -107,8 +107,8 @@ func TestAFormatNothingReadsIsNotASource(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := src.Stat(t.Context(), "assets/paper.pdf"); !errors.Is(err, fs.ErrNotExist) {
-		t.Errorf("stat of the PDF gave %v, want ErrNotExist", err)
+	if _, err := src.Stat(t.Context(), "assets/paper.pdf"); !errors.Is(err, port.ErrNotANote) {
+		t.Errorf("stat of the PDF gave %v, want ErrNotANote", err)
 	}
 }
 
@@ -152,8 +152,8 @@ func TestABookInAHiddenFolderIsNotASourceEither(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := src.Stat(t.Context(), ".obsidian/A Book.epub"); !errors.Is(err, fs.ErrNotExist) {
-		t.Errorf("stat gave %v, want ErrNotExist", err)
+	if _, err := src.Stat(t.Context(), ".obsidian/A Book.epub"); !errors.Is(err, port.ErrNotANote) {
+		t.Errorf("stat gave %v, want ErrNotANote", err)
 	}
 }
 

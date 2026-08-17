@@ -22,14 +22,18 @@ const emit = defineEmits<{
   (event: 'ask'): void
 }>()
 
+/** A gesture is reached out under the primary button and under no other. */
 const onPointerDown = (event: PointerEvent) => {
+  if (event.button !== 0) return
   event.stopPropagation()
   event.preventDefault()
   emit('reach', event)
 }
 
+/** What the handle answers stops here; everything else is the node's. */
 const onKey = (event: KeyboardEvent) => {
   if (!isPress(event)) return
+  event.stopPropagation()
   event.preventDefault()
   emit('ask')
 }
@@ -43,7 +47,7 @@ const onKey = (event: KeyboardEvent) => {
       role="button"
       aria-label="Reach out from here"
       @pointerdown="onPointerDown"
-      @keydown.stop="onKey"
+      @keydown="onKey"
       @click.stop
     />
     <rect class="plex__handle-mark plex__handle-mark--across" aria-hidden="true" />

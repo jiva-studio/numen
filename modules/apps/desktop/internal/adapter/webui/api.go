@@ -36,9 +36,20 @@ type API struct {
 	// it has none, and the rest of the window works as it did.
 	Agent agent.Agent
 
+	// Reads and Saves are how the window opens a note and puts it back. A build
+	// without them answers that a note cannot be edited here.
+	Reads *note.Read
+	Saves *note.Write
+
 	// Watching is everyone drawing this vault, for when something asks that a
 	// note be put in front of the person.
 	Watching audience[string]
+
+	// Leaving is everyone drawing this vault, for the moment the window goes:
+	// each is asked to write what only it holds, and answers when it has.
+	Leaving leaving
+	// Writing is the writes taken and not yet finished.
+	Writing inflight
 
 	// Indexed counts what the scan has stored so far. Ready is set when it
 	// finished, Failed when it could not — a vault that could not be read is

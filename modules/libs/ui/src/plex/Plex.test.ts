@@ -41,12 +41,14 @@ describe('choosing a node', () => {
 })
 
 describe('what a screen reader and a keyboard are given', () => {
-  it('makes every node but the focus reachable by tab', () => {
+  it('makes every node reachable by tab, the focus included', () => {
+    // The focus cannot be chosen and is still stopped at: a menu is asked for
+    // from wherever the keyboard is.
     const plex = mountPlex()
-    const reachable = plex.findAll('[tabindex="0"]')
-    const focus = plex.findAll('[tabindex="-1"]')
-    expect(focus).toHaveLength(1)
-    expect(reachable).toHaveLength(neighbourhoods.typical.nodes.length - 1)
+    expect(plex.findAll('.plex__node[tabindex="0"]')).toHaveLength(
+      neighbourhoods.typical.nodes.length,
+    )
+    expect(plex.findAll('.plex__node[tabindex="-1"]')).toHaveLength(0)
   })
 
   it('names a node by its title and its seat', () => {

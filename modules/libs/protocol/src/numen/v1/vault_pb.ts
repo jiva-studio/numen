@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/vault.proto.
  */
 export const file_numen_v1_vault: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiNwoETm90ZRIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJEhIKCmlkZW50aWZpZXIYAyABKAkiZAoGU2VhdGVkEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEhwKBHNlYXQYAiABKA4yDi5udW1lbi52MS5TZWF0Eg0KBWxhYmVsGAMgASgJEg8KB3Rocm91Z2gYBCABKAkiDgoMU3RhdGVSZXF1ZXN0IvcBCg1TdGF0ZVJlc3BvbnNlEgwKBG5hbWUYASABKAkSDAoEcGF0aBgCIAEoCRIPCgdpbmRleGVkGAMgASgDEg0KBXJlYWR5GAQgASgIEg4KBmZhaWxlZBgFIAEoCRIRCgl1bndhdGNoZWQYBiABKAkSDgoGY2h1bmtzGAcgASgDEhAKCGVtYmVkZGVkGAggASgDEg8KB3JlYWRpbmcYCSABKAkSEQoJZW1iZWRkaW5nGAogASgIEg0KBWJvb2tzGAsgASgDEhIKCmJvb2tzX3JlYWQYDCABKAMSEAoIbGVhcm5pbmcYDSABKAgSDAoEYnVzeRgOIAEoCCIQCg5PcGVuaW5nUmVxdWVzdCI9Cg9PcGVuaW5nUmVzcG9uc2USIQoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGVIAIgBAUIHCgVfbm90ZSIQCg5DaGFuZ2VzUmVxdWVzdCIwCg9DaGFuZ2VzUmVzcG9uc2USDQoFcGF0aHMYASADKAkSDgoGcmVsb2FkGAIgASgIIg4KDEZvY3VzUmVxdWVzdCIdCg1Gb2N1c1Jlc3BvbnNlEgwKBHBhdGgYASABKAkiJAoUTmVpZ2hib3VyaG9vZFJlcXVlc3QSDAoEcGF0aBgBIAEoCSJZChVOZWlnaGJvdXJob29kUmVzcG9uc2USHQoFZm9jdXMYASABKAsyDi5udW1lbi52MS5Ob3RlEiEKB3JlbGF0ZWQYAiADKAsyEC5udW1lbi52MS5TZWF0ZWQqXgoEU2VhdBIUChBTRUFUX1VOU1BFQ0lGSUVEEAASDwoLU0VBVF9QQVJFTlQQARIOCgpTRUFUX0NISUxEEAISDQoJU0VBVF9KVU1QEAMSEAoMU0VBVF9TSUJMSU5HEAQy2AIKDFZhdWx0U2VydmljZRI4CgVTdGF0ZRIWLm51bWVuLnYxLlN0YXRlUmVxdWVzdBoXLm51bWVuLnYxLlN0YXRlUmVzcG9uc2USPgoHT3BlbmluZxIYLm51bWVuLnYxLk9wZW5pbmdSZXF1ZXN0GhkubnVtZW4udjEuT3BlbmluZ1Jlc3BvbnNlElAKDU5laWdoYm91cmhvb2QSHi5udW1lbi52MS5OZWlnaGJvdXJob29kUmVxdWVzdBofLm51bWVuLnYxLk5laWdoYm91cmhvb2RSZXNwb25zZRJACgdDaGFuZ2VzEhgubnVtZW4udjEuQ2hhbmdlc1JlcXVlc3QaGS5udW1lbi52MS5DaGFuZ2VzUmVzcG9uc2UwARI6CgVGb2N1cxIWLm51bWVuLnYxLkZvY3VzUmVxdWVzdBoXLm51bWVuLnYxLkZvY3VzUmVzcG9uc2UwAUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiNwoETm90ZRIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJEhIKCmlkZW50aWZpZXIYAyABKAkiZAoGU2VhdGVkEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEhwKBHNlYXQYAiABKA4yDi5udW1lbi52MS5TZWF0Eg0KBWxhYmVsGAMgASgJEg8KB3Rocm91Z2gYBCABKAkiDgoMU3RhdGVSZXF1ZXN0IvcBCg1TdGF0ZVJlc3BvbnNlEgwKBG5hbWUYASABKAkSDAoEcGF0aBgCIAEoCRIPCgdpbmRleGVkGAMgASgDEg0KBXJlYWR5GAQgASgIEg4KBmZhaWxlZBgFIAEoCRIRCgl1bndhdGNoZWQYBiABKAkSDgoGY2h1bmtzGAcgASgDEhAKCGVtYmVkZGVkGAggASgDEg8KB3JlYWRpbmcYCSABKAkSEQoJZW1iZWRkaW5nGAogASgIEg0KBWJvb2tzGAsgASgDEhIKCmJvb2tzX3JlYWQYDCABKAMSEAoIbGVhcm5pbmcYDSABKAgSDAoEYnVzeRgOIAEoCCIQCg5PcGVuaW5nUmVxdWVzdCI9Cg9PcGVuaW5nUmVzcG9uc2USIQoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGVIAIgBAUIHCgVfbm90ZSIQCg5DaGFuZ2VzUmVxdWVzdCIwCg9DaGFuZ2VzUmVzcG9uc2USDQoFcGF0aHMYASADKAkSDgoGcmVsb2FkGAIgASgIIg4KDEZvY3VzUmVxdWVzdCIdCg1Gb2N1c1Jlc3BvbnNlEgwKBHBhdGgYASABKAkiJAoUTmVpZ2hib3VyaG9vZFJlcXVlc3QSDAoEcGF0aBgBIAEoCSJZChVOZWlnaGJvdXJob29kUmVzcG9uc2USHQoFZm9jdXMYASABKAsyDi5udW1lbi52MS5Ob3RlEiEKB3JlbGF0ZWQYAiADKAsyEC5udW1lbi52MS5TZWF0ZWQiGwoLUmVhZFJlcXVlc3QSDAoEcGF0aBgBIAEoCSJRCgxSZWFkUmVzcG9uc2USDAoEYm9keRgBIAEoCRInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsIioKDFdyaXRlUmVxdWVzdBIMCgRwYXRoGAEgASgJEgwKBGJvZHkYAiABKAkiRAoNV3JpdGVSZXNwb25zZRInCgdyZWZ1c2FsGAEgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsIhEKD1F1aXR0aW5nUmVxdWVzdCIwChBRdWl0dGluZ1Jlc3BvbnNlEg0KBXRva2VuGAEgASgJEg0KBWZsdXNoGAIgASgIIh8KDkZsdXNoZWRSZXF1ZXN0Eg0KBXRva2VuGAEgASgJIhEKD0ZsdXNoZWRSZXNwb25zZSquAQoHUmVmdXNhbBIXChNSRUZVU0FMX1VOU1BFQ0lGSUVEEAASEwoPUkVGVVNBTF9NSVNTSU5HEAESFgoSUkVGVVNBTF9OT1RfQV9OT1RFEAISFAoQUkVGVVNBTF9OT1RfVEVYVBADEhUKEVJFRlVTQUxfVE9PX0xBUkdFEAQSGAoUUkVGVVNBTF9CT0RZX1JFRlVTRUQQBRIWChJSRUZVU0FMX1VOUkVBREFCTEUQBipeCgRTZWF0EhQKEFNFQVRfVU5TUEVDSUZJRUQQABIPCgtTRUFUX1BBUkVOVBABEg4KClNFQVRfQ0hJTEQQAhINCglTRUFUX0pVTVAQAxIQCgxTRUFUX1NJQkxJTkcQBDLOBAoMVmF1bHRTZXJ2aWNlEjgKBVN0YXRlEhYubnVtZW4udjEuU3RhdGVSZXF1ZXN0GhcubnVtZW4udjEuU3RhdGVSZXNwb25zZRI+CgdPcGVuaW5nEhgubnVtZW4udjEuT3BlbmluZ1JlcXVlc3QaGS5udW1lbi52MS5PcGVuaW5nUmVzcG9uc2USUAoNTmVpZ2hib3VyaG9vZBIeLm51bWVuLnYxLk5laWdoYm91cmhvb2RSZXF1ZXN0Gh8ubnVtZW4udjEuTmVpZ2hib3VyaG9vZFJlc3BvbnNlEkAKB0NoYW5nZXMSGC5udW1lbi52MS5DaGFuZ2VzUmVxdWVzdBoZLm51bWVuLnYxLkNoYW5nZXNSZXNwb25zZTABEjoKBUZvY3VzEhYubnVtZW4udjEuRm9jdXNSZXF1ZXN0GhcubnVtZW4udjEuRm9jdXNSZXNwb25zZTABEjUKBFJlYWQSFS5udW1lbi52MS5SZWFkUmVxdWVzdBoWLm51bWVuLnYxLlJlYWRSZXNwb25zZRI4CgVXcml0ZRIWLm51bWVuLnYxLldyaXRlUmVxdWVzdBoXLm51bWVuLnYxLldyaXRlUmVzcG9uc2USQwoIUXVpdHRpbmcSGS5udW1lbi52MS5RdWl0dGluZ1JlcXVlc3QaGi5udW1lbi52MS5RdWl0dGluZ1Jlc3BvbnNlMAESPgoHRmx1c2hlZBIYLm51bWVuLnYxLkZsdXNoZWRSZXF1ZXN0GhkubnVtZW4udjEuRmx1c2hlZFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * Note is a note as something else refers to it.
@@ -370,6 +370,227 @@ export const NeighbourhoodResponseSchema: GenMessage<NeighbourhoodResponse> = /*
   messageDesc(file_numen_v1_vault, 11);
 
 /**
+ * @generated from message numen.v1.ReadRequest
+ */
+export type ReadRequest = Message<"numen.v1.ReadRequest"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+};
+
+/**
+ * Describes the message numen.v1.ReadRequest.
+ * Use `create(ReadRequestSchema)` to create a new message.
+ */
+export const ReadRequestSchema: GenMessage<ReadRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 12);
+
+/**
+ * @generated from message numen.v1.ReadResponse
+ */
+export type ReadResponse = Message<"numen.v1.ReadResponse"> & {
+  /**
+   * The prose below the frontmatter, with line endings as LF. Empty when the
+   * note is refused.
+   *
+   * @generated from field: string body = 1;
+   */
+  body: string;
+
+  /**
+   * Set when the note was not read, and why.
+   *
+   * @generated from field: optional numen.v1.Refusal refusal = 2;
+   */
+  refusal?: Refusal | undefined;
+};
+
+/**
+ * Describes the message numen.v1.ReadResponse.
+ * Use `create(ReadResponseSchema)` to create a new message.
+ */
+export const ReadResponseSchema: GenMessage<ReadResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 13);
+
+/**
+ * @generated from message numen.v1.WriteRequest
+ */
+export type WriteRequest = Message<"numen.v1.WriteRequest"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * The prose to put below the frontmatter, with line endings as LF.
+   *
+   * @generated from field: string body = 2;
+   */
+  body: string;
+};
+
+/**
+ * Describes the message numen.v1.WriteRequest.
+ * Use `create(WriteRequestSchema)` to create a new message.
+ */
+export const WriteRequestSchema: GenMessage<WriteRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 14);
+
+/**
+ * @generated from message numen.v1.WriteResponse
+ */
+export type WriteResponse = Message<"numen.v1.WriteResponse"> & {
+  /**
+   * Set when nothing was written, and why.
+   *
+   * @generated from field: optional numen.v1.Refusal refusal = 1;
+   */
+  refusal?: Refusal | undefined;
+};
+
+/**
+ * Describes the message numen.v1.WriteResponse.
+ * Use `create(WriteResponseSchema)` to create a new message.
+ */
+export const WriteResponseSchema: GenMessage<WriteResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 15);
+
+/**
+ * @generated from message numen.v1.QuittingRequest
+ */
+export type QuittingRequest = Message<"numen.v1.QuittingRequest"> & {
+};
+
+/**
+ * Describes the message numen.v1.QuittingRequest.
+ * Use `create(QuittingRequestSchema)` to create a new message.
+ */
+export const QuittingRequestSchema: GenMessage<QuittingRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 16);
+
+/**
+ * @generated from message numen.v1.QuittingResponse
+ */
+export type QuittingResponse = Message<"numen.v1.QuittingResponse"> & {
+  /**
+   * What this caller answers Flushed with. The stream opens by saying it, so
+   * a caller knows it is listening before anything is asked of it.
+   *
+   * @generated from field: string token = 1;
+   */
+  token: string;
+
+  /**
+   * Set when the window is going and this caller's unwritten work has to land.
+   *
+   * @generated from field: bool flush = 2;
+   */
+  flush: boolean;
+};
+
+/**
+ * Describes the message numen.v1.QuittingResponse.
+ * Use `create(QuittingResponseSchema)` to create a new message.
+ */
+export const QuittingResponseSchema: GenMessage<QuittingResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 17);
+
+/**
+ * @generated from message numen.v1.FlushedRequest
+ */
+export type FlushedRequest = Message<"numen.v1.FlushedRequest"> & {
+  /**
+   * The token this caller was given when it began listening.
+   *
+   * @generated from field: string token = 1;
+   */
+  token: string;
+};
+
+/**
+ * Describes the message numen.v1.FlushedRequest.
+ * Use `create(FlushedRequestSchema)` to create a new message.
+ */
+export const FlushedRequestSchema: GenMessage<FlushedRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 18);
+
+/**
+ * @generated from message numen.v1.FlushedResponse
+ */
+export type FlushedResponse = Message<"numen.v1.FlushedResponse"> & {
+};
+
+/**
+ * Describes the message numen.v1.FlushedResponse.
+ * Use `create(FlushedResponseSchema)` to create a new message.
+ */
+export const FlushedResponseSchema: GenMessage<FlushedResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 19);
+
+/**
+ * Refusal is why a note could not be read or written.
+ *
+ * @generated from enum numen.v1.Refusal
+ */
+export enum Refusal {
+  /**
+   * @generated from enum value: REFUSAL_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * Nothing is at the path. A read says so; a write creates the file.
+   *
+   * @generated from enum value: REFUSAL_MISSING = 1;
+   */
+  MISSING = 1,
+
+  /**
+   * The file is in the vault and is not a note.
+   *
+   * @generated from enum value: REFUSAL_NOT_A_NOTE = 2;
+   */
+  NOT_A_NOTE = 2,
+
+  /**
+   * The file is not text this can carry.
+   *
+   * @generated from enum value: REFUSAL_NOT_TEXT = 3;
+   */
+  NOT_TEXT = 3,
+
+  /**
+   * The file is past the size a note is read at.
+   *
+   * @generated from enum value: REFUSAL_TOO_LARGE = 4;
+   */
+  TOO_LARGE = 4,
+
+  /**
+   * The prose opens with a frontmatter delimiter, so writing it would put a
+   * second block inside the first.
+   *
+   * @generated from enum value: REFUSAL_BODY_REFUSED = 5;
+   */
+  BODY_REFUSED = 5,
+
+  /**
+   * The frontmatter cannot be read, so the note can be neither read nor written
+   * from here.
+   *
+   * @generated from enum value: REFUSAL_UNREADABLE = 6;
+   */
+  UNREADABLE = 6,
+}
+
+/**
+ * Describes the enum numen.v1.Refusal.
+ */
+export const RefusalSchema: GenEnum<Refusal> = /*@__PURE__*/
+  enumDesc(file_numen_v1_vault, 0);
+
+/**
  * Seat is where a note sits relative to the one in focus. A sibling is written
  * nowhere: it is another child of a shared parent.
  *
@@ -406,7 +627,7 @@ export enum Seat {
  * Describes the enum numen.v1.Seat.
  */
 export const SeatSchema: GenEnum<Seat> = /*@__PURE__*/
-  enumDesc(file_numen_v1_vault, 0);
+  enumDesc(file_numen_v1_vault, 1);
 
 /**
  * VaultService answers questions about the one vault a client is looking at.
@@ -468,6 +689,51 @@ export const VaultService: GenService<{
     methodKind: "server_streaming";
     input: typeof FocusRequestSchema;
     output: typeof FocusResponseSchema;
+  },
+  /**
+   * Read answers with the prose of a note, below its frontmatter.
+   *
+   * @generated from rpc numen.v1.VaultService.Read
+   */
+  read: {
+    methodKind: "unary";
+    input: typeof ReadRequestSchema;
+    output: typeof ReadResponseSchema;
+  },
+  /**
+   * Write puts prose into a note, keeping the frontmatter the file has when the
+   * write lands and creating the file where there is none. What was on disk
+   * under an edit made elsewhere is replaced.
+   *
+   * @generated from rpc numen.v1.VaultService.Write
+   */
+  write: {
+    methodKind: "unary";
+    input: typeof WriteRequestSchema;
+    output: typeof WriteResponseSchema;
+  },
+  /**
+   * Quitting says the window is going, for as long as the caller listens. A
+   * caller holding work that is only in its own memory writes it now and
+   * answers with Flushed.
+   *
+   * @generated from rpc numen.v1.VaultService.Quitting
+   */
+  quitting: {
+    methodKind: "server_streaming";
+    input: typeof QuittingRequestSchema;
+    output: typeof QuittingResponseSchema;
+  },
+  /**
+   * Flushed says a caller has written everything it owed, and the window may
+   * go. A caller that never says it is waited for and then left behind.
+   *
+   * @generated from rpc numen.v1.VaultService.Flushed
+   */
+  flushed: {
+    methodKind: "unary";
+    input: typeof FlushedRequestSchema;
+    output: typeof FlushedResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_vault, 0);

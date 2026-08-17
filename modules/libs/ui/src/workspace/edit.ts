@@ -7,23 +7,23 @@
  */
 import {
   branch,
-  group,
-  groupById,
-  groupWithTab,
-  groupsOf,
   isBranch,
-  isGroup,
+  isPane,
   leads,
   nodeAt,
   normalize,
   orientationAt,
   orientationOf,
+  pane,
+  paneById,
+  paneWithTab,
+  panesOf,
   pathTo,
   replaceAt,
   withChildren,
-  type Group,
   type NodeId,
   type Orientation,
+  type Pane,
   type Side,
   type TabId,
   type Workspace,
@@ -31,27 +31,27 @@ import {
 } from './model'
 import { insert } from './model/shares'
 
-/** Where an identity for a group or a branch a gesture makes comes from. */
+/** Where an identity for a pane or a branch a gesture makes comes from. */
 export type Naming = () => NodeId
 
 export interface TabDrop {
   readonly tab: TabId
-  /** The group it was let go on. */
+  /** The pane it was let go on. */
   readonly onto: NodeId
   readonly side: Side
 }
 
-export function focusGroup(workspace: Workspace, id: NodeId): Workspace {
-  return groupById(workspace.root, id) ? { ...workspace, focus: id } : workspace
+export function focusPane(workspace: Workspace, id: NodeId): Workspace {
+  return paneById(workspace.root, id) ? { ...workspace, focus: id } : workspace
 }
 
 export function activateTab(workspace: Workspace, tab: TabId): Workspace {
-  const holder = groupWithTab(workspace.root, tab)
+  const holder = paneWithTab(workspace.root, tab)
   if (!holder) return workspace
 
   return {
     ...workspace,
-    root: mapGroup(workspace.root, holder.id, (held) => ({ ...held, active: tab })),
+    root: mapPane(workspace.root, holder.id, (held) => ({ ...held, active: tab })),
     focus: holder.id,
   }
 }
@@ -62,14 +62,14 @@ export function openTab(
   tab: TabId,
   into: NodeId = workspace.focus,
 ): Workspace {
-  if (groupWithTab(workspace.root, tab)) return activateTab(workspace, tab)
+  if (paneWithTab(workspace.root, tab)) return activateTab(workspace, tab)
 
-  const target = groupById(workspace.root, into) ?? groupsOf(workspace.root)[0]
+  const target = paneById(workspace.root, into) ?? panesOf(workspace.root)[0]
   if (!target) return workspace
 
   return {
     ...workspace,
-    root: mapGroup(workspace.root, target.id, (held) => ({
+    root: mapPane(workspace.root, target.id, (held) => ({
       ...held,
       tabs: [...held.tabs, tab],
       active: tab,
@@ -79,7 +79,7 @@ export function openTab(
 }
 
 export function closeTab(workspace: Workspace, tab: TabId): Workspace {
-  const holder = groupWithTab(workspace.root, tab)
+  const holder = paneWithTab(workspace.root, tab)
   if (!holder) return workspace
   return settle({ ...workspace, root: detach(workspace.root, tab) }, holder.id)
 }
@@ -89,7 +89,7 @@ export function closeTab(workspace: Workspace, tab: TabId): Workspace {
  * `slotAt` reports them.
  */
 export function moveTabWithin(workspace: Workspace, tab: TabId, slot: number): Workspace {
-  const holder = groupWithTab(workspace.root, tab)
+  const holder = paneWithTab(workspace.root, tab)
   if (!holder) return workspace
 
   const from = holder.tabs.indexOf(tab)
@@ -99,20 +99,20 @@ export function moveTabWithin(workspace: Workspace, tab: TabId, slot: number): W
 
   return {
     ...workspace,
-    root: mapGroup(workspace.root, holder.id, (held) => ({ ...held, tabs })),
+    root: mapPane(workspace.root, holder.id, (held) => ({ ...held, tabs })),
     focus: holder.id,
   }
 }
 
 /**
- * A tab let go on a group: it joins the stack, or it takes half the group and
+ * A tab let go on a pane: it joins the stack, or it takes half the pane and
  * the two share the room.
  *
  * A tab let go where it started, with nowhere else to go, is only shown.
  */
 export function dropTab(workspace: Workspace, drop: TabDrop, naming: Naming): Workspace {
-  const target = groupById(workspace.root, drop.onto)
-  const source = groupWithTab(workspace.root, drop.tab)
+  const target = paneById(workspace.root, drop.onto)
+  const source = paneWithTab(workspace.root, drop.tab)
   if (!target || !source) return workspace
 
   if (source.id === target.id && (drop.side === 'center' || source.tabs.length === 1)) {
@@ -122,7 +122,7 @@ export function dropTab(workspace: Workspace, drop: TabDrop, naming: Naming): Wo
   const root = detach(workspace.root, drop.tab)
 
   if (drop.side === 'center') {
-    const joined = mapGroup(root, target.id, (held) => ({
+    const joined = mapPane(root, target.id, (held) => ({
       ...held,
       tabs: [...held.tabs, drop.tab],
       active: drop.tab,
@@ -141,7 +141,7 @@ export function dropOnEdge(
   side: Side,
   naming: Naming,
 ): Workspace {
-  if (!groupWithTab(workspace.root, tab) || side === 'center') return workspace
+  if (!paneWithTab(workspace.root, tab) || side === 'center') return workspace
 
   const root = detach(workspace.root, tab)
   const landed = beside(root, root.id, tab, side, workspace.axis, naming)
@@ -172,9 +172,9 @@ interface Landed {
 }
 
 /**
- * A new group put alongside a node, taking half its share.
+ * A new pane put alongside a node, taking half its share.
  *
- * Where the parent divides its length the way the side asks, the group joins
+ * Where the parent divides its length the way the side asks, the pane joins
  * it as a neighbour; where it does not, the node is wrapped in a branch, which
  * lands one level deeper and divides the other way. A node with no parent is
  * the root, and the workspace turns its axis to suit.
@@ -191,7 +191,7 @@ function beside(
   const path = pathTo(root, onto)
   if (!wanted || !path) return { root, axis, focus: onto }
 
-  const made = group(id(), [tab])
+  const made = pane(id(), [tab])
   const index = path[path.length - 1]
   const above = path.slice(0, -1)
 
@@ -226,14 +226,14 @@ function beside(
 }
 
 /**
- * The tab taken off whichever group holds it. The group is left where it is,
+ * The tab taken off whichever pane holds it. The pane is left where it is,
  * empty if that was its last tab, and `settle` is what clears it away.
  */
 function detach(root: WorkspaceNode, tab: TabId): WorkspaceNode {
-  const holder = groupWithTab(root, tab)
+  const holder = paneWithTab(root, tab)
   if (!holder) return root
 
-  return mapGroup(root, holder.id, (held) => {
+  return mapPane(root, holder.id, (held) => {
     const at = held.tabs.indexOf(tab)
     const tabs = held.tabs.filter((each) => each !== tab)
     const active = held.active === tab ? (tabs[at] ?? tabs[at - 1] ?? null) : held.active
@@ -241,28 +241,28 @@ function detach(root: WorkspaceNode, tab: TabId): WorkspaceNode {
   })
 }
 
-/** The canonical tree, with the focus on a group that survived it. */
+/** The canonical tree, with the focus on a pane that survived it. */
 function settle(workspace: Workspace, preferred: NodeId): Workspace {
   const settled = normalize(workspace)
-  const groups = groupsOf(settled.root)
+  const panes = panesOf(settled.root)
   const kept =
-    groups.find((each) => each.id === preferred) ??
-    groups.find((each) => each.id === workspace.focus) ??
-    groups[0]
+    panes.find((each) => each.id === preferred) ??
+    panes.find((each) => each.id === workspace.focus) ??
+    panes[0]
 
   return kept ? { ...settled, focus: kept.id } : settled
 }
 
-function mapGroup(
+function mapPane(
   root: WorkspaceNode,
   id: NodeId,
-  change: (group: Group) => Group,
+  change: (pane: Pane) => Pane,
 ): WorkspaceNode {
   const path = pathTo(root, id)
   if (!path) return root
 
   const node = nodeAt(root, path)
-  if (!node || !isGroup(node)) return root
+  if (!node || !isPane(node)) return root
 
   return replaceAt(root, path, change(node))
 }
