@@ -1,9 +1,7 @@
 /**
  * The one tree an arrangement of the screen has.
  *
- * An edit may leave a group holding nothing, or a branch holding one child.
- * Neither draws anything, and both let two trees stand for the same picture.
- * This puts the tree back into the single form that picture has.
+ * A group holding nothing goes, and so does a branch holding one child.
  */
 import { branch, orthogonal, type Workspace, type WorkspaceNode } from './node'
 import { fit } from './shares'
@@ -16,10 +14,9 @@ interface Slice {
 }
 
 /**
- * A branch that keeps one child hands the child's own children up to its
- * parent. Two levels turn a half, so those children already divide their
- * length the way the parent does, and the picture is unchanged. A single
- * child that is a group goes up as it is, having no orientation to keep.
+ * A branch left with one child hands that child's own children up to its
+ * parent: two levels turn a half, so they already divide their length the way
+ * the parent does. A single child that is a group goes up as it is.
  */
 function reduce(node: WorkspaceNode): Slice {
   if (isGroup(node)) {

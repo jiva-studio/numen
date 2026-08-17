@@ -8,19 +8,23 @@
 import WorkspaceTab from './WorkspaceTab.vue'
 import type { Group, TabId } from '../model'
 
-defineProps<{
-  group: Group
-  /** What each tab is called. A tab with no title is shown by its identity. */
-  titles: Readonly<Record<TabId, string>>
-  /** The group a tab would open into. */
-  focused?: boolean
-}>()
+withDefaults(
+  defineProps<{
+    group: Group
+    /** What each tab is called. A tab with no title is shown by its identity. */
+    titles: Readonly<Record<TabId, string>>
+    /** The group a tab would open into. */
+    focused?: boolean
+  }>(),
+  { focused: false },
+)
 
 const emit = defineEmits<{
   (event: 'choose', tab: TabId): void
   (event: 'close', tab: TabId): void
   (event: 'lift', tab: TabId, at: PointerEvent): void
-  (event: 'take'): void
+  /** This group asks to be the one a tab opens into. */
+  (event: 'claim'): void
 }>()
 
 defineSlots<{
@@ -34,7 +38,7 @@ defineSlots<{
     class="group numen flex min-h-0 min-w-0 flex-col bg-surface text-ink"
     :data-workspace-group="group.id"
     :data-focused="focused || undefined"
-    @pointerdown="emit('take')"
+    @pointerdown="emit('claim')"
   >
     <div
       class="group__strip flex shrink-0 items-stretch overflow-hidden"
@@ -44,9 +48,10 @@ defineSlots<{
       <WorkspaceTab
         v-for="tab in group.tabs"
         :key="tab"
-        :data-workspace-tab="tab"
+        :tab="tab"
         :title="titles[tab] ?? tab"
         :showing="tab === group.active"
+        :marked="tab === group.active && focused"
         @lift="emit('lift', tab, $event)"
         @close="emit('close', tab)"
         @click="emit('choose', tab)"
@@ -63,9 +68,13 @@ defineSlots<{
 </template>
 
 <style scoped>
+.group {
+  block-size: 100%;
+}
+
+/* Sits on the same surface as what it stands over, told apart by one line. */
 .group__strip {
   border-block-end: var(--numen-stroke) solid var(--numen-node-border);
-  background: color-mix(in oklab, var(--numen-surface) 88%, var(--numen-node-fg));
 }
 
 .group__body {

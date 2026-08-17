@@ -6,11 +6,11 @@
  * model holds, and a handle that moves reports shares back; the model is the
  * only place they are kept.
  */
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import WorkspaceGroup from './WorkspaceGroup.vue'
 import { orientationAt, type Branch, type NodeId, type Orientation, type TabId } from '../model'
-import { fit } from '../model/shares'
+import { atLeast, fit } from '../model/shares'
 
 defineOptions({ name: 'WorkspaceBranch' })
 
@@ -20,13 +20,15 @@ const props = defineProps<{
   depth: number
   titles: Readonly<Record<TabId, string>>
   focus: NodeId
+  /** The least room a group is worth drawing in. */
+  minimum: number
 }>()
 
 const emit = defineEmits<{
   (event: 'choose', tab: TabId): void
   (event: 'close', tab: TabId): void
   (event: 'lift', tab: TabId, at: PointerEvent): void
-  (event: 'take', group: NodeId): void
+  (event: 'claim', group: NodeId): void
   (event: 'resize', branch: NodeId, sizes: readonly number[]): void
 }>()
 
@@ -38,6 +40,39 @@ defineSlots<{
 const direction = computed(() => orientationAt(props.axis, props.depth))
 
 const sizes = computed(() => fit(props.node.sizes, props.node.children.length))
+
+/**
+ * The smallest share a handle may leave a child, worked out from how long the
+ * branch is on screen. A splitter counts in percent, and a group is only worth
+ * drawing above a certain number of pixels.
+ */
+const frame = useTemplateRef<InstanceType<typeof SplitterGroup>>('frame')
+const length = ref(0)
+
+const floor = computed(
+  () => atLeast(props.minimum, length.value, props.node.children.length) * 100,
+)
+
+let watching: ResizeObserver | undefined
+
+// The element is followed: a change of shape gives the group a new one.
+watch(
+  () => frame.value?.$el as HTMLElement | undefined,
+  (element) => {
+    watching?.disconnect()
+    if (!element || typeof ResizeObserver === 'undefined') return
+
+    watching = new ResizeObserver(([seen]) => {
+      if (!seen) return
+      const box = seen.contentRect
+      length.value = direction.value === 'horizontal' ? box.width : box.height
+    })
+    watching.observe(element)
+  },
+  { immediate: true, flush: 'post' },
+)
+
+onBeforeUnmount(() => watching?.disconnect())
 
 /** Which children there are, so that a change of shape starts the group afresh. */
 const shape = computed(() => props.node.children.map((child) => child.id).join(' '))
@@ -59,6 +94,7 @@ function settled(reported: number[]): void {
 
 <template>
   <SplitterGroup
+    ref="frame"
     :id="node.id"
     :key="shape"
     class="branch min-h-0 min-w-0"
@@ -72,7 +108,7 @@ function settled(reported: number[]): void {
         :id="child.id"
         :order="index"
         :default-size="(sizes[index] ?? 0) * 100"
-        :min-size="8"
+        :min-size="floor"
         class="min-h-0 min-w-0"
       >
         <WorkspaceBranch
@@ -82,10 +118,11 @@ function settled(reported: number[]): void {
           :depth="depth + 1"
           :titles="titles"
           :focus="focus"
+          :minimum="minimum"
           @choose="emit('choose', $event)"
           @close="emit('close', $event)"
           @lift="(tab, at) => emit('lift', tab, at)"
-          @take="emit('take', $event)"
+          @claim="emit('claim', $event)"
           @resize="(branch, next) => emit('resize', branch, next)"
         >
           <template #tab="bound"><slot name="tab" v-bind="bound" /></template>
@@ -94,14 +131,13 @@ function settled(reported: number[]): void {
 
         <WorkspaceGroup
           v-else
-          class="h-full"
           :group="child"
           :titles="titles"
           :focused="child.id === focus"
           @choose="emit('choose', $event)"
           @close="emit('close', $event)"
           @lift="(tab, at) => emit('lift', tab, at)"
-          @take="emit('take', child.id)"
+          @claim="emit('claim', child.id)"
         >
           <template #tab="bound"><slot name="tab" v-bind="bound" /></template>
           <template #silence><slot name="silence" /></template>
@@ -112,6 +148,10 @@ function settled(reported: number[]): void {
 </template>
 
 <style scoped>
+.branch {
+  block-size: 100%;
+}
+
 /* The line between two panels, and the reach around it a pointer is caught by. */
 .branch__handle {
   --line: var(--numen-stroke);
@@ -145,6 +185,6 @@ function settled(reported: number[]): void {
 }
 
 .branch__handle[data-state='drag'] {
-  background: var(--numen-focus-bg);
+  background: var(--numen-ring);
 }
 </style>

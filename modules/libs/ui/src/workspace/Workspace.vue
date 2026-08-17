@@ -22,21 +22,25 @@ import {
 import { overlayFor, sideAt, slotAt } from './drop'
 import type { NodeId, Rect, Side, TabId, TabLabel, Workspace } from './model'
 
-const props = defineProps<{
-  tabs: readonly TabLabel[]
-  /** Where identities for what a gesture makes come from. */
-  naming?: Naming | undefined
-  /** How close to the outer edge divides the whole workspace. */
-  edge?: number | undefined
-}>()
+const props = withDefaults(
+  defineProps<{
+    tabs: readonly TabLabel[]
+    /** Where identities for what a gesture makes come from. */
+    naming?: Naming | undefined
+    /** How close to the outer edge divides the whole workspace. */
+    edge?: number
+    /** How far the pointer travels before a press becomes a drag. */
+    threshold?: number
+    /** The least room a group is worth drawing in. */
+    minimum?: number
+  }>(),
+  { edge: 22, threshold: 4, minimum: 220 },
+)
 
 defineSlots<{
   tab(props: { id: TabId }): unknown
   silence(): unknown
 }>()
-
-/** How close to the outer edge divides the whole workspace. */
-const EDGE = 22
 
 const workspace = defineModel<Workspace>({ required: true })
 
@@ -74,9 +78,6 @@ type Landing =
 const dragging = shallowRef<Dragging | null>(null)
 const landing = shallowRef<Landing | null>(null)
 
-/** How far the pointer travels before a press becomes a drag. */
-const THRESHOLD = 4
-
 const overlay = computed(() => (dragging.value?.moved ? (landing.value?.box ?? null) : null))
 
 const carried = computed(() =>
@@ -94,7 +95,7 @@ function close(tab: TabId): void {
   emit('close', tab)
 }
 
-function take(group: NodeId): void {
+function claim(group: NodeId): void {
   workspace.value = focusGroup(workspace.value, group)
 }
 
@@ -128,8 +129,8 @@ function drag(at: PointerEvent): void {
 
   const moved =
     held.moved ||
-    Math.abs(at.clientX - held.startX) > THRESHOLD ||
-    Math.abs(at.clientY - held.startY) > THRESHOLD
+    Math.abs(at.clientX - held.startX) > props.threshold ||
+    Math.abs(at.clientY - held.startY) > props.threshold
 
   dragging.value = { ...held, x: at.clientX, y: at.clientY, moved }
   landing.value = moved ? landingAt(at.clientX, at.clientY) : null
@@ -145,8 +146,8 @@ function drop(): void {
 
   if (held?.moved && at) land(held, at)
   landing.value = null
-  // Kept until the click that follows the release has passed, so that letting
-  // go of a drag does not read as choosing the tab underneath.
+  // Held one frame longer: the click that follows the release reads it and
+  // stands down.
   requestAnimationFrame(() => {
     dragging.value = null
   })
@@ -196,26 +197,26 @@ function landingAt(x: number, y: number): Landing | null {
   if (strip && id) {
     const tabs = [...strip.querySelectorAll('[data-workspace-tab]')].map((tab) => boxOf(tab))
     const slot = slotAt(x, tabs)
-    const caret = tabs[slot] ?? tabs[tabs.length - 1]
-    return {
-      kind: 'strip',
-      group: id,
-      slot,
-      box: local(
-        caret
-          ? { x: (slot < tabs.length ? caret.x : caret.x + caret.width) - 1, y: caret.y, width: 2, height: caret.height }
-          : boxOf(strip),
-      ),
-    }
+    return { kind: 'strip', group: id, slot, box: local(caretAt(slot, tabs, strip)) }
   }
 
-  const side = edgeOf(x, y, outer, props.edge ?? EDGE)
+  const side = edgeOf(x, y, outer, props.edge)
   if (side) return { kind: 'edge', side, box: local(overlayFor(side, boxOf(held))) }
 
   if (!group || !id) return null
 
   const box = boxOf(group)
-  return { kind: 'group', group: id, side: sideAt({ x, y }, box), box: local(overlayFor(sideAt({ x, y }, box), box)) }
+  const asked = sideAt({ x, y }, box)
+  return { kind: 'group', group: id, side: asked, box: local(overlayFor(asked, box)) }
+}
+
+/** The gap a tab would take, along the strip. Its width is drawn in CSS. */
+function caretAt(slot: number, tabs: readonly Rect[], strip: Element): Rect {
+  const beside = tabs[slot] ?? tabs[tabs.length - 1]
+  if (!beside) return boxOf(strip)
+
+  const at = slot < tabs.length ? beside.x : beside.x + beside.width
+  return { x: at, y: beside.y, width: 0, height: beside.height }
 }
 
 const boxOf = (element: Element): Rect => {
@@ -254,40 +255,40 @@ onBeforeUnmount(() => {
   <div ref="frame" class="workspace numen relative min-h-0 min-w-0 bg-surface text-ink">
     <WorkspaceBranch
       v-if="workspace.root.kind === 'branch'"
-      class="h-full"
       :node="workspace.root"
       :axis="workspace.axis"
       :depth="0"
       :titles="titles"
       :focus="workspace.focus"
+      :minimum="minimum"
       @choose="choose"
       @close="close"
       @lift="lift"
-      @take="take"
+      @claim="claim"
       @resize="resize"
     >
       <template #tab="bound"><slot name="tab" v-bind="bound" /></template>
-      <template #silence><slot name="silence">Nothing open</slot></template>
+      <template #silence><slot name="silence" /></template>
     </WorkspaceBranch>
 
     <WorkspaceGroup
       v-else
-      class="h-full"
       :group="workspace.root"
       :titles="titles"
       :focused="workspace.root.id === workspace.focus"
       @choose="choose"
       @close="close"
       @lift="lift"
-      @take="take(workspace.root.id)"
+      @claim="claim(workspace.root.id)"
     >
       <template #tab="bound"><slot name="tab" v-bind="bound" /></template>
-      <template #silence><slot name="silence">Nothing open</slot></template>
+      <template #silence><slot name="silence" /></template>
     </WorkspaceGroup>
 
     <div
       v-if="overlay"
       class="workspace__overlay"
+      :data-caret="landing?.kind === 'strip' || undefined"
       :style="{
         left: `${overlay.x}px`,
         top: `${overlay.y}px`,
@@ -308,19 +309,39 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .workspace {
+  /* The line standing in the gap a dragged tab would take. */
+  --caret: 2px;
+
   block-size: 100%;
   overflow: hidden;
 }
 
-/* Where the tab would go, shown over everything and catching nothing. */
+/* Where the tab would go, shown over everything and catching nothing. The
+   wash is the same colour as the outline, laid on thinly. */
 .workspace__overlay {
   position: absolute;
   z-index: 2;
   pointer-events: none;
-  border: var(--numen-stroke) solid var(--numen-focus-bg);
-  background: color-mix(in oklab, var(--numen-focus-bg) 18%, transparent);
+  border: var(--numen-ring-width) solid var(--numen-ring);
+  border-radius: var(--numen-radius);
 }
 
+.workspace__overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--numen-ring);
+  opacity: 0.16;
+}
+
+.workspace__overlay[data-caret] {
+  inline-size: var(--caret);
+  margin-inline-start: calc(var(--caret) / -2);
+  border: none;
+  background: var(--numen-ring);
+}
+
+/* What is being carried, said beside the pointer. */
 .workspace__carried {
   position: fixed;
   z-index: 3;

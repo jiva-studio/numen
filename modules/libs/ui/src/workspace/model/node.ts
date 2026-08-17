@@ -10,8 +10,6 @@ export type Orientation = 'horizontal' | 'vertical'
 /** Where a dragged tab lands on a group. */
 export type Side = 'left' | 'right' | 'top' | 'bottom' | 'center'
 
-export const SIDES = ['left', 'right', 'top', 'bottom', 'center'] as const
-
 /** What a tab is called, for a strip to show. */
 export interface TabLabel {
   readonly id: TabId

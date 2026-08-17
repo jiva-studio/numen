@@ -83,6 +83,7 @@ onBeforeUnmount(() => watching?.disconnect())
   --breath: 28px;
 
   position: relative;
+  block-size: 100%;
   padding-inline: var(--inset);
 }
 

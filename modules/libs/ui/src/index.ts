@@ -74,7 +74,6 @@ export {
   normalize,
   orientationAt,
   orientationOf,
-  SIDES,
 } from './workspace/model'
 export type {
   Branch as WorkspaceBranchNode,

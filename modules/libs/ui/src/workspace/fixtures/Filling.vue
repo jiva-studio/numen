@@ -9,17 +9,7 @@ defineProps<{ name: string }>()
 </script>
 
 <template>
-  <div class="filling numen grid h-full place-items-center font-sans text-base text-hushed">
+  <div class="filling numen grid h-full place-items-center bg-surface font-sans text-base text-hushed">
     {{ name }}
   </div>
 </template>
-
-<style scoped>
-.filling {
-  background: repeating-linear-gradient(
-    135deg,
-    transparent 0 12px,
-    color-mix(in oklab, var(--numen-node-fg) 4%, transparent) 12px 24px
-  );
-}
-</style>

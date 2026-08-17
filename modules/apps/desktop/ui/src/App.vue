@@ -61,7 +61,6 @@ onUnmounted(() => {
       <template #tab="{ id }">
         <Plex
           v-if="id === PLEX && neighbourhood && !failure && !indexing"
-          class="plex"
           :neighbourhood="asPlex(neighbourhood)"
           :creatable="[]"
           @activate="go"
@@ -70,7 +69,6 @@ onUnmounted(() => {
         <Agent
           v-else-if="id === AGENT"
           v-model="asked"
-          class="agent"
           :turns="turns"
           :working="working"
           :placeholder="words.ask"
@@ -81,7 +79,7 @@ onUnmounted(() => {
           </template>
         </Agent>
 
-        <div v-else class="plex" />
+        <div v-else />
       </template>
     </Workspace>
   </main>
@@ -97,11 +95,6 @@ main {
 .below {
   flex: 1;
   min-height: 0;
-}
-
-.plex,
-.agent {
-  block-size: 100%;
 }
 
 .waiting,

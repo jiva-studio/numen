@@ -3,16 +3,14 @@
  * story is run in a browser by `@storybook/addon-vitest`.
  *
  * What the tabs hold is a plain panel with a name on it. The workspace knows
- * nothing about its contents, and a story that reached for the plex or the
- * agent would be the door that dependency comes back in through.
+ * nothing about its contents, and neither do these.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Workspace from './Workspace.vue'
 import Filling from './fixtures/Filling.vue'
-import { arrangeWorkspace } from './arrange'
-import { groupWithTab, groupsOf, isBranch, type TabLabel, type Workspace as State } from './model'
+import { groupsOf, type TabLabel, type Workspace as State } from './model'
 import { crowded, deep, empty, oneStack, sideBySide } from './fixtures/build'
 
 const TITLES: Readonly<Record<string, string>> = {
@@ -34,10 +32,25 @@ const labelled = (state: State): readonly TabLabel[] =>
     .flatMap((group) => group.tabs)
     .map((id) => ({ id, title: TITLES[id] ?? id }))
 
+/** The arrangements a reader can start from. */
+const ARRANGEMENTS = {
+  'side by side': sideBySide,
+  'one stack': oneStack,
+  nested: deep,
+  crowded,
+  empty,
+} satisfies Record<string, () => State>
+
+type Arrangement = keyof typeof ARRANGEMENTS
+
 interface Knobs {
-  workspace: State
-  /** How close to the outer edge divides the whole workspace. */
+  arrangement: Arrangement
   edge: number
+  threshold: number
+  /** Given by the story, and nothing a reader turns. */
+  tabs?: never
+  naming?: never
+  modelValue?: never
 }
 
 const meta: Meta<Knobs> = {
@@ -45,20 +58,26 @@ const meta: Meta<Knobs> = {
   component: Workspace,
   parameters: { layout: 'fullscreen' },
   argTypes: {
+    arrangement: {
+      control: 'select',
+      options: Object.keys(ARRANGEMENTS),
+      description: 'What the workspace starts as. Changing it starts afresh.',
+    },
     edge: { control: { type: 'range', min: 4, max: 80, step: 2 } },
-    workspace: { control: false },
+    threshold: { control: { type: 'range', min: 0, max: 24, step: 1 } },
+    tabs: { table: { disable: true } },
+    naming: { table: { disable: true } },
+    modelValue: { table: { disable: true } },
   },
-  args: { workspace: sideBySide(), edge: 22 },
+  args: { arrangement: 'side by side', edge: 22, threshold: 4 },
   render: (args) => ({
     components: { Workspace, Filling },
     setup() {
-      const held = ref<State>(args.workspace)
-      // The knob is the source of a fresh arrangement; after that the
-      // workspace is, and the story follows it.
+      const held = ref<State>(ARRANGEMENTS[args.arrangement]())
       watch(
-        () => args.workspace,
+        () => args.arrangement,
         (next) => {
-          held.value = next
+          held.value = ARRANGEMENTS[next]()
         },
       )
       const titles = () => labelled(held.value)
@@ -70,6 +89,7 @@ const meta: Meta<Knobs> = {
           v-model="held"
           :tabs="titles()"
           :edge="args.edge"
+          :threshold="args.threshold"
           :naming="{ id: () => 'made-' + Math.random().toString(36).slice(2, 8) }"
         >
           <template #tab="{ id }"><Filling :name="id" /></template>
@@ -86,16 +106,17 @@ type Story = StoryObj<Knobs>
 export const SideBySide: Story = {}
 
 /** Both in one stack, so that only one shows at a time. */
-export const OneStack: Story = { args: { workspace: oneStack() } }
+export const OneStack: Story = { args: { arrangement: 'one stack' } }
 
 /** Four levels, each turning a quarter from the one above. */
-export const Nested: Story = { args: { workspace: deep() } }
+export const Nested: Story = { args: { arrangement: 'nested' } }
 
 /** More tabs than a strip has room for. */
-export const Crowded: Story = { args: { workspace: crowded() } }
+export const Crowded: Story = { args: { arrangement: 'crowded' } }
 
 /** The last tab closed. */
-export const Empty: Story = { args: { workspace: empty() } }
+export const Empty: Story = { args: { arrangement: 'empty' } }
+
 
 const boxOf = (element: Element) => element.getBoundingClientRect()
 
@@ -126,6 +147,7 @@ async function dragTo(from: Element, to: { x: number; y: number }): Promise<void
 
 /** Dragging a tab to the right edge of a group divides that group. */
 export const DividesOnAnEdge: Story = {
+  tags: ['!dev'],
   play: async ({ canvasElement }) => {
     const before = groupBox(canvasElement, 'aside')
     const main = groupBox(canvasElement, 'main')
@@ -156,6 +178,7 @@ export const DividesOnAnEdge: Story = {
 
 /** Dragging a tab into the middle of another group joins its stack. */
 export const JoinsAStack: Story = {
+  tags: ['!dev'],
   play: async ({ canvasElement }) => {
     const main = groupBox(canvasElement, 'main')
 
@@ -171,7 +194,8 @@ export const JoinsAStack: Story = {
 
 /** Letting a tab go where it was picked up changes nothing. */
 export const StaysPut: Story = {
-  args: { workspace: sideBySide() },
+  tags: ['!dev'],
+  args: { arrangement: 'side by side' },
   play: async ({ canvasElement }) => {
     const before = [...canvasElement.querySelectorAll('[data-workspace-group]')].map((group) => [
       group.getAttribute('data-workspace-group'),
@@ -194,7 +218,8 @@ export const StaysPut: Story = {
 
 /** Dragging to the outer edge divides the whole workspace. */
 export const DividesTheWorkspace: Story = {
-  args: { workspace: crowded() },
+  tags: ['!dev'],
+  args: { arrangement: 'crowded' },
   play: async ({ canvasElement }) => {
     const frame = boxOf(canvasElement.querySelector('.workspace') as Element)
 
@@ -214,7 +239,8 @@ export const DividesTheWorkspace: Story = {
 
 /** A tab dropped on a strip takes its place among the others. */
 export const ReordersInAStrip: Story = {
-  args: { workspace: crowded() },
+  tags: ['!dev'],
+  args: { arrangement: 'crowded' },
   play: async ({ canvasElement }) => {
     const first = boxOf(tabIn(canvasElement, 'one'))
 
@@ -230,6 +256,7 @@ export const ReordersInAStrip: Story = {
 
 /** Closing the last tab of a group clears the group away. */
 export const ClosesAGroup: Story = {
+  tags: ['!dev'],
   play: async ({ canvasElement }) => {
     const main = groupBox(canvasElement, 'main')
     const close = within(tabIn(canvasElement, 'chat') as HTMLElement).getByRole('button')
@@ -242,17 +269,10 @@ export const ClosesAGroup: Story = {
   },
 }
 
-/** The model is what is drawn: change it, and the picture follows. */
+/** The shares the model holds are the shares that are drawn. */
 export const FollowsTheModel: Story = {
+  tags: ['!dev'],
   play: async ({ canvasElement }) => {
-    const state = sideBySide()
-    const boxes = arrangeWorkspace(state, { x: 0, y: 0, width: 1000, height: 600 })
-
-    // What the model says of itself, before any of it is drawn.
-    await expect(boxes.get('main')?.width).toBe(720)
-    await expect(groupWithTab(state.root, 'chat')?.id).toBe('aside')
-    await expect(isBranch(state.root)).toBe(true)
-
     const drawn = [...canvasElement.querySelectorAll('[data-workspace-group]')].map(boxOf)
     const total = drawn.reduce((wide, box) => wide + box.width, 0)
     await expect((drawn[0]?.width ?? 0) / total).toBeCloseTo(0.72, 1)

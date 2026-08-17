@@ -17,9 +17,3 @@ export const within = (point: Point, box: Rect): Point => ({
   x: point.x - box.x,
   y: point.y - box.y,
 })
-
-export const holds = (box: Rect, point: Point): boolean =>
-  point.x >= box.x &&
-  point.x <= box.x + box.width &&
-  point.y >= box.y &&
-  point.y <= box.y + box.height

@@ -50,10 +50,7 @@ describe('what does not draw is cleared away', () => {
   })
 })
 
-/**
- * The case a branch handing its child up would get wrong: the child would
- * change depth, and everything under it would turn a quarter.
- */
+/** Grandchildren rise two levels at once, and keep the way they divide. */
 describe('a branch that keeps one child hands its grandchildren up', () => {
   const withEmpty = workspaceOf(
     split(

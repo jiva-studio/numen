@@ -7,11 +7,19 @@
  * start of a drag is settled by what the pointer does next, which the
  * workspace watches.
  */
-defineProps<{
-  title: string
-  /** The one its group is showing. */
-  showing?: boolean
-}>()
+import type { TabId } from '../model'
+withDefaults(
+  defineProps<{
+    /** Its identity, carried on the element for a drag to find it by. */
+    tab: TabId
+    title: string
+    /** The one its group is showing. */
+    showing?: boolean
+    /** Showing, in the group a tab would open into. */
+    marked?: boolean
+  }>(),
+  { showing: false, marked: false },
+)
 
 const emit = defineEmits<{
   (event: 'lift', at: PointerEvent): void
@@ -23,8 +31,10 @@ const emit = defineEmits<{
   <div
     class="tab numen flex min-w-0 max-w-56 shrink items-center gap-1.5 px-3 font-sans text-small text-hushed"
     role="tab"
-    :aria-selected="showing === true"
+    :aria-selected="showing"
+    :data-workspace-tab="tab"
     :data-showing="showing || undefined"
+    :data-marked="marked || undefined"
     @pointerdown="emit('lift', $event)"
   >
     <span class="min-w-0 truncate">{{ title }}</span>
@@ -42,10 +52,10 @@ const emit = defineEmits<{
 
 <style scoped>
 .tab {
-  /* How tall a strip stands, and how far the tab showing is lifted out of the
-     ones beside it. */
+  /* How tall a strip stands, and how thick the mark along the top of the one
+     showing is. */
   --height: 2.1rem;
-  --lift: 1px;
+  --lift: 2px;
 
   block-size: var(--height);
   border-inline-end: var(--numen-stroke) solid var(--numen-node-border);
@@ -54,10 +64,15 @@ const emit = defineEmits<{
   touch-action: none;
 }
 
+/* The one showing is raised, as a node in focus is. */
 .tab[data-showing] {
-  background: var(--numen-surface);
+  background: var(--numen-node-bg);
   color: var(--numen-node-fg);
-  box-shadow: inset 0 var(--lift) 0 0 var(--numen-focus-bg);
+}
+
+/* The mark along the top belongs to the group a tab would open into. */
+.tab[data-marked] {
+  box-shadow: inset 0 var(--lift) 0 0 var(--numen-ring);
 }
 
 .tab__close {

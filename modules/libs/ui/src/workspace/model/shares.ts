@@ -56,6 +56,18 @@ export function remove(sizes: readonly number[], index: number): readonly number
   return fit(fitted, fitted.length)
 }
 
+/**
+ * The smallest share a child may be squeezed to, given how long the branch is
+ * and how little of it a child is worth drawing in.
+ *
+ * An equal share is the ceiling: a branch too short to give everyone the
+ * minimum divides what it has evenly.
+ */
+export function atLeast(minimum: number, length: number, count: number): number {
+  if (count <= 0 || !(length > 0) || !(minimum > 0)) return 0
+  return Math.min(1 / count, minimum / length)
+}
+
 /** The share at `index` divided among `inner`, in proportion to them. */
 export function spread(
   sizes: readonly number[],

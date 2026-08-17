@@ -1,9 +1,4 @@
-/**
- * What is true of every workspace an edit produces.
- *
- * Read by the tests after each gesture, so that a rule broken anywhere is
- * caught where it was broken.
- */
+/** What is true of every workspace an edit produces. */
 import { groupsOf, isBranch, type Workspace, type WorkspaceNode } from '../model'
 
 /** Anything that does not hold about a workspace, said in words. */

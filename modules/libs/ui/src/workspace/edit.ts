@@ -31,7 +31,7 @@ import {
 } from './model'
 import { insert } from './model/shares'
 
-/** Where fresh identities come from, so that these functions stay pure. */
+/** Where an identity for a group or a branch a gesture makes comes from. */
 export interface Naming {
   readonly id: () => NodeId
 }
@@ -174,13 +174,12 @@ interface Landed {
 }
 
 /**
- * A new group put alongside a node.
+ * A new group put alongside a node, taking half its share.
  *
- * The parent's own orientation is known from its depth. Where it is the one
- * the side asks for, the group joins it as a neighbour and the node's share is
- * halved. Where it is not, the node is wrapped in a branch, which lands one
- * level deeper and so divides its length the way the side asks. A node with no
- * parent is the root, and the workspace turns its axis to suit.
+ * Where the parent divides its length the way the side asks, the group joins
+ * it as a neighbour; where it does not, the node is wrapped in a branch, which
+ * lands one level deeper and divides the other way. A node with no parent is
+ * the root, and the workspace turns its axis to suit.
  */
 function beside(
   root: WorkspaceNode,

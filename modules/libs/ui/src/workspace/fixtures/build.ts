@@ -14,7 +14,7 @@ import type { Naming } from '../edit'
 /** A stack of tabs. */
 export const stack = (id: NodeId, ...tabs: string[]): WorkspaceNode => group(id, tabs)
 
-/** A row or a column, in equal shares unless it is told otherwise. */
+/** A row or a column, in equal shares when none are given. */
 export const split = (
   id: NodeId,
   children: readonly WorkspaceNode[],
