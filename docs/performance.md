@@ -496,3 +496,59 @@ vault is 164 MB of markdown, so a hundred thousand notes cut the same way
 
 ADR-0019's target of 5 MB per thousand notes allows 500 MB. This is the
 arithmetic ADR-0030 rebudgets against.
+
+## Editing a note in a tab
+
+```
+go test ./internal/core/usecase/note/ -run XXX -bench 'Read|Save' -benchtime 50x
+```
+
+Taken 2026-08-17, AMD Ryzen 7 6800U, NVMe, `-benchtime 50x`.
+
+| | |
+|---|---|
+| Read a note, vault of 1 000 | 98 µs |
+| Read a note, vault of 100 000 | 99 µs |
+| Save, 500-word body | 10.06 ms |
+| Save, 5 000-word body | 10.07 ms |
+
+**A read does not grow with the vault.** The two figures are within a percent of
+each other, which is what says the read addresses one file and looks at nothing
+else. This is the cost a window pays per clean tab per change that names its
+path: ten open tabs are about a millisecond of reading per change.
+
+**A save costs the same whatever is in it.** Both bodies land in the same 10 ms,
+so what is being measured is not the text. A save syncs the temporary file and
+then the folder it is renamed into, and those two are the whole figure. Against
+a quiet interval of 800 ms it is not a wait a person can notice; it is worth
+recording because it says where a faster save would have to come from.
+
+### Not measured yet
+
+- keystroke to picture redrawn, at a hundred thousand notes. It crosses the
+  webview, the schema, the write, the watcher and the index, and nothing here
+  drives that whole path.
+- what one open tab costs resident. Every tab of a pane is drawn and hidden, so
+  tab count is live editor count, and only a browser can answer it.
+
+### What an edit costs to embed
+
+```
+go test ./internal/adapter/index/ -run Recut -count=1
+```
+
+These are assertions rather than timings: the count of vectors a save asks the
+model for. A 200-word note cuts into one large chunk and five small ones, tiled
+at fifty words with ten of overlap.
+
+| the edit is | vectors asked for | chunks that keep their row |
+|---|---|---|
+| a line added to the frontmatter | 0 | 6 of 6 |
+| at the end of the body | 1 | 4 of 5 small |
+| at the start of the body | 5 | 0 |
+
+The first row is the one that says the hash is over the text and not over the
+offsets: every chunk moves in the file and none of them changes, so nothing is
+embedded again. The third is the shape of the cost that remains, and what would
+have to be spent to bound it is places — a heading dividing the body into spans
+that tile separately, so an edit re-cuts one of them.

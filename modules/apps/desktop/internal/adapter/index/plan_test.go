@@ -47,6 +47,11 @@ var expectedPlans = []struct {
 	// names. A virtual table reports itself as a scan and has no named index.
 	{chunk.Statements(), "lexical", []any{`"entropy"`, 1, 20}, []string{"chunks_fts", "INTEGER PRIMARY KEY"}},
 	{chunk.Statements(), "clear_fts", []any{1}, []string{"chunks_by_source"}},
+	// Cutting a source again reads what it holds now, and then moves, writes or
+	// takes out one row at a time.
+	{chunk.Statements(), "chunks_of", []any{1}, []string{"chunks_by_source"}},
+	{chunk.Statements(), "move_chunk", []any{0, 10, 1, nil, 1}, []string{"INTEGER PRIMARY KEY"}},
+	{chunk.Statements(), "delete_chunk", []any{1}, []string{"INTEGER PRIMARY KEY"}},
 	// The coarse pass reads the vector index. That it stays inside one vault is
 	// asserted in TestTheCoarsePassIsConstrainedInsideTheQuery and
 	// TestTheCoarsePassStaysInsideItsVault.

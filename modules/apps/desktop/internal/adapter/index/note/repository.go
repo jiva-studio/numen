@@ -94,23 +94,17 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note) error
 		return err
 	}
 
-	// Derived rows are replaced wholesale: diffing them against what was there
-	// costs more than rewriting a handful of rows.
-	//
 	// The source row survives a re-save, so nothing cascades and each kind of
-	// derived row is cleared by hand. The chunks go too, and the file is then
-	// answered by "what is unchunked" until it is cut again.
+	// derived row is cleared by hand.
 	for _, name := range []string{"clear_headings", "clear_links", "clear_problems"} {
 		if err := exec(ctx, tx, name, row); err != nil {
 			return err
 		}
 	}
-	if err := chunk.Clear(ctx, tx, row); err != nil {
-		return err
-	}
 	// The note goes in as its own large window, so the words in it are findable
-	// as soon as it is indexed.
-	if err := chunk.Write(ctx, tx, row, vault, cut(n)); err != nil {
+	// as soon as it is indexed. A window whose text is what it was keeps its
+	// row, and the vector made from it.
+	if err := chunk.Replace(ctx, tx, row, vault, cut(n)); err != nil {
 		return err
 	}
 	for _, h := range n.Headings {

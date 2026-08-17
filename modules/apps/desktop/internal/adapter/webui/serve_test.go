@@ -124,6 +124,20 @@ type behind struct {
 // does, with the pieces a test drives in place of the ones a window gets.
 func opening(t *testing.T, notes map[string]string, watcher port.VaultWatcher, readers port.VaultReaders) *behind {
 	t.Helper()
+	return openingWith(t, notes, watcher, readers, nil, settled)
+}
+
+// openingWith is the same, with the model that fills the index for meaning and
+// how long the vault has to have been still before a note is embedded.
+func openingWith(
+	t *testing.T,
+	notes map[string]string,
+	watcher port.VaultWatcher,
+	readers port.VaultReaders,
+	embedder port.Embedder,
+	still time.Duration,
+) *behind {
+	t.Helper()
 
 	v := testsupport.NewVault(t, notes)
 	cfg := container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}
@@ -139,6 +153,13 @@ func opening(t *testing.T, notes map[string]string, watcher port.VaultWatcher, r
 		Links:     db.Links(),
 		Listeners: following(),
 		Watching:  focusing(),
+	}
+	if embedder != nil {
+		if err := db.FitVectors(t.Context(), embedder.Model().Dimensions); err != nil {
+			t.Fatal(err)
+		}
+		api.Model.Store(embedder.Model().String())
+		api.Progress = db.Progress()
 	}
 	scan := usecase.Scan{
 		Readers:     readers,
@@ -158,7 +179,7 @@ func opening(t *testing.T, notes map[string]string, watcher port.VaultWatcher, r
 	t.Cleanup(done)
 
 	ctx, stop := context.WithCancel(t.Context())
-	wait := begin(ctx, cfg, db, api, scan, follow, held, nil, make(chan struct{}, 1), io.Discard)
+	wait := begin(ctx, cfg, db, api, scan, follow, held, readers, embedder, waking(still), io.Discard)
 	t.Cleanup(func() {
 		stop()
 		wait()

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
@@ -76,9 +77,7 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		closeEmbedder = func() error { return nil }
 	}
 
-	// wanted carries one nudge: something that is not a note changed, and the
-	// vault's books are to be read again.
-	wanted := make(chan struct{}, 1)
+	wake := waking(settled)
 
 	watching, stop := context.WithCancel(ctx)
 	api := &API{
@@ -129,7 +128,7 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		Scan:    scan,
 	}
 
-	wait := begin(watching, cfg, db, api, scan, follow, held, embedder, wanted, out)
+	wait := begin(watching, cfg, db, api, scan, follow, held, cfg.VaultReaders(), embedder, wake, out)
 
 	return &Opened{
 		API:      api,
@@ -166,6 +165,39 @@ func settling(ctx context.Context, pages *leaving, writes *inflight) {
 	<-writes.seal()
 }
 
+// settled is how long the vault has to have been still before the notes written
+// into it are embedded. It is longer than the bound in ui/src/tab.ts, which
+// writes an unfinished edit every five seconds while a person goes on typing.
+const settled = 8 * time.Second
+
+// nudges are the two ways work reaches the reading behind the window once the
+// first pass is over: a book, which is found and cut before anything is
+// embedded, and a note, which arrives already cut and owes only its vectors.
+type nudges struct {
+	sources chan struct{}
+	notes   chan struct{}
+	// still is how long the vault has to have been quiet before a note that was
+	// written is embedded.
+	still time.Duration
+}
+
+func waking(still time.Duration) nudges {
+	return nudges{
+		sources: make(chan struct{}, 1),
+		notes:   make(chan struct{}, 1),
+		still:   still,
+	}
+}
+
+// raise leaves one nudge waiting. What owes work is asked of the index, so
+// several changes at once are one pass.
+func raise(nudge chan struct{}) {
+	select {
+	case nudge <- struct{}{}:
+	default:
+	}
+}
+
 // begin starts the watch and the first scan together, and answers with what
 // waits for both to stop.
 //
@@ -182,8 +214,9 @@ func begin(
 	scan usecase.Scan,
 	follow usecase.Follow,
 	held *holding,
+	readers port.VaultReaders,
 	embedder port.Embedder,
-	wanted chan struct{},
+	wake nudges,
 	out io.Writer,
 ) func() {
 	trouble := func(err error) {
@@ -198,12 +231,12 @@ func begin(
 		api.Listeners.tell(changed{paths: m.Paths, reload: m.Reload})
 		if m.Sources {
 			// A book dropped into an open vault is read without anybody asking.
-			// One nudge is enough: what owes work is asked of the index, so
-			// several changes at once are one reading.
-			select {
-			case wanted <- struct{}{}:
-			default:
-			}
+			raise(wake.sources)
+		}
+		if len(m.Paths) > 0 {
+			// A note written is a note cut again, and its chunks owe their
+			// vectors. Which ones is not carried: the debt is in the index.
+			raise(wake.notes)
 		}
 	}
 
@@ -272,19 +305,29 @@ func begin(
 		// moment its notes answer, and a library takes minutes to cut and hours
 		// to embed. Neither stops the window, and neither has to finish: an
 		// index is a cache.
-		readSources(ctx, cfg, db, api, embedder, out)
+		readSources(ctx, cfg, db, api, readers, embedder, out)
 		// Everything this vault owed is read.
 		api.Busy.Store(false)
 
-		// A book that arrives while the window is open is read where the first
-		// reading was: one at a time, and never while another is running.
+		// What arrives while the window is open is read where the first reading
+		// was: one at a time, and never while another is running.
+		var quiet <-chan time.Time
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case <-wanted:
+			case <-wake.sources:
 				api.Busy.Store(true)
-				readSources(ctx, cfg, db, api, embedder, out)
+				readSources(ctx, cfg, db, api, readers, embedder, out)
+				api.Busy.Store(false)
+			case <-wake.notes:
+				// Every write puts the pass off again. What was typed is
+				// embedded once the vault has been still.
+				quiet = time.After(wake.still)
+			case <-quiet:
+				quiet = nil
+				api.Busy.Store(true)
+				embedSources(ctx, db, api, readers, embedder, out)
 				api.Busy.Store(false)
 			}
 		}
@@ -357,6 +400,7 @@ func readSources(
 	cfg container.Config,
 	db *container.Index,
 	api *API,
+	readers port.VaultReaders,
 	embedder port.Embedder,
 	out io.Writer,
 ) {
@@ -369,7 +413,7 @@ func readSources(
 	}
 
 	extract := source.Extract{
-		Readers:      cfg.VaultReaders(),
+		Readers:      readers,
 		Sources:      db.Sources(),
 		Owing:        db.SourcesKnown(),
 		Sizes:        sizes,
@@ -391,12 +435,28 @@ func readSources(
 	}
 	api.Reading.Store("")
 
+	embedSources(ctx, db, api, readers, embedder, out)
+}
+
+// embedSources gives the chunks of the vault the vectors they owe, and reads no
+// file the index does not already hold a chunk of.
+//
+// It is the whole of what a note that was written owes: the chunks are cut
+// where the note is stored, and what has no vector is a question for the index.
+func embedSources(
+	ctx context.Context,
+	db *container.Index,
+	api *API,
+	readers port.VaultReaders,
+	embedder port.Embedder,
+	out io.Writer,
+) {
 	if embedder == nil {
 		return
 	}
 
 	embed := source.Embed{
-		Readers:  cfg.VaultReaders(),
+		Readers:  readers,
 		Chunks:   db.VectorsOwing(),
 		Vectors:  db.Vectors(),
 		Embedder: embedder,

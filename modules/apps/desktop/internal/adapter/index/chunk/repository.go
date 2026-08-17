@@ -7,10 +7,13 @@ package chunk
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"embed"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index/sqlfile"
 )
@@ -43,8 +46,8 @@ type Source struct {
 // Window is one cut of a source's text. `Location` is what the source's own
 // numbering calls the place, and is empty when the format offered none.
 //
-// `Text` is what the window holds, and is indexed, not kept: it is the
-// text at `Start` for `Length` in the file, so a window whose text says
+// `Text` is what the window holds, and is indexed and hashed, not kept: it is
+// the text at `Start` for `Length` in the file, so a window whose text says
 // something the file does not is a window that cannot be read back.
 //
 // `Small` are the windows inside this one. A Window with none of its own is a
@@ -119,10 +122,7 @@ func (r *Repository) SaveExtraction(ctx context.Context, vaultID string, s Sourc
 		vault, s.Path, s.Kind, s.Size, s.MTime, nullable(s.Hash), nullable(s.Recipe)).Scan(&source); err != nil {
 		return fmt.Errorf("save_source %s: %w", s.Path, err)
 	}
-	if err := Clear(ctx, tx, source); err != nil {
-		return err
-	}
-	if err := Write(ctx, tx, source, vault, windows); err != nil {
+	if err := Replace(ctx, tx, source, vault, windows); err != nil {
 		return err
 	}
 	if err := tx.Commit(); err != nil {
@@ -131,7 +131,7 @@ func (r *Repository) SaveExtraction(ctx context.Context, vaultID string, s Sourc
 	return nil
 }
 
-// SaveWindows replaces the chunks of one source with the windows given.
+// SaveWindows makes the chunks of one source the windows given.
 func (r *Repository) SaveWindows(ctx context.Context, vaultID, kind, path string, windows []Window) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -150,10 +150,7 @@ func (r *Repository) SaveWindows(ctx context.Context, vaultID, kind, path string
 	if err != nil {
 		return err
 	}
-	if err := Clear(ctx, tx, source); err != nil {
-		return err
-	}
-	if err := Write(ctx, tx, source, vault, windows); err != nil {
+	if err := Replace(ctx, tx, source, vault, windows); err != nil {
 		return err
 	}
 	if err := tx.Commit(); err != nil {
@@ -164,8 +161,12 @@ func (r *Repository) SaveWindows(ctx context.Context, vaultID, kind, path string
 
 // SaveVectors writes both representations of each vector.
 //
-// They go in one transaction. A chunk with only one of the two is absent from
-// the coarse pass and invisible to the question of what has no vector.
+// They go in one transaction, and both are written by reading the chunk they
+// belong to. A chunk with only one of the two is absent from the coarse pass
+// and invisible to the question of what has no vector.
+//
+// A vector naming a chunk the index no longer holds is written nowhere, and
+// what is left of the group is written as it stands.
 func (r *Repository) SaveVectors(ctx context.Context, vectors []Vector) error {
 	if len(vectors) == 0 {
 		return nil
@@ -185,7 +186,7 @@ func (r *Repository) SaveVectors(ctx context.Context, vectors []Vector) error {
 		if err := exec(ctx, tx, "insert_vec", v.Coarse, v.Chunk); err != nil {
 			return err
 		}
-		if err := exec(ctx, tx, "save_vector", v.Chunk, v.Model, v.Dims, v.Kind, v.Value); err != nil {
+		if err := exec(ctx, tx, "save_vector", v.Model, v.Dims, v.Kind, v.Value, v.Chunk); err != nil {
 			return err
 		}
 	}
@@ -246,32 +247,174 @@ func Clear(ctx context.Context, tx *sql.Tx, source int64) error {
 	return exec(ctx, tx, "clear_chunks", source)
 }
 
-// Write puts the windows of one source in, inside a transaction that is already
-// open. A large window is written before the windows inside it, which is what
-// gives them something to point at.
+// Replace makes the chunks of one source the windows given, inside a
+// transaction that is already open.
+//
+// A chunk is identified by the hash of its text. A window whose hash is on a row
+// of this source keeps that row, and its vector and its full-text row with it;
+// the row is moved to where the text now is. A window whose hash is on no row is
+// a new chunk, and a row whose hash is in no window is a chunk that is gone.
+//
+// A large window covers the whole of a note, so its hash moves whenever the note
+// is edited at all, and `chunks.parent … ON DELETE CASCADE` takes every window
+// inside a large one with it. The new rows go in first, the windows that were
+// kept are then pointed at the large window they now sit in, and the rows that
+// are gone come out last.
 //
 // Every window written is indexed for the words it holds, large and small alike,
 // so that the lexical and the dense half of a search name one kind of row.
-func Write(ctx context.Context, tx *sql.Tx, source, vault int64, windows []Window) error {
-	insert, err := tx.PrepareContext(ctx, stmt.Get("insert_chunk"))
+func Replace(ctx context.Context, tx *sql.Tx, source, vault int64, windows []Window) error {
+	held, err := chunksOf(ctx, tx, source)
 	if err != nil {
-		return fmt.Errorf("insert_chunk: %w", err)
+		return err
 	}
-	defer insert.Close()
 
-	index, err := tx.PrepareContext(ctx, stmt.Get("insert_fts"))
+	w, err := prepare(ctx, tx)
 	if err != nil {
-		return fmt.Errorf("insert_fts: %w", err)
+		return err
 	}
-	defer index.Close()
+	defer w.close()
 
 	for _, large := range windows {
-		row, err := write(ctx, insert, index, source, vault, large, nil)
+		row, err := w.put(ctx, held, source, vault, large, nil)
 		if err != nil {
 			return err
 		}
 		for _, small := range large.Small {
-			if _, err := write(ctx, insert, index, source, vault, small, row); err != nil {
+			if _, err := w.put(ctx, held, source, vault, small, row); err != nil {
+				return err
+			}
+		}
+	}
+	return remove(ctx, tx, held.unclaimed())
+}
+
+// writer is the three statements a cut runs per window, prepared once for the
+// whole source.
+type writer struct{ insert, index, move *sql.Stmt }
+
+func prepare(ctx context.Context, tx *sql.Tx) (writer, error) {
+	var w writer
+	for _, s := range []struct {
+		name string
+		at   **sql.Stmt
+	}{
+		{"insert_chunk", &w.insert},
+		{"insert_fts", &w.index},
+		{"move_chunk", &w.move},
+	} {
+		prepared, err := tx.PrepareContext(ctx, stmt.Get(s.name))
+		if err != nil {
+			w.close()
+			return writer{}, fmt.Errorf("%s: %w", s.name, err)
+		}
+		*s.at = prepared
+	}
+	return w, nil
+}
+
+func (w writer) close() {
+	for _, s := range []*sql.Stmt{w.insert, w.index, w.move} {
+		if s != nil {
+			s.Close()
+		}
+	}
+}
+
+// put is the row one window is held on, and moves or writes it.
+//
+// A window inside another arrives with the row enclosing it, and a large window
+// with nothing, which is also what the row's `parent` becomes.
+func (w writer) put(ctx context.Context, held *held, source, vault int64, win Window, parent any) (int64, error) {
+	key := text{hash: hashOf(win.Text), small: parent != nil}
+	if row, kept := held.claim(key); kept {
+		if _, err := w.move.ExecContext(ctx, win.Start, win.Length, parent, nullable(win.Location), row); err != nil {
+			return 0, fmt.Errorf("move_chunk: %w", err)
+		}
+		return row, nil
+	}
+
+	var row int64
+	err := w.insert.QueryRowContext(ctx,
+		source, vault, win.Start, win.Length, parent, nullable(win.Location), key.hash).Scan(&row)
+	if err != nil {
+		return 0, fmt.Errorf("insert_chunk: %w", err)
+	}
+	if _, err := w.index.ExecContext(ctx, row, win.Text); err != nil {
+		return 0, fmt.Errorf("insert_fts: %w", err)
+	}
+	return row, nil
+}
+
+// text is what a window has to hold to be held on a row: the same text, cut at
+// the same size. A vector belongs to a window that sits inside another, so the
+// two sizes are separate populations.
+type text struct {
+	hash  string
+	small bool
+}
+
+// held is what a source's rows hold, in the shape a fresh cut asks about them.
+type held struct {
+	rows map[text][]int64
+	left map[int64]bool
+}
+
+func chunksOf(ctx context.Context, tx *sql.Tx, source int64) (*held, error) {
+	rows, err := tx.QueryContext(ctx, stmt.Get("chunks_of"), source)
+	if err != nil {
+		return nil, fmt.Errorf("chunks_of: %w", err)
+	}
+	defer rows.Close()
+
+	h := &held{rows: map[text][]int64{}, left: map[int64]bool{}}
+	for rows.Next() {
+		var row int64
+		var key text
+		if err := rows.Scan(&row, &key.hash, &key.small); err != nil {
+			return nil, fmt.Errorf("chunks_of: %w", err)
+		}
+		h.rows[key] = append(h.rows[key], row)
+		h.left[row] = true
+	}
+	return h, rows.Err()
+}
+
+// claim is a row holding the text given, and false where none does. A row is
+// claimed once, so a text that occurs twice in a source is two rows.
+func (h *held) claim(key text) (int64, bool) {
+	rows := h.rows[key]
+	if len(rows) == 0 {
+		return 0, false
+	}
+	row := rows[0]
+	h.rows[key] = rows[1:]
+	delete(h.left, row)
+	return row, true
+}
+
+// unclaimed is the rows of the source no window holds, in order, so that a cut
+// writes the same thing twice running.
+func (h *held) unclaimed() []int64 {
+	out := make([]int64, 0, len(h.left))
+	for row := range h.left {
+		out = append(out, row)
+	}
+	slices.Sort(out)
+	return out
+}
+
+// remove takes out the rows given, and everything indexed over them.
+//
+// The rows in the two virtual tables go first, by the chunk's own number.
+// Nothing cascades into a virtual table, and a row left in either answers a
+// search with a chunk that no longer exists. A large window takes the windows
+// inside it, so a row here may already be gone from `chunks` by the time it is
+// reached.
+func remove(ctx context.Context, tx *sql.Tx, rows []int64) error {
+	for _, row := range rows {
+		for _, name := range []string{"delete_fts", "delete_vec", "delete_chunk"} {
+			if err := exec(ctx, tx, name, row); err != nil {
 				return err
 			}
 		}
@@ -279,16 +422,11 @@ func Write(ctx context.Context, tx *sql.Tx, source, vault int64, windows []Windo
 	return nil
 }
 
-func write(ctx context.Context, insert, index *sql.Stmt, source, vault int64, w Window, parent any) (int64, error) {
-	var row int64
-	err := insert.QueryRowContext(ctx, source, vault, w.Start, w.Length, parent, nullable(w.Location)).Scan(&row)
-	if err != nil {
-		return 0, fmt.Errorf("insert_chunk: %w", err)
-	}
-	if _, err := index.ExecContext(ctx, row, w.Text); err != nil {
-		return 0, fmt.Errorf("insert_fts: %w", err)
-	}
-	return row, nil
+// hashOf addresses a window by the text it holds. A chunk keeps its row, and its
+// vector and its full-text row with it, for as long as this value stays the same.
+func hashOf(s string) string {
+	sum := sha256.Sum256([]byte(s))
+	return hex.EncodeToString(sum[:])
 }
 
 // exec runs a named statement and says which one failed.

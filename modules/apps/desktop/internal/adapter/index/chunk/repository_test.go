@@ -97,3 +97,15 @@ func withoutComments(sql string) string {
 	}
 	return strings.Join(strings.Fields(b.String()), " ")
 }
+
+func TestBothHalvesOfAVectorReadTheChunkTheyBelongTo(t *testing.T) {
+	// A chunk that went while its vector was being made is written nothing by
+	// either half, so the coarse index and the vectors cannot disagree and the
+	// pass that was making it carries on.
+	for _, name := range []string{"insert_vec", "save_vector"} {
+		statement := withoutComments(stmt.Get(name))
+		if !strings.Contains(statement, "FROM chunks WHERE id = ?") {
+			t.Errorf("%s writes without reading the chunk it belongs to: %s", name, statement)
+		}
+	}
+}
