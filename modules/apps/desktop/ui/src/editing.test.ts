@@ -43,6 +43,8 @@ function fake(over: Partial<Core> = {}) {
       files.set(path, body)
       return { body: '', refusal: null }
     },
+    create: async () => ({ path: '', refusal: null }),
+    join: async () => null,
     ...over,
   }
   return { core, files, wrote }

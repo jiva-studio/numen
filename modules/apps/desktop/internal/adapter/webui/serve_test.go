@@ -10,10 +10,15 @@ import (
 	"testing"
 	"time"
 
+	"connectrpc.com/connect"
+
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/testsupport"
 )
@@ -92,6 +97,25 @@ func (r waits) Read(ctx context.Context, path string) ([]byte, error) {
 	return raw, err
 }
 
+// unwalkable is a set of readers that cannot list the vault, which is what a
+// folder the walk is refused looks like from here. A note named outright is
+// still read.
+type unwalkable struct{ port.VaultReaders }
+
+func (u unwalkable) Open(v domain.Vault) (port.VaultReader, error) {
+	reader, err := u.VaultReaders.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return unlisted{VaultReader: reader}, nil
+}
+
+type unlisted struct{ port.VaultReader }
+
+func (unlisted) Walk(context.Context, func(domain.FileRef) error) error {
+	return errors.New("the vault cannot be listed")
+}
+
 // unreadable is a set of readers whose reads fail, which is what a permission
 // or a device that went away looks like from here.
 type unreadable struct{ port.VaultReaders }
@@ -153,6 +177,8 @@ func openingWith(
 		Links:     db.Links(),
 		Listeners: following(),
 		Watching:  focusing(),
+		Reads:     &note.Read{Readers: filesystem.Readers{}},
+		Saves:     &note.Write{Readers: filesystem.Readers{}, Writers: filesystem.Writers{}},
 	}
 	if embedder != nil {
 		if err := db.FitVectors(t.Context(), embedder.Model().Dimensions); err != nil {
@@ -178,8 +204,11 @@ func openingWith(
 	line, done := api.Listeners.listen()
 	t.Cleanup(done)
 
+	wake := waking(still)
+	api.Wrote = func() { raise(wake.notes) }
+
 	ctx, stop := context.WithCancel(t.Context())
-	wait := begin(ctx, cfg, db, api, scan, follow, held, readers, embedder, waking(still), io.Discard)
+	wait := begin(ctx, cfg, db, api, scan, follow, held, readers, embedder, wake, io.Discard)
 	t.Cleanup(func() {
 		stop()
 		wait()
@@ -192,6 +221,19 @@ func write(t *testing.T, v domain.Vault, path, body string) {
 	t.Helper()
 	if err := os.WriteFile(filepath.Join(v.Path, filepath.FromSlash(path)), []byte(body), 0o644); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// save puts a body into a note the way the window does: through the handler a
+// save lands in.
+func save(t *testing.T, f *behind, path, body string) {
+	t.Helper()
+	out, err := f.api.Write(t.Context(), connect.NewRequest(&v1.WriteRequest{Path: path, Body: body}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if refusal := out.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
+		t.Fatalf("the save of %s was refused: %v", path, refusal)
 	}
 }
 

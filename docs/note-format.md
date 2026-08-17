@@ -86,9 +86,12 @@ application is a guest in a file the user also edits.
 - **The application does not rewrite what it did not change.** Formatting,
   whitespace, key order in frontmatter and line endings are preserved as found.
   A save must not produce a diff the user did not ask for.
-- **Line endings are preserved per file.** A file whose endings are uniformly
-  CRLF keeps CRLF. New files are written with LF. A file whose endings are mixed
-  is written with LF, so it is made uniform the first time it is saved.
+- **Line endings are preserved per file.** Every break in the file decides. A file
+  whose breaks are all CRLF has its body written with CRLF; any other file has its
+  body written with LF, and a new file is written with LF. The frontmatter arrives on
+  the other side as the bytes it went in as, so a file whose breaks are mixed above
+  the body keeps that mixture and a save that changes no text leaves the file byte for
+  byte as it was (ADR-0027, ADR-0032).
 - **Unknown frontmatter keys are preserved verbatim.** The application reads the
   keys it owns and leaves everything else untouched, including keys it will own
   in a future version.

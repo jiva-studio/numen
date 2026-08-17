@@ -7,6 +7,7 @@
  */
 import { ref } from 'vue'
 import { rateOf } from '@numen/ui'
+import type { PlexRelatedSeat } from '@numen/ui'
 import type { Neighbourhood } from './plex'
 
 /** Everything the window asks of the core, and nothing about how it is drawn. */
@@ -40,6 +41,13 @@ export interface Core {
   read(path: string): Promise<Answered>
   /** Prose into a note, keeping the frontmatter the file has when it lands. */
   write(path: string, body: string): Promise<Answered>
+  /** A note made, named after the title it is given and joined as it is written. */
+  create(note: NewNote): Promise<Made>
+  /**
+   * A relationship written into one note. The note at the other end is left
+   * alone: a link is one end's account of a relationship.
+   */
+  join(path: string, link: NewLink): Promise<Refused | null>
   /**
    * The window going, for as long as the client listens. The stream opens with
    * the token this client answers under.
@@ -58,7 +66,41 @@ export interface Answered {
   refusal: Refused | null
 }
 
-export type Refused = 'missing' | 'notANote' | 'notText' | 'tooLarge' | 'bodyRefused' | 'unreadable'
+export type Refused =
+  | 'missing'
+  | 'notANote'
+  | 'notText'
+  | 'tooLarge'
+  | 'bodyRefused'
+  | 'unreadable'
+  | 'occupied'
+
+/** A note to make: what it is called, where it goes, and what it arrives joined to. */
+export interface NewNote {
+  title: string
+  /** Where in the vault it goes, relative to the root. Empty is the root. */
+  folder: string
+  links: readonly NewLink[]
+}
+
+/**
+ * One relationship as the note it is written in declares it: the note at the
+ * other end, by the path it is filed under, and where that note sits seen from
+ * this one.
+ */
+export interface NewLink {
+  to: string
+  seat: PlexRelatedSeat
+  /** What the person calls this relationship, when they call it anything. */
+  label?: string
+}
+
+/** What making a note came back with. */
+export interface Made {
+  /** Where the note is filed. Empty when nothing was made. */
+  path: string
+  refusal: Refused | null
+}
 
 export function showing(
   core: Core,

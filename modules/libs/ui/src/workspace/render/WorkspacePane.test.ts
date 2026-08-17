@@ -116,3 +116,34 @@ describe('the way out of a panel', () => {
     expect(document.activeElement).toBe(first?.element)
   })
 })
+
+describe('the tab that is showing', () => {
+  it('is said as the pane is drawn', () => {
+    expect(mountPane().emitted('show')).toStrictEqual([['chat']])
+  })
+
+  it('is said again when another tab takes its place', async () => {
+    const held = mountPane()
+    await held.setProps({ pane: pane('main', ['plex', 'chat', 'notes'], 'notes') })
+
+    expect(held.emitted('show')).toStrictEqual([['chat'], ['notes']])
+  })
+
+  it('is said once the panel it stands over is on screen', async () => {
+    const onScreen: boolean[] = []
+    const onShow = (tab: string) => {
+      const at = ['plex', 'chat', 'notes'].indexOf(tab)
+      const panel = document.getElementById(`later-panel-${at}`)
+      onScreen.push(panel?.hasAttribute('data-showing') ?? false)
+    }
+
+    const held = mountPane({ pane: pane('later', ['plex', 'chat', 'notes'], 'chat'), onShow })
+    await held.setProps({ pane: pane('later', ['plex', 'chat', 'notes'], 'notes') })
+
+    expect(onScreen).toStrictEqual([true, true])
+  })
+
+  it('is nothing at all where the pane holds nothing', () => {
+    expect(mountPane({ pane: pane('main', []) }).emitted('show')).toBeUndefined()
+  })
+})

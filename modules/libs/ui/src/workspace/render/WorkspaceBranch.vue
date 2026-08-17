@@ -33,6 +33,7 @@ const emit = defineEmits<{
   (event: 'lift', tab: TabId, at: PointerEvent): void
   (event: 'claim', pane: NodeId): void
   (event: 'resize', branch: NodeId, sizes: readonly number[]): void
+  (event: 'show', tab: TabId): void
 }>()
 
 /** What a child says, said again unchanged. */
@@ -40,6 +41,7 @@ const passed = {
   onChoose: (tab: TabId) => emit('choose', tab),
   onClose: (tab: TabId) => emit('close', tab),
   onLift: (tab: TabId, at: PointerEvent) => emit('lift', tab, at),
+  onShow: (tab: TabId) => emit('show', tab),
 }
 
 defineSlots<{

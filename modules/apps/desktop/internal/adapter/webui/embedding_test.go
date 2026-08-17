@@ -2,6 +2,7 @@ package webui
 
 import (
 	"context"
+	"errors"
 	"hash/fnv"
 	"math/rand/v2"
 	"strings"
@@ -22,14 +23,20 @@ var (
 	after  = []string{"lantern", "compass", "anchor", "harvest", "cinder", "willow", "amber", "thistle"}
 )
 
-// noteWith is a note of n words of one vocabulary, long enough to be cut into
-// windows that carry a vector.
-func noteWith(vocabulary []string, n int) string {
+// prose is n words of one vocabulary, which is what a buffer holds: the text
+// under the frontmatter, and no frontmatter of its own.
+func prose(vocabulary []string, n int) string {
 	out := make([]string, 0, n)
 	for i := range n {
 		out = append(out, vocabulary[i%len(vocabulary)])
 	}
-	return "---\ntitle: Note\n---\n\n" + strings.Join(out, " ") + "\n"
+	return strings.Join(out, " ") + "\n"
+}
+
+// noteWith is a note of n words of one vocabulary, long enough to be cut into
+// windows that carry a vector.
+func noteWith(vocabulary []string, n int) string {
+	return "---\ntitle: Note\n---\n\n" + prose(vocabulary, n)
 }
 
 // asked is a model that answers a direction belonging to the text it was given.
@@ -76,6 +83,43 @@ func (a *asked) saw(word string) bool {
 		}
 	}
 	return false
+}
+
+// sulking is a model that turns down the first few askings, which is what a
+// service that was not answering when the window opened looks like from here.
+// What it turned down still owes a vector.
+type sulking struct {
+	*asked
+
+	mu     sync.Mutex
+	left   int
+	turned int
+}
+
+func sulks(dims, refusals int) *sulking {
+	return &sulking{asked: &asked{dims: dims}, left: refusals}
+}
+
+func (s *sulking) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+	s.mu.Lock()
+	refusing := s.left > 0
+	if refusing {
+		s.left--
+		s.turned++
+	}
+	s.mu.Unlock()
+
+	if refusing {
+		return nil, errors.New("the model is not answering")
+	}
+	return s.asked.Embed(ctx, texts)
+}
+
+// refused is how many askings it has turned down.
+func (s *sulking) refused() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.turned
 }
 
 // direction is a vector that belongs to one text and no other.
@@ -197,4 +241,58 @@ func TestTheCooldownDoesNotFirePerSave(t *testing.T) {
 	case passes > 2:
 		t.Errorf("%d saves asked the model %d times", saves, passes)
 	}
+}
+
+// TestASaveEmbedsWhereTheWatchNeverStarted. A vault nobody is following is a
+// vault somebody is still writing in, and a save is what starts the pass that
+// pays what the index says is owed.
+func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
+	// The first asking is turned down, so the note's chunks come out of the
+	// first reading still owing their vectors.
+	model := sulks(64, 1)
+
+	f := openingWith(t, map[string]string{
+		"Note.md": noteWith(before, 200),
+	}, unwatchable{}, walked(), model, 20*time.Millisecond)
+
+	eventually(t, "the model was never asked at all", func() bool { return model.refused() > 0 })
+	if reason := text(&f.api.Unwatched); reason == "" {
+		t.Fatal("a vault whose watch never started is shown as followed")
+	}
+	held, embedded := vectored(t, f, model)
+	if held == 0 || embedded > 0 {
+		t.Fatalf("%d of %d chunks carry a vector with nothing saved yet", embedded, held)
+	}
+
+	// Longer than what is on disk, so every chunk's place is still inside the
+	// note the person saved.
+	save(t, f, "Note.md", prose(after, 240))
+
+	eventually(t, "what was saved stayed out of search by meaning", func() bool {
+		held, embedded := vectored(t, f, model)
+		return held > 0 && held == embedded && model.saw(after[0])
+	})
+}
+
+// TestANoteWrittenAfterTheScanFailedIsEmbedded. A vault that could not be read
+// is a vault somebody is still writing in, and what they write is embedded.
+func TestANoteWrittenAfterTheScanFailedIsEmbedded(t *testing.T) {
+	watcher := byHand()
+	model := &asked{dims: 64}
+
+	f := openingWith(t, map[string]string{
+		"Note.md": noteWith(before, 200),
+	}, watcher, unwalkable{VaultReaders: filesystem.Readers{}}, model, 20*time.Millisecond)
+
+	eventually(t, "the scan was not reported as failed", func() bool {
+		return f.api.failure() != ""
+	})
+
+	write(t, f.vault, "Note.md", noteWith(after, 200))
+	tells(t, watcher, "Note.md")
+
+	eventually(t, "what was written stayed out of search by meaning", func() bool {
+		held, embedded := vectored(t, f, model)
+		return held > 0 && held == embedded && model.saw(after[0])
+	})
 }

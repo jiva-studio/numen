@@ -42,6 +42,7 @@ Read these first; everything else is derived from them.
 - [ADR-0031 — The agent this application starts, and what it may reach](0031-the-agent-this-application-starts.md)
 - [ADR-0027 — The application writes to the vault](0027-the-application-writes-to-the-vault.md)
 - [ADR-0032 — The window saves a note as it is typed](0032-the-window-saves-a-note-as-it-is-typed.md)
+- [ADR-0033 — One process, one writer, one lifetime](0033-one-process-one-writer-one-lifetime.md)
 
 ## The note file
 
@@ -69,6 +70,7 @@ Read these first; everything else is derived from them.
 
 - [ADR-0006 — Sources: extracted text into the cache, unreproducible output into the vault](0006-sources.md)
 - [ADR-0007 — Structural chunking, and how a passage is found](0007-structural-chunking-and-hybrid-search.md)
+- [ADR-0034 — A chunk is identified by the text it holds](0034-a-chunk-is-identified-by-its-text.md)
 
 Not yet written.
 

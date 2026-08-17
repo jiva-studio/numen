@@ -7,7 +7,8 @@
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
 import { Refusal, VaultService } from '@numen/protocol'
-import type { Answered, Core, Refused } from './showing'
+import { asSeat } from './plex'
+import type { Answered, Core, Made, NewLink, Refused } from './showing'
 
 export const vault = createClient(
   VaultService,
@@ -23,17 +24,36 @@ export const core: Core = {
   focus: (signal) => vault.focus({}, { signal }),
   read: async (path) => answered(await vault.read({ path })),
   write: async (path, body) => answered(await vault.write({ path, body })),
+  create: async (note) => {
+    const answer = await vault.create({
+      title: note.title,
+      folder: note.folder,
+      links: note.links.map(written),
+    })
+    return { path: answer.path, refusal: refusalIn(answer) } satisfies Made
+  },
+  join: async (path, link) => refusalIn(await vault.join({ path, link: written(link) })),
   quitting: (signal) => vault.quitting({}, { signal }),
   flushed: async (token) => {
     await vault.flushed({ token })
   },
 }
 
+/** A link in the shape the schema carries it. */
+const written = (link: NewLink) => ({
+  to: link.to,
+  seat: asSeat(link.seat),
+  label: link.label ?? '',
+})
+
 /** The schema's answer in the words the window uses. */
 const answered = (from: { body?: string | undefined; refusal?: Refusal | undefined }): Answered => ({
   body: from.body ?? '',
-  refusal: from.refusal === undefined ? null : refused[from.refusal],
+  refusal: refusalIn(from),
 })
+
+const refusalIn = (from: { refusal?: Refusal | undefined }): Refused | null =>
+  from.refusal === undefined ? null : refused[from.refusal]
 
 const refused: Record<Refusal, Refused> = {
   [Refusal.UNSPECIFIED]: 'unreadable',
@@ -43,4 +63,5 @@ const refused: Record<Refusal, Refused> = {
   [Refusal.TOO_LARGE]: 'tooLarge',
   [Refusal.BODY_REFUSED]: 'bodyRefused',
   [Refusal.UNREADABLE]: 'unreadable',
+  [Refusal.OCCUPIED]: 'occupied',
 }

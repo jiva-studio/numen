@@ -3,8 +3,9 @@
 - **Status:** Accepted, except where noted below
 - **Date:** 2026-08-15
 - **Applies to:** the product — every application in this repository
-- **Partly superseded by:** ADR-0032 — item 4 of the list in the context, the
-  conflict copy and the rule that there is no silent winner
+- **Partly superseded by:** ADR-0032 — items 2, 3 and 4 of the honest list below:
+  what recognises a write coming back, what reconciliation covers, and the conflict
+  copy with the rule that there is no silent winner
 - **Related:** ADR-0000, ADR-0002
 
 ## Context
@@ -51,8 +52,21 @@ problems, all of which have to be implemented:
 2. **Echo-loop protection.** Writing a file makes the watcher report that write
    back. The write path has to recognise its own bytes and drop the event, or
    every save triggers a reparse and, worse, a re-save.
+
+   > **Partly superseded by [ADR-0032](0032-the-window-saves-a-note-as-it-is-typed.md).**
+   > No write path recognises its own bytes and no event is dropped: a save comes
+   > back through the watcher and the note is parsed again. The re-save is what
+   > does not follow — a tab reads its file back and finds the normalised text it
+   > already shows, and equal text is not a change.
+
 3. **External edits mid-session.** A note open in the editor can change under the
    user; the application must reconcile rather than overwrite.
+
+   > **Partly superseded by [ADR-0032](0032-the-window-saves-a-note-as-it-is-typed.md).**
+   > A tab with nothing unsaved reads its file again and shows what it holds. A tab
+   > with unsaved text keeps what the person typed, and its next save carries that
+   > over whatever landed.
+
 4. **Conflict copies.** When the buffer is dirty *and* the file changed on disk,
    reconciliation is impossible and a conflict copy is written. No silent winner.
 

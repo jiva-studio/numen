@@ -81,8 +81,7 @@ defineExpose({
   focus: () => view?.focus(),
   /**
    * Take the editor's measurements again. An editor drawn while it is hidden
-   * has none, and one hidden with `display: none` comes back without its
-   * scroll offset. The caller says when it is on screen.
+   * has none to take. The caller says when it is on screen.
    */
   measure: () => view?.requestMeasure(),
 })

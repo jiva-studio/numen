@@ -5,7 +5,7 @@
 - **Applies to:** the vault format — every application that writes one
 - **Supersedes:** ADR-0001 item 4
 - **Partly supersedes:** ADR-0027, "A write that would overwrite an unseen edit refuses"
-- **Related:** ADR-0009, ADR-0023, ADR-0026, ADR-0027
+- **Related:** ADR-0009, ADR-0023, ADR-0026, ADR-0027, ADR-0033, ADR-0034
 
 ## Context
 
@@ -31,7 +31,18 @@ Every change puts the write off again. One write happens once the text has been
 still, and a second happens once the oldest unwritten change reaches a bound, so
 that a crash costs at most that bound. Nothing changed means nothing written.
 
-Closing a tab and quitting the window write what is owed and wait for it.
+Closing a tab and quitting the window write what is owed and wait for it. What a
+quit waits for, in what order, and for how long is ADR-0033.
+
+### A note is embedded once the vault has been still
+
+A save reaches the index at once: the note is parsed again, cut again (ADR-0034), and
+found by word. Its vectors are asked for after the vault has been quiet for eight
+seconds, and every write puts that pass off again.
+
+The cooldown is longer than the bound above, so one sitting at one note is embedded
+once. The two numbers are read together, and this pair holds in
+`modules/apps/desktop`.
 
 ### The window's save overwrites, and is told nothing
 
@@ -56,8 +67,9 @@ The buffer holds the body. The save reads the file, takes the frontmatter as it
 then stands, puts the body on it and replaces the file.
 
 So a link an agent adds to a note that is open survives a save that knows nothing
-about it. This holds only while writes to one vault are serialised from before that
-read to after the rename.
+about it. This holds while the read and the rename are serialised against every other
+write that reads a note and puts it back. That serialisation is one process's, and it
+covers neither a create, a move's own rename nor a removal (ADR-0033).
 
 ### A save writes no identifier
 
@@ -73,10 +85,25 @@ written elsewhere keeps the frontmatter it came with (ADR-0009).
 A note renamed or removed under an open tab leaves the tab open, showing what the
 person was reading, at the name they opened. The next save puts it back there.
 
-### Line endings are decided by the whole file
+### A note has a ceiling, and a file over it is not opened here
 
-A file whose endings are uniformly CRLF is written back with CRLF. Anything else is
-written with LF, and mixed endings are therefore made uniform once.
+A megabyte is the most a note may be and still be read. The size is asked of the file
+before it is opened, so a file over the bound is refused with none of its bytes read,
+and the tab says which file and what the bound is. A body handed back over the same
+number is refused by it too.
+
+A megabyte of prose is a quarter of a million words. The bound is the core's, so what
+is refused to the window is refused to an agent.
+
+### Line endings are decided by the whole file, and the body alone is written
+
+Every break in the file is looked at. A file whose breaks are all CRLF has its body
+written with CRLF, and any other file has its body written with LF.
+
+The frontmatter arrives on the other side as the bytes it went in as (ADR-0027). So a
+file whose breaks are mixed above the body keeps that mixture, and a save that changes
+no text leaves the file byte for byte as it was. A body of mixed breaks is written with
+one break throughout.
 
 The buffer is LF throughout, so what is compared for having changed is the
 normalised text, and a note is never unsaved by being opened.
@@ -89,9 +116,9 @@ byte offsets into the file as it is on disk.
 **Positive**
 
 - Saving is invisible. There is no key to press and nothing to answer.
-- A person can open any note and type in it. A frontmatter this application cannot
-  write is no longer a note it cannot save, and a file it did not create is
-  returned unmarked.
+- A person can open a note of any shape up to the ceiling and type in it. A
+  frontmatter this application cannot write is no longer a note it cannot save, and a
+  file it did not create is returned unmarked.
 - A tab shows what its file holds, or what the person typed, and never a third
   thing.
 
@@ -104,7 +131,12 @@ byte offsets into the file as it is on disk.
   synchroniser's own conflict copies are what a person is left with.
 - The person cannot see or edit their own frontmatter here, in a product whose
   first decision is that the file is theirs. It is reached with any text editor.
-- A note whose endings are mixed is rewritten end to end, once.
+- A note whose body holds breaks of both kinds has that body written with one of them,
+  once. What is above the body keeps the breaks it had, so the file stays mixed.
+- A note over a megabyte cannot be opened in a tab at all. The window says which file
+  and what the bound is, and the person opens it elsewhere.
+- A note just saved is not found by meaning for at least eight seconds after the
+  typing stops. It is found by word at once.
 
 ## Alternatives considered
 

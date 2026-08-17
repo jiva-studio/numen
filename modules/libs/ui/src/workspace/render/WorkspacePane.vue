@@ -5,7 +5,7 @@
  * The strip and the pane carry their identities on the element, so that a
  * drag can find out what the pointer is over by asking the document.
  */
-import { useTemplateRef } from 'vue'
+import { onMounted, useTemplateRef, watch } from 'vue'
 import WorkspaceTab from './WorkspaceTab.vue'
 import { stepTo } from './keys'
 import type { Pane, TabId } from '../model'
@@ -31,6 +31,8 @@ const emit = defineEmits<{
   (event: 'lift', tab: TabId, at: PointerEvent): void
   /** This pane asks to be the one a tab opens into. */
   (event: 'claim'): void
+  /** The tab that is now the one showing, once it is on screen. */
+  (event: 'show', tab: TabId): void
 }>()
 
 defineSlots<{
@@ -43,6 +45,23 @@ defineSlots<{
 function claim(event: PointerEvent): void {
   if (event.button === 0) emit('claim')
 }
+
+/**
+ * A tab held out of sight is drawn with no size, so what is showing is said
+ * once it is on screen and can be measured. It is said for the tab this pane
+ * opens with as well.
+ */
+onMounted(() => {
+  if (props.pane.active !== null) emit('show', props.pane.active)
+})
+
+watch(
+  () => props.pane.active,
+  (tab) => {
+    if (tab !== null) emit('show', tab)
+  },
+  { flush: 'post' },
+)
 
 /**
  * A tab and the panel it stands over name each other, so the names are unique

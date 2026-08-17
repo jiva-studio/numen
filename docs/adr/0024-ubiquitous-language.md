@@ -3,8 +3,11 @@
 - **Status:** Accepted
 - **Date:** 2026-08-16
 - **Extended:** 2026-08-17 — `source`, `chunk`, `location`, `passage` (ADR-0006)
+- **Extended:** 2026-08-17 — `reload`, `hash`, `mark`, `stuck`; `focus` settled a
+  third time (ADR-0032, ADR-0034)
 - **Applies to:** the product as a whole
-- **Related:** ADR-0003, ADR-0006, ADR-0011, ADR-0014, ADR-0020
+- **Related:** ADR-0003, ADR-0006, ADR-0011, ADR-0014, ADR-0020, ADR-0032,
+  ADR-0034
 
 ## Context
 
@@ -81,7 +84,8 @@ in one place, meaning the obvious thing, needs no entry.
 | index | The cache. Never a SQL index; that word belongs to SQL and stays in SQL |
 | source | A thing the index holds text for. A note and a book are kinds of source (ADR-0006) |
 | chunk | One window of a source's text, as a row. Both of ADR-0007's sizes are chunks; the large one is the chunk with no parent (ADR-0006) |
-| location | Where a chunk sits, in the terms its own format uses. Nullable; `start` and `length` are the key and are not a location (ADR-0006) |
+| location | Where a chunk sits, in the terms its own format uses. Nullable, and never a key. `start` and `length` are where a chunk is and are not a location either (ADR-0006) |
+| hash | Over a file's bytes, which file it is; over a window's text, which chunk it is. Two things, settled below (ADR-0006, ADR-0034) |
 | passage | What a search returns: the text around a hit, and where it came from (ADR-0006, ADR-0007) |
 | registry | The list of vaults the installation knows |
 | scan | One walk of a whole vault |
@@ -89,6 +93,7 @@ in one place, meaning the obvious thing, needs no entry.
 | group | What a scan writes in: one transaction's worth |
 | fingerprint | Path, size and modification time — what says a note need not be read again |
 | changed | What a write answers when the note on disk is no longer the one the caller read (ADR-0027). Never a *conflict* |
+| reload | What a client is told when the vault is to be read again whole: more changed at once than could be followed, or a listener that fell behind (ADR-0023) |
 | backlink | A link that resolves here, whichever end wrote it |
 | problem | Something that could not be acted on and was not guessed at |
 | watch | Following a vault for changes the application did not make |
@@ -111,7 +116,7 @@ in one place, meaning the obvious thing, needs no entry.
 |---|---|
 | plex | The focused neighbourhood the product is named for |
 | neighbourhood | One note and everything joined to it, seen from that note |
-| focus | The note a neighbourhood is seen from. Never the keyboard's position |
+| focus | A neighbourhood's: the note it is seen from. A workspace's: the pane a tab opens into. Never the keyboard's position; settled below |
 | node | What is drawn in place of a note |
 | edge | A line drawn between two nodes. Two links can be one edge (ADR-0003) |
 | seat | Where a node sits relative to the focus: `parent`, `child`, `jump`, `sibling` |
@@ -126,6 +131,8 @@ in one place, meaning the obvious thing, needs no entry.
 | tab | One thing a pane holds open, shown by its title |
 | menu | A list of things that can be done, opened on what they are done to |
 | unsaved | A tab whose text is not the text in its file |
+| stuck | A tab whose file can be neither read nor written: not a note, not text, over the ceiling, or frontmatter that will not parse (ADR-0032) |
+| mark | The one word a tab carries beside its title for the state it is in, and what a screen reader reads out: `unsaved` or `stuck` |
 
 ### Words that were spent twice, and how they are settled
 
@@ -163,9 +170,24 @@ doing, and the wire is read by something drawing a line about it. Every other
 step keeps its word across the boundary, and a third name for either of these is
 a defect.
 
-**`focus`.** The note a neighbourhood is seen from. Where the keyboard is has
-its own word, because a reader who sees `focus` in a stylesheet will guess
-wrong exactly once and be wrong everywhere after.
+**`focus`.** Two things, and what carries them settles them apart. A
+*neighbourhood*'s focus is the note it is seen from. A *workspace*'s focus is the
+pane a tab opens into. A neighbourhood knows nothing of panes and a workspace
+knows nothing of notes (ADR-0020), so the two are never read in one sentence.
+
+The keyboard's position is neither, and has its own word: a reader who sees `focus`
+in a stylesheet will guess wrong exactly once and be wrong everywhere after.
+
+**`mark`.** A tab's mark is one word about the state of what the tab holds, drawn
+beside the title and read out as the tab's own label. Markdown's syntax characters
+are markup, and where the editor says mark it is the library's `Decoration.mark`,
+which does not leave the module that calls it.
+
+**`hash`.** Two, and what each is taken over settles them. A source's `hash` is
+over the bytes of a file and says which file it is (ADR-0006). A chunk's `hash` is
+over the text of one window and says which chunk it is (ADR-0034). Each is a column
+of the table it belongs to, nothing joins one to the other, and a sentence that
+says `hash` alone has said nothing.
 
 **`label` and `title`.** A title names a note; a label names a relationship.
 Both are drawn, a few pixels apart, which is precisely why they cannot share a
@@ -175,10 +197,6 @@ word.
 of notes (ADR-0022). A pane is one part of a split workspace. The workspace was
 written with the storage word and is renamed, because the two are read side by
 side in the same session and one of them is about the database.
-
-**`window` and `chunk`.** The window is the application's window. A span of a
-source's text cut for searching is a *chunk*, and how large one is cut is its
-size.
 
 **`unsaved` and `dirty`.** A tab whose text is not the text in its file is
 *unsaved*. `dirty` names the fraction of a chunk's words that are rubbish, and

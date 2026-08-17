@@ -89,6 +89,7 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		Progress:  db.Progress(),
 		Reads:     &note.Read{Readers: cfg.VaultReaders()},
 		Saves:     &note.Write{Readers: cfg.VaultReaders(), Writers: cfg.VaultWriters()},
+		Wrote:     func() { raise(wake.notes) },
 	}
 	// Named before anything is read: it is what decides whether a chunk already
 	// carries a vector, and what tells the window that something is going to
@@ -122,6 +123,25 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 	// second way of showing a vault does not decide it again.
 	held := &holding{NoteRepository: db.Notes()}
 	refresh := usecase.Refresh{Readers: cfg.VaultReaders(), Notes: held}
+
+	// A note the window makes is level in the index before the answer comes
+	// back, so it is drawn as soon as it exists.
+	level := func(ctx context.Context, v domain.Vault, paths []string) error {
+		_, err := refresh.Execute(ctx, v, paths)
+		return err
+	}
+	api.Makes = &note.Create{
+		Writers:   cfg.VaultWriters(),
+		Names:     db.Queries(),
+		Index:     level,
+		Extension: filedUnder(cfg),
+	}
+	api.Joins = &note.Linking{
+		Readers: cfg.VaultReaders(),
+		Writers: cfg.VaultWriters(),
+		Index:   level,
+	}
+
 	follow := usecase.Follow{
 		Watcher: cfg.VaultWatcher(),
 		Refresh: refresh,
@@ -149,6 +169,15 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 			return err
 		},
 	}, nil
+}
+
+// filedUnder is the extension a note this vault holds is filed under. Empty is
+// markdown.
+func filedUnder(cfg container.Config) string {
+	if len(cfg.Extensions) > 0 {
+		return cfg.Extensions[0]
+	}
+	return ""
 }
 
 // settling is everything owed landing: every client writes what only it holds,
@@ -265,13 +294,9 @@ func begin(
 		}()
 	}
 
-	running.Add(1)
-	go func() {
-		defer running.Done()
-		// Set false on every way out of the reading, including the ways that
-		// return early.
-		defer api.Busy.Store(false)
-
+	// first is the vault's first reading: the scan, and the notes written while
+	// it ran read once more. It answers whether the vault was read.
+	first := func() bool {
 		result, err := scan.Execute(ctx, api.Vault)
 		api.Indexed.Store(int64(result.Indexed))
 
@@ -286,10 +311,10 @@ func begin(
 		case errors.Is(err, context.Canceled):
 			// Asked to stop. What it stored is correct as far as it got, and
 			// there is nothing to report.
-			return
+			return false
 		default:
 			api.Failed.Store(err.Error())
-			return
+			return false
 		}
 
 		if len(under) > 0 {
@@ -300,17 +325,29 @@ func begin(
 
 		fmt.Fprintf(out, "%s: %d notes\n", api.Vault.Name, result.Seen)
 		api.Ready.Store(true)
+		return true
+	}
+
+	running.Add(1)
+	go func() {
+		defer running.Done()
+		// Set false on every way out of the reading.
+		defer api.Busy.Store(false)
 
 		// Reading the sources comes after the notes: a vault is useful the
 		// moment its notes answer, and a library takes minutes to cut and hours
 		// to embed. Neither stops the window, and neither has to finish: an
 		// index is a cache.
-		readSources(ctx, cfg, db, api, readers, embedder, out)
+		if first() {
+			readSources(ctx, cfg, db, api, readers, embedder, out)
+		}
 		// Everything this vault owed is read.
 		api.Busy.Store(false)
 
 		// What arrives while the window is open is read where the first reading
-		// was: one at a time, and never while another is running.
+		// was: one at a time, and never while another is running. A vault whose
+		// first reading failed is one somebody goes on writing in, so the
+		// waiting stands whatever that reading did.
 		var quiet <-chan time.Time
 		for {
 			select {

@@ -40,6 +40,16 @@ type API struct {
 	// without them answers that a note cannot be edited here.
 	Reads *note.Read
 	Saves *note.Write
+	// Wrote is what a save raises: the reading behind the window asks the index
+	// what owes a vector, once the vault has been still. Nil for a build with
+	// nothing reading behind it, and then a save changes no vectors.
+	Wrote func()
+
+	// Makes is how the window makes a note, and Joins how it writes a
+	// relationship into one. A build without them answers that a note cannot be
+	// made here.
+	Makes *note.Create
+	Joins *note.Linking
 
 	// Watching is everyone drawing this vault, for when something asks that a
 	// note be put in front of the person.

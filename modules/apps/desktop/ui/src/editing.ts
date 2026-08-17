@@ -202,6 +202,8 @@ export function editing(core: Core, limits = waiting) {
  * A refusal in the words the tab model uses.
  *
  * A write never answers `missing`, because a save creates the file it does not
- * find, and a read answers it as its own kind.
+ * find, and a read answers it as its own kind. `occupied` is a note being made,
+ * which is not something a tab does.
  */
-const refusalOf = (from: Refused): Refusal => (from === 'missing' ? 'unreadable' : from)
+const refusalOf = (from: Refused): Refusal =>
+  from === 'missing' || from === 'occupied' ? 'unreadable' : from

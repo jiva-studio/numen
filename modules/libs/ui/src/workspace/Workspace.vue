@@ -62,6 +62,12 @@ const emit = defineEmits<{
    */
   (event: 'close', tab: TabId, hold: () => void): void
   (event: 'activate', tab: TabId): void
+  /**
+   * The tab a pane is now showing, once it is on screen. Every tab of a pane is
+   * drawn and the ones not shown are held out of sight, so what a tab holds is
+   * told here that it can measure itself.
+   */
+  (event: 'show', tab: TabId): void
 }>()
 
 const titles = computed(() =>
@@ -317,6 +323,7 @@ onBeforeUnmount(() => {
       @lift="lift"
       @claim="claim"
       @resize="resize"
+      @show="emit('show', $event)"
     >
       <template #tab="bound"><slot name="tab" v-bind="bound" /></template>
       <template v-if="$slots.mark" #mark="bound"><slot name="mark" v-bind="bound" /></template>
@@ -334,6 +341,7 @@ onBeforeUnmount(() => {
       @close="close"
       @lift="lift"
       @claim="claim(workspace.root.id)"
+      @show="emit('show', $event)"
     >
       <template #tab="bound"><slot name="tab" v-bind="bound" /></template>
       <template v-if="$slots.mark" #mark="bound"><slot name="mark" v-bind="bound" /></template>

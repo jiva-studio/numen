@@ -9,6 +9,8 @@ import { undo } from '@codemirror/commands'
 import { EditorSelection } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import Editor from './Editor.vue'
+import WorkspacePane from '@/workspace/render/WorkspacePane.vue'
+import { pane } from '@/workspace/model'
 import { MARKED_UP, TABLE } from '@/fixtures/markdown'
 import { ARABIC, DEVANAGARI, LINK, LONG, RUSSIAN, UNBREAKABLE } from '@/fixtures/prose'
 
@@ -211,5 +213,77 @@ export const TenOpenTabs: Story = {
 
     console.info(`one open tab: ${mb(one)} MB; ten: ${mb(ten)} MB; each further: ${mb((ten - one) / 9)} MB`)
     more.forEach((app) => app.unmount())
+  },
+}
+
+/** The two tabs of the pane below, and the one of them holding the note. */
+const HELD = 'note'
+const BESIDE = 'beside'
+
+/**
+ * A tab switched away from and come back to.
+ *
+ * Every tab of a pane is drawn and the ones not shown are held out of sight.
+ * The pane says which tab is on screen and that tab's editor is measured again,
+ * and the offset the person left the text at is the offset it comes back at.
+ */
+export const ShownAgain: Story = {
+  render: () => ({
+    components: { Editor, WorkspacePane },
+    setup: () => {
+      const held = ref(pane('main', [HELD, BESIDE], HELD))
+      const editors = new Map<string, { measure: () => void }>()
+      return {
+        held,
+        HELD,
+        text: BEFORE,
+        titles: { [HELD]: 'Note', [BESIDE]: 'Beside' },
+        choose: (tab: string) => {
+          held.value = pane('main', [HELD, BESIDE], tab)
+        },
+        drew: (editor: unknown) => {
+          if (editor) editors.set(HELD, editor as { measure: () => void })
+        },
+        shown: (tab: string) => editors.get(tab)?.measure(),
+      }
+    },
+    template: `
+      <div class="numen h-screen bg-surface">
+        <WorkspacePane :pane="held" :titles="titles" @choose="choose" @show="shown">
+          <template #tab="{ id }">
+            <Editor
+              v-if="id === HELD"
+              :ref="drew"
+              :model-value="text"
+              class="h-full"
+            />
+            <p v-else class="p-4 font-sans text-base text-ink">Something else</p>
+          </template>
+        </WorkspacePane>
+      </div>`,
+  }),
+  play: async ({ canvasElement }) => {
+    const view = viewOf(canvasElement)
+    const tab = (id: string) =>
+      canvasElement.querySelector(`[data-workspace-tab="${id}"]`) as HTMLElement
+
+    view.dispatch({ selection: EditorSelection.single(view.state.doc.line(LINE).from + COLUMN) })
+    view.scrollDOM.scrollTop = 600
+    await settled()
+    const offset = view.scrollDOM.scrollTop
+    await expect(offset).toBeGreaterThan(0)
+    const top = topmost(view)
+
+    // Away: the panel is held out of sight, and what has no box has no offset.
+    await userEvent.click(tab(BESIDE))
+    await settled()
+    await expect(view.scrollDOM.scrollTop).toBe(0)
+
+    await userEvent.click(tab(HELD))
+    await settled()
+    await settled()
+
+    await expect(view.scrollDOM.scrollTop).toBe(offset)
+    await expect(topmost(view)).toBe(top)
   },
 }

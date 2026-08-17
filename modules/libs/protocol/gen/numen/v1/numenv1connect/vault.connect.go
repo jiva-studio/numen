@@ -56,6 +56,10 @@ const (
 	VaultServiceReadProcedure = "/numen.v1.VaultService/Read"
 	// VaultServiceWriteProcedure is the fully-qualified name of the VaultService's Write RPC.
 	VaultServiceWriteProcedure = "/numen.v1.VaultService/Write"
+	// VaultServiceCreateProcedure is the fully-qualified name of the VaultService's Create RPC.
+	VaultServiceCreateProcedure = "/numen.v1.VaultService/Create"
+	// VaultServiceJoinProcedure is the fully-qualified name of the VaultService's Join RPC.
+	VaultServiceJoinProcedure = "/numen.v1.VaultService/Join"
 	// VaultServiceQuittingProcedure is the fully-qualified name of the VaultService's Quitting RPC.
 	VaultServiceQuittingProcedure = "/numen.v1.VaultService/Quitting"
 	// VaultServiceFlushedProcedure is the fully-qualified name of the VaultService's Flushed RPC.
@@ -85,6 +89,12 @@ type VaultServiceClient interface {
 	// write lands and creating the file where there is none. What was on disk
 	// under an edit made elsewhere is replaced.
 	Write(context.Context, *connect.Request[v1.WriteRequest]) (*connect.Response[v1.WriteResponse], error)
+	// Create makes a note. The file is named after the title, and the links the
+	// note carries are written into it as it is made, so it arrives joined.
+	Create(context.Context, *connect.Request[v1.CreateRequest]) (*connect.Response[v1.CreateResponse], error)
+	// Join writes a relationship into one note. The note at the other end is left
+	// alone: a link is one end's account of a relationship.
+	Join(context.Context, *connect.Request[v1.JoinRequest]) (*connect.Response[v1.JoinResponse], error)
 	// Quitting says the window is going, for as long as the caller listens. A
 	// caller holding work that is only in its own memory writes it now and
 	// answers with Flushed.
@@ -147,6 +157,18 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(vaultServiceMethods.ByName("Write")),
 			connect.WithClientOptions(opts...),
 		),
+		create: connect.NewClient[v1.CreateRequest, v1.CreateResponse](
+			httpClient,
+			baseURL+VaultServiceCreateProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Create")),
+			connect.WithClientOptions(opts...),
+		),
+		join: connect.NewClient[v1.JoinRequest, v1.JoinResponse](
+			httpClient,
+			baseURL+VaultServiceJoinProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Join")),
+			connect.WithClientOptions(opts...),
+		),
 		quitting: connect.NewClient[v1.QuittingRequest, v1.QuittingResponse](
 			httpClient,
 			baseURL+VaultServiceQuittingProcedure,
@@ -171,6 +193,8 @@ type vaultServiceClient struct {
 	focus         *connect.Client[v1.FocusRequest, v1.FocusResponse]
 	read          *connect.Client[v1.ReadRequest, v1.ReadResponse]
 	write         *connect.Client[v1.WriteRequest, v1.WriteResponse]
+	create        *connect.Client[v1.CreateRequest, v1.CreateResponse]
+	join          *connect.Client[v1.JoinRequest, v1.JoinResponse]
 	quitting      *connect.Client[v1.QuittingRequest, v1.QuittingResponse]
 	flushed       *connect.Client[v1.FlushedRequest, v1.FlushedResponse]
 }
@@ -210,6 +234,16 @@ func (c *vaultServiceClient) Write(ctx context.Context, req *connect.Request[v1.
 	return c.write.CallUnary(ctx, req)
 }
 
+// Create calls numen.v1.VaultService.Create.
+func (c *vaultServiceClient) Create(ctx context.Context, req *connect.Request[v1.CreateRequest]) (*connect.Response[v1.CreateResponse], error) {
+	return c.create.CallUnary(ctx, req)
+}
+
+// Join calls numen.v1.VaultService.Join.
+func (c *vaultServiceClient) Join(ctx context.Context, req *connect.Request[v1.JoinRequest]) (*connect.Response[v1.JoinResponse], error) {
+	return c.join.CallUnary(ctx, req)
+}
+
 // Quitting calls numen.v1.VaultService.Quitting.
 func (c *vaultServiceClient) Quitting(ctx context.Context, req *connect.Request[v1.QuittingRequest]) (*connect.ServerStreamForClient[v1.QuittingResponse], error) {
 	return c.quitting.CallServerStream(ctx, req)
@@ -243,6 +277,12 @@ type VaultServiceHandler interface {
 	// write lands and creating the file where there is none. What was on disk
 	// under an edit made elsewhere is replaced.
 	Write(context.Context, *connect.Request[v1.WriteRequest]) (*connect.Response[v1.WriteResponse], error)
+	// Create makes a note. The file is named after the title, and the links the
+	// note carries are written into it as it is made, so it arrives joined.
+	Create(context.Context, *connect.Request[v1.CreateRequest]) (*connect.Response[v1.CreateResponse], error)
+	// Join writes a relationship into one note. The note at the other end is left
+	// alone: a link is one end's account of a relationship.
+	Join(context.Context, *connect.Request[v1.JoinRequest]) (*connect.Response[v1.JoinResponse], error)
 	// Quitting says the window is going, for as long as the caller listens. A
 	// caller holding work that is only in its own memory writes it now and
 	// answers with Flushed.
@@ -301,6 +341,18 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(vaultServiceMethods.ByName("Write")),
 		connect.WithHandlerOptions(opts...),
 	)
+	vaultServiceCreateHandler := connect.NewUnaryHandler(
+		VaultServiceCreateProcedure,
+		svc.Create,
+		connect.WithSchema(vaultServiceMethods.ByName("Create")),
+		connect.WithHandlerOptions(opts...),
+	)
+	vaultServiceJoinHandler := connect.NewUnaryHandler(
+		VaultServiceJoinProcedure,
+		svc.Join,
+		connect.WithSchema(vaultServiceMethods.ByName("Join")),
+		connect.WithHandlerOptions(opts...),
+	)
 	vaultServiceQuittingHandler := connect.NewServerStreamHandler(
 		VaultServiceQuittingProcedure,
 		svc.Quitting,
@@ -329,6 +381,10 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 			vaultServiceReadHandler.ServeHTTP(w, r)
 		case VaultServiceWriteProcedure:
 			vaultServiceWriteHandler.ServeHTTP(w, r)
+		case VaultServiceCreateProcedure:
+			vaultServiceCreateHandler.ServeHTTP(w, r)
+		case VaultServiceJoinProcedure:
+			vaultServiceJoinHandler.ServeHTTP(w, r)
 		case VaultServiceQuittingProcedure:
 			vaultServiceQuittingHandler.ServeHTTP(w, r)
 		case VaultServiceFlushedProcedure:
@@ -368,6 +424,14 @@ func (UnimplementedVaultServiceHandler) Read(context.Context, *connect.Request[v
 
 func (UnimplementedVaultServiceHandler) Write(context.Context, *connect.Request[v1.WriteRequest]) (*connect.Response[v1.WriteResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Write is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) Create(context.Context, *connect.Request[v1.CreateRequest]) (*connect.Response[v1.CreateResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Create is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) Join(context.Context, *connect.Request[v1.JoinRequest]) (*connect.Response[v1.JoinResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Join is not implemented"))
 }
 
 func (UnimplementedVaultServiceHandler) Quitting(context.Context, *connect.Request[v1.QuittingRequest], *connect.ServerStream[v1.QuittingResponse]) error {

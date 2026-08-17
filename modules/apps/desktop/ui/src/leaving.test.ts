@@ -82,6 +82,8 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
       files.set(path, body)
       return { body: '', refusal: null }
     },
+    create: async () => ({ path: '', refusal: null }),
+    join: async () => null,
   }
   return {
     core,

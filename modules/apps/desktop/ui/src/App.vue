@@ -8,12 +8,14 @@
  */
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { Activity, Agent, Editor, Menu, Plex, Workspace, closeTab, openTab, remainingWord } from '@numen/ui'
-import type { MenuItem, Tab, WorkspaceLayout } from '@numen/ui'
+import type { PlexRelatedSeat, Tab, WorkspaceLayout } from '@numen/ui'
 import '@numen/ui/styles.css'
 import { core } from './vault'
 import { showing } from './showing'
 import { footOf, type Phase } from './foot'
 import { editing } from './editing'
+import { creating, CREATABLE } from './creating'
+import { ITEMS, chose as carry } from './menu'
 import { leaving } from './leaving'
 import { asPlex } from './plex'
 import { core as agent } from './agent'
@@ -21,11 +23,16 @@ import { conversation } from './conversation'
 import { AGENT, PLEX, TABS, opening } from './workspace'
 
 const notes = editing(core)
+const making = creating(core)
 const window = showing(core, undefined, undefined, notes.changed)
 /** What the window answers when the application says it is going. */
 const going = leaving(core)
 going.holds(notes.flush)
-const { neighbourhood, indexing, failure, notice, trouble, unwatched, go } = window
+/** A refusal outlives the tab it was refused on, so it is drawn beside them. */
+const refused = notes.said
+const { neighbourhood, here, indexing, failure, notice, trouble, unwatched, go } = window
+/** What could not be made or joined, in words a person reads. */
+const unmade = computed(() => making.said.value)
 /** The plex reads one value, so what it is given changes when the vault does. */
 const plexed = computed(() => (neighbourhood.value ? asPlex(neighbourhood.value) : null))
 const { chunks, embedded, reading, embedding, books, booksRead, learning, rate } = window
@@ -103,12 +110,6 @@ const marked = (path: string): string | undefined => {
 /** The menu on a node, and where it was asked for. */
 const menu = ref<{ path: string; at: { x: number; y: number }; from: HTMLElement | SVGElement | null } | null>(null)
 
-const items: readonly MenuItem[] = [
-  { id: 'open', text: 'Open in a tab' },
-  { id: 'ask', text: 'Ask the agent about this note' },
-  { id: 'copy', text: 'Copy path' },
-]
-
 const askMenu = (path: string, at: { x: number; y: number }, from: HTMLElement | SVGElement | null) => {
   menu.value = { path, at, from }
 }
@@ -117,19 +118,39 @@ const chose = (id: string) => {
   const asking = menu.value
   menu.value = null
   if (!asking) return
-  if (id === 'open') return openNote(asking.path)
-  if (id === 'copy') return void navigator.clipboard?.writeText(asking.path)
-  if (id === 'ask') {
-    asked.value = asking.path + ' — '
-    layout.value = openTab(layout.value, AGENT)
-  }
+  carry(id, asking.path, {
+    open: (path) => openNote(path),
+    child: (path) => void made(path, 'child'),
+    ask: (path) => {
+      asked.value = path + ' — '
+      layout.value = openTab(layout.value, AGENT)
+    },
+    copy: (path) => void navigator.clipboard?.writeText(path),
+  })
 }
 
 /** A note opens in the pane the person is in, and the tab is shown. */
-const openNote = (path: string) => {
-  titles.set(path, nameOf(path))
+const openNote = (path: string, title = nameOf(path)) => {
+  titles.set(path, title)
   notes.open(path)
   layout.value = openTab(layout.value, path)
+}
+
+/**
+ * A note made in a seat of another one. It is in the index by the time the
+ * answer arrives, so the picture is asked for again and it is drawn in it; the
+ * tab is where the person writes it.
+ */
+const made = async (from: string, seat: PlexRelatedSeat) => {
+  const note = await making.make(from, seat)
+  if (!note) return
+  if (here.value) await go(here.value)
+  openNote(note.path, note.title)
+}
+
+/** Two notes the person drew a line between. */
+const joined = async (from: string, to: string, seat: PlexRelatedSeat) => {
+  if ((await making.join(from, to, seat)) && here.value) await go(here.value)
 }
 
 const nameOf = (path: string): string => {
@@ -138,6 +159,20 @@ const nameOf = (path: string): string => {
   const near = named?.related?.find((r) => r.note?.path === path)
   return near?.note?.title || (path.split('/').pop() ?? path).replace(/\.md$/, '')
 }
+
+/** The editor of each open note, for as long as its tab is drawn. */
+const editors = new Map<string, { measure: () => void }>()
+
+const drew = (path: string, editor: unknown) => {
+  if (editor) editors.set(path, editor as { measure: () => void })
+  else editors.delete(path)
+}
+
+/**
+ * A tab is drawn while it is out of sight, where an editor has nothing to
+ * measure. The editor of the tab now on screen takes its measurements again.
+ */
+const shown = (id: string) => editors.get(id)?.measure()
 
 /** A tab that holds a note writes what it owes before it goes. */
 const shut = (id: string, hold: () => void) => {
@@ -166,20 +201,23 @@ onUnmounted(() => {
     <p v-if="trouble" class="warning">the vault could not be read — {{ trouble }}</p>
     <p v-if="notice" class="warning">{{ notice }}</p>
 
-    <p v-if="notes.said" role="alert" class="warning">{{ notes.said }}</p>
+    <p v-if="refused" role="alert" class="warning">{{ refused }}</p>
+    <p v-if="unmade" role="alert" class="warning">{{ unmade }}</p>
 
     <p v-if="failure" class="failure">{{ failure }}</p>
     <p v-else-if="indexing" class="waiting">reading the vault…</p>
     <p v-else-if="!neighbourhood && trouble" class="waiting">nothing was read</p>
     <p v-else-if="!neighbourhood" class="waiting">this vault holds no notes</p>
 
-    <Workspace v-model="layout" class="below" :tabs="tabs" @close="shut">
+    <Workspace v-model="layout" class="below" :tabs="tabs" @close="shut" @show="shown">
       <template #tab="{ id }">
         <Plex
           v-if="id === PLEX && plexed && !failure && !indexing"
           :neighbourhood="plexed!"
-          :creatable="[]"
+          :creatable="CREATABLE"
           @activate="go"
+          @create="(from: string, seat: PlexRelatedSeat) => void made(from, seat)"
+          @link="(from: string, to: string, seat: PlexRelatedSeat) => void joined(from, to, seat)"
           @menu="askMenu"
           @dismiss="menu = null"
         />
@@ -200,6 +238,7 @@ onUnmounted(() => {
         <div v-else-if="notes.all().includes(id)" class="note">
           <p v-if="notes.saying(id)" role="alert" class="warning">{{ notes.saying(id) }}</p>
           <Editor
+            :ref="(editor: unknown) => drew(id, editor)"
             :model-value="notes.shown(id).body"
             class="note__text"
             @update:model-value="(body: string) => notes.typed(id, body)"
@@ -221,7 +260,7 @@ onUnmounted(() => {
 
     <Menu
       v-if="menu"
-      :items="items"
+      :items="ITEMS"
       :at="menu.at"
       :from="menu.from"
       open
