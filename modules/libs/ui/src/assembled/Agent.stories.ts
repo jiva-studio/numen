@@ -1,23 +1,20 @@
 /**
- * The three components in one piece: a panel with the conversation on it and
- * the composer under that.
+ * The conversation and the field it is carried on with, in one piece.
  *
- * Where they are judged against each other: whether the composer stays put
- * under a thread that scrolls, whether the field growing takes its height
- * from the conversation, whether one type size holds across all three.
+ * Where the two are judged against each other: whether the composer stays put
+ * under a thread that scrolls, whether the field growing takes its height from
+ * the conversation, whether one type size holds across both.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { onScopeDispose, ref } from 'vue'
-import Panel from '@/panel/Panel.vue'
-import Thread from '@/thread/Thread.vue'
-import Composer from '@/composer/Composer.vue'
+import Agent from './Agent.vue'
 import type { Turn } from '@/thread/model'
 import { framed } from '@/fixtures/frame'
 import { LONG, MULTILINE, RUSSIAN } from '@/fixtures/prose'
 
 const meta = {
-  title: 'Chat/Agent panel',
+  title: 'Chat/Agent',
   decorators: [framed],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta
@@ -31,18 +28,17 @@ const back = (id: string, text: string): Turn => ({ id, voice: 'answered', text 
 
 /**
  * The thread takes what height is left and scrolls inside it; the composer
- * takes what it needs. The panel stacks them and nothing more.
+ * takes what it needs and is written over the foot of it.
  */
 const TEMPLATE = `
-  <Panel class="h-full">
-    <Thread :turns="turns" class="min-h-0 flex-1" />
-    <Composer
-      v-model="text"
-      :working="working"
-      placeholder="Ask about this note"
-      @submit="onSubmit"
-    />
-  </Panel>
+  <Agent
+    v-model="text"
+    class="h-full"
+    :turns="turns"
+    :working="working"
+    placeholder="Ask about this note"
+    @submit="onSubmit"
+  />
 `
 
 /**
@@ -50,7 +46,7 @@ const TEMPLATE = `
  * the answer arrives a few characters at a time.
  */
 const conversation = (start: readonly Turn[]): Render => () => ({
-  components: { Panel, Thread, Composer },
+  components: { Agent },
   setup() {
     const turns = ref<Turn[]>([...start])
     const text = ref('')
