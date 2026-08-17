@@ -33,6 +33,8 @@ func main() {
 		"where agents reach this vault; anything but a loopback address opens it to the network")
 	flag.BoolVar(&agents.off, "no-mcp", false, "do not let agents reach this vault")
 	flag.Float64Var(&zoom, "zoom", 0, "how large everything is drawn, 1 being as designed")
+	flag.BoolVar(&cfg.RebuildIndex, "rebuild-index", false,
+		"read every file and put it in the index again, whatever the index remembers")
 	flag.Parse()
 
 	if err := run(cfg, agents, zoom); err != nil {

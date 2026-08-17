@@ -98,11 +98,12 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		}
 	}
 	scan := usecase.Scan{
-		Readers:     cfg.VaultReaders(),
-		Vaults:      db.Vaults(),
-		Notes:       db.Notes(),
-		Known:       db.Queries(),
-		Maintenance: db.Maintenance(),
+		Readers:      cfg.VaultReaders(),
+		Vaults:       db.Vaults(),
+		Notes:        db.Notes(),
+		Known:        db.Queries(),
+		Maintenance:  db.Maintenance(),
+		RebuildIndex: cfg.RebuildIndex,
 		OnProgress: func(res usecase.ScanResult) {
 			api.Indexed.Store(int64(res.Indexed))
 		},
@@ -252,10 +253,11 @@ func readSources(
 	}
 
 	extract := source.Extract{
-		Readers: cfg.VaultReaders(),
-		Sources: db.Sources(),
-		Owing:   db.SourcesKnown(),
-		Sizes:   sizes,
+		Readers:      cfg.VaultReaders(),
+		Sources:      db.Sources(),
+		Owing:        db.SourcesKnown(),
+		Sizes:        sizes,
+		RebuildIndex: cfg.RebuildIndex,
 		OnProgress: func(res source.ExtractResult) {
 			api.Reading.Store(res.Reading)
 			api.Books.Store(int64(res.Seen))

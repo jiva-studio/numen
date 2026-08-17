@@ -176,8 +176,7 @@ export type StateResponse = Message<"numen.v1.StateResponse"> & {
   /**
    * Embedding says whether anything is going to turn the chunks into vectors.
    * False for an installation with no model, where `embedded` stays where it is
-   * and the vault is searched by its words — a whole search, and not a wait.
-   * Without this a count of nothing out of thousands looks like work.
+   * and the vault is searched by its words.
    *
    * @generated from field: bool embedding = 10;
    */
@@ -199,9 +198,9 @@ export type StateResponse = Message<"numen.v1.StateResponse"> & {
   booksRead: bigint;
 
   /**
-   * Learning is set while vectors are being made. Without it a client cannot
-   * tell the two phases apart: both name a source they are reading, and both
-   * move a count, but they move different counts.
+   * Learning is set while vectors are being made. It is what tells the two
+   * phases apart: both name a source and move a count, and the counts are of
+   * different things.
    *
    * @generated from field: bool learning = 13;
    */

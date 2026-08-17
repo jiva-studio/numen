@@ -36,6 +36,12 @@ type Config struct {
 	// Agent is which agent answers in the panel. It arrives the way Embedding
 	// does.
 	Agent adapteragent.Config
+
+	// RebuildIndex reads every file and puts it in the index again, whatever the
+	// index remembers about it. Both entry points offer it under one name: a
+	// person with a vault restored from an archive is not asked which binary they
+	// are holding.
+	RebuildIndex bool
 }
 
 // Registry is the list of vaults this installation knows: application state,

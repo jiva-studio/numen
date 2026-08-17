@@ -22,12 +22,14 @@ type Scan struct {
 	Known       port.NoteQueries
 	Maintenance port.IndexMaintenance
 
-	// Again reads every note, whatever the index believes about it. The
-	// fingerprint is the path, the size and the modification time, so a file
-	// whose content changed while those did not is otherwise skipped — an
-	// archive restored by `unzip`, a tree brought over by `rsync -tc`. This is
-	// the way out of that.
-	Again bool
+	// RebuildIndex reads every file and puts it in the index again, whatever the
+	// index remembers about it.
+	//
+	// What it remembers is a path, a size and a modification time, so a file whose
+	// content changed while those did not is skipped — an archive restored by
+	// `unzip`, a tree brought over by `rsync -tc`. Rebuilding is the way out of
+	// that, and the only one.
+	RebuildIndex bool
 
 	// OnProgress, if set, is called each time a group of notes is written. A
 	// scan of a large vault takes a minute, and something has to be able to say
@@ -109,7 +111,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 		res.Seen++
 		seen[ref.Path] = true
 
-		if previous, ok := known[ref.Path]; ok && !u.Again && previous.Unchanged(ref) {
+		if previous, ok := known[ref.Path]; ok && !u.RebuildIndex && previous.Unchanged(ref) {
 			res.Unchanged++
 			continue
 		}

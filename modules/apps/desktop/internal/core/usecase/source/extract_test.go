@@ -314,10 +314,10 @@ func TestABookTheVaultNoLongerHoldsIsTakenOut(t *testing.T) {
 }
 
 // A file whose content changed while its size and modification time did not is
-// skipped: the fingerprint is those three and nothing else. An archive restored
+// skipped: the index believes those three and nothing else. An archive restored
 // by `unzip` and a tree brought over by `rsync -tc` both do that, and the chunks
-// then describe text the file no longer has. Reading again is the way out.
-func TestReadingAgainIgnoresWhatTheIndexBelieves(t *testing.T) {
+// then describe text the file no longer has. Rebuilding is the way out.
+func TestRebuildingTheIndexReadsEveryFile(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
 
@@ -352,10 +352,10 @@ func TestReadingAgainIgnoresWhatTheIndexBelieves(t *testing.T) {
 		t.Errorf("the fingerprint is the path, the size and the time: %+v", res)
 	}
 
-	extract.Again = true
+	extract.RebuildIndex = true
 	if res, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
 	} else if res.Extracted != 1 {
-		t.Errorf("asked to read again and read %d books: %+v", res.Extracted, res)
+		t.Errorf("rebuilding read %d books: %+v", res.Extracted, res)
 	}
 }

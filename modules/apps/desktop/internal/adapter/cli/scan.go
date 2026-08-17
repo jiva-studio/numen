@@ -14,18 +14,17 @@ import (
 )
 
 func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
-	// `--again` reads every file, whatever the index believes about it.
-	again := false
+	// `--rebuild-index` reads every file, whatever the index remembers.
 	rest := make([]string, 0, len(args))
 	for _, arg := range args {
-		if arg == "--again" {
-			again = true
+		if arg == "--rebuild-index" {
+			cfg.RebuildIndex = true
 			continue
 		}
 		rest = append(rest, arg)
 	}
 	if len(rest) != 1 {
-		return errors.New("usage: numen-cli scan <vault> [--again]")
+		return errors.New("usage: numen-cli scan <vault> [--rebuild-index]")
 	}
 	v, err := findVault(cfg, rest[0])
 	if err != nil {
@@ -39,12 +38,12 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args 
 
 	started := time.Now()
 	scan := usecase.Scan{
-		Readers:     cfg.VaultReaders(),
-		Vaults:      db.Vaults(),
-		Notes:       db.Notes(),
-		Known:       db.Queries(),
-		Maintenance: db.Maintenance(),
-		Again:       again,
+		Readers:      cfg.VaultReaders(),
+		Vaults:       db.Vaults(),
+		Notes:        db.Notes(),
+		Known:        db.Queries(),
+		Maintenance:  db.Maintenance(),
+		RebuildIndex: cfg.RebuildIndex,
 	}
 	// A terminal that prints nothing for a minute looks broken. One group is
 	// about half a second, and the line rewrites itself.
@@ -59,10 +58,10 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args 
 	// window does the same in the background; here it is waited for, which is
 	// this adapter's property and not the use case's.
 	extract := source.Extract{
-		Readers: cfg.VaultReaders(),
-		Sources: db.Sources(),
-		Owing:   db.SourcesKnown(),
-		Again:   again,
+		Readers:      cfg.VaultReaders(),
+		Sources:      db.Sources(),
+		Owing:        db.SourcesKnown(),
+		RebuildIndex: cfg.RebuildIndex,
 		OnProgress: func(res source.ExtractResult) {
 			if res.Reading != "" {
 				fmt.Fprintf(out, "  reading %s\r", res.Reading)

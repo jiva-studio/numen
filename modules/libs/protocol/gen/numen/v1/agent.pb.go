@@ -298,10 +298,8 @@ func (*Thinking) Descriptor() ([]byte, []int) {
 
 // Doing is a tool in the agent's hands.
 //
-// It arrives more than once for one call. A call carrying the text of a note is
-// written for minutes, and reporting it only once it is whole leaves the person
-// watching the name of the tool before it, with nothing to say the wait is a
-// wait for something.
+// It arrives more than once for one call: a call carrying the text of a note is
+// written for minutes, and each report says how much has arrived.
 type Doing struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The tool, by the name it is called by whoever serves it.

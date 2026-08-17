@@ -21,7 +21,7 @@ const usage = `numen-cli — notes with typed links and spaced repetition
 usage:
   numen-cli vault add <path> [--name <name>]   give a folder an identity and remember it
   numen-cli vault list                         show the vaults this installation knows
-  numen-cli scan <vault> [--again]              bring the index up to date with a vault
+  numen-cli scan <vault> [--rebuild-index]      bring the index up to date with a vault
   numen-cli search <vault> <query>             full-text search within one vault
   numen-cli links <vault> <note>               what a note points at, and what points at it
   numen-cli problems <vault> [<check>...]      what the vault holds that was not guessed at

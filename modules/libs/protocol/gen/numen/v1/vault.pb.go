@@ -284,8 +284,7 @@ type StateResponse struct {
 	Reading string `protobuf:"bytes,9,opt,name=reading,proto3" json:"reading,omitempty"`
 	// Embedding says whether anything is going to turn the chunks into vectors.
 	// False for an installation with no model, where `embedded` stays where it is
-	// and the vault is searched by its words — a whole search, and not a wait.
-	// Without this a count of nothing out of thousands looks like work.
+	// and the vault is searched by its words.
 	Embedding bool `protobuf:"varint,10,opt,name=embedding,proto3" json:"embedding,omitempty"`
 	// Books is how many the vault holds, and books_read how many of those have
 	// been accounted for — read, skipped as unchanged, or found gone. Cutting is
@@ -293,9 +292,9 @@ type StateResponse struct {
 	// chunks, and the two phases are told apart by `learning`.
 	Books     int64 `protobuf:"varint,11,opt,name=books,proto3" json:"books,omitempty"`
 	BooksRead int64 `protobuf:"varint,12,opt,name=books_read,json=booksRead,proto3" json:"books_read,omitempty"`
-	// Learning is set while vectors are being made. Without it a client cannot
-	// tell the two phases apart: both name a source they are reading, and both
-	// move a count, but they move different counts.
+	// Learning is set while vectors are being made. It is what tells the two
+	// phases apart: both name a source and move a count, and the counts are of
+	// different things.
 	Learning bool `protobuf:"varint,13,opt,name=learning,proto3" json:"learning,omitempty"`
 	// Busy is set while the vault is still being read: its notes, then its books,
 	// then their vectors. Reading a book and embedding one change no file, so this

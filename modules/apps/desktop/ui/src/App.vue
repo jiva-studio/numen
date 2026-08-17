@@ -31,8 +31,8 @@ const words = {
   unsent: 'Did not send',
   stopped: 'The agent stopped here',
   reading: 'Reading',
-  learning: 'Learning what it says',
-  words: 'Searching by words — no model to learn what it says',
+  learning: 'Preparing search by meaning',
+  words: 'Searching by words only — no model set',
 }
 
 /** What the foot of the window says, one sentence per phase. */

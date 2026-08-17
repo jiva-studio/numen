@@ -119,8 +119,8 @@ worse than a missing result: the chunks describe text the file no longer has, so
 a search answers with a passage sliced at the wrong place, or with an empty one.
 
 There is no cheap signal that closes it. What is provided instead is a way out:
-reading a vault again ignores every fingerprint, and is one command. A person who
-restores a vault from an archive runs it.
+`scan --rebuild-index` reads every file whatever the index remembers, and is one
+command. A person who restores a vault from an archive runs it.
 
 The kind of quantisation is stored because a stored vector's type cannot be
 recovered from the length of its blob.
