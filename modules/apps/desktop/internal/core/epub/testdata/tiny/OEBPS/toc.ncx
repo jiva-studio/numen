@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One point, for the cover, and one that points nowhere. The title is what a
+     converter made of a Word filename. -->
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
+  <head>
+    <meta content="tiny-1" name="dtb:uid"/>
+    <meta content="1" name="dtb:depth"/>
+  </head>
+  <docTitle>
+    <text>&lt;4D6963726F736F667420576F7264202D2074696E79&gt;</text>
+  </docTitle>
+  <navMap>
+    <navPoint class="chapter" id="np-1" playOrder="1">
+      <navLabel><text>Начать</text></navLabel>
+      <content src="cover.xhtml"/>
+    </navPoint>
+    <navPoint class="chapter" id="np-2" playOrder="2">
+      <navLabel><text>A point with nowhere to go</text></navLabel>
+    </navPoint>
+  </navMap>
+</ncx>

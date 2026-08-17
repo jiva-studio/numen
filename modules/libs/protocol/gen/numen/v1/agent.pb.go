@@ -91,6 +91,8 @@ type AskResponse struct {
 	//	*AskResponse_Said
 	//	*AskResponse_Doing
 	//	*AskResponse_Stopped
+	//	*AskResponse_Answered
+	//	*AskResponse_Thinking
 	Step          isAskResponse_Step `protobuf_oneof:"step"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -160,6 +162,24 @@ func (x *AskResponse) GetStopped() string {
 	return ""
 }
 
+func (x *AskResponse) GetAnswered() *Answered {
+	if x != nil {
+		if x, ok := x.Step.(*AskResponse_Answered); ok {
+			return x.Answered
+		}
+	}
+	return nil
+}
+
+func (x *AskResponse) GetThinking() *Thinking {
+	if x != nil {
+		if x, ok := x.Step.(*AskResponse_Thinking); ok {
+			return x.Thinking
+		}
+	}
+	return nil
+}
+
 type isAskResponse_Step interface {
 	isAskResponse_Step()
 }
@@ -180,27 +200,124 @@ type AskResponse_Stopped struct {
 	Stopped string `protobuf:"bytes,3,opt,name=stopped,proto3,oneof"`
 }
 
+type AskResponse_Answered struct {
+	// The tool the agent was using has answered. Nothing of this application's
+	// is running from here until the next step arrives.
+	Answered *Answered `protobuf:"bytes,4,opt,name=answered,proto3,oneof"`
+}
+
+type AskResponse_Thinking struct {
+	// A request to the model has begun. This is where a wait starts, and the
+	// agent says so itself.
+	Thinking *Thinking `protobuf:"bytes,5,opt,name=thinking,proto3,oneof"`
+}
+
 func (*AskResponse_Said) isAskResponse_Step() {}
 
 func (*AskResponse_Doing) isAskResponse_Step() {}
 
 func (*AskResponse_Stopped) isAskResponse_Step() {}
 
+func (*AskResponse_Answered) isAskResponse_Step() {}
+
+func (*AskResponse_Thinking) isAskResponse_Step() {}
+
+// Answered and Thinking carry nothing: each is a moment, and what it means is
+// its name. A client that does not know one ignores the step it names.
+type Answered struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Answered) Reset() {
+	*x = Answered{}
+	mi := &file_numen_v1_agent_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Answered) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Answered) ProtoMessage() {}
+
+func (x *Answered) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_agent_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Answered.ProtoReflect.Descriptor instead.
+func (*Answered) Descriptor() ([]byte, []int) {
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{2}
+}
+
+type Thinking struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Thinking) Reset() {
+	*x = Thinking{}
+	mi := &file_numen_v1_agent_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Thinking) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Thinking) ProtoMessage() {}
+
+func (x *Thinking) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_agent_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Thinking.ProtoReflect.Descriptor instead.
+func (*Thinking) Descriptor() ([]byte, []int) {
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{3}
+}
+
 // Doing is a tool in the agent's hands.
+//
+// It arrives more than once for one call: a call carrying the text of a note is
+// written for minutes, and each report says how much has arrived.
 type Doing struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The tool, by the name it is called by whoever serves it.
 	Tool string `protobuf:"bytes,1,opt,name=tool,proto3" json:"tool,omitempty"`
 	// What it was called about — a note, a query — empty when the call says
-	// nothing worth showing.
-	About         string `protobuf:"bytes,2,opt,name=about,proto3" json:"about,omitempty"`
+	// nothing worth showing. Read out of arguments that have not finished
+	// arriving, so it appears before the call is made.
+	About string `protobuf:"bytes,2,opt,name=about,proto3" json:"about,omitempty"`
+	// How much of the call has been written, in characters. The only thing that
+	// moves while a long call is being written.
+	Written       int32 `protobuf:"varint,3,opt,name=written,proto3" json:"written,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Doing) Reset() {
 	*x = Doing{}
-	mi := &file_numen_v1_agent_proto_msgTypes[2]
+	mi := &file_numen_v1_agent_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -212,7 +329,7 @@ func (x *Doing) String() string {
 func (*Doing) ProtoMessage() {}
 
 func (x *Doing) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[2]
+	mi := &file_numen_v1_agent_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -225,7 +342,7 @@ func (x *Doing) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Doing.ProtoReflect.Descriptor instead.
 func (*Doing) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{2}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Doing) GetTool() string {
@@ -242,6 +359,13 @@ func (x *Doing) GetAbout() string {
 	return ""
 }
 
+func (x *Doing) GetWritten() int32 {
+	if x != nil {
+		return x.Written
+	}
+	return 0
+}
+
 var File_numen_v1_agent_proto protoreflect.FileDescriptor
 
 const file_numen_v1_agent_proto_rawDesc = "" +
@@ -250,15 +374,22 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	"\n" +
 	"AskRequest\x12\x14\n" +
 	"\x05asked\x18\x01 \x01(\tR\x05asked\x12\x14\n" +
-	"\x05focus\x18\x02 \x01(\tR\x05focus\"p\n" +
+	"\x05focus\x18\x02 \x01(\tR\x05focus\"\xd4\x01\n" +
 	"\vAskResponse\x12\x14\n" +
 	"\x04said\x18\x01 \x01(\tH\x00R\x04said\x12'\n" +
 	"\x05doing\x18\x02 \x01(\v2\x0f.numen.v1.DoingH\x00R\x05doing\x12\x1a\n" +
-	"\astopped\x18\x03 \x01(\tH\x00R\astoppedB\x06\n" +
-	"\x04step\"1\n" +
+	"\astopped\x18\x03 \x01(\tH\x00R\astopped\x120\n" +
+	"\banswered\x18\x04 \x01(\v2\x12.numen.v1.AnsweredH\x00R\banswered\x120\n" +
+	"\bthinking\x18\x05 \x01(\v2\x12.numen.v1.ThinkingH\x00R\bthinkingB\x06\n" +
+	"\x04step\"\n" +
+	"\n" +
+	"\bAnswered\"\n" +
+	"\n" +
+	"\bThinking\"K\n" +
 	"\x05Doing\x12\x12\n" +
 	"\x04tool\x18\x01 \x01(\tR\x04tool\x12\x14\n" +
-	"\x05about\x18\x02 \x01(\tR\x05about2D\n" +
+	"\x05about\x18\x02 \x01(\tR\x05about\x12\x18\n" +
+	"\awritten\x18\x03 \x01(\x05R\awritten2D\n" +
 	"\fAgentService\x124\n" +
 	"\x03Ask\x12\x14.numen.v1.AskRequest\x1a\x15.numen.v1.AskResponse0\x01BIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
@@ -274,21 +405,25 @@ func file_numen_v1_agent_proto_rawDescGZIP() []byte {
 	return file_numen_v1_agent_proto_rawDescData
 }
 
-var file_numen_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_numen_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_numen_v1_agent_proto_goTypes = []any{
 	(*AskRequest)(nil),  // 0: numen.v1.AskRequest
 	(*AskResponse)(nil), // 1: numen.v1.AskResponse
-	(*Doing)(nil),       // 2: numen.v1.Doing
+	(*Answered)(nil),    // 2: numen.v1.Answered
+	(*Thinking)(nil),    // 3: numen.v1.Thinking
+	(*Doing)(nil),       // 4: numen.v1.Doing
 }
 var file_numen_v1_agent_proto_depIdxs = []int32{
-	2, // 0: numen.v1.AskResponse.doing:type_name -> numen.v1.Doing
-	0, // 1: numen.v1.AgentService.Ask:input_type -> numen.v1.AskRequest
-	1, // 2: numen.v1.AgentService.Ask:output_type -> numen.v1.AskResponse
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	4, // 0: numen.v1.AskResponse.doing:type_name -> numen.v1.Doing
+	2, // 1: numen.v1.AskResponse.answered:type_name -> numen.v1.Answered
+	3, // 2: numen.v1.AskResponse.thinking:type_name -> numen.v1.Thinking
+	0, // 3: numen.v1.AgentService.Ask:input_type -> numen.v1.AskRequest
+	1, // 4: numen.v1.AgentService.Ask:output_type -> numen.v1.AskResponse
+	4, // [4:5] is the sub-list for method output_type
+	3, // [3:4] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_agent_proto_init() }
@@ -300,6 +435,8 @@ func file_numen_v1_agent_proto_init() {
 		(*AskResponse_Said)(nil),
 		(*AskResponse_Doing)(nil),
 		(*AskResponse_Stopped)(nil),
+		(*AskResponse_Answered)(nil),
+		(*AskResponse_Thinking)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -307,7 +444,7 @@ func file_numen_v1_agent_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_agent_proto_rawDesc), len(file_numen_v1_agent_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

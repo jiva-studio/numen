@@ -9,7 +9,7 @@
  * moment a task is taken and taken down when the answer begins.
  */
 import { ref, type Ref } from 'vue'
-import type { Turn } from '@numen/ui'
+import { charsWord, type Turn } from '@numen/ui'
 import type { Agent } from './agent'
 
 /** The words the panel puts up itself. */
@@ -77,9 +77,21 @@ export function conversation(agent: Agent, words: Wording, paint: Paint = onNext
     inFlight = flight
     working.value = true
 
-    // The line for the work, up before anything comes back.
+    // The line for the work, up before anything comes back. There is one of
+    // it: what the agent has in hand now, replaced as that changes.
     const doing = `${next++}`
-    put({ id: doing, voice: 'doing', text: words.thinking, state: 'arriving' })
+
+    // What the agent has in hand, as far as anything has said. A call carrying
+    // the text of a note is reported again every time more of it is written, so
+    // the count is what moves while it is being written.
+    let says = words.thinking
+    let about = ''
+
+    const nowDoing = (state: 'arriving' | 'settled', written = 0) => {
+      put({ id: doing, voice: 'doing', text: says, about, aside: charsWord(written), state })
+    }
+
+    nowDoing('arriving')
 
     let answer = ''
     let saying = ''
@@ -119,13 +131,26 @@ export function conversation(agent: Agent, words: Wording, paint: Paint = onNext
 
           case 'doing':
             settleAnswer()
-            put({
-              id: doing,
-              voice: 'doing',
-              text: spoken(step.tool),
-              about: step.about,
-              state: 'arriving',
-            })
+            says = spoken(step.tool)
+            about = step.about
+            nowDoing('arriving', step.written)
+            break
+
+          // A tool answered. Which one is not said, and with two in hand this is
+          // one of them, so the line keeps its name and stops claiming to be
+          // running. What comes next is named when it begins.
+          case 'answered':
+            nowDoing('settled')
+            break
+
+          // A request to the model has begun: from here, what happens is not
+          // ours and is not quick. The answer so far settles first, so the line
+          // stays below the last thing said and not below a turn still growing.
+          case 'thinking':
+            settleAnswer()
+            says = words.thinking
+            about = ''
+            nowDoing('arriving')
             break
 
           case 'stopped':

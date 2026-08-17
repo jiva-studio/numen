@@ -1,2 +1,3 @@
--- Headings, links and problems go with it: the schema says they are the note's.
-DELETE FROM notes WHERE id = ?;
+-- The note, its headings, its links, its problems and its chunks go with it:
+-- the schema says they are the source's.
+DELETE FROM sources WHERE id = ?;

@@ -89,6 +89,55 @@ func TestADeletedNoteLeavesTheIndex(t *testing.T) {
 	}
 }
 
+// TestARefreshDoesNotTakeABookForARemovedNote. A refresh asks the reader whether
+// each path is still there and reads fs.ErrNotExist as "it was removed". A book
+// the vault holds is there, and taking its text out of it is its own step.
+func TestARefreshDoesNotTakeABookForARemovedNote(t *testing.T) {
+	refresh, db, v := refreshing(t, map[string]string{
+		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
+	})
+	testsupport.WriteBook(t, v.Path, "library/A Book.epub")
+
+	res, err := refresh.Execute(t.Context(), v, []string{"library/A Book.epub", "Note.md"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Removed) != 0 {
+		t.Errorf("removed %v — the vault holds the book", res.Removed)
+	}
+	if !slices.Equal(res.Assets, []string{"library/A Book.epub"}) {
+		t.Errorf("reported %v as sources of another kind", res.Assets)
+	}
+	if !slices.Equal(res.Indexed, []string{"Note.md"}) {
+		t.Errorf("indexed %v", res.Indexed)
+	}
+	if !slices.Equal(res.Changed(), []string{"Note.md"}) {
+		t.Errorf("the caller was told to look at %v", res.Changed())
+	}
+	if got := titles(t, db, v, "entropy"); !slices.Equal(got, []string{"Note"}) {
+		t.Errorf("the index holds %v", got)
+	}
+}
+
+// TestARefreshedBookThatWentIsStillGone. Nothing about a second kind of source
+// changes what a path that is not there means.
+func TestARefreshedBookThatWentIsStillGone(t *testing.T) {
+	refresh, _, v := refreshing(t, map[string]string{
+		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
+	})
+
+	res, err := refresh.Execute(t.Context(), v, []string{"library/Never Existed.epub"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(res.Removed, []string{"library/Never Existed.epub"}) {
+		t.Errorf("removed %v", res.Removed)
+	}
+	if len(res.Assets) != 0 {
+		t.Errorf("reported %v as sources the vault holds", res.Assets)
+	}
+}
+
 // unreadableReaders answers one path with a failure that is not "gone" — a
 // permission, a broken link, a device that went away.
 type unreadableReaders struct {

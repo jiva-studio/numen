@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lint"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/testsupport"
 )
@@ -83,7 +84,7 @@ func built(t *testing.T, notes map[string]string) (domain.Vault, mcp.Core) {
 
 	core := mcp.Core{
 		Vault: v, Root: v.Path, Readers: readers, Notes: queries,
-		Search:        note.Search{Notes: queries},
+		Search:        search.New(db.Passages(), readers, nil),
 		Neighbourhood: note.ShowNeighbourhood{Links: db.Links(), Notes: queries},
 		Links:         note.ShowLinks{Links: db.Links()},
 		Problems:      lint.Standard(db.Problems()),
@@ -188,10 +189,13 @@ func TestANoteIsMadeAndFoundThroughTheTools(t *testing.T) {
 	}
 
 	found := call[struct {
-		Matches []mcp.Note `json:"matches"`
+		Matches []mcp.Passage `json:"matches"`
 	}](t, session, "note_search", map[string]any{"query": "disorder"})
-	if len(found.Matches) != 1 || found.Matches[0].Path != made[0].Path {
+	if len(found.Matches) != 1 || found.Matches[0].Source != made[0].Path {
 		t.Errorf("a note made through the tools is not searchable: %+v", found.Matches)
+	}
+	if !strings.Contains(found.Matches[0].Text, "A measure of disorder.") {
+		t.Errorf("a match came back without the text around it: %+v", found.Matches[0])
 	}
 }
 
@@ -256,11 +260,15 @@ func TestOneNoteRefusedLeavesTheRestMade(t *testing.T) {
 	}
 }
 
+// created makes each note in its own call, which is the only way the tool takes
+// them. The outcomes come back in the order they were asked for.
 func created(t *testing.T, session *sdk.ClientSession, notes ...map[string]any) []mcp.CreateOutcome {
 	t.Helper()
-	return call[struct {
-		Created []mcp.CreateOutcome `json:"created"`
-	}](t, session, "note_create", map[string]any{"notes": notes}).Created
+	out := make([]mcp.CreateOutcome, 0, len(notes))
+	for _, note := range notes {
+		out = append(out, call[mcp.CreateOutcome](t, session, "note_create", note))
+	}
+	return out
 }
 
 // A path that names nothing is an answer, not a failure: the note may have gone
@@ -419,10 +427,8 @@ func TestALinkTooLargeToWriteIsRefusedBeforeAnythingIsWritten(t *testing.T) {
 
 	huge := strings.Repeat("x", (1<<20)+1)
 	if got := failing(t, session, "note_create", map[string]any{
-		"notes": []map[string]any{{
-			"title": "Entropy",
-			"links": []map[string]any{{"to": "Heat", "role": "ref", "label": huge}},
-		}},
+		"title": "Entropy",
+		"links": []map[string]any{{"to": "Heat", "role": "ref", "label": huge}},
 	}); !strings.Contains(got, "carries at once") {
 		t.Errorf("want a refusal naming the size, got %q", got)
 	}

@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 	"time"
 
@@ -71,6 +72,106 @@ func TestScanIndexesEveryNoteOnce(t *testing.T) {
 	}
 	if summary.Notes != 8 {
 		t.Errorf("index holds %d notes, want 8", summary.Notes)
+	}
+}
+
+// TestAScanSeesBooksBesideNotes. A book found in a vault is reported without
+// anybody asking, and it is not counted as a note: what `Seen` means did not
+// change when a second kind of source became visible.
+func TestAScanSeesBooksBesideNotes(t *testing.T) {
+	ctx := t.Context()
+	root := testsupport.CopyVault(t)
+	testsupport.WriteBook(t, root, "library/A Book.epub")
+	v, readers := vaultAt(t, root)
+	db := openIndex(t)
+
+	res, err := scanner(readers, db).Execute(ctx, v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Seen != 8 {
+		t.Errorf("saw %d notes, want the 8 the fixture holds", res.Seen)
+	}
+	if res.Assets != 1 {
+		t.Errorf("saw %d sources of another kind, want the one book", res.Assets)
+	}
+	if res.Indexed != 8 || res.Removed != 0 {
+		t.Errorf("scan of a vault with a book in it: %+v", res)
+	}
+
+	summary, err := db.Queries().Summary(ctx, v.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if summary.Notes != 8 {
+		t.Errorf("index holds %d notes, want 8 — the book was parsed as one", summary.Notes)
+	}
+}
+
+// TestAFormatNothingExtractsIsNotSeenAtAll. Processing is triggered by type, so
+// the fixture's PDF is neither a note nor a source of another kind.
+func TestAFormatNothingExtractsIsNotSeenAtAll(t *testing.T) {
+	v, readers := vaultAt(t, testsupport.VaultDir(t))
+	db := openIndex(t)
+
+	res, err := scanner(readers, db).Execute(t.Context(), v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Assets != 0 {
+		t.Errorf("counted %d sources of another kind — the fixture holds only a PDF", res.Assets)
+	}
+	if res.Seen != 8 {
+		t.Errorf("saw %d notes, want 8", res.Seen)
+	}
+}
+
+// TestTwoVaultsCountAndAnswerForTheirOwnSourcesOnly. Two vaults sharing no
+// words, and both directions asked: one index holds every vault, so a query
+// that forgets which one returns a plausible number.
+func TestTwoVaultsCountAndAnswerForTheirOwnSourcesOnly(t *testing.T) {
+	ctx := t.Context()
+	first := testsupport.NewVault(t, map[string]string{
+		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n\nthermodynamics\n",
+	})
+	testsupport.WriteBook(t, first.Path, "library/Thermodynamics.epub")
+
+	second := testsupport.NewVault(t, map[string]string{
+		"Quasar.md": "---\ntitle: Quasar\n---\n\n# Quasar\n\nredshift\n",
+		"Pulsar.md": "---\ntitle: Pulsar\n---\n\n# Pulsar\n\nredshift\n",
+	})
+	testsupport.WriteBook(t, second.Path, "shelf/Astronomy.epub")
+	testsupport.WriteBook(t, second.Path, "shelf/Cosmology.epub")
+
+	db := openIndex(t)
+	scan := scanner(filesystem.Readers{}, db)
+
+	one, err := scan.Execute(ctx, first)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if one.Seen != 1 || one.Assets != 1 {
+		t.Errorf("the first vault scanned as %+v, want one note and one book", one)
+	}
+	two, err := scan.Execute(ctx, second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if two.Seen != 2 || two.Assets != 2 {
+		t.Errorf("the second vault scanned as %+v, want two notes and two books", two)
+	}
+
+	if got := titles(t, db, first, "thermodynamics"); !slices.Equal(got, []string{"Entropy"}) {
+		t.Errorf("the first vault holds %v", got)
+	}
+	if got := titles(t, db, second, "thermodynamics"); len(got) != 0 {
+		t.Errorf("the second vault answered with the first's notes: %v", got)
+	}
+	if got := titles(t, db, second, "redshift"); !slices.Equal(got, []string{"Pulsar", "Quasar"}) {
+		t.Errorf("the second vault holds %v", got)
+	}
+	if got := titles(t, db, first, "redshift"); len(got) != 0 {
+		t.Errorf("the first vault answered with the second's notes: %v", got)
 	}
 }
 

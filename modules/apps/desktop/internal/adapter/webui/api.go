@@ -48,6 +48,28 @@ type API struct {
 	Failed  atomic.Value
 	// Unwatched is why the vault is not being followed, when it is not.
 	Unwatched atomic.Value
+
+	// Progress answers how far cutting and embedding have got. Nil for a vault
+	// nothing is reading for meaning, and the window then says nothing about it.
+	Progress port.IndexProgress
+	// Model is the identity vectors are being made under, which is what decides
+	// whether a chunk already carries one. Empty for an installation with no
+	// model, and then nothing is going to embed anything. It is named by the
+	// goroutine reading the vault and asked for by every request.
+	Model atomic.Value
+	// Reading is the source being read now, empty between sources and after the
+	// last one.
+	Reading atomic.Value
+	// Books counts what the vault holds and BooksRead how far cutting has got
+	// through them. Cutting opens files, so a book is its unit; embedding works
+	// on what cutting produced, and Learning says which of the two is running.
+	Books     atomic.Int64
+	BooksRead atomic.Int64
+	Learning  atomic.Bool
+	// Busy is set for as long as this vault is being read: its notes, then its
+	// books, then their vectors. Reading a book and embedding one change no
+	// file, so a client asks again for as long as it holds.
+	Busy atomic.Bool
 }
 
 // failure is what stopped the scan, or empty while nothing has.
@@ -58,15 +80,29 @@ func text(v *atomic.Value) string {
 	return s
 }
 
-func (a *API) State(context.Context, *connect.Request[v1.StateRequest]) (*connect.Response[v1.StateResponse], error) {
-	return connect.NewResponse(&v1.StateResponse{
+func (a *API) State(ctx context.Context, _ *connect.Request[v1.StateRequest]) (*connect.Response[v1.StateResponse], error) {
+	out := &v1.StateResponse{
 		Name:      a.Vault.Name,
 		Path:      a.Vault.Path,
 		Indexed:   a.Indexed.Load(),
 		Ready:     a.Ready.Load(),
 		Failed:    a.failure(),
 		Unwatched: text(&a.Unwatched),
-	}), nil
+		Reading:   text(&a.Reading),
+		Embedding: text(&a.Model) != "",
+		Books:     a.Books.Load(),
+		BooksRead: a.BooksRead.Load(),
+		Learning:  a.Learning.Load(),
+		Busy:      a.Busy.Load(),
+	}
+	// A count that cannot be taken leaves the pair at nothing, and the rest of
+	// the state is answered as it stands.
+	if a.Progress != nil {
+		if held, embedded, err := a.Progress.Progress(ctx, a.Vault.ID, text(&a.Model)); err == nil {
+			out.Chunks, out.Embedded = held, embedded
+		}
+	}
+	return connect.NewResponse(out), nil
 }
 
 func (a *API) Opening(ctx context.Context, _ *connect.Request[v1.OpeningRequest]) (*connect.Response[v1.OpeningResponse], error) {

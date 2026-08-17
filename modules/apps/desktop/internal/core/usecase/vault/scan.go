@@ -22,6 +22,15 @@ type Scan struct {
 	Known       port.NoteQueries
 	Maintenance port.IndexMaintenance
 
+	// RebuildIndex reads every file and puts it in the index again, whatever the
+	// index remembers about it.
+	//
+	// What it remembers is a path, a size and a modification time, so a file whose
+	// content changed while those did not is skipped — an archive restored by
+	// `unzip`, a tree brought over by `rsync -tc`. Rebuilding is the way out of
+	// that, and the only one.
+	RebuildIndex bool
+
 	// OnProgress, if set, is called each time a group of notes is written. A
 	// scan of a large vault takes a minute, and something has to be able to say
 	// so while it happens. What is done with that is the caller's business.
@@ -29,8 +38,12 @@ type Scan struct {
 }
 
 // ScanResult reports what a scan did, in the terms the user cares about.
+//
+// `Seen` counts notes and nothing else, and every other number here is about
+// those notes. What the walk found that is not a note is `Assets`.
 type ScanResult struct {
-	Seen      int // markdown files found in the vault
+	Seen      int // notes found in the vault
+	Assets    int // sources of another kind found in the vault
 	Indexed   int // parsed and written, because they were new or had changed
 	Unchanged int // skipped on size and modification time alone
 	Removed   int // in the index, no longer on disk
@@ -89,10 +102,16 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 		if err := ctx.Err(); err != nil {
 			return res, err
 		}
+		if ref.Kind != domain.KindNote {
+			// A source of another kind is what the vault holds, said out loud.
+			// Taking its text out of it is its own step, on its own schedule.
+			res.Assets++
+			continue
+		}
 		res.Seen++
 		seen[ref.Path] = true
 
-		if previous, ok := known[ref.Path]; ok && previous.Unchanged(ref) {
+		if previous, ok := known[ref.Path]; ok && !u.RebuildIndex && previous.Unchanged(ref) {
 			res.Unchanged++
 			continue
 		}

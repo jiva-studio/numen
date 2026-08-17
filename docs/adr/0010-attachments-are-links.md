@@ -1,8 +1,10 @@
 # ADR-0010: Attachments are links
 
-- **Status:** Accepted
+- **Status:** Accepted, except where noted below
 - **Date:** 2026-08-15
 - **Applies to:** the vault format — every application that reads or writes one
+- **Partly superseded by:** ADR-0006 — what triggers expensive processing, in the
+  rule below
 - **Related:** ADR-0003, ADR-0011
 
 ## Context
@@ -56,6 +58,11 @@ is a query for `role='attachment'` rather than a directory listing.
   any file and from then on it is addressable. Expensive processing — text
   extraction, transcription, chunking — is triggered by type and on demand, not
   by discovery.
+
+  > **Superseded by [ADR-0006](0006-sources.md) in one half.** Discovery is what
+  > triggers processing. Triggering by type survives, and so does the fingerprint
+  > that keeps it incremental.
+
 - **An asset with no attachment edges is normal**, not an error: a file was
   dropped into the vault and not yet pinned. It is indexed, findable, and listed
   under "unattached".

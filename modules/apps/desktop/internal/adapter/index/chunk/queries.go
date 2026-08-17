@@ -1,0 +1,282 @@
+package chunk
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+)
+
+// Queries answers questions about chunks in shapes that are not chunks: where a
+// passage is read from, what matched a search, what still owes work.
+type Queries struct{ db *sql.DB }
+
+func NewQueries(db *sql.DB) *Queries { return &Queries{db: db} }
+
+// Passage is one chunk, and where its text is read from.
+//
+// `Parent` is the large window this one sits inside, and is zero for a large
+// window.
+type Passage struct {
+	Chunk    int64
+	Path     string
+	Start    int
+	Length   int
+	Location string
+	Parent   int64
+}
+
+// Fingerprints is what the index believes about each file of one kind, keyed by
+// path, so a scan can decide what to read again without opening anything.
+func (q *Queries) Fingerprints(ctx context.Context, vaultID, kind string) (map[string]domain.FileRef, error) {
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return map[string]domain.FileRef{}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.db.QueryContext(ctx, stmt.Get("fingerprints"), vault, kind)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := map[string]domain.FileRef{}
+	for rows.Next() {
+		var ref domain.FileRef
+		if err := rows.Scan(&ref.Path, &ref.Size, &ref.MTime); err != nil {
+			return nil, err
+		}
+		out[ref.Path] = ref
+	}
+	return out, rows.Err()
+}
+
+// Lexical is the words half of a search: the chunks of one vault whose text
+// matches what was typed, best first.
+//
+// What comes back is the large window enclosing each hit, which is what a
+// result shows.
+func (q *Queries) Lexical(ctx context.Context, vaultID, query string, limit int) ([]domain.Passage, error) {
+	if limit <= 0 {
+		// How many candidates to keep is a retrieval decision. The caller makes
+		// it, and arriving here without one is a mistake in the caller.
+		return nil, fmt.Errorf("the lexical half needs a positive limit, got %d", limit)
+	}
+	expression := Expression(query)
+	if expression == "" {
+		return nil, nil
+	}
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.db.QueryContext(ctx, stmt.Get("lexical"), expression, vault, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []domain.Passage
+	for rows.Next() {
+		var p domain.Passage
+		if err := rows.Scan(&p.Chunk, &p.Source, &p.Start, &p.Length, &p.Location); err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
+// Nearest is the coarse pass: the chunks of one vault nearest a query vector,
+// nearest first.
+//
+// It is not expected to be right. It is expected not to lose the answer, so the
+// caller asks for several times what the result needs.
+func (q *Queries) Nearest(ctx context.Context, vaultID string, coarse []byte, k int) ([]domain.Passage, error) {
+	if k <= 0 {
+		return nil, fmt.Errorf("the coarse pass needs a positive k, got %d", k)
+	}
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.db.QueryContext(ctx, stmt.Get("search"), coarse, vault, k)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// The order is the answer. A distance is not comparable with a score from
+	// the words half, so the position in this list is what leaves here.
+	var near []int64
+	for rows.Next() {
+		var chunk int64
+		var distance float64
+		if err := rows.Scan(&chunk, &distance); err != nil {
+			return nil, err
+		}
+		near = append(near, chunk)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// The nearest-neighbour question is asked of the vector index alone: it
+	// takes its own ordering and does not join. Where each answer is read from
+	// is a second question, asked once per match.
+	enclosing, err := q.db.PrepareContext(ctx, stmt.Get("enclosing"))
+	if err != nil {
+		return nil, err
+	}
+	defer enclosing.Close()
+
+	out := make([]domain.Passage, 0, len(near))
+	for _, chunk := range near {
+		p := domain.Passage{Chunk: chunk}
+		err := enclosing.QueryRowContext(ctx, chunk, vault).
+			Scan(&p.Source, &p.Start, &p.Length, &p.Location)
+		if errors.Is(err, sql.ErrNoRows) {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, nil
+}
+
+// Passage is where one chunk's text is read from. False when the vault holds no
+// such chunk.
+func (q *Queries) Passage(ctx context.Context, vaultID string, chunk int64) (Passage, bool, error) {
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return Passage{}, false, nil
+	}
+	if err != nil {
+		return Passage{}, false, err
+	}
+	p, found, err := scanPassage(q.db.QueryRowContext(ctx, stmt.Get("passage"), chunk, vault), chunk)
+	return p, found, err
+}
+
+func scanPassage(row *sql.Row, chunk int64) (Passage, bool, error) {
+	p := Passage{Chunk: chunk}
+	err := row.Scan(&p.Path, &p.Start, &p.Length, &p.Location, &p.Parent)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Passage{}, false, nil
+	}
+	if err != nil {
+		return Passage{}, false, err
+	}
+	return p, true, nil
+}
+
+// Unchunked is the sources of one kind with no small window: the file changed,
+// or it has never been cut.
+func (q *Queries) Unchunked(ctx context.Context, vaultID, kind string, limit int) ([]string, error) {
+	return q.paths(ctx, vaultID, "unchunked", limit, func(vault int64) []any {
+		return []any{vault, kind, limit}
+	})
+}
+
+// ByOtherRecipe is the sources of one kind whose text was not extracted by the
+// recipe in use.
+func (q *Queries) ByOtherRecipe(ctx context.Context, vaultID, kind, recipe string, limit int) ([]string, error) {
+	return q.paths(ctx, vaultID, "stale_recipe", limit, func(vault int64) []any {
+		return []any{vault, kind, recipe, limit}
+	})
+}
+
+// Unembedded is the small windows of a vault with no vector from the model in
+// use, from `after` onwards. Asked with the last id of the previous answer, it
+// resumes.
+func (q *Queries) Unembedded(ctx context.Context, vaultID, model string, after int64, limit int) ([]Passage, error) {
+	if limit <= 0 {
+		return nil, fmt.Errorf("a batch needs a positive limit, got %d", limit)
+	}
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.db.QueryContext(ctx, stmt.Get("unembedded"), model, vault, after, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []Passage
+	for rows.Next() {
+		var p Passage
+		if err := rows.Scan(&p.Chunk, &p.Path, &p.Start, &p.Length, &p.Location, &p.Parent); err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
+// paths answers the questions that come back as a list of paths in one vault.
+func (q *Queries) paths(ctx context.Context, vaultID, statement string, limit int, args func(vault int64) []any) ([]string, error) {
+	if limit <= 0 {
+		return nil, fmt.Errorf("%s needs a positive limit, got %d", statement, limit)
+	}
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.db.QueryContext(ctx, stmt.Get(statement), args(vault)...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []string
+	for rows.Next() {
+		var path string
+		if err := rows.Scan(&path); err != nil {
+			return nil, err
+		}
+		out = append(out, path)
+	}
+	return out, rows.Err()
+}
+
+// Progress is how many of a vault's chunks can carry a vector and how many of
+// those carry one for the model named. Cutting finishes long before embedding
+// does, so the pair is what says how far there is to go.
+//
+// A vault the index has never heard of has nothing and owes nothing.
+func (q *Queries) Progress(ctx context.Context, vaultID, model string) (held, embedded int64, err error) {
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return 0, 0, nil
+	}
+	if err != nil {
+		return 0, 0, err
+	}
+	err = q.db.QueryRowContext(ctx, stmt.Get("progress"), model, vault).
+		Scan(&held, &embedded)
+	return held, embedded, err
+}

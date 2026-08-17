@@ -38,8 +38,16 @@ type Kind int
 const (
 	// Saying carries a piece of what the agent is telling the person.
 	Saying Kind = iota
-	// Calling names a tool the agent is using.
+	// Calling names a tool the agent is using. It arrives more than once for one
+	// call: the tool is named as soon as it is reached for, and again as its
+	// arguments are written, because writing them is most of the wait.
 	Calling
+	// Answered says the tool is finished. What follows is not this application's
+	// and is not quick.
+	Answered
+	// Thinking says a request to the model has begun. It is the moment a wait
+	// starts, and the only step that says nothing is being done here.
+	Thinking
 	// Stopped is the last step of any work.
 	Stopped
 )
@@ -54,6 +62,10 @@ type Step struct {
 	// About is what that call is about — a note, a query — empty when the
 	// call says nothing worth showing.
 	About string
+	// Written is how much of the call has been written, in characters. A call
+	// carrying the text of a note is written for minutes, and this is the only
+	// thing that moves while it is.
+	Written int
 	// Failed is why the work stopped, empty when the agent was done.
 	Failed string
 }

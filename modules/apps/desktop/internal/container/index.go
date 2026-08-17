@@ -31,9 +31,29 @@ func (c Config) OpenIndex(ctx context.Context) (*Index, error) {
 
 func (i *Index) Close() error { return i.db.Close() }
 
+// FitVectors makes the vector index hold vectors of the width given.
+func (i *Index) FitVectors(ctx context.Context, dims int) error {
+	return i.db.FitVectors(ctx, dims)
+}
+
 func (i *Index) Vaults() port.VaultRepository { return i.db.Vaults() }
 func (i *Index) Notes() port.NoteRepository   { return i.db.Notes() }
 func (i *Index) Queries() port.NoteQueries    { return i.db.NoteQueries() }
+
+// Passages is the two indexes a search runs over. They read, so a search answers
+// while a scan is still writing.
+func (i *Index) Passages() port.PassageQueries { return i.db.ChunkQueries() }
+
+// Progress is how far cutting and embedding have got, for a window to say so.
+func (i *Index) Progress() port.IndexProgress { return i.db.ChunkQueries() }
+
+// Sources holds what has text and what was made from it. One type answers all
+// four ports: they divide the same tables by what asks, not by where the rows
+// are.
+func (i *Index) Sources() port.SourceRepository   { return i.db.Sources() }
+func (i *Index) SourcesKnown() port.SourceQueries { return i.db.Sources() }
+func (i *Index) Vectors() port.VectorRepository   { return i.db.Sources() }
+func (i *Index) VectorsOwing() port.VectorQueries { return i.db.Sources() }
 
 // Maintenance is how the index is told that it has changed wholesale.
 func (i *Index) Maintenance() port.IndexMaintenance { return i.db.Statistics() }

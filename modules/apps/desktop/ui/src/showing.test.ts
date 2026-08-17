@@ -15,7 +15,20 @@ const answer = (path: string): Neighbourhood =>
 const nothing = () =>
   ({ focus: { path: '', title: '', identifier: '' }, related: [] }) as unknown as Neighbourhood
 
-const settled = { name: 'Vault', ready: true, failed: '', unwatched: '' }
+const settled = {
+  name: 'Vault',
+  ready: true,
+  failed: '',
+  unwatched: '',
+  chunks: 0n,
+  embedded: 0n,
+  reading: '',
+  embedding: false,
+  books: 0n,
+  booksRead: 0n,
+  learning: false,
+  busy: false,
+}
 
 /** A core that answers whatever it is told to, and records what it was asked. */
 function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
@@ -162,5 +175,151 @@ describe('a vault that is not being followed', () => {
     await nap()
 
     expect(window.unwatched.value).toBe('too many watches')
+  })
+})
+
+/**
+ * A stream that stays open, which is what a real one does.
+ *
+ * The stream stays open, so the interval under test is the only one being
+ * waited.
+ */
+const held = () => new Promise<never>(() => {})
+
+describe('chunks with nothing to embed them', () => {
+  it('is not busy, so a count of none is not shown as work', async () => {
+    const core = fake({
+      state: async () => ({ ...settled, chunks: 4823n, embedded: 0n, embedding: false }),
+    })
+    const window = showing(core, async () => window.close())
+
+    await window.start()
+    await nap()
+
+    expect(window.chunks.value).toBe(4823)
+    expect(window.embedded.value).toBe(0)
+    expect(window.embedding.value).toBe(false)
+  })
+})
+
+describe('a vault reading itself', () => {
+  it('asks again on its own, since none of that work touches a file', async () => {
+    let asks = 0
+    const core = fake({
+      changes: async function* () {
+        await held()
+      },
+      focus: async function* () {
+        await held()
+      },
+      state: async () => {
+        asks++
+        // Cutting begins after the notes are read, so at the moment the window
+        // opens there is nothing to count and the vault is the only one that
+        // knows more is coming.
+        return {
+          ...settled,
+          busy: asks < 4,
+          chunks: BigInt(asks * 100),
+          embedded: 0n,
+          embedding: true,
+        }
+      },
+    })
+    const window = showing(core, async () => {
+      if (asks > 6) window.close()
+    })
+
+    await window.start()
+    await nap()
+
+    // Asked again with no change reported and no note touched.
+    expect(asks).toBeGreaterThanOrEqual(4)
+    // And stopped once the vault said it was done.
+    expect(asks).toBeLessThanOrEqual(6)
+    expect(window.chunks.value).toBeGreaterThan(0)
+  })
+
+  it('measures how fast the count moves over the interval it waited', async () => {
+    let asks = 0
+    let clock = 0
+    const core = fake({
+      changes: async function* () {
+        await held()
+      },
+      focus: async function* () {
+        await held()
+      },
+      state: async () => {
+        asks++
+        return {
+          ...settled,
+          busy: asks < 5,
+          chunks: 1000n,
+          embedded: BigInt(asks * 20),
+          embedding: true,
+          learning: true,
+        }
+      },
+    })
+    const window = showing(
+      core,
+      async (ms) => {
+        clock += ms
+      },
+      () => clock,
+    )
+
+    await window.start()
+    await nap()
+
+    // Twenty more every two seconds is ten a second.
+    expect(window.rate.value).toBeCloseTo(10, 5)
+  })
+
+  it('starts the rate again when the phase changes, since it counts another thing', async () => {
+    let asks = 0
+    let clock = 0
+    const core = fake({
+      changes: async function* () {
+        await held()
+      },
+      focus: async function* () {
+        await held()
+      },
+      state: async () => {
+        asks++
+        if (asks < 4) {
+          // Books, and forty of them.
+          return { ...settled, busy: true, books: 40n, booksRead: BigInt(asks * 10), embedding: true }
+        }
+        // Now chunks, and ninety thousand already carry a vector. The count
+        // jumps forward by three orders of magnitude.
+        return {
+          ...settled,
+          busy: asks < 5,
+          books: 40n,
+          booksRead: 40n,
+          chunks: 100000n,
+          embedded: 90000n,
+          embedding: true,
+          learning: true,
+        }
+      },
+    })
+    const window = showing(
+      core,
+      async (ms) => {
+        clock += ms
+      },
+      () => clock,
+    )
+
+    await window.start()
+    await nap()
+
+    expect(window.learning.value).toBe(true)
+    // One reading of a phase is a count. Two are a rate.
+    expect(window.rate.value).toBe(0)
   })
 })

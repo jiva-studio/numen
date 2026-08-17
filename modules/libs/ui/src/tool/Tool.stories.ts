@@ -3,6 +3,7 @@
  * works.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { expect } from 'storybook/test'
 import Tool from './Tool.vue'
 
 const meta = {
@@ -58,5 +59,23 @@ export const AwkwardText: Story = {
   args: {
     tool: 'note_neighbourhood',
     about: 'a note whose title runs on well past the width of the panel it is drawn in',
+  },
+}
+
+/**
+ * A call carrying the text of a note is written for minutes, and how much has
+ * arrived is the only thing that moves while it is.
+ */
+export const BeingWritten: Story = {
+  args: {
+    tool: 'Create a note',
+    about: "Vidura's warning",
+    aside: '12 015 characters',
+    working: true,
+  },
+  play: async ({ canvasElement }) => {
+    const line = canvasElement.querySelector('.tool')
+    await expect(line).toHaveTextContent("Vidura's warning")
+    await expect(line).toHaveTextContent('12 015 characters')
   },
 }

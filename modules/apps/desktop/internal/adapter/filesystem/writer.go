@@ -149,9 +149,13 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	// What moves has to be a note; where it goes only has to be in the vault.
-	// Taking a note out of the vault's sight is a move into somewhere that is
-	// deliberately not a note, and refusing that would refuse removal itself.
+	// What moves has to be a note. Where it goes has to be a place a note may
+	// live, or this application's own folder — which is where a note goes when it
+	// is taken out of the vault's sight, and is deliberately not a note-place.
+	//
+	// Anywhere else in the vault is refused, another tool's dot-folder included:
+	// a folder something else reads is a folder that acts on what it finds, and a
+	// file left there is one the index does not know about and nothing shows.
 	source, err := w.note(from)
 	if err != nil {
 		return err
@@ -159,6 +163,9 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
 	target, err := w.inside(to)
 	if err != nil {
 		return err
+	}
+	if !w.holds(to) && !w.ours(to) {
+		return fmt.Errorf("%s: %w", to, ErrNotANote)
 	}
 	if source == target {
 		return nil
@@ -214,6 +221,25 @@ func (w *VaultWriter) note(path string) (string, error) {
 // taken out of the vault's sight is such a place and is deliberately not a note.
 func (w *VaultWriter) inside(path string) (string, error) {
 	return inside(w.root, path, w.opts.serviceDir())
+}
+
+// TrashDir is the folder a removed note is kept in. It is named here as well as
+// where removal decides to use it: this is what may be written to, and that is
+// what writes there.
+const TrashDir = ".trash"
+
+// ours is a folder this application keeps for itself inside the vault: the one
+// it writes its own state into, and the one a note goes to when it is taken out
+// of the vault's sight.
+func (w *VaultWriter) ours(path string) bool {
+	clean := pathpkg.Clean(filepath.ToSlash(path))
+	for dir := pathpkg.Dir(clean); dir != "." && dir != "/"; dir = pathpkg.Dir(dir) {
+		switch pathpkg.Base(dir) {
+		case w.opts.serviceDir(), TrashDir:
+			return true
+		}
+	}
+	return false
 }
 
 // holds answers the same question about a path that a walk answers about the

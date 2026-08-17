@@ -37,6 +37,9 @@ Read these first; everything else is derived from them.
 - [ADR-0021 — The index measures itself after a scan](0021-the-index-measures-itself.md)
 - [ADR-0022 — Notes are indexed in groups](0022-notes-are-indexed-in-groups.md)
 - [ADR-0023 — The vault is watched](0023-the-vault-is-watched.md)
+- [ADR-0029 — The vector index stays inside SQLite, and what that costs](0029-the-vector-index-and-what-it-costs.md)
+- [ADR-0030 — The index-size budget, and where an exact scan ends](0030-index-size-and-approximate-search.md)
+- [ADR-0031 — The agent this application starts, and what it may reach](0031-the-agent-this-application-starts.md)
 - [ADR-0027 — The application writes to the vault](0027-the-application-writes-to-the-vault.md)
 
 ## The note file
@@ -63,11 +66,12 @@ Read these first; everything else is derived from them.
 
 ## Vault layout and sources
 
+- [ADR-0006 — Sources: extracted text into the cache, unreproducible output into the vault](0006-sources.md)
+- [ADR-0007 — Structural chunking, and how a passage is found](0007-structural-chunking-and-hybrid-search.md)
+
 Not yet written.
 
 - ADR-0004 — A submodule mechanism for extension-produced artifacts ([#5](https://github.com/jiva-studio/numen/issues/5))
-- ADR-0006 — Sources: extracted text into the cache, unreproducible output into the vault ([#7](https://github.com/jiva-studio/numen/issues/7))
-- ADR-0007 — Structural chunking; hybrid search ([#8](https://github.com/jiva-studio/numen/issues/8))
 
 ## Spaced repetition
 

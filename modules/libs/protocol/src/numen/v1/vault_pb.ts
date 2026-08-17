@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/vault.proto.
  */
 export const file_numen_v1_vault: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiNwoETm90ZRIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJEhIKCmlkZW50aWZpZXIYAyABKAkiZAoGU2VhdGVkEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEhwKBHNlYXQYAiABKA4yDi5udW1lbi52MS5TZWF0Eg0KBWxhYmVsGAMgASgJEg8KB3Rocm91Z2gYBCABKAkiDgoMU3RhdGVSZXF1ZXN0Im4KDVN0YXRlUmVzcG9uc2USDAoEbmFtZRgBIAEoCRIMCgRwYXRoGAIgASgJEg8KB2luZGV4ZWQYAyABKAMSDQoFcmVhZHkYBCABKAgSDgoGZmFpbGVkGAUgASgJEhEKCXVud2F0Y2hlZBgGIAEoCSIQCg5PcGVuaW5nUmVxdWVzdCI9Cg9PcGVuaW5nUmVzcG9uc2USIQoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGVIAIgBAUIHCgVfbm90ZSIQCg5DaGFuZ2VzUmVxdWVzdCIwCg9DaGFuZ2VzUmVzcG9uc2USDQoFcGF0aHMYASADKAkSDgoGcmVsb2FkGAIgASgIIg4KDEZvY3VzUmVxdWVzdCIdCg1Gb2N1c1Jlc3BvbnNlEgwKBHBhdGgYASABKAkiJAoUTmVpZ2hib3VyaG9vZFJlcXVlc3QSDAoEcGF0aBgBIAEoCSJZChVOZWlnaGJvdXJob29kUmVzcG9uc2USHQoFZm9jdXMYASABKAsyDi5udW1lbi52MS5Ob3RlEiEKB3JlbGF0ZWQYAiADKAsyEC5udW1lbi52MS5TZWF0ZWQqXgoEU2VhdBIUChBTRUFUX1VOU1BFQ0lGSUVEEAASDwoLU0VBVF9QQVJFTlQQARIOCgpTRUFUX0NISUxEEAISDQoJU0VBVF9KVU1QEAMSEAoMU0VBVF9TSUJMSU5HEAQy2AIKDFZhdWx0U2VydmljZRI4CgVTdGF0ZRIWLm51bWVuLnYxLlN0YXRlUmVxdWVzdBoXLm51bWVuLnYxLlN0YXRlUmVzcG9uc2USPgoHT3BlbmluZxIYLm51bWVuLnYxLk9wZW5pbmdSZXF1ZXN0GhkubnVtZW4udjEuT3BlbmluZ1Jlc3BvbnNlElAKDU5laWdoYm91cmhvb2QSHi5udW1lbi52MS5OZWlnaGJvdXJob29kUmVxdWVzdBofLm51bWVuLnYxLk5laWdoYm91cmhvb2RSZXNwb25zZRJACgdDaGFuZ2VzEhgubnVtZW4udjEuQ2hhbmdlc1JlcXVlc3QaGS5udW1lbi52MS5DaGFuZ2VzUmVzcG9uc2UwARI6CgVGb2N1cxIWLm51bWVuLnYxLkZvY3VzUmVxdWVzdBoXLm51bWVuLnYxLkZvY3VzUmVzcG9uc2UwAUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiNwoETm90ZRIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJEhIKCmlkZW50aWZpZXIYAyABKAkiZAoGU2VhdGVkEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEhwKBHNlYXQYAiABKA4yDi5udW1lbi52MS5TZWF0Eg0KBWxhYmVsGAMgASgJEg8KB3Rocm91Z2gYBCABKAkiDgoMU3RhdGVSZXF1ZXN0IvcBCg1TdGF0ZVJlc3BvbnNlEgwKBG5hbWUYASABKAkSDAoEcGF0aBgCIAEoCRIPCgdpbmRleGVkGAMgASgDEg0KBXJlYWR5GAQgASgIEg4KBmZhaWxlZBgFIAEoCRIRCgl1bndhdGNoZWQYBiABKAkSDgoGY2h1bmtzGAcgASgDEhAKCGVtYmVkZGVkGAggASgDEg8KB3JlYWRpbmcYCSABKAkSEQoJZW1iZWRkaW5nGAogASgIEg0KBWJvb2tzGAsgASgDEhIKCmJvb2tzX3JlYWQYDCABKAMSEAoIbGVhcm5pbmcYDSABKAgSDAoEYnVzeRgOIAEoCCIQCg5PcGVuaW5nUmVxdWVzdCI9Cg9PcGVuaW5nUmVzcG9uc2USIQoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGVIAIgBAUIHCgVfbm90ZSIQCg5DaGFuZ2VzUmVxdWVzdCIwCg9DaGFuZ2VzUmVzcG9uc2USDQoFcGF0aHMYASADKAkSDgoGcmVsb2FkGAIgASgIIg4KDEZvY3VzUmVxdWVzdCIdCg1Gb2N1c1Jlc3BvbnNlEgwKBHBhdGgYASABKAkiJAoUTmVpZ2hib3VyaG9vZFJlcXVlc3QSDAoEcGF0aBgBIAEoCSJZChVOZWlnaGJvdXJob29kUmVzcG9uc2USHQoFZm9jdXMYASABKAsyDi5udW1lbi52MS5Ob3RlEiEKB3JlbGF0ZWQYAiADKAsyEC5udW1lbi52MS5TZWF0ZWQqXgoEU2VhdBIUChBTRUFUX1VOU1BFQ0lGSUVEEAASDwoLU0VBVF9QQVJFTlQQARIOCgpTRUFUX0NISUxEEAISDQoJU0VBVF9KVU1QEAMSEAoMU0VBVF9TSUJMSU5HEAQy2AIKDFZhdWx0U2VydmljZRI4CgVTdGF0ZRIWLm51bWVuLnYxLlN0YXRlUmVxdWVzdBoXLm51bWVuLnYxLlN0YXRlUmVzcG9uc2USPgoHT3BlbmluZxIYLm51bWVuLnYxLk9wZW5pbmdSZXF1ZXN0GhkubnVtZW4udjEuT3BlbmluZ1Jlc3BvbnNlElAKDU5laWdoYm91cmhvb2QSHi5udW1lbi52MS5OZWlnaGJvdXJob29kUmVxdWVzdBofLm51bWVuLnYxLk5laWdoYm91cmhvb2RSZXNwb25zZRJACgdDaGFuZ2VzEhgubnVtZW4udjEuQ2hhbmdlc1JlcXVlc3QaGS5udW1lbi52MS5DaGFuZ2VzUmVzcG9uc2UwARI6CgVGb2N1cxIWLm51bWVuLnYxLkZvY3VzUmVxdWVzdBoXLm51bWVuLnYxLkZvY3VzUmVzcG9uc2UwAUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * Note is a note as something else refers to it.
@@ -148,6 +148,73 @@ export type StateResponse = Message<"numen.v1.StateResponse"> & {
    * @generated from field: string unwatched = 6;
    */
   unwatched: string;
+
+  /**
+   * Chunks is how many spans of text the index holds, and embedded is how many
+   * of those carry a vector. Cutting finishes long before embedding does, so
+   * the pair is what says how far searching by meaning has got. Both are zero
+   * for a vault nothing has cut yet.
+   *
+   * @generated from field: int64 chunks = 7;
+   */
+  chunks: bigint;
+
+  /**
+   * @generated from field: int64 embedded = 8;
+   */
+  embedded: bigint;
+
+  /**
+   * Reading is the source being read now, as the vault calls it. Empty when
+   * nothing is being read, which is not the same as everything being done:
+   * `ready` says that.
+   *
+   * @generated from field: string reading = 9;
+   */
+  reading: string;
+
+  /**
+   * Embedding says whether anything is going to turn the chunks into vectors.
+   * False for an installation with no model, where `embedded` stays where it is
+   * and the vault is searched by its words.
+   *
+   * @generated from field: bool embedding = 10;
+   */
+  embedding: boolean;
+
+  /**
+   * Books is how many the vault holds, and books_read how many of those have
+   * been accounted for — read, skipped as unchanged, or found gone. Cutting is
+   * counted in books because that is what it opens; embedding is counted in
+   * chunks, and the two phases are told apart by `learning`.
+   *
+   * @generated from field: int64 books = 11;
+   */
+  books: bigint;
+
+  /**
+   * @generated from field: int64 books_read = 12;
+   */
+  booksRead: bigint;
+
+  /**
+   * Learning is set while vectors are being made. It is what tells the two
+   * phases apart: both name a source and move a count, and the counts are of
+   * different things.
+   *
+   * @generated from field: bool learning = 13;
+   */
+  learning: boolean;
+
+  /**
+   * Busy is set while the vault is still being read: its notes, then its books,
+   * then their vectors. Reading a book and embedding one change no file, so this
+   * is the only thing that says there is more to come. `ready` says the notes
+   * are done, which is a smaller claim.
+   *
+   * @generated from field: bool busy = 14;
+   */
+  busy: boolean;
 };
 
 /**

@@ -1,6 +1,7 @@
 -- The note a vault opens on: the first one it holds.
-SELECT path, title, COALESCE(identifier, '')
-FROM notes
-WHERE vault_id = ?
-ORDER BY id
+SELECT s.path, n.title, COALESCE(n.identifier, '')
+FROM notes n
+JOIN sources s ON s.id = n.source_id
+WHERE n.vault_id = ?
+ORDER BY n.source_id
 LIMIT 1;

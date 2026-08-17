@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 )
 
@@ -36,6 +37,11 @@ func changeable(t *testing.T, notes map[string]string) changing {
 			return err
 		},
 	}
+}
+
+// search is the one search, with no embedder: the words half answers alone.
+func (c changing) search() search.Search {
+	return search.New(c.db.Passages(), filesystem.Readers{}, nil)
 }
 
 func (c changing) create() note.Create {
@@ -93,11 +99,11 @@ func TestACreatedNoteIsNamedAfterItsTitleAndFoundByIt(t *testing.T) {
 	}
 
 	// The index is level before the caller is told, so this finds it.
-	found, err := note.Search{Notes: c.db.Queries()}.Execute(t.Context(), c.vault, "disorder")
+	found, err := c.search().Execute(t.Context(), c.vault, "disorder", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(found) != 1 || found[0].Path != created.Path {
+	if len(found) != 1 || found[0].Source != created.Path {
 		t.Errorf("the new note is not searchable yet: %v", found)
 	}
 }
@@ -252,7 +258,7 @@ func TestRemovingPutsTheNoteInTheTrashAndOutOfTheIndex(t *testing.T) {
 		t.Errorf("the note is not in the trash: %v", err)
 	}
 
-	found, err := note.Search{Notes: c.db.Queries()}.Execute(t.Context(), c.vault, "disorder")
+	found, err := c.search().Execute(t.Context(), c.vault, "disorder", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
 	}

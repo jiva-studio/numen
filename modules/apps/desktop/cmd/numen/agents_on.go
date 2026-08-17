@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lint"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 )
 
 // This file is the only one that knows an agent can reach the vault. Built with
@@ -60,7 +61,7 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 	if err != nil {
 		fmt.Fprintln(out, "agents:", err)
 	}
-	opened.API.Agent = agent(root, endpoint.URL, secret, words, out)
+	opened.API.Agent = agent(cfg, root, endpoint.URL, secret, words, out)
 
 	return func() error {
 		forget()
@@ -73,17 +74,24 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 // It reaches the same tools over the same port as an agent somebody configured
 // themselves, and is given all of them: what it changes appears in the window
 // as it happens.
-func agent(root, url, secret string, served map[string]mcp.Words, out io.Writer) *claudecode.Agent {
+func agent(cfg container.Config, root, url, secret string, served map[string]mcp.Words, out io.Writer) *claudecode.Agent {
 	words := make(map[string]claudecode.Words, len(served))
 	for name, said := range served {
-		words[claudecode.Tool(name)] = claudecode.Words{Title: said.Title, About: said.About}
+		words[claudecode.Tool(name)] = claudecode.Words{
+			Title:  said.Title,
+			About:  said.About,
+			Inside: said.Inside,
+		}
 	}
 	return &claudecode.Agent{
-		Root:    root,
-		Tools:   claudecode.Endpoint{URL: url, Token: secret},
-		Allowed: []string{claudecode.Tool("*")},
-		Words:   words,
-		Trouble: func(err error) { fmt.Fprintln(out, "agent:", err) },
+		Root:                root,
+		Tools:               claudecode.Endpoint{URL: url, Token: secret},
+		Allowed:             []string{claudecode.Tool("*")},
+		Words:               words,
+		Model:               cfg.Agent.Claude.Model,
+		Turns:               cfg.Agent.Claude.MaxSteps,
+		ReadsHooksAndSkills: cfg.Agent.Claude.ReadsHooksAndSkills,
+		Trouble:             func(err error) { fmt.Fprintln(out, "agent:", err) },
 	}
 }
 
@@ -106,7 +114,7 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string) mcp.Core
 		View:    opened.API.Viewing(),
 		Notes:   queries,
 
-		Search:        note.Search{Notes: queries},
+		Search:        search.New(opened.Index.Passages(), readers, opened.Embedder),
 		Neighbourhood: note.ShowNeighbourhood{Links: opened.Index.Links(), Notes: queries},
 		Links:         note.ShowLinks{Links: opened.Index.Links()},
 		Problems:      lint.Standard(opened.Index.Problems()),

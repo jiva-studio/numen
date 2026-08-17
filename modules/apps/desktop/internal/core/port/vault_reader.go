@@ -10,14 +10,15 @@ import (
 // and read. The filesystem is one implementation; a fixture in memory is
 // another.
 type VaultReader interface {
-	// Walk reports every file that is a candidate for indexing, in unspecified
-	// order. The service folder is not reported.
+	// Walk reports every source the vault holds, in unspecified order, each
+	// saying which kind it is. The service folder is not reported, and neither
+	// is a file of no kind the application reads.
 	Walk(ctx context.Context, fn func(domain.FileRef) error) error
 	// Read returns the bytes of one file, addressed by a path a walk reported.
 	Read(ctx context.Context, path string) ([]byte, error)
-	// Stat answers what a walk reports about one path: its size and when it
-	// changed. fs.ErrNotExist when the vault does not hold it, which includes
-	// a path the vault's rules say to ignore.
+	// Stat answers what a walk reports about one path: its kind, its size and
+	// when it changed. fs.ErrNotExist when the vault does not hold it, which
+	// includes a path the vault's rules say to ignore.
 	Stat(ctx context.Context, path string) (domain.FileRef, error)
 }
 

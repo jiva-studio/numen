@@ -8,13 +8,16 @@ DESKTOP  := modules/apps/desktop
 UI       := modules/libs/ui
 PROTOCOL := modules/libs/protocol
 
-# The plugins the schema is compiled with. They are needed only by someone
-# changing it: what they produce is committed.
-GENERATE := nix-shell -p buf protoc-gen-go protoc-gen-connect-go --run
-
-# The window links against the system's own browser, so it is built with a
-# compiler that can see GTK.
-WEBVIEW := nix-shell -p pkg-config gtk4 webkitgtk_6_0 --run
+# What has to be on PATH, and who needs it:
+#
+#   go, node, npm                everything
+#   pkg-config, gtk4,            the window, which links against the system's
+#   webkitgtk-6.0                own browser through cgo
+#   buf, protoc-gen-go,          the schema, and only for somebody changing it:
+#   protoc-gen-connect-go        what they produce is committed
+#
+# How they get there is the machine's business. Nothing here provides them, so
+# nothing here is slower than the work it does.
 
 .PHONY: help
 help:
@@ -28,7 +31,7 @@ install: ## fetch every module's dependencies
 
 .PHONY: generate
 generate: ## compile the schema into Go and TypeScript
-	cd $(PROTOCOL) && $(GENERATE) 'buf generate'
+	cd $(PROTOCOL) && buf generate
 
 .PHONY: generate-check
 generate-check: generate ## fail if what is committed is out of date
@@ -46,7 +49,7 @@ interface: ## build the window's page into the binary's assets
 
 .PHONY: desktop
 desktop: interface ## build the window
-	cd $(DESKTOP) && $(WEBVIEW) 'CGO_ENABLED=1 go build -o ../../../numen ./cmd/numen'
+	cd $(DESKTOP) && CGO_ENABLED=1 go build -o ../../../numen ./cmd/numen
 
 .PHONY: test
 test: ## run every test
@@ -57,6 +60,6 @@ test: ## run every test
 .PHONY: lint
 lint: generate-check ## the checks CI runs, less the one needing a base branch
 	cd $(DESKTOP) && gofmt -l ./cmd ./internal && go vet ./...
-	cd $(PROTOCOL) && $(GENERATE) 'buf lint'
+	cd $(PROTOCOL) && buf lint
 	cd $(UI) && npm run typecheck
 	cd $(DESKTOP)/ui && npm run typecheck

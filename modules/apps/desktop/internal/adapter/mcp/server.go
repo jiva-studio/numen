@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lint"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 )
 
 // Version is what an agent is told it is talking to.
@@ -37,7 +38,7 @@ type Core struct {
 	// served the vault and nothing that puts a note in front of anybody.
 	View port.View
 
-	Search        note.Search
+	Search        search.Search
 	Neighbourhood note.ShowNeighbourhood
 	Links         note.ShowLinks
 	Problems      lint.Linter

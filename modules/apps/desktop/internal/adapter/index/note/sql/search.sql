@@ -1,8 +1,17 @@
--- A result is a title and a path. The text is on disk.
-SELECT n.path, n.title
-FROM notes_fts
-JOIN notes n ON n.id = notes_fts.rowid
-WHERE notes_fts MATCH ?
-  AND n.vault_id = ?
-ORDER BY bm25(notes_fts)
+-- The notes whose text matches the words typed, best first.
+--
+-- The words are indexed over chunks, so a note matching in several of its
+-- windows is grouped back to the one note and ranked by its best window.
+--
+-- `rank` is the full-text table's own score for the row, which is what an
+-- aggregate can be taken of.
+SELECT s.path, n.title, MIN(chunks_fts.rank) AS score
+FROM chunks_fts
+JOIN chunks c ON c.id = chunks_fts.rowid
+JOIN notes n ON n.source_id = c.source_id
+JOIN sources s ON s.id = n.source_id
+WHERE chunks_fts MATCH ?
+  AND c.vault_id = ?
+GROUP BY n.source_id
+ORDER BY score
 LIMIT ?;

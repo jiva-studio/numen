@@ -2,6 +2,8 @@
  * What a thread is made of, as plain values.
  */
 
+import { grouped } from '../counting'
+
 export interface VoiceDescriptor {
   /** Drawn in a bubble of its own, or as text on the surface. */
   readonly bubble: boolean
@@ -33,6 +35,12 @@ export interface Turn {
   readonly text: string
   /** What the turn is about, for a voice that has something to be about. */
   readonly about?: string
+  /**
+   * What is true of the turn beside what it says: how much of a call has been
+   * written, how long a wait has lasted, what a finished piece of work took.
+   * It is the part that moves while nothing else does.
+   */
+  readonly aside?: string
   readonly state?: TurnState
 }
 
@@ -53,3 +61,15 @@ export const placeTurns = (turns: readonly Turn[]): readonly PlacedTurn[] =>
       state,
     }
   })
+
+/**
+ * How much of a call has been written, in words.
+ *
+ * A call carrying the text of a note is written for minutes, and this is the
+ * only thing about it that moves. Grouped in thousands, because the numbers
+ * reach five figures on one note.
+ */
+export const charsWord = (written: number): string =>
+  written <= 0 ? '' : `${grouped(written)} characters`
+
+

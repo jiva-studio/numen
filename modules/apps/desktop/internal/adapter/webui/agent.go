@@ -36,8 +36,10 @@ func (a *API) Ask(ctx context.Context, r *connect.Request[v1.AskRequest], stream
 			if !working {
 				return nil
 			}
-			if err := stream.Send(stepOf(step)); err != nil {
-				return err
+			for _, out := range stepsOf(step) {
+				if err := stream.Send(out); err != nil {
+					return err
+				}
 			}
 			if step.Kind == agent.Stopped {
 				return nil
@@ -46,16 +48,24 @@ func (a *API) Ask(ctx context.Context, r *connect.Request[v1.AskRequest], stream
 	}
 }
 
-// stepOf says a step in the schema's words.
-func stepOf(step agent.Step) *v1.AskResponse {
+// stepsOf says a step in the schema's words.
+func stepsOf(step agent.Step) []*v1.AskResponse {
 	switch step.Kind {
 	case agent.Calling:
-		return &v1.AskResponse{Step: &v1.AskResponse_Doing{
-			Doing: &v1.Doing{Tool: step.Tool, About: step.About},
-		}}
+		return []*v1.AskResponse{{Step: &v1.AskResponse_Doing{
+			Doing: &v1.Doing{
+				Tool:    step.Tool,
+				About:   step.About,
+				Written: int32(step.Written),
+			},
+		}}}
+	case agent.Answered:
+		return []*v1.AskResponse{{Step: &v1.AskResponse_Answered{Answered: &v1.Answered{}}}}
+	case agent.Thinking:
+		return []*v1.AskResponse{{Step: &v1.AskResponse_Thinking{Thinking: &v1.Thinking{}}}}
 	case agent.Stopped:
-		return &v1.AskResponse{Step: &v1.AskResponse_Stopped{Stopped: step.Failed}}
+		return []*v1.AskResponse{{Step: &v1.AskResponse_Stopped{Stopped: step.Failed}}}
 	default:
-		return &v1.AskResponse{Step: &v1.AskResponse_Said{Said: step.Text}}
+		return []*v1.AskResponse{{Step: &v1.AskResponse_Said{Said: step.Text}}}
 	}
 }

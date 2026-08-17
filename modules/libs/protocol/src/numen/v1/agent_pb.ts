@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/agent.proto.
  */
 export const file_numen_v1_agent: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS9hZ2VudC5wcm90bxIIbnVtZW4udjEiKgoKQXNrUmVxdWVzdBINCgVhc2tlZBgBIAEoCRINCgVmb2N1cxgCIAEoCSJaCgtBc2tSZXNwb25zZRIOCgRzYWlkGAEgASgJSAASIAoFZG9pbmcYAiABKAsyDy5udW1lbi52MS5Eb2luZ0gAEhEKB3N0b3BwZWQYAyABKAlIAEIGCgRzdGVwIiQKBURvaW5nEgwKBHRvb2wYASABKAkSDQoFYWJvdXQYAiABKAkyRAoMQWdlbnRTZXJ2aWNlEjQKA0FzaxIULm51bWVuLnYxLkFza1JlcXVlc3QaFS5udW1lbi52MS5Bc2tSZXNwb25zZTABQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChRudW1lbi92MS9hZ2VudC5wcm90bxIIbnVtZW4udjEiKgoKQXNrUmVxdWVzdBINCgVhc2tlZBgBIAEoCRINCgVmb2N1cxgCIAEoCSKqAQoLQXNrUmVzcG9uc2USDgoEc2FpZBgBIAEoCUgAEiAKBWRvaW5nGAIgASgLMg8ubnVtZW4udjEuRG9pbmdIABIRCgdzdG9wcGVkGAMgASgJSAASJgoIYW5zd2VyZWQYBCABKAsyEi5udW1lbi52MS5BbnN3ZXJlZEgAEiYKCHRoaW5raW5nGAUgASgLMhIubnVtZW4udjEuVGhpbmtpbmdIAEIGCgRzdGVwIgoKCEFuc3dlcmVkIgoKCFRoaW5raW5nIjUKBURvaW5nEgwKBHRvb2wYASABKAkSDQoFYWJvdXQYAiABKAkSDwoHd3JpdHRlbhgDIAEoBTJECgxBZ2VudFNlcnZpY2USNAoDQXNrEhQubnVtZW4udjEuQXNrUmVxdWVzdBoVLm51bWVuLnYxLkFza1Jlc3BvbnNlMAFCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * @generated from message numen.v1.AskRequest
@@ -80,6 +80,24 @@ export type AskResponse = Message<"numen.v1.AskResponse"> & {
      */
     value: string;
     case: "stopped";
+  } | {
+    /**
+     * The tool the agent was using has answered. Nothing of this application's
+     * is running from here until the next step arrives.
+     *
+     * @generated from field: numen.v1.Answered answered = 4;
+     */
+    value: Answered;
+    case: "answered";
+  } | {
+    /**
+     * A request to the model has begun. This is where a wait starts, and the
+     * agent says so itself.
+     *
+     * @generated from field: numen.v1.Thinking thinking = 5;
+     */
+    value: Thinking;
+    case: "thinking";
   } | { case: undefined; value?: undefined };
 };
 
@@ -91,7 +109,39 @@ export const AskResponseSchema: GenMessage<AskResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_agent, 1);
 
 /**
+ * Answered and Thinking carry nothing: each is a moment, and what it means is
+ * its name. A client that does not know one ignores the step it names.
+ *
+ * @generated from message numen.v1.Answered
+ */
+export type Answered = Message<"numen.v1.Answered"> & {
+};
+
+/**
+ * Describes the message numen.v1.Answered.
+ * Use `create(AnsweredSchema)` to create a new message.
+ */
+export const AnsweredSchema: GenMessage<Answered> = /*@__PURE__*/
+  messageDesc(file_numen_v1_agent, 2);
+
+/**
+ * @generated from message numen.v1.Thinking
+ */
+export type Thinking = Message<"numen.v1.Thinking"> & {
+};
+
+/**
+ * Describes the message numen.v1.Thinking.
+ * Use `create(ThinkingSchema)` to create a new message.
+ */
+export const ThinkingSchema: GenMessage<Thinking> = /*@__PURE__*/
+  messageDesc(file_numen_v1_agent, 3);
+
+/**
  * Doing is a tool in the agent's hands.
+ *
+ * It arrives more than once for one call: a call carrying the text of a note is
+ * written for minutes, and each report says how much has arrived.
  *
  * @generated from message numen.v1.Doing
  */
@@ -105,11 +155,20 @@ export type Doing = Message<"numen.v1.Doing"> & {
 
   /**
    * What it was called about — a note, a query — empty when the call says
-   * nothing worth showing.
+   * nothing worth showing. Read out of arguments that have not finished
+   * arriving, so it appears before the call is made.
    *
    * @generated from field: string about = 2;
    */
   about: string;
+
+  /**
+   * How much of the call has been written, in characters. The only thing that
+   * moves while a long call is being written.
+   *
+   * @generated from field: int32 written = 3;
+   */
+  written: number;
 };
 
 /**
@@ -117,7 +176,7 @@ export type Doing = Message<"numen.v1.Doing"> & {
  * Use `create(DoingSchema)` to create a new message.
  */
 export const DoingSchema: GenMessage<Doing> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 2);
+  messageDesc(file_numen_v1_agent, 4);
 
 /**
  * AgentService gives a task to the agent working this vault.

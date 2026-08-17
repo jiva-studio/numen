@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/testsupport"
 )
 
 // watching follows a vault and gives back a function that waits for the next
@@ -204,6 +205,47 @@ func TestANewNoteInANewFolderIsReported(t *testing.T) {
 
 	if got := next(); !slices.Contains(got, "later/Added.md") {
 		t.Errorf("reported %v", got)
+	}
+}
+
+// TestABookAppearingIsReported. The watcher filters through the same answer the
+// walk does, so dropping a book into a folder is the whole gesture.
+func TestABookAppearingIsReported(t *testing.T) {
+	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
+	changes, _, err := filesystem.Watcher{}.Watch(t.Context(), domain.Vault{Path: root})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testsupport.WriteBook(t, root, "library/Dropped.epub")
+
+	// A new folder and the file inside it arrive as their own events, and which
+	// batch carries the book depends on which of them the walk of the folder
+	// caught.
+	deadline := time.After(5 * time.Second)
+	for {
+		select {
+		case paths := <-changes:
+			if slices.Contains(paths, "library/Dropped.epub") {
+				return
+			}
+		case <-deadline:
+			t.Fatal("a book appeared in the vault and nothing was said")
+		}
+	}
+}
+
+// TestAPDFAppearingIsNotReported. Classification is by type on both paths: what
+// the walk does not report the watcher does not report either.
+func TestAPDFAppearingIsNotReported(t *testing.T) {
+	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
+	next := watching(t, root)
+
+	write(t, root, "assets/paper.pdf", "%PDF-1.4\n")
+	write(t, root, "Note.md", "# Note\n\nedited\n")
+
+	if got := next(); !slices.Equal(got, []string{"Note.md"}) {
+		t.Errorf("reported %v, want only the note", got)
 	}
 }
 

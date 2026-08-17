@@ -4,6 +4,7 @@
 - **Date:** 2026-08-16
 - **Applies to:** `modules/apps/desktop`
 - **Related:** ADR-0014, ADR-0018, ADR-0023, ADR-0024, ADR-0025
+- **Extended by:** ADR-0031 — the agent this application starts
 
 ## Context
 
@@ -63,8 +64,17 @@ questions for different readers.
 
 The schema is shaped for a window — one focus, one neighbourhood, a stream of
 what changed. A tool surface is shaped for a model: few tools, named for what
-they do, described in prose the model reads before choosing, batched because a
-model pays for every round trip.
+they do, described in prose the model reads before choosing.
+
+**A call that carries names takes as many as are wanted; a call that carries the
+text of a document takes one.** A model pays for every round trip, which is the
+argument for a list, and it writes a call out in full before making it, which is
+the argument against. Which wins depends on what the list carries. Paths and
+links are written in a moment, so looking up twenty notes, moving twenty or
+joining twenty is one call. A note carries what the note says: several in one
+call means nothing reaches the vault until the last word of the last one, and a
+person watching a graph sees it move once, minutes late. Every note is worth a
+call of its own.
 
 Generating either from the other would make both worse, and nothing is written
 twice by keeping them apart: both consume the same use cases. What differs is
@@ -78,9 +88,10 @@ not an absolute path repeated in every answer; a note that can be named two ways
 is a note an agent has to keep two names for.
 
 Where the vault is on disk is said once, when the agent connects, and can be
-asked for again. An agent that can open files joins the two itself; an agent
-that cannot reads through a tool. Which of the two it is is the agent's
-business, and never an assumption in the answer.
+asked for again. An agent that can open files joins the two itself; an agent that
+cannot reads through a tool. For an agent that arrived on its own that is its own
+business, and never an assumption in the answer. For the one this application
+starts it is decided here: it cannot open files, and the decision is ADR-0031's.
 
 ### What is served, and to whom
 
@@ -137,7 +148,8 @@ rather than beside it, and it is the largest single reason to do so.
 **Positive**
 
 - A person installs one thing, starts one thing, and pastes one line into their
-  agent's configuration.
+  agent's configuration. Or types into the panel, and the application starts one
+  for them (ADR-0031).
 - What the agent does is visible as it happens, through machinery that already
   exists and is tested.
 - The index keeps one writer.

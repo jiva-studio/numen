@@ -2,6 +2,8 @@ package filesystem_test
 
 import (
 	"errors"
+	"io/fs"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -46,6 +48,112 @@ func TestWalkReportsEveryNoteAndNothingElse(t *testing.T) {
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("walk found\n  %v\nwant\n  %v", got, want)
+	}
+}
+
+// walkedKinds is what a walk found, as the kind of source each path is.
+func walkedKinds(t *testing.T, root string, opts filesystem.Options) map[string]domain.SourceKind {
+	t.Helper()
+	src, err := filesystem.Open(root, opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]domain.SourceKind{}
+	if err := src.Walk(t.Context(), func(r domain.FileRef) error {
+		got[r.Path] = r.Kind
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	return got
+}
+
+// TestWalkSaysWhichKindEachSourceIs. A walk reports the kind of each source, so
+// a book is never handed to the markdown parser.
+func TestWalkSaysWhichKindEachSourceIs(t *testing.T) {
+	root := testsupport.CopyVault(t)
+	testsupport.WriteBook(t, root, "library/A Book.epub")
+
+	kinds := walkedKinds(t, root, filesystem.Options{})
+
+	if got := kinds["library/A Book.epub"]; got != domain.KindBook {
+		t.Errorf("the book walked as %q", got)
+	}
+	if got := kinds["notes/Entropy.md"]; got != domain.KindNote {
+		t.Errorf("the note walked as %q", got)
+	}
+	notes := 0
+	for _, kind := range kinds {
+		if kind == domain.KindNote {
+			notes++
+		}
+	}
+	if notes != 8 {
+		t.Errorf("walked %d notes, want the 8 the fixture holds", notes)
+	}
+}
+
+// TestAFormatNothingReadsIsNotASource. Which files are sources is decided by
+// type, so the fixture's PDF is reported by nothing and stats as absent.
+func TestAFormatNothingReadsIsNotASource(t *testing.T) {
+	root := testsupport.CopyVault(t)
+	testsupport.WriteBook(t, root, "library/A Book.epub")
+
+	if kind, found := walkedKinds(t, root, filesystem.Options{})["assets/paper.pdf"]; found {
+		t.Errorf("walk reported the PDF as %q", kind)
+	}
+
+	src, err := filesystem.Open(root, filesystem.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := src.Stat(t.Context(), "assets/paper.pdf"); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("stat of the PDF gave %v, want ErrNotExist", err)
+	}
+}
+
+// TestStatDoesNotSayABookIsGone. A refresh reads fs.ErrNotExist as "the file was
+// removed", so a book the vault holds has to stat like the note beside it.
+func TestStatDoesNotSayABookIsGone(t *testing.T) {
+	root := testsupport.CopyVault(t)
+	testsupport.WriteBook(t, root, "library/A Book.epub")
+
+	src, err := filesystem.Open(root, filesystem.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ref, err := src.Stat(t.Context(), "library/A Book.epub")
+	if err != nil {
+		t.Fatalf("stat of a book the vault holds: %v", err)
+	}
+	if ref.Kind != domain.KindBook {
+		t.Errorf("stat says the book is %q", ref.Kind)
+	}
+	if ref.Size <= 0 || ref.MTime == 0 {
+		t.Errorf("stat gave %+v", ref)
+	}
+	if _, err := src.Read(t.Context(), "library/A Book.epub"); err != nil {
+		t.Errorf("read of a book the vault holds: %v", err)
+	}
+}
+
+// TestABookInAHiddenFolderIsNotASourceEither. One set of rules answers for every
+// kind: what the vault says to leave alone is left alone whatever is in it.
+func TestABookInAHiddenFolderIsNotASourceEither(t *testing.T) {
+	root := testsupport.CopyVault(t)
+	testsupport.WriteBook(t, root, ".obsidian/A Book.epub")
+
+	kinds := walkedKinds(t, root, filesystem.Options{})
+	if kind, found := kinds[".obsidian/A Book.epub"]; found {
+		t.Errorf("walk reported a book from a hidden folder as %q", kind)
+	}
+
+	src, err := filesystem.Open(root, filesystem.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := src.Stat(t.Context(), ".obsidian/A Book.epub"); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("stat gave %v, want ErrNotExist", err)
 	}
 }
 
@@ -222,6 +330,28 @@ func TestWhichExtensionsCountIsASetting(t *testing.T) {
 	}
 }
 
+func TestWhichExtensionsAreBooksIsASetting(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{"a.md", "b.epub", "c.pdf"} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// The default is EPUB alone, because it is the one format an extractor
+	// handles.
+	want := map[string]domain.SourceKind{"a.md": domain.KindNote, "b.epub": domain.KindBook}
+	if got := walkedKinds(t, dir, filesystem.Options{}); !maps.Equal(got, want) {
+		t.Errorf("default found %v, want %v", got, want)
+	}
+
+	want = map[string]domain.SourceKind{"a.md": domain.KindNote, "c.pdf": domain.KindBook}
+	got := walkedKinds(t, dir, filesystem.Options{BookExtensions: []string{".pdf"}})
+	if !maps.Equal(got, want) {
+		t.Errorf("configured found %v, want %v", got, want)
+	}
+}
+
 func TestTheConfiguredServiceFolderIsSkippedEvenWithoutALeadingDot(t *testing.T) {
 	// The name is a setting because a leading dot is not free — some sync tools
 	// skip hidden directories — so a service folder called _numen must be
@@ -297,7 +427,7 @@ func TestAPathThatLeavesTheVaultIsRefused(t *testing.T) {
 // exist.
 func TestTheWriterOnlyTouchesNotes(t *testing.T) {
 	root := t.TempDir()
-	for _, path := range []string{".git/config", "photo.png", "notes/keep.md"} {
+	for _, path := range []string{".git/config", "photo.png", "library/A Book.epub", "notes/keep.md"} {
 		if err := os.MkdirAll(filepath.Join(root, filepath.Dir(path)), 0o755); err != nil {
 			t.Fatal(err)
 		}
@@ -310,7 +440,9 @@ func TestTheWriterOnlyTouchesNotes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, path := range []string{".git/config", "photo.png"} {
+	// A book is among them: the reader says the vault holds it, and writing is
+	// still a thing only a note is open to.
+	for _, path := range []string{".git/config", "photo.png", "library/A Book.epub"} {
 		if err := writer.Write(t.Context(), path, []byte("mine"), domain.FileRef{}); !errors.Is(err, filesystem.ErrNotANote) {
 			t.Errorf("write %s: want ErrNotANote, got %v", path, err)
 		}

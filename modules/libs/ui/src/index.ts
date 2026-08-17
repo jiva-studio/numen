@@ -39,11 +39,15 @@ export type { ComposerState, KeyIntent } from './composer/model'
 export { default as Dots } from './dots/Dots.vue'
 
 export { default as Thread } from './thread/Thread.vue'
-export { VOICES, VOICE_NAMES, placeTurns } from './thread/model'
+export { VOICES, VOICE_NAMES, charsWord, placeTurns } from './thread/model'
 export type { PlacedTurn, Turn, TurnState, Voice } from './thread/model'
 
 export { default as Prose } from './prose/Prose.vue'
 export { default as Tool } from './tool/Tool.vue'
+
+export { default as Activity } from './activity/Activity.vue'
+export { activity, percentWord, rateOf, remainingWord, shareOf, tallyWord } from './activity/model'
+export type { ActivityDescriptor, ActivityState, Tally } from './activity/model'
 
 export { default as Agent } from './assembled/Agent.vue'
 

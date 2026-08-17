@@ -5,10 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
+	"strings"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 )
+
+// excerptRunes is how much of a passage one line of terminal output carries.
+const excerptRunes = 160
 
 func searchCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
 	if len(args) < 2 {
@@ -24,16 +29,42 @@ func searchCommand(ctx context.Context, out io.Writer, cfg container.Config, arg
 	}
 	defer db.Close()
 
-	matches, err := note.Search{Notes: db.Queries()}.Execute(ctx, v, args[1])
+	// The same search the window runs. An installation with no model answers by
+	// words alone, and says nothing about it: half a search is a whole answer.
+	embedder, closeEmbedder, why := cfg.Embedder()
+	if why != nil {
+		fmt.Fprintf(os.Stderr, "searching by words alone: %v\n", why)
+	}
+	if closeEmbedder != nil {
+		defer func() { _ = closeEmbedder() }()
+	}
+
+	found, err := search.New(db.Passages(), cfg.VaultReaders(), embedder).
+		Execute(ctx, v, args[1], search.Parameters{})
 	if err != nil {
 		return err
 	}
-	if len(matches) == 0 {
+	if len(found) == 0 {
 		fmt.Fprintln(out, "nothing found")
 		return nil
 	}
-	for _, m := range matches {
-		fmt.Fprintf(out, "%s\n  %s\n", m.Title, m.Path)
+	for _, p := range found {
+		where := p.Source
+		if p.Location != "" {
+			where += " · " + p.Location
+		}
+		fmt.Fprintf(out, "%s\n  %s\n", where, excerpt(p.Text))
 	}
 	return nil
+}
+
+// excerpt is a passage on one line: the words, with the shape of the file taken
+// out of them.
+func excerpt(text string) string {
+	words := strings.Join(strings.Fields(text), " ")
+	runes := []rune(words)
+	if len(runes) <= excerptRunes {
+		return words
+	}
+	return string(runes[:excerptRunes]) + "…"
 }

@@ -10,20 +10,50 @@ CREATE TABLE vaults (
     path       TEXT NOT NULL
 );
 
--- A note, and what a scan knows about the file it came from.
+-- A file the index has read, and what a scan knows about it. `kind` says what
+-- sort of file it is. What only one kind has is stored in a table of its own.
 --
--- `id` is the note's identity inside this database, and what every other table
--- points at.
+-- `id` is the source's identity inside this database, and what every other
+-- table points at.
 --
 -- `size` and `modified_at` are what let the next scan skip the file without
--- opening it.
+-- opening it, for every kind.
+--
+-- `hash` is the address the content itself gives the source, and is null until
+-- something computes it. A source is saved and removed by its path, and a hash
+-- is what lets a moved file keep what was derived from it.
+--
+-- `recipe` is what extracted the text, and is null while nothing has.
+CREATE TABLE sources (
+    id          INTEGER PRIMARY KEY,
+    vault_id    INTEGER NOT NULL REFERENCES vaults(id) ON DELETE CASCADE,
+    path        TEXT NOT NULL,
+    kind        TEXT NOT NULL,
+    size        INTEGER NOT NULL,
+    modified_at INTEGER NOT NULL,
+    hash        TEXT,
+    recipe      TEXT,
+
+    UNIQUE (vault_id, path)
+);
+
+-- Every row filed under a vault carries the vault, and names the pair as its
+-- foreign key, so a row cannot claim a vault its source does not belong to.
+CREATE UNIQUE INDEX sources_by_vault ON sources (id, vault_id);
+
+-- Every scan asks one question of every source of one kind: has this file
+-- changed. This answers it without reading the files themselves.
+CREATE INDEX sources_by_fingerprint ON sources (vault_id, kind, path, size, modified_at);
+
+-- What only a note has: the names a link reaches it by, and the frontmatter
+-- they are written in. A note's row number is its source's, so a question that
+-- needs only the file joins `sources` on it.
 --
 -- `identifier` is the ULID written in the file, when there is one. Most notes
 -- have none, and a copied file carries a copy of it.
 CREATE TABLE notes (
-    id                INTEGER PRIMARY KEY,
-    vault_id          INTEGER NOT NULL REFERENCES vaults(id) ON DELETE CASCADE,
-    path              TEXT NOT NULL,
+    source_id         INTEGER PRIMARY KEY,
+    vault_id          INTEGER NOT NULL,
 
     -- The name a note is found by when a link is written by name. NOCASE on the
     -- column and not on the comparison, so that [[entropy]] finds Entropy.md
@@ -34,40 +64,22 @@ CREATE TABLE notes (
     identifier        TEXT,
     frontmatter       TEXT,
     frontmatter_error TEXT,
-    size              INTEGER NOT NULL,
-    modified_at       INTEGER NOT NULL,
 
-    UNIQUE (vault_id, path)
+    FOREIGN KEY (source_id, vault_id) REFERENCES sources (id, vault_id) ON DELETE CASCADE
 );
 
--- Carries the path so that resolution is answered from the index alone.
-CREATE INDEX notes_by_basename ON notes (vault_id, basename, path);
-
--- Every scan asks one question of every note in the vault: has this file
--- changed. This answers it without reading the notes themselves.
-CREATE INDEX notes_by_fingerprint ON notes (vault_id, path, size, modified_at);
+-- A name means something inside one vault, so the vault leads. The path a
+-- candidate is reported by comes from the source, which is one lookup by row
+-- number away.
+CREATE INDEX notes_by_basename ON notes (vault_id, basename);
 
 -- An identifier names one note in the world, and is looked up without a vault.
 CREATE INDEX notes_by_identifier ON notes (identifier);
 
 CREATE TABLE headings (
-    note_id  INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+    note_id  INTEGER NOT NULL REFERENCES notes(source_id) ON DELETE CASCADE,
     line     INTEGER NOT NULL,
     level    INTEGER NOT NULL,
     text     TEXT NOT NULL,
     PRIMARY KEY (note_id, line)
-);
-
--- The search index, and nothing else: `content=''` keeps no copy of what was
--- indexed. A result is a title and a path, and the text is on disk.
---
--- `contentless_delete` is what makes a row replaceable without that copy, which
--- a rescan of an edited note needs.
---
--- The rowid is the note's own id. It is the only key this kind of table has.
-CREATE VIRTUAL TABLE notes_fts USING fts5 (
-    title,
-    body,
-    content='',
-    contentless_delete=1
 );

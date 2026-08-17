@@ -10,7 +10,9 @@ import (
 	"os"
 	"path/filepath"
 
+	adapteragent "github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/agent"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/appstate"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
@@ -24,6 +26,22 @@ type Config struct {
 	// Extensions are the file extensions treated as notes. Empty means the
 	// default, which is markdown alone.
 	Extensions []string
+
+	// Embedding is the model this run turns text into vectors with. An entry
+	// point reads the settings and says what it found, so nothing below one
+	// reaches the machine's own file. A zero value names no embedder, and nothing
+	// is embedded.
+	Embedding embed.Config
+
+	// Agent is which agent answers in the panel. It arrives the way Embedding
+	// does.
+	Agent adapteragent.Config
+
+	// RebuildIndex reads every file and puts it in the index again, whatever the
+	// index remembers about it. Both entry points offer it under one name: a
+	// person with a vault restored from an archive is not asked which binary they
+	// are holding.
+	RebuildIndex bool
 }
 
 // Registry is the list of vaults this installation knows: application state,

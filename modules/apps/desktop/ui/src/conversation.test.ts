@@ -32,7 +32,14 @@ const nap = () => new Promise((wake) => setTimeout(wake, 0))
 const now = (draw: () => void) => draw()
 
 const said = (text: string): Step => ({ kind: 'said', text })
-const used = (tool: string, about = ''): Step => ({ kind: 'doing', tool, about })
+const used = (tool: string, about = '', written = 0): Step => ({
+  kind: 'doing',
+  tool,
+  about,
+  written,
+})
+const answered = (): Step => ({ kind: 'answered' })
+const thinking = (): Step => ({ kind: 'thinking' })
 const stopped = (failed = ''): Step => ({ kind: 'stopped', failed })
 
 describe('an answer', () => {
@@ -140,4 +147,77 @@ describe('a tool nobody titled', () => {
 
     expect(seen).toBe('note search')
   })
+})
+
+describe('a wait that explains itself', () => {
+  it('shows which note is being written while it is being written', async () => {
+    let release = () => {}
+    const held = new Promise<void>((go) => {
+      release = go
+    })
+    const talk = conversation(
+      doing([used('Create a note', "Vidura's warning", 12015)], held),
+      words,
+      now,
+    )
+    const asking = talk.ask('write it up', '')
+    await nap()
+
+    const line = talk.turns.value.find((turn) => turn.voice === 'doing')
+    expect(line?.text).toBe('Create a note')
+    // Which note, before the note exists: the name is read out of a call that
+    // has not finished being written.
+    expect(line?.about).toBe("Vidura's warning")
+    // The only thing that moves while twelve thousand characters are typed.
+    expect(line?.aside).toBe('12 015 characters')
+
+    release()
+    await asking
+  })
+
+  it('stops claiming a tool is running once it has answered', async () => {
+    let release = () => {}
+    const held = new Promise<void>((go) => {
+      release = go
+    })
+    const talk = conversation(
+      doing([used('Create a note', "Vidura's warning", 4000), answered()], held),
+      words,
+      now,
+    )
+    const asking = talk.ask('write it up', '')
+    await nap()
+
+    // Which tool answered is not said, and with two in hand this is one of them.
+    // The line keeps its name and stops claiming to be running.
+    const line = talk.turns.value.find((turn) => turn.voice === 'doing')
+    expect(line?.text).toBe('Create a note')
+    expect(line?.state).toBe('settled')
+
+    release()
+    await asking
+  })
+
+  it('says the model is working when the model is asked, and not before', async () => {
+    let release = () => {}
+    const held = new Promise<void>((go) => {
+      release = go
+    })
+    const talk = conversation(
+      doing([used('Create a note', "Vidura's warning", 4000), answered(), thinking()], held),
+      words,
+      now,
+    )
+    const asking = talk.ask('write it up', '')
+    await nap()
+
+    const line = talk.turns.value.find((turn) => turn.voice === 'doing')
+    expect(line?.text).toBe(words.thinking)
+    expect(line?.about).toBe('')
+    expect(line?.state).toBe('arriving')
+
+    release()
+    await asking
+  })
+
 })

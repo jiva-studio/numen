@@ -6,9 +6,14 @@
 --
 -- The basename column folds case, so [[entropy]] finds Entropy.md. A path is
 -- compared exactly: it is a path on a disk.
-SELECT path FROM notes WHERE vault_id = ? AND path = ?
+--
+-- Only notes answer to a name; the join says so.
+SELECT s.path FROM sources s JOIN notes n ON n.source_id = s.id
+WHERE s.vault_id = ? AND s.path = ?
 UNION
-SELECT path FROM notes WHERE vault_id = ? AND path = ?
+SELECT s.path FROM sources s JOIN notes n ON n.source_id = s.id
+WHERE s.vault_id = ? AND s.path = ?
 UNION
-SELECT path FROM notes WHERE vault_id = ? AND basename = ?
+SELECT s.path FROM notes n JOIN sources s ON s.id = n.source_id
+WHERE n.vault_id = ? AND n.basename = ?
 ORDER BY 1;

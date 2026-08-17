@@ -59,19 +59,60 @@ The service folder is excluded from indexing in full.
 
 ### Application state lives with the application
 
-The registry of vaults — which ones exist, where they are, which was open last —
-and anything else about this installation lives in the platform's configuration
-location (`~/.config/numen/` or the platform equivalent), as JSON.
+Everything about this installation lives in the platform's configuration location
+(`~/.config/numen/` or the platform equivalent), as JSON.
 
 JSON rather than a database, deliberately. It is a handful of entries, and the
 one time it matters most is when the application will not start: a file a human
 can open and fix beats a database that needs the application to read it.
+
+### Settings are one file, and the application never writes it
+
+```
+~/.config/numen/numen.json
+```
+
+Everything a person may want to change is a section of that one file, and each
+section is named for the part of the application it is about: `appearance` for how
+the window is drawn, `indexing` for how a vault is made searchable, `agent` for
+which agent answers in the panel. A person looking for a setting looks for the
+part it belongs to.
+
+The file is named after the application, so the name says what it configures
+wherever it is read out or copied to.
+
+**The registry of vaults is a separate file.** Which vaults exist, where they are
+and which was open last is written by the application, when a person adds a vault.
+A file the application rewrites is no place for something typed by hand: one
+rewrite drops a comment, reorders what a person arranged, or loses a key typed
+while the file was being written. The two files have different authors, so they
+are two files.
+
+The same holds for anything else the application writes for itself — where agents
+reach this vault, and the secret they present. Written by the application, kept
+beside the registry, and not part of what a person edits.
+
+An entry point reads the settings once and says what it found; nothing below one
+opens the file. A test cannot reach the machine's own settings, a model, or a paid
+account, because nothing under an entry point knows where to look.
+
+### One word, one thing
+
+`numen.json` is the settings of an installation. `<vault>/.numen/config.json` is
+the identity of a vault. Two files that a person, or a sentence, could confuse are
+two names to keep apart, so the settings carry the application's name and the
+identity keeps the generic one it has always had (ADR-0024).
 
 ### Consequences of losing either half
 
 Losing the **registry** costs the user re-adding their vaults. No knowledge is
 lost, because every vault still carries its own identity and every row in the
 index still points at it.
+
+Losing the **settings** costs the user their preferences, and the application
+starts on its defaults: the desktop decides how large the window is drawn, no
+model is loaded, and search answers by words alone. Nothing is unrecoverable, and
+a person who kept a key in the file supplies it again.
 
 Losing the **`.numen/config.json`** of a vault means the application no longer
 recognises it: adding the folder again produces a new identity, and the old rows

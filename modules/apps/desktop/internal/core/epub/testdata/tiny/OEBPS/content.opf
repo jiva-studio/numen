@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The title is written with a prefix of the writer's own choosing, and the
+     spine is not the order of the files in the archive. -->
+<package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="id">
+  <metadata xmlns:whatever="http://purl.org/dc/elements/1.1/">
+    <whatever:title>A Tiny Book</whatever:title>
+    <whatever:language>en</whatever:language>
+    <whatever:identifier id="id">tiny-1</whatever:identifier>
+  </metadata>
+  <manifest>
+    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+    <item id="cover" href="cover.xhtml" media-type="application/xhtml+xml"/>
+    <item id="first" href="first.xhtml" media-type="application/xhtml+xml"/>
+    <item id="second" href="second.xhtml" media-type="application/xhtml+xml"/>
+    <item id="gone" href="gone.xhtml" media-type="application/xhtml+xml"/>
+  </manifest>
+  <spine toc="ncx">
+    <itemref idref="cover"/>
+    <itemref idref="gone"/>
+    <itemref idref="first"/>
+    <itemref idref="second"/>
+    <itemref idref="nothing-declares-this"/>
+  </spine>
+</package>

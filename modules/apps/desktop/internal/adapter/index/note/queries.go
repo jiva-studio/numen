@@ -6,11 +6,12 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 )
 
 // Queries answers questions about notes in shapes that are not notes: what the
-// index believes about each file, what matched a search, how much is there.
+// index believes about each file, what a name reaches, how much is there.
 type Queries struct{ db *sql.DB }
 
 func NewQueries(db *sql.DB) *Queries { return &Queries{db: db} }
@@ -24,7 +25,7 @@ func (q *Queries) Fingerprints(ctx context.Context, vaultID string) (map[string]
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("fingerprints"), vault)
+	rows, err := q.db.QueryContext(ctx, stmt.Get("fingerprints"), vault, kind)
 	if err != nil {
 		return nil, err
 	}
@@ -41,6 +42,9 @@ func (q *Queries) Fingerprints(ctx context.Context, vaultID string) (map[string]
 	return out, rows.Err()
 }
 
+// Search is the notes whose text matches the words typed, each ranked by its
+// best window. A search over everything the vault holds answers with passages;
+// this answers with notes.
 func (q *Queries) Search(ctx context.Context, vaultID, query string, limit int) ([]domain.NoteMatch, error) {
 	if limit <= 0 {
 		// How many results a person wants is not something a database adapter
@@ -48,7 +52,7 @@ func (q *Queries) Search(ctx context.Context, vaultID, query string, limit int) 
 		// mistake in the caller.
 		return nil, fmt.Errorf("search limit must be positive, got %d", limit)
 	}
-	expression := ftsExpression(query)
+	expression := chunk.Expression(query)
 	if expression == "" {
 		return nil, nil
 	}
@@ -69,7 +73,8 @@ func (q *Queries) Search(ctx context.Context, vaultID, query string, limit int) 
 	var out []domain.NoteMatch
 	for rows.Next() {
 		var m domain.NoteMatch
-		if err := rows.Scan(&m.Path, &m.Title); err != nil {
+		var score float64
+		if err := rows.Scan(&m.Path, &m.Title, &score); err != nil {
 			return nil, err
 		}
 		out = append(out, m)

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A navigation control file that names the parts of the book: nested points,
+     one point with no content element, one pointing at a document that is not
+     in the archive, and a list of the pages of the printed edition. -->
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
+  <head>
+    <meta content="tiny-1" name="dtb:uid"/>
+    <meta content="2" name="dtb:depth"/>
+  </head>
+  <docTitle><text>A Tiny Book</text></docTitle>
+  <navMap>
+    <navPoint id="np-1" playOrder="1">
+      <navLabel><text>Of the Beginning</text></navLabel>
+      <content src="first.xhtml#one"/>
+      <navPoint id="np-2" playOrder="2">
+        <navLabel><text>Alpha</text></navLabel>
+        <content src="first.xhtml#alpha"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="np-3" playOrder="3">
+      <navLabel><text>Of the Middle</text></navLabel>
+      <content src="second.xhtml#two"/>
+    </navPoint>
+    <navPoint id="np-4" playOrder="4">
+      <navLabel><text>Of what was left out</text></navLabel>
+      <content src="gone.xhtml"/>
+    </navPoint>
+    <navPoint id="np-5" playOrder="5">
+      <navLabel><text>Nowhere</text></navLabel>
+    </navPoint>
+  </navMap>
+  <pageList>
+    <navLabel><text>Pages</text></navLabel>
+    <pageTarget id="pt-1" value="7" type="normal" playOrder="6">
+      <navLabel><text>[Pg 7]</text></navLabel>
+      <content src="second.xhtml#two"/>
+    </pageTarget>
+  </pageList>
+</ncx>

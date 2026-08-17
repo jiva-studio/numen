@@ -48,7 +48,8 @@ func Open(root string, opts Options) (*VaultReader, error) {
 
 func (s *VaultReader) Root() string { return s.root }
 
-// Walk reports every note in the vault.
+// Walk reports every source in the vault, each saying which kind it is. A file
+// of no kind the application reads is not reported at all.
 //
 // What the vault's ignore rules name is skipped, and so is the service folder.
 // The service folder is named separately because its name is a setting, and a
@@ -83,7 +84,8 @@ func (s *VaultReader) Walk(ctx context.Context, fn func(domain.FileRef) error) e
 			}
 			return nil
 		}
-		if !s.opts.isNote(d.Name()) || ignored.MatchesPath(rel) {
+		kind, ok := s.opts.kind(d.Name())
+		if !ok || ignored.MatchesPath(rel) {
 			return nil
 		}
 		info, err := d.Info()
@@ -95,6 +97,7 @@ func (s *VaultReader) Walk(ctx context.Context, fn func(domain.FileRef) error) e
 		}
 		return fn(domain.FileRef{
 			Path:  rel,
+			Kind:  kind,
 			Size:  info.Size(),
 			MTime: info.ModTime().UnixNano(),
 		})
@@ -118,7 +121,8 @@ func (s *VaultReader) Stat(ctx context.Context, path string) (domain.FileRef, er
 	if ctx.Err() != nil {
 		return domain.FileRef{}, ctx.Err()
 	}
-	if !s.holds(path) {
+	kind, held := s.holds(path)
+	if !held {
 		return domain.FileRef{}, fs.ErrNotExist
 	}
 	info, err := os.Stat(filepath.Join(s.root, filepath.FromSlash(path)))
@@ -130,26 +134,30 @@ func (s *VaultReader) Stat(ctx context.Context, path string) (domain.FileRef, er
 	}
 	return domain.FileRef{
 		Path:  path,
+		Kind:  kind,
 		Size:  info.Size(),
 		MTime: info.ModTime().UnixNano(),
 	}, nil
 }
 
-// holds reports whether a path inside this vault is one a walk would report.
-func (s *VaultReader) holds(path string) bool {
+// holds reports which kind of source a path inside this vault is, and whether a
+// walk would report it at all. The walk and the watcher both ask it, so the two
+// agree about what the vault holds.
+func (s *VaultReader) holds(path string) (domain.SourceKind, bool) {
 	if _, err := inside(s.root, path, s.opts.serviceDir()); err != nil {
-		return false
+		return "", false
 	}
-	if !s.opts.isNote(pathpkg.Base(path)) {
-		return false
+	kind, ok := s.opts.kind(pathpkg.Base(path))
+	if !ok {
+		return "", false
 	}
 	if s.ignored.MatchesPath(path) {
-		return false
+		return "", false
 	}
 	for dir := pathpkg.Dir(path); dir != "." && dir != "/"; dir = pathpkg.Dir(dir) {
 		if pathpkg.Base(dir) == s.opts.serviceDir() || s.ignored.MatchesPath(dir+"/") {
-			return false
+			return "", false
 		}
 	}
-	return true
+	return kind, true
 }

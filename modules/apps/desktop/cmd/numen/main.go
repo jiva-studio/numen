@@ -18,6 +18,7 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/webui"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 )
@@ -32,6 +33,8 @@ func main() {
 		"where agents reach this vault; anything but a loopback address opens it to the network")
 	flag.BoolVar(&agents.off, "no-mcp", false, "do not let agents reach this vault")
 	flag.Float64Var(&zoom, "zoom", 0, "how large everything is drawn, 1 being as designed")
+	flag.BoolVar(&cfg.RebuildIndex, "rebuild-index", false,
+		"read every file and put it in the index again, whatever the index remembers")
 	flag.Parse()
 
 	if err := run(cfg, agents, zoom); err != nil {
@@ -43,6 +46,13 @@ func main() {
 func run(cfg container.Config, agents agentOptions, zoom float64) error {
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
+
+	chosen, err := settings.Open()
+	if err != nil {
+		return err
+	}
+	cfg.Embedding = chosen.Indexing.Embedding
+	cfg.Agent = chosen.Agent
 
 	opened, err := webui.Open(ctx, cfg, os.Stdout)
 	if err != nil {
@@ -73,7 +83,7 @@ func run(cfg container.Config, agents agentOptions, zoom float64) error {
 		Width:  1280,
 		Height: 860,
 		URL:    "/",
-		Zoom:   drawnAt(zoom),
+		Zoom:   drawnAt(zoom, chosen.Appearance.Zoom),
 	})
 
 	return app.Run()
@@ -83,11 +93,15 @@ func run(cfg container.Config, agents agentOptions, zoom float64) error {
 //
 // A screen says how many pixels it has and not how large they are, so the
 // desktop is asked: GDK_DPI_SCALE is what the person told their session text
-// should be scaled by, and this window is drawn to match. The flag says it
-// outright for a person who wants this one window larger.
-func drawnAt(asked float64) float64 {
+// should be scaled by, and this window is drawn to match. The settings and the
+// flag each say it outright, the flag last, so that one launch can differ from
+// every other without the file changing.
+func drawnAt(asked, configured float64) float64 {
 	if asked > 0 {
 		return asked
+	}
+	if configured > 0 {
+		return configured
 	}
 	if scale, err := strconv.ParseFloat(os.Getenv("GDK_DPI_SCALE"), 64); err == nil && scale > 0 {
 		return scale

@@ -9,7 +9,8 @@ import (
 // VaultWatcher follows one vault for changes the application did not make. The
 // filesystem is one implementation; a channel a test writes to is another.
 type VaultWatcher interface {
-	// Watch reports the paths of notes that change, folded, until ctx is done.
+	// Watch reports the paths of sources that change, folded, until ctx is
+	// done. Which kind each is comes from a stat of the path.
 	//
 	// `lost` says the vault has to be read again: more changed at once than
 	// could be reported, or something went that cannot be asked what it held.
