@@ -113,12 +113,18 @@ func Read(raw []byte) (*Book, error) {
 
 	text := newExtractor()
 	book := &Book{Title: pkg.title}
+	left := int64(mostPerBook)
 	for _, docPath := range pkg.spine {
-		markup, ok := contents(files[docPath])
+		if left <= 0 {
+			break
+		}
+		markup, ok := within(files[docPath], min(int64(mostPerDocument), left))
 		if !ok {
-			// A manifest may name a file the archive does not hold.
+			// A manifest may name a file the archive does not hold, and one it
+			// holds may be larger than a chapter can be.
 			continue
 		}
+		left -= int64(len(markup))
 		book.Documents = append(book.Documents, text.document(docPath, markup))
 	}
 	book.Text = string(text.out)

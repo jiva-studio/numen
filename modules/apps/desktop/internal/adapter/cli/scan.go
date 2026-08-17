@@ -14,10 +14,20 @@ import (
 )
 
 func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
-	if len(args) != 1 {
-		return errors.New("usage: numen-cli scan <vault>")
+	// `--again` reads every file, whatever the index believes about it.
+	again := false
+	rest := make([]string, 0, len(args))
+	for _, arg := range args {
+		if arg == "--again" {
+			again = true
+			continue
+		}
+		rest = append(rest, arg)
 	}
-	v, err := findVault(cfg, args[0])
+	if len(rest) != 1 {
+		return errors.New("usage: numen-cli scan <vault> [--again]")
+	}
+	v, err := findVault(cfg, rest[0])
 	if err != nil {
 		return err
 	}
@@ -34,6 +44,7 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args 
 		Notes:       db.Notes(),
 		Known:       db.Queries(),
 		Maintenance: db.Maintenance(),
+		Again:       again,
 	}
 	// A terminal that prints nothing for a minute looks broken. One group is
 	// about half a second, and the line rewrites itself.
@@ -51,6 +62,7 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args 
 		Readers: cfg.VaultReaders(),
 		Sources: db.Sources(),
 		Owing:   db.SourcesKnown(),
+		Again:   again,
 		OnProgress: func(res source.ExtractResult) {
 			if res.Reading != "" {
 				fmt.Fprintf(out, "  reading %s\r", res.Reading)

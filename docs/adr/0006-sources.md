@@ -52,6 +52,19 @@ handles is never opened; it is still incremental on the fingerprint, so a scan
 that finds nothing changed extracts nothing; and a source that nothing links to
 is still an ordinary source rather than a problem.
 
+### What is not stored, and what is
+
+The text of a source is not stored. What is stored about a note beside its chunks
+is its title, its headings and its frontmatter — the parts a graph is drawn from,
+which ADR-0016 already decided and which are verbatim file text. Body prose is not
+stored for any kind of source.
+
+The full-text index keeps no copy of what it indexed, and is contentless. It does
+keep term positions, so the sequence of words in a window can be recovered from it
+without opening the file — lowercased and without punctuation. That is a property
+of the index and not a copy of the source, and it is written here so that nobody
+reads "the text is not stored" as more than it says.
+
 ### Extraction never refuses
 
 An extractor that finds text returns it. **No structure is a normal outcome**, not
@@ -91,6 +104,23 @@ vectors.**
 Both are staleness keys beside the fingerprint, so a source has three — the file
 changed, the recipe changed, the model changed — and each has to be answerable as
 a query.
+
+**The fingerprint is the path, the size and the modification time, and nothing
+else.** A warm scan opens no file, so there is nothing cheaper it could compare.
+The content hash is recorded when a source is read and is not compared: it says
+which file this is, for the day a moved book is to keep its chunks, and it costs a
+read to compute.
+
+That leaves a gap, and it is a real one: a file whose content changed while its
+size and modification time did not is skipped. Two ordinary tools do exactly
+that — an archive restored by `unzip`, which sets the time from the archive, and
+`rsync -tc`, which compares content and preserves the time. The consequence is
+worse than a missing result: the chunks describe text the file no longer has, so
+a search answers with a passage sliced at the wrong place, or with an empty one.
+
+There is no cheap signal that closes it. What is provided instead is a way out:
+reading a vault again ignores every fingerprint, and is one command. A person who
+restores a vault from an archive runs it.
 
 The kind of quantisation is stored because a stored vector's type cannot be
 recovered from the length of its blob.

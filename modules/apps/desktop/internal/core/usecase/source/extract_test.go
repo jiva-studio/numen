@@ -312,3 +312,50 @@ func TestABookTheVaultNoLongerHoldsIsTakenOut(t *testing.T) {
 		t.Error("the chunks of the book that is still there were taken out as well")
 	}
 }
+
+// A file whose content changed while its size and modification time did not is
+// skipped: the fingerprint is those three and nothing else. An archive restored
+// by `unzip` and a tree brought over by `rsync -tc` both do that, and the chunks
+// then describe text the file no longer has. Reading again is the way out.
+func TestReadingAgainIgnoresWhatTheIndexBelieves(t *testing.T) {
+	ctx := t.Context()
+	index, shelf := newStore(), newLibrary()
+
+	was := words(latin, 200)
+	// Other words, letter for letter, so the size is the same one.
+	now := strings.Map(func(r rune) rune {
+		if r == 'a' {
+			return 'e'
+		}
+		return r
+	}, was)
+	before, after := bookOf(t, "A", was), bookOf(t, "A", now)
+	if len(before) != len(after) || string(before) == string(after) {
+		t.Fatalf("the two books are %d and %d bytes, and this asks about equal ones",
+			len(before), len(after))
+	}
+
+	shelf.hold("library/A.epub", domain.KindBook, before, 1)
+
+	extract := Extract{Readers: vaults{first.ID: shelf}, Sources: index, Owing: index}
+	if res, err := extract.Execute(ctx, first); err != nil {
+		t.Fatal(err)
+	} else if res.Extracted != 1 {
+		t.Fatalf("read %d books", res.Extracted)
+	}
+
+	shelf.hold("library/A.epub", domain.KindBook, after, 1)
+
+	if res, err := extract.Execute(ctx, first); err != nil {
+		t.Fatal(err)
+	} else if res.Unchanged != 1 || res.Extracted != 0 {
+		t.Errorf("the fingerprint is the path, the size and the time: %+v", res)
+	}
+
+	extract.Again = true
+	if res, err := extract.Execute(ctx, first); err != nil {
+		t.Fatal(err)
+	} else if res.Extracted != 1 {
+		t.Errorf("asked to read again and read %d books: %+v", res.Extracted, res)
+	}
+}

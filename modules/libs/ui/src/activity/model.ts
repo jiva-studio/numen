@@ -7,6 +7,8 @@
  * what the words are, so nothing here knows what is being counted.
  */
 
+import { grouped } from '../counting'
+
 /**
  * Where a piece of work has got to.
  *
@@ -76,21 +78,12 @@ export const activity = (input: {
  * A tally as it is read out.
  *
  * Grouped in thousands, because the numbers this draws are counts of text and
- * reach six figures on an ordinary vault.
+ * reach six figures on an ordinary vault. A count that overtook its total reads
+ * as the total: a vault loses a book mid-scan, and the bar is already full.
  */
 export const tallyWord = (tally: Tally): string =>
-  `${grouped(tally.done)} of ${grouped(tally.total)}`
+  `${grouped(Math.min(tally.done, tally.total))} of ${grouped(tally.total)}`
 
-const grouped = (n: number): string => {
-  const whole = Math.max(0, Math.floor(n))
-  const digits = String(whole)
-  let out = ''
-  for (let i = 0; i < digits.length; i++) {
-    if (i > 0 && (digits.length - i) % 3 === 0) out += ' '
-    out += digits[i]
-  }
-  return out
-}
 
 /**
  * A share as a percentage, for reading beside the count.
@@ -130,8 +123,13 @@ export const remainingWord = (left: number, perSecond: number): string => {
 /**
  * The rate a count is moving at, from two readings and the time between them.
  *
- * Smoothed towards the rate already known: one reading of a count written in
- * groups swings between nothing and a whole group.
+ * A count written in groups stands still between them, and a reading that saw no
+ * movement measured nothing: the rate already known stands, and what is drawn
+ * from it stands with it. Movement is smoothed towards what was known, so one
+ * group arriving at once does not become the rate.
+ *
+ * A count that went backwards is a fresh start, and has no rate until it is read
+ * twice.
  */
 export const rateOf = (
   previous: { readonly done: number; readonly rate: number },
@@ -141,6 +139,7 @@ export const rateOf = (
   if (seconds <= 0) return previous.rate
   const moved = done - previous.done
   if (moved < 0) return 0
+  if (moved === 0) return previous.rate
   const now = moved / seconds
   if (previous.rate <= 0) return now
   return previous.rate * 0.7 + now * 0.3

@@ -39,6 +39,7 @@ const used = (tool: string, about = '', written = 0): Step => ({
   written,
 })
 const answered = (): Step => ({ kind: 'answered' })
+const thinking = (): Step => ({ kind: 'thinking' })
 const stopped = (failed = ''): Step => ({ kind: 'stopped', failed })
 
 describe('an answer', () => {
@@ -174,7 +175,7 @@ describe('a wait that explains itself', () => {
     await asking
   })
 
-  it('stops naming a tool that has answered', async () => {
+  it('stops claiming a tool is running once it has answered', async () => {
     let release = () => {}
     const held = new Promise<void>((go) => {
       release = go
@@ -187,11 +188,33 @@ describe('a wait that explains itself', () => {
     const asking = talk.ask('write it up', '')
     await nap()
 
-    // The note is written and the tool is done, and the line says a request to
-    // the model has begun.
+    // Which tool answered is not said, and with two in hand this is one of them.
+    // The line keeps its name and stops claiming to be running.
+    const line = talk.turns.value.find((turn) => turn.voice === 'doing')
+    expect(line?.text).toBe('Create a note')
+    expect(line?.state).toBe('settled')
+
+    release()
+    await asking
+  })
+
+  it('says the model is working when the model is asked, and not before', async () => {
+    let release = () => {}
+    const held = new Promise<void>((go) => {
+      release = go
+    })
+    const talk = conversation(
+      doing([used('Create a note', "Vidura's warning", 4000), answered(), thinking()], held),
+      words,
+      now,
+    )
+    const asking = talk.ask('write it up', '')
+    await nap()
+
     const line = talk.turns.value.find((turn) => turn.voice === 'doing')
     expect(line?.text).toBe(words.thinking)
     expect(line?.about).toBe('')
+    expect(line?.state).toBe('arriving')
 
     release()
     await asking

@@ -69,6 +69,13 @@ run, and a hook is a shell command.
 A person may ask for their own back, as a setting. Then what they configured for
 themselves is read, and nothing else.
 
+**The sources of configuration are named, not turned off.** Refusing every
+customisation wholesale refuses this vault's own tools with them: they arrive on a
+command line and are read as a customisation like any other. An agent that loses
+them answers from what the model already knows and mentions the vault was missing
+after the answer — which is worse than saying nothing, and is what naming the
+sources avoids.
+
 **What a vault carries is refused either way.** A vault is a folder that arrives
 from elsewhere — synced, cloned, shared, restored — and a configuration file
 inside one is a folder naming commands for this machine to run. The working
@@ -93,18 +100,21 @@ afternoon does not cost the settings of the one before.
 
 Empty names no agent, and the panel says there is none.
 
-### The environment is built, not inherited
+### The environment is inherited, less what describes somebody else's session
 
 Variables that describe a Claude Code session belong to whoever is running one.
 The window is not running one. They are dropped: a session's identity, its
 socket, its messaging token, and how hard it was told to think.
 
-Variables that say how to reach a model belong to the installation and are passed
-on.
+**Everything else passes**, and that is the honest shape of it. What says how to
+reach a model passes, which is the point — and so does what says *which server*
+sees the notes, which configuration root is read, which proxy the traffic goes
+through, and which program the name `claude` resolves to. A denylist of nine names
+is not a built environment; it is an inherited one with nine holes plugged.
 
-This is a list, and a list is one release behind the program it filters. That is
-accepted for now and named as the weakness it is: the shape that matches the
-claim is an allowlist, and it is not yet written.
+The shape that matches the claim is an allowlist: a named set, and nothing else.
+It is not written, and until it is, this section says what is true rather than
+what was intended.
 
 ### What it is told about the person
 
@@ -128,11 +138,13 @@ and that the answer is read in a narrow panel.
   their standing instructions, their hooks: none of it applies. The setting gives
   it back, and turning it on runs their shell commands on every question.
 
-- **The vault's own instructions are read when hooks and skills are on.** A file
-  the agent itself can write is then read into every later conversation, and the
-  panel shows no path, so it happens unseen. This is why the default is off, and
-  it is not a full answer: the file is writable, and a person who turns the
-  setting on has no way to see that it changed.
+- **A file the agent leaves in the vault is read by the person's own terminal.**
+  The panel's agent does not read the vault's instructions in either mode — the
+  sources it is given do not include the vault. But a note it writes stays in the
+  folder, and the person's own agent, started in that folder, reads what is there.
+  Where a note may be written is bounded to places a note may live and this
+  application's own folders, so another tool's folder is refused; the vault's root
+  is not, and a file named for what another tool reads can still land in it.
 
 - **The bearer token is on the command line.** Any local process that can read
   `/proc` can read it, and it grants what the tools grant. The token file is

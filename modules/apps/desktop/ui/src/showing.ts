@@ -197,6 +197,10 @@ export function showing(
   async function keepUp() {
     if (keeping) return
     keeping = true
+    // One interval stale is not worth a message. Two in a row is a vault that
+    // has stopped answering, and the counts on screen are of a moment that has
+    // passed.
+    let missed = 0
     try {
       for (;;) {
         await wait(2000)
@@ -204,8 +208,13 @@ export function showing(
         try {
           await ask()
           time()
-        } catch {
-          // A count one interval stale is not worth a message on screen.
+          if (missed > 0) {
+            missed = 0
+            notice.value = ''
+          }
+        } catch (error) {
+          missed++
+          if (missed > 1) notice.value = String(error)
         }
         if (!busy()) return
       }
@@ -238,7 +247,12 @@ export function showing(
             const note = await core.opening()
             if (note) await go(note.path)
           }
-          await ask()
+          try {
+            await ask()
+          } catch {
+            // The stream stays open. What a change means is already drawn; the
+            // counts come round with the next one.
+          }
           void keepUp()
         }
       } catch (error) {
@@ -246,6 +260,8 @@ export function showing(
         notice.value = String(error)
       }
       await wait(1000)
+      // Taken up again, so what was said about losing it no longer holds.
+      if (open) notice.value = ''
     }
   }
 
@@ -273,9 +289,10 @@ export function showing(
   /** Waits for the scan to have stored something, then shows the first note. */
   async function start() {
     try {
-      for (;;) {
+      while (open) {
         const state = await ask()
         const note = await core.opening()
+        if (!open) return
         if (note) {
           indexing.value = false
           await go(note.path)

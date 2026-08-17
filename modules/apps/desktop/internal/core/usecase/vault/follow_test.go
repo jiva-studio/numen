@@ -133,11 +133,29 @@ func TestABookThatChangedIsNotANoteThatMoved(t *testing.T) {
 
 	watcher.changes <- []string{"library/A Book.epub", "Note.md"}
 
-	if got := next(t, f.moved); !slices.Equal(got.Paths, []string{"Note.md"}) {
+	got := next(t, f.moved)
+	if !slices.Equal(got.Paths, []string{"Note.md"}) {
 		t.Errorf("reported %+v", got)
+	}
+	// A book is not a note that moved, and it is not nothing either: reading one
+	// is its own work, and whoever listens is told there is some.
+	if !got.Sources {
+		t.Error("a book changed and nothing was told to read it")
 	}
 	if got := titles(t, f.index, f.vault, "entropy"); !slices.Equal(got, []string{"Note"}) {
 		t.Errorf("the index holds %v", got)
+	}
+}
+
+// Not knowing what changed is answered by looking at everything, books included.
+func TestWhatCannotBeFollowedTakesTheBooksWithIt(t *testing.T) {
+	watcher := held()
+	f := following(t, map[string]string{"Note.md": "# Note\n"}, watcher)
+
+	watcher.lost <- struct{}{}
+
+	if got := next(t, f.moved); !got.Reload || !got.Sources {
+		t.Errorf("reported %+v", got)
 	}
 }
 

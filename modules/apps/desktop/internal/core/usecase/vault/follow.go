@@ -32,6 +32,10 @@ type Follow struct {
 type Moved struct {
 	Paths  []string
 	Reload bool
+	// Sources is set when something that is not a note changed. Reading one is
+	// its own work and takes minutes, so it is reported and not done here.
+	// Which ones is not carried: what owes work is asked of the index.
+	Sources bool
 }
 
 // Begin starts watching. Acting on what it collects is Run, and the two are
@@ -75,7 +79,7 @@ func (f *Following) Run(ctx context.Context) {
 				continue
 			}
 			f.trouble(nil)
-			f.changed(Moved{Paths: res.Changed()})
+			f.changed(Moved{Paths: res.Changed(), Sources: len(res.Assets) > 0})
 
 		case <-f.lost:
 			// More changed at once than could be followed, or something went
@@ -86,7 +90,9 @@ func (f *Following) Run(ctx context.Context) {
 				continue
 			}
 			f.trouble(nil)
-			f.changed(Moved{Reload: true})
+			// Read again from the top, so whatever changed is among what the
+			// walk finds.
+			f.changed(Moved{Reload: true, Sources: true})
 		}
 	}
 }

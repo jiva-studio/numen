@@ -54,7 +54,27 @@ func archiveIndex(archive *zip.Reader) map[string]*zip.File {
 
 // contents reads one archive entry. A missing or unreadable entry is not there.
 func contents(f *zip.File) ([]byte, bool) {
+	return within(f, mostPerDocument)
+}
+
+// mostPerDocument is how much of one document inside an archive is read, and
+// mostPerBook how much of all of them together.
+//
+// An archive says how large its entries are and is believed about nothing: a few
+// hundred kilobytes of zeros expand to as much as the format allows, and reading
+// that is how opening a book ends the process. What is over the bound is left
+// unread, which is what a document the archive does not hold amounts to.
+const (
+	mostPerDocument = 16 << 20
+	mostPerBook     = 256 << 20
+)
+
+// within is the contents of one entry, up to the bound given.
+func within(f *zip.File, most int64) ([]byte, bool) {
 	if f == nil {
+		return nil, false
+	}
+	if f.UncompressedSize64 > uint64(most) {
 		return nil, false
 	}
 	r, err := f.Open()
@@ -62,8 +82,12 @@ func contents(f *zip.File) ([]byte, bool) {
 		return nil, false
 	}
 	defer r.Close()
-	raw, err := io.ReadAll(r)
+	// The header is a claim. This is the answer to it being false.
+	raw, err := io.ReadAll(io.LimitReader(r, most+1))
 	if err != nil {
+		return nil, false
+	}
+	if int64(len(raw)) > most {
 		return nil, false
 	}
 	return raw, true

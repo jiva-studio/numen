@@ -85,6 +85,9 @@ describe('tallyWord', () => {
     { done: 1200, total: 36560, want: '1 200 of 36 560' },
     { done: 145800, total: 145800, want: '145 800 of 145 800' },
     { done: -5, total: 10, want: '0 of 10' },
+    // A vault loses a book mid-scan and the total falls below what was read.
+    // The bar is already full, and the count has to agree with it.
+    { done: 38, total: 37, want: '37 of 37' },
   ])('reads $done of $total as $want', ({ done, total, want }) => {
     expect(tallyWord({ done, total })).toBe(want)
   })
@@ -123,9 +126,19 @@ describe('rateOf', () => {
     expect(rateOf({ done: 0, rate: 0 }, 20, 2)).toBe(10)
   })
 
-  it('leans on the rate already known', () => {
-    // A group of nothing between two readings keeps the rate already known.
-    expect(rateOf({ done: 20, rate: 10 }, 20, 2)).toBeCloseTo(7, 5)
+  it('leans on the rate already known when something moved', () => {
+    expect(rateOf({ done: 20, rate: 10 }, 40, 2)).toBeCloseTo(10, 5)
+    expect(rateOf({ done: 20, rate: 10 }, 60, 2)).toBeCloseTo(13, 5)
+  })
+
+  it('stands where it is when nothing moved, so no estimate grows out of it', () => {
+    // A count written in groups stands still between them. Decaying the rate
+    // here divides into a longer and longer estimate every time it is drawn.
+    let rate = 8
+    for (let stalled = 0; stalled < 40; stalled++) {
+      rate = rateOf({ done: 100, rate }, 100, 2)
+    }
+    expect(rate).toBe(8)
   })
 
   it('keeps the old rate when no time has passed', () => {

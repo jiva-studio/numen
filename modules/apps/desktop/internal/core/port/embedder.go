@@ -15,6 +15,15 @@ import (
 type EmbeddingModel struct {
 	Name       string
 	Dimensions int
+
+	// MaxTokens is where the model truncates what it is given. Zero is a model
+	// that did not say, and then a window is cut at whatever the caller asks.
+	//
+	// A window is cut in words and bounded in characters, so this is turned into
+	// characters by a floor and not a measurement: text of another script takes
+	// several tokens a word, and a window silently truncated is a window indexed
+	// for text it does not contain.
+	MaxTokens int
 }
 
 // String is the identity as one value, for a column that holds it.

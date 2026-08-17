@@ -71,6 +71,12 @@ than unimportant ones.
 
 Two representations are stored, and full precision is not one of them:
 
+> **The rerank is not yet built.** The dense half orders by the coarse
+> representation and hands that order to the merge. The byte-precision vector is
+> stored and read by nothing, so it is a cost with no reader until the rerank
+> exists — and the dense ranking is the coarse one, which this decision says is
+> not expected to be right.
+
 | Stored | Used for |
 | --- | --- |
 | One bit per dimension | The coarse pass, over everything |

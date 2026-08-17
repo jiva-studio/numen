@@ -22,6 +22,13 @@ type Scan struct {
 	Known       port.NoteQueries
 	Maintenance port.IndexMaintenance
 
+	// Again reads every note, whatever the index believes about it. The
+	// fingerprint is the path, the size and the modification time, so a file
+	// whose content changed while those did not is otherwise skipped — an
+	// archive restored by `unzip`, a tree brought over by `rsync -tc`. This is
+	// the way out of that.
+	Again bool
+
 	// OnProgress, if set, is called each time a group of notes is written. A
 	// scan of a large vault takes a minute, and something has to be able to say
 	// so while it happens. What is done with that is the caller's business.
@@ -102,7 +109,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 		res.Seen++
 		seen[ref.Path] = true
 
-		if previous, ok := known[ref.Path]; ok && previous.Unchanged(ref) {
+		if previous, ok := known[ref.Path]; ok && !u.Again && previous.Unchanged(ref) {
 			res.Unchanged++
 			continue
 		}

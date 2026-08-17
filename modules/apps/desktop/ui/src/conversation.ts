@@ -84,18 +84,14 @@ export function conversation(agent: Agent, words: Wording, paint: Paint = onNext
     // What the agent has in hand, as far as anything has said. A call carrying
     // the text of a note is reported again every time more of it is written, so
     // the count is what moves while it is being written.
-    const nowDoing = (says: string, about: string, written: number) => {
-      put({
-        id: doing,
-        voice: 'doing',
-        text: says,
-        about,
-        aside: charsWord(written),
-        state: 'arriving',
-      })
+    let says = words.thinking
+    let about = ''
+
+    const nowDoing = (state: 'arriving' | 'settled', written = 0) => {
+      put({ id: doing, voice: 'doing', text: says, about, aside: charsWord(written), state })
     }
 
-    nowDoing(words.thinking, '', 0)
+    nowDoing('arriving')
 
     let answer = ''
     let saying = ''
@@ -135,15 +131,26 @@ export function conversation(agent: Agent, words: Wording, paint: Paint = onNext
 
           case 'doing':
             settleAnswer()
-            nowDoing(spoken(step.tool), step.about, step.written)
+            says = spoken(step.tool)
+            about = step.about
+            nowDoing('arriving', step.written)
             break
 
-          // The tool is finished, and a request to the model has begun. Both
-          // say the same thing to the person: what happens now is not ours and
-          // is not quick.
+          // A tool answered. Which one is not said, and with two in hand this is
+          // one of them, so the line keeps its name and stops claiming to be
+          // running. What comes next is named when it begins.
           case 'answered':
+            nowDoing('settled')
+            break
+
+          // A request to the model has begun: from here, what happens is not
+          // ours and is not quick. The answer so far settles first, so the line
+          // stays below the last thing said and not below a turn still growing.
           case 'thinking':
-            nowDoing(words.thinking, '', 0)
+            settleAnswer()
+            says = words.thinking
+            about = ''
+            nowDoing('arriving')
             break
 
           case 'stopped':

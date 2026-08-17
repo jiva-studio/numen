@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/source"
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
 )
 
 // Opened is a vault put together and running: the questions a client may ask,
@@ -69,6 +70,10 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		closeEmbedder = func() error { return nil }
 	}
 
+	// wanted carries one nudge: something that is not a note changed, and the
+	// vault's books are to be read again.
+	wanted := make(chan struct{}, 1)
+
 	watching, stop := context.WithCancel(ctx)
 	api := &API{
 		Vault:     vaults[0],
@@ -82,7 +87,15 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 	// carries a vector, and what tells the window that something is going to
 	// embed what was cut.
 	if embedder != nil {
-		api.Model.Store(embedder.Model().String())
+		model := embedder.Model()
+		// The vector index is built for one width. A model of another width
+		// rebuilds it, and what it held is embedded again.
+		if err := db.FitVectors(ctx, model.Dimensions); err != nil {
+			fmt.Fprintf(out, "not embedding %s: %v\n", vaults[0].Name, err)
+			embedder = nil
+		} else {
+			api.Model.Store(model.String())
+		}
 	}
 	scan := usecase.Scan{
 		Readers:     cfg.VaultReaders(),
@@ -106,6 +119,15 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		Scan:    scan,
 		Changed: func(m usecase.Moved) {
 			api.Listeners.tell(changed{paths: m.Paths, reload: m.Reload})
+			if m.Sources {
+				// A book dropped into an open vault is read without anybody
+				// asking. One nudge is enough: what owes work is asked of the
+				// index, so several changes at once are one reading.
+				select {
+				case wanted <- struct{}{}:
+				default:
+				}
+			}
 		},
 		Trouble: func(err error) {
 			if err == nil {
@@ -166,7 +188,24 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		// The scan goes first. It writes in groups from what it holds, so its
 		// copy of a note lands last however early the note was read.
 		if following != nil {
-			following.Run(watching)
+			running.Add(1)
+			go func() {
+				defer running.Done()
+				following.Run(watching)
+			}()
+		}
+
+		// A book that arrives while the window is open is read where the first
+		// reading was: one at a time, and never while another is running.
+		for {
+			select {
+			case <-watching.Done():
+				return
+			case <-wanted:
+				api.Busy.Store(true)
+				readSources(watching, cfg, db, api, embedder, out)
+				api.Busy.Store(false)
+			}
 		}
 	}()
 
@@ -204,10 +243,19 @@ func readSources(
 	embedder port.Embedder,
 	out io.Writer,
 ) {
+	// A window is cut under the limit of the model that will read it. Without a
+	// model the default bound stands: what is cut now is what a model of any width
+	// is later given.
+	sizes := window.Sizes{}
+	if embedder != nil {
+		sizes.Limit = window.Under(embedder.Model().MaxTokens)
+	}
+
 	extract := source.Extract{
 		Readers: cfg.VaultReaders(),
 		Sources: db.Sources(),
 		Owing:   db.SourcesKnown(),
+		Sizes:   sizes,
 		OnProgress: func(res source.ExtractResult) {
 			api.Reading.Store(res.Reading)
 			api.Books.Store(int64(res.Seen))

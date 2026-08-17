@@ -76,3 +76,37 @@ func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
 		t.Errorf("got an embedder: %v", opened.Embedder.Model())
 	}
 }
+
+// The vault says whether it has work in hand, and a client asks again for as long
+// as it does. The counts of that work move with no file changing, so nothing else
+// can say there is more to come: never set, and the numbers stand still while a
+// library is read; never cleared, and a client asks every two seconds for ever.
+func TestAVaultSaysWhileItIsBeingRead(t *testing.T) {
+	cfg := vault(t, embed.Config{})
+
+	opened, err := webui.Open(t.Context(), cfg, os.Stderr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = opened.Close() })
+
+	// Set before the reading goroutine starts, so a client asking between opening
+	// and the first read is told there is more to come.
+	if !opened.API.Busy.Load() {
+		t.Error("a vault just opened says it has nothing in hand")
+	}
+
+	waitFor(t, func() bool { return !opened.API.Busy.Load() })
+}
+
+// waitFor gives a background reading its time and says what it was waiting for.
+func waitFor(t *testing.T, done func() bool) {
+	t.Helper()
+	for range 200 {
+		if done() {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatal("the vault never said it was finished, so a client asks for ever")
+}

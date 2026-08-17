@@ -174,9 +174,10 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	if len(near) == 0 {
 		t.Fatal("the first vault's dense half answered nothing at all")
 	}
+	// Every note of the first vault is a fair answer; nothing of the second is.
 	for _, p := range near {
-		if !strings.Contains(p.Source, "Entropy") {
-			t.Errorf("the dense half answered with %s, which is not the first vault's", p.Source)
+		if _, held := firstNotes[p.Source]; !held {
+			t.Errorf("the dense half answered with %s, which the first vault does not hold", p.Source)
 		}
 	}
 

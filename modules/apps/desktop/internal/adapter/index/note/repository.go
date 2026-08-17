@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index/sqlfile"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
 )
 
 //go:embed sql/*.sql
@@ -109,7 +110,7 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note) error
 	}
 	// The note goes in as its own large window, so the words in it are findable
 	// as soon as it is indexed.
-	if err := chunk.Write(ctx, tx, row, vault, []chunk.Window{whole(n)}); err != nil {
+	if err := chunk.Write(ctx, tx, row, vault, cut(n)); err != nil {
 		return err
 	}
 	for _, h := range n.Headings {
@@ -145,16 +146,44 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note) error
 //
 // The prose is a suffix of the file, so it begins at the file's size less its
 // own length.
-func whole(n domain.Note) chunk.Window {
-	start := int(n.Ref.Size) - len(n.Body)
-	if start < 0 {
-		start = 0
+// cut is how a note is cut: one large window over the whole of it, and the small
+// windows inside that carry the vectors. A book is cut the same way, at the same
+// sizes, so a mixed vault ranks by what a passage says and not by what it came
+// from.
+//
+// Offsets are into the file. The body begins after the frontmatter, and every
+// window is moved out by as much.
+func cut(n domain.Note) []chunk.Window {
+	at := int(n.Ref.Size) - len(n.Body)
+	if at < 0 {
+		at = 0
 	}
-	return chunk.Window{
-		Start:  start,
-		Length: len(n.Body),
-		Text:   n.Title + "\n" + n.Body,
+
+	out := make([]chunk.Window, 0, 1)
+	for _, large := range window.Cut(n.Body, nil, window.Sizes{Large: window.Whole}) {
+		// The title is searched together with the body: a note is looked for by
+		// the name it was given.
+		w := chunk.Window{
+			Start:    at + large.Start,
+			Length:   large.Length,
+			Location: large.Location,
+			Text:     n.Title + "\n" + large.Slice(n.Body),
+		}
+		for _, small := range large.Small {
+			w.Small = append(w.Small, chunk.Window{
+				Start:    at + small.Start,
+				Length:   small.Length,
+				Location: small.Location,
+				Text:     small.Slice(n.Body),
+			})
+		}
+		out = append(out, w)
 	}
+	if len(out) == 0 {
+		// A note of a title and no words is answered by its title.
+		out = append(out, chunk.Window{Start: at, Length: len(n.Body), Text: n.Title})
+	}
+	return out
 }
 
 func (r *Repository) Remove(ctx context.Context, vaultID string, paths []string) error {

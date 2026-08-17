@@ -31,6 +31,11 @@ func (c Config) OpenIndex(ctx context.Context) (*Index, error) {
 
 func (i *Index) Close() error { return i.db.Close() }
 
+// FitVectors makes the vector index hold vectors of the width given.
+func (i *Index) FitVectors(ctx context.Context, dims int) error {
+	return i.db.FitVectors(ctx, dims)
+}
+
 func (i *Index) Vaults() port.VaultRepository { return i.db.Vaults() }
 func (i *Index) Notes() port.NoteRepository   { return i.db.Notes() }
 func (i *Index) Queries() port.NoteQueries    { return i.db.NoteQueries() }

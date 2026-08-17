@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
@@ -32,7 +33,7 @@ func searchCommand(ctx context.Context, out io.Writer, cfg container.Config, arg
 	// words alone, and says nothing about it: half a search is a whole answer.
 	embedder, closeEmbedder, why := cfg.Embedder()
 	if why != nil {
-		fmt.Fprintf(out, "searching by words alone: %v\n", why)
+		fmt.Fprintf(os.Stderr, "searching by words alone: %v\n", why)
 	}
 	if closeEmbedder != nil {
 		defer func() { _ = closeEmbedder() }()

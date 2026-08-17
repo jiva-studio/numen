@@ -183,13 +183,18 @@ func (a *Agent) arguments(task agent.Task) []string {
 		"--append-system-prompt", manners(task),
 	}
 	// A hook is a shell command, and a settings file inside a vault is a vault
-	// telling this machine what to run. Safe mode reads none of it; asked for the
-	// person's own, only theirs is read, and a vault's is left where it is.
+	// telling this machine what to run. Naming the sources read is what refuses
+	// them: none by default, and only the person's own when they ask. A vault's
+	// are refused either way.
+	//
+	// Named rather than turned off wholesale, because turning every
+	// customisation off takes this vault's own tools with it — they arrive on a
+	// command line and are read as a customisation like any other.
+	sources := ""
 	if a.ReadsHooksAndSkills {
-		args = append(args, "--setting-sources", "user")
-	} else {
-		args = append(args, "--safe-mode")
+		sources = "user"
 	}
+	args = append(args, "--setting-sources", sources)
 	if a.Model != "" {
 		args = append(args, "--model", a.Model)
 	}

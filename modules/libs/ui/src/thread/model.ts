@@ -2,6 +2,8 @@
  * What a thread is made of, as plain values.
  */
 
+import { grouped } from '../counting'
+
 export interface VoiceDescriptor {
   /** Drawn in a bubble of its own, or as text on the surface. */
   readonly bubble: boolean
@@ -71,12 +73,3 @@ export const charsWord = (written: number): string =>
   written <= 0 ? '' : `${grouped(written)} characters`
 
 
-const grouped = (n: number): string => {
-  const digits = String(Math.max(0, Math.floor(n)))
-  let out = ''
-  for (let i = 0; i < digits.length; i++) {
-    if (i > 0 && (digits.length - i) % 3 === 0) out += ' '
-    out += digits[i]
-  }
-  return out
-}

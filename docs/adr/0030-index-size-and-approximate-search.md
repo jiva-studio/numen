@@ -52,6 +52,12 @@ vault of this size holds.
 **Vector search is therefore approximate**, and three rules bind whatever
 structure provides it:
 
+> **Not yet built.** The coarse pass in the tree is an exact scan of the bit
+> vectors, with the vault as a metadata filter. It answers every corpus measured
+> so far inside the target, which is why nothing has forced the clustering yet.
+> The three rules stand as what any approximation has to satisfy when it is
+> written.
+
 - **It reads from disk.** ADR-0029 disqualifies an index that has to be resident
   to be searched, and that is not reopened here.
 - **It narrows before it compares, on a value every query constrains.** ADR-0007

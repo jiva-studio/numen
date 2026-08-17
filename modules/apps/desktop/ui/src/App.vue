@@ -8,10 +8,10 @@
  */
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { Activity, AgentPanel, Plex, remainingWord } from '@numen/ui'
-import type { Tally } from '@numen/ui'
 import '@numen/ui/styles.css'
 import { core } from './vault'
 import { showing } from './showing'
+import { footOf, type Phase } from './foot'
 import { asPlex } from './plex'
 import { core as agent } from './agent'
 import { conversation } from './conversation'
@@ -19,6 +19,8 @@ import { conversation } from './conversation'
 const window = showing(core)
 const { neighbourhood, indexing, failure, notice, trouble, unwatched, go } = window
 const { chunks, embedded, reading, embedding, books, booksRead, learning, rate } = window
+/** What the vault says about having work in hand. The counts do not say it. */
+const { working: reads } = window
 
 /** Everything this window says in its own voice. */
 const words = {
@@ -33,50 +35,33 @@ const words = {
   words: 'Searching by words — no model to learn what it says',
 }
 
-/** What the foot of the window says, as the component takes it. */
-interface Doing {
-  says: string
-  about: string
-  working: boolean
-  left: string
-  tally?: Tally | undefined
+/** What the foot of the window says, one sentence per phase. */
+const saying: Record<Phase, string> = {
+  reading: words.reading,
+  learning: words.learning,
+  wordsOnly: words.words,
+  idle: '',
 }
 
-/**
- * What the foot of the window says about work nobody asked for.
- *
- * Reading a source and learning what it says are different waits, counted in
- * different things — books opened, then windows of text embedded — so they are
- * different sentences with different tallies. The component draws what it is
- * given and knows neither.
- */
-const activity = computed((): Doing => {
-  if (learning.value) {
-    return {
-      says: words.learning,
-      about: reading.value,
-      working: true,
-      left: remainingWord(chunks.value - embedded.value, rate.value),
-      tally: { done: embedded.value, total: chunks.value },
-    }
+const activity = computed(() => {
+  const foot = footOf({
+    busy: reads.value,
+    learning: learning.value,
+    reading: reading.value,
+    books: books.value,
+    booksRead: booksRead.value,
+    chunks: chunks.value,
+    embedded: embedded.value,
+    embedding: embedding.value,
+    rate: rate.value,
+  })
+  return {
+    says: saying[foot.phase],
+    about: foot.about,
+    working: foot.working,
+    left: remainingWord(foot.left, foot.perSecond),
+    tally: foot.tally,
   }
-  // Between two books nothing is open and the phase is not over. The count is
-  // what says the phase is still running.
-  if (reading.value || (books.value > 0 && booksRead.value < books.value)) {
-    return {
-      says: words.reading,
-      about: reading.value,
-      working: true,
-      left: remainingWord(books.value - booksRead.value, rate.value),
-      tally: { done: booksRead.value, total: books.value },
-    }
-  }
-  // Half the search is missing and nothing is going to bring it: a fact about
-  // this installation, said once and quietly.
-  if (chunks.value > 0 && !embedding.value) {
-    return { says: words.words, about: '', working: false, left: '' }
-  }
-  return { says: '', about: '', working: false, left: '' }
 })
 
 const { turns, working, ask, close } = conversation(agent, words)

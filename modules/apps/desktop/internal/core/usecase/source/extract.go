@@ -38,6 +38,13 @@ type Extract struct {
 	// cut at other sizes owes its text again.
 	Sizes window.Sizes
 
+	// Again reads every source, whatever the index believes about it. The
+	// fingerprint is the path, the size and the modification time, so a file
+	// whose content changed while those did not is otherwise skipped — an
+	// archive restored by `unzip`, a tree brought over by `rsync -tc`. This is
+	// the way out of that.
+	Again bool
+
 	// OnProgress, if set, is called as each source is opened and as each one is
 	// written. A library takes minutes, and something has to be able to say how
 	// far it has got.
@@ -95,7 +102,7 @@ func (u Extract) discover(ctx context.Context, v domain.Vault, reader port.Vault
 		}
 		res.Seen++
 		found[ref.Path] = true
-		if previous, ok := known[ref.Path]; ok && previous.Unchanged(ref) {
+		if previous, ok := known[ref.Path]; ok && !u.Again && previous.Unchanged(ref) {
 			res.Unchanged++
 			return nil
 		}
@@ -211,7 +218,14 @@ func (u Extract) source(
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("read %s: %w", path, err)
+		if ctx.Err() != nil {
+			return err
+		}
+		// A file that will not open is one file. Stopping here records nothing,
+		// and every later run stops at the same place, leaving every book after
+		// it unread.
+		res.Unreadable++
+		return nil
 	}
 
 	book, err := epub.Read(raw)

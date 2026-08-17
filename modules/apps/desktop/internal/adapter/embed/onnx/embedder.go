@@ -153,7 +153,7 @@ func (e *Embedder) Close() error {
 }
 
 func (e *Embedder) Model() port.EmbeddingModel {
-	return port.EmbeddingModel{Name: e.name, Dimensions: e.dimensions}
+	return port.EmbeddingModel{Name: e.name, Dimensions: e.dimensions, MaxTokens: e.maxTokens}
 }
 
 // Embed runs the model over the texts, a batch at a time.

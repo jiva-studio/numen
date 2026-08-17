@@ -27,6 +27,8 @@ import (
 // about. A person looking for a setting looks for the part of the application it
 // belongs to.
 type Config struct {
+	// V is the shape of the file. Nothing reads it yet, and it is written so that
+	// the day a section changes shape there is something to tell the two apart.
 	V int `json:"v"`
 
 	// Appearance is how the window is drawn.

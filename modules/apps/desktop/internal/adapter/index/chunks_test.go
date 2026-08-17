@@ -247,9 +247,9 @@ func TestCuttingASourceTwiceDoesNotDoubleIt(t *testing.T) {
 }
 
 func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
-	// A note is saved with `ON CONFLICT DO UPDATE`, so its source row survives
-	// and nothing cascades. Its chunks describe text that has changed, and a
-	// chunk left behind sends a reader to the wrong offset in the file.
+	// A note is saved with ON CONFLICT DO UPDATE, so its source row survives and
+	// nothing cascades. Its chunks describe text that has changed, and one left
+	// behind sends a reader to an offset the file no longer has.
 	ctx := t.Context()
 	db := opened(t)
 
@@ -261,17 +261,18 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 	if err := db.Notes().Save(ctx, first.ID, []domain.Note{note}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Chunks().SaveWindows(ctx, first.ID, "note", note.Ref.Path, []chunk.Window{{
-		Start: 0, Length: 14, Text: note.Body,
-		Small: []chunk.Window{
-			{Start: 0, Length: 7, Text: "the fir"},
-			{Start: 7, Length: 7, Text: "st body"},
-		},
-	}}); err != nil {
-		t.Fatal(err)
+
+	// A note is cut the way a book is: one large window over the whole of it, and
+	// the small windows inside it that carry the vectors.
+	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE parent IS NULL`); got != 1 {
+		t.Errorf("%d large windows for one note", got)
+	}
+	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE parent IS NOT NULL`); got == 0 {
+		t.Fatal("a note has no small windows, so nothing about it can be embedded")
 	}
 	vectorise(t, db, first, 0x00)
-	if counted(t, db, `SELECT COUNT(*) FROM chunks_vec`) != 2 {
+	was := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`)
+	if was == 0 {
 		t.Fatal("the note was not embedded, so this test would pass either way")
 	}
 
@@ -281,13 +282,14 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// What is left is the note as its own large window, written by the save. The
-	// windows inside it are gone with the text they described.
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunks`); got != 1 {
-		t.Errorf("%d chunks after a note was rewritten, want its own window alone", got)
+	// What is left is the note as it stands now, cut once.
+	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE parent IS NULL`); got != 1 {
+		t.Errorf("%d large windows after a note was rewritten", got)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE parent IS NOT NULL`); got != 0 {
-		t.Errorf("%d small windows describe a note that has been rewritten", got)
+	if got := counted(t, db,
+		`SELECT COUNT(*) FROM chunks c WHERE c.parent IS NOT NULL
+		   AND c.parent NOT IN (SELECT id FROM chunks WHERE parent IS NULL)`); got != 0 {
+		t.Errorf("%d small windows sit inside a large one that is gone", got)
 	}
 	if got := counted(t, db, `SELECT COUNT(*) FROM vectors`); got != 0 {
 		t.Errorf("%d vectors describe a note that has been rewritten", got)
@@ -300,7 +302,7 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(found) != 1 || found[0].Source != note.Ref.Path {
+	if len(found) == 0 || found[0].Source != note.Ref.Path {
 		t.Errorf("the rewritten note is not findable by its new words: %+v", found)
 	}
 	if stale, err := db.ChunkQueries().Lexical(ctx, first.ID, "first", 10); err != nil {
@@ -308,16 +310,40 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 	} else if len(stale) != 0 {
 		t.Errorf("the words of the note before it was rewritten still answer: %+v", stale)
 	}
-	// The note itself stays, and is now what "has not been cut" answers with.
 	if got := counted(t, db, `SELECT COUNT(*) FROM notes`); got != 1 {
 		t.Errorf("%d notes, want the one that was saved twice", got)
 	}
-	owing, err := db.ChunkQueries().Unchunked(ctx, first.ID, "note", 10)
+}
+
+// A note is searchable by its meaning, which needs the windows that carry
+// vectors. One large window and nothing inside it is a note the dense half can
+// never return.
+func TestANoteIsCutIntoWindowsThatCanCarryAVector(t *testing.T) {
+	ctx := t.Context()
+	db := opened(t)
+
+	body := strings.Repeat("entropy is the measure of disorder in a closed system. ", 8)
+	note := domain.Note{
+		Ref:   domain.FileRef{Path: "notes/Entropy.md", Size: int64(len(body)), MTime: 1},
+		Title: "Entropy",
+		Body:  body,
+	}
+	if err := db.Notes().Save(ctx, first.ID, []domain.Note{note}); err != nil {
+		t.Fatal(err)
+	}
+
+	owing, err := db.ChunkQueries().Unembedded(ctx, first.ID, "model", 0, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(owing) != 1 || owing[0] != note.Ref.Path {
-		t.Errorf("what has not been cut is %v, want the rewritten note", owing)
+	if len(owing) < 2 {
+		t.Fatalf("%d windows of a note owe a vector, so its text is one window", len(owing))
+	}
+	// Every offset is into the file, so the text of a passage can be read back.
+	for _, p := range owing {
+		if p.Start < 0 || p.Start+p.Length > int(note.Ref.Size) {
+			t.Errorf("a window lies outside the file: %+v", p)
+		}
 	}
 }
 

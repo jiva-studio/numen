@@ -418,3 +418,58 @@ func intersect(names, wanted []string) []string {
 	}
 	return out
 }
+
+// An archive says how large its entries are and is believed about nothing. A few
+// hundred kilobytes of zeros expand to as much as the format allows, and reading
+// that is how opening a book ends the process.
+func TestADocumentLargerThanAChapterIsLeftUnread(t *testing.T) {
+	book := read(t, packed(t, map[string][]byte{
+		"mimetype": []byte("application/epub+zip"),
+		"META-INF/container.xml": []byte(`<container xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+			<rootfiles><rootfile full-path="content.opf" media-type="application/oebps-package+xml"/></rootfiles>
+		</container>`),
+		"content.opf": []byte(`<package xmlns="http://www.idpf.org/2007/opf" version="3.0">
+			<metadata><dc:title xmlns:dc="http://purl.org/dc/elements/1.1/">Bomb</dc:title></metadata>
+			<manifest>
+				<item id="a" href="swollen.xhtml" media-type="application/xhtml+xml"/>
+				<item id="b" href="ordinary.xhtml" media-type="application/xhtml+xml"/>
+			</manifest>
+			<spine><itemref idref="a"/><itemref idref="b"/></spine>
+		</package>`),
+		// Larger than any chapter, and a few hundred kilobytes on disk.
+		"swollen.xhtml":  []byte("<html><body><p>" + strings.Repeat("a", 20<<20) + "</p></body></html>"),
+		"ordinary.xhtml": []byte("<html><body><p>a chapter of ordinary size</p></body></html>"),
+	}))
+
+	if !strings.Contains(book.Text, "ordinary size") {
+		t.Error("the chapter beside it was not read")
+	}
+	if strings.Contains(book.Text, strings.Repeat("a", 1000)) {
+		t.Error("the swollen document was read")
+	}
+}
+
+// packed is an archive of exactly the parts given.
+func packed(t *testing.T, parts map[string][]byte) []byte {
+	t.Helper()
+
+	var out bytes.Buffer
+	archive := zip.NewWriter(&out)
+	for _, name := range slices.Sorted(maps.Keys(parts)) {
+		method := zip.Deflate
+		if name == "mimetype" {
+			method = zip.Store
+		}
+		entry, err := archive.CreateHeader(&zip.FileHeader{Name: name, Method: method})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := entry.Write(parts[name]); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := archive.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return out.Bytes()
+}

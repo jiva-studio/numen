@@ -394,8 +394,33 @@ func delta(partial string) string {
 func TestTheAgentReadsNothingThisMachineHoldsForIt(t *testing.T) {
 	argv := recorded(t)
 
-	if !slices.Contains(argv, "--safe-mode") {
-		t.Errorf("the machine's own hooks, skills and instructions are read: %q", argv)
+	at := slices.Index(argv, "--setting-sources")
+	if at < 0 {
+		t.Fatalf("every source is read, hooks and all: %q", argv)
+	}
+	if got := argv[at+1]; got != "" {
+		t.Errorf("the sources read are %q", got)
+	}
+	// Refusing every customisation refuses this vault's tools with them: they
+	// arrive on a command line and are read as one.
+	if slices.Contains(argv, "--safe-mode") {
+		t.Error("safe mode takes this vault's own tools away")
+	}
+}
+
+// The tools of this vault survive whatever refuses the machine's configuration.
+// An agent that cannot reach the vault answers from what the model already
+// knows, and says the vault was missing after the answer.
+func TestThisVaultsToolsSurviveWhatIsRefused(t *testing.T) {
+	for _, own := range []bool{false, true} {
+		argv := recordedWith(t, func(a *claudecode.Agent) { a.ReadsHooksAndSkills = own })
+
+		if slices.Contains(argv, "--safe-mode") {
+			t.Errorf("own=%v: safe mode disables MCP servers, this vault's included", own)
+		}
+		if !slices.Contains(argv, "--mcp-config") || !slices.Contains(argv, "--strict-mcp-config") {
+			t.Errorf("own=%v: the vault is not the server it was given: %q", own, argv)
+		}
 	}
 }
 

@@ -42,7 +42,7 @@ var expectedPlans = []struct {
 	{chunk.Statements(), "unembedded", []any{"model", 1, 0, 50}, []string{"chunks_by_vault"}},
 	{chunk.Statements(), "passage", []any{1, 1}, []string{"INTEGER PRIMARY KEY"}},
 	{chunk.Statements(), "enclosing", []any{1, 1}, []string{"INTEGER PRIMARY KEY"}},
-	{chunk.Statements(), "progress", []any{"model", 1}, []string{"chunks_by_window", "INTEGER PRIMARY KEY"}},
+	{chunk.Statements(), "progress", []any{"model", 1}, []string{"chunks_by_vault_parent", "INTEGER PRIMARY KEY"}},
 	// The lexical half reads the full-text index and then the row each hit
 	// names. A virtual table reports itself as a scan and has no named index.
 	{chunk.Statements(), "lexical", []any{`"entropy"`, 1, 20}, []string{"chunks_fts", "INTEGER PRIMARY KEY"}},

@@ -2,9 +2,13 @@ package index
 
 import (
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index/chunk"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 )
 
 func TestEveryConnectionGetsThePragmas(t *testing.T) {
@@ -105,5 +109,79 @@ func TestVectorSearchIsInTheBuild(t *testing.T) {
 	}
 	if version == "" {
 		t.Error("vec_version() returned nothing")
+	}
+}
+
+// A vector index is built for one width, and a model of another width cannot be
+// written to it. The width is the model's, so an installation that names a
+// 384-dimension model can embed with it.
+func TestTheVectorIndexIsFittedToTheModel(t *testing.T) {
+	ctx := t.Context()
+	db := opened(t)
+
+	if err := db.FitVectors(ctx, 384); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.FitVectors(ctx, 384); err != nil {
+		t.Fatalf("fitting to the width it already holds: %v", err)
+	}
+
+	narrow(t, db, first, 384)
+}
+
+// Changing model rebuilds the index. What it held was made by another model and
+// cannot be compared with what comes next.
+func TestFittingToAnotherWidthTakesTheVectorsWithIt(t *testing.T) {
+	ctx := t.Context()
+	db := opened(t)
+
+	if err := db.FitVectors(ctx, 384); err != nil {
+		t.Fatal(err)
+	}
+	narrow(t, db, first, 384)
+
+	if err := db.FitVectors(ctx, 1024); err != nil {
+		t.Fatal(err)
+	}
+	if left := counted(t, db, `SELECT count(*) FROM vectors`); left != 0 {
+		t.Errorf("%d vectors of the old width survived", left)
+	}
+	narrow(t, db, first, 1024)
+}
+
+// narrow cuts one source and embeds its small windows at the width given.
+func narrow(t *testing.T, db *DB, vault domain.Vault, dims int) {
+	t.Helper()
+	ctx := t.Context()
+
+	path := "library/" + strconv.Itoa(dims) + ".epub"
+	if err := db.Chunks().SaveSource(ctx, vault.ID, chunk.Source{
+		Path: path, Kind: "book", Size: 100, MTime: 1, Hash: "h" + path, Recipe: "epub",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Chunks().SaveWindows(ctx, vault.ID, "book", path, []chunk.Window{{
+		Start: 0, Length: 50, Text: "whole",
+		Small: []chunk.Window{{Start: 0, Length: 50, Text: "a window of text"}},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+
+	owing, err := db.ChunkQueries().Unembedded(ctx, vault.ID, "model", 0, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(owing) == 0 {
+		t.Fatal("nothing owes a vector, so this proves nothing")
+	}
+	vectors := make([]chunk.Vector, 0, len(owing))
+	for _, p := range owing {
+		vectors = append(vectors, chunk.Vector{
+			Chunk: p.Chunk, Model: "model", Dims: dims, Kind: "int8",
+			Value: make([]byte, dims), Coarse: make([]byte, dims/8),
+		})
+	}
+	if err := db.Chunks().SaveVectors(ctx, vectors); err != nil {
+		t.Fatalf("a %d-dimension vector could not be written: %v", dims, err)
 	}
 }

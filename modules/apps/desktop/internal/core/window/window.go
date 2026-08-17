@@ -40,6 +40,23 @@ const (
 	DefaultDirty        = 0.25
 )
 
+// CharactersPerToken is the floor a token is worth in characters.
+//
+// Latin runs about four; Devanagari and transliterated Sanskrit run under two, and
+// Cyrillic between. Two is the floor, so a window cut under a model's limit by
+// this is under it for every script — at the cost of a shorter window for Latin
+// than the model could hold.
+const CharactersPerToken = 2
+
+// Under is the character bound that keeps a window inside a model's token limit.
+// Zero tokens is a model that did not say, and takes the default bound.
+func Under(tokens int) int {
+	if tokens <= 0 {
+		return DefaultLimit
+	}
+	return tokens * CharactersPerToken
+}
+
 // Sizes are how large a chunk is cut and what makes a window legible enough to
 // index. A zero field takes its default.
 type Sizes struct {

@@ -77,7 +77,11 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 func agent(cfg container.Config, root, url, secret string, served map[string]mcp.Words, out io.Writer) *claudecode.Agent {
 	words := make(map[string]claudecode.Words, len(served))
 	for name, said := range served {
-		words[claudecode.Tool(name)] = claudecode.Words{Title: said.Title, About: said.About}
+		words[claudecode.Tool(name)] = claudecode.Words{
+			Title:  said.Title,
+			About:  said.About,
+			Inside: said.Inside,
+		}
 	}
 	return &claudecode.Agent{
 		Root:                root,
