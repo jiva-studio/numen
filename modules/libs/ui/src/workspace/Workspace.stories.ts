@@ -90,7 +90,7 @@ const meta: Meta<Knobs> = {
           :tabs="titles()"
           :edge="args.edge"
           :threshold="args.threshold"
-          :naming="{ id: () => 'made-' + Math.random().toString(36).slice(2, 8) }"
+          :naming="() => 'made-' + Math.random().toString(36).slice(2, 8)"
         >
           <template #tab="{ id }"><Filling :name="id" /></template>
         </Workspace>

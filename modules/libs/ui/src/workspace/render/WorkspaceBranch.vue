@@ -32,6 +32,13 @@ const emit = defineEmits<{
   (event: 'resize', branch: NodeId, sizes: readonly number[]): void
 }>()
 
+/** What a child says, said again unchanged. */
+const passed = {
+  onChoose: (tab: TabId) => emit('choose', tab),
+  onClose: (tab: TabId) => emit('close', tab),
+  onLift: (tab: TabId, at: PointerEvent) => emit('lift', tab, at),
+}
+
 defineSlots<{
   tab(props: { id: TabId }): unknown
   silence(): unknown
@@ -113,15 +120,13 @@ function settled(reported: number[]): void {
       >
         <WorkspaceBranch
           v-if="child.kind === 'branch'"
+          v-bind="passed"
           :node="child"
           :axis="axis"
           :depth="depth + 1"
           :titles="titles"
           :focus="focus"
           :minimum="minimum"
-          @choose="emit('choose', $event)"
-          @close="emit('close', $event)"
-          @lift="(tab, at) => emit('lift', tab, at)"
           @claim="emit('claim', $event)"
           @resize="(branch, next) => emit('resize', branch, next)"
         >
@@ -131,12 +136,10 @@ function settled(reported: number[]): void {
 
         <WorkspaceGroup
           v-else
+          v-bind="passed"
           :group="child"
           :titles="titles"
           :focused="child.id === focus"
-          @choose="emit('choose', $event)"
-          @close="emit('close', $event)"
-          @lift="(tab, at) => emit('lift', tab, at)"
           @claim="emit('claim', child.id)"
         >
           <template #tab="bound"><slot name="tab" v-bind="bound" /></template>

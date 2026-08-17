@@ -4,9 +4,15 @@
  * Pure — the same tree and the same box give the same numbers on any machine.
  * Nothing here measures the DOM.
  */
-import { orientationAt, type NodeId, type Rect, type Workspace, type WorkspaceNode } from './model'
+import {
+  isBranch,
+  orientationAt,
+  type NodeId,
+  type Rect,
+  type Workspace,
+  type WorkspaceNode,
+} from './model'
 import { fit } from './model/shares'
-import { isBranch } from './model'
 
 export interface ArrangeOptions {
   /** What is left between two children for the handle between them. */

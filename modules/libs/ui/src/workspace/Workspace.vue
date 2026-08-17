@@ -53,8 +53,15 @@ const titles = computed(() =>
   Object.fromEntries(props.tabs.map((tab) => [tab.id, tab.title])),
 )
 
+/**
+ * A node's identity reaches the DOM as the id of a splitter panel, so it is
+ * unique to the document and not only to this tree.
+ */
 let made = 0
-const naming = computed<Naming>(() => props.naming ?? { id: () => `node-${++made}` })
+const mint = (): NodeId =>
+  typeof crypto?.randomUUID === 'function' ? crypto.randomUUID() : `node-${++made}-${Date.now()}`
+
+const naming = computed<Naming>(() => props.naming ?? mint)
 
 const frame = useTemplateRef<HTMLElement>('frame')
 
@@ -69,11 +76,15 @@ interface Dragging {
   readonly moved: boolean
 }
 
-/** Where the tab would go if it were let go now. */
-type Landing =
-  | { readonly kind: 'edge'; readonly side: Side; readonly box: Rect }
-  | { readonly kind: 'group'; readonly group: NodeId; readonly side: Side; readonly box: Rect }
-  | { readonly kind: 'strip'; readonly group: NodeId; readonly slot: number; readonly box: Rect }
+/**
+ * Where the tab would go if it were let go now, and the part of the screen
+ * that stands for it.
+ */
+type Landing = { readonly box: Rect } & (
+  | { readonly kind: 'edge'; readonly side: Side }
+  | { readonly kind: 'group'; readonly group: NodeId; readonly side: Side }
+  | { readonly kind: 'strip'; readonly group: NodeId; readonly slot: number }
+)
 
 const dragging = shallowRef<Dragging | null>(null)
 const landing = shallowRef<Landing | null>(null)

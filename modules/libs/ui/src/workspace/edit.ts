@@ -32,9 +32,7 @@ import {
 import { insert } from './model/shares'
 
 /** Where an identity for a group or a branch a gesture makes comes from. */
-export interface Naming {
-  readonly id: () => NodeId
-}
+export type Naming = () => NodeId
 
 export interface TabDrop {
   readonly tab: TabId
@@ -187,7 +185,7 @@ function beside(
   tab: TabId,
   side: Side,
   axis: Orientation,
-  { id }: Naming,
+  id: Naming,
 ): Landed {
   const wanted = orientationOf(side)
   const path = pathTo(root, onto)

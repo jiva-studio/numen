@@ -34,7 +34,7 @@ export const workspaceOf = (
 /** Identities that count up, so a test can name what a gesture made. */
 export function naming(prefix = 'made'): Naming {
   let made = 0
-  return { id: () => `${prefix}-${++made}` }
+  return () => `${prefix}-${++made}`
 }
 
 /** What the desktop opens with: the plex, and the agent beside it. */
