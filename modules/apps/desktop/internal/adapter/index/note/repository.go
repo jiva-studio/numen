@@ -135,15 +135,13 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note) error
 	return nil
 }
 
-// whole is a note as one window. A note's large window is the note itself, and
-// what it holds is the prose plus the title, which is indexed and not embedded.
-//
-// The prose is a suffix of the file, so it begins at the file's size less its
-// own length.
 // cut is how a note is cut: one large window over the whole of it, and the small
 // windows inside that carry the vectors. A book is cut the same way, at the same
 // sizes, so a mixed vault ranks by what a passage says and not by what it came
 // from.
+//
+// The note's headings are its places, so the small windows of one section are
+// tiled inside that section and no window runs across a heading.
 //
 // Offsets are into the file. The body begins after the frontmatter, and every
 // window is moved out by as much.
@@ -154,7 +152,7 @@ func cut(n domain.Note) []chunk.Window {
 	}
 
 	out := make([]chunk.Window, 0, 1)
-	for _, large := range window.Cut(n.Body, nil, window.Sizes{Large: window.Whole}) {
+	for _, large := range window.Cut(n.Body, places(n), window.Sizes{Large: window.Whole}) {
 		// The title is searched together with the body: a note is looked for by
 		// the name it was given.
 		w := chunk.Window{
@@ -176,6 +174,20 @@ func cut(n domain.Note) []chunk.Window {
 	if len(out) == 0 {
 		// A note of a title and no words is answered by its title.
 		out = append(out, chunk.Window{Start: at, Length: len(n.Body), Text: n.Title})
+	}
+	return out
+}
+
+// places is where a note names the section that follows. A heading carries the
+// byte its line begins at in the body, which is the offset a window is cut
+// against, and the heading's own text is what the section is called.
+func places(n domain.Note) []window.Place {
+	if len(n.Headings) == 0 {
+		return nil
+	}
+	out := make([]window.Place, 0, len(n.Headings))
+	for _, h := range n.Headings {
+		out = append(out, window.Place{Title: h.Text, Offset: h.Offset})
 	}
 	return out
 }

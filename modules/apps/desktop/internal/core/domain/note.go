@@ -30,10 +30,15 @@ type Note struct {
 }
 
 // Heading is one ATX heading of a note, in document order.
+//
+// Line is counted from the first line of the body, and Offset is the byte the
+// heading's own line begins at in the body. The frontmatter is in neither: both
+// address the body the parser produced.
 type Heading struct {
-	Level int
-	Text  string
-	Line  int
+	Level  int
+	Text   string
+	Line   int
+	Offset int
 }
 
 // VaultProblem is something in a vault that could not be acted on and was not

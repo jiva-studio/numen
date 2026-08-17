@@ -77,6 +77,55 @@ func TestHeadingsAreCollectedInOrder(t *testing.T) {
 	}
 }
 
+func TestAHeadingCarriesTheByteItBeginsAt(t *testing.T) {
+	// The offset addresses the body, and the frontmatter is not in the body. A
+	// heading's line number is not its offset, so both are checked against the
+	// bytes the parser handed over.
+	raw := []byte("---\ntitle: Cut\n---\nprose\n\n## First law\n\nmore prose\n\n### Second law\n")
+	n := markdown.Parse(domain.FileRef{Path: "x.md", Size: int64(len(raw))}, raw)
+
+	if len(n.Headings) != 2 {
+		t.Fatalf("headings = %v", n.Headings)
+	}
+	for _, h := range n.Headings {
+		want := strings.Repeat("#", h.Level) + " " + h.Text
+		if h.Offset < 0 || h.Offset > len(n.Body) {
+			t.Fatalf("%q begins at %d, and the body is %d bytes", h.Text, h.Offset, len(n.Body))
+		}
+		if !strings.HasPrefix(n.Body[h.Offset:], want) {
+			t.Errorf("the body at %d is %q, want %q", h.Offset, shortened(n.Body[h.Offset:]), want)
+		}
+		if h.Offset == h.Line {
+			t.Errorf("%q begins at %d, which is its line number", h.Text, h.Offset)
+		}
+	}
+}
+
+func TestAHeadingInAFileWrittenWithCRLFBeginsWhereItSays(t *testing.T) {
+	// A carriage return is a byte of the line and not of its text, so a heading
+	// begins past every one of them.
+	raw := []byte("# One\r\n\r\nprose\r\n\r\n## Two\r\n\r\nmore\r\n\r\n### Three\r\n")
+	n := markdown.Parse(domain.FileRef{Path: "x.md", Size: int64(len(raw))}, raw)
+
+	if len(n.Headings) != 3 {
+		t.Fatalf("headings = %v", n.Headings)
+	}
+	for _, h := range n.Headings {
+		want := strings.Repeat("#", h.Level) + " " + h.Text + "\r\n"
+		if !strings.HasPrefix(n.Body[h.Offset:], want) {
+			t.Errorf("the body at %d is %q, want %q", h.Offset, shortened(n.Body[h.Offset:]), want)
+		}
+	}
+}
+
+// shortened cuts text down for a failure message.
+func shortened(s string) string {
+	if len(s) > 20 {
+		return s[:20]
+	}
+	return s
+}
+
 func TestFencedCodeIsNotParsedAsContent(t *testing.T) {
 	n := parseFile(t, "edge/code-fence.md")
 	for _, h := range n.Headings {
