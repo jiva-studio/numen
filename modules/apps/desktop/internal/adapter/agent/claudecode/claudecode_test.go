@@ -1,12 +1,16 @@
 package claudecode_test
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
+	"syscall"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/agent/claudecode"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agent"
@@ -439,5 +443,79 @@ func TestAVaultsOwnConfigurationIsNeverRead(t *testing.T) {
 	}
 	if got := argv[at+1]; got != "user" {
 		t.Errorf("the sources read are %q", got)
+	}
+}
+
+// An agent this window started does not outlive it. The child is put in a
+// process group of its own, so nothing that ends this process reaches it, and
+// one still answering goes on writing to the vault with nobody watching.
+func TestClosingEndsAnAgentThatIsStillAnswering(t *testing.T) {
+	dir := t.TempDir()
+	script := filepath.Join(dir, "claude")
+	// Says one thing and then waits, the way an agent between turns does.
+	body := "#!/bin/sh\n" +
+		`echo '{"type":"system","subtype":"init","session_id":"s1"}'` + "\n" +
+		"echo $$ > " + filepath.Join(dir, "pid") + "\n" +
+		"sleep 120\n"
+	if err := os.WriteFile(script, []byte(body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	claude := claudecode.Agent{
+		Command: []string{script},
+		Root:    dir,
+		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
+	}
+	work, err := claude.Take(context.Background(), agent.Task{Asked: "take your time"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var pid int
+	for range 200 {
+		raw, err := os.ReadFile(filepath.Join(dir, "pid"))
+		if err == nil {
+			if pid, err = strconv.Atoi(strings.TrimSpace(string(raw))); err == nil && pid > 0 {
+				break
+			}
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if pid == 0 {
+		t.Fatal("the agent never started")
+	}
+	if err := syscall.Kill(pid, 0); err != nil {
+		t.Fatalf("the agent is not running: %v", err)
+	}
+
+	if err := claude.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	// A process this one started stays visible until it is waited for, so what
+	// says it is over is that a signal no longer reaches it.
+	gone := false
+	for range 200 {
+		if err := syscall.Kill(pid, 0); err != nil {
+			gone = true
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if !gone {
+		syscall.Kill(pid, syscall.SIGKILL)
+		t.Fatal("the agent outlived the window that started it")
+	}
+
+	if _, taking := <-work.Steps(); taking {
+		// Draining what was said before the close is fine; what must not
+		// happen is the work going on.
+		for range work.Steps() {
+		}
+	}
+
+	// A window that has closed does not start another.
+	if _, err := claude.Take(context.Background(), agent.Task{Asked: "again"}); err == nil {
+		t.Error("an agent was started after the window closed")
 	}
 }

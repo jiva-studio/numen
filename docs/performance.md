@@ -523,13 +523,45 @@ then the folder it is renamed into, and those two are the whole figure. Against
 a quiet interval of 800 ms it is not a wait a person can notice; it is worth
 recording because it says where a faster save would have to come from.
 
-### Not measured yet
+### A save, and how long until the window knows
 
-- keystroke to picture redrawn, at a hundred thousand notes. It crosses the
-  webview, the schema, the write, the watcher and the index, and nothing here
-  drives that whole path.
-- what one open tab costs resident. Every tab of a pane is drawn and hidden, so
-  tab count is live editor count, and only a browser can answer it.
+```
+NUMEN_LOAD=1 go test ./internal/adapter/webui/ -run TestEditLoad -v -timeout 30m
+```
+
+Taken 2026-08-17, same machine. This is the path the application owns: the
+write, the watcher noticing it, the refresh, and the change reaching a client.
+
+| vault | save | until a client is told |
+|---|---|---|
+| 10 000 notes | 22 ms | 65 ms |
+| 100 000 notes | 13 ms | 66 ms |
+
+Neither figure grows with the vault. The watcher reports a path, the refresh
+reads that one note, and what is walked is nothing — which is what says an edit
+is answered by the size of the note and not the size of the library.
+
+What is still not measured is the two ends a browser owns: a keystroke becoming
+a request, and the picture being painted.
+
+### What an open tab costs, and why there is no number
+
+```
+npx vitest run --project stories src/editor/Editor.stories.ts
+```
+
+Every tab of a pane is drawn and hidden, so tab count is live editor count, and
+the story mounts ten in one page to find what the tenth costs.
+
+It has no number. `performance.memory.usedJSHeapSize` is quantised by the
+browser, and it reads the same 67.6 MB with one editor alive and with ten. So
+what the story asserts is the part that can be checked — that ten editors are
+alive at once — and the size is left unmeasured.
+
+The instrument that would answer it is
+`performance.measureUserAgentSpecificMemory()`, which needs the page to be
+cross-origin isolated. Until the story runs in such a page there is no figure
+here, and a figure taken from the quantised counter would be an invention.
 
 ### What an edit costs to embed
 

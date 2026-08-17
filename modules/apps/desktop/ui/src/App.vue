@@ -197,7 +197,7 @@ onUnmounted(() => {
           <p v-if="notes.saying(id)" class="warning">{{ notes.saying(id) }}</p>
           <Editor
             :model-value="notes.shown(id).body"
-            class="prose"
+            class="note__text"
             @update:model-value="(body: string) => notes.typed(id, body)"
           />
         </div>
@@ -237,6 +237,20 @@ main {
 .below {
   flex: 1;
   min-height: 0;
+}
+
+/* A note fills the pane it is in: the editor scrolls, and the line it says
+   something is wrong on stays where it is. */
+.note {
+  display: flex;
+  flex-direction: column;
+  block-size: 100%;
+  min-block-size: 0;
+}
+
+.note__text {
+  flex: 1;
+  min-block-size: 0;
 }
 
 /* The foot of the window: clear of the plex, quiet when there is no work. */

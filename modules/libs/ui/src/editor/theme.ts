@@ -91,10 +91,13 @@ export const theme = EditorView.theme({
     borderBottomRightRadius: 'var(--numen-radius)',
   },
 
+  /* A quotation is prose a person reads, set apart by its rule and not by
+     being harder to see. */
   '.cm-quote': {
-    borderLeft: '3px solid var(--numen-node-border)',
+    borderLeft: '3px solid var(--numen-ring)',
     paddingLeft: '10px',
-    color: 'var(--numen-edge-label)',
+    color: 'var(--numen-node-fg)',
+    fontStyle: 'italic',
   },
 
   '.cm-bullet': { color: 'var(--editor-marker)' },

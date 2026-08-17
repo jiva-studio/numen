@@ -68,13 +68,21 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 	if err != nil {
 		fmt.Fprintln(out, "agents:", err)
 	}
-	opened.API.Agent = agent(cfg, root, endpoint.URL, secret, words, out)
+	started := agent(cfg, root, endpoint.URL, secret, words, out)
+	opened.API.Agent = started
 
 	return func() error {
 		forget()
+		// The agents this window started go first: each is in a process group
+		// of its own, so nothing else reaches them, and one still answering
+		// would go on writing to the vault after the window is gone.
+		stopped := started.Close()
 		shutdown, cancel := context.WithTimeout(context.Background(), agentBound)
 		defer cancel()
-		return endpoint.Close(shutdown)
+		if err := endpoint.Close(shutdown); err != nil {
+			return err
+		}
+		return stopped
 	}, nil
 }
 

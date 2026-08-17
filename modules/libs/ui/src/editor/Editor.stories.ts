@@ -4,7 +4,7 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
-import { ref } from 'vue'
+import { createApp, ref } from 'vue'
 import { undo } from '@codemirror/commands'
 import { EditorSelection } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
@@ -164,5 +164,52 @@ export const ReadAgain: Story = {
 
     undo(view)
     await expect(view.state.doc.toString()).toBe(AFTER)
+  },
+}
+
+
+/**
+ * What a tab costs while it is open.
+ *
+ * Every tab of a pane is drawn and hidden, so tab count is live editor count.
+ * The heap is reported for docs/performance.md; a threshold here would fail on
+ * a browser that collects at a different moment.
+ */
+
+export const TenOpenTabs: Story = {
+  render: () => ({
+    components: { Editor },
+    setup: () => ({ text: MARKED_UP }),
+    template: `<div class="h-screen overflow-hidden bg-surface" data-tabs>
+      <div><Editor :model-value="text" class="h-screen" /></div>
+    </div>`,
+  }),
+  play: async ({ canvasElement }) => {
+    const heap = () =>
+      (performance as { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize ?? 0
+    const mb = (bytes: number) => (bytes / 1024 / 1024).toFixed(1)
+
+    await settled()
+    const room = canvasElement.querySelector('[data-tabs]') as HTMLElement
+    await expect(room.querySelectorAll('.cm-editor').length).toBe(1)
+    const one = heap()
+
+    // Nine more of what a pane holds out of sight, in the page that already
+    // has one, so the difference is the tabs and not the page.
+    const more = Array.from({ length: 9 }, () => {
+      const held = document.createElement('div')
+      held.style.display = 'none'
+      room.append(held)
+      const app = createApp(Editor, { modelValue: MARKED_UP })
+      app.mount(held)
+      return app
+    })
+    await settled()
+    await settled()
+    await expect(room.querySelectorAll('.cm-editor').length).toBe(10)
+    const ten = heap()
+
+    console.info(`one open tab: ${mb(one)} MB; ten: ${mb(ten)} MB; each further: ${mb((ten - one) / 9)} MB`)
+    more.forEach((app) => app.unmount())
   },
 }
