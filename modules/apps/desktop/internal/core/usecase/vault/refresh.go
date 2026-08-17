@@ -11,9 +11,12 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
-// Refresh brings named notes up to date, for when something says which ones
+// Refresh brings named notes up to date, for when something says which files
 // changed. A scan asks the whole vault what it looks like; this asks a handful
 // of files.
+//
+// The names it is handed come from a watcher, which reports every kind of
+// source. A path that is not a note is said back and left alone.
 type Refresh struct {
 	Readers port.VaultReaders
 	Notes   port.NoteRepository
@@ -25,6 +28,9 @@ type RefreshResult struct {
 	Indexed    []string
 	Removed    []string
 	Unreadable []string
+	// Assets are the paths of sources that are not notes. They changed, and
+	// bringing them up to date is its own step.
+	Assets []string
 }
 
 // Changed is every note the caller may need to look at again.
@@ -65,6 +71,12 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 			// arrives once, so anything dropped here is dropped until the next
 			// scan.
 			res.Unreadable = append(res.Unreadable, path)
+			continue
+		}
+		if ref.Kind != domain.KindNote {
+			// The vault holds it, so it is not gone and its row stays where it
+			// is. Reading it is the business of whatever extracts its text.
+			res.Assets = append(res.Assets, path)
 			continue
 		}
 		raw, err := reader.Read(ctx, path)

@@ -4,7 +4,7 @@
 --
 -- `note` is what the person wrote about why the link exists.
 CREATE TABLE links (
-    note_id    INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+    note_id    INTEGER NOT NULL REFERENCES notes(source_id) ON DELETE CASCADE,
     position   INTEGER NOT NULL,
     scheme     TEXT NOT NULL,
     value      TEXT NOT NULL,
@@ -33,7 +33,7 @@ CREATE INDEX links_by_name ON links (value_base);
 -- are read together, so a "vault problems" view is a query rather than a
 -- rescan.
 CREATE TABLE problems (
-    note_id INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+    note_id INTEGER NOT NULL REFERENCES notes(source_id) ON DELETE CASCADE,
     detail  TEXT NOT NULL
 );
 

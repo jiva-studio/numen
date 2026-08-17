@@ -12,7 +12,17 @@ import { AgentService } from '@numen/protocol'
 /** One thing the agent said, did, or stopped for. */
 export type Step =
   | { readonly kind: 'said'; readonly text: string }
-  | { readonly kind: 'doing'; readonly tool: string; readonly about: string }
+  | {
+      readonly kind: 'doing'
+      readonly tool: string
+      readonly about: string
+      /** How much of the call has been written. It arrives more than once. */
+      readonly written: number
+    }
+  /** The tool answered. Nothing of this application's is running from here. */
+  | { readonly kind: 'answered' }
+  /** A request to the model has begun: this is where a wait starts. */
+  | { readonly kind: 'thinking' }
   | { readonly kind: 'stopped'; readonly failed: string }
 
 export interface Agent {
@@ -33,7 +43,18 @@ export const core: Agent = {
           yield { kind: 'said', text: step.step.value }
           break
         case 'doing':
-          yield { kind: 'doing', tool: step.step.value.tool, about: step.step.value.about }
+          yield {
+            kind: 'doing',
+            tool: step.step.value.tool,
+            about: step.step.value.about,
+            written: step.step.value.written,
+          }
+          break
+        case 'answered':
+          yield { kind: 'answered' }
+          break
+        case 'thinking':
+          yield { kind: 'thinking' }
           break
         case 'stopped':
           yield { kind: 'stopped', failed: step.step.value }

@@ -11,6 +11,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 )
@@ -35,8 +36,8 @@ options:
 `
 
 // Main runs the command line and returns a process exit code.
-func Main(ctx context.Context, out, errOut io.Writer, args []string) int {
-	if err := Run(ctx, out, args); err != nil {
+func Main(ctx context.Context, out, errOut io.Writer, args []string, embedding embed.Config) int {
+	if err := Run(ctx, out, args, embedding); err != nil {
 		fmt.Fprintln(errOut, "numen-cli:", err)
 		return 1
 	}
@@ -45,8 +46,8 @@ func Main(ctx context.Context, out, errOut io.Writer, args []string) int {
 
 // Run is Main with its output injected and errors returned, so what the person
 // sees is testable.
-func Run(ctx context.Context, out io.Writer, args []string) error {
-	var cfg container.Config
+func Run(ctx context.Context, out io.Writer, args []string, embedding embed.Config) error {
+	cfg := container.Config{Embedding: embedding}
 	fs := flag.NewFlagSet("numen-cli", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	fs.StringVar(&cfg.IndexPath, "index", "", "path to the index database")

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agent"
 )
@@ -33,6 +34,10 @@ func read(ctx context.Context, r io.Reader, steps chan<- agent.Step, words map[s
 	}
 }
 
+// writtenStep is how much more of a call has to be written before it is
+// reported again.
+const writtenStep = 200
+
 // reader is what has been made of the stream so far.
 type reader struct {
 	steps chan<- agent.Step
@@ -50,6 +55,8 @@ type reader struct {
 	// about is known when it is shown.
 	calling string
 	written strings.Builder
+	// told is how much of the call had been reported the last time it was.
+	told int
 	// failed is why the work stopped. The first reason is the one that holds.
 	failed string
 }
@@ -65,12 +72,25 @@ func (rd *reader) line(ctx context.Context, line string) {
 		rd.piece(ctx, said.Event)
 	case "assistant":
 		rd.whole(ctx, said)
+	case "user":
+		// The tool answered. Everything from here until the next block arrives
+		// is the model's, and the step says so.
+		if said.answers() {
+			rd.tell(ctx, agent.Step{Kind: agent.Answered})
+		}
 	case "system":
-		if said.Subtype == "init" {
+		switch said.Subtype {
+		case "init":
 			if said.Session != "" && rd.kept != nil {
 				rd.kept(said.Session)
 			}
 			rd.stop(unreachable(said))
+		case "status":
+			// `requesting` is written when a request to the model begins. It is
+			// the start of the wait, reported by the agent itself.
+			if said.Status == "requesting" {
+				rd.tell(ctx, agent.Step{Kind: agent.Thinking})
+			}
 		}
 	case "result":
 		if said.IsError {
@@ -89,6 +109,8 @@ func (rd *reader) piece(ctx context.Context, event streamed) {
 			rd.pieces = true
 			rd.calling = event.Block.Name
 			rd.written.Reset()
+			rd.told = 0
+			rd.tell(ctx, rd.calls(rd.calling, ""))
 		}
 	case "content_block_delta":
 		switch event.Delta.Type {
@@ -100,6 +122,12 @@ func (rd *reader) piece(ctx context.Context, event streamed) {
 			rd.tell(ctx, agent.Step{Kind: agent.Saying, Text: event.Delta.Text})
 		case "input_json_delta":
 			rd.written.WriteString(event.Delta.Partial)
+			// Reported as it is written, one writtenStep of characters at a
+			// time. A call carrying the body of a note is written for minutes.
+			if rd.written.Len()-rd.told >= writtenStep {
+				rd.told = rd.written.Len()
+				rd.tell(ctx, rd.calls(rd.calling, rd.written.String()))
+			}
 		}
 	case "content_block_stop":
 		if rd.calling == "" {
@@ -190,6 +218,9 @@ type event struct {
 	Result  string          `json:"result"`
 	IsError bool            `json:"is_error"`
 
+	// Status is what a status line says is happening now.
+	Status string `json:"status"`
+
 	// Servers is absent from a line that says nothing about servers, and empty
 	// on a line that says there are none.
 	Servers *[]struct {
@@ -240,25 +271,138 @@ func (rd *reader) calls(tool string, arguments string) agent.Step {
 		return step
 	}
 
+	step.Written = len([]rune(arguments))
+
 	var made map[string]any
 	if err := json.Unmarshal([]byte(arguments), &made); err != nil {
+		// Still arriving, which is where most of a long wait is spent. What has
+		// been written is read for the name, so that the person sees which note
+		// is being written while it is being written.
+		step.About = glimpsed(arguments, words.Inside)
+		if step.About == "" {
+			step.About = glimpsed(arguments, words.About)
+		}
 		return step
 	}
 	switch value := made[words.About].(type) {
 	case string:
 		step.About = value
 	case []any:
-		if len(value) == 0 {
-			break
-		}
-		if first, ok := value[0].(string); ok {
-			step.About = first
-			if len(value) > 1 {
-				step.About = fmt.Sprintf("%s and %d more", first, len(value)-1)
-			}
-		}
+		step.About = named(value, words.Inside)
 	}
 	return step
+}
+
+// named is what a collection of arguments is about: the first element by the
+// name it carries, and how many others there are.
+func named(value []any, inside string) string {
+	if len(value) == 0 {
+		return ""
+	}
+	first := ""
+	switch element := value[0].(type) {
+	case string:
+		first = element
+	case map[string]any:
+		if inside == "" {
+			return ""
+		}
+		first, _ = element[inside].(string)
+	}
+	if first == "" {
+		return ""
+	}
+	if len(value) > 1 {
+		return fmt.Sprintf("%s and %d more", first, len(value)-1)
+	}
+	return first
+}
+
+// glimpsed is the value of a named field in JSON that has not finished
+// arriving.
+//
+// Nothing here decodes: half a document does not parse, and waiting for the
+// whole of it is waiting for the thing being watched. The first field of that
+// name is taken, since the first element of a collection is the one being
+// written when there is nothing else to show yet.
+func glimpsed(arguments, field string) string {
+	if field == "" {
+		return ""
+	}
+	at := strings.Index(arguments, `"`+field+`"`)
+	if at < 0 {
+		return ""
+	}
+	rest := arguments[at+len(field)+2:]
+	rest = strings.TrimLeft(rest, " \t\r\n")
+	if !strings.HasPrefix(rest, ":") {
+		return ""
+	}
+	rest = strings.TrimLeft(rest[1:], " \t\r\n")
+	if !strings.HasPrefix(rest, `"`) {
+		return ""
+	}
+	rest = rest[1:]
+
+	// One way out, so that every value read is read the same way. An escape whose
+	// second half has not arrived, and a character cut in half, both end the
+	// value where they begin.
+	var out strings.Builder
+	for i := 0; i < len(rest); i++ {
+		if rest[i] == '"' {
+			break
+		}
+		if rest[i] == '\\' {
+			if i+1 >= len(rest) {
+				break
+			}
+			out.WriteByte(rest[i])
+			i++
+		}
+		out.WriteByte(rest[i])
+	}
+	return unquoted(whole(out.String()))
+}
+
+// whole is the text without a character that has half arrived.
+//
+// Pieces are cut where the stream cut them, which for anything outside ASCII is
+// as likely to be the middle of a character as the end of one.
+func whole(text string) string {
+	for len(text) > 0 {
+		last, size := utf8.DecodeLastRuneInString(text)
+		if last != utf8.RuneError || size > 1 {
+			return text
+		}
+		text = text[:len(text)-1]
+	}
+	return text
+}
+
+// unquoted turns the escapes of a JSON string into what they stand for.
+//
+// The last escape may have arrived in pieces — a character named by number is
+// six of them, and five are not a character — so the tail is given up a piece at
+// a time until what is left reads. An escape shown as itself is text the person
+// did not write.
+func unquoted(text string) string {
+	for at := len(text); at > 0; at-- {
+		var out string
+		if err := json.Unmarshal([]byte(`"`+text[:at]+`"`), &out); err == nil {
+			return out
+		}
+	}
+	return ""
+}
+
+// answers reports whether this line carries the answer of a tool.
+func (e event) answers() bool {
+	for _, block := range e.blocks() {
+		if block.Type == "tool_result" {
+			return true
+		}
+	}
+	return false
 }
 
 func (e event) blocks() []block {

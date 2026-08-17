@@ -12,10 +12,15 @@ withDefaults(
     tool: string
     /** What it is working on, when that is worth saying. */
     about?: string
+    /**
+     * What is true of it beside its name: how much has been written, how long
+     * the wait has lasted. It is what moves while nothing else does.
+     */
+    aside?: string
     /** Still in hand. */
     working?: boolean
   }>(),
-  { about: '', working: false },
+  { about: '', aside: '', working: false },
 )
 </script>
 
@@ -24,6 +29,8 @@ withDefaults(
     <span class="tool__mark" :data-working="working || undefined" />
     <span class="tool__name min-w-0 truncate">{{ tool }}</span>
     <span v-if="about" class="tool__about min-w-0 flex-1 truncate opacity-70">{{ about }}</span>
+    <span v-else class="tool__gap flex-1" />
+    <span v-if="aside" class="tool__aside flex-none tabular-nums opacity-70">{{ aside }}</span>
     <Dots v-if="working" class="tool__dots" />
   </p>
 </template>

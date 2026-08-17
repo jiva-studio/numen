@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/markdown"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 )
 
 // How much one call may ask for. A tool with no ceiling is a way to put a whole
@@ -49,37 +50,44 @@ func noteOf(ref domain.NoteRef) Note {
 	return Note{Path: ref.Path, Title: ref.Title, ID: ref.ID}
 }
 
+// Passage is what a search returns: the text around a hit, and where it came
+// from. A hit inside a book names the book, and a hit inside a note names the
+// note.
+type Passage struct {
+	Source   string `json:"source" jsonschema:"the file the text is read from, relative to the vault folder"`
+	Location string `json:"location,omitempty" jsonschema:"where this sits in the source's own numbering — a chapter, a printed page — absent when the format offered none"`
+	Text     string `json:"text" jsonschema:"the passage itself"`
+}
+
 func addNoteTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "note_search",
-		Title: "Search notes",
-		Description: "Search the vault by content and title. Returns matching notes, " +
-			"nearest first. Use this before assuming a note does or does not exist.",
+		Title: "Search the vault",
+		Description: "Search everything the vault holds — the notes, and the books and " +
+			"papers filed beside them — for the words typed and for what they mean. " +
+			"Returns passages, best first: the text around each hit and the file it was " +
+			"read from. One passage per file, so a long book does not take the answer. " +
+			"Use this before assuming something is or is not written down.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Query string `json:"query" jsonschema:"words to look for"`
-		Limit int    `json:"limit,omitempty" jsonschema:"how many notes to return, 20 by default"`
+		Limit int    `json:"limit,omitempty" jsonschema:"how many passages to return, 20 by default"`
 	}) (*sdk.CallToolResult, struct {
-		Matches []Note `json:"matches"`
+		Matches []Passage `json:"matches"`
 	}, error) {
 		type out = struct {
-			Matches []Note `json:"matches"`
+			Matches []Passage `json:"matches"`
 		}
-		limit := in.Limit
-		if limit <= 0 {
-			limit = 20
+		if in.Limit > maxMatches {
+			return nil, out{}, fmt.Errorf("ask for at most %d passages at a time", maxMatches)
 		}
-		if limit > maxMatches {
-			return nil, out{}, fmt.Errorf("ask for at most %d notes at a time", maxMatches)
-		}
-		search := core.Search
-		search.Limit = limit
-		found, err := search.Execute(ctx, core.Vault, in.Query)
+		found, err := core.Search.Execute(ctx, core.Vault, in.Query,
+			search.Parameters{Limit: in.Limit})
 		if err != nil {
 			return nil, out{}, err
 		}
-		matches := make([]Note, 0, len(found))
-		for _, m := range found {
-			matches = append(matches, Note{Path: m.Path, Title: m.Title})
+		matches := make([]Passage, 0, len(found))
+		for _, p := range found {
+			matches = append(matches, Passage{Source: p.Source, Location: p.Location, Text: p.Text})
 		}
 		return nil, out{Matches: matches}, nil
 	})
@@ -213,58 +221,45 @@ func addNoteTools(server *sdk.Server, core Core) {
 		return nil, res, nil
 	})
 
+	// One note per call.
+	//
+	// A call is written out in full before it is made, and this one carries the
+	// text of a note: one at a time, each is filed as it is finished, and stopping
+	// halfway keeps what was made. The other calls that take a list carry names,
+	// which are written in a moment.
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "note_create",
 		Title: "Create a note",
-		Description: "Make notes. Each is named after its title, so choose titles that " +
-			"read as names. Give a note its `links` here rather than adding them " +
-			"afterwards: it is one write, and the person watching sees it arrive already " +
-			"joined instead of appearing loose and then jumping into place. If other " +
-			"notes already answer to a name they come back under `shares`, and links " +
-			"written by that name will be ambiguous.",
-	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		Notes []NewNote `json:"notes" jsonschema:"the notes to make"`
-	}) (*sdk.CallToolResult, struct {
-		Created []CreateOutcome `json:"created"`
-	}, error) {
-		type out = struct {
-			Created []CreateOutcome `json:"created"`
-		}
-		if len(in.Notes) > maxRefs {
-			return nil, out{}, fmt.Errorf("make at most %d notes at a time", maxRefs)
-		}
-		// Asked of the whole call, before a file is opened.
-		size := 0
-		for _, want := range in.Notes {
-			size += len(want.Body)
-			for _, l := range want.Links {
-				size += carried(l)
-			}
+		Description: "Make one note. It is named after its title, so choose a title that " +
+			"reads as a name. For several notes call this once for each, in the order " +
+			"they should appear: every note is filed as it is finished, and the person " +
+			"watching sees each one arrive. Give the note its `links` here rather than " +
+			"adding them afterwards: it is one write, and the person sees it arrive " +
+			"already joined instead of appearing loose and then jumping into place. If " +
+			"other notes already answer to a name they come back under `shares`, and " +
+			"links written by that name will be ambiguous.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in NewNote) (*sdk.CallToolResult, CreateOutcome, error) {
+		size := len(in.Body)
+		for _, l := range in.Links {
+			size += carried(l)
 		}
 		if size > maxBytes {
-			return nil, out{}, fmt.Errorf(
+			return nil, CreateOutcome{}, fmt.Errorf(
 				"a call writing %d bytes is more than this carries at once, which is %d", size, maxBytes)
 		}
 
-		res := out{Created: make([]CreateOutcome, 0, len(in.Notes))}
-		for _, want := range in.Notes {
-			if err := ctx.Err(); err != nil {
-				return nil, out{}, err
-			}
-			created, err := core.Create.Execute(ctx, core.Vault, note.NewNote{
-				Title: want.Title, Body: want.Body, Folder: want.Folder,
-				Links: written(want.Links),
-			})
-			// A path alongside a refusal means the file was written and
-			// something after it was not; the note is there under that name.
-			outcome := CreateOutcome{Created: created}
-			if err != nil {
-				outcome.Created.Title = want.Title
-				outcome.Refused = err.Error()
-			}
-			res.Created = append(res.Created, outcome)
+		created, err := core.Create.Execute(ctx, core.Vault, note.NewNote{
+			Title: in.Title, Body: in.Body, Folder: in.Folder,
+			Links: written(in.Links),
+		})
+		// A path alongside a refusal means the file was written and something
+		// after it was not; the note is there under that name.
+		outcome := CreateOutcome{Created: created}
+		if err != nil {
+			outcome.Created.Title = in.Title
+			outcome.Refused = err.Error()
 		}
-		return nil, res, nil
+		return nil, outcome, nil
 	})
 
 	sdk.AddTool(server, &sdk.Tool{

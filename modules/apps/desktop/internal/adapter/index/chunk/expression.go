@@ -1,8 +1,8 @@
-package note
+package chunk
 
 import "strings"
 
-// ftsExpression turns what a person typed into an FTS5 query.
+// Expression turns what a person typed into an FTS5 query.
 //
 // The value is already bound as a parameter, so this is not about injection: it
 // is that FTS5 parses the bound string as an expression of its own. Left alone,
@@ -15,7 +15,7 @@ import "strings"
 // user: searching for AND, OR or NEAR finds those words. That is the right trade
 // for a search box — a query language is a decision to make deliberately, not
 // something to leak because of how a string is passed along.
-func ftsExpression(typed string) string {
+func Expression(typed string) string {
 	fields := strings.Fields(typed)
 	if len(fields) == 0 {
 		return ""

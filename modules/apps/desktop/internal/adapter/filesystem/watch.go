@@ -24,7 +24,7 @@ type Watcher struct {
 	Options Options
 }
 
-// Watch follows one vault and reports the notes that change in it.
+// Watch follows one vault and reports the sources that change in it.
 //
 // The watch is on the tree, not on any file: editors save by writing a
 // temporary file and renaming it over the original, so the file a watch was
@@ -125,7 +125,7 @@ func fold(
 			}
 			paths, whole := shape.concerns(event.Path())
 			if whole {
-				// A folder that is gone takes notes with it, and their paths
+				// A folder that is gone takes sources with it, and their paths
 				// are known only to the index.
 				rescan()
 				continue
@@ -191,8 +191,9 @@ func (f *folders) forget(path string) {
 	}
 }
 
-// concerns turns an absolute path from the operating system into the notes of
-// this vault that it names.
+// concerns turns an absolute path from the operating system into the sources of
+// this vault that it names. What the vault holds is asked of the reader, so the
+// watcher and the walk answer alike.
 //
 // A file is itself, when the vault holds it. A folder is everything under it:
 // a folder arrives with its contents already in place — copied, restored,
@@ -200,7 +201,7 @@ func (f *folders) forget(path string) {
 // it is established after the fact.
 //
 // `whole` is set when the answer cannot be worked out from the disk: a folder
-// that has gone took notes with it, and their paths are known only to the
+// that has gone took sources with it, and their paths are known only to the
 // index. A path outside the vault is that case too, and is what arrives when a
 // watched folder is renamed away.
 func (f *folders) concerns(absolute string) (paths []string, whole bool) {
@@ -226,7 +227,7 @@ func (f *folders) concerns(absolute string) (paths []string, whole bool) {
 				f.are[held] = true
 				return nil
 			}
-			if f.reader.holds(held) {
+			if _, holds := f.reader.holds(held); holds {
 				found = append(found, held)
 			}
 			return nil
@@ -238,7 +239,7 @@ func (f *folders) concerns(absolute string) (paths []string, whole bool) {
 		return nil, true
 	}
 
-	if !f.reader.holds(path) {
+	if _, holds := f.reader.holds(path); !holds {
 		return nil, false
 	}
 	return []string{path}, false

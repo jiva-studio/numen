@@ -1,8 +1,10 @@
 package claudecode_test
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -29,6 +31,7 @@ func started(t *testing.T, prints string) agent.Work {
 		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
 		Words: map[string]claudecode.Words{
 			claudecode.Tool("note_search"): {Title: "Search notes", About: "query"},
+			claudecode.Tool("note_create"): {Title: "Create a note", About: "notes", Inside: "title"},
 		},
 	}
 	work, err := claude.Take(t.Context(), agent.Task{Asked: "what is here?"})
@@ -108,14 +111,29 @@ func TestReadsWordsAndCallsAsTheyAreWritten(t *testing.T) {
 		`{"type":"result","subtype":"success","is_error":false}`)
 
 	steps := heard(t, work)
-	if len(steps) != 4 {
-		t.Fatalf("the whole message was said again: %+v", steps)
+
+	var said []string
+	var calls []agent.Step
+	for _, step := range steps {
+		switch step.Kind {
+		case agent.Saying:
+			said = append(said, step.Text)
+		case agent.Calling:
+			calls = append(calls, step)
+		}
 	}
-	if steps[0].Text != "Two " || steps[1].Text != "notes." {
-		t.Errorf("words are %+v", steps[:2])
+
+	// The pieces, and not the whole that follows every piece of it.
+	if !slices.Equal(said, []string{"Two ", "notes."}) {
+		t.Errorf("the words said are %q", said)
 	}
-	if steps[2].Kind != agent.Calling || steps[2].About != "entropy" {
-		t.Errorf("call is %+v", steps[2])
+	// A call is reported as it is written and again once it is whole. What it is
+	// about is known by then.
+	if len(calls) == 0 {
+		t.Fatal("no call")
+	}
+	if last := calls[len(calls)-1]; last.About != "entropy" {
+		t.Errorf("call is %+v", last)
 	}
 }
 
@@ -195,5 +213,206 @@ func TestSaysNothingWhenTheLineSaysNothingAboutServers(t *testing.T) {
 	last := steps[len(steps)-1]
 	if last.Kind != agent.Stopped || last.Failed != "" {
 		t.Errorf("last step is %+v", last)
+	}
+}
+
+// recorded is what the agent's command line was called with, from a script that
+// writes down its arguments and answers nothing.
+func recorded(t *testing.T) []string {
+	t.Helper()
+	return recordedWith(t, func(*claudecode.Agent) {})
+}
+
+// recordedWith is recorded with the agent changed before it is started.
+func recordedWith(t *testing.T, change func(*claudecode.Agent)) []string {
+	t.Helper()
+
+	dir := t.TempDir()
+	script := filepath.Join(dir, "claude")
+	written := filepath.Join(dir, "argv")
+	body := "#!/bin/sh\nfor a in \"$@\"; do printf '%s\\n' \"$a\"; done > " + written + "\n"
+	if err := os.WriteFile(script, []byte(body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	claude := claudecode.Agent{
+		Command: []string{script},
+		Root:    dir,
+		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
+		Allowed: []string{claudecode.Tool("*")},
+	}
+	change(&claude)
+	work, err := claude.Take(t.Context(), agent.Task{Asked: "what is here?"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Drained so that the script has run and written before it is read.
+	heard(t, work)
+
+	raw, err := os.ReadFile(written)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return strings.Split(strings.TrimRight(string(raw), "\n"), "\n")
+}
+
+// The agent may look something up and may not touch this machine, so the run
+// names the whole set of tools it is started with.
+func TestTheAgentBringsOnlyTheToolsItIsNamed(t *testing.T) {
+	argv := recorded(t)
+
+	at := -1
+	for i, arg := range argv {
+		if arg == "--tools" {
+			at = i
+		}
+	}
+	if at < 0 {
+		t.Fatalf("nothing names the built-in tools: %q", argv)
+	}
+	if at+1 >= len(argv) {
+		t.Fatal("--tools was given nothing")
+	}
+
+	named := strings.Split(argv[at+1], ",")
+	// Named one at a time: a check that only counts passes when the set changes
+	// to another set of the same size.
+	if !slices.Equal(named, []string{"WebSearch", "WebFetch"}) {
+		t.Errorf("the tools it brings are %q", named)
+	}
+	// Nothing that reads or writes this machine, whatever else is added.
+	for _, refused := range []string{"Bash", "Write", "Edit", "Read", "Task", "NotebookEdit"} {
+		if slices.Contains(named, refused) {
+			t.Errorf("%s is a tool it brought", refused)
+		}
+	}
+}
+
+// One server, named in full, and no chance of another being read from the
+// machine's own configuration.
+func TestTheAgentReachesThisVaultAndNothingElse(t *testing.T) {
+	argv := recorded(t)
+
+	if !slices.Contains(argv, "--strict-mcp-config") {
+		t.Errorf("another server's configuration may still be read: %q", argv)
+	}
+	config := ""
+	for i, arg := range argv {
+		if arg == "--mcp-config" && i+1 < len(argv) {
+			config = argv[i+1]
+		}
+	}
+	if !strings.Contains(config, "127.0.0.1:7717") {
+		t.Errorf("the vault is not the server it was given: %q", config)
+	}
+}
+
+// kinds is what a run said, as the kinds of its steps in order.
+func kinds(steps []agent.Step) []agent.Kind {
+	out := make([]agent.Kind, 0, len(steps))
+	for _, s := range steps {
+		out = append(out, s.Kind)
+	}
+	return out
+}
+
+const (
+	requesting = `{"type":"system","subtype":"status","status":"requesting"}`
+	answered   = `{"type":"user","message":{"content":[{"type":"tool_result","content":"done"}]}}`
+)
+
+// The moment a request to the model begins is written into the stream, and it is
+// the moment a wait starts.
+func TestSaysWhenTheModelWasAskedSomething(t *testing.T) {
+	steps := heard(t, started(t, strings.Join([]string{connected, requesting}, "\n")))
+
+	if !slices.Contains(kinds(steps), agent.Thinking) {
+		t.Errorf("nothing says the model was asked: %+v", steps)
+	}
+}
+
+// A tool answering is the end of that tool, and the stream says so.
+func TestSaysWhenTheToolAnswered(t *testing.T) {
+	steps := heard(t, started(t, strings.Join([]string{connected, answered}, "\n")))
+
+	if !slices.Contains(kinds(steps), agent.Answered) {
+		t.Errorf("nothing says the tool finished: %+v", steps)
+	}
+}
+
+// A call carrying the body of a note is written for minutes. It is named as it
+// is reached for, and reported again as it is written.
+func TestReportsACallWhileItIsStillBeingWritten(t *testing.T) {
+	// Long enough to be reported more than once as it arrives.
+	body := strings.Repeat("Игра в кости есть корень несчастья. ", 30)
+	lines := []string{
+		connected,
+		`{"type":"stream_event","event":{"type":"content_block_start",` +
+			`"content_block":{"type":"tool_use","name":"` + claudecode.Tool("note_create") + `"}}}`,
+		delta(`{"notes":[{"title":"Vidura's warning","body":"`),
+		delta(body),
+		delta(body),
+		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,
+	}
+	steps := heard(t, started(t, strings.Join(lines, "\n")))
+
+	var calls []agent.Step
+	for _, s := range steps {
+		if s.Kind == agent.Calling {
+			calls = append(calls, s)
+		}
+	}
+	if len(calls) < 3 {
+		t.Fatalf("a call written over minutes was reported %d times: %+v", len(calls), calls)
+	}
+	if calls[0].Tool != "Create a note" {
+		t.Errorf("first says %q", calls[0].Tool)
+	}
+	// The name is read out of arguments that have not finished arriving.
+	if calls[1].About != "Vidura's warning" {
+		t.Errorf("what it is writing is %q", calls[1].About)
+	}
+	if calls[len(calls)-1].Written <= calls[1].Written {
+		t.Errorf("what has been written did not grow: %d then %d",
+			calls[1].Written, calls[len(calls)-1].Written)
+	}
+}
+
+// delta is one piece of a call's arguments as the stream writes it.
+func delta(partial string) string {
+	quoted, err := json.Marshal(partial)
+	if err != nil {
+		panic(err)
+	}
+	return `{"type":"stream_event","event":{"type":"content_block_delta",` +
+		`"delta":{"type":"input_json_delta","partial_json":` + string(quoted) + `}}}`
+}
+
+// A hook is a shell command the agent's own program runs, and it is not a tool:
+// nothing about the tools it may use has any bearing on it. A question typed
+// into a panel is not asking for one.
+func TestTheAgentReadsNothingThisMachineHoldsForIt(t *testing.T) {
+	argv := recorded(t)
+
+	if !slices.Contains(argv, "--safe-mode") {
+		t.Errorf("the machine's own hooks, skills and instructions are read: %q", argv)
+	}
+}
+
+// Asked for the person's own configuration, only theirs is read. A vault arrives
+// from elsewhere, and a settings file inside one is a vault naming commands for
+// this machine to run.
+func TestAVaultsOwnConfigurationIsNeverRead(t *testing.T) {
+	argv := recordedWith(t, func(a *claudecode.Agent) { a.ReadsHooksAndSkills = true })
+
+	if slices.Contains(argv, "--safe-mode") {
+		t.Error("the person asked for their own configuration and got none")
+	}
+	at := slices.Index(argv, "--setting-sources")
+	if at < 0 {
+		t.Fatalf("every source is read, a vault's included: %q", argv)
+	}
+	if got := argv[at+1]; got != "user" {
+		t.Errorf("the sources read are %q", got)
 	}
 }

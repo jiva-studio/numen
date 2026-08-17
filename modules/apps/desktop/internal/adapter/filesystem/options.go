@@ -5,6 +5,8 @@ import (
 	"time"
 
 	ignore "github.com/sabhiram/go-gitignore"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 )
 
 // Options are what a vault on disk may be configured with.
@@ -15,6 +17,9 @@ type Options struct {
 	// Extensions are the file extensions treated as notes, with the leading
 	// dot. Empty means the default, which is markdown alone.
 	Extensions []string
+	// BookExtensions are the file extensions treated as books, with the leading
+	// dot. Empty means the default, which is EPUB alone.
+	BookExtensions []string
 	// Ignore is what the vault says not to look at, in the syntax of
 	// `.gitignore`. Empty means the default.
 	Ignore []string
@@ -48,6 +53,10 @@ func (o Options) hold() time.Duration {
 // mean.
 var DefaultExtensions = []string{".md"}
 
+// DefaultBookExtensions is what counts as a book: EPUB, the one format an
+// extractor handles.
+var DefaultBookExtensions = []string{".epub"}
+
 // DefaultIgnore is what no vault has to ask to be left out. A name beginning
 // with a dot belongs to a tool — an editor's lock, a sync client's
 // bookkeeping.
@@ -67,8 +76,32 @@ func (o Options) extensions() []string {
 	return o.Extensions
 }
 
+func (o Options) bookExtensions() []string {
+	if len(o.BookExtensions) == 0 {
+		return DefaultBookExtensions
+	}
+	return o.BookExtensions
+}
+
+// kind says which sort of source a file's name makes it, and whether it is one
+// at all. A name that answers to both lists is a note.
+func (o Options) kind(name string) (domain.SourceKind, bool) {
+	switch {
+	case named(name, o.extensions()):
+		return domain.KindNote, true
+	case named(name, o.bookExtensions()):
+		return domain.KindBook, true
+	}
+	return "", false
+}
+
 func (o Options) isNote(name string) bool {
-	for _, ext := range o.extensions() {
+	kind, ok := o.kind(name)
+	return ok && kind == domain.KindNote
+}
+
+func named(name string, extensions []string) bool {
+	for _, ext := range extensions {
 		if len(name) > len(ext) && strings.EqualFold(name[len(name)-len(ext):], ext) {
 			return true
 		}

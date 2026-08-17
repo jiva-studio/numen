@@ -47,6 +47,7 @@ const placed = computed(() => placeTurns(props.turns))
             v-if="entry.turn.voice === 'doing'"
             :tool="entry.turn.text"
             :about="entry.turn.about ?? ''"
+            :aside="entry.turn.aside ?? ''"
             :working="entry.state === 'arriving'"
           />
           <span v-else-if="entry.voice.bubble" class="thread__text">{{ entry.turn.text }}</span>

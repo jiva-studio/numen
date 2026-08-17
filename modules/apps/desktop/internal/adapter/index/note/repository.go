@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index/sqlfile"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 )
@@ -20,6 +21,11 @@ import (
 var files embed.FS
 
 var stmt = sqlfile.Load(files, "sql")
+
+// kind is what a note is among the sources the index holds. Everything this
+// package writes and reads is one, and a path naming a file of another kind
+// answers nothing here.
+const kind = "note"
 
 // Repository is the collection of notes. It puts one in and takes one out, and
 // answers no questions about them.
@@ -79,17 +85,32 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note) error
 
 	var row int64
 	if err := tx.QueryRowContext(ctx, stmt.Get("save"),
-		vault, n.Ref.Path, domain.Basename(n.Ref.Path), n.Title, nullable(n.ID),
-		frontmatter, nullable(problem), n.Ref.Size, n.Ref.MTime).Scan(&row); err != nil {
+		vault, n.Ref.Path, kind, n.Ref.Size, n.Ref.MTime).Scan(&row); err != nil {
 		return fmt.Errorf("save: %w", err)
+	}
+	if err := exec(ctx, tx, "save_note", row, vault, domain.Basename(n.Ref.Path),
+		n.Title, nullable(n.ID), frontmatter, nullable(problem)); err != nil {
+		return err
 	}
 
 	// Derived rows are replaced wholesale: diffing them against what was there
 	// costs more than rewriting a handful of rows.
+	//
+	// The source row survives a re-save, so nothing cascades and each kind of
+	// derived row is cleared by hand. The chunks go too, and the file is then
+	// answered by "what is unchunked" until it is cut again.
 	for _, name := range []string{"clear_headings", "clear_links", "clear_problems"} {
 		if err := exec(ctx, tx, name, row); err != nil {
 			return err
 		}
+	}
+	if err := chunk.Clear(ctx, tx, row); err != nil {
+		return err
+	}
+	// The note goes in as its own large window, so the words in it are findable
+	// as soon as it is indexed.
+	if err := chunk.Write(ctx, tx, row, vault, []chunk.Window{whole(n)}); err != nil {
+		return err
 	}
 	for _, h := range n.Headings {
 		if err := exec(ctx, tx, "insert_heading", row, h.Line, h.Level, h.Text); err != nil {
@@ -116,7 +137,24 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note) error
 			return err
 		}
 	}
-	return exec(ctx, tx, "save_fts", row, n.Title, n.Body)
+	return nil
+}
+
+// whole is a note as one window. A note's large window is the note itself, and
+// what it holds is the prose plus the title, which is indexed and not embedded.
+//
+// The prose is a suffix of the file, so it begins at the file's size less its
+// own length.
+func whole(n domain.Note) chunk.Window {
+	start := int(n.Ref.Size) - len(n.Body)
+	if start < 0 {
+		start = 0
+	}
+	return chunk.Window{
+		Start:  start,
+		Length: len(n.Body),
+		Text:   n.Title + "\n" + n.Body,
+	}
 }
 
 func (r *Repository) Remove(ctx context.Context, vaultID string, paths []string) error {
@@ -142,7 +180,9 @@ func (r *Repository) Remove(ctx context.Context, vaultID string, paths []string)
 		if err != nil {
 			return fmt.Errorf("identify %s: %w", path, err)
 		}
-		if err := exec(ctx, tx, "delete_fts", row); err != nil {
+		// The full-text index and the vector index are both virtual tables, and
+		// a cascade reaches neither.
+		if err := chunk.Clear(ctx, tx, row); err != nil {
 			return err
 		}
 		if err := exec(ctx, tx, "delete", row); err != nil {

@@ -83,6 +83,41 @@ message StateResponse {
   // Why the vault is not being followed, when it is not. Changes will only
   // appear when something asks for them again.
   string unwatched = 6;
+
+  // Chunks is how many spans of text the index holds, and embedded is how many
+  // of those carry a vector. Cutting finishes long before embedding does, so
+  // the pair is what says how far searching by meaning has got. Both are zero
+  // for a vault nothing has cut yet.
+  int64 chunks = 7;
+  int64 embedded = 8;
+
+  // Reading is the source being read now, as the vault calls it. Empty when
+  // nothing is being read, which is not the same as everything being done:
+  // `ready` says that.
+  string reading = 9;
+
+  // Embedding says whether anything is going to turn the chunks into vectors.
+  // False for an installation with no model, where `embedded` stays where it is
+  // and the vault is searched by its words.
+  bool embedding = 10;
+
+  // Books is how many the vault holds, and books_read how many of those have
+  // been accounted for — read, skipped as unchanged, or found gone. Cutting is
+  // counted in books because that is what it opens; embedding is counted in
+  // chunks, and the two phases are told apart by `learning`.
+  int64 books = 11;
+  int64 books_read = 12;
+
+  // Learning is set while vectors are being made. It is what tells the two
+  // phases apart: both name a source and move a count, and the counts are of
+  // different things.
+  bool learning = 13;
+
+  // Busy is set while the vault is still being read: its notes, then its books,
+  // then their vectors. Reading a book and embedding one change no file, so this
+  // is the only thing that says there is more to come. `ready` says the notes
+  // are done, which is a smaller claim.
+  bool busy = 14;
 }
 
 message OpeningRequest {}

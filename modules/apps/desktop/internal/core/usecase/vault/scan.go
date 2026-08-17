@@ -29,8 +29,12 @@ type Scan struct {
 }
 
 // ScanResult reports what a scan did, in the terms the user cares about.
+//
+// `Seen` counts notes and nothing else, and every other number here is about
+// those notes. What the walk found that is not a note is `Assets`.
 type ScanResult struct {
-	Seen      int // markdown files found in the vault
+	Seen      int // notes found in the vault
+	Assets    int // sources of another kind found in the vault
 	Indexed   int // parsed and written, because they were new or had changed
 	Unchanged int // skipped on size and modification time alone
 	Removed   int // in the index, no longer on disk
@@ -88,6 +92,12 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	for _, ref := range found {
 		if err := ctx.Err(); err != nil {
 			return res, err
+		}
+		if ref.Kind != domain.KindNote {
+			// A source of another kind is what the vault holds, said out loud.
+			// Taking its text out of it is its own step, on its own schedule.
+			res.Assets++
+			continue
 		}
 		res.Seen++
 		seen[ref.Path] = true

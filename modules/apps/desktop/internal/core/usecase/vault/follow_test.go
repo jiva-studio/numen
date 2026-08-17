@@ -122,6 +122,25 @@ func TestAChangedNoteIsBroughtUpToDateAndReported(t *testing.T) {
 	}
 }
 
+// TestABookThatChangedIsNotANoteThatMoved. The watcher reports every kind of
+// source it sees; what a listener is told to look at again is notes.
+func TestABookThatChangedIsNotANoteThatMoved(t *testing.T) {
+	watcher := held()
+	f := following(t, map[string]string{
+		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
+	}, watcher)
+	testsupport.WriteBook(t, f.vault.Path, "library/A Book.epub")
+
+	watcher.changes <- []string{"library/A Book.epub", "Note.md"}
+
+	if got := next(t, f.moved); !slices.Equal(got.Paths, []string{"Note.md"}) {
+		t.Errorf("reported %+v", got)
+	}
+	if got := titles(t, f.index, f.vault, "entropy"); !slices.Equal(got, []string{"Note"}) {
+		t.Errorf("the index holds %v", got)
+	}
+}
+
 // TestWhatCannotBeFollowedIsRead. The one answer to not knowing what changed is
 // to look at everything, and whoever is listening is told to ask again rather
 // than told which notes moved.

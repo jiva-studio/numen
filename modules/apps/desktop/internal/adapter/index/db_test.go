@@ -88,3 +88,22 @@ func TestDSNCarriesEveryPragma(t *testing.T) {
 		t.Errorf("dsn %q does not start with the path", got)
 	}
 }
+
+func TestVectorSearchIsInTheBuild(t *testing.T) {
+	// The extension is bundled with the driver, so a build without it fails at
+	// the first query. The
+	// version floor in go.mod does not say the functions are there; this does.
+	db, err := Open(t.Context(), filepath.Join(t.TempDir(), "index.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	var version string
+	if err := db.read.QueryRowContext(t.Context(), "SELECT vec_version()").Scan(&version); err != nil {
+		t.Fatalf("vec_version() is not available: %v", err)
+	}
+	if version == "" {
+		t.Error("vec_version() returned nothing")
+	}
+}

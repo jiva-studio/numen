@@ -13,7 +13,9 @@ import (
 	"strings"
 
 	_ "modernc.org/sqlite"
+	_ "modernc.org/sqlite/vec"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index/note"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index/vault"
 )
@@ -83,12 +85,20 @@ func (d *DB) Close() error {
 
 func (d *DB) Vaults() *vault.Repository { return vault.NewRepository(d.write) }
 func (d *DB) Notes() *note.Repository   { return note.NewRepository(d.write) }
+func (d *DB) Chunks() *chunk.Repository { return chunk.NewRepository(d.write) }
 
 // Statistics writes, so it takes the pool that is allowed to.
 func (d *DB) Statistics() Statistics { return Statistics{d.write} }
 
 // NoteQueries reads, so it takes the pool that does not wait for the writer.
 func (d *DB) NoteQueries() *note.Queries { return note.NewQueries(d.read) }
+
+// ChunkQueries reads, so a search answers while a scan is still writing.
+func (d *DB) ChunkQueries() *chunk.Queries { return chunk.NewQueries(d.read) }
+
+// Sources is the source and vector ports over the chunk tables. It writes and
+// reads both, through the pool each half belongs to.
+func (d *DB) Sources() sources { return sources{write: d.Chunks(), read: d.ChunkQueries()} }
 
 func dsn(path string) string {
 	q := url.Values{}

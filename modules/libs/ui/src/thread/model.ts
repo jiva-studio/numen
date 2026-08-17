@@ -33,6 +33,12 @@ export interface Turn {
   readonly text: string
   /** What the turn is about, for a voice that has something to be about. */
   readonly about?: string
+  /**
+   * What is true of the turn beside what it says: how much of a call has been
+   * written, how long a wait has lasted, what a finished piece of work took.
+   * It is the part that moves while nothing else does.
+   */
+  readonly aside?: string
   readonly state?: TurnState
 }
 
@@ -53,3 +59,24 @@ export const placeTurns = (turns: readonly Turn[]): readonly PlacedTurn[] =>
       state,
     }
   })
+
+/**
+ * How much of a call has been written, in words.
+ *
+ * A call carrying the text of a note is written for minutes, and this is the
+ * only thing about it that moves. Grouped in thousands, because the numbers
+ * reach five figures on one note.
+ */
+export const charsWord = (written: number): string =>
+  written <= 0 ? '' : `${grouped(written)} characters`
+
+
+const grouped = (n: number): string => {
+  const digits = String(Math.max(0, Math.floor(n)))
+  let out = ''
+  for (let i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 === 0) out += ' '
+    out += digits[i]
+  }
+  return out
+}

@@ -32,7 +32,13 @@ const nap = () => new Promise((wake) => setTimeout(wake, 0))
 const now = (draw: () => void) => draw()
 
 const said = (text: string): Step => ({ kind: 'said', text })
-const used = (tool: string, about = ''): Step => ({ kind: 'doing', tool, about })
+const used = (tool: string, about = '', written = 0): Step => ({
+  kind: 'doing',
+  tool,
+  about,
+  written,
+})
+const answered = (): Step => ({ kind: 'answered' })
 const stopped = (failed = ''): Step => ({ kind: 'stopped', failed })
 
 describe('an answer', () => {
@@ -140,4 +146,55 @@ describe('a tool nobody titled', () => {
 
     expect(seen).toBe('note search')
   })
+})
+
+describe('a wait that explains itself', () => {
+  it('shows which note is being written while it is being written', async () => {
+    let release = () => {}
+    const held = new Promise<void>((go) => {
+      release = go
+    })
+    const talk = conversation(
+      doing([used('Create a note', "Vidura's warning", 12015)], held),
+      words,
+      now,
+    )
+    const asking = talk.ask('write it up', '')
+    await nap()
+
+    const line = talk.turns.value.find((turn) => turn.voice === 'doing')
+    expect(line?.text).toBe('Create a note')
+    // Which note, before the note exists: the name is read out of a call that
+    // has not finished being written.
+    expect(line?.about).toBe("Vidura's warning")
+    // The only thing that moves while twelve thousand characters are typed.
+    expect(line?.aside).toBe('12 015 characters')
+
+    release()
+    await asking
+  })
+
+  it('stops naming a tool that has answered', async () => {
+    let release = () => {}
+    const held = new Promise<void>((go) => {
+      release = go
+    })
+    const talk = conversation(
+      doing([used('Create a note', "Vidura's warning", 4000), answered()], held),
+      words,
+      now,
+    )
+    const asking = talk.ask('write it up', '')
+    await nap()
+
+    // The note is written and the tool is done, and the line says a request to
+    // the model has begun.
+    const line = talk.turns.value.find((turn) => turn.voice === 'doing')
+    expect(line?.text).toBe(words.thinking)
+    expect(line?.about).toBe('')
+
+    release()
+    await asking
+  })
+
 })

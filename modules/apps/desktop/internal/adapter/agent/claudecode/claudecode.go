@@ -11,7 +11,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -34,14 +36,22 @@ type Agent struct {
 	Root string
 	// Tools is where it reaches this vault.
 	Tools Endpoint
-	// Allowed are the tools it may use without being asked. Anything else is
-	// refused.
+	// Allowed are the tools it may use without being asked. It names this
+	// vault's tools: the agent is started with none of its own, so there is
+	// nothing else to approve.
 	Allowed []string
 	// Words are how the tools this vault serves are spoken about, by the name
 	// the agent calls them. A tool that is not here is named as it named
 	// itself.
 	Words map[string]Words
-	// Turns is how many times the agent may go round before it is stopped.
+	// Model is which model answers, by the name the command line knows it as.
+	// Empty leaves the choice to the installation the agent belongs to.
+	Model string
+	// ReadsHooksAndSkills lets the agent read what this machine holds for it:
+	// hooks, skills, standing instructions, plugins. What a vault carries is
+	// refused whether this is set or not.
+	ReadsHooksAndSkills bool
+	// Turns is how many times the agent may go to the model before it is stopped.
 	Turns int
 	// Trouble is told what the agent wrote to its error output when something
 	// went wrong.
@@ -84,6 +94,7 @@ func (a *Agent) Take(ctx context.Context, task agent.Task) (agent.Work, error) {
 	name, rest := a.command()
 	cmd := exec.CommandContext(running, name, append(rest, a.arguments(task)...)...)
 	cmd.Dir = a.Root
+	cmd.Env = environment(os.Environ())
 	detach(cmd)
 
 	// The whole group goes, and the pipes are let go of shortly after: a
@@ -138,12 +149,21 @@ func (a *Agent) command() (string, []string) {
 	return a.Command[0], a.Command[1:]
 }
 
+// brought is the tools the agent may use besides this vault's own: it may look
+// something up, and it may not touch this machine. Every other built-in — a
+// shell, a file writer, a file reader — is absent.
+const brought = "WebSearch,WebFetch"
+
 // arguments are what the agent is started with.
 //
 // Only what the command line documents: the task on the command line, the
 // answer as one JSON object per line, this vault's tools and no other server's,
-// and the tools named in Allowed approved ahead of the run. What the agent may
-// do with the tools it brought itself is its own permission mode's answer.
+// and the tools named in Allowed approved ahead of the run.
+//
+// The tools it brings are the two that reach the web; every other built-in is
+// disabled. An agent works this vault through the tools this vault serves, and
+// every one of those goes through a use case that says what a note is and keeps
+// the index level with the file.
 func (a *Agent) arguments(task agent.Task) []string {
 	turns := a.Turns
 	if turns <= 0 {
@@ -157,9 +177,21 @@ func (a *Agent) arguments(task agent.Task) []string {
 		"--include-partial-messages",
 		"--strict-mcp-config",
 		"--mcp-config", a.servers(),
+		"--tools", brought,
 		"--permission-mode", "dontAsk",
 		"--max-turns", fmt.Sprint(turns),
 		"--append-system-prompt", manners(task),
+	}
+	// A hook is a shell command, and a settings file inside a vault is a vault
+	// telling this machine what to run. Safe mode reads none of it; asked for the
+	// person's own, only theirs is read, and a vault's is left where it is.
+	if a.ReadsHooksAndSkills {
+		args = append(args, "--setting-sources", "user")
+	} else {
+		args = append(args, "--safe-mode")
+	}
+	if a.Model != "" {
+		args = append(args, "--model", a.Model)
 	}
 	if len(a.Allowed) > 0 {
 		args = append(args, "--allowedTools", strings.Join(a.Allowed, ","))
@@ -168,6 +200,38 @@ func (a *Agent) arguments(task agent.Task) []string {
 		args = append(args, "--resume", session)
 	}
 	return args
+}
+
+// session names the variables that describe a Claude Code session somebody else
+// is running.
+//
+// A window is not one, so these are stripped from the environment the agent is
+// started with. What says how to reach a model is not here: that belongs to the
+// installation and is passed on.
+var session = []string{
+	"CLAUDECODE",
+	"CLAUDE_CODE_SESSION_ID",
+	"CLAUDE_CODE_CHILD_SESSION",
+	"CLAUDE_CODE_ENTRYPOINT",
+	"CLAUDE_CODE_EXECPATH",
+	"CLAUDE_CODE_MESSAGING_SOCKET",
+	"CLAUDE_CODE_MESSAGING_TOKEN",
+	"CLAUDE_PID",
+	"CLAUDE_EFFORT",
+}
+
+// environment is what the agent is started with: everything the machine holds,
+// less what belongs to a session it is not part of.
+func environment(held []string) []string {
+	out := make([]string, 0, len(held))
+	for _, entry := range held {
+		name, _, found := strings.Cut(entry, "=")
+		if found && slices.Contains(session, name) {
+			continue
+		}
+		out = append(out, entry)
+	}
+	return out
 }
 
 // manners is what the agent is told about the person it is answering.
@@ -226,6 +290,9 @@ func Tool(name string) string { return prefix + name }
 type Words struct {
 	Title string
 	About string
+	// Inside names the field of one element that says which element it is, for
+	// a call that takes a collection.
+	Inside string
 }
 
 // work is one task being worked, and what stops it.

@@ -1,6 +1,6 @@
 -- What parsing each file turned up, as the parser said it.
-SELECT n.path, p.detail
+SELECT s.path, p.detail
 FROM problems p
-JOIN notes n ON n.id = p.note_id
-WHERE n.vault_id = ?
-ORDER BY n.path, p.rowid;
+JOIN sources s ON s.id = p.note_id
+WHERE s.vault_id = ?
+ORDER BY s.path, p.rowid;

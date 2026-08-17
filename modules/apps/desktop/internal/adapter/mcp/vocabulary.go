@@ -15,6 +15,10 @@ import (
 type Words struct {
 	Title string
 	About string
+	// Inside names the field of one element that says which element it is, for
+	// a call that takes a collection. Creating three notes is about three
+	// titles, and the collection itself is about nothing a person can read.
+	Inside string
 }
 
 // Vocabulary asks the server what it serves, and reads the answer.
@@ -40,7 +44,12 @@ func Vocabulary(ctx context.Context, core Core) (map[string]Words, error) {
 
 	words := make(map[string]Words, len(listed.Tools))
 	for _, tool := range listed.Tools {
-		words[tool.Name] = Words{Title: titleOf(tool), About: firstRequired(tool.InputSchema)}
+		about := firstRequired(tool.InputSchema)
+		words[tool.Name] = Words{
+			Title:  titleOf(tool),
+			About:  about,
+			Inside: firstRequiredInside(tool.InputSchema, about),
+		}
 	}
 	return words, nil
 }
@@ -69,4 +78,43 @@ func firstRequired(schema any) string {
 	}
 	first, _ := required[0].(string)
 	return first
+}
+
+// holds reports whether a declared type is the one named. A field that may be
+// left out is declared as several types at once, so the declaration is a name or
+// a list of them.
+func holds(declared any, kind string) bool {
+	switch value := declared.(type) {
+	case string:
+		return value == kind
+	case []any:
+		for _, one := range value {
+			if name, _ := one.(string); name == kind {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// firstRequiredInside is what one element of a collection argument is named by:
+// the field that element cannot be given without. Empty for an argument that is
+// not a collection of things with names of their own.
+func firstRequiredInside(schema any, field string) string {
+	declared, ok := schema.(map[string]any)
+	if !ok || field == "" {
+		return ""
+	}
+	properties, ok := declared["properties"].(map[string]any)
+	if !ok {
+		return ""
+	}
+	argument, ok := properties[field].(map[string]any)
+	if !ok {
+		return ""
+	}
+	if !holds(argument["type"], "array") {
+		return ""
+	}
+	return firstRequired(argument["items"])
 }
