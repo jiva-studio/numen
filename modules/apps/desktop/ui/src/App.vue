@@ -1,13 +1,14 @@
 <script setup lang="ts">
 /**
- * The window: one vault, one note in focus, and the plex around it.
+ * The window: one vault, and tabs to divide the screen between.
  *
  * Choosing a node asks for that note's neighbourhood and hands it back to the
  * plex, which travels there by itself. What decides when to ask is in
- * `showing.ts`.
+ * `showing.ts`; what each tab stands for is settled here and nowhere else.
  */
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { Activity, AgentPanel, Plex, remainingWord } from '@numen/ui'
+import { Activity, Agent, Plex, Workspace, remainingWord } from '@numen/ui'
+import type { WorkspaceLayout } from '@numen/ui'
 import '@numen/ui/styles.css'
 import { core } from './vault'
 import { showing } from './showing'
@@ -15,6 +16,7 @@ import { footOf, type Phase } from './foot'
 import { asPlex } from './plex'
 import { core as agent } from './agent'
 import { conversation } from './conversation'
+import { AGENT, PLEX, TABS, opening } from './workspace'
 
 const window = showing(core)
 const { neighbourhood, indexing, failure, notice, trouble, unwatched, go } = window
@@ -66,6 +68,7 @@ const activity = computed(() => {
 
 const { turns, working, ask, close } = conversation(agent, words)
 const asked = ref('')
+const layout = ref<WorkspaceLayout>(opening())
 
 const send = (text: string) => {
   asked.value = ''
@@ -90,29 +93,31 @@ onUnmounted(() => {
     <p v-else-if="!neighbourhood && trouble" class="waiting">nothing was read</p>
     <p v-else-if="!neighbourhood" class="waiting">this vault holds no notes</p>
 
-    <div class="below">
-      <Plex
-        v-if="neighbourhood && !failure && !indexing"
-        class="plex"
-        :neighbourhood="asPlex(neighbourhood)"
-        :creatable="[]"
-        @activate="go"
-      />
-      <div v-else class="plex" />
+    <Workspace v-model="layout" class="below" :tabs="TABS">
+      <template #tab="{ id }">
+        <Plex
+          v-if="id === PLEX && neighbourhood && !failure && !indexing"
+          :neighbourhood="asPlex(neighbourhood)"
+          :creatable="[]"
+          @activate="go"
+        />
 
-      <AgentPanel
-        v-model="asked"
-        class="agent"
-        :turns="turns"
-        :working="working"
-        :placeholder="words.ask"
-        @submit="send"
-      >
-        <template #failure="{ turn }">
-          {{ turn.voice === 'asked' ? words.unsent : words.stopped }}
-        </template>
-      </AgentPanel>
-    </div>
+        <Agent
+          v-else-if="id === AGENT"
+          v-model="asked"
+          :turns="turns"
+          :working="working"
+          :placeholder="words.ask"
+          @submit="send"
+        >
+          <template #failure="{ turn }">
+            {{ turn.voice === 'asked' ? words.unsent : words.stopped }}
+          </template>
+        </Agent>
+
+        <div v-else />
+      </template>
+    </Workspace>
 
     <Activity
       class="activity"
@@ -133,22 +138,8 @@ main {
 }
 
 .below {
-  display: flex;
   flex: 1;
   min-height: 0;
-}
-
-.plex {
-  flex: 1;
-  min-width: 0;
-}
-
-/* Floating: clear of the top, the bottom and the trailing edge. */
-.agent {
-  flex: none;
-  inline-size: clamp(24rem, 32vw, 40rem);
-  margin-block: var(--numen-inset-wide);
-  margin-inline-end: var(--numen-inset-wide);
 }
 
 /* The foot of the window: clear of the plex, quiet when there is no work. */

@@ -49,8 +49,48 @@ export { default as Activity } from './activity/Activity.vue'
 export { activity, percentWord, rateOf, remainingWord, shareOf, tallyWord } from './activity/model'
 export type { ActivityDescriptor, ActivityState, Tally } from './activity/model'
 
+export { default as Agent } from './assembled/Agent.vue'
 
-export { default as AgentPanel } from './assembled/AgentPanel.vue'
+export { default as Workspace } from './workspace/Workspace.vue'
+export {
+  activateTab,
+  closeTab,
+  dropOnEdge,
+  dropTab,
+  focusGroup,
+  moveTabWithin,
+  openTab,
+  resizeBranch,
+} from './workspace/edit'
+export type { Naming, TabDrop } from './workspace/edit'
+
+/** For arranging without drawing, or reading a gesture without this renderer. */
+export { arrangeWorkspace, DEFAULT_ARRANGE } from './workspace/arrange'
+export { DEFAULT_DROP, overlayFor, sideAt, slotAt } from './workspace/drop'
+export {
+  branch,
+  group,
+  groupById,
+  groupWithTab,
+  groupsOf,
+  isBranch,
+  isGroup,
+  normalize,
+  orientationAt,
+  orientationOf,
+} from './workspace/model'
+export type {
+  Branch as WorkspaceBranchNode,
+  Group as WorkspaceGroupNode,
+  NodeId,
+  Orientation,
+  Rect,
+  Side,
+  TabId,
+  TabLabel,
+  Workspace as WorkspaceLayout,
+  WorkspaceNode,
+} from './workspace/model'
 
 export type { Environment, PlexTransition } from './plex/transition'
 export type {
