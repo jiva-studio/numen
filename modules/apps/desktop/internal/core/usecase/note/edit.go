@@ -26,34 +26,50 @@ type editing struct {
 	now         func() time.Time
 	fingerprint domain.FileRef
 	// overwrite is a caller writing what is in front of the person: the note
-	// on disk is replaced without being compared to anything, a note that is
+	// on disk is replaced without being held to a fingerprint, a note that is
 	// not there is made, and no identifier is stamped.
 	overwrite bool
+	// seen is what the caller last saw of the note, and is what a file that is
+	// there is compared with. Nil for a caller that puts its text down whatever
+	// the note now holds.
+	seen *Seen
 }
 
-func (e editing) apply(ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error) error {
-	if err := e.splice(ctx, v, path, change); err != nil {
-		return err
+func (e editing) apply(ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error) (domain.FileRef, error) {
+	written, err := e.splice(ctx, v, path, change)
+	if err != nil {
+		return domain.FileRef{}, err
 	}
 	if e.index == nil {
-		return nil
+		return written, nil
 	}
-	return e.index(ctx, v, []string{path})
+	return written, e.index(ctx, v, []string{path})
 }
 
 // splice is the read, the change and the write, under this vault's write lock
 // from before the read until after the file is replaced.
-func (e editing) splice(ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error) error {
+func (e editing) splice(
+	ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error,
+) (domain.FileRef, error) {
 	release, err := e.writers.Hold(ctx, v)
 	if err != nil {
-		return err
+		return domain.FileRef{}, err
 	}
 	defer release()
 
 	reader, err := e.readers.Open(v)
 	if err != nil {
-		return err
+		return domain.FileRef{}, err
 	}
+
+	// What the file is, asked before its bytes are read, which is the order a
+	// read hands its fingerprint over in.
+	var on domain.FileRef
+	var looked error
+	if e.seen != nil || (e.fingerprint == (domain.FileRef{}) && !e.overwrite) {
+		on, looked = reader.Stat(ctx, path)
+	}
+
 	raw, err := reader.Read(ctx, path)
 	switch {
 	case err == nil:
@@ -63,7 +79,7 @@ func (e editing) splice(ctx context.Context, v domain.Vault, path string, change
 		// arrives when the application changes a note's contents.
 		raw = nil
 	default:
-		return fmt.Errorf("read %s: %w", path, err)
+		return domain.FileRef{}, fmt.Errorf("read %s: %w", path, err)
 	}
 
 	// Every edit is a read, a think and a write, and the person may save the
@@ -72,17 +88,24 @@ func (e editing) splice(ctx context.Context, v domain.Vault, path string, change
 	// read just now. A caller writing over what is there is held to neither.
 	against := e.fingerprint
 	if against == (domain.FileRef{}) && !e.overwrite {
-		if against, err = reader.Stat(ctx, path); err != nil {
-			return fmt.Errorf("look at %s: %w", path, err)
+		if looked != nil {
+			return domain.FileRef{}, fmt.Errorf("look at %s: %w", path, looked)
 		}
+		against = on
 	}
 	doc, err := markdown.Open(raw)
 	if err != nil {
-		return fmt.Errorf("%s: %w", path, err)
+		return domain.FileRef{}, fmt.Errorf("%s: %w", path, err)
+	}
+
+	// A note that is not there cannot hold anything the caller has not read, so
+	// it is made.
+	if looked == nil && e.seen.stale(on, markdown.Normalised(doc.Body())) {
+		return domain.FileRef{}, fmt.Errorf("write %s: %w", path, port.ErrChanged)
 	}
 
 	if err := change(doc); err != nil {
-		return fmt.Errorf("%s: %w", path, err)
+		return domain.FileRef{}, fmt.Errorf("%s: %w", path, err)
 	}
 
 	// The application is editing this note, so it may write the identifier the
@@ -97,16 +120,16 @@ func (e editing) splice(ctx context.Context, v domain.Vault, path string, change
 		}
 		identifier, err := ulid.New(at())
 		if err != nil {
-			return err
+			return domain.FileRef{}, err
 		}
 		if err := doc.SetIdentifier(identifier); err != nil {
-			return err
+			return domain.FileRef{}, err
 		}
 	}
 
 	writer, err := e.writers.Open(v)
 	if err != nil {
-		return err
+		return domain.FileRef{}, err
 	}
 	return writer.Write(ctx, path, doc.Bytes(), against)
 }

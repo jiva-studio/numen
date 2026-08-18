@@ -38,8 +38,9 @@ service VaultService {
   rpc Read(ReadRequest) returns (ReadResponse);
 
   // Write puts prose into a note, keeping the frontmatter the file has when the
-  // write lands and creating the file where there is none. What was on disk
-  // under an edit made elsewhere is replaced.
+  // write lands and creating the file where there is none. A note that no
+  // longer holds the prose the caller read is left alone and answered
+  // `changed`.
   rpc Write(WriteRequest) returns (WriteResponse);
 
   // Create makes a note. The file is named after the title, and the links the
@@ -55,8 +56,9 @@ service VaultService {
   // answers with Flushed.
   rpc Quitting(QuittingRequest) returns (stream QuittingResponse);
 
-  // Flushed says a caller has written everything it owed, and the window may
-  // go. A caller that never says it is waited for and then left behind.
+  // Flushed says what a caller has left. Nothing left lets the window go; work
+  // a person is being asked about keeps it open. A caller that never says it is
+  // waited for and then left behind.
   rpc Flushed(FlushedRequest) returns (FlushedResponse);
 }
 
@@ -220,6 +222,31 @@ message ReadResponse {
 
   // Set when the note was not read, and why.
   optional Refusal refusal = 2;
+
+  // The file this prose came out of. Absent when the note was refused.
+  optional Fingerprint at = 3;
+}
+
+// Fingerprint is which file this is: where it is filed, how big it is, and when
+// it last changed.
+message Fingerprint {
+  string path = 1;
+  int64 size = 2;
+
+  // When the file last changed, in nanoseconds since the epoch.
+  int64 mtime = 3;
+}
+
+// Seen is what a caller last saw of a note: the prose a read gave it, and the
+// file that read came out of. A note still holding either is the note this
+// caller read.
+message Seen {
+  // The prose below the frontmatter, with line endings as LF, as the read gave
+  // it.
+  string prose = 1;
+
+  // The file the prose came out of.
+  Fingerprint at = 2;
 }
 
 message WriteRequest {
@@ -227,11 +254,23 @@ message WriteRequest {
 
   // The prose to put below the frontmatter, with line endings as LF.
   string body = 2;
+
+  // What this caller last saw of the note. Absent for a write that lands on
+  // whatever the note now holds.
+  optional Seen seen = 3;
 }
 
 message WriteResponse {
   // Set when nothing was written, and why.
   optional Refusal refusal = 1;
+
+  // Set when the note holds prose this caller has not read. Nothing was
+  // written, and the person chooses what happens to their text.
+  bool changed = 2;
+
+  // The file the write produced, for the caller to present at its next write.
+  // Absent when nothing was written.
+  optional Fingerprint at = 3;
 }
 
 // NewLink is one relationship as the note it is written in declares it: the
@@ -274,6 +313,10 @@ message JoinRequest {
 message JoinResponse {
   // Set when nothing was written, and why.
   optional Refusal refusal = 1;
+
+  // Set when the note changed between being read and being written. Nothing
+  // was written, and the caller reads the note again before asking for this.
+  bool changed = 2;
 }
 
 message QuittingRequest {}
@@ -287,9 +330,25 @@ message QuittingResponse {
   bool flush = 2;
 }
 
+// Owed is what a caller has left when it answers.
+enum Owed {
+  // Nothing is left.
+  OWED_UNSPECIFIED = 0;
+
+  // Everything this caller held is written.
+  OWED_WRITTEN = 1;
+
+  // Something this caller holds could not be written, and a person is being
+  // asked what to do with it. The window stays until they answer.
+  OWED_ASKING = 2;
+}
+
 message FlushedRequest {
   // The token this caller was given when it began listening.
   string token = 1;
+
+  // What this caller has left.
+  Owed owed = 2;
 }
 
 message FlushedResponse {}

@@ -164,7 +164,8 @@ func (u Move) repair(ctx context.Context, v domain.Vault, in string, address dom
 	if err != nil {
 		return false, err
 	}
-	return true, writer.Write(ctx, in, doc.Bytes(), domain.FileRef{})
+	_, err = writer.Write(ctx, in, doc.Bytes(), domain.FileRef{})
+	return true, err
 }
 
 func (u Move) index(ctx context.Context, v domain.Vault, paths ...string) error {

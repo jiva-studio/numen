@@ -57,7 +57,7 @@ func BenchmarkSave(b *testing.B) {
 			for i := range b.N {
 				// Every save writes something different, which is what a person
 				// typing does and what the index has to notice.
-				if err := write.Save(b.Context(), v, path, fmt.Sprintf("%s\n\n%d\n", body, i)); err != nil {
+				if _, err := write.Save(b.Context(), v, path, fmt.Sprintf("%s\n\n%d\n", body, i), nil); err != nil {
 					b.Fatal(err)
 				}
 			}

@@ -3,9 +3,9 @@
 - **Status:** Accepted, except where noted below
 - **Date:** 2026-08-15
 - **Applies to:** the product — every application in this repository
-- **Partly superseded by:** ADR-0032 — items 2, 3 and 4 of the honest list below:
-  what recognises a write coming back, what reconciliation covers, and the conflict
-  copy with the rule that there is no silent winner
+- **Partly superseded by:** ADR-0032 — items 2 and 3 of the honest list below, and
+  the conflict copy of item 4: what recognises a write coming back, what
+  reconciliation covers, and the copy that is not written
 - **Related:** ADR-0000, ADR-0002
 
 ## Context
@@ -63,16 +63,16 @@ problems, all of which have to be implemented:
    user; the application must reconcile rather than overwrite.
 
    > **Partly superseded by [ADR-0032](0032-the-window-saves-a-note-as-it-is-typed.md).**
-   > A tab with nothing unsaved reads its file again and shows what it holds. A tab
-   > with unsaved text keeps what the person typed, and its next save carries that
-   > over whatever landed.
+   > Nothing is reconciled. A tab with nothing unsaved reads its file again and shows
+   > what it holds; a tab with unsaved text stops saving, says which file moved under
+   > it, and waits for the person to keep their prose or take the file's.
 
 4. **Conflict copies.** When the buffer is dirty *and* the file changed on disk,
    reconciliation is impossible and a conflict copy is written. No silent winner.
 
-   > **Superseded by [ADR-0032](0032-the-window-saves-a-note-as-it-is-typed.md).**
-   > The window's save overwrites and writes no copy. What that costs is stated
-   > there.
+   > **Partly superseded by [ADR-0032](0032-the-window-saves-a-note-as-it-is-typed.md).**
+   > No copy is written. There is no silent winner either: the save stops, the tab
+   > says so, and the person picks the prose that survives.
 
 5. **Metadata outliving its files.** Rows can survive the file they describe, so
    startup has to detect that.

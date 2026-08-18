@@ -37,10 +37,20 @@ export interface Core {
   changes(signal: AbortSignal): AsyncIterable<{ paths: string[]; reload: boolean }>
   /** The notes something else asked to be put in front of the person. */
   focus(signal: AbortSignal): AsyncIterable<{ path: string }>
-  /** The prose of a note, below its frontmatter. */
-  read(path: string): Promise<Answered>
-  /** Prose into a note, keeping the frontmatter the file has when it lands. */
-  write(path: string, body: string): Promise<Answered>
+  /** The prose of a note, below its frontmatter, and the file it came out of. */
+  read(path: string): Promise<Answered & { at?: string }>
+  /**
+   * Prose into a note, keeping the frontmatter the file has when it lands.
+   *
+   * Seen is what a read gave this caller. Prose on disk that the caller never
+   * saw comes back as changed, and nothing is written. Nothing seen writes
+   * over whatever is there.
+   */
+  write(
+    path: string,
+    body: string,
+    seen: { prose: string; at: string } | null,
+  ): Promise<Answered & { at?: string; changed?: boolean }>
   /** A note made, named after the title it is given and joined as it is written. */
   create(note: NewNote): Promise<Made>
   /**
@@ -54,7 +64,7 @@ export interface Core {
    */
   quitting(signal: AbortSignal): AsyncIterable<{ token: string; flush: boolean }>
   /** Everything this client owed has been written. */
-  flushed(token: string): Promise<void>
+  flushed(token: string, owed?: 'written' | 'asking'): Promise<void>
 }
 
 /**

@@ -5,6 +5,8 @@
 - **Extended:** 2026-08-17 — `source`, `chunk`, `location`, `passage` (ADR-0006)
 - **Extended:** 2026-08-17 — `reload`, `hash`, `mark`, `stuck`; `focus` settled a
   third time (ADR-0032, ADR-0034)
+- **Extended:** 2026-08-18 — `overtaken`, `keep`, `take`; `mark` takes a third
+  value and an order (ADR-0032)
 - **Applies to:** the product as a whole
 - **Related:** ADR-0003, ADR-0006, ADR-0011, ADR-0014, ADR-0020, ADR-0032,
   ADR-0034
@@ -132,7 +134,10 @@ in one place, meaning the obvious thing, needs no entry.
 | menu | A list of things that can be done, opened on what they are done to |
 | unsaved | A tab whose text is not the text in its file |
 | stuck | A tab whose file can be neither read nor written: not a note, not text, over the ceiling, or frontmatter that will not parse (ADR-0032) |
-| mark | The one word a tab carries beside its title for the state it is in, and what a screen reader reads out: `unsaved` or `stuck` |
+| overtaken | A tab whose file no longer holds the prose the tab read, so its save stopped (ADR-0032) |
+| keep | Writing an overtaken tab's prose over its file, when the person says so (ADR-0032) |
+| take | Replacing an overtaken tab's prose with its file's, when the person says so (ADR-0032) |
+| mark | The one word a tab carries beside its title for the state it is in, and what a screen reader reads out: `stuck`, `overtaken` or `unsaved`, the first of those that holds |
 
 ### Words that were spent twice, and how they are settled
 
@@ -182,6 +187,14 @@ in a stylesheet will guess wrong exactly once and be wrong everywhere after.
 beside the title and read out as the tab's own label. Markdown's syntax characters
 are markup, and where the editor says mark it is the library's `Decoration.mark`,
 which does not leave the module that calls it.
+
+**`changed` and `overtaken`.** `changed` says a file is no longer what somebody
+read: a write answers it, and a watcher's event carries the paths it happened to.
+`overtaken` is the tab whose save stopped for that reason, and it is a mark, which
+is a word about a tab.
+
+**`reload` and `take`.** A client told to `reload` reads the vault again whole. A
+`take` is one tab reading one file, and the person asks for it.
 
 **`hash`.** Two, and what each is taken over settles them. A source's `hash` is
 over the bytes of a file and says which file it is (ADR-0006). A chunk's `hash` is

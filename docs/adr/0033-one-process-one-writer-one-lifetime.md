@@ -8,10 +8,11 @@
 ## Context
 
 ADR-0027 gave the core a write path that reads a note, changes one thing and puts
-it back. ADR-0032 gave the window a save of the same shape, and rests a promise on
-it: a link an agent adds to an open note survives that note's next save. The
-promise holds only if the read and the rename are one act, and nothing said where
-that is arranged or how far it reaches.
+it back. An agent's edit is that shape, the link repair a move leaves in another
+note is that shape, and so is the window's save, which reads the file for the
+frontmatter it does not hold (ADR-0032). Each is correct only if its read and its
+rename are one act against the others, and nothing said where that is arranged or
+how far it reaches.
 
 Two more rules were arranged in the same place and written down nowhere. ADR-0032
 says a quit writes what is owed and waits for it, with no bound on the wait.
@@ -38,7 +39,11 @@ is one filesystem call over one name.
 
 **The lock lives in this process.** Two windows on one vault hold a lock each.
 
-### The window goes in one order, and each wait has a bound
+### The window goes in one order, and every wait on the machine has a bound
+
+**A tab whose save stopped is answered first.** The quit lists every overtaken tab
+(ADR-0032) and waits for the person to answer each one, with no bound. The quit is
+called off from that list, and the window stays as it was.
 
 The page is asked first, then the agents, then the scan and the follower, then the
 database. The order is what each part needs from the next: the page holds text
@@ -68,18 +73,20 @@ stops where it is, and what it had already written to the vault stays written.
 
 **Positive**
 
-- The promise ADR-0032 rests on is one lock in one file, and what it covers is one
-  function.
+- Every operation that reads a note and puts it back queues on one lock in one
+  file, and what that covers is one function.
 - Nothing an agent started keeps running once the window is gone, and nothing it
   writes lands after the index stopped following the vault.
-- A wedged page costs three seconds and then the window goes.
+- A quit with no tab to ask about is bounded: a wedged page costs three seconds and
+  then the window goes. A quit that does have one waits on the person, and they can
+  call it off.
 
 **Negative**
 
 - **There is no lock between two processes on one vault.** Two windows, or a window
-  and the command line, interleave their reads and renames, and ADR-0032's silent
-  winner is then between them. A file synchroniser is a third process and takes no
-  part in this at all.
+  and the command line, interleave their reads and renames, so a save can pass
+  ADR-0032's comparison and land on a write made between the two. A file
+  synchroniser is a third process and takes no part in this at all.
 - **A create, a move and a removal are not serialised against a save.** A note
   renamed while a save is in the air leaves the tab open at the name it was read
   from, and ADR-0032 puts the file back there.
@@ -101,9 +108,9 @@ close is written above as a cost.
 (ADR-0002) and the writes here are to files, so two vaults have nothing to queue
 behind each other for.
 
-**No bound on the quit at all**, waiting for the page however long it takes.
-Rejected: a webview already torn down answers never, and the window would then
-never close.
+**No bound on the wait for the page**, however long it takes. Rejected: a webview
+already torn down answers never, and the window would then never close. The wait
+with no bound is the one a person is answering.
 
 **Let an agent finish, and keep the process alive until it does.** Rejected: the
 window is gone, nothing is drawing what the agent says, and the tools it writes

@@ -31,7 +31,11 @@ type VaultWriter interface {
 	// is on disk. A file that no longer matches it is left alone and
 	// ErrChanged is returned: the caller read a note, thought about it, and
 	// something else wrote in the meantime.
-	Write(ctx context.Context, path string, content []byte, fingerprint domain.FileRef) error
+	//
+	// What comes back is the fingerprint of the file this write produced,
+	// which is what the caller presents at its next write. It is the zero
+	// value when nothing was written.
+	Write(ctx context.Context, path string, content []byte, fingerprint domain.FileRef) (domain.FileRef, error)
 
 	// Create puts content where there is nothing, and refuses where there is
 	// something. Looking first and writing after is not the same promise: two

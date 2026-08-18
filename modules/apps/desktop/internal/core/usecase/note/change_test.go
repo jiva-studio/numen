@@ -340,15 +340,51 @@ func TestAWriteRefusesToLandOnAnEditItDidNotSee(t *testing.T) {
 	}
 
 	// Somebody else gets there first.
-	if err := writing.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nTheirs.\n", domain.FileRef{}); err != nil {
+	if _, err := writing.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nTheirs.\n", domain.FileRef{}); err != nil {
 		t.Fatal(err)
 	}
 
-	err = writing.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nMine.\n", stale)
+	_, err = writing.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nMine.\n", stale)
 	if !errors.Is(err, port.ErrChanged) {
 		t.Fatalf("want ErrChanged, got %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Theirs.") {
 		t.Errorf("the refused write landed anyway:\n%s", body)
+	}
+}
+
+// A caller that wrote a note and writes it again presents the fingerprint its
+// own write answered with. Holding the one it read would leave every sitting
+// with one write in it.
+func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
+	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	writing := note.Write{
+		Readers: filesystem.Readers{}, Writers: filesystem.Writers{}, Index: c.index,
+	}
+
+	reader, err := (filesystem.Readers{}).Open(c.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	read, err := reader.Stat(t.Context(), "Entropy.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	at, err := writing.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nOne.\n", read)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if at == (domain.FileRef{}) {
+		t.Fatal("the write answered with no fingerprint")
+	}
+
+	if _, err := writing.Execute(
+		t.Context(), c.vault, "Entropy.md", "# Entropy\n\nTwo.\n", at,
+	); err != nil {
+		t.Fatalf("the write after a write was refused: %v", err)
+	}
+	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Two.") {
+		t.Errorf("the second write did not land:\n%s", body)
 	}
 }

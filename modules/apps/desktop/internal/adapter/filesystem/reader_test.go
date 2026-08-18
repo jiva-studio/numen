@@ -443,7 +443,7 @@ func TestTheWriterOnlyTouchesNotes(t *testing.T) {
 	// A book is among them: the reader says the vault holds it, and writing is
 	// still a thing only a note is open to.
 	for _, path := range []string{".git/config", "photo.png", "library/A Book.epub"} {
-		if err := writer.Write(t.Context(), path, []byte("mine"), domain.FileRef{}); !errors.Is(err, filesystem.ErrNotANote) {
+		if _, err := writer.Write(t.Context(), path, []byte("mine"), domain.FileRef{}); !errors.Is(err, filesystem.ErrNotANote) {
 			t.Errorf("write %s: want ErrNotANote, got %v", path, err)
 		}
 		if err := writer.Remove(t.Context(), path); !errors.Is(err, filesystem.ErrNotANote) {
@@ -454,7 +454,7 @@ func TestTheWriterOnlyTouchesNotes(t *testing.T) {
 		}
 	}
 
-	if err := writer.Write(t.Context(), "notes/keep.md", []byte("mine"), domain.FileRef{}); err != nil {
+	if _, err := writer.Write(t.Context(), "notes/keep.md", []byte("mine"), domain.FileRef{}); err != nil {
 		t.Errorf("a note is still writable: %v", err)
 	}
 }
@@ -475,7 +475,7 @@ func TestAWriteDoesNotFollowALinkOutOfTheVault(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := writer.Write(t.Context(), "linked/secret.md", []byte("mine"), domain.FileRef{}); !errors.Is(err, filesystem.ErrOutside) {
+	if _, err := writer.Write(t.Context(), "linked/secret.md", []byte("mine"), domain.FileRef{}); !errors.Is(err, filesystem.ErrOutside) {
 		t.Errorf("want ErrOutside, got %v", err)
 	}
 	if kept, _ := os.ReadFile(filepath.Join(outside, "secret.md")); string(kept) != "not yours" {

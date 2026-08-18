@@ -32,8 +32,15 @@ type Opened struct {
 	// and then every search is answered by words alone.
 	Embedder port.Embedder
 	// Settle is everything owed landing before anything is taken away. It is
-	// called while the window is still drawn, and calling it again is free.
-	Settle func(ctx context.Context)
+	// called while the window is still drawn, and calling it again is free. It
+	// answers false where a page is holding work a person is being asked about,
+	// and then nothing has been taken away and the vault is as it was.
+	Settle func(ctx context.Context) bool
+	// Answered is every page having written what it owes. It is what the window
+	// waits on while a person answers a question, and that wait is on a person
+	// and is not measured. It answers false where ctx ended or the vault was
+	// asked again.
+	Answered func(ctx context.Context) bool
 	// Close stops the scan, waits for it, and closes the index.
 	Close func() error
 }
@@ -156,7 +163,8 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		Index:    db,
 		Refresh:  refresh,
 		Embedder: embedder,
-		Settle:   func(ctx context.Context) { settling(ctx, &api.Leaving, &api.Writing) },
+		Settle:   func(ctx context.Context) bool { return settling(ctx, &api.Leaving, &api.Writing) },
+		Answered: func(ctx context.Context) bool { return answering(ctx, &api.Leaving) },
 		Close: func() error {
 			stop()
 			wait()
@@ -181,17 +189,46 @@ func filedUnder(cfg container.Config) string {
 }
 
 // settling is everything owed landing: every client writes what only it holds,
-// and then the writes already taken finish.
+// and then the writes already taken finish. It answers with whether the vault
+// settled.
 //
-// The clients are bounded by ctx: what they owe sits in a webview this process
-// cannot reach into. The writes are not, because the door is shut first and
-// what is left is a fixed set of filesystem operations.
-func settling(ctx context.Context, pages *leaving, writes *inflight) {
+// A client that says nothing is bounded by ctx: what it owes sits in a webview
+// this process cannot reach into. A client raising a question has said
+// something, and the round ends on it: the vault stays open, the door stays
+// open, and the wait from there is on a person.
+//
+// The writes are not bounded, because the door is shut first and what is left
+// is a fixed set of filesystem operations.
+func settling(ctx context.Context, pages *leaving, writes *inflight) bool {
+	round := pages.ask()
 	select {
-	case <-pages.ask():
+	case <-round.written:
+	case <-round.questions:
+	case <-round.over:
 	case <-ctx.Done():
 	}
+	if round.standing() || pages.current() != round {
+		return false
+	}
 	<-writes.seal()
+	return true
+}
+
+// answering waits for the round in progress to end with every page having
+// written what it owes.
+func answering(ctx context.Context, pages *leaving) bool {
+	round := pages.current()
+	if round == nil {
+		return false
+	}
+	select {
+	case <-round.written:
+		return true
+	case <-round.over:
+		return false
+	case <-ctx.Done():
+		return false
+	}
 }
 
 // settled is how long the vault has to have been still before the notes written

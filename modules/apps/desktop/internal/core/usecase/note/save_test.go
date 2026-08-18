@@ -24,6 +24,17 @@ func (c changing) saving() note.Write {
 	}
 }
 
+// opened is a tab that has just read a note: the prose it was given, and the
+// file it came out of.
+func (c changing) opened(t *testing.T, path string) *note.Seen {
+	t.Helper()
+	found, err := (note.Read{Readers: filesystem.Readers{}}).Execute(t.Context(), c.vault, path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return &note.Seen{Prose: found.Body, At: found.Ref}
+}
+
 // A flow sequence is the commonest frontmatter line there is, and an identifier
 // stamped into a note cannot be spliced past one. The person's own save writes
 // no identifier, so such a note is saveable.
@@ -32,7 +43,8 @@ func TestSavingANoteWhoseFrontmatterIsWrittenOnOneLine(t *testing.T) {
 		"Ideas.md": "---\ntags: [draft, idea]\n---\n# Ideas\n",
 	})
 
-	if err := c.saving().Save(t.Context(), c.vault, "Ideas.md", "# Ideas\n\nMine.\n"); err != nil {
+	seen := c.opened(t, "Ideas.md")
+	if _, err := c.saving().Save(t.Context(), c.vault, "Ideas.md", "# Ideas\n\nMine.\n", seen); err != nil {
 		t.Fatal(err)
 	}
 
@@ -52,7 +64,7 @@ func TestSavingANoteWhoseFrontmatterIsWrittenOnOneLine(t *testing.T) {
 func TestSavingANoteThatIsNotThereMakesIt(t *testing.T) {
 	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
-	if err := c.saving().Save(t.Context(), c.vault, "physics/Heat.md", "# Heat\n"); err != nil {
+	if _, err := c.saving().Save(t.Context(), c.vault, "physics/Heat.md", "# Heat\n", nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -61,47 +73,182 @@ func TestSavingANoteThatIsNotThereMakesIt(t *testing.T) {
 	}
 }
 
-// The refusal is for a caller that read, thought and arrived late. A save is
-// not one, and is told nothing to be held to.
-func TestASaveLandsOnAChangeItNeverSaw(t *testing.T) {
+// A note that is not there holds no prose anybody could have missed, so the
+// tab that was reading it puts it back where it opened it.
+func TestASaveRemakesANoteDeletedUnderIt(t *testing.T) {
 	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	saving := c.saving()
-
-	// Somebody else gets there first, between the tab's read and its save.
-	if err := saving.Save(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nTheirs.\n"); err != nil {
+	seen := c.opened(t, "Entropy.md")
+	if err := os.Remove(filepath.Join(c.vault.Path, "Entropy.md")); err != nil {
 		t.Fatal(err)
 	}
-	if err := saving.Save(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nMine.\n"); err != nil {
-		t.Fatalf("a save was refused: %v", err)
+
+	if _, err := c.saving().Save(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nMine.\n", seen); err != nil {
+		t.Fatalf("a note that is not there was not made: %v", err)
+	}
+	if body := c.read(t, "Entropy.md"); body != "# Entropy\n\nMine.\n" {
+		t.Errorf("a note made by a save carries the person's text and nothing else:\n%q", body)
+	}
+}
+
+// The prose the tab read is gone from the file, so the save stops and the
+// person is asked. Nothing is written.
+func TestASaveOverProseTheTabNeverReadIsStopped(t *testing.T) {
+	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	seen := c.opened(t, "Entropy.md")
+
+	// Somebody else gets there first, between the tab's read and its save.
+	theirs := "# Entropy\n\nTheirs.\n"
+	if err := os.WriteFile(filepath.Join(c.vault.Path, "Entropy.md"), []byte(theirs), 0o644); err != nil {
+		t.Fatal(err)
 	}
 
+	_, err := c.saving().Save(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nMine.\n", seen)
+	if !errors.Is(err, port.ErrChanged) {
+		t.Fatalf("want ErrChanged, got %v", err)
+	}
+	if body := c.read(t, "Entropy.md"); body != theirs {
+		t.Errorf("a save that was stopped wrote anyway:\n%s", body)
+	}
+}
+
+// The person answered the question with *keep*, which is a save holding itself
+// against nothing.
+func TestASaveThatComparesNothingLands(t *testing.T) {
+	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	if err := os.WriteFile(
+		filepath.Join(c.vault.Path, "Entropy.md"), []byte("# Entropy\n\nTheirs.\n"), 0o644,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := c.saving().Save(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nMine.\n", nil); err != nil {
+		t.Fatalf("a save holding itself against nothing was stopped: %v", err)
+	}
 	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Mine.") {
 		t.Errorf("the save did not land:\n%s", body)
 	}
 }
 
-// Nobody asked for a comparison, so nothing the file does between the read and
-// the rename refuses the write. What changes it here is a writer outside the
-// application, which the vault's lock does not reach.
-func TestASaveIsNotRefusedByACheckNobodyAskedFor(t *testing.T) {
+// A synchroniser, a checkout and a touch all move a file's time over text that
+// did not change. This is the rule that keeps the question off the screen of a
+// person whose vault is in a synchronised folder.
+func TestTheSameBytesWrittenAgainAreNotAChange(t *testing.T) {
 	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	seen := c.opened(t, "Entropy.md")
 	on := filepath.Join(c.vault.Path, "Entropy.md")
 
-	saving := note.Write{
-		Readers: watchedReaders{inner: filesystem.Readers{}, stat: func(path string) {
-			if err := os.WriteFile(on, []byte("# Entropy\n\nSomebody else's, longer.\n"), 0o644); err != nil {
-				t.Error(err)
-			}
-		}},
-		Writers: filesystem.Writers{},
-		Index:   c.index,
+	raw, err := os.ReadFile(on)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(on, raw, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	later := time.Now().Add(time.Hour)
+	if err := os.Chtimes(on, later, later); err != nil {
+		t.Fatal(err)
 	}
 
-	if err := saving.Save(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nMine.\n"); err != nil {
-		t.Fatalf("a save was refused: %v", err)
+	if _, err := c.saving().Save(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nMine.\n", seen); err != nil {
+		t.Fatalf("a save was stopped by a file nobody edited: %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Mine.") {
 		t.Errorf("the save did not land:\n%s", body)
+	}
+}
+
+// A tab that saved and did not read again holds the file its own write
+// produced. Holding the one it read would leave every sitting with one save in
+// it.
+func TestASaveFollowsASaveWithNoReadBetween(t *testing.T) {
+	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	saving := c.saving()
+	seen := c.opened(t, "Entropy.md")
+
+	at, err := saving.Save(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nOne.\n", seen)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if at == (domain.FileRef{}) {
+		t.Fatal("the save answered with no fingerprint")
+	}
+
+	if _, err := saving.Save(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nTwo.\n",
+		&note.Seen{Prose: seen.Prose, At: at}); err != nil {
+		t.Fatalf("the save after a save was stopped: %v", err)
+	}
+	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Two.") {
+		t.Errorf("the second save did not land:\n%s", body)
+	}
+}
+
+// The frontmatter is not what the tab holds, so what an agent writes into it is
+// not prose the tab has missed. The link is carried across by the save that
+// follows it.
+func TestALinkAnAgentAddsBetweenTwoSavesIsNotAChange(t *testing.T) {
+	c := changeable(t, map[string]string{
+		"Entropy.md": "# Entropy\n",
+		"Heat.md":    "# Heat\n",
+	})
+	saving := c.saving()
+	seen := c.opened(t, "Heat.md")
+
+	mine := "# Heat\n\nMine.\n"
+	at, err := saving.Save(t.Context(), c.vault, "Heat.md", mine, seen)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := c.linking().Add(t.Context(), c.vault, "Heat.md", domain.Link{
+		Target: domain.Address{Scheme: domain.SchemeName, Value: "Entropy"},
+		Role:   domain.RoleParent,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := saving.Save(t.Context(), c.vault, "Heat.md", "# Heat\n\nMine, and more.\n",
+		&note.Seen{Prose: mine, At: at}); err != nil {
+		t.Fatalf("a link written into the frontmatter stopped a save: %v", err)
+	}
+
+	body := c.read(t, "Heat.md")
+	if !strings.Contains(body, "to: Entropy") {
+		t.Errorf("the agent's link is gone:\n%s", body)
+	}
+	if !strings.Contains(body, "Mine, and more.") {
+		t.Errorf("the save did not land:\n%s", body)
+	}
+}
+
+// Two vaults holding the same path and no words in common. A save answers for
+// the vault it was given and reaches no other.
+func TestTwoVaultsHoldTheirOwnSaves(t *testing.T) {
+	first := changeable(t, map[string]string{"Note.md": "# Note\n\nthermodynamics\n"})
+	second := changeable(t, map[string]string{"Note.md": "# Note\n\nredshift\n"})
+
+	if _, err := first.saving().Save(
+		t.Context(), first.vault, "Note.md", "# Note\n\nentropy\n", first.opened(t, "Note.md"),
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	if body := first.read(t, "Note.md"); !strings.Contains(body, "entropy") {
+		t.Errorf("the save did not land:\n%s", body)
+	}
+	if body := second.read(t, "Note.md"); !strings.Contains(body, "redshift") {
+		t.Errorf("the second vault was written by the first vault's save:\n%s", body)
+	}
+
+	if _, err := second.saving().Save(
+		t.Context(), second.vault, "Note.md", "# Note\n\npulsar\n", second.opened(t, "Note.md"),
+	); err != nil {
+		t.Fatalf("the second vault was stopped by what the first vault holds: %v", err)
+	}
+	if body := second.read(t, "Note.md"); !strings.Contains(body, "pulsar") {
+		t.Errorf("the second vault's save did not land:\n%s", body)
+	}
+	if body := first.read(t, "Note.md"); !strings.Contains(body, "entropy") {
+		t.Errorf("the first vault was written by the second vault's save:\n%s", body)
 	}
 }
 
@@ -152,7 +299,8 @@ func TestALinkWrittenWhileASaveIsReadingSurvivesIt(t *testing.T) {
 
 	saved := make(chan error, 1)
 	go func() {
-		saved <- saving.Save(context.Background(), c.vault, "Heat.md", "# Heat\n\nWhat the person typed.\n")
+		_, err := saving.Save(context.Background(), c.vault, "Heat.md", "# Heat\n\nWhat the person typed.\n", nil)
+		saved <- err
 	}()
 
 	// The save has reached the point where it takes the lock, or — with
@@ -235,8 +383,9 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 
 	saved := make(chan error, 1)
 	go func() {
-		saved <- saving.Save(context.Background(), c.vault, "physics/Heat.md",
-			"# Heat\n\nWhat the person typed.\n")
+		_, err := saving.Save(context.Background(), c.vault, "physics/Heat.md",
+			"# Heat\n\nWhat the person typed.\n", nil)
+		saved <- err
 	}()
 
 	select {
@@ -273,7 +422,7 @@ func TestSavingThroughALinkLeavesTheLink(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := c.saving().Save(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nMine.\n"); err != nil {
+	if _, err := c.saving().Save(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nMine.\n", nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -294,7 +443,7 @@ func TestSavingThroughALinkLeavesTheLink(t *testing.T) {
 func TestSavingMoreTextThanANoteHolds(t *testing.T) {
 	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
-	err := c.saving().Save(t.Context(), c.vault, "Entropy.md", strings.Repeat("x", note.MaxBytes+1))
+	_, err := c.saving().Save(t.Context(), c.vault, "Entropy.md", strings.Repeat("x", note.MaxBytes+1), nil)
 	if !errors.Is(err, note.ErrTooLarge) {
 		t.Fatalf("want ErrTooLarge, got %v", err)
 	}

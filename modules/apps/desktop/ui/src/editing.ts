@@ -5,8 +5,8 @@
  * interval — and holds the answers where the template can draw them.
  */
 import { ref, type Ref } from 'vue'
-import { opening, stateOf, tabAfter, waiting, type Effect, type Event, type Refusal, type State, type Tab } from './tab'
-import type { Answered, Core, Refused } from './showing'
+import { opening, stateOf, tabAfter, waiting, type Effect, type Event, type Refusal, type Seen, type State, type Tab } from './tab'
+import type { Answered, Refused } from './showing'
 
 /** One open note as the window draws it. */
 export interface Editing {
@@ -14,6 +14,20 @@ export interface Editing {
   readonly body: string
   readonly state: State
   readonly refusal: Refusal | null
+}
+
+/**
+ * The core as a tab reads and writes through it. A read answers with the
+ * fingerprint it read at, and a write presents the one the tab last saw and
+ * answers whether the file carries another.
+ */
+export interface Notes {
+  read(path: string): Promise<Answered & { at?: string }>
+  write(
+    path: string,
+    body: string,
+    seen: Seen | null,
+  ): Promise<Answered & { at?: string; changed?: boolean }>
 }
 
 /** What a person is shown for each refusal. */
@@ -25,7 +39,20 @@ const words: Record<Refusal, string> = {
   unreadable: 'the frontmatter of this note cannot be read',
 }
 
-export function editing(core: Core, limits = waiting) {
+/** What a person is told and answers with when their tab was overtaken. */
+export interface Overtaken {
+  readonly says: string
+  readonly keep: string
+  readonly take: string
+}
+
+const overtaken: Overtaken = {
+  says: 'this note changed on disk, and saving stopped',
+  keep: 'keep mine',
+  take: "take the file's",
+}
+
+export function editing(core: Notes, limits = waiting) {
   const tabs = ref(new Map<string, Tab>())
   /** The interval each tab is waiting on, so arming again replaces it. */
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
@@ -61,6 +88,15 @@ export function editing(core: Core, limits = waiting) {
     for (const path of [...tabs.value.keys()]) turn(path, { kind: 'changed', paths })
   }
 
+  /** A save asked for now. */
+  const save = (path: string): void => turn(path, { kind: 'saving' })
+
+  /** The person keeps what they have written. */
+  const keep = (path: string): void => turn(path, { kind: 'keeping' })
+
+  /** The person takes what the file holds. */
+  const take = (path: string): void => turn(path, { kind: 'taking' })
+
   const shown = (path: string): Editing => {
     const tab = tabs.value.get(path)
     return {
@@ -77,6 +113,12 @@ export function editing(core: Core, limits = waiting) {
   const sayingOf = (path: string): string => {
     const refusal = tabs.value.get(path)?.refused
     return refusal ? words[refusal] : ''
+  }
+
+  /** What an overtaken note puts to the person, for the window to draw. */
+  const overtakenOf = (path: string): Overtaken | null => {
+    const tab = tabs.value.get(path)
+    return tab && stateOf(tab) === 'overtaken' ? overtaken : null
   }
 
   function turn(path: string, event: Event): void {
@@ -97,7 +139,7 @@ export function editing(core: Core, limits = waiting) {
         void read(path, effect.generation)
         return
       case 'write':
-        void write(path, effect.body)
+        void write(path, effect.body, effect.seen)
         return
       case 'arm':
         arm(path, effect.after)
@@ -131,7 +173,7 @@ export function editing(core: Core, limits = waiting) {
   }
 
   async function read(path: string, generation: number): Promise<void> {
-    let answered: Answered
+    let answered: Answered & { at?: string }
     try {
       answered = await core.read(path)
     } catch {
@@ -142,25 +184,27 @@ export function editing(core: Core, limits = waiting) {
       generation,
       answer:
         answered.refusal === null
-          ? { kind: 'body', body: answered.body }
+          ? { kind: 'body', body: answered.body, at: answered.at ?? '' }
           : answered.refusal === 'missing'
             ? { kind: 'missing' }
             : { kind: 'refused', refusal: refusalOf(answered.refusal) },
     })
   }
 
-  async function write(path: string, body: string): Promise<void> {
-    let answered: Answered
+  async function write(path: string, body: string, seen: Seen | null): Promise<void> {
+    let answered: Answered & { at?: string; changed?: boolean }
     try {
-      answered = await core.write(path, body)
+      answered = await core.write(path, body, seen)
     } catch {
       answered = { body: '', refusal: 'unreadable' }
     }
     turn(path, {
       kind: 'written',
-      answer:
-        answered.refusal === null
-          ? { kind: 'ok' }
+      // A file that moved past what the tab read is put to the person.
+      answer: answered.changed
+        ? { kind: 'changed' }
+        : answered.refusal === null
+          ? { kind: 'ok', at: answered.at ?? '' }
           : { kind: 'refused', refusal: refusalOf(answered.refusal) },
     })
     // A tab held for its write is asked about again, so the model decides what
@@ -189,9 +233,13 @@ export function editing(core: Core, limits = waiting) {
     shut,
     typed,
     changed,
+    save,
+    keep,
+    take,
     shown,
     all,
     saying: sayingOf,
+    overtaken: overtakenOf,
     said,
     flush,
     tabs: tabs as Ref<Map<string, Tab>>,

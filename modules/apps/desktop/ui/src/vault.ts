@@ -6,7 +6,7 @@
  */
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
-import { Refusal, VaultService } from '@numen/protocol'
+import { Owed, Refusal, VaultService } from '@numen/protocol'
 import { asSeat } from './plex'
 import type { Answered, Core, Made, NewLink, Refused } from './showing'
 
@@ -23,7 +23,8 @@ export const core: Core = {
   changes: (signal) => vault.changes({}, { signal }),
   focus: (signal) => vault.focus({}, { signal }),
   read: async (path) => answered(await vault.read({ path })),
-  write: async (path, body) => answered(await vault.write({ path, body })),
+  write: async (path, body, seen) =>
+    answered(await vault.write({ path, body, ...(seen ? { seen: seenOf(seen) } : {}) })),
   create: async (note) => {
     const answer = await vault.create({
       title: note.title,
@@ -34,8 +35,8 @@ export const core: Core = {
   },
   join: async (path, link) => refusalIn(await vault.join({ path, link: written(link) })),
   quitting: (signal) => vault.quitting({}, { signal }),
-  flushed: async (token) => {
-    await vault.flushed({ token })
+  flushed: async (token, owed) => {
+    await vault.flushed({ token, owed: owing[owed ?? 'nothing'] })
   },
 }
 
@@ -47,10 +48,34 @@ const written = (link: NewLink) => ({
 })
 
 /** The schema's answer in the words the window uses. */
-const answered = (from: { body?: string | undefined; refusal?: Refusal | undefined }): Answered => ({
-  body: from.body ?? '',
-  refusal: refusalIn(from),
-})
+/**
+ * A file as one value the window carries about and never reads into.
+ *
+ * The schema holds the parts; what a tab does with one is present it back
+ * unchanged, so the parts stay here and the string goes everywhere else.
+ */
+const stamp = (at?: { path: string; size: bigint; mtime: bigint }): string | undefined =>
+  at && `${at.path} ${at.size} ${at.mtime}`
+
+const seenOf = (seen: { prose: string; at: string }) => {
+  const [path = '', size = '0', mtime = '0'] = seen.at.split(' ')
+  return { prose: seen.prose, at: { path, size: BigInt(size), mtime: BigInt(mtime) } }
+}
+
+const answered = (from: {
+  body?: string | undefined
+  refusal?: Refusal | undefined
+  changed?: boolean | undefined
+  at?: { path: string; size: bigint; mtime: bigint } | undefined
+}): Answered & { at?: string; changed?: boolean } => {
+  const at = stamp(from.at)
+  return {
+    body: from.body ?? '',
+    refusal: refusalIn(from),
+    ...(at === undefined ? {} : { at }),
+    ...(from.changed === undefined ? {} : { changed: from.changed }),
+  }
+}
 
 const refusalIn = (from: { refusal?: Refusal | undefined }): Refused | null =>
   from.refusal === undefined ? null : refused[from.refusal]
@@ -64,4 +89,11 @@ const refused: Record<Refusal, Refused> = {
   [Refusal.BODY_REFUSED]: 'bodyRefused',
   [Refusal.UNREADABLE]: 'unreadable',
   [Refusal.OCCUPIED]: 'occupied',
+}
+
+/** What a client has left, as the schema names it. */
+const owing: Record<'nothing' | 'written' | 'asking', Owed> = {
+  nothing: Owed.UNSPECIFIED,
+  written: Owed.WRITTEN,
+  asking: Owed.ASKING,
 }

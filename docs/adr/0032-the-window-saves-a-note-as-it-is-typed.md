@@ -1,11 +1,12 @@
-# ADR-0032: The window saves a note as it is typed
+# ADR-0032: The window saves a note as it is typed, and stops at an unseen edit
 
 - **Status:** Accepted
-- **Date:** 2026-08-17
-- **Applies to:** the vault format — every application that writes one
-- **Supersedes:** ADR-0001 item 4
-- **Partly supersedes:** ADR-0027, "A write that would overwrite an unseen edit refuses"
-- **Related:** ADR-0009, ADR-0023, ADR-0026, ADR-0027, ADR-0033, ADR-0034
+- **Date:** 2026-08-18
+- **Applies to:** `modules/apps/desktop`
+- **Partly supersedes:** ADR-0001 — item 3, and the conflict copy of item 4
+- **Partly supersedes:** ADR-0009 and ADR-0027 — the identifier, for the window's
+  save alone
+- **Related:** ADR-0009, ADR-0023, ADR-0024, ADR-0026, ADR-0027, ADR-0033, ADR-0034
 
 ## Context
 
@@ -15,13 +16,15 @@ change. An agent is that caller, and so is every link tool.
 
 A person typing in a note is not. There is no request, no decision and no moment
 of asking — there is a buffer that differs from a file, and a save that has to
-happen without being asked for. The rules that hold for a caller who arrives late
-answer questions this caller never poses, and one of them refuses a write the
-person made themselves.
+happen without being asked for.
 
 Two further things separate this caller. It holds the prose and not the file: the
 frontmatter is in front of the body and never on screen. And it is the only one
 whose write can land while someone is looking at what it lands on.
+
+The note underneath is not still. An agent, a second window and a file
+synchroniser write into the same vault, and the save that follows a keystroke
+carries a body read minutes ago.
 
 ## Decision
 
@@ -30,6 +33,8 @@ whose write can land while someone is looking at what it lands on.
 Every change puts the write off again. One write happens once the text has been
 still, and a second happens once the oldest unwritten change reaches a bound, so
 that a crash costs at most that bound. Nothing changed means nothing written.
+
+`Ctrl+S` writes what is owed at the moment it is pressed, under the rules below.
 
 Closing a tab and quitting the window write what is owed and wait for it. What a
 quit waits for, in what order, and for how long is ADR-0033.
@@ -44,46 +49,49 @@ The cooldown is longer than the bound above, so one sitting at one note is embed
 once. The two numbers are read together, and this pair holds in
 `modules/apps/desktop`.
 
-### The window's save overwrites, and is told nothing
+### A save that would overwrite an unseen edit stops
 
-There is no comparison. The save carries a path and a body, and it lands.
+The save reads the file it is replacing and compares the prose there with the prose
+the tab read. Equal prose is not a change, and the save lands. The frontmatter is
+not compared; it is carried across (below).
 
-What this costs, in full:
+Prose the tab has not read stops it. Nothing is written, the tab carries the mark
+`overtaken` (ADR-0024), and the unasked save stops for that tab: what the person
+typed stays in the buffer, and every keystroke after that leaves it there.
 
-- a body edit made under an open tab with unsaved changes — by an agent, another
-  window, or a file synchroniser — is replaced by that tab's next save;
-- the same note open in two places collapses to whichever saved last.
+The person answers with one of two, and the unasked save runs again afterwards:
 
-Both are silent. ADR-0001 item 4 refuses a silent winner and prescribes a conflict
-copy; this chooses one and writes no copy, so item 4 no longer holds. A copy beside
-the note is an ordinary note: indexed, drawn in the plex, returned by searches.
+- **keep** writes the tab's prose over the file;
+- **take** replaces the tab's prose with the file's.
 
-ADR-0027's refusal stands for every other caller. It is what a slow reader owes the
-person, and a person typing is not a slow reader.
+`Ctrl+S` stops here too. A tab that is overtaken is answered before it closes and
+before the window quits (ADR-0033).
+
+ADR-0027 refuses a write that would overwrite an unseen edit. A caller that read a
+note presents the fingerprint it was given; this caller holds prose, and the prose
+it read is what it presents.
 
 ### A save keeps the frontmatter that is on disk when it lands
 
 The buffer holds the body. The save reads the file, takes the frontmatter as it
-then stands, puts the body on it and replaces the file.
-
-So a link an agent adds to a note that is open survives a save that knows nothing
-about it. This holds while the read and the rename are serialised against every other
-write that reads a note and puts it back. That serialisation is one process's, and it
-covers neither a create, a move's own rename nor a removal (ADR-0033).
+then stands, puts the body on it and replaces the file. The read and the rename are
+one act against every other write that reads a note and puts it back (ADR-0033).
 
 ### A save writes no identifier
 
-ADR-0027 writes an identifier when the application changes what is in a note. This
-write is the person changing what is in their own note, and it stamps nothing.
+ADR-0027 writes an identifier when the application changes what is in a note, and
+ADR-0009 counts the person opening a file and changing it among those. A save from a
+tab carries what the person wrote in their own note, and it stamps nothing.
 
 A note acquires an identifier from the operations that act on it as a note: a
 create, a move, a link. Reading one and typing in it is not among them, so a note
-written elsewhere keeps the frontmatter it came with (ADR-0009).
+written elsewhere keeps the frontmatter it came with.
 
 ### A file that is not there is created
 
 A note renamed or removed under an open tab leaves the tab open, showing what the
-person was reading, at the name they opened. The next save puts it back there.
+person was reading, at the name they opened. A name with no file behind it holds no
+prose, so the next save puts the note back there.
 
 ### A note has a ceiling, and a file over it is not opened here
 
@@ -106,7 +114,8 @@ no text leaves the file byte for byte as it was. A body of mixed breaks is writt
 one break throughout.
 
 The buffer is LF throughout, so what is compared for having changed is the
-normalised text, and a note is never unsaved by being opened.
+normalised text, and a note is never unsaved by being opened. The prose read back
+from disk is normalised the same way before the comparison above.
 
 Normalised text reaches the person and never the index. Offsets into a note are
 byte offsets into the file as it is on disk.
@@ -115,7 +124,10 @@ byte offsets into the file as it is on disk.
 
 **Positive**
 
-- Saving is invisible. There is no key to press and nothing to answer.
+- Saving is invisible while nothing else writes the note: nothing has to be pressed
+  and nothing is asked.
+- Prose the tab never read is never written over, and a collision is settled by the
+  person whose note it is.
 - A person can open a note of any shape up to the ceiling and type in it. A
   frontmatter this application cannot write is no longer a note it cannot save, and a
   file it did not create is returned unmarked.
@@ -124,11 +136,15 @@ byte offsets into the file as it is on disk.
 
 **Negative**
 
-- Concurrent edits are lost silently, which is the decision and not a defect of it.
-  The product has one editor and one agent on one machine, and the loss is bounded
-  by how long a person leaves a tab unsaved.
-- A vault under a file synchroniser is the case this handles worst, and the
-  synchroniser's own conflict copies are what a person is left with.
+- A collision the person did not cause reaches them: a tab stops saving over
+  somebody else's write, in the middle of their typing.
+- A tab that stopped holds the only copy of what is in it, and a crash costs all of
+  it. The bound above stops applying the moment the tab stops.
+- **keep** writes over what the file held, and nothing keeps what was there.
+- A vault under a file synchroniser stops tabs often, and the person answers for
+  writes they did not make.
+- Two processes on one vault each read, compare and write in turn, so a save can
+  pass the comparison and land on a write made since it (ADR-0033).
 - The person cannot see or edit their own frontmatter here, in a product whose
   first decision is that the file is theirs. It is reached with any text editor.
 - A note whose body holds breaks of both kinds has that body written with one of them,
@@ -140,15 +156,9 @@ byte offsets into the file as it is on disk.
 
 ## Alternatives considered
 
-**Ask.** The file changed under an edit, so the person chooses: keep mine, or take
-the file's. Rejected: it interrupts typing to ask about a collision the person did
-not cause and usually cannot judge, and every path out of the question is one of the
-two writes it was asking about.
-
-**Compare, and refuse.** ADR-0027's rule, applied here too. Rejected: the write it
-refuses is the person's own, and there is nothing for them to do about the refusal
-except make it again.
-
 **A conflict copy**, as ADR-0001 item 4 requires. Rejected: a copy in the vault is a
 note, and a vault that answers a collision by growing a second note has moved the
 problem into the place the person searches.
+
+**A modal over the window.** Rejected: it stops every tab for one tab's collision,
+and the prose the question is about is behind it.

@@ -250,16 +250,20 @@ func addNoteTools(server *sdk.Server, core Core) {
 		Title: "Write a note",
 		Description: "Replace the prose of a note. The frontmatter is left alone — use " +
 			"the link tools to change what a note is joined to. Pass the fingerprint from " +
-			"`note_read` so a write cannot land on top of an edit you did not see.",
+			"`note_read` so a write cannot land on top of an edit you did not see. This " +
+			"answers with the fingerprint it produced: pass that one to write the same " +
+			"note again without reading it back.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path        string `json:"path" jsonschema:"the note to write"`
 		Body        string `json:"body" jsonschema:"the markdown to put in it"`
 		Fingerprint string `json:"fingerprint,omitempty" jsonschema:"what note_read said the note was, to refuse a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, struct {
-		Path string `json:"path"`
+		Path        string `json:"path"`
+		Fingerprint string `json:"fingerprint"`
 	}, error) {
 		type out = struct {
-			Path string `json:"path"`
+			Path        string `json:"path"`
+			Fingerprint string `json:"fingerprint"`
 		}
 		if len(in.Body) > maxBytes {
 			return nil, out{}, fmt.Errorf("a body of %d bytes is larger than the %d this writes",
@@ -269,10 +273,13 @@ func addNoteTools(server *sdk.Server, core Core) {
 		if err != nil {
 			return nil, out{}, err
 		}
-		if err := core.Write.Execute(ctx, core.Vault, in.Path, in.Body, ref); err != nil {
+		// What the file became. A caller writing this note again presents it, and
+		// the one it read is behind by its own write.
+		written, err := core.Write.Execute(ctx, core.Vault, in.Path, in.Body, ref)
+		if err != nil {
 			return nil, out{}, err
 		}
-		return nil, out{Path: in.Path}, nil
+		return nil, out{Path: in.Path, Fingerprint: fingerprintOf(written)}, nil
 	})
 
 	sdk.AddTool(server, &sdk.Tool{

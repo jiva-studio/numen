@@ -100,7 +100,7 @@ func TestWritingThroughALinkLeavesTheLink(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := writer.Write(t.Context(), "Entropy.md", []byte("# Entropy\n\nMine.\n"), domain.FileRef{}); err != nil {
+	if _, err := writer.Write(t.Context(), "Entropy.md", []byte("# Entropy\n\nMine.\n"), domain.FileRef{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -216,7 +216,7 @@ func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = w.Write(t.Context(), "Note.md", []byte("# Mine\n"), domain.FileRef{})
+			_, err = w.Write(t.Context(), "Note.md", []byte("# Mine\n"), domain.FileRef{})
 			if !errors.Is(err, port.ErrNotANote) {
 				t.Errorf("writing through the link gave %v, want ErrNotANote", err)
 			}

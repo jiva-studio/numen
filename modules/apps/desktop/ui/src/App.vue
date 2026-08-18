@@ -1,3 +1,23 @@
+<script lang="ts">
+/**
+ * The one word a tab carries beside its title, and what a screen reader reads
+ * out. A state with no word carries no mark; `stateOf` holds a tab in one
+ * state, so the precedence the words are declared in is the precedence drawn.
+ */
+import type { State } from './tab'
+
+const MARKS: Record<State, string | undefined> = {
+  stuck: 'stuck',
+  overtaken: 'overtaken',
+  unsaved: 'unsaved',
+  saving: 'unsaved',
+  loading: undefined,
+  clean: undefined,
+}
+
+export const markOf = (state: State): string | undefined => MARKS[state]
+</script>
+
 <script setup lang="ts">
 /**
  * The window: one vault, and tabs to divide the screen between.
@@ -6,7 +26,7 @@
  * plex, which travels there by itself. What decides when to ask is in
  * `showing.ts`; what each tab stands for is settled here and nowhere else.
  */
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Activity, Agent, Editor, Menu, Plex, Workspace, closeTab, openTab, remainingWord } from '@numen/ui'
 import type { PlexRelatedSeat, Tab, WorkspaceLayout } from '@numen/ui'
 import '@numen/ui/styles.css'
@@ -28,6 +48,32 @@ const window = showing(core, undefined, undefined, notes.changed)
 /** What the window answers when the application says it is going. */
 const going = leaving(core)
 going.holds(notes.flush)
+
+/**
+ * The notes whose text the file has moved past, told to the quit.
+ *
+ * A question is raised while the tab stands overtaken and dropped when it
+ * stops, so the window waits on exactly what is still to be answered.
+ */
+const raised = new Map<string, () => void>()
+watch(
+  () => notes.all().filter((path) => notes.shown(path).state === 'overtaken'),
+  (standing) => {
+    for (const path of standing) {
+      if (raised.has(path)) continue
+      raised.set(
+        path,
+        going.raise({ path, keep: async () => notes.keep(path), take: async () => notes.take(path) }),
+      )
+    }
+    for (const [path, drop] of raised) {
+      if (standing.includes(path)) continue
+      drop()
+      raised.delete(path)
+    }
+  },
+  { deep: true },
+)
 /** A refusal outlives the tab it was refused on, so it is drawn beside them. */
 const refused = notes.said
 const { neighbourhood, here, indexing, failure, notice, trouble, unwatched, go } = window
@@ -50,6 +96,11 @@ const words = {
   reading: 'Reading',
   learning: 'Preparing search by meaning',
   words: 'Searching by words only — no model set',
+  overtaken: 'The file changed on disk, so this note stopped saving.',
+  keep: 'Keep mine',
+  take: "Take the file's",
+  going: 'These notes stopped saving because their files changed. The window waits.',
+  later: 'Not yet',
 }
 
 /** What the foot of the window says, one sentence per phase. */
@@ -94,18 +145,13 @@ const send = (text: string) => {
 const tabs = computed<readonly Tab[]>(() => [
   ...TABS,
   ...notes.all().map((path): Tab => {
-    const mark = marked(path)
+    const mark = markOf(notes.shown(path).state)
     return { id: path, title: titles.get(path) ?? path, ...(mark ? { mark } : {}) }
   }),
 ])
 
 /** What a note was called by the node it was opened from. */
 const titles = new Map<string, string>()
-
-const marked = (path: string): string | undefined => {
-  const state = notes.shown(path).state
-  return state === 'unsaved' || state === 'saving' ? 'unsaved' : state === 'stuck' ? 'stuck' : undefined
-}
 
 /** The menu on a node, and where it was asked for. */
 const menu = ref<{ path: string; at: { x: number; y: number }; from: HTMLElement | SVGElement | null } | null>(null)
@@ -233,11 +279,27 @@ onUnmounted(() => {
 
         <div v-else-if="notes.all().includes(id)" class="note">
           <p v-if="notes.saying(id)" role="alert" class="warning">{{ notes.saying(id) }}</p>
+
+          <p
+            v-if="notes.shown(id).state === 'overtaken'"
+            role="status"
+            class="warning overtaken"
+          >
+            {{ words.overtaken }}
+            <button type="button" class="overtaken__answer" @click="notes.keep(id)">
+              {{ words.keep }}
+            </button>
+            <button type="button" class="overtaken__answer" @click="notes.take(id)">
+              {{ words.take }}
+            </button>
+          </p>
+
           <Editor
             :ref="(editor: unknown) => drew(id, editor)"
             :model-value="notes.shown(id).body"
             class="note__text"
             @update:model-value="(body: string) => notes.typed(id, body)"
+            @save="notes.save(id)"
           />
         </div>
 
@@ -253,6 +315,24 @@ onUnmounted(() => {
       :left="activity.left"
       :tally="activity.tally"
     />
+
+    <section v-if="going.questions.value.length" role="alertdialog" class="leaving">
+      <p class="leaving__says">{{ words.going }}</p>
+      <ul class="leaving__notes">
+        <li v-for="one in going.questions.value" :key="one.path" class="leaving__note">
+          <span class="leaving__title">{{ titles.get(one.path) ?? one.path }}</span>
+          <button type="button" class="overtaken__answer" @click="void one.keep()">
+            {{ words.keep }}
+          </button>
+          <button type="button" class="overtaken__answer" @click="void one.take()">
+            {{ words.take }}
+          </button>
+          <button type="button" class="overtaken__answer" @click="one.later()">
+            {{ words.later }}
+          </button>
+        </li>
+      </ul>
+    </section>
 
     <Menu
       v-if="menu"
@@ -290,6 +370,77 @@ main {
 .note__text {
   flex: 1;
   min-block-size: 0;
+}
+
+/* The question a note holds: the band a refusal is said in, with the two
+   answers on the same line as the sentence, so the band stands one line high. */
+/* The window is going and these notes are not written. It sits over the work
+   because nothing else the person does can end it. */
+.leaving {
+  position: fixed;
+  inset-block-end: 1rem;
+  inset-inline: 1rem;
+  z-index: 20;
+  padding: 0.8rem 1rem;
+  border-radius: var(--numen-radius);
+  background: light-dark(#fff4e5, #3a2e1c);
+  color: light-dark(#7a4b00, #f0c890);
+  box-shadow: 0 6px 24px light-dark(#00000022, #00000066);
+  font: 0.85rem system-ui, sans-serif;
+}
+
+.leaving__says {
+  margin: 0 0 0.5rem;
+}
+
+.leaving__notes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.leaving__note {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.leaving__title {
+  flex: 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overtaken {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.9rem;
+}
+
+.overtaken__answer {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+}
+
+.overtaken__answer:hover {
+  text-decoration-thickness: 2px;
+}
+
+.overtaken__answer:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 2px;
 }
 
 /* The foot of the window: clear of the plex, quiet when there is no work. */

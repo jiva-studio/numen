@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { editing } from './editing'
-import type { Answered, Core } from './showing'
+import { editing, type Notes } from './editing'
+import type { Core } from './showing'
 
 /** A vault that has been read and is doing nothing. */
 const idle = {
@@ -19,11 +19,17 @@ const idle = {
   busy: false,
 }
 
+/** A file's fingerprint, which follows what the file holds. */
+const marked = (body: string): string => `at:${body}`
+
+/** Everything a tab asks of the core, and the rest of what a window asks. */
+type Faked = Omit<Core, 'read' | 'write'> & Notes
+
 /** A core that answers reads and writes from what a test puts in it. */
-function fake(over: Partial<Core> = {}) {
+function fake(over: Partial<Faked> = {}) {
   const files = new Map<string, string>()
   const wrote: { path: string; body: string }[] = []
-  const core: Core = {
+  const core: Faked = {
     neighbourhood: async () => ({}) as never,
     opening: async () => null,
     state: async () => idle,
@@ -34,14 +40,20 @@ function fake(over: Partial<Core> = {}) {
     // eslint-disable-next-line require-yield
     quitting: async function* () {},
     flushed: async () => {},
-    read: async (path): Promise<Answered> =>
+    read: async (path) =>
       files.has(path)
-        ? { body: files.get(path) ?? '', refusal: null }
+        ? { body: files.get(path) ?? '', refusal: null, at: marked(files.get(path) ?? '') }
         : { body: '', refusal: 'missing' },
-    write: async (path, body): Promise<Answered> => {
+    write: async (path, body, seen) => {
       wrote.push({ path, body })
+      const held = files.get(path)
+      // A note still holding either the prose or the file that prose came out of
+      // is the note this caller read.
+      if (seen && held !== undefined && held !== seen.prose && marked(held) !== seen.at) {
+        return { body: '', refusal: null, changed: true }
+      }
       files.set(path, body)
-      return { body: '', refusal: null }
+      return { body: '', refusal: null, at: marked(body) }
     },
     create: async () => ({ path: '', refusal: null }),
     join: async () => null,
@@ -248,6 +260,104 @@ describe('closing', () => {
 
     expect(wrote.map((w) => w.path).sort()).toEqual(['a.md', 'b.md'])
     expect(notes.all()).toEqual([])
+  })
+})
+
+describe('a save asked for now', () => {
+  it('writes what is unsaved without waiting for the text to be still', async () => {
+    const { core, files, wrote } = fake()
+    files.set('Heat.md', 'one')
+    const notes = editing(core, { quiet: 10_000, bound: 10_000 })
+    notes.open('Heat.md')
+    await settle()
+
+    notes.typed('Heat.md', 'one two')
+    notes.save('Heat.md')
+    await settle()
+
+    expect(wrote).toEqual([{ path: 'Heat.md', body: 'one two' }])
+  })
+
+  it('writes nothing for a note nothing was typed into', async () => {
+    const { core, files, wrote } = fake()
+    files.set('Heat.md', 'one')
+    const notes = editing(core, quick)
+    notes.open('Heat.md')
+    await settle()
+
+    notes.save('Heat.md')
+    await settle()
+
+    expect(wrote).toEqual([])
+  })
+})
+
+describe('a note that changed on disk under a save', () => {
+  /** A note open and typed into, whose file moved before the write landed. */
+  const caught = async () => {
+    const { core, files, wrote } = fake()
+    files.set('Heat.md', 'one')
+    const notes = editing(core, quick)
+    notes.open('Heat.md')
+    await settle()
+
+    notes.typed('Heat.md', 'mine')
+    files.set('Heat.md', 'theirs')
+    notes.save('Heat.md')
+    await settle()
+    return { notes, files, wrote }
+  }
+
+  it('is put to the person, and nothing more is written', async () => {
+    const { notes, wrote } = await caught()
+
+    expect(notes.shown('Heat.md').state).toBe('overtaken')
+    expect(notes.overtaken('Heat.md')?.says).toBe('this note changed on disk, and saving stopped')
+    expect(notes.shown('Heat.md').body).toBe('mine')
+
+    notes.typed('Heat.md', 'mine and more')
+    await new Promise((wake) => setTimeout(wake, 20))
+
+    expect(wrote).toHaveLength(1)
+    expect(notes.shown('Heat.md').state).toBe('overtaken')
+  })
+
+  it('keeps what the person has, and the file takes it', async () => {
+    const { notes, files } = await caught()
+
+    notes.keep('Heat.md')
+    await settle()
+
+    expect(files.get('Heat.md')).toBe('mine')
+    expect(notes.shown('Heat.md').state).toBe('clean')
+    expect(notes.overtaken('Heat.md')).toBeNull()
+  })
+
+  it("takes the file's, and what it holds replaces what was typed", async () => {
+    const { notes } = await caught()
+
+    notes.take('Heat.md')
+    await settle()
+
+    expect(notes.shown('Heat.md').body).toBe('theirs')
+    expect(notes.shown('Heat.md').state).toBe('clean')
+    expect(notes.overtaken('Heat.md')).toBeNull()
+  })
+
+  it('does not stop a note whose own two saves follow each other', async () => {
+    const { core, files, wrote } = fake()
+    files.set('Heat.md', 'one')
+    const notes = editing(core, quick)
+    notes.open('Heat.md')
+    await settle()
+
+    notes.typed('Heat.md', 'one two')
+    await vi.waitFor(() => expect(wrote).toHaveLength(1))
+    notes.typed('Heat.md', 'one two three')
+    await vi.waitFor(() => expect(wrote).toHaveLength(2))
+
+    expect(files.get('Heat.md')).toBe('one two three')
+    expect(notes.shown('Heat.md').state).toBe('clean')
   })
 })
 

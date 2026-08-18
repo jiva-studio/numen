@@ -287,3 +287,55 @@ export const ShownAgain: Story = {
     await expect(topmost(view)).toBe(top)
   },
 }
+
+/**
+ * The chord that keeps the text.
+ *
+ * Put the caret in the text and press Ctrl+S. The editor says the person asked
+ * for the text to be kept, the text is left as it was, and the page's own
+ * answer to the chord does not run.
+ */
+export const Kept: Story = {
+  render: () => ({
+    components: { Editor },
+    setup: () => {
+      const asked = ref(0)
+      const answered = ref('')
+      return {
+        text: MARKED_UP,
+        asked,
+        answered,
+        kept: () => (asked.value += 1),
+        watch: (key: KeyboardEvent) => {
+          if (key.key === 's' && (key.ctrlKey || key.metaKey)) {
+            answered.value = key.defaultPrevented ? 'answered' : 'left for the page'
+          }
+        },
+      }
+    },
+    template: `
+      <div class="numen flex h-screen flex-col bg-surface" @keydown="watch">
+        <p class="shrink-0 border-b border-rule px-3 py-2 font-sans text-small text-ink">
+          asked <span data-asked>{{ asked }}</span> times, and
+          <span data-answered>{{ answered }}</span>
+        </p>
+        <Editor :model-value="text" class="min-h-0 flex-1" @save="kept" />
+      </div>`,
+  }),
+  play: async ({ canvasElement }) => {
+    const view = viewOf(canvasElement)
+    const said = (what: string) =>
+      (canvasElement.querySelector(`[${what}]`) as HTMLElement).textContent?.trim()
+
+    await userEvent.click(view.contentDOM)
+    await settled()
+    await expect(view.hasFocus).toBe(true)
+
+    await userEvent.keyboard('{Control>}s{/Control}')
+    await settled()
+
+    await expect(said('data-asked')).toBe('1')
+    await expect(said('data-answered')).toBe('answered')
+    await expect(view.state.doc.toString()).toBe(MARKED_UP)
+  },
+}

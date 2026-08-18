@@ -3,8 +3,7 @@
 - **Status:** Accepted, except where noted below
 - **Date:** 2026-08-16
 - **Applies to:** the vault format — every application that writes one
-- **Partly superseded by:** ADR-0032 — the refusal on an unseen edit and the
-  identifier, for the window's save alone
+- **Partly superseded by:** ADR-0032 — the identifier, for the window's save alone
 - **Related:** ADR-0001, ADR-0009, ADR-0011, ADR-0012, ADR-0022, ADR-0023
 
 ## Context
@@ -68,8 +67,9 @@ identifier and is a note in full; it acquires one when the application itself
 changes what is in it.
 
 > **Partly superseded by
-> [ADR-0032](0032-the-window-saves-a-note-as-it-is-typed.md).** A person typing in
-> the window is not the application changing a note, and that save stamps nothing.
+> [ADR-0032](0032-the-window-saves-a-note-as-it-is-typed.md).** A save carrying what
+> a person typed writes no identifier: what it puts in the note is theirs. Every
+> other write from this application stamps as above.
 
 **Moving and removing do not change a note.** They are renames: the bytes are
 identical on the other side, so a note that had no identifier still has none
@@ -132,11 +132,6 @@ only where a name cannot pick a target (ADR-0011), and a repair that reached for
 it would be answering a question nobody asked.
 
 ### A write that would overwrite an unseen edit refuses
-
-> **Partly superseded by
-> [ADR-0032](0032-the-window-saves-a-note-as-it-is-typed.md).** The window's save
-> is not presented with a fingerprint and is not refused. This holds for every
-> other caller.
 
 A caller may present the fingerprint it was given when it read the note. If the
 note on disk no longer matches it, the write is refused and says so.

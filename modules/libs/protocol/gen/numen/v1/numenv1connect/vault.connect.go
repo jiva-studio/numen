@@ -86,8 +86,9 @@ type VaultServiceClient interface {
 	// Read answers with the prose of a note, below its frontmatter.
 	Read(context.Context, *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error)
 	// Write puts prose into a note, keeping the frontmatter the file has when the
-	// write lands and creating the file where there is none. What was on disk
-	// under an edit made elsewhere is replaced.
+	// write lands and creating the file where there is none. A note that no
+	// longer holds the prose the caller read is left alone and answered
+	// `changed`.
 	Write(context.Context, *connect.Request[v1.WriteRequest]) (*connect.Response[v1.WriteResponse], error)
 	// Create makes a note. The file is named after the title, and the links the
 	// note carries are written into it as it is made, so it arrives joined.
@@ -99,8 +100,9 @@ type VaultServiceClient interface {
 	// caller holding work that is only in its own memory writes it now and
 	// answers with Flushed.
 	Quitting(context.Context, *connect.Request[v1.QuittingRequest]) (*connect.ServerStreamForClient[v1.QuittingResponse], error)
-	// Flushed says a caller has written everything it owed, and the window may
-	// go. A caller that never says it is waited for and then left behind.
+	// Flushed says what a caller has left. Nothing left lets the window go; work
+	// a person is being asked about keeps it open. A caller that never says it is
+	// waited for and then left behind.
 	Flushed(context.Context, *connect.Request[v1.FlushedRequest]) (*connect.Response[v1.FlushedResponse], error)
 }
 
@@ -274,8 +276,9 @@ type VaultServiceHandler interface {
 	// Read answers with the prose of a note, below its frontmatter.
 	Read(context.Context, *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error)
 	// Write puts prose into a note, keeping the frontmatter the file has when the
-	// write lands and creating the file where there is none. What was on disk
-	// under an edit made elsewhere is replaced.
+	// write lands and creating the file where there is none. A note that no
+	// longer holds the prose the caller read is left alone and answered
+	// `changed`.
 	Write(context.Context, *connect.Request[v1.WriteRequest]) (*connect.Response[v1.WriteResponse], error)
 	// Create makes a note. The file is named after the title, and the links the
 	// note carries are written into it as it is made, so it arrives joined.
@@ -287,8 +290,9 @@ type VaultServiceHandler interface {
 	// caller holding work that is only in its own memory writes it now and
 	// answers with Flushed.
 	Quitting(context.Context, *connect.Request[v1.QuittingRequest], *connect.ServerStream[v1.QuittingResponse]) error
-	// Flushed says a caller has written everything it owed, and the window may
-	// go. A caller that never says it is waited for and then left behind.
+	// Flushed says what a caller has left. Nothing left lets the window go; work
+	// a person is being asked about keeps it open. A caller that never says it is
+	// waited for and then left behind.
 	Flushed(context.Context, *connect.Request[v1.FlushedRequest]) (*connect.Response[v1.FlushedResponse], error)
 }
 

@@ -300,30 +300,45 @@ func TestReadingGivesBackWhatWritingWants(t *testing.T) {
 		t.Fatalf("want one note with a fingerprint: %+v", read.Notes)
 	}
 
-	if _, err := session.CallTool(t.Context(), &sdk.CallToolParams{
-		Name: "note_write",
-		Arguments: map[string]any{
-			"path": "Entropy.md", "body": "# Entropy\n\nRewritten.\n",
-			"fingerprint": read.Notes[0].Fingerprint,
-		},
-	}); err != nil {
-		t.Fatal(err)
+	// A write answers with what the note became, so an agent writing twice has
+	// what the second write needs.
+	first := call[wrote](t, session, "note_write", map[string]any{
+		"path": "Entropy.md", "body": "# Entropy\n\nRewritten.\n",
+		"fingerprint": read.Notes[0].Fingerprint,
+	})
+	if first.Fingerprint == "" || first.Fingerprint == read.Notes[0].Fingerprint {
+		t.Fatalf("the write did not answer with the file it made: %+v", first)
+	}
+
+	second := call[wrote](t, session, "note_write", map[string]any{
+		"path": "Entropy.md", "body": "# Entropy\n\nAgain.\n",
+		"fingerprint": first.Fingerprint,
+	})
+	if second.Fingerprint == "" {
+		t.Errorf("the second write answered with no fingerprint: %+v", second)
 	}
 
 	again := call[struct {
 		Notes []mcp.Contents `json:"notes"`
 	}](t, session, "note_read", map[string]any{"paths": []string{"Entropy.md"}})
-	if !strings.Contains(again.Notes[0].Body, "Rewritten.") {
-		t.Errorf("the write did not land:\n%s", again.Notes[0].Body)
+	if !strings.Contains(again.Notes[0].Body, "Again.") {
+		t.Errorf("the writes did not land:\n%s", again.Notes[0].Body)
 	}
 
-	// The fingerprint is stale now, and the second write is refused.
+	// What the read gave is two writes behind, and a write presenting it is
+	// refused.
 	if got := failing(t, session, "note_write", map[string]any{
-		"path": "Entropy.md", "body": "# Entropy\n\nAgain.\n",
+		"path": "Entropy.md", "body": "# Entropy\n\nOnce more.\n",
 		"fingerprint": read.Notes[0].Fingerprint,
 	}); !strings.Contains(got, "changed") {
 		t.Errorf("want a refusal naming the change, got %q", got)
 	}
+}
+
+// wrote is what note_write answers with.
+type wrote struct {
+	Path        string `json:"path"`
+	Fingerprint string `json:"fingerprint"`
 }
 
 func TestLinkingTwoNotesShowsAtBothEnds(t *testing.T) {

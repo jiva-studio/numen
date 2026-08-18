@@ -41,6 +41,20 @@ const caretAt = (view: EditorView, line: number, column: number) => {
   view.dispatch({ selection: EditorSelection.single(at) })
 }
 
+/** A key pressed wherever the caret is, and the event as the page left it. */
+const chord = (on: EventTarget, held: KeyboardEventInit = { ctrlKey: true }) => {
+  const key = new KeyboardEvent('keydown', {
+    key: 's',
+    code: 'KeyS',
+    keyCode: 83,
+    bubbles: true,
+    cancelable: true,
+    ...held,
+  })
+  on.dispatchEvent(key)
+  return key
+}
+
 afterEach(() => {
   while (drawn.length) drawn.pop()?.unmount()
   vi.restoreAllMocks()
@@ -190,5 +204,52 @@ describe('what a parent can ask for', () => {
     const before = measure.mock.calls.length
     exposed.measure()
     expect(measure.mock.calls.length).toBe(before + 1)
+  })
+})
+
+describe('the chord that keeps the text', () => {
+  it('reaches the outside', () => {
+    const { wrapper, view } = editor({ modelValue: 'one' })
+    chord(view.contentDOM)
+    expect(wrapper.emitted('save')).toEqual([[]])
+  })
+
+  it('is answered by the editor, so nothing behind it hears the key', () => {
+    const { view } = editor({ modelValue: 'one' })
+    expect(chord(view.contentDOM).defaultPrevented).toBe(true)
+  })
+
+  it('leaves the text as it was', () => {
+    const { wrapper, view } = editor({ modelValue: 'one' })
+    chord(view.contentDOM)
+    expect(view.state.doc.toString()).toBe('one')
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+  })
+
+  it('is the chord and not the letter in it', () => {
+    const { wrapper, view } = editor({ modelValue: 'one' })
+    chord(view.contentDOM, {})
+    expect(wrapper.emitted('save')).toBeUndefined()
+  })
+
+  it('is heard by the editor the caret is in and by no other', () => {
+    const one = editor({ modelValue: 'one' })
+    const two = editor({ modelValue: 'two' })
+
+    chord(one.view.contentDOM)
+    expect(one.wrapper.emitted('save')).toEqual([[]])
+    expect(two.wrapper.emitted('save')).toBeUndefined()
+  })
+
+  it('is heard while the text will not be typed into', () => {
+    const { wrapper, view } = editor({ modelValue: 'one', readonly: true })
+    chord(view.contentDOM)
+    expect(wrapper.emitted('save')).toEqual([[]])
+  })
+
+  it('is heard by no editor while the caret is in none of them', () => {
+    const { wrapper } = editor({ modelValue: 'one' })
+    chord(document.body)
+    expect(wrapper.emitted('save')).toBeUndefined()
   })
 })

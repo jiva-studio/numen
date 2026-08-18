@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { editing } from './editing'
-import { leaving } from './leaving'
+import { leaving, type Going, type Owed, type Question } from './leaving'
 import type { Answered, Core } from './showing'
 
 /** A vault that has been read and is doing nothing. */
@@ -36,6 +36,7 @@ function stream() {
       said.push(message)
       wake?.()
     },
+    /** The stream drops. The next one a page opens is a stream again. */
     end() {
       over = true
       wake?.()
@@ -43,7 +44,10 @@ function stream() {
     async *read() {
       for (;;) {
         while (said.length > 0) yield said.shift() as { token: string; flush: boolean }
-        if (over) return
+        if (over) {
+          over = false
+          return
+        }
         await new Promise<void>((woken) => {
           wake = woken
         })
@@ -56,11 +60,11 @@ function stream() {
 function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) {
   const files = new Map<string, string>()
   const wrote: { path: string; body: string }[] = []
-  const answered: string[] = []
+  const answered: { token: string; owed: Owed }[] = []
   /** Writes wait here until a test lets them through. */
   let held: (() => void) | null = null
 
-  const core: Core = {
+  const core: Core & Going = {
     neighbourhood: async () => ({}) as never,
     opening: async () => null,
     state: async () => idle,
@@ -69,8 +73,8 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
     // eslint-disable-next-line require-yield
     focus: async function* () {},
     quitting,
-    flushed: async (token) => {
-      answered.push(token)
+    flushed: async (token: string, owed: Owed = 'written') => {
+      answered.push({ token, owed })
     },
     read: async (path): Promise<Answered> =>
       files.has(path)
@@ -101,6 +105,36 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
   }
 }
 
+/**
+ * A tab whose text the file changed under, which a test answers for. The write
+ * each way out would do is not this file's subject; what it records is which
+ * way the person took.
+ */
+function conflicted(path: string) {
+  const took: string[] = []
+  let drop = () => {}
+  const question: Question = {
+    path,
+    keep: async () => {
+      took.push('keep ' + path)
+      drop()
+    },
+    take: async () => {
+      took.push('take ' + path)
+      drop()
+    },
+  }
+  return {
+    question,
+    took,
+    raise: (raising: (one: Question) => () => void) => {
+      drop = raising(question)
+    },
+    /** The question stops standing, however that came about. */
+    answered: () => drop(),
+  }
+}
+
 const nap = () => new Promise((wake) => setTimeout(wake, 0))
 const settle = async () => {
   for (let i = 0; i < 20; i++) await nap()
@@ -126,7 +160,7 @@ describe('a page asked to write what it owes', () => {
     await settle()
 
     expect(at.wrote).toEqual([{ path: 'Note.md', body: 'what the person was in the middle of' }])
-    expect(at.answered).toEqual(['7'])
+    expect(at.answered).toEqual([{ token: '7', owed: 'written' }])
   })
 
   it('does not answer while the write it owes is still in the air', async () => {
@@ -151,7 +185,7 @@ describe('a page asked to write what it owes', () => {
     await settle()
 
     expect(at.wrote).toEqual([{ path: 'Note.md', body: 'held' }])
-    expect(at.answered).toEqual(['1'])
+    expect(at.answered).toEqual([{ token: '1', owed: 'written' }])
   })
 
   it('says nothing until the application asks', async () => {
@@ -184,6 +218,157 @@ describe('a page asked to write what it owes', () => {
     said.say({ token: '0', flush: true })
     await settle()
 
-    expect(at.answered).toEqual(['0'])
+    expect(at.answered).toEqual([{ token: '0', owed: 'written' }])
+  })
+})
+
+describe('a page holding text the file changed under', () => {
+  it('says there are questions outstanding, and does not say it has written', async () => {
+    const said = stream()
+    const at = fake(said.read)
+    const going = leaving(at.core)
+    const note = conflicted('Note.md')
+    note.raise(going.raise)
+    void going.start()
+
+    said.say({ token: '4', flush: true })
+    await settle()
+
+    expect(at.answered).toEqual([{ token: '4', owed: 'asking' }])
+    expect(going.questions.value.map((one) => one.path)).toEqual(['Note.md'])
+  })
+
+  it('says so before the writes it owes have landed', async () => {
+    const said = stream()
+    const at = fake(said.read)
+    const notes = editing(at.core)
+    const going = leaving(at.core)
+    going.holds(notes.flush)
+    const note = conflicted('Held.md')
+    note.raise(going.raise)
+
+    void going.start()
+    notes.open('Other.md')
+    await settle()
+    notes.typed('Other.md', 'on its way')
+    at.hold()
+
+    said.say({ token: '5', flush: true })
+    await settle()
+
+    expect(at.answered).toEqual([{ token: '5', owed: 'asking' }])
+
+    at.release()
+    await settle()
+
+    // The write landed and the question still stands, so nothing has changed
+    // about what the page owes.
+    expect(at.wrote).toEqual([{ path: 'Other.md', body: 'on its way' }])
+    expect(at.answered).toEqual([{ token: '5', owed: 'asking' }])
+  })
+
+  it('says it has written once every question is answered', async () => {
+    const said = stream()
+    const at = fake(said.read)
+    const going = leaving(at.core)
+    const first = conflicted('One.md')
+    const second = conflicted('Two.md')
+    first.raise(going.raise)
+    second.raise(going.raise)
+    void going.start()
+
+    said.say({ token: '6', flush: true })
+    await settle()
+
+    expect(at.answered).toEqual([{ token: '6', owed: 'asking' }])
+
+    await going.questions.value.find((one) => one.path === 'One.md')?.keep()
+    await settle()
+
+    // One of the two is answered, so the window is still owed something.
+    expect(at.answered.at(-1)).toEqual({ token: '6', owed: 'asking' })
+    expect(going.questions.value.map((one) => one.path)).toEqual(['Two.md'])
+
+    await going.questions.value.find((one) => one.path === 'Two.md')?.take()
+    await settle()
+
+    expect(at.answered.at(-1)).toEqual({ token: '6', owed: 'written' })
+    expect(going.questions.value).toEqual([])
+    expect(first.took).toEqual(['keep One.md'])
+    expect(second.took).toEqual(['take Two.md'])
+  })
+
+  it('leaves a question the person put off standing, and stops drawing it', async () => {
+    const said = stream()
+    const at = fake(said.read)
+    const going = leaving(at.core, async () => {})
+    conflicted('Later.md').raise(going.raise)
+    void going.start()
+
+    said.say({ token: '8', flush: true })
+    await settle()
+
+    going.questions.value[0]?.later()
+    await settle()
+
+    expect(going.questions.value).toEqual([])
+    // Nothing was answered for it, so the window is still owed it.
+    expect(at.answered.at(-1)).toEqual({ token: '8', owed: 'asking' })
+
+    // And it is still owed it the next time the window is asked for.
+    said.end()
+    await settle()
+    said.say({ token: '9', flush: true })
+    await settle()
+
+    expect(at.answered.at(-1)).toEqual({ token: '9', owed: 'asking' })
+  })
+
+  it('says nothing under a token the stream took with it', async () => {
+    const said = stream()
+    const at = fake(said.read)
+    const going = leaving(at.core, async () => {})
+    const note = conflicted('Note.md')
+    note.raise(going.raise)
+    void going.start()
+
+    said.say({ token: '2', flush: true })
+    await settle()
+
+    expect(at.answered).toEqual([{ token: '2', owed: 'asking' }])
+
+    said.end()
+    await settle()
+    note.answered()
+    await settle()
+
+    // Nothing answers to that token now, and the page has not been asked again.
+    expect(at.answered).toEqual([{ token: '2', owed: 'asking' }])
+
+    said.say({ token: '3', flush: true })
+    await settle()
+
+    expect(at.answered.at(-1)).toEqual({ token: '3', owed: 'written' })
+  })
+
+  it('raises what stands again under the token it is asked under next', async () => {
+    const said = stream()
+    const at = fake(said.read)
+    const going = leaving(at.core, async () => {})
+    conflicted('Note.md').raise(going.raise)
+    void going.start()
+
+    said.say({ token: '9', flush: true })
+    await settle()
+
+    expect(at.answered).toEqual([{ token: '9', owed: 'asking' }])
+
+    // The stream drops and the page listens again under a new token.
+    said.end()
+    await settle()
+    said.say({ token: '10', flush: true })
+    await settle()
+
+    expect(at.answered.at(-1)).toEqual({ token: '10', owed: 'asking' })
   })
 })

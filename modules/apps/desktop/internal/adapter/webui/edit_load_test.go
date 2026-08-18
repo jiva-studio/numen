@@ -93,7 +93,7 @@ func TestEditLoad(t *testing.T) {
 	body := "# Heat\n\nA line nobody wrote before, at " + strconv.FormatInt(time.Now().UnixNano(), 10) + ".\n"
 
 	saving := time.Now()
-	if err := api.Saves.Save(t.Context(), v, path, body); err != nil {
+	if _, err := api.Saves.Save(t.Context(), v, path, body, nil); err != nil {
 		t.Fatal(err)
 	}
 	wrote := time.Since(saving)

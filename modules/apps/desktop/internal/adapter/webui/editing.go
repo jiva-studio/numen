@@ -29,11 +29,17 @@ func (a *API) Read(ctx context.Context, r *connect.Request[v1.ReadRequest]) (*co
 	out := &v1.ReadResponse{Body: found.Body}
 	if refusal, refused := refusalOf(found.Outcome); refused {
 		out.Refusal = &refusal
+	} else {
+		// What the file was when this prose came out of it, for the client to
+		// present when it puts prose back.
+		out.At = fingerprintOf(found.Ref)
 	}
 	return connect.NewResponse(out), nil
 }
 
-// Write puts prose into a note. What is on disk is replaced.
+// Write puts prose into a note. A note still holding the prose the client read
+// is written over; one holding something else is left alone and the client is
+// told the note changed.
 func (a *API) Write(ctx context.Context, r *connect.Request[v1.WriteRequest]) (*connect.Response[v1.WriteResponse], error) {
 	if a.Saves == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
@@ -44,14 +50,20 @@ func (a *API) Write(ctx context.Context, r *connect.Request[v1.WriteRequest]) (*
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
 	defer a.Writing.done()
-	err := a.Saves.Save(ctx, a.Vault, r.Msg.GetPath(), r.Msg.GetBody())
+	at, err := a.Saves.Save(ctx, a.Vault, r.Msg.GetPath(), r.Msg.GetBody(), seenOf(r.Msg.GetSeen()))
 	if err == nil {
 		// What the person typed owes its vectors. Which chunks owe them is not
 		// carried: the debt is in the index, so several saves are one pass.
 		if a.Wrote != nil {
 			a.Wrote()
 		}
-		return connect.NewResponse(&v1.WriteResponse{}), nil
+		return connect.NewResponse(&v1.WriteResponse{At: fingerprintOf(at)}), nil
+	}
+	// A note holding prose this client has not read is its own answer. A
+	// refusal is something the client can do nothing about; this one is a
+	// question, and the person answers it.
+	if errors.Is(err, port.ErrChanged) {
+		return connect.NewResponse(&v1.WriteResponse{Changed: true}), nil
 	}
 	refusal, refused := refusedBy(err)
 	if !refused {
@@ -115,6 +127,12 @@ func (a *API) Join(ctx context.Context, r *connect.Request[v1.JoinRequest]) (*co
 	defer a.Writing.done()
 
 	if err := a.Joins.Add(ctx, a.Vault, r.Msg.GetPath(), link); err != nil {
+		// A join reads a note, splices its frontmatter and puts it back. A note
+		// that moved in between is left alone, and the client reads it again
+		// before it asks for this.
+		if errors.Is(err, port.ErrChanged) {
+			return connect.NewResponse(&v1.JoinResponse{Changed: true}), nil
+		}
 		refusal, refused := refusedBy(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
@@ -175,8 +193,40 @@ func roleOf(seat v1.Seat) (domain.LinkRole, bool) {
 	}
 }
 
+// fingerprintOf is a file as the schema carries it. Nothing is carried for the
+// zero value: a caller is given a fingerprint only where there is a file behind
+// it.
+func fingerprintOf(ref domain.FileRef) *v1.Fingerprint {
+	if ref == (domain.FileRef{}) {
+		return nil
+	}
+	return &v1.Fingerprint{Path: ref.Path, Size: ref.Size, Mtime: ref.MTime}
+}
+
+// seenOf is what a client says it last saw of a note. Nothing said is nothing
+// compared, and the write lands on whatever the note now holds.
+func seenOf(seen *v1.Seen) *note.Seen {
+	if seen == nil {
+		return nil
+	}
+	return &note.Seen{Prose: seen.GetProse(), At: refOf(seen.GetAt())}
+}
+
+// refOf is a fingerprint as the core holds one. The kind is left empty: what
+// the file is was decided when it was asked for.
+func refOf(at *v1.Fingerprint) domain.FileRef {
+	if at == nil {
+		return domain.FileRef{}
+	}
+	return domain.FileRef{Path: at.GetPath(), Size: at.GetSize(), MTime: at.GetMtime()}
+}
+
 // refusedBy says which refusal a write's error is, and whether it is one at all.
 // Anything else is the vault being out of reach.
+//
+// A note that changed is not among them. It is answered on its own, because a
+// refusal is something the client can do nothing about and that one is a
+// question for the person.
 func refusedBy(err error) (v1.Refusal, bool) {
 	switch {
 	case errors.Is(err, note.ErrTooLarge):

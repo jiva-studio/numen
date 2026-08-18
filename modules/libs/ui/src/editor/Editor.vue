@@ -11,7 +11,7 @@ import { onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
 import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { drawing, editable, editing, preview, setup } from './setup'
-import { opening, resolving } from './outside'
+import { opening, resolving, saving } from './outside'
 import { replacing } from './replacing'
 
 const props = withDefaults(
@@ -29,6 +29,8 @@ const props = withDefaults(
 const emit = defineEmits<{
   /** A drawn link was followed. */
   (event: 'open', address: string): void
+  /** The person asked, with `Ctrl+S`, for the text to be kept now. */
+  (event: 'save'): void
 }>()
 
 const text = defineModel<string>({ default: '' })
@@ -46,6 +48,7 @@ onMounted(() => {
         setup({ live: props.live, readonly: props.readonly, placeholder: props.placeholder }),
         resolving.of((address) => props.resolve?.(address) ?? address),
         opening.of((address) => emit('open', address)),
+        saving.of(() => emit('save')),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) text.value = update.state.doc.toString()
         }),

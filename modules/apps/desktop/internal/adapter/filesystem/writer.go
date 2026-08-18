@@ -52,40 +52,45 @@ func OpenForWriting(root string, opts Options) (*VaultWriter, error) {
 // it already had: the person may have made one read-only on purpose.
 const newFileMode fs.FileMode = 0o644
 
-func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, fingerprint domain.FileRef) error {
+func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, fingerprint domain.FileRef) (domain.FileRef, error) {
 	if ctx.Err() != nil {
-		return ctx.Err()
+		return domain.FileRef{}, ctx.Err()
 	}
 	target, err := w.file(path)
 	if err != nil {
-		return err
+		return domain.FileRef{}, err
 	}
 
 	mode := newFileMode
 	switch info, err := os.Stat(target); {
 	case err == nil:
 		if info.IsDir() {
-			return fmt.Errorf("write %s: it is a directory", path)
+			return domain.FileRef{}, fmt.Errorf("write %s: it is a directory", path)
 		}
 		mode = info.Mode().Perm()
 		if fingerprint != (domain.FileRef{}) &&
 			(info.Size() != fingerprint.Size || info.ModTime().UnixNano() != fingerprint.MTime) {
-			return fmt.Errorf("write %s: %w", path, port.ErrChanged)
+			return domain.FileRef{}, fmt.Errorf("write %s: %w", path, port.ErrChanged)
 		}
 	case errors.Is(err, fs.ErrNotExist):
 		// A note that is not there yet cannot have changed, and a caller that
 		// believed it was there is told so.
 		if fingerprint != (domain.FileRef{}) {
-			return fmt.Errorf("write %s: %w", path, port.ErrChanged)
+			return domain.FileRef{}, fmt.Errorf("write %s: %w", path, port.ErrChanged)
 		}
 	default:
-		return err
+		return domain.FileRef{}, err
 	}
 
 	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
-		return err
+		return domain.FileRef{}, err
 	}
-	return replace(target, content, mode)
+	written, err := replace(target, content, mode)
+	if err != nil {
+		return domain.FileRef{}, err
+	}
+	written.Path = path
+	return written, nil
 }
 
 // replace writes content beside the target and renames it over the top.
@@ -97,32 +102,44 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, fi
 // The contents are flushed before the rename. Without that, a machine that
 // loses power between the two can leave the rename recorded and the bytes not,
 // which is the one outcome this whole arrangement exists to prevent.
-func replace(target string, content []byte, mode fs.FileMode) error {
+//
+// The fingerprint that comes back is taken from the temporary file's own
+// descriptor. The rename carries the file across whole, so its size and its
+// modification time are the ones at the target from the moment the rename
+// lands, and a caller holding them is holding the file it just wrote.
+func replace(target string, content []byte, mode fs.FileMode) (domain.FileRef, error) {
 	dir, name := filepath.Split(target)
 	tmp, err := os.CreateTemp(dir, "."+name+".*")
 	if err != nil {
-		return err
+		return domain.FileRef{}, err
 	}
 	defer os.Remove(tmp.Name())
 
 	if _, err := tmp.Write(content); err != nil {
 		tmp.Close()
-		return err
+		return domain.FileRef{}, err
 	}
 	if err := tmp.Sync(); err != nil {
 		tmp.Close()
-		return err
+		return domain.FileRef{}, err
+	}
+	info, err := tmp.Stat()
+	if err != nil {
+		tmp.Close()
+		return domain.FileRef{}, err
 	}
 	if err := tmp.Close(); err != nil {
-		return err
+		return domain.FileRef{}, err
 	}
+	// Changing the mode moves no modification time.
 	if err := os.Chmod(tmp.Name(), mode); err != nil {
-		return err
+		return domain.FileRef{}, err
 	}
 	if err := os.Rename(tmp.Name(), target); err != nil {
-		return err
+		return domain.FileRef{}, err
 	}
-	return settle(dir)
+	written := domain.FileRef{Size: info.Size(), MTime: info.ModTime().UnixNano()}
+	return written, settle(dir)
 }
 
 // settle flushes the folder the rename was recorded in.

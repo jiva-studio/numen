@@ -10,6 +10,7 @@ import { markdown } from '@codemirror/lang-markdown'
 import { bracketMatching, syntaxHighlighting } from '@codemirror/language'
 import { type Extension, Compartment, EditorState } from '@codemirror/state'
 import {
+  type KeyBinding,
   EditorView,
   drawSelection,
   keymap,
@@ -20,6 +21,7 @@ import { highlighting } from './highlight'
 import { LANGUAGES } from './languages'
 import { following, live, wholeLines } from './live'
 import { GFM } from '@lezer/markdown'
+import { saving } from './outside'
 import { theme } from './theme'
 
 /** What can be changed without the editor being built again. */
@@ -40,13 +42,26 @@ export const editable = (on: boolean): Extension => [
   EditorState.readOnly.of(!on),
 ]
 
+/**
+ * The chord that asks for the text to be kept now, answered by whoever put the
+ * editor on the screen. It is handled here, so the letter is not inserted and
+ * the page's own answer to the chord does not run.
+ */
+export const keeping: KeyBinding = {
+  key: 'Mod-s',
+  run: (view) => {
+    view.state.facet(saving)()
+    return true
+  },
+}
+
 export const setup = (settings: Settings = {}): Extension => [
   history(),
   drawSelection(),
   rectangularSelection(),
   bracketMatching(),
   EditorView.lineWrapping,
-  keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
+  keymap.of([keeping, ...defaultKeymap, ...historyKeymap, indentWithTab]),
   markdown({ extensions: GFM, codeLanguages: LANGUAGES }),
   syntaxHighlighting(highlighting),
   theme,

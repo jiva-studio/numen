@@ -78,7 +78,7 @@ func run(cfg container.Config, agents agentOptions, zoom float64) error {
 	// agents are let go of, then the scan and the follower stop and the
 	// database closes.
 	going := &going{settle: opened.Settle}
-	defer going.wait()
+	defer func() { going.wait() }()
 
 	app := application.New(application.Options{
 		Name: "numen",
@@ -87,16 +87,11 @@ func run(cfg container.Config, agents agentOptions, zoom float64) error {
 		},
 		// A quit that does not come through the window is answered on the
 		// thread the page is served on, so the settling happens off it and the
-		// quit is asked for again once it is over.
+		// quit is asked for again once it is over. A settling that ended with a
+		// question standing asks for nothing: the person is answering it, and
+		// this refusal is the whole of what a stale goroutine may do.
 		ShouldQuit: func() bool {
-			if going.settled() {
-				return true
-			}
-			go func() {
-				going.wait()
-				application.Get().Quit()
-			}()
-			return false
+			return asked(going, func() { application.Get().Quit() })
 		},
 	})
 
@@ -110,53 +105,122 @@ func run(cfg container.Config, agents agentOptions, zoom float64) error {
 
 	// A hook runs before the window is destroyed and on a thread of its own, so
 	// the page is still drawn and still answered while what it owes is written.
-	window.RegisterHook(events.Common.WindowClosing, func(*application.WindowEvent) {
-		going.wait()
+	// A cancelled event is where the hooks stop, and the destroy the window
+	// registered for itself is one of the listeners after them.
+	window.RegisterHook(events.Common.WindowClosing, func(event *application.WindowEvent) {
+		if !closing(ctx, going, opened.Answered, window.Close) {
+			event.Cancel()
+		}
 	})
 
 	return app.Run()
 }
 
-// quitBound is how long the window waits for a page to write what only it
-// holds. A page whose script has stopped — a wedged webview, one already torn
-// down — answers never, and this is how long that costs.
-const quitBound = 3 * time.Second
-
-// going is the vault settling, once, whichever way the window is asked to go.
-type going struct {
-	settle func(context.Context)
-	once   sync.Once
-	over   chan struct{}
+// closing is the window being asked to go, and answers with whether it may.
+//
+// A page holding text a person has to answer for calls the close off, and the
+// close is asked for again once they have answered. That wait is on a person
+// and is not measured.
+func closing(
+	ctx context.Context,
+	g *going,
+	answered func(context.Context) bool,
+	again func(),
+) bool {
+	if g.wait() {
+		return true
+	}
+	go func() {
+		if answered(ctx) {
+			again()
+		}
+	}()
+	return false
 }
 
-// wait settles the vault and returns when it has.
-func (g *going) wait() {
-	g.begin()
-	<-g.over
+// asked is a quit that did not come through the window, and answers with
+// whether the application may go.
+//
+// It is answered on the thread the page is served on, so the settling happens
+// off it and the quit is asked for again once it is over. A settling that ended
+// with a question standing asks for nothing: the person is answering it, and
+// this refusal is the whole of what the goroutine left behind may do.
+func asked(g *going, quit func()) bool {
+	if g.settled() {
+		return true
+	}
+	go func() {
+		if g.wait() {
+			quit()
+		}
+	}()
+	return false
+}
+
+// quitBound is how long the window waits for a page that says nothing to write
+// what only it holds. A page whose script has stopped — a wedged webview, one
+// already torn down — answers never, and this is how long that costs. A page
+// raising a question has answered, and the bound is not what its wait is
+// measured by.
+const quitBound = 3 * time.Second
+
+// going is the vault settling, whichever way the window is asked to go.
+//
+// A settling that ends with a question standing leaves the vault as it was, and
+// the next ask begins another one.
+type going struct {
+	settle func(context.Context) bool
+
+	mu   sync.Mutex
+	turn *turn
+	done bool
+}
+
+// turn is one settling, and what it answered.
+type turn struct {
+	over    chan struct{}
+	settled bool
+}
+
+// wait settles the vault and answers with whether it did. A settling already
+// running is joined and its answer shared.
+func (g *going) wait() bool {
+	g.mu.Lock()
+	if g.done {
+		g.mu.Unlock()
+		return true
+	}
+	this := g.turn
+	if this == nil {
+		this = &turn{over: make(chan struct{})}
+		g.turn = this
+		go g.begin(this)
+	}
+	g.mu.Unlock()
+
+	<-this.over
+	return this.settled
 }
 
 // settled reports whether there is nothing left owed.
 func (g *going) settled() bool {
-	g.begin()
-	select {
-	case <-g.over:
-		return true
-	default:
-		return false
-	}
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return g.done
 }
 
-func (g *going) begin() {
-	g.once.Do(func() {
-		g.over = make(chan struct{})
-		go func() {
-			defer close(g.over)
+func (g *going) begin(this *turn) {
+	defer close(this.over)
 
-			ctx, cancel := context.WithTimeout(context.Background(), quitBound)
-			defer cancel()
-			g.settle(ctx)
-		}()
-	})
+	ctx, cancel := context.WithTimeout(context.Background(), quitBound)
+	defer cancel()
+	settled := g.settle(ctx)
+
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	this.settled = settled
+	g.done = settled
+	g.turn = nil
 }
 
 // drawnAt is how large everything is drawn.

@@ -3,8 +3,8 @@
 - **Status:** Accepted, except where noted below
 - **Date:** 2026-08-15
 - **Applies to:** `modules/apps/desktop`
-- **Partly superseded by:** ADR-0027 and ADR-0032 — echo-loop protection, in the
-  consequences
+- **Partly superseded by:** ADR-0027 and ADR-0032 — in the consequences:
+  echo-loop protection, and an edit appearing without being asked for
 - **Related:** ADR-0001, ADR-0002, ADR-0018, ADR-0027, ADR-0032
 
 ## Context
@@ -83,6 +83,11 @@ to date.
 **Positive**
 
 - An edit made anywhere appears without anyone asking for it.
+
+  > **Partly superseded by [ADR-0032](0032-the-window-saves-a-note-as-it-is-typed.md).**
+  > A tab holding unsaved prose is not redrawn from its file. It stops saving, says
+  > so, and shows what the person typed until they answer.
+
 - The 100 ms budget becomes something to measure.
 - The scan stops being the only way in and becomes the way back.
 
