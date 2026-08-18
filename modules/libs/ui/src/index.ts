@@ -37,6 +37,7 @@ export type {
 export { default as Panel } from './panel/Panel.vue'
 
 export { default as Editor } from './editor/Editor.vue'
+export type { EditorChange } from './editor/change'
 
 export { default as Composer } from './composer/Composer.vue'
 export { COMPOSER_STATES, composerState, keyIntent } from './composer/model'

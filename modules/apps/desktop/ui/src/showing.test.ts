@@ -45,6 +45,8 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     changes: async function* () {},
     // eslint-disable-next-line require-yield
     focus: async function* () {},
+    // eslint-disable-next-line require-yield
+    editing: async function* () {},
     read: async () => ({ body: '', refusal: null }),
     write: async () => ({ body: '', refusal: null }),
     create: async () => ({ path: '', refusal: null }),
@@ -108,7 +110,7 @@ describe('the stream of changes', () => {
     const core = fake({
       changes: async function* () {
         streams++
-        yield { paths: ['Note.md'], reload: false }
+        yield { paths: ['Note.md'], reload: false, renamed: [] }
       },
     })
     const waits: number[] = []
@@ -144,7 +146,7 @@ describe('the stream of changes', () => {
   it('asks for the picture again for a change to any note', async () => {
     const core = fake({
       changes: async function* () {
-        yield { paths: ['Somewhere/Else.md'], reload: false }
+        yield { paths: ['Somewhere/Else.md'], reload: false, renamed: [] }
       },
     })
     const window = showing(core, async () => window.close())
@@ -219,6 +221,9 @@ describe('a vault reading itself', () => {
       focus: async function* () {
         await held()
       },
+      editing: async function* () {
+        await held()
+      },
       state: async () => {
         asks++
         // Cutting begins after the notes are read, so at the moment the window
@@ -257,6 +262,9 @@ describe('a vault reading itself', () => {
       focus: async function* () {
         await held()
       },
+      editing: async function* () {
+        await held()
+      },
       state: async () => {
         asks++
         return {
@@ -292,6 +300,9 @@ describe('a vault reading itself', () => {
         await held()
       },
       focus: async function* () {
+        await held()
+      },
+      editing: async function* () {
         await held()
       },
       state: async () => {

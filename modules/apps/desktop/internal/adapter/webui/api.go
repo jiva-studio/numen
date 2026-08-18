@@ -51,6 +51,10 @@ type API struct {
 	Makes *note.Create
 	Joins *note.Linking
 
+	// Drawing is everyone drawing this vault, for a change to a note being made
+	// while they may be showing it.
+	Drawing audience[domain.Editing]
+
 	// Watching is everyone drawing this vault, for when something asks that a
 	// note be put in front of the person.
 	Watching audience[string]
@@ -181,7 +185,13 @@ func (a *API) Changes(
 			if !open {
 				return nil
 			}
-			if err := out.Send(&v1.ChangesResponse{Paths: what.paths, Reload: what.reload}); err != nil {
+			renamed := make([]*v1.Renamed, 0, len(what.renamed))
+			for _, went := range what.renamed {
+				renamed = append(renamed, &v1.Renamed{From: went.From, To: went.To})
+			}
+			if err := out.Send(&v1.ChangesResponse{
+				Paths: what.paths, Reload: what.reload, Renamed: renamed,
+			}); err != nil {
 				return err
 			}
 		}

@@ -36,6 +36,7 @@ func started(t *testing.T, prints string) agent.Work {
 		Words: map[string]claudecode.Words{
 			claudecode.Tool("note_search"): {Title: "Search notes", About: "query"},
 			claudecode.Tool("note_create"): {Title: "Create a note", About: "notes", Inside: "title"},
+			claudecode.Tool("note_write"):  {Title: "Write a note", About: "path", Kind: agent.Edit},
 		},
 	}
 	work, err := claude.Take(t.Context(), agent.Task{Asked: "what is here?"})
@@ -390,6 +391,72 @@ func delta(partial string) string {
 	}
 	return `{"type":"stream_event","event":{"type":"content_block_delta",` +
 		`"delta":{"type":"input_json_delta","partial_json":` + string(quoted) + `}}}`
+}
+
+// wrote is one message carrying a call that writes a note and a call that looks
+// for one.
+var wrote = `{"type":"assistant","message":{"content":[` +
+	`{"type":"tool_use","id":"toolu_7","name":"` + claudecode.Tool("note_write") + `",` +
+	`"input":{"path":"physics/entropy.md","body":"Two words."}},` +
+	`{"type":"tool_use","id":"toolu_8","name":"` + claudecode.Tool("note_search") + `",` +
+	`"input":{"query":"entropy"}}]}}`
+
+// One call is reported as it is reached for and again as it is written, and what
+// says those reports are one call is the name the agent gave it.
+func TestEveryReportOfOneCallCarriesTheNameTheAgentGaveIt(t *testing.T) {
+	// Long enough to be reported while it is still being written.
+	body := strings.Repeat("Игра в кости есть корень несчастья. ", 20)
+	lines := []string{
+		connected,
+		`{"type":"stream_event","event":{"type":"content_block_start","content_block":` +
+			`{"type":"tool_use","id":"toolu_7","name":"` + claudecode.Tool("note_write") + `"}}}`,
+		delta(`{"path":"physics/entropy.md","body":"` + body),
+		delta(`"}`),
+		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,
+	}
+	steps := heard(t, started(t, strings.Join(lines, "\n")))
+
+	reports := 0
+	for _, step := range steps {
+		if step.Tool != "Write a note" {
+			continue
+		}
+		reports++
+		if step.Call != "toolu_7" {
+			t.Errorf("a report of the call says %q", step.Call)
+		}
+	}
+	if reports < 2 {
+		t.Fatalf("one call was reported %d times: %+v", reports, steps)
+	}
+}
+
+// What a call does to the vault is what a person watching it wants to know, and
+// the tool's own declaration is what says so.
+func TestSaysWhatACallDoesToTheVault(t *testing.T) {
+	steps := heard(t, started(t, connected+"\n"+wrote))
+
+	if steps[0].Kind != agent.Edit {
+		t.Errorf("a call that writes a note is %+v", steps[0])
+	}
+	// A tool that declared nothing about what it does is a call and no more.
+	if steps[1].Kind != agent.Calling {
+		t.Errorf("a call that says nothing about itself is %+v", steps[1])
+	}
+}
+
+// A client follows the agent by opening what it is working in, and a path is the
+// only thing that says which note that is.
+func TestSaysWhichNoteACallIsWorkingIn(t *testing.T) {
+	steps := heard(t, started(t, connected+"\n"+wrote))
+
+	if steps[0].Place.Path != "physics/entropy.md" {
+		t.Errorf("the call is working in %+v", steps[0].Place)
+	}
+	// A query names no note, and nothing is opened for it.
+	if steps[1].Place != (agent.Place{}) {
+		t.Errorf("a search is working in %+v", steps[1].Place)
+	}
 }
 
 // A hook is a shell command the agent's own program runs, and it is not a tool:

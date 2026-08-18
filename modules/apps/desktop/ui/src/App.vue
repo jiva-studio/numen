@@ -8,6 +8,7 @@ import type { State } from './tab'
 
 const MARKS: Record<State, string | undefined> = {
   stuck: 'stuck',
+  gone: 'gone',
   overtaken: 'overtaken',
   unsaved: 'unsaved',
   saving: 'unsaved',
@@ -34,6 +35,7 @@ import { core } from './vault'
 import { showing } from './showing'
 import { footOf, type Phase } from './foot'
 import { editing } from './editing'
+import { drawn } from './drawn'
 import { creating, CREATABLE } from './creating'
 import { ITEMS, chose as carry } from './menu'
 import { leaving } from './leaving'
@@ -42,9 +44,10 @@ import { core as agent } from './agent'
 import { conversation } from './conversation'
 import { AGENT, PLEX, TABS, opening } from './workspace'
 
-const notes = editing(core)
+const drawings = drawn()
+const notes = editing(core, undefined, drawings.arrived)
 const making = creating(core)
-const window = showing(core, undefined, undefined, notes.changed)
+const window = showing(core, undefined, undefined, notes.changed, drawings.told)
 /** What the window answers when the application says it is going. */
 const going = leaving(core)
 going.holds(notes.flush)
@@ -95,6 +98,8 @@ const words = {
   learning: 'Preparing search by meaning',
   words: 'Searching by words only — no model set',
   overtaken: 'The file changed on disk, so this note stopped saving.',
+  gone: 'This note is no longer in the vault, so saving stopped. What is here is still yours.',
+  makeAgain: 'make it again',
   keep: 'Keep mine',
   take: "Take the file's",
   going: 'These notes stopped saving because their files changed. The window waits.',
@@ -218,6 +223,7 @@ const shown = (id: string) => editors.get(id)?.measure()
 const shut = (id: string, hold: () => void) => {
   if (!notes.all().includes(id)) return
   hold()
+  drawings.shut(id)
   void notes.shut(id).then((gone) => {
     if (!gone) return
     titles.delete(id)
@@ -231,6 +237,7 @@ onMounted(() => {
 })
 onUnmounted(() => {
   window.close()
+  drawings.close()
   going.close()
   close()
 })
@@ -278,6 +285,13 @@ onUnmounted(() => {
         <div v-else-if="notes.all().includes(id)" class="note">
           <p v-if="notes.saying(id)" role="alert" class="warning">{{ notes.saying(id) }}</p>
 
+
+          <p v-if="notes.shown(id).state === 'gone'" role="status" class="warning overtaken">
+            {{ words.gone }}
+            <button type="button" class="overtaken__answer" @click="notes.keep(id)">
+              {{ words.makeAgain }}
+            </button>
+          </p>
           <p
             v-if="notes.shown(id).state === 'overtaken'"
             role="status"
@@ -295,6 +309,7 @@ onUnmounted(() => {
           <Editor
             :ref="(editor: unknown) => drew(id, editor)"
             :model-value="notes.shown(id).body"
+            :change="drawings.shown(id)"
             class="note__text"
             @update:model-value="(body: string) => notes.typed(id, body)"
             @save="notes.save(id)"

@@ -31,6 +31,12 @@ export type Refusal =
  */
 const mendable: readonly Refusal[] = ['tooLarge', 'bodyRefused', 'unreachable']
 
+/** A note that is no longer where it was, and where it now is. */
+export interface Went {
+  readonly from: string
+  readonly to: string
+}
+
 /** Which file prose came out of, as the core hands it back. */
 export type At = string
 
@@ -65,6 +71,11 @@ export interface Tab {
   readonly flight: Flight | null
   /** Whether the flight has to be followed by a write. */
   readonly owed: boolean
+  /**
+   * Whether the note this tab reads is at a name with no file behind it, and
+   * so its save stopped. A note that comes back clears it.
+   */
+  readonly gone: boolean
   /** Whether the file moved past the prose this tab read, and so its save stopped. */
   readonly overtaken: boolean
   /** When the first unwritten change was made, or nothing. */
@@ -75,7 +86,7 @@ export interface Tab {
   readonly refused: Refusal | null
 }
 
-export type State = 'loading' | 'stuck' | 'overtaken' | 'saving' | 'unsaved' | 'clean'
+export type State = 'loading' | 'stuck' | 'gone' | 'overtaken' | 'saving' | 'unsaved' | 'clean'
 
 /** Dirty is what is shown differing from what was written. */
 export const dirty = (tab: Tab): boolean => tab.shown !== tab.written
@@ -87,6 +98,7 @@ export const dirty = (tab: Tab): boolean => tab.shown !== tab.written
 export const stateOf = (tab: Tab): State => {
   if (tab.refused) return 'stuck'
   if (tab.written === null) return 'loading'
+  if (tab.gone) return 'gone'
   if (tab.overtaken) return 'overtaken'
   if (tab.flight) return 'saving'
   if (dirty(tab)) return 'unsaved'
@@ -117,7 +129,12 @@ export type Event =
   /** The write in the air answered. */
   | { readonly kind: 'written'; readonly answer: Written }
   /** The vault changed. A change carrying no paths is a reload. */
-  | { readonly kind: 'changed'; readonly paths: readonly string[] }
+  | {
+      readonly kind: 'changed'
+      readonly paths: readonly string[]
+      /** The notes that moved, so a tab showing one follows it. */
+      readonly renamed: readonly Went[]
+    }
   /** A save is asked for now. */
   | { readonly kind: 'saving' }
   /** The person keeps theirs: what is shown goes to the file. */
@@ -176,6 +193,7 @@ export const opening = (path: string): Next => ({
     shown: '',
     flight: null,
     owed: false,
+    gone: false,
     overtaken: false,
     since: null,
     reading: 1,
@@ -195,7 +213,7 @@ export const tabAfter = (tab: Tab, event: Event, limits: Waiting = waiting): Nex
     case 'written':
       return landed(tab, event.answer)
     case 'changed':
-      return changed(tab, event.paths)
+      return changed(tab, event.paths, event.renamed)
     case 'saving':
       return saving(tab)
     case 'keeping':
@@ -239,10 +257,16 @@ const answered = (tab: Tab, generation: number, answer: Read): Next => {
   if (answer.kind === 'refused') {
     return loading ? { tab: { ...tab, refused: answer.refusal }, effects: [] } : still(tab)
   }
-  // Missing out of the first read empties the buffer, and the next write creates
-  // the file. Missing out of a re-read leaves the buffer where it is.
-  if (answer.kind === 'missing') return loading ? shows(tab, '', null) : still(tab)
+  // Missing out of the first read empties the buffer, and the next write makes
+  // the file. Missing out of a re-read is a note that is no longer there: what
+  // the person has stays on the screen, and nothing of it is written anywhere
+  // until they say so.
+  if (answer.kind === 'missing') {
+    return loading ? shows(tab, '', null) : still({ ...tab, gone: true })
+  }
   if (loading) return shows(tab, answer.body, answer.at)
+  // The note came back, at this name or another.
+  if (state === 'gone') return shows({ ...tab, gone: false }, answer.body, answer.at)
   if (generation !== tab.reading) return still(tab)
   if (state === 'overtaken') return shows({ ...tab, overtaken: false }, answer.body, answer.at)
   if (dirty(tab)) return still(tab)
@@ -304,18 +328,24 @@ const landed = (tab: Tab, answer: Written): Next => {
     at: answer.at,
     flight: null,
     since: null,
+    gone: false,
   }
   return tab.owed ? begins(written, seenOf(written)) : still(written)
 }
 
-const changed = (tab: Tab, paths: readonly string[]): Next => {
+const changed = (tab: Tab, paths: readonly string[], renamed: readonly Went[]): Next => {
+  // A note that moved is followed wherever it went: its name changed and what
+  // it holds did not. A tab left at the name it had holds a name with no file.
+  const went = renamed.find((one) => one.from === tab.path)
+  const at = went ? { ...tab, path: went.to, gone: false } : tab
+
   // A change carrying no paths is a reload, and it is about every tab.
-  const mine = paths.length === 0 || paths.includes(tab.path)
-  if (!mine || stateOf(tab) !== 'clean') return still(tab)
-  const reading = tab.reading + 1
+  const mine = paths.length === 0 || paths.includes(at.path) || went !== undefined
+  if (!mine || stateOf(at) !== 'clean') return still(at)
+  const reading = at.reading + 1
   return {
-    tab: { ...tab, reading },
-    effects: [{ kind: 'read', path: tab.path, generation: reading }],
+    tab: { ...at, reading },
+    effects: [{ kind: 'read', path: at.path, generation: reading }],
   }
 }
 
@@ -331,8 +361,17 @@ const saving = (tab: Tab): Next => {
 }
 
 /** Keep: what is shown goes to the file, over whatever the file holds. */
-const keeping = (tab: Tab): Next =>
-  stateOf(tab) === 'overtaken' ? begins(tab, null) : still(tab)
+/**
+ * Keep: what is on screen goes to the file, whatever the file now holds.
+ *
+ * A note that is no longer there is made again at the name it had, which is the
+ * one thing that recovers prose the person can otherwise only copy out by hand.
+ */
+const keeping = (tab: Tab): Next => {
+  const state = stateOf(tab)
+  if (state !== 'overtaken' && state !== 'gone') return still(tab)
+  return begins(tab, null)
+}
 
 /** Take: the file is read again, and that read replaces the buffer. */
 const taking = (tab: Tab): Next => {

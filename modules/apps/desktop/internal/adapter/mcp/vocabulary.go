@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agent"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -19,6 +20,39 @@ type Words struct {
 	// a call that takes a collection. Creating three notes is about three
 	// titles, and the collection itself is about nothing a person can read.
 	Inside string
+	// Kind is what this call does to the vault.
+	Kind agent.Kind
+	// Stood and Becomes name the arguments carrying the text a call replaces
+	// and what it puts in that text's place. Both are empty for a call that
+	// replaces no stretch.
+	Stood   string
+	Becomes string
+}
+
+// doing is what each tool this vault serves does, and the arguments a call
+// naming a stretch of a note carries it in.
+//
+// The tools are written out by hand and so is this. A schema says what a call
+// takes and cannot say what taking it means.
+var doing = map[string]Words{
+	"note_search":        {Kind: agent.Search},
+	"note_get":           {Kind: agent.Read},
+	"note_read":          {Kind: agent.Read},
+	"note_neighbourhood": {Kind: agent.Read},
+	"note_create":        {Kind: agent.Edit},
+	"note_write":         {Kind: agent.Edit},
+	"note_edit":          {Kind: agent.Edit, Stood: "stood", Becomes: "becomes"},
+	"note_rename":        {Kind: agent.Move},
+	"note_move":          {Kind: agent.Move},
+	"note_remove":        {Kind: agent.Remove},
+	"note_focus":         {Kind: agent.Read},
+	"link_add":           {Kind: agent.Edit},
+	"link_update":        {Kind: agent.Edit},
+	"link_remove":        {Kind: agent.Edit},
+	"link_list":          {Kind: agent.Read},
+	"vault_get":          {Kind: agent.Read},
+	"vault_named":        {Kind: agent.Read},
+	"vault_problems":     {Kind: agent.Read},
 }
 
 // Vocabulary asks the server what it serves, and reads the answer.
@@ -46,9 +80,12 @@ func Vocabulary(ctx context.Context, core Core) (map[string]Words, error) {
 	for _, tool := range listed.Tools {
 		about := firstRequired(tool.InputSchema)
 		words[tool.Name] = Words{
-			Title:  titleOf(tool),
-			About:  about,
-			Inside: firstRequiredInside(tool.InputSchema, about),
+			Title:   titleOf(tool),
+			About:   about,
+			Inside:  firstRequiredInside(tool.InputSchema, about),
+			Kind:    doing[tool.Name].Kind,
+			Stood:   doing[tool.Name].Stood,
+			Becomes: doing[tool.Name].Becomes,
 		}
 	}
 	return words, nil

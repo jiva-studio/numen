@@ -52,6 +52,8 @@ const (
 	VaultServiceChangesProcedure = "/numen.v1.VaultService/Changes"
 	// VaultServiceFocusProcedure is the fully-qualified name of the VaultService's Focus RPC.
 	VaultServiceFocusProcedure = "/numen.v1.VaultService/Focus"
+	// VaultServiceEditingProcedure is the fully-qualified name of the VaultService's Editing RPC.
+	VaultServiceEditingProcedure = "/numen.v1.VaultService/Editing"
 	// VaultServiceReadProcedure is the fully-qualified name of the VaultService's Read RPC.
 	VaultServiceReadProcedure = "/numen.v1.VaultService/Read"
 	// VaultServiceWriteProcedure is the fully-qualified name of the VaultService's Write RPC.
@@ -83,6 +85,10 @@ type VaultServiceClient interface {
 	// person — an agent working the vault beside them — for as long as the
 	// caller listens. What travelling there looks like is the client's.
 	Focus(context.Context, *connect.Request[v1.FocusRequest]) (*connect.ServerStreamForClient[v1.FocusResponse], error)
+	// Editing reports a change being made to a note's prose while it is being
+	// made, for as long as the caller listens. It is what a person reading that
+	// note is shown; the note itself arrives the way every other change does.
+	Editing(context.Context, *connect.Request[v1.EditingRequest]) (*connect.ServerStreamForClient[v1.EditingResponse], error)
 	// Read answers with the prose of a note, below its frontmatter.
 	Read(context.Context, *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error)
 	// Write puts prose into a note, keeping the frontmatter the file has when the
@@ -147,6 +153,12 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(vaultServiceMethods.ByName("Focus")),
 			connect.WithClientOptions(opts...),
 		),
+		editing: connect.NewClient[v1.EditingRequest, v1.EditingResponse](
+			httpClient,
+			baseURL+VaultServiceEditingProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Editing")),
+			connect.WithClientOptions(opts...),
+		),
 		read: connect.NewClient[v1.ReadRequest, v1.ReadResponse](
 			httpClient,
 			baseURL+VaultServiceReadProcedure,
@@ -193,6 +205,7 @@ type vaultServiceClient struct {
 	neighbourhood *connect.Client[v1.NeighbourhoodRequest, v1.NeighbourhoodResponse]
 	changes       *connect.Client[v1.ChangesRequest, v1.ChangesResponse]
 	focus         *connect.Client[v1.FocusRequest, v1.FocusResponse]
+	editing       *connect.Client[v1.EditingRequest, v1.EditingResponse]
 	read          *connect.Client[v1.ReadRequest, v1.ReadResponse]
 	write         *connect.Client[v1.WriteRequest, v1.WriteResponse]
 	create        *connect.Client[v1.CreateRequest, v1.CreateResponse]
@@ -224,6 +237,11 @@ func (c *vaultServiceClient) Changes(ctx context.Context, req *connect.Request[v
 // Focus calls numen.v1.VaultService.Focus.
 func (c *vaultServiceClient) Focus(ctx context.Context, req *connect.Request[v1.FocusRequest]) (*connect.ServerStreamForClient[v1.FocusResponse], error) {
 	return c.focus.CallServerStream(ctx, req)
+}
+
+// Editing calls numen.v1.VaultService.Editing.
+func (c *vaultServiceClient) Editing(ctx context.Context, req *connect.Request[v1.EditingRequest]) (*connect.ServerStreamForClient[v1.EditingResponse], error) {
+	return c.editing.CallServerStream(ctx, req)
 }
 
 // Read calls numen.v1.VaultService.Read.
@@ -273,6 +291,10 @@ type VaultServiceHandler interface {
 	// person — an agent working the vault beside them — for as long as the
 	// caller listens. What travelling there looks like is the client's.
 	Focus(context.Context, *connect.Request[v1.FocusRequest], *connect.ServerStream[v1.FocusResponse]) error
+	// Editing reports a change being made to a note's prose while it is being
+	// made, for as long as the caller listens. It is what a person reading that
+	// note is shown; the note itself arrives the way every other change does.
+	Editing(context.Context, *connect.Request[v1.EditingRequest], *connect.ServerStream[v1.EditingResponse]) error
 	// Read answers with the prose of a note, below its frontmatter.
 	Read(context.Context, *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error)
 	// Write puts prose into a note, keeping the frontmatter the file has when the
@@ -333,6 +355,12 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(vaultServiceMethods.ByName("Focus")),
 		connect.WithHandlerOptions(opts...),
 	)
+	vaultServiceEditingHandler := connect.NewServerStreamHandler(
+		VaultServiceEditingProcedure,
+		svc.Editing,
+		connect.WithSchema(vaultServiceMethods.ByName("Editing")),
+		connect.WithHandlerOptions(opts...),
+	)
 	vaultServiceReadHandler := connect.NewUnaryHandler(
 		VaultServiceReadProcedure,
 		svc.Read,
@@ -381,6 +409,8 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 			vaultServiceChangesHandler.ServeHTTP(w, r)
 		case VaultServiceFocusProcedure:
 			vaultServiceFocusHandler.ServeHTTP(w, r)
+		case VaultServiceEditingProcedure:
+			vaultServiceEditingHandler.ServeHTTP(w, r)
 		case VaultServiceReadProcedure:
 			vaultServiceReadHandler.ServeHTTP(w, r)
 		case VaultServiceWriteProcedure:
@@ -420,6 +450,10 @@ func (UnimplementedVaultServiceHandler) Changes(context.Context, *connect.Reques
 
 func (UnimplementedVaultServiceHandler) Focus(context.Context, *connect.Request[v1.FocusRequest], *connect.ServerStream[v1.FocusResponse]) error {
 	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Focus is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) Editing(context.Context, *connect.Request[v1.EditingRequest], *connect.ServerStream[v1.EditingResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Editing is not implemented"))
 }
 
 func (UnimplementedVaultServiceHandler) Read(context.Context, *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error) {

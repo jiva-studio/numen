@@ -20,8 +20,17 @@ export const core: Core = {
   neighbourhood: (path) => vault.neighbourhood({ path }),
   opening: async () => (await vault.opening({})).note ?? null,
   state: () => vault.state({}),
-  changes: (signal) => vault.changes({}, { signal }),
+  changes: async function* (signal) {
+    for await (const change of vault.changes({}, { signal })) {
+      yield {
+        paths: change.paths,
+        reload: change.reload,
+        renamed: change.renamed.map((went) => ({ from: went.from, to: went.to })),
+      }
+    }
+  },
   focus: (signal) => vault.focus({}, { signal }),
+  editing: (signal) => vault.editing({}, { signal }),
   read: async (path) => answered(await vault.read({ path })),
   write: async (path, body, seen) =>
     answered(await vault.write({ path, body, ...(seen ? { seen: seenOf(seen) } : {}) })),

@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agent"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 )
 
 // Endpoint is where the agent reaches this vault's tools, and what it must
@@ -44,6 +45,8 @@ type Agent struct {
 	// the agent calls them. A tool that is not here is named as it named
 	// itself.
 	Words map[string]Words
+	// Drafting is how a change this agent is making is drawn before it lands.
+	Drafting Drafting
 	// Model is which model answers, by the name the command line knows it as.
 	// Empty leaves the choice to the installation the agent belongs to.
 	Model string
@@ -181,7 +184,7 @@ func (a *Agent) Take(ctx context.Context, task agent.Task) (agent.Work, error) {
 		defer a.letGo(w)
 		defer close(w.steps)
 
-		failed := read(running, out, w.steps, a.Words, a.carry)
+		failed := read(running, out, w.steps, a.Words, a.carry, a.Drafting)
 
 		err := cmd.Wait()
 		if running.Err() != nil {
@@ -350,14 +353,23 @@ const prefix = "mcp__" + Name + "__"
 func Tool(name string) string { return prefix + name }
 
 // Words are how one tool is spoken about to a person: what it calls itself,
-// and which of its arguments says what a call was about. Both are the tool's
-// own declaration, read from what the server serves.
+// which of its arguments says what a call was about, and what a call of it does
+// to the vault. Each is the tool's own declaration, read from what the server
+// serves.
 type Words struct {
 	Title string
 	About string
 	// Inside names the field of one element that says which element it is, for
 	// a call that takes a collection.
 	Inside string
+	// Stood and Becomes name the arguments carrying the text a call replaces
+	// and what it puts in that text's place. Both are empty for a call that
+	// replaces no stretch.
+	Stood   string
+	Becomes string
+	// Kind is what a call of this tool does to the vault. A tool that declares
+	// nothing about it is agent.Calling.
+	Kind agent.Kind
 }
 
 // work is one task being worked, and what stops it.
@@ -403,4 +415,27 @@ func lastLine(said string) string {
 		}
 	}
 	return said
+}
+
+// Drafting is how a change is drawn while the call making it is still being
+// written. Nothing here is a write: the vault is what changes a note, and this
+// only says what is on its way.
+type Drafting struct {
+	// Tell is told each time more of the change has arrived.
+	Tell func(ctx context.Context, said domain.Editing)
+	// Where says where a stretch stands in a note, and whether it stands in
+	// exactly one place. A stretch that stands nowhere or twice is not drawn.
+	Where func(ctx context.Context, path, stood string) (from, to int, one bool)
+	// Now is the clock the pace is kept by.
+	Now func() time.Time
+}
+
+// drawing reports whether anything can be drawn at all.
+func (d Drafting) drawing() bool { return d.Tell != nil && d.Where != nil }
+
+func (d Drafting) now() time.Time {
+	if d.Now == nil {
+		return time.Now()
+	}
+	return d.Now()
 }

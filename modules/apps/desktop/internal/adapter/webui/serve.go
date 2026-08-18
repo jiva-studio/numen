@@ -93,6 +93,7 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		Links:     db.Links(),
 		Listeners: following(),
 		Watching:  focusing(),
+		Drawing:   drawing(),
 		Progress:  db.Progress(),
 		Reads:     &note.Read{Readers: cfg.VaultReaders()},
 		Saves:     &note.Write{Readers: cfg.VaultReaders(), Writers: cfg.VaultWriters()},

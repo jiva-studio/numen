@@ -10,6 +10,7 @@ import { undo } from '@codemirror/commands'
 import { EditorSelection } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import Editor from './Editor.vue'
+import { marked, type EditorChange } from './change'
 import { opening, resolving } from './outside'
 
 type Props = InstanceType<typeof Editor>['$props']
@@ -34,6 +35,15 @@ const editor = (props: Partial<Props> = {}) => {
 const caretOf = (view: EditorView) => {
   const line = view.state.doc.lineAt(view.state.selection.main.head)
   return { line: line.number, column: view.state.selection.main.head - line.from }
+}
+
+/** What is drawn over a change, and nothing where nothing is. */
+const over = (view: EditorView) => {
+  const found: { from: number; to: number; mark: string | null }[] = []
+  view.state.field(marked).decorations.between(0, view.state.doc.length, (from, to, deco) => {
+    found.push({ from, to, mark: (deco.spec as { class?: string }).class ?? null })
+  })
+  return found
 }
 
 const caretAt = (view: EditorView, line: number, column: number) => {
@@ -163,6 +173,55 @@ describe('what it will not be typed into', () => {
     const { wrapper, view } = editor({ modelValue: 'first', readonly: true })
     await wrapper.setProps({ modelValue: 'second' })
     expect(view.state.doc.toString()).toBe('second')
+  })
+})
+
+describe('a change something other than the reader is making', () => {
+  const DOC = 'the cat sat on the mat'
+  const CHANGE: EditorChange = { id: 'one', from: 4, to: 7, text: 'dog' }
+
+  it('is drawn for nobody while the component is handed none', () => {
+    expect(over(editor({ modelValue: DOC }).view)).toEqual([])
+  })
+
+  it('marks the stretch that is about to change', () => {
+    const { view } = editor({ modelValue: DOC, change: CHANGE })
+    expect(over(view)).toEqual([{ from: 4, to: 7, mark: 'cm-changing' }])
+  })
+
+  it('is shown once the text arrives by the ordinary route', async () => {
+    const { wrapper, view } = editor({ modelValue: DOC, change: CHANGE })
+    await wrapper.setProps({ modelValue: 'the dog sat on the mat' })
+    expect(over(view)).toEqual([{ from: 4, to: 7, mark: null }])
+  })
+
+  it('is dropped whole when there is no longer a change', async () => {
+    const { wrapper, view } = editor({ modelValue: DOC, change: CHANGE })
+    await wrapper.setProps({ change: null })
+    expect(over(view)).toEqual([])
+  })
+
+  it('is drawn where a second change stands instead of where the first did', async () => {
+    const { wrapper, view } = editor({ modelValue: DOC, change: CHANGE })
+    await wrapper.setProps({ change: { id: 'two', from: 12, to: 14, text: 'under' } })
+    expect(over(view)).toEqual([{ from: 12, to: 14, mark: 'cm-changing' }])
+  })
+
+  it('writes none of the text itself', async () => {
+    const { wrapper, view } = editor({ modelValue: DOC, change: CHANGE })
+    await wrapper.setProps({ change: { id: 'two', from: 0, to: 22, text: 'something else' } })
+    await wrapper.setProps({ change: null })
+
+    expect(view.state.doc.toString()).toBe(DOC)
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+  })
+
+  it('leaves nothing behind when it is never made', async () => {
+    const { wrapper, view } = editor({ modelValue: DOC, change: CHANGE })
+    await wrapper.setProps({ change: null })
+
+    expect(view.state.doc.toString()).toBe(DOC)
+    expect(view.contentDOM.querySelector('.cm-changing')).toBe(null)
   })
 })
 

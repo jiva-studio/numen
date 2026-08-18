@@ -41,6 +41,9 @@ type Write struct {
 	Writers port.VaultWriters
 	Index   func(ctx context.Context, v domain.Vault, paths []string) error
 	Now     func() time.Time
+	// Telling is told what a write is doing while it is being made. Nothing is
+	// told where nobody is drawing the note.
+	Telling Telling
 }
 
 // Execute puts body in the note at path.
@@ -64,7 +67,22 @@ func (u Write) Execute(
 		readers: u.Readers, writers: u.Writers, index: u.Index, now: u.Now,
 		fingerprint: fingerprint,
 	}
+	ends := func() {}
+	defer func() { ends() }()
+
 	return e.apply(ctx, v, path, func(doc *markdown.Document) error {
+		// A note rewritten whole is drawn as the stretch that changed, so what
+		// a person watching sees is the change and not the note.
+		was := markdown.Normalised(doc.Body())
+		at, insert := markdown.Differs(was, markdown.Normalised(body))
+		if at.From != at.To || insert != "" {
+			ends = u.Telling.begins(ctx, domain.Editing{
+				Path: path,
+				From: markdown.Counted(was, at.From),
+				To:   markdown.Counted(was, at.To),
+				Text: insert,
+			})
+		}
 		doc.SetBody(body)
 		return nil
 	})

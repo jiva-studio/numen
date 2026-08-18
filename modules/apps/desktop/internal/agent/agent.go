@@ -33,15 +33,28 @@ type Work interface {
 }
 
 // Kind is what a step is.
+//
+// A step naming a call says what that call does to the vault. A call whose kind
+// is not known is Calling.
 type Kind int
 
 const (
-	// Saying carries a piece of what the agent is telling the person.
-	Saying Kind = iota
 	// Calling names a tool the agent is using. It arrives more than once for one
 	// call: the tool is named as soon as it is reached for, and again as its
 	// arguments are written, because writing them is most of the wait.
-	Calling
+	Calling Kind = iota
+	// Read names a call that reads the vault and leaves it as it was.
+	Read
+	// Edit names a call that writes a note.
+	Edit
+	// Remove names a call that takes a note out of the vault.
+	Remove
+	// Move names a call that files a note elsewhere.
+	Move
+	// Search names a call that looks for notes.
+	Search
+	// Saying carries a piece of what the agent is telling the person.
+	Saying
 	// Answered says the tool is finished. What follows is not this application's
 	// and is not quick.
 	Answered
@@ -55,6 +68,9 @@ const (
 // Step is one thing the agent said, did, or stopped for.
 type Step struct {
 	Kind Kind
+	// Call is what the agent named this call. Every step of one call carries the
+	// same name, and a step that is not a call carries none.
+	Call string
 	// Text is what the agent is saying, for a step that says something.
 	Text string
 	// Tool is what it is using, by the name it is served under.
@@ -62,10 +78,22 @@ type Step struct {
 	// About is what that call is about — a note, a query — empty when the
 	// call says nothing worth showing.
 	About string
+	// Place is where in the vault the call is working, empty when what the
+	// call is about is not a note.
+	Place Place
 	// Written is how much of the call has been written, in characters. A call
 	// carrying the text of a note is written for minutes, and this is the only
 	// thing that moves while it is.
 	Written int
 	// Failed is why the work stopped, empty when the agent was done.
 	Failed string
+}
+
+// Place is where a call is working: a note, by its path, and the place in it
+// the call names.
+type Place struct {
+	Path string
+	// Line is counted from one. Zero is a call that named the note and no place
+	// in it.
+	Line int
 }

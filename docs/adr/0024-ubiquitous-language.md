@@ -76,6 +76,7 @@ in one place, meaning the obvious thing, needs no entry.
 | address | Scheme and value; the only thing that says where a link goes |
 | identifier | The ULID a note or a vault carries in the world |
 | anchor | An identifier marking a place in a note rather than a thing |
+| stretch | A run of a note's prose, named by the text standing in it rather than by where it stands (ADR-0034) |
 
 **What the application keeps**
 
@@ -110,6 +111,9 @@ in one place, meaning the obvious thing, needs no entry.
 | tool | One operation an agent can call. Never a synonym for a use case |
 | client | A consumer of the schema that draws a vault (ADR-0025). Never an agent |
 | step | One thing an agent said, did, or stopped for, as the panel is told about it |
+| call | What an agent named one use of a tool, so every step reporting it is known to be one |
+| kind | What a call does to the vault: `read`, `edit`, `remove`, `move`, `search`. A call that says no more than that it is one is `calling` |
+| place | Where a call is working: a note, and the line in it where one is named |
 | settings | What a person configures about an installation, and the one file it is in |
 
 **What is drawn**
@@ -134,10 +138,11 @@ in one place, meaning the obvious thing, needs no entry.
 | menu | A list of things that can be done, opened on what they are done to |
 | unsaved | A tab whose text is not the text in its file |
 | stuck | A tab whose file can be neither read nor written: not a note, not text, over the ceiling, or frontmatter that will not parse (ADR-0032) |
+| gone | A tab whose name has no file behind it, so its save stopped (ADR-0032) |
 | overtaken | A tab whose file no longer holds the prose the tab read, so its save stopped (ADR-0032) |
 | keep | Writing an overtaken tab's prose over its file, when the person says so (ADR-0032) |
 | take | Replacing an overtaken tab's prose with its file's, when the person says so (ADR-0032) |
-| mark | The one word a tab carries beside its title for the state it is in, and what a screen reader reads out: `stuck`, `overtaken` or `unsaved`, the first of those that holds |
+| mark | The one word a tab carries beside its title for the state it is in, and what a screen reader reads out: `stuck`, `gone`, `overtaken` or `unsaved`, the first of those that holds |
 
 ### Words that were spent twice, and how they are settled
 
