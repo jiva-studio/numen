@@ -8,6 +8,7 @@ import type { State } from './tab'
 
 const MARKS: Record<State, string | undefined> = {
   stuck: 'stuck',
+  gone: 'gone',
   overtaken: 'overtaken',
   unsaved: 'unsaved',
   saving: 'unsaved',
@@ -97,6 +98,8 @@ const words = {
   learning: 'Preparing search by meaning',
   words: 'Searching by words only — no model set',
   overtaken: 'The file changed on disk, so this note stopped saving.',
+  gone: 'This note is no longer in the vault, so saving stopped. What is here is still yours.',
+  makeAgain: 'make it again',
   keep: 'Keep mine',
   take: "Take the file's",
   going: 'These notes stopped saving because their files changed. The window waits.',
@@ -282,6 +285,13 @@ onUnmounted(() => {
         <div v-else-if="notes.all().includes(id)" class="note">
           <p v-if="notes.saying(id)" role="alert" class="warning">{{ notes.saying(id) }}</p>
 
+
+          <p v-if="notes.shown(id).state === 'gone'" role="status" class="warning overtaken">
+            {{ words.gone }}
+            <button type="button" class="overtaken__answer" @click="notes.keep(id)">
+              {{ words.makeAgain }}
+            </button>
+          </p>
           <p
             v-if="notes.shown(id).state === 'overtaken'"
             role="status"

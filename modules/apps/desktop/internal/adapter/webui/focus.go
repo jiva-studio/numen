@@ -50,6 +50,11 @@ func (a *API) Focus(
 	}
 }
 
+func (v viewing) Moved(_ context.Context, went domain.Went) error {
+	v.Listeners.tell(changed{renamed: []domain.Went{went}})
+	return nil
+}
+
 func (v viewing) Editing(_ context.Context, said domain.Editing) error {
 	v.Drawing.tell(said)
 	return nil

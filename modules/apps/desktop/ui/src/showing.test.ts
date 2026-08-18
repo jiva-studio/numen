@@ -110,7 +110,7 @@ describe('the stream of changes', () => {
     const core = fake({
       changes: async function* () {
         streams++
-        yield { paths: ['Note.md'], reload: false }
+        yield { paths: ['Note.md'], reload: false, renamed: [] }
       },
     })
     const waits: number[] = []
@@ -146,7 +146,7 @@ describe('the stream of changes', () => {
   it('asks for the picture again for a change to any note', async () => {
     const core = fake({
       changes: async function* () {
-        yield { paths: ['Somewhere/Else.md'], reload: false }
+        yield { paths: ['Somewhere/Else.md'], reload: false, renamed: [] }
       },
     })
     const window = showing(core, async () => window.close())

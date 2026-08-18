@@ -182,7 +182,12 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string) mcp.Core
 		},
 		Write:   note.Write{Readers: readers, Writers: writers, Index: index, Telling: tells},
 		Replace: note.Replace{Readers: readers, Writers: writers, Index: index, Telling: tells},
-		Move:    note.Move{Readers: readers, Writers: writers, Links: opened.Index.Links(), Index: index},
+		Move: note.Move{
+			Readers: readers, Writers: writers, Links: opened.Index.Links(), Index: index,
+			Moving: func(ctx context.Context, went domain.Went) {
+				_ = opened.API.Viewing().Moved(ctx, went)
+			},
+		},
 		Remove:  note.Remove{Readers: readers, Writers: writers, Links: opened.Index.Links(), Index: index},
 		Linking: note.Linking{Readers: readers, Writers: writers, Index: index},
 	}

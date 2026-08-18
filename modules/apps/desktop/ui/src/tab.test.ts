@@ -16,6 +16,7 @@ const tab = (over: Partial<Tab> = {}): Tab => ({
   shown: 'one',
   flight: null,
   owed: false,
+  gone: false,
   overtaken: false,
   since: null,
   reading: 1,
@@ -143,13 +144,14 @@ describe('a read answers missing', () => {
     ])
   })
 
-  it('leaves the buffer alone out of a re-read', () => {
-    // The note was renamed under an open tab. What the person is reading stays
-    // on the screen at the name they opened.
+  it('leaves the buffer alone out of a re-read, and says the note is not there', () => {
+    // The note was removed or renamed under an open tab. What the person is
+    // reading stays on the screen, and the tab stops writing it anywhere.
     const reading = tab({ reading: 2 })
     const next = tabAfter(reading, { kind: 'read', generation: 2, answer: { kind: 'missing' } })
 
-    expect(next.tab).toEqual(reading)
+    expect(next.tab.shown).toBe(reading.shown)
+    expect(stateOf(next.tab)).toBe('gone')
     expect(next.effects).toEqual([])
   })
 })
@@ -430,11 +432,11 @@ describe('a write answers changed', () => {
   it('reads nothing when the vault changes under it', () => {
     const stopped = overtaken()
 
-    expect(tabAfter(stopped, { kind: 'changed', paths: ['Note.md'] })).toEqual({
+    expect(tabAfter(stopped, { kind: 'changed', paths: ['Note.md'], renamed: [] })).toEqual({
       tab: stopped,
       effects: [],
     })
-    expect(tabAfter(stopped, { kind: 'changed', paths: [] })).toEqual({
+    expect(tabAfter(stopped, { kind: 'changed', paths: [], renamed: [] })).toEqual({
       tab: stopped,
       effects: [],
     })
@@ -539,12 +541,12 @@ describe("the person takes the file's", () => {
     expect(stateOf(next.tab)).toBe('overtaken')
   })
 
-  it('stays overtaken where the file is gone', () => {
+  it('says the note is not there where the file is gone, since there is nothing to take', () => {
     const reading = tabAfter(overtaken(), { kind: 'taking' }).tab
     const next = tabAfter(reading, { kind: 'read', generation: 2, answer: { kind: 'missing' } })
 
-    expect(next.tab).toEqual(reading)
-    expect(stateOf(next.tab)).toBe('overtaken')
+    expect(next.tab.shown).toBe(reading.shown)
+    expect(stateOf(next.tab)).toBe('gone')
   })
 
   it('does nothing to a tab that was not overtaken', () => {
@@ -617,6 +619,7 @@ describe('the vault changes', () => {
     const next = tabAfter(tab({ reading: 1 }), {
       kind: 'changed',
       paths: ['Other.md', 'Note.md'],
+      renamed: [],
     })
 
     expect(next.tab.reading).toBe(2)
@@ -624,7 +627,7 @@ describe('the vault changes', () => {
   })
 
   it('reads again for a reload, which names nothing at all', () => {
-    const next = tabAfter(tab({ reading: 1 }), { kind: 'changed', paths: [] })
+    const next = tabAfter(tab({ reading: 1 }), { kind: 'changed', paths: [], renamed: [] })
 
     expect(next.tab.reading).toBe(2)
     expect(next.effects).toEqual([{ kind: 'read', path: 'Note.md', generation: 2 }])
@@ -633,11 +636,11 @@ describe('the vault changes', () => {
   it('does nothing to a tab with something unsaved, reload or not', () => {
     const unsaved = tab({ shown: 'mine', since: 10 })
 
-    expect(tabAfter(unsaved, { kind: 'changed', paths: ['Note.md'] })).toEqual({
+    expect(tabAfter(unsaved, { kind: 'changed', paths: ['Note.md'], renamed: [] })).toEqual({
       tab: unsaved,
       effects: [],
     })
-    expect(tabAfter(unsaved, { kind: 'changed', paths: [] })).toEqual({
+    expect(tabAfter(unsaved, { kind: 'changed', paths: [], renamed: [] })).toEqual({
       tab: unsaved,
       effects: [],
     })
@@ -651,13 +654,13 @@ describe('the vault changes', () => {
     ]
 
     for (const one of held) {
-      expect(tabAfter(one, { kind: 'changed', paths: [] })).toEqual({ tab: one, effects: [] })
+      expect(tabAfter(one, { kind: 'changed', paths: [], renamed: [] })).toEqual({ tab: one, effects: [] })
     }
   })
 
   it('does nothing when the change names other paths only', () => {
     const clean = tab()
-    const next = tabAfter(clean, { kind: 'changed', paths: ['Somewhere/Else.md'] })
+    const next = tabAfter(clean, { kind: 'changed', paths: ['Somewhere/Else.md'], renamed: [] })
 
     expect(next.tab).toEqual(clean)
     expect(next.effects).toEqual([])
@@ -708,5 +711,89 @@ describe('a close is asked for', () => {
     })
 
     expect(next.effects).toEqual([{ kind: 'say', refusal: 'unreadable' }, { kind: 'close' }])
+  })
+})
+
+describe('a note that moved', () => {
+  it('is followed to where it went', () => {
+    const next = tabAfter(tab(), {
+      kind: 'changed',
+      paths: ['Note.md', 'Renamed.md'],
+      renamed: [{ from: 'Note.md', to: 'Renamed.md' }],
+    })
+    expect(next.tab.path).toBe('Renamed.md')
+    expect(next.effects).toEqual([{ kind: 'read', path: 'Renamed.md', generation: 2 }])
+  })
+
+  it('is followed even where the tab has something unwritten, so its save lands where the note is', () => {
+    const next = tabAfter(tab({ shown: 'mine', since: 10 }), {
+      kind: 'changed',
+      paths: [],
+      renamed: [{ from: 'Note.md', to: 'Renamed.md' }],
+    })
+    expect(next.tab.path).toBe('Renamed.md')
+    // What the person typed is theirs, and a move is not a reason to read over it.
+    expect(next.tab.shown).toBe('mine')
+    expect(kinds(next.effects)).toEqual([])
+  })
+
+  it('leaves a tab that is not the one that moved where it is', () => {
+    const next = tabAfter(tab(), {
+      kind: 'changed',
+      paths: ['Other.md'],
+      renamed: [{ from: 'Other.md', to: 'Elsewhere.md' }],
+    })
+    expect(next.tab.path).toBe('Note.md')
+    expect(kinds(next.effects)).toEqual([])
+  })
+})
+
+describe('a note that is no longer there', () => {
+  const vanished = (over: Partial<Tab> = {}) =>
+    tabAfter(tab({ reading: 2, ...over }), {
+      kind: 'read',
+      generation: 2,
+      answer: { kind: 'missing' },
+    }).tab
+
+  it('leaves what the person has on the screen', () => {
+    expect(vanished({ shown: 'mine', since: 10 }).shown).toBe('mine')
+  })
+
+  it('is a state of its own, so the tab can say so', () => {
+    expect(stateOf(vanished())).toBe('gone')
+  })
+
+  it('stops the unasked save, so nothing is written back without being asked', () => {
+    const next = tabAfter(vanished({ shown: 'mine', since: 10 }), { kind: 'fired' })
+    expect(kinds(next.effects)).toEqual([])
+  })
+
+  it('is not written by typing either', () => {
+    const typed = tabAfter(vanished(), { kind: 'typed', body: 'more', at: 20 })
+    expect(stateOf(typed.tab)).toBe('gone')
+    expect(kinds(tabAfter(typed.tab, { kind: 'fired' }).effects)).toEqual([])
+  })
+
+  it('is made again at the name it had when the person says to keep it', () => {
+    const next = tabAfter(vanished({ shown: 'mine', since: 10 }), { kind: 'keeping' })
+    expect(next.effects).toEqual([
+      { kind: 'write', path: 'Note.md', body: 'mine', seen: null },
+    ])
+  })
+
+  it('is itself again once the note comes back', () => {
+    const back = tabAfter(vanished(), {
+      kind: 'changed',
+      paths: ['Note.md'],
+      renamed: [],
+    })
+    const read = tabAfter(back.tab, {
+      kind: 'read',
+      generation: back.tab.reading,
+      answer: { kind: 'body', body: 'theirs', at: 'a2' },
+    })
+    expect(stateOf(read.tab)).toBe('clean')
+    expect(read.tab.shown).toBe('theirs')
   })
 })

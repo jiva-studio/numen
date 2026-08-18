@@ -185,7 +185,13 @@ func (a *API) Changes(
 			if !open {
 				return nil
 			}
-			if err := out.Send(&v1.ChangesResponse{Paths: what.paths, Reload: what.reload}); err != nil {
+			renamed := make([]*v1.Renamed, 0, len(what.renamed))
+			for _, went := range what.renamed {
+				renamed = append(renamed, &v1.Renamed{From: went.From, To: went.To})
+			}
+			if err := out.Send(&v1.ChangesResponse{
+				Paths: what.paths, Reload: what.reload, Renamed: renamed,
+			}); err != nil {
 				return err
 			}
 		}

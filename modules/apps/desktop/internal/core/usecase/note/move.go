@@ -20,6 +20,9 @@ type Move struct {
 	Writers port.VaultWriters
 	Links   port.LinkQueries
 	Index   func(ctx context.Context, v domain.Vault, paths []string) error
+	// Moving is told where the note went, so that whoever is showing it at the
+	// name it had follows it. Nothing is told where nobody is drawing.
+	Moving Moving
 }
 
 // Moved says where the note went and what it did to the links that pointed at
@@ -67,6 +70,12 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (Mov
 	}
 	if err := u.index(ctx, v, from, to); err != nil {
 		return res, err
+	}
+
+	// The file is where it now is and the index is level with it. Whoever is
+	// reading this note at the name it had is reading a name with no file.
+	if u.Moving != nil {
+		u.Moving(ctx, domain.Went{From: from, To: to})
 	}
 
 	name := domain.Basename(to)

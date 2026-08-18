@@ -138,10 +138,11 @@ in one place, meaning the obvious thing, needs no entry.
 | menu | A list of things that can be done, opened on what they are done to |
 | unsaved | A tab whose text is not the text in its file |
 | stuck | A tab whose file can be neither read nor written: not a note, not text, over the ceiling, or frontmatter that will not parse (ADR-0032) |
+| gone | A tab whose name has no file behind it, so its save stopped (ADR-0032) |
 | overtaken | A tab whose file no longer holds the prose the tab read, so its save stopped (ADR-0032) |
 | keep | Writing an overtaken tab's prose over its file, when the person says so (ADR-0032) |
 | take | Replacing an overtaken tab's prose with its file's, when the person says so (ADR-0032) |
-| mark | The one word a tab carries beside its title for the state it is in, and what a screen reader reads out: `stuck`, `overtaken` or `unsaved`, the first of those that holds |
+| mark | The one word a tab carries beside its title for the state it is in, and what a screen reader reads out: `stuck`, `gone`, `overtaken` or `unsaved`, the first of those that holds |
 
 ### Words that were spent twice, and how they are settled
 

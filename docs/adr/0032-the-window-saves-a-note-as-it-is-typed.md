@@ -93,11 +93,27 @@ A note acquires an identifier from the operations that change what is in it: a
 create, a link. Reading one and typing in it is not among them, and neither is a
 move, so a note written elsewhere keeps the frontmatter it came with.
 
-### A file that is not there is created
+### A note that moved is followed, and one that is gone is said
 
-A note renamed or removed under an open tab leaves the tab open, showing what the
-person was reading, at the name they opened. A name with no file behind it holds no
-prose, so the next save puts the note back there.
+A note this application moves is followed: the move knows both names, so the tab
+takes the one the note now has and goes on reading and writing it there. This
+holds for every caller of a move, because it is the move that says so and not
+whoever asked for one.
+
+A note that is gone from a name and not known to be anywhere else leaves the tab
+open, showing what the person was reading, and the tab carries the mark `gone`.
+The unasked save stops there, and every keystroke after it leaves the text in the
+buffer. The person answers, and the note is made again at that name only on their
+word.
+
+The read is the check. A name is called gone when a read of it finds nothing, and
+a read that finds the note again — at that name or the one it moved to — clears
+the mark.
+
+What this does not cover is said plainly: a note renamed by something other than
+this application is a note gone from one name and arrived at another, with
+nothing to connect the two. The tab says the note is gone, which is what is
+known.
 
 ### A note has a ceiling, and a file over it is not opened here
 

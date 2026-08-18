@@ -198,7 +198,19 @@ message ChangesResponse {
   // Set when the vault has to be read again rather than followed — more
   // changed at once than could be reported.
   bool reload = 2;
+
+  // The notes that were renamed by this application, each by where it was and
+  // where it now is. A client showing one of them follows it there.
+  repeated Renamed renamed = 3;
 }
+
+// Renamed is a note that is no longer where it was. The bytes do not change on
+// the way, so this says nothing about what the note holds.
+message Renamed {
+  string from = 1;
+  string to = 2;
+}
+
 
 message FocusRequest {}
 

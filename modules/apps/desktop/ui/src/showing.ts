@@ -10,6 +10,7 @@ import { rateOf } from '@numen/ui'
 import type { PlexRelatedSeat } from '@numen/ui'
 import type { Neighbourhood } from './plex'
 import type { Said } from './drawing'
+import type { Went } from './tab'
 
 /** Everything the window asks of the core, and nothing about how it is drawn. */
 export interface Core {
@@ -35,7 +36,11 @@ export interface Core {
     /** Whether the vault is still being read at all. */
     busy: boolean
   }>
-  changes(signal: AbortSignal): AsyncIterable<{ paths: string[]; reload: boolean }>
+  changes(signal: AbortSignal): AsyncIterable<{
+    paths: string[]
+    reload: boolean
+    renamed: readonly Went[]
+  }>
   /** A change being made to a note's prose, reported while it is being made. */
   editing(signal: AbortSignal): AsyncIterable<Said>
   /** The notes something else asked to be put in front of the person. */
@@ -123,7 +128,7 @@ export function showing(
    * What else hears about a change. A change carrying no paths names nothing:
    * everything showing the vault reads again.
    */
-  told: (paths: readonly string[]) => void = () => {},
+  told: (paths: readonly string[], renamed?: readonly Went[]) => void = () => {},
   /** What hears about a change to a note while it is being made. */
   drawing: (said: Said) => void = () => {},
 ) {
@@ -324,8 +329,8 @@ export function showing(
       try {
         for await (const change of core.changes(listening.signal)) {
           if (!open) return
-          if (change.paths.length === 0 && !change.reload) continue
-          told(change.reload ? [] : change.paths)
+          if (change.paths.length === 0 && !change.reload && change.renamed.length === 0) continue
+          told(change.reload ? [] : change.paths, change.renamed)
           if (here.value) {
             await go(here.value)
           } else {

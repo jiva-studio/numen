@@ -15,6 +15,7 @@ import (
 type window struct {
 	asked []string
 	drawn []domain.Editing
+	went  []domain.Went
 	fails error
 }
 
@@ -38,6 +39,9 @@ func watched(t *testing.T, notes map[string]string) (*sdk.ClientSession, *window
 	})
 	core.Write.Telling = tells
 	core.Replace.Telling = tells
+	core.Move.Moving = func(ctx context.Context, went domain.Went) {
+		_ = looking.Moved(ctx, went)
+	}
 	return connectedTo(t, core), looking
 }
 
@@ -117,4 +121,31 @@ func (w *window) Editing(_ context.Context, said domain.Editing) error {
 	}
 	w.drawn = append(w.drawn, said)
 	return nil
+}
+
+// went is where the window was told each note moved to.
+func (w *window) Moved(_ context.Context, went domain.Went) error {
+	if w.fails != nil {
+		return w.fails
+	}
+	w.went = append(w.went, went)
+	return nil
+}
+
+// A person reading a note that is renamed under them is reading a name with no
+// file behind it, and every change made afterwards is made somewhere they are
+// not looking. So the window is told where the note went.
+func TestRenamingANoteSaysWhereItWent(t *testing.T) {
+	s, looking := watched(t, map[string]string{"Entropy.md": "# Entropy\n"})
+
+	call[struct {
+		Path string `json:"path"`
+	}](t, s, "note_rename", map[string]any{"path": "Entropy.md", "title": "Order"})
+
+	if len(looking.went) != 1 {
+		t.Fatalf("the window was told %d times, wanted once", len(looking.went))
+	}
+	if looking.went[0].From != "Entropy.md" || looking.went[0].To == "" {
+		t.Errorf("the note went %+v", looking.went[0])
+	}
 }

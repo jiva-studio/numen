@@ -7,6 +7,9 @@ import "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 type changed struct {
 	paths  []string
 	reload bool
+	// renamed is the notes that are no longer where they were, each by where it
+	// was and where it now is.
+	renamed []domain.Went
 }
 
 // following is everyone listening for what moved.

@@ -5,7 +5,19 @@
  * interval — and holds the answers where the template can draw them.
  */
 import { ref, type Ref } from 'vue'
-import { opening, stateOf, tabAfter, waiting, type Effect, type Event, type Refusal, type Seen, type State, type Tab } from './tab'
+import {
+  opening,
+  stateOf,
+  tabAfter,
+  waiting,
+  type Effect,
+  type Event,
+  type Refusal,
+  type Seen,
+  type State,
+  type Tab,
+  type Went,
+} from './tab'
 import type { Answered, Refused } from './showing'
 
 /** One open note as the window draws it. */
@@ -101,8 +113,8 @@ export function editing(
   }
 
   /** The vault changed. Every open note hears it and decides for itself. */
-  const changed = (paths: readonly string[]): void => {
-    for (const path of [...tabs.value.keys()]) turn(path, { kind: 'changed', paths })
+  const changed = (paths: readonly string[], renamed: readonly Went[] = []): void => {
+    for (const path of [...tabs.value.keys()]) turn(path, { kind: 'changed', paths, renamed })
   }
 
   /** A save asked for now. */
@@ -159,10 +171,10 @@ export function editing(
   function act(path: string, effect: Effect): void {
     switch (effect.kind) {
       case 'read':
-        void read(path, effect.generation)
+        void read(path, effect.path, effect.generation)
         return
       case 'write':
-        void write(path, effect.body, effect.seen)
+        void write(path, effect.path, effect.body, effect.seen)
         return
       case 'arm':
         arm(path, effect.after)
@@ -196,17 +208,17 @@ export function editing(
     )
   }
 
-  async function read(path: string, generation: number): Promise<void> {
+  async function read(key: string, path: string, generation: number): Promise<void> {
     let answered: Answered & { at?: string }
     try {
       answered = await core.read(path)
     } catch {
       // The core did not answer. What is on screen is still here, and asking
       // again is what finds out whether the vault came back.
-      turn(path, { kind: 'read', generation, answer: { kind: 'refused', refusal: 'unreachable' } })
+      turn(key, { kind: 'read', generation, answer: { kind: 'refused', refusal: 'unreachable' } })
       return
     }
-    turn(path, {
+    turn(key, {
       kind: 'read',
       generation,
       answer:
@@ -218,15 +230,15 @@ export function editing(
     })
   }
 
-  async function write(path: string, body: string, seen: Seen | null): Promise<void> {
+  async function write(key: string, path: string, body: string, seen: Seen | null): Promise<void> {
     let answered: Answered & { at?: string; changed?: boolean }
     try {
       answered = await core.write(path, body, seen)
     } catch {
-      turn(path, { kind: 'written', answer: { kind: 'refused', refusal: 'unreachable' } })
+      turn(key, { kind: 'written', answer: { kind: 'refused', refusal: 'unreachable' } })
       return
     }
-    turn(path, {
+    turn(key, {
       kind: 'written',
       // A file that moved past what the tab read is put to the person.
       answer: answered.changed
@@ -237,7 +249,7 @@ export function editing(
     })
     // A tab held for its write is asked about again, so the model decides what
     // the answer means for a close it already agreed to.
-    if (closing.has(path)) turn(path, { kind: 'closing' })
+    if (closing.has(key)) turn(key, { kind: 'closing' })
   }
 
   function forget(path: string): void {
