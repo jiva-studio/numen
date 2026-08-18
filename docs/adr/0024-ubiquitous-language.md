@@ -76,6 +76,7 @@ in one place, meaning the obvious thing, needs no entry.
 | address | Scheme and value; the only thing that says where a link goes |
 | identifier | The ULID a note or a vault carries in the world |
 | anchor | An identifier marking a place in a note rather than a thing |
+| stretch | A run of a note's prose, named by the text standing in it rather than by where it stands (ADR-0034) |
 
 **What the application keeps**
 

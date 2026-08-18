@@ -49,3 +49,23 @@ func TestAToolSaysWhatOneOfItsThingsIsCalled(t *testing.T) {
 		t.Errorf("one link is named by %q", add.Inside)
 	}
 }
+
+// The panel names the note being edited while the call is still being written,
+// which it can only do if the note is what the call is declared to be about.
+func TestAnEditIsAboutTheNoteItChanges(t *testing.T) {
+	words, err := mcp.Vocabulary(t.Context(), mcp.Core{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	edit, served := words["note_edit"]
+	if !served {
+		t.Fatal("no note_edit")
+	}
+	if edit.Title == "" {
+		t.Error("the tool has no title")
+	}
+	if edit.About != "path" {
+		t.Errorf("a call is about %q", edit.About)
+	}
+}

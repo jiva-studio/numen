@@ -1,0 +1,157 @@
+package note
+
+import (
+	"context"
+	"fmt"
+	"strings"
+	"time"
+	"unicode/utf8"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/markdown"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
+)
+
+// Replace puts one stretch of a note's prose in place of another, and leaves
+// every byte around it as it was.
+//
+// What is replaced is named by the text standing there rather than by where it
+// stands. Text says both where the stretch is and that the note still holds
+// what the caller was working from, so nothing else has to be presented for a
+// write to be safe.
+type Replace struct {
+	Readers port.VaultReaders
+	Writers port.VaultWriters
+	Index   func(ctx context.Context, v domain.Vault, paths []string) error
+	Now     func() time.Time
+}
+
+// Replaced is what a replacement did.
+type Replaced struct {
+	// At is the fingerprint of the file this write produced.
+	At domain.FileRef
+	// Span is where the stretch stood, as byte offsets into the prose a read
+	// hands out.
+	Span markdown.Span
+	// Stood is the stretch as the note held it, which is not always the text
+	// the caller asked for.
+	Stood string
+	// Plainly says the stretch was found only once punctuation or spacing were
+	// allowed to differ.
+	Plainly bool
+}
+
+// Nowhere is a stretch that is not in the note, and where a copy of it stopped
+// agreeing with what is there.
+type Nowhere struct {
+	// Matched is the longest opening of what was asked for that does stand in
+	// the note, and Instead is what stands in the note from there.
+	Matched string
+	Instead string
+}
+
+func (e Nowhere) Error() string {
+	if e.Matched == "" {
+		return "no part of this stretch is in the note"
+	}
+	return fmt.Sprintf("this stretch is not in the note; it holds %q where the stretch has %q",
+		e.Instead, e.Matched+"…")
+}
+
+// Twice is a stretch standing in more than one place, which is a stretch that
+// does not say which of them was meant.
+type Twice struct {
+	Places int
+}
+
+func (e Twice) Error() string {
+	return fmt.Sprintf("this stretch stands in %d places; take in enough of what is around "+
+		"one of them to tell it from the others", e.Places)
+}
+
+// ErrAlreadyWritten is a replacement that is already in the note and an
+// original that is gone, which is the write having landed already.
+var ErrAlreadyWritten = fmt.Errorf("this replacement is already in the note")
+
+// Execute puts `becomes` where `stood` stands in the note at path.
+func (u Replace) Execute(
+	ctx context.Context, v domain.Vault, path, stood, becomes string,
+) (Replaced, error) {
+	if stood == "" {
+		return Replaced{}, fmt.Errorf("name the text to replace")
+	}
+
+	done := Replaced{}
+	e := editing{readers: u.Readers, writers: u.Writers, index: u.Index, now: u.Now}
+	at, err := e.apply(ctx, v, path, func(doc *markdown.Document) error {
+		body := markdown.Normalised(doc.Body())
+
+		where, plainly := markdown.Where(body, stood)
+		switch {
+		case len(where) == 1:
+		case len(where) > 1:
+			return Twice{Places: len(where)}
+		case becomes != "" && strings.Contains(body, becomes):
+			return ErrAlreadyWritten
+		default:
+			return nowhere(body, stood)
+		}
+
+		span := where[0]
+		written := body[:span.From] + becomes + body[span.To:]
+		if len(written) > MaxBytes {
+			return fmt.Errorf("%w: %d bytes, and %d is the most",
+				ErrTooLarge, len(written), MaxBytes)
+		}
+
+		done.Span = markdown.Span{From: span.From, To: span.From + len(becomes)}
+		done.Stood = body[span.From:span.To]
+		done.Plainly = plainly
+		doc.SetBody(written)
+		return nil
+	})
+	if err != nil {
+		return Replaced{}, err
+	}
+	done.At = at
+	return done, nil
+}
+
+// nowhere is what to say about a stretch that is not in the note: how much of
+// its opening does stand there, and what stands in its place.
+//
+// The opening is found by halving, which the text being present for every
+// shorter opening allows.
+func nowhere(body, stood string) Nowhere {
+	low, high := 0, len(stood)
+	for low < high {
+		middle := low + (high-low+1)/2
+		for middle < high && !utf8.RuneStart(stood[middle]) {
+			middle++
+		}
+		if middle > high {
+			break
+		}
+		if at, _ := markdown.Where(body, stood[:middle]); len(at) > 0 {
+			low = middle
+			continue
+		}
+		high = middle - 1
+		for high > low && !utf8.RuneStart(stood[high]) {
+			high--
+		}
+	}
+	if low == 0 {
+		return Nowhere{}
+	}
+	matched := stood[:low]
+	at, _ := markdown.Where(body, matched)
+	if len(at) == 0 {
+		return Nowhere{}
+	}
+	end := min(at[0].From+len(stood), len(body))
+	for end < len(body) && !utf8.RuneStart(body[end]) {
+		end++
+	}
+	return Nowhere{Matched: matched, Instead: body[at[0].From:end]}
+}

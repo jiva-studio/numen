@@ -252,7 +252,10 @@ func addNoteTools(server *sdk.Server, core Core) {
 			"the link tools to change what a note is joined to. Pass the fingerprint from " +
 			"`note_read` so a write cannot land on top of an edit you did not see. This " +
 			"answers with the fingerprint it produced: pass that one to write the same " +
-			"note again without reading it back.",
+			"note again without reading it back. To change part of a note, `note_edit` " +
+			"replaces one stretch and leaves the rest untouched; this is for a note being " +
+			"rewritten, or one short enough that rewriting it is the plainer thing — under " +
+			"about 800 characters it usually is.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path        string `json:"path" jsonschema:"the note to write"`
 		Body        string `json:"body" jsonschema:"the markdown to put in it"`
@@ -280,6 +283,48 @@ func addNoteTools(server *sdk.Server, core Core) {
 			return nil, out{}, err
 		}
 		return nil, out{Path: in.Path, Fingerprint: fingerprintOf(written)}, nil
+	})
+
+	sdk.AddTool(server, &sdk.Tool{
+		Name:  "note_edit",
+		Title: "Edit a note",
+		Description: "Replace one stretch of a note's prose with another and leave the " +
+			"rest of it the bytes it was. `stood` is that stretch as `note_read` gave it " +
+			"to you, and it must stand in exactly one place: where it stands twice, take " +
+			"in enough of what surrounds one of them to tell it from the others. Quotes, " +
+			"dashes and spacing may differ from what the note has and the stretch is " +
+			"still found; the answer says so, and says what the note held. Reach for this " +
+			"before `note_write` for anything short of rewriting a note — it costs you the " +
+			"stretch instead of the whole note, and it cannot change a word you did not " +
+			"name. It answers with the fingerprint it produced.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
+		Path    string `json:"path" jsonschema:"the note to edit"`
+		Stood   string `json:"stood" jsonschema:"the text to replace, as the note has it"`
+		Becomes string `json:"becomes" jsonschema:"what to put in its place; empty takes the text out"`
+	}) (*sdk.CallToolResult, struct {
+		Path        string `json:"path"`
+		Fingerprint string `json:"fingerprint"`
+		Stood       string `json:"stood"`
+		Plainly     bool   `json:"plainly,omitempty"`
+	}, error) {
+		type out = struct {
+			Path        string `json:"path"`
+			Fingerprint string `json:"fingerprint"`
+			Stood       string `json:"stood"`
+			Plainly     bool   `json:"plainly,omitempty"`
+		}
+		done, err := core.Replace.Execute(ctx, core.Vault, in.Path, in.Stood, in.Becomes)
+		if err != nil {
+			return nil, out{}, err
+		}
+		// What stood there is answered because a stretch found by a looser
+		// reading is not the text that was asked for.
+		return nil, out{
+			Path:        in.Path,
+			Fingerprint: fingerprintOf(done.At),
+			Stood:       done.Stood,
+			Plainly:     done.Plainly,
+		}, nil
 	})
 
 	sdk.AddTool(server, &sdk.Tool{

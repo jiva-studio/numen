@@ -141,6 +141,7 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string) mcp.Core
 			Extension: extension(cfg),
 		},
 		Write:   note.Write{Readers: readers, Writers: writers, Index: index},
+		Replace: note.Replace{Readers: readers, Writers: writers, Index: index},
 		Move:    note.Move{Readers: readers, Writers: writers, Links: opened.Index.Links(), Index: index},
 		Remove:  note.Remove{Readers: readers, Writers: writers, Links: opened.Index.Links(), Index: index},
 		Linking: note.Linking{Readers: readers, Writers: writers, Index: index},
