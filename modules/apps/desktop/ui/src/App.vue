@@ -138,14 +138,10 @@ const openNote = (path: string, title = nameOf(path)) => {
 
 /**
  * A note made in a seat of another one. It is in the index by the time the
- * answer arrives, so the picture is asked for again and it is drawn in it; the
- * tab is where the person writes it.
+ * answer arrives, so the picture is asked for again and it is drawn in it.
  */
 const made = async (from: string, seat: PlexRelatedSeat) => {
-  const note = await making.make(from, seat)
-  if (!note) return
-  if (here.value) await go(here.value)
-  openNote(note.path, note.title)
+  if ((await making.make(from, seat)) && here.value) await go(here.value)
 }
 
 /** Two notes the person drew a line between. */

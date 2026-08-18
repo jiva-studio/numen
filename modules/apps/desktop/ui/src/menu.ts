@@ -7,7 +7,7 @@ import type { MenuItem } from '@numen/ui'
 
 /** What is offered, in the order it is drawn. */
 export const ITEMS: readonly MenuItem[] = [
-  { id: 'open', text: 'Open in a tab' },
+  { id: 'open', text: 'Edit in a tab' },
   { id: 'child', text: 'New child note' },
   { id: 'ask', text: 'Ask the agent about this note' },
   { id: 'copy', text: 'Copy path' },
