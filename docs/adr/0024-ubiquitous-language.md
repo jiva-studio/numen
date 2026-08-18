@@ -7,9 +7,12 @@
   third time (ADR-0032, ADR-0034)
 - **Extended:** 2026-08-18 — `overtaken`, `keep`, `take`; `mark` takes a third
   value and an order (ADR-0032)
+- **Extended:** 2026-08-18 — `conversation`, and `session` settled apart from it
+  (ADR-0031)
+- **Extended:** 2026-08-18 — `finish`, settled apart from `stop` (ADR-0031)
 - **Applies to:** the product as a whole
-- **Related:** ADR-0003, ADR-0006, ADR-0011, ADR-0014, ADR-0020, ADR-0032,
-  ADR-0034
+- **Related:** ADR-0003, ADR-0006, ADR-0011, ADR-0014, ADR-0020, ADR-0031,
+  ADR-0032, ADR-0034
 
 ## Context
 
@@ -110,6 +113,9 @@ in one place, meaning the obvious thing, needs no entry.
 | agent | A program acting on a vault on a person's behalf, through tools (ADR-0026) |
 | tool | One operation an agent can call. Never a synonym for a use case |
 | client | A consumer of the schema that draws a vault (ADR-0025). Never an agent |
+| conversation | One thread of talk with an agent, named by the client and carried in every question of it. Never a *thread*; see below (ADR-0031) |
+| session | What the agent's own program calls a conversation it is keeping, named by that program. Never leaves the adapter that started it (ADR-0031) |
+| finish | Saying a conversation is over: nothing is asked under its name again, and what the agent kept of it is let go of. Never a *close*; see below (ADR-0031) |
 | step | One thing an agent said, did, or stopped for, as the panel is told about it |
 | call | What an agent named one use of a tool, so every step reporting it is known to be one |
 | kind | What a call does to the vault: `read`, `edit`, `remove`, `move`, `search`. A call that says no more than that it is one is `calling` |
@@ -129,7 +135,7 @@ in one place, meaning the obvious thing, needs no entry.
 | viewport | The area the plex is drawn into |
 | window | The application's window on screen, and nothing else |
 | panel | The column beside the plex where a person asks an agent something |
-| turn | One thing shown in the panel's thread: what was asked, what was answered, what is being done |
+| turn | One thing shown in the panel's conversation: what was asked, what was answered, what is being done |
 | voice | Whose turn it is, and so how it is drawn |
 | workspace | Everything the window holds open, and how it is split |
 | branch | A split of the workspace, drawn as two parts side by side |
@@ -171,14 +177,40 @@ it means how large a chunk is cut.
 is a tool that has finished, which is what the agent's own stream reports. A
 *voice* named `answered` is the agent replying to the person. The first crosses
 the wire and belongs to an agent's work; the second never leaves the interface and
-belongs to a thread. Where both could be read, the step is *the tool answered* and
-the voice is *the agent's reply*.
+belongs to a conversation. Where both could be read, the step is *the tool answered*
+and the voice is *the agent's reply*.
 
 **`calling` and `doing`.** A step is `calling` in the core and `doing` on the
 wire, and this is the rename a boundary requires: the core says what the agent is
 doing, and the wire is read by something drawing a line about it. Every other
 step keeps its word across the boundary, and a third name for either of these is
 a defect.
+
+**`conversation`, and not `thread`.** One thread of talk with an agent. The
+client mints the name, the schema carries it, the port takes it and the adapter
+keys what it remembers by it, and all four say `conversation`. *Thread* is the
+same thing under a second name, so a client that says thread renames a field on
+the way across a boundary. Where the English word is wanted, the phrase is
+*thread of talk* and the field is still `conversation`.
+
+**`finish` and `stop`.** A `stop` is one answer given up on: the person presses
+stop, and the conversation stays open to be asked again. A `finish` is the
+conversation itself being over — the tab closed, or the window went — and
+nothing is asked under that name again. Finishing stops whatever is still being
+answered in the conversation; stopping an answer finishes nothing. The client
+says it, the schema carries it, the port takes it and the adapter drops the
+session on it, and all four say `finish`.
+
+*Close* is neither, and is the near-synonym to refuse: the window closes, a tab
+closes, and an agent's `Close` ends every child it started. A conversation is
+finished.
+
+**`session`.** What the agent's own program calls a conversation it is keeping.
+A conversation is the person's and is named by the client; a session is that
+program's and is named by that program, and the adapter's whole job here is to
+hold one against the other. The word therefore stays on the identifier and on
+nothing else: the environment variables that describe somebody else's session
+are the ones this application drops, and are named for that.
 
 **`focus`.** Two things, and what carries them settles them apart. A
 *neighbourhood*'s focus is the note it is seen from. A *workspace*'s focus is the
