@@ -17,9 +17,11 @@ import {
   type PlacedNode,
   type PlexFrame,
   type PlexRelatedSeat,
+  type PlexShowing,
   type Point,
 } from '../model'
 import type { Drop } from '../arrange'
+import type { MenuOpening } from '../../menu/model'
 
 const props = withDefaults(
   defineProps<{
@@ -56,12 +58,14 @@ const props = withDefaults(
 const emit = defineEmits<{
   /** A node was chosen. The identifier is the caller's, handed back as given. */
   (event: 'activate', id: string): void
+  /** A node was asked for on its own, and where it is to be drawn. */
+  (event: 'show', id: string, showing: PlexShowing): void
   /** A gesture began at a node's handle. */
   (event: 'reach', id: string, pointer: PointerEvent): void
   /** A handle was pressed from the keyboard, where there is nowhere to drag. */
   (event: 'ask', id: string): void
-  /** A menu was asked for on a node: where it was asked, and from what. */
-  (event: 'menu', id: string, at: Point, from: SVGGElement): void
+  /** A menu was asked for on a node: where, from what, and by what. */
+  (event: 'menu', id: string, at: Point, from: SVGGElement, opening: MenuOpening): void
 }>()
 
 const svg = useTemplateRef<SVGSVGElement>('svg')
@@ -174,9 +178,10 @@ const ghost = computed<PlacedNode | null>(() => {
       :node="node"
       :standing="standingOf(node)"
       @activate="emit('activate', node.id)"
+      @show="emit('show', node.id, $event)"
       @reach="emit('reach', node.id, $event)"
       @ask="emit('ask', node.id)"
-      @menu="(at, from) => emit('menu', node.id, at, from)"
+      @menu="(at, from, opening) => emit('menu', node.id, at, from, opening)"
     >
       <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
     </PlexNodeView>

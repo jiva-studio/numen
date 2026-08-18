@@ -70,3 +70,29 @@ export const stepTo = (items: readonly MenuItem[], from: number, by: number): nu
   }
   return -1
 }
+
+/**
+ * How a menu came to be open, declared once. Where the keyboard is as it
+ * appears is derived from this table.
+ */
+export interface MenuOpeningDescriptor {
+  /** Whether the keyboard lands on an item as the menu appears. */
+  readonly lands: boolean
+}
+
+export const MENU_OPENINGS = {
+  pointer: { lands: false },
+  keyboard: { lands: true },
+} as const satisfies Record<string, MenuOpeningDescriptor>
+
+/** What opened a menu: a hand, or the keyboard. */
+export type MenuOpening = keyof typeof MENU_OPENINGS
+
+export const MENU_OPENINGS_ALL = Object.keys(MENU_OPENINGS) as readonly MenuOpening[]
+
+/**
+ * Where the keyboard is as a menu opens. Opened by hand it is on no item, and
+ * the first step down from there lands on the first one.
+ */
+export const landsOn = (opening: MenuOpening, items: readonly MenuItem[]): number =>
+  MENU_OPENINGS[opening].lands ? stepTo(items, -1, 1) : -1

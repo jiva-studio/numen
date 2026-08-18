@@ -25,15 +25,16 @@ describe('what state a composer is in', () => {
     expect(composerState('hello', true)).toBe('writing')
   })
 
-  it('offers a button only when there is something to send', () => {
+  it('can be pressed with something to send, and while an answer arrives', () => {
     expect(COMPOSER_STATES.empty.acts).toBe(false)
     expect(COMPOSER_STATES.ready.acts).toBe(true)
-    expect(COMPOSER_STATES.writing.acts).toBe(false)
+    expect(COMPOSER_STATES.writing.acts).toBe(true)
   })
 
-  it('shows the dots in place of the button while writing', () => {
+  it('stops the answer on its way, and sends the rest of the time', () => {
+    expect(COMPOSER_STATES.empty.shows).toBe('send')
     expect(COMPOSER_STATES.ready.shows).toBe('send')
-    expect(COMPOSER_STATES.writing.shows).toBe('writing')
+    expect(COMPOSER_STATES.writing.shows).toBe('stop')
   })
 
 })

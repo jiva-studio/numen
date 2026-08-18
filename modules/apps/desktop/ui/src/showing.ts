@@ -5,10 +5,11 @@
  * window keeps up with the vault, and a rule inside a component is a rule that
  * is only exercised by looking at the screen.
  */
-import { ref } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 import { rateOf } from '@numen/ui'
 import type { PlexRelatedSeat } from '@numen/ui'
 import type { Neighbourhood } from './plex'
+import { standing, type Standing } from './standing'
 import type { Said } from './drawing'
 import type { Went } from './tab'
 
@@ -120,6 +121,21 @@ export interface Made {
   refusal: Refused | null
 }
 
+/** One plex as its tab holds it: where it stands, and letting go of it. */
+export interface Plexed extends Standing {
+  /** The person is looking at this plex. */
+  looking(): void
+  /** The tab has closed, and nothing is asked for this plex again. */
+  close(): void
+}
+
+/**
+ * The vault as the whole window reads it, and the plexes it keeps up to date.
+ *
+ * One window reads the vault once: one stream of changes, one stream of edits,
+ * one stream of notes asked for, and one set of counts. A plex tab holds where
+ * it is standing and nothing more, and hears from here when to ask again.
+ */
 export function showing(
   core: Core,
   wait: (ms: number) => Promise<unknown> = sleep,
@@ -131,24 +147,21 @@ export function showing(
   told: (paths: readonly string[], renamed?: readonly Went[]) => void = () => {},
   /** What hears about a change to a note while it is being made. */
   drawing: (said: Said) => void = () => {},
+  /** What opens a plex on a note, for a window with none open to show it in. */
+  shows: (path: string) => void = () => {},
 ) {
-  const neighbourhood = ref<Neighbourhood | null>(null)
-  /**
-   * The note the window is showing, as it asked for it.
-   *
-   * Kept apart from what came back: when the note is gone the answer carries no
-   * path, and taking the next question from the focus would leave the window
-   * with nothing to ask about and no way back.
-   */
-  const here = ref('')
   const name = ref('')
   const indexing = ref(true)
   /** The core could not be reached: nothing else in the window is true. */
   const failure = ref('')
-  /** Something is wrong and the window still works: it says so and carries on. */
-  const notice = ref('')
+  /** What the window itself lost touch with, said until it has it back. */
+  const lost = ref('')
   const trouble = ref('')
   const unwatched = ref('')
+  /** Whether the vault holds a note to show at all. */
+  const holds = ref(false)
+  /** The note the vault opens with, which is where a plex standing nowhere goes. */
+  const opening = ref('')
   /**
    * How far reading the vault for meaning has got.
    *
@@ -198,33 +211,67 @@ export function showing(
   let counted: { phase: string; done: number; at: number } | null = null
 
   /**
-   * Which question is the current one. Two answers can be in flight — a click
-   * while a change is being followed — and without this the slower one wins
-   * whatever was asked last.
+   * The plexes open in the window, each in a tab of its own, in the order the
+   * person was last in them. The last one is the plex in front.
    */
-  let asked = 0
+  const plexes = shallowRef<readonly Standing[]>([])
+  /**
+   * The plex the person is looking at. A note asked for from outside the window
+   * is put in front of it.
+   */
+  const ahead = computed<Standing | null>(() => plexes.value.at(-1) ?? null)
+  /** The note the person is looking at, which is what a question is about. */
+  const looking = computed(() => ahead.value?.here.value ?? '')
+  /**
+   * The one thing the window says while it still works: what it lost touch
+   * with, or what the plex in front could not show.
+   */
+  const notice = computed(() => lost.value || ahead.value?.trouble.value || '')
+
   let open = true
   /** Let go of every stream the window is listening to. */
   const listening = new AbortController()
 
-  async function go(path: string) {
-    const mine = ++asked
-    try {
-      const answer = await core.neighbourhood(path)
-      if (mine !== asked) return
-      if (!answer.focus?.path) {
-        // The vault no longer holds it. What is on screen stays, and following
-        // goes on, so putting the file back brings it straight back.
-        notice.value = `${path} is not in the vault`
-        return
-      }
-      notice.value = ''
-      here.value = path
-      neighbourhood.value = answer
-    } catch (error) {
-      if (mine !== asked) return
-      notice.value = String(error)
+  /**
+   * A plex of its own, followed for as long as its tab is open. It opens where
+   * it is told to, where the person is looking, or on the note the vault opens
+   * with. Closing it is what stops it being asked for.
+   */
+  function plex(at = ''): Plexed {
+    const view = standing(core)
+    const from = at || ahead.value?.here.value || opening.value
+    plexes.value = [...plexes.value, view]
+    if (from) void view.go(from)
+
+    return {
+      ...view,
+      /** The person is looking at this plex. */
+      looking: () => {
+        if (!plexes.value.includes(view)) return
+        plexes.value = [...plexes.value.filter((one) => one !== view), view]
+      },
+      close: () => {
+        view.close()
+        plexes.value = plexes.value.filter((one) => one !== view)
+      },
     }
+  }
+
+  /**
+   * One plex asks for its picture again. A plex standing nowhere is given the
+   * note the vault opens with.
+   */
+  async function again(view: Standing) {
+    const path = view.here.value || opening.value
+    if (path) await view.go(path)
+  }
+
+  /** The note the vault opens with, and whether it holds one at all. */
+  async function first() {
+    const note = await core.opening()
+    holds.value = note !== null
+    opening.value = note?.path ?? ''
+    return opening.value
   }
 
   /** What the vault says about itself, which is not only its name. */
@@ -299,11 +346,11 @@ export function showing(
           time()
           if (missed > 0) {
             missed = 0
-            notice.value = ''
+            lost.value = ''
           }
         } catch (error) {
           missed++
-          if (missed > 1) notice.value = String(error)
+          if (missed > 1) lost.value = String(error)
         }
         if (!busy()) return
       }
@@ -331,12 +378,14 @@ export function showing(
           if (!open) return
           if (change.paths.length === 0 && !change.reload && change.renamed.length === 0) continue
           told(change.reload ? [] : change.paths, change.renamed)
-          if (here.value) {
-            await go(here.value)
-          } else {
-            const note = await core.opening()
-            if (note) await go(note.path)
+          try {
+            // Asked once for the window, and only while a plex has nowhere to
+            // stand.
+            if (plexes.value.some((view) => !view.here.value)) await first()
+          } catch {
+            // The next change asks again.
           }
+          await Promise.all(plexes.value.map((view) => again(view)))
           try {
             await ask()
           } catch {
@@ -347,20 +396,13 @@ export function showing(
         }
       } catch (error) {
         if (!open) return
-        notice.value = String(error)
+        lost.value = String(error)
       }
       await wait(1000)
       // Taken up again, so what was said about losing it no longer holds.
-      if (open) notice.value = ''
+      if (open) lost.value = ''
     }
   }
-
-  /**
-   * Travels to whatever is asked for while the window is open — an agent
-   * working the vault beside the person naming the note it is talking about.
-   *
-   * Taken up again the way following is, and for the same reason.
-   */
 
   /** Follows the changes being made to notes, and takes the stream up again. */
   async function draw() {
@@ -374,21 +416,32 @@ export function showing(
         }
       } catch (error) {
         if (!open) return
-        notice.value = String(error)
+        lost.value = String(error)
       }
       await wait(1000)
     }
   }
+
+  /**
+   * Travels to whatever is asked for while the window is open — an agent
+   * working the vault beside the person naming the note it is talking about.
+   * It lands in the plex the person is looking at, and in one opened on it
+   * when the window has no plex at all.
+   *
+   * Taken up again the way following is, and for the same reason.
+   */
   async function watch() {
     while (open) {
       try {
         for await (const wanted of core.focus(listening.signal)) {
           if (!open) return
-          if (wanted.path) await go(wanted.path)
+          if (!wanted.path) continue
+          if (ahead.value) await ahead.value.go(wanted.path)
+          else shows(wanted.path)
         }
       } catch (error) {
         if (!open) return
-        notice.value = String(error)
+        lost.value = String(error)
       }
       await wait(1000)
     }
@@ -399,11 +452,11 @@ export function showing(
     try {
       while (open) {
         const state = await ask()
-        const note = await core.opening()
+        const note = await first()
         if (!open) return
         if (note) {
           indexing.value = false
-          await go(note.path)
+          await Promise.all(plexes.value.map((view) => again(view)))
           void follow()
           void watch()
           void draw()
@@ -429,14 +482,14 @@ export function showing(
   }
 
   return {
-    neighbourhood,
-    here,
     name,
     indexing,
     failure,
     notice,
     trouble,
     unwatched,
+    holds,
+    looking,
     chunks,
     embedded,
     reading,
@@ -446,7 +499,7 @@ export function showing(
     learning,
     working,
     rate,
-    go,
+    plex,
     start,
     follow,
     watch,

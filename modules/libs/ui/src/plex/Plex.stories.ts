@@ -16,8 +16,16 @@ import { neighbourhoodOf, walkStart } from './fixtures/walk'
 import { around, build, type Named } from './fixtures/build'
 import { nameNow } from './fixtures/names'
 import { ring } from './fixtures/ring'
-import type { PlexEdge, PlexNeighbourhood, PlexNode, PlexRelatedSeat, Point } from './model'
+import type {
+  PlexEdge,
+  PlexNeighbourhood,
+  PlexNode,
+  PlexRelatedSeat,
+  PlexShowing,
+  Point,
+} from './model'
 import type { Environment } from './transition'
+import type { MenuOpening } from '../menu/model'
 
 interface Knobs {
   neighbourhood: PlexNeighbourhood
@@ -25,9 +33,10 @@ interface Knobs {
   showEdgeLabels: boolean
   duration: number
   onActivate: (id: string) => void
+  onShow: (id: string, showing: PlexShowing) => void
   onCreate: (from: string, seat: PlexRelatedSeat) => void
   onLink: (from: string, to: string, seat: PlexRelatedSeat) => void
-  onMenu: (id: string, at: Point, from: SVGGElement) => void
+  onMenu: (id: string, at: Point, from: SVGGElement, opening: MenuOpening) => void
   onDismiss: () => void
 
   focusWidth: number
@@ -182,6 +191,7 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
         :show-edge-labels="args.showEdgeLabels"
         :duration="args.duration"
         @activate="chose($event); args.onActivate($event)"
+        @show="(id, showing) => args.onShow(id, showing)"
         @create="(from, seat) => { create(from, seat); args.onCreate(from, seat) }"
         @link="(from, to, seat) => { link(from, to, seat); args.onLink(from, to, seat) }"
         @menu="args.onMenu"
@@ -218,6 +228,7 @@ const walking = (args: Knobs) => ({
         :show-edge-labels="args.showEdgeLabels"
         :duration="args.duration"
         @activate="focused = $event; args.onActivate($event)"
+        @show="(id, showing) => args.onShow(id, showing)"
       />
     </div>
   `,
@@ -287,6 +298,7 @@ const meta = {
     environment: { table: { disable: true } },
     naming: { table: { disable: true } },
     onActivate: { table: { disable: true } },
+    onShow: { table: { disable: true } },
     onCreate: { table: { disable: true } },
     onLink: { table: { disable: true } },
     onMenu: { table: { disable: true } },
@@ -298,6 +310,7 @@ const meta = {
     showEdgeLabels: true,
     duration: 420,
     onActivate: fn(),
+    onShow: fn(),
     onCreate: fn(),
     onLink: fn(),
     onMenu: fn(),
@@ -445,6 +458,7 @@ export const AskingForAMenu: Story = {
       expect.any(String),
       expect.any(Object),
       focus,
+      'pointer',
     )
     await expect(refused).toBe(true)
 
@@ -456,6 +470,45 @@ export const AskingForAMenu: Story = {
     await expect(args.onCreate).not.toHaveBeenCalled()
     await expect(canvasElement.querySelector('.plex__thread')).toBeNull()
     await expect(args.onMenu).toHaveBeenCalledTimes(2)
+  },
+}
+
+/**
+ * Asking for a node itself, rather than travelling to it.
+ *
+ * Asked on the focus, which is the one node a click moves nothing on, so what
+ * a double click leaves behind is the asking on its own.
+ *
+ * Only a browser can answer any of it: whether a double click reaches an SVG
+ * group at all, and whether a modifier held over it arrives with it.
+ */
+export const AskingForANode: Story = {
+  args: invented.args,
+  render: invented.render,
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    const focus = canvas.getByLabelText(/, focus$/)
+
+    // One session throughout, so that a modifier held down is still held when
+    // the hand arrives.
+    const hand = userEvent.setup()
+
+    await hand.dblClick(focus)
+    await expect(args.onShow).toHaveBeenLastCalledWith(expect.any(String), 'here')
+    await expect(args.onActivate).not.toHaveBeenCalled()
+
+    // The same gesture with the modifier held asks for it beside where the
+    // reader is. What that means is the application's, and never reaches here.
+    await hand.keyboard('{Alt>}')
+    await hand.dblClick(focus)
+    await hand.keyboard('{/Alt}')
+    await expect(args.onShow).toHaveBeenLastCalledWith(expect.any(String), 'beside')
+
+    // The keyboard route: a press with Shift, and the same modifier for where.
+    focus.focus()
+    await hand.keyboard('{Shift>}{Enter}{/Shift}')
+    await expect(args.onShow).toHaveBeenLastCalledWith(expect.any(String), 'here')
+    await expect(args.onShow).toHaveBeenCalledTimes(3)
   },
 }
 

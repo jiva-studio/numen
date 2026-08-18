@@ -113,6 +113,33 @@ describe('making a note in a seat of another', () => {
   })
 })
 
+describe('a note made on its own', () => {
+  it('is filed at the top of the vault, joined to nothing', async () => {
+    const { core, asked } = fake()
+    const made = await creating(core).start()
+
+    expect(made).toStrictEqual({ path: `${UNTITLED}.md`, title: UNTITLED })
+    expect(asked).toStrictEqual([{ title: UNTITLED, folder: '', links: [] }])
+  })
+
+  it('takes the next free name, as a note made in a seat does', async () => {
+    const { core } = fake([{ path: '', refusal: 'occupied' }])
+
+    expect(await creating(core).start()).toStrictEqual({
+      path: `${UNTITLED} 2.md`,
+      title: `${UNTITLED} 2`,
+    })
+  })
+
+  it('is nothing when the vault refused, and the refusal is said', async () => {
+    const { core } = fake([{ path: '', refusal: 'unreadable' }])
+    const making = creating(core)
+
+    expect(await making.start()).toBeNull()
+    expect(making.said.value).not.toBe('')
+  })
+})
+
 describe('joining two notes that are both there', () => {
   it('writes the link in the note the gesture came from, in the seat it landed in', async () => {
     const { core, joined } = fake()

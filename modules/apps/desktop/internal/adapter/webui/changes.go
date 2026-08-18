@@ -35,14 +35,16 @@ func focusing() audience[string] {
 // drawing is everyone drawing the vault, for a change to a note being made
 // while they are showing it.
 //
-// A report arriving while a listener is busy replaces the one it has not read:
-// each report carries the whole of what a change is doing, so the newest is the
-// only one worth having. The report that ends a change is not one of those, and
-// arrives whatever a listener is doing.
+// Each report carries the whole of what one change is doing, so a report
+// replaces the one waiting about that change and nothing else: several changes
+// are made at once, and each is drawn in a place of its own. The report that
+// ends a change is replaced by nothing, and arrives whatever a listener is
+// doing.
 func drawing() audience[domain.Editing] {
 	return audience[domain.Editing]{
 		latest: true,
+		about:  func(said domain.Editing) string { return said.Change },
 		keep:   func(said domain.Editing) bool { return said.Done },
-		room:   1,
+		room:   8,
 	}
 }

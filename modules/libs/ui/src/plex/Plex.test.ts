@@ -40,6 +40,56 @@ describe('choosing a node', () => {
   })
 })
 
+describe('asking for a node on its own', () => {
+  it('hands back the identifier and where it is to be drawn', async () => {
+    const plex = mountPlex()
+    await plex.get('[aria-label^="Domain"]').trigger('dblclick')
+    expect(plex.emitted('show')).toStrictEqual([['child-0', 'here']])
+  })
+
+  it('says beside when the modifier was held, which is read at the node', async () => {
+    const plex = mountPlex()
+    await plex.get('[aria-label^="Domain"]').trigger('dblclick', { altKey: true })
+    expect(plex.emitted('show')).toStrictEqual([['child-0', 'beside']])
+  })
+
+  it('is answered by the focus, which cannot be travelled to at all', async () => {
+    const plex = mountPlex()
+    await plex.get('[aria-label^="Hexagonal architecture"]').trigger('dblclick')
+
+    const asked = plex.emitted('show') as [string, string][]
+    expect(asked[0]?.[1]).toBe('here')
+    expect(plex.emitted('activate')).toBeUndefined()
+  })
+
+  it('travels there as well, because a double click is two clicks', async () => {
+    const plex = mountPlex()
+    const node = plex.get('[aria-label^="Domain"]')
+
+    await node.trigger('click')
+    await node.trigger('click')
+    await node.trigger('dblclick')
+
+    expect(plex.emitted('activate')).toStrictEqual([['child-0'], ['child-0']])
+    expect(plex.emitted('show')).toStrictEqual([['child-0', 'here']])
+  })
+
+  it('answers Shift and a press, and leaves a press on its own to travelling', async () => {
+    const plex = mountPlex()
+    const node = plex.get('[aria-label^="Domain"]')
+
+    await node.trigger('keydown', { key: 'Enter', shiftKey: true })
+    await node.trigger('keydown', { key: ' ', shiftKey: true, altKey: true })
+    await node.trigger('keydown', { key: 'Enter' })
+
+    expect(plex.emitted('show')).toStrictEqual([
+      ['child-0', 'here'],
+      ['child-0', 'beside'],
+    ])
+    expect(plex.emitted('activate')).toStrictEqual([['child-0']])
+  })
+})
+
 describe('what a screen reader and a keyboard are given', () => {
   it('makes every node reachable by tab, the focus included', () => {
     // The focus cannot be chosen and is still stopped at: a menu is asked for

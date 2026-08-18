@@ -33,7 +33,13 @@ type AskRequest struct {
 	Asked string `protobuf:"bytes,1,opt,name=asked,proto3" json:"asked,omitempty"`
 	// The note in focus, for a task that says "this note". Empty when nothing
 	// is in focus.
-	Focus         string `protobuf:"bytes,2,opt,name=focus,proto3" json:"focus,omitempty"`
+	Focus string `protobuf:"bytes,2,opt,name=focus,proto3" json:"focus,omitempty"`
+	// Which thread of talk this question belongs to. Questions carrying one name
+	// are answered in one conversation with the agent, so the name has to be the
+	// client's alone: unique among the conversations it has open, and never
+	// given to a second one for as long as the application is running. Empty is
+	// no conversation, and a question asked under it is answered on its own.
+	Conversation  string `protobuf:"bytes,3,opt,name=conversation,proto3" json:"conversation,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -82,6 +88,95 @@ func (x *AskRequest) GetFocus() string {
 	return ""
 }
 
+func (x *AskRequest) GetConversation() string {
+	if x != nil {
+		return x.Conversation
+	}
+	return ""
+}
+
+type FinishRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Which thread of talk is over, by the name its questions carried. Empty is
+	// no conversation, and there is nothing to finish.
+	Conversation  string `protobuf:"bytes,1,opt,name=conversation,proto3" json:"conversation,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FinishRequest) Reset() {
+	*x = FinishRequest{}
+	mi := &file_numen_v1_agent_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FinishRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FinishRequest) ProtoMessage() {}
+
+func (x *FinishRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_agent_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FinishRequest.ProtoReflect.Descriptor instead.
+func (*FinishRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *FinishRequest) GetConversation() string {
+	if x != nil {
+		return x.Conversation
+	}
+	return ""
+}
+
+type FinishResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FinishResponse) Reset() {
+	*x = FinishResponse{}
+	mi := &file_numen_v1_agent_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FinishResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FinishResponse) ProtoMessage() {}
+
+func (x *FinishResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_agent_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FinishResponse.ProtoReflect.Descriptor instead.
+func (*FinishResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{2}
+}
+
 // AskResponse is one step of the work: one thing the agent said, did, or
 // stopped for.
 type AskResponse struct {
@@ -100,7 +195,7 @@ type AskResponse struct {
 
 func (x *AskResponse) Reset() {
 	*x = AskResponse{}
-	mi := &file_numen_v1_agent_proto_msgTypes[1]
+	mi := &file_numen_v1_agent_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -112,7 +207,7 @@ func (x *AskResponse) String() string {
 func (*AskResponse) ProtoMessage() {}
 
 func (x *AskResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[1]
+	mi := &file_numen_v1_agent_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -125,7 +220,7 @@ func (x *AskResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AskResponse.ProtoReflect.Descriptor instead.
 func (*AskResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{1}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *AskResponse) GetStep() isAskResponse_Step {
@@ -232,7 +327,7 @@ type Answered struct {
 
 func (x *Answered) Reset() {
 	*x = Answered{}
-	mi := &file_numen_v1_agent_proto_msgTypes[2]
+	mi := &file_numen_v1_agent_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -244,7 +339,7 @@ func (x *Answered) String() string {
 func (*Answered) ProtoMessage() {}
 
 func (x *Answered) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[2]
+	mi := &file_numen_v1_agent_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -257,7 +352,7 @@ func (x *Answered) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Answered.ProtoReflect.Descriptor instead.
 func (*Answered) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{2}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{4}
 }
 
 type Thinking struct {
@@ -268,7 +363,7 @@ type Thinking struct {
 
 func (x *Thinking) Reset() {
 	*x = Thinking{}
-	mi := &file_numen_v1_agent_proto_msgTypes[3]
+	mi := &file_numen_v1_agent_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -280,7 +375,7 @@ func (x *Thinking) String() string {
 func (*Thinking) ProtoMessage() {}
 
 func (x *Thinking) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[3]
+	mi := &file_numen_v1_agent_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -293,7 +388,7 @@ func (x *Thinking) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Thinking.ProtoReflect.Descriptor instead.
 func (*Thinking) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{3}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{5}
 }
 
 // Doing is a tool in the agent's hands.
@@ -317,7 +412,7 @@ type Doing struct {
 
 func (x *Doing) Reset() {
 	*x = Doing{}
-	mi := &file_numen_v1_agent_proto_msgTypes[4]
+	mi := &file_numen_v1_agent_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -329,7 +424,7 @@ func (x *Doing) String() string {
 func (*Doing) ProtoMessage() {}
 
 func (x *Doing) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[4]
+	mi := &file_numen_v1_agent_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -342,7 +437,7 @@ func (x *Doing) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Doing.ProtoReflect.Descriptor instead.
 func (*Doing) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Doing) GetTool() string {
@@ -370,11 +465,15 @@ var File_numen_v1_agent_proto protoreflect.FileDescriptor
 
 const file_numen_v1_agent_proto_rawDesc = "" +
 	"\n" +
-	"\x14numen/v1/agent.proto\x12\bnumen.v1\"8\n" +
+	"\x14numen/v1/agent.proto\x12\bnumen.v1\"\\\n" +
 	"\n" +
 	"AskRequest\x12\x14\n" +
 	"\x05asked\x18\x01 \x01(\tR\x05asked\x12\x14\n" +
-	"\x05focus\x18\x02 \x01(\tR\x05focus\"\xd4\x01\n" +
+	"\x05focus\x18\x02 \x01(\tR\x05focus\x12\"\n" +
+	"\fconversation\x18\x03 \x01(\tR\fconversation\"3\n" +
+	"\rFinishRequest\x12\"\n" +
+	"\fconversation\x18\x01 \x01(\tR\fconversation\"\x10\n" +
+	"\x0eFinishResponse\"\xd4\x01\n" +
 	"\vAskResponse\x12\x14\n" +
 	"\x04said\x18\x01 \x01(\tH\x00R\x04said\x12'\n" +
 	"\x05doing\x18\x02 \x01(\v2\x0f.numen.v1.DoingH\x00R\x05doing\x12\x1a\n" +
@@ -389,9 +488,10 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	"\x05Doing\x12\x12\n" +
 	"\x04tool\x18\x01 \x01(\tR\x04tool\x12\x14\n" +
 	"\x05about\x18\x02 \x01(\tR\x05about\x12\x18\n" +
-	"\awritten\x18\x03 \x01(\x05R\awritten2D\n" +
+	"\awritten\x18\x03 \x01(\x05R\awritten2\x81\x01\n" +
 	"\fAgentService\x124\n" +
-	"\x03Ask\x12\x14.numen.v1.AskRequest\x1a\x15.numen.v1.AskResponse0\x01BIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x03Ask\x12\x14.numen.v1.AskRequest\x1a\x15.numen.v1.AskResponse0\x01\x12;\n" +
+	"\x06Finish\x12\x17.numen.v1.FinishRequest\x1a\x18.numen.v1.FinishResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_agent_proto_rawDescOnce sync.Once
@@ -405,22 +505,26 @@ func file_numen_v1_agent_proto_rawDescGZIP() []byte {
 	return file_numen_v1_agent_proto_rawDescData
 }
 
-var file_numen_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_numen_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_numen_v1_agent_proto_goTypes = []any{
-	(*AskRequest)(nil),  // 0: numen.v1.AskRequest
-	(*AskResponse)(nil), // 1: numen.v1.AskResponse
-	(*Answered)(nil),    // 2: numen.v1.Answered
-	(*Thinking)(nil),    // 3: numen.v1.Thinking
-	(*Doing)(nil),       // 4: numen.v1.Doing
+	(*AskRequest)(nil),     // 0: numen.v1.AskRequest
+	(*FinishRequest)(nil),  // 1: numen.v1.FinishRequest
+	(*FinishResponse)(nil), // 2: numen.v1.FinishResponse
+	(*AskResponse)(nil),    // 3: numen.v1.AskResponse
+	(*Answered)(nil),       // 4: numen.v1.Answered
+	(*Thinking)(nil),       // 5: numen.v1.Thinking
+	(*Doing)(nil),          // 6: numen.v1.Doing
 }
 var file_numen_v1_agent_proto_depIdxs = []int32{
-	4, // 0: numen.v1.AskResponse.doing:type_name -> numen.v1.Doing
-	2, // 1: numen.v1.AskResponse.answered:type_name -> numen.v1.Answered
-	3, // 2: numen.v1.AskResponse.thinking:type_name -> numen.v1.Thinking
+	6, // 0: numen.v1.AskResponse.doing:type_name -> numen.v1.Doing
+	4, // 1: numen.v1.AskResponse.answered:type_name -> numen.v1.Answered
+	5, // 2: numen.v1.AskResponse.thinking:type_name -> numen.v1.Thinking
 	0, // 3: numen.v1.AgentService.Ask:input_type -> numen.v1.AskRequest
-	1, // 4: numen.v1.AgentService.Ask:output_type -> numen.v1.AskResponse
-	4, // [4:5] is the sub-list for method output_type
-	3, // [3:4] is the sub-list for method input_type
+	1, // 4: numen.v1.AgentService.Finish:input_type -> numen.v1.FinishRequest
+	3, // 5: numen.v1.AgentService.Ask:output_type -> numen.v1.AskResponse
+	2, // 6: numen.v1.AgentService.Finish:output_type -> numen.v1.FinishResponse
+	5, // [5:7] is the sub-list for method output_type
+	3, // [3:5] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
 	3, // [3:3] is the sub-list for extension extendee
 	0, // [0:3] is the sub-list for field type_name
@@ -431,7 +535,7 @@ func file_numen_v1_agent_proto_init() {
 	if File_numen_v1_agent_proto != nil {
 		return
 	}
-	file_numen_v1_agent_proto_msgTypes[1].OneofWrappers = []any{
+	file_numen_v1_agent_proto_msgTypes[3].OneofWrappers = []any{
 		(*AskResponse_Said)(nil),
 		(*AskResponse_Doing)(nil),
 		(*AskResponse_Stopped)(nil),
@@ -444,7 +548,7 @@ func file_numen_v1_agent_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_agent_proto_rawDesc), len(file_numen_v1_agent_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

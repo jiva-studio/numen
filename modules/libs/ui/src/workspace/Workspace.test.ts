@@ -9,7 +9,7 @@ import { describe, expect, it, vi } from 'vitest'
 import Workspace from './Workspace.vue'
 import WorkspacePane from './render/WorkspacePane.vue'
 import { type Tab, type Workspace as State } from './model'
-import { oneStack, stack, workspaceOf } from './fixtures/build'
+import { oneStack, split, stack, workspaceOf } from './fixtures/build'
 
 const TABS: readonly Tab[] = [
   { id: 'plex', title: 'Plex' },
@@ -120,6 +120,33 @@ describe('what a tab carries', () => {
 
     expect(held.find('.mine').text()).toBe('chat: stuck')
     expect(held.find('.tab__mark').exists()).toBe(false)
+  })
+})
+
+describe('a new tab asked for', () => {
+  it('carries the pane it was asked in, and opens nothing', async () => {
+    const held = mountWorkspace(oneStack(), { newTab: 'New tab' })
+    await held.get('[data-workspace-new]').trigger('click')
+
+    expect(held.emitted('open')).toStrictEqual([['main']])
+    expect(held.emitted('update:modelValue')).toBeUndefined()
+  })
+
+  it('names the pane under the pointer where the workspace is divided', async () => {
+    const divided = workspaceOf(
+      split('root', [stack('main', 'plex'), stack('aside', 'chat')]),
+      'horizontal',
+      'main',
+    )
+    const held = mountWorkspace(divided, { newTab: 'New tab' })
+    const asides = held.findAllComponents(WorkspacePane)[1]
+    await asides?.get('[data-workspace-new]').trigger('click')
+
+    expect(held.emitted('open')).toStrictEqual([['aside']])
+  })
+
+  it('is offered by no strip where no word for it was given', () => {
+    expect(mountWorkspace().find('[data-workspace-new]').exists()).toBe(false)
   })
 })
 

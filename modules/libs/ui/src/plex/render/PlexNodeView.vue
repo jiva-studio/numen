@@ -12,14 +12,17 @@
  */
 import { computed, ref } from 'vue'
 import PlexNodeHandle from './PlexNodeHandle.vue'
-import { isMenuKey, isPress } from './keys'
+import { isMenuKey, isPress, isShowKey } from './keys'
+import type { MenuOpening } from '../../menu/model'
 import {
   handleIn,
   isReachable,
   isStop,
   nameOf,
+  showingOf,
   type NodeStanding,
   type PlacedNode,
+  type PlexShowing,
   type Point,
 } from '../model'
 
@@ -35,15 +38,21 @@ const props = withDefaults(
 const emit = defineEmits<{
   /** Chosen, by click or by keyboard. Which node it was is the caller's to say. */
   (event: 'activate'): void
+  /**
+   * Asked to be drawn out on its own, and where it is to go. The modifier is
+   * read here, so what travels on is the meaning.
+   */
+  (event: 'show', showing: PlexShowing): void
   /** A gesture began at the handle, and a pointer is dragging it somewhere. */
   (event: 'reach', pointer: PointerEvent): void
   /** The handle was pressed from the keyboard, where there is nowhere to drag. */
   (event: 'ask'): void
   /**
-   * A menu was asked for on this node: where it was asked, and the element it
-   * was asked from. A keypress carries no point, so it carries both.
+   * A menu was asked for on this node: where it was asked, the element it was
+   * asked from, and what asked for it. A keypress carries no point, so it
+   * carries both.
    */
-  (event: 'menu', at: Point, from: SVGGElement): void
+  (event: 'menu', at: Point, from: SVGGElement, opening: MenuOpening): void
 }>()
 
 const over = ref(false)
@@ -67,6 +76,14 @@ const activate = () => {
   if (reachable.value) emit('activate')
 }
 
+/**
+ * Asking for the node itself, which every node that is really there answers —
+ * the focus included, as it answers a menu.
+ */
+const show = (modified: boolean) => {
+  if (stop.value) emit('show', showingOf(modified))
+}
+
 /** The middle of the node, for a press, which carries no point of its own. */
 const middleOf = (element: SVGGElement): Point => {
   const box = element.getBoundingClientRect()
@@ -81,6 +98,7 @@ const onContextMenu = (event: MouseEvent) => {
     'menu',
     { x: event.clientX, y: event.clientY },
     event.currentTarget as SVGGElement,
+    'pointer',
   )
 }
 
@@ -89,7 +107,12 @@ const onKey = (event: KeyboardEvent) => {
   if (isMenuKey(event)) {
     if (ghost.value) return
     event.preventDefault()
-    emit('menu', middleOf(group), group)
+    emit('menu', middleOf(group), group, 'keyboard')
+    return
+  }
+  if (isShowKey(event)) {
+    event.preventDefault()
+    show(event.altKey)
     return
   }
   if (!isPress(event)) return
@@ -146,6 +169,7 @@ const hue = computed(() => ({
     :class="[`plex__node--${node.seat}`, `plex__node--${standing}`]"
     :aria-label="ghost ? undefined : nameOf(node)"
     @click="activate"
+    @dblclick="show($event.altKey)"
     @contextmenu="onContextMenu"
     @keydown="onKey"
     @pointerenter="over = true"

@@ -22,7 +22,11 @@ func (a *API) Ask(ctx context.Context, r *connect.Request[v1.AskRequest], stream
 			errors.New("no agent is set up for this vault"))
 	}
 
-	work, err := a.Agent.Take(ctx, agent.Task{Asked: r.Msg.GetAsked(), Focus: r.Msg.GetFocus()})
+	work, err := a.Agent.Take(ctx, agent.Task{
+		Asked:        r.Msg.GetAsked(),
+		Focus:        r.Msg.GetFocus(),
+		Conversation: r.Msg.GetConversation(),
+	})
 	if err != nil {
 		return connect.NewError(connect.CodeInternal, err)
 	}
@@ -46,6 +50,19 @@ func (a *API) Ask(ctx context.Context, r *connect.Request[v1.AskRequest], stream
 			}
 		}
 	}
+}
+
+// Finish says a conversation is over, and hands that on to the agent.
+func (a *API) Finish(ctx context.Context, r *connect.Request[v1.FinishRequest]) (*connect.Response[v1.FinishResponse], error) {
+	if a.Agent == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented,
+			errors.New("no agent is set up for this vault"))
+	}
+
+	if err := a.Agent.Finish(ctx, r.Msg.GetConversation()); err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	return connect.NewResponse(&v1.FinishResponse{}), nil
 }
 
 // stepsOf says a step in the schema's words.

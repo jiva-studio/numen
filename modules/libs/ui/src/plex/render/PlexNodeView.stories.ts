@@ -16,6 +16,7 @@ import {
   type NodeStanding,
   type PlacedNode,
   type PlexSeat,
+  type PlexShowing,
 } from '../model'
 
 interface Knobs {
@@ -31,6 +32,7 @@ interface Knobs {
   icon: boolean
 
   onActivate: () => void
+  onShow: (showing: PlexShowing) => void
   onReach: (pointer: PointerEvent) => void
   onAsk: () => void
 }
@@ -87,6 +89,7 @@ const on =
             :node="node"
             :standing="args.standing"
             @activate="args.onActivate"
+            @show="args.onShow"
             @reach="args.onReach"
             @ask="args.onAsk"
           >
@@ -137,6 +140,7 @@ const meta: Meta<Knobs> = {
     standing: { control: 'select', options: STANDINGS },
 
     onActivate: { table: { disable: true } },
+    onShow: { table: { disable: true } },
     onReach: { table: { disable: true } },
     onAsk: { table: { disable: true } },
   },
@@ -150,6 +154,7 @@ const meta: Meta<Knobs> = {
     icon: false,
     standing: 'open',
     onActivate: fn(),
+    onShow: fn(),
     onReach: fn(),
     onAsk: fn(),
   },

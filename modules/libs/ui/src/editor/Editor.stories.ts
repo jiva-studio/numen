@@ -12,7 +12,7 @@ import Editor from './Editor.vue'
 import type { EditorChange } from './change'
 import WorkspacePane from '@/workspace/render/WorkspacePane.vue'
 import { pane } from '@/workspace/model'
-import { MARKED_UP, TABLE } from '@/fixtures/markdown'
+import { MARKED_UP, PICTURE, TABLE } from '@/fixtures/markdown'
 import { ARABIC, DEVANAGARI, LINK, LONG, RUSSIAN, UNBREAKABLE } from '@/fixtures/prose'
 
 const meta = {
@@ -54,6 +54,171 @@ export const AsWritten: Story = { render: framed(MARKED_UP, { live: false }) }
 
 /** Nothing to type into. */
 export const ReadOnly: Story = { render: framed(MARKED_UP, { readonly: true }) }
+
+/* One line of every construct whose marks are concealed, each with a blank
+   line after it, and a line at the end to park the caret on. */
+const BULLET = '- a bullet'
+const TASK = '- [ ] something to do'
+const CONCEALED = [
+  '# Heading one',
+  '## Heading two',
+  '### Heading three',
+  '#### Heading four',
+  '##### Heading five',
+  '###### Heading six',
+  'A **bold** and *slanted* and ~~struck~~ word.',
+  'A `snippet` and a [somewhere](https://example.invalid/x "a title").',
+  '> A quotation.',
+  BULLET,
+  TASK,
+]
+
+/* Two constructs drawn as something other than text. What is drawn takes its
+   own height, which is not the height of the line it was written on. */
+const REDRAWN = ['---', `![a picture](${PICTURE})`]
+
+const EVERY = [...CONCEALED, ...REDRAWN]
+const STEADY = `${EVERY.join('\n\n')}\n\nSomething well away from all of it.\n`
+
+/** Which line a construct is written on, and the line nothing is drawn on. */
+const written = (text: string) => EVERY.indexOf(text) * 2 + 1
+const PARKED = EVERY.length * 2 + 1
+
+/* A heading is set at the tightest line in the editor, and how far a letter
+   stands above and below its baseline is the font's answer. These are the
+   machine's own sans cut twice: one face reaching past that line, one well
+   inside it. */
+const SANS =
+  "local('DejaVu Sans'), local('Liberation Sans'), local('Noto Sans'), " +
+  "local('FreeSans'), local('Nimbus Sans'), local('Arial'), local('Helvetica'), " +
+  "local('Cantarell'), local('Ubuntu'), local('Roboto'), local('Verdana')"
+const TALL = { name: 'numen-tall', ascent: '110%', descent: '40%' }
+const LOW = { name: 'numen-low', ascent: '60%', descent: '40%' }
+const FACES = [TALL, LOW]
+
+/** The two faces, handed to the page. */
+const cutting = () => {
+  const sheet = document.createElement('style')
+  sheet.textContent = FACES.map(
+    ({ name, ascent, descent }) =>
+      `@font-face { font-family: '${name}'; src: ${SANS};` +
+      ` ascent-override: ${ascent}; descent-override: ${descent} }`,
+  ).join('\n')
+  document.head.append(sheet)
+  return Promise.all(FACES.map(({ name }) => document.fonts.load(`100px '${name}'`)))
+}
+
+/** How tall a line of a face is when nothing but the face decides. */
+const reach = (name: string) => {
+  const probe = document.createElement('span')
+  probe.textContent = 'x'
+  probe.style.cssText =
+    'position:absolute;visibility:hidden;line-height:normal;font-size:100px;' +
+    `font-family:'${name}'`
+  document.body.append(probe)
+  const height = probe.getBoundingClientRect().height
+  probe.remove()
+  return height
+}
+
+/**
+ * The line a construct is written on, measured with the marks concealed and
+ * with them back. Text drawn as text keeps its height; a rule and a picture
+ * are drawn as themselves and take their own. Every measurement is made under
+ * the machine's font and under both cut faces.
+ */
+export const Steady: Story = {
+  render: framed(STEADY),
+  play: async ({ canvasElement }) => {
+    const view = viewOf(canvasElement)
+
+    const put = async (line: number, column: number) => {
+      view.dispatch({ selection: EditorSelection.single(view.state.doc.line(line).from + column) })
+      await settled()
+      await settled()
+    }
+
+    /** The block the editor drew for a line, measured where it stands. */
+    const heightOf = (line: number) => {
+      const row = view.state.doc.line(line)
+      const drawn = Array.from(view.contentDOM.children).find((block) => {
+        const at = view.posAtDOM(block)
+        return at >= row.from && at <= row.to
+      })
+      if (!drawn) throw new Error(`nothing is drawn for line ${line}`)
+      return drawn.getBoundingClientRect().height
+    }
+
+    await cutting()
+    // A face the machine cannot cut pins nothing.
+    await expect(reach(TALL.name) > reach(LOW.name)).toBe(true)
+
+    for (const chosen of [null, ...FACES]) {
+      const face = chosen ? chosen.name : 'the machine'
+      if (chosen) view.dom.style.setProperty('--numen-font-sans', `'${chosen.name}'`)
+      else view.dom.style.removeProperty('--numen-font-sans')
+      await settled()
+
+      for (const text of CONCEALED) {
+        const line = written(text)
+        await put(PARKED, 0)
+        const concealed = heightOf(line)
+        await put(line, 2)
+        await expect({ face, text, height: heightOf(line) }).toEqual({
+          face,
+          text,
+          height: concealed,
+        })
+      }
+
+      for (const text of REDRAWN) {
+        const line = written(text)
+        await put(PARKED, 0)
+        const concealed = heightOf(line)
+        await put(line, 2)
+        await expect({ face, text, same: heightOf(line) === concealed }).toEqual({
+          face,
+          text,
+          same: false,
+        })
+      }
+
+      // Either side of what stands in place of a mark there is somewhere for
+      // the caret to be drawn, and a click there lands on that line.
+      await put(PARKED, 0)
+      for (const [text, column] of [
+        ['# Heading one', 0],
+        ['# Heading one', 2],
+        [BULLET, 0],
+        [BULLET, 1],
+        [TASK, 0],
+        [TASK, 1],
+      ] as const) {
+        const line = written(text)
+        const spot = view.coordsAtPos(view.state.doc.line(line).from + column)
+        const back = spot
+          ? view.posAtCoords({ x: spot.left + 1, y: (spot.top + spot.bottom) / 2 })
+          : null
+        await expect({
+          face,
+          text,
+          column,
+          drawn: !!spot && spot.bottom - spot.top > 0,
+          lands: back !== null && view.state.doc.lineAt(back).number === line,
+        }).toEqual({ face, text, column, drawn: true, lands: true })
+      }
+
+      // The task's box stands inside the line it marks.
+      const box = canvasElement.querySelector('.cm-box') as HTMLElement
+      const held = box.getBoundingClientRect()
+      const around = (box.closest('.cm-line') as HTMLElement).getBoundingClientRect()
+      await expect({
+        face,
+        inside: held.top >= around.top && held.bottom <= around.bottom,
+      }).toEqual({ face, inside: true })
+    }
+  },
+}
 
 /**
  * A table on its own. Click a cell and type: what is typed is written back

@@ -60,10 +60,13 @@ type Agent struct {
 	// went wrong.
 	Trouble func(error)
 
-	// carried is the conversation so far. The next question is asked in it.
+	// carried is the session each conversation is on so far, under the name the
+	// task gave its conversation. The next question of a conversation is asked
+	// in the session carried for it, and a question that named no conversation
+	// is asked in none.
 	carried struct {
 		sync.Mutex
-		session string
+		sessions map[string]string
 	}
 
 	// taken is the work this agent started and has not been told is over. The
@@ -120,17 +123,60 @@ func (a *Agent) Close() error {
 	return failed
 }
 
-// Carrying is the conversation the next question is asked in.
-func (a *Agent) Carrying() string {
+// Finish ends a conversation: everything still being answered in it stops, and
+// the session it was on is let go of once nothing is left to write one.
+func (a *Agent) Finish(_ context.Context, conversation string) error {
+	if conversation == "" {
+		return nil
+	}
+
+	a.taken.Lock()
+	answering := make([]*work, 0, len(a.taken.running))
+	for w := range a.taken.running {
+		if w.conversation == conversation {
+			answering = append(answering, w)
+		}
+	}
+	a.taken.Unlock()
+
+	var failed error
+	for _, w := range answering {
+		if err := w.Stop(); err != nil && failed == nil {
+			failed = err
+		}
+	}
+
 	a.carried.Lock()
 	defer a.carried.Unlock()
-	return a.carried.session
+	delete(a.carried.sessions, conversation)
+	return failed
 }
 
-func (a *Agent) carry(session string) {
+// Carrying is the session the next question of this conversation is asked in,
+// empty for a conversation nothing has been asked in yet.
+func (a *Agent) Carrying(conversation string) string {
+	if conversation == "" {
+		return ""
+	}
 	a.carried.Lock()
 	defer a.carried.Unlock()
-	a.carried.session = session
+	return a.carried.sessions[conversation]
+}
+
+// carrying is what one run tells the session it is on to. It is kept under
+// that run's conversation, and a run that named none is kept nowhere.
+func (a *Agent) carrying(conversation string) func(string) {
+	if conversation == "" {
+		return func(string) {}
+	}
+	return func(session string) {
+		a.carried.Lock()
+		defer a.carried.Unlock()
+		if a.carried.sessions == nil {
+			a.carried.sessions = map[string]string{}
+		}
+		a.carried.sessions[conversation] = session
+	}
 }
 
 // Name is what the server this agent is served by calls itself, and the prefix
@@ -168,7 +214,12 @@ func (a *Agent) Take(ctx context.Context, task agent.Task) (agent.Work, error) {
 
 	// Held before it is started, so a close cannot pass between the two and
 	// leave a child nothing reaches.
-	w := &work{cmd: cmd, stop: stop, steps: make(chan agent.Step, 16)}
+	w := &work{
+		cmd:          cmd,
+		stop:         stop,
+		conversation: task.Conversation,
+		steps:        make(chan agent.Step, 16),
+	}
 	if !a.hold(w) {
 		stop()
 		return nil, errors.New("this agent is closing")
@@ -184,7 +235,7 @@ func (a *Agent) Take(ctx context.Context, task agent.Task) (agent.Work, error) {
 		defer a.letGo(w)
 		defer close(w.steps)
 
-		failed := read(running, out, w.steps, a.Words, a.carry, a.Drafting)
+		failed := read(running, out, w.steps, a.Words, a.carrying(task.Conversation), a.Drafting)
 
 		err := cmd.Wait()
 		if running.Err() != nil {
@@ -264,19 +315,19 @@ func (a *Agent) arguments(task agent.Task) []string {
 	if len(a.Allowed) > 0 {
 		args = append(args, "--allowedTools", strings.Join(a.Allowed, ","))
 	}
-	if session := a.Carrying(); session != "" {
+	if session := a.Carrying(task.Conversation); session != "" {
 		args = append(args, "--resume", session)
 	}
 	return args
 }
 
-// session names the variables that describe a Claude Code session somebody else
-// is running.
+// dropped names the environment variables that describe a Claude Code session
+// somebody else is running.
 //
 // A window is not one, so these are stripped from the environment the agent is
 // started with. What says how to reach a model is not here: that belongs to the
 // installation and is passed on.
-var session = []string{
+var dropped = []string{
 	"CLAUDECODE",
 	"CLAUDE_CODE_SESSION_ID",
 	"CLAUDE_CODE_CHILD_SESSION",
@@ -294,7 +345,7 @@ func environment(held []string) []string {
 	out := make([]string, 0, len(held))
 	for _, entry := range held {
 		name, _, found := strings.Cut(entry, "=")
-		if found && slices.Contains(session, name) {
+		if found && slices.Contains(dropped, name) {
 			continue
 		}
 		out = append(out, entry)
@@ -374,11 +425,14 @@ type Words struct {
 
 // work is one task being worked, and what stops it.
 type work struct {
-	cmd     *exec.Cmd
-	stop    func()
-	steps   chan agent.Step
-	reading sync.WaitGroup
-	once    sync.Once
+	cmd  *exec.Cmd
+	stop func()
+	// conversation is the thread of talk this task was asked in, empty for a
+	// question asked in none. Finishing that conversation stops this work.
+	conversation string
+	steps        chan agent.Step
+	reading      sync.WaitGroup
+	once         sync.Once
 }
 
 func (w *work) Steps() <-chan agent.Step { return w.steps }

@@ -13,14 +13,25 @@ import "context"
 type Agent interface {
 	// Take gives the agent a task and hands back the work it has begun.
 	Take(ctx context.Context, task Task) (Work, error)
+	// Finish says a conversation is over. What the agent kept of it is let go
+	// of, and whatever is still being worked in it is stopped and waited for.
+	// Empty is no conversation, and there is nothing to finish.
+	Finish(ctx context.Context, conversation string) error
 }
 
-// Task is what the person asked, and where they were looking when they asked
-// it.
+// Task is what the person asked, where they were looking when they asked it,
+// and which conversation they asked it in.
 type Task struct {
 	Asked string
 	// Focus is the note the window is showing, empty when it shows none.
 	Focus string
+	// Conversation is which thread of talk this question belongs to, named by
+	// the caller. Questions carrying one name are answered in one conversation
+	// with the agent, so the name has to be the caller's alone: unique among
+	// the conversations it has open, and never given to a second one for as
+	// long as this process runs. Empty is no conversation, and a question
+	// asked under it is answered on its own.
+	Conversation string
 }
 
 // Work is one task being worked.

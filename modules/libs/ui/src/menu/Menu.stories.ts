@@ -8,12 +8,13 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { onMounted, ref } from 'vue'
 import Menu from './Menu.vue'
-import type { MenuItem } from './model'
+import { MENU_OPENINGS_ALL, type MenuItem, type MenuOpening } from './model'
 import { ARABIC, DEVANAGARI, EMPTY, LINK, LONG, RUSSIAN, UNBREAKABLE } from '@/fixtures/prose'
 
 interface Knobs {
   items: readonly MenuItem[]
   at: { x: number; y: number }
+  opening: MenuOpening
   margin: number
   name: string
   onChoose: (id: string) => void
@@ -68,6 +69,7 @@ const asked = (args: Knobs) => ({
         :at="at"
         :open="open"
         :from="from"
+        :opening="args.opening"
         :margin="args.margin"
         :name="args.name"
         @choose="args.onChoose"
@@ -94,6 +96,7 @@ const meta = {
     },
   },
   argTypes: {
+    opening: { control: 'inline-radio', options: MENU_OPENINGS_ALL },
     margin: { control: { type: 'range', min: 0, max: 48, step: 2 } },
     name: { control: 'text' },
     items: { table: { disable: true } },
@@ -104,6 +107,7 @@ const meta = {
   args: {
     items: ITEMS,
     at: { x: 480, y: 300 },
+    opening: 'pointer',
     margin: 8,
     name: 'Menu',
     onChoose: fn(),
@@ -135,6 +139,30 @@ export const Choosing: Story = {
 }
 
 /**
+ * Opened by hand: nothing is chosen, so Enter chooses nothing, and the first
+ * step down lands on the first item.
+ *
+ * Only a browser can answer it. Enter reaches whatever holds the keyboard, so
+ * what is lit and what would be chosen are one fact.
+ */
+export const OpenedByHand: Story = {
+  play: async ({ args }) => {
+    const menu = menuElement()!
+    await expect(menu).toHaveFocus()
+    await expect(menu.querySelector('[role="menuitem"]:focus')).toBeNull()
+
+    await userEvent.keyboard('{Enter}')
+    await expect(args.onChoose).not.toHaveBeenCalled()
+
+    await userEvent.keyboard('{ArrowDown}')
+    await expect(within(menu).getByRole('menuitem', { name: 'Open' })).toHaveFocus()
+
+    await userEvent.keyboard('{Enter}')
+    await expect(args.onChoose).toHaveBeenCalledWith('open')
+  },
+}
+
+/**
  * Escape, and the keyboard goes back to the thing the menu was asked of.
  *
  * Only a browser can answer it: whether the keyboard actually lands on the
@@ -142,6 +170,7 @@ export const Choosing: Story = {
  * finds its way back to an element the menu never contained.
  */
 export const GivingItBack: Story = {
+  args: { opening: 'keyboard' },
   play: async ({ canvasElement }) => {
     const node = within(canvasElement).getByRole('button', { name: 'A node' })
     const named = (name: string) => within(menuElement()!).getByRole('menuitem', { name })
@@ -297,6 +326,7 @@ export const NoTextAtAll: Story = {
 /** An item that is drawn and announced, and cannot be chosen. */
 export const NotChoosable: Story = {
   args: {
+    opening: 'keyboard',
     items: [
       { id: 'open', text: 'Open' },
       { id: 'ask', text: 'Ask the agent about this note', disabled: true },

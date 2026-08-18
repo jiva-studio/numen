@@ -4,7 +4,7 @@
  * area it has to fit in.
  */
 import { describe, expect, it } from 'vitest'
-import { placeMenu, stepTo, type MenuItem } from './model'
+import { landsOn, placeMenu, stepTo, type MenuItem } from './model'
 
 const VIEWPORT = { width: 1000, height: 800 }
 const SIZE = { width: 200, height: 300 }
@@ -89,5 +89,25 @@ describe('where the keyboard goes', () => {
     const only: MenuItem[] = [{ id: 'only', text: 'Only' }]
     expect(stepTo(only, 0, 1)).toBe(0)
     expect(stepTo(only, 0, -1)).toBe(0)
+  })
+})
+
+describe('where the keyboard lands as a menu opens', () => {
+  const items: MenuItem[] = [
+    { id: 'one', text: 'One', disabled: true },
+    { id: 'two', text: 'Two' },
+  ]
+
+  it('is the first item that can be chosen, for one opened from the keyboard', () => {
+    expect(landsOn('keyboard', items)).toBe(1)
+  })
+
+  it('is no item at all, for one opened by hand', () => {
+    expect(landsOn('pointer', items)).toBe(-1)
+  })
+
+  it('is no item at all either way when there is nothing to land on', () => {
+    expect(landsOn('keyboard', [])).toBe(-1)
+    expect(landsOn('pointer', [])).toBe(-1)
   })
 })

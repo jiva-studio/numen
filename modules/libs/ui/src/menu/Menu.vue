@@ -8,7 +8,7 @@
  * chosen; what the items are and what choosing one does are the caller's.
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { placeMenu, stepTo, type MenuItem } from './model'
+import { landsOn, placeMenu, stepTo, type MenuItem, type MenuOpening } from './model'
 import type { Point } from '../plex/model'
 import type { Size } from '../plex/arrange'
 
@@ -20,6 +20,8 @@ const props = withDefaults(
     at: Point
     /** Whether it is drawn at all. */
     open?: boolean
+    /** What opened it. Opened by hand it appears with nothing chosen. */
+    opening?: MenuOpening
     /** Where the keyboard goes back to once it closes. */
     from?: HTMLElement | SVGElement | null
     /** The area it is placed in. The browser's own by default. */
@@ -33,6 +35,7 @@ const props = withDefaults(
   }>(),
   {
     open: false,
+    opening: 'pointer',
     from: null,
     viewport: null,
     margin: 8,
@@ -86,6 +89,7 @@ const measure = () => {
   size.value = { width: box.width, height: box.height }
 }
 
+/** The keyboard onto an item, or onto the menu itself where there is none. */
 const goTo = (index: number) => {
   here.value = index
   const chosen = drawn()[index]
@@ -120,7 +124,8 @@ const onWindowKey = (event: KeyboardEvent) => {
  * which is what keeps the keyboard inside a menu that stands over the page.
  */
 const onKey = (event: KeyboardEvent) => {
-  const step = (by: number, from = here.value) => {
+  // Counting back from no item is counting back from the first.
+  const step = (by: number, from = by < 0 ? Math.max(here.value, 0) : here.value) => {
     event.preventDefault()
     goTo(stepTo(props.items, from, by))
   }
@@ -149,7 +154,7 @@ const enter = async () => {
 
   await nextTick()
   measure()
-  goTo(stepTo(props.items, -1, 1))
+  goTo(landsOn(props.opening, props.items))
 }
 
 const leave = () => {
@@ -250,7 +255,7 @@ onBeforeUnmount(leave)
 }
 
 .menu__item:hover:not(:disabled),
-.menu__item:focus {
+.menu__item:focus-visible {
   outline: none;
   background: var(--numen-bubble-bg);
 }

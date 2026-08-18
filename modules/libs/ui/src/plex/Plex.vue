@@ -16,10 +16,12 @@ import {
   seatWord,
   type PlexNeighbourhood,
   type PlexRelatedSeat,
+  type PlexShowing,
   type Point,
 } from './model'
 import { resolveOptions } from './arrange'
 import { usePlexGesture } from './gesture'
+import type { MenuOpening } from '../menu/model'
 
 const props = withDefaults(
   defineProps<{
@@ -61,6 +63,12 @@ const props = withDefaults(
 const emit = defineEmits<{
   /** A node other than the focus was chosen, by click or by keyboard. */
   (event: 'activate', id: string): void
+  /**
+   * A node asked for on its own: a double click, or a press with Shift held.
+   * Where it is to be drawn is the second word, and the focus answers this as
+   * every other node does.
+   */
+  (event: 'show', id: string, showing: PlexShowing): void
   /** Reached out into empty space: make a node in this seat of that one. */
   (event: 'create', from: string, seat: PlexRelatedSeat): void
   /** Reached out onto another node: relate the two in this seat. */
@@ -68,12 +76,12 @@ const emit = defineEmits<{
   /**
    * A menu was asked for on a node. The point is in the coordinates of the
    * screen; the element is what it was asked from, which is the only thing a
-   * keypress hands over.
+   * keypress hands over; the opening is what asked for it.
    *
    * Every node answers this, the focus included. What the menu holds and what
    * choosing an item does are the caller's.
    */
-  (event: 'menu', id: string, at: Point, from: SVGGElement): void
+  (event: 'menu', id: string, at: Point, from: SVGGElement, opening: MenuOpening): void
   /** A menu asked for on a node has nothing left to stand on. */
   (event: 'dismiss'): void
 }>()
@@ -178,9 +186,10 @@ defineExpose({ moving: toRef(moving) })
       :gesture-at="gesture.at.value"
       :gesture-outcome="gesture.outcome.value"
       @activate="emit('activate', $event)"
+      @show="(id, showing) => emit('show', id, showing)"
       @reach="gesture.begin"
       @ask="gesture.ask"
-      @menu="(id, at, from) => emit('menu', id, at, from)"
+      @menu="(id, at, from, opening) => emit('menu', id, at, from, opening)"
     >
       <template v-if="$slots.icon" #icon="{ node }"><slot name="icon" :node="node" /></template>
     </PlexView>

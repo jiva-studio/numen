@@ -21,8 +21,13 @@ const props = withDefaults(
     focused?: boolean
     /** Whether the tabs here are offered a way to be closed. */
     closable?: boolean
+    /**
+     * What the way to a new tab is called. A strip given no word for one
+     * offers no way to ask.
+     */
+    newTab?: string | undefined
   }>(),
-  { marks: () => ({}), focused: false, closable: true },
+  { marks: () => ({}), focused: false, closable: true, newTab: undefined },
 )
 
 const emit = defineEmits<{
@@ -31,6 +36,8 @@ const emit = defineEmits<{
   (event: 'lift', tab: TabId, at: PointerEvent): void
   /** This pane asks to be the one a tab opens into. */
   (event: 'claim'): void
+  /** A new tab asked for here. What it holds is the caller's to decide. */
+  (event: 'open'): void
   /** The tab that is now the one showing, once it is on screen. */
   (event: 'show', tab: TabId): void
 }>()
@@ -76,7 +83,10 @@ function reach(at: number): void {
   strip.value?.querySelectorAll<HTMLElement>('[data-workspace-tab]')[at]?.focus()
 }
 
-/** The strip is walked with the arrows, and what is reached is shown. */
+/**
+ * The strip is walked with the arrows, and what is reached is shown. The tabs
+ * are what it walks; the way to a new tab is a stop of its own.
+ */
 function along(event: KeyboardEvent): void {
   const held = (event.target as Element | null)
     ?.closest('[data-workspace-tab]')
@@ -117,29 +127,45 @@ function out(event: KeyboardEvent): void {
     <div
       ref="strip"
       class="pane__strip flex shrink-0 items-stretch overflow-hidden"
-      role="tablist"
       :data-workspace-strip="pane.id"
-      @keydown="along"
     >
-      <WorkspaceTab
-        v-for="(tab, at) in pane.tabs"
-        :id="tabName(at)"
-        :key="tab"
-        :aria-controls="panelName(at)"
-        :tab="tab"
-        :title="titles[tab] ?? tab"
-        :mark="marks[tab]"
-        :showing="tab === pane.active"
-        :focused="tab === pane.active && focused"
-        :closable="closable"
-        @lift="emit('lift', tab, $event)"
-        @close="emit('close', tab)"
-        @click="emit('choose', tab)"
+      <!-- The list of tabs, and nothing else in it. -->
+      <div class="flex min-w-0 shrink items-stretch" role="tablist" @keydown="along">
+        <WorkspaceTab
+          v-for="(tab, at) in pane.tabs"
+          :id="tabName(at)"
+          :key="tab"
+          :aria-controls="panelName(at)"
+          :tab="tab"
+          :title="titles[tab] ?? tab"
+          :mark="marks[tab]"
+          :showing="tab === pane.active"
+          :focused="tab === pane.active && focused"
+          :closable="closable"
+          @lift="emit('lift', tab, $event)"
+          @close="emit('close', tab)"
+          @click="emit('choose', tab)"
+        >
+          <template v-if="$slots.mark" #mark="bound">
+            <slot name="mark" :id="tab" v-bind="bound" />
+          </template>
+        </WorkspaceTab>
+      </div>
+
+      <!-- One more tab, asked for beside the list of them. What it holds is
+           settled somewhere else entirely, and it keeps its width while the
+           tabs give theirs up. -->
+      <button
+        v-if="newTab"
+        class="pane__new shrink-0 cursor-default select-none font-sans text-small text-hushed"
+        type="button"
+        data-workspace-new
+        :aria-label="newTab"
+        :title="newTab"
+        @click="emit('open')"
       >
-        <template v-if="$slots.mark" #mark="bound">
-          <slot name="mark" :id="tab" v-bind="bound" />
-        </template>
-      </WorkspaceTab>
+        +
+      </button>
     </div>
 
     <div class="pane__body min-h-0 min-w-0 flex-1">
@@ -171,6 +197,16 @@ function out(event: KeyboardEvent): void {
 /* Sits on the same surface as what it stands over, told apart by one line. */
 .pane__strip {
   border-block-end: var(--numen-stroke) solid var(--numen-node-border);
+}
+
+/* Faint until the hand is on it. */
+.pane__new {
+  padding-inline: var(--numen-node-padding);
+  opacity: 0.55;
+}
+
+.pane__new:hover {
+  opacity: 1;
 }
 
 .pane__body {

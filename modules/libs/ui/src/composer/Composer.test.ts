@@ -66,10 +66,15 @@ describe('what is not sent', () => {
 })
 
 describe('while an answer is being written', () => {
-  it('gives the button’s place to the dots', () => {
-    const wrapper = composer({ modelValue: 'hello', working: true })
-    expect(wrapper.find('button').exists()).toBe(false)
-    expect(wrapper.find('.dots').exists()).toBe(true)
+  it('gives the disc to stopping, under the name it was given', async () => {
+    const wrapper = composer({ modelValue: 'hello', working: true, stops: 'Give up' })
+    const disc = wrapper.get('button')
+    expect(disc.attributes('aria-label')).toBe('Give up')
+    expect(disc.attributes('disabled')).toBeUndefined()
+
+    await disc.trigger('click')
+    expect(wrapper.emitted('stop')).toStrictEqual([[]])
+    expect(wrapper.emitted('submit')).toBeUndefined()
   })
 
   it('sends nothing on Enter', async () => {
@@ -78,20 +83,29 @@ describe('while an answer is being written', () => {
     expect(wrapper.emitted('submit')).toBeUndefined()
   })
 
-  it('stands the dots on the disc the button stood on', () => {
-    const disc = (working: boolean) => {
-      const wrapper = composer({ modelValue: 'hello', working })
-      const element = working ? wrapper.get('.dots').element.parentElement : wrapper.get('button').element
-      return [...(element?.classList ?? [])].filter((name) => name.startsWith('size-') || name.startsWith('rounded-'))
-    }
-    expect(disc(true)).toStrictEqual(disc(false))
+  it('stops nothing on Enter', async () => {
+    const wrapper = composer({ modelValue: 'hello', working: true })
+    await wrapper.get('textarea').trigger('keydown', enter)
+    expect(wrapper.emitted('stop')).toBeUndefined()
   })
 
-  it('shows the button again once the answer has arrived', async () => {
-    const wrapper = composer({ modelValue: 'hello', working: true })
+  it('stands one disc either way, and changes the glyph on it', () => {
+    const glyph = (working: boolean) => {
+      const wrapper = composer({ modelValue: 'hello', working })
+      expect(wrapper.findAll('button')).toHaveLength(1)
+      return wrapper.get('button svg').html()
+    }
+    expect(glyph(true)).not.toBe(glyph(false))
+  })
+
+  it('sends again once the answer has arrived', async () => {
+    const wrapper = composer({ modelValue: 'hello', working: true, sends: 'Send it' })
     await wrapper.setProps({ working: false })
-    expect(wrapper.find('button').exists()).toBe(true)
-    expect(wrapper.find('.dots').exists()).toBe(false)
+    expect(wrapper.get('button').attributes('aria-label')).toBe('Send it')
+
+    await wrapper.get('button').trigger('click')
+    expect(wrapper.emitted('submit')).toStrictEqual([['hello']])
+    expect(wrapper.emitted('stop')).toBeUndefined()
   })
 })
 

@@ -34,6 +34,17 @@ defineSlots<{
   /** What a mark is drawn as. Given one, the caller draws its own. */
   mark(props: { mark: string }): unknown
 }>()
+
+/**
+ * A tab is lifted under the primary button and under no other. The press
+ * selects no text as it travels, and takes the keyboard itself.
+ */
+const onPointerDown = (event: PointerEvent) => {
+  if (event.button !== 0) return
+  event.preventDefault()
+  ;(event.currentTarget as HTMLElement).focus()
+  emit('lift', event)
+}
 </script>
 
 <template>
@@ -45,7 +56,7 @@ defineSlots<{
     :data-workspace-tab="tab"
     :data-showing="showing || undefined"
     :data-focused="focused || undefined"
-    @pointerdown="emit('lift', $event)"
+    @pointerdown="onPointerDown"
   >
     <!-- The whole name is on the element, for a title too long to be drawn. -->
     <span class="min-w-0 truncate" :title="title">{{ title }}</span>
@@ -71,7 +82,7 @@ defineSlots<{
 .tab {
   /* How tall a strip stands, and how thick the line along the top of the one
      showing is. */
-  --height: 2.1rem;
+  --height: 1.4rem;
   --lift: 2px;
 
   block-size: var(--height);

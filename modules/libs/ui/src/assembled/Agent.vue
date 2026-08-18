@@ -19,12 +19,24 @@ withDefaults(
     working?: boolean
     placeholder?: string
     disabled?: boolean
+    /** What the disc at the end of the field is called while it sends. */
+    sends?: string
+    /** What it is called while it stops the answer on its way. */
+    stops?: string
   }>(),
-  { working: false, placeholder: 'Write a message', disabled: false },
+  {
+    working: false,
+    placeholder: 'Write a message',
+    disabled: false,
+    sends: 'Send',
+    stops: 'Stop',
+  },
 )
 
 const emit = defineEmits<{
   (event: 'submit', text: string): void
+  /** Give up on the answer on its way. */
+  (event: 'stop'): void
 }>()
 
 const text = defineModel<string>({ default: '' })
@@ -50,7 +62,7 @@ onBeforeUnmount(() => watching?.disconnect())
 
 <template>
   <div
-    class="agent numen flex min-h-0 flex-col gap-gap overflow-hidden font-sans text-base text-ink"
+    class="agent numen flex min-h-0 flex-col font-sans text-base text-ink"
     :style="{ '--agent-room': room }"
   >
     <Thread class="agent__thread" :turns="turns">
@@ -66,7 +78,10 @@ onBeforeUnmount(() => watching?.disconnect())
       :working="working"
       :placeholder="placeholder"
       :disabled="disabled"
+      :sends="sends"
+      :stops="stops"
       @submit="emit('submit', $event)"
+      @stop="emit('stop')"
     />
   </div>
 </template>
@@ -76,7 +91,7 @@ onBeforeUnmount(() => watching?.disconnect())
   /* What the conversation is kept clear of at the sides, how far it fades
      where it passes behind an edge, and how far the composer stands off the
      foot. */
-  --inset: 20px;
+  --inset: var(--numen-gutter);
   --fade: 20px;
   --lift: 12px;
   /* What is left between the last turn and the composer written over it. */
@@ -87,10 +102,13 @@ onBeforeUnmount(() => watching?.disconnect())
   padding-inline: var(--inset);
 }
 
-/* Takes the whole of it and scrolls inside. What it is clear of at the foot is
-   the composer's own height. */
+/* Takes the whole of it and scrolls inside. The words run on to the composer's
+   own edge and fade out over the band it stands in. */
 .agent__thread {
-  --clear: calc(var(--agent-room) + var(--lift) * 2 + var(--breath));
+  /* The band the composer stands in, up from the foot, and what the last turn
+     is held clear of above it. */
+  --behind: calc(var(--agent-room) + var(--lift));
+  --clear: calc(var(--behind) + var(--lift) + var(--breath));
 
   flex: 1;
   min-height: 0;
@@ -100,8 +118,8 @@ onBeforeUnmount(() => watching?.disconnect())
     to bottom,
     transparent 0,
     #000 var(--fade),
-    #000 calc(100% - var(--clear)),
-    transparent calc(100% - var(--clear) + var(--fade))
+    #000 calc(100% - var(--behind)),
+    transparent calc(100% - var(--behind) + var(--fade))
   );
 }
 
@@ -109,6 +127,5 @@ onBeforeUnmount(() => watching?.disconnect())
   position: absolute;
   inset-inline: var(--inset);
   inset-block-end: var(--lift);
-  box-shadow: var(--numen-panel-shadow);
 }
 </style>

@@ -25,6 +25,8 @@ const props = defineProps<{
   minimum: number
   /** Whether the tabs below are offered a way to be closed. */
   closable: boolean
+  /** What the way to a new tab is called, for every strip below. */
+  newTab?: string | undefined
 }>()
 
 const emit = defineEmits<{
@@ -32,6 +34,7 @@ const emit = defineEmits<{
   (event: 'close', tab: TabId): void
   (event: 'lift', tab: TabId, at: PointerEvent): void
   (event: 'claim', pane: NodeId): void
+  (event: 'open', pane: NodeId): void
   (event: 'resize', branch: NodeId, sizes: readonly number[]): void
   (event: 'show', tab: TabId): void
 }>()
@@ -135,7 +138,9 @@ function settled(reported: number[]): void {
           :focus="focus"
           :minimum="minimum"
           :closable="closable"
+          :new-tab="newTab"
           @claim="emit('claim', $event)"
+          @open="emit('open', $event)"
           @resize="(branch, next) => emit('resize', branch, next)"
         >
           <template #tab="bound"><slot name="tab" v-bind="bound" /></template>
@@ -151,7 +156,9 @@ function settled(reported: number[]): void {
           :marks="marks"
           :focused="child.id === focus"
           :closable="closable"
+          :new-tab="newTab"
           @claim="emit('claim', child.id)"
+          @open="emit('open', child.id)"
         >
           <template #tab="bound"><slot name="tab" v-bind="bound" /></template>
           <template v-if="$slots.mark" #mark="bound"><slot name="mark" v-bind="bound" /></template>

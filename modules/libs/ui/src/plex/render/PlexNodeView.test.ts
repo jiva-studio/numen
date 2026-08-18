@@ -98,6 +98,55 @@ describe('a node that can be chosen', () => {
   })
 })
 
+describe('a node asked for on its own', () => {
+  it('is asked for by a double click, to be drawn where the reader is', async () => {
+    const node = mountNode()
+    await node.trigger('dblclick')
+    expect(node.emitted('show')).toStrictEqual([['here']])
+  })
+
+  it('is asked for beside where the reader is when the modifier is held', async () => {
+    const node = mountNode()
+    await node.trigger('dblclick', { altKey: true })
+    expect(node.emitted('show')).toStrictEqual([['beside']])
+  })
+
+  it('is asked for by a press with Shift, and by Shift and the modifier', async () => {
+    const node = mountNode()
+    await node.trigger('keydown', { key: 'Enter', shiftKey: true })
+    await node.trigger('keydown', { key: ' ', shiftKey: true, altKey: true })
+    expect(node.emitted('show')).toStrictEqual([['here'], ['beside']])
+  })
+
+  it('is not asked for by a press on its own, which travels there instead', async () => {
+    const node = mountNode()
+    await node.trigger('keydown', { key: 'Enter' })
+    await node.trigger('keydown', { key: ' ' })
+    expect(node.emitted('show')).toBeUndefined()
+    expect(node.emitted('activate')).toHaveLength(2)
+  })
+
+  it('is asked for on the focus too, which is the node being read', async () => {
+    const node = mountNode({ seat: 'focus' })
+    await node.trigger('dblclick')
+    expect(node.emitted('show')).toStrictEqual([['here']])
+    expect(node.emitted('activate')).toBeUndefined()
+  })
+
+  it('is not asked for by a node on its way in or out', async () => {
+    const node = mountNode({ opacity: 0.4 })
+    await node.trigger('dblclick')
+    await node.trigger('keydown', { key: 'Enter', shiftKey: true })
+    expect(node.emitted('show')).toBeUndefined()
+  })
+
+  it('is not asked for by a node that is not there yet', async () => {
+    const ghost = mount(PlexNodeView, { props: { node: nodeAt(), standing: 'ghost' } })
+    await ghost.trigger('dblclick')
+    expect(ghost.emitted('show')).toBeUndefined()
+  })
+})
+
 describe('the handle', () => {
   it('is not there until a pointer is, and goes when it leaves', async () => {
     const node = mountNode()
@@ -132,6 +181,12 @@ describe('the handle', () => {
     await node.get('.plex__handle').trigger('pointerdown')
     expect(node.emitted('reach')).toHaveLength(1)
     expect(node.emitted('activate')).toBeUndefined()
+  })
+
+  it('does not draw the node out when it is pressed twice', async () => {
+    const node = await hover(mountNode())
+    await node.get('.plex__handle').trigger('dblclick')
+    expect(node.emitted('show')).toBeUndefined()
   })
 
   it('sits on the trailing edge, halfway down', async () => {
