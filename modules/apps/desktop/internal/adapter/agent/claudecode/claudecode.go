@@ -350,14 +350,18 @@ const prefix = "mcp__" + Name + "__"
 func Tool(name string) string { return prefix + name }
 
 // Words are how one tool is spoken about to a person: what it calls itself,
-// and which of its arguments says what a call was about. Both are the tool's
-// own declaration, read from what the server serves.
+// which of its arguments says what a call was about, and what a call of it does
+// to the vault. Each is the tool's own declaration, read from what the server
+// serves.
 type Words struct {
 	Title string
 	About string
 	// Inside names the field of one element that says which element it is, for
 	// a call that takes a collection.
 	Inside string
+	// Kind is what a call of this tool does to the vault. A tool that declares
+	// nothing about it is agent.Calling.
+	Kind agent.Kind
 }
 
 // work is one task being worked, and what stops it.

@@ -50,6 +50,9 @@ type reader struct {
 	// pieces is set once words have arrived a piece at a time. The whole
 	// message follows every piece of it.
 	pieces bool
+	// call is what the agent named the call being written. Every step of that
+	// call carries it.
+	call string
 	// calling is the tool being written out, and the arguments as far as they
 	// have arrived. A call is reported once it is whole, so that what it is
 	// about is known when it is shown.
@@ -107,10 +110,11 @@ func (rd *reader) piece(ctx context.Context, event streamed) {
 	case "content_block_start":
 		if event.Block.Type == "tool_use" {
 			rd.pieces = true
+			rd.call = event.Block.ID
 			rd.calling = event.Block.Name
 			rd.written.Reset()
 			rd.told = 0
-			rd.tell(ctx, rd.calls(rd.calling, ""))
+			rd.tell(ctx, rd.calls(rd.call, rd.calling, ""))
 		}
 	case "content_block_delta":
 		switch event.Delta.Type {
@@ -126,14 +130,15 @@ func (rd *reader) piece(ctx context.Context, event streamed) {
 			// time. A call carrying the body of a note is written for minutes.
 			if rd.written.Len()-rd.told >= writtenStep {
 				rd.told = rd.written.Len()
-				rd.tell(ctx, rd.calls(rd.calling, rd.written.String()))
+				rd.tell(ctx, rd.calls(rd.call, rd.calling, rd.written.String()))
 			}
 		}
 	case "content_block_stop":
 		if rd.calling == "" {
 			return
 		}
-		rd.tell(ctx, rd.calls(rd.calling, rd.written.String()))
+		rd.tell(ctx, rd.calls(rd.call, rd.calling, rd.written.String()))
+		rd.call = ""
 		rd.calling = ""
 		rd.written.Reset()
 	}
@@ -152,7 +157,7 @@ func (rd *reader) whole(ctx context.Context, said event) {
 				rd.tell(ctx, agent.Step{Kind: agent.Saying, Text: block.Text})
 			}
 		case "tool_use":
-			rd.tell(ctx, rd.calls(block.Name, string(block.Input)))
+			rd.tell(ctx, rd.calls(block.ID, block.Name, string(block.Input)))
 		}
 	}
 }
@@ -247,50 +252,66 @@ type streamed struct {
 
 // block is a piece of what the agent said: prose, or a tool it reached for.
 type block struct {
-	Type  string          `json:"type"`
-	Text  string          `json:"text"`
-	Name  string          `json:"name"`
+	Type string `json:"type"`
+	Text string `json:"text"`
+	Name string `json:"name"`
+	// ID is what the agent named a call, and is carried by every report of it.
+	ID    string          `json:"id"`
 	Input json.RawMessage `json:"input"`
 }
 
-// calling is a tool as the person is told about it: what the tool calls
-// itself, and what this call was about.
+// notePath is the argument a tool of this vault names one note by. A call read
+// by it is about a path, and that path is where the call is working.
+const notePath = "path"
+
+// calls is a tool as the person is told about it: what the tool calls itself,
+// what this call was about, what it does to the vault, and what the agent named
+// the call.
 //
-// Both come from what the tool declared. The name is its title, and what the
-// call is about is the argument it declared it cannot be called without. A
-// tool this vault does not serve is named as it named itself and is about
-// nothing: nothing was declared here to read it by.
-func (rd *reader) calls(tool string, arguments string) agent.Step {
+// All but the name come from what the tool declared. The name it is shown by is
+// its title, and what the call is about is the argument it declared it cannot be
+// called without. A tool this vault does not serve is named as it named itself
+// and is about nothing: nothing was declared here to read it by.
+func (rd *reader) calls(call, tool, arguments string) agent.Step {
 	words, served := rd.words[tool]
 	if !served {
-		return agent.Step{Kind: agent.Calling, Tool: tool}
+		return agent.Step{Kind: agent.Calling, Call: call, Tool: tool}
 	}
 
-	step := agent.Step{Kind: agent.Calling, Tool: words.Title}
+	step := agent.Step{Kind: words.Kind, Call: call, Tool: words.Title}
 	if words.About == "" {
 		return step
 	}
 
 	step.Written = len([]rune(arguments))
+	step.About = about(words, arguments)
+	if words.About == notePath {
+		step.Place = agent.Place{Path: step.About}
+	}
+	return step
+}
 
+// about is what a call was about, read from the arguments as far as they have
+// arrived.
+//
+// Arguments still arriving is where most of a long wait is spent, and half a
+// document does not parse. What has been written is read for the name, so that
+// the person sees which note is being written while it is being written.
+func about(words Words, arguments string) string {
 	var made map[string]any
 	if err := json.Unmarshal([]byte(arguments), &made); err != nil {
-		// Still arriving, which is where most of a long wait is spent. What has
-		// been written is read for the name, so that the person sees which note
-		// is being written while it is being written.
-		step.About = glimpsed(arguments, words.Inside)
-		if step.About == "" {
-			step.About = glimpsed(arguments, words.About)
+		if seen := glimpsed(arguments, words.Inside); seen != "" {
+			return seen
 		}
-		return step
+		return glimpsed(arguments, words.About)
 	}
 	switch value := made[words.About].(type) {
 	case string:
-		step.About = value
+		return value
 	case []any:
-		step.About = named(value, words.Inside)
+		return named(value, words.Inside)
 	}
-	return step
+	return ""
 }
 
 // named is what a collection of arguments is about: the first element by the

@@ -111,6 +111,9 @@ in one place, meaning the obvious thing, needs no entry.
 | tool | One operation an agent can call. Never a synonym for a use case |
 | client | A consumer of the schema that draws a vault (ADR-0025). Never an agent |
 | step | One thing an agent said, did, or stopped for, as the panel is told about it |
+| call | What an agent named one use of a tool, so every step reporting it is known to be one |
+| kind | What a call does to the vault: `read`, `edit`, `remove`, `move`, `search`. A call that says no more than that it is one is `calling` |
+| place | Where a call is working: a note, and the line in it where one is named |
 | settings | What a person configures about an installation, and the one file it is in |
 
 **What is drawn**
