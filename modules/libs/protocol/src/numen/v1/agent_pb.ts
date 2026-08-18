@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/agent.proto.
  */
 export const file_numen_v1_agent: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS9hZ2VudC5wcm90bxIIbnVtZW4udjEiKgoKQXNrUmVxdWVzdBINCgVhc2tlZBgBIAEoCRINCgVmb2N1cxgCIAEoCSKqAQoLQXNrUmVzcG9uc2USDgoEc2FpZBgBIAEoCUgAEiAKBWRvaW5nGAIgASgLMg8ubnVtZW4udjEuRG9pbmdIABIRCgdzdG9wcGVkGAMgASgJSAASJgoIYW5zd2VyZWQYBCABKAsyEi5udW1lbi52MS5BbnN3ZXJlZEgAEiYKCHRoaW5raW5nGAUgASgLMhIubnVtZW4udjEuVGhpbmtpbmdIAEIGCgRzdGVwIgoKCEFuc3dlcmVkIgoKCFRoaW5raW5nIjUKBURvaW5nEgwKBHRvb2wYASABKAkSDQoFYWJvdXQYAiABKAkSDwoHd3JpdHRlbhgDIAEoBTJECgxBZ2VudFNlcnZpY2USNAoDQXNrEhQubnVtZW4udjEuQXNrUmVxdWVzdBoVLm51bWVuLnYxLkFza1Jlc3BvbnNlMAFCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChRudW1lbi92MS9hZ2VudC5wcm90bxIIbnVtZW4udjEiQAoKQXNrUmVxdWVzdBINCgVhc2tlZBgBIAEoCRINCgVmb2N1cxgCIAEoCRIUCgxjb252ZXJzYXRpb24YAyABKAkiJQoNRmluaXNoUmVxdWVzdBIUCgxjb252ZXJzYXRpb24YASABKAkiEAoORmluaXNoUmVzcG9uc2UiqgEKC0Fza1Jlc3BvbnNlEg4KBHNhaWQYASABKAlIABIgCgVkb2luZxgCIAEoCzIPLm51bWVuLnYxLkRvaW5nSAASEQoHc3RvcHBlZBgDIAEoCUgAEiYKCGFuc3dlcmVkGAQgASgLMhIubnVtZW4udjEuQW5zd2VyZWRIABImCgh0aGlua2luZxgFIAEoCzISLm51bWVuLnYxLlRoaW5raW5nSABCBgoEc3RlcCIKCghBbnN3ZXJlZCIKCghUaGlua2luZyI1CgVEb2luZxIMCgR0b29sGAEgASgJEg0KBWFib3V0GAIgASgJEg8KB3dyaXR0ZW4YAyABKAUygQEKDEFnZW50U2VydmljZRI0CgNBc2sSFC5udW1lbi52MS5Bc2tSZXF1ZXN0GhUubnVtZW4udjEuQXNrUmVzcG9uc2UwARI7CgZGaW5pc2gSFy5udW1lbi52MS5GaW5pc2hSZXF1ZXN0GhgubnVtZW4udjEuRmluaXNoUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * @generated from message numen.v1.AskRequest
@@ -36,6 +36,17 @@ export type AskRequest = Message<"numen.v1.AskRequest"> & {
    * @generated from field: string focus = 2;
    */
   focus: string;
+
+  /**
+   * Which thread of talk this question belongs to. Questions carrying one name
+   * are answered in one conversation with the agent, so the name has to be the
+   * client's alone: unique among the conversations it has open, and never
+   * given to a second one for as long as the application is running. Empty is
+   * no conversation, and a question asked under it is answered on its own.
+   *
+   * @generated from field: string conversation = 3;
+   */
+  conversation: string;
 };
 
 /**
@@ -44,6 +55,39 @@ export type AskRequest = Message<"numen.v1.AskRequest"> & {
  */
 export const AskRequestSchema: GenMessage<AskRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_agent, 0);
+
+/**
+ * @generated from message numen.v1.FinishRequest
+ */
+export type FinishRequest = Message<"numen.v1.FinishRequest"> & {
+  /**
+   * Which thread of talk is over, by the name its questions carried. Empty is
+   * no conversation, and there is nothing to finish.
+   *
+   * @generated from field: string conversation = 1;
+   */
+  conversation: string;
+};
+
+/**
+ * Describes the message numen.v1.FinishRequest.
+ * Use `create(FinishRequestSchema)` to create a new message.
+ */
+export const FinishRequestSchema: GenMessage<FinishRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_agent, 1);
+
+/**
+ * @generated from message numen.v1.FinishResponse
+ */
+export type FinishResponse = Message<"numen.v1.FinishResponse"> & {
+};
+
+/**
+ * Describes the message numen.v1.FinishResponse.
+ * Use `create(FinishResponseSchema)` to create a new message.
+ */
+export const FinishResponseSchema: GenMessage<FinishResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_agent, 2);
 
 /**
  * AskResponse is one step of the work: one thing the agent said, did, or
@@ -106,7 +150,7 @@ export type AskResponse = Message<"numen.v1.AskResponse"> & {
  * Use `create(AskResponseSchema)` to create a new message.
  */
 export const AskResponseSchema: GenMessage<AskResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 1);
+  messageDesc(file_numen_v1_agent, 3);
 
 /**
  * Answered and Thinking carry nothing: each is a moment, and what it means is
@@ -122,7 +166,7 @@ export type Answered = Message<"numen.v1.Answered"> & {
  * Use `create(AnsweredSchema)` to create a new message.
  */
 export const AnsweredSchema: GenMessage<Answered> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 2);
+  messageDesc(file_numen_v1_agent, 4);
 
 /**
  * @generated from message numen.v1.Thinking
@@ -135,7 +179,7 @@ export type Thinking = Message<"numen.v1.Thinking"> & {
  * Use `create(ThinkingSchema)` to create a new message.
  */
 export const ThinkingSchema: GenMessage<Thinking> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 3);
+  messageDesc(file_numen_v1_agent, 5);
 
 /**
  * Doing is a tool in the agent's hands.
@@ -176,7 +220,7 @@ export type Doing = Message<"numen.v1.Doing"> & {
  * Use `create(DoingSchema)` to create a new message.
  */
 export const DoingSchema: GenMessage<Doing> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 4);
+  messageDesc(file_numen_v1_agent, 6);
 
 /**
  * AgentService gives a task to the agent working this vault.
@@ -186,7 +230,7 @@ export const DoingSchema: GenMessage<Doing> = /*@__PURE__*/
 export const AgentService: GenService<{
   /**
    * Ask hands over a task and reports what the agent does, in the order it
-   * does it, until it finishes. Letting go of the stream stops the agent.
+   * does it, until it is done. Letting go of the stream stops the agent.
    *
    * @generated from rpc numen.v1.AgentService.Ask
    */
@@ -194,6 +238,17 @@ export const AgentService: GenService<{
     methodKind: "server_streaming";
     input: typeof AskRequestSchema;
     output: typeof AskResponseSchema;
+  },
+  /**
+   * Finish says a conversation is over. What the agent kept of it is let go
+   * of, and whatever is still being answered in it stops.
+   *
+   * @generated from rpc numen.v1.AgentService.Finish
+   */
+  finish: {
+    methodKind: "unary";
+    input: typeof FinishRequestSchema;
+    output: typeof FinishResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_agent, 0);

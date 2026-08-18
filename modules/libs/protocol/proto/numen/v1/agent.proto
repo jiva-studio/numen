@@ -12,8 +12,12 @@ option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/nume
 // AgentService gives a task to the agent working this vault.
 service AgentService {
   // Ask hands over a task and reports what the agent does, in the order it
-  // does it, until it finishes. Letting go of the stream stops the agent.
+  // does it, until it is done. Letting go of the stream stops the agent.
   rpc Ask(AskRequest) returns (stream AskResponse);
+
+  // Finish says a conversation is over. What the agent kept of it is let go
+  // of, and whatever is still being answered in it stops.
+  rpc Finish(FinishRequest) returns (FinishResponse);
 }
 
 message AskRequest {
@@ -22,7 +26,21 @@ message AskRequest {
   // The note in focus, for a task that says "this note". Empty when nothing
   // is in focus.
   string focus = 2;
+  // Which thread of talk this question belongs to. Questions carrying one name
+  // are answered in one conversation with the agent, so the name has to be the
+  // client's alone: unique among the conversations it has open, and never
+  // given to a second one for as long as the application is running. Empty is
+  // no conversation, and a question asked under it is answered on its own.
+  string conversation = 3;
 }
+
+message FinishRequest {
+  // Which thread of talk is over, by the name its questions carried. Empty is
+  // no conversation, and there is nothing to finish.
+  string conversation = 1;
+}
+
+message FinishResponse {}
 
 // AskResponse is one step of the work: one thing the agent said, did, or
 // stopped for.
