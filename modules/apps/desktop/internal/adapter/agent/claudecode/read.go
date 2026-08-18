@@ -57,8 +57,8 @@ type reader struct {
 	// words are what each tool this vault serves calls itself, and which
 	// argument says what a call was about.
 	words map[string]Words
-	// kept is told which conversation this was, so that the next question can
-	// be asked in the same one.
+	// kept is told which session this run is on, so that the next question of
+	// the same conversation is asked in it.
 	kept func(string)
 	// pieces is set once words have arrived a piece at a time. The whole
 	// message follows every piece of it.

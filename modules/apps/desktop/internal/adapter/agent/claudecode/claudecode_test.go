@@ -513,17 +513,20 @@ func TestAVaultsOwnConfigurationIsNeverRead(t *testing.T) {
 	}
 }
 
-// An agent this window started does not outlive it. The child is put in a
-// process group of its own, so nothing that ends this process reaches it, and
-// one still answering goes on writing to the vault with nobody watching.
-func TestClosingEndsAnAgentThatIsStillAnswering(t *testing.T) {
+// No agent this window started outlives it, and a person has several
+// conversations open at once. Each child is put in a process group of its own,
+// so nothing that ends this process reaches it, and one still answering goes on
+// writing to the vault with nobody watching.
+func TestClosingEndsEveryAgentThatIsStillAnswering(t *testing.T) {
 	dir := t.TempDir()
 	script := filepath.Join(dir, "claude")
 	// Says one thing and then waits, the way an agent between turns does.
-	body := "#!/bin/sh\n" +
-		`echo '{"type":"system","subtype":"init","session_id":"s1"}'` + "\n" +
-		"echo $$ > " + filepath.Join(dir, "pid") + "\n" +
-		"sleep 120\n"
+	body := `#!/bin/sh
+asked=$2
+printf '{"type":"system","subtype":"init","session_id":"s-%s"}\n' "$asked"
+echo $$ > "` + dir + `/pid-$asked"
+sleep 120
+`
 	if err := os.WriteFile(script, []byte(body), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -533,26 +536,36 @@ func TestClosingEndsAnAgentThatIsStillAnswering(t *testing.T) {
 		Root:    dir,
 		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
 	}
-	work, err := claude.Take(context.Background(), agent.Task{Asked: "take your time"})
-	if err != nil {
-		t.Fatal(err)
+	asked := map[string]string{"one": "left", "two": "right"}
+	works := map[string]agent.Work{}
+	for conversation, question := range asked {
+		work, err := claude.Take(context.Background(),
+			agent.Task{Asked: question, Conversation: conversation})
+		if err != nil {
+			t.Fatal(err)
+		}
+		works[conversation] = work
 	}
 
-	var pid int
-	for range 200 {
-		raw, err := os.ReadFile(filepath.Join(dir, "pid"))
-		if err == nil {
-			if pid, err = strconv.Atoi(strings.TrimSpace(string(raw))); err == nil && pid > 0 {
-				break
+	pids := map[string]int{}
+	for conversation, question := range asked {
+		pid := 0
+		for range 200 {
+			raw, err := os.ReadFile(filepath.Join(dir, "pid-"+question))
+			if err == nil {
+				if pid, err = strconv.Atoi(strings.TrimSpace(string(raw))); err == nil && pid > 0 {
+					break
+				}
 			}
+			time.Sleep(10 * time.Millisecond)
 		}
-		time.Sleep(10 * time.Millisecond)
-	}
-	if pid == 0 {
-		t.Fatal("the agent never started")
-	}
-	if err := syscall.Kill(pid, 0); err != nil {
-		t.Fatalf("the agent is not running: %v", err)
+		if pid == 0 {
+			t.Fatalf("the agent of conversation %q never started", conversation)
+		}
+		if err := syscall.Kill(pid, 0); err != nil {
+			t.Fatalf("the agent of conversation %q is not running: %v", conversation, err)
+		}
+		pids[conversation] = pid
 	}
 
 	if err := claude.Close(); err != nil {
@@ -561,23 +574,27 @@ func TestClosingEndsAnAgentThatIsStillAnswering(t *testing.T) {
 
 	// A process this one started stays visible until it is waited for, so what
 	// says it is over is that a signal no longer reaches it.
-	gone := false
-	for range 200 {
-		if err := syscall.Kill(pid, 0); err != nil {
-			gone = true
-			break
+	for conversation, pid := range pids {
+		gone := false
+		for range 200 {
+			if err := syscall.Kill(pid, 0); err != nil {
+				gone = true
+				break
+			}
+			time.Sleep(10 * time.Millisecond)
 		}
-		time.Sleep(10 * time.Millisecond)
-	}
-	if !gone {
-		syscall.Kill(pid, syscall.SIGKILL)
-		t.Fatal("the agent outlived the window that started it")
+		if !gone {
+			syscall.Kill(pid, syscall.SIGKILL)
+			t.Errorf("the agent of conversation %q outlived the window that started it", conversation)
+		}
 	}
 
-	if _, taking := <-work.Steps(); taking {
-		// Draining what was said before the close is fine; what must not
-		// happen is the work going on.
-		for range work.Steps() {
+	for _, work := range works {
+		if _, taking := <-work.Steps(); taking {
+			// Draining what was said before the close is fine; what must not
+			// happen is the work going on.
+			for range work.Steps() {
+			}
 		}
 	}
 
@@ -585,4 +602,370 @@ func TestClosingEndsAnAgentThatIsStillAnswering(t *testing.T) {
 	if _, err := claude.Take(context.Background(), agent.Task{Asked: "again"}); err == nil {
 		t.Error("an agent was started after the window closed")
 	}
+}
+
+// A person keeps several conversations open at once, and each goes on in the
+// one it was in.
+//
+// The script says which session it is on, named after what it was asked, and
+// writes down what it was started with.
+func TestEachConversationGoesOnInItsOwn(t *testing.T) {
+	dir := t.TempDir()
+	script := filepath.Join(dir, "claude")
+	body := `#!/bin/sh
+asked=$2
+for a in "$@"; do printf '%s\n' "$a"; done > "` + dir + `/argv-$asked"
+printf '{"type":"system","subtype":"init","session_id":"s-%s"}\n' "$asked"
+echo '{"type":"result","subtype":"success","is_error":false}'
+`
+	if err := os.WriteFile(script, []byte(body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	claude := claudecode.Agent{
+		Command: []string{script},
+		Root:    dir,
+		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
+	}
+	asks := func(asked, conversation string) {
+		t.Helper()
+		work, err := claude.Take(t.Context(), agent.Task{Asked: asked, Conversation: conversation})
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { work.Stop() })
+		heard(t, work)
+	}
+
+	asks("left", "one")
+	asks("right", "two")
+
+	// A first question has no session behind it to go on with.
+	for conversation, asked := range map[string]string{"one": "left", "two": "right"} {
+		if session := resumed(argvOf(t, dir, asked)); session != "" {
+			t.Errorf("the first question of conversation %q went on with %q, want none",
+				conversation, session)
+		}
+	}
+
+	asks("left-again", "one")
+	asks("right-again", "two")
+
+	if session := resumed(argvOf(t, dir, "left-again")); session != "s-left" {
+		t.Errorf("conversation %q went on with %q, want %q", "one", session, "s-left")
+	}
+	if session := resumed(argvOf(t, dir, "right-again")); session != "s-right" {
+		t.Errorf("conversation %q went on with %q, want %q", "two", session, "s-right")
+	}
+	if session := claude.Carrying("one"); session != "s-left-again" {
+		t.Errorf("conversation %q is carrying %q, want %q", "one", session, "s-left-again")
+	}
+}
+
+// Both are started before either has finished, the way two panels answering at
+// once are.
+func TestConversationsAnsweringAtOnceKeepTheirOwn(t *testing.T) {
+	dir := t.TempDir()
+	script := filepath.Join(dir, "claude")
+	// Waits for the other to have started, so that neither finishes alone.
+	body := `#!/bin/sh
+asked=$2
+touch "` + dir + `/started-$asked"
+for a in "$@"; do printf '%s\n' "$a"; done > "` + dir + `/argv-$asked"
+until [ -f "` + dir + `/started-left" ] && [ -f "` + dir + `/started-right" ]; do sleep 0.01; done
+printf '{"type":"system","subtype":"init","session_id":"s-%s"}\n' "$asked"
+echo '{"type":"result","subtype":"success","is_error":false}'
+`
+	if err := os.WriteFile(script, []byte(body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	claude := claudecode.Agent{
+		Command: []string{script},
+		Root:    dir,
+		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
+	}
+	takes := func(asked, conversation string) agent.Work {
+		t.Helper()
+		work, err := claude.Take(t.Context(), agent.Task{Asked: asked, Conversation: conversation})
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { work.Stop() })
+		return work
+	}
+
+	left, right := takes("left", "one"), takes("right", "two")
+	heard(t, left)
+	heard(t, right)
+
+	if session := claude.Carrying("one"); session != "s-left" {
+		t.Errorf("conversation %q is carrying %q, want %q", "one", session, "s-left")
+	}
+	if session := claude.Carrying("two"); session != "s-right" {
+		t.Errorf("conversation %q is carrying %q, want %q", "two", session, "s-right")
+	}
+}
+
+// A question asked in no conversation is answered on its own: nothing it was
+// told carries into the next one asked the same way.
+func TestAQuestionInNoConversationCarriesNothing(t *testing.T) {
+	dir := t.TempDir()
+	script := filepath.Join(dir, "claude")
+	body := `#!/bin/sh
+asked=$2
+for a in "$@"; do printf '%s\n' "$a"; done > "` + dir + `/argv-$asked"
+printf '{"type":"system","subtype":"init","session_id":"s-%s"}\n' "$asked"
+echo '{"type":"result","subtype":"success","is_error":false}'
+`
+	if err := os.WriteFile(script, []byte(body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	claude := claudecode.Agent{
+		Command: []string{script},
+		Root:    dir,
+		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
+	}
+	asks := func(asked string) {
+		t.Helper()
+		work, err := claude.Take(t.Context(), agent.Task{Asked: asked})
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { work.Stop() })
+		heard(t, work)
+	}
+
+	asks("first")
+	asks("second")
+
+	if session := resumed(argvOf(t, dir, "second")); session != "" {
+		t.Errorf("a question in no conversation went on with %q, want none", session)
+	}
+	if session := claude.Carrying(""); session != "" {
+		t.Errorf("no conversation is carrying %q, want none", session)
+	}
+}
+
+// Stopping one conversation leaves every other where it was: a person closing
+// one tab is still owed the answer in the next.
+func TestStoppingOneConversationLeavesAnotherAnswering(t *testing.T) {
+	dir := t.TempDir()
+	script := filepath.Join(dir, "claude")
+	// Says one thing, waits to be let on, and says the rest.
+	body := `#!/bin/sh
+asked=$2
+printf '{"type":"system","subtype":"init","session_id":"s-%s"}\n' "$asked"
+printf '{"type":"assistant","message":{"content":[{"type":"text","text":"first %s"}]}}\n' "$asked"
+until [ -f "` + dir + `/on-$asked" ]; do sleep 0.01; done
+printf '{"type":"assistant","message":{"content":[{"type":"text","text":"second %s"}]}}\n' "$asked"
+echo '{"type":"result","subtype":"success","is_error":false}'
+`
+	if err := os.WriteFile(script, []byte(body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	claude := claudecode.Agent{
+		Command: []string{script},
+		Root:    dir,
+		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
+	}
+	takes := func(asked, conversation string) agent.Work {
+		t.Helper()
+		work, err := claude.Take(context.Background(), agent.Task{Asked: asked, Conversation: conversation})
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { work.Stop() })
+		return work
+	}
+
+	left, right := takes("left", "one"), takes("right", "two")
+
+	// Both are mid-answer: each has said its first piece and neither is done.
+	if step := <-left.Steps(); step.Text != "first left" {
+		t.Fatalf("one conversation said %+v, want %q", step, "first left")
+	}
+	if step := <-right.Steps(); step.Text != "first right" {
+		t.Fatalf("the other said %+v, want %q", step, "first right")
+	}
+
+	if err := left.Stop(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.WriteFile(filepath.Join(dir, "on-right"), nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var said []string
+	for step := range right.Steps() {
+		if step.Kind == agent.Saying {
+			said = append(said, step.Text)
+		}
+	}
+	if !slices.Contains(said, "second right") {
+		t.Errorf("the conversation left running said %q, want %q among it", said, "second right")
+	}
+	if session := claude.Carrying("two"); session != "s-right" {
+		t.Errorf("conversation %q is carrying %q, want %q", "two", session, "s-right")
+	}
+}
+
+// argvOf is what the run answering one question was started with.
+func argvOf(t *testing.T, dir, asked string) []string {
+	t.Helper()
+
+	raw, err := os.ReadFile(filepath.Join(dir, "argv-"+asked))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return strings.Split(strings.TrimRight(string(raw), "\n"), "\n")
+}
+
+// resumed is the session a run was told to go on with, empty when it was told
+// none.
+func resumed(argv []string) string {
+	at := slices.Index(argv, "--resume")
+	if at < 0 || at+1 >= len(argv) {
+		return ""
+	}
+	return argv[at+1]
+}
+
+// A conversation the person closed is over, and the session it was on is let
+// go of. Every other conversation is where it was.
+func TestFinishingAConversationLetsGoOfWhatItWasOn(t *testing.T) {
+	dir := t.TempDir()
+	script := filepath.Join(dir, "claude")
+	body := `#!/bin/sh
+asked=$2
+printf '{"type":"system","subtype":"init","session_id":"s-%s"}\n' "$asked"
+echo '{"type":"result","subtype":"success","is_error":false}'
+`
+	if err := os.WriteFile(script, []byte(body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	claude := claudecode.Agent{
+		Command: []string{script},
+		Root:    dir,
+		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
+	}
+	asks := func(asked, conversation string) {
+		t.Helper()
+		work, err := claude.Take(t.Context(), agent.Task{Asked: asked, Conversation: conversation})
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { work.Stop() })
+		heard(t, work)
+	}
+
+	asks("left", "one")
+	asks("right", "two")
+
+	if err := claude.Finish(t.Context(), "one"); err != nil {
+		t.Fatal(err)
+	}
+
+	if session := claude.Carrying("one"); session != "" {
+		t.Errorf("a conversation that is over is carrying %q, want none", session)
+	}
+	if session := claude.Carrying("two"); session != "s-right" {
+		t.Errorf("conversation %q is carrying %q, want %q", "two", session, "s-right")
+	}
+}
+
+// A person closing a tab mid-answer is the ordinary way a conversation ends.
+// What was still answering in it goes with it, and the tab beside it is still
+// owed its answer.
+func TestFinishingAConversationEndsWhatIsStillAnsweringInIt(t *testing.T) {
+	dir := t.TempDir()
+	script := filepath.Join(dir, "claude")
+	// Says one thing, writes down where it is, and waits the way an agent
+	// between turns does.
+	body := `#!/bin/sh
+asked=$2
+printf '{"type":"system","subtype":"init","session_id":"s-%s"}\n' "$asked"
+printf '{"type":"assistant","message":{"content":[{"type":"text","text":"first %s"}]}}\n' "$asked"
+echo $$ > "` + dir + `/pid-$asked"
+sleep 120
+`
+	if err := os.WriteFile(script, []byte(body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	claude := claudecode.Agent{
+		Command: []string{script},
+		Root:    dir,
+		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
+	}
+	takes := func(asked, conversation string) agent.Work {
+		t.Helper()
+		work, err := claude.Take(context.Background(), agent.Task{Asked: asked, Conversation: conversation})
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { work.Stop() })
+		return work
+	}
+
+	left, right := takes("left", "one"), takes("right", "two")
+
+	// Both are mid-answer: each has said its first piece and neither is done.
+	if step := <-left.Steps(); step.Text != "first left" {
+		t.Fatalf("one conversation said %+v, want %q", step, "first left")
+	}
+	if step := <-right.Steps(); step.Text != "first right" {
+		t.Fatalf("the other said %+v, want %q", step, "first right")
+	}
+	closing, answering := pidOf(t, dir, "left"), pidOf(t, dir, "right")
+
+	if err := claude.Finish(context.Background(), "one"); err != nil {
+		t.Fatal(err)
+	}
+
+	if !ended(closing) {
+		syscall.Kill(closing, syscall.SIGKILL)
+		t.Error("the agent of a conversation that is over is still running")
+	}
+	for range left.Steps() {
+	}
+	if err := syscall.Kill(answering, 0); err != nil {
+		t.Errorf("the conversation left open stopped answering: %v", err)
+	}
+	if session := claude.Carrying("two"); session != "s-right" {
+		t.Errorf("conversation %q is carrying %q, want %q", "two", session, "s-right")
+	}
+}
+
+// pidOf is the process a run is, once it has written down where it is.
+func pidOf(t *testing.T, dir, asked string) int {
+	t.Helper()
+
+	for range 200 {
+		raw, err := os.ReadFile(filepath.Join(dir, "pid-"+asked))
+		if err == nil {
+			if pid, err := strconv.Atoi(strings.TrimSpace(string(raw))); err == nil && pid > 0 {
+				return pid
+			}
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatalf("the agent answering %q never said where it is", asked)
+	return 0
+}
+
+// ended reports whether a process is over. One this process started stays
+// visible until it is waited for, so what says it is over is that a signal no
+// longer reaches it.
+func ended(pid int) bool {
+	for range 200 {
+		if err := syscall.Kill(pid, 0); err != nil {
+			return true
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	return false
 }

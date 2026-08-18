@@ -48,15 +48,37 @@ func TestTheReportThatEndsAChangeIsNotReplaced(t *testing.T) {
 	t.Cleanup(done)
 
 	drawing.tell(domain.Editing{Change: "one", Done: true})
-	drawing.tell(domain.Editing{Change: "two", Text: "another change"})
+	drawing.tell(domain.Editing{Change: "one", Text: "more of it"})
 
 	got := <-line
 	if got.Change != "one" || !got.Done {
-		t.Errorf("what waited is %+v", got)
+		t.Errorf("what waited is %+v, want the report that ended change one", got)
 	}
-	// What could not replace it arrives once there is room.
-	drawing.tell(domain.Editing{Change: "two", Text: "another change"})
-	if got := <-line; got.Change != "two" {
-		t.Errorf("the change that waited is %+v", got)
+	// What could not replace it waits behind it.
+	if got := <-line; got.Text != "more of it" {
+		t.Errorf("what waited behind it is %+v, want the report of change one", got)
+	}
+}
+
+// Several changes are made at once, and each is drawn in a place of its own: a
+// report about one note may not take the place of an unread report about
+// another.
+func TestAChangeDoesNotDisplaceOneToAnotherNote(t *testing.T) {
+	drawing := drawing()
+	line, done := drawing.listen()
+	t.Cleanup(done)
+
+	drawing.tell(domain.Editing{Change: "one", Path: "Aggressor.md", Text: "An axe"})
+	drawing.tell(domain.Editing{Change: "two", Path: "Fugue.md", Text: "A theme"})
+	drawing.tell(domain.Editing{Change: "two", Path: "Fugue.md", Text: "A theme answered"})
+
+	if got := <-line; got.Change != "one" || got.Text != "An axe" {
+		t.Errorf("the first report waiting is %+v, want change one saying %q", got, "An axe")
+	}
+	if got := <-line; got.Change != "two" || got.Text != "A theme answered" {
+		t.Errorf("the next is %+v, want change two saying %q", got, "A theme answered")
+	}
+	if len(line) != 0 {
+		t.Errorf("got %d reports queued behind them, want 0", len(line))
 	}
 }
