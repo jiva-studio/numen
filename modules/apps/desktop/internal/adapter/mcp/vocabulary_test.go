@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/mcp"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agent"
 )
 
 // What the window says about a call is what the tool declared: a call names its
@@ -67,5 +68,37 @@ func TestAnEditIsAboutTheNoteItChanges(t *testing.T) {
 	}
 	if edit.About != "path" {
 		t.Errorf("a call is about %q", edit.About)
+	}
+}
+
+// What a call does to the vault is written out beside the tools rather than
+// read off a schema, so a tool renamed without its entry says nothing.
+func TestEveryToolServedSaysWhatItDoes(t *testing.T) {
+	words, err := mcp.Vocabulary(t.Context(), mcp.Core{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, said := range words {
+		if said.Kind == agent.Calling {
+			t.Errorf("%s says nothing about what it does", name)
+		}
+	}
+}
+
+// The arguments an edit is drawn from are the ones it is declared with. A name
+// that drifted would leave a change nobody could place.
+func TestAnEditNamesTheArgumentsItReplacesTextWith(t *testing.T) {
+	words, err := mcp.Vocabulary(t.Context(), mcp.Core{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	edit := words["note_edit"]
+	if edit.Stood != "stood" || edit.Becomes != "becomes" {
+		t.Fatalf("an edit replaces %q with %q", edit.Stood, edit.Becomes)
+	}
+	for _, tool := range []string{"note_write", "note_read"} {
+		if words[tool].Stood != "" || words[tool].Becomes != "" {
+			t.Errorf("%s claims to replace a stretch", tool)
+		}
 	}
 }

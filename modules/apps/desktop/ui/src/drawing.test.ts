@@ -99,3 +99,19 @@ describe('a note the window closed', () => {
     expect(drawn.shown('Note.md')).toBeNull()
   })
 })
+
+describe('a change nobody says any more about', () => {
+  it('is let go of on a bound of its own, so no drawing outlives its agent', () => {
+    const drawn = drawing()
+    expect(drawn.told(said())).toEqual({ path: 'Note.md', after: holding.abandoned })
+  })
+
+  it('has that bound put off again by every report of itself', () => {
+    const drawn = drawing()
+    drawn.told(said())
+    expect(drawn.told(said({ text: 'An axe, two-bladed' }))).toEqual({
+      path: 'Note.md',
+      after: holding.abandoned,
+    })
+  })
+})

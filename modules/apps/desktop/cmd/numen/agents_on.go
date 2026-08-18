@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lint"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/markdown"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 )
@@ -68,7 +69,27 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 	if err != nil {
 		fmt.Fprintln(out, "agents:", err)
 	}
-	started := agent(cfg, root, endpoint.URL, secret, words, out)
+	// What the agent is about to change reaches the window before the change
+	// does, and where a stretch stands is the vault's to say.
+	reading := note.Read{Readers: cfg.VaultReaders()}
+	drafting := claudecode.Drafting{
+		Tell: func(ctx context.Context, said domain.Editing) {
+			_ = opened.API.Viewing().Editing(ctx, said)
+		},
+		Where: func(ctx context.Context, path, stood string) (int, int, bool) {
+			contents, err := reading.Execute(ctx, opened.Vault, path)
+			if err != nil || contents.Outcome != note.Ok {
+				return 0, 0, false
+			}
+			at, _ := markdown.Where(contents.Body, stood)
+			if len(at) != 1 {
+				return 0, 0, false
+			}
+			return markdown.Counted(contents.Body, at[0].From),
+				markdown.Counted(contents.Body, at[0].To), true
+		},
+	}
+	started := agent(cfg, root, endpoint.URL, secret, words, drafting, out)
 	opened.API.Agent = started
 
 	return func() error {
@@ -91,13 +112,22 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 // It reaches the same tools over the same port as an agent somebody configured
 // themselves, and is given all of them: what it changes appears in the window
 // as it happens.
-func agent(cfg container.Config, root, url, secret string, served map[string]mcp.Words, out io.Writer) *claudecode.Agent {
+func agent(
+	cfg container.Config,
+	root, url, secret string,
+	served map[string]mcp.Words,
+	drafting claudecode.Drafting,
+	out io.Writer,
+) *claudecode.Agent {
 	words := make(map[string]claudecode.Words, len(served))
 	for name, said := range served {
 		words[claudecode.Tool(name)] = claudecode.Words{
-			Title:  said.Title,
-			About:  said.About,
-			Inside: said.Inside,
+			Title:   said.Title,
+			About:   said.About,
+			Inside:  said.Inside,
+			Kind:    said.Kind,
+			Stood:   said.Stood,
+			Becomes: said.Becomes,
 		}
 	}
 	return &claudecode.Agent{
@@ -105,6 +135,7 @@ func agent(cfg container.Config, root, url, secret string, served map[string]mcp
 		Tools:               claudecode.Endpoint{URL: url, Token: secret},
 		Allowed:             []string{claudecode.Tool("*")},
 		Words:               words,
+		Drafting:            drafting,
 		Model:               cfg.Agent.Claude.Model,
 		Turns:               cfg.Agent.Claude.MaxSteps,
 		ReadsHooksAndSkills: cfg.Agent.Claude.ReadsHooksAndSkills,

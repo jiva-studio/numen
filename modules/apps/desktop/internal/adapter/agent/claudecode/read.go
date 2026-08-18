@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agent"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 )
 
 // read turns what the agent prints into steps, and reports why it stopped when
@@ -19,8 +21,15 @@ import (
 // pipe feels like: the tail of one read is the head of the next, so lines are
 // put together before anything is decoded. A line that will not decode is
 // passed over.
-func read(ctx context.Context, r io.Reader, steps chan<- agent.Step, words map[string]Words, kept func(string)) string {
-	reading := reader{steps: steps, words: words, kept: kept}
+func read(
+	ctx context.Context,
+	r io.Reader,
+	steps chan<- agent.Step,
+	words map[string]Words,
+	kept func(string),
+	draft Drafting,
+) string {
+	reading := reader{steps: steps, words: words, kept: kept, draft: draft}
 	lines := bufio.NewReader(r)
 
 	for {
@@ -37,6 +46,10 @@ func read(ctx context.Context, r io.Reader, steps chan<- agent.Step, words map[s
 // writtenStep is how much more of a call has to be written before it is
 // reported again.
 const writtenStep = 200
+
+// framePace is how often a change being written is drawn. The words arrive
+// faster than a screen is redrawn.
+const framePace = 50 * time.Millisecond
 
 // reader is what has been made of the stream so far.
 type reader struct {
@@ -60,6 +73,16 @@ type reader struct {
 	written strings.Builder
 	// told is how much of the call had been reported the last time it was.
 	told int
+	// draft is how a change being written is drawn before it lands.
+	draft Drafting
+	// path is the note the change being written goes into, and from and to are
+	// the stretch it replaces. Set once that stretch has been found.
+	path     string
+	from, to int
+	drawn    bool
+	// at is when a frame was last sent. A long call is drawn at a pace a screen
+	// can keep.
+	at time.Time
 	// failed is why the work stopped. The first reason is the one that holds.
 	failed string
 }
@@ -114,6 +137,8 @@ func (rd *reader) piece(ctx context.Context, event streamed) {
 			rd.calling = event.Block.Name
 			rd.written.Reset()
 			rd.told = 0
+			rd.path, rd.from, rd.to, rd.drawn = "", 0, 0, false
+			rd.at = time.Time{}
 			rd.tell(ctx, rd.calls(rd.call, rd.calling, ""))
 		}
 	case "content_block_delta":
@@ -132,6 +157,7 @@ func (rd *reader) piece(ctx context.Context, event streamed) {
 				rd.told = rd.written.Len()
 				rd.tell(ctx, rd.calls(rd.call, rd.calling, rd.written.String()))
 			}
+			rd.draw(ctx)
 		}
 	case "content_block_stop":
 		if rd.calling == "" {
@@ -141,6 +167,7 @@ func (rd *reader) piece(ctx context.Context, event streamed) {
 		rd.call = ""
 		rd.calling = ""
 		rd.written.Reset()
+		rd.drawn = false
 	}
 }
 
@@ -434,4 +461,47 @@ func (e event) blocks() []block {
 		return nil
 	}
 	return message.Content
+}
+
+// draw reports what a change is doing while the call making it is still being
+// written.
+//
+// The text going in arrives after the text it replaces, so nothing is drawn
+// until the replacement has begun: a stretch shown with nothing in its place
+// reads as having been deleted. Once the replacement has begun the stretch it
+// replaces is whole, and where it stands can be found.
+func (rd *reader) draw(ctx context.Context) {
+	words, served := rd.words[rd.calling]
+	if !served || words.Becomes == "" || !rd.draft.drawing() {
+		return
+	}
+
+	arguments := rd.written.String()
+	if !strings.Contains(arguments, `"`+words.Becomes+`"`) {
+		return
+	}
+	if !rd.drawn {
+		path, stood := glimpsed(arguments, words.About), glimpsed(arguments, words.Stood)
+		if path == "" || stood == "" {
+			return
+		}
+		from, to, one := rd.draft.Where(ctx, path, stood)
+		if !one {
+			return
+		}
+		rd.path, rd.from, rd.to, rd.drawn = path, from, to, true
+	}
+
+	now := rd.draft.now()
+	if now.Sub(rd.at) < framePace {
+		return
+	}
+	rd.at = now
+	rd.draft.Tell(ctx, domain.Editing{
+		Change: rd.call,
+		Path:   rd.path,
+		From:   rd.from,
+		To:     rd.to,
+		Text:   glimpsed(arguments, words.Becomes),
+	})
 }

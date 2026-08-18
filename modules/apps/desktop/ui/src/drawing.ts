@@ -38,9 +38,11 @@ export interface Holding {
   readonly settle: number
   /** How long a change whose text never arrived stays at all. */
   readonly bound: number
+  /** How long a change stays when nothing more is said about it. */
+  readonly abandoned: number
 }
 
-export const holding: Holding = { settle: 900, bound: 4000 }
+export const holding: Holding = { settle: 900, bound: 4000, abandoned: 15000 }
 
 /** What should be done: the interval for one note, armed again over the last. */
 export interface Arm {
@@ -63,7 +65,10 @@ export function drawing(limits: Holding = holding) {
         text: said.text,
       })
       ending.delete(said.path)
-      return null
+      // A change is drawn on the word of whoever is making it, and that word
+      // stops arriving when an agent is stopped mid-call. The bound is what a
+      // drawing nobody ends costs.
+      return { path: said.path, after: limits.abandoned }
     }
     // A change nobody is drawing ends nothing.
     if (!changes.has(said.path)) return null
