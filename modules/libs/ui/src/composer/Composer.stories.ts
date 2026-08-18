@@ -22,7 +22,7 @@ const meta = {
           'method is composing, Enter belongs to the input method and never ' +
           'reaches the message. It grows with what is typed until it reaches ' +
           'the height the tokens allow, then scrolls. While an answer is on ' +
-          'its way the button gives its place to three dots.',
+          'its way the disc stops it.',
       },
     },
   },
@@ -31,7 +31,13 @@ const meta = {
     working: { control: 'boolean' },
     disabled: { control: 'boolean' },
   },
-  args: { placeholder: 'Write a message', working: false, disabled: false, onSubmit: fn() },
+  args: {
+    placeholder: 'Write a message',
+    working: false,
+    disabled: false,
+    onSubmit: fn(),
+    onStop: fn(),
+  },
 } satisfies Meta<typeof Composer>
 
 export default meta
@@ -52,7 +58,7 @@ const holding = (...starts: string[]): Render => (args) => ({
   `,
 })
 
-/** Empty, and with a line in it. Turn `working` on for the dots. */
+/** Empty, and with a line in it. Turn `working` on for the disc that stops. */
 export const Playground: Story = {
   render: holding('', 'What does a plex draw?'),
   play: async ({ canvasElement }) => {
@@ -85,3 +91,34 @@ export const Grown: Story = {
 /** A word with nowhere to break, a script that is not Latin, and one that
  *  runs the other way. */
 export const AwkwardText: Story = { render: holding(LINK, DEVANAGARI, ARABIC) }
+
+/**
+ * As narrow as a pane is ever drawn, with words standing in that are longer
+ * than the row holding them.
+ */
+export const Narrow: Story = {
+  args: { placeholder: 'Ask about this note, or about anything else in the vault' },
+  render: (args) => ({
+    components: { Composer },
+    setup: () => ({ args, empty: ref(''), typed: ref('x') }),
+    template: `
+      <div class="numen flex w-[180px] flex-col gap-4">
+        <Composer v-bind="args" v-model="empty" />
+        <Composer v-bind="args" v-model="typed" />
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const [empty, typed] = [...canvasElement.querySelectorAll('.composer')].map(
+      (each) => each.getBoundingClientRect().height,
+    )
+
+    // A field at rest is one row, so nothing moves as the first character lands.
+    await expect(empty).toBe(typed)
+
+    // The words that do not fit end in an ellipsis rather than wrapping.
+    const standing = canvasElement.querySelector('.composer__standing') as HTMLElement
+    await expect(standing.scrollWidth).toBeGreaterThan(standing.clientWidth)
+    await expect(getComputedStyle(standing).textOverflow).toBe('ellipsis')
+  },
+}

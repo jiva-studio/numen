@@ -2,11 +2,14 @@
  * What a composer is, as plain values. No DOM, no clock, no measurement.
  */
 
+/** What the disc at the end of the field does when it is pressed. */
+export type ComposerAction = 'send' | 'stop'
+
 export interface ComposerStateDescriptor {
-  /** Whether there is a button to press at all. */
+  /** Whether pressing the disc does anything. */
   readonly acts: boolean
-  /** What stands at the end of the field. */
-  readonly shows: 'send' | 'writing'
+  /** What stands on the disc, which is what pressing it does. */
+  readonly shows: ComposerAction
 }
 
 /**
@@ -16,7 +19,7 @@ export interface ComposerStateDescriptor {
 export const COMPOSER_STATES = {
   empty: { acts: false, shows: 'send' },
   ready: { acts: true, shows: 'send' },
-  writing: { acts: false, shows: 'writing' },
+  writing: { acts: true, shows: 'stop' },
 } as const satisfies Record<string, ComposerStateDescriptor>
 
 export type ComposerState = keyof typeof COMPOSER_STATES

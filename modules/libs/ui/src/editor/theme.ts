@@ -36,10 +36,13 @@ export const theme = EditorView.theme({
   },
   '&.cm-focused': { outline: 'none' },
   '.cm-scroller': { fontFamily: 'inherit', lineHeight: 'inherit' },
-  '.cm-content': { caretColor: 'var(--numen-node-fg)', padding: '4px 0' },
+  '.cm-content': { caretColor: 'var(--numen-node-fg)', padding: 'var(--numen-gutter) 0' },
   '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--numen-node-fg)' },
-  '.cm-line': { padding: '0 4px' },
+  '.cm-line': { padding: '0 var(--numen-gutter)' },
   '.cm-placeholder': { color: 'var(--numen-edge-label)' },
+  /* The editor draws a buffer either side of replaced content. On the baseline
+     it leaves a line the height of its text, mark concealed or not. */
+  '.cm-widgetBuffer': { verticalAlign: 'baseline' },
   /* Selection, at the reach the editor's own base theme uses for it. That theme
      is told neither light nor dark, so it paints a light ground under text this
      one keeps on either. */

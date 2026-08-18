@@ -7,12 +7,14 @@ import {
   dropTab,
   moveTabWithin,
   openTab,
+  openTabBeside,
   resizeBranch,
 } from './edit'
 import { arrangeWorkspace } from './arrange'
-import { isBranch, isPane, paneWithTab, panesOf, type Workspace } from './model'
+import { isBranch, isPane, paneWithTab, panesOf, type Side, type Workspace } from './model'
 import {
   deep,
+  empty,
   naming,
   oneStack,
   sideBySide,
@@ -49,6 +51,116 @@ describe('opening and showing', () => {
     const after = activateTab(oneStack(), 'chat')
     expect(panesOf(after.root)[0]?.active).toBe('chat')
     expect(after.focus).toBe('main')
+  })
+})
+
+describe('opening a tab in a pane of its own', () => {
+  it('opens one that was nowhere in the tree', () => {
+    const after = openTabBeside(sideBySide(), 'notes', 'right', naming())
+
+    expect(ids(after)).toStrictEqual(['main', 'made-1', 'aside'])
+    expect(tabsOf(after, 'made-1')).toStrictEqual(['notes'])
+    expect(after.focus).toBe('made-1')
+    expect(broken(after)).toStrictEqual([])
+  })
+
+  it('takes one that is already open away from where it was', () => {
+    const after = openTabBeside(sideBySide(), 'chat', 'right', naming())
+
+    expect(paneWithTab(after.root, 'chat')?.id).toBe('made-1')
+    expect(panesOf(after.root).map((each) => each.id)).toStrictEqual(['main', 'made-1'])
+    expect(after.focus).toBe('made-1')
+    expect(broken(after)).toStrictEqual([])
+  })
+
+  it('leaves one that is alone in the pane it would open beside where it is', () => {
+    const before = workspaceOf(stack('main', 'plex'))
+    const ids = naming()
+
+    const after = openTabBeside(before, 'plex', 'left', ids)
+
+    expect(after).toStrictEqual(before)
+    // Nothing was made, so nothing was named.
+    expect(ids()).toBe('made-1')
+  })
+
+  it.each([
+    ['left' as Side, 'horizontal', ['made-1', 'main']],
+    ['right' as Side, 'horizontal', ['main', 'made-1']],
+    ['top' as Side, 'vertical', ['made-1', 'main']],
+    ['bottom' as Side, 'vertical', ['main', 'made-1']],
+  ])('puts it on the %s', (side, axis, order) => {
+    const after = openTabBeside(oneStack(), 'notes', side, naming())
+
+    expect(ids(after)).toStrictEqual(order)
+    expect(after.axis).toBe(axis)
+    expect(broken(after)).toStrictEqual([])
+  })
+
+  it('joins the parent when the parent already divides that way', () => {
+    const after = openTabBeside(withSpare(), 'more', 'left', naming(), 'aside')
+
+    expect(ids(after)).toStrictEqual(['main', 'made-1', 'aside'])
+    expect(broken(after)).toStrictEqual([])
+  })
+
+  it('wraps the pane when the parent divides the other way', () => {
+    const after = openTabBeside(withSpare(), 'more', 'bottom', naming(), 'main')
+
+    expect(ids(after)).toStrictEqual(['made-2', 'aside'])
+    const wrapper = isBranch(after.root) ? after.root.children[0] : undefined
+    expect(wrapper && isBranch(wrapper) && wrapper.children.map((child) => child.id)).toStrictEqual([
+      'main',
+      'made-1',
+    ])
+    expect(broken(after)).toStrictEqual([])
+  })
+
+  it('takes half of what it opened beside', () => {
+    const after = openTabBeside(sideBySide(), 'notes', 'right', naming())
+    const boxes = arrangeWorkspace(after, SCREEN)
+
+    expect(boxes.get('main')?.width).toBeCloseTo(360)
+    expect(boxes.get('made-1')?.width).toBeCloseTo(360)
+    expect(boxes.get('aside')?.width).toBeCloseTo(280)
+  })
+
+  it('leaves the others where they were', () => {
+    const before = arrangeWorkspace(withSpare(), SCREEN)
+    const after = arrangeWorkspace(
+      openTabBeside(withSpare(), 'more', 'right', naming(), 'main'),
+      SCREEN,
+    )
+    expect(after.get('aside')).toStrictEqual(before.get('aside'))
+  })
+
+  it('opens beside the pane a tab opens into when told no other', () => {
+    const focused = workspaceOf(sideBySide().root, 'horizontal', 'aside')
+    const after = openTabBeside(focused, 'notes', 'right', naming())
+
+    expect(ids(after)).toStrictEqual(['main', 'aside', 'made-1'])
+    expect(broken(after)).toStrictEqual([])
+  })
+
+  it('divides a workspace holding nothing, and clears the empty pane away', () => {
+    const after = openTabBeside(empty(), 'notes', 'bottom', naming())
+
+    expect(isPane(after.root) && after.root.id).toBe('made-1')
+    expect(tabsOf(after, 'made-1')).toStrictEqual(['notes'])
+    expect(broken(after)).toStrictEqual([])
+  })
+
+  it('does nothing for the middle, which divides nothing', () => {
+    const before = sideBySide()
+    expect(openTabBeside(before, 'notes', 'center', naming())).toStrictEqual(before)
+  })
+
+  it('leaves the tree canonical when the pane it opened beside empties', () => {
+    const after = openTabBeside(oneStack(), 'plex', 'left', naming(), 'main')
+
+    expect(panesOf(after.root)).toHaveLength(2)
+    expect(tabsOf(after, 'made-1')).toStrictEqual(['plex'])
+    expect(broken(after)).toStrictEqual([])
   })
 })
 

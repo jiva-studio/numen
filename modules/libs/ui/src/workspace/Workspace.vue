@@ -41,8 +41,13 @@ const props = withDefaults(
     threshold?: number
     /** The least room a pane is worth drawing in. */
     minimum?: number
+    /**
+     * What the way to a new tab is called. A workspace given no word for one
+     * offers no way to ask.
+     */
+    newTab?: string | undefined
   }>(),
-  { edge: 22, threshold: 4, minimum: 220 },
+  { edge: 22, threshold: 4, minimum: 220, newTab: undefined },
 )
 
 defineSlots<{
@@ -62,6 +67,11 @@ const emit = defineEmits<{
    */
   (event: 'close', tab: TabId, hold: () => void): void
   (event: 'activate', tab: TabId): void
+  /**
+   * A new tab asked for, and the pane it was asked in. What a tab holds is
+   * the caller's, so nothing is opened here.
+   */
+  (event: 'open', pane: NodeId): void
   /**
    * The tab a pane is now showing, once it is on screen. Every tab of a pane is
    * drawn and the ones not shown are held out of sight, so what a tab holds is
@@ -318,10 +328,12 @@ onBeforeUnmount(() => {
       :focus="workspace.focus"
       :minimum="minimum"
       :closable="closable"
+      :new-tab="newTab"
       @choose="choose"
       @close="close"
       @lift="lift"
       @claim="claim"
+      @open="emit('open', $event)"
       @resize="resize"
       @show="emit('show', $event)"
     >
@@ -337,10 +349,12 @@ onBeforeUnmount(() => {
       :marks="marks"
       :focused="workspace.root.id === workspace.focus"
       :closable="closable"
+      :new-tab="newTab"
       @choose="choose"
       @close="close"
       @lift="lift"
       @claim="claim(workspace.root.id)"
+      @open="emit('open', workspace.root.id)"
       @show="emit('show', $event)"
     >
       <template #tab="bound"><slot name="tab" v-bind="bound" /></template>

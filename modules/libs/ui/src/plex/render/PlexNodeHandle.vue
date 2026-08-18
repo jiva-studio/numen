@@ -5,7 +5,8 @@
  *
  * Drawn about its own origin and put where it belongs by the one number it
  * takes, so every size in it is a token and none is arithmetic. It sits inside
- * a node that navigates when clicked, so pressing it must never reach that.
+ * a node that answers a click and a double click of its own, so pressing it
+ * must never reach that.
  */
 import type { Point } from '../model'
 import { isPress } from './keys'
@@ -49,6 +50,7 @@ const onKey = (event: KeyboardEvent) => {
       @pointerdown="onPointerDown"
       @keydown="onKey"
       @click.stop
+      @dblclick.stop
     />
     <rect class="plex__handle-mark plex__handle-mark--across" aria-hidden="true" />
     <rect class="plex__handle-mark plex__handle-mark--down" aria-hidden="true" />

@@ -78,6 +78,33 @@ export function openTab(
   }
 }
 
+/**
+ * A tab opened in a pane of its own, alongside another one. A tab already
+ * open is taken from wherever it was, and one that is alone in the pane it
+ * would be put beside is only shown.
+ *
+ * The middle is not a side, and a tab asked for there stays where it is.
+ */
+export function openTabBeside(
+  workspace: Workspace,
+  tab: TabId,
+  side: Side,
+  naming: Naming,
+  onto: NodeId = workspace.focus,
+): Workspace {
+  const target = paneById(workspace.root, onto) ?? panesOf(workspace.root)[0]
+  if (!target || side === 'center') return workspace
+
+  const source = paneWithTab(workspace.root, tab)
+  if (source && source.id === target.id && source.tabs.length === 1) {
+    return activateTab(workspace, tab)
+  }
+
+  const root = detach(workspace.root, tab)
+  const landed = beside(root, target.id, tab, side, workspace.axis, naming)
+  return settle({ ...workspace, root: landed.root, axis: landed.axis }, landed.focus)
+}
+
 export function closeTab(workspace: Workspace, tab: TabId): Workspace {
   const holder = paneWithTab(workspace.root, tab)
   if (!holder) return workspace

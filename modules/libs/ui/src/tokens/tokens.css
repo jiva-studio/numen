@@ -63,9 +63,17 @@
   --numen-edge-label: light-dark(#7b7f87, #8b9098);
   --numen-ring: light-dark(#2f6fd0, #78a9ef);
   --numen-alarm: light-dark(#a33a32, #e08b83);
+  /* The band something is said in that a person should read but need not act
+     on at once. */
+  --numen-caution-bg: light-dark(#fff4e5, #3a2e1c);
+  --numen-caution-fg: light-dark(#7a4b00, #f0c890);
   /* The ground under a stretch of text something is about to change. It sits
      under words that are still being read, so it is a tint and not a colour. */
   --numen-highlight: light-dark(#d6a46333, #d6a4633d);
+
+  /* The clearance reading keeps from the edge of the pane it fills. A note and
+     a conversation are read at the same measure, so they keep the same one. */
+  --numen-gutter: 20px;
 
   /* The clearance a line of small print keeps from the corner it sits in. */
   --numen-inset: 8px;

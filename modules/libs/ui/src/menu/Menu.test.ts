@@ -146,20 +146,24 @@ describe('being put away', () => {
 })
 
 describe('where the keyboard is while it is open', () => {
+  /** Opened from the keyboard, which is the opening that lands on an item. */
+  const opened = (props: Partial<MenuProps> = {}) =>
+    mountMenu({ opening: 'keyboard', ...props })
+
   it('is on the first item that can be chosen', async () => {
-    mountMenu({ items: [{ id: 'open', text: 'Open', disabled: true }, ...ITEMS] })
+    opened({ items: [{ id: 'open', text: 'Open', disabled: true }, ...ITEMS] })
     await settle()
     expect(document.activeElement).toBe(choices()[1])
   })
 
   it('is on the menu itself when there is nothing to be on', async () => {
-    mountMenu({ items: [] })
+    opened({ items: [] })
     await settle()
     expect(document.activeElement).toBe(drawn())
   })
 
   it('walks the items with the arrows, and wraps', async () => {
-    mountMenu()
+    opened()
     await settle()
     const menu = drawn()!
 
@@ -174,7 +178,7 @@ describe('where the keyboard is while it is open', () => {
   })
 
   it('goes to the ends on Home and End', async () => {
-    mountMenu()
+    opened()
     await settle()
     const menu = drawn()!
 
@@ -186,7 +190,7 @@ describe('where the keyboard is while it is open', () => {
   })
 
   it('is kept inside: tab moves within the items rather than out of them', async () => {
-    mountMenu()
+    opened()
     await settle()
     const menu = drawn()!
 
@@ -201,6 +205,34 @@ describe('where the keyboard is while it is open', () => {
     tab()
     tab()
     expect(document.activeElement).toBe(choices()[0])
+  })
+})
+
+describe('where the keyboard is in a menu opened by hand', () => {
+  const step = (key: string) =>
+    drawn()?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
+
+  it('is on no item at all, and on the menu itself', async () => {
+    mountMenu()
+    await settle()
+    expect(choices().some((item) => item === document.activeElement)).toBe(false)
+    expect(document.activeElement).toBe(drawn())
+  })
+
+  it('goes to the first item on the first step down', async () => {
+    mountMenu()
+    await settle()
+
+    step('ArrowDown')
+    expect(document.activeElement).toBe(choices()[0])
+  })
+
+  it('goes to the last on the first step up', async () => {
+    mountMenu()
+    await settle()
+
+    step('ArrowUp')
+    expect(document.activeElement).toBe(choices()[2])
   })
 })
 

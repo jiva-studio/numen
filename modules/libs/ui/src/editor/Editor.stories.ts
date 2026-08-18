@@ -55,6 +55,78 @@ export const AsWritten: Story = { render: framed(MARKED_UP, { live: false }) }
 /** Nothing to type into. */
 export const ReadOnly: Story = { render: framed(MARKED_UP, { readonly: true }) }
 
+/* One line of every construct whose marks are concealed, each with a blank
+   line after it, and a line at the end to park the caret on. */
+const BULLET = '- a bullet'
+const TASK = '- [ ] something to do'
+const CONCEALED = [
+  '# Heading one',
+  '## Heading two',
+  '### Heading three',
+  '#### Heading four',
+  '##### Heading five',
+  '###### Heading six',
+  'A **bold** and *slanted* and ~~struck~~ word.',
+  'A `snippet` and a [somewhere](https://example.invalid/x "a title").',
+  '> A quotation.',
+  BULLET,
+  TASK,
+]
+const STEADY = `${CONCEALED.join('\n\n')}\n\nSomething well away from all of it.\n`
+
+/** Which line a construct is written on, and the line nothing is drawn on. */
+const written = (text: string) => CONCEALED.indexOf(text) * 2 + 1
+const PARKED = CONCEALED.length * 2 + 1
+
+/**
+ * The line a construct is written on, measured with the marks concealed and
+ * with them back. The text on it changes; its height does not.
+ */
+export const Steady: Story = {
+  render: framed(STEADY),
+  play: async ({ canvasElement }) => {
+    const view = viewOf(canvasElement)
+
+    const put = async (line: number, column: number) => {
+      view.dispatch({ selection: EditorSelection.single(view.state.doc.line(line).from + column) })
+      await settled()
+      await settled()
+    }
+
+    const heightOf = (line: number) => view.lineBlockAt(view.state.doc.line(line).from).height
+
+    for (const text of CONCEALED) {
+      const line = written(text)
+      await put(PARKED, 0)
+      const concealed = heightOf(line)
+      await put(line, 2)
+      await expect({ text, height: heightOf(line) }).toEqual({ text, height: concealed })
+    }
+
+    // Either side of what stands in place of a mark there is somewhere for the
+    // caret to be drawn.
+    await put(PARKED, 0)
+    const standing = (line: number, column: number) => {
+      const spot = view.coordsAtPos(view.state.doc.line(line).from + column)
+      return spot ? spot.bottom - spot.top : 0
+    }
+    for (const [text, column] of [
+      ['# Heading one', 0],
+      ['# Heading one', 2],
+      [BULLET, 0],
+      [BULLET, 1],
+      [TASK, 0],
+      [TASK, 1],
+    ] as const) {
+      await expect({ text, column, drawn: standing(written(text), column) > 0 }).toEqual({
+        text,
+        column,
+        drawn: true,
+      })
+    }
+  },
+}
+
 /**
  * A table on its own. Click a cell and type: what is typed is written back
  * over that cell alone. Tab walks the cells and makes a row at the end,

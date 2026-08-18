@@ -8,11 +8,11 @@ import './tokens/theme.css'
 
 export { default as Plex } from './plex/Plex.vue'
 export { browserEnvironment } from './plex/transition'
-export { countOf, isStop, seatWord, SEATS } from './plex/model'
+export { countOf, isStop, seatWord, showingOf, SEATS, SHOWINGS } from './plex/model'
 
 export { default as Menu } from './menu/Menu.vue'
-export { placeMenu, stepTo } from './menu/model'
-export type { MenuItem, MenuPlacement, MenuPlacing } from './menu/model'
+export { landsOn, placeMenu, stepTo, MENU_OPENINGS } from './menu/model'
+export type { MenuItem, MenuOpening, MenuPlacement, MenuPlacing } from './menu/model'
 
 /** For arranging without drawing, or drawing without this renderer. */
 export { default as PlexView } from './plex/render/PlexView.vue'
@@ -67,6 +67,7 @@ export {
   focusPane,
   moveTabWithin,
   openTab,
+  openTabBeside,
   resizeBranch,
 } from './workspace/edit'
 export type { Naming, TabDrop } from './workspace/edit'
@@ -110,5 +111,7 @@ export type {
   PlexNode,
   PlexRelatedSeat,
   PlexSeat,
+  PlexShowing,
   Point,
+  ShowingDescriptor,
 } from './plex/model'

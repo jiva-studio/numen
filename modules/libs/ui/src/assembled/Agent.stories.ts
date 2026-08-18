@@ -6,7 +6,7 @@
  * the conversation, whether one type size holds across both.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { onScopeDispose, ref } from 'vue'
 import Agent from './Agent.vue'
 import type { Turn } from '@/thread/model'
@@ -38,12 +38,13 @@ const TEMPLATE = `
     :working="working"
     placeholder="Ask about this note"
     @submit="onSubmit"
+    @stop="onStop"
   />
 `
 
 /**
- * A live one. Sending adds the turn, the dots take the button's place, and
- * the answer arrives a few characters at a time.
+ * A live one. Sending adds the turn, the disc becomes the one that stops it,
+ * and the answer arrives a few characters at a time.
  */
 const conversation = (start: readonly Turn[]): Render => () => ({
   components: { Agent },
@@ -87,12 +88,44 @@ const conversation = (start: readonly Turn[]): Render => () => ({
       }, 16)
     }
 
+    /** Given up on: what had arrived stays, and nothing more comes. */
+    const onStop = () => {
+      const last = turns.value.at(-1)
+      if (last?.state === 'arriving') arrived(last.id, last.text, true)
+      settle()
+    }
+
     onScopeDispose(settle)
 
-    return { turns, text, working, onSubmit }
+    return { turns, text, working, onSubmit, onStop }
   },
   template: TEMPLATE,
 })
+
+/**
+ * Where the thread's mask turns opaque and where it turns clear, in the
+ * coordinates of the page. Both stops are written `calc(100% ± n)` from the
+ * foot of the band the mask is painted over.
+ */
+const fadesAt = (thread: HTMLElement): readonly number[] => {
+  const foot = thread.getBoundingClientRect().bottom
+  return [
+    ...getComputedStyle(thread).maskImage.matchAll(/calc\(100% ([+-]) ([\d.]+)px\)/g),
+  ].map(([, sign, size]) => foot + (sign === '+' ? Number(size) : -Number(size)))
+}
+
+/** The words go as the composer's top edge does, and are gone a fade later. */
+const fadesUnderTheComposer = async (canvasElement: HTMLElement) => {
+  const thread = canvasElement.querySelector('.agent__thread') as HTMLElement
+  const composer = canvasElement.querySelector('.composer') as HTMLElement
+  const fade = parseFloat(getComputedStyle(thread).getPropertyValue('--fade'))
+
+  await waitFor(async () => {
+    const [opaque, clear] = fadesAt(thread)
+    await expect(opaque).toBeCloseTo(composer.getBoundingClientRect().top, 0)
+    await expect(clear).toBeCloseTo((opaque ?? 0) + fade, 0)
+  })
+}
 
 /** Type into it and press Enter. */
 export const Playground: Story = {
@@ -118,7 +151,10 @@ export const Fresh: Story = {
   },
 }
 
-/** A long conversation, so the composer is under a thread that scrolls. */
+/**
+ * A long conversation, so the composer is under a thread that scrolls and the
+ * words run on underneath it.
+ */
 export const LongConversation: Story = {
   render: conversation(
     Array.from({ length: 60 }, (_, index) =>
@@ -127,4 +163,30 @@ export const LongConversation: Story = {
         : back(`${index}`, `Answer ${(index + 1) / 2}. ${LONG}`),
     ),
   ),
+  play: async ({ canvasElement }) => {
+    const composer = canvasElement.querySelector('.composer')!
+    const ground = getComputedStyle(composer)
+    // What it is written over shows through it.
+    await expect(ground.backgroundColor).toMatch(/^rgba\(/)
+    await expect(ground.backdropFilter).toContain('blur')
+
+    // A turn is drawn under the composer's own top edge.
+    const over = composer.getBoundingClientRect()
+    const stack = canvasElement.ownerDocument.elementsFromPoint(
+      over.left + over.width / 2,
+      over.top + 4,
+    )
+    await expect(stack.some((element) => element.closest('.thread__turn'))).toBe(true)
+
+    // And it is on its way out where it reaches that edge.
+    await fadesUnderTheComposer(canvasElement)
+
+    // The field grown taller carries the fade up with it.
+    const field = canvasElement.querySelector('textarea') as HTMLTextAreaElement
+    await userEvent.click(field)
+    await userEvent.keyboard(`one{Shift>}{Enter}{/Shift}two{Shift>}{Enter}{/Shift}three`)
+    await expect(composer.getBoundingClientRect().height).toBeGreaterThan(over.height)
+
+    await fadesUnderTheComposer(canvasElement)
+  },
 }

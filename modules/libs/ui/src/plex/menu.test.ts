@@ -42,10 +42,11 @@ describe('a right-click on a node', () => {
     rightClick(focus.element)
     await plex.vm.$nextTick()
 
-    const [asked] = plex.emitted('menu') as [string, { x: number; y: number }, Element][]
+    const [asked] = plex.emitted('menu') as [string, { x: number; y: number }, Element, string][]
     expect(asked?.[0]).toBe('focus')
     expect(asked?.[1]).toStrictEqual({ x: 320, y: 240 })
     expect(asked?.[2]).toBe(focus.element)
+    expect(asked?.[3]).toBe('pointer')
     expect(plex.emitted('activate')).toBeUndefined()
   })
 
@@ -153,8 +154,16 @@ describe('asking for a menu from the keyboard', () => {
     const focus = plex.get('[aria-label^="A node"]')
     await focus.trigger('keydown', press('ContextMenu'))
 
-    const [asked] = plex.emitted('menu') as [string, unknown, Element][]
+    const [asked] = plex.emitted('menu') as [string, unknown, Element, string][]
     expect(asked?.[2]).toBe(focus.element)
+  })
+
+  it('says the keyboard opened it, which is what a menu starts on an item for', async () => {
+    const plex = mountPlex()
+    await plex.get('[aria-label^="A node"]').trigger('keydown', press('F10', true))
+
+    const [asked] = plex.emitted('menu') as [string, unknown, unknown, string][]
+    expect(asked?.[3]).toBe('keyboard')
   })
 
   it('leaves F10 on its own, and Enter and the space bar to choosing', async () => {
@@ -166,6 +175,15 @@ describe('asking for a menu from the keyboard', () => {
 
     expect(plex.emitted('menu')).toBeUndefined()
     expect(plex.emitted('activate')).toHaveLength(2)
+  })
+
+  it('keeps Shift to itself only with F10, and not with a press', async () => {
+    const plex = mountPlex()
+    const child = plex.get(`[aria-label^="${A_CHILD}"]`)
+    await child.trigger('keydown', press('Enter', true))
+
+    expect(plex.emitted('menu')).toBeUndefined()
+    expect(plex.emitted('show')).toHaveLength(1)
   })
 
   it('is reachable, because every node is a tab stop', () => {

@@ -58,6 +58,61 @@ describe('what the strip is', () => {
   })
 })
 
+describe('asking for a new tab', () => {
+  const asking = () => mountPane({ newTab: 'New tab' })
+
+  it('is offered at the end of the strip, under the name it was given', () => {
+    const button = asking().get('[data-workspace-new]')
+
+    expect(button.element.tagName).toBe('BUTTON')
+    expect(button.attributes('aria-label')).toBe('New tab')
+    expect(button.attributes('type')).toBe('button')
+  })
+
+  it('is not offered at all where no word for it was given', () => {
+    expect(mountPane().find('[data-workspace-new]').exists()).toBe(false)
+  })
+
+  it('says so, and opens nothing itself', async () => {
+    const held = asking()
+    await held.get('[data-workspace-new]').trigger('click')
+
+    expect(held.emitted('open')).toStrictEqual([[]])
+    expect(held.emitted('choose')).toBeUndefined()
+    expect(held.emitted('show')).toStrictEqual([['chat']])
+  })
+
+  it('says nothing until it is pressed', () => {
+    expect(asking().emitted('open')).toBeUndefined()
+  })
+
+  it('sits after the tabs, beside the list of them rather than in it', () => {
+    const held = asking()
+    const whole = held.get('[data-workspace-strip]')
+    const tabs = held.get('[role="tablist"]')
+
+    expect(whole.element.lastElementChild?.hasAttribute('data-workspace-new')).toBe(true)
+    expect(tabs.findAll('[data-workspace-tab]')).toHaveLength(3)
+    expect(tabs.element.contains(held.get('[data-workspace-new]').element)).toBe(false)
+  })
+
+  it('is reached by tab rather than by the arrows that walk the strip', async () => {
+    const held = asking()
+    await strip(held)[2]?.trigger('keydown', { key: 'ArrowRight' })
+
+    expect(held.emitted('choose')).toStrictEqual([['plex']])
+    expect(named()).toBe('plex')
+    expect(held.get('[data-workspace-new]').attributes('tabindex')).toBeUndefined()
+  })
+
+  it('is left out of the walk when an arrow is pressed on it', async () => {
+    const held = asking()
+    await held.get('[data-workspace-new]').trigger('keydown', { key: 'ArrowRight' })
+
+    expect(held.emitted('choose')).toBeUndefined()
+  })
+})
+
 describe('walking the strip', () => {
   it('steps along with the arrows, and shows what it reaches', async () => {
     const held = mountPane()
