@@ -73,10 +73,14 @@ func (u Write) Execute(
 	return e.apply(ctx, v, path, func(doc *markdown.Document) error {
 		// A note rewritten whole is drawn as the stretch that changed, so what
 		// a person watching sees is the change and not the note.
-		at, insert := markdown.Differs(markdown.Normalised(doc.Body()), markdown.Normalised(body))
+		was := markdown.Normalised(doc.Body())
+		at, insert := markdown.Differs(was, markdown.Normalised(body))
 		if at.From != at.To || insert != "" {
 			ends = u.Telling.begins(ctx, domain.Editing{
-				Path: path, From: at.From, To: at.To, Text: insert,
+				Path: path,
+				From: markdown.Counted(was, at.From),
+				To:   markdown.Counted(was, at.To),
+				Text: insert,
 			})
 		}
 		doc.SetBody(body)

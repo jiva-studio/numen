@@ -215,8 +215,8 @@ message EditingResponse {
   string change = 1;
   // The note being changed.
   string path = 2;
-  // The stretch being replaced, as byte offsets into the prose a read answers
-  // with.
+  // The stretch being replaced, counted the way a client counts text: in UTF-16
+  // code units over the prose a read answers with.
   int32 from = 3;
   int32 to = 4;
   // What is going in where that stretch stands.

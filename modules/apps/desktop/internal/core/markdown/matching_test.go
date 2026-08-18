@@ -171,3 +171,26 @@ func TestAStretchNeverSplitsARune(t *testing.T) {
 		t.Errorf("the stretch begins inside a rune, at %d", at.From)
 	}
 }
+
+// A client counts text its own way, and prose that is not ASCII is where the
+// two partings show.
+func TestAnOffsetIsCountedTheWayAClientCountsText(t *testing.T) {
+	for name, c := range map[string]struct {
+		text string
+		at   int
+		want int
+	}{
+		"ascii":              {"one two", 4, 4},
+		"cyrillic":           {"сказал да", len("сказал "), 7},
+		"beyond the basics":  {"a 𝔘 b", len("a 𝔘"), 4},
+		"the end of it":      {"сказал", len("сказал"), 6},
+		"the start of it":    {"сказал", 0, 0},
+		"past the end of it": {"сказал", 999, 6},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if got := Counted(c.text, c.at); got != c.want {
+				t.Errorf("counted %d, wanted %d", got, c.want)
+			}
+		})
+	}
+}

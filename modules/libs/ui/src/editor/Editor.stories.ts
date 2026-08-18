@@ -1,14 +1,15 @@
 /**
  * What the editor looks like while it is being typed into. What it does to the
- * text is asserted in `live.test.ts` and `table.test.ts`.
+ * text is asserted in `live.test.ts`, `table.test.ts` and `change.test.ts`.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { createApp, ref } from 'vue'
 import { undo } from '@codemirror/commands'
 import { EditorSelection } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import Editor from './Editor.vue'
+import type { EditorChange } from './change'
 import WorkspacePane from '@/workspace/render/WorkspacePane.vue'
 import { pane } from '@/workspace/model'
 import { MARKED_UP, TABLE } from '@/fixtures/markdown'
@@ -338,4 +339,145 @@ export const Kept: Story = {
     await expect(said('data-answered')).toBe('answered')
     await expect(view.state.doc.toString()).toBe(MARKED_UP)
   },
+}
+
+/* A change something other than the reader is making. The editor draws it and
+   never writes it: the button is what puts the text in, and until it is
+   pressed the stretch about to be replaced is only marked. */
+const NOTE =
+  '# Entropy\n\n' +
+  'A note is an ordinary file in an ordinary folder. Not a database and not ' +
+  'an export: the files are the notes.\n'
+
+/** Where a run of the text stands, as a change addresses it. */
+const spanning = (text: string, run: string) => {
+  const from = text.indexOf(run)
+  return { from, to: from + run.length }
+}
+
+/** The text as it stands once the change has been made. */
+const applied = (text: string, change: EditorChange) =>
+  text.slice(0, change.from) + change.text + text.slice(change.to)
+
+const making =
+  (text: string, change: EditorChange): Render =>
+  () => ({
+    components: { Editor },
+    setup: () => {
+      const held = ref(text)
+      return { held, change, make: () => (held.value = applied(text, change)) }
+    },
+    template: `
+      <div class="numen flex h-screen flex-col bg-surface">
+        <button
+          class="shrink-0 border-b border-rule px-3 py-2 text-left font-sans text-small text-ink"
+          @click="make"
+        >
+          Make the change
+        </button>
+        <Editor v-model="held" :change="change" class="min-h-0 flex-1" />
+      </div>`,
+  })
+
+const MIDDLE: EditorChange = {
+  id: 'middle',
+  ...spanning(NOTE, 'an ordinary folder'),
+  text: 'a folder anyone can open',
+}
+
+/**
+ * A change partway through the text. The mark says where it is coming, and
+ * the words arrive one at a time once the text has landed.
+ */
+export const Changed: Story = {
+  render: making(NOTE, MIDDLE),
+  play: async ({ canvasElement }) => {
+    const view = viewOf(canvasElement)
+    const arriving = () => canvasElement.querySelectorAll('.cm-arriving')
+
+    await expect(canvasElement.querySelectorAll('.cm-changing').length).toBeGreaterThan(0)
+
+    await userEvent.click(within(canvasElement).getByRole('button'))
+    await settled()
+
+    await expect(view.state.doc.toString()).toBe(applied(NOTE, MIDDLE))
+    await expect(canvasElement.querySelector('.cm-changing')).toBeNull()
+    await expect(view.contentDOM.textContent).not.toContain(MIDDLE.text)
+
+    // One word arrives at a time: the same element for as long as it fades,
+    // and the next word a run of its own. An element drawn again, or one
+    // growing to hold everything shown so far, would fade a word twice.
+    await waitFor(async () => await expect(arriving().length).toBe(1))
+    const element = arriving()[0]
+    const word = element?.textContent ?? ''
+    await settled()
+    await settled()
+    await expect(arriving().length).toBe(1)
+    await expect(arriving()[0]).toBe(element)
+
+    await waitFor(async () => await expect(arriving()[0]?.textContent).not.toBe(word))
+    await expect(arriving()[0]?.textContent?.startsWith(word)).toBe(false)
+
+    await waitFor(async () => await expect(view.contentDOM.textContent).toContain(MIDDLE.text), {
+      timeout: 5000,
+    })
+  },
+}
+
+/** A change at the very first character of the text. */
+export const ChangedAtTheStart: Story = {
+  render: making(NOTE, {
+    id: 'start',
+    ...spanning(NOTE, '# Entropy'),
+    text: '# Entropy, and what it costs to keep',
+  }),
+}
+
+const ENDING = NOTE.trimEnd()
+
+/** A change running to the very last character of the text. */
+export const ChangedAtTheEnd: Story = {
+  render: making(ENDING, {
+    id: 'end',
+    ...spanning(ENDING, 'the files are the notes.'),
+    text: 'the files are the notes, and the index is a cache.',
+  }),
+}
+
+/** A change covering the whole of the text. */
+export const ChangedThroughout: Story = {
+  render: making(NOTE, {
+    id: 'throughout',
+    from: 0,
+    to: NOTE.length,
+    text: '# Entropy, rewritten\n\nEvery line of it is somebody else’s now.\n',
+  }),
+}
+
+/** A change that puts nothing in: the stretch is marked and then it is gone. */
+export const ChangedToNothing: Story = {
+  render: making(NOTE, {
+    id: 'nothing',
+    ...spanning(NOTE, ' Not a database and not an export: the files are the notes.'),
+    text: '',
+  }),
+}
+
+/** A change far longer than what it replaces. */
+export const ChangedForMore: Story = {
+  render: making(NOTE, {
+    id: 'more',
+    ...spanning(NOTE, 'a database'),
+    text:
+      'a database, an index, a cache, or anything else that can be thrown ' +
+      'away and made again from the files it was built out of',
+  }),
+}
+
+const SCRIPTS = `# ${RUSSIAN}\n\n${ARABIC}\n\n${DEVANAGARI}\n`
+
+/** A change written in a script that is not Latin, over one that runs the
+ *  other way. */
+export const ChangedInAnotherScript: Story = {
+  render: making(SCRIPTS, { id: 'script', ...spanning(SCRIPTS, ARABIC), text: DEVANAGARI }),
 }

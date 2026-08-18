@@ -22,6 +22,7 @@ export const core: Core = {
   state: () => vault.state({}),
   changes: (signal) => vault.changes({}, { signal }),
   focus: (signal) => vault.focus({}, { signal }),
+  editing: (signal) => vault.editing({}, { signal }),
   read: async (path) => answered(await vault.read({ path })),
   write: async (path, body, seen) =>
     answered(await vault.write({ path, body, ...(seen ? { seen: seenOf(seen) } : {}) })),

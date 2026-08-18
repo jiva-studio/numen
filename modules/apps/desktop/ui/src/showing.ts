@@ -9,6 +9,7 @@ import { ref } from 'vue'
 import { rateOf } from '@numen/ui'
 import type { PlexRelatedSeat } from '@numen/ui'
 import type { Neighbourhood } from './plex'
+import type { Said } from './drawing'
 
 /** Everything the window asks of the core, and nothing about how it is drawn. */
 export interface Core {
@@ -35,6 +36,8 @@ export interface Core {
     busy: boolean
   }>
   changes(signal: AbortSignal): AsyncIterable<{ paths: string[]; reload: boolean }>
+  /** A change being made to a note's prose, reported while it is being made. */
+  editing(signal: AbortSignal): AsyncIterable<Said>
   /** The notes something else asked to be put in front of the person. */
   focus(signal: AbortSignal): AsyncIterable<{ path: string }>
   /** The prose of a note, below its frontmatter, and the file it came out of. */
@@ -121,6 +124,8 @@ export function showing(
    * everything showing the vault reads again.
    */
   told: (paths: readonly string[]) => void = () => {},
+  /** What hears about a change to a note while it is being made. */
+  drawing: (said: Said) => void = () => {},
 ) {
   const neighbourhood = ref<Neighbourhood | null>(null)
   /**
@@ -351,6 +356,24 @@ export function showing(
    *
    * Taken up again the way following is, and for the same reason.
    */
+
+  /** Follows the changes being made to notes, and takes the stream up again. */
+  async function draw() {
+    while (open) {
+      try {
+        for await (const said of core.editing(listening.signal)) {
+          if (!open) return
+          // The stream opens by saying nothing, which is how an open one is
+          // told from one that never opened.
+          if (said.path) drawing(said)
+        }
+      } catch (error) {
+        if (!open) return
+        notice.value = String(error)
+      }
+      await wait(1000)
+    }
+  }
   async function watch() {
     while (open) {
       try {
@@ -378,6 +401,7 @@ export function showing(
           await go(note.path)
           void follow()
           void watch()
+          void draw()
           void keepUp()
           return
         }
@@ -387,6 +411,7 @@ export function showing(
           indexing.value = false
           void follow()
           void watch()
+          void draw()
           void keepUp()
           return
         }

@@ -194,3 +194,22 @@ func closes(text string, at int) bool {
 func spacing(b byte) bool {
 	return b == ' ' || b == '\t' || b == '\n' || b == '\r'
 }
+
+// Counted is `at`, a byte offset into text, as a client counts text: in UTF-16
+// code units.
+//
+// A note is read by something that counts its own way, and a stretch named in
+// bytes lands somewhere else in prose that is not ASCII.
+func Counted(text string, at int) int {
+	if at > len(text) {
+		at = len(text)
+	}
+	units := 0
+	for _, r := range text[:at] {
+		units++
+		if r > 0xffff {
+			units++
+		}
+	}
+	return units
+}

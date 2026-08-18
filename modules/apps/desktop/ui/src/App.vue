@@ -34,6 +34,7 @@ import { core } from './vault'
 import { showing } from './showing'
 import { footOf, type Phase } from './foot'
 import { editing } from './editing'
+import { drawn } from './drawn'
 import { creating, CREATABLE } from './creating'
 import { ITEMS, chose as carry } from './menu'
 import { leaving } from './leaving'
@@ -42,9 +43,10 @@ import { core as agent } from './agent'
 import { conversation } from './conversation'
 import { AGENT, PLEX, TABS, opening } from './workspace'
 
-const notes = editing(core)
+const drawings = drawn()
+const notes = editing(core, undefined, drawings.arrived)
 const making = creating(core)
-const window = showing(core, undefined, undefined, notes.changed)
+const window = showing(core, undefined, undefined, notes.changed, drawings.told)
 /** What the window answers when the application says it is going. */
 const going = leaving(core)
 going.holds(notes.flush)
@@ -218,6 +220,7 @@ const shown = (id: string) => editors.get(id)?.measure()
 const shut = (id: string, hold: () => void) => {
   if (!notes.all().includes(id)) return
   hold()
+  drawings.shut(id)
   void notes.shut(id).then((gone) => {
     if (!gone) return
     titles.delete(id)
@@ -231,6 +234,7 @@ onMounted(() => {
 })
 onUnmounted(() => {
   window.close()
+  drawings.close()
   going.close()
   close()
 })
@@ -295,6 +299,7 @@ onUnmounted(() => {
           <Editor
             :ref="(editor: unknown) => drew(id, editor)"
             :model-value="notes.shown(id).body"
+            :change="drawings.shown(id)"
             class="note__text"
             @update:model-value="(body: string) => notes.typed(id, body)"
             @save="notes.save(id)"

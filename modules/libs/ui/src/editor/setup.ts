@@ -17,6 +17,7 @@ import {
   placeholder,
   rectangularSelection,
 } from '@codemirror/view'
+import { changing, marked, pacing, type EditorChange } from './change'
 import { highlighting } from './highlight'
 import { LANGUAGES } from './languages'
 import { following, live, wholeLines } from './live'
@@ -27,15 +28,20 @@ import { theme } from './theme'
 /** What can be changed without the editor being built again. */
 export const drawing = new Compartment()
 export const editing = new Compartment()
+export const showing = new Compartment()
 
 export interface Settings {
   /** Marks are drawn as what they mean, away from the caret. */
   readonly live?: boolean
   readonly readonly?: boolean
   readonly placeholder?: string
+  /** A change being made to the text by something other than the reader. */
+  readonly change?: EditorChange | null
 }
 
 export const preview = (on: boolean): Extension => (on ? [wholeLines, live, following] : [])
+
+export const shown = (change: EditorChange | null): Extension => changing.of(change)
 
 export const editable = (on: boolean): Extension => [
   EditorView.editable.of(on),
@@ -66,6 +72,9 @@ export const setup = (settings: Settings = {}): Extension => [
   syntaxHighlighting(highlighting),
   theme,
   placeholder(settings.placeholder ?? ''),
+  marked,
+  pacing(),
   drawing.of(preview(settings.live ?? true)),
   editing.of(editable(!settings.readonly)),
+  showing.of(shown(settings.change ?? null)),
 ]

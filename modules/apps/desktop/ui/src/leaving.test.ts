@@ -72,6 +72,8 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
     changes: async function* () {},
     // eslint-disable-next-line require-yield
     focus: async function* () {},
+    // eslint-disable-next-line require-yield
+    editing: async function* () {},
     quitting,
     flushed: async (token: string, owed: Owed = 'written') => {
       answered.push({ token, owed })

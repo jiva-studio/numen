@@ -12,8 +12,8 @@ type Editing struct {
 	Change string
 	// Path is the note, relative to the vault folder.
 	Path string
-	// From and To are the stretch being replaced, as byte offsets into the prose
-	// a read hands out.
+	// From and To are the stretch being replaced, counted the way a client counts
+	// text: in UTF-16 code units over the prose a read hands out.
 	From int
 	To   int
 	// Text is what is going in where that stretch stands.

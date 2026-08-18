@@ -859,8 +859,8 @@ type EditingResponse struct {
 	Change string `protobuf:"bytes,1,opt,name=change,proto3" json:"change,omitempty"`
 	// The note being changed.
 	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
-	// The stretch being replaced, as byte offsets into the prose a read answers
-	// with.
+	// The stretch being replaced, counted the way a client counts text: in UTF-16
+	// code units over the prose a read answers with.
 	From int32 `protobuf:"varint,3,opt,name=from,proto3" json:"from,omitempty"`
 	To   int32 `protobuf:"varint,4,opt,name=to,proto3" json:"to,omitempty"`
 	// What is going in where that stretch stands.

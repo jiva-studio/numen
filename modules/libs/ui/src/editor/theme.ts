@@ -134,6 +134,13 @@ export const theme = EditorView.theme({
     maxWidth: '100%',
     borderRadius: 'var(--numen-radius)',
   },
+  /* A stretch something other than the reader is about to change. The words
+     that arrive in it fade up on the product's own keyframes. */
+  '.cm-changing': {
+    backgroundColor: 'var(--numen-highlight)',
+    borderRadius: 'var(--numen-radius)',
+  },
+
   '.cm-picture-lost': {
     height: '2em',
     border: '1px dashed var(--numen-node-border)',

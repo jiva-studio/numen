@@ -363,8 +363,8 @@ export type EditingResponse = Message<"numen.v1.EditingResponse"> & {
   path: string;
 
   /**
-   * The stretch being replaced, as byte offsets into the prose a read answers
-   * with.
+   * The stretch being replaced, counted the way a client counts text: in UTF-16
+   * code units over the prose a read answers with.
    *
    * @generated from field: int32 from = 3;
    */

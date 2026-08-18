@@ -110,8 +110,13 @@ func (u Replace) Execute(
 				ErrTooLarge, len(written), MaxBytes)
 		}
 
+		// A client counts text its own way, and a stretch named in bytes lands
+		// somewhere else in prose that is not ASCII.
 		ends = u.Telling.begins(ctx, domain.Editing{
-			Path: path, From: span.From, To: span.To, Text: becomes,
+			Path: path,
+			From: markdown.Counted(body, span.From),
+			To:   markdown.Counted(body, span.To),
+			Text: becomes,
 		})
 
 		done.Span = markdown.Span{From: span.From, To: span.From + len(becomes)}

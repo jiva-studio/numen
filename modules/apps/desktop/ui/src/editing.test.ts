@@ -38,6 +38,8 @@ function fake(over: Partial<Faked> = {}) {
     // eslint-disable-next-line require-yield
     focus: async function* () {},
     // eslint-disable-next-line require-yield
+    editing: async function* () {},
+    // eslint-disable-next-line require-yield
     quitting: async function* () {},
     flushed: async () => {},
     read: async (path) =>

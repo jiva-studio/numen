@@ -200,3 +200,24 @@ func TestWritingANoteWholeTellsTheWindowOnlyWhatChanged(t *testing.T) {
 		t.Errorf("the stretch is %d bytes, wanted the ten that changed", began.To-began.From)
 	}
 }
+
+// A note that is not ASCII is where counting in bytes and counting the way a
+// client counts part company, and a stretch named in bytes is drawn over the
+// wrong words.
+func TestTheStretchIsCountedTheWayAClientCountsText(t *testing.T) {
+	s, looking := watched(t, map[string]string{
+		"Aggressor.md": "Он сказал да.\n",
+	})
+
+	call[struct {
+		Path string `json:"path"`
+	}](t, s, "note_edit", map[string]any{
+		"path": "Aggressor.md", "stood": "сказал", "becomes": "промолчал",
+	})
+
+	began := looking.drawn[0]
+	// "Он " is three characters and four bytes.
+	if began.From != 3 || began.To != 9 {
+		t.Errorf("the stretch is %d..%d, wanted 3..9", began.From, began.To)
+	}
+}

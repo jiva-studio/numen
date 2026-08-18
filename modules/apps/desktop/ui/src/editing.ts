@@ -53,7 +53,12 @@ const overtaken: Overtaken = {
   take: "take the file's",
 }
 
-export function editing(core: Notes, limits = waiting) {
+export function editing(
+  core: Notes,
+  limits = waiting,
+  /** What hears that a note on screen was replaced by what its file holds. */
+  replaced: (path: string) => void = () => {},
+) {
   const tabs = ref(new Map<string, Tab>())
   /** The interval each tab is waiting on, so arming again replaces it. */
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
@@ -165,6 +170,7 @@ export function editing(core: Notes, limits = waiting) {
       case 'replace':
         bodies.value.set(path, effect.body)
         bodies.value = new Map(bodies.value)
+        replaced(path)
         return
       case 'hold':
         return

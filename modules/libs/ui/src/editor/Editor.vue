@@ -10,7 +10,8 @@
 import { onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
 import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { drawing, editable, editing, preview, setup } from './setup'
+import type { EditorChange } from './change'
+import { drawing, editable, editing, preview, setup, showing, shown } from './setup'
 import { opening, resolving, saving } from './outside'
 import { replacing } from './replacing'
 
@@ -20,10 +21,12 @@ const props = withDefaults(
     live?: boolean
     readonly?: boolean
     placeholder?: string
+    /** A change being made to this text by something other than the reader. */
+    change?: EditorChange | null
     /** What an address in the text becomes before the window loads it. */
     resolve?: (address: string) => string
   }>(),
-  { live: true, readonly: false, placeholder: 'Write' },
+  { live: true, readonly: false, placeholder: 'Write', change: null },
 )
 
 const emit = defineEmits<{
@@ -45,7 +48,12 @@ onMounted(() => {
     state: EditorState.create({
       doc: text.value,
       extensions: [
-        setup({ live: props.live, readonly: props.readonly, placeholder: props.placeholder }),
+        setup({
+          live: props.live,
+          readonly: props.readonly,
+          placeholder: props.placeholder,
+          change: props.change,
+        }),
         resolving.of((address) => props.resolve?.(address) ?? address),
         opening.of((address) => emit('open', address)),
         saving.of(() => emit('save')),
@@ -78,6 +86,11 @@ watch(
 watch(
   () => props.readonly,
   (off) => view?.dispatch({ effects: editing.reconfigure(editable(!off)) }),
+)
+
+watch(
+  () => props.change,
+  (change) => view?.dispatch({ effects: showing.reconfigure(shown(change)) }),
 )
 
 defineExpose({
