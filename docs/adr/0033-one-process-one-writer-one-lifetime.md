@@ -45,6 +45,14 @@ is one filesystem call over one name.
 (ADR-0032) and waits for the person to answer each one, with no bound. The quit is
 called off from that list, and the window stays as it was.
 
+A tab put off leaves the list and stays overtaken, so the next close stops on it
+again. What ends a question is one of the two answers and nothing else.
+
+**A page that goes with a question standing is still owed.** Its work is held by a
+window this process cannot reach into, and a page that comes back takes it over and
+raises the question again. A page that does not come back is silence, and silence
+costs the bound below.
+
 The page is asked first, then the agents, then the scan and the follower, then the
 database. The order is what each part needs from the next: the page holds text
 nothing else has, an agent writes through the core, the scan and the follower write

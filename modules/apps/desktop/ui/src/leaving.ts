@@ -94,6 +94,9 @@ export function leaving(core: Going, wait: (ms: number) => Promise<unknown> = sl
   async function answer(token: string) {
     under = token
     told = null
+    // Every asking is put to the person whole. What was put off last time is
+    // drawn again, because this is a fresh reason to answer it.
+    put.clear()
     const owed = Promise.allSettled([...owing].map((one) => one()))
     writing = owed
     void owed.then(() => {

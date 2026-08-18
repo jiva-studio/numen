@@ -378,7 +378,7 @@ describe('a core that cannot be reached', () => {
 })
 
 describe('a save that was refused', () => {
-  it('is said in words that outlive the tab it was refused on', async () => {
+  it('says why in the tab it was refused on, for as long as that tab is open', async () => {
     const { core, files } = fake({
       write: async () => ({ body: '', refusal: 'bodyRefused' }),
     })
@@ -388,12 +388,66 @@ describe('a save that was refused', () => {
     await settle()
 
     notes.typed('Heat.md', '---\nnot a body\n---\n')
-    await notes.shut('Heat.md')
+    await vi.waitFor(() => expect(notes.shown('Heat.md').state).toBe('stuck'))
 
-    // The tab is gone, and what could not be written is still on screen.
-    expect(notes.all()).toEqual([])
-    expect(notes.said.value).toBe(
+    expect(notes.saying('Heat.md')).toBe(
       'a note begins below its frontmatter, and this text begins with one',
     )
+  })
+
+  it('says the vault was out of reach when the core did not answer', async () => {
+    const { core, files } = fake({
+      write: async () => {
+        throw new Error('no transport')
+      },
+    })
+    files.set('Heat.md', 'one')
+    const notes = editing(core, quick)
+    notes.open('Heat.md')
+    await settle()
+
+    notes.typed('Heat.md', 'one two')
+    await vi.waitFor(() => expect(notes.shown('Heat.md').state).toBe('stuck'))
+
+    expect(notes.saying('Heat.md')).toBe(
+      'the vault could not be reached, so this note was not written',
+    )
+  })
+})
+
+describe('closing a note that could not be written', () => {
+  it('holds it once and says why, and lets it go when it is asked again', async () => {
+    const { core, files } = fake({
+      write: async () => {
+        throw new Error('no transport')
+      },
+    })
+    files.set('Heat.md', 'one')
+    const notes = editing(core, quick)
+    notes.open('Heat.md')
+    await settle()
+
+    notes.typed('Heat.md', 'one two')
+    await vi.waitFor(() => expect(notes.shown('Heat.md').state).toBe('stuck'))
+
+    await notes.shut('Heat.md')
+    expect(notes.all()).toEqual(['Heat.md'])
+    expect(notes.saying('Heat.md')).toBe(
+      'the vault could not be reached, so this note was not written',
+    )
+
+    await notes.shut('Heat.md')
+    expect(notes.all()).toEqual([])
+  })
+
+  it('lets a note it could never read go the first time', async () => {
+    const { core } = fake({ read: async () => ({ body: '', refusal: 'notText' }) })
+    const notes = editing(core, quick)
+    notes.open('photo.md')
+    await settle()
+
+    await notes.shut('photo.md')
+
+    expect(notes.all()).toEqual([])
   })
 })

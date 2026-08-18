@@ -55,11 +55,15 @@ const written = (link: NewLink) => ({
  * unchanged, so the parts stay here and the string goes everywhere else.
  */
 const stamp = (at?: { path: string; size: bigint; mtime: bigint }): string | undefined =>
-  at && `${at.path} ${at.size} ${at.mtime}`
+  at && `${at.size} ${at.mtime} ${at.path}`
 
+/** The two numbers first: a path holds spaces, and everything after them is it. */
 const seenOf = (seen: { prose: string; at: string }) => {
-  const [path = '', size = '0', mtime = '0'] = seen.at.split(' ')
-  return { prose: seen.prose, at: { path, size: BigInt(size), mtime: BigInt(mtime) } }
+  const [size = '0', mtime = '0', ...rest] = seen.at.split(' ')
+  return {
+    prose: seen.prose,
+    at: { path: rest.join(' '), size: BigInt(size), mtime: BigInt(mtime) },
+  }
 }
 
 const answered = (from: {

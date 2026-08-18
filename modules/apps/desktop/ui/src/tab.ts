@@ -22,9 +22,14 @@ export type Refusal =
   | 'notText'
   /** The frontmatter is broken, and the note can be neither read nor written. */
   | 'unreadable'
+  /** The vault could not be reached. What is on screen is still here. */
+  | 'unreachable'
 
-/** The refusals that are about the body, which is what a keystroke can change. */
-const aboutTheBody: readonly Refusal[] = ['tooLarge', 'bodyRefused']
+/**
+ * The refusals a keystroke is worth trying again after: the two a body causes,
+ * and a vault that was out of reach when it was last asked.
+ */
+const mendable: readonly Refusal[] = ['tooLarge', 'bodyRefused', 'unreachable']
 
 /** Which file prose came out of, as the core hands it back. */
 export type At = string
@@ -257,7 +262,7 @@ const armFor = (since: number, at: number, limits: Waiting): number =>
  * file, which a keystroke does not mend.
  */
 const mends = (tab: Tab): boolean =>
-  tab.written !== null && tab.refused !== null && aboutTheBody.includes(tab.refused)
+  tab.written !== null && tab.refused !== null && mendable.includes(tab.refused)
 
 const typed = (tab: Tab, body: string, at: number, limits: Waiting): Next => {
   const state = stateOf(tab)
@@ -341,20 +346,24 @@ const taking = (tab: Tab): Next => {
 
 /**
  * A tab with something unwritten is held until what is owed answers, and the
- * caller closes it then. A close keeps what an overtaken tab shows. A tab that
- * cannot be written says so, and the buffer goes with it.
+ * caller closes it then. An overtaken tab is held with its question standing:
+ * what the file holds and what the person typed are both still there, and
+ * choosing between them is theirs. A tab that cannot be written says so, and
+ * the buffer goes with it.
  */
 const closing = (tab: Tab): Next => {
   const state = stateOf(tab)
+  // A refusal a keystroke or another try can mend holds the tab: the text is
+  // still writable and the person has not been told it is about to go.
   if (tab.refused && state === 'stuck') {
+    if (tab.written !== null && dirty(tab) && mendable.includes(tab.refused)) {
+      return { tab, effects: [{ kind: 'say', refusal: tab.refused }, { kind: 'hold' }] }
+    }
     return { tab, effects: [{ kind: 'say', refusal: tab.refused }, { kind: 'close' }] }
   }
   // A tab that has not read its note owes nothing.
   if (state === 'loading') return { tab, effects: [{ kind: 'close' }] }
-  if (state === 'overtaken') {
-    const going = keeping(tab)
-    return { tab: going.tab, effects: [...going.effects, { kind: 'hold' }] }
-  }
+  if (state === 'overtaken') return { tab, effects: [{ kind: 'hold' }] }
   if (state === 'unsaved') {
     const going = begins(tab, seenOf(tab))
     return { tab: going.tab, effects: [...going.effects, { kind: 'hold' }] }

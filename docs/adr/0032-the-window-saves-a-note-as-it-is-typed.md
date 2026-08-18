@@ -55,6 +55,12 @@ The save reads the file it is replacing and compares the prose there with the pr
 the tab read. Equal prose is not a change, and the save lands. The frontmatter is
 not compared; it is carried across (below).
 
+**A file still standing where this caller's own last write left it is not a change
+either.** A write answers with the file it made, and a caller that presents that
+file is presenting its own work. The prose there can differ from what the caller
+sent — a save gives a note the trailing break it is written with, and the line
+endings the file already had — and none of that is an edit anybody made.
+
 Prose the tab has not read stops it. Nothing is written, the tab carries the mark
 `overtaken` (ADR-0024), and the unasked save stops for that tab: what the person
 typed stays in the buffer, and every keystroke after that leaves it there.
@@ -68,8 +74,8 @@ The person answers with one of two, and the unasked save runs again afterwards:
 before the window quits (ADR-0033).
 
 ADR-0027 refuses a write that would overwrite an unseen edit. A caller that read a
-note presents the fingerprint it was given; this caller holds prose, and the prose
-it read is what it presents.
+note presents the fingerprint it was given; this caller presents the prose it read
+and the file that prose came out of.
 
 ### A save keeps the frontmatter that is on disk when it lands
 
@@ -83,9 +89,9 @@ ADR-0027 writes an identifier when the application changes what is in a note, an
 ADR-0009 counts the person opening a file and changing it among those. A save from a
 tab carries what the person wrote in their own note, and it stamps nothing.
 
-A note acquires an identifier from the operations that act on it as a note: a
-create, a move, a link. Reading one and typing in it is not among them, so a note
-written elsewhere keeps the frontmatter it came with.
+A note acquires an identifier from the operations that change what is in it: a
+create, a link. Reading one and typing in it is not among them, and neither is a
+move, so a note written elsewhere keeps the frontmatter it came with.
 
 ### A file that is not there is created
 

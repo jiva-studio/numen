@@ -37,6 +37,7 @@ const words: Record<Refusal, string> = {
   tooLarge: 'this note is longer than the editor holds',
   bodyRefused: 'a note begins below its frontmatter, and this text begins with one',
   unreadable: 'the frontmatter of this note cannot be read',
+  unreachable: 'the vault could not be reached, so this note was not written',
 }
 
 /** What a person is told and answers with when their tab was overtaken. */
@@ -64,18 +65,29 @@ export function editing(core: Notes, limits = waiting) {
     carry(path, opening(path))
   }
 
-  /** A note the window is no longer showing. A close writes what is owed. */
-  const shut = (path: string): Promise<void> =>
+  /**
+   * A note the window is no longer showing.
+   *
+   * A tab that cannot be written is held once and says why. Asked a second time
+   * it goes: the person has been told, and insisting is theirs to do.
+   */
+  const shut = (path: string): Promise<boolean> =>
     new Promise((done) => {
-      if (!tabs.value.has(path)) return done()
+      if (!tabs.value.has(path)) return done(true)
+      if (told.has(path)) {
+        forget(path)
+        return done(true)
+      }
       closing.set(path, done)
       turn(path, { kind: 'closing' })
     })
 
+  /** The tabs that were held once, and go the next time they are asked. */
+  const told = new Set<string>()
+
   /** Who is waiting for a tab to finish going. */
-  const closing = new Map<string, () => void>()
+  const closing = new Map<string, (gone: boolean) => void>()
   /** The last refusal a person was told about, which outlives its tab. */
-  const said = ref('')
 
   /** The person typed. */
   const typed = (path: string, body: string): void => {
@@ -131,6 +143,12 @@ export function editing(core: Notes, limits = waiting) {
     tabs.value.set(path, next.tab)
     tabs.value = new Map(tabs.value)
     for (const effect of next.effects) act(path, effect)
+
+    // Held with nothing on its way to the file: the tab stays, and whoever
+    // asked for it to close hears that it did not.
+    const held = next.effects.some((effect) => effect.kind === 'hold')
+    const writing = next.effects.some((effect) => effect.kind === 'write')
+    if (held && !writing) closing.get(path)?.(false)
   }
 
   function act(path: string, effect: Effect): void {
@@ -151,9 +169,9 @@ export function editing(core: Notes, limits = waiting) {
       case 'hold':
         return
       case 'say':
-        // Said where it outlives the tab: the words come from the model and the
-        // tab is about to go with them.
-        said.value = words[effect.refusal]
+        // The tab has said why for as long as it has been open. Held once here,
+        // so a person who meant it can ask again.
+        told.add(path)
         return
       case 'close':
         forget(path)
@@ -177,7 +195,10 @@ export function editing(core: Notes, limits = waiting) {
     try {
       answered = await core.read(path)
     } catch {
-      answered = { body: '', refusal: 'unreadable' }
+      // The core did not answer. What is on screen is still here, and asking
+      // again is what finds out whether the vault came back.
+      turn(path, { kind: 'read', generation, answer: { kind: 'refused', refusal: 'unreachable' } })
+      return
     }
     turn(path, {
       kind: 'read',
@@ -196,7 +217,8 @@ export function editing(core: Notes, limits = waiting) {
     try {
       answered = await core.write(path, body, seen)
     } catch {
-      answered = { body: '', refusal: 'unreadable' }
+      turn(path, { kind: 'written', answer: { kind: 'refused', refusal: 'unreachable' } })
+      return
     }
     turn(path, {
       kind: 'written',
@@ -219,8 +241,9 @@ export function editing(core: Notes, limits = waiting) {
     tabs.value = new Map(tabs.value)
     bodies.value.delete(path)
     bodies.value = new Map(bodies.value)
-    closing.get(path)?.()
+    closing.get(path)?.(true)
     closing.delete(path)
+    told.delete(path)
   }
 
   /** Every tab writes what it owes, for a window that is going. */
@@ -240,7 +263,6 @@ export function editing(core: Notes, limits = waiting) {
     all,
     saying: sayingOf,
     overtaken: overtakenOf,
-    said,
     flush,
     tabs: tabs as Ref<Map<string, Tab>>,
   }

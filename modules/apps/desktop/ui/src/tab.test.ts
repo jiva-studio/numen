@@ -694,12 +694,12 @@ describe('a close is asked for', () => {
     expect(next.effects).toEqual([{ kind: 'close' }])
   })
 
-  it('keeps what an overtaken tab shows, and holds it', () => {
+  it('holds an overtaken tab, writing nothing and leaving the question standing', () => {
     const next = tabAfter(overtaken(), { kind: 'closing' })
 
-    expect(kinds(next.effects)).toEqual(['write', 'hold'])
-    expect(next.effects[0]).toEqual({ kind: 'write', path: 'Note.md', body: 'mine', seen: null })
-    expect(stateOf(next.tab)).toBe('saving')
+    expect(kinds(next.effects)).toEqual(['hold'])
+    expect(stateOf(next.tab)).toBe('overtaken')
+    expect(next.tab.shown).toBe('mine')
   })
 
   it('says why a stuck tab cannot be written before it goes', () => {

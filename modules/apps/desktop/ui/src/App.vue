@@ -74,8 +74,6 @@ watch(
   },
   { deep: true },
 )
-/** A refusal outlives the tab it was refused on, so it is drawn beside them. */
-const refused = notes.said
 const { neighbourhood, here, indexing, failure, notice, trouble, unwatched, go } = window
 /** What could not be made or joined, in words a person reads. */
 const unmade = computed(() => making.said.value)
@@ -220,7 +218,8 @@ const shown = (id: string) => editors.get(id)?.measure()
 const shut = (id: string, hold: () => void) => {
   if (!notes.all().includes(id)) return
   hold()
-  void notes.shut(id).then(() => {
+  void notes.shut(id).then((gone) => {
+    if (!gone) return
     titles.delete(id)
     layout.value = closeTab(layout.value, id)
   })
@@ -243,7 +242,6 @@ onUnmounted(() => {
     <p v-if="trouble" class="warning">the vault could not be read — {{ trouble }}</p>
     <p v-if="notice" class="warning">{{ notice }}</p>
 
-    <p v-if="refused" role="alert" class="warning">{{ refused }}</p>
     <p v-if="unmade" role="alert" class="warning">{{ unmade }}</p>
 
     <p v-if="failure" class="failure">{{ failure }}</p>

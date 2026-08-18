@@ -78,7 +78,8 @@ because the user opened and changed it, made a link in it, or made a card in it.
 
 > **Partly superseded by [ADR-0032](0032-the-window-saves-a-note-as-it-is-typed.md).**
 > A person opening a note and typing in it gives it no identifier. Making a link or
-> a card in one still does, and so do a create and a move.
+> a card in one still does, and so does a create. A move renames a file and changes
+> nothing in it.
 
 **Cards in a note without an identifier are not indexed.** The line is about
 which data survives by being re-derived and which survives only by being
