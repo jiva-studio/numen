@@ -26,8 +26,25 @@ export type Step =
   | { readonly kind: 'stopped'; readonly failed: string }
 
 export interface Agent {
-  /** Ask about the note in focus, and read what happens as it happens. */
-  readonly ask: (asked: string, focus: string, signal: AbortSignal) => AsyncIterable<Step>
+  /**
+   * Ask about the note in focus, and read what happens as it happens.
+   *
+   * The conversation is which thread of talk the question belongs to. Questions
+   * carrying one name are answered as one conversation, and a name stands for
+   * one conversation and is never given to a second.
+   */
+  readonly ask: (
+    asked: string,
+    focus: string,
+    conversation: string,
+    signal: AbortSignal,
+  ) => AsyncIterable<Step>
+
+  /**
+   * Say a conversation is over. What the agent kept of it is let go of, and
+   * whatever is still being answered in it stops.
+   */
+  readonly finish: (conversation: string) => Promise<void>
 }
 
 const agent = createClient(
@@ -36,8 +53,8 @@ const agent = createClient(
 )
 
 export const core: Agent = {
-  async *ask(asked, focus, signal) {
-    for await (const step of agent.ask({ asked, focus }, { signal })) {
+  async *ask(asked, focus, conversation, signal) {
+    for await (const step of agent.ask({ asked, focus, conversation }, { signal })) {
       switch (step.step.case) {
         case 'said':
           yield { kind: 'said', text: step.step.value }
@@ -61,5 +78,9 @@ export const core: Agent = {
           break
       }
     }
+  },
+
+  async finish(conversation) {
+    await agent.finish({ conversation })
   },
 }

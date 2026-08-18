@@ -7,7 +7,7 @@
  */
 import { ref } from 'vue'
 import type { PlexRelatedSeat } from '@numen/ui'
-import type { Core, Refused } from './showing'
+import type { Core, NewLink, Refused } from './showing'
 
 /**
  * Seats a person may make a note in. A sibling is another child of a shared
@@ -54,24 +54,17 @@ export function creating(core: Core) {
   const said = ref('')
 
   /**
-   * Make a note in a seat of another one, filed in the folder that one is in.
+   * A note under the first name the vault has free.
    *
    * The name is asked for again for as long as the vault answers that it is
    * taken: whether a name is free is the filesystem's to answer at the moment
    * the file is made, so it is asked one name at a time.
    */
-  async function make(from: string, seat: PlexRelatedSeat): Promise<Made | null> {
-    const opposite = facing[seat]
-    if (!opposite) return null
-
+  async function named(folder: string, links: readonly NewLink[]): Promise<Made | null> {
     for (let taken = 1; taken <= names; taken++) {
       const title = nameAt(taken)
       try {
-        const made = await core.create({
-          title,
-          folder: folderOf(from),
-          links: [{ to: from, seat: opposite }],
-        })
+        const made = await core.create({ title, folder, links })
         if (made.refusal === 'occupied') continue
         if (made.refusal !== null) {
           said.value = words[made.refusal]
@@ -87,6 +80,16 @@ export function creating(core: Core) {
     said.value = words.occupied
     return null
   }
+
+  /** Make a note in a seat of another one, filed in the folder that one is in. */
+  async function make(from: string, seat: PlexRelatedSeat): Promise<Made | null> {
+    const opposite = facing[seat]
+    if (!opposite) return null
+    return named(folderOf(from), [{ to: from, seat: opposite }])
+  }
+
+  /** A note standing on its own, filed at the top of the vault. */
+  const start = (): Promise<Made | null> => named('', [])
 
   /**
    * Join two notes that are both there. The link is written in the one the
@@ -107,7 +110,7 @@ export function creating(core: Core) {
     }
   }
 
-  return { make, join, said }
+  return { make, start, join, said }
 }
 
 /** The name the note asked for after that many taken ones is filed under. */

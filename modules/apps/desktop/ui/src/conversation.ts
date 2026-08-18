@@ -2,11 +2,14 @@
  * What the panel shows: what was said, what the agent is doing, and whether an
  * answer is still on its way.
  *
- * The turns are what the thread draws, in its vocabulary and not the vault's.
- * An answer grows as its pieces arrive.
+ * The turns are what one conversation draws, in its vocabulary and not the
+ * vault's. An answer grows as its pieces arrive.
  *
  * Work is one line, saying what the agent has in hand now. It is put up the
  * moment a task is taken and taken down when the answer begins.
+ *
+ * One of these is one thread of talk. Every question it sends carries the name
+ * of the conversation, and the agent answers them all as one.
  */
 import { ref, type Ref } from 'vue'
 import { charsWord, type Turn } from '@numen/ui'
@@ -27,8 +30,13 @@ export interface Conversation {
   /** An answer is being written; the composer shows it. */
   readonly working: Ref<boolean>
   readonly ask: (asked: string, focus: string) => Promise<void>
-  /** Give up on whatever is in flight. */
-  readonly close: () => void
+  /** The answer on its way is let go of, and the conversation keeps what arrived. */
+  readonly stop: () => void
+  /**
+   * The conversation is over: the answer on its way is let go of, and the agent
+   * is told so it can let go of what it kept of the talk.
+   */
+  readonly finish: () => void
 }
 
 /**
@@ -46,12 +54,18 @@ const onNextFrame: Paint = (draw) => {
 }
 
 /**
- * A tool as the thread says it. A tool served with a title of its own arrives
+ * A tool as the panel says it. A tool served with a title of its own arrives
  * with one; the rest arrive named the way a program is named.
  */
 const spoken = (tool: string) => tool.replaceAll('_', ' ')
 
-export function conversation(agent: Agent, words: Wording, paint: Paint = onNextFrame): Conversation {
+export function conversation(
+  agent: Agent,
+  words: Wording,
+  /** What this thread of talk is called, for as long as it is open. */
+  conversation: string,
+  paint: Paint = onNextFrame,
+): Conversation {
   const turns = ref<Turn[]>([])
   const working = ref(false)
 
@@ -115,7 +129,7 @@ export function conversation(agent: Agent, words: Wording, paint: Paint = onNext
     }
 
     try {
-      for await (const step of agent.ask(asked, focus, flight.signal)) {
+      for await (const step of agent.ask(asked, focus, conversation, flight.signal)) {
         if (flight.signal.aborted) break
 
         switch (step.kind) {
@@ -163,7 +177,7 @@ export function conversation(agent: Agent, words: Wording, paint: Paint = onNext
       settleAnswer()
 
       // Given up on is not gone wrong: what was asked for stops, and the
-      // thread keeps whatever had arrived by then.
+      // conversation keeps whatever had arrived by then.
       if (!flight.signal.aborted) {
         if (failed) put({ id: `${next++}`, voice: 'answered', text: failed, state: 'failed' })
         else if (!said) put({ id: `${next++}`, voice: 'answered', text: words.nothing })
@@ -182,11 +196,25 @@ export function conversation(agent: Agent, words: Wording, paint: Paint = onNext
     }
   }
 
-  const close = () => {
+  const stop = () => {
     inFlight?.abort()
     inFlight = null
     working.value = false
   }
 
-  return { turns, working, ask, close }
+  /**
+   * The conversation is over, and the agent is told under the name it heard it
+   * by. The person closed a tab, so an agent that could not be told is nothing
+   * they are shown and nothing that reaches the close.
+   */
+  const finish = () => {
+    stop()
+    try {
+      void agent.finish(conversation).catch(() => {})
+    } catch {
+      // The tab closes whether the agent heard or not.
+    }
+  }
+
+  return { turns, working, ask, stop, finish }
 }
