@@ -1,8 +1,9 @@
 # ADR-0027: The application writes to the vault
 
-- **Status:** Accepted
+- **Status:** Accepted, except where noted below
 - **Date:** 2026-08-16
 - **Applies to:** the vault format — every application that writes one
+- **Partly superseded by:** ADR-0032 — the identifier, for the window's save alone
 - **Related:** ADR-0001, ADR-0009, ADR-0011, ADR-0012, ADR-0022, ADR-0023
 
 ## Context
@@ -64,6 +65,11 @@ Three rules, all the same rule seen from different sides.
 contents, and never backfilled** (ADR-0009). A note written in vim has no
 identifier and is a note in full; it acquires one when the application itself
 changes what is in it.
+
+> **Partly superseded by
+> [ADR-0032](0032-the-window-saves-a-note-as-it-is-typed.md).** A save carrying what
+> a person typed writes no identifier: what it puts in the note is theirs. Every
+> other write from this application stamps as above.
 
 **Moving and removing do not change a note.** They are renames: the bytes are
 identical on the other side, so a note that had no identifier still has none

@@ -39,6 +39,14 @@ export const isReachable = (node: PlacedNode): boolean =>
   node.seat !== 'focus' && node.opacity >= 1
 
 /**
+ * Whether the keyboard stops on a node.
+ *
+ * Wider than being choosable: the focus is stopped on although it cannot be
+ * chosen, because a menu is asked for from wherever the keyboard is.
+ */
+export const isStop = (node: PlacedNode): boolean => node.opacity >= 1
+
+/**
  * What a node is to a gesture, beyond a box with a title.
  *
  * One value rather than a flag each, because a node is only ever one of these:

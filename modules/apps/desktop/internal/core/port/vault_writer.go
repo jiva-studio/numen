@@ -31,7 +31,11 @@ type VaultWriter interface {
 	// is on disk. A file that no longer matches it is left alone and
 	// ErrChanged is returned: the caller read a note, thought about it, and
 	// something else wrote in the meantime.
-	Write(ctx context.Context, path string, content []byte, fingerprint domain.FileRef) error
+	//
+	// What comes back is the fingerprint of the file this write produced,
+	// which is what the caller presents at its next write. It is the zero
+	// value when nothing was written.
+	Write(ctx context.Context, path string, content []byte, fingerprint domain.FileRef) (domain.FileRef, error)
 
 	// Create puts content where there is nothing, and refuses where there is
 	// something. Looking first and writing after is not the same promise: two
@@ -57,4 +61,12 @@ type VaultWriter interface {
 // decided while it runs.
 type VaultWriters interface {
 	Open(v domain.Vault) (VaultWriter, error)
+
+	// Hold takes one vault's write lock and answers with what gives it back.
+	// One write to a vault happens at a time, and a read-modify-write holds
+	// the lock from its read to its rename.
+	//
+	// A context that ends while the lock is waited for is answered with its
+	// error, and nothing is held.
+	Hold(ctx context.Context, v domain.Vault) (release func(), err error)
 }

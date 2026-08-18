@@ -7,6 +7,7 @@
  */
 import { ref } from 'vue'
 import { rateOf } from '@numen/ui'
+import type { PlexRelatedSeat } from '@numen/ui'
 import type { Neighbourhood } from './plex'
 
 /** Everything the window asks of the core, and nothing about how it is drawn. */
@@ -36,12 +37,90 @@ export interface Core {
   changes(signal: AbortSignal): AsyncIterable<{ paths: string[]; reload: boolean }>
   /** The notes something else asked to be put in front of the person. */
   focus(signal: AbortSignal): AsyncIterable<{ path: string }>
+  /** The prose of a note, below its frontmatter, and the file it came out of. */
+  read(path: string): Promise<Answered & { at?: string }>
+  /**
+   * Prose into a note, keeping the frontmatter the file has when it lands.
+   *
+   * Seen is what a read gave this caller. Prose on disk that the caller never
+   * saw comes back as changed, and nothing is written. Nothing seen writes
+   * over whatever is there.
+   */
+  write(
+    path: string,
+    body: string,
+    seen: { prose: string; at: string } | null,
+  ): Promise<Answered & { at?: string; changed?: boolean }>
+  /** A note made, named after the title it is given and joined as it is written. */
+  create(note: NewNote): Promise<Made>
+  /**
+   * A relationship written into one note. The note at the other end is left
+   * alone: a link is one end's account of a relationship.
+   */
+  join(path: string, link: NewLink): Promise<Refused | null>
+  /**
+   * The window going, for as long as the client listens. The stream opens with
+   * the token this client answers under.
+   */
+  quitting(signal: AbortSignal): AsyncIterable<{ token: string; flush: boolean }>
+  /** Everything this client owed has been written. */
+  flushed(token: string, owed?: 'written' | 'asking'): Promise<void>
+}
+
+/**
+ * What a read or a write came back with. A refusal carries no body, and the
+ * words for one belong to whatever shows it.
+ */
+export interface Answered {
+  body: string
+  refusal: Refused | null
+}
+
+export type Refused =
+  | 'missing'
+  | 'notANote'
+  | 'notText'
+  | 'tooLarge'
+  | 'bodyRefused'
+  | 'unreadable'
+  | 'occupied'
+
+/** A note to make: what it is called, where it goes, and what it arrives joined to. */
+export interface NewNote {
+  title: string
+  /** Where in the vault it goes, relative to the root. Empty is the root. */
+  folder: string
+  links: readonly NewLink[]
+}
+
+/**
+ * One relationship as the note it is written in declares it: the note at the
+ * other end, by the path it is filed under, and where that note sits seen from
+ * this one.
+ */
+export interface NewLink {
+  to: string
+  seat: PlexRelatedSeat
+  /** What the person calls this relationship, when they call it anything. */
+  label?: string
+}
+
+/** What making a note came back with. */
+export interface Made {
+  /** Where the note is filed. Empty when nothing was made. */
+  path: string
+  refusal: Refused | null
 }
 
 export function showing(
   core: Core,
   wait: (ms: number) => Promise<unknown> = sleep,
   now: () => number = () => Date.now(),
+  /**
+   * What else hears about a change. A change carrying no paths names nothing:
+   * everything showing the vault reads again.
+   */
+  told: (paths: readonly string[]) => void = () => {},
 ) {
   const neighbourhood = ref<Neighbourhood | null>(null)
   /**
@@ -241,6 +320,7 @@ export function showing(
         for await (const change of core.changes(listening.signal)) {
           if (!open) return
           if (change.paths.length === 0 && !change.reload) continue
+          told(change.reload ? [] : change.paths)
           if (here.value) {
             await go(here.value)
           } else {

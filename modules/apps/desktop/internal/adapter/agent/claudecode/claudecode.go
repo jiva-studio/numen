@@ -62,6 +62,59 @@ type Agent struct {
 		sync.Mutex
 		session string
 	}
+
+	// taken is the work this agent started and has not been told is over. The
+	// child is in a process group of its own, so nothing else ends it.
+	taken struct {
+		sync.Mutex
+		running map[*work]bool
+		shut    bool
+	}
+}
+
+// hold keeps the work so that closing can reach it.
+func (a *Agent) hold(w *work) bool {
+	a.taken.Lock()
+	defer a.taken.Unlock()
+
+	if a.taken.shut {
+		return false
+	}
+	if a.taken.running == nil {
+		a.taken.running = map[*work]bool{}
+	}
+	a.taken.running[w] = true
+	return true
+}
+
+func (a *Agent) letGo(w *work) {
+	a.taken.Lock()
+	defer a.taken.Unlock()
+	delete(a.taken.running, w)
+}
+
+// Close stops every agent this one started and waits for them.
+//
+// A task outlives the window otherwise: the child is started in its own process
+// group, so it is left running by whatever ends this process, and it goes on
+// writing to the vault with nobody watching.
+func (a *Agent) Close() error {
+	a.taken.Lock()
+	a.taken.shut = true
+	running := make([]*work, 0, len(a.taken.running))
+	for w := range a.taken.running {
+		running = append(running, w)
+	}
+	a.taken.running = nil
+	a.taken.Unlock()
+
+	var failed error
+	for _, w := range running {
+		if err := w.Stop(); err != nil && failed == nil {
+			failed = err
+		}
+	}
+	return failed
 }
 
 // Carrying is the conversation the next question is asked in.
@@ -110,15 +163,22 @@ func (a *Agent) Take(ctx context.Context, task agent.Task) (agent.Work, error) {
 	var said strings.Builder
 	cmd.Stderr = &said
 
+	// Held before it is started, so a close cannot pass between the two and
+	// leave a child nothing reaches.
+	w := &work{cmd: cmd, stop: stop, steps: make(chan agent.Step, 16)}
+	if !a.hold(w) {
+		stop()
+		return nil, errors.New("this agent is closing")
+	}
 	if err := cmd.Start(); err != nil {
+		a.letGo(w)
 		stop()
 		return nil, fmt.Errorf("start %s: %w", name, err)
 	}
-
-	w := &work{cmd: cmd, stop: stop, steps: make(chan agent.Step, 16)}
 	w.reading.Add(1)
 	go func() {
 		defer w.reading.Done()
+		defer a.letGo(w)
 		defer close(w.steps)
 
 		failed := read(running, out, w.steps, a.Words, a.carry)

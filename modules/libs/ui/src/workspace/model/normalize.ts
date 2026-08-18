@@ -1,11 +1,11 @@
 /**
  * The one tree an arrangement of the screen has.
  *
- * A group holding nothing goes, and so does a branch holding one child.
+ * A pane holding nothing goes, and so does a branch holding one child.
  */
 import { branch, orthogonal, type Workspace, type WorkspaceNode } from './node'
 import { fit } from './shares'
-import { groupsOf, isBranch, isGroup, withChildren } from './tree'
+import { isBranch, isPane, panesOf, withChildren } from './tree'
 
 /** What a node comes to, and the shares those pieces take of its length. */
 interface Slice {
@@ -16,10 +16,10 @@ interface Slice {
 /**
  * A branch left with one child hands that child's own children up to its
  * parent: two levels turn a half, so they already divide their length the way
- * the parent does. A single child that is a group goes up as it is.
+ * the parent does. A single child that is a pane goes up as it is.
  */
 function reduce(node: WorkspaceNode): Slice {
-  if (isGroup(node)) {
+  if (isPane(node)) {
     return node.tabs.length > 0 ? { nodes: [node], sizes: [1] } : { nodes: [], sizes: [] }
   }
 
@@ -49,10 +49,10 @@ function reduce(node: WorkspaceNode): Slice {
   return { nodes: [withChildren(node, nodes, sizes)], sizes: [1] }
 }
 
-/** A group with nothing in it, kept so that a workspace always has a root. */
+/** A pane with nothing in it, kept so that a workspace always has a root. */
 const emptied = (root: WorkspaceNode): WorkspaceNode => {
-  const first = groupsOf(root)[0]
-  return { kind: 'group', id: first?.id ?? root.id, tabs: [], active: null }
+  const first = panesOf(root)[0]
+  return { kind: 'pane', id: first?.id ?? root.id, tabs: [], active: null }
 }
 
 export function normalize(workspace: Workspace): Workspace {

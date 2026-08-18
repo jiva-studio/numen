@@ -16,6 +16,9 @@ To change an accepted decision, write a new ADR that supersedes it and mark the
 old one `Superseded by ADR-NNNN`. Do not edit the old file into agreement with
 the new one — the point of the record is that it shows what was believed and why.
 
+**A decision is in the record once it is on the default branch.** Until then it
+is its pull request's draft, and a draft is edited in place.
+
 ## Foundations
 
 Read these first; everything else is derived from them.
@@ -41,6 +44,8 @@ Read these first; everything else is derived from them.
 - [ADR-0030 — The index-size budget, and where an exact scan ends](0030-index-size-and-approximate-search.md)
 - [ADR-0031 — The agent this application starts, and what it may reach](0031-the-agent-this-application-starts.md)
 - [ADR-0027 — The application writes to the vault](0027-the-application-writes-to-the-vault.md)
+- [ADR-0032 — The window saves a note as it is typed, and stops at an unseen edit](0032-the-window-saves-a-note-as-it-is-typed.md)
+- [ADR-0033 — One process, one writer, one lifetime](0033-one-process-one-writer-one-lifetime.md)
 
 ## The note file
 
@@ -68,6 +73,7 @@ Read these first; everything else is derived from them.
 
 - [ADR-0006 — Sources: extracted text into the cache, unreproducible output into the vault](0006-sources.md)
 - [ADR-0007 — Structural chunking, and how a passage is found](0007-structural-chunking-and-hybrid-search.md)
+- [ADR-0034 — A chunk is identified by the text it holds](0034-a-chunk-is-identified-by-its-text.md)
 
 Not yet written.
 

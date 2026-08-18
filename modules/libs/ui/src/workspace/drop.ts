@@ -1,7 +1,7 @@
 /**
  * What letting go of a dragged tab comes to, as geometry alone.
  *
- * Pure: a point and a box in, a side out. Which group that box belongs to and
+ * Pure: a point and a box in, a side out. Which pane that box belongs to and
  * what the side then does to the tree are settled elsewhere.
  */
 import type { Point, Rect, Side } from './model'

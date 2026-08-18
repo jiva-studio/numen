@@ -40,7 +40,7 @@ func (u Linking) Add(ctx context.Context, v domain.Vault, from string, add domai
 			return err
 		}
 	}
-	return u.editing().apply(ctx, v, from, func(doc *markdown.Document) error {
+	_, err := u.editing().apply(ctx, v, from, func(doc *markdown.Document) error {
 		for _, link := range links {
 			if err := doc.AddLink(link); err != nil {
 				return err
@@ -48,6 +48,7 @@ func (u Linking) Add(ctx context.Context, v domain.Vault, from string, add domai
 		}
 		return nil
 	})
+	return err
 }
 
 // Update changes what an existing link says about itself — its role, its type,
@@ -56,7 +57,7 @@ func (u Linking) Update(ctx context.Context, v domain.Vault, from string, to dom
 	if change.Role != "" && !domain.KnownRole(change.Role) {
 		return fmt.Errorf("%q is not a role a link can carry", change.Role)
 	}
-	return u.editing().apply(ctx, v, from, func(doc *markdown.Document) error {
+	_, err := u.editing().apply(ctx, v, from, func(doc *markdown.Document) error {
 		changed, err := doc.UpdateLink(to, change)
 		if err != nil {
 			return err
@@ -66,13 +67,14 @@ func (u Linking) Update(ctx context.Context, v domain.Vault, from string, to dom
 		}
 		return nil
 	})
+	return err
 }
 
 // Remove takes a relationship out. The note at the other end is untouched: what
 // is removed is one end's account of the relationship, which is all a link ever
 // was.
 func (u Linking) Remove(ctx context.Context, v domain.Vault, from string, to domain.Address, role domain.LinkRole) error {
-	return u.editing().apply(ctx, v, from, func(doc *markdown.Document) error {
+	_, err := u.editing().apply(ctx, v, from, func(doc *markdown.Document) error {
 		removed, err := doc.RemoveLink(to, role)
 		if err != nil {
 			return err
@@ -82,6 +84,7 @@ func (u Linking) Remove(ctx context.Context, v domain.Vault, from string, to dom
 		}
 		return nil
 	})
+	return err
 }
 
 // Writable is what a link must carry before anything will write it.

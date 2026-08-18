@@ -50,7 +50,7 @@ describe('overlayFor', () => {
     expect(overlayFor('bottom', BOX)).toStrictEqual({ x: 0, y: 200, width: 800, height: 200 })
   })
 
-  it('shows the whole group for the middle', () => {
+  it('shows the whole pane for the middle', () => {
     expect(overlayFor('center', BOX)).toStrictEqual(BOX)
   })
 })

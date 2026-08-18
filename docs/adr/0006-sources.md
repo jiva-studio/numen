@@ -1,11 +1,13 @@
 # ADR-0006: Sources: extracted text into the cache, unreproducible output into the vault
 
-- **Status:** Accepted
+- **Status:** Accepted, except where noted below
 - **Date:** 2026-08-17
 - **Applies to:** `modules/apps/desktop`
 - **Partly supersedes:** ADR-0010 — what triggers extraction, transcription and
   chunking
-- **Related:** ADR-0000, ADR-0002, ADR-0007, ADR-0016, ADR-0024, ADR-0029
+- **Partly superseded by:** ADR-0034 — `start` and `length` as a chunk's key
+- **Related:** ADR-0000, ADR-0002, ADR-0007, ADR-0016, ADR-0024, ADR-0029,
+  ADR-0034
 
 ## Context
 
@@ -88,6 +90,10 @@ of source, and what re-reading costs is in docs/performance.md.
 extracted text of the source. It is always present, and it is what a passage is
 read back through. Everything the application does with a chunk goes through it.
 
+> **Partly superseded by [ADR-0034](0034-a-chunk-is-identified-by-its-text.md).**
+> `start` and `length` are where a chunk is, and they are updated as text moves.
+> What identifies a chunk is the hash of its text.
+
 **The human's location is `location`**, a projection in the sense ADR-0016 gives
 parsed frontmatter: nullable, and made only of keys that belong to the vocabulary
 of the source's own format — the spine document and navigation entry of an EPUB,
@@ -157,6 +163,11 @@ These words are defined here and entered in ADR-0024.
   cuts are chunks; the large one is the chunk with no parent.
 - **location** — where a chunk sits, in the terms its own format uses. Nullable.
   `start` and `length` are not a location; they are the key.
+
+  > **Partly superseded by [ADR-0034](0034-a-chunk-is-identified-by-its-text.md).**
+  > The key is the hash of a chunk's text. `start` and `length` are where the chunk
+  > is, and are read and written as its text moves.
+
 - **passage** — what a search returns: the text around a hit, and where it came
   from.
 

@@ -107,12 +107,17 @@ func (d *Document) Bytes() []byte {
 // Body is the prose below the frontmatter.
 func (d *Document) Body() string { return string(d.body) }
 
-// SetBody replaces the prose and leaves the frontmatter alone.
+// SetBody replaces the prose and leaves the frontmatter alone. The prose is
+// written with the file's own line ending, and ends with one.
 func (d *Document) SetBody(body string) {
-	if body != "" && !strings.HasSuffix(body, "\n") {
-		body += d.eol
+	text := Normalised(body)
+	if text != "" && !strings.HasSuffix(text, "\n") {
+		text += "\n"
 	}
-	d.body = []byte(body)
+	if d.eol == "\r\n" {
+		text = strings.ReplaceAll(text, "\n", "\r\n")
+	}
+	d.body = []byte(text)
 }
 
 // Identifier is what the note carries, and whether it carries one.
@@ -287,15 +292,6 @@ func lineOffsets(block []byte) []int {
 		offsets = append(offsets, len(block))
 	}
 	return offsets
-}
-
-// lineEnding is what this file separates its lines with. A file that arrives
-// with CRLF keeps CRLF, so anything written into it has to match.
-func lineEnding(raw []byte) string {
-	if i := bytes.IndexByte(raw, '\n'); i > 0 && raw[i-1] == '\r' {
-		return "\r\n"
-	}
-	return "\n"
 }
 
 // linkEntry is one record of the `links:` block, in the order the format

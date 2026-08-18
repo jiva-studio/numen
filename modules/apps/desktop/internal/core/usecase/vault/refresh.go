@@ -25,8 +25,11 @@ type Refresh struct {
 // RefreshResult is what happened, in the terms a caller acts on: the notes that
 // are now different from what was shown, and the ones that could not be read.
 type RefreshResult struct {
-	Indexed    []string
-	Removed    []string
+	Indexed []string
+	Removed []string
+	// LeftAlone is the paths holding a file the vault does not hold as a note.
+	// Nothing was there to look at again, and nothing is missing either.
+	LeftAlone  []string
 	Unreadable []string
 	// Assets are the paths of sources that are not notes. They changed, and
 	// bringing them up to date is its own step.
@@ -61,6 +64,14 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 			return res, err
 		}
 		ref, err := reader.Stat(ctx, path)
+		// A file the vault leaves alone is at this path — an attachment, an
+		// export, a note somebody renamed out of the vault's sight. It is not
+		// a note that vanished: nothing was lost, so nobody is told to look
+		// again, and the index holds nothing at a path that is not a note.
+		if errors.Is(err, port.ErrNotANote) {
+			res.LeftAlone = append(res.LeftAlone, path)
+			continue
+		}
 		if errors.Is(err, fs.ErrNotExist) {
 			res.Removed = append(res.Removed, path)
 			continue
@@ -101,7 +112,10 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 	if err := group.flush(ctx); err != nil {
 		return res, fmt.Errorf("index: %w", err)
 	}
-	if err := u.Notes.Remove(ctx, v.ID, res.Removed); err != nil {
+	// Both leave the index, and they leave it for different reasons: one path
+	// has nothing at it, the other has something that is not a note.
+	gone := append(append([]string(nil), res.Removed...), res.LeftAlone...)
+	if err := u.Notes.Remove(ctx, v.ID, gone); err != nil {
 		return res, fmt.Errorf("remove: %w", err)
 	}
 	return res, nil

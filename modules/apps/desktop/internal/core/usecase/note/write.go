@@ -3,6 +3,7 @@ package note
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -10,6 +11,24 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/markdown"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
+
+// ErrTooLarge is what a body over MaxBytes gets. Nothing is written. The bound
+// is measured against the body being written.
+var ErrTooLarge = errors.New("this is more text than a note is written with")
+
+// ErrBodyRefused is a body that opens with the frontmatter delimiter. It is a
+// whole note handed back as prose — a caller that read a file, changed it, and
+// returned all of it. Writing it would put a second frontmatter block inside
+// the first one's note, and the block that then reads as the note's own is the
+// wrong one.
+var ErrBodyRefused = errors.New(
+	"a body is the prose below the frontmatter, and this one begins with a frontmatter block; " +
+		"send what note_read gave you, or use the link tools to change the frontmatter")
+
+// ErrUnreadable is a note whose frontmatter is not YAML. A write discovers it
+// on the way past and leaves the file alone: repairing the block means guessing
+// at what the person wrote.
+var ErrUnreadable = markdown.ErrUnreadable
 
 // Write replaces the prose of a note and leaves its frontmatter alone.
 //
@@ -30,20 +49,84 @@ type Write struct {
 // that has changed since it was read is left alone and port.ErrChanged comes
 // back: someone editing their own note outranks a caller that read it, thought
 // about it, and arrived late.
-func (u Write) Execute(ctx context.Context, v domain.Vault, path, body string, fingerprint domain.FileRef) error {
-	// A body that opens with the delimiter is a whole note being handed back as
-	// prose — a caller that read a file, changed it, and returned all of it.
-	// Writing it would put a second frontmatter block inside the first one's
-	// note, and the block that then reads as the note's own is the wrong one.
+//
+// What comes back is the fingerprint of the file this write produced, which is
+// what the caller presents at its next write.
+func (u Write) Execute(
+	ctx context.Context, v domain.Vault, path, body string, fingerprint domain.FileRef,
+) (domain.FileRef, error) {
 	opening := strings.TrimPrefix(body, "\ufeff")
 	if strings.HasPrefix(opening, "---\n") || strings.HasPrefix(opening, "---\r\n") {
-		return errors.New("a body is the prose below the frontmatter, and this one begins with a frontmatter block; " +
-			"send what note_read gave you, or use the link tools to change the frontmatter")
+		return domain.FileRef{}, ErrBodyRefused
 	}
 
 	e := editing{
 		readers: u.Readers, writers: u.Writers, index: u.Index, now: u.Now,
 		fingerprint: fingerprint,
+	}
+	return e.apply(ctx, v, path, func(doc *markdown.Document) error {
+		doc.SetBody(body)
+		return nil
+	})
+}
+
+// Seen is what a caller last saw of the note it is saving.
+//
+// Prose answers first: text that is still what the caller was given is the text
+// it read, whatever the file's size and time say. A synchroniser, a checkout
+// and a touch all move those over text that did not change, and comparing them
+// alone is what asks a person about a file nobody edited.
+//
+// At answers for text that did move, and is what makes a save that follows a
+// save land: the note is at the fingerprint the last write produced, so it is
+// the note this caller put there.
+type Seen struct {
+	// Prose is what a read gave this caller, with every line break as one \n.
+	Prose string
+	// At is the file that read came out of.
+	At domain.FileRef
+}
+
+// stale reports whether the note in front of the writer holds prose this caller
+// has not read.
+func (s *Seen) stale(on domain.FileRef, prose string) bool {
+	if s == nil {
+		return false
+	}
+	return prose != s.Prose && !on.Unchanged(s.At)
+}
+
+// Save puts body in the note at path, and makes the note where there is none.
+//
+// This is the person writing their own note in their own window. The body lands
+// on the frontmatter the file holds at the moment the write goes in, and a note
+// carrying no identifier keeps none. A note made here is made with no
+// frontmatter at all.
+//
+// Seen is what the caller last saw of the note. Under the write lock the file
+// is read and held against it: a note the caller has seen is written over, and
+// a note holding prose it has not is left alone with port.ErrChanged. Nil is a
+// caller that compares nothing, and its body lands.
+//
+// What comes back is the fingerprint of the file the save produced, which is
+// what the caller presents at its next save.
+func (u Write) Save(
+	ctx context.Context, v domain.Vault, path, body string, seen *Seen,
+) (domain.FileRef, error) {
+	if len(body) > MaxBytes {
+		return domain.FileRef{}, fmt.Errorf(
+			"%w: %d bytes, and %d is the most", ErrTooLarge, len(body), MaxBytes)
+	}
+	// A body opening with the delimiter is read back as a frontmatter block, and
+	// then the prose it was is no longer the note's body.
+	if opening := strings.TrimPrefix(body, "\ufeff"); strings.HasPrefix(opening, "---\n") ||
+		strings.HasPrefix(opening, "---\r\n") {
+		return domain.FileRef{}, ErrBodyRefused
+	}
+	e := editing{
+		readers: u.Readers, writers: u.Writers, index: u.Index,
+		overwrite: true,
+		seen:      seen,
 	}
 	return e.apply(ctx, v, path, func(doc *markdown.Document) error {
 		doc.SetBody(body)

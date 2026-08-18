@@ -1,5 +1,5 @@
 /** What is true of every workspace an edit produces. */
-import { groupsOf, isBranch, type Workspace, type WorkspaceNode } from '../model'
+import { isBranch, panesOf, type Workspace, type WorkspaceNode } from '../model'
 
 /** Anything that does not hold about a workspace, said in words. */
 export function broken(workspace: Workspace): readonly string[] {
@@ -28,26 +28,26 @@ export function broken(workspace: Workspace): readonly string[] {
 
   walk(workspace.root)
 
-  const groups = groupsOf(workspace.root)
-  const bare = groups.filter((each) => each.tabs.length === 0)
-  if (bare.length > 0 && groups.length > 1) {
-    faults.push(`${bare.length} group(s) hold nothing while others do`)
+  const panes = panesOf(workspace.root)
+  const bare = panes.filter((each) => each.tabs.length === 0)
+  if (bare.length > 0 && panes.length > 1) {
+    faults.push(`${bare.length} pane(s) hold nothing while others do`)
   }
 
-  for (const each of groups) {
+  for (const each of panes) {
     if (each.active !== null && !each.tabs.includes(each.active)) {
-      faults.push(`group ${each.id} shows ${each.active}, which it does not hold`)
+      faults.push(`pane ${each.id} shows ${each.active}, which it does not hold`)
     }
     if (each.active === null && each.tabs.length > 0) {
-      faults.push(`group ${each.id} holds tabs and shows none`)
+      faults.push(`pane ${each.id} holds tabs and shows none`)
     }
   }
 
-  if (!groups.some((each) => each.id === workspace.focus)) {
-    faults.push(`the focus is on ${workspace.focus}, which is not a group`)
+  if (!panes.some((each) => each.id === workspace.focus)) {
+    faults.push(`the focus is on ${workspace.focus}, which is not a pane`)
   }
 
-  const tabs = groups.flatMap((each) => each.tabs)
+  const tabs = panes.flatMap((each) => each.tabs)
   if (new Set(tabs).size !== tabs.length) faults.push('a tab is open in two places')
 
   return faults

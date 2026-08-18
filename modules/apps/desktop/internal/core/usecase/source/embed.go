@@ -200,7 +200,7 @@ func (e *extracted) of(ctx context.Context, path string) (string, bool, error) {
 	e.path, e.text, e.held = path, "", false
 
 	ref, err := e.reader.Stat(ctx, path)
-	if errors.Is(err, fs.ErrNotExist) {
+	if port.NoNote(err) {
 		return "", false, nil
 	}
 	if err != nil {

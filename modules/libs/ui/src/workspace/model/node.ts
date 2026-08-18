@@ -7,21 +7,26 @@ export type NodeId = string
 
 export type Orientation = 'horizontal' | 'vertical'
 
-/** Where a dragged tab lands on a group. */
+/** Where a dragged tab lands on a pane. */
 export type Side = 'left' | 'right' | 'top' | 'bottom' | 'center'
 
-/** What a tab is called, for a strip to show. */
-export interface TabLabel {
+/** What a tab is called, and what it carries besides, for a strip to show. */
+export interface Tab {
   readonly id: TabId
   readonly title: string
+  /**
+   * A word for what the tab is holding: unsaved work, or why it is stuck. The
+   * strip draws it beside the title and says it aloud.
+   */
+  readonly mark?: string
 }
 
 /** A stack of tabs with one of them showing. */
-export interface Group {
-  readonly kind: 'group'
+export interface Pane {
+  readonly kind: 'pane'
   readonly id: NodeId
   readonly tabs: readonly TabId[]
-  /** Null while the group holds nothing. */
+  /** Null while the pane holds nothing. */
   readonly active: TabId | null
 }
 
@@ -38,7 +43,7 @@ export interface Branch {
   readonly sizes: readonly number[]
 }
 
-export type WorkspaceNode = Branch | Group
+export type WorkspaceNode = Branch | Pane
 
 /**
  * A tree of splits with a stack of tabs at every leaf.
@@ -51,7 +56,7 @@ export type WorkspaceNode = Branch | Group
 export interface Workspace {
   readonly root: WorkspaceNode
   readonly axis: Orientation
-  /** The group a tab opens into. */
+  /** The pane a tab opens into. */
   readonly focus: NodeId
 }
 
@@ -71,8 +76,8 @@ export const orientationOf = (side: Side): Orientation | null => {
 /** Whether a side puts what lands on it ahead of what it landed on. */
 export const leads = (side: Side): boolean => side === 'left' || side === 'top'
 
-export const group = (id: NodeId, tabs: readonly TabId[], active?: TabId): Group => ({
-  kind: 'group',
+export const pane = (id: NodeId, tabs: readonly TabId[], active?: TabId): Pane => ({
+  kind: 'pane',
   id,
   tabs,
   active: active ?? tabs[0] ?? null,

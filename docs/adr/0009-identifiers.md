@@ -1,9 +1,11 @@
 # ADR-0009: Identifiers for notes and blocks
 
-- **Status:** Accepted
+- **Status:** Accepted, except where noted below
 - **Date:** 2026-08-15
 - **Applies to:** the vault format — every application that reads or writes one
-- **Related:** ADR-0001, ADR-0003, ADR-0011, ADR-0012
+- **Partly superseded by:** ADR-0032 — a note a person opens and types in acquires
+  no identifier
+- **Related:** ADR-0001, ADR-0003, ADR-0011, ADR-0012, ADR-0027, ADR-0032
 
 ## Context
 
@@ -73,6 +75,11 @@ in full**: text, headings, search, links by name. It simply cannot be a stable
 *target*: nothing can point at it with `note://` and nothing can be attached to
 it. The identifier is written the moment the application itself edits that file,
 because the user opened and changed it, made a link in it, or made a card in it.
+
+> **Partly superseded by [ADR-0032](0032-the-window-saves-a-note-as-it-is-typed.md).**
+> A person opening a note and typing in it gives it no identifier. Making a link or
+> a card in one still does, and so does a create. A move renames a file and changes
+> nothing in it.
 
 **Cards in a note without an identifier are not indexed.** The line is about
 which data survives by being re-derived and which survives only by being

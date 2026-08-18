@@ -59,9 +59,11 @@ describe('the node in focus', () => {
     expect(node.emitted('activate')).toBeUndefined()
   })
 
-  it('is not a tab stop, but is still announced', () => {
+  it('is stopped at by tab, and is announced', () => {
+    // A menu is asked for from wherever the keyboard is, and the note being
+    // read is the likeliest one to ask about.
     const node = mountNode({ seat: 'focus' })
-    expect(node.attributes('tabindex')).toBe('-1')
+    expect(node.attributes('tabindex')).toBe('0')
     expect(node.attributes('aria-hidden')).toBeUndefined()
     expect(node.attributes('role')).toBe('img')
   })
@@ -182,6 +184,14 @@ describe('a node that is not there yet', () => {
 
   it('says the seat it would take, because it has nothing else to say', () => {
     expect(mountGhost().get('.plex__title-text').text()).toBe('parent')
+  })
+
+  it('asks for no menu, and lets the webview keep its own', () => {
+    const ghost = mountGhost()
+    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true })
+    ghost.element.dispatchEvent(event)
+    expect(ghost.emitted('menu')).toBeUndefined()
+    expect(event.defaultPrevented).toBe(false)
   })
 })
 

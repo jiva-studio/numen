@@ -8,7 +8,7 @@ const SCREEN = { x: 0, y: 0, width: 1000, height: 600 }
 describe('a row divides the width', () => {
   const boxes = arrangeWorkspace(sideBySide(), SCREEN)
 
-  it('gives each group its share', () => {
+  it('gives each pane its share', () => {
     expect(boxes.get('main')).toStrictEqual({ x: 0, y: 0, width: 720, height: 600 })
     expect(boxes.get('aside')).toStrictEqual({ x: 720, y: 0, width: 280, height: 600 })
   })
@@ -63,7 +63,7 @@ describe('a gap is taken out before the shares are counted', () => {
   })
 })
 
-describe('a workspace holding one group', () => {
+describe('a workspace holding one pane', () => {
   it('gives it everything', () => {
     const boxes = arrangeWorkspace(workspaceOf(stack('main', 'one')), SCREEN)
     expect(boxes.get('main')).toStrictEqual(SCREEN)

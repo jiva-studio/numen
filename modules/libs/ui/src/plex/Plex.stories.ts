@@ -16,7 +16,7 @@ import { neighbourhoodOf, walkStart } from './fixtures/walk'
 import { around, build, type Named } from './fixtures/build'
 import { nameNow } from './fixtures/names'
 import { ring } from './fixtures/ring'
-import type { PlexEdge, PlexNeighbourhood, PlexNode, PlexRelatedSeat } from './model'
+import type { PlexEdge, PlexNeighbourhood, PlexNode, PlexRelatedSeat, Point } from './model'
 import type { Environment } from './transition'
 
 interface Knobs {
@@ -27,6 +27,8 @@ interface Knobs {
   onActivate: (id: string) => void
   onCreate: (from: string, seat: PlexRelatedSeat) => void
   onLink: (from: string, to: string, seat: PlexRelatedSeat) => void
+  onMenu: (id: string, at: Point, from: SVGGElement) => void
+  onDismiss: () => void
 
   focusWidth: number
   focusHeight: number
@@ -182,6 +184,8 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
         @activate="chose($event); args.onActivate($event)"
         @create="(from, seat) => { create(from, seat); args.onCreate(from, seat) }"
         @link="(from, to, seat) => { link(from, to, seat); args.onLink(from, to, seat) }"
+        @menu="args.onMenu"
+        @dismiss="args.onDismiss"
       />
     </div>
   `,
@@ -285,6 +289,8 @@ const meta = {
     onActivate: { table: { disable: true } },
     onCreate: { table: { disable: true } },
     onLink: { table: { disable: true } },
+    onMenu: { table: { disable: true } },
+    onDismiss: { table: { disable: true } },
   },
 
   args: {
@@ -294,6 +300,8 @@ const meta = {
     onActivate: fn(),
     onCreate: fn(),
     onLink: fn(),
+    onMenu: fn(),
+    onDismiss: fn(),
     naming: nameNow,
 
     focusWidth: 176,
@@ -405,6 +413,52 @@ export const MakingOne: Story = {
   },
 }
 
+/**
+ * Asking a node for a menu.
+ *
+ * The plex says which node was asked about, where, and from what. What the
+ * menu holds and what choosing an item does never reach this far.
+ *
+ * Only a browser can answer any of it: whether a `contextmenu` lands on an SVG
+ * group at all, whether refusing it takes the webview's own menu away, and
+ * whether the right button over the handle reaches the node under it instead
+ * of reaching out from it.
+ */
+export const AskingForAMenu: Story = {
+  args: invented.args,
+  render: invented.render,
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    const focus = canvas.getByLabelText(/, focus$/)
+
+    // Read after the node has had it: a listener above sees what the node did.
+    let refused: boolean | null = null
+    const watch = (event: Event) => {
+      refused = event.defaultPrevented
+    }
+    canvasElement.addEventListener('contextmenu', watch)
+    await userEvent.pointer({ keys: '[MouseRight]', target: focus })
+    canvasElement.removeEventListener('contextmenu', watch)
+
+    // The focus is the note being read, and the likeliest one to ask about.
+    await expect(args.onMenu).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(Object),
+      focus,
+    )
+    await expect(refused).toBe(true)
+
+    // The handle sits on the trailing edge, which is where a person aims. The
+    // right button over it reaches the node, and makes nothing.
+    await userEvent.hover(focus)
+    const handle = canvasElement.querySelector('.plex__handle')!
+    await userEvent.pointer({ keys: '[MouseRight]', target: handle })
+    await expect(args.onCreate).not.toHaveBeenCalled()
+    await expect(canvasElement.querySelector('.plex__thread')).toBeNull()
+    await expect(args.onMenu).toHaveBeenCalledTimes(2)
+  },
+}
+
 /** Two parents, one a parent of the other: the only edge inside a row. */
 export const SeveralParents: Story = {
   args: { neighbourhood: neighbourhoods.diamond },
@@ -441,11 +495,18 @@ export const Walk: Story = {
     const middle = canvasElement.getBoundingClientRect()
 
     // The keyboard, in a real browser: whether tab actually stops on an SVG
-    // group, and that the focus — where the reader already is — is not a stop.
+    // group. The focus is a stop too, although it cannot be chosen — a menu is
+    // asked for from wherever the keyboard is.
     await expect(canvas.getByLabelText('Hexagonal architecture, focus')).toHaveAttribute(
       'tabindex',
-      '-1',
+      '0',
     )
+    await userEvent.tab()
+    await expect(canvas.getByLabelText('Hexagonal architecture, focus')).toHaveFocus()
+
+    // Past the handle the node under the keyboard now offers, onto the seat
+    // above it.
+    await userEvent.tab()
     await userEvent.tab()
     await expect(canvas.getByLabelText('Architecture, parent')).toHaveFocus()
     await userEvent.keyboard('{Enter}')

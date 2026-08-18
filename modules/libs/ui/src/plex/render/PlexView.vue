@@ -60,6 +60,8 @@ const emit = defineEmits<{
   (event: 'reach', id: string, pointer: PointerEvent): void
   /** A handle was pressed from the keyboard, where there is nowhere to drag. */
   (event: 'ask', id: string): void
+  /** A menu was asked for on a node: where it was asked, and from what. */
+  (event: 'menu', id: string, at: Point, from: SVGGElement): void
 }>()
 
 const svg = useTemplateRef<SVGSVGElement>('svg')
@@ -174,6 +176,7 @@ const ghost = computed<PlacedNode | null>(() => {
       @activate="emit('activate', node.id)"
       @reach="emit('reach', node.id, $event)"
       @ask="emit('ask', node.id)"
+      @menu="(at, from) => emit('menu', node.id, at, from)"
     >
       <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
     </PlexNodeView>

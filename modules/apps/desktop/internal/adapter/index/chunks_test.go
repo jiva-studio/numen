@@ -690,3 +690,79 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 		t.Error("nothing was counted at all")
 	}
 }
+
+// cutInto records one book and makes its chunks the small windows named, each
+// under a large window of its own.
+func cutInto(t *testing.T, db *DB, vault domain.Vault, path string, texts ...string) {
+	t.Helper()
+	ctx := t.Context()
+
+	if err := db.Chunks().SaveSource(ctx, vault.ID, chunk.Source{
+		Path: path, Kind: "book", Size: 1000, MTime: 1, Hash: "hash-" + path, Recipe: "epub",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	windows := make([]chunk.Window, 0, len(texts))
+	for i, text := range texts {
+		windows = append(windows, chunk.Window{
+			Start: i * 100, Length: 100, Text: path + " " + text,
+			Small: []chunk.Window{{Start: i * 100, Length: 50, Text: text}},
+		})
+	}
+	if err := db.Chunks().SaveWindows(ctx, vault.ID, "book", path, windows); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestAChunkThatWentIsWrittenNoVectorAndStopsNothing. A save cuts a note again
+// while a pass is making vectors out of what it was told owed one a moment ago.
+func TestAChunkThatWentIsWrittenNoVectorAndStopsNothing(t *testing.T) {
+	ctx := t.Context()
+	db := opened(t)
+
+	cutInto(t, db, first, "library/kept.epub", "kept passage")
+	cutInto(t, db, first, "library/recut.epub", "the passage as it was")
+
+	// What a pass is given, before anything moves under it.
+	owing, err := db.ChunkQueries().Unembedded(ctx, first.ID, "model", 0, 1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(owing) != 2 {
+		t.Fatalf("%d chunks owe a vector, want the two that were cut", len(owing))
+	}
+
+	cutInto(t, db, first, "library/recut.epub", "the passage as it is now")
+
+	vectors := make([]chunk.Vector, 0, len(owing))
+	for _, p := range owing {
+		vectors = append(vectors, chunk.Vector{
+			Chunk: p.Chunk, Model: "model", Dims: 1024, Kind: "int8",
+			Value: bits(1), Coarse: bits(1),
+		})
+	}
+	if err := db.Chunks().SaveVectors(ctx, vectors); err != nil {
+		t.Fatalf("a chunk that went stopped the pass: %v", err)
+	}
+
+	// Both halves of a vector follow the chunk: the one still held carries
+	// both, the one that went carries neither.
+	var gone int
+	for _, p := range owing {
+		held := counted(t, db, `SELECT count(*) FROM chunks WHERE id = ?`, p.Chunk)
+		if held == 0 {
+			gone++
+		}
+		for _, half := range []string{
+			`SELECT count(*) FROM vectors WHERE chunk_id = ?`,
+			`SELECT count(*) FROM chunks_vec WHERE chunk_id = ?`,
+		} {
+			if got := counted(t, db, half, p.Chunk); got != held {
+				t.Errorf("chunk %d is held %d times and answers %d to %s", p.Chunk, held, got, half)
+			}
+		}
+	}
+	if gone != 1 {
+		t.Fatalf("%d of the chunks the pass was given went, want the one that was cut again", gone)
+	}
+}

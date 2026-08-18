@@ -8,7 +8,7 @@
  */
 import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
-import WorkspaceGroup from './WorkspaceGroup.vue'
+import WorkspacePane from './WorkspacePane.vue'
 import { orientationAt, type Branch, type NodeId, type Orientation, type TabId } from '../model'
 import { atLeast, fit } from '../model/shares'
 
@@ -19,17 +19,21 @@ const props = defineProps<{
   axis: Orientation
   depth: number
   titles: Readonly<Record<TabId, string>>
+  marks: Readonly<Record<TabId, string>>
   focus: NodeId
-  /** The least room a group is worth drawing in. */
+  /** The least room a pane is worth drawing in. */
   minimum: number
+  /** Whether the tabs below are offered a way to be closed. */
+  closable: boolean
 }>()
 
 const emit = defineEmits<{
   (event: 'choose', tab: TabId): void
   (event: 'close', tab: TabId): void
   (event: 'lift', tab: TabId, at: PointerEvent): void
-  (event: 'claim', group: NodeId): void
+  (event: 'claim', pane: NodeId): void
   (event: 'resize', branch: NodeId, sizes: readonly number[]): void
+  (event: 'show', tab: TabId): void
 }>()
 
 /** What a child says, said again unchanged. */
@@ -37,10 +41,12 @@ const passed = {
   onChoose: (tab: TabId) => emit('choose', tab),
   onClose: (tab: TabId) => emit('close', tab),
   onLift: (tab: TabId, at: PointerEvent) => emit('lift', tab, at),
+  onShow: (tab: TabId) => emit('show', tab),
 }
 
 defineSlots<{
   tab(props: { id: TabId }): unknown
+  mark(props: { id: TabId; mark: string }): unknown
   silence(): unknown
 }>()
 
@@ -50,7 +56,7 @@ const sizes = computed(() => fit(props.node.sizes, props.node.children.length))
 
 /**
  * The smallest share a handle may leave a child, worked out from how long the
- * branch is on screen. A splitter counts in percent, and a group is only worth
+ * branch is on screen. A splitter counts in percent, and a pane is only worth
  * drawing above a certain number of pixels.
  */
 const frame = useTemplateRef<InstanceType<typeof SplitterGroup>>('frame')
@@ -62,7 +68,7 @@ const floor = computed(
 
 let watching: ResizeObserver | undefined
 
-// The element is followed: a change of shape gives the group a new one.
+// The element is followed: a change of shape gives the pane a new one.
 watch(
   () => frame.value?.$el as HTMLElement | undefined,
   (element) => {
@@ -81,7 +87,7 @@ watch(
 
 onBeforeUnmount(() => watching?.disconnect())
 
-/** Which children there are, so that a change of shape starts the group afresh. */
+/** Which children there are, so that a change of shape starts the pane afresh. */
 const shape = computed(() => props.node.children.map((child) => child.id).join(' '))
 
 /**
@@ -125,26 +131,32 @@ function settled(reported: number[]): void {
           :axis="axis"
           :depth="depth + 1"
           :titles="titles"
+          :marks="marks"
           :focus="focus"
           :minimum="minimum"
+          :closable="closable"
           @claim="emit('claim', $event)"
           @resize="(branch, next) => emit('resize', branch, next)"
         >
           <template #tab="bound"><slot name="tab" v-bind="bound" /></template>
+          <template v-if="$slots.mark" #mark="bound"><slot name="mark" v-bind="bound" /></template>
           <template #silence><slot name="silence" /></template>
         </WorkspaceBranch>
 
-        <WorkspaceGroup
+        <WorkspacePane
           v-else
           v-bind="passed"
-          :group="child"
+          :pane="child"
           :titles="titles"
+          :marks="marks"
           :focused="child.id === focus"
+          :closable="closable"
           @claim="emit('claim', child.id)"
         >
           <template #tab="bound"><slot name="tab" v-bind="bound" /></template>
+          <template v-if="$slots.mark" #mark="bound"><slot name="mark" v-bind="bound" /></template>
           <template #silence><slot name="silence" /></template>
-        </WorkspaceGroup>
+        </WorkspacePane>
       </SplitterPanel>
     </template>
   </SplitterGroup>

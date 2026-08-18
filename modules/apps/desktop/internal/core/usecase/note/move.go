@@ -126,7 +126,16 @@ func (u Move) landsOn(ctx context.Context, v domain.Vault, was domain.ResolvedLi
 
 // repair writes the name in place of an address that no longer reaches
 // anything. Only the address changes, and only in the note that wrote it.
+//
+// It is a read and a write over a note somebody may have open, so it holds the
+// vault's write lock across both.
 func (u Move) repair(ctx context.Context, v domain.Vault, in string, address domain.Address, name string) (bool, error) {
+	release, err := u.Writers.Hold(ctx, v)
+	if err != nil {
+		return false, err
+	}
+	defer release()
+
 	reader, err := u.Readers.Open(v)
 	if err != nil {
 		return false, err
@@ -155,7 +164,8 @@ func (u Move) repair(ctx context.Context, v domain.Vault, in string, address dom
 	if err != nil {
 		return false, err
 	}
-	return true, writer.Write(ctx, in, doc.Bytes(), domain.FileRef{})
+	_, err = writer.Write(ctx, in, doc.Bytes(), domain.FileRef{})
+	return true, err
 }
 
 func (u Move) index(ctx context.Context, v domain.Vault, paths ...string) error {

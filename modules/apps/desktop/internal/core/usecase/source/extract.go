@@ -207,7 +207,7 @@ func (u Extract) source(
 	u.progress(*res)
 
 	ref, err := reader.Stat(ctx, path)
-	if errors.Is(err, fs.ErrNotExist) {
+	if port.NoNote(err) {
 		res.Vanished++
 		return nil
 	}

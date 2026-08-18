@@ -45,6 +45,13 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     changes: async function* () {},
     // eslint-disable-next-line require-yield
     focus: async function* () {},
+    read: async () => ({ body: '', refusal: null }),
+    write: async () => ({ body: '', refusal: null }),
+    create: async () => ({ path: '', refusal: null }),
+    join: async () => null,
+    // eslint-disable-next-line require-yield
+    quitting: async function* () {},
+    flushed: async () => {},
     ...over,
   }
 }

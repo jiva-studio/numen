@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/source"
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
@@ -29,6 +31,16 @@ type Opened struct {
 	// the stored vectors come from one model. Nil for an installation with none,
 	// and then every search is answered by words alone.
 	Embedder port.Embedder
+	// Settle is everything owed landing before anything is taken away. It is
+	// called while the window is still drawn, and calling it again is free. It
+	// answers false where a page is holding work a person is being asked about,
+	// and then nothing has been taken away and the vault is as it was.
+	Settle func(ctx context.Context) bool
+	// Answered is every page having written what it owes. It is what the window
+	// waits on while a person answers a question, and that wait is on a person
+	// and is not measured. It answers false where ctx ended or the vault was
+	// asked again.
+	Answered func(ctx context.Context) bool
 	// Close stops the scan, waits for it, and closes the index.
 	Close func() error
 }
@@ -39,8 +51,10 @@ type Opened struct {
 // The scan is started and left running. A vault of a hundred thousand notes
 // takes a minute and a half, and the first note is answerable long before that.
 //
-// Closing stops the scan, waits for it, and then closes the database — in that
-// order, because the database is what the scan writes to.
+// Going takes two steps. Settle is called while the window is still drawn: the
+// clients write what only they hold and the writes in the air land. Closing
+// then stops the scan, waits for it, and closes the database — in that order,
+// because the database is what the scan writes to.
 func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, error) {
 	registry, err := cfg.Registry()
 	if err != nil {
@@ -70,9 +84,7 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		closeEmbedder = func() error { return nil }
 	}
 
-	// wanted carries one nudge: something that is not a note changed, and the
-	// vault's books are to be read again.
-	wanted := make(chan struct{}, 1)
+	wake := waking(settled)
 
 	watching, stop := context.WithCancel(ctx)
 	api := &API{
@@ -82,6 +94,9 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		Listeners: following(),
 		Watching:  focusing(),
 		Progress:  db.Progress(),
+		Reads:     &note.Read{Readers: cfg.VaultReaders()},
+		Saves:     &note.Write{Readers: cfg.VaultReaders(), Writers: cfg.VaultWriters()},
+		Wrote:     func() { raise(wake.notes) },
 	}
 	// Named before anything is read: it is what decides whether a chunk already
 	// carries a vector, and what tells the window that something is going to
@@ -113,102 +128,34 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 	// Following the vault is a use case; this adapter only says who hears about
 	// it. Whatever a change turns out to mean is decided in one place, so a
 	// second way of showing a vault does not decide it again.
-	refresh := usecase.Refresh{Readers: cfg.VaultReaders(), Notes: db.Notes()}
+	held := &holding{NoteRepository: db.Notes()}
+	refresh := usecase.Refresh{Readers: cfg.VaultReaders(), Notes: held}
+
+	// A note the window makes is level in the index before the answer comes
+	// back, so it is drawn as soon as it exists.
+	level := func(ctx context.Context, v domain.Vault, paths []string) error {
+		_, err := refresh.Execute(ctx, v, paths)
+		return err
+	}
+	api.Makes = &note.Create{
+		Writers:   cfg.VaultWriters(),
+		Names:     db.Queries(),
+		Index:     level,
+		Extension: filedUnder(cfg),
+	}
+	api.Joins = &note.Linking{
+		Readers: cfg.VaultReaders(),
+		Writers: cfg.VaultWriters(),
+		Index:   level,
+	}
+
 	follow := usecase.Follow{
 		Watcher: cfg.VaultWatcher(),
 		Refresh: refresh,
 		Scan:    scan,
-		Changed: func(m usecase.Moved) {
-			api.Listeners.tell(changed{paths: m.Paths, reload: m.Reload})
-			if m.Sources {
-				// A book dropped into an open vault is read without anybody
-				// asking. One nudge is enough: what owes work is asked of the
-				// index, so several changes at once are one reading.
-				select {
-				case wanted <- struct{}{}:
-				default:
-				}
-			}
-		},
-		Trouble: func(err error) {
-			if err == nil {
-				api.Failed.Store("")
-				return
-			}
-			api.Failed.Store(err.Error())
-		},
 	}
 
-	// Watching begins before the scan does, so an edit made while the vault is
-	// being read is held.
-	//
-	// A vault that cannot be watched is still a vault: the application keeps
-	// working, and says that changes will not appear by themselves.
-	following, beginErr := follow.Begin(watching, api.Vault)
-	if beginErr != nil {
-		fmt.Fprintf(out, "not watching %s: %v\n", api.Vault.Name, beginErr)
-		api.Unwatched.Store(beginErr.Error())
-	}
-
-	// Set before the goroutine starts, so that a client asking between opening
-	// and the first read is told there is more to come.
-	api.Busy.Store(true)
-
-	var running sync.WaitGroup
-	running.Add(1)
-	go func() {
-		defer running.Done()
-		// Set false on every way out of the reading, including the ways that
-		// return early.
-		defer api.Busy.Store(false)
-
-		result, err := scan.Execute(watching, api.Vault)
-		api.Indexed.Store(int64(result.Indexed))
-		switch {
-		case err == nil:
-			fmt.Fprintf(out, "%s: %d notes\n", api.Vault.Name, result.Seen)
-			api.Ready.Store(true)
-		case errors.Is(err, context.Canceled):
-			// Asked to stop. What it stored is correct as far as it got, and
-			// there is nothing to report.
-			return
-		default:
-			api.Failed.Store(err.Error())
-			return
-		}
-
-		// Reading the sources comes after the notes: a vault is useful the
-		// moment its notes answer, and a library takes minutes to cut and hours
-		// to embed. Neither stops the window, and neither has to finish: an
-		// index is a cache.
-		readSources(watching, cfg, db, api, embedder, out)
-		// Everything this vault owed is read. Watching it goes on for as long as
-		// the window is open, and a change to a file is reported as a change.
-		api.Busy.Store(false)
-
-		// The scan goes first. It writes in groups from what it holds, so its
-		// copy of a note lands last however early the note was read.
-		if following != nil {
-			running.Add(1)
-			go func() {
-				defer running.Done()
-				following.Run(watching)
-			}()
-		}
-
-		// A book that arrives while the window is open is read where the first
-		// reading was: one at a time, and never while another is running.
-		for {
-			select {
-			case <-watching.Done():
-				return
-			case <-wanted:
-				api.Busy.Store(true)
-				readSources(watching, cfg, db, api, embedder, out)
-				api.Busy.Store(false)
-			}
-		}
-	}()
+	wait := begin(watching, cfg, db, api, scan, follow, held, cfg.VaultReaders(), embedder, wake, out)
 
 	return &Opened{
 		API:      api,
@@ -216,9 +163,11 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		Index:    db,
 		Refresh:  refresh,
 		Embedder: embedder,
+		Settle:   func(ctx context.Context) bool { return settling(ctx, &api.Leaving, &api.Writing) },
+		Answered: func(ctx context.Context) bool { return answering(ctx, &api.Leaving) },
 		Close: func() error {
 			stop()
-			running.Wait()
+			wait()
 			// The embedder goes after the work that uses it and before the
 			// database, which is the order they depend on each other in.
 			err := closeEmbedder()
@@ -228,6 +177,290 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 			return err
 		},
 	}, nil
+}
+
+// filedUnder is the extension a note this vault holds is filed under. Empty is
+// markdown.
+func filedUnder(cfg container.Config) string {
+	if len(cfg.Extensions) > 0 {
+		return cfg.Extensions[0]
+	}
+	return ""
+}
+
+// settling is everything owed landing: every client writes what only it holds,
+// and then the writes already taken finish. It answers with whether the vault
+// settled.
+//
+// A client that says nothing is bounded by ctx: what it owes sits in a webview
+// this process cannot reach into. A client raising a question has said
+// something, and the round ends on it: the vault stays open, the door stays
+// open, and the wait from there is on a person.
+//
+// The writes are not bounded, because the door is shut first and what is left
+// is a fixed set of filesystem operations.
+func settling(ctx context.Context, pages *leaving, writes *inflight) bool {
+	round := pages.ask()
+	select {
+	case <-round.written:
+	case <-round.questions:
+	case <-round.over:
+	case <-ctx.Done():
+	}
+	if round.standing() || pages.current() != round {
+		return false
+	}
+	<-writes.seal()
+	return true
+}
+
+// answering waits for the round in progress to end with every page having
+// written what it owes.
+func answering(ctx context.Context, pages *leaving) bool {
+	round := pages.current()
+	if round == nil {
+		return false
+	}
+	select {
+	case <-round.written:
+		return true
+	case <-round.over:
+		return false
+	case <-ctx.Done():
+		return false
+	}
+}
+
+// settled is how long the vault has to have been still before the notes written
+// into it are embedded. It is longer than the bound in ui/src/tab.ts, which
+// writes an unfinished edit every five seconds while a person goes on typing.
+const settled = 8 * time.Second
+
+// nudges are the two ways work reaches the reading behind the window once the
+// first pass is over: a book, which is found and cut before anything is
+// embedded, and a note, which arrives already cut and owes only its vectors.
+type nudges struct {
+	sources chan struct{}
+	notes   chan struct{}
+	// still is how long the vault has to have been quiet before a note that was
+	// written is embedded.
+	still time.Duration
+}
+
+func waking(still time.Duration) nudges {
+	return nudges{
+		sources: make(chan struct{}, 1),
+		notes:   make(chan struct{}, 1),
+		still:   still,
+	}
+}
+
+// raise leaves one nudge waiting. What owes work is asked of the index, so
+// several changes at once are one pass.
+func raise(nudge chan struct{}) {
+	select {
+	case nudge <- struct{}{}:
+	default:
+	}
+}
+
+// begin starts the watch and the first scan together, and answers with what
+// waits for both to stop.
+//
+// The watch is acted on alongside the scan: a change reaches the window through
+// it and through nothing else.
+//
+// A vault that cannot be watched is still a vault: the application keeps
+// working, and says that changes will not appear by themselves.
+func begin(
+	ctx context.Context,
+	cfg container.Config,
+	db *container.Index,
+	api *API,
+	scan usecase.Scan,
+	follow usecase.Follow,
+	held *holding,
+	readers port.VaultReaders,
+	embedder port.Embedder,
+	wake nudges,
+	out io.Writer,
+) func() {
+	trouble := func(err error) {
+		if err == nil {
+			api.Failed.Store("")
+			return
+		}
+		api.Failed.Store(err.Error())
+	}
+	follow.Trouble = trouble
+	follow.Changed = func(m usecase.Moved) {
+		api.Listeners.tell(changed{paths: m.Paths, reload: m.Reload})
+		if m.Sources {
+			// A book dropped into an open vault is read without anybody asking.
+			raise(wake.sources)
+		}
+		if len(m.Paths) > 0 {
+			// A note written is a note cut again, and its chunks owe their
+			// vectors. Which ones is not carried: the debt is in the index.
+			raise(wake.notes)
+		}
+	}
+
+	// Set before the goroutine starts, so that a client asking between opening
+	// and the first read is told there is more to come.
+	api.Busy.Store(true)
+
+	var running sync.WaitGroup
+
+	watch, err := follow.Begin(ctx, api.Vault)
+	if err != nil {
+		fmt.Fprintf(out, "not watching %s: %v\n", api.Vault.Name, err)
+		api.Unwatched.Store(err.Error())
+	}
+	if watch != nil {
+		running.Add(1)
+		go func() {
+			defer running.Done()
+
+			watch.Run(ctx)
+			// Nothing reaches the window once the watch stops, so from here on
+			// the vault is one that is not being followed.
+			if ctx.Err() == nil {
+				api.Unwatched.Store("the watch stopped")
+			}
+		}()
+	}
+
+	// first is the vault's first reading: the scan, and the notes written while
+	// it ran read once more. It answers whether the vault was read.
+	first := func() bool {
+		result, err := scan.Execute(ctx, api.Vault)
+		api.Indexed.Store(int64(result.Indexed))
+
+		// The scan writes in groups from what it read, so its copy of a note
+		// lands last however early the note was read. Every note brought up to
+		// date underneath it is read once more, and the newest copy of each
+		// lands last.
+		under := held.taken()
+
+		switch {
+		case err == nil:
+		case errors.Is(err, context.Canceled):
+			// Asked to stop. What it stored is correct as far as it got, and
+			// there is nothing to report.
+			return false
+		default:
+			api.Failed.Store(err.Error())
+			return false
+		}
+
+		if len(under) > 0 {
+			if _, err := follow.Refresh.Execute(ctx, api.Vault, under); err != nil {
+				trouble(err)
+			}
+		}
+
+		fmt.Fprintf(out, "%s: %d notes\n", api.Vault.Name, result.Seen)
+		api.Ready.Store(true)
+		return true
+	}
+
+	running.Add(1)
+	go func() {
+		defer running.Done()
+		// Set false on every way out of the reading.
+		defer api.Busy.Store(false)
+
+		// Reading the sources comes after the notes: a vault is useful the
+		// moment its notes answer, and a library takes minutes to cut and hours
+		// to embed. Neither stops the window, and neither has to finish: an
+		// index is a cache.
+		if first() {
+			readSources(ctx, cfg, db, api, readers, embedder, out)
+		}
+		// Everything this vault owed is read.
+		api.Busy.Store(false)
+
+		// What arrives while the window is open is read where the first reading
+		// was: one at a time, and never while another is running. A vault whose
+		// first reading failed is one somebody goes on writing in, so the
+		// waiting stands whatever that reading did.
+		var quiet <-chan time.Time
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-wake.sources:
+				api.Busy.Store(true)
+				readSources(ctx, cfg, db, api, readers, embedder, out)
+				api.Busy.Store(false)
+			case <-wake.notes:
+				// Every write puts the pass off again. What was typed is
+				// embedded once the vault has been still.
+				quiet = time.After(wake.still)
+			case <-quiet:
+				quiet = nil
+				api.Busy.Store(true)
+				embedSources(ctx, db, api, readers, embedder, out)
+				api.Busy.Store(false)
+			}
+		}
+	}()
+
+	return running.Wait
+}
+
+// holding is the index, keeping the paths of the notes written through it while
+// the first scan is still reading the vault.
+type holding struct {
+	port.NoteRepository
+
+	mu    sync.Mutex
+	paths []string
+	kept  map[string]bool
+	over  bool
+}
+
+func (h *holding) Save(ctx context.Context, vaultID string, notes []domain.Note) error {
+	for _, n := range notes {
+		h.hold(n.Ref.Path)
+	}
+	return h.NoteRepository.Save(ctx, vaultID, notes)
+}
+
+func (h *holding) Remove(ctx context.Context, vaultID string, paths []string) error {
+	for _, path := range paths {
+		h.hold(path)
+	}
+	return h.NoteRepository.Remove(ctx, vaultID, paths)
+}
+
+// hold takes the path before the write it belongs to, so a note whose write
+// lands while the scan is still running is one of the paths taken after it.
+func (h *holding) hold(path string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	if h.over || h.kept[path] {
+		return
+	}
+	if h.kept == nil {
+		h.kept = map[string]bool{}
+	}
+	h.kept[path] = true
+	h.paths = append(h.paths, path)
+}
+
+// taken is every path held, and the end of the holding: the scan is over, so a
+// write that lands from now on is already the last one.
+func (h *holding) taken() []string {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	h.over = true
+	paths := h.paths
+	h.paths, h.kept = nil, nil
+	return paths
 }
 
 // readSources takes the text out of every book in the vault and then embeds what
@@ -241,6 +474,7 @@ func readSources(
 	cfg container.Config,
 	db *container.Index,
 	api *API,
+	readers port.VaultReaders,
 	embedder port.Embedder,
 	out io.Writer,
 ) {
@@ -253,7 +487,7 @@ func readSources(
 	}
 
 	extract := source.Extract{
-		Readers:      cfg.VaultReaders(),
+		Readers:      readers,
 		Sources:      db.Sources(),
 		Owing:        db.SourcesKnown(),
 		Sizes:        sizes,
@@ -275,12 +509,28 @@ func readSources(
 	}
 	api.Reading.Store("")
 
+	embedSources(ctx, db, api, readers, embedder, out)
+}
+
+// embedSources gives the chunks of the vault the vectors they owe, and reads no
+// file the index does not already hold a chunk of.
+//
+// It is the whole of what a note that was written owes: the chunks are cut
+// where the note is stored, and what has no vector is a question for the index.
+func embedSources(
+	ctx context.Context,
+	db *container.Index,
+	api *API,
+	readers port.VaultReaders,
+	embedder port.Embedder,
+	out io.Writer,
+) {
 	if embedder == nil {
 		return
 	}
 
 	embed := source.Embed{
-		Readers:  cfg.VaultReaders(),
+		Readers:  readers,
 		Chunks:   db.VectorsOwing(),
 		Vectors:  db.Vectors(),
 		Embedder: embedder,

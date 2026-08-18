@@ -8,7 +8,6 @@
 package markdown
 
 import (
-	"bufio"
 	"bytes"
 	"path"
 	"regexp"
@@ -93,24 +92,27 @@ func splitFrontmatter(raw []byte) (frontmatter, body []byte, ok bool) {
 	}
 }
 
+// headings walks the body a line at a time, so each heading carries the byte its
+// line begins at as well as the line's number. The offset is counted over the
+// bytes as they are, and a carriage return is dropped from the text alone.
 func headings(body []byte) []domain.Heading {
 	var out []domain.Heading
-	sc := bufio.NewScanner(bytes.NewReader(body))
-	sc.Buffer(make([]byte, 0, 64*1024), 4*1024*1024)
-	line, fenced := 0, false
-	for sc.Scan() {
-		text := strings.TrimRight(sc.Text(), "\r")
-		if isFence(text) {
-			fenced = !fenced
-			line++
-			continue
+	fenced := false
+	for line, at := 0, 0; at <= len(body); line++ {
+		end := len(body)
+		if next := bytes.IndexByte(body[at:], '\n'); next >= 0 {
+			end = at + next
 		}
-		if !fenced {
+		text := strings.TrimRight(string(body[at:end]), "\r")
+		switch {
+		case isFence(text):
+			fenced = !fenced
+		case !fenced:
 			if m := headingRe.FindStringSubmatch(text); m != nil {
-				out = append(out, domain.Heading{Level: len(m[1]), Text: m[2], Line: line})
+				out = append(out, domain.Heading{Level: len(m[1]), Text: m[2], Line: line, Offset: at})
 			}
 		}
-		line++
+		at = end + 1
 	}
 	return out
 }

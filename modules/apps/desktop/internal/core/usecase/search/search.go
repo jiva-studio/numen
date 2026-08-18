@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/fs"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/embedding"
@@ -123,7 +122,7 @@ func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage
 		text, held := read[p.Source]
 		if !held && !gone[p.Source] {
 			text, err = extracted(ctx, reader, p.Source)
-			if errors.Is(err, fs.ErrNotExist) || errors.Is(err, errUnreadable) {
+			if port.NoNote(err) || errors.Is(err, errUnreadable) {
 				gone[p.Source] = true
 				continue
 			}

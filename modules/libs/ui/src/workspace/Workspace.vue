@@ -8,30 +8,38 @@
  */
 import { computed, onBeforeUnmount, shallowRef, useTemplateRef } from 'vue'
 import WorkspaceBranch from './render/WorkspaceBranch.vue'
-import WorkspaceGroup from './render/WorkspaceGroup.vue'
+import WorkspacePane from './render/WorkspacePane.vue'
 import {
   activateTab,
   closeTab,
   dropOnEdge,
   dropTab,
-  focusGroup,
+  focusPane,
   moveTabWithin,
   resizeBranch,
   type Naming,
 } from './edit'
 import { overlayFor, sideAt, slotAt } from './drop'
-import type { NodeId, Rect, Side, TabId, TabLabel, Workspace } from './model'
+import {
+  panesOf,
+  type NodeId,
+  type Rect,
+  type Side,
+  type Tab,
+  type TabId,
+  type Workspace,
+} from './model'
 
 const props = withDefaults(
   defineProps<{
-    tabs: readonly TabLabel[]
+    tabs: readonly Tab[]
     /** Where identities for what a gesture makes come from. */
     naming?: Naming | undefined
     /** How close to the outer edge divides the whole workspace. */
     edge?: number
     /** How far the pointer travels before a press becomes a drag. */
     threshold?: number
-    /** The least room a group is worth drawing in. */
+    /** The least room a pane is worth drawing in. */
     minimum?: number
   }>(),
   { edge: 22, threshold: 4, minimum: 220 },
@@ -39,18 +47,47 @@ const props = withDefaults(
 
 defineSlots<{
   tab(props: { id: TabId }): unknown
+  /** What a mark is drawn as. Given none, a tab carrying one draws a dot. */
+  mark(props: { id: TabId; mark: string }): unknown
   silence(): unknown
 }>()
 
 const workspace = defineModel<Workspace>({ required: true })
 
 const emit = defineEmits<{
-  (event: 'close', tab: TabId): void
+  /**
+   * A close asked for, before anything is applied. A caller that calls `hold`
+   * while it is being told takes the close, and the tab stays until the
+   * caller closes it itself.
+   */
+  (event: 'close', tab: TabId, hold: () => void): void
   (event: 'activate', tab: TabId): void
+  /**
+   * The tab a pane is now showing, once it is on screen. Every tab of a pane is
+   * drawn and the ones not shown are held out of sight, so what a tab holds is
+   * told here that it can measure itself.
+   */
+  (event: 'show', tab: TabId): void
 }>()
 
 const titles = computed(() =>
   Object.fromEntries(props.tabs.map((tab) => [tab.id, tab.title])),
+)
+
+const marks = computed(() =>
+  Object.fromEntries(
+    props.tabs.flatMap((tab): readonly (readonly [TabId, string])[] =>
+      tab.mark === undefined ? [] : [[tab.id, tab.mark]],
+    ),
+  ),
+)
+
+/**
+ * The last tab in the workspace is offered no close, and a close asked for it
+ * is refused. A workspace holding nothing has no way back to what it held.
+ */
+const closable = computed(
+  () => panesOf(workspace.value.root).reduce((held, pane) => held + pane.tabs.length, 0) > 1,
 )
 
 /**
@@ -82,8 +119,8 @@ interface Dragging {
  */
 type Landing = { readonly box: Rect } & (
   | { readonly kind: 'edge'; readonly side: Side }
-  | { readonly kind: 'group'; readonly group: NodeId; readonly side: Side }
-  | { readonly kind: 'strip'; readonly group: NodeId; readonly slot: number }
+  | { readonly kind: 'pane'; readonly pane: NodeId; readonly side: Side }
+  | { readonly kind: 'strip'; readonly pane: NodeId; readonly slot: number }
 )
 
 const dragging = shallowRef<Dragging | null>(null)
@@ -102,12 +139,19 @@ function choose(tab: TabId): void {
 }
 
 function close(tab: TabId): void {
+  if (!closable.value) return
+
+  let held = false
+  emit('close', tab, () => {
+    held = true
+  })
+  if (held) return
+
   workspace.value = closeTab(workspace.value, tab)
-  emit('close', tab)
 }
 
-function claim(group: NodeId): void {
-  workspace.value = focusGroup(workspace.value, group)
+function claim(pane: NodeId): void {
+  workspace.value = focusPane(workspace.value, pane)
 }
 
 function resize(branch: NodeId, sizes: readonly number[]): void {
@@ -117,8 +161,8 @@ function resize(branch: NodeId, sizes: readonly number[]): void {
 function lift(tab: TabId, at: PointerEvent): void {
   if (at.button !== 0) return
 
-  const holder = document.elementFromPoint(at.clientX, at.clientY)?.closest('[data-workspace-group]')
-  const from = holder?.getAttribute('data-workspace-group') ?? workspace.value.focus
+  const holder = document.elementFromPoint(at.clientX, at.clientY)?.closest('[data-workspace-pane]')
+  const from = holder?.getAttribute('data-workspace-pane') ?? workspace.value.focus
 
   dragging.value = {
     tab,
@@ -172,15 +216,15 @@ function land(held: Dragging, at: Landing): void {
     return
   }
 
-  if (at.kind === 'group') {
-    workspace.value = dropTab(workspace.value, { tab: held.tab, onto: at.group, side: at.side }, ids)
+  if (at.kind === 'pane') {
+    workspace.value = dropTab(workspace.value, { tab: held.tab, onto: at.pane, side: at.side }, ids)
     return
   }
 
   const joined =
-    at.group === held.from
+    at.pane === held.from
       ? workspace.value
-      : dropTab(workspace.value, { tab: held.tab, onto: at.group, side: 'center' }, ids)
+      : dropTab(workspace.value, { tab: held.tab, onto: at.pane, side: 'center' }, ids)
   workspace.value = moveTabWithin(joined, held.tab, at.slot)
 }
 
@@ -189,7 +233,7 @@ function land(held: Dragging, at: Landing): void {
  *
  * A strip is read first, so that a tab can be put in order among its
  * neighbours; then the outer edge, which divides the whole workspace; then the
- * group, which divides itself.
+ * pane, which divides itself.
  */
 function landingAt(x: number, y: number): Landing | null {
   const held = frame.value
@@ -202,23 +246,23 @@ function landingAt(x: number, y: number): Landing | null {
   const under = document.elementFromPoint(x, y)
 
   const strip = under?.closest('[data-workspace-strip]')
-  const group = under?.closest('[data-workspace-group]')
-  const id = group?.getAttribute('data-workspace-group')
+  const pane = under?.closest('[data-workspace-pane]')
+  const id = pane?.getAttribute('data-workspace-pane')
 
   if (strip && id) {
     const tabs = [...strip.querySelectorAll('[data-workspace-tab]')].map((tab) => boxOf(tab))
     const slot = slotAt(x, tabs)
-    return { kind: 'strip', group: id, slot, box: local(caretAt(slot, tabs, strip)) }
+    return { kind: 'strip', pane: id, slot, box: local(caretAt(slot, tabs, strip)) }
   }
 
   const side = edgeOf(x, y, outer, props.edge)
   if (side) return { kind: 'edge', side, box: local(overlayFor(side, boxOf(held))) }
 
-  if (!group || !id) return null
+  if (!pane || !id) return null
 
-  const box = boxOf(group)
+  const box = boxOf(pane)
   const asked = sideAt({ x, y }, box)
-  return { kind: 'group', group: id, side: asked, box: local(overlayFor(asked, box)) }
+  return { kind: 'pane', pane: id, side: asked, box: local(overlayFor(asked, box)) }
 }
 
 /** The gap a tab would take, along the strip. Its width is drawn in CSS. */
@@ -270,31 +314,39 @@ onBeforeUnmount(() => {
       :axis="workspace.axis"
       :depth="0"
       :titles="titles"
+      :marks="marks"
       :focus="workspace.focus"
       :minimum="minimum"
+      :closable="closable"
       @choose="choose"
       @close="close"
       @lift="lift"
       @claim="claim"
       @resize="resize"
+      @show="emit('show', $event)"
     >
       <template #tab="bound"><slot name="tab" v-bind="bound" /></template>
+      <template v-if="$slots.mark" #mark="bound"><slot name="mark" v-bind="bound" /></template>
       <template #silence><slot name="silence" /></template>
     </WorkspaceBranch>
 
-    <WorkspaceGroup
+    <WorkspacePane
       v-else
-      :group="workspace.root"
+      :pane="workspace.root"
       :titles="titles"
+      :marks="marks"
       :focused="workspace.root.id === workspace.focus"
+      :closable="closable"
       @choose="choose"
       @close="close"
       @lift="lift"
       @claim="claim(workspace.root.id)"
+      @show="emit('show', $event)"
     >
       <template #tab="bound"><slot name="tab" v-bind="bound" /></template>
+      <template v-if="$slots.mark" #mark="bound"><slot name="mark" v-bind="bound" /></template>
       <template #silence><slot name="silence" /></template>
-    </WorkspaceGroup>
+    </WorkspacePane>
 
     <div
       v-if="overlay"

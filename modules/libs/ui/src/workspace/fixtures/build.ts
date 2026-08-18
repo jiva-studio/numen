@@ -1,8 +1,8 @@
 /** Workspaces to draw and to test against. */
 import {
   branch,
-  group,
-  groupsOf,
+  pane,
+  panesOf,
   type NodeId,
   type Orientation,
   type Workspace,
@@ -12,7 +12,7 @@ import { even } from '../model/shares'
 import type { Naming } from '../edit'
 
 /** A stack of tabs. */
-export const stack = (id: NodeId, ...tabs: string[]): WorkspaceNode => group(id, tabs)
+export const stack = (id: NodeId, ...tabs: string[]): WorkspaceNode => pane(id, tabs)
 
 /** A row or a column, in equal shares when none are given. */
 export const split = (
@@ -28,7 +28,7 @@ export const workspaceOf = (
 ): Workspace => ({
   root,
   axis,
-  focus: focus ?? groupsOf(root)[0]?.id ?? root.id,
+  focus: focus ?? panesOf(root)[0]?.id ?? root.id,
 })
 
 /** Identities that count up, so a test can name what a gesture made. */
@@ -74,4 +74,4 @@ export const crowded = (): Workspace =>
   )
 
 /** Nothing open. */
-export const empty = (): Workspace => workspaceOf(group('main', []))
+export const empty = (): Workspace => workspaceOf(pane('main', []))

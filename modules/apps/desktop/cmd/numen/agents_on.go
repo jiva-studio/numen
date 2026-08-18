@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/agent/claudecode"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/mcp"
@@ -23,6 +24,12 @@ import (
 // what serves them — is linked in at all.
 
 const defaultAgentAddr = mcp.DefaultAddr
+
+// agentBound is how long the agents' transport has to be cut off. A session an
+// agent left open holds its connection until it is closed under it, and this is
+// how long that costs. The calls already running are waited for afterwards,
+// without a bound.
+const agentBound = 2 * time.Second
 
 func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened, opts agentOptions, out io.Writer) (func() error, error) {
 	if opts.off {
@@ -46,7 +53,7 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 	}
 	forget, err := announce(cfg, endpoint.URL, secret)
 	if err != nil {
-		endpoint.Close()
+		endpoint.Close(context.Background())
 		return nil, err
 	}
 
@@ -61,11 +68,21 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 	if err != nil {
 		fmt.Fprintln(out, "agents:", err)
 	}
-	opened.API.Agent = agent(cfg, root, endpoint.URL, secret, words, out)
+	started := agent(cfg, root, endpoint.URL, secret, words, out)
+	opened.API.Agent = started
 
 	return func() error {
 		forget()
-		return endpoint.Close()
+		// The agents this window started go first: each is in a process group
+		// of its own, so nothing else reaches them, and one still answering
+		// would go on writing to the vault after the window is gone.
+		stopped := started.Close()
+		shutdown, cancel := context.WithTimeout(context.Background(), agentBound)
+		defer cancel()
+		if err := endpoint.Close(shutdown); err != nil {
+			return err
+		}
+		return stopped
 	}, nil
 }
 

@@ -1,9 +1,11 @@
 # ADR-0023: The vault is watched
 
-- **Status:** Accepted
+- **Status:** Accepted, except where noted below
 - **Date:** 2026-08-15
 - **Applies to:** `modules/apps/desktop`
-- **Related:** ADR-0001, ADR-0002, ADR-0018
+- **Partly superseded by:** ADR-0027 and ADR-0032 — in the consequences:
+  echo-loop protection, and an edit appearing without being asked for
+- **Related:** ADR-0001, ADR-0002, ADR-0018, ADR-0027, ADR-0032
 
 ## Context
 
@@ -81,6 +83,11 @@ to date.
 **Positive**
 
 - An edit made anywhere appears without anyone asking for it.
+
+  > **Partly superseded by [ADR-0032](0032-the-window-saves-a-note-as-it-is-typed.md).**
+  > A tab holding unsaved prose is not redrawn from its file. It stops saving, says
+  > so, and shows what the person typed until they answer.
+
 - The 100 ms budget becomes something to measure.
 - The scan stops being the only way in and becomes the way back.
 
@@ -94,6 +101,16 @@ to date.
   is a message rather than a fix.
 - Echo-loop protection (ADR-0001) is not built, because nothing writes to a
   vault yet. Whatever does will see its own writes come back.
+
+  > **Partly superseded by [ADR-0032](0032-the-window-saves-a-note-as-it-is-typed.md).**
+  > The application writes to a vault (ADR-0027, ADR-0032), and its own writes do
+  > come back: no event is dropped and the note is parsed again on every save. What
+  > does not follow is a re-save — a tab reads its file back and finds the
+  > normalised text it already shows.
+
+- A listener that fell behind is marked and its message is dropped, and it is told
+  to read the vault again on the next message it is sent. A vault that goes quiet
+  sends none, so that client shows what it had and says nothing about it.
 
 ## Alternatives considered
 

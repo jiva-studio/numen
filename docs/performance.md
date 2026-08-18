@@ -496,3 +496,131 @@ vault is 164 MB of markdown, so a hundred thousand notes cut the same way
 
 ADR-0019's target of 5 MB per thousand notes allows 500 MB. This is the
 arithmetic ADR-0030 rebudgets against.
+
+## Editing a note in a tab
+
+```
+go test ./internal/core/usecase/note/ -run XXX -bench 'Read|Save' -benchtime 50x
+```
+
+Taken 2026-08-17, AMD Ryzen 7 6800U, NVMe, `-benchtime 50x`.
+
+| | |
+|---|---|
+| Read a note, vault of 1 000 | 98 µs |
+| Read a note, vault of 100 000 | 99 µs |
+| Save, 500-word body | 10.06 ms |
+| Save, 5 000-word body | 10.07 ms |
+
+**A read does not grow with the vault.** The two figures are within a percent of
+each other, which is what says the read addresses one file and looks at nothing
+else. This is the cost a window pays per clean tab per change that names its
+path: ten open tabs are about a millisecond of reading per change.
+
+**A save costs the same whatever is in it.** Both bodies land in the same 10 ms,
+so what is being measured is not the text. A save syncs the temporary file and
+then the folder it is renamed into, and those two are the whole figure. Against
+a quiet interval of 800 ms it is not a wait a person can notice; it is worth
+recording because it says where a faster save would have to come from.
+
+### A save, and how long until the window knows
+
+```
+NUMEN_LOAD=1 go test ./internal/adapter/webui/ -run TestEditLoad -v -timeout 30m
+```
+
+Taken 2026-08-17, same machine. This is the path the application owns: the
+write, the watcher noticing it, the refresh, and the change reaching a client.
+
+| vault | save | until a client is told |
+|---|---|---|
+| 10 000 notes | 22 ms | 65 ms |
+| 100 000 notes | 13 ms | 66 ms |
+
+Neither figure grows with the vault. The watcher reports a path, the refresh
+reads that one note, and what is walked is nothing — which is what says an edit
+is answered by the size of the note and not the size of the library.
+
+What is still not measured is the two ends a browser owns: a keystroke becoming
+a request, and the picture being painted.
+
+### What an open tab costs, and why there is no number
+
+```
+npx vitest run --project stories src/editor/Editor.stories.ts
+```
+
+Every tab of a pane is drawn and hidden, so tab count is live editor count, and
+the story mounts ten in one page to find what the tenth costs.
+
+It has no number. `performance.memory.usedJSHeapSize` is quantised by the
+browser, and it reads the same 67.6 MB with one editor alive and with ten. So
+what the story asserts is the part that can be checked — that ten editors are
+alive at once — and the size is left unmeasured.
+
+The instrument that would answer it is
+`performance.measureUserAgentSpecificMemory()`, which needs the page to be
+cross-origin isolated. Until the story runs in such a page there is no figure
+here, and a figure taken from the quantised counter would be an invention.
+
+### What an edit costs to embed
+
+```
+go test ./internal/adapter/index/ -count=1
+```
+
+These are assertions rather than timings: the count of vectors a save asks the
+model for. Chunks are tiled at fifty words with ten of overlap, and a chunk is
+identified by the hash of its text, so one whose text did not change keeps its
+row and the vector on it.
+
+A note's headings are its places. The chunks of one section are tiled inside that
+section, and a note that names no place is one span tiled from its first word.
+The two columns below are the same words cut both ways.
+
+**A 200-word note under four headings**, one every 48 words. It holds five small
+chunks over the whole body and four with the headings naming the sections.
+
+| the edit is | no place named | the headings as places |
+|---|---|---|
+| a line added to the frontmatter | 0 asked · 5 of 5 kept | 0 asked · 4 of 4 kept |
+| at the end of the body | 1 · 4 of 5 | 1 · 4 of 4 |
+| in the middle of the body | 3 · 2 of 5 | 2 · 3 of 4 |
+| at the start of the body | 5 · 0 of 5 | 2 · 3 of 4 |
+
+**A 1000-word note under five headings**, one every 200 words. It holds 25 small
+chunks either way.
+
+| the edit is | no place named | the headings as places |
+|---|---|---|
+| a line added to the frontmatter | 0 asked · 25 of 25 kept | 0 asked · 25 of 25 kept |
+| at the end of the body | 1 · 25 of 25 | 1 · 24 of 25 |
+| in the middle of the body | 14 · 12 of 25 | 3 · 22 of 25 |
+| at the start of the body | 26 · 0 of 25 | 5 · 20 of 25 |
+
+The counts are of the chunks that carry a vector. The chunk enclosing the note
+keeps its row in the frontmatter row alone: its text is the whole note, so any
+edit to the body replaces it, and the chunks that were kept are pointed at the
+row that is there now.
+
+The frontmatter row is the one that says the hash is over the text and not over
+the offsets: every chunk moves in the file and none of them changes, so nothing
+is embedded again.
+
+**What a heading buys is the last two rows of the second table.** With the note
+as one span, an edit re-cuts every chunk after it and the worst case grows with
+the note: 5 vectors at 200 words, 26 at a thousand. With a heading opening each
+section the worst case is the chunks of that section at any length — 5 at a
+thousand words, and 3 for an edit half way down.
+
+**What it costs is chunk count on a note that is mostly headings.** A chunk is
+never cut across a heading, so a section shorter than fifty words is a chunk of
+its own. A 200-word note with a heading every five words is cut into 40 chunks
+where the same words with no place named are cut into 7, and each of the 40 owes
+a vector of its own. An edit anywhere in that note asks for one.
+
+The first cut of the 200-word note asks for four vectors where one span asks for
+five: a section of 48 words is one chunk, and nothing overlaps across a heading.
+Every small chunk carries the name of the section it was cut inside; the chunk
+enclosing the note carries the note's title, so a note is still answered by the
+name it was given.
