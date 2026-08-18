@@ -7,6 +7,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
@@ -43,6 +44,48 @@ func (a *API) Focus(
 				return nil
 			}
 			if err := out.Send(&v1.FocusResponse{Path: path}); err != nil {
+				return err
+			}
+		}
+	}
+}
+
+func (v viewing) Editing(_ context.Context, said domain.Editing) error {
+	v.Drawing.tell(said)
+	return nil
+}
+
+// Editing reports a change being made to a note's prose while it is being made,
+// for as long as the client listens.
+func (a *API) Editing(
+	ctx context.Context,
+	_ *connect.Request[v1.EditingRequest],
+	out *connect.ServerStream[v1.EditingResponse],
+) error {
+	line, done := a.Drawing.listen()
+	defer done()
+
+	// A stream that says nothing until a note is changed is indistinguishable
+	// from one that never opened.
+	if err := out.Send(&v1.EditingResponse{}); err != nil {
+		return err
+	}
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case said, open := <-line:
+			if !open {
+				return nil
+			}
+			if err := out.Send(&v1.EditingResponse{
+				Change: said.Change,
+				Path:   said.Path,
+				From:   int32(said.From),
+				To:     int32(said.To),
+				Text:   said.Text,
+				Done:   said.Done,
+			}); err != nil {
 				return err
 			}
 		}

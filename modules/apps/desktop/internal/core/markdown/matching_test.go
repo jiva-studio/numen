@@ -1,6 +1,9 @@
 package markdown
 
-import "testing"
+import (
+	"testing"
+	"unicode/utf8"
+)
 
 // The offsets are into the text as it was given, so what a caller replaces is
 // the bytes the person wrote.
@@ -132,5 +135,39 @@ func TestAnEmptyStretchFindsNothing(t *testing.T) {
 func TestAStretchThatIsNotThereIsNotFound(t *testing.T) {
 	if at, _ := Where("the aggressor is named", "the poisoner"); at != nil {
 		t.Errorf("found %d places", len(at))
+	}
+}
+
+// A note rewritten whole still names the sentence that changed, so what is
+// drawn is the change and not the note.
+func TestOnlyWhatDiffersIsAnswered(t *testing.T) {
+	was := "# Title\n\nA hedgehog is named.\n\nAnd nothing else.\n"
+	now := "# Title\n\nAn axe is named.\n\nAnd nothing else.\n"
+
+	at, insert := Differs(was, now)
+	if was[at.From:at.To] != "A hedgehog" {
+		t.Errorf("the stretch is %q", was[at.From:at.To])
+	}
+	if insert != "An axe" {
+		t.Errorf("what goes in is %q", insert)
+	}
+}
+
+// Two texts that are the same name no stretch at all.
+func TestTextThatDidNotChangeAnswersAnEmptyStretch(t *testing.T) {
+	at, insert := Differs("the same", "the same")
+	if at.From != at.To || insert != "" {
+		t.Errorf("answered %d..%d with %q", at.From, at.To, insert)
+	}
+}
+
+// A stretch never begins or ends inside a rune, whatever the two texts share.
+func TestAStretchNeverSplitsARune(t *testing.T) {
+	at, insert := Differs("сказал «да» сразу", "сказал «нет» сразу")
+	if !utf8.ValidString(insert) {
+		t.Errorf("what goes in is not text: %q", insert)
+	}
+	if !utf8.RuneStart("сказал «да» сразу"[at.From]) {
+		t.Errorf("the stretch begins inside a rune, at %d", at.From)
 	}
 }

@@ -1,6 +1,9 @@
 package markdown
 
-import "strings"
+import (
+	"strings"
+	"unicode/utf8"
+)
 
 // A Span is a stretch of prose, as byte offsets into the text it was found in.
 type Span struct {
@@ -131,4 +134,63 @@ func plainly(r rune) rune {
 		return ' '
 	}
 	return r
+}
+
+// Differs is the stretch of `was` that `now` does not have, and the text that
+// stands there instead.
+//
+// What the two share at either end is left out, so replacing one whole note's
+// prose with another names the sentence that changed. The stretch is widened to
+// whole words, and two texts that are the same name no stretch at all.
+func Differs(was, now string) (Span, string) {
+	if was == now {
+		return Span{From: len(was), To: len(was)}, ""
+	}
+
+	head := 0
+	for head < len(was) && head < len(now) && was[head] == now[head] {
+		head++
+	}
+	for head > 0 && !opens(was, head) {
+		head--
+	}
+
+	most := min(len(was), len(now)) - head
+	tail := 0
+	for tail < most && was[len(was)-tail-1] == now[len(now)-tail-1] {
+		tail++
+	}
+	for tail > 0 && !closes(was, len(was)-tail) {
+		tail--
+	}
+
+	return Span{From: head, To: len(was) - tail}, now[head : len(now)-tail]
+}
+
+// opens reports whether a stretch may begin at `at`: at the start of the text,
+// or where a rune begins and spacing stands before it.
+func opens(text string, at int) bool {
+	if at <= 0 {
+		return true
+	}
+	if at < len(text) && !utf8.RuneStart(text[at]) {
+		return false
+	}
+	return spacing(text[at-1])
+}
+
+// closes reports whether a stretch may end at `at`: at the end of the text, or
+// where spacing stands.
+func closes(text string, at int) bool {
+	if at >= len(text) {
+		return true
+	}
+	if !utf8.RuneStart(text[at]) {
+		return false
+	}
+	return spacing(text[at])
+}
+
+func spacing(b byte) bool {
+	return b == ' ' || b == '\t' || b == '\n' || b == '\r'
 }

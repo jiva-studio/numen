@@ -34,6 +34,11 @@ service VaultService {
   // caller listens. What travelling there looks like is the client's.
   rpc Focus(FocusRequest) returns (stream FocusResponse);
 
+  // Editing reports a change being made to a note's prose while it is being
+  // made, for as long as the caller listens. It is what a person reading that
+  // note is shown; the note itself arrives the way every other change does.
+  rpc Editing(EditingRequest) returns (stream EditingResponse);
+
   // Read answers with the prose of a note, below its frontmatter.
   rpc Read(ReadRequest) returns (ReadResponse);
 
@@ -200,6 +205,25 @@ message FocusRequest {}
 message FocusResponse {
   // The note to see the neighbourhood from.
   string path = 1;
+}
+
+message EditingRequest {}
+
+message EditingResponse {
+  // The change this reports on. Every report of one change carries the same
+  // name, and no two changes carry one.
+  string change = 1;
+  // The note being changed.
+  string path = 2;
+  // The stretch being replaced, as byte offsets into the prose a read answers
+  // with.
+  int32 from = 3;
+  int32 to = 4;
+  // What is going in where that stretch stands.
+  string text = 5;
+  // The last report of this change, which arrives whether the change landed or
+  // was refused.
+  bool done = 6;
 }
 
 message NeighbourhoodRequest {

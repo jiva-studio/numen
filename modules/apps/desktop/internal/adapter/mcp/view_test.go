@@ -6,11 +6,15 @@ import (
 	"testing"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 )
 
 // window is what an agent puts a note in front of.
 type window struct {
 	asked []string
+	drawn []domain.Editing
 	fails error
 }
 
@@ -29,6 +33,11 @@ func watched(t *testing.T, notes map[string]string) (*sdk.ClientSession, *window
 	_, core := built(t, notes)
 	looking := &window{}
 	core.View = looking
+	tells := note.Telling(func(ctx context.Context, said domain.Editing) {
+		_ = looking.Editing(ctx, said)
+	})
+	core.Write.Telling = tells
+	core.Replace.Telling = tells
 	return connectedTo(t, core), looking
 }
 
@@ -98,4 +107,14 @@ func TestNoWindowMeansNoTool(t *testing.T) {
 			t.Fatal("a headless vault serves a tool that needs somebody looking")
 		}
 	}
+}
+
+// drawn is what the window was told about a change being made, in the order it
+// was told.
+func (w *window) Editing(_ context.Context, said domain.Editing) error {
+	if w.fails != nil {
+		return w.fails
+	}
+	w.drawn = append(w.drawn, said)
+	return nil
 }

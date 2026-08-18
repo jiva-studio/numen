@@ -23,6 +23,9 @@ type Replace struct {
 	Readers port.VaultReaders
 	Writers port.VaultWriters
 	Index   func(ctx context.Context, v domain.Vault, paths []string) error
+	// Telling is told what this change is doing while it is being made. Nothing
+	// is told where nobody is drawing the note.
+	Telling Telling
 	Now     func() time.Time
 }
 
@@ -82,6 +85,9 @@ func (u Replace) Execute(
 	}
 
 	done := Replaced{}
+	ends := func() {}
+	defer func() { ends() }()
+
 	e := editing{readers: u.Readers, writers: u.Writers, index: u.Index, now: u.Now}
 	at, err := e.apply(ctx, v, path, func(doc *markdown.Document) error {
 		body := markdown.Normalised(doc.Body())
@@ -103,6 +109,10 @@ func (u Replace) Execute(
 			return fmt.Errorf("%w: %d bytes, and %d is the most",
 				ErrTooLarge, len(written), MaxBytes)
 		}
+
+		ends = u.Telling.begins(ctx, domain.Editing{
+			Path: path, From: span.From, To: span.To, Text: becomes,
+		})
 
 		done.Span = markdown.Span{From: span.From, To: span.From + len(becomes)}
 		done.Stood = body[span.From:span.To]

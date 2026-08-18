@@ -123,6 +123,15 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string) mcp.Core
 	readers := cfg.VaultReaders()
 	writers := cfg.VaultWriters()
 	queries := opened.Index.Queries()
+	viewing := opened.API.Viewing()
+	// What a write is doing reaches the window the way a note put in front of
+	// the person does. A build with no window draws nothing and is told nothing.
+	tells := note.Telling(func(ctx context.Context, said domain.Editing) {
+		if viewing == nil {
+			return
+		}
+		_ = viewing.Editing(ctx, said)
+	})
 
 	return mcp.Core{
 		Vault:   opened.Vault,
@@ -140,8 +149,8 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string) mcp.Core
 			Writers: writers, Names: queries, Index: index,
 			Extension: extension(cfg),
 		},
-		Write:   note.Write{Readers: readers, Writers: writers, Index: index},
-		Replace: note.Replace{Readers: readers, Writers: writers, Index: index},
+		Write:   note.Write{Readers: readers, Writers: writers, Index: index, Telling: tells},
+		Replace: note.Replace{Readers: readers, Writers: writers, Index: index, Telling: tells},
 		Move:    note.Move{Readers: readers, Writers: writers, Links: opened.Index.Links(), Index: index},
 		Remove:  note.Remove{Readers: readers, Writers: writers, Links: opened.Index.Links(), Index: index},
 		Linking: note.Linking{Readers: readers, Writers: writers, Index: index},

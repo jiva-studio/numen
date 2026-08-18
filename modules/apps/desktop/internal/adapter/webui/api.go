@@ -51,6 +51,10 @@ type API struct {
 	Makes *note.Create
 	Joins *note.Linking
 
+	// Drawing is everyone drawing this vault, for a change to a note being made
+	// while they may be showing it.
+	Drawing audience[domain.Editing]
+
 	// Watching is everyone drawing this vault, for when something asks that a
 	// note be put in front of the person.
 	Watching audience[string]

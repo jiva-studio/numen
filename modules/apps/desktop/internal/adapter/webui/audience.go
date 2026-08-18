@@ -13,6 +13,9 @@ type audience[T any] struct {
 	// latest hands a listener what has just happened in place of what it has
 	// not read yet.
 	latest bool
+	// keep says a message is one a listener has to be given. A message waiting
+	// under it stays where it is, and what would have replaced it waits instead.
+	keep func(T) bool
 	// room is how many messages a listener may be owed before it is behind.
 	room int
 
@@ -21,10 +24,12 @@ type audience[T any] struct {
 	to   map[int]*line[T]
 }
 
-// line is one listener, and whether it is owed a message it never received.
+// line is one listener, whether it is owed a message it never received, and
+// whether what it has not read is a message it has to be given.
 type line[T any] struct {
 	ch     chan T
 	behind bool
+	kept   bool
 }
 
 func (a *audience[T]) listen() (<-chan T, func()) {
@@ -58,14 +63,15 @@ func (a *audience[T]) tell(what T) {
 		if l.behind && a.behind != nil {
 			message = a.behind(what)
 		}
+		keeping := a.keep != nil && a.keep(message)
 		select {
 		case l.ch <- message:
-			l.behind = false
+			l.behind, l.kept = false, keeping
 			continue
 		default:
 		}
 
-		if !a.latest {
+		if !a.latest || l.kept {
 			l.behind = true
 			continue
 		}
@@ -75,7 +81,7 @@ func (a *audience[T]) tell(what T) {
 		}
 		select {
 		case l.ch <- message:
-			l.behind = false
+			l.behind, l.kept = false, keeping
 		default:
 			l.behind = true
 		}

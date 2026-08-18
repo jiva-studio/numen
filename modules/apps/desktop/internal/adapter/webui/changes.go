@@ -1,5 +1,7 @@
 package webui
 
+import "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+
 // changed is what a client is told: the notes that are different now, or that
 // the vault has to be read again.
 type changed struct {
@@ -25,4 +27,19 @@ func following() audience[changed] {
 // replaces the one it has not read: what matters is the last note asked for.
 func focusing() audience[string] {
 	return audience[string]{latest: true, room: 1}
+}
+
+// drawing is everyone drawing the vault, for a change to a note being made
+// while they are showing it.
+//
+// A report arriving while a listener is busy replaces the one it has not read:
+// each report carries the whole of what a change is doing, so the newest is the
+// only one worth having. The report that ends a change is not one of those, and
+// arrives whatever a listener is doing.
+func drawing() audience[domain.Editing] {
+	return audience[domain.Editing]{
+		latest: true,
+		keep:   func(said domain.Editing) bool { return said.Done },
+		room:   1,
+	}
 }
