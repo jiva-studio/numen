@@ -25,6 +25,9 @@ const idle = {
   embedding: false,
   books: 0n,
   booksRead: 0n,
+  recognising: '',
+  pages: 0n,
+  pagesRead: 0n,
   learning: false,
   busy: false,
 }
@@ -77,6 +80,7 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
     focus: async function* () {},
     // eslint-disable-next-line require-yield
     editing: async function* () {},
+    tasks: async function* () {},
     quitting,
     flushed: async (token: string, owed: Owed = 'written') => {
       answered.push({ token, owed })

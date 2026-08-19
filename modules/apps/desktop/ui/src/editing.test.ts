@@ -18,6 +18,9 @@ const idle = {
   embedding: false,
   books: 0n,
   booksRead: 0n,
+  recognising: '',
+  pages: 0n,
+  pagesRead: 0n,
   learning: false,
   busy: false,
 }
@@ -42,6 +45,7 @@ function fake(over: Partial<Faked> = {}) {
     focus: async function* () {},
     // eslint-disable-next-line require-yield
     editing: async function* () {},
+    tasks: async function* () {},
     // eslint-disable-next-line require-yield
     quitting: async function* () {},
     flushed: async () => {},

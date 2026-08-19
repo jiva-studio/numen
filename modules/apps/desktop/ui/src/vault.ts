@@ -32,6 +32,18 @@ export const core: Core & Asking = {
   },
   focus: (signal) => vault.focus({}, { signal }),
   editing: (signal) => vault.editing({}, { signal }),
+  async *tasks(signal) {
+    for await (const said of vault.tasks({}, { signal })) {
+      yield said.tasks.map((at) => ({
+        id: at.id,
+        doing: at.doing,
+        about: at.about,
+        done: Number(at.done),
+        total: Number(at.total),
+        failed: at.failed,
+      }))
+    }
+  },
   read: async (path) => answered(await vault.read({ path })),
   write: async (path, body, seen) =>
     answered(await vault.write({ path, body, ...(seen ? { seen: seenOf(seen) } : {}) })),

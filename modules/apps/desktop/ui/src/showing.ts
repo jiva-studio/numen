@@ -14,6 +14,25 @@ import type { Said } from './drawing'
 import type { Went } from './tab'
 
 /** Everything the window asks of the core, and nothing about how it is drawn. */
+/**
+ * One piece of work the application is doing behind the window.
+ *
+ * Every kind of work is one of these, which is what keeps the window from
+ * growing a branch per kind: it draws the list it is given.
+ */
+export interface Task {
+  /** What the work is called, so that the same work reported again replaces it. */
+  readonly id: string
+  /** The work, in the words to show, and what it is on. */
+  readonly doing: string
+  readonly about: string
+  /** How far it has got, where there is a total to count against. */
+  readonly done: number
+  readonly total: number
+  /** Why it stopped, when it stopped badly. */
+  readonly failed: string
+}
+
 export interface Core {
   neighbourhood(path: string): Promise<Neighbourhood>
   opening(): Promise<{ path: string } | null>
@@ -48,6 +67,16 @@ export interface Core {
   }>
   /** A change being made to a note's prose, reported while it is being made. */
   editing(signal: AbortSignal): AsyncIterable<Said>
+  /**
+   * Everything the application is doing behind the window, for as long as the
+   * window listens.
+   *
+   * The whole list arrives whenever any of it changes, and the first arrives at
+   * once. It is a stream because work can begin without the window asking for
+   * it: an agent is told to read a document, and this is where the person
+   * watching sees it happen.
+   */
+  tasks(signal: AbortSignal): AsyncIterable<readonly Task[]>
   /** The notes something else asked to be put in front of the person. */
   focus(signal: AbortSignal): AsyncIterable<{ path: string }>
   /** The prose of a note, below its frontmatter, and the file it came out of. */
@@ -201,6 +230,14 @@ export function showing(
    */
   const books = ref(0)
   const booksRead = ref(0)
+  /**
+   * Everything the application is doing behind the window.
+   *
+   * It arrives whole and is shown whole. A new kind of work is an entry here
+   * rather than another count to read out of the state and another branch in
+   * what draws it.
+   */
+  const tasks = ref<readonly Task[]>([])
   const learning = ref(false)
   /**
    * Whether the vault is still being read.
@@ -333,6 +370,7 @@ export function showing(
    * The vault says so; the counts do not. Cutting a library begins after the
    * notes are read, so a count of nothing is what the work looks like both
    * before it starts and while it runs.
+   *
    */
   const busy = () => working.value
 
@@ -470,6 +508,29 @@ export function showing(
     }
   }
 
+  /**
+   * Keeps the list of what is being done up to date while the window is open.
+   *
+   * Nothing is asked for on a timer. Work begins without the window: an agent is
+   * told to read a document, and the list says so the moment it starts.
+   *
+   * Taken up again the way following is, and for the same reason.
+   */
+  async function attend() {
+    while (open) {
+      try {
+        for await (const list of core.tasks(listening.signal)) {
+          if (!open) return
+          tasks.value = list
+        }
+      } catch (error) {
+        if (!open) return
+        lost.value = String(error)
+      }
+      await wait(1000)
+    }
+  }
+
   /** Waits for the scan to have stored something, then shows the first note. */
   async function start() {
     try {
@@ -483,6 +544,7 @@ export function showing(
           void follow()
           void watch()
           void draw()
+          void attend()
           void keepUp()
           return
         }
@@ -493,6 +555,7 @@ export function showing(
           void follow()
           void watch()
           void draw()
+          void attend()
           void keepUp()
           return
         }
@@ -523,6 +586,7 @@ export function showing(
     embedding,
     books,
     booksRead,
+    tasks,
     learning,
     working,
     rate,

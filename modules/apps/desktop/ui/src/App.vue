@@ -114,6 +114,7 @@ const {
   embedding,
   books,
   booksRead,
+  tasks,
   learning,
   rate,
 } = window
@@ -198,23 +199,36 @@ const activity = computed(() => {
 /**
  * Everything running behind the window, as the corner draws it.
  *
- * One task for now: reading the vault for meaning. A count is only drawn where
- * the pass has said what it found, and what it found is the work in hand and
- * not the size of the vault.
+ * The application says what it is doing and this draws the list. A new kind of
+ * work is an entry in it and nothing here.
+ *
+ * Reading the vault for meaning is not in that list yet: it is read out of the
+ * counts the state carries, which is the older way and the one this replaces.
+ * A count is only drawn where the pass has said what it found, and what it found
+ * is the work in hand and not the size of the vault.
  */
-const tasks = computed<readonly Notice[]>(() => {
+const notices = computed<readonly Notice[]>(() => {
+  const out: Notice[] = tasks.value.map((at) => ({
+    id: at.id,
+    says: at.failed ? at.failed : at.doing,
+    about: at.about,
+    working: !at.failed,
+    left: '',
+    ...(at.total > 0 ? { done: at.done, total: at.total } : {}),
+  }))
+
   const one = activity.value
-  if (!one.says) return []
-  return [
-    {
+  if (one.says) {
+    out.push({
       id: 'indexing',
       says: one.says,
       about: one.about,
       working: one.working,
       left: one.left,
       ...(one.tally ? { done: one.tally.done, total: one.tally.total } : {}),
-    },
-  ]
+    })
+  }
+  return out
 })
 
 /** What a note was called by the node it was opened from. */
@@ -577,7 +591,7 @@ onUnmounted(() => {
       </template>
     </Workspace>
 
-    <Notices :notices="tasks" :name="words.working" :put-away="words.putAway" />
+    <Notices :notices="notices" :name="words.working" :put-away="words.putAway" />
 
     <band v-if="going.questions.value.length" role="alertdialog" class="leaving">
       <p class="leaving__says">{{ words.going }}</p>

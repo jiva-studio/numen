@@ -25,6 +25,9 @@ const settled = {
   embedding: false,
   books: 0n,
   booksRead: 0n,
+  recognising: '',
+  pages: 0n,
+  pagesRead: 0n,
   learning: false,
   busy: false,
 }
@@ -46,6 +49,7 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     focus: async function* () {},
     // eslint-disable-next-line require-yield
     editing: async function* () {},
+    tasks: async function* () {},
     read: async () => ({ body: '', refusal: null }),
     write: async () => ({ body: '', refusal: null }),
     create: async () => ({ path: '', refusal: null }),

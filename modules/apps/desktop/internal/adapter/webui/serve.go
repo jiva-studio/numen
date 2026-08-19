@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/task"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/source"
@@ -30,6 +31,11 @@ type Opened struct {
 	// Refresh brings named notes up to date. Whatever changes a note calls it,
 	// so that what changed is findable before the change is reported done.
 	Refresh usecase.Refresh
+	// Recognising reads a scanned document for whoever asks. It is one job for
+	// the window and for an agent alike, so that what a person started through
+	// one of them is shown by the other.
+	Recognising *container.Recognising
+
 	// Embedder turns text into vectors, for filling the index and for turning a
 	// query into one. It is the same embedder for both, so a query's vector and
 	// the stored vectors come from one model. Nil for an installation with none,
@@ -96,6 +102,12 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 	wake := waking(settled)
 
 	watching, stop := context.WithCancel(ctx)
+	// One list of what is being done, for everything that does anything and for
+	// the window that shows it. One job behind it too: what a person asked for
+	// is one piece of work however they asked for it.
+	tasks := task.New()
+	recognising := cfg.Recognising(db.Sources(), tasks)
+
 	api := &API{
 		Vault:     vaults[0],
 		Notes:     db.Queries(),
@@ -104,6 +116,7 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		Watching:  focusing(),
 		Drawing:   drawing(),
 		Progress:  db.Progress(),
+		Tasking:   tasks,
 		Reads:     &note.Read{Readers: cfg.VaultReaders()},
 		Saves:     &note.Write{Readers: cfg.VaultReaders(), Writers: cfg.VaultWriters()},
 		Wrote:     func() { raise(wake.notes) },
@@ -127,7 +140,7 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 	// The search the window offers is the search the application already does.
 	// It is built once the embedder is settled, so a model that could not be
 	// fitted leaves the words half to answer on its own.
-	finds := search.New(db.Passages(), cfg.VaultReaders(), embedder, cfg.Embedding.Floor)
+	finds := search.New(db.Passages(), cfg.VaultReaders(), cfg.DerivedStores(), embedder, cfg.Embedding.Floor)
 	api.Finds = &finds
 	scan := usecase.Scan{
 		Readers:      cfg.VaultReaders(),
@@ -175,13 +188,14 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 	wait := begin(watching, cfg, db, api, scan, follow, held, cfg.VaultReaders(), embedder, wake, out)
 
 	return &Opened{
-		API:      api,
-		Vault:    api.Vault,
-		Index:    db,
-		Refresh:  refresh,
-		Embedder: embedder,
-		Settle:   func(ctx context.Context) bool { return settling(ctx, &api.Leaving, &api.Writing) },
-		Answered: func(ctx context.Context) bool { return answering(ctx, &api.Leaving) },
+		API:         api,
+		Vault:       api.Vault,
+		Index:       db,
+		Refresh:     refresh,
+		Recognising: recognising,
+		Embedder:    embedder,
+		Settle:      func(ctx context.Context) bool { return settling(ctx, &api.Leaving, &api.Writing) },
+		Answered:    func(ctx context.Context) bool { return answering(ctx, &api.Leaving) },
 		Close: func() error {
 			stop()
 			wait()
@@ -510,10 +524,16 @@ func readSources(
 		sizes.Limit = window.Under(embedder.Model().MaxTokens)
 	}
 
+	derived, err := cfg.DerivedStores().Open(api.Vault)
+	if err != nil {
+		fmt.Fprintf(out, "reading the sources of %s: %v\n", api.Vault.Name, err)
+		return
+	}
 	extract := source.Extract{
 		Readers:      readers,
 		Sources:      db.Sources(),
 		Owing:        db.SourcesKnown(),
+		Derived:      derived,
 		Sizes:        sizes,
 		RebuildIndex: cfg.RebuildIndex,
 		OnProgress: func(res source.ExtractResult) {

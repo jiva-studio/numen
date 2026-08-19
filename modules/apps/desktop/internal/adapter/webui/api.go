@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agent"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/task"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
@@ -81,6 +82,11 @@ type API struct {
 	Unwatched atomic.Value
 	// Unreachable is why an agent cannot be reached, when one cannot.
 	Unreachable atomic.Value
+
+	// Tasking is everything being done behind the window. Whatever does work
+	// puts itself there and the window reads the list, so a new kind of work is
+	// an entry rather than another field here.
+	Tasking *task.Tasks
 
 	// Progress answers how far cutting and embedding have got. Nil for a vault
 	// nothing is reading for meaning, and the window then says nothing about it.
