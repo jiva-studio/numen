@@ -85,6 +85,7 @@ const put = (id: string) => {
         :tally="tallyOf(one)"
         :working="one.working ?? false"
         :left="one.left ?? ''"
+        :trouble="one.trouble ?? ''"
       />
       <button
         type="button"

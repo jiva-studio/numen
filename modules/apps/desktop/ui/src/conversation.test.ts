@@ -443,3 +443,120 @@ describe('a conversation that is over', () => {
   })
 })
 
+
+describe('a window nobody is looking at', () => {
+  /** A screen that never draws a frame, which is what a hidden window is. */
+  const never = () => {}
+
+  it('shows the answer as it arrives, and takes the wait down with it', async () => {
+    let release = () => {}
+    const held = new Promise<void>((go) => {
+      release = go
+    })
+    const talk = conversation(doing([said('Two notes.')], held), words, called, never)
+    const asking = talk.ask('what is here?', '')
+    await nap()
+
+    // The question with nothing under it is the failure this guards against.
+    expect(talk.turns.value.map((turn) => `${turn.voice}: ${turn.text}`)).toEqual([
+      'asked: what is here?',
+      'answered: Two notes.',
+    ])
+
+    release()
+    await asking
+  })
+})
+
+describe('giving up on an answer', () => {
+  it('takes down what was said about working on it', async () => {
+    let release = () => {}
+    const held = new Promise<void>((go) => {
+      release = go
+    })
+    const talk = conversation(doing([used('Search notes')], held), words, called, now)
+    const asking = talk.ask('what is here?', '')
+    await nap()
+
+    talk.stop()
+
+    expect(talk.turns.value.filter((turn) => turn.voice === 'doing')).toEqual([])
+    expect(talk.working.value).toBe(false)
+
+    release()
+    await asking
+  })
+})
+
+describe('two tools in hand at once', () => {
+  it('says nothing about either when one of them answers', async () => {
+    let release = () => {}
+    const held = new Promise<void>((go) => {
+      release = go
+    })
+    const talk = conversation(
+      doing([used('Search notes', 'entropy'), used('Read a note', 'Vidura'), answered()], held),
+      words,
+      called,
+      now,
+    )
+    const asking = talk.ask('tell me about him', '')
+    await nap()
+
+    // Which tool answered is not said. The one still running is not finished,
+    // and what the model is doing is not known.
+    const lines = talk.turns.value.filter((turn) => turn.voice === 'doing')
+    expect(lines.map((turn) => [turn.text, turn.state])).toEqual([['Read a note', 'arriving']])
+
+    release()
+    await asking
+  })
+})
+
+describe('an exchange that is over', () => {
+  it('leaves nothing saying the agent is still working', async () => {
+    const talk = conversation(doing([used('Search notes'), stopped('went round too many times')]), words, called, now)
+    await talk.ask('what is here?', '')
+
+    expect(talk.turns.value.filter((turn) => turn.voice === 'doing')).toEqual([])
+  })
+
+  it('leaves nothing saying so when the agent could not be reached', async () => {
+    const talk = conversation(
+      {
+        async *ask() {
+          yield used('Search notes')
+          throw new Error('no agent')
+        },
+        finish: async () => {},
+      },
+      words,
+      called,
+      now,
+    )
+    await talk.ask('what is here?', '')
+
+    expect(talk.turns.value.filter((turn) => turn.voice === 'doing')).toEqual([])
+    expect(talk.turns.value.at(-1)?.text).toBe(words.unreachable)
+  })
+})
+
+describe('words with none in them', () => {
+  it('leave the wait standing, and put no empty turn under the question', async () => {
+    let release = () => {}
+    const held = new Promise<void>((go) => {
+      release = go
+    })
+    const talk = conversation(doing([said(''), said('')], held), words, called, now)
+    const asking = talk.ask('what is here?', '')
+    await nap()
+
+    expect(talk.turns.value.map((turn) => `${turn.voice}: ${turn.text}`)).toEqual([
+      'asked: what is here?',
+      `doing: ${words.thinking}`,
+    ])
+
+    release()
+    await asking
+  })
+})

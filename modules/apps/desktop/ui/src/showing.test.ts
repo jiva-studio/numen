@@ -5,11 +5,14 @@
  * showing something stale, with no error and no way back.
  */
 import { describe, expect, it } from 'vitest'
-import { showing, type Core } from './showing'
+import { showing, type Core, type Task } from './showing'
 import type { Neighbourhood } from './plex'
 
 const answer = (path: string): Neighbourhood =>
   ({ focus: { path, title: path, identifier: '' }, related: [] }) as unknown as Neighbourhood
+
+/** A stream that stays open, so a loop waiting on it is not the one under test. */
+const held = () => new Promise<never>(() => {})
 
 const settled = {
   name: 'Vault',
@@ -49,7 +52,9 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     focus: async function* () {},
     // eslint-disable-next-line require-yield
     editing: async function* () {},
-    tasks: async function* () {},
+    tasks: async function* () {
+      await held()
+    },
     read: async () => ({ body: '', refusal: null }),
     write: async () => ({ body: '', refusal: null }),
     create: async () => ({ path: '', refusal: null }),
@@ -465,14 +470,6 @@ describe('a vault that is not being followed', () => {
   })
 })
 
-/**
- * A stream that stays open, which is what a real one does.
- *
- * The stream stays open, so the interval under test is the only one being
- * waited.
- */
-const held = () => new Promise<never>(() => {})
-
 describe('chunks with nothing to embed them', () => {
   it('is not busy, so a count of none is not shown as work', async () => {
     const core = fake({
@@ -619,5 +616,78 @@ describe('a vault reading itself', () => {
     expect(window.learning.value).toBe(true)
     // One reading of a phase is a count. Two are a rate.
     expect(window.rate.value).toBe(0)
+  })
+})
+
+describe('what the application is doing', () => {
+  const reading = (done: number): Task => ({
+    id: 'reading:library/scan.pdf',
+    doing: 'Reading a scan',
+    about: 'library/scan.pdf',
+    done,
+    total: 400,
+    failed: '',
+  })
+
+  it('is what the stream last said, whole', async () => {
+    const core = fake({
+      changes: async function* () {
+        await held()
+      },
+      focus: async function* () {
+        await held()
+      },
+      editing: async function* () {
+        await held()
+      },
+      tasks: async function* () {
+        yield [reading(16)]
+        yield [reading(32)]
+        await held()
+      },
+    })
+    const window = showing(core, async () => {})
+
+    await window.start()
+    await nap()
+
+    expect(window.tasks.value.map((one) => one.done)).toEqual([32])
+
+    window.close()
+  })
+
+  it('takes the stream up again, and says nothing about having lost it', async () => {
+    let opened = 0
+    const core = fake({
+      changes: async function* () {
+        await held()
+      },
+      focus: async function* () {
+        await held()
+      },
+      editing: async function* () {
+        await held()
+      },
+      tasks: async function* () {
+        opened++
+        if (opened === 1) throw new Error('the stream dropped')
+        yield [reading(48)]
+        await held()
+      },
+    })
+    // The clock is the test's, so the wait between one stream and the next is
+    // not a second of it.
+    const window = showing(core, async () => {})
+
+    await window.start()
+    await nap()
+    await nap()
+
+    expect(opened).toBeGreaterThan(1)
+    expect(window.tasks.value.map((one) => one.done)).toEqual([48])
+    // A stream taken up again is not a stream that was lost.
+    expect(window.warning.value).toBe('')
+
+    window.close()
   })
 })

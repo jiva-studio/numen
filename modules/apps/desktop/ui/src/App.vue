@@ -208,11 +208,15 @@ const activity = computed(() => {
  * is the work in hand and not the size of the vault.
  */
 const notices = computed<readonly Notice[]>(() => {
+  // A person asked for every one of these and is waiting to be told it began,
+  // so none of them waits to be drawn.
   const out: Notice[] = tasks.value.map((at) => ({
     id: at.id,
-    says: at.failed ? at.failed : at.doing,
+    says: at.doing,
     about: at.about,
     working: !at.failed,
+    trouble: at.failed,
+    asked: true,
     left: '',
     ...(at.total > 0 ? { done: at.done, total: at.total } : {}),
   }))

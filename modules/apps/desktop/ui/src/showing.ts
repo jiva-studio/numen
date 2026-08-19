@@ -528,6 +528,8 @@ export function showing(
         lost.value = String(error)
       }
       await wait(1000)
+      // Taken up again, so what was said about losing it no longer holds.
+      if (open) lost.value = ''
     }
   }
 

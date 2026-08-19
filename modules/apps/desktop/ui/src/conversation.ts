@@ -73,6 +73,11 @@ export function conversation(
   let next = 0
   let inFlight: AbortController | null = null
 
+  // What takes down the lines the exchange in flight put up. Letting go of an
+  // answer is noticed on the next write, which for a model mid-thought is not
+  // soon, and the screen says so at once.
+  let clear: (() => void) | null = null
+
   const put = (turn: Turn) => {
     const at = turns.value.findIndex((other) => other.id === turn.id)
     if (at < 0) turns.value.push(turn)
@@ -127,7 +132,16 @@ export function conversation(
       else drop(wait)
     }
 
+    clear = () => {
+      takeDown()
+      waiting(false)
+    }
+
     waiting(true)
+
+    // The calls reached for since the model last spoke or was asked again. A
+    // tool answering says which of them it was for none of them.
+    const calls = new Set<string>()
 
     let answer = ''
     let saying = ''
@@ -159,11 +173,21 @@ export function conversation(
 
         switch (step.kind) {
           case 'said':
+            // Words with none in them are not the answer beginning. Taking the
+            // wait down for one leaves the question with an empty turn under it
+            // and nothing saying anybody is working.
+            if (step.text === '') break
+            calls.clear()
             waiting(false)
             if (!saying) {
               takeDown()
               saying = `${next++}`
-              answer = ''
+              answer = step.text
+              // The turn goes up with its first words in the same step the wait
+              // comes down. A window nobody is looking at draws no frames, and
+              // the frames are what grow the turn.
+              put({ id: saying, voice: 'answered', text: answer, state: 'arriving' })
+              break
             }
             answer += step.text
             show()
@@ -172,16 +196,19 @@ export function conversation(
           case 'doing':
             settleAnswer()
             waiting(false)
+            calls.add(`${step.tool}\u0000${step.about}`)
             says = spoken(step.tool)
             about = step.about
             nowDoing('arriving', step.written)
             break
 
-          // A tool answered. Which one is not said, and with two in hand this is
-          // one of them, so the line keeps its name and stops claiming to be
-          // running. The wait goes up under it: what comes next is the model,
-          // and it is named when it begins.
+          // A tool answered. Which one is not said, so with one call in hand the
+          // line keeps its name and stops claiming to be running, and the wait
+          // goes up under it: what comes next is the model, and it is named
+          // when it begins. With more than one call in hand this names none of
+          // them, and the screen stands as it is.
           case 'answered':
+            if (calls.size > 1) break
             if (up) nowDoing('settled')
             waiting(true)
             break
@@ -190,6 +217,7 @@ export function conversation(
           // ours and is not quick. The answer so far settles first, so the line
           // stays below the last thing said and not below a turn still growing.
           case 'thinking':
+            calls.clear()
             settleAnswer()
             takeDown()
             waiting(true)
@@ -221,6 +249,7 @@ export function conversation(
     } finally {
       if (inFlight === flight) {
         inFlight = null
+        clear = null
         working.value = false
       }
     }
@@ -229,6 +258,8 @@ export function conversation(
   const stop = () => {
     inFlight?.abort()
     inFlight = null
+    clear?.()
+    clear = null
     working.value = false
   }
 
