@@ -166,7 +166,7 @@ func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage
 	for _, p := range found {
 		prose, held := read[p.Source]
 		if !held && !gone[p.Source] {
-			prose, err = extracted(ctx, of, p.Source, p.TextPath)
+			prose, err = extracted(ctx, of, p.Source, p.TextFrom, p.Hash)
 			if port.NoNote(err) || errors.Is(err, errUnreadable) {
 				gone[p.Source] = true
 				continue
@@ -198,8 +198,8 @@ var errUnreadable = errors.New("nothing could be read from the source")
 //
 // Which reader produces it is decided in one place, so that what a search slices
 // and what an extractor cut are the same text.
-func extracted(ctx context.Context, of text.Reader, path, textPath string) (string, error) {
-	doc, err := of.Of(ctx, path, textPath)
+func extracted(ctx context.Context, of text.Reader, path, from, hash string) (string, error) {
+	doc, err := of.Of(ctx, path, from, hash)
 	if errors.Is(err, text.ErrUnreadable) {
 		return "", errUnreadable
 	}

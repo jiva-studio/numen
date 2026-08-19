@@ -1,7 +1,7 @@
 -- The large window one chunk sits inside, where to read its text from, and
 -- where the chunk itself stands inside that window. A window with nothing
 -- enclosing it is its own, and stands at its own beginning.
-SELECT s.path, COALESCE(s.text_path, ''),
+SELECT s.path, COALESCE(s.text_from, ''), COALESCE(s.hash, ''),
        COALESCE(p.start, c.start),
        COALESCE(p.length, c.length),
        COALESCE(p.location, c.location, ''),

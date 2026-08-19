@@ -76,7 +76,8 @@ func (s sources) Unembedded(ctx context.Context, vaultID string, model port.Embe
 		out = append(out, domain.Passage{
 			Chunk:       p.Chunk,
 			Source:      p.Path,
-			TextPath:    p.TextPath,
+			TextFrom:    p.TextFrom,
+			Hash:        p.Hash,
 			Start:       p.Start,
 			Length:      p.Length,
 			Location:    p.Location,
@@ -94,7 +95,7 @@ func stored(s port.Source) chunk.Source {
 		MTime:    s.Ref.MTime,
 		Hash:     s.Hash,
 		Recipe:   s.Recipe,
-		TextPath: s.TextPath,
+		TextFrom: s.TextFrom,
 	}
 }
 
@@ -117,7 +118,15 @@ func (s sources) Kept(ctx context.Context, recipe string, of [][]byte) (map[stri
 	return s.read.Kept(ctx, recipe, of)
 }
 
-// Recognised is the sources of one kind standing on a file of their own.
-func (s sources) Recognised(ctx context.Context, vaultID string, kind domain.SourceKind) (map[string]string, error) {
-	return s.read.Recognised(ctx, vaultID, string(kind))
+// Recognised is the sources of one kind whose text a producer made.
+func (s sources) Recognised(ctx context.Context, vaultID string, kind domain.SourceKind) ([]port.Recognised, error) {
+	found, err := s.read.Recognised(ctx, vaultID, string(kind))
+	if err != nil {
+		return nil, err
+	}
+	out := make([]port.Recognised, 0, len(found))
+	for _, r := range found {
+		out = append(out, port.Recognised{Path: r.Path, From: r.From, Hash: r.Hash})
+	}
+	return out, nil
 }

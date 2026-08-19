@@ -1112,3 +1112,40 @@ func TestAVectorStaysWhileAnyChunkStillHoldsItsText(t *testing.T) {
 // said: which model, and how wide. The recipe in use says more. Where the model
 // and the width agree, what was carried was made by the model now in use, and
 // it is not bought a second time.
+
+// recognised puts in one source whose text a producer made.
+func recognised(t *testing.T, db *DB, vault domain.Vault, path, hash string) {
+	t.Helper()
+
+	if err := db.Chunks().SaveSource(t.Context(), vault.ID, chunk.Source{
+		Path: path, Kind: "book", Size: 1000, MTime: 1, Hash: hash, TextFrom: "ocr",
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// What a scan sweeps is its own vault. A source read in another vault is that
+// vault's, and this answer holds none of it.
+func TestRecognisedStaysInsideItsVault(t *testing.T) {
+	db := opened(t)
+
+	recognised(t, db, first, "library/first.pdf", "hash-first")
+	recognised(t, db, second, "library/second.pdf", "hash-second")
+	book(t, db, first, "library/plain.epub", 1)
+
+	for _, c := range []struct {
+		vault domain.Vault
+		want  chunk.Recognised
+	}{
+		{first, chunk.Recognised{Path: "library/first.pdf", From: "ocr", Hash: "hash-first"}},
+		{second, chunk.Recognised{Path: "library/second.pdf", From: "ocr", Hash: "hash-second"}},
+	} {
+		found, err := db.ChunkQueries().Recognised(t.Context(), c.vault.ID, "book")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(found) != 1 || found[0] != c.want {
+			t.Errorf("%s answers with %v, want only %v", c.vault.Name, found, c.want)
+		}
+	}
+}

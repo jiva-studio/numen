@@ -22,12 +22,12 @@ type Reader struct {
 
 // Of is the text a source's chunks are places in.
 //
-// A source naming a file of its own reads from there or reads nothing. Falling
-// back to the document would slice one text at another text's offsets, which is
-// a wrong answer given confidently and is worse than no answer.
-func (r Reader) Of(ctx context.Context, path, textPath string) (*Document, error) {
-	if textPath != "" {
-		return r.recognised(ctx, textPath)
+// A source naming a producer reads what that producer wrote or reads nothing.
+// Falling back to the document would slice one text at another text's offsets,
+// which is a wrong answer given confidently and is worse than no answer.
+func (r Reader) Of(ctx context.Context, path, from, hash string) (*Document, error) {
+	if from != "" {
+		return r.recognised(ctx, from, hash)
 	}
 	ref, err := r.Vault.Stat(ctx, path)
 	if err != nil {
@@ -40,21 +40,25 @@ func (r Reader) Of(ctx context.Context, path, textPath string) (*Document, error
 	return Read(ref, raw)
 }
 
-// recognised is a source whose text is a file a recogniser wrote.
-func (r Reader) recognised(ctx context.Context, name string) (*Document, error) {
+// recognised is a source whose text a producer wrote. A recognition still
+// running is the source's text while it runs.
+func (r Reader) recognised(ctx context.Context, from, hash string) (*Document, error) {
 	if r.Derived == nil {
 		return nil, ErrUnreadable
 	}
-	raw, err := r.Derived.Read(ctx, name)
-	if errors.Is(err, fs.ErrNotExist) {
-		// The store is a folder on the person's disk and they may empty it. The
-		// source says nothing until a scan notices and cuts it again.
-		return nil, ErrUnreadable
+	for _, name := range []string{Artifact(from, hash), Partial(from, hash)} {
+		raw, err := r.Derived.Read(ctx, name)
+		if errors.Is(err, fs.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		return Recognised(raw), nil
 	}
-	if err != nil {
-		return nil, err
-	}
-	return Recognised(raw), nil
+	// The store is a folder on the person's disk and they may empty it. The
+	// source says nothing until a scan notices and cuts it again.
+	return nil, ErrUnreadable
 }
 
 // Recognised is a recognition, as the text its chunks are places in and the
@@ -72,25 +76,42 @@ func Recognised(raw []byte) *Document {
 	return doc
 }
 
-// Artifact is the name a recognition of these bytes is kept under.
+// Artifact is the name a producer's recognition of these bytes is kept under.
 //
 // It is the hash of what was read and not the path it was read from, so a
 // document renamed or moved keeps its recognition, and two copies of one
 // document in a vault share the one file rather than being read twice.
-func Artifact(area, hash string) string {
-	return area + "/" + hash + ".txt"
+func Artifact(from, hash string) string {
+	return from + "/" + hash + ".txt"
 }
 
-// Partial is the name a recognition still running is kept under. It is not an
-// artifact until it is complete, and nothing reads it back as one.
-func Partial(area, hash string) string {
-	return area + "/" + hash + ".partial"
+// Partial is the name a producer's recognition still running is kept under. It
+// is not an artifact until it is complete, and nothing reads it back as one.
+func Partial(from, hash string) string {
+	return from + "/" + hash + ".partial"
+}
+
+// Boxes is the name the coordinates a model produced are kept under. They are
+// kept because no machine here remakes them cheaply.
+func Boxes(from, hash string) string {
+	return from + "/" + hash + ".boxes"
 }
 
 // Beside is the name of what says which models produced an artifact. Nothing on
 // any hot path reads it; it is there so a person can ask what read a text they
 // are looking at, and so a sweep can find everything a recogniser now known to
 // be bad produced.
-func Beside(area, hash string) string {
-	return area + "/" + hash + ".json"
+func Beside(from, hash string) string {
+	return from + "/" + hash + ".json"
+}
+
+// Names is every file one recognition of these bytes is kept under. One run
+// made them and none of them means anything without the others.
+func Names(from, hash string) []string {
+	return []string{
+		Artifact(from, hash),
+		Partial(from, hash),
+		Boxes(from, hash),
+		Beside(from, hash),
+	}
 }
