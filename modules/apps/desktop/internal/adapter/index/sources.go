@@ -111,3 +111,8 @@ func windows(in []port.Window) []chunk.Window {
 	}
 	return out
 }
+
+// Kept is the vectors already made for these texts under this recipe.
+func (s sources) Kept(ctx context.Context, recipe string, of [][]byte) (map[string][]byte, error) {
+	return s.read.Kept(ctx, recipe, of)
+}

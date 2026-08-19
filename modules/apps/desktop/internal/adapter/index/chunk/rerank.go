@@ -29,12 +29,12 @@ type scored struct {
 // A candidate the index holds no comparable vector for cannot be compared and
 // is not an answer. A vector that is read and does not compare is a corrupt
 // row, and says so.
-func (q *Queries) rerank(ctx context.Context, query []float32, candidates []int64, floor float64) ([]int64, error) {
+func (q *Queries) rerank(ctx context.Context, model string, query []float32, candidates []int64, floor float64) ([]int64, error) {
 	ids, err := json.Marshal(candidates)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.db.QueryContext(ctx, stmt.Get("rerank"), string(ids), len(query))
+	rows, err := q.db.QueryContext(ctx, stmt.Get("rerank"), string(ids), model, len(query))
 	if err != nil {
 		return nil, err
 	}

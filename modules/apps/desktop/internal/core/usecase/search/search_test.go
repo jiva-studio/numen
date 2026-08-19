@@ -189,7 +189,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	// The meaning half answers with the whole table's best k, so this is where a
 	// lost filter shows.
 	dense := c.db.ChunkQueries()
-	near, err := dense.Nearest(ctx, c.first.ID, pointing(+1), 20, search.DefaultFloor)
+	near, err := dense.Nearest(ctx, c.first.ID, model.String(), pointing(+1), 20, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}

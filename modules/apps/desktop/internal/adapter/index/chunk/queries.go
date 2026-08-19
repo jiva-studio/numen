@@ -3,8 +3,11 @@ package chunk
 import (
 	"context"
 	"database/sql"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/embedding"
@@ -104,7 +107,7 @@ func (q *Queries) Lexical(ctx context.Context, vaultID, query string, limit int,
 // full-precision vectors order what it kept. A chunk that does not reach the
 // similarity floor is not an answer, so a vault with nothing to say answers
 // with nothing.
-func (q *Queries) Nearest(ctx context.Context, vaultID string, query []float32, limit int, floor float64) ([]domain.Passage, error) {
+func (q *Queries) Nearest(ctx context.Context, vaultID, model string, query []float32, limit int, floor float64) ([]domain.Passage, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("the meaning half needs a positive limit, got %d", limit)
 	}
@@ -123,7 +126,7 @@ func (q *Queries) Nearest(ctx context.Context, vaultID string, query []float32, 
 	if err != nil {
 		return nil, err
 	}
-	ranked, err := q.rerank(ctx, query, near, floor)
+	ranked, err := q.rerank(ctx, model, query, near, floor)
 	if err != nil {
 		return nil, err
 	}
@@ -305,4 +308,46 @@ func (q *Queries) Progress(ctx context.Context, vaultID, model string) (held, em
 	err = q.db.QueryRowContext(ctx, stmt.Get("progress"), model, vault).
 		Scan(&held, &embedded)
 	return held, embedded, err
+}
+
+// Kept is the vectors already made for the texts given under the recipe given,
+// by the hex of their fingerprint.
+//
+// A vector that comes back was paid for once, and asking a model for it again
+// is buying what is already here.
+func (q *Queries) Kept(ctx context.Context, recipe string, of [][]byte) (map[string][]byte, error) {
+	if len(of) == 0 {
+		return nil, nil
+	}
+	wanted := make([]string, 0, len(of))
+	for _, one := range of {
+		if len(one) == 0 {
+			continue
+		}
+		wanted = append(wanted, hex.EncodeToString(one))
+	}
+	if len(wanted) == 0 {
+		return nil, nil
+	}
+	asked, err := json.Marshal(wanted)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.db.QueryContext(ctx, stmt.Get("kept_vectors"), string(asked), recipe)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := make(map[string][]byte, len(wanted))
+	for rows.Next() {
+		var fingerprint string
+		var v []byte
+		if err := rows.Scan(&fingerprint, &v); err != nil {
+			return nil, err
+		}
+		out[strings.ToLower(fingerprint)] = v
+	}
+	return out, rows.Err()
 }

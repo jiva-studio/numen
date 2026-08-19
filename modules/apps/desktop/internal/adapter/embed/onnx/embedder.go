@@ -46,6 +46,7 @@ const (
 // Embedder is one model, loaded and compiled.
 type Embedder struct {
 	name       string
+	from       string
 	dimensions int
 	maxTokens  int
 	batchTexts int
@@ -83,6 +84,7 @@ func Open(cfg embed.LocalModel) (*Embedder, error) {
 
 	e := &Embedder{
 		name:       cfg.Name,
+		from:       paths.model,
 		dimensions: cfg.Dimensions,
 		maxTokens:  max(cfg.MaxTokens, tokenStep),
 		batchTexts: max(cfg.BatchTexts, 1),
@@ -153,7 +155,9 @@ func (e *Embedder) Close() error {
 }
 
 func (e *Embedder) Model() port.EmbeddingModel {
-	return port.EmbeddingModel{Name: e.name, Dimensions: e.dimensions, MaxTokens: e.maxTokens}
+	return port.EmbeddingModel{
+		Name: e.name, Dimensions: e.dimensions, MaxTokens: e.maxTokens, From: e.from,
+	}
 }
 
 // Embed runs the model over the texts, a batch at a time.

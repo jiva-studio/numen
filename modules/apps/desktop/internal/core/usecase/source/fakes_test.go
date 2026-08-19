@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"cmp"
 	"context"
+	"encoding/hex"
 	"fmt"
 	"hash/fnv"
 	"io/fs"
@@ -40,6 +41,8 @@ type store struct {
 	groups  [][]port.Vector         // every write of vectors, in order
 	written map[string]int          // extractions per path
 	next    int64
+	// kept is what the index already holds, by recipe and fingerprint.
+	kept map[string][]byte
 }
 
 // storedChunk is one row of chunks. `parent` is zero for a large window.
@@ -91,6 +94,21 @@ func (s *store) SaveVectors(_ context.Context, vectors []port.Vector) error {
 		s.vectors[v.Chunk] = append(s.vectors[v.Chunk], v)
 	}
 	return nil
+}
+
+// Kept is the vectors this store already holds for the texts given, which is
+// what a real index answers out of what it was paid for.
+func (s *store) Kept(_ context.Context, recipe string, of [][]byte) (map[string][]byte, error) {
+	if s.kept == nil {
+		return nil, nil
+	}
+	out := map[string][]byte{}
+	for _, one := range of {
+		if v, held := s.kept[recipe+"/"+hex.EncodeToString(one)]; held {
+			out[hex.EncodeToString(one)] = v
+		}
+	}
+	return out, nil
 }
 
 func (s *store) Fingerprints(_ context.Context, vaultID string, kind domain.SourceKind) (map[string]domain.FileRef, error) {

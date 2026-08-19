@@ -2,6 +2,7 @@ package port
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 )
 
@@ -24,11 +25,29 @@ type EmbeddingModel struct {
 	// several tokens a word, and a window silently truncated is a window indexed
 	// for text it does not contain.
 	MaxTokens int
+
+	// From is where the vectors are made: the address of the service, or the
+	// place a local model was loaded from. Two models answering to one name
+	// from two places are two models, and a vector made by one says nothing
+	// about what the other would have made.
+	From string
 }
 
 // String is the identity as one value, for a column that holds it.
 func (m EmbeddingModel) String() string {
 	return m.Name + "@" + strconv.Itoa(m.Dimensions)
+}
+
+// Recipe is everything about this model that decides what a vector is, as one
+// value.
+//
+// A vector kept beyond the row that pointed at it is claimed again by the text
+// it was made from and the recipe it was made under. Anything left out of the
+// recipe is something that can change while the key does not, and a vector
+// found under a key that no longer describes it is worse than one that was
+// never kept.
+func (m EmbeddingModel) Recipe() string {
+	return fmt.Sprintf("%s|%s|%d|%d", m.From, m.Name, m.Dimensions, m.MaxTokens)
 }
 
 // Embedder turns text into vectors. The core asks for it and does not know

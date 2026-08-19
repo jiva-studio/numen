@@ -66,7 +66,7 @@ func New(model embed.ServiceModel) (*Client, error) {
 }
 
 func (c *Client) Model() port.EmbeddingModel {
-	return port.EmbeddingModel{Name: c.model.Name, Dimensions: c.dimensions}
+	return port.EmbeddingModel{Name: c.model.Name, Dimensions: c.dimensions, From: c.model.BaseURL}
 }
 
 // Embed sends the texts in as few requests as the character budget allows.

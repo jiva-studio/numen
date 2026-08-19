@@ -3,7 +3,7 @@
 --
 -- A chunk that went while its vector was being made is written nothing, and the
 -- run that was making it carries on.
-INSERT INTO vectors (chunk_id, model, dims, kind, v)
+INSERT INTO chunk_vectors (chunk_id, model, dims, kind, v)
 SELECT id, ?, ?, ?, ? FROM chunks WHERE id = ?
 ON CONFLICT (chunk_id) DO UPDATE SET
     model = excluded.model,

@@ -545,6 +545,16 @@ func embedSources(
 		return
 	}
 
+	// What this pass owes, asked once before it starts: the chunks that can
+	// carry a vector and do not. The pass finds them a few hundred at a time,
+	// and a total that grows as it goes is a count that never settles.
+	owing := int64(0)
+	if api.Progress != nil {
+		if held, embedded, err := api.Progress.Progress(ctx, api.Vault.ID, text(&api.Model)); err == nil {
+			owing = max(0, held-embedded)
+		}
+	}
+
 	embed := source.Embed{
 		Readers:  readers,
 		Chunks:   db.VectorsOwing(),
@@ -552,13 +562,12 @@ func embedSources(
 		Embedder: embedder,
 		OnProgress: func(res source.EmbedResult) {
 			api.Reading.Store(res.Reading)
-			// What this pass found to do and how much of it is done. A person who
-			// edited one note is waiting on that note.
-			api.Owed.Store(&Owed{Owing: int64(res.Owing), Made: int64(res.Embedded)})
+			// A person who edited one note is waiting on that note, so this is
+			// the work in hand and not the size of the vault.
+			api.Owed.Store(&Owed{Owing: owing, Made: int64(res.Embedded)})
 		},
 	}
-	// Nothing found yet, so nothing is owed.
-	api.Owed.Store(&Owed{})
+	api.Owed.Store(&Owed{Owing: owing})
 	api.Learning.Store(true)
 	if _, err := embed.Execute(ctx, api.Vault); err != nil && !errors.Is(err, context.Canceled) {
 		fmt.Fprintf(out, "embedding %s: %v\n", api.Vault.Name, err)

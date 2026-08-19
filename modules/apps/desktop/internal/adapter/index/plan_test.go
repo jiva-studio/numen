@@ -199,7 +199,7 @@ func cut(t *testing.T, tx *sql.Tx, source, vault int64) {
 		}
 		index(t, tx, small, "entropy and the observer")
 		if _, err := tx.ExecContext(ctx,
-			`INSERT INTO vectors (chunk_id, model, dims, kind, v) VALUES (?, 'model', 1024, 'int8', ?)`,
+			`INSERT INTO chunk_vectors (chunk_id, model, dims, kind, v) VALUES (?, 'model', 1024, 'int8', ?)`,
 			small, coarse); err != nil {
 			t.Fatal(err)
 		}

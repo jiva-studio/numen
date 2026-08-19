@@ -9,5 +9,5 @@
 -- "has a vector for this model" means.
 SELECT count(*), count(v.chunk_id)
   FROM chunks c
-  LEFT JOIN vectors v ON v.chunk_id = c.id AND v.model = ?
+  LEFT JOIN chunk_vectors v ON v.chunk_id = c.id AND v.model = ?
  WHERE c.vault_id = ? AND c.parent IS NOT NULL;

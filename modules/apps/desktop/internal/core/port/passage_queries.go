@@ -22,5 +22,5 @@ type PassageQueries interface {
 	// at most `limit` of them. `query` is the full precision the model answered
 	// with, and a chunk whose similarity to it is under `floor` is not an answer
 	// and does not come back.
-	Nearest(ctx context.Context, vaultID string, query []float32, limit int, floor float64) ([]domain.Passage, error)
+	Nearest(ctx context.Context, vaultID, model string, query []float32, limit int, floor float64) ([]domain.Passage, error)
 }

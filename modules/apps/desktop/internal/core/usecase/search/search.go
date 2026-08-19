@@ -126,7 +126,7 @@ func (u Search) nearest(ctx context.Context, v domain.Vault, query string, p Par
 	if len(vectors) != 1 {
 		return nil, fmt.Errorf("the embedder answered with %d vectors for one query", len(vectors))
 	}
-	return u.passages.Nearest(ctx, v.ID, vectors[0], p.Dense, p.Floor)
+	return u.passages.Nearest(ctx, v.ID, u.embedder.Model().String(), vectors[0], p.Dense, p.Floor)
 }
 
 // read fills in the text of each passage from the vault. A chunk is a place in a

@@ -6,7 +6,7 @@
 SELECT c.id, s.path, c.start, c.length, COALESCE(c.location, ''), COALESCE(c.parent, 0)
 FROM chunks c
 JOIN sources s ON s.id = c.source_id
-LEFT JOIN vectors v ON v.chunk_id = c.id AND v.model = ?
+LEFT JOIN chunk_vectors v ON v.chunk_id = c.id AND v.model = ?
 WHERE c.vault_id = ? AND c.id > ? AND c.parent IS NOT NULL AND v.chunk_id IS NULL
 ORDER BY c.id
 LIMIT ?;
