@@ -52,6 +52,18 @@ service VaultService {
   // note is shown; the note itself arrives the way every other change does.
   rpc Editing(EditingRequest) returns (stream EditingResponse);
 
+  // Tasks reports everything the application is doing behind the window, for as
+  // long as the caller listens: what it is, what it is on, and how far it has
+  // got.
+  //
+  // The whole list arrives every time any of it changes, and the first arrives
+  // at once, so a window that opened while work was running is told about it.
+  // It is a stream rather than a question asked over and over, because what is
+  // being done is known here the moment it changes and work can begin without
+  // the window asking for it — an agent is told to read a document, and this is
+  // where the person watching sees it happen.
+  rpc Tasks(TasksRequest) returns (stream TasksResponse);
+
   // Read answers with the prose of a note, below its frontmatter.
   rpc Read(ReadRequest) returns (ReadResponse);
 
@@ -201,6 +213,41 @@ message StateResponse {
   // where chunks and embedded are the whole of what the vault holds.
   int64 owing = 15;
   int64 made = 16;
+
+}
+
+message TasksRequest {}
+
+message TasksResponse {
+  // Everything being done now, in the order the work began. The list arrives
+  // whole, because what is being done is a list and not a set of differences to
+  // apply.
+  repeated Task tasks = 1;
+}
+
+// A Task is one piece of work the application is doing behind the window.
+//
+// Every kind of work is one of these. That is the point: the next kind is an
+// entry in a list rather than another field on the state, another thing for the
+// window to poll, and another branch in what draws it.
+message Task {
+  // Id is what this work is called, so that the same work reported again
+  // replaces itself rather than appearing twice.
+  string id = 1;
+
+  // Doing is the work, in the words to show. About is what it is on, and is
+  // empty for work that is on nothing in particular.
+  string doing = 2;
+  string about = 3;
+
+  // Done and total are how far it has got, when there is a total to count
+  // against. Both zero is work running with nothing to count, which is an
+  // ordinary state and not an unknown one.
+  int64 done = 4;
+  int64 total = 5;
+
+  // Failed is why the work stopped, when it stopped badly.
+  string failed = 6;
 }
 
 message OpeningRequest {}
