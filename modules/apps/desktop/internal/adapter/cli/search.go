@@ -39,7 +39,7 @@ func searchCommand(ctx context.Context, out io.Writer, cfg container.Config, arg
 		defer func() { _ = closeEmbedder() }()
 	}
 
-	found, err := search.New(db.Passages(), cfg.VaultReaders(), embedder).
+	found, err := search.New(db.Passages(), cfg.VaultReaders(), embedder, cfg.Embedding.Floor).
 		Execute(ctx, v, args[1], search.Parameters{})
 	if err != nil {
 		return err

@@ -16,6 +16,8 @@ const vault = (over: Partial<Reading> = {}): Reading => ({
   booksRead: 0,
   chunks: 0,
   embedded: 0,
+  owing: 0,
+  made: 0,
   embedding: false,
   rate: 0,
   ...over,
@@ -48,14 +50,25 @@ describe('a vault with work in hand', () => {
     expect(foot.working).toBe(true)
   })
 
-  it('counts chunks once it is embedding, against the chunks and not the books', () => {
+  it('counts what the pass found to do, and not what the vault holds', () => {
+    // Somebody who changed one note is waiting on one chunk. A count of the
+    // whole vault beside it says nothing about what they are waiting for.
     const foot = footOf(
-      vault({ busy: true, learning: true, books: 40, booksRead: 40, chunks: 4823, embedded: 1200 }),
+      vault({
+        busy: true,
+        learning: true,
+        books: 40,
+        booksRead: 40,
+        chunks: 65261,
+        embedded: 65260,
+        owing: 8,
+        made: 3,
+      }),
     )
 
     expect(foot.phase).toBe('learning')
-    expect(foot.tally).toEqual({ done: 1200, total: 4823 })
-    expect(foot.left).toBe(3623)
+    expect(foot.tally).toEqual({ done: 3, total: 8 })
+    expect(foot.left).toBe(5)
   })
 
   it('has no count in the moment between the phases', () => {
@@ -69,7 +82,7 @@ describe('a vault with work in hand', () => {
   })
 
   it('hands over the rate it was given, and nothing else', () => {
-    const foot = footOf(vault({ busy: true, learning: true, chunks: 100, embedded: 40, rate: 8 }))
+    const foot = footOf(vault({ busy: true, learning: true, owing: 100, made: 40, rate: 8 }))
 
     expect(foot.perSecond).toBe(8)
     expect(foot.left).toBe(60)

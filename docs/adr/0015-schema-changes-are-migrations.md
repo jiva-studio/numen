@@ -32,10 +32,14 @@ migrations.**
 - **Each migration runs in one transaction together with its version bump.** A
   failure leaves the database at the last version that fully applied, so the next
   start retries a whole migration rather than resuming half-way through one.
-- A migration that genuinely cannot preserve what it changes may empty the
-  tables it affects, and the next scan refills them. That is then one migration's
-  decision, visible in the file, rather than the behaviour of every schema change
-  everywhere.
+- **Emptying is a migration's own decision.** A numbered file may empty the
+  tables it changes, and the next scan refills them. Nothing outside a migration
+  file empties anything.
+- **An index at a version this build does not carry is refused.** The
+  application says which version the index holds and which this build knows, and
+  opens nothing. A schema written by a later build holds what this one cannot
+  read, and a build that cannot read a thing has nothing to say about whether it
+  is worth keeping.
 
 Adding a column, an index or a table therefore costs the user nothing. Only a
 change that redefines what is stored costs a re-scan, and only for the part that

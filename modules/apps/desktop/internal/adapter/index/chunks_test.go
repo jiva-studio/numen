@@ -1,13 +1,21 @@
 package index
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"database/sql"
+	"encoding/hex"
+	"errors"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/embedding"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 )
 
 // The two vaults every scoping test here uses. Their content shares nothing, so
@@ -26,6 +34,30 @@ func bits(seed byte) []byte {
 		b[i] = seed
 	}
 	return b
+}
+
+// direction is the vector a seed stands for: dimension i takes the sign of the
+// bit the coarse vector keeps it in. Quantising it gives back `bits(seed)`, so
+// the two representations of a chunk agree.
+func direction(seed byte) []float32 {
+	v := make([]float32, 1024)
+	for i := range v {
+		v[i] = -1
+		if seed&(1<<(7-uint(i)%8)) != 0 {
+			v[i] = 1
+		}
+	}
+	return v
+}
+
+// precise is the full-precision half of a vector, one signed byte per dimension.
+func precise(v []float32) []byte {
+	q := embedding.Bytes(embedding.Normalise(v))
+	out := make([]byte, len(q))
+	for i, x := range q {
+		out[i] = byte(x)
+	}
+	return out
 }
 
 func opened(t *testing.T) *DB {
@@ -85,13 +117,33 @@ func vectorise(t *testing.T, db *DB, vault domain.Vault, seed byte) {
 	vectors := make([]chunk.Vector, 0, len(owing))
 	for _, p := range owing {
 		vectors = append(vectors, chunk.Vector{
-			Chunk: p.Chunk, Model: "model", Dims: 1024, Kind: "int8",
-			Value: bits(seed), Coarse: bits(seed),
+			Chunk: p.Chunk, Fingerprint: fingerprintOf(t, db, p.Chunk), Recipe: "model",
+			Value: precise(direction(seed)), Coarse: bits(seed),
 		})
 	}
 	if err := db.Chunks().SaveVectors(ctx, vectors); err != nil {
 		t.Fatal(err)
 	}
+}
+
+// fingerprintOf is the text one chunk holds, as the vector made from it is
+// addressed. The real path hashes what it is about to send; a fixture reads
+// what the cut already recorded.
+func fingerprintOf(t *testing.T, db *DB, chunk int64) []byte {
+	t.Helper()
+
+	var held string
+	if err := db.write.QueryRowContext(t.Context(),
+		`SELECT hash FROM chunks WHERE id = ?`, chunk).Scan(&held); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		t.Fatal(err)
+	}
+	raw, err := hex.DecodeString(held)
+	if err != nil || len(raw) == 0 {
+		// A fixture that stored no text still needs a key of its own.
+		sum := sha256.Sum256([]byte(strconv.FormatInt(chunk, 10)))
+		return sum[:]
+	}
+	return raw
 }
 
 func counted(t *testing.T, db *DB, statement string, args ...any) int {
@@ -104,18 +156,19 @@ func counted(t *testing.T, db *DB, statement string, args ...any) int {
 }
 
 func TestTheCoarsePassStaysInsideItsVault(t *testing.T) {
-	// A nearest-neighbour search answers with the whole table's best k. The two
-	// vaults are seeded so each one's nearest neighbour is the other's, so a
-	// query asked of the first is nearer to everything the second holds.
+	// A nearest-neighbour search answers with the whole table's best k. Both
+	// vaults are seeded near enough to either query to be an answer, and each
+	// query is the other vault's own vector, so the wrong vault's rows are the
+	// nearer ones and a lost filter puts them first.
 	ctx := t.Context()
 	db := opened(t)
-	book(t, db, first, "library/first.epub", 0x00)
+	book(t, db, first, "library/first.epub", 0xfe)
 	book(t, db, second, "library/second.epub", 0xff)
 
 	queries := db.ChunkQueries()
 
 	near := func(vault domain.Vault, seed byte) []domain.Passage {
-		matches, err := queries.Nearest(ctx, vault.ID, bits(seed), 10)
+		matches, err := queries.Nearest(ctx, vault.ID, "model", direction(seed), 10, search.DefaultFloor)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -132,7 +185,7 @@ func TestTheCoarsePassStaysInsideItsVault(t *testing.T) {
 			t.Errorf("the first vault answered with %s, which belongs to the second", m.Source)
 		}
 	}
-	for _, m := range near(second, 0x00) {
+	for _, m := range near(second, 0xfe) {
 		if !strings.HasPrefix(m.Source, "library/second") {
 			t.Errorf("the second vault answered with %s, which belongs to the first", m.Source)
 		}
@@ -151,7 +204,7 @@ func TestTheWordsHalfStaysInsideItsVault(t *testing.T) {
 	queries := db.ChunkQueries()
 
 	// "opening" is in both vaults, so what separates them is the filter.
-	shared, err := queries.Lexical(ctx, first.ID, "opening", 10)
+	shared, err := queries.Lexical(ctx, first.ID, "opening", 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -165,7 +218,7 @@ func TestTheWordsHalfStaysInsideItsVault(t *testing.T) {
 	}
 
 	// A word only the other vault holds is not in this one.
-	leaked, err := queries.Lexical(ctx, first.ID, "second", 10)
+	leaked, err := queries.Lexical(ctx, first.ID, "second", 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -182,7 +235,7 @@ func TestAHitComesBackAsTheWindowThatIsRead(t *testing.T) {
 	book(t, db, first, "library/first.epub", 0x00)
 
 	queries := db.ChunkQueries()
-	dense, err := queries.Nearest(ctx, first.ID, bits(0x00), 10)
+	dense, err := queries.Nearest(ctx, first.ID, "model", direction(0x00), 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -191,7 +244,7 @@ func TestAHitComesBackAsTheWindowThatIsRead(t *testing.T) {
 	}
 	// The words half finds the small windows and the large one, which is one row
 	// per window of the book.
-	lexical, err := queries.Lexical(ctx, first.ID, "first", 10)
+	lexical, err := queries.Lexical(ctx, first.ID, "first", 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -222,7 +275,7 @@ func TestCuttingASourceTwiceDoesNotDoubleIt(t *testing.T) {
 	book(t, db, first, "library/first.epub", 0x00)
 
 	chunks := counted(t, db, `SELECT COUNT(*) FROM chunks`)
-	vectors := counted(t, db, `SELECT COUNT(*) FROM vectors`)
+	vectors := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`)
 	vec := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`)
 	fts := counted(t, db, `SELECT COUNT(*) FROM chunks_fts`)
 	if chunks != 3 || vectors != 2 || vec != 2 || fts != 3 {
@@ -235,7 +288,7 @@ func TestCuttingASourceTwiceDoesNotDoubleIt(t *testing.T) {
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks`); got != chunks {
 		t.Errorf("%d chunks after cutting the same source twice, want %d", got, chunks)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM vectors`); got != vectors {
+	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != vectors {
 		t.Errorf("%d vectors after cutting the same source twice, want %d", got, vectors)
 	}
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != vec {
@@ -291,21 +344,21 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 		   AND c.parent NOT IN (SELECT id FROM chunks WHERE parent IS NULL)`); got != 0 {
 		t.Errorf("%d small windows sit inside a large one that is gone", got)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM vectors`); got != 0 {
+	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
 		t.Errorf("%d vectors describe a note that has been rewritten", got)
 	}
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
 		t.Errorf("%d rows in the vector index describe a note that has been rewritten", got)
 	}
 	// The words of the note as it stands now are what the full-text index holds.
-	found, err := db.ChunkQueries().Lexical(ctx, first.ID, "longer", 10)
+	found, err := db.ChunkQueries().Lexical(ctx, first.ID, "longer", 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(found) == 0 || found[0].Source != note.Ref.Path {
 		t.Errorf("the rewritten note is not findable by its new words: %+v", found)
 	}
-	if stale, err := db.ChunkQueries().Lexical(ctx, first.ID, "first", 10); err != nil {
+	if stale, err := db.ChunkQueries().Lexical(ctx, first.ID, "first", 10, false); err != nil {
 		t.Fatal(err)
 	} else if len(stale) != 0 {
 		t.Errorf("the words of the note before it was rewritten still answer: %+v", stale)
@@ -359,14 +412,14 @@ func TestRemovingASourceLeavesNothingSearchable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	matches, err := db.ChunkQueries().Nearest(ctx, first.ID, bits(0x00), 10)
+	matches, err := db.ChunkQueries().Nearest(ctx, first.ID, "model", direction(0x00), 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(matches) != 0 {
 		t.Errorf("a removed book still answers a search: %+v", matches)
 	}
-	words, err := db.ChunkQueries().Lexical(ctx, first.ID, "first", 10)
+	words, err := db.ChunkQueries().Lexical(ctx, first.ID, "first", 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -737,7 +790,7 @@ func TestAChunkThatWentIsWrittenNoVectorAndStopsNothing(t *testing.T) {
 	vectors := make([]chunk.Vector, 0, len(owing))
 	for _, p := range owing {
 		vectors = append(vectors, chunk.Vector{
-			Chunk: p.Chunk, Model: "model", Dims: 1024, Kind: "int8",
+			Chunk: p.Chunk, Fingerprint: fingerprintOf(t, db, p.Chunk), Recipe: "model",
 			Value: bits(1), Coarse: bits(1),
 		})
 	}
@@ -754,7 +807,7 @@ func TestAChunkThatWentIsWrittenNoVectorAndStopsNothing(t *testing.T) {
 			gone++
 		}
 		for _, half := range []string{
-			`SELECT count(*) FROM vectors WHERE chunk_id = ?`,
+			`SELECT count(*) FROM chunks_vec WHERE chunk_id = ?`,
 			`SELECT count(*) FROM chunks_vec WHERE chunk_id = ?`,
 		} {
 			if got := counted(t, db, half, p.Chunk); got != held {
@@ -766,3 +819,296 @@ func TestAChunkThatWentIsWrittenNoVectorAndStopsNothing(t *testing.T) {
 		t.Fatalf("%d of the chunks the pass was given went, want the one that was cut again", gone)
 	}
 }
+
+func TestAChunkTooFarFromTheQueryIsNoAnswer(t *testing.T) {
+	// A nearest-neighbour query answers with k rows whatever was asked. What a
+	// vault holds nothing near is not an answer, and the floor is what says so.
+	ctx := t.Context()
+	db := opened(t)
+	book(t, db, first, "library/first.epub", 0x00)
+	queries := db.ChunkQueries()
+
+	far, err := queries.Nearest(ctx, first.ID, "model", direction(0xff), 10, search.DefaultFloor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(far) != 0 {
+		t.Errorf("a vault pointing the other way answered with %v", far)
+	}
+
+	// The same vault, asked what it does hold.
+	near, err := queries.Nearest(ctx, first.ID, "model", direction(0x00), 10, search.DefaultFloor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(near) != 2 {
+		t.Errorf("%d answers, want the book's two small windows", len(near))
+	}
+}
+
+func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
+	// The two representations of a chunk are written apart here, so the bits say
+	// one thing and the full-precision vectors another. The coarse pass keeps
+	// several times what is asked for, and what leaves is the one the real
+	// vectors put first.
+	ctx := t.Context()
+	db := opened(t)
+	cutInto(t, db, first, "library/coarse.epub", "the passage the bits prefer")
+	cutInto(t, db, first, "library/true.epub", "the passage the vectors prefer")
+
+	owing, err := db.ChunkQueries().Unembedded(ctx, first.ID, "model", 0, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(owing) != 2 {
+		t.Fatalf("%d chunks owe a vector, want the two small windows", len(owing))
+	}
+	if err := db.Chunks().SaveVectors(ctx, []chunk.Vector{{
+		Chunk: owing[0].Chunk, Fingerprint: fingerprintOf(t, db, owing[0].Chunk), Recipe: "model",
+		Coarse: bits(0xff), Value: precise(direction(0xfe)),
+	}, {
+		Chunk: owing[1].Chunk, Fingerprint: fingerprintOf(t, db, owing[1].Chunk), Recipe: "model",
+		Coarse: bits(0xfe), Value: precise(direction(0xff)),
+	}}); err != nil {
+		t.Fatal(err)
+	}
+
+	near, err := db.ChunkQueries().Nearest(ctx, first.ID, "model", direction(0xff), 1, search.DefaultFloor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(near) != 1 {
+		t.Fatalf("%d answers, want the one that was asked for", len(near))
+	}
+	if near[0].Source != "library/true.epub" {
+		t.Errorf("the answer is %s, which is the one the bits put first", near[0].Source)
+	}
+}
+
+// A vector outlives the chunk that asked for it.
+//
+// Chunks are renumbered by every cut and by every rebuild of the index. What a
+// model made is kept by the text it read, so a vault whose rows all went and
+// came back again is not bought a second time.
+func TestAVectorIsKeptByTheTextItWasMadeFrom(t *testing.T) {
+	ctx := t.Context()
+	db := opened(t)
+	cutInto(t, db, first, "library/kept.epub", "the passage that was paid for")
+
+	owing, err := db.ChunkQueries().Unembedded(ctx, first.ID, "model", 0, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(owing) == 0 {
+		t.Fatal("nothing owes a vector")
+	}
+
+	text := "the passage that was paid for"
+	sum := sha256.Sum256([]byte(text))
+	value := precise(direction(0x11))
+	if err := db.Chunks().SaveVectors(ctx, []chunk.Vector{{
+		Chunk: owing[0].Chunk, Fingerprint: sum[:], Recipe: "a recipe",
+		Coarse: bits(0x11), Value: value,
+	}}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Everything a rebuild reaches: the chunks, their vectors, the coarse index.
+	for _, statement := range []string{`DELETE FROM sources`, `DELETE FROM chunks_vec`} {
+		if _, err := db.write.ExecContext(ctx, statement); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
+		t.Fatalf("%d vectors survived a rebuild of the chunks, want none", got)
+	}
+
+	kept, err := db.ChunkQueries().Kept(ctx, "a recipe", [][]byte{sum[:]})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(kept) != 1 {
+		t.Fatalf("the index kept %d vectors for text it paid for, want 1", len(kept))
+	}
+	if got := kept[hex.EncodeToString(sum[:])]; !bytes.Equal(got, value) {
+		t.Errorf("what was kept is %d bytes, want the %d that were paid for", len(got), len(value))
+	}
+
+	// Another recipe is another vector, and this one was never made.
+	other, err := db.ChunkQueries().Kept(ctx, "another recipe", [][]byte{sum[:]})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(other) != 0 {
+		t.Errorf("a vector made under one recipe answered for another: %v", other)
+	}
+}
+
+// One model's vectors are not answers to another model's question.
+//
+// Two models of the same width write blobs of the same size, and a rerank that
+// reads both is comparing directions two models chose for themselves. The
+// similarity means nothing and the floor lets it through.
+func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
+	ctx := t.Context()
+	db := opened(t)
+	cutInto(t, db, first, "library/first.epub", "a passage two models read")
+	queries := db.ChunkQueries()
+
+	owing, err := queries.Unembedded(ctx, first.ID, "another-model", 0, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(owing) == 0 {
+		t.Fatal("nothing owes a vector from the other model")
+	}
+	made := make([]chunk.Vector, 0, len(owing))
+	for _, p := range owing {
+		made = append(made, chunk.Vector{
+			Chunk: p.Chunk, Fingerprint: fingerprintOf(t, db, p.Chunk), Recipe: "another-model",
+			Coarse: bits(0x00), Value: precise(direction(0x00)),
+		})
+	}
+	if err := db.Chunks().SaveVectors(ctx, made); err != nil {
+		t.Fatal(err)
+	}
+
+	// The coarse pass answers, because the bits are there. What is asked of it
+	// afterwards is the model's own, and this vector is another model's.
+	near, err := queries.Nearest(ctx, first.ID, "model", direction(0x00), 10, 0.5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(near) != 0 {
+		t.Errorf("a query of one model was answered by another model's vectors: %v", near)
+	}
+
+	// Asked of the model that made them, the same rows answer.
+	its, err := queries.Nearest(ctx, first.ID, "another-model", direction(0x00), 10, 0.5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(its) == 0 {
+		t.Error("a model's own vectors did not answer its own question")
+	}
+}
+
+// Text a source stopped holding takes its vector with it; a source that went
+// takes nothing.
+//
+// A cut says exactly which text this source used to hold and does not any more,
+// and that is the one moment the answer is known. A source the vault no longer
+// offers is a different thing: a folder that could not be read looks the same
+// as one whose files were deleted, and a vector was bought.
+func TestTextThatWentTakesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
+	ctx := t.Context()
+	db := opened(t)
+	cutInto(t, db, first, "library/edited.epub", "a passage that will be rewritten")
+	cutInto(t, db, first, "library/gone.epub", "a passage in a book that goes")
+
+	owing, err := db.ChunkQueries().Unembedded(ctx, first.ID, "model", 0, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(owing) != 2 {
+		t.Fatalf("%d chunks owe a vector, want the two small windows", len(owing))
+	}
+	made := make([]chunk.Vector, 0, len(owing))
+	for _, p := range owing {
+		var hash string
+		if err := db.write.QueryRowContext(ctx,
+			`SELECT hash FROM chunks WHERE id = ?`, p.Chunk).Scan(&hash); err != nil {
+			t.Fatal(err)
+		}
+		raw, err := hex.DecodeString(hash)
+		if err != nil {
+			t.Fatal(err)
+		}
+		made = append(made, chunk.Vector{
+			Chunk: p.Chunk, Fingerprint: raw, Recipe: "model",
+			Coarse: bits(0x00), Value: precise(direction(0x00)),
+		})
+	}
+	if err := db.Chunks().SaveVectors(ctx, made); err != nil {
+		t.Fatal(err)
+	}
+	if got := counted(t, db, `SELECT COUNT(*) FROM vectors`); got != 2 {
+		t.Fatalf("%d vectors were kept, want 2", got)
+	}
+
+	// The book that went from the vault.
+	if err := db.Chunks().RemoveSources(ctx, first.ID, "book", []string{"library/gone.epub"}); err != nil {
+		t.Fatal(err)
+	}
+	if got := counted(t, db, `SELECT COUNT(*) FROM vectors`); got != 2 {
+		t.Errorf("%d vectors are left after a source went, want both kept", got)
+	}
+
+	// The book that was rewritten.
+	cutInto(t, db, first, "library/edited.epub", "a passage as it is written now")
+	if got := counted(t, db, `SELECT COUNT(*) FROM vectors`); got != 1 {
+		t.Errorf("%d vectors are left after the text was replaced, want 1", got)
+	}
+}
+
+// One vector answers for every chunk holding that text.
+//
+// Two sources can hold the same passage, and a vector is made once for the
+// text. A source that stops holding it says nothing about the others.
+func TestAVectorStaysWhileAnyChunkStillHoldsItsText(t *testing.T) {
+	ctx := t.Context()
+	db := opened(t)
+	shared := "the same passage, standing in two books"
+	cutInto(t, db, first, "library/one.epub", shared)
+	cutInto(t, db, first, "library/two.epub", shared)
+
+	owing, err := db.ChunkQueries().Unembedded(ctx, first.ID, "model", 0, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(owing) != 2 {
+		t.Fatalf("%d chunks owe a vector, want two", len(owing))
+	}
+	made := make([]chunk.Vector, 0, len(owing))
+	for _, p := range owing {
+		var hash string
+		if err := db.write.QueryRowContext(ctx,
+			`SELECT hash FROM chunks WHERE id = ?`, p.Chunk).Scan(&hash); err != nil {
+			t.Fatal(err)
+		}
+		raw, err := hex.DecodeString(hash)
+		if err != nil {
+			t.Fatal(err)
+		}
+		made = append(made, chunk.Vector{
+			Chunk: p.Chunk, Fingerprint: raw, Recipe: "model",
+			Coarse: bits(0x00), Value: precise(direction(0x00)),
+		})
+	}
+	if err := db.Chunks().SaveVectors(ctx, made); err != nil {
+		t.Fatal(err)
+	}
+	// One text, one vector, whichever chunk asked for it.
+	if got := counted(t, db, `SELECT COUNT(*) FROM vectors`); got != 1 {
+		t.Fatalf("%d vectors were kept for one text, want 1", got)
+	}
+
+	// One book rewritten; the other still holds the passage.
+	cutInto(t, db, first, "library/one.epub", "something else entirely")
+
+	sum := sha256.Sum256([]byte(shared))
+	kept, err := db.ChunkQueries().Kept(ctx, "model", [][]byte{sum[:]})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(kept) != 1 {
+		t.Error("the vector for text a book still holds was taken out")
+	}
+}
+
+// Vectors carried in under an older name of the same model are taken up.
+//
+// A migration that carries vectors forward knows only what the rows it reads
+// said: which model, and how wide. The recipe in use says more. Where the model
+// and the width agree, what was carried was made by the model now in use, and
+// it is not bought a second time.

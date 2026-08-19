@@ -1,6 +1,7 @@
 package index
 
 import (
+	"crypto/sha256"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -131,7 +132,11 @@ func TestTheVectorIndexIsFittedToTheModel(t *testing.T) {
 
 // Changing model rebuilds the index. What it held was made by another model and
 // cannot be compared with what comes next.
-func TestFittingToAnotherWidthTakesTheVectorsWithIt(t *testing.T) {
+// Fitting the coarse index to another width leaves what was made standing.
+//
+// A vector of the old width is not comparable with a query of the new one and
+// is not read; it is also not bought again if the model goes back.
+func TestFittingToAnotherWidthKeepsWhatWasMade(t *testing.T) {
 	ctx := t.Context()
 	db := opened(t)
 
@@ -139,12 +144,16 @@ func TestFittingToAnotherWidthTakesTheVectorsWithIt(t *testing.T) {
 		t.Fatal(err)
 	}
 	narrow(t, db, first, 384)
+	made := counted(t, db, `SELECT count(*) FROM vectors`)
+	if made == 0 {
+		t.Fatal("nothing was kept for the text that was embedded")
+	}
 
 	if err := db.FitVectors(ctx, 1024); err != nil {
 		t.Fatal(err)
 	}
-	if left := counted(t, db, `SELECT count(*) FROM vectors`); left != 0 {
-		t.Errorf("%d vectors of the old width survived", left)
+	if left := counted(t, db, `SELECT count(*) FROM vectors`); left != made {
+		t.Errorf("%d of %d vectors survived a change of width", left, made)
 	}
 	narrow(t, db, first, 1024)
 }
@@ -176,8 +185,9 @@ func narrow(t *testing.T, db *DB, vault domain.Vault, dims int) {
 	}
 	vectors := make([]chunk.Vector, 0, len(owing))
 	for _, p := range owing {
+		sum := sha256.Sum256([]byte(strconv.Itoa(dims) + ":" + strconv.Itoa(int(p.Chunk))))
 		vectors = append(vectors, chunk.Vector{
-			Chunk: p.Chunk, Model: "model", Dims: dims, Kind: "int8",
+			Chunk: p.Chunk, Fingerprint: sum[:], Recipe: "model/" + strconv.Itoa(dims),
 			Value: make([]byte, dims), Coarse: make([]byte, dims/8),
 		})
 	}

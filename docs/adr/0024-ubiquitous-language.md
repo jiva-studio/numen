@@ -87,6 +87,7 @@ in one place, meaning the obvious thing, needs no entry.
 |---|---|
 | artifact | Data that cannot be reproduced locally, deterministically and for free. Lives in the vault |
 | cache | Data that can. Lives outside the vault |
+| bought | Data a model made. Lives outside the vault and is kept: addressed by the text it was made from and the recipe it was made under (ADR-0000) |
 | index | The cache. Never a SQL index; that word belongs to SQL and stays in SQL |
 | source | A thing the index holds text for. A note and a book are kinds of source (ADR-0006) |
 | chunk | One window of a source's text, as a row. Both of ADR-0007's sizes are chunks; the large one is the chunk with no parent (ADR-0006) |
@@ -98,6 +99,8 @@ in one place, meaning the obvious thing, needs no entry.
 | refresh | Bringing named notes up to date. Never *reindex*, never *incremental* |
 | group | What a scan writes in: one transaction's worth |
 | fingerprint | Path, size and modification time — what says a note need not be read again |
+| vector | What a model made of one chunk's text. Kept by its text and its recipe; never *embedding* |
+| recipe | Everything that decides what a thing made from text is: for a cut, the reader and the sizes; for a vector, where it was made, which model, how wide, where the text was cut off and how it is stored |
 | changed | What a write answers when the note on disk is no longer the one the caller read (ADR-0027). Never a *conflict* |
 | reload | What a client is told when the vault is to be read again whole: more changed at once than could be followed, or a listener that fell behind (ADR-0023) |
 | backlink | A link that resolves here, whichever end wrote it |

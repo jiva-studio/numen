@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/source"
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
@@ -104,15 +105,22 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 	// embed what was cut.
 	if embedder != nil {
 		model := embedder.Model()
-		// The vector index is built for one width. A model of another width
-		// rebuilds it, and what it held is embedded again.
+		// The coarse index is built for one width. A model of another width
+		// rebuilds it from what has been made.
 		if err := db.FitVectors(ctx, model.Dimensions); err != nil {
 			fmt.Fprintf(out, "not embedding %s: %v\n", vaults[0].Name, err)
 			embedder = nil
 		} else {
 			api.Model.Store(model.String())
+			api.Recipe.Store(model.Recipe())
 		}
 	}
+
+	// The search the window offers is the search the application already does.
+	// It is built once the embedder is settled, so a model that could not be
+	// fitted leaves the words half to answer on its own.
+	finds := search.New(db.Passages(), cfg.VaultReaders(), embedder, cfg.Embedding.Floor)
+	api.Finds = &finds
 	scan := usecase.Scan{
 		Readers:      cfg.VaultReaders(),
 		Vaults:       db.Vaults(),
@@ -371,6 +379,8 @@ func begin(
 		defer running.Done()
 		// Set false on every way out of the reading.
 		defer api.Busy.Store(false)
+		// Set false on every way out of the reading, and embedding is part of it.
+		defer api.Learning.Store(false)
 
 		// Reading the sources comes after the notes: a vault is useful the
 		// moment its notes answer, and a library takes minutes to cut and hours
@@ -397,7 +407,12 @@ func begin(
 				api.Busy.Store(false)
 			case <-wake.notes:
 				// Every write puts the pass off again. What was typed is
-				// embedded once the vault has been still.
+				// embedded once the vault has been still, and there is work
+				// to come from the moment the write lands.
+				if text(&api.Model) != "" {
+					api.Busy.Store(true)
+					api.Learning.Store(true)
+				}
 				quiet = time.After(wake.still)
 			case <-quiet:
 				quiet = nil
@@ -509,6 +524,7 @@ func readSources(
 		fmt.Fprintf(out, "%s: %d books, %d chunks\n", api.Vault.Name, res.Extracted, res.Chunks)
 	}
 	api.Reading.Store("")
+	api.Owed.Store(&Owed{})
 
 	embedSources(ctx, db, api, readers, embedder, out)
 }
@@ -530,6 +546,16 @@ func embedSources(
 		return
 	}
 
+	// What this pass owes, asked once before it starts: the chunks that can
+	// carry a vector and do not. The pass finds them a few hundred at a time,
+	// and a total that grows as it goes is a count that never settles.
+	owing := int64(0)
+	if api.Progress != nil {
+		if held, embedded, err := api.Progress.Progress(ctx, api.Vault.ID, text(&api.Recipe)); err == nil {
+			owing = max(0, held-embedded)
+		}
+	}
+
 	embed := source.Embed{
 		Readers:  readers,
 		Chunks:   db.VectorsOwing(),
@@ -537,14 +563,19 @@ func embedSources(
 		Embedder: embedder,
 		OnProgress: func(res source.EmbedResult) {
 			api.Reading.Store(res.Reading)
+			// A person who edited one note is waiting on that note, so this is
+			// the work in hand and not the size of the vault.
+			api.Owed.Store(&Owed{Owing: owing, Made: int64(res.Embedded)})
 		},
 	}
+	api.Owed.Store(&Owed{Owing: owing})
 	api.Learning.Store(true)
 	if _, err := embed.Execute(ctx, api.Vault); err != nil && !errors.Is(err, context.Canceled) {
 		fmt.Fprintf(out, "embedding %s: %v\n", api.Vault.Name, err)
 	}
 	api.Learning.Store(false)
 	api.Reading.Store("")
+	api.Owed.Store(&Owed{})
 }
 
 // Showing is the vault the window has open.

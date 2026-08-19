@@ -52,7 +52,7 @@ func (q *Queries) Search(ctx context.Context, vaultID, query string, limit int) 
 		// mistake in the caller.
 		return nil, fmt.Errorf("search limit must be positive, got %d", limit)
 	}
-	expression := chunk.Expression(query)
+	expression := chunk.Expression(query, false)
 	if expression == "" {
 		return nil, nil
 	}
@@ -126,6 +126,63 @@ func (q *Queries) Named(ctx context.Context, vaultID, name string) ([]string, er
 			return nil, err
 		}
 		out = append(out, path)
+	}
+	return out, rows.Err()
+}
+
+// mostPerNote is how many headings of one note an answer carries.
+const mostPerNote = 2
+
+// Names is the names in a vault that match the words typed: a note's own
+// title, and the headings inside notes.
+//
+// The two are ranked apart and a title comes first, so what is cut by the limit
+// is a heading of a note already named or a name matched less well. What one
+// note may contribute is settled before the limit is applied.
+func (q *Queries) Names(ctx context.Context, vaultID, query string, limit int) ([]domain.NameMatch, error) {
+	if limit <= 0 {
+		// How many results a person wants is not something a database adapter
+		// knows. The caller decides, and arriving here without one is a
+		// mistake in the caller.
+		return nil, fmt.Errorf("titles limit must be positive, got %d", limit)
+	}
+
+	words := chunk.Expression(query, true)
+	if words == "" {
+		return nil, nil
+	}
+
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.db.QueryContext(ctx, stmt.Get("titles"),
+		opening, closing, words, vault, limit,
+		opening, closing, words, vault, mostPerNote, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := make([]domain.NameMatch, 0, limit)
+	for rows.Next() {
+		var kind, line int
+		var marked string
+		var score float64
+		var m domain.NameMatch
+		if err := rows.Scan(&kind, &m.Path, &m.Title, &line, &marked, &score); err != nil {
+			return nil, err
+		}
+		name, at := split(marked)
+		m.At = at
+		if kind != 0 {
+			m.Heading, m.Line = name, line
+		}
+		out = append(out, m)
 	}
 	return out, rows.Err()
 }

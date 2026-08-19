@@ -120,7 +120,7 @@ defineExpose({ focus: () => field.value?.focus() })
             </svg>
           </slot>
           <svg v-else viewBox="0 0 16 16" class="size-4" fill="currentColor">
-            <rect x="4.5" y="4.5" width="7" height="7" rx="1.5" />
+            <rect x="3" y="3" width="10" height="10" rx="2" />
           </svg>
         </Button>
       </Transition>

@@ -65,12 +65,11 @@ type Window struct {
 // `Kind` is the quantisation of `Value` — `int8` or `float32` — and is recorded
 // because a blob does not say what it holds.
 type Vector struct {
-	Chunk  int64
-	Model  string
-	Dims   int
-	Kind   string
-	Value  []byte
-	Coarse []byte
+	Chunk       int64
+	Fingerprint []byte
+	Recipe      string
+	Value       []byte
+	Coarse      []byte
 }
 
 // Repository is the collection of chunks and the vectors made from them.
@@ -178,7 +177,7 @@ func (r *Repository) SaveVectors(ctx context.Context, vectors []Vector) error {
 	defer tx.Rollback()
 
 	for _, v := range vectors {
-		// The vector index takes no conflict clause, so a row that is being
+		// The coarse index takes no conflict clause, so a row that is being
 		// replaced is removed first.
 		if err := exec(ctx, tx, "delete_vec", v.Chunk); err != nil {
 			return err
@@ -186,7 +185,7 @@ func (r *Repository) SaveVectors(ctx context.Context, vectors []Vector) error {
 		if err := exec(ctx, tx, "insert_vec", v.Coarse, v.Chunk); err != nil {
 			return err
 		}
-		if err := exec(ctx, tx, "save_vector", v.Model, v.Dims, v.Kind, v.Value, v.Chunk); err != nil {
+		if err := exec(ctx, tx, "keep_vector", v.Fingerprint, v.Recipe, v.Value); err != nil {
 			return err
 		}
 	}
@@ -286,7 +285,10 @@ func Replace(ctx context.Context, tx *sql.Tx, source, vault int64, windows []Win
 			}
 		}
 	}
-	return remove(ctx, tx, held.unclaimed())
+	if err := remove(ctx, tx, held.unclaimed()); err != nil {
+		return err
+	}
+	return forget(ctx, tx, held.forgotten())
 }
 
 // writer is the three statements a cut runs per window, prepared once for the
@@ -358,6 +360,9 @@ type text struct {
 type held struct {
 	rows map[text][]int64
 	left map[int64]bool
+	// text is the fingerprint each row holds, so a row that goes says which
+	// text went with it.
+	text map[int64]string
 }
 
 func chunksOf(ctx context.Context, tx *sql.Tx, source int64) (*held, error) {
@@ -367,7 +372,7 @@ func chunksOf(ctx context.Context, tx *sql.Tx, source int64) (*held, error) {
 	}
 	defer rows.Close()
 
-	h := &held{rows: map[text][]int64{}, left: map[int64]bool{}}
+	h := &held{rows: map[text][]int64{}, left: map[int64]bool{}, text: map[int64]string{}}
 	for rows.Next() {
 		var row int64
 		var key text
@@ -376,6 +381,7 @@ func chunksOf(ctx context.Context, tx *sql.Tx, source int64) (*held, error) {
 		}
 		h.rows[key] = append(h.rows[key], row)
 		h.left[row] = true
+		h.text[row] = key.hash
 	}
 	return h, rows.Err()
 }
@@ -468,4 +474,32 @@ func nullable(s string) any {
 		return nil
 	}
 	return s
+}
+
+// forgotten is the text of the rows no window holds: what this source used to
+// hold and does not any more.
+func (h *held) forgotten() []string {
+	out := make([]string, 0, len(h.left))
+	for row := range h.left {
+		if hash := h.text[row]; hash != "" {
+			out = append(out, hash)
+		}
+	}
+	slices.Sort(out)
+	return slices.Compact(out)
+}
+
+// forget takes out the vectors made for text no chunk holds.
+//
+// It is asked where a source was cut again, so the text is known to have been
+// replaced. A source the vault no longer offers takes nothing with it: a folder
+// that could not be read looks the same from here as one whose files were
+// deleted, and a vector was bought.
+func forget(ctx context.Context, tx *sql.Tx, texts []string) error {
+	for _, hash := range texts {
+		if err := exec(ctx, tx, "forget_vector", hash, hash); err != nil {
+			return err
+		}
+	}
+	return nil
 }

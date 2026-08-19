@@ -6,8 +6,9 @@
  */
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
-import { Owed, Refusal, VaultService } from '@numen/protocol'
+import { Half as Halves, Owed, Refusal, VaultService } from '@numen/protocol'
 import { asSeat } from './plex'
+import type { Asking, Half } from './finding'
 import type { Answered, Core, Made, NewLink, Refused } from './showing'
 
 export const vault = createClient(
@@ -16,7 +17,7 @@ export const vault = createClient(
 )
 
 /** The same questions, in the shape the window asks them. */
-export const core: Core = {
+export const core: Core & Asking = {
   neighbourhood: (path) => vault.neighbourhood({ path }),
   opening: async () => (await vault.opening({})).note ?? null,
   state: () => vault.state({}),
@@ -47,7 +48,41 @@ export const core: Core = {
   flushed: async (token, owed) => {
     await vault.flushed({ token, owed: owing[owed ?? 'nothing'] })
   },
+  /** The names in the vault that match what is typed. */
+  names: async (query, limit) => {
+    const answer = await vault.names({ query, limit })
+    return answer.found.map((one) => ({
+      path: one.note?.path ?? '',
+      title: one.note?.title ?? '',
+      heading: one.heading?.text ?? '',
+      // A name with no heading stands on no line of the prose.
+      line: one.heading?.line ?? -1,
+      at: one.at.map(run),
+    }))
+  },
+  /** The text the vault holds that answers what is typed, by one half. */
+  search: async (query, half, limit) => {
+    const answer = await vault.search({ query, limit, half: halves[half] })
+    return answer.found.map((one) => ({
+      path: one.path,
+      title: one.note?.title ?? '',
+      // A source that is not a note carries none, and there is nothing this
+      // window can open it as.
+      isNote: one.note !== undefined,
+      text: one.text,
+      at: one.at.map(run),
+    }))
+  },
 }
+
+/** Which half of a search runs, as the schema names it. */
+const halves: Record<Half, Halves> = {
+  words: Halves.WORDS,
+  meaning: Halves.MEANING,
+}
+
+/** A run of text, kept as the plain pair the window carries it as. */
+const run = (span: { from: number; to: number }) => ({ from: span.from, to: span.to })
 
 /** A link in the shape the schema carries it. */
 const written = (link: NewLink) => ({

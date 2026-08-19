@@ -48,6 +48,10 @@ const (
 	// VaultServiceNeighbourhoodProcedure is the fully-qualified name of the VaultService's
 	// Neighbourhood RPC.
 	VaultServiceNeighbourhoodProcedure = "/numen.v1.VaultService/Neighbourhood"
+	// VaultServiceNamesProcedure is the fully-qualified name of the VaultService's Names RPC.
+	VaultServiceNamesProcedure = "/numen.v1.VaultService/Names"
+	// VaultServiceSearchProcedure is the fully-qualified name of the VaultService's Search RPC.
+	VaultServiceSearchProcedure = "/numen.v1.VaultService/Search"
 	// VaultServiceChangesProcedure is the fully-qualified name of the VaultService's Changes RPC.
 	VaultServiceChangesProcedure = "/numen.v1.VaultService/Changes"
 	// VaultServiceFocusProcedure is the fully-qualified name of the VaultService's Focus RPC.
@@ -77,6 +81,17 @@ type VaultServiceClient interface {
 	Opening(context.Context, *connect.Request[v1.OpeningRequest]) (*connect.Response[v1.OpeningResponse], error)
 	// Neighbourhood is one note and everything joined to it.
 	Neighbourhood(context.Context, *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error)
+	// Names is the names in a vault that match what was typed: a note's own
+	// title, and the headings inside notes. It is asked as a person types, and
+	// the last word matches on its prefix.
+	//
+	// It reads names and nothing else. Searching the text a vault holds is
+	// Search, and that answers with passages.
+	Names(context.Context, *connect.Request[v1.NamesRequest]) (*connect.Response[v1.NamesResponse], error)
+	// Search is the text a vault holds that answers what was typed, by the words
+	// in it or by what it means. The caller says which half runs, so a client
+	// drawing the two apart asks twice.
+	Search(context.Context, *connect.Request[v1.SearchRequest]) (*connect.Response[v1.SearchResponse], error)
 	// Changes reports the notes that changed on disk, for as long as the caller
 	// listens. It says which notes, and nothing about them: the caller knows
 	// what it is showing and asks for what it needs.
@@ -141,6 +156,18 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(vaultServiceMethods.ByName("Neighbourhood")),
 			connect.WithClientOptions(opts...),
 		),
+		names: connect.NewClient[v1.NamesRequest, v1.NamesResponse](
+			httpClient,
+			baseURL+VaultServiceNamesProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Names")),
+			connect.WithClientOptions(opts...),
+		),
+		search: connect.NewClient[v1.SearchRequest, v1.SearchResponse](
+			httpClient,
+			baseURL+VaultServiceSearchProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Search")),
+			connect.WithClientOptions(opts...),
+		),
 		changes: connect.NewClient[v1.ChangesRequest, v1.ChangesResponse](
 			httpClient,
 			baseURL+VaultServiceChangesProcedure,
@@ -203,6 +230,8 @@ type vaultServiceClient struct {
 	state         *connect.Client[v1.StateRequest, v1.StateResponse]
 	opening       *connect.Client[v1.OpeningRequest, v1.OpeningResponse]
 	neighbourhood *connect.Client[v1.NeighbourhoodRequest, v1.NeighbourhoodResponse]
+	names         *connect.Client[v1.NamesRequest, v1.NamesResponse]
+	search        *connect.Client[v1.SearchRequest, v1.SearchResponse]
 	changes       *connect.Client[v1.ChangesRequest, v1.ChangesResponse]
 	focus         *connect.Client[v1.FocusRequest, v1.FocusResponse]
 	editing       *connect.Client[v1.EditingRequest, v1.EditingResponse]
@@ -227,6 +256,16 @@ func (c *vaultServiceClient) Opening(ctx context.Context, req *connect.Request[v
 // Neighbourhood calls numen.v1.VaultService.Neighbourhood.
 func (c *vaultServiceClient) Neighbourhood(ctx context.Context, req *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error) {
 	return c.neighbourhood.CallUnary(ctx, req)
+}
+
+// Names calls numen.v1.VaultService.Names.
+func (c *vaultServiceClient) Names(ctx context.Context, req *connect.Request[v1.NamesRequest]) (*connect.Response[v1.NamesResponse], error) {
+	return c.names.CallUnary(ctx, req)
+}
+
+// Search calls numen.v1.VaultService.Search.
+func (c *vaultServiceClient) Search(ctx context.Context, req *connect.Request[v1.SearchRequest]) (*connect.Response[v1.SearchResponse], error) {
+	return c.search.CallUnary(ctx, req)
 }
 
 // Changes calls numen.v1.VaultService.Changes.
@@ -283,6 +322,17 @@ type VaultServiceHandler interface {
 	Opening(context.Context, *connect.Request[v1.OpeningRequest]) (*connect.Response[v1.OpeningResponse], error)
 	// Neighbourhood is one note and everything joined to it.
 	Neighbourhood(context.Context, *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error)
+	// Names is the names in a vault that match what was typed: a note's own
+	// title, and the headings inside notes. It is asked as a person types, and
+	// the last word matches on its prefix.
+	//
+	// It reads names and nothing else. Searching the text a vault holds is
+	// Search, and that answers with passages.
+	Names(context.Context, *connect.Request[v1.NamesRequest]) (*connect.Response[v1.NamesResponse], error)
+	// Search is the text a vault holds that answers what was typed, by the words
+	// in it or by what it means. The caller says which half runs, so a client
+	// drawing the two apart asks twice.
+	Search(context.Context, *connect.Request[v1.SearchRequest]) (*connect.Response[v1.SearchResponse], error)
 	// Changes reports the notes that changed on disk, for as long as the caller
 	// listens. It says which notes, and nothing about them: the caller knows
 	// what it is showing and asks for what it needs.
@@ -341,6 +391,18 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 		VaultServiceNeighbourhoodProcedure,
 		svc.Neighbourhood,
 		connect.WithSchema(vaultServiceMethods.ByName("Neighbourhood")),
+		connect.WithHandlerOptions(opts...),
+	)
+	vaultServiceNamesHandler := connect.NewUnaryHandler(
+		VaultServiceNamesProcedure,
+		svc.Names,
+		connect.WithSchema(vaultServiceMethods.ByName("Names")),
+		connect.WithHandlerOptions(opts...),
+	)
+	vaultServiceSearchHandler := connect.NewUnaryHandler(
+		VaultServiceSearchProcedure,
+		svc.Search,
+		connect.WithSchema(vaultServiceMethods.ByName("Search")),
 		connect.WithHandlerOptions(opts...),
 	)
 	vaultServiceChangesHandler := connect.NewServerStreamHandler(
@@ -405,6 +467,10 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 			vaultServiceOpeningHandler.ServeHTTP(w, r)
 		case VaultServiceNeighbourhoodProcedure:
 			vaultServiceNeighbourhoodHandler.ServeHTTP(w, r)
+		case VaultServiceNamesProcedure:
+			vaultServiceNamesHandler.ServeHTTP(w, r)
+		case VaultServiceSearchProcedure:
+			vaultServiceSearchHandler.ServeHTTP(w, r)
 		case VaultServiceChangesProcedure:
 			vaultServiceChangesHandler.ServeHTTP(w, r)
 		case VaultServiceFocusProcedure:
@@ -442,6 +508,14 @@ func (UnimplementedVaultServiceHandler) Opening(context.Context, *connect.Reques
 
 func (UnimplementedVaultServiceHandler) Neighbourhood(context.Context, *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Neighbourhood is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) Names(context.Context, *connect.Request[v1.NamesRequest]) (*connect.Response[v1.NamesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Names is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) Search(context.Context, *connect.Request[v1.SearchRequest]) (*connect.Response[v1.SearchResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Search is not implemented"))
 }
 
 func (UnimplementedVaultServiceHandler) Changes(context.Context, *connect.Request[v1.ChangesRequest], *connect.ServerStream[v1.ChangesResponse]) error {

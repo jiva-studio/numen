@@ -18,6 +18,8 @@ const idle = {
   unwatched: '',
   chunks: 0n,
   embedded: 0n,
+  owing: 0n,
+  made: 0n,
   reading: '',
   embedding: false,
   books: 0n,

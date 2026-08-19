@@ -110,3 +110,9 @@
   border-color: var(--numen-panel-border);
   opacity: 0.6;
 }
+
+/* Selected text is one colour, wherever it is selected. The editor paints its
+   own and is told the same one. */
+::selection {
+  background-color: var(--numen-selection);
+}

@@ -6,7 +6,7 @@
  * only thing on screen that moves while nobody is asking for anything.
  */
 import { computed } from 'vue'
-import Dots from '../dots/Dots.vue'
+import Waiting from '../waiting/Waiting.vue'
 import { activity, percentWord, tallyWord, type Tally } from './model'
 
 const props = withDefaults(
@@ -57,7 +57,7 @@ const left = computed(() => (shown.value.counts ? props.left : ''))
 <template>
   <p
     v-if="shown.state !== 'quiet'"
-    class="activity numen flex items-baseline gap-2 font-sans text-small text-hushed"
+    class="activity numen flex items-center gap-2 font-sans text-small text-hushed"
     :data-state="shown.state"
     role="status"
     aria-live="polite"
@@ -74,11 +74,16 @@ const left = computed(() => (shown.value.counts ? props.left : ''))
       class="activity__bar"
       :style="{ '--activity-share': shown.share }"
     />
-    <Dots v-else-if="shown.state === 'working'" class="activity__dots" />
+    <Waiting v-else-if="shown.state === 'working'" class="activity__waiting" />
   </p>
 </template>
 
 <style scoped>
+/* Every state of the line stands the same height. */
+.activity {
+  min-block-size: calc(var(--numen-line-height) * 1em);
+}
+
 .activity__mark {
   flex: none;
   inline-size: 0.4em;
@@ -101,6 +106,17 @@ const left = computed(() => (shown.value.counts ? props.left : ''))
   opacity: 1;
   background: currentColor;
   box-shadow: 0 0 0 0.15em color-mix(in oklab, currentColor 25%, transparent);
+}
+
+/* The numbers keep their own line. They are short, and the words beside them
+   are what gives way. */
+.activity__count,
+.activity__percent {
+  flex: none;
+}
+
+.activity__left {
+  min-inline-size: 0;
 }
 
 .activity__bar {

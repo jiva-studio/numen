@@ -1,3 +1,4 @@
+| Embeddings | bought | A model made them, and the system works without them |
 # ADR-0000: Data is classified as either artifact or cache
 
 - **Status:** Accepted
@@ -84,6 +85,27 @@ Two things follow from this and are decided elsewhere: where that state is kept,
 and how a vault stays recognisable once its folder is moved. Neither is settled
 here.
 
+## The third class: what was bought
+
+A vector is not written by a person and is not reproduced for free. It comes
+from a model, and a model is either minutes of a machine or money and a network.
+Neither answer the rule offers fits it: it does not belong in the vault, and it
+is not something to delete and make again.
+
+**A vector is bought.** It lives in SQLite beside the cache, and it is kept:
+
+- It is addressed by the text it was made from and the recipe it was made
+  under — never by the row that pointed at it. Chunks are renumbered by every
+  cut; the words a window holds and the model that read them are what the vector
+  is about.
+- It outlives what asked for it. A source the vault no longer offers takes
+  nothing with it: a folder that could not be read looks the same as one whose
+  files were deleted.
+- It is forgotten where a source is cut again and the text it held is gone, and
+  no other chunk holds that text. That is the one moment the answer is known.
+- Nothing else deletes one. Emptying the cache is free; emptying this is a bill.
+
+
 ## Consequences
 
 **Positive**
@@ -92,8 +114,8 @@ here.
   makes the vault small, greppable and diffable, and makes backups cheap.
 - Schema migrations disappear as a category (see ADR-0004): when the SQLite model
   changes, tables are dropped and replayed from artifacts.
-- "Delete the index if something looks wrong" becomes a legitimate, safe support
-  answer instead of a data-loss risk.
+- "Delete the cache if something looks wrong" is a legitimate, safe support
+  answer. What was bought is kept apart from it and outlives it.
 - New feature areas have a decision procedure instead of a debate.
 
 **Negative / costs**

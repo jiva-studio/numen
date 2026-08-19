@@ -2,6 +2,7 @@ package source
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -40,8 +41,11 @@ type Embed struct {
 
 // EmbedResult reports what embedding did.
 type EmbedResult struct {
-	Owing     int    // chunks found with no vector from the model in use
-	Embedded  int    // chunks that now carry one
+	Owing    int // chunks found with no vector from the model in use
+	Embedded int // chunks that now carry one
+	// Reused counts the chunks whose vector was already made for their text and
+	// was claimed rather than bought.
+	Reused    int
 	Vanished  int    // whose source the vault no longer holds
 	Displaced int    // whose place is not in the text their source holds now
 	Reading   string // the source open now
@@ -97,8 +101,8 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 // A chunk whose source is gone, or whose place is not in the text that source
 // holds now, is left as it is: the file is what is true, and the index follows it
 // when the file is next read.
-func (u Embed) read(ctx context.Context, source *extracted, owing []domain.Passage, res *EmbedResult) ([]int64, []string, error) {
-	chunks := make([]int64, 0, len(owing))
+func (u Embed) read(ctx context.Context, source *extracted, owing []domain.Passage, res *EmbedResult) ([]domain.Passage, []string, error) {
+	chunks := make([]domain.Passage, 0, len(owing))
 	texts := make([]string, 0, len(owing))
 
 	for _, p := range owing {
@@ -118,7 +122,7 @@ func (u Embed) read(ctx context.Context, source *extracted, owing []domain.Passa
 			res.Displaced++
 			continue
 		}
-		chunks = append(chunks, p.Chunk)
+		chunks = append(chunks, p)
 		texts = append(texts, text[p.Start:p.Start+p.Length])
 	}
 	return chunks, texts, nil
@@ -130,40 +134,92 @@ func (u Embed) read(ctx context.Context, source *extracted, owing []domain.Passa
 // embedded is stored, and both representations of a vector are one value: a chunk
 // holding one and not the other is absent from the coarse pass and invisible to
 // the question of what has no vector.
-func (u Embed) write(ctx context.Context, model port.EmbeddingModel, chunks []int64, texts []string, res *EmbedResult) error {
+func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []domain.Passage, texts []string, res *EmbedResult) error {
 	if len(texts) == 0 {
 		return nil
 	}
-	vectors, err := u.Embedder.Embed(ctx, texts)
-	if err != nil {
-		return fmt.Errorf("embed %d chunks: %w", len(texts), err)
+	recipe := model.Recipe()
+
+	// The text each chunk holds, as the index recorded it when the source was
+	// cut. That record is what a chunk is identified by, and what every
+	// question about what still owes a vector is asked against.
+	prints := make([][]byte, len(texts))
+	for i := range texts {
+		raw, err := hex.DecodeString(owing[i].Fingerprint)
+		if err != nil || len(raw) == 0 {
+			continue
+		}
+		prints[i] = raw
 	}
-	if len(vectors) != len(texts) {
-		return fmt.Errorf("%s answered with %d vectors for %d texts", model, len(vectors), len(texts))
+	kept, err := u.Vectors.Kept(ctx, recipe, prints)
+	if err != nil {
+		return fmt.Errorf("what is already made: %w", err)
 	}
 
-	out := make([]port.Vector, 0, len(vectors))
-	for i, v := range vectors {
-		if len(v) != model.Dimensions {
-			return fmt.Errorf("%s answered with %d dimensions", model, len(v))
+	out := make([]port.Vector, 0, len(texts))
+	var asking []string
+	var askingFor []int
+	for i := range texts {
+		value, held := kept[hex.EncodeToString(prints[i])]
+		if !held || len(prints[i]) == 0 {
+			asking = append(asking, texts[i])
+			askingFor = append(askingFor, i)
+			continue
 		}
-		// The scale that turns a float into a byte belongs to the model and is
-		// fixed, and it is fixed for a vector of unit length.
-		v = embedding.Normalise(v)
+		// Bought once. What the coarse pass needs is read back out of it.
 		out = append(out, port.Vector{
-			Chunk:  chunks[i],
-			Model:  model,
-			Kind:   port.QuantisedInt8,
-			Value:  signed(embedding.Bytes(v)),
-			Coarse: embedding.Bits(v),
+			Chunk:       owing[i].Chunk,
+			Fingerprint: prints[i],
+			Model:       model,
+			Kind:        port.QuantisedInt8,
+			Value:       value,
+			Coarse:      embedding.Bits(embedding.Floats(unsigned(value))),
 		})
+		res.Reused++
 	}
+
+	if len(asking) > 0 {
+		vectors, err := u.Embedder.Embed(ctx, asking)
+		if err != nil {
+			return fmt.Errorf("embed %d chunks: %w", len(asking), err)
+		}
+		if len(vectors) != len(asking) {
+			return fmt.Errorf("%s answered with %d vectors for %d texts", model, len(vectors), len(asking))
+		}
+		for i, v := range vectors {
+			if len(v) != model.Dimensions {
+				return fmt.Errorf("%s answered with %d dimensions", model, len(v))
+			}
+			// The scale that turns a float into a byte belongs to the model and
+			// is fixed, and it is fixed for a vector of unit length.
+			v = embedding.Normalise(v)
+			at := askingFor[i]
+			out = append(out, port.Vector{
+				Chunk:       owing[at].Chunk,
+				Fingerprint: prints[at],
+				Model:       model,
+				Kind:        port.QuantisedInt8,
+				Value:       signed(embedding.Bytes(v)),
+				Coarse:      embedding.Bits(v),
+			})
+		}
+	}
+
 	if err := u.Vectors.SaveVectors(ctx, out); err != nil {
 		return fmt.Errorf("write %d vectors: %w", len(out), err)
 	}
 	res.Embedded += len(out)
 	u.progress(*res)
 	return nil
+}
+
+// unsigned is a stored vector as the dimensions it holds, one per byte.
+func unsigned(stored []byte) []int8 {
+	out := make([]int8, len(stored))
+	for i, b := range stored {
+		out[i] = int8(b)
+	}
+	return out
 }
 
 func (u Embed) progress(res EmbedResult) {

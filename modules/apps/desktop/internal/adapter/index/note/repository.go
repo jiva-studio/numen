@@ -96,7 +96,9 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note) error
 
 	// The source row survives a re-save, so nothing cascades and each kind of
 	// derived row is cleared by hand.
-	for _, name := range []string{"clear_headings", "clear_links", "clear_problems"} {
+	for _, name := range []string{
+		"clear_heading_names", "clear_headings", "clear_links", "clear_problems",
+	} {
 		if err := exec(ctx, tx, name, row); err != nil {
 			return err
 		}
@@ -111,6 +113,17 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note) error
 		if err := exec(ctx, tx, "insert_heading", row, h.Line, h.Level, h.Text); err != nil {
 			return err
 		}
+	}
+
+	// The names this note answers to, indexed for the words in them: its own
+	// title, and every heading inside it. The headings go in once they are all
+	// stored, because the index of them is keyed by the numbers they were
+	// stored under.
+	if err := exec(ctx, tx, "insert_title", row, n.Title); err != nil {
+		return err
+	}
+	if err := exec(ctx, tx, "insert_heading_names", row); err != nil {
+		return err
 	}
 	if len(n.Links) > 0 {
 		insert, err := tx.PrepareContext(ctx, stmt.Get("insert_link"))
@@ -215,10 +228,15 @@ func (r *Repository) Remove(ctx context.Context, vaultID string, paths []string)
 		if err != nil {
 			return fmt.Errorf("identify %s: %w", path, err)
 		}
-		// The full-text index and the vector index are both virtual tables, and
-		// a cascade reaches neither.
+		// The full-text index, the index of names and the vector index are all
+		// virtual tables, and a cascade reaches none of them.
 		if err := chunk.Clear(ctx, tx, row); err != nil {
 			return err
+		}
+		for _, name := range []string{"clear_heading_names", "delete_title_name"} {
+			if err := exec(ctx, tx, name, row); err != nil {
+				return err
+			}
 		}
 		if err := exec(ctx, tx, "delete", row); err != nil {
 			return err

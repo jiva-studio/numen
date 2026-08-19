@@ -17,14 +17,12 @@ const coarseWidth = 1024
 // which is where a virtual table keeps its shape.
 var declaredWidth = regexp.MustCompile(`bit\[(\d+)]`)
 
-// FitVectors makes the vector index hold vectors of the width given.
+// FitVectors makes the coarse index hold vectors of the width given.
 //
-// A vector index is built for one width, and a model of another width cannot be
-// written to it. The width is therefore the model's, and changing model rebuilds
-// the index: it is a cache, and what is thrown away is embedded again.
-//
-// Nothing is touched when the width already matches, which is every start after
-// the first.
+// The coarse index is built for one width, and a model of another width cannot
+// be written to it. The width is the model's, so changing model rebuilds it
+// from what has been made. What a model made is kept by the text it read, and
+// is not touched here.
 func (db *DB) FitVectors(ctx context.Context, dims int) error {
 	if dims <= 0 {
 		return fmt.Errorf("a vector of %d dimensions is not a vector", dims)
@@ -50,9 +48,6 @@ func (db *DB) FitVectors(ctx context.Context, dims int) error {
 			vault_id  integer,
 			embedding bit[%d]
 		)`, dims),
-		// The vectors that are left were made at the old width, and nothing can
-		// compare them with what comes next.
-		`DELETE FROM vectors`,
 	} {
 		if _, err := tx.ExecContext(ctx, statement); err != nil {
 			return fmt.Errorf("fit the vector index to %d dimensions: %w", dims, err)

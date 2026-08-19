@@ -5,8 +5,10 @@ import (
 	"unicode/utf8"
 )
 
-// A Span is a stretch of prose, as byte offsets into the text it was found in.
-type Span struct {
+// Stretch is a run of prose, as byte offsets into the text it was found in.
+// Where a client is told about a run it is told in the units a client counts
+// in, which is domain.Span; nothing crosses that boundary unconverted.
+type Stretch struct {
 	From int
 	To   int
 }
@@ -23,7 +25,7 @@ type Span struct {
 //
 // Plainly says the stretch was found only once punctuation or spacing were
 // allowed to differ, which is worth saying out loud to whoever asked.
-func Where(text, wanted string) (at []Span, plainly bool) {
+func Where(text, wanted string) (at []Stretch, plainly bool) {
 	if wanted == "" {
 		return nil, false
 	}
@@ -39,9 +41,9 @@ func Where(text, wanted string) (at []Span, plainly bool) {
 		if len(found) == 0 {
 			continue
 		}
-		at = make([]Span, 0, len(found))
+		at = make([]Stretch, 0, len(found))
 		for _, span := range found {
-			at = append(at, Span{From: held.at[span.From], To: held.at[span.To]})
+			at = append(at, Stretch{From: held.at[span.From], To: held.at[span.To]})
 		}
 		return at, true
 	}
@@ -50,14 +52,14 @@ func Where(text, wanted string) (at []Span, plainly bool) {
 
 // standing is every place `wanted` stands in `text`. A place found is stepped
 // over, so two reported stretches never overlap.
-func standing(text, wanted string) []Span {
-	var at []Span
+func standing(text, wanted string) []Stretch {
+	var at []Stretch
 	for from := 0; from <= len(text); {
 		next := strings.Index(text[from:], wanted)
 		if next < 0 {
 			return at
 		}
-		at = append(at, Span{From: from + next, To: from + next + len(wanted)})
+		at = append(at, Stretch{From: from + next, To: from + next + len(wanted)})
 		from += next + len(wanted)
 	}
 	return at
@@ -142,9 +144,9 @@ func plainly(r rune) rune {
 // What the two share at either end is left out, so replacing one whole note's
 // prose with another names the sentence that changed. The stretch is widened to
 // whole words, and two texts that are the same name no stretch at all.
-func Differs(was, now string) (Span, string) {
+func Differs(was, now string) (Stretch, string) {
 	if was == now {
-		return Span{From: len(was), To: len(was)}, ""
+		return Stretch{From: len(was), To: len(was)}, ""
 	}
 
 	head := 0
@@ -164,7 +166,7 @@ func Differs(was, now string) (Span, string) {
 		tail--
 	}
 
-	return Span{From: head, To: len(was) - tail}, now[head : len(now)-tail]
+	return Stretch{From: head, To: len(was) - tail}, now[head : len(now)-tail]
 }
 
 // opens reports whether a stretch may begin at `at`: at the start of the text,

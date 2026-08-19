@@ -50,38 +50,36 @@ func (s sources) ByOtherRecipe(ctx context.Context, vaultID string, kind domain.
 	return s.read.ByOtherRecipe(ctx, vaultID, string(kind), recipe, limit)
 }
 
-// SaveVectors writes a group, both representations of each vector together.
+// SaveVectors writes a group: the coarse row of each, and the vector itself
+// where the text it was made from addresses it.
 func (s sources) SaveVectors(ctx context.Context, vectors []port.Vector) error {
 	out := make([]chunk.Vector, 0, len(vectors))
 	for _, v := range vectors {
 		out = append(out, chunk.Vector{
-			Chunk: v.Chunk,
-			Model: v.Model.String(),
-			// The width comes from the model that made the vector, because a
-			// blob of a thousand bytes is a thousand int8 dimensions or two
-			// hundred and fifty float32 ones and does not say which.
-			Dims:   v.Model.Dimensions,
-			Kind:   v.Kind,
-			Value:  v.Value,
-			Coarse: v.Coarse,
+			Chunk:       v.Chunk,
+			Fingerprint: v.Fingerprint,
+			Recipe:      v.Model.Recipe(),
+			Value:       v.Value,
+			Coarse:      v.Coarse,
 		})
 	}
 	return s.write.SaveVectors(ctx, out)
 }
 
 func (s sources) Unembedded(ctx context.Context, vaultID string, model port.EmbeddingModel, after int64, limit int) ([]domain.Passage, error) {
-	found, err := s.read.Unembedded(ctx, vaultID, model.String(), after, limit)
+	found, err := s.read.Unembedded(ctx, vaultID, model.Recipe(), after, limit)
 	if err != nil {
 		return nil, err
 	}
 	out := make([]domain.Passage, 0, len(found))
 	for _, p := range found {
 		out = append(out, domain.Passage{
-			Chunk:    p.Chunk,
-			Source:   p.Path,
-			Start:    p.Start,
-			Length:   p.Length,
-			Location: p.Location,
+			Chunk:       p.Chunk,
+			Source:      p.Path,
+			Start:       p.Start,
+			Length:      p.Length,
+			Location:    p.Location,
+			Fingerprint: p.Fingerprint,
 		})
 	}
 	return out, nil
@@ -110,4 +108,9 @@ func windows(in []port.Window) []chunk.Window {
 		})
 	}
 	return out
+}
+
+// Kept is the vectors already made for these texts under this recipe.
+func (s sources) Kept(ctx context.Context, recipe string, of [][]byte) (map[string][]byte, error) {
+	return s.read.Kept(ctx, recipe, of)
 }

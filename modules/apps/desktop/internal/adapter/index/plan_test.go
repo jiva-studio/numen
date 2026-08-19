@@ -39,10 +39,10 @@ var expectedPlans = []struct {
 	{chunk.Statements(), "fingerprints", []any{1, "book"}, []string{"sources_by_fingerprint"}},
 	{chunk.Statements(), "unchunked", []any{1, "book", 50}, []string{"sources_by_fingerprint", "chunks_by_source"}},
 	{chunk.Statements(), "stale_recipe", []any{1, "book", "epub", 50}, []string{"sources_by_fingerprint"}},
-	{chunk.Statements(), "unembedded", []any{"model", 1, 0, 50}, []string{"chunks_by_vault"}},
+	{chunk.Statements(), "unembedded", []any{"model", 1, 0, 50}, []string{"chunks_by_vault", "vectors_of"}},
 	{chunk.Statements(), "passage", []any{1, 1}, []string{"INTEGER PRIMARY KEY"}},
 	{chunk.Statements(), "enclosing", []any{1, 1}, []string{"INTEGER PRIMARY KEY"}},
-	{chunk.Statements(), "progress", []any{"model", 1}, []string{"chunks_by_vault_parent", "INTEGER PRIMARY KEY"}},
+	{chunk.Statements(), "progress", []any{"model", 1}, []string{"chunks_by_vault_parent", "vectors_of"}},
 	// The lexical half reads the full-text index and then the row each hit
 	// names. A virtual table reports itself as a scan and has no named index.
 	{chunk.Statements(), "lexical", []any{`"entropy"`, 1, 20}, []string{"chunks_fts", "INTEGER PRIMARY KEY"}},
@@ -185,21 +185,21 @@ func cut(t *testing.T, tx *sql.Tx, source, vault int64) {
 
 	var large int64
 	if err := tx.QueryRowContext(ctx,
-		`INSERT INTO chunks (source_id, vault_id, start, length, parent, location)
-		 VALUES (?, ?, 0, 100, NULL, 'chapter 1') RETURNING id`, source, vault).Scan(&large); err != nil {
+		`INSERT INTO chunks (source_id, vault_id, start, length, parent, location, hash)
+		 VALUES (?, ?, 0, 100, NULL, 'chapter 1', hex(randomblob(32))) RETURNING id`, source, vault).Scan(&large); err != nil {
 		t.Fatal(err)
 	}
 	index(t, tx, large, "entropy and the observer, at length")
 	for j := range 2 {
 		var small int64
 		if err := tx.QueryRowContext(ctx,
-			`INSERT INTO chunks (source_id, vault_id, start, length, parent, location)
-			 VALUES (?, ?, ?, 50, ?, NULL) RETURNING id`, source, vault, j*50, large).Scan(&small); err != nil {
+			`INSERT INTO chunks (source_id, vault_id, start, length, parent, location, hash)
+			 VALUES (?, ?, ?, 50, ?, NULL, hex(randomblob(32))) RETURNING id`, source, vault, j*50, large).Scan(&small); err != nil {
 			t.Fatal(err)
 		}
 		index(t, tx, small, "entropy and the observer")
 		if _, err := tx.ExecContext(ctx,
-			`INSERT INTO vectors (chunk_id, model, dims, kind, v) VALUES (?, 'model', 1024, 'int8', ?)`,
+			`INSERT OR IGNORE INTO vectors (fingerprint, recipe, v) VALUES (unhex((SELECT hash FROM chunks WHERE id = ?)), 'model', ?)`,
 			small, coarse); err != nil {
 			t.Fatal(err)
 		}

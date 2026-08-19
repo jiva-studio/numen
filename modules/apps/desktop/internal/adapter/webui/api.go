@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 )
 
@@ -51,6 +52,11 @@ type API struct {
 	Makes *note.Create
 	Joins *note.Linking
 
+	// Finds is how the window searches the text the vault holds, by the words
+	// in it and by what it means. A build without one answers that it cannot be
+	// searched, and the names a vault holds are answered all the same.
+	Finds *search.Search
+
 	// Drawing is everyone drawing this vault, for a change to a note being made
 	// while they may be showing it.
 	Drawing audience[domain.Editing]
@@ -82,6 +88,9 @@ type API struct {
 	// model, and then nothing is going to embed anything. It is named by the
 	// goroutine reading the vault and asked for by every request.
 	Model atomic.Value
+	// Recipe is everything that decides what a vector is, which is what a
+	// vector is found by.
+	Recipe atomic.Value
 	// Reading is the source being read now, empty between sources and after the
 	// last one.
 	Reading atomic.Value
@@ -91,6 +100,10 @@ type API struct {
 	Books     atomic.Int64
 	BooksRead atomic.Int64
 	Learning  atomic.Bool
+	// Owed is what the pass now running found to do and how much of it it has
+	// done. The two are one fact and are stored together: read one at a time,
+	// they can be seen in a state neither of them was ever in.
+	Owed atomic.Pointer[Owed]
 	// Busy is set for as long as this vault is being read: its notes, then its
 	// books, then their vectors. Reading a book and embedding one change no
 	// file, so a client asks again for as long as it holds.
@@ -106,6 +119,10 @@ func text(v *atomic.Value) string {
 }
 
 func (a *API) State(ctx context.Context, _ *connect.Request[v1.StateRequest]) (*connect.Response[v1.StateResponse], error) {
+	owed := a.Owed.Load()
+	if owed == nil {
+		owed = &Owed{}
+	}
 	out := &v1.StateResponse{
 		Name:      a.Vault.Name,
 		Path:      a.Vault.Path,
@@ -118,12 +135,14 @@ func (a *API) State(ctx context.Context, _ *connect.Request[v1.StateRequest]) (*
 		Books:     a.Books.Load(),
 		BooksRead: a.BooksRead.Load(),
 		Learning:  a.Learning.Load(),
+		Owing:     owed.Owing,
+		Made:      owed.Made,
 		Busy:      a.Busy.Load(),
 	}
 	// A count that cannot be taken leaves the pair at nothing, and the rest of
 	// the state is answered as it stands.
 	if a.Progress != nil {
-		if held, embedded, err := a.Progress.Progress(ctx, a.Vault.ID, text(&a.Model)); err == nil {
+		if held, embedded, err := a.Progress.Progress(ctx, a.Vault.ID, text(&a.Recipe)); err == nil {
 			out.Chunks, out.Embedded = held, embedded
 		}
 	}
@@ -215,4 +234,11 @@ func seatOf(s domain.Seat) v1.Seat {
 	default:
 		return v1.Seat_SEAT_UNSPECIFIED
 	}
+}
+
+// Owed is the work one pass has in hand: what it found to do, and how much of
+// it it has done.
+type Owed struct {
+	Owing int64
+	Made  int64
 }

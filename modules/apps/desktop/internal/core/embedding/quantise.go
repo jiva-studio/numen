@@ -68,3 +68,27 @@ func Normalise(v []float32) []float32 {
 	}
 	return v
 }
+
+// Similarity is the cosine of the angle between a query vector and a stored
+// one. It is what the rerank orders by, and the unit a similarity floor is
+// stated in.
+//
+// Each side is divided by its own length, so the scale a stored vector was
+// quantised at does not enter. Vectors of different widths, and a vector with
+// no direction, are not comparable and answer zero.
+func Similarity(query []float32, stored []int8) float64 {
+	if len(query) != len(stored) {
+		return 0
+	}
+	var dot, left, right float64
+	for i, b := range stored {
+		q, s := float64(query[i]), float64(b)
+		dot += q * s
+		left += q * q
+		right += s * s
+	}
+	if left == 0 || right == 0 {
+		return 0
+	}
+	return dot / math.Sqrt(left*right)
+}

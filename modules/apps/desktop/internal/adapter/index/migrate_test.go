@@ -2,6 +2,8 @@ package index
 
 import (
 	"database/sql"
+	"errors"
+	"fmt"
 	"path/filepath"
 	"testing"
 
@@ -137,62 +139,6 @@ func TestMigrationsRunInOneTransactionEach(t *testing.T) {
 	}
 }
 
-func TestTheChunksOfAnOlderIndexKeepTheirVectors(t *testing.T) {
-	// A chunk written before it carried the hash of its text keeps its row, and
-	// the vector made from it. The hash it carries is the empty string, which no
-	// text hashes to, so the row is replaced the next time its source is cut.
-	ctx := t.Context()
-	path := filepath.Join(t.TempDir(), "index.db")
-
-	db, err := sql.Open("sqlite", dsn(path))
-	if err != nil {
-		t.Fatal(err)
-	}
-	available, err := loadMigrations()
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, m := range available {
-		if m.version >= 6 {
-			break
-		}
-		if err := apply(ctx, db, m); err != nil {
-			t.Fatal(err)
-		}
-	}
-	for _, statement := range []string{
-		`INSERT INTO vaults (id, identifier, name, path) VALUES (1, '01AAA', 'kept', '/notes')`,
-		`INSERT INTO sources (id, vault_id, path, kind, size, modified_at)
-		 VALUES (1, 1, 'notes/Entropy.md', 'note', 10, 1)`,
-		`INSERT INTO chunks (id, source_id, vault_id, start, length, parent) VALUES (1, 1, 1, 0, 10, NULL)`,
-		`INSERT INTO chunks (id, source_id, vault_id, start, length, parent) VALUES (2, 1, 1, 0, 10, 1)`,
-		`INSERT INTO vectors (chunk_id, model, dims, kind, v) VALUES (2, 'model', 1024, 'int8', x'00')`,
-	} {
-		if _, err := db.ExecContext(ctx, statement); err != nil {
-			t.Fatalf("%s: %v", statement, err)
-		}
-	}
-	if err := db.Close(); err != nil {
-		t.Fatal(err)
-	}
-
-	upgraded, err := Open(ctx, path)
-	if err != nil {
-		t.Fatalf("migrating an index cut before chunks carried a hash: %v", err)
-	}
-	defer upgraded.Close()
-
-	var chunks, vectors int
-	if err := upgraded.read.QueryRowContext(ctx,
-		`SELECT (SELECT COUNT(*) FROM chunks WHERE hash = ''), (SELECT COUNT(*) FROM vectors)`).
-		Scan(&chunks, &vectors); err != nil {
-		t.Fatal(err)
-	}
-	if chunks != 2 || vectors != 1 {
-		t.Errorf("%d chunks and %d vectors survived the migration, want 2 and 1", chunks, vectors)
-	}
-}
-
 func TestAnOlderIndexIsMigratedRatherThanRebuilt(t *testing.T) {
 	// The point of migrations: a schema change must not cost the user a rescan
 	// of every vault. This builds a database at version 1, puts a row in it, and
@@ -246,26 +192,74 @@ func TestAnOlderIndexIsMigratedRatherThanRebuilt(t *testing.T) {
 	}
 }
 
-// A version number says how many migrations ran, and nothing about which. An
-// index migrated by other texts under the same numbers has a schema its number
-// does not describe, and no later migration can be written to expect either one.
+// An index a later build wrote is reported and left where it stands.
 //
-// This is what an edited migration leaves behind, and what a database written by
-// another build of this application looks like.
-func TestAnIndexMigratedByOtherMigrationsIsBuiltAgain(t *testing.T) {
+// Its schema holds what this build cannot read. Nothing is repaired, nothing is
+// emptied: what this build owes the person is the two numbers and their own
+// copy of their index, untouched.
+func TestAnIndexFromALaterBuildIsRefused(t *testing.T) {
 	ctx := t.Context()
 	path := filepath.Join(t.TempDir(), "index.db")
 
-	// A database that believes three migrations ran, holding a table none of
-	// this binary's migrations create and lacking every one they do.
+	db, err := Open(ctx, path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Vaults().Save(ctx, domain.Vault{ID: "01LATER", Name: "later", Path: "/later"}); err != nil {
+		t.Fatal(err)
+	}
+	// A schema this build does not carry, written by one that does.
+	if _, err := db.write.ExecContext(ctx,
+		fmt.Sprintf("PRAGMA user_version = %d", newest(t)+3)); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	again, err := Open(ctx, path)
+	if err == nil {
+		again.Close()
+		t.Fatal("an index from a later build was opened")
+	}
+	var ahead *Ahead
+	if !errors.As(err, &ahead) {
+		t.Fatalf("the error is %v, which does not say the index is ahead", err)
+	}
+	if ahead.Held != newest(t)+3 || ahead.Known != newest(t) {
+		t.Errorf("said %d and %d, want %d and %d", ahead.Held, ahead.Known, newest(t)+3, newest(t))
+	}
+
+	// The index is as it was left. Nothing was repaired by deleting.
 	raw, err := sql.Open("sqlite", dsn(path))
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer raw.Close()
+	var vaults int
+	if err := raw.QueryRowContext(ctx, `SELECT count(*) FROM vaults`).Scan(&vaults); err != nil {
+		t.Fatal(err)
+	}
+	if vaults != 1 {
+		t.Errorf("the index holds %d vaults, want the one it was left with", vaults)
+	}
+}
+
+// An index whose number does not describe the schema it holds is reported.
+//
+// A migration written to expect what came before it fails on a schema that does
+// not have it. The failure is what this build says; the index is not touched.
+func TestAnIndexWhoseSchemaDoesNotMatchItsNumberIsRefused(t *testing.T) {
+	ctx := t.Context()
+	path := filepath.Join(t.TempDir(), "index.db")
+
+	raw, err := sql.Open("sqlite", dsn(path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Three migrations claimed, and none of what they build.
 	for _, statement := range []string{
 		`CREATE TABLE strangers (id INTEGER PRIMARY KEY)`,
-		`CREATE TABLE applied (version INTEGER PRIMARY KEY, name TEXT NOT NULL, hash TEXT NOT NULL)`,
-		`INSERT INTO applied VALUES (1, '0001_initial.sql', 'another build wrote this')`,
 		`PRAGMA user_version = 3`,
 	} {
 		if _, err := raw.ExecContext(ctx, statement); err != nil {
@@ -277,36 +271,24 @@ func TestAnIndexMigratedByOtherMigrationsIsBuiltAgain(t *testing.T) {
 	}
 
 	db, err := Open(ctx, path)
-	if err != nil {
-		t.Fatalf("an index of another build could not be opened: %v", err)
+	if err == nil {
+		db.Close()
+		t.Fatal("an index whose schema does not match its number was opened")
 	}
-	t.Cleanup(func() { db.Close() })
 
-	var version int
-	if err := db.write.QueryRowContext(ctx, "PRAGMA user_version").Scan(&version); err != nil {
+	// What it held, it still holds.
+	back, err := sql.Open("sqlite", dsn(path))
+	if err != nil {
 		t.Fatal(err)
 	}
-	if version != newest(t) {
-		t.Errorf("the index is at version %d", version)
-	}
-	// Built from the first migration, so what it holds is what they create.
-	for _, table := range []string{"vaults", "notes", "sources", "chunks", "vectors"} {
-		var held int
-		if err := db.write.QueryRowContext(ctx,
-			`SELECT count(*) FROM sqlite_master WHERE type='table' AND name = ?`, table).Scan(&held); err != nil {
-			t.Fatal(err)
-		}
-		if held != 1 {
-			t.Errorf("%s is not there", table)
-		}
-	}
+	defer back.Close()
 	var strangers int
-	if err := db.write.QueryRowContext(ctx,
+	if err := back.QueryRowContext(ctx,
 		`SELECT count(*) FROM sqlite_master WHERE type='table' AND name='strangers'`).Scan(&strangers); err != nil {
 		t.Fatal(err)
 	}
-	if strangers != 0 {
-		t.Error("a table no migration creates survived")
+	if strangers != 1 {
+		t.Error("a table this build does not know was taken out of somebody's index")
 	}
 }
 

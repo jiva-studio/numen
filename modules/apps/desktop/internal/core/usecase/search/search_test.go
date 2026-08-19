@@ -2,7 +2,9 @@ package search_test
 
 import (
 	"context"
+	"encoding/hex"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -91,11 +93,11 @@ func (c corpus) cut(t *testing.T, v domain.Vault, path string, small ...string) 
 	}
 }
 
-// vectorise gives every small window of one vault a vector pointing the same
-// way, so a query pointing the other way is as far from it as the space allows.
-func (c corpus) vectorise(t *testing.T, v domain.Vault, sign float32) {
+// vectorise gives every small window of one vault a vector pointing the way
+// given, in both of the representations a chunk carries.
+func (c corpus) vectorise(t *testing.T, v domain.Vault, direction []float32) {
 	t.Helper()
-	owing, err := c.db.ChunkQueries().Unembedded(t.Context(), v.ID, model.String(), 0, 1000)
+	owing, err := c.db.ChunkQueries().Unembedded(t.Context(), v.ID, model.Recipe(), 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,9 +106,13 @@ func (c corpus) vectorise(t *testing.T, v domain.Vault, sign float32) {
 	}
 	vectors := make([]chunk.Vector, 0, len(owing))
 	for _, p := range owing {
+		raw, err := hex.DecodeString(p.Fingerprint)
+		if err != nil {
+			t.Fatal(err)
+		}
 		vectors = append(vectors, chunk.Vector{
-			Chunk: p.Chunk, Model: model.String(), Dims: dimensions, Kind: "int8",
-			Value: []byte{}, Coarse: embedding.Bits(pointing(sign)),
+			Chunk: p.Chunk, Fingerprint: raw, Recipe: model.Recipe(),
+			Value: precise(direction), Coarse: embedding.Bits(direction),
 		})
 	}
 	if err := c.db.Chunks().SaveVectors(t.Context(), vectors); err != nil {
@@ -114,14 +120,23 @@ func (c corpus) vectorise(t *testing.T, v domain.Vault, sign float32) {
 	}
 }
 
+// precise is the full-precision half of a vector, one signed byte per dimension.
+func precise(v []float32) []byte {
+	q := embedding.Bytes(embedding.Normalise(slices.Clone(v)))
+	out := make([]byte, len(q))
+	for i, x := range q {
+		out[i] = byte(x)
+	}
+	return out
+}
+
 func (c corpus) search(embedder port.Embedder) search.Search {
-	return search.New(c.db.ChunkQueries(), filesystem.Readers{}, embedder)
+	return search.New(c.db.ChunkQueries(), filesystem.Readers{}, embedder, 0)
 }
 
 var model = port.EmbeddingModel{Name: "test", Dimensions: dimensions}
 
-// pointing is a vector whose every dimension has the sign given, which is the
-// whole of what the coarse pass reads.
+// pointing is a vector whose every dimension has the sign given.
 func pointing(sign float32) []float32 {
 	v := make([]float32, dimensions)
 	for i := range v {
@@ -130,15 +145,26 @@ func pointing(sign float32) []float32 {
 	return v
 }
 
+// leaning agrees with `pointing(+1)` on all but an eighth of its dimensions.
+// The two stand at a cosine of 0.75, which is near enough for either to be an
+// answer to the other and far enough for the nearer one to be recognisable.
+func leaning() []float32 {
+	v := pointing(+1)
+	for i := range dimensions / 8 {
+		v[i] = -1
+	}
+	return v
+}
+
 // oneWay is an embedder whose vectors all point the same way.
-type oneWay struct{ sign float32 }
+type oneWay struct{ direction []float32 }
 
 func (o oneWay) Model() port.EmbeddingModel { return model }
 
 func (o oneWay) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	out := make([][]float32, 0, len(texts))
 	for range texts {
-		out = append(out, pointing(o.sign))
+		out = append(out, slices.Clone(o.direction))
 	}
 	return out, nil
 }
@@ -159,15 +185,16 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	c.cut(t, c.first, "notes/Entropy.md", "a measure of disorder")
 	c.cut(t, c.second, "notes/Quasar.md", "a distant beacon")
 
-	// The vaults point opposite ways, so the query below is nearest to
-	// everything the second vault holds and furthest from the first's.
-	c.vectorise(t, c.first, -1)
-	c.vectorise(t, c.second, +1)
+	// The vaults point different ways, and the query below is the second's own
+	// vector: nearest to everything it holds, and near enough to the first's for
+	// those to be answers too.
+	c.vectorise(t, c.first, leaning())
+	c.vectorise(t, c.second, pointing(+1))
 
-	// The coarse pass answers with the whole table's best k, so this is where a
+	// The meaning half answers with the whole table's best k, so this is where a
 	// lost filter shows.
 	dense := c.db.ChunkQueries()
-	near, err := dense.Nearest(ctx, c.first.ID, embedding.Bits(pointing(+1)), 20)
+	near, err := dense.Nearest(ctx, c.first.ID, model.Recipe(), pointing(+1), 20, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -183,7 +210,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 
 	// A full-text match runs across the whole table, and "shared" is in both
 	// vaults, so this is where a lost filter shows for the words half.
-	words, err := dense.Lexical(ctx, c.second.ID, "shared", 20)
+	words, err := dense.Lexical(ctx, c.second.ID, "shared", 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,7 +224,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	}
 
 	// And the merge of the two, which is what a caller asks for.
-	found, err := c.search(oneWay{sign: +1}).Execute(ctx, c.first, "shared", search.Parameters{})
+	found, err := c.search(oneWay{direction: pointing(+1)}).Execute(ctx, c.first, "shared", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -209,9 +236,9 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 			t.Errorf("the merge answered with %+v, which belongs to the second vault", p)
 		}
 	}
-	// Asked from the other side, with the vector that points at the first
-	// vault's own chunks.
-	for _, p := range c.searchIn(t, c.second, "disorder", oneWay{sign: -1}) {
+	// Asked from the other side, with the vector the first vault's own chunks
+	// carry.
+	for _, p := range c.searchIn(t, c.second, "disorder", oneWay{direction: leaning()}) {
 		if !strings.Contains(p.Source, "Quasar") {
 			t.Errorf("the second vault answered with %s, which belongs to the first", p.Source)
 		}
@@ -235,7 +262,7 @@ func TestAVaultWithNoVectorsAnswersFromItsWords(t *testing.T) {
 
 	for name, embedder := range map[string]port.Embedder{
 		"with no embedder at all":        nil,
-		"with an embedder and no vector": oneWay{sign: +1},
+		"with an embedder and no vector": oneWay{direction: pointing(+1)},
 	} {
 		t.Run(name, func(t *testing.T) {
 			found, err := c.search(embedder).Execute(ctx, c.first, "disorder", search.Parameters{})
@@ -260,7 +287,7 @@ func TestFiveMatchingChunksOfOneNoteAreOneResult(t *testing.T) {
 		"disorder once more", "disorder at last")
 
 	// Every window of the note matches, the large one included.
-	hits, err := c.db.ChunkQueries().Lexical(ctx, c.first.ID, "disorder", 20)
+	hits, err := c.db.ChunkQueries().Lexical(ctx, c.first.ID, "disorder", 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}

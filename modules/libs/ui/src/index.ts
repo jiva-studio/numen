@@ -14,6 +14,15 @@ export { default as Menu } from './menu/Menu.vue'
 export { landsOn, placeMenu, stepTo, MENU_OPENINGS } from './menu/model'
 export type { MenuItem, MenuOpening, MenuPlacement, MenuPlacing } from './menu/model'
 
+export { default as Palette } from './palette/Palette.vue'
+export type {
+  PaletteAction,
+  PaletteItem,
+  PalettePart,
+  PaletteBand,
+  PaletteSpan,
+} from './palette/model'
+
 /** For arranging without drawing, or drawing without this renderer. */
 export { default as PlexView } from './plex/render/PlexView.vue'
 export {
@@ -44,6 +53,7 @@ export { COMPOSER_STATES, composerState, keyIntent } from './composer/model'
 export type { ComposerState, KeyIntent } from './composer/model'
 
 export { default as Dots } from './dots/Dots.vue'
+export { default as Waiting } from './waiting/Waiting.vue'
 
 export { default as Thread } from './thread/Thread.vue'
 export { VOICES, VOICE_NAMES, charsWord, placeTurns } from './thread/model'
@@ -55,6 +65,10 @@ export { default as Tool } from './tool/Tool.vue'
 export { default as Activity } from './activity/Activity.vue'
 export { activity, percentWord, rateOf, remainingWord, shareOf, tallyWord } from './activity/model'
 export type { ActivityDescriptor, ActivityState, Tally } from './activity/model'
+
+export { default as Notices } from './notices/Notices.vue'
+export { standing, tallyOf } from './notices/model'
+export type { Notice } from './notices/model'
 
 export { default as Agent } from './assembled/Agent.vue'
 

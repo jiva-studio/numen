@@ -41,7 +41,7 @@ func changeable(t *testing.T, notes map[string]string) changing {
 
 // search is the one search, with no embedder: the words half answers alone.
 func (c changing) search() search.Search {
-	return search.New(c.db.Passages(), filesystem.Readers{}, nil)
+	return search.New(c.db.Passages(), filesystem.Readers{}, nil, 0)
 }
 
 func (c changing) create() note.Create {

@@ -88,10 +88,24 @@ watch(
   { immediate: true, flush: 'post' },
 )
 
-onBeforeUnmount(() => watching?.disconnect())
+onBeforeUnmount(() => {
+  watching?.disconnect()
+  // The branch is going, and where its handle reached is not news about a node
+  // that will not be there to hear it.
+  reached = null
+  putDown()
+})
 
 /** Which children there are, so that a change of shape starts the pane afresh. */
 const shape = computed(() => props.node.children.map((child) => child.id).join(' '))
+
+/**
+ * Whether a handle is under the pointer, and where it has reached. The splitter
+ * moves the panels itself while it is held, and the model is told where it came
+ * to rest.
+ */
+let holding = false
+let reached: readonly number[] | null = null
 
 /**
  * A splitter reports the shares it settled on, including the ones it worked
@@ -104,7 +118,36 @@ function settled(reported: number[]): void {
     shares.length === held.length &&
     shares.every((share, index) => Math.abs(share - (held[index] ?? 0)) < 1e-6)
 
-  if (!same) emit('resize', props.node.id, shares)
+  if (same) return
+  if (holding) reached = shares
+  else emit('resize', props.node.id, shares)
+}
+
+/**
+ * What a held handle is marked by, on the root so that it reaches everything
+ * the drag passes over.
+ */
+const RESIZING = 'data-resizing'
+
+/** The handle put down, wherever the pointer had reached by then. */
+const putDown = () => {
+  if (!holding) return
+  holding = false
+  document.documentElement.removeAttribute(RESIZING)
+
+  const settled = reached
+  reached = null
+  if (settled) emit('resize', props.node.id, settled)
+}
+
+/** A handle taken up, and put down where it stopped. */
+function handling(now: boolean): void {
+  if (!now) {
+    putDown()
+    return
+  }
+  holding = true
+  document.documentElement.setAttribute(RESIZING, '')
 }
 </script>
 
@@ -118,7 +161,12 @@ function settled(reported: number[]): void {
     @layout="settled"
   >
     <template v-for="(child, index) in node.children" :key="child.id">
-      <SplitterResizeHandle v-if="index > 0" class="branch__handle" :data-direction="direction" />
+      <SplitterResizeHandle
+        v-if="index > 0"
+        class="branch__handle"
+        :data-direction="direction"
+        @dragging="handling"
+      />
 
       <SplitterPanel
         :id="child.id"
@@ -174,12 +222,15 @@ function settled(reported: number[]): void {
   block-size: 100%;
 }
 
-/* The line between two panels, and the reach around it a pointer is caught by. */
+/* The line between two panels, and the reach around it a pointer is caught by.
+   The reach hangs over both panels and stands above them, so a press on either
+   side of the line is a press on the handle. */
 .branch__handle {
   --line: var(--numen-stroke);
   --reach: 7px;
 
   position: relative;
+  z-index: 1;
   flex: none;
   background: var(--numen-node-border);
 }
@@ -208,5 +259,22 @@ function settled(reported: number[]): void {
 
 .branch__handle[data-state='drag'] {
   background: var(--numen-ring);
+}
+
+/* A finger is caught from further out than a pointer, at the reach the splitter
+   answers a touch from. */
+@media (pointer: coarse) {
+  .branch__handle {
+    --reach: 15px;
+  }
+}
+</style>
+
+<style>
+/* While a handle is held, the drag moves the handle and the text under the
+   pointer is left alone. */
+[data-resizing] * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
 }
 </style>

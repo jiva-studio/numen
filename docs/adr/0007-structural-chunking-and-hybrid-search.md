@@ -69,13 +69,7 @@ low precision retrieves far more than few dimensions at high precision, and
 truncating a vector this model produces discards arbitrary directions rather
 than unimportant ones.
 
-Two representations are stored, and full precision is not one of them:
-
-> **The rerank is not yet built.** The dense half orders by the coarse
-> representation and hands that order to the merge. The byte-precision vector is
-> stored and read by nothing, so it is a cost with no reader until the rerank
-> exists — and the dense ranking is the coarse one, which this decision says is
-> not expected to be right.
+Two representations are stored:
 
 | Stored | Used for |
 | --- | --- |
