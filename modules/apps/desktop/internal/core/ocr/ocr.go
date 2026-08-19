@@ -34,16 +34,32 @@ type Line struct {
 	Score float32
 }
 
+// A Span is one box of a region, in what was written from it: the rectangle it
+// covers on the page, and the run of bytes it produced.
+type Span struct {
+	Box    image.Rectangle
+	Start  int
+	Length int
+}
+
 // A Block is one region of a page, written out.
 type Block struct {
 	Label string
 	Text  string
+	// Spans are where on the page each run of Text was read. A recogniser that
+	// reports no rectangles leaves them empty.
+	Spans []Span
 }
 
 // A Page is one page of a document, read.
 type Page struct {
+	// At is which page of the document this is, counted from zero.
+	At int
 	// Label is what the document calls this page.
 	Label string
+	// Size is the page as it was rendered, which the rectangles are addressed
+	// from. A zero size is a page nothing was measured on.
+	Size image.Point
 	// Blocks are what it says, in the order it is read.
 	Blocks []Block
 }
@@ -101,11 +117,13 @@ func inside(a, b image.Rectangle) bool {
 	return float64(both.Dx()*both.Dy()) > 0.9*float64(a.Dx()*a.Dy())
 }
 
-// Assemble writes one region out as running prose.
-func Assemble(lines []Line) string {
+// Assemble writes one region out as running prose, and says where on the page
+// each run of it was read.
+func Assemble(lines []Line) (string, []Span) {
 	var out strings.Builder
+	var spans []Span
 	for _, line := range group(lines) {
-		text := strings.TrimSpace(written(line))
+		text, boxes := written(line)
 		if text == "" {
 			continue
 		}
@@ -113,12 +131,22 @@ func Assemble(lines []Line) string {
 		if hyphen.MatchString(joined) {
 			out.Reset()
 			out.WriteString(hyphen.ReplaceAllString(joined, "$1"))
+			// The hyphen is gone from the end of the box that carried it, so
+			// that box covers one byte fewer than it wrote.
+			if n := len(spans); n > 0 {
+				spans[n-1].Length -= len(joined) - out.Len()
+			}
 		} else if joined != "" {
 			out.WriteString(" ")
 		}
+		at := out.Len()
+		for _, span := range boxes {
+			span.Start += at
+			spans = append(spans, span)
+		}
 		out.WriteString(text)
 	}
-	return out.String()
+	return out.String(), spans
 }
 
 // group divides a region's lines into the lines the page prints.
@@ -166,22 +194,29 @@ func shared(line []Line, box Line) float64 {
 	return float64(max(bottom-top, 0)) / float64(height)
 }
 
-// written is one line of the page.
+// written is one line of the page, and where in it each box was read. The
+// offsets are in the line's own text.
 //
 // Detection cuts a line where the printing leaves a gap, so two boxes of one
 // line are two words. The gap itself is not measurable here: a detector widens
 // every box it returns by a fixed number of pixels, and neighbours therefore
 // overlap however far apart the words were.
-func written(line []Line) string {
-	parts := make([]string, 0, len(line))
+func written(line []Line) (string, []Span) {
+	var out strings.Builder
+	var spans []Span
 	for _, box := range line {
-		// A box the recogniser read as nothing is not a word. Joining it in
-		// would put two spaces where the page has one.
-		if text := strings.TrimSpace(box.Text); text != "" {
-			parts = append(parts, text)
+		// A box the recogniser read as nothing is not a word.
+		text := strings.TrimSpace(box.Text)
+		if text == "" {
+			continue
 		}
+		if out.Len() > 0 {
+			out.WriteString(" ")
+		}
+		spans = append(spans, Span{Box: box.Box, Start: out.Len(), Length: len(text)})
+		out.WriteString(text)
 	}
-	return strings.Join(parts, " ")
+	return out.String(), spans
 }
 
 // A line broken by a hyphen continues in the next one.

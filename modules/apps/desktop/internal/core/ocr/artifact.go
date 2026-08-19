@@ -29,12 +29,27 @@ type Mark struct {
 	Offset int
 }
 
-// Write is the artifact for a document that has been read.
+// A Box is one run of prose and where it was read: the page it is on, the run
+// of bytes in the text, and the rectangle it covers as a fraction of the page.
+type Box struct {
+	Page                   int
+	Start                  int
+	Length                 int
+	MinX, MinY, MaxX, MaxY float32
+}
+
+// Write is the artifact for a document that has been read, and the boxes its
+// prose was read from.
 //
 // A page with nothing on it is still written: its mark is what makes the page
 // after it findable, and a blank page is a fact about the document.
-func Write(pages []Page) []byte {
+//
+// A box is placed in the prose, which is what Read gives back. The mark and the
+// newline closing it are bookkeeping and are counted in neither.
+func Write(pages []Page) ([]byte, []Box) {
 	var out strings.Builder
+	var boxes []Box
+	prose := 0
 	for _, page := range pages {
 		out.WriteString(pageStart)
 		out.WriteString(strings.ReplaceAll(page.Label, pageStart, ""))
@@ -43,12 +58,39 @@ func Write(pages []Page) []byte {
 		for i, block := range page.Blocks {
 			if i > 0 {
 				out.WriteString(blockGap)
+				prose += len(blockGap)
 			}
+			boxes = append(boxes, within(page, block, prose)...)
 			out.WriteString(block.Text)
+			prose += len(block.Text)
 		}
 		out.WriteString("\n")
+		prose++
 	}
-	return []byte(out.String())
+	return []byte(out.String()), boxes
+}
+
+// within is where each span of a block sits: at its offset from base in the
+// prose, and over the fraction of the page its rectangle covers. A page nothing
+// was measured on gives no boxes, having no size to take a fraction of.
+func within(page Page, block Block, base int) []Box {
+	if page.Size.X <= 0 || page.Size.Y <= 0 {
+		return nil
+	}
+	wide, high := float32(page.Size.X), float32(page.Size.Y)
+	boxes := make([]Box, 0, len(block.Spans))
+	for _, span := range block.Spans {
+		boxes = append(boxes, Box{
+			Page:   page.At,
+			Start:  base + span.Start,
+			Length: span.Length,
+			MinX:   float32(span.Box.Min.X) / wide,
+			MinY:   float32(span.Box.Min.Y) / high,
+			MaxX:   float32(span.Box.Max.X) / wide,
+			MaxY:   float32(span.Box.Max.Y) / high,
+		})
+	}
+	return boxes
 }
 
 // Note is a line the artifact carries for whatever wrote it and nobody else: a

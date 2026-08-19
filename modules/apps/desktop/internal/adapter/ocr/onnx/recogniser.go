@@ -147,8 +147,8 @@ func (r *Recogniser) Read(ctx context.Context, page image.Image) ([]ocr.Block, e
 				Score: line.Score,
 			})
 		}
-		if text := ocr.Assemble(lines); text != "" {
-			out = append(out, ocr.Block{Label: region.Label, Text: text})
+		if text, spans := ocr.Assemble(lines); text != "" {
+			out = append(out, ocr.Block{Label: region.Label, Text: text, Spans: spans})
 		}
 	}
 	return out, nil

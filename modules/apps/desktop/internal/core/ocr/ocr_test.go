@@ -17,7 +17,7 @@ func line(x0, y0, x1, y1 int, text string) ocr.Line {
 func TestLinesAreGroupedByWhatTheyShareVertically(t *testing.T) {
 	// Two runs on one line, and a third beneath them. The one beneath is a line
 	// of its own however far left it starts.
-	got := ocr.Assemble([]ocr.Line{
+	got, _ := ocr.Assemble([]ocr.Line{
 		line(10, 100, 60, 120, "second"),
 		line(0, 98, 8, 121, "the"),
 		line(0, 140, 90, 160, "line beneath"),
@@ -42,7 +42,7 @@ func TestALineBrokenByAHyphenContinues(t *testing.T) {
 	}
 	for _, c := range tests {
 		t.Run(c.name, func(t *testing.T) {
-			got := ocr.Assemble([]ocr.Line{
+			got, _ := ocr.Assemble([]ocr.Line{
 				line(0, 0, 100, 20, c.ends),
 				line(0, 40, 100, 60, c.next),
 			})
@@ -101,7 +101,7 @@ func TestAnArtifactSaysWhatEachPageSays(t *testing.T) {
 			{Label: "text", Text: "The body begins."},
 		}},
 	}
-	raw := ocr.Write(pages)
+	raw, _ := ocr.Write(pages)
 
 	text, marks := ocr.Read(raw)
 	if len(marks) != 2 {
@@ -141,7 +141,7 @@ func TestAnArtifactWithNoMarksIsAllProse(t *testing.T) {
 }
 
 func TestAPageWithNothingOnItIsStillAPage(t *testing.T) {
-	raw := ocr.Write([]ocr.Page{
+	raw, _ := ocr.Write([]ocr.Page{
 		{Label: "1", Blocks: []ocr.Block{{Label: "text", Text: "Something."}}},
 		{Label: "2"},
 		{Label: "3", Blocks: []ocr.Block{{Label: "text", Text: "Something else."}}},
@@ -162,7 +162,8 @@ func TestWritingAndReadingAgreeAboutEveryOffset(t *testing.T) {
 		{Label: "ii", Blocks: []ocr.Block{{Label: "text", Text: "Beta."}, {Label: "text", Text: "Gamma."}}},
 		{Label: "1", Blocks: []ocr.Block{{Label: "text", Text: "Delta."}}},
 	}
-	text, marks := ocr.Read(ocr.Write(pages))
+	raw, _ := ocr.Write(pages)
+	text, marks := ocr.Read(raw)
 
 	// Every mark is inside the text and they ascend, which is what Locate
 	// searches through.
@@ -183,7 +184,7 @@ func TestWritingAndReadingAgreeAboutEveryOffset(t *testing.T) {
 func TestABoxReadAsNothingIsNotAWord(t *testing.T) {
 	// A detector finds a run of words and the recogniser reads nothing in it.
 	// Joining that in puts two spaces where the page prints one.
-	got := ocr.Assemble([]ocr.Line{
+	got, _ := ocr.Assemble([]ocr.Line{
 		line(0, 0, 30, 20, "As the"),
 		line(35, 0, 40, 20, ""),
 		line(45, 0, 90, 20, "Lord traveled"),
@@ -199,13 +200,15 @@ func TestABoxReadAsNothingIsNotAWord(t *testing.T) {
 func TestALineWrittenForTheWriterIsNotProse(t *testing.T) {
 	// A run stopped part way writes down how far it got. That line is not what
 	// the page says, and an offset into the prose must not count it.
-	raw := append([]byte("\x00pages 2\n"), ocr.Write([]ocr.Page{
+	first, _ := ocr.Write([]ocr.Page{
 		{Label: "1", Blocks: []ocr.Block{{Label: "text", Text: "Alpha."}}},
-	})...)
-	raw = append(raw, []byte("\x00pages 4\n")...)
-	raw = append(raw, ocr.Write([]ocr.Page{
+	})
+	second, _ := ocr.Write([]ocr.Page{
 		{Label: "2", Blocks: []ocr.Block{{Label: "text", Text: "Beta."}}},
-	})...)
+	})
+	raw := append([]byte("\x00pages 2\n"), first...)
+	raw = append(raw, []byte("\x00pages 4\n")...)
+	raw = append(raw, second...)
 
 	text, marks := ocr.Read(raw)
 	if strings.Contains(text, "pages") {
@@ -216,5 +219,125 @@ func TestALineWrittenForTheWriterIsNotProse(t *testing.T) {
 	}
 	if got := strings.TrimSpace(text[marks[1].Offset:]); got != "Beta." {
 		t.Errorf("the second page says %q, want %q", got, "Beta.")
+	}
+}
+
+func TestEveryBoxSaysWhereItsWordsAreInTheProse(t *testing.T) {
+	// Two pages, and the first of them two regions. The offsets are in the
+	// prose, so the second page's boxes are past everything the first says.
+	first, firstSpans := ocr.Assemble([]ocr.Line{
+		line(0, 0, 50, 20, "Alpha"),
+		line(60, 0, 100, 20, "beta"),
+		line(0, 40, 60, 60, "gamma"),
+	})
+	last, lastSpans := ocr.Assemble([]ocr.Line{
+		line(0, 0, 70, 20, "Epsilon"),
+		line(80, 0, 120, 20, "zeta"),
+	})
+	pages := []ocr.Page{
+		{At: 0, Label: "i", Size: image.Pt(600, 800), Blocks: []ocr.Block{
+			{Label: "text", Text: first, Spans: firstSpans},
+			// A region read by something that reports no rectangles. It says
+			// what it says and the prose after it moves along by that much.
+			{Label: "text", Text: "Delta."},
+		}},
+		{At: 1, Label: "1", Size: image.Pt(600, 800), Blocks: []ocr.Block{
+			{Label: "text", Text: last, Spans: lastSpans},
+		}},
+	}
+	raw, boxes := ocr.Write(pages)
+	text, _ := ocr.Read(raw)
+
+	want := []string{"Alpha", "beta", "gamma", "Epsilon", "zeta"}
+	if len(boxes) != len(want) {
+		t.Fatalf("wrote %d boxes, want %d", len(boxes), len(want))
+	}
+	for i, box := range boxes {
+		if box.Start < 0 || box.Start+box.Length > len(text) {
+			t.Fatalf("box %d covers %d..%d, and the prose is %d long", i, box.Start, box.Start+box.Length, len(text))
+		}
+		if got := text[box.Start : box.Start+box.Length]; got != want[i] {
+			t.Errorf("box %d reads %q, want %q", i, got, want[i])
+		}
+	}
+
+	if boxes[3].Page != 1 {
+		t.Errorf("the fourth box is on page %d, want 1", boxes[3].Page)
+	}
+	// The rectangle is the share of the page the box covers.
+	if boxes[0].MinX != 0 || boxes[0].MaxX != 50.0/600 || boxes[0].MaxY != 20.0/800 {
+		t.Errorf("the first box covers %v..%v, %v..%v", boxes[0].MinX, boxes[0].MaxX, boxes[0].MinY, boxes[0].MaxY)
+	}
+	for i, box := range boxes {
+		for _, at := range []float32{box.MinX, box.MinY, box.MaxX, box.MaxY} {
+			if at < 0 || at > 1 {
+				t.Errorf("box %d reaches %v, and the page is one wide and one high", i, at)
+			}
+		}
+	}
+}
+
+func TestAJoinedWordLeavesTheHyphenBoxOneByteShorter(t *testing.T) {
+	// The hyphen is gone from the end of the box that carried it, so that box
+	// covers the first half of the word and no more.
+	text, spans := ocr.Assemble([]ocr.Line{
+		line(0, 0, 100, 20, "under-"),
+		line(0, 40, 200, 60, "standing follows"),
+	})
+	if text != "understanding follows" {
+		t.Fatalf("assembled %q", text)
+	}
+	if len(spans) != 2 {
+		t.Fatalf("wrote %d spans, want 2", len(spans))
+	}
+	if got := text[spans[0].Start : spans[0].Start+spans[0].Length]; got != "under" {
+		t.Errorf("the first box reads %q, want %q", got, "under")
+	}
+	if got := text[spans[1].Start : spans[1].Start+spans[1].Length]; got != "standing follows" {
+		t.Errorf("the second box reads %q, want %q", got, "standing follows")
+	}
+}
+
+func TestAPageNothingWasMeasuredOnHasNoBoxes(t *testing.T) {
+	// A page with no size gives no fraction of itself to divide a rectangle by.
+	raw, boxes := ocr.Write([]ocr.Page{
+		{At: 0, Label: "1", Blocks: []ocr.Block{{
+			Label: "text",
+			Text:  "Alpha beta",
+			Spans: []ocr.Span{{Box: image.Rect(0, 0, 50, 20), Start: 0, Length: 5}},
+		}}},
+	})
+
+	if len(boxes) != 0 {
+		t.Errorf("wrote %d boxes for a page nothing was measured on", len(boxes))
+	}
+	text, marks := ocr.Read(raw)
+	if len(marks) != 1 || !strings.Contains(text, "Alpha beta") {
+		t.Errorf("the page says %q", text)
+	}
+}
+
+func TestAJoinedWordLeavesTheHyphenBoxShorterByTheHyphen(t *testing.T) {
+	// A hyphen is one byte, or two, or three. What the box covers is what it
+	// wrote less the mark that was taken out of it.
+	for _, hyphen := range []string{"-", "‐", "‑", "­"} {
+		t.Run(hyphen, func(t *testing.T) {
+			text, spans := ocr.Assemble([]ocr.Line{
+				line(0, 0, 100, 20, "Viśvakoṣa"+hyphen),
+				line(0, 40, 200, 60, "ṭīkā follows"),
+			})
+			if text != "Viśvakoṣaṭīkā follows" {
+				t.Fatalf("assembled %q", text)
+			}
+			if len(spans) != 2 {
+				t.Fatalf("wrote %d spans, want 2", len(spans))
+			}
+			if got := text[spans[0].Start : spans[0].Start+spans[0].Length]; got != "Viśvakoṣa" {
+				t.Errorf("the first box reads %q", got)
+			}
+			if got := text[spans[1].Start : spans[1].Start+spans[1].Length]; got != "ṭīkā follows" {
+				t.Errorf("the second box reads %q", got)
+			}
+		})
 	}
 }
