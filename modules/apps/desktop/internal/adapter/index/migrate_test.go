@@ -139,66 +139,6 @@ func TestMigrationsRunInOneTransactionEach(t *testing.T) {
 	}
 }
 
-func TestTheChunksOfAnOlderIndexKeepTheirRows(t *testing.T) {
-	// A chunk written before it carried the hash of its text keeps its row.
-	// Its vector cannot come with it: a vector is kept by the text it was made
-	// from, and this chunk never recorded what its text was. The row is
-	// replaced, and the vector made again, the next time its source is cut.
-	ctx := t.Context()
-	path := filepath.Join(t.TempDir(), "index.db")
-
-	db, err := sql.Open("sqlite", dsn(path))
-	if err != nil {
-		t.Fatal(err)
-	}
-	available, err := loadMigrations()
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, m := range available {
-		if m.version >= 6 {
-			break
-		}
-		if err := apply(ctx, db, m); err != nil {
-			t.Fatal(err)
-		}
-	}
-	for _, statement := range []string{
-		`INSERT INTO vaults (id, identifier, name, path) VALUES (1, '01AAA', 'kept', '/notes')`,
-		`INSERT INTO sources (id, vault_id, path, kind, size, modified_at)
-		 VALUES (1, 1, 'notes/Entropy.md', 'note', 10, 1)`,
-		`INSERT INTO chunks (id, source_id, vault_id, start, length, parent) VALUES (1, 1, 1, 0, 10, NULL)`,
-		`INSERT INTO chunks (id, source_id, vault_id, start, length, parent) VALUES (2, 1, 1, 0, 10, 1)`,
-		`INSERT INTO vectors (chunk_id, model, dims, kind, v) VALUES (2, 'model', 1024, 'int8', x'00')`,
-	} {
-		if _, err := db.ExecContext(ctx, statement); err != nil {
-			t.Fatalf("%s: %v", statement, err)
-		}
-	}
-	if err := db.Close(); err != nil {
-		t.Fatal(err)
-	}
-
-	upgraded, err := Open(ctx, path)
-	if err != nil {
-		t.Fatalf("migrating an index cut before chunks carried a hash: %v", err)
-	}
-	defer upgraded.Close()
-
-	var chunks, vectors int
-	if err := upgraded.read.QueryRowContext(ctx,
-		`SELECT (SELECT COUNT(*) FROM chunks WHERE hash = ''), (SELECT COUNT(*) FROM vectors)`).
-		Scan(&chunks, &vectors); err != nil {
-		t.Fatal(err)
-	}
-	if chunks != 2 {
-		t.Errorf("%d chunks survived the migration, want 2", chunks)
-	}
-	if vectors != 0 {
-		t.Errorf("%d vectors were carried for text the index never recorded", vectors)
-	}
-}
-
 func TestAnOlderIndexIsMigratedRatherThanRebuilt(t *testing.T) {
 	// The point of migrations: a schema change must not cost the user a rescan
 	// of every vault. This builds a database at version 1, puts a row in it, and

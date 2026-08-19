@@ -1105,3 +1105,10 @@ func TestAVectorStaysWhileAnyChunkStillHoldsItsText(t *testing.T) {
 		t.Error("the vector for text a book still holds was taken out")
 	}
 }
+
+// Vectors carried in under an older name of the same model are taken up.
+//
+// A migration that carries vectors forward knows only what the rows it reads
+// said: which model, and how wide. The recipe in use says more. Where the model
+// and the width agree, what was carried was made by the model now in use, and
+// it is not bought a second time.

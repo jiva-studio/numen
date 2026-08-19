@@ -185,16 +185,16 @@ func cut(t *testing.T, tx *sql.Tx, source, vault int64) {
 
 	var large int64
 	if err := tx.QueryRowContext(ctx,
-		`INSERT INTO chunks (source_id, vault_id, start, length, parent, location)
-		 VALUES (?, ?, 0, 100, NULL, 'chapter 1') RETURNING id`, source, vault).Scan(&large); err != nil {
+		`INSERT INTO chunks (source_id, vault_id, start, length, parent, location, hash)
+		 VALUES (?, ?, 0, 100, NULL, 'chapter 1', hex(randomblob(32))) RETURNING id`, source, vault).Scan(&large); err != nil {
 		t.Fatal(err)
 	}
 	index(t, tx, large, "entropy and the observer, at length")
 	for j := range 2 {
 		var small int64
 		if err := tx.QueryRowContext(ctx,
-			`INSERT INTO chunks (source_id, vault_id, start, length, parent, location)
-			 VALUES (?, ?, ?, 50, ?, NULL) RETURNING id`, source, vault, j*50, large).Scan(&small); err != nil {
+			`INSERT INTO chunks (source_id, vault_id, start, length, parent, location, hash)
+			 VALUES (?, ?, ?, 50, ?, NULL, hex(randomblob(32))) RETURNING id`, source, vault, j*50, large).Scan(&small); err != nil {
 			t.Fatal(err)
 		}
 		index(t, tx, small, "entropy and the observer")

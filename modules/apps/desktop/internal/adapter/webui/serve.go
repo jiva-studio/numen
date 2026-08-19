@@ -105,8 +105,8 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 	// embed what was cut.
 	if embedder != nil {
 		model := embedder.Model()
-		// The vector index is built for one width. A model of another width
-		// rebuilds it, and what it held is embedded again.
+		// The coarse index is built for one width. A model of another width
+		// rebuilds it from what has been made.
 		if err := db.FitVectors(ctx, model.Dimensions); err != nil {
 			fmt.Fprintf(out, "not embedding %s: %v\n", vaults[0].Name, err)
 			embedder = nil
