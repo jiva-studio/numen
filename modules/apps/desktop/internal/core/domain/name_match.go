@@ -1,13 +1,13 @@
 package domain
 
-// TitleMatch is one name in a vault that matched what was typed: a note, and
+// NameMatch is one name in a vault that matched what was typed: a note, and
 // the heading inside it when a heading is what matched rather than the note's
 // own title.
 //
 // It is a read model — a note is not reconstructed from it. A search over the
 // text a vault holds returns a Passage; this is the answer to the narrower
 // question, asked while a person is still typing.
-type TitleMatch struct {
+type NameMatch struct {
 	Path  string
 	Title string
 

@@ -14,11 +14,13 @@ import (
 // what holds the words.
 type PassageQueries interface {
 	// Lexical is the chunks of one vault whose text matches the words typed,
-	// best first, at most `limit` of them.
-	Lexical(ctx context.Context, vaultID, query string, limit int) ([]domain.Passage, error)
+	// best first, at most `limit` of them. `growing` says the last word may
+	// still be being typed, and is then matched by its opening.
+	Lexical(ctx context.Context, vaultID, query string, limit int, growing bool) ([]domain.Passage, error)
 
 	// Nearest is the chunks of one vault nearest a query vector, nearest first,
 	// at most `limit` of them. `query` is the full precision the model answered
-	// with, and a chunk too far from it is not an answer and does not come back.
-	Nearest(ctx context.Context, vaultID string, query []float32, limit int) ([]domain.Passage, error)
+	// with, and a chunk whose similarity to it is under `floor` is not an answer
+	// and does not come back.
+	Nearest(ctx context.Context, vaultID string, query []float32, limit int, floor float64) ([]domain.Passage, error)
 }

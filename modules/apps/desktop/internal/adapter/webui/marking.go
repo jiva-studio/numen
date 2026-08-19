@@ -4,17 +4,17 @@ import (
 	"slices"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 )
 
 // marks is where each word typed stands in a passage, counted the way a client
-// counts text: in UTF-16 code units.
+// counts text: in UTF-16 code units. The runs come in order and do not overlap.
 //
-// Case is folded and nothing else is. These marks are what says why a passage
-// is here, and a mark on something the person did not type is a worse answer
-// than no mark at all. A passage found for what it means rather than for what
-// it says therefore carries none.
+// Case is folded and nothing else is. A run begins where a word begins, and
+// ends where one ends; the last word typed may still be growing, so it matches
+// a word by its opening, which is the rule the index matched it by.
 func marks(text, query string) []domain.Span {
 	words := strings.Fields(query)
 	if len(words) == 0 || text == "" {
@@ -23,27 +23,62 @@ func marks(text, query string) []domain.Span {
 	folded, units := folding(text)
 
 	var at []domain.Span
-	for _, word := range words {
+	for i, word := range words {
 		wanted, _ := folding(word)
 		if len(wanted) == 0 {
 			continue
 		}
+		whole := i < len(words)-1
 		for from := 0; from+len(wanted) <= len(folded); from++ {
-			if slices.Equal(folded[from:from+len(wanted)], wanted) {
-				at = append(at, domain.Span{From: units[from], To: units[from+len(wanted)]})
+			to := from + len(wanted)
+			if !slices.Equal(folded[from:to], wanted) {
+				continue
 			}
+			if !opens(folded, from) || (whole && !closes(folded, to)) {
+				continue
+			}
+			at = append(at, domain.Span{From: units[from], To: units[to]})
 		}
 	}
-	return at
+	return merged(at)
+}
+
+// wordly is what a word is made of, so that what stands either side of one is
+// what tells a word from a run of letters inside one.
+func wordly(r rune) bool { return unicode.IsLetter(r) || unicode.IsDigit(r) }
+
+// opens and closes say whether a run beginning or ending here is a whole word's
+// beginning or end. The ends of the text are both.
+func opens(runes []rune, at int) bool { return at == 0 || !wordly(runes[at-1]) }
+
+func closes(runes []rune, at int) bool { return at == len(runes) || !wordly(runes[at]) }
+
+// merged is the runs in the order they stand, with ones that touch or overlap
+// made into one. Two words typed can name the same characters.
+func merged(at []domain.Span) []domain.Span {
+	if len(at) < 2 {
+		return at
+	}
+	slices.SortFunc(at, func(a, b domain.Span) int { return a.From - b.From })
+
+	out := at[:1]
+	for _, span := range at[1:] {
+		last := &out[len(out)-1]
+		if span.From <= last.To {
+			last.To = max(last.To, span.To)
+			continue
+		}
+		out = append(out, span)
+	}
+	return out
 }
 
 // folding is the text one rune at a time with case dropped, and where each of
 // those runes begins for something counting in UTF-16 code units.
 //
-// A rune at a time, because folding a whole string can change how many
-// characters it holds and the offsets would no longer address the text they
-// came from. The offsets run one longer than the text, so the end of the last
-// rune is among them.
+// A rune at a time: folding a whole string can change how many characters it
+// holds. The offsets run one longer than the text, so the end of the last rune
+// is among them.
 func folding(text string) ([]rune, []int) {
 	runes := make([]rune, 0, len(text))
 	units := make([]int, 0, len(text)+1)
@@ -165,4 +200,33 @@ func ends(units []int, at int) int {
 		}
 	}
 	return len(units) - 1
+}
+
+// How far either side of a hit a passage is read at all, in bytes. The window
+// drawn opens a little before the first word that matched and runs on from
+// there, so what is read has to hold the widest window that can open near the
+// hit and the words that can open it.
+const reach = 8 * glancing
+
+// nearby is the part of a passage the window is cut from, and where the hit
+// stands inside it.
+//
+// A passage is the whole of the window enclosing its hit, which for a section
+// of a book is the whole section. What is read is what a window can be cut
+// from.
+func nearby(text string, hit int) (string, int) {
+	from, to := hit-reach, hit+reach
+	if from < 0 {
+		from = 0
+	}
+	if to > len(text) {
+		to = len(text)
+	}
+	for from > 0 && !utf8.RuneStart(text[from]) {
+		from--
+	}
+	for to < len(text) && !utf8.RuneStart(text[to]) {
+		to++
+	}
+	return text[from:to], hit - from
 }

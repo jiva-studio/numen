@@ -126,7 +126,7 @@ func precise(v []float32) []byte {
 }
 
 func (c corpus) search(embedder port.Embedder) search.Search {
-	return search.New(c.db.ChunkQueries(), filesystem.Readers{}, embedder)
+	return search.New(c.db.ChunkQueries(), filesystem.Readers{}, embedder, 0)
 }
 
 var model = port.EmbeddingModel{Name: "test", Dimensions: dimensions}
@@ -189,7 +189,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	// The meaning half answers with the whole table's best k, so this is where a
 	// lost filter shows.
 	dense := c.db.ChunkQueries()
-	near, err := dense.Nearest(ctx, c.first.ID, pointing(+1), 20)
+	near, err := dense.Nearest(ctx, c.first.ID, pointing(+1), 20, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -205,7 +205,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 
 	// A full-text match runs across the whole table, and "shared" is in both
 	// vaults, so this is where a lost filter shows for the words half.
-	words, err := dense.Lexical(ctx, c.second.ID, "shared", 20)
+	words, err := dense.Lexical(ctx, c.second.ID, "shared", 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -282,7 +282,7 @@ func TestFiveMatchingChunksOfOneNoteAreOneResult(t *testing.T) {
 		"disorder once more", "disorder at last")
 
 	// Every window of the note matches, the large one included.
-	hits, err := c.db.ChunkQueries().Lexical(ctx, c.first.ID, "disorder", 20)
+	hits, err := c.db.ChunkQueries().Lexical(ctx, c.first.ID, "disorder", 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}

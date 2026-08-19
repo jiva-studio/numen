@@ -234,7 +234,7 @@ onBeforeUnmount(leave)
   --narrowest: 180px;
   --widest: 320px;
   --tallest: 60vh;
-  --lift: 60;
+  --lift: var(--numen-lift-menu);
 
   position: fixed;
   z-index: var(--lift);

@@ -16,11 +16,9 @@ import "strings"
 // for a search box — a query language is a decision to make deliberately, not
 // something to leak because of how a string is passed along.
 //
-// The last word carries a prefix mark, because a search box is typed into: the
-// index holds whole words, and a word still being typed matches none of them.
-// It is what lets "наставник" reach "наставника", and a finished word is a
-// prefix of itself, so nothing is lost by it.
-func Expression(typed string) string {
+// `growing` says the last word may still be being typed, and it then carries a
+// prefix mark. A question that is finished is asked exactly.
+func Expression(typed string, growing bool) string {
 	fields := strings.Fields(typed)
 	if len(fields) == 0 {
 		return ""
@@ -30,6 +28,8 @@ func Expression(typed string) string {
 		// Doubling is how a quote is escaped inside an FTS5 string.
 		quoted = append(quoted, `"`+strings.ReplaceAll(field, `"`, `""`)+`"`)
 	}
-	quoted[len(quoted)-1] += "*"
+	if growing {
+		quoted[len(quoted)-1] += "*"
+	}
 	return strings.Join(quoted, " ")
 }

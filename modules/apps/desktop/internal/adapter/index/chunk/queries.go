@@ -62,13 +62,13 @@ func (q *Queries) Fingerprints(ctx context.Context, vaultID, kind string) (map[s
 //
 // What comes back is the large window enclosing each hit, which is what a
 // result shows.
-func (q *Queries) Lexical(ctx context.Context, vaultID, query string, limit int) ([]domain.Passage, error) {
+func (q *Queries) Lexical(ctx context.Context, vaultID, query string, limit int, growing bool) ([]domain.Passage, error) {
 	if limit <= 0 {
 		// How many candidates to keep is a retrieval decision. The caller makes
 		// it, and arriving here without one is a mistake in the caller.
 		return nil, fmt.Errorf("the lexical half needs a positive limit, got %d", limit)
 	}
-	expression := Expression(query)
+	expression := Expression(query, growing)
 	if expression == "" {
 		return nil, nil
 	}
@@ -89,7 +89,7 @@ func (q *Queries) Lexical(ctx context.Context, vaultID, query string, limit int)
 	var out []domain.Passage
 	for rows.Next() {
 		var p domain.Passage
-		if err := rows.Scan(&p.Chunk, &p.Source, &p.Start, &p.Length, &p.Location, &p.Hit); err != nil {
+		if err := rows.Scan(&p.Chunk, &p.Source, &p.Start, &p.Length, &p.Location, &p.HitAt); err != nil {
 			return nil, err
 		}
 		out = append(out, p)
@@ -104,7 +104,7 @@ func (q *Queries) Lexical(ctx context.Context, vaultID, query string, limit int)
 // full-precision vectors order what it kept. A chunk that does not reach the
 // similarity floor is not an answer, so a vault with nothing to say answers
 // with nothing.
-func (q *Queries) Nearest(ctx context.Context, vaultID string, query []float32, limit int) ([]domain.Passage, error) {
+func (q *Queries) Nearest(ctx context.Context, vaultID string, query []float32, limit int, floor float64) ([]domain.Passage, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("the meaning half needs a positive limit, got %d", limit)
 	}
@@ -123,7 +123,7 @@ func (q *Queries) Nearest(ctx context.Context, vaultID string, query []float32, 
 	if err != nil {
 		return nil, err
 	}
-	ranked, err := q.rerank(ctx, query, near)
+	ranked, err := q.rerank(ctx, query, near, floor)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +173,7 @@ func (q *Queries) enclosing(ctx context.Context, vault int64, chunks []int64) ([
 	for _, chunk := range chunks {
 		p := domain.Passage{Chunk: chunk}
 		err := enclosing.QueryRowContext(ctx, chunk, vault).
-			Scan(&p.Source, &p.Start, &p.Length, &p.Location, &p.Hit)
+			Scan(&p.Source, &p.Start, &p.Length, &p.Location, &p.HitAt)
 		if errors.Is(err, sql.ErrNoRows) {
 			continue
 		}

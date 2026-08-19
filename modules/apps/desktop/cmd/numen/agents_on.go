@@ -171,7 +171,7 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string) mcp.Core
 		View:    opened.API.Viewing(),
 		Notes:   queries,
 
-		Search:        search.New(opened.Index.Passages(), readers, opened.Embedder),
+		Search:        search.New(opened.Index.Passages(), readers, opened.Embedder, cfg.Embedding.Floor),
 		Neighbourhood: note.ShowNeighbourhood{Links: opened.Index.Links(), Notes: queries},
 		Links:         note.ShowLinks{Links: opened.Index.Links()},
 		Problems:      lint.Standard(opened.Index.Problems()),

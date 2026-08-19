@@ -19,7 +19,7 @@ export type {
   PaletteAction,
   PaletteItem,
   PalettePart,
-  PaletteSection,
+  PaletteBand,
   PaletteSpan,
 } from './palette/model'
 

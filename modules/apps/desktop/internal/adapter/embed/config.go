@@ -16,11 +16,17 @@ const (
 const KeyEnvVar = "NUMEN_EMBEDDING_KEY"
 
 // Config is the embedding section of this installation's settings: which
-// embedder, which model, how wide its vectors are.
+// embedder, which model, how wide its vectors are, and how near the query a
+// passage stands to be an answer at all.
 type Config struct {
 	Use     string       `json:"use"`
 	Local   LocalModel   `json:"local"`
 	Service ServiceModel `json:"service"`
+	// Floor is the cosine similarity a passage reaches to be an answer, in the
+	// units the model in use measures in. Where a model puts two pieces of text
+	// about different things is a fact about that model, so a model changed is
+	// a floor measured again. Zero takes the one the search was built against.
+	Floor float64 `json:"floor"`
 }
 
 // LocalModel is a model this machine runs.

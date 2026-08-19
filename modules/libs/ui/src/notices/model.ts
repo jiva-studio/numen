@@ -27,8 +27,7 @@ export interface Notice {
 /**
  * The notices worth drawing: the ones that have something to say.
  *
- * A notice with no words is one nobody could read, and it would stand in the
- * corner saying nothing.
+ * A notice with no words is one nobody could read.
  */
 export const standing = (notices: readonly Notice[]): readonly Notice[] =>
   notices.filter((notice) => notice.says !== '')
@@ -42,8 +41,7 @@ export const tallyOf = (notice: Notice): { done: number; total: number } | undef
 /**
  * How long work runs before it is worth a card, in milliseconds.
  *
- * Most passes are over before a person could read what they were called, and a
- * card for each of them is something to look past all day.
+ * Most passes are over before a person could read what they were called.
  */
 export const WAIT = 10_000
 

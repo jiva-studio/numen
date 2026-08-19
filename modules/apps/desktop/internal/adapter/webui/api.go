@@ -97,10 +97,10 @@ type API struct {
 	Books     atomic.Int64
 	BooksRead atomic.Int64
 	Learning  atomic.Bool
-	// Owing is what the pass now running found to do, and Made how much of it
-	// it has done. They are the work in hand; the counts above are the vault.
-	Owing atomic.Int64
-	Made  atomic.Int64
+	// Owed is what the pass now running found to do and how much of it it has
+	// done. The two are one fact and are stored together: read one at a time,
+	// they can be seen in a state neither of them was ever in.
+	Owed atomic.Pointer[Owed]
 	// Busy is set for as long as this vault is being read: its notes, then its
 	// books, then their vectors. Reading a book and embedding one change no
 	// file, so a client asks again for as long as it holds.
@@ -116,6 +116,10 @@ func text(v *atomic.Value) string {
 }
 
 func (a *API) State(ctx context.Context, _ *connect.Request[v1.StateRequest]) (*connect.Response[v1.StateResponse], error) {
+	owed := a.Owed.Load()
+	if owed == nil {
+		owed = &Owed{}
+	}
 	out := &v1.StateResponse{
 		Name:      a.Vault.Name,
 		Path:      a.Vault.Path,
@@ -128,8 +132,8 @@ func (a *API) State(ctx context.Context, _ *connect.Request[v1.StateRequest]) (*
 		Books:     a.Books.Load(),
 		BooksRead: a.BooksRead.Load(),
 		Learning:  a.Learning.Load(),
-		Owing:     a.Owing.Load(),
-		Made:      a.Made.Load(),
+		Owing:     owed.Owing,
+		Made:      owed.Made,
 		Busy:      a.Busy.Load(),
 	}
 	// A count that cannot be taken leaves the pair at nothing, and the rest of
@@ -227,4 +231,11 @@ func seatOf(s domain.Seat) v1.Seat {
 	default:
 		return v1.Seat_SEAT_UNSPECIFIED
 	}
+}
+
+// Owed is the work one pass has in hand: what it found to do, and how much of
+// it it has done.
+type Owed struct {
+	Owing int64
+	Made  int64
 }

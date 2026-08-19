@@ -109,7 +109,7 @@ describe('a plex the window is following', () => {
 
     await window.plex().go('Gone.md')
 
-    expect(window.notice.value).toContain('Gone.md')
+    expect(window.warning.value).toContain('Gone.md')
   })
 
   it('says nothing again once the note it could not show comes back', async () => {
@@ -124,12 +124,12 @@ describe('a plex the window is following', () => {
     const plex = window.plex()
 
     await plex.go('Note.md')
-    expect(window.notice.value).toContain('Note.md')
+    expect(window.warning.value).toContain('Note.md')
 
     holds = true
     await plex.go('Note.md')
 
-    expect(window.notice.value).toBe('')
+    expect(window.warning.value).toBe('')
   })
 
   it('says the trouble of the plex the person is in, and not that of another', async () => {
@@ -149,11 +149,11 @@ describe('a plex the window is following', () => {
 
     // Two is standing where it asked to be, and one is not: the window says so
     // while the person is in one, and holds its tongue while they are in two.
-    expect(window.notice.value).toContain('Gone.md')
+    expect(window.warning.value).toContain('Gone.md')
     two.looking()
-    expect(window.notice.value).toBe('')
+    expect(window.warning.value).toBe('')
     one.looking()
-    expect(window.notice.value).toContain('Gone.md')
+    expect(window.warning.value).toContain('Gone.md')
   })
 
   it('says nothing for a plex whose tab has closed', async () => {
@@ -169,7 +169,7 @@ describe('a plex the window is following', () => {
     two.close()
     await going
 
-    expect(window.notice.value).toBe('')
+    expect(window.warning.value).toBe('')
     expect(one.here.value).toBe('')
   })
 
@@ -205,7 +205,7 @@ describe('a plex the window is following', () => {
     await nap()
 
     expect(window.failure.value).toContain('connection refused')
-    expect(window.notice.value).toBe('')
+    expect(window.warning.value).toBe('')
   })
 })
 
@@ -245,7 +245,7 @@ describe('the stream of changes', () => {
     await window.follow()
 
     expect(streams).toBeGreaterThanOrEqual(2)
-    expect(window.notice.value).toContain('connection lost')
+    expect(window.warning.value).toContain('connection lost')
   })
 
   it('asks for the picture again for a change to any note', async () => {

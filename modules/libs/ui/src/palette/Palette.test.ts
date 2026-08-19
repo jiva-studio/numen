@@ -11,7 +11,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import Palette from './Palette.vue'
-import type { PaletteSection } from './model'
+import type { PaletteBand } from './model'
 
 const OPEN = [{ id: 'open', text: 'Open the note' }]
 const BOTH = [
@@ -19,7 +19,7 @@ const BOTH = [
   { id: 'open', text: 'Open the note' },
 ]
 
-const SECTIONS: PaletteSection[] = [
+const SECTIONS: PaletteBand[] = [
   {
     id: 'names',
     title: 'Names',
@@ -44,7 +44,7 @@ let mounted: { unmount: () => void } | null = null
 
 const mountPalette = (props: Partial<PaletteProps> = {}) => {
   const palette = mount(Palette, {
-    props: { sections: SECTIONS, open: true, ...props },
+    props: { bands: SECTIONS, open: true, ...props },
     attachTo: document.body,
   })
   mounted = palette
@@ -211,7 +211,7 @@ describe('choosing', () => {
   })
 
   it('chooses nothing when no band holds anything', async () => {
-    const palette = mountPalette({ sections: [{ id: 'names', title: 'Names', items: [] }] })
+    const palette = mountPalette({ bands: [{ id: 'names', title: 'Names', items: [] }] })
     await settle()
 
     await press('Enter')
@@ -244,43 +244,54 @@ describe('choosing', () => {
 
 describe('a band arriving while it is being read', () => {
   it('keeps the keyboard on the item it was on', async () => {
-    const palette = mountPalette({ sections: [SECTIONS[1]!] })
+    const palette = mountPalette({ bands: [SECTIONS[1]!] })
     await settle()
     expect(lit()?.textContent).toContain('Heat engine')
 
-    await palette.setProps({ sections: SECTIONS })
+    await palette.setProps({ bands: SECTIONS })
     await settle()
 
     expect(lit()?.textContent).toContain('Heat engine')
     expect(options()).toHaveLength(4)
   })
 
-  it('leaves nothing lit when the item it was on is gone', async () => {
+  it('hands the keyboard to the first item when the one it was on is gone', async () => {
     const palette = mountPalette()
     await settle()
     await press('ArrowDown')
     expect(lit()?.textContent).toContain('Enthalpy')
 
-    await palette.setProps({ sections: [SECTIONS[1]!] })
+    await palette.setProps({ bands: [SECTIONS[1]!] })
     await settle()
 
-    expect(lit()).toBeNull()
+    expect(lit()?.textContent).toContain('Heat engine')
   })
 
-  it('lights the first item of a list filling for the first time, and no other', async () => {
-    const palette = mountPalette({ sections: [] })
+  it('lights the first answer to a fresh question, however many have gone before', async () => {
+    const palette = mountPalette()
     await settle()
-    expect(lit()).toBeNull()
+    await press('ArrowDown')
 
-    await palette.setProps({ sections: [SECTIONS[1]!] })
+    // What a person typed, and then the answers to it. The list holds what the
+    // question before turned up until each band lands.
+    await palette.setProps({ modelValue: 'heat' })
     await settle()
+    await palette.setProps({ bands: [SECTIONS[1]!] })
+    await settle()
+
     expect(lit()?.textContent).toContain('Heat engine')
+    expect(field()?.getAttribute('aria-activedescendant')).not.toBeNull()
+  })
 
+  it('leaves what a person lit where it is when another band lands', async () => {
+    const palette = mountPalette({ bands: [SECTIONS[1]!] })
+    await settle()
     await press('ArrowDown')
     const moved = lit()?.textContent
 
-    await palette.setProps({ sections: SECTIONS })
+    await palette.setProps({ bands: SECTIONS })
     await settle()
+
     expect(lit()?.textContent).toBe(moved)
   })
 })
@@ -290,7 +301,7 @@ describe('what a band says about itself', () => {
 
   it('draws a line under a band that is still filling, and marks the band busy', async () => {
     mountPalette({
-      sections: [{ id: 'meaning', title: 'Meaning', items: [], working: true }],
+      bands: [{ id: 'meaning', title: 'Meaning', items: [], working: true }],
     })
     await settle()
 
@@ -308,7 +319,7 @@ describe('what a band says about itself', () => {
 
   it('leaves the line out of what a screen reader reads, since the band says it', async () => {
     mountPalette({
-      sections: [{ id: 'meaning', title: 'Meaning', items: [], working: true }],
+      bands: [{ id: 'meaning', title: 'Meaning', items: [], working: true }],
     })
     await settle()
 
@@ -319,7 +330,7 @@ describe('what a band says about itself', () => {
 
   it("says a band came back with nothing, in the band's own words", async () => {
     mountPalette({
-      sections: [{ id: 'meaning', title: 'Meaning', items: [], silence: 'No model is set' }],
+      bands: [{ id: 'meaning', title: 'Meaning', items: [], silence: 'No model is set' }],
     })
     await settle()
     expect(document.body.querySelector('.palette__silence')?.textContent).toContain(
@@ -357,7 +368,7 @@ describe('which band stands where', () => {
 
   it('draws a band that came back with nothing at the foot', async () => {
     mountPalette({
-      sections: [
+      bands: [
         { id: 'names', title: 'Names', items: [], silence: 'Nothing' },
         SECTIONS[1]!,
       ],
@@ -369,7 +380,7 @@ describe('which band stands where', () => {
 
   it('lights the first item there is, wherever its band was offered', async () => {
     mountPalette({
-      sections: [
+      bands: [
         { id: 'names', title: 'Names', items: [], silence: 'Nothing' },
         SECTIONS[1]!,
       ],
@@ -381,13 +392,53 @@ describe('which band stands where', () => {
 
   it('brings a band back up the moment it holds something', async () => {
     const palette = mountPalette({
-      sections: [{ id: 'names', title: 'Names', items: [] }, SECTIONS[1]!],
+      bands: [{ id: 'names', title: 'Names', items: [] }, SECTIONS[1]!],
     })
     await settle()
     expect(bands()).toEqual(['Text', 'Names'])
 
-    await palette.setProps({ sections: SECTIONS })
+    await palette.setProps({ bands: SECTIONS })
     await settle()
     expect(bands()).toEqual(['Names', 'Text'])
+  })
+})
+
+describe('what the palette says about itself', () => {
+  it('says the list is open only while there is one', async () => {
+    const palette = mountPalette()
+    await settle()
+    expect(field()?.getAttribute('aria-expanded')).toBe('true')
+
+    await palette.setProps({ bands: [] })
+    await settle()
+    expect(field()?.getAttribute('aria-expanded')).toBe('false')
+  })
+
+  it('gives the list bands it owns, each named by its own title', async () => {
+    mountPalette()
+    await settle()
+
+    const list = document.body.querySelector('[role="listbox"]')!
+    const groups = Array.from(list.querySelectorAll('[role="group"]'))
+    expect(groups).toHaveLength(2)
+
+    for (const group of groups) {
+      const named = document.getElementById(group.getAttribute('aria-labelledby') ?? '')
+      expect(named?.textContent).toContain(group === groups[0] ? 'Names' : 'Text')
+    }
+  })
+
+  it('passes a pointer over an item that cannot be chosen', async () => {
+    mountPalette()
+    await settle()
+
+    const off = options()[2]!
+    expect(off.textContent).toContain('Not this one')
+
+    off.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 40, clientY: 40 }))
+    await nextTick()
+
+    expect(off.getAttribute('data-here')).toBeNull()
+    expect(lit()?.textContent).toContain('Entropy')
   })
 })

@@ -237,7 +237,7 @@ export function showing(
    * The one thing the window says while it still works: what it lost touch
    * with, or what the plex in front could not show.
    */
-  const notice = computed(() => lost.value || ahead.value?.trouble.value || '')
+  const warning = computed(() => lost.value || ahead.value?.trouble.value || '')
 
   let open = true
   /** Let go of every stream the window is listening to. */
@@ -504,7 +504,7 @@ export function showing(
     name,
     indexing,
     failure,
-    notice,
+    warning,
     trouble,
     unwatched,
     holds,

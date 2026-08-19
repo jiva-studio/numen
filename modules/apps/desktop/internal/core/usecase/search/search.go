@@ -13,22 +13,37 @@ import (
 // defaultLimit is how many results a caller that names no number gets.
 const defaultLimit = 20
 
-// lexicalCandidates is how many candidates the words half keeps for each result
-// the search returns, so the answer is among its candidates.
+// lexicalCandidates is how many candidates the words half keeps for every result
+// the search returns, so the answer is among what it ranks.
 const lexicalCandidates = 5
 
-// Parameters says which halves of a search run and how many candidates each
-// keeps. A half that keeps none does not run; with neither named, both run.
+// DefaultFloor is how near the query a passage stands to be an answer, in
+// cosine similarity.
+//
+// A nearest-neighbour index answers with as many rows as it is asked for
+// whatever the question, and this is what leaves a vault holding nothing near
+// with nothing to say. The number belongs to the model the vectors were made
+// by: it is where that model puts two pieces of text about different things,
+// and another model puts them somewhere else.
+const DefaultFloor = 0.50
+
+// Parameters says which halves of a search run, how many candidates each keeps,
+// and what a candidate has to reach. A half that keeps none does not run; with
+// neither named, both run.
 type Parameters struct {
 	// Limit is how many results come back, one per document.
 	Limit int
-	// Lexical is how many candidates the words half keeps.
+	// Lexical is how many candidates the words half keeps, and Dense how many
+	// passages the meaning half returns. The coarse pass under it keeps several
+	// times as many, and the full-precision vectors order those.
 	Lexical int
-	// Dense is how many passages the meaning half returns. The coarse pass
-	// underneath it keeps several times as many, and the full-precision vectors
-	// decide among those, so what arrives here is already ordered by how near
-	// the query it is.
-	Dense int
+	Dense   int
+	// Floor is how near the query a passage stands to be an answer at all. It
+	// is read only by the meaning half; the words half has no distance.
+	Floor float64
+	// Growing says the last word typed may still be being typed, so the index
+	// matches it by its opening. A question that is finished is asked exactly.
+	Growing bool
 }
 
 // filled supplies what the caller left out.
@@ -39,6 +54,9 @@ func (p Parameters) filled() Parameters {
 	if p.Lexical <= 0 && p.Dense <= 0 {
 		p.Lexical = p.Limit * lexicalCandidates
 		p.Dense = p.Limit
+	}
+	if p.Floor == 0 {
+		p.Floor = DefaultFloor
 	}
 	return p
 }
@@ -54,6 +72,7 @@ type Search struct {
 	passages port.PassageQueries
 	readers  port.VaultReaders
 	embedder port.Embedder
+	floor    float64
 }
 
 // New is a search over one vault's index.
@@ -62,25 +81,34 @@ type Search struct {
 // model, and then the meaning half does not run and the words half answers alone,
 // which is a whole search: the vector index is optional and may never finish
 // filling.
-func New(passages port.PassageQueries, readers port.VaultReaders, embedder port.Embedder) Search {
-	return Search{passages: passages, readers: readers, embedder: embedder}
+//
+// `floor` is how near the query a passage stands to be an answer, in the units
+// the model in use measures in. Zero takes DefaultFloor.
+func New(passages port.PassageQueries, readers port.VaultReaders, embedder port.Embedder, floor float64) Search {
+	if floor == 0 {
+		floor = DefaultFloor
+	}
+	return Search{passages: passages, readers: readers, embedder: embedder, floor: floor}
 }
 
 // Execute runs the halves the parameters name, merges their rankings by rank,
 // and returns one passage per document.
 func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.Passage, error) {
+	if p.Floor == 0 {
+		p.Floor = u.floor
+	}
 	p = p.filled()
 
 	var rankings [][]domain.Passage
 	if p.Lexical > 0 {
-		lexical, err := u.passages.Lexical(ctx, v.ID, query, p.Lexical)
+		lexical, err := u.passages.Lexical(ctx, v.ID, query, p.Lexical, p.Growing)
 		if err != nil {
 			return nil, err
 		}
 		rankings = append(rankings, lexical)
 	}
 	if p.Dense > 0 && u.embedder != nil {
-		dense, err := u.nearest(ctx, v, query, p.Dense)
+		dense, err := u.nearest(ctx, v, query, p)
 		if err != nil {
 			return nil, err
 		}
@@ -90,7 +118,7 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 }
 
 // nearest is the meaning half, over a vector of the query itself.
-func (u Search) nearest(ctx context.Context, v domain.Vault, query string, k int) ([]domain.Passage, error) {
+func (u Search) nearest(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.Passage, error) {
 	vectors, err := u.embedder.Embed(ctx, []string{query})
 	if err != nil {
 		return nil, err
@@ -98,7 +126,7 @@ func (u Search) nearest(ctx context.Context, v domain.Vault, query string, k int
 	if len(vectors) != 1 {
 		return nil, fmt.Errorf("the embedder answered with %d vectors for one query", len(vectors))
 	}
-	return u.passages.Nearest(ctx, v.ID, vectors[0], k)
+	return u.passages.Nearest(ctx, v.ID, vectors[0], p.Dense, p.Floor)
 }
 
 // read fills in the text of each passage from the vault. A chunk is a place in a
@@ -184,22 +212,23 @@ func span(raw string, start, length int) string {
 	return raw[start:end]
 }
 
-// Halves is which halves of a search a caller wants run.
-type Halves int
+// Half is which half of a search a caller wants run.
+type Half int
 
 const (
 	// Both run, and what they answer is merged into one ranking.
-	Both Halves = iota
+	Both Half = iota
 	// Words alone: what is written, matched as words.
 	Words
 	// Meaning alone: what the query means, against the vectors the index holds.
 	Meaning
 )
 
-// Running is the parameters for a search of the halves named. The half that is
+// Typing is the parameters for a search of the half named, asked while a person
+// is still typing it: the last word is matched by its opening. The half that is
 // not wanted keeps no candidates, which is how a half is told not to run.
-func Running(half Halves, limit int) Parameters {
-	p := Parameters{Limit: limit}.filled()
+func Typing(half Half, limit int) Parameters {
+	p := Parameters{Limit: limit, Growing: true}.filled()
 	switch half {
 	case Words:
 		p.Dense = 0

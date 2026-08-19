@@ -100,7 +100,7 @@ watch(
   },
   { deep: true },
 )
-const { indexing, failure, notice, trouble, unwatched, holds, looking } = window
+const { indexing, failure, warning, trouble, unwatched, holds, looking } = window
 /** What could not be made or joined, in words a person reads. */
 const unmade = computed(() => making.said.value)
 // `made` is spent in this window on making a note, so the count of vectors
@@ -156,6 +156,7 @@ const words = {
   read: 'Open the note',
   readAt: 'Open at this heading',
   noneFound: 'Nothing',
+  notAsked: 'The vault could not answer',
   typeToFind: 'Type to look for a note',
   /** The corner where what is running behind the window is shown. */
   working: 'Background work',
@@ -236,11 +237,14 @@ const { layout, blanks } = held
 const palette = finding(core, words)
 
 /**
- * The palette is opened and put away by one keystroke, taken on the window
- * rather than on anything drawn: it belongs to no pane.
+ * The palette is opened and put away by one keystroke, taken on the window: it
+ * belongs to no pane.
  */
 const asked = (event: KeyboardEvent) => {
-  if (event.key !== 'k' || event.altKey || !(event.metaKey || event.ctrlKey)) return
+  // A pane that has already answered this keystroke has answered it: an editor
+  // binds Ctrl-K to a cut of its own.
+  if (event.defaultPrevented) return
+  if (event.key.toLowerCase() !== 'k' || event.altKey || !(event.metaKey || event.ctrlKey)) return
   event.preventDefault()
   palette.shows(!palette.open.value)
 }
@@ -435,6 +439,7 @@ const shown = (id: string) => {
 
 /** A tab lets go of what it held. A tab that holds a note writes what it owes. */
 const shut = (id: string, hold: () => void) => {
+  entering.delete(id)
   if (held.shut(id)) return
   if (!notes.all().includes(id)) return
   hold()
@@ -464,7 +469,7 @@ onUnmounted(() => {
   <main>
     <p v-if="unwatched" class="warning">not following the vault — {{ unwatched }}</p>
     <p v-if="trouble" class="warning">the vault could not be read — {{ trouble }}</p>
-    <p v-if="notice" class="warning">{{ notice }}</p>
+    <p v-if="warning" class="warning">{{ warning }}</p>
 
     <p v-if="unmade" role="alert" class="warning">{{ unmade }}</p>
 
@@ -521,7 +526,7 @@ onUnmounted(() => {
           </template>
         </Agent>
 
-        <section v-else-if="blanks.includes(id)" class="blank">
+        <band v-else-if="blanks.includes(id)" class="blank">
           <p class="blank__says">{{ words.choose }}</p>
           <ul class="blank__choices">
             <li v-for="one in becomes" :key="one.id">
@@ -530,7 +535,7 @@ onUnmounted(() => {
               </button>
             </li>
           </ul>
-        </section>
+        </band>
 
         <div v-else-if="notes.all().includes(id)" class="note">
           <p v-if="notes.saying(id)" role="alert" class="warning">{{ notes.saying(id) }}</p>
@@ -572,7 +577,7 @@ onUnmounted(() => {
 
     <Notices :notices="tasks" :name="words.working" :put-away="words.putAway" />
 
-    <section v-if="going.questions.value.length" role="alertdialog" class="leaving">
+    <band v-if="going.questions.value.length" role="alertdialog" class="leaving">
       <p class="leaving__says">{{ words.going }}</p>
       <ul class="leaving__notes">
         <li v-for="one in going.questions.value" :key="one.path" class="leaving__note">
@@ -588,7 +593,7 @@ onUnmounted(() => {
           </button>
         </li>
       </ul>
-    </section>
+    </band>
 
     <Menu
       v-if="menu"
@@ -603,7 +608,7 @@ onUnmounted(() => {
 
     <Palette
       :model-value="palette.typed.value"
-      :sections="palette.sections.value"
+      :bands="palette.bands.value"
       :open="palette.open.value"
       :placeholder="words.find"
       :name="words.find"
@@ -694,7 +699,7 @@ main {
   position: fixed;
   inset-block-end: 1rem;
   inset-inline: 1rem;
-  z-index: 20;
+  z-index: var(--numen-lift-going);
   padding: 0.8rem 1rem;
   border-radius: var(--numen-radius);
   background: var(--numen-caution-bg);

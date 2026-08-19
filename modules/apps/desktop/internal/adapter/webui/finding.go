@@ -17,20 +17,25 @@ import (
 // errNoSearching is what a build with nothing to search the text with answers.
 var errNoSearching = errors.New("this build cannot search the text of a vault")
 
-// mostFound is how many answers a client that names no number gets.
-const mostFound = 20
+// How many answers a client gets when it names no number, and the most it may
+// ask for. A window draws a list a person reads; a number past that is a
+// question about the corpus and is answered as the ceiling.
+const (
+	mostFound = 20
+	mostAsked = 200
+)
 
-// Titles hands the client the names in the vault that match what was typed: a
+// Names hands the client the names in the vault that match what was typed: a
 // note's own title, and the headings inside notes.
-func (a *API) Titles(ctx context.Context, r *connect.Request[v1.TitlesRequest]) (*connect.Response[v1.TitlesResponse], error) {
-	found, err := a.Notes.Titles(ctx, a.Vault.ID, r.Msg.GetQuery(), atMost(r.Msg.GetLimit()))
+func (a *API) Names(ctx context.Context, r *connect.Request[v1.NamesRequest]) (*connect.Response[v1.NamesResponse], error) {
+	found, err := a.Notes.Names(ctx, a.Vault.ID, r.Msg.GetQuery(), atMost(r.Msg.GetLimit()))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	out := &v1.TitlesResponse{Found: make([]*v1.Titled, 0, len(found))}
+	out := &v1.NamesResponse{Found: make([]*v1.Named, 0, len(found))}
 	for _, m := range found {
-		titled := &v1.Titled{
+		titled := &v1.Named{
 			Note: &v1.Note{Path: m.Path, Title: m.Title},
 			At:   spansOf(m.At),
 		}
@@ -56,7 +61,7 @@ func (a *API) Search(ctx context.Context, r *connect.Request[v1.SearchRequest]) 
 	}
 
 	found, err := a.Finds.Execute(ctx, a.Vault,
-		query, search.Running(halfOf(r.Msg.GetHalf()), atMost(r.Msg.GetLimit())))
+		query, search.Typing(halfOf(r.Msg.GetHalf()), atMost(r.Msg.GetLimit())))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -72,10 +77,10 @@ func (a *API) Search(ctx context.Context, r *connect.Request[v1.SearchRequest]) 
 	out := &v1.SearchResponse{Found: make([]*v1.Passage, 0, len(found))}
 	for _, p := range found {
 		// A passage is the whole window enclosing its hit, so what is drawn is the
-		// words about the first run that matched.
-		// A hit by meaning stands on no word, so the window opens where the chunk
-		// that matched begins.
-		text, at := around(p.Text, marks(p.Text, query), markdown.Counted(p.Text, p.Hit))
+		// words about the first run that matched. A hit by meaning stands on no
+		// word, and the window opens where the chunk that matched begins.
+		read, hit := nearby(p.Text, p.HitAt)
+		text, at := around(read, marks(read, query), markdown.Counted(read, hit))
 		passage := &v1.Passage{
 			Path:     p.Source,
 			Text:     text,
@@ -91,7 +96,7 @@ func (a *API) Search(ctx context.Context, r *connect.Request[v1.SearchRequest]) 
 }
 
 // halfOf is the half the client named, as the use case names it.
-func halfOf(half v1.Half) search.Halves {
+func halfOf(half v1.Half) search.Half {
 	switch half {
 	case v1.Half_HALF_WORDS:
 		return search.Words
@@ -108,7 +113,7 @@ func atMost(limit int32) int {
 	if limit <= 0 {
 		return mostFound
 	}
-	return int(limit)
+	return min(int(limit), mostAsked)
 }
 
 // sourcesOf is every file the passages came out of, each named once.

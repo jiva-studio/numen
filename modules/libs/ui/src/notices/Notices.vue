@@ -76,7 +76,7 @@ const put = (id: string) => {
 </script>
 
 <template>
-  <div v-if="drawn.length" class="notices numen font-sans text-small" :aria-label="name">
+  <aside v-if="drawn.length" class="notices numen font-sans text-small" :aria-label="name">
     <article v-for="one in drawn" :key="one.id" class="notice">
       <Activity
         class="notice__work"
@@ -86,13 +86,18 @@ const put = (id: string) => {
         :working="one.working ?? false"
         :left="one.left ?? ''"
       />
-      <button type="button" class="notice__away" :aria-label="putAway" @click="put(one.id)">
+      <button
+        type="button"
+        class="notice__away"
+        :aria-label="`${putAway}: ${one.says}`"
+        @click="put(one.id)"
+      >
         <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false">
           <path d="M3 3 L9 9 M9 3 L3 9" />
         </svg>
       </button>
     </article>
-  </div>
+  </aside>
 </template>
 
 <style scoped>
@@ -103,7 +108,7 @@ const put = (id: string) => {
   position: fixed;
   inset-block-end: var(--numen-inset-wide);
   inset-inline-start: var(--numen-inset-wide);
-  z-index: 40;
+  z-index: var(--numen-lift-notice);
   display: flex;
   flex-direction: column;
   gap: var(--gap);
@@ -125,7 +130,7 @@ const put = (id: string) => {
   border-radius: var(--numen-radius-panel);
   background: var(--numen-node-bg);
   color: var(--numen-node-fg);
-  box-shadow: 0 0.5rem 1.5rem oklch(0% 0 0 / 35%);
+  box-shadow: var(--numen-shadow-card);
 }
 
 .notice__work {

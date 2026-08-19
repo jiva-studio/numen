@@ -24,13 +24,13 @@ service VaultService {
   // Neighbourhood is one note and everything joined to it.
   rpc Neighbourhood(NeighbourhoodRequest) returns (NeighbourhoodResponse);
 
-  // Titles is the names in a vault that match what was typed: a note's own
+  // Names is the names in a vault that match what was typed: a note's own
   // title, and the headings inside notes. It is asked as a person types, and
   // the last word matches on its prefix.
   //
   // It reads names and nothing else. Searching the text a vault holds is
   // Search, and that answers with passages.
-  rpc Titles(TitlesRequest) returns (TitlesResponse);
+  rpc Names(NamesRequest) returns (NamesResponse);
 
   // Search is the text a vault holds that answers what was typed, by the words
   // in it or by what it means. The caller says which half runs, so a client
@@ -181,10 +181,9 @@ message StateResponse {
   int64 books = 11;
   int64 books_read = 12;
 
-  // Learning names the phase rather than the instant: it is set while vectors
-  // are being made, and from the moment a write lands until they have been.
-  // It is what tells the two phases apart: both name a source and move a
-  // count, and the counts are of different things.
+  // Learning names a phase: it is set while vectors are being made, and from
+  // the moment a write lands until they have been. It is what tells the two
+  // phases apart, since both name a source and move a count.
   bool learning = 13;
 
   // Busy is set while the vault is still being read: its notes, then its books,
@@ -195,8 +194,7 @@ message StateResponse {
 
   // Owing is how many chunks the pass now running found with no vector, and
   // made is how many of those it has made one for. They are the work in hand,
-  // where chunks and embedded are the whole of what the vault holds: a person
-  // who edited one note is waiting on one chunk and not on the vault.
+  // where chunks and embedded are the whole of what the vault holds.
   int64 owing = 15;
   int64 made = 16;
 }
@@ -268,7 +266,7 @@ message NeighbourhoodResponse {
   repeated Seated related = 2;
 }
 
-message TitlesRequest {
+message NamesRequest {
   // What was typed, as it was typed. Words are matched together, and the last
   // of them on its prefix.
   string query = 1;
@@ -277,16 +275,16 @@ message TitlesRequest {
   int32 limit = 2;
 }
 
-message TitlesResponse {
+message NamesResponse {
   // The names that matched, best first, with a note's own title before a
   // heading inside one.
-  repeated Titled found = 1;
+  repeated Named found = 1;
 }
 
-// Titled is one name that matched, and the note it stands for. A note's own
+// Named is one name that matched, and the note it stands for. A note's own
 // title matched when there is no heading here; otherwise the note is what the
 // heading stands in.
-message Titled {
+message Named {
   Note note = 1;
 
   // The heading that matched, absent when the note's own title did.

@@ -17,6 +17,7 @@ const WORDS: Words = {
   read: 'Open the note',
   readAt: 'Open at this heading',
   noneFound: 'Nothing',
+  notAsked: 'The vault could not answer',
 }
 
 /** An answer the test hands over when it chooses to. */
@@ -38,15 +39,15 @@ function later<T>(): Later<T> {
 
 /** A vault that answers when the test says so, and remembers what it was asked. */
 function asking() {
-  const titles: Later<readonly Named[]>[] = []
+  const names: Later<readonly Named[]>[] = []
   const searched: { half: Half; answer: Later<readonly Passage[]> }[] = []
   const queries: string[] = []
 
   const core: Asking = {
-    titles: (query) => {
+    names: (query) => {
       queries.push(query)
       const one = later<readonly Named[]>()
-      titles.push(one)
+      names.push(one)
       return one.promise
     },
     search: (query, half) => {
@@ -58,7 +59,7 @@ function asking() {
   }
 
   const half = (which: Half) => searched.find((one) => one.half === which)?.answer
-  return { core, titles, searched, queries, half }
+  return { core, names, searched, queries, half }
 }
 
 /** Nothing waits in a test; the hold is a clock and the clock is handed in. */
@@ -88,8 +89,8 @@ const passage = (over: Partial<Passage> = {}): Passage => ({
 })
 
 /** The band under one identity, from what the palette is drawing now. */
-const bandOf = (sections: readonly { id: string }[], id: string) =>
-  sections.find((one) => one.id === id) as
+const bandOf = (bands: readonly { id: string }[], id: string) =>
+  bands.find((one) => one.id === id) as
     | { id: string; items: readonly { id: string; title: string }[]; working?: boolean; silence?: string }
     | undefined
 
@@ -98,7 +99,7 @@ describe('asking', () => {
     const vault = asking()
     const palette = finding(vault.core, WORDS, now)
 
-    expect(palette.sections.value).toHaveLength(0)
+    expect(palette.bands.value).toHaveLength(0)
     expect(vault.queries).toHaveLength(0)
   })
 
@@ -109,7 +110,7 @@ describe('asking', () => {
     void palette.typing('ent')
     await settled()
 
-    expect(vault.titles).toHaveLength(1)
+    expect(vault.names).toHaveLength(1)
     expect(vault.searched.map((one) => one.half)).toEqual(['words', 'meaning'])
     expect(new Set(vault.queries)).toEqual(new Set(['ent']))
   })
@@ -133,8 +134,8 @@ describe('asking', () => {
     void palette.typing('')
     await settled()
 
-    expect(vault.titles).toHaveLength(1)
-    expect(palette.sections.value).toHaveLength(0)
+    expect(vault.names).toHaveLength(1)
+    expect(palette.bands.value).toHaveLength(0)
   })
 })
 
@@ -146,13 +147,13 @@ describe('answers arriving', () => {
     void palette.typing('ent')
     await settled()
 
-    vault.titles[0]?.answers([named()])
+    vault.names[0]?.answers([named()])
     await settled()
 
-    expect(bandOf(palette.sections.value, 'names')?.items).toHaveLength(1)
-    expect(bandOf(palette.sections.value, 'names')?.working).toBe(false)
-    expect(bandOf(palette.sections.value, 'text')?.working).toBe(true)
-    expect(bandOf(palette.sections.value, 'meaning')?.working).toBe(true)
+    expect(bandOf(palette.bands.value, 'names')?.items).toHaveLength(1)
+    expect(bandOf(palette.bands.value, 'names')?.working).toBe(false)
+    expect(bandOf(palette.bands.value, 'text')?.working).toBe(true)
+    expect(bandOf(palette.bands.value, 'meaning')?.working).toBe(true)
   })
 
   it('drops an answer to a question nobody is asking any more', async () => {
@@ -165,16 +166,16 @@ describe('answers arriving', () => {
     await settled()
 
     // The first question answers late, and with something else entirely.
-    vault.titles[0]?.answers([named({ path: 'notes/stale.md', title: 'Stale' })])
+    vault.names[0]?.answers([named({ path: 'notes/stale.md', title: 'Stale' })])
     await settled()
-    expect(bandOf(palette.sections.value, 'names')?.items).toHaveLength(0)
+    expect(bandOf(palette.bands.value, 'names')?.items).toHaveLength(0)
 
-    vault.titles[1]?.answers([named()])
+    vault.names[1]?.answers([named()])
     await settled()
-    expect(bandOf(palette.sections.value, 'names')?.items?.[0]?.title).toBe('Entropy')
+    expect(bandOf(palette.bands.value, 'names')?.items?.[0]?.title).toBe('Entropy')
   })
 
-  it('says what a band could not be filled with, and fills the others', async () => {
+  it('says a band could not be asked in the window’s own words, and fills the others', async () => {
     const vault = asking()
     const palette = finding(vault.core, WORDS, now)
 
@@ -182,12 +183,12 @@ describe('answers arriving', () => {
     await settled()
 
     vault.half('meaning')?.fails('no model is set')
-    vault.titles[0]?.answers([named()])
+    vault.names[0]?.answers([named()])
     await settled()
 
-    expect(bandOf(palette.sections.value, 'meaning')?.silence).toContain('no model is set')
-    expect(bandOf(palette.sections.value, 'meaning')?.working).toBe(false)
-    expect(bandOf(palette.sections.value, 'names')?.items).toHaveLength(1)
+    expect(bandOf(palette.bands.value, 'meaning')?.silence).toBe(WORDS.notAsked)
+    expect(bandOf(palette.bands.value, 'meaning')?.working).toBe(false)
+    expect(bandOf(palette.bands.value, 'names')?.items).toHaveLength(1)
   })
 
   it('says a band came back with nothing in the window’s own words', async () => {
@@ -196,10 +197,10 @@ describe('answers arriving', () => {
 
     void palette.typing('ent')
     await settled()
-    vault.titles[0]?.answers([])
+    vault.names[0]?.answers([])
     await settled()
 
-    expect(bandOf(palette.sections.value, 'names')?.silence).toBe('Nothing')
+    expect(bandOf(palette.bands.value, 'names')?.silence).toBe('Nothing')
   })
 
   it('lets go of everything when the palette is put away', async () => {
@@ -211,12 +212,12 @@ describe('answers arriving', () => {
     await settled()
     palette.shows(false)
 
-    vault.titles[0]?.answers([named()])
+    vault.names[0]?.answers([named()])
     await settled()
 
     expect(palette.open.value).toBe(false)
     expect(palette.typed.value).toBe('')
-    expect(palette.sections.value).toHaveLength(0)
+    expect(palette.bands.value).toHaveLength(0)
   })
 })
 
@@ -227,7 +228,7 @@ describe('where a thing found takes the person', () => {
     void palette.typing('ent')
     await settled()
 
-    vault.titles[0]?.answers([
+    vault.names[0]?.answers([
       named(),
       named({ path: 'notes/carnot.md', title: 'The Carnot cycle', heading: 'Entropy here', line: 12 }),
     ])
@@ -238,7 +239,7 @@ describe('where a thing found takes the person', () => {
 
   it('opens a note found by its own name in the plex, and its text on the other key', async () => {
     const palette = await filled()
-    const item = bandOf(palette.sections.value, 'names')!.items[0]!
+    const item = bandOf(palette.bands.value, 'names')!.items[0]!
 
     expect(palette.chose(item.id, 'plex')).toEqual({
       at: 'plex',
@@ -254,7 +255,7 @@ describe('where a thing found takes the person', () => {
 
   it('opens a note found by a heading inside it on the line that heading stands on', async () => {
     const palette = await filled()
-    const item = bandOf(palette.sections.value, 'names')!.items[1]!
+    const item = bandOf(palette.bands.value, 'names')!.items[1]!
 
     expect(palette.chose(item.id, 'note')).toEqual({
       at: 'note',
@@ -272,7 +273,7 @@ describe('where a thing found takes the person', () => {
 
   it('opens a passage as the note it was read out of, on no line in particular', async () => {
     const palette = await filled()
-    const item = bandOf(palette.sections.value, 'text')!.items[0]!
+    const item = bandOf(palette.bands.value, 'text')!.items[0]!
 
     expect(palette.chose(item.id, 'note')).toEqual({
       at: 'note',
@@ -294,13 +295,13 @@ describe('what a key reaches, per kind of thing found', () => {
     void palette.typing('ent')
     await settled()
 
-    vault.titles[0]?.answers([named(), named({ heading: 'Entropy here', line: 12 })])
+    vault.names[0]?.answers([named(), named({ heading: 'Entropy here', line: 12 })])
     vault.half('words')?.answers([passage()])
     await settled()
 
     const acts = (band: string, at: number) =>
       (
-        palette.sections.value.find((one) => one.id === band)?.items[at]?.actions ?? []
+        palette.bands.value.find((one) => one.id === band)?.items[at]?.actions ?? []
       ).map((one) => one.id)
 
     expect(acts('names', 0)).toEqual(['plex', 'note'])
@@ -321,7 +322,7 @@ describe('a passage from something that is not a note', () => {
     ])
     await settled()
 
-    const item = bandOf(palette.sections.value, 'text')!.items[0]! as {
+    const item = bandOf(palette.bands.value, 'text')!.items[0]! as {
       id: string
       title: string
       actions?: readonly unknown[]
@@ -331,11 +332,9 @@ describe('a passage from something that is not a note', () => {
     expect(item.title).toBe('library/mahabharata.epub')
     expect(item.actions ?? []).toHaveLength(0)
     expect(item.disabled).toBe(true)
-    expect(palette.chose(item.id, 'note')).toEqual({
-      at: 'note',
-      path: 'library/mahabharata.epub',
-      title: '',
-    })
+    // Nothing was offered, so nothing is answered for.
+    expect(palette.chose(item.id, 'note')).toBeNull()
+    expect(palette.chose(item.id, 'plex')).toBeNull()
   })
 })
 
@@ -348,7 +347,7 @@ describe('a band landing under the keyboard', () => {
 
     vault.half('words')?.answers([passage({ path: 'notes/heat.md' })])
     await settled()
-    const before = bandOf(palette.sections.value, 'text')!.items[0]!.id
+    const before = bandOf(palette.bands.value, 'text')!.items[0]!.id
 
     // The same passage, now second in its band because a better one arrived.
     void palette.typing('war ')
@@ -362,7 +361,7 @@ describe('a band landing under the keyboard', () => {
       ])
     await settled()
 
-    const after = bandOf(palette.sections.value, 'text')!.items[1]!.id
+    const after = bandOf(palette.bands.value, 'text')!.items[1]!.id
     expect(after).toBe(before)
   })
 })

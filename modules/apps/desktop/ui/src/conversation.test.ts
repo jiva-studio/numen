@@ -304,7 +304,7 @@ describe('where the line about work stands', () => {
     await nap()
 
     // An answer with nothing in it is drawn as a turn with no words and a gap
-    // above and below it, which reads as the panel having lost something.
+    // above and below it.
     expect(drawn(talk)).toEqual(['asked: tell me about him', `doing: ${words.thinking}`])
 
     release()

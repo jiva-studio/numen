@@ -49,8 +49,8 @@ export const core: Core & Asking = {
     await vault.flushed({ token, owed: owing[owed ?? 'nothing'] })
   },
   /** The names in the vault that match what is typed. */
-  titles: async (query, limit) => {
-    const answer = await vault.titles({ query, limit })
+  names: async (query, limit) => {
+    const answer = await vault.names({ query, limit })
     return answer.found.map((one) => ({
       path: one.note?.path ?? '',
       title: one.note?.title ?? '',

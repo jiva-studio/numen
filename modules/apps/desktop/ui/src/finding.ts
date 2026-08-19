@@ -10,7 +10,7 @@
  * while the slow one is still out.
  */
 import { computed, ref, shallowRef } from 'vue'
-import type { PaletteItem, PaletteSection } from '@numen/ui'
+import type { PaletteItem, PaletteBand } from '@numen/ui'
 
 /** A run of a name or a passage, counted the way this window counts text. */
 export interface Span {
@@ -50,8 +50,8 @@ export type Half = 'words' | 'meaning'
 
 /** The two questions the palette asks of the vault. */
 export interface Asking {
-  /** The names in the vault that match: titles, and headings inside notes. */
-  titles(query: string, limit: number): Promise<readonly Named[]>
+  /** The names in the vault that match: a note’s own title, and its headings. */
+  names(query: string, limit: number): Promise<readonly Named[]>
   /** The text the vault holds that answers, by one half of a search. */
   search(query: string, half: Half, limit: number): Promise<readonly Passage[]>
 }
@@ -67,6 +67,8 @@ export interface Words {
   readAt: string
   /** What a band says when it came back with nothing. */
   noneFound: string
+  /** What a band says when the vault could not answer at all. */
+  notAsked: string
 }
 
 /** Where an item chosen takes the person. */
@@ -92,14 +94,18 @@ const HOLD = 120
 /** Which band is which, and nothing else is one. */
 type Band = 'names' | 'text' | 'meaning'
 
-/** Where one item stands in the vault. A line of -1 is no line at all. */
+/**
+ * Where one item stands in the vault, and what it can be asked. A line of -1 is
+ * no line at all.
+ */
 interface Stands {
   path: string
   title: string
   line: number
+  offers: readonly string[]
 }
 
-/** One item as it is drawn, beside where it stands. */
+/** One item as it is drawn, beside where it stands and what it offers. */
 interface Drawn {
   item: PaletteItem
   stands: Stands
@@ -128,8 +134,7 @@ export function finding(
   /**
    * Which question is the current one. A keystroke, and every answer to what
    * was asked before it, is measured against this: three questions are in the
-   * air at once, and without it a slow answer to an old one fills a list the
-   * person is already reading.
+   * air at once, and only the newest is drawn.
    */
   let asked = 0
 
@@ -156,7 +161,10 @@ export function finding(
     } catch (error) {
       if (mine !== asked) return
       into([])
-      said.value = { ...said.value, [band]: String(error) }
+      // What went wrong is said in the window's own voice. The reason belongs
+      // where a person reading it can do something about it.
+      console.error(error)
+      said.value = { ...said.value, [band]: words.notAsked }
     } finally {
       if (mine === asked) waiting.value = { ...waiting.value, [band]: false }
     }
@@ -167,7 +175,7 @@ export function finding(
     waiting.value = { names: true, text: true, meaning: true }
     said.value = { names: '', text: '', meaning: '' }
     await Promise.all([
-      fill(mine, 'names', () => core.titles(query, EACH), (found) => (names.value = found)),
+      fill(mine, 'names', () => core.names(query, EACH), (found) => (names.value = found)),
       fill(mine, 'text', () => core.search(query, 'words', EACH), (found) => (texts.value = found)),
       fill(
         mine,
@@ -222,7 +230,7 @@ export function finding(
               { id: PLEX, text: words.travel },
             ],
           },
-          stands: { path: one.path, title: one.title, line: one.line },
+          stands: { path: one.path, title: one.title, line: one.line, offers: [NOTE, PLEX] },
         }
       : {
           item: {
@@ -234,14 +242,13 @@ export function finding(
               { id: NOTE, text: words.read },
             ],
           },
-          stands: { path: one.path, title: one.title, line: -1 },
+          stands: { path: one.path, title: one.title, line: -1, offers: [PLEX, NOTE] },
         }
 
   const passageItem = (band: Band, one: Passage): Drawn => ({
     item: {
-      // Named by where it stands in the vault and not by where it stands in the
-      // list: a band that lands renumbers the list, and an item renamed under the
-      // keyboard takes the keyboard somewhere else.
+      // Named by where it stands in the vault: a band that lands renumbers the
+      // list, and an item renamed under the keyboard takes it somewhere else.
       id: `${band}:${one.path}`,
       title: one.title || one.path,
       detail: one.text,
@@ -257,15 +264,20 @@ export function finding(
           }
         : { disabled: true }),
     },
-    stands: { path: one.path, title: one.title, line: -1 },
+    stands: {
+      path: one.path,
+      title: one.title,
+      line: -1,
+      offers: one.isNote ? [NOTE, PLEX] : [],
+    },
   })
 
   /** What the bands hold, and where each thing in them stands in the vault. */
   const built = computed(() => {
     const held = new Map<string, Stands>()
-    if (!typed.value.trim()) return { sections: [] as readonly PaletteSection[], held }
+    if (!typed.value.trim()) return { bands: [] as readonly PaletteBand[], held }
 
-    const band = (id: Band, title: string, drawn: readonly Drawn[]): PaletteSection => {
+    const band = (id: Band, title: string, drawn: readonly Drawn[]): PaletteBand => {
       for (const one of drawn) held.set(one.item.id, one.stands)
       return {
         id,
@@ -277,7 +289,7 @@ export function finding(
     }
 
     return {
-      sections: [
+      bands: [
         band('names', words.names, names.value.map(nameItem)),
         band(
           'text',
@@ -289,17 +301,19 @@ export function finding(
           words.meaning,
           meanings.value.map((one) => passageItem('meaning', one)),
         ),
-      ] as readonly PaletteSection[],
+      ] as readonly PaletteBand[],
       held,
     }
   })
 
-  const sections = computed(() => built.value.sections)
+  const bands = computed(() => built.value.bands)
 
   /** Where one item, asked one thing, takes the person. */
   const chose = (item: string, action: string): Landing | null => {
     const stands = built.value.held.get(item)
-    if (!stands) return null
+    // An item offering nothing is an answer and no more: a book is neither a
+    // note nor a node, and there is nowhere this answers with.
+    if (!stands || !stands.offers.includes(action)) return null
     const named = { path: stands.path, title: stands.title }
     if (action === PLEX) return { at: 'plex', ...named }
     return stands.line >= 0
@@ -307,5 +321,5 @@ export function finding(
       : { at: 'note', ...named }
   }
 
-  return { open, typed, sections, typing, shows, chose }
+  return { open, typed, bands, typing, shows, chose }
 }

@@ -16,10 +16,10 @@ type NoteQueries interface {
 	// everything the vault holds is PassageQueries and the use case above it.
 	Search(ctx context.Context, vaultID, query string, limit int) ([]domain.NoteMatch, error)
 
-	// Titles is the names in a vault that match the words typed: a note's own
+	// Names is the names in a vault that match the words typed: a note's own
 	// title, and the headings inside notes. Searching the text a vault holds is
 	// PassageQueries and the use case above it.
-	Titles(ctx context.Context, vaultID, query string, limit int) ([]domain.TitleMatch, error)
+	Names(ctx context.Context, vaultID, query string, limit int) ([]domain.NameMatch, error)
 
 	Summary(ctx context.Context, vaultID string) (domain.VaultSummary, error)
 

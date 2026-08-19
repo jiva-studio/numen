@@ -25,10 +25,10 @@ func noted(t *testing.T, db *DB, vault domain.Vault, path, title string, heading
 }
 
 // named is the names one vault answers a query with.
-func named(t *testing.T, db *DB, vault domain.Vault, query string) []domain.TitleMatch {
+func named(t *testing.T, db *DB, vault domain.Vault, query string) []domain.NameMatch {
 	t.Helper()
 
-	found, err := db.NoteQueries().Titles(t.Context(), vault.ID, query, 20)
+	found, err := db.NoteQueries().Names(t.Context(), vault.ID, query, 20)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,7 +37,7 @@ func named(t *testing.T, db *DB, vault domain.Vault, query string) []domain.Titl
 
 // marked is the name a match stands for, with the runs that matched wrapped in
 // brackets, so a test reads what a person would see.
-func marked(m domain.TitleMatch) string {
+func marked(m domain.NameMatch) string {
 	text := m.Title
 	if m.Heading != "" {
 		text = m.Heading
@@ -127,6 +127,36 @@ func TestOneNoteContributesOnlySoManyHeadings(t *testing.T) {
 // stated here so that the test says what it is asserting.
 const mostHeadingsOfANote = 2
 
+// TestOneNoteDoesNotCrowdOutTheOthers is the order the two cuts are made in. A
+// note with more matching headings than the whole answer holds is thinned
+// first, so the notes ranking below it still reach the person.
+func TestOneNoteDoesNotCrowdOutTheOthers(t *testing.T) {
+	db := opened(t)
+
+	crowded := make([]string, 0, 40)
+	for i := range 40 {
+		crowded = append(crowded, "Entropy "+string(rune('a'+i%26))+string(rune('a'+i/26)))
+	}
+	noted(t, db, first, "notes/thermo.md", "Thermodynamics", crowded...)
+	noted(t, db, first, "notes/engine.md", "Engines", "Entropy of an engine")
+	noted(t, db, first, "notes/time.md", "Time", "Entropy and the arrow")
+
+	found := named(t, db, first, "entropy")
+
+	notes := map[string]int{}
+	for _, m := range found {
+		notes[m.Path]++
+	}
+	if notes["notes/engine.md"] != 1 || notes["notes/time.md"] != 1 {
+		t.Errorf("the other notes answered %d and %d times, want one each: %+v",
+			notes["notes/engine.md"], notes["notes/time.md"], found)
+	}
+	if notes["notes/thermo.md"] != mostHeadingsOfANote {
+		t.Errorf("the crowded note answered %d times, want %d",
+			notes["notes/thermo.md"], mostHeadingsOfANote)
+	}
+}
+
 func TestANameGoesWhenTheNoteDoes(t *testing.T) {
 	db := opened(t)
 	noted(t, db, first, "notes/entropy.md", "Entropy", "Entropy and heat")
@@ -169,9 +199,21 @@ func TestATitleThatChangedStopsAnsweringUnderTheOldOne(t *testing.T) {
 func TestANameStaysInsideItsVault(t *testing.T) {
 	db := opened(t)
 	noted(t, db, first, "notes/entropy.md", "Entropy", "Entropy and heat")
+	noted(t, db, second, "notes/engine.md", "Engine", "Engine and work")
 
 	if found := named(t, db, second, "entropy"); len(found) != 0 {
-		t.Errorf("the other vault answered %+v, want nothing", found)
+		t.Errorf("the second vault answered %+v about the first, want nothing", found)
+	}
+	if found := named(t, db, first, "engine"); len(found) != 0 {
+		t.Errorf("the first vault answered %+v about the second, want nothing", found)
+	}
+
+	// Each answers about itself, so neither is silent for a reason of its own.
+	if found := named(t, db, first, "entropy"); len(found) == 0 {
+		t.Error("the first vault answered nothing about its own name")
+	}
+	if found := named(t, db, second, "engine"); len(found) == 0 {
+		t.Error("the second vault answered nothing about its own name")
 	}
 }
 

@@ -11,7 +11,6 @@ go test ./internal/core/usecase/vault/ -run XXX -bench ColdScan -benchtime 1x
 go test ./internal/core/usecase/vault/ -run XXX -bench 'WarmScan|Incremental|Search'
 go test ./internal/core/usecase/vault/ -run XXX -bench 'Links|Backlinks' -benchtime 300x
 NUMEN_LOAD=1 go test ./internal/core/usecase/vault/ -run TestLoad -v -timeout 40m
-NUMEN_FLOOR=1 go test ./internal/adapter/index/chunk/ -run TestTheFloor -v
 ```
 
 The vault is generated, not downloaded: `testsupport.GenerateVault` writes notes
@@ -253,12 +252,16 @@ Replacing float32 with int8 in the working index: 1561 MB to 613 MB, load 10 s
 to 5 s, search 35.7 ms to 31.8 ms, and the top six identical on every question
 in the acceptance set.
 
-
 ### The similarity floor, and what the coarse pass has to keep
 
-`~/.cache/numen/index.db`: 65 261 embedded chunks, `baai/bge-m3` at 1024
-dimensions, int8. Eighteen questions, ten the vault holds an answer to and eight
-it does not. Top-1 cosine, exhaustive over every stored vector.
+Taken once with a standalone program, against one index of 65 261 embedded
+chunks — `baai/bge-m3` at 1024 dimensions, int8, over the Ganguli Mahābhārata
+and a few hundred notes. Eighteen questions, ten the vault holds an answer to
+and eight it does not. Top-1 cosine, exhaustive over every stored vector.
+
+What the floor and the rerank do is held by fixtures in `chunks_test.go`. What
+the floor should be is this measurement, and a model changed is a measurement
+to take again.
 
 | Held | | Unheld | |
 | --- | --- | --- | --- |

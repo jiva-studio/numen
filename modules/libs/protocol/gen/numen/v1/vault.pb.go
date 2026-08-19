@@ -474,10 +474,9 @@ type StateResponse struct {
 	// chunks, and the two phases are told apart by `learning`.
 	Books     int64 `protobuf:"varint,11,opt,name=books,proto3" json:"books,omitempty"`
 	BooksRead int64 `protobuf:"varint,12,opt,name=books_read,json=booksRead,proto3" json:"books_read,omitempty"`
-	// Learning names the phase rather than the instant: it is set while vectors
-	// are being made, and from the moment a write lands until they have been.
-	// It is what tells the two phases apart: both name a source and move a
-	// count, and the counts are of different things.
+	// Learning names a phase: it is set while vectors are being made, and from
+	// the moment a write lands until they have been. It is what tells the two
+	// phases apart, since both name a source and move a count.
 	Learning bool `protobuf:"varint,13,opt,name=learning,proto3" json:"learning,omitempty"`
 	// Busy is set while the vault is still being read: its notes, then its books,
 	// then their vectors. Reading a book and embedding one change no file, so this
@@ -486,8 +485,7 @@ type StateResponse struct {
 	Busy bool `protobuf:"varint,14,opt,name=busy,proto3" json:"busy,omitempty"`
 	// Owing is how many chunks the pass now running found with no vector, and
 	// made is how many of those it has made one for. They are the work in hand,
-	// where chunks and embedded are the whole of what the vault holds: a person
-	// who edited one note is waiting on one chunk and not on the vault.
+	// where chunks and embedded are the whole of what the vault holds.
 	Owing         int64 `protobuf:"varint,15,opt,name=owing,proto3" json:"owing,omitempty"`
 	Made          int64 `protobuf:"varint,16,opt,name=made,proto3" json:"made,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1179,7 +1177,7 @@ func (x *NeighbourhoodResponse) GetRelated() []*Seated {
 	return nil
 }
 
-type TitlesRequest struct {
+type NamesRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// What was typed, as it was typed. Words are matched together, and the last
 	// of them on its prefix.
@@ -1190,20 +1188,20 @@ type TitlesRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *TitlesRequest) Reset() {
-	*x = TitlesRequest{}
+func (x *NamesRequest) Reset() {
+	*x = NamesRequest{}
 	mi := &file_numen_v1_vault_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *TitlesRequest) String() string {
+func (x *NamesRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*TitlesRequest) ProtoMessage() {}
+func (*NamesRequest) ProtoMessage() {}
 
-func (x *TitlesRequest) ProtoReflect() protoreflect.Message {
+func (x *NamesRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vault_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1215,48 +1213,48 @@ func (x *TitlesRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use TitlesRequest.ProtoReflect.Descriptor instead.
-func (*TitlesRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use NamesRequest.ProtoReflect.Descriptor instead.
+func (*NamesRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{15}
 }
 
-func (x *TitlesRequest) GetQuery() string {
+func (x *NamesRequest) GetQuery() string {
 	if x != nil {
 		return x.Query
 	}
 	return ""
 }
 
-func (x *TitlesRequest) GetLimit() int32 {
+func (x *NamesRequest) GetLimit() int32 {
 	if x != nil {
 		return x.Limit
 	}
 	return 0
 }
 
-type TitlesResponse struct {
+type NamesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The names that matched, best first, with a note's own title before a
 	// heading inside one.
-	Found         []*Titled `protobuf:"bytes,1,rep,name=found,proto3" json:"found,omitempty"`
+	Found         []*Named `protobuf:"bytes,1,rep,name=found,proto3" json:"found,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *TitlesResponse) Reset() {
-	*x = TitlesResponse{}
+func (x *NamesResponse) Reset() {
+	*x = NamesResponse{}
 	mi := &file_numen_v1_vault_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *TitlesResponse) String() string {
+func (x *NamesResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*TitlesResponse) ProtoMessage() {}
+func (*NamesResponse) ProtoMessage() {}
 
-func (x *TitlesResponse) ProtoReflect() protoreflect.Message {
+func (x *NamesResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vault_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1268,22 +1266,22 @@ func (x *TitlesResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use TitlesResponse.ProtoReflect.Descriptor instead.
-func (*TitlesResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use NamesResponse.ProtoReflect.Descriptor instead.
+func (*NamesResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{16}
 }
 
-func (x *TitlesResponse) GetFound() []*Titled {
+func (x *NamesResponse) GetFound() []*Named {
 	if x != nil {
 		return x.Found
 	}
 	return nil
 }
 
-// Titled is one name that matched, and the note it stands for. A note's own
+// Named is one name that matched, and the note it stands for. A note's own
 // title matched when there is no heading here; otherwise the note is what the
 // heading stands in.
-type Titled struct {
+type Named struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Note  *Note                  `protobuf:"bytes,1,opt,name=note,proto3" json:"note,omitempty"`
 	// The heading that matched, absent when the note's own title did.
@@ -1296,20 +1294,20 @@ type Titled struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Titled) Reset() {
-	*x = Titled{}
+func (x *Named) Reset() {
+	*x = Named{}
 	mi := &file_numen_v1_vault_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Titled) String() string {
+func (x *Named) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Titled) ProtoMessage() {}
+func (*Named) ProtoMessage() {}
 
-func (x *Titled) ProtoReflect() protoreflect.Message {
+func (x *Named) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vault_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1321,26 +1319,26 @@ func (x *Titled) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Titled.ProtoReflect.Descriptor instead.
-func (*Titled) Descriptor() ([]byte, []int) {
+// Deprecated: Use Named.ProtoReflect.Descriptor instead.
+func (*Named) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{17}
 }
 
-func (x *Titled) GetNote() *Note {
+func (x *Named) GetNote() *Note {
 	if x != nil {
 		return x.Note
 	}
 	return nil
 }
 
-func (x *Titled) GetHeading() *Heading {
+func (x *Named) GetHeading() *Heading {
 	if x != nil {
 		return x.Heading
 	}
 	return nil
 }
 
-func (x *Titled) GetAt() []*Span {
+func (x *Named) GetAt() []*Span {
 	if x != nil {
 		return x.At
 	}
@@ -2537,13 +2535,13 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"i\n" +
 	"\x15NeighbourhoodResponse\x12$\n" +
 	"\x05focus\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x05focus\x12*\n" +
-	"\arelated\x18\x02 \x03(\v2\x10.numen.v1.SeatedR\arelated\";\n" +
-	"\rTitlesRequest\x12\x14\n" +
+	"\arelated\x18\x02 \x03(\v2\x10.numen.v1.SeatedR\arelated\":\n" +
+	"\fNamesRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
-	"\x05limit\x18\x02 \x01(\x05R\x05limit\"8\n" +
-	"\x0eTitlesResponse\x12&\n" +
-	"\x05found\x18\x01 \x03(\v2\x10.numen.v1.TitledR\x05found\"\x8a\x01\n" +
-	"\x06Titled\x12\"\n" +
+	"\x05limit\x18\x02 \x01(\x05R\x05limit\"6\n" +
+	"\rNamesResponse\x12%\n" +
+	"\x05found\x18\x01 \x03(\v2\x0f.numen.v1.NamedR\x05found\"\x89\x01\n" +
+	"\x05Named\x12\"\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04note\x120\n" +
 	"\aheading\x18\x02 \x01(\v2\x11.numen.v1.HeadingH\x00R\aheading\x88\x01\x01\x12\x1e\n" +
 	"\x02at\x18\x03 \x03(\v2\x0e.numen.v1.SpanR\x02atB\n" +
@@ -2649,12 +2647,12 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x04Owed\x12\x14\n" +
 	"\x10OWED_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fOWED_WRITTEN\x10\x01\x12\x0f\n" +
-	"\vOWED_ASKING\x10\x022\xfe\x06\n" +
+	"\vOWED_ASKING\x10\x022\xfb\x06\n" +
 	"\fVaultService\x128\n" +
 	"\x05State\x12\x16.numen.v1.StateRequest\x1a\x17.numen.v1.StateResponse\x12>\n" +
 	"\aOpening\x12\x18.numen.v1.OpeningRequest\x1a\x19.numen.v1.OpeningResponse\x12P\n" +
-	"\rNeighbourhood\x12\x1e.numen.v1.NeighbourhoodRequest\x1a\x1f.numen.v1.NeighbourhoodResponse\x12;\n" +
-	"\x06Titles\x12\x17.numen.v1.TitlesRequest\x1a\x18.numen.v1.TitlesResponse\x12;\n" +
+	"\rNeighbourhood\x12\x1e.numen.v1.NeighbourhoodRequest\x1a\x1f.numen.v1.NeighbourhoodResponse\x128\n" +
+	"\x05Names\x12\x16.numen.v1.NamesRequest\x1a\x17.numen.v1.NamesResponse\x12;\n" +
 	"\x06Search\x12\x17.numen.v1.SearchRequest\x1a\x18.numen.v1.SearchResponse\x12@\n" +
 	"\aChanges\x12\x18.numen.v1.ChangesRequest\x1a\x19.numen.v1.ChangesResponse0\x01\x12:\n" +
 	"\x05Focus\x12\x16.numen.v1.FocusRequest\x1a\x17.numen.v1.FocusResponse0\x01\x12@\n" +
@@ -2700,9 +2698,9 @@ var file_numen_v1_vault_proto_goTypes = []any{
 	(*EditingResponse)(nil),       // 16: numen.v1.EditingResponse
 	(*NeighbourhoodRequest)(nil),  // 17: numen.v1.NeighbourhoodRequest
 	(*NeighbourhoodResponse)(nil), // 18: numen.v1.NeighbourhoodResponse
-	(*TitlesRequest)(nil),         // 19: numen.v1.TitlesRequest
-	(*TitlesResponse)(nil),        // 20: numen.v1.TitlesResponse
-	(*Titled)(nil),                // 21: numen.v1.Titled
+	(*NamesRequest)(nil),          // 19: numen.v1.NamesRequest
+	(*NamesResponse)(nil),         // 20: numen.v1.NamesResponse
+	(*Named)(nil),                 // 21: numen.v1.Named
 	(*Heading)(nil),               // 22: numen.v1.Heading
 	(*Span)(nil),                  // 23: numen.v1.Span
 	(*SearchRequest)(nil),         // 24: numen.v1.SearchRequest
@@ -2731,10 +2729,10 @@ var file_numen_v1_vault_proto_depIdxs = []int32{
 	12, // 3: numen.v1.ChangesResponse.renamed:type_name -> numen.v1.Renamed
 	4,  // 4: numen.v1.NeighbourhoodResponse.focus:type_name -> numen.v1.Note
 	5,  // 5: numen.v1.NeighbourhoodResponse.related:type_name -> numen.v1.Seated
-	21, // 6: numen.v1.TitlesResponse.found:type_name -> numen.v1.Titled
-	4,  // 7: numen.v1.Titled.note:type_name -> numen.v1.Note
-	22, // 8: numen.v1.Titled.heading:type_name -> numen.v1.Heading
-	23, // 9: numen.v1.Titled.at:type_name -> numen.v1.Span
+	21, // 6: numen.v1.NamesResponse.found:type_name -> numen.v1.Named
+	4,  // 7: numen.v1.Named.note:type_name -> numen.v1.Note
+	22, // 8: numen.v1.Named.heading:type_name -> numen.v1.Heading
+	23, // 9: numen.v1.Named.at:type_name -> numen.v1.Span
 	2,  // 10: numen.v1.SearchRequest.half:type_name -> numen.v1.Half
 	26, // 11: numen.v1.SearchResponse.found:type_name -> numen.v1.Passage
 	4,  // 12: numen.v1.Passage.note:type_name -> numen.v1.Note
@@ -2754,7 +2752,7 @@ var file_numen_v1_vault_proto_depIdxs = []int32{
 	6,  // 26: numen.v1.VaultService.State:input_type -> numen.v1.StateRequest
 	8,  // 27: numen.v1.VaultService.Opening:input_type -> numen.v1.OpeningRequest
 	17, // 28: numen.v1.VaultService.Neighbourhood:input_type -> numen.v1.NeighbourhoodRequest
-	19, // 29: numen.v1.VaultService.Titles:input_type -> numen.v1.TitlesRequest
+	19, // 29: numen.v1.VaultService.Names:input_type -> numen.v1.NamesRequest
 	24, // 30: numen.v1.VaultService.Search:input_type -> numen.v1.SearchRequest
 	10, // 31: numen.v1.VaultService.Changes:input_type -> numen.v1.ChangesRequest
 	13, // 32: numen.v1.VaultService.Focus:input_type -> numen.v1.FocusRequest
@@ -2768,7 +2766,7 @@ var file_numen_v1_vault_proto_depIdxs = []int32{
 	7,  // 40: numen.v1.VaultService.State:output_type -> numen.v1.StateResponse
 	9,  // 41: numen.v1.VaultService.Opening:output_type -> numen.v1.OpeningResponse
 	18, // 42: numen.v1.VaultService.Neighbourhood:output_type -> numen.v1.NeighbourhoodResponse
-	20, // 43: numen.v1.VaultService.Titles:output_type -> numen.v1.TitlesResponse
+	20, // 43: numen.v1.VaultService.Names:output_type -> numen.v1.NamesResponse
 	25, // 44: numen.v1.VaultService.Search:output_type -> numen.v1.SearchResponse
 	11, // 45: numen.v1.VaultService.Changes:output_type -> numen.v1.ChangesResponse
 	14, // 46: numen.v1.VaultService.Focus:output_type -> numen.v1.FocusResponse

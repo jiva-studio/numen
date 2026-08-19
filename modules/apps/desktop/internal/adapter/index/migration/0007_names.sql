@@ -2,14 +2,13 @@
 -- and every heading inside a note. This is what a person typing in the palette
 -- is matched against.
 --
--- Two indexes and not one. A title and a heading are each ranked against their
--- own population, and an answer draws every title before every heading, so no
--- score is ever weighed against the other kind.
+-- Two indexes. A title and a heading are each ranked against their own
+-- population, and an answer draws every title before every heading, so no score
+-- is ever weighed against the other kind.
 --
--- Each keeps a copy of the text it indexed, which the chunk index does not. A
--- name is a few words, and what an answer draws is the name with the run that
--- matched marked in it — which is the index saying where it matched, and it can
--- only say that over text it holds.
+-- Each keeps a copy of the text it indexed. What an answer draws is the name
+-- with the run that matched marked in it, and the index can only say where it
+-- matched over text it holds.
 
 -- A heading is addressed by a number of its own, so its full-text row can be
 -- deleted by it. The table is rebuilt because a column of this kind cannot be

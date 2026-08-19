@@ -118,7 +118,7 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 	// The search the window offers is the search the application already does.
 	// It is built once the embedder is settled, so a model that could not be
 	// fitted leaves the words half to answer on its own.
-	finds := search.New(db.Passages(), cfg.VaultReaders(), embedder)
+	finds := search.New(db.Passages(), cfg.VaultReaders(), embedder, cfg.Embedding.Floor)
 	api.Finds = &finds
 	scan := usecase.Scan{
 		Readers:      cfg.VaultReaders(),
@@ -378,6 +378,8 @@ func begin(
 		defer running.Done()
 		// Set false on every way out of the reading.
 		defer api.Busy.Store(false)
+		// Set false on every way out of the reading, and embedding is part of it.
+		defer api.Learning.Store(false)
 
 		// Reading the sources comes after the notes: a vault is useful the
 		// moment its notes answer, and a library takes minutes to cut and hours
@@ -405,8 +407,7 @@ func begin(
 			case <-wake.notes:
 				// Every write puts the pass off again. What was typed is
 				// embedded once the vault has been still, and there is work
-				// to come from the moment the write lands: a window told
-				// nothing until the wait is over stops watching and misses it.
+				// to come from the moment the write lands.
 				if text(&api.Model) != "" {
 					api.Busy.Store(true)
 					api.Learning.Store(true)
@@ -522,8 +523,7 @@ func readSources(
 		fmt.Fprintf(out, "%s: %d books, %d chunks\n", api.Vault.Name, res.Extracted, res.Chunks)
 	}
 	api.Reading.Store("")
-	api.Owing.Store(0)
-	api.Made.Store(0)
+	api.Owed.Store(&Owed{})
 
 	embedSources(ctx, db, api, readers, embedder, out)
 }
@@ -553,24 +553,19 @@ func embedSources(
 		OnProgress: func(res source.EmbedResult) {
 			api.Reading.Store(res.Reading)
 			// What this pass found to do and how much of it is done. A person who
-			// edited one note is waiting on that note, and a count of the vault
-			// tells them nothing about it.
-			api.Owing.Store(int64(res.Owing))
-			api.Made.Store(int64(res.Embedded))
+			// edited one note is waiting on that note.
+			api.Owed.Store(&Owed{Owing: int64(res.Owing), Made: int64(res.Embedded)})
 		},
 	}
-	// Nothing found yet, so nothing is owed: the counts of the pass before this
-	// one are not what this one is doing.
-	api.Owing.Store(0)
-	api.Made.Store(0)
+	// Nothing found yet, so nothing is owed.
+	api.Owed.Store(&Owed{})
 	api.Learning.Store(true)
 	if _, err := embed.Execute(ctx, api.Vault); err != nil && !errors.Is(err, context.Canceled) {
 		fmt.Fprintf(out, "embedding %s: %v\n", api.Vault.Name, err)
 	}
 	api.Learning.Store(false)
 	api.Reading.Store("")
-	api.Owing.Store(0)
-	api.Made.Store(0)
+	api.Owed.Store(&Owed{})
 }
 
 // Showing is the vault the window has open.

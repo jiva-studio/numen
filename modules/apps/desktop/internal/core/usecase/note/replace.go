@@ -33,9 +33,9 @@ type Replace struct {
 type Replaced struct {
 	// At is the fingerprint of the file this write produced.
 	At domain.FileRef
-	// Span is where the stretch stood, as byte offsets into the prose a read
+	// Stretch is where the stretch stood, as byte offsets into the prose a read
 	// hands out.
-	Span markdown.Span
+	Stretch markdown.Stretch
 	// Stood is the stretch as the note held it, which is not always the text
 	// the caller asked for.
 	Stood string
@@ -119,7 +119,7 @@ func (u Replace) Execute(
 			Text: becomes,
 		})
 
-		done.Span = markdown.Span{From: span.From, To: span.From + len(becomes)}
+		done.Stretch = markdown.Stretch{From: span.From, To: span.From + len(becomes)}
 		done.Stood = body[span.From:span.To]
 		done.Plainly = plainly
 		doc.SetBody(written)

@@ -46,7 +46,7 @@ export interface PaletteItem {
 }
 
 /** One band of the list. What the bands are is the caller's. */
-export interface PaletteSection {
+export interface PaletteBand {
   readonly id: string
   /** What the band is called. */
   readonly title: string
@@ -59,7 +59,7 @@ export interface PaletteSection {
 
 /** One item, and the band it was drawn in. */
 export interface PalettePlace {
-  readonly section: PaletteSection
+  readonly band: PaletteBand
   readonly item: PaletteItem
 }
 
@@ -68,23 +68,20 @@ export interface PalettePlace {
  * The bands in the order they are drawn: as they were offered, and the ones
  * holding nothing after the ones holding something.
  *
- * A band that came back with nothing is still drawn, because it says the
- * question was asked and answered. It stands at the foot, because it is not
- * what a person is reading and it should not sit between them and what is.
- *
- * Only empty bands move, and an empty band holds no item, so what the keyboard
- * counts is untouched by this.
+ * A band that came back with nothing is still drawn: it says the question was
+ * asked and answered. It stands at the foot, and holds no item, so what the
+ * keyboard counts is untouched.
  */
-export const ordered = (sections: readonly PaletteSection[]): readonly PaletteSection[] => [
-  ...sections.filter((one) => one.items.length > 0),
-  ...sections.filter((one) => one.items.length === 0),
+export const ordered = (bands: readonly PaletteBand[]): readonly PaletteBand[] => [
+  ...bands.filter((one) => one.items.length > 0),
+  ...bands.filter((one) => one.items.length === 0),
 ]
 
 /**
  * Every item in the order it is drawn, so that one number says which item.
  */
-export const flatten = (sections: readonly PaletteSection[]): readonly PalettePlace[] =>
-  sections.flatMap((section) => section.items.map((item) => ({ section, item })))
+export const flatten = (bands: readonly PaletteBand[]): readonly PalettePlace[] =>
+  bands.flatMap((band) => band.items.map((item) => ({ band, item })))
 
 /** Whether the keyboard may land here. An item with nothing to do is passed over. */
 export const choosable = (item: PaletteItem): boolean =>
@@ -113,22 +110,12 @@ export const stepTo = (
 
 /**
  * Where the keyboard stands once the list has changed under it: on the item it
- * was on, wherever that item has moved to.
- *
- * A band that was still filling arrives while a person is reading, and the item
- * their eye is on keeps the keyboard. An item that is gone hands it to the
- * nearest item at or after where it stood, counting from `at`; a list with
- * nothing to land on takes it nowhere.
+ * was on, wherever that item has moved to. An item that is gone hands it to the
+ * first item there is; a list with nothing to land on takes it nowhere.
  */
-export const keptAt = (
-  places: readonly PalettePlace[],
-  was: string,
-  at = 0,
-): number => {
+export const keptAt = (places: readonly PalettePlace[], was: string): number => {
   const held = places.findIndex((place) => place.item.id === was && choosable(place.item))
-  if (held >= 0) return held
-  const from = Math.min(Math.max(at, 0), Math.max(places.length - 1, 0))
-  return stepTo(places, from - 1, 1)
+  return held >= 0 ? held : stepTo(places, -1, 1)
 }
 
 /** What the action Enter reaches is, and Shift and Enter the second. */
@@ -216,7 +203,7 @@ export interface PlacedItem {
 
 /** One band as it is drawn. */
 export interface PlacedBand {
-  readonly section: PaletteSection
+  readonly band: PaletteBand
   readonly items: readonly PlacedItem[]
 }
 
@@ -227,11 +214,11 @@ export interface PlacedBand {
  * The bands are walked in the order they were given, which is the order the
  * keyboard counts in, so a number here is a number into `flatten`.
  */
-export const placePalette = (sections: readonly PaletteSection[]): readonly PlacedBand[] => {
+export const placePalette = (bands: readonly PaletteBand[]): readonly PlacedBand[] => {
   let at = 0
-  return sections.map((section) => ({
-    section,
-    items: section.items.map((item) => ({
+  return bands.map((band) => ({
+    band,
+    items: band.items.map((item) => ({
       item,
       at: at++,
       name: partsOf(item.title, item.at),

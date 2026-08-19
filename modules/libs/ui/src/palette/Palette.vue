@@ -24,12 +24,13 @@ import {
 import Waiting from '../waiting/Waiting.vue'
 import {
   actionAt,
+  choosable,
   flatten,
   keptAt,
   ordered,
   placePalette,
   stepTo,
-  type PaletteSection,
+  type PaletteBand,
 } from './model'
 
 const props = withDefaults(
@@ -38,7 +39,7 @@ const props = withDefaults(
      * The bands, in the order they are offered. A band holding nothing is
      * drawn at the foot, whatever order it was offered in.
      */
-    sections?: readonly PaletteSection[]
+    bands?: readonly PaletteBand[]
     /** Whether it is drawn at all. */
     open?: boolean
     /** The words standing in for what has not been typed. */
@@ -51,7 +52,7 @@ const props = withDefaults(
     name?: string
   }>(),
   {
-    sections: () => [],
+    bands: () => [],
     open: false,
     placeholder: 'Search',
     from: null,
@@ -90,10 +91,10 @@ const field = useTemplateRef<HTMLInputElement>('field')
 const list = useTemplateRef<HTMLElement>('list')
 
 /** What is drawn, and in what order: a band holding nothing stands at the foot. */
-const shown = computed(() => ordered(props.sections))
+const shown = computed(() => ordered(props.bands))
 
 const places = computed(() => flatten(shown.value))
-const bands = computed(() => placePalette(shown.value))
+const placed = computed(() => placePalette(shown.value))
 
 /** The item the keyboard is on, by its identity rather than by where it sits. */
 const held = ref('')
@@ -107,28 +108,21 @@ const goTo = (at: number) => {
   held.value = places.value[at]?.item.id ?? ''
 }
 
-/**
- * What is lit is brought into sight. Only a key does this: a list that scrolls
- * itself takes a person away from what they were reading.
- */
+/** What is lit is brought into sight. Only a key does this. */
 const reveal = async () => {
   await nextTick()
   list.value?.querySelector<HTMLElement>('[data-here]')?.scrollIntoView?.({ block: 'nearest' })
 }
 
 /**
- * Answers arriving never move what is lit and never move the list. A band that
- * was still filling lands while a person is reading, and where they are is
- * where they stay.
- *
- * The one thing the arriving answers decide is the first: a list filling for
- * something just typed lights its first item, which is what the typing asked
- * for. Nothing else here touches it.
+ * Answers arriving never move what is lit and never move the list. What they do
+ * decide is the first item, when nothing is lit: a question was typed, and this
+ * is its first answer.
  */
 watch(
   places,
-  (now, before) => {
-    if (before.length || !now.length || here.value >= 0) return
+  (now) => {
+    if (here.value >= 0) return
     goTo(stepTo(now, -1, 1))
   },
   { flush: 'post' },
@@ -141,15 +135,16 @@ watch(typed, () => {
 
 /**
  * A pointer that has actually moved lights what it is over. A list scrolling
- * under a pointer standing still reports one too, and that is not a person
- * choosing anything.
+ * under a pointer standing still reports a move too.
  */
 let stood = { x: -1, y: -1 }
 
 const over = (at: number, event: PointerEvent) => {
   if (event.clientX === stood.x && event.clientY === stood.y) return
   stood = { x: event.clientX, y: event.clientY }
-  goTo(at)
+  // An item the keyboard steps over is one the pointer passes over.
+  const item = places.value[at]?.item
+  if (item && choosable(item)) goTo(at)
 }
 
 const choose = (at: number, second: boolean) => {
@@ -239,56 +234,61 @@ onBeforeUnmount(() => {
           spellcheck="false"
           :placeholder="placeholder"
           :aria-label="name"
-          aria-expanded="true"
+          :aria-expanded="placed.length !== 0"
           :aria-controls="`${uid}-list`"
           :aria-activedescendant="here >= 0 ? optionName(here) : undefined"
         />
 
         <div
-          v-if="bands.length"
+          v-if="placed.length"
           :id="`${uid}-list`"
           ref="list"
           class="palette__list min-h-0 flex-1"
           role="listbox"
           :aria-label="name"
         >
-          <section
-            v-for="band in bands"
-            :key="band.section.id"
+          <band
+            v-for="one in placed"
+            :key="one.band.id"
             class="palette__band"
-            :aria-busy="band.section.working || undefined"
+            role="group"
+            :aria-labelledby="`${uid}-band-${one.band.id}`"
+            :aria-busy="one.band.working || undefined"
           >
-            <p class="palette__title flex items-center gap-1.5 text-small text-hushed">
-              <span>{{ band.section.title }}</span>
+            <p
+              :id="`${uid}-band-${one.band.id}`"
+              class="palette__title flex items-center gap-1.5 text-small text-hushed"
+            >
+              <span>{{ one.band.title }}</span>
               <!-- More of this band is on its way. -->
-              <Waiting v-if="band.section.working" />
+              <Waiting v-if="one.band.working" />
             </p>
             <div
-              v-for="placed in band.items"
-              :id="optionName(placed.at)"
-              :key="placed.item.id"
+              v-for="drawn in one.items"
+              :id="optionName(drawn.at)"
+              :key="drawn.item.id"
               class="palette__item flex flex-col rounded-node px-2 py-1.5"
               role="option"
-              :aria-selected="placed.at === here"
-              :aria-disabled="placed.item.disabled || undefined"
-              :data-here="placed.at === here || undefined"
-              :data-off="placed.item.disabled || undefined"
-              @pointermove="over(placed.at, $event)"
+              :aria-selected="drawn.at === here"
+              :aria-disabled="drawn.item.disabled || undefined"
+              :data-here="drawn.at === here || undefined"
+              :data-off="drawn.item.disabled || undefined"
+              @pointermove="over(drawn.at, $event)"
               @pointerdown.prevent
-              @click="choose(placed.at, $event.shiftKey)"
+              @click="choose(drawn.at, $event.shiftKey)"
             >
               <span class="palette__name min-w-0">
                 <span
-                  v-for="(part, piece) in placed.name"
+                  v-for="(part, piece) in drawn.name"
                   :key="piece"
                   :data-hit="part.hit || undefined"
                   >{{ part.text }}</span
                 >
               </span>
 
-              <span v-if="placed.detail.length" class="palette__detail min-w-0 text-small text-hushed">
+              <span v-if="drawn.detail.length" class="palette__detail min-w-0 text-small text-hushed">
                 <span
-                  v-for="(part, piece) in placed.detail"
+                  v-for="(part, piece) in drawn.detail"
                   :key="piece"
                   :data-hit="part.hit || undefined"
                   >{{ part.text }}</span
@@ -296,10 +296,10 @@ onBeforeUnmount(() => {
               </span>
             </div>
 
-            <p v-if="!band.items.length" class="palette__silence px-2 py-1.5 text-hushed">
-              {{ band.section.silence ?? 'Nothing' }}
+            <p v-if="!one.items.length" class="palette__silence px-2 py-1.5 text-hushed">
+              {{ one.band.silence ?? 'Nothing' }}
             </p>
-          </section>
+          </band>
         </div>
 
         <p v-else-if="$slots.silence" class="palette__nothing px-2 py-1.5 text-hushed">
@@ -326,13 +326,12 @@ onBeforeUnmount(() => {
 /* Over the window, with what it covers showing through the panel and dimmed
    everywhere else. */
 .palette {
-  --lift: 70;
+  --lift: var(--numen-lift-palette);
   /* How far down the window it hangs, how wide it may be, and how much of the
      screen its list takes before it scrolls. */
   --drop: 12vh;
   --widest: 640px;
   --tallest: 50vh;
-  --ground: light-dark(#00000014, #0000005c);
 
   position: fixed;
   inset: 0;
@@ -341,7 +340,7 @@ onBeforeUnmount(() => {
   justify-items: center;
   align-content: start;
   padding: var(--drop) var(--numen-inset-wide);
-  background: var(--ground);
+  background: var(--numen-scrim);
 }
 
 .palette__panel {

@@ -24,16 +24,50 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 			want:  []domain.Span{{From: 3, To: 9}, {From: 29, To: 35}},
 		},
 		{
-			name:  "each word typed, on its own",
+			name:  "each word typed, in the order the runs stand",
 			text:  "heat and work",
 			query: "work heat",
-			want:  []domain.Span{{From: 9, To: 13}, {From: 0, To: 4}},
+			want:  []domain.Span{{From: 0, To: 4}, {From: 9, To: 13}},
 		},
 		{
 			name:  "case is folded and nothing else is",
 			text:  "Entropy is not entropy",
 			query: "ENTROPY",
 			want:  []domain.Span{{From: 0, To: 7}, {From: 15, To: 22}},
+		},
+		{
+			// The index matched a word. A run of the same letters inside another
+			// word is not that word, and a mark on it says a passage is here for
+			// something nobody typed.
+			name:  "letters standing inside another word are not marked",
+			text:  "the party started early",
+			query: "art",
+		},
+		{
+			// The last word typed may still be growing, and the index reached it
+			// by its opening. Every word before it is finished.
+			name:  "the last word typed matches a word by its opening",
+			text:  "a reversible engine",
+			query: "revers",
+			want:  []domain.Span{{From: 2, To: 8}},
+		},
+		{
+			name:  "a word before the last one is matched whole",
+			text:  "a reversible engine",
+			query: "revers engine",
+			want:  []domain.Span{{From: 13, To: 19}},
+		},
+		{
+			name:  "two words naming the same characters come back as one run",
+			text:  "entropy again",
+			query: "ent entropy",
+			want:  []domain.Span{{From: 0, To: 7}},
+		},
+		{
+			name:  "the runs come back in the order they stand",
+			text:  "engine and entropy",
+			query: "entropy engine",
+			want:  []domain.Span{{From: 0, To: 6}, {From: 11, To: 18}},
 		},
 		{
 			name:  "a word the person did not type is not marked",

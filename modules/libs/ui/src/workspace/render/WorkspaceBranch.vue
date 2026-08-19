@@ -90,6 +90,9 @@ watch(
 
 onBeforeUnmount(() => {
   watching?.disconnect()
+  // The branch is going, and where its handle reached is not news about a node
+  // that will not be there to hear it.
+  reached = null
   putDown()
 })
 
@@ -121,47 +124,20 @@ function settled(reported: number[]): void {
 }
 
 /**
- * One movement of a held handle per frame, and the rest let go of.
- *
- * A pointer reports itself several times for every frame that is drawn, and
- * each report resizes the panels, which lays out everything inside them again.
- * The frames not drawn are the ones a person feels.
- */
-let letting = true
-
-const damping = (event: PointerEvent) => {
-  if (!letting) {
-    event.stopImmediatePropagation()
-    return
-  }
-  letting = false
-  requestAnimationFrame(() => {
-    letting = true
-  })
-}
-
-/**
  * What a held handle is marked by, on the root so that it reaches everything
  * the drag passes over.
  */
 const RESIZING = 'data-resizing'
 
-/**
- * The handle put down. The splitter says so for a pointer let go over the
- * handle itself; a pointer let go anywhere else is the same drag ending, and
- * the window is where that is heard.
- */
+/** The handle put down, wherever the pointer had reached by then. */
 const putDown = () => {
   if (!holding) return
   holding = false
-  window.removeEventListener('pointermove', damping, { capture: true })
-  window.removeEventListener('pointerup', putDown)
-  window.removeEventListener('pointercancel', putDown)
   document.documentElement.removeAttribute(RESIZING)
 
-  if (!reached) return
-  emit('resize', props.node.id, reached)
+  const settled = reached
   reached = null
+  if (settled) emit('resize', props.node.id, settled)
 }
 
 /** A handle taken up, and put down where it stopped. */
@@ -171,10 +147,6 @@ function handling(now: boolean): void {
     return
   }
   holding = true
-  letting = true
-  window.addEventListener('pointermove', damping, { capture: true })
-  window.addEventListener('pointerup', putDown)
-  window.addEventListener('pointercancel', putDown)
   document.documentElement.setAttribute(RESIZING, '')
 }
 </script>
@@ -251,9 +223,8 @@ function handling(now: boolean): void {
 }
 
 /* The line between two panels, and the reach around it a pointer is caught by.
-   The reach hangs over both panels and stands above them: a panel drawn after
-   the handle otherwise takes the presses on its side of the line, and what it
-   holds reads them as its own. */
+   The reach hangs over both panels and stands above them, so a press on either
+   side of the line is a press on the handle. */
 .branch__handle {
   --line: var(--numen-stroke);
   --reach: 7px;
@@ -300,9 +271,8 @@ function handling(now: boolean): void {
 </style>
 
 <style>
-/* While a handle is held, the drag moves the handle. Text under the pointer is
-   left alone: a selection running through it is one the engine works out again
-   for every movement, over everything the panels hold. */
+/* While a handle is held, the drag moves the handle and the text under the
+   pointer is left alone. */
 [data-resizing] * {
   user-select: none !important;
   -webkit-user-select: none !important;

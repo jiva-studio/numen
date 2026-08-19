@@ -18,7 +18,7 @@ import {
   placePalette,
   stepTo,
   type PaletteItem,
-  type PaletteSection,
+  type PaletteBand,
 } from './model'
 
 const OPEN = [{ id: 'open', text: 'Open' }]
@@ -34,7 +34,7 @@ const item = (id: string, more: Partial<PaletteItem> = {}): PaletteItem => ({
   ...more,
 })
 
-const band = (id: string, items: PaletteItem[], more: Partial<PaletteSection> = {}): PaletteSection => ({
+const band = (id: string, items: PaletteItem[], more: Partial<PaletteBand> = {}): PaletteBand => ({
   id,
   title: id,
   items,
@@ -42,7 +42,7 @@ const band = (id: string, items: PaletteItem[], more: Partial<PaletteSection> = 
 })
 
 /** Two bands, four items, and one of them not to be landed on. */
-const SECTIONS: PaletteSection[] = [
+const SECTIONS: PaletteBand[] = [
   band('names', [item('one'), item('two')]),
   band('text', [item('three', { disabled: true }), item('four')]),
 ]
@@ -145,13 +145,8 @@ describe('a band arriving under the keyboard', () => {
     expect(keptAt(after, 'one')).toBe(1)
   })
 
-  it('keeps the keyboard where it stood when the item it was on is gone', () => {
-    const places = flatten(SECTIONS)
-    expect(keptAt(places, 'vanished', 3)).toBe(3)
-  })
-
-  it('hands it to the first item when it stood nowhere', () => {
-    expect(keptAt(flatten(SECTIONS), 'vanished', -1)).toBe(0)
+  it('hands the keyboard to the first item when the one it was on is gone', () => {
+    expect(keptAt(flatten(SECTIONS), 'vanished')).toBe(0)
   })
 
   it('hands it on when the item it was on is still there and turned off', () => {
@@ -306,9 +301,9 @@ describe('which band stands where', () => {
   })
 
   it('leaves what the keyboard counts exactly where it was', () => {
-    const sections = [empty, holding, alsoEmpty, band('more', [item('two'), item('three')])]
-    expect(flatten(ordered(sections)).map((place) => place.item.id)).toEqual(
-      flatten(sections).map((place) => place.item.id),
+    const bands = [empty, holding, alsoEmpty, band('more', [item('two'), item('three')])]
+    expect(flatten(ordered(bands)).map((place) => place.item.id)).toEqual(
+      flatten(bands).map((place) => place.item.id),
     )
   })
 })

@@ -234,17 +234,25 @@ export const blockMarks = (state: EditorState) => build(state, 0, state.doc.leng
  */
 const margin = 2000
 
-/** The lines the viewport shows, whole, and a margin of them either side. */
-const shown = (view: EditorView) => {
+/** The lines the viewport shows, whole. */
+const onScreen = (view: EditorView) => {
   const ranges = view.visibleRanges
   if (!ranges.length) return null
   const first = ranges[0]
   const last = ranges[ranges.length - 1]
   if (!first || !last) return null
   const doc = view.state.doc
+  return { from: doc.lineAt(first.from).from, to: doc.lineAt(last.to).to }
+}
+
+/** Those lines with a margin of them either side, which is what is drawn for. */
+const shown = (view: EditorView) => {
+  const seen = onScreen(view)
+  if (!seen) return null
+  const doc = view.state.doc
   return {
-    from: doc.lineAt(Math.max(first.from - margin, 0)).from,
-    to: doc.lineAt(Math.min(last.to + margin, doc.length)).to,
+    from: doc.lineAt(Math.max(seen.from - margin, 0)).from,
+    to: doc.lineAt(Math.min(seen.to + margin, doc.length)).to,
   }
 }
 
@@ -283,12 +291,14 @@ export const live = ViewPlugin.fromClass(
         update.selectionSet ||
         syntaxTree(update.startState) != syntaxTree(update.state)
 
-      const span = shown(update.view)
-      // Marks already drawn answer for a viewport inside them.
-      if (!afresh && this.span && span && span.from >= this.span.from && span.to <= this.span.to) {
+      // The lines on screen, against the wider span the marks in hand were
+      // drawn for. A viewport still inside them is already drawn.
+      const seen = onScreen(update.view)
+      if (!afresh && this.span && seen && seen.from >= this.span.from && seen.to <= this.span.to) {
         return
       }
 
+      const span = shown(update.view)
       this.span = span
       this.decorations = span ? marks(update.view.state, span.from, span.to) : Decoration.none
     }

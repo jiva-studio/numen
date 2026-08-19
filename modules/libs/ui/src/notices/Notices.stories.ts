@@ -119,7 +119,7 @@ export const PutOneAway: Story = {
     await waitFor(() => expect(cards()).toHaveLength(2))
 
     const first = within(cards()[0]!)
-    await userEvent.click(first.getByRole('button', { name: 'Put away' }))
+    await userEvent.click(first.getByRole('button', { name: /^Put away/ }))
 
     await waitFor(() => expect(cards()).toHaveLength(1))
     await expect(cards()[0]!.textContent).toContain('Preparing search by meaning')
@@ -164,5 +164,20 @@ export const NotWorthACardYet: Story = {
   play: async () => {
     await expect(cards()).toHaveLength(0)
     await waitFor(() => expect(cards()).toHaveLength(1), { timeout: 3000 })
+  },
+}
+
+/** Each card names what it puts away, so two of them are told apart. */
+export const EachCardNamesWhatItPutsAway: Story = {
+  args: { notices: [READING, EMBEDDING] },
+  play: async () => {
+    await waitFor(() => expect(cards()).toHaveLength(2))
+
+    const named = [...cards()].map(
+      (card) => card.querySelector('.notice__away')?.getAttribute('aria-label') ?? '',
+    )
+    await expect(named[0]).toContain('Reading the vault')
+    await expect(named[1]).toContain('Preparing search by meaning')
+    await expect(named[0]).not.toBe(named[1])
   },
 }

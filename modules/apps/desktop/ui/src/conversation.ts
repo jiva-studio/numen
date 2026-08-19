@@ -136,7 +136,7 @@ export function conversation(
     const settleAnswer = () => {
       if (!saying) return
       // An answer with nothing in it is a turn with no words and a gap either
-      // side of it, which reads as the panel having lost something.
+      // side of it.
       if (answer === '') drop(saying)
       else put({ id: saying, voice: 'answered', text: answer })
       saying = ''

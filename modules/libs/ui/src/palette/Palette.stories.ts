@@ -9,7 +9,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { onMounted, onUnmounted, ref } from 'vue'
 import Palette from './Palette.vue'
-import type { PaletteSection, PaletteSpan } from './model'
+import type { PaletteBand, PaletteSpan } from './model'
 import {
   ARABIC,
   DEVANAGARI,
@@ -21,7 +21,7 @@ import {
 } from '@/fixtures/prose'
 
 interface Knobs {
-  sections: readonly PaletteSection[]
+  bands: readonly PaletteBand[]
   placeholder: string
   name: string
   onChoose: (item: string, action: string) => void
@@ -74,7 +74,7 @@ const passage = (id: string, title: string, text: string, word: string) => ({
 })
 
 /** A vault with something in it, answering the word "ent". */
-const NAMES: PaletteSection = {
+const NAMES: PaletteBand = {
   id: 'names',
   title: 'Names',
   items: [
@@ -85,7 +85,7 @@ const NAMES: PaletteSection = {
   ],
 }
 
-const TEXT: PaletteSection = {
+const TEXT: PaletteBand = {
   id: 'text',
   title: 'Text',
   items: [
@@ -99,7 +99,7 @@ const TEXT: PaletteSection = {
   ],
 }
 
-const MEANING: PaletteSection = {
+const MEANING: PaletteBand = {
   id: 'meaning',
   title: 'Meaning',
   items: [
@@ -109,7 +109,7 @@ const MEANING: PaletteSection = {
   ],
 }
 
-const ALL: PaletteSection[] = [NAMES, TEXT, { ...MEANING, working: true }]
+const ALL: PaletteBand[] = [NAMES, TEXT, { ...MEANING, working: true }]
 
 /** A window with something in it, and a palette standing over the lot. */
 const over = (args: Knobs) => ({
@@ -129,7 +129,7 @@ const over = (args: Knobs) => ({
       >Open the palette</button>
       <Palette
         v-model="typed"
-        :sections="args.sections"
+        :bands="args.bands"
         :open="open"
         :placeholder="args.placeholder"
         :name="args.name"
@@ -162,12 +162,12 @@ const meta = {
   argTypes: {
     placeholder: { control: 'text' },
     name: { control: 'text' },
-    sections: { table: { disable: true } },
+    bands: { table: { disable: true } },
     onChoose: { table: { disable: true } },
     onDismiss: { table: { disable: true } },
   },
   args: {
-    sections: ALL,
+    bands: ALL,
     placeholder: 'Search',
     name: 'Palette',
     onChoose: fn(),
@@ -214,24 +214,24 @@ export const Filling: Story = {
     setup() {
       const open = ref(true)
       const typed = ref('ent')
-      const sections = ref<PaletteSection[]>([
+      const bands = ref<PaletteBand[]>([
         { ...NAMES, items: [], working: true },
         TEXT,
       ])
 
       let waiting: ReturnType<typeof setTimeout> | undefined
       onMounted(() => {
-        waiting = setTimeout(() => (sections.value = [NAMES, TEXT]), 700)
+        waiting = setTimeout(() => (bands.value = [NAMES, TEXT]), 700)
       })
       onUnmounted(() => clearTimeout(waiting))
 
-      return { args, open, typed, sections }
+      return { args, open, typed, bands }
     },
     template: `
       <div class="numen" style="height:100vh;background:var(--numen-surface)">
         <Palette
           v-model="typed"
-          :sections="sections"
+          :bands="bands"
           :open="open"
           @choose="args.onChoose"
           @dismiss="args.onDismiss"
@@ -250,7 +250,7 @@ export const Filling: Story = {
 /** Every band came back with nothing, each saying so in its own words. */
 export const Nothing: Story = {
   args: {
-    sections: [
+    bands: [
       { id: 'names', title: 'Names', items: [], silence: 'No name holds those words' },
       { id: 'text', title: 'Text', items: [], silence: 'Nothing is written with them' },
       { id: 'meaning', title: 'Meaning', items: [], silence: 'No model is set' },
@@ -260,13 +260,13 @@ export const Nothing: Story = {
 
 /** Nothing has been typed yet, so there is no band to draw at all. */
 export const Unasked: Story = {
-  args: { sections: [] },
+  args: { bands: [] },
 }
 
 /** One band, one item, one thing to do with it. */
 export const Alone: Story = {
   args: {
-    sections: [{ id: 'names', title: 'Names', items: [named('entropy', 'Entropy', 'ent')] }],
+    bands: [{ id: 'names', title: 'Names', items: [named('entropy', 'Entropy', 'ent')] }],
   },
 }
 
@@ -278,7 +278,7 @@ export const Alone: Story = {
  */
 export const FarTooMany: Story = {
   args: {
-    sections: [
+    bands: [
       {
         id: 'names',
         title: 'Names',
@@ -307,7 +307,7 @@ export const FarTooMany: Story = {
 /** Scripts that are not Latin, one of which runs the other way. */
 export const NotLatin: Story = {
   args: {
-    sections: [
+    bands: [
       {
         id: 'names',
         title: 'Названия',
@@ -329,7 +329,7 @@ export const NotLatin: Story = {
  */
 export const TooLong: Story = {
   args: {
-    sections: [
+    bands: [
       {
         id: 'names',
         title: 'Names',
@@ -355,7 +355,7 @@ export const TooLong: Story = {
 /** Characters that are several code units each, with a run landing inside one. */
 export const Graphemes: Story = {
   args: {
-    sections: [
+    bands: [
       {
         id: 'names',
         title: 'Names',
@@ -371,7 +371,7 @@ export const Graphemes: Story = {
 /** An item that is drawn and cannot be chosen, beside ones that can. */
 export const NotToBeChosen: Story = {
   args: {
-    sections: [
+    bands: [
       {
         id: 'names',
         title: 'Names',
@@ -402,7 +402,7 @@ export const NotToBeChosen: Story = {
  */
 export const SomeCameBackEmpty: Story = {
   args: {
-    sections: [
+    bands: [
       { id: 'names', title: 'Names', items: [], silence: 'No name holds those words' },
       TEXT,
       { ...MEANING, working: true },
