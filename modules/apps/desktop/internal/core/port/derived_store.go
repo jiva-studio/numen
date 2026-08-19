@@ -2,9 +2,14 @@ package port
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 )
+
+// ErrClaimed is what a name another caller holds gets. Work whose whole output
+// is one file reads it as that work already being under way.
+var ErrClaimed = errors.New("the name is claimed by another caller")
 
 // A derived file is one the application made and cannot make again: a model
 // read a scan and wrote down what it saw. It is not a note and never becomes
@@ -36,6 +41,11 @@ type DerivedStore interface {
 	// Remove takes a name out of the store. A name already gone is the outcome
 	// that was asked for.
 	Remove(ctx context.Context, name string) error
+
+	// Claim takes a name for this caller alone and returns what lets it go. A
+	// name already claimed is refused with ErrClaimed, so work whose whole
+	// output is one file is done once.
+	Claim(ctx context.Context, name string) (release func() error, err error)
 }
 
 // DerivedStores opens one vault's store. Which vault a use case works on is

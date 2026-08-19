@@ -124,6 +124,29 @@ func (d *Derived) Append(_ context.Context, name string, content []byte) error {
 	return file.Close()
 }
 
+// claimSuffix names the file a claim on a name is held on. It outlives the
+// name: a claim is held on an open file, and unlinking one lets a second caller
+// make another at the same path and hold it too.
+const claimSuffix = ".claim"
+
+// Claim holds a name until the returned function is called, and refuses one
+// another caller holds with port.ErrClaimed.
+//
+// What is held is a lock the kernel keeps on `<name>.claim` beside the
+// artifact, so the claim crosses processes and a run that was killed leaves the
+// name free. A claim file lying on disk with no lock on it is a name free to
+// take.
+func (d *Derived) Claim(_ context.Context, name string) (func() error, error) {
+	target, err := d.at(name + claimSuffix)
+	if err != nil {
+		return nil, err
+	}
+	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+		return nil, err
+	}
+	return claim(target)
+}
+
 func (d *Derived) Remove(_ context.Context, name string) error {
 	target, err := d.at(name)
 	if err != nil {

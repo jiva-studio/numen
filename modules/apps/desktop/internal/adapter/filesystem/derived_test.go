@@ -1,13 +1,18 @@
 package filesystem_test
 
 import (
+	"bufio"
 	"errors"
+	"fmt"
+	"io"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
 func store(t *testing.T) (*filesystem.Derived, string) {
@@ -151,4 +156,129 @@ func TestAStoreIsOneFolder(t *testing.T) {
 			t.Errorf("opened a store on %q", area)
 		}
 	}
+}
+
+func TestANameIsClaimedByOneCallerAtATime(t *testing.T) {
+	// One recognition writes one file, appending to it for an hour. The name is
+	// held for as long as that takes.
+	derived, _ := store(t)
+
+	release, err := derived.Claim(t.Context(), "ocr/abc.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := derived.Claim(t.Context(), "ocr/abc.txt"); !errors.Is(err, port.ErrClaimed) {
+		t.Errorf("claiming a held name gave %v, want port.ErrClaimed", err)
+	}
+
+	if err := release(); err != nil {
+		t.Fatal(err)
+	}
+	again, err := derived.Claim(t.Context(), "ocr/abc.txt")
+	if err != nil {
+		t.Fatalf("claiming a released name gave %v", err)
+	}
+	if err := again(); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestTwoNamesAreClaimedTogether(t *testing.T) {
+	derived, _ := store(t)
+
+	first, err := derived.Claim(t.Context(), "ocr/one.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer first()
+	second, err := derived.Claim(t.Context(), "ocr/two.txt")
+	if err != nil {
+		t.Fatalf("claiming another name gave %v", err)
+	}
+	if err := second(); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestAClaimCannotLeaveTheStore(t *testing.T) {
+	// A claim is a file the store writes, and it is judged by the rule every
+	// other name is judged by.
+	derived, _ := store(t)
+
+	for _, name := range []string{
+		"ocr/../config.json",
+		"ocr/../../elsewhere",
+		"config.json",
+		"/etc/passwd",
+	} {
+		if _, err := derived.Claim(t.Context(), name); !errors.Is(err, filesystem.ErrOutside) {
+			t.Errorf("claiming %q gave %v, want ErrOutside", name, err)
+		}
+	}
+}
+
+// claimHeld is what the child process prints once it holds the claim, and
+// holdingEnv is the vault it is asked to hold it in.
+const (
+	claimHeld  = "the claim is held"
+	holdingEnv = "NUMEN_TEST_CLAIM_ROOT"
+)
+
+func TestAClaimHeldByAnotherProcessIsRefused(t *testing.T) {
+	// `numen recognise` is a separate binary and runs while the window is open,
+	// so what one process holds every other has to see.
+	derived, root := store(t)
+
+	child := exec.CommandContext(t.Context(), os.Args[0],
+		"-test.run=^TestHoldingAClaimForAnotherProcess$", "-test.timeout=1m")
+	child.Env = append(os.Environ(), holdingEnv+"="+root)
+	child.Stderr = os.Stderr
+	stdin, err := child.StdinPipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	stdout, err := child.StdoutPipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := child.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		stdin.Close()
+		child.Wait()
+	}()
+
+	said := bufio.NewScanner(stdout)
+	for said.Scan() && said.Text() != claimHeld {
+	}
+	if said.Text() != claimHeld {
+		t.Fatalf("the child never took the claim: %v", said.Err())
+	}
+
+	if _, err := derived.Claim(t.Context(), "ocr/held.txt"); !errors.Is(err, port.ErrClaimed) {
+		t.Errorf("claiming a name another process holds gave %v, want port.ErrClaimed", err)
+	}
+}
+
+// TestHoldingAClaimForAnotherProcess is the child of the test above. It takes
+// the claim, says so, and holds it until its parent closes its input.
+func TestHoldingAClaimForAnotherProcess(t *testing.T) {
+	root := os.Getenv(holdingEnv)
+	if root == "" {
+		t.Skip("this test is run by TestAClaimHeldByAnotherProcessIsRefused")
+	}
+	derived, err := filesystem.OpenDerived(root, filesystem.Options{}, filesystem.OCRDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	release, err := derived.Claim(t.Context(), "ocr/held.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer release()
+
+	fmt.Println(claimHeld)
+	io.ReadAll(os.Stdin)
 }
