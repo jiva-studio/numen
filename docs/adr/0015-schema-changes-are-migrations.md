@@ -3,7 +3,8 @@
 - **Status:** Accepted
 - **Date:** 2026-08-15
 - **Applies to:** any application that keeps an index; today `modules/apps/desktop`
-- **Related:** ADR-0000, ADR-0002, ADR-0014
+- **Related:** ADR-0000, ADR-0002, ADR-0014, ADR-0035
+- **Partly superseded by:** ADR-0035 — what happens to an index this build cannot account for
 
 ## Context
 
@@ -35,11 +36,6 @@ migrations.**
 - **Emptying is a migration's own decision.** A numbered file may empty the
   tables it changes, and the next scan refills them. Nothing outside a migration
   file empties anything.
-- **An index at a version this build does not carry is refused.** The
-  application says which version the index holds and which this build knows, and
-  opens nothing. A schema written by a later build holds what this one cannot
-  read, and a build that cannot read a thing has nothing to say about whether it
-  is worth keeping.
 
 Adding a column, an index or a table therefore costs the user nothing. Only a
 change that redefines what is stored costs a re-scan, and only for the part that

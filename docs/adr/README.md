@@ -46,6 +46,7 @@ Read these first; everything else is derived from them.
 - [ADR-0027 — The application writes to the vault](0027-the-application-writes-to-the-vault.md)
 - [ADR-0032 — The window saves a note as it is typed, and stops at an unseen edit](0032-the-window-saves-a-note-as-it-is-typed.md)
 - [ADR-0033 — One process, one writer, one lifetime](0033-one-process-one-writer-one-lifetime.md)
+- [ADR-0035 — What the application cannot do, it says](0035-what-the-application-cannot-do-it-says.md)
 
 ## The note file
 

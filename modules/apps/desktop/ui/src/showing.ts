@@ -22,6 +22,7 @@ export interface Core {
     ready: boolean
     failed: string
     unwatched: string
+    unreachable: string
     /** Spans of text the index holds, and how many of them carry a vector. */
     chunks: bigint
     embedded: bigint
@@ -161,6 +162,8 @@ export function showing(
   const lost = ref('')
   const trouble = ref('')
   const unwatched = ref('')
+  /** Why an agent cannot be reached, said in the panel that would have asked it. */
+  const unreachable = ref('')
   /** Whether the vault holds a note to show at all. */
   const holds = ref(false)
   /** The note the vault opens with, which is where a plex standing nowhere goes. */
@@ -291,6 +294,7 @@ export function showing(
     name.value = state.name
     trouble.value = state.failed
     unwatched.value = state.unwatched
+    unreachable.value = state.unreachable
     chunks.value = Number(state.chunks)
     embedded.value = Number(state.embedded)
     owing.value = Number(state.owing)
@@ -507,6 +511,7 @@ export function showing(
     warning,
     trouble,
     unwatched,
+    unreachable,
     holds,
     looking,
     travel,

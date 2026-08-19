@@ -79,6 +79,8 @@ type API struct {
 	Failed  atomic.Value
 	// Unwatched is why the vault is not being followed, when it is not.
 	Unwatched atomic.Value
+	// Unreachable is why an agent cannot be reached, when one cannot.
+	Unreachable atomic.Value
 
 	// Progress answers how far cutting and embedding have got. Nil for a vault
 	// nothing is reading for meaning, and the window then says nothing about it.
@@ -124,20 +126,21 @@ func (a *API) State(ctx context.Context, _ *connect.Request[v1.StateRequest]) (*
 		owed = &Owed{}
 	}
 	out := &v1.StateResponse{
-		Name:      a.Vault.Name,
-		Path:      a.Vault.Path,
-		Indexed:   a.Indexed.Load(),
-		Ready:     a.Ready.Load(),
-		Failed:    a.failure(),
-		Unwatched: text(&a.Unwatched),
-		Reading:   text(&a.Reading),
-		Embedding: text(&a.Model) != "",
-		Books:     a.Books.Load(),
-		BooksRead: a.BooksRead.Load(),
-		Learning:  a.Learning.Load(),
-		Owing:     owed.Owing,
-		Made:      owed.Made,
-		Busy:      a.Busy.Load(),
+		Name:        a.Vault.Name,
+		Path:        a.Vault.Path,
+		Indexed:     a.Indexed.Load(),
+		Ready:       a.Ready.Load(),
+		Failed:      a.failure(),
+		Unwatched:   text(&a.Unwatched),
+		Unreachable: text(&a.Unreachable),
+		Reading:     text(&a.Reading),
+		Embedding:   text(&a.Model) != "",
+		Books:       a.Books.Load(),
+		BooksRead:   a.BooksRead.Load(),
+		Learning:    a.Learning.Load(),
+		Owing:       owed.Owing,
+		Made:        owed.Made,
+		Busy:        a.Busy.Load(),
 	}
 	// A count that cannot be taken leaves the pair at nothing, and the rest of
 	// the state is answered as it stands.

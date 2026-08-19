@@ -42,6 +42,7 @@ func main() {
 
 	if err := run(cfg, agents, zoom); err != nil {
 		fmt.Fprintln(os.Stderr, "numen:", err)
+		refuse(cfg, err, zoom)
 		os.Exit(1)
 	}
 }
@@ -63,9 +64,14 @@ func run(cfg container.Config, agents agentOptions, zoom float64) error {
 	}
 	defer opened.Close()
 
+	// An agent nobody can reach is a panel that says so, not a window that does
+	// not open. Everything else the window does is the vault, and the vault is
+	// here.
 	closeAgents, err := serveAgents(ctx, cfg, opened, agents, os.Stdout)
 	if err != nil {
-		return err
+		opened.API.Unreachable.Store(err.Error())
+		fmt.Fprintln(os.Stderr, "numen: no agent:", err)
+		closeAgents = func() error { return nil }
 	}
 	defer closeAgents()
 

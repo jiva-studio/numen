@@ -100,7 +100,7 @@ watch(
   },
   { deep: true },
 )
-const { indexing, failure, warning, trouble, unwatched, holds, looking } = window
+const { indexing, failure, warning, trouble, unwatched, unreachable, holds, looking } = window
 /** What could not be made or joined, in words a person reads. */
 const unmade = computed(() => making.said.value)
 // `made` is spent in this window on making a note, so the count of vectors
@@ -137,6 +137,7 @@ const words = {
   plex: 'Plex',
   agent: 'Agent',
   stopped: 'The agent stopped here',
+  nothingSaid: 'Nothing said yet',
   reading: 'Reading',
   learning: 'Indexing',
   words: 'Searching by words only — no model set',
@@ -521,6 +522,7 @@ onUnmounted(() => {
           @submit="(text: string) => send(id, text)"
           @stop="talkIn(id)?.stop()"
         >
+          <template #silence>{{ unreachable || words.nothingSaid }}</template>
           <template #failure="{ turn }">
             {{ turn.voice === 'asked' ? words.unsent : words.stopped }}
           </template>
