@@ -6,7 +6,8 @@
  * vault's. An answer grows as its pieces arrive.
  *
  * Work is one line, saying what the agent has in hand now. It is put up the
- * moment a task is taken and taken down when the answer begins.
+ * moment a task is taken and taken down when the answer begins. Under it stands
+ * the wait, which is up for every moment nothing more particular is known.
  *
  * One of these is one thread of talk. Every question it sends carries the name
  * of the conversation, and the agent answers them all as one.
@@ -95,6 +96,11 @@ export function conversation(
     // it: what the agent has in hand now, replaced as that changes.
     const doing = `${next++}`
 
+    // The line for the wait, which stands whenever nothing more particular is
+    // known. A question is in hand from the moment it is sent, and the screen
+    // says so for every moment of it.
+    const wait = `${next++}`
+
     // What the agent has in hand, as far as anything has said. A call carrying
     // the text of a note is reported again every time more of it is written, so
     // the count is what moves while it is being written.
@@ -116,7 +122,12 @@ export function conversation(
       up = true
     }
 
-    nowDoing('arriving')
+    const waiting = (on: boolean) => {
+      if (on) put({ id: wait, voice: 'doing', text: words.thinking, about: '', state: 'arriving' })
+      else drop(wait)
+    }
+
+    waiting(true)
 
     let answer = ''
     let saying = ''
@@ -148,6 +159,7 @@ export function conversation(
 
         switch (step.kind) {
           case 'said':
+            waiting(false)
             if (!saying) {
               takeDown()
               saying = `${next++}`
@@ -159,6 +171,7 @@ export function conversation(
 
           case 'doing':
             settleAnswer()
+            waiting(false)
             says = spoken(step.tool)
             about = step.about
             nowDoing('arriving', step.written)
@@ -166,9 +179,11 @@ export function conversation(
 
           // A tool answered. Which one is not said, and with two in hand this is
           // one of them, so the line keeps its name and stops claiming to be
-          // running. What comes next is named when it begins.
+          // running. The wait goes up under it: what comes next is the model,
+          // and it is named when it begins.
           case 'answered':
             if (up) nowDoing('settled')
+            waiting(true)
             break
 
           // A request to the model has begun: from here, what happens is not
@@ -176,9 +191,8 @@ export function conversation(
           // stays below the last thing said and not below a turn still growing.
           case 'thinking':
             settleAnswer()
-            says = words.thinking
-            about = ''
-            nowDoing('arriving')
+            takeDown()
+            waiting(true)
             break
 
           case 'stopped':
@@ -187,6 +201,7 @@ export function conversation(
         }
       }
       takeDown()
+      waiting(false)
       const said = answer !== ''
       settleAnswer()
 
@@ -198,6 +213,7 @@ export function conversation(
       }
     } catch {
       takeDown()
+      waiting(false)
       settleAnswer()
       if (!flight.signal.aborted) {
         put({ id: `${next++}`, voice: 'answered', text: words.unreachable, state: 'failed' })

@@ -237,6 +237,52 @@ describe('a wait that explains itself', () => {
     await asking
   })
 
+  /**
+   * The failure this guards against is a screen with nothing moving on it. A
+   * model that has been handed a tool's answer says nothing for as long as it
+   * takes to read it, and a person watching that has no way to tell it apart
+   * from an agent that died.
+   */
+  it('says it is working while a tool that answered leads nowhere yet', async () => {
+    let release = () => {}
+    const held = new Promise<void>((go) => {
+      release = go
+    })
+    const talk = conversation(
+      doing([used('Create a note', "Vidura's warning", 4000), answered()], held),
+      words,
+      called,
+      now,
+    )
+    const asking = talk.ask('write it up', '')
+    await nap()
+
+    const lines = talk.turns.value.filter((turn) => turn.voice === 'doing')
+    expect(lines.map((turn) => [turn.text, turn.state])).toEqual([
+      ['Create a note', 'settled'],
+      [words.thinking, 'arriving'],
+    ])
+
+    release()
+    await asking
+  })
+
+  it('says it is working before anything at all has come back', async () => {
+    let release = () => {}
+    const held = new Promise<void>((go) => {
+      release = go
+    })
+    const talk = conversation(doing([], held), words, called, now)
+    const asking = talk.ask('write it up', '')
+    await nap()
+
+    const line = talk.turns.value.find((turn) => turn.voice === 'doing')
+    expect(line?.text).toBe(words.thinking)
+    expect(line?.state).toBe('arriving')
+
+    release()
+    await asking
+  })
 })
 
 
