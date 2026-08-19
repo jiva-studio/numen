@@ -77,11 +77,10 @@ func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
 	}
 }
 
-// The vault says whether it has work in hand, and a client asks again for as long
-// as it does. The counts of that work move with no file changing, so nothing else
-// can say there is more to come: never set, and the numbers stand still while a
-// library is read; never cleared, and a client asks every two seconds for ever.
-func TestAVaultSaysWhileItIsBeingRead(t *testing.T) {
+// Reading a vault is work, and work is one entry in the list of what is being
+// done. A pass that reports itself anywhere else draws a second card for the
+// same work, with a count of its own that nobody can place.
+func TestAVaultSaysWhatItIsDoingWhileItReadsItself(t *testing.T) {
 	cfg := vault(t, embed.Config{})
 
 	opened, err := webui.Open(t.Context(), cfg, os.Stderr)
@@ -90,13 +89,22 @@ func TestAVaultSaysWhileItIsBeingRead(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = opened.Close() })
 
-	// Set before the reading goroutine starts, so a client asking between opening
-	// and the first read is told there is more to come.
-	if !opened.API.Busy.Load() {
-		t.Error("a vault just opened says it has nothing in hand")
+	// Said before the reading goroutine starts, so a window that opens on a
+	// fresh vault is shown the walk from its first moment.
+	list := opened.API.Tasking.List()
+	if len(list) != 1 {
+		t.Errorf("a vault just opened is doing %+v, want the walk of its notes", list)
+	}
+	// Nobody asked for it, so it is drawn once it has lasted.
+	for _, at := range list {
+		if at.Asked {
+			t.Errorf("%q says a person asked for it", at.Doing)
+		}
 	}
 
-	waitFor(t, func() bool { return !opened.API.Busy.Load() })
+	// Each pass takes itself out when it ends, so a vault that has been read
+	// says it is doing nothing.
+	waitFor(t, func() bool { return len(opened.API.Tasking.List()) == 0 })
 }
 
 // waitFor gives a background reading its time and says what it was waiting for.

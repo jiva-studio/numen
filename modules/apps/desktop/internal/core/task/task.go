@@ -36,6 +36,11 @@ type Task struct {
 	// stays in the list until whoever put it there takes it out, because a
 	// failure nobody was shown is a failure nobody can act on.
 	Failed string
+
+	// Asked is set for work a person started and is waiting to be told about.
+	// Work nobody asked for is shown once it has lasted, and most of it ends
+	// before that.
+	Asked bool
 }
 
 // Tasks is what the application is doing now.

@@ -444,8 +444,6 @@ type StateResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Path  string                 `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
-	// Indexed is how many notes the running scan has stored.
-	Indexed int64 `protobuf:"varint,3,opt,name=indexed,proto3" json:"indexed,omitempty"`
 	// Ready is set when the scan has finished.
 	Ready bool `protobuf:"varint,4,opt,name=ready,proto3" json:"ready,omitempty"`
 	// Why the scan stopped, when it stopped for a reason. A vault that could
@@ -463,34 +461,10 @@ type StateResponse struct {
 	// for a vault nothing has cut yet.
 	Chunks   int64 `protobuf:"varint,7,opt,name=chunks,proto3" json:"chunks,omitempty"`
 	Embedded int64 `protobuf:"varint,8,opt,name=embedded,proto3" json:"embedded,omitempty"`
-	// Reading is the source being read now, as the vault calls it. Empty when
-	// nothing is being read, which is not the same as everything being done:
-	// `ready` says that.
-	Reading string `protobuf:"bytes,9,opt,name=reading,proto3" json:"reading,omitempty"`
 	// Embedding says whether anything is going to turn the chunks into vectors.
 	// False for an installation with no model, where `embedded` stays where it is
 	// and the vault is searched by its words.
-	Embedding bool `protobuf:"varint,10,opt,name=embedding,proto3" json:"embedding,omitempty"`
-	// Books is how many the vault holds, and books_read how many of those have
-	// been accounted for — read, skipped as unchanged, or found gone. Cutting is
-	// counted in books because that is what it opens; embedding is counted in
-	// chunks, and the two phases are told apart by `learning`.
-	Books     int64 `protobuf:"varint,11,opt,name=books,proto3" json:"books,omitempty"`
-	BooksRead int64 `protobuf:"varint,12,opt,name=books_read,json=booksRead,proto3" json:"books_read,omitempty"`
-	// Learning names a phase: it is set while vectors are being made, and from
-	// the moment a write lands until they have been. It is what tells the two
-	// phases apart, since both name a source and move a count.
-	Learning bool `protobuf:"varint,13,opt,name=learning,proto3" json:"learning,omitempty"`
-	// Busy is set while the vault is still being read: its notes, then its books,
-	// then their vectors. Reading a book and embedding one change no file, so this
-	// is the only thing that says there is more to come. `ready` says the notes
-	// are done, which is a smaller claim.
-	Busy bool `protobuf:"varint,14,opt,name=busy,proto3" json:"busy,omitempty"`
-	// Owing is how many chunks the pass now running found with no vector, and
-	// made is how many of those it has made one for. They are the work in hand,
-	// where chunks and embedded are the whole of what the vault holds.
-	Owing         int64 `protobuf:"varint,15,opt,name=owing,proto3" json:"owing,omitempty"`
-	Made          int64 `protobuf:"varint,16,opt,name=made,proto3" json:"made,omitempty"`
+	Embedding     bool `protobuf:"varint,10,opt,name=embedding,proto3" json:"embedding,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -539,13 +513,6 @@ func (x *StateResponse) GetPath() string {
 	return ""
 }
 
-func (x *StateResponse) GetIndexed() int64 {
-	if x != nil {
-		return x.Indexed
-	}
-	return 0
-}
-
 func (x *StateResponse) GetReady() bool {
 	if x != nil {
 		return x.Ready
@@ -588,60 +555,11 @@ func (x *StateResponse) GetEmbedded() int64 {
 	return 0
 }
 
-func (x *StateResponse) GetReading() string {
-	if x != nil {
-		return x.Reading
-	}
-	return ""
-}
-
 func (x *StateResponse) GetEmbedding() bool {
 	if x != nil {
 		return x.Embedding
 	}
 	return false
-}
-
-func (x *StateResponse) GetBooks() int64 {
-	if x != nil {
-		return x.Books
-	}
-	return 0
-}
-
-func (x *StateResponse) GetBooksRead() int64 {
-	if x != nil {
-		return x.BooksRead
-	}
-	return 0
-}
-
-func (x *StateResponse) GetLearning() bool {
-	if x != nil {
-		return x.Learning
-	}
-	return false
-}
-
-func (x *StateResponse) GetBusy() bool {
-	if x != nil {
-		return x.Busy
-	}
-	return false
-}
-
-func (x *StateResponse) GetOwing() int64 {
-	if x != nil {
-		return x.Owing
-	}
-	return 0
-}
-
-func (x *StateResponse) GetMade() int64 {
-	if x != nil {
-		return x.Made
-	}
-	return 0
 }
 
 type TasksRequest struct {
@@ -747,7 +665,11 @@ type Task struct {
 	Done  int64 `protobuf:"varint,4,opt,name=done,proto3" json:"done,omitempty"`
 	Total int64 `protobuf:"varint,5,opt,name=total,proto3" json:"total,omitempty"`
 	// Failed is why the work stopped, when it stopped badly.
-	Failed        string `protobuf:"bytes,6,opt,name=failed,proto3" json:"failed,omitempty"`
+	Failed string `protobuf:"bytes,6,opt,name=failed,proto3" json:"failed,omitempty"`
+	// Asked is set for work a person started and is waiting to be told about.
+	// Work nobody asked for is drawn once it has lasted, and most of it is over
+	// before that.
+	Asked         bool `protobuf:"varint,7,opt,name=asked,proto3" json:"asked,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -822,6 +744,13 @@ func (x *Task) GetFailed() string {
 		return x.Failed
 	}
 	return ""
+}
+
+func (x *Task) GetAsked() bool {
+	if x != nil {
+		return x.Asked
+	}
+	return false
 }
 
 type OpeningRequest struct {
@@ -2678,37 +2607,31 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x04seat\x18\x02 \x01(\x0e2\x0e.numen.v1.SeatR\x04seat\x12\x14\n" +
 	"\x05label\x18\x03 \x01(\tR\x05label\x12\x18\n" +
 	"\athrough\x18\x04 \x01(\tR\athrough\"\x0e\n" +
-	"\fStateRequest\"\xba\x03\n" +
+	"\fStateRequest\"\xcb\x02\n" +
 	"\rStateResponse\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\x12\x18\n" +
-	"\aindexed\x18\x03 \x01(\x03R\aindexed\x12\x14\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
 	"\x05ready\x18\x04 \x01(\bR\x05ready\x12\x16\n" +
 	"\x06failed\x18\x05 \x01(\tR\x06failed\x12\x1c\n" +
 	"\tunwatched\x18\x06 \x01(\tR\tunwatched\x12 \n" +
 	"\vunreachable\x18\x11 \x01(\tR\vunreachable\x12\x16\n" +
 	"\x06chunks\x18\a \x01(\x03R\x06chunks\x12\x1a\n" +
-	"\bembedded\x18\b \x01(\x03R\bembedded\x12\x18\n" +
-	"\areading\x18\t \x01(\tR\areading\x12\x1c\n" +
+	"\bembedded\x18\b \x01(\x03R\bembedded\x12\x1c\n" +
 	"\tembedding\x18\n" +
-	" \x01(\bR\tembedding\x12\x14\n" +
-	"\x05books\x18\v \x01(\x03R\x05books\x12\x1d\n" +
-	"\n" +
-	"books_read\x18\f \x01(\x03R\tbooksRead\x12\x1a\n" +
-	"\blearning\x18\r \x01(\bR\blearning\x12\x12\n" +
-	"\x04busy\x18\x0e \x01(\bR\x04busy\x12\x14\n" +
-	"\x05owing\x18\x0f \x01(\x03R\x05owing\x12\x12\n" +
-	"\x04made\x18\x10 \x01(\x03R\x04made\"\x0e\n" +
+	" \x01(\bR\tembeddingJ\x04\b\x03\x10\x04J\x04\b\t\x10\n" +
+	"J\x04\b\v\x10\x11R\x05booksR\n" +
+	"books_readR\x04busyR\aindexedR\blearningR\x04madeR\x05owingR\areading\"\x0e\n" +
 	"\fTasksRequest\"5\n" +
 	"\rTasksResponse\x12$\n" +
-	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\x84\x01\n" +
+	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\x9a\x01\n" +
 	"\x04Task\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05doing\x18\x02 \x01(\tR\x05doing\x12\x14\n" +
 	"\x05about\x18\x03 \x01(\tR\x05about\x12\x12\n" +
 	"\x04done\x18\x04 \x01(\x03R\x04done\x12\x14\n" +
 	"\x05total\x18\x05 \x01(\x03R\x05total\x12\x16\n" +
-	"\x06failed\x18\x06 \x01(\tR\x06failed\"\x10\n" +
+	"\x06failed\x18\x06 \x01(\tR\x06failed\x12\x14\n" +
+	"\x05asked\x18\a \x01(\bR\x05asked\"\x10\n" +
 	"\x0eOpeningRequest\"C\n" +
 	"\x0fOpeningResponse\x12'\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteH\x00R\x04note\x88\x01\x01B\a\n" +

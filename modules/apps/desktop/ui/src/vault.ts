@@ -41,6 +41,7 @@ export const core: Core & Asking = {
         done: Number(at.done),
         total: Number(at.total),
         failed: at.failed,
+        asked: at.asked,
       }))
     }
   },

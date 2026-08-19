@@ -169,7 +169,10 @@ func (r *Recognising) read(ctx context.Context, v domain.Vault, id, path string)
 	return nil
 }
 
+// say puts this reading in the list of what is being done. A person asked for
+// it and is waiting to be told it began.
 func (r *Recognising) say(at task.Task) {
+	at.Asked = true
 	if r.tasks != nil {
 		r.tasks.Set(at)
 	}

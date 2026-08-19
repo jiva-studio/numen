@@ -50,7 +50,22 @@ func doing(list []task.Task) []*v1.Task {
 			Done:   at.Done,
 			Total:  at.Total,
 			Failed: at.Failed,
+			Asked:  at.Asked,
 		})
 	}
 	return out
+}
+
+// say puts one piece of work in the list, for a build that keeps one.
+func (a *API) say(at task.Task) {
+	if a.Tasking != nil {
+		a.Tasking.Set(at)
+	}
+}
+
+// finished takes one piece of work out of the list.
+func (a *API) finished(id string) {
+	if a.Tasking != nil {
+		a.Tasking.Done(id)
+	}
 }

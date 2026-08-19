@@ -159,9 +159,6 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		Known:        db.Queries(),
 		Maintenance:  db.Maintenance(),
 		RebuildIndex: cfg.RebuildIndex,
-		OnProgress: func(res usecase.ScanResult) {
-			api.Indexed.Store(int64(res.Indexed))
-		},
 	}
 	api.Scan = scan.Execute
 
@@ -271,6 +268,14 @@ func answering(ctx context.Context, pages *leaving) bool {
 		return false
 	}
 }
+
+// What each pass behind the window is called in the list of what is being done.
+// One name each, so a pass that reports itself again replaces itself.
+const (
+	walkingNotes  = "walking the notes"
+	readingBooks  = "reading the books"
+	makingVectors = "making the vectors"
+)
 
 // settled is how long the vault has to have been still before the notes written
 // into it are embedded. It is longer than the bound in ui/src/tab.ts, which
@@ -383,9 +388,9 @@ func begin(
 		}
 	}
 
-	// Set before the goroutine starts, so that a client asking between opening
-	// and the first read is told there is more to come.
-	api.Busy.Store(true)
+	// Said before the goroutine starts, so a window that opens on a fresh vault
+	// is shown the walk from its first moment.
+	api.say(task.Task{ID: walkingNotes, Doing: "Reading the vault"})
 
 	var running sync.WaitGroup
 
@@ -411,8 +416,15 @@ func begin(
 	// first is the vault's first reading: the scan, and the notes written while
 	// it ran read once more. It answers whether the vault was read.
 	first := func() bool {
-		result, err := scan.Execute(ctx, api.Vault)
-		api.Indexed.Store(int64(result.Indexed))
+		defer api.finished(walkingNotes)
+
+		// The walk a person watches is this one. A later one is the index being
+		// brought level with a vault that moved under it.
+		walk := scan
+		walk.OnProgress = func(res usecase.ScanResult) {
+			api.say(task.Task{ID: walkingNotes, Doing: "Reading the vault", Done: int64(res.Indexed)})
+		}
+		result, err := walk.Execute(ctx, api.Vault)
 
 		// The scan writes in groups from what it read, so its copy of a note
 		// lands last however early the note was read. Every note brought up to
@@ -445,10 +457,6 @@ func begin(
 	running.Add(1)
 	go func() {
 		defer running.Done()
-		// Set false on every way out of the reading.
-		defer api.Busy.Store(false)
-		// Set false on every way out of the reading, and embedding is part of it.
-		defer api.Learning.Store(false)
 
 		// Reading the sources comes after the notes: a vault is useful the
 		// moment its notes answer, and a library takes minutes to cut and hours
@@ -457,8 +465,6 @@ func begin(
 		if first() {
 			readSources(ctx, cfg, db, api, readers, embedder, out)
 		}
-		// Everything this vault owed is read.
-		api.Busy.Store(false)
 
 		// What arrives while the window is open is read where the first reading
 		// was: one at a time, and never while another is running. A vault whose
@@ -470,35 +476,24 @@ func begin(
 			case <-ctx.Done():
 				return
 			case <-wake.sources:
-				api.Busy.Store(true)
 				readSources(ctx, cfg, db, api, readers, embedder, out)
-				api.Busy.Store(false)
 			case <-wake.read:
 				// A batch of pages is on disk. What has been read of the
 				// document is cut and embedded while the rest of it is still
 				// being read.
 				if held := owed.take(); len(held) > 0 {
-					api.Busy.Store(true)
 					for path, v := range held {
 						cutSource(ctx, cfg, db, readers, embedder, v, path, out)
 					}
 					embedSources(ctx, cfg, db, api, readers, embedder, out)
-					api.Busy.Store(false)
 				}
 			case <-wake.notes:
-				// Every write puts the pass off again. What was typed is
-				// embedded once the vault has been still, and there is work
-				// to come from the moment the write lands.
-				if text(&api.Model) != "" {
-					api.Busy.Store(true)
-					api.Learning.Store(true)
-				}
+				// Every write puts the pass off again: what was typed is
+				// embedded once the vault has been still.
 				quiet = time.After(wake.still)
 			case <-quiet:
 				quiet = nil
-				api.Busy.Store(true)
 				embedSources(ctx, cfg, db, api, readers, embedder, out)
-				api.Busy.Store(false)
 			}
 		}
 	}()
@@ -583,12 +578,16 @@ func readSources(
 	}
 	extract.RebuildIndex = cfg.RebuildIndex
 	extract.OnProgress = func(res source.ExtractResult) {
-		api.Reading.Store(res.Reading)
-		api.Books.Store(int64(res.Seen))
-		// Every book the walk found leaves this pass one of four ways, and all
-		// four count as done.
-		api.BooksRead.Store(int64(res.Extracted + res.Unchanged + res.Unreadable + res.Vanished))
+		api.say(task.Task{
+			ID: readingBooks, Doing: "Reading books", About: res.Reading,
+			// Every book the walk found leaves this pass one of four ways, and
+			// all four count as done.
+			Done:  int64(res.Extracted + res.Unchanged + res.Unreadable + res.Vanished),
+			Total: int64(res.Seen),
+		})
 	}
+
+	api.say(task.Task{ID: readingBooks, Doing: "Reading books"})
 	if res, err := extract.Execute(ctx, api.Vault); err != nil {
 		if !errors.Is(err, context.Canceled) {
 			fmt.Fprintf(out, "reading the sources of %s: %v\n", api.Vault.Name, err)
@@ -596,8 +595,7 @@ func readSources(
 	} else if res.Extracted > 0 {
 		fmt.Fprintf(out, "%s: %d books, %d chunks\n", api.Vault.Name, res.Extracted, res.Chunks)
 	}
-	api.Reading.Store("")
-	api.Owed.Store(&Owed{})
+	api.finished(readingBooks)
 
 	embedSources(ctx, cfg, db, api, readers, embedder, out)
 }
@@ -703,20 +701,21 @@ func embedSources(
 		Vectors:  db.Vectors(),
 		Embedder: embedder,
 		OnProgress: func(res source.EmbedResult) {
-			api.Reading.Store(res.Reading)
 			// A person who edited one note is waiting on that note, so this is
 			// the work in hand and not the size of the vault.
-			api.Owed.Store(&Owed{Owing: owing, Made: int64(res.Embedded)})
+			api.say(task.Task{
+				ID: makingVectors, Doing: "Indexing",
+				Done: int64(res.Embedded), Total: owing,
+			})
 		},
 	}
-	api.Owed.Store(&Owed{Owing: owing})
-	api.Learning.Store(true)
+	// This pass says what it owes and what it has made. The source a vector is
+	// made from is named by the reading of that source.
+	api.say(task.Task{ID: makingVectors, Doing: "Indexing", Total: owing})
 	if _, err := embed.Execute(ctx, api.Vault); err != nil && !errors.Is(err, context.Canceled) {
 		fmt.Fprintf(out, "embedding %s: %v\n", api.Vault.Name, err)
 	}
-	api.Learning.Store(false)
-	api.Reading.Store("")
-	api.Owed.Store(&Owed{})
+	api.finished(makingVectors)
 }
 
 // Showing is the vault the window has open.

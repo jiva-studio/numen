@@ -72,12 +72,11 @@ type API struct {
 	// Writing is the writes taken and not yet finished.
 	Writing inflight
 
-	// Indexed counts what the scan has stored so far. Ready is set when it
-	// finished, Failed when it could not — a vault that could not be read is
-	// not an empty one, and the interface has to be able to tell them apart.
-	Indexed atomic.Int64
-	Ready   atomic.Bool
-	Failed  atomic.Value
+	// Ready is set when the scan finished, Failed when it could not — a vault
+	// that could not be read is not an empty one, and the interface has to be
+	// able to tell them apart.
+	Ready  atomic.Bool
+	Failed atomic.Value
 	// Unwatched is why the vault is not being followed, when it is not.
 	Unwatched atomic.Value
 	// Unreachable is why an agent cannot be reached, when one cannot.
@@ -99,23 +98,6 @@ type API struct {
 	// Recipe is everything that decides what a vector is, which is what a
 	// vector is found by.
 	Recipe atomic.Value
-	// Reading is the source being read now, empty between sources and after the
-	// last one.
-	Reading atomic.Value
-	// Books counts what the vault holds and BooksRead how far cutting has got
-	// through them. Cutting opens files, so a book is its unit; embedding works
-	// on what cutting produced, and Learning says which of the two is running.
-	Books     atomic.Int64
-	BooksRead atomic.Int64
-	Learning  atomic.Bool
-	// Owed is what the pass now running found to do and how much of it it has
-	// done. The two are one fact and are stored together: read one at a time,
-	// they can be seen in a state neither of them was ever in.
-	Owed atomic.Pointer[Owed]
-	// Busy is set for as long as this vault is being read: its notes, then its
-	// books, then their vectors. Reading a book and embedding one change no
-	// file, so a client asks again for as long as it holds.
-	Busy atomic.Bool
 }
 
 // failure is what stopped the scan, or empty while nothing has.
@@ -127,26 +109,14 @@ func text(v *atomic.Value) string {
 }
 
 func (a *API) State(ctx context.Context, _ *connect.Request[v1.StateRequest]) (*connect.Response[v1.StateResponse], error) {
-	owed := a.Owed.Load()
-	if owed == nil {
-		owed = &Owed{}
-	}
 	out := &v1.StateResponse{
 		Name:        a.Vault.Name,
 		Path:        a.Vault.Path,
-		Indexed:     a.Indexed.Load(),
 		Ready:       a.Ready.Load(),
 		Failed:      a.failure(),
 		Unwatched:   text(&a.Unwatched),
 		Unreachable: text(&a.Unreachable),
-		Reading:     text(&a.Reading),
 		Embedding:   text(&a.Model) != "",
-		Books:       a.Books.Load(),
-		BooksRead:   a.BooksRead.Load(),
-		Learning:    a.Learning.Load(),
-		Owing:       owed.Owing,
-		Made:        owed.Made,
-		Busy:        a.Busy.Load(),
 	}
 	// A count that cannot be taken leaves the pair at nothing, and the rest of
 	// the state is answered as it stands.
@@ -243,11 +213,4 @@ func seatOf(s domain.Seat) v1.Seat {
 	default:
 		return v1.Seat_SEAT_UNSPECIFIED
 	}
-}
-
-// Owed is the work one pass has in hand: what it found to do, and how much of
-// it it has done.
-type Owed struct {
-	Owing int64
-	Made  int64
 }

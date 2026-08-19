@@ -154,10 +154,13 @@ message Seated {
 message StateRequest {}
 
 message StateResponse {
+  // What is being done behind the window is Tasks. What is here is what the
+  // vault is.
+  reserved 3, 9, 11 to 16;
+  reserved "books", "books_read", "busy", "indexed", "learning", "made", "owing", "reading";
+
   string name = 1;
   string path = 2;
-  // Indexed is how many notes the running scan has stored.
-  int64 indexed = 3;
   // Ready is set when the scan has finished.
   bool ready = 4;
 
@@ -180,40 +183,10 @@ message StateResponse {
   int64 chunks = 7;
   int64 embedded = 8;
 
-  // Reading is the source being read now, as the vault calls it. Empty when
-  // nothing is being read, which is not the same as everything being done:
-  // `ready` says that.
-  string reading = 9;
-
   // Embedding says whether anything is going to turn the chunks into vectors.
   // False for an installation with no model, where `embedded` stays where it is
   // and the vault is searched by its words.
   bool embedding = 10;
-
-  // Books is how many the vault holds, and books_read how many of those have
-  // been accounted for — read, skipped as unchanged, or found gone. Cutting is
-  // counted in books because that is what it opens; embedding is counted in
-  // chunks, and the two phases are told apart by `learning`.
-  int64 books = 11;
-  int64 books_read = 12;
-
-  // Learning names a phase: it is set while vectors are being made, and from
-  // the moment a write lands until they have been. It is what tells the two
-  // phases apart, since both name a source and move a count.
-  bool learning = 13;
-
-  // Busy is set while the vault is still being read: its notes, then its books,
-  // then their vectors. Reading a book and embedding one change no file, so this
-  // is the only thing that says there is more to come. `ready` says the notes
-  // are done, which is a smaller claim.
-  bool busy = 14;
-
-  // Owing is how many chunks the pass now running found with no vector, and
-  // made is how many of those it has made one for. They are the work in hand,
-  // where chunks and embedded are the whole of what the vault holds.
-  int64 owing = 15;
-  int64 made = 16;
-
 }
 
 message TasksRequest {}
@@ -248,6 +221,11 @@ message Task {
 
   // Failed is why the work stopped, when it stopped badly.
   string failed = 6;
+
+  // Asked is set for work a person started and is waiting to be told about.
+  // Work nobody asked for is drawn once it has lasted, and most of it is over
+  // before that.
+  bool asked = 7;
 }
 
 message OpeningRequest {}

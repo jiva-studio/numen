@@ -19,17 +19,7 @@ const idle = {
   unreachable: '',
   chunks: 0n,
   embedded: 0n,
-  owing: 0n,
-  made: 0n,
-  reading: '',
   embedding: false,
-  books: 0n,
-  booksRead: 0n,
-  recognising: '',
-  pages: 0n,
-  pagesRead: 0n,
-  learning: false,
-  busy: false,
 }
 
 /** What the application says over the quit stream, when a test says it. */
