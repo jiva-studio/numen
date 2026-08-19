@@ -18,6 +18,8 @@ const settled = {
   unwatched: '',
   chunks: 0n,
   embedded: 0n,
+  owing: 0n,
+  made: 0n,
   reading: '',
   embedding: false,
   books: 0n,
@@ -543,6 +545,8 @@ describe('a vault reading itself', () => {
           busy: asks < 5,
           chunks: 1000n,
           embedded: BigInt(asks * 20),
+          owing: 1000n,
+          made: BigInt(asks * 20),
           embedding: true,
           learning: true,
         }

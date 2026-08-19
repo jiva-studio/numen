@@ -45,17 +45,17 @@ export const theme = EditorView.theme({
      line stands as tall as its text in any font, and its own box is that text's
      height. */
   '.cm-widgetBuffer': { verticalAlign: 'baseline', height: '1em', marginTop: '-1em' },
-  /* Selection, at the reach the editor's own base theme uses for it. That theme
-     is told neither light nor dark, so it paints a light ground under text this
-     one keeps on either. */
+  /* Selection, the one colour selected text is painted with anywhere. The base
+     theme is told neither light nor dark, so it paints a light ground under
+     text this one keeps on either. */
   '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
-    backgroundColor: 'light-dark(#2f6fd038, #78a9ef42)',
+    backgroundColor: 'var(--numen-selection)',
   },
   '&:not(.cm-focused) > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
-    backgroundColor: 'light-dark(#2f6fd01f, #78a9ef24)',
+    backgroundColor: 'var(--numen-selection-away)',
   },
   '.cm-selectionBackground, .cm-content ::selection': {
-    backgroundColor: 'light-dark(#2f6fd038, #78a9ef42)',
+    backgroundColor: 'var(--numen-selection)',
   },
 
   /* The ground the base theme lays under a line and a special character is the

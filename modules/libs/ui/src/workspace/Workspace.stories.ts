@@ -394,3 +394,65 @@ export const FollowsTheModel: Story = {
     await expect((drawn[0]?.width ?? 0) / total).toBeCloseTo(0.72, 1)
   },
 }
+
+/**
+ * A handle dragged across the text moves the handle and selects nothing.
+ *
+ * A selection running through what the panels hold is one the engine works out
+ * again for every movement of the pointer, which is what a person feels.
+ */
+export const SelectsNothingWhileResizing: Story = {
+  tags: ['!dev'],
+  play: async ({ canvasElement }) => {
+    const handle = canvasElement.querySelector('.branch__handle')
+    if (!handle) throw new Error('no handle')
+    const at = boxOf(handle)
+    const from = { clientX: at.x + at.width / 2, clientY: at.y + at.height / 2 }
+
+    /** Whether the root was marked while the pointer was on its way. */
+    let marked = false
+    const watch = () => {
+      marked ||= document.documentElement.hasAttribute('data-resizing')
+    }
+    window.addEventListener('pointermove', watch, true)
+
+    await expect(document.documentElement.hasAttribute('data-resizing')).toBe(false)
+
+    await userEvent.pointer([
+      { keys: '[MouseLeft>]', target: handle, coords: from },
+      { coords: { clientX: from.clientX - 120, clientY: from.clientY } },
+      { coords: { clientX: from.clientX + 160, clientY: from.clientY + 40 } },
+      { keys: '[/MouseLeft]' },
+    ])
+
+    window.removeEventListener('pointermove', watch, true)
+
+    await expect(marked).toBe(true)
+    await expect(document.documentElement.hasAttribute('data-resizing')).toBe(false)
+    await expect(getSelection()?.toString() ?? '').toBe('')
+  },
+}
+
+/**
+ * The reach around a handle catches a press on either side of the line.
+ *
+ * The splitter answers a press from a few pixels away, and those pixels stand
+ * over the panels. Whichever panel is drawn after the handle takes them unless
+ * the reach stands above it, and what that panel holds then reads the press as
+ * its own — an editor there starts a selection and runs it through its text for
+ * the whole drag.
+ */
+export const CatchesAPressOnEitherSideOfTheLine: Story = {
+  tags: ['!dev'],
+  play: async ({ canvasElement }) => {
+    const handle = canvasElement.querySelector('.branch__handle')
+    if (!handle) throw new Error('no handle')
+    const at = boxOf(handle)
+    const middle = at.y + at.height / 2
+
+    for (const away of [-4, 4]) {
+      const x = at.x + at.width / 2 + away
+      await expect(document.elementFromPoint(x, middle)).toBe(handle)
+    }
+  },
+}

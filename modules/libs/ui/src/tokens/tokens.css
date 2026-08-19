@@ -62,6 +62,10 @@
   --numen-edge: light-dark(#c3c6cc, #3d424a);
   --numen-edge-label: light-dark(#7b7f87, #8b9098);
   --numen-ring: light-dark(#2f6fd0, #78a9ef);
+  /* The ground under selected text. The second is the same selection where the
+     keyboard is somewhere else. */
+  --numen-selection: light-dark(#2f6fd038, #78a9ef42);
+  --numen-selection-away: light-dark(#2f6fd01f, #78a9ef24);
   --numen-alarm: light-dark(#a33a32, #e08b83);
   /* The band something is said in that a person should read but need not act
      on at once. */

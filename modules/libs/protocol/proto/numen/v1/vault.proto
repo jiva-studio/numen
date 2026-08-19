@@ -24,6 +24,19 @@ service VaultService {
   // Neighbourhood is one note and everything joined to it.
   rpc Neighbourhood(NeighbourhoodRequest) returns (NeighbourhoodResponse);
 
+  // Titles is the names in a vault that match what was typed: a note's own
+  // title, and the headings inside notes. It is asked as a person types, and
+  // the last word matches on its prefix.
+  //
+  // It reads names and nothing else. Searching the text a vault holds is
+  // Search, and that answers with passages.
+  rpc Titles(TitlesRequest) returns (TitlesResponse);
+
+  // Search is the text a vault holds that answers what was typed, by the words
+  // in it or by what it means. The caller says which half runs, so a client
+  // drawing the two apart asks twice.
+  rpc Search(SearchRequest) returns (SearchResponse);
+
   // Changes reports the notes that changed on disk, for as long as the caller
   // listens. It says which notes, and nothing about them: the caller knows
   // what it is showing and asks for what it needs.
@@ -168,9 +181,10 @@ message StateResponse {
   int64 books = 11;
   int64 books_read = 12;
 
-  // Learning is set while vectors are being made. It is what tells the two
-  // phases apart: both name a source and move a count, and the counts are of
-  // different things.
+  // Learning names the phase rather than the instant: it is set while vectors
+  // are being made, and from the moment a write lands until they have been.
+  // It is what tells the two phases apart: both name a source and move a
+  // count, and the counts are of different things.
   bool learning = 13;
 
   // Busy is set while the vault is still being read: its notes, then its books,
@@ -178,6 +192,13 @@ message StateResponse {
   // is the only thing that says there is more to come. `ready` says the notes
   // are done, which is a smaller claim.
   bool busy = 14;
+
+  // Owing is how many chunks the pass now running found with no vector, and
+  // made is how many of those it has made one for. They are the work in hand,
+  // where chunks and embedded are the whole of what the vault holds: a person
+  // who edited one note is waiting on one chunk and not on the vault.
+  int64 owing = 15;
+  int64 made = 16;
 }
 
 message OpeningRequest {}
@@ -245,6 +266,99 @@ message NeighbourhoodRequest {
 message NeighbourhoodResponse {
   Note focus = 1;
   repeated Seated related = 2;
+}
+
+message TitlesRequest {
+  // What was typed, as it was typed. Words are matched together, and the last
+  // of them on its prefix.
+  string query = 1;
+
+  // How many names to answer with. Zero takes the number the vault chooses.
+  int32 limit = 2;
+}
+
+message TitlesResponse {
+  // The names that matched, best first, with a note's own title before a
+  // heading inside one.
+  repeated Titled found = 1;
+}
+
+// Titled is one name that matched, and the note it stands for. A note's own
+// title matched when there is no heading here; otherwise the note is what the
+// heading stands in.
+message Titled {
+  Note note = 1;
+
+  // The heading that matched, absent when the note's own title did.
+  optional Heading heading = 2;
+
+  // Where in that name the words stand, counted the way a client counts text:
+  // in UTF-16 code units.
+  // A word reached by its prefix is marked whole.
+  repeated Span at = 3;
+}
+
+// Heading is one line of a note that names what stands below it.
+message Heading {
+  string text = 1;
+
+  // The line it stands on, counted from the first line of the prose.
+  int32 line = 2;
+}
+
+// Span is a run of text, by where it begins and where it ends.
+message Span {
+  int32 from = 1;
+  int32 to = 2;
+}
+
+// Half is which half of a search runs.
+enum Half {
+  // Both halves run, and what they answer is merged into one ranking.
+  HALF_UNSPECIFIED = 0;
+
+  // The words typed, matched as words.
+  HALF_WORDS = 1;
+
+  // What the words mean, matched against the vectors the index holds. A vault
+  // nothing has embedded answers with nothing.
+  HALF_MEANING = 2;
+}
+
+message SearchRequest {
+  string query = 1;
+
+  // How many passages to answer with. Zero takes the number the vault chooses.
+  int32 limit = 2;
+
+  Half half = 3;
+}
+
+message SearchResponse {
+  // The passages that answer, best first, one per source.
+  repeated Passage found = 1;
+}
+
+// Passage is what a search returns: the text around a hit, and where it came
+// from.
+message Passage {
+  // The file the text was read out of, as the vault calls it.
+  string path = 1;
+
+  // The note the text was read out of, absent for a source that is not one.
+  // A window that opens notes offers to open these and no others.
+  optional Note note = 2;
+
+  string text = 3;
+
+  // Where in that text the words typed stand, counted the way a client counts
+  // text: in UTF-16 code units. Empty for a hit by meaning, which stands on no
+  // word in particular.
+  repeated Span at = 4;
+
+  // What the source's own numbering calls the place, empty when the format
+  // offered none.
+  string location = 5;
 }
 
 message ReadRequest {

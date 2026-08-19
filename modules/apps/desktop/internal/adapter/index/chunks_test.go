@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/embedding"
 )
 
 // The two vaults every scoping test here uses. Their content shares nothing, so
@@ -26,6 +27,30 @@ func bits(seed byte) []byte {
 		b[i] = seed
 	}
 	return b
+}
+
+// direction is the vector a seed stands for: dimension i takes the sign of the
+// bit the coarse vector keeps it in. Quantising it gives back `bits(seed)`, so
+// the two representations of a chunk agree.
+func direction(seed byte) []float32 {
+	v := make([]float32, 1024)
+	for i := range v {
+		v[i] = -1
+		if seed&(1<<(7-uint(i)%8)) != 0 {
+			v[i] = 1
+		}
+	}
+	return v
+}
+
+// precise is the full-precision half of a vector, one signed byte per dimension.
+func precise(v []float32) []byte {
+	q := embedding.Bytes(embedding.Normalise(v))
+	out := make([]byte, len(q))
+	for i, x := range q {
+		out[i] = byte(x)
+	}
+	return out
 }
 
 func opened(t *testing.T) *DB {
@@ -86,7 +111,7 @@ func vectorise(t *testing.T, db *DB, vault domain.Vault, seed byte) {
 	for _, p := range owing {
 		vectors = append(vectors, chunk.Vector{
 			Chunk: p.Chunk, Model: "model", Dims: 1024, Kind: "int8",
-			Value: bits(seed), Coarse: bits(seed),
+			Value: precise(direction(seed)), Coarse: bits(seed),
 		})
 	}
 	if err := db.Chunks().SaveVectors(ctx, vectors); err != nil {
@@ -104,18 +129,19 @@ func counted(t *testing.T, db *DB, statement string, args ...any) int {
 }
 
 func TestTheCoarsePassStaysInsideItsVault(t *testing.T) {
-	// A nearest-neighbour search answers with the whole table's best k. The two
-	// vaults are seeded so each one's nearest neighbour is the other's, so a
-	// query asked of the first is nearer to everything the second holds.
+	// A nearest-neighbour search answers with the whole table's best k. Both
+	// vaults are seeded near enough to either query to be an answer, and each
+	// query is the other vault's own vector, so the wrong vault's rows are the
+	// nearer ones and a lost filter puts them first.
 	ctx := t.Context()
 	db := opened(t)
-	book(t, db, first, "library/first.epub", 0x00)
+	book(t, db, first, "library/first.epub", 0xfe)
 	book(t, db, second, "library/second.epub", 0xff)
 
 	queries := db.ChunkQueries()
 
 	near := func(vault domain.Vault, seed byte) []domain.Passage {
-		matches, err := queries.Nearest(ctx, vault.ID, bits(seed), 10)
+		matches, err := queries.Nearest(ctx, vault.ID, direction(seed), 10)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -132,7 +158,7 @@ func TestTheCoarsePassStaysInsideItsVault(t *testing.T) {
 			t.Errorf("the first vault answered with %s, which belongs to the second", m.Source)
 		}
 	}
-	for _, m := range near(second, 0x00) {
+	for _, m := range near(second, 0xfe) {
 		if !strings.HasPrefix(m.Source, "library/second") {
 			t.Errorf("the second vault answered with %s, which belongs to the first", m.Source)
 		}
@@ -182,7 +208,7 @@ func TestAHitComesBackAsTheWindowThatIsRead(t *testing.T) {
 	book(t, db, first, "library/first.epub", 0x00)
 
 	queries := db.ChunkQueries()
-	dense, err := queries.Nearest(ctx, first.ID, bits(0x00), 10)
+	dense, err := queries.Nearest(ctx, first.ID, direction(0x00), 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -359,7 +385,7 @@ func TestRemovingASourceLeavesNothingSearchable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	matches, err := db.ChunkQueries().Nearest(ctx, first.ID, bits(0x00), 10)
+	matches, err := db.ChunkQueries().Nearest(ctx, first.ID, direction(0x00), 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -764,5 +790,70 @@ func TestAChunkThatWentIsWrittenNoVectorAndStopsNothing(t *testing.T) {
 	}
 	if gone != 1 {
 		t.Fatalf("%d of the chunks the pass was given went, want the one that was cut again", gone)
+	}
+}
+
+func TestAChunkTooFarFromTheQueryIsNoAnswer(t *testing.T) {
+	// A nearest-neighbour query answers with k rows whatever was asked. What a
+	// vault holds nothing near is not an answer, and the floor is what says so.
+	ctx := t.Context()
+	db := opened(t)
+	book(t, db, first, "library/first.epub", 0x00)
+	queries := db.ChunkQueries()
+
+	far, err := queries.Nearest(ctx, first.ID, direction(0xff), 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(far) != 0 {
+		t.Errorf("a vault pointing the other way answered with %v", far)
+	}
+
+	// The same vault, asked what it does hold.
+	near, err := queries.Nearest(ctx, first.ID, direction(0x00), 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(near) != 2 {
+		t.Errorf("%d answers, want the book's two small windows", len(near))
+	}
+}
+
+func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
+	// The two representations of a chunk are written apart here, so the bits say
+	// one thing and the full-precision vectors another. The coarse pass keeps
+	// several times what is asked for, and what leaves is the one the real
+	// vectors put first.
+	ctx := t.Context()
+	db := opened(t)
+	cutInto(t, db, first, "library/coarse.epub", "the passage the bits prefer")
+	cutInto(t, db, first, "library/true.epub", "the passage the vectors prefer")
+
+	owing, err := db.ChunkQueries().Unembedded(ctx, first.ID, "model", 0, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(owing) != 2 {
+		t.Fatalf("%d chunks owe a vector, want the two small windows", len(owing))
+	}
+	if err := db.Chunks().SaveVectors(ctx, []chunk.Vector{{
+		Chunk: owing[0].Chunk, Model: "model", Dims: 1024, Kind: "int8",
+		Coarse: bits(0xff), Value: precise(direction(0xfe)),
+	}, {
+		Chunk: owing[1].Chunk, Model: "model", Dims: 1024, Kind: "int8",
+		Coarse: bits(0xfe), Value: precise(direction(0xff)),
+	}}); err != nil {
+		t.Fatal(err)
+	}
+
+	near, err := db.ChunkQueries().Nearest(ctx, first.ID, direction(0xff), 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(near) != 1 {
+		t.Fatalf("%d answers, want the one that was asked for", len(near))
+	}
+	if near[0].Source != "library/true.epub" {
+		t.Errorf("the answer is %s, which is the one the bits put first", near[0].Source)
 	}
 }

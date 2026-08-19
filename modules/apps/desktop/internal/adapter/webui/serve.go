@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/source"
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
@@ -113,6 +114,12 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 			api.Model.Store(model.String())
 		}
 	}
+
+	// The search the window offers is the search the application already does.
+	// It is built once the embedder is settled, so a model that could not be
+	// fitted leaves the words half to answer on its own.
+	finds := search.New(db.Passages(), cfg.VaultReaders(), embedder)
+	api.Finds = &finds
 	scan := usecase.Scan{
 		Readers:      cfg.VaultReaders(),
 		Vaults:       db.Vaults(),
@@ -397,7 +404,13 @@ func begin(
 				api.Busy.Store(false)
 			case <-wake.notes:
 				// Every write puts the pass off again. What was typed is
-				// embedded once the vault has been still.
+				// embedded once the vault has been still, and there is work
+				// to come from the moment the write lands: a window told
+				// nothing until the wait is over stops watching and misses it.
+				if text(&api.Model) != "" {
+					api.Busy.Store(true)
+					api.Learning.Store(true)
+				}
 				quiet = time.After(wake.still)
 			case <-quiet:
 				quiet = nil
@@ -509,6 +522,8 @@ func readSources(
 		fmt.Fprintf(out, "%s: %d books, %d chunks\n", api.Vault.Name, res.Extracted, res.Chunks)
 	}
 	api.Reading.Store("")
+	api.Owing.Store(0)
+	api.Made.Store(0)
 
 	embedSources(ctx, db, api, readers, embedder, out)
 }
@@ -537,14 +552,25 @@ func embedSources(
 		Embedder: embedder,
 		OnProgress: func(res source.EmbedResult) {
 			api.Reading.Store(res.Reading)
+			// What this pass found to do and how much of it is done. A person who
+			// edited one note is waiting on that note, and a count of the vault
+			// tells them nothing about it.
+			api.Owing.Store(int64(res.Owing))
+			api.Made.Store(int64(res.Embedded))
 		},
 	}
+	// Nothing found yet, so nothing is owed: the counts of the pass before this
+	// one are not what this one is doing.
+	api.Owing.Store(0)
+	api.Made.Store(0)
 	api.Learning.Store(true)
 	if _, err := embed.Execute(ctx, api.Vault); err != nil && !errors.Is(err, context.Canceled) {
 		fmt.Fprintf(out, "embedding %s: %v\n", api.Vault.Name, err)
 	}
 	api.Learning.Store(false)
 	api.Reading.Store("")
+	api.Owing.Store(0)
+	api.Made.Store(0)
 }
 
 // Showing is the vault the window has open.

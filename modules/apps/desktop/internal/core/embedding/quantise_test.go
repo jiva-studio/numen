@@ -104,3 +104,44 @@ func TestNormaliseKeepsAllZeros(t *testing.T) {
 		t.Errorf("got %v", got)
 	}
 }
+
+func TestSimilarityIsTheAngleBetweenTwoVectors(t *testing.T) {
+	for _, c := range []struct {
+		name   string
+		query  []float32
+		stored []int8
+		want   float64
+	}{
+		{"the same direction", []float32{1, 1, 1, 1}, []int8{7, 7, 7, 7}, 1},
+		{"the opposite direction", []float32{1, 1, 1, 1}, []int8{-7, -7, -7, -7}, -1},
+		{"at a right angle", []float32{1, 1, 0, 0}, []int8{0, 0, 7, 7}, 0},
+		{"an eighth of the dimensions turned", []float32{1, 1, 1, 1, 1, 1, 1, -1}, []int8{1, 1, 1, 1, 1, 1, 1, 1}, 0.75},
+		{"length does not enter", []float32{9, 0}, []int8{1, 0}, 1},
+		{"widths that do not match", []float32{1, 1}, []int8{1}, 0},
+		{"a vector with no direction", []float32{1, 1}, []int8{0, 0}, 0},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			got := embedding.Similarity(c.query, c.stored)
+			if math.Abs(got-c.want) > 1e-9 {
+				t.Errorf("got %v, want %v", got, c.want)
+			}
+		})
+	}
+}
+
+func TestSimilarityIsOneForAVectorWithItself(t *testing.T) {
+	// A stored vector is the query's own, quantised. The angle between them is
+	// what the quantisation cost, and it is small enough for a floor to be set
+	// in the same units either side of it.
+	random := rand.New(rand.NewPCG(7, 11))
+	v := make([]float32, 1024)
+	for i := range v {
+		v[i] = random.Float32()*2 - 1
+	}
+	embedding.Normalise(v)
+
+	got := embedding.Similarity(v, embedding.Bytes(v))
+	if got < 0.999 {
+		t.Errorf("a vector against its own quantisation stands at %v", got)
+	}
+}

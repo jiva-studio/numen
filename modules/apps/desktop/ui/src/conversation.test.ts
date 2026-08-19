@@ -239,6 +239,79 @@ describe('a wait that explains itself', () => {
 
 })
 
+
+describe('where the line about work stands', () => {
+  /** What the panel is drawing, in the order it draws it. */
+  const drawn = (talk: { turns: { value: readonly { voice: string; text: string }[] } }) =>
+    talk.turns.value.map((turn) => `${turn.voice}: ${turn.text}`)
+
+  it('stays down once the answer has begun, whatever a tool answers after it', async () => {
+    let release = () => {}
+    const held = new Promise<void>((go) => {
+      release = go
+    })
+    const talk = conversation(
+      doing([used('Read a note'), said('Duryodhana '), answered(), said('was a king.')], held),
+      words,
+      called,
+      now,
+    )
+    const asking = talk.ask('tell me about him', '')
+    await nap()
+
+    // A tool answering says nothing about the answer being written over it, and
+    // a line put back here stands under the answer for the rest of the talk.
+    expect(drawn(talk)).toEqual([
+      'asked: tell me about him',
+      'answered: Duryodhana was a king.',
+    ])
+
+    release()
+    await asking
+  })
+
+  it('goes back up under the answer when the model is asked again', async () => {
+    let release = () => {}
+    const held = new Promise<void>((go) => {
+      release = go
+    })
+    const talk = conversation(
+      doing([said('One moment. '), thinking(), used('Read a note')], held),
+      words,
+      called,
+      now,
+    )
+    const asking = talk.ask('tell me about him', '')
+    await nap()
+
+    expect(drawn(talk)).toEqual([
+      'asked: tell me about him',
+      'answered: One moment. ',
+      'doing: Read a note',
+    ])
+
+    release()
+    await asking
+  })
+
+  it('leaves no empty answer behind when the model said nothing before it stopped', async () => {
+    let release = () => {}
+    const held = new Promise<void>((go) => {
+      release = go
+    })
+    const talk = conversation(doing([said(''), thinking()], held), words, called, now)
+    const asking = talk.ask('tell me about him', '')
+    await nap()
+
+    // An answer with nothing in it is drawn as a turn with no words and a gap
+    // above and below it, which reads as the panel having lost something.
+    expect(drawn(talk)).toEqual(['asked: tell me about him', `doing: ${words.thinking}`])
+
+    release()
+    await asking
+  })
+})
+
 describe('a conversation', () => {
   it('carries its own name, so what is asked in one is remembered in one', async () => {
     const carried: string[] = []
@@ -323,3 +396,4 @@ describe('a conversation that is over', () => {
     expect(talk.turns.value).toStrictEqual([])
   })
 })
+

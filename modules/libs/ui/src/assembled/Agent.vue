@@ -103,7 +103,8 @@ onBeforeUnmount(() => watching?.disconnect())
 }
 
 /* Takes the whole of it and scrolls inside. The words run on to the composer's
-   own edge and fade out over the band it stands in. */
+   own edge and fade out over the band it stands in. The top is an edge of the
+   window and is drawn to it. */
 .agent__thread {
   /* The band the composer stands in, up from the foot, and what the last turn
      is held clear of above it. */
@@ -116,8 +117,6 @@ onBeforeUnmount(() => watching?.disconnect())
   padding-block-end: var(--clear);
   mask-image: linear-gradient(
     to bottom,
-    transparent 0,
-    #000 var(--fade),
     #000 calc(100% - var(--behind)),
     transparent calc(100% - var(--behind) + var(--fade))
   );

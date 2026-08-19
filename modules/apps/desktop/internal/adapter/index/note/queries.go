@@ -129,3 +129,68 @@ func (q *Queries) Named(ctx context.Context, vaultID, name string) ([]string, er
 	}
 	return out, rows.Err()
 }
+
+// mostPerNote is how many headings of one note an answer carries. A note whose
+// every section names the word typed is one answer, not ten.
+const mostPerNote = 2
+
+// Titles is the names in a vault that match the words typed: a note's own
+// title, and the headings inside notes.
+//
+// The two are ranked apart and a title comes first, so what is cut by the limit
+// is a heading of a note already named or a name matched less well. Each half
+// is asked for its own limit, and the headings are thinned to what one note may
+// contribute before the answer is cut to the number asked for.
+func (q *Queries) Titles(ctx context.Context, vaultID, query string, limit int) ([]domain.TitleMatch, error) {
+	if limit <= 0 {
+		// How many results a person wants is not something a database adapter
+		// knows. The caller decides, and arriving here without one is a
+		// mistake in the caller.
+		return nil, fmt.Errorf("titles limit must be positive, got %d", limit)
+	}
+	words := chunk.Expression(query)
+	if words == "" {
+		return nil, nil
+	}
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.db.QueryContext(ctx, stmt.Get("titles"),
+		opening, closing, words, vault, limit,
+		opening, closing, words, vault, limit*mostPerNote)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := make([]domain.TitleMatch, 0, limit)
+	carried := map[string]int{}
+	for rows.Next() {
+		var kind, line int
+		var marked string
+		var score float64
+		var m domain.TitleMatch
+		if err := rows.Scan(&kind, &m.Path, &m.Title, &line, &marked, &score); err != nil {
+			return nil, err
+		}
+		name, at := split(marked)
+		m.At = at
+		if kind != 0 {
+			if carried[m.Path] >= mostPerNote {
+				continue
+			}
+			carried[m.Path]++
+			m.Heading, m.Line = name, line
+		}
+		out = append(out, m)
+		if len(out) == limit {
+			break
+		}
+	}
+	return out, rows.Err()
+}

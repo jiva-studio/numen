@@ -33,6 +33,9 @@ export interface Reading {
   readonly booksRead: number
   readonly chunks: number
   readonly embedded: number
+  /** What the pass now running found to do, and how much of it is done. */
+  readonly owing: number
+  readonly made: number
   /** Whether anything is going to embed what was cut. */
   readonly embedding: boolean
   /** How fast the count of the phase now running is moving, a second. */
@@ -72,8 +75,8 @@ export const footOf = (v: Reading): Foot => {
       phase: 'learning',
       about: v.reading,
       working: true,
-      ...(v.chunks > 0 ? { tally: { done: v.embedded, total: v.chunks } } : {}),
-      left: Math.max(0, v.chunks - v.embedded),
+      ...(v.owing > 0 ? { tally: { done: v.made, total: v.owing } } : {}),
+      left: Math.max(0, v.owing - v.made),
       perSecond: v.rate,
     }
   }

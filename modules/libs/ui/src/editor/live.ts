@@ -227,19 +227,25 @@ export const marks = (state: EditorState, from: number, to: number) => build(sta
 /** What is drawn in place of whole lines: a rule, a table. */
 export const blockMarks = (state: EditorState) => build(state, 0, state.doc.length, 'blocks')
 
-/** The lines the viewport shows, whole. */
+/**
+ * How far past the lines on screen the marks are drawn, in characters. A pane
+ * being resized moves the viewport a line at a time, and marks already drawn
+ * answer for the lines it reaches.
+ */
+const margin = 2000
+
+/** The lines the viewport shows, whole, and a margin of them either side. */
 const shown = (view: EditorView) => {
   const ranges = view.visibleRanges
   if (!ranges.length) return null
   const first = ranges[0]
   const last = ranges[ranges.length - 1]
   if (!first || !last) return null
-  return { from: view.state.doc.lineAt(first.from).from, to: view.state.doc.lineAt(last.to).to }
-}
-
-const drawn = (view: EditorView) => {
-  const span = shown(view)
-  return span ? marks(view.state, span.from, span.to) : Decoration.none
+  const doc = view.state.doc
+  return {
+    from: doc.lineAt(Math.max(first.from - margin, 0)).from,
+    to: doc.lineAt(Math.min(last.to + margin, doc.length)).to,
+  }
 }
 
 /** A widget standing for whole lines is the state's to hold, not a plugin's. */
@@ -260,22 +266,31 @@ export const wholeLines = StateField.define<DecorationSet>({
 export const live = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet
+    /** The span the marks in hand were drawn for. */
+    span: { from: number; to: number } | null
 
     constructor(view: EditorView) {
-      this.decorations = drawn(view)
+      this.span = shown(view)
+      this.decorations = this.span ? marks(view.state, this.span.from, this.span.to) : Decoration.none
     }
 
     update(update: ViewUpdate) {
       // A parse finishes in chunks, and the transaction that announces one
-      // changes neither the document nor the selection nor the viewport. Past
-      // the first chunk a note is drawn as it is written until this is asked.
-      if (
+      // changes neither the document nor the selection. Past the first chunk a
+      // note is drawn as it is written until this is asked.
+      const afresh =
         update.docChanged ||
         update.selectionSet ||
-        update.viewportChanged ||
         syntaxTree(update.startState) != syntaxTree(update.state)
-      )
-        this.decorations = drawn(update.view)
+
+      const span = shown(update.view)
+      // Marks already drawn answer for a viewport inside them.
+      if (!afresh && this.span && span && span.from >= this.span.from && span.to <= this.span.to) {
+        return
+      }
+
+      this.span = span
+      this.decorations = span ? marks(update.view.state, span.from, span.to) : Decoration.none
     }
   },
   {

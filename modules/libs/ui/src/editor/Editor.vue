@@ -94,12 +94,33 @@ watch(
 )
 
 defineExpose({
-  focus: () => view?.focus(),
+  /** Take the keyboard. False while there is no editor yet to take it. */
+  focus: () => {
+    if (!view) return false
+    view.focus()
+    return true
+  },
   /**
    * Take the editor's measurements again. An editor drawn while it is hidden
    * has none to take. The caller says when it is on screen.
    */
   measure: () => view?.requestMeasure(),
+  /**
+   * Put the caret on one line of the prose and bring it into sight. Lines are
+   * counted from the first line of the prose, and one past the end lands on the
+   * last line there is.
+   */
+  reveal: (line: number) => {
+    if (!view) return false
+    const at = Math.min(Math.max(Math.trunc(line), 0) + 1, view.state.doc.lines)
+    const { from } = view.state.doc.line(at)
+    view.dispatch({
+      selection: { anchor: from },
+      effects: EditorView.scrollIntoView(from, { y: 'start' }),
+    })
+    view.focus()
+    return true
+  },
 })
 </script>
 

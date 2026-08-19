@@ -25,6 +25,9 @@ export interface Core {
     /** Spans of text the index holds, and how many of them carry a vector. */
     chunks: bigint
     embedded: bigint
+    /** What the pass now running found to do, and how much of it is done. */
+    owing: bigint
+    made: bigint
     /** The source being read now, empty when nothing is. */
     reading: string
     /** Whether anything is going to turn the chunks into vectors. */
@@ -171,6 +174,14 @@ export function showing(
    */
   const chunks = ref(0)
   const embedded = ref(0)
+  /**
+   * What the pass now running found to do, and how much of it is done.
+   *
+   * This is the work in hand. The counts above are the whole of what the vault
+   * holds, and somebody who changed one note is waiting on one chunk.
+   */
+  const owing = ref(0)
+  const made = ref(0)
   const reading = ref('')
   /**
    * Whether anything is going to embed what was cut.
@@ -282,6 +293,8 @@ export function showing(
     unwatched.value = state.unwatched
     chunks.value = Number(state.chunks)
     embedded.value = Number(state.embedded)
+    owing.value = Number(state.owing)
+    made.value = Number(state.made)
     reading.value = state.reading
     embedding.value = state.embedding
     books.value = Number(state.books)
@@ -300,7 +313,7 @@ export function showing(
    */
   function time() {
     const phase = learning.value ? 'learning' : 'reading'
-    const done = learning.value ? embedded.value : booksRead.value
+    const done = learning.value ? made.value : booksRead.value
     const at = now()
     if (counted !== null && counted.phase === phase) {
       rate.value = rateOf({ done: counted.done, rate: rate.value }, done, (at - counted.at) / 1000)
@@ -423,10 +436,17 @@ export function showing(
   }
 
   /**
+   * A note put in front of the person: the plex they are looking at travels
+   * there, and a window holding no plex at all opens one on it.
+   */
+  async function travel(path: string) {
+    if (ahead.value) await ahead.value.go(path)
+    else shows(path)
+  }
+
+  /**
    * Travels to whatever is asked for while the window is open — an agent
    * working the vault beside the person naming the note it is talking about.
-   * It lands in the plex the person is looking at, and in one opened on it
-   * when the window has no plex at all.
    *
    * Taken up again the way following is, and for the same reason.
    */
@@ -436,8 +456,7 @@ export function showing(
         for await (const wanted of core.focus(listening.signal)) {
           if (!open) return
           if (!wanted.path) continue
-          if (ahead.value) await ahead.value.go(wanted.path)
-          else shows(wanted.path)
+          await travel(wanted.path)
         }
       } catch (error) {
         if (!open) return
@@ -490,8 +509,11 @@ export function showing(
     unwatched,
     holds,
     looking,
+    travel,
     chunks,
     embedded,
+    owing,
+    made,
     reading,
     embedding,
     books,

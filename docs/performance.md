@@ -11,6 +11,7 @@ go test ./internal/core/usecase/vault/ -run XXX -bench ColdScan -benchtime 1x
 go test ./internal/core/usecase/vault/ -run XXX -bench 'WarmScan|Incremental|Search'
 go test ./internal/core/usecase/vault/ -run XXX -bench 'Links|Backlinks' -benchtime 300x
 NUMEN_LOAD=1 go test ./internal/core/usecase/vault/ -run TestLoad -v -timeout 40m
+NUMEN_FLOOR=1 go test ./internal/adapter/index/chunk/ -run TestTheFloor -v
 ```
 
 The vault is generated, not downloaded: `testsupport.GenerateVault` writes notes
@@ -245,12 +246,75 @@ first 256 numbers 0.475. This model does not order its dimensions by importance,
 which is why truncating is worse than projecting.
 
 The binary row is the coarse pass. It is not accurate and is not meant to be:
-half the right answers are outside its top twenty, which is why the pass keeps a
-hundred candidates for a result of six.
+half the right answers are outside its top twenty, which is why it keeps eight
+candidates for every result and the byte-precision vectors order what it kept.
 
 Replacing float32 with int8 in the working index: 1561 MB to 613 MB, load 10 s
 to 5 s, search 35.7 ms to 31.8 ms, and the top six identical on every question
 in the acceptance set.
+
+
+### The similarity floor, and what the coarse pass has to keep
+
+`~/.cache/numen/index.db`: 65 261 embedded chunks, `baai/bge-m3` at 1024
+dimensions, int8. Eighteen questions, ten the vault holds an answer to and eight
+it does not. Top-1 cosine, exhaustive over every stored vector.
+
+| Held | | Unheld | |
+| --- | --- | --- | --- |
+| game of dice / Draupadi | 0.716 | `SELECT * FROM users WHERE deleted_at IS NULL` | **0.521** |
+| amortised analysis of a dynamic array | 0.783 | semiconductor revenue guidance | 0.494 |
+| chicken | 0.781 | mating habits of emperor penguins | 0.489 |
+| death of Karna | 0.687 | changing a diesel oil filter | 0.475 |
+| a king who does not protect | 0.687 | Kubernetes ingress controller | 0.458 |
+| Krishna's counsel to Arjuna | 0.679 | `asdkjfh qwpoeiru zxcvbnm` | 0.443 |
+| house of lac | 0.637 | best pizza toppings in Naples | 0.432 |
+| dharma is subtle | 0.606 | sourdough hydration ratio | 0.413 |
+| Bhishma's silence | 0.593 | | |
+| Lagrangian in classical mechanics | **0.520** | | |
+
+The two columns overlap by 0.0012: the SQL string reaches higher than the
+Lagrangian note. **The floor is 0.50** — under every held question by 0.0199,
+over the second-highest unheld by 0.0056. Seven of the eight unheld questions
+then keep nothing at all and the eighth keeps 4 of 160; every held question
+keeps its answer, from 2 passages for the Lagrangian to 160 for the narrative
+ones.
+
+The offset is per query, not per corpus: the corpus median ran from 0.207 to
+0.403 across the eighteen. A floor stated against each query's own distribution
+separates these two columns cleanly, and is a decision of its own.
+
+**How many the coarse pass keeps.** Recall of a query's exact top twenty at or
+above the floor, from a coarse pool of 20×f:
+
+| f | Pool | Mean recall | Worst |
+| --- | --- | --- | --- |
+| 2 | 40 | 0.762 | 0.438 |
+| 4 | 80 | 0.869 | 0.562 |
+| 6 | 120 | 0.911 | 0.625 |
+| **8** | **160** | **0.944** | **0.688** |
+| 12 | 240 | 0.968 | 0.750 |
+| 16 | 320 | 0.973 | 0.750 |
+
+The curve flattens after eight while the coarse pass costs close to linear in k:
+40 → 12 ms, 100 → 20 ms, 200 → 32 ms, 400 → 56 ms, 800 → 116 ms.
+
+**What the rerank costs.** Same eighteen questions, six rounds each, warm, at a
+limit of twenty.
+
+| Meaning half | Median | p95 |
+| --- | --- | --- |
+| Coarse k=100, no rerank | 19.6 ms | 23.4 ms |
+| Coarse k=160, rerank, floor | 26.2 ms | 30.9 ms |
+| Coarse k=160 alone | 26.3 ms | 29.9 ms |
+
+The rerank is 0.4 ms of that: one `json_each` join, 160 int8 blobs, 160×1024
+dot products, a sort. The 7 ms is the wider coarse pass, less the 0.7 ms saved
+by resolving 20 enclosing windows where there were 100.
+
+The words half measures 1.1 ms median and about 39 ms p95 on a long natural
+language query, where the FTS expression becomes a wide OR. A search running
+both halves on such a query stands over ADR-0019's 50 ms and did before this.
 
 ### A partition key charges for every partition
 

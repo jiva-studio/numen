@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 )
 
@@ -50,6 +51,11 @@ type API struct {
 	// made here.
 	Makes *note.Create
 	Joins *note.Linking
+
+	// Finds is how the window searches the text the vault holds, by the words
+	// in it and by what it means. A build without one answers that it cannot be
+	// searched, and the names a vault holds are answered all the same.
+	Finds *search.Search
 
 	// Drawing is everyone drawing this vault, for a change to a note being made
 	// while they may be showing it.
@@ -91,6 +97,10 @@ type API struct {
 	Books     atomic.Int64
 	BooksRead atomic.Int64
 	Learning  atomic.Bool
+	// Owing is what the pass now running found to do, and Made how much of it
+	// it has done. They are the work in hand; the counts above are the vault.
+	Owing atomic.Int64
+	Made  atomic.Int64
 	// Busy is set for as long as this vault is being read: its notes, then its
 	// books, then their vectors. Reading a book and embedding one change no
 	// file, so a client asks again for as long as it holds.
@@ -118,6 +128,8 @@ func (a *API) State(ctx context.Context, _ *connect.Request[v1.StateRequest]) (*
 		Books:     a.Books.Load(),
 		BooksRead: a.BooksRead.Load(),
 		Learning:  a.Learning.Load(),
+		Owing:     a.Owing.Load(),
+		Made:      a.Made.Load(),
 		Busy:      a.Busy.Load(),
 	}
 	// A count that cannot be taken leaves the pair at nothing, and the rest of

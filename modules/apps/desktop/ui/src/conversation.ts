@@ -101,8 +101,19 @@ export function conversation(
     let says = words.thinking
     let about = ''
 
+    // Whether the line is up. It comes down when the answer begins, and a tool
+    // answering does not put it back: what a tool did belongs above the answer
+    // it led to, and a line raised here stands under that answer for good.
+    let up = false
+
+    const takeDown = () => {
+      drop(doing)
+      up = false
+    }
+
     const nowDoing = (state: 'arriving' | 'settled', written = 0) => {
       put({ id: doing, voice: 'doing', text: says, about, aside: charsWord(written), state })
+      up = true
     }
 
     nowDoing('arriving')
@@ -124,7 +135,10 @@ export function conversation(
 
     const settleAnswer = () => {
       if (!saying) return
-      put({ id: saying, voice: 'answered', text: answer })
+      // An answer with nothing in it is a turn with no words and a gap either
+      // side of it, which reads as the panel having lost something.
+      if (answer === '') drop(saying)
+      else put({ id: saying, voice: 'answered', text: answer })
       saying = ''
     }
 
@@ -135,7 +149,7 @@ export function conversation(
         switch (step.kind) {
           case 'said':
             if (!saying) {
-              drop(doing)
+              takeDown()
               saying = `${next++}`
               answer = ''
             }
@@ -154,7 +168,7 @@ export function conversation(
           // one of them, so the line keeps its name and stops claiming to be
           // running. What comes next is named when it begins.
           case 'answered':
-            nowDoing('settled')
+            if (up) nowDoing('settled')
             break
 
           // A request to the model has begun: from here, what happens is not
@@ -172,7 +186,7 @@ export function conversation(
             break
         }
       }
-      drop(doing)
+      takeDown()
       const said = answer !== ''
       settleAnswer()
 
@@ -183,7 +197,7 @@ export function conversation(
         else if (!said) put({ id: `${next++}`, voice: 'answered', text: words.nothing })
       }
     } catch {
-      drop(doing)
+      takeDown()
       settleAnswer()
       if (!flight.signal.aborted) {
         put({ id: `${next++}`, voice: 'answered', text: words.unreachable, state: 'failed' })

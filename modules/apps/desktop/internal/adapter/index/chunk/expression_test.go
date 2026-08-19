@@ -18,13 +18,25 @@ func TestOrdinaryWordsAreNotFTSSyntax(t *testing.T) {
 }
 
 func TestWordsAreCombinedWithImplicitAnd(t *testing.T) {
-	if got, want := Expression("entropy shannon"), `"entropy" "shannon"`; got != want {
+	if got, want := Expression("entropy shannon"), `"entropy" "shannon"*`; got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestTheLastWordIsMatchedOnItsPrefix(t *testing.T) {
+	// The index holds whole words. A word still being typed is a prefix of the
+	// one in the text and matches nothing without this.
+	if got, want := Expression("наставник"), `"наставник"*`; got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+	// Only the last one: the words before it are finished.
+	if got, want := Expression("entro mixing"), `"entro" "mixing"*`; got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
 }
 
 func TestEmbeddedQuotesAreDoubled(t *testing.T) {
-	if got, want := Expression(`say"hello`), `"say""hello"`; got != want {
+	if got, want := Expression(`say"hello`), `"say""hello"*`; got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
 }

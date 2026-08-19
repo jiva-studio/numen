@@ -28,12 +28,13 @@ export const markOf = (state: State): string | undefined => MARKS[state]
  * `showing.ts`, what a tab holds is in `holding.ts`, and what is drawn from
  * either is here.
  */
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
-  Activity,
   Agent,
   Editor,
   Menu,
+  Notices,
+  Palette,
   Plex,
   Workspace,
   closeTab,
@@ -41,7 +42,14 @@ import {
   openTabBeside,
   remainingWord,
 } from '@numen/ui'
-import type { MenuOpening, PlexNeighbourhood, PlexRelatedSeat, PlexShowing, Tab } from '@numen/ui'
+import type {
+  MenuOpening,
+  Notice,
+  PlexNeighbourhood,
+  PlexRelatedSeat,
+  PlexShowing,
+  Tab,
+} from '@numen/ui'
 import '@numen/ui/styles.css'
 import { core } from './vault'
 import { showing } from './showing'
@@ -50,6 +58,7 @@ import { editing } from './editing'
 import { drawn } from './drawn'
 import { creating, CREATABLE } from './creating'
 import { holding, type Talk } from './holding'
+import { finding } from './finding'
 import { ITEMS, chose as carry } from './menu'
 import { leaving } from './leaving'
 import { core as agent } from './agent'
@@ -94,7 +103,20 @@ watch(
 const { indexing, failure, notice, trouble, unwatched, holds, looking } = window
 /** What could not be made or joined, in words a person reads. */
 const unmade = computed(() => making.said.value)
-const { chunks, embedded, reading, embedding, books, booksRead, learning, rate } = window
+// `made` is spent in this window on making a note, so the count of vectors
+// made keeps a name of its own here.
+const {
+  chunks,
+  embedded,
+  owing,
+  made: vectors,
+  reading,
+  embedding,
+  books,
+  booksRead,
+  learning,
+  rate,
+} = window
 /** What the vault says about having work in hand. The counts do not say it. */
 const { working: reads } = window
 
@@ -116,7 +138,7 @@ const words = {
   agent: 'Agent',
   stopped: 'The agent stopped here',
   reading: 'Reading',
-  learning: 'Preparing search by meaning',
+  learning: 'Indexing',
   words: 'Searching by words only — no model set',
   overtaken: 'The file changed on disk, so this note stopped saving.',
   gone: 'This note is no longer in the vault, so saving stopped. What is here is still yours.',
@@ -125,6 +147,19 @@ const words = {
   take: "Take the file's",
   going: 'These notes stopped saving because their files changed. The window waits.',
   later: 'Not yet',
+  /** The palette, and the three bands it draws. */
+  find: 'Search the vault',
+  names: 'Names',
+  text: 'Text',
+  meaning: 'Meaning',
+  travel: 'Show in plex',
+  read: 'Open the note',
+  readAt: 'Open at this heading',
+  noneFound: 'Nothing',
+  typeToFind: 'Type to look for a note',
+  /** The corner where what is running behind the window is shown. */
+  working: 'Background work',
+  putAway: 'Put away',
 }
 
 /** What the foot of the window says, one sentence per phase. */
@@ -144,6 +179,8 @@ const activity = computed(() => {
     booksRead: booksRead.value,
     chunks: chunks.value,
     embedded: embedded.value,
+    owing: owing.value,
+    made: vectors.value,
     embedding: embedding.value,
     rate: rate.value,
   })
@@ -154,6 +191,28 @@ const activity = computed(() => {
     left: remainingWord(foot.left, foot.perSecond),
     tally: foot.tally,
   }
+})
+
+/**
+ * Everything running behind the window, as the corner draws it.
+ *
+ * One task for now: reading the vault for meaning. A count is only drawn where
+ * the pass has said what it found, and what it found is the work in hand and
+ * not the size of the vault.
+ */
+const tasks = computed<readonly Notice[]>(() => {
+  const one = activity.value
+  if (!one.says) return []
+  return [
+    {
+      id: 'indexing',
+      says: one.says,
+      about: one.about,
+      working: one.working,
+      left: one.left,
+      ...(one.tally ? { done: one.tally.done, total: one.tally.total } : {}),
+    },
+  ]
 })
 
 /** What a note was called by the node it was opened from. */
@@ -172,6 +231,63 @@ const held = holding({
   },
 })
 const { layout, blanks } = held
+
+/** The palette: one keystroke, and everything the words typed turn up. */
+const palette = finding(core, words)
+
+/**
+ * The palette is opened and put away by one keystroke, taken on the window
+ * rather than on anything drawn: it belongs to no pane.
+ */
+const asked = (event: KeyboardEvent) => {
+  if (event.key !== 'k' || event.altKey || !(event.metaKey || event.ctrlKey)) return
+  event.preventDefault()
+  palette.shows(!palette.open.value)
+}
+
+/**
+ * The notes asked to be opened, and the line each was asked to open on, until
+ * there is an editor to hand it to. A line of -1 is the note itself and no
+ * line in particular.
+ */
+const entering = new Map<string, number>()
+
+/**
+ * Somewhere the palette was asked to go. A name is a thing and travels in the
+ * plex the person is looking at; a heading and a passage are places in a note,
+ * and open it where they stand.
+ */
+const went = (item: string, action: string) => {
+  const landing = palette.chose(item, action)
+  palette.shows(false)
+  if (!landing) return
+
+  if (landing.at === 'plex') {
+    void window.travel(landing.path)
+    return
+  }
+  titles.set(landing.path, landing.title || landing.path)
+  notes.open(landing.path)
+  entering.set(landing.path, landing.line ?? -1)
+  layout.value = openTab(layout.value, landing.path)
+  void nextTick(() => enters(landing.path))
+}
+
+/**
+ * A note opened takes the keyboard once it is on screen, on the line it was
+ * asked for when it was asked for one.
+ *
+ * A tab already showing has an editor now; a tab that has to be drawn first
+ * says so when it appears, and an editor says so when it is built.
+ */
+const enters = (path: string) => {
+  const line = entering.get(path)
+  const editor = editors.get(path)
+  if (line === undefined || !editor) return
+  // An editor is registered as it is drawn, a moment before it exists to take
+  // anything. The note is owed its keyboard until one has.
+  if (line >= 0 ? editor.reveal(line) : editor.focus()) entering.delete(path)
+}
 
 /** A question is about the note the person is looking at. */
 const send = (id: string, text: string) => {
@@ -246,10 +362,12 @@ const chose = (id: string) => {
 const openNote = (tab: string, path: string, showing: PlexShowing = 'here') => {
   titles.set(path, nameOf(tab, path))
   notes.open(path)
+  entering.set(path, -1)
   layout.value =
     showing === 'beside'
       ? openTabBeside(layout.value, path, 'right', naming)
       : openTab(layout.value, path)
+  void nextTick(() => enters(path))
 }
 
 /**
@@ -286,12 +404,23 @@ const plexIn = (id: string) => held.plexes.value.get(id)?.view ?? null
 /** The talk one agent tab holds. */
 const talkIn = (id: string) => held.agents.value.get(id) ?? null
 
+/** What the window asks of an editor once it is drawn. */
+interface Drawn {
+  focus(): boolean
+  measure(): void
+  reveal(line: number): boolean
+}
+
 /** The editor of each open note, for as long as its tab is drawn. */
-const editors = new Map<string, { measure: () => void }>()
+const editors = new Map<string, Drawn>()
 
 const drew = (path: string, editor: unknown) => {
-  if (editor) editors.set(path, editor as { measure: () => void })
-  else editors.delete(path)
+  if (!editor) {
+    editors.delete(path)
+    return
+  }
+  editors.set(path, editor as Drawn)
+  void nextTick(() => enters(path))
 }
 
 /**
@@ -301,6 +430,7 @@ const drew = (path: string, editor: unknown) => {
 const shown = (id: string) => {
   held.shown(id)
   editors.get(id)?.measure()
+  enters(id)
 }
 
 /** A tab lets go of what it held. A tab that holds a note writes what it owes. */
@@ -317,10 +447,12 @@ const shut = (id: string, hold: () => void) => {
 }
 
 onMounted(() => {
+  globalThis.addEventListener('keydown', asked)
   void window.start()
   void going.start()
 })
 onUnmounted(() => {
+  globalThis.removeEventListener('keydown', asked)
   window.close()
   drawings.close()
   going.close()
@@ -438,14 +570,7 @@ onUnmounted(() => {
       </template>
     </Workspace>
 
-    <Activity
-      class="activity"
-      :says="activity.says"
-      :about="activity.about"
-      :working="activity.working"
-      :left="activity.left"
-      :tally="activity.tally"
-    />
+    <Notices :notices="tasks" :name="words.working" :put-away="words.putAway" />
 
     <section v-if="going.questions.value.length" role="alertdialog" class="leaving">
       <p class="leaving__says">{{ words.going }}</p>
@@ -475,6 +600,19 @@ onUnmounted(() => {
       @choose="chose"
       @dismiss="menu = null"
     />
+
+    <Palette
+      :model-value="palette.typed.value"
+      :sections="palette.sections.value"
+      :open="palette.open.value"
+      :placeholder="words.find"
+      :name="words.find"
+      @update:model-value="(text: string) => void palette.typing(text)"
+      @choose="went"
+      @dismiss="palette.shows(false)"
+    >
+      <template #silence>{{ words.typeToFind }}</template>
+    </Palette>
   </main>
 </template>
 
@@ -617,12 +755,6 @@ main {
 .overtaken__answer:focus-visible {
   outline: 1px solid currentColor;
   outline-offset: 2px;
-}
-
-/* The foot of the window: clear of the plex, quiet when there is no work. */
-.activity {
-  flex: none;
-  padding: 0.3rem 1rem;
 }
 
 .waiting,

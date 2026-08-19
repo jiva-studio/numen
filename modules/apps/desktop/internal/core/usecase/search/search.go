@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/embedding"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/epub"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
@@ -14,9 +13,9 @@ import (
 // defaultLimit is how many results a caller that names no number gets.
 const defaultLimit = 20
 
-// candidatesPerResult is how many candidates a half keeps for each result the
-// search returns, so the answer is among its candidates.
-const candidatesPerResult = 5
+// lexicalCandidates is how many candidates the words half keeps for each result
+// the search returns, so the answer is among its candidates.
+const lexicalCandidates = 5
 
 // Parameters says which halves of a search run and how many candidates each
 // keeps. A half that keeps none does not run; with neither named, both run.
@@ -25,7 +24,10 @@ type Parameters struct {
 	Limit int
 	// Lexical is how many candidates the words half keeps.
 	Lexical int
-	// Dense is how many candidates the coarse pass keeps.
+	// Dense is how many passages the meaning half returns. The coarse pass
+	// underneath it keeps several times as many, and the full-precision vectors
+	// decide among those, so what arrives here is already ordered by how near
+	// the query it is.
 	Dense int
 }
 
@@ -35,8 +37,8 @@ func (p Parameters) filled() Parameters {
 		p.Limit = defaultLimit
 	}
 	if p.Lexical <= 0 && p.Dense <= 0 {
-		p.Lexical = p.Limit * candidatesPerResult
-		p.Dense = p.Limit * candidatesPerResult
+		p.Lexical = p.Limit * lexicalCandidates
+		p.Dense = p.Limit
 	}
 	return p
 }
@@ -57,7 +59,7 @@ type Search struct {
 // New is a search over one vault's index.
 //
 // The embedder turns a query into a vector. Nil is an installation with no
-// model, and then the coarse pass does not run and the words half answers alone,
+// model, and then the meaning half does not run and the words half answers alone,
 // which is a whole search: the vector index is optional and may never finish
 // filling.
 func New(passages port.PassageQueries, readers port.VaultReaders, embedder port.Embedder) Search {
@@ -87,7 +89,7 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 	return u.read(ctx, v, collapse(merge(rankings...), p.Limit))
 }
 
-// nearest is the coarse pass, over a vector of the query itself.
+// nearest is the meaning half, over a vector of the query itself.
 func (u Search) nearest(ctx context.Context, v domain.Vault, query string, k int) ([]domain.Passage, error) {
 	vectors, err := u.embedder.Embed(ctx, []string{query})
 	if err != nil {
@@ -96,7 +98,7 @@ func (u Search) nearest(ctx context.Context, v domain.Vault, query string, k int
 	if len(vectors) != 1 {
 		return nil, fmt.Errorf("the embedder answered with %d vectors for one query", len(vectors))
 	}
-	return u.passages.Nearest(ctx, v.ID, embedding.Bits(vectors[0]), k)
+	return u.passages.Nearest(ctx, v.ID, vectors[0], k)
 }
 
 // read fills in the text of each passage from the vault. A chunk is a place in a
@@ -180,4 +182,30 @@ func span(raw string, start, length int) string {
 		end = len(raw)
 	}
 	return raw[start:end]
+}
+
+// Halves is which halves of a search a caller wants run.
+type Halves int
+
+const (
+	// Both run, and what they answer is merged into one ranking.
+	Both Halves = iota
+	// Words alone: what is written, matched as words.
+	Words
+	// Meaning alone: what the query means, against the vectors the index holds.
+	Meaning
+)
+
+// Running is the parameters for a search of the halves named. The half that is
+// not wanted keeps no candidates, which is how a half is told not to run.
+func Running(half Halves, limit int) Parameters {
+	p := Parameters{Limit: limit}.filled()
+	switch half {
+	case Words:
+		p.Dense = 0
+	case Meaning:
+		p.Lexical = 0
+	case Both:
+	}
+	return p
 }

@@ -17,8 +17,8 @@ type PassageQueries interface {
 	// best first, at most `limit` of them.
 	Lexical(ctx context.Context, vaultID, query string, limit int) ([]domain.Passage, error)
 
-	// Nearest is the chunks of one vault nearest a query vector, nearest first.
-	// `coarse` is one bit per dimension, and `k` is how many candidates the pass
-	// keeps.
-	Nearest(ctx context.Context, vaultID string, coarse []byte, k int) ([]domain.Passage, error)
+	// Nearest is the chunks of one vault nearest a query vector, nearest first,
+	// at most `limit` of them. `query` is the full precision the model answered
+	// with, and a chunk too far from it is not an answer and does not come back.
+	Nearest(ctx context.Context, vaultID string, query []float32, limit int) ([]domain.Passage, error)
 }

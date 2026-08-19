@@ -21,5 +21,9 @@ type Passage struct {
 	// when the format offered none.
 	Location string
 
+	// Hit is where the chunk that matched begins inside Text, in bytes. A
+	// passage whose hit is the window itself begins at its own beginning.
+	Hit int
+
 	Text string
 }
