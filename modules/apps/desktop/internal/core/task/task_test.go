@@ -2,6 +2,9 @@ package task_test
 
 import (
 	"context"
+	"fmt"
+	"slices"
+	"sync"
 	"testing"
 	"time"
 
@@ -110,6 +113,52 @@ func TestWatchingEndsWithItsContext(t *testing.T) {
 		}
 	}
 	t.Fatal("the stream did not end with its context")
+}
+
+func TestWhatAListenerIsToldLastIsTheNewest(t *testing.T) {
+	// Several pieces of work report at once, which is what the list is for. Each
+	// of them only ever gets further on, so a listener told that one has got less
+	// far than it already had has been handed an older list than the one before.
+	tasks := task.New()
+	ctx, stop := context.WithCancel(t.Context())
+	watching := tasks.Watch(ctx)
+
+	ended := make(chan []task.Task, 1)
+	go func() {
+		far := map[string]int64{}
+		var last []task.Task
+		for list := range watching {
+			for _, at := range list {
+				if at.Done < far[at.ID] {
+					t.Errorf("%s had got to %d and is now said to be at %d", at.ID, far[at.ID], at.Done)
+				}
+				far[at.ID] = at.Done
+			}
+			last = list
+		}
+		ended <- last
+	}()
+
+	var reporting sync.WaitGroup
+	for which := range 8 {
+		reporting.Add(1)
+		go func() {
+			defer reporting.Done()
+			id := fmt.Sprintf("reading-%d", which)
+			for page := int64(1); page <= 200; page++ {
+				tasks.Set(task.Task{ID: id, Doing: "Reading a scan", Done: page, Total: 200})
+			}
+		}()
+	}
+	reporting.Wait()
+
+	// The stream ends with its context after the last list is in it, so what
+	// comes out of it last is what a person is left looking at.
+	doing := tasks.List()
+	stop()
+	if last := <-ended; !slices.Equal(last, doing) {
+		t.Errorf("left showing %+v, want what is being done, %+v", last, doing)
+	}
 }
 
 func next(t *testing.T, watching <-chan []task.Task) []task.Task {

@@ -61,29 +61,24 @@ func (t *Tasks) Set(task Task) {
 		return
 	}
 	t.mu.Lock()
+	defer t.mu.Unlock()
 	if _, held := t.held[task.ID]; !held {
 		t.order = append(t.order, task.ID)
 	}
 	t.held[task.ID] = task
-	list := t.list()
-	t.mu.Unlock()
-
-	t.tell(list)
+	t.tell()
 }
 
 // Done takes one task out. A task that is not there is the outcome asked for.
 func (t *Tasks) Done(id string) {
 	t.mu.Lock()
+	defer t.mu.Unlock()
 	if _, held := t.held[id]; !held {
-		t.mu.Unlock()
 		return
 	}
 	delete(t.held, id)
 	t.order = slices.DeleteFunc(t.order, func(at string) bool { return at == id })
-	list := t.list()
-	t.mu.Unlock()
-
-	t.tell(list)
+	t.tell()
 }
 
 // List is what is being done now.
@@ -133,9 +128,11 @@ func (t *Tasks) Watch(ctx context.Context) <-chan []Task {
 
 // tell hands the list to everybody watching, dropping what a listener has not
 // read yet.
-func (t *Tasks) tell(list []Task) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
+//
+// The caller holds the lock from the change through the telling, so the last
+// list a listener is left holding is the newest one.
+func (t *Tasks) tell() {
+	list := t.list()
 	for _, told := range t.waiting {
 		select {
 		case <-told:
