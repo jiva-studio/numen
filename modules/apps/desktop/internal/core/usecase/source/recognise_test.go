@@ -3,6 +3,7 @@ package source
 import (
 	"context"
 	"errors"
+	"fmt"
 	"image"
 	"io/fs"
 	"os"
@@ -20,9 +21,10 @@ import (
 type shelf struct {
 	mu    sync.Mutex
 	files map[string][]byte
+	held  map[string]bool
 }
 
-func newShelf() *shelf { return &shelf{files: map[string][]byte{}} }
+func newShelf() *shelf { return &shelf{files: map[string][]byte{}, held: map[string]bool{}} }
 
 func (s *shelf) Open(domain.Vault) (port.DerivedStore, error) { return s, nil }
 
@@ -55,6 +57,28 @@ func (s *shelf) Remove(_ context.Context, name string) error {
 	defer s.mu.Unlock()
 	delete(s.files, name)
 	return nil
+}
+
+func (s *shelf) Claim(_ context.Context, name string) (func() error, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.held[name] {
+		return nil, port.ErrClaimed
+	}
+	s.held[name] = true
+	return func() error {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		delete(s.held, name)
+		return nil
+	}, nil
+}
+
+// hold takes a name the way another run holds it.
+func (s *shelf) hold(name string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.held[name] = true
 }
 
 func (s *shelf) names() []string {
@@ -90,7 +114,14 @@ func (s *speaker) Read(ctx context.Context, _ image.Image) ([]ocr.Block, error) 
 	if s.says == "" {
 		return nil, nil
 	}
-	return []ocr.Block{{Label: "text", Text: s.says}}, nil
+	// No two pages say the same thing, so a coordinate read at the wrong offset
+	// names the wrong words.
+	said := fmt.Sprintf("%s %d", s.says, s.pages)
+	return []ocr.Block{{
+		Label: "text",
+		Text:  said,
+		Spans: []ocr.Span{{Box: image.Rect(10, 20, 30, 40), Length: len(said)}},
+	}}, nil
 }
 
 func (s *speaker) Close() error { return nil }
@@ -142,10 +173,10 @@ func TestWhatIsReadIsWrittenDownAndClaimed(t *testing.T) {
 	// The artifact is named by the hash of what was read, and the source now
 	// says its text is there.
 	src := index.sources[v.ID][documentPath]
-	if src.TextPath == "" {
-		t.Fatal("the source does not say where its text is")
+	if src.TextFrom == "" {
+		t.Fatal("the source does not say which producer made its text")
 	}
-	raw, err := shelf.Read(t.Context(), src.TextPath)
+	raw, err := shelf.Read(t.Context(), text.Artifact(src.TextFrom, src.Hash))
 	if err != nil {
 		t.Fatalf("the artifact is not where the source says: %v", err)
 	}
@@ -179,8 +210,8 @@ func TestADocumentSayingNothingWritesNothing(t *testing.T) {
 	if names := shelf.names(); len(names) != 0 {
 		t.Errorf("it wrote %v", names)
 	}
-	if src, held := index.sources[v.ID][documentPath]; held && src.TextPath != "" {
-		t.Errorf("the source was pointed at %q", src.TextPath)
+	if src, held := index.sources[v.ID][documentPath]; held && src.TextFrom != "" {
+		t.Errorf("the source was pointed at %q", src.TextFrom)
 	}
 }
 
@@ -251,7 +282,7 @@ func TestWhatReadItIsKeptBesideWhatItRead(t *testing.T) {
 		t.Fatal(err)
 	}
 	src := index.sources[v.ID][documentPath]
-	hash := strings.TrimSuffix(strings.TrimPrefix(src.TextPath, "ocr/"), ".txt")
+	hash := src.Hash
 
 	raw, err := shelf.Read(t.Context(), text.Beside("ocr", hash))
 	if err != nil {
@@ -273,8 +304,8 @@ func TestAReadingDeletedByHandIsNoticed(t *testing.T) {
 	if _, err := u.Execute(t.Context(), v, documentPath); err != nil {
 		t.Fatal(err)
 	}
-	stood := index.sources[v.ID][documentPath].TextPath
-	if stood == "" {
+	stood := index.sources[v.ID][documentPath]
+	if stood.TextFrom == "" {
 		t.Fatal("the source does not stand on a reading")
 	}
 
@@ -287,7 +318,7 @@ func TestAReadingDeletedByHandIsNoticed(t *testing.T) {
 		t.Fatal("the source was not cut, so this cannot tell anything")
 	}
 
-	if err := shelf.Remove(t.Context(), stood); err != nil {
+	if err := shelf.Remove(t.Context(), text.Artifact(stood.TextFrom, stood.Hash)); err != nil {
 		t.Fatal(err)
 	}
 	res, err := extract.Execute(t.Context(), v)
@@ -297,7 +328,308 @@ func TestAReadingDeletedByHandIsNoticed(t *testing.T) {
 	if res.Forgotten != 1 {
 		t.Errorf("noticed %d readings gone, want 1", res.Forgotten)
 	}
-	if got := index.sources[v.ID][documentPath].TextPath; got != "" {
+	if got := index.sources[v.ID][documentPath].TextFrom; got != "" {
 		t.Errorf("the source still stands on %q", got)
 	}
+}
+
+// document is the bytes under test and the hash a reading of them is kept
+// under.
+func document(t *testing.T) string {
+	t.Helper()
+	raw, err := os.ReadFile("../../pdf/testdata/outline.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return fingerprint(raw)
+}
+
+// reads checks that every coordinate names the words it was read from, in the
+// prose the artifact holds.
+//
+// The offsets rise, because the prose of every page written before this one
+// stands in front of it.
+func reads(t *testing.T, prose string, boxes []ocr.Box, says string) {
+	t.Helper()
+	at := -1
+	for i, box := range boxes {
+		if box.Start < 0 || box.Start+box.Length > len(prose) {
+			t.Errorf("box %d reaches %d of %d bytes", i, box.Start+box.Length, len(prose))
+			continue
+		}
+		if box.Start <= at {
+			t.Errorf("box %d begins at %d, and the one before it at %d", i, box.Start, at)
+		}
+		at = box.Start
+		if got := prose[box.Start : box.Start+box.Length]; !strings.HasPrefix(got, says) {
+			t.Errorf("box %d reads %q, and no page says that", i, got)
+		}
+	}
+}
+
+func TestADocumentAnotherRunHoldsIsLeftAlone(t *testing.T) {
+	// The name is the hash of the document's bytes, and it is appended to for an
+	// hour. One run holds it for all of that.
+	u, v, index, shelf, model := recogniser(t, "A page.")
+	shelf.hold(text.Partial("ocr", document(t)))
+
+	res, err := u.Execute(t.Context(), v, documentPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !res.Busy {
+		t.Error("a document another run is reading was read again")
+	}
+	if model.pages != 0 {
+		t.Errorf("the model was shown %d pages", model.pages)
+	}
+	if names := shelf.names(); len(names) != 0 {
+		t.Errorf("it wrote %v", names)
+	}
+	if _, held := index.sources[v.ID][documentPath]; held {
+		t.Error("the source was recorded")
+	}
+}
+
+func TestEveryCoordinateNamesTheWordsItWasReadFrom(t *testing.T) {
+	// Every page is its own batch here, so the offsets only come out right if
+	// the prose written before each of them is carried forward.
+	const says = "A page."
+	u, v, index, shelf, _ := recogniser(t, says)
+
+	res, err := u.Execute(t.Context(), v, documentPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	src := index.sources[v.ID][documentPath]
+	raw, err := shelf.Read(t.Context(), text.Artifact(src.TextFrom, src.Hash))
+	if err != nil {
+		t.Fatal(err)
+	}
+	packed, err := shelf.Read(t.Context(), text.Boxes(src.TextFrom, src.Hash))
+	if err != nil {
+		t.Fatalf("the coordinates are not beside the artifact: %v", err)
+	}
+
+	prose, _ := ocr.Read(raw)
+	boxes := ocr.Unpack(packed)
+	if len(boxes) != res.Pages {
+		t.Fatalf("%d coordinates over %d pages", len(boxes), res.Pages)
+	}
+	for i, box := range boxes {
+		if box.Page != i {
+			t.Errorf("coordinate %d is on page %d", i, box.Page)
+		}
+	}
+	reads(t, prose, boxes, says)
+}
+
+func TestCoordinatesAheadOfTheCountAreDropped(t *testing.T) {
+	// The coordinates of a batch are written before its pages are, so a run that
+	// died between the two left coordinates the count does not claim.
+	const says = "A page."
+	u, v, index, shelf, model := recogniser(t, says)
+
+	ctx, stop := context.WithCancel(t.Context())
+	model.stop = func(pages int) {
+		if pages == 2 {
+			stop()
+		}
+	}
+	if _, err := u.Execute(ctx, v, documentPath); !errors.Is(err, context.Canceled) {
+		t.Fatalf("stopping gave %v", err)
+	}
+	stray := ocr.Pack([]ocr.Box{{Page: 2, Start: 9000, Length: 7}})
+	if err := shelf.Append(t.Context(), text.Boxes("ocr", document(t)), stray); err != nil {
+		t.Fatal(err)
+	}
+
+	model.stop = nil
+	res, err := u.Execute(t.Context(), v, documentPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	src := index.sources[v.ID][documentPath]
+	raw, err := shelf.Read(t.Context(), text.Artifact(src.TextFrom, src.Hash))
+	if err != nil {
+		t.Fatal(err)
+	}
+	packed, err := shelf.Read(t.Context(), text.Boxes(src.TextFrom, src.Hash))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	prose, _ := ocr.Read(raw)
+	boxes := ocr.Unpack(packed)
+	if len(boxes) != res.Pages {
+		t.Fatalf("%d coordinates over %d pages", len(boxes), res.Pages)
+	}
+	reads(t, prose, boxes, says)
+}
+
+func TestTheSourceIsCutAsItsPagesAreRead(t *testing.T) {
+	// A book is an hour. The pages already read answer questions while the rest
+	// of it is still being read.
+	u, v, _, _, _ := recogniser(t, "A page.")
+
+	cuts := 0
+	u.Cut = func(context.Context, domain.Vault, string) error {
+		cuts++
+		return nil
+	}
+	res, err := u.Execute(t.Context(), v, documentPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cuts < res.Pages {
+		t.Errorf("the source was cut %d times over %d pages", cuts, res.Pages)
+	}
+}
+
+func TestABatchThatDidNotLandWholeIsReadAgain(t *testing.T) {
+	// A count stands after the pages it claims. An append cut short leaves
+	// pages no count claims, and they are read again.
+	const says = "A page."
+	u, v, index, shelf, model := recogniser(t, says)
+
+	ctx, stop := context.WithCancel(t.Context())
+	model.stop = func(pages int) {
+		if pages == 2 {
+			stop()
+		}
+	}
+	if _, err := u.Execute(ctx, v, documentPath); !errors.Is(err, context.Canceled) {
+		t.Fatalf("stopping gave %v", err)
+	}
+
+	// The tail of an append that never finished.
+	partial := text.Partial("ocr", document(t))
+	torn, err := shelf.Read(t.Context(), partial)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := shelf.Write(t.Context(), partial, append(torn, "A pa"...)); err != nil {
+		t.Fatal(err)
+	}
+
+	model.stop = nil
+	res, err := u.Execute(t.Context(), v, documentPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	src := index.sources[v.ID][documentPath]
+	raw, err := shelf.Read(t.Context(), text.Artifact(src.TextFrom, src.Hash))
+	if err != nil {
+		t.Fatal(err)
+	}
+	prose, marks := ocr.Read(raw)
+	if len(marks) != res.Pages {
+		t.Errorf("the artifact names %d pages and the document has %d", len(marks), res.Pages)
+	}
+	if strings.Contains(prose, resumeMark) {
+		t.Errorf("a count is in the prose: %q", prose)
+	}
+
+	packed, err := shelf.Read(t.Context(), text.Boxes(src.TextFrom, src.Hash))
+	if err != nil {
+		t.Fatal(err)
+	}
+	reads(t, prose, ocr.Unpack(packed), says)
+}
+
+func TestAPartialCarryingNoCountIsReadFromTheBeginning(t *testing.T) {
+	// The count and the prose in front of it are one fact. A file carrying no
+	// count has been read to nowhere.
+	const says = "A page."
+	u, v, index, shelf, model := recogniser(t, says)
+
+	ctx, stop := context.WithCancel(t.Context())
+	model.stop = func(pages int) {
+		if pages == 2 {
+			stop()
+		}
+	}
+	if _, err := u.Execute(ctx, v, documentPath); !errors.Is(err, context.Canceled) {
+		t.Fatalf("stopping gave %v", err)
+	}
+
+	partial := text.Partial("ocr", document(t))
+	held, err := shelf.Read(t.Context(), partial)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var without []string
+	for _, line := range strings.SplitAfter(string(held), "\n") {
+		if !strings.HasPrefix(line, resumeMark) {
+			without = append(without, line)
+		}
+	}
+	if err := shelf.Write(t.Context(), partial, []byte(strings.Join(without, ""))); err != nil {
+		t.Fatal(err)
+	}
+
+	model.stop = nil
+	res, err := u.Execute(t.Context(), v, documentPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Resumed != 0 {
+		t.Errorf("it took up a file carrying no count at page %d", res.Resumed)
+	}
+	src := index.sources[v.ID][documentPath]
+	raw, err := shelf.Read(t.Context(), text.Artifact(src.TextFrom, src.Hash))
+	if err != nil {
+		t.Fatal(err)
+	}
+	prose, marks := ocr.Read(raw)
+	if len(marks) != res.Pages {
+		t.Errorf("the artifact names %d pages and the document has %d", len(marks), res.Pages)
+	}
+	packed, err := shelf.Read(t.Context(), text.Boxes(src.TextFrom, src.Hash))
+	if err != nil {
+		t.Fatal(err)
+	}
+	reads(t, prose, ocr.Unpack(packed), says)
+}
+
+func TestCoordinatesThatDidNotLandWholeAreNotReadAsRecords(t *testing.T) {
+	// An append cut short inside a record leaves bytes that are not one, and
+	// every record appended after them is read at a shifted offset.
+	const says = "A page."
+	u, v, index, shelf, model := recogniser(t, says)
+
+	ctx, stop := context.WithCancel(t.Context())
+	model.stop = func(pages int) {
+		if pages == 2 {
+			stop()
+		}
+	}
+	if _, err := u.Execute(ctx, v, documentPath); !errors.Is(err, context.Canceled) {
+		t.Fatalf("stopping gave %v", err)
+	}
+	name := text.Boxes("ocr", document(t))
+	if err := shelf.Append(t.Context(), name, make([]byte, 10)); err != nil {
+		t.Fatal(err)
+	}
+
+	model.stop = nil
+	res, err := u.Execute(t.Context(), v, documentPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	src := index.sources[v.ID][documentPath]
+	raw, err := shelf.Read(t.Context(), text.Artifact(src.TextFrom, src.Hash))
+	if err != nil {
+		t.Fatal(err)
+	}
+	packed, err := shelf.Read(t.Context(), name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	prose, _ := ocr.Read(raw)
+	boxes := ocr.Unpack(packed)
+	if len(boxes) != res.Pages {
+		t.Fatalf("%d coordinates over %d pages", len(boxes), res.Pages)
+	}
+	reads(t, prose, boxes, says)
 }

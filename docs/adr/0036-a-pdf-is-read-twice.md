@@ -60,28 +60,41 @@ and another never.
 
 ### Where a source's text is, is a column
 
-`sources.text_path` names the file a source's chunks are places in, when that is
-not the source's own bytes. Null is the ordinary case.
+`sources.text_from` names the producer that made the text a source's chunks are
+places in. Null is the ordinary case, and the only case for a note, an EPUB, or a
+PDF nobody has read.
+
+It holds a producer and not a name. The four files one reading writes are all
+composed from the producer and the hash, and the hash is a column here already,
+so a name is composed where it is needed and nothing takes an extension off a
+stored string.
 
 It is not in the recipe. The recipe is compared against the strings the running
 binary produces, so a per-source value in it makes every recognised source
-permanently unequal to all of them. **A recipe names a procedure; a location is
-data.**
+permanently unequal to all of them. **A recipe names a procedure.**
 
 Three rules hold it together:
 
-1. The column is authoritative for reading a passage back. A source naming a file
-   reads from there or reads nothing — falling back to the document would slice
-   one text at another text's offsets, which is a wrong answer given confidently.
-2. It is cleared by the same write that clears `hash` and `recipe`. One statement
-   does all three, so it is enforced rather than remembered.
-3. **The artifact is named by the hash of the bytes it was read from.** A
-   document renamed or moved keeps its recognition, two copies of one document
-   share one file, and a fingerprint that moved without the content — `unzip`,
+1. The column is authoritative for reading a passage back. A source naming a
+   producer reads from that producer's files or reads nothing — falling back to
+   the document would slice one text at another text's offsets, which is a wrong
+   answer given confidently.
+2. It is written by the same statement that writes the chunks cut from that text,
+   and cleared by the same write that clears `hash` and `recipe`. A row naming a
+   text its chunks are not offsets into answers with the wrong words, so the two
+   are one fact and one write.
+3. **A reading is named by the hash of the bytes it was made from.** A document
+   renamed or moved keeps its recognition, two copies of one document share one
+   reading, and a fingerprint that moved without the content — `unzip`,
    `rsync -t` — costs one read rather than an hour.
 
 Rule 3 is what makes rule 2 safe. Without it, a sync client touching a file
 throws a recognition away.
+
+Rule 3 is also what a sweep has to ask. A source that leaves the vault takes the
+files of its reading with it, and the question is whether **any** source still
+names that reading — not whether the path that named it went. Asked by path, a
+rename deletes the reading it was meant to keep.
 
 ### One reader answers for every kind of source
 
@@ -128,9 +141,44 @@ and rule 1 leaves nothing to fall back to.
 
 A document is an hour. ADR-0006 requires processing to be interruptible and
 resumable, and a run stopped part way keeps what it read: pages are appended to a
-partial file that says how far it got, and the rename to the final name is the
-last act. Until that rename there is no artifact, so a scan meeting a half-read
-document cuts the document's own text layer — the answer it gave before.
+partial file, and the count of how far it got is appended after them. The count
+is what makes the batch in front of it count, so a batch that did not land whole
+is one no count claims and the next run reads those pages again.
+
+**A partial is the source's text while it is being written.** After every batch
+the source is cut again from what has been read, so a book answers questions
+about the pages that have been read while the rest of it is still being read. The
+whole book waiting on the last page is an hour of finished pages on disk that
+answer nothing.
+
+What that costs is stated rather than discovered: while a run is on, the source
+is cut from the recognised prefix only, so the part of the book not yet read
+drops out of search until the run finishes.
+
+Reading it back tries the finished file and then the partial. The rename to the
+final name is still the last act, and the two names are one question because both
+are composed from the producer and the hash.
+
+### Where a passage was read is kept, and only here
+
+A reading is written beside a second file holding, per run of words, where on the
+page it was read: the page, the run of bytes in the text, and the rectangle as a
+fraction of that page. Fractions, so a viewer multiplies by whatever it rendered
+into and needs neither the dpi nor the page size. Fixed-width records in page
+order, so a viewer wanting one page seeks to it and reads no more.
+
+**It is kept because a model made it and this machine remakes it in an hour.**
+Every other map from a text offset to a format's own address is milliseconds
+away and is not kept: a PDF's own layer answers per word on demand, an EPUB's
+spine item is re-parsed, and a note's offset is already its address.
+
+What travels between a search and a viewer is a range of bytes in the source's
+text, and nothing above the viewer knows about pixels. Each format turns that
+range into its own address, so a third format is one new viewer and no change
+above it.
+
+Which range is a question this does not answer. It is decided where the passage
+is chosen, and the coordinates make no more claim than the offsets do.
 
 ## Consequences
 

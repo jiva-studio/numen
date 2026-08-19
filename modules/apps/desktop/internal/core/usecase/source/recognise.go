@@ -41,6 +41,10 @@ type Recognise struct {
 	// it had. Zero takes the default.
 	Batch int
 
+	// Cut makes a source's chunks. It is called as pages are written down, so
+	// what has been read is searchable before the rest of it is.
+	Cut func(ctx context.Context, v domain.Vault, path string) error
+
 	OnProgress func(RecogniseResult)
 }
 
@@ -51,6 +55,7 @@ type RecogniseResult struct {
 	Read    int    // how many have been read, this run and before it
 	Resumed int    // how many a run before this one had already read
 	Empty   bool   // it says nothing, and nothing was written
+	Busy    bool   // somebody else is reading these bytes, and nothing was done
 }
 
 // DefaultBatch is how many pages are read before they are written down.
@@ -83,12 +88,25 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 	hash := fingerprint(raw)
 	area := u.area()
 	final, partial := text.Artifact(area, hash), text.Partial(area, hash)
+	boxes := text.Boxes(area, hash)
+
+	// One run to a document. The name is the hash of its bytes, and it is held for
+	// as long as the reading takes.
+	release, err := store.Claim(ctx, partial)
+	if errors.Is(err, port.ErrClaimed) {
+		res.Busy = true
+		return res, nil
+	}
+	if err != nil {
+		return res, err
+	}
+	defer release()
 
 	// A document already read is not read again. The name is the hash of what
 	// was read, so this holds however the file was renamed or moved since.
 	if _, err := store.Read(ctx, final); err == nil {
 		res.Read, res.Pages = 1, 1
-		return res, u.claim(ctx, v, ref, hash, final)
+		return res, u.stand(ctx, v, ref, hash, area)
 	}
 
 	scan, err := pdf.Open(raw)
@@ -98,12 +116,43 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 	defer scan.Close()
 	res.Pages = scan.Pages()
 
-	done, err := resumed(ctx, store, partial)
+	done, prose, err := resumed(ctx, store, partial)
 	if err != nil {
+		return res, err
+	}
+	// The two files are written one after the other, so a run that died between
+	// them left coordinates for pages the count does not claim.
+	if err := trimmed(ctx, store, boxes, done); err != nil {
 		return res, err
 	}
 	res.Resumed, res.Read = done, done
 	u.progress(res)
+
+	// write puts a run of pages down and cuts the source from everything the
+	// document has said so far.
+	//
+	// The coordinates go first, so a run that dies between the two writes leaves
+	// them ahead of the count and the next run trims them back to it.
+	//
+	// Nothing here says which text the source stands on. Cutting writes that
+	// and the chunks cut from it in one statement, and they are one fact: a row
+	// naming a text its chunks are not offsets into answers with the wrong
+	// words.
+	write := func(pages []ocr.Page) error {
+		written, found := ocr.Write(pages)
+		for i := range found {
+			found[i].Start += prose
+		}
+		if err := store.Append(ctx, boxes, ocr.Pack(found)); err != nil {
+			return err
+		}
+		if err := store.Append(ctx, partial, marked(written, res.Read)); err != nil {
+			return err
+		}
+		said, _ := ocr.Read(written)
+		prose += len(said)
+		return u.cut(ctx, v, path)
+	}
 
 	pages := make([]ocr.Page, 0, u.batch())
 	for index := done; index < scan.Pages(); index++ {
@@ -112,19 +161,24 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 			// person did, and the next run begins where this one stopped.
 			return res, err
 		}
-		image, err := scan.Image(index, u.By.Recognition().DPI)
+		drawn, err := scan.Image(index, u.By.Recognition().DPI)
 		if err != nil {
 			return res, fmt.Errorf("draw page %d of %s: %w", index+1, path, err)
 		}
-		blocks, err := u.By.Read(ctx, image)
+		blocks, err := u.By.Read(ctx, drawn)
 		if err != nil {
 			return res, fmt.Errorf("read page %d of %s: %w", index+1, path, err)
 		}
-		pages = append(pages, ocr.Page{Label: scan.Label(index), Blocks: blocks})
+		pages = append(pages, ocr.Page{
+			At:     index,
+			Label:  scan.Label(index),
+			Size:   drawn.Bounds().Size(),
+			Blocks: blocks,
+		})
 
 		res.Read = index + 1
 		if len(pages) >= u.batch() {
-			if err := store.Append(ctx, partial, written(pages, res.Read)); err != nil {
+			if err := write(pages); err != nil {
 				return res, err
 			}
 			pages = pages[:0]
@@ -132,7 +186,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 		u.progress(res)
 	}
 	if len(pages) > 0 {
-		if err := store.Append(ctx, partial, written(pages, res.Read)); err != nil {
+		if err := write(pages); err != nil {
 			return res, err
 		}
 	}
@@ -145,32 +199,94 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 	if err != nil {
 		return res, err
 	}
-	if prose, _ := ocr.Read(whole); strings.TrimSpace(prose) == "" {
+	if said, _ := ocr.Read(whole); strings.TrimSpace(said) == "" {
 		// A document that says nothing writes nothing. An empty artifact would
 		// stand in for a text layer that worked, and there is no falling back
 		// from one.
 		res.Empty = true
-		return res, store.Remove(ctx, partial)
+		return res, u.forget(ctx, v, ref, hash, store, partial, boxes)
 	}
 
 	if err := store.Write(ctx, final, whole); err != nil {
 		return res, err
 	}
-	if err := store.Remove(ctx, partial); err != nil {
-		return res, err
-	}
 	if err := u.record(ctx, store, area, hash); err != nil {
 		return res, err
 	}
-	return res, u.claim(ctx, v, ref, hash, final)
+	// The source stands on the artifact before the partial goes.
+	if err := u.stand(ctx, v, ref, hash, area); err != nil {
+		return res, err
+	}
+	return res, store.Remove(ctx, partial)
 }
 
-// claim records that this source's text is now the artifact's.
+// stand puts the source on the text a producer made.
+//
+// Cutting writes which text a source stands on together with the chunks cut
+// from it, in one statement, and the two are one fact. Where nothing cuts here
+// the source is recorded as owing its text, and the scan that cuts it writes
+// both.
+func (u Recognise) stand(ctx context.Context, v domain.Vault, ref domain.FileRef, hash, from string) error {
+	if u.Cut != nil {
+		return u.Cut(ctx, v, ref.Path)
+	}
+	return u.claim(ctx, v, ref, hash, from)
+}
+
+// forget puts a document that said nothing back on its own text layer, and takes
+// away what reading it produced.
+func (u Recognise) forget(
+	ctx context.Context,
+	v domain.Vault,
+	ref domain.FileRef,
+	hash string,
+	store port.DerivedStore,
+	names ...string,
+) error {
+	for _, name := range names {
+		if err := store.Remove(ctx, name); err != nil {
+			return err
+		}
+	}
+	return u.stand(ctx, v, ref, hash, "")
+}
+
+// cut makes this source's chunks from what has been read so far.
+func (u Recognise) cut(ctx context.Context, v domain.Vault, path string) error {
+	if u.Cut == nil {
+		return nil
+	}
+	return u.Cut(ctx, v, path)
+}
+
+// trimmed drops the coordinates of pages no count claims.
+func trimmed(ctx context.Context, store port.DerivedStore, name string, done int) error {
+	raw, err := store.Read(ctx, name)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	held := ocr.Unpack(raw)
+	kept := make([]ocr.Box, 0, len(held))
+	for _, box := range held {
+		if box.Page < done {
+			kept = append(kept, box)
+		}
+	}
+	// Written back whatever was dropped. An append that did not land whole
+	// leaves bytes that are not a record, and every record appended after them
+	// is read at a shifted offset.
+	return store.Write(ctx, name, ocr.Pack(kept))
+}
+
+// claim records which producer made this source's text.
 //
 // No recipe is written, so the source owes its text: what cuts it into windows
 // is extraction, which knows the sizes and is the one place that does.
-func (u Recognise) claim(ctx context.Context, v domain.Vault, ref domain.FileRef, hash, name string) error {
-	return u.Sources.SaveSource(ctx, v.ID, port.Source{Ref: ref, Hash: hash, TextPath: name})
+func (u Recognise) claim(ctx context.Context, v domain.Vault, ref domain.FileRef, hash, from string) error {
+	return u.Sources.SaveSource(ctx, v.ID, port.Source{Ref: ref, Hash: hash, TextFrom: from})
 }
 
 // record keeps what read the document beside what it read. Nothing on any path
@@ -192,42 +308,65 @@ func (u Recognise) record(ctx context.Context, store port.DerivedStore, area, ha
 	return store.Write(ctx, text.Beside(area, hash), append(raw, '\n'))
 }
 
-// written is a run of pages and how many of the document have been read,
-// together, so that a run stopped part way can be taken up again.
+// marked is a run of pages and, after them, how many of the document have been
+// read, so that a run stopped part way can be taken up again.
+//
+// The count stands last and is what makes the batch before it count. A batch
+// that did not land whole is one no count claims, and the next run reads those
+// pages again.
 //
 // The count is a comment: it is a line the artifact's own reader passes over,
 // because a page mark is what it looks for.
-func written(pages []ocr.Page, read int) []byte {
-	return append([]byte(fmt.Sprintf("%s%d\n", resumeMark, read)), ocr.Write(pages)...)
+func marked(raw []byte, read int) []byte {
+	return append(raw, fmt.Sprintf("%s%d\n", resumeMark, read)...)
 }
 
 // resumeMark begins the line that says how much of a document has been read.
 const resumeMark = ocr.Note + "pages "
 
-// resumed is how many pages of a document a run before this one read.
-func resumed(ctx context.Context, store port.DerivedStore, partial string) (int, error) {
+// resumed is how many pages of a document a run before this one read and how
+// many bytes of prose those pages came to, with anything past the last count cut
+// away.
+//
+// A count stands after the pages it claims, so what follows the last one is a
+// batch that did not land whole. The two numbers come from the same stretch of
+// the file, which is what makes a coordinate written next land where its words
+// are.
+func resumed(ctx context.Context, store port.DerivedStore, partial string) (int, int, error) {
 	raw, err := store.Read(ctx, partial)
 	if errors.Is(err, fs.ErrNotExist) {
-		return 0, nil
+		return 0, 0, nil
 	}
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
-	// The last count written is the one that counts: every batch appends one,
-	// and the run stopped after the last of them.
+	read, end := lastCount(raw)
+	if end < len(raw) {
+		if err := store.Write(ctx, partial, raw[:end]); err != nil {
+			return 0, 0, err
+		}
+	}
+	said, _ := ocr.Read(raw[:end])
+	return read, len(said), nil
+}
+
+// lastCount is the last count a partial carries and where the line holding it
+// ends. A file carrying none is a document nothing has read.
+func lastCount(raw []byte) (read, end int) {
 	at := strings.LastIndex(string(raw), resumeMark)
 	if at < 0 {
-		return 0, nil
+		return 0, 0
 	}
 	line := string(raw[at+len(resumeMark):])
-	if end := strings.IndexByte(line, '\n'); end >= 0 {
-		line = line[:end]
+	stop := strings.IndexByte(line, '\n')
+	if stop < 0 {
+		return lastCount(raw[:at])
 	}
-	read, err := strconv.Atoi(strings.TrimSpace(line))
+	read, err := strconv.Atoi(strings.TrimSpace(line[:stop]))
 	if err != nil {
-		return 0, nil
+		return lastCount(raw[:at])
 	}
-	return read, nil
+	return read, at + len(resumeMark) + stop + 1
 }
 
 func (u Recognise) area() string {

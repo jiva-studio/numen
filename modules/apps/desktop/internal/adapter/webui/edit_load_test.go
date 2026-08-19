@@ -74,7 +74,7 @@ func TestEditLoad(t *testing.T) {
 	}
 
 	reading := time.Now()
-	wait := begin(t.Context(), cfg, db, api, scan, follow, held, filesystem.Readers{}, nil, waking(time.Hour), io.Discard)
+	wait := begin(t.Context(), cfg, db, api, scan, follow, held, filesystem.Readers{}, nil, waking(time.Hour), &pending{}, io.Discard)
 	t.Cleanup(wait)
 	for !api.Ready.Load() && api.failure() == "" {
 		time.Sleep(50 * time.Millisecond)

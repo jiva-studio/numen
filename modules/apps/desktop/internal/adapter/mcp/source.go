@@ -13,9 +13,12 @@ import (
 // about it.
 type Document struct {
 	Path string `json:"path"`
-	// Read says whether a model has read this document. A scan that carries its
-	// own text says nothing about whether that text is any good, so this is the
-	// only thing that can be said for certain.
+	// Read says whether this document stands on what a model read in it. A
+	// reading still running stands on the pages it has reached, so this is true
+	// from the first of them.
+	//
+	// A scan that carries its own text says nothing about whether that text is
+	// any good, so this is the only thing that can be said for certain.
 	Read bool `json:"read"`
 }
 
@@ -52,9 +55,13 @@ func addSourceTools(server *sdk.Server, core Core) {
 		if err != nil {
 			return nil, out{}, err
 		}
+		stands := make(map[string]bool, len(read))
+		for _, one := range read {
+			stands[one.Path] = one.From != ""
+		}
 		documents := make([]Document, 0, len(known))
 		for path := range known {
-			documents = append(documents, Document{Path: path, Read: read[path] != ""})
+			documents = append(documents, Document{Path: path, Read: stands[path]})
 		}
 		says := ""
 		if core.Recognise != nil {
@@ -71,8 +78,10 @@ func addSourceTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "source_recognise",
 		Title: "Read a scanned document",
-		Description: "Have a model read one scanned document and write down what it says, " +
-			"so that the vault can search it. This is slow — an hour for a book — and " +
+		Description: "Have a model read one scanned document and write down what it says. " +
+			"The pages it has read are searchable as it goes, so a search finds the " +
+			"beginning of a book long before the end of it is read; the part not yet " +
+			"read answers nothing until it is. This is slow — an hour for a book — and " +
 			"it is never done on its own, because whether a document's own text is any " +
 			"good cannot be told from the text. Ask for it when a document is a scan, " +
 			"or when what a search returns from one is nonsense.",
@@ -94,9 +103,12 @@ func addSourceTools(server *sdk.Server, core Core) {
 		// minutes and reading a book is an hour, and how far either has got is
 		// among everything else the window shows being done.
 		if !core.Recognise.Start(context.WithoutCancel(ctx), core.Vault, in.Path) {
-			return nil, out{Says: "one document is already being read — this one waits for it"}, nil
+			// Nothing here remembers a request that was not taken.
+			return nil, out{Says: "another document is being read and this one was not taken; " +
+				"nothing is reading it — ask again once source_list says none is being read"}, nil
 		}
-		says := "started; it runs in the background and the window shows how far it has got"
+		says := "started; it runs in the background, the pages it has read are searchable " +
+			"as it goes, and the window shows how far it has got"
 		if !core.Recognise.Ready() {
 			says = "started; what is needed to read scans is being fetched first, about 160 MB"
 		}

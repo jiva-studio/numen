@@ -118,7 +118,7 @@ func (u Embed) read(ctx context.Context, source *extracted, owing []domain.Passa
 			res.Reading = p.Source
 			u.progress(*res)
 		}
-		prose, ok, err := source.textOf(ctx, p.Source, p.TextPath)
+		prose, ok, err := source.textOf(ctx, p.Source, p.TextFrom, p.Hash)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -260,13 +260,13 @@ type extracted struct {
 //
 // One reader for every kind and for every place a text may live, so that a
 // window is re-sliced out of the text it was cut from.
-func (e *extracted) textOf(ctx context.Context, path, textPath string) (string, bool, error) {
+func (e *extracted) textOf(ctx context.Context, path, from, hash string) (string, bool, error) {
 	if e.path == path {
 		return e.text, e.held, nil
 	}
 	e.path, e.text, e.held = path, "", false
 
-	doc, err := e.of.Of(ctx, path, textPath)
+	doc, err := e.of.Of(ctx, path, from, hash)
 	switch {
 	case port.NoNote(err), errors.Is(err, fs.ErrNotExist), errors.Is(err, text.ErrUnreadable):
 		return "", false, nil

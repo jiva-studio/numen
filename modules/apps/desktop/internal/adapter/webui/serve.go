@@ -108,6 +108,16 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 	tasks := task.New()
 	recognising := cfg.Recognising(db.Sources(), tasks)
 
+	// What a recognition writes down is cut where every other cut happens. A
+	// document being read and a vault being scanned are then never two passes
+	// over the index at once.
+	owed := &pending{}
+	recognising.Cut = func(_ context.Context, v domain.Vault, path string) error {
+		owed.put(v, path)
+		raise(wake.read)
+		return nil
+	}
+
 	api := &API{
 		Vault:     vaults[0],
 		Notes:     db.Queries(),
@@ -185,7 +195,7 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		Scan:    scan,
 	}
 
-	wait := begin(watching, cfg, db, api, scan, follow, held, cfg.VaultReaders(), embedder, wake, out)
+	wait := begin(watching, cfg, db, api, scan, follow, held, cfg.VaultReaders(), embedder, wake, owed, out)
 
 	return &Opened{
 		API:         api,
@@ -273,6 +283,9 @@ const settled = 8 * time.Second
 type nudges struct {
 	sources chan struct{}
 	notes   chan struct{}
+	// read is one source with more text than its chunks account for, which is
+	// what a recognition leaves behind every batch of pages.
+	read chan struct{}
 	// still is how long the vault has to have been quiet before a note that was
 	// written is embedded.
 	still time.Duration
@@ -282,8 +295,40 @@ func waking(still time.Duration) nudges {
 	return nudges{
 		sources: make(chan struct{}, 1),
 		notes:   make(chan struct{}, 1),
+		read:    make(chan struct{}, 1),
 		still:   still,
 	}
+}
+
+// pending is the sources a recognition has written more of than their chunks
+// account for.
+//
+// One document is read at a time and a document asks many times over, so this
+// holds a source once however many batches it wrote. It holds more than one
+// because a nudge can be dropped while the pass is busy, and a document that
+// finished while another was being asked for is a book cut to the page it
+// reached.
+type pending struct {
+	mu    sync.Mutex
+	paths map[string]domain.Vault
+}
+
+func (p *pending) put(v domain.Vault, path string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.paths == nil {
+		p.paths = map[string]domain.Vault{}
+	}
+	p.paths[path] = v
+}
+
+// take is everything waiting, and leaves nothing behind.
+func (p *pending) take() map[string]domain.Vault {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	held := p.paths
+	p.paths = nil
+	return held
 }
 
 // raise leaves one nudge waiting. What owes work is asked of the index, so
@@ -314,6 +359,7 @@ func begin(
 	readers port.VaultReaders,
 	embedder port.Embedder,
 	wake nudges,
+	owed *pending,
 	out io.Writer,
 ) func() {
 	trouble := func(err error) {
@@ -427,6 +473,18 @@ func begin(
 				api.Busy.Store(true)
 				readSources(ctx, cfg, db, api, readers, embedder, out)
 				api.Busy.Store(false)
+			case <-wake.read:
+				// A batch of pages is on disk. What has been read of the
+				// document is cut and embedded while the rest of it is still
+				// being read.
+				if held := owed.take(); len(held) > 0 {
+					api.Busy.Store(true)
+					for path, v := range held {
+						cutSource(ctx, cfg, db, readers, embedder, v, path, out)
+					}
+					embedSources(ctx, cfg, db, api, readers, embedder, out)
+					api.Busy.Store(false)
+				}
 			case <-wake.notes:
 				// Every write puts the pass off again. What was typed is
 				// embedded once the vault has been still, and there is work
@@ -439,7 +497,7 @@ func begin(
 			case <-quiet:
 				quiet = nil
 				api.Busy.Store(true)
-				embedSources(ctx, db, api, readers, embedder, out)
+				embedSources(ctx, cfg, db, api, readers, embedder, out)
 				api.Busy.Store(false)
 			}
 		}
@@ -516,33 +574,20 @@ func readSources(
 	embedder port.Embedder,
 	out io.Writer,
 ) {
-	// A window is cut under the limit of the model that will read it. Without a
-	// model the default bound stands: what is cut now is what a model of any width
-	// is later given.
-	sizes := window.Sizes{}
-	if embedder != nil {
-		sizes.Limit = window.Under(embedder.Model().MaxTokens)
-	}
+	sizes := cutting(embedder)
 
-	derived, err := cfg.DerivedStores().Open(api.Vault)
+	extract, err := extracting(cfg, db, readers, sizes, api.Vault)
 	if err != nil {
 		fmt.Fprintf(out, "reading the sources of %s: %v\n", api.Vault.Name, err)
 		return
 	}
-	extract := source.Extract{
-		Readers:      readers,
-		Sources:      db.Sources(),
-		Owing:        db.SourcesKnown(),
-		Derived:      derived,
-		Sizes:        sizes,
-		RebuildIndex: cfg.RebuildIndex,
-		OnProgress: func(res source.ExtractResult) {
-			api.Reading.Store(res.Reading)
-			api.Books.Store(int64(res.Seen))
-			// Every book the walk found leaves this pass one of four ways, and
-			// all four count as done.
-			api.BooksRead.Store(int64(res.Extracted + res.Unchanged + res.Unreadable + res.Vanished))
-		},
+	extract.RebuildIndex = cfg.RebuildIndex
+	extract.OnProgress = func(res source.ExtractResult) {
+		api.Reading.Store(res.Reading)
+		api.Books.Store(int64(res.Seen))
+		// Every book the walk found leaves this pass one of four ways, and all
+		// four count as done.
+		api.BooksRead.Store(int64(res.Extracted + res.Unchanged + res.Unreadable + res.Vanished))
 	}
 	if res, err := extract.Execute(ctx, api.Vault); err != nil {
 		if !errors.Is(err, context.Canceled) {
@@ -554,7 +599,65 @@ func readSources(
 	api.Reading.Store("")
 	api.Owed.Store(&Owed{})
 
-	embedSources(ctx, db, api, readers, embedder, out)
+	embedSources(ctx, cfg, db, api, readers, embedder, out)
+}
+
+// cutSource cuts one source again from whatever its text now says.
+//
+// A recognition writes a batch of pages and asks for this, so a book being read
+// answers questions about the pages that have been read. Failing is one source:
+// the next batch asks again.
+func cutSource(
+	ctx context.Context,
+	cfg container.Config,
+	db *container.Index,
+	readers port.VaultReaders,
+	embedder port.Embedder,
+	v domain.Vault,
+	path string,
+	out io.Writer,
+) {
+	cut, err := extracting(cfg, db, readers, cutting(embedder), v)
+	if err != nil {
+		fmt.Fprintf(out, "cutting %s: %v\n", path, err)
+		return
+	}
+	if _, err := cut.One(ctx, v, path); err != nil && !errors.Is(err, context.Canceled) {
+		fmt.Fprintf(out, "cutting %s: %v\n", path, err)
+	}
+}
+
+// extracting is what cuts a vault's sources, put together the one way. A pass
+// over the whole vault and a pass over one source are the same cut, and two
+// assemblies of it are two cuts that come apart.
+func extracting(
+	cfg container.Config,
+	db *container.Index,
+	readers port.VaultReaders,
+	sizes window.Sizes,
+	v domain.Vault,
+) (source.Extract, error) {
+	derived, err := cfg.DerivedStores().Open(v)
+	if err != nil {
+		return source.Extract{}, err
+	}
+	return source.Extract{
+		Readers: readers,
+		Sources: db.Sources(),
+		Owing:   db.SourcesKnown(),
+		Derived: derived,
+		Sizes:   sizes,
+	}, nil
+}
+
+// cutting is the sizes a window is cut at. A window is cut under the limit of
+// the model that will read it; without a model the default bound stands, and
+// what is cut now is what a model of any width is later given.
+func cutting(embedder port.Embedder) window.Sizes {
+	if embedder == nil {
+		return window.Sizes{}
+	}
+	return window.Sizes{Limit: window.Under(embedder.Model().MaxTokens)}
 }
 
 // embedSources gives the chunks of the vault the vectors they owe, and reads no
@@ -564,6 +667,7 @@ func readSources(
 // where the note is stored, and what has no vector is a question for the index.
 func embedSources(
 	ctx context.Context,
+	cfg container.Config,
 	db *container.Index,
 	api *API,
 	readers port.VaultReaders,
@@ -584,8 +688,17 @@ func embedSources(
 		}
 	}
 
+	// A source standing on what a model read in it is read from the store, and a
+	// vector is made from the text a chunk is a place in. Without the store that
+	// text cannot be reached and the chunk is passed over with nothing said.
+	derived, err := cfg.DerivedStores().Open(api.Vault)
+	if err != nil {
+		fmt.Fprintf(out, "embedding %s: %v\n", api.Vault.Name, err)
+		return
+	}
 	embed := source.Embed{
 		Readers:  readers,
+		Derived:  derived,
 		Chunks:   db.VectorsOwing(),
 		Vectors:  db.Vectors(),
 		Embedder: embedder,

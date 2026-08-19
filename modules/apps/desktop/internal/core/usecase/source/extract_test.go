@@ -1,12 +1,14 @@
 package source
 
 import (
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/text"
+	"errors"
+	"io/fs"
 	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/epub"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/text"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
 )
 
@@ -358,5 +360,176 @@ func TestRebuildingTheIndexReadsEveryFile(t *testing.T) {
 		t.Fatal(err)
 	} else if res.Extracted != 1 {
 		t.Errorf("rebuilding read %d books: %+v", res.Extracted, res)
+	}
+}
+
+// A recognition still running is the source's text while it runs. The pages it
+// has read are what a passage is a place in, and the artifact answers under the
+// same producer name once the run finishes.
+func TestASourceCutFromAPartialReadsBackFromThePartial(t *testing.T) {
+	ctx := t.Context()
+	index, shelf, made := newStore(), newLibrary(), newShelf()
+
+	raw := bookOf(t, "A Book", words(sanskrit, 200))
+	shelf.hold(bookPath, domain.KindBook, raw, 1)
+
+	const (
+		read  = "What the pages read so far say."
+		whole = "What every page of the document says."
+	)
+	hash := fingerprint(raw)
+	if err := made.Write(ctx, text.Partial("ocr", hash), []byte(read)); err != nil {
+		t.Fatal(err)
+	}
+
+	extract := Extract{Readers: vaults{first.ID: shelf}, Sources: index, Owing: index, Derived: made}
+	if _, err := extract.Execute(ctx, first); err != nil {
+		t.Fatal(err)
+	}
+	src := index.sources[first.ID][bookPath]
+	if src.TextFrom != "ocr" {
+		t.Fatalf("the source names %q as the producer of its text, want ocr", src.TextFrom)
+	}
+
+	of := text.Reader{Vault: shelf, Derived: made}
+	doc, err := of.Of(ctx, bookPath, src.TextFrom, src.Hash)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if doc.Text != read {
+		t.Errorf("the source reads back as %q, want the pages the run has read", doc.Text)
+	}
+
+	if err := made.Write(ctx, text.Artifact("ocr", hash), []byte(whole)); err != nil {
+		t.Fatal(err)
+	}
+	doc, err = of.Of(ctx, bookPath, src.TextFrom, src.Hash)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if doc.Text != whole {
+		t.Errorf("the source reads back as %q, want the finished artifact", doc.Text)
+	}
+}
+
+// A source the vault no longer holds takes the files of its reading with it.
+// One run made them and none of them means anything without the others.
+func TestABookTakenOutTakesTheFilesOfItsReading(t *testing.T) {
+	ctx := t.Context()
+	index, shelf, made := newStore(), newLibrary(), newShelf()
+
+	gone := bookOf(t, "Gone", words(latin, 200))
+	kept := bookOf(t, "Kept", words(sanskrit, 200))
+	shelf.hold("library/gone.epub", domain.KindBook, gone, 1)
+	shelf.hold("library/kept.epub", domain.KindBook, kept, 1)
+
+	for _, raw := range [][]byte{gone, kept} {
+		for _, name := range text.Names("ocr", fingerprint(raw)) {
+			if err := made.Write(ctx, name, []byte("What the pages say.")); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	extract := Extract{Readers: vaults{first.ID: shelf}, Sources: index, Owing: index, Derived: made}
+	if _, err := extract.Execute(ctx, first); err != nil {
+		t.Fatal(err)
+	}
+	if index.sources[first.ID]["library/gone.epub"].TextFrom == "" {
+		t.Fatal("the book was not cut from its reading, so its removal proves nothing")
+	}
+
+	delete(shelf.files, "library/gone.epub")
+	res, err := extract.Execute(ctx, first)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Removed != 1 {
+		t.Fatalf("removed = %d, want the one book the vault no longer holds", res.Removed)
+	}
+
+	for _, name := range text.Names("ocr", fingerprint(gone)) {
+		if _, err := made.Read(ctx, name); !errors.Is(err, fs.ErrNotExist) {
+			t.Errorf("%s is still in the store", name)
+		}
+	}
+	for _, name := range text.Names("ocr", fingerprint(kept)) {
+		if _, err := made.Read(ctx, name); err != nil {
+			t.Errorf("%s went with the other book: %v", name, err)
+		}
+	}
+}
+
+func TestARenamedBookKeepsItsReading(t *testing.T) {
+	// A reading is named by the hash of what was read, so a document renamed is
+	// the same reading at another path. Renaming is a path gone and a path
+	// found, and an hour of a model's work stands on the one that went.
+	ctx := t.Context()
+	index, shelf, made := newStore(), newLibrary(), newShelf()
+
+	raw := bookOf(t, "Read", words(sanskrit, 200))
+	shelf.hold("library/before.epub", domain.KindBook, raw, 1)
+	for _, name := range text.Names("ocr", fingerprint(raw)) {
+		if err := made.Write(ctx, name, []byte("What the pages say.")); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	extract := Extract{Readers: vaults{first.ID: shelf}, Sources: index, Owing: index, Derived: made}
+	if _, err := extract.Execute(ctx, first); err != nil {
+		t.Fatal(err)
+	}
+	if index.sources[first.ID]["library/before.epub"].TextFrom == "" {
+		t.Fatal("the book was not cut from its reading, so renaming it proves nothing")
+	}
+
+	delete(shelf.files, "library/before.epub")
+	shelf.hold("library/after.epub", domain.KindBook, raw, 1)
+	if _, err := extract.Execute(ctx, first); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, name := range text.Names("ocr", fingerprint(raw)) {
+		if _, err := made.Read(ctx, name); err != nil {
+			t.Errorf("renaming the book threw away %s: %v", name, err)
+		}
+	}
+	if from := index.sources[first.ID]["library/after.epub"].TextFrom; from == "" {
+		t.Error("the renamed book does not stand on its reading")
+	}
+}
+
+func TestOneOfTwoCopiesTakenOutLeavesTheOtherReading(t *testing.T) {
+	// Two copies of one document are one reading, because the name is the hash
+	// of the bytes. Taking one copy out leaves the other standing on it.
+	ctx := t.Context()
+	index, shelf, made := newStore(), newLibrary(), newShelf()
+
+	raw := bookOf(t, "Twice", words(sanskrit, 200))
+	shelf.hold("library/one.epub", domain.KindBook, raw, 1)
+	shelf.hold("shelf/two.epub", domain.KindBook, raw, 1)
+	for _, name := range text.Names("ocr", fingerprint(raw)) {
+		if err := made.Write(ctx, name, []byte("What the pages say.")); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	extract := Extract{Readers: vaults{first.ID: shelf}, Sources: index, Owing: index, Derived: made}
+	if _, err := extract.Execute(ctx, first); err != nil {
+		t.Fatal(err)
+	}
+
+	delete(shelf.files, "library/one.epub")
+	if _, err := extract.Execute(ctx, first); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, name := range text.Names("ocr", fingerprint(raw)) {
+		if _, err := made.Read(ctx, name); err != nil {
+			t.Errorf("one copy going took %s with it: %v", name, err)
+		}
+	}
+	if from := index.sources[first.ID]["shelf/two.epub"].TextFrom; from == "" {
+		t.Error("the copy that stayed lost its reading")
 	}
 }

@@ -36,7 +36,7 @@ type Extract struct {
 	// Derived holds what a recogniser wrote. Without one, a source is read from
 	// its own bytes and a recognition is not looked for.
 	Derived port.DerivedStore
-	// Area is the store a recognition is kept in. Empty means the default.
+	// Area is the producer a recognition is kept under. Empty means the default.
 	Area string
 
 	// Sizes are how the text is cut. They are named in the recipe, so a source
@@ -85,7 +85,8 @@ func (u Extract) Execute(ctx context.Context, v domain.Vault) (ExtractResult, er
 	if err != nil {
 		return res, err
 	}
-	if err := u.discover(ctx, v, reader, &res); err != nil {
+	var swept []port.Recognised
+	if err := u.discover(ctx, v, reader, &res, &swept); err != nil {
 		return res, err
 	}
 	if err := u.forgotten(ctx, v, reader, &res); err != nil {
@@ -94,13 +95,19 @@ func (u Extract) Execute(ctx context.Context, v domain.Vault) (ExtractResult, er
 	if err := u.cut(ctx, v, reader, &res); err != nil {
 		return res, err
 	}
-	return res, nil
+	return res, u.sweep(ctx, v, swept)
 }
 
 // discover records every book the vault holds. Nothing is opened: a file whose
 // size and modification time are what the index believes is left alone, and one
 // that differs is recorded with no recipe, which is what owing its text means.
-func (u Extract) discover(ctx context.Context, v domain.Vault, reader port.VaultReader, res *ExtractResult) error {
+func (u Extract) discover(
+	ctx context.Context,
+	v domain.Vault,
+	reader port.VaultReader,
+	res *ExtractResult,
+	swept *[]port.Recognised,
+) error {
 	known, err := u.Owing.Fingerprints(ctx, v.ID, domain.KindBook)
 	if err != nil {
 		return fmt.Errorf("read index: %w", err)
@@ -140,6 +147,14 @@ func (u Extract) discover(ctx context.Context, v domain.Vault, reader port.Vault
 		return nil
 	}
 	slices.Sort(gone)
+	// What those paths stood on, before the rows saying so are taken out. Which
+	// of those readings nothing stands on any more is a question for once every
+	// source has been cut.
+	went, err := u.standing(ctx, v, gone)
+	if err != nil {
+		return err
+	}
+	*swept = went
 	if err := u.Sources.RemoveSources(ctx, v.ID, domain.KindBook, gone); err != nil {
 		return fmt.Errorf("remove: %w", err)
 	}
@@ -147,13 +162,70 @@ func (u Extract) discover(ctx context.Context, v domain.Vault, reader port.Vault
 	return nil
 }
 
-// forgotten finds the sources standing on a file that is no longer there.
+// standing is the reading each of these paths stood on, for the ones that stood
+// on any.
+func (u Extract) standing(ctx context.Context, v domain.Vault, paths []string) ([]port.Recognised, error) {
+	if u.Derived == nil {
+		return nil, nil
+	}
+	held, err := u.Owing.Recognised(ctx, v.ID, domain.KindBook)
+	if err != nil {
+		return nil, fmt.Errorf("read index: %w", err)
+	}
+	made := make(map[string]port.Recognised, len(held))
+	for _, r := range held {
+		made[r.Path] = r
+	}
+	out := make([]port.Recognised, 0, len(paths))
+	for _, path := range paths {
+		if r, on := made[path]; on && r.From != "" {
+			out = append(out, r)
+		}
+	}
+	return out, nil
+}
+
+// sweep takes out the files of a reading no source stands on any more.
+//
+// A reading is named by the hash of the bytes it was made from, so a document
+// renamed is the same reading at another path and two copies of one document
+// are one reading. What is asked is whether any source still names it, and the
+// question is asked once every source has been cut and says what it stands on.
+//
+// A walk that failed returns before any of this, so a folder that could not be
+// read takes nothing with it.
+func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.Recognised) error {
+	if u.Derived == nil || len(went) == 0 {
+		return nil
+	}
+	held, err := u.Owing.Recognised(ctx, v.ID, domain.KindBook)
+	if err != nil {
+		return fmt.Errorf("read index: %w", err)
+	}
+	stood := make(map[port.Recognised]bool, len(held))
+	for _, r := range held {
+		stood[port.Recognised{From: r.From, Hash: r.Hash}] = true
+	}
+	for _, r := range went {
+		if stood[port.Recognised{From: r.From, Hash: r.Hash}] {
+			continue
+		}
+		for _, name := range text.Names(r.From, r.Hash) {
+			if err := u.Derived.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
+				return fmt.Errorf("remove %s: %w", name, err)
+			}
+		}
+	}
+	return nil
+}
+
+// forgotten finds the sources whose producer's files are no longer there.
 //
 // The store is a folder on the person's disk and they may empty it. A source
 // whose text went with it answers a search with nothing and would go on doing
 // so, because its recipe is still the one in use: nothing else asks after it.
-// Recording it afresh with no recipe clears where its text was, so the next pass
-// cuts it from the document again.
+// Recording it afresh with no recipe clears which producer made its text, so the
+// next pass cuts it from the document again.
 func (u Extract) forgotten(ctx context.Context, v domain.Vault, reader port.VaultReader, res *ExtractResult) error {
 	if u.Derived == nil {
 		return nil
@@ -162,26 +234,37 @@ func (u Extract) forgotten(ctx context.Context, v domain.Vault, reader port.Vaul
 	if err != nil {
 		return fmt.Errorf("read index: %w", err)
 	}
-	for path, name := range standing {
+	for _, r := range standing {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		if _, err := u.Derived.Read(ctx, name); !errors.Is(err, fs.ErrNotExist) {
+		if u.holds(ctx, text.Artifact(r.From, r.Hash), text.Partial(r.From, r.Hash)) {
 			continue
 		}
-		ref, err := reader.Stat(ctx, path)
+		ref, err := reader.Stat(ctx, r.Path)
 		if port.NoNote(err) {
 			continue
 		}
 		if err != nil {
-			return fmt.Errorf("stat %s: %w", path, err)
+			return fmt.Errorf("stat %s: %w", r.Path, err)
 		}
 		if err := u.Sources.SaveSource(ctx, v.ID, port.Source{Ref: ref}); err != nil {
-			return fmt.Errorf("record %s: %w", path, err)
+			return fmt.Errorf("record %s: %w", r.Path, err)
 		}
 		res.Forgotten++
 	}
 	return nil
+}
+
+// holds says the store has something under one of these names. A recognition
+// still running is the text of the pages it has read.
+func (u Extract) holds(ctx context.Context, names ...string) bool {
+	for _, name := range names {
+		if _, err := u.Derived.Read(ctx, name); !errors.Is(err, fs.ErrNotExist) {
+			return true
+		}
+	}
+	return false
 }
 
 // cut extracts and cuts every source that owes its text.
@@ -230,6 +313,19 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 		}
 	}
 	return nil
+}
+
+// One brings a single source's chunks up to date with its text.
+//
+// It is what a recognition calls as it writes: the pages already read are cut
+// and can be embedded while the rest of the document is still being read.
+func (u Extract) One(ctx context.Context, v domain.Vault, path string) (ExtractResult, error) {
+	var res ExtractResult
+	reader, err := u.Readers.Open(v)
+	if err != nil {
+		return res, err
+	}
+	return res, u.source(ctx, v, reader, path, u.sizes(), &res)
 }
 
 // source takes the text out of one book and writes the windows it was cut into.
@@ -289,7 +385,7 @@ func (u Extract) source(
 	// places in that. It is found by the hash of the bytes it was read from, so a
 	// file whose modification time moved without its content is claimed again
 	// rather than read from scratch.
-	doc, textPath, err := u.text(ctx, ref, raw, hash)
+	doc, from, err := u.text(ctx, ref, raw, hash)
 	if err != nil {
 		res.Unreadable++
 		return nil
@@ -301,7 +397,7 @@ func (u Extract) source(
 			Ref:      ref,
 			Hash:     hash,
 			Recipe:   recipe(name, sizes),
-			TextPath: textPath,
+			TextFrom: from,
 		},
 		Windows: windows,
 	}
@@ -401,27 +497,30 @@ func (u Extract) progress(res ExtractResult) {
 	}
 }
 
-// text is what a source says, and where that text is.
+// text is what a source says, and which producer made it.
 //
 // A recognition of these bytes stands in for the file's own text layer: it is
 // what a person asked for, and a document whose layer is unusable is why they
-// asked. Where there is none, the file speaks for itself and nothing is named.
+// asked. A recognition still running is the text of the pages it has read.
+// Where there is none, the file speaks for itself and no producer is named.
 func (u Extract) text(ctx context.Context, ref domain.FileRef, raw []byte, hash string) (*text.Document, string, error) {
 	if u.Derived != nil {
-		name := text.Artifact(u.area(), hash)
-		switch found, err := u.Derived.Read(ctx, name); {
-		case err == nil:
-			return text.Recognised(found), name, nil
-		case !errors.Is(err, fs.ErrNotExist):
-			return nil, "", err
+		from := u.area()
+		for _, name := range []string{text.Artifact(from, hash), text.Partial(from, hash)} {
+			switch found, err := u.Derived.Read(ctx, name); {
+			case err == nil:
+				return text.Recognised(found), from, nil
+			case !errors.Is(err, fs.ErrNotExist):
+				return nil, "", err
+			}
 		}
 	}
 	doc, err := text.Read(ref, raw)
 	return doc, "", err
 }
 
-// area is the store a recognition is kept in, and the first part of every name
-// recorded against a source.
+// area is the producer a recognition is kept under, and the first part of every
+// name its files carry.
 func (u Extract) area() string {
 	if u.Area == "" {
 		return "ocr"

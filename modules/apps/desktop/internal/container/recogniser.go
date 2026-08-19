@@ -2,8 +2,10 @@ package container
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/ocr/onnx"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
@@ -28,9 +30,10 @@ func (c Config) Recogniser() (recogniser port.Recogniser, close func() error, wh
 	return models, models.Close, nil
 }
 
-// reading is what the one piece of work this runs is called, wherever it is
-// shown. The same work reported again replaces itself.
-const reading = "reading"
+// reading is what one reading is called, wherever it is shown. It stands for
+// the whole of that reading, so what it reports again replaces itself, and one
+// reading dismissed is one reading dismissed.
+func reading() string { return fmt.Sprintf("reading-%d", time.Now().UnixNano()) }
 
 // Recognising reads scanned documents behind whoever asked.
 //
@@ -43,8 +46,16 @@ type Recognising struct {
 	sources port.SourceRepository
 	tasks   *task.Tasks
 
+	// Cut makes a source's chunks from what has been read of it. It is called
+	// as pages are written down, so a page is searchable when it is read.
+	Cut func(ctx context.Context, v domain.Vault, path string) error
+
 	mu      sync.Mutex
 	running bool
+	// last is what the reading before this one was called. A reading that
+	// failed is left in the list under that name, and the next reading takes it
+	// out.
+	last string
 }
 
 // Recognising is the recogniser this installation offers, reporting itself into
@@ -79,37 +90,46 @@ func (r *Recognising) Start(ctx context.Context, v domain.Vault, path string) bo
 		return false
 	}
 	r.running = true
+	before := r.last
+	id := reading()
+	r.last = id
 	r.mu.Unlock()
 
-	r.say(task.Task{ID: reading, Doing: "Reading a scan", About: path})
+	r.done(before)
+	r.say(task.Task{ID: id, Doing: "Reading a scan", About: path})
 
 	go func() {
-		err := r.read(ctx, v, path)
+		err := r.read(ctx, v, id, path)
 
+		switch {
+		case err == nil, errors.Is(err, context.Canceled):
+			// A reading somebody stopped is a reading that is over.
+			r.done(id)
+		default:
+			// A failure nobody was shown is a failure nobody can act on, so it
+			// stays in the list until it is dismissed or the next reading
+			// begins.
+			r.say(task.Task{ID: id, Doing: "Reading a scan", About: path, Failed: err.Error()})
+		}
+
+		// The task is finished before the run is, so that a reading begun the
+		// moment this one ends has the list to itself.
 		r.mu.Lock()
 		r.running = false
 		r.mu.Unlock()
-
-		if err != nil {
-			// A failure nobody was shown is a failure nobody can act on, so it
-			// stays in the list until the next reading replaces it.
-			r.say(task.Task{ID: reading, Doing: "Reading a scan", About: path, Failed: err.Error()})
-			return
-		}
-		r.done()
 	}()
 	return true
 }
 
 // read is the work itself: what is missing arrives, and then the document is
 // read.
-func (r *Recognising) read(ctx context.Context, v domain.Vault, path string) error {
+func (r *Recognising) read(ctx context.Context, v domain.Vault, id, path string) error {
 	fetching := r.cfg.Recognition
 	fetching.Fetching = func(what string, done, total int64) {
 		// Counted in megabytes because that is the size a person reads. Bytes
 		// are nine digits and say nothing that the first three do not.
 		r.say(task.Task{
-			ID: reading, Doing: "Fetching models", About: what,
+			ID: id, Doing: "Fetching models", About: what,
 			Done: done >> 20, Total: total >> 20,
 		})
 	}
@@ -120,15 +140,16 @@ func (r *Recognising) read(ctx context.Context, v domain.Vault, path string) err
 	}
 	defer models.Close()
 
-	r.say(task.Task{ID: reading, Doing: "Reading a scan", About: path})
-	_, err = source.Recognise{
+	r.say(task.Task{ID: id, Doing: "Reading a scan", About: path})
+	res, err := source.Recognise{
 		Readers: r.cfg.VaultReaders(),
 		Sources: r.sources,
 		Derived: r.cfg.DerivedStores(),
 		By:      models,
+		Cut:     r.Cut,
 		OnProgress: func(res source.RecogniseResult) {
 			r.say(task.Task{
-				ID:    reading,
+				ID:    id,
 				Doing: "Reading a scan",
 				About: path,
 				Done:  int64(res.Read),
@@ -136,7 +157,16 @@ func (r *Recognising) read(ctx context.Context, v domain.Vault, path string) err
 			})
 		},
 	}.Execute(ctx, v, path)
-	return err
+	if err != nil {
+		return err
+	}
+	if res.Busy {
+		// Another run holds these bytes — a terminal, or a second window. What
+		// it reads is what this would have read, and saying so is what the
+		// person is owed.
+		return fmt.Errorf("%s is already being read", path)
+	}
+	return nil
 }
 
 func (r *Recognising) say(at task.Task) {
@@ -145,8 +175,8 @@ func (r *Recognising) say(at task.Task) {
 	}
 }
 
-func (r *Recognising) done() {
+func (r *Recognising) done(id string) {
 	if r.tasks != nil {
-		r.tasks.Done(reading)
+		r.tasks.Done(id)
 	}
 }
