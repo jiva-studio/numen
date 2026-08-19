@@ -129,9 +129,9 @@ func (s *store) Unchunked(_ context.Context, vaultID string, kind domain.SourceK
 	})
 }
 
-func (s *store) ByOtherRecipe(_ context.Context, vaultID string, kind domain.SourceKind, recipe string, limit int) ([]string, error) {
+func (s *store) ByOtherRecipe(_ context.Context, vaultID string, kind domain.SourceKind, recipes []string, limit int) ([]string, error) {
 	return s.paths(vaultID, kind, limit, func(src port.Source) bool {
-		return src.Recipe != recipe
+		return !slices.Contains(recipes, src.Recipe)
 	})
 }
 
@@ -144,8 +144,13 @@ func (s *store) Unembedded(_ context.Context, vaultID string, model port.Embeddi
 		if c.vault != vaultID || c.parent == 0 || c.id <= after || s.embedded(c.id, model) {
 			continue
 		}
+		// The source says which text its chunks are places in, as the query
+		// does: a chunk of a source standing on a reading is read from that
+		// reading and not from the file.
+		src := s.sources[c.vault][c.path]
 		out = append(out, domain.Passage{
 			Chunk: c.id, Source: c.path, Start: c.start, Length: c.length, Location: c.location,
+			TextFrom: src.TextFrom, Hash: src.Hash,
 		})
 		if len(out) == limit {
 			break
@@ -431,4 +436,15 @@ func words(vocabulary []string, n int) string {
 		out = append(out, vocabulary[i%len(vocabulary)])
 	}
 	return strings.Join(out, " ")
+}
+
+func (s *store) Recognised(_ context.Context, vaultID string, kind domain.SourceKind) ([]port.Recognised, error) {
+	var out []port.Recognised
+	for path, src := range s.sources[vaultID] {
+		if src.Ref.Kind == kind && src.TextFrom != "" {
+			out = append(out, port.Recognised{Path: path, From: src.TextFrom, Hash: src.Hash})
+		}
+	}
+	slices.SortFunc(out, func(a, b port.Recognised) int { return cmp.Compare(a.Path, b.Path) })
+	return out, nil
 }

@@ -40,7 +40,6 @@ import {
   closeTab,
   openTab,
   openTabBeside,
-  remainingWord,
 } from '@numen/ui'
 import type {
   MenuOpening,
@@ -53,7 +52,7 @@ import type {
 import '@numen/ui/styles.css'
 import { core } from './vault'
 import { showing } from './showing'
-import { footOf, type Phase } from './foot'
+import { cornerOf } from './corner'
 import { editing } from './editing'
 import { drawn } from './drawn'
 import { creating, CREATABLE } from './creating'
@@ -68,9 +67,7 @@ import { AGENT, NOTE, PLEX, plexCalled, shortened } from './workspace'
 const drawings = drawn()
 const notes = editing(core, undefined, drawings.arrived)
 const making = creating(core)
-const window = showing(core, undefined, undefined, notes.changed, drawings.told, (path) =>
-  held.shows(path),
-)
+const window = showing(core, undefined, notes.changed, drawings.told, (path) => held.shows(path))
 /** What the window answers when the application says it is going. */
 const going = leaving(core)
 going.holds(notes.flush)
@@ -103,22 +100,7 @@ watch(
 const { indexing, failure, warning, trouble, unwatched, unreachable, holds, looking } = window
 /** What could not be made or joined, in words a person reads. */
 const unmade = computed(() => making.said.value)
-// `made` is spent in this window on making a note, so the count of vectors
-// made keeps a name of its own here.
-const {
-  chunks,
-  embedded,
-  owing,
-  made: vectors,
-  reading,
-  embedding,
-  books,
-  booksRead,
-  learning,
-  rate,
-} = window
-/** What the vault says about having work in hand. The counts do not say it. */
-const { working: reads } = window
+const { chunks, embedding, tasks } = window
 
 /** Everything this window says in its own voice. */
 const words = {
@@ -138,8 +120,6 @@ const words = {
   agent: 'Agent',
   stopped: 'The agent stopped here',
   nothingSaid: 'Nothing said yet',
-  reading: 'Reading',
-  learning: 'Indexing',
   words: 'Searching by words only — no model set',
   overtaken: 'The file changed on disk, so this note stopped saving.',
   gone: 'This note is no longer in the vault, so saving stopped. What is here is still yours.',
@@ -164,58 +144,10 @@ const words = {
   putAway: 'Put away',
 }
 
-/** What the foot of the window says, one sentence per phase. */
-const saying: Record<Phase, string> = {
-  reading: words.reading,
-  learning: words.learning,
-  wordsOnly: words.words,
-  idle: '',
-}
-
-const activity = computed(() => {
-  const foot = footOf({
-    busy: reads.value,
-    learning: learning.value,
-    reading: reading.value,
-    books: books.value,
-    booksRead: booksRead.value,
-    chunks: chunks.value,
-    embedded: embedded.value,
-    owing: owing.value,
-    made: vectors.value,
-    embedding: embedding.value,
-    rate: rate.value,
-  })
-  return {
-    says: saying[foot.phase],
-    about: foot.about,
-    working: foot.working,
-    left: remainingWord(foot.left, foot.perSecond),
-    tally: foot.tally,
-  }
-})
-
-/**
- * Everything running behind the window, as the corner draws it.
- *
- * One task for now: reading the vault for meaning. A count is only drawn where
- * the pass has said what it found, and what it found is the work in hand and
- * not the size of the vault.
- */
-const tasks = computed<readonly Notice[]>(() => {
-  const one = activity.value
-  if (!one.says) return []
-  return [
-    {
-      id: 'indexing',
-      says: one.says,
-      about: one.about,
-      working: one.working,
-      left: one.left,
-      ...(one.tally ? { done: one.tally.done, total: one.tally.total } : {}),
-    },
-  ]
-})
+/** Everything running behind the window, as the corner draws it. */
+const notices = computed<readonly Notice[]>(() =>
+  cornerOf(tasks.value, { chunks: chunks.value, embedding: embedding.value }, words),
+)
 
 /** What a note was called by the node it was opened from. */
 const titles = new Map<string, string>()
@@ -577,7 +509,7 @@ onUnmounted(() => {
       </template>
     </Workspace>
 
-    <Notices :notices="tasks" :name="words.working" :put-away="words.putAway" />
+    <Notices :notices="notices" :name="words.working" :put-away="words.putAway" />
 
     <band v-if="going.questions.value.length" role="alertdialog" class="leaving">
       <p class="leaving__says">{{ words.going }}</p>

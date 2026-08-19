@@ -92,8 +92,9 @@ func TestAScanSeesBooksBesideNotes(t *testing.T) {
 	if res.Seen != 8 {
 		t.Errorf("saw %d notes, want the 8 the fixture holds", res.Seen)
 	}
-	if res.Assets != 1 {
-		t.Errorf("saw %d sources of another kind, want the one book", res.Assets)
+	// The fixture carries a PDF of its own beside the EPUB written here.
+	if res.Assets != 2 {
+		t.Errorf("saw %d sources of another kind, want the book and the document", res.Assets)
 	}
 	if res.Indexed != 8 || res.Removed != 0 {
 		t.Errorf("scan of a vault with a book in it: %+v", res)
@@ -109,17 +110,24 @@ func TestAScanSeesBooksBesideNotes(t *testing.T) {
 }
 
 // TestAFormatNothingExtractsIsNotSeenAtAll. Processing is triggered by type, so
-// the fixture's PDF is neither a note nor a source of another kind.
+// a file of a format no reader handles is neither a note nor a source of
+// another kind, however much of a vault it is.
 func TestAFormatNothingExtractsIsNotSeenAtAll(t *testing.T) {
-	v, readers := vaultAt(t, testsupport.VaultDir(t))
+	root := testsupport.CopyVault(t)
+	if err := os.WriteFile(filepath.Join(root, "assets", "scan.png"), []byte("PNG"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	v, readers := vaultAt(t, root)
 	db := openIndex(t)
 
 	res, err := scanner(readers, db).Execute(t.Context(), v)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Assets != 0 {
-		t.Errorf("counted %d sources of another kind — the fixture holds only a PDF", res.Assets)
+	// The fixture carries a document of its own, and it is a source. The image
+	// written beside it is not.
+	if res.Assets != 1 {
+		t.Errorf("counted %d sources of another kind, want the document alone", res.Assets)
 	}
 	if res.Seen != 8 {
 		t.Errorf("saw %d notes, want 8", res.Seen)

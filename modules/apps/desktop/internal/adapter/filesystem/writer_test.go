@@ -125,7 +125,7 @@ func TestWritingThroughALinkLeavesTheLink(t *testing.T) {
 // still comes back.
 func TestAskingAboutAFileTheVaultLeavesAloneOpensNothing(t *testing.T) {
 	root := t.TempDir()
-	export, err := os.OpenFile(filepath.Join(root, "export.pdf"), os.O_CREATE|os.O_WRONLY, 0o000)
+	export, err := os.OpenFile(filepath.Join(root, "export.iso"), os.O_CREATE|os.O_WRONLY, 0o000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,7 +141,7 @@ func TestAskingAboutAFileTheVaultLeavesAloneOpensNothing(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	switch _, err := reader.Stat(t.Context(), "export.pdf"); {
+	switch _, err := reader.Stat(t.Context(), "export.iso"); {
 	case !errors.Is(err, port.ErrNotANote):
 		t.Errorf("want ErrNotANote, got %v", err)
 	case errors.Is(err, fs.ErrNotExist):

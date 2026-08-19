@@ -21,6 +21,15 @@ type Passage struct {
 	// when the format offered none.
 	Location string
 
+	// TextFrom names the producer of the text the words are read from. Empty
+	// where the source's own bytes are the text.
+	TextFrom string
+
+	// Hash addresses the content of the source, and is what the files of a
+	// reading of it are kept under. Reading a passage back composes the name
+	// from this and TextFrom.
+	Hash string
+
 	// HitAt is where the chunk that matched begins inside Text, in bytes. A
 	// passage whose hit is the window itself begins at its own beginning.
 	HitAt int

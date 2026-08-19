@@ -131,7 +131,7 @@ func precise(v []float32) []byte {
 }
 
 func (c corpus) search(embedder port.Embedder) search.Search {
-	return search.New(c.db.ChunkQueries(), filesystem.Readers{}, embedder, 0)
+	return search.New(c.db.ChunkQueries(), filesystem.Readers{}, nil, embedder, 0)
 }
 
 var model = port.EmbeddingModel{Name: "test", Dimensions: dimensions}

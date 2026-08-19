@@ -94,3 +94,23 @@ describe('how long work runs before it is worth a card', () => {
     expect(showing(embedding, new Map(), new Set(), 99_000, 10_000)).toEqual([])
   })
 })
+
+describe('a notice somebody asked for', () => {
+  const asked: Notice = { id: 'reading', says: 'Reading a scan', asked: true }
+  const behind: Notice = { id: 'indexing', says: 'Indexing' }
+
+  it('is drawn the moment it arrives', () => {
+    // The wait is for work nobody asked for. Somebody who asked is waiting to
+    // be told it began, and ten seconds of nothing is an application that did
+    // not hear them.
+    const arrived = arrivals(new Map(), [asked, behind], 0)
+
+    expect(showing([asked, behind], arrived, new Set(), 0).map((one) => one.id)).toEqual(['reading'])
+  })
+
+  it('is put away like any other', () => {
+    const arrived = arrivals(new Map(), [asked], 0)
+
+    expect(showing([asked], arrived, new Set(['reading']), 0)).toEqual([])
+  })
+})

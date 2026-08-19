@@ -40,23 +40,62 @@ func followed(root, path, serviceDir string) (string, error) {
 	return real, err
 }
 
-// within is the path as it was written and the path with its links resolved,
-// both of them inside the vault or neither of them anything.
+// within is the vault as the person's: a path that stays inside it, and that is
+// not in the folder belonging to the application.
 func within(root, path, serviceDir string) (target, real string, err error) {
+	clean, err := cleaned(path)
+	if err != nil {
+		return "", "", err
+	}
+	if ours(clean, serviceDir) {
+		return "", "", fmt.Errorf("%s belongs to the application, not to the vault", path)
+	}
+	return contained(root, clean)
+}
+
+// service is the exact complement of within: a path that stays inside the
+// vault, and that is in the folder belonging to the application.
+//
+// The two together cover the vault once and overlap nowhere, which is what lets
+// one type write a derived file where no writer of notes can reach, without
+// making any note's refusal weaker. That property is the subject of a test.
+func service(root, path, serviceDir string) (target, real string, err error) {
+	clean, err := cleaned(path)
+	if err != nil {
+		return "", "", err
+	}
+	if !ours(clean, serviceDir) {
+		return "", "", fmt.Errorf("%s: %w", path, ErrOutside)
+	}
+	return contained(root, clean)
+}
+
+// ours says whether a path is in the folder the application keeps for itself.
+func ours(clean, serviceDir string) bool {
+	return clean == serviceDir || strings.HasPrefix(clean, serviceDir+"/")
+}
+
+// cleaned is a path a vault could hold, in the one form the rules are written
+// against. A path that could not name anything inside a vault is refused here
+// and never reaches the filesystem.
+func cleaned(path string) (string, error) {
 	if path == "" {
-		return "", "", fmt.Errorf("%w: it is empty", ErrOutside)
+		return "", fmt.Errorf("%w: it is empty", ErrOutside)
 	}
 	if filepath.IsAbs(path) || strings.ContainsRune(path, 0) {
-		return "", "", fmt.Errorf("%s: %w", path, ErrOutside)
+		return "", fmt.Errorf("%s: %w", path, ErrOutside)
 	}
 	clean := pathpkg.Clean(filepath.ToSlash(path))
 	if clean == "." || clean == ".." || strings.HasPrefix(clean, "../") {
-		return "", "", fmt.Errorf("%s: %w", path, ErrOutside)
+		return "", fmt.Errorf("%s: %w", path, ErrOutside)
 	}
-	if clean == serviceDir || strings.HasPrefix(clean, serviceDir+"/") {
-		return "", "", fmt.Errorf("%s belongs to the application, not to the vault", path)
-	}
+	return clean, nil
+}
 
+// contained is the containment rule and nothing else: where a cleaned path
+// lands on this machine, and where it lands once every link on the way to it is
+// resolved, both of them under the root or neither of them anything.
+func contained(root, clean string) (target, real string, err error) {
 	target = filepath.Join(root, filepath.FromSlash(clean))
 
 	// A folder inside the vault may be a link to somewhere else — a synced
@@ -72,7 +111,7 @@ func within(root, path, serviceDir string) (target, real string, err error) {
 		return "", "", err
 	}
 	if real != root && !strings.HasPrefix(real, root+string(filepath.Separator)) {
-		return "", "", fmt.Errorf("%s: %w", path, ErrOutside)
+		return "", "", fmt.Errorf("%s: %w", clean, ErrOutside)
 	}
 	return target, real, nil
 }

@@ -21,5 +21,5 @@ func main() {
 		fmt.Fprintln(os.Stderr, "numen-cli:", err)
 		os.Exit(1)
 	}
-	os.Exit(cli.Main(context.Background(), os.Stdout, os.Stderr, os.Args[1:], chosen.Indexing.Embedding))
+	os.Exit(cli.Main(context.Background(), os.Stdout, os.Stderr, os.Args[1:], chosen.Indexing))
 }

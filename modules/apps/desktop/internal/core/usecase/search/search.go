@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/epub"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/text"
 )
 
 // defaultLimit is how many results a caller that names no number gets.
@@ -72,6 +72,7 @@ type Search struct {
 	passages port.PassageQueries
 	readers  port.VaultReaders
 	embedder port.Embedder
+	derived  port.DerivedStores
 	floor    float64
 }
 
@@ -84,11 +85,17 @@ type Search struct {
 //
 // `floor` is how near the query a passage stands to be an answer, in the units
 // the model in use measures in. Zero takes DefaultFloor.
-func New(passages port.PassageQueries, readers port.VaultReaders, embedder port.Embedder, floor float64) Search {
+func New(passages port.PassageQueries, readers port.VaultReaders, derived port.DerivedStores, embedder port.Embedder, floor float64) Search {
 	if floor == 0 {
 		floor = DefaultFloor
 	}
-	return Search{passages: passages, readers: readers, embedder: embedder, floor: floor}
+	return Search{
+		passages: passages,
+		readers:  readers,
+		embedder: embedder,
+		derived:  derived,
+		floor:    floor,
+	}
 }
 
 // Execute runs the halves the parameters name, merges their rankings by rank,
@@ -142,16 +149,24 @@ func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage
 	if err != nil {
 		return nil, err
 	}
+	var store port.DerivedStore
+	if u.derived != nil {
+		if store, err = u.derived.Open(v); err != nil {
+			return nil, err
+		}
+	}
+	of := text.Reader{Vault: reader, Derived: store}
 
-	// Several passages of one file are read once.
+	// Several passages of one file are read once. A source is one text however
+	// many passages name it, so its path is the whole of the key.
 	read := map[string]string{}
 	gone := map[string]bool{}
 
 	out := make([]domain.Passage, 0, len(found))
 	for _, p := range found {
-		text, held := read[p.Source]
+		prose, held := read[p.Source]
 		if !held && !gone[p.Source] {
-			text, err = extracted(ctx, reader, p.Source)
+			prose, err = extracted(ctx, of, p.Source, p.TextFrom, p.Hash)
 			if port.NoNote(err) || errors.Is(err, errUnreadable) {
 				gone[p.Source] = true
 				continue
@@ -159,12 +174,12 @@ func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage
 			if err != nil {
 				return nil, fmt.Errorf("read %s: %w", p.Source, err)
 			}
-			read[p.Source] = text
+			read[p.Source] = prose
 		}
 		if gone[p.Source] {
 			continue
 		}
-		p.Text = span(text, p.Start, p.Length)
+		p.Text = span(prose, p.Start, p.Length)
 		out = append(out, p)
 	}
 	return out, nil
@@ -180,23 +195,18 @@ var errUnreadable = errors.New("nothing could be read from the source")
 // and a chunk's offsets belong to that, not to the bytes on disk: slicing the
 // archive at a text offset returns compressed noise. Extraction is deterministic,
 // which is what lets the text be recovered from the source it belongs to.
-func extracted(ctx context.Context, reader port.VaultReader, path string) (string, error) {
-	ref, err := reader.Stat(ctx, path)
+//
+// Which reader produces it is decided in one place, so that what a search slices
+// and what an extractor cut are the same text.
+func extracted(ctx context.Context, of text.Reader, path, from, hash string) (string, error) {
+	doc, err := of.Of(ctx, path, from, hash)
+	if errors.Is(err, text.ErrUnreadable) {
+		return "", errUnreadable
+	}
 	if err != nil {
 		return "", err
 	}
-	raw, err := reader.Read(ctx, path)
-	if err != nil {
-		return "", err
-	}
-	if ref.Kind == domain.KindBook {
-		book, err := epub.Read(raw)
-		if err != nil {
-			return "", errUnreadable
-		}
-		return book.Text, nil
-	}
-	return string(raw), nil
+	return doc.Text, nil
 }
 
 // span is the text a window addresses, bounded by what the source holds now. A

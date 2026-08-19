@@ -12,14 +12,7 @@ const idle = {
   unreachable: '',
   chunks: 0n,
   embedded: 0n,
-  owing: 0n,
-  made: 0n,
-  reading: '',
   embedding: false,
-  books: 0n,
-  booksRead: 0n,
-  learning: false,
-  busy: false,
 }
 
 /** A file's fingerprint, which follows what the file holds. */
@@ -42,6 +35,7 @@ function fake(over: Partial<Faked> = {}) {
     focus: async function* () {},
     // eslint-disable-next-line require-yield
     editing: async function* () {},
+    tasks: async function* () {},
     // eslint-disable-next-line require-yield
     quitting: async function* () {},
     flushed: async () => {},

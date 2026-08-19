@@ -84,7 +84,7 @@ func built(t *testing.T, notes map[string]string) (domain.Vault, mcp.Core) {
 
 	core := mcp.Core{
 		Vault: v, Root: v.Path, Readers: readers, Notes: queries,
-		Search:        search.New(db.Passages(), readers, nil, 0),
+		Search:        search.New(db.Passages(), readers, nil, nil, 0),
 		Neighbourhood: note.ShowNeighbourhood{Links: db.Links(), Notes: queries},
 		Links:         note.ShowLinks{Links: db.Links()},
 		Problems:      lint.Standard(db.Problems()),

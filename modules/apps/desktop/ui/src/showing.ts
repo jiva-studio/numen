@@ -6,7 +6,6 @@
  * is only exercised by looking at the screen.
  */
 import { computed, ref, shallowRef } from 'vue'
-import { rateOf } from '@numen/ui'
 import type { PlexRelatedSeat } from '@numen/ui'
 import type { Neighbourhood } from './plex'
 import { standing, type Standing } from './standing'
@@ -14,6 +13,27 @@ import type { Said } from './drawing'
 import type { Went } from './tab'
 
 /** Everything the window asks of the core, and nothing about how it is drawn. */
+/**
+ * One piece of work the application is doing behind the window.
+ *
+ * Every kind of work is one of these, which is what keeps the window from
+ * growing a branch per kind: it draws the list it is given.
+ */
+export interface Task {
+  /** What the work is called, so that the same work reported again replaces it. */
+  readonly id: string
+  /** The work, in the words to show, and what it is on. */
+  readonly doing: string
+  readonly about: string
+  /** How far it has got, where there is a total to count against. */
+  readonly done: number
+  readonly total: number
+  /** Why it stopped, when it stopped badly. */
+  readonly failed: string
+  /** Whether a person asked for this and is waiting to be told it began. */
+  readonly asked: boolean
+}
+
 export interface Core {
   neighbourhood(path: string): Promise<Neighbourhood>
   opening(): Promise<{ path: string } | null>
@@ -26,20 +46,8 @@ export interface Core {
     /** Spans of text the index holds, and how many of them carry a vector. */
     chunks: bigint
     embedded: bigint
-    /** What the pass now running found to do, and how much of it is done. */
-    owing: bigint
-    made: bigint
-    /** The source being read now, empty when nothing is. */
-    reading: string
     /** Whether anything is going to turn the chunks into vectors. */
     embedding: boolean
-    /** Books the vault holds, and how many of those cutting has got through. */
-    books: bigint
-    booksRead: bigint
-    /** Whether vectors are being made now, which is the second of two phases. */
-    learning: boolean
-    /** Whether the vault is still being read at all. */
-    busy: boolean
   }>
   changes(signal: AbortSignal): AsyncIterable<{
     paths: string[]
@@ -48,6 +56,16 @@ export interface Core {
   }>
   /** A change being made to a note's prose, reported while it is being made. */
   editing(signal: AbortSignal): AsyncIterable<Said>
+  /**
+   * Everything the application is doing behind the window, for as long as the
+   * window listens.
+   *
+   * The whole list arrives whenever any of it changes, and the first arrives at
+   * once. It is a stream because work can begin without the window asking for
+   * it: an agent is told to read a document, and this is where the person
+   * watching sees it happen.
+   */
+  tasks(signal: AbortSignal): AsyncIterable<readonly Task[]>
   /** The notes something else asked to be put in front of the person. */
   focus(signal: AbortSignal): AsyncIterable<{ path: string }>
   /** The prose of a note, below its frontmatter, and the file it came out of. */
@@ -137,13 +155,13 @@ export interface Plexed extends Standing {
  * The vault as the whole window reads it, and the plexes it keeps up to date.
  *
  * One window reads the vault once: one stream of changes, one stream of edits,
- * one stream of notes asked for, and one set of counts. A plex tab holds where
- * it is standing and nothing more, and hears from here when to ask again.
+ * one stream of notes asked for, one stream of what is being done, and one set
+ * of counts. A plex tab holds where it is standing and nothing more, and hears
+ * from here when to ask again.
  */
 export function showing(
   core: Core,
   wait: (ms: number) => Promise<unknown> = sleep,
-  now: () => number = () => Date.now(),
   /**
    * What else hears about a change. A change carrying no paths names nothing:
    * everything showing the vault reads again.
@@ -169,23 +187,13 @@ export function showing(
   /** The note the vault opens with, which is where a plex standing nowhere goes. */
   const opening = ref('')
   /**
-   * How far reading the vault for meaning has got.
+   * How much of the text the index holds carries a vector.
    *
-   * Cutting finishes long before embedding does, so the pair is what says how
-   * far there is to go. `reading` names what is being read, and is empty
-   * between sources as well as after the last one.
+   * The whole of what the vault holds, which is what says whether it can be
+   * searched by meaning at all. How far a pass has got is a task.
    */
   const chunks = ref(0)
   const embedded = ref(0)
-  /**
-   * What the pass now running found to do, and how much of it is done.
-   *
-   * This is the work in hand. The counts above are the whole of what the vault
-   * holds, and somebody who changed one note is waiting on one chunk.
-   */
-  const owing = ref(0)
-  const made = ref(0)
-  const reading = ref('')
   /**
    * Whether anything is going to embed what was cut.
    *
@@ -194,35 +202,13 @@ export function showing(
    */
   const embedding = ref(false)
   /**
-   * Books the vault holds and how far cutting has got through them.
+   * Everything the application is doing behind the window.
    *
-   * Cutting opens files, so it is counted in books; embedding works on what
-   * cutting produced and is counted in chunks. `learning` says which is running.
+   * It arrives whole and is shown whole. A new kind of work is an entry here
+   * rather than another count to read out of the state and another branch in
+   * what draws it.
    */
-  const books = ref(0)
-  const booksRead = ref(0)
-  const learning = ref(false)
-  /**
-   * Whether the vault is still being read.
-   *
-   * Reading a book and embedding one change no file, so the vault is the only
-   * one that knows there is more to come. This is it saying so.
-   */
-  const working = ref(false)
-  /**
-   * How fast the count now shown is moving, a second.
-   *
-   * Measured here because a rate needs a clock, and the words it turns into are
-   * made by a model that has none. It is measured over the interval of the loop
-   * that keeps the counts up to date, and only there: `ask` is called from three
-   * places at three cadences, and a rate is a rate over one of them.
-   *
-   * Each phase counts a different thing — books opened, then windows embedded —
-   * so a phase is timed on its own. Carrying a figure across is not a rate at
-   * all.
-   */
-  const rate = ref(0)
-  let counted: { phase: string; done: number; at: number } | null = null
+  const tasks = ref<readonly Task[]>([])
 
   /**
    * The plexes open in the window, each in a tab of its own, in the order the
@@ -297,83 +283,8 @@ export function showing(
     unreachable.value = state.unreachable
     chunks.value = Number(state.chunks)
     embedded.value = Number(state.embedded)
-    owing.value = Number(state.owing)
-    made.value = Number(state.made)
-    reading.value = state.reading
     embedding.value = state.embedding
-    books.value = Number(state.books)
-    booksRead.value = Number(state.booksRead)
-    learning.value = state.learning
-    working.value = state.busy
     return state
-  }
-
-  /**
-   * Take the rate from this reading of the count and the one before it, in the
-   * phase it belongs to.
-   *
-   * A phase that has only been read once has no rate: one reading is a count,
-   * and two are a rate.
-   */
-  function time() {
-    const phase = learning.value ? 'learning' : 'reading'
-    const done = learning.value ? made.value : booksRead.value
-    const at = now()
-    if (counted !== null && counted.phase === phase) {
-      rate.value = rateOf({ done: counted.done, rate: rate.value }, done, (at - counted.at) / 1000)
-    } else {
-      rate.value = 0
-    }
-    counted = { phase, done, at }
-  }
-
-  /**
-   * Whether the vault has work in hand.
-   *
-   * The vault says so; the counts do not. Cutting a library begins after the
-   * notes are read, so a count of nothing is what the work looks like both
-   * before it starts and while it runs.
-   */
-  const busy = () => working.value
-
-  /**
-   * Keep the counts up to date while the vault has work in hand.
-   *
-   * Reading books and embedding them change no file, so following the vault says
-   * nothing about either. The loop asks on its own until the vault says it is
-   * done, and one failed answer is skipped: the interval comes round again.
-   *
-   * One loop at a time, so every rate is taken over the loop's own interval.
-   */
-  let keeping = false
-
-  async function keepUp() {
-    if (keeping) return
-    keeping = true
-    // One interval stale is not worth a message. Two in a row is a vault that
-    // has stopped answering, and the counts on screen are of a moment that has
-    // passed.
-    let missed = 0
-    try {
-      for (;;) {
-        await wait(2000)
-        if (!open) return
-        try {
-          await ask()
-          time()
-          if (missed > 0) {
-            missed = 0
-            lost.value = ''
-          }
-        } catch (error) {
-          missed++
-          if (missed > 1) lost.value = String(error)
-        }
-        if (!busy()) return
-      }
-    } finally {
-      keeping = false
-    }
   }
 
   /**
@@ -409,7 +320,6 @@ export function showing(
             // The stream stays open. What a change means is already drawn; the
             // counts come round with the next one.
           }
-          void keepUp()
         }
       } catch (error) {
         if (!open) return
@@ -470,6 +380,41 @@ export function showing(
     }
   }
 
+  /**
+   * Keeps the list of what is being done up to date while the window is open.
+   *
+   * Nothing is asked for on a timer. Work begins without the window: an agent is
+   * told to read a document, and the list says so the moment it starts.
+   *
+   * Taken up again the way following is, and for the same reason.
+   */
+  async function attend() {
+    while (open) {
+      try {
+        for await (const list of core.tasks(listening.signal)) {
+          if (!open) return
+          const ran = tasks.value.length > 0
+          tasks.value = list
+          // What the vault holds moves while a pass runs and settles when it
+          // ends, so it is asked for again the moment the list empties.
+          if (ran && list.length === 0) {
+            try {
+              await ask()
+            } catch {
+              // The stream stays open, and the pass after this one asks again.
+            }
+          }
+        }
+      } catch (error) {
+        if (!open) return
+        lost.value = String(error)
+      }
+      await wait(1000)
+      // Taken up again, so what was said about losing it no longer holds.
+      if (open) lost.value = ''
+    }
+  }
+
   /** Waits for the scan to have stored something, then shows the first note. */
   async function start() {
     try {
@@ -483,7 +428,7 @@ export function showing(
           void follow()
           void watch()
           void draw()
-          void keepUp()
+          void attend()
           return
         }
         // A vault that could not be read is not an empty one, and neither is
@@ -493,7 +438,7 @@ export function showing(
           void follow()
           void watch()
           void draw()
-          void keepUp()
+          void attend()
           return
         }
         await wait(100)
@@ -517,15 +462,8 @@ export function showing(
     travel,
     chunks,
     embedded,
-    owing,
-    made,
-    reading,
     embedding,
-    books,
-    booksRead,
-    learning,
-    working,
-    rate,
+    tasks,
     plex,
     start,
     follow,

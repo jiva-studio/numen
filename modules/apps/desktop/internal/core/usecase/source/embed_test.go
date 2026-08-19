@@ -4,7 +4,9 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/ocr"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/text"
 )
 
 // dimensions is the width of the model the tests embed with. One byte per
@@ -278,5 +280,43 @@ func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 			t.Fatalf("chunk %d carries %d vectors after both vaults were embedded",
 				chunk.id, len(index.vectors[chunk.id]))
 		}
+	}
+}
+
+func TestASourceStandingOnAReadingIsEmbeddedFromIt(t *testing.T) {
+	// A source that stands on what a model read in it holds no text of its own
+	// that a chunk is a place in. Reaching that text is the store's, and an
+	// embedder without one passes the chunk over and says nothing.
+	ctx := t.Context()
+	index, shelf, made := newStore(), newLibrary(), newShelf()
+
+	raw := bookOf(t, "Scanned", words(sanskrit, 400))
+	shelf.hold(bookPath, domain.KindBook, raw, 1)
+	read, _ := ocr.Write([]ocr.Page{{At: 0, Label: "1", Blocks: []ocr.Block{{Label: "text", Text: words(sanskrit, 400)}}}})
+	if err := made.Write(ctx, text.Artifact("ocr", fingerprint(raw)), read); err != nil {
+		t.Fatal(err)
+	}
+
+	extract := Extract{Readers: vaults{first.ID: shelf}, Sources: index, Owing: index, Derived: made}
+	if _, err := extract.Execute(ctx, first); err != nil {
+		t.Fatal(err)
+	}
+	if index.sources[first.ID][bookPath].TextFrom == "" {
+		t.Fatal("the source does not stand on a reading, so embedding it proves nothing")
+	}
+	small := index.small(first.ID)
+	if len(small) == 0 {
+		t.Fatal("the book was not cut into anything that carries a vector")
+	}
+
+	embed := Embed{
+		Readers: vaults{first.ID: shelf}, Derived: made, Chunks: index, Vectors: index,
+		Embedder: &embedder{dims: dimensions}, BatchCharacters: 4000,
+	}
+	if _, err := embed.Execute(ctx, first); err != nil {
+		t.Fatal(err)
+	}
+	if len(index.vectors) != len(small) {
+		t.Errorf("%d of %d chunks carry a vector", len(index.vectors), len(small))
 	}
 }

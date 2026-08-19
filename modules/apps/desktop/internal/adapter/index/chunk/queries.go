@@ -30,6 +30,12 @@ type Passage struct {
 	Length   int
 	Location string
 	Parent   int64
+	// TextFrom names the producer of the text this chunk is a place in. Empty
+	// where the source's own bytes are the text, which is the ordinary case.
+	TextFrom string
+	// Hash addresses the content of the source, and is what the files of a
+	// reading of it are kept under.
+	Hash string
 	// Fingerprint is the text this chunk holds, as the index recorded it.
 	Fingerprint string
 }
@@ -94,7 +100,7 @@ func (q *Queries) Lexical(ctx context.Context, vaultID, query string, limit int,
 	var out []domain.Passage
 	for rows.Next() {
 		var p domain.Passage
-		if err := rows.Scan(&p.Chunk, &p.Source, &p.Start, &p.Length, &p.Location, &p.HitAt); err != nil {
+		if err := rows.Scan(&p.Chunk, &p.Source, &p.TextFrom, &p.Hash, &p.Start, &p.Length, &p.Location, &p.HitAt); err != nil {
 			return nil, err
 		}
 		out = append(out, p)
@@ -178,7 +184,7 @@ func (q *Queries) enclosing(ctx context.Context, vault int64, chunks []int64) ([
 	for _, chunk := range chunks {
 		p := domain.Passage{Chunk: chunk}
 		err := enclosing.QueryRowContext(ctx, chunk, vault).
-			Scan(&p.Source, &p.Start, &p.Length, &p.Location, &p.HitAt)
+			Scan(&p.Source, &p.TextFrom, &p.Hash, &p.Start, &p.Length, &p.Location, &p.HitAt)
 		if errors.Is(err, sql.ErrNoRows) {
 			continue
 		}
@@ -206,7 +212,7 @@ func (q *Queries) Passage(ctx context.Context, vaultID string, chunk int64) (Pas
 
 func scanPassage(row *sql.Row, chunk int64) (Passage, bool, error) {
 	p := Passage{Chunk: chunk}
-	err := row.Scan(&p.Path, &p.Start, &p.Length, &p.Location, &p.Parent)
+	err := row.Scan(&p.Path, &p.TextFrom, &p.Hash, &p.Start, &p.Length, &p.Location, &p.Parent)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Passage{}, false, nil
 	}
@@ -224,11 +230,15 @@ func (q *Queries) Unchunked(ctx context.Context, vaultID, kind string, limit int
 	})
 }
 
-// ByOtherRecipe is the sources of one kind whose text was not extracted by the
-// recipe in use.
-func (q *Queries) ByOtherRecipe(ctx context.Context, vaultID, kind, recipe string, limit int) ([]string, error) {
+// ByOtherRecipe is the sources of one kind whose text was not extracted by any
+// of the recipes now in use.
+func (q *Queries) ByOtherRecipe(ctx context.Context, vaultID, kind string, recipes []string, limit int) ([]string, error) {
+	named, err := json.Marshal(recipes)
+	if err != nil {
+		return nil, err
+	}
 	return q.paths(ctx, vaultID, "stale_recipe", limit, func(vault int64) []any {
-		return []any{vault, kind, recipe, limit}
+		return []any{vault, kind, string(named), limit}
 	})
 }
 
@@ -256,7 +266,7 @@ func (q *Queries) Unembedded(ctx context.Context, vaultID, recipe string, after 
 	var out []Passage
 	for rows.Next() {
 		var p Passage
-		if err := rows.Scan(&p.Chunk, &p.Path, &p.Start, &p.Length, &p.Location, &p.Parent, &p.Fingerprint); err != nil {
+		if err := rows.Scan(&p.Chunk, &p.Path, &p.TextFrom, &p.Hash, &p.Start, &p.Length, &p.Location, &p.Parent, &p.Fingerprint); err != nil {
 			return nil, err
 		}
 		out = append(out, p)
@@ -350,6 +360,45 @@ func (q *Queries) Kept(ctx context.Context, recipe string, of [][]byte) (map[str
 			return nil, err
 		}
 		out[strings.ToLower(fingerprint)] = v
+	}
+	return out, rows.Err()
+}
+
+// Recognised is one source whose text a producer made: where the file is, what
+// made the text, and the hash the files of that reading are kept under.
+type Recognised struct {
+	Path string
+	From string
+	Hash string
+}
+
+// Recognised is the sources of one kind whose text a producer made rather than
+// their own bytes, by path.
+//
+// A scan asks it in order to find the ones whose files are gone: the store is a
+// folder on the person's disk and they may empty it, and a source standing on
+// files that are not there answers a search with nothing.
+func (q *Queries) Recognised(ctx context.Context, vaultID, kind string) ([]Recognised, error) {
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.db.QueryContext(ctx, stmt.Get("recognised"), vault, kind)
+	if err != nil {
+		return nil, fmt.Errorf("recognised: %w", err)
+	}
+	defer rows.Close()
+
+	var out []Recognised
+	for rows.Next() {
+		var r Recognised
+		if err := rows.Scan(&r.Path, &r.From, &r.Hash); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
 	}
 	return out, rows.Err()
 }

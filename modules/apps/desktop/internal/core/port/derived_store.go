@@ -1,0 +1,55 @@
+package port
+
+import (
+	"context"
+	"errors"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+)
+
+// ErrClaimed is what a name another caller holds gets. Work whose whole output
+// is one file reads it as that work already being under way.
+var ErrClaimed = errors.New("the name is claimed by another caller")
+
+// A derived file is one the application made and cannot make again: a model
+// read a scan and wrote down what it saw. It is not a note and never becomes
+// one — nothing walks it, nothing indexes it as a source of its own, no link
+// reaches it, and the person did not write it.
+//
+// It is kept inside the vault folder because losing it loses work no machine
+// here can redo, and in the application's own folder inside it because it is
+// the application's and not the person's.
+//
+// Every name is a name in one store. A name that leaves it is refused, and so
+// is one that resolves out of it through a link.
+type DerivedStore interface {
+	// Read returns what is stored under a name. A name with nothing under it
+	// gets fs.ErrNotExist: the folder is on the person's disk and they may
+	// empty it, which is an answer and not a failure.
+	Read(ctx context.Context, name string) ([]byte, error)
+
+	// Write puts content under a name, atomically, replacing whatever was
+	// there. Replacing is ordinary: one recognition run twice writes the same
+	// bytes under the same name.
+	Write(ctx context.Context, name string, content []byte) error
+
+	// Append adds to what is under a name, creating it when there is nothing.
+	// A recognition is written as it is read, over an hour, and reading a
+	// growing file back in order to rewrite it costs the square of its pages.
+	Append(ctx context.Context, name string, content []byte) error
+
+	// Remove takes a name out of the store. A name already gone is the outcome
+	// that was asked for.
+	Remove(ctx context.Context, name string) error
+
+	// Claim takes a name for this caller alone and returns what lets it go. A
+	// name already claimed is refused with ErrClaimed, so work whose whole
+	// output is one file is done once.
+	Claim(ctx context.Context, name string) (release func() error, err error)
+}
+
+// DerivedStores opens one vault's store. Which vault a use case works on is
+// decided while it runs, as with readers and writers.
+type DerivedStores interface {
+	Open(v domain.Vault) (DerivedStore, error)
+}

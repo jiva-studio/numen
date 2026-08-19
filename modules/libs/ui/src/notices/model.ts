@@ -22,6 +22,13 @@ export interface Notice {
   readonly working?: boolean
   /** How much longer, in words, from whoever is timing the count. */
   readonly left?: string
+  /** Why it stopped, when it stopped badly. It is drawn as trouble. */
+  readonly trouble?: string
+  /**
+   * Whether a person asked for this and is waiting to be told it began. One of
+   * these is drawn the moment it arrives.
+   */
+  readonly asked?: boolean
 }
 
 /**
@@ -41,7 +48,8 @@ export const tallyOf = (notice: Notice): { done: number; total: number } | undef
 /**
  * How long work runs before it is worth a card, in milliseconds.
  *
- * Most passes are over before a person could read what they were called.
+ * Most passes are over before a person could read what they were called. A
+ * notice somebody asked for does not wait: they are waiting for it.
  */
 export const WAIT = 10_000
 
@@ -65,7 +73,8 @@ export const showing = (
   wait: number = WAIT,
 ): readonly Notice[] =>
   standing(notices).filter(
-    (notice) => !away.has(notice.id) && at - (arrived.get(notice.id) ?? at) >= wait,
+    (notice) =>
+      !away.has(notice.id) && (notice.asked || at - (arrived.get(notice.id) ?? at) >= wait),
   )
 
 /**

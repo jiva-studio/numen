@@ -208,7 +208,7 @@ func openingWith(
 	api.Wrote = func() { raise(wake.notes) }
 
 	ctx, stop := context.WithCancel(t.Context())
-	wait := begin(ctx, cfg, db, api, scan, follow, held, readers, embedder, wake, io.Discard)
+	wait := begin(ctx, cfg, db, api, scan, follow, held, readers, embedder, wake, &pending{}, io.Discard)
 	t.Cleanup(func() {
 		stop()
 		wait()

@@ -253,14 +253,21 @@ func TestAnIndexWhoseSchemaDoesNotMatchItsNumberIsRefused(t *testing.T) {
 	ctx := t.Context()
 	path := filepath.Join(t.TempDir(), "index.db")
 
+	available, err := loadMigrations()
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Every migration but the newest claimed, and none of what they build, so
+	// the newest runs against a schema without what it was written to expect.
+	behind := available[len(available)-1].version - 1
+
 	raw, err := sql.Open("sqlite", dsn(path))
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Three migrations claimed, and none of what they build.
 	for _, statement := range []string{
 		`CREATE TABLE strangers (id INTEGER PRIMARY KEY)`,
-		`PRAGMA user_version = 3`,
+		fmt.Sprintf(`PRAGMA user_version = %d`, behind),
 	} {
 		if _, err := raw.ExecContext(ctx, statement); err != nil {
 			t.Fatal(err)
@@ -331,4 +338,68 @@ func newest(t *testing.T) int {
 		t.Fatal(err)
 	}
 	return available[len(available)-1].version
+}
+
+// A source read before the column held a producer stands on the same reading
+// after.
+//
+// The column held a whole name and now holds the producer that name began with.
+// A row keeping the whole name composes a name from it and finds nothing under
+// it, and the passages of that book come back empty with nothing saying why.
+func TestASourceReadBeforeTheColumnMeantAProducerKeepsItsReading(t *testing.T) {
+	ctx := t.Context()
+	path := filepath.Join(t.TempDir(), "index.db")
+
+	db, err := sql.Open("sqlite", dsn(path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	available, err := loadMigrations()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var through []migration
+	for _, one := range available {
+		if one.version >= 3 {
+			break
+		}
+		through = append(through, one)
+	}
+	if len(through) == len(available) {
+		t.Skip("the column does not name a producer yet")
+	}
+	for _, one := range through {
+		if err := apply(ctx, db, one); err != nil {
+			t.Fatal(err)
+		}
+	}
+	const hash = "0ce540f592f6df89d36c636a898be70be0a557f468bff30137666607de9c580c"
+	if _, err := db.ExecContext(ctx,
+		`INSERT INTO vaults (identifier, name, path) VALUES ('01AAA', 'kept', '/notes')`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx,
+		`INSERT INTO sources (vault_id, path, kind, size, modified_at, hash, text_path)
+		 SELECT id, 'library/scan.pdf', 'book', 1, 1, ?, ? FROM vaults WHERE identifier = '01AAA'`,
+		hash, "ocr/"+hash+".txt"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	upgraded, err := Open(ctx, path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer upgraded.Close()
+
+	var from string
+	if err := upgraded.write.QueryRowContext(ctx,
+		`SELECT text_from FROM sources WHERE path = 'library/scan.pdf'`).Scan(&from); err != nil {
+		t.Fatal(err)
+	}
+	if from != "ocr" {
+		t.Errorf("text_from = %q, and a name composed from it names nothing", from)
+	}
 }

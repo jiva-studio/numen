@@ -52,6 +52,18 @@ service VaultService {
   // note is shown; the note itself arrives the way every other change does.
   rpc Editing(EditingRequest) returns (stream EditingResponse);
 
+  // Tasks reports everything the application is doing behind the window, for as
+  // long as the caller listens: what it is, what it is on, and how far it has
+  // got.
+  //
+  // The whole list arrives every time any of it changes, and the first arrives
+  // at once, so a window that opened while work was running is told about it.
+  // It is a stream rather than a question asked over and over, because what is
+  // being done is known here the moment it changes and work can begin without
+  // the window asking for it — an agent is told to read a document, and this is
+  // where the person watching sees it happen.
+  rpc Tasks(TasksRequest) returns (stream TasksResponse);
+
   // Read answers with the prose of a note, below its frontmatter.
   rpc Read(ReadRequest) returns (ReadResponse);
 
@@ -142,10 +154,13 @@ message Seated {
 message StateRequest {}
 
 message StateResponse {
+  // What is being done behind the window is Tasks. What is here is what the
+  // vault is.
+  reserved 3, 9, 11 to 16;
+  reserved "books", "books_read", "busy", "indexed", "learning", "made", "owing", "reading";
+
   string name = 1;
   string path = 2;
-  // Indexed is how many notes the running scan has stored.
-  int64 indexed = 3;
   // Ready is set when the scan has finished.
   bool ready = 4;
 
@@ -168,39 +183,49 @@ message StateResponse {
   int64 chunks = 7;
   int64 embedded = 8;
 
-  // Reading is the source being read now, as the vault calls it. Empty when
-  // nothing is being read, which is not the same as everything being done:
-  // `ready` says that.
-  string reading = 9;
-
   // Embedding says whether anything is going to turn the chunks into vectors.
   // False for an installation with no model, where `embedded` stays where it is
   // and the vault is searched by its words.
   bool embedding = 10;
+}
 
-  // Books is how many the vault holds, and books_read how many of those have
-  // been accounted for — read, skipped as unchanged, or found gone. Cutting is
-  // counted in books because that is what it opens; embedding is counted in
-  // chunks, and the two phases are told apart by `learning`.
-  int64 books = 11;
-  int64 books_read = 12;
+message TasksRequest {}
 
-  // Learning names a phase: it is set while vectors are being made, and from
-  // the moment a write lands until they have been. It is what tells the two
-  // phases apart, since both name a source and move a count.
-  bool learning = 13;
+message TasksResponse {
+  // Everything being done now, in the order the work began. The list arrives
+  // whole, because what is being done is a list and not a set of differences to
+  // apply.
+  repeated Task tasks = 1;
+}
 
-  // Busy is set while the vault is still being read: its notes, then its books,
-  // then their vectors. Reading a book and embedding one change no file, so this
-  // is the only thing that says there is more to come. `ready` says the notes
-  // are done, which is a smaller claim.
-  bool busy = 14;
+// A Task is one piece of work the application is doing behind the window.
+//
+// Every kind of work is one of these. That is the point: the next kind is an
+// entry in a list rather than another field on the state, another thing for the
+// window to poll, and another branch in what draws it.
+message Task {
+  // Id is what this work is called, so that the same work reported again
+  // replaces itself rather than appearing twice.
+  string id = 1;
 
-  // Owing is how many chunks the pass now running found with no vector, and
-  // made is how many of those it has made one for. They are the work in hand,
-  // where chunks and embedded are the whole of what the vault holds.
-  int64 owing = 15;
-  int64 made = 16;
+  // Doing is the work, in the words to show. About is what it is on, and is
+  // empty for work that is on nothing in particular.
+  string doing = 2;
+  string about = 3;
+
+  // Done and total are how far it has got, when there is a total to count
+  // against. Both zero is work running with nothing to count, which is an
+  // ordinary state and not an unknown one.
+  int64 done = 4;
+  int64 total = 5;
+
+  // Failed is why the work stopped, when it stopped badly.
+  string failed = 6;
+
+  // Asked is set for work a person started and is waiting to be told about.
+  // Work nobody asked for is drawn once it has lasted, and most of it is over
+  // before that.
+  bool asked = 7;
 }
 
 message OpeningRequest {}

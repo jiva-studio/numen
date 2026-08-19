@@ -16,6 +16,14 @@ type Source struct {
 	Ref    domain.FileRef
 	Hash   string
 	Recipe string
+
+	// TextFrom names the producer of the text this source's chunks are places
+	// in. Empty where the source's own bytes are the text, which is the
+	// ordinary case.
+	//
+	// It is cleared by a write that records a fingerprint alone, because a file
+	// that changed is a file whose reading was of other bytes.
+	TextFrom string
 }
 
 // Window is one cut of a source's text, as it is handed to storage. Location is

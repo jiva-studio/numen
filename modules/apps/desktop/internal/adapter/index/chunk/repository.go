@@ -32,8 +32,8 @@ func Statements() map[string]string { return stmt }
 // answer — nothing — so callers turn this into an empty result.
 var errNoVault = errors.New("vault not in the index")
 
-// Source is a file the index has read, and what reading it produced. `Hash` and
-// `Recipe` are empty until something computes them.
+// Source is a file the index has read, and what reading it produced. `Hash`,
+// `Recipe` and `TextFrom` are empty until something computes them.
 type Source struct {
 	Path   string
 	Kind   string
@@ -41,6 +41,10 @@ type Source struct {
 	MTime  int64
 	Hash   string
 	Recipe string
+
+	// TextFrom names the producer of the text this source's chunks are places
+	// in. Empty where the source's own bytes are the text.
+	TextFrom string
 }
 
 // Window is one cut of a source's text. `Location` is what the source's own
@@ -91,7 +95,7 @@ func (r *Repository) SaveSource(ctx context.Context, vaultID string, s Source) e
 	}
 	var row int64
 	if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
-		vault, s.Path, s.Kind, s.Size, s.MTime, nullable(s.Hash), nullable(s.Recipe)).Scan(&row); err != nil {
+		vault, s.Path, s.Kind, s.Size, s.MTime, nullable(s.Hash), nullable(s.Recipe), nullable(s.TextFrom)).Scan(&row); err != nil {
 		return fmt.Errorf("save_source %s: %w", s.Path, err)
 	}
 	if err := tx.Commit(); err != nil {
@@ -118,7 +122,7 @@ func (r *Repository) SaveExtraction(ctx context.Context, vaultID string, s Sourc
 	}
 	var source int64
 	if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
-		vault, s.Path, s.Kind, s.Size, s.MTime, nullable(s.Hash), nullable(s.Recipe)).Scan(&source); err != nil {
+		vault, s.Path, s.Kind, s.Size, s.MTime, nullable(s.Hash), nullable(s.Recipe), nullable(s.TextFrom)).Scan(&source); err != nil {
 		return fmt.Errorf("save_source %s: %w", s.Path, err)
 	}
 	if err := Replace(ctx, tx, source, vault, windows); err != nil {

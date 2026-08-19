@@ -171,7 +171,10 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string) mcp.Core
 		View:    opened.API.Viewing(),
 		Notes:   queries,
 
-		Search:        search.New(opened.Index.Passages(), readers, opened.Embedder, cfg.Embedding.Floor),
+		Sources:   opened.Index.SourcesKnown(),
+		Recognise: recogniser(opened),
+
+		Search:        search.New(opened.Index.Passages(), readers, cfg.DerivedStores(), opened.Embedder, cfg.Embedding.Floor),
 		Neighbourhood: note.ShowNeighbourhood{Links: opened.Index.Links(), Notes: queries},
 		Links:         note.ShowLinks{Links: opened.Index.Links()},
 		Problems:      lint.Standard(opened.Index.Problems()),
@@ -199,4 +202,13 @@ func extension(cfg container.Config) string {
 		return cfg.Extensions[0]
 	}
 	return ""
+}
+
+// recogniser is what reads a scanned document for an agent that asks.
+//
+// It is always served, even on a machine holding none of the models: what is
+// missing is fetched behind whoever asked, and the tool says so. A tool that is
+// not served at all leaves an agent saying the vault cannot do a thing it can.
+func recogniser(opened *webui.Opened) mcp.Recognising {
+	return opened.Recognising
 }

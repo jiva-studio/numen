@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/ocr/onnx"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
@@ -26,6 +27,13 @@ type Config struct {
 	// Extensions are the file extensions treated as notes. Empty means the
 	// default, which is markdown alone.
 	Extensions []string
+
+	// BookExtensions are the file extensions treated as books. Empty means the
+	// default, which is every format a reader takes text out of.
+	BookExtensions []string
+
+	// Recognition is how a scanned document is read when a person asks for it.
+	Recognition onnx.Config
 
 	// Embedding is the model this run turns text into vectors with. An entry
 	// point reads the settings and says what it found, so nothing below one
@@ -75,9 +83,21 @@ func (c Config) VaultIdentity() port.VaultIdentity {
 }
 
 // VaultOptions is how a vault on disk is read: which folder is ours, and which
-// files count as notes. The same answer for whatever looks at it.
+// files count as notes and as books. The same answer for whatever looks at it.
 func (c Config) VaultOptions() filesystem.Options {
-	return filesystem.Options{ServiceDir: c.ServiceDir, Extensions: c.Extensions}
+	return filesystem.Options{
+		ServiceDir:     c.ServiceDir,
+		Extensions:     c.Extensions,
+		BookExtensions: c.BookExtensions,
+	}
+}
+
+// DerivedStores opens the shelf the application keeps its own irreplaceable
+// files on, inside a vault. It is a third opener beside the readers and the
+// writers because it is a third right: reading a person's vault, changing it,
+// and keeping something of our own in it are not the same permission.
+func (c Config) DerivedStores() port.DerivedStores {
+	return filesystem.DerivedStores{Options: c.VaultOptions(), Area: filesystem.OCRDir}
 }
 
 // indexPath defaults to the platform cache directory. The index is a cache in

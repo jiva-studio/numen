@@ -53,9 +53,9 @@ func (o Options) hold() time.Duration {
 // mean.
 var DefaultExtensions = []string{".md"}
 
-// DefaultBookExtensions is what counts as a book: EPUB, the one format an
-// extractor handles.
-var DefaultBookExtensions = []string{".epub"}
+// DefaultBookExtensions is what counts as a book: the formats a reader takes
+// text out of. A book is any source with text that a person did not type here.
+var DefaultBookExtensions = []string{".epub", ".pdf"}
 
 // DefaultIgnore is what no vault has to ask to be left out. A name beginning
 // with a dot belongs to a tool — an editor's lock, a sync client's

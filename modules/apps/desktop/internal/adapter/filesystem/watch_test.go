@@ -235,13 +235,13 @@ func TestABookAppearingIsReported(t *testing.T) {
 	}
 }
 
-// TestAPDFAppearingIsNotReported. Classification is by type on both paths: what
-// the walk does not report the watcher does not report either.
-func TestAPDFAppearingIsNotReported(t *testing.T) {
+// TestAnImageAppearingIsNotReported. Classification is by type on both paths:
+// what the walk does not report the watcher does not report either.
+func TestAnImageAppearingIsNotReported(t *testing.T) {
 	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
 	next := watching(t, root)
 
-	write(t, root, "assets/paper.pdf", "%PDF-1.4\n")
+	write(t, root, "assets/scan.png", "PNG\n")
 	write(t, root, "Note.md", "# Note\n\nedited\n")
 
 	if got := next(); !slices.Equal(got, []string{"Note.md"}) {

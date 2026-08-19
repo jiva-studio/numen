@@ -11,8 +11,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 )
 
@@ -22,6 +22,7 @@ usage:
   numen-cli vault add <path> [--name <name>]   give a folder an identity and remember it
   numen-cli vault list                         show the vaults this installation knows
   numen-cli scan <vault> [--rebuild-index]      bring the index up to date with a vault
+  numen-cli recognise <vault> <file>          read a scanned document with a model
   numen-cli search <vault> <query>             full-text search within one vault
   numen-cli links <vault> <note>               what a note points at, and what points at it
   numen-cli problems <vault> [<check>...]      what the vault holds that was not guessed at
@@ -36,8 +37,8 @@ options:
 `
 
 // Main runs the command line and returns a process exit code.
-func Main(ctx context.Context, out, errOut io.Writer, args []string, embedding embed.Config) int {
-	if err := Run(ctx, out, args, embedding); err != nil {
+func Main(ctx context.Context, out, errOut io.Writer, args []string, indexing settings.Indexing) int {
+	if err := Run(ctx, out, args, indexing); err != nil {
 		fmt.Fprintln(errOut, "numen-cli:", err)
 		return 1
 	}
@@ -46,8 +47,8 @@ func Main(ctx context.Context, out, errOut io.Writer, args []string, embedding e
 
 // Run is Main with its output injected and errors returned, so what the person
 // sees is testable.
-func Run(ctx context.Context, out io.Writer, args []string, embedding embed.Config) error {
-	cfg := container.Config{Embedding: embedding}
+func Run(ctx context.Context, out io.Writer, args []string, indexing settings.Indexing) error {
+	cfg := container.Config{Embedding: indexing.Embedding, Recognition: indexing.Recognition}
 	fs := flag.NewFlagSet("numen-cli", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	fs.StringVar(&cfg.IndexPath, "index", "", "path to the index database")
@@ -75,6 +76,8 @@ func Run(ctx context.Context, out io.Writer, args []string, embedding embed.Conf
 		return vaultCommand(ctx, out, cfg, rest[1:])
 	case "scan":
 		return scanCommand(ctx, out, cfg, rest[1:])
+	case "recognise":
+		return recogniseCommand(ctx, out, cfg, rest[1:])
 	case "search":
 		return searchCommand(ctx, out, cfg, rest[1:])
 	case "links":

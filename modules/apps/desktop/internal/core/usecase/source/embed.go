@@ -9,8 +9,8 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/embedding"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/epub"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/text"
 )
 
 // chunksPerQuery bounds one answer about what owes a vector.
@@ -26,6 +26,10 @@ type Embed struct {
 	Readers port.VaultReaders
 	Chunks  port.VectorQueries
 	Vectors port.VectorRepository
+
+	// Derived holds what a recogniser wrote. A window of a recognised document
+	// is re-sliced out of that and not out of the document.
+	Derived port.DerivedStore
 
 	// Embedder is optional. Without one nothing is embedded and a search answers
 	// on its words alone, which is a whole search: the vector index fills in
@@ -63,7 +67,11 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 	if err != nil {
 		return res, err
 	}
-	source := extracted{reader: reader}
+	var store port.DerivedStore
+	if u.Derived != nil {
+		store = u.Derived
+	}
+	source := extracted{of: text.Reader{Vault: reader, Derived: store}}
 
 	after := int64(0)
 	for {
@@ -110,7 +118,7 @@ func (u Embed) read(ctx context.Context, source *extracted, owing []domain.Passa
 			res.Reading = p.Source
 			u.progress(*res)
 		}
-		text, ok, err := source.of(ctx, p.Source)
+		prose, ok, err := source.textOf(ctx, p.Source, p.TextFrom, p.Hash)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -118,12 +126,12 @@ func (u Embed) read(ctx context.Context, source *extracted, owing []domain.Passa
 			res.Vanished++
 			continue
 		}
-		if p.Start < 0 || p.Length <= 0 || p.Start+p.Length > len(text) {
+		if p.Start < 0 || p.Length <= 0 || p.Start+p.Length > len(prose) {
 			res.Displaced++
 			continue
 		}
 		chunks = append(chunks, p)
-		texts = append(texts, text[p.Start:p.Start+p.Length])
+		texts = append(texts, prose[p.Start:p.Start+p.Length])
 	}
 	return chunks, texts, nil
 }
@@ -241,46 +249,31 @@ func signed(q []int8) []byte {
 // again. The source now open is kept, because the chunks of one source are asked
 // about together.
 type extracted struct {
-	reader port.VaultReader
-	path   string
-	text   string
-	held   bool
+	of   text.Reader
+	path string
+	text string
+	held bool
 }
 
-// of is the extracted text of one source, and false where the vault no longer
+// text is the extracted text of one source, and false where the vault no longer
 // holds a source with text at that path.
-func (e *extracted) of(ctx context.Context, path string) (string, bool, error) {
+//
+// One reader for every kind and for every place a text may live, so that a
+// window is re-sliced out of the text it was cut from.
+func (e *extracted) textOf(ctx context.Context, path, from, hash string) (string, bool, error) {
 	if e.path == path {
 		return e.text, e.held, nil
 	}
 	e.path, e.text, e.held = path, "", false
 
-	ref, err := e.reader.Stat(ctx, path)
-	if port.NoNote(err) {
+	doc, err := e.of.Of(ctx, path, from, hash)
+	switch {
+	case port.NoNote(err), errors.Is(err, fs.ErrNotExist), errors.Is(err, text.ErrUnreadable):
 		return "", false, nil
-	}
-	if err != nil {
-		return "", false, fmt.Errorf("stat %s: %w", path, err)
-	}
-	raw, err := e.reader.Read(ctx, path)
-	if errors.Is(err, fs.ErrNotExist) {
-		return "", false, nil
-	}
-	if err != nil {
+	case err != nil:
 		return "", false, fmt.Errorf("read %s: %w", path, err)
 	}
-
-	switch ref.Kind {
-	case domain.KindBook:
-		book, err := epub.Read(raw)
-		if err != nil {
-			return "", false, nil
-		}
-		e.text = book.Text
-	default:
-		// A note's text is the file, and its chunks are places in it.
-		e.text = string(raw)
-	}
+	e.text = doc.Text
 	e.held = true
 	return e.text, true, nil
 }

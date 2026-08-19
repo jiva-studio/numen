@@ -691,3 +691,63 @@ five: a section of 48 words is one chunk, and nothing overlaps across a heading.
 Every small chunk carries the name of the section it was cut inside; the chunk
 enclosing the note carries the note's title, so a note is still answered by the
 name it was given.
+
+## Reading a PDF
+
+Recorded 2026-08-19 on the same AMD Ryzen 7 6800U, `CGO_ENABLED=0`, pdfium
+through WebAssembly.
+
+The document is 546 pages of a scan at 600 dpi, 233 MB, carrying a text layer
+somebody else's OCR left in it.
+
+| | |
+| --- | --- |
+| The library, compiled | 5.1 s, once for the life of the process |
+| Opening a document after that | 0.1–0.6 s |
+| Its text layer, all of it | 10–12 s (1 701 572 characters, about 45 pages a second) |
+| Naming every page | 4 ms |
+
+The compile is the module, not the document, and it is paid by the first PDF a
+run reads and by no other. The text of a smaller document is proportionally
+quicker: 80 pages is under a second.
+
+## Reading a scanned page with a model
+
+The same machine, ONNX Runtime through `purego`, one page at 300 dpi: layout by
+PP-DocLayoutV3, lines by PP-OCRv5 detection, text by PP-OCRv6 tiny.
+
+| | |
+| --- | --- |
+| One page, ten regions | 8.6 s |
+| A document of 546 pages | about 75 minutes |
+
+Two settings are measured rather than guessed.
+
+**Threads is four.** Two is slower (9.7 s a page), eight is slower (10.7), and
+sixteen is much slower (23.2). The lines of a page are small, and spreading one
+of them over sixteen threads costs more than it saves.
+
+**One page at a time.** A second worker holds a second copy of every model, 124
+MB of layout weights among them, and on a 13 GB machine the pair spent their time
+in swap: 18.4 s a page against 8.5.
+
+The recogniser is chosen for what it keeps rather than for its size. Measured
+over three pages of a book set in transliterated Sanskrit, against the document's
+own text layer with every mark folded away from both:
+
+| | size | a page | keeps the letter | marks |
+| --- | --- | --- | --- | --- |
+| PP-OCRv6 tiny | 4.5 MB | 1.2 s | 92.6% | 142 |
+| PP-OCRv6 small | 21 MB | 2.6 s | 81.5% | 156 |
+| PP-OCRv6 medium | 77 MB | 8.1 s | 81.5% | 157 |
+| PP-OCRv5 server | 85 MB | 7.9 s | 90.8% | 67 |
+
+No model in the family can write a consonant with a dot below it. Small and
+medium delete the letter they cannot spell — `ṭuṭaba hṛdayaka` becomes `uaba
+hdayaka` — and one Sanskrit word in five loses a letter. Tiny writes the plain
+letter instead, so the word keeps its length and a search still reaches it. The
+smallest is also the fastest and, on this book, the best.
+
+A recogniser that cannot spell a script at all writes plausible nonsense: the
+same models over a Russian document return Latin gibberish, and what keeps most
+of it out of the index is `window.legible` refusing to cut it.

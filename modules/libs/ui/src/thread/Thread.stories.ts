@@ -2,6 +2,7 @@
  * What the thread looks like. What it does is asserted in `Thread.test.ts`.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { expect } from 'storybook/test'
 import Thread from './Thread.vue'
 import type { Turn } from './model'
 import { ARABIC, DEVANAGARI, LINK, LONG, MULTILINE, RUSSIAN, UNBREAKABLE } from '@/fixtures/prose'
@@ -133,4 +134,107 @@ export const OwnTurn: Story = {
       </div>
     `,
   }),
+}
+
+interface Point {
+  readonly x: number
+  readonly y: number
+}
+
+/** The middle of a word, in the coordinates of the page it is drawn on. */
+const wordAt = (root: Element, word: string): Point => {
+  const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+  for (let node = walk.nextNode(); node; node = walk.nextNode()) {
+    const at = (node.nodeValue ?? '').indexOf(word)
+    if (at < 0) continue
+
+    const range = document.createRange()
+    range.setStart(node, at)
+    range.setEnd(node, at + word.length)
+    const box = range.getBoundingClientRect()
+    return { x: box.x + box.width / 2, y: box.y + box.height / 2 }
+  }
+  throw new Error(`“${word}” is nowhere in the thread`)
+}
+
+/** The same point told to the window the story is framed in. */
+const framedIn = (point: Point): Point => {
+  const frame = window.frameElement as HTMLElement | null
+  if (!frame) return point
+
+  const box = frame.getBoundingClientRect()
+  return {
+    x: box.x + point.x * (box.width / window.innerWidth),
+    y: box.y + point.y * (box.height / window.innerHeight),
+  }
+}
+
+/**
+ * A drag the browser makes itself, so the selection it leaves is the browser's
+ * own. The pointer is put down, walked to where it is going a step at a time,
+ * and lifted.
+ */
+const dragged = async (from: Point, to: Point): Promise<string | null> => {
+  const context = await import('@vitest/browser/context').catch(() => null)
+  if (!context) return null
+
+  const session = context.cdp() as unknown as {
+    send: (method: string, params: unknown) => Promise<unknown>
+  }
+  const at = (type: string, point: Point, buttons: number) =>
+    session.send('Input.dispatchMouseEvent', {
+      type,
+      ...framedIn(point),
+      button: 'left',
+      buttons,
+      ...(type === 'mouseMoved' ? {} : { clickCount: 1 }),
+    })
+
+  const STEPS = 12
+  window.getSelection()?.removeAllRanges()
+  await at('mouseMoved', from, 0)
+  await at('mousePressed', from, 1)
+  for (let step = 1; step <= STEPS; step += 1) {
+    await at(
+      'mouseMoved',
+      {
+        x: from.x + ((to.x - from.x) * step) / STEPS,
+        y: from.y + ((to.y - from.y) * step) / STEPS,
+      },
+      1,
+    )
+    await new Promise((done) => setTimeout(done, 16))
+  }
+  await at('mouseReleased', to, 0)
+  await new Promise((done) => setTimeout(done, 16))
+
+  return String(window.getSelection() ?? '')
+}
+
+/**
+ * A selection dragged across the turns. What is taken runs from where the
+ * pointer went down to where it came up, through everything between and
+ * nothing above. It is asserted only where a browser pointer can be driven.
+ */
+export const Selecting: Story = {
+  render: framed([
+    said('1', 'Which of these are worth keeping?'),
+    back(
+      '2',
+      'Three of them:\n\n- the harmonic one\n- the damped one\n- the driven one\n\nThe rest repeat what those already say.',
+    ),
+    said('3', 'Then drop the rest.'),
+    back('4', 'Dropped. Nine notes are left in the vault.'),
+  ]),
+  play: async ({ canvasElement }) => {
+    const turns = canvasElement.querySelectorAll('.thread__turn')
+    const taken = await dragged(wordAt(turns[1]!, 'damped'), wordAt(turns[3]!, 'vault'))
+    if (taken === null) return
+
+    await expect(taken).toContain('the driven one')
+    await expect(taken).toContain('Then drop the rest')
+    await expect(taken).toContain('Nine notes are left in the')
+    await expect(taken).not.toContain('the harmonic one')
+    await expect(taken).not.toContain('worth keeping')
+  },
 }
