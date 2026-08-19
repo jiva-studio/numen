@@ -1,0 +1,121 @@
+package mcp
+
+import (
+	"context"
+	"fmt"
+
+	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+)
+
+// A Document is one source of a vault that is not a note, as an agent is told
+// about it.
+type Document struct {
+	Path string `json:"path"`
+	// Read says whether a model has read this document. A scan that carries its
+	// own text says nothing about whether that text is any good, so this is the
+	// only thing that can be said for certain.
+	Read bool `json:"read"`
+}
+
+// addSourceTools adds the tools for the sources a vault holds beside its notes.
+//
+// There are two, and the first is why the second is usable: an agent asked to
+// read a document has to be able to find out which have been read already, or
+// it will read one twice and never read another.
+func addSourceTools(server *sdk.Server, core Core) {
+	sdk.AddTool(server, &sdk.Tool{
+		Name:  "source_list",
+		Title: "List the documents a vault holds",
+		Description: "List the books, papers and scans filed in the vault beside its notes, " +
+			"and say of each whether a model has read it. A scanned document carries no " +
+			"text of its own until it is read, and nothing in the words of a document " +
+			"that does carry text says whether that text is any good. Use this before " +
+			"asking for one to be read.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, _ struct{}) (*sdk.CallToolResult, struct {
+		Documents []Document `json:"documents"`
+		Says      string     `json:"says,omitempty"`
+	}, error) {
+		type out = struct {
+			Documents []Document `json:"documents"`
+			Says      string     `json:"says,omitempty"`
+		}
+		if core.Sources == nil {
+			return nil, out{}, fmt.Errorf("this vault's sources are not open")
+		}
+		known, err := core.Sources.Fingerprints(ctx, core.Vault.ID, domain.KindBook)
+		if err != nil {
+			return nil, out{}, err
+		}
+		read, err := core.Sources.Recognised(ctx, core.Vault.ID, domain.KindBook)
+		if err != nil {
+			return nil, out{}, err
+		}
+		documents := make([]Document, 0, len(known))
+		for path := range known {
+			documents = append(documents, Document{Path: path, Read: read[path] != ""})
+		}
+		says := ""
+		if core.Recognise != nil {
+			switch {
+			case core.Recognise.Running():
+				says = "one document is being read now"
+			case !core.Recognise.Ready():
+				says = "what is needed to read scans is not here yet, and is fetched when one is asked for"
+			}
+		}
+		return nil, out{Documents: documents, Says: says}, nil
+	})
+
+	sdk.AddTool(server, &sdk.Tool{
+		Name:  "source_recognise",
+		Title: "Read a scanned document",
+		Description: "Have a model read one scanned document and write down what it says, " +
+			"so that the vault can search it. This is slow — an hour for a book — and " +
+			"it is never done on its own, because whether a document's own text is any " +
+			"good cannot be told from the text. Ask for it when a document is a scan, " +
+			"or when what a search returns from one is nonsense.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
+		Path string `json:"path" jsonschema:"the document, as source_list gives it"`
+	}) (*sdk.CallToolResult, struct {
+		Started bool   `json:"started"`
+		Says    string `json:"says"`
+	}, error) {
+		type out = struct {
+			Started bool   `json:"started"`
+			Says    string `json:"says"`
+		}
+		if core.Recognise == nil {
+			return nil, out{}, fmt.Errorf("this installation cannot read scans")
+		}
+
+		// Nothing here happens inside this question. Fetching the models is
+		// minutes and reading a book is an hour, and how far either has got is
+		// among everything else the window shows being done.
+		if !core.Recognise.Start(context.WithoutCancel(ctx), core.Vault, in.Path) {
+			return nil, out{Says: "one document is already being read — this one waits for it"}, nil
+		}
+		says := "started; it runs in the background and the window shows how far it has got"
+		if !core.Recognise.Ready() {
+			says = "started; what is needed to read scans is being fetched first, about 160 MB"
+		}
+		return nil, out{Started: true, Says: says}, nil
+	})
+}
+
+// Recognising is what the tools need in order to read a document: a way to
+// begin, a way to say how far it has got, and whether it could begin at once.
+//
+// It is an interface so that a server can be built without one, and so that the
+// tools can say "it has started" rather than "there is nothing to read with".
+type Recognising interface {
+	// Ready says whether reading could begin now without waiting for anything
+	// to arrive.
+	Ready() bool
+	// Running says whether a document is being read.
+	Running() bool
+	// Start begins reading one document behind whoever asked, and says whether
+	// it began. It does not begin a second while one runs.
+	Start(ctx context.Context, v domain.Vault, path string) bool
+}

@@ -38,6 +38,11 @@ type Core struct {
 	// served the vault and nothing that puts a note in front of anybody.
 	View port.View
 
+	// Sources and Recognise are the documents a vault holds beside its notes.
+	// Without them the tools for those documents are not added.
+	Sources   port.SourceQueries
+	Recognise Recognising
+
 	Search        search.Search
 	Neighbourhood note.ShowNeighbourhood
 	Links         note.ShowLinks
@@ -67,6 +72,7 @@ func New(core Core) *sdk.Server {
 	addLinkTools(server, core)
 	addVaultTools(server, core)
 	addViewTools(server, core)
+	addSourceTools(server, core)
 	return server
 }
 

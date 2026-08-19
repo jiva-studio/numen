@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/cli"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/embed"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/testsupport"
 )
 
@@ -38,7 +38,7 @@ func (s *session) run(args ...string) (string, error) {
 	s.t.Helper()
 	var out bytes.Buffer
 	// No embedder: a test must not reach a model, a service, or an account.
-	err := cli.Run(context.Background(), &out, append(s.base, args...), embed.Config{})
+	err := cli.Run(context.Background(), &out, append(s.base, args...), settings.Indexing{})
 	return out.String(), err
 }
 
