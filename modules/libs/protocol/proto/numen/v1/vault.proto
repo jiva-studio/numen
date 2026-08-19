@@ -157,6 +157,10 @@ message StateResponse {
   // appear when something asks for them again.
   string unwatched = 6;
 
+  // Why an agent cannot be reached, when one cannot. The window works and the
+  // panel says this instead of answering.
+  string unreachable = 17;
+
   // Chunks is how many spans of text the index holds, and embedded is how many
   // of those carry a vector. Cutting finishes long before embedding does, so
   // the pair is what says how far searching by meaning has got. Both are zero

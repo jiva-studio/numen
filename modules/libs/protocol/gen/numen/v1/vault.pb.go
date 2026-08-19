@@ -454,6 +454,9 @@ type StateResponse struct {
 	// Why the vault is not being followed, when it is not. Changes will only
 	// appear when something asks for them again.
 	Unwatched string `protobuf:"bytes,6,opt,name=unwatched,proto3" json:"unwatched,omitempty"`
+	// Why an agent cannot be reached, when one cannot. The window works and the
+	// panel says this instead of answering.
+	Unreachable string `protobuf:"bytes,17,opt,name=unreachable,proto3" json:"unreachable,omitempty"`
 	// Chunks is how many spans of text the index holds, and embedded is how many
 	// of those carry a vector. Cutting finishes long before embedding does, so
 	// the pair is what says how far searching by meaning has got. Both are zero
@@ -560,6 +563,13 @@ func (x *StateResponse) GetFailed() string {
 func (x *StateResponse) GetUnwatched() string {
 	if x != nil {
 		return x.Unwatched
+	}
+	return ""
+}
+
+func (x *StateResponse) GetUnreachable() string {
+	if x != nil {
+		return x.Unreachable
 	}
 	return ""
 }
@@ -2488,14 +2498,15 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x04seat\x18\x02 \x01(\x0e2\x0e.numen.v1.SeatR\x04seat\x12\x14\n" +
 	"\x05label\x18\x03 \x01(\tR\x05label\x12\x18\n" +
 	"\athrough\x18\x04 \x01(\tR\athrough\"\x0e\n" +
-	"\fStateRequest\"\x98\x03\n" +
+	"\fStateRequest\"\xba\x03\n" +
 	"\rStateResponse\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x18\n" +
 	"\aindexed\x18\x03 \x01(\x03R\aindexed\x12\x14\n" +
 	"\x05ready\x18\x04 \x01(\bR\x05ready\x12\x16\n" +
 	"\x06failed\x18\x05 \x01(\tR\x06failed\x12\x1c\n" +
-	"\tunwatched\x18\x06 \x01(\tR\tunwatched\x12\x16\n" +
+	"\tunwatched\x18\x06 \x01(\tR\tunwatched\x12 \n" +
+	"\vunreachable\x18\x11 \x01(\tR\vunreachable\x12\x16\n" +
 	"\x06chunks\x18\a \x01(\x03R\x06chunks\x12\x1a\n" +
 	"\bembedded\x18\b \x01(\x03R\bembedded\x12\x18\n" +
 	"\areading\x18\t \x01(\tR\areading\x12\x1c\n" +

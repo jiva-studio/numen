@@ -83,6 +83,10 @@ func (c Config) VaultOptions() filesystem.Options {
 // indexPath defaults to the platform cache directory. The index is a cache in
 // the strict sense — losing it costs a rebuild and nothing else — so it belongs
 // where the system keeps disposable data.
+// IndexPathOrDefault is where the index is, whether or not one was named. It is
+// what a person is told when the index is what stopped the application.
+func (c Config) IndexPathOrDefault() (string, error) { return c.indexPath() }
+
 func (c Config) indexPath() (string, error) {
 	if c.IndexPath != "" {
 		if err := os.MkdirAll(filepath.Dir(c.IndexPath), 0o755); err != nil {

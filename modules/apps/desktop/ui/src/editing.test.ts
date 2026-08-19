@@ -9,6 +9,7 @@ const idle = {
   ready: true,
   failed: '',
   unwatched: '',
+  unreachable: '',
   chunks: 0n,
   embedded: 0n,
   owing: 0n,
