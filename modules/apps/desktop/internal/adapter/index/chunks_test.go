@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
+	"errors"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -115,13 +117,33 @@ func vectorise(t *testing.T, db *DB, vault domain.Vault, seed byte) {
 	vectors := make([]chunk.Vector, 0, len(owing))
 	for _, p := range owing {
 		vectors = append(vectors, chunk.Vector{
-			Chunk: p.Chunk, Model: "model", Dims: 1024, Kind: "int8",
+			Chunk: p.Chunk, Fingerprint: fingerprintOf(t, db, p.Chunk), Recipe: "model",
 			Value: precise(direction(seed)), Coarse: bits(seed),
 		})
 	}
 	if err := db.Chunks().SaveVectors(ctx, vectors); err != nil {
 		t.Fatal(err)
 	}
+}
+
+// fingerprintOf is the text one chunk holds, as the vector made from it is
+// addressed. The real path hashes what it is about to send; a fixture reads
+// what the cut already recorded.
+func fingerprintOf(t *testing.T, db *DB, chunk int64) []byte {
+	t.Helper()
+
+	var held string
+	if err := db.write.QueryRowContext(t.Context(),
+		`SELECT hash FROM chunks WHERE id = ?`, chunk).Scan(&held); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		t.Fatal(err)
+	}
+	raw, err := hex.DecodeString(held)
+	if err != nil || len(raw) == 0 {
+		// A fixture that stored no text still needs a key of its own.
+		sum := sha256.Sum256([]byte(strconv.FormatInt(chunk, 10)))
+		return sum[:]
+	}
+	return raw
 }
 
 func counted(t *testing.T, db *DB, statement string, args ...any) int {
@@ -253,7 +275,7 @@ func TestCuttingASourceTwiceDoesNotDoubleIt(t *testing.T) {
 	book(t, db, first, "library/first.epub", 0x00)
 
 	chunks := counted(t, db, `SELECT COUNT(*) FROM chunks`)
-	vectors := counted(t, db, `SELECT COUNT(*) FROM chunk_vectors`)
+	vectors := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`)
 	vec := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`)
 	fts := counted(t, db, `SELECT COUNT(*) FROM chunks_fts`)
 	if chunks != 3 || vectors != 2 || vec != 2 || fts != 3 {
@@ -266,7 +288,7 @@ func TestCuttingASourceTwiceDoesNotDoubleIt(t *testing.T) {
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks`); got != chunks {
 		t.Errorf("%d chunks after cutting the same source twice, want %d", got, chunks)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunk_vectors`); got != vectors {
+	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != vectors {
 		t.Errorf("%d vectors after cutting the same source twice, want %d", got, vectors)
 	}
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != vec {
@@ -322,7 +344,7 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 		   AND c.parent NOT IN (SELECT id FROM chunks WHERE parent IS NULL)`); got != 0 {
 		t.Errorf("%d small windows sit inside a large one that is gone", got)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunk_vectors`); got != 0 {
+	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
 		t.Errorf("%d vectors describe a note that has been rewritten", got)
 	}
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
@@ -597,7 +619,7 @@ func TestAnAnswerAboutWhatOwesWorkResumes(t *testing.T) {
 	ctx := t.Context()
 	db := opened(t)
 	book(t, db, first, "library/first.epub", 0x00)
-	if _, err := db.write.ExecContext(ctx, `DELETE FROM chunk_vectors`); err != nil {
+	if _, err := db.write.ExecContext(ctx, `DELETE FROM vectors`); err != nil {
 		t.Fatal(err)
 	}
 
@@ -768,7 +790,7 @@ func TestAChunkThatWentIsWrittenNoVectorAndStopsNothing(t *testing.T) {
 	vectors := make([]chunk.Vector, 0, len(owing))
 	for _, p := range owing {
 		vectors = append(vectors, chunk.Vector{
-			Chunk: p.Chunk, Model: "model", Dims: 1024, Kind: "int8",
+			Chunk: p.Chunk, Fingerprint: fingerprintOf(t, db, p.Chunk), Recipe: "model",
 			Value: bits(1), Coarse: bits(1),
 		})
 	}
@@ -785,7 +807,7 @@ func TestAChunkThatWentIsWrittenNoVectorAndStopsNothing(t *testing.T) {
 			gone++
 		}
 		for _, half := range []string{
-			`SELECT count(*) FROM chunk_vectors WHERE chunk_id = ?`,
+			`SELECT count(*) FROM chunks_vec WHERE chunk_id = ?`,
 			`SELECT count(*) FROM chunks_vec WHERE chunk_id = ?`,
 		} {
 			if got := counted(t, db, half, p.Chunk); got != held {
@@ -842,10 +864,10 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 		t.Fatalf("%d chunks owe a vector, want the two small windows", len(owing))
 	}
 	if err := db.Chunks().SaveVectors(ctx, []chunk.Vector{{
-		Chunk: owing[0].Chunk, Model: "model", Dims: 1024, Kind: "int8",
+		Chunk: owing[0].Chunk, Fingerprint: fingerprintOf(t, db, owing[0].Chunk), Recipe: "model",
 		Coarse: bits(0xff), Value: precise(direction(0xfe)),
 	}, {
-		Chunk: owing[1].Chunk, Model: "model", Dims: 1024, Kind: "int8",
+		Chunk: owing[1].Chunk, Fingerprint: fingerprintOf(t, db, owing[1].Chunk), Recipe: "model",
 		Coarse: bits(0xfe), Value: precise(direction(0xff)),
 	}}); err != nil {
 		t.Fatal(err)
@@ -886,7 +908,6 @@ func TestAVectorIsKeptByTheTextItWasMadeFrom(t *testing.T) {
 	value := precise(direction(0x11))
 	if err := db.Chunks().SaveVectors(ctx, []chunk.Vector{{
 		Chunk: owing[0].Chunk, Fingerprint: sum[:], Recipe: "a recipe",
-		Model: "model", Dims: 1024, Kind: "int8",
 		Coarse: bits(0x11), Value: value,
 	}}); err != nil {
 		t.Fatal(err)
@@ -898,7 +919,7 @@ func TestAVectorIsKeptByTheTextItWasMadeFrom(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunk_vectors`); got != 0 {
+	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
 		t.Fatalf("%d vectors survived a rebuild of the chunks, want none", got)
 	}
 
@@ -931,10 +952,9 @@ func TestAVectorIsKeptByTheTextItWasMadeFrom(t *testing.T) {
 func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 	ctx := t.Context()
 	db := opened(t)
-	book(t, db, first, "library/first.epub", 0x00)
+	cutInto(t, db, first, "library/first.epub", "a passage two models read")
 	queries := db.ChunkQueries()
 
-	// The same chunks, embedded again by a model of the same width.
 	owing, err := queries.Unembedded(ctx, first.ID, "another-model", 0, 10)
 	if err != nil {
 		t.Fatal(err)
@@ -944,10 +964,8 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 	}
 	made := make([]chunk.Vector, 0, len(owing))
 	for _, p := range owing {
-		sum := sha256.Sum256([]byte("another model read this " + strconv.Itoa(int(p.Chunk))))
 		made = append(made, chunk.Vector{
-			Chunk: p.Chunk, Fingerprint: sum[:], Recipe: "another-model",
-			Model: "another-model", Dims: 1024, Kind: "int8",
+			Chunk: p.Chunk, Fingerprint: fingerprintOf(t, db, p.Chunk), Recipe: "another-model",
 			Coarse: bits(0x00), Value: precise(direction(0x00)),
 		})
 	}
@@ -955,9 +973,8 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// The first model's rows are gone: one chunk carries one vector, and the
-	// second write replaced the first. What is left points the same way as the
-	// query, so only the model tells them apart.
+	// The coarse pass answers, because the bits are there. What is asked of it
+	// afterwards is the model's own, and this vector is another model's.
 	near, err := queries.Nearest(ctx, first.ID, "model", direction(0x00), 10, 0.5)
 	if err != nil {
 		t.Fatal(err)
@@ -1008,8 +1025,7 @@ func TestTextThatWentTakesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
 			t.Fatal(err)
 		}
 		made = append(made, chunk.Vector{
-			Chunk: p.Chunk, Fingerprint: raw, Recipe: "model/int8",
-			Model: "model", Dims: 1024, Kind: "int8",
+			Chunk: p.Chunk, Fingerprint: raw, Recipe: "model",
 			Coarse: bits(0x00), Value: precise(direction(0x00)),
 		})
 	}
@@ -1065,8 +1081,7 @@ func TestAVectorStaysWhileAnyChunkStillHoldsItsText(t *testing.T) {
 			t.Fatal(err)
 		}
 		made = append(made, chunk.Vector{
-			Chunk: p.Chunk, Fingerprint: raw, Recipe: "model/int8",
-			Model: "model", Dims: 1024, Kind: "int8",
+			Chunk: p.Chunk, Fingerprint: raw, Recipe: "model",
 			Coarse: bits(0x00), Value: precise(direction(0x00)),
 		})
 	}
@@ -1082,7 +1097,7 @@ func TestAVectorStaysWhileAnyChunkStillHoldsItsText(t *testing.T) {
 	cutInto(t, db, first, "library/one.epub", "something else entirely")
 
 	sum := sha256.Sum256([]byte(shared))
-	kept, err := db.ChunkQueries().Kept(ctx, "model/int8", [][]byte{sum[:]})
+	kept, err := db.ChunkQueries().Kept(ctx, "model", [][]byte{sum[:]})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -47,7 +47,7 @@ func (m EmbeddingModel) String() string {
 // found under a key that no longer describes it is worse than one that was
 // never kept.
 func (m EmbeddingModel) Recipe() string {
-	return fmt.Sprintf("%s|%s|%d|%d", m.From, m.Name, m.Dimensions, m.MaxTokens)
+	return fmt.Sprintf("%s|%s|%d|%d|%s", m.From, m.Name, m.Dimensions, m.MaxTokens, QuantisedInt8)
 }
 
 // Embedder turns text into vectors. The core asks for it and does not know

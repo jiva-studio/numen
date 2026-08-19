@@ -139,10 +139,11 @@ func TestMigrationsRunInOneTransactionEach(t *testing.T) {
 	}
 }
 
-func TestTheChunksOfAnOlderIndexKeepTheirVectors(t *testing.T) {
-	// A chunk written before it carried the hash of its text keeps its row, and
-	// the vector made from it. The hash it carries is the empty string, which no
-	// text hashes to, so the row is replaced the next time its source is cut.
+func TestTheChunksOfAnOlderIndexKeepTheirRows(t *testing.T) {
+	// A chunk written before it carried the hash of its text keeps its row.
+	// Its vector cannot come with it: a vector is kept by the text it was made
+	// from, and this chunk never recorded what its text was. The row is
+	// replaced, and the vector made again, the next time its source is cut.
 	ctx := t.Context()
 	path := filepath.Join(t.TempDir(), "index.db")
 
@@ -186,12 +187,15 @@ func TestTheChunksOfAnOlderIndexKeepTheirVectors(t *testing.T) {
 
 	var chunks, vectors int
 	if err := upgraded.read.QueryRowContext(ctx,
-		`SELECT (SELECT COUNT(*) FROM chunks WHERE hash = ''), (SELECT COUNT(*) FROM chunk_vectors)`).
+		`SELECT (SELECT COUNT(*) FROM chunks WHERE hash = ''), (SELECT COUNT(*) FROM vectors)`).
 		Scan(&chunks, &vectors); err != nil {
 		t.Fatal(err)
 	}
-	if chunks != 2 || vectors != 1 {
-		t.Errorf("%d chunks and %d vectors survived the migration, want 2 and 1", chunks, vectors)
+	if chunks != 2 {
+		t.Errorf("%d chunks survived the migration, want 2", chunks)
+	}
+	if vectors != 0 {
+		t.Errorf("%d vectors were carried for text the index never recorded", vectors)
 	}
 }
 

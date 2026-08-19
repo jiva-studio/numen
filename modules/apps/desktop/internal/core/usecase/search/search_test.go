@@ -2,6 +2,7 @@ package search_test
 
 import (
 	"context"
+	"encoding/hex"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -96,7 +97,7 @@ func (c corpus) cut(t *testing.T, v domain.Vault, path string, small ...string) 
 // given, in both of the representations a chunk carries.
 func (c corpus) vectorise(t *testing.T, v domain.Vault, direction []float32) {
 	t.Helper()
-	owing, err := c.db.ChunkQueries().Unembedded(t.Context(), v.ID, model.String(), 0, 1000)
+	owing, err := c.db.ChunkQueries().Unembedded(t.Context(), v.ID, model.Recipe(), 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,8 +106,12 @@ func (c corpus) vectorise(t *testing.T, v domain.Vault, direction []float32) {
 	}
 	vectors := make([]chunk.Vector, 0, len(owing))
 	for _, p := range owing {
+		raw, err := hex.DecodeString(p.Fingerprint)
+		if err != nil {
+			t.Fatal(err)
+		}
 		vectors = append(vectors, chunk.Vector{
-			Chunk: p.Chunk, Model: model.String(), Dims: dimensions, Kind: "int8",
+			Chunk: p.Chunk, Fingerprint: raw, Recipe: model.Recipe(),
 			Value: precise(direction), Coarse: embedding.Bits(direction),
 		})
 	}
@@ -189,7 +194,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	// The meaning half answers with the whole table's best k, so this is where a
 	// lost filter shows.
 	dense := c.db.ChunkQueries()
-	near, err := dense.Nearest(ctx, c.first.ID, model.String(), pointing(+1), 20, search.DefaultFloor)
+	near, err := dense.Nearest(ctx, c.first.ID, model.Recipe(), pointing(+1), 20, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}

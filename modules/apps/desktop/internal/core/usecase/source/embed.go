@@ -2,7 +2,6 @@ package source
 
 import (
 	"context"
-	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -102,8 +101,8 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 // A chunk whose source is gone, or whose place is not in the text that source
 // holds now, is left as it is: the file is what is true, and the index follows it
 // when the file is next read.
-func (u Embed) read(ctx context.Context, source *extracted, owing []domain.Passage, res *EmbedResult) ([]int64, []string, error) {
-	chunks := make([]int64, 0, len(owing))
+func (u Embed) read(ctx context.Context, source *extracted, owing []domain.Passage, res *EmbedResult) ([]domain.Passage, []string, error) {
+	chunks := make([]domain.Passage, 0, len(owing))
 	texts := make([]string, 0, len(owing))
 
 	for _, p := range owing {
@@ -123,7 +122,7 @@ func (u Embed) read(ctx context.Context, source *extracted, owing []domain.Passa
 			res.Displaced++
 			continue
 		}
-		chunks = append(chunks, p.Chunk)
+		chunks = append(chunks, p)
 		texts = append(texts, text[p.Start:p.Start+p.Length])
 	}
 	return chunks, texts, nil
@@ -135,18 +134,22 @@ func (u Embed) read(ctx context.Context, source *extracted, owing []domain.Passa
 // embedded is stored, and both representations of a vector are one value: a chunk
 // holding one and not the other is absent from the coarse pass and invisible to
 // the question of what has no vector.
-func (u Embed) write(ctx context.Context, model port.EmbeddingModel, chunks []int64, texts []string, res *EmbedResult) error {
+func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []domain.Passage, texts []string, res *EmbedResult) error {
 	if len(texts) == 0 {
 		return nil
 	}
-	recipe := model.Recipe() + "/" + port.QuantisedInt8
+	recipe := model.Recipe()
 
-	// The text each chunk holds, as the vector it was made into is kept under.
-	// It is the text about to be sent, so what is claimed is what was read.
+	// The text each chunk holds, as the index recorded it when the source was
+	// cut. That record is what a chunk is identified by, and what every
+	// question about what still owes a vector is asked against.
 	prints := make([][]byte, len(texts))
-	for i, text := range texts {
-		sum := sha256.Sum256([]byte(text))
-		prints[i] = sum[:]
+	for i := range texts {
+		raw, err := hex.DecodeString(owing[i].Fingerprint)
+		if err != nil || len(raw) == 0 {
+			continue
+		}
+		prints[i] = raw
 	}
 	kept, err := u.Vectors.Kept(ctx, recipe, prints)
 	if err != nil {
@@ -158,14 +161,14 @@ func (u Embed) write(ctx context.Context, model port.EmbeddingModel, chunks []in
 	var askingFor []int
 	for i := range texts {
 		value, held := kept[hex.EncodeToString(prints[i])]
-		if !held {
+		if !held || len(prints[i]) == 0 {
 			asking = append(asking, texts[i])
 			askingFor = append(askingFor, i)
 			continue
 		}
 		// Bought once. What the coarse pass needs is read back out of it.
 		out = append(out, port.Vector{
-			Chunk:       chunks[i],
+			Chunk:       owing[i].Chunk,
 			Fingerprint: prints[i],
 			Model:       model,
 			Kind:        port.QuantisedInt8,
@@ -192,7 +195,7 @@ func (u Embed) write(ctx context.Context, model port.EmbeddingModel, chunks []in
 			v = embedding.Normalise(v)
 			at := askingFor[i]
 			out = append(out, port.Vector{
-				Chunk:       chunks[at],
+				Chunk:       owing[at].Chunk,
 				Fingerprint: prints[at],
 				Model:       model,
 				Kind:        port.QuantisedInt8,

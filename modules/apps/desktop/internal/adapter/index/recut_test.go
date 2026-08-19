@@ -159,7 +159,7 @@ func rowsOf(t *testing.T, db *DB, statement string, args ...any) []int64 {
 // coarse index both.
 func vectored(t *testing.T, db *DB, chunk int64) bool {
 	t.Helper()
-	stored := counted(t, db, `SELECT COUNT(*) FROM chunk_vectors WHERE chunk_id = ?`, chunk)
+	stored := counted(t, db, `SELECT COUNT(*) FROM chunks_vec WHERE chunk_id = ?`, chunk)
 	coarse := counted(t, db, `SELECT COUNT(*) FROM chunks_vec WHERE chunk_id = ?`, chunk)
 	if stored != coarse {
 		t.Errorf("chunk %d is in %d rows of vectors and %d of the coarse index", chunk, stored, coarse)
@@ -207,7 +207,7 @@ func TestEditingTheEndOfANoteAsksForOneVector(t *testing.T) {
 	if vectored(t, db, now[4]) {
 		t.Error("the window the edit landed in carries a vector made from other text")
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunk_vectors`); got != 4 {
+	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 4 {
 		t.Errorf("%d vectors survived the edit, want the four windows before it", got)
 	}
 	if asked := model.run(t, db, first); asked != 1 {
@@ -243,7 +243,7 @@ func TestAWindowThatMovedInTheFileKeepsItsVector(t *testing.T) {
 	if got := largeWindow(t, db, first, n.Ref.Path); got != enclosing {
 		t.Errorf("the large window is row %d, and was row %d", got, enclosing)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunk_vectors`); got != len(was) {
+	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != len(was) {
 		t.Errorf("%d vectors, want the %d windows that carry one", got, len(was))
 	}
 	if asked := model.run(t, db, first); asked != 0 {
@@ -419,7 +419,7 @@ func TestEditingTheStartOfANoteRecutsAllOfIt(t *testing.T) {
 
 	save(t, db, first, noteAt(n.Ref.Path, n.Title, "wordzz "+body))
 
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunk_vectors`); got != 0 {
+	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
 		t.Errorf("%d vectors survived an edit at the start of the note", got)
 	}
 	now := smallWindows(t, db, first, n.Ref.Path)
@@ -540,7 +540,7 @@ func TestARecutStaysInsideItsVault(t *testing.T) {
 		t.Fatal("the second vault holds no window that carries a vector")
 	}
 	was := chunksIn(t, db, second)
-	vectors := counted(t, db, `SELECT COUNT(*) FROM chunk_vectors`)
+	vectors := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`)
 
 	save(t, db, first, noteAt(mine.Ref.Path, mine.Title, mine.Body+" wordzz"))
 
@@ -552,7 +552,7 @@ func TestARecutStaysInsideItsVault(t *testing.T) {
 	if got := chunksIn(t, db, second); got != was {
 		t.Errorf("the second vault holds %d chunks, and held %d before the first vault's note was cut", got, was)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunk_vectors`); got != vectors-1 {
+	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != vectors-1 {
 		t.Errorf("%d vectors, want %d: the one window the edit landed in", got, vectors-1)
 	}
 
@@ -678,7 +678,7 @@ func TestCuttingOneSectionStaysInsideItsVault(t *testing.T) {
 		t.Fatal("the second vault holds no window that carries a vector")
 	}
 	was := chunksIn(t, db, second)
-	vectors := counted(t, db, `SELECT COUNT(*) FROM chunk_vectors`)
+	vectors := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`)
 
 	// A word typed into the first section of the first vault's note.
 	save(t, db, first, parsedAt(path, typedBefore(body, 0)))
@@ -693,7 +693,7 @@ func TestCuttingOneSectionStaysInsideItsVault(t *testing.T) {
 	}
 	// The section the word landed in is cut into two windows, and both of them owe
 	// a vector; the sections it did not reach keep theirs.
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunk_vectors`); got != vectors-1 {
+	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != vectors-1 {
 		t.Errorf("%d vectors, want %d", got, vectors-1)
 	}
 	if asked := model.run(t, db, first); asked != 2 {

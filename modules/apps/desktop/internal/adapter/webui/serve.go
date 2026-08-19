@@ -112,6 +112,7 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 			embedder = nil
 		} else {
 			api.Model.Store(model.String())
+			api.Recipe.Store(model.Recipe())
 		}
 	}
 
@@ -550,7 +551,7 @@ func embedSources(
 	// and a total that grows as it goes is a count that never settles.
 	owing := int64(0)
 	if api.Progress != nil {
-		if held, embedded, err := api.Progress.Progress(ctx, api.Vault.ID, text(&api.Model)); err == nil {
+		if held, embedded, err := api.Progress.Progress(ctx, api.Vault.ID, text(&api.Recipe)); err == nil {
 			owing = max(0, held-embedded)
 		}
 	}

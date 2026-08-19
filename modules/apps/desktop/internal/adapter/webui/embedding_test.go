@@ -167,7 +167,7 @@ func (r counts) Walk(ctx context.Context, fn func(domain.FileRef) error) error {
 // carry one from the model in use.
 func vectored(t *testing.T, f *behind, model port.Embedder) (held, embedded int64) {
 	t.Helper()
-	held, embedded, err := f.index.Progress().Progress(t.Context(), f.vault.ID, model.Model().String())
+	held, embedded, err := f.index.Progress().Progress(t.Context(), f.vault.ID, model.Model().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}

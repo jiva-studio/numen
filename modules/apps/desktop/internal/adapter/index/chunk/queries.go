@@ -30,6 +30,8 @@ type Passage struct {
 	Length   int
 	Location string
 	Parent   int64
+	// Fingerprint is the text this chunk holds, as the index recorded it.
+	Fingerprint string
 }
 
 // Fingerprints is what the index believes about each file of one kind, keyed by
@@ -107,7 +109,7 @@ func (q *Queries) Lexical(ctx context.Context, vaultID, query string, limit int,
 // full-precision vectors order what it kept. A chunk that does not reach the
 // similarity floor is not an answer, so a vault with nothing to say answers
 // with nothing.
-func (q *Queries) Nearest(ctx context.Context, vaultID, model string, query []float32, limit int, floor float64) ([]domain.Passage, error) {
+func (q *Queries) Nearest(ctx context.Context, vaultID, recipe string, query []float32, limit int, floor float64) ([]domain.Passage, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("the meaning half needs a positive limit, got %d", limit)
 	}
@@ -126,7 +128,7 @@ func (q *Queries) Nearest(ctx context.Context, vaultID, model string, query []fl
 	if err != nil {
 		return nil, err
 	}
-	ranked, err := q.rerank(ctx, model, query, near, floor)
+	ranked, err := q.rerank(ctx, recipe, query, near, floor)
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +235,7 @@ func (q *Queries) ByOtherRecipe(ctx context.Context, vaultID, kind, recipe strin
 // Unembedded is the small windows of a vault with no vector from the model in
 // use, from `after` onwards. Asked with the last id of the previous answer, it
 // resumes.
-func (q *Queries) Unembedded(ctx context.Context, vaultID, model string, after int64, limit int) ([]Passage, error) {
+func (q *Queries) Unembedded(ctx context.Context, vaultID, recipe string, after int64, limit int) ([]Passage, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("a batch needs a positive limit, got %d", limit)
 	}
@@ -245,7 +247,7 @@ func (q *Queries) Unembedded(ctx context.Context, vaultID, model string, after i
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("unembedded"), model, vault, after, limit)
+	rows, err := q.db.QueryContext(ctx, stmt.Get("unembedded"), recipe, vault, after, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +256,7 @@ func (q *Queries) Unembedded(ctx context.Context, vaultID, model string, after i
 	var out []Passage
 	for rows.Next() {
 		var p Passage
-		if err := rows.Scan(&p.Chunk, &p.Path, &p.Start, &p.Length, &p.Location, &p.Parent); err != nil {
+		if err := rows.Scan(&p.Chunk, &p.Path, &p.Start, &p.Length, &p.Location, &p.Parent, &p.Fingerprint); err != nil {
 			return nil, err
 		}
 		out = append(out, p)
@@ -297,7 +299,7 @@ func (q *Queries) paths(ctx context.Context, vaultID, statement string, limit in
 // does, so the pair is what says how far there is to go.
 //
 // A vault the index has never heard of has nothing and owes nothing.
-func (q *Queries) Progress(ctx context.Context, vaultID, model string) (held, embedded int64, err error) {
+func (q *Queries) Progress(ctx context.Context, vaultID, recipe string) (held, embedded int64, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return 0, 0, nil
@@ -305,7 +307,7 @@ func (q *Queries) Progress(ctx context.Context, vaultID, model string) (held, em
 	if err != nil {
 		return 0, 0, err
 	}
-	err = q.db.QueryRowContext(ctx, stmt.Get("progress"), model, vault).
+	err = q.db.QueryRowContext(ctx, stmt.Get("progress"), recipe, vault).
 		Scan(&held, &embedded)
 	return held, embedded, err
 }

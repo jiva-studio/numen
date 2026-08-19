@@ -88,6 +88,9 @@ type API struct {
 	// model, and then nothing is going to embed anything. It is named by the
 	// goroutine reading the vault and asked for by every request.
 	Model atomic.Value
+	// Recipe is everything that decides what a vector is, which is what a
+	// vector is found by.
+	Recipe atomic.Value
 	// Reading is the source being read now, empty between sources and after the
 	// last one.
 	Reading atomic.Value
@@ -139,7 +142,7 @@ func (a *API) State(ctx context.Context, _ *connect.Request[v1.StateRequest]) (*
 	// A count that cannot be taken leaves the pair at nothing, and the rest of
 	// the state is answered as it stands.
 	if a.Progress != nil {
-		if held, embedded, err := a.Progress.Progress(ctx, a.Vault.ID, text(&a.Model)); err == nil {
+		if held, embedded, err := a.Progress.Progress(ctx, a.Vault.ID, text(&a.Recipe)); err == nil {
 			out.Chunks, out.Embedded = held, embedded
 		}
 	}

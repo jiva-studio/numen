@@ -68,9 +68,6 @@ type Vector struct {
 	Chunk       int64
 	Fingerprint []byte
 	Recipe      string
-	Model       string
-	Dims        int
-	Kind        string
 	Value       []byte
 	Coarse      []byte
 }
@@ -180,7 +177,7 @@ func (r *Repository) SaveVectors(ctx context.Context, vectors []Vector) error {
 	defer tx.Rollback()
 
 	for _, v := range vectors {
-		// The vector index takes no conflict clause, so a row that is being
+		// The coarse index takes no conflict clause, so a row that is being
 		// replaced is removed first.
 		if err := exec(ctx, tx, "delete_vec", v.Chunk); err != nil {
 			return err
@@ -188,14 +185,8 @@ func (r *Repository) SaveVectors(ctx context.Context, vectors []Vector) error {
 		if err := exec(ctx, tx, "insert_vec", v.Coarse, v.Chunk); err != nil {
 			return err
 		}
-		if err := exec(ctx, tx, "save_vector", v.Model, v.Dims, v.Kind, v.Value, v.Chunk); err != nil {
+		if err := exec(ctx, tx, "keep_vector", v.Fingerprint, v.Recipe, v.Value); err != nil {
 			return err
-		}
-		// Kept by the text it was made from, where renumbering cannot reach it.
-		if len(v.Fingerprint) > 0 {
-			if err := exec(ctx, tx, "keep_vector", v.Fingerprint, v.Recipe, v.Value); err != nil {
-				return err
-			}
 		}
 	}
 	if err := tx.Commit(); err != nil {

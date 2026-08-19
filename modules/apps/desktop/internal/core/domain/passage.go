@@ -25,5 +25,9 @@ type Passage struct {
 	// passage whose hit is the window itself begins at its own beginning.
 	HitAt int
 
+	// Fingerprint is the text this chunk holds, as the index recorded it. It is
+	// what a vector made from that text is found by.
+	Fingerprint string
+
 	Text string
 }

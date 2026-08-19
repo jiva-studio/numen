@@ -188,7 +188,6 @@ func narrow(t *testing.T, db *DB, vault domain.Vault, dims int) {
 		sum := sha256.Sum256([]byte(strconv.Itoa(dims) + ":" + strconv.Itoa(int(p.Chunk))))
 		vectors = append(vectors, chunk.Vector{
 			Chunk: p.Chunk, Fingerprint: sum[:], Recipe: "model/" + strconv.Itoa(dims),
-			Model: "model", Dims: dims, Kind: "int8",
 			Value: make([]byte, dims), Coarse: make([]byte, dims/8),
 		})
 	}
