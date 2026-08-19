@@ -34,10 +34,14 @@ func walkPaths(t *testing.T, root string) []string {
 	return got
 }
 
-func TestWalkReportsEveryNoteAndNothingElse(t *testing.T) {
+// TestWalkReportsEverySourceAndNothingElse. A walk reports the files something
+// reads and no others: the note in the hidden folder and the service folder are
+// the vault's and not the application's to index.
+func TestWalkReportsEverySourceAndNothingElse(t *testing.T) {
 	got := walkPaths(t, testsupport.VaultDir(t))
 	want := []string{
 		"Thermodynamics.md",
+		"assets/paper.pdf",
 		"daily/2026-08-15.md",
 		"edge/broken-frontmatter.md",
 		"edge/broken-links.md",
@@ -94,21 +98,26 @@ func TestWalkSaysWhichKindEachSourceIs(t *testing.T) {
 }
 
 // TestAFormatNothingReadsIsNotASource. Which files are sources is decided by
-// type, so the fixture's PDF is reported by nothing and stats as absent.
+// type, so a file of a format no reader handles is reported by nothing and
+// stats as absent, however large a part of the vault it is.
 func TestAFormatNothingReadsIsNotASource(t *testing.T) {
 	root := testsupport.CopyVault(t)
 	testsupport.WriteBook(t, root, "library/A Book.epub")
+	scanned := "assets/scan.png"
+	if err := os.WriteFile(filepath.Join(root, filepath.FromSlash(scanned)), []byte("PNG"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 
-	if kind, found := walkedKinds(t, root, filesystem.Options{})["assets/paper.pdf"]; found {
-		t.Errorf("walk reported the PDF as %q", kind)
+	if kind, found := walkedKinds(t, root, filesystem.Options{})[scanned]; found {
+		t.Errorf("walk reported the image as %q", kind)
 	}
 
 	src, err := filesystem.Open(root, filesystem.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := src.Stat(t.Context(), "assets/paper.pdf"); !errors.Is(err, port.ErrNotANote) {
-		t.Errorf("stat of the PDF gave %v, want ErrNotANote", err)
+	if _, err := src.Stat(t.Context(), scanned); !errors.Is(err, port.ErrNotANote) {
+		t.Errorf("stat of the image gave %v, want ErrNotANote", err)
 	}
 }
 
@@ -338,9 +347,12 @@ func TestWhichExtensionsAreBooksIsASetting(t *testing.T) {
 		}
 	}
 
-	// The default is EPUB alone, because it is the one format an extractor
-	// handles.
-	want := map[string]domain.SourceKind{"a.md": domain.KindNote, "b.epub": domain.KindBook}
+	// The default is every format a reader takes text out of.
+	want := map[string]domain.SourceKind{
+		"a.md":   domain.KindNote,
+		"b.epub": domain.KindBook,
+		"c.pdf":  domain.KindBook,
+	}
 	if got := walkedKinds(t, dir, filesystem.Options{}); !maps.Equal(got, want) {
 		t.Errorf("default found %v, want %v", got, want)
 	}

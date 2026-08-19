@@ -1,6 +1,7 @@
 package source
 
 import (
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/text"
 	"strings"
 	"testing"
 
@@ -42,7 +43,7 @@ func TestABookIsCutIntoWindowsRecordedWithTheRecipeThatCutThem(t *testing.T) {
 			}
 
 			source := index.sources[first.ID][bookPath]
-			if want := recipe(extract.sizes()); source.Recipe != want {
+			if want := recipe(text.ReaderEPUB, extract.sizes()); source.Recipe != want {
 				t.Errorf("recipe = %q, want %q", source.Recipe, want)
 			}
 			if source.Hash == "" {
@@ -173,7 +174,7 @@ func TestTheRecipeFollowsTheCutSizesAndStalenessFollowsTheRecipe(t *testing.T) {
 	other := one
 	other.Small = 21
 
-	if recipe(Extract{Sizes: one}.sizes()) == recipe(Extract{Sizes: other}.sizes()) {
+	if recipe(text.ReaderEPUB, one) == recipe(text.ReaderEPUB, other) {
 		t.Fatal("one word of difference in a window size is not in the recipe")
 	}
 
@@ -185,7 +186,7 @@ func TestTheRecipeFollowsTheCutSizesAndStalenessFollowsTheRecipe(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	stale, err := index.ByOtherRecipe(ctx, first.ID, domain.KindBook, recipe(Extract{Sizes: other}.sizes()), 10)
+	stale, err := index.ByOtherRecipe(ctx, first.ID, domain.KindBook, recipes(Extract{Sizes: other}.sizes()), 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -204,7 +205,7 @@ func TestTheRecipeFollowsTheCutSizesAndStalenessFollowsTheRecipe(t *testing.T) {
 	if index.written[bookPath] != 2 {
 		t.Errorf("the source was written %d times, want the cut at each of the two sizes", index.written[bookPath])
 	}
-	if want := recipe(extract.sizes()); index.sources[first.ID][bookPath].Recipe != want {
+	if want := recipe(text.ReaderEPUB, extract.sizes()); index.sources[first.ID][bookPath].Recipe != want {
 		t.Errorf("recipe = %q, want %q", index.sources[first.ID][bookPath].Recipe, want)
 	}
 

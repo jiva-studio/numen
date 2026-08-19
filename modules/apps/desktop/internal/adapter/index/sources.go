@@ -46,8 +46,8 @@ func (s sources) Unchunked(ctx context.Context, vaultID string, kind domain.Sour
 	return s.read.Unchunked(ctx, vaultID, string(kind), limit)
 }
 
-func (s sources) ByOtherRecipe(ctx context.Context, vaultID string, kind domain.SourceKind, recipe string, limit int) ([]string, error) {
-	return s.read.ByOtherRecipe(ctx, vaultID, string(kind), recipe, limit)
+func (s sources) ByOtherRecipe(ctx context.Context, vaultID string, kind domain.SourceKind, recipes []string, limit int) ([]string, error) {
+	return s.read.ByOtherRecipe(ctx, vaultID, string(kind), recipes, limit)
 }
 
 // SaveVectors writes a group: the coarse row of each, and the vector itself
@@ -76,6 +76,7 @@ func (s sources) Unembedded(ctx context.Context, vaultID string, model port.Embe
 		out = append(out, domain.Passage{
 			Chunk:       p.Chunk,
 			Source:      p.Path,
+			TextPath:    p.TextPath,
 			Start:       p.Start,
 			Length:      p.Length,
 			Location:    p.Location,
@@ -87,12 +88,13 @@ func (s sources) Unembedded(ctx context.Context, vaultID string, model port.Embe
 
 func stored(s port.Source) chunk.Source {
 	return chunk.Source{
-		Path:   s.Ref.Path,
-		Kind:   string(s.Ref.Kind),
-		Size:   s.Ref.Size,
-		MTime:  s.Ref.MTime,
-		Hash:   s.Hash,
-		Recipe: s.Recipe,
+		Path:     s.Ref.Path,
+		Kind:     string(s.Ref.Kind),
+		Size:     s.Ref.Size,
+		MTime:    s.Ref.MTime,
+		Hash:     s.Hash,
+		Recipe:   s.Recipe,
+		TextPath: s.TextPath,
 	}
 }
 
@@ -113,4 +115,9 @@ func windows(in []port.Window) []chunk.Window {
 // Kept is the vectors already made for these texts under this recipe.
 func (s sources) Kept(ctx context.Context, recipe string, of [][]byte) (map[string][]byte, error) {
 	return s.read.Kept(ctx, recipe, of)
+}
+
+// Recognised is the sources of one kind standing on a file of their own.
+func (s sources) Recognised(ctx context.Context, vaultID string, kind domain.SourceKind) (map[string]string, error) {
+	return s.read.Recognised(ctx, vaultID, string(kind))
 }

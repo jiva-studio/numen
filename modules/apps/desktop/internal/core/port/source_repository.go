@@ -16,6 +16,14 @@ type Source struct {
 	Ref    domain.FileRef
 	Hash   string
 	Recipe string
+
+	// TextPath names the file this source's chunks are places in, when it is not
+	// the source's own bytes: a scan holds no text, and what reading it produced
+	// is a file of its own. Empty is the ordinary case.
+	//
+	// It is cleared by a write that records a fingerprint alone, because a file
+	// that changed is a file whose reading was of other bytes.
+	TextPath string
 }
 
 // Window is one cut of a source's text, as it is handed to storage. Location is

@@ -21,6 +21,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/agent"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/embed"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/ocr/onnx"
 )
 
 // Config is this installation's settings, in sections named for what they are
@@ -52,13 +53,17 @@ type Appearance struct {
 type Indexing struct {
 	// Embedding is which model turns text into vectors, and how it is reached.
 	Embedding embed.Config `json:"embedding"`
+
+	// Recognition is how a scanned document is read when a person asks for it.
+	// Nothing here runs on its own.
+	Recognition onnx.Config `json:"recognition"`
 }
 
 // Defaults are what an installation nobody has configured does.
 func Defaults() Config {
 	return Config{
 		V:        1,
-		Indexing: Indexing{Embedding: embed.Defaults()},
+		Indexing: Indexing{Embedding: embed.Defaults(), Recognition: onnx.Defaults()},
 		Agent:    agent.Defaults(),
 	}
 }

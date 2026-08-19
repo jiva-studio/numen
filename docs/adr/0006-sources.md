@@ -184,6 +184,11 @@ keep is the person's choice, and the application does not make it for them.
 either is produced, nor where in the vault an artifact of one is written — that is
 ADR-0004's shape. EPUB is the only extractor this decision covers.
 
+> **Answered for PDF by [ADR-0036](0036-a-pdf-is-read-twice.md).** Its text layer
+> is a cache and is read on every scan; a model reading it is an artifact, is
+> written into the service folder, and is asked for by a person. Audio is still
+> open.
+
 **Why transliterated Sanskrit does not surface.** As ADR-0007 records: it is
 indexed, no question in the acceptance set reaches it, and whether the cause is
 the model, the transliteration or the way verse is cut is not established.

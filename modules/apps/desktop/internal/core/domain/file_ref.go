@@ -7,7 +7,8 @@ type SourceKind string
 const (
 	// KindNote is a markdown file in a vault.
 	KindNote SourceKind = "note"
-	// KindBook is an EPUB in a vault.
+	// KindBook is a source with text that nobody typed here: an EPUB, a PDF.
+	// What reads one is decided from its name and recorded in its recipe.
 	KindBook SourceKind = "book"
 )
 

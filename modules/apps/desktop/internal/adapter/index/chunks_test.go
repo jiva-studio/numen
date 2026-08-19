@@ -573,7 +573,7 @@ func TestWhatIsStaleIsAskedOnThreeKeys(t *testing.T) {
 	}
 
 	// The recipe: the same books read by a reader that has since changed.
-	byOther, err := queries.ByOtherRecipe(ctx, first.ID, "book", "epub-2", 10)
+	byOther, err := queries.ByOtherRecipe(ctx, first.ID, "book", []string{"epub-2"}, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -585,7 +585,7 @@ func TestWhatIsStaleIsAskedOnThreeKeys(t *testing.T) {
 			t.Errorf("the first vault answered with %s, which belongs to the second", path)
 		}
 	}
-	same, err := queries.ByOtherRecipe(ctx, first.ID, "book", "epub", 10)
+	same, err := queries.ByOtherRecipe(ctx, first.ID, "book", []string{"epub"}, 10)
 	if err != nil {
 		t.Fatal(err)
 	}

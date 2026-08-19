@@ -129,9 +129,9 @@ func (s *store) Unchunked(_ context.Context, vaultID string, kind domain.SourceK
 	})
 }
 
-func (s *store) ByOtherRecipe(_ context.Context, vaultID string, kind domain.SourceKind, recipe string, limit int) ([]string, error) {
+func (s *store) ByOtherRecipe(_ context.Context, vaultID string, kind domain.SourceKind, recipes []string, limit int) ([]string, error) {
 	return s.paths(vaultID, kind, limit, func(src port.Source) bool {
-		return src.Recipe != recipe
+		return !slices.Contains(recipes, src.Recipe)
 	})
 }
 
@@ -431,4 +431,14 @@ func words(vocabulary []string, n int) string {
 		out = append(out, vocabulary[i%len(vocabulary)])
 	}
 	return strings.Join(out, " ")
+}
+
+func (s *store) Recognised(_ context.Context, vaultID string, kind domain.SourceKind) (map[string]string, error) {
+	out := map[string]string{}
+	for path, src := range s.sources[vaultID] {
+		if src.Ref.Kind == kind && src.TextPath != "" {
+			out[path] = src.TextPath
+		}
+	}
+	return out, nil
 }

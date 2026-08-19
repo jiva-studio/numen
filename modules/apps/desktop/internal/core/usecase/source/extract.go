@@ -8,11 +8,10 @@ import (
 	"fmt"
 	"io/fs"
 	"slices"
-	"strings"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/epub"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/text"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
 )
 
@@ -33,6 +32,12 @@ type Extract struct {
 	Readers port.VaultReaders
 	Sources port.SourceRepository
 	Owing   port.SourceQueries
+
+	// Derived holds what a recogniser wrote. Without one, a source is read from
+	// its own bytes and a recognition is not looked for.
+	Derived port.DerivedStore
+	// Area is the store a recognition is kept in. Empty means the default.
+	Area string
 
 	// Sizes are how the text is cut. They are named in the recipe, so a source
 	// cut at other sizes owes its text again.
@@ -66,6 +71,7 @@ type ExtractResult struct {
 	Chunks     int    // windows written, of both sizes
 	Unreadable int    // read, and not a book
 	Removed    int    // held by the index, no longer in the vault
+	Forgotten  int    // read by a model once, and that reading is gone
 	Vanished   int    // named by the index, gone by the time it was read
 	Reading    string // the source open now
 }
@@ -80,6 +86,9 @@ func (u Extract) Execute(ctx context.Context, v domain.Vault) (ExtractResult, er
 		return res, err
 	}
 	if err := u.discover(ctx, v, reader, &res); err != nil {
+		return res, err
+	}
+	if err := u.forgotten(ctx, v, reader, &res); err != nil {
 		return res, err
 	}
 	if err := u.cut(ctx, v, reader, &res); err != nil {
@@ -138,6 +147,43 @@ func (u Extract) discover(ctx context.Context, v domain.Vault, reader port.Vault
 	return nil
 }
 
+// forgotten finds the sources standing on a file that is no longer there.
+//
+// The store is a folder on the person's disk and they may empty it. A source
+// whose text went with it answers a search with nothing and would go on doing
+// so, because its recipe is still the one in use: nothing else asks after it.
+// Recording it afresh with no recipe clears where its text was, so the next pass
+// cuts it from the document again.
+func (u Extract) forgotten(ctx context.Context, v domain.Vault, reader port.VaultReader, res *ExtractResult) error {
+	if u.Derived == nil {
+		return nil
+	}
+	standing, err := u.Owing.Recognised(ctx, v.ID, domain.KindBook)
+	if err != nil {
+		return fmt.Errorf("read index: %w", err)
+	}
+	for path, name := range standing {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if _, err := u.Derived.Read(ctx, name); !errors.Is(err, fs.ErrNotExist) {
+			continue
+		}
+		ref, err := reader.Stat(ctx, path)
+		if port.NoNote(err) {
+			continue
+		}
+		if err != nil {
+			return fmt.Errorf("stat %s: %w", path, err)
+		}
+		if err := u.Sources.SaveSource(ctx, v.ID, port.Source{Ref: ref}); err != nil {
+			return fmt.Errorf("record %s: %w", path, err)
+		}
+		res.Forgotten++
+	}
+	return nil
+}
+
 // cut extracts and cuts every source that owes its text.
 //
 // Which those are is asked of the data, on both keys that answer it: a source
@@ -147,7 +193,7 @@ func (u Extract) discover(ctx context.Context, v domain.Vault, reader port.Vault
 // is continued by starting another.
 func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReader, res *ExtractResult) error {
 	sizes := u.sizes()
-	recipe := recipe(sizes)
+	known := recipes(sizes)
 	tried := map[string]bool{}
 
 	questions := []func(context.Context) ([]string, error){
@@ -155,7 +201,7 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 			return u.Owing.Unchunked(ctx, v.ID, domain.KindBook, sourcesPerQuery)
 		},
 		func(ctx context.Context) ([]string, error) {
-			return u.Owing.ByOtherRecipe(ctx, v.ID, domain.KindBook, recipe, sourcesPerQuery)
+			return u.Owing.ByOtherRecipe(ctx, v.ID, domain.KindBook, known, sourcesPerQuery)
 		},
 	}
 	for _, ask := range questions {
@@ -174,7 +220,7 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 				if err := ctx.Err(); err != nil {
 					return err
 				}
-				if err := u.source(ctx, v, reader, path, sizes, recipe, res); err != nil {
+				if err := u.source(ctx, v, reader, path, sizes, res); err != nil {
 					return err
 				}
 			}
@@ -200,7 +246,6 @@ func (u Extract) source(
 	reader port.VaultReader,
 	path string,
 	sizes window.Sizes,
-	recipe string,
 	res *ExtractResult,
 ) error {
 	res.Reading = path
@@ -230,18 +275,33 @@ func (u Extract) source(
 		return nil
 	}
 
-	book, err := epub.Read(raw)
+	// Which reader takes the text out is the file's to say, and it is part of
+	// what the recipe records: two readers give one file two texts, and a chunk
+	// keeps an offset into one of them.
+	name, ok := text.ReaderName(ref)
+	if !ok {
+		res.Unreadable++
+		return nil
+	}
+	hash := fingerprint(raw)
+
+	// A document read by a recogniser has a text of its own, and the chunks are
+	// places in that. It is found by the hash of the bytes it was read from, so a
+	// file whose modification time moved without its content is claimed again
+	// rather than read from scratch.
+	doc, textPath, err := u.text(ctx, ref, raw, hash)
 	if err != nil {
 		res.Unreadable++
 		return nil
 	}
 
-	windows := windowsOf(book, sizes)
+	windows := windowsOf(doc, sizes)
 	extraction := port.Extraction{
 		Source: port.Source{
-			Ref:    ref,
-			Hash:   fingerprint(raw),
-			Recipe: recipe,
+			Ref:      ref,
+			Hash:     hash,
+			Recipe:   recipe(name, sizes),
+			TextPath: textPath,
 		},
 		Windows: windows,
 	}
@@ -254,48 +314,29 @@ func (u Extract) source(
 	return nil
 }
 
-// windowsOf cuts one book's text: the large windows a result shows, each holding
-// the small windows that carry a vector.
-func windowsOf(book *epub.Book, sizes window.Sizes) []port.Window {
-	places := make([]window.Place, 0, len(book.Places))
-	for _, p := range book.Places {
-		places = append(places, window.Place{Title: p.Title, Offset: p.Offset})
-	}
-
+// windowsOf cuts one source's text: the large windows a result shows, each
+// holding the small windows that carry a vector.
+func windowsOf(doc *text.Document, sizes window.Sizes) []port.Window {
 	var out []port.Window
-	for _, large := range window.Cut(book.Text, places, sizes) {
-		w := windowAt(book, large)
+	for _, large := range window.Cut(doc.Text, doc.Places, sizes) {
+		w := windowAt(doc, large)
 		for _, small := range large.Small {
-			w.Small = append(w.Small, windowAt(book, small))
+			w.Small = append(w.Small, windowAt(doc, small))
 		}
 		out = append(out, w)
 	}
 	return out
 }
 
-// windowAt is one window with what it holds and where the book says it is. The
-// text goes with it to be indexed for its words and is not kept.
-func windowAt(book *epub.Book, w window.Window) port.Window {
+// windowAt is one window with what it holds and where the source says it is.
+// The text goes with it to be indexed for its words and is not kept.
+func windowAt(doc *text.Document, w window.Window) port.Window {
 	return port.Window{
 		Start:    w.Start,
 		Length:   w.Length,
-		Location: located(book.Locate(w.Start)),
-		Text:     w.Slice(book.Text),
+		Location: doc.Locate(w.Start),
+		Text:     w.Slice(doc.Text),
 	}
-}
-
-// located is where a window is, in the words the book itself uses: the part its
-// own navigation names, and the page of the printed book it was made from. Empty
-// where the book named neither, which is half the books read.
-func located(at epub.Location) string {
-	named := make([]string, 0, 2)
-	if at.Place != "" {
-		named = append(named, at.Place)
-	}
-	if at.Page != "" {
-		named = append(named, at.Page)
-	}
-	return strings.Join(named, ", ")
 }
 
 // counted is how many windows of both sizes a cut produced.
@@ -310,9 +351,20 @@ func counted(windows []port.Window) int {
 // recipe names what produced a source's text: the reader that took it out, and
 // the sizes it was cut into. Both are asked as one question — a source whose
 // recipe is not this one owes its text again.
-func recipe(s window.Sizes) string {
+func recipe(reader string, s window.Sizes) string {
 	return fmt.Sprintf("%s/large=%d+%d/small=%d+%d/limit=%d",
-		extractor, s.Large, s.LargeOverlap, s.Small, s.SmallOverlap, s.Limit)
+		reader, s.Large, s.LargeOverlap, s.Small, s.SmallOverlap, s.Limit)
+}
+
+// recipes are what every reader would produce at these sizes. A source carrying
+// none of them owes its text: its own reader has changed, or the sizes have.
+func recipes(s window.Sizes) []string {
+	named := []string{text.ReaderEPUB, text.ReaderPDF}
+	out := make([]string, 0, len(named))
+	for _, reader := range named {
+		out = append(out, recipe(reader, s))
+	}
+	return out
 }
 
 // sizes fills in what configuration left unset with the defaults the cut applies,
@@ -347,4 +399,32 @@ func (u Extract) progress(res ExtractResult) {
 	if u.OnProgress != nil {
 		u.OnProgress(res)
 	}
+}
+
+// text is what a source says, and where that text is.
+//
+// A recognition of these bytes stands in for the file's own text layer: it is
+// what a person asked for, and a document whose layer is unusable is why they
+// asked. Where there is none, the file speaks for itself and nothing is named.
+func (u Extract) text(ctx context.Context, ref domain.FileRef, raw []byte, hash string) (*text.Document, string, error) {
+	if u.Derived != nil {
+		name := text.Artifact(u.area(), hash)
+		switch found, err := u.Derived.Read(ctx, name); {
+		case err == nil:
+			return text.Recognised(found), name, nil
+		case !errors.Is(err, fs.ErrNotExist):
+			return nil, "", err
+		}
+	}
+	doc, err := text.Read(ref, raw)
+	return doc, "", err
+}
+
+// area is the store a recognition is kept in, and the first part of every name
+// recorded against a source.
+func (u Extract) area() string {
+	if u.Area == "" {
+		return "ocr"
+	}
+	return u.Area
 }
