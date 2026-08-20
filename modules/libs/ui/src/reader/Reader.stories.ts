@@ -214,7 +214,11 @@ export const LitOver: Story = {
   render: book(LIT),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await waitFor(async () => await expect(pictureAt(canvasElement, 0)).toBeInTheDocument())
+    await waitFor(async () =>
+      await expect(
+        canvasElement.querySelectorAll('.reader__page[data-page="0"] .reader__lit'),
+      ).toHaveLength(LIT.length),
+    )
 
     /** Every lit rectangle, as a share of the page it is drawn over. */
     const over = async () => {
@@ -281,5 +285,57 @@ export const Undrawn: Story = {
         await expect(canvas.getAllByText('This page would not come.')[0]).toBeInTheDocument(),
       { timeout: 5000 },
     )
+  },
+}
+
+/**
+ * Nothing is lit until the page it is lit on is there. A rectangle over a page
+ * still coming is a mark on nothing, standing where the page is not.
+ */
+export const LitOnlyOnceThePageIsThere: Story = {
+  render: book(LIT),
+  play: async ({ canvasElement }) => {
+    // Before anything has arrived, the first page is a ring turning and no
+    // rectangles at all.
+    await expect(canvasElement.querySelectorAll('.reader__lit')).toHaveLength(0)
+
+    await waitFor(async () => {
+      const picture = pictureAt(canvasElement, 0)
+      await expect(picture).toBeInTheDocument()
+      await expect(picture!.complete).toBe(true)
+    })
+    await waitFor(async () =>
+      await expect(
+        canvasElement.querySelectorAll('.reader__page[data-page="0"] .reader__lit'),
+      ).toHaveLength(LIT.length),
+    )
+  },
+}
+
+/**
+ * The row taken hold of and pulled. A book on a table is moved by putting a hand
+ * on it, and a row five hundred pages long is a long way to travel by a
+ * scrollbar.
+ */
+export const Pulled: Story = {
+  render: book([], MANY),
+  play: async ({ canvasElement }) => {
+    await waitFor(async () => await expect(pictureAt(canvasElement, 0)).toBeInTheDocument())
+
+    const room = roomOf(canvasElement)
+    const box = room.getBoundingClientRect()
+    const from = { clientX: box.left + box.width / 2, clientY: box.top + box.height / 2 }
+
+    room.dispatchEvent(new PointerEvent('pointerdown', { ...from, button: 0, bubbles: true }))
+    room.dispatchEvent(
+      new PointerEvent('pointermove', {
+        clientX: from.clientX - 300,
+        clientY: from.clientY,
+        bubbles: true,
+      }),
+    )
+    room.dispatchEvent(new PointerEvent('pointerup', { ...from, bubbles: true }))
+
+    await waitFor(async () => await expect(room.scrollLeft).toBeGreaterThan(0))
   },
 }

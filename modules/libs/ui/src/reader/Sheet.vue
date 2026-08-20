@@ -4,7 +4,8 @@
  * ring turning while it is on its way.
  *
  * A page arrives drawn. A rectangle is a fraction of the page, so it is placed
- * in per cent and the zoom carries it along.
+ * in per cent and the zoom carries it along, and it is drawn once the page it
+ * belongs to is there: over a page not yet arrived it is a mark on nothing.
  *
  * A document is busy while another page of it is drawing, so a page that did
  * not come is asked for again a few times before it says it is not coming. Each
@@ -85,6 +86,7 @@ const boxOf = (one: Lit) => ({
       class="reader__picture block size-full object-contain"
       :src="drawing"
       :alt="`${page} ${at + 1}`"
+      draggable="false"
       @error="tries += 1"
       @load="arrived = true"
     />
@@ -94,12 +96,14 @@ const boxOf = (one: Lit) => ({
       </span>
       <Waiting v-else class="text-hushed" />
     </div>
-    <div
-      v-for="(one, index) in lit"
-      :key="index"
-      class="reader__lit pointer-events-none absolute rounded-[2px] bg-(--numen-highlight)"
-      :style="boxOf(one)"
-    />
+    <template v-if="arrived">
+      <div
+        v-for="(one, index) in lit"
+        :key="index"
+        class="reader__lit pointer-events-none absolute rounded-[2px] bg-(--numen-highlight)"
+        :style="boxOf(one)"
+      />
+    </template>
   </figure>
 </template>
 

@@ -12,6 +12,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import Controls from './Controls.vue'
 import Sheet from './Sheet.vue'
+import { Hand, wheeled } from './hand'
 import {
   GAP,
   drawn,
@@ -153,11 +154,76 @@ onBeforeUnmount(() => {
   clearTimeout(settling)
 })
 
-/** The hand moved the row, so the page in front is whichever is under it. */
+/** The row moved, so the page in front is whichever is under the room now. */
 const scrolled = () => {
   if (!area.value) return
   along.value = area.value.scrollLeft
   if (middle.value !== props.at) emit('go', middle.value)
+}
+
+/**
+ * The row taken hold of and pulled. A book on a table is moved by putting a
+ * hand on it, and a row five hundred pages long is a long way to travel by a
+ * scrollbar.
+ */
+const hand = new Hand()
+/** Whether the hand is dragging, which is what the room is drawn as. */
+const dragging = ref(false)
+
+const took = (event: PointerEvent) => {
+  // The controls sit over the room and are pressed, not dragged.
+  if (!area.value || event.button !== 0) return
+  hand.take(
+    { x: event.clientX, y: event.clientY },
+    { x: area.value.scrollLeft, y: area.value.scrollTop },
+  )
+}
+
+const pulled = (event: PointerEvent) => {
+  if (!area.value || !hand.holding) return
+  const stands = hand.to({ x: event.clientX, y: event.clientY })
+  if (!stands) return
+  dragging.value = true
+  area.value.scrollLeft = stands.x
+  area.value.scrollTop = stands.y
+  follow(event)
+}
+
+/**
+ * The pointer followed where it leaves the room, so a hand that runs off the
+ * edge still carries the row. A pointer the window is not holding is one this
+ * cannot be asked about, and the drag then lasts as long as the pointer is over
+ * the room.
+ */
+const follow = (event: PointerEvent) => {
+  if (!area.value || area.value.hasPointerCapture(event.pointerId)) return
+  try {
+    area.value.setPointerCapture(event.pointerId)
+  } catch {
+    // The row is carried by the pointer while it is over the room.
+  }
+}
+
+const letGo = (event: PointerEvent) => {
+  hand.release()
+  dragging.value = false
+  if (area.value?.hasPointerCapture(event.pointerId)) {
+    area.value.releasePointerCapture(event.pointerId)
+  }
+}
+
+/**
+ * A wheel turned. A row at rest has one axis and a wheel turned down means the
+ * next page; drawn closer the room has both, and then down means down.
+ */
+const turned = (event: WheelEvent) => {
+  if (!area.value) return
+  const hasBelow = area.value.scrollHeight > area.value.clientHeight
+  const by = wheeled({ x: event.deltaX, y: event.deltaY }, hasBelow)
+  if (by.x === 0 && by.y === 0) return
+  event.preventDefault()
+  area.value.scrollLeft += by.x
+  area.value.scrollTop += by.y
 }
 
 /** The row put where a page stands, with that page against the left edge. */
@@ -211,7 +277,13 @@ defineExpose({
     <div
       ref="area"
       class="reader__room h-full overflow-auto overscroll-x-contain"
+      :class="dragging ? 'reader__room--held' : 'reader__room--takeable'"
       @scroll.passive="scrolled"
+      @pointerdown="took"
+      @pointermove="pulled"
+      @pointerup="letGo"
+      @pointercancel="letGo"
+      @wheel="turned"
     >
       <div
         v-if="pages > 0"
@@ -249,3 +321,16 @@ defineExpose({
     />
   </div>
 </template>
+
+<style scoped>
+/* The row is taken hold of and pulled, so the hand says so before it is put
+   down and while it is holding. */
+.reader__room--takeable {
+  cursor: grab;
+}
+
+.reader__room--held {
+  cursor: grabbing;
+  user-select: none;
+}
+</style>
