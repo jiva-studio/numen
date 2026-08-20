@@ -339,3 +339,4 @@ export const Pulled: Story = {
     await waitFor(async () => await expect(room.scrollLeft).toBeGreaterThan(0))
   },
 }
+

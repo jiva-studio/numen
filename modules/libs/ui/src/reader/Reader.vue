@@ -137,9 +137,20 @@ const drawing = (page: number) => (drawnAt.value > 0 ? props.picture(page) : '')
 const area = useTemplateRef<HTMLElement>('area')
 let watching: ResizeObserver | undefined
 
+/**
+ * The room, taken again.
+ *
+ * A room with no size is not a measurement. Every tab of a pane is mounted while
+ * it is out of sight, and one out of sight has no room; laying the row out on
+ * nothing asks for every page again at a width nothing will ever draw at, and
+ * asks for them all a second time when the tab comes back.
+ */
 const measure = () => {
   if (!area.value) return
-  room.value = { wide: area.value.clientWidth, high: area.value.clientHeight }
+  const wide = area.value.clientWidth
+  const high = area.value.clientHeight
+  if (wide <= 0 || high <= 0) return
+  room.value = { wide, high }
 }
 
 onMounted(() => {

@@ -59,9 +59,14 @@ export interface Row {
  * A page whose size is not known takes the first page's, and a document that
  * has said nothing takes an upright sheet. Laying the row out on nothing would
  * put every page at the same place, and the row would jump as the sizes came.
+ *
+ * A room with no height makes no row. Until something has been measured there is
+ * no width to draw a page at, and a page drawn at a made-up one is a page drawn
+ * and thrown away.
  */
 export function row(sheets: readonly Sheet[], pages: number, room: Room, zoom: number): Row {
-  const high = Math.max(Math.round((room.high - 2 * GAP) * zoom), 1)
+  const high = Math.round((room.high - 2 * GAP) * zoom)
+  if (high <= 0) return { high: 0, starts: [], widths: [], length: 0 }
   const starts: number[] = []
   const widths: number[] = []
   let along = GAP

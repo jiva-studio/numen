@@ -3,9 +3,13 @@
  * One page of a document, in the row: the picture, what is lit over it, and a
  * ring turning while it is on its way.
  *
- * A page arrives drawn. A rectangle is a fraction of the page, so it is placed
- * in per cent and the zoom carries it along, and it is drawn once the page it
- * belongs to is there: over a page not yet arrived it is a mark on nothing.
+ * A page arrives drawn, and nothing of it is painted until it has: a picture
+ * still coming is the browser's own broken-picture mark and its words, standing
+ * where the page will be.
+ *
+ * A rectangle is a fraction of the page, so it is placed in per cent and the zoom
+ * carries it along, and it too waits: over a page not yet arrived it is a mark on
+ * nothing.
  *
  * A document is busy while another page of it is drawing, so a page that did
  * not come is asked for again a few times before it says it is not coming. Each
@@ -84,6 +88,7 @@ const boxOf = (one: Lit) => ({
     <img
       v-if="drawing"
       class="reader__picture block size-full object-contain"
+      :class="{ invisible: !arrived }"
       :src="drawing"
       :alt="`${page} ${at + 1}`"
       draggable="false"

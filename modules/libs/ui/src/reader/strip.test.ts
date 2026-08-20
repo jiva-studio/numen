@@ -161,3 +161,20 @@ describe('how close a page is drawn', () => {
     expect(drawn(2, 1 / NEARER)).toBeCloseTo(2 / NEARER, 5)
   })
 })
+
+describe('a room nothing has been measured in', () => {
+  it('makes no row at all', () => {
+    // Until something has been measured there is no width to draw a page at,
+    // and a page drawn at a made-up one is a page drawn and thrown away.
+    const laid = row(book(8), 8, { wide: 0, high: 0 }, 1)
+
+    expect(laid.high).toBe(0)
+    expect(laid.widths).toEqual([])
+    expect(laid.length).toBe(0)
+    expect(within(laid, { wide: 0, high: 0 }, 0)).toEqual([])
+  })
+
+  it('makes no row in a room too short to stand a page in', () => {
+    expect(row(book(8), 8, { wide: 900, high: 2 * GAP }, 1).widths).toEqual([])
+  })
+})
