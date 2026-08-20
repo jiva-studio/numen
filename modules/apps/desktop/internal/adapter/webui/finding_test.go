@@ -122,6 +122,34 @@ func TestAPassageSaysWhichNoteItCameOutOf(t *testing.T) {
 	}
 }
 
+// A hit is a place in a source, and the client is told which place: it is what
+// opens the source there, and nothing the client holds says it.
+func TestAPassageSaysWhereInItsSourceItStands(t *testing.T) {
+	client, _ := opened(t, map[string]string{
+		"engine.md": "# Engines\n\nNo engine beats a reversible engine.\n",
+	})
+
+	answer, err := client.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{
+		Query: "reversible", Half: v1.Half_HALF_WORDS,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	found := answer.Msg.GetFound()
+	if len(found) == 0 {
+		t.Fatal("nothing found")
+	}
+	first := found[0]
+	if first.GetLength() == 0 {
+		t.Errorf("the passage stands over no text: %d to %d",
+			first.GetStart(), first.GetStart()+first.GetLength())
+	}
+	if first.GetStart() < 0 {
+		t.Errorf("the passage begins at %d", first.GetStart())
+	}
+}
+
 func TestAnAnswerIsCutToWhatWasAskedFor(t *testing.T) {
 	client, _ := opened(t, map[string]string{
 		"a.md": "# Entropy one\n",

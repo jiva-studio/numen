@@ -54,6 +54,7 @@ var doing = map[string]Words{
 	"vault_named":        {Kind: agent.Read},
 	"vault_problems":     {Kind: agent.Read},
 	"source_list":        {Kind: agent.Read},
+	"source_show":        {Kind: agent.Read},
 	// Reading a document changes what the vault holds — it writes down what a
 	// model saw — so it is shown as a change and not as a look.
 	"source_recognise": {Kind: agent.Edit},

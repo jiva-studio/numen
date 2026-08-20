@@ -98,7 +98,7 @@ type VaultServiceClient interface {
 	// listens. It says which notes, and nothing about them: the caller knows
 	// what it is showing and asks for what it needs.
 	Changes(context.Context, *connect.Request[v1.ChangesRequest]) (*connect.ServerStreamForClient[v1.ChangesResponse], error)
-	// Focus reports the notes something else asked to be put in front of the
+	// Focus reports the places something else asked to be put in front of the
 	// person — an agent working the vault beside them — for as long as the
 	// caller listens. What travelling there looks like is the client's.
 	Focus(context.Context, *connect.Request[v1.FocusRequest]) (*connect.ServerStreamForClient[v1.FocusResponse], error)
@@ -362,7 +362,7 @@ type VaultServiceHandler interface {
 	// listens. It says which notes, and nothing about them: the caller knows
 	// what it is showing and asks for what it needs.
 	Changes(context.Context, *connect.Request[v1.ChangesRequest], *connect.ServerStream[v1.ChangesResponse]) error
-	// Focus reports the notes something else asked to be put in front of the
+	// Focus reports the places something else asked to be put in front of the
 	// person — an agent working the vault beside them — for as long as the
 	// caller listens. What travelling there looks like is the client's.
 	Focus(context.Context, *connect.Request[v1.FocusRequest], *connect.ServerStream[v1.FocusResponse]) error

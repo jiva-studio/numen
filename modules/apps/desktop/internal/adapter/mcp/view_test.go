@@ -11,19 +11,19 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 )
 
-// window is what an agent puts a note in front of.
+// window is what an agent puts a place in front of.
 type window struct {
-	asked []string
+	asked []domain.Place
 	drawn []domain.Editing
 	went  []domain.Went
 	fails error
 }
 
-func (w *window) Focus(_ context.Context, path string) error {
+func (w *window) Focus(_ context.Context, at domain.Place) error {
 	if w.fails != nil {
 		return w.fails
 	}
-	w.asked = append(w.asked, path)
+	w.asked = append(w.asked, at)
 	return nil
 }
 
@@ -58,7 +58,10 @@ func TestFocusPutsANoteInFrontOfThePerson(t *testing.T) {
 	if out.Focused.Path != "notes/entropy.md" || out.Focused.Title != "Entropy" {
 		t.Errorf("answered with %+v", out.Focused)
 	}
-	if len(looking.asked) != 1 || looking.asked[0] != "notes/entropy.md" {
+	// A note is put in front of the person whole. Nothing about it names a
+	// stretch, so nothing is asked for one.
+	want := domain.Place{Path: "notes/entropy.md"}
+	if len(looking.asked) != 1 || looking.asked[0] != want {
 		t.Errorf("the window was asked for %v", looking.asked)
 	}
 }
@@ -96,8 +99,8 @@ func TestFocusSaysSoWhenTheWindowWouldNot(t *testing.T) {
 	}
 }
 
-// Without a window there is nobody to show a note to, and the tool an agent
-// would call is not there to call.
+// Without a window there is nobody to show anything to, and the tools an agent
+// would call are not there to call.
 func TestNoWindowMeansNoTool(t *testing.T) {
 	_, core := built(t, map[string]string{"notes/entropy.md": "# Entropy\n"})
 	session := connectedTo(t, core)
@@ -107,9 +110,54 @@ func TestNoWindowMeansNoTool(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, tool := range listed.Tools {
-		if tool.Name == "note_focus" {
-			t.Fatal("a headless vault serves a tool that needs somebody looking")
+		if tool.Name == "note_focus" || tool.Name == "source_show" {
+			t.Fatalf("a headless vault serves %s, which needs somebody looking", tool.Name)
 		}
+	}
+}
+
+// library is a vault holding a document beside its notes.
+var library = map[string]string{
+	"notes/entropy.md":    "# Entropy\n",
+	"library/A Book.epub": "a document nothing here reads",
+}
+
+// A person asked to be shown a passage of a book, and what the agent hands over
+// is the place: the document, and where in its text to open.
+func TestShowPutsAPlaceInFrontOfThePerson(t *testing.T) {
+	session, looking := watched(t, library)
+
+	out := call[struct {
+		Shown bool   `json:"shown"`
+		Says  string `json:"says"`
+	}](t, session, "source_show", map[string]any{
+		"path": "library/A Book.epub", "start": 1200, "length": 80,
+	})
+
+	if !out.Shown {
+		t.Errorf("answered with %+v", out)
+	}
+	want := domain.Place{Path: "library/A Book.epub", Start: 1200, Length: 80}
+	if len(looking.asked) != 1 || looking.asked[0] != want {
+		t.Errorf("the window was asked for %v", looking.asked)
+	}
+}
+
+func TestShowRefusesAPathTheVaultDoesNotHold(t *testing.T) {
+	session, looking := watched(t, library)
+
+	res, err := session.CallTool(t.Context(), &sdk.CallToolParams{
+		Name:      "source_show",
+		Arguments: map[string]any{"path": "library/Nowhere.epub", "start": 0, "length": 10},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !res.IsError {
+		t.Error("a document that is not there was shown anyway")
+	}
+	if len(looking.asked) != 0 {
+		t.Errorf("the window was asked for %v", looking.asked)
 	}
 }
 

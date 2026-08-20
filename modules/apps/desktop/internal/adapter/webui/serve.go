@@ -130,6 +130,15 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		Reads:     &note.Read{Readers: cfg.VaultReaders()},
 		Saves:     &note.Write{Readers: cfg.VaultReaders(), Writers: cfg.VaultWriters()},
 		Wrote:     func() { raise(wake.notes) },
+		Readers:   cfg.VaultReaders(),
+		Viewer:    looking(),
+		// Where a passage sits on the page is asked of whichever producer made
+		// the text it is a place in, which is what the index records.
+		Marking: &source.Marks{
+			Readers: cfg.VaultReaders(),
+			Sources: db.SourcesKnown(),
+			Derived: cfg.DerivedStores(),
+		},
 	}
 	// Named before anything is read: it is what decides whether a chunk already
 	// carries a vector, and what tells the window that something is going to
@@ -206,6 +215,9 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		Close: func() error {
 			stop()
 			wait()
+			// The documents held open for the window go with it, and each
+			// gives back the worker it was holding.
+			api.Viewer.close()
 			// The embedder goes after the work that uses it and before the
 			// database, which is the order they depend on each other in.
 			err := closeEmbedder()

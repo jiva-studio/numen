@@ -66,14 +66,20 @@ func (a *API) Finish(ctx context.Context, r *connect.Request[v1.FinishRequest]) 
 }
 
 // stepsOf says a step in the schema's words.
+//
+// Every kind that names a tool is drawn as one, whatever that tool does to the
+// vault, and carries where in the vault it is working.
 func stepsOf(step agent.Step) []*v1.AskResponse {
 	switch step.Kind {
-	case agent.Calling:
+	case agent.Calling, agent.Read, agent.Edit, agent.Remove, agent.Move, agent.Search:
 		return []*v1.AskResponse{{Step: &v1.AskResponse_Doing{
 			Doing: &v1.Doing{
 				Tool:    step.Tool,
 				About:   step.About,
 				Written: int32(step.Written),
+				Path:    step.Place.Path,
+				Start:   int32(step.Place.Start),
+				Length:  int32(step.Place.Length),
 			},
 		}}}
 	case agent.Answered:

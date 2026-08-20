@@ -11,17 +11,17 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
-// Viewing is this window, for whatever asks for a note to be put in front of
+// Viewing is this window, for whatever asks for a place to be put in front of
 // the person.
 func (a *API) Viewing() port.View { return viewing{a} }
 
 // viewing tells the clients and nothing more. What travelling there looks
-// like is theirs, and a note asked for while nobody is drawing is a note
+// like is theirs, and a place asked for while nobody is drawing is a place
 // nobody sees.
 type viewing struct{ *API }
 
-func (v viewing) Focus(_ context.Context, path string) error {
-	v.Watching.tell(path)
+func (v viewing) Focus(_ context.Context, at domain.Place) error {
+	v.Watching.tell(at)
 	return nil
 }
 
@@ -39,11 +39,15 @@ func (a *API) Focus(
 		select {
 		case <-ctx.Done():
 			return nil
-		case path, open := <-line:
+		case at, open := <-line:
 			if !open {
 				return nil
 			}
-			if err := out.Send(&v1.FocusResponse{Path: path}); err != nil {
+			if err := out.Send(&v1.FocusResponse{
+				Path:   at.Path,
+				Start:  int32(at.Start),
+				Length: int32(at.Length),
+			}); err != nil {
 				return err
 			}
 		}

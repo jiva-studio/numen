@@ -86,6 +86,8 @@ func (a *API) Search(ctx context.Context, r *connect.Request[v1.SearchRequest]) 
 			Text:     text,
 			At:       spansOf(at),
 			Location: p.Location,
+			Start:    int32(p.Start),
+			Length:   int32(p.Length),
 		}
 		if note, held := titles[p.Source]; held {
 			passage.Note = noteOf(note)

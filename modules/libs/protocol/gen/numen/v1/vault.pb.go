@@ -1029,8 +1029,14 @@ func (*FocusRequest) Descriptor() ([]byte, []int) {
 
 type FocusResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The note to see the neighbourhood from.
-	Path          string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	// The source to put in front of the person: a note to see the neighbourhood
+	// from, or a document to open.
+	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	// Where in the text of that source to open, counted in bytes. A length of
+	// zero names the source and no place inside it, which is what a note arrives
+	// with.
+	Start         int32 `protobuf:"varint,2,opt,name=start,proto3" json:"start,omitempty"`
+	Length        int32 `protobuf:"varint,3,opt,name=length,proto3" json:"length,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1070,6 +1076,20 @@ func (x *FocusResponse) GetPath() string {
 		return x.Path
 	}
 	return ""
+}
+
+func (x *FocusResponse) GetStart() int32 {
+	if x != nil {
+		return x.Start
+	}
+	return 0
+}
+
+func (x *FocusResponse) GetLength() int32 {
+	if x != nil {
+		return x.Length
+	}
+	return 0
 }
 
 type EditingRequest struct {
@@ -1693,7 +1713,12 @@ type Passage struct {
 	At []*Span `protobuf:"bytes,4,rep,name=at,proto3" json:"at,omitempty"`
 	// What the source's own numbering calls the place, empty when the format
 	// offered none.
-	Location      string `protobuf:"bytes,5,opt,name=location,proto3" json:"location,omitempty"`
+	Location string `protobuf:"bytes,5,opt,name=location,proto3" json:"location,omitempty"`
+	// Where the passage stands in the text of the source it was read out of,
+	// counted in bytes. It is what opens that source here, and a hit in a note
+	// carries it as every other hit does.
+	Start         int32 `protobuf:"varint,6,opt,name=start,proto3" json:"start,omitempty"`
+	Length        int32 `protobuf:"varint,7,opt,name=length,proto3" json:"length,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1761,6 +1786,20 @@ func (x *Passage) GetLocation() string {
 		return x.Location
 	}
 	return ""
+}
+
+func (x *Passage) GetStart() int32 {
+	if x != nil {
+		return x.Start
+	}
+	return 0
+}
+
+func (x *Passage) GetLength() int32 {
+	if x != nil {
+		return x.Length
+	}
+	return 0
 }
 
 type ReadRequest struct {
@@ -2644,9 +2683,11 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\aRenamed\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to\"\x0e\n" +
-	"\fFocusRequest\"#\n" +
+	"\fFocusRequest\"Q\n" +
 	"\rFocusResponse\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\x10\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
+	"\x05start\x18\x02 \x01(\x05R\x05start\x12\x16\n" +
+	"\x06length\x18\x03 \x01(\x05R\x06length\"\x10\n" +
 	"\x0eEditingRequest\"\x89\x01\n" +
 	"\x0fEditingResponse\x12\x16\n" +
 	"\x06change\x18\x01 \x01(\tR\x06change\x12\x12\n" +
@@ -2682,13 +2723,15 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\"\n" +
 	"\x04half\x18\x03 \x01(\x0e2\x0e.numen.v1.HalfR\x04half\"9\n" +
 	"\x0eSearchResponse\x12'\n" +
-	"\x05found\x18\x01 \x03(\v2\x11.numen.v1.PassageR\x05found\"\x9f\x01\n" +
+	"\x05found\x18\x01 \x03(\v2\x11.numen.v1.PassageR\x05found\"\xcd\x01\n" +
 	"\aPassage\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12'\n" +
 	"\x04note\x18\x02 \x01(\v2\x0e.numen.v1.NoteH\x00R\x04note\x88\x01\x01\x12\x12\n" +
 	"\x04text\x18\x03 \x01(\tR\x04text\x12\x1e\n" +
 	"\x02at\x18\x04 \x03(\v2\x0e.numen.v1.SpanR\x02at\x12\x1a\n" +
-	"\blocation\x18\x05 \x01(\tR\blocationB\a\n" +
+	"\blocation\x18\x05 \x01(\tR\blocation\x12\x14\n" +
+	"\x05start\x18\x06 \x01(\x05R\x05start\x12\x16\n" +
+	"\x06length\x18\a \x01(\x05R\x06lengthB\a\n" +
 	"\x05_note\"!\n" +
 	"\vReadRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"\x93\x01\n" +

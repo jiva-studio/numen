@@ -42,7 +42,7 @@ service VaultService {
   // what it is showing and asks for what it needs.
   rpc Changes(ChangesRequest) returns (stream ChangesResponse);
 
-  // Focus reports the notes something else asked to be put in front of the
+  // Focus reports the places something else asked to be put in front of the
   // person — an agent working the vault beside them — for as long as the
   // caller listens. What travelling there looks like is the client's.
   rpc Focus(FocusRequest) returns (stream FocusResponse);
@@ -263,8 +263,15 @@ message Renamed {
 message FocusRequest {}
 
 message FocusResponse {
-  // The note to see the neighbourhood from.
+  // The source to put in front of the person: a note to see the neighbourhood
+  // from, or a document to open.
   string path = 1;
+
+  // Where in the text of that source to open, counted in bytes. A length of
+  // zero names the source and no place inside it, which is what a note arrives
+  // with.
+  int32 start = 2;
+  int32 length = 3;
 }
 
 message EditingRequest {}
@@ -386,6 +393,12 @@ message Passage {
   // What the source's own numbering calls the place, empty when the format
   // offered none.
   string location = 5;
+
+  // Where the passage stands in the text of the source it was read out of,
+  // counted in bytes. It is what opens that source here, and a hit in a note
+  // carries it as every other hit does.
+  int32 start = 6;
+  int32 length = 7;
 }
 
 message ReadRequest {

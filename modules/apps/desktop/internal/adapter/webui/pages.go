@@ -26,20 +26,32 @@ func Pages() (http.Handler, error) {
 	return http.FileServerFS(built), nil
 }
 
+// policy is what the window may load: what this handler serves, and nothing
+// else. A page of a document arrives as a picture at a URL of its own, so
+// nothing here needs `data:` or `blob:`.
+//
+// Inline style is allowed because a page positions what it draws through the
+// style attribute.
+const policy = "default-src 'self'; img-src 'self'; style-src 'self' 'unsafe-inline'; " +
+	"font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; " +
+	"frame-ancestors 'none'"
+
 // Serving puts the questions in front of the pages, so that a window and a
 // browser are answered by one handler.
 func (a *API) Serving(files http.Handler) http.Handler {
 	route, questions := numenv1connect.NewVaultServiceHandler(a)
 	asking, tasks := numenv1connect.NewAgentServiceHandler(a)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, route) {
+		w.Header().Set("Content-Security-Policy", policy)
+		switch {
+		case strings.HasPrefix(r.URL.Path, route):
 			questions.ServeHTTP(w, r)
-			return
-		}
-		if strings.HasPrefix(r.URL.Path, asking) {
+		case strings.HasPrefix(r.URL.Path, asking):
 			tasks.ServeHTTP(w, r)
-			return
+		case strings.HasPrefix(r.URL.EscapedPath(), assetsRoute):
+			a.Asset(w, r)
+		default:
+			files.ServeHTTP(w, r)
 		}
-		files.ServeHTTP(w, r)
 	})
 }

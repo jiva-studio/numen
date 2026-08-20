@@ -50,6 +50,8 @@ type Passage struct {
 	Source   string `json:"source" jsonschema:"the file the text is read from, relative to the vault folder"`
 	Location string `json:"location,omitempty" jsonschema:"where this sits in the source's own numbering — a chapter, a printed page — absent when the format offered none"`
 	Text     string `json:"text" jsonschema:"the passage itself"`
+	Start    int    `json:"start" jsonschema:"where the passage begins in the source's text, in bytes; hand it to source_show to put this place in front of the person"`
+	Length   int    `json:"length" jsonschema:"how long the passage is, in bytes"`
 }
 
 func addNoteTools(server *sdk.Server, core Core) {
@@ -80,7 +82,13 @@ func addNoteTools(server *sdk.Server, core Core) {
 		}
 		matches := make([]Passage, 0, len(found))
 		for _, p := range found {
-			matches = append(matches, Passage{Source: p.Source, Location: p.Location, Text: p.Text})
+			matches = append(matches, Passage{
+				Source:   p.Source,
+				Location: p.Location,
+				Text:     p.Text,
+				Start:    p.Start,
+				Length:   p.Length,
+			})
 		}
 		return nil, out{Matches: matches}, nil
 	})

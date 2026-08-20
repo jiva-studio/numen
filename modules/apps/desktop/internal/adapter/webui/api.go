@@ -20,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/task"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/source"
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 )
 
@@ -42,6 +43,17 @@ type API struct {
 	// without them answers that a note cannot be edited here.
 	Reads *note.Read
 	Saves *note.Write
+
+	// Readers open the vault a document is drawn from. A path from outside
+	// arrives at the vault through them, and one leaving the vault is refused
+	// there.
+	Readers port.VaultReaders
+	// Viewer holds the documents the window has open and the pages it has
+	// drawn. A build without one answers that it cannot draw a document.
+	Viewer *viewer
+	// Marking says where a run of a source's text sits on the pages it was read
+	// from. A build without one answers that it cannot say where a passage is.
+	Marking *source.Marks
 	// Wrote is what a save raises: the reading behind the window asks the index
 	// what owes a vector, once the vault has been still. Nil for a build with
 	// nothing reading behind it, and then a save changes no vectors.
@@ -63,8 +75,8 @@ type API struct {
 	Drawing audience[domain.Editing]
 
 	// Watching is everyone drawing this vault, for when something asks that a
-	// note be put in front of the person.
-	Watching audience[string]
+	// place be put in front of the person.
+	Watching audience[domain.Place]
 
 	// Leaving is everyone drawing this vault, for the moment the window goes:
 	// each is asked to write what only it holds, and answers when it has.

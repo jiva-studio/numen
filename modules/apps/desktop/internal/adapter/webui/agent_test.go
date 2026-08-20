@@ -145,6 +145,27 @@ func TestEveryStepTheAgentTakesReachesTheClient(t *testing.T) {
 	}
 }
 
+// A call says where in the vault it was working, so that an answer can name the
+// place it stands on. A call the vault serves is drawn as a tool in hand
+// whatever that tool does to the vault.
+func TestACallSaysWhereItIsWorking(t *testing.T) {
+	taking := &asking{took: make(chan agent.Task, 1), takes: []agent.Step{
+		{
+			Kind: agent.Read, Tool: "Show the person a passage of a document",
+			About: "library/A Book.epub",
+			Place: agent.Place{Path: "library/A Book.epub", Start: 1200, Length: 80},
+		},
+		{Kind: agent.Stopped},
+	}}
+	client := panelled(t, &webui.API{Agent: taking})
+
+	steps := heard(t, client, &v1.AskRequest{Asked: "show me where that is"})
+	doing := steps[0].GetDoing()
+	if doing.GetPath() != "library/A Book.epub" || doing.GetStart() != 1200 || doing.GetLength() != 80 {
+		t.Errorf("the call is working at %+v", doing)
+	}
+}
+
 // TestAConversationSaidToBeOverReachesTheAgent, under the name its questions
 // carried. A tab closes, and what was kept for it is let go of.
 func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
