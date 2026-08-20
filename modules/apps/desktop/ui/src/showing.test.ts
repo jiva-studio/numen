@@ -418,6 +418,56 @@ describe('a note asked for from outside the window', () => {
   })
 })
 
+describe('a place inside a source asked for from outside the window', () => {
+  /** A window that records the documents it was asked to open, and where. */
+  const watching = (core: Core) => {
+    const opened: string[] = []
+    const window = showing(
+      core,
+      async () => window.close(),
+      undefined,
+      undefined,
+      undefined,
+      (path, start, length) => opened.push(`${path} ${start} ${length}`),
+    )
+    return { window, opened }
+  }
+
+  it('opens the document it stands in, and leaves the plex where it is', async () => {
+    const core = fake({
+      focus: async function* () {
+        yield { path: 'library/mahabharata.epub', start: 40_512, length: 31 }
+      },
+    })
+    const { window, opened } = watching(core)
+    const plex = window.plex()
+    await plex.go('Opening.md')
+    await nap()
+
+    await window.watch()
+
+    expect(opened).toStrictEqual(['library/mahabharata.epub 40512 31'])
+    expect(plex.here.value).toBe('Opening.md')
+  })
+
+  it('travels the plex for a focus that names no run of a source', async () => {
+    const core = fake({
+      focus: async function* () {
+        yield { path: 'Wanted.md', start: 0, length: 0 }
+      },
+    })
+    const { window, opened } = watching(core)
+    const plex = window.plex()
+    await plex.go('Opening.md')
+    await nap()
+
+    await window.watch()
+
+    expect(opened).toStrictEqual([])
+    expect(plex.here.value).toBe('Wanted.md')
+  })
+})
+
 describe('a vault that could not be read', () => {
   it('stops the waiting and is not called empty', async () => {
     const core = fake({

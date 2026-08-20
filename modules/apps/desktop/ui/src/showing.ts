@@ -66,8 +66,12 @@ export interface Core {
    * watching sees it happen.
    */
   tasks(signal: AbortSignal): AsyncIterable<readonly Task[]>
-  /** The notes something else asked to be put in front of the person. */
-  focus(signal: AbortSignal): AsyncIterable<{ path: string }>
+  /**
+   * The places something else asked to be put in front of the person: a
+   * source, and the stretch of its own text meant, counted in bytes. A length
+   * of zero names the source and no place inside it.
+   */
+  focus(signal: AbortSignal): AsyncIterable<{ path: string; start?: number; length?: number }>
   /** The prose of a note, below its frontmatter, and the file it came out of. */
   read(path: string): Promise<Answered & { at?: string }>
   /**
@@ -171,6 +175,8 @@ export function showing(
   drawing: (said: Said) => void = () => {},
   /** What opens a plex on a note, for a window with none open to show it in. */
   shows: (path: string) => void = () => {},
+  /** What opens a document at a stretch of its own text, in the tab it is read in. */
+  reads: (path: string, start: number, length: number) => void = () => {},
 ) {
   const name = ref('')
   const indexing = ref(true)
@@ -360,7 +366,8 @@ export function showing(
 
   /**
    * Travels to whatever is asked for while the window is open — an agent
-   * working the vault beside the person naming the note it is talking about.
+   * working the vault beside the person naming the note it is talking about. A
+   * focus naming a stretch of a source's text opens that source at it.
    *
    * Taken up again the way following is, and for the same reason.
    */
@@ -370,7 +377,8 @@ export function showing(
         for await (const wanted of core.focus(listening.signal)) {
           if (!open) return
           if (!wanted.path) continue
-          await travel(wanted.path)
+          if (wanted.length) reads(wanted.path, wanted.start ?? 0, wanted.length)
+          else await travel(wanted.path)
         }
       } catch (error) {
         if (!open) return

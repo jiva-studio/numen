@@ -5,5 +5,11 @@ export default defineConfig({
   plugins: [vue()],
   // Built into the Go package that serves it: what is embedded has to sit
   // beside the code that embeds it.
-  build: { outDir: '../internal/adapter/webui/pages/app', emptyOutDir: true },
+  // `assets` is where the vault's own files are asked for, so the window's
+  // built pieces are filed apart from them.
+  build: {
+    outDir: '../internal/adapter/webui/pages/app',
+    emptyOutDir: true,
+    assetsDir: 'built',
+  },
 })

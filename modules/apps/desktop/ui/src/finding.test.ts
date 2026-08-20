@@ -16,6 +16,7 @@ const WORDS: Words = {
   travel: 'Show in plex',
   read: 'Open the note',
   readAt: 'Open at this heading',
+  readDocument: 'Open the document',
   noneFound: 'Nothing',
   notAsked: 'The vault could not answer',
 }
@@ -84,6 +85,8 @@ const passage = (over: Partial<Passage> = {}): Passage => ({
   title: 'Heat engines',
   text: 'no engine beats a reversible one',
   isNote: true,
+  start: 0,
+  length: 0,
   at: [{ from: 3, to: 9 }],
   ...over,
 })
@@ -311,28 +314,41 @@ describe('what a key reaches, per kind of thing found', () => {
 })
 
 describe('a passage from something that is not a note', () => {
-  it('is drawn, and offers nothing, because there is nothing to open it as', async () => {
+  it('offers the document, opened where the words were found', async () => {
     const vault = asking()
     const palette = finding(vault.core, WORDS, now)
     void palette.typing('war')
     await settled()
 
     vault.half('words')?.answers([
-      passage({ path: 'library/mahabharata.epub', title: '', isNote: false }),
+      passage({
+        path: 'library/mahabharata.epub',
+        title: '',
+        isNote: false,
+        start: 40_512,
+        length: 31,
+      }),
     ])
     await settled()
 
     const item = bandOf(palette.bands.value, 'text')!.items[0]! as {
       id: string
       title: string
-      actions?: readonly unknown[]
-      disabled?: boolean
+      actions?: readonly { id: string; text: string }[]
     }
 
     expect(item.title).toBe('library/mahabharata.epub')
-    expect(item.actions ?? []).toHaveLength(0)
-    expect(item.disabled).toBe(true)
-    // Nothing was offered, so nothing is answered for.
+    expect(item.actions?.map((one) => one.text)).toEqual([WORDS.readDocument])
+
+    // The document opens where the words stand in its own text.
+    expect(palette.chose(item.id, 'document')).toEqual({
+      at: 'document',
+      path: 'library/mahabharata.epub',
+      title: '',
+      start: 40_512,
+      length: 31,
+    })
+    // It is neither a note nor a node, and neither is answered for.
     expect(palette.chose(item.id, 'note')).toBeNull()
     expect(palette.chose(item.id, 'plex')).toBeNull()
   })

@@ -9,13 +9,26 @@
 import { computed } from 'vue'
 import Prose from '../prose/Prose.vue'
 import Tool from '../tool/Tool.vue'
-import { placeTurns, type Turn } from './model'
+import { placeTurns, type PlacedTurn, type Turn } from './model'
 
 const props = defineProps<{
   turns: readonly Turn[]
 }>()
 
+const emit = defineEmits<{
+  /** A turn the person pressed, which is one that says it opens something. */
+  (event: 'open', turn: Turn): void
+}>()
+
 const placed = computed(() => placeTurns(props.turns))
+
+/** What the line about a tool in hand is drawn from. */
+const toolOf = (entry: PlacedTurn) => ({
+  tool: entry.turn.text,
+  about: entry.turn.about ?? '',
+  aside: entry.turn.aside ?? '',
+  working: entry.state === 'arriving',
+})
 </script>
 
 <template>
@@ -43,13 +56,17 @@ const placed = computed(() => placeTurns(props.turns))
         "
       >
         <slot name="turn" :turn="entry.turn" :state="entry.state">
-          <Tool
-            v-if="entry.turn.voice === 'doing'"
-            :tool="entry.turn.text"
-            :about="entry.turn.about ?? ''"
-            :aside="entry.turn.aside ?? ''"
-            :working="entry.state === 'arriving'"
-          />
+          <template v-if="entry.turn.voice === 'doing'">
+            <button
+              v-if="entry.turn.opens"
+              type="button"
+              class="thread__opens w-full cursor-pointer rounded-node text-start outline-none focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring"
+              @click="emit('open', entry.turn)"
+            >
+              <Tool v-bind="toolOf(entry)" />
+            </button>
+            <Tool v-else v-bind="toolOf(entry)" />
+          </template>
           <span v-else-if="entry.voice.bubble" class="thread__text">{{ entry.turn.text }}</span>
           <Prose v-else :text="entry.turn.text" :arriving="entry.state === 'arriving'" />
         </slot>

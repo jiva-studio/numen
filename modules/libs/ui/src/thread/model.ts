@@ -42,6 +42,8 @@ export interface Turn {
    */
   readonly aside?: string
   readonly state?: TurnState
+  /** Whether the turn stands for somewhere the person can be taken. */
+  readonly opens?: boolean
 }
 
 /** A turn with everything about how to draw it worked out. */

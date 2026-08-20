@@ -37,6 +37,8 @@ const emit = defineEmits<{
   (event: 'submit', text: string): void
   /** Give up on the answer on its way. */
   (event: 'stop'): void
+  /** A turn the person pressed, which is one that says it opens something. */
+  (event: 'open', turn: Turn): void
 }>()
 
 const text = defineModel<string>({ default: '' })
@@ -65,7 +67,7 @@ onBeforeUnmount(() => watching?.disconnect())
     class="agent numen flex min-h-0 flex-col font-sans text-base text-ink"
     :style="{ '--agent-room': room }"
   >
-    <Thread class="agent__thread" :turns="turns">
+    <Thread class="agent__thread" :turns="turns" @open="emit('open', $event)">
       <template #silence><slot name="silence">Nothing said yet</slot></template>
       <template v-if="$slots.turn" #turn="bound"><slot name="turn" v-bind="bound" /></template>
       <template #failure="bound"><slot name="failure" v-bind="bound">Did not send</slot></template>

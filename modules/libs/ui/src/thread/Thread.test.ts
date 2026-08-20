@@ -59,6 +59,25 @@ describe('a turn that failed', () => {
   })
 })
 
+describe('a line about work that opens something', () => {
+  const doing = (id: string, opens?: boolean): Turn =>
+    opens === undefined
+      ? { id, voice: 'doing', text: 'Read a document' }
+      : { id, voice: 'doing', text: 'Read a document', opens }
+
+  it('can be pressed, and says which turn was pressed', async () => {
+    const wrapper = thread([doing('1', true)])
+
+    await wrapper.find('.thread__opens').trigger('click')
+
+    expect(wrapper.emitted('open')).toEqual([[doing('1', true)]])
+  })
+
+  it('is a line and nothing to press where the turn opens nothing', () => {
+    expect(thread([doing('1')]).find('.thread__opens').exists()).toBe(false)
+  })
+})
+
 describe('what the caller decides', () => {
   it('renders the body of a turn its own way when it says how', () => {
     const wrapper = mount(Thread, {

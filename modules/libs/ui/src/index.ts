@@ -71,6 +71,7 @@ export { standing, tallyOf } from './notices/model'
 export type { Notice } from './notices/model'
 
 export { default as Agent } from './assembled/Agent.vue'
+export { default as Reader } from './assembled/Reader.vue'
 
 export { default as Workspace } from './workspace/Workspace.vue'
 export {

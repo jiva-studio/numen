@@ -1,15 +1,17 @@
 /**
  * What each tab of the window holds, and what letting go of one comes to.
  *
- * A tab holds a plex, a talk, or nothing yet. Which it is decides what is drawn
- * and what is released when it closes, and both are settled here so a test can
- * ask them without a browser. A tab holding a note is the window's own.
+ * A tab holds a plex, a talk, a document, or nothing yet. Which it is decides
+ * what is drawn and what is released when it closes, and both are settled here
+ * so a test can ask them without a browser. A tab holding a note is the
+ * window's own.
  */
 import { computed, ref, shallowRef, type ComputedRef, type Ref } from 'vue'
 import { closeTab, openTab, paneWithTab } from '@numen/ui'
 import type { NodeId, PlexNeighbourhood, WorkspaceLayout } from '@numen/ui'
 import { asPlex } from './plex'
 import type { Conversation } from './conversation'
+import type { Reading } from './reading'
 import type { Plexed } from './showing'
 import { AGENT, BLANK, CONVERSATION, NOTE, PLEX, named, opening } from './workspace'
 
@@ -33,11 +35,15 @@ export interface Makes {
   talk(conversation: string): Conversation
   /** A note of its own, opened; where it is filed, or nothing when none was made. */
   note(): Promise<string>
+  /** The document filed at a path, read from its first page. */
+  document(path: string): Reading
 }
 
 export function holding(makes: Makes) {
   const plexes = shallowRef<ReadonlyMap<string, Held>>(new Map())
   const agents = shallowRef<ReadonlyMap<string, Talk>>(new Map())
+  /** The documents open, each under the path it is filed at. */
+  const documents = shallowRef<ReadonlyMap<string, Reading>>(new Map())
   /** Tabs opened with nothing in them, each waiting to be told what it holds. */
   const blanks = ref<readonly string[]>([])
   /** The agent tab the person was last in. A question about a note goes there. */
@@ -66,6 +72,17 @@ export function holding(makes: Makes) {
     return id
   }
 
+  /**
+   * A document of its own, and the tab it will be read in. Its path is its tab,
+   * so the same document opened twice is the one tab it already has.
+   */
+  const documentTab = (path: string): string => {
+    if (!documents.value.has(path)) {
+      documents.value = new Map(documents.value).set(path, makes.document(path))
+    }
+    return path
+  }
+
   const layout = ref<WorkspaceLayout>(opening(plexTab(), agentTab()))
 
   /** A tab opened empty, in the pane the plus was pressed in. */
@@ -86,6 +103,11 @@ export function holding(makes: Makes) {
   /** A plex opened on a note, for a note to show and no plex to show it in. */
   const shows = (path: string) => {
     layout.value = openTab(layout.value, plexTab(path))
+  }
+
+  /** A document put in front of the person, in the tab it is read in. */
+  const reads = (path: string) => {
+    layout.value = openTab(layout.value, documentTab(path))
   }
 
   /** A blank tab told what to hold, and holding it where it stood. */
@@ -149,6 +171,13 @@ export function holding(makes: Makes) {
       return true
     }
 
+    const read = documents.value.get(id)
+    if (read) {
+      read.close()
+      documents.value = without(documents.value, id)
+      return true
+    }
+
     return false
   }
 
@@ -156,19 +185,23 @@ export function holding(makes: Makes) {
   const close = () => {
     for (const talk of agents.value.values()) talk.finish()
     for (const held of plexes.value.values()) held.view.close()
+    for (const read of documents.value.values()) read.close()
   }
 
   return {
     layout,
     plexes,
     agents,
+    documents,
     blanks,
     talking,
     plexTab,
     agentTab,
+    documentTab,
     blanked,
     fills,
     shows,
+    reads,
     becomeIt,
     writing,
     askAbout,
