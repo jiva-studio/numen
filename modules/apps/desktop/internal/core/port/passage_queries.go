@@ -27,5 +27,8 @@ type PassageQueries interface {
 	// at most `limit` of them. `query` is the full precision the model answered
 	// with, and a chunk whose similarity to it is under `floor` is not an answer
 	// and does not come back.
-	Nearest(ctx context.Context, vaultID, model string, query []float32, limit int, floor float64) ([]domain.Passage, error)
+	//
+	// `recipe` is what a vector is kept under, which is everything about the
+	// model that decides what a vector is. A name alone finds none of them.
+	Nearest(ctx context.Context, vaultID, recipe string, query []float32, limit int, floor float64) ([]domain.Passage, error)
 }

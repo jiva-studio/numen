@@ -149,7 +149,10 @@ func (u Search) nearest(ctx context.Context, v domain.Vault, query string, p Par
 	if len(vectors) != 1 {
 		return nil, fmt.Errorf("the embedder answered with %d vectors for one query", len(vectors))
 	}
-	return u.passages.Nearest(ctx, v.ID, u.embedder.Model().String(), vectors[0], p.Dense, p.Floor)
+	// A vector is kept under the recipe it was made by, which is everything
+	// about the model that decides what a vector is. Asked under anything else,
+	// no vector is found and this half answers nothing at all.
+	return u.passages.Nearest(ctx, v.ID, u.embedder.Model().Recipe(), vectors[0], p.Dense, p.Floor)
 }
 
 // read fills in the text of each passage from the vault. A chunk is a place in a

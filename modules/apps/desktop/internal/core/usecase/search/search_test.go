@@ -394,3 +394,61 @@ func TestANameThatMatchesNoSectionChangesNothing(t *testing.T) {
 		t.Errorf("the search opened at %d, and the words are at 40", found[0].Start)
 	}
 }
+
+func TestTheMeaningHalfAnswersWhereTheWordsHalfCannot(t *testing.T) {
+	// A vector is kept under the recipe it was made by, which is everything
+	// about the model that decides what a vector is. Asked under anything else
+	// — a name, a name and a width — no vector is found and this half answers
+	// nothing at all, silently, for ever.
+	//
+	// Every other test here has a query the words half can answer, so a meaning
+	// half that answered nothing was a search that still looked right.
+	ctx := t.Context()
+	c := indexed(t)
+	c.vectorise(t, c.first, pointing(+1))
+
+	// A word no note in the vault says, so nothing lexical can match it.
+	const unsaid = "zzqqxx"
+	words, err := c.db.ChunkQueries().Lexical(ctx, c.first.ID, unsaid, 20, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(words) != 0 {
+		t.Fatalf("the words half answered %d passages to a word nothing says", len(words))
+	}
+
+	found, err := c.search(oneWay{pointing(+1)}).Execute(ctx, c.first, unsaid, search.Parameters{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) == 0 {
+		t.Fatal("the meaning half answered nothing, so the search is its words half alone")
+	}
+}
+
+func TestTheMeaningHalfIsAskedUnderTheRecipeAVectorIsKeptBy(t *testing.T) {
+	// The recipe is what the vector was written under. A search asking under
+	// anything else joins on nothing, and the failure is silence rather than an
+	// error: the words half answers and the search looks like it worked.
+	ctx := t.Context()
+	c := indexed(t)
+	c.vectorise(t, c.first, pointing(+1))
+
+	under, err := c.db.ChunkQueries().Nearest(
+		ctx, c.first.ID, model.Recipe(), pointing(+1), 10, search.DefaultFloor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(under) == 0 {
+		t.Fatal("nothing came back under the recipe the vectors were written with")
+	}
+
+	astray, err := c.db.ChunkQueries().Nearest(
+		ctx, c.first.ID, model.String(), pointing(+1), 10, search.DefaultFloor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(astray) != 0 {
+		t.Errorf("%d passages came back under a name that is not the recipe", len(astray))
+	}
+}
