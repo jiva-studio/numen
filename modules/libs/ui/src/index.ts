@@ -70,8 +70,8 @@ export { default as Notices } from './notices/Notices.vue'
 export { standing, tallyOf } from './notices/model'
 export type { Notice } from './notices/model'
 
-export { default as Agent } from './assembled/Agent.vue'
-export { default as Reader } from './assembled/Reader.vue'
+export { default as Agent } from './screens/Agent.vue'
+export { default as Reader } from './reader/Reader.vue'
 
 export { default as Workspace } from './workspace/Workspace.vue'
 export {

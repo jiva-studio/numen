@@ -526,10 +526,11 @@ onUnmounted(() => {
         <Reader
           v-else-if="documentIn(id)"
           :ref="(reader: unknown) => drewReader(id, reader)"
-          :picture="documentIn(id)!.picture.value"
           :pages="documentIn(id)!.pages.value"
+          :sheets="documentIn(id)!.sheets.value"
           :at="documentIn(id)!.at.value"
-          :lit="documentIn(id)!.lit.value"
+          :picture="documentIn(id)!.pictureOf"
+          :lit="documentIn(id)!.litOn"
           :back="words.back"
           :next="words.next"
           :page="words.page"

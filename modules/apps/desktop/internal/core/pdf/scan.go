@@ -37,20 +37,22 @@ func (s *Scan) Pages() int { return s.doc.pages }
 //
 // The page is drawn turned by however much it asks to be, so a page whose text
 // is written a quarter turn from the way it is drawn is drawn as wide as its
-// text is high.
+// text is high, and it is answered so.
+//
+// The page is not loaded to be measured. A window laying out a book asks for
+// every page's size before it has drawn any of them, and loading five hundred
+// pages to measure them is seconds before anything is on the screen.
 func (s *Scan) Size(index int) (wide, high float64, err error) {
 	if index < 0 || index >= s.doc.pages {
 		return 0, 0, fmt.Errorf("pdf: page %d of %d", index, s.doc.pages)
 	}
-	page := requests.Page{ByIndex: &requests.PageByIndex{Document: s.doc.ref, Index: index}}
-	sheet, ok := s.doc.paper(page)
-	if !ok {
+	size, err := s.doc.worker.FPDF_GetPageSizeByIndexF(&requests.FPDF_GetPageSizeByIndexF{
+		Document: s.doc.ref, Index: index,
+	})
+	if err != nil || size.Size.Width <= 0 || size.Size.Height <= 0 {
 		return 0, 0, fmt.Errorf("pdf: page %d cannot be measured", index)
 	}
-	if sheet.turn%2 == 1 {
-		return sheet.high, sheet.wide, nil
-	}
-	return sheet.wide, sheet.high, nil
+	return float64(size.Size.Width), float64(size.Size.Height), nil
 }
 
 // Image is one page drawn at the given resolution.

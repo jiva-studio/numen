@@ -8,7 +8,14 @@
 import { describe, expect, it } from 'vitest'
 import { reading, type Documents, type Marked, type Shape } from './reading'
 
-const SHAPE: Shape = { pages: 3 }
+const SHAPE: Shape = {
+  pages: 3,
+  sheets: [
+    { wide: 612, high: 792 },
+    { wide: 612, high: 792 },
+    { wide: 612, high: 792 },
+  ],
+}
 
 /** A document of three pages, recording every question put to it. */
 function book(shape: Shape | Error = SHAPE, where: readonly Marked[] = []) {

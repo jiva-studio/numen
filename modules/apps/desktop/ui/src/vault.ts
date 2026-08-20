@@ -9,7 +9,7 @@ import { createConnectTransport } from '@connectrpc/connect-web'
 import { Half as Halves, Owed, Refusal, VaultService } from '@numen/protocol'
 import { asSeat } from './plex'
 import type { Asking, Half } from './finding'
-import type { Documents, Marked } from './reading'
+import type { Documents, Marked, Sheet } from './reading'
 import type { Answered, Core, Made, NewLink, Refused } from './showing'
 
 export const vault = createClient(
@@ -99,8 +99,8 @@ export const core: Core & Asking = {
 export const documents: Documents = {
   shape: async (path) => {
     const answer = await served(asset(path))
-    const said = (await answer.json()) as { pages?: number }
-    return { pages: said.pages ?? 0 }
+    const said = (await answer.json()) as { pages?: number; sheets?: readonly Sheet[] }
+    return { pages: said.pages ?? 0, sheets: said.sheets ?? [] }
   },
   page: (path, at, wide) => `${asset(path)}/pages/${at}?wide=${wide}`,
   marks: async (path, start, length) => {

@@ -22,20 +22,31 @@ export interface Marked {
   readonly rects: readonly Rect[]
 }
 
+/** One page's size, in the page's own units. */
+export interface Sheet {
+  readonly wide: number
+  readonly high: number
+}
+
 /**
- * What a document is: how many pages it has.
+ * What a document is: how many pages it has and how big each one is.
  *
  * A page has no name but where it stands in the file. That is the number the
  * viewer opens at and the number a location says, and one page with two numbers
  * is a person working out which is meant.
+ *
+ * The sizes are here because a strip of pages is laid out before any of them is
+ * drawn. Built on one guessed shape it would move under the hand as the real
+ * ones arrived.
  */
 export interface Shape {
   readonly pages: number
+  readonly sheets: readonly Sheet[]
 }
 
 /** Everything a document tab asks of the application. */
 export interface Documents {
-  /** How many pages the document has. */
+  /** How many pages the document has, and how big each one is. */
   shape(path: string): Promise<Shape>
   /**
    * Where one page is drawn `wide` device pixels across, as an address to point
@@ -56,6 +67,8 @@ export type Reading = ReturnType<typeof reading>
 
 export function reading(documents: Documents, path: string) {
   const pages = ref(0)
+  /** How big each page is, in its own units. */
+  const sheets = ref<readonly Sheet[]>([])
   /** Which page is in front, counted from the first. */
   const at = ref(0)
   /** How wide the page is drawn, in device pixels. */
@@ -66,20 +79,24 @@ export function reading(documents: Documents, path: string) {
   const trouble = ref('')
 
   /**
-   * What is lit on the page in front, in fractions of it. A rectangle is
-   * multiplied by the page as it is drawn, so the zoom changes nothing here.
+   * What is lit on one page, in fractions of it. A rectangle is multiplied by
+   * the page as it is drawn, so the zoom changes nothing here.
    */
-  const lit = computed<readonly Rect[]>(
-    () => marks.value.find((one) => one.page === at.value)?.rects ?? [],
-  )
+  const litOn = (page: number): readonly Rect[] =>
+    marks.value.find((one) => one.page === page)?.rects ?? []
+
+  /** What is lit on the page in front. */
+  const lit = computed<readonly Rect[]>(() => litOn(at.value))
 
   /**
-   * The page in front, at the width it is drawn to. It is empty until the
-   * document has been read and the room it is read in has been measured.
+   * Where one page is drawn, at the width the strip wants it. It is empty until
+   * the document has been read and the room it is read in has been measured.
    */
-  const picture = computed(() =>
-    pages.value > 0 && wide.value > 0 ? documents.page(path, at.value, wide.value) : '',
-  )
+  const pictureOf = (page: number): string =>
+    pages.value > 0 && wide.value > 0 ? documents.page(path, page, wide.value) : ''
+
+  /** Where the page in front is drawn. */
+  const picture = computed(() => pictureOf(at.value))
 
   /** Whether the tab this document stands in is still open. */
   let open = true
@@ -93,6 +110,7 @@ export function reading(documents: Documents, path: string) {
       const said = await documents.shape(path)
       if (!open) return
       pages.value = said.pages
+      sheets.value = said.sheets
     } catch (error) {
       if (!open) return
       trouble.value = String(error)
@@ -147,14 +165,18 @@ export function reading(documents: Documents, path: string) {
   const close = () => {
     open = false
     pages.value = 0
+    sheets.value = []
   }
 
   return {
     path,
     pages,
+    sheets,
     at,
     picture,
+    pictureOf,
     lit,
+    litOn,
     trouble,
     go,
     next,

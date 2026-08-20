@@ -103,6 +103,17 @@ func (v *viewer) close() { v.docs.close() }
 type said struct {
 	Path  string `json:"path"`
 	Pages int    `json:"pages"`
+	// Sheets is how big each page is, in the page's own units. A window lays
+	// out the pages it has not drawn yet, so it needs their shape before it has
+	// their pixels, and a strip built on one guessed shape moves under the hand
+	// as the real ones arrive.
+	Sheets []sheet `json:"sheets"`
+}
+
+// A sheet is one page's size, in the page's own units.
+type sheet struct {
+	Wide float64 `json:"wide"`
+	High float64 `json:"high"`
 }
 
 // Document answers what the document at a path in the vault is.
@@ -131,6 +142,14 @@ func (a *API) Document(w http.ResponseWriter, r *http.Request, path string) {
 		return
 	}
 	told := said{Path: print.path, Pages: doc.scan.Pages()}
+	told.Sheets = make([]sheet, told.Pages)
+	for i := range told.Sheets {
+		wide, high, err := doc.scan.Size(i)
+		if err != nil {
+			continue
+		}
+		told.Sheets[i] = sheet{Wide: wide, High: high}
+	}
 	doc.release()
 
 	w.Header().Set("Content-Type", "application/json")
