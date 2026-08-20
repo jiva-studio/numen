@@ -46,6 +46,8 @@ type Span struct {
 type Block struct {
 	Label string
 	Text  string
+	// Place says the region is the one printing the page's own number.
+	Place bool
 	// Spans are where on the page each run of Text was read. A recogniser that
 	// reports no rectangles leaves them empty.
 	Spans []Span
@@ -55,14 +57,41 @@ type Block struct {
 type Page struct {
 	// At is which page of the document this is, counted from zero.
 	At int
-	// Label is what the document calls this page.
+	// Label is what the document calls this page. It is empty where the
+	// document says nothing about it.
 	Label string
+	// Number is what the page prints as its own number. It is empty where the
+	// page prints none.
+	Number string
 	// Size is the page as it was rendered, which the rectangles are addressed
 	// from. A zero size is a page nothing was measured on.
 	Size image.Point
 	// Blocks are what it says, in the order it is read.
 	Blocks []Block
 }
+
+// Number is what a page prints as its own number, and the blocks that are the
+// page's prose. The number is read in the region that prints it, and that
+// region leaves the prose with it.
+//
+// A place region saying anything that is not a page number numbers no page.
+func Number(blocks []Block) (string, []Block) {
+	number := ""
+	prose := make([]Block, 0, len(blocks))
+	for _, block := range blocks {
+		if !block.Place {
+			prose = append(prose, block)
+			continue
+		}
+		if said := strings.TrimSpace(block.Text); number == "" && pageNumber.MatchString(said) {
+			number = said
+		}
+	}
+	return number, prose
+}
+
+// A page number is a few digits, or a few roman numerals in either case.
+var pageNumber = regexp.MustCompile(`^(?:[0-9]{1,4}|(?i:[ivxlcdm]{1,7}))$`)
 
 // Distinct drops a region that covers one already kept.
 //

@@ -2,6 +2,8 @@ package ocr
 
 import (
 	"strings"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
 )
 
 // The artifact is plain text with the pages marked in it:
@@ -15,8 +17,9 @@ import (
 // any of this, no escaping is needed because a recogniser has no character for
 // one, and a person opening the file sees the book.
 //
-// The mark carries the page's printed label rather than its number, because that
-// is what a person holding the book would say and what a result has to show.
+// The mark carries the number the page prints on itself, which is what a person
+// holding the book would say, and is empty where nothing names the page. Where a
+// page stands among the marks is where it stands in the file.
 const (
 	pageMark  = '\x0c'
 	blockGap  = "\n\n"
@@ -25,17 +28,10 @@ const (
 
 // A Mark is a page of the artifact, at the offset its prose begins.
 type Mark struct {
+	// Label is the number the page prints on itself, empty where nothing names
+	// the page.
 	Label  string
 	Offset int
-}
-
-// A Box is one run of prose and where it was read: the page it is on, the run
-// of bytes in the text, and the rectangle it covers as a fraction of the page.
-type Box struct {
-	Page                   int
-	Start                  int
-	Length                 int
-	MinX, MinY, MaxX, MaxY float32
 }
 
 // Write is the artifact for a document that has been read, and the boxes its
@@ -46,13 +42,13 @@ type Box struct {
 //
 // A box is placed in the prose, which is what Read gives back. The mark and the
 // newline closing it are bookkeeping and are counted in neither.
-func Write(pages []Page) ([]byte, []Box) {
+func Write(pages []Page) ([]byte, []placed.Box) {
 	var out strings.Builder
-	var boxes []Box
+	var boxes []placed.Box
 	prose := 0
 	for _, page := range pages {
 		out.WriteString(pageStart)
-		out.WriteString(strings.ReplaceAll(page.Label, pageStart, ""))
+		out.WriteString(strings.ReplaceAll(called(page), pageStart, ""))
 		out.WriteString(pageStart)
 		out.WriteString("\n")
 		for i, block := range page.Blocks {
@@ -70,17 +66,26 @@ func Write(pages []Page) ([]byte, []Box) {
 	return []byte(out.String()), boxes
 }
 
+// called is what a page is called: the number it prints on itself, and what the
+// document calls it where it prints none.
+func called(page Page) string {
+	if page.Number != "" {
+		return page.Number
+	}
+	return page.Label
+}
+
 // within is where each span of a block sits: at its offset from base in the
 // prose, and over the fraction of the page its rectangle covers. A page nothing
 // was measured on gives no boxes, having no size to take a fraction of.
-func within(page Page, block Block, base int) []Box {
+func within(page Page, block Block, base int) []placed.Box {
 	if page.Size.X <= 0 || page.Size.Y <= 0 {
 		return nil
 	}
 	wide, high := float32(page.Size.X), float32(page.Size.Y)
-	boxes := make([]Box, 0, len(block.Spans))
+	boxes := make([]placed.Box, 0, len(block.Spans))
 	for _, span := range block.Spans {
-		boxes = append(boxes, Box{
+		boxes = append(boxes, placed.Box{
 			Page:   page.At,
 			Start:  base + span.Start,
 			Length: span.Length,

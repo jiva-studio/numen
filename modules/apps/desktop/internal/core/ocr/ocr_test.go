@@ -234,19 +234,35 @@ func TestEveryBoxSaysWhereItsWordsAreInTheProse(t *testing.T) {
 		line(0, 0, 70, 20, "Epsilon"),
 		line(80, 0, 120, 20, "zeta"),
 	})
+	// The first page prints its number above what it says. That region is not
+	// prose, and the words under it are where the prose puts them.
+	number, opening := ocr.Number([]ocr.Block{
+		{
+			Label: "number",
+			Text:  "2",
+			Place: true,
+			Spans: []ocr.Span{{Box: image.Rect(300, 0, 320, 10), Length: 1}},
+		},
+		{Label: "text", Text: first, Spans: firstSpans},
+		// A region read by something that reports no rectangles. It says
+		// what it says and the prose after it moves along by that much.
+		{Label: "text", Text: "Delta."},
+	})
 	pages := []ocr.Page{
-		{At: 0, Label: "i", Size: image.Pt(600, 800), Blocks: []ocr.Block{
-			{Label: "text", Text: first, Spans: firstSpans},
-			// A region read by something that reports no rectangles. It says
-			// what it says and the prose after it moves along by that much.
-			{Label: "text", Text: "Delta."},
-		}},
+		{At: 0, Number: number, Size: image.Pt(600, 800), Blocks: opening},
+		// A page printing nothing, in a document that calls it something.
 		{At: 1, Label: "1", Size: image.Pt(600, 800), Blocks: []ocr.Block{
 			{Label: "text", Text: last, Spans: lastSpans},
 		}},
 	}
 	raw, boxes := ocr.Write(pages)
-	text, _ := ocr.Read(raw)
+	text, marks := ocr.Read(raw)
+
+	for i, want := range []string{"2", "1"} {
+		if marks[i].Label != want {
+			t.Errorf("page %d is called %q, want %q", i, marks[i].Label, want)
+		}
+	}
 
 	want := []string{"Alpha", "beta", "gamma", "Epsilon", "zeta"}
 	if len(boxes) != len(want) {
@@ -337,6 +353,96 @@ func TestAJoinedWordLeavesTheHyphenBoxShorterByTheHyphen(t *testing.T) {
 			}
 			if got := text[spans[1].Start : spans[1].Start+spans[1].Length]; got != "ṭīkā follows" {
 				t.Errorf("the second box reads %q", got)
+			}
+		})
+	}
+}
+
+func TestAPageIsCalledWhatItPrints(t *testing.T) {
+	// The thirty-third page of the file, printing 2 in its corner. What the
+	// page prints is what a person holding the book would say, and the number
+	// is not a run of the page's prose.
+	number, prose := ocr.Number([]ocr.Block{
+		{Label: "number", Text: "2", Place: true},
+		{Label: "text", Text: "The body begins."},
+	})
+	raw, _ := ocr.Write([]ocr.Page{{At: 32, Number: number, Blocks: prose}})
+
+	text, marks := ocr.Read(raw)
+	if len(marks) != 1 {
+		t.Fatalf("read %d pages, want 1", len(marks))
+	}
+	if marks[0].Label != "2" {
+		t.Errorf("the page is called %q, want %q", marks[0].Label, "2")
+	}
+	if got := strings.TrimSpace(text); got != "The body begins." {
+		t.Errorf("the page says %q, want %q", got, "The body begins.")
+	}
+}
+
+func TestAPageNothingNamesIsCalledNothing(t *testing.T) {
+	// The page prints no number and the document says nothing about it. A
+	// number here is one nobody could find in the book.
+	raw, _ := ocr.Write([]ocr.Page{
+		{At: 32, Blocks: []ocr.Block{{Label: "text", Text: "The body begins."}}},
+	})
+
+	_, marks := ocr.Read(raw)
+	if len(marks) != 1 {
+		t.Fatalf("read %d pages, want 1", len(marks))
+	}
+	if marks[0].Label != "" {
+		t.Errorf("the page is called %q, and nothing says what it is called", marks[0].Label)
+	}
+}
+
+func TestADocumentNamesThePagesThatPrintNoNumber(t *testing.T) {
+	raw, _ := ocr.Write([]ocr.Page{
+		{At: 4, Label: "v", Blocks: []ocr.Block{{Label: "text", Text: "Preface."}}},
+		{At: 5, Label: "vi", Number: "6", Blocks: []ocr.Block{{Label: "text", Text: "More."}}},
+	})
+
+	_, marks := ocr.Read(raw)
+	if len(marks) != 2 {
+		t.Fatalf("read %d pages, want 2", len(marks))
+	}
+	if marks[0].Label != "v" {
+		t.Errorf("the first page is called %q, want %q", marks[0].Label, "v")
+	}
+	// The page prints its own number and the document calls it something else.
+	// The page is the one holding the book open.
+	if marks[1].Label != "6" {
+		t.Errorf("the second page is called %q, want %q", marks[1].Label, "6")
+	}
+}
+
+func TestAPlaceRegionSayingSomethingElseNumbersNoPage(t *testing.T) {
+	tests := []struct {
+		says string
+		want string
+	}{
+		{says: "2", want: "2"},
+		{says: "417", want: "417"},
+		{says: "ii", want: "ii"},
+		{says: "XIV", want: "XIV"},
+		{says: " 12 ", want: "12"},
+		{says: "Chapter Two", want: ""},
+		{says: "2 of 8", want: ""},
+		{says: "Śrī Caitanya", want: ""},
+		{says: "123456", want: ""},
+	}
+	for _, c := range tests {
+		t.Run(c.says, func(t *testing.T) {
+			number, prose := ocr.Number([]ocr.Block{
+				{Label: "number", Text: c.says, Place: true},
+				{Label: "text", Text: "The body."},
+			})
+			if number != c.want {
+				t.Errorf("a page printing %q is called %q, want %q", c.says, number, c.want)
+			}
+			// What the region said stays out of the prose whatever it said.
+			if len(prose) != 1 || prose[0].Text != "The body." {
+				t.Errorf("the page says %v", prose)
 			}
 		})
 	}

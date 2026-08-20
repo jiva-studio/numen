@@ -77,7 +77,8 @@ type DetectModel struct {
 
 	// MaxSide is the longest side a part is read at.
 	MaxSide int `json:"max_side"`
-	// Expand is how many pixels a found line is widened by.
+	// Expand is how many pixels a found line is widened by, in the image the
+	// detector reads: the part scaled so that its longest side is MaxSide.
 	Expand int `json:"expand"`
 	// Minimum is the heat a pixel carries to be part of a line.
 	Minimum float32 `json:"minimum"`
@@ -192,9 +193,12 @@ func (d DetectModel) maxSide() int {
 	return d.MaxSide
 }
 
+// The boundary the detector draws falls inside the letters by a share of the
+// line's own height. One number serves a heading and a paragraph because a part
+// is read scaled to MaxSide, which brings the two to nearly one size.
 func (d DetectModel) expand() int {
 	if d.Expand <= 0 {
-		return 10
+		return 18
 	}
 	return d.Expand
 }

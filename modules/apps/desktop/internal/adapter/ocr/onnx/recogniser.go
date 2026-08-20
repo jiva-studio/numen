@@ -114,6 +114,9 @@ func (r *Recogniser) Close() error {
 // A part whose kind the configuration does not ask for is not read at all. A
 // running head and a page ornament are printed on every page and are not what
 // the page says, and reading them costs as much as reading a paragraph.
+//
+// A part the configuration calls a place is marked as one: what it says is the
+// number the page prints on itself.
 func (r *Recogniser) Read(ctx context.Context, page image.Image) ([]ocr.Block, error) {
 	regions, err := r.layout.Regions(page)
 	if err != nil {
@@ -134,7 +137,9 @@ func (r *Recogniser) Read(ctx context.Context, page image.Image) ([]ocr.Block, e
 		}
 		found, err := r.lines.RunOCR(crop)
 		if err != nil {
-			return nil, fmt.Errorf("read a %s: %w", region.Label, err)
+			// One part of a page that could not be read is one part. A page is
+			// hundreds of words, and the rest of them are still what it says.
+			continue
 		}
 		lines := make([]ocr.Line, 0, len(found))
 		for _, line := range found {
@@ -148,7 +153,12 @@ func (r *Recogniser) Read(ctx context.Context, page image.Image) ([]ocr.Block, e
 			})
 		}
 		if text, spans := ocr.Assemble(lines); text != "" {
-			out = append(out, ocr.Block{Label: region.Label, Text: text, Spans: spans})
+			out = append(out, ocr.Block{
+				Label: region.Label,
+				Text:  text,
+				Place: r.place[region.Label],
+				Spans: spans,
+			})
 		}
 	}
 	return out, nil

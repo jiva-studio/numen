@@ -1,4 +1,4 @@
-package ocr
+package placed
 
 import (
 	"encoding/binary"
