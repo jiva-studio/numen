@@ -96,11 +96,13 @@ func (s *shelf) names() []string {
 // many pages it was shown.
 type speaker struct {
 	says string
-	// prints is what every page says in the region that prints its own number.
-	// Empty is a page printing none.
-	prints string
-	pages  int
-	stop   func(int)
+	// heads is what every page says in the region that opens a part of the
+	// document. Empty is a page opening none.
+	heads string
+	// blank is the page, counted from one, that the model reads nothing on.
+	blank int
+	pages int
+	stop  func(int)
 }
 
 func (s *speaker) Recognition() port.Recognition {
@@ -115,15 +117,15 @@ func (s *speaker) Read(ctx context.Context, _ image.Image) ([]ocr.Block, error) 
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	if s.says == "" {
+	if s.says == "" || s.pages == s.blank {
 		return nil, nil
 	}
 	// No two pages say the same thing, so a coordinate read at the wrong offset
 	// names the wrong words.
 	said := fmt.Sprintf("%s %d", s.says, s.pages)
 	var out []ocr.Block
-	if s.prints != "" {
-		out = append(out, ocr.Block{Label: "number", Text: s.prints, Place: true})
+	if s.heads != "" {
+		out = append(out, ocr.Block{Label: "doc_title", Text: fmt.Sprintf("%s %d", s.heads, s.pages), Head: true, Depth: 1})
 	}
 	return append(out, ocr.Block{
 		Label: "text",
@@ -648,100 +650,6 @@ func TestCoordinatesThatDidNotLandWholeAreNotReadAsRecords(t *testing.T) {
 	reads(t, prose, boxes, says)
 }
 
-func TestAPageIsCalledWhatItPrints(t *testing.T) {
-	// Every page prints 2 in its corner, and the document names none of them.
-	// What the page prints is what the mark carries, wherever the page stands
-	// in the file.
-	u, v, index, shelf, model := recogniser(t, "A page.")
-	model.prints = "2"
-
-	res, err := u.Execute(t.Context(), v, documentPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	called := calls(t, v, index, shelf)
-	if len(called) != res.Pages {
-		t.Fatalf("the artifact names %d pages and the document has %d", len(called), res.Pages)
-	}
-	for i, name := range called {
-		if name != "2" {
-			t.Errorf("the page at %d is called %q, want %q", i, name, "2")
-		}
-	}
-	// What the page prints is not a run of what the page says.
-	prose := says(t, v, index, shelf)
-	if strings.Contains(prose, "2 A page.") {
-		t.Errorf("the number the page prints is in its prose: %q", prose)
-	}
-}
-
-func TestAPageNothingNamesIsCalledNothing(t *testing.T) {
-	// The document carries no page labels and the pages print no number the
-	// model was shown. A number here is one that appears nowhere in the book.
-	u, v, index, shelf, _ := recogniser(t, "A page.")
-
-	if _, err := u.Execute(t.Context(), v, documentPath); err != nil {
-		t.Fatal(err)
-	}
-
-	for i, name := range calls(t, v, index, shelf) {
-		if name != "" {
-			t.Errorf("the page at %d is called %q, and nothing says what it is called", i, name)
-		}
-	}
-}
-
-func TestAPageIsCalledWhatTheDocumentCallsIt(t *testing.T) {
-	// A document numbering its front matter apart from its body says what each
-	// of its pages is called, and no page prints a number the model was shown.
-	u, v, index, shelf, _ := reading(t, "A page.", "labels.pdf")
-
-	if _, err := u.Execute(t.Context(), v, documentPath); err != nil {
-		t.Fatal(err)
-	}
-
-	want := []string{"i", "ii", "1"}
-	called := calls(t, v, index, shelf)
-	if len(called) != len(want) {
-		t.Fatalf("the artifact names %d pages, want %d", len(called), len(want))
-	}
-	for i, name := range called {
-		if name != want[i] {
-			t.Errorf("the page at %d is called %q, want %q", i, name, want[i])
-		}
-	}
-}
-
-func TestAPlaceRegionSayingSomethingElseNamesNoPage(t *testing.T) {
-	// A page number is a few characters a model read, and a model reads
-	// nonsense. What is not a page number names no page.
-	u, v, index, shelf, model := recogniser(t, "A page.")
-	model.prints = "Chapter Two"
-
-	if _, err := u.Execute(t.Context(), v, documentPath); err != nil {
-		t.Fatal(err)
-	}
-
-	for i, name := range calls(t, v, index, shelf) {
-		if name != "" {
-			t.Errorf("the page at %d is called %q, and it prints no number", i, name)
-		}
-	}
-}
-
-// calls is what the artifact calls each page of the document, in the order the
-// file holds them.
-func calls(t *testing.T, v domain.Vault, index *store, written *shelf) []string {
-	t.Helper()
-	_, marks := ocr.Read(artifact(t, v, index, written))
-	out := make([]string, 0, len(marks))
-	for _, mark := range marks {
-		out = append(out, mark.Label)
-	}
-	return out
-}
-
 // says is the prose the artifact holds.
 func says(t *testing.T, v domain.Vault, index *store, written *shelf) string {
 	t.Helper()
@@ -758,4 +666,125 @@ func artifact(t *testing.T, v domain.Vault, index *store, written *shelf) []byte
 		t.Fatalf("the artifact is not where the source says: %v", err)
 	}
 	return raw
+}
+
+func TestAReadingNamesItsParts(t *testing.T) {
+	// The layout model names the headings and a sidecar keeps them, so a
+	// recognised document divides into parts exactly as a book with an outline
+	// does. What the scan made of the words does not matter: the part carries the
+	// run of prose the heading is.
+	u, v, index, shelf, model := recogniser(t, "A page.")
+	model.heads = "IAYADEVA GOSVAMI"
+
+	res, err := u.Execute(t.Context(), v, documentPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	src := index.sources[v.ID][documentPath]
+	raw, err := shelf.Read(t.Context(), text.Artifact(src.TextFrom, src.Hash))
+	if err != nil {
+		t.Fatal(err)
+	}
+	parts, err := shelf.Read(t.Context(), text.Parts(src.TextFrom, src.Hash))
+	if err != nil {
+		t.Fatalf("the parts are not beside the artifact: %v", err)
+	}
+
+	doc := text.Recognised(raw, parts)
+	if len(doc.Places) != res.Pages {
+		t.Fatalf("the reading names %d parts over %d pages", len(doc.Places), res.Pages)
+	}
+	for i, place := range doc.Places {
+		want := fmt.Sprintf("IAYADEVA GOSVAMI %d", i+1)
+		if place.Title != want {
+			t.Errorf("part %d is called %q, want %q", i, place.Title, want)
+		}
+		if got := doc.Text[place.Offset : place.Offset+len(want)]; got != want {
+			t.Errorf("part %d begins at %d, which reads %q", i, place.Offset, got)
+		}
+	}
+}
+
+func TestPartsAheadOfTheCountAreDropped(t *testing.T) {
+	// The parts of a batch are written before its pages are, so a run that died
+	// between the two left parts the count does not claim. One kept would name a
+	// part of the prose that is not there.
+	u, v, index, shelf, model := recogniser(t, "A page.")
+	model.heads = "A part"
+
+	ctx, stop := context.WithCancel(t.Context())
+	model.stop = func(pages int) {
+		if pages == 2 {
+			stop()
+		}
+	}
+	if _, err := u.Execute(ctx, v, documentPath); !errors.Is(err, context.Canceled) {
+		t.Fatalf("stopping gave %v", err)
+	}
+	stray := ocr.Pack([]ocr.Part{{Start: 9000, Length: 7, Depth: 1}})
+	if err := shelf.Append(t.Context(), text.Parts("ocr", document(t)), stray); err != nil {
+		t.Fatal(err)
+	}
+
+	model.stop = nil
+	res, err := u.Execute(t.Context(), v, documentPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	src := index.sources[v.ID][documentPath]
+	raw, err := shelf.Read(t.Context(), text.Artifact(src.TextFrom, src.Hash))
+	if err != nil {
+		t.Fatal(err)
+	}
+	parts, err := shelf.Read(t.Context(), text.Parts(src.TextFrom, src.Hash))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	doc := text.Recognised(raw, parts)
+	if len(doc.Places) != res.Pages {
+		t.Fatalf("the reading names %d parts over %d pages", len(doc.Places), res.Pages)
+	}
+	// A part carries a run of the prose, so the one thing every part has to be
+	// is where its heading stands.
+	for i, place := range doc.Places {
+		if !strings.HasPrefix(place.Title, "A part ") {
+			t.Errorf("part %d is called %q", i, place.Title)
+		}
+		at := place.Offset
+		if at < 0 || at+len(place.Title) > len(doc.Text) {
+			t.Fatalf("part %d begins at %d, and the prose is %d long", i, at, len(doc.Text))
+		}
+		if got := doc.Text[at : at+len(place.Title)]; got != place.Title {
+			t.Errorf("part %d begins at %d, which reads %q", i, at, got)
+		}
+	}
+}
+
+func TestTheArtifactMarksOnePageForEachPageOfTheDocument(t *testing.T) {
+	// A page is called where it stands among the marks, so the marks and the
+	// pages have to be the same run of things in the same order. A page
+	// nothing was read on is still marked.
+	u, v, index, shelf, model := recogniser(t, "A page.")
+	model.blank = 2
+
+	res, err := u.Execute(t.Context(), v, documentPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	prose, marks := ocr.Read(artifact(t, v, index, shelf))
+	if len(marks) != res.Pages {
+		t.Fatalf("the artifact marks %d pages and the document has %d", len(marks), res.Pages)
+	}
+	at := -1
+	for i, mark := range marks {
+		if mark.Offset <= at && i > 0 {
+			t.Errorf("page %d begins at %d, and the page before it at %d", i, mark.Offset, at)
+		}
+		at = mark.Offset
+		if mark.Offset < 0 || mark.Offset > len(prose) {
+			t.Errorf("page %d begins at %d, and the prose is %d long", i, mark.Offset, len(prose))
+		}
+	}
 }

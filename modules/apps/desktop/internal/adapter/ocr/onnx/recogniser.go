@@ -29,9 +29,10 @@ type Recogniser struct {
 	layout *Layout
 	lines  *paddle.Engine
 
-	body, place map[string]bool
-	margin      int
-	named       port.Recognition
+	body   map[string]bool
+	head   map[string]int
+	margin int
+	named  port.Recognition
 }
 
 // Open loads the models and compiles them. It is expensive — the weights are
@@ -88,7 +89,7 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 		layout: layout,
 		lines:  lines,
 		body:   set(cfg.Regions.body()),
-		place:  set(cfg.Regions.place()),
+		head:   depths(cfg.Regions.head()),
 		margin: cfg.Layout.margin(),
 		named: port.Recognition{
 			Layout:     name(paths.layout),
@@ -115,8 +116,8 @@ func (r *Recogniser) Close() error {
 // running head and a page ornament are printed on every page and are not what
 // the page says, and reading them costs as much as reading a paragraph.
 //
-// A part the configuration calls a place is marked as one: what it says is the
-// number the page prints on itself.
+// A part the configuration calls a head opens a part of the document, and
+// carries how deep that part sits.
 func (r *Recogniser) Read(ctx context.Context, page image.Image) ([]ocr.Block, error) {
 	regions, err := r.layout.Regions(page)
 	if err != nil {
@@ -128,7 +129,7 @@ func (r *Recogniser) Read(ctx context.Context, page image.Image) ([]ocr.Block, e
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		if !r.body[region.Label] && !r.place[region.Label] {
+		if !r.body[region.Label] {
 			continue
 		}
 		crop, corner := cropped(page, region.Rect, r.margin)
@@ -153,10 +154,12 @@ func (r *Recogniser) Read(ctx context.Context, page image.Image) ([]ocr.Block, e
 			})
 		}
 		if text, spans := ocr.Assemble(lines); text != "" {
+			depth, head := r.head[region.Label]
 			out = append(out, ocr.Block{
 				Label: region.Label,
 				Text:  text,
-				Place: r.place[region.Label],
+				Head:  head,
+				Depth: depth,
 				Spans: spans,
 			})
 		}
@@ -179,6 +182,16 @@ func cropped(page image.Image, rect image.Rectangle, by int) (image.Image, image
 	out := image.NewRGBA(image.Rect(0, 0, wider.Dx(), wider.Dy()))
 	draw.Draw(out, out.Bounds(), page, wider.Min, draw.Src)
 	return out, wider.Min
+}
+
+// depths is how deep the part each name opens sits: where it stands in the
+// list, outermost first.
+func depths(names []string) map[string]int {
+	out := make(map[string]int, len(names))
+	for i, n := range names {
+		out[n] = i
+	}
+	return out
 }
 
 func set(names []string) map[string]bool {

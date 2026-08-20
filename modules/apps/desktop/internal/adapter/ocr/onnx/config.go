@@ -114,12 +114,14 @@ type PageReading struct {
 }
 
 // RegionKinds says what the parts of a page are for. A part the model names
-// that is in neither list is not read.
+// that Body does not carry is not read.
 type RegionKinds struct {
 	// Body carry what the document says.
 	Body []string `json:"body"`
-	// Place says which page of the printed document this is.
-	Place []string `json:"place"`
+	// Head open a part of the document, outermost first: where a name stands in
+	// the list is how deep the part it opens sits. Each of them is read only
+	// where Body carries it too.
+	Head []string `json:"head"`
 }
 
 // Defaults read a scanned page with the smallest models measured to be the best
@@ -249,12 +251,12 @@ func (r RegionKinds) body() []string {
 	}
 }
 
-// place is the part that says which page of the printed document this is.
-func (r RegionKinds) place() []string {
-	if len(r.Place) > 0 {
-		return r.Place
+// head are the parts that open a part of the document, outermost first.
+func (r RegionKinds) head() []string {
+	if len(r.Head) > 0 {
+		return r.Head
 	}
-	return []string{"number"}
+	return []string{"doc_title", "paragraph_title"}
 }
 
 // paths are the files this run reads its models out of, and where they were

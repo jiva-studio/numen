@@ -11,7 +11,7 @@ import (
 )
 
 // The book is the chapter as the models read it: the titles come out mangled,
-// each is its own region, and the page numbers are the printed ones.
+// each is its own region.
 const (
 	frontMatter = "This book was printed at Nabadwip in the year 1908."
 	docTitle    = "Srī Javadeva Gosvāmi"
@@ -24,18 +24,18 @@ const (
 
 func book() []ocr.Page {
 	return []ocr.Page{
-		{At: 0, Label: "iii", Blocks: []ocr.Block{
+		{At: 0, Blocks: []ocr.Block{
 			{Label: "text", Text: frontMatter},
 		}},
-		{At: 1, Label: "iv", Blocks: []ocr.Block{
+		{At: 1, Blocks: []ocr.Block{
 			{Label: "doc_title", Text: docTitle},
 			{Label: "text", Text: birth},
 		}},
-		{At: 2, Label: "v", Blocks: []ocr.Block{
+		{At: 2, Blocks: []ocr.Block{
 			{Label: "paragraph_title", Text: sectionOne},
 			{Label: "text", Text: ganges},
 		}},
-		{At: 3, Label: "vi", Blocks: []ocr.Block{
+		{At: 3, Blocks: []ocr.Block{
 			{Label: "paragraph_title", Text: sectionTwo},
 			{Label: "text", Text: padmavati},
 		}},
@@ -46,7 +46,7 @@ func book() []ocr.Page {
 // layout model named in it.
 func written(t *testing.T) (raw []byte, parts []byte) {
 	t.Helper()
-	raw, _ = ocr.Write(book())
+	raw, _, _ = ocr.Write(book())
 	prose, _ := ocr.Read(raw)
 	named := []struct {
 		heading string
@@ -85,9 +85,9 @@ func TestAReadingWithPartsLocatesAPassageBySectionAndPage(t *testing.T) {
 	raw, parts := written(t)
 	doc := text.Recognised(raw, parts)
 
-	located(t, doc, ganges, sectionOne+", v")
-	located(t, doc, padmavati, sectionTwo+", vi")
-	located(t, doc, birth, docTitle+", iv")
+	located(t, doc, ganges, sectionOne+", page 3 of the file")
+	located(t, doc, padmavati, sectionTwo+", page 4 of the file")
+	located(t, doc, birth, docTitle+", page 2 of the file")
 }
 
 func TestAReadingWithPartsNamesThemAsPlaces(t *testing.T) {
@@ -108,8 +108,8 @@ func TestAReadingWithNoPartsLocatesAPassageByPageAlone(t *testing.T) {
 	raw, _ := written(t)
 	doc := text.Recognised(raw, nil)
 
-	located(t, doc, ganges, "v")
-	located(t, doc, padmavati, "vi")
+	located(t, doc, ganges, "page 3 of the file")
+	located(t, doc, padmavati, "page 4 of the file")
 	if len(doc.Places) != 0 {
 		t.Errorf("a reading with no parts names %+v", doc.Places)
 	}
@@ -119,12 +119,12 @@ func TestAPassageBeforeTheFirstPartIsLocatedByPageAlone(t *testing.T) {
 	raw, parts := written(t)
 	doc := text.Recognised(raw, parts)
 
-	located(t, doc, frontMatter, "iii")
+	located(t, doc, frontMatter, "page 1 of the file")
 }
 
 func TestAPartAtTheVeryStartNamesTheTextFromItsFirstByte(t *testing.T) {
-	raw, _ := ocr.Write([]ocr.Page{
-		{At: 0, Label: "1", Blocks: []ocr.Block{
+	raw, _, _ := ocr.Write([]ocr.Page{
+		{At: 0, Blocks: []ocr.Block{
 			{Label: "doc_title", Text: docTitle},
 			{Label: "text", Text: birth},
 		}},
@@ -135,8 +135,8 @@ func TestAPartAtTheVeryStartNamesTheTextFromItsFirstByte(t *testing.T) {
 	if doc.Text[:len(docTitle)] != docTitle {
 		t.Fatalf("the prose begins %q, want it to begin with the title", doc.Text[:len(docTitle)])
 	}
-	located(t, doc, docTitle, docTitle+", 1")
-	located(t, doc, birth, docTitle+", 1")
+	located(t, doc, docTitle, docTitle+", page 1 of the file")
+	located(t, doc, birth, docTitle+", page 1 of the file")
 }
 
 func TestPartsOutOfOrderAreNotTrusted(t *testing.T) {
@@ -151,7 +151,7 @@ func TestPartsOutOfOrderAreNotTrusted(t *testing.T) {
 	if len(doc.Places) != 0 {
 		t.Errorf("the document names %+v", doc.Places)
 	}
-	located(t, doc, ganges, "v")
+	located(t, doc, ganges, "page 3 of the file")
 }
 
 func TestPartsNamingOffsetsPastTheTextAreNotTrusted(t *testing.T) {
@@ -166,7 +166,7 @@ func TestPartsNamingOffsetsPastTheTextAreNotTrusted(t *testing.T) {
 	if len(doc.Places) != 0 {
 		t.Errorf("the document names %+v", doc.Places)
 	}
-	located(t, doc, ganges, "v")
+	located(t, doc, ganges, "page 3 of the file")
 }
 
 func TestAPartsSidecarIsSweptWithTheRest(t *testing.T) {
@@ -179,20 +179,20 @@ func TestAPartsSidecarIsSweptWithTheRest(t *testing.T) {
 	}
 }
 
-func TestAPageIsSaidByWhatItPrintsOrByWhereItStands(t *testing.T) {
-	// A page that prints its number is called that. A page that prints none is
-	// called by where it stands in the file, and said so — a person told a
-	// number looks for it on the page, and the position is not there.
-	raw, _ := ocr.Write([]ocr.Page{
-		{At: 0, Number: "2", Blocks: []ocr.Block{{Label: "text", Text: "Alpha beta."}}},
+func TestAPageIsSaidByWhereItStandsInTheFile(t *testing.T) {
+	// One name to a page, and it is the one a viewer opens at. What the paper
+	// printed is a second number for the same page, and a person shown both has
+	// to work out which is being talked about.
+	raw, _, _ := ocr.Write([]ocr.Page{
+		{At: 0, Blocks: []ocr.Block{{Label: "text", Text: "Alpha beta."}}},
 		{At: 1, Blocks: []ocr.Block{{Label: "text", Text: "Gamma delta."}}},
 	})
 	doc := text.Recognised(raw, nil)
 
-	if said := doc.Locate(0); said != "2" {
-		t.Errorf("a page printing 2 is located at %q", said)
+	if said := doc.Locate(0); said != "page 1 of the file" {
+		t.Errorf("the first page is located at %q", said)
 	}
 	if said := doc.Locate(len(doc.Text) - 3); said != "page 2 of the file" {
-		t.Errorf("a page printing nothing is located at %q", said)
+		t.Errorf("the second page is located at %q", said)
 	}
 }

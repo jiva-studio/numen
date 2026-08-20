@@ -8,18 +8,18 @@ import (
 
 // The artifact is plain text with the pages marked in it:
 //
-//	\x0c<page label>\x0c
+//	\x0c\x0c
 //	<the page's prose, one blank line between regions>
-//	\x0c<next page label>\x0c
+//	\x0c\x0c
 //	…
 //
 // A form feed is what a page break has meant in plain text since long before
 // any of this, no escaping is needed because a recogniser has no character for
 // one, and a person opening the file sees the book.
 //
-// The mark carries the number the page prints on itself, which is what a person
-// holding the book would say, and is empty where nothing names the page. Where a
-// page stands among the marks is where it stands in the file.
+// The mark says only that a page begins here. Where a page stands among the
+// marks is what it is called, and a second name for one page is a second thing
+// to be wrong about.
 const (
 	pageMark  = '\x0c'
 	blockGap  = "\n\n"
@@ -28,27 +28,25 @@ const (
 
 // A Mark is a page of the artifact, at the offset its prose begins.
 type Mark struct {
-	// Label is the number the page prints on itself, empty where nothing names
-	// the page.
-	Label  string
 	Offset int
 }
 
-// Write is the artifact for a document that has been read, and the boxes its
-// prose was read from.
+// Write is the artifact for a document that has been read, the boxes its prose
+// was read from, and the parts it divides into.
 //
 // A page with nothing on it is still written: its mark is what makes the page
 // after it findable, and a blank page is a fact about the document.
 //
-// A box is placed in the prose, which is what Read gives back. The mark and the
-// newline closing it are bookkeeping and are counted in neither.
-func Write(pages []Page) ([]byte, []placed.Box) {
+// A box and a part are both placed in the prose, which is what Read gives back.
+// The mark and the newline closing it are bookkeeping and are counted in none of
+// them.
+func Write(pages []Page) ([]byte, []placed.Box, []Part) {
 	var out strings.Builder
 	var boxes []placed.Box
+	var parts []Part
 	prose := 0
 	for _, page := range pages {
 		out.WriteString(pageStart)
-		out.WriteString(strings.ReplaceAll(called(page), pageStart, ""))
 		out.WriteString(pageStart)
 		out.WriteString("\n")
 		for i, block := range page.Blocks {
@@ -57,22 +55,16 @@ func Write(pages []Page) ([]byte, []placed.Box) {
 				prose += len(blockGap)
 			}
 			boxes = append(boxes, within(page, block, prose)...)
+			if block.Head && block.Text != "" {
+				parts = append(parts, Part{Start: prose, Length: len(block.Text), Depth: block.Depth})
+			}
 			out.WriteString(block.Text)
 			prose += len(block.Text)
 		}
 		out.WriteString("\n")
 		prose++
 	}
-	return []byte(out.String()), boxes
-}
-
-// called is what a page is called: the number it prints on itself, and what the
-// document calls it where it prints none.
-func called(page Page) string {
-	if page.Number != "" {
-		return page.Number
-	}
-	return page.Label
+	return []byte(out.String()), boxes, parts
 }
 
 // within is where each span of a block sits: at its offset from base in the
@@ -128,14 +120,14 @@ func Read(raw []byte) (string, []Mark) {
 		if !found {
 			break
 		}
-		label, prose, closed := strings.Cut(after, pageStart)
+		_, prose, closed := strings.Cut(after, pageStart)
 		if !closed {
 			// A mark that never closes is not a mark. What follows is prose.
 			out.WriteString(after)
 			break
 		}
 		prose = strings.TrimPrefix(prose, "\n")
-		marks = append(marks, Mark{Label: label, Offset: out.Len()})
+		marks = append(marks, Mark{Offset: out.Len()})
 		rest = prose
 	}
 	return out.String(), marks
