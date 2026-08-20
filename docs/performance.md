@@ -876,3 +876,39 @@ turned back to. So the drawn pages are kept, in this machine's cache folder and
 not in the vault — a page turned back to is read from disk in about a
 millisecond, and a book read through once costs its half second a page and never
 again.
+
+## Finding the section a question is about
+
+Recorded 2026-08-20 over the same 546-page scan. 700 questions drawn from the
+book's own parts: for each of 350 parts whose heading the recogniser read as
+words, one question is that heading — a person asking where the book speaks
+about a thing — and one is seven words from the middle of the part. The right
+answer is that part either way.
+
+| | right section | opened at its start |
+| --- | --- | --- |
+| the words half as it stands | 307/350 | 298/350 |
+| the section's name in every chunk | 340/350 | 306/350 |
+| the sections findable by name | 346/350 | 346/350 |
+| both | 348/350 | 348/350 |
+
+The questions quoting a phrase from the middle of a part moved by one either
+way — 331, 330, 331, 330 — so none of these costs anything on a question that
+names no section.
+
+**The second column is the one that decided it.** Putting the name into every
+chunk lifts the right chapter but still answers with whatever paragraph of it
+ranks best; making a section findable by its own name answers with the section,
+at its heading.
+
+What the words half was doing is visible in one query. Asked for
+`Madhavendra Puri`, BM25 scored the chapter that *is* about him at −12.74 and
+the subsections inside it between −17.8 and −19.7 — and lower is better. The
+chapter's opening says his name once, in its heading; a paragraph in the
+subsection after it says it four times.
+
+**The name in every chunk was left.** It is worth two points on top of the
+other, and it changes the text a vector is made from: the recipe changes, and
+every chunk of every recognised document is embedded again. Only the words half
+was measured here — what a vector that knows its chapter is worth cannot be
+known without buying those vectors. The number to beat is 346 and 346.
