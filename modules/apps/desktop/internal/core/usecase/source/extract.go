@@ -509,7 +509,10 @@ func (u Extract) text(ctx context.Context, ref domain.FileRef, raw []byte, hash 
 		for _, name := range []string{text.Artifact(from, hash), text.Partial(from, hash)} {
 			switch found, err := u.Derived.Read(ctx, name); {
 			case err == nil:
-				return text.Recognised(found), from, nil
+				// The parts of a reading bound the windows it is cut into, the
+				// way an outline bounds a book's.
+				parts, _ := u.Derived.Read(ctx, text.Parts(from, hash))
+				return text.Recognised(found, parts), from, nil
 			case !errors.Is(err, fs.ErrNotExist):
 				return nil, "", err
 			}

@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/ocr"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/text"
 )
@@ -94,9 +95,12 @@ func (s *shelf) names() []string {
 // A speaker reads every page as the same thing, or as nothing, and counts how
 // many pages it was shown.
 type speaker struct {
-	says  string
-	pages int
-	stop  func(int)
+	says string
+	// prints is what every page says in the region that prints its own number.
+	// Empty is a page printing none.
+	prints string
+	pages  int
+	stop   func(int)
 }
 
 func (s *speaker) Recognition() port.Recognition {
@@ -117,11 +121,15 @@ func (s *speaker) Read(ctx context.Context, _ image.Image) ([]ocr.Block, error) 
 	// No two pages say the same thing, so a coordinate read at the wrong offset
 	// names the wrong words.
 	said := fmt.Sprintf("%s %d", s.says, s.pages)
-	return []ocr.Block{{
+	var out []ocr.Block
+	if s.prints != "" {
+		out = append(out, ocr.Block{Label: "number", Text: s.prints, Place: true})
+	}
+	return append(out, ocr.Block{
 		Label: "text",
 		Text:  said,
 		Spans: []ocr.Span{{Box: image.Rect(10, 20, 30, 40), Length: len(said)}},
-	}}, nil
+	}), nil
 }
 
 func (s *speaker) Close() error { return nil }
@@ -132,11 +140,17 @@ const documentPath = "library/scan.pdf"
 // recogniser is a Recognise over one vault holding one document.
 //
 // The document is the pdf package's own fixture: four pages that a reader can
-// open and count, which is all this needs — what the pages say comes from the
-// model, and the model here is a fake.
+// open and count, and that the document names none of, which is all this needs
+// — what the pages say comes from the model, and the model here is a fake.
 func recogniser(t *testing.T, says string) (Recognise, domain.Vault, *store, *shelf, *speaker) {
 	t.Helper()
-	raw, err := os.ReadFile("../../pdf/testdata/outline.pdf")
+	return reading(t, says, "outline.pdf")
+}
+
+// reading is a Recognise over a vault holding the fixture named.
+func reading(t *testing.T, says, fixture string) (Recognise, domain.Vault, *store, *shelf, *speaker) {
+	t.Helper()
+	raw, err := os.ReadFile("../../pdf/testdata/" + fixture)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -349,7 +363,7 @@ func document(t *testing.T) string {
 //
 // The offsets rise, because the prose of every page written before this one
 // stands in front of it.
-func reads(t *testing.T, prose string, boxes []ocr.Box, says string) {
+func reads(t *testing.T, prose string, boxes []placed.Box, says string) {
 	t.Helper()
 	at := -1
 	for i, box := range boxes {
@@ -412,7 +426,7 @@ func TestEveryCoordinateNamesTheWordsItWasReadFrom(t *testing.T) {
 	}
 
 	prose, _ := ocr.Read(raw)
-	boxes := ocr.Unpack(packed)
+	boxes := placed.Unpack(packed)
 	if len(boxes) != res.Pages {
 		t.Fatalf("%d coordinates over %d pages", len(boxes), res.Pages)
 	}
@@ -439,7 +453,7 @@ func TestCoordinatesAheadOfTheCountAreDropped(t *testing.T) {
 	if _, err := u.Execute(ctx, v, documentPath); !errors.Is(err, context.Canceled) {
 		t.Fatalf("stopping gave %v", err)
 	}
-	stray := ocr.Pack([]ocr.Box{{Page: 2, Start: 9000, Length: 7}})
+	stray := placed.Pack([]placed.Box{{Page: 2, Start: 9000, Length: 7}})
 	if err := shelf.Append(t.Context(), text.Boxes("ocr", document(t)), stray); err != nil {
 		t.Fatal(err)
 	}
@@ -460,7 +474,7 @@ func TestCoordinatesAheadOfTheCountAreDropped(t *testing.T) {
 	}
 
 	prose, _ := ocr.Read(raw)
-	boxes := ocr.Unpack(packed)
+	boxes := placed.Unpack(packed)
 	if len(boxes) != res.Pages {
 		t.Fatalf("%d coordinates over %d pages", len(boxes), res.Pages)
 	}
@@ -534,7 +548,7 @@ func TestABatchThatDidNotLandWholeIsReadAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	reads(t, prose, ocr.Unpack(packed), says)
+	reads(t, prose, placed.Unpack(packed), says)
 }
 
 func TestAPartialCarryingNoCountIsReadFromTheBeginning(t *testing.T) {
@@ -589,7 +603,7 @@ func TestAPartialCarryingNoCountIsReadFromTheBeginning(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	reads(t, prose, ocr.Unpack(packed), says)
+	reads(t, prose, placed.Unpack(packed), says)
 }
 
 func TestCoordinatesThatDidNotLandWholeAreNotReadAsRecords(t *testing.T) {
@@ -627,9 +641,121 @@ func TestCoordinatesThatDidNotLandWholeAreNotReadAsRecords(t *testing.T) {
 		t.Fatal(err)
 	}
 	prose, _ := ocr.Read(raw)
-	boxes := ocr.Unpack(packed)
+	boxes := placed.Unpack(packed)
 	if len(boxes) != res.Pages {
 		t.Fatalf("%d coordinates over %d pages", len(boxes), res.Pages)
 	}
 	reads(t, prose, boxes, says)
+}
+
+func TestAPageIsCalledWhatItPrints(t *testing.T) {
+	// Every page prints 2 in its corner, and the document names none of them.
+	// What the page prints is what the mark carries, wherever the page stands
+	// in the file.
+	u, v, index, shelf, model := recogniser(t, "A page.")
+	model.prints = "2"
+
+	res, err := u.Execute(t.Context(), v, documentPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	called := calls(t, v, index, shelf)
+	if len(called) != res.Pages {
+		t.Fatalf("the artifact names %d pages and the document has %d", len(called), res.Pages)
+	}
+	for i, name := range called {
+		if name != "2" {
+			t.Errorf("the page at %d is called %q, want %q", i, name, "2")
+		}
+	}
+	// What the page prints is not a run of what the page says.
+	prose := says(t, v, index, shelf)
+	if strings.Contains(prose, "2 A page.") {
+		t.Errorf("the number the page prints is in its prose: %q", prose)
+	}
+}
+
+func TestAPageNothingNamesIsCalledNothing(t *testing.T) {
+	// The document carries no page labels and the pages print no number the
+	// model was shown. A number here is one that appears nowhere in the book.
+	u, v, index, shelf, _ := recogniser(t, "A page.")
+
+	if _, err := u.Execute(t.Context(), v, documentPath); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, name := range calls(t, v, index, shelf) {
+		if name != "" {
+			t.Errorf("the page at %d is called %q, and nothing says what it is called", i, name)
+		}
+	}
+}
+
+func TestAPageIsCalledWhatTheDocumentCallsIt(t *testing.T) {
+	// A document numbering its front matter apart from its body says what each
+	// of its pages is called, and no page prints a number the model was shown.
+	u, v, index, shelf, _ := reading(t, "A page.", "labels.pdf")
+
+	if _, err := u.Execute(t.Context(), v, documentPath); err != nil {
+		t.Fatal(err)
+	}
+
+	want := []string{"i", "ii", "1"}
+	called := calls(t, v, index, shelf)
+	if len(called) != len(want) {
+		t.Fatalf("the artifact names %d pages, want %d", len(called), len(want))
+	}
+	for i, name := range called {
+		if name != want[i] {
+			t.Errorf("the page at %d is called %q, want %q", i, name, want[i])
+		}
+	}
+}
+
+func TestAPlaceRegionSayingSomethingElseNamesNoPage(t *testing.T) {
+	// A page number is a few characters a model read, and a model reads
+	// nonsense. What is not a page number names no page.
+	u, v, index, shelf, model := recogniser(t, "A page.")
+	model.prints = "Chapter Two"
+
+	if _, err := u.Execute(t.Context(), v, documentPath); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, name := range calls(t, v, index, shelf) {
+		if name != "" {
+			t.Errorf("the page at %d is called %q, and it prints no number", i, name)
+		}
+	}
+}
+
+// calls is what the artifact calls each page of the document, in the order the
+// file holds them.
+func calls(t *testing.T, v domain.Vault, index *store, written *shelf) []string {
+	t.Helper()
+	_, marks := ocr.Read(artifact(t, v, index, written))
+	out := make([]string, 0, len(marks))
+	for _, mark := range marks {
+		out = append(out, mark.Label)
+	}
+	return out
+}
+
+// says is the prose the artifact holds.
+func says(t *testing.T, v domain.Vault, index *store, written *shelf) string {
+	t.Helper()
+	prose, _ := ocr.Read(artifact(t, v, index, written))
+	return prose
+}
+
+// artifact is what recognition wrote for the document under test.
+func artifact(t *testing.T, v domain.Vault, index *store, written *shelf) []byte {
+	t.Helper()
+	src := index.sources[v.ID][documentPath]
+	raw, err := written.Read(t.Context(), text.Artifact(src.TextFrom, src.Hash))
+	if err != nil {
+		t.Fatalf("the artifact is not where the source says: %v", err)
+	}
+	return raw
 }

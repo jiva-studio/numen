@@ -51,11 +51,11 @@ type Place struct {
 }
 
 // A Page is one page of the document, at the offset where its text begins.
-//
-// Label is what the document calls the page — the number printed on it, which
-// is not the page's index whenever a book has front matter. It is the index,
-// written out, for a document that names none.
 type Page struct {
+	// Label is what the document calls this page, and is empty where it calls
+	// it nothing. A number counted from the first page is not what the page
+	// prints, and a person told one looks for it in the book and does not find
+	// it.
 	Label  string
 	Offset int
 }
@@ -112,7 +112,7 @@ func Read(raw []byte) (*Book, error) {
 			break
 		}
 		starts = append(starts, text.Len())
-		book.Pages = append(book.Pages, Page{Label: doc.label(i), Offset: text.Len()})
+		book.Pages = append(book.Pages, Page{Label: doc.labelled(i), Offset: text.Len()})
 
 		page := doc.text(i)
 		if page == "" {
@@ -145,8 +145,13 @@ type Location struct {
 	Place string
 	// PlaceOffset is where that place begins.
 	PlaceOffset int
-	// Page is the printed page the offset falls on.
+	// Page is what the page the offset falls on prints on itself, and is empty
+	// where the page prints nothing.
 	Page string
+	// At is where that page stands in the file, counted from the first. It is
+	// known for every page, and it is what a document printing no numbers is
+	// navigated by.
+	At int
 }
 
 // Locate answers where one offset in the document's text is.
@@ -156,7 +161,7 @@ func (b *Book) Locate(offset int) Location {
 		at.Place, at.PlaceOffset = b.Places[i].Title, b.Places[i].Offset
 	}
 	if i := preceding(len(b.Pages), offset, func(i int) int { return b.Pages[i].Offset }); i >= 0 {
-		at.Page = b.Pages[i].Label
+		at.Page, at.At = b.Pages[i].Label, i
 	}
 	return at
 }

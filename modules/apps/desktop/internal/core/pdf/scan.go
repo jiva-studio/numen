@@ -31,8 +31,35 @@ func (s *Scan) Close() { s.doc.close() }
 // Pages is how many pages the document has.
 func (s *Scan) Pages() int { return s.doc.pages }
 
-// Label is what the document calls one page.
+// Label is what the document calls one page. Where the document names none, the
+// page's own number is what it is called.
 func (s *Scan) Label(index int) string { return s.doc.label(index) }
+
+// Labelled is what the document says one page is called, and is empty where the
+// document says nothing about it.
+func (s *Scan) Labelled(index int) string { return s.doc.labelled(index) }
+
+// Size is how wide and how high one page is drawn, in the page's own units. A
+// drawing at a width works its resolution back from it, and the document
+// answers without anything being drawn.
+//
+// The page is drawn turned by however much it asks to be, so a page whose text
+// is written a quarter turn from the way it is drawn is drawn as wide as its
+// text is high.
+func (s *Scan) Size(index int) (wide, high float64, err error) {
+	if index < 0 || index >= s.doc.pages {
+		return 0, 0, fmt.Errorf("pdf: page %d of %d", index, s.doc.pages)
+	}
+	page := requests.Page{ByIndex: &requests.PageByIndex{Document: s.doc.ref, Index: index}}
+	sheet, ok := s.doc.paper(page)
+	if !ok {
+		return 0, 0, fmt.Errorf("pdf: page %d cannot be measured", index)
+	}
+	if sheet.turn%2 == 1 {
+		return sheet.high, sheet.wide, nil
+	}
+	return sheet.wide, sheet.high, nil
+}
 
 // Image is one page drawn at the given resolution.
 //

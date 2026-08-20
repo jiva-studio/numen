@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/ocr"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
 )
 
 // A Reader is where a source's text comes from: the file itself, or the file a
@@ -54,26 +55,56 @@ func (r Reader) recognised(ctx context.Context, from, hash string) (*Document, e
 		if err != nil {
 			return nil, err
 		}
-		return Recognised(raw), nil
+		parts, err := r.Derived.Read(ctx, Parts(from, hash))
+		if err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return nil, err
+		}
+		return Recognised(raw, parts), nil
 	}
 	// The store is a folder on the person's disk and they may empty it. The
 	// source says nothing until a scan notices and cuts it again.
 	return nil, ErrUnreadable
 }
 
-// Recognised is a recognition, as the text its chunks are places in and the
-// pages that text names.
+// Recognised is a recognition, as the text its chunks are places in, the parts
+// that text is divided into, and the pages it names.
 //
-// A recognised document names no parts. What a layout model calls a heading is
-// a shape on a page and not an entry in an outline, and turning one into the
-// other would be a guess about what the book's parts are.
-func Recognised(raw []byte) *Document {
+// The parts are what a layout model called a heading, written beside the
+// artifact when it was read. A recognition that names none is a document with
+// no parts, and is located by its pages alone.
+func Recognised(raw, parts []byte) *Document {
 	prose, marks := ocr.Read(raw)
 	doc := &Document{Text: prose}
-	for _, m := range marks {
-		doc.paged = append(doc.paged, mark{Offset: m.Offset, Name: m.Label})
+	for _, p := range divided(prose, ocr.Unpack(parts)) {
+		doc.Places = append(doc.Places, p)
+		doc.named = append(doc.named, mark{Offset: p.Offset, Name: p.Title})
+	}
+	for i, m := range marks {
+		doc.paged = append(doc.paged, mark{Offset: m.Offset, Name: paging(m.Label, i)})
 	}
 	return doc
+}
+
+// divided is the parts a sidecar names, as places in the prose. A part is named
+// by its heading run as the scan was read, mangled or not.
+//
+// The parts of one artifact begin in the order the prose is read and end within
+// it. A sidecar that says otherwise was written for other bytes, and none of it
+// is used.
+func divided(prose string, parts []ocr.Part) []window.Place {
+	places := make([]window.Place, 0, len(parts))
+	at := 0
+	for _, p := range parts {
+		if p.Start < at || p.Length <= 0 || p.Start+p.Length > len(prose) {
+			return nil
+		}
+		at = p.Start
+		places = append(places, window.Place{
+			Title:  prose[p.Start : p.Start+p.Length],
+			Offset: p.Start,
+		})
+	}
+	return places
 }
 
 // Artifact is the name a producer's recognition of these bytes is kept under.
@@ -89,6 +120,12 @@ func Artifact(from, hash string) string {
 // is not an artifact until it is complete, and nothing reads it back as one.
 func Partial(from, hash string) string {
 	return from + "/" + hash + ".partial"
+}
+
+// Parts is the name the parts of a reading are kept under. A reading whose
+// layout model named none has no such file.
+func Parts(from, hash string) string {
+	return from + "/" + hash + ".parts"
 }
 
 // Boxes is the name the coordinates a model produced are kept under. They are
@@ -112,6 +149,7 @@ func Names(from, hash string) []string {
 		Artifact(from, hash),
 		Partial(from, hash),
 		Boxes(from, hash),
+		Parts(from, hash),
 		Beside(from, hash),
 	}
 }

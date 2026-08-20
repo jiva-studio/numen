@@ -37,6 +37,7 @@ var expectedPlans = []struct {
 
 	{chunk.Statements(), "identify", []any{1, "book", "p"}, []string{"(vault_id=? AND path=?)"}},
 	{chunk.Statements(), "fingerprints", []any{1, "book"}, []string{"sources_by_fingerprint"}},
+	{chunk.Statements(), "reading", []any{1, "library/note.epub"}, []string{"(vault_id=? AND path=?)"}},
 	{chunk.Statements(), "unchunked", []any{1, "book", 50}, []string{"sources_by_fingerprint", "chunks_by_source"}},
 	{chunk.Statements(), "stale_recipe", []any{1, "book", `["epub-1","pdf-1"]`, 50}, []string{"sources_by_fingerprint"}},
 	{chunk.Statements(), "unembedded", []any{"model", 1, 0, 50}, []string{"chunks_by_vault", "vectors_of"}},

@@ -14,6 +14,7 @@ package text
 
 import (
 	"errors"
+	"fmt"
 	"path"
 	"sort"
 	"strings"
@@ -63,6 +64,19 @@ func (d *Document) Locate(offset int) string {
 		named = append(named, d.paged[i].Name)
 	}
 	return strings.Join(named, ", ")
+}
+
+// paging is what a page is called: what it prints on itself, and where it
+// stands in the file for a page that prints nothing.
+//
+// The two are said differently because they are different facts. A person told
+// a number looks for it on the page, and a number counted from the first is one
+// they will not find there.
+func paging(printed string, at int) string {
+	if printed != "" {
+		return printed
+	}
+	return fmt.Sprintf("page %d of the file", at+1)
 }
 
 func preceding(marks []mark, offset int) int {
@@ -123,8 +137,8 @@ func fromEPUB(raw []byte) (*Document, error) {
 		doc.Places = append(doc.Places, window.Place{Title: p.Title, Offset: p.Offset})
 		doc.named = append(doc.named, mark{Offset: p.Offset, Name: p.Title})
 	}
-	for _, p := range book.Pages {
-		doc.paged = append(doc.paged, mark{Offset: p.Offset, Name: p.Label})
+	for i, p := range book.Pages {
+		doc.paged = append(doc.paged, mark{Offset: p.Offset, Name: paging(p.Label, i)})
 	}
 	return doc, nil
 }
@@ -139,8 +153,8 @@ func fromPDF(raw []byte) (*Document, error) {
 		doc.Places = append(doc.Places, window.Place{Title: p.Title, Offset: p.Offset})
 		doc.named = append(doc.named, mark{Offset: p.Offset, Name: p.Title})
 	}
-	for _, p := range book.Pages {
-		doc.paged = append(doc.paged, mark{Offset: p.Offset, Name: p.Label})
+	for i, p := range book.Pages {
+		doc.paged = append(doc.paged, mark{Offset: p.Offset, Name: paging(p.Label, i)})
 	}
 	return doc, nil
 }

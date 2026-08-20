@@ -9,10 +9,10 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/pdf"
 )
 
-// The fixtures are five documents, and each is one thing a reader has to get
+// The fixtures are six documents, and each is one thing a reader has to get
 // right.
 //
-// Four of them are written out by hand, uncompressed and without a cross
+// Five of them are written out by hand, uncompressed and without a cross
 // reference table, which is what a great many files in the world look like
 // after a tool has half-written them: the library rebuilds what it needs, and a
 // person can read the fixture. `outline.pdf` is the exception. An outline's
@@ -22,6 +22,7 @@ const (
 	tiny    = "tiny.pdf"    // two pages of text, naming nothing
 	outline = "outline.pdf" // four pages, three of them named, one name inside another
 	labels  = "labels.pdf"  // front matter numbered apart from the body
+	turned  = "turned.pdf"  // a page drawn a quarter turn from the way its text is written
 	scan    = "scan.pdf"    // two pages that carry no text at all
 	prose   = "prose.txt"   // not a document
 )
@@ -77,12 +78,13 @@ func TestEveryPageIsNamed(t *testing.T) {
 		}
 	}
 
-	// A document naming none of its pages still names all of them: the number
-	// of the page is what it is called.
+	// A document naming none of its pages names none of them. Where a page
+	// stands in the file is where it stands among these, and a number counted
+	// from the first is not what the page prints.
 	plain := read(t, tiny)
 	for i, page := range plain.Pages {
-		if want := []string{"1", "2"}[i]; page.Label != want {
-			t.Errorf("page %d is called %q, want %q", i, page.Label, want)
+		if page.Label != "" {
+			t.Errorf("page %d is called %q by a document that calls it nothing", i, page.Label)
 		}
 	}
 }
@@ -193,11 +195,12 @@ func TestLocate(t *testing.T) {
 		at    int
 		place string
 		page  string
+		sheet int
 	}{
-		{name: "before every name", at: at("Front"), place: "", page: "1"},
-		{name: "at a name", at: at("Opening"), place: "The First Part", page: "2"},
-		{name: "inside a nested name", at: at("closer"), place: "A Closer Reading", page: "3"},
-		{name: "after the last name", at: at("Afterword"), place: "Afterword", page: "4"},
+		{name: "before every name", at: at("Front"), place: "", page: "", sheet: 0},
+		{name: "at a name", at: at("Opening"), place: "The First Part", page: "", sheet: 1},
+		{name: "inside a nested name", at: at("closer"), place: "A Closer Reading", page: "", sheet: 2},
+		{name: "after the last name", at: at("Afterword"), place: "Afterword", page: "", sheet: 3},
 	}
 	for _, c := range tests {
 		t.Run(c.name, func(t *testing.T) {
@@ -205,8 +208,13 @@ func TestLocate(t *testing.T) {
 			if where.Place != c.place {
 				t.Errorf("place is %q, want %q", where.Place, c.place)
 			}
+			// This document prints no page numbers, so where a page stands in
+			// the file is all there is to say about it.
 			if where.Page != c.page {
 				t.Errorf("page is %q, want %q", where.Page, c.page)
+			}
+			if where.At != c.sheet {
+				t.Errorf("page stands at %d in the file, want %d", where.At, c.sheet)
 			}
 		})
 	}
@@ -282,5 +290,40 @@ func TestReadingIsSafeFromSeveralGoroutines(t *testing.T) {
 		if got := <-done; got != want {
 			t.Errorf("one reading gave %q, want %q", got, want)
 		}
+	}
+}
+
+// A page says how big it is, and what it says is the size it is drawn at one of
+// its own units to the pixel. A page drawn a quarter turn from the way its text
+// is written is as wide as its text is high, and it says so.
+func TestAPageSaysHowBigItIs(t *testing.T) {
+	for _, name := range []string{tiny, turned, labels} {
+		t.Run(name, func(t *testing.T) {
+			held, err := pdf.Open(fixture(t, name))
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer held.Close()
+
+			for page := range held.Pages() {
+				wide, high, err := held.Size(page)
+				if err != nil {
+					t.Fatalf("page %d: %v", page, err)
+				}
+				drawn, err := held.Image(page, 72)
+				if err != nil {
+					t.Fatalf("page %d: %v", page, err)
+				}
+				if got := float64(drawn.Bounds().Dx()); got < wide-1 || got > wide+1 {
+					t.Errorf("page %d says it is %g across and is drawn %g", page, wide, got)
+				}
+				if got := float64(drawn.Bounds().Dy()); got < high-1 || got > high+1 {
+					t.Errorf("page %d says it is %g high and is drawn %g", page, high, got)
+				}
+			}
+			if _, _, err := held.Size(held.Pages()); err == nil {
+				t.Error("a page the document does not have was measured")
+			}
+		})
 	}
 }

@@ -367,9 +367,32 @@ func (q *Queries) Kept(ctx context.Context, recipe string, of [][]byte) (map[str
 // Recognised is one source whose text a producer made: where the file is, what
 // made the text, and the hash the files of that reading are kept under.
 type Recognised struct {
-	Path string
-	From string
-	Hash string
+	Path  string
+	From  string
+	Hash  string
+	Size  int64
+	MTime int64
+}
+
+// Reading is what one source's text came from, and false where the index holds
+// no source at that path.
+func (q *Queries) Reading(ctx context.Context, vaultID, path string) (Recognised, bool, error) {
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return Recognised{}, false, nil
+	}
+	if err != nil {
+		return Recognised{}, false, err
+	}
+	found := Recognised{Path: path}
+	err = q.db.QueryRowContext(ctx, stmt.Get("reading"), vault, path).Scan(&found.From, &found.Hash, &found.Size, &found.MTime)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Recognised{}, false, nil
+	}
+	if err != nil {
+		return Recognised{}, false, fmt.Errorf("reading %s: %w", path, err)
+	}
+	return found, true, nil
 }
 
 // Recognised is the sources of one kind whose text a producer made rather than

@@ -438,6 +438,18 @@ func words(vocabulary []string, n int) string {
 	return strings.Join(out, " ")
 }
 
+func (s *store) Reading(_ context.Context, vaultID, path string) (port.Recognised, bool, error) {
+	src, held := s.sources[vaultID][path]
+	if !held {
+		return port.Recognised{}, false, nil
+	}
+	// The row says what the file was when it was read, as the query does.
+	return port.Recognised{
+		Path: path, From: src.TextFrom, Hash: src.Hash,
+		Size: src.Ref.Size, MTime: src.Ref.MTime,
+	}, true, nil
+}
+
 func (s *store) Recognised(_ context.Context, vaultID string, kind domain.SourceKind) ([]port.Recognised, error) {
 	var out []port.Recognised
 	for path, src := range s.sources[vaultID] {

@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/ocr"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/pdf"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/text"
 )
@@ -143,7 +144,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 		for i := range found {
 			found[i].Start += prose
 		}
-		if err := store.Append(ctx, boxes, ocr.Pack(found)); err != nil {
+		if err := store.Append(ctx, boxes, placed.Pack(found)); err != nil {
 			return err
 		}
 		if err := store.Append(ctx, partial, marked(written, res.Read)); err != nil {
@@ -169,11 +170,15 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 		if err != nil {
 			return res, fmt.Errorf("read page %d of %s: %w", index+1, path, err)
 		}
+		// The number a page prints on itself is not prose, and leaves the
+		// page's blocks with the region that printed it.
+		number, prose := ocr.Number(blocks)
 		pages = append(pages, ocr.Page{
 			At:     index,
-			Label:  scan.Label(index),
+			Label:  scan.Labelled(index),
+			Number: number,
 			Size:   drawn.Bounds().Size(),
-			Blocks: blocks,
+			Blocks: prose,
 		})
 
 		res.Read = index + 1
@@ -268,8 +273,8 @@ func trimmed(ctx context.Context, store port.DerivedStore, name string, done int
 	if err != nil {
 		return err
 	}
-	held := ocr.Unpack(raw)
-	kept := make([]ocr.Box, 0, len(held))
+	held := placed.Unpack(raw)
+	kept := make([]placed.Box, 0, len(held))
 	for _, box := range held {
 		if box.Page < done {
 			kept = append(kept, box)
@@ -278,7 +283,7 @@ func trimmed(ctx context.Context, store port.DerivedStore, name string, done int
 	// Written back whatever was dropped. An append that did not land whole
 	// leaves bytes that are not a record, and every record appended after them
 	// is read at a shifted offset.
-	return store.Write(ctx, name, ocr.Pack(kept))
+	return store.Write(ctx, name, placed.Pack(kept))
 }
 
 // claim records which producer made this source's text.
