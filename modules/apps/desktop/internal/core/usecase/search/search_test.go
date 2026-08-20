@@ -191,7 +191,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	c.vectorise(t, c.first, leaning())
 	c.vectorise(t, c.second, pointing(+1))
 
-	// The meaning half answers with the whole table's best k, so this is where a
+	// A search by meaning answers with the whole table's best k, so this is where a
 	// lost filter shows.
 	dense := c.db.ChunkQueries()
 	near, err := dense.Nearest(ctx, c.first.ID, model.Recipe(), pointing(+1), nil, 20, search.DefaultFloor)
@@ -209,7 +209,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	}
 
 	// A full-text match runs across the whole table, and "shared" is in both
-	// vaults, so this is where a lost filter shows for the words half.
+	// vaults, so this is where a lost filter shows for a search by words.
 	words, err := dense.Lexical(ctx, c.second.ID, "shared", nil, 20, false)
 	if err != nil {
 		t.Fatal(err)
@@ -219,7 +219,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	}
 	for _, p := range words {
 		if !strings.Contains(p.Source, "Quasar") {
-			t.Errorf("the words half answered with %s, which is not the second vault's", p.Source)
+			t.Errorf("a search by words answered with %s, which is not the second vault's", p.Source)
 		}
 	}
 
@@ -346,7 +346,7 @@ func (c corpus) sectioned(t *testing.T, v domain.Vault, path string) {
 }
 
 func TestASearchAnswersWithTheSectionAskedAbout(t *testing.T) {
-	// The words half ranks by how often the words appear, so a paragraph in the
+	// A search by words ranks by how often the words appear, so a paragraph in the
 	// middle of a chapter outranks the chapter's own opening. Asked where a book
 	// speaks about a thing, what a person wants is the section about it.
 	ctx := t.Context()
@@ -358,7 +358,7 @@ func TestASearchAnswersWithTheSectionAskedAbout(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(words) == 0 || words[0].Start == 0 {
-		t.Fatalf("the words half answers with %+v, and this proves nothing", words)
+		t.Fatalf("a search by words answers with %+v, and this proves nothing", words)
 	}
 
 	found, err := c.search(nil).Execute(ctx, c.first, "Madhavendra Puri", search.Parameters{})
@@ -377,7 +377,7 @@ func TestASearchAnswersWithTheSectionAskedAbout(t *testing.T) {
 }
 
 func TestANameThatMatchesNoSectionChangesNothing(t *testing.T) {
-	// The names half answers about sections alone. A question about words that
+	// A search by name answers about sections alone. A question about words that
 	// name no section is the search there was before it.
 	ctx := t.Context()
 	c := indexed(t)
@@ -395,13 +395,13 @@ func TestANameThatMatchesNoSectionChangesNothing(t *testing.T) {
 	}
 }
 
-func TestTheMeaningHalfAnswersWhereTheWordsHalfCannot(t *testing.T) {
+func TestASearchByMeaningAnswersWhereWordsCannot(t *testing.T) {
 	// A vector is kept under the recipe it was made by, which is everything
 	// about the model that decides what a vector is. Asked under anything else
 	// — a name, a name and a width — no vector is found and this half answers
 	// nothing at all, silently, for ever.
 	//
-	// Every other test here has a query the words half can answer, so a meaning
+	// Every other test here has a query a search by words can answer, so a meaning
 	// half that answered nothing was a search that still looked right.
 	ctx := t.Context()
 	c := indexed(t)
@@ -414,7 +414,7 @@ func TestTheMeaningHalfAnswersWhereTheWordsHalfCannot(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(words) != 0 {
-		t.Fatalf("the words half answered %d passages to a word nothing says", len(words))
+		t.Fatalf("a search by words answered %d passages to a word nothing says", len(words))
 	}
 
 	found, err := c.search(oneWay{pointing(+1)}).Execute(ctx, c.first, unsaid, search.Parameters{})
@@ -422,14 +422,14 @@ func TestTheMeaningHalfAnswersWhereTheWordsHalfCannot(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(found) == 0 {
-		t.Fatal("the meaning half answered nothing, so the search is its words half alone")
+		t.Fatal("a search by meaning answered nothing, so the search is its words alone")
 	}
 }
 
-func TestTheMeaningHalfIsAskedUnderTheRecipeAVectorIsKeptBy(t *testing.T) {
+func TestASearchByMeaningAsksUnderTheRecipeAVectorIsKeptBy(t *testing.T) {
 	// The recipe is what the vector was written under. A search asking under
 	// anything else joins on nothing, and the failure is silence rather than an
-	// error: the words half answers and the search looks like it worked.
+	// error: a search by words answers and the search looks like it worked.
 	ctx := t.Context()
 	c := indexed(t)
 	c.vectorise(t, c.first, pointing(+1))
@@ -493,9 +493,9 @@ func TestAQuestionAboutBooksIsAnsweredFromBooks(t *testing.T) {
 	}
 }
 
-func TestEveryHalfIsToldWhichKindsAQuestionIsAbout(t *testing.T) {
+func TestEveryWayIsToldWhichKindsAQuestionIsAbout(t *testing.T) {
 	// One half left unfiltered answers about the wrong kind, and the fused
-	// order carries it: a half that ignores the kind is a half that undoes it.
+	// order carries it: a way that ignores the kind is a half that undoes it.
 	ctx := t.Context()
 	c := indexed(t)
 	c.sectioned(t, c.first, "notes/Entropy.md")
@@ -508,7 +508,7 @@ func TestEveryHalfIsToldWhichKindsAQuestionIsAbout(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(words) != 0 {
-		t.Errorf("the words half answered %d passages about books in a vault of notes", len(words))
+		t.Errorf("a search by words answered %d passages about books in a vault of notes", len(words))
 	}
 
 	named, err := queries.Named(ctx, c.first.ID, "Madhavendra Puri", books, 20, false)
@@ -516,7 +516,7 @@ func TestEveryHalfIsToldWhichKindsAQuestionIsAbout(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(named) != 0 {
-		t.Errorf("the names half answered %d sections of books in a vault of notes", len(named))
+		t.Errorf("a search by name answered %d sections of books in a vault of notes", len(named))
 	}
 
 	dense, err := queries.Nearest(ctx, c.first.ID, model.Recipe(), pointing(+1), books, 20, -1)
@@ -524,6 +524,6 @@ func TestEveryHalfIsToldWhichKindsAQuestionIsAbout(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(dense) != 0 {
-		t.Errorf("the meaning half answered %d passages of books in a vault of notes", len(dense))
+		t.Errorf("a search by meaning answered %d passages of books in a vault of notes", len(dense))
 	}
 }

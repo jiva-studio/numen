@@ -270,7 +270,7 @@ func Clear(ctx context.Context, tx *sql.Tx, source int64) error {
 // are gone come out last.
 //
 // Every window written is indexed for the words it holds, large and small alike,
-// so that the lexical and the dense half of a search name one kind of row.
+// so that a search asked by words and one asked by meaning name one kind of row.
 func Replace(ctx context.Context, tx *sql.Tx, source, vault int64, windows []Window) error {
 	held, err := chunksOf(ctx, tx, source)
 	if err != nil {

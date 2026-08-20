@@ -52,7 +52,7 @@ func TestBlankInputProducesNoExpression(t *testing.T) {
 }
 
 func TestAFinishedQuestionIsAskedExactly(t *testing.T) {
-	// The lexical half is what answers a question spelled precisely. An agent
+	// A search by words is what answers a question spelled precisely. An agent
 	// asking whether a word is in the vault is asking about that word.
 	if got, want := Expression("наставник", false), `"наставник"`; got != want {
 		t.Errorf("got %q, want %q", got, want)

@@ -51,15 +51,15 @@ export interface Passage {
   at: readonly Span[]
 }
 
-/** Which half of a search over the text runs. */
-export type Half = 'words' | 'meaning'
+/** How a search over the text is asked. */
+export type Way = 'words' | 'meaning'
 
 /** The two questions the palette asks of the vault. */
 export interface Asking {
   /** The names in the vault that match: a note’s own title, and its headings. */
   names(query: string, limit: number): Promise<readonly Named[]>
-  /** The text the vault holds that answers, by one half of a search. */
-  search(query: string, half: Half, limit: number): Promise<readonly Passage[]>
+  /** The text the vault holds that answers, asked one way. */
+  search(query: string, way: Way, limit: number): Promise<readonly Passage[]>
 }
 
 /** Everything the palette says in the window's voice. */

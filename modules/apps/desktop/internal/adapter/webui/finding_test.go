@@ -65,7 +65,7 @@ func TestAHeadingIsFoundWithTheLineItStandsOn(t *testing.T) {
 	}
 }
 
-func TestEachHalfIsAskedByItself(t *testing.T) {
+func TestEachWayIsAskedByItself(t *testing.T) {
 	client, _ := opened(t, map[string]string{
 		"engine.md": "# Engines\n\nNo engine beats a reversible engine.\n",
 	})
@@ -74,7 +74,7 @@ func TestEachHalfIsAskedByItself(t *testing.T) {
 	// the words half answers on its own. Which is which is the handler's to get
 	// right: both halves answer with the same shape.
 	words, err := client.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{
-		Query: "reversible", Half: v1.Half_HALF_WORDS,
+		Query: "reversible", Way: v1.Way_WAY_WORDS,
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -84,7 +84,7 @@ func TestEachHalfIsAskedByItself(t *testing.T) {
 	}
 
 	meaning, err := client.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{
-		Query: "reversible", Half: v1.Half_HALF_MEANING,
+		Query: "reversible", Way: v1.Way_WAY_MEANING,
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -100,7 +100,7 @@ func TestAPassageSaysWhichNoteItCameOutOf(t *testing.T) {
 	})
 
 	answer, err := client.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{
-		Query: "reversible", Half: v1.Half_HALF_WORDS,
+		Query: "reversible", Way: v1.Way_WAY_WORDS,
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -130,7 +130,7 @@ func TestAPassageSaysWhereInItsSourceItStands(t *testing.T) {
 	})
 
 	answer, err := client.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{
-		Query: "reversible", Half: v1.Half_HALF_WORDS,
+		Query: "reversible", Way: v1.Way_WAY_WORDS,
 	}))
 	if err != nil {
 		t.Fatal(err)

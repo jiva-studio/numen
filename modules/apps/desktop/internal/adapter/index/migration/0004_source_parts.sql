@@ -1,7 +1,7 @@
 -- The names of the parts a source divides into, so that a section is something
 -- a person can find and not only a label an answer carries.
 --
--- The words half ranks a chunk by how often the words appear in it, and a
+-- A search asked by words ranks a chunk by how often they appear in it, and a
 -- chapter's opening paragraph says its subject once — in the heading — while a
 -- paragraph in the middle of it says it four times. Asked where a book speaks
 -- about a thing, the index answered with the densest paragraph and not with the

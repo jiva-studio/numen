@@ -21,7 +21,7 @@ export interface Reading {
 
 /** The sentences the corner draws that are the window's own. */
 export interface Words {
-  /** Half the search is missing and nothing is going to bring it. */
+  /** One way of asking is missing and nothing is going to bring it. */
   readonly words: string
 }
 

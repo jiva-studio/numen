@@ -7,7 +7,7 @@
  * band that failed must not take the other two down with it.
  */
 import { describe, expect, it } from 'vitest'
-import { finding, type Asking, type Half, type Named, type Passage, type Words } from './finding'
+import { finding, type Asking, type Way, type Named, type Passage, type Words } from './finding'
 
 const WORDS: Words = {
   names: 'Names',
@@ -41,7 +41,7 @@ function later<T>(): Later<T> {
 /** A vault that answers when the test says so, and remembers what it was asked. */
 function asking() {
   const names: Later<readonly Named[]>[] = []
-  const searched: { half: Half; answer: Later<readonly Passage[]> }[] = []
+  const searched: { way: Way; answer: Later<readonly Passage[]> }[] = []
   const queries: string[] = []
 
   const core: Asking = {
@@ -51,16 +51,16 @@ function asking() {
       names.push(one)
       return one.promise
     },
-    search: (query, half) => {
+    search: (query, way) => {
       queries.push(query)
       const one = later<readonly Passage[]>()
-      searched.push({ half, answer: one })
+      searched.push({ way, answer: one })
       return one.promise
     },
   }
 
-  const half = (which: Half) => searched.find((one) => one.half === which)?.answer
-  return { core, names, searched, queries, half }
+  const way = (which: Way) => searched.find((one) => one.way === which)?.answer
+  return { core, names, searched, queries, way }
 }
 
 /** Nothing waits in a test; the hold is a clock and the clock is handed in. */
@@ -114,7 +114,7 @@ describe('asking', () => {
     await settled()
 
     expect(vault.names).toHaveLength(1)
-    expect(vault.searched.map((one) => one.half)).toEqual(['words', 'meaning'])
+    expect(vault.searched.map((one) => one.way)).toEqual(['words', 'meaning'])
     expect(new Set(vault.queries)).toEqual(new Set(['ent']))
   })
 
@@ -185,7 +185,7 @@ describe('answers arriving', () => {
     void palette.typing('ent')
     await settled()
 
-    vault.half('meaning')?.fails('no model is set')
+    vault.way('meaning')?.fails('no model is set')
     vault.names[0]?.answers([named()])
     await settled()
 
@@ -235,7 +235,7 @@ describe('where a thing found takes the person', () => {
       named(),
       named({ path: 'notes/carnot.md', title: 'The Carnot cycle', heading: 'Entropy here', line: 12 }),
     ])
-    vault.half('words')?.answers([passage()])
+    vault.way('words')?.answers([passage()])
     await settled()
     return palette
   }
@@ -299,7 +299,7 @@ describe('what a key reaches, per kind of thing found', () => {
     await settled()
 
     vault.names[0]?.answers([named(), named({ heading: 'Entropy here', line: 12 })])
-    vault.half('words')?.answers([passage()])
+    vault.way('words')?.answers([passage()])
     await settled()
 
     const acts = (band: string, at: number) =>
@@ -320,7 +320,7 @@ describe('a passage from something that is not a note', () => {
     void palette.typing('war')
     await settled()
 
-    vault.half('words')?.answers([
+    vault.way('words')?.answers([
       passage({
         path: 'library/mahabharata.epub',
         title: '',
@@ -361,7 +361,7 @@ describe('a band landing under the keyboard', () => {
     void palette.typing('war')
     await settled()
 
-    vault.half('words')?.answers([passage({ path: 'notes/heat.md' })])
+    vault.way('words')?.answers([passage({ path: 'notes/heat.md' })])
     await settled()
     const before = bandOf(palette.bands.value, 'text')!.items[0]!.id
 
@@ -369,7 +369,7 @@ describe('a band landing under the keyboard', () => {
     void palette.typing('war ')
     await settled()
     vault.searched
-      .filter((one) => one.half === 'words')
+      .filter((one) => one.way === 'words')
       .at(-1)
       ?.answer.answers([
         passage({ path: 'notes/fire.md', title: 'Fire' }),

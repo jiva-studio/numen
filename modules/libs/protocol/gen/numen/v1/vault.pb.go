@@ -161,57 +161,63 @@ func (Seat) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{1}
 }
 
-// Half is which half of a search runs.
-type Half int32
+// Way is how a search is asked. Each way is an order of its own, and a search
+// asked every way fuses them into one.
+type Way int32
 
 const (
-	// Both halves run, and what they answer is merged into one ranking.
-	Half_HALF_UNSPECIFIED Half = 0
+	// Every way, fused into one ranking.
+	Way_WAY_UNSPECIFIED Way = 0
 	// The words typed, matched as words.
-	Half_HALF_WORDS Half = 1
+	Way_WAY_WORDS Way = 1
 	// What the words mean, matched against the vectors the index holds. A vault
 	// nothing has embedded answers with nothing.
-	Half_HALF_MEANING Half = 2
+	Way_WAY_MEANING Way = 2
+	// The names of the sections a source divides into. A hit is the section, and
+	// it answers at its own beginning.
+	Way_WAY_NAMES Way = 3
 )
 
-// Enum value maps for Half.
+// Enum value maps for Way.
 var (
-	Half_name = map[int32]string{
-		0: "HALF_UNSPECIFIED",
-		1: "HALF_WORDS",
-		2: "HALF_MEANING",
+	Way_name = map[int32]string{
+		0: "WAY_UNSPECIFIED",
+		1: "WAY_WORDS",
+		2: "WAY_MEANING",
+		3: "WAY_NAMES",
 	}
-	Half_value = map[string]int32{
-		"HALF_UNSPECIFIED": 0,
-		"HALF_WORDS":       1,
-		"HALF_MEANING":     2,
+	Way_value = map[string]int32{
+		"WAY_UNSPECIFIED": 0,
+		"WAY_WORDS":       1,
+		"WAY_MEANING":     2,
+		"WAY_NAMES":       3,
 	}
 )
 
-func (x Half) Enum() *Half {
-	p := new(Half)
+func (x Way) Enum() *Way {
+	p := new(Way)
 	*p = x
 	return p
 }
 
-func (x Half) String() string {
+func (x Way) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (Half) Descriptor() protoreflect.EnumDescriptor {
+func (Way) Descriptor() protoreflect.EnumDescriptor {
 	return file_numen_v1_vault_proto_enumTypes[2].Descriptor()
 }
 
-func (Half) Type() protoreflect.EnumType {
+func (Way) Type() protoreflect.EnumType {
 	return &file_numen_v1_vault_proto_enumTypes[2]
 }
 
-func (x Half) Number() protoreflect.EnumNumber {
+func (x Way) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use Half.Descriptor instead.
-func (Half) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use Way.Descriptor instead.
+func (Way) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{2}
 }
 
@@ -1596,7 +1602,7 @@ type SearchRequest struct {
 	Query string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
 	// How many passages to answer with. Zero takes the number the vault chooses.
 	Limit         int32 `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
-	Half          Half  `protobuf:"varint,3,opt,name=half,proto3,enum=numen.v1.Half" json:"half,omitempty"`
+	Way           Way   `protobuf:"varint,3,opt,name=way,proto3,enum=numen.v1.Way" json:"way,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1645,11 +1651,11 @@ func (x *SearchRequest) GetLimit() int32 {
 	return 0
 }
 
-func (x *SearchRequest) GetHalf() Half {
+func (x *SearchRequest) GetWay() Way {
 	if x != nil {
-		return x.Half
+		return x.Way
 	}
-	return Half_HALF_UNSPECIFIED
+	return Way_WAY_UNSPECIFIED
 }
 
 type SearchResponse struct {
@@ -2717,11 +2723,11 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x04line\x18\x02 \x01(\x05R\x04line\"*\n" +
 	"\x04Span\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\x05R\x04from\x12\x0e\n" +
-	"\x02to\x18\x02 \x01(\x05R\x02to\"_\n" +
+	"\x02to\x18\x02 \x01(\x05R\x02to\"\\\n" +
 	"\rSearchRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
-	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\"\n" +
-	"\x04half\x18\x03 \x01(\x0e2\x0e.numen.v1.HalfR\x04half\"9\n" +
+	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x1f\n" +
+	"\x03way\x18\x03 \x01(\x0e2\r.numen.v1.WayR\x03way\"9\n" +
 	"\x0eSearchResponse\x12'\n" +
 	"\x05found\x18\x01 \x03(\v2\x11.numen.v1.PassageR\x05found\"\xcd\x01\n" +
 	"\aPassage\x12\x12\n" +
@@ -2805,12 +2811,12 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\n" +
 	"SEAT_CHILD\x10\x02\x12\r\n" +
 	"\tSEAT_JUMP\x10\x03\x12\x10\n" +
-	"\fSEAT_SIBLING\x10\x04*>\n" +
-	"\x04Half\x12\x14\n" +
-	"\x10HALF_UNSPECIFIED\x10\x00\x12\x0e\n" +
-	"\n" +
-	"HALF_WORDS\x10\x01\x12\x10\n" +
-	"\fHALF_MEANING\x10\x02*?\n" +
+	"\fSEAT_SIBLING\x10\x04*I\n" +
+	"\x03Way\x12\x13\n" +
+	"\x0fWAY_UNSPECIFIED\x10\x00\x12\r\n" +
+	"\tWAY_WORDS\x10\x01\x12\x0f\n" +
+	"\vWAY_MEANING\x10\x02\x12\r\n" +
+	"\tWAY_NAMES\x10\x03*?\n" +
 	"\x04Owed\x12\x14\n" +
 	"\x10OWED_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fOWED_WRITTEN\x10\x01\x12\x0f\n" +
@@ -2849,7 +2855,7 @@ var file_numen_v1_vault_proto_msgTypes = make([]protoimpl.MessageInfo, 41)
 var file_numen_v1_vault_proto_goTypes = []any{
 	(Refusal)(0),                  // 0: numen.v1.Refusal
 	(Seat)(0),                     // 1: numen.v1.Seat
-	(Half)(0),                     // 2: numen.v1.Half
+	(Way)(0),                      // 2: numen.v1.Way
 	(Owed)(0),                     // 3: numen.v1.Owed
 	(*Note)(nil),                  // 4: numen.v1.Note
 	(*Seated)(nil),                // 5: numen.v1.Seated
@@ -2905,7 +2911,7 @@ var file_numen_v1_vault_proto_depIdxs = []int32{
 	4,  // 8: numen.v1.Named.note:type_name -> numen.v1.Note
 	25, // 9: numen.v1.Named.heading:type_name -> numen.v1.Heading
 	26, // 10: numen.v1.Named.at:type_name -> numen.v1.Span
-	2,  // 11: numen.v1.SearchRequest.half:type_name -> numen.v1.Half
+	2,  // 11: numen.v1.SearchRequest.way:type_name -> numen.v1.Way
 	29, // 12: numen.v1.SearchResponse.found:type_name -> numen.v1.Passage
 	4,  // 13: numen.v1.Passage.note:type_name -> numen.v1.Note
 	26, // 14: numen.v1.Passage.at:type_name -> numen.v1.Span

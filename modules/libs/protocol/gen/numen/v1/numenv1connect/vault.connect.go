@@ -91,8 +91,8 @@ type VaultServiceClient interface {
 	// Search, and that answers with passages.
 	Names(context.Context, *connect.Request[v1.NamesRequest]) (*connect.Response[v1.NamesResponse], error)
 	// Search is the text a vault holds that answers what was typed, by the words
-	// in it or by what it means. The caller says which half runs, so a client
-	// drawing the two apart asks twice.
+	// in it or by what it means or by what a section is called. The caller says
+	// which way it is asked, so a client drawing them apart asks once for each.
 	Search(context.Context, *connect.Request[v1.SearchRequest]) (*connect.Response[v1.SearchResponse], error)
 	// Changes reports the notes that changed on disk, for as long as the caller
 	// listens. It says which notes, and nothing about them: the caller knows
@@ -355,8 +355,8 @@ type VaultServiceHandler interface {
 	// Search, and that answers with passages.
 	Names(context.Context, *connect.Request[v1.NamesRequest]) (*connect.Response[v1.NamesResponse], error)
 	// Search is the text a vault holds that answers what was typed, by the words
-	// in it or by what it means. The caller says which half runs, so a client
-	// drawing the two apart asks twice.
+	// in it or by what it means or by what a section is called. The caller says
+	// which way it is asked, so a client drawing them apart asks once for each.
 	Search(context.Context, *connect.Request[v1.SearchRequest]) (*connect.Response[v1.SearchResponse], error)
 	// Changes reports the notes that changed on disk, for as long as the caller
 	// listens. It says which notes, and nothing about them: the caller knows

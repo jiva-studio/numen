@@ -82,7 +82,7 @@ func kinds(chosen []domain.SourceKind) (string, error) {
 	return string(raw), nil
 }
 
-// Lexical is the words half of a search: the chunks of one vault whose text
+// Lexical is a search asked by words: the chunks of one vault whose text
 // matches what was typed, best first.
 //
 // What comes back is the large window enclosing each hit, which is what a
@@ -91,7 +91,7 @@ func (q *Queries) Lexical(ctx context.Context, vaultID, query string, of []domai
 	if limit <= 0 {
 		// How many candidates to keep is a retrieval decision. The caller makes
 		// it, and arriving here without one is a mistake in the caller.
-		return nil, fmt.Errorf("the lexical half needs a positive limit, got %d", limit)
+		return nil, fmt.Errorf("a search by words needs a positive limit, got %d", limit)
 	}
 	expression := Expression(query, growing)
 	if expression == "" {
@@ -135,7 +135,7 @@ func (q *Queries) Lexical(ctx context.Context, vaultID, query string, of []domai
 // name most often.
 func (q *Queries) Named(ctx context.Context, vaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error) {
 	if limit <= 0 {
-		return nil, fmt.Errorf("the names half needs a positive limit, got %d", limit)
+		return nil, fmt.Errorf("a search by name needs a positive limit, got %d", limit)
 	}
 	expression := Expression(query, growing)
 	if expression == "" {
@@ -170,7 +170,7 @@ func (q *Queries) Named(ctx context.Context, vaultID, query string, of []domain.
 	return out, rows.Err()
 }
 
-// Nearest is the meaning half of a search: the chunks of one vault nearest a
+// Nearest is a search asked by meaning: the chunks of one vault nearest a
 // query vector, nearest first, at most `limit` of them.
 //
 // The coarse pass over the bit vectors keeps several times that many, and the
@@ -179,7 +179,7 @@ func (q *Queries) Named(ctx context.Context, vaultID, query string, of []domain.
 // with nothing.
 func (q *Queries) Nearest(ctx context.Context, vaultID, recipe string, query []float32, of []domain.SourceKind, limit int, floor float64) ([]domain.Passage, error) {
 	if limit <= 0 {
-		return nil, fmt.Errorf("the meaning half needs a positive limit, got %d", limit)
+		return nil, fmt.Errorf("a search by meaning needs a positive limit, got %d", limit)
 	}
 	if len(query) == 0 {
 		return nil, nil

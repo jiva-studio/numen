@@ -13,7 +13,7 @@ import (
 // defaultLimit is how many results a caller that names no number gets.
 const defaultLimit = 20
 
-// lexicalCandidates is how many candidates the words half keeps for every result
+// lexicalCandidates is how many candidates the words keep for every result
 // the search returns, so the answer is among what it ranks.
 const lexicalCandidates = 5
 
@@ -27,18 +27,18 @@ const lexicalCandidates = 5
 // and another model puts them somewhere else.
 const DefaultFloor = 0.50
 
-// Parameters says which halves of a search run, how many candidates each keeps,
+// Parameters says which ways a search is asked, how many candidates each keeps,
 // and what a candidate has to reach. A half that keeps none does not run; with
 // neither named, both run.
 type Parameters struct {
 	// Limit is how many results come back, one per document.
 	Limit int
-	// Lexical is how many candidates the words half keeps, and Dense how many
-	// passages the meaning half returns. The coarse pass under it keeps several
+	// Lexical is how many candidates the words keep, and Dense how many passages
+	// the meaning returns. The coarse pass under it keeps several
 	// times as many, and the full-precision vectors order those.
 	Lexical int
 	Dense   int
-	// Named is how many sections the names half keeps. A document has far fewer
+	// Named is how many sections the names keep. A document has far fewer
 	// sections than chunks, and one name matching is a strong thing to have
 	// said, so a few of them are enough.
 	Named int
@@ -110,12 +110,12 @@ func New(passages port.PassageQueries, readers port.VaultReaders, derived port.D
 	}
 }
 
-// Execute runs the halves the parameters name, merges their rankings by rank,
+// Execute runs the ways the parameters name, merges their rankings by rank,
 // and returns one passage per document.
 //
-// Three halves, which is a way of saying three orders. The words in a chunk, the
-// meaning of a chunk, and the name of the section a chunk opens: a chunk that
-// two of them place well outranks one that any of them placed first alone.
+// Three orders: the words in a chunk, the meaning of a chunk, and the name of
+// the section a chunk opens. A chunk that two of them place well outranks one
+// that any of them placed first alone.
 func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.Passage, error) {
 	if p.Floor == 0 {
 		p.Floor = u.floor
@@ -147,7 +147,7 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 	return u.read(ctx, v, collapse(merge(rankings...), p.Limit))
 }
 
-// nearest is the meaning half, over a vector of the query itself.
+// nearest is the search asked by meaning, over a vector of the query itself.
 func (u Search) nearest(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.Passage, error) {
 	vectors, err := u.embedder.Embed(ctx, []string{query})
 	if err != nil {
@@ -248,29 +248,37 @@ func span(raw string, start, length int) string {
 	return raw[start:end]
 }
 
-// Half is which half of a search a caller wants run.
-type Half int
+// Way is how a search is asked. Each way is an order of its own, and a search
+// asked every way fuses them into one.
+type Way int
 
 const (
-	// Both run, and what they answer is merged into one ranking.
-	Both Half = iota
-	// Words alone: what is written, matched as words.
-	Words
-	// Meaning alone: what the query means, against the vectors the index holds.
-	Meaning
+	// EveryWay: all of them, fused into one ranking.
+	EveryWay Way = iota
+	// ByWords: what is written, matched as words.
+	ByWords
+	// ByMeaning: what the query means, against the vectors the index holds.
+	ByMeaning
+	// ByName: the names of the sections a source divides into.
+	ByName
 )
 
-// Typing is the parameters for a search of the half named, asked while a person
-// is still typing it: the last word is matched by its opening. The half that is
-// not wanted keeps no candidates, which is how a half is told not to run.
-func Typing(half Half, limit int) Parameters {
+// Typing is the parameters for a search asked the way named, while a person is
+// still typing it: the last word is matched by its opening.
+//
+// A way that is not wanted keeps no candidates, which is how a way is told not
+// to run. Every way but the one named is silenced, so a caller drawing the ways
+// apart is shown one of them and not one and a half.
+func Typing(way Way, limit int) Parameters {
 	p := Parameters{Limit: limit, Growing: true}.filled()
-	switch half {
-	case Words:
-		p.Dense = 0
-	case Meaning:
-		p.Lexical = 0
-	case Both:
+	switch way {
+	case ByWords:
+		p.Dense, p.Named = 0, 0
+	case ByMeaning:
+		p.Lexical, p.Named = 0, 0
+	case ByName:
+		p.Lexical, p.Dense = 0, 0
+	case EveryWay:
 	}
 	return p
 }

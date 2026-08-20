@@ -49,7 +49,7 @@ func (a *API) Names(ctx context.Context, r *connect.Request[v1.NamesRequest]) (*
 
 // Search hands the client the text the vault holds that answers what was typed.
 //
-// Which half runs is the client's, so a client drawing what is written apart
+// Which way it is asked is the client's, so a client drawing what is written apart
 // from what it means asks twice and each answer fills its own list.
 func (a *API) Search(ctx context.Context, r *connect.Request[v1.SearchRequest]) (*connect.Response[v1.SearchResponse], error) {
 	if a.Finds == nil {
@@ -61,7 +61,7 @@ func (a *API) Search(ctx context.Context, r *connect.Request[v1.SearchRequest]) 
 	}
 
 	found, err := a.Finds.Execute(ctx, a.Vault,
-		query, search.Typing(halfOf(r.Msg.GetHalf()), atMost(r.Msg.GetLimit())))
+		query, search.Typing(wayOf(r.Msg.GetWay()), atMost(r.Msg.GetLimit())))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -97,17 +97,19 @@ func (a *API) Search(ctx context.Context, r *connect.Request[v1.SearchRequest]) 
 	return connect.NewResponse(out), nil
 }
 
-// halfOf is the half the client named, as the use case names it.
-func halfOf(half v1.Half) search.Half {
-	switch half {
-	case v1.Half_HALF_WORDS:
-		return search.Words
-	case v1.Half_HALF_MEANING:
-		return search.Meaning
-	case v1.Half_HALF_UNSPECIFIED:
-		return search.Both
+// wayOf is the way the client named, as the use case names it.
+func wayOf(way v1.Way) search.Way {
+	switch way {
+	case v1.Way_WAY_WORDS:
+		return search.ByWords
+	case v1.Way_WAY_MEANING:
+		return search.ByMeaning
+	case v1.Way_WAY_NAMES:
+		return search.ByName
+	case v1.Way_WAY_UNSPECIFIED:
+		return search.EveryWay
 	}
-	return search.Both
+	return search.EveryWay
 }
 
 // atMost is how many answers to give, from what the client asked for.

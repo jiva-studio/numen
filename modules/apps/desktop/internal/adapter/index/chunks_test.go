@@ -193,7 +193,7 @@ func TestTheCoarsePassStaysInsideItsVault(t *testing.T) {
 	}
 }
 
-func TestTheWordsHalfStaysInsideItsVault(t *testing.T) {
+func TestASearchByWordsStaysInsideItsVault(t *testing.T) {
 	// One database holds every vault, and a full-text match runs across the
 	// whole table: the vault is a filter on the match, and a query that forgets
 	// it answers with another vault's passages.
@@ -1249,7 +1249,7 @@ func TestOnlyTheWindowThatOpensASectionCarriesItsName(t *testing.T) {
 	}
 }
 
-func TestTheNamesHalfStaysInsideItsVault(t *testing.T) {
+func TestASearchByNameStaysInsideItsVault(t *testing.T) {
 	ctx := t.Context()
 	db := opened(t)
 	sectioned(t, db, first, "library/chaitanya.pdf")

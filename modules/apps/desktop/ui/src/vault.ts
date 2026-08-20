@@ -6,9 +6,9 @@
  */
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
-import { Half as Halves, Owed, Refusal, VaultService } from '@numen/protocol'
+import { Owed, Refusal, VaultService, Way as Ways } from '@numen/protocol'
 import { asSeat } from './plex'
-import type { Asking, Half } from './finding'
+import type { Asking, Way } from './finding'
 import type { Documents, Marked, Sheet } from './reading'
 import type { Answered, Core, Made, NewLink, Refused } from './showing'
 
@@ -74,9 +74,9 @@ export const core: Core & Asking = {
       at: one.at.map(run),
     }))
   },
-  /** The text the vault holds that answers what is typed, by one half. */
-  search: async (query, half, limit) => {
-    const answer = await vault.search({ query, limit, half: halves[half] })
+  /** The text the vault holds that answers what is typed, asked one way. */
+  search: async (query, way, limit) => {
+    const answer = await vault.search({ query, limit, way: ways[way] })
     return answer.found.map((one) => ({
       path: one.path,
       title: one.note?.title ?? '',
@@ -137,10 +137,10 @@ const served = async (address: string): Promise<Response> => {
 
 const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
 
-/** Which half of a search runs, as the schema names it. */
-const halves: Record<Half, Halves> = {
-  words: Halves.WORDS,
-  meaning: Halves.MEANING,
+/** How a search is asked, as the schema names it. */
+const ways: Record<Way, Ways> = {
+  words: Ways.WORDS,
+  meaning: Ways.MEANING,
 }
 
 /** A run of text, kept as the plain pair the window carries it as. */

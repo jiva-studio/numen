@@ -168,7 +168,7 @@ func TestWithNoEmbedderTheTextIsCutAndNothingFails(t *testing.T) {
 	// What the words half answers over is there all the same.
 	for _, chunk := range small {
 		if chunk.text == "" {
-			t.Fatalf("chunk %d holds no text for the words half of a search", chunk.id)
+			t.Fatalf("chunk %d holds no text for a search by words", chunk.id)
 		}
 	}
 }

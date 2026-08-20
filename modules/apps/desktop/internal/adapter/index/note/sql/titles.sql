@@ -1,7 +1,7 @@
 -- The names in one vault that match the words typed: a note's own title first,
 -- then the headings inside notes.
 --
--- Each half is ranked against its own population and the two are never weighed
+-- Each is ranked against its own population and the two are never weighed
 -- against each other: a note called what was typed answers before a note with a
 -- line in it called that, whatever either score says. `kind` holds that order.
 --

@@ -470,7 +470,7 @@ func TestARecutKeepsAWindowInsideALargeOneThatChanged(t *testing.T) {
 }
 
 func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
-	// A hit in the words half and a hit in the dense half name one row, so a
+	// A hit found by words and one found by meaning name one row, so a
 	// chunk that keeps its number keeps what was indexed under it.
 	ctx := t.Context()
 	db := opened(t)

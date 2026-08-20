@@ -569,7 +569,7 @@ func (h *holding) taken() []string {
 // readSources takes the text out of every book in the vault and then embeds what
 // was cut, reporting what it is reading as it goes.
 //
-// Both halves are allowed to fail without the window minding. A book that will
+// Every way is allowed to fail without the window minding. A book that will
 // not parse is one book; an embedder that is not configured is the ordinary case,
 // and search answers on words alone until one is.
 func readSources(

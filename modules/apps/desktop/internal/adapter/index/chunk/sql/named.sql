@@ -1,8 +1,9 @@
 -- The sections of one vault whose names match the words typed, best first.
 --
 -- What a section answers with is the chunk it opens, so a hit on a name is a
--- passage standing where the section begins. The shape is the words half's, so
--- both are read back the same way and both can be fused into one order.
+-- passage standing where the section begins. The shape is the same as a search
+-- asked by words, so both are read back the same way and both fuse into one
+-- order.
 SELECT c.id, s.path, COALESCE(s.text_from, ''), COALESCE(s.hash, ''),
        c.start,
        c.length,

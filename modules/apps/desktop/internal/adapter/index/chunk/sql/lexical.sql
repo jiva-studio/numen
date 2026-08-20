@@ -1,5 +1,5 @@
--- The lexical half: the chunks of one vault whose text matches the words typed,
--- best first.
+-- A search asked by words: the chunks of one vault whose text matches the words
+-- typed, best first.
 --
 -- The row that comes back is the large window enclosing the hit, which is what
 -- a result shows, and where the hit itself stands inside it. A window with
