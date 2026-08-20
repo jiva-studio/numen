@@ -133,6 +133,10 @@ recognised document names no parts — what a layout model calls a heading is a
 shape on a page, not an entry in an outline — so it is one span, which ADR-0006
 already calls an ordinary outcome.
 
+> Both of those sentences were wrong, and ADR-0038 says why. The mark carried a
+> number nobody could see on the page, and the layout model names a heading well
+> enough to say where a section begins even when it reads the words badly.
+
 A page with nothing on it is still written; a document with nothing on it writes
 nothing at all. An empty artifact would stand in for a text layer that worked,
 and rule 1 leaves nothing to fall back to.

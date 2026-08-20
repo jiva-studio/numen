@@ -76,6 +76,8 @@ Read these first; everything else is derived from them.
 - [ADR-0007 — Structural chunking, and how a passage is found](0007-structural-chunking-and-hybrid-search.md)
 - [ADR-0034 — A chunk is identified by the text it holds](0034-a-chunk-is-identified-by-its-text.md)
 - [ADR-0036 — A PDF's text layer is a cache; reading it with a model is an artifact a person asks for](0036-a-pdf-is-read-twice.md)
+- [ADR-0037 — A passage is shown where it was read, and one shape says where that is](0037-a-passage-is-shown-where-it-was-read.md)
+- [ADR-0038 — Where a passage is in a book, said so a person can find it](0038-where-a-passage-is-in-a-book.md)
 
 Not yet written.
 

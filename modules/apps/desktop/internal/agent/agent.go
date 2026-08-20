@@ -90,7 +90,7 @@ type Step struct {
 	// call says nothing worth showing.
 	About string
 	// Place is where in the vault the call is working, empty when what the
-	// call is about is not a note.
+	// call is about is not a source the vault holds.
 	Place Place
 	// Written is how much of the call has been written, in characters. A call
 	// carrying the text of a note is written for minutes, and this is the only
@@ -100,11 +100,13 @@ type Step struct {
 	Failed string
 }
 
-// Place is where a call is working: a note, by its path, and the place in it
-// the call names.
+// Place is where a call is working: a source, by its path, and the stretch of
+// that source's text the call names.
 type Place struct {
 	Path string
-	// Line is counted from one. Zero is a call that named the note and no place
-	// in it.
-	Line int
+	// Start and Length are the stretch, counted in bytes over the text the
+	// source is read as. A length of zero is a call that named the source and
+	// no place inside it.
+	Start  int
+	Length int
 }

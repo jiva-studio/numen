@@ -751,3 +751,67 @@ smallest is also the fastest and, on this book, the best.
 A recogniser that cannot spell a script at all writes plausible nonsense: the
 same models over a Russian document return Latin gibberish, and what keeps most
 of it out of the index is `window.legible` refusing to cut it.
+
+## Where a document's own words sit
+
+Recorded 2026-08-20 on the same machine, over the 546-page scan and its text
+layer.
+
+| | |
+| --- | --- |
+| Reading the whole text | 9.5 s, 1 702 107 bytes over 546 pages |
+| The words of one page | 239 ms |
+| The words of three pages | 213 ms, 71 ms a page |
+| The words of ten pages | 403 ms, 40 ms a page |
+
+**Almost all of it is opening the document.** Ten pages cost twice what one
+does, not ten times, because the 233 MB file is read and parsed once and the
+pages after the first are tens of milliseconds each. That is what a cache of
+open documents is for, and it is why the pages wanted are asked for together.
+
+The layer yields 572 boxes a page, 312 357 over the book, against the 51 169 a
+recognition of the same pages produced. The gap is punctuation: this layer puts
+a space before a comma, so 43 523 of the boxes are one byte standing alone in
+the text.
+
+## What a line's boundary costs
+
+Recorded 2026-08-20 over the same scan: the four headings of pages 31 and 32,
+and the body of twenty pages spread across the book, against the document's own
+text layer. Error is the mean share of characters wrong.
+
+The detector answers with the text's own outline drawn inside the letters, and
+the amount it falls short is a share of the line's height. What widens it again
+was a fixed number of pixels, measured on the part after it has been scaled — on
+a heading that is about four pixels of the page against fifteen to twenty of
+shrink. The top of every capital and the last letter of every line were cut off.
+
+| the line widened by | headings | body |
+| --- | --- | --- |
+| 10 pixels | 0.074 | 0.0644 |
+| 14 | 0.031 | 0.0633 |
+| 18 | 0.025 | 0.0639 |
+| 20 | 0.017 | 0.0648 |
+| 24 | 0.035 | 0.0667 |
+
+**Eighteen**, the middle of where it stops mattering rather than the edge. The
+body is flat from ten to twenty and begins to pay after that.
+
+```
+"IAYADEVA GOSVAMI'S LIFEINNABADWI"         became "JAYADEVA GOSVAMI'S LIFE INNABADWIP"
+"LAYADEVA GOSVAMI'S MARRIAGE TO PADMAVAT"  became "JAYADEVA GOSVAMI'S MARRIAGE TO PADMAVATI"
+"THELORD HELPS IAYADEVA GOSVAMIWRITE…"     became "THE LORD HELPS JAYADEVA GOSVÁMI WRITE GITA GOVINDA"
+```
+
+Two other settings were measured and neither is worth moving. The heat a pixel
+carries to be part of a line gives the same boxes at 0.15, 0.20 and 0.30 — the
+map is as good as binary here. The longest side a part is read at costs small
+type when lowered and costs everything when raised, and 300 dpi beats 150, 200,
+400 and 600 because detection is scaled to that side whatever the page was drawn
+at.
+
+What no setting reaches: a word gap in a display face no wider than its letter
+gaps is one line to any threshold, so the space is the recogniser's own guess.
+And the alphabet the model carries has `ā ī ū ñ ś` and none of the letters with
+a dot under them, so `Lakṣmaṇa` and `Kṛṣṇa` cannot be written whatever the boxes
+are.
