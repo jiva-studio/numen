@@ -131,7 +131,7 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		Saves:     &note.Write{Readers: cfg.VaultReaders(), Writers: cfg.VaultWriters()},
 		Wrote:     func() { raise(wake.notes) },
 		Readers:   cfg.VaultReaders(),
-		Viewer:    looking(),
+		Viewer:    keepingDrawings(),
 		// Where a passage sits on the page is asked of whichever producer made
 		// the text it is a place in, which is what the index records.
 		Marking: &source.Marks{

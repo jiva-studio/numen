@@ -845,3 +845,34 @@ is showing.
 The margin that works is the measurement worth keeping here: it says the failure
 is the detector needing background around a line, not the models being unable to
 read two digits.
+
+## Drawing a page of a scan
+
+Recorded 2026-08-20 over the same 546-page scan, five pages averaged, on an
+idle machine. The recognition run competes for the same cores and for the same
+pool of pdfium workers; under one, every number below is roughly doubled.
+
+| width asked | pdfium | resample | jpeg | total | over the wire |
+| --- | --- | --- | --- | --- | --- |
+| 800 | 443 ms | 43 | 17 | **503 ms** | 234 kB |
+| 1200 | 498 | 95 | 34 | **628** | 417 kB |
+| 1600 | 553 | 163 | 52 | **768** | 625 kB |
+| 2400 | 616 | 377 | 107 | **1101** | 1094 kB |
+
+**Drawing barely moves with the resolution** — 104 dpi costs 443 ms and 311 dpi
+costs 616. So the cost is not rasterising: each page of this book holds one
+large photograph, and the library decodes the whole of it whatever size is
+asked for. Half a second a page is what this document costs, and no setting
+here reaches it.
+
+**The resample was for a pixel or two.** The resolution is a whole number
+rounded up, so a page asked for at 800 comes back 804 across. Scaling those
+four pixels off cost between a tenth and four tenths of a second, and the window
+lays the page out at the width it asked for anyway. It is gone: the page goes as
+it was drawn, and the browser takes the four pixels off in the compositor.
+
+That leaves the half second, and it is the same half second every time a page is
+turned back to. So the drawn pages are kept, in this machine's cache folder and
+not in the vault — a page turned back to is read from disk in about a
+millisecond, and a book read through once costs its half second a page and never
+again.

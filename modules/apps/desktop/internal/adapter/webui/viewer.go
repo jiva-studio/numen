@@ -13,8 +13,6 @@ import (
 	"strconv"
 	"time"
 
-	xdraw "golang.org/x/image/draw"
-
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/pdf"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
@@ -53,6 +51,9 @@ type viewer struct {
 	open  func(raw []byte) (drawable, error)
 	docs  *documents
 	drawn *pictures
+	// kept is the same pages on disk, so a document opened again is not drawn
+	// again. It is nothing where this machine names no cache folder.
+	kept *shelf
 
 	// patience is how long a request waits for the document before it answers
 	// that the document is busy. The library's own wait is minutes, which is
@@ -82,7 +83,9 @@ func drawnByTheLibrary(raw []byte) (drawable, error) {
 	return scan, nil
 }
 
-// looking is a window with nothing open yet.
+// looking is a window with nothing open yet, and nothing kept on disk. What is
+// kept there outlives the window, so where it goes is said where the window is
+// served and not here.
 func looking() *viewer {
 	return &viewer{
 		open:     drawnByTheLibrary,
@@ -156,9 +159,7 @@ func (a *API) Page(w http.ResponseWriter, r *http.Request, path, page string) {
 	}
 
 	key := shot{of: print, at: at, wide: wide}
-	body, err := a.Viewer.drawn.draw(ctx, key, func() ([]byte, error) {
-		return a.drawing(ctx, reader, key)
-	})
+	body, err := a.picture(ctx, reader, key)
 	if err != nil {
 		refuse(w, err)
 		return
@@ -207,6 +208,24 @@ func (a *API) opening(
 	})
 }
 
+// picture is one page as the bytes that cross to the window: the one held in
+// memory, or the one on disk, or the page drawn.
+//
+// Several asks for one page draw it once and are answered with the one drawing.
+func (a *API) picture(ctx context.Context, reader port.VaultReader, key shot) ([]byte, error) {
+	return a.Viewer.drawn.draw(ctx, key, func() ([]byte, error) {
+		if body := a.Viewer.kept.get(key); body != nil {
+			return body, nil
+		}
+		body, err := a.drawing(ctx, reader, key)
+		if err != nil {
+			return nil, err
+		}
+		a.Viewer.kept.put(key, body)
+		return body, nil
+	})
+}
+
 // drawing is one page of a document, drawn and encoded.
 func (a *API) drawing(ctx context.Context, reader port.VaultReader, key shot) ([]byte, error) {
 	doc, give, err := a.opening(ctx, reader, key.of)
@@ -247,9 +266,7 @@ func (a *API) readAhead(reader port.VaultReader, key shot) {
 		defer func() { <-a.Viewer.reading }()
 		ctx, cancel := context.WithTimeout(context.Background(), a.Viewer.ahead)
 		defer cancel()
-		a.Viewer.drawn.draw(ctx, next, func() ([]byte, error) {
-			return a.drawing(ctx, reader, next)
-		})
+		a.picture(ctx, reader, next)
 	}()
 }
 
@@ -257,9 +274,13 @@ func (a *API) readAhead(reader port.VaultReader, key shot) {
 // document held.
 //
 // The library draws at a resolution, so the resolution is worked back from the
-// width asked for and the page's own size: the page is drawn at the first
-// resolution wide enough and scaled to exactly the width. The size is the
+// width asked for and the page's own size, rounded up. The size is the
 // document's own answer, and is asked once.
+//
+// It comes back a pixel or two wider than was asked for, and goes as it is. The
+// window lays the page out at the width it asked for, so the browser takes those
+// pixels off; resampling them off here is a pass over every pixel of the page to
+// change nothing anybody sees.
 func (d *document) picture(at, wide int) (image.Image, error) {
 	points, measured := d.points[at]
 	if !measured {
@@ -278,21 +299,7 @@ func (d *document) picture(at, wide int) (image.Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	return sized(drawn, wide), nil
-}
-
-// sized is the drawing at exactly the width asked for. A resolution is a whole
-// number and lands within a pixel or two of the width, and the window lays the
-// page out at the width it asked for.
-func sized(drawn image.Image, wide int) image.Image {
-	bounds := drawn.Bounds()
-	if bounds.Dx() == wide {
-		return drawn
-	}
-	high := max(bounds.Dy()*wide/bounds.Dx(), 1)
-	out := image.NewRGBA(image.Rect(0, 0, wide, high))
-	xdraw.CatmullRom.Scale(out, out.Bounds(), drawn, bounds, xdraw.Src, nil)
-	return out
+	return drawn, nil
 }
 
 // encoded is a drawn page as the bytes that cross to the window.
@@ -336,4 +343,12 @@ func refuse(w http.ResponseWriter, err error) {
 	default:
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+// keepingDrawings is a window that keeps the pages it draws where this machine
+// keeps what it can make again.
+func keepingDrawings() *viewer {
+	v := looking()
+	v.kept = shelved()
+	return v
 }
