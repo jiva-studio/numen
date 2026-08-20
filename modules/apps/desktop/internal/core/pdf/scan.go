@@ -31,14 +31,6 @@ func (s *Scan) Close() { s.doc.close() }
 // Pages is how many pages the document has.
 func (s *Scan) Pages() int { return s.doc.pages }
 
-// Label is what the document calls one page. Where the document names none, the
-// page's own number is what it is called.
-func (s *Scan) Label(index int) string { return s.doc.label(index) }
-
-// Labelled is what the document says one page is called, and is empty where the
-// document says nothing about it.
-func (s *Scan) Labelled(index int) string { return s.doc.labelled(index) }
-
 // Size is how wide and how high one page is drawn, in the page's own units. A
 // drawing at a width works its resolution back from it, and the document
 // answers without anything being drawn.

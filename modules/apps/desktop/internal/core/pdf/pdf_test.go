@@ -63,28 +63,17 @@ func TestPagesAreTheReadingOrder(t *testing.T) {
 	}
 }
 
-func TestEveryPageIsNamed(t *testing.T) {
-	// A document that numbers its front matter apart from its body says so, and
-	// what it says is what a person holding the printed book would say.
+func TestAPageIsWhereItStandsInTheFile(t *testing.T) {
+	// A page carries no name of its own. A document numbering its front matter
+	// apart from its body still has three pages, and they stand in one order.
 	book := read(t, labels)
 
-	want := []string{"i", "ii", "1"}
-	if len(book.Pages) != len(want) {
-		t.Fatalf("%d pages, want %d", len(book.Pages), len(want))
+	if len(book.Pages) != 3 {
+		t.Fatalf("%d pages, want 3", len(book.Pages))
 	}
-	for i, label := range want {
-		if book.Pages[i].Label != label {
-			t.Errorf("page %d is called %q, want %q", i, book.Pages[i].Label, label)
-		}
-	}
-
-	// A document naming none of its pages names none of them. Where a page
-	// stands in the file is where it stands among these, and a number counted
-	// from the first is not what the page prints.
-	plain := read(t, tiny)
-	for i, page := range plain.Pages {
-		if page.Label != "" {
-			t.Errorf("page %d is called %q by a document that calls it nothing", i, page.Label)
+	for i, page := range book.Pages {
+		if i > 0 && page.Offset < book.Pages[i-1].Offset {
+			t.Errorf("page %d begins before the page before it", i)
 		}
 	}
 }
@@ -194,24 +183,18 @@ func TestLocate(t *testing.T) {
 		name  string
 		at    int
 		place string
-		page  string
 		sheet int
 	}{
-		{name: "before every name", at: at("Front"), place: "", page: "", sheet: 0},
-		{name: "at a name", at: at("Opening"), place: "The First Part", page: "", sheet: 1},
-		{name: "inside a nested name", at: at("closer"), place: "A Closer Reading", page: "", sheet: 2},
-		{name: "after the last name", at: at("Afterword"), place: "Afterword", page: "", sheet: 3},
+		{name: "before every name", at: at("Front"), place: "", sheet: 0},
+		{name: "at a name", at: at("Opening"), place: "The First Part", sheet: 1},
+		{name: "inside a nested name", at: at("closer"), place: "A Closer Reading", sheet: 2},
+		{name: "after the last name", at: at("Afterword"), place: "Afterword", sheet: 3},
 	}
 	for _, c := range tests {
 		t.Run(c.name, func(t *testing.T) {
 			where := book.Locate(c.at)
 			if where.Place != c.place {
 				t.Errorf("place is %q, want %q", where.Place, c.place)
-			}
-			// This document prints no page numbers, so where a page stands in
-			// the file is all there is to say about it.
-			if where.Page != c.page {
-				t.Errorf("page is %q, want %q", where.Page, c.page)
 			}
 			if where.At != c.sheet {
 				t.Errorf("page stands at %d in the file, want %d", where.At, c.sheet)

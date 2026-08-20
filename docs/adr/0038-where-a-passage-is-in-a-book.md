@@ -13,11 +13,12 @@ Gosvāmī. The agent answered "page 33", opened the middle of the chapter, and l
 a run of text that crossed a heading and a footnote. Three separate things were
 wrong, and each was the application knowing less than it had been told.
 
-**The number was invented.** pdfium returns an empty label for every page of
+**The number was two numbers.** pdfium returns an empty label for every page of
 that book — it carries no page-label dictionary — and the reader quietly filled
-in the page's position instead. The page in the person's hands prints **2**. They
-were given a number that appears nowhere in the book, stated as if it were the
-book's own.
+in the page's position instead, stated as if it were the book's own. The page in
+the person's hands prints **2**, and the pane that would open it says 33. Which
+number is right depends on what is being asked, and nothing said which was being
+answered.
 
 **The heading could not be found.** It stands in the reading as
 `IAYADEVA GOSVAMI'S LIFEINNABADWI`. There is no token `Jayadeva` in it, so the
@@ -30,24 +31,26 @@ the label away.
 
 ## Decision
 
-### A page is said by what it prints, or by where it stands, and never one as the other
+### A page is called where it stands in the file, and nothing else
 
-Two facts, kept apart:
+One page, one number, and it is the number the viewer opens at. The marks are
+written one per page in order, so the number is the position and is stored
+nowhere. A location says *page 33 of the file*, which is what the pane shows
+while a person reads it.
 
-- **Where the page stands in the file** is known for every page and is stored
-  nowhere: the marks are written one per page in order, so it is the position.
-- **What the page prints on itself** is known sometimes, and stored when it is.
+What the paper printed is not kept. A viewer counts from the first sheet and a
+printed book counts from wherever its body starts, so the two disagree on every
+page of the front matter and by a constant after it. Told both, a person has to
+work out which number is being talked about, and an agent saying "page 14" over a
+pane that says 44 reads as a broken program.
 
-Three answers to the second, in order: what the recogniser read in the region the
-layout model calls the page's number; what the document says, **when it says
-something**; and nothing. The fallback that hid the difference is gone — asking
-what a document calls a page and asking what to show a person are two questions.
+This takes with it the reading of the region the layout model calls the page's
+number, and the page-label dictionary a born-digital PDF may carry. Neither is
+wrong; both are a second name for one page.
 
-A number read off a page is a few characters a model guessed, so it is taken only
-when it looks like one: digits, or roman numerals, and short.
-
-Where a page prints nothing, a location says so — *page 33 of the file* — and
-never a bare number a person would go looking for on the paper.
+A book made for a screen is the exception, and it is not one: an EPUB has no
+pages of its own, so the page breaks it names from the printed edition it was set
+from are the only page names it has.
 
 ### A reading names its parts
 
@@ -84,8 +87,8 @@ does not settle a default.
 
 **Positive**
 
-- A person is told a number they can find on the page, or told plainly that the
-  book prints none.
+- A person is told one number for a page, and it is the one on the screen in
+  front of them.
 - A search reaches a heading, which is what a person asking "where does it speak
   about X" is asking for.
 - A passage says which section it is in, and a section can be opened at its
@@ -93,13 +96,16 @@ does not settle a default.
 
 **Negative**
 
-- Every reading made before this carries an invented number in its marks and no
-  parts. Nothing can tell them apart from honest ones, and nothing needs to: the
-  book is read again, which is an hour, and the next reading is right.
+- Every reading made before this carries a number in its marks and no parts. The
+  number is passed over where an artifact is read, so an old reading loses
+  nothing by it; the parts are why the book is read again, which is an hour.
 - One more file beside each reading.
 
 **Neutral**
 
+- A person holding the paper cannot be given a citation into it, and nothing
+  here will produce one. Reading the number off a scan was measured before it
+  was dropped, and what it cost is in `docs/performance.md`.
 - The retroflex letters — `ṛ ṅ ṭ ḍ ṇ ṣ` — are absent from the alphabet this
   recogniser carries, and no boundary and no setting reaches them. A word gap in
   a display face no wider than its letter gaps is one line to any threshold, so

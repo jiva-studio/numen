@@ -99,8 +99,8 @@ export const core: Core & Asking = {
 export const documents: Documents = {
   shape: async (path) => {
     const answer = await served(asset(path))
-    const said = (await answer.json()) as { pages?: number; labels?: readonly string[] }
-    return { pages: said.pages ?? 0, labels: said.labels ?? [] }
+    const said = (await answer.json()) as { pages?: number }
+    return { pages: said.pages ?? 0 }
   },
   page: (path, at, wide) => `${asset(path)}/pages/${at}?wide=${wide}`,
   marks: async (path, start, length) => {

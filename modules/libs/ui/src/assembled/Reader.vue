@@ -27,8 +27,6 @@ const props = withDefaults(
     pages?: number
     /** Which page is in front, counted from the first. */
     at?: number
-    /** What the document calls the page in front. */
-    label?: string
     /** What is lit on the page in front, in fractions of it. */
     lit?: readonly Lit[]
     /** What turning back a page is called, and turning on. */
@@ -46,7 +44,6 @@ const props = withDefaults(
     picture: '',
     pages: 0,
     at: 0,
-    label: '',
     lit: () => [],
     back: 'Previous page',
     next: 'Next page',
@@ -254,7 +251,6 @@ defineExpose({
         @keydown.enter="turn"
       />
       <span class="text-small text-hushed">/ {{ pages }}</span>
-      <span v-if="label && label !== String(at + 1)" class="text-small text-hushed">{{ label }}</span>
 
       <Button
         variant="ghost"
@@ -304,7 +300,7 @@ defineExpose({
           <img
             class="reader__picture block w-full"
             :src="drawing"
-            :alt="label"
+            :alt="`${page} ${at + 1}`"
             @error="failed"
             @load="tries = 0"
           />

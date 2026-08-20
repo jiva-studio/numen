@@ -65,17 +65,6 @@ func (p *paper) opened([]byte) (drawable, error) {
 func (p *paper) Pages() int { return p.pages }
 
 // Label numbers the first two pages as front matter, the way a book does.
-func (p *paper) Label(index int) string {
-	switch index {
-	case 0:
-		return "i"
-	case 1:
-		return "ii"
-	default:
-		return fmt.Sprint(index - 1)
-	}
-}
-
 // Size is what the page measures in its own units, which the document answers
 // without drawing anything.
 func (p *paper) Size(int) (wide, high float64, err error) {
@@ -206,10 +195,6 @@ func TestWhatADocumentIsIsHowManyPagesAndWhatEachIsCalled(t *testing.T) {
 	}
 	if told.Path != book || told.Pages != 4 {
 		t.Errorf("the document came back as %+v", told)
-	}
-	want := []string{"i", "ii", "1", "2"}
-	if strings.Join(told.Labels, ",") != strings.Join(want, ",") {
-		t.Errorf("the pages are called %v, not %v", told.Labels, want)
 	}
 }
 
@@ -507,7 +492,7 @@ func TestAPageOfARealDocumentComesBack(t *testing.T) {
 	if err := json.NewDecoder(out.Body).Decode(&told); err != nil {
 		t.Fatal(err)
 	}
-	if told.Pages < 1 || len(told.Labels) != told.Pages {
+	if told.Pages < 1 {
 		t.Fatalf("the document came back as %+v", told)
 	}
 

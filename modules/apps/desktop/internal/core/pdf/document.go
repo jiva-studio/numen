@@ -107,26 +107,3 @@ func (d *document) text(index int) string {
 	}
 	return page.Text
 }
-
-// label is what the document calls a page. A book's front matter is numbered
-// apart from its body, and the label is what a person reading it would say.
-// Where a document names none, the page's own number is what it is called.
-func (d *document) label(index int) string {
-	if label := d.labelled(index); label != "" {
-		return label
-	}
-	return fmt.Sprint(index + 1)
-}
-
-// labelled is what the document says a page is called. It is empty for a
-// document that says nothing about the page, which is what a document carrying
-// no page labels at all looks like.
-func (d *document) labelled(index int) string {
-	named, err := d.worker.FPDF_GetPageLabel(&requests.FPDF_GetPageLabel{
-		Document: d.ref, Page: index,
-	})
-	if err != nil {
-		return ""
-	}
-	return tidy(named.Label)
-}

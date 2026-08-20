@@ -529,7 +529,6 @@ onUnmounted(() => {
           :picture="documentIn(id)!.picture.value"
           :pages="documentIn(id)!.pages.value"
           :at="documentIn(id)!.at.value"
-          :label="documentIn(id)!.label.value"
           :lit="documentIn(id)!.lit.value"
           :back="words.back"
           :next="words.next"

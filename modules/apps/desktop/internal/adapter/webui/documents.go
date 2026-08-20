@@ -12,7 +12,6 @@ import (
 // the application, and a test puts its own in.
 type drawable interface {
 	Pages() int
-	Label(index int) string
 	Size(index int) (wide, high float64, err error)
 	Image(index, dpi int) (image.Image, error)
 	Close()

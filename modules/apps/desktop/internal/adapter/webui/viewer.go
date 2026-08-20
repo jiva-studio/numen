@@ -100,10 +100,6 @@ func (v *viewer) close() { v.docs.close() }
 type said struct {
 	Path  string `json:"path"`
 	Pages int    `json:"pages"`
-	// Labels is what the document calls each of its pages, in order. A book's
-	// front matter is numbered apart from its body, and the label is what a
-	// person reading it would say.
-	Labels []string `json:"labels"`
 }
 
 // Document answers what the document at a path in the vault is.
@@ -132,10 +128,6 @@ func (a *API) Document(w http.ResponseWriter, r *http.Request, path string) {
 		return
 	}
 	told := said{Path: print.path, Pages: doc.scan.Pages()}
-	told.Labels = make([]string, told.Pages)
-	for i := range told.Labels {
-		told.Labels[i] = doc.scan.Label(i)
-	}
 	doc.release()
 
 	w.Header().Set("Content-Type", "application/json")

@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { reading, type Documents, type Marked, type Shape } from './reading'
 
-const SHAPE: Shape = { pages: 3, labels: ['i', 'ii', '1'] }
+const SHAPE: Shape = { pages: 3 }
 
 /** A document of three pages, recording every question put to it. */
 function book(shape: Shape | Error = SHAPE, where: readonly Marked[] = []) {
@@ -52,7 +52,6 @@ describe('a document opened', () => {
 
     expect(read.pages.value).toBe(3)
     expect(read.at.value).toBe(0)
-    expect(read.label.value).toBe('i')
   })
 
   it('draws nothing until it is told how wide the page is', async () => {
@@ -98,7 +97,6 @@ describe('a page turned', () => {
 
     await read.go(9)
     expect(read.at.value).toBe(2)
-    expect(read.label.value).toBe('1')
 
     await read.go(-4)
     expect(read.at.value).toBe(0)

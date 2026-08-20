@@ -23,7 +23,7 @@ type Story = StoryObj<typeof meta>
 type Render = NonNullable<Story['render']>
 
 /** Front matter in roman numerals, and a body numbered from one. */
-const LABELS = ['i', 'ii', 'iii', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+const PAGES = 12
 
 /** Where something sits on a page, in fractions of it. */
 interface Lit {
@@ -63,14 +63,14 @@ const book = (lit: readonly Lit[] = []): Render => () => ({
     /** The width the reader last asked for, in device pixels. */
     const wide = ref(0)
     const picture = computed(() =>
-      wide.value > 0 ? drawn(LABELS[at.value] ?? '', wide.value) : '',
+      wide.value > 0 ? drawn(String(at.value + 1), wide.value) : '',
     )
 
     const go = (page: number) => {
-      at.value = Math.min(Math.max(page, 0), LABELS.length - 1)
+      at.value = Math.min(Math.max(page, 0), PAGES - 1)
     }
 
-    return { at, wide, picture, lit, labels: LABELS, pages: LABELS.length, go }
+    return { at, wide, picture, lit, pages: PAGES, go }
   },
   template: TEMPLATE,
 })
@@ -82,7 +82,6 @@ const TEMPLATE = `
       :picture="picture"
       :pages="pages"
       :at="at"
-      :label="labels[at]"
       :lit="lit"
       @go="go"
       @wide="wide = $event"

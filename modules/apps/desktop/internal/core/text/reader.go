@@ -80,7 +80,7 @@ func Recognised(raw, parts []byte) *Document {
 		doc.named = append(doc.named, mark{Offset: p.Offset, Name: p.Title})
 	}
 	for i, m := range marks {
-		doc.paged = append(doc.paged, mark{Offset: m.Offset, Name: paging(m.Label, i)})
+		doc.paged = append(doc.paged, mark{Offset: m.Offset, Name: sheet(i)})
 	}
 	return doc
 }

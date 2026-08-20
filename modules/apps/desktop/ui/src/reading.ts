@@ -22,19 +22,20 @@ export interface Marked {
   readonly rects: readonly Rect[]
 }
 
-/** What a document is: how many pages it has, and what each is called. */
+/**
+ * What a document is: how many pages it has.
+ *
+ * A page has no name but where it stands in the file. That is the number the
+ * viewer opens at and the number a location says, and one page with two numbers
+ * is a person working out which is meant.
+ */
 export interface Shape {
   readonly pages: number
-  /**
-   * What the document calls each page: roman numerals in the front matter, and
-   * the same thing a search result's location shows.
-   */
-  readonly labels: readonly string[]
 }
 
 /** Everything a document tab asks of the application. */
 export interface Documents {
-  /** How many pages the document has, and what each is called. */
+  /** How many pages the document has. */
   shape(path: string): Promise<Shape>
   /**
    * Where one page is drawn `wide` device pixels across, as an address to point
@@ -55,7 +56,6 @@ export type Reading = ReturnType<typeof reading>
 
 export function reading(documents: Documents, path: string) {
   const pages = ref(0)
-  const labels = ref<readonly string[]>([])
   /** Which page is in front, counted from the first. */
   const at = ref(0)
   /** How wide the page is drawn, in device pixels. */
@@ -64,9 +64,6 @@ export function reading(documents: Documents, path: string) {
   const marks = ref<readonly Marked[]>([])
   /** What this document could not do, in words the window puts up for it. */
   const trouble = ref('')
-
-  /** What the document calls the page in front. */
-  const label = computed(() => labels.value[at.value] ?? String(at.value + 1))
 
   /**
    * What is lit on the page in front, in fractions of it. A rectangle is
@@ -96,7 +93,6 @@ export function reading(documents: Documents, path: string) {
       const said = await documents.shape(path)
       if (!open) return
       pages.value = said.pages
-      labels.value = said.labels
     } catch (error) {
       if (!open) return
       trouble.value = String(error)
@@ -156,9 +152,7 @@ export function reading(documents: Documents, path: string) {
   return {
     path,
     pages,
-    labels,
     at,
-    label,
     picture,
     lit,
     trouble,

@@ -815,3 +815,33 @@ gaps is one line to any threshold, so the space is the recogniser's own guess.
 And the alphabet the model carries has `ā ī ū ñ ś` and none of the letters with
 a dot under them, so `Lakṣmaṇa` and `Kṛṣṇa` cannot be written whatever the boxes
 are.
+
+## A part too small to find a line in
+
+Recorded 2026-08-20 over the same scan, pages 44 to 73 of the file, which print
+14 to 43. The layout model finds the `number` region on every one of them — the
+number stands alone at the foot between two ornaments — and it is some fifty
+pixels across at 300 dpi.
+
+Nothing is read in it. The detector draws a boundary around dark pixels and
+shrinks it by a share of the line's height; a line filling the image it is
+looked for in leaves no boundary to draw, so the region comes back blank.
+
+| what was read | pages right of 30 |
+| --- | --- |
+| the region as it stands | 0 |
+| the region magnified 3× to 20× | 0 |
+| the crop widened to 150, 250, 400, 640, 960 pixels | 0 to 6 |
+
+Widening the crop takes in the ornaments either side, and what they read as is
+not a number. Keeping only the lines whose middle falls in the region gets 30 of
+30 at a margin of 150 pixels and above — and that margin is a pixel count
+against one book at one dpi, so it is not a default anything can carry.
+
+So nothing reads it. A page is called where it stands in the file, which is known
+for every page, costs nothing, and is the number the pane in front of the person
+is showing.
+
+The margin that works is the measurement worth keeping here: it says the failure
+is the detector needing background around a line, not the models being unable to
+read two digits.
