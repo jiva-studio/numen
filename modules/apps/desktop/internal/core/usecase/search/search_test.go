@@ -194,7 +194,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	// The meaning half answers with the whole table's best k, so this is where a
 	// lost filter shows.
 	dense := c.db.ChunkQueries()
-	near, err := dense.Nearest(ctx, c.first.ID, model.Recipe(), pointing(+1), 20, search.DefaultFloor)
+	near, err := dense.Nearest(ctx, c.first.ID, model.Recipe(), pointing(+1), nil, 20, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -210,7 +210,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 
 	// A full-text match runs across the whole table, and "shared" is in both
 	// vaults, so this is where a lost filter shows for the words half.
-	words, err := dense.Lexical(ctx, c.second.ID, "shared", 20, false)
+	words, err := dense.Lexical(ctx, c.second.ID, "shared", nil, 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -287,7 +287,7 @@ func TestFiveMatchingChunksOfOneNoteAreOneResult(t *testing.T) {
 		"disorder once more", "disorder at last")
 
 	// Every window of the note matches, the large one included.
-	hits, err := c.db.ChunkQueries().Lexical(ctx, c.first.ID, "disorder", 20, false)
+	hits, err := c.db.ChunkQueries().Lexical(ctx, c.first.ID, "disorder", nil, 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -353,7 +353,7 @@ func TestASearchAnswersWithTheSectionAskedAbout(t *testing.T) {
 	c := indexed(t)
 	c.sectioned(t, c.first, "notes/Entropy.md")
 
-	words, err := c.db.ChunkQueries().Lexical(ctx, c.first.ID, "Madhavendra Puri", 20, false)
+	words, err := c.db.ChunkQueries().Lexical(ctx, c.first.ID, "Madhavendra Puri", nil, 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -409,7 +409,7 @@ func TestTheMeaningHalfAnswersWhereTheWordsHalfCannot(t *testing.T) {
 
 	// A word no note in the vault says, so nothing lexical can match it.
 	const unsaid = "zzqqxx"
-	words, err := c.db.ChunkQueries().Lexical(ctx, c.first.ID, unsaid, 20, false)
+	words, err := c.db.ChunkQueries().Lexical(ctx, c.first.ID, unsaid, nil, 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -435,7 +435,7 @@ func TestTheMeaningHalfIsAskedUnderTheRecipeAVectorIsKeptBy(t *testing.T) {
 	c.vectorise(t, c.first, pointing(+1))
 
 	under, err := c.db.ChunkQueries().Nearest(
-		ctx, c.first.ID, model.Recipe(), pointing(+1), 10, search.DefaultFloor)
+		ctx, c.first.ID, model.Recipe(), pointing(+1), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -444,11 +444,86 @@ func TestTheMeaningHalfIsAskedUnderTheRecipeAVectorIsKeptBy(t *testing.T) {
 	}
 
 	astray, err := c.db.ChunkQueries().Nearest(
-		ctx, c.first.ID, model.String(), pointing(+1), 10, search.DefaultFloor)
+		ctx, c.first.ID, model.String(), pointing(+1), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(astray) != 0 {
 		t.Errorf("%d passages came back under a name that is not the recipe", len(astray))
+	}
+}
+
+func TestAQuestionAboutBooksIsAnsweredFromBooks(t *testing.T) {
+	// A vault holds far more notes than books. Asked about a book and told to
+	// look everywhere, a search answers with whatever the vault holds most of,
+	// and the person who said "in the book" is handed a note.
+	ctx := t.Context()
+	c := indexed(t)
+	c.sectioned(t, c.first, "notes/Entropy.md")
+	c.vectorise(t, c.first, pointing(+1))
+
+	everywhere, err := c.search(oneWay{pointing(+1)}).
+		Execute(ctx, c.first, "Madhavendra Puri", search.Parameters{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(everywhere) == 0 {
+		t.Fatal("the search found nothing at all")
+	}
+
+	// This vault holds notes alone, so a question about books is answered by
+	// nothing: what is asserted is that the kind reached every half.
+	books, err := c.search(oneWay{pointing(+1)}).Execute(ctx, c.first, "Madhavendra Puri",
+		search.Parameters{Of: []domain.SourceKind{domain.KindBook}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(books) != 0 {
+		t.Errorf("%d passages came back from the books of a vault that holds none", len(books))
+	}
+
+	notes, err := c.search(oneWay{pointing(+1)}).Execute(ctx, c.first, "Madhavendra Puri",
+		search.Parameters{Of: []domain.SourceKind{domain.KindNote}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(notes) != len(everywhere) {
+		t.Errorf("asking the notes of a vault of notes gave %d passages and asking everywhere gave %d",
+			len(notes), len(everywhere))
+	}
+}
+
+func TestEveryHalfIsToldWhichKindsAQuestionIsAbout(t *testing.T) {
+	// One half left unfiltered answers about the wrong kind, and the fused
+	// order carries it: a half that ignores the kind is a half that undoes it.
+	ctx := t.Context()
+	c := indexed(t)
+	c.sectioned(t, c.first, "notes/Entropy.md")
+	c.vectorise(t, c.first, pointing(+1))
+	queries := c.db.ChunkQueries()
+	books := []domain.SourceKind{domain.KindBook}
+
+	words, err := queries.Lexical(ctx, c.first.ID, "Madhavendra Puri", books, 20, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(words) != 0 {
+		t.Errorf("the words half answered %d passages about books in a vault of notes", len(words))
+	}
+
+	named, err := queries.Named(ctx, c.first.ID, "Madhavendra Puri", books, 20, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(named) != 0 {
+		t.Errorf("the names half answered %d sections of books in a vault of notes", len(named))
+	}
+
+	dense, err := queries.Nearest(ctx, c.first.ID, model.Recipe(), pointing(+1), books, 20, -1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(dense) != 0 {
+		t.Errorf("the meaning half answered %d passages of books in a vault of notes", len(dense))
 	}
 }

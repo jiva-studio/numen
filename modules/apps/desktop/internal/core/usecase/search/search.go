@@ -48,6 +48,13 @@ type Parameters struct {
 	// Growing says the last word typed may still be being typed, so the index
 	// matches it by its opening. A question that is finished is asked exactly.
 	Growing bool
+	// Of are the kinds of source the question is about. None is every kind,
+	// which is what a question that says nothing about the sort of file it
+	// wants asks for.
+	//
+	// A person asking a book about something is asking about the book. Told to
+	// look everywhere, an answer draws whatever the vault holds most of.
+	Of []domain.SourceKind
 }
 
 // filled supplies what the caller left out.
@@ -117,14 +124,14 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 
 	var rankings [][]domain.Passage
 	if p.Lexical > 0 {
-		lexical, err := u.passages.Lexical(ctx, v.ID, query, p.Lexical, p.Growing)
+		lexical, err := u.passages.Lexical(ctx, v.ID, query, p.Of, p.Lexical, p.Growing)
 		if err != nil {
 			return nil, err
 		}
 		rankings = append(rankings, lexical)
 	}
 	if p.Named > 0 {
-		named, err := u.passages.Named(ctx, v.ID, query, p.Named, p.Growing)
+		named, err := u.passages.Named(ctx, v.ID, query, p.Of, p.Named, p.Growing)
 		if err != nil {
 			return nil, err
 		}
@@ -152,7 +159,7 @@ func (u Search) nearest(ctx context.Context, v domain.Vault, query string, p Par
 	// A vector is kept under the recipe it was made by, which is everything
 	// about the model that decides what a vector is. Asked under anything else,
 	// no vector is found and this half answers nothing at all.
-	return u.passages.Nearest(ctx, v.ID, u.embedder.Model().Recipe(), vectors[0], p.Dense, p.Floor)
+	return u.passages.Nearest(ctx, v.ID, u.embedder.Model().Recipe(), vectors[0], p.Of, p.Dense, p.Floor)
 }
 
 // read fills in the text of each passage from the vault. A chunk is a place in a

@@ -11,7 +11,8 @@ SELECT c.id, s.path, COALESCE(s.text_from, ''), COALESCE(s.hash, ''),
 FROM parts_fts
 JOIN chunks c ON c.id = parts_fts.rowid
 JOIN sources s ON s.id = c.source_id
-WHERE parts_fts MATCH ?
-  AND c.vault_id = ?
+WHERE parts_fts MATCH ?1
+  AND c.vault_id = ?2
+  AND (json_array_length(?3) = 0 OR s.kind IN (SELECT value FROM json_each(?3)))
 ORDER BY bm25(parts_fts)
-LIMIT ?;
+LIMIT ?4;

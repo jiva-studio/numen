@@ -169,7 +169,7 @@ func TestTheCoarsePassStaysInsideItsVault(t *testing.T) {
 	queries := db.ChunkQueries()
 
 	near := func(vault domain.Vault, seed byte) []domain.Passage {
-		matches, err := queries.Nearest(ctx, vault.ID, "model", direction(seed), 10, search.DefaultFloor)
+		matches, err := queries.Nearest(ctx, vault.ID, "model", direction(seed), nil, 10, search.DefaultFloor)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -205,7 +205,7 @@ func TestTheWordsHalfStaysInsideItsVault(t *testing.T) {
 	queries := db.ChunkQueries()
 
 	// "opening" is in both vaults, so what separates them is the filter.
-	shared, err := queries.Lexical(ctx, first.ID, "opening", 10, false)
+	shared, err := queries.Lexical(ctx, first.ID, "opening", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -219,7 +219,7 @@ func TestTheWordsHalfStaysInsideItsVault(t *testing.T) {
 	}
 
 	// A word only the other vault holds is not in this one.
-	leaked, err := queries.Lexical(ctx, first.ID, "second", 10, false)
+	leaked, err := queries.Lexical(ctx, first.ID, "second", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -236,7 +236,7 @@ func TestAHitComesBackAsTheWindowThatIsRead(t *testing.T) {
 	book(t, db, first, "library/first.epub", 0x00)
 
 	queries := db.ChunkQueries()
-	dense, err := queries.Nearest(ctx, first.ID, "model", direction(0x00), 10, search.DefaultFloor)
+	dense, err := queries.Nearest(ctx, first.ID, "model", direction(0x00), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -245,7 +245,7 @@ func TestAHitComesBackAsTheWindowThatIsRead(t *testing.T) {
 	}
 	// The words half finds the small windows and the large one, which is one row
 	// per window of the book.
-	lexical, err := queries.Lexical(ctx, first.ID, "first", 10, false)
+	lexical, err := queries.Lexical(ctx, first.ID, "first", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -352,14 +352,14 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 		t.Errorf("%d rows in the vector index describe a note that has been rewritten", got)
 	}
 	// The words of the note as it stands now are what the full-text index holds.
-	found, err := db.ChunkQueries().Lexical(ctx, first.ID, "longer", 10, false)
+	found, err := db.ChunkQueries().Lexical(ctx, first.ID, "longer", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(found) == 0 || found[0].Source != note.Ref.Path {
 		t.Errorf("the rewritten note is not findable by its new words: %+v", found)
 	}
-	if stale, err := db.ChunkQueries().Lexical(ctx, first.ID, "first", 10, false); err != nil {
+	if stale, err := db.ChunkQueries().Lexical(ctx, first.ID, "first", nil, 10, false); err != nil {
 		t.Fatal(err)
 	} else if len(stale) != 0 {
 		t.Errorf("the words of the note before it was rewritten still answer: %+v", stale)
@@ -413,14 +413,14 @@ func TestRemovingASourceLeavesNothingSearchable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	matches, err := db.ChunkQueries().Nearest(ctx, first.ID, "model", direction(0x00), 10, search.DefaultFloor)
+	matches, err := db.ChunkQueries().Nearest(ctx, first.ID, "model", direction(0x00), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(matches) != 0 {
 		t.Errorf("a removed book still answers a search: %+v", matches)
 	}
-	words, err := db.ChunkQueries().Lexical(ctx, first.ID, "first", 10, false)
+	words, err := db.ChunkQueries().Lexical(ctx, first.ID, "first", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -829,7 +829,7 @@ func TestAChunkTooFarFromTheQueryIsNoAnswer(t *testing.T) {
 	book(t, db, first, "library/first.epub", 0x00)
 	queries := db.ChunkQueries()
 
-	far, err := queries.Nearest(ctx, first.ID, "model", direction(0xff), 10, search.DefaultFloor)
+	far, err := queries.Nearest(ctx, first.ID, "model", direction(0xff), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -838,7 +838,7 @@ func TestAChunkTooFarFromTheQueryIsNoAnswer(t *testing.T) {
 	}
 
 	// The same vault, asked what it does hold.
-	near, err := queries.Nearest(ctx, first.ID, "model", direction(0x00), 10, search.DefaultFloor)
+	near, err := queries.Nearest(ctx, first.ID, "model", direction(0x00), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -874,7 +874,7 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	near, err := db.ChunkQueries().Nearest(ctx, first.ID, "model", direction(0xff), 1, search.DefaultFloor)
+	near, err := db.ChunkQueries().Nearest(ctx, first.ID, "model", direction(0xff), nil, 1, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -976,7 +976,7 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 
 	// The coarse pass answers, because the bits are there. What is asked of it
 	// afterwards is the model's own, and this vector is another model's.
-	near, err := queries.Nearest(ctx, first.ID, "model", direction(0x00), 10, 0.5)
+	near, err := queries.Nearest(ctx, first.ID, "model", direction(0x00), nil, 10, 0.5)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -985,7 +985,7 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 	}
 
 	// Asked of the model that made them, the same rows answer.
-	its, err := queries.Nearest(ctx, first.ID, "another-model", direction(0x00), 10, 0.5)
+	its, err := queries.Nearest(ctx, first.ID, "another-model", direction(0x00), nil, 10, 0.5)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1203,7 +1203,7 @@ func TestASectionIsFoundByItsName(t *testing.T) {
 	sectioned(t, db, first, "library/chaitanya.pdf")
 	queries := db.ChunkQueries()
 
-	lexical, err := queries.Lexical(ctx, first.ID, "Madhavendra Puri", 10, false)
+	lexical, err := queries.Lexical(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1214,7 +1214,7 @@ func TestASectionIsFoundByItsName(t *testing.T) {
 		t.Fatal("the words half already answers with the section, and this proves nothing")
 	}
 
-	named, err := queries.Named(ctx, first.ID, "Madhavendra Puri", 10, false)
+	named, err := queries.Named(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1240,7 +1240,7 @@ func TestOnlyTheWindowThatOpensASectionCarriesItsName(t *testing.T) {
 	db := opened(t)
 	sectioned(t, db, first, "library/chaitanya.pdf")
 
-	named, err := db.ChunkQueries().Named(ctx, first.ID, "Madhavendra Puri", 10, false)
+	named, err := db.ChunkQueries().Named(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1255,7 +1255,7 @@ func TestTheNamesHalfStaysInsideItsVault(t *testing.T) {
 	sectioned(t, db, first, "library/chaitanya.pdf")
 	sectioned(t, db, second, "library/chaitanya.pdf")
 
-	named, err := db.ChunkQueries().Named(ctx, first.ID, "Madhavendra Puri", 10, false)
+	named, err := db.ChunkQueries().Named(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1282,7 +1282,7 @@ func TestASectionCutAwayIsNotFoundByItsName(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	named, err := db.ChunkQueries().Named(ctx, first.ID, "Madhavendra Puri", 10, false)
+	named, err := db.ChunkQueries().Named(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1316,7 +1316,7 @@ func TestASectionSurvivesTheWayASourceIsHandedOver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	named, err := db.ChunkQueries().Named(ctx, first.ID, "Madhavendra Puri", 10, false)
+	named, err := db.ChunkQueries().Named(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}

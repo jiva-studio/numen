@@ -62,10 +62,14 @@ func addNoteTools(server *sdk.Server, core Core) {
 			"papers filed beside them — for the words typed and for what they mean. " +
 			"Returns passages, best first: the text around each hit and the file it was " +
 			"read from. One passage per file, so a long book does not take the answer. " +
-			"Use this before assuming something is or is not written down.",
+			"Use this before assuming something is or is not written down. " +
+			"When the person asks about a book — find it in the book, what does the " +
+			"book say — pass kinds: [\"book\"]. A vault holds far more notes than " +
+			"books, and a search told to look everywhere answers with notes.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		Query string `json:"query" jsonschema:"words to look for"`
-		Limit int    `json:"limit,omitempty" jsonschema:"how many passages to return, 20 by default"`
+		Query string   `json:"query" jsonschema:"words to look for"`
+		Kinds []string `json:"kinds,omitempty" jsonschema:"which sorts of file to look in: note, book. All of them when left out"`
+		Limit int      `json:"limit,omitempty" jsonschema:"how many passages to return, 20 by default"`
 	}) (*sdk.CallToolResult, struct {
 		Matches []Passage `json:"matches"`
 	}, error) {
@@ -75,8 +79,12 @@ func addNoteTools(server *sdk.Server, core Core) {
 		if in.Limit > maxMatches {
 			return nil, out{}, fmt.Errorf("ask for at most %d passages at a time", maxMatches)
 		}
+		of, err := sorts(in.Kinds)
+		if err != nil {
+			return nil, out{}, err
+		}
 		found, err := core.Search.Execute(ctx, core.Vault, in.Query,
-			search.Parameters{Limit: in.Limit})
+			search.Parameters{Of: of, Limit: in.Limit})
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -560,4 +568,20 @@ func carried(l NewLink) int {
 type RemoveOutcome struct {
 	note.Removed
 	Refused string `json:"refused,omitempty" jsonschema:"why this one was not removed, empty when it was"`
+}
+
+// sorts is the kinds of source a question names. A kind the vault has no word
+// for is a mistake in the asking and is said so, rather than quietly answering
+// about everything.
+func sorts(named []string) ([]domain.SourceKind, error) {
+	out := make([]domain.SourceKind, 0, len(named))
+	for _, one := range named {
+		kind := domain.SourceKind(one)
+		if kind != domain.KindNote && kind != domain.KindBook {
+			return nil, fmt.Errorf("%q is not a sort of file this vault holds: try %q or %q",
+				one, domain.KindNote, domain.KindBook)
+		}
+		out = append(out, kind)
+	}
+	return out, nil
 }
