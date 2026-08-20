@@ -107,6 +107,7 @@ func windows(in []port.Window) []chunk.Window {
 			Length:   w.Length,
 			Location: w.Location,
 			Text:     w.Text,
+			Opens:    w.Opens,
 			Small:    windows(w.Small),
 		})
 	}

@@ -38,6 +38,10 @@ type Parameters struct {
 	// times as many, and the full-precision vectors order those.
 	Lexical int
 	Dense   int
+	// Named is how many sections the names half keeps. A document has far fewer
+	// sections than chunks, and one name matching is a strong thing to have
+	// said, so a few of them are enough.
+	Named int
 	// Floor is how near the query a passage stands to be an answer at all. It
 	// is read only by the meaning half; the words half has no distance.
 	Floor float64
@@ -51,9 +55,10 @@ func (p Parameters) filled() Parameters {
 	if p.Limit <= 0 {
 		p.Limit = defaultLimit
 	}
-	if p.Lexical <= 0 && p.Dense <= 0 {
+	if p.Lexical <= 0 && p.Dense <= 0 && p.Named <= 0 {
 		p.Lexical = p.Limit * lexicalCandidates
 		p.Dense = p.Limit
+		p.Named = p.Limit
 	}
 	if p.Floor == 0 {
 		p.Floor = DefaultFloor
@@ -100,6 +105,10 @@ func New(passages port.PassageQueries, readers port.VaultReaders, derived port.D
 
 // Execute runs the halves the parameters name, merges their rankings by rank,
 // and returns one passage per document.
+//
+// Three halves, which is a way of saying three orders. The words in a chunk, the
+// meaning of a chunk, and the name of the section a chunk opens: a chunk that
+// two of them place well outranks one that any of them placed first alone.
 func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.Passage, error) {
 	if p.Floor == 0 {
 		p.Floor = u.floor
@@ -113,6 +122,13 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 			return nil, err
 		}
 		rankings = append(rankings, lexical)
+	}
+	if p.Named > 0 {
+		named, err := u.passages.Named(ctx, v.ID, query, p.Named, p.Growing)
+		if err != nil {
+			return nil, err
+		}
+		rankings = append(rankings, named)
 	}
 	if p.Dense > 0 && u.embedder != nil {
 		dense, err := u.nearest(ctx, v, query, p)

@@ -253,21 +253,16 @@ func TestAnIndexWhoseSchemaDoesNotMatchItsNumberIsRefused(t *testing.T) {
 	ctx := t.Context()
 	path := filepath.Join(t.TempDir(), "index.db")
 
-	available, err := loadMigrations()
-	if err != nil {
-		t.Fatal(err)
-	}
-	// Every migration but the newest claimed, and none of what they build, so
-	// the newest runs against a schema without what it was written to expect.
-	behind := available[len(available)-1].version - 1
-
 	raw, err := sql.Open("sqlite", dsn(path))
 	if err != nil {
 		t.Fatal(err)
 	}
+	// A number saying nothing has been applied, over a schema already holding a
+	// name the first migration builds. It runs, and it cannot.
 	for _, statement := range []string{
 		`CREATE TABLE strangers (id INTEGER PRIMARY KEY)`,
-		fmt.Sprintf(`PRAGMA user_version = %d`, behind),
+		`CREATE TABLE vaults (id INTEGER PRIMARY KEY)`,
+		`PRAGMA user_version = 0`,
 	} {
 		if _, err := raw.ExecContext(ctx, statement); err != nil {
 			t.Fatal(err)
@@ -282,6 +277,7 @@ func TestAnIndexWhoseSchemaDoesNotMatchItsNumberIsRefused(t *testing.T) {
 		db.Close()
 		t.Fatal("an index whose schema does not match its number was opened")
 	}
+	t.Logf("refused with: %v", err)
 
 	// What it held, it still holds.
 	back, err := sql.Open("sqlite", dsn(path))

@@ -416,6 +416,10 @@ func windowsOf(doc *text.Document, sizes window.Sizes) []port.Window {
 	var out []port.Window
 	for _, large := range window.Cut(doc.Text, doc.Places, sizes) {
 		w := windowAt(doc, large)
+		// The name of a section is kept on the window that begins it, and on that
+		// one only: a small window standing at the same place is inside it, and
+		// one section named twice is one section answering twice.
+		w.Opens = doc.Opens(large.Start)
 		for _, small := range large.Small {
 			w.Small = append(w.Small, windowAt(doc, small))
 		}

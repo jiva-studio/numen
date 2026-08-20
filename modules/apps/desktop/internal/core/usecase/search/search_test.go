@@ -319,3 +319,78 @@ func TestAPassageIsReadFromTheFileAndNotFromTheIndex(t *testing.T) {
 		}
 	}
 }
+
+// sectioned replaces one note's windows with three, of which the first opens a
+// section whose name the section after it says over and over.
+//
+// This is the shape a chapter of a book has: the chapter names its subject once,
+// in its heading, and a paragraph further on says it four times.
+func (c corpus) sectioned(t *testing.T, v domain.Vault, path string) {
+	t.Helper()
+	windows := []chunk.Window{
+		{
+			Start: 0, Length: 40, Location: "Madhavendra Puri",
+			Opens: []string{"Madhavendra Puri"},
+			Text:  "Madhavendra Puri appeared in the fourteenth",
+		},
+		{
+			Start: 40, Length: 40, Location: "The Disciplic Succession",
+			Opens: []string{"The Disciplic Succession"},
+			Text: "Madhavendra Puri was the disciple. Madhavendra Puri had disciples. " +
+				"Madhavendra Puri is said. Madhavendra Puri again.",
+		},
+	}
+	if err := c.db.Chunks().SaveWindows(t.Context(), v.ID, "note", path, windows); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestASearchAnswersWithTheSectionAskedAbout(t *testing.T) {
+	// The words half ranks by how often the words appear, so a paragraph in the
+	// middle of a chapter outranks the chapter's own opening. Asked where a book
+	// speaks about a thing, what a person wants is the section about it.
+	ctx := t.Context()
+	c := indexed(t)
+	c.sectioned(t, c.first, "notes/Entropy.md")
+
+	words, err := c.db.ChunkQueries().Lexical(ctx, c.first.ID, "Madhavendra Puri", 20, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(words) == 0 || words[0].Start == 0 {
+		t.Fatalf("the words half answers with %+v, and this proves nothing", words)
+	}
+
+	found, err := c.search(nil).Execute(ctx, c.first, "Madhavendra Puri", search.Parameters{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) == 0 {
+		t.Fatal("the search found nothing")
+	}
+	if found[0].Start != 0 {
+		t.Errorf("the search opened at %d, and the section begins at 0", found[0].Start)
+	}
+	if found[0].Location != "Madhavendra Puri" {
+		t.Errorf("the search answered with %q", found[0].Location)
+	}
+}
+
+func TestANameThatMatchesNoSectionChangesNothing(t *testing.T) {
+	// The names half answers about sections alone. A question about words that
+	// name no section is the search there was before it.
+	ctx := t.Context()
+	c := indexed(t)
+	c.sectioned(t, c.first, "notes/Entropy.md")
+
+	found, err := c.search(nil).Execute(ctx, c.first, "disciple", search.Parameters{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) == 0 {
+		t.Fatal("the search found nothing")
+	}
+	if found[0].Start != 40 {
+		t.Errorf("the search opened at %d, and the words are at 40", found[0].Start)
+	}
+}

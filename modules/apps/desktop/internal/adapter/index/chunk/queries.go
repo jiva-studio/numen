@@ -108,6 +108,46 @@ func (q *Queries) Lexical(ctx context.Context, vaultID, query string, limit int,
 	return out, rows.Err()
 }
 
+// Named is the sections of one vault whose names match what was typed, best
+// first.
+//
+// A section answers with the chunk it opens, so what comes back stands where the
+// section begins. Asked where a book speaks about a thing, this is the half that
+// answers with the chapter about it and not with the paragraph that says its
+// name most often.
+func (q *Queries) Named(ctx context.Context, vaultID, query string, limit int, growing bool) ([]domain.Passage, error) {
+	if limit <= 0 {
+		return nil, fmt.Errorf("the names half needs a positive limit, got %d", limit)
+	}
+	expression := Expression(query, growing)
+	if expression == "" {
+		return nil, nil
+	}
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.db.QueryContext(ctx, stmt.Get("named"), expression, vault, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []domain.Passage
+	for rows.Next() {
+		var p domain.Passage
+		if err := rows.Scan(&p.Chunk, &p.Source, &p.TextFrom, &p.Hash, &p.Start, &p.Length, &p.Location, &p.HitAt); err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
 // Nearest is the meaning half of a search: the chunks of one vault nearest a
 // query vector, nearest first, at most `limit` of them.
 //

@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/embedding"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 )
 
@@ -1147,5 +1148,182 @@ func TestRecognisedStaysInsideItsVault(t *testing.T) {
 		if len(found) != 1 || found[0] != c.want {
 			t.Errorf("%s answers with %v, want only %v", c.vault.Name, found, c.want)
 		}
+	}
+}
+
+// sectioned is a book of three sections, where the words of a section's name
+// are said once in its own opening and often in the section after it.
+//
+// This is the shape a chapter of a scanned book has: the chapter says its
+// subject once, in its heading, and a paragraph in the middle of the next
+// section says it four times.
+func sectioned(t *testing.T, db *DB, vault domain.Vault, path string) {
+	t.Helper()
+	ctx := t.Context()
+	chunks := db.Chunks()
+
+	if err := chunks.SaveSource(ctx, vault.ID, chunk.Source{
+		Path: path, Kind: "book", Size: 1000, MTime: 1, Hash: "hash-" + path, Recipe: "pdf",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	windows := []chunk.Window{
+		{
+			Start: 0, Length: 100, Location: "Madhavendra Puri",
+			Opens: []string{"Madhavendra Puri"},
+			Text:  "Madhavendra Puri appeared in the fourteenth century.",
+			Small: []chunk.Window{{Start: 0, Length: 100, Text: "Madhavendra Puri appeared."}},
+		},
+		{
+			Start: 100, Length: 100, Location: "The Disciplic Succession",
+			Opens: []string{"The Disciplic Succession"},
+			Text: "Madhavendra Puri was the disciple of Laksmipati. " +
+				"Madhavendra Puri's disciples included Isvara Puri. " +
+				"Madhavendra Puri is said to be. Madhavendra Puri again.",
+			Small: []chunk.Window{{Start: 100, Length: 100, Text: "Madhavendra Puri four times over."}},
+		},
+		{
+			Start: 200, Length: 100, Location: "Nityananda Prabhu",
+			Opens: []string{"Nityananda Prabhu"},
+			Text:  "Nityananda Prabhu met him at a holy place.",
+			Small: []chunk.Window{{Start: 200, Length: 100, Text: "Nityananda Prabhu met him."}},
+		},
+	}
+	if err := chunks.SaveWindows(ctx, vault.ID, "book", path, windows); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestASectionIsFoundByItsName(t *testing.T) {
+	// The words half answers with the paragraph that says the name most often.
+	// Asked where a book speaks about a thing, what a person wants is the
+	// section about it.
+	ctx := t.Context()
+	db := opened(t)
+	sectioned(t, db, first, "library/chaitanya.pdf")
+	queries := db.ChunkQueries()
+
+	lexical, err := queries.Lexical(ctx, first.ID, "Madhavendra Puri", 10, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lexical) == 0 {
+		t.Fatal("the words half found nothing")
+	}
+	if lexical[0].Start == 0 {
+		t.Fatal("the words half already answers with the section, and this proves nothing")
+	}
+
+	named, err := queries.Named(ctx, first.ID, "Madhavendra Puri", 10, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(named) == 0 {
+		t.Fatal("the names half found no section")
+	}
+	if named[0].Start != 0 {
+		t.Errorf("the section came back at %d, and it begins at 0", named[0].Start)
+	}
+	if named[0].Location != "Madhavendra Puri" {
+		t.Errorf("the section came back as %q", named[0].Location)
+	}
+	if named[0].Chunk == 0 {
+		t.Error("the section names no row, so nothing can be merged on it")
+	}
+}
+
+func TestOnlyTheWindowThatOpensASectionCarriesItsName(t *testing.T) {
+	// A small window standing where a section begins is inside the window that
+	// opens it. One section named twice is one section answering twice, and the
+	// second answer is the same place said again.
+	ctx := t.Context()
+	db := opened(t)
+	sectioned(t, db, first, "library/chaitanya.pdf")
+
+	named, err := db.ChunkQueries().Named(ctx, first.ID, "Madhavendra Puri", 10, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(named) != 1 {
+		t.Fatalf("%d sections came back, want the one", len(named))
+	}
+}
+
+func TestTheNamesHalfStaysInsideItsVault(t *testing.T) {
+	ctx := t.Context()
+	db := opened(t)
+	sectioned(t, db, first, "library/chaitanya.pdf")
+	sectioned(t, db, second, "library/chaitanya.pdf")
+
+	named, err := db.ChunkQueries().Named(ctx, first.ID, "Madhavendra Puri", 10, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(named) != 1 {
+		t.Fatalf("%d sections came back, want the one this vault holds", len(named))
+	}
+}
+
+func TestASectionCutAwayIsNotFoundByItsName(t *testing.T) {
+	// A window keeps its row through a cut when it says the same thing, so a
+	// name is not dropped with the chunk. A section that is no longer there
+	// answering by name is a passage opening where nothing begins.
+	ctx := t.Context()
+	db := opened(t)
+	sectioned(t, db, first, "library/chaitanya.pdf")
+
+	// Cut again, and this time nothing opens a section.
+	if err := db.Chunks().SaveWindows(ctx, first.ID, "book", "library/chaitanya.pdf",
+		[]chunk.Window{{
+			Start: 0, Length: 100, Location: "Madhavendra Puri",
+			Text:  "Madhavendra Puri appeared in the fourteenth century.",
+			Small: []chunk.Window{{Start: 0, Length: 100, Text: "Madhavendra Puri appeared."}},
+		}}); err != nil {
+		t.Fatal(err)
+	}
+
+	named, err := db.ChunkQueries().Named(ctx, first.ID, "Madhavendra Puri", 10, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(named) != 0 {
+		t.Errorf("%d sections came back from a source that names none", len(named))
+	}
+}
+
+func TestASectionSurvivesTheWayASourceIsHandedOver(t *testing.T) {
+	// A source is written through the port, which is a second shape of a window
+	// and a place a field is dropped in silence. Everything below here can be
+	// right and a section still be unfindable.
+	ctx := t.Context()
+	db := opened(t)
+
+	if err := db.Sources().SaveExtraction(ctx, first.ID, port.Extraction{
+		Source: port.Source{
+			Ref: domain.FileRef{
+				Path: "library/chaitanya.pdf", Kind: domain.KindBook, Size: 1000, MTime: 1,
+			},
+			Hash:   "hash",
+			Recipe: "pdf",
+		},
+		Windows: []port.Window{{
+			Start: 0, Length: 60, Location: "Madhavendra Puri",
+			Opens: []string{"Madhavendra Puri"},
+			Text:  "Madhavendra Puri appeared in the fourteenth century.",
+			Small: []port.Window{{Start: 0, Length: 60, Text: "Madhavendra Puri appeared."}},
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	named, err := db.ChunkQueries().Named(ctx, first.ID, "Madhavendra Puri", 10, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(named) != 1 {
+		t.Fatalf("%d sections came back, want the one the source names", len(named))
+	}
+	if named[0].Start != 0 {
+		t.Errorf("the section came back at %d, and it begins at 0", named[0].Start)
 	}
 }

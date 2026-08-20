@@ -66,6 +66,25 @@ func (d *Document) Locate(offset int) string {
 	return strings.Join(named, ", ")
 }
 
+// Opens are the parts that begin exactly at an offset: what a section starting
+// here is called.
+//
+// A part and the first subsection inside it can begin at one place, and both
+// name it. What is answered is every name, outermost first, so a question about
+// either reaches the same place.
+func (d *Document) Opens(offset int) []string {
+	var names []string
+	for _, m := range d.named {
+		if m.Offset == offset {
+			names = append(names, m.Name)
+		}
+		if m.Offset > offset {
+			break
+		}
+	}
+	return names
+}
+
 // sheet is what a page of a file is called: where it stands in it.
 //
 // A person is told the number a viewer opens at, so there is one number and it
