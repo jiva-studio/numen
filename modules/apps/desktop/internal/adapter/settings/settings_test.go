@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/agent"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/embed"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
 )
 
@@ -184,5 +185,67 @@ func TestOneAgentFieldKeepsTheRest(t *testing.T) {
 	}
 	if cfg.Agent.Claude.MaxSteps != was {
 		t.Errorf("max steps is %d", cfg.Agent.Claude.MaxSteps)
+	}
+}
+
+// Nothing proofreads a reading unless a person named something to proofread it
+// with. This is what an untouched installation does, and a model that rewrites
+// a person's books does not arrive by default.
+func TestAnUntouchedInstallationProofreadsNothing(t *testing.T) {
+	cfg, err := settings.At(filepath.Join(t.TempDir(), "numen.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Indexing.Proofreading.Named() {
+		t.Errorf("proofreads with %+v", cfg.Indexing.Proofreading)
+	}
+}
+
+// A section named without a model is a section naming nothing.
+func TestAProofreaderWithoutAModelIsNoProofreader(t *testing.T) {
+	cfg, err := settings.At(write(t, `{"indexing":{"proofreading":{"use":"service"}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Indexing.Proofreading.Named() {
+		t.Error("proofreads with a model nobody named")
+	}
+}
+
+func TestANamedProofreaderKeepsTheDefaultsForTheRest(t *testing.T) {
+	cfg, err := settings.At(write(t,
+		`{"indexing":{"proofreading":{"use":"service","service":{"name":"google/gemini-2.5-flash"}}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	read := cfg.Indexing.Proofreading
+	if !read.Named() || read.Service.Name != "google/gemini-2.5-flash" {
+		t.Errorf("got %+v", read)
+	}
+	if read.Service.BaseURL != proofreading.Defaults().Service.BaseURL {
+		t.Errorf("base URL is %q", read.Service.BaseURL)
+	}
+	if read.Service.LettersApart != proofreading.Defaults().Service.LettersApart {
+		t.Errorf("letters apart is %v", read.Service.LettersApart)
+	}
+}
+
+func TestTheProofreadersKeyStaysOutOfWhatIsWrittenBack(t *testing.T) {
+	cfg, err := settings.At(write(t, `{"indexing":{"proofreading":{"service":{"key":"sk-proof"}}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := cfg.Indexing.Proofreading.Service.Key(); got != "sk-proof" {
+		t.Errorf("got %q", got)
+	}
+	raw, err := json.Marshal(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(raw), "sk-proof") {
+		t.Errorf("the key is in %s", raw)
+	}
+	if strings.Contains(cfg.Indexing.Proofreading.Service.String(), "sk-proof") {
+		t.Errorf("the key is in %s", cfg.Indexing.Proofreading.Service)
 	}
 }

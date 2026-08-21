@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/ocr/onnx"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
@@ -40,6 +41,10 @@ type Config struct {
 	// reaches the machine's own file. A zero value names no embedder, and nothing
 	// is embedded.
 	Embedding embed.Config
+
+	// Proofreading is what puts a reading right. It arrives the way Embedding
+	// does, and naming nothing here is naming no proofreader.
+	Proofreading proofreading.Config
 
 	// Agent is which agent answers in the panel. It arrives the way Embedding
 	// does.

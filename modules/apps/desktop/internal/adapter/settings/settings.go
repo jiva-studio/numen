@@ -22,6 +22,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/agent"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/ocr/onnx"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/proofreading"
 )
 
 // Config is this installation's settings, in sections named for what they are
@@ -57,14 +58,22 @@ type Indexing struct {
 	// Recognition is how a scanned document is read when a person asks for it.
 	// Nothing here runs on its own.
 	Recognition onnx.Config `json:"recognition"`
+
+	// Proofreading is what puts a reading right. Naming nothing here is naming
+	// no proofreader, and a reading is used as it was read.
+	Proofreading proofreading.Config `json:"proofreading"`
 }
 
 // Defaults are what an installation nobody has configured does.
 func Defaults() Config {
 	return Config{
-		V:        1,
-		Indexing: Indexing{Embedding: embed.Defaults(), Recognition: onnx.Defaults()},
-		Agent:    agent.Defaults(),
+		V: 1,
+		Indexing: Indexing{
+			Embedding:    embed.Defaults(),
+			Recognition:  onnx.Defaults(),
+			Proofreading: proofreading.Defaults(),
+		},
+		Agent: agent.Defaults(),
 	}
 }
 
