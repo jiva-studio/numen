@@ -91,9 +91,10 @@ stands, and the growth carried along that walk is what the rest is read off.
 
 A run claims the reading, asks about pages in batches and puts a count after
 what came back, so a run stopped part way is taken up at the page it stopped on.
-`Cut` is called after each batch, so a book answers about the pages already put
-right while the rest is still being read. A window whose text did not change
-keeps its vector, and about a fifth of blocks carry a misread word.
+`Cut` is called after each batch and before the count, so a book answers about
+the pages already put right while the rest is still being read, and a batch no
+count claims is one the next run asks about again. A window whose text did not
+change keeps its vector, and about a fifth of blocks carry a misread word.
 
 Where the service has a queue, one run collects the batch that is out and leaves
 the next, and the batch's name stands beside the reading. A batch outlives the

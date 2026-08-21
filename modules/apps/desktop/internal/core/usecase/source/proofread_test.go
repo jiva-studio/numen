@@ -279,6 +279,37 @@ func TestASourceIsCutAgainAsItsPagesArePutRight(t *testing.T) {
 	}
 }
 
+func TestABatchThatWasNotCutIsAskedAboutAgain(t *testing.T) {
+	put, v, shelved, by := proofreading(t, map[int]string{
+		0: corrects(0, "the WORDS 1"),
+		2: corrects(2, "the WORDS 3"),
+	})
+	cuts := 0
+	put.Cut = func(context.Context, domain.Vault, string) error {
+		cuts++
+		if cuts == 1 {
+			return errors.New("the index would not take it")
+		}
+		return nil
+	}
+
+	if _, err := put.Execute(t.Context(), v, documentPath); err == nil {
+		t.Fatal("a cut that failed was taken as a batch done")
+	}
+	if _, err := shelved.Read(t.Context(), textNames(t, shelved).far); err == nil {
+		t.Error("a batch nothing cut was counted")
+	}
+
+	by.asked = nil
+	if _, err := put.Execute(t.Context(), v, documentPath); err != nil {
+		t.Fatal(err)
+	}
+	// Four pages, two to a request, and the first two asked about again.
+	if len(by.asked) != 2 || len(by.asked[0]) == 0 || by.asked[0][0] != 0 {
+		t.Errorf("the run after it asked about %v", by.asked)
+	}
+}
+
 // names are what one reading of the fixture is kept under.
 type names struct {
 	hash     string

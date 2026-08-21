@@ -155,8 +155,9 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 		put, refused := u.gathered(asked, replies)
 		res.Refused += refused
 
-		// The corrections go first, so a run that dies among the writes leaves
-		// them ahead of the count and the next run trims them back to it.
+		// The corrections are written, the source is cut, and the count stands
+		// after both: a batch no count claims is one the next run asks about
+		// again, and it trims the corrections back to the count first.
 		if len(put) > 0 {
 			if err := store.Append(ctx, corrections, fixes.Pack(put)); err != nil {
 				return res, err
@@ -164,10 +165,10 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 			res.Fixed += len(put)
 		}
 		res.Read = end
-		if err := u.counted(ctx, store, far, standing{Pages: end}); err != nil {
+		if err := u.cut(ctx, v, path); err != nil {
 			return res, err
 		}
-		if err := u.cut(ctx, v, path); err != nil {
+		if err := u.counted(ctx, store, far, standing{Pages: end}); err != nil {
 			return res, err
 		}
 		u.progress(res)
@@ -294,10 +295,10 @@ func (u Proofread) await(
 		}
 		stood = standing{Pages: end}
 		res.Read = end
-		if err := u.counted(ctx, store, far, stood); err != nil {
+		if err := u.cut(ctx, v, path); err != nil {
 			return res, err
 		}
-		if err := u.cut(ctx, v, path); err != nil {
+		if err := u.counted(ctx, store, far, stood); err != nil {
 			return res, err
 		}
 		u.progress(res)
