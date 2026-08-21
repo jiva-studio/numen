@@ -59,6 +59,11 @@ a reply: a mark of ours coming back — `⟦` or `⟧`, which no recogniser prod
 refuses the page, as does a line the page did not name, and letters that moved
 further than the threshold drop that one correction.
 
+A reply row is the line's number and, after it, the line. What stands between
+them is a bar, spaces, or both: measured over one batch of 40 pages, the model
+answered 15 pages with `2544|the line` and 25 with `2544 the line`, each page in
+one style throughout. A row whose number runs into a word is not a row.
+
 Spaces, marks, case and diacritics come off both sides and the edit distance is
 taken as a share of the longer. Over 931 corrections the distribution has a hole
 in it: 36 stand further apart than 0.50, 47 than 0.30, 49 than 0.20, 70 than

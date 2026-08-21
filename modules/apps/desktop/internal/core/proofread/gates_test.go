@@ -135,3 +135,28 @@ func TestTwoLinesOfNoLettersStandNowhereApart(t *testing.T) {
 		t.Errorf("marks alone stand %v apart", apart)
 	}
 }
+
+func TestTheNumberIsTakenFromTheLineHoweverItIsSeparated(t *testing.T) {
+	for _, reply := range []string{
+		"10|the Guṇḍicā temple.",
+		"10 the Guṇḍicā temple.",
+		"10 | the Guṇḍicā temple.",
+	} {
+		fixed, answered := proofread.Fixed(page(), reply, proofread.LettersApart)
+		if !answered {
+			t.Errorf("%q was refused", reply)
+			continue
+		}
+		if len(fixed) != 1 || fixed[0].At != 10 || fixed[0].Text != "the Guṇḍicā temple." {
+			t.Errorf("%q gave back %v", reply, fixed)
+		}
+	}
+}
+
+func TestANumberRunningIntoTheLineRefusesThePage(t *testing.T) {
+	reply := "10the Guṇḍicā temple."
+
+	if fixed, answered := proofread.Fixed(page(), reply, proofread.LettersApart); answered {
+		t.Errorf("a row whose number is part of a word was taken as an answer, giving %v", fixed)
+	}
+}

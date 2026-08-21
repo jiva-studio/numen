@@ -15,10 +15,10 @@ const LettersApart = 0.30
 // Fixed is the lines a reply puts right, and whether the reply answers the
 // question that was asked.
 //
-// A mark of ours coming back refuses the page, as does a reply line that is not
-// a number the page carries, a bar and text. A correction whose letters stand
-// further than apart from the line as read is dropped, as is one saying what
-// the line already says.
+// A mark of ours coming back refuses the page, as does a reply row that is not
+// a number the page carries and, after it, the line. A correction whose letters
+// stand further than apart from the line as read is dropped, as is one saying
+// what the line already says.
 func Fixed(page Page, reply string, apart float64) ([]Line, bool) {
 	if strings.Contains(reply, Opens) || strings.Contains(reply, Closes) {
 		return nil, false
@@ -35,19 +35,14 @@ func Fixed(page Page, reply string, apart float64) ([]Line, bool) {
 		if row == "" {
 			continue
 		}
-		bar := strings.IndexByte(row, '|')
-		if bar < 0 {
-			return nil, false
-		}
-		at, err := strconv.Atoi(strings.TrimSpace(row[:bar]))
-		if err != nil {
+		at, text, ok := numbered(row)
+		if !ok {
 			return nil, false
 		}
 		was, named := read[at]
 		if !named {
 			return nil, false
 		}
-		text := strings.TrimSpace(row[bar+1:])
 		if text == strings.TrimSpace(was) {
 			continue
 		}
@@ -57,6 +52,30 @@ func Fixed(page Page, reply string, apart float64) ([]Line, bool) {
 		out = append(out, Line{At: at, Text: text})
 	}
 	return out, true
+}
+
+// numbered is the line a reply row is about and what that line now says.
+//
+// A row opens with the number, and a bar, spaces, or both stand between the
+// number and the line.
+func numbered(row string) (int, string, bool) {
+	digits := 0
+	for digits < len(row) && row[digits] >= '0' && row[digits] <= '9' {
+		digits++
+	}
+	if digits == 0 || digits == len(row) {
+		return 0, "", false
+	}
+	at, err := strconv.Atoi(row[:digits])
+	if err != nil {
+		return 0, "", false
+	}
+	rest := row[digits:]
+	if rest[0] != '|' && rest[0] != ' ' && rest[0] != '\t' {
+		return 0, "", false
+	}
+	rest = strings.TrimPrefix(strings.TrimLeft(rest, " \t"), "|")
+	return at, strings.TrimSpace(rest), true
 }
 
 // unfenced is a reply with the code fence a model wrapped it in taken off.
