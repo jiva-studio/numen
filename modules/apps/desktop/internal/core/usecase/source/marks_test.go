@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/fixes"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/pdf"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
@@ -294,5 +295,36 @@ func TestAFileRewrittenSinceItWasReadIsPlacedFromItself(t *testing.T) {
 	}
 	if len(after) == 1 && len(after[0].Rects) == 1 && after[0].Rects[0].MinY == 0.1 {
 		t.Error("the reading of other bytes was placed on the file that is there now")
+	}
+}
+
+// A run of a proofread reading is lit where its words now stand. A correction
+// that changes a line's length moves everything after it, and the coordinates
+// answer about the text the chunks are places in.
+func TestAProofreadReadingIsLitWhereItsWordsNowStand(t *testing.T) {
+	u, index, store, _, _, shelved := placing(t, "tiny.pdf")
+	holds(t, index, shelved, "ocr", "abc123")
+
+	written := []placed.Box{
+		{Page: 4, Start: 0, Length: 5, MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23},
+		{Page: 4, Start: 6, Length: 4, MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23},
+		{Page: 5, Start: 11, Length: 5, MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53},
+	}
+	if err := store.Write(t.Context(), text.Boxes("ocr", "abc123"), placed.Pack(written)); err != nil {
+		t.Fatal(err)
+	}
+	// The first line is put right and grows by three bytes, so the third line
+	// begins at 14 and runs to 19.
+	put := []fixes.Line{{At: 0, Text: "eighteen"}}
+	if err := store.Write(t.Context(), text.Fixes("ocr", "abc123"), fixes.Pack(put)); err != nil {
+		t.Fatal(err)
+	}
+
+	found, err := u.Execute(t.Context(), first, documentPath, 16, 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) != 1 || found[0].Page != 5 || len(found[0].Rects) != 1 {
+		t.Fatalf("the run was placed at %+v", found)
 	}
 }

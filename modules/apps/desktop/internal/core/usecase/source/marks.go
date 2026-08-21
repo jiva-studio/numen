@@ -7,6 +7,7 @@ import (
 	"sort"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/fixes"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/pdf"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
@@ -92,7 +93,18 @@ func (u Marks) read(
 	if err != nil {
 		return nil, err
 	}
-	return placed.Marks(placed.Unpack(raw), start, length), nil
+	boxes := placed.Unpack(raw)
+
+	// A reading that was proofread is read with its corrections in it, so a run
+	// of its text is a run of the corrected prose and the coordinates say where
+	// those words stand.
+	corrections, err := store.Read(ctx, text.Fixes(said.From, said.Hash))
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return nil, err
+	}
+	boxes = fixes.Boxes(boxes, fixes.Unpack(corrections))
+
+	return placed.Marks(boxes, start, length), nil
 }
 
 // layer is where the document's own text layer put the words, over the pages

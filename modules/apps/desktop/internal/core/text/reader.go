@@ -5,7 +5,9 @@ import (
 	"errors"
 	"io/fs"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/fixes"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/ocr"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
 )
@@ -55,15 +57,52 @@ func (r Reader) recognised(ctx context.Context, from, hash string) (*Document, e
 		if err != nil {
 			return nil, err
 		}
-		parts, err := r.Derived.Read(ctx, Parts(from, hash))
-		if err != nil && !errors.Is(err, fs.ErrNotExist) {
-			return nil, err
-		}
-		return Recognised(raw, parts), nil
+		return Composed(ctx, r.Derived, from, hash, raw)
 	}
 	// The store is a folder on the person's disk and they may empty it. The
 	// source says nothing until a scan notices and cuts it again.
 	return nil, ErrUnreadable
+}
+
+// Composed is a reading and everything kept beside it, as the text a source's
+// chunks are places in.
+//
+// The corrections are read before the coordinates, and a reading nothing
+// proofread is composed from its own bytes alone.
+func Composed(
+	ctx context.Context,
+	store port.DerivedStore,
+	from, hash string,
+	raw []byte,
+) (*Document, error) {
+	parts, err := beside(ctx, store, Parts(from, hash))
+	if err != nil {
+		return nil, err
+	}
+	corrections, err := beside(ctx, store, Fixes(from, hash))
+	if err != nil {
+		return nil, err
+	}
+	var boxes []byte
+	if len(corrections) > 0 {
+		if boxes, err = beside(ctx, store, Boxes(from, hash)); err != nil {
+			return nil, err
+		}
+	}
+	return Recognised(raw, parts, boxes, corrections), nil
+}
+
+// beside is what is kept under a name, and nothing where the store holds
+// nothing.
+func beside(ctx context.Context, store port.DerivedStore, name string) ([]byte, error) {
+	raw, err := store.Read(ctx, name)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return raw, nil
 }
 
 // Recognised is a recognition, as the text its chunks are places in, the parts
@@ -72,10 +111,17 @@ func (r Reader) recognised(ctx context.Context, from, hash string) (*Document, e
 // The parts are what a layout model called a heading, written beside the
 // artifact when it was read. A recognition that names none is a document with
 // no parts, and is located by its pages alone.
-func Recognised(raw, parts []byte) *Document {
+//
+// A reading that was proofread is composed with its corrections in it, and the
+// pages and the parts stand where they now are.
+func Recognised(raw, parts, boxes, corrections []byte) *Document {
 	prose, marks := ocr.Read(raw)
+	named := ocr.Unpack(parts)
+	if put := fixes.Unpack(corrections); len(put) > 0 {
+		prose, marks, named = fixes.Prose(prose, marks, placed.Unpack(boxes), named, put)
+	}
 	doc := &Document{Text: prose}
-	for _, p := range divided(prose, ocr.Unpack(parts)) {
+	for _, p := range divided(prose, named) {
 		doc.Places = append(doc.Places, p)
 		doc.named = append(doc.named, mark{Offset: p.Offset, Name: p.Title})
 	}
@@ -134,6 +180,18 @@ func Boxes(from, hash string) string {
 	return from + "/" + hash + ".boxes"
 }
 
+// Fixes is the name a reading's corrections are kept under. A reading nothing
+// proofread has no such file.
+func Fixes(from, hash string) string {
+	return from + "/" + hash + ".fixes"
+}
+
+// Proofread is the name of what says who put a reading right and how far they
+// got. A run stopped part way is taken up again at the page it names.
+func Proofread(from, hash string) string {
+	return from + "/" + hash + ".proofread"
+}
+
 // Beside is the name of what says which models produced an artifact. Nothing on
 // any hot path reads it; it is there so a person can ask what read a text they
 // are looking at, and so a sweep can find everything a recogniser now known to
@@ -150,6 +208,8 @@ func Names(from, hash string) []string {
 		Partial(from, hash),
 		Boxes(from, hash),
 		Parts(from, hash),
+		Fixes(from, hash),
+		Proofread(from, hash),
 		Beside(from, hash),
 	}
 }

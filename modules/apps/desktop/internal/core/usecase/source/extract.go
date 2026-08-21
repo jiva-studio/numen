@@ -515,8 +515,11 @@ func (u Extract) text(ctx context.Context, ref domain.FileRef, raw []byte, hash 
 			case err == nil:
 				// The parts of a reading bound the windows it is cut into, the
 				// way an outline bounds a book's.
-				parts, _ := u.Derived.Read(ctx, text.Parts(from, hash))
-				return text.Recognised(found, parts), from, nil
+				doc, err := text.Composed(ctx, u.Derived, from, hash, found)
+				if err != nil {
+					return nil, "", err
+				}
+				return doc, from, nil
 			case !errors.Is(err, fs.ErrNotExist):
 				return nil, "", err
 			}
