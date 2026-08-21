@@ -58,6 +58,8 @@ func proofreadCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 	fmt.Fprintf(out, "proofreading %s with %s\n", args[1], by.Name())
 	started := time.Now()
 
+	// The line of pages rewrites itself, and is closed once it stops.
+	shown := false
 	res, err := source.Proofread{
 		Readers: cfg.VaultReaders(),
 		Derived: cfg.DerivedStores(),
@@ -72,19 +74,26 @@ func proofreadCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 		OnProgress: func(res source.ProofreadResult) {
 			if res.Pages > 0 {
 				fmt.Fprintf(out, "  page %d of %d\r", res.Read, res.Pages)
+				shown = true
 			}
 		},
 	}.Execute(ctx, v, args[1])
 	if err != nil {
 		return err
 	}
+	if shown {
+		fmt.Fprintln(out)
+	}
 
 	switch {
 	case res.Busy:
 		fmt.Fprintf(out, "%s is already being proofread, and nothing was done\n", res.Path)
 	case res.Waiting:
-		fmt.Fprintf(out, "%d of %d pages of %s are with the proofreader; ask again to collect them\n",
-			res.Read, res.Pages, res.Path)
+		// What a collected batch did is said here too: a run that leaves a
+		// batch collects one before it.
+		fmt.Fprintf(out, "put %d lines right, %d pages left as they were read; "+
+			"%d of %d pages of %s are with the proofreader, ask again to collect them\n",
+			res.Fixed, res.Refused, res.Read, res.Pages, res.Path)
 	case res.None:
 		fmt.Fprintf(out, "%s has no reading to proofread\n", res.Path)
 	default:

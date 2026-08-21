@@ -35,8 +35,9 @@ func (c Config) Recogniser() (recogniser port.Recogniser, close func() error, wh
 // reading dismissed is one reading dismissed.
 func reading() string { return fmt.Sprintf("reading-%d", time.Now().UnixNano()) }
 
-// correcting is what one proofreading is called, wherever it is shown.
-func correcting() string { return fmt.Sprintf("proofreading-%d", time.Now().UnixNano()) }
+// correcting is what one reading's proofreading is called, wherever it is
+// shown. One reading is one line, and it replaces itself as pages are put right.
+func correcting(path string) string { return "proofreading-" + path }
 
 // Recognising reads scanned documents behind whoever asked.
 //
@@ -183,7 +184,7 @@ func (r *Recognising) read(ctx context.Context, v domain.Vault, id, path string)
 func (r *Recognising) correct(ctx context.Context, v domain.Vault, path string) {
 	by, err := r.cfg.Proofreader()
 	if err != nil {
-		r.say(task.Task{ID: correcting(), Doing: "Proofreading a reading", About: path, Failed: err.Error()})
+		r.say(task.Task{ID: correcting(path), Doing: "Proofreading a reading", About: path, Failed: err.Error()})
 		return
 	}
 	if by == nil {
@@ -197,7 +198,7 @@ func (r *Recognising) correct(ctx context.Context, v domain.Vault, path string) 
 		return
 	}
 
-	id := correcting()
+	id := correcting(path)
 	service := r.cfg.Proofreading.Service
 	r.say(task.Task{ID: id, Doing: "Proofreading a reading", About: path})
 
@@ -286,7 +287,8 @@ func (r *Recognising) collect(
 		if ctx.Err() != nil {
 			return
 		}
-		_, err := source.Proofread{
+		id := correcting(said.Path)
+		res, err := source.Proofread{
 			Readers: r.cfg.VaultReaders(),
 			Derived: r.cfg.DerivedStores(),
 			By:      queue,
@@ -295,10 +297,21 @@ func (r *Recognising) collect(
 			Apart:   service.LettersApart,
 			Cut:     r.Cut,
 		}.Execute(ctx, v, said.Path)
-		if err != nil {
+
+		switch {
+		case err != nil:
 			r.say(task.Task{
-				ID: correcting(), Doing: "Proofreading a reading",
+				ID: id, Doing: "Proofreading a reading",
 				About: said.Path, Failed: err.Error(),
+			})
+		case res.None, res.Busy, res.Read >= res.Pages:
+			// A reading with nothing left to put right is a reading nobody is
+			// waiting on.
+			r.done(id)
+		default:
+			r.say(task.Task{
+				ID: id, Doing: "Proofreading a reading", About: said.Path,
+				Done: int64(res.Read), Total: int64(res.Pages),
 			})
 		}
 	}

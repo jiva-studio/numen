@@ -61,6 +61,9 @@ func recogniseCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 		Derived: derived,
 	}
 
+	// The line of pages is closed once it stops, so what follows it stands on a
+	// line of its own.
+	shown := false
 	recognise := source.Recognise{
 		Readers: cfg.VaultReaders(),
 		Sources: db.Sources(),
@@ -75,12 +78,16 @@ func recogniseCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 		OnProgress: func(res source.RecogniseResult) {
 			if res.Pages > 0 {
 				fmt.Fprintf(out, "  page %d of %d\r", res.Read, res.Pages)
+				shown = true
 			}
 		},
 	}
 	res, err := recognise.Execute(ctx, v, args[1])
 	if err != nil {
 		return err
+	}
+	if shown {
+		fmt.Fprintln(out)
 	}
 
 	switch {
