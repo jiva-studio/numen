@@ -78,6 +78,7 @@ Read these first; everything else is derived from them.
 - [ADR-0036 — A PDF's text layer is a cache; reading it with a model is an artifact a person asks for](0036-a-pdf-is-read-twice.md)
 - [ADR-0037 — A passage is shown where it was read, and one shape says where that is](0037-a-passage-is-shown-where-it-was-read.md)
 - [ADR-0038 — Where a passage is in a book, said so a person can find it](0038-where-a-passage-is-in-a-book.md)
+- [ADR-0039 — A reading is proofread, where a person configured something to proofread it with](0039-a-reading-is-proofread.md)
 
 Not yet written.
 
