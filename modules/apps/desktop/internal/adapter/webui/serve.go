@@ -118,6 +118,10 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		return nil
 	}
 
+	// A batch left with a proofreader outlives the run that left it, so one
+	// left before the application closed is collected when it opens.
+	go recognising.Collecting(watching, db.SourcesKnown(), collectedEvery, vaults...)
+
 	api := &API{
 		Vault:     vaults[0],
 		Notes:     db.Queries(),
@@ -293,6 +297,10 @@ const (
 // into it are embedded. It is longer than the bound in ui/src/tab.ts, which
 // writes an unfinished edit every five seconds while a person goes on typing.
 const settled = 8 * time.Second
+
+// collectedEvery is how often the batches left with a proofreader are asked
+// after. A batch is answered in hours.
+const collectedEvery = 5 * time.Minute
 
 // nudges are the two ways work reaches the reading behind the window once the
 // first pass is over: a book, which is found and cut before anything is

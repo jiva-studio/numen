@@ -23,6 +23,7 @@ usage:
   numen-cli vault list                         show the vaults this installation knows
   numen-cli scan <vault> [--rebuild-index]      bring the index up to date with a vault
   numen-cli recognise <vault> <file>          read a scanned document with a model
+  numen-cli proofread <vault> <file>          put a document's reading right with a model
   numen-cli search <vault> <query>             full-text search within one vault
   numen-cli links <vault> <note>               what a note points at, and what points at it
   numen-cli problems <vault> [<check>...]      what the vault holds that was not guessed at
@@ -48,7 +49,7 @@ func Main(ctx context.Context, out, errOut io.Writer, args []string, indexing se
 // Run is Main with its output injected and errors returned, so what the person
 // sees is testable.
 func Run(ctx context.Context, out io.Writer, args []string, indexing settings.Indexing) error {
-	cfg := container.Config{Embedding: indexing.Embedding, Recognition: indexing.Recognition}
+	cfg := container.Config{Embedding: indexing.Embedding, Recognition: indexing.Recognition, Proofreading: indexing.Proofreading}
 	fs := flag.NewFlagSet("numen-cli", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	fs.StringVar(&cfg.IndexPath, "index", "", "path to the index database")
@@ -78,6 +79,8 @@ func Run(ctx context.Context, out io.Writer, args []string, indexing settings.In
 		return scanCommand(ctx, out, cfg, rest[1:])
 	case "recognise":
 		return recogniseCommand(ctx, out, cfg, rest[1:])
+	case "proofread":
+		return proofreadCommand(ctx, out, cfg, rest[1:])
 	case "search":
 		return searchCommand(ctx, out, cfg, rest[1:])
 	case "links":
