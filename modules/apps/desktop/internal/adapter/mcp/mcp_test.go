@@ -151,6 +151,18 @@ func TestTheVaultIsLocatedInTheInstructions(t *testing.T) {
 	}
 }
 
+// The tools an agent is given say what they take; the instructions say how a
+// book is asked, which is what nothing about one tool's arguments can say.
+func TestHowABookIsAskedIsInTheInstructions(t *testing.T) {
+	session, _ := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	said := session.InitializeResult().Instructions
+	for _, rule := range []string{"source_show", "source_read", "own words"} {
+		if !strings.Contains(said, rule) {
+			t.Errorf("the instructions say nothing about %q:\n%s", rule, said)
+		}
+	}
+}
+
 func TestTheToolsAreNamedForWhatTheyWorkOn(t *testing.T) {
 	session, _ := connected(t, nil)
 	tools, err := session.ListTools(t.Context(), nil)

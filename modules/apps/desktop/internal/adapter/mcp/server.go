@@ -106,6 +106,18 @@ func instructions(core Core) string {
 	b.WriteString("the link tools rather than by writing the file yourself.\n")
 	b.WriteString("- A removed note goes to the vault's trash rather than being destroyed.\n\n")
 
+	b.WriteString("A vault holds books and papers beside its notes, and asking them is not ")
+	b.WriteString("like asking a note:\n")
+	b.WriteString("- Search with the person's own words before searching with your own. A ")
+	b.WriteString("book's sections are searched by name, and a section named what was asked ")
+	b.WriteString("for is what the search answers with.\n")
+	b.WriteString("- A search answers with several places of one book. Show every place you ")
+	b.WriteString("speak about: `source_show` takes the rest under `also`, and the person is ")
+	b.WriteString("taken to the first.\n")
+	b.WriteString("- A passage is a window cut to a size and it ends where it was cut, which ")
+	b.WriteString("is mid-sentence as often as not. Read on with `source_read` before saying ")
+	b.WriteString("a book does not say something.\n\n")
+
 	b.WriteString("Changes appear immediately in the window the person has open, so work in ")
 	b.WriteString("small steps they can follow.\n")
 	return b.String()
