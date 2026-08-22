@@ -18,7 +18,8 @@ const LettersApart = 0.30
 // A mark of ours coming back refuses the page, as does a reply row that is not
 // a number the page carries and, after it, the line. A correction whose letters
 // stand further than apart from the line as read is dropped, as is one saying
-// what the line already says.
+// what the line already says and one that only puts something wordless in
+// front of it.
 func Fixed(page Page, reply string, apart float64) ([]Line, bool) {
 	if strings.Contains(reply, Opens) || strings.Contains(reply, Closes) {
 		return nil, false
@@ -35,7 +36,7 @@ func Fixed(page Page, reply string, apart float64) ([]Line, bool) {
 		if row == "" {
 			continue
 		}
-		at, text, ok := numbered(row)
+		at, text, barred, ok := numbered(row)
 		if !ok {
 			return nil, false
 		}
@@ -43,7 +44,17 @@ func Fixed(page Page, reply string, apart float64) ([]Line, bool) {
 		if !named {
 			return nil, false
 		}
+		// A line opening with the digits the row opens with, and no bar to tell
+		// the two apart, is a row whose number was left out: the line's own
+		// first word reads as the number, and the page is refused rather than
+		// have that word eaten.
+		if !barred && strings.HasPrefix(strings.TrimSpace(was), opening(row)) {
+			return nil, false
+		}
 		if text == strings.TrimSpace(was) {
+			continue
+		}
+		if fronted(was, text) {
 			continue
 		}
 		if Apart(was, text) > apart {
@@ -54,28 +65,56 @@ func Fixed(page Page, reply string, apart float64) ([]Line, bool) {
 	return out, true
 }
 
-// numbered is the line a reply row is about and what that line now says.
+// numbered is the line a reply row is about, what that line now says, and
+// whether a bar stood between the two.
 //
 // A row opens with the number, and a bar, spaces, or both stand between the
 // number and the line.
-func numbered(row string) (int, string, bool) {
+func numbered(row string) (at int, text string, barred, ok bool) {
+	digits := opening(row)
+	if digits == "" || len(digits) == len(row) {
+		return 0, "", false, false
+	}
+	at, err := strconv.Atoi(digits)
+	if err != nil {
+		return 0, "", false, false
+	}
+	rest := row[len(digits):]
+	if rest[0] != '|' && rest[0] != ' ' && rest[0] != '\t' {
+		return 0, "", false, false
+	}
+	rest = strings.TrimLeft(rest, " \t")
+	barred = strings.HasPrefix(rest, "|")
+	return at, strings.TrimSpace(strings.TrimPrefix(rest, "|")), barred, true
+}
+
+// opening is the run of digits a row opens with, and nothing for a row opening
+// with anything else.
+func opening(row string) string {
 	digits := 0
 	for digits < len(row) && row[digits] >= '0' && row[digits] <= '9' {
 		digits++
 	}
-	if digits == 0 || digits == len(row) {
-		return 0, "", false
+	return row[:digits]
+}
+
+// fronted is a correction that says what the line says with something wordless
+// put in front of it.
+//
+// A separator this does not know — a dash, an arrow, a colon — stands where the
+// line begins, and the letters either side of it are the same, so nothing that
+// counts letters sees it.
+func fronted(was, text string) bool {
+	was = strings.TrimSpace(was)
+	if was == "" || !strings.HasSuffix(text, was) {
+		return false
 	}
-	at, err := strconv.Atoi(row[:digits])
-	if err != nil {
-		return 0, "", false
+	for _, r := range text[:len(text)-len(was)] {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			return false
+		}
 	}
-	rest := row[digits:]
-	if rest[0] != '|' && rest[0] != ' ' && rest[0] != '\t' {
-		return 0, "", false
-	}
-	rest = strings.TrimPrefix(strings.TrimLeft(rest, " \t"), "|")
-	return at, strings.TrimSpace(rest), true
+	return true
 }
 
 // unfenced is a reply with the code fence a model wrapped it in taken off.

@@ -160,3 +160,49 @@ func TestANumberRunningIntoTheLineRefusesThePage(t *testing.T) {
 		t.Errorf("a row whose number is part of a word was taken as an answer, giving %v", fixed)
 	}
 }
+
+// A separator the reply invented stands where the line begins, and the letters
+// either side of it are the same, so the third gate cannot see it.
+func TestAWordlessThingPutInFrontOfALineIsNoCorrection(t *testing.T) {
+	for _, put := range []string{
+		"10 - the Gundicā teinple.",
+		"10 — the Gundicā teinple.",
+		"10 → the Gundicā teinple.",
+		"10 : the Gundicā teinple.",
+	} {
+		fixed, answered := proofread.Fixed(page(), put, proofread.LettersApart)
+		if !answered {
+			t.Errorf("%q refused the page", put)
+			continue
+		}
+		if len(fixed) != 0 {
+			t.Errorf("%q put %q in front of the line", put, fixed[0].Text)
+		}
+	}
+}
+
+// The same line, corrected as well as fronted, is a correction: what stands in
+// front of it is not all that changed.
+func TestALineThatChangedIsACorrectionHoweverItOpens(t *testing.T) {
+	fixed, answered := proofread.Fixed(page(), "10|— the Guṇḍicā temple.", proofread.LettersApart)
+	if !answered || len(fixed) != 1 {
+		t.Fatalf("answered=%v gave %v", answered, fixed)
+	}
+}
+
+// A line whose own text opens with digits is a row whose number was left out.
+func TestARowWhoseNumberIsTheLinesOwnDigitsRefusesThePage(t *testing.T) {
+	dated := proofread.Page{At: 3, Lines: []proofread.Line{
+		{At: 1, Text: "1 January 1970 was a Thursday"},
+	}}
+
+	// The number is there, and the line is put right after it.
+	if fixed, answered := proofread.Fixed(dated, "1|1 January 1970 was a Thursday, they say", proofread.LettersApart); !answered || len(fixed) != 1 {
+		t.Fatalf("a row carrying its number was refused: answered=%v %v", answered, fixed)
+	}
+
+	// The number was left out, and the line's own first word reads as one.
+	if fixed, answered := proofread.Fixed(dated, "1 January 1970 was a Thursday, they say", proofread.LettersApart); answered {
+		t.Errorf("a row that ate the line's own digits was taken as an answer: %v", fixed)
+	}
+}
