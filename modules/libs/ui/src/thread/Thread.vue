@@ -9,15 +9,22 @@
 import { computed } from 'vue'
 import Prose from '../prose/Prose.vue'
 import Tool from '../tool/Tool.vue'
-import { placeTurns, type PlacedTurn, type Turn } from './model'
+import { placeTurns, type PlacedTurn, type Turn, type TurnPlace } from './model'
 
-const props = defineProps<{
-  turns: readonly Turn[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    turns: readonly Turn[]
+    /** What the places under a turn are called together, for whoever cannot see them. */
+    places?: string
+  }>(),
+  { places: 'Places this speaks about' },
+)
 
 const emit = defineEmits<{
   /** A turn the person pressed, which is one that says it opens something. */
   (event: 'open', turn: Turn): void
+  /** A place under a turn the person pressed. */
+  (event: 'go', turn: Turn, place: TurnPlace): void
 }>()
 
 const placed = computed(() => placeTurns(props.turns))
@@ -71,6 +78,22 @@ const toolOf = (entry: PlacedTurn) => ({
           <Prose v-else :text="entry.turn.text" :arriving="entry.state === 'arriving'" />
         </slot>
       </div>
+
+      <ul
+        v-if="entry.turn.places?.length"
+        class="thread__places mt-2 flex flex-wrap gap-1"
+        :aria-label="places"
+      >
+        <li v-for="place in entry.turn.places" :key="place.id">
+          <button
+            type="button"
+            class="thread__place cursor-pointer rounded-node border border-node-border px-2 py-0.5 text-small text-hushed outline-none hover:text-answer-ink focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring"
+            @click="emit('go', entry.turn, place)"
+          >
+            {{ place.name }}
+          </button>
+        </li>
+      </ul>
 
       <p v-if="entry.state === 'failed'" class="mt-1 text-small text-alarm">
         <slot name="failure" :turn="entry.turn">Did not send</slot>

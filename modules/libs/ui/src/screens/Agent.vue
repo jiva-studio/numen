@@ -10,7 +10,7 @@
 import { onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
 import Thread from '../thread/Thread.vue'
 import Composer from '../composer/Composer.vue'
-import type { Turn } from '../thread/model'
+import type { Turn, TurnPlace } from '../thread/model'
 
 withDefaults(
   defineProps<{
@@ -39,6 +39,8 @@ const emit = defineEmits<{
   (event: 'stop'): void
   /** A turn the person pressed, which is one that says it opens something. */
   (event: 'open', turn: Turn): void
+  /** A place under a turn the person pressed. */
+  (event: 'go', turn: Turn, place: TurnPlace): void
 }>()
 
 const text = defineModel<string>({ default: '' })
@@ -67,7 +69,12 @@ onBeforeUnmount(() => watching?.disconnect())
     class="agent numen flex min-h-0 flex-col font-sans text-base text-ink"
     :style="{ '--agent-room': room }"
   >
-    <Thread class="agent__thread" :turns="turns" @open="emit('open', $event)">
+    <Thread
+      class="agent__thread"
+      :turns="turns"
+      @open="emit('open', $event)"
+      @go="(turn: Turn, place: TurnPlace) => emit('go', turn, place)"
+    >
       <template #silence><slot name="silence">Nothing said yet</slot></template>
       <template v-if="$slots.turn" #turn="bound"><slot name="turn" v-bind="bound" /></template>
       <template #failure="bound"><slot name="failure" v-bind="bound">Did not send</slot></template>

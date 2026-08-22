@@ -57,7 +57,7 @@ export { default as Waiting } from './waiting/Waiting.vue'
 
 export { default as Thread } from './thread/Thread.vue'
 export { VOICES, VOICE_NAMES, charsWord, placeTurns } from './thread/model'
-export type { PlacedTurn, Turn, TurnState, Voice } from './thread/model'
+export type { PlacedTurn, Turn, TurnPlace, TurnState, Voice } from './thread/model'
 
 export { default as Prose } from './prose/Prose.vue'
 export { default as Tool } from './tool/Tool.vue'

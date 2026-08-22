@@ -50,6 +50,7 @@ import type {
   PlexShowing,
   Tab,
   Turn,
+  TurnPlace,
 } from '@numen/ui'
 import '@numen/ui/styles.css'
 import { core, documents } from './vault'
@@ -65,6 +66,7 @@ import { ITEMS, chose as carry } from './menu'
 import { leaving } from './leaving'
 import { core as agent } from './agent'
 import { conversation } from './conversation'
+import type { Place } from './agent'
 import { AGENT, NOTE, PLEX, plexCalled, shortened } from './workspace'
 
 const drawings = drawn()
@@ -169,10 +171,21 @@ const notices = computed<readonly Notice[]>(() =>
 /** What a note was called by the node it was opened from. */
 const titles = new Map<string, string>()
 
+/**
+ * What a place in a document is called: the page it begins on, as the reader
+ * numbers pages. A place standing nowhere is called by its file.
+ */
+const pageOf = async (place: Place): Promise<string> => {
+  const where = await documents.marks(place.path, [{ start: place.start, length: place.length }])
+  const first = where[0]?.[0]
+  if (!first) return documentCalled(place.path)
+  return `${words.page} ${first.page + 1}`
+}
+
 /** What each tab of the window holds, and what it lets go of when it closes. */
 const held = holding({
   plex: window.plex,
-  talk: (name) => conversation(agent, words, name),
+  talk: (name) => conversation(agent, words, name, undefined, pageOf),
   note: async () => {
     const made = await making.start()
     if (!made) return ''
@@ -272,6 +285,18 @@ const send = (id: string, text: string) => {
 const opensTurn = (id: string, turn: Turn) => {
   const place = held.agents.value.get(id)?.place(turn.id)
   if (place) opensAt(place.path, { start: place.start, length: place.length })
+}
+
+/**
+ * A place under an answer pressed: the document opens there, and the other
+ * places that answer speaks about in the same document are lit with it.
+ */
+const goesTo = (id: string, turn: Turn, chosen: TurnPlace) => {
+  const spoken = held.agents.value.get(id)?.places(turn.id) ?? []
+  const here = spoken.find((spot) => spot.id === chosen.id)
+  if (!here) return
+  const withIt = spoken.filter((spot) => spot !== here && spot.path === here.path)
+  opensAt(here.path, ...[here, ...withIt].map(({ start, length }) => ({ start, length })))
 }
 
 /** The identity a pane made by a split is filed under. */
@@ -518,6 +543,7 @@ onUnmounted(() => {
           @submit="(text: string) => send(id, text)"
           @stop="talkIn(id)?.stop()"
           @open="(turn: Turn) => opensTurn(id, turn)"
+          @go="(turn: Turn, place: TurnPlace) => goesTo(id, turn, place)"
         >
           <template #silence>{{ unreachable || words.nothingSaid }}</template>
           <template #failure="{ turn }">
