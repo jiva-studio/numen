@@ -24,6 +24,11 @@ const (
 	maxMatches = 100
 )
 
+// passagesEach is how many places in one file a search answers with. A book
+// speaks about a thing in several places, and a reader who cannot turn the page
+// is told about all of them.
+const passagesEach = 3
+
 // maxBytes is the most one call will carry in either direction, whether that is
 // one note or a batch of them. It is the ceiling a read holds a note to.
 //
@@ -61,7 +66,11 @@ func addNoteTools(server *sdk.Server, core Core) {
 		Description: "Search everything the vault holds — the notes, and the books and " +
 			"papers filed beside them — for the words typed and for what they mean. " +
 			"Returns passages, best first: the text around each hit and the file it was " +
-			"read from. One passage per file, so a long book does not take the answer. " +
+			"read from. A file answers with at most a few of its passages, so a long " +
+			"book does not take the answer. " +
+			"A passage is a window cut to a size, and it ends where it was cut, which " +
+			"is mid-sentence as often as not: read on with source_read before " +
+			"concluding that a book says nothing about something. " +
 			"Use this before assuming something is or is not written down. " +
 			"When the person asks about a book — find it in the book, what does the " +
 			"book say — pass kinds: [\"book\"]. A vault holds far more notes than " +
@@ -84,7 +93,7 @@ func addNoteTools(server *sdk.Server, core Core) {
 			return nil, out{}, err
 		}
 		found, err := core.Search.Execute(ctx, core.Vault, in.Query,
-			search.Parameters{Of: of, Limit: in.Limit})
+			search.Parameters{Of: of, Limit: in.Limit, Each: passagesEach})
 		if err != nil {
 			return nil, out{}, err
 		}

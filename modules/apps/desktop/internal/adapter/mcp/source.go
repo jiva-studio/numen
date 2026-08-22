@@ -7,6 +7,7 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/source"
 )
 
 // A Document is one source of a vault that is not a note, as an agent is told
@@ -73,6 +74,54 @@ func addSourceTools(server *sdk.Server, core Core) {
 			}
 		}
 		return nil, out{Documents: documents, Says: says}, nil
+	})
+
+	sdk.AddTool(server, &sdk.Tool{
+		Name:  "source_read",
+		Title: "Read a run of a document's text",
+		Description: "Read a stretch of one document's own text, in the offsets a search's " +
+			"passage carries. A passage is a window cut to a size and it ends where it " +
+			"was cut, so what answers the question often stands just past it: ask for " +
+			"the run beginning at the passage's start plus its length to read on, or " +
+			"for one beginning before it to read back. The text is what the reader that " +
+			"made it wrote, corrections and all, which is the text a search matched. " +
+			"Notes are read with note_read.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
+		Path   string `json:"path" jsonschema:"the document, as source_list gives it"`
+		Start  int    `json:"start" jsonschema:"where the run begins in the document's text, in bytes"`
+		Length int    `json:"length" jsonschema:"how much to read, in bytes"`
+	}) (*sdk.CallToolResult, struct {
+		Text     string `json:"text"`
+		Location string `json:"location,omitempty" jsonschema:"where the run begins in the document's own numbering"`
+		Start    int    `json:"start" jsonschema:"where the run begins, which is what was asked for held within the text"`
+		Length   int    `json:"length" jsonschema:"how long the run is"`
+		Whole    int    `json:"whole" jsonschema:"how long the document's text is, so what stands on either side can be asked for"`
+	}, error) {
+		type out = struct {
+			Text     string `json:"text"`
+			Location string `json:"location,omitempty" jsonschema:"where the run begins in the document's own numbering"`
+			Start    int    `json:"start" jsonschema:"where the run begins, which is what was asked for held within the text"`
+			Length   int    `json:"length" jsonschema:"how long the run is"`
+			Whole    int    `json:"whole" jsonschema:"how long the document's text is, so what stands on either side can be asked for"`
+		}
+		if core.Sources == nil {
+			return nil, out{}, fmt.Errorf("this vault's sources are not open")
+		}
+		res, err := source.Read{
+			Readers: core.Readers,
+			Sources: core.Sources,
+			Derived: core.Derived,
+		}.Execute(ctx, core.Vault, in.Path, in.Start, in.Length)
+		if err != nil {
+			return nil, out{}, err
+		}
+		return nil, out{
+			Text:     res.Text,
+			Location: res.Location,
+			Start:    res.Start,
+			Length:   res.Length,
+			Whole:    res.Whole,
+		}, nil
 	})
 
 	sdk.AddTool(server, &sdk.Tool{

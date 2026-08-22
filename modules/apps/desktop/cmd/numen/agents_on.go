@@ -173,6 +173,7 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string) mcp.Core
 
 		Sources:   opened.Index.SourcesKnown(),
 		Recognise: recogniser(opened),
+		Derived:   cfg.DerivedStores(),
 
 		Search:        search.New(opened.Index.Passages(), readers, cfg.DerivedStores(), opened.Embedder, cfg.Embedding.Floor),
 		Neighbourhood: note.ShowNeighbourhood{Links: opened.Index.Links(), Notes: queries},

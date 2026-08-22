@@ -42,6 +42,9 @@ type Core struct {
 	// Without them the tools for those documents are not added.
 	Sources   port.SourceQueries
 	Recognise Recognising
+	// Derived is where a reading of a document is kept. Without it a document
+	// stands on its own bytes, which for a scan is nothing.
+	Derived port.DerivedStores
 
 	Search        search.Search
 	Neighbourhood note.ShowNeighbourhood
