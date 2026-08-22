@@ -18,6 +18,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   /** A turn the person pressed, which is one that says it opens something. */
   (event: 'open', turn: Turn): void
+  /** A link inside a turn was pressed, with the turn it stands in. */
+  (event: 'follow', turn: Turn, href: string, press: MouseEvent): void
 }>()
 
 const placed = computed(() => placeTurns(props.turns))
@@ -68,7 +70,12 @@ const toolOf = (entry: PlacedTurn) => ({
             <Tool v-else v-bind="toolOf(entry)" />
           </template>
           <span v-else-if="entry.voice.bubble" class="thread__text">{{ entry.turn.text }}</span>
-          <Prose v-else :text="entry.turn.text" :arriving="entry.state === 'arriving'" />
+          <Prose
+            v-else
+            :text="entry.turn.text"
+            :arriving="entry.state === 'arriving'"
+            @follow="(href: string, press: MouseEvent) => emit('follow', entry.turn, href, press)"
+          />
         </slot>
       </div>
 

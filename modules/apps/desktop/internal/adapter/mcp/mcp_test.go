@@ -156,7 +156,7 @@ func TestTheVaultIsLocatedInTheInstructions(t *testing.T) {
 func TestHowABookIsAskedIsInTheInstructions(t *testing.T) {
 	session, _ := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	said := session.InitializeResult().Instructions
-	for _, rule := range []string{"source_show", "source_read", "own words"} {
+	for _, rule := range []string{"source_show", "source_read", "own words", "numen:"} {
 		if !strings.Contains(said, rule) {
 			t.Errorf("the instructions say nothing about %q:\n%s", rule, said)
 		}

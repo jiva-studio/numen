@@ -116,7 +116,12 @@ func instructions(core Core) string {
 	b.WriteString("taken to the first.\n")
 	b.WriteString("- A passage is a window cut to a size and it ends where it was cut, which ")
 	b.WriteString("is mid-sentence as often as not. Read on with `source_read` before saying ")
-	b.WriteString("a book does not say something.\n\n")
+	b.WriteString("a book does not say something.\n")
+	b.WriteString("- Name a passage in what you write as a link, so the person can go to it:\n")
+	b.WriteString("  `[the Remuna episode](numen:library%2FA%20Book.pdf?start=62690&length=1246)`\n")
+	b.WriteString("  The path is percent-encoded, and the start and length are the ones the ")
+	b.WriteString("search gave you. Write the link where you speak about the passage, not in ")
+	b.WriteString("a list at the end.\n\n")
 
 	b.WriteString("Changes appear immediately in the window the person has open, so work in ")
 	b.WriteString("small steps they can follow.\n")

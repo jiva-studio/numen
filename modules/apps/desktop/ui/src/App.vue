@@ -65,6 +65,7 @@ import { ITEMS, chose as carry } from './menu'
 import { leaving } from './leaving'
 import { core as agent } from './agent'
 import { conversation } from './conversation'
+import { same, spotOf, spotsIn } from './places'
 import { AGENT, NOTE, PLEX, plexCalled, shortened } from './workspace'
 
 const drawings = drawn()
@@ -272,6 +273,19 @@ const send = (id: string, text: string) => {
 const opensTurn = (id: string, turn: Turn) => {
   const place = held.agents.value.get(id)?.place(turn.id)
   if (place) opensAt(place.path, { start: place.start, length: place.length })
+}
+
+/**
+ * A link inside an answer pressed. One naming a place in the vault opens it,
+ * and the other places that answer names in the same document are lit with it.
+ * Any other link is left to whatever would follow it.
+ */
+const followed = (turn: Turn, href: string, press: MouseEvent) => {
+  const here = spotOf(href)
+  if (!here) return
+  press.preventDefault()
+  const named = spotsIn(turn.text).filter((spot) => spot.path === here.path && !same(spot, here))
+  opensAt(here.path, ...[here, ...named].map(({ start, length }) => ({ start, length })))
 }
 
 /** The identity a pane made by a split is filed under. */
@@ -518,6 +532,9 @@ onUnmounted(() => {
           @submit="(text: string) => send(id, text)"
           @stop="talkIn(id)?.stop()"
           @open="(turn: Turn) => opensTurn(id, turn)"
+          @follow="
+            (turn: Turn, href: string, press: MouseEvent) => followed(turn, href, press)
+          "
         >
           <template #silence>{{ unreachable || words.nothingSaid }}</template>
           <template #failure="{ turn }">
