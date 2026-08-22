@@ -130,11 +130,13 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 		}
 		rankings = append(rankings, lexical)
 	}
+	var named []domain.Passage
 	if p.Named > 0 {
-		named, err := u.passages.Named(ctx, v.ID, query, p.Of, p.Named, p.Growing)
+		found, err := u.passages.Named(ctx, v.ID, query, p.Of, p.Named, p.Growing)
 		if err != nil {
 			return nil, err
 		}
+		named = found
 		rankings = append(rankings, named)
 	}
 	if p.Dense > 0 && u.embedder != nil {
@@ -144,7 +146,7 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 		}
 		rankings = append(rankings, dense)
 	}
-	return u.read(ctx, v, collapse(merge(rankings...), p.Limit))
+	return u.read(ctx, v, collapse(merge(rankings...), named, p.Limit))
 }
 
 // nearest is the search asked by meaning, over a vector of the query itself.

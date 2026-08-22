@@ -56,7 +56,18 @@ func merge(rankings ...[]domain.Passage) []domain.Passage {
 //
 // The order is the order it was given, so the best-ranked chunk of a source is
 // the one that survives.
-func collapse(fused []domain.Passage, limit int) []domain.Passage {
+//
+// Where a document has a section named what was asked for, that section is the
+// passage it answers with. Which documents answer is asked of every ranking;
+// where in one to stand is what its names say.
+func collapse(fused, named []domain.Passage, limit int) []domain.Passage {
+	sections := map[string]domain.Passage{}
+	for _, p := range named {
+		if _, held := sections[p.Source]; !held {
+			sections[p.Source] = p
+		}
+	}
+
 	out := make([]domain.Passage, 0, min(limit, len(fused)))
 	taken := map[string]bool{}
 	for _, p := range fused {
@@ -64,6 +75,9 @@ func collapse(fused []domain.Passage, limit int) []domain.Passage {
 			continue
 		}
 		taken[p.Source] = true
+		if section, has := sections[p.Source]; has {
+			p = section
+		}
 		out = append(out, p)
 		if len(out) == limit {
 			break
