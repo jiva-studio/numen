@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
 )
 
@@ -91,10 +92,6 @@ func (a *API) Marks(w http.ResponseWriter, r *http.Request, path string) {
 // one page at a time.
 const longestRun = 100_000
 
-// mostRuns is how many places one question may ask about. What is lit at once
-// is what a person can take in.
-const mostRuns = 8
-
 // places is which parts of the source's text the window is asking about: a
 // `start` and a `length` for each of them, paired in the order they are given.
 func places(query url.Values) ([]placed.Run, error) {
@@ -102,8 +99,8 @@ func places(query url.Values) ([]placed.Run, error) {
 	if len(starts) != len(lengths) {
 		return nil, fmt.Errorf("%d places begin and %d have a length", len(starts), len(lengths))
 	}
-	if len(starts) == 0 || len(starts) > mostRuns {
-		return nil, fmt.Errorf("ask about between one and %d places, not %d", mostRuns, len(starts))
+	if len(starts) == 0 || len(starts) > domain.MostLit {
+		return nil, fmt.Errorf("ask about between one and %d places, not %d", domain.MostLit, len(starts))
 	}
 	runs := make([]placed.Run, 0, len(starts))
 	for i, at := range starts {

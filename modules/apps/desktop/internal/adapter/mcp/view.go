@@ -11,10 +11,6 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
-// mostPlaces is how many places beyond the one the person is taken to may be
-// lit at once. What is lit at once is what a person can take in.
-const mostPlaces = 7
-
 // addViewTools gives an agent the one thing a person watching can do that
 // reading and writing cannot: put a place in front of them.
 //
@@ -92,8 +88,8 @@ func addViewTools(server *sdk.Server, core Core) {
 				"a passage begins at or after the start of the text, and its length is zero or more")
 		}
 
-		if len(in.Also) > mostPlaces {
-			return nil, out{}, fmt.Errorf("light at most %d places of one document", mostPlaces+1)
+		if 1+len(in.Also) > domain.MostLit {
+			return nil, out{}, fmt.Errorf("light at most %d places of one document", domain.MostLit)
 		}
 
 		ref, err := holding(ctx, core, in.Path)
