@@ -55,8 +55,7 @@ func run(cfg container.Config, agents agentOptions, zoom float64) error {
 	if err != nil {
 		return err
 	}
-	cfg.Embedding = chosen.Indexing.Embedding
-	cfg.Recognition = chosen.Indexing.Recognition
+	cfg = cfg.Indexing(chosen.Indexing)
 	cfg.Agent = chosen.Agent
 
 	opened, err := webui.Open(ctx, cfg, os.Stdout)

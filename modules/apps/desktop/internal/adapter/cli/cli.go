@@ -49,7 +49,7 @@ func Main(ctx context.Context, out, errOut io.Writer, args []string, indexing se
 // Run is Main with its output injected and errors returned, so what the person
 // sees is testable.
 func Run(ctx context.Context, out io.Writer, args []string, indexing settings.Indexing) error {
-	cfg := container.Config{Embedding: indexing.Embedding, Recognition: indexing.Recognition, Proofreading: indexing.Proofreading}
+	cfg := container.Config{}.Indexing(indexing)
 	fs := flag.NewFlagSet("numen-cli", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	fs.StringVar(&cfg.IndexPath, "index", "", "path to the index database")

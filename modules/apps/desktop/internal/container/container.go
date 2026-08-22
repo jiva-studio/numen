@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/ocr/onnx"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/proofreading"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
@@ -55,6 +56,20 @@ type Config struct {
 	// person with a vault restored from an archive is not asked which binary they
 	// are holding.
 	RebuildIndex bool
+}
+
+// Indexing is this configuration carrying what a settings file says about
+// making a vault searchable.
+//
+// Every section of it is carried here, in one place both entry points use. A
+// section an entry point leaves behind is a part of the application that does
+// nothing and says nothing, since naming no model is how a person turns one
+// off.
+func (c Config) Indexing(said settings.Indexing) Config {
+	c.Embedding = said.Embedding
+	c.Recognition = said.Recognition
+	c.Proofreading = said.Proofreading
+	return c
 }
 
 // Registry is the list of vaults this installation knows: application state,
