@@ -28,18 +28,6 @@ export const VOICE_NAMES = Object.keys(VOICES) as readonly Voice[]
 /** How far along a turn is. Settled unless it says otherwise. */
 export type TurnState = 'settled' | 'arriving' | 'failed'
 
-/**
- * Somewhere a turn stands for, as the thread draws it: what to call it, and
- * whatever the caller addresses it by.
- *
- * What a place is — a file, a page, a run of bytes — is the caller's business.
- * The thread draws a name and hands the name's own address back.
- */
-export interface TurnPlace {
-  readonly id: string
-  readonly name: string
-}
-
 export interface Turn {
   /** Whatever the caller addresses this turn by. Never read, only handed back. */
   readonly id: string
@@ -56,11 +44,6 @@ export interface Turn {
   readonly state?: TurnState
   /** Whether the turn stands for somewhere the person can be taken. */
   readonly opens?: boolean
-  /**
-   * The places this turn speaks about, each of them somewhere the person can be
-   * taken. They are drawn under it, in the order they are given.
-   */
-  readonly places?: readonly TurnPlace[]
 }
 
 /** A turn with everything about how to draw it worked out. */

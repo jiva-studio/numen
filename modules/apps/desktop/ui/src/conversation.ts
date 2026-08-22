@@ -26,15 +26,6 @@ export interface Wording {
   readonly nothing: string
 }
 
-/**
- * One place an answer speaks about: where it is, what to call it, and the name
- * the thread hands back when the person presses it.
- */
-export interface Spot extends Place {
-  readonly id: string
-  readonly name: string
-}
-
 export interface Conversation {
   readonly turns: Ref<Turn[]>
   /** An answer is being written; the composer shows it. */
@@ -42,8 +33,6 @@ export interface Conversation {
   readonly ask: (asked: string, focus: string) => Promise<void>
   /** The stretch of a source one line names, for a line that says it opens one. */
   readonly place: (turn: string) => Place | null
-  /** The places one answer speaks about, in the order they were reached. */
-  readonly places: (turn: string) => readonly Spot[]
   /** The answer on its way is let go of, and the conversation keeps what arrived. */
   readonly stop: () => void
   /**
@@ -73,33 +62,18 @@ const onNextFrame: Paint = (draw) => {
  */
 const spoken = (tool: string) => tool.replaceAll('_', ' ')
 
-/** A file by the name it is filed under, which is the last part of its path. */
-const called = (path: string): string => path.split('/').pop() ?? path
-
-/** Whether two places are the same stretch of the same file. */
-const same = (one: Place, other: Place): boolean =>
-  one.path === other.path && one.start === other.start && one.length === other.length
-
 export function conversation(
   agent: Agent,
   words: Wording,
   /** What this thread of talk is called, for as long as it is open. */
   conversation: string,
   paint: Paint = onNextFrame,
-  /**
-   * What a place is called where the person reads it — a page of a book. A
-   * place nothing can name is drawn by the file it is in.
-   */
-  naming: (place: Place) => Promise<string> = async (place) => called(place.path),
 ): Conversation {
   const turns = ref<Turn[]>([])
   const working = ref(false)
 
   /** The stretch of a source each line about work names, under the line's name. */
   const places = new Map<string, Place>()
-
-  /** The places each answer speaks about, under the answer's name. */
-  const visited = new Map<string, readonly Spot[]>()
 
   let next = 0
   let inFlight: AbortController | null = null
@@ -198,39 +172,12 @@ export function conversation(
       })
     }
 
-    // The places the agent reached while working towards this answer, in the
-    // order it reached them and each of them once.
-    let reached: Place[] = []
-
-    /**
-     * The places go under the answer they led to, named where the person reads
-     * them. The names are asked for after the turn is up: what a place is
-     * called is worth waiting for and the answer is not.
-     */
-    const naming_ = async (turn: string, said: string, places: readonly Place[]) => {
-      const spots = await Promise.all(
-        places.map(async (place, i) => ({
-          ...place,
-          id: `${i}`,
-          name: await naming(place).catch(() => called(place.path)),
-        })),
-      )
-      visited.set(turn, spots)
-      if (turns.value.some((one) => one.id === turn)) {
-        put({ id: turn, voice: 'answered', text: said, places: spots.map(({ id, name }) => ({ id, name })) })
-      }
-    }
-
     const settleAnswer = () => {
       if (!saying) return
       // An answer with nothing in it is a turn with no words and a gap either
       // side of it.
       if (answer === '') drop(saying)
-      else {
-        put({ id: saying, voice: 'answered', text: answer })
-        if (reached.length) void naming_(saying, answer, reached)
-      }
-      reached = []
+      else put({ id: saying, voice: 'answered', text: answer })
       saying = ''
     }
 
@@ -267,12 +214,9 @@ export function conversation(
             says = spoken(step.tool)
             about = step.about
             // A call naming a stretch of a source's text names somewhere the
-            // line can be pressed to open, and somewhere the answer it leads to
-            // speaks about.
-            if (step.place?.length) {
-              places.set(doing, step.place)
-              if (!reached.some((one) => same(one, step.place!))) reached.push(step.place)
-            } else places.delete(doing)
+            // line can be pressed to open.
+            if (step.place?.length) places.set(doing, step.place)
+            else places.delete(doing)
             nowDoing('arriving', step.written)
             break
 
@@ -351,13 +295,5 @@ export function conversation(
     }
   }
 
-  return {
-    turns,
-    working,
-    ask,
-    place: (turn: string) => places.get(turn) ?? null,
-    places: (turn: string) => visited.get(turn) ?? [],
-    stop,
-    finish,
-  }
+  return { turns, working, ask, place: (turn: string) => places.get(turn) ?? null, stop, finish }
 }

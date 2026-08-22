@@ -78,38 +78,6 @@ describe('a line about work that opens something', () => {
   })
 })
 
-describe('the places a turn speaks about', () => {
-  const answered: Turn = {
-    id: '2',
-    voice: 'answered',
-    text: 'The book says opinions differ.',
-    places: [
-      { id: 'a', name: 'page 39' },
-      { id: 'b', name: 'page 43' },
-    ],
-  }
-
-  it('are drawn under it, in the order they were given', () => {
-    const wrapper = thread([answered])
-
-    const drawn = wrapper.findAll('.thread__place')
-
-    expect(drawn.map((one) => one.text())).toStrictEqual(['page 39', 'page 43'])
-  })
-
-  it('say which turn and which place was pressed', async () => {
-    const wrapper = thread([answered])
-
-    await wrapper.findAll('.thread__place')[1]?.trigger('click')
-
-    expect(wrapper.emitted('go')).toEqual([[answered, { id: 'b', name: 'page 43' }]])
-  })
-
-  it('are nothing at all where a turn speaks about none', () => {
-    expect(thread([back('1')]).findAll('.thread__place')).toHaveLength(0)
-  })
-})
-
 describe('what the caller decides', () => {
   it('renders the body of a turn its own way when it says how', () => {
     const wrapper = mount(Thread, {

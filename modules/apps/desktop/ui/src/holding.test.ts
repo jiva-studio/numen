@@ -37,7 +37,6 @@ const talked = (stopped: string[], over: string[], conversation: string): Conver
   working: ref(false),
   ask: async () => {},
   place: () => null,
-  places: () => [],
   stop: () => stopped.push(conversation),
   finish: () => {
     stopped.push(conversation)
