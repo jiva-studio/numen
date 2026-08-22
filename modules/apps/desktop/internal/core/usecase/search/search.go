@@ -31,8 +31,15 @@ const DefaultFloor = 0.50
 // and what a candidate has to reach. A half that keeps none does not run; with
 // neither named, both run.
 type Parameters struct {
-	// Limit is how many results come back, one per document.
+	// Limit is how many results come back.
 	Limit int
+	// Each is how many passages one document may answer with. Zero is one, and
+	// a document names itself once.
+	//
+	// A reader who cannot turn the page needs the several places a book speaks
+	// about a thing, and a list a person runs their eye down needs one line per
+	// book.
+	Each int
 	// Lexical is how many candidates the words keep, and Dense how many passages
 	// the meaning returns. The coarse pass under it keeps several
 	// times as many, and the full-precision vectors order those.
@@ -61,6 +68,9 @@ type Parameters struct {
 func (p Parameters) filled() Parameters {
 	if p.Limit <= 0 {
 		p.Limit = defaultLimit
+	}
+	if p.Each <= 0 {
+		p.Each = 1
 	}
 	if p.Lexical <= 0 && p.Dense <= 0 && p.Named <= 0 {
 		p.Lexical = p.Limit * lexicalCandidates
@@ -146,7 +156,7 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 		}
 		rankings = append(rankings, dense)
 	}
-	return u.read(ctx, v, collapse(merge(rankings...), named, p.Limit))
+	return u.read(ctx, v, collapse(merge(rankings...), named, p.Each, p.Limit))
 }
 
 // nearest is the search asked by meaning, over a vector of the query itself.
