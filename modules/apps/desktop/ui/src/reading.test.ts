@@ -17,8 +17,12 @@ const SHAPE: Shape = {
   ],
 }
 
-/** A document of three pages, recording every question put to it. */
-function book(shape: Shape | Error = SHAPE, where: readonly Marked[] = []) {
+/**
+ * A document of three pages, recording every question put to it. It answers
+ * about each run asked about with the marks standing at the same place in
+ * `where`, and with nothing where that list is shorter.
+ */
+function book(shape: Shape | Error = SHAPE, where: readonly (readonly Marked[])[] = []) {
   const asked: string[] = []
   /** Every run of the document's text it was asked what stands on. */
   const runs: string[] = []
@@ -30,9 +34,9 @@ function book(shape: Shape | Error = SHAPE, where: readonly Marked[] = []) {
       return shape
     },
     page: (path, at, wide) => `${path} ${at} ${wide}`,
-    marks: async (path, start, length) => {
-      runs.push(`${path} ${start} ${length}`)
-      return where
+    marks: async (path, asking) => {
+      for (const one of asking) runs.push(`${path} ${one.start} ${one.length}`)
+      return asking.map((_, i) => where[i] ?? [])
     },
   }
 
@@ -141,7 +145,7 @@ describe('what is lit', () => {
     read.widen(800)
     const rect = { minX: 0.1, minY: 0.2, maxX: 0.9, maxY: 0.3 }
 
-    await read.light([{ page: 2, rects: [rect] }])
+    await read.light([[{ page: 2, rects: [rect] }]])
 
     expect(read.at.value).toBe(2)
     expect(read.lit.value).toStrictEqual([rect])
@@ -154,15 +158,43 @@ describe('what is lit', () => {
 describe('a document opened at a place in its text', () => {
   it('lights what stands there, on the first page it falls on', async () => {
     const rect = { minX: 0.1, minY: 0.2, maxX: 0.4, maxY: 0.23 }
-    const { documents, runs } = book(SHAPE, [{ page: 1, rects: [rect] }])
+    const { documents, runs } = book(SHAPE, [[{ page: 1, rects: [rect] }]])
     const read = reading(documents, 'Book.pdf')
     read.widen(800)
 
-    await read.reach(40_512, 31)
+    await read.reach({ start: 40_512, length: 31 })
 
     expect(runs).toStrictEqual(['Book.pdf 40512 31'])
     expect(read.at.value).toBe(1)
     expect(read.lit.value).toStrictEqual([rect])
+  })
+
+  it('lights the other places asked for where they fall, apart from the first', async () => {
+    const here = { minX: 0.1, minY: 0.2, maxX: 0.4, maxY: 0.23 }
+    const there = { minX: 0.1, minY: 0.5, maxX: 0.4, maxY: 0.53 }
+    const alsoThere = { minX: 0.1, minY: 0.8, maxX: 0.4, maxY: 0.83 }
+    const { documents, runs } = book(SHAPE, [
+      [{ page: 1, rects: [here] }],
+      [{ page: 1, rects: [there] }],
+      [{ page: 2, rects: [alsoThere] }],
+    ])
+    const read = reading(documents, 'Book.pdf')
+    read.widen(800)
+
+    await read.reach(
+      { start: 40_512, length: 31 },
+      { start: 41_000, length: 20 },
+      { start: 90_000, length: 12 },
+    )
+
+    expect(runs).toStrictEqual(['Book.pdf 40512 31', 'Book.pdf 41000 20', 'Book.pdf 90000 12'])
+    // The tab stands at the first place, which is the one lit.
+    expect(read.at.value).toBe(1)
+    expect(read.lit.value).toStrictEqual([here])
+    expect(read.also.value).toStrictEqual([there])
+    // The third place falls on another page and is lit there.
+    expect(read.alsoOn(2)).toStrictEqual([alsoThere])
+    expect(read.litOn(2)).toStrictEqual([])
   })
 
   it('stands on the first page with nothing lit where nothing stands there', async () => {
@@ -170,7 +202,7 @@ describe('a document opened at a place in its text', () => {
     const read = reading(documents, 'Book.pdf')
     read.widen(800)
 
-    await read.reach(40_512, 31)
+    await read.reach({ start: 40_512, length: 31 })
 
     expect(read.at.value).toBe(0)
     expect(read.lit.value).toStrictEqual([])
@@ -185,7 +217,7 @@ describe('a document opened at a place in its text', () => {
     const read = reading(documents, 'Book.pdf')
     read.widen(800)
 
-    await read.reach(40_512, 31)
+    await read.reach({ start: 40_512, length: 31 })
 
     expect(read.trouble.value).toContain('the layer is being written')
     expect(read.picture.value).toBe('Book.pdf 0 800')

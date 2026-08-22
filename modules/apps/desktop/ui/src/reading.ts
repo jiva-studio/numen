@@ -22,6 +22,12 @@ export interface Marked {
   readonly rects: readonly Rect[]
 }
 
+/** A stretch of a document's own text, counted in bytes. */
+export interface Run {
+  readonly start: number
+  readonly length: number
+}
+
 /** One page's size, in the page's own units. */
 export interface Sheet {
   readonly wide: number
@@ -54,10 +60,11 @@ export interface Documents {
    */
   page(path: string, at: number, wide: number): string
   /**
-   * Where a stretch of the document's own text stands on its pages, counted in
-   * bytes. A stretch nothing was recorded for stands nowhere.
+   * Where stretches of the document's own text stand on its pages, one answer
+   * per stretch and in the order they were asked about. A stretch nothing was
+   * recorded for stands nowhere.
    */
-  marks(path: string, start: number, length: number): Promise<readonly Marked[]>
+  marks(path: string, runs: readonly Run[]): Promise<readonly (readonly Marked[])[]>
 }
 
 /** The widest a page is drawn, in device pixels, which is as wide as one is drawn. */
@@ -73,8 +80,13 @@ export function reading(documents: Documents, path: string) {
   const at = ref(0)
   /** How wide the page is drawn, in device pixels. */
   const wide = ref(0)
-  /** What is lit, page by page. */
+  /** What is lit, page by page: the place the tab turned to. */
   const marks = ref<readonly Marked[]>([])
+  /**
+   * The other places asked for, page by page. They are somewhere else to look
+   * and not where the person was taken.
+   */
+  const others = ref<readonly (readonly Marked[])[]>([])
   /** What this document could not do, in words the window puts up for it. */
   const trouble = ref('')
 
@@ -85,8 +97,15 @@ export function reading(documents: Documents, path: string) {
   const litOn = (page: number): readonly Rect[] =>
     marks.value.find((one) => one.page === page)?.rects ?? []
 
+  /** The other places on one page, each of them somewhere else to look. */
+  const alsoOn = (page: number): readonly Rect[] =>
+    others.value.flatMap((where) => where.find((one) => one.page === page)?.rects ?? [])
+
   /** What is lit on the page in front. */
   const lit = computed<readonly Rect[]>(() => litOn(at.value))
+
+  /** The other places on the page in front. */
+  const also = computed<readonly Rect[]>(() => alsoOn(at.value))
 
   /**
    * Where one page is drawn, at the width the strip wants it. It is empty until
@@ -134,25 +153,28 @@ export function reading(documents: Documents, path: string) {
   }
 
   /**
-   * Where a run of the document's text sits. The tab turns to the first page it
-   * falls on, and every page it falls on is lit as it is reached.
+   * Where the runs of the document's text sit. The first of them is the place
+   * the person was sent to: the tab turns to its first page, and the rest are
+   * lit where they fall.
    */
-  const light = async (where: readonly Marked[]) => {
-    marks.value = where
-    const first = where[0]
+  const light = async (where: readonly (readonly Marked[])[]) => {
+    const [front = [], ...rest] = where
+    marks.value = front
+    others.value = rest
+    const first = front[0] ?? rest.flat()[0]
     if (first) await go(first.page)
   }
 
   /**
-   * A stretch of the document's text reached: what stands there is asked for
-   * and lit, and the tab turns to the first page of it. A stretch standing
-   * nowhere leaves the document on the page it is on with nothing lit.
+   * Stretches of the document's text reached: where they stand is asked for and
+   * lit, and the tab turns to the first page of the first of them. A stretch
+   * standing nowhere leaves the document on the page it is on with nothing lit.
    */
-  const reach = async (start: number, length: number) => {
+  const reach = async (...runs: readonly Run[]) => {
     await shape
-    if (!open) return
+    if (!open || runs.length === 0) return
     try {
-      const where = await documents.marks(path, start, length)
+      const where = await documents.marks(path, runs)
       if (!open) return
       await light(where)
     } catch (error) {
@@ -177,6 +199,8 @@ export function reading(documents: Documents, path: string) {
     pictureOf,
     lit,
     litOn,
+    also,
+    alsoOn,
     trouble,
     go,
     next,

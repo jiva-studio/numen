@@ -12,4 +12,14 @@ type Place struct {
 	// it.
 	Start  int
 	Length int
+	// Also are the other stretches of the same source worth seeing. The person
+	// is taken to the first stretch, and these are shown where they fall.
+	Also []Stretch
+}
+
+// A Stretch is a run of a source's text, counted in bytes over the text the
+// source is read as.
+type Stretch struct {
+	Start  int
+	Length int
 }

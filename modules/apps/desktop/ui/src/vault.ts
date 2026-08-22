@@ -103,10 +103,13 @@ export const documents: Documents = {
     return { pages: said.pages ?? 0, sheets: said.sheets ?? [] }
   },
   page: (path, at, wide) => `${asset(path)}/pages/${at}?wide=${wide}`,
-  marks: async (path, start, length) => {
-    const answer = await served(`${asset(path)}/marks?start=${start}&length=${length}`)
-    const said = (await answer.json()) as { marks?: readonly Marked[] }
-    return said.marks ?? []
+  marks: async (path, runs) => {
+    const where = runs
+      .map((one) => `start=${one.start}&length=${one.length}`)
+      .join('&')
+    const answer = await served(`${asset(path)}/marks?${where}`)
+    const said = (await answer.json()) as { runs?: readonly { marks?: readonly Marked[] }[] }
+    return runs.map((_, i) => said.runs?.[i]?.marks ?? [])
   },
 }
 

@@ -34,14 +34,18 @@ type Marks struct {
 	Layer func(raw []byte, pages []int) ([]placed.Box, error)
 }
 
-// Execute is where a run of one source's text sits: the pages it falls on and,
-// on each, the rectangles covering it.
+// Execute is where the runs of one source's text sit: for each of them, the
+// pages it falls on and, on each, the rectangles covering it.
+//
+// The answer stands in the order the runs were asked about, so a caller that
+// asked about a passage and the places around it knows which is which. The
+// coordinates are read once however many runs are asked about.
 func (u Marks) Execute(
 	ctx context.Context,
 	v domain.Vault,
 	path string,
-	start, length int,
-) ([]placed.Page, error) {
+	runs []placed.Run,
+) ([][]placed.Page, error) {
 	reader, err := u.Readers.Open(v)
 	if err != nil {
 		return nil, err
@@ -52,7 +56,7 @@ func (u Marks) Execute(
 	if err != nil {
 		return nil, err
 	}
-	if length <= 0 || start < 0 {
+	if len(runs) == 0 {
 		return nil, nil
 	}
 
@@ -63,10 +67,26 @@ func (u Marks) Execute(
 	// A reading is of the bytes the index last saw, and its coordinates
 	// describe those. A file rewritten since is read from its own layer, which
 	// is the words that are there now.
+	var boxes []placed.Box
 	if said.From != "" && ref.Unchanged(domain.FileRef{Size: said.Size, MTime: said.MTime}) {
-		return u.read(ctx, v, said, start, length)
+		boxes, err = u.read(ctx, v, said)
+	} else {
+		boxes, err = u.layer(ctx, reader, ref, runs)
 	}
-	return u.layer(ctx, reader, ref, start, length)
+	if err != nil {
+		return nil, err
+	}
+	return over(boxes, runs), nil
+}
+
+// over is where each run sits, in the order the runs were asked about. A run
+// standing nowhere is lit nowhere and keeps its place in the answer.
+func over(boxes []placed.Box, runs []placed.Run) [][]placed.Page {
+	out := make([][]placed.Page, 0, len(runs))
+	for _, one := range runs {
+		out = append(out, placed.Marks(boxes, one.Start, one.Length))
+	}
+	return out
 }
 
 // read is where a producer put the words it read. The coordinates are kept
@@ -76,8 +96,7 @@ func (u Marks) read(
 	ctx context.Context,
 	v domain.Vault,
 	said port.Recognised,
-	start, length int,
-) ([]placed.Page, error) {
+) ([]placed.Box, error) {
 	if u.Derived == nil {
 		return nil, nil
 	}
@@ -102,13 +121,11 @@ func (u Marks) read(
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return nil, err
 	}
-	boxes = fixes.Boxes(boxes, fixes.Unpack(corrections))
-
-	return placed.Marks(boxes, start, length), nil
+	return fixes.Boxes(boxes, fixes.Unpack(corrections)), nil
 }
 
 // layer is where the document's own text layer put the words, over the pages
-// the run falls on and no others.
+// the runs fall on and no others.
 //
 // Which pages those are comes from where each page's text begins, which the
 // document says when it is read. A page nothing asked about is not read.
@@ -116,8 +133,8 @@ func (u Marks) layer(
 	ctx context.Context,
 	reader port.VaultReader,
 	ref domain.FileRef,
-	start, length int,
-) ([]placed.Page, error) {
+	runs []placed.Run,
+) ([]placed.Box, error) {
 	if name, ok := text.ReaderName(ref); !ok || name != text.ReaderPDF {
 		// A book made for a screen is set afresh wherever it is shown, and
 		// carries no rectangles.
@@ -131,7 +148,7 @@ func (u Marks) layer(
 	if err != nil {
 		return nil, err
 	}
-	pages := across(book, start, start+length)
+	pages := every(book, runs)
 	if len(pages) == 0 {
 		return nil, nil
 	}
@@ -139,11 +156,25 @@ func (u Marks) layer(
 	if layer == nil {
 		layer = book.Placed
 	}
-	boxes, err := layer(raw, pages)
-	if err != nil {
-		return nil, err
+	return layer(raw, pages)
+}
+
+// every is the pages all the runs fall on, in order and each of them once. Two
+// runs on one page are one page read.
+func every(book *pdf.Book, runs []placed.Run) []int {
+	held := map[int]bool{}
+	var out []int
+	for _, one := range runs {
+		for _, page := range across(book, one.Start, one.Start+one.Length) {
+			if held[page] {
+				continue
+			}
+			held[page] = true
+			out = append(out, page)
+		}
 	}
-	return placed.Marks(boxes, start, length), nil
+	sort.Ints(out)
+	return out
 }
 
 // across is the pages a run of the document's text falls on. A page holds the

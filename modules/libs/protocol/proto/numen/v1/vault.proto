@@ -272,6 +272,17 @@ message FocusResponse {
   // with.
   int32 start = 2;
   int32 length = 3;
+
+  // The other stretches of the same source worth seeing. The person is taken to
+  // the stretch above, and these are shown where they fall.
+  repeated Stretch also = 4;
+}
+
+// A Stretch is a run of a source's text, counted in bytes over the text the
+// source is read as.
+message Stretch {
+  int32 start = 1;
+  int32 length = 2;
 }
 
 message EditingRequest {}

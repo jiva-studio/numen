@@ -52,6 +52,19 @@ describe('a page that has come', () => {
   it('lights what was found on it', async () => {
     expect((await arrived()).findAll('.reader__lit')).toHaveLength(LIT.length)
   })
+
+  it('marks the other places apart from the one it was opened at', async () => {
+    // Two ways of drawing one page: the place the person was sent to, and the
+    // others, which say there is something here and are not where they are.
+    const also = [{ minX: 0.1, minY: 0.6, maxX: 0.5, maxY: 0.66 }]
+    const page = mount(Sheet, {
+      props: { at: 0, picture: '/assets/book/pages/0?wide=400', lit: LIT, also },
+    })
+    await page.find('.reader__picture').trigger('load')
+
+    expect(page.findAll('.reader__also')).toHaveLength(also.length)
+    expect(page.findAll('.reader__lit')).toHaveLength(LIT.length)
+  })
 })
 
 describe('a page that will not come', () => {

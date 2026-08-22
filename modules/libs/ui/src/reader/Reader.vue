@@ -43,6 +43,8 @@ const props = withDefaults(
     picture?: (page: number) => string
     /** What is lit on one page, in fractions of it. */
     lit?: (page: number) => readonly Lit[]
+    /** The other places on one page, each of them somewhere else to look. */
+    also?: (page: number) => readonly Lit[]
     /** What turning back a page is called, and turning on. */
     back?: string
     next?: string
@@ -60,6 +62,7 @@ const props = withDefaults(
     at: 0,
     picture: () => '',
     lit: () => [],
+    also: () => [],
     back: 'Previous page',
     next: 'Next page',
     page: 'Page',
@@ -307,6 +310,7 @@ defineExpose({
           :at="page"
           :picture="drawing(page)"
           :lit="lit(page)"
+          :also="also(page)"
           :page="props.page"
           :undrawn="undrawn"
           :style="boxOf(page)"

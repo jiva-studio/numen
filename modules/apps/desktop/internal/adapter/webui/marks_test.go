@@ -99,10 +99,14 @@ func TestARunOfTheProseComesBackAsPagesAndRectangles(t *testing.T) {
 	if err := json.NewDecoder(out.Body).Decode(&told); err != nil {
 		t.Fatal(err)
 	}
-	if len(told.Marks) != 1 || told.Marks[0].Page != 1 || len(told.Marks[0].Rects) != 1 {
-		t.Fatalf("%q is on the second page and came back at %+v", "Delta", told.Marks)
+	if len(told.Runs) != 1 {
+		t.Fatalf("one place was asked about and %d came back: %+v", len(told.Runs), told.Runs)
 	}
-	box := told.Marks[0].Rects[0]
+	marks := told.Runs[0].Marks
+	if len(marks) != 1 || marks[0].Page != 1 || len(marks[0].Rects) != 1 {
+		t.Fatalf("%q is on the second page and came back at %+v", "Delta", marks)
+	}
+	box := marks[0].Rects[0]
 	if box.MinX < 0 || box.MinY < 0 || box.MaxX > 1 || box.MaxY > 1 {
 		t.Errorf("%q is at %+v, which is off the page", "Delta", box)
 	}
@@ -121,7 +125,7 @@ func TestASourceNothingIsKnownAboutComesBackWithNoPages(t *testing.T) {
 	if out.Code != http.StatusOK {
 		t.Fatalf("asked where a word is and got %d: %s", out.Code, out.Body)
 	}
-	if body := strings.TrimSpace(out.Body.String()); body != `{"marks":[]}` {
+	if body := strings.TrimSpace(out.Body.String()); body != `{"runs":[]}` {
 		t.Errorf("a source nothing is known about came back as %s", body)
 	}
 }

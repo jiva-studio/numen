@@ -1,6 +1,7 @@
 package webui
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
@@ -40,7 +41,7 @@ func TestTheLastPlaceAskedForIsTheOneWaiting(t *testing.T) {
 	focusing.tell(domain.Place{Path: "library/A Book.epub", Start: 1200, Length: 80})
 
 	want := domain.Place{Path: "library/A Book.epub", Start: 1200, Length: 80}
-	if waiting := <-line; waiting != want {
+	if waiting := <-line; !reflect.DeepEqual(waiting, want) {
 		t.Errorf("the listener was handed %+v", waiting)
 	}
 	if len(line) != 0 {

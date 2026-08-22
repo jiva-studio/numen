@@ -3,6 +3,7 @@ package mcp_test
 import (
 	"context"
 	"errors"
+	"reflect"
 	"testing"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
@@ -61,7 +62,7 @@ func TestFocusPutsANoteInFrontOfThePerson(t *testing.T) {
 	// A note is put in front of the person whole. Nothing about it names a
 	// stretch, so nothing is asked for one.
 	want := domain.Place{Path: "notes/entropy.md"}
-	if len(looking.asked) != 1 || looking.asked[0] != want {
+	if len(looking.asked) != 1 || !reflect.DeepEqual(looking.asked[0], want) {
 		t.Errorf("the window was asked for %v", looking.asked)
 	}
 }
@@ -138,7 +139,7 @@ func TestShowPutsAPlaceInFrontOfThePerson(t *testing.T) {
 		t.Errorf("answered with %+v", out)
 	}
 	want := domain.Place{Path: "library/A Book.epub", Start: 1200, Length: 80}
-	if len(looking.asked) != 1 || looking.asked[0] != want {
+	if len(looking.asked) != 1 || !reflect.DeepEqual(looking.asked[0], want) {
 		t.Errorf("the window was asked for %v", looking.asked)
 	}
 }

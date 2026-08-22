@@ -35,6 +35,8 @@ const props = withDefaults(
     picture?: string
     /** What is lit on it, in fractions of it. */
     lit?: readonly Lit[]
+    /** The other places on it, each of them somewhere else to look. */
+    also?: readonly Lit[]
     /** What the page is called, for whoever cannot see it. */
     page?: string
     /** What is said where it would not come. */
@@ -43,6 +45,7 @@ const props = withDefaults(
   {
     picture: '',
     lit: () => [],
+    also: () => [],
     page: 'Page',
     undrawn: 'This page would not come.',
   },
@@ -103,6 +106,12 @@ const boxOf = (one: Lit) => ({
     </div>
     <template v-if="arrived">
       <div
+        v-for="(one, index) in also"
+        :key="`also-${index}`"
+        class="reader__also pointer-events-none absolute rounded-[2px] bg-(--numen-highlight)"
+        :style="boxOf(one)"
+      />
+      <div
         v-for="(one, index) in lit"
         :key="index"
         class="reader__lit pointer-events-none absolute rounded-[2px] bg-(--numen-highlight)"
@@ -118,6 +127,12 @@ const boxOf = (one: Lit) => ({
 .reader__page {
   border: var(--numen-stroke) solid var(--numen-node-border);
   background: var(--numen-node-bg);
+}
+
+/* A place the person was not sent to is drawn faintly: it says there is
+   something here, and the place they were sent to is the one that reads as lit. */
+.reader__also {
+  opacity: 0.35;
 }
 
 /* The ring stands in the middle of a page's worth of nothing, so it is drawn at

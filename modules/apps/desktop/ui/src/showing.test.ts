@@ -428,7 +428,8 @@ describe('a place inside a source asked for from outside the window', () => {
       undefined,
       undefined,
       undefined,
-      (path, start, length) => opened.push(`${path} ${start} ${length}`),
+      (path, runs) =>
+        opened.push(`${path} ${runs.map((one) => `${one.start} ${one.length}`).join(' ')}`),
     )
     return { window, opened }
   }
@@ -448,6 +449,28 @@ describe('a place inside a source asked for from outside the window', () => {
 
     expect(opened).toStrictEqual(['library/mahabharata.epub 40512 31'])
     expect(plex.here.value).toBe('Opening.md')
+  })
+
+  it('opens the document at every place the focus names, the first of them first', async () => {
+    const core = fake({
+      focus: async function* () {
+        yield {
+          path: 'library/mahabharata.epub',
+          start: 40_512,
+          length: 31,
+          also: [
+            { start: 41_000, length: 20 },
+            // A place of no length is no place, and is not lit.
+            { start: 42_000, length: 0 },
+          ],
+        }
+      },
+    })
+    const { window, opened } = watching(core)
+
+    await window.watch()
+
+    expect(opened).toStrictEqual(['library/mahabharata.epub 40512 31 41000 20'])
   })
 
   it('travels the plex for a focus that names no run of a source', async () => {

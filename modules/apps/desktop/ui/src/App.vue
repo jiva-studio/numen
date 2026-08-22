@@ -54,7 +54,7 @@ import type {
 import '@numen/ui/styles.css'
 import { core, documents } from './vault'
 import { showing } from './showing'
-import { reading } from './reading'
+import { reading, type Run } from './reading'
 import { cornerOf } from './corner'
 import { editing } from './editing'
 import { drawn } from './drawn'
@@ -76,7 +76,7 @@ const window = showing(
   notes.changed,
   drawings.told,
   (path) => held.shows(path),
-  (path, start, length) => opensAt(path, start, length),
+  (path, runs) => opensAt(path, ...runs),
 )
 /** What the window answers when the application says it is going. */
 const going = leaving(core)
@@ -209,11 +209,13 @@ const entering = new Map<string, number>()
 
 /**
  * A document put in front of the person, opened at a stretch of its own text.
- * What stands there is lit, and the tab turns to the first page of it.
+ * What stands there is lit, and the tab turns to the first page of it. The
+ * places named after it are lit where they fall, each of them somewhere else to
+ * look.
  */
-const opensAt = (path: string, start: number, length: number) => {
+const opensAt = (path: string, ...runs: readonly Run[]) => {
   held.reads(path)
-  void held.documents.value.get(path)?.reach(start, length)
+  void held.documents.value.get(path)?.reach(...runs)
 }
 
 /**
@@ -232,7 +234,7 @@ const went = (item: string, action: string) => {
     return
   }
   if (landing.at === 'document') {
-    opensAt(landing.path, landing.start ?? 0, landing.length ?? 0)
+    opensAt(landing.path, { start: landing.start ?? 0, length: landing.length ?? 0 })
     return
   }
   titles.set(landing.path, landing.title || landing.path)
@@ -269,7 +271,7 @@ const send = (id: string, text: string) => {
 /** A line about work pressed: the place that call was on is put in front. */
 const opensTurn = (id: string, turn: Turn) => {
   const place = held.agents.value.get(id)?.place(turn.id)
-  if (place) opensAt(place.path, place.start, place.length)
+  if (place) opensAt(place.path, { start: place.start, length: place.length })
 }
 
 /** The identity a pane made by a split is filed under. */
@@ -531,6 +533,7 @@ onUnmounted(() => {
           :at="documentIn(id)!.at.value"
           :picture="documentIn(id)!.pictureOf"
           :lit="documentIn(id)!.litOn"
+          :also="documentIn(id)!.alsoOn"
           :back="words.back"
           :next="words.next"
           :page="words.page"

@@ -32,6 +32,12 @@ type Page struct {
 	Rects []Rect
 }
 
+// A Run is a stretch of a source's text, in bytes.
+type Run struct {
+	Start  int
+	Length int
+}
+
 // Marks is where a run of the prose sits: the pages it falls on and, on each,
 // the rectangles covering it.
 //

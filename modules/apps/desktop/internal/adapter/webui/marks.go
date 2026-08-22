@@ -8,13 +8,21 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
 )
 
 // errNoMarking is what a build with nothing to place a passage with answers.
 var errNoMarking = errors.New("this build cannot say where a passage is")
 
-// lit is what the window is told a run of the prose covers.
+// lit is what the window is told the runs of the prose cover, one entry per run
+// and in the order they were asked about.
 type lit struct {
+	Runs []covered `json:"runs"`
+}
+
+// covered is what one run covers.
+type covered struct {
 	Marks []onPage `json:"marks"`
 }
 
@@ -40,7 +48,7 @@ func (a *API) Marks(w http.ResponseWriter, r *http.Request, path string) {
 		http.Error(w, errNoMarking.Error(), http.StatusNotImplemented)
 		return
 	}
-	start, length, err := run(r.URL.Query())
+	runs, err := places(r.URL.Query())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -52,21 +60,25 @@ func (a *API) Marks(w http.ResponseWriter, r *http.Request, path string) {
 	ctx, cancel := context.WithTimeout(r.Context(), patience)
 	defer cancel()
 
-	found, err := a.Marking.Execute(ctx, a.Vault, path, start, length)
+	found, err := a.Marking.Execute(ctx, a.Vault, path, runs)
 	if err != nil {
 		refuse(w, err)
 		return
 	}
 
-	told := lit{Marks: make([]onPage, 0, len(found))}
-	for _, page := range found {
-		one := onPage{Page: page.Page, Rects: make([]rect, 0, len(page.Rects))}
-		for _, box := range page.Rects {
-			one.Rects = append(one.Rects, rect{
-				MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY,
-			})
+	told := lit{Runs: make([]covered, 0, len(found))}
+	for _, pages := range found {
+		one := covered{Marks: make([]onPage, 0, len(pages))}
+		for _, page := range pages {
+			marks := onPage{Page: page.Page, Rects: make([]rect, 0, len(page.Rects))}
+			for _, box := range page.Rects {
+				marks.Rects = append(marks.Rects, rect{
+					MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY,
+				})
+			}
+			one.Marks = append(one.Marks, marks)
 		}
-		told.Marks = append(told.Marks, one)
+		told.Runs = append(told.Runs, one)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -74,21 +86,36 @@ func (a *API) Marks(w http.ResponseWriter, r *http.Request, path string) {
 	json.NewEncoder(w).Encode(told)
 }
 
-// run is which part of the source's text the window is asking about: where it
-// begins, and how many bytes of it there are.
 // longestRun is the most text one question about a place may cover. A passage
 // is a few hundred characters; a run of a million asks where the whole book is,
 // one page at a time.
 const longestRun = 100_000
 
-func run(query url.Values) (start, length int, err error) {
-	start, err = strconv.Atoi(query.Get("start"))
-	if err != nil || start < 0 {
-		return 0, 0, fmt.Errorf("start: %q is not a place in the text", query.Get("start"))
+// mostRuns is how many places one question may ask about. What is lit at once
+// is what a person can take in.
+const mostRuns = 8
+
+// places is which parts of the source's text the window is asking about: a
+// `start` and a `length` for each of them, paired in the order they are given.
+func places(query url.Values) ([]placed.Run, error) {
+	starts, lengths := query["start"], query["length"]
+	if len(starts) != len(lengths) {
+		return nil, fmt.Errorf("%d places begin and %d have a length", len(starts), len(lengths))
 	}
-	length, err = strconv.Atoi(query.Get("length"))
-	if err != nil || length < 1 || length > longestRun {
-		return 0, 0, fmt.Errorf("length: %q is not a run of the text", query.Get("length"))
+	if len(starts) == 0 || len(starts) > mostRuns {
+		return nil, fmt.Errorf("ask about between one and %d places, not %d", mostRuns, len(starts))
 	}
-	return start, length, nil
+	runs := make([]placed.Run, 0, len(starts))
+	for i, at := range starts {
+		start, err := strconv.Atoi(at)
+		if err != nil || start < 0 {
+			return nil, fmt.Errorf("start: %q is not a place in the text", at)
+		}
+		length, err := strconv.Atoi(lengths[i])
+		if err != nil || length < 1 || length > longestRun {
+			return nil, fmt.Errorf("length: %q is not a run of the text", lengths[i])
+		}
+		runs = append(runs, placed.Run{Start: start, Length: length})
+	}
+	return runs, nil
 }

@@ -10,6 +10,7 @@ import type { PlexRelatedSeat } from '@numen/ui'
 import type { Neighbourhood } from './plex'
 import { standing, type Standing } from './standing'
 import type { Said } from './drawing'
+import type { Run } from './reading'
 import type { Went } from './tab'
 
 /** Everything the window asks of the core, and nothing about how it is drawn. */
@@ -71,7 +72,12 @@ export interface Core {
    * source, and the stretch of its own text meant, counted in bytes. A length
    * of zero names the source and no place inside it.
    */
-  focus(signal: AbortSignal): AsyncIterable<{ path: string; start?: number; length?: number }>
+  focus(signal: AbortSignal): AsyncIterable<{
+    path: string
+    start?: number
+    length?: number
+    also?: readonly { start?: number; length?: number }[]
+  }>
   /** The prose of a note, below its frontmatter, and the file it came out of. */
   read(path: string): Promise<Answered & { at?: string }>
   /**
@@ -175,8 +181,11 @@ export function showing(
   drawing: (said: Said) => void = () => {},
   /** What opens a plex on a note, for a window with none open to show it in. */
   shows: (path: string) => void = () => {},
-  /** What opens a document at a stretch of its own text, in the tab it is read in. */
-  reads: (path: string, start: number, length: number) => void = () => {},
+  /**
+   * What opens a document at stretches of its own text, in the tab it is read
+   * in. The person is taken to the first of them.
+   */
+  reads: (path: string, runs: readonly Run[]) => void = () => {},
 ) {
   const name = ref('')
   const indexing = ref(true)
@@ -377,8 +386,12 @@ export function showing(
         for await (const wanted of core.focus(listening.signal)) {
           if (!open) return
           if (!wanted.path) continue
-          if (wanted.length) reads(wanted.path, wanted.start ?? 0, wanted.length)
-          else await travel(wanted.path)
+          if (wanted.length) {
+            const also = (wanted.also ?? [])
+              .filter((one) => (one.length ?? 0) > 0)
+              .map((one) => ({ start: one.start ?? 0, length: one.length ?? 0 }))
+            reads(wanted.path, [{ start: wanted.start ?? 0, length: wanted.length }, ...also])
+          } else await travel(wanted.path)
         }
       } catch (error) {
         if (!open) return
