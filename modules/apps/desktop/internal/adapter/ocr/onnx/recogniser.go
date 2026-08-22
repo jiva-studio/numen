@@ -16,6 +16,7 @@ import (
 	"image"
 	"image/draw"
 
+	read "github.com/getcharzp/go-ocr"
 	"github.com/getcharzp/go-ocr/paddle"
 	ort "github.com/getcharzp/onnxruntime_purego"
 
@@ -26,8 +27,13 @@ import (
 // A Recogniser is the models this machine reads a page with.
 type Recogniser struct {
 	engine *ort.Engine
-	layout *Layout
+	shape  *Layout
 	lines  *paddle.Engine
+
+	// layout is the parts of a page in the order they are read, and read is
+	// what one of those parts says. A test puts its own in.
+	layout func(image.Image) ([]ocr.Region, error)
+	read   func(image.Image) ([]read.RecResult, error)
 
 	body   map[string]bool
 	head   map[string]int
@@ -86,8 +92,10 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 
 	return &Recogniser{
 		engine: paths.engine,
-		layout: layout,
+		shape:  layout,
 		lines:  lines,
+		layout: layout.Regions,
+		read:   lines.RunOCR,
 		body:   set(cfg.Regions.body()),
 		head:   depths(cfg.Regions.head()),
 		margin: cfg.Layout.margin(),
@@ -104,7 +112,7 @@ func (r *Recogniser) Recognition() port.Recognition { return r.named }
 
 func (r *Recogniser) Close() error {
 	r.lines.Destroy()
-	err := r.layout.Close()
+	err := r.shape.Close()
 	r.engine.Destroy()
 	return err
 }
@@ -119,12 +127,17 @@ func (r *Recogniser) Close() error {
 // A part the configuration calls a head opens a part of the document, and
 // carries how deep that part sits.
 func (r *Recogniser) Read(ctx context.Context, page image.Image) ([]ocr.Block, error) {
-	regions, err := r.layout.Regions(page)
+	regions, err := r.layout(page)
 	if err != nil {
 		return nil, err
 	}
 
 	var out []ocr.Block
+	// What could not be read, and the last of it. A page whose every part was
+	// refused says nothing, and a page that says nothing is a blank page to
+	// everything downstream.
+	var refused int
+	var failed error
 	for _, region := range regions {
 		if err := ctx.Err(); err != nil {
 			return nil, err
@@ -136,10 +149,11 @@ func (r *Recogniser) Read(ctx context.Context, page image.Image) ([]ocr.Block, e
 		if crop == nil {
 			continue
 		}
-		found, err := r.lines.RunOCR(crop)
+		found, err := r.read(crop)
 		if err != nil {
 			// One part of a page that could not be read is one part. A page is
 			// hundreds of words, and the rest of them are still what it says.
+			refused, failed = refused+1, err
 			continue
 		}
 		lines := make([]ocr.Line, 0, len(found))
@@ -163,6 +177,9 @@ func (r *Recogniser) Read(ctx context.Context, page image.Image) ([]ocr.Block, e
 				Spans: spans,
 			})
 		}
+	}
+	if len(out) == 0 && refused > 0 {
+		return nil, fmt.Errorf("every part of the page: %w", failed)
 	}
 	return out, nil
 }
