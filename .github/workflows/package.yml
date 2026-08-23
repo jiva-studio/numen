@@ -182,12 +182,16 @@ jobs:
           # A compressed image is written twice over before it is one, and the
           # machine this runs on has room for the application about three times.
           go clean -cache
-          df -h /
 
           mkdir -p "$RUNNER_TEMP/image"
           mv "$RUNNER_TEMP/Numen.app" "$RUNNER_TEMP/image/"
           ln -s /Applications "$RUNNER_TEMP/image/Applications"
+
+          # The volume is sized here. Asked to size it itself, hdiutil measures
+          # the folder and comes up short of what the filesystem then needs.
+          megabytes=$(du -sm "$RUNNER_TEMP/image" | cut -f1)
           hdiutil create -volname Numen -srcfolder "$RUNNER_TEMP/image" \
+            -fs HFS+ -size "$(( megabytes + 200 ))m" \
             -ov -format UDZO "$RUNNER_TEMP/Numen-${VERSION}.dmg"
           codesign --force --timestamp --keychain "$KEYCHAIN" --sign "$IDENTITY" \
             "$RUNNER_TEMP/Numen-${VERSION}.dmg"
