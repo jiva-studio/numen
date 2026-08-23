@@ -52,20 +52,22 @@ func TestTheSettingsGivenAreTheOnesUsed(t *testing.T) {
 	}
 }
 
-// Saying nothing about questions is asking the way the vault was indexed, and
-// one placement is one model loaded once.
-func TestOnePlacementIsOneEmbedder(t *testing.T) {
+// Saying nothing about questions is asking the way the vault was indexed.
+func TestOnePlacementIsOneModelSeenTwoWays(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "sk-test")
 
-	indexing, asking, close, why := container.Config{Embedding: serving("bge-m3")}.Embedders()
+	indexing, asking, close, why := container.Config{Embedding: serving("bge-m3")}.Embedders(nil)
 	if why != nil {
 		t.Fatal(why)
 	}
 	if close != nil {
 		defer func() { _ = close() }()
 	}
-	if indexing != asking {
-		t.Errorf("two embedders for one placement: %v and %v", indexing, asking)
+	if indexing == nil || asking == nil {
+		t.Fatalf("got %v and %v", indexing, asking)
+	}
+	if a, b := indexing.Model().Recipe(), asking.Model().Recipe(); a != b {
+		t.Errorf("%s and %s", a, b)
 	}
 }
 
@@ -76,7 +78,7 @@ func TestAQuestionIsEmbeddedWhereTheSettingsSay(t *testing.T) {
 	cfg.Query.Service.Name = "reached-another-way"
 	cfg.Query.Service.BaseURL = nowhere
 
-	indexing, asking, close, why := container.Config{Embedding: cfg}.Embedders()
+	indexing, asking, close, why := container.Config{Embedding: cfg}.Embedders(nil)
 	if why != nil {
 		t.Fatal(why)
 	}
@@ -100,7 +102,7 @@ func TestAQuestionWithNowhereToBeEmbeddedIsAReason(t *testing.T) {
 	cfg.Query.Use = embed.UseService
 	cfg.Query.Service.BaseURL = ""
 
-	indexing, asking, close, why := container.Config{Embedding: cfg}.Embedders()
+	indexing, asking, close, why := container.Config{Embedding: cfg}.Embedders(nil)
 	if why == nil {
 		t.Fatal("want a reason")
 	}

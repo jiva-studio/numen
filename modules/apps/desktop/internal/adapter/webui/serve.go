@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/embedding"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/task"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
@@ -92,33 +91,25 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		return nil, err
 	}
 
-	// Opened once, for as long as the window is. A local model holds a session
-	// that takes seconds to build, and both filling the index and answering a
-	// query need it.
-	embedder, asking, closeEmbedder, why := cfg.Embedders()
+	// One list of what is being done, for everything that does anything and for
+	// the window that shows it. One job behind it too: what a person asked for
+	// is one piece of work however they asked for it. It is made before
+	// anything that reports itself into it.
+	tasks := task.New()
+
+	// Opened once, for as long as the window is. A local model is fetched and
+	// compiled behind this, so the window is drawn while it arrives.
+	embedder, asking, closeEmbedder, why := cfg.Embedders(tasks)
 	if why != nil {
 		fmt.Fprintf(out, "not embedding %s: %v\n", vaults[0].Name, why)
 	}
 	if closeEmbedder == nil {
 		closeEmbedder = func() error { return nil }
 	}
-	// Two placements are asked whether they are one model. Nothing in a
-	// settings file shows it, and a question embedded in another space finds
-	// nothing however well it is written.
-	if embedder != asking {
-		if err := embedding.Agree(ctx, embedder, asking); err != nil {
-			fmt.Fprintf(out, "asking by words alone: %v\n", err)
-			asking = nil
-		}
-	}
 
 	wake := waking(settled)
 
 	watching, stop := context.WithCancel(ctx)
-	// One list of what is being done, for everything that does anything and for
-	// the window that shows it. One job behind it too: what a person asked for
-	// is one piece of work however they asked for it.
-	tasks := task.New()
 	recognising := cfg.Recognising(db.Sources(), tasks)
 
 	// What a recognition writes down is cut where every other cut happens. A

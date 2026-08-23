@@ -8,11 +8,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gomlx/compute"
 	_ "github.com/gomlx/compute/gobackend" // the pure-Go backend, registered under "go"
@@ -68,9 +70,14 @@ type Embedder struct {
 	mu sync.Mutex
 }
 
-// Open loads the model and compiles it. It is expensive — the weights are read
-// and converted — and the result is reusable for the life of the process.
-func Open(is embed.Identity, cfg embed.LocalModel) (*Embedder, error) {
+// Fetching is how much of a model is here and how much is wanted, told while it
+// comes down. Nothing is told for a model that is already on this machine.
+type Fetching func(done, total int64)
+
+// Open loads the model and compiles it, fetching it first where this machine
+// does not hold it. It is expensive — the weights are read and converted — and
+// the result is reusable for the life of the process.
+func Open(is embed.Identity, cfg embed.LocalModel, tell Fetching) (*Embedder, error) {
 	if is.Dimensions <= 0 {
 		return nil, fmt.Errorf("%s: dimensions must be known before a vector is stored", cfg.Name)
 	}
@@ -78,7 +85,7 @@ func Open(is embed.Identity, cfg embed.LocalModel) (*Embedder, error) {
 		return nil, fmt.Errorf("%s is pooled %q, and a model is pooled %q or %q",
 			is.Name, is.Pooling, embed.PoolMean, embed.PoolHead)
 	}
-	paths, err := locate(cfg)
+	paths, err := locate(cfg, tell)
 	if err != nil {
 		return nil, err
 	}
@@ -325,7 +332,7 @@ const (
 // locate finds the model's files: in a directory the configuration names, or in
 // the download cache. A named directory is what an installation with no network
 // uses.
-func locate(cfg embed.LocalModel) (paths, error) {
+func locate(cfg embed.LocalModel, tell Fetching) (paths, error) {
 	file := cfg.File
 	if file == "" {
 		file = modelFile
@@ -350,7 +357,7 @@ func locate(cfg embed.LocalModel) (paths, error) {
 	}
 
 	repo := hub.New(cfg.Name).WithProgressBar(false)
-	folder, err := published(repo)
+	folder, sizes, err := published(repo)
 	if err != nil {
 		return paths{}, err
 	}
@@ -358,8 +365,17 @@ func locate(cfg embed.LocalModel) (paths, error) {
 		return paths{}, fmt.Errorf("%s publishes no %s/%s: it has %v", cfg.Name, modelFolder, file, folder)
 	}
 
+	files := wanted(folder, file)
+	var total int64
+	for _, name := range files {
+		total += sizes[name]
+	}
+	if dir, err := repo.CacheDir(); err == nil {
+		defer arriving(dir, total, tell)()
+	}
+
 	p := paths{}
-	for _, name := range wanted(folder, file) {
+	for _, name := range files {
 		at, err := repo.DownloadFile(modelFolder + "/" + name)
 		if err != nil {
 			return paths{}, err
@@ -385,18 +401,68 @@ func locate(cfg embed.LocalModel) (paths, error) {
 }
 
 // published is what a repository holds beside its models, by the names they
-// have inside that folder.
-func published(repo *hub.Repo) ([]string, error) {
+// have inside that folder, and how large each is.
+func published(repo *hub.Repo) ([]string, map[string]int64, error) {
 	var out []string
-	for name, err := range repo.IterFileNames() {
+	sizes := map[string]int64{}
+	for info, err := range repo.IterFileInfos() {
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		if rest, inside := strings.CutPrefix(name, modelFolder+"/"); inside && rest != "" {
-			out = append(out, rest)
+		rest, inside := strings.CutPrefix(info.Name, modelFolder+"/")
+		if !inside || rest == "" {
+			continue
 		}
+		out = append(out, rest)
+		sizes[rest] = info.Size
 	}
-	return out, nil
+	return out, sizes, nil
+}
+
+// arriving reports how much of the model is on this machine while it comes
+// down, and hands back what stops the reporting.
+//
+// What is counted is the bytes under the repository's own place in the cache.
+// Nothing here reaches inside the download, so this is what has arrived rather
+// than what has been asked for.
+func arriving(dir string, total int64, tell Fetching) func() {
+	if tell == nil || total <= 0 {
+		return func() {}
+	}
+	done := make(chan struct{})
+	over := make(chan struct{})
+	go func() {
+		defer close(over)
+		tick := time.NewTicker(time.Second)
+		defer tick.Stop()
+		for {
+			select {
+			case <-done:
+				return
+			case <-tick.C:
+				tell(min(weighed(dir), total), total)
+			}
+		}
+	}()
+	return func() {
+		close(done)
+		<-over
+	}
+}
+
+// weighed is how many bytes stand under a folder.
+func weighed(dir string) int64 {
+	var sum int64
+	_ = filepath.WalkDir(dir, func(_ string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() {
+			return nil
+		}
+		if info, err := entry.Info(); err == nil {
+			sum += info.Size()
+		}
+		return nil
+	})
+	return sum
 }
 
 // wanted is everything the model named is made of, out of what stands beside
