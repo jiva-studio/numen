@@ -6,16 +6,36 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: what the files call themselves
+        description: Version
         type: string
         default: 0.0.0-dev
+      linux:
+        description: Linux
+        type: boolean
+        default: true
+      windows:
+        description: Windows
+        type: boolean
+        default: true
+      macos:
+        description: macOS
+        type: boolean
+        default: true
+      cli:
+        description: Command line tool
+        type: boolean
+        default: true
+      # Signing is not this. A mac build is signed either way; notarizing is
+      # Apple checking it and answering with a ticket the image carries, and
+      # that answer takes minutes.
       notarize:
-        description: send the mac build to Apple and wait for the answer
+        description: Notarize the mac build
         type: boolean
         default: true
 
 jobs:
   linux:
+    if: inputs.linux
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -81,6 +101,7 @@ jobs:
   # Windows reaches the system's browser through a component written in Go, so
   # this one is built on the same machine as Linux.
   windows:
+    if: inputs.windows
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -141,6 +162,7 @@ jobs:
           if-no-files-found: error
 
   macos:
+    if: inputs.macos
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -290,6 +312,7 @@ jobs:
   # The command line tool carries no webview, so one machine builds it for every
   # other.
   cli:
+    if: inputs.cli
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
