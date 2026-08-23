@@ -1,24 +1,3 @@
-<script lang="ts">
-/**
- * The one word a tab carries beside its title, and what a screen reader reads
- * out. A state with no word carries no mark; `stateOf` holds a tab in one
- * state, so the precedence the words are declared in is the precedence drawn.
- */
-import type { State } from './tab'
-
-const MARKS: Record<State, string | undefined> = {
-  stuck: 'stuck',
-  gone: 'gone',
-  overtaken: 'overtaken',
-  unsaved: 'unsaved',
-  saving: 'unsaved',
-  loading: undefined,
-  clean: undefined,
-}
-
-export const markOf = (state: State): string | undefined => MARKS[state]
-</script>
-
 <script setup lang="ts">
 /**
  * The window: one vault, and tabs to divide the screen between.
@@ -66,6 +45,8 @@ import { leaving } from './leaving'
 import { core as agent } from './agent'
 import { conversation } from './conversation'
 import { same, spotOf, spotsIn } from './places'
+import { markOf } from './tab'
+import { WORDS as words } from './words'
 import { AGENT, NOTE, PLEX, plexCalled, shortened } from './workspace'
 
 const drawings = drawn()
@@ -112,55 +93,6 @@ const { indexing, failure, warning, trouble, unwatched, unreachable, holds, look
 /** What could not be made or joined, in words a person reads. */
 const unmade = computed(() => making.said.value)
 const { chunks, embedding, tasks } = window
-
-/** Everything this window says in its own voice. */
-const words = {
-  ask: 'Ask about this note',
-  thinking: 'Thinking',
-  unreachable: 'The agent could not be reached.',
-  nothing: 'The agent finished without saying anything.',
-  unsent: 'Did not send',
-  send: 'Send',
-  stop: 'Stop the agent',
-  newTab: 'New tab',
-  choose: 'What goes in this tab',
-  newNote: 'New note',
-  newPlex: 'New plex',
-  newAgent: 'New agent',
-  plex: 'Plex',
-  agent: 'Agent',
-  stopped: 'The agent stopped here',
-  nothingSaid: 'Nothing said yet',
-  words: 'Searching by words only — no model set',
-  overtaken: 'The file changed on disk, so this note stopped saving.',
-  gone: 'This note is no longer in the vault, so saving stopped. What is here is still yours.',
-  makeAgain: 'make it again',
-  keep: 'Keep mine',
-  take: "Take the file's",
-  going: 'These notes stopped saving because their files changed. The window waits.',
-  later: 'Not yet',
-  /** The palette, and the three bands it draws. */
-  find: 'Search the vault',
-  names: 'Names',
-  text: 'Text',
-  meaning: 'Meaning',
-  travel: 'Show in plex',
-  read: 'Open the note',
-  readAt: 'Open at this heading',
-  readDocument: 'Open the document here',
-  noneFound: 'Nothing',
-  notAsked: 'The vault could not answer',
-  typeToFind: 'Type to look for a note',
-  /** The corner where what is running behind the window is shown. */
-  working: 'Background work',
-  putAway: 'Put away',
-  /** A document read: turning its pages, and how close it is drawn. */
-  back: 'Previous page',
-  next: 'Next page',
-  page: 'Page',
-  closer: 'Closer',
-  further: 'Further',
-}
 
 /** Everything running behind the window, as the corner draws it. */
 const notices = computed<readonly Notice[]>(() =>
