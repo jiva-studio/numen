@@ -1,7 +1,11 @@
 // Package pdf turns the bytes of a PDF file into the text it carries and the
-// places it names. It is pure: no filesystem, no clock, no database. The same
-// bytes give the same text at the same offsets, which is what lets a chunk keep
-// an offset and not the text.
+// places it names. It reads no file, asks no clock and holds no database, and
+// the same bytes give the same text at the same offsets, which is what lets a
+// chunk keep an offset and not the text.
+//
+// It does hold one thing with a lifetime: a pool of WebAssembly workers,
+// started when the first document is opened and kept for the life of the
+// process.
 //
 // A document is read in the order it is paginated: every page's text layer, in
 // order, as one stream. Everything the document names — an outline entry, a

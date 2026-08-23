@@ -19,27 +19,34 @@ import (
 // and nothing to install beside it. The library is compiled into this program.
 //
 // A worker holds one document at a time, so there are several of them and a
-// reader borrows one. Starting them costs a compile of the module, which is why
-// they are started once and kept.
-var (
-	workers     pdfium.Pool
-	workersOnce sync.Once
-	workersWhy  error
-)
+// reader borrows one. They are started once and kept for the life of the
+// process.
+var workers struct {
+	sync.Mutex
+	pool pdfium.Pool
+}
 
 // waitForWorker is how long a reader waits for one to come free. Reading a
 // document takes a second or two, and the wait is bounded so that a worker
 // wedged inside the library is a failure rather than a program that stops.
 const waitForWorker = 2 * time.Minute
 
+// pool is the workers this process reads documents on, started the first time
+// one is wanted. A start that failed is tried again by the next reader.
 func pool() (pdfium.Pool, error) {
-	workersOnce.Do(func() {
-		// One worker a core, and at least two: a vault is read by one
-		// goroutine today and by more as soon as anything asks it to be.
-		n := max(runtime.NumCPU(), 2)
-		workers, workersWhy = webassembly.Init(webassembly.Config{MaxTotal: n})
-	})
-	return workers, workersWhy
+	workers.Lock()
+	defer workers.Unlock()
+	if workers.pool != nil {
+		return workers.pool, nil
+	}
+	// One worker a core, and at least two: a vault is read by one goroutine
+	// today and by more as soon as anything asks it to be.
+	made, err := webassembly.Init(webassembly.Config{MaxTotal: max(runtime.NumCPU(), 2)})
+	if err != nil {
+		return nil, err
+	}
+	workers.pool = made
+	return made, nil
 }
 
 // A document is one PDF, open, on a worker of its own.
