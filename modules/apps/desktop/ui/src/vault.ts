@@ -6,7 +6,7 @@
  */
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
-import { Owed, Refusal, VaultService, Way as Ways } from '@numen/protocol'
+import { Counting, Owed, Refusal, VaultService, Way as Ways } from '@numen/protocol'
 import { asSeat } from './plex'
 import type { Asking, Way } from './finding'
 import type { Documents, Marked, Sheet } from './reading'
@@ -41,6 +41,7 @@ export const core: Core & Asking = {
         about: at.about,
         done: Number(at.done),
         total: Number(at.total),
+        counting: at.counting === Counting.BYTES ? ('bytes' as const) : ('things' as const),
         failed: at.failed,
         asked: at.asked,
       }))

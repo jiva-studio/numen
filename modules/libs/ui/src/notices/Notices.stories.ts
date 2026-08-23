@@ -23,7 +23,16 @@ const EMBEDDING: Notice = {
   done: 3,
   total: 8,
   working: true,
-  left: 'about 5 seconds left',
+}
+
+const FETCHING: Notice = {
+  id: 'fetching',
+  says: 'Preparing the model',
+  about: 'intfloat/multilingual-e5-small',
+  done: 121_000_000,
+  total: 470_268_510,
+  counting: 'bytes',
+  working: true,
 }
 
 const READING: Notice = {
@@ -100,6 +109,11 @@ export const TwoAtOnce: Story = {
   play: async () => {
     await waitFor(() => expect(cards()).toHaveLength(2))
   },
+}
+
+/** A download reads out in the sizes a person reads, not in bytes. */
+export const CountedInBytes: Story = {
+  args: { notices: [FETCHING] },
 }
 
 /** Work that has not said what it found yet: words and no count. */

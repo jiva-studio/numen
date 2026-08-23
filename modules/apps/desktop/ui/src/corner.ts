@@ -43,13 +43,12 @@ export const cornerOf = (
     working: !at.failed,
     trouble: at.failed,
     asked: at.asked,
-    left: '',
-    ...(at.total > 0 ? { done: at.done, total: at.total } : {}),
+    ...(at.total > 0 ? { done: at.done, total: at.total, counting: at.counting } : {}),
   }))
 
   // Said once and quietly, and it is so whether or not anything is running.
   if (vault.chunks > 0 && !vault.embedding) {
-    out.push({ id: 'wordsOnly', says: words.words, about: '', working: false, left: '' })
+    out.push({ id: 'wordsOnly', says: words.words, about: '', working: false })
   }
   return out
 }

@@ -41,7 +41,19 @@ type Task struct {
 	// Work nobody asked for is shown once it has lasted, and most of it ends
 	// before that.
 	Asked bool
+
+	// Counting is what Done and Total are counted in.
+	Counting Counting
 }
+
+// Counting is what a piece of work counts. Bytes are read out in the sizes a
+// person reads them in, and everything else is counted one by one.
+type Counting int
+
+const (
+	Things Counting = iota
+	Bytes
+)
 
 // Tasks is what the application is doing now.
 //

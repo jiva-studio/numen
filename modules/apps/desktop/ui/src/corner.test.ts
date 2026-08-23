@@ -23,6 +23,7 @@ const reading = (over: Partial<Task> = {}): Task => ({
   about: 'library/Sabhaparva.pdf',
   done: 42,
   total: 400,
+  counting: 'things',
   failed: '',
   asked: true,
   ...over,

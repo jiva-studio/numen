@@ -63,12 +63,21 @@ export { default as Prose } from './prose/Prose.vue'
 export { default as Tool } from './tool/Tool.vue'
 
 export { default as Activity } from './activity/Activity.vue'
-export { activity, percentWord, rateOf, remainingWord, shareOf, tallyWord } from './activity/model'
-export type { ActivityDescriptor, ActivityState, Tally } from './activity/model'
+export {
+  activity,
+  percentWord,
+  rateOf,
+  rateWord,
+  remainingWord,
+  shareOf,
+  sizeWord,
+  tallyWord,
+} from './activity/model'
+export type { ActivityDescriptor, ActivityState, Counting, Tally } from './activity/model'
 
 export { default as Notices } from './notices/Notices.vue'
-export { standing, tallyOf } from './notices/model'
-export type { Notice } from './notices/model'
+export { measured, standing, tallyOf } from './notices/model'
+export type { Movement, Notice } from './notices/model'
 
 export { default as Agent } from './screens/Agent.vue'
 export { default as Reader } from './reader/Reader.vue'

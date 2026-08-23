@@ -7,7 +7,7 @@
  */
 import { computed } from 'vue'
 import Waiting from '../waiting/Waiting.vue'
-import { activity, percentWord, tallyWord, type Tally } from './model'
+import { activity, percentWord, tallyWord, type Counting, type Tally } from './model'
 
 const props = withDefaults(
   defineProps<{
@@ -23,17 +23,22 @@ const props = withDefaults(
      * exist yet.
      */
     tally?: Tally | undefined
+    /** What the tally counts. */
+    counting?: Counting
     /** Whether the work named is happening now. */
     working?: boolean
     /**
-     * How much longer, in words, from whoever is timing the count. Empty until
-     * there is enough movement to say: a rate needs a clock and this has none.
+     * How fast the count is moving, in words, from whoever is timing it. Empty
+     * until there is enough movement to say: a rate needs a clock and this has
+     * none.
      */
+    rate?: string
+    /** How much longer, in words, from the same place. */
     left?: string
     /** Something is wrong and this is what it says. */
     trouble?: string
   }>(),
-  { says: '', about: '', working: false, left: '', trouble: '' },
+  { says: '', about: '', counting: 'things', working: false, rate: '', left: '', trouble: '' },
 )
 
 const shown = computed(() =>
@@ -46,11 +51,14 @@ const shown = computed(() =>
 )
 
 const words = computed(() => props.trouble || props.says)
-const count = computed(() => (shown.value.counts && props.tally ? tallyWord(props.tally) : ''))
+const count = computed(() =>
+  shown.value.counts && props.tally ? tallyWord(props.tally, props.counting) : '',
+)
 const percent = computed(() =>
   shown.value.share === undefined ? '' : percentWord(shown.value.share),
 )
-/** The estimate is only shown beside a count, since it is an estimate of one. */
+/** Both are only shown beside a count, since both are read off one. */
+const rate = computed(() => (shown.value.counts ? props.rate : ''))
 const left = computed(() => (shown.value.counts ? props.left : ''))
 </script>
 
@@ -68,6 +76,7 @@ const left = computed(() => (shown.value.counts ? props.left : ''))
     <span v-else class="activity__gap flex-1" />
     <span v-if="count" class="activity__count tabular-nums opacity-70">{{ count }}</span>
     <span v-if="percent" class="activity__percent tabular-nums opacity-70">{{ percent }}</span>
+    <span v-if="rate" class="activity__rate tabular-nums opacity-70">{{ rate }}</span>
     <span v-if="left" class="activity__left truncate opacity-70">{{ left }}</span>
     <span
       v-if="shown.share !== undefined"
@@ -111,7 +120,8 @@ const left = computed(() => (shown.value.counts ? props.left : ''))
 /* The numbers keep their own line. They are short, and the words beside them
    are what gives way. */
 .activity__count,
-.activity__percent {
+.activity__percent,
+.activity__rate {
   flex: none;
 }
 

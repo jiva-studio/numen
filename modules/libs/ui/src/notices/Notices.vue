@@ -11,7 +11,18 @@
  */
 import { computed, ref, watch, watchEffect } from 'vue'
 import Activity from '../activity/Activity.vue'
-import { arrivals, remembered, showing, standing, tallyOf, WAIT, type Notice } from './model'
+import { rateWord, remainingWord } from '../activity/model'
+import {
+  arrivals,
+  measured,
+  remembered,
+  showing,
+  standing,
+  tallyOf,
+  WAIT,
+  type Movement,
+  type Notice,
+} from './model'
 
 const props = withDefaults(
   defineProps<{
@@ -40,15 +51,28 @@ const away = ref<ReadonlySet<string>>(new Set())
 const arrived = ref<ReadonlyMap<string, number>>(new Map())
 const now = ref(props.clock())
 
+/** How fast each count is moving. This is the clock the rate is read against. */
+const moving = ref<ReadonlyMap<string, Movement>>(new Map())
+
 watch(
   () => props.notices,
   (all) => {
     now.value = props.clock()
     arrived.value = arrivals(arrived.value, all, now.value)
     away.value = remembered(away.value, all)
+    moving.value = measured(moving.value, all, now.value)
   },
   { immediate: true },
 )
+
+const rateOn = (one: Notice): string =>
+  rateWord(moving.value.get(one.id)?.rate ?? 0, one.counting ?? 'things')
+
+const leftOn = (one: Notice): string => {
+  const tally = tallyOf(one)
+  if (tally === undefined) return ''
+  return remainingWord(tally.total - tally.done, moving.value.get(one.id)?.rate ?? 0)
+}
 
 const drawn = computed(() =>
   showing(props.notices, arrived.value, away.value, now.value, props.wait),
@@ -83,8 +107,10 @@ const put = (id: string) => {
         :says="one.says"
         :about="one.about ?? ''"
         :tally="tallyOf(one)"
+        :counting="one.counting ?? 'things'"
         :working="one.working ?? false"
-        :left="one.left ?? ''"
+        :rate="rateOn(one)"
+        :left="leftOn(one)"
         :trouble="one.trouble ?? ''"
       />
       <button
