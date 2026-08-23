@@ -5,11 +5,15 @@
  * from a node comes to, what the menu on a node offers, and which note a click
  * opens are decided here, so a test can ask them without a screen.
  */
-import { computed, ref, type ComputedRef } from 'vue'
+import { computed, ref } from 'vue'
 import type { MenuOpening, PlexNeighbourhood, PlexRelatedSeat, PlexShowing } from '@numen/ui'
 import { chose as carry } from '../menu'
 import { asPlex } from '../plex'
 import type { Plexed } from '../showing'
+import type { Kind } from '../windowing'
+import { WORDS as words } from '../words'
+import { PLEX, plexCalled } from '../workspace'
+import PlexTab from './PlexTab.vue'
 
 /** Where the menu on a node stands, and what it was asked for on. */
 export interface Asked {
@@ -38,6 +42,23 @@ export interface Plexing {
 
 /** What one plex tab holds. */
 export type Held = ReturnType<typeof plexing>
+
+/**
+ * A plex tab as the window keeps it. It is called after the note it stands on,
+ * which is what tells two of them apart.
+ */
+export const plexKind = (opens: (at: string) => Held): Kind<Held> => ({
+  kind: PLEX,
+  opens,
+  called: (held) => plexCalled(words.plex, held.view.neighbourhood.value?.focus?.title ?? ''),
+  draws: PlexTab,
+  shown: (held) => held.view.looking(),
+  shuts: (held) => {
+    held.view.close()
+    return true
+  },
+  offers: words.newPlex,
+})
 
 export function plexing(view: Plexed, deps: Plexing) {
   /** The picture as the plex reads it, and nothing while the window has none. */

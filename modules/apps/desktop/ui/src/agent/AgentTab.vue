@@ -10,7 +10,7 @@ import type { Turn } from '@numen/ui'
 import { WORDS as words } from '../words'
 import type { Held } from './kind'
 
-const props = defineProps<{ held: Held; unreachable: string }>()
+const props = defineProps<{ held: Held }>()
 </script>
 
 <template>
@@ -29,7 +29,7 @@ const props = defineProps<{ held: Held; unreachable: string }>()
       (turn: Turn, href: string, press: MouseEvent) => props.held.followed(turn, href, press)
     "
   >
-    <template #silence>{{ props.unreachable || words.nothingSaid }}</template>
+    <template #silence>{{ props.held.unreachable() || words.nothingSaid }}</template>
     <template #failure="{ turn }">
       {{ turn.voice === 'asked' ? words.unsent : words.stopped }}
     </template>

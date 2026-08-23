@@ -7,9 +7,14 @@
  * from that store, and everything a tab decides for itself is decided here.
  */
 import { nextTick, ref, watch } from 'vue'
+import type { Change } from '../drawing'
 import type { drawn } from '../drawn'
-import type { editing } from '../editing'
+import type { Editing, editing } from '../editing'
 import { markOf } from '../tab'
+import type { Kind } from '../windowing'
+import { WORDS as words } from '../words'
+import { NOTE } from '../workspace'
+import NoteTab from './NoteTab.vue'
 
 /** The notes of the whole window, read and written by one store. */
 type Notes = ReturnType<typeof editing>
@@ -32,10 +37,31 @@ export interface Drawn {
 export interface Noting {
   /** The tab of a note that has written what it owed, going now. */
   closes(path: string): void
+  /** A note made to fill a tab that was told to hold one; where it is filed. */
+  makes(): Promise<string>
 }
 
-/** What one note tab holds. */
-export type Held = ReturnType<ReturnType<typeof noting>['opens']>
+/** What one note tab holds: its text, and the answers a person gives it. */
+export interface Held {
+  readonly path: string
+  /** The note as the window draws it: the body, and the state it is in. */
+  shown(): Editing
+  /** What could not be read or written, in words a person reads. */
+  saying(): string
+  /** What arrived from elsewhere, for the editor to take into what is typed. */
+  change(): Change | null
+  typed(body: string): void
+  save(): void
+  /** The person keeps what they have written, over whatever the file holds. */
+  keep(): void
+  /** The person takes what the file holds. */
+  take(): void
+  /** The editor of this note, as it is drawn and as it goes. */
+  drew(editor: unknown): void
+  measure(): void
+  /** The tab is closing, and what is unwritten goes to the file first. */
+  shuts(): void
+}
 
 /**
  * The line a note is opened on where none was asked for: the note itself, and
@@ -109,19 +135,24 @@ export function noting(vault: Called, notes: Notes, drawings: Drawings, deps: No
   }
 
   /**
-   * A note opened, under the name it is called by and on the line asked for.
-   * It is owed its keyboard from here until an editor has taken it.
+   * A note opened. It is owed its keyboard from here until an editor has taken
+   * it, on the line it was told to stand on before it was drawn.
    */
-  const opens = (path: string, title = '', line = ITSELF) => {
-    if (title) calls(path, title)
+  const opens = (path: string, line = ITSELF) => {
     notes.open(path)
     owed.set(path, line)
     void nextTick(() => enters(path))
     return held(path)
   }
 
+  /** The line an open note is to stand on, asked for after it was opened. */
+  const entersAt = (path: string, line: number) => {
+    owed.set(path, line)
+    void nextTick(() => enters(path))
+  }
+
   /** What one tab of a note holds. */
-  const held = (path: string) => ({
+  const held = (path: string): Held => ({
     path,
     shown: () => notes.shown(path),
     saying: () => notes.saying(path),
@@ -162,5 +193,25 @@ export function noting(vault: Called, notes: Notes, drawings: Drawings, deps: No
   const called = (path: string): string => titles.value.get(path) ?? path
   const marked = (path: string): string | undefined => markOf(notes.shown(path).state)
 
-  return { titles, calls, forgets, opens, held, called, marked, enters }
+  /**
+   * A note tab as the window keeps it. A note is its own tab, filed under the
+   * path it is written at.
+   */
+  const kind: Kind<Held> = {
+    kind: NOTE,
+    opens: (path) => opens(path),
+    called: (held) => called(held.path),
+    marked: (held) => marked(held.path),
+    draws: NoteTab,
+    identity: (path) => path,
+    makes: () => deps.makes(),
+    shown: (held) => held.measure(),
+    shuts: (held) => {
+      held.shuts()
+      return false
+    },
+    offers: words.newNote,
+  }
+
+  return { kind, titles, calls, forgets, opens, entersAt, held, called, marked }
 }

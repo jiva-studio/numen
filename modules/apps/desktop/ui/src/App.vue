@@ -2,14 +2,15 @@
 /**
  * The window: one vault, and tabs to divide the screen between.
  *
- * Choosing a node asks for that note's neighbourhood and hands it back to the
- * plex, which travels there by itself. What decides when to ask is in
- * `showing.ts`, what a tab holds is in `holding.ts`, and what is drawn from
- * either is here.
+ * What a tab of each kind holds is that kind's own, in `plex/`, `agent/`,
+ * `document/` and `note/`; keeping tabs of any kind at all is in
+ * `windowing.ts`; when to ask the vault again is in `showing.ts`. What is left
+ * here is the vault this window reads, the kinds it draws, and the few things
+ * one kind asks of another.
  */
 import { computed, onMounted, onUnmounted, watch } from 'vue'
-import { Notices, Palette, Workspace, closeTab, openTab, openTabBeside } from '@numen/ui'
-import type { Notice, PlexShowing, Tab } from '@numen/ui'
+import { Notices, Palette, Workspace } from '@numen/ui'
+import type { Notice, PlexShowing } from '@numen/ui'
 import '@numen/ui/styles.css'
 import { core, documents } from './vault'
 import { showing } from './showing'
@@ -18,21 +19,18 @@ import { cornerOf } from './corner'
 import { editing } from './editing'
 import { drawn } from './drawn'
 import { creating } from './creating'
-import { holding, type Talk } from './holding'
 import { finding } from './finding'
 import { leaving } from './leaving'
-import AgentTab from './agent/AgentTab.vue'
-import { talking } from './agent/kind'
-import DocumentTab from './document/DocumentTab.vue'
-import { documenting } from './document/kind'
-import NoteTab from './note/NoteTab.vue'
+import { windowing } from './windowing'
+import BlankTab from './BlankTab.vue'
+import { agentKind, talking, type Held as Talk } from './agent/kind'
+import { documentKind, documenting, type Held as Read } from './document/kind'
 import { noting } from './note/kind'
-import PlexTab from './plex/PlexTab.vue'
-import { plexing } from './plex/kind'
+import { plexKind, plexing } from './plex/kind'
 import { core as agent } from './agent'
 import { conversation } from './conversation'
 import { WORDS as words } from './words'
-import { AGENT, NOTE, PLEX, plexCalled, shortened } from './workspace'
+import { AGENT, CONVERSATION, DOCUMENT, NOTE, PLEX, named, opening } from './workspace'
 
 const drawings = drawn()
 const notes = editing(core, undefined, drawings.arrived)
@@ -42,8 +40,8 @@ const window = showing(
   undefined,
   notes.changed,
   drawings.told,
-  (path) => held.shows(path),
-  (path, runs) => opensAt(path, ...runs),
+  (path) => void held.opens(PLEX, path),
+  (path, runs) => void opensAt(path, ...runs),
 )
 /** What the window answers when the application says it is going. */
 const going = leaving(core)
@@ -86,35 +84,52 @@ const notices = computed<readonly Notice[]>(() =>
 
 /** The notes the window has open: what each is called, and what each tab of one holds. */
 const noted = noting(core, notes, drawings, {
-  closes: (path) => {
-    layout.value = closeTab(layout.value, path)
+  closes: (path) => held.closes(path),
+  makes: async () => {
+    const made = await making.start()
+    if (!made) return ''
+    noted.calls(made.path, made.title)
+    return made.path
   },
 })
 const titles = noted.titles
 
-/** What each tab of the window holds, and what it lets go of when it closes. */
-const held = holding({
-  plex: (at) =>
-    plexing(window.plex(at), {
-      makes: making,
-      ready: () => !failure.value && !indexing.value,
-      opens: (path, title, showing) => openNote(path, title, showing),
-      asks: (text) => held.askAbout(text),
-    }),
-  talk: (name) =>
-    talking(conversation(agent, words, name), {
-      looking: () => looking.value,
-      opens: (path, ...runs) => opensAt(path, ...runs),
-    }),
-  note: async () => {
-    const made = await making.start()
-    if (!made) return ''
-    noted.opens(made.path, made.title)
-    return made.path
-  },
-  document: (path) => documenting(reading(documents, path)),
-})
-const { layout, blanks } = held
+/** The agent tabs, and the one a question about a note is put in. */
+let agents: ReturnType<typeof agentKind>
+
+/**
+ * The kinds of tab this window draws, in the order a blank tab offers them.
+ *
+ * Each is given what it reads of the vault and what it may ask of the window.
+ * Nothing else here knows what any of them holds.
+ */
+const held = windowing(
+  [
+    (host) =>
+      plexKind((at) =>
+        plexing(window.plex(at), {
+          makes: making,
+          ready: () => !failure.value && !indexing.value,
+          opens: (path, title, showing) => openNote(path, title, showing),
+          asks: (text) => void agents.asks(text),
+        }),
+      ),
+    (host) => {
+      agents = agentKind(host, () =>
+        talking(conversation(agent, words, named(CONVERSATION)), {
+          looking: () => looking.value,
+          opens: (path, ...runs) => void opensAt(path, ...runs),
+          unreachable: () => unreachable.value,
+        }),
+      )
+      return agents.kind
+    },
+    () => documentKind((path) => documenting(reading(documents, path))),
+    () => noted.kind,
+  ],
+  words,
+)
+const { layout, blanks, becomes } = held
 
 /** The palette: one keystroke, and everything the words typed turn up. */
 const palette = finding(core, words)
@@ -138,9 +153,9 @@ const asked = (event: KeyboardEvent) => {
  * places named after it are lit where they fall, each of them somewhere else to
  * look.
  */
-const opensAt = (path: string, ...runs: readonly Run[]) => {
-  held.reads(path)
-  void held.documents.value.get(path)?.reach(...runs)
+const opensAt = async (path: string, ...runs: readonly Run[]) => {
+  const id = await held.opens(DOCUMENT, path)
+  void held.holdsIn<Read>(id, DOCUMENT)?.reach(...runs)
 }
 
 /**
@@ -149,7 +164,7 @@ const opensAt = (path: string, ...runs: readonly Run[]) => {
  * and open it where they stand. A passage from a source that is not a note
  * opens that source where it stands.
  */
-const went = (item: string, action: string) => {
+const went = async (item: string, action: string) => {
   const landing = palette.chose(item, action)
   palette.shows(false)
   if (!landing) return
@@ -159,89 +174,37 @@ const went = (item: string, action: string) => {
     return
   }
   if (landing.at === 'document') {
-    opensAt(landing.path, { start: landing.start ?? 0, length: landing.length ?? 0 })
+    await opensAt(landing.path, { start: landing.start ?? 0, length: landing.length ?? 0 })
     return
   }
-  noted.opens(landing.path, landing.title || landing.path, landing.line ?? undefined)
-  layout.value = openTab(layout.value, landing.path)
+  openNote(landing.path, landing.title || landing.path)
+  if (landing.line !== undefined) noted.entersAt(landing.path, landing.line)
 }
 
-/** The identity a pane made by a split is filed under. */
-const naming = () => crypto.randomUUID()
-
-/** What the window can be told to put in a blank tab. */
-const becomes: readonly Tab[] = [
-  { id: NOTE, title: words.newNote },
-  { id: PLEX, title: words.newPlex },
-  { id: AGENT, title: words.newAgent },
-]
-
-/** An agent is called by the first thing asked of it. */
-const agentCalled = (talk: Talk): string =>
-  shortened(talk.turns.value.find((turn) => turn.voice === 'asked')?.text ?? '') || words.agent
-
-/** A document is called by the file it is read out of. */
-const documentCalled = (path: string): string => path.split('/').pop() ?? path
-
-/** Every tab the window holds, and what each is called. */
-const tabs = computed<readonly Tab[]>(() => [
-  ...[...held.plexes.value].map(
-    ([id, one]): Tab => ({
-      id,
-      title: plexCalled(words.plex, one.view.neighbourhood.value?.focus?.title ?? ''),
-    }),
-  ),
-  ...[...held.agents.value].map(([id, talk]): Tab => ({ id, title: agentCalled(talk) })),
-  ...[...held.documents.value.keys()].map((id): Tab => ({ id, title: documentCalled(id) })),
-  ...blanks.value.map((id): Tab => ({ id, title: words.newTab })),
-  ...notes.all().map((path): Tab => {
-    const mark = noted.marked(path)
-    return { id: path, title: noted.called(path), ...(mark ? { mark } : {}) }
-  }),
-])
-
-/** A note opens where the person asked for it, and the tab is shown. */
+/** A note opens where the person asked for it, under the name it is called by. */
 const openNote = (path: string, title: string, showing: PlexShowing = 'here') => {
-  noted.opens(path, title)
-  layout.value =
-    showing === 'beside'
-      ? openTabBeside(layout.value, path, 'right', naming)
-      : openTab(layout.value, path)
+  noted.calls(path, title)
+  void (showing === 'beside' ? held.beside(NOTE, path) : held.opens(NOTE, path))
 }
-
-/** What one plex tab holds, or nothing where the tab holds no plex. */
-const plexIn = (id: string) => held.plexes.value.get(id) ?? null
-
-/** The talk one agent tab holds. */
-const talkIn = (id: string) => held.agents.value.get(id) ?? null
-
-/** The document one document tab is reading. */
-const documentIn = (id: string) => held.documents.value.get(id) ?? null
-
-/** What one note tab holds, or nothing where the tab holds no note. */
-const noteIn = (id: string) => (notes.all().includes(id) ? noted.held(id) : null)
 
 /**
- * A tab is drawn while it is out of sight, where an editor and a page have no
- * room to measure. Whatever the tab now on screen holds measures again.
+ * A tab lets go of what it held. A kind that has something to finish first —
+ * a note with a write on its way — keeps the tab until it has.
  */
-const shown = (id: string) => {
-  held.shown(id)
-  noteIn(id)?.measure()
-  documentIn(id)?.measure()
+const shut = (id: string, hold: () => void) => {
+  if (!held.shut(id)) hold()
 }
 
-/** A tab lets go of what it held. A tab that holds a note writes what it owes. */
-const shut = (id: string, hold: () => void) => {
-  if (held.shut(id)) return
-  const note = noteIn(id)
-  if (!note) return
-  hold()
-  note.shuts()
+/** The window opens with a plex holding the room and an agent along the edge. */
+const starts = async () => {
+  const plex = await held.opens(PLEX)
+  const talk = await held.opens(AGENT)
+  layout.value = opening(plex, talk)
 }
 
 onMounted(() => {
   globalThis.addEventListener('keydown', asked)
+  void starts()
   void window.start()
   void going.start()
 })
@@ -269,31 +232,24 @@ onUnmounted(() => {
     <Workspace
       v-model="layout"
       class="below"
-      :tabs="tabs"
+      :tabs="held.tabs.value"
       :new-tab="words.newTab"
       @close="shut"
-      @show="shown"
+      @show="held.shown"
       @open="held.blanked"
     >
       <template #tab="{ id }">
-        <PlexTab v-if="plexIn(id)" :held="plexIn(id)!" />
+        <component
+          :is="held.heldIn(id)!.kind.draws"
+          v-if="held.heldIn(id)"
+          :held="held.heldIn(id)!.held"
+        />
 
-        <AgentTab v-else-if="talkIn(id)" :held="talkIn(id)!" :unreachable="unreachable" />
-
-        <DocumentTab v-else-if="documentIn(id)" :held="documentIn(id)!" />
-
-        <div v-else-if="blanks.includes(id)" class="blank">
-          <p class="blank__says">{{ words.choose }}</p>
-          <ul class="blank__choices">
-            <li v-for="one in becomes" :key="one.id">
-              <button type="button" class="blank__choice" @click="void held.becomeIt(id, one.id)">
-                {{ one.title }}
-              </button>
-            </li>
-          </ul>
-        </div>
-
-        <NoteTab v-else-if="noteIn(id)" :held="noteIn(id)!" />
+        <BlankTab
+          v-else-if="blanks.includes(id)"
+          :becomes="becomes"
+          @choose="(kind: string) => void held.becomeIt(id, kind)"
+        />
 
         <div v-else />
       </template>
@@ -346,67 +302,6 @@ main {
   min-height: 0;
 }
 
-/* A note fills the pane it is in: the editor scrolls, and the line it says
-   something is wrong on stays where it is. */
-.note {
-  display: flex;
-  flex-direction: column;
-  block-size: 100%;
-  min-block-size: 0;
-}
-
-.note__text {
-  flex: 1;
-  min-block-size: 0;
-}
-
-/* A tab with nothing in it yet, and the few things it can be told to be. */
-.blank {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  block-size: 100%;
-  padding: var(--numen-gutter);
-  font-family: var(--numen-font-sans);
-  font-size: 0.85rem;
-}
-
-.blank__says {
-  margin: 0;
-  color: var(--numen-edge-label);
-}
-
-.blank__choices {
-  display: flex;
-  flex-direction: column;
-  align-items: start;
-  gap: 0.25rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.blank__choice {
-  padding: 0.3rem 0.6rem;
-  border: 0;
-  border-radius: var(--numen-radius);
-  background: none;
-  color: var(--numen-node-fg);
-  font: inherit;
-  cursor: pointer;
-}
-
-.blank__choice:hover {
-  background: var(--numen-bubble-bg);
-}
-
-.blank__choice:focus-visible {
-  outline: var(--numen-ring-width) solid var(--numen-ring);
-  outline-offset: 1px;
-}
-
-/* The question a note holds: the band a refusal is said in, with the two
-   answers on the same line as the sentence, so the band stands one line high. */
 /* The window is going and these notes are not written. It sits over the work
    because nothing else the person does can end it. */
 .leaving {

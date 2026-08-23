@@ -83,6 +83,7 @@ const window = (titles: Record<string, string> = {}, states: Record<string, Stat
   const closed: string[] = []
   const noted = noting(vault(titles), store.store, drawing.store, {
     closes: (path) => closed.push(path),
+    makes: async () => 'Made.md',
   })
   return { noted, closed, ...store, drawings: drawing }
 }
@@ -102,7 +103,7 @@ describe('a note opened', () => {
 
   it('is revealed at the line it was asked for', async () => {
     const one = window()
-    const held = one.noted.opens('Note.md', 'Note', 12)
+    const held = one.noted.opens('Note.md', 12)
     const drew = editor()
 
     held.drew(drew.drawn)
@@ -140,7 +141,7 @@ describe('a note opened', () => {
 
   it('is called what it was opened under', () => {
     const one = window()
-    one.noted.opens('Deep/Note.md', 'A note')
+    one.noted.calls('Deep/Note.md', 'A note')
 
     expect(one.noted.called('Deep/Note.md')).toBe('A note')
   })
@@ -156,7 +157,8 @@ describe('a note opened', () => {
 describe('what a note is called', () => {
   it('is the heading the vault reads out of it once what was typed has landed', async () => {
     const one = window({ 'Note.md': 'What it is about' })
-    one.noted.opens('Note.md', 'Untitled note')
+    one.noted.calls('Note.md', 'Untitled note')
+    one.noted.opens('Note.md')
 
     await nextTick()
     await vi.waitFor(() => expect(one.noted.called('Note.md')).toBe('What it is about'))
@@ -164,7 +166,8 @@ describe('what a note is called', () => {
 
   it('is the name it had when the vault cannot answer', async () => {
     const one = window()
-    one.noted.opens('Note.md', 'Untitled note')
+    one.noted.calls('Note.md', 'Untitled note')
+    one.noted.opens('Note.md')
 
     await nextTick()
     await nextTick()
@@ -187,7 +190,8 @@ describe('the word a note tab carries', () => {
 describe('a note tab closing', () => {
   it('writes what it owes, and the window closes it when the note has gone', async () => {
     const one = window()
-    const held = one.noted.opens('Note.md', 'A note')
+    one.noted.calls('Note.md', 'A note')
+    const held = one.noted.opens('Note.md')
 
     held.shuts()
     await nextTick()
@@ -200,7 +204,8 @@ describe('a note tab closing', () => {
 
   it('stays open while the note is not done with it', async () => {
     const one = window()
-    const held = one.noted.opens('Note.md', 'A note')
+    one.noted.calls('Note.md', 'A note')
+    const held = one.noted.opens('Note.md')
     one.holds()
 
     held.shuts()

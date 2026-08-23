@@ -10,6 +10,10 @@ import type { Turn } from '@numen/ui'
 import type { Conversation } from '../conversation'
 import { same, spotOf, spotsIn } from '../places'
 import type { Run } from '../reading'
+import type { Host, Kind } from '../windowing'
+import { WORDS as words } from '../words'
+import { AGENT, shortened } from '../workspace'
+import AgentTab from './AgentTab.vue'
 
 /** What an agent tab asks of the window it is drawn in. */
 export interface Talking {
@@ -17,6 +21,8 @@ export interface Talking {
   looking(): string
   /** A source opened at stretches of its own text, the first of them in front. */
   opens(path: string, ...runs: readonly Run[]): void
+  /** Why the agent cannot be reached, said in the panel that would have asked it. */
+  unreachable(): string
 }
 
 /** What one agent tab holds. */
@@ -55,5 +61,48 @@ export function talking(talk: Conversation, deps: Talking) {
     deps.opens(here.path, ...[here, ...named].map(({ start, length }) => ({ start, length })))
   }
 
-  return { ...talk, asked, writing, send, opensTurn, followed }
+  return { ...talk, asked, writing, send, opensTurn, followed, unreachable: deps.unreachable }
+}
+
+/**
+ * The agent tabs of a window, and the one the person was last in.
+ *
+ * A question about a note goes where the person was last talking, and a window
+ * with no agent open opens one to carry it.
+ */
+export function agentKind(host: Host, opens: () => Held) {
+  const talks = new Map<string, Held>()
+  /** The agent tab the person was last in, while the window still holds it. */
+  let last = ''
+
+  const kind: Kind<Held> = {
+    kind: AGENT,
+    opens: (_at, id) => {
+      const held = opens()
+      talks.set(id, held)
+      return held
+    },
+    called: (held) =>
+      shortened(held.turns.value.find((turn) => turn.voice === 'asked')?.text ?? '') || words.agent,
+    draws: AgentTab,
+    shown: (_held, id) => {
+      last = id
+    },
+    shuts: (held, id) => {
+      held.finish()
+      talks.delete(id)
+      if (last === id) last = ''
+      return true
+    },
+    offers: words.newAgent,
+  }
+
+  /** Something to ask, put in the agent the person was last in and put in front. */
+  const asks = async (text: string) => {
+    const id = talks.has(last) ? last : await host.opens(AGENT)
+    talks.get(id)?.writing(text)
+    host.shows(id)
+  }
+
+  return { kind, asks }
 }
