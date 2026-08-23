@@ -10,8 +10,8 @@ import { ref } from 'vue'
 import { paneWithTab, type Turn } from '@numen/ui'
 import { holding, type Makes, type Talk } from './holding'
 import { talking } from './agent/kind'
+import type { Held as Read } from './document/kind'
 import type { Held } from './plex/kind'
-import type { Reading } from './reading'
 import type { Plexed } from './showing'
 
 /**
@@ -61,7 +61,7 @@ const opened = (dropped: string[], path: string) => {
     picture: ref(''),
     close: () => dropped.push(path),
   }
-  return view as unknown as Reading
+  return view as unknown as Read
 }
 
 /** A window whose ports record what they were asked for. */

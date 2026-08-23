@@ -33,6 +33,8 @@ import { finding } from './finding'
 import { leaving } from './leaving'
 import AgentTab from './agent/AgentTab.vue'
 import { talking } from './agent/kind'
+import DocumentTab from './document/DocumentTab.vue'
+import { documenting } from './document/kind'
 import PlexTab from './plex/PlexTab.vue'
 import { plexing } from './plex/kind'
 import { core as agent } from './agent'
@@ -152,7 +154,7 @@ const held = holding({
     notes.open(made.path)
     return made.path
   },
-  document: (path) => reading(documents, path),
+  document: (path) => documenting(reading(documents, path)),
 })
 const { layout, blanks } = held
 
@@ -306,22 +308,6 @@ const drew = (path: string, editor: unknown) => {
   void nextTick(() => enters(path))
 }
 
-/** What the window asks of a document once it is drawn. */
-interface Read {
-  measure(): void
-}
-
-/** The reader of each open document, for as long as its tab is drawn. */
-const readers = new Map<string, Read>()
-
-const drewReader = (path: string, reader: unknown) => {
-  if (!reader) {
-    readers.delete(path)
-    return
-  }
-  readers.set(path, reader as Read)
-}
-
 /**
  * A tab is drawn while it is out of sight, where an editor and a page have no
  * room to measure. Whatever the tab now on screen holds measures again.
@@ -329,7 +315,7 @@ const drewReader = (path: string, reader: unknown) => {
 const shown = (id: string) => {
   held.shown(id)
   editors.get(id)?.measure()
-  readers.get(id)?.measure()
+  documentIn(id)?.measure()
   enters(id)
 }
 
@@ -387,25 +373,7 @@ onUnmounted(() => {
 
         <AgentTab v-else-if="talkIn(id)" :held="talkIn(id)!" :unreachable="unreachable" />
 
-        <Reader
-          v-else-if="documentIn(id)"
-          :ref="(reader: unknown) => drewReader(id, reader)"
-          :pages="documentIn(id)!.pages.value"
-          :sheets="documentIn(id)!.sheets.value"
-          :at="documentIn(id)!.at.value"
-          :picture="documentIn(id)!.pictureOf"
-          :lit="documentIn(id)!.litOn"
-          :also="documentIn(id)!.alsoOn"
-          :back="words.back"
-          :next="words.next"
-          :page="words.page"
-          :closer="words.closer"
-          :further="words.further"
-          @go="(page: number) => void documentIn(id)?.go(page)"
-          @wide="(wide: number) => documentIn(id)?.widen(wide)"
-        >
-          <template #silence>{{ documentIn(id)?.trouble.value }}</template>
-        </Reader>
+        <DocumentTab v-else-if="documentIn(id)" :held="documentIn(id)!" />
 
         <div v-else-if="blanks.includes(id)" class="blank">
           <p class="blank__says">{{ words.choose }}</p>

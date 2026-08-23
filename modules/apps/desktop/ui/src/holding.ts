@@ -10,8 +10,8 @@ import { ref, shallowRef, type Ref } from 'vue'
 import { closeTab, openTab, paneWithTab } from '@numen/ui'
 import type { NodeId, WorkspaceLayout } from '@numen/ui'
 import type { Held as Talk } from './agent/kind'
+import type { Held as Read } from './document/kind'
 import type { Held } from './plex/kind'
-import type { Reading } from './reading'
 import { AGENT, BLANK, CONVERSATION, NOTE, PLEX, named, opening } from './workspace'
 
 export type { Talk }
@@ -25,14 +25,14 @@ export interface Makes {
   /** A note of its own, opened; where it is filed, or nothing when none was made. */
   note(): Promise<string>
   /** The document filed at a path, read from its first page. */
-  document(path: string): Reading
+  document(path: string): Read
 }
 
 export function holding(makes: Makes) {
   const plexes = shallowRef<ReadonlyMap<string, Held>>(new Map())
   const agents = shallowRef<ReadonlyMap<string, Talk>>(new Map())
   /** The documents open, each under the path it is filed at. */
-  const documents = shallowRef<ReadonlyMap<string, Reading>>(new Map())
+  const documents = shallowRef<ReadonlyMap<string, Read>>(new Map())
   /** Tabs opened with nothing in them, each waiting to be told what it holds. */
   const blanks = ref<readonly string[]>([])
   /** The agent tab the person was last in. A question about a note goes there. */
