@@ -141,6 +141,20 @@ func TestAVaultIndexedByAServiceIsAskedOnThisMachine(t *testing.T) {
 	}
 }
 
+// A vault searched by its words: nothing fetched, nothing asked of a network.
+func TestAnInstallationMayNameNoModelAtAll(t *testing.T) {
+	cfg, err := settings.At(write(t, `{"indexing":{"embedding":{"indexing":{"use":""}}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := cfg.Indexing.Embedding.Indexing.Use; got != "" {
+		t.Errorf("uses %q", got)
+	}
+	if got := cfg.Indexing.Embedding.Asking().Use; got != "" {
+		t.Errorf("questions are embedded by %q", got)
+	}
+}
+
 func TestTheKeyComesFromTheFileOrTheEnvironment(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "from-the-environment")
 
