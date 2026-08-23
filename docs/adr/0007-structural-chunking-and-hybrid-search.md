@@ -3,8 +3,11 @@
 - **Status:** Accepted
 - **Date:** 2026-08-17
 - **Extended:** 2026-08-17 — how lexical and dense search are combined
+- **Extended:** 2026-08-20 — a third ranking, over the names of a source's parts
+  (ADR-0038)
 - **Applies to:** `modules/apps/desktop`
-- **Related:** ADR-0000, ADR-0002, ADR-0006, ADR-0016, ADR-0019, ADR-0030
+- **Related:** ADR-0000, ADR-0002, ADR-0006, ADR-0016, ADR-0019, ADR-0030,
+  ADR-0038
 
 ## Context
 
@@ -41,13 +44,18 @@ The small window is what carries a vector. The large window is what a result
 shows, so a hit arrives with enough text around it to be understood. Several
 small windows of one large window collapse to it, keeping the best score.
 
-Sizes are configuration, not decision, with two rules that are:
+The sizes themselves are not decided here. Two rules about them are:
 
 - **A window is bounded in words, never in lines or bytes.** A file that puts a
   whole book on four lines must not produce a chunk the size of the book.
 - **The small window is checked against the model's input limit** and stays
   under it with margin. A window that is silently truncated indexes text it does
   not contain.
+
+> **They are constants, not configuration.** The word counts, the two overlaps
+> and the legibility thresholds are defaults in `internal/core/window`, and no
+> settings key reaches them. The character limit is the one that does, taken
+> from the model's `max_tokens`.
 
 ### Everything indexed is cut the same way
 
@@ -92,17 +100,23 @@ partition key is introduced later it will be for a value every query constrains,
 and the number of partitions is then a design parameter rather than a
 consequence of how many books there are.
 
-### There is one search, and the two indexes are parameters of it
+### There is one search, and the indexes are parameters of it
 
 Lexical and dense retrieval are not two searches. One search takes the query and
-says which halves to run and how many candidates each keeps, and returns one kind
+says which ways to run and how many candidates each keeps, and returns one kind
 of result.
 
-**Both indexes are built over the same unit: the chunk.** A lexical hit and a
-dense hit name the same row, so they can be placed in one list and a hit can be
-read back the same way whichever half found it.
+> **A third way, from [ADR-0038](0038-where-a-passage-is-in-a-book.md).** The
+> names of the parts a source divides into are indexed apart and ranked apart,
+> so a question naming a section is answered with that section at its heading.
+> It is another parameter of the same search and merges the same way, and the
+> search now fuses three rankings.
 
-**The two rankings are merged by rank.** A chunk's score is the sum of
+**Every index is built over the same unit: the chunk.** A lexical hit and a
+dense hit name the same row, so they can be placed in one list and a hit can be
+read back the same way whichever way found it.
+
+**The rankings are merged by rank.** A chunk's score is the sum of
 `1 / (k + rank)` over the rankings that returned it. BM25 and cosine similarity
 are not comparable — one is unbounded and drawn from the corpus, the other is a
 bounded angle — so combining the scores means calibrating them per corpus and per
@@ -147,8 +161,8 @@ way verse is cut is not established.
 - What can be found is a property of one decision — how the text is cut — rather
   than of several interacting ones.
 - Notes and sources share an index, a ranking and a code path.
-- Merging by rank keeps the two halves independent: either ranking can change
-  without the other being tuned again.
+- Merging by rank keeps the ways independent: one ranking can change without the
+  others being tuned again.
 - Dropping full precision makes the vector part of the index a quarter of its
   size, with no visible change to what comes back.
 - The acceptance test catches the class of regression that latency and size

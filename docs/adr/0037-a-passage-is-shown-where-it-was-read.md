@@ -1,6 +1,6 @@
 # ADR-0037: A passage is shown where it was read, and one shape says where that is
 
-- **Status:** Accepted
+- **Status:** Accepted, except where noted below
 - **Date:** 2026-08-20
 - **Applies to:** `modules/apps/desktop`
 - **Related:** ADR-0000, ADR-0006, ADR-0013, ADR-0017, ADR-0036
@@ -48,8 +48,10 @@ Two things produce it and nothing above asks which:
   milliseconds a page — the same reason ADR-0036 keeps the layer's text nowhere.
 
 Which one answers is decided by the column that already decides which *text* a
-source's chunks are places in. One question, one answer, and no way for the
-rectangles to be indexed against a text the chunks are not in.
+source's chunks are places in, together with one check that the file is still
+the bytes that reading was made from. A document rewritten since is placed by
+its own layer, which is the words that are there now. Nothing indexes a
+rectangle against a text the chunks are not in.
 
 That property is why the layer's boxes are not written down. A file would need
 invalidating when the document changes, sweeping, and a rule for what happens
@@ -100,6 +102,16 @@ A **drawn page** is in memory, keyed by the document, the page and the width it
 was drawn for, and nothing goes on disk. By ADR-0000's rule it is a cache: made
 here, deterministically, in the hundreds of milliseconds. A disk cache would need
 the width in its key, eviction and a sweep, and has earned none of that.
+
+> **Reversed on measurement, 2026-08-20.** Drawing a page of the 600 dpi scan is
+> half a second at any width — the library decodes the page's photograph
+> whatever size is asked for — and it is the same half second every time the
+> page is turned back to. So a drawn page is also kept in this machine's cache
+> folder, under the document's fingerprint, the page and the width, and what is
+> held is swept back to half a gigabyte oldest first. A page turned back to is
+> read in about a millisecond. It stays a cache by ADR-0000's rule: it is not in
+> the vault, and losing it costs the drawing again. The numbers are in
+> `docs/performance.md`.
 
 ## Consequences
 

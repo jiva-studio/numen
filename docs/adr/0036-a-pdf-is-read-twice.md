@@ -64,7 +64,8 @@ and another never.
 places in. Null is the ordinary case, and the only case for a note, an EPUB, or a
 PDF nobody has read.
 
-It holds a producer and not a name. The four files one reading writes are all
+It holds a producer and not a name. The files one reading is kept under — seven
+of them, from the prose itself to the corrections a person made to it — are all
 composed from the producer and the hash, and the hash is a column here already,
 so a name is composed where it is needed and nothing takes an extension off a
 stored string.

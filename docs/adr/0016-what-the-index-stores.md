@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-08-15
 - **Applies to:** `modules/apps/desktop`
-- **Related:** ADR-0002, ADR-0012, ADR-0015
+- **Related:** ADR-0002, ADR-0012, ADR-0015, ADR-0024
 
 ## Context
 
@@ -27,7 +27,7 @@ A scan stores what has a consumer today, and nothing else:
 | Path, size, modification time | The invalidation key. Without it every scan reads every file. |
 | Frontmatter, parsed | The application's own keys will live here (ADR-0009), and a query needs them without reopening the file. A parse error is stored rather than repaired. |
 | The body, indexed and not kept | What full-text search matches against. The index holds no copy of the text: a result is a title and a path, and the text is on disk where it was read from. |
-| Headings, with level and position | The outline of a note, and the boundaries structural chunking will cut on. |
+| Headings, with their level and the line they stand on | The outline of a note, and the boundaries structural chunking will cut on. |
 | The note identifier, when the file carries one | What a link written as `note://` points at, across vaults (ADR-0009, ADR-0011). An identifier that is not a ULID is a reported problem rather than a target. |
 | The filename without its extension | What a link written by name is matched against. Stored rather than computed, because resolution asks for it on every link. |
 | Links, as written | The edges of the graph (ADR-0003). Stored as written; where each one points is worked out when asked, so adding a file resolves a link that was dangling without touching a row. |

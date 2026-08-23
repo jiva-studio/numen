@@ -1,9 +1,10 @@
 # ADR-0002: SQLite is a cache, one database for all vaults
 
-- **Status:** Accepted
+- **Status:** Accepted, except where noted below
 - **Date:** 2026-08-15
 - **Applies to:** any application that keeps an index; today `modules/apps/desktop`
-- **Related:** ADR-0000, ADR-0001, ADR-0004
+- **Partly superseded by:** ADR-0007 — the partition key, and nothing else
+- **Related:** ADR-0000, ADR-0001, ADR-0004, ADR-0007, ADR-0036
 
 ## Context
 
@@ -20,9 +21,15 @@ there are.
 
 ### The index is derived data only
 
-It holds parsed links and graph edges, full-text indexes, card state, source
-chunks, word coordinates and embeddings. **Deleting it must produce a full
-rebuild from the vault, with no network access and no external service calls.**
+It holds parsed links and graph edges, full-text indexes, source chunks and
+embeddings. **Deleting it must produce a full rebuild from the vault, with no
+network access and no external service calls.**
+
+> **Card state and word coordinates were named here and are not in it.** Spaced
+> repetition is unbuilt, and the schema holds no card or review table. Where a
+> word sits on a page is an hour of a model's work, so it is an artifact:
+> [ADR-0036](0036-a-pdf-is-read-twice.md) keeps it in the service folder beside
+> the reading it belongs to.
 
 It is stored outside the vault, so that syncing or committing a vault never
 carries an index along.
@@ -55,6 +62,13 @@ The arguments that pointed the other way do not survive contact:
   distance is computed. Its documentation names per-user and per-document indexes
   as the intended case, which is exactly what `vault_id` is. Partitioning inside
   one index is the idiom, and it is faster than an unpartitioned one.
+
+  > **Reversed by [ADR-0007](0007-structural-chunking-and-hybrid-search.md).** A
+  > query pays about 65 µs for every partition it walks, whatever each partition
+  > holds, so a key no query filters by is a tax on every search. In
+  > `chunks_vec` the vault is an ordinary metadata column and nothing is
+  > partitioned. The measurement is in `docs/performance.md`.
+
 - **Corruption.** The index is disposable by construction. Corruption costs a
   rebuild of every vault instead of one — an inconvenience, not a loss.
 - **Deleting a vault.** One `DELETE` of the vault's own row; everything filed
@@ -157,6 +171,13 @@ the procedure, are ADR-0019.
 | 2-hop graph traversal | under 50 ms |
 | PDF page open with highlights | under 200 ms |
 
+> **The PDF row holds for a page turned back to, and not for the first draw.**
+> Measured 2026-08-20, a page of a 600 dpi scan takes half a second to draw at
+> any width, because the library decodes the page's photograph whatever size is
+> asked for, and no setting reaches it. So drawn pages are kept, and a page
+> asked for a second time is read in about a millisecond. The numbers are in
+> `docs/performance.md`.
+
 These force three things: invalidation on `(path, mtime, size)` so only changed
 files are reparsed; a batched startup reconciliation — one directory walk and one
 batch query, never a per-file round trip; and neighbourhood queries by recursive
@@ -180,8 +201,8 @@ seemed to support it do not hold.
 notes form a graph. Rejected on two counts.
 
 The workload is not graph-shaped. The graph is the smallest part of the system —
-500k edges against 5M review events, plus chunks, page coordinates and
-embeddings — and the queries are shallow: neighbours two hops out, children of a
+500k edges against 5M review events, plus chunks and embeddings — and the
+queries are shallow: neighbours two hops out, children of a
 parent, a topological order over `requires`, cycle detection. A recursive CTE
 covers all of it inside the budget. Graph engines earn their keep on
 variable-length paths and pattern matching across millions of edges, which is
