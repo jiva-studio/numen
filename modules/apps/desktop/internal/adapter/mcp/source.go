@@ -25,9 +25,8 @@ type Document struct {
 
 // addSourceTools adds the tools for the sources a vault holds beside its notes.
 //
-// There are two, and the first is why the second is usable: an agent asked to
-// read a document has to be able to find out which have been read already, or
-// it will read one twice and never read another.
+// An agent asked to read a document finds out first which have been read
+// already, so the listing is what makes the reading usable.
 func addSourceTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "source_list",
@@ -151,7 +150,7 @@ func addSourceTools(server *sdk.Server, core Core) {
 		// Nothing here happens inside this question. Fetching the models is
 		// minutes and reading a book is an hour, and how far either has got is
 		// among everything else the window shows being done.
-		if !core.Recognise.Start(context.WithoutCancel(ctx), core.Vault, in.Path) {
+		if !core.Recognise.Start(core.Vault, in.Path) {
 			// Nothing here remembers a request that was not taken.
 			return nil, out{Says: "another document is being read and this one was not taken; " +
 				"nothing is reading it — ask again once source_list says none is being read"}, nil
@@ -177,6 +176,7 @@ type Recognising interface {
 	// Running says whether a document is being read.
 	Running() bool
 	// Start begins reading one document behind whoever asked, and says whether
-	// it began. It does not begin a second while one runs.
-	Start(ctx context.Context, v domain.Vault, path string) bool
+	// it began. It does not begin a second while one runs, and it runs under
+	// the application rather than under the call that asked for it.
+	Start(v domain.Vault, path string) bool
 }

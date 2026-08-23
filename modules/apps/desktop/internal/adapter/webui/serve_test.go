@@ -181,7 +181,7 @@ func openingWith(
 		Saves:     &note.Write{Readers: filesystem.Readers{}, Writers: filesystem.Writers{}},
 	}
 	if embedder != nil {
-		if err := db.FitVectors(t.Context(), embedder.Model().Dimensions); err != nil {
+		if err := db.FitVectors(t.Context(), embedder.Model().Dimensions, embedder.Model().Recipe()); err != nil {
 			t.Fatal(err)
 		}
 		api.Model.Store(embedder.Model().String())

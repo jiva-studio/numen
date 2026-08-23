@@ -29,11 +29,8 @@ func (c Config) PrepareRecogniser(ctx context.Context) error {
 	return recognition.Prepare(ctx, c.Recognition)
 }
 
-// Recogniser is what reads a scanned page on this machine, opened now.
-//
-// Three values, as with the embedder: the recogniser, what gives it back, and
-// why there is none. A failure is absence and not an error — recognition is
-// unavailable and everything else works.
+// Recogniser is what reads a scanned page on this machine, opened now: the
+// recogniser, what gives it back, and why there is none.
 //
 // It waits for whatever is missing, so it is for a terminal, where waiting is
 // what a person came for. A window asks Recognising instead.
@@ -69,6 +66,12 @@ type Recognising struct {
 	sources port.SourceRepository
 	tasks   *task.Tasks
 
+	// under is what every reading runs under, and going is every reading that
+	// has not ended. A reading outlives the question that asked for it and ends
+	// with the application, which waits here for what it is still writing.
+	under context.Context
+	going sync.WaitGroup
+
 	// open is what reads a page, opened when there is one to read, and ready
 	// says whether opening it would wait for anything to arrive. Which models
 	// those are is settled where every other adapter is chosen.
@@ -76,8 +79,7 @@ type Recognising struct {
 	ready func() bool
 
 	// standing says whether the runtime a page is read through was made before
-	// the window. A build that draws no window has none to be made before it and
-	// leaves this unset.
+	// the window. A test that reads through nothing leaves it unset.
 	standing func() bool
 
 	// queue is where pages are left for a proofreader to answer about later,
@@ -98,9 +100,9 @@ type Recognising struct {
 
 // Recognising is the recogniser this installation offers, reporting itself into
 // the list of what is being done.
-func (c Config) Recognising(sources port.SourceRepository, tasks *task.Tasks) *Recognising {
+func (c Config) Recognising(ctx context.Context, sources port.SourceRepository, tasks *task.Tasks) *Recognising {
 	return &Recognising{
-		cfg: c, sources: sources, tasks: tasks,
+		cfg: c, sources: sources, tasks: tasks, under: ctx,
 		open: func(ctx context.Context, tell func(what string, done, total int64)) (port.Recogniser, func() error, error) {
 			cfg := c.Recognition
 			cfg.Fetching = tell
@@ -124,6 +126,10 @@ type opening func(ctx context.Context, tell func(what string, done, total int64)
 // to arrive.
 func (r *Recognising) Ready() bool { return r.ready() }
 
+// Wait is every reading and every collection this started, ended. What they
+// write goes into an index the application still holds open.
+func (r *Recognising) Wait() { r.going.Wait() }
+
 // Running says whether a document is being read.
 func (r *Recognising) Running() bool {
 	r.mu.Lock()
@@ -137,9 +143,13 @@ func (r *Recognising) Running() bool {
 // One at a time: the models hold a worker each, and a second reading would take
 // twice as long and say so half as clearly.
 //
-// The context is the application's rather than the caller's, because whoever
-// asked is answered at once and goes away.
-func (r *Recognising) Start(ctx context.Context, v domain.Vault, path string) bool {
+// It runs under the application, so whoever asked is answered at once and goes
+// away while the reading carries on.
+func (r *Recognising) Start(v domain.Vault, path string) bool {
+	ctx := r.under
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	r.mu.Lock()
 	if r.running {
 		r.mu.Unlock()
@@ -154,7 +164,9 @@ func (r *Recognising) Start(ctx context.Context, v domain.Vault, path string) bo
 	r.done(before)
 	r.say(task.Task{ID: id, Doing: "Reading a scan", About: path})
 
+	r.going.Add(1)
 	go func() {
+		defer r.going.Done()
 		// The task is finished before the run is, so that a reading begun the
 		// moment this one ends has the list to itself. It is finished however
 		// this reading ends.
@@ -318,6 +330,8 @@ func (r *Recognising) Collecting(
 	if err != nil || queue == nil {
 		return
 	}
+	r.going.Add(1)
+	defer r.going.Done()
 	for {
 		for _, v := range vaults {
 			r.collect(ctx, known, queue, v)

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"cmp"
 	"context"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"hash/fnv"
@@ -150,13 +151,20 @@ func (s *store) Unembedded(_ context.Context, vaultID string, model port.Embeddi
 		src := s.sources[c.vault][c.path]
 		out = append(out, domain.Passage{
 			Chunk: c.id, Source: c.path, Start: c.start, Length: c.length, Location: c.location,
-			TextFrom: src.TextFrom, Hash: src.Hash,
+			TextFrom: src.TextFrom, Hash: src.Hash, Fingerprint: fingerprintOf(c.text),
 		})
 		if len(out) == limit {
 			break
 		}
 	}
 	return out, nil
+}
+
+// fingerprintOf is what an index records a chunk's text as, and what a vector
+// already bought is reclaimed by.
+func fingerprintOf(text string) string {
+	sum := sha256.Sum256([]byte(text))
+	return hex.EncodeToString(sum[:])
 }
 
 // put records a source as it arrived, the recipe included: a source recorded

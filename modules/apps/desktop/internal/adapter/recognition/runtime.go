@@ -13,6 +13,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	ort "github.com/getcharzp/onnxruntime_purego"
 )
@@ -114,9 +115,14 @@ var held struct {
 	at     string
 }
 
+// here says whether this process has its runtime. It is read without the lock,
+// so it is answered while another reading is opening one.
+var here atomic.Bool
+
 // keep is the runtime this process has settled on. The lock is the caller's.
 func keep(engine *ort.Engine, at string) (*ort.Engine, string, error) {
 	held.engine, held.at = engine, at
+	here.Store(true)
 	return engine, at, nil
 }
 

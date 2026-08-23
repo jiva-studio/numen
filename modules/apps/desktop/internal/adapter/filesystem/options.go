@@ -18,7 +18,7 @@ type Options struct {
 	// dot. Empty means the default, which is markdown alone.
 	Extensions []string
 	// BookExtensions are the file extensions treated as books, with the leading
-	// dot. Empty means the default, which is EPUB alone.
+	// dot. Empty means the default, which is EPUB and PDF.
 	BookExtensions []string
 	// Ignore is what the vault says not to look at, in the syntax of
 	// `.gitignore`. Empty means the default.

@@ -49,25 +49,21 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 	}
 	options, err := paths.engine.NewSessionOptions()
 	if err != nil {
-		paths.close()
 		return nil, err
 	}
 	if err := options.SetIntraOpNumThreads(int32(cfg.Page.threads())); err != nil {
-		paths.close()
 		return nil, err
 	}
 
 	layout, err := OpenLayout(paths.engine, paths.layout, options,
 		cfg.Layout.labels(), cfg.Layout.minimum(), cfg.Layout.overlap())
 	if err != nil {
-		paths.close()
 		return nil, err
 	}
 
 	classes, dict, err := alphabet(paths.recognise, cfg.Recognise)
 	if err != nil {
 		layout.Close()
-		paths.close()
 		return nil, err
 	}
 	lines, err := paddle.NewEngine(paddle.Config{
@@ -85,7 +81,6 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 	})
 	if err != nil {
 		layout.Close()
-		paths.close()
 		return nil, fmt.Errorf("the recogniser: %w", err)
 	}
 

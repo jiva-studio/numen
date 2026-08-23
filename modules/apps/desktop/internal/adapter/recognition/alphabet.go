@@ -43,9 +43,11 @@ func alphabet(model string, cfg RecogniserModel) (int64, string, error) {
 	}
 	lines := strings.Split(strings.TrimRight(characters, "\n"), "\n")
 
-	// The model writes one class a character, and two more it never writes: the
-	// blank a decoder collapses on, and a space.
+	// The model writes one class a character, and two more: the blank a decoder
+	// collapses on, and a space. A decoder reads a class as the entry one
+	// before it, so the dictionary carries every class but the blank.
 	classes := int64(len(lines)) + 2
+	lines = append(lines, " ")
 	if cfg.Classes > 0 && cfg.Classes != classes {
 		return 0, "", fmt.Errorf("%s knows %d characters and the settings say %d", model, classes, cfg.Classes)
 	}

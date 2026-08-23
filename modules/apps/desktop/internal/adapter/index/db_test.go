@@ -1,7 +1,7 @@
 package index
 
 import (
-	"crypto/sha256"
+	"encoding/hex"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -120,27 +120,26 @@ func TestTheVectorIndexIsFittedToTheModel(t *testing.T) {
 	ctx := t.Context()
 	db := opened(t)
 
-	if err := db.FitVectors(ctx, 384); err != nil {
+	if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.FitVectors(ctx, 384); err != nil {
+	if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
 		t.Fatalf("fitting to the width it already holds: %v", err)
 	}
 
 	narrow(t, db, first, 384)
 }
 
-// Changing model rebuilds the index. What it held was made by another model and
-// cannot be compared with what comes next.
-// Fitting the coarse index to another width leaves what was made standing.
+// Fitting the coarse index to another width leaves what was made standing, and
+// a width that comes back is filled from it.
 //
-// A vector of the old width is not comparable with a query of the new one and
-// is not read; it is also not bought again if the model goes back.
+// A vector of the old width is not comparable with a query of the new one, and
+// is kept by the text it was bought for.
 func TestFittingToAnotherWidthKeepsWhatWasMade(t *testing.T) {
 	ctx := t.Context()
 	db := opened(t)
 
-	if err := db.FitVectors(ctx, 384); err != nil {
+	if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
 		t.Fatal(err)
 	}
 	narrow(t, db, first, 384)
@@ -148,15 +147,27 @@ func TestFittingToAnotherWidthKeepsWhatWasMade(t *testing.T) {
 	if made == 0 {
 		t.Fatal("nothing was kept for the text that was embedded")
 	}
+	if coarse := counted(t, db, `SELECT count(*) FROM chunks_vec`); coarse != made {
+		t.Fatalf("%d of %d vectors reached the coarse index", coarse, made)
+	}
 
-	if err := db.FitVectors(ctx, 1024); err != nil {
+	if err := db.FitVectors(ctx, 1024, narrowRecipe(1024)); err != nil {
 		t.Fatal(err)
 	}
 	if left := counted(t, db, `SELECT count(*) FROM vectors`); left != made {
 		t.Errorf("%d of %d vectors survived a change of width", left, made)
 	}
-	narrow(t, db, first, 1024)
+
+	if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
+		t.Fatal(err)
+	}
+	if back := counted(t, db, `SELECT count(*) FROM chunks_vec`); back != made {
+		t.Errorf("the width came back and %d of %d vectors are in the coarse index", back, made)
+	}
 }
+
+// narrowRecipe is what a model of the width given writes its vectors under.
+func narrowRecipe(dims int) string { return "model/" + strconv.Itoa(dims) }
 
 // narrow cuts one source and embeds its small windows at the width given.
 func narrow(t *testing.T, db *DB, vault domain.Vault, dims int) {
@@ -176,7 +187,7 @@ func narrow(t *testing.T, db *DB, vault domain.Vault, dims int) {
 		t.Fatal(err)
 	}
 
-	owing, err := db.ChunkQueries().Unembedded(ctx, vault.ID, "model", 0, 10)
+	owing, err := db.ChunkQueries().Unembedded(ctx, vault.ID, narrowRecipe(dims), 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,9 +196,14 @@ func narrow(t *testing.T, db *DB, vault domain.Vault, dims int) {
 	}
 	vectors := make([]chunk.Vector, 0, len(owing))
 	for _, p := range owing {
-		sum := sha256.Sum256([]byte(strconv.Itoa(dims) + ":" + strconv.Itoa(int(p.Chunk))))
+		// A vector is found by the text the window holds, which is the chunk's
+		// own hash.
+		print, err := hex.DecodeString(p.Fingerprint)
+		if err != nil || len(print) == 0 {
+			t.Fatalf("chunk %d owes a vector under fingerprint %q", p.Chunk, p.Fingerprint)
+		}
 		vectors = append(vectors, chunk.Vector{
-			Chunk: p.Chunk, Fingerprint: sum[:], Recipe: "model/" + strconv.Itoa(dims),
+			Chunk: p.Chunk, Fingerprint: print, Recipe: narrowRecipe(dims),
 			Value: make([]byte, dims), Coarse: make([]byte, dims/8),
 		})
 	}

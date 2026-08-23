@@ -2,8 +2,8 @@ package embedding
 
 import "math"
 
-// Int8Scale is what one unit of an int8 dimension is worth. It is a constant:
-// the same float32 must quantise to the same byte in every run, or a vector
+// Int8Scale is what one unit of an int8 dimension is worth. It is a constant,
+// so the same float32 quantises to the same byte in every run and a vector
 // stored today is comparable with one stored after the next book is added.
 //
 // 0.4 is the scale a unit-length 1024-dimension vector is quantised at.
@@ -17,6 +17,21 @@ const Int8Scale = 0.4
 func Bits(v []float32) []byte {
 	out := make([]byte, (len(v)+7)/8)
 	for i, x := range v {
+		if x > 0 {
+			out[i/8] |= 1 << (7 - uint(i)%8)
+		}
+	}
+	return out
+}
+
+// Coarse is the one bit per dimension of a vector that has been quantised. It
+// is read out of the bytes that are stored, so a vector bought and a vector
+// reclaimed from the index carry the same bits.
+//
+// A dimension that quantised to zero is stored as a zero bit.
+func Coarse(q []int8) []byte {
+	out := make([]byte, (len(q)+7)/8)
+	for i, x := range q {
 		if x > 0 {
 			out[i/8] |= 1 << (7 - uint(i)%8)
 		}

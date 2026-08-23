@@ -39,7 +39,8 @@ func (c Config) Searchable(ctx context.Context, db *Index, embedder port.Embedde
 	// vault made searchable is a vault whose vector index holds what the model
 	// makes, whichever entry point is doing the making.
 	if embedder != nil {
-		if err := db.FitVectors(ctx, embedder.Model().Dimensions); err != nil {
+		model := embedder.Model()
+		if err := db.FitVectors(ctx, model.Dimensions, model.Recipe()); err != nil {
 			return vault.Searchable{}, err
 		}
 	}

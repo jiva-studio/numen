@@ -29,6 +29,9 @@ func legible(chunk string, s Sizes) bool {
 		return false
 	}
 
+	if s.Dirty < 0 {
+		return true
+	}
 	words, dirty := 0, 0
 	for _, token := range strings.Fields(chunk) {
 		words++
