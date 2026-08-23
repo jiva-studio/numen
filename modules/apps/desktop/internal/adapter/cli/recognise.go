@@ -58,10 +58,11 @@ func recogniseCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 	// line of its own.
 	shown := false
 	recognise := source.Recognise{
-		Readers: cfg.VaultReaders(),
-		Sources: db.Sources(),
-		Derived: cfg.DerivedStores(),
-		By:      models,
+		Readers:   cfg.VaultReaders(),
+		Sources:   db.Sources(),
+		Derived:   cfg.DerivedStores(),
+		Documents: cfg.Documents(),
+		By:        models,
 		Cut: func(ctx context.Context, v domain.Vault, path string) error {
 			_, err := cut.One(ctx, v, path)
 			return err

@@ -8,7 +8,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/fixes"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/pdf"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/text"
@@ -29,9 +28,9 @@ type Marks struct {
 	Sources port.SourceQueries
 	Derived port.DerivedStores
 
-	// Layer is where the words of some pages of a document sit. It is the
-	// document's own answer in the application, and a test puts its own in.
-	Layer func(raw []byte, pages []int) ([]placed.Box, error)
+	// Documents reads a document that carries its own text layer. A vault whose
+	// documents are all recognised needs none.
+	Documents port.Documents
 }
 
 // Execute is where the runs of one source's text sit: for each of them, the
@@ -140,11 +139,14 @@ func (u Marks) layer(
 		// carries no rectangles.
 		return nil, nil
 	}
+	if u.Documents == nil {
+		return nil, nil
+	}
 	raw, err := reader.Read(ctx, ref.Path)
 	if err != nil {
 		return nil, err
 	}
-	book, err := pdf.Read(raw)
+	book, err := u.Documents.Read(ctx, raw)
 	if err != nil {
 		return nil, err
 	}
@@ -152,16 +154,12 @@ func (u Marks) layer(
 	if len(pages) == 0 {
 		return nil, nil
 	}
-	layer := u.Layer
-	if layer == nil {
-		layer = book.Placed
-	}
-	return layer(raw, pages)
+	return u.Documents.Placed(ctx, raw, book.Pages, pages)
 }
 
 // every is the pages all the runs fall on, in order and each of them once. Two
 // runs on one page are one page read.
-func every(book *pdf.Book, runs []placed.Run) []int {
+func every(book port.Reading, runs []placed.Run) []int {
 	held := map[int]bool{}
 	var out []int
 	for _, one := range runs {
@@ -180,7 +178,7 @@ func every(book *pdf.Book, runs []placed.Run) []int {
 // across is the pages a run of the document's text falls on. A page holds the
 // text from where it begins up to where the next page does, and the last page
 // holds the rest.
-func across(book *pdf.Book, start, end int) []int {
+func across(book port.Reading, start, end int) []int {
 	if end > len(book.Text) {
 		end = len(book.Text)
 	}
@@ -189,13 +187,13 @@ func across(book *pdf.Book, start, end int) []int {
 	}
 	// The page the run begins on is the last one beginning at or before it.
 	first := sort.Search(len(book.Pages), func(i int) bool {
-		return book.Pages[i].Offset > start
+		return book.Pages[i] > start
 	}) - 1
 	if first < 0 {
 		first = 0
 	}
 	var out []int
-	for i := first; i < len(book.Pages) && book.Pages[i].Offset < end; i++ {
+	for i := first; i < len(book.Pages) && book.Pages[i] < end; i++ {
 		out = append(out, i)
 	}
 	return out

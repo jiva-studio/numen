@@ -86,12 +86,13 @@ func (p Parameters) filled() Parameters {
 // Every field is asked for by New. An embedder that is left out answers: the
 // words half runs alone, with none of what the vectors hold.
 type Search struct {
-	passages port.PassageQueries
-	readers  port.VaultReaders
-	embedder port.Embedder
-	derived  port.DerivedStores
-	floor    float64
-	trouble  func(error)
+	passages  port.PassageQueries
+	readers   port.VaultReaders
+	embedder  port.Embedder
+	derived   port.DerivedStores
+	documents port.Documents
+	floor     float64
+	trouble   func(error)
 }
 
 // New is a search over one vault's index.
@@ -106,7 +107,7 @@ type Search struct {
 //
 // `trouble` hears about a half that could not answer. Nothing is said by
 // passing nothing.
-func New(passages port.PassageQueries, readers port.VaultReaders, derived port.DerivedStores, embedder port.Embedder, floor float64, trouble func(error)) Search {
+func New(passages port.PassageQueries, readers port.VaultReaders, derived port.DerivedStores, documents port.Documents, embedder port.Embedder, floor float64, trouble func(error)) Search {
 	if floor == 0 {
 		floor = DefaultFloor
 	}
@@ -114,12 +115,13 @@ func New(passages port.PassageQueries, readers port.VaultReaders, derived port.D
 		trouble = func(error) {}
 	}
 	return Search{
-		passages: passages,
-		readers:  readers,
-		embedder: embedder,
-		derived:  derived,
-		floor:    floor,
-		trouble:  trouble,
+		passages:  passages,
+		readers:   readers,
+		embedder:  embedder,
+		derived:   derived,
+		documents: documents,
+		floor:     floor,
+		trouble:   trouble,
 	}
 }
 
@@ -209,7 +211,7 @@ func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage
 			return nil, err
 		}
 	}
-	of := text.Reader{Vault: reader, Derived: store}
+	of := text.Reader{Vault: reader, Derived: store, Documents: u.documents}
 
 	// Several passages of one file are read once. A source is one text however
 	// many passages name it, so its path is the whole of the key.

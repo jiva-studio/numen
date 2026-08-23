@@ -13,6 +13,7 @@
 package text
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"path"
@@ -21,7 +22,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/epub"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/pdf"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
 )
 
@@ -127,7 +128,9 @@ func ReaderName(ref domain.FileRef) (string, bool) {
 // A note is its own bytes. A book is what taking the text out of it produces,
 // and a chunk's offsets belong to that and not to the bytes on disk: slicing an
 // archive at a text offset returns compressed noise.
-func Read(ref domain.FileRef, raw []byte) (*Document, error) {
+//
+// One format is read by a library, which is given rather than reached for.
+func Read(ctx context.Context, docs port.Documents, ref domain.FileRef, raw []byte) (*Document, error) {
 	reader, ok := ReaderName(ref)
 	if !ok {
 		return nil, ErrUnreadable
@@ -138,7 +141,10 @@ func Read(ref domain.FileRef, raw []byte) (*Document, error) {
 	case ReaderEPUB:
 		return fromEPUB(raw)
 	case ReaderPDF:
-		return fromPDF(raw)
+		if docs == nil {
+			return nil, ErrUnreadable
+		}
+		return fromPages(ctx, docs, raw)
 	}
 	return nil, ErrUnreadable
 }
@@ -164,18 +170,23 @@ func fromEPUB(raw []byte) (*Document, error) {
 	return doc, nil
 }
 
-func fromPDF(raw []byte) (*Document, error) {
-	book, err := pdf.Read(raw)
+// fromPages is a document whose text is laid out on printed pages, and whose
+// pages are named by where they stand.
+func fromPages(ctx context.Context, docs port.Documents, raw []byte) (*Document, error) {
+	book, err := docs.Read(ctx, raw)
 	if err != nil {
+		if ctx.Err() != nil {
+			return nil, err
+		}
 		return nil, ErrUnreadable
 	}
 	doc := &Document{Text: book.Text}
 	for _, p := range book.Places {
-		doc.Places = append(doc.Places, window.Place{Title: p.Title, Offset: p.Offset})
+		doc.Places = append(doc.Places, p)
 		doc.named = append(doc.named, mark{Offset: p.Offset, Name: p.Title})
 	}
-	for i, p := range book.Pages {
-		doc.paged = append(doc.paged, mark{Offset: p.Offset, Name: sheet(i)})
+	for i, at := range book.Pages {
+		doc.paged = append(doc.paged, mark{Offset: at, Name: sheet(i)})
 	}
 	return doc, nil
 }

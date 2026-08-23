@@ -132,7 +132,7 @@ func precise(v []float32) []byte {
 }
 
 func (c corpus) search(embedder port.Embedder) search.Search {
-	return search.New(c.db.ChunkQueries(), filesystem.Readers{}, nil, embedder, 0, nil)
+	return search.New(c.db.ChunkQueries(), filesystem.Readers{}, nil, nil, embedder, 0, nil)
 }
 
 var model = port.EmbeddingModel{Name: "test", Dimensions: dimensions}
@@ -296,7 +296,7 @@ func TestAModelOutOfReachLeavesTheWordsToAnswer(t *testing.T) {
 	c := indexed(t)
 
 	var said []error
-	finds := search.New(c.db.ChunkQueries(), filesystem.Readers{}, nil,
+	finds := search.New(c.db.ChunkQueries(), filesystem.Readers{}, nil, nil,
 		outOfReach{why: errors.New("dial tcp: network is unreachable")}, 0,
 		func(err error) { said = append(said, err) })
 
@@ -318,7 +318,7 @@ func TestASearchTheCallerStoppedIsNotAnAnswer(t *testing.T) {
 	ctx := t.Context()
 	c := indexed(t)
 
-	finds := search.New(c.db.ChunkQueries(), filesystem.Readers{}, nil,
+	finds := search.New(c.db.ChunkQueries(), filesystem.Readers{}, nil, nil,
 		outOfReach{why: context.Canceled}, 0, func(error) {})
 
 	if _, err := finds.Execute(ctx, c.first, "disorder", search.Parameters{}); !errors.Is(err, context.Canceled) {

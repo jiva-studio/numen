@@ -21,6 +21,9 @@ import (
 type Reader struct {
 	Vault   port.VaultReader
 	Derived port.DerivedStore
+	// Documents reads a format that needs a library. A vault holding none is
+	// read without one.
+	Documents port.Documents
 }
 
 // Of is the text a source's chunks are places in.
@@ -40,7 +43,7 @@ func (r Reader) Of(ctx context.Context, path, from, hash string) (*Document, err
 	if err != nil {
 		return nil, err
 	}
-	return Read(ref, raw)
+	return Read(ctx, r.Documents, ref, raw)
 }
 
 // recognised is a source whose text a producer wrote. A recognition still

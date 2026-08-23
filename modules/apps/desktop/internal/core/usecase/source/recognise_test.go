@@ -11,6 +11,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/pdf"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/ocr"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
@@ -152,7 +153,7 @@ func recogniser(t *testing.T, says string) (Recognise, domain.Vault, *store, *sh
 // reading is a Recognise over a vault holding the fixture named.
 func reading(t *testing.T, says, fixture string) (Recognise, domain.Vault, *store, *shelf, *speaker) {
 	t.Helper()
-	raw, err := os.ReadFile("../../pdf/testdata/" + fixture)
+	raw, err := os.ReadFile("../../../adapter/pdf/testdata/" + fixture)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -164,11 +165,12 @@ func reading(t *testing.T, says, fixture string) (Recognise, domain.Vault, *stor
 	shelf := newShelf()
 	model := &speaker{says: says}
 	return Recognise{
-		Readers: readers,
-		Sources: index,
-		Derived: shelf,
-		By:      model,
-		Batch:   1,
+		Readers:   readers,
+		Sources:   index,
+		Derived:   shelf,
+		Documents: pdf.Documents{},
+		By:        model,
+		Batch:     1,
 	}, v, index, shelf, model
 }
 
@@ -353,7 +355,7 @@ func TestAReadingDeletedByHandIsNoticed(t *testing.T) {
 // under.
 func document(t *testing.T) string {
 	t.Helper()
-	raw, err := os.ReadFile("../../pdf/testdata/outline.pdf")
+	raw, err := os.ReadFile("../../../adapter/pdf/testdata/outline.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
