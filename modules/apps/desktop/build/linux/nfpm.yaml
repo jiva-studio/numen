@@ -1,0 +1,31 @@
+# What a Debian or Redhat machine is handed. The packaging workflow gathers the
+# binary and this file's neighbours into one directory and packages from there.
+name: numen
+arch: amd64
+platform: linux
+version: ${VERSION}
+section: utils
+maintainer: Jiva Studio <contact@akdasa.studio>
+description: |
+  A knowledge tool: markdown notes linked into a graph, a typed hierarchy with
+  several parents, spaced repetition, and a source layer over PDF and audio.
+homepage: https://github.com/jiva-studio/numen
+license: Proprietary
+
+contents:
+  - src: ./numen
+    dst: /usr/bin/numen
+  - src: ./numen.desktop
+    dst: /usr/share/applications/numen.desktop
+
+# The window draws through the system's own browser, and the machine has to
+# carry it.
+overrides:
+  deb:
+    depends:
+      - libgtk-4-1
+      - libwebkitgtk-6.0-4
+  rpm:
+    depends:
+      - gtk4
+      - webkitgtk6.0
