@@ -18,6 +18,27 @@ func TestTheCommandLineIsFoundWhereAnInstallerPutIt(t *testing.T) {
 	}
 }
 
+// A mac carries programs inside application bundles, and the command line
+// found there is a name standing for the file it points at.
+func TestTheCommandLineIsFoundInsideAnApplicationBundle(t *testing.T) {
+	home := t.TempDir()
+	real := filepath.Join(home, ".local", "share", "claude", "versions", "2.1.241")
+	program(t, real)
+
+	bundle := filepath.Join(home, "Applications", "Claude Code URL Handler.app", "Contents", "MacOS")
+	if err := os.MkdirAll(bundle, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	want := filepath.Join(bundle, "claude")
+	if err := os.Symlink(real, want); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := found(home, places); got != want {
+		t.Errorf("found %q, want %q", got, want)
+	}
+}
+
 // A version folder is written by the installer, so the place names it with a
 // star and any one of them answers.
 func TestAVersionFolderIsExpanded(t *testing.T) {
