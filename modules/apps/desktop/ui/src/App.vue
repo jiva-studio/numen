@@ -487,7 +487,6 @@ onUnmounted(() => {
     <p v-if="failure" class="failure">{{ failure }}</p>
     <p v-else-if="indexing" class="waiting">reading the vault…</p>
     <p v-else-if="!holds && trouble" class="waiting">nothing was read</p>
-    <p v-else-if="!holds" class="waiting">this vault holds no notes</p>
 
     <Workspace
       v-model="layout"

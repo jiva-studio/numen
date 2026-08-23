@@ -67,18 +67,16 @@ describe('the window with no note to show', () => {
     const window = await drawn()
 
     expect(window.find('.waiting').text()).toBe('nothing was read')
-    expect(window.text()).not.toContain('this vault holds no notes')
     expect(window.find('.warning').text()).toContain('the vault folder is not there')
   })
 
-  it('says the vault holds no notes when it was read and holds none', async () => {
+  it('says nothing when the vault was read and holds none', async () => {
     said.ready = true
     said.failed = ''
 
     const window = await drawn()
 
-    expect(window.find('.waiting').text()).toBe('this vault holds no notes')
-    expect(window.text()).not.toContain('nothing was read')
+    expect(window.find('.waiting').exists()).toBe(false)
     expect(window.find('.warning').exists()).toBe(false)
   })
 })
