@@ -8,7 +8,7 @@
  * here is the vault this window reads, the kinds it draws, and the few things
  * one kind asks of another.
  */
-import { computed, onMounted, onUnmounted, watch } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { Notices, Palette, Workspace } from '@numen/ui'
 import type { Notice, PlexShowing } from '@numen/ui'
 import '@numen/ui/styles.css'
@@ -21,9 +21,11 @@ import { drawn } from './drawn'
 import { creating } from './creating'
 import { finding } from './finding'
 import { leaving } from './leaving'
+import { raising } from './raising'
 import { windowing } from './windowing'
 import BlankTab from './BlankTab.vue'
-import { agentKind, talking, type Held as Talk } from './agent/kind'
+import Leaving from './Leaving.vue'
+import { agentKind, talking } from './agent/kind'
 import { documentKind, documenting, type Held as Read } from './document/kind'
 import { noting } from './note/kind'
 import { plexKind, plexing } from './plex/kind'
@@ -47,31 +49,8 @@ const window = showing(
 const going = leaving(core)
 going.holds(notes.flush)
 
-/**
- * The notes whose text the file has moved past, told to the quit.
- *
- * A question is raised while the tab stands overtaken and dropped when it
- * stops, so the window waits on exactly what is still to be answered.
- */
-const raised = new Map<string, () => void>()
-watch(
-  () => notes.all().filter((path) => notes.shown(path).state === 'overtaken'),
-  (standing) => {
-    for (const path of standing) {
-      if (raised.has(path)) continue
-      raised.set(
-        path,
-        going.raise({ path, keep: async () => notes.keep(path), take: async () => notes.take(path) }),
-      )
-    }
-    for (const [path, drop] of raised) {
-      if (standing.includes(path)) continue
-      drop()
-      raised.delete(path)
-    }
-  },
-  { deep: true },
-)
+raising(notes, going)
+
 const { indexing, failure, warning, trouble, unwatched, unreachable, holds, looking } = window
 /** What could not be made or joined, in words a person reads. */
 const unmade = computed(() => making.said.value)
@@ -92,7 +71,6 @@ const noted = noting(core, notes, drawings, {
     return made.path
   },
 })
-const titles = noted.titles
 
 /** The agent tabs, and the one a question about a note is put in. */
 let agents: ReturnType<typeof agentKind>
@@ -257,23 +235,7 @@ onUnmounted(() => {
 
     <Notices :notices="notices" :name="words.working" :put-away="words.putAway" />
 
-    <section v-if="going.questions.value.length" role="alertdialog" class="leaving">
-      <p class="leaving__says">{{ words.going }}</p>
-      <ul class="leaving__notes">
-        <li v-for="one in going.questions.value" :key="one.path" class="leaving__note">
-          <span class="leaving__title">{{ titles.get(one.path) ?? one.path }}</span>
-          <button type="button" class="overtaken__answer" @click="void one.keep()">
-            {{ words.keep }}
-          </button>
-          <button type="button" class="overtaken__answer" @click="void one.take()">
-            {{ words.take }}
-          </button>
-          <button type="button" class="overtaken__answer" @click="one.later()">
-            {{ words.later }}
-          </button>
-        </li>
-      </ul>
-    </section>
+    <Leaving :questions="going.questions.value" :called="noted.called" />
 
     <Palette
       :model-value="palette.typed.value"
