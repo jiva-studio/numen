@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"sync"
 
 	"github.com/gomlx/compute"
@@ -313,14 +314,26 @@ type paths struct {
 	tokenizer string
 }
 
+// Where a repository keeps the models it publishes, and which of them is run
+// when the configuration names none.
+const (
+	modelFolder = "onnx"
+	modelFile   = "model.onnx"
+	tokenFile   = "tokenizer.json"
+)
+
 // locate finds the model's files: in a directory the configuration names, or in
 // the download cache. A named directory is what an installation with no network
 // uses.
 func locate(cfg embed.LocalModel) (paths, error) {
+	file := cfg.File
+	if file == "" {
+		file = modelFile
+	}
 	if cfg.Dir != "" {
 		p := paths{
-			model:     filepath.Join(cfg.Dir, "model.onnx"),
-			tokenizer: filepath.Join(cfg.Dir, "tokenizer.json"),
+			model:     filepath.Join(cfg.Dir, file),
+			tokenizer: filepath.Join(cfg.Dir, tokenFile),
 		}
 		for _, required := range []string{p.model, p.tokenizer} {
 			if _, err := os.Stat(required); err != nil {
@@ -335,21 +348,88 @@ func locate(cfg embed.LocalModel) (paths, error) {
 	if !cfg.Download {
 		return paths{}, fmt.Errorf("%s is not on this machine: set local.dir to where it is, or local.download to fetch it", cfg.Name)
 	}
+
 	repo := hub.New(cfg.Name).WithProgressBar(false)
-	p := paths{}
-	var err error
-	if p.model, err = repo.DownloadFile("onnx/model.onnx"); err != nil {
+	folder, err := published(repo)
+	if err != nil {
 		return paths{}, err
 	}
-	// A model too large for one file keeps its weights beside it, and the
-	// reader resolves that name relative to the model.
-	if repo.HasFile("onnx/model.onnx_data") {
-		if _, err := repo.DownloadFile("onnx/model.onnx_data"); err != nil {
+	if !slices.Contains(folder, file) {
+		return paths{}, fmt.Errorf("%s publishes no %s/%s: it has %v", cfg.Name, modelFolder, file, folder)
+	}
+
+	p := paths{}
+	for _, name := range wanted(folder, file) {
+		at, err := repo.DownloadFile(modelFolder + "/" + name)
+		if err != nil {
+			return paths{}, err
+		}
+		if name == file {
+			p.model = at
+		}
+		if name == tokenFile {
+			p.tokenizer = at
+		}
+	}
+	// The tokeniser stands at the root of a repository, and beside the models
+	// in some.
+	if repo.HasFile(tokenFile) {
+		if p.tokenizer, err = repo.DownloadFile(tokenFile); err != nil {
 			return paths{}, err
 		}
 	}
-	if p.tokenizer, err = repo.DownloadFile("tokenizer.json"); err != nil {
-		return paths{}, err
+	if p.tokenizer == "" {
+		return paths{}, fmt.Errorf("%s publishes no %s", cfg.Name, tokenFile)
 	}
 	return p, nil
+}
+
+// published is what a repository holds beside its models, by the names they
+// have inside that folder.
+func published(repo *hub.Repo) ([]string, error) {
+	var out []string
+	for name, err := range repo.IterFileNames() {
+		if err != nil {
+			return nil, err
+		}
+		if rest, inside := strings.CutPrefix(name, modelFolder+"/"); inside && rest != "" {
+			out = append(out, rest)
+		}
+	}
+	return out, nil
+}
+
+// wanted is everything the model named is made of, out of what stands beside
+// it: the model, and every file that is not another model's.
+//
+// A model too large for one file keeps its weights in a second under its own
+// name, and a graph may point at a constant in a third. A folder holds the full
+// build and the quantised ones together, and taking one means leaving the
+// gigabytes belonging to the others.
+func wanted(folder []string, named string) []string {
+	var others []string
+	for _, name := range folder {
+		if name != named && strings.HasSuffix(name, ".onnx") {
+			others = append(others, name)
+		}
+	}
+	out := []string{named}
+	for _, name := range folder {
+		if name == named || theirs(name, others) {
+			continue
+		}
+		out = append(out, name)
+	}
+	return out
+}
+
+// theirs says a file belongs to one of the models given: it is that model, or
+// it stands beside it under that model's name.
+func theirs(name string, models []string) bool {
+	for _, model := range models {
+		if strings.HasPrefix(name, model) {
+			return true
+		}
+	}
+	return false
 }
