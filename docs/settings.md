@@ -131,8 +131,9 @@ how a key is set.
 
 ### Nothing configured
 
-The file a first run writes. A model on this machine, fetched on first use, no
-key and no account.
+What a first run does: a model on this machine, fetched on first use, no key and
+no account. The file it writes carries every section filled in — this is the
+embedding part of it.
 
 ```json
 {
@@ -147,7 +148,8 @@ key and no account.
       "indexing": {
         "use": "local",
         "local": { "name": "intfloat/multilingual-e5-small", "batch_texts": 8, "download": true }
-      }
+      },
+      "query": { "use": "" }
     }
   }
 }
@@ -247,6 +249,8 @@ at the top, with the model written among its fields:
 }}}
 ```
 
-It is still read: the placement becomes `indexing`, the model is lifted out of
-whichever half `use` names, and questions are asked the way the vault was
-indexed.
+It is still read: the placement becomes `indexing`, the model is what the half
+`use` names reaches, and questions are asked the way the vault was indexed.
+
+A file naming the service and nothing but a key is a hosted model — the
+service's own name, 1536 wide — and not whatever this machine would have run.

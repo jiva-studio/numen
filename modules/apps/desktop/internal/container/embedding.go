@@ -50,13 +50,23 @@ func (e *Embedding) Landed(held port.Embedder, why error) {
 }
 
 // Disown is the model turning out not to be the one whose vectors are stored.
-// It is here and it is not used.
-func (e *Embedding) Disown(why error) {
-	e.Landed(nil, why)
+// It is let go of, and nothing is asked of it again.
+func (e *Embedding) Disown(why error) error {
+	e.once.Do(func() { close(e.here) })
+
 	e.mu.Lock()
+	held := e.held
 	e.held, e.why = nil, why
 	e.mu.Unlock()
+
+	if closer, ok := held.(interface{ Close() error }); ok {
+		return closer.Close()
+	}
+	return nil
 }
+
+// Model is what the settings say this is, known before the weights are here.
+func (e *Embedding) Model() port.EmbeddingModel { return e.is }
 
 // Here says whether there is something to embed with.
 func (e *Embedding) Here() bool {

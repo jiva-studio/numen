@@ -19,7 +19,6 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/source"
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
 )
 
 // Opened is a vault put together and running: the questions a client may ask,
@@ -99,7 +98,7 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 
 	// Opened once, for as long as the window is. A local model is fetched and
 	// compiled behind this, so the window is drawn while it arrives.
-	embedder, asking, closeEmbedder, why := cfg.Embedders(tasks)
+	embedder, asking, closeEmbedder, why := cfg.Embedders(ctx, tasks)
 	if why != nil {
 		fmt.Fprintf(out, "not embedding %s: %v\n", vaults[0].Name, why)
 	}
@@ -167,8 +166,12 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 	// The search the window offers is the search the application already does.
 	// It is built once the embedder is settled, so a model that could not be
 	// fitted leaves the words half to answer on its own.
+	// A search short of a half is said where the person is. A window opened
+	// from a desktop entry has no terminal to write to.
 	finds := search.New(db.Passages(), cfg.VaultReaders(), cfg.DerivedStores(), asking, cfg.Embedding.Floor,
-		func(err error) { fmt.Fprintf(out, "answering by words alone: %v\n", err) })
+		func(err error) {
+			api.say(task.Task{ID: wordsAlone, Doing: "Answering by words alone", Failed: err.Error()})
+		})
 	api.Finds = &finds
 	scan := usecase.Scan{
 		Readers:      cfg.VaultReaders(),
@@ -297,6 +300,8 @@ const (
 	walkingNotes  = "walking the notes"
 	readingBooks  = "reading the books"
 	makingVectors = "making the vectors"
+	// wordsAlone is a search answered short of the half that asks by meaning.
+	wordsAlone = "answering by words alone"
 )
 
 // settled is how long the vault has to have been still before the notes written
@@ -595,14 +600,11 @@ func readSources(
 	embedder port.Embedder,
 	out io.Writer,
 ) {
-	sizes := cutting(embedder)
-
-	extract, err := extracting(cfg, db, readers, sizes, api.Vault)
+	extract, err := cfg.Extract(db.Sources(), db.SourcesKnown(), api.Vault)
 	if err != nil {
 		fmt.Fprintf(out, "reading the sources of %s: %v\n", api.Vault.Name, err)
 		return
 	}
-	extract.RebuildIndex = cfg.RebuildIndex
 	extract.OnProgress = func(res source.ExtractResult) {
 		api.say(task.Task{
 			ID: readingBooks, Doing: "Reading books", About: res.Reading,
@@ -641,7 +643,7 @@ func cutSource(
 	path string,
 	out io.Writer,
 ) {
-	cut, err := extracting(cfg, db, readers, cutting(embedder), v)
+	cut, err := cfg.Extract(db.Sources(), db.SourcesKnown(), v)
 	if err != nil {
 		fmt.Fprintf(out, "cutting %s: %v\n", path, err)
 		return
@@ -649,39 +651,6 @@ func cutSource(
 	if _, err := cut.One(ctx, v, path); err != nil && !errors.Is(err, context.Canceled) {
 		fmt.Fprintf(out, "cutting %s: %v\n", path, err)
 	}
-}
-
-// extracting is what cuts a vault's sources, put together the one way. A pass
-// over the whole vault and a pass over one source are the same cut, and two
-// assemblies of it are two cuts that come apart.
-func extracting(
-	cfg container.Config,
-	db *container.Index,
-	readers port.VaultReaders,
-	sizes window.Sizes,
-	v domain.Vault,
-) (source.Extract, error) {
-	derived, err := cfg.DerivedStores().Open(v)
-	if err != nil {
-		return source.Extract{}, err
-	}
-	return source.Extract{
-		Readers: readers,
-		Sources: db.Sources(),
-		Owing:   db.SourcesKnown(),
-		Derived: derived,
-		Sizes:   sizes,
-	}, nil
-}
-
-// cutting is the sizes a window is cut at. A window is cut under the limit of
-// the model that will read it; without a model the default bound stands, and
-// what is cut now is what a model of any width is later given.
-func cutting(embedder port.Embedder) window.Sizes {
-	if embedder == nil {
-		return window.Sizes{}
-	}
-	return window.Sizes{Limit: window.Under(embedder.Model().MaxTokens)}
 }
 
 // embedSources gives the chunks of the vault the vectors they owe, and reads no

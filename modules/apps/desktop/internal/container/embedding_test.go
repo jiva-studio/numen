@@ -26,6 +26,17 @@ func (landed) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	return out, nil
 }
 
+// shut is a model that says when it was let go of.
+type shut struct {
+	landed
+	closed bool
+}
+
+func (s *shut) Close() error {
+	s.closed = true
+	return nil
+}
+
 // What a model is, is known from the settings before the weights are here: the
 // vector index is fitted to its width and a vector is claimed under its recipe
 // while it comes down.
@@ -74,18 +85,39 @@ func TestAPassIsNotLeftWaitingOnAModelThatWillNeverCome(t *testing.T) {
 	}
 }
 
-// A model here and not the one whose vectors are stored is a model nothing is
-// asked of.
-func TestADisownedModelIsNotAsked(t *testing.T) {
+// A model here and not the one whose vectors are stored is let go of, and
+// nothing is asked of it again.
+func TestADisownedModelIsLetGoOfAndNotAsked(t *testing.T) {
 	wrong := errors.New("not one model")
+	held := &shut{}
 	arriving := container.Arriving(bge)
-	arriving.Landed(landed{}, nil)
-	arriving.Disown(wrong)
+	arriving.Landed(held, nil)
 
+	if err := arriving.Disown(wrong); err != nil {
+		t.Fatal(err)
+	}
+	if !held.closed {
+		t.Error("a model nothing will ask of is still loaded")
+	}
 	if arriving.Here() {
 		t.Error("still here")
 	}
 	if _, err := arriving.Asking().Embed(t.Context(), []string{"anything"}); !errors.Is(err, wrong) {
+		t.Errorf("got %v", err)
+	}
+	if _, err := arriving.Filling().Embed(t.Context(), []string{"anything"}); !errors.Is(err, wrong) {
+		t.Errorf("got %v", err)
+	}
+}
+
+// A model disowned before it turned up is one nobody waits for.
+func TestAModelDisownedBeforeItLandsIsNotWaitedFor(t *testing.T) {
+	wrong := errors.New("not one model")
+	arriving := container.Arriving(bge)
+	if err := arriving.Disown(wrong); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := arriving.Filling().Embed(t.Context(), []string{"anything"}); !errors.Is(err, wrong) {
 		t.Errorf("got %v", err)
 	}
 }

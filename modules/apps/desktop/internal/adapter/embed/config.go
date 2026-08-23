@@ -3,6 +3,8 @@ package embed
 import (
 	"encoding/json"
 	"os"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
 // Where a vector is made.
@@ -23,6 +25,10 @@ const (
 // does not carry one.
 const KeyEnvVar = "NUMEN_EMBEDDING_KEY"
 
+// ServedDimensions is how wide a hosted model's vectors are where a file names
+// a service and says nothing about the model.
+const ServedDimensions = 1536
+
 // Config is the embedding section of this installation's settings: what a
 // vector is, where it is made, and how near the query a passage stands to be an
 // answer at all.
@@ -30,7 +36,7 @@ type Config struct {
 	// Model is what a vector is, and it is said once. A vector made while a
 	// vault is indexed is claimed again by a question, so the two are one
 	// model or the comparison between them means nothing.
-	Model Identity `json:"model"`
+	Model Model `json:"model"`
 
 	// Indexing makes the vectors a vault is searched by. Query makes the vector
 	// a question is asked with, and taking nothing here is asking the way the
@@ -48,12 +54,12 @@ type Config struct {
 	Floor float64 `json:"floor"`
 }
 
-// Identity is what a vector is: everything that decides the space it lands in.
+// Model is what a vector is: everything that decides the space it lands in.
 //
 // Name is what the model is called here, and is not how either placement
 // reaches it: a repository and a service call one model by two names, and
 // vectors made under both are kept under this one.
-type Identity struct {
+type Model struct {
 	Name       string `json:"name"`
 	Dimensions int    `json:"dimensions"`
 	// MaxTokens is where the model truncates what it is given. A window cut
@@ -61,6 +67,18 @@ type Identity struct {
 	MaxTokens int `json:"max_tokens"`
 	// Pooling is PoolMean or PoolHead. Empty is PoolMean.
 	Pooling string `json:"pooling"`
+}
+
+// Stored is this model in the words a vector is kept under. It is the one
+// crossing between the settings and the index, so nothing copies the fields
+// across by hand.
+func (m Model) Stored() port.EmbeddingModel {
+	return port.EmbeddingModel{
+		Name:       m.Name,
+		Dimensions: m.Dimensions,
+		MaxTokens:  m.MaxTokens,
+		Pooling:    m.Pooling,
+	}
 }
 
 // Placement is where a vector is made: on this machine, or by a service.
@@ -116,7 +134,7 @@ func Defaults() Config {
 	indexing := here
 	indexing.Use = UseLocal
 	return Config{
-		Model: Identity{
+		Model: Model{
 			Name:       "intfloat/multilingual-e5-small",
 			Dimensions: 384,
 			MaxTokens:  256,
@@ -139,7 +157,7 @@ func (c Config) Asking() Placement {
 // As is a configuration in which this placement is the one that makes every
 // vector. A run that asks questions and fills no index opens the placement that
 // answers them and no other.
-func (p Placement) As(is Identity) Config {
+func (p Placement) As(is Model) Config {
 	return Config{Model: is, Indexing: p}
 }
 
@@ -184,12 +202,17 @@ func (c *Config) UnmarshalJSON(raw []byte) error {
 			return err
 		}
 	}
+	// A model is pooled one way, under one word. Two words for one pooling are
+	// two keys over one set of vectors.
+	if c.Model.Pooling == "" {
+		c.Model.Pooling = PoolMean
+	}
 	return nil
 }
 
 // lift reads the flat form: one placement, with what the model is written
 // among the two halves of it.
-func lift(one *Placement, model *Identity, local, service *json.RawMessage) error {
+func lift(one *Placement, model *Model, local, service *json.RawMessage) error {
 	var said struct {
 		Name       *string `json:"name"`
 		Dimensions *int    `json:"dimensions"`
@@ -209,6 +232,11 @@ func lift(one *Placement, model *Identity, local, service *json.RawMessage) erro
 		if err := json.Unmarshal(*service, &one.Service); err != nil {
 			return err
 		}
+	}
+	// The model is the one the named placement reaches. A file naming the
+	// service is a hosted model, whatever this machine would have run.
+	if one.Use == UseService {
+		*model = Model{Name: one.Service.Name, Dimensions: ServedDimensions, Pooling: PoolMean}
 	}
 	if from == nil {
 		return nil
@@ -323,7 +351,7 @@ func (p *Placement) UnmarshalJSON(raw []byte) error {
 }
 
 // UnmarshalJSON keeps whatever the defaults set for the fields the file omits.
-func (i *Identity) UnmarshalJSON(raw []byte) error {
+func (i *Model) UnmarshalJSON(raw []byte) error {
 	var f struct {
 		Name       *string `json:"name"`
 		Dimensions *int    `json:"dimensions"`

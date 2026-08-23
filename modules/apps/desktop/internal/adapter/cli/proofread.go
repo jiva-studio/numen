@@ -41,18 +41,12 @@ func proofreadCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 	}
 	defer db.Close()
 
-	derived, err := cfg.DerivedStores().Open(v)
-	if err != nil {
-		return err
-	}
 	// What a batch of pages puts right is cut before the next batch is asked
 	// about, so a book answers about the pages already corrected while the rest
 	// is still being asked about.
-	cut := source.Extract{
-		Readers: cfg.VaultReaders(),
-		Sources: db.Sources(),
-		Owing:   db.SourcesKnown(),
-		Derived: derived,
+	cut, err := cfg.Extract(db.Sources(), db.SourcesKnown(), v)
+	if err != nil {
+		return err
 	}
 
 	fmt.Fprintf(out, "proofreading %s with %s\n", args[1], by.Name())

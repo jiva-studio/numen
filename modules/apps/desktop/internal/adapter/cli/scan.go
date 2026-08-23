@@ -57,21 +57,14 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args 
 	// A scan reads the whole vault, and a book in it is part of the vault. The
 	// window does the same in the background; here it is waited for, which is
 	// this adapter's property and not the use case's.
-	derived, err := cfg.DerivedStores().Open(v)
+	extract, err := cfg.Extract(db.Sources(), db.SourcesKnown(), v)
 	if err != nil {
 		return err
 	}
-	extract := source.Extract{
-		Readers:      cfg.VaultReaders(),
-		Sources:      db.Sources(),
-		Owing:        db.SourcesKnown(),
-		Derived:      derived,
-		RebuildIndex: cfg.RebuildIndex,
-		OnProgress: func(res source.ExtractResult) {
-			if res.Reading != "" {
-				fmt.Fprintf(out, "  reading %s\r", res.Reading)
-			}
-		},
+	extract.OnProgress = func(res source.ExtractResult) {
+		if res.Reading != "" {
+			fmt.Fprintf(out, "  reading %s\r", res.Reading)
+		}
 	}
 	sources, err := extract.Execute(ctx, v)
 	if err != nil {

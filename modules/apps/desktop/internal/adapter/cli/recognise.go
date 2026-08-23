@@ -48,17 +48,11 @@ func recogniseCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 	fmt.Fprintf(out, "reading %s with %s\n", args[1], models.Recognition())
 	started := time.Now()
 
-	derived, err := cfg.DerivedStores().Open(v)
-	if err != nil {
-		return err
-	}
 	// What a batch of pages writes down is cut before the next batch is read, so
 	// a document stopped part way through is searchable to the page it reached.
-	cut := source.Extract{
-		Readers: cfg.VaultReaders(),
-		Sources: db.Sources(),
-		Owing:   db.SourcesKnown(),
-		Derived: derived,
+	cut, err := cfg.Extract(db.Sources(), db.SourcesKnown(), v)
+	if err != nil {
+		return err
 	}
 
 	// The line of pages is closed once it stops, so what follows it stands on a

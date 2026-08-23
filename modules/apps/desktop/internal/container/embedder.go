@@ -26,7 +26,7 @@ import (
 // An embedder is optional: an installation naming no placement answers with
 // nothing. A placement that cannot be built — no key, no base URL — is a
 // reason, and nothing is built at all.
-func (c Config) Embedders(tasks *task.Tasks) (indexing, asking port.Embedder, close func() error, why error) {
+func (c Config) Embedders(ctx context.Context, tasks *task.Tasks) (indexing, asking port.Embedder, close func() error, why error) {
 	first, why := c.placed(c.Embedding.Indexing, tasks)
 	if why != nil || first == nil {
 		return nil, nil, nil, why
@@ -45,12 +45,8 @@ func (c Config) Embedders(tasks *task.Tasks) (indexing, asking port.Embedder, cl
 	}
 	// Two placements are asked whether they are one model, once both are here.
 	go func() {
-		held := context.Background()
-		if first.Wait(held) != nil || second.Wait(held) != nil {
-			return
-		}
-		if err := embedding.Agree(held, first.Filling(), second.Filling()); err != nil {
-			second.Disown(err)
+		if err := agreeing(ctx, first, second); err != nil {
+			_ = second.Disown(err)
 			failed(tasks, c.Embedding.Query.Local.Name, err)
 		}
 	}()
@@ -60,22 +56,11 @@ func (c Config) Embedders(tasks *task.Tasks) (indexing, asking port.Embedder, cl
 // Embedder is what makes the vectors a vault is searched by, waited for. A run
 // with nowhere to show that a model is arriving waits for it instead.
 func (c Config) Embedder() (port.Embedder, func() error, error) {
-	switch where := c.Embedding.Indexing; where.Use {
-	case embed.UseService:
-		client, err := openai.New(c.Embedding.Model, where.Service)
-		if err != nil {
-			return nil, nil, err
-		}
-		return client, func() error { return nil }, nil
-
-	case embed.UseLocal:
-		model, err := onnx.Open(c.Embedding.Model, where.Local, nil)
-		if err != nil {
-			return nil, nil, err
-		}
-		return model, model.Close, nil
+	held, err := c.placed(c.Embedding.Indexing, nil)
+	if err != nil || held == nil {
+		return nil, nil, err
 	}
-	return nil, nil, nil
+	return held.Filling(), held.Close, nil
 }
 
 // placed is what one placement makes: a service, which answers at once, or a
@@ -94,9 +79,7 @@ func (c Config) placed(where embed.Placement, tasks *task.Tasks) (*Embedding, er
 
 	case embed.UseLocal:
 		is := c.Embedding.Model
-		held := Arriving(port.EmbeddingModel{
-			Name: is.Name, Dimensions: is.Dimensions, MaxTokens: is.MaxTokens, Pooling: is.Pooling,
-		})
+		held := Arriving(is.Stored())
 		doing := preparing(tasks, where.Local.Name)
 		doing(0, 0)
 		go func() {
@@ -118,6 +101,36 @@ func (c Config) placed(where embed.Placement, tasks *task.Tasks) (*Embedding, er
 	// it is a vault searched by its words and no reason given.
 	return nil, fmt.Errorf("vectors are made %q, and they are made %q or %q",
 		where.Use, embed.UseLocal, embed.UseService)
+}
+
+// agreeing is the two placements answering one text alike, once both are here.
+//
+// A question embedded in another space finds nothing the first indexed, and
+// nothing in a settings file shows that two placements are one model.
+func agreeing(ctx context.Context, first, second *Embedding) error {
+	if a, b := first.Model().Recipe(), second.Model().Recipe(); a != b {
+		return fmt.Errorf("vectors are made under %s and asked for under %s", a, b)
+	}
+	if err := first.Wait(ctx); err != nil {
+		return nil
+	}
+	if err := second.Wait(ctx); err != nil {
+		return nil
+	}
+
+	said, err := first.Filling().Embed(ctx, []string{embedding.Asked})
+	if err != nil {
+		return nil
+	}
+	back, err := second.Filling().Embed(ctx, []string{embedding.Asked})
+	if err != nil {
+		return nil
+	}
+	if len(said) != 1 || len(back) != 1 || !embedding.Agreed(said[0], back[0]) {
+		return fmt.Errorf("%s and %s are not one model, and a question embedded by the second finds nothing the first indexed",
+			first.Model(), second.Model())
+	}
+	return nil
 }
 
 // What the arrival of a model is called in the list of what is being done. Two

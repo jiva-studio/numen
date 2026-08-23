@@ -77,7 +77,7 @@ type Fetching func(done, total int64)
 // Open loads the model and compiles it, fetching it first where this machine
 // does not hold it. It is expensive — the weights are read and converted — and
 // the result is reusable for the life of the process.
-func Open(is embed.Identity, cfg embed.LocalModel, tell Fetching) (*Embedder, error) {
+func Open(is embed.Model, cfg embed.LocalModel, tell Fetching) (*Embedder, error) {
 	if is.Dimensions <= 0 {
 		return nil, fmt.Errorf("%s: dimensions must be known before a vector is stored", cfg.Name)
 	}
@@ -364,7 +364,7 @@ func locate(cfg embed.LocalModel, tell Fetching) (paths, error) {
 	repo := hub.New(cfg.Name).WithProgressBar(false)
 	folder, sizes, err := published(repo)
 	if err != nil {
-		return paths{}, err
+		return paths{}, fmt.Errorf("what %s publishes: %w", cfg.Name, err)
 	}
 	if !slices.Contains(folder, file) {
 		return paths{}, fmt.Errorf("%s publishes no %s/%s: it has %v", cfg.Name, modelFolder, file, folder)
@@ -376,14 +376,14 @@ func locate(cfg embed.LocalModel, tell Fetching) (paths, error) {
 		total += sizes[name]
 	}
 	if dir, err := repo.CacheDir(); err == nil {
-		defer arriving(dir, total, tell)()
+		defer arriving(dir, files, sizes, total, tell)()
 	}
 
 	p := paths{}
 	for _, name := range files {
 		at, err := repo.DownloadFile(modelFolder + "/" + name)
 		if err != nil {
-			return paths{}, err
+			return paths{}, fmt.Errorf("fetching %s/%s: %w", modelFolder, name, err)
 		}
 		if name == file {
 			p.model = at
@@ -396,7 +396,7 @@ func locate(cfg embed.LocalModel, tell Fetching) (paths, error) {
 	// in some.
 	if repo.HasFile(tokenFile) {
 		if p.tokenizer, err = repo.DownloadFile(tokenFile); err != nil {
-			return paths{}, err
+			return paths{}, fmt.Errorf("fetching %s: %w", tokenFile, err)
 		}
 	}
 	if p.tokenizer == "" {
@@ -429,7 +429,7 @@ func published(repo *hub.Repo) ([]string, map[string]int64, error) {
 //
 // What is counted is the bytes under the repository's own place in the cache,
 // which is what has arrived.
-func arriving(dir string, total int64, tell Fetching) func() {
+func arriving(dir string, files []string, sizes map[string]int64, total int64, tell Fetching) func() {
 	if tell == nil || total <= 0 {
 		return func() {}
 	}
@@ -444,7 +444,7 @@ func arriving(dir string, total int64, tell Fetching) func() {
 			case <-done:
 				return
 			case <-tick.C:
-				tell(min(weighed(dir), total), total)
+				tell(min(weighed(dir, files, sizes), total), total)
 			}
 		}
 	}()
@@ -454,15 +454,25 @@ func arriving(dir string, total int64, tell Fetching) func() {
 	}
 }
 
-// weighed is how many bytes stand under a folder.
-func weighed(dir string) int64 {
+// weighed is how many bytes of the files named stand under a folder. A folder
+// holding another build of the same model holds bytes that are not this one's,
+// and a file part-written counts for no more than the size it will take.
+func weighed(dir string, files []string, sizes map[string]int64) int64 {
+	wanted := make(map[string]int64, len(files))
+	for _, name := range files {
+		wanted[name] = sizes[name]
+	}
 	var sum int64
-	_ = filepath.WalkDir(dir, func(_ string, entry fs.DirEntry, err error) error {
+	_ = filepath.WalkDir(dir, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() {
 			return nil
 		}
+		was, ours := wanted[strings.TrimSuffix(filepath.Base(path), ".incomplete")]
+		if !ours {
+			return nil
+		}
 		if info, err := entry.Info(); err == nil {
-			sum += info.Size()
+			sum += min(info.Size(), was)
 		}
 		return nil
 	})

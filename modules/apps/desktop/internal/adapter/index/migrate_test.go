@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
 func TestEveryMigrationIsNamedAndOrdered(t *testing.T) {
@@ -189,6 +190,57 @@ func TestAnOlderIndexIsMigratedRatherThanRebuilt(t *testing.T) {
 	}
 	if want := available[len(available)-1].version; version != want {
 		t.Errorf("version = %d, want %d", version, want)
+	}
+}
+
+// A vector is bought with minutes of a machine or with money, so a key that
+// changes shape is a key rewritten and not a vault embedded again.
+func TestVectorsSurviveTheRecipeChangingShape(t *testing.T) {
+	ctx := t.Context()
+	path := filepath.Join(t.TempDir(), "index.db")
+
+	db, err := sql.Open("sqlite", dsn(path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	available, err := loadMigrations()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, m := range available {
+		if m.version >= 5 {
+			break
+		}
+		if err := apply(ctx, db, m); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// The key as it was written: where the vector was made, then the model.
+	const was = "https://api.openai.com/v1|text-embedding-3-small|1536|0|int8"
+	if _, err := db.ExecContext(ctx,
+		`INSERT INTO vectors (fingerprint, recipe, v) VALUES (x'01', ?, x'02')`, was); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	upgraded, err := Open(ctx, path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer upgraded.Close()
+
+	want := port.EmbeddingModel{
+		Name: "text-embedding-3-small", Dimensions: 1536, Pooling: "mean",
+	}.Recipe()
+	var recipe string
+	if err := upgraded.write.QueryRowContext(ctx,
+		`SELECT recipe FROM vectors WHERE fingerprint = x'01'`).Scan(&recipe); err != nil {
+		t.Fatalf("the vector did not survive the migration: %v", err)
+	}
+	if recipe != want {
+		t.Errorf("kept under %q, asked for under %q", recipe, want)
 	}
 }
 

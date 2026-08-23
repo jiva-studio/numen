@@ -56,7 +56,7 @@ func TestTheSettingsGivenAreTheOnesUsed(t *testing.T) {
 func TestOnePlacementIsOneModelSeenTwoWays(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "sk-test")
 
-	indexing, asking, close, why := container.Config{Embedding: serving("bge-m3")}.Embedders(nil)
+	indexing, asking, close, why := container.Config{Embedding: serving("bge-m3")}.Embedders(t.Context(), nil)
 	if why != nil {
 		t.Fatal(why)
 	}
@@ -78,7 +78,7 @@ func TestAQuestionIsEmbeddedWhereTheSettingsSay(t *testing.T) {
 	cfg.Query.Service.Name = "reached-another-way"
 	cfg.Query.Service.BaseURL = nowhere
 
-	indexing, asking, close, why := container.Config{Embedding: cfg}.Embedders(nil)
+	indexing, asking, close, why := container.Config{Embedding: cfg}.Embedders(t.Context(), nil)
 	if why != nil {
 		t.Fatal(why)
 	}
@@ -100,12 +100,12 @@ func TestAPlacementNobodyImplementsIsARefusal(t *testing.T) {
 	cfg := serving("bge-m3")
 	cfg.Query.Use = "grcp"
 
-	if _, _, _, why := (container.Config{Embedding: cfg}).Embedders(nil); why == nil {
+	if _, _, _, why := (container.Config{Embedding: cfg}).Embedders(t.Context(), nil); why == nil {
 		t.Fatal("want a reason")
 	}
 	cfg = serving("bge-m3")
 	cfg.Indexing.Use = "sevrice"
-	if _, _, _, why := (container.Config{Embedding: cfg}).Embedders(nil); why == nil {
+	if _, _, _, why := (container.Config{Embedding: cfg}).Embedders(t.Context(), nil); why == nil {
 		t.Fatal("want a reason")
 	}
 }
@@ -118,7 +118,7 @@ func TestAQuestionWithNowhereToBeEmbeddedIsAReason(t *testing.T) {
 	cfg.Query.Use = embed.UseService
 	cfg.Query.Service.BaseURL = ""
 
-	indexing, asking, close, why := container.Config{Embedding: cfg}.Embedders(nil)
+	indexing, asking, close, why := container.Config{Embedding: cfg}.Embedders(t.Context(), nil)
 	if why == nil {
 		t.Fatal("want a reason")
 	}

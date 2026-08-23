@@ -115,6 +115,26 @@ func TestAFileNamingOneFieldKeepsTheDefaultsForTheRest(t *testing.T) {
 	}
 }
 
+// The commonest flat file: the service named, and a key. What the model is
+// comes from the placement the file names.
+func TestAFlatFileNamingOnlyAKeyIsTheServicesModel(t *testing.T) {
+	cfg, err := settings.At(write(t, `{"indexing":{"embedding":{"use":"service","service":{"key":"sk-x"}}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	e := cfg.Indexing.Embedding
+	if e.Model.Name != e.Indexing.Service.Name {
+		t.Errorf("the model is %q and the service is %q", e.Model.Name, e.Indexing.Service.Name)
+	}
+	if e.Model.Dimensions != embed.ServedDimensions {
+		t.Errorf("the model is %d wide", e.Model.Dimensions)
+	}
+	// A service says where it cuts a text off, or it says nothing.
+	if e.Model.MaxTokens != 0 {
+		t.Errorf("the model cuts at %d", e.Model.MaxTokens)
+	}
+}
+
 func TestAVaultIndexedByAServiceIsAskedOnThisMachine(t *testing.T) {
 	cfg, err := settings.At(write(t, `{"indexing":{"embedding":{
 		"model": {"name":"bge-m3","dimensions":1024,"max_tokens":512,"pooling":"head"},

@@ -10,9 +10,9 @@ import (
 // vector, and a vector whose model differs from the one now configured is
 // stale: its numbers describe directions another model chose.
 //
-// Both fields are part of the identity. Two models of the same name at
-// different widths produce vectors that cannot be compared, and the width is
-// what a reader needs to know before it decodes stored bytes.
+// Every field is part of the identity. Two models of the same name at different
+// widths produce vectors that cannot be compared, and the width is what a
+// reader needs to know before it decodes stored bytes.
 type EmbeddingModel struct {
 	Name       string
 	Dimensions int
