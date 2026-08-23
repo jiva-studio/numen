@@ -7,19 +7,9 @@
  * `showing.ts`, what a tab holds is in `holding.ts`, and what is drawn from
  * either is here.
  */
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import {
-  Agent,
-  Editor,
-  Notices,
-  Palette,
-  Reader,
-  Workspace,
-  closeTab,
-  openTab,
-  openTabBeside,
-} from '@numen/ui'
-import type { Notice, PlexShowing, Tab, Turn } from '@numen/ui'
+import { computed, onMounted, onUnmounted, watch } from 'vue'
+import { Notices, Palette, Workspace, closeTab, openTab, openTabBeside } from '@numen/ui'
+import type { Notice, PlexShowing, Tab } from '@numen/ui'
 import '@numen/ui/styles.css'
 import { core, documents } from './vault'
 import { showing } from './showing'
@@ -35,12 +25,12 @@ import AgentTab from './agent/AgentTab.vue'
 import { talking } from './agent/kind'
 import DocumentTab from './document/DocumentTab.vue'
 import { documenting } from './document/kind'
+import NoteTab from './note/NoteTab.vue'
+import { noting } from './note/kind'
 import PlexTab from './plex/PlexTab.vue'
 import { plexing } from './plex/kind'
 import { core as agent } from './agent'
 import { conversation } from './conversation'
-import { same, spotOf, spotsIn } from './places'
-import { markOf } from './tab'
 import { WORDS as words } from './words'
 import { AGENT, NOTE, PLEX, plexCalled, shortened } from './workspace'
 
@@ -94,44 +84,13 @@ const notices = computed<readonly Notice[]>(() =>
   cornerOf(tasks.value, { chunks: chunks.value, embedding: embedding.value }, words),
 )
 
-/** What each note is called, as the vault last said it. */
-const titles = ref<ReadonlyMap<string, string>>(new Map())
-
-const calls = (path: string, name: string): void => {
-  titles.value = new Map(titles.value).set(path, name)
-}
-
-const forgets = (path: string): void => {
-  const rest = new Map(titles.value)
-  rest.delete(path)
-  titles.value = rest
-}
-
-/**
- * A note is called what the vault calls it. A heading written into a note is
- * that note's title, so a tab is asked what it is called again once what was
- * typed into it has landed.
- *
- * A vault that cannot answer leaves the tab under the name it had.
- */
-const calling = async (path: string): Promise<void> => {
-  try {
-    const said = (await core.neighbourhood(path)).focus?.title
-    if (said) calls(path, said)
-  } catch {
-    return
-  }
-}
-
-watch(
-  () => notes.all().filter((path) => notes.shown(path).state === 'clean'),
-  (settled, before) => {
-    for (const path of settled) {
-      if (!before?.includes(path)) void calling(path)
-    }
+/** The notes the window has open: what each is called, and what each tab of one holds. */
+const noted = noting(core, notes, drawings, {
+  closes: (path) => {
+    layout.value = closeTab(layout.value, path)
   },
-  { deep: true },
-)
+})
+const titles = noted.titles
 
 /** What each tab of the window holds, and what it lets go of when it closes. */
 const held = holding({
@@ -150,8 +109,7 @@ const held = holding({
   note: async () => {
     const made = await making.start()
     if (!made) return ''
-    calls(made.path, made.title)
-    notes.open(made.path)
+    noted.opens(made.path, made.title)
     return made.path
   },
   document: (path) => documenting(reading(documents, path)),
@@ -173,13 +131,6 @@ const asked = (event: KeyboardEvent) => {
   event.preventDefault()
   palette.shows(!palette.open.value)
 }
-
-/**
- * The notes asked to be opened, and the line each was asked to open on, until
- * there is an editor to hand it to. A line of -1 is the note itself and no
- * line in particular.
- */
-const entering = new Map<string, number>()
 
 /**
  * A document put in front of the person, opened at a stretch of its own text.
@@ -211,27 +162,8 @@ const went = (item: string, action: string) => {
     opensAt(landing.path, { start: landing.start ?? 0, length: landing.length ?? 0 })
     return
   }
-  calls(landing.path, landing.title || landing.path)
-  notes.open(landing.path)
-  entering.set(landing.path, landing.line ?? -1)
+  noted.opens(landing.path, landing.title || landing.path, landing.line ?? undefined)
   layout.value = openTab(layout.value, landing.path)
-  void nextTick(() => enters(landing.path))
-}
-
-/**
- * A note opened takes the keyboard once it is on screen, on the line it was
- * asked for when it was asked for one.
- *
- * A tab already showing has an editor now; a tab that has to be drawn first
- * says so when it appears, and an editor says so when it is built.
- */
-const enters = (path: string) => {
-  const line = entering.get(path)
-  const editor = editors.get(path)
-  if (line === undefined || !editor) return
-  // An editor is registered as it is drawn, a moment before it exists to take
-  // anything. The note is owed its keyboard until one has.
-  if (line >= 0 ? editor.reveal(line) : editor.focus()) entering.delete(path)
 }
 
 /** The identity a pane made by a split is filed under. */
@@ -263,21 +195,18 @@ const tabs = computed<readonly Tab[]>(() => [
   ...[...held.documents.value.keys()].map((id): Tab => ({ id, title: documentCalled(id) })),
   ...blanks.value.map((id): Tab => ({ id, title: words.newTab })),
   ...notes.all().map((path): Tab => {
-    const mark = markOf(notes.shown(path).state)
-    return { id: path, title: titles.value.get(path) ?? path, ...(mark ? { mark } : {}) }
+    const mark = noted.marked(path)
+    return { id: path, title: noted.called(path), ...(mark ? { mark } : {}) }
   }),
 ])
 
 /** A note opens where the person asked for it, and the tab is shown. */
 const openNote = (path: string, title: string, showing: PlexShowing = 'here') => {
-  calls(path, title)
-  notes.open(path)
-  entering.set(path, -1)
+  noted.opens(path, title)
   layout.value =
     showing === 'beside'
       ? openTabBeside(layout.value, path, 'right', naming)
       : openTab(layout.value, path)
-  void nextTick(() => enters(path))
 }
 
 /** What one plex tab holds, or nothing where the tab holds no plex. */
@@ -289,24 +218,8 @@ const talkIn = (id: string) => held.agents.value.get(id) ?? null
 /** The document one document tab is reading. */
 const documentIn = (id: string) => held.documents.value.get(id) ?? null
 
-/** What the window asks of an editor once it is drawn. */
-interface Drawn {
-  focus(): boolean
-  measure(): void
-  reveal(line: number): boolean
-}
-
-/** The editor of each open note, for as long as its tab is drawn. */
-const editors = new Map<string, Drawn>()
-
-const drew = (path: string, editor: unknown) => {
-  if (!editor) {
-    editors.delete(path)
-    return
-  }
-  editors.set(path, editor as Drawn)
-  void nextTick(() => enters(path))
-}
+/** What one note tab holds, or nothing where the tab holds no note. */
+const noteIn = (id: string) => (notes.all().includes(id) ? noted.held(id) : null)
 
 /**
  * A tab is drawn while it is out of sight, where an editor and a page have no
@@ -314,23 +227,17 @@ const drew = (path: string, editor: unknown) => {
  */
 const shown = (id: string) => {
   held.shown(id)
-  editors.get(id)?.measure()
+  noteIn(id)?.measure()
   documentIn(id)?.measure()
-  enters(id)
 }
 
 /** A tab lets go of what it held. A tab that holds a note writes what it owes. */
 const shut = (id: string, hold: () => void) => {
-  entering.delete(id)
   if (held.shut(id)) return
-  if (!notes.all().includes(id)) return
+  const note = noteIn(id)
+  if (!note) return
   hold()
-  drawings.shut(id)
-  void notes.shut(id).then((gone) => {
-    if (!gone) return
-    forgets(id)
-    layout.value = closeTab(layout.value, id)
-  })
+  note.shuts()
 }
 
 onMounted(() => {
@@ -386,39 +293,7 @@ onUnmounted(() => {
           </ul>
         </div>
 
-        <div v-else-if="notes.all().includes(id)" class="note">
-          <p v-if="notes.saying(id)" role="alert" class="warning">{{ notes.saying(id) }}</p>
-
-
-          <p v-if="notes.shown(id).state === 'gone'" role="status" class="warning overtaken">
-            {{ words.gone }}
-            <button type="button" class="overtaken__answer" @click="notes.keep(id)">
-              {{ words.makeAgain }}
-            </button>
-          </p>
-          <p
-            v-if="notes.shown(id).state === 'overtaken'"
-            role="status"
-            class="warning overtaken"
-          >
-            {{ words.overtaken }}
-            <button type="button" class="overtaken__answer" @click="notes.keep(id)">
-              {{ words.keep }}
-            </button>
-            <button type="button" class="overtaken__answer" @click="notes.take(id)">
-              {{ words.take }}
-            </button>
-          </p>
-
-          <Editor
-            :ref="(editor: unknown) => drew(id, editor)"
-            :model-value="notes.shown(id).body"
-            :change="drawings.shown(id)"
-            class="note__text"
-            @update:model-value="(body: string) => notes.typed(id, body)"
-            @save="notes.save(id)"
-          />
-        </div>
+        <NoteTab v-else-if="noteIn(id)" :held="noteIn(id)!" />
 
         <div v-else />
       </template>
