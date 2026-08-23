@@ -1,0 +1,263 @@
+name: package
+
+# Files to hand to somebody, asked for by hand. Every job keeps what it built as
+# an artefact; what a release contains is a separate question.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: what the files call themselves
+        type: string
+        default: 0.0.0-dev
+      notarize:
+        description: send the mac build to Apple and wait for the answer
+        type: boolean
+        default: true
+
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache-dependency-path: modules/apps/desktop/go.sum
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # The window links against the system's own browser, so the machine that
+      # compiles it needs that browser's headers.
+      - name: Webview
+        run: sudo apt-get update && sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev
+
+      - name: Interface
+        run: |
+          make install
+          make interface
+
+      - name: Window
+        working-directory: modules/apps/desktop
+        run: CGO_ENABLED=1 go build -trimpath -o "$RUNNER_TEMP/numen" ./cmd/numen
+
+      - name: Archive
+        env:
+          VERSION: ${{ inputs.version }}
+        run: tar czf "$RUNNER_TEMP/numen_${VERSION}_linux_amd64.tar.gz" -C "$RUNNER_TEMP" numen
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: numen-linux-amd64
+          path: ${{ runner.temp }}/numen_*_linux_amd64.tar.gz
+          if-no-files-found: error
+
+  # Windows reaches the system's browser through a component written in Go, so
+  # this one is built on the same machine as Linux.
+  windows:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache-dependency-path: modules/apps/desktop/go.sum
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Interface
+        run: |
+          make install
+          make interface
+
+      - name: Window
+        working-directory: modules/apps/desktop
+        run: GOOS=windows GOARCH=amd64 go build -trimpath -o "$RUNNER_TEMP/numen.exe" ./cmd/numen
+
+      - name: Archive
+        env:
+          VERSION: ${{ inputs.version }}
+        run: cd "$RUNNER_TEMP" && zip -q "numen_${VERSION}_windows_amd64.zip" numen.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: numen-windows-amd64
+          path: ${{ runner.temp }}/numen_*_windows_amd64.zip
+          if-no-files-found: error
+
+  macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache-dependency-path: modules/apps/desktop/go.sum
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Interface
+        run: |
+          make install
+          make interface
+
+      # Both architectures come off this one machine: the window links against
+      # frameworks the SDK carries for each.
+      - name: Window
+        working-directory: modules/apps/desktop
+        env:
+          MACOSX_DEPLOYMENT_TARGET: "11.0"
+        run: |
+          CGO_ENABLED=1 GOARCH=arm64 go build -trimpath -o "$RUNNER_TEMP/numen-arm64" ./cmd/numen
+          CGO_ENABLED=1 GOARCH=amd64 CC="clang -arch x86_64" go build -trimpath -o "$RUNNER_TEMP/numen-amd64" ./cmd/numen
+          lipo -create "$RUNNER_TEMP/numen-arm64" "$RUNNER_TEMP/numen-amd64" -output "$RUNNER_TEMP/numen"
+          lipo -info "$RUNNER_TEMP/numen"
+
+      - name: Bundle
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          APP="$RUNNER_TEMP/Numen.app"
+          mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+          cp "$RUNNER_TEMP/numen" "$APP/Contents/MacOS/numen"
+          cp modules/apps/desktop/build/darwin/Info.plist "$APP/Contents/Info.plist"
+          printf 'APPL????' > "$APP/Contents/PkgInfo"
+          plutil -replace CFBundleShortVersionString -string "$VERSION" "$APP/Contents/Info.plist"
+          plutil -replace CFBundleVersion -string "$VERSION" "$APP/Contents/Info.plist"
+          plutil -lint "$APP/Contents/Info.plist"
+
+      # The identity lives in a keychain of this run's own, which the last step
+      # deletes.
+      - name: Signing identity
+        env:
+          CERTIFICATE: ${{ secrets.APPLE_DEVELOPER_ID_CERTIFICATE }}
+          CERTIFICATE_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_CERTIFICATE_PASSWORD }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 24)
+          echo "$CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          read -r -a searched <<< "$(security list-keychains -d user | tr -d '"')"
+          security list-keychains -d user -s "$KEYCHAIN" "${searched[@]}"
+          security import "$RUNNER_TEMP/certificate.p12" -k "$KEYCHAIN" \
+            -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" > /dev/null
+          rm "$RUNNER_TEMP/certificate.p12"
+
+          identity=$(security find-identity -v -p codesigning "$KEYCHAIN" \
+            | awk '/Developer ID Application/ { print $2; exit }')
+          if [ -z "$identity" ]; then
+            echo "::error::no Developer ID Application identity in the keychain"
+            security find-identity -p codesigning "$KEYCHAIN"
+            exit 1
+          fi
+          echo "KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
+          echo "IDENTITY=$identity" >> "$GITHUB_ENV"
+
+      - name: Sign
+        run: |
+          codesign --force --timestamp --options runtime \
+            --entitlements modules/apps/desktop/build/darwin/entitlements.plist \
+            --keychain "$KEYCHAIN" --sign "$IDENTITY" \
+            "$RUNNER_TEMP/Numen.app"
+          codesign --verify --deep --strict --verbose=2 "$RUNNER_TEMP/Numen.app"
+
+      - name: Disk image
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/image"
+          cp -R "$RUNNER_TEMP/Numen.app" "$RUNNER_TEMP/image/"
+          ln -s /Applications "$RUNNER_TEMP/image/Applications"
+          hdiutil create -volname Numen -srcfolder "$RUNNER_TEMP/image" \
+            -ov -format UDZO "$RUNNER_TEMP/Numen-${VERSION}.dmg"
+          codesign --force --timestamp --keychain "$KEYCHAIN" --sign "$IDENTITY" \
+            "$RUNNER_TEMP/Numen-${VERSION}.dmg"
+
+      # Apple looks inside and answers; the ticket is then attached to the image
+      # so that a machine offline can still be told the answer.
+      - name: Notarize
+        if: inputs.notarize
+        env:
+          VERSION: ${{ inputs.version }}
+          API_KEY: ${{ secrets.APPLE_STORE_CONNECT_API_KEY }}
+          API_KEY_ID: ${{ secrets.APPLE_STORE_CONNECT_API_KEY_ID }}
+          API_KEY_ISSUER: ${{ secrets.APPLE_STORE_CONNECT_API_KEY_ISSUER }}
+        run: |
+          printf '%b' "$API_KEY" > "$RUNNER_TEMP/api-key.p8"
+          xcrun notarytool submit "$RUNNER_TEMP/Numen-${VERSION}.dmg" \
+            --key "$RUNNER_TEMP/api-key.p8" --key-id "$API_KEY_ID" \
+            --issuer "$API_KEY_ISSUER" --wait --timeout 30m
+          rm "$RUNNER_TEMP/api-key.p8"
+          xcrun stapler staple "$RUNNER_TEMP/Numen-${VERSION}.dmg"
+
+      # What a person's machine will say when they open it.
+      - name: Gatekeeper
+        if: inputs.notarize
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          hdiutil attach "$RUNNER_TEMP/Numen-${VERSION}.dmg" \
+            -mountpoint "$RUNNER_TEMP/mounted" -nobrowse -quiet
+          spctl --assess --type execute -vv "$RUNNER_TEMP/mounted/Numen.app"
+          hdiutil detach "$RUNNER_TEMP/mounted" -quiet
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: numen-macos-universal
+          path: ${{ runner.temp }}/Numen-*.dmg
+          if-no-files-found: error
+
+      - name: Forget the identity
+        if: always()
+        run: security delete-keychain "$RUNNER_TEMP/signing.keychain-db" || true
+
+  # The command line tool carries no webview, so one machine builds it for every
+  # other.
+  cli:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache-dependency-path: modules/apps/desktop/go.sum
+
+      - name: Build
+        working-directory: modules/apps/desktop
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do
+            os=${target%/*}
+            arch=${target#*/}
+            work="$RUNNER_TEMP/cli/$os-$arch"
+            mkdir -p "$work"
+            if [ "$os" = windows ]; then
+              binary="$work/numen-cli.exe"
+            else
+              binary="$work/numen-cli"
+            fi
+            CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" go build -trimpath -o "$binary" ./cmd/numen-cli
+            tar czf "$RUNNER_TEMP/cli/numen-cli_${VERSION}_${os}_${arch}.tar.gz" -C "$work" .
+          done
+          ls -la "$RUNNER_TEMP/cli"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: numen-cli
+          path: ${{ runner.temp }}/cli/*.tar.gz
+          if-no-files-found: error

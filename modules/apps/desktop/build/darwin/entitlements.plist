@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<!-- The hardened runtime is on and asks for nothing back. The page runs in
+     WebKit's own processes, and the agent this application starts is a program
+     of its own with a signature of its own. -->
+<dict>
+</dict>
+</plist>
