@@ -198,15 +198,14 @@ jobs:
         if: inputs.notarize
         env:
           VERSION: ${{ inputs.version }}
-          API_KEY: ${{ secrets.APPLE_STORE_CONNECT_API_KEY }}
+          API_KEY: ${{ secrets.APPLE_NOTARY_API_KEY }}
           API_KEY_ID: ${{ secrets.APPLE_STORE_CONNECT_API_KEY_ID }}
           API_KEY_ISSUER: ${{ secrets.APPLE_STORE_CONNECT_API_KEY_ISSUER }}
         run: |
-          # The key is held as one quoted line with its newlines written out.
-          key=$API_KEY
-          key=${key#\"}
-          key=${key%\"}
-          printf '%b' "$key" > "$RUNNER_TEMP/api-key.p8"
+          # The key is held encoded, so that what Apple is handed is the file
+          # byte for byte.
+          printf '%s' "$API_KEY" | base64 --decode > "$RUNNER_TEMP/api-key.p8"
+          openssl pkey -in "$RUNNER_TEMP/api-key.p8" -noout
           xcrun notarytool submit "$RUNNER_TEMP/Numen-${VERSION}.dmg" \
             --key "$RUNNER_TEMP/api-key.p8" --key-id "$API_KEY_ID" \
             --issuer "$API_KEY_ISSUER" --wait --timeout 30m
