@@ -270,9 +270,16 @@ func (a *Agent) command() (string, []string) {
 // An application opened from a desktop is given the system path alone, so every
 // folder an installer writes to is named here. A leading ~ is this person's
 // home, and a * is expanded.
+//
+// A mac carries programs inside application bundles, and the one an installer
+// leaves there holds the command line under the name it is started by.
 var places = []string{
 	"~/.local/bin/claude",
 	"~/.claude/local/claude",
+	"~/Applications/Claude Code URL Handler.app/Contents/MacOS/claude",
+	"/Applications/Claude Code URL Handler.app/Contents/MacOS/claude",
+	"~/Applications/Claude.app/Contents/MacOS/claude",
+	"/Applications/Claude.app/Contents/MacOS/claude",
 	"~/.bun/bin/claude",
 	"~/.volta/bin/claude",
 	"~/.npm-global/bin/claude",
