@@ -24,6 +24,12 @@ func (c Config) Cutting() window.Sizes {
 	return window.Sizes{Limit: window.Under(c.Embedding.Model.MaxTokens)}
 }
 
+// NotesCutAt is the note repository, told the sizes a note is cut at. A note is
+// cut in the adapter that stores it, and the sizes reach that adapter from here.
+func (i *Index) NotesCutAt(sizes window.Sizes) port.NoteRepository {
+	return i.db.Notes().Cut(sizes)
+}
+
 // Searchable is what makes a vault answer, put together the one way: the notes
 // read, the books read, and the vectors made. Every entry point takes it from
 // here, so a vault made searchable in a terminal and a vault made searchable in
@@ -49,7 +55,7 @@ func (c Config) Searchable(ctx context.Context, db *Index, embedder port.Embedde
 		Notes: vault.Scan{
 			Readers:      c.VaultReaders(),
 			Vaults:       db.Vaults(),
-			Notes:        db.Notes(),
+			Notes:        db.NotesCutAt(c.Cutting()),
 			Known:        db.Queries(),
 			Maintenance:  db.Maintenance(),
 			RebuildIndex: c.RebuildIndex,

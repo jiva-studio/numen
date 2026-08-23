@@ -30,9 +30,21 @@ const kind = "note"
 
 // Repository is the collection of notes. It puts one in and takes one out, and
 // answers no questions about them.
-type Repository struct{ db *sql.DB }
+type Repository struct {
+	db *sql.DB
+
+	// sizes are what a note is cut at. A repository told none cuts at the sizes
+	// the window package names.
+	sizes window.Sizes
+}
 
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
+
+// Cut is the repository, cutting a note at the sizes given. The settings decide
+// them, and what has read the settings passes them in here.
+func (r *Repository) Cut(sizes window.Sizes) *Repository {
+	return &Repository{db: r.db, sizes: sizes}
+}
 
 // exec runs a named statement and says which one failed. A bare driver error
 // from one of the many statements in a transaction is a schema mistake nobody
@@ -63,7 +75,7 @@ func (r *Repository) Save(ctx context.Context, vaultID string, notes []domain.No
 		return err
 	}
 	for _, n := range notes {
-		if err := saveNote(ctx, tx, vault, n); err != nil {
+		if err := saveNote(ctx, tx, vault, n, r.sizes); err != nil {
 			return fmt.Errorf("%s: %w", n.Ref.Path, err)
 		}
 	}
@@ -73,7 +85,7 @@ func (r *Repository) Save(ctx context.Context, vaultID string, notes []domain.No
 	return nil
 }
 
-func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note) error {
+func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes window.Sizes) error {
 	frontmatter, storeErr := encodeFrontmatter(n)
 	problem := n.FrontmatterErr
 	if storeErr != "" {
@@ -106,7 +118,7 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note) error
 	// The note goes in as its own large window, so the words in it are findable
 	// as soon as it is indexed. A window whose text is what it was keeps its
 	// row, and the vector made from it.
-	if err := chunk.Replace(ctx, tx, row, vault, cut(n)); err != nil {
+	if err := chunk.Replace(ctx, tx, row, vault, cut(n, sizes)); err != nil {
 		return err
 	}
 	for _, h := range n.Headings {
@@ -149,23 +161,26 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note) error
 }
 
 // cut is how a note is cut: one large window over the whole of it, and the small
-// windows inside that carry the vectors. A book is cut the same way, at the same
-// sizes, so a mixed vault ranks by what a passage says and not by what it came
-// from.
+// windows inside that carry the vectors. The small windows are cut at the sizes
+// a book's are, and a mixed vault ranks by what a passage says.
+//
+// The large window is the note itself. The sizes decide the small windows inside
+// it.
 //
 // The note's headings are its places, so the small windows of one section are
 // tiled inside that section and no window runs across a heading.
 //
 // Offsets are into the file. The body begins after the frontmatter, and every
 // window is moved out by as much.
-func cut(n domain.Note) []chunk.Window {
+func cut(n domain.Note, sizes window.Sizes) []chunk.Window {
 	at := int(n.Ref.Size) - len(n.Body)
 	if at < 0 {
 		at = 0
 	}
+	sizes.Large = window.Whole
 
 	out := make([]chunk.Window, 0, 1)
-	for _, large := range window.Cut(n.Body, places(n), window.Sizes{Large: window.Whole}) {
+	for _, large := range window.Cut(n.Body, places(n), sizes) {
 		// The title is searched together with the body: a note is looked for by
 		// the name it was given.
 		w := chunk.Window{

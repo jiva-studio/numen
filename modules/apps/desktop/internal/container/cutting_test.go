@@ -49,6 +49,54 @@ func TestTheModelSaidIsWhatAWindowIsCutUnder(t *testing.T) {
 	}
 }
 
+// A note is cut at the sizes the settings say. The windows a vault owes vectors
+// for are its small ones, and each is under the input limit of the model that
+// will read it.
+func TestANoteIsCutAtTheSettingsSizes(t *testing.T) {
+	db, err := container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}.OpenIndex(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+
+	cfg := embed.Defaults()
+	cfg.Model.MaxTokens = 8
+	held := container.Config{Embedding: cfg, ServiceDir: ".numen"}
+	v := domain.Vault{ID: "v", Path: t.TempDir()}
+
+	searchable, err := held.Searchable(t.Context(), db, wide{384}, v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Vaults().Save(t.Context(), v); err != nil {
+		t.Fatal(err)
+	}
+
+	body := strings.TrimSpace(strings.Repeat("windows carry vectors ", 100))
+	n := domain.Note{
+		Ref:   domain.FileRef{Path: "notes/cut.md", Size: int64(len(body)), MTime: 1},
+		Title: "Cut",
+		Body:  body,
+	}
+	if err := searchable.Notes.Notes.Save(t.Context(), v.ID, []domain.Note{n}); err != nil {
+		t.Fatal(err)
+	}
+
+	owing, err := db.VectorsOwing().Unembedded(t.Context(), v.ID, wide{384}.Model(), 0, 1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(owing) == 0 {
+		t.Fatal("a note of a hundred lines owes no vector")
+	}
+	limit := window.Under(cfg.Model.MaxTokens)
+	for _, p := range owing {
+		if p.Length > limit {
+			t.Errorf("a window of %d characters is embedded by a model that reads %d", p.Length, limit)
+		}
+	}
+}
+
 // The vector index is built for one width, and the width is the model's.
 // Whichever entry point makes a vault searchable settles it.
 func TestMakingAVaultSearchableFitsTheVectorIndex(t *testing.T) {
@@ -81,20 +129,20 @@ func (w wide) Model() port.EmbeddingModel {
 
 func (wide) Embed(context.Context, []string) ([][]float32, error) { return nil, nil }
 
-// Nothing outside this package builds a source.Extract of its own. The sizes it
-// carries decide what a chunk is kept under, and a second assembly is a second
-// answer for one settings file.
+// Nothing outside this package builds a source.Extract or a window.Sizes of its
+// own. The sizes decide what a chunk is kept under, and a second assembly is a
+// second answer for one settings file.
 func TestNothingElseAssemblesACut(t *testing.T) {
 	root := filepath.Join("..", "..", "internal")
-	var built []string
+	within := func(path, dir string) bool {
+		return strings.HasPrefix(filepath.ToSlash(path), filepath.ToSlash(filepath.Join(root, dir))+"/")
+	}
+	var built, sized, cutting []string
 	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
 		}
-		if strings.HasSuffix(path, "_test.go") || strings.Contains(path, "core/usecase/source") {
-			return nil
-		}
-		if strings.HasPrefix(filepath.ToSlash(path), filepath.ToSlash(filepath.Join(root, "container"))) {
+		if strings.HasSuffix(path, "_test.go") || within(path, "container") {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
@@ -102,14 +150,33 @@ func TestNothingElseAssemblesACut(t *testing.T) {
 			return err
 		}
 		ast.Inspect(file, func(n ast.Node) bool {
+			// A note is cut by whatever the repository was told when it was
+			// built, so a repository taken without being told cuts at the
+			// package's own defaults.
+			if call, ok := n.(*ast.CallExpr); ok {
+				if named, ok := call.Fun.(*ast.SelectorExpr); ok && named.Sel.Name == "Notes" {
+					if held, ok := named.X.(*ast.Ident); ok && held.Name == "db" {
+						cutting = append(cutting, path)
+					}
+				}
+			}
 			lit, ok := n.(*ast.CompositeLit)
 			if !ok {
 				return true
 			}
-			if named, ok := lit.Type.(*ast.SelectorExpr); ok && named.Sel.Name == "Extract" {
-				if pkg, ok := named.X.(*ast.Ident); ok && pkg.Name == "source" {
-					built = append(built, path)
-				}
+			named, ok := lit.Type.(*ast.SelectorExpr)
+			if !ok {
+				return true
+			}
+			pkg, ok := named.X.(*ast.Ident)
+			if !ok {
+				return true
+			}
+			switch {
+			case pkg.Name == "source" && named.Sel.Name == "Extract" && !within(path, "core/usecase/source"):
+				built = append(built, path)
+			case pkg.Name == "window" && named.Sel.Name == "Sizes":
+				sized = append(sized, path)
 			}
 			return true
 		})
@@ -120,5 +187,11 @@ func TestNothingElseAssemblesACut(t *testing.T) {
 	}
 	if len(built) != 0 {
 		t.Errorf("a cut is assembled outside the composition root: %v", built)
+	}
+	if len(sized) != 0 {
+		t.Errorf("sizes are assembled outside the composition root: %v", sized)
+	}
+	if len(cutting) != 0 {
+		t.Errorf("a note repository is taken without being told its sizes: %v", cutting)
 	}
 }
