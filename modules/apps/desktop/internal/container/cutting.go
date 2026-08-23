@@ -73,11 +73,12 @@ func (c Config) Embed(db *Index, embedder port.Embedder, v domain.Vault) (source
 		return source.Embed{}, err
 	}
 	return source.Embed{
-		Readers:  c.VaultReaders(),
-		Derived:  derived,
-		Chunks:   db.VectorsOwing(),
-		Vectors:  db.Vectors(),
-		Embedder: embedder,
+		Readers:   c.VaultReaders(),
+		Derived:   derived,
+		Documents: c.Documents(),
+		Chunks:    db.VectorsOwing(),
+		Vectors:   db.Vectors(),
+		Embedder:  embedder,
 	}, nil
 }
 
@@ -93,6 +94,7 @@ func (c Config) Extract(sources port.SourceRepository, owing port.SourceQueries,
 		Sources:      sources,
 		Owing:        owing,
 		Derived:      derived,
+		Documents:    c.Documents(),
 		Sizes:        c.Cutting(),
 		RebuildIndex: c.RebuildIndex,
 	}, nil

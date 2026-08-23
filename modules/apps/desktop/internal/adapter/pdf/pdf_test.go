@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/pdf"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/pdf"
 )
 
 // The fixtures are six documents, and each is one thing a reader has to get

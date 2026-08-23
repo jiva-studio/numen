@@ -20,6 +20,9 @@ type Read struct {
 	Readers port.VaultReaders
 	Sources port.SourceQueries
 	Derived port.DerivedStores
+	// Documents reads a format that needs a library, for a source standing on
+	// its own bytes.
+	Documents port.Documents
 }
 
 // ReadResult is a run of a source's text, where it begins, and how much of the
@@ -80,7 +83,7 @@ func (u Read) Execute(
 		}
 	}
 
-	doc, err := text.Reader{Vault: reader, Derived: store}.Of(ctx, path, from, hash)
+	doc, err := text.Reader{Vault: reader, Derived: store, Documents: u.Documents}.Of(ctx, path, from, hash)
 	if err != nil {
 		return res, err
 	}

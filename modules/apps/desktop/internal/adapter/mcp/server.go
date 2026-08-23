@@ -45,6 +45,9 @@ type Core struct {
 	// Derived is where a reading of a document is kept. Without it a document
 	// stands on its own bytes, which for a scan is nothing.
 	Derived port.DerivedStores
+	// Documents reads a format that needs a library, for a document standing on
+	// its own bytes.
+	Documents port.Documents
 
 	Search        search.Search
 	Neighbourhood note.ShowNeighbourhood

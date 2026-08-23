@@ -36,6 +36,9 @@ type Extract struct {
 	// Derived holds what a recogniser wrote. Without one, a source is read from
 	// its own bytes and a recognition is not looked for.
 	Derived port.DerivedStore
+	// Documents reads a format that needs a library. Without one, a source in
+	// that format is unreadable.
+	Documents port.Documents
 	// Area is the producer a recognition is kept under. Empty means the default.
 	Area string
 
@@ -525,7 +528,7 @@ func (u Extract) text(ctx context.Context, ref domain.FileRef, raw []byte, hash 
 			}
 		}
 	}
-	doc, err := text.Read(ref, raw)
+	doc, err := text.Read(ctx, u.Documents, ref, raw)
 	return doc, "", err
 }
 

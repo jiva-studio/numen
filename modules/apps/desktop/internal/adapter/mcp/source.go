@@ -107,9 +107,10 @@ func addSourceTools(server *sdk.Server, core Core) {
 			return nil, out{}, fmt.Errorf("this vault's sources are not open")
 		}
 		res, err := source.Read{
-			Readers: core.Readers,
-			Sources: core.Sources,
-			Derived: core.Derived,
+			Readers:   core.Readers,
+			Sources:   core.Sources,
+			Derived:   core.Derived,
+			Documents: core.Documents,
 		}.Execute(ctx, core.Vault, in.Path, in.Start, in.Length)
 		if err != nil {
 			return nil, out{}, err

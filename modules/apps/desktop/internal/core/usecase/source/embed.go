@@ -30,6 +30,9 @@ type Embed struct {
 	// Derived holds what a recogniser wrote. A window of a recognised document
 	// is re-sliced out of that and not out of the document.
 	Derived port.DerivedStore
+	// Documents reads a format that needs a library, for a source standing on
+	// its own bytes.
+	Documents port.Documents
 
 	// Embedder is optional. Without one nothing is embedded and a search answers
 	// on its words alone, which is a whole search: the vector index fills in
@@ -71,7 +74,7 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 	if u.Derived != nil {
 		store = u.Derived
 	}
-	source := extracted{of: text.Reader{Vault: reader, Derived: store}}
+	source := extracted{of: text.Reader{Vault: reader, Derived: store, Documents: u.Documents}}
 
 	after := int64(0)
 	for {

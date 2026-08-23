@@ -220,11 +220,12 @@ func (r *Recognising) read(ctx context.Context, v domain.Vault, id, path string)
 
 	r.say(task.Task{ID: id, Doing: "Reading a scan", About: path})
 	res, err := source.Recognise{
-		Readers: r.cfg.VaultReaders(),
-		Sources: r.sources,
-		Derived: r.cfg.DerivedStores(),
-		By:      models,
-		Cut:     r.Cut,
+		Readers:   r.cfg.VaultReaders(),
+		Sources:   r.sources,
+		Derived:   r.cfg.DerivedStores(),
+		Documents: r.cfg.Documents(),
+		By:        models,
+		Cut:       r.Cut,
 		OnProgress: func(res source.RecogniseResult) {
 			r.say(task.Task{
 				ID:    id,

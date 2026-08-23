@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/pdf"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/pdf"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/testsupport"
 )
 
@@ -117,7 +117,7 @@ func drawnFrom(t *testing.T, from *paper) (*API, http.Handler) {
 		another: "the bytes of a second scan",
 		beside:  "a file the vault leaves alone",
 	})
-	api := &API{Vault: vault, Readers: filesystem.Readers{}, Viewer: looking()}
+	api := &API{Vault: vault, Readers: filesystem.Readers{}, Viewer: looking(pdf.Documents{})}
 	api.Viewer.open = from.opened
 	t.Cleanup(api.Viewer.close)
 	return api, api.Serving(http.NotFoundHandler())
@@ -134,7 +134,7 @@ func alone(api *API) { api.Viewer.reading = make(chan struct{}) }
 func fromTheLibrary(t *testing.T, raw string) (*API, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{book: raw})
-	api := &API{Vault: vault, Readers: filesystem.Readers{}, Viewer: looking()}
+	api := &API{Vault: vault, Readers: filesystem.Readers{}, Viewer: looking(pdf.Documents{})}
 	api.Viewer.patience = time.Minute
 	t.Cleanup(api.Viewer.close)
 	return api, api.Serving(http.NotFoundHandler())
@@ -481,7 +481,7 @@ func TestOnlySoManyDocumentsAreHeldOpen(t *testing.T) {
 
 // A page of a document the library draws comes back a picture of it.
 func TestAPageOfARealDocumentComesBack(t *testing.T) {
-	raw, err := os.ReadFile("../../core/pdf/testdata/scan.pdf")
+	raw, err := os.ReadFile("../pdf/testdata/scan.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -545,11 +545,11 @@ func TestTheWindowIsToldWhatItMayLoad(t *testing.T) {
 // pdf.Open is what the application draws with, and what the viewer holds by
 // default.
 func TestTheApplicationDrawsWithTheLibrary(t *testing.T) {
-	raw, err := os.ReadFile("../../core/pdf/testdata/labels.pdf")
+	raw, err := os.ReadFile("../pdf/testdata/labels.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
-	opened, err := looking().open(raw)
+	opened, err := looking(pdf.Documents{}).open(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
