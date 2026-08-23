@@ -22,8 +22,8 @@ import (
 //
 // It waits for whatever is missing, so it is for a terminal, where waiting is
 // what a person came for. A window asks Recognising instead.
-func (c Config) Recogniser() (recogniser port.Recogniser, close func() error, why error) {
-	models, err := onnx.Open(context.Background(), c.Recognition)
+func (c Config) Recogniser(ctx context.Context) (recogniser port.Recogniser, close func() error, why error) {
+	models, err := onnx.Open(ctx, c.Recognition)
 	if err != nil {
 		return nil, nil, err
 	}

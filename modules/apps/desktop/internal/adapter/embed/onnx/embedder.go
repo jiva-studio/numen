@@ -77,7 +77,7 @@ type Fetching func(done, total int64)
 // Open loads the model and compiles it, fetching it first where this machine
 // does not hold it. It is expensive — the weights are read and converted — and
 // the result is reusable for the life of the process.
-func Open(is embed.Model, cfg embed.LocalModel, tell Fetching) (*Embedder, error) {
+func Open(ctx context.Context, is embed.Model, cfg embed.LocalModel, tell Fetching) (*Embedder, error) {
 	if is.Dimensions <= 0 {
 		return nil, fmt.Errorf("%s: dimensions must be known before a vector is stored", cfg.Name)
 	}
@@ -90,7 +90,7 @@ func Open(is embed.Model, cfg embed.LocalModel, tell Fetching) (*Embedder, error
 		return nil, fmt.Errorf("%s is pooled %q, and a model is pooled %q or %q",
 			is.Name, is.Pooling, embed.PoolMean, embed.PoolHead)
 	}
-	paths, err := locate(cfg, tell)
+	paths, err := locate(ctx, cfg, tell)
 	if err != nil {
 		return nil, err
 	}
@@ -337,7 +337,7 @@ const (
 // locate finds the model's files: in a directory the configuration names, or in
 // the download cache. A named directory is what an installation with no network
 // uses.
-func locate(cfg embed.LocalModel, tell Fetching) (paths, error) {
+func locate(ctx context.Context, cfg embed.LocalModel, tell Fetching) (paths, error) {
 	file := cfg.File
 	if file == "" {
 		file = modelFile
@@ -381,7 +381,7 @@ func locate(cfg embed.LocalModel, tell Fetching) (paths, error) {
 
 	p := paths{}
 	for _, name := range files {
-		at, err := repo.DownloadFile(modelFolder + "/" + name)
+		at, err := repo.DownloadFileCtx(ctx, modelFolder+"/"+name)
 		if err != nil {
 			return paths{}, fmt.Errorf("fetching %s/%s: %w", modelFolder, name, err)
 		}
@@ -395,7 +395,7 @@ func locate(cfg embed.LocalModel, tell Fetching) (paths, error) {
 	// The tokeniser stands at the root of a repository, and beside the models
 	// in some.
 	if repo.HasFile(tokenFile) {
-		if p.tokenizer, err = repo.DownloadFile(tokenFile); err != nil {
+		if p.tokenizer, err = repo.DownloadFileCtx(ctx, tokenFile); err != nil {
 			return paths{}, fmt.Errorf("fetching %s: %w", tokenFile, err)
 		}
 	}

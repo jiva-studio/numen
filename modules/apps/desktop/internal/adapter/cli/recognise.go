@@ -39,7 +39,7 @@ func recogniseCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 	if !onnx.Ready(cfg.Recognition) {
 		fmt.Fprintln(out, "fetching what is needed to read scans, about 160 MB")
 	}
-	models, closeModels, why := cfg.Recogniser()
+	models, closeModels, why := cfg.Recogniser(ctx)
 	if why != nil {
 		return fmt.Errorf("nothing to read with: %w", why)
 	}

@@ -30,7 +30,7 @@ func open(t *testing.T, dir string) *onnx.Embedder {
 	t.Helper()
 	cfg := embed.Defaults()
 	cfg.Indexing.Local.Dir = dir
-	e, err := onnx.Open(cfg.Model, cfg.Indexing.Local, nil)
+	e, err := onnx.Open(t.Context(), cfg.Model, cfg.Indexing.Local, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,7 +41,7 @@ func open(t *testing.T, dir string) *onnx.Embedder {
 func TestAMissingDirectoryIsNamedInTheError(t *testing.T) {
 	cfg := embed.Defaults()
 	cfg.Indexing.Local.Dir = t.TempDir()
-	_, err := onnx.Open(cfg.Model, cfg.Indexing.Local, nil)
+	_, err := onnx.Open(t.Context(), cfg.Model, cfg.Indexing.Local, nil)
 	if err == nil {
 		t.Fatal("want an error")
 	}
@@ -54,7 +54,7 @@ func TestDimensionsMustBeKnown(t *testing.T) {
 	cfg := embed.Defaults()
 	cfg.Model.Dimensions = 0
 	cfg.Indexing.Local.Dir = t.TempDir()
-	if _, err := onnx.Open(cfg.Model, cfg.Indexing.Local, nil); err == nil {
+	if _, err := onnx.Open(t.Context(), cfg.Model, cfg.Indexing.Local, nil); err == nil {
 		t.Fatal("want an error")
 	}
 }
@@ -65,7 +65,7 @@ func TestWhereATextIsCutOffMustBeSaid(t *testing.T) {
 	cfg := embed.Defaults()
 	cfg.Model.MaxTokens = 0
 	cfg.Indexing.Local.Dir = t.TempDir()
-	_, err := onnx.Open(cfg.Model, cfg.Indexing.Local, nil)
+	_, err := onnx.Open(t.Context(), cfg.Model, cfg.Indexing.Local, nil)
 	if err == nil || !strings.Contains(err.Error(), "cut off") {
 		t.Fatalf("got %v", err)
 	}
@@ -76,7 +76,7 @@ func TestAPoolingNobodyImplementsIsRefused(t *testing.T) {
 	cfg := embed.Defaults()
 	cfg.Model.Pooling = "cls"
 	cfg.Indexing.Local.Dir = t.TempDir()
-	_, err := onnx.Open(cfg.Model, cfg.Indexing.Local, nil)
+	_, err := onnx.Open(t.Context(), cfg.Model, cfg.Indexing.Local, nil)
 	if err == nil || !strings.Contains(err.Error(), "cls") {
 		t.Fatalf("got %v", err)
 	}

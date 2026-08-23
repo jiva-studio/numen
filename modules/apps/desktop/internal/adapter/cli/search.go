@@ -34,7 +34,7 @@ func searchCommand(ctx context.Context, out io.Writer, cfg container.Config, arg
 	// Only the placement that embeds questions is opened: nothing here fills an
 	// index.
 	asking := container.Config{Embedding: cfg.Embedding.Asking().As(cfg.Embedding.Model)}
-	embedder, closeEmbedder, why := asking.Embedder()
+	embedder, closeEmbedder, why := asking.Embedder(ctx)
 	if why != nil {
 		fmt.Fprintf(os.Stderr, "searching by words alone: %v\n", why)
 	}

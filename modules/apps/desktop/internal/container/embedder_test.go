@@ -10,7 +10,7 @@ import (
 // A container nobody configured builds no embedder, and the machine's own
 // settings are not read here.
 func TestAContainerNobodyGaveSettingsEmbedsWithNothing(t *testing.T) {
-	embedder, close, why := container.Config{}.Embedder()
+	embedder, close, why := container.Config{}.Embedder(t.Context())
 	if why != nil {
 		t.Fatalf("want no reason, got %v", why)
 	}
@@ -37,7 +37,7 @@ func serving(name string) embed.Config {
 func TestTheSettingsGivenAreTheOnesUsed(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "sk-test")
 
-	embedder, close, why := container.Config{Embedding: serving("bge-m3")}.Embedder()
+	embedder, close, why := container.Config{Embedding: serving("bge-m3")}.Embedder(t.Context())
 	if why != nil {
 		t.Fatal(why)
 	}
