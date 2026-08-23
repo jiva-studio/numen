@@ -47,3 +47,12 @@ const pressed = (press: MouseEvent) => {
     <Drawn />
   </div>
 </template>
+
+<style scoped>
+/* A table wider than the measure scrolls inside itself, carrying its own
+   scrollbar. */
+.prose :deep(table) {
+  display: block;
+  overflow-x: auto;
+}
+</style>

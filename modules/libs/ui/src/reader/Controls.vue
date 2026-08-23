@@ -64,7 +64,11 @@ const turn = () => {
 
 <template>
   <div class="reader__controls pointer-events-none absolute inset-x-0 bottom-inset flex justify-center">
-    <div class="reader__pill pointer-events-auto flex items-center gap-1 rounded-full p-1">
+    <!-- Standing over the page, so it carries a panel's own ground and lets
+         what is behind it through. -->
+    <div
+      class="reader__pill pointer-events-auto flex items-center gap-1 rounded-full border border-panel-rule bg-panel p-1 shadow-panel backdrop-blur-panel"
+    >
       <Button
         variant="ghost"
         size="icon-small"
@@ -161,15 +165,6 @@ const turn = () => {
 </template>
 
 <style scoped>
-/* The controls stand over the page, so they carry their own ground and let what
-   is behind them through. */
-.reader__pill {
-  background: color-mix(in srgb, var(--numen-surface) 88%, transparent);
-  border: var(--numen-stroke) solid var(--numen-node-border);
-  box-shadow: 0 2px 8px rgb(0 0 0 / 0.18);
-  backdrop-filter: blur(8px);
-}
-
 /* The field carries the page and nothing else: a number field's own arrows are
    not drawn. */
 .reader__at::-webkit-inner-spin-button,

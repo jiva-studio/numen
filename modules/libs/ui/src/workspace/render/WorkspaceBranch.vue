@@ -124,16 +124,19 @@ function settled(reported: number[]): void {
 }
 
 /**
- * What a held handle is marked by, on the root so that it reaches everything
- * the drag passes over.
+ * What a held handle is marked by, on the branch so that it reaches the panels
+ * the drag divides.
  */
 const RESIZING = 'data-resizing'
+
+/** The branch's own element, which carries that mark. */
+const marked = (): HTMLElement | undefined => frame.value?.$el as HTMLElement | undefined
 
 /** The handle put down, wherever the pointer had reached by then. */
 const putDown = () => {
   if (!holding) return
   holding = false
-  document.documentElement.removeAttribute(RESIZING)
+  marked()?.removeAttribute(RESIZING)
 
   const settled = reached
   reached = null
@@ -147,7 +150,7 @@ function handling(now: boolean): void {
     return
   }
   holding = true
-  document.documentElement.setAttribute(RESIZING, '')
+  marked()?.setAttribute(RESIZING, '')
 }
 </script>
 
@@ -268,13 +271,17 @@ function handling(now: boolean): void {
     --reach: 15px;
   }
 }
-</style>
 
-<style>
 /* While a handle is held, the drag moves the handle and the text under the
-   pointer is left alone. */
-[data-resizing] * {
-  user-select: none !important;
-  -webkit-user-select: none !important;
+   pointer is left alone. The branch hands this down, and the editor's typing
+   area, which the browser makes selectable, is told on its own. */
+.branch[data-resizing] {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.branch[data-resizing] :deep(.cm-content) {
+  user-select: none;
+  -webkit-user-select: none;
 }
 </style>

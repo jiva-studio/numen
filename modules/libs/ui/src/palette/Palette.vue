@@ -247,7 +247,7 @@ onBeforeUnmount(() => {
           role="listbox"
           :aria-label="name"
         >
-          <band
+          <section
             v-for="one in placed"
             :key="one.band.id"
             class="palette__band"
@@ -299,7 +299,7 @@ onBeforeUnmount(() => {
             <p v-if="!one.items.length" class="palette__silence px-2 py-1.5 text-hushed">
               {{ one.band.silence ?? 'Nothing' }}
             </p>
-          </band>
+          </section>
         </div>
 
         <p v-else-if="$slots.silence" class="palette__nothing px-2 py-1.5 text-hushed">

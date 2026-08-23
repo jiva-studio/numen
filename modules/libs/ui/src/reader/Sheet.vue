@@ -137,8 +137,8 @@ const boxOf = (one: Lit) => ({
 
 /* The ring stands in the middle of a page's worth of nothing, so it is drawn at
    the size of something being waited for and not of a word. */
-.reader__waiting :deep(.waiting) {
-  --size: 1.4rem;
-  --thickness: 2px;
+.reader__waiting {
+  --waiting-size: 1.4rem;
+  --waiting-thickness: 2px;
 }
 </style>
