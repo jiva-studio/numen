@@ -167,8 +167,44 @@ const notices = computed<readonly Notice[]>(() =>
   cornerOf(tasks.value, { chunks: chunks.value, embedding: embedding.value }, words),
 )
 
-/** What a note was called by the node it was opened from. */
-const titles = new Map<string, string>()
+/** What each note is called, as the vault last said it. */
+const titles = ref<ReadonlyMap<string, string>>(new Map())
+
+const calls = (path: string, name: string): void => {
+  titles.value = new Map(titles.value).set(path, name)
+}
+
+const forgets = (path: string): void => {
+  const rest = new Map(titles.value)
+  rest.delete(path)
+  titles.value = rest
+}
+
+/**
+ * A note is called what the vault calls it. A heading written into a note is
+ * that note's title, so a tab is asked what it is called again once what was
+ * typed into it has landed.
+ *
+ * A vault that cannot answer leaves the tab under the name it had.
+ */
+const calling = async (path: string): Promise<void> => {
+  try {
+    const said = (await core.neighbourhood(path)).focus?.title
+    if (said) calls(path, said)
+  } catch {
+    return
+  }
+}
+
+watch(
+  () => notes.all().filter((path) => notes.shown(path).state === 'clean'),
+  (settled, before) => {
+    for (const path of settled) {
+      if (!before?.includes(path)) void calling(path)
+    }
+  },
+  { deep: true },
+)
 
 /** What each tab of the window holds, and what it lets go of when it closes. */
 const held = holding({
@@ -177,7 +213,7 @@ const held = holding({
   note: async () => {
     const made = await making.start()
     if (!made) return ''
-    titles.set(made.path, made.title)
+    calls(made.path, made.title)
     notes.open(made.path)
     return made.path
   },
@@ -238,7 +274,7 @@ const went = (item: string, action: string) => {
     opensAt(landing.path, { start: landing.start ?? 0, length: landing.length ?? 0 })
     return
   }
-  titles.set(landing.path, landing.title || landing.path)
+  calls(landing.path, landing.title || landing.path)
   notes.open(landing.path)
   entering.set(landing.path, landing.line ?? -1)
   layout.value = openTab(layout.value, landing.path)
@@ -318,7 +354,7 @@ const tabs = computed<readonly Tab[]>(() => [
   ...blanks.value.map((id): Tab => ({ id, title: words.newTab })),
   ...notes.all().map((path): Tab => {
     const mark = markOf(notes.shown(path).state)
-    return { id: path, title: titles.get(path) ?? path, ...(mark ? { mark } : {}) }
+    return { id: path, title: titles.value.get(path) ?? path, ...(mark ? { mark } : {}) }
   }),
 ])
 
@@ -355,7 +391,7 @@ const chose = (id: string) => {
 
 /** A note opens where the person asked for it, and the tab is shown. */
 const openNote = (tab: string, path: string, showing: PlexShowing = 'here') => {
-  titles.set(path, nameOf(tab, path))
+  calls(path, nameOf(tab, path))
   notes.open(path)
   entering.set(path, -1)
   layout.value =
@@ -457,7 +493,7 @@ const shut = (id: string, hold: () => void) => {
   drawings.shut(id)
   void notes.shut(id).then((gone) => {
     if (!gone) return
-    titles.delete(id)
+    forgets(id)
     layout.value = closeTab(layout.value, id)
   })
 }
