@@ -7,8 +7,8 @@
 -- Null is the ordinary case, and the only case for a note or a book whose text
 -- is its own: the text of a source is the source.
 --
--- The four files one recognition writes are all composed from the producer and
--- the hash, which is already a column here, so a name is composed where it is
+-- The files a reading is kept under are all composed from the producer and the
+-- hash, which is already a column here, so a name is composed where it is
 -- needed and nothing takes an extension off a stored string.
 --
 -- It is cleared by the same write that clears `hash` and `recipe`, because it is
