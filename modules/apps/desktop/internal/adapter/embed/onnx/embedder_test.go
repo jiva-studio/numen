@@ -4,6 +4,7 @@ import (
 	"context"
 	"math"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -55,6 +56,19 @@ func TestDimensionsMustBeKnown(t *testing.T) {
 	cfg.Dir = t.TempDir()
 	if _, err := onnx.Open(cfg); err == nil {
 		t.Fatal("want an error")
+	}
+}
+
+func TestAPoolingNobodyImplementsIsRefused(t *testing.T) {
+	// Taken as the pooling it is not, a model answers with vectors near
+	// nothing, and every search over them comes back empty for no stated
+	// reason.
+	cfg := embed.Defaults().Local
+	cfg.Dir = t.TempDir()
+	cfg.Pooling = "cls"
+	_, err := onnx.Open(cfg)
+	if err == nil || !strings.Contains(err.Error(), "cls") {
+		t.Fatalf("got %v", err)
 	}
 }
 

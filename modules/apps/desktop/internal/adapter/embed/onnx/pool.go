@@ -36,6 +36,22 @@ func meanPool(flat []float32, mask [][]int64, dimensions int) [][]float32 {
 	return out
 }
 
+// headPool turns a model's per-token output into one vector per text: the
+// first token, at unit length.
+//
+// A model trained this way gathers what a text says into the token that opens
+// it, and the tokens after it carry nothing a vector is made of.
+func headPool(flat []float32, rows, seq, dimensions int) [][]float32 {
+	out := make([][]float32, rows)
+	for row := range out {
+		at := row * seq * dimensions
+		vector := make([]float32, dimensions)
+		copy(vector, flat[at:at+dimensions])
+		out[row] = embedding.Normalise(vector)
+	}
+	return out
+}
+
 // bucket rounds a sequence length up to the next step. Every distinct shape
 // costs a compilation, so the lengths are held to a few.
 func bucket(tokens, step, limit int) int {

@@ -11,6 +11,14 @@ const (
 	UseService = "service"
 )
 
+// How a model's per-token output becomes one vector. A model pooled the way it
+// was not trained to be answers with vectors in a space of its own, near
+// nothing the same model made another way.
+const (
+	PoolMean = "mean"
+	PoolHead = "head"
+)
+
 // KeyEnvVar is where the service key is read from when the configuration file
 // does not carry one.
 const KeyEnvVar = "NUMEN_EMBEDDING_KEY"
@@ -38,6 +46,11 @@ type LocalModel struct {
 	Dimensions int `json:"dimensions"`
 	// Dir holds model.onnx and tokenizer.json. Empty means the download cache.
 	Dir string `json:"dir"`
+	// Pooling is how the model's per-token output becomes one vector: PoolMean
+	// over the tokens, or PoolHead from the one that opens the text. Empty is
+	// PoolMean. A model whose output is already one vector per text is not
+	// pooled at all and this says nothing about it.
+	Pooling string `json:"pooling"`
 	// MaxTokens is where a text is truncated. It stays under the model's own
 	// limit, since a silently truncated window indexes text it does not contain.
 	MaxTokens int `json:"max_tokens"`
@@ -159,6 +172,7 @@ func (m *LocalModel) UnmarshalJSON(raw []byte) error {
 		Name       *string `json:"name"`
 		Dimensions *int    `json:"dimensions"`
 		Dir        *string `json:"dir"`
+		Pooling    *string `json:"pooling"`
 		MaxTokens  *int    `json:"max_tokens"`
 		BatchTexts *int    `json:"batch_texts"`
 	}
@@ -168,6 +182,7 @@ func (m *LocalModel) UnmarshalJSON(raw []byte) error {
 	assign(&m.Name, f.Name)
 	assign(&m.Dimensions, f.Dimensions)
 	assign(&m.Dir, f.Dir)
+	assign(&m.Pooling, f.Pooling)
 	assign(&m.MaxTokens, f.MaxTokens)
 	assign(&m.BatchTexts, f.BatchTexts)
 	return nil

@@ -32,6 +32,19 @@ func TestTokensAreAveragedAndTheResultIsUnitLength(t *testing.T) {
 	}
 }
 
+func TestTheFirstTokenIsTheVectorWhenTheModelPoolsThatWay(t *testing.T) {
+	// Two texts of three tokens. Only the first token of each carries the
+	// vector; a model trained this way puts nothing in the rest.
+	flat := []float32{
+		3, 0, 9, 9, 9, 9,
+		0, 5, 9, 9, 9, 9,
+	}
+	got := headPool(flat, 2, 3, 2)
+	if !slices.Equal(got[0], []float32{1, 0}) || !slices.Equal(got[1], []float32{0, 1}) {
+		t.Errorf("got %v", got)
+	}
+}
+
 func TestAllPaddingIsAZeroVector(t *testing.T) {
 	got := meanPool([]float32{5, 5}, [][]int64{{0}}, 2)
 	if !slices.Equal(got[0], []float32{0, 0}) {

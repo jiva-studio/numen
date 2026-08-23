@@ -58,6 +58,9 @@ type Embedder struct {
 	typeIDs   bool
 	// pooled says the model's output is already one vector per text.
 	pooled bool
+	// head says the vector is the token that opens a text rather than the
+	// average of them.
+	head bool
 
 	// One compiled graph, one execution at a time.
 	mu sync.Mutex
@@ -68,6 +71,10 @@ type Embedder struct {
 func Open(cfg embed.LocalModel) (*Embedder, error) {
 	if cfg.Dimensions <= 0 {
 		return nil, fmt.Errorf("%s: dimensions must be known before a vector is stored", cfg.Name)
+	}
+	if cfg.Pooling != "" && cfg.Pooling != embed.PoolMean && cfg.Pooling != embed.PoolHead {
+		return nil, fmt.Errorf("%s is pooled %q, and a model is pooled %q or %q",
+			cfg.Name, cfg.Pooling, embed.PoolMean, embed.PoolHead)
 	}
 	paths, err := locate(cfg)
 	if err != nil {
@@ -90,6 +97,7 @@ func Open(cfg embed.LocalModel) (*Embedder, error) {
 		batchTexts: max(cfg.BatchTexts, 1),
 		tokenizer:  tokenizer,
 		net:        net,
+		head:       cfg.Pooling == embed.PoolHead,
 	}
 	if pad, err := tokenizer.SpecialTokenID(api.TokPad); err == nil {
 		e.pad = pad
@@ -248,6 +256,9 @@ func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
 	}
 	if want := len(batch) * seq * e.dimensions; len(flat) != want {
 		return nil, fmt.Errorf("%s returned %d values for %s", e.name, len(flat), outputs[0].Shape())
+	}
+	if e.head {
+		return headPool(flat, len(batch), seq, e.dimensions), nil
 	}
 	return meanPool(flat, mask, e.dimensions), nil
 }
