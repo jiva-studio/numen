@@ -11,25 +11,15 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   Agent,
   Editor,
-  Menu,
   Notices,
   Palette,
-  Plex,
   Reader,
   Workspace,
   closeTab,
   openTab,
   openTabBeside,
 } from '@numen/ui'
-import type {
-  MenuOpening,
-  Notice,
-  PlexNeighbourhood,
-  PlexRelatedSeat,
-  PlexShowing,
-  Tab,
-  Turn,
-} from '@numen/ui'
+import type { Notice, PlexShowing, Tab, Turn } from '@numen/ui'
 import '@numen/ui/styles.css'
 import { core, documents } from './vault'
 import { showing } from './showing'
@@ -37,11 +27,12 @@ import { reading, type Run } from './reading'
 import { cornerOf } from './corner'
 import { editing } from './editing'
 import { drawn } from './drawn'
-import { creating, CREATABLE } from './creating'
+import { creating } from './creating'
 import { holding, type Talk } from './holding'
 import { finding } from './finding'
-import { ITEMS, chose as carry } from './menu'
 import { leaving } from './leaving'
+import PlexTab from './plex/PlexTab.vue'
+import { plexing } from './plex/kind'
 import { core as agent } from './agent'
 import { conversation } from './conversation'
 import { same, spotOf, spotsIn } from './places'
@@ -140,7 +131,13 @@ watch(
 
 /** What each tab of the window holds, and what it lets go of when it closes. */
 const held = holding({
-  plex: window.plex,
+  plex: (at) =>
+    plexing(window.plex(at), {
+      makes: making,
+      ready: () => !failure.value && !indexing.value,
+      opens: (path, title, showing) => openNote(path, title, showing),
+      asks: (text) => held.askAbout(text),
+    }),
   talk: (name) => conversation(agent, words, name),
   note: async () => {
     const made = await making.start()
@@ -290,40 +287,9 @@ const tabs = computed<readonly Tab[]>(() => [
   }),
 ])
 
-/** The menu on a node: the plex it was asked in, where, and by what. */
-const menu = ref<{
-  tab: string
-  path: string
-  at: { x: number; y: number }
-  from: HTMLElement | SVGElement | null
-  opening: MenuOpening
-} | null>(null)
-
-const askMenu = (
-  tab: string,
-  path: string,
-  at: { x: number; y: number },
-  from: HTMLElement | SVGElement | null,
-  opening: MenuOpening,
-) => {
-  menu.value = { tab, path, at, from, opening }
-}
-
-const chose = (id: string) => {
-  const asking = menu.value
-  menu.value = null
-  if (!asking) return
-  carry(id, asking.path, {
-    open: (path) => openNote(asking.tab, path),
-    child: (path) => void made(asking.tab, path, 'child'),
-    ask: (path) => held.askAbout(`${path} — `),
-    copy: (path) => void navigator.clipboard?.writeText(path),
-  })
-}
-
 /** A note opens where the person asked for it, and the tab is shown. */
-const openNote = (tab: string, path: string, showing: PlexShowing = 'here') => {
-  calls(path, nameOf(tab, path))
+const openNote = (path: string, title: string, showing: PlexShowing = 'here') => {
+  calls(path, title)
   notes.open(path)
   entering.set(path, -1)
   layout.value =
@@ -333,40 +299,8 @@ const openNote = (tab: string, path: string, showing: PlexShowing = 'here') => {
   void nextTick(() => enters(path))
 }
 
-/**
- * A note made in a seat of another one. It is in the index by the time the
- * answer arrives, so the picture is asked for again and it is drawn in it.
- *
- * The plex stands on the note it was made from: a neighbourhood is one seat
- * deep, and that is the seat the new note sits in.
- */
-const made = async (tab: string, from: string, seat: PlexRelatedSeat) => {
-  if (await making.make(from, seat)) await plexIn(tab)?.go(from)
-}
-
-/**
- * Two notes the person drew a line between. The plex stands on the note the
- * line was drawn from, which is the one the link is written in.
- */
-const joined = async (tab: string, from: string, to: string, seat: PlexRelatedSeat) => {
-  if (await making.join(from, to, seat)) await plexIn(tab)?.go(from)
-}
-
-const nameOf = (tab: string, path: string): string => {
-  const around = plexIn(tab)?.neighbourhood.value
-  if (around?.focus?.path === path && around.focus.title) return around.focus.title
-  const near = around?.related?.find((r) => r.note?.path === path)
-  return near?.note?.title || (path.split('/').pop() ?? path).replace(/\.md$/, '')
-}
-
-/** The picture one plex tab draws, or nothing while it has none. */
-const picture = (id: string): PlexNeighbourhood | null => {
-  if (failure.value || indexing.value) return null
-  return held.plexes.value.get(id)?.picture.value ?? null
-}
-
-/** Where one plex tab is standing. */
-const plexIn = (id: string) => held.plexes.value.get(id)?.view ?? null
+/** What one plex tab holds, or nothing where the tab holds no plex. */
+const plexIn = (id: string) => held.plexes.value.get(id) ?? null
 
 /** The talk one agent tab holds. */
 const talkIn = (id: string) => held.agents.value.get(id) ?? null
@@ -470,26 +404,7 @@ onUnmounted(() => {
       @open="held.blanked"
     >
       <template #tab="{ id }">
-        <Plex
-          v-if="picture(id)"
-          :neighbourhood="picture(id)!"
-          :creatable="CREATABLE"
-          @activate="(path: string) => void plexIn(id)?.go(path)"
-          @create="(from: string, seat: PlexRelatedSeat) => void made(id, from, seat)"
-          @link="
-            (from: string, to: string, seat: PlexRelatedSeat) => void joined(id, from, to, seat)
-          "
-          @menu="
-            (
-              path: string,
-              at: { x: number; y: number },
-              from: SVGGElement,
-              opening: MenuOpening,
-            ) => askMenu(id, path, at, from, opening)
-          "
-          @show="(path: string, how: PlexShowing) => openNote(id, path, how)"
-          @dismiss="menu = null"
-        />
+        <PlexTab v-if="plexIn(id)" :held="plexIn(id)!" />
 
         <Agent
           v-else-if="talkIn(id)"
@@ -601,17 +516,6 @@ onUnmounted(() => {
         </li>
       </ul>
     </section>
-
-    <Menu
-      v-if="menu"
-      :items="ITEMS"
-      :at="menu.at"
-      :from="menu.from"
-      :opening="menu.opening"
-      open
-      @choose="chose"
-      @dismiss="menu = null"
-    />
 
     <Palette
       :model-value="palette.typed.value"

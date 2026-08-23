@@ -6,21 +6,13 @@
  * so a test can ask them without a browser. A tab holding a note is the
  * window's own.
  */
-import { computed, ref, shallowRef, type ComputedRef, type Ref } from 'vue'
+import { ref, shallowRef, type Ref } from 'vue'
 import { closeTab, openTab, paneWithTab } from '@numen/ui'
-import type { NodeId, PlexNeighbourhood, WorkspaceLayout } from '@numen/ui'
-import { asPlex } from './plex'
+import type { NodeId, WorkspaceLayout } from '@numen/ui'
 import type { Conversation } from './conversation'
+import type { Held } from './plex/kind'
 import type { Reading } from './reading'
-import type { Plexed } from './showing'
 import { AGENT, BLANK, CONVERSATION, NOTE, PLEX, named, opening } from './workspace'
-
-/** What one plex tab holds: where it is standing, and the picture it draws. */
-export interface Held {
-  readonly view: Plexed
-  /** The plex reads one value, so what it is given changes when the vault does. */
-  readonly picture: ComputedRef<PlexNeighbourhood | null>
-}
 
 /** What one agent tab holds: a talk of its own, and the question being written. */
 export interface Talk extends Conversation {
@@ -30,7 +22,7 @@ export interface Talk extends Conversation {
 /** What the window makes when a tab is told what it holds. */
 export interface Makes {
   /** A plex of its own, standing where it is told or where the person is. */
-  plex(at?: string): Plexed
+  plex(at?: string): Held
   /** A talk of its own, answering under the name the agent hears it by. */
   talk(conversation: string): Conversation
   /** A note of its own, opened; where it is filed, or nothing when none was made. */
@@ -52,11 +44,7 @@ export function holding(makes: Makes) {
   /** A plex of its own, and the tab it will stand in. */
   const plexTab = (at?: string): string => {
     const id = named(PLEX)
-    const view = makes.plex(at)
-    const picture = computed(() =>
-      view.neighbourhood.value ? asPlex(view.neighbourhood.value) : null,
-    )
-    plexes.value = new Map(plexes.value).set(id, { view, picture })
+    plexes.value = new Map(plexes.value).set(id, makes.plex(at))
     return id
   }
 

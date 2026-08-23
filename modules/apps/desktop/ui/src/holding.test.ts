@@ -10,10 +10,14 @@ import { ref } from 'vue'
 import { paneWithTab, type Turn } from '@numen/ui'
 import { holding, type Makes } from './holding'
 import type { Conversation } from './conversation'
+import type { Held } from './plex/kind'
 import type { Reading } from './reading'
 import type { Plexed } from './showing'
 
-/** A plex that stands where it was told to and records what became of it. */
+/**
+ * A plex tab standing where it was told to, which records what became of it.
+ * Holding a plex is holding where it stands, and nothing else here reads more.
+ */
 const plexed = (closed: string[], looked: string[], at: string) => {
   const view = {
     neighbourhood: ref(null),
@@ -25,7 +29,7 @@ const plexed = (closed: string[], looked: string[], at: string) => {
     looking: () => looked.push(view.here.value),
     close: () => closed.push(view.here.value),
   }
-  return view as unknown as Plexed
+  return { view: view as unknown as Plexed } as Held
 }
 
 /**
