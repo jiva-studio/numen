@@ -27,7 +27,7 @@ import (
 // nothing. A placement that cannot be built — no key, no base URL — is a
 // reason, and nothing is built at all.
 func (c Config) Embedders(ctx context.Context, tasks *task.Tasks) (indexing, asking port.Embedder, close func() error, why error) {
-	first, why := c.placed(ctx, c.Embedding.Indexing, tasks)
+	first, why := c.placed(ctx, c.Embedding.Indexing, forIndexing, tasks)
 	if why != nil || first == nil {
 		return nil, nil, nil, why
 	}
@@ -35,7 +35,7 @@ func (c Config) Embedders(ctx context.Context, tasks *task.Tasks) (indexing, ask
 		return first.Filling(), first.Asking(), first.Close, nil
 	}
 
-	second, why := c.placed(ctx, c.Embedding.Query, tasks)
+	second, why := c.placed(ctx, c.Embedding.Query, forQuery, tasks)
 	if why != nil {
 		_ = first.Close()
 		return nil, nil, nil, why
@@ -47,7 +47,7 @@ func (c Config) Embedders(ctx context.Context, tasks *task.Tasks) (indexing, ask
 	go func() {
 		if err := agreeing(ctx, first, second); err != nil {
 			_ = second.Disown(err)
-			failed(tasks, c.Embedding.Query.Local.Name, err)
+			failed(tasks, arriving(forQuery, c.Embedding.Query), err)
 		}
 	}()
 	return first.Filling(), second.Asking(), both(first.Close, second.Close), nil
@@ -56,7 +56,7 @@ func (c Config) Embedders(ctx context.Context, tasks *task.Tasks) (indexing, ask
 // Embedder is what makes the vectors a vault is searched by, waited for. A run
 // with nowhere to show that a model is arriving waits for it instead.
 func (c Config) Embedder(ctx context.Context) (port.Embedder, func() error, error) {
-	held, err := c.placed(ctx, c.Embedding.Indexing, nil)
+	held, err := c.placed(ctx, c.Embedding.Indexing, forIndexing, nil)
 	if err != nil || held == nil {
 		return nil, nil, err
 	}
@@ -66,7 +66,7 @@ func (c Config) Embedder(ctx context.Context) (port.Embedder, func() error, erro
 // placed is what one placement makes: a service, which answers at once, or a
 // model on this machine, which is loaded behind the window. Nothing for a
 // placement that names neither.
-func (c Config) placed(ctx context.Context, where embed.Placement, tasks *task.Tasks) (*Embedding, error) {
+func (c Config) placed(ctx context.Context, where embed.Placement, role string, tasks *task.Tasks) (*Embedding, error) {
 	switch where.Use {
 	case embed.UseService:
 		client, err := openai.New(c.Embedding.Model, where.Service)
@@ -80,17 +80,18 @@ func (c Config) placed(ctx context.Context, where embed.Placement, tasks *task.T
 	case embed.UseLocal:
 		is := c.Embedding.Model
 		held := Arriving(is.Stored())
-		doing := preparing(tasks, where.Local.Name)
+		at := arriving(role, where)
+		doing := preparing(tasks, at)
 		doing(0, 0)
 		go func() {
 			model, err := onnx.Open(ctx, is, where.Local, doing)
 			if err != nil {
 				held.Landed(nil, err)
-				failed(tasks, where.Local.Name, err)
+				failed(tasks, at, err)
 				return
 			}
 			held.Landed(model, nil)
-			ready(tasks, where.Local.Name)
+			ready(tasks, at)
 		}()
 		return held, nil
 
@@ -106,25 +107,34 @@ func (c Config) placed(ctx context.Context, where embed.Placement, tasks *task.T
 // agreeing is the two placements answering one text alike, once both are here.
 //
 // A question embedded in another space finds nothing the first indexed, and
-// nothing in a settings file shows that two placements are one model.
+// nothing in a settings file shows that two placements are one model. A
+// comparison that did not happen is not agreement, and only a context that
+// ended excuses one.
 func agreeing(ctx context.Context, first, second *Embedding) error {
-	if a, b := first.Model().Recipe(), second.Model().Recipe(); a != b {
-		return fmt.Errorf("vectors are made under %s and asked for under %s", a, b)
+	// unchecked is a comparison nobody got an answer out of. A run somebody
+	// stopped is owed no answer.
+	unchecked := func(why error) error {
+		if ctx.Err() != nil {
+			return nil
+		}
+		return fmt.Errorf("%s and %s were not compared as one model: %w",
+			first.Model(), second.Model(), why)
 	}
+
 	if err := first.Wait(ctx); err != nil {
-		return nil
+		return unchecked(err)
 	}
 	if err := second.Wait(ctx); err != nil {
-		return nil
+		return unchecked(err)
 	}
 
 	said, err := first.Filling().Embed(ctx, []string{embedding.Asked})
 	if err != nil {
-		return nil
+		return unchecked(err)
 	}
 	back, err := second.Filling().Embed(ctx, []string{embedding.Asked})
 	if err != nil {
-		return nil
+		return unchecked(err)
 	}
 	if len(said) != 1 || len(back) != 1 || !embedding.Agreed(said[0], back[0]) {
 		return fmt.Errorf("%s and %s are not one model, and a question embedded by the second finds nothing the first indexed",
@@ -133,9 +143,29 @@ func agreeing(ctx context.Context, first, second *Embedding) error {
 	return nil
 }
 
-// What the arrival of a model is called in the list of what is being done. Two
-// placements are two models, so the name is part of what it is called.
-func gettingReady(name string) string { return "getting ready: " + name }
+// Which half of the work a placement is for. An arrival is called by its role
+// and its name, and two placements naming one repository are two lines.
+const (
+	forIndexing = "indexing"
+	forQuery    = "query"
+)
+
+// listing is one placement's arrival in the list of what is being done: what
+// that line is called, and the name to show on it.
+type listing struct {
+	id, name string
+}
+
+// arriving is how one placement appears while it is on its way. A model on this
+// machine is named by its repository and a service by the model it is asked
+// for.
+func arriving(role string, where embed.Placement) listing {
+	name := where.Service.Name
+	if where.Use == embed.UseLocal {
+		name = where.Local.Name
+	}
+	return listing{id: "getting ready: " + role + ": " + name, name: name}
+}
 
 // preparing tells the list how far the model has got, counted in the bytes of
 // it that are here. Fetching it and compiling it are one wait.
@@ -143,29 +173,29 @@ func gettingReady(name string) string { return "getting ready: " + name }
 // A run with no list to tell is told nothing and still asks: what says how far
 // the work has got is called wherever the work is, and a run in a terminal
 // takes the same road as a window.
-func preparing(tasks *task.Tasks, name string) onnx.Fetching {
+func preparing(tasks *task.Tasks, at listing) onnx.Fetching {
 	if tasks == nil {
 		return func(int64, int64) {}
 	}
 	return func(done, total int64) {
 		tasks.Set(task.Task{
-			ID: gettingReady(name), Doing: "Preparing the model", About: name,
+			ID: at.id, Doing: "Preparing the model", About: at.name,
 			Done: done, Total: total,
 		})
 	}
 }
 
-func ready(tasks *task.Tasks, name string) {
+func ready(tasks *task.Tasks, at listing) {
 	if tasks != nil {
-		tasks.Done(gettingReady(name))
+		tasks.Done(at.id)
 	}
 }
 
 // failed leaves the model in the list under what stopped it.
-func failed(tasks *task.Tasks, name string, why error) {
+func failed(tasks *task.Tasks, at listing, why error) {
 	if tasks != nil {
 		tasks.Set(task.Task{
-			ID: gettingReady(name), Doing: "Preparing the model", About: name,
+			ID: at.id, Doing: "Preparing the model", About: at.name,
 			Failed: why.Error(),
 		})
 	}

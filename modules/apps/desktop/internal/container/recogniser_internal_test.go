@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"image"
+	"runtime"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/ocr"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
@@ -45,6 +47,7 @@ func recognising(t *testing.T, why error) *watched {
 		cfg:   Config{ServiceDir: ".numen"},
 		tasks: tasks,
 		ready: func() bool { return true },
+		queue: func() (port.ProofreadQueue, error) { return nil, nil },
 		open: func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
 			w.mu.Lock()
 			w.open++
@@ -182,5 +185,60 @@ func TestAReadingStoppedIsNotAFailure(t *testing.T) {
 
 	if at, held := w.said(t); held {
 		t.Errorf("a reading that was stopped is in the list: %+v", at)
+	}
+}
+
+// A reading that ends where nothing expected it to holds nothing afterwards:
+// the next document is taken.
+func TestAReadingThatEndsAbruptlyDoesNotHoldTheNextOne(t *testing.T) {
+	w := recognising(t, nil)
+
+	// The first reading leaves its goroutine partway down, as a panic under the
+	// reading does.
+	abrupt := make(chan struct{}, 1)
+	abrupt <- struct{}{}
+	w.Recognising.open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+		select {
+		case <-abrupt:
+			runtime.Goexit()
+		default:
+		}
+		return nil, nil, errors.New("nothing to read with")
+	}
+
+	if !w.Start(t.Context(), somewhere, "a.pdf") {
+		t.Fatal("the document was not taken")
+	}
+	w.settled(t)
+
+	if !w.Start(t.Context(), somewhere, "b.pdf") {
+		t.Fatal("nothing was taken after a reading that ended where nothing expected it to")
+	}
+	w.settled(t)
+}
+
+// A queue that failed to build is said, as the proofreader that failed to build
+// is said. A person who configured a queue and is given none is owed the reason.
+func TestAProofreadQueueThatFailedToBuildIsSaid(t *testing.T) {
+	t.Setenv(proofreading.KeyEnvVar, "sk-test")
+	w := recognising(t, nil)
+
+	cfg := Config{ServiceDir: ".numen"}
+	cfg.Proofreading = proofreading.Defaults()
+	cfg.Proofreading.Use = proofreading.UseService
+	cfg.Proofreading.Service.Name = "a-model"
+	w.Recognising.cfg = cfg
+	w.Recognising.queue = func() (port.ProofreadQueue, error) {
+		return nil, errors.New("no queue for the proofreading service")
+	}
+
+	w.correct(t.Context(), somewhere, "a.pdf")
+
+	at, held := w.said(t)
+	if !held {
+		t.Fatal("a queue that failed to build was not said")
+	}
+	if at.Failed == "" || at.About != "a.pdf" {
+		t.Errorf("got %+v", at)
 	}
 }

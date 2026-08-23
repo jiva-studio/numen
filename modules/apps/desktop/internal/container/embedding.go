@@ -30,6 +30,9 @@ type Embedding struct {
 	mu   sync.RWMutex
 	held port.Embedder
 	why  error
+	// settled is the wait being over: something answered for it, it was let go
+	// of, or it was closed.
+	settled bool
 }
 
 // Arriving is an embedder being loaded somewhere else, under the identity the
@@ -39,26 +42,39 @@ func Arriving(is port.EmbeddingModel) *Embedding {
 }
 
 // Landed is the model turning up, or the reason it never will. It is the first
-// of these that counts.
+// of these that counts, and a model arriving after the wait is over is let go
+// of where it stands.
 func (e *Embedding) Landed(held port.Embedder, why error) {
-	e.once.Do(func() {
-		e.mu.Lock()
+	e.mu.Lock()
+	late := e.settled
+	if !late {
+		e.settled = true
 		e.held, e.why = held, why
-		e.mu.Unlock()
-		close(e.here)
-	})
+	}
+	e.mu.Unlock()
+
+	e.once.Do(func() { close(e.here) })
+	if late {
+		_ = letGo(held)
+	}
 }
 
 // Disown is the model turning out not to be the one whose vectors are stored.
 // It is let go of, and nothing is asked of it again.
+//
+// The reason is in place before anybody can see the wait is over.
 func (e *Embedding) Disown(why error) error {
-	e.once.Do(func() { close(e.here) })
-
 	e.mu.Lock()
 	held := e.held
-	e.held, e.why = nil, why
+	e.held, e.why, e.settled = nil, why, true
 	e.mu.Unlock()
 
+	e.once.Do(func() { close(e.here) })
+	return letGo(held)
+}
+
+// letGo closes a model that holds something, and says what closing it said.
+func letGo(held port.Embedder) error {
 	if closer, ok := held.(interface{ Close() error }); ok {
 		return closer.Close()
 	}
@@ -98,20 +114,14 @@ func (e *Embedding) Wait(ctx context.Context) error {
 	return nil
 }
 
-// Close lets go of the model. A model that has not turned up holds nothing, and
-// the download behind it ends with the process.
+// Close lets go of the model. The wait is over from here, so a model still on
+// its way down is let go of the moment it arrives.
 func (e *Embedding) Close() error {
-	select {
-	case <-e.here:
-	default:
-		return nil
-	}
-	e.mu.RLock()
-	defer e.mu.RUnlock()
-	if closer, ok := e.held.(interface{ Close() error }); ok {
-		return closer.Close()
-	}
-	return nil
+	e.mu.Lock()
+	held := e.held
+	e.held, e.settled = nil, true
+	e.mu.Unlock()
+	return letGo(held)
 }
 
 // Filling waits for the model. Nothing is owed to anybody watching a pass over

@@ -122,6 +122,67 @@ func TestAModelDisownedBeforeItLandsIsNotWaitedFor(t *testing.T) {
 	}
 }
 
+// A model let go of before it arrived is let go of when it does: the weights
+// are compiled by then and nothing else holds them.
+func TestAModelThatLandsAfterItWasDisownedIsLetGoOf(t *testing.T) {
+	arriving := container.Arriving(bge)
+	if err := arriving.Disown(errors.New("not one model")); err != nil {
+		t.Fatal(err)
+	}
+
+	held := &shut{}
+	arriving.Landed(held, nil)
+	if !held.closed {
+		t.Error("a model nothing will ask of is still loaded")
+	}
+	if arriving.Here() {
+		t.Error("still here")
+	}
+}
+
+func TestAModelThatLandsAfterEverythingWasClosedIsLetGoOf(t *testing.T) {
+	arriving := container.Arriving(bge)
+	if err := arriving.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	held := &shut{}
+	arriving.Landed(held, nil)
+	if !held.closed {
+		t.Error("a model nothing will ask of is still loaded")
+	}
+}
+
+// Whoever was waiting on a model let go of is told why. The reason is in place
+// before anybody can see the wait is over.
+func TestAModelDisownedTellsWhoeverWasWaitingWhy(t *testing.T) {
+	wrong := errors.New("not one model")
+	for range 2000 {
+		arriving := container.Arriving(bge)
+
+		waiting := make(chan struct{}, 8)
+		waited := make(chan error, cap(waiting))
+		for range cap(waited) {
+			go func() {
+				waiting <- struct{}{}
+				waited <- arriving.Wait(t.Context())
+			}()
+		}
+		for range cap(waiting) {
+			<-waiting
+		}
+
+		if err := arriving.Disown(wrong); err != nil {
+			t.Fatal(err)
+		}
+		for range cap(waited) {
+			if err := <-waited; !errors.Is(err, wrong) {
+				t.Fatalf("a model let go of permanently answered %v", err)
+			}
+		}
+	}
+}
+
 func TestAPassStoppedWhileTheModelArrivesIsStopped(t *testing.T) {
 	arriving := container.Arriving(bge)
 	ctx, cancel := context.WithCancel(t.Context())

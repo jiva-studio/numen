@@ -2,9 +2,11 @@ package container_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/task"
 )
 
 // A container nobody configured builds no embedder, and the machine's own
@@ -145,6 +147,125 @@ func TestAPlacementNobodyImplementsIsARefusal(t *testing.T) {
 	cfg.Indexing.Use = "sevrice"
 	if _, _, _, why := (container.Config{Embedding: cfg}).Embedders(t.Context(), nil); why == nil {
 		t.Fatal("want a reason")
+	}
+}
+
+// missing is a placement for a model on this machine that is not on it: a
+// folder with nothing in it, looked in and not fetched. Nothing reaches a
+// network.
+func missing(t *testing.T) embed.Placement {
+	t.Helper()
+	where := embed.Defaults().Indexing
+	where.Local.Dir = t.TempDir()
+	where.Local.Download = false
+	return where
+}
+
+// waited is the list of what is being done, once it holds what is asked of it.
+func waited(t *testing.T, tasks *task.Tasks, enough func([]task.Task) bool) []task.Task {
+	t.Helper()
+	for range 400 {
+		if held := tasks.List(); enough(held) {
+			return held
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	t.Fatalf("the list holds %+v", tasks.List())
+	return nil
+}
+
+// uncompared is two placements the comparison between them never got an answer
+// out of: the model the vault would be indexed by is not on this machine, and
+// questions are placed with a service. It answers with the list.
+func uncompared(t *testing.T) *task.Tasks {
+	t.Helper()
+	t.Setenv(embed.KeyEnvVar, "sk-test")
+	cfg := embed.Defaults()
+	cfg.Indexing = missing(t)
+	// A service placement is reached by the model it asks for, and names no
+	// repository at all.
+	cfg.Query = embed.Placement{Use: embed.UseService}
+	cfg.Query.Service.Name = "reached-another-way"
+	cfg.Query.Service.BaseURL = nowhere
+
+	tasks := task.New()
+	_, _, close, why := container.Config{Embedding: cfg}.Embedders(t.Context(), tasks)
+	if why != nil {
+		t.Fatal(why)
+	}
+	if close != nil {
+		t.Cleanup(func() { _ = close() })
+	}
+	return tasks
+}
+
+// failing is the list once the number of things that stopped badly is reached.
+func failing(t *testing.T, tasks *task.Tasks, want int) []task.Task {
+	t.Helper()
+	return waited(t, tasks, func(held []task.Task) bool {
+		got := 0
+		for _, at := range held {
+			if at.Failed != "" {
+				got++
+			}
+		}
+		return got == want
+	})
+}
+
+// A comparison that could not be made is not agreement: the placement that
+// answers questions is let go of, and it is said.
+func TestTwoPlacementsThatCouldNotBeComparedAreNotOneModel(t *testing.T) {
+	held := failing(t, uncompared(t), 2)
+	if len(held) != 2 {
+		t.Fatalf("the list holds %d pieces of work: %+v", len(held), held)
+	}
+}
+
+// A placement is called by the name it is reached by, whichever kind it is.
+func TestAPlacementIsInTheListUnderItsOwnName(t *testing.T) {
+	tasks := uncompared(t)
+	held := failing(t, tasks, 2)
+
+	for _, at := range held {
+		if at.About == "reached-another-way" {
+			return
+		}
+	}
+	t.Errorf("the placement that answers questions is not in the list: %+v", held)
+}
+
+// Two placements naming one repository are two lines, and how far one has got
+// is not written over by the other.
+func TestTwoPlacementsOfOneRepositoryAreTwoLines(t *testing.T) {
+	cfg := embed.Defaults()
+	cfg.Indexing = missing(t)
+	cfg.Query = missing(t)
+	cfg.Query.Use = embed.UseLocal
+
+	tasks := task.New()
+	_, _, close, why := container.Config{Embedding: cfg}.Embedders(t.Context(), tasks)
+	if why != nil {
+		t.Fatal(why)
+	}
+	if close != nil {
+		defer func() { _ = close() }()
+	}
+
+	held := waited(t, tasks, func(held []task.Task) bool {
+		failed := 0
+		for _, at := range held {
+			if at.Failed != "" {
+				failed++
+			}
+		}
+		return failed == 2
+	})
+	if len(held) != 2 {
+		t.Fatalf("two placements are %d lines: %+v", len(held), held)
+	}
+	if held[0].ID == held[1].ID {
+		t.Errorf("two placements share the line %q", held[0].ID)
 	}
 }
 

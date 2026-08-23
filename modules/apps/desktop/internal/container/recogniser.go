@@ -61,6 +61,10 @@ type Recognising struct {
 	open  opening
 	ready func() bool
 
+	// queue is where pages are left for a proofreader to answer about later,
+	// built when there are pages to leave.
+	queue func() (port.ProofreadQueue, error)
+
 	// Cut makes a source's chunks from what has been read of it. It is called
 	// as pages are written down, so a page is searchable when it is read.
 	Cut func(ctx context.Context, v domain.Vault, path string) error
@@ -88,6 +92,7 @@ func (c Config) Recognising(sources port.SourceRepository, tasks *task.Tasks) *R
 			return models, models.Close, nil
 		},
 		ready: c.RecogniserReady,
+		queue: c.ProofreadQueue,
 	}
 }
 
@@ -130,6 +135,15 @@ func (r *Recognising) Start(ctx context.Context, v domain.Vault, path string) bo
 	r.say(task.Task{ID: id, Doing: "Reading a scan", About: path})
 
 	go func() {
+		// The task is finished before the run is, so that a reading begun the
+		// moment this one ends has the list to itself. It is finished however
+		// this reading ends.
+		defer func() {
+			r.mu.Lock()
+			r.running = false
+			r.mu.Unlock()
+		}()
+
 		err := r.read(ctx, v, id, path)
 		if err == nil {
 			r.correct(ctx, v, path)
@@ -145,12 +159,6 @@ func (r *Recognising) Start(ctx context.Context, v domain.Vault, path string) bo
 			// begins.
 			r.say(task.Task{ID: id, Doing: "Reading a scan", About: path, Failed: err.Error()})
 		}
-
-		// The task is finished before the run is, so that a reading begun the
-		// moment this one ends has the list to itself.
-		r.mu.Lock()
-		r.running = false
-		r.mu.Unlock()
 	}()
 	return true
 }
@@ -216,8 +224,9 @@ func (r *Recognising) correct(ctx context.Context, v domain.Vault, path string) 
 
 	// A proofreader with a queue is left the pages and answers later, and the
 	// batch is collected by whatever comes back for it.
-	queue, err := r.cfg.ProofreadQueue()
+	queue, err := r.queue()
 	if err != nil {
+		r.say(task.Task{ID: correcting(path), Doing: "Proofreading a reading", About: path, Failed: err.Error()})
 		return
 	}
 
@@ -278,7 +287,7 @@ func (r *Recognising) Collecting(
 	every time.Duration,
 	vaults ...domain.Vault,
 ) {
-	queue, err := r.cfg.ProofreadQueue()
+	queue, err := r.queue()
 	if err != nil || queue == nil {
 		return
 	}
