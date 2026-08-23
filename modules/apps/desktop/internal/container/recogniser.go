@@ -14,6 +14,21 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/source"
 )
 
+// RecogniserReady says whether a document could be read now without waiting for
+// anything to arrive. Which models those are is settled here, with every other
+// choice of adapter.
+func (c Config) RecogniserReady() bool { return recognition.Ready(c.Recognition) }
+
+// PrepareRecogniser makes the runtime this process reads a page through, and is
+// called before a window is made. One made after a window reads every page it is
+// given as nothing.
+//
+// A machine holding no runtime says so and is left as it is: reading is what
+// fetches one.
+func (c Config) PrepareRecogniser(ctx context.Context) error {
+	return recognition.Prepare(ctx, c.Recognition)
+}
+
 // Recogniser is what reads a scanned page on this machine, opened now.
 //
 // Three values, as with the embedder: the recogniser, what gives it back, and
@@ -22,11 +37,6 @@ import (
 //
 // It waits for whatever is missing, so it is for a terminal, where waiting is
 // what a person came for. A window asks Recognising instead.
-// RecogniserReady says whether a document could be read now without waiting for
-// anything to arrive. Which models those are is settled here, with every other
-// choice of adapter.
-func (c Config) RecogniserReady() bool { return recognition.Ready(c.Recognition) }
-
 func (c Config) Recogniser(ctx context.Context) (recogniser port.Recogniser, close func() error, why error) {
 	models, err := recognition.Open(ctx, c.Recognition)
 	if err != nil {
@@ -34,6 +44,10 @@ func (c Config) Recogniser(ctx context.Context) (recogniser port.Recogniser, clo
 	}
 	return models, models.Close, nil
 }
+
+// errLateRuntime is a document left unread because what would read it was
+// fetched after the window was made.
+var errLateRuntime = errors.New("what reads a scan arrived just now; open numen again to read it")
 
 // reading is what one reading is called, wherever it is shown. It stands for
 // the whole of that reading, so what it reports again replaces itself, and one
@@ -60,6 +74,11 @@ type Recognising struct {
 	// those are is settled where every other adapter is chosen.
 	open  opening
 	ready func() bool
+
+	// standing says whether the runtime a page is read through was made before
+	// the window. A build that draws no window has none to be made before it and
+	// leaves this unset.
+	standing func() bool
 
 	// queue is where pages are left for a proofreader to answer about later,
 	// built when there are pages to leave.
@@ -91,8 +110,9 @@ func (c Config) Recognising(sources port.SourceRepository, tasks *task.Tasks) *R
 			}
 			return models, models.Close, nil
 		},
-		ready: c.RecogniserReady,
-		queue: c.ProofreadQueue,
+		ready:    c.RecogniserReady,
+		standing: recognition.Prepared,
+		queue:    c.ProofreadQueue,
 	}
 }
 
@@ -178,6 +198,13 @@ func (r *Recognising) read(ctx context.Context, v domain.Vault, id, path string)
 		return fmt.Errorf("nothing to read with: %w", err)
 	}
 	defer close()
+
+	// Every page of this process is read through the runtime it made before its
+	// window, and a runtime this process fetched afterwards is not that one. What
+	// was missing is here now, and the reading is the next opening's to do.
+	if r.standing != nil && !r.standing() {
+		return errLateRuntime
+	}
 
 	r.say(task.Task{ID: id, Doing: "Reading a scan", About: path})
 	res, err := source.Recognise{

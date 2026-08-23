@@ -58,6 +58,13 @@ func run(cfg container.Config, agents agentOptions, zoom float64) error {
 	cfg = cfg.Indexing(chosen.Indexing)
 	cfg.Agent = chosen.Agent
 
+	// Before the window: every page this process reads is read through the
+	// runtime made here, and one made after the window reads a page as nothing.
+	// A machine holding no runtime yet is told so by the first reading.
+	if err := cfg.PrepareRecogniser(ctx); err != nil {
+		fmt.Fprintln(os.Stderr, "numen: nothing to read a scan with:", err)
+	}
+
 	opened, err := webui.Open(ctx, cfg, os.Stdout)
 	if err != nil {
 		return err

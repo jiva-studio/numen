@@ -106,9 +106,8 @@ func library(ctx context.Context, cfg Config) (*ort.Engine, string, error) {
 
 // held is the runtime this process reads with, and where it came from.
 //
-// One for the life of the process: every tensor is made through the memory it
-// holds, whichever reading made it. The lock is over the opening, which two
-// readings may reach at once.
+// One for the life of the process, made before the window. The lock is over the
+// opening, which two readings may reach at once.
 var held struct {
 	sync.Mutex
 	engine *ort.Engine

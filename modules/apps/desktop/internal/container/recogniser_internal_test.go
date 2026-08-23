@@ -217,6 +217,25 @@ func TestAReadingThatEndsAbruptlyDoesNotHoldTheNextOne(t *testing.T) {
 	w.settled(t)
 }
 
+// Every page is read through the runtime the process made before its window. A
+// reading through one made afterwards writes down a blank page for every page of
+// the document, so what was missing is fetched and nothing is read.
+func TestNothingIsReadThroughARuntimeMadeAfterTheWindow(t *testing.T) {
+	w := recognising(t, nil)
+	w.Recognising.standing = func() bool { return false }
+
+	err := w.read(t.Context(), somewhere, "reading-1", "a.pdf")
+	if !errors.Is(err, errLateRuntime) {
+		t.Fatalf("the document was read through a runtime made after the window: %v", err)
+	}
+	if w.opened() != 1 {
+		t.Errorf("what was missing was fetched %d times", w.opened())
+	}
+	if !w.held.closed {
+		t.Error("what was opened was not given back")
+	}
+}
+
 // A queue that failed to build is said, as the proofreader that failed to build
 // is said. A person who configured a queue and is given none is owed the reason.
 func TestAProofreadQueueThatFailedToBuildIsSaid(t *testing.T) {

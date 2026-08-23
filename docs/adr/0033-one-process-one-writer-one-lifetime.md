@@ -72,6 +72,19 @@ A quit that does not arrive through the window is answered on the thread the pag
 served on, so the settling happens off that thread and the quit is asked for again
 once it is over. It happens once, whichever way the window is asked to go.
 
+### The runtime a page is read through is made before the window
+
+Every model this process runs is run through one ONNX Runtime environment, made
+once and kept for the life of the process. **It is made before the window is**,
+and a reading is refused where it was not: a runtime made after a window reads
+every page it is given as nothing, and a second one made later is the same
+runtime.
+
+Making it costs the shared library and nothing else — no model is read, so a
+machine holding every model and a machine holding none open alike. A machine
+holding no runtime at all is left as it is, and reading is what fetches one. The
+reading that fetched it says so, and the document is the next opening's to read.
+
 ### An agent does not outlive the window
 
 An agent runs in a process group of its own and is ended with it. A task in flight
@@ -100,6 +113,8 @@ stops where it is, and what it had already written to the vault stays written.
   from, and ADR-0032 puts the file back there.
 - **A page that does not answer inside the bound loses what only it held.** The
   bound is what the window waits, and there is nothing to wait for after it.
+- **A machine that fetched its runtime during a reading reads that document on
+  the next opening**, and is told so where the reading was asked for.
 - **An answer in flight is lost when the window goes.** A note an agent was part of
   the way through writing is whatever its last complete write left.
 - **Three bounds are three constants**, and nothing measures what any of them is a
