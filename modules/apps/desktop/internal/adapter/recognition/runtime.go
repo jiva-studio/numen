@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 
 	ort "github.com/getcharzp/onnxruntime_purego"
 )
@@ -63,18 +64,24 @@ func runtimeAddress() (string, error) {
 // holds is tried, and only a machine holding none fetches one — a library that
 // is here is a hundred and thirty megabytes nobody waits for.
 func library(ctx context.Context, cfg Config) (*ort.Engine, string, error) {
+	held.Lock()
+	defer held.Unlock()
+	if held.engine != nil {
+		return held.engine, held.at, nil
+	}
+
 	if cfg.Runtime != "" {
 		engine, err := ort.NewEngine(cfg.Runtime)
 		if err != nil {
 			return nil, "", fmt.Errorf("the onnx runtime %s: %w", cfg.Runtime, err)
 		}
-		return engine, cfg.Runtime, nil
+		return keep(engine, cfg.Runtime)
 	}
 
 	support()
 	engine, at, refused := opened(present(cfg))
 	if engine != nil {
-		return engine, at, nil
+		return keep(engine, at)
 	}
 
 	address, err := runtimeAddress()
@@ -94,6 +101,23 @@ func library(ctx context.Context, cfg Config) (*ort.Engine, string, error) {
 		return nil, "", fmt.Errorf("no onnx runtime this machine opens — name one in recognition.runtime:\n  %s",
 			strings.Join(refused, "\n  "))
 	}
+	return keep(engine, at)
+}
+
+// held is the runtime this process reads with, and where it came from.
+//
+// One for the life of the process: every tensor is made through the memory it
+// holds, whichever reading made it. The lock is over the opening, which two
+// readings may reach at once.
+var held struct {
+	sync.Mutex
+	engine *ort.Engine
+	at     string
+}
+
+// keep is the runtime this process has settled on. The lock is the caller's.
+func keep(engine *ort.Engine, at string) (*ort.Engine, string, error) {
+	held.engine, held.at = engine, at
 	return engine, at, nil
 }
 

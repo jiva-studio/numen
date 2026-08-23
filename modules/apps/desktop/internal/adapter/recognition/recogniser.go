@@ -19,7 +19,6 @@ import (
 
 	read "github.com/getcharzp/go-ocr"
 	"github.com/getcharzp/go-ocr/paddle"
-	ort "github.com/getcharzp/onnxruntime_purego"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/ocr"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
@@ -27,9 +26,8 @@ import (
 
 // A Recogniser is the models this machine reads a page with.
 type Recogniser struct {
-	engine *ort.Engine
-	shape  *Layout
-	lines  *paddle.Engine
+	shape *Layout
+	lines *paddle.Engine
 
 	// layout is the parts of a page in the order they are read, and read is
 	// what one of those parts says. A test puts its own in.
@@ -92,7 +90,6 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 	}
 
 	return &Recogniser{
-		engine: paths.engine,
 		shape:  layout,
 		lines:  lines,
 		layout: layout.Regions,
@@ -111,11 +108,11 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 
 func (r *Recogniser) Recognition() port.Recognition { return r.named }
 
+// Close lets go of the models this reading loaded. The runtime they ran on is
+// the process's and stays.
 func (r *Recogniser) Close() error {
 	r.lines.Destroy()
-	err := r.shape.Close()
-	r.engine.Destroy()
-	return err
+	return r.shape.Close()
 }
 
 // Read is one page: its parts, in the order the page is read, and what each of

@@ -272,12 +272,8 @@ type paths struct {
 	from      string
 }
 
-// close lets go of what locating opened.
-func (p paths) close() {
-	if p.engine != nil {
-		p.engine.Destroy()
-	}
-}
+// close lets go of what locating opened. The runtime it found is the process's.
+func (p paths) close() {}
 
 // locate finds the runtime and the models.
 //
