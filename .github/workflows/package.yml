@@ -48,10 +48,34 @@ jobs:
           VERSION: ${{ inputs.version }}
         run: tar czf "$RUNNER_TEMP/numen_${VERSION}_linux_amd64.tar.gz" -C "$RUNNER_TEMP" numen
 
+      # One description, both package managers. What goes into a package is
+      # gathered beside it first, because the paths in it are read from
+      # wherever nfpm is run.
+      - name: Packages
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.47.0
+
+          staged="$RUNNER_TEMP/staged"
+          mkdir -p "$staged"
+          cp "$RUNNER_TEMP/numen" "$staged/numen"
+          cp modules/apps/desktop/build/linux/numen.desktop "$staged/"
+          cp modules/apps/desktop/build/linux/nfpm.yaml "$staged/"
+
+          cd "$staged"
+          for kind in deb rpm; do
+            nfpm package -f nfpm.yaml -p "$kind" -t "$RUNNER_TEMP"
+          done
+          ls -la "$RUNNER_TEMP"/*.deb "$RUNNER_TEMP"/*.rpm
+
       - uses: actions/upload-artifact@v4
         with:
           name: numen-linux-amd64
-          path: ${{ runner.temp }}/numen_*_linux_amd64.tar.gz
+          path: |
+            ${{ runner.temp }}/numen_*_linux_amd64.tar.gz
+            ${{ runner.temp }}/*.deb
+            ${{ runner.temp }}/*.rpm
           if-no-files-found: error
 
   # Windows reaches the system's browser through a component written in Go, so
@@ -84,10 +108,36 @@ jobs:
           VERSION: ${{ inputs.version }}
         run: cd "$RUNNER_TEMP" && zip -q "numen_${VERSION}_windows_amd64.zip" numen.exe
 
+      # The installer carries Microsoft's own bootstrapper and runs it on a
+      # machine whose Windows does not already have the engine the window draws
+      # through.
+      - name: Installer
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          sudo apt-get update && sudo apt-get install -y nsis
+          curl -sfSL "https://go.microsoft.com/fwlink/p/?LinkId=2124703" \
+            -o "$RUNNER_TEMP/webview2.exe"
+
+          numeric=${VERSION%%-*}
+          IFS=. read -r major minor patch _ <<< "$numeric"
+          numeric="${major:-0}.${minor:-0}.${patch:-0}.0"
+
+          makensis -V2 \
+            "-DVERSION=$VERSION" \
+            "-DNUMERIC_VERSION=$numeric" \
+            "-DBINARY=$RUNNER_TEMP/numen.exe" \
+            "-DWEBVIEW2=$RUNNER_TEMP/webview2.exe" \
+            "-DOUTFILE=$RUNNER_TEMP/Numen-${VERSION}.exe" \
+            modules/apps/desktop/build/windows/installer.nsi
+          ls -la "$RUNNER_TEMP"/Numen-*.exe
+
       - uses: actions/upload-artifact@v4
         with:
           name: numen-windows-amd64
-          path: ${{ runner.temp }}/numen_*_windows_amd64.zip
+          path: |
+            ${{ runner.temp }}/numen_*_windows_amd64.zip
+            ${{ runner.temp }}/Numen-*.exe
           if-no-files-found: error
 
   macos:
