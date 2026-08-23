@@ -94,6 +94,22 @@ func TestAQuestionIsEmbeddedWhereTheSettingsSay(t *testing.T) {
 	}
 }
 
+// A word for a placement that nobody implements is a reason, not a vault
+// quietly searched by its words.
+func TestAPlacementNobodyImplementsIsARefusal(t *testing.T) {
+	cfg := serving("bge-m3")
+	cfg.Query.Use = "grcp"
+
+	if _, _, _, why := (container.Config{Embedding: cfg}).Embedders(nil); why == nil {
+		t.Fatal("want a reason")
+	}
+	cfg = serving("bge-m3")
+	cfg.Indexing.Use = "sevrice"
+	if _, _, _, why := (container.Config{Embedding: cfg}).Embedders(nil); why == nil {
+		t.Fatal("want a reason")
+	}
+}
+
 // A placement that cannot be built is the whole thing not being built, and
 // what was opened before it is let go of.
 func TestAQuestionWithNowhereToBeEmbeddedIsAReason(t *testing.T) {

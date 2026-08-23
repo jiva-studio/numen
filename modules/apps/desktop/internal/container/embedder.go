@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/embed/onnx"
@@ -18,14 +19,13 @@ import (
 // for questions is what puts a vault indexed over a network within reach of a
 // machine that has none.
 //
-// A model on this machine is fetched and compiled behind this, so a person who
-// has just installed the application has a window rather than a wait. Until it
-// is here the words answer alone, and what it is — the model, its width — is
-// known from the settings all the same.
+// A model on this machine is fetched and compiled behind this, and the window
+// is drawn while it arrives. Until it is here the words answer alone, and the
+// model and its width are known from the settings.
 //
-// An embedder is optional: an installation with none answers with nothing, and
-// a placement that cannot be built — no key, no base URL — is that same
-// absence, carrying the reason with it.
+// An embedder is optional: an installation naming no placement answers with
+// nothing. A placement that cannot be built — no key, no base URL — is a
+// reason, and nothing is built at all.
 func (c Config) Embedders(tasks *task.Tasks) (indexing, asking port.Embedder, close func() error, why error) {
 	first, why := c.placed(c.Embedding.Indexing, tasks)
 	if why != nil || first == nil {
@@ -44,8 +44,6 @@ func (c Config) Embedders(tasks *task.Tasks) (indexing, asking port.Embedder, cl
 		return first.Filling(), nil, first.Close, nil
 	}
 	// Two placements are asked whether they are one model, once both are here.
-	// Nothing in a settings file shows it, and a question embedded in another
-	// space finds nothing however well it is written.
 	go func() {
 		held := context.Background()
 		if first.Wait(held) != nil || second.Wait(held) != nil {
@@ -112,17 +110,22 @@ func (c Config) placed(where embed.Placement, tasks *task.Tasks) (*Embedding, er
 			ready(tasks, where.Local.Name)
 		}()
 		return held, nil
+
+	case "":
+		return nil, nil
 	}
-	return nil, nil
+	// A word neither of them is a word nobody implements. Left to mean nothing,
+	// it is a vault searched by its words and no reason given.
+	return nil, fmt.Errorf("vectors are made %q, and they are made %q or %q",
+		where.Use, embed.UseLocal, embed.UseService)
 }
 
 // What the arrival of a model is called in the list of what is being done. Two
 // placements are two models, so the name is part of what it is called.
 func gettingReady(name string) string { return "getting ready: " + name }
 
-// preparing tells the list how far the model has got. Fetching it and compiling
-// it are one wait to whoever is watching, and the count is the bytes of it that
-// are here.
+// preparing tells the list how far the model has got, counted in the bytes of
+// it that are here. Fetching it and compiling it are one wait.
 func preparing(tasks *task.Tasks, name string) onnx.Fetching {
 	if tasks == nil {
 		return nil
@@ -141,9 +144,7 @@ func ready(tasks *task.Tasks, name string) {
 	}
 }
 
-// failed leaves the model in the list under what stopped it. A vault that will
-// never be searched by meaning is not a vault that is quietly searched by
-// words.
+// failed leaves the model in the list under what stopped it.
 func failed(tasks *task.Tasks, name string, why error) {
 	if tasks != nil {
 		tasks.Set(task.Task{

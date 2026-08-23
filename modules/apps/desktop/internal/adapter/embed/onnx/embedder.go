@@ -81,6 +81,11 @@ func Open(is embed.Identity, cfg embed.LocalModel, tell Fetching) (*Embedder, er
 	if is.Dimensions <= 0 {
 		return nil, fmt.Errorf("%s: dimensions must be known before a vector is stored", cfg.Name)
 	}
+	// Where a text is cut off is part of what a vector is, and this machine is
+	// what does the cutting. A model run here says where.
+	if is.MaxTokens <= 0 {
+		return nil, fmt.Errorf("%s: where a text is cut off must be known before a vector is stored", cfg.Name)
+	}
 	if is.Pooling != "" && is.Pooling != embed.PoolMean && is.Pooling != embed.PoolHead {
 		return nil, fmt.Errorf("%s is pooled %q, and a model is pooled %q or %q",
 			is.Name, is.Pooling, embed.PoolMean, embed.PoolHead)
@@ -102,7 +107,7 @@ func Open(is embed.Identity, cfg embed.LocalModel, tell Fetching) (*Embedder, er
 		name:       is.Name,
 		from:       paths.model,
 		dimensions: is.Dimensions,
-		maxTokens:  max(is.MaxTokens, tokenStep),
+		maxTokens:  is.MaxTokens,
 		pooling:    is.Pooling,
 		batchTexts: max(cfg.BatchTexts, 1),
 		tokenizer:  tokenizer,
@@ -422,9 +427,8 @@ func published(repo *hub.Repo) ([]string, map[string]int64, error) {
 // arriving reports how much of the model is on this machine while it comes
 // down, and hands back what stops the reporting.
 //
-// What is counted is the bytes under the repository's own place in the cache.
-// Nothing here reaches inside the download, so this is what has arrived rather
-// than what has been asked for.
+// What is counted is the bytes under the repository's own place in the cache,
+// which is what has arrived.
 func arriving(dir string, total int64, tell Fetching) func() {
 	if tell == nil || total <= 0 {
 		return func() {}

@@ -59,10 +59,20 @@ func TestDimensionsMustBeKnown(t *testing.T) {
 	}
 }
 
+// A model reports the identity the settings gave it, whole: the recipe a vector
+// is stored under is made from it in one process and read in another.
+func TestWhereATextIsCutOffMustBeSaid(t *testing.T) {
+	cfg := embed.Defaults()
+	cfg.Model.MaxTokens = 0
+	cfg.Indexing.Local.Dir = t.TempDir()
+	_, err := onnx.Open(cfg.Model, cfg.Indexing.Local, nil)
+	if err == nil || !strings.Contains(err.Error(), "cut off") {
+		t.Fatalf("got %v", err)
+	}
+}
+
 func TestAPoolingNobodyImplementsIsRefused(t *testing.T) {
-	// Taken as the pooling it is not, a model answers with vectors near
-	// nothing, and every search over them comes back empty for no stated
-	// reason.
+	// A model is pooled the way it was trained to be, or it is refused here.
 	cfg := embed.Defaults()
 	cfg.Model.Pooling = "cls"
 	cfg.Indexing.Local.Dir = t.TempDir()
@@ -128,7 +138,7 @@ func TestTheSameTextGivesTheSameVector(t *testing.T) {
 	}
 }
 
-func TestALongTextIsTruncatedRatherThanRefused(t *testing.T) {
+func TestALongTextIsTruncatedAndEmbedded(t *testing.T) {
 	e := open(t, modelDir(t))
 	long := ""
 	for range 4000 {
@@ -139,8 +149,7 @@ func TestALongTextIsTruncatedRatherThanRefused(t *testing.T) {
 	}
 }
 
-// Throughput is the number that decides whether embedding on this machine can
-// be the default, and it is measured on the machine that asks.
+// The rate at which this machine embeds, measured on the machine that asks.
 func TestThroughput(t *testing.T) {
 	if testing.Short() {
 		t.Skip("measures for a while")
