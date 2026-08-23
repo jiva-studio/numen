@@ -34,7 +34,8 @@ type SearchableResult struct {
 //
 // The notes come first: a vault is useful the moment its notes answer, and a
 // library takes minutes to cut. A library that could not be read is said and
-// does not stop the vectors — the notes are already cut and owe theirs.
+// does not stop the vectors — the notes are already cut and owe theirs, and
+// both failures come back together.
 func (u Searchable) Execute(ctx context.Context, v domain.Vault) (SearchableResult, error) {
 	var out SearchableResult
 
@@ -46,16 +47,15 @@ func (u Searchable) Execute(ctx context.Context, v domain.Vault) (SearchableResu
 
 	books, read := u.ReadBooks(ctx, v)
 	out.Books = books
-	if read != nil && errors.Is(read, context.Canceled) {
+	// A context that has ended ends the whole pass, and what stopped the books
+	// is what stopped it.
+	if read != nil && ctx.Err() != nil {
 		return out, read
 	}
 
 	vectors, made := u.MakeVectors(ctx, v)
 	out.Vectors = vectors
-	if made != nil {
-		return out, made
-	}
-	return out, read
+	return out, errors.Join(read, made)
 }
 
 // ReadBooks takes the text out of every book the vault holds and cuts it.

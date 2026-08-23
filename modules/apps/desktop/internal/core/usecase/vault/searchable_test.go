@@ -92,6 +92,65 @@ func TestNotesThatCannotBeReadStopTheRest(t *testing.T) {
 	}
 }
 
+// Two passes that failed are two things wrong with the vault, and the caller is
+// told both.
+func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
+	v, readers := vaultAt(t, testsupport.VaultDir(t))
+	db := openIndex(t)
+
+	if err := db.FitVectors(t.Context(), width); err != nil {
+		t.Fatal(err)
+	}
+
+	making := searchable(readers, db)
+	making.Books.Readers = refusing{}
+	making.Vectors.Embedder = unwilling{}
+
+	_, err := making.Execute(t.Context(), v)
+	if err == nil {
+		t.Fatal("a vault whose books and vectors both failed came back clean")
+	}
+	if !strings.Contains(err.Error(), "not here") {
+		t.Errorf("what stopped the books is not in %v", err)
+	}
+	if !strings.Contains(err.Error(), "not answering") {
+		t.Errorf("what stopped the vectors is not in %v", err)
+	}
+}
+
+// A run given a time limit ends on a different error from one that was
+// cancelled, and both are the run being over: the pass that met the limit is
+// what the caller is told, and nothing is asked of the context afterwards.
+func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
+	v, readers := vaultAt(t, testsupport.VaultDir(t))
+	db := openIndex(t)
+
+	if err := db.FitVectors(t.Context(), width); err != nil {
+		t.Fatal(err)
+	}
+
+	over := limit(t.Context())
+	making := searchable(readers, db)
+	making.Books.Readers = timedOut{limit: over}
+	counted := &counting{VaultReaders: readers}
+	making.Vectors.Readers = counted
+	making.Vectors.Embedder = unwilling{}
+
+	_, err := making.Execute(over, v)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("got %v", err)
+	}
+	if !strings.Contains(err.Error(), "books") {
+		t.Errorf("the pass that met the limit is not named in %v", err)
+	}
+	if strings.Contains(err.Error(), "embedding") {
+		t.Errorf("the vectors were tried on a context that had ended: %v", err)
+	}
+	if counted.opened != 0 {
+		t.Error("the vectors were tried on a context that had ended")
+	}
+}
+
 // width is what the vector index is built at.
 const width = 1024
 
@@ -109,6 +168,52 @@ func (pointing) Embed(_ context.Context, texts []string) ([][]float32, error) {
 		out[i][0] = 1
 	}
 	return out, nil
+}
+
+// unwilling is a model that answers nothing, which is what a service that is
+// not there looks like from here.
+type unwilling struct{}
+
+func (unwilling) Model() port.EmbeddingModel {
+	return port.EmbeddingModel{Name: "test", Dimensions: width, MaxTokens: 256, Pooling: "mean"}
+}
+
+func (unwilling) Embed(context.Context, []string) ([][]float32, error) {
+	return nil, errors.New("the model is not answering")
+}
+
+// limited is a run under a time limit, reaching it where the test says. What it
+// ends with is the error a deadline gives, which is not the error a cancelled
+// run gives.
+type limited struct {
+	context.Context
+	over chan struct{}
+}
+
+func limit(ctx context.Context) *limited {
+	return &limited{Context: ctx, over: make(chan struct{})}
+}
+
+// reached is the limit being met.
+func (l *limited) reached() { close(l.over) }
+
+func (l *limited) Done() <-chan struct{} { return l.over }
+
+func (l *limited) Err() error {
+	select {
+	case <-l.over:
+		return context.DeadlineExceeded
+	default:
+		return l.Context.Err()
+	}
+}
+
+// timedOut is a set of readers that reach the run's limit and stop there.
+type timedOut struct{ limit *limited }
+
+func (t timedOut) Open(domain.Vault) (port.VaultReader, error) {
+	t.limit.reached()
+	return nil, t.limit.Err()
 }
 
 // refusing opens no vault.

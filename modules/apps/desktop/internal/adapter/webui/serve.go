@@ -101,6 +101,9 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 	embedder, asking, closeEmbedder, why := cfg.Embedders(ctx, tasks)
 	if why != nil {
 		fmt.Fprintf(out, "not embedding %s: %v\n", vaults[0].Name, why)
+		// A placement that made no model is a vault with no vectors for as long
+		// as the window is open. It stands in the list under what stopped it.
+		tasks.Set(task.Task{ID: makingVectors, Doing: "Indexing", Failed: why.Error()})
 	}
 	if closeEmbedder == nil {
 		closeEmbedder = func() error { return nil }
@@ -169,7 +172,7 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 	scan := usecase.Scan{
 		Readers:      cfg.VaultReaders(),
 		Vaults:       db.Vaults(),
-		Notes:        db.Notes(),
+		Notes:        db.NotesCutAt(cfg.Cutting()),
 		Known:        db.Queries(),
 		Maintenance:  db.Maintenance(),
 		RebuildIndex: cfg.RebuildIndex,
@@ -179,7 +182,7 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 	// Following the vault is a use case; this adapter only says who hears about
 	// it. Whatever a change turns out to mean is decided in one place, so a
 	// second way of showing a vault does not decide it again.
-	held := &holding{NoteRepository: db.Notes()}
+	held := &holding{NoteRepository: db.NotesCutAt(cfg.Cutting())}
 	refresh := usecase.Refresh{Readers: cfg.VaultReaders(), Notes: held}
 
 	// A note the window makes is level in the index before the answer comes
@@ -507,9 +510,9 @@ func begin(
 				// being read.
 				if held := owed.take(); len(held) > 0 {
 					for path, v := range held {
-						cutSource(ctx, cfg, db, readers, embedder, v, path, out)
+						cutSource(ctx, cfg, db, api, embedder, v, path)
 					}
-					embedSources(ctx, cfg, db, api, readers, embedder, out)
+					embedSources(ctx, cfg, db, api, readers, embedder)
 				}
 			case <-wake.notes:
 				// Every write puts the pass off again: what was typed is
@@ -517,7 +520,7 @@ func begin(
 				quiet = time.After(wake.still)
 			case <-quiet:
 				quiet = nil
-				embedSources(ctx, cfg, db, api, readers, embedder, out)
+				embedSources(ctx, cfg, db, api, readers, embedder)
 			}
 		}
 	}()
@@ -595,7 +598,7 @@ func readSources(
 ) {
 	making, err := cfg.Searchable(ctx, db, embedder, api.Vault)
 	if err != nil {
-		fmt.Fprintf(out, "reading the sources of %s: %v\n", api.Vault.Name, err)
+		api.say(task.Task{ID: readingBooks, Doing: "Reading books", Failed: err.Error()})
 		return
 	}
 	making.Books.OnProgress = func(res source.ExtractResult) {
@@ -609,16 +612,23 @@ func readSources(
 	}
 
 	api.say(task.Task{ID: readingBooks, Doing: "Reading books"})
-	if res, err := making.ReadBooks(ctx, api.Vault); err != nil {
-		if !errors.Is(err, context.Canceled) {
-			fmt.Fprintln(out, err)
+	res, read := making.ReadBooks(ctx, api.Vault)
+	switch {
+	case read == nil:
+		if res.Extracted > 0 {
+			fmt.Fprintf(out, "%s: %d books, %d chunks\n", api.Vault.Name, res.Extracted, res.Chunks)
 		}
-	} else if res.Extracted > 0 {
-		fmt.Fprintf(out, "%s: %d books, %d chunks\n", api.Vault.Name, res.Extracted, res.Chunks)
+		api.finished(readingBooks)
+	case errors.Is(read, context.Canceled):
+		// Asked to stop. What it cut is correct as far as it got.
+		api.finished(readingBooks)
+	default:
+		// A failed pass stays in the list until whoever is shown it takes it
+		// out.
+		api.say(task.Task{ID: readingBooks, Doing: "Reading books", Failed: read.Error()})
 	}
-	api.finished(readingBooks)
 
-	embedSources(ctx, cfg, db, api, readers, embedder, out)
+	embedSources(ctx, cfg, db, api, readers, embedder)
 }
 
 // cutSource cuts one source again from whatever its text now says.
@@ -630,19 +640,27 @@ func cutSource(
 	ctx context.Context,
 	cfg container.Config,
 	db *container.Index,
-	readers port.VaultReaders,
+	api *API,
 	embedder port.Embedder,
 	v domain.Vault,
 	path string,
-	out io.Writer,
 ) {
+	cut := func(err error) {
+		api.say(task.Task{ID: readingBooks, Doing: "Reading books", About: path, Failed: err.Error()})
+	}
+
 	making, err := cfg.Searchable(ctx, db, embedder, v)
 	if err != nil {
-		fmt.Fprintf(out, "cutting %s: %v\n", path, err)
+		cut(err)
 		return
 	}
-	if err := making.CutOne(ctx, v, path); err != nil && !errors.Is(err, context.Canceled) {
-		fmt.Fprintln(out, err)
+	switch err := making.CutOne(ctx, v, path); {
+	case err == nil:
+		// The pages that were read are cut, and a cut that failed before this
+		// one is over.
+		api.finished(readingBooks)
+	case !errors.Is(err, context.Canceled):
+		cut(err)
 	}
 }
 
@@ -658,7 +676,6 @@ func embedSources(
 	api *API,
 	readers port.VaultReaders,
 	embedder port.Embedder,
-	out io.Writer,
 ) {
 	if embedder == nil {
 		return
@@ -674,9 +691,13 @@ func embedSources(
 		}
 	}
 
+	indexing := func(err error) {
+		api.say(task.Task{ID: makingVectors, Doing: "Indexing", Failed: err.Error()})
+	}
+
 	making, err := cfg.Searchable(ctx, db, embedder, api.Vault)
 	if err != nil {
-		fmt.Fprintf(out, "embedding %s: %v\n", api.Vault.Name, err)
+		indexing(err)
 		return
 	}
 	making.Vectors.OnProgress = func(res source.EmbedResult) {
@@ -691,10 +712,14 @@ func embedSources(
 	// This pass says what it owes and what it has made. The source a vector is
 	// made from is named by the reading of that source.
 	api.say(task.Task{ID: makingVectors, Doing: "Indexing", Total: owing})
-	if _, err := making.MakeVectors(ctx, api.Vault); err != nil && !errors.Is(err, context.Canceled) {
-		fmt.Fprintln(out, err)
+	switch _, err := making.MakeVectors(ctx, api.Vault); {
+	case err == nil, errors.Is(err, context.Canceled):
+		api.finished(makingVectors)
+	default:
+		// A vault short of the vectors it owes is searched by its words alone,
+		// and the reason for it stands in the list.
+		indexing(err)
 	}
-	api.finished(makingVectors)
 }
 
 // Showing is the vault the window has open.
