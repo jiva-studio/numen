@@ -1,6 +1,8 @@
 package container
 
 import (
+	"context"
+
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/source"
@@ -26,7 +28,15 @@ func (c Config) Cutting() window.Sizes {
 // read, the books read, and the vectors made. Every entry point takes it from
 // here, so a vault made searchable in a terminal and a vault made searchable in
 // a window are the same vault.
-func (c Config) Searchable(db *Index, embedder port.Embedder, v domain.Vault) (vault.Searchable, error) {
+func (c Config) Searchable(ctx context.Context, db *Index, embedder port.Embedder, v domain.Vault) (vault.Searchable, error) {
+	// The coarse index is built for one width, and the width is the model's. A
+	// vault made searchable is a vault whose vector index holds what the model
+	// makes, whichever entry point is doing the making.
+	if embedder != nil {
+		if err := db.FitVectors(ctx, embedder.Model().Dimensions); err != nil {
+			return vault.Searchable{}, err
+		}
+	}
 	books, err := c.Extract(db.Sources(), db.SourcesKnown(), v)
 	if err != nil {
 		return vault.Searchable{}, err

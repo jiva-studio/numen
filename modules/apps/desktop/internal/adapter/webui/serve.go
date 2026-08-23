@@ -152,15 +152,8 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 	// embed what was cut.
 	if embedder != nil {
 		model := embedder.Model()
-		// The coarse index is built for one width. A model of another width
-		// rebuilds it from what has been made.
-		if err := db.FitVectors(ctx, model.Dimensions); err != nil {
-			fmt.Fprintf(out, "not embedding %s: %v\n", vaults[0].Name, err)
-			embedder, asking = nil, nil
-		} else {
-			api.Model.Store(model.String())
-			api.Recipe.Store(model.Recipe())
-		}
+		api.Model.Store(model.String())
+		api.Recipe.Store(model.Recipe())
 	}
 
 	// The search the window offers is the search the application already does.
@@ -600,7 +593,7 @@ func readSources(
 	embedder port.Embedder,
 	out io.Writer,
 ) {
-	making, err := cfg.Searchable(db, embedder, api.Vault)
+	making, err := cfg.Searchable(ctx, db, embedder, api.Vault)
 	if err != nil {
 		fmt.Fprintf(out, "reading the sources of %s: %v\n", api.Vault.Name, err)
 		return
@@ -643,7 +636,7 @@ func cutSource(
 	path string,
 	out io.Writer,
 ) {
-	making, err := cfg.Searchable(db, embedder, v)
+	making, err := cfg.Searchable(ctx, db, embedder, v)
 	if err != nil {
 		fmt.Fprintf(out, "cutting %s: %v\n", path, err)
 		return
@@ -681,7 +674,7 @@ func embedSources(
 		}
 	}
 
-	making, err := cfg.Searchable(db, embedder, api.Vault)
+	making, err := cfg.Searchable(ctx, db, embedder, api.Vault)
 	if err != nil {
 		fmt.Fprintf(out, "embedding %s: %v\n", api.Vault.Name, err)
 		return

@@ -1,6 +1,7 @@
 package container_test
 
 import (
+	"context"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -12,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
 )
 
@@ -46,6 +48,38 @@ func TestTheModelSaidIsWhatAWindowIsCutUnder(t *testing.T) {
 		t.Errorf("cut at %d, under %d", got, window.Under(512))
 	}
 }
+
+// The vector index is built for one width, and the width is the model's.
+// Whichever entry point makes a vault searchable settles it.
+func TestMakingAVaultSearchableFitsTheVectorIndex(t *testing.T) {
+	db, err := container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}.OpenIndex(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+
+	held := container.Config{Embedding: embed.Defaults(), ServiceDir: ".numen"}
+	v := domain.Vault{ID: "v", Path: t.TempDir()}
+
+	if _, err := held.Searchable(t.Context(), db, wide{384}, v); err != nil {
+		t.Fatal(err)
+	}
+	// A width the index cannot be built for is the reason nothing is made
+	// searchable, and it is found before a vector is asked of anything.
+	_, err = held.Searchable(t.Context(), db, wide{0}, v)
+	if err == nil || !strings.Contains(err.Error(), "not a vector") {
+		t.Fatalf("got %v", err)
+	}
+}
+
+// wide is a model of the width given.
+type wide struct{ dimensions int }
+
+func (w wide) Model() port.EmbeddingModel {
+	return port.EmbeddingModel{Name: "wide", Dimensions: w.dimensions, MaxTokens: 256, Pooling: "mean"}
+}
+
+func (wide) Embed(context.Context, []string) ([][]float32, error) { return nil, nil }
 
 // Nothing outside this package builds a source.Extract of its own. The sizes it
 // carries decide what a chunk is kept under, and a second assembly is a second
