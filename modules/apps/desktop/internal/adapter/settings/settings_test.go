@@ -39,6 +39,35 @@ func TestAnUntouchedInstallationEmbedsLocallyAndIsDrawnAsDesigned(t *testing.T) 
 	}
 }
 
+// A person who has run the binary and nothing else has a file to read and
+// change, holding what the application is doing.
+func TestAnInstallationNobodyConfiguredWritesItsSettingsDown(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "numen", "numen.json")
+	cfg, err := settings.At(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var back settings.Config
+	if err := json.Unmarshal(raw, &back); err != nil {
+		t.Fatal(err)
+	}
+	// Read back, the file says what the run it was written by was doing.
+	if back.Indexing.Embedding.Model != cfg.Indexing.Embedding.Model {
+		t.Errorf("the model is %+v, was %+v", back.Indexing.Embedding.Model, cfg.Indexing.Embedding.Model)
+	}
+	if !back.Indexing.Embedding.Indexing.Local.Download {
+		t.Error("a machine with no model would fetch none")
+	}
+	// A key nobody set is not a field of the file.
+	if strings.Contains(string(raw), `"key"`) {
+		t.Errorf("the file offers a key:\n%s", raw)
+	}
+}
+
 func TestOneSettingIsAValidFile(t *testing.T) {
 	cfg, err := settings.At(write(t, `{"appearance":{"zoom":1.5}}`))
 	if err != nil {

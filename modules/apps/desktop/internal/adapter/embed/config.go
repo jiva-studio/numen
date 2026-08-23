@@ -83,9 +83,8 @@ type LocalModel struct {
 	File string `json:"file"`
 	// BatchTexts is how many texts one forward pass carries.
 	BatchTexts int `json:"batch_texts"`
-	// Download allows fetching the model when it is not on this machine, and is
-	// off by default. Without it and without a directory, a vault is searched by
-	// its words.
+	// Download allows fetching the model when it is not on this machine. Turned
+	// off, and with no directory named, a vault is searched by its words.
 	Download bool `json:"download"`
 }
 
@@ -107,7 +106,7 @@ type ServiceModel struct {
 // Defaults embed locally: no key, no account, nothing to reach over a network.
 func Defaults() Config {
 	here := Placement{
-		Local: LocalModel{Name: "intfloat/multilingual-e5-small", BatchTexts: 8},
+		Local: LocalModel{Name: "intfloat/multilingual-e5-small", BatchTexts: 8, Download: true},
 		Service: ServiceModel{
 			BaseURL:         "https://api.openai.com/v1",
 			Name:            "text-embedding-3-small",
@@ -233,7 +232,9 @@ type serviceFile struct {
 	Name            *string `json:"name"`
 	BatchCharacters *int    `json:"batch_characters"`
 	KeyEnv          *string `json:"key_env"`
-	Key             *string `json:"key"`
+	// A key is written by a person and never by us, so the field is absent from
+	// what we write rather than present and empty.
+	Key *string `json:"key,omitempty"`
 }
 
 // UnmarshalJSON keeps whatever the defaults set for the fields the file omits.

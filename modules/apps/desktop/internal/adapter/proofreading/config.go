@@ -68,11 +68,13 @@ func (c Config) Named() bool {
 // serviceFile is the shape on disk, with the key among the fields a person
 // writes.
 type serviceFile struct {
-	BaseURL      *string  `json:"base_url"`
-	BatchURL     *string  `json:"batch_url"`
-	Name         *string  `json:"name"`
-	KeyEnv       *string  `json:"key_env"`
-	Key          *string  `json:"key"`
+	BaseURL  *string `json:"base_url"`
+	BatchURL *string `json:"batch_url"`
+	Name     *string `json:"name"`
+	KeyEnv   *string `json:"key_env"`
+	// A key is written by a person and never by us, so the field is absent from
+	// what we write rather than present and empty.
+	Key          *string  `json:"key,omitempty"`
 	PagesAtOnce  *int     `json:"pages_at_once"`
 	LettersApart *float64 `json:"letters_apart"`
 }
