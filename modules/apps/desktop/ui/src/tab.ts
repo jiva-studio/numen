@@ -105,6 +105,23 @@ export const stateOf = (tab: Tab): State => {
   return 'clean'
 }
 
+/**
+ * The one word a tab carries beside its title, and what a screen reader reads
+ * out. A state with no word carries no mark; `stateOf` holds a tab in one
+ * state, so the precedence the words are declared in is the precedence drawn.
+ */
+const MARKS: Record<State, string | undefined> = {
+  stuck: 'stuck',
+  gone: 'gone',
+  overtaken: 'overtaken',
+  unsaved: 'unsaved',
+  saving: 'unsaved',
+  loading: undefined,
+  clean: undefined,
+}
+
+export const markOf = (state: State): string | undefined => MARKS[state]
+
 /** What a read answers. */
 export type Read =
   | { readonly kind: 'body'; readonly body: string; readonly at: At }

@@ -6,7 +6,7 @@
  * answer from before the last keystroke put on the screen over it.
  */
 import { describe, expect, it } from 'vitest'
-import { dirty, opening, stateOf, tabAfter, waiting, type Effect, type Tab } from './tab'
+import { dirty, markOf, opening, stateOf, tabAfter, waiting, type Effect, type Tab } from './tab'
 
 /** A tab that has read its note and shows what it read. */
 const tab = (over: Partial<Tab> = {}): Tab => ({
@@ -795,5 +795,36 @@ describe('a note that is no longer there', () => {
     })
     expect(stateOf(read.tab)).toBe('clean')
     expect(read.tab.shown).toBe('theirs')
+  })
+})
+
+describe('the word a tab carries beside its title', () => {
+  it('is nothing while the note is being read', () => {
+    expect(markOf('loading')).toBeUndefined()
+  })
+
+  it('is nothing when the text on screen is the text of the file', () => {
+    expect(markOf('clean')).toBeUndefined()
+  })
+
+  it('is unsaved while there is something to write', () => {
+    expect(markOf('unsaved')).toBe('unsaved')
+  })
+
+  it('is unsaved while the write is on its way', () => {
+    expect(markOf('saving')).toBe('unsaved')
+  })
+
+  it('is overtaken while the file has moved past what the tab read', () => {
+    expect(markOf('overtaken')).toBe('overtaken')
+  })
+
+  it('is stuck when the note can be neither read nor written', () => {
+    expect(markOf('stuck')).toBe('stuck')
+  })
+
+  it('is a different word for each of the three things a tab carries', () => {
+    const words: (string | undefined)[] = [markOf('stuck'), markOf('overtaken'), markOf('unsaved')]
+    expect(new Set(words).size).toBe(3)
   })
 })
