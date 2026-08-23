@@ -457,6 +457,9 @@ func arriving(dir string, files []string, sizes map[string]int64, total int64, t
 // weighed is how many bytes of the files named stand under a folder. A folder
 // holding another build of the same model holds bytes that are not this one's,
 // and a file part-written counts for no more than the size it will take.
+//
+// A cache files one copy of a model and hangs its names off it, so a name is
+// weighed as what it points at.
 func weighed(dir string, files []string, sizes map[string]int64) int64 {
 	wanted := make(map[string]int64, len(files))
 	for _, name := range files {
@@ -471,7 +474,7 @@ func weighed(dir string, files []string, sizes map[string]int64) int64 {
 		if !ours {
 			return nil
 		}
-		if info, err := entry.Info(); err == nil {
+		if info, err := os.Stat(path); err == nil {
 			sum += min(info.Size(), was)
 		}
 		return nil
