@@ -359,13 +359,8 @@ func name(path string) string {
 	return strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 }
 
-// spaced is one line as the recogniser wrote it.
-//
-// A PP-OCR recogniser has no character for a space and writes the one class it
-// has no letter for, which arrives as a question mark. Every other question
-// mark it writes is one the page prints, and there is no telling them apart —
-// which is why the page's own punctuation is left alone and only a run between
-// words is turned back into what it was.
+// spaced is one line as the recogniser wrote it, with a run of space between
+// words standing as one space.
 func spaced(text string) string {
-	return strings.Join(strings.Fields(strings.ReplaceAll(text, "?", " ")), " ")
+	return strings.Join(strings.Fields(text), " ")
 }
