@@ -29,9 +29,9 @@ var ErrNoKey = errors.New("no key in the configuration or the environment")
 
 // Client is one hosted model.
 type Client struct {
-	model      embed.ServiceModel
-	dimensions int
-	http       *http.Client
+	model embed.ServiceModel
+	is    embed.Identity
+	http  *http.Client
 
 	// Attempts is how many times one request is sent before its error is
 	// reported. A real run meets "engine overloaded" repeatedly.
@@ -43,30 +43,32 @@ type Client struct {
 // New builds a client from configuration. The key is never an argument: it is
 // read from the configuration or the environment, where no call site can copy
 // it into a log.
-func New(model embed.ServiceModel) (*Client, error) {
+func New(is embed.Identity, model embed.ServiceModel) (*Client, error) {
 	if model.BaseURL == "" {
 		return nil, errors.New("no base URL for the embedding service")
 	}
 	if model.Name == "" {
 		return nil, errors.New("no model name for the embedding service")
 	}
-	if model.Dimensions <= 0 {
+	if is.Dimensions <= 0 {
 		return nil, fmt.Errorf("%s: dimensions must be known before a vector is stored", model.Name)
 	}
 	if model.Key() == "" {
 		return nil, fmt.Errorf("%w: %s", ErrNoKey, model)
 	}
 	return &Client{
-		model:      model,
-		dimensions: model.Dimensions,
-		http:       &http.Client{Timeout: 90 * time.Second},
-		Attempts:   5,
-		Delay:      time.Second,
+		model:    model,
+		is:       is,
+		http:     &http.Client{Timeout: 90 * time.Second},
+		Attempts: 5,
+		Delay:    time.Second,
 	}, nil
 }
 
 func (c *Client) Model() port.EmbeddingModel {
-	return port.EmbeddingModel{Name: c.model.Name, Dimensions: c.dimensions, From: c.model.BaseURL}
+	return port.EmbeddingModel{
+		Name: c.is.Name, Dimensions: c.is.Dimensions, MaxTokens: c.is.MaxTokens, Pooling: c.is.Pooling,
+	}
 }
 
 // Embed sends the texts in as few requests as the character budget allows.
@@ -190,8 +192,9 @@ func (c *Client) collect(parsed response) ([][]float32, error) {
 		if item.Index < 0 || item.Index >= len(vectors) {
 			return nil, fmt.Errorf("vector %d of %d is out of range", item.Index, len(vectors))
 		}
-		if len(item.Embedding) != c.dimensions {
-			return nil, fmt.Errorf("%s returned %d dimensions, configured as %d", c.model.Name, len(item.Embedding), c.dimensions)
+		if len(item.Embedding) != c.is.Dimensions {
+			return nil, fmt.Errorf("%s returned %d dimensions, configured as %d",
+				c.model.Name, len(item.Embedding), c.is.Dimensions)
 		}
 		if vectors[item.Index] != nil {
 			return nil, fmt.Errorf("vector %d arrived twice", item.Index)

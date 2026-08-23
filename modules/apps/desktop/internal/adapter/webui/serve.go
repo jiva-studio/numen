@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/embedding"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/task"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
@@ -36,11 +37,14 @@ type Opened struct {
 	// one of them is shown by the other.
 	Recognising *container.Recognising
 
-	// Embedder turns text into vectors, for filling the index and for turning a
-	// query into one. It is the same embedder for both, so a query's vector and
-	// the stored vectors come from one model. Nil for an installation with none,
-	// and then every search is answered by words alone.
+	// Embedder fills the index, and Asking turns a query into a vector. They
+	// are one object where the settings name one placement, and two placements
+	// of one model where a vault indexed over a network is asked on a machine
+	// that has none. Nil for an installation with none, and for Asking also
+	// where the two turned out not to be one model; then a search is answered
+	// by words alone.
 	Embedder port.Embedder
+	Asking   port.Embedder
 	// Settle is everything owed landing before anything is taken away. It is
 	// called while the window is still drawn, and calling it again is free. It
 	// answers false where a page is holding work a person is being asked about,
@@ -91,12 +95,21 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 	// Opened once, for as long as the window is. A local model holds a session
 	// that takes seconds to build, and both filling the index and answering a
 	// query need it.
-	embedder, closeEmbedder, why := cfg.Embedder()
+	embedder, asking, closeEmbedder, why := cfg.Embedders()
 	if why != nil {
 		fmt.Fprintf(out, "not embedding %s: %v\n", vaults[0].Name, why)
 	}
 	if closeEmbedder == nil {
 		closeEmbedder = func() error { return nil }
+	}
+	// Two placements are asked whether they are one model. Nothing in a
+	// settings file shows it, and a question embedded in another space finds
+	// nothing however well it is written.
+	if embedder != asking {
+		if err := embedding.Agree(ctx, embedder, asking); err != nil {
+			fmt.Fprintf(out, "asking by words alone: %v\n", err)
+			asking = nil
+		}
 	}
 
 	wake := waking(settled)
@@ -153,7 +166,7 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		// rebuilds it from what has been made.
 		if err := db.FitVectors(ctx, model.Dimensions); err != nil {
 			fmt.Fprintf(out, "not embedding %s: %v\n", vaults[0].Name, err)
-			embedder = nil
+			embedder, asking = nil, nil
 		} else {
 			api.Model.Store(model.String())
 			api.Recipe.Store(model.Recipe())
@@ -163,7 +176,7 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 	// The search the window offers is the search the application already does.
 	// It is built once the embedder is settled, so a model that could not be
 	// fitted leaves the words half to answer on its own.
-	finds := search.New(db.Passages(), cfg.VaultReaders(), cfg.DerivedStores(), embedder, cfg.Embedding.Floor,
+	finds := search.New(db.Passages(), cfg.VaultReaders(), cfg.DerivedStores(), asking, cfg.Embedding.Floor,
 		func(err error) { fmt.Fprintf(out, "answering by words alone: %v\n", err) })
 	api.Finds = &finds
 	scan := usecase.Scan{
@@ -215,6 +228,7 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		Refresh:     refresh,
 		Recognising: recognising,
 		Embedder:    embedder,
+		Asking:      asking,
 		Settle:      func(ctx context.Context) bool { return settling(ctx, &api.Leaving, &api.Writing) },
 		Answered:    func(ctx context.Context) bool { return answering(ctx, &api.Leaving) },
 		Close: func() error {

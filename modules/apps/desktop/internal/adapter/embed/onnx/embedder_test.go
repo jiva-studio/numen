@@ -28,9 +28,9 @@ func modelDir(t *testing.T) string {
 
 func open(t *testing.T, dir string) *onnx.Embedder {
 	t.Helper()
-	cfg := embed.Defaults().Local
-	cfg.Dir = dir
-	e, err := onnx.Open(cfg)
+	cfg := embed.Defaults()
+	cfg.Indexing.Local.Dir = dir
+	e, err := onnx.Open(cfg.Model, cfg.Indexing.Local)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,9 +39,9 @@ func open(t *testing.T, dir string) *onnx.Embedder {
 }
 
 func TestAMissingDirectoryIsNamedInTheError(t *testing.T) {
-	cfg := embed.Defaults().Local
-	cfg.Dir = t.TempDir()
-	_, err := onnx.Open(cfg)
+	cfg := embed.Defaults()
+	cfg.Indexing.Local.Dir = t.TempDir()
+	_, err := onnx.Open(cfg.Model, cfg.Indexing.Local)
 	if err == nil {
 		t.Fatal("want an error")
 	}
@@ -51,10 +51,10 @@ func TestAMissingDirectoryIsNamedInTheError(t *testing.T) {
 }
 
 func TestDimensionsMustBeKnown(t *testing.T) {
-	cfg := embed.Defaults().Local
-	cfg.Dimensions = 0
-	cfg.Dir = t.TempDir()
-	if _, err := onnx.Open(cfg); err == nil {
+	cfg := embed.Defaults()
+	cfg.Model.Dimensions = 0
+	cfg.Indexing.Local.Dir = t.TempDir()
+	if _, err := onnx.Open(cfg.Model, cfg.Indexing.Local); err == nil {
 		t.Fatal("want an error")
 	}
 }
@@ -63,10 +63,10 @@ func TestAPoolingNobodyImplementsIsRefused(t *testing.T) {
 	// Taken as the pooling it is not, a model answers with vectors near
 	// nothing, and every search over them comes back empty for no stated
 	// reason.
-	cfg := embed.Defaults().Local
-	cfg.Dir = t.TempDir()
-	cfg.Pooling = "cls"
-	_, err := onnx.Open(cfg)
+	cfg := embed.Defaults()
+	cfg.Model.Pooling = "cls"
+	cfg.Indexing.Local.Dir = t.TempDir()
+	_, err := onnx.Open(cfg.Model, cfg.Indexing.Local)
 	if err == nil || !strings.Contains(err.Error(), "cls") {
 		t.Fatalf("got %v", err)
 	}
@@ -74,7 +74,7 @@ func TestAPoolingNobodyImplementsIsRefused(t *testing.T) {
 
 func TestTheModelEmbedsAndReportsItself(t *testing.T) {
 	e := open(t, modelDir(t))
-	if got := e.Model(); got.Dimensions != embed.Defaults().Local.Dimensions {
+	if got := e.Model(); got.Dimensions != embed.Defaults().Model.Dimensions {
 		t.Errorf("got %s", got)
 	}
 

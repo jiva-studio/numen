@@ -175,7 +175,7 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 		Recognise: recogniser(opened),
 		Derived:   cfg.DerivedStores(),
 
-		Search: search.New(opened.Index.Passages(), readers, cfg.DerivedStores(), opened.Embedder, cfg.Embedding.Floor,
+		Search: search.New(opened.Index.Passages(), readers, cfg.DerivedStores(), opened.Asking, cfg.Embedding.Floor,
 			func(err error) { fmt.Fprintln(out, "agents: answering by words alone:", err) }),
 		Neighbourhood: note.ShowNeighbourhood{Links: opened.Index.Links(), Notes: queries},
 		Links:         note.ShowLinks{Links: opened.Index.Links()},

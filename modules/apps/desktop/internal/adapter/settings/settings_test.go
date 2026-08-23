@@ -27,11 +27,11 @@ func TestAnUntouchedInstallationEmbedsLocallyAndIsDrawnAsDesigned(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Indexing.Embedding.Use != embed.UseLocal {
-		t.Errorf("uses %q", cfg.Indexing.Embedding.Use)
+	if cfg.Indexing.Embedding.Indexing.Use != embed.UseLocal {
+		t.Errorf("uses %q", cfg.Indexing.Embedding.Indexing.Use)
 	}
-	if cfg.Indexing.Embedding.Local.Name == "" || cfg.Indexing.Embedding.Local.Dimensions == 0 {
-		t.Errorf("no model to run: %+v", cfg.Indexing.Embedding.Local)
+	if cfg.Indexing.Embedding.Indexing.Local.Name == "" || cfg.Indexing.Embedding.Model.Dimensions == 0 {
+		t.Errorf("no model to run: %+v", cfg.Indexing.Embedding)
 	}
 	// Zero is what says the desktop decides, so nothing may fill it in.
 	if cfg.Appearance.Zoom != 0 {
@@ -49,31 +49,66 @@ func TestOneSettingIsAValidFile(t *testing.T) {
 	}
 	// A file that names the window must leave the embedder alone. Both are
 	// sections of one file, and the section nobody wrote about is unchanged.
-	if cfg.Indexing.Embedding.Local.Name != embed.Defaults().Local.Name {
-		t.Errorf("local model is %q", cfg.Indexing.Embedding.Local.Name)
+	if cfg.Indexing.Embedding.Indexing.Local.Name != embed.Defaults().Indexing.Local.Name {
+		t.Errorf("local model is %q", cfg.Indexing.Embedding.Indexing.Local.Name)
 	}
-	if cfg.Indexing.Embedding.Use != embed.UseLocal {
-		t.Errorf("uses %q", cfg.Indexing.Embedding.Use)
+	if cfg.Indexing.Embedding.Indexing.Use != embed.UseLocal {
+		t.Errorf("uses %q", cfg.Indexing.Embedding.Indexing.Use)
 	}
 }
 
+// A file written before questions had a placement of their own names one
+// embedder, among whose fields the model is written.
 func TestAFileNamingOneFieldKeepsTheDefaultsForTheRest(t *testing.T) {
 	cfg, err := settings.At(write(t,
 		`{"indexing":{"embedding":{"use":"service","service":{"name":"text-embedding-3-large","dimensions":3072}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Indexing.Embedding.Use != embed.UseService {
-		t.Errorf("uses %q", cfg.Indexing.Embedding.Use)
+	e := cfg.Indexing.Embedding
+	if e.Indexing.Use != embed.UseService {
+		t.Errorf("uses %q", e.Indexing.Use)
 	}
-	if cfg.Indexing.Embedding.Service.Name != "text-embedding-3-large" || cfg.Indexing.Embedding.Service.Dimensions != 3072 {
-		t.Errorf("got %+v", cfg.Indexing.Embedding.Service)
+	if e.Model.Name != "text-embedding-3-large" || e.Model.Dimensions != 3072 {
+		t.Errorf("got %+v", e.Model)
 	}
-	if cfg.Indexing.Embedding.Service.BaseURL != embed.Defaults().Service.BaseURL {
-		t.Errorf("base URL is %q", cfg.Indexing.Embedding.Service.BaseURL)
+	if e.Indexing.Service.Name != "text-embedding-3-large" {
+		t.Errorf("got %+v", e.Indexing.Service)
 	}
-	if cfg.Indexing.Embedding.Local.Name != embed.Defaults().Local.Name {
-		t.Errorf("local model is %q", cfg.Indexing.Embedding.Local.Name)
+	if e.Indexing.Service.BaseURL != embed.Defaults().Indexing.Service.BaseURL {
+		t.Errorf("base URL is %q", e.Indexing.Service.BaseURL)
+	}
+	if e.Indexing.Local.Name != embed.Defaults().Indexing.Local.Name {
+		t.Errorf("local model is %q", e.Indexing.Local.Name)
+	}
+	// A question is asked the way the vault was indexed.
+	if got := e.Asking(); got.Use != embed.UseService {
+		t.Errorf("questions are embedded by %+v", got)
+	}
+}
+
+func TestAVaultIndexedByAServiceIsAskedOnThisMachine(t *testing.T) {
+	cfg, err := settings.At(write(t, `{"indexing":{"embedding":{
+		"model": {"name":"bge-m3","dimensions":1024,"max_tokens":512,"pooling":"head"},
+		"indexing": {"use":"service","service":{"base_url":"https://openrouter.ai/api/v1","name":"baai/bge-m3"}},
+		"query":    {"use":"local","local":{"name":"BAAI/bge-m3","download":true}}
+	}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	e := cfg.Indexing.Embedding
+	if e.Model.Name != "bge-m3" || e.Model.Dimensions != 1024 || e.Model.Pooling != embed.PoolHead {
+		t.Errorf("the model is %+v", e.Model)
+	}
+	if e.Indexing.Use != embed.UseService || e.Indexing.Service.Name != "baai/bge-m3" {
+		t.Errorf("indexed by %+v", e.Indexing)
+	}
+	if got := e.Asking(); got.Use != embed.UseLocal || got.Local.Name != "BAAI/bge-m3" {
+		t.Errorf("asked by %+v", got)
+	}
+	// The section nobody wrote about keeps its default.
+	if e.Indexing.Service.BatchCharacters != embed.Defaults().Indexing.Service.BatchCharacters {
+		t.Errorf("batch is %d", e.Indexing.Service.BatchCharacters)
 	}
 }
 
@@ -84,7 +119,7 @@ func TestTheKeyComesFromTheFileOrTheEnvironment(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := cfg.Indexing.Embedding.Service.Key(); got != "from-the-file" {
+	if got := cfg.Indexing.Embedding.Indexing.Service.Key(); got != "from-the-file" {
 		t.Errorf("got %q", got)
 	}
 
@@ -92,7 +127,7 @@ func TestTheKeyComesFromTheFileOrTheEnvironment(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := cfg.Indexing.Embedding.Service.Key(); got != "from-the-environment" {
+	if got := cfg.Indexing.Embedding.Indexing.Service.Key(); got != "from-the-environment" {
 		t.Errorf("got %q", got)
 	}
 }
@@ -103,7 +138,7 @@ func TestAnInstallationMayNameItsOwnEnvironmentVariable(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := cfg.Indexing.Embedding.Service.Key(); got != "from-openrouter" {
+	if got := cfg.Indexing.Embedding.Indexing.Service.Key(); got != "from-openrouter" {
 		t.Errorf("got %q", got)
 	}
 }

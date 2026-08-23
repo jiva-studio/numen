@@ -49,6 +49,7 @@ type Embedder struct {
 	from       string
 	dimensions int
 	maxTokens  int
+	pooling    string
 	batchTexts int
 
 	tokenizer api.Tokenizer
@@ -68,13 +69,13 @@ type Embedder struct {
 
 // Open loads the model and compiles it. It is expensive — the weights are read
 // and converted — and the result is reusable for the life of the process.
-func Open(cfg embed.LocalModel) (*Embedder, error) {
-	if cfg.Dimensions <= 0 {
+func Open(is embed.Identity, cfg embed.LocalModel) (*Embedder, error) {
+	if is.Dimensions <= 0 {
 		return nil, fmt.Errorf("%s: dimensions must be known before a vector is stored", cfg.Name)
 	}
-	if cfg.Pooling != "" && cfg.Pooling != embed.PoolMean && cfg.Pooling != embed.PoolHead {
+	if is.Pooling != "" && is.Pooling != embed.PoolMean && is.Pooling != embed.PoolHead {
 		return nil, fmt.Errorf("%s is pooled %q, and a model is pooled %q or %q",
-			cfg.Name, cfg.Pooling, embed.PoolMean, embed.PoolHead)
+			is.Name, is.Pooling, embed.PoolMean, embed.PoolHead)
 	}
 	paths, err := locate(cfg)
 	if err != nil {
@@ -90,14 +91,15 @@ func Open(cfg embed.LocalModel) (*Embedder, error) {
 	}
 
 	e := &Embedder{
-		name:       cfg.Name,
+		name:       is.Name,
 		from:       paths.model,
-		dimensions: cfg.Dimensions,
-		maxTokens:  max(cfg.MaxTokens, tokenStep),
+		dimensions: is.Dimensions,
+		maxTokens:  max(is.MaxTokens, tokenStep),
+		pooling:    is.Pooling,
 		batchTexts: max(cfg.BatchTexts, 1),
 		tokenizer:  tokenizer,
 		net:        net,
-		head:       cfg.Pooling == embed.PoolHead,
+		head:       is.Pooling == embed.PoolHead,
 	}
 	if pad, err := tokenizer.SpecialTokenID(api.TokPad); err == nil {
 		e.pad = pad
@@ -164,7 +166,7 @@ func (e *Embedder) Close() error {
 
 func (e *Embedder) Model() port.EmbeddingModel {
 	return port.EmbeddingModel{
-		Name: e.name, Dimensions: e.dimensions, MaxTokens: e.maxTokens, From: e.from,
+		Name: e.name, Dimensions: e.dimensions, MaxTokens: e.maxTokens, Pooling: e.pooling,
 	}
 }
 
