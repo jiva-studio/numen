@@ -5,11 +5,16 @@
  * showing something stale, with no error and no way back.
  */
 import { describe, expect, it } from 'vitest'
+import { create } from '@bufbuild/protobuf'
 import { showing, type Core, type Task } from './showing'
-import type { Neighbourhood } from './plex'
+import { NeighbourhoodSchema, type Neighbourhood } from './plex'
 
 const answer = (path: string): Neighbourhood =>
-  ({ focus: { path, title: path, identifier: '' }, related: [] }) as unknown as Neighbourhood
+  create(NeighbourhoodSchema, { focus: { path, title: path, identifier: '' }, related: [] })
+
+/** A neighbourhood of a note the index does not hold: a focus with no path. */
+const nothing = (): Neighbourhood =>
+  create(NeighbourhoodSchema, { focus: { path: '', title: '', identifier: '' }, related: [] })
 
 /** A stream that stays open, so a loop waiting on it is not the one under test. */
 const held = () => new Promise<never>(() => {})
@@ -100,11 +105,7 @@ describe('a plex the window is following', () => {
   })
 
   it('says what it could not show, where the window says everything else', async () => {
-    // A neighbourhood of a note the index does not hold: a focus with no path.
-    const core = fake({
-      neighbourhood: async () =>
-        ({ focus: { path: '', title: '' }, related: [] }) as unknown as Neighbourhood,
-    })
+    const core = fake({ neighbourhood: async () => nothing() })
     const window = showing(core, async () => window.close())
 
     await window.plex().go('Gone.md')
@@ -115,10 +116,7 @@ describe('a plex the window is following', () => {
   it('says nothing again once the note it could not show comes back', async () => {
     let holds = false
     const core = fake({
-      neighbourhood: async (path) =>
-        holds
-          ? answer(path)
-          : ({ focus: { path: '', title: '' }, related: [] }) as unknown as Neighbourhood,
+      neighbourhood: async (path) => (holds ? answer(path) : nothing()),
     })
     const window = showing(core, async () => window.close())
     const plex = window.plex()
@@ -134,10 +132,7 @@ describe('a plex the window is following', () => {
 
   it('says the trouble of the plex the person is in, and not that of another', async () => {
     const core = fake({
-      neighbourhood: async (path) =>
-        path === 'Gone.md'
-          ? (({ focus: { path: '', title: '' }, related: [] }) as unknown as Neighbourhood)
-          : answer(path),
+      neighbourhood: async (path) => (path === 'Gone.md' ? nothing() : answer(path)),
     })
     const window = showing(core, async () => window.close())
     const one = window.plex()
@@ -157,10 +152,7 @@ describe('a plex the window is following', () => {
   })
 
   it('says nothing for a plex whose tab has closed', async () => {
-    const core = fake({
-      neighbourhood: async () =>
-        ({ focus: { path: '', title: '' }, related: [] }) as unknown as Neighbourhood,
-    })
+    const core = fake({ neighbourhood: async () => nothing() })
     const window = showing(core, async () => window.close())
     const one = window.plex()
     const two = window.plex()

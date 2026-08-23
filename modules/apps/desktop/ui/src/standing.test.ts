@@ -5,15 +5,16 @@
  * showing something stale, with no error and no way back.
  */
 import { describe, expect, it } from 'vitest'
+import { create } from '@bufbuild/protobuf'
 import { standing, type Neighbours } from './standing'
-import type { Neighbourhood } from './plex'
+import { NeighbourhoodSchema, type Neighbourhood } from './plex'
 
 const answer = (path: string): Neighbourhood =>
-  ({ focus: { path, title: path, identifier: '' }, related: [] }) as unknown as Neighbourhood
+  create(NeighbourhoodSchema, { focus: { path, title: path, identifier: '' }, related: [] })
 
 /** A neighbourhood of a note the index does not hold: a focus with no path. */
-const nothing = () =>
-  ({ focus: { path: '', title: '', identifier: '' }, related: [] }) as unknown as Neighbourhood
+const nothing = (): Neighbourhood =>
+  create(NeighbourhoodSchema, { focus: { path: '', title: '', identifier: '' }, related: [] })
 
 /** A vault that answers whatever it is told to. */
 const fake = (neighbourhood: Neighbours['neighbourhood']): Neighbours => ({ neighbourhood })
