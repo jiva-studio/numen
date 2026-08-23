@@ -34,7 +34,11 @@ func TestLocatingLetsGoOfNoRuntime(t *testing.T) {
 	if err != nil {
 		t.Skipf("no onnx runtime on this machine: %v", err)
 	}
-	paths{engine: held}.close()
+	// A recogniser that could not be built gives back what it opened and
+	// reaches for nothing else.
+	if _, err := Open(t.Context(), Config{Runtime: cfg.Runtime, Download: false}); err == nil {
+		t.Fatal("a recogniser was built with no models named")
+	}
 
 	again, _, err := library(t.Context(), cfg)
 	if err != nil {

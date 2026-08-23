@@ -25,7 +25,7 @@ var ErrNoKey = errors.New("no key in the configuration or the environment")
 // inFlight is how many pages are being asked about at any moment.
 const inFlight = 4
 
-// Client is one hosted model. It asks about one page at a time.
+// Client is one hosted model, asked about several pages at once.
 type Client struct {
 	service proofreading.Service
 	http    *http.Client

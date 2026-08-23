@@ -19,9 +19,8 @@ const TrashDir = ".trash"
 // Remove takes a note out of the vault.
 //
 // It moves the file into the vault's trash. Everything the index knows is
-// rebuilt from the file, so losing the index costs a scan; a review log is not
-// rebuilt from anything, and removal is the one act that will eventually be
-// unrecoverable.
+// rebuilt from the file, so losing the index costs a scan; the file is the one
+// thing nothing rebuilds.
 type Remove struct {
 	Readers port.VaultReaders
 	Writers port.VaultWriters

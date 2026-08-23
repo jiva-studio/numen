@@ -38,8 +38,8 @@ type Agent struct {
 	// Tools is where it reaches this vault.
 	Tools Endpoint
 	// Allowed are the tools it may use without being asked. It names this
-	// vault's tools: the agent is started with none of its own, so there is
-	// nothing else to approve.
+	// vault's tools; the two the agent brings — searching the web and fetching
+	// a page — are named where they are brought.
 	Allowed []string
 	// Words are how the tools this vault serves are spoken about, by the name
 	// the agent calls them. A tool that is not here is named as it named

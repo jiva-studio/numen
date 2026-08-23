@@ -29,11 +29,8 @@ func (c Config) PrepareRecogniser(ctx context.Context) error {
 	return recognition.Prepare(ctx, c.Recognition)
 }
 
-// Recogniser is what reads a scanned page on this machine, opened now.
-//
-// Three values, as with the embedder: the recogniser, what gives it back, and
-// why there is none. A failure is absence and not an error — recognition is
-// unavailable and everything else works.
+// Recogniser is what reads a scanned page on this machine, opened now: the
+// recogniser, what gives it back, and why there is none.
 //
 // It waits for whatever is missing, so it is for a terminal, where waiting is
 // what a person came for. A window asks Recognising instead.
@@ -82,8 +79,7 @@ type Recognising struct {
 	ready func() bool
 
 	// standing says whether the runtime a page is read through was made before
-	// the window. A build that draws no window has none to be made before it and
-	// leaves this unset.
+	// the window. A test that reads through nothing leaves it unset.
 	standing func() bool
 
 	// queue is where pages are left for a proofreader to answer about later,

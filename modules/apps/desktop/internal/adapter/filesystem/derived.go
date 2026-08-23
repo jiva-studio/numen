@@ -96,11 +96,10 @@ func (d *Derived) Write(_ context.Context, name string, content []byte) error {
 	return settle(filepath.Dir(target))
 }
 
-// Append adds to the end of what is there.
+// Append adds to the end of what is there, in place.
 //
-// It is not atomic and does not need to be: what is appended is read back only
-// once the whole of it has been written and renamed into its final name, so a
-// half-written file is one nothing has been told about.
+// It is not atomic. A run that stopped partway leaves a torn tail, and what
+// reads the file back takes the whole pages and drops what follows them.
 func (d *Derived) Append(_ context.Context, name string, content []byte) error {
 	target, err := d.at(name)
 	if err != nil {

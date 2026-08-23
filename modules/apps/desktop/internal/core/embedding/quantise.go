@@ -2,8 +2,8 @@ package embedding
 
 import "math"
 
-// Int8Scale is what one unit of an int8 dimension is worth. It is a constant:
-// the same float32 must quantise to the same byte in every run, or a vector
+// Int8Scale is what one unit of an int8 dimension is worth. It is a constant,
+// so the same float32 quantises to the same byte in every run and a vector
 // stored today is comparable with one stored after the next book is added.
 //
 // 0.4 is the scale a unit-length 1024-dimension vector is quantised at.

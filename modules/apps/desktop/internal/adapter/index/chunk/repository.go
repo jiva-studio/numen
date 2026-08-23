@@ -71,8 +71,10 @@ type Window struct {
 
 // Vector is one chunk's embedding in both representations that are stored.
 //
-// `Kind` is the quantisation of `Value` — `int8` or `float32` — and is recorded
-// because a blob does not say what it holds.
+// `Value` is one byte a dimension, for the rerank. `Coarse` is one bit a
+// dimension, read out of `Value`, and is what the first pass compares.
+// `Fingerprint` is the text the vector was bought for, and `Recipe` the model
+// and the shape it was bought under.
 type Vector struct {
 	Chunk       int64
 	Fingerprint []byte
@@ -331,7 +333,7 @@ func prepare(ctx context.Context, tx *sql.Tx) (writer, error) {
 }
 
 func (w writer) close() {
-	for _, s := range []*sql.Stmt{w.insert, w.index, w.move} {
+	for _, s := range []*sql.Stmt{w.insert, w.index, w.names, w.move} {
 		if s != nil {
 			s.Close()
 		}

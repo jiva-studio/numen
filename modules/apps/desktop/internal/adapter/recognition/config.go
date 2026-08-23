@@ -25,10 +25,7 @@ type Config struct {
 	// application, and then the download cache.
 	Dir string `json:"dir"`
 
-	// Download allows fetching what is not on this machine. Recognition never
-	// starts on its own, so a person who asked for it has already agreed to the
-	// work, and asking again about the models is a second question about one
-	// decision.
+	// Download allows fetching what is not on this machine.
 	Download bool `json:"download"`
 
 	Layout    LayoutModel     `json:"layout"`
@@ -107,9 +104,7 @@ type RecogniserModel struct {
 type PageReading struct {
 	// DPI is what a page is rendered at.
 	DPI int `json:"dpi"`
-	// Threads is how many threads one model may use. More is not better: the
-	// lines of a page are small, and spreading one of them over sixteen threads
-	// costs more than it saves.
+	// Threads is how many threads one model may use.
 	Threads int `json:"threads"`
 }
 
@@ -142,16 +137,12 @@ func Defaults() Config {
 		},
 		Page: PageReading{DPI: 300, Threads: 4},
 
-		// Recognition never starts on its own. A person who asked for it has
-		// agreed to the work, and asking again about the download is a second
-		// question about one decision.
+		// What a reading needs is fetched when it is wanted.
 		Download: true,
 	}
 }
 
-// The defaults for everything a settings file leaves out. They are measured
-// rather than guessed, and what they were measured against is in
-// docs/performance.md.
+// The defaults for everything a settings file leaves out.
 func (l LayoutModel) minimum() float32 {
 	if l.Minimum <= 0 {
 		return 0.4
@@ -272,9 +263,6 @@ type paths struct {
 	from      string
 }
 
-// close lets go of what locating opened. The runtime it found is the process's.
-func (p paths) close() {}
-
 // locate finds the runtime and the models.
 //
 // Three places are tried in order and each is a setting: a path written down,
@@ -298,7 +286,6 @@ func locate(ctx context.Context, cfg Config) (paths, error) {
 		{&found.recognise, cfg.Recognise.Path, cfg.Recognise.Name, "recognise"},
 	} {
 		if *one.into, err = model(ctx, cfg, one.path, one.name, one.what); err != nil {
-			found.close()
 			return paths{}, err
 		}
 	}

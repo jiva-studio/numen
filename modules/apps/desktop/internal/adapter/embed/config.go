@@ -116,7 +116,8 @@ type ServiceModel struct {
 	key string
 }
 
-// Defaults embed locally: no key, no account, nothing to reach over a network.
+// Defaults embed on this machine: no key and no account. The model itself is
+// fetched the first time it is wanted.
 func Defaults() Config {
 	here := Placement{
 		Local: LocalModel{Name: "intfloat/multilingual-e5-small", BatchTexts: 8, Download: true},

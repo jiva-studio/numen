@@ -9,7 +9,7 @@ import (
 )
 
 // locks is one lock per vault root, keyed by the folder on disk. Every writer
-// opened on a folder takes the same lock, and so does every opener.
+// opened on a folder takes the same lock.
 var locks sync.Map
 
 // Hold takes this vault's write lock, waiting for whoever holds it.

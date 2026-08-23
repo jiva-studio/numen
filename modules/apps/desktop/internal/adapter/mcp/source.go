@@ -25,9 +25,8 @@ type Document struct {
 
 // addSourceTools adds the tools for the sources a vault holds beside its notes.
 //
-// There are two, and the first is why the second is usable: an agent asked to
-// read a document has to be able to find out which have been read already, or
-// it will read one twice and never read another.
+// An agent asked to read a document finds out first which have been read
+// already, so the listing is what makes the reading usable.
 func addSourceTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "source_list",
