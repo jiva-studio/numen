@@ -1,4 +1,4 @@
-package container
+package embedding
 
 import (
 	"context"
@@ -73,28 +73,17 @@ func (e *Embedding) Disown(why error) error {
 	return letGo(held)
 }
 
-// letGo closes a model that holds something, and says what closing it said.
+// letGo closes a model that is here, and says what closing it said. There is
+// nothing to close where nothing landed.
 func letGo(held port.Embedder) error {
-	if closer, ok := held.(interface{ Close() error }); ok {
-		return closer.Close()
+	if held == nil {
+		return nil
 	}
-	return nil
+	return held.Close()
 }
 
 // Model is what the settings say this is, known before the weights are here.
 func (e *Embedding) Model() port.EmbeddingModel { return e.is }
-
-// Here says whether there is something to embed with.
-func (e *Embedding) Here() bool {
-	select {
-	case <-e.here:
-	default:
-		return false
-	}
-	e.mu.RLock()
-	defer e.mu.RUnlock()
-	return e.held != nil
-}
 
 // Wait blocks until the model turns up, and says what stopped it.
 func (e *Embedding) Wait(ctx context.Context) error {
@@ -154,6 +143,9 @@ func (w waiting) Embed(ctx context.Context, texts []string) ([][]float32, error)
 	return w.e.embedding(ctx, texts)
 }
 
+// Close lets go of the one model both ways of waiting ask.
+func (w waiting) Close() error { return w.e.Close() }
+
 type impatient struct{ e *Embedding }
 
 func (i impatient) Model() port.EmbeddingModel { return i.e.is }
@@ -172,3 +164,6 @@ func (i impatient) Embed(ctx context.Context, texts []string) ([][]float32, erro
 	}
 	return i.e.embedding(ctx, texts)
 }
+
+// Close lets go of the one model both ways of waiting ask.
+func (i impatient) Close() error { return i.e.Close() }

@@ -170,12 +170,16 @@ func (o oneWay) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	return out, nil
 }
 
+func (oneWay) Close() error { return nil }
+
 // outOfReach is an embedder on the other side of a network that is not there.
 type outOfReach struct{ why error }
 
 func (outOfReach) Model() port.EmbeddingModel { return model }
 
 func (o outOfReach) Embed(context.Context, []string) ([][]float32, error) { return nil, o.why }
+
+func (outOfReach) Close() error { return nil }
 
 func sources(passages []domain.Passage) []string {
 	out := make([]string, 0, len(passages))

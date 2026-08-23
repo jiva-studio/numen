@@ -67,6 +67,10 @@ func New(is embed.Model, model embed.ServiceModel) (*Client, error) {
 
 func (c *Client) Model() port.EmbeddingModel { return c.is.Stored() }
 
+// Close releases what the model holds on this machine, which is nothing: the
+// weights are the service's.
+func (c *Client) Close() error { return nil }
+
 // Embed sends the texts in as few requests as the character budget allows.
 func (c *Client) Embed(ctx context.Context, texts []string) ([][]float32, error) {
 	if len(texts) == 0 {

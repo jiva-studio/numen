@@ -129,6 +129,8 @@ func (w wide) Model() port.EmbeddingModel {
 
 func (wide) Embed(context.Context, []string) ([][]float32, error) { return nil, nil }
 
+func (wide) Close() error { return nil }
+
 // Nothing outside this package builds a source.Extract or a window.Sizes of its
 // own. The sizes decide what a chunk is kept under, and a second assembly is a
 // second answer for one settings file.

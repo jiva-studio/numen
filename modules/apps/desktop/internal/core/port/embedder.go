@@ -63,4 +63,7 @@ type Embedder interface {
 	// Any number of texts may be passed: how a request to the model is
 	// bounded is the implementation's business.
 	Embed(ctx context.Context, texts []string) ([][]float32, error)
+
+	// Close releases whatever the model holds.
+	Close() error
 }

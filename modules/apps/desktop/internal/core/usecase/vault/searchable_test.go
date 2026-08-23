@@ -170,6 +170,8 @@ func (pointing) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	return out, nil
 }
 
+func (pointing) Close() error { return nil }
+
 // unwilling is a model that answers nothing, which is what a service that is
 // not there looks like from here.
 type unwilling struct{}
@@ -181,6 +183,8 @@ func (unwilling) Model() port.EmbeddingModel {
 func (unwilling) Embed(context.Context, []string) ([][]float32, error) {
 	return nil, errors.New("the model is not answering")
 }
+
+func (unwilling) Close() error { return nil }
 
 // limited is a run under a time limit, reaching it where the test says. What it
 // ends with is the error a deadline gives, which is not the error a cancelled

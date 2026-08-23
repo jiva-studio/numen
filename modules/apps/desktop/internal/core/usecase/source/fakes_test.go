@@ -352,6 +352,8 @@ func (e *embedder) Model() port.EmbeddingModel {
 	return port.EmbeddingModel{Name: "fake", Dimensions: e.dims}
 }
 
+func (*embedder) Close() error { return nil }
+
 func (e *embedder) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	e.calls++
 	if e.refuse > 0 && e.calls == e.refuse {

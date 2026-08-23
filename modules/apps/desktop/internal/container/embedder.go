@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/embedding"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/task"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 )
 
 // Embedders are what makes the vectors a vault is searched by and what makes
@@ -63,23 +64,33 @@ func (c Config) Embedder(ctx context.Context) (port.Embedder, func() error, erro
 	return held.Filling(), held.Close, nil
 }
 
+// Searching is the search a question is answered by, put together the one way:
+// the passages, the vault's files, the text read out of books, and the model a
+// question is embedded by.
+//
+// trouble is where a half that could not run is said. A search short of the
+// half that asks by meaning is a search the words answer.
+func (c Config) Searching(db *Index, asking port.Embedder, trouble func(error)) search.Search {
+	return search.New(db.Passages(), c.VaultReaders(), c.DerivedStores(), asking, c.Embedding.Floor, trouble)
+}
+
 // placed is what one placement makes: a service, which answers at once, or a
 // model on this machine, which is loaded behind the window. Nothing for a
 // placement that names neither.
-func (c Config) placed(ctx context.Context, where embed.Placement, role string, tasks *task.Tasks) (*Embedding, error) {
+func (c Config) placed(ctx context.Context, where embed.Placement, role string, tasks *task.Tasks) (*embedding.Embedding, error) {
 	switch where.Use {
 	case embed.UseService:
 		client, err := openai.New(c.Embedding.Model, where.Service)
 		if err != nil {
 			return nil, err
 		}
-		held := Arriving(client.Model())
+		held := embedding.Arriving(client.Model())
 		held.Landed(client, nil)
 		return held, nil
 
 	case embed.UseLocal:
 		is := c.Embedding.Model
-		held := Arriving(is.Stored())
+		held := embedding.Arriving(is.Stored())
 		at := arriving(role, where)
 		doing := preparing(tasks, at)
 		doing(0, 0)
@@ -110,7 +121,7 @@ func (c Config) placed(ctx context.Context, where embed.Placement, role string, 
 // nothing in a settings file shows that two placements are one model. A
 // comparison that did not happen is not agreement, and only a context that
 // ended excuses one.
-func agreeing(ctx context.Context, first, second *Embedding) error {
+func agreeing(ctx context.Context, first, second *embedding.Embedding) error {
 	// unchecked is a comparison nobody got an answer out of. A run somebody
 	// stopped is owed no answer.
 	unchecked := func(why error) error {

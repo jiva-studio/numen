@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/task"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/source"
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 )
@@ -164,10 +163,9 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 	// fitted leaves the words half to answer on its own.
 	// A search short of a half is said where the person is. A window opened
 	// from a desktop entry has no terminal to write to.
-	finds := search.New(db.Passages(), cfg.VaultReaders(), cfg.DerivedStores(), asking, cfg.Embedding.Floor,
-		func(err error) {
-			api.say(task.Task{ID: wordsAlone, Doing: "Answering by words alone", Failed: err.Error()})
-		})
+	finds := cfg.Searching(db, asking, func(err error) {
+		api.say(task.Task{ID: wordsAlone, Doing: "Answering by words alone", Failed: err.Error()})
+	})
 	api.Finds = &finds
 	scan := usecase.Scan{
 		Readers:      cfg.VaultReaders(),

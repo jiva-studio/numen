@@ -1,4 +1,4 @@
-package container_test
+package embedding_test
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/embedding"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
@@ -26,6 +26,8 @@ func (landed) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	return out, nil
 }
 
+func (landed) Close() error { return nil }
+
 // shut is a model that says when it was let go of.
 type shut struct {
 	landed
@@ -41,7 +43,7 @@ func (s *shut) Close() error {
 // vector index is fitted to its width and a vector is claimed under its recipe
 // while it comes down.
 func TestAModelSaysWhatItIsBeforeItIsHere(t *testing.T) {
-	arriving := container.Arriving(bge)
+	arriving := embedding.Arriving(bge)
 	if got := arriving.Asking().Model().Recipe(); got != bge.Recipe() {
 		t.Errorf("got %s", got)
 	}
@@ -51,14 +53,14 @@ func TestAModelSaysWhatItIsBeforeItIsHere(t *testing.T) {
 }
 
 func TestAQuestionIsNotMadeToWaitForAModelStillArriving(t *testing.T) {
-	arriving := container.Arriving(bge)
-	if _, err := arriving.Asking().Embed(t.Context(), []string{"anything"}); !errors.Is(err, container.ErrArriving) {
+	arriving := embedding.Arriving(bge)
+	if _, err := arriving.Asking().Embed(t.Context(), []string{"anything"}); !errors.Is(err, embedding.ErrArriving) {
 		t.Fatalf("got %v", err)
 	}
 }
 
 func TestAPassFillingTheIndexWaitsForTheModel(t *testing.T) {
-	arriving := container.Arriving(bge)
+	arriving := embedding.Arriving(bge)
 	go func() {
 		time.Sleep(10 * time.Millisecond)
 		arriving.Landed(landed{}, nil)
@@ -74,7 +76,7 @@ func TestAPassFillingTheIndexWaitsForTheModel(t *testing.T) {
 
 func TestAPassIsNotLeftWaitingOnAModelThatWillNeverCome(t *testing.T) {
 	unreachable := errors.New("dial tcp: network is unreachable")
-	arriving := container.Arriving(bge)
+	arriving := embedding.Arriving(bge)
 	arriving.Landed(nil, unreachable)
 
 	if _, err := arriving.Filling().Embed(t.Context(), []string{"anything"}); !errors.Is(err, unreachable) {
@@ -90,7 +92,7 @@ func TestAPassIsNotLeftWaitingOnAModelThatWillNeverCome(t *testing.T) {
 func TestADisownedModelIsLetGoOfAndNotAsked(t *testing.T) {
 	wrong := errors.New("not one model")
 	held := &shut{}
-	arriving := container.Arriving(bge)
+	arriving := embedding.Arriving(bge)
 	arriving.Landed(held, nil)
 
 	if err := arriving.Disown(wrong); err != nil {
@@ -98,9 +100,6 @@ func TestADisownedModelIsLetGoOfAndNotAsked(t *testing.T) {
 	}
 	if !held.closed {
 		t.Error("a model nothing will ask of is still loaded")
-	}
-	if arriving.Here() {
-		t.Error("still here")
 	}
 	if _, err := arriving.Asking().Embed(t.Context(), []string{"anything"}); !errors.Is(err, wrong) {
 		t.Errorf("got %v", err)
@@ -113,7 +112,7 @@ func TestADisownedModelIsLetGoOfAndNotAsked(t *testing.T) {
 // A model disowned before it turned up is one nobody waits for.
 func TestAModelDisownedBeforeItLandsIsNotWaitedFor(t *testing.T) {
 	wrong := errors.New("not one model")
-	arriving := container.Arriving(bge)
+	arriving := embedding.Arriving(bge)
 	if err := arriving.Disown(wrong); err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +124,7 @@ func TestAModelDisownedBeforeItLandsIsNotWaitedFor(t *testing.T) {
 // A model let go of before it arrived is let go of when it does: the weights
 // are compiled by then and nothing else holds them.
 func TestAModelThatLandsAfterItWasDisownedIsLetGoOf(t *testing.T) {
-	arriving := container.Arriving(bge)
+	arriving := embedding.Arriving(bge)
 	if err := arriving.Disown(errors.New("not one model")); err != nil {
 		t.Fatal(err)
 	}
@@ -135,13 +134,10 @@ func TestAModelThatLandsAfterItWasDisownedIsLetGoOf(t *testing.T) {
 	if !held.closed {
 		t.Error("a model nothing will ask of is still loaded")
 	}
-	if arriving.Here() {
-		t.Error("still here")
-	}
 }
 
 func TestAModelThatLandsAfterEverythingWasClosedIsLetGoOf(t *testing.T) {
-	arriving := container.Arriving(bge)
+	arriving := embedding.Arriving(bge)
 	if err := arriving.Close(); err != nil {
 		t.Fatal(err)
 	}
@@ -158,7 +154,7 @@ func TestAModelThatLandsAfterEverythingWasClosedIsLetGoOf(t *testing.T) {
 func TestAModelDisownedTellsWhoeverWasWaitingWhy(t *testing.T) {
 	wrong := errors.New("not one model")
 	for range 2000 {
-		arriving := container.Arriving(bge)
+		arriving := embedding.Arriving(bge)
 
 		waiting := make(chan struct{}, 8)
 		waited := make(chan error, cap(waiting))
@@ -184,7 +180,7 @@ func TestAModelDisownedTellsWhoeverWasWaitingWhy(t *testing.T) {
 }
 
 func TestAPassStoppedWhileTheModelArrivesIsStopped(t *testing.T) {
-	arriving := container.Arriving(bge)
+	arriving := embedding.Arriving(bge)
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	if _, err := arriving.Filling().Embed(ctx, []string{"anything"}); !errors.Is(err, context.Canceled) {
