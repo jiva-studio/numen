@@ -140,13 +140,14 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		Saves:     &note.Write{Readers: cfg.VaultReaders(), Writers: cfg.VaultWriters()},
 		Wrote:     func() { raise(wake.notes) },
 		Readers:   cfg.VaultReaders(),
-		Viewer:    keepingDrawings(),
+		Viewer:    keepingDrawings(cfg.Documents()),
 		// Where a passage sits on the page is asked of whichever producer made
 		// the text it is a place in, which is what the index records.
 		Marking: &source.Marks{
-			Readers: cfg.VaultReaders(),
-			Sources: db.SourcesKnown(),
-			Derived: cfg.DerivedStores(),
+			Readers:   cfg.VaultReaders(),
+			Sources:   db.SourcesKnown(),
+			Derived:   cfg.DerivedStores(),
+			Documents: cfg.Documents(),
 		},
 	}
 	// Named before anything is read: it is what decides whether a chunk already

@@ -11,7 +11,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/ocr"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/pdf"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/text"
@@ -33,6 +32,9 @@ type Recognise struct {
 	Sources port.SourceRepository
 	Derived port.DerivedStores
 	By      port.Recogniser
+
+	// Documents draws the pages a model is given.
+	Documents port.Documents
 
 	// Area is the store the artifact is kept in. Empty means the default.
 	Area string
@@ -110,7 +112,10 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 		return res, u.stand(ctx, v, ref, hash, area)
 	}
 
-	scan, err := pdf.Open(raw)
+	if u.Documents == nil {
+		return res, fmt.Errorf("%s: nothing to draw a page with", path)
+	}
+	scan, err := u.Documents.Draw(ctx, raw)
 	if err != nil {
 		return res, fmt.Errorf("%s: %w", path, err)
 	}

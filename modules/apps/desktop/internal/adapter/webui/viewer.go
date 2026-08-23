@@ -13,7 +13,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/pdf"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
@@ -72,22 +71,19 @@ const (
 	drawnAhead = 30 * time.Second
 )
 
-// drawnByTheLibrary holds a document open with the library the application
-// draws with.
-func drawnByTheLibrary(raw []byte) (drawable, error) {
-	scan, err := pdf.Open(raw)
-	if err != nil {
-		return nil, err
+// drawnBy holds a document open with what the application draws with.
+func drawnBy(docs port.Documents) func([]byte) (drawable, error) {
+	return func(raw []byte) (drawable, error) {
+		return docs.Draw(context.Background(), raw)
 	}
-	return scan, nil
 }
 
 // looking is a window with nothing open yet, and nothing kept on disk. What is
 // kept there outlives the window, so where it goes is said where the window is
 // served and not here.
-func looking() *viewer {
+func looking(docs port.Documents) *viewer {
 	return &viewer{
-		open:     drawnByTheLibrary,
+		open:     drawnBy(docs),
 		docs:     keeping(),
 		drawn:    drawings(),
 		patience: patience,
@@ -354,7 +350,7 @@ func refuse(w http.ResponseWriter, err error) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 	case errors.Is(err, port.ErrOutside):
 		http.Error(w, err.Error(), http.StatusBadRequest)
-	case errors.Is(err, pdf.ErrNotPDF), errors.Is(err, pdf.ErrEncrypted):
+	case errors.Is(err, port.ErrNotADocument), errors.Is(err, port.ErrEncrypted):
 		http.Error(w, err.Error(), http.StatusUnsupportedMediaType)
 	case errors.Is(err, errNoDrawing):
 		http.Error(w, err.Error(), http.StatusNotImplemented)
@@ -365,8 +361,8 @@ func refuse(w http.ResponseWriter, err error) {
 
 // keepingDrawings is a window that keeps the pages it draws where this machine
 // keeps what it can make again.
-func keepingDrawings() *viewer {
-	v := looking()
+func keepingDrawings(docs port.Documents) *viewer {
+	v := looking(docs)
 	v.kept = shelved()
 	return v
 }

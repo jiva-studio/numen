@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/pdf"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/pdf"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/testsupport"
@@ -46,7 +46,7 @@ func (i indexed) Recognised(context.Context, string, domain.SourceKind) ([]port.
 // that document read, so a test can name a word and ask where it is.
 func placing(t *testing.T) (*API, http.Handler, *pdf.Book) {
 	t.Helper()
-	raw, err := os.ReadFile("../../core/pdf/testdata/tiny.pdf")
+	raw, err := os.ReadFile("../pdf/testdata/tiny.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,8 +62,9 @@ func placing(t *testing.T) (*API, http.Handler, *pdf.Book) {
 		Vault:   vault,
 		Readers: filesystem.Readers{},
 		Marking: &source.Marks{
-			Readers: filesystem.Readers{},
-			Sources: indexed{book: {Path: book}},
+			Readers:   filesystem.Readers{},
+			Sources:   indexed{book: {Path: book}},
+			Documents: pdf.Documents{},
 		},
 	}
 	return api, api.Serving(http.NotFoundHandler()), doc

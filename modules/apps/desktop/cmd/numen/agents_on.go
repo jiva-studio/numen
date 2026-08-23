@@ -187,6 +187,7 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 		Sources:   opened.Index.SourcesKnown(),
 		Recognise: recogniser(opened),
 		Derived:   cfg.DerivedStores(),
+		Documents: cfg.Documents(),
 
 		Search: cfg.Searching(opened.Index, opened.Asking,
 			func(err error) { fmt.Fprintln(out, "agents: answering by words alone:", err) }),

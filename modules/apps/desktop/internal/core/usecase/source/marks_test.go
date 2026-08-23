@@ -1,18 +1,36 @@
 package source
 
 import (
+	"context"
 	"os"
 	"slices"
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/pdf"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/fixes"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/pdf"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/text"
 )
+
+// layered reads a document with the library and answers where its words sit
+// with what the test put in.
+type layered struct {
+	port.Documents
+	where func(raw []byte, pages []int) ([]placed.Box, error)
+}
+
+func (l layered) Placed(_ context.Context, raw []byte, _ []int, pages []int) ([]placed.Box, error) {
+	return l.where(raw, pages)
+}
+
+// answering is the use case with the test's own answer for where words sit.
+func answering(u Marks, where func(raw []byte, pages []int) ([]placed.Box, error)) Marks {
+	u.Documents = layered{Documents: pdf.Documents{}, where: where}
+	return u
+}
 
 // placing is a Marks over one vault holding one document, and the document read.
 //
@@ -20,7 +38,7 @@ import (
 // a test can name a word and say which page it is printed on.
 func placing(t *testing.T, name string) (Marks, *store, *shelf, *pdf.Book, []byte, *library) {
 	t.Helper()
-	raw, err := os.ReadFile("../../pdf/testdata/" + name)
+	raw, err := os.ReadFile("../../../adapter/pdf/testdata/" + name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,9 +51,10 @@ func placing(t *testing.T, name string) (Marks, *store, *shelf, *pdf.Book, []byt
 	index := newStore()
 	store := newShelf()
 	return Marks{
-		Readers: vaults{first.ID: shelved},
-		Sources: index,
-		Derived: store,
+		Readers:   vaults{first.ID: shelved},
+		Sources:   index,
+		Derived:   store,
+		Documents: pdf.Documents{},
 	}, index, store, book, raw, shelved
 }
 
@@ -81,10 +100,10 @@ func lit(t *testing.T, u Marks, path string, start, length int) []placed.Page {
 func TestARecognisedSourceIsLitFromWhatWasReadInIt(t *testing.T) {
 	u, index, store, _, _, shelved := placing(t, "tiny.pdf")
 	holds(t, index, shelved, "ocr", "abc123")
-	u.Layer = func([]byte, []int) ([]placed.Box, error) {
+	u = answering(u, func([]byte, []int) ([]placed.Box, error) {
 		t.Error("the document's own layer was read for a source standing on a reading")
 		return nil, nil
-	}
+	})
 
 	// Two words on one page and a third on the next, as a model reading the
 	// pages wrote them down.
@@ -177,10 +196,10 @@ func TestOnlyThePagesARunFallsOnArePlaced(t *testing.T) {
 	holds(t, index, shelved, "", "abc123")
 
 	var asked []int
-	u.Layer = func(raw []byte, pages []int) ([]placed.Box, error) {
+	u = answering(u, func(raw []byte, pages []int) ([]placed.Box, error) {
 		asked = pages
 		return book.Placed(raw, pages)
-	}
+	})
 
 	start, length := run(t, book, "closer")
 	found := lit(t, u, documentPath, start, length)
@@ -200,10 +219,10 @@ func TestSeveralPlacesAreAskedAboutAtOnce(t *testing.T) {
 	holds(t, index, shelved, "", "abc123")
 
 	var asked [][]int
-	u.Layer = func(raw []byte, pages []int) ([]placed.Box, error) {
+	u = answering(u, func(raw []byte, pages []int) ([]placed.Box, error) {
 		asked = append(asked, pages)
 		return book.Placed(raw, pages)
-	}
+	})
 
 	after, afterLength := run(t, book, "Afterword")
 	closer, closerLength := run(t, book, "closer")
@@ -248,10 +267,10 @@ func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
 // text is what says where its offsets are, and nothing has said.
 func TestASourceTheIndexDoesNotHoldIsPlacedNowhere(t *testing.T) {
 	u, _, _, book, _, _ := placing(t, "tiny.pdf")
-	u.Layer = func([]byte, []int) ([]placed.Box, error) {
+	u = answering(u, func([]byte, []int) ([]placed.Box, error) {
 		t.Error("a source the index does not hold was read")
 		return nil, nil
-	}
+	})
 
 	start, length := run(t, book, "gamma")
 	found := lit(t, u, documentPath, start, length)
@@ -304,7 +323,7 @@ func TestAFileRewrittenSinceItWasReadIsPlacedFromItself(t *testing.T) {
 	}
 
 	// The same document, written again.
-	raw, err := os.ReadFile("../../pdf/testdata/outline.pdf")
+	raw, err := os.ReadFile("../../../adapter/pdf/testdata/outline.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
