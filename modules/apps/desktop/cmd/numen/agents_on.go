@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/agent"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/agent/claudecode"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/webui"
@@ -88,7 +89,20 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 				markdown.Counted(contents.Body, at[0].To), true
 		},
 	}
-	started := agent(cfg, root, endpoint.URL, secret, words, drafting, out)
+	// The settings name which agent answers in the panel. An installation that
+	// names none still serves the tools, so an agent a person runs themselves
+	// reaches the vault.
+	if cfg.Agent.Use != agent.UseClaude {
+		opened.API.Unreachable.Store("no agent is named in the settings")
+		return func() error {
+			forget()
+			shutdown, cancel := context.WithTimeout(context.Background(), agentBound)
+			defer cancel()
+			return endpoint.Close(shutdown)
+		}, nil
+	}
+
+	started := claude(cfg, root, endpoint.URL, secret, words, drafting, out)
 	opened.API.Agent = started
 
 	return func() error {
@@ -106,12 +120,12 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 	}, nil
 }
 
-// agent is what the window asks on the person's behalf.
+// claude is what the window asks on the person's behalf.
 //
 // It reaches the same tools over the same port as an agent somebody configured
 // themselves, and is given all of them: what it changes appears in the window
 // as it happens.
-func agent(
+func claude(
 	cfg container.Config,
 	root, url, secret string,
 	served map[string]mcp.Words,
