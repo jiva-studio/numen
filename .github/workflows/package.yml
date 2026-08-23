@@ -120,6 +120,7 @@ jobs:
           CGO_ENABLED=1 GOARCH=amd64 CC="clang -arch x86_64" go build -trimpath -o "$RUNNER_TEMP/numen-amd64" ./cmd/numen
           lipo -create "$RUNNER_TEMP/numen-arm64" "$RUNNER_TEMP/numen-amd64" -output "$RUNNER_TEMP/numen"
           lipo -info "$RUNNER_TEMP/numen"
+          rm "$RUNNER_TEMP/numen-arm64" "$RUNNER_TEMP/numen-amd64"
 
       - name: Bundle
         env:
@@ -127,7 +128,7 @@ jobs:
         run: |
           APP="$RUNNER_TEMP/Numen.app"
           mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-          cp "$RUNNER_TEMP/numen" "$APP/Contents/MacOS/numen"
+          mv "$RUNNER_TEMP/numen" "$APP/Contents/MacOS/numen"
           cp modules/apps/desktop/build/darwin/Info.plist "$APP/Contents/Info.plist"
           printf 'APPL????' > "$APP/Contents/PkgInfo"
           plutil -replace CFBundleShortVersionString -string "$VERSION" "$APP/Contents/Info.plist"
@@ -178,8 +179,13 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
         run: |
+          # A compressed image is written twice over before it is one, and the
+          # machine this runs on has room for the application about three times.
+          go clean -cache
+          df -h /
+
           mkdir -p "$RUNNER_TEMP/image"
-          cp -R "$RUNNER_TEMP/Numen.app" "$RUNNER_TEMP/image/"
+          mv "$RUNNER_TEMP/Numen.app" "$RUNNER_TEMP/image/"
           ln -s /Applications "$RUNNER_TEMP/image/Applications"
           hdiutil create -volname Numen -srcfolder "$RUNNER_TEMP/image" \
             -ov -format UDZO "$RUNNER_TEMP/Numen-${VERSION}.dmg"
