@@ -44,16 +44,25 @@ func doing(list []task.Task) []*v1.Task {
 	out := make([]*v1.Task, 0, len(list))
 	for _, at := range list {
 		out = append(out, &v1.Task{
-			Id:     at.ID,
-			Doing:  at.Doing,
-			About:  at.About,
-			Done:   at.Done,
-			Total:  at.Total,
-			Failed: at.Failed,
-			Asked:  at.Asked,
+			Id:       at.ID,
+			Doing:    at.Doing,
+			About:    at.About,
+			Done:     at.Done,
+			Total:    at.Total,
+			Failed:   at.Failed,
+			Asked:    at.Asked,
+			Counting: counted(at.Counting),
 		})
 	}
 	return out
+}
+
+// counted is what a task counts, as the schema says it.
+func counted(in task.Counting) v1.Counting {
+	if in == task.Bytes {
+		return v1.Counting_COUNTING_BYTES
+	}
+	return v1.Counting_COUNTING_THINGS
 }
 
 // say puts one piece of work in the list, for a build that keeps one.

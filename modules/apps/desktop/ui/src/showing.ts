@@ -6,7 +6,7 @@
  * is only exercised by looking at the screen.
  */
 import { computed, ref, shallowRef } from 'vue'
-import type { PlexRelatedSeat } from '@numen/ui'
+import type { Counting, PlexRelatedSeat } from '@numen/ui'
 import type { Neighbourhood } from './plex'
 import { standing, type Standing } from './standing'
 import type { Said } from './drawing'
@@ -29,6 +29,8 @@ export interface Task {
   /** How far it has got, where there is a total to count against. */
   readonly done: number
   readonly total: number
+  /** What that count counts. */
+  readonly counting: Counting
   /** Why it stopped, when it stopped badly. */
   readonly failed: string
   /** Whether a person asked for this and is waiting to be told it began. */

@@ -547,6 +547,7 @@ describe('what the application is doing', () => {
     about: 'library/scan.pdf',
     done,
     total: 400,
+    counting: 'things',
     failed: '',
     asked: true,
   })

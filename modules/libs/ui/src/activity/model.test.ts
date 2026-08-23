@@ -3,8 +3,10 @@ import {
   activity,
   percentWord,
   rateOf,
+  rateWord,
   remainingWord,
   shareOf,
+  sizeWord,
   tallyWord,
 } from './model'
 
@@ -90,6 +92,42 @@ describe('tallyWord', () => {
     { done: 38, total: 37, want: '37 of 37' },
   ])('reads $done of $total as $want', ({ done, total, want }) => {
     expect(tallyWord({ done, total })).toBe(want)
+  })
+
+  it.each([
+    { done: 0, total: 470_268_510, want: '0 B of 470 MB' },
+    { done: 121_000_000, total: 470_268_510, want: '121 MB of 470 MB' },
+    { done: 470_268_510, total: 470_268_510, want: '470 MB of 470 MB' },
+  ])('counted in bytes, reads $done of $total as $want', ({ done, total, want }) => {
+    expect(tallyWord({ done, total }, 'bytes')).toBe(want)
+  })
+})
+
+describe('sizeWord', () => {
+  it.each([
+    { bytes: 0, want: '0 B' },
+    { bytes: 512, want: '512 B' },
+    { bytes: 17_082_730, want: '17 MB' },
+    { bytes: 470_268_510, want: '470 MB' },
+    { bytes: 2_400_000_000, want: '2.4 GB' },
+    { bytes: -1, want: '0 B' },
+  ])('reads $bytes as $want', ({ bytes, want }) => {
+    expect(sizeWord(bytes)).toBe(want)
+  })
+})
+
+describe('rateWord', () => {
+  it('says nothing about a rate nobody has measured', () => {
+    expect(rateWord(0, 'bytes')).toBe('')
+    expect(rateWord(-1, 'bytes')).toBe('')
+  })
+
+  it('reads a rate of bytes in the sizes a person reads', () => {
+    expect(rateWord(12_400_000, 'bytes')).toBe('12 MB/s')
+  })
+
+  it('counts everything else one by one', () => {
+    expect(rateWord(1420)).toBe('1 420/s')
   })
 })
 

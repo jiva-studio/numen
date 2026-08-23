@@ -2,7 +2,16 @@
  * What the notices in the corner decide, as plain values.
  */
 import { describe, expect, it } from 'vitest'
-import { arrivals, remembered, showing, standing, tallyOf, type Notice } from './model'
+import {
+  arrivals,
+  measured,
+  remembered,
+  showing,
+  standing,
+  tallyOf,
+  type Movement,
+  type Notice,
+} from './model'
 
 const one = (over: Partial<Notice> = {}): Notice => ({
   id: 'embedding',
@@ -112,5 +121,41 @@ describe('a notice somebody asked for', () => {
     const arrived = arrivals(new Map(), [asked], 0)
 
     expect(showing([asked], arrived, new Set(['reading']), 0)).toEqual([])
+  })
+})
+
+describe('measured', () => {
+  const fetching = (done: number): Notice => ({
+    id: 'model',
+    says: 'Preparing the model',
+    done,
+    total: 470_268_510,
+    counting: 'bytes',
+    working: true,
+  })
+
+  it('reads a count once before it has a rate', () => {
+    const moving = measured(new Map(), [fetching(0)], 1000)
+
+    expect(moving.get('model')).toEqual({ done: 0, rate: 0, at: 1000 })
+  })
+
+  it('measures how fast the count is moving between two readings', () => {
+    const first = measured(new Map(), [fetching(0)], 1000)
+    const second = measured(first, [fetching(4_000_000)], 3000)
+
+    expect(second.get('model')?.rate).toBe(2_000_000)
+  })
+
+  it('forgets work that is no longer standing', () => {
+    const was: ReadonlyMap<string, Movement> = new Map([['gone', { done: 5, rate: 1, at: 0 }]])
+
+    expect(measured(was, [fetching(0)], 1000).has('gone')).toBe(false)
+  })
+
+  it('measures nothing for work with no total to count against', () => {
+    const nothing: Notice = { id: 'scan', says: 'Reading a scan', working: true }
+
+    expect(measured(new Map(), [nothing], 1000).size).toBe(0)
   })
 })

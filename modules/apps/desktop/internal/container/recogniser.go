@@ -187,11 +187,11 @@ func (r *Recognising) Start(ctx context.Context, v domain.Vault, path string) bo
 // read.
 func (r *Recognising) read(ctx context.Context, v domain.Vault, id, path string) error {
 	models, close, err := r.open(ctx, func(what string, done, total int64) {
-		// Counted in megabytes because that is the size a person reads. Bytes
-		// are nine digits and say nothing that the first three do not.
+		// The count is bytes and says so, and the sizes a person reads them in
+		// are the window's to write.
 		r.say(task.Task{
 			ID: id, Doing: "Fetching models", About: what,
-			Done: done >> 20, Total: total >> 20,
+			Done: done, Total: total, Counting: task.Bytes,
 		})
 	})
 	if err != nil {

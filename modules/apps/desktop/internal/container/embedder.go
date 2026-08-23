@@ -181,6 +181,9 @@ func arriving(role string, where embed.Placement) listing {
 // preparing tells the list how far the model has got, counted in the bytes of
 // it that are here. Fetching it and compiling it are one wait.
 //
+// The count is bytes and says so, and the sizes a person reads them in are the
+// window's to write.
+//
 // A run with no list to tell is told nothing and still asks: what says how far
 // the work has got is called wherever the work is, and a run in a terminal
 // takes the same road as a window.
@@ -191,7 +194,7 @@ func preparing(tasks *task.Tasks, at listing) onnx.Fetching {
 	return func(done, total int64) {
 		tasks.Set(task.Task{
 			ID: at.id, Doing: "Preparing the model", About: at.name,
-			Done: done, Total: total,
+			Done: done, Total: total, Counting: task.Bytes,
 		})
 	}
 }

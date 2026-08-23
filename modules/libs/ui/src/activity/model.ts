@@ -23,6 +23,14 @@ export interface Tally {
   readonly total: number
 }
 
+/**
+ * What a count counts.
+ *
+ * Bytes are read out in the sizes a person reads them in. Everything else is
+ * counted one by one.
+ */
+export type Counting = 'things' | 'bytes'
+
 /** What a line of activity draws. */
 export interface ActivityDescriptor {
   readonly state: ActivityState
@@ -75,14 +83,44 @@ export const activity = (input: {
 }
 
 /**
+ * A size in the units it is read in, in the thousands a machine reports its own
+ * disk in.
+ *
+ * Whole units above a kilobyte: a figure with decimals in it changes every time
+ * it is drawn, and a number that never settles reads as noise.
+ */
+export const sizeWord = (bytes: number): string => {
+  const size = bytes < 0 ? 0 : bytes
+  if (size < 1e3) return `${Math.round(size)} B`
+  if (size < 1e6) return `${Math.round(size / 1e3)} kB`
+  if (size < 1e9) return `${Math.round(size / 1e6)} MB`
+  return `${(size / 1e9).toFixed(1)} GB`
+}
+
+/**
  * A tally as it is read out.
  *
  * Grouped in thousands, because the numbers this draws are counts of text and
  * reach six figures on an ordinary vault. A count that overtook its total reads
  * as the total: a vault loses a book mid-scan, and the bar is already full.
  */
-export const tallyWord = (tally: Tally): string =>
-  `${grouped(Math.min(tally.done, tally.total))} of ${grouped(tally.total)}`
+export const tallyWord = (tally: Tally, counting: Counting = 'things'): string => {
+  const done = Math.min(tally.done, tally.total)
+  return counting === 'bytes'
+    ? `${sizeWord(done)} of ${sizeWord(tally.total)}`
+    : `${grouped(done)} of ${grouped(tally.total)}`
+}
+
+/**
+ * How fast a count is moving, in words.
+ *
+ * `perSecond` is measured by whoever is watching the count. A rate of nothing
+ * is nothing known, and nothing is said.
+ */
+export const rateWord = (perSecond: number, counting: Counting = 'things'): string => {
+  if (perSecond <= 0) return ''
+  return counting === 'bytes' ? `${sizeWord(perSecond)}/s` : `${grouped(Math.round(perSecond))}/s`
+}
 
 
 /**

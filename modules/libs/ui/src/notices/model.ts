@@ -2,6 +2,8 @@
  * What a notice is, as plain values. No DOM, no clock, no measurement.
  */
 
+import { rateOf, type Counting } from '../activity/model'
+
 /**
  * One thing running behind the window.
  *
@@ -18,10 +20,10 @@ export interface Notice {
   /** Where it has got to, when there is a total to count against. */
   readonly done?: number
   readonly total?: number
+  /** What that count counts. */
+  readonly counting?: Counting
   /** Whether it is running now, or is a fact that is simply so. */
   readonly working?: boolean
-  /** How much longer, in words, from whoever is timing the count. */
-  readonly left?: string
   /** Why it stopped, when it stopped badly. It is drawn as trouble. */
   readonly trouble?: string
   /**
@@ -44,6 +46,35 @@ export const tallyOf = (notice: Notice): { done: number; total: number } | undef
   notice.total === undefined || notice.done === undefined
     ? undefined
     : { done: notice.done, total: notice.total }
+
+/** What one count was doing when it was last read. */
+export interface Movement {
+  readonly done: number
+  readonly rate: number
+  readonly at: number
+}
+
+/**
+ * How fast each count is moving, from what it was doing when it was last read.
+ *
+ * A count that has gone is forgotten, and one that has just arrived is read once
+ * before it has a rate.
+ */
+export const measured = (
+  was: ReadonlyMap<string, Movement>,
+  notices: readonly Notice[],
+  at: number,
+): ReadonlyMap<string, Movement> => {
+  const moving = new Map<string, Movement>()
+  for (const notice of standing(notices)) {
+    const tally = tallyOf(notice)
+    if (tally === undefined) continue
+    const before = was.get(notice.id)
+    const rate = before ? rateOf(before, tally.done, (at - before.at) / 1000) : 0
+    moving.set(notice.id, { done: tally.done, rate, at })
+  }
+  return moving
+}
 
 /**
  * How long work runs before it is worth a card, in milliseconds.
