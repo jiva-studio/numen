@@ -2,6 +2,7 @@ package webui
 
 import (
 	"context"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -31,13 +32,35 @@ func (a *API) Tasks(
 	watching, stop := context.WithCancel(ctx)
 	defer stop()
 
-	for list := range a.Tasking.Watch(watching) {
-		if err := out.Send(&v1.TasksResponse{Tasks: doing(list)}); err != nil {
-			return err
+	watch := a.Tasking.Watch(watching)
+	repeat := time.NewTimer(again)
+	repeat.Stop()
+	defer repeat.Stop()
+
+	var last []task.Task
+	for {
+		select {
+		case list, standing := <-watch:
+			if !standing {
+				return nil
+			}
+			if err := out.Send(&v1.TasksResponse{Tasks: doing(list)}); err != nil {
+				return err
+			}
+			last = list
+			repeat.Reset(again)
+
+		case <-repeat.C:
+			if err := out.Send(&v1.TasksResponse{Tasks: doing(last)}); err != nil {
+				return err
+			}
 		}
 	}
-	return nil
 }
+
+// again is how long after a change the same list is said a second time. A
+// window is handed each list by the write that follows it.
+const again = time.Second
 
 // doing is the work as the schema says it.
 func doing(list []task.Task) []*v1.Task {
