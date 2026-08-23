@@ -38,22 +38,28 @@ export interface Passage {
   title: string
   /**
    * Whether the text was read out of a note. A book is neither a note nor a
-   * node, so there is nothing this window can open one as.
+   * node, and what this window opens one as is the document it is.
    */
   isNote: boolean
   text: string
+  /**
+   * Where the hit stands in the source's own text, counted in bytes, which is
+   * what the document it came out of is opened at.
+   */
+  start: number
+  length: number
   at: readonly Span[]
 }
 
-/** Which half of a search over the text runs. */
-export type Half = 'words' | 'meaning'
+/** How a search over the text is asked. */
+export type Way = 'words' | 'meaning'
 
 /** The two questions the palette asks of the vault. */
 export interface Asking {
   /** The names in the vault that match: a note’s own title, and its headings. */
   names(query: string, limit: number): Promise<readonly Named[]>
-  /** The text the vault holds that answers, by one half of a search. */
-  search(query: string, half: Half, limit: number): Promise<readonly Passage[]>
+  /** The text the vault holds that answers, asked one way. */
+  search(query: string, way: Way, limit: number): Promise<readonly Passage[]>
 }
 
 /** Everything the palette says in the window's voice. */
@@ -65,6 +71,8 @@ export interface Words {
   travel: string
   read: string
   readAt: string
+  /** What opening a document where the words were found is called. */
+  readDocument: string
   /** What a band says when it came back with nothing. */
   noneFound: string
   /** What a band says when the vault could not answer at all. */
@@ -73,17 +81,21 @@ export interface Words {
 
 /** Where an item chosen takes the person. */
 export interface Landing {
-  at: 'plex' | 'note'
+  at: 'plex' | 'note' | 'document'
   path: string
   /** What the note is called, for a tab that has not been opened before. */
   title: string
   /** The line to put the caret on, for a place inside a note. */
   line?: number
+  /** The stretch of the source's own text to light, for a place in a document. */
+  start?: number
+  length?: number
 }
 
-/** The two things that can be done to anything the palette turns up. */
+/** The things that can be done to anything the palette turns up. */
 const PLEX = 'plex'
 const NOTE = 'note'
+const DOCUMENT = 'document'
 
 /** How many answers each band holds. */
 const EACH = 8
@@ -102,6 +114,9 @@ interface Stands {
   path: string
   title: string
   line: number
+  /** The stretch of the source's own text the item was found in. */
+  start: number
+  length: number
   offers: readonly string[]
 }
 
@@ -230,7 +245,14 @@ export function finding(
               { id: PLEX, text: words.travel },
             ],
           },
-          stands: { path: one.path, title: one.title, line: one.line, offers: [NOTE, PLEX] },
+          stands: {
+            path: one.path,
+            title: one.title,
+            line: one.line,
+            start: 0,
+            length: 0,
+            offers: [NOTE, PLEX],
+          },
         }
       : {
           item: {
@@ -242,33 +264,42 @@ export function finding(
               { id: NOTE, text: words.read },
             ],
           },
-          stands: { path: one.path, title: one.title, line: -1, offers: [PLEX, NOTE] },
+          stands: {
+            path: one.path,
+            title: one.title,
+            line: -1,
+            start: 0,
+            length: 0,
+            offers: [PLEX, NOTE],
+          },
         }
 
   const passageItem = (band: Band, one: Passage): Drawn => ({
     item: {
-      // Named by where it stands in the vault: a band that lands renumbers the
-      // list, and an item renamed under the keyboard takes it somewhere else.
-      id: `${band}:${one.path}`,
+      // Named by where it stands in the vault and where in that source it was
+      // found: a band that lands renumbers the list, and an item renamed under
+      // the keyboard takes it somewhere else. One source answering twice is two
+      // passages, and a name that left the place out kept only the last of them.
+      id: `${band}:${one.path}:${one.start}`,
       title: one.title || one.path,
       detail: one.text,
       detailAt: one.at,
-      // A book is not a note and is not a node, so nothing is offered for one.
-      // It is still an answer, and it is still drawn.
-      ...(one.isNote
-        ? {
-            actions: [
-              { id: NOTE, text: words.read },
-              { id: PLEX, text: words.travel },
-            ],
-          }
-        : { disabled: true }),
+      // A book is not a note and is not a node, and what it opens as is the
+      // document it is, at the stretch of its text the words were found in.
+      actions: one.isNote
+        ? [
+            { id: NOTE, text: words.read },
+            { id: PLEX, text: words.travel },
+          ]
+        : [{ id: DOCUMENT, text: words.readDocument }],
     },
     stands: {
       path: one.path,
       title: one.title,
       line: -1,
-      offers: one.isNote ? [NOTE, PLEX] : [],
+      start: one.start,
+      length: one.length,
+      offers: one.isNote ? [NOTE, PLEX] : [DOCUMENT],
     },
   })
 
@@ -311,11 +342,14 @@ export function finding(
   /** Where one item, asked one thing, takes the person. */
   const chose = (item: string, action: string): Landing | null => {
     const stands = built.value.held.get(item)
-    // An item offering nothing is an answer and no more: a book is neither a
-    // note nor a node, and there is nowhere this answers with.
+    // An item is answered for by what it offers, and an item offering nothing
+    // is an answer and no more.
     if (!stands || !stands.offers.includes(action)) return null
     const named = { path: stands.path, title: stands.title }
     if (action === PLEX) return { at: 'plex', ...named }
+    if (action === DOCUMENT) {
+      return { at: 'document', ...named, start: stands.start, length: stands.length }
+    }
     return stands.line >= 0
       ? { at: 'note', ...named, line: stands.line }
       : { at: 'note', ...named }

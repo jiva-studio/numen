@@ -8,10 +8,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/gomlx/compute"
 	_ "github.com/gomlx/compute/gobackend" // the pure-Go backend, registered under "go"
@@ -49,6 +52,7 @@ type Embedder struct {
 	from       string
 	dimensions int
 	maxTokens  int
+	pooling    string
 	batchTexts int
 
 	tokenizer api.Tokenizer
@@ -58,18 +62,35 @@ type Embedder struct {
 	typeIDs   bool
 	// pooled says the model's output is already one vector per text.
 	pooled bool
+	// head says the vector is the token that opens a text rather than the
+	// average of them.
+	head bool
 
 	// One compiled graph, one execution at a time.
 	mu sync.Mutex
 }
 
-// Open loads the model and compiles it. It is expensive — the weights are read
-// and converted — and the result is reusable for the life of the process.
-func Open(cfg embed.LocalModel) (*Embedder, error) {
-	if cfg.Dimensions <= 0 {
+// Fetching is how much of a model is here and how much is wanted, told while it
+// comes down. Nothing is told for a model that is already on this machine.
+type Fetching func(done, total int64)
+
+// Open loads the model and compiles it, fetching it first where this machine
+// does not hold it. It is expensive — the weights are read and converted — and
+// the result is reusable for the life of the process.
+func Open(ctx context.Context, is embed.Model, cfg embed.LocalModel, tell Fetching) (*Embedder, error) {
+	if is.Dimensions <= 0 {
 		return nil, fmt.Errorf("%s: dimensions must be known before a vector is stored", cfg.Name)
 	}
-	paths, err := locate(cfg)
+	// Where a text is cut off is part of what a vector is, and this machine is
+	// what does the cutting. A model run here says where.
+	if is.MaxTokens <= 0 {
+		return nil, fmt.Errorf("%s: where a text is cut off must be known before a vector is stored", cfg.Name)
+	}
+	if is.Pooling != "" && is.Pooling != embed.PoolMean && is.Pooling != embed.PoolHead {
+		return nil, fmt.Errorf("%s is pooled %q, and a model is pooled %q or %q",
+			is.Name, is.Pooling, embed.PoolMean, embed.PoolHead)
+	}
+	paths, err := locate(ctx, cfg, tell)
 	if err != nil {
 		return nil, err
 	}
@@ -83,13 +104,15 @@ func Open(cfg embed.LocalModel) (*Embedder, error) {
 	}
 
 	e := &Embedder{
-		name:       cfg.Name,
+		name:       is.Name,
 		from:       paths.model,
-		dimensions: cfg.Dimensions,
-		maxTokens:  max(cfg.MaxTokens, tokenStep),
+		dimensions: is.Dimensions,
+		maxTokens:  is.MaxTokens,
+		pooling:    is.Pooling,
 		batchTexts: max(cfg.BatchTexts, 1),
 		tokenizer:  tokenizer,
 		net:        net,
+		head:       is.Pooling == embed.PoolHead,
 	}
 	if pad, err := tokenizer.SpecialTokenID(api.TokPad); err == nil {
 		e.pad = pad
@@ -156,7 +179,7 @@ func (e *Embedder) Close() error {
 
 func (e *Embedder) Model() port.EmbeddingModel {
 	return port.EmbeddingModel{
-		Name: e.name, Dimensions: e.dimensions, MaxTokens: e.maxTokens, From: e.from,
+		Name: e.name, Dimensions: e.dimensions, MaxTokens: e.maxTokens, Pooling: e.pooling,
 	}
 }
 
@@ -249,6 +272,9 @@ func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
 	if want := len(batch) * seq * e.dimensions; len(flat) != want {
 		return nil, fmt.Errorf("%s returned %d values for %s", e.name, len(flat), outputs[0].Shape())
 	}
+	if e.head {
+		return headPool(flat, len(batch), seq, e.dimensions), nil
+	}
 	return meanPool(flat, mask, e.dimensions), nil
 }
 
@@ -300,14 +326,26 @@ type paths struct {
 	tokenizer string
 }
 
+// Where a repository keeps the models it publishes, and which of them is run
+// when the configuration names none.
+const (
+	modelFolder = "onnx"
+	modelFile   = "model.onnx"
+	tokenFile   = "tokenizer.json"
+)
+
 // locate finds the model's files: in a directory the configuration names, or in
 // the download cache. A named directory is what an installation with no network
 // uses.
-func locate(cfg embed.LocalModel) (paths, error) {
+func locate(ctx context.Context, cfg embed.LocalModel, tell Fetching) (paths, error) {
+	file := cfg.File
+	if file == "" {
+		file = modelFile
+	}
 	if cfg.Dir != "" {
 		p := paths{
-			model:     filepath.Join(cfg.Dir, "model.onnx"),
-			tokenizer: filepath.Join(cfg.Dir, "tokenizer.json"),
+			model:     filepath.Join(cfg.Dir, file),
+			tokenizer: filepath.Join(cfg.Dir, tokenFile),
 		}
 		for _, required := range []string{p.model, p.tokenizer} {
 			if _, err := os.Stat(required); err != nil {
@@ -322,21 +360,156 @@ func locate(cfg embed.LocalModel) (paths, error) {
 	if !cfg.Download {
 		return paths{}, fmt.Errorf("%s is not on this machine: set local.dir to where it is, or local.download to fetch it", cfg.Name)
 	}
+
 	repo := hub.New(cfg.Name).WithProgressBar(false)
-	p := paths{}
-	var err error
-	if p.model, err = repo.DownloadFile("onnx/model.onnx"); err != nil {
-		return paths{}, err
+	folder, sizes, err := published(repo)
+	if err != nil {
+		return paths{}, fmt.Errorf("what %s publishes: %w", cfg.Name, err)
 	}
-	// A model too large for one file keeps its weights beside it, and the
-	// reader resolves that name relative to the model.
-	if repo.HasFile("onnx/model.onnx_data") {
-		if _, err := repo.DownloadFile("onnx/model.onnx_data"); err != nil {
-			return paths{}, err
+	if !slices.Contains(folder, file) {
+		return paths{}, fmt.Errorf("%s publishes no %s/%s: it has %v", cfg.Name, modelFolder, file, folder)
+	}
+
+	files := wanted(folder, file)
+	var total int64
+	for _, name := range files {
+		total += sizes[name]
+	}
+	if dir, err := repo.CacheDir(); err == nil {
+		defer arriving(dir, files, sizes, total, tell)()
+	}
+
+	p := paths{}
+	for _, name := range files {
+		at, err := repo.DownloadFileCtx(ctx, modelFolder+"/"+name)
+		if err != nil {
+			return paths{}, fmt.Errorf("fetching %s/%s: %w", modelFolder, name, err)
+		}
+		if name == file {
+			p.model = at
+		}
+		if name == tokenFile {
+			p.tokenizer = at
 		}
 	}
-	if p.tokenizer, err = repo.DownloadFile("tokenizer.json"); err != nil {
-		return paths{}, err
+	// The tokeniser stands at the root of a repository, and beside the models
+	// in some.
+	if repo.HasFile(tokenFile) {
+		if p.tokenizer, err = repo.DownloadFileCtx(ctx, tokenFile); err != nil {
+			return paths{}, fmt.Errorf("fetching %s: %w", tokenFile, err)
+		}
+	}
+	if p.tokenizer == "" {
+		return paths{}, fmt.Errorf("%s publishes no %s", cfg.Name, tokenFile)
 	}
 	return p, nil
+}
+
+// published is what a repository holds beside its models, by the names they
+// have inside that folder, and how large each is.
+func published(repo *hub.Repo) ([]string, map[string]int64, error) {
+	var out []string
+	sizes := map[string]int64{}
+	for info, err := range repo.IterFileInfos() {
+		if err != nil {
+			return nil, nil, err
+		}
+		rest, inside := strings.CutPrefix(info.Name, modelFolder+"/")
+		if !inside || rest == "" {
+			continue
+		}
+		out = append(out, rest)
+		sizes[rest] = info.Size
+	}
+	return out, sizes, nil
+}
+
+// arriving reports how much of the model is on this machine while it comes
+// down, and hands back what stops the reporting.
+//
+// What is counted is the bytes under the repository's own place in the cache,
+// which is what has arrived.
+func arriving(dir string, files []string, sizes map[string]int64, total int64, tell Fetching) func() {
+	if tell == nil || total <= 0 {
+		return func() {}
+	}
+	done := make(chan struct{})
+	over := make(chan struct{})
+	go func() {
+		defer close(over)
+		tick := time.NewTicker(time.Second)
+		defer tick.Stop()
+		for {
+			select {
+			case <-done:
+				return
+			case <-tick.C:
+				tell(min(weighed(dir, files, sizes), total), total)
+			}
+		}
+	}()
+	return func() {
+		close(done)
+		<-over
+	}
+}
+
+// weighed is how many bytes of the files named stand under a folder. A folder
+// holding another build of the same model holds bytes that are not this one's,
+// and a file part-written counts for no more than the size it will take.
+func weighed(dir string, files []string, sizes map[string]int64) int64 {
+	wanted := make(map[string]int64, len(files))
+	for _, name := range files {
+		wanted[name] = sizes[name]
+	}
+	var sum int64
+	_ = filepath.WalkDir(dir, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() {
+			return nil
+		}
+		was, ours := wanted[strings.TrimSuffix(filepath.Base(path), ".incomplete")]
+		if !ours {
+			return nil
+		}
+		if info, err := entry.Info(); err == nil {
+			sum += min(info.Size(), was)
+		}
+		return nil
+	})
+	return sum
+}
+
+// wanted is everything the model named is made of, out of what stands beside
+// it: the model, and every file that is not another model's.
+//
+// A model too large for one file keeps its weights in a second under its own
+// name, and a graph may point at a constant in a third. A folder holds the full
+// build and the quantised ones together, and taking one means leaving the
+// gigabytes belonging to the others.
+func wanted(folder []string, named string) []string {
+	var others []string
+	for _, name := range folder {
+		if name != named && strings.HasSuffix(name, ".onnx") {
+			others = append(others, name)
+		}
+	}
+	out := []string{named}
+	for _, name := range folder {
+		if name == named || theirs(name, others) {
+			continue
+		}
+		out = append(out, name)
+	}
+	return out
+}
+
+// theirs says a file belongs to one of the models given: it is that model, or
+// it stands beside it under that model's name.
+func theirs(name string, models []string) bool {
+	for _, model := range models {
+		if strings.HasPrefix(name, model) {
+			return true
+		}
+	}
+	return false
 }

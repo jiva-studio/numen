@@ -68,16 +68,30 @@ func (q *Queries) Fingerprints(ctx context.Context, vaultID, kind string) (map[s
 	return out, rows.Err()
 }
 
-// Lexical is the words half of a search: the chunks of one vault whose text
+// kinds is what a caller's chosen kinds are on the wire: a JSON array, empty
+// for a question that says nothing about what sort of file it wants.
+func kinds(chosen []domain.SourceKind) (string, error) {
+	out := make([]string, 0, len(chosen))
+	for _, k := range chosen {
+		out = append(out, string(k))
+	}
+	raw, err := json.Marshal(out)
+	if err != nil {
+		return "", err
+	}
+	return string(raw), nil
+}
+
+// Lexical is a search asked by words: the chunks of one vault whose text
 // matches what was typed, best first.
 //
 // What comes back is the large window enclosing each hit, which is what a
 // result shows.
-func (q *Queries) Lexical(ctx context.Context, vaultID, query string, limit int, growing bool) ([]domain.Passage, error) {
+func (q *Queries) Lexical(ctx context.Context, vaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error) {
 	if limit <= 0 {
 		// How many candidates to keep is a retrieval decision. The caller makes
 		// it, and arriving here without one is a mistake in the caller.
-		return nil, fmt.Errorf("the lexical half needs a positive limit, got %d", limit)
+		return nil, fmt.Errorf("a search by words needs a positive limit, got %d", limit)
 	}
 	expression := Expression(query, growing)
 	if expression == "" {
@@ -91,7 +105,11 @@ func (q *Queries) Lexical(ctx context.Context, vaultID, query string, limit int,
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("lexical"), expression, vault, limit)
+	wanted, err := kinds(of)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.db.QueryContext(ctx, stmt.Get("lexical"), expression, vault, wanted, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -108,16 +126,60 @@ func (q *Queries) Lexical(ctx context.Context, vaultID, query string, limit int,
 	return out, rows.Err()
 }
 
-// Nearest is the meaning half of a search: the chunks of one vault nearest a
+// Named is the sections of one vault whose names match what was typed, best
+// first.
+//
+// A section answers with the chunk it opens, so what comes back stands where the
+// section begins. Asked where a book speaks about a thing, this is the half that
+// answers with the chapter about it and not with the paragraph that says its
+// name most often.
+func (q *Queries) Named(ctx context.Context, vaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error) {
+	if limit <= 0 {
+		return nil, fmt.Errorf("a search by name needs a positive limit, got %d", limit)
+	}
+	expression := Expression(query, growing)
+	if expression == "" {
+		return nil, nil
+	}
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	wanted, err := kinds(of)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.db.QueryContext(ctx, stmt.Get("named"), expression, vault, wanted, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []domain.Passage
+	for rows.Next() {
+		var p domain.Passage
+		if err := rows.Scan(&p.Chunk, &p.Source, &p.TextFrom, &p.Hash, &p.Start, &p.Length, &p.Location, &p.HitAt); err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
+// Nearest is a search asked by meaning: the chunks of one vault nearest a
 // query vector, nearest first, at most `limit` of them.
 //
 // The coarse pass over the bit vectors keeps several times that many, and the
 // full-precision vectors order what it kept. A chunk that does not reach the
 // similarity floor is not an answer, so a vault with nothing to say answers
 // with nothing.
-func (q *Queries) Nearest(ctx context.Context, vaultID, recipe string, query []float32, limit int, floor float64) ([]domain.Passage, error) {
+func (q *Queries) Nearest(ctx context.Context, vaultID, recipe string, query []float32, of []domain.SourceKind, limit int, floor float64) ([]domain.Passage, error) {
 	if limit <= 0 {
-		return nil, fmt.Errorf("the meaning half needs a positive limit, got %d", limit)
+		return nil, fmt.Errorf("a search by meaning needs a positive limit, got %d", limit)
 	}
 	if len(query) == 0 {
 		return nil, nil
@@ -134,7 +196,7 @@ func (q *Queries) Nearest(ctx context.Context, vaultID, recipe string, query []f
 	if err != nil {
 		return nil, err
 	}
-	ranked, err := q.rerank(ctx, recipe, query, near, floor)
+	ranked, err := q.rerank(ctx, recipe, query, near, of, floor)
 	if err != nil {
 		return nil, err
 	}
@@ -367,9 +429,32 @@ func (q *Queries) Kept(ctx context.Context, recipe string, of [][]byte) (map[str
 // Recognised is one source whose text a producer made: where the file is, what
 // made the text, and the hash the files of that reading are kept under.
 type Recognised struct {
-	Path string
-	From string
-	Hash string
+	Path  string
+	From  string
+	Hash  string
+	Size  int64
+	MTime int64
+}
+
+// Reading is what one source's text came from, and false where the index holds
+// no source at that path.
+func (q *Queries) Reading(ctx context.Context, vaultID, path string) (Recognised, bool, error) {
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return Recognised{}, false, nil
+	}
+	if err != nil {
+		return Recognised{}, false, err
+	}
+	found := Recognised{Path: path}
+	err = q.db.QueryRowContext(ctx, stmt.Get("reading"), vault, path).Scan(&found.From, &found.Hash, &found.Size, &found.MTime)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Recognised{}, false, nil
+	}
+	if err != nil {
+		return Recognised{}, false, fmt.Errorf("reading %s: %w", path, err)
+	}
+	return found, true, nil
 }
 
 // Recognised is the sources of one kind whose text a producer made rather than

@@ -16,10 +16,8 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/task"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/source"
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
 )
 
 // Opened is a vault put together and running: the questions a client may ask,
@@ -36,11 +34,14 @@ type Opened struct {
 	// one of them is shown by the other.
 	Recognising *container.Recognising
 
-	// Embedder turns text into vectors, for filling the index and for turning a
-	// query into one. It is the same embedder for both, so a query's vector and
-	// the stored vectors come from one model. Nil for an installation with none,
-	// and then every search is answered by words alone.
+	// Embedder fills the index, and Asking turns a query into a vector. They
+	// are one object where the settings name one placement, and two placements
+	// of one model where a vault indexed over a network is asked on a machine
+	// that has none. Nil for an installation with none, and for Asking also
+	// where the two turned out not to be one model; then a search is answered
+	// by words alone.
 	Embedder port.Embedder
+	Asking   port.Embedder
 	// Settle is everything owed landing before anything is taken away. It is
 	// called while the window is still drawn, and calling it again is free. It
 	// answers false where a page is holding work a person is being asked about,
@@ -88,12 +89,20 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		return nil, err
 	}
 
-	// Opened once, for as long as the window is. A local model holds a session
-	// that takes seconds to build, and both filling the index and answering a
-	// query need it.
-	embedder, closeEmbedder, why := cfg.Embedder()
+	// One list of what is being done, for everything that does anything and for
+	// the window that shows it. One job behind it too: what a person asked for
+	// is one piece of work however they asked for it. It is made before
+	// anything that reports itself into it.
+	tasks := task.New()
+
+	// Opened once, for as long as the window is. A local model is fetched and
+	// compiled behind this, so the window is drawn while it arrives.
+	embedder, asking, closeEmbedder, why := cfg.Embedders(ctx, tasks)
 	if why != nil {
 		fmt.Fprintf(out, "not embedding %s: %v\n", vaults[0].Name, why)
+		// A placement that made no model is a vault with no vectors for as long
+		// as the window is open. It stands in the list under what stopped it.
+		tasks.Set(task.Task{ID: makingVectors, Doing: "Indexing", Failed: why.Error()})
 	}
 	if closeEmbedder == nil {
 		closeEmbedder = func() error { return nil }
@@ -102,10 +111,6 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 	wake := waking(settled)
 
 	watching, stop := context.WithCancel(ctx)
-	// One list of what is being done, for everything that does anything and for
-	// the window that shows it. One job behind it too: what a person asked for
-	// is one piece of work however they asked for it.
-	tasks := task.New()
 	recognising := cfg.Recognising(db.Sources(), tasks)
 
 	// What a recognition writes down is cut where every other cut happens. A
@@ -117,6 +122,10 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		raise(wake.read)
 		return nil
 	}
+
+	// A batch left with a proofreader outlives the run that left it, so one
+	// left before the application closed is collected when it opens.
+	go recognising.Collecting(watching, db.SourcesKnown(), collectedEvery, vaults...)
 
 	api := &API{
 		Vault:     vaults[0],
@@ -130,32 +139,38 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		Reads:     &note.Read{Readers: cfg.VaultReaders()},
 		Saves:     &note.Write{Readers: cfg.VaultReaders(), Writers: cfg.VaultWriters()},
 		Wrote:     func() { raise(wake.notes) },
+		Readers:   cfg.VaultReaders(),
+		Viewer:    keepingDrawings(),
+		// Where a passage sits on the page is asked of whichever producer made
+		// the text it is a place in, which is what the index records.
+		Marking: &source.Marks{
+			Readers: cfg.VaultReaders(),
+			Sources: db.SourcesKnown(),
+			Derived: cfg.DerivedStores(),
+		},
 	}
 	// Named before anything is read: it is what decides whether a chunk already
 	// carries a vector, and what tells the window that something is going to
 	// embed what was cut.
 	if embedder != nil {
 		model := embedder.Model()
-		// The coarse index is built for one width. A model of another width
-		// rebuilds it from what has been made.
-		if err := db.FitVectors(ctx, model.Dimensions); err != nil {
-			fmt.Fprintf(out, "not embedding %s: %v\n", vaults[0].Name, err)
-			embedder = nil
-		} else {
-			api.Model.Store(model.String())
-			api.Recipe.Store(model.Recipe())
-		}
+		api.Model.Store(model.String())
+		api.Recipe.Store(model.Recipe())
 	}
 
 	// The search the window offers is the search the application already does.
 	// It is built once the embedder is settled, so a model that could not be
 	// fitted leaves the words half to answer on its own.
-	finds := search.New(db.Passages(), cfg.VaultReaders(), cfg.DerivedStores(), embedder, cfg.Embedding.Floor)
+	// A search short of a half is said where the person is. A window opened
+	// from a desktop entry has no terminal to write to.
+	finds := cfg.Searching(db, asking, func(err error) {
+		api.say(task.Task{ID: wordsAlone, Doing: "Answering by words alone", Failed: err.Error()})
+	})
 	api.Finds = &finds
 	scan := usecase.Scan{
 		Readers:      cfg.VaultReaders(),
 		Vaults:       db.Vaults(),
-		Notes:        db.Notes(),
+		Notes:        db.NotesCutAt(cfg.Cutting()),
 		Known:        db.Queries(),
 		Maintenance:  db.Maintenance(),
 		RebuildIndex: cfg.RebuildIndex,
@@ -165,7 +180,7 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 	// Following the vault is a use case; this adapter only says who hears about
 	// it. Whatever a change turns out to mean is decided in one place, so a
 	// second way of showing a vault does not decide it again.
-	held := &holding{NoteRepository: db.Notes()}
+	held := &holding{NoteRepository: db.NotesCutAt(cfg.Cutting())}
 	refresh := usecase.Refresh{Readers: cfg.VaultReaders(), Notes: held}
 
 	// A note the window makes is level in the index before the answer comes
@@ -201,11 +216,15 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		Refresh:     refresh,
 		Recognising: recognising,
 		Embedder:    embedder,
+		Asking:      asking,
 		Settle:      func(ctx context.Context) bool { return settling(ctx, &api.Leaving, &api.Writing) },
 		Answered:    func(ctx context.Context) bool { return answering(ctx, &api.Leaving) },
 		Close: func() error {
 			stop()
 			wait()
+			// The documents held open for the window go with it, and each
+			// gives back the worker it was holding.
+			api.Viewer.close()
 			// The embedder goes after the work that uses it and before the
 			// database, which is the order they depend on each other in.
 			err := closeEmbedder()
@@ -275,12 +294,18 @@ const (
 	walkingNotes  = "walking the notes"
 	readingBooks  = "reading the books"
 	makingVectors = "making the vectors"
+	// wordsAlone is a search answered short of the half that asks by meaning.
+	wordsAlone = "answering by words alone"
 )
 
 // settled is how long the vault has to have been still before the notes written
 // into it are embedded. It is longer than the bound in ui/src/tab.ts, which
 // writes an unfinished edit every five seconds while a person goes on typing.
 const settled = 8 * time.Second
+
+// collectedEvery is how often the batches left with a proofreader are asked
+// after. A batch is answered in hours.
+const collectedEvery = 5 * time.Minute
 
 // nudges are the two ways work reaches the reading behind the window once the
 // first pass is over: a book, which is found and cut before anything is
@@ -483,9 +508,9 @@ func begin(
 				// being read.
 				if held := owed.take(); len(held) > 0 {
 					for path, v := range held {
-						cutSource(ctx, cfg, db, readers, embedder, v, path, out)
+						cutSource(ctx, cfg, db, api, embedder, v, path)
 					}
-					embedSources(ctx, cfg, db, api, readers, embedder, out)
+					embedSources(ctx, cfg, db, api, readers, embedder)
 				}
 			case <-wake.notes:
 				// Every write puts the pass off again: what was typed is
@@ -493,7 +518,7 @@ func begin(
 				quiet = time.After(wake.still)
 			case <-quiet:
 				quiet = nil
-				embedSources(ctx, cfg, db, api, readers, embedder, out)
+				embedSources(ctx, cfg, db, api, readers, embedder)
 			}
 		}
 	}()
@@ -557,7 +582,7 @@ func (h *holding) taken() []string {
 // readSources takes the text out of every book in the vault and then embeds what
 // was cut, reporting what it is reading as it goes.
 //
-// Both halves are allowed to fail without the window minding. A book that will
+// Every way is allowed to fail without the window minding. A book that will
 // not parse is one book; an embedder that is not configured is the ordinary case,
 // and search answers on words alone until one is.
 func readSources(
@@ -569,15 +594,12 @@ func readSources(
 	embedder port.Embedder,
 	out io.Writer,
 ) {
-	sizes := cutting(embedder)
-
-	extract, err := extracting(cfg, db, readers, sizes, api.Vault)
+	making, err := cfg.Searchable(ctx, db, embedder, api.Vault)
 	if err != nil {
-		fmt.Fprintf(out, "reading the sources of %s: %v\n", api.Vault.Name, err)
+		api.say(task.Task{ID: readingBooks, Doing: "Reading books", Failed: err.Error()})
 		return
 	}
-	extract.RebuildIndex = cfg.RebuildIndex
-	extract.OnProgress = func(res source.ExtractResult) {
+	making.Books.OnProgress = func(res source.ExtractResult) {
 		api.say(task.Task{
 			ID: readingBooks, Doing: "Reading books", About: res.Reading,
 			// Every book the walk found leaves this pass one of four ways, and
@@ -588,16 +610,23 @@ func readSources(
 	}
 
 	api.say(task.Task{ID: readingBooks, Doing: "Reading books"})
-	if res, err := extract.Execute(ctx, api.Vault); err != nil {
-		if !errors.Is(err, context.Canceled) {
-			fmt.Fprintf(out, "reading the sources of %s: %v\n", api.Vault.Name, err)
+	res, read := making.ReadBooks(ctx, api.Vault)
+	switch {
+	case read == nil:
+		if res.Extracted > 0 {
+			fmt.Fprintf(out, "%s: %d books, %d chunks\n", api.Vault.Name, res.Extracted, res.Chunks)
 		}
-	} else if res.Extracted > 0 {
-		fmt.Fprintf(out, "%s: %d books, %d chunks\n", api.Vault.Name, res.Extracted, res.Chunks)
+		api.finished(readingBooks)
+	case errors.Is(read, context.Canceled):
+		// Asked to stop. What it cut is correct as far as it got.
+		api.finished(readingBooks)
+	default:
+		// A failed pass stays in the list until whoever is shown it takes it
+		// out.
+		api.say(task.Task{ID: readingBooks, Doing: "Reading books", Failed: read.Error()})
 	}
-	api.finished(readingBooks)
 
-	embedSources(ctx, cfg, db, api, readers, embedder, out)
+	embedSources(ctx, cfg, db, api, readers, embedder)
 }
 
 // cutSource cuts one source again from whatever its text now says.
@@ -609,53 +638,28 @@ func cutSource(
 	ctx context.Context,
 	cfg container.Config,
 	db *container.Index,
-	readers port.VaultReaders,
+	api *API,
 	embedder port.Embedder,
 	v domain.Vault,
 	path string,
-	out io.Writer,
 ) {
-	cut, err := extracting(cfg, db, readers, cutting(embedder), v)
+	cut := func(err error) {
+		api.say(task.Task{ID: readingBooks, Doing: "Reading books", About: path, Failed: err.Error()})
+	}
+
+	making, err := cfg.Searchable(ctx, db, embedder, v)
 	if err != nil {
-		fmt.Fprintf(out, "cutting %s: %v\n", path, err)
+		cut(err)
 		return
 	}
-	if _, err := cut.One(ctx, v, path); err != nil && !errors.Is(err, context.Canceled) {
-		fmt.Fprintf(out, "cutting %s: %v\n", path, err)
+	switch err := making.CutOne(ctx, v, path); {
+	case err == nil:
+		// The pages that were read are cut, and a cut that failed before this
+		// one is over.
+		api.finished(readingBooks)
+	case !errors.Is(err, context.Canceled):
+		cut(err)
 	}
-}
-
-// extracting is what cuts a vault's sources, put together the one way. A pass
-// over the whole vault and a pass over one source are the same cut, and two
-// assemblies of it are two cuts that come apart.
-func extracting(
-	cfg container.Config,
-	db *container.Index,
-	readers port.VaultReaders,
-	sizes window.Sizes,
-	v domain.Vault,
-) (source.Extract, error) {
-	derived, err := cfg.DerivedStores().Open(v)
-	if err != nil {
-		return source.Extract{}, err
-	}
-	return source.Extract{
-		Readers: readers,
-		Sources: db.Sources(),
-		Owing:   db.SourcesKnown(),
-		Derived: derived,
-		Sizes:   sizes,
-	}, nil
-}
-
-// cutting is the sizes a window is cut at. A window is cut under the limit of
-// the model that will read it; without a model the default bound stands, and
-// what is cut now is what a model of any width is later given.
-func cutting(embedder port.Embedder) window.Sizes {
-	if embedder == nil {
-		return window.Sizes{}
-	}
-	return window.Sizes{Limit: window.Under(embedder.Model().MaxTokens)}
 }
 
 // embedSources gives the chunks of the vault the vectors they owe, and reads no
@@ -670,7 +674,6 @@ func embedSources(
 	api *API,
 	readers port.VaultReaders,
 	embedder port.Embedder,
-	out io.Writer,
 ) {
 	if embedder == nil {
 		return
@@ -686,36 +689,35 @@ func embedSources(
 		}
 	}
 
-	// A source standing on what a model read in it is read from the store, and a
-	// vector is made from the text a chunk is a place in. Without the store that
-	// text cannot be reached and the chunk is passed over with nothing said.
-	derived, err := cfg.DerivedStores().Open(api.Vault)
+	indexing := func(err error) {
+		api.say(task.Task{ID: makingVectors, Doing: "Indexing", Failed: err.Error()})
+	}
+
+	making, err := cfg.Searchable(ctx, db, embedder, api.Vault)
 	if err != nil {
-		fmt.Fprintf(out, "embedding %s: %v\n", api.Vault.Name, err)
+		indexing(err)
 		return
 	}
-	embed := source.Embed{
-		Readers:  readers,
-		Derived:  derived,
-		Chunks:   db.VectorsOwing(),
-		Vectors:  db.Vectors(),
-		Embedder: embedder,
-		OnProgress: func(res source.EmbedResult) {
-			// A person who edited one note is waiting on that note, so this is
-			// the work in hand and not the size of the vault.
-			api.say(task.Task{
-				ID: makingVectors, Doing: "Indexing",
-				Done: int64(res.Embedded), Total: owing,
-			})
-		},
+	making.Vectors.OnProgress = func(res source.EmbedResult) {
+		// A person who edited one note is waiting on that note, so this is the
+		// work in hand and not the size of the vault.
+		api.say(task.Task{
+			ID: makingVectors, Doing: "Indexing",
+			Done: int64(res.Embedded), Total: owing,
+		})
 	}
+
 	// This pass says what it owes and what it has made. The source a vector is
 	// made from is named by the reading of that source.
 	api.say(task.Task{ID: makingVectors, Doing: "Indexing", Total: owing})
-	if _, err := embed.Execute(ctx, api.Vault); err != nil && !errors.Is(err, context.Canceled) {
-		fmt.Fprintf(out, "embedding %s: %v\n", api.Vault.Name, err)
+	switch _, err := making.MakeVectors(ctx, api.Vault); {
+	case err == nil, errors.Is(err, context.Canceled):
+		api.finished(makingVectors)
+	default:
+		// A vault short of the vectors it owes is searched by its words alone,
+		// and the reason for it stands in the list.
+		indexing(err)
 	}
-	api.finished(makingVectors)
 }
 
 // Showing is the vault the window has open.

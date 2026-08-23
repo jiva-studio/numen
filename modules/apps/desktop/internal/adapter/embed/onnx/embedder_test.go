@@ -4,6 +4,7 @@ import (
 	"context"
 	"math"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -27,9 +28,9 @@ func modelDir(t *testing.T) string {
 
 func open(t *testing.T, dir string) *onnx.Embedder {
 	t.Helper()
-	cfg := embed.Defaults().Local
-	cfg.Dir = dir
-	e, err := onnx.Open(cfg)
+	cfg := embed.Defaults()
+	cfg.Indexing.Local.Dir = dir
+	e, err := onnx.Open(t.Context(), cfg.Model, cfg.Indexing.Local, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,9 +39,9 @@ func open(t *testing.T, dir string) *onnx.Embedder {
 }
 
 func TestAMissingDirectoryIsNamedInTheError(t *testing.T) {
-	cfg := embed.Defaults().Local
-	cfg.Dir = t.TempDir()
-	_, err := onnx.Open(cfg)
+	cfg := embed.Defaults()
+	cfg.Indexing.Local.Dir = t.TempDir()
+	_, err := onnx.Open(t.Context(), cfg.Model, cfg.Indexing.Local, nil)
 	if err == nil {
 		t.Fatal("want an error")
 	}
@@ -50,17 +51,40 @@ func TestAMissingDirectoryIsNamedInTheError(t *testing.T) {
 }
 
 func TestDimensionsMustBeKnown(t *testing.T) {
-	cfg := embed.Defaults().Local
-	cfg.Dimensions = 0
-	cfg.Dir = t.TempDir()
-	if _, err := onnx.Open(cfg); err == nil {
+	cfg := embed.Defaults()
+	cfg.Model.Dimensions = 0
+	cfg.Indexing.Local.Dir = t.TempDir()
+	if _, err := onnx.Open(t.Context(), cfg.Model, cfg.Indexing.Local, nil); err == nil {
 		t.Fatal("want an error")
+	}
+}
+
+// A model reports the identity the settings gave it, whole: the recipe a vector
+// is stored under is made from it in one process and read in another.
+func TestWhereATextIsCutOffMustBeSaid(t *testing.T) {
+	cfg := embed.Defaults()
+	cfg.Model.MaxTokens = 0
+	cfg.Indexing.Local.Dir = t.TempDir()
+	_, err := onnx.Open(t.Context(), cfg.Model, cfg.Indexing.Local, nil)
+	if err == nil || !strings.Contains(err.Error(), "cut off") {
+		t.Fatalf("got %v", err)
+	}
+}
+
+func TestAPoolingNobodyImplementsIsRefused(t *testing.T) {
+	// A model is pooled the way it was trained to be, or it is refused here.
+	cfg := embed.Defaults()
+	cfg.Model.Pooling = "cls"
+	cfg.Indexing.Local.Dir = t.TempDir()
+	_, err := onnx.Open(t.Context(), cfg.Model, cfg.Indexing.Local, nil)
+	if err == nil || !strings.Contains(err.Error(), "cls") {
+		t.Fatalf("got %v", err)
 	}
 }
 
 func TestTheModelEmbedsAndReportsItself(t *testing.T) {
 	e := open(t, modelDir(t))
-	if got := e.Model(); got.Dimensions != embed.Defaults().Local.Dimensions {
+	if got := e.Model(); got.Dimensions != embed.Defaults().Model.Dimensions {
 		t.Errorf("got %s", got)
 	}
 
@@ -114,7 +138,7 @@ func TestTheSameTextGivesTheSameVector(t *testing.T) {
 	}
 }
 
-func TestALongTextIsTruncatedRatherThanRefused(t *testing.T) {
+func TestALongTextIsTruncatedAndEmbedded(t *testing.T) {
 	e := open(t, modelDir(t))
 	long := ""
 	for range 4000 {
@@ -125,8 +149,7 @@ func TestALongTextIsTruncatedRatherThanRefused(t *testing.T) {
 	}
 }
 
-// Throughput is the number that decides whether embedding on this machine can
-// be the default, and it is measured on the machine that asks.
+// The rate at which this machine embeds, measured on the machine that asks.
 func TestThroughput(t *testing.T) {
 	if testing.Short() {
 		t.Skip("measures for a while")

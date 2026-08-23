@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/embedding"
 )
 
@@ -29,12 +30,16 @@ type scored struct {
 // A candidate the index holds no comparable vector for cannot be compared and
 // is not an answer. A vector that is read and does not compare is a corrupt
 // row, and says so.
-func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, candidates []int64, floor float64) ([]int64, error) {
+func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, candidates []int64, of []domain.SourceKind, floor float64) ([]int64, error) {
 	ids, err := json.Marshal(candidates)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.db.QueryContext(ctx, stmt.Get("rerank"), string(ids), recipe)
+	wanted, err := kinds(of)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.db.QueryContext(ctx, stmt.Get("rerank"), string(ids), recipe, wanted)
 	if err != nil {
 		return nil, err
 	}

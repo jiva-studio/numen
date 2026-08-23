@@ -83,4 +83,13 @@ message Doing {
   // How much of the call has been written, in characters. The only thing that
   // moves while a long call is being written.
   int32 written = 3;
+
+  // Where the call is working: the source it names, by the path the vault
+  // files it under. Empty for a call that is working on no one file.
+  string path = 4;
+
+  // The stretch of that source's text the call names, counted in bytes. A
+  // length of zero is a call that named the source and no place inside it.
+  int32 start = 5;
+  int32 length = 6;
 }

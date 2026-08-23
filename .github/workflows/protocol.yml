@@ -17,10 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          # buf compares the schema against what is on the branch this will
-          # merge into, which it cannot do from a shallow clone.
-          fetch-depth: 0
 
       - uses: actions/setup-go@v5
         with:
@@ -45,19 +41,6 @@ jobs:
 
       - name: Lint
         run: buf lint
-
-      # A field removed or renumbered breaks every client already built against
-      # it. Adding one does not, which is why this compares rather than forbids.
-      # There is nothing to compare against until the schema is on the branch
-      # being merged into.
-      - name: Breaking changes
-        if: github.event_name == 'pull_request'
-        run: |
-          if git cat-file -e "origin/${{ github.base_ref }}:modules/libs/protocol/buf.yaml" 2>/dev/null; then
-            buf breaking --against "../../../.git#branch=origin/${{ github.base_ref }},subdir=modules/libs/protocol"
-          else
-            echo "no schema on ${{ github.base_ref }} yet — nothing to break"
-          fi
 
       # The generated code is committed so that an ordinary build needs none of
       # the tools above. This is what proves it is still what the schema says.

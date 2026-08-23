@@ -65,7 +65,7 @@ func TestAHeadingIsFoundWithTheLineItStandsOn(t *testing.T) {
 	}
 }
 
-func TestEachHalfIsAskedByItself(t *testing.T) {
+func TestEachWayIsAskedByItself(t *testing.T) {
 	client, _ := opened(t, map[string]string{
 		"engine.md": "# Engines\n\nNo engine beats a reversible engine.\n",
 	})
@@ -74,7 +74,7 @@ func TestEachHalfIsAskedByItself(t *testing.T) {
 	// the words half answers on its own. Which is which is the handler's to get
 	// right: both halves answer with the same shape.
 	words, err := client.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{
-		Query: "reversible", Half: v1.Half_HALF_WORDS,
+		Query: "reversible", Way: v1.Way_WAY_WORDS,
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -84,7 +84,7 @@ func TestEachHalfIsAskedByItself(t *testing.T) {
 	}
 
 	meaning, err := client.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{
-		Query: "reversible", Half: v1.Half_HALF_MEANING,
+		Query: "reversible", Way: v1.Way_WAY_MEANING,
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -100,7 +100,7 @@ func TestAPassageSaysWhichNoteItCameOutOf(t *testing.T) {
 	})
 
 	answer, err := client.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{
-		Query: "reversible", Half: v1.Half_HALF_WORDS,
+		Query: "reversible", Way: v1.Way_WAY_WORDS,
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -119,6 +119,34 @@ func TestAPassageSaysWhichNoteItCameOutOf(t *testing.T) {
 	}
 	if len(first.GetAt()) == 0 {
 		t.Error("the passage says nothing about where the word typed stands in it")
+	}
+}
+
+// A hit is a place in a source, and the client is told which place: it is what
+// opens the source there, and nothing the client holds says it.
+func TestAPassageSaysWhereInItsSourceItStands(t *testing.T) {
+	client, _ := opened(t, map[string]string{
+		"engine.md": "# Engines\n\nNo engine beats a reversible engine.\n",
+	})
+
+	answer, err := client.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{
+		Query: "reversible", Way: v1.Way_WAY_WORDS,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	found := answer.Msg.GetFound()
+	if len(found) == 0 {
+		t.Fatal("nothing found")
+	}
+	first := found[0]
+	if first.GetLength() == 0 {
+		t.Errorf("the passage stands over no text: %d to %d",
+			first.GetStart(), first.GetStart()+first.GetLength())
+	}
+	if first.GetStart() < 0 {
+		t.Errorf("the passage begins at %d", first.GetStart())
 	}
 }
 

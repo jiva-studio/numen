@@ -67,6 +67,8 @@ func (a *asked) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	return out, nil
 }
 
+func (*asked) Close() error { return nil }
+
 func (a *asked) times() int {
 	a.mu.Lock()
 	defer a.mu.Unlock()

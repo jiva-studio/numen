@@ -41,7 +41,11 @@ type Window struct {
 	Length   int
 	Location string
 	Text     string
-	Small    []Window
+	// Opens are the parts of the source that begin exactly where this window
+	// does: what a section starting here is called. Empty for a window that
+	// opens none, which is most of them.
+	Opens []string
+	Small []Window
 }
 
 // An Extraction is one source as reading it left it: the file, the recipe that

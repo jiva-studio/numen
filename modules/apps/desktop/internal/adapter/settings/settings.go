@@ -21,7 +21,8 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/agent"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/embed"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/ocr/onnx"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/proofreading"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/recognition"
 )
 
 // Config is this installation's settings, in sections named for what they are
@@ -56,15 +57,23 @@ type Indexing struct {
 
 	// Recognition is how a scanned document is read when a person asks for it.
 	// Nothing here runs on its own.
-	Recognition onnx.Config `json:"recognition"`
+	Recognition recognition.Config `json:"recognition"`
+
+	// Proofreading is what puts a reading right. Naming nothing here is naming
+	// no proofreader, and a reading is used as it was read.
+	Proofreading proofreading.Config `json:"proofreading"`
 }
 
 // Defaults are what an installation nobody has configured does.
 func Defaults() Config {
 	return Config{
-		V:        1,
-		Indexing: Indexing{Embedding: embed.Defaults(), Recognition: onnx.Defaults()},
-		Agent:    agent.Defaults(),
+		V: 1,
+		Indexing: Indexing{
+			Embedding:    embed.Defaults(),
+			Recognition:  recognition.Defaults(),
+			Proofreading: proofreading.Defaults(),
+		},
+		Agent: agent.Defaults(),
 	}
 }
 
@@ -91,6 +100,10 @@ func At(path string) (Config, error) {
 	cfg := Defaults()
 	raw, err := os.ReadFile(path)
 	if errors.Is(err, fs.ErrNotExist) {
+		// An installation nobody has configured is written down as what it is
+		// doing. A machine that will not take the file runs on the same
+		// settings.
+		_ = write(path, cfg)
 		return cfg, nil
 	}
 	if err != nil {
@@ -103,4 +116,17 @@ func At(path string) (Config, error) {
 		cfg.V = 1
 	}
 	return cfg, nil
+}
+
+// write puts the settings where they are read from. The key is not among what
+// is written: rewriting the file is not how one is set.
+func write(path string, cfg Config) error {
+	raw, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, append(raw, '\n'), 0o600)
 }

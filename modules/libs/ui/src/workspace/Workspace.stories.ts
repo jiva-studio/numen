@@ -409,14 +409,16 @@ export const SelectsNothingWhileResizing: Story = {
     const at = boxOf(handle)
     const from = { clientX: at.x + at.width / 2, clientY: at.y + at.height / 2 }
 
-    /** Whether the root was marked while the pointer was on its way. */
+    /** The branch being resized, while the pointer is on its way. */
+    const resizing = () => canvasElement.querySelector('.branch[data-resizing]')
+
     let marked = false
     const watch = () => {
-      marked ||= document.documentElement.hasAttribute('data-resizing')
+      marked ||= resizing() !== null
     }
     window.addEventListener('pointermove', watch, true)
 
-    await expect(document.documentElement.hasAttribute('data-resizing')).toBe(false)
+    await expect(resizing()).toBeNull()
 
     await userEvent.pointer([
       { keys: '[MouseLeft>]', target: handle, coords: from },
@@ -428,7 +430,7 @@ export const SelectsNothingWhileResizing: Story = {
     window.removeEventListener('pointermove', watch, true)
 
     await expect(marked).toBe(true)
-    await expect(document.documentElement.hasAttribute('data-resizing')).toBe(false)
+    await expect(resizing()).toBeNull()
     await expect(getSelection()?.toString() ?? '').toBe('')
   },
 }

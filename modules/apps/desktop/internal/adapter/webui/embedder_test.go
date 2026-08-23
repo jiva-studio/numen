@@ -44,10 +44,11 @@ func vault(t *testing.T, embedding embed.Config) container.Config {
 // filling of the index, and this asks for it.
 func TestTheEmbedderConfiguredIsTheOneOnHand(t *testing.T) {
 	embedding := embed.Defaults()
-	embedding.Use = embed.UseService
-	embedding.Service.Name = "asked-for"
+	embedding.Model.Name = "asked-for"
+	embedding.Indexing.Use = embed.UseService
+	embedding.Indexing.Service.Name = "asked-for"
 	// Nowhere: this test wants the embedder built, not called.
-	embedding.Service.BaseURL = "http://127.0.0.1:1/v1"
+	embedding.Indexing.Service.BaseURL = "http://127.0.0.1:1/v1"
 	t.Setenv(embed.KeyEnvVar, "sk-test")
 
 	opened, err := webui.Open(t.Context(), vault(t, embedding), os.Stderr)

@@ -168,7 +168,7 @@ func TestWithNoEmbedderTheTextIsCutAndNothingFails(t *testing.T) {
 	// What the words half answers over is there all the same.
 	for _, chunk := range small {
 		if chunk.text == "" {
-			t.Fatalf("chunk %d holds no text for the words half of a search", chunk.id)
+			t.Fatalf("chunk %d holds no text for a search by words", chunk.id)
 		}
 	}
 }
@@ -292,7 +292,7 @@ func TestASourceStandingOnAReadingIsEmbeddedFromIt(t *testing.T) {
 
 	raw := bookOf(t, "Scanned", words(sanskrit, 400))
 	shelf.hold(bookPath, domain.KindBook, raw, 1)
-	read, _ := ocr.Write([]ocr.Page{{At: 0, Label: "1", Blocks: []ocr.Block{{Label: "text", Text: words(sanskrit, 400)}}}})
+	read, _, _ := ocr.Write([]ocr.Page{{At: 0, Blocks: []ocr.Block{{Label: "text", Text: words(sanskrit, 400)}}}})
 	if err := made.Write(ctx, text.Artifact("ocr", fingerprint(raw)), read); err != nil {
 		t.Fatal(err)
 	}

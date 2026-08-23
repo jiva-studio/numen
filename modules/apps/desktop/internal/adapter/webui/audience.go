@@ -19,7 +19,7 @@ type audience[T any] struct {
 	// same thing.
 	about func(T) string
 	// keep says a message is one a listener has to be given. A message waiting
-	// under it stays where it is, and what would have replaced it waits instead.
+	// under it stays where it is, and what replaces it waits.
 	keep func(T) bool
 	// room is how many messages a listener may be owed before it is behind.
 	room int

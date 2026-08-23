@@ -7,7 +7,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/ocr/onnx"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/source"
@@ -36,10 +35,10 @@ func recogniseCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 	// what is missing and waits for it. It is said out loud first: a hundred and
 	// sixty megabytes is minutes, and a program that prints nothing for minutes
 	// looks broken.
-	if !onnx.Ready(cfg.Recognition) {
+	if !cfg.RecogniserReady() {
 		fmt.Fprintln(out, "fetching what is needed to read scans, about 160 MB")
 	}
-	models, closeModels, why := cfg.Recogniser()
+	models, closeModels, why := cfg.Recogniser(ctx)
 	if why != nil {
 		return fmt.Errorf("nothing to read with: %w", why)
 	}
@@ -48,19 +47,16 @@ func recogniseCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 	fmt.Fprintf(out, "reading %s with %s\n", args[1], models.Recognition())
 	started := time.Now()
 
-	derived, err := cfg.DerivedStores().Open(v)
+	// What a batch of pages writes down is cut before the next batch is read, so
+	// a document stopped part way through is searchable to the page it reached.
+	cut, err := cfg.Extract(db.Sources(), db.SourcesKnown(), v)
 	if err != nil {
 		return err
 	}
-	// What a batch of pages writes down is cut before the next batch is read, so
-	// a document stopped part way through is searchable to the page it reached.
-	cut := source.Extract{
-		Readers: cfg.VaultReaders(),
-		Sources: db.Sources(),
-		Owing:   db.SourcesKnown(),
-		Derived: derived,
-	}
 
+	// The line of pages is closed once it stops, so what follows it stands on a
+	// line of its own.
+	shown := false
 	recognise := source.Recognise{
 		Readers: cfg.VaultReaders(),
 		Sources: db.Sources(),
@@ -75,12 +71,16 @@ func recogniseCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 		OnProgress: func(res source.RecogniseResult) {
 			if res.Pages > 0 {
 				fmt.Fprintf(out, "  page %d of %d\r", res.Read, res.Pages)
+				shown = true
 			}
 		},
 	}
 	res, err := recognise.Execute(ctx, v, args[1])
 	if err != nil {
 		return err
+	}
+	if shown {
+		fmt.Fprintln(out)
 	}
 
 	switch {

@@ -57,8 +57,8 @@ the reason the measured direction was quantisation and staged retrieval
 ### The driver must be one that carries the extension
 
 `modernc.org/sqlite` gained the bundled extension in **v1.50.0**. ADR-0014 states
-that the driver supports it; that is true only from this version, and the module
-is pinned below it.
+that the driver supports it; that is true only from this version, which is the
+floor the module is held above. `go.mod` names v1.56.0.
 
 **The pin is a requirement, not a detail:** the vector index does not exist in a
 build made with an older driver, and the failure is a missing SQL function
@@ -86,8 +86,7 @@ decision about a second engine has to beat.
 - Every reachable fallback costs cgo, so leaving `sqlite-vec` and keeping
   ADR-0014's one-machine cross-compilation are now known to be mutually
   exclusive. That is a smaller escape hatch than ADR-0002 assumed.
-- Raising the driver floor takes whatever else changed between the pinned
-  version and it.
+- Raising the driver floor takes whatever else changed with it.
 
 ## Alternatives considered
 

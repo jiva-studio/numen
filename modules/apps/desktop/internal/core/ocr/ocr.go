@@ -46,17 +46,22 @@ type Span struct {
 type Block struct {
 	Label string
 	Text  string
+	// Head says the region is a heading, and Depth is how far in the part it
+	// opens sits. A document title stands above the section titles within it.
+	Head  bool
+	Depth int
 	// Spans are where on the page each run of Text was read. A recogniser that
 	// reports no rectangles leaves them empty.
 	Spans []Span
 }
 
 // A Page is one page of a document, read.
+//
+// It carries no name of its own. What a page is called is where it stands in
+// the document, and that is what a person is shown and what a viewer opens at.
 type Page struct {
 	// At is which page of the document this is, counted from zero.
 	At int
-	// Label is what the document calls this page.
-	Label string
 	// Size is the page as it was rendered, which the rectangles are addressed
 	// from. A zero size is a page nothing was measured on.
 	Size image.Point

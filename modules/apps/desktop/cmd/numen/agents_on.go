@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lint"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/markdown"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 )
 
 // This file is the only one that knows an agent can reach the vault. Built with
@@ -46,7 +45,7 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 	if err != nil {
 		return nil, err
 	}
-	core := agentCore(cfg, opened, root)
+	core := agentCore(cfg, opened, root, out)
 	endpoint, err := mcp.ServeHTTP(ctx, opts.addr, secret, core,
 		func(err error) { fmt.Fprintln(out, "agents:", err) })
 	if err != nil {
@@ -146,7 +145,7 @@ func agent(
 // agentCore wires the tools to the same use cases everything else uses. The
 // index is brought level by the same refresh the watcher drives, so a tool that
 // writes a note leaves it findable.
-func agentCore(cfg container.Config, opened *webui.Opened, root string) mcp.Core {
+func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.Writer) mcp.Core {
 	index := func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := opened.Refresh.Execute(ctx, v, paths)
 		return err
@@ -173,8 +172,10 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string) mcp.Core
 
 		Sources:   opened.Index.SourcesKnown(),
 		Recognise: recogniser(opened),
+		Derived:   cfg.DerivedStores(),
 
-		Search:        search.New(opened.Index.Passages(), readers, cfg.DerivedStores(), opened.Embedder, cfg.Embedding.Floor),
+		Search: cfg.Searching(opened.Index, opened.Asking,
+			func(err error) { fmt.Fprintln(out, "agents: answering by words alone:", err) }),
 		Neighbourhood: note.ShowNeighbourhood{Links: opened.Index.Links(), Notes: queries},
 		Links:         note.ShowLinks{Links: opened.Index.Links()},
 		Problems:      lint.Standard(opened.Index.Problems()),

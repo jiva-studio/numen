@@ -64,7 +64,8 @@ and another never.
 places in. Null is the ordinary case, and the only case for a note, an EPUB, or a
 PDF nobody has read.
 
-It holds a producer and not a name. The four files one reading writes are all
+It holds a producer and not a name. The files one reading is kept under — seven
+of them, from the prose itself to the corrections a person made to it — are all
 composed from the producer and the hash, and the hash is a column here already,
 so a name is composed where it is needed and nothing takes an extension off a
 stored string.
@@ -132,6 +133,11 @@ a result says which printed page it came from. **Places do not survive.** A
 recognised document names no parts — what a layout model calls a heading is a
 shape on a page, not an entry in an outline — so it is one span, which ADR-0006
 already calls an ordinary outcome.
+
+> Both of those sentences were wrong, and ADR-0038 says why. The mark carries no
+> number at all now — a page is called where it stands in the file — and the
+> layout model names a heading well enough to say where a section begins even
+> when it reads the words badly.
 
 A page with nothing on it is still written; a document with nothing on it writes
 nothing at all. An empty artifact would stand in for a text layer that worked,

@@ -470,7 +470,7 @@ func TestARecutKeepsAWindowInsideALargeOneThatChanged(t *testing.T) {
 }
 
 func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
-	// A hit in the words half and a hit in the dense half name one row, so a
+	// A hit found by words and one found by meaning name one row, so a
 	// chunk that keeps its number keeps what was indexed under it.
 	ctx := t.Context()
 	db := opened(t)
@@ -498,7 +498,7 @@ func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
 		t.Errorf("%d full-text rows name a chunk that is gone", got)
 	}
 
-	found, err := db.ChunkQueries().Lexical(ctx, first.ID, opening, 10, false)
+	found, err := db.ChunkQueries().Lexical(ctx, first.ID, opening, nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -510,7 +510,7 @@ func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
 			t.Errorf("%s answered for a word of %s", p.Source, n.Ref.Path)
 		}
 	}
-	typed, err := db.ChunkQueries().Lexical(ctx, first.ID, "wordzz", 10, false)
+	typed, err := db.ChunkQueries().Lexical(ctx, first.ID, "wordzz", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -567,7 +567,7 @@ func TestARecutStaysInsideItsVault(t *testing.T) {
 		{second, "quasar", true},
 		{first, "quasar", false},
 	} {
-		found, err := db.ChunkQueries().Lexical(ctx, ask.vault.ID, ask.word, 10, false)
+		found, err := db.ChunkQueries().Lexical(ctx, ask.vault.ID, ask.word, nil, 10, false)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -633,7 +633,7 @@ func TestANoteWithSectionsIsStillFoundByItsTitle(t *testing.T) {
 	}
 	save(t, db, first, n)
 
-	found, err := db.ChunkQueries().Lexical(ctx, first.ID, n.Title, 10, false)
+	found, err := db.ChunkQueries().Lexical(ctx, first.ID, n.Title, nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -711,7 +711,7 @@ func TestCuttingOneSectionStaysInsideItsVault(t *testing.T) {
 		{second, "quasar", true},
 		{first, "quasar", false},
 	} {
-		found, err := db.ChunkQueries().Lexical(ctx, ask.vault.ID, ask.word, 10, false)
+		found, err := db.ChunkQueries().Lexical(ctx, ask.vault.ID, ask.word, nil, 10, false)
 		if err != nil {
 			t.Fatal(err)
 		}

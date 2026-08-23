@@ -107,6 +107,7 @@ func windows(in []port.Window) []chunk.Window {
 			Length:   w.Length,
 			Location: w.Location,
 			Text:     w.Text,
+			Opens:    w.Opens,
 			Small:    windows(w.Small),
 		})
 	}
@@ -116,6 +117,19 @@ func windows(in []port.Window) []chunk.Window {
 // Kept is the vectors already made for these texts under this recipe.
 func (s sources) Kept(ctx context.Context, recipe string, of [][]byte) (map[string][]byte, error) {
 	return s.read.Kept(ctx, recipe, of)
+}
+
+// Reading is what one source's text came from, and false where the index holds
+// no source at that path.
+func (s sources) Reading(ctx context.Context, vaultID, path string) (port.Recognised, bool, error) {
+	found, held, err := s.read.Reading(ctx, vaultID, path)
+	if err != nil || !held {
+		return port.Recognised{}, false, err
+	}
+	return port.Recognised{
+		Path: found.Path, From: found.From, Hash: found.Hash,
+		Size: found.Size, MTime: found.MTime,
+	}, true, nil
 }
 
 // Recognised is the sources of one kind whose text a producer made.

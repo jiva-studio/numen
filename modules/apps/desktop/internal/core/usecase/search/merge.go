@@ -51,21 +51,51 @@ func merge(rankings ...[]domain.Passage) []domain.Passage {
 	return fused
 }
 
-// collapse keeps one passage per source: several passages of one document are
-// one result, and a document names itself once.
+// where is one place in one file. A hit and the window enclosing it are two
+// rows standing in the same place, and one place is one passage.
+type where struct {
+	source        string
+	start, length int
+}
+
+// collapse keeps at most `each` passages of one source, in the order it was
+// given, so the best-ranked chunks of a source are the ones that survive.
 //
-// The order is the order it was given, so the best-ranked chunk of a source is
-// the one that survives.
-func collapse(fused []domain.Passage, limit int) []domain.Passage {
-	out := make([]domain.Passage, 0, min(limit, len(fused)))
-	taken := map[string]bool{}
-	for _, p := range fused {
-		if taken[p.Source] {
-			continue
+// Where a document has a section named what was asked for, that section is the
+// first passage it answers with. Which documents answer is asked of every
+// ranking; where in one to stand is what its names say.
+func collapse(fused, named []domain.Passage, each, limit int) []domain.Passage {
+	sections := map[string]domain.Passage{}
+	for _, p := range named {
+		if _, held := sections[p.Source]; !held {
+			sections[p.Source] = p
 		}
-		taken[p.Source] = true
+	}
+
+	out := make([]domain.Passage, 0, min(limit, len(fused)))
+	taken := map[string]int{}
+	opened := map[string]bool{}
+	held := map[where]bool{}
+
+	keep := func(p domain.Passage) bool {
+		at := where{p.Source, p.Start, p.Length}
+		if held[at] || taken[p.Source] >= each {
+			return true
+		}
+		held[at] = true
+		taken[p.Source]++
 		out = append(out, p)
-		if len(out) == limit {
+		return len(out) < limit
+	}
+
+	for _, p := range fused {
+		if section, has := sections[p.Source]; has && !opened[p.Source] {
+			opened[p.Source] = true
+			if !keep(section) {
+				break
+			}
+		}
+		if !keep(p) {
 			break
 		}
 	}

@@ -352,6 +352,8 @@ func (e *embedder) Model() port.EmbeddingModel {
 	return port.EmbeddingModel{Name: "fake", Dimensions: e.dims}
 }
 
+func (*embedder) Close() error { return nil }
+
 func (e *embedder) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	e.calls++
 	if e.refuse > 0 && e.calls == e.refuse {
@@ -436,6 +438,18 @@ func words(vocabulary []string, n int) string {
 		out = append(out, vocabulary[i%len(vocabulary)])
 	}
 	return strings.Join(out, " ")
+}
+
+func (s *store) Reading(_ context.Context, vaultID, path string) (port.Recognised, bool, error) {
+	src, held := s.sources[vaultID][path]
+	if !held {
+		return port.Recognised{}, false, nil
+	}
+	// The row says what the file was when it was read, as the query does.
+	return port.Recognised{
+		Path: path, From: src.TextFrom, Hash: src.Hash,
+		Size: src.Ref.Size, MTime: src.Ref.MTime,
+	}, true, nil
 }
 
 func (s *store) Recognised(_ context.Context, vaultID string, kind domain.SourceKind) ([]port.Recognised, error) {

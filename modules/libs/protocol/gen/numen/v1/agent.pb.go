@@ -405,7 +405,14 @@ type Doing struct {
 	About string `protobuf:"bytes,2,opt,name=about,proto3" json:"about,omitempty"`
 	// How much of the call has been written, in characters. The only thing that
 	// moves while a long call is being written.
-	Written       int32 `protobuf:"varint,3,opt,name=written,proto3" json:"written,omitempty"`
+	Written int32 `protobuf:"varint,3,opt,name=written,proto3" json:"written,omitempty"`
+	// Where the call is working: the source it names, by the path the vault
+	// files it under. Empty for a call that is working on no one file.
+	Path string `protobuf:"bytes,4,opt,name=path,proto3" json:"path,omitempty"`
+	// The stretch of that source's text the call names, counted in bytes. A
+	// length of zero is a call that named the source and no place inside it.
+	Start         int32 `protobuf:"varint,5,opt,name=start,proto3" json:"start,omitempty"`
+	Length        int32 `protobuf:"varint,6,opt,name=length,proto3" json:"length,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -461,6 +468,27 @@ func (x *Doing) GetWritten() int32 {
 	return 0
 }
 
+func (x *Doing) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *Doing) GetStart() int32 {
+	if x != nil {
+		return x.Start
+	}
+	return 0
+}
+
+func (x *Doing) GetLength() int32 {
+	if x != nil {
+		return x.Length
+	}
+	return 0
+}
+
 var File_numen_v1_agent_proto protoreflect.FileDescriptor
 
 const file_numen_v1_agent_proto_rawDesc = "" +
@@ -484,11 +512,14 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	"\n" +
 	"\bAnswered\"\n" +
 	"\n" +
-	"\bThinking\"K\n" +
+	"\bThinking\"\x8d\x01\n" +
 	"\x05Doing\x12\x12\n" +
 	"\x04tool\x18\x01 \x01(\tR\x04tool\x12\x14\n" +
 	"\x05about\x18\x02 \x01(\tR\x05about\x12\x18\n" +
-	"\awritten\x18\x03 \x01(\x05R\awritten2\x81\x01\n" +
+	"\awritten\x18\x03 \x01(\x05R\awritten\x12\x12\n" +
+	"\x04path\x18\x04 \x01(\tR\x04path\x12\x14\n" +
+	"\x05start\x18\x05 \x01(\x05R\x05start\x12\x16\n" +
+	"\x06length\x18\x06 \x01(\x05R\x06length2\x81\x01\n" +
 	"\fAgentService\x124\n" +
 	"\x03Ask\x12\x14.numen.v1.AskRequest\x1a\x15.numen.v1.AskResponse0\x01\x12;\n" +
 	"\x06Finish\x12\x17.numen.v1.FinishRequest\x1a\x18.numen.v1.FinishResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"

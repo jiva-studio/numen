@@ -42,6 +42,9 @@ type Core struct {
 	// Without them the tools for those documents are not added.
 	Sources   port.SourceQueries
 	Recognise Recognising
+	// Derived is where a reading of a document is kept. Without it a document
+	// stands on its own bytes, which for a scan is nothing.
+	Derived port.DerivedStores
 
 	Search        search.Search
 	Neighbourhood note.ShowNeighbourhood
@@ -102,6 +105,23 @@ func instructions(core Core) string {
 	b.WriteString("- Prose is yours to write; the frontmatter is the person's. Change it with ")
 	b.WriteString("the link tools rather than by writing the file yourself.\n")
 	b.WriteString("- A removed note goes to the vault's trash rather than being destroyed.\n\n")
+
+	b.WriteString("A vault holds books and papers beside its notes, and asking them is not ")
+	b.WriteString("like asking a note:\n")
+	b.WriteString("- Search with the person's own words before searching with your own. A ")
+	b.WriteString("book's sections are searched by name, and a section named what was asked ")
+	b.WriteString("for is what the search answers with.\n")
+	b.WriteString("- A search answers with several places of one book. Show every place you ")
+	b.WriteString("speak about: `source_show` takes the rest under `also`, and the person is ")
+	b.WriteString("taken to the first.\n")
+	b.WriteString("- A passage is a window cut to a size and it ends where it was cut, which ")
+	b.WriteString("is mid-sentence as often as not. Read on with `source_read` before saying ")
+	b.WriteString("a book does not say something.\n")
+	b.WriteString("- Name a passage in what you write as a link, so the person can go to it:\n")
+	b.WriteString("  `[the Remuna episode](numen:library%2FA%20Book.pdf?start=62690&length=1246)`\n")
+	b.WriteString("  The path is percent-encoded, and the start and length are the ones the ")
+	b.WriteString("search gave you. Write the link where you speak about the passage, not in ")
+	b.WriteString("a list at the end.\n\n")
 
 	b.WriteString("Changes appear immediately in the window the person has open, so work in ")
 	b.WriteString("small steps they can follow.\n")

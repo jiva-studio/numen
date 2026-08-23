@@ -751,3 +751,164 @@ smallest is also the fastest and, on this book, the best.
 A recogniser that cannot spell a script at all writes plausible nonsense: the
 same models over a Russian document return Latin gibberish, and what keeps most
 of it out of the index is `window.legible` refusing to cut it.
+
+## Where a document's own words sit
+
+Recorded 2026-08-20 on the same machine, over the 546-page scan and its text
+layer.
+
+| | |
+| --- | --- |
+| Reading the whole text | 9.5 s, 1 702 107 bytes over 546 pages |
+| The words of one page | 239 ms |
+| The words of three pages | 213 ms, 71 ms a page |
+| The words of ten pages | 403 ms, 40 ms a page |
+
+**Almost all of it is opening the document.** Ten pages cost twice what one
+does, not ten times, because the 233 MB file is read and parsed once and the
+pages after the first are tens of milliseconds each. That is what a cache of
+open documents is for, and it is why the pages wanted are asked for together.
+
+The layer yields 572 boxes a page, 312 357 over the book, against the 51 169 a
+recognition of the same pages produced. The gap is punctuation: this layer puts
+a space before a comma, so 43 523 of the boxes are one byte standing alone in
+the text.
+
+## What a line's boundary costs
+
+Recorded 2026-08-20 over the same scan: the four headings of pages 31 and 32,
+and the body of twenty pages spread across the book, against the document's own
+text layer. Error is the mean share of characters wrong.
+
+The detector answers with the text's own outline drawn inside the letters, and
+the amount it falls short is a share of the line's height. What widens it again
+was a fixed number of pixels, measured on the part after it has been scaled — on
+a heading that is about four pixels of the page against fifteen to twenty of
+shrink. The top of every capital and the last letter of every line were cut off.
+
+| the line widened by | headings | body |
+| --- | --- | --- |
+| 10 pixels | 0.074 | 0.0644 |
+| 14 | 0.031 | 0.0633 |
+| 18 | 0.025 | 0.0639 |
+| 20 | 0.017 | 0.0648 |
+| 24 | 0.035 | 0.0667 |
+
+**Eighteen**, the middle of where it stops mattering rather than the edge. The
+body is flat from ten to twenty and begins to pay after that.
+
+```
+"IAYADEVA GOSVAMI'S LIFEINNABADWI"         became "JAYADEVA GOSVAMI'S LIFE INNABADWIP"
+"LAYADEVA GOSVAMI'S MARRIAGE TO PADMAVAT"  became "JAYADEVA GOSVAMI'S MARRIAGE TO PADMAVATI"
+"THELORD HELPS IAYADEVA GOSVAMIWRITE…"     became "THE LORD HELPS JAYADEVA GOSVÁMI WRITE GITA GOVINDA"
+```
+
+Two other settings were measured and neither is worth moving. The heat a pixel
+carries to be part of a line gives the same boxes at 0.15, 0.20 and 0.30 — the
+map is as good as binary here. The longest side a part is read at costs small
+type when lowered and costs everything when raised, and 300 dpi beats 150, 200,
+400 and 600 because detection is scaled to that side whatever the page was drawn
+at.
+
+What no setting reaches: a word gap in a display face no wider than its letter
+gaps is one line to any threshold, so the space is the recogniser's own guess.
+And the alphabet the model carries has `ā ī ū ñ ś` and none of the letters with
+a dot under them, so `Lakṣmaṇa` and `Kṛṣṇa` cannot be written whatever the boxes
+are.
+
+## A part too small to find a line in
+
+Recorded 2026-08-20 over the same scan, pages 44 to 73 of the file, which print
+14 to 43. The layout model finds the `number` region on every one of them — the
+number stands alone at the foot between two ornaments — and it is some fifty
+pixels across at 300 dpi.
+
+Nothing is read in it. The detector draws a boundary around dark pixels and
+shrinks it by a share of the line's height; a line filling the image it is
+looked for in leaves no boundary to draw, so the region comes back blank.
+
+| what was read | pages right of 30 |
+| --- | --- |
+| the region as it stands | 0 |
+| the region magnified 3× to 20× | 0 |
+| the crop widened to 150, 250, 400, 640, 960 pixels | 0 to 6 |
+
+Widening the crop takes in the ornaments either side, and what they read as is
+not a number. Keeping only the lines whose middle falls in the region gets 30 of
+30 at a margin of 150 pixels and above — and that margin is a pixel count
+against one book at one dpi, so it is not a default anything can carry.
+
+So nothing reads it. A page is called where it stands in the file, which is known
+for every page, costs nothing, and is the number the pane in front of the person
+is showing.
+
+The margin that works is the measurement worth keeping here: it says the failure
+is the detector needing background around a line, not the models being unable to
+read two digits.
+
+## Drawing a page of a scan
+
+Recorded 2026-08-20 over the same 546-page scan, five pages averaged, on an
+idle machine. The recognition run competes for the same cores and for the same
+pool of pdfium workers; under one, every number below is roughly doubled.
+
+| width asked | pdfium | resample | jpeg | total | over the wire |
+| --- | --- | --- | --- | --- | --- |
+| 800 | 443 ms | 43 | 17 | **503 ms** | 234 kB |
+| 1200 | 498 | 95 | 34 | **628** | 417 kB |
+| 1600 | 553 | 163 | 52 | **768** | 625 kB |
+| 2400 | 616 | 377 | 107 | **1101** | 1094 kB |
+
+**Drawing barely moves with the resolution** — 104 dpi costs 443 ms and 311 dpi
+costs 616. So the cost is not rasterising: each page of this book holds one
+large photograph, and the library decodes the whole of it whatever size is
+asked for. Half a second a page is what this document costs, and no setting
+here reaches it.
+
+**The resample was for a pixel or two.** The resolution is a whole number
+rounded up, so a page asked for at 800 comes back 804 across. Scaling those
+four pixels off cost between a tenth and four tenths of a second, and the window
+lays the page out at the width it asked for anyway. It is gone: the page goes as
+it was drawn, and the browser takes the four pixels off in the compositor.
+
+That leaves the half second, and it is the same half second every time a page is
+turned back to. So the drawn pages are kept, in this machine's cache folder and
+not in the vault — a page turned back to is read from disk in about a
+millisecond, and a book read through once costs its half second a page and never
+again.
+
+## Finding the section a question is about
+
+Recorded 2026-08-20 over the same 546-page scan. 700 questions drawn from the
+book's own parts: for each of 350 parts whose heading the recogniser read as
+words, one question is that heading — a person asking where the book speaks
+about a thing — and one is seven words from the middle of the part. The right
+answer is that part either way.
+
+| | right section | opened at its start |
+| --- | --- | --- |
+| the words half as it stands | 307/350 | 298/350 |
+| the section's name in every chunk | 340/350 | 306/350 |
+| the sections findable by name | 346/350 | 346/350 |
+| both | 348/350 | 348/350 |
+
+The questions quoting a phrase from the middle of a part moved by one either
+way — 331, 330, 331, 330 — so none of these costs anything on a question that
+names no section.
+
+**The second column is the one that decided it.** Putting the name into every
+chunk lifts the right chapter but still answers with whatever paragraph of it
+ranks best; making a section findable by its own name answers with the section,
+at its heading.
+
+What the words half was doing is visible in one query. Asked for
+`Madhavendra Puri`, BM25 scored the chapter that *is* about him at −12.74 and
+the subsections inside it between −17.8 and −19.7 — and lower is better. The
+chapter's opening says his name once, in its heading; a paragraph in the
+subsection after it says it four times.
+
+**The name in every chunk was left.** It is worth two points on top of the
+other, and it changes the text a vector is made from: the recipe changes, and
+every chunk of every recognised document is embedded again. Only the words half
+was measured here — what a vector that knows its chapter is worth cannot be
+known without buying those vectors. The number to beat is 346 and 346.

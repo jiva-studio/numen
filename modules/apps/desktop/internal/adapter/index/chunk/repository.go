@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index/sqlfile"
 )
@@ -61,7 +62,11 @@ type Window struct {
 	Length   int
 	Location string
 	Text     string
-	Small    []Window
+	// Opens are the parts of the source that begin exactly where this window
+	// does: what a section starting here is called. Empty for a window that
+	// opens none, which is most of them.
+	Opens []string
+	Small []Window
 }
 
 // Vector is one chunk's embedding in both representations that are stored.
@@ -265,11 +270,16 @@ func Clear(ctx context.Context, tx *sql.Tx, source int64) error {
 // are gone come out last.
 //
 // Every window written is indexed for the words it holds, large and small alike,
-// so that the lexical and the dense half of a search name one kind of row.
+// so that a search asked by words and one asked by meaning name one kind of row.
 func Replace(ctx context.Context, tx *sql.Tx, source, vault int64, windows []Window) error {
 	held, err := chunksOf(ctx, tx, source)
 	if err != nil {
 		return err
+	}
+	// A window that says the same thing keeps its row through a cut, so the
+	// names of the parts are dropped by the source and not with the chunks.
+	if _, err := tx.ExecContext(ctx, stmt.Get("clear_parts"), source); err != nil {
+		return fmt.Errorf("clear_parts: %w", err)
 	}
 
 	w, err := prepare(ctx, tx)
@@ -295,9 +305,9 @@ func Replace(ctx context.Context, tx *sql.Tx, source, vault int64, windows []Win
 	return forget(ctx, tx, held.forgotten())
 }
 
-// writer is the three statements a cut runs per window, prepared once for the
-// whole source.
-type writer struct{ insert, index, move *sql.Stmt }
+// writer is the statements a cut runs per window, prepared once for the whole
+// source.
+type writer struct{ insert, index, names, move *sql.Stmt }
 
 func prepare(ctx context.Context, tx *sql.Tx) (writer, error) {
 	var w writer
@@ -307,6 +317,7 @@ func prepare(ctx context.Context, tx *sql.Tx) (writer, error) {
 	}{
 		{"insert_chunk", &w.insert},
 		{"insert_fts", &w.index},
+		{"insert_part", &w.names},
 		{"move_chunk", &w.move},
 	} {
 		prepared, err := tx.PrepareContext(ctx, stmt.Get(s.name))
@@ -337,6 +348,9 @@ func (w writer) put(ctx context.Context, held *held, source, vault int64, win Wi
 		if _, err := w.move.ExecContext(ctx, win.Start, win.Length, parent, nullable(win.Location), row); err != nil {
 			return 0, fmt.Errorf("move_chunk: %w", err)
 		}
+		if err := w.opens(ctx, row, win); err != nil {
+			return 0, err
+		}
 		return row, nil
 	}
 
@@ -349,7 +363,22 @@ func (w writer) put(ctx context.Context, held *held, source, vault int64, win Wi
 	if _, err := w.index.ExecContext(ctx, row, win.Text); err != nil {
 		return 0, fmt.Errorf("insert_fts: %w", err)
 	}
+	if err := w.opens(ctx, row, win); err != nil {
+		return 0, err
+	}
 	return row, nil
+}
+
+// opens keeps the names of the parts one window begins, so a section can be
+// found by its name and answer with the chunk it opens.
+func (w writer) opens(ctx context.Context, row int64, win Window) error {
+	if len(win.Opens) == 0 {
+		return nil
+	}
+	if _, err := w.names.ExecContext(ctx, row, strings.Join(win.Opens, "\n")); err != nil {
+		return fmt.Errorf("insert_part: %w", err)
+	}
+	return nil
 }
 
 // text is what a window has to hold to be held on a row: the same text, cut at

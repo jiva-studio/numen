@@ -10,9 +10,9 @@ import (
 // vector, and a vector whose model differs from the one now configured is
 // stale: its numbers describe directions another model chose.
 //
-// Both fields are part of the identity. Two models of the same name at
-// different widths produce vectors that cannot be compared, and the width is
-// what a reader needs to know before it decodes stored bytes.
+// Every field is part of the identity. Two models of the same name at different
+// widths produce vectors that cannot be compared, and the width is what a
+// reader needs to know before it decodes stored bytes.
 type EmbeddingModel struct {
 	Name       string
 	Dimensions int
@@ -26,11 +26,9 @@ type EmbeddingModel struct {
 	// for text it does not contain.
 	MaxTokens int
 
-	// From is where the vectors are made: the address of the service, or the
-	// place a local model was loaded from. Two models answering to one name
-	// from two places are two models, and a vector made by one says nothing
-	// about what the other would have made.
-	From string
+	// Pooling is how the model's output becomes one vector. Two poolings of one
+	// model put a text in two places, so it is part of the identity.
+	Pooling string
 }
 
 // String is the identity as one value, for a column that holds it.
@@ -46,8 +44,11 @@ func (m EmbeddingModel) String() string {
 // recipe is something that can change while the key does not, and a vector
 // found under a key that no longer describes it is worse than one that was
 // never kept.
+//
+// Where the vector was made is not part of it. One model runs on this machine
+// and behind a service, and a vault indexed by the one is asked by the other.
 func (m EmbeddingModel) Recipe() string {
-	return fmt.Sprintf("%s|%s|%d|%d|%s", m.From, m.Name, m.Dimensions, m.MaxTokens, QuantisedInt8)
+	return fmt.Sprintf("%s|%d|%d|%s|%s", m.Name, m.Dimensions, m.MaxTokens, m.Pooling, QuantisedInt8)
 }
 
 // Embedder turns text into vectors. The core asks for it and does not know
@@ -62,4 +63,7 @@ type Embedder interface {
 	// Any number of texts may be passed: how a request to the model is
 	// bounded is the implementation's business.
 	Embed(ctx context.Context, texts []string) ([][]float32, error)
+
+	// Close releases whatever the model holds.
+	Close() error
 }

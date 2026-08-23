@@ -19,15 +19,40 @@ const props = withDefaults(
   { arriving: false },
 )
 
+const emit = defineEmits<{
+  /**
+   * A link in the prose was pressed, with what it points at and the press
+   * itself. Nothing here follows it: what a link means is the caller's, and so
+   * is whether the browser should go there.
+   */
+  (event: 'follow', href: string, press: MouseEvent): void
+}>()
+
 const drawn = computed(() => render(props.text))
 const Drawn = () => drawn.value
+
+const pressed = (press: MouseEvent) => {
+  const link = (press.target as HTMLElement | null)?.closest?.('a')
+  const href = link?.getAttribute('href')
+  if (href) emit('follow', href, press)
+}
 </script>
 
 <template>
   <div
     class="prose prose-sm prose-numen numen max-w-none break-words"
     :class="{ 'prose--arriving': arriving }"
+    @click="pressed"
   >
     <Drawn />
   </div>
 </template>
+
+<style scoped>
+/* A table wider than the measure scrolls inside itself, carrying its own
+   scrollbar. */
+.prose :deep(table) {
+  display: block;
+  overflow-x: auto;
+}
+</style>

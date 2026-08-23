@@ -84,7 +84,7 @@ func built(t *testing.T, notes map[string]string) (domain.Vault, mcp.Core) {
 
 	core := mcp.Core{
 		Vault: v, Root: v.Path, Readers: readers, Notes: queries,
-		Search:        search.New(db.Passages(), readers, nil, nil, 0),
+		Search:        search.New(db.Passages(), readers, nil, nil, 0, nil),
 		Neighbourhood: note.ShowNeighbourhood{Links: db.Links(), Notes: queries},
 		Links:         note.ShowLinks{Links: db.Links()},
 		Problems:      lint.Standard(db.Problems()),
@@ -148,6 +148,18 @@ func TestTheVaultIsLocatedInTheInstructions(t *testing.T) {
 	session, v := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	if got := session.InitializeResult().Instructions; !strings.Contains(got, v.Path) {
 		t.Errorf("the vault's folder is not in the instructions:\n%s", got)
+	}
+}
+
+// The tools an agent is given say what they take; the instructions say how a
+// book is asked, which is what nothing about one tool's arguments can say.
+func TestHowABookIsAskedIsInTheInstructions(t *testing.T) {
+	session, _ := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	said := session.InitializeResult().Instructions
+	for _, rule := range []string{"source_show", "source_read", "own words", "numen:"} {
+		if !strings.Contains(said, rule) {
+			t.Errorf("the instructions say nothing about %q:\n%s", rule, said)
+		}
 	}
 }
 

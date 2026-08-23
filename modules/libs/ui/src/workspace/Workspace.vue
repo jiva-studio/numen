@@ -418,15 +418,23 @@ onBeforeUnmount(() => {
   background: var(--numen-ring);
 }
 
-/* What is being carried, said beside the pointer. */
+/* What is being carried, said beside the pointer. One line, then an ellipsis,
+   as a title is wherever it is drawn. */
 .workspace__carried {
+  /* How far the label reaches before the title is cut. */
+  --widest: 240px;
+
   position: fixed;
   z-index: 3;
+  max-inline-size: var(--widest);
   margin: 0;
   padding: 0.15rem 0.5rem;
   pointer-events: none;
+  overflow: hidden;
   border-radius: var(--numen-radius);
   background: var(--numen-focus-bg);
   color: var(--numen-focus-fg);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

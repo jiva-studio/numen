@@ -416,6 +416,10 @@ func windowsOf(doc *text.Document, sizes window.Sizes) []port.Window {
 	var out []port.Window
 	for _, large := range window.Cut(doc.Text, doc.Places, sizes) {
 		w := windowAt(doc, large)
+		// The name of a section is kept on the window that begins it, and on that
+		// one only: a small window standing at the same place is inside it, and
+		// one section named twice is one section answering twice.
+		w.Opens = doc.Opens(large.Start)
 		for _, small := range large.Small {
 			w.Small = append(w.Small, windowAt(doc, small))
 		}
@@ -509,7 +513,13 @@ func (u Extract) text(ctx context.Context, ref domain.FileRef, raw []byte, hash 
 		for _, name := range []string{text.Artifact(from, hash), text.Partial(from, hash)} {
 			switch found, err := u.Derived.Read(ctx, name); {
 			case err == nil:
-				return text.Recognised(found), from, nil
+				// The parts of a reading bound the windows it is cut into, the
+				// way an outline bounds a book's.
+				doc, err := text.Composed(ctx, u.Derived, from, hash, found)
+				if err != nil {
+					return nil, "", err
+				}
+				return doc, from, nil
 			case !errors.Is(err, fs.ErrNotExist):
 				return nil, "", err
 			}

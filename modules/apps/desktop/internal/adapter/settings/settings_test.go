@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/agent"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/embed"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
 )
 
@@ -26,15 +27,44 @@ func TestAnUntouchedInstallationEmbedsLocallyAndIsDrawnAsDesigned(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Indexing.Embedding.Use != embed.UseLocal {
-		t.Errorf("uses %q", cfg.Indexing.Embedding.Use)
+	if cfg.Indexing.Embedding.Indexing.Use != embed.UseLocal {
+		t.Errorf("uses %q", cfg.Indexing.Embedding.Indexing.Use)
 	}
-	if cfg.Indexing.Embedding.Local.Name == "" || cfg.Indexing.Embedding.Local.Dimensions == 0 {
-		t.Errorf("no model to run: %+v", cfg.Indexing.Embedding.Local)
+	if cfg.Indexing.Embedding.Indexing.Local.Name == "" || cfg.Indexing.Embedding.Model.Dimensions == 0 {
+		t.Errorf("no model to run: %+v", cfg.Indexing.Embedding)
 	}
 	// Zero is what says the desktop decides, so nothing may fill it in.
 	if cfg.Appearance.Zoom != 0 {
 		t.Errorf("zoom is %v", cfg.Appearance.Zoom)
+	}
+}
+
+// A person who has run the binary and nothing else has a file to read and
+// change, holding what the application is doing.
+func TestAnInstallationNobodyConfiguredWritesItsSettingsDown(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "numen", "numen.json")
+	cfg, err := settings.At(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var back settings.Config
+	if err := json.Unmarshal(raw, &back); err != nil {
+		t.Fatal(err)
+	}
+	// Read back, the file says what the run it was written by was doing.
+	if back.Indexing.Embedding.Model != cfg.Indexing.Embedding.Model {
+		t.Errorf("the model is %+v, was %+v", back.Indexing.Embedding.Model, cfg.Indexing.Embedding.Model)
+	}
+	if !back.Indexing.Embedding.Indexing.Local.Download {
+		t.Error("a machine with no model would fetch none")
+	}
+	// A key nobody set is not a field of the file.
+	if strings.Contains(string(raw), `"key"`) {
+		t.Errorf("the file offers a key:\n%s", raw)
 	}
 }
 
@@ -48,67 +78,131 @@ func TestOneSettingIsAValidFile(t *testing.T) {
 	}
 	// A file that names the window must leave the embedder alone. Both are
 	// sections of one file, and the section nobody wrote about is unchanged.
-	if cfg.Indexing.Embedding.Local.Name != embed.Defaults().Local.Name {
-		t.Errorf("local model is %q", cfg.Indexing.Embedding.Local.Name)
+	if cfg.Indexing.Embedding.Indexing.Local.Name != embed.Defaults().Indexing.Local.Name {
+		t.Errorf("local model is %q", cfg.Indexing.Embedding.Indexing.Local.Name)
 	}
-	if cfg.Indexing.Embedding.Use != embed.UseLocal {
-		t.Errorf("uses %q", cfg.Indexing.Embedding.Use)
+	if cfg.Indexing.Embedding.Indexing.Use != embed.UseLocal {
+		t.Errorf("uses %q", cfg.Indexing.Embedding.Indexing.Use)
 	}
 }
 
+// A file naming one field of one section leaves everything else alone.
 func TestAFileNamingOneFieldKeepsTheDefaultsForTheRest(t *testing.T) {
 	cfg, err := settings.At(write(t,
-		`{"indexing":{"embedding":{"use":"service","service":{"name":"text-embedding-3-large","dimensions":3072}}}}`))
+		`{"indexing":{"embedding":{"model":{"name":"text-embedding-3-large","dimensions":3072},
+		 "indexing":{"use":"service","service":{"name":"text-embedding-3-large"}}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Indexing.Embedding.Use != embed.UseService {
-		t.Errorf("uses %q", cfg.Indexing.Embedding.Use)
+	e := cfg.Indexing.Embedding
+	if e.Indexing.Use != embed.UseService {
+		t.Errorf("uses %q", e.Indexing.Use)
 	}
-	if cfg.Indexing.Embedding.Service.Name != "text-embedding-3-large" || cfg.Indexing.Embedding.Service.Dimensions != 3072 {
-		t.Errorf("got %+v", cfg.Indexing.Embedding.Service)
+	if e.Model.Name != "text-embedding-3-large" || e.Model.Dimensions != 3072 {
+		t.Errorf("got %+v", e.Model)
 	}
-	if cfg.Indexing.Embedding.Service.BaseURL != embed.Defaults().Service.BaseURL {
-		t.Errorf("base URL is %q", cfg.Indexing.Embedding.Service.BaseURL)
+	// A field the file says nothing about keeps what the defaults set.
+	if e.Model.MaxTokens != embed.Defaults().Model.MaxTokens {
+		t.Errorf("the model cuts at %d", e.Model.MaxTokens)
 	}
-	if cfg.Indexing.Embedding.Local.Name != embed.Defaults().Local.Name {
-		t.Errorf("local model is %q", cfg.Indexing.Embedding.Local.Name)
+	if e.Indexing.Service.BaseURL != embed.Defaults().Indexing.Service.BaseURL {
+		t.Errorf("base URL is %q", e.Indexing.Service.BaseURL)
+	}
+	if e.Indexing.Local.Name != embed.Defaults().Indexing.Local.Name {
+		t.Errorf("local model is %q", e.Indexing.Local.Name)
+	}
+	// A question is asked the way the vault was indexed.
+	if got := e.Asking(); got.Use != embed.UseService {
+		t.Errorf("questions are embedded by %+v", got)
+	}
+}
+
+// A model pooled one way is pooled under one word, whether the file says it or
+// leaves it out: two words for one pooling are two keys over one set of
+// vectors.
+func TestAPoolingLeftOutIsTheOneEveryModelHas(t *testing.T) {
+	cfg, err := settings.At(write(t,
+		`{"indexing":{"embedding":{"model":{"name":"e5","dimensions":384}}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := cfg.Indexing.Embedding.Model.Pooling; got != embed.PoolMean {
+		t.Errorf("pooled %q", got)
+	}
+}
+
+func TestAVaultIndexedByAServiceIsAskedOnThisMachine(t *testing.T) {
+	cfg, err := settings.At(write(t, `{"indexing":{"embedding":{
+		"model": {"name":"bge-m3","dimensions":1024,"max_tokens":512,"pooling":"head"},
+		"indexing": {"use":"service","service":{"base_url":"https://openrouter.ai/api/v1","name":"baai/bge-m3"}},
+		"query":    {"use":"local","local":{"name":"BAAI/bge-m3","download":true}}
+	}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	e := cfg.Indexing.Embedding
+	if e.Model.Name != "bge-m3" || e.Model.Dimensions != 1024 || e.Model.Pooling != embed.PoolHead {
+		t.Errorf("the model is %+v", e.Model)
+	}
+	if e.Indexing.Use != embed.UseService || e.Indexing.Service.Name != "baai/bge-m3" {
+		t.Errorf("indexed by %+v", e.Indexing)
+	}
+	if got := e.Asking(); got.Use != embed.UseLocal || got.Local.Name != "BAAI/bge-m3" {
+		t.Errorf("asked by %+v", got)
+	}
+	// The section nobody wrote about keeps its default.
+	if e.Indexing.Service.BatchCharacters != embed.Defaults().Indexing.Service.BatchCharacters {
+		t.Errorf("batch is %d", e.Indexing.Service.BatchCharacters)
+	}
+}
+
+// A vault searched by its words: nothing fetched, nothing asked of a network.
+func TestAnInstallationMayNameNoModelAtAll(t *testing.T) {
+	cfg, err := settings.At(write(t, `{"indexing":{"embedding":{"indexing":{"use":""}}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := cfg.Indexing.Embedding.Indexing.Use; got != "" {
+		t.Errorf("uses %q", got)
+	}
+	if got := cfg.Indexing.Embedding.Asking().Use; got != "" {
+		t.Errorf("questions are embedded by %q", got)
 	}
 }
 
 func TestTheKeyComesFromTheFileOrTheEnvironment(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "from-the-environment")
 
-	cfg, err := settings.At(write(t, `{"indexing":{"embedding":{"service":{"key":"from-the-file"}}}}`))
+	cfg, err := settings.At(write(t, `{"indexing":{"embedding":{"indexing":{"service":{"key":"from-the-file"}}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := cfg.Indexing.Embedding.Service.Key(); got != "from-the-file" {
+	if got := cfg.Indexing.Embedding.Indexing.Service.Key(); got != "from-the-file" {
 		t.Errorf("got %q", got)
 	}
 
-	cfg, err = settings.At(write(t, `{"indexing":{"embedding":{"service":{}}}}`))
+	cfg, err = settings.At(write(t, `{"indexing":{"embedding":{"indexing":{"service":{}}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := cfg.Indexing.Embedding.Service.Key(); got != "from-the-environment" {
+	if got := cfg.Indexing.Embedding.Indexing.Service.Key(); got != "from-the-environment" {
 		t.Errorf("got %q", got)
 	}
 }
 
 func TestAnInstallationMayNameItsOwnEnvironmentVariable(t *testing.T) {
 	t.Setenv("OPENROUTER_API_KEY", "from-openrouter")
-	cfg, err := settings.At(write(t, `{"indexing":{"embedding":{"service":{"key_env":"OPENROUTER_API_KEY"}}}}`))
+	cfg, err := settings.At(write(t, `{"indexing":{"embedding":{"indexing":{"service":{"key_env":"OPENROUTER_API_KEY"}}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := cfg.Indexing.Embedding.Service.Key(); got != "from-openrouter" {
+	if got := cfg.Indexing.Embedding.Indexing.Service.Key(); got != "from-openrouter" {
 		t.Errorf("got %q", got)
 	}
 }
 
 func TestWritingTheSettingsBackDoesNotCarryTheKey(t *testing.T) {
-	cfg, err := settings.At(write(t, `{"indexing":{"embedding":{"service":{"key":"sk-secret"}}}}`))
+	cfg, err := settings.At(write(t, `{"indexing":{"embedding":{"indexing":{"service":{"key":"sk-secret"}}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -184,5 +278,67 @@ func TestOneAgentFieldKeepsTheRest(t *testing.T) {
 	}
 	if cfg.Agent.Claude.MaxSteps != was {
 		t.Errorf("max steps is %d", cfg.Agent.Claude.MaxSteps)
+	}
+}
+
+// Nothing proofreads a reading unless a person named something to proofread it
+// with. This is what an untouched installation does, and a model that rewrites
+// a person's books does not arrive by default.
+func TestAnUntouchedInstallationProofreadsNothing(t *testing.T) {
+	cfg, err := settings.At(filepath.Join(t.TempDir(), "numen.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Indexing.Proofreading.Named() {
+		t.Errorf("proofreads with %+v", cfg.Indexing.Proofreading)
+	}
+}
+
+// A section named without a model is a section naming nothing.
+func TestAProofreaderWithoutAModelIsNoProofreader(t *testing.T) {
+	cfg, err := settings.At(write(t, `{"indexing":{"proofreading":{"use":"service"}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Indexing.Proofreading.Named() {
+		t.Error("proofreads with a model nobody named")
+	}
+}
+
+func TestANamedProofreaderKeepsTheDefaultsForTheRest(t *testing.T) {
+	cfg, err := settings.At(write(t,
+		`{"indexing":{"proofreading":{"use":"service","service":{"name":"google/gemini-2.5-flash"}}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	read := cfg.Indexing.Proofreading
+	if !read.Named() || read.Service.Name != "google/gemini-2.5-flash" {
+		t.Errorf("got %+v", read)
+	}
+	if read.Service.BaseURL != proofreading.Defaults().Service.BaseURL {
+		t.Errorf("base URL is %q", read.Service.BaseURL)
+	}
+	if read.Service.LettersApart != proofreading.Defaults().Service.LettersApart {
+		t.Errorf("letters apart is %v", read.Service.LettersApart)
+	}
+}
+
+func TestTheProofreadersKeyStaysOutOfWhatIsWrittenBack(t *testing.T) {
+	cfg, err := settings.At(write(t, `{"indexing":{"proofreading":{"service":{"key":"sk-proof"}}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := cfg.Indexing.Proofreading.Service.Key(); got != "sk-proof" {
+		t.Errorf("got %q", got)
+	}
+	raw, err := json.Marshal(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(raw), "sk-proof") {
+		t.Errorf("the key is in %s", raw)
+	}
+	if strings.Contains(cfg.Indexing.Proofreading.Service.String(), "sk-proof") {
+		t.Errorf("the key is in %s", cfg.Indexing.Proofreading.Service)
 	}
 }

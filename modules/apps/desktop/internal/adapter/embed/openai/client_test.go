@@ -28,10 +28,10 @@ func client(t *testing.T, baseURL string, dimensions int) *openai.Client {
 	t.Helper()
 	t.Setenv(embed.KeyEnvVar, "test-key")
 	cfg := embed.Defaults()
-	cfg.Service.BaseURL = baseURL
-	cfg.Service.Name = "test-embed"
-	cfg.Service.Dimensions = dimensions
-	c, err := openai.New(cfg.Service)
+	cfg.Model.Dimensions = dimensions
+	cfg.Indexing.Service.BaseURL = baseURL
+	cfg.Indexing.Service.Name = "test-embed"
+	c, err := openai.New(cfg.Model, cfg.Indexing.Service)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -233,13 +233,13 @@ func TestABatchIsCutByCharacters(t *testing.T) {
 	})
 	t.Setenv(embed.KeyEnvVar, "test-key")
 	cfg := embed.Defaults()
-	cfg.Service.BaseURL = s.URL
-	cfg.Service.Name = "test-embed"
-	cfg.Service.Dimensions = 4
+	cfg.Model.Dimensions = 4
+	cfg.Indexing.Service.BaseURL = s.URL
+	cfg.Indexing.Service.Name = "test-embed"
 	// A verse in Devanagari: the same number of texts, far more tokens.
 	verse := strings.Repeat("धर्मक्षेत्रे कुरुक्षेत्रे ", 10)
-	cfg.Service.BatchCharacters = len([]rune(verse)) * 2
-	c, err := openai.New(cfg.Service)
+	cfg.Indexing.Service.BatchCharacters = len([]rune(verse)) * 2
+	c, err := openai.New(cfg.Model, cfg.Indexing.Service)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -273,8 +273,8 @@ func TestNoTextsIsNoRequest(t *testing.T) {
 func TestAServiceWithoutAKeyIsRefusedBeforeAnyRequest(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "")
 	cfg := embed.Defaults()
-	cfg.Service.BaseURL = "http://127.0.0.1:1"
-	if _, err := openai.New(cfg.Service); !errors.Is(err, openai.ErrNoKey) {
+	cfg.Indexing.Service.BaseURL = "http://127.0.0.1:1"
+	if _, err := openai.New(cfg.Model, cfg.Indexing.Service); !errors.Is(err, openai.ErrNoKey) {
 		t.Fatalf("got %v", err)
 	}
 }
@@ -282,7 +282,7 @@ func TestAServiceWithoutAKeyIsRefusedBeforeAnyRequest(t *testing.T) {
 func TestTheKeyIsNotInWhatTheConfigurationPrints(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "sk-secret")
 	cfg := embed.Defaults()
-	if printed := fmt.Sprintf("%v", cfg.Service); strings.Contains(printed, "sk-secret") {
+	if printed := fmt.Sprintf("%v", cfg.Indexing.Service); strings.Contains(printed, "sk-secret") {
 		t.Errorf("the key is in %q", printed)
 	}
 }

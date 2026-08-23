@@ -95,24 +95,18 @@ func TestRegionsComeBackInReadingOrder(t *testing.T) {
 
 func TestAnArtifactSaysWhatEachPageSays(t *testing.T) {
 	pages := []ocr.Page{
-		{Label: "i", Blocks: []ocr.Block{{Label: "text", Text: "Preface."}}},
-		{Label: "1", Blocks: []ocr.Block{
+		{Blocks: []ocr.Block{{Label: "text", Text: "Preface."}}},
+		{Blocks: []ocr.Block{
 			{Label: "paragraph_title", Text: "THE FIRST PART"},
 			{Label: "text", Text: "The body begins."},
 		}},
 	}
-	raw, _ := ocr.Write(pages)
+	raw, _, _ := ocr.Write(pages)
 
 	text, marks := ocr.Read(raw)
 	if len(marks) != 2 {
 		t.Fatalf("read %d pages, want 2", len(marks))
 	}
-	for i, want := range []string{"i", "1"} {
-		if marks[i].Label != want {
-			t.Errorf("page %d is called %q, want %q", i, marks[i].Label, want)
-		}
-	}
-
 	// The marks are not in the text: an offset in it is an offset in the prose.
 	if strings.ContainsRune(text, '\x0c') {
 		t.Errorf("the text still carries a page mark: %q", text)
@@ -141,38 +135,35 @@ func TestAnArtifactWithNoMarksIsAllProse(t *testing.T) {
 }
 
 func TestAPageWithNothingOnItIsStillAPage(t *testing.T) {
-	raw, _ := ocr.Write([]ocr.Page{
-		{Label: "1", Blocks: []ocr.Block{{Label: "text", Text: "Something."}}},
-		{Label: "2"},
-		{Label: "3", Blocks: []ocr.Block{{Label: "text", Text: "Something else."}}},
+	raw, _, _ := ocr.Write([]ocr.Page{
+		{Blocks: []ocr.Block{{Label: "text", Text: "Something."}}},
+		{},
+		{Blocks: []ocr.Block{{Label: "text", Text: "Something else."}}},
 	})
 
 	_, marks := ocr.Read(raw)
 	if len(marks) != 3 {
 		t.Fatalf("read %d pages, want 3 — a blank page is a fact about the document", len(marks))
 	}
-	if marks[2].Label != "3" {
-		t.Errorf("the third page is called %q", marks[2].Label)
-	}
 }
 
 func TestWritingAndReadingAgreeAboutEveryOffset(t *testing.T) {
 	pages := []ocr.Page{
-		{Label: "i", Blocks: []ocr.Block{{Label: "text", Text: "Alpha."}}},
-		{Label: "ii", Blocks: []ocr.Block{{Label: "text", Text: "Beta."}, {Label: "text", Text: "Gamma."}}},
-		{Label: "1", Blocks: []ocr.Block{{Label: "text", Text: "Delta."}}},
+		{Blocks: []ocr.Block{{Label: "text", Text: "Alpha."}}},
+		{Blocks: []ocr.Block{{Label: "text", Text: "Beta."}, {Label: "text", Text: "Gamma."}}},
+		{Blocks: []ocr.Block{{Label: "text", Text: "Delta."}}},
 	}
-	raw, _ := ocr.Write(pages)
+	raw, _, _ := ocr.Write(pages)
 	text, marks := ocr.Read(raw)
 
 	// Every mark is inside the text and they ascend, which is what Locate
 	// searches through.
 	for i, mark := range marks {
 		if mark.Offset < 0 || mark.Offset > len(text) {
-			t.Errorf("page %q begins at %d, and the text is %d long", mark.Label, mark.Offset, len(text))
+			t.Errorf("page %d begins at %d, and the text is %d long", i, mark.Offset, len(text))
 		}
 		if i > 0 && mark.Offset < marks[i-1].Offset {
-			t.Errorf("page %q begins before the page before it", mark.Label)
+			t.Errorf("page %d begins before the page before it", i)
 		}
 	}
 	// The first page's prose is where it says it is.
@@ -200,11 +191,11 @@ func TestABoxReadAsNothingIsNotAWord(t *testing.T) {
 func TestALineWrittenForTheWriterIsNotProse(t *testing.T) {
 	// A run stopped part way writes down how far it got. That line is not what
 	// the page says, and an offset into the prose must not count it.
-	first, _ := ocr.Write([]ocr.Page{
-		{Label: "1", Blocks: []ocr.Block{{Label: "text", Text: "Alpha."}}},
+	first, _, _ := ocr.Write([]ocr.Page{
+		{Blocks: []ocr.Block{{Label: "text", Text: "Alpha."}}},
 	})
-	second, _ := ocr.Write([]ocr.Page{
-		{Label: "2", Blocks: []ocr.Block{{Label: "text", Text: "Beta."}}},
+	second, _, _ := ocr.Write([]ocr.Page{
+		{Blocks: []ocr.Block{{Label: "text", Text: "Beta."}}},
 	})
 	raw := append([]byte("\x00pages 2\n"), first...)
 	raw = append(raw, []byte("\x00pages 4\n")...)
@@ -234,18 +225,19 @@ func TestEveryBoxSaysWhereItsWordsAreInTheProse(t *testing.T) {
 		line(0, 0, 70, 20, "Epsilon"),
 		line(80, 0, 120, 20, "zeta"),
 	})
+	opening := []ocr.Block{
+		{Label: "text", Text: first, Spans: firstSpans},
+		// A region read by something that reports no rectangles. It says
+		// what it says and the prose after it moves along by that much.
+		{Label: "text", Text: "Delta."},
+	}
 	pages := []ocr.Page{
-		{At: 0, Label: "i", Size: image.Pt(600, 800), Blocks: []ocr.Block{
-			{Label: "text", Text: first, Spans: firstSpans},
-			// A region read by something that reports no rectangles. It says
-			// what it says and the prose after it moves along by that much.
-			{Label: "text", Text: "Delta."},
-		}},
-		{At: 1, Label: "1", Size: image.Pt(600, 800), Blocks: []ocr.Block{
+		{At: 0, Size: image.Pt(600, 800), Blocks: opening},
+		{At: 1, Size: image.Pt(600, 800), Blocks: []ocr.Block{
 			{Label: "text", Text: last, Spans: lastSpans},
 		}},
 	}
-	raw, boxes := ocr.Write(pages)
+	raw, boxes, _ := ocr.Write(pages)
 	text, _ := ocr.Read(raw)
 
 	want := []string{"Alpha", "beta", "gamma", "Epsilon", "zeta"}
@@ -300,8 +292,8 @@ func TestAJoinedWordLeavesTheHyphenBoxOneByteShorter(t *testing.T) {
 
 func TestAPageNothingWasMeasuredOnHasNoBoxes(t *testing.T) {
 	// A page with no size gives no fraction of itself to divide a rectangle by.
-	raw, boxes := ocr.Write([]ocr.Page{
-		{At: 0, Label: "1", Blocks: []ocr.Block{{
+	raw, boxes, _ := ocr.Write([]ocr.Page{
+		{At: 0, Blocks: []ocr.Block{{
 			Label: "text",
 			Text:  "Alpha beta",
 			Spans: []ocr.Span{{Box: image.Rect(0, 0, 50, 20), Start: 0, Length: 5}},
@@ -339,5 +331,52 @@ func TestAJoinedWordLeavesTheHyphenBoxShorterByTheHyphen(t *testing.T) {
 				t.Errorf("the second box reads %q", got)
 			}
 		})
+	}
+}
+
+// A heading is where a part of the document begins, and a part carries the run
+// of prose the heading is, not the words themselves. A scan that read the
+// heading badly still says where its part starts.
+func TestAHeadingSaysWhereAPartOfTheDocumentBegins(t *testing.T) {
+	raw, _, parts := ocr.Write([]ocr.Page{
+		{At: 0, Blocks: []ocr.Block{
+			{Label: "doc_title", Text: "IAYADEVA GOSVAMI", Head: true, Depth: 0},
+			{Label: "text", Text: "He was born in Kenduli."},
+			{Label: "paragraph_title", Text: "His Youth", Head: true, Depth: 1},
+		}},
+		{At: 1, Blocks: []ocr.Block{
+			{Label: "text", Text: "The village stands there still."},
+			{Label: "paragraph_title", Text: "The Journey", Head: true, Depth: 1},
+		}},
+	})
+	text, _ := ocr.Read(raw)
+
+	want := []struct {
+		title string
+		depth int
+	}{
+		{"IAYADEVA GOSVAMI", 0},
+		{"His Youth", 1},
+		{"The Journey", 1},
+	}
+	if len(parts) != len(want) {
+		t.Fatalf("wrote %d parts, want %d", len(parts), len(want))
+	}
+	at := -1
+	for i, part := range parts {
+		if part.Start <= at {
+			t.Errorf("part %d begins at %d, and the one before it at %d", i, part.Start, at)
+		}
+		at = part.Start
+		if part.Start < 0 || part.Start+part.Length > len(text) {
+			t.Fatalf("part %d covers %d..%d, and the prose is %d long",
+				i, part.Start, part.Start+part.Length, len(text))
+		}
+		if got := text[part.Start : part.Start+part.Length]; got != want[i].title {
+			t.Errorf("part %d reads %q, want %q", i, got, want[i].title)
+		}
+		if part.Depth != want[i].depth {
+			t.Errorf("%q sits at depth %d, want %d", want[i].title, part.Depth, want[i].depth)
+		}
 	}
 }

@@ -10,9 +10,15 @@
 - **Extended:** 2026-08-18 — `conversation`, and `session` settled apart from it
   (ADR-0031)
 - **Extended:** 2026-08-18 — `finish`, settled apart from `stop` (ADR-0031)
+- **Extended:** 2026-08-23 — `part`, `page`, `sheet`, `span`, `stood`, `way`,
+  `lit`, `maker`, `check`; `stretch` settled the other way about, and `place`,
+  `asking`, `mark`, `stored` and `lint` settled apart (ADR-0036, ADR-0037,
+  ADR-0038, ADR-0039)
+- **Extended:** 2026-08-23 — `arriving`, `landed`, `disown`, `fill`,
+  `searchable`, `cutting`, `kept`, and the model that is not here yet
 - **Applies to:** the product as a whole
-- **Related:** ADR-0003, ADR-0006, ADR-0011, ADR-0014, ADR-0020, ADR-0031,
-  ADR-0032, ADR-0034
+- **Related:** ADR-0003, ADR-0006, ADR-0007, ADR-0011, ADR-0014, ADR-0020,
+  ADR-0026, ADR-0031, ADR-0032, ADR-0034, ADR-0036, ADR-0037, ADR-0038
 
 ## Context
 
@@ -79,7 +85,7 @@ in one place, meaning the obvious thing, needs no entry.
 | address | Scheme and value; the only thing that says where a link goes |
 | identifier | The ULID a note or a vault carries in the world |
 | anchor | An identifier marking a place in a note rather than a thing |
-| stretch | A run of a note's prose, named by the text standing in it rather than by where it stands (ADR-0034) |
+| stretch | A run of a source's text, by where it stands: `Start` and `Length`, counted in bytes over the text the source is read as |
 
 **What the application keeps**
 
@@ -90,9 +96,13 @@ in one place, meaning the obvious thing, needs no entry.
 | bought | Data a model made. Lives outside the vault and is kept: addressed by the text it was made from and the recipe it was made under (ADR-0000) |
 | index | The cache. Never a SQL index; that word belongs to SQL and stays in SQL |
 | source | A thing the index holds text for. A note and a book are kinds of source (ADR-0006) |
-| chunk | One window of a source's text, as a row. Both of ADR-0007's sizes are chunks; the large one is the chunk with no parent (ADR-0006) |
+| chunk | One cut of a source's text, as a row. Both of ADR-0007's sizes are chunks; the large one is the chunk with no parent (ADR-0006) |
+| cutting | How a source's text is cut into chunks: the sizes, taken from the settings and from one place, so a vault cut in a terminal and a vault cut in a window are cut alike (ADR-0007) |
+| part | A named division of a source: the heading that names it, and where in the source's text the division begins. A note's headings and a book's outline are both parts (ADR-0038) |
+| page | One page of a document, at the offset where its text begins. Called by where it stands in the file, and by nothing else (ADR-0038) |
+| sheet | One page as it was read off a scan: how big it is, and what was found on it (ADR-0036) |
 | location | Where a chunk sits, in the terms its own format uses. Nullable, and never a key. `start` and `length` are where a chunk is and are not a location either (ADR-0006) |
-| hash | Over a file's bytes, which file it is; over a window's text, which chunk it is. Two things, settled below (ADR-0006, ADR-0034) |
+| hash | Over a file's bytes, which file it is; over a cut's text, which chunk it is. Two things, settled below (ADR-0006, ADR-0034) |
 | passage | What a search returns: the text around a hit, and where it came from (ADR-0006, ADR-0007) |
 | registry | The list of vaults the installation knows |
 | scan | One walk of a whole vault |
@@ -100,7 +110,16 @@ in one place, meaning the obvious thing, needs no entry.
 | group | What a scan writes in: one transaction's worth |
 | fingerprint | Path, size and modification time — what says a note need not be read again |
 | vector | What a model made of one chunk's text. Kept by its text and its recipe; never *embedding* |
-| recipe | Everything that decides what a thing made from text is: for a cut, the reader and the sizes; for a vector, where it was made, which model, how wide, where the text was cut off and how it is stored |
+| kept | Held past the run that made it, and claimed again by what it was made from. Never *stored* |
+| recipe | Everything that decides what a thing made from text is: for a cut, the reader and the sizes; for a vector, which model, how wide, where the text was cut off and how it is kept |
+| maker | Where a vector is made: this machine, or a service. A vault is indexed by one maker and may be asked by another, and a maker is no part of a recipe |
+| arriving | A model that is not on this machine yet. What it is is known from the settings, so the index is fitted and vectors are claimed under its recipe while the weights come down |
+| landed | The model turning up, or the reason it never will. The first of the two counts, and one turning up after the wait is over is let go of |
+| disown | The model turning out not to be the one whose vectors are kept: it is let go of, and nothing is asked of it again |
+| fill | Giving the index the vectors it owes. A pass that fills waits for the model; a question does not |
+| searchable | A vault whose notes are read, whose books are read, and whose chunks have their vectors. The three are one pass in one order |
+| way | How a search is asked: `words`, `meaning`, `part`, or every way fused into one ranking (ADR-0007, ADR-0038) |
+| check | One thing that can be wrong with a vault, and what notices it. A person asks for a check by name and is answered with problems |
 | changed | What a write answers when the note on disk is no longer the one the caller read (ADR-0027). Never a *conflict* |
 | reload | What a client is told when the vault is to be read again whole: more changed at once than could be followed, or a listener that fell behind (ADR-0023) |
 | backlink | A link that resolves here, whichever end wrote it |
@@ -122,7 +141,8 @@ in one place, meaning the obvious thing, needs no entry.
 | step | One thing an agent said, did, or stopped for, as the panel is told about it |
 | call | What an agent named one use of a tool, so every step reporting it is known to be one |
 | kind | What a call does to the vault: `read`, `edit`, `remove`, `move`, `search`. A call that says no more than that it is one is `calling` |
-| place | Where a call is working: a note, and the line in it where one is named |
+| place | Where a call is working: a source, by the path the vault files it under, and the stretch of that source's text the call names. A length of zero names the source and nothing inside it |
+| stood | A run named by the text standing in it, quoted. What an agent names a stretch by when it has read prose and not measured it (ADR-0026) |
 | settings | What a person configures about an installation, and the one file it is in |
 
 **What is drawn**
@@ -136,6 +156,8 @@ in one place, meaning the obvious thing, needs no entry.
 | edge | A line drawn between two nodes. Two links can be one edge (ADR-0003) |
 | seat | Where a node sits relative to the focus: `parent`, `child`, `jump`, `sibling` |
 | viewport | The area the plex is drawn into |
+| span | A run of text as a client counts it: `from` and `to`, in UTF-16 code units. The one form a run takes on the wire |
+| lit | Where a stretch of a document's text falls on the pages it was read from: the pages, and the rectangles covering it on each (ADR-0037) |
 | window | The application's window on screen, and nothing else |
 | panel | The column beside the plex where a person asks an agent something |
 | turn | One thing shown in the panel's conversation: what was asked, what was answered, what is being done |
@@ -173,8 +195,34 @@ one; it does not leave the storage it belongs to.
 
 **`window`.** The application's window. How long the watcher holds events
 before acting on them is a *hold*; the area the plex draws into is a
-*viewport*; a span of a source's text is a *chunk*. Where ADR-0007 says window
-it means how large a chunk is cut.
+*viewport*; a run of a source's text cut for the index is a *chunk*. Where
+ADR-0007 says window it means how large a chunk is cut, so `internal/core/window`
+is `internal/core/cutting` and its `Window` is a `Chunk`.
+
+**`place`, `part` and `maker`.** Three things, and the word goes to the first.
+A *place* is where a call is working: the source, and the stretch of that
+source's text the call names. It is what the panel draws a line about and what
+a tool is given to open a book at.
+
+A named division of a source is a *part* — the heading, and where the division
+begins. The storage keeps them under that word, and `window.Place`,
+`pdf.Place`, `epub.Place` and `text.Document.Places` are parts. A note's
+headings are parts of the note.
+
+Where a vector is made is a *maker*: this machine, or a service. No text stands
+in it, so it is not a place and *placement* is not a word here.
+
+Where a stretch is drawn over on a page is *lit*, and `internal/core/placed` is
+`internal/core/lit`. The palette's `Landing` — where choosing an item takes the
+person — is a place; a model is what *lands*.
+
+**`asking`.** A person asks an agent. `Ask` on the wire, `asked` in the request,
+and the panel that sends it: that is the whole of the word.
+
+Everything on the search side says *query*. The embedder that makes a query's
+vector and does not wait for a model is `Querying`, where that vector is made is
+the query's maker, and the two questions the palette puts to the vault are
+`Querying` as well.
 
 **`answered`.** Two things, and they are settled apart. A *step* named `answered`
 is a tool that has finished, which is what the agent's own stream reports. A
@@ -224,9 +272,17 @@ The keyboard's position is neither, and has its own word: a reader who sees `foc
 in a stylesheet will guess wrong exactly once and be wrong everywhere after.
 
 **`mark`.** A tab's mark is one word about the state of what the tab holds, drawn
-beside the title and read out as the tab's own label. Markdown's syntax characters
-are markup, and where the editor says mark it is the library's `Decoration.mark`,
-which does not leave the module that calls it.
+beside the title and read out as the tab's own label. It is the only sense that
+crosses a boundary, and the word is spent on it.
+
+Markdown's syntax characters are markup, and where the editor says mark it is the
+library's `Decoration.mark`, which does not leave the module that calls it. The
+runs of a query found in a passage are *spans*, drawn as `at`; the two delimiters
+SQLite's `highlight()` wraps a match in stay inside the statement that asked for
+them. Where a stretch of a document falls on its pages is *lit*, and the facet
+answering it is `GET /assets/<id>/lit`. The form feed between two pages of a
+reading's artifact is a page break, and what reading one back answers with is the
+document's *pages*.
 
 **`changed` and `overtaken`.** `changed` says a file is no longer what somebody
 read: a write answers it, and a watcher's event carries the paths it happened to.
@@ -238,9 +294,50 @@ is a word about a tab.
 
 **`hash`.** Two, and what each is taken over settles them. A source's `hash` is
 over the bytes of a file and says which file it is (ADR-0006). A chunk's `hash` is
-over the text of one window and says which chunk it is (ADR-0034). Each is a column
+over the text of one cut and says which chunk it is (ADR-0034). Each is a column
 of the table it belongs to, nothing joins one to the other, and a sentence that
 says `hash` alone has said nothing.
+
+**The three ways.** A search is asked by `words`, by `meaning`, or by `part`,
+and every way at once fuses the three into one ranking. Those four words are
+what the schema carries, what the use case takes and what the window offers. A
+*half* is one of two, so the phrase is *the way that asks by meaning*.
+
+`lexical`, `dense` and `named` name those same three ways in retrieval's
+vocabulary, and are renamed on `search.Parameters` and `port.PassageQueries`
+alike. *Names* stays with the palette's other question — a note's own title and
+its headings, matched so a person can travel to it.
+
+**`stretch`, `span` and `stood`.** A *stretch* is a run of a source's text by
+where it stands: `Start` and `Length`, in bytes over the text the source is read
+as. One field naming, so `markdown.Stretch` carries a start and a length like
+everything else.
+
+A *span* is that same run as a client counts it — `from` and `to`, in UTF-16
+code units — and this is the rename a boundary requires: a window counts text
+its own way, and nothing crosses that boundary unconverted. `ocr.Span` is a
+rectangle and the bytes read out of it, which is a `Box`.
+
+`stood` is a run named by the text standing in it. An agent editing a note has
+read the prose and not measured it, so it quotes what it means to replace; the
+vault finds the stretch, answers with what stood there, and refuses a quotation
+that stands nowhere or twice.
+
+**`stored` and `kept`.** Data the application holds past the run that made it is
+*kept*, and is claimed again by what it was made from. `stored` is the storage's
+own word for it and is not a second one, so `embed.Model.Stored` is `Kept`. A
+tab's `keep` is a person writing an overtaken tab's prose over its file, and is
+read only beside `take`.
+
+**`page` and `sheet`.** A page is one page of a document, at the offset where its
+text begins, and it is called by where it stands in the file — which is what
+`pdf.Page`, `epub.Page` and `ocr.Mark` all are. A *sheet* is that page as a scan
+gives it: how big it is, and what was found on it, which is `ocr.Page`.
+
+**`lint`.** What a check finds is a *problem*, and the package that runs the
+checks is named for what it finds: `internal/core/lint` is `internal/core/problem`
+and `lint.Linter` is `problem.Checking`. *Lint* is a tool in another language and
+names nothing here.
 
 **`label` and `title`.** A title names a note; a label names a relationship.
 Both are drawn, a few pixels apart, which is precisely why they cannot share a

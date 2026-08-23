@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/agent.proto.
  */
 export const file_numen_v1_agent: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS9hZ2VudC5wcm90bxIIbnVtZW4udjEiQAoKQXNrUmVxdWVzdBINCgVhc2tlZBgBIAEoCRINCgVmb2N1cxgCIAEoCRIUCgxjb252ZXJzYXRpb24YAyABKAkiJQoNRmluaXNoUmVxdWVzdBIUCgxjb252ZXJzYXRpb24YASABKAkiEAoORmluaXNoUmVzcG9uc2UiqgEKC0Fza1Jlc3BvbnNlEg4KBHNhaWQYASABKAlIABIgCgVkb2luZxgCIAEoCzIPLm51bWVuLnYxLkRvaW5nSAASEQoHc3RvcHBlZBgDIAEoCUgAEiYKCGFuc3dlcmVkGAQgASgLMhIubnVtZW4udjEuQW5zd2VyZWRIABImCgh0aGlua2luZxgFIAEoCzISLm51bWVuLnYxLlRoaW5raW5nSABCBgoEc3RlcCIKCghBbnN3ZXJlZCIKCghUaGlua2luZyI1CgVEb2luZxIMCgR0b29sGAEgASgJEg0KBWFib3V0GAIgASgJEg8KB3dyaXR0ZW4YAyABKAUygQEKDEFnZW50U2VydmljZRI0CgNBc2sSFC5udW1lbi52MS5Bc2tSZXF1ZXN0GhUubnVtZW4udjEuQXNrUmVzcG9uc2UwARI7CgZGaW5pc2gSFy5udW1lbi52MS5GaW5pc2hSZXF1ZXN0GhgubnVtZW4udjEuRmluaXNoUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChRudW1lbi92MS9hZ2VudC5wcm90bxIIbnVtZW4udjEiQAoKQXNrUmVxdWVzdBINCgVhc2tlZBgBIAEoCRINCgVmb2N1cxgCIAEoCRIUCgxjb252ZXJzYXRpb24YAyABKAkiJQoNRmluaXNoUmVxdWVzdBIUCgxjb252ZXJzYXRpb24YASABKAkiEAoORmluaXNoUmVzcG9uc2UiqgEKC0Fza1Jlc3BvbnNlEg4KBHNhaWQYASABKAlIABIgCgVkb2luZxgCIAEoCzIPLm51bWVuLnYxLkRvaW5nSAASEQoHc3RvcHBlZBgDIAEoCUgAEiYKCGFuc3dlcmVkGAQgASgLMhIubnVtZW4udjEuQW5zd2VyZWRIABImCgh0aGlua2luZxgFIAEoCzISLm51bWVuLnYxLlRoaW5raW5nSABCBgoEc3RlcCIKCghBbnN3ZXJlZCIKCghUaGlua2luZyJiCgVEb2luZxIMCgR0b29sGAEgASgJEg0KBWFib3V0GAIgASgJEg8KB3dyaXR0ZW4YAyABKAUSDAoEcGF0aBgEIAEoCRINCgVzdGFydBgFIAEoBRIOCgZsZW5ndGgYBiABKAUygQEKDEFnZW50U2VydmljZRI0CgNBc2sSFC5udW1lbi52MS5Bc2tSZXF1ZXN0GhUubnVtZW4udjEuQXNrUmVzcG9uc2UwARI7CgZGaW5pc2gSFy5udW1lbi52MS5GaW5pc2hSZXF1ZXN0GhgubnVtZW4udjEuRmluaXNoUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * @generated from message numen.v1.AskRequest
@@ -213,6 +213,27 @@ export type Doing = Message<"numen.v1.Doing"> & {
    * @generated from field: int32 written = 3;
    */
   written: number;
+
+  /**
+   * Where the call is working: the source it names, by the path the vault
+   * files it under. Empty for a call that is working on no one file.
+   *
+   * @generated from field: string path = 4;
+   */
+  path: string;
+
+  /**
+   * The stretch of that source's text the call names, counted in bytes. A
+   * length of zero is a call that named the source and no place inside it.
+   *
+   * @generated from field: int32 start = 5;
+   */
+  start: number;
+
+  /**
+   * @generated from field: int32 length = 6;
+   */
+  length: number;
 };
 
 /**

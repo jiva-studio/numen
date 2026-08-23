@@ -10,6 +10,7 @@ import { ref } from 'vue'
 import { paneWithTab, type Turn } from '@numen/ui'
 import { holding, type Makes } from './holding'
 import type { Conversation } from './conversation'
+import type { Reading } from './reading'
 import type { Plexed } from './showing'
 
 /** A plex that stands where it was told to and records what became of it. */
@@ -35,12 +36,25 @@ const talked = (stopped: string[], over: string[], conversation: string): Conver
   turns: ref<Turn[]>([]),
   working: ref(false),
   ask: async () => {},
+  place: () => null,
   stop: () => stopped.push(conversation),
   finish: () => {
     stopped.push(conversation)
     over.push(conversation)
   },
 })
+
+/** A document that records having been let go of, under the path it is read from. */
+const opened = (dropped: string[], path: string) => {
+  const view = {
+    path,
+    pages: ref(0),
+    at: ref(0),
+    picture: ref(''),
+    close: () => dropped.push(path),
+  }
+  return view as unknown as Reading
+}
 
 /** A window whose ports record what they were asked for. */
 function window(made: { note?: string } = {}) {
@@ -49,6 +63,8 @@ function window(made: { note?: string } = {}) {
   const stopped: string[] = []
   const over: string[] = []
   const conversations: string[] = []
+  const dropped: string[] = []
+  const read: string[] = []
   const makes: Makes = {
     plex: (at = '') => plexed(closed, looked, at),
     talk: (conversation) => {
@@ -56,8 +72,12 @@ function window(made: { note?: string } = {}) {
       return talked(stopped, over, conversation)
     },
     note: async () => made.note ?? '',
+    document: (path) => {
+      read.push(path)
+      return opened(dropped, path)
+    },
   }
-  return { held: holding(makes), closed, looked, stopped, over, conversations }
+  return { held: holding(makes), closed, looked, stopped, over, conversations, dropped, read }
 }
 
 describe('the window as it opens', () => {
@@ -147,6 +167,40 @@ describe('an agent tab that closes', () => {
   })
 })
 
+describe('a document opened', () => {
+  it('is read in a tab of its own, under the path it is filed at', () => {
+    const { held, read } = window()
+
+    held.reads('Books/Manual.pdf')
+
+    expect(read).toStrictEqual(['Books/Manual.pdf'])
+    expect(held.documents.value.has('Books/Manual.pdf')).toBe(true)
+    expect(paneWithTab(held.layout.value.root, 'Books/Manual.pdf')).not.toBeNull()
+  })
+
+  it('is the one tab it already has when it is opened again', () => {
+    const { held, read } = window()
+    held.reads('Books/Manual.pdf')
+
+    held.reads('Books/Manual.pdf')
+
+    expect(read).toStrictEqual(['Books/Manual.pdf'])
+    expect(held.documents.value.size).toBe(1)
+  })
+})
+
+describe('a document tab that closes', () => {
+  it('lets go of the document, which is what lets go of what it drew', () => {
+    const { held, dropped } = window()
+    const id = held.documentTab('Books/Manual.pdf')
+
+    expect(held.shut(id)).toBe(true)
+
+    expect(dropped).toStrictEqual(['Books/Manual.pdf'])
+    expect(held.documents.value.has(id)).toBe(false)
+  })
+})
+
 describe('a blank tab that closes', () => {
   it('is no longer waiting to be told what it holds', () => {
     const { held } = window()
@@ -167,15 +221,17 @@ describe('a tab the window holds nothing for', () => {
 })
 
 describe('the window going', () => {
-  it('lets go of every plex and every talk', () => {
-    const { held, closed, stopped } = window()
+  it('lets go of every plex, every talk and every document', () => {
+    const { held, closed, stopped, dropped } = window()
     held.plexTab('One.md')
     held.agentTab()
+    held.documentTab('Manual.pdf')
 
     held.close()
 
     expect(closed).toContain('One.md')
     expect(stopped).toHaveLength(2)
+    expect(dropped).toStrictEqual(['Manual.pdf'])
   })
 
   it('says every conversation it had open is over', () => {

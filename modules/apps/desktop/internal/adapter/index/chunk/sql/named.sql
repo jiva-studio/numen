@@ -1,0 +1,19 @@
+-- The sections of one vault whose names match the words typed, best first.
+--
+-- What a section answers with is the chunk it opens, so a hit on a name is a
+-- passage standing where the section begins. The shape is the same as a search
+-- asked by words, so both are read back the same way and both fuse into one
+-- order.
+SELECT c.id, s.path, COALESCE(s.text_from, ''), COALESCE(s.hash, ''),
+       c.start,
+       c.length,
+       COALESCE(c.location, ''),
+       0
+FROM parts_fts
+JOIN chunks c ON c.id = parts_fts.rowid
+JOIN sources s ON s.id = c.source_id
+WHERE parts_fts MATCH ?1
+  AND c.vault_id = ?2
+  AND (json_array_length(?3) = 0 OR s.kind IN (SELECT value FROM json_each(?3)))
+ORDER BY bm25(parts_fts)
+LIMIT ?4;

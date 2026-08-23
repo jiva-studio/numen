@@ -25,11 +25,11 @@ func following() audience[changed] {
 	}
 }
 
-// focusing is everyone drawing the vault, for the notes something asks to be
-// put in front of the person. A note asked for while a listener is busy
-// replaces the one it has not read: what matters is the last note asked for.
-func focusing() audience[string] {
-	return audience[string]{latest: true, room: 1}
+// focusing is everyone drawing the vault, for the places something asks to be
+// put in front of the person. A place asked for while a listener is busy
+// replaces the one it has not read: what matters is the last place asked for.
+func focusing() audience[domain.Place] {
+	return audience[domain.Place]{latest: true, room: 1}
 }
 
 // drawing is everyone drawing the vault, for a change to a note being made

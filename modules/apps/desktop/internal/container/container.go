@@ -14,7 +14,9 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/ocr/onnx"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/proofreading"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/recognition"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
@@ -33,13 +35,17 @@ type Config struct {
 	BookExtensions []string
 
 	// Recognition is how a scanned document is read when a person asks for it.
-	Recognition onnx.Config
+	Recognition recognition.Config
 
 	// Embedding is the model this run turns text into vectors with. An entry
 	// point reads the settings and says what it found, so nothing below one
 	// reaches the machine's own file. A zero value names no embedder, and nothing
 	// is embedded.
 	Embedding embed.Config
+
+	// Proofreading is what puts a reading right. It arrives the way Embedding
+	// does, and naming nothing here is naming no proofreader.
+	Proofreading proofreading.Config
 
 	// Agent is which agent answers in the panel. It arrives the way Embedding
 	// does.
@@ -50,6 +56,20 @@ type Config struct {
 	// person with a vault restored from an archive is not asked which binary they
 	// are holding.
 	RebuildIndex bool
+}
+
+// Indexing is this configuration carrying what a settings file says about
+// making a vault searchable.
+//
+// Every section of it is carried here, in one place both entry points use. A
+// section an entry point leaves behind is a part of the application that does
+// nothing and says nothing, since naming no model is how a person turns one
+// off.
+func (c Config) Indexing(said settings.Indexing) Config {
+	c.Embedding = said.Embedding
+	c.Recognition = said.Recognition
+	c.Proofreading = said.Proofreading
+	return c
 }
 
 // Registry is the list of vaults this installation knows: application state,

@@ -1,7 +1,6 @@
 package filesystem
 
 import (
-	"errors"
 	"fmt"
 	pathpkg "path"
 	"path/filepath"
@@ -10,10 +9,9 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
-// ErrOutside is what a path that does not stay in the vault gets. It is not
-// "not found": a caller asking for something outside has made a mistake worth
-// hearing about, and answering "no such note" would hide it.
-var ErrOutside = errors.New("not a path inside the vault")
+// ErrOutside is the core's sentinel, so a caller that never names this package
+// still recognises it.
+var ErrOutside = port.ErrOutside
 
 // ErrNotANote is what a path inside the vault gets when the vault does not hold
 // it as a note: an attachment, a folder some tool keeps its state in, whatever

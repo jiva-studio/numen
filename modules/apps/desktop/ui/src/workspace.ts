@@ -11,6 +11,8 @@ export const PLEX = 'plex'
 export const AGENT = 'agent'
 export const BLANK = 'blank'
 export const NOTE = 'note'
+/** A document read in the window, under the path the vault files it at. */
+export const DOCUMENT = 'document'
 
 /** One thread of talk, under the name the agent hears it by. */
 export const CONVERSATION = 'conversation'

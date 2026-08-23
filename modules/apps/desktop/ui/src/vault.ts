@@ -6,9 +6,10 @@
  */
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
-import { Half as Halves, Owed, Refusal, VaultService } from '@numen/protocol'
+import { Owed, Refusal, VaultService, Way as Ways } from '@numen/protocol'
 import { asSeat } from './plex'
-import type { Asking, Half } from './finding'
+import type { Asking, Way } from './finding'
+import type { Documents, Marked, Sheet } from './reading'
 import type { Answered, Core, Made, NewLink, Refused } from './showing'
 
 export const vault = createClient(
@@ -73,25 +74,76 @@ export const core: Core & Asking = {
       at: one.at.map(run),
     }))
   },
-  /** The text the vault holds that answers what is typed, by one half. */
-  search: async (query, half, limit) => {
-    const answer = await vault.search({ query, limit, half: halves[half] })
+  /** The text the vault holds that answers what is typed, asked one way. */
+  search: async (query, way, limit) => {
+    const answer = await vault.search({ query, limit, way: ways[way] })
     return answer.found.map((one) => ({
       path: one.path,
       title: one.note?.title ?? '',
-      // A source that is not a note carries none, and there is nothing this
-      // window can open it as.
+      // A source that is not a note carries none, and what this window opens
+      // one as is the document it is.
       isNote: one.note !== undefined,
       text: one.text,
+      start: one.start,
+      length: one.length,
       at: one.at.map(run),
     }))
   },
 }
 
-/** Which half of a search runs, as the schema names it. */
-const halves: Record<Half, Halves> = {
-  words: Halves.WORDS,
-  meaning: Halves.MEANING,
+/**
+ * The documents the vault holds, over the addresses the application serves the
+ * window at. A page is a picture at an address of its own, drawn to the width
+ * it is asked for in device pixels.
+ */
+export const documents: Documents = {
+  shape: async (path) => {
+    const answer = await served(asset(path))
+    const said = (await answer.json()) as { pages?: number; sheets?: readonly Sheet[] }
+    return { pages: said.pages ?? 0, sheets: said.sheets ?? [] }
+  },
+  page: (path, at, wide) => `${asset(path)}/pages/${at}?wide=${wide}`,
+  marks: async (path, runs) => {
+    const where = runs
+      .map((one) => `start=${one.start}&length=${one.length}`)
+      .join('&')
+    const answer = await served(`${asset(path)}/marks?${where}`)
+    const said = (await answer.json()) as { runs?: readonly { marks?: readonly Marked[] }[] }
+    return runs.map((_, i) => said.runs?.[i]?.marks ?? [])
+  },
+}
+
+/**
+ * Where a file of the vault is asked about. The path is written out whole, so a
+ * file in a folder is one part of the address and the facet asked of it is the
+ * next.
+ */
+const asset = (path: string): string => `/assets/${encodeURIComponent(path)}`
+
+/** How often a document that is busy is waited out before it is a refusal. */
+const PATIENCE = 3
+
+/**
+ * What the application answered. A document held by whoever is drawing from it
+ * is asked for again, after the wait it names.
+ */
+const served = async (address: string): Promise<Response> => {
+  for (let asked = 0; ; asked++) {
+    const answer = await fetch(address)
+    if (answer.ok) return answer
+    if (answer.status !== 503 || asked >= PATIENCE) {
+      throw new Error((await answer.text()).trim() || `${answer.status}`)
+    }
+    await sleep(Number(answer.headers.get('Retry-After') ?? 1) * 1000)
+  }
+}
+
+const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
+
+/** How a search is asked, as the schema names it. */
+const ways: Record<Way, Ways> = {
+  words: Ways.WORDS,
+  meaning: Ways.MEANING,
 }
 
 /** A run of text, kept as the plain pair the window carries it as. */

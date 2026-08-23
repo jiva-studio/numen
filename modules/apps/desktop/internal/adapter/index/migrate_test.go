@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
 func TestEveryMigrationIsNamedAndOrdered(t *testing.T) {
@@ -192,6 +193,57 @@ func TestAnOlderIndexIsMigratedRatherThanRebuilt(t *testing.T) {
 	}
 }
 
+// A vector is bought with minutes of a machine or with money, so a key that
+// changes shape is a key rewritten and not a vault embedded again.
+func TestVectorsSurviveTheRecipeChangingShape(t *testing.T) {
+	ctx := t.Context()
+	path := filepath.Join(t.TempDir(), "index.db")
+
+	db, err := sql.Open("sqlite", dsn(path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	available, err := loadMigrations()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, m := range available {
+		if m.version >= 5 {
+			break
+		}
+		if err := apply(ctx, db, m); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// The key as it was written: where the vector was made, then the model.
+	const was = "https://api.openai.com/v1|text-embedding-3-small|1536|0|int8"
+	if _, err := db.ExecContext(ctx,
+		`INSERT INTO vectors (fingerprint, recipe, v) VALUES (x'01', ?, x'02')`, was); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	upgraded, err := Open(ctx, path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer upgraded.Close()
+
+	want := port.EmbeddingModel{
+		Name: "text-embedding-3-small", Dimensions: 1536, Pooling: "mean",
+	}.Recipe()
+	var recipe string
+	if err := upgraded.write.QueryRowContext(ctx,
+		`SELECT recipe FROM vectors WHERE fingerprint = x'01'`).Scan(&recipe); err != nil {
+		t.Fatalf("the vector did not survive the migration: %v", err)
+	}
+	if recipe != want {
+		t.Errorf("kept under %q, asked for under %q", recipe, want)
+	}
+}
+
 // An index a later build wrote is reported and left where it stands.
 //
 // Its schema holds what this build cannot read. Nothing is repaired, nothing is
@@ -253,21 +305,16 @@ func TestAnIndexWhoseSchemaDoesNotMatchItsNumberIsRefused(t *testing.T) {
 	ctx := t.Context()
 	path := filepath.Join(t.TempDir(), "index.db")
 
-	available, err := loadMigrations()
-	if err != nil {
-		t.Fatal(err)
-	}
-	// Every migration but the newest claimed, and none of what they build, so
-	// the newest runs against a schema without what it was written to expect.
-	behind := available[len(available)-1].version - 1
-
 	raw, err := sql.Open("sqlite", dsn(path))
 	if err != nil {
 		t.Fatal(err)
 	}
+	// A number saying nothing has been applied, over a schema already holding a
+	// name the first migration builds. It runs, and it cannot.
 	for _, statement := range []string{
 		`CREATE TABLE strangers (id INTEGER PRIMARY KEY)`,
-		fmt.Sprintf(`PRAGMA user_version = %d`, behind),
+		`CREATE TABLE vaults (id INTEGER PRIMARY KEY)`,
+		`PRAGMA user_version = 0`,
 	} {
 		if _, err := raw.ExecContext(ctx, statement); err != nil {
 			t.Fatal(err)
@@ -282,6 +329,7 @@ func TestAnIndexWhoseSchemaDoesNotMatchItsNumberIsRefused(t *testing.T) {
 		db.Close()
 		t.Fatal("an index whose schema does not match its number was opened")
 	}
+	t.Logf("refused with: %v", err)
 
 	// What it held, it still holds.
 	back, err := sql.Open("sqlite", dsn(path))

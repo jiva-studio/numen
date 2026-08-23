@@ -291,6 +291,13 @@ type block struct {
 // by it is about a path, and that path is where the call is working.
 const notePath = "path"
 
+// spanStart and spanLength are the arguments a tool of this vault names a
+// stretch of a source's text by.
+const (
+	spanStart  = "start"
+	spanLength = "length"
+)
+
 // calls is a tool as the person is told about it: what the tool calls itself,
 // what this call was about, what it does to the vault, and what the agent named
 // the call.
@@ -313,9 +320,26 @@ func (rd *reader) calls(call, tool, arguments string) agent.Step {
 	step.Written = len([]rune(arguments))
 	step.About = about(words, arguments)
 	if words.About == notePath {
-		step.Place = agent.Place{Path: step.About}
+		step.Place = placed(step.About, arguments)
 	}
 	return step
+}
+
+// placed is where a call is working: the path it named, and the stretch of that
+// source's text it named beside it.
+//
+// The stretch is read once the arguments parse whole, so it arrives with the
+// report that ends the call. Half a number is another number.
+func placed(path, arguments string) agent.Place {
+	at := agent.Place{Path: path}
+	var made map[string]any
+	if err := json.Unmarshal([]byte(arguments), &made); err != nil {
+		return at
+	}
+	start, _ := made[spanStart].(float64)
+	length, _ := made[spanLength].(float64)
+	at.Start, at.Length = int(start), int(length)
+	return at
 }
 
 // about is what a call was about, read from the arguments as far as they have

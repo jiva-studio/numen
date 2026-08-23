@@ -1,6 +1,11 @@
 package webui
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+)
 
 // A listener that fell behind is told to read everything again.
 func TestALaggingListenerIsToldToReadEverythingAgain(t *testing.T) {
@@ -24,22 +29,23 @@ func TestALaggingListenerIsToldToReadEverythingAgain(t *testing.T) {
 	}
 }
 
-// What matters is the last note asked for: one asked for while a listener is
+// What matters is the last place asked for: one asked for while a listener is
 // busy replaces the one it has not read.
-func TestTheLastNoteAskedForIsTheOneWaiting(t *testing.T) {
+func TestTheLastPlaceAskedForIsTheOneWaiting(t *testing.T) {
 	focusing := focusing()
 	line, done := focusing.listen()
 	defer done()
 
-	focusing.tell("notes/one.md")
-	focusing.tell("notes/two.md")
-	focusing.tell("notes/three.md")
+	focusing.tell(domain.Place{Path: "notes/one.md"})
+	focusing.tell(domain.Place{Path: "notes/two.md"})
+	focusing.tell(domain.Place{Path: "library/A Book.epub", Start: 1200, Length: 80})
 
-	if waiting := <-line; waiting != "notes/three.md" {
-		t.Errorf("the listener was handed %q", waiting)
+	want := domain.Place{Path: "library/A Book.epub", Start: 1200, Length: 80}
+	if waiting := <-line; !reflect.DeepEqual(waiting, want) {
+		t.Errorf("the listener was handed %+v", waiting)
 	}
 	if len(line) != 0 {
-		t.Errorf("%d notes are queued behind it", len(line))
+		t.Errorf("%d places are queued behind it", len(line))
 	}
 }
 
@@ -48,7 +54,7 @@ func TestNobodyIsToldAfterTheyStopListening(t *testing.T) {
 	line, done := focusing.listen()
 	done()
 
-	focusing.tell("notes/one.md")
+	focusing.tell(domain.Place{Path: "notes/one.md"})
 
 	if _, open := <-line; open {
 		t.Error("a closed line was written to")

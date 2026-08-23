@@ -14,6 +14,7 @@ package text
 
 import (
 	"errors"
+	"fmt"
 	"path"
 	"sort"
 	"strings"
@@ -51,9 +52,9 @@ type mark struct {
 	Name   string
 }
 
-// Locate is where an offset is, in the words the source itself uses: the part
-// its own navigation or outline names, and the page of the printed book it was
-// made from. Empty where the source named neither.
+// Locate is where an offset is: the part the source's own navigation, outline
+// or headings name, and the page it falls on. Empty where the source has
+// neither.
 func (d *Document) Locate(offset int) string {
 	named := make([]string, 0, 2)
 	if i := preceding(d.named, offset); i >= 0 {
@@ -63,6 +64,35 @@ func (d *Document) Locate(offset int) string {
 		named = append(named, d.paged[i].Name)
 	}
 	return strings.Join(named, ", ")
+}
+
+// Opens are the parts that begin exactly at an offset: what a section starting
+// here is called.
+//
+// A part and the first subsection inside it can begin at one place, and both
+// name it. What is answered is every name, outermost first, so a question about
+// either reaches the same place.
+func (d *Document) Opens(offset int) []string {
+	var names []string
+	for _, m := range d.named {
+		if m.Offset == offset {
+			names = append(names, m.Name)
+		}
+		if m.Offset > offset {
+			break
+		}
+	}
+	return names
+}
+
+// sheet is what a page of a file is called: where it stands in it.
+//
+// A person is told the number a viewer opens at, so there is one number and it
+// is the one on the screen. What the paper printed is a second number for the
+// same page, and a person shown both has to work out which is being talked
+// about.
+func sheet(at int) string {
+	return fmt.Sprintf("page %d of the file", at+1)
 }
 
 func preceding(marks []mark, offset int) int {
@@ -123,7 +153,12 @@ func fromEPUB(raw []byte) (*Document, error) {
 		doc.Places = append(doc.Places, window.Place{Title: p.Title, Offset: p.Offset})
 		doc.named = append(doc.named, mark{Offset: p.Offset, Name: p.Title})
 	}
+	// A book made for a screen has no pages of its own, and those it names are
+	// the printed edition it was set from. That is the only name they have.
 	for _, p := range book.Pages {
+		if p.Label == "" {
+			continue
+		}
 		doc.paged = append(doc.paged, mark{Offset: p.Offset, Name: p.Label})
 	}
 	return doc, nil
@@ -139,8 +174,8 @@ func fromPDF(raw []byte) (*Document, error) {
 		doc.Places = append(doc.Places, window.Place{Title: p.Title, Offset: p.Offset})
 		doc.named = append(doc.named, mark{Offset: p.Offset, Name: p.Title})
 	}
-	for _, p := range book.Pages {
-		doc.paged = append(doc.paged, mark{Offset: p.Offset, Name: p.Label})
+	for i, p := range book.Pages {
+		doc.paged = append(doc.paged, mark{Offset: p.Offset, Name: sheet(i)})
 	}
 	return doc, nil
 }

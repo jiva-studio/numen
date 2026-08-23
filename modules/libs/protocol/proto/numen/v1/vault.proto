@@ -33,8 +33,8 @@ service VaultService {
   rpc Names(NamesRequest) returns (NamesResponse);
 
   // Search is the text a vault holds that answers what was typed, by the words
-  // in it or by what it means. The caller says which half runs, so a client
-  // drawing the two apart asks twice.
+  // in it or by what it means or by what a section is called. The caller says
+  // which way it is asked, so a client drawing them apart asks once for each.
   rpc Search(SearchRequest) returns (SearchResponse);
 
   // Changes reports the notes that changed on disk, for as long as the caller
@@ -42,7 +42,7 @@ service VaultService {
   // what it is showing and asks for what it needs.
   rpc Changes(ChangesRequest) returns (stream ChangesResponse);
 
-  // Focus reports the notes something else asked to be put in front of the
+  // Focus reports the places something else asked to be put in front of the
   // person — an agent working the vault beside them — for as long as the
   // caller listens. What travelling there looks like is the client's.
   rpc Focus(FocusRequest) returns (stream FocusResponse);
@@ -263,8 +263,26 @@ message Renamed {
 message FocusRequest {}
 
 message FocusResponse {
-  // The note to see the neighbourhood from.
+  // The source to put in front of the person: a note to see the neighbourhood
+  // from, or a document to open.
   string path = 1;
+
+  // Where in the text of that source to open, counted in bytes. A length of
+  // zero names the source and no place inside it, which is what a note arrives
+  // with.
+  int32 start = 2;
+  int32 length = 3;
+
+  // The other stretches of the same source worth seeing. The person is taken to
+  // the stretch above, and these are shown where they fall.
+  repeated Stretch also = 4;
+}
+
+// A Stretch is a run of a source's text, counted in bytes over the text the
+// source is read as.
+message Stretch {
+  int32 start = 1;
+  int32 length = 2;
 }
 
 message EditingRequest {}
@@ -339,17 +357,22 @@ message Span {
   int32 to = 2;
 }
 
-// Half is which half of a search runs.
-enum Half {
-  // Both halves run, and what they answer is merged into one ranking.
-  HALF_UNSPECIFIED = 0;
+// Way is how a search is asked. Each way is an order of its own, and a search
+// asked every way fuses them into one.
+enum Way {
+  // Every way, fused into one ranking.
+  WAY_UNSPECIFIED = 0;
 
   // The words typed, matched as words.
-  HALF_WORDS = 1;
+  WAY_WORDS = 1;
 
   // What the words mean, matched against the vectors the index holds. A vault
   // nothing has embedded answers with nothing.
-  HALF_MEANING = 2;
+  WAY_MEANING = 2;
+
+  // The names of the sections a source divides into. A hit is the section, and
+  // it answers at its own beginning.
+  WAY_NAMES = 3;
 }
 
 message SearchRequest {
@@ -358,7 +381,7 @@ message SearchRequest {
   // How many passages to answer with. Zero takes the number the vault chooses.
   int32 limit = 2;
 
-  Half half = 3;
+  Way way = 3;
 }
 
 message SearchResponse {
@@ -386,6 +409,12 @@ message Passage {
   // What the source's own numbering calls the place, empty when the format
   // offered none.
   string location = 5;
+
+  // Where the passage stands in the text of the source it was read out of,
+  // counted in bytes. It is what opens that source here, and a hit in a note
+  // carries it as every other hit does.
+  int32 start = 6;
+  int32 length = 7;
 }
 
 message ReadRequest {

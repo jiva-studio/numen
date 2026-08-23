@@ -7,7 +7,7 @@
  * band that failed must not take the other two down with it.
  */
 import { describe, expect, it } from 'vitest'
-import { finding, type Asking, type Half, type Named, type Passage, type Words } from './finding'
+import { finding, type Asking, type Way, type Named, type Passage, type Words } from './finding'
 
 const WORDS: Words = {
   names: 'Names',
@@ -16,6 +16,7 @@ const WORDS: Words = {
   travel: 'Show in plex',
   read: 'Open the note',
   readAt: 'Open at this heading',
+  readDocument: 'Open the document',
   noneFound: 'Nothing',
   notAsked: 'The vault could not answer',
 }
@@ -40,7 +41,7 @@ function later<T>(): Later<T> {
 /** A vault that answers when the test says so, and remembers what it was asked. */
 function asking() {
   const names: Later<readonly Named[]>[] = []
-  const searched: { half: Half; answer: Later<readonly Passage[]> }[] = []
+  const searched: { way: Way; answer: Later<readonly Passage[]> }[] = []
   const queries: string[] = []
 
   const core: Asking = {
@@ -50,16 +51,16 @@ function asking() {
       names.push(one)
       return one.promise
     },
-    search: (query, half) => {
+    search: (query, way) => {
       queries.push(query)
       const one = later<readonly Passage[]>()
-      searched.push({ half, answer: one })
+      searched.push({ way, answer: one })
       return one.promise
     },
   }
 
-  const half = (which: Half) => searched.find((one) => one.half === which)?.answer
-  return { core, names, searched, queries, half }
+  const way = (which: Way) => searched.find((one) => one.way === which)?.answer
+  return { core, names, searched, queries, way }
 }
 
 /** Nothing waits in a test; the hold is a clock and the clock is handed in. */
@@ -84,6 +85,8 @@ const passage = (over: Partial<Passage> = {}): Passage => ({
   title: 'Heat engines',
   text: 'no engine beats a reversible one',
   isNote: true,
+  start: 0,
+  length: 0,
   at: [{ from: 3, to: 9 }],
   ...over,
 })
@@ -111,7 +114,7 @@ describe('asking', () => {
     await settled()
 
     expect(vault.names).toHaveLength(1)
-    expect(vault.searched.map((one) => one.half)).toEqual(['words', 'meaning'])
+    expect(vault.searched.map((one) => one.way)).toEqual(['words', 'meaning'])
     expect(new Set(vault.queries)).toEqual(new Set(['ent']))
   })
 
@@ -182,7 +185,7 @@ describe('answers arriving', () => {
     void palette.typing('ent')
     await settled()
 
-    vault.half('meaning')?.fails('no model is set')
+    vault.way('meaning')?.fails('no model is set')
     vault.names[0]?.answers([named()])
     await settled()
 
@@ -232,7 +235,7 @@ describe('where a thing found takes the person', () => {
       named(),
       named({ path: 'notes/carnot.md', title: 'The Carnot cycle', heading: 'Entropy here', line: 12 }),
     ])
-    vault.half('words')?.answers([passage()])
+    vault.way('words')?.answers([passage()])
     await settled()
     return palette
   }
@@ -296,7 +299,7 @@ describe('what a key reaches, per kind of thing found', () => {
     await settled()
 
     vault.names[0]?.answers([named(), named({ heading: 'Entropy here', line: 12 })])
-    vault.half('words')?.answers([passage()])
+    vault.way('words')?.answers([passage()])
     await settled()
 
     const acts = (band: string, at: number) =>
@@ -311,28 +314,41 @@ describe('what a key reaches, per kind of thing found', () => {
 })
 
 describe('a passage from something that is not a note', () => {
-  it('is drawn, and offers nothing, because there is nothing to open it as', async () => {
+  it('offers the document, opened where the words were found', async () => {
     const vault = asking()
     const palette = finding(vault.core, WORDS, now)
     void palette.typing('war')
     await settled()
 
-    vault.half('words')?.answers([
-      passage({ path: 'library/mahabharata.epub', title: '', isNote: false }),
+    vault.way('words')?.answers([
+      passage({
+        path: 'library/mahabharata.epub',
+        title: '',
+        isNote: false,
+        start: 40_512,
+        length: 31,
+      }),
     ])
     await settled()
 
     const item = bandOf(palette.bands.value, 'text')!.items[0]! as {
       id: string
       title: string
-      actions?: readonly unknown[]
-      disabled?: boolean
+      actions?: readonly { id: string; text: string }[]
     }
 
     expect(item.title).toBe('library/mahabharata.epub')
-    expect(item.actions ?? []).toHaveLength(0)
-    expect(item.disabled).toBe(true)
-    // Nothing was offered, so nothing is answered for.
+    expect(item.actions?.map((one) => one.text)).toEqual([WORDS.readDocument])
+
+    // The document opens where the words stand in its own text.
+    expect(palette.chose(item.id, 'document')).toEqual({
+      at: 'document',
+      path: 'library/mahabharata.epub',
+      title: '',
+      start: 40_512,
+      length: 31,
+    })
+    // It is neither a note nor a node, and neither is answered for.
     expect(palette.chose(item.id, 'note')).toBeNull()
     expect(palette.chose(item.id, 'plex')).toBeNull()
   })
@@ -345,7 +361,7 @@ describe('a band landing under the keyboard', () => {
     void palette.typing('war')
     await settled()
 
-    vault.half('words')?.answers([passage({ path: 'notes/heat.md' })])
+    vault.way('words')?.answers([passage({ path: 'notes/heat.md' })])
     await settled()
     const before = bandOf(palette.bands.value, 'text')!.items[0]!.id
 
@@ -353,7 +369,7 @@ describe('a band landing under the keyboard', () => {
     void palette.typing('war ')
     await settled()
     vault.searched
-      .filter((one) => one.half === 'words')
+      .filter((one) => one.way === 'words')
       .at(-1)
       ?.answer.answers([
         passage({ path: 'notes/fire.md', title: 'Fire' }),

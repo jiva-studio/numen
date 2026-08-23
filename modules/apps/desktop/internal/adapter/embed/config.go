@@ -3,25 +3,46 @@ package embed
 import (
 	"encoding/json"
 	"os"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
-// Which embedder an installation uses.
+// Where a vector is made.
 const (
 	UseLocal   = "local"
 	UseService = "service"
+)
+
+// How a model's per-token output becomes one vector. A model pooled the way it
+// was not trained to be answers with vectors in a space of its own, near
+// nothing the same model made another way.
+const (
+	PoolMean = "mean"
+	PoolHead = "head"
 )
 
 // KeyEnvVar is where the service key is read from when the configuration file
 // does not carry one.
 const KeyEnvVar = "NUMEN_EMBEDDING_KEY"
 
-// Config is the embedding section of this installation's settings: which
-// embedder, which model, how wide its vectors are, and how near the query a
-// passage stands to be an answer at all.
+// Config is the embedding section of this installation's settings: what a
+// vector is, where it is made, and how near the query a passage stands to be an
+// answer at all.
 type Config struct {
-	Use     string       `json:"use"`
-	Local   LocalModel   `json:"local"`
-	Service ServiceModel `json:"service"`
+	// Model is what a vector is, and it is said once. A vector made while a
+	// vault is indexed is claimed again by a question, so the two are one
+	// model or the comparison between them means nothing.
+	Model Model `json:"model"`
+
+	// Indexing makes the vectors a vault is searched by. Query makes the vector
+	// a question is asked with, and taking nothing here is asking the way the
+	// vault was indexed.
+	//
+	// A vault is indexed once and asked all day, and this machine answers a
+	// question without a network.
+	Indexing Placement `json:"indexing"`
+	Query    Placement `json:"query"`
+
 	// Floor is the cosine similarity a passage reaches to be an answer, in the
 	// units the model in use measures in. Where a model puts two pieces of text
 	// about different things is a fact about that model, so a model changed is
@@ -29,31 +50,61 @@ type Config struct {
 	Floor float64 `json:"floor"`
 }
 
-// LocalModel is a model this machine runs.
-type LocalModel struct {
-	// Name is a HuggingFace repository, which is also the identity stored with
-	// every vector it produces.
-	Name string `json:"name"`
-	// Dimensions is what the model returns. A model of another width is refused.
-	Dimensions int `json:"dimensions"`
-	// Dir holds model.onnx and tokenizer.json. Empty means the download cache.
-	Dir string `json:"dir"`
-	// MaxTokens is where a text is truncated. It stays under the model's own
-	// limit, since a silently truncated window indexes text it does not contain.
+// Model is what a vector is: everything that decides the space it lands in.
+//
+// Name is what the model is called here, and is not how either placement
+// reaches it: a repository and a service call one model by two names, and
+// vectors made under both are kept under this one.
+type Model struct {
+	Name       string `json:"name"`
+	Dimensions int    `json:"dimensions"`
+	// MaxTokens is where the model truncates what it is given. A window cut
+	// somewhere else is a window whose vector describes text it does not hold.
 	MaxTokens int `json:"max_tokens"`
+	// Pooling is PoolMean or PoolHead. Empty is PoolMean.
+	Pooling string `json:"pooling"`
+}
+
+// Stored is this model in the words a vector is kept under. It is the one
+// crossing between the settings and the index, so nothing copies the fields
+// across by hand.
+func (m Model) Stored() port.EmbeddingModel {
+	return port.EmbeddingModel{
+		Name:       m.Name,
+		Dimensions: m.Dimensions,
+		MaxTokens:  m.MaxTokens,
+		Pooling:    m.Pooling,
+	}
+}
+
+// Placement is where a vector is made: on this machine, or by a service.
+type Placement struct {
+	Use     string       `json:"use"`
+	Local   LocalModel   `json:"local"`
+	Service ServiceModel `json:"service"`
+}
+
+// LocalModel is how this machine reaches a model it runs.
+type LocalModel struct {
+	// Name is a HuggingFace repository.
+	Name string `json:"name"`
+	// Dir holds the model and tokenizer.json. Empty means the download cache.
+	Dir string `json:"dir"`
+	// File is the model inside the repository or the directory. Empty is
+	// model.onnx, and naming another is how a quantised build of one model is
+	// run in place of the full one.
+	File string `json:"file"`
 	// BatchTexts is how many texts one forward pass carries.
 	BatchTexts int `json:"batch_texts"`
-	// Download allows fetching the model when it is not on this machine, and is
-	// off by default. Without it and without a directory, a vault is searched by
-	// its words.
+	// Download allows fetching the model when it is not on this machine. Turned
+	// off, and with no directory named, a vault is searched by its words.
 	Download bool `json:"download"`
 }
 
-// ServiceModel is a hosted model reached over HTTP.
+// ServiceModel is how a hosted model is reached over HTTP.
 type ServiceModel struct {
-	BaseURL    string `json:"base_url"`
-	Name       string `json:"name"`
-	Dimensions int    `json:"dimensions"`
+	BaseURL string `json:"base_url"`
+	Name    string `json:"name"`
 	// BatchCharacters bounds one request by the characters of everything in it.
 	BatchCharacters int `json:"batch_characters"`
 	// KeyEnv names the environment variable holding the key, for an
@@ -67,22 +118,64 @@ type ServiceModel struct {
 
 // Defaults embed locally: no key, no account, nothing to reach over a network.
 func Defaults() Config {
-	return Config{
-		Use: UseLocal,
-		Local: LocalModel{
-			Name:       "intfloat/multilingual-e5-small",
-			Dimensions: 384,
-			MaxTokens:  256,
-			BatchTexts: 8,
-		},
+	here := Placement{
+		Local: LocalModel{Name: "intfloat/multilingual-e5-small", BatchTexts: 8, Download: true},
 		Service: ServiceModel{
 			BaseURL:         "https://api.openai.com/v1",
 			Name:            "text-embedding-3-small",
-			Dimensions:      1536,
 			BatchCharacters: 32000,
 			KeyEnv:          KeyEnvVar,
 		},
 	}
+	indexing := here
+	indexing.Use = UseLocal
+	return Config{
+		Model: Model{
+			Name:       "intfloat/multilingual-e5-small",
+			Dimensions: 384,
+			MaxTokens:  256,
+			Pooling:    PoolMean,
+		},
+		Indexing: indexing,
+		Query:    here,
+	}
+}
+
+// Asking is where the vector of a question is made. An installation that says
+// nothing about questions asks the way it indexed.
+func (c Config) Asking() Placement {
+	if c.Query.Use == "" {
+		return c.Indexing
+	}
+	return c.Query
+}
+
+// As is a configuration in which this placement is the one that makes every
+// vector. A run that asks questions and fills no index opens the placement that
+// answers them and no other.
+func (p Placement) As(is Model) Config {
+	return Config{Model: is, Indexing: p}
+}
+
+// UnmarshalJSON keeps whatever the defaults set for the fields the file omits.
+func (c *Config) UnmarshalJSON(raw []byte) error {
+	var f struct {
+		Model    *Model     `json:"model"`
+		Indexing *Placement `json:"indexing"`
+		Query    *Placement `json:"query"`
+		Floor    *float64   `json:"floor"`
+	}
+	f.Model, f.Indexing, f.Query = &c.Model, &c.Indexing, &c.Query
+	if err := json.Unmarshal(raw, &f); err != nil {
+		return err
+	}
+	assign(&c.Floor, f.Floor)
+	// A model is pooled one way, under one word. Two words for one pooling are
+	// two keys over one set of vectors.
+	if c.Model.Pooling == "" {
+		c.Model.Pooling = PoolMean
+	}
+	return nil
 }
 
 // serviceFile is the shape on disk, with the key among the fields a person
@@ -90,10 +183,10 @@ func Defaults() Config {
 type serviceFile struct {
 	BaseURL         *string `json:"base_url"`
 	Name            *string `json:"name"`
-	Dimensions      *int    `json:"dimensions"`
 	BatchCharacters *int    `json:"batch_characters"`
 	KeyEnv          *string `json:"key_env"`
-	Key             *string `json:"key"`
+	// A key is written by a person and never by us.
+	Key *string `json:"key,omitempty"`
 }
 
 // UnmarshalJSON keeps whatever the defaults set for the fields the file omits.
@@ -104,7 +197,6 @@ func (s *ServiceModel) UnmarshalJSON(raw []byte) error {
 	}
 	assign(&s.BaseURL, f.BaseURL)
 	assign(&s.Name, f.Name)
-	assign(&s.Dimensions, f.Dimensions)
 	assign(&s.BatchCharacters, f.BatchCharacters)
 	assign(&s.KeyEnv, f.KeyEnv)
 	assign(&s.key, f.Key)
@@ -117,14 +209,12 @@ func (s ServiceModel) MarshalJSON() ([]byte, error) {
 	return json.Marshal(serviceFile{
 		BaseURL:         &s.BaseURL,
 		Name:            &s.Name,
-		Dimensions:      &s.Dimensions,
 		BatchCharacters: &s.BatchCharacters,
 		KeyEnv:          &s.KeyEnv,
 	})
 }
 
-// String reports the configuration with the key replaced. A value that formats
-// itself cannot be logged into a file by accident.
+// String reports the configuration with the key replaced.
 func (s ServiceModel) String() string {
 	held := "absent"
 	if s.Key() != "" {
@@ -134,8 +224,7 @@ func (s ServiceModel) String() string {
 }
 
 // Key is the service key: from the file if it names one, otherwise from the
-// environment. It is never taken as an argument, so there is no call site at
-// which it could be written down.
+// environment. It is never taken as an argument.
 func (s ServiceModel) Key() string {
 	if s.key != "" {
 		return s.key
@@ -157,18 +246,51 @@ func assign[T any](dst *T, src *T) {
 func (m *LocalModel) UnmarshalJSON(raw []byte) error {
 	var f struct {
 		Name       *string `json:"name"`
-		Dimensions *int    `json:"dimensions"`
 		Dir        *string `json:"dir"`
-		MaxTokens  *int    `json:"max_tokens"`
+		File       *string `json:"file"`
 		BatchTexts *int    `json:"batch_texts"`
+		Download   *bool   `json:"download"`
 	}
 	if err := json.Unmarshal(raw, &f); err != nil {
 		return err
 	}
 	assign(&m.Name, f.Name)
-	assign(&m.Dimensions, f.Dimensions)
 	assign(&m.Dir, f.Dir)
-	assign(&m.MaxTokens, f.MaxTokens)
+	assign(&m.File, f.File)
 	assign(&m.BatchTexts, f.BatchTexts)
+	assign(&m.Download, f.Download)
+	return nil
+}
+
+// UnmarshalJSON keeps whatever the defaults set for the fields the file omits.
+func (p *Placement) UnmarshalJSON(raw []byte) error {
+	var f struct {
+		Use     *string       `json:"use"`
+		Local   *LocalModel   `json:"local"`
+		Service *ServiceModel `json:"service"`
+	}
+	f.Local, f.Service = &p.Local, &p.Service
+	if err := json.Unmarshal(raw, &f); err != nil {
+		return err
+	}
+	assign(&p.Use, f.Use)
+	return nil
+}
+
+// UnmarshalJSON keeps whatever the defaults set for the fields the file omits.
+func (i *Model) UnmarshalJSON(raw []byte) error {
+	var f struct {
+		Name       *string `json:"name"`
+		Dimensions *int    `json:"dimensions"`
+		MaxTokens  *int    `json:"max_tokens"`
+		Pooling    *string `json:"pooling"`
+	}
+	if err := json.Unmarshal(raw, &f); err != nil {
+		return err
+	}
+	assign(&i.Name, f.Name)
+	assign(&i.Dimensions, f.Dimensions)
+	assign(&i.MaxTokens, f.MaxTokens)
+	assign(&i.Pooling, f.Pooling)
 	return nil
 }

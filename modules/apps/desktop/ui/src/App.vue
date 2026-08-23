@@ -36,6 +36,7 @@ import {
   Notices,
   Palette,
   Plex,
+  Reader,
   Workspace,
   closeTab,
   openTab,
@@ -48,10 +49,12 @@ import type {
   PlexRelatedSeat,
   PlexShowing,
   Tab,
+  Turn,
 } from '@numen/ui'
 import '@numen/ui/styles.css'
-import { core } from './vault'
+import { core, documents } from './vault'
 import { showing } from './showing'
+import { reading, type Run } from './reading'
 import { cornerOf } from './corner'
 import { editing } from './editing'
 import { drawn } from './drawn'
@@ -62,12 +65,20 @@ import { ITEMS, chose as carry } from './menu'
 import { leaving } from './leaving'
 import { core as agent } from './agent'
 import { conversation } from './conversation'
+import { same, spotOf, spotsIn } from './places'
 import { AGENT, NOTE, PLEX, plexCalled, shortened } from './workspace'
 
 const drawings = drawn()
 const notes = editing(core, undefined, drawings.arrived)
 const making = creating(core)
-const window = showing(core, undefined, notes.changed, drawings.told, (path) => held.shows(path))
+const window = showing(
+  core,
+  undefined,
+  notes.changed,
+  drawings.told,
+  (path) => held.shows(path),
+  (path, runs) => opensAt(path, ...runs),
+)
 /** What the window answers when the application says it is going. */
 const going = leaving(core)
 going.holds(notes.flush)
@@ -136,12 +147,19 @@ const words = {
   travel: 'Show in plex',
   read: 'Open the note',
   readAt: 'Open at this heading',
+  readDocument: 'Open the document here',
   noneFound: 'Nothing',
   notAsked: 'The vault could not answer',
   typeToFind: 'Type to look for a note',
   /** The corner where what is running behind the window is shown. */
   working: 'Background work',
   putAway: 'Put away',
+  /** A document read: turning its pages, and how close it is drawn. */
+  back: 'Previous page',
+  next: 'Next page',
+  page: 'Page',
+  closer: 'Closer',
+  further: 'Further',
 }
 
 /** Everything running behind the window, as the corner draws it. */
@@ -163,6 +181,7 @@ const held = holding({
     notes.open(made.path)
     return made.path
   },
+  document: (path) => reading(documents, path),
 })
 const { layout, blanks } = held
 
@@ -190,9 +209,21 @@ const asked = (event: KeyboardEvent) => {
 const entering = new Map<string, number>()
 
 /**
+ * A document put in front of the person, opened at a stretch of its own text.
+ * What stands there is lit, and the tab turns to the first page of it. The
+ * places named after it are lit where they fall, each of them somewhere else to
+ * look.
+ */
+const opensAt = (path: string, ...runs: readonly Run[]) => {
+  held.reads(path)
+  void held.documents.value.get(path)?.reach(...runs)
+}
+
+/**
  * Somewhere the palette was asked to go. A name is a thing and travels in the
  * plex the person is looking at; a heading and a passage are places in a note,
- * and open it where they stand.
+ * and open it where they stand. A passage from a source that is not a note
+ * opens that source where it stands.
  */
 const went = (item: string, action: string) => {
   const landing = palette.chose(item, action)
@@ -201,6 +232,10 @@ const went = (item: string, action: string) => {
 
   if (landing.at === 'plex') {
     void window.travel(landing.path)
+    return
+  }
+  if (landing.at === 'document') {
+    opensAt(landing.path, { start: landing.start ?? 0, length: landing.length ?? 0 })
     return
   }
   titles.set(landing.path, landing.title || landing.path)
@@ -234,6 +269,25 @@ const send = (id: string, text: string) => {
   void talk.ask(text, looking.value)
 }
 
+/** A line about work pressed: the place that call was on is put in front. */
+const opensTurn = (id: string, turn: Turn) => {
+  const place = held.agents.value.get(id)?.place(turn.id)
+  if (place) opensAt(place.path, { start: place.start, length: place.length })
+}
+
+/**
+ * A link inside an answer pressed. One naming a place in the vault opens it,
+ * and the other places that answer names in the same document are lit with it.
+ * Any other link is left to whatever would follow it.
+ */
+const followed = (turn: Turn, href: string, press: MouseEvent) => {
+  const here = spotOf(href)
+  if (!here) return
+  press.preventDefault()
+  const named = spotsIn(turn.text).filter((spot) => spot.path === here.path && !same(spot, here))
+  opensAt(here.path, ...[here, ...named].map(({ start, length }) => ({ start, length })))
+}
+
 /** The identity a pane made by a split is filed under. */
 const naming = () => crypto.randomUUID()
 
@@ -248,6 +302,9 @@ const becomes: readonly Tab[] = [
 const agentCalled = (talk: Talk): string =>
   shortened(talk.turns.value.find((turn) => turn.voice === 'asked')?.text ?? '') || words.agent
 
+/** A document is called by the file it is read out of. */
+const documentCalled = (path: string): string => path.split('/').pop() ?? path
+
 /** Every tab the window holds, and what each is called. */
 const tabs = computed<readonly Tab[]>(() => [
   ...[...held.plexes.value].map(
@@ -257,6 +314,7 @@ const tabs = computed<readonly Tab[]>(() => [
     }),
   ),
   ...[...held.agents.value].map(([id, talk]): Tab => ({ id, title: agentCalled(talk) })),
+  ...[...held.documents.value.keys()].map((id): Tab => ({ id, title: documentCalled(id) })),
   ...blanks.value.map((id): Tab => ({ id, title: words.newTab })),
   ...notes.all().map((path): Tab => {
     const mark = markOf(notes.shown(path).state)
@@ -341,6 +399,9 @@ const plexIn = (id: string) => held.plexes.value.get(id)?.view ?? null
 /** The talk one agent tab holds. */
 const talkIn = (id: string) => held.agents.value.get(id) ?? null
 
+/** The document one document tab is reading. */
+const documentIn = (id: string) => held.documents.value.get(id) ?? null
+
 /** What the window asks of an editor once it is drawn. */
 interface Drawn {
   focus(): boolean
@@ -360,13 +421,30 @@ const drew = (path: string, editor: unknown) => {
   void nextTick(() => enters(path))
 }
 
+/** What the window asks of a document once it is drawn. */
+interface Read {
+  measure(): void
+}
+
+/** The reader of each open document, for as long as its tab is drawn. */
+const readers = new Map<string, Read>()
+
+const drewReader = (path: string, reader: unknown) => {
+  if (!reader) {
+    readers.delete(path)
+    return
+  }
+  readers.set(path, reader as Read)
+}
+
 /**
- * A tab is drawn while it is out of sight, where an editor has nothing to
- * measure. The editor of the tab now on screen takes its measurements again.
+ * A tab is drawn while it is out of sight, where an editor and a page have no
+ * room to measure. Whatever the tab now on screen holds measures again.
  */
 const shown = (id: string) => {
   held.shown(id)
   editors.get(id)?.measure()
+  readers.get(id)?.measure()
   enters(id)
 }
 
@@ -453,6 +531,10 @@ onUnmounted(() => {
           @update:model-value="(text: string) => held.writing(id, text)"
           @submit="(text: string) => send(id, text)"
           @stop="talkIn(id)?.stop()"
+          @open="(turn: Turn) => opensTurn(id, turn)"
+          @follow="
+            (turn: Turn, href: string, press: MouseEvent) => followed(turn, href, press)
+          "
         >
           <template #silence>{{ unreachable || words.nothingSaid }}</template>
           <template #failure="{ turn }">
@@ -460,7 +542,27 @@ onUnmounted(() => {
           </template>
         </Agent>
 
-        <band v-else-if="blanks.includes(id)" class="blank">
+        <Reader
+          v-else-if="documentIn(id)"
+          :ref="(reader: unknown) => drewReader(id, reader)"
+          :pages="documentIn(id)!.pages.value"
+          :sheets="documentIn(id)!.sheets.value"
+          :at="documentIn(id)!.at.value"
+          :picture="documentIn(id)!.pictureOf"
+          :lit="documentIn(id)!.litOn"
+          :also="documentIn(id)!.alsoOn"
+          :back="words.back"
+          :next="words.next"
+          :page="words.page"
+          :closer="words.closer"
+          :further="words.further"
+          @go="(page: number) => void documentIn(id)?.go(page)"
+          @wide="(wide: number) => documentIn(id)?.widen(wide)"
+        >
+          <template #silence>{{ documentIn(id)?.trouble.value }}</template>
+        </Reader>
+
+        <div v-else-if="blanks.includes(id)" class="blank">
           <p class="blank__says">{{ words.choose }}</p>
           <ul class="blank__choices">
             <li v-for="one in becomes" :key="one.id">
@@ -469,7 +571,7 @@ onUnmounted(() => {
               </button>
             </li>
           </ul>
-        </band>
+        </div>
 
         <div v-else-if="notes.all().includes(id)" class="note">
           <p v-if="notes.saying(id)" role="alert" class="warning">{{ notes.saying(id) }}</p>
@@ -511,7 +613,7 @@ onUnmounted(() => {
 
     <Notices :notices="notices" :name="words.working" :put-away="words.putAway" />
 
-    <band v-if="going.questions.value.length" role="alertdialog" class="leaving">
+    <section v-if="going.questions.value.length" role="alertdialog" class="leaving">
       <p class="leaving__says">{{ words.going }}</p>
       <ul class="leaving__notes">
         <li v-for="one in going.questions.value" :key="one.path" class="leaving__note">
@@ -527,7 +629,7 @@ onUnmounted(() => {
           </button>
         </li>
       </ul>
-    </band>
+    </section>
 
     <Menu
       v-if="menu"
@@ -588,7 +690,8 @@ main {
   gap: 0.6rem;
   block-size: 100%;
   padding: var(--numen-gutter);
-  font: 0.85rem system-ui, sans-serif;
+  font-family: var(--numen-font-sans);
+  font-size: 0.85rem;
 }
 
 .blank__says {
@@ -639,7 +742,8 @@ main {
   background: var(--numen-caution-bg);
   color: var(--numen-caution-fg);
   box-shadow: var(--numen-panel-shadow);
-  font: 0.85rem system-ui, sans-serif;
+  font-family: var(--numen-font-sans);
+  font-size: 0.85rem;
 }
 
 .leaving__says {
@@ -699,16 +803,21 @@ main {
 .waiting,
 .failure {
   margin: auto;
-  font: 0.9rem system-ui, sans-serif;
+  font-family: var(--numen-font-sans);
+  font-size: 0.9rem;
   opacity: 0.6;
 }
 
+/* A warning and a failure carry filesystem paths, and a long one breaks where
+   it stands. */
 .warning {
   margin: 0;
   padding: 0.4rem 1rem;
-  font: 0.8rem system-ui, sans-serif;
+  font-family: var(--numen-font-sans);
+  font-size: 0.8rem;
   background: var(--numen-caution-bg);
   color: var(--numen-caution-fg);
+  overflow-wrap: break-word;
 }
 
 .failure {
@@ -716,5 +825,6 @@ main {
   opacity: 1;
   max-width: 40rem;
   text-align: center;
+  overflow-wrap: break-word;
 }
 </style>

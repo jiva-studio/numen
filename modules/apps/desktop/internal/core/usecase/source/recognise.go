@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/ocr"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/pdf"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/text"
 )
@@ -88,7 +89,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 	hash := fingerprint(raw)
 	area := u.area()
 	final, partial := text.Artifact(area, hash), text.Partial(area, hash)
-	boxes := text.Boxes(area, hash)
+	boxes, parts := text.Boxes(area, hash), text.Parts(area, hash)
 
 	// One run to a document. The name is the hash of its bytes, and it is held for
 	// as long as the reading takes.
@@ -120,9 +121,12 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 	if err != nil {
 		return res, err
 	}
-	// The two files are written one after the other, so a run that died between
-	// them left coordinates for pages the count does not claim.
+	// The files are written one after the other, so a run that died between them
+	// left coordinates and parts the count does not claim.
 	if err := trimmed(ctx, store, boxes, done); err != nil {
+		return res, err
+	}
+	if err := shortened(ctx, store, parts, prose); err != nil {
 		return res, err
 	}
 	res.Resumed, res.Read = done, done
@@ -131,20 +135,29 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 	// write puts a run of pages down and cuts the source from everything the
 	// document has said so far.
 	//
-	// The coordinates go first, so a run that dies between the two writes leaves
-	// them ahead of the count and the next run trims them back to it.
+	// The coordinates and the parts go first, so a run that dies among the
+	// writes leaves them ahead of the count and the next run trims them back to
+	// it.
 	//
 	// Nothing here says which text the source stands on. Cutting writes that
 	// and the chunks cut from it in one statement, and they are one fact: a row
 	// naming a text its chunks are not offsets into answers with the wrong
 	// words.
 	write := func(pages []ocr.Page) error {
-		written, found := ocr.Write(pages)
+		written, found, named := ocr.Write(pages)
 		for i := range found {
 			found[i].Start += prose
 		}
-		if err := store.Append(ctx, boxes, ocr.Pack(found)); err != nil {
+		for i := range named {
+			named[i].Start += prose
+		}
+		if err := store.Append(ctx, boxes, placed.Pack(found)); err != nil {
 			return err
+		}
+		if len(named) > 0 {
+			if err := store.Append(ctx, parts, ocr.Pack(named)); err != nil {
+				return err
+			}
 		}
 		if err := store.Append(ctx, partial, marked(written, res.Read)); err != nil {
 			return err
@@ -171,7 +184,6 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 		}
 		pages = append(pages, ocr.Page{
 			At:     index,
-			Label:  scan.Label(index),
 			Size:   drawn.Bounds().Size(),
 			Blocks: blocks,
 		})
@@ -204,7 +216,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 		// stand in for a text layer that worked, and there is no falling back
 		// from one.
 		res.Empty = true
-		return res, u.forget(ctx, v, ref, hash, store, partial, boxes)
+		return res, u.forget(ctx, v, ref, hash, store, partial, boxes, parts)
 	}
 
 	if err := store.Write(ctx, final, whole); err != nil {
@@ -268,8 +280,8 @@ func trimmed(ctx context.Context, store port.DerivedStore, name string, done int
 	if err != nil {
 		return err
 	}
-	held := ocr.Unpack(raw)
-	kept := make([]ocr.Box, 0, len(held))
+	held := placed.Unpack(raw)
+	kept := make([]placed.Box, 0, len(held))
 	for _, box := range held {
 		if box.Page < done {
 			kept = append(kept, box)
@@ -278,6 +290,26 @@ func trimmed(ctx context.Context, store port.DerivedStore, name string, done int
 	// Written back whatever was dropped. An append that did not land whole
 	// leaves bytes that are not a record, and every record appended after them
 	// is read at a shifted offset.
+	return store.Write(ctx, name, placed.Pack(kept))
+}
+
+// shortened drops the parts no count claims: those opening past the prose the
+// pages before the count came to.
+func shortened(ctx context.Context, store port.DerivedStore, name string, prose int) error {
+	raw, err := store.Read(ctx, name)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	held := ocr.Unpack(raw)
+	kept := make([]ocr.Part, 0, len(held))
+	for _, part := range held {
+		if part.Start+part.Length <= prose {
+			kept = append(kept, part)
+		}
+	}
 	return store.Write(ctx, name, ocr.Pack(kept))
 }
 

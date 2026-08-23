@@ -9,6 +9,17 @@ import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
 import { AgentService } from '@numen/protocol'
 
+/**
+ * Where in the vault a call was working: a source, and the stretch of that
+ * source's text it named, counted in bytes. A length of zero names the source
+ * and no place inside it.
+ */
+export interface Place {
+  readonly path: string
+  readonly start: number
+  readonly length: number
+}
+
 /** One thing the agent said, did, or stopped for. */
 export type Step =
   | { readonly kind: 'said'; readonly text: string }
@@ -18,6 +29,8 @@ export type Step =
       readonly about: string
       /** How much of the call has been written. It arrives more than once. */
       readonly written: number
+      /** Where it was working, for a call working on a source the vault holds. */
+      readonly place?: Place
     }
   /** The tool answered. Nothing of this application's is running from here. */
   | { readonly kind: 'answered' }
@@ -59,14 +72,19 @@ export const core: Agent = {
         case 'said':
           yield { kind: 'said', text: step.step.value }
           break
-        case 'doing':
+        case 'doing': {
+          const said = step.step.value
           yield {
             kind: 'doing',
-            tool: step.step.value.tool,
-            about: step.step.value.about,
-            written: step.step.value.written,
+            tool: said.tool,
+            about: said.about,
+            written: said.written,
+            ...(said.path
+              ? { place: { path: said.path, start: said.start, length: said.length } }
+              : {}),
           }
           break
+        }
         case 'answered':
           yield { kind: 'answered' }
           break

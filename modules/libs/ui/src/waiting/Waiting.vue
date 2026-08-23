@@ -16,17 +16,16 @@
 
 <style scoped>
 /* As tall as one line of the text it stands beside, so it sits on that line's
-   own middle. The colour is whatever it stands on. */
+   own middle. The colour is whatever it stands on, and `--waiting-size` and
+   `--waiting-thickness` are whatever holds it. */
 .waiting {
-  --size: 0.9em;
-  --thickness: 1.5px;
   --cycle: 800ms;
 
   display: inline-block;
   flex: none;
-  inline-size: var(--size);
-  block-size: var(--size);
-  border: var(--thickness) solid currentColor;
+  inline-size: var(--waiting-size, 0.9em);
+  block-size: var(--waiting-size, 0.9em);
+  border: var(--waiting-thickness, 1.5px) solid currentColor;
   /* One arc left open is what makes the turning visible on a ring. */
   border-block-start-color: transparent;
   border-radius: 50%;

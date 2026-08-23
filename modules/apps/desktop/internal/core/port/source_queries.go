@@ -30,6 +30,14 @@ type SourceQueries interface {
 	// other format on every run.
 	ByOtherRecipe(ctx context.Context, vaultID string, kind domain.SourceKind, recipes []string, limit int) ([]string, error)
 
+	// Reading is what one source's text came from. It answers false where the
+	// index holds no source at that path.
+	//
+	// From is empty for a source whose own bytes are the text, which is the
+	// ordinary case, and a caller acts on the difference: it decides which
+	// producer the offsets a chunk carries belong to.
+	Reading(ctx context.Context, vaultID, path string) (Recognised, bool, error)
+
 	// Recognised is the sources of one kind whose text a producer made, by path.
 	//
 	// A scan asks it to find the ones whose files are gone: the store is a
@@ -43,4 +51,10 @@ type Recognised struct {
 	Path string
 	From string
 	Hash string
+
+	// Size and MTime are the file as the index last saw it. A reading is of the
+	// bytes that were there then, and a file rewritten since is one those
+	// coordinates no longer describe.
+	Size  int64
+	MTime int64
 }

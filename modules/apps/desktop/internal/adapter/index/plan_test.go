@@ -37,15 +37,19 @@ var expectedPlans = []struct {
 
 	{chunk.Statements(), "identify", []any{1, "book", "p"}, []string{"(vault_id=? AND path=?)"}},
 	{chunk.Statements(), "fingerprints", []any{1, "book"}, []string{"sources_by_fingerprint"}},
+	{chunk.Statements(), "reading", []any{1, "library/note.epub"}, []string{"(vault_id=? AND path=?)"}},
 	{chunk.Statements(), "unchunked", []any{1, "book", 50}, []string{"sources_by_fingerprint", "chunks_by_source"}},
 	{chunk.Statements(), "stale_recipe", []any{1, "book", `["epub-1","pdf-1"]`, 50}, []string{"sources_by_fingerprint"}},
 	{chunk.Statements(), "unembedded", []any{"model", 1, 0, 50}, []string{"chunks_by_vault", "vectors_of"}},
 	{chunk.Statements(), "passage", []any{1, 1}, []string{"INTEGER PRIMARY KEY"}},
 	{chunk.Statements(), "enclosing", []any{1, 1}, []string{"INTEGER PRIMARY KEY"}},
 	{chunk.Statements(), "progress", []any{"model", 1}, []string{"chunks_by_vault_parent", "vectors_of"}},
-	// The lexical half reads the full-text index and then the row each hit
+	// A search by words reads the full-text index and then the row each hit
 	// names. A virtual table reports itself as a scan and has no named index.
-	{chunk.Statements(), "lexical", []any{`"entropy"`, 1, 20}, []string{"chunks_fts", "INTEGER PRIMARY KEY"}},
+	{chunk.Statements(), "lexical", []any{`"entropy"`, 1, `[]`, 20}, []string{"chunks_fts", "INTEGER PRIMARY KEY"}},
+	// A search by name reads its own full-text index the same way.
+	{chunk.Statements(), "named", []any{`"entropy"`, 1, `[]`, 20}, []string{"parts_fts", "INTEGER PRIMARY KEY"}},
+	{chunk.Statements(), "clear_parts", []any{1}, []string{"chunks_by_source"}},
 	{chunk.Statements(), "clear_fts", []any{1}, []string{"chunks_by_source"}},
 	// Cutting a source again reads what it holds now, and then moves, writes or
 	// takes out one row at a time.
