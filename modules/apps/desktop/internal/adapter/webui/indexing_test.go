@@ -21,7 +21,7 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 	// answering looks like from here.
 	model := sulks(64, math.MaxInt)
 	cfg, db := reading(t)
-	if err := db.FitVectors(t.Context(), model.Model().Dimensions); err != nil {
+	if err := db.FitVectors(t.Context(), model.Model().Dimensions, model.Model().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -49,7 +49,7 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 func TestAPassThatEmbeddedLeavesTheList(t *testing.T) {
 	model := &asked{dims: 64}
 	cfg, db := reading(t)
-	if err := db.FitVectors(t.Context(), model.Model().Dimensions); err != nil {
+	if err := db.FitVectors(t.Context(), model.Model().Dimensions, model.Model().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 

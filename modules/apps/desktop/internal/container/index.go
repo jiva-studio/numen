@@ -31,9 +31,10 @@ func (c Config) OpenIndex(ctx context.Context) (*Index, error) {
 
 func (i *Index) Close() error { return i.db.Close() }
 
-// FitVectors makes the vector index hold vectors of the width given.
-func (i *Index) FitVectors(ctx context.Context, dims int) error {
-	return i.db.FitVectors(ctx, dims)
+// FitVectors makes the vector index hold vectors of the width given, filled
+// from what the recipe has already bought.
+func (i *Index) FitVectors(ctx context.Context, dims int, recipe string) error {
+	return i.db.FitVectors(ctx, dims, recipe)
 }
 
 func (i *Index) Vaults() port.VaultRepository { return i.db.Vaults() }

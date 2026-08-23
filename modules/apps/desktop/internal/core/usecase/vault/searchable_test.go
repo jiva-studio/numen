@@ -43,7 +43,7 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
 
-	if err := db.FitVectors(t.Context(), width); err != nil {
+	if err := db.FitVectors(t.Context(), width, pointing{}.Model().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -98,7 +98,7 @@ func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
 
-	if err := db.FitVectors(t.Context(), width); err != nil {
+	if err := db.FitVectors(t.Context(), width, pointing{}.Model().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -125,7 +125,7 @@ func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
 
-	if err := db.FitVectors(t.Context(), width); err != nil {
+	if err := db.FitVectors(t.Context(), width, pointing{}.Model().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 

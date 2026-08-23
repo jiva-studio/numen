@@ -18,8 +18,8 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 	shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 900)), 1)
 
 	embed := Embed{
-		Readers:  vaults{first.ID: shelf, second.ID: shelf},
-		Chunks:   index, Vectors: index,
+		Readers: vaults{first.ID: shelf, second.ID: shelf},
+		Chunks:  index, Vectors: index,
 		Embedder: &faint{dims: dimensions}, BatchCharacters: 4000,
 	}
 
