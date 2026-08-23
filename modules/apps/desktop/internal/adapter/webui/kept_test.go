@@ -59,8 +59,7 @@ func TestAPageDrawnBeforeIsNotDrawnAgain(t *testing.T) {
 }
 
 // The width is part of what a drawing is, so a page asked for at another width
-// is another drawing. One handed back at the wrong size would be laid out
-// blurred, and the person would have no way to ask for it again.
+// is another drawing.
 func TestAPageAtAnotherWidthIsAnotherDrawing(t *testing.T) {
 	from := sheets(4)
 	api, handler := drawnFrom(t, from)

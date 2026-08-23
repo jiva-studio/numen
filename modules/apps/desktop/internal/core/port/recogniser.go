@@ -21,8 +21,7 @@ type Recognition struct {
 	DPI int
 
 	// From is where the models were loaded from. Two models answering to one
-	// name from two places are two models, and neither says anything about what
-	// the other would have read.
+	// name from two places are two models.
 	From string
 }
 

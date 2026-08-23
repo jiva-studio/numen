@@ -72,8 +72,7 @@ type serviceFile struct {
 	BatchURL *string `json:"batch_url"`
 	Name     *string `json:"name"`
 	KeyEnv   *string `json:"key_env"`
-	// A key is written by a person and never by us, so the field is absent from
-	// what we write rather than present and empty.
+	// A key is written by a person and never by us.
 	Key          *string  `json:"key,omitempty"`
 	PagesAtOnce  *int     `json:"pages_at_once"`
 	LettersApart *float64 `json:"letters_apart"`

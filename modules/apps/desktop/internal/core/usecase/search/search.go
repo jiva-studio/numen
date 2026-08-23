@@ -20,11 +20,9 @@ const lexicalCandidates = 5
 // DefaultFloor is how near the query a passage stands to be an answer, in
 // cosine similarity.
 //
-// A nearest-neighbour index answers with as many rows as it is asked for
-// whatever the question, and this is what leaves a vault holding nothing near
-// with nothing to say. The number belongs to the model the vectors were made
-// by: it is where that model puts two pieces of text about different things,
-// and another model puts them somewhere else.
+// The number belongs to the model the vectors were made by: it is where that
+// model puts two pieces of text about different things, and another model puts
+// them somewhere else.
 const DefaultFloor = 0.50
 
 // Parameters says which ways a search is asked, how many candidates each keeps,
@@ -59,8 +57,7 @@ type Parameters struct {
 	// which is what a question that says nothing about the sort of file it
 	// wants asks for.
 	//
-	// A person asking a book about something is asking about the book. Told to
-	// look everywhere, an answer draws whatever the vault holds most of.
+	// A person asking a book about something is asking about the book.
 	Of []domain.SourceKind
 }
 
@@ -86,10 +83,8 @@ func (p Parameters) filled() Parameters {
 // Search answers a query within one vault, over everything the vault holds.
 //
 // One database holds every vault, so the vault is an argument of the search.
-// Every field is asked for by New, since none of them is a parameter a caller
-// may forget. An embedder that is left out answers: the words half runs alone,
-// quickly, and with none of what the vectors hold. Absence is said by passing
-// nothing.
+// Every field is asked for by New. An embedder that is left out answers: the
+// words half runs alone, with none of what the vectors hold.
 type Search struct {
 	passages port.PassageQueries
 	readers  port.VaultReaders
@@ -109,8 +104,8 @@ type Search struct {
 // `floor` is how near the query a passage stands to be an answer, in the units
 // the model in use measures in. Zero takes DefaultFloor.
 //
-// `trouble` hears about a half that could not answer, so that a search short of
-// one is a search somebody is told about. Nothing is said by passing nothing.
+// `trouble` hears about a half that could not answer. Nothing is said by
+// passing nothing.
 func New(passages port.PassageQueries, readers port.VaultReaders, derived port.DerivedStores, embedder port.Embedder, floor float64, trouble func(error)) Search {
 	if floor == 0 {
 		floor = DefaultFloor

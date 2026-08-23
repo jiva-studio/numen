@@ -19,9 +19,8 @@ import (
 // because the export that carries its own alphabet is not the export the first
 // host publishes — and a person may point any of them at a fourth place.
 //
-// A downloaded file is kept under the platform's cache directory. It is a cache
-// in the sense ADR-0000 gives the word: deleting it costs a download and no
-// knowledge.
+// A downloaded file is kept under the platform's cache directory. Deleting it
+// costs a download and no knowledge.
 const cacheDir = "numen/models"
 
 // fetching is how long one model has to arrive. The largest of them is 124 MB,

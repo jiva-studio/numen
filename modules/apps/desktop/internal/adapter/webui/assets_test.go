@@ -50,9 +50,8 @@ func TestWhatIsNotAnAssetIsNotAnAddress(t *testing.T) {
 
 // The window's own pieces reach it.
 //
-// A file of the vault is asked for under `assets`, and a bundler that filed the
-// window's scripts there too would have them answered as vault files: the page
-// arrives and nothing it names does.
+// A file of the vault is asked for under `assets`. The window's own scripts are
+// served from elsewhere.
 func TestTheWindowsOwnPiecesAreServed(t *testing.T) {
 	files, err := Pages()
 	if err != nil {

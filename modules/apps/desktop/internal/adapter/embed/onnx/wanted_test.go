@@ -43,8 +43,7 @@ func TestAModelInSeveralFilesComesWithAllOfThem(t *testing.T) {
 }
 
 func TestAQuantisedBuildDoesNotDragDownTheFullOne(t *testing.T) {
-	// The weights beside model.onnx are two gigabytes and belong to a model
-	// nobody asked for.
+	// The weights beside model.onnx belong to a model nobody asked for.
 	got := wanted(e5, "model_qint8_avx512_vnni.onnx")
 	want := []string{"model_qint8_avx512_vnni.onnx", "config.json", "tokenizer.json"}
 	if !slices.Equal(got, want) {

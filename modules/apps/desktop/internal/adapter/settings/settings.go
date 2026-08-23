@@ -101,9 +101,8 @@ func At(path string) (Config, error) {
 	raw, err := os.ReadFile(path)
 	if errors.Is(err, fs.ErrNotExist) {
 		// An installation nobody has configured is written down as what it is
-		// doing, so the settings a person changes are the ones in front of
-		// them. A machine that will not take the file runs on the same
-		// settings and is told nothing, since there is nothing to do about it.
+		// doing. A machine that will not take the file runs on the same
+		// settings.
 		_ = write(path, cfg)
 		return cfg, nil
 	}

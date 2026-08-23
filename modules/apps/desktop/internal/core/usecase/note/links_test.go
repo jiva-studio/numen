@@ -331,8 +331,8 @@ func TestOneNoteWrittenTwoWaysIsOneLink(t *testing.T) {
 }
 
 func TestTwoUnresolvedLinksAreOnlyTheSameWhenWrittenTheSame(t *testing.T) {
-	// Nothing here knows what a name that answers to nothing would have meant,
-	// so two of them stay two.
+	// A name that answers to nothing is matched as it is written, so two of
+	// them stay two.
 	db, v := indexed(t, map[string]string{
 		"source.md": "Points at [[Nowhere]] and [[Elsewhere]].\n",
 	})

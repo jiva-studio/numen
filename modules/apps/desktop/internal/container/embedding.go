@@ -17,9 +17,8 @@ var ErrArriving = errors.New("the model is still arriving")
 // vector index is fitted and a vector is claimed under the right recipe while
 // the weights are still coming down.
 //
-// Two ways of waiting, because two callers want different things. A pass that
-// fills the index has nowhere to be and waits; a person who has typed a
-// question is answered by the words rather than kept waiting for the weights.
+// Two ways of waiting. A pass that fills the index waits; a person who has
+// typed a question is answered by the words.
 type Embedding struct {
 	is port.EmbeddingModel
 
@@ -106,12 +105,11 @@ func (e *Embedding) Close() error {
 }
 
 // Filling waits for the model. Nothing is owed to anybody watching a pass over
-// a vault, and a pass that gave up would leave the vault unsearchable by
-// meaning until something woke it again.
+// a vault.
 func (e *Embedding) Filling() port.Embedder { return waiting{e} }
 
 // Asking does not wait. A search short of the half that asks by meaning is a
-// search the words answer, and a person gets it now.
+// search the words answer.
 func (e *Embedding) Asking() port.Embedder { return impatient{e} }
 
 // embedding is what the model answers with, once it is here.

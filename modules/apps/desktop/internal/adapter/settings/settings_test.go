@@ -86,8 +86,7 @@ func TestOneSettingIsAValidFile(t *testing.T) {
 	}
 }
 
-// A file written before questions had a placement of their own names one
-// embedder, among whose fields the model is written.
+// A file naming one embedder writes the model among that embedder's fields.
 func TestAFileNamingOneFieldKeepsTheDefaultsForTheRest(t *testing.T) {
 	cfg, err := settings.At(write(t,
 		`{"indexing":{"embedding":{"use":"service","service":{"name":"text-embedding-3-large","dimensions":3072}}}}`))

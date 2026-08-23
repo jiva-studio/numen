@@ -169,8 +169,7 @@ func (r *Recognising) read(ctx context.Context, v domain.Vault, id, path string)
 	}
 	if res.Busy {
 		// Another run holds these bytes — a terminal, or a second window. What
-		// it reads is what this would have read, and saying so is what the
-		// person is owed.
+		// it reads is what this reads.
 		return fmt.Errorf("%s is already being read", path)
 	}
 	return nil

@@ -32,7 +32,7 @@ func searchCommand(ctx context.Context, out io.Writer, cfg container.Config, arg
 	// The same search the window runs. An installation with no model answers by
 	// words alone, and says nothing about it: half a search is a whole answer.
 	// Only the placement that embeds questions is opened: nothing here fills an
-	// index, and a local model is half a minute and a gigabyte to load.
+	// index.
 	asking := container.Config{Embedding: cfg.Embedding.Asking().As(cfg.Embedding.Model)}
 	embedder, closeEmbedder, why := asking.Embedder()
 	if why != nil {

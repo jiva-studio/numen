@@ -36,9 +36,8 @@ type Config struct {
 	// a question is asked with, and taking nothing here is asking the way the
 	// vault was indexed.
 	//
-	// They are separate because their costs are opposite. A vault is indexed
-	// once, and a service does that in an hour where this machine takes a day;
-	// a question is asked all day, and a machine answers it without a network.
+	// A vault is indexed once and asked all day, and this machine answers a
+	// question without a network.
 	Indexing Placement `json:"indexing"`
 	Query    Placement `json:"query"`
 
@@ -144,9 +143,8 @@ func (p Placement) As(is Identity) Config {
 	return Config{Model: is, Indexing: p}
 }
 
-// settingsFile is the shape on disk. Both the sections and the older flat form
-// are read: an installation configured before questions had a placement of
-// their own keeps working, and indexes and asks the one way it named.
+// settingsFile is the shape on disk: the sections, and the flat form of one
+// placement, which indexes and asks the one way it names.
 type settingsFile struct {
 	Model    *json.RawMessage `json:"model"`
 	Indexing *json.RawMessage `json:"indexing"`
@@ -232,8 +230,7 @@ type serviceFile struct {
 	Name            *string `json:"name"`
 	BatchCharacters *int    `json:"batch_characters"`
 	KeyEnv          *string `json:"key_env"`
-	// A key is written by a person and never by us, so the field is absent from
-	// what we write rather than present and empty.
+	// A key is written by a person and never by us.
 	Key *string `json:"key,omitempty"`
 }
 
@@ -262,8 +259,7 @@ func (s ServiceModel) MarshalJSON() ([]byte, error) {
 	})
 }
 
-// String reports the configuration with the key replaced. A value that formats
-// itself cannot be logged into a file by accident.
+// String reports the configuration with the key replaced.
 func (s ServiceModel) String() string {
 	held := "absent"
 	if s.Key() != "" {
@@ -273,8 +269,7 @@ func (s ServiceModel) String() string {
 }
 
 // Key is the service key: from the file if it names one, otherwise from the
-// environment. It is never taken as an argument, so there is no call site at
-// which it could be written down.
+// environment. It is never taken as an argument.
 func (s ServiceModel) Key() string {
 	if s.key != "" {
 		return s.key

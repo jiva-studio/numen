@@ -12,17 +12,14 @@ import (
 // distance left is what arithmetic on two machines leaves.
 const Agreement = 0.99
 
-// asked is the text both are asked about. It is short, so the question costs a
-// service almost nothing, and it carries several scripts, so two models that
-// differ only outside one alphabet still differ here.
+// asked is the text both are asked about. It carries several scripts, so two
+// models that differ only outside one alphabet differ here.
 const asked = "Śrī Caitanya Mahāprabhu — Кришна — the holy name"
 
 // Agree says whether two embedders are two placements of one model.
 //
-// A vault's vectors are made by one of them and a question is asked with the
-// other, and a question in another space finds nothing however well it is
-// written. Nothing in a configuration file shows this: two placements name a
-// model by whatever each of them calls it, so they are asked instead.
+// A question embedded in another space finds nothing the first indexed. Two
+// placements name a model by whatever each of them calls it, so they are asked.
 func Agree(ctx context.Context, indexing, asking port.Embedder) error {
 	if indexing == nil || asking == nil {
 		return nil
