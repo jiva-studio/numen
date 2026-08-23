@@ -24,6 +24,21 @@ func Bits(v []float32) []byte {
 	return out
 }
 
+// Coarse is the one bit per dimension of a vector that has been quantised. It
+// is read out of the bytes that are stored, so a vector bought and a vector
+// reclaimed from the index carry the same bits.
+//
+// A dimension that quantised to zero is stored as a zero bit.
+func Coarse(q []int8) []byte {
+	out := make([]byte, (len(q)+7)/8)
+	for i, x := range q {
+		if x > 0 {
+			out[i/8] |= 1 << (7 - uint(i)%8)
+		}
+	}
+	return out
+}
+
 // Bytes keeps one byte per dimension, for the rerank. Values beyond what
 // Int8Scale reaches are clamped; a unit-length vector puts almost nothing there.
 func Bytes(v []float32) []int8 {

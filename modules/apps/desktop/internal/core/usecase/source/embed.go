@@ -181,7 +181,7 @@ func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []dom
 			Model:       model,
 			Kind:        port.QuantisedInt8,
 			Value:       value,
-			Coarse:      embedding.Bits(embedding.Floats(unsigned(value))),
+			Coarse:      embedding.Coarse(unsigned(value)),
 		})
 		res.Reused++
 	}
@@ -202,13 +202,14 @@ func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []dom
 			// is fixed, and it is fixed for a vector of unit length.
 			v = embedding.Normalise(v)
 			at := askingFor[i]
+			quantised := embedding.Bytes(v)
 			out = append(out, port.Vector{
 				Chunk:       owing[at].Chunk,
 				Fingerprint: prints[at],
 				Model:       model,
 				Kind:        port.QuantisedInt8,
-				Value:       signed(embedding.Bytes(v)),
-				Coarse:      embedding.Bits(v),
+				Value:       signed(quantised),
+				Coarse:      embedding.Coarse(quantised),
 			})
 		}
 	}
