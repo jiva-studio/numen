@@ -96,6 +96,7 @@ type Search struct {
 	embedder port.Embedder
 	derived  port.DerivedStores
 	floor    float64
+	trouble  func(error)
 }
 
 // New is a search over one vault's index.
@@ -107,9 +108,15 @@ type Search struct {
 //
 // `floor` is how near the query a passage stands to be an answer, in the units
 // the model in use measures in. Zero takes DefaultFloor.
-func New(passages port.PassageQueries, readers port.VaultReaders, derived port.DerivedStores, embedder port.Embedder, floor float64) Search {
+//
+// `trouble` hears about a half that could not answer, so that a search short of
+// one is a search somebody is told about. Nothing is said by passing nothing.
+func New(passages port.PassageQueries, readers port.VaultReaders, derived port.DerivedStores, embedder port.Embedder, floor float64, trouble func(error)) Search {
 	if floor == 0 {
 		floor = DefaultFloor
+	}
+	if trouble == nil {
+		trouble = func(error) {}
 	}
 	return Search{
 		passages: passages,
@@ -117,6 +124,7 @@ func New(passages port.PassageQueries, readers port.VaultReaders, derived port.D
 		embedder: embedder,
 		derived:  derived,
 		floor:    floor,
+		trouble:  trouble,
 	}
 }
 
@@ -151,22 +159,35 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 	}
 	if p.Dense > 0 && u.embedder != nil {
 		dense, err := u.nearest(ctx, v, query, p)
-		if err != nil {
+		switch {
+		case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 			return nil, err
+		case errors.Is(err, errNoVector):
+			// A model out of reach leaves the words to answer. A vault is
+			// searched on a machine with no network, and by a person whose key
+			// has run out.
+			u.trouble(err)
+		case err != nil:
+			return nil, err
+		default:
+			rankings = append(rankings, dense)
 		}
-		rankings = append(rankings, dense)
 	}
 	return u.read(ctx, v, collapse(merge(rankings...), named, p.Each, p.Limit))
 }
+
+// errNoVector marks the query having no vector, which is the half that asks by
+// meaning having nothing to ask with.
+var errNoVector = errors.New("the query was not turned into a vector")
 
 // nearest is the search asked by meaning, over a vector of the query itself.
 func (u Search) nearest(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.Passage, error) {
 	vectors, err := u.embedder.Embed(ctx, []string{query})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %w", errNoVector, err)
 	}
 	if len(vectors) != 1 {
-		return nil, fmt.Errorf("the embedder answered with %d vectors for one query", len(vectors))
+		return nil, fmt.Errorf("%w: the embedder answered with %d vectors for one query", errNoVector, len(vectors))
 	}
 	// A vector is kept under the recipe it was made by, which is everything
 	// about the model that decides what a vector is. Asked under anything else,

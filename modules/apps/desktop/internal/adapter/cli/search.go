@@ -39,7 +39,8 @@ func searchCommand(ctx context.Context, out io.Writer, cfg container.Config, arg
 		defer func() { _ = closeEmbedder() }()
 	}
 
-	found, err := search.New(db.Passages(), cfg.VaultReaders(), cfg.DerivedStores(), embedder, cfg.Embedding.Floor).
+	trouble := func(err error) { fmt.Fprintf(os.Stderr, "answering by words alone: %v\n", err) }
+	found, err := search.New(db.Passages(), cfg.VaultReaders(), cfg.DerivedStores(), embedder, cfg.Embedding.Floor, trouble).
 		Execute(ctx, v, args[1], search.Parameters{})
 	if err != nil {
 		return err

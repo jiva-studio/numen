@@ -3,6 +3,7 @@ package search_test
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -131,7 +132,7 @@ func precise(v []float32) []byte {
 }
 
 func (c corpus) search(embedder port.Embedder) search.Search {
-	return search.New(c.db.ChunkQueries(), filesystem.Readers{}, nil, embedder, 0)
+	return search.New(c.db.ChunkQueries(), filesystem.Readers{}, nil, embedder, 0, nil)
 }
 
 var model = port.EmbeddingModel{Name: "test", Dimensions: dimensions}
@@ -168,6 +169,13 @@ func (o oneWay) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	}
 	return out, nil
 }
+
+// outOfReach is an embedder on the other side of a network that is not there.
+type outOfReach struct{ why error }
+
+func (outOfReach) Model() port.EmbeddingModel { return model }
+
+func (o outOfReach) Embed(context.Context, []string) ([][]float32, error) { return nil, o.why }
 
 func sources(passages []domain.Passage) []string {
 	out := make([]string, 0, len(passages))
@@ -276,6 +284,41 @@ func TestAVaultWithNoVectorsAnswersFromItsWords(t *testing.T) {
 				t.Errorf("the passage does not carry the text around the hit: %q", found[0].Text)
 			}
 		})
+	}
+}
+
+func TestAModelOutOfReachLeavesTheWordsToAnswer(t *testing.T) {
+	ctx := t.Context()
+	c := indexed(t)
+
+	var said []error
+	finds := search.New(c.db.ChunkQueries(), filesystem.Readers{}, nil,
+		outOfReach{why: errors.New("dial tcp: network is unreachable")}, 0,
+		func(err error) { said = append(said, err) })
+
+	found, err := finds.Execute(ctx, c.first, "disorder", search.Parameters{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) != 1 || !strings.Contains(found[0].Source, "Entropy") {
+		t.Fatalf("the words alone found %v", sources(found))
+	}
+	if len(said) != 1 {
+		t.Fatalf("the half that did not answer said %v", said)
+	}
+}
+
+func TestASearchTheCallerStoppedIsNotAnAnswer(t *testing.T) {
+	// A question nobody is waiting for any more is not a question the words
+	// answer on their own.
+	ctx := t.Context()
+	c := indexed(t)
+
+	finds := search.New(c.db.ChunkQueries(), filesystem.Readers{}, nil,
+		outOfReach{why: context.Canceled}, 0, func(error) {})
+
+	if _, err := finds.Execute(ctx, c.first, "disorder", search.Parameters{}); !errors.Is(err, context.Canceled) {
+		t.Fatalf("got %v", err)
 	}
 }
 

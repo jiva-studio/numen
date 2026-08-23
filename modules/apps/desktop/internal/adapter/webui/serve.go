@@ -163,7 +163,8 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 	// The search the window offers is the search the application already does.
 	// It is built once the embedder is settled, so a model that could not be
 	// fitted leaves the words half to answer on its own.
-	finds := search.New(db.Passages(), cfg.VaultReaders(), cfg.DerivedStores(), embedder, cfg.Embedding.Floor)
+	finds := search.New(db.Passages(), cfg.VaultReaders(), cfg.DerivedStores(), embedder, cfg.Embedding.Floor,
+		func(err error) { fmt.Fprintf(out, "answering by words alone: %v\n", err) })
 	api.Finds = &finds
 	scan := usecase.Scan{
 		Readers:      cfg.VaultReaders(),
