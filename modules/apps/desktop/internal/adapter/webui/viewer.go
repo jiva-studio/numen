@@ -13,7 +13,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/pdf"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
@@ -353,7 +352,7 @@ func refuse(w http.ResponseWriter, err error) {
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 	case errors.Is(err, errNoPage), port.NoNote(err):
 		http.Error(w, err.Error(), http.StatusNotFound)
-	case errors.Is(err, filesystem.ErrOutside):
+	case errors.Is(err, port.ErrOutside):
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	case errors.Is(err, pdf.ErrNotPDF), errors.Is(err, pdf.ErrEncrypted):
 		http.Error(w, err.Error(), http.StatusUnsupportedMediaType)

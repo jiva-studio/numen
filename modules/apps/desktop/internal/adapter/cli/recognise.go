@@ -7,7 +7,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/ocr/onnx"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/source"
@@ -36,7 +35,7 @@ func recogniseCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 	// what is missing and waits for it. It is said out loud first: a hundred and
 	// sixty megabytes is minutes, and a program that prints nothing for minutes
 	// looks broken.
-	if !onnx.Ready(cfg.Recognition) {
+	if !cfg.RecogniserReady() {
 		fmt.Fprintln(out, "fetching what is needed to read scans, about 160 MB")
 	}
 	models, closeModels, why := cfg.Recogniser(ctx)

@@ -17,6 +17,11 @@ import (
 // differently.
 var ErrNotANote = errors.New("not a note this vault holds")
 
+// ErrOutside is what a path that does not stay in the vault gets. It is not
+// "no note": a caller asking for something outside has made a mistake worth
+// hearing about, and "no such note" would hide it.
+var ErrOutside = errors.New("not a path inside the vault")
+
 // NoNote reports whether an error says there is no note at the path: nothing is
 // there, or something is there that the vault leaves alone.
 //

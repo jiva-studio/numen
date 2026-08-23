@@ -22,6 +22,11 @@ import (
 //
 // It waits for whatever is missing, so it is for a terminal, where waiting is
 // what a person came for. A window asks Recognising instead.
+// RecogniserReady says whether a document could be read now without waiting for
+// anything to arrive. Which models those are is settled here, with every other
+// choice of adapter.
+func (c Config) RecogniserReady() bool { return onnx.Ready(c.Recognition) }
+
 func (c Config) Recogniser(ctx context.Context) (recogniser port.Recogniser, close func() error, why error) {
 	models, err := onnx.Open(ctx, c.Recognition)
 	if err != nil {
@@ -82,7 +87,7 @@ func (c Config) Recognising(sources port.SourceRepository, tasks *task.Tasks) *R
 			}
 			return models, models.Close, nil
 		},
-		ready: func() bool { return onnx.Ready(c.Recognition) },
+		ready: c.RecogniserReady,
 	}
 }
 
