@@ -1,0 +1,186 @@
+package container
+
+import (
+	"context"
+	"errors"
+	"image"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/ocr"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/task"
+)
+
+// reads nothing, and says it was closed.
+type blank struct{ closed bool }
+
+func (blank) Recognition() port.Recognition { return port.Recognition{Recogniser: "blank"} }
+
+func (blank) Read(context.Context, image.Image) ([]ocr.Block, error) { return nil, nil }
+
+func (b *blank) Close() error {
+	b.closed = true
+	return nil
+}
+
+// watched is a Recognising given what it reads with, and a way to know what it
+// said.
+type watched struct {
+	*Recognising
+	tasks *task.Tasks
+	held  *blank
+
+	mu   sync.Mutex
+	open int
+}
+
+func recognising(t *testing.T, why error) *watched {
+	t.Helper()
+	tasks := task.New()
+	w := &watched{tasks: tasks, held: &blank{}}
+	w.Recognising = &Recognising{
+		cfg:   Config{ServiceDir: ".numen"},
+		tasks: tasks,
+		ready: func() bool { return true },
+		open: func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+			w.mu.Lock()
+			w.open++
+			w.mu.Unlock()
+			if why != nil {
+				return nil, nil, why
+			}
+			return w.held, w.held.Close, nil
+		},
+	}
+	return w
+}
+
+// opened is how many times a recogniser was asked for.
+func (w *watched) opened() int {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.open
+}
+
+// settled waits for the reading to be over.
+func (w *watched) settled(t *testing.T) {
+	t.Helper()
+	for range 200 {
+		if !w.Running() {
+			return
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	t.Fatal("the reading never ended")
+}
+
+// said is the one task in the list, or nothing.
+func (w *watched) said(t *testing.T) (task.Task, bool) {
+	t.Helper()
+	held := w.tasks.List()
+	if len(held) == 0 {
+		return task.Task{}, false
+	}
+	if len(held) != 1 {
+		t.Fatalf("the list holds %d pieces of work: %+v", len(held), held)
+	}
+	return held[0], true
+}
+
+var somewhere = domain.Vault{ID: "v", Path: "/nowhere"}
+
+// One at a time: the models hold a worker each.
+func TestASecondDocumentIsNotTakenWhileOneIsBeingRead(t *testing.T) {
+	w := recognising(t, errors.New("nothing to read with"))
+
+	held := make(chan struct{})
+	w.Recognising.open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+		<-held
+		return nil, nil, errors.New("nothing to read with")
+	}
+
+	if !w.Start(t.Context(), somewhere, "a.pdf") {
+		t.Fatal("the first document was not taken")
+	}
+	if w.Start(t.Context(), somewhere, "b.pdf") {
+		t.Error("a second document was taken while one was being read")
+	}
+	close(held)
+	w.settled(t)
+
+	if w.Start(t.Context(), somewhere, "b.pdf") {
+		return
+	}
+	t.Error("nothing was taken once the first reading was over")
+}
+
+// A failure nobody was shown is a failure nobody can act on.
+func TestAReadingThatFailedStaysInTheList(t *testing.T) {
+	w := recognising(t, errors.New("no models on this machine"))
+
+	if !w.Start(t.Context(), somewhere, "a.pdf") {
+		t.Fatal("the document was not taken")
+	}
+	w.settled(t)
+
+	at, held := w.said(t)
+	if !held {
+		t.Fatal("the failure was not said")
+	}
+	if at.Failed == "" || at.About != "a.pdf" {
+		t.Errorf("got %+v", at)
+	}
+}
+
+// The next reading takes the one before it out of the list: one reading is one
+// line, however many have failed.
+func TestTheNextReadingClearsTheOneBeforeIt(t *testing.T) {
+	w := recognising(t, errors.New("no models on this machine"))
+
+	if !w.Start(t.Context(), somewhere, "a.pdf") {
+		t.Fatal("the document was not taken")
+	}
+	w.settled(t)
+	if _, held := w.said(t); !held {
+		t.Fatal("the first failure was not said")
+	}
+
+	if !w.Start(t.Context(), somewhere, "b.pdf") {
+		t.Fatal("the second document was not taken")
+	}
+	w.settled(t)
+
+	at, held := w.said(t)
+	if !held {
+		t.Fatal("the second failure was not said")
+	}
+	if at.About != "b.pdf" {
+		t.Errorf("the list holds %+v", at)
+	}
+	if w.opened() != 2 {
+		t.Errorf("a recogniser was opened %d times", w.opened())
+	}
+}
+
+// A reading whoever asked for it stopped is a reading that is over, and not one
+// that failed.
+func TestAReadingStoppedIsNotAFailure(t *testing.T) {
+	w := recognising(t, nil)
+	ctx, cancel := context.WithCancel(t.Context())
+	w.Recognising.open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+		cancel()
+		return nil, nil, context.Canceled
+	}
+
+	if !w.Start(ctx, somewhere, "a.pdf") {
+		t.Fatal("the document was not taken")
+	}
+	w.settled(t)
+
+	if at, held := w.said(t); held {
+		t.Errorf("a reading that was stopped is in the list: %+v", at)
+	}
+}

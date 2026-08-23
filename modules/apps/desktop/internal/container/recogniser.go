@@ -50,6 +50,12 @@ type Recognising struct {
 	sources port.SourceRepository
 	tasks   *task.Tasks
 
+	// open is what reads a page, opened when there is one to read, and ready
+	// says whether opening it would wait for anything to arrive. Which models
+	// those are is settled where every other adapter is chosen.
+	open  opening
+	ready func() bool
+
 	// Cut makes a source's chunks from what has been read of it. It is called
 	// as pages are written down, so a page is searchable when it is read.
 	Cut func(ctx context.Context, v domain.Vault, path string) error
@@ -65,12 +71,28 @@ type Recognising struct {
 // Recognising is the recogniser this installation offers, reporting itself into
 // the list of what is being done.
 func (c Config) Recognising(sources port.SourceRepository, tasks *task.Tasks) *Recognising {
-	return &Recognising{cfg: c, sources: sources, tasks: tasks}
+	return &Recognising{
+		cfg: c, sources: sources, tasks: tasks,
+		open: func(ctx context.Context, tell func(what string, done, total int64)) (port.Recogniser, func() error, error) {
+			cfg := c.Recognition
+			cfg.Fetching = tell
+			models, err := onnx.Open(ctx, cfg)
+			if err != nil {
+				return nil, nil, err
+			}
+			return models, models.Close, nil
+		},
+		ready: func() bool { return onnx.Ready(c.Recognition) },
+	}
 }
+
+// opening is what reads a scanned page, opened when there is one to read. It is
+// told how far the fetching of what it needs has got.
+type opening func(ctx context.Context, tell func(what string, done, total int64)) (port.Recogniser, func() error, error)
 
 // Ready says whether a document could be read now without waiting for anything
 // to arrive.
-func (r *Recognising) Ready() bool { return onnx.Ready(r.cfg.Recognition) }
+func (r *Recognising) Ready() bool { return r.ready() }
 
 // Running says whether a document is being read.
 func (r *Recognising) Running() bool {
@@ -131,21 +153,18 @@ func (r *Recognising) Start(ctx context.Context, v domain.Vault, path string) bo
 // read is the work itself: what is missing arrives, and then the document is
 // read.
 func (r *Recognising) read(ctx context.Context, v domain.Vault, id, path string) error {
-	fetching := r.cfg.Recognition
-	fetching.Fetching = func(what string, done, total int64) {
+	models, close, err := r.open(ctx, func(what string, done, total int64) {
 		// Counted in megabytes because that is the size a person reads. Bytes
 		// are nine digits and say nothing that the first three do not.
 		r.say(task.Task{
 			ID: id, Doing: "Fetching models", About: what,
 			Done: done >> 20, Total: total >> 20,
 		})
-	}
-
-	models, err := onnx.Open(ctx, fetching)
+	})
 	if err != nil {
 		return fmt.Errorf("nothing to read with: %w", err)
 	}
-	defer models.Close()
+	defer close()
 
 	r.say(task.Task{ID: id, Doing: "Reading a scan", About: path})
 	res, err := source.Recognise{
