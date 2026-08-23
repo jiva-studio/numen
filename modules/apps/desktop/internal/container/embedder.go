@@ -139,9 +139,13 @@ func gettingReady(name string) string { return "getting ready: " + name }
 
 // preparing tells the list how far the model has got, counted in the bytes of
 // it that are here. Fetching it and compiling it are one wait.
+//
+// A run with no list to tell is told nothing and still asks: what says how far
+// the work has got is called wherever the work is, and a run in a terminal
+// takes the same road as a window.
 func preparing(tasks *task.Tasks, name string) onnx.Fetching {
 	if tasks == nil {
-		return nil
+		return func(int64, int64) {}
 	}
 	return func(done, total int64) {
 		tasks.Set(task.Task{

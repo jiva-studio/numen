@@ -94,6 +94,44 @@ func TestAQuestionIsEmbeddedWhereTheSettingsSay(t *testing.T) {
 	}
 }
 
+// A run in a terminal has no list of what is being done, and asks for a model
+// on this machine like any other.
+func TestARunWithNoListToTellStillOpensAModel(t *testing.T) {
+	cfg := embed.Defaults()
+	// A folder with nothing in it: the model is looked for and not found,
+	// which is what this asks about. Nothing reaches a network.
+	cfg.Indexing.Local.Dir = t.TempDir()
+	cfg.Indexing.Local.Download = false
+	held := container.Config{Embedding: cfg}
+
+	embedder, close, why := held.Embedder(t.Context())
+	if why != nil {
+		t.Fatal(why)
+	}
+	if close != nil {
+		defer func() { _ = close() }()
+	}
+	if embedder == nil {
+		t.Fatal("no embedder")
+	}
+	// The model never turns up, and asking says why rather than panicking on
+	// the way there.
+	if _, err := embedder.Embed(t.Context(), []string{"anything"}); err == nil {
+		t.Error("a model that is not on this machine embedded something")
+	}
+
+	indexing, asking, closeBoth, why := held.Embedders(t.Context(), nil)
+	if why != nil {
+		t.Fatal(why)
+	}
+	if closeBoth != nil {
+		defer func() { _ = closeBoth() }()
+	}
+	if indexing == nil || asking == nil {
+		t.Fatalf("got %v and %v", indexing, asking)
+	}
+}
+
 // A word for a placement that nobody implements is a reason, not a vault
 // quietly searched by its words.
 func TestAPlacementNobodyImplementsIsARefusal(t *testing.T) {
