@@ -5,12 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
-	"path/filepath"
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
@@ -76,7 +73,7 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		return nil, err
 	}
 	if len(vaults) == 0 {
-		made, err := firstVault(cfg, registry)
+		made, err := cfg.FirstVault(registry)
 		if err != nil {
 			return nil, err
 		}
@@ -724,33 +721,3 @@ func embedSources(
 
 // Showing is the vault the window has open.
 func (a *API) Showing() domain.Vault { return a.Vault }
-
-// firstVault is somewhere to write, made for a person who has added nothing.
-//
-// An application that answers "you have no vault" and stops is one that asks
-// somebody to read its manual before it will do anything. It makes a folder
-// where this system keeps documents, and that folder is theirs: ordinary files
-// in an ordinary place, which they may move or replace with one of their own.
-func firstVault(cfg container.Config, registry port.VaultRegistry) (domain.Vault, error) {
-	documents, err := filesystem.Documents()
-	if err != nil {
-		return domain.Vault{}, err
-	}
-	root := filepath.Join(documents, defaultVaultName)
-	if err := os.MkdirAll(root, 0o755); err != nil {
-		return domain.Vault{}, err
-	}
-	// A folder that is already a vault keeps the identity it has.
-	if _, err := filesystem.Initialize(root, cfg.VaultOptions().ServiceDir, time.Now()); err != nil {
-		return domain.Vault{}, err
-	}
-	return usecase.Add{
-		Identity: cfg.VaultIdentity(),
-		Registry: registry,
-		Now:      time.Now,
-	}.Execute(root, defaultVaultName)
-}
-
-// defaultVaultName is what the first vault is called, and what its folder is
-// named inside the documents folder.
-const defaultVaultName = "numen"
