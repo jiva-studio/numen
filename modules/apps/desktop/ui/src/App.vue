@@ -562,7 +562,7 @@ onUnmounted(() => {
           <template #silence>{{ documentIn(id)?.trouble.value }}</template>
         </Reader>
 
-        <band v-else-if="blanks.includes(id)" class="blank">
+        <div v-else-if="blanks.includes(id)" class="blank">
           <p class="blank__says">{{ words.choose }}</p>
           <ul class="blank__choices">
             <li v-for="one in becomes" :key="one.id">
@@ -571,7 +571,7 @@ onUnmounted(() => {
               </button>
             </li>
           </ul>
-        </band>
+        </div>
 
         <div v-else-if="notes.all().includes(id)" class="note">
           <p v-if="notes.saying(id)" role="alert" class="warning">{{ notes.saying(id) }}</p>
@@ -613,7 +613,7 @@ onUnmounted(() => {
 
     <Notices :notices="notices" :name="words.working" :put-away="words.putAway" />
 
-    <band v-if="going.questions.value.length" role="alertdialog" class="leaving">
+    <section v-if="going.questions.value.length" role="alertdialog" class="leaving">
       <p class="leaving__says">{{ words.going }}</p>
       <ul class="leaving__notes">
         <li v-for="one in going.questions.value" :key="one.path" class="leaving__note">
@@ -629,7 +629,7 @@ onUnmounted(() => {
           </button>
         </li>
       </ul>
-    </band>
+    </section>
 
     <Menu
       v-if="menu"
@@ -690,7 +690,8 @@ main {
   gap: 0.6rem;
   block-size: 100%;
   padding: var(--numen-gutter);
-  font: 0.85rem system-ui, sans-serif;
+  font-family: var(--numen-font-sans);
+  font-size: 0.85rem;
 }
 
 .blank__says {
@@ -741,7 +742,8 @@ main {
   background: var(--numen-caution-bg);
   color: var(--numen-caution-fg);
   box-shadow: var(--numen-panel-shadow);
-  font: 0.85rem system-ui, sans-serif;
+  font-family: var(--numen-font-sans);
+  font-size: 0.85rem;
 }
 
 .leaving__says {
@@ -801,16 +803,21 @@ main {
 .waiting,
 .failure {
   margin: auto;
-  font: 0.9rem system-ui, sans-serif;
+  font-family: var(--numen-font-sans);
+  font-size: 0.9rem;
   opacity: 0.6;
 }
 
+/* A warning and a failure carry filesystem paths, and a long one breaks where
+   it stands. */
 .warning {
   margin: 0;
   padding: 0.4rem 1rem;
-  font: 0.8rem system-ui, sans-serif;
+  font-family: var(--numen-font-sans);
+  font-size: 0.8rem;
   background: var(--numen-caution-bg);
   color: var(--numen-caution-fg);
+  overflow-wrap: break-word;
 }
 
 .failure {
@@ -818,5 +825,6 @@ main {
   opacity: 1;
   max-width: 40rem;
   text-align: center;
+  overflow-wrap: break-word;
 }
 </style>
