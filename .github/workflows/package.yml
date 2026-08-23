@@ -196,7 +196,11 @@ jobs:
           API_KEY_ID: ${{ secrets.APPLE_STORE_CONNECT_API_KEY_ID }}
           API_KEY_ISSUER: ${{ secrets.APPLE_STORE_CONNECT_API_KEY_ISSUER }}
         run: |
-          printf '%b' "$API_KEY" > "$RUNNER_TEMP/api-key.p8"
+          # The key is held as one quoted line with its newlines written out.
+          key=$API_KEY
+          key=${key#\"}
+          key=${key%\"}
+          printf '%b' "$key" > "$RUNNER_TEMP/api-key.p8"
           xcrun notarytool submit "$RUNNER_TEMP/Numen-${VERSION}.dmg" \
             --key "$RUNNER_TEMP/api-key.p8" --key-id "$API_KEY_ID" \
             --issuer "$API_KEY_ISSUER" --wait --timeout 30m
