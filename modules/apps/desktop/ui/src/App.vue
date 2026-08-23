@@ -31,6 +31,8 @@ import { creating } from './creating'
 import { holding, type Talk } from './holding'
 import { finding } from './finding'
 import { leaving } from './leaving'
+import AgentTab from './agent/AgentTab.vue'
+import { talking } from './agent/kind'
 import PlexTab from './plex/PlexTab.vue'
 import { plexing } from './plex/kind'
 import { core as agent } from './agent'
@@ -138,7 +140,11 @@ const held = holding({
       opens: (path, title, showing) => openNote(path, title, showing),
       asks: (text) => held.askAbout(text),
     }),
-  talk: (name) => conversation(agent, words, name),
+  talk: (name) =>
+    talking(conversation(agent, words, name), {
+      looking: () => looking.value,
+      opens: (path, ...runs) => opensAt(path, ...runs),
+    }),
   note: async () => {
     const made = await making.start()
     if (!made) return ''
@@ -224,33 +230,6 @@ const enters = (path: string) => {
   // An editor is registered as it is drawn, a moment before it exists to take
   // anything. The note is owed its keyboard until one has.
   if (line >= 0 ? editor.reveal(line) : editor.focus()) entering.delete(path)
-}
-
-/** A question is about the note the person is looking at. */
-const send = (id: string, text: string) => {
-  const talk = held.agents.value.get(id)
-  if (!talk) return
-  talk.asked.value = ''
-  void talk.ask(text, looking.value)
-}
-
-/** A line about work pressed: the place that call was on is put in front. */
-const opensTurn = (id: string, turn: Turn) => {
-  const place = held.agents.value.get(id)?.place(turn.id)
-  if (place) opensAt(place.path, { start: place.start, length: place.length })
-}
-
-/**
- * A link inside an answer pressed. One naming a place in the vault opens it,
- * and the other places that answer names in the same document are lit with it.
- * Any other link is left to whatever would follow it.
- */
-const followed = (turn: Turn, href: string, press: MouseEvent) => {
-  const here = spotOf(href)
-  if (!here) return
-  press.preventDefault()
-  const named = spotsIn(turn.text).filter((spot) => spot.path === here.path && !same(spot, here))
-  opensAt(here.path, ...[here, ...named].map(({ start, length }) => ({ start, length })))
 }
 
 /** The identity a pane made by a split is filed under. */
@@ -406,27 +385,7 @@ onUnmounted(() => {
       <template #tab="{ id }">
         <PlexTab v-if="plexIn(id)" :held="plexIn(id)!" />
 
-        <Agent
-          v-else-if="talkIn(id)"
-          :model-value="talkIn(id)!.asked.value"
-          :turns="talkIn(id)!.turns.value"
-          :working="talkIn(id)!.working.value"
-          :placeholder="words.ask"
-          :sends="words.send"
-          :stops="words.stop"
-          @update:model-value="(text: string) => held.writing(id, text)"
-          @submit="(text: string) => send(id, text)"
-          @stop="talkIn(id)?.stop()"
-          @open="(turn: Turn) => opensTurn(id, turn)"
-          @follow="
-            (turn: Turn, href: string, press: MouseEvent) => followed(turn, href, press)
-          "
-        >
-          <template #silence>{{ unreachable || words.nothingSaid }}</template>
-          <template #failure="{ turn }">
-            {{ turn.voice === 'asked' ? words.unsent : words.stopped }}
-          </template>
-        </Agent>
+        <AgentTab v-else-if="talkIn(id)" :held="talkIn(id)!" :unreachable="unreachable" />
 
         <Reader
           v-else-if="documentIn(id)"

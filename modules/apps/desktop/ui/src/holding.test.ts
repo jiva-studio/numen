@@ -8,8 +8,8 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { paneWithTab, type Turn } from '@numen/ui'
-import { holding, type Makes } from './holding'
-import type { Conversation } from './conversation'
+import { holding, type Makes, type Talk } from './holding'
+import { talking } from './agent/kind'
 import type { Held } from './plex/kind'
 import type { Reading } from './reading'
 import type { Plexed } from './showing'
@@ -36,17 +36,21 @@ const plexed = (closed: string[], looked: string[], at: string) => {
  * A talk that records having been let go of and having been told it is over,
  * under the name it answers by. A talk that is over is let go of as well.
  */
-const talked = (stopped: string[], over: string[], conversation: string): Conversation => ({
-  turns: ref<Turn[]>([]),
-  working: ref(false),
-  ask: async () => {},
-  place: () => null,
-  stop: () => stopped.push(conversation),
-  finish: () => {
-    stopped.push(conversation)
-    over.push(conversation)
-  },
-})
+const talked = (stopped: string[], over: string[], conversation: string): Talk =>
+  talking(
+    {
+      turns: ref<Turn[]>([]),
+      working: ref(false),
+      ask: async () => {},
+      place: () => null,
+      stop: () => stopped.push(conversation),
+      finish: () => {
+        stopped.push(conversation)
+        over.push(conversation)
+      },
+    },
+    { looking: () => '', opens: () => {} },
+  )
 
 /** A document that records having been let go of, under the path it is read from. */
 const opened = (dropped: string[], path: string) => {

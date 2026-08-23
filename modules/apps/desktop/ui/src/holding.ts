@@ -9,22 +9,19 @@
 import { ref, shallowRef, type Ref } from 'vue'
 import { closeTab, openTab, paneWithTab } from '@numen/ui'
 import type { NodeId, WorkspaceLayout } from '@numen/ui'
-import type { Conversation } from './conversation'
+import type { Held as Talk } from './agent/kind'
 import type { Held } from './plex/kind'
 import type { Reading } from './reading'
 import { AGENT, BLANK, CONVERSATION, NOTE, PLEX, named, opening } from './workspace'
 
-/** What one agent tab holds: a talk of its own, and the question being written. */
-export interface Talk extends Conversation {
-  readonly asked: Ref<string>
-}
+export type { Talk }
 
 /** What the window makes when a tab is told what it holds. */
 export interface Makes {
   /** A plex of its own, standing where it is told or where the person is. */
   plex(at?: string): Held
   /** A talk of its own, answering under the name the agent hears it by. */
-  talk(conversation: string): Conversation
+  talk(conversation: string): Talk
   /** A note of its own, opened; where it is filed, or nothing when none was made. */
   note(): Promise<string>
   /** The document filed at a path, read from its first page. */
@@ -55,8 +52,7 @@ export function holding(makes: Makes) {
    */
   const agentTab = (): string => {
     const id = named(AGENT)
-    const talk = makes.talk(named(CONVERSATION))
-    agents.value = new Map(agents.value).set(id, { asked: ref(''), ...talk })
+    agents.value = new Map(agents.value).set(id, makes.talk(named(CONVERSATION)))
     return id
   }
 
@@ -109,10 +105,7 @@ export function holding(makes: Makes) {
   }
 
   /** What is being written in one agent tab. */
-  const writing = (id: string, text: string) => {
-    const talk = agents.value.get(id)
-    if (talk) talk.asked.value = text
-  }
+  const writing = (id: string, text: string) => agents.value.get(id)?.writing(text)
 
   /**
    * Something to ask, put in the agent the person was last in. With no agent
