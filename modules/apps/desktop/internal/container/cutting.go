@@ -4,6 +4,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
 )
 
@@ -19,6 +20,48 @@ func (c Config) Cutting() window.Sizes {
 		return window.Sizes{}
 	}
 	return window.Sizes{Limit: window.Under(c.Embedding.Model.MaxTokens)}
+}
+
+// Searchable is what makes a vault answer, put together the one way: the notes
+// read, the books read, and the vectors made. Every entry point takes it from
+// here, so a vault made searchable in a terminal and a vault made searchable in
+// a window are the same vault.
+func (c Config) Searchable(db *Index, embedder port.Embedder, v domain.Vault) (vault.Searchable, error) {
+	books, err := c.Extract(db.Sources(), db.SourcesKnown(), v)
+	if err != nil {
+		return vault.Searchable{}, err
+	}
+	vectors, err := c.Embed(db, embedder, v)
+	if err != nil {
+		return vault.Searchable{}, err
+	}
+	return vault.Searchable{
+		Notes: vault.Scan{
+			Readers:      c.VaultReaders(),
+			Vaults:       db.Vaults(),
+			Notes:        db.Notes(),
+			Known:        db.Queries(),
+			Maintenance:  db.Maintenance(),
+			RebuildIndex: c.RebuildIndex,
+		},
+		Books:   books,
+		Vectors: vectors,
+	}, nil
+}
+
+// Embed gives a vault's chunks the vectors they owe.
+func (c Config) Embed(db *Index, embedder port.Embedder, v domain.Vault) (source.Embed, error) {
+	derived, err := c.DerivedStores().Open(v)
+	if err != nil {
+		return source.Embed{}, err
+	}
+	return source.Embed{
+		Readers:  c.VaultReaders(),
+		Derived:  derived,
+		Chunks:   db.VectorsOwing(),
+		Vectors:  db.Vectors(),
+		Embedder: embedder,
+	}, nil
 }
 
 // Extract cuts a vault's sources into chunks. Every entry point takes it from

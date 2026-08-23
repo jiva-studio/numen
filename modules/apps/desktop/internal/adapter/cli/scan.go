@@ -36,37 +36,37 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args 
 	}
 	defer db.Close()
 
-	started := time.Now()
-	scan := usecase.Scan{
-		Readers:      cfg.VaultReaders(),
-		Vaults:       db.Vaults(),
-		Notes:        db.Notes(),
-		Known:        db.Queries(),
-		Maintenance:  db.Maintenance(),
-		RebuildIndex: cfg.RebuildIndex,
+	// The vectors are made here too. The window does all three in the
+	// background; here they are waited for, which is this adapter's property
+	// and not the use case's.
+	embedder, closeEmbedder, why := cfg.Embedder(ctx)
+	if why != nil {
+		fmt.Fprintf(out, "not embedding %s: %v\n", v.Name, why)
 	}
+	if closeEmbedder != nil {
+		defer func() { _ = closeEmbedder() }()
+	}
+	making, err := cfg.Searchable(db, embedder, v)
+	if err != nil {
+		return err
+	}
+
 	// A terminal that prints nothing for a minute looks broken. One group is
 	// about half a second, and the line rewrites itself.
-	scan.OnProgress = func(res usecase.ScanResult) {
+	making.Notes.OnProgress = func(res usecase.ScanResult) {
 		fmt.Fprintf(out, "  %d indexed\r", res.Indexed)
 	}
-	result, err := scan.Execute(ctx, v)
-	if err != nil {
-		return err
-	}
-	// A scan reads the whole vault, and a book in it is part of the vault. The
-	// window does the same in the background; here it is waited for, which is
-	// this adapter's property and not the use case's.
-	extract, err := cfg.Extract(db.Sources(), db.SourcesKnown(), v)
-	if err != nil {
-		return err
-	}
-	extract.OnProgress = func(res source.ExtractResult) {
+	making.Books.OnProgress = func(res source.ExtractResult) {
 		if res.Reading != "" {
 			fmt.Fprintf(out, "  reading %s\r", res.Reading)
 		}
 	}
-	sources, err := extract.Execute(ctx, v)
+	making.Vectors.OnProgress = func(res source.EmbedResult) {
+		fmt.Fprintf(out, "  %d embedded\r", res.Embedded)
+	}
+
+	started := time.Now()
+	made, err := making.Execute(ctx, v)
 	if err != nil {
 		return err
 	}
@@ -75,9 +75,12 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args 
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(out, "%s in %s\n", describe(result), time.Since(started).Round(time.Millisecond))
-	if sources.Seen > 0 {
-		fmt.Fprintln(out, describeSources(sources))
+	fmt.Fprintf(out, "%s in %s\n", describe(made.Notes), time.Since(started).Round(time.Millisecond))
+	if made.Books.Seen > 0 {
+		fmt.Fprintln(out, describeSources(made.Books))
+	}
+	if made.Vectors.Embedded > 0 {
+		fmt.Fprintf(out, "%d vectors made\n", made.Vectors.Embedded)
 	}
 	fmt.Fprintf(out, "index now holds %d notes and %d headings\n", summary.Notes, summary.Headings)
 	return nil

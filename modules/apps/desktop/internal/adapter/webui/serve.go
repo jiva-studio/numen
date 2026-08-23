@@ -600,12 +600,12 @@ func readSources(
 	embedder port.Embedder,
 	out io.Writer,
 ) {
-	extract, err := cfg.Extract(db.Sources(), db.SourcesKnown(), api.Vault)
+	making, err := cfg.Searchable(db, embedder, api.Vault)
 	if err != nil {
 		fmt.Fprintf(out, "reading the sources of %s: %v\n", api.Vault.Name, err)
 		return
 	}
-	extract.OnProgress = func(res source.ExtractResult) {
+	making.Books.OnProgress = func(res source.ExtractResult) {
 		api.say(task.Task{
 			ID: readingBooks, Doing: "Reading books", About: res.Reading,
 			// Every book the walk found leaves this pass one of four ways, and
@@ -616,9 +616,9 @@ func readSources(
 	}
 
 	api.say(task.Task{ID: readingBooks, Doing: "Reading books"})
-	if res, err := extract.Execute(ctx, api.Vault); err != nil {
+	if res, err := making.ReadBooks(ctx, api.Vault); err != nil {
 		if !errors.Is(err, context.Canceled) {
-			fmt.Fprintf(out, "reading the sources of %s: %v\n", api.Vault.Name, err)
+			fmt.Fprintln(out, err)
 		}
 	} else if res.Extracted > 0 {
 		fmt.Fprintf(out, "%s: %d books, %d chunks\n", api.Vault.Name, res.Extracted, res.Chunks)
@@ -643,13 +643,13 @@ func cutSource(
 	path string,
 	out io.Writer,
 ) {
-	cut, err := cfg.Extract(db.Sources(), db.SourcesKnown(), v)
+	making, err := cfg.Searchable(db, embedder, v)
 	if err != nil {
 		fmt.Fprintf(out, "cutting %s: %v\n", path, err)
 		return
 	}
-	if _, err := cut.One(ctx, v, path); err != nil && !errors.Is(err, context.Canceled) {
-		fmt.Fprintf(out, "cutting %s: %v\n", path, err)
+	if err := making.CutOne(ctx, v, path); err != nil && !errors.Is(err, context.Canceled) {
+		fmt.Fprintln(out, err)
 	}
 }
 
@@ -681,34 +681,25 @@ func embedSources(
 		}
 	}
 
-	// A source standing on what a model read in it is read from the store, and a
-	// vector is made from the text a chunk is a place in. Without the store that
-	// text cannot be reached and the chunk is passed over with nothing said.
-	derived, err := cfg.DerivedStores().Open(api.Vault)
+	making, err := cfg.Searchable(db, embedder, api.Vault)
 	if err != nil {
 		fmt.Fprintf(out, "embedding %s: %v\n", api.Vault.Name, err)
 		return
 	}
-	embed := source.Embed{
-		Readers:  readers,
-		Derived:  derived,
-		Chunks:   db.VectorsOwing(),
-		Vectors:  db.Vectors(),
-		Embedder: embedder,
-		OnProgress: func(res source.EmbedResult) {
-			// A person who edited one note is waiting on that note, so this is
-			// the work in hand and not the size of the vault.
-			api.say(task.Task{
-				ID: makingVectors, Doing: "Indexing",
-				Done: int64(res.Embedded), Total: owing,
-			})
-		},
+	making.Vectors.OnProgress = func(res source.EmbedResult) {
+		// A person who edited one note is waiting on that note, so this is the
+		// work in hand and not the size of the vault.
+		api.say(task.Task{
+			ID: makingVectors, Doing: "Indexing",
+			Done: int64(res.Embedded), Total: owing,
+		})
 	}
+
 	// This pass says what it owes and what it has made. The source a vector is
 	// made from is named by the reading of that source.
 	api.say(task.Task{ID: makingVectors, Doing: "Indexing", Total: owing})
-	if _, err := embed.Execute(ctx, api.Vault); err != nil && !errors.Is(err, context.Canceled) {
-		fmt.Fprintf(out, "embedding %s: %v\n", api.Vault.Name, err)
+	if _, err := making.MakeVectors(ctx, api.Vault); err != nil && !errors.Is(err, context.Canceled) {
+		fmt.Fprintln(out, err)
 	}
 	api.finished(makingVectors)
 }
