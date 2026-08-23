@@ -111,7 +111,7 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 	wake := waking(settled)
 
 	watching, stop := context.WithCancel(ctx)
-	recognising := cfg.Recognising(db.Sources(), tasks)
+	recognising := cfg.Recognising(watching, db.Sources(), tasks)
 
 	// What a recognition writes down is cut where every other cut happens. A
 	// document being read and a vault being scanned are then never two passes
@@ -222,6 +222,8 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		Close: func() error {
 			stop()
 			wait()
+			// A reading writes to the index, so it ends before the index does.
+			recognising.Wait()
 			// The documents held open for the window go with it, and each
 			// gives back the worker it was holding.
 			api.Viewer.close()

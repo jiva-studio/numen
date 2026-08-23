@@ -151,7 +151,7 @@ func addSourceTools(server *sdk.Server, core Core) {
 		// Nothing here happens inside this question. Fetching the models is
 		// minutes and reading a book is an hour, and how far either has got is
 		// among everything else the window shows being done.
-		if !core.Recognise.Start(context.WithoutCancel(ctx), core.Vault, in.Path) {
+		if !core.Recognise.Start(core.Vault, in.Path) {
 			// Nothing here remembers a request that was not taken.
 			return nil, out{Says: "another document is being read and this one was not taken; " +
 				"nothing is reading it — ask again once source_list says none is being read"}, nil
@@ -177,6 +177,7 @@ type Recognising interface {
 	// Running says whether a document is being read.
 	Running() bool
 	// Start begins reading one document behind whoever asked, and says whether
-	// it began. It does not begin a second while one runs.
-	Start(ctx context.Context, v domain.Vault, path string) bool
+	// it began. It does not begin a second while one runs, and it runs under
+	// the application rather than under the call that asked for it.
+	Start(v domain.Vault, path string) bool
 }

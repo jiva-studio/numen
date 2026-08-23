@@ -105,16 +105,16 @@ func TestASecondDocumentIsNotTakenWhileOneIsBeingRead(t *testing.T) {
 		return nil, nil, errors.New("nothing to read with")
 	}
 
-	if !w.Start(t.Context(), somewhere, "a.pdf") {
+	if !w.Start(somewhere, "a.pdf") {
 		t.Fatal("the first document was not taken")
 	}
-	if w.Start(t.Context(), somewhere, "b.pdf") {
+	if w.Start(somewhere, "b.pdf") {
 		t.Error("a second document was taken while one was being read")
 	}
 	close(held)
 	w.settled(t)
 
-	if w.Start(t.Context(), somewhere, "b.pdf") {
+	if w.Start(somewhere, "b.pdf") {
 		return
 	}
 	t.Error("nothing was taken once the first reading was over")
@@ -124,7 +124,7 @@ func TestASecondDocumentIsNotTakenWhileOneIsBeingRead(t *testing.T) {
 func TestAReadingThatFailedStaysInTheList(t *testing.T) {
 	w := recognising(t, errors.New("no models on this machine"))
 
-	if !w.Start(t.Context(), somewhere, "a.pdf") {
+	if !w.Start(somewhere, "a.pdf") {
 		t.Fatal("the document was not taken")
 	}
 	w.settled(t)
@@ -143,7 +143,7 @@ func TestAReadingThatFailedStaysInTheList(t *testing.T) {
 func TestTheNextReadingClearsTheOneBeforeIt(t *testing.T) {
 	w := recognising(t, errors.New("no models on this machine"))
 
-	if !w.Start(t.Context(), somewhere, "a.pdf") {
+	if !w.Start(somewhere, "a.pdf") {
 		t.Fatal("the document was not taken")
 	}
 	w.settled(t)
@@ -151,7 +151,7 @@ func TestTheNextReadingClearsTheOneBeforeIt(t *testing.T) {
 		t.Fatal("the first failure was not said")
 	}
 
-	if !w.Start(t.Context(), somewhere, "b.pdf") {
+	if !w.Start(somewhere, "b.pdf") {
 		t.Fatal("the second document was not taken")
 	}
 	w.settled(t)
@@ -173,12 +173,13 @@ func TestTheNextReadingClearsTheOneBeforeIt(t *testing.T) {
 func TestAReadingStoppedIsNotAFailure(t *testing.T) {
 	w := recognising(t, nil)
 	ctx, cancel := context.WithCancel(t.Context())
+	w.Recognising.under = ctx
 	w.Recognising.open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
 		cancel()
 		return nil, nil, context.Canceled
 	}
 
-	if !w.Start(ctx, somewhere, "a.pdf") {
+	if !w.Start(somewhere, "a.pdf") {
 		t.Fatal("the document was not taken")
 	}
 	w.settled(t)
@@ -206,12 +207,12 @@ func TestAReadingThatEndsAbruptlyDoesNotHoldTheNextOne(t *testing.T) {
 		return nil, nil, errors.New("nothing to read with")
 	}
 
-	if !w.Start(t.Context(), somewhere, "a.pdf") {
+	if !w.Start(somewhere, "a.pdf") {
 		t.Fatal("the document was not taken")
 	}
 	w.settled(t)
 
-	if !w.Start(t.Context(), somewhere, "b.pdf") {
+	if !w.Start(somewhere, "b.pdf") {
 		t.Fatal("nothing was taken after a reading that ended where nothing expected it to")
 	}
 	w.settled(t)
@@ -233,6 +234,37 @@ func TestNothingIsReadThroughARuntimeMadeAfterTheWindow(t *testing.T) {
 	}
 	if !w.held.closed {
 		t.Error("what was opened was not given back")
+	}
+}
+
+// A reading writes to the index, and the application waits for it before what
+// it writes to is closed.
+func TestTheApplicationWaitsForAReadingItStarted(t *testing.T) {
+	w := recognising(t, nil)
+
+	holding := make(chan struct{})
+	w.Recognising.open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+		<-holding
+		return nil, nil, errors.New("nothing to read with")
+	}
+	if !w.Start(somewhere, "a.pdf") {
+		t.Fatal("the document was not taken")
+	}
+
+	waited := make(chan struct{})
+	go func() { w.Wait(); close(waited) }()
+
+	select {
+	case <-waited:
+		t.Fatal("the wait ended while the reading was still running")
+	case <-time.After(50 * time.Millisecond):
+	}
+
+	close(holding)
+	select {
+	case <-waited:
+	case <-time.After(2 * time.Second):
+		t.Fatal("the wait never ended")
 	}
 }
 
