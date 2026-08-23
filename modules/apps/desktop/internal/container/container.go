@@ -14,8 +14,8 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/ocr/onnx"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/proofreading"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/recognition"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
@@ -35,7 +35,7 @@ type Config struct {
 	BookExtensions []string
 
 	// Recognition is how a scanned document is read when a person asks for it.
-	Recognition onnx.Config
+	Recognition recognition.Config
 
 	// Embedding is the model this run turns text into vectors with. An entry
 	// point reads the settings and says what it found, so nothing below one

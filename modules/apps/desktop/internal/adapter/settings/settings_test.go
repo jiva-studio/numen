@@ -86,10 +86,11 @@ func TestOneSettingIsAValidFile(t *testing.T) {
 	}
 }
 
-// A file naming one embedder writes the model among that embedder's fields.
+// A file naming one field of one section leaves everything else alone.
 func TestAFileNamingOneFieldKeepsTheDefaultsForTheRest(t *testing.T) {
 	cfg, err := settings.At(write(t,
-		`{"indexing":{"embedding":{"use":"service","service":{"name":"text-embedding-3-large","dimensions":3072}}}}`))
+		`{"indexing":{"embedding":{"model":{"name":"text-embedding-3-large","dimensions":3072},
+		 "indexing":{"use":"service","service":{"name":"text-embedding-3-large"}}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,8 +101,9 @@ func TestAFileNamingOneFieldKeepsTheDefaultsForTheRest(t *testing.T) {
 	if e.Model.Name != "text-embedding-3-large" || e.Model.Dimensions != 3072 {
 		t.Errorf("got %+v", e.Model)
 	}
-	if e.Indexing.Service.Name != "text-embedding-3-large" {
-		t.Errorf("got %+v", e.Indexing.Service)
+	// A field the file says nothing about keeps what the defaults set.
+	if e.Model.MaxTokens != embed.Defaults().Model.MaxTokens {
+		t.Errorf("the model cuts at %d", e.Model.MaxTokens)
 	}
 	if e.Indexing.Service.BaseURL != embed.Defaults().Indexing.Service.BaseURL {
 		t.Errorf("base URL is %q", e.Indexing.Service.BaseURL)
@@ -115,23 +117,17 @@ func TestAFileNamingOneFieldKeepsTheDefaultsForTheRest(t *testing.T) {
 	}
 }
 
-// The commonest flat file: the service named, and a key. What the model is
-// comes from the placement the file names.
-func TestAFlatFileNamingOnlyAKeyIsTheServicesModel(t *testing.T) {
-	cfg, err := settings.At(write(t, `{"indexing":{"embedding":{"use":"service","service":{"key":"sk-x"}}}}`))
+// A model pooled one way is pooled under one word, whether the file says it or
+// leaves it out: two words for one pooling are two keys over one set of
+// vectors.
+func TestAPoolingLeftOutIsTheOneEveryModelHas(t *testing.T) {
+	cfg, err := settings.At(write(t,
+		`{"indexing":{"embedding":{"model":{"name":"e5","dimensions":384}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	e := cfg.Indexing.Embedding
-	if e.Model.Name != e.Indexing.Service.Name {
-		t.Errorf("the model is %q and the service is %q", e.Model.Name, e.Indexing.Service.Name)
-	}
-	if e.Model.Dimensions != embed.ServedDimensions {
-		t.Errorf("the model is %d wide", e.Model.Dimensions)
-	}
-	// A service says where it cuts a text off, or it says nothing.
-	if e.Model.MaxTokens != 0 {
-		t.Errorf("the model cuts at %d", e.Model.MaxTokens)
+	if got := cfg.Indexing.Embedding.Model.Pooling; got != embed.PoolMean {
+		t.Errorf("pooled %q", got)
 	}
 }
 
@@ -177,7 +173,7 @@ func TestAnInstallationMayNameNoModelAtAll(t *testing.T) {
 func TestTheKeyComesFromTheFileOrTheEnvironment(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "from-the-environment")
 
-	cfg, err := settings.At(write(t, `{"indexing":{"embedding":{"service":{"key":"from-the-file"}}}}`))
+	cfg, err := settings.At(write(t, `{"indexing":{"embedding":{"indexing":{"service":{"key":"from-the-file"}}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,7 +181,7 @@ func TestTheKeyComesFromTheFileOrTheEnvironment(t *testing.T) {
 		t.Errorf("got %q", got)
 	}
 
-	cfg, err = settings.At(write(t, `{"indexing":{"embedding":{"service":{}}}}`))
+	cfg, err = settings.At(write(t, `{"indexing":{"embedding":{"indexing":{"service":{}}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -196,7 +192,7 @@ func TestTheKeyComesFromTheFileOrTheEnvironment(t *testing.T) {
 
 func TestAnInstallationMayNameItsOwnEnvironmentVariable(t *testing.T) {
 	t.Setenv("OPENROUTER_API_KEY", "from-openrouter")
-	cfg, err := settings.At(write(t, `{"indexing":{"embedding":{"service":{"key_env":"OPENROUTER_API_KEY"}}}}`))
+	cfg, err := settings.At(write(t, `{"indexing":{"embedding":{"indexing":{"service":{"key_env":"OPENROUTER_API_KEY"}}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -206,7 +202,7 @@ func TestAnInstallationMayNameItsOwnEnvironmentVariable(t *testing.T) {
 }
 
 func TestWritingTheSettingsBackDoesNotCarryTheKey(t *testing.T) {
-	cfg, err := settings.At(write(t, `{"indexing":{"embedding":{"service":{"key":"sk-secret"}}}}`))
+	cfg, err := settings.At(write(t, `{"indexing":{"embedding":{"indexing":{"service":{"key":"sk-secret"}}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}

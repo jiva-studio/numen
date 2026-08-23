@@ -237,20 +237,3 @@ network, and every search is the lexical half answering alone.
 { "indexing": { "embedding": { "indexing": { "use": "" } } } }
 ```
 
-## The older shape
-
-A file written before questions had a placement of their own names one embedder
-at the top, with the model written among its fields:
-
-```json
-{ "indexing": { "embedding": {
-  "use": "service",
-  "service": { "base_url": "…", "name": "baai/bge-m3", "dimensions": 1024, "key": "…" }
-}}}
-```
-
-It is still read: the placement becomes `indexing`, the model is what the half
-`use` names reaches, and questions are asked the way the vault was indexed.
-
-A file naming the service and nothing but a key is a hosted model — the
-service's own name, 1536 wide — and not whatever this machine would have run.

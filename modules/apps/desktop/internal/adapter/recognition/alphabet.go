@@ -1,4 +1,4 @@
-package onnx
+package recognition
 
 import (
 	"encoding/binary"

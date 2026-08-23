@@ -1,4 +1,5 @@
-// Package onnx reads a scanned page with models running on this machine.
+// Package recognition reads a scanned page with models running on this
+// machine.
 //
 // A page goes through two of them: one divides it into its parts and says in
 // what order they are read, and one reads the lines inside each part. They are
@@ -8,7 +9,7 @@
 // Every part is read on its own image. Reading a whole page at once costs one
 // detection instead of ten, and a line found that way reaches across the gutter
 // of a two-column page and carries the other column's words with it.
-package onnx
+package recognition
 
 import (
 	"context"

@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/ocr/onnx"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/recognition"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/task"
@@ -25,10 +25,10 @@ import (
 // RecogniserReady says whether a document could be read now without waiting for
 // anything to arrive. Which models those are is settled here, with every other
 // choice of adapter.
-func (c Config) RecogniserReady() bool { return onnx.Ready(c.Recognition) }
+func (c Config) RecogniserReady() bool { return recognition.Ready(c.Recognition) }
 
 func (c Config) Recogniser(ctx context.Context) (recogniser port.Recogniser, close func() error, why error) {
-	models, err := onnx.Open(ctx, c.Recognition)
+	models, err := recognition.Open(ctx, c.Recognition)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -81,7 +81,7 @@ func (c Config) Recognising(sources port.SourceRepository, tasks *task.Tasks) *R
 		open: func(ctx context.Context, tell func(what string, done, total int64)) (port.Recogniser, func() error, error) {
 			cfg := c.Recognition
 			cfg.Fetching = tell
-			models, err := onnx.Open(ctx, cfg)
+			models, err := recognition.Open(ctx, cfg)
 			if err != nil {
 				return nil, nil, err
 			}

@@ -1,6 +1,6 @@
 //go:build darwin || freebsd || linux || netbsd
 
-package onnx
+package recognition
 
 import "github.com/ebitengine/purego"
 

@@ -25,10 +25,6 @@ const (
 // does not carry one.
 const KeyEnvVar = "NUMEN_EMBEDDING_KEY"
 
-// ServedDimensions is how wide a hosted model's vectors are where a file names
-// a service and says nothing about the model.
-const ServedDimensions = 1536
-
 // Config is the embedding section of this installation's settings: what a
 // vector is, where it is made, and how near the query a passage stands to be an
 // answer at all.
@@ -161,93 +157,24 @@ func (p Placement) As(is Model) Config {
 	return Config{Model: is, Indexing: p}
 }
 
-// settingsFile is the shape on disk: the sections, and the flat form of one
-// placement, which indexes and asks the one way it names.
-type settingsFile struct {
-	Model    *json.RawMessage `json:"model"`
-	Indexing *json.RawMessage `json:"indexing"`
-	Query    *json.RawMessage `json:"query"`
-	Floor    *float64         `json:"floor"`
-
-	Use     *string          `json:"use"`
-	Local   *json.RawMessage `json:"local"`
-	Service *json.RawMessage `json:"service"`
-}
-
 // UnmarshalJSON keeps whatever the defaults set for the fields the file omits.
 func (c *Config) UnmarshalJSON(raw []byte) error {
-	var f settingsFile
+	var f struct {
+		Model    *Model     `json:"model"`
+		Indexing *Placement `json:"indexing"`
+		Query    *Placement `json:"query"`
+		Floor    *float64   `json:"floor"`
+	}
+	f.Model, f.Indexing, f.Query = &c.Model, &c.Indexing, &c.Query
 	if err := json.Unmarshal(raw, &f); err != nil {
 		return err
 	}
 	assign(&c.Floor, f.Floor)
-
-	if f.Use != nil || f.Local != nil || f.Service != nil {
-		assign(&c.Indexing.Use, f.Use)
-		if err := lift(&c.Indexing, &c.Model, f.Local, f.Service); err != nil {
-			return err
-		}
-		c.Query = c.Indexing
-		c.Query.Use = ""
-	}
-
-	for _, onto := range []struct {
-		said *json.RawMessage
-		into any
-	}{{f.Model, &c.Model}, {f.Indexing, &c.Indexing}, {f.Query, &c.Query}} {
-		if onto.said == nil {
-			continue
-		}
-		if err := json.Unmarshal(*onto.said, onto.into); err != nil {
-			return err
-		}
-	}
 	// A model is pooled one way, under one word. Two words for one pooling are
 	// two keys over one set of vectors.
 	if c.Model.Pooling == "" {
 		c.Model.Pooling = PoolMean
 	}
-	return nil
-}
-
-// lift reads the flat form: one placement, with what the model is written
-// among the two halves of it.
-func lift(one *Placement, model *Model, local, service *json.RawMessage) error {
-	var said struct {
-		Name       *string `json:"name"`
-		Dimensions *int    `json:"dimensions"`
-		MaxTokens  *int    `json:"max_tokens"`
-		Pooling    *string `json:"pooling"`
-	}
-	from := local
-	if one.Use == UseService {
-		from = service
-	}
-	if local != nil {
-		if err := json.Unmarshal(*local, &one.Local); err != nil {
-			return err
-		}
-	}
-	if service != nil {
-		if err := json.Unmarshal(*service, &one.Service); err != nil {
-			return err
-		}
-	}
-	// The model is the one the named placement reaches. A file naming the
-	// service is a hosted model, whatever this machine would have run.
-	if one.Use == UseService {
-		*model = Model{Name: one.Service.Name, Dimensions: ServedDimensions, Pooling: PoolMean}
-	}
-	if from == nil {
-		return nil
-	}
-	if err := json.Unmarshal(*from, &said); err != nil {
-		return err
-	}
-	assign(&model.Name, said.Name)
-	assign(&model.Dimensions, said.Dimensions)
-	assign(&model.MaxTokens, said.MaxTokens)
-	assign(&model.Pooling, said.Pooling)
 	return nil
 }
 
