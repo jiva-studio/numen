@@ -396,8 +396,8 @@ func TestOpeningAVaultMovesTheWindowToIt(t *testing.T) {
 	}
 }
 
-// The session ends with the vault it was serving, so an agent is told before it
-// calls rather than after.
+// The session ends with the vault it was serving, and the tool's own
+// description is where an agent is told so.
 func TestOpeningSaysThatTheSessionEnds(t *testing.T) {
 	f := onTheList(t)
 	session := connectedTo(t, f.core)

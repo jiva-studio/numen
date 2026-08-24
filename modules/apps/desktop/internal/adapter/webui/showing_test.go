@@ -458,8 +458,7 @@ func TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 }
 
 // TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther. One settling runs at a
-// time, and the second to arrive is refused rather than putting the first in
-// the past.
+// time. The second to arrive is refused, and the first runs to its end.
 func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 	f := swapping(t)
 

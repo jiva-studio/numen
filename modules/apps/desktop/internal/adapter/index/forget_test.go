@@ -72,8 +72,7 @@ type contents struct {
 	chunks   []int64
 }
 
-// held reads what a vault holds. Every list has to have something in it, or the
-// assertions made against it hold for a vault that was never filled.
+// held reads what a vault holds. A vault holding none of the four fails here.
 func held(t *testing.T, db *DB, vault domain.Vault) contents {
 	t.Helper()
 

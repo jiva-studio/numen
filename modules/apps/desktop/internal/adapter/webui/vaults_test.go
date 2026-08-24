@@ -50,7 +50,7 @@ func (r *vaultRows) forgotten() []string {
 }
 
 // bin is where a test puts what a person deleted, and a machine with nowhere to
-// put it where fails says so.
+// put it where refuse is set.
 type bin struct {
 	mu    sync.Mutex
 	fails error

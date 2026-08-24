@@ -95,8 +95,7 @@ func TestFindAcceptsNamePathAndIdentity(t *testing.T) {
 }
 
 // TestNothingNamesNoVault. A path is resolved against the folder this process
-// was started in, and a client that named no vault would otherwise reach the
-// one standing there — a forget or an erase among them.
+// was started in, and a vault standing there is still not what nothing names.
 func TestNothingNamesNoVault(t *testing.T) {
 	here, err := os.Getwd()
 	if err != nil {

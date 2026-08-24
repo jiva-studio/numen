@@ -2,8 +2,7 @@ package trash
 
 import "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 
-// ErrNoTrash is the core's sentinel, so a caller that never names this package
-// still recognises it.
+// ErrNoTrash is the core's sentinel, under the name this package answers by.
 var ErrNoTrash = port.ErrNoTrash
 
 // Trash is this machine's trash.

@@ -129,8 +129,8 @@ func run(cfg container.Config, agents agentOptions, vault string, zoom float64) 
 		return err
 	}
 
-	// The picker and the swap above are what an agent adds and opens a vault
-	// through, and a tool is served where what it works through is there.
+	// A tool is served where what it works through is there, so the picker and
+	// the swap above stand before the agents are let in.
 	//
 	// An agent nobody can reach is a panel that says so, not a window that does
 	// not open. Everything else the window does is the vault, and the vault is

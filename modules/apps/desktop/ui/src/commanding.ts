@@ -759,8 +759,8 @@ export function commanding(
         : ''
 
   /**
-   * The vaults the installation holds. The two it will not take are drawn and
-   * say why, so a person meets that rule here and not after answering.
+   * The vaults the installation holds. The two it will not take are drawn with
+   * the reason beside them, and cannot be chosen.
    */
   const listing = (text: string, step: Asked): PaletteBand => {
     const word = text.trim().toLowerCase()
