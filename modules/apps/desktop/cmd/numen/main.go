@@ -52,6 +52,10 @@ func main() {
 }
 
 func run(cfg container.Config, agents agentOptions, vault string, zoom float64) error {
+	// Before anything draws: the settings a folder picker reads are looked for
+	// once, the first time something asks for one.
+	findSchemas()
+
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
 
