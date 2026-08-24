@@ -1,0 +1,69 @@
+/*
+ * Monokai, from the original by Wimer Hazenberg, as the theme shipped inside
+ * Visual Studio Code sets it.
+ *
+ * `color-scheme` is pinned: the palette is published dark, and there is no
+ * light half for the setting to choose.
+ *
+ * The syntax colours are that theme's own assignments: pink keywords, green
+ * names, cyan types and storage, yellow strings, purple numbers, and
+ * punctuation in the text colour.
+ *
+ * Mixed here, because the palette does not name them: the selection where the
+ * keyboard is away, which is the selection at a lower alpha, and the alpha the
+ * highlight is laid on at.
+ */
+:root {
+  color-scheme: dark;
+
+  --numen-surface: #1e1f1c;
+  --numen-node-bg: #272822;
+  --numen-node-fg: #f8f8f2;
+  --numen-node-border: #34352f;
+
+  /* The accent is the tone the palette fills a button and a selected row with,
+     with its focus line around what the keyboard is on. */
+  --numen-focus-bg: #75715e;
+  --numen-focus-fg: #f8f8f2;
+  --numen-focus-border: #75715e;
+
+  --numen-seat-parent: #66d9ef;
+  --numen-seat-child: #a6e22e;
+  --numen-seat-jump: #fd971f;
+  --numen-seat-sibling: #ae81ff;
+
+  --numen-edge: #414339;
+  --numen-edge-label: #90908a;
+  --numen-ring: #99947c;
+  --numen-selection: #878b9180;
+  --numen-selection-away: #878b9140;
+  --numen-selection-match: #575b6180;
+  --numen-alarm: #f92672;
+  /* The band takes the ground a menu sits on, with the palette's yellow in it. */
+  --numen-caution-bg: #414339;
+  --numen-caution-fg: #e6db74;
+  --numen-highlight: #e6db7433;
+
+  /* Code takes the ground the window is drawn on, and a table's head row the
+     band a line is picked out with. */
+  --numen-syntax-mark: #75715e;
+  --numen-code-bg: #1e1f1c;
+  --numen-table-head-bg: #3e3d32;
+  --numen-syntax-keyword: #f92672;
+  --numen-syntax-name: #a6e22e;
+  --numen-syntax-type: #66d9ef;
+  --numen-syntax-string: #e6db74;
+  --numen-syntax-number: #ae81ff;
+  --numen-syntax-comment: #88846f;
+  --numen-syntax-punctuation: #f8f8f2;
+
+  --numen-panel-bg: #272822cc;
+  --numen-panel-border: #ffffff1f;
+
+  --numen-field-bg: #414339;
+  --numen-field-border: #75715e;
+
+  --numen-bubble-bg: #3e3d32;
+  --numen-bubble-fg: #f8f8f2;
+  --numen-answer-fg: #f8f8f2;
+}

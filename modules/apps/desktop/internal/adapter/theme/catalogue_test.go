@@ -69,11 +69,13 @@ func TestTheFolderIsMadeEmptyOnTheFirstRun(t *testing.T) {
 	}
 }
 
-func TestSevenPalettesShipInsideTheApplication(t *testing.T) {
+func TestThirteenPalettesShipInsideTheApplication(t *testing.T) {
 	themes := folder(t).Themes()
 	for _, name := range []string{
 		"preset:numen", "preset:dracula", "preset:nord", "preset:solarized",
-		"preset:catppuccin", "preset:gruvbox", "preset:amber",
+		"preset:catppuccin", "preset:gruvbox", "preset:amber", "preset:github",
+		"preset:one-dark", "preset:monokai", "preset:tokyo-night", "preset:ayu",
+		"preset:cobalt2",
 	} {
 		if !holds(themes, name) {
 			t.Errorf("no %s among %v", name, named(themes))
