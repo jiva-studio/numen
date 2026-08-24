@@ -7,7 +7,8 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
-import { noting, type Called, type Drawn } from './kind'
+import { noting, type Called } from './kind'
+import type { Drawn } from './entering'
 import type { drawn } from './drawn'
 import type { editing } from './editing'
 import type { State } from './tab'
@@ -198,8 +199,10 @@ describe('the word a note tab carries', () => {
     one.noted.opens('Note.md')
     one.noted.opens('Other.md')
 
-    expect(one.noted.marked('Note.md')).toBe('unsaved')
-    expect(one.noted.marked('Other.md')).toBeUndefined()
+    const marked = (path: string) => one.noted.kind.marked?.(one.noted.held(path))
+
+    expect(marked('Note.md')).toBe('unsaved')
+    expect(marked('Other.md')).toBeUndefined()
   })
 })
 
