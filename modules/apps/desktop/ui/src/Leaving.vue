@@ -6,6 +6,7 @@
  * one of them has been answered or put off.
  */
 import type { Standing } from './leaving'
+import { WORDS as note } from './note/words'
 import { WORDS as words } from './words'
 
 const props = defineProps<{
@@ -22,10 +23,10 @@ const props = defineProps<{
       <li v-for="one in props.questions" :key="one.path" class="leaving__note">
         <span class="leaving__title">{{ props.called(one.path) }}</span>
         <button type="button" class="leaving__answer" @click="void one.keep()">
-          {{ words.keep }}
+          {{ note.keep }}
         </button>
         <button type="button" class="leaving__answer" @click="void one.take()">
-          {{ words.take }}
+          {{ note.take }}
         </button>
         <button type="button" class="leaving__answer" @click="one.later()">
           {{ words.later }}

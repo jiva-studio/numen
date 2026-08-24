@@ -11,9 +11,9 @@ import { chose as carry } from '../menu'
 import { asPlex } from '../plex'
 import type { Standing } from '../standing'
 import type { Host, Kind } from '../windowing'
-import { WORDS as words } from '../words'
 import { PLEX, plexCalled } from '../workspace'
 import PlexTab from './PlexTab.vue'
+import { WORDS as words } from './words'
 
 /** Where the menu on a node stands, and what it was asked for on. */
 export interface Asked {

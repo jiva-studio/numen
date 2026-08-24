@@ -11,9 +11,9 @@ import type { Conversation } from '../conversation'
 import { same, spotOf, spotsIn } from '../places'
 import type { Run } from '../reading'
 import type { Host, Kind } from '../windowing'
-import { WORDS as words } from '../words'
 import { AGENT, shortened } from '../workspace'
 import AgentTab from './AgentTab.vue'
+import { WORDS as words } from './words'
 
 /** What an agent tab asks of the window it is drawn in. */
 export interface Talking {

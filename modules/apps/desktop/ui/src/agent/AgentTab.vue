@@ -7,7 +7,7 @@
  */
 import { Agent } from '@numen/ui'
 import type { Turn } from '@numen/ui'
-import { WORDS as words } from '../words'
+import { WORDS as words } from './words'
 import type { Held } from './kind'
 
 const props = defineProps<{ held: Held }>()

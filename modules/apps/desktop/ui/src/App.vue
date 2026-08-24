@@ -32,6 +32,7 @@ import { noting } from './note/kind'
 import { plexKind, plexing } from './plex/kind'
 import { core as agent } from './agent'
 import { conversation } from './conversation'
+import { WORDS as talk } from './agent/words'
 import { WORDS as words } from './words'
 import { AGENT, CONVERSATION, PLEX, named, opening } from './workspace'
 
@@ -96,7 +97,7 @@ const plexes = plexKind(held.host, () => standing(core), {
 
 /** The agent tabs, and the one a question about a note is put in. */
 const agents = agentKind(held.host, () =>
-  talking(conversation(agent, words, named(CONVERSATION)), {
+  talking(conversation(agent, talk, named(CONVERSATION)), {
     looking: () => plexes.looking(),
     opens: (path, ...runs) => void read.opensAt(path, ...runs),
     unreachable: () => unreachable.value,

@@ -7,7 +7,7 @@
  * offers to make it again.
  */
 import { Editor } from '@numen/ui'
-import { WORDS as words } from '../words'
+import { WORDS as words } from './words'
 import type { Held } from './kind'
 
 const props = defineProps<{ held: Held }>()

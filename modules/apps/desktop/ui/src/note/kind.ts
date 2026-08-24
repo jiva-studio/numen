@@ -13,9 +13,9 @@ import type { Editing, editing } from '../editing'
 import type { PlexShowing } from '@numen/ui'
 import { markOf } from '../tab'
 import type { Host, Kind } from '../windowing'
-import { WORDS as words } from '../words'
 import { NOTE } from '../workspace'
 import NoteTab from './NoteTab.vue'
+import { WORDS as words } from './words'
 
 /** The notes of the whole window, read and written by one store. */
 type Notes = ReturnType<typeof editing>

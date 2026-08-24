@@ -5,7 +5,7 @@
  * What the document could not be read as is said where the pages would be.
  */
 import { Reader } from '@numen/ui'
-import { WORDS as words } from '../words'
+import { WORDS as words } from './words'
 import type { Held } from './kind'
 
 const props = defineProps<{ held: Held }>()
