@@ -355,9 +355,7 @@ onUnmounted(() => {
       @choose="went"
       @back="back"
       @dismiss="dismissed"
-    >
-      <template #silence>{{ words.typeToFind }}</template>
-    </Palette>
+    />
   </main>
 </template>
 

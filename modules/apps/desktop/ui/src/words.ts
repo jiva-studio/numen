@@ -49,7 +49,6 @@ export const WORDS = {
   readDocument: 'Open the document here',
   noneFound: 'Nothing',
   notAsked: 'The vault could not answer',
-  typeToFind: 'Type to look for a note',
   /** The commands, and the three bands they are drawn in. */
   overNote: 'This note',
   overWindow: 'This window',
