@@ -5,7 +5,7 @@
  * for the whole window, and `showing.ts` tells every plex when to ask again.
  */
 import { ref } from 'vue'
-import type { Neighbourhood } from '../core'
+import type { Neighbourhood, Went } from '../core'
 
 /** The one question a plex asks of the vault: what is around a note. */
 export interface Neighbours {
@@ -56,10 +56,19 @@ export function standing(core: Neighbours) {
     }
   }
 
+  /**
+   * A note that moved. A plex standing on it stands on where it went, so the
+   * next question is asked at the name the file now has.
+   */
+  const follows = (renamed: readonly Went[]) => {
+    const went = renamed.find((one) => one.from === here.value)
+    if (went) here.value = went.to
+  }
+
   /** The tab has closed. An answer still on its way is let go of. */
   const close = () => {
     open = false
   }
 
-  return { neighbourhood, here, trouble, go, close }
+  return { neighbourhood, here, trouble, go, follows, close }
 }

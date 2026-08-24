@@ -6,10 +6,10 @@
  * not be read is not shown as an empty one. The failure of the second is
  * silent — one wrong line and an unreadable vault reads as an empty one.
  */
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
-import { Agent, Editor, Plex, Reader } from '@numen/ui'
+import { Agent, Editor, Palette, Plex, Reader } from '@numen/ui'
 import AgentTab from './agent/AgentTab.vue'
 import DocumentTab from './document/DocumentTab.vue'
 import NoteTab from './note/NoteTab.vue'
@@ -82,6 +82,16 @@ const editor = answers('Editor', { focus: () => true, measure: () => {}, reveal:
 const reader = answers('Reader', { measure: () => {} })
 
 /**
+ * Every window a test drew. A window listens for the keystrokes that open the
+ * palette for as long as it is mounted, and the next test draws its own.
+ */
+const windows: { unmount(): void }[] = []
+
+afterEach(() => {
+  for (const window of windows.splice(0)) window.unmount()
+})
+
+/**
  * The window drawn, with what each kind draws inside it stubbed. The tabs
  * themselves are the window's own, and they are what is asked about here.
  */
@@ -89,6 +99,7 @@ async function drawn() {
   const window = mount(App, {
     global: { stubs: { Plex: true, Editor: editor, Agent: true, Reader: reader, Palette: true } },
   })
+  windows.push(window)
   await settles()
   await settles()
   return window
@@ -143,6 +154,50 @@ describe('a place an answer names', () => {
 
     expect(window.findComponent(DocumentTab).exists()).toBe(true)
     expect(window.findComponent(DocumentTab).findComponent(Reader).exists()).toBe(true)
+  })
+})
+
+describe('the palette', () => {
+  /** A keystroke taken on the window, and whether the window took it. */
+  const pressed = (key: string) => {
+    const event = new KeyboardEvent('keydown', { key, ctrlKey: true, cancelable: true })
+    globalThis.dispatchEvent(event)
+    return event
+  }
+
+  const bandsOf = (window: Awaited<ReturnType<typeof drawn>>) =>
+    (window.findComponent(Palette).props('bands') as readonly { id: string }[]).map((one) => one.id)
+
+  it('opens on the commands for what is in front, and prints nothing', async () => {
+    const window = await drawn()
+
+    const event = pressed('p')
+    await settles()
+
+    expect(event.defaultPrevented).toBe(true)
+    expect(window.findComponent(Palette).props('open')).toBe(true)
+    expect(bandsOf(window)).toStrictEqual(['note', 'window', 'vault'])
+  })
+
+  it('opens on the search under its own keystroke', async () => {
+    const window = await drawn()
+
+    pressed('k')
+    await settles()
+
+    expect(window.findComponent(Palette).props('open')).toBe(true)
+    expect(bandsOf(window)).toStrictEqual([])
+  })
+
+  it('turns from the search to the commands on the character that means them', async () => {
+    const window = await drawn()
+    pressed('k')
+    await settles()
+
+    window.findComponent(Palette).vm.$emit('update:modelValue', '>')
+    await settles()
+
+    expect(bandsOf(window)).toStrictEqual(['note', 'window', 'vault'])
   })
 })
 

@@ -1,20 +1,26 @@
 /**
  * The menu on a node: what it offers, and what a choice comes to.
+ *
+ * What it offers is every command over a note. A person who never opens the
+ * palette reaches these here, so what the two lists hold is asked of both.
  */
 import { describe, expect, it, vi } from 'vitest'
 
 import { ITEMS, chose } from './menu'
-
-const choices = () => ({
-  open: vi.fn(),
-  child: vi.fn(),
-  ask: vi.fn(),
-  copy: vi.fn(),
-})
+import { commandsOf, overNote } from '../commanding'
+import { WORDS as words } from '../words'
 
 describe('what the menu offers', () => {
-  it('offers four things, in the order they are drawn', () => {
-    expect(ITEMS.map((item) => item.id)).toStrictEqual(['open', 'child', 'ask', 'copy'])
+  it('offers every command over a note, in the order the commands are drawn', () => {
+    expect(ITEMS.map((item) => item.id)).toStrictEqual(
+      overNote(commandsOf(words)).map((one) => one.id),
+    )
+  })
+
+  it('offers making a note, changing its title and removing it', () => {
+    const offered = new Set(ITEMS.map((item) => item.id))
+
+    expect([...offered].filter((id) => ['child', 'title', 'remove'].includes(id))).toHaveLength(3)
   })
 
   it('says what each of them does', () => {
@@ -23,22 +29,22 @@ describe('what the menu offers', () => {
 })
 
 describe('choosing one', () => {
-  it('hands the note it was asked for on to the item chosen, and to no other', () => {
+  it('hands the command, the note and the name it is called by to the window', () => {
     for (const item of ITEMS) {
-      const on = choices()
-      chose(item.id, 'physics/Ontology.md', on)
+      const runs = vi.fn()
+      chose(item.id, 'physics/Ontology.md', 'Ontology', { runs })
 
-      const called = Object.entries(on).filter(([, what]) => what.mock.calls.length > 0)
-      expect(called.map(([id]) => id)).toStrictEqual([item.id])
-      expect(called[0]?.[1]).toHaveBeenCalledWith('physics/Ontology.md')
+      expect(runs).toHaveBeenCalledWith(item.id, 'physics/Ontology.md', 'Ontology')
     }
   })
 
   it('does nothing for an identifier the menu does not offer', () => {
-    const on = choices()
-    chose('constructor', 'Ontology.md', on)
-    chose('', 'Ontology.md', on)
+    const runs = vi.fn()
 
-    for (const what of Object.values(on)) expect(what).not.toHaveBeenCalled()
+    chose('constructor', 'Ontology.md', 'Ontology', { runs })
+    chose('', 'Ontology.md', 'Ontology', { runs })
+    chose('destroy', 'Ontology.md', 'Ontology', { runs })
+
+    expect(runs).not.toHaveBeenCalled()
   })
 })

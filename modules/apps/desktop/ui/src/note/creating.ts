@@ -40,8 +40,12 @@ const words: Record<Refused, string> = {
   tooLarge: 'that note is longer than this writes',
   bodyRefused: 'that text cannot be written into a note',
   unreadable: 'the frontmatter of that note cannot be read',
-  occupied: `every name from ${UNTITLED} onwards is taken`,
+  occupied: 'a note of that name is filed there already',
+  unnameable: 'no file can be named that',
 }
+
+/** What a person is told when the vault took none of the names it was offered. */
+const exhausted = `every name from ${UNTITLED} onwards is taken`
 
 /** A note that now exists: where it is filed, and what it is called. */
 export interface Made {
@@ -77,8 +81,34 @@ export function creating(core: Core) {
         return null
       }
     }
-    said.value = words.occupied
+    said.value = exhausted
     return null
+  }
+
+  /**
+   * A note under the name a person gave it: in a seat of another note, filed
+   * beside it, or on its own at the top of the vault.
+   */
+  async function calls(
+    title: string,
+    from: string,
+    seat: PlexRelatedSeat | null,
+  ): Promise<Made | null> {
+    const opposite = seat ? facing[seat] : undefined
+    if (seat && !opposite) return null
+    const links = opposite ? [{ to: from, seat: opposite }] : []
+    try {
+      const made = await core.create({ title, folder: from ? folderOf(from) : '', links })
+      if (made.refusal !== null) {
+        said.value = words[made.refusal]
+        return null
+      }
+      said.value = ''
+      return { path: made.path, title }
+    } catch (error) {
+      said.value = String(error)
+      return null
+    }
   }
 
   /** Make a note in a seat of another one, filed in the folder that one is in. */
@@ -110,7 +140,7 @@ export function creating(core: Core) {
     }
   }
 
-  return { make, start, join, said }
+  return { make, calls, start, join, said }
 }
 
 /** The name the note asked for after that many taken ones is filed under. */

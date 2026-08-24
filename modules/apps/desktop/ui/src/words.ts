@@ -3,8 +3,31 @@
  *
  * A sentence about what a tab holds is said by the kind that holds it, beside
  * the code that draws it. What is left here is the window itself: its tabs,
- * the palette, the corner, and the quit.
+ * the palette, the commands, the corner, and the quit.
  */
+import type { Refused } from './core'
+import { WORDS as agent } from './agent/words'
+import { WORDS as note } from './note/words'
+import { WORDS as plex } from './plex/words'
+
+/**
+ * The key a keystroke is held with, as this keyboard writes it: Command on
+ * Apple keyboards and Control everywhere else.
+ */
+const held = /mac|iphone|ipad|ipod/i.test(navigator.userAgent) ? '⌘' : '⌃'
+
+/** What the vault refused a command, in words a person reads. */
+const REFUSED: Record<Refused, string> = {
+  missing: 'that note is not in the vault',
+  notANote: 'that file is not a note',
+  notText: 'that file is not text',
+  tooLarge: 'that note is longer than this writes',
+  bodyRefused: 'that text cannot be written into a note',
+  unreadable: 'the frontmatter of that note cannot be read',
+  occupied: 'a note of that name is filed there, so the note was renamed and its file was not',
+  unnameable: 'no file can be named that',
+}
+
 export const WORDS = {
   newTab: 'New tab',
   /** What the window says above the work while something is wrong. */
@@ -27,6 +50,52 @@ export const WORDS = {
   noneFound: 'Nothing',
   notAsked: 'The vault could not answer',
   typeToFind: 'Type to look for a note',
+  /** The commands, and the three bands they are drawn in. */
+  overNote: 'This note',
+  overWindow: 'This window',
+  overVault: 'This vault',
+  beside: 'Open beside',
+  child: 'New child note',
+  parent: 'New parent note',
+  jump: 'New jump note',
+  title: 'Change title',
+  remove: 'Remove note',
+  destroy: 'Destroy note',
+  ask: 'Ask the agent about this note',
+  copy: 'Copy path',
+  newNote: note.newNote,
+  newPlex: plex.newPlex,
+  newAgent: agent.newAgent,
+  close: 'Close this tab',
+  findKeys: `${held}K`,
+  first: 'Go to the note the vault opens with',
+  goto: 'Go to a note',
+  /** Why nothing can be done to a note: the vault is unread, or none is in front. */
+  indexing: 'The vault is still being read',
+  noNote: 'Nothing in front of you is a note',
+  /** The steps a command asks for: the chip beside the field, and the field. */
+  command: 'Command',
+  typeCommand: 'Type a command',
+  naming: 'Name',
+  typeName: 'What is it called',
+  callIt: 'Call it',
+  typeNote: 'Look for a note',
+  asking: 'Confirm',
+  goOn: 'Press ↵ to go on',
+  removes: 'Remove',
+  trashed: 'It goes to the .trash folder of the vault',
+  exactly: 'This cannot be undone',
+  typeBack: 'Type the name of the note',
+  destroys: 'Destroy',
+  forever: 'Nothing brings it back',
+  /** The note a search did not find, offered as one to make. */
+  creating: 'Nothing was found',
+  creates: 'Create a note called',
+  /** What a command could not do, and what it left behind. */
+  refused: REFUSED,
+  retargeted: 'These notes link by a name that means another note now:',
+  dangling: 'These notes link to nothing now:',
+  nowhere: 'The vault has no note to open with',
   /** The corner where what is running behind the window is shown. */
   words: 'Searching by words only — no model set',
   working: 'Background work',
