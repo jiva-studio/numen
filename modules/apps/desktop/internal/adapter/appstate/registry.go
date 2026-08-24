@@ -3,15 +3,24 @@ package appstate
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
+	"sync"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 )
 
-type VaultRegistry struct{ path string }
+// VaultRegistry is the list of vaults, kept in one file that every write
+// rewrites whole. The mutex is held from reading that file to writing it back,
+// so two writes in this process are one after the other.
+type VaultRegistry struct {
+	mu   sync.Mutex
+	path string
+}
 
 // Open uses the platform's configuration location.
 func Open() (*VaultRegistry, error) {
@@ -65,6 +74,8 @@ func (r *VaultRegistry) save(f file) error {
 }
 
 func (r *VaultRegistry) All() ([]domain.Vault, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	f, err := r.load()
 	return f.Vaults, err
 }
@@ -73,6 +84,8 @@ func (r *VaultRegistry) All() ([]domain.Vault, error) {
 // how a moved vault is recognised: the identity travels with the folder, the
 // registry only remembers where it was last seen.
 func (r *VaultRegistry) Save(v domain.Vault) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	f, err := r.load()
 	if err != nil {
 		return err
@@ -87,8 +100,66 @@ func (r *VaultRegistry) Save(v domain.Vault) error {
 	return r.save(f)
 }
 
+// Remove takes a vault off the list. The folder and the identity inside it stay
+// as they are. An identity the list does not hold is already off it.
+func (r *VaultRegistry) Remove(id string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	f, err := r.load()
+	if err != nil {
+		return err
+	}
+	at := slices.IndexFunc(f.Vaults, func(v domain.Vault) bool { return v.ID == id })
+	if at < 0 {
+		return nil
+	}
+	f.Vaults = slices.Delete(f.Vaults, at, at+1)
+	if f.Last == id {
+		f.Last = ""
+	}
+	return r.save(f)
+}
+
+// Opened records the vault a window is showing. Recording the vault already
+// recorded writes nothing.
+func (r *VaultRegistry) Opened(id string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	f, err := r.load()
+	if err != nil {
+		return err
+	}
+	if !slices.ContainsFunc(f.Vaults, func(v domain.Vault) bool { return v.ID == id }) {
+		return fmt.Errorf("no vault on the list carries the identity %s", id)
+	}
+	if f.Last == id {
+		return nil
+	}
+	f.Last = id
+	return r.save(f)
+}
+
+// Last is the vault opened most recently. Nothing has been opened until a vault
+// is recorded, and an identity that names nothing on the list answers the same.
+func (r *VaultRegistry) Last() (domain.Vault, bool, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	f, err := r.load()
+	if err != nil {
+		return domain.Vault{}, false, err
+	}
+	for _, v := range f.Vaults {
+		if v.ID == f.Last && f.Last != "" {
+			return v, true, nil
+		}
+	}
+	return domain.Vault{}, false, nil
+}
+
 // Find resolves what the user typed: an identity, a name, or a path.
 func (r *VaultRegistry) Find(nameOrPath string) (domain.Vault, bool, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	f, err := r.load()
 	if err != nil {
 		return domain.Vault{}, false, err
