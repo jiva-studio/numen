@@ -145,13 +145,14 @@ is asked for in front of them.
   reused and the file is the size it was.
 
 - **The folder picker is the first thing here built on the desktop's own
-  settings, and a machine without them ends the process.** The library that puts
-  the picker up calls `abort` where the settings a file chooser reads are not
-  installed, and no code of ours runs after it. The picker is asked for only
-  where compiled settings are found, which turns the common case into words —
-  and it catches only a machine holding none at all. A machine holding settings
-  without the one a file chooser reads still ends. What closes that is the
-  package naming what it needs, not a check here.
+  settings, and the library that puts it up calls `abort` where they are not
+  installed.** No code of ours runs after that. The settings ship with the
+  toolkit this binary is linked against, so where the machine has not put them
+  on the search path the toolkit is asked where it keeps them, and a picker
+  asked for on a machine where neither has them is answered in words. What is
+  left uncovered is a machine holding settings without the one a file chooser
+  reads: that still ends the process, and what closes it is the package naming
+  what it needs.
 
 ## Alternatives considered
 
