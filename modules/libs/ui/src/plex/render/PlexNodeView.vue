@@ -234,13 +234,21 @@ const hue = computed(() => ({
 }
 
 /* The hue comes from the node's own seat, so a new seat needs a token and
-   nothing here. It changes over the length of the move that changes the seat,
-   or a node would wear the focus colours while still halfway there. */
+   nothing here. The outline changes over the length of the move that changes
+   the seat; the fill answers the pointer at the speed a pointer is answered. */
 .plex__box {
   rx: var(--numen-radius);
   fill: var(--numen-node-bg);
   stroke: var(--numen-seat-hue, var(--numen-node-border));
   stroke-width: var(--numen-stroke);
+  transition:
+    fill var(--numen-motion-hover) var(--numen-easing),
+    stroke var(--numen-plex-move) var(--numen-easing);
+}
+
+/* While the plex is moving, the fill is a seat's colour too: the focused node
+   is painted from its own pair, and follows the move as the outline does. */
+[data-moving] .plex__box {
   transition:
     fill var(--numen-plex-move) var(--numen-easing),
     stroke var(--numen-plex-move) var(--numen-easing);
