@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"sync/atomic"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
@@ -43,12 +44,15 @@ var errNoDrawing = errors.New("this build cannot draw a document")
 
 // viewer holds what the window is looking at: the documents open and the pages
 // already drawn.
+//
+// What is open belongs to the vault it was opened in, and is emptied when
+// another vault comes into the window.
 type viewer struct {
 	// open holds a document open for drawing. It is pdf.Open in the
 	// application, and a test puts its own in.
 	open  func(raw []byte) (drawable, error)
-	docs  *documents
-	drawn *pictures
+	docs  atomic.Pointer[documents]
+	drawn atomic.Pointer[pictures]
 	// kept is the same pages on disk, so a document opened again is not drawn
 	// again. It is nothing where this machine names no cache folder.
 	kept *shelf
@@ -82,17 +86,25 @@ func drawnBy(docs port.Documents) func([]byte) (drawable, error) {
 // kept there outlives the window, so where it goes is said where the window is
 // served and not here.
 func looking(docs port.Documents) *viewer {
-	return &viewer{
+	v := &viewer{
 		open:     drawnBy(docs),
-		docs:     keeping(),
-		drawn:    drawings(),
 		patience: patience,
 		reading:  make(chan struct{}, 1),
 		ahead:    drawnAhead,
 	}
+	v.docs.Store(keeping())
+	v.drawn.Store(drawings())
+	return v
 }
 
-func (v *viewer) close() { v.docs.close() }
+func (v *viewer) close() { v.docs.Load().close() }
+
+// empty closes the documents the window has open and drops the pages drawn from
+// them. It goes on looking, at whatever it is given next.
+func (v *viewer) empty() {
+	v.docs.Swap(keeping()).close()
+	v.drawn.Store(drawings())
+}
 
 // said is what the window is told a document is.
 type said struct {
@@ -192,7 +204,7 @@ func (a *API) Page(w http.ResponseWriter, r *http.Request, path, page string) {
 // The path goes through the vault's readers the way everything from outside
 // does, so a path leaving the vault is refused there.
 func (a *API) standing(ctx context.Context, path string) (port.VaultReader, fingerprint, error) {
-	reader, err := a.Readers.Open(a.Vault)
+	reader, err := a.Readers.Open(a.Showing())
 	if err != nil {
 		return nil, fingerprint{}, err
 	}
@@ -213,7 +225,7 @@ func (a *API) opening(
 	reader port.VaultReader,
 	print fingerprint,
 ) (*document, func(), error) {
-	return a.Viewer.docs.take(ctx, print, func() (drawable, error) {
+	return a.Viewer.docs.Load().take(ctx, print, func() (drawable, error) {
 		raw, err := reader.Read(context.WithoutCancel(ctx), print.path)
 		if err != nil {
 			return nil, err
@@ -227,7 +239,7 @@ func (a *API) opening(
 //
 // Several asks for one page draw it once and are answered with the one drawing.
 func (a *API) picture(ctx context.Context, reader port.VaultReader, key shot) ([]byte, error) {
-	return a.Viewer.drawn.draw(ctx, key, func() ([]byte, error) {
+	return a.Viewer.drawn.Load().draw(ctx, key, func() ([]byte, error) {
 		if body := a.Viewer.kept.get(key); body != nil {
 			return body, nil
 		}
@@ -268,7 +280,7 @@ func (a *API) drawing(ctx context.Context, reader port.VaultReader, key shot) ([
 // first.
 func (a *API) readAhead(reader port.VaultReader, key shot) {
 	next := shot{of: key.of, at: key.at + 1, wide: key.wide}
-	if a.Viewer.drawn.has(next) {
+	if a.Viewer.drawn.Load().has(next) {
 		return
 	}
 	select {

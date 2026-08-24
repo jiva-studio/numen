@@ -61,7 +61,7 @@ func (a *API) Marks(w http.ResponseWriter, r *http.Request, path string) {
 	ctx, cancel := context.WithTimeout(r.Context(), patience)
 	defer cancel()
 
-	found, err := a.Marking.Execute(ctx, a.Vault, path, runs)
+	found, err := a.Marking.Execute(ctx, a.Showing(), path, runs)
 	if err != nil {
 		refuse(w, err)
 		return

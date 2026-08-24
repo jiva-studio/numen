@@ -56,6 +56,15 @@ func (w *inflight) seal() <-chan struct{} {
 	return w.idle
 }
 
+// open takes writes again. The vault the door was shut on is gone and another
+// is in front of the person.
+func (w *inflight) open() {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	w.sealed, w.over, w.idle = false, false, nil
+}
+
 // reckon ends the wait once nothing is being written. The lock is held.
 func (w *inflight) reckon() {
 	if !w.sealed || w.over || w.count > 0 {

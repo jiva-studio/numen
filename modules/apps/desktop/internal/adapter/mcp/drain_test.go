@@ -93,7 +93,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 
 	queries := db.Queries()
 	core := mcp.Core{
-		Vault: v, Root: v.Path, Readers: readers, Notes: queries,
+		Showing: mcp.One(v, v.Path), Readers: readers, Notes: queries,
 		Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
 		Neighbourhood: note.ShowNeighbourhood{Links: db.Links(), Notes: queries},
 		Links:         note.ShowLinks{Links: db.Links()},

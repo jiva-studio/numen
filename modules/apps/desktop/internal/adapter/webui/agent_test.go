@@ -49,6 +49,13 @@ type answering struct{ steps chan agent.Step }
 func (a answering) Steps() <-chan agent.Step { return a.steps }
 func (a answering) Stop() error              { return nil }
 
+// panelling is a vault whose panel one agent answers.
+func panelling(taking agent.Agent) *webui.API {
+	api := &webui.API{}
+	api.Answers(taking)
+	return api
+}
+
 // panelled is one vault's panel and a client talking to it the way the window
 // does.
 func panelled(t *testing.T, api *webui.API) numenv1connect.AgentServiceClient {
@@ -91,7 +98,7 @@ func heard(t *testing.T, client numenv1connect.AgentServiceClient, ask *v1.AskRe
 // asked it in.
 func TestWhatTheClientAsksReachesTheAgent(t *testing.T) {
 	taking := &asking{took: make(chan agent.Task, 1), takes: []agent.Step{{Kind: agent.Stopped}}}
-	client := panelled(t, &webui.API{Agent: taking})
+	client := panelled(t, panelling(taking))
 
 	heard(t, client, &v1.AskRequest{
 		Asked:        "rewrite this note",
@@ -121,7 +128,7 @@ func TestEveryStepTheAgentTakesReachesTheClient(t *testing.T) {
 		{Kind: agent.Saying, Text: "Rewritten."},
 		{Kind: agent.Stopped, Failed: "out of turns"},
 	}}
-	client := panelled(t, &webui.API{Agent: taking})
+	client := panelled(t, panelling(taking))
 
 	steps := heard(t, client, &v1.AskRequest{Asked: "rewrite this note"})
 	if len(steps) != 5 {
@@ -157,7 +164,7 @@ func TestACallSaysWhereItIsWorking(t *testing.T) {
 		},
 		{Kind: agent.Stopped},
 	}}
-	client := panelled(t, &webui.API{Agent: taking})
+	client := panelled(t, panelling(taking))
 
 	steps := heard(t, client, &v1.AskRequest{Asked: "show me where that is"})
 	doing := steps[0].GetDoing()
@@ -170,7 +177,7 @@ func TestACallSaysWhereItIsWorking(t *testing.T) {
 // carried. A tab closes, and what was kept for it is let go of.
 func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
 	taking := &asking{over: make(chan string, 1)}
-	client := panelled(t, &webui.API{Agent: taking})
+	client := panelled(t, panelling(taking))
 
 	if _, err := client.Finish(t.Context(),
 		connect.NewRequest(&v1.FinishRequest{Conversation: "8f2c1e"})); err != nil {
@@ -186,7 +193,7 @@ func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
 // agent is the one that could not let go.
 func TestAConversationThatCouldNotBeFinishedSaysSo(t *testing.T) {
 	taking := &asking{over: make(chan string, 1), refuses: errors.New("the child would not go")}
-	client := panelled(t, &webui.API{Agent: taking})
+	client := panelled(t, panelling(taking))
 
 	_, err := client.Finish(t.Context(),
 		connect.NewRequest(&v1.FinishRequest{Conversation: "8f2c1e"}))

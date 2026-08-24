@@ -69,7 +69,7 @@ func addLinkTools(server *sdk.Server, core Core) {
 				return nil, out{}, err
 			}
 			group := batches[from]
-			err := core.Linking.Add(ctx, core.Vault, from, group[0], group[1:]...)
+			err := core.Linking.Add(ctx, core.shown().Vault, from, group[0], group[1:]...)
 			if err == nil {
 				continue
 			}
@@ -94,7 +94,7 @@ func addLinkTools(server *sdk.Server, core Core) {
 		Label string `json:"label,omitempty" jsonschema:"a few words naming the relationship"`
 		Note  string `json:"note,omitempty" jsonschema:"why the link exists"`
 	}) (*sdk.CallToolResult, Done, error) {
-		err := core.Linking.Update(ctx, core.Vault, in.From, domain.ParseAddress(in.To), domain.Link{
+		err := core.Linking.Update(ctx, core.shown().Vault, in.From, domain.ParseAddress(in.To), domain.Link{
 			Role:  domain.LinkRole(in.Role),
 			Type:  in.Type,
 			Label: in.Label,
@@ -113,7 +113,7 @@ func addLinkTools(server *sdk.Server, core Core) {
 		To   string `json:"to" jsonschema:"the target as it is written"`
 		Role string `json:"role,omitempty" jsonschema:"only remove the link carrying this role; every role by default"`
 	}) (*sdk.CallToolResult, Done, error) {
-		err := core.Linking.Remove(ctx, core.Vault, in.From,
+		err := core.Linking.Remove(ctx, core.shown().Vault, in.From,
 			domain.ParseAddress(in.To), domain.LinkRole(in.Role))
 		return nil, Done{Path: in.From}, err
 	})
@@ -133,7 +133,7 @@ func addLinkTools(server *sdk.Server, core Core) {
 			Links     []Link `json:"links"`
 			Backlinks []Link `json:"backlinks"`
 		}
-		found, err := core.Links.Execute(ctx, core.Vault, in.Path)
+		found, err := core.Links.Execute(ctx, core.shown().Vault, in.Path)
 		if err != nil {
 			return nil, out{}, err
 		}

@@ -37,7 +37,7 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 		return func() error { return nil }, nil
 	}
 
-	root, err := filepath.Abs(opened.Vault.Path)
+	root, err := filepath.Abs(opened.Showing().Path)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 			_ = opened.API.Viewing().Editing(ctx, said)
 		},
 		Where: func(ctx context.Context, path, stood string) (int, int, bool) {
-			contents, err := reading.Execute(ctx, opened.Vault, path)
+			contents, err := reading.Execute(ctx, opened.Showing(), path)
 			if err != nil || contents.Outcome != note.Ok {
 				return 0, 0, false
 			}
@@ -103,7 +103,7 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 	}
 
 	started := claude(cfg, root, endpoint.URL, secret, words, drafting, out)
-	opened.API.Agent = started
+	opened.API.Answers(started)
 
 	return func() error {
 		forget()
@@ -162,7 +162,7 @@ func claude(
 // writes a note leaves it findable.
 func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.Writer) mcp.Core {
 	index := func(ctx context.Context, v domain.Vault, paths []string) error {
-		_, err := opened.Refresh.Execute(ctx, v, paths)
+		_, err := opened.Refresh().Execute(ctx, v, paths)
 		return err
 	}
 	readers := cfg.VaultReaders()
@@ -189,8 +189,7 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 	}
 
 	return mcp.Core{
-		Vault:   opened.Vault,
-		Root:    root,
+		Showing: mcp.One(opened.Showing(), root),
 		Readers: readers,
 		View:    opened.API.Viewing(),
 		Notes:   queries,
@@ -233,5 +232,5 @@ func extension(cfg container.Config) string {
 // missing is fetched behind whoever asked, and the tool says so. A tool that is
 // not served at all leaves an agent saying the vault cannot do a thing it can.
 func recogniser(opened *webui.Opened) mcp.Recognising {
-	return opened.Recognising
+	return opened.Recognising()
 }

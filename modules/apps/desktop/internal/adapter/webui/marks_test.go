@@ -59,7 +59,6 @@ func placing(t *testing.T) (*API, http.Handler, *pdf.Book) {
 		beside: "a file the vault leaves alone",
 	})
 	api := &API{
-		Vault:   vault,
 		Readers: filesystem.Readers{},
 		Marking: &source.Marks{
 			Readers:   filesystem.Readers{},
@@ -67,6 +66,7 @@ func placing(t *testing.T) (*API, http.Handler, *pdf.Book) {
 			Documents: pdf.Documents{},
 		},
 	}
+	api.show(vault)
 	return api, api.Serving(http.NotFoundHandler()), doc
 }
 

@@ -47,11 +47,12 @@ func addSourceTools(server *sdk.Server, core Core) {
 		if core.Sources == nil {
 			return nil, out{}, fmt.Errorf("this vault's sources are not open")
 		}
-		known, err := core.Sources.Fingerprints(ctx, core.Vault.ID, domain.KindBook)
+		shown := core.shown()
+		known, err := core.Sources.Fingerprints(ctx, shown.Vault.ID, domain.KindBook)
 		if err != nil {
 			return nil, out{}, err
 		}
-		read, err := core.Sources.Recognised(ctx, core.Vault.ID, domain.KindBook)
+		read, err := core.Sources.Recognised(ctx, shown.Vault.ID, domain.KindBook)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -111,7 +112,7 @@ func addSourceTools(server *sdk.Server, core Core) {
 			Sources:   core.Sources,
 			Derived:   core.Derived,
 			Documents: core.Documents,
-		}.Execute(ctx, core.Vault, in.Path, in.Start, in.Length)
+		}.Execute(ctx, core.shown().Vault, in.Path, in.Start, in.Length)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -151,7 +152,7 @@ func addSourceTools(server *sdk.Server, core Core) {
 		// Nothing here happens inside this question. Fetching the models is
 		// minutes and reading a book is an hour, and how far either has got is
 		// among everything else the window shows being done.
-		if !core.Recognise.Start(core.Vault, in.Path) {
+		if !core.Recognise.Start(core.shown().Vault, in.Path) {
 			// Nothing here remembers a request that was not taken.
 			return nil, out{Says: "another document is being read and this one was not taken; " +
 				"nothing is reading it — ask again once source_list says none is being read"}, nil

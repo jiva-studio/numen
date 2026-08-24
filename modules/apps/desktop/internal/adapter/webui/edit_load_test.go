@@ -50,7 +50,6 @@ func TestEditLoad(t *testing.T) {
 	t.Cleanup(func() { db.Close() })
 
 	api := &API{
-		Vault:     v,
 		Notes:     db.Queries(),
 		Links:     db.Links(),
 		Listeners: following(),
@@ -59,6 +58,7 @@ func TestEditLoad(t *testing.T) {
 		Reads:     &note.Read{Readers: filesystem.Readers{}},
 		Saves:     &note.Write{Readers: filesystem.Readers{}, Writers: filesystem.Writers{}},
 	}
+	api.show(v)
 	scan := usecase.Scan{
 		Readers:     filesystem.Readers{},
 		Vaults:      db.Vaults(),
@@ -74,7 +74,7 @@ func TestEditLoad(t *testing.T) {
 	}
 
 	reading := time.Now()
-	wait := begin(t.Context(), cfg, db, api, scan, follow, held, filesystem.Readers{}, nil, waking(time.Hour), &pending{}, io.Discard)
+	wait := begin(t.Context(), v, cfg, db, api, scan, follow, held, filesystem.Readers{}, nil, waking(time.Hour), &pending{}, io.Discard)
 	t.Cleanup(wait)
 	for !api.Ready.Load() && api.failure() == "" {
 		time.Sleep(50 * time.Millisecond)

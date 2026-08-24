@@ -22,7 +22,7 @@ func (a *API) Read(ctx context.Context, r *connect.Request[v1.ReadRequest]) (*co
 	if a.Reads == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
-	found, err := a.Reads.Execute(ctx, a.Vault, r.Msg.GetPath())
+	found, err := a.Reads.Execute(ctx, a.Showing(), r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -50,7 +50,7 @@ func (a *API) Write(ctx context.Context, r *connect.Request[v1.WriteRequest]) (*
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
 	defer a.Writing.done()
-	at, err := a.Saves.Save(ctx, a.Vault, r.Msg.GetPath(), r.Msg.GetBody(), seenOf(r.Msg.GetSeen()))
+	at, err := a.Saves.Save(ctx, a.Showing(), r.Msg.GetPath(), r.Msg.GetBody(), seenOf(r.Msg.GetSeen()))
 	if err == nil {
 		// What the person typed owes its vectors. Which chunks owe them is not
 		// carried: the debt is in the index, so several saves are one pass.
@@ -90,7 +90,7 @@ func (a *API) Create(ctx context.Context, r *connect.Request[v1.CreateRequest]) 
 	}
 	defer a.Writing.done()
 
-	made, err := a.Makes.Execute(ctx, a.Vault, note.NewNote{
+	made, err := a.Makes.Execute(ctx, a.Showing(), note.NewNote{
 		Title:  r.Msg.GetTitle(),
 		Folder: r.Msg.GetFolder(),
 		Links:  links,
@@ -126,7 +126,7 @@ func (a *API) Join(ctx context.Context, r *connect.Request[v1.JoinRequest]) (*co
 	}
 	defer a.Writing.done()
 
-	if err := a.Joins.Add(ctx, a.Vault, r.Msg.GetPath(), link); err != nil {
+	if err := a.Joins.Add(ctx, a.Showing(), r.Msg.GetPath(), link); err != nil {
 		// A join reads a note, splices its frontmatter and puts it back. A note
 		// that moved in between is left alone, and the client reads it again
 		// before it asks for this.
@@ -185,7 +185,7 @@ func (a *API) addressed(ctx context.Context, to string) (domain.Address, error) 
 	if a.Notes == nil {
 		return domain.Address{Scheme: domain.SchemeName, Value: domain.Basename(to)}, nil
 	}
-	return note.Addressed(ctx, a.Notes, a.Vault.ID, to)
+	return note.Addressed(ctx, a.Notes, a.Showing().ID, to)
 }
 
 // roleOf is the role a link carries to put the note at its other end in a seat.

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
@@ -17,19 +18,15 @@ import (
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 )
 
-// Opened is a vault put together and running: the questions a client may ask,
+// Opened is a window put together and running: the questions a client may ask,
 // and the pieces anything else working the same vault needs.
+//
+// The index and the embedder belong to the installation and are made once. The
+// passes behind a vault belong to that vault, and are taken down and built
+// again when another is opened.
 type Opened struct {
 	API   *API
-	Vault domain.Vault
 	Index *container.Index
-	// Refresh brings named notes up to date. Whatever changes a note calls it,
-	// so that what changed is findable before the change is reported done.
-	Refresh usecase.Refresh
-	// Recognising reads a scanned document for whoever asks. It is one job for
-	// the window and for an agent alike, so that what a person started through
-	// one of them is shown by the other.
-	Recognising *container.Recognising
 
 	// Embedder fills the index, and Asking turns a query into a vector. They
 	// are one object where the settings name one placement, and two placements
@@ -39,22 +36,62 @@ type Opened struct {
 	// by words alone.
 	Embedder port.Embedder
 	Asking   port.Embedder
-	// Settle is everything owed landing before anything is taken away. It is
-	// called while the window is still drawn, and calling it again is free. It
-	// answers false where a page is holding work a person is being asked about,
-	// and then nothing has been taken away and the vault is as it was.
-	Settle func(ctx context.Context) bool
-	// Answered is every page having written what it owes. It is what the window
-	// waits on while a person answers a question, and that wait is on a person
-	// and is not measured. It answers false where ctx ended or the vault was
-	// asked again.
-	Answered func(ctx context.Context) bool
-	// Close stops the scan, waits for it, and closes the index.
-	Close func() error
+
+	cfg      container.Config
+	registry port.VaultRegistry
+	tasks    *task.Tasks
+	out      io.Writer
+	// under is what every vault's passes run under.
+	under context.Context
+	wake  nudges
+	// vectors is why this installation embeds nothing, when it does not. It
+	// stands in the list of what is being done, and is put back there when a
+	// vault going takes its own entries out.
+	vectors error
+	// stopEmbedder gives back the models the installation is holding.
+	stopEmbedder func() error
+
+	// on is the half of the window that belongs to the vault it is showing, and
+	// is nothing while that vault is being changed.
+	on atomic.Pointer[showing]
+
+	// One settling runs at a time, and the second to arrive is refused.
+	mu    sync.Mutex
+	busy  bool
+	going bool
 }
+
+// showing is the half of the window that belongs to one vault: the passes
+// running behind it and what ends them.
+type showing struct {
+	scan        usecase.Scan
+	refresh     usecase.Refresh
+	recognising *container.Recognising
+	// stop ends every pass this vault started, and ended waits for them.
+	stop  context.CancelFunc
+	ended func()
+}
+
+// errGoing is a vault asked for in a window that has settled to close.
+var errGoing = errors.New("the window is closing")
+
+// errSettling is a vault asked for while the window is already settling what it
+// owes.
+var errSettling = errors.New("the window is settling what it owes")
+
+// errAsking is a vault asked for while a page holds work a person is being
+// asked about.
+var errAsking = errors.New("a page is holding work a person has to answer for")
+
+// errNoVault is a window standing on nothing: the vault it was showing was
+// taken down and neither it nor the one asked for came up.
+var errNoVault = errors.New("the window has no vault")
 
 // Open puts together everything the window needs: the vault it shows, the
 // questions it may ask, and a scan running behind it.
+//
+// asked is the vault a person named — a name, a path or an identity. Naming
+// none opens the one shown last.
 //
 // The scan is started and left running. A vault of a hundred thousand notes
 // takes a minute and a half, and the first note is answerable long before that.
@@ -63,22 +100,14 @@ type Opened struct {
 // clients write what only they hold and the writes in the air land. Closing
 // then stops the scan, waits for it, and closes the database — in that order,
 // because the database is what the scan writes to.
-func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, error) {
+func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer) (*Opened, error) {
 	registry, err := cfg.Registry()
 	if err != nil {
 		return nil, err
 	}
-	vaults, err := usecase.List{Registry: registry}.Execute()
+	first, err := chosen(cfg, registry, asked, out)
 	if err != nil {
 		return nil, err
-	}
-	if len(vaults) == 0 {
-		made, err := cfg.FirstVault(registry)
-		if err != nil {
-			return nil, err
-		}
-		fmt.Fprintf(out, "%s: a vault to write in, at %s\n", made.Name, made.Path)
-		vaults = []domain.Vault{made}
 	}
 
 	db, err := cfg.OpenIndex(ctx)
@@ -96,9 +125,10 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 	// compiled behind this, so the window is drawn while it arrives.
 	embedder, asking, closeEmbedder, why := cfg.Embedders(ctx, tasks)
 	if why != nil {
-		fmt.Fprintf(out, "not embedding %s: %v\n", vaults[0].Name, why)
-		// A placement that made no model is a vault with no vectors for as long
-		// as the window is open. It stands in the list under what stopped it.
+		fmt.Fprintf(out, "not embedding %s: %v\n", first.Name, why)
+		// A placement that made no model is an installation with no vectors for
+		// as long as the window is open. It stands in the list under what
+		// stopped it.
 		tasks.Set(task.Task{ID: makingVectors, Doing: "Indexing", Failed: why.Error()})
 	}
 	if closeEmbedder == nil {
@@ -107,25 +137,7 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 
 	wake := waking(settled)
 
-	watching, stop := context.WithCancel(ctx)
-	recognising := cfg.Recognising(watching, db.Sources(), tasks)
-
-	// What a recognition writes down is cut where every other cut happens. A
-	// document being read and a vault being scanned are then never two passes
-	// over the index at once.
-	owed := &pending{}
-	recognising.Cut = func(_ context.Context, v domain.Vault, path string) error {
-		owed.put(v, path)
-		raise(wake.read)
-		return nil
-	}
-
-	// A batch left with a proofreader outlives the run that left it, so one
-	// left before the application closed is collected when it opens.
-	go recognising.Collecting(watching, db.SourcesKnown(), collectedEvery, vaults...)
-
 	api := &API{
-		Vault:     vaults[0],
 		Notes:     db.Queries(),
 		Links:     db.Links(),
 		Listeners: following(),
@@ -176,44 +188,39 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		api.say(task.Task{ID: wordsAlone, Doing: "Answering by words alone", Failed: err.Error()})
 	})
 	api.Finds = &finds
-	scan := usecase.Scan{
-		Readers:      cfg.VaultReaders(),
-		Vaults:       db.Vaults(),
-		Notes:        db.NotesCutAt(cfg.Cutting()),
-		Known:        db.Queries(),
-		Maintenance:  db.Maintenance(),
-		RebuildIndex: cfg.RebuildIndex,
-	}
-	api.Scan = scan.Execute
 
-	// Following the vault is a use case; this adapter only says who hears about
-	// it. Whatever a change turns out to mean is decided in one place, so a
-	// second way of showing a vault does not decide it again.
-	held := &holding{NoteRepository: db.NotesCutAt(cfg.Cutting())}
-	refresh := usecase.Refresh{Readers: cfg.VaultReaders(), Notes: held}
-
-	// A note the window makes is level in the index before the answer comes
-	// back, so it is drawn as soon as it exists.
-	level := func(ctx context.Context, v domain.Vault, paths []string) error {
-		_, err := refresh.Execute(ctx, v, paths)
-		return err
+	opened := &Opened{
+		API:          api,
+		Index:        db,
+		Embedder:     embedder,
+		Asking:       asking,
+		cfg:          cfg,
+		registry:     registry,
+		tasks:        tasks,
+		out:          out,
+		under:        ctx,
+		wake:         wake,
+		vectors:      why,
+		stopEmbedder: closeEmbedder,
 	}
+	api.Scan = opened.scanning
+
 	api.Makes = &note.Create{
 		Writers:   cfg.VaultWriters(),
 		Names:     db.Queries(),
-		Index:     level,
+		Index:     opened.level,
 		Extension: filedUnder(cfg),
 	}
 	api.Joins = &note.Linking{
 		Readers: cfg.VaultReaders(),
 		Writers: cfg.VaultWriters(),
-		Index:   level,
+		Index:   opened.level,
 	}
 	api.Renames = &note.Rename{Move: note.Move{
 		Readers: cfg.VaultReaders(),
 		Writers: cfg.VaultWriters(),
 		Links:   api.Links,
-		Index:   level,
+		Index:   opened.level,
 		Moving: func(ctx context.Context, went domain.Went) {
 			_ = api.Viewing().Moved(ctx, went)
 		},
@@ -222,44 +229,348 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		Readers: cfg.VaultReaders(),
 		Writers: cfg.VaultWriters(),
 		Links:   api.Links,
-		Index:   level,
+		Index:   opened.level,
 	}
 
+	// Reading every file again is what this launch was asked for, and is not
+	// carried to a vault opened later.
+	if err := opened.arrive(first, cfg.RebuildIndex); err != nil {
+		_ = closeEmbedder()
+		_ = db.Close()
+		return nil, err
+	}
+	return opened, nil
+}
+
+// chosen is the vault this window opens: the one a person named, else the one
+// shown last, else the first this installation holds, else one made to write
+// in.
+func chosen(
+	cfg container.Config,
+	registry port.VaultRegistry,
+	asked string,
+	out io.Writer,
+) (domain.Vault, error) {
+	if asked != "" {
+		return usecase.Find{Registry: registry}.Execute(asked)
+	}
+	last, found, err := registry.Last()
+	if err != nil {
+		return domain.Vault{}, err
+	}
+	if found {
+		return last, nil
+	}
+	held, err := usecase.List{Registry: registry}.Execute()
+	if err != nil {
+		return domain.Vault{}, err
+	}
+	if len(held) > 0 {
+		return held[0], nil
+	}
+	made, err := cfg.FirstVault(registry)
+	if err != nil {
+		return domain.Vault{}, err
+	}
+	fmt.Fprintf(out, "%s: a vault to write in, at %s\n", made.Name, made.Path)
+	return made, nil
+}
+
+// Show puts another vault in the window. The index and the embedder belong to
+// the installation and stay; what belongs to the vault is taken down and built
+// again.
+//
+// Nothing is taken away until the vault asked for reads as a vault and every
+// page has written what only it holds. A page holding text a person has to
+// answer for calls the swap off, and the window stays on the vault it had.
+//
+// A vault that will not come up leaves the window on the one it was showing. A
+// window neither of them comes up in stands on nothing and says so.
+func (o *Opened) Show(ctx context.Context, v domain.Vault) error {
+	if v.ID == o.API.Showing().ID {
+		return nil
+	}
+	if err := readable(o.cfg, v); err != nil {
+		return err
+	}
+	if err := o.alone(); err != nil {
+		return err
+	}
+	defer o.free()
+
+	if !settling(ctx, &o.API.Leaving, &o.API.Writing) {
+		return errAsking
+	}
+
+	was := o.API.Showing()
+	o.leave()
+	o.forget()
+
+	err := o.arrive(v, false)
+	if err != nil {
+		if back := o.arrive(was, false); back != nil {
+			// The window is standing on nothing: it says so, and the door on
+			// writes stays shut.
+			o.API.show(domain.Vault{})
+			o.API.Failed.Store(back.Error())
+			return errors.Join(err, back)
+		}
+	}
+	// Writes are taken again: there is a vault to write in.
+	o.API.Writing.open()
+	// The round the settling was is over, and what a page holds from here is
+	// this vault's.
+	o.API.Leaving.over()
+	// Everything a page is holding was read in a vault that is no longer in
+	// front of it.
+	o.API.Listeners.tell(changed{reload: true})
+	return err
+}
+
+// arrive puts a vault in the window and builds everything that belongs to it.
+func (o *Opened) arrive(v domain.Vault, rebuild bool) error {
+	o.API.show(v)
+	// Recorded before the vault is built, so the next window opens on it. A
+	// list that could not be written is said and nothing more.
+	if err := o.registry.Opened(v.ID); err != nil {
+		fmt.Fprintf(o.out, "not recording %s as the vault opened: %v\n", v.Name, err)
+	}
+	on, err := o.begins(v, rebuild)
+	if err != nil {
+		return err
+	}
+	o.on.Store(on)
+	return nil
+}
+
+// begins builds the half of the window that belongs to one vault: the scan and
+// the watch behind it, the reading of the documents it holds, and the batches
+// left with a proofreader.
+func (o *Opened) begins(v domain.Vault, rebuild bool) (*showing, error) {
+	known, err := usecase.List{Registry: o.registry}.Execute()
+	if err != nil {
+		return nil, err
+	}
+
+	watching, stop := context.WithCancel(o.under)
+	recognising := o.cfg.Recognising(watching, o.Index.Sources(), o.tasks)
+
+	// What a recognition writes down is cut where every other cut happens. A
+	// document being read and a vault being scanned are then never two passes
+	// over the index at once.
+	owed := &pending{}
+	recognising.Cut = func(_ context.Context, of domain.Vault, path string) error {
+		owed.put(of, path)
+		raise(o.wake.read)
+		return nil
+	}
+
+	// A batch left with a proofreader outlives the run that left it, so one
+	// left before the application closed is collected when it opens. Every
+	// vault this installation holds is asked after.
+	go recognising.Collecting(watching, o.Index.SourcesKnown(), collectedEvery, known...)
+
+	scan := usecase.Scan{
+		Readers:      o.cfg.VaultReaders(),
+		Vaults:       o.Index.Vaults(),
+		Notes:        o.Index.NotesCutAt(o.cfg.Cutting()),
+		Known:        o.Index.Queries(),
+		Maintenance:  o.Index.Maintenance(),
+		RebuildIndex: rebuild,
+	}
+
+	// Following the vault is a use case; this adapter only says who hears about
+	// it. Whatever a change turns out to mean is decided in one place, so a
+	// second way of showing a vault does not decide it again.
+	held := &holding{NoteRepository: o.Index.NotesCutAt(o.cfg.Cutting())}
+	refresh := usecase.Refresh{Readers: o.cfg.VaultReaders(), Notes: held}
 	follow := usecase.Follow{
-		Watcher: cfg.VaultWatcher(),
+		Watcher: o.cfg.VaultWatcher(),
 		Refresh: refresh,
 		Scan:    scan,
 	}
 
-	wait := begin(watching, cfg, db, api, scan, follow, held, cfg.VaultReaders(), embedder, wake, owed, out)
+	ended := begin(watching, v, o.cfg, o.Index, o.API, scan, follow,
+		held, o.cfg.VaultReaders(), o.Embedder, o.wake, owed, o.out)
 
-	return &Opened{
-		API:         api,
-		Vault:       api.Vault,
-		Index:       db,
-		Refresh:     refresh,
-		Recognising: recognising,
-		Embedder:    embedder,
-		Asking:      asking,
-		Settle:      func(ctx context.Context) bool { return settling(ctx, &api.Leaving, &api.Writing) },
-		Answered:    func(ctx context.Context) bool { return answering(ctx, &api.Leaving) },
-		Close: func() error {
-			stop()
-			wait()
-			// A reading writes to the index, so it ends before the index does.
-			recognising.Wait()
-			// The documents held open for the window go with it, and each
-			// gives back the worker it was holding.
-			api.Viewer.close()
-			// The embedder goes after the work that uses it and before the
-			// database, which is the order they depend on each other in.
-			err := closeEmbedder()
-			if closed := db.Close(); err == nil {
-				err = closed
-			}
-			return err
-		},
+	return &showing{
+		scan:        scan,
+		refresh:     refresh,
+		recognising: recognising,
+		stop:        stop,
+		ended:       ended,
 	}, nil
+}
+
+// leave takes down the half of the window that belongs to the vault it is
+// showing.
+func (o *Opened) leave() {
+	on := o.on.Swap(nil)
+	if on == nil {
+		return
+	}
+	on.stop()
+	on.ended()
+	// A reading writes to the index, so it ends before anything reads what it
+	// wrote.
+	on.recognising.Wait()
+	// The documents held open go with the vault, and each gives back the worker
+	// it was holding.
+	if o.API.Viewer != nil {
+		o.API.Viewer.empty()
+	}
+}
+
+// forget is the vault that went leaving nothing of itself behind: what was said
+// about reading it, and the entries its passes left in the list of what is
+// being done.
+//
+// What stopped this installation from embedding at all is put back. It stands
+// for as long as the window is open.
+func (o *Opened) forget() {
+	o.API.Ready.Store(false)
+	o.API.Failed.Store("")
+	o.API.Unwatched.Store("")
+
+	for _, pass := range []string{walkingNotes, readingBooks, makingVectors, wordsAlone} {
+		o.API.finished(pass)
+	}
+	if o.vectors != nil {
+		o.API.say(task.Task{ID: makingVectors, Doing: "Indexing", Failed: o.vectors.Error()})
+	}
+}
+
+// alone takes the window for one settling. A swap and a window closing both
+// settle, one settling runs at a time, and the second to arrive is told so.
+func (o *Opened) alone() error {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+
+	switch {
+	case o.going:
+		return errGoing
+	case o.busy:
+		return errSettling
+	}
+	o.busy = true
+	return nil
+}
+
+func (o *Opened) free() {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	o.busy = false
+}
+
+// Settle is everything owed landing before anything is taken away. It is called
+// while the window is still drawn, and calling it again is free. It answers
+// false where a page is holding work a person is being asked about, and then
+// nothing has been taken away and the vault is as it was.
+//
+// A vault being opened settles too, and the close that arrives while it is
+// running is answered false: the window stays, and the next ask settles again.
+func (o *Opened) Settle(ctx context.Context) bool {
+	o.mu.Lock()
+	if o.going {
+		o.mu.Unlock()
+		return true
+	}
+	if o.busy {
+		o.mu.Unlock()
+		return false
+	}
+	o.busy = true
+	o.mu.Unlock()
+
+	settled := settling(ctx, &o.API.Leaving, &o.API.Writing)
+
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	o.busy = false
+	// A window that settled to go shows no other vault.
+	o.going = settled
+	return settled
+}
+
+// Answered is every page having written what it owes. It is what the window
+// waits on while a person answers a question, and that wait is on a person and
+// is not measured. It answers false where ctx ended or the vault was asked
+// again.
+func (o *Opened) Answered(ctx context.Context) bool { return answering(ctx, &o.API.Leaving) }
+
+// Close stops the passes behind the vault, waits for them, and closes the
+// index.
+func (o *Opened) Close() error {
+	o.leave()
+	if o.API.Viewer != nil {
+		o.API.Viewer.close()
+	}
+	// The embedder goes after the work that uses it and before the database,
+	// which is the order they depend on each other in.
+	err := o.stopEmbedder()
+	if closed := o.Index.Close(); err == nil {
+		err = closed
+	}
+	return err
+}
+
+// Showing is the vault the window has open.
+func (o *Opened) Showing() domain.Vault { return o.API.Showing() }
+
+// Refresh brings named notes up to date. Whatever changes a note calls it, so
+// that what changed is findable before the change is reported done.
+func (o *Opened) Refresh() usecase.Refresh {
+	if on := o.on.Load(); on != nil {
+		return on.refresh
+	}
+	return usecase.Refresh{
+		Readers: o.cfg.VaultReaders(),
+		Notes:   o.Index.NotesCutAt(o.cfg.Cutting()),
+	}
+}
+
+// Recognising reads a scanned document for whoever asks. It is one job for the
+// window and for an agent alike, so that what a person started through one of
+// them is shown by the other. Nothing while the window has no vault.
+func (o *Opened) Recognising() *container.Recognising {
+	if on := o.on.Load(); on != nil {
+		return on.recognising
+	}
+	return nil
+}
+
+// level brings named notes up to date in the index, through whatever is
+// following the vault they are in. A note the window makes is level before the
+// answer comes back, so it is drawn as soon as it exists.
+func (o *Opened) level(ctx context.Context, v domain.Vault, paths []string) error {
+	_, err := o.Refresh().Execute(ctx, v, paths)
+	return err
+}
+
+// scanning reads the whole vault.
+func (o *Opened) scanning(ctx context.Context, v domain.Vault) (usecase.ScanResult, error) {
+	on := o.on.Load()
+	if on == nil {
+		return usecase.ScanResult{}, errNoVault
+	}
+	return on.scan.Execute(ctx, v)
+}
+
+// readable is the vault being one this window can show: the folder reads as a
+// vault, and it carries the identity the list has for it.
+func readable(cfg container.Config, v domain.Vault) error {
+	identity := cfg.VaultIdentity()
+	if err := identity.Readable(v.Path); err != nil {
+		return err
+	}
+	carried, found, err := identity.Of(v.Path)
+	if err != nil {
+		return err
+	}
+	if !found || carried != v.ID {
+		return fmt.Errorf("%s is no longer the vault %s", v.Path, v.Name)
+	}
+	return nil
 }
 
 // filedUnder is the extension a note this vault holds is filed under. Empty is
@@ -366,6 +677,9 @@ func waking(still time.Duration) nudges {
 // because a nudge can be dropped while the pass is busy, and a document that
 // finished while another was being asked for is a book cut to the page it
 // reached.
+//
+// It belongs to the vault that was being read, and goes with it: a path read in
+// one vault is not cut under the vault that arrives.
 type pending struct {
 	mu    sync.Mutex
 	paths map[string]domain.Vault
@@ -408,6 +722,7 @@ func raise(nudge chan struct{}) {
 // working, and says that changes will not appear by themselves.
 func begin(
 	ctx context.Context,
+	v domain.Vault,
 	cfg container.Config,
 	db *container.Index,
 	api *API,
@@ -447,9 +762,9 @@ func begin(
 
 	var running sync.WaitGroup
 
-	watch, err := follow.Begin(ctx, api.Vault)
+	watch, err := follow.Begin(ctx, v)
 	if err != nil {
-		fmt.Fprintf(out, "not watching %s: %v\n", api.Vault.Name, err)
+		fmt.Fprintf(out, "not watching %s: %v\n", v.Name, err)
 		api.Unwatched.Store(err.Error())
 	}
 	if watch != nil {
@@ -477,7 +792,7 @@ func begin(
 		walk.OnProgress = func(res usecase.ScanResult) {
 			api.say(task.Task{ID: walkingNotes, Doing: "Reading the vault", Done: int64(res.Indexed)})
 		}
-		result, err := walk.Execute(ctx, api.Vault)
+		result, err := walk.Execute(ctx, v)
 
 		// The scan writes in groups from what it read, so its copy of a note
 		// lands last however early the note was read. Every note brought up to
@@ -497,12 +812,12 @@ func begin(
 		}
 
 		if len(under) > 0 {
-			if _, err := follow.Refresh.Execute(ctx, api.Vault, under); err != nil {
+			if _, err := follow.Refresh.Execute(ctx, v, under); err != nil {
 				trouble(err)
 			}
 		}
 
-		fmt.Fprintf(out, "%s: %d notes\n", api.Vault.Name, result.Seen)
+		fmt.Fprintf(out, "%s: %d notes\n", v.Name, result.Seen)
 		api.Ready.Store(true)
 		return true
 	}
@@ -516,7 +831,7 @@ func begin(
 		// to embed. Neither stops the window, and neither has to finish: an
 		// index is a cache.
 		if first() {
-			readSources(ctx, cfg, db, api, readers, embedder, out)
+			readSources(ctx, cfg, db, api, v, readers, embedder, out)
 		}
 
 		// What arrives while the window is open is read where the first reading
@@ -529,16 +844,16 @@ func begin(
 			case <-ctx.Done():
 				return
 			case <-wake.sources:
-				readSources(ctx, cfg, db, api, readers, embedder, out)
+				readSources(ctx, cfg, db, api, v, readers, embedder, out)
 			case <-wake.read:
 				// A batch of pages is on disk. What has been read of the
 				// document is cut and embedded while the rest of it is still
 				// being read.
 				if held := owed.take(); len(held) > 0 {
-					for path, v := range held {
-						cutSource(ctx, cfg, db, api, embedder, v, path)
+					for path, of := range held {
+						cutSource(ctx, cfg, db, api, embedder, of, path)
 					}
-					embedSources(ctx, cfg, db, api, readers, embedder)
+					embedSources(ctx, cfg, db, api, v, readers, embedder)
 				}
 			case <-wake.notes:
 				// Every write puts the pass off again: what was typed is
@@ -546,7 +861,7 @@ func begin(
 				quiet = time.After(wake.still)
 			case <-quiet:
 				quiet = nil
-				embedSources(ctx, cfg, db, api, readers, embedder)
+				embedSources(ctx, cfg, db, api, v, readers, embedder)
 			}
 		}
 	}()
@@ -618,11 +933,12 @@ func readSources(
 	cfg container.Config,
 	db *container.Index,
 	api *API,
+	v domain.Vault,
 	readers port.VaultReaders,
 	embedder port.Embedder,
 	out io.Writer,
 ) {
-	making, err := cfg.Searchable(ctx, db, embedder, api.Vault)
+	making, err := cfg.Searchable(ctx, db, embedder, v)
 	if err != nil {
 		api.say(task.Task{ID: readingBooks, Doing: "Reading books", Failed: err.Error()})
 		return
@@ -638,11 +954,11 @@ func readSources(
 	}
 
 	api.say(task.Task{ID: readingBooks, Doing: "Reading books"})
-	res, read := making.ReadBooks(ctx, api.Vault)
+	res, read := making.ReadBooks(ctx, v)
 	switch {
 	case read == nil:
 		if res.Extracted > 0 {
-			fmt.Fprintf(out, "%s: %d books, %d chunks\n", api.Vault.Name, res.Extracted, res.Chunks)
+			fmt.Fprintf(out, "%s: %d books, %d chunks\n", v.Name, res.Extracted, res.Chunks)
 		}
 		api.finished(readingBooks)
 	case errors.Is(read, context.Canceled):
@@ -654,7 +970,7 @@ func readSources(
 		api.say(task.Task{ID: readingBooks, Doing: "Reading books", Failed: read.Error()})
 	}
 
-	embedSources(ctx, cfg, db, api, readers, embedder)
+	embedSources(ctx, cfg, db, api, v, readers, embedder)
 }
 
 // cutSource cuts one source again from whatever its text now says.
@@ -700,6 +1016,7 @@ func embedSources(
 	cfg container.Config,
 	db *container.Index,
 	api *API,
+	v domain.Vault,
 	readers port.VaultReaders,
 	embedder port.Embedder,
 ) {
@@ -712,7 +1029,7 @@ func embedSources(
 	// and a total that grows as it goes is a count that never settles.
 	owing := int64(0)
 	if api.Progress != nil {
-		if held, embedded, err := api.Progress.Progress(ctx, api.Vault.ID, text(&api.Recipe)); err == nil {
+		if held, embedded, err := api.Progress.Progress(ctx, v.ID, text(&api.Recipe)); err == nil {
 			owing = max(0, held-embedded)
 		}
 	}
@@ -721,7 +1038,7 @@ func embedSources(
 		api.say(task.Task{ID: makingVectors, Doing: "Indexing", Failed: err.Error()})
 	}
 
-	making, err := cfg.Searchable(ctx, db, embedder, api.Vault)
+	making, err := cfg.Searchable(ctx, db, embedder, v)
 	if err != nil {
 		indexing(err)
 		return
@@ -738,7 +1055,7 @@ func embedSources(
 	// This pass says what it owes and what it has made. The source a vector is
 	// made from is named by the reading of that source.
 	api.say(task.Task{ID: makingVectors, Doing: "Indexing", Total: owing})
-	switch _, err := making.MakeVectors(ctx, api.Vault); {
+	switch _, err := making.MakeVectors(ctx, v); {
 	case err == nil, errors.Is(err, context.Canceled):
 		api.finished(makingVectors)
 	default:
@@ -747,6 +1064,3 @@ func embedSources(
 		indexing(err)
 	}
 }
-
-// Showing is the vault the window has open.
-func (a *API) Showing() domain.Vault { return a.Vault }

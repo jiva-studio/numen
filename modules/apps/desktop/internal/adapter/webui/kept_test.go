@@ -44,7 +44,7 @@ func TestAPageDrawnBeforeIsNotDrawnAgain(t *testing.T) {
 	}
 
 	// Nothing in memory, the way a window opened again begins.
-	api.Viewer.drawn = drawings()
+	api.Viewer.drawn.Store(drawings())
 
 	out := ask(handler, pageOf(book, 0, 400))
 	if out.Code != http.StatusOK {
@@ -89,7 +89,7 @@ func TestADocumentRewrittenIsDrawnAgain(t *testing.T) {
 	}
 	_, drawn, _ := from.counted()
 
-	at := filepath.Join(string(api.Vault.Path), book)
+	at := filepath.Join(string(api.Showing().Path), book)
 	if err := os.WriteFile(at, []byte("the bytes of another scan entirely"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +97,7 @@ func TestADocumentRewrittenIsDrawnAgain(t *testing.T) {
 	if err := os.Chtimes(at, later, later); err != nil {
 		t.Fatal(err)
 	}
-	api.Viewer.drawn = drawings()
+	api.Viewer.drawn.Store(drawings())
 
 	if out := ask(handler, pageOf(book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for the page again and got %d", out.Code)
