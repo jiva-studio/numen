@@ -88,10 +88,7 @@ export interface Words {
 const naming = () => crypto.randomUUID()
 
 export function windowing(declared: readonly Declared[], words: Words) {
-  /**
-   * What every kind is given. It is handed over before there is a window to
-   * ask anything of, and each of these reaches what is below when it is called.
-   */
+  /** What every kind is given, made before the kinds it is handed to. */
   const host: Host = {
     opens: (kind, at) => opens(kind, at),
     beside: (kind, at) => beside(kind, at),

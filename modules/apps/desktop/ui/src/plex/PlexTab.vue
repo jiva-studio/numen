@@ -2,8 +2,8 @@
 /**
  * A plex tab: the picture, and the menu on a node of it.
  *
- * Every gesture is handed to what the tab holds. The menu is drawn here
- * because it stands on a node of this picture and goes with it.
+ * Every gesture is handed to what the tab holds. The menu stands on a node of
+ * this picture and goes when the picture does.
  */
 import { Menu, Plex } from '@numen/ui'
 import type { MenuOpening, PlexRelatedSeat, PlexShowing } from '@numen/ui'

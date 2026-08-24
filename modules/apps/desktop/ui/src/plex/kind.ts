@@ -43,10 +43,7 @@ export interface Plexing {
 /** What one plex tab holds. */
 export type Held = ReturnType<typeof plexing>
 
-/**
- * A plex tab as the window keeps it. It is called after the note it stands on,
- * which is what tells two of them apart.
- */
+/** A plex tab as the window keeps it, called after the note it stands on. */
 export const plexKind = (opens: (at: string) => Held): Kind<Held> => ({
   kind: PLEX,
   opens,
@@ -95,7 +92,7 @@ export function plexing(view: Plexed, deps: Plexing) {
   const opens = (path: string, showing: PlexShowing = 'here') =>
     deps.opens(path, nameOf(path), showing)
 
-  /** A menu asked for on a node, and what standing anywhere else does to it. */
+  /** A menu asked for on a node, and one put away. */
   const asks = (asked: Asked) => {
     menu.value = asked
   }

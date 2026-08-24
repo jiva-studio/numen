@@ -2,8 +2,8 @@
 /**
  * An agent tab: one thread of talk, and the composer it is asked in.
  *
- * Why the agent cannot be reached is the window's to know, and it is said in
- * the panel that would have asked it.
+ * Why the agent cannot be reached is the window's to know, and it stands where
+ * the answers do.
  */
 import { Agent } from '@numen/ui'
 import type { Turn } from '@numen/ui'

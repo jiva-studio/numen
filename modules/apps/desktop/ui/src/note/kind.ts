@@ -164,7 +164,6 @@ export function noting(vault: Called, notes: Notes, drawings: Drawings, deps: No
     save: () => notes.save(path),
     keep: () => notes.keep(path),
     take: () => notes.take(path),
-    /** The editor of this note, as it is drawn and as it goes. */
     drew: (editor: unknown) => {
       if (!editor) {
         editors.delete(path)
@@ -177,10 +176,7 @@ export function noting(vault: Called, notes: Notes, drawings: Drawings, deps: No
       editors.get(path)?.measure()
       enters(path)
     },
-    /**
-     * The tab is closing. What is unwritten goes to the file first, so the tab
-     * stands until the note says it is done and the window closes it then.
-     */
+    /** The tab stands until the note says the write is done, and goes then. */
     shuts: () => {
       owed.delete(path)
       drawings.shut(path)

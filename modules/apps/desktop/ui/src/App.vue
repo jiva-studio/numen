@@ -169,10 +169,7 @@ const openNote = (path: string, title: string, showing: PlexShowing = 'here') =>
   noted.entersAt(path)
 }
 
-/**
- * A tab lets go of what it held. A kind that has something to finish first —
- * a note with a write on its way — keeps the tab until it has.
- */
+/** A tab lets go of what it held. A kind with something to finish keeps it. */
 const shut = (id: string, hold: () => void) => {
   if (!held.shut(id)) hold()
 }

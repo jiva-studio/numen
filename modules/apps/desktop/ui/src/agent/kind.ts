@@ -21,7 +21,7 @@ export interface Talking {
   looking(): string
   /** A source opened at stretches of its own text, the first of them in front. */
   opens(path: string, ...runs: readonly Run[]): void
-  /** Why the agent cannot be reached, said in the panel that would have asked it. */
+  /** Why the agent cannot be reached, which the tab says where its answers stand. */
   unreachable(): string
 }
 
