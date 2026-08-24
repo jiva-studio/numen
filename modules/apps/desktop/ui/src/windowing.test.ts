@@ -41,13 +41,20 @@ const kind = ({ keeps = false, ...over }: Partial<Kept> & { keeps?: boolean } = 
   return { declared: () => one, one, opened, ids, shut, seen }
 }
 
+/** A window told what kinds it draws, each of them made with what it is given. */
+const told = (declared: readonly ((host: Host) => Kept)[]) => {
+  const window = windowing(words)
+  window.declares(declared.map((one) => one(window.host)))
+  return window
+}
+
 /** Every tab on the screen, whichever pane it is in. */
 const onScreen = (layout: WorkspaceLayout) => panesOf(layout.root).flatMap((pane) => pane.tabs)
 
 describe('a tab of a kind', () => {
   it('is opened by the kind, drawn, and called what the kind calls it', async () => {
     const thing = kind()
-    const window = windowing([thing.declared], words)
+    const window = told([thing.declared])
 
     const id = await window.opens('thing', 'Note.md')
 
@@ -59,7 +66,7 @@ describe('a tab of a kind', () => {
 
   it('carries the word its kind gives it, and none where the kind gives none', async () => {
     const marked = kind({ marked: (held: { at: string }) => (held.at ? 'unsaved' : undefined) })
-    const window = windowing([marked.declared], words)
+    const window = told([marked.declared])
 
     const one = await window.opens('thing', 'Note.md')
     const other = await window.opens('thing')
@@ -70,7 +77,7 @@ describe('a tab of a kind', () => {
 
   it('is a tab of its own each time, for a kind that takes no identity', async () => {
     const thing = kind()
-    const window = windowing([thing.declared], words)
+    const window = told([thing.declared])
 
     const one = await window.opens('thing')
     const other = await window.opens('thing')
@@ -81,7 +88,7 @@ describe('a tab of a kind', () => {
 
   it('is the tab already open, for a kind whose identity is what it opens on', async () => {
     const thing = kind({ identity: (at: string) => at })
-    const window = windowing([thing.declared], words)
+    const window = told([thing.declared])
 
     const one = await window.opens('thing', 'Note.md')
     const again = await window.opens('thing', 'Note.md')
@@ -93,7 +100,7 @@ describe('a tab of a kind', () => {
   it('is a tab of its own where another kind names one after the same thing', async () => {
     const thing = kind({ identity: (at: string) => at })
     const other = kind({ kind: 'other', identity: (at: string) => at })
-    const window = windowing([thing.declared, other.declared], words)
+    const window = told([thing.declared, other.declared])
 
     const one = await window.opens('thing', 'Note.md')
     const another = await window.opens('other', 'Note.md')
@@ -104,7 +111,7 @@ describe('a tab of a kind', () => {
   })
 
   it('is nothing for a kind the window was never told about', async () => {
-    const window = windowing([kind().declared], words)
+    const window = told([kind().declared])
 
     expect(await window.opens('nothing')).toBe('')
     expect(onScreen(window.layout.value)).toEqual([])
@@ -112,7 +119,7 @@ describe('a tab of a kind', () => {
 
   it('is told the identity it will carry, so its kind can find it again', async () => {
     const thing = kind()
-    const window = windowing([thing.declared], words)
+    const window = told([thing.declared])
 
     const id = await window.opens('thing', 'Note.md')
 
@@ -125,7 +132,7 @@ describe('what a kind is given', () => {
     const other = kind({ kind: 'other' })
     let host: Host | null = null
     const thing = kind()
-    const window = windowing([(given: Host) => ((host = given), thing.one), other.declared], words)
+    const window = told([(given: Host) => ((host = given), thing.one), other.declared])
 
     const opened = await host!.opens('other', 'Note.md')
     const mine = await window.opens('thing')
@@ -140,7 +147,7 @@ describe('what a kind is given', () => {
 describe('a tab that closes', () => {
   it('lets go of what it held', async () => {
     const thing = kind()
-    const window = windowing([thing.declared], words)
+    const window = told([thing.declared])
     const id = await window.opens('thing', 'Note.md')
 
     expect(window.shut(id)).toBe(true)
@@ -150,7 +157,7 @@ describe('a tab that closes', () => {
 
   it('stays where it is while its kind has something to finish', async () => {
     const holding = kind({ keeps: true })
-    const window = windowing([holding.declared], words)
+    const window = told([holding.declared])
     const id = await window.opens('thing', 'Note.md')
 
     expect(window.shut(id)).toBe(false)
@@ -160,7 +167,7 @@ describe('a tab that closes', () => {
 
   it('goes when the kind that took it says it is done', async () => {
     const holding = kind({ keeps: true })
-    const window = windowing([holding.declared], words)
+    const window = told([holding.declared])
     const id = await window.opens('thing', 'Note.md')
     window.shut(id)
 
@@ -176,7 +183,7 @@ describe('a tab with nothing in it yet', () => {
     const thing = kind({ offers: 'New thing' })
     const other = kind({ kind: 'other', offers: 'New other' })
     const quiet = kind({ kind: 'quiet' })
-    const window = windowing([thing.declared, other.declared, quiet.declared], words)
+    const window = told([thing.declared, other.declared, quiet.declared])
 
     window.blanked('main')
 
@@ -189,7 +196,7 @@ describe('a tab with nothing in it yet', () => {
 
   it('is what it was told to be, standing where it stood', async () => {
     const thing = kind({ offers: 'New thing' })
-    const window = windowing([thing.declared], words)
+    const window = told([thing.declared])
     window.blanked('main')
     const blank = window.blanks.value[0] ?? ''
 
@@ -202,7 +209,7 @@ describe('a tab with nothing in it yet', () => {
 
   it('opens on what its kind had to make first', async () => {
     const thing = kind({ offers: 'New thing', makes: async () => 'Made.md' })
-    const window = windowing([thing.declared], words)
+    const window = told([thing.declared])
     window.blanked('main')
 
     await window.becomeIt(window.blanks.value[0] ?? '', 'thing')
@@ -212,7 +219,7 @@ describe('a tab with nothing in it yet', () => {
 
   it('stays blank when its kind made nothing', async () => {
     const thing = kind({ offers: 'New thing', makes: async () => '' })
-    const window = windowing([thing.declared], words)
+    const window = told([thing.declared])
     window.blanked('main')
     const blank = window.blanks.value[0] ?? ''
 
@@ -223,7 +230,7 @@ describe('a tab with nothing in it yet', () => {
   })
 
   it('goes on its own when it is closed with nothing in it', () => {
-    const window = windowing([kind().declared], words)
+    const window = told([kind().declared])
     window.blanked('main')
     const blank = window.blanks.value[0] ?? ''
 
@@ -235,7 +242,7 @@ describe('a tab with nothing in it yet', () => {
 describe('the tab now on screen', () => {
   it('is told, so what it holds has room to measure', async () => {
     const thing = kind()
-    const window = windowing([thing.declared], words)
+    const window = told([thing.declared])
     const id = await window.opens('thing', 'Note.md')
 
     window.shown(id)
@@ -245,7 +252,7 @@ describe('the tab now on screen', () => {
 
   it('is nothing to a window that no longer holds it', () => {
     const thing = kind()
-    const window = windowing([thing.declared], words)
+    const window = told([thing.declared])
 
     window.shown('gone')
 
@@ -256,7 +263,7 @@ describe('the tab now on screen', () => {
 describe('the window going', () => {
   it('says so to every tab, and waits for none of them', async () => {
     const thing = kind({ keeps: true })
-    const window = windowing([thing.declared], words)
+    const window = told([thing.declared])
     await window.opens('thing', 'One.md')
     await window.opens('thing', 'Two.md')
 
@@ -268,7 +275,7 @@ describe('the window going', () => {
   it('lets a kind that has its own way of going take it, and asks no more', async () => {
     const going: string[] = []
     const thing = kind({ gone: (held: { at: string }) => going.push(held.at) })
-    const window = windowing([thing.declared], words)
+    const window = told([thing.declared])
     await window.opens('thing', 'One.md')
 
     window.close()

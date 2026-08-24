@@ -90,9 +90,6 @@ export interface Host {
   holds<Held>(kind: string, id: string): Held | null
 }
 
-/** A kind, made knowing the window its tabs will be drawn in. */
-export type Declared = (host: Host) => Kept
-
 /** What the window itself says about its tabs. */
 export interface Words {
   /** What a tab with nothing in it yet is called. */
@@ -102,8 +99,11 @@ export interface Words {
 /** The identity a pane made by a split is filed under. */
 const naming = () => crypto.randomUUID()
 
-export function windowing(declared: readonly Declared[], words: Words) {
-  /** What every kind is given, made before the kinds it is handed to. */
+export function windowing(words: Words) {
+  /**
+   * What every kind is given. It is there before any kind is, so a kind is
+   * made with it and declared to the window it already has.
+   */
   const host: Host = {
     opens: (kind, at) => opens(kind, at),
     beside: (kind, at) => beside(kind, at),
@@ -114,8 +114,19 @@ export function windowing(declared: readonly Declared[], words: Words) {
     holds: <Held,>(kind: string, id: string) => holdsIn<Held>(id, kind),
   }
 
-  const kinds = declared.map((one) => one(host))
-  const byKind = new Map(kinds.map((one) => [one.kind, one]))
+  /** The kinds of tab this window draws, in the order they were declared. */
+  let kinds: readonly Kept[] = []
+  const byKind = new Map<string, Kept>()
+
+  /**
+   * The kinds this window draws. It is told once, before a tab of any of them
+   * is opened.
+   */
+  const declares = (told: readonly Kept[]) => {
+    kinds = told
+    for (const one of told) byKind.set(one.kind, one)
+  }
+
   /**
    * Every tab the window holds, each under the identity it opened with, in the
    * order the person was last in them.
@@ -268,6 +279,7 @@ export function windowing(declared: readonly Declared[], words: Words) {
     blanks,
     becomes,
     host,
+    declares,
     heldIn,
     holdsIn,
     opens,

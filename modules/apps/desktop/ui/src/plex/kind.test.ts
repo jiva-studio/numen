@@ -220,32 +220,25 @@ const window = (opening = 'Opening.md') => {
   /** Every time the vault was asked where it opens, and what it answered then. */
   const asked: string[] = []
   let first = opening
-  let plexes!: ReturnType<typeof plexKind>
 
   const makes = () => {
     const view = standing('')
     views.push(view)
     return view.view
   }
-  const held = windowing(
-    [
-      (host) => {
-        plexes = plexKind(host, makes, {
-          makes: making().makes,
-          ready: () => true,
-          opens: () => {},
-          asks: () => {},
-          opening: () => first,
-          first: async () => {
-            asked.push(first)
-            return first
-          },
-        })
-        return plexes.kind
-      },
-    ],
-    { newTab: 'New tab' },
-  )
+  const held = windowing({ newTab: 'New tab' })
+  const plexes = plexKind(held.host, makes, {
+    makes: making().makes,
+    ready: () => true,
+    opens: () => {},
+    asks: () => {},
+    opening: () => first,
+    first: async () => {
+      asked.push(first)
+      return first
+    },
+  })
+  held.declares([plexes.kind])
 
   /** A plex tab of this window, opened on what it was given. */
   const holds = async (at = '') => {

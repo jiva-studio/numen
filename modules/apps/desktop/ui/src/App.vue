@@ -81,46 +81,34 @@ const noted = noting(core, notes, drawings, {
   },
 })
 
-/** The plex tabs, and the one the person is looking at. */
-let plexes: ReturnType<typeof plexKind>
-/** The agent tabs, and the one a question about a note is put in. */
-let agents: ReturnType<typeof agentKind>
-
-/**
- * The kinds of tab this window draws, in the order a blank tab offers them.
- *
- * Each is given what it reads of the vault and what it may ask of the window.
- * Nothing else here knows what any of them holds.
- */
-const held = windowing(
-  [
-    () => noted.kind,
-    (host) => {
-      plexes = plexKind(host, () => standing(core), {
-        makes: making,
-        ready: () => !failure.value && !indexing.value,
-        opens: (path, title, showing) => openNote(path, title, showing),
-        asks: (text) => void agents.asks(text),
-        opening: () => window.opening.value,
-        first: () => window.first(),
-      })
-      return plexes.kind
-    },
-    (host) => {
-      agents = agentKind(host, () =>
-        talking(conversation(agent, words, named(CONVERSATION)), {
-          looking: () => plexes.looking(),
-          opens: (path, ...runs) => void opensAt(path, ...runs),
-          unreachable: () => unreachable.value,
-        }),
-      )
-      return agents.kind
-    },
-    () => documentKind((path) => documenting(reading(documents, path))),
-  ],
-  words,
-)
+/** The tabs of this window, whatever kind each of them holds. */
+const held = windowing(words)
 const { layout, blanks, becomes } = held
+
+/** The plex tabs, and the one the person is looking at. */
+const plexes = plexKind(held.host, () => standing(core), {
+  makes: making,
+  ready: () => !failure.value && !indexing.value,
+  opens: (path, title, showing) => openNote(path, title, showing),
+  asks: (text) => void agents.asks(text),
+  opening: () => window.opening.value,
+  first: () => window.first(),
+})
+
+/** The agent tabs, and the one a question about a note is put in. */
+const agents = agentKind(held.host, () =>
+  talking(conversation(agent, words, named(CONVERSATION)), {
+    looking: () => plexes.looking(),
+    opens: (path, ...runs) => void opensAt(path, ...runs),
+    unreachable: () => unreachable.value,
+  }),
+)
+
+/** The document tabs, each reading the document it is filed at. */
+const documented = documentKind((path) => documenting(reading(documents, path)))
+
+/** The kinds this window draws, in the order a blank tab offers them. */
+held.declares([noted.kind, plexes.kind, agents.kind, documented])
 
 /** The palette: one keystroke, and everything the words typed turn up. */
 const palette = finding(core, words)

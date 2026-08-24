@@ -48,20 +48,13 @@ const tab = (
 /** A window of agent tabs, with a talk of its own for each. */
 const tabs = () => {
   const talks: ReturnType<typeof tab>[] = []
-  let agents!: ReturnType<typeof agentKind>
-  const held = windowing(
-    [
-      (host) => {
-        agents = agentKind(host, () => {
-          const one = tab()
-          talks.push(one)
-          return one.held
-        })
-        return agents.kind
-      },
-    ],
-    { newTab: 'New tab' },
-  )
+  const held = windowing({ newTab: 'New tab' })
+  const agents = agentKind(held.host, () => {
+    const one = tab()
+    talks.push(one)
+    return one.held
+  })
+  held.declares([agents.kind])
 
   /** An agent tab of this window, and what it holds. */
   const holds = async () => {
