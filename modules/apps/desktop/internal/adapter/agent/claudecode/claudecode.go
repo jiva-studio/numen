@@ -271,15 +271,13 @@ func (a *Agent) command() (string, []string) {
 // folder an installer writes to is named here. A leading ~ is this person's
 // home, and a * is expanded.
 //
-// A mac carries programs inside application bundles, and the one an installer
-// leaves there holds the command line under the name it is started by.
+// A mac carries programs inside application bundles, and the bundle the
+// command line's installer leaves there holds a link to it.
 var places = []string{
 	"~/.local/bin/claude",
 	"~/.claude/local/claude",
 	"~/Applications/Claude Code URL Handler.app/Contents/MacOS/claude",
 	"/Applications/Claude Code URL Handler.app/Contents/MacOS/claude",
-	"~/Applications/Claude.app/Contents/MacOS/claude",
-	"/Applications/Claude.app/Contents/MacOS/claude",
 	"~/.bun/bin/claude",
 	"~/.volta/bin/claude",
 	"~/.npm-global/bin/claude",
@@ -332,10 +330,22 @@ func found(home string, places []string) string {
 	return ""
 }
 
-// runnable is a file with an execute bit on it.
+// runnable is a file with an execute bit on it, held under the name it was
+// looked for by.
+//
+// A mac filesystem answers to a name in any case, so the folder is asked which
+// name it keeps.
 func runnable(path string) bool {
 	about, err := os.Stat(path)
-	return err == nil && about.Mode().IsRegular() && about.Mode().Perm()&0o111 != 0
+	if err != nil || !about.Mode().IsRegular() || about.Mode().Perm()&0o111 == 0 {
+		return false
+	}
+	entries, err := os.ReadDir(filepath.Dir(path))
+	if err != nil {
+		return false
+	}
+	name := filepath.Base(path)
+	return slices.ContainsFunc(entries, func(e os.DirEntry) bool { return e.Name() == name })
 }
 
 // brought is the tools the agent may use besides this vault's own: it may look

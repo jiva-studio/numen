@@ -144,6 +144,7 @@ func claude(
 		}
 	}
 	return &claudecode.Agent{
+		Command:             cfg.Agent.Claude.Command,
 		Root:                root,
 		Tools:               claudecode.Endpoint{URL: url, Token: secret},
 		Allowed:             []string{claudecode.Tool("*")},

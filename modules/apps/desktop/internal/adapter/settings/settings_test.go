@@ -266,6 +266,18 @@ func TestAnUntouchedInstallationCarriesAStepCount(t *testing.T) {
 	}
 }
 
+// An installation the folders looked in do not cover names the command line
+// itself, and it is started as written.
+func TestTheCommandLineCanBeNamed(t *testing.T) {
+	cfg, err := settings.At(write(t, `{"agent":{"claude":{"command":["/opt/claude/bin/claude"]}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := cfg.Agent.Claude.Command; len(got) != 1 || got[0] != "/opt/claude/bin/claude" {
+		t.Errorf("got %q", got)
+	}
+}
+
 // One field named leaves the rest of its section alone.
 func TestOneAgentFieldKeepsTheRest(t *testing.T) {
 	was := settings.Defaults().Agent.Claude.MaxSteps

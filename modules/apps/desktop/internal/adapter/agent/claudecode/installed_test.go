@@ -72,6 +72,18 @@ func TestWhatCannotBeRunIsNotTheCommandLine(t *testing.T) {
 	}
 }
 
+// A mac filesystem answers to a name in any case, and the command line is the
+// file held under that name.
+func TestAProgramUnderAnotherCaseIsNotTheCommandLine(t *testing.T) {
+	onlyPlaces(t, "~/Applications/Claude.app/Contents/MacOS/claude")
+	home := t.TempDir()
+	program(t, filepath.Join(home, "Applications", "Claude.app", "Contents", "MacOS", "Claude"))
+
+	if got := found(home, places); got != "" {
+		t.Errorf("found %q, want nothing", got)
+	}
+}
+
 // Nothing is looked up under a home that is not known.
 func TestNoHomeMeansNoHomePlaces(t *testing.T) {
 	if got := found("", []string{"~/.local/bin/claude"}); got != "" {
