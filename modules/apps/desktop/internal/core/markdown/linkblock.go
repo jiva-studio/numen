@@ -230,7 +230,7 @@ func (d *Document) PointLinksAt(from domain.Address, to string) (int, error) {
 		if !ok {
 			continue
 		}
-		written, err := scalar(to)
+		written, err := scalarLike(asItWasWritten(e.address.Value, to), e.address.Style)
 		if err != nil {
 			return moved, err
 		}
@@ -240,15 +240,19 @@ func (d *Document) PointLinksAt(from domain.Address, to string) (int, error) {
 	return moved, nil
 }
 
-// scalarSpan is the bytes one plain scalar occupies, so that changing a value
-// leaves everything else on its line — a trailing comment, the spacing, the
-// other keys of the entry — exactly where it was.
+// scalarSpan is the bytes one scalar occupies, so that changing a value leaves
+// everything else on its line — a trailing comment, the spacing, the other keys
+// of the entry — exactly where it was.
 //
-// Only a scalar written plainly is spliced. A quoted or folded one is where the
-// column and the length stop agreeing, and guessing at its extent is how a
-// rename truncates somebody's sentence.
+// The span covers the whole token, quotes and all. A name in double brackets
+// opens with `[`, which reads as a sequence unless it is quoted, so the form a
+// person writes a link in is a quoted one and a rename has to reach it.
+//
+// A scalar written over lines of its own — with `|`, with `>`, or a quoted one
+// carried across a line break — is not one token on one line. Its link stays as
+// it was written and shows as a problem.
 func (d *Document) scalarSpan(node *yaml.Node) (start, end int, ok bool) {
-	if node.Kind != yaml.ScalarNode || node.Style != 0 {
+	if node.Kind != yaml.ScalarNode {
 		return 0, 0, false
 	}
 	lines := lineOffsets(d.front)
@@ -256,11 +260,60 @@ func (d *Document) scalarSpan(node *yaml.Node) (start, end int, ok bool) {
 		return 0, 0, false
 	}
 	start = lines[node.Line-1] + node.Column - 1
-	end = start + len(node.Value)
-	if start < 0 || end > len(d.front) || string(d.front[start:end]) != node.Value {
+	if start < 0 || start >= len(d.front) {
+		return 0, 0, false
+	}
+
+	switch {
+	case node.Style == 0:
+		end = start + len(node.Value)
+		if end > len(d.front) || string(d.front[start:end]) != node.Value {
+			return 0, 0, false
+		}
+	case node.Style&yaml.SingleQuotedStyle != 0:
+		end, ok = quotedEnd(d.front, start, '\'')
+	case node.Style&yaml.DoubleQuotedStyle != 0:
+		end, ok = quotedEnd(d.front, start, '"')
+	default:
+		return 0, 0, false
+	}
+	if node.Style != 0 && !ok {
+		return 0, 0, false
+	}
+
+	// What the token says, read back. A span that does not say what the node
+	// said is the wrong span, and nothing is written over.
+	var said string
+	if err := yaml.Unmarshal(d.front[start:end], &said); err != nil || said != node.Value {
 		return 0, 0, false
 	}
 	return start, end, true
+}
+
+// quotedEnd is where a quoted scalar ends, counting from the quote it opens
+// with. Inside a single-quoted one a doubled quote is a quote; inside a
+// double-quoted one a backslash escapes what follows.
+func quotedEnd(front []byte, start int, quote byte) (int, bool) {
+	if front[start] != quote {
+		return 0, false
+	}
+	for at := start + 1; at < len(front); at++ {
+		switch front[at] {
+		case '\\':
+			if quote == '"' {
+				at++
+			}
+		case '\n':
+			return 0, false
+		case quote:
+			if quote == '\'' && at+1 < len(front) && front[at+1] == '\'' {
+				at++
+				continue
+			}
+			return at + 1, true
+		}
+	}
+	return 0, false
 }
 
 // splice puts bytes in place of a range of the frontmatter.
@@ -384,6 +437,43 @@ func scalar(value string) (string, error) {
 		return "", err
 	}
 	return strings.TrimRight(out.String(), "\n"), nil
+}
+
+// asItWasWritten is a name in the notation the name it replaces was in. Double
+// brackets are how a person writes a link, and an alias after `|` or a place
+// after `#` is theirs: the target is what moved, and the rest is left standing.
+func asItWasWritten(was, to string) string {
+	if !strings.HasPrefix(was, "[[") || !strings.HasSuffix(was, "]]") || len(was) < 4 {
+		return to
+	}
+	return "[[" + to + keptAfterTarget(was[2:len(was)-2]) + "]]"
+}
+
+// scalarLike is a value spelled the way the value it replaces was spelled. How
+// somebody quotes their own frontmatter is theirs, and a rename that changed
+// every link it touched from one quote to the other would be a diff nobody
+// asked for. A style the value cannot be written in is written as YAML has to
+// spell it.
+func scalarLike(value string, style yaml.Style) (string, error) {
+	if style == 0 {
+		return scalar(value)
+	}
+	var out bytes.Buffer
+	enc := yaml.NewEncoder(&out)
+	enc.SetIndent(2)
+	if err := enc.Encode(&yaml.Node{Kind: yaml.ScalarNode, Style: style, Value: value}); err != nil {
+		return scalar(value)
+	}
+	if err := enc.Close(); err != nil {
+		return scalar(value)
+	}
+	written := strings.TrimRight(out.String(), "\n")
+
+	var said string
+	if err := yaml.Unmarshal([]byte(written), &said); err != nil || said != value {
+		return scalar(value)
+	}
+	return written, nil
 }
 
 // Links are the relationships written in the `links:` block. Links written in
