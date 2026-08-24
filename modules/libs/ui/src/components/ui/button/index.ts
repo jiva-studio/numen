@@ -4,25 +4,31 @@ import { cva } from 'class-variance-authority'
 export { default as Button } from './Button.vue'
 
 /**
- * Hover is a brightness filter, so a variant sets its colours once and they
- * hold in both themes. Focus wears the ring at the width the tokens name,
- * which is the treatment every focusable thing in this library uses.
+ * Hover mixes a little of a variant's own text into its ground, so one
+ * expression darkens a light button and lightens a dark one. Focus wears the
+ * ring at the width the tokens name, which is the treatment every focusable
+ * thing in this library uses.
  */
 export const buttonVariants = cva(
   [
     'inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap',
     'font-sans text-base font-medium',
-    'cursor-pointer transition-[filter,background-color,color] duration-100 ease-numen',
+    'cursor-pointer transition-[background-color,color] duration-100 ease-numen',
     'outline-none focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring',
-    'hover:brightness-[var(--numen-hover-brightness)]',
     'disabled:pointer-events-none disabled:opacity-50',
     '[&_svg]:pointer-events-none [&_svg]:shrink-0',
   ],
   {
     variants: {
       variant: {
-        solid: 'bg-accent text-accent-ink',
-        outline: 'border border-rule bg-raised text-ink',
+        solid: [
+          'bg-accent text-accent-ink',
+          'hover:bg-[color-mix(in_oklab,var(--numen-focus-bg),var(--numen-focus-fg)_8%)]',
+        ],
+        outline: [
+          'border border-rule bg-raised text-ink',
+          'hover:bg-[color-mix(in_oklab,var(--numen-node-bg),var(--numen-node-fg)_8%)]',
+        ],
         ghost: 'text-ink hover:bg-raised',
       },
       size: {

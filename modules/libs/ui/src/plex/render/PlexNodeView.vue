@@ -213,15 +213,20 @@ const hue = computed(() => ({
 
 <style scoped>
 /* No transition on the position — it comes from the frame, and a CSS one here
-   would race it. Hover is a filter so that it leaves the box's own colours
-   alone: the fill is a token and the outline carries the seat's hue. */
+   would race it. */
 .plex__node {
   cursor: pointer;
-  transition: filter var(--numen-motion-hover) var(--numen-easing);
 }
 
-.plex__node:hover {
-  filter: brightness(var(--numen-hover-brightness));
+/* Hover mixes a little of a node's own text into the ground under it, which
+   darkens a light node and lightens a dark one. The outline is left to the
+   seat's hue, and the focused node is painted from the pair it wears. */
+.plex__node:hover .plex__box {
+  fill: color-mix(in oklab, var(--numen-node-bg), var(--numen-node-fg) 8%);
+}
+
+.plex__node--focus:hover .plex__box {
+  fill: color-mix(in oklab, var(--numen-focus-bg), var(--numen-focus-fg) 8%);
 }
 
 .plex__node--focus {

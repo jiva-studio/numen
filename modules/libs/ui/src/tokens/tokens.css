@@ -47,7 +47,6 @@
   --numen-node-bg: light-dark(#ffffff, #23262a);
   --numen-node-fg: light-dark(#1d1f22, #dfe2e6);
   --numen-node-border: light-dark(#d8d9dd, #34383e);
-  --numen-hover-brightness: light-dark(0.965, 1.16);
 
   --numen-focus-bg: light-dark(#1d1f22, #e8eaee);
   --numen-focus-fg: light-dark(#fbfbfa, #17181a);
