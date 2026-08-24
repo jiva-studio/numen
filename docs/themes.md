@@ -178,10 +178,16 @@ Nothing bounds a theme to the first block. A palette stays in it.
 | --- | --- |
 | `preset:numen` | this product's own palette, in two halves. |
 | `preset:catppuccin` | Latte in the light, Mocha in the dark. |
+| `preset:github` | Light Default in the light, Dark Default in the dark. |
 | `preset:gruvbox` | two halves, orange the accent. |
 | `preset:solarized` | two halves, one set of accents across both. |
+| `preset:ayu` | two halves, yellow the accent across both. |
+| `preset:tokyo-night` | Tokyo Night in the dark, Tokyo Night Light in the light. |
 | `preset:dracula` | dark, pinned. |
 | `preset:nord` | dark, pinned. |
+| `preset:one-dark` | dark, pinned: Atom's hues on One Dark Pro's grounds. |
+| `preset:monokai` | dark, pinned: the original, as Visual Studio Code sets it. |
+| `preset:cobalt2` | dark, pinned: yellow on navy. |
 | `preset:amber` | dark, pinned: four colours, and the rest derived from them. |
 
 Each is its publisher's palette from that publisher's own source; what a
