@@ -198,6 +198,25 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		Writers: cfg.VaultWriters(),
 		Index:   level,
 	}
+	api.Renames = &note.Rename{
+		Readers: cfg.VaultReaders(),
+		Writers: cfg.VaultWriters(),
+		Links:   api.Links,
+		Index:   level,
+		// Where the note went reaches the clients, so a tab open on the name it
+		// had follows the file.
+		Moving: func(ctx context.Context, went domain.Went) {
+			_ = api.Viewing().Moved(ctx, went)
+		},
+	}
+	// Nothing is told where a removed note went: a note in the trash is a note
+	// out of the vault.
+	api.Removes = &note.Remove{
+		Readers: cfg.VaultReaders(),
+		Writers: cfg.VaultWriters(),
+		Links:   api.Links,
+		Index:   level,
+	}
 
 	follow := usecase.Follow{
 		Watcher: cfg.VaultWatcher(),

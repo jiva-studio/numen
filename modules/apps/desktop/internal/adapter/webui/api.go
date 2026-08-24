@@ -65,6 +65,12 @@ type API struct {
 	Makes *note.Create
 	Joins *note.Linking
 
+	// Renames gives a note a different name, and Removes takes one out of the
+	// vault. A build without them answers that a note cannot be renamed or
+	// removed here.
+	Renames *note.Rename
+	Removes *note.Remove
+
 	// Finds is how the window searches the text the vault holds, by the words
 	// in it and by what it means. A build without one answers that it cannot be
 	// searched, and the names a vault holds are answered all the same.

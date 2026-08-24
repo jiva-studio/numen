@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 
 	"connectrpc.com/connect"
 
@@ -238,6 +239,8 @@ func refOf(at *v1.Fingerprint) domain.FileRef {
 // question for the person.
 func refusedBy(err error) (v1.Refusal, bool) {
 	switch {
+	case errors.Is(err, fs.ErrNotExist):
+		return v1.Refusal_REFUSAL_MISSING, true
 	case errors.Is(err, note.ErrTooLarge):
 		return v1.Refusal_REFUSAL_TOO_LARGE, true
 	case errors.Is(err, note.ErrUnreadable):

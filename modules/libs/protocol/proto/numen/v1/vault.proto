@@ -81,6 +81,16 @@ service VaultService {
   // alone: a link is one end's account of a relationship.
   rpc Join(JoinRequest) returns (JoinResponse);
 
+  // Rename gives a note a different name. A note is shown by its title, else by
+  // its first level-one heading, else by its filename: whichever of the three
+  // names it is brought into line, and the file is renamed with it.
+  rpc Rename(RenameRequest) returns (RenameResponse);
+
+  // Remove takes a note out of the vault, into the trash it can be brought back
+  // from. The links that pointed at it are left as they were written: a link is
+  // not wrong because the note it names is gone.
+  rpc Remove(RemoveRequest) returns (RemoveResponse);
+
   // Quitting says the window is going, for as long as the caller listens. A
   // caller holding work that is only in its own memory writes it now and
   // answers with Flushed.
@@ -118,6 +128,9 @@ enum Refusal {
 
   // A file is already where the note would be made. Nothing is written.
   REFUSAL_OCCUPIED = 7;
+
+  // The title leaves nothing a file can be named after. Nothing is written.
+  REFUSAL_UNNAMEABLE = 8;
 }
 
 // Note is a note as something else refers to it.
@@ -534,6 +547,95 @@ message JoinResponse {
   // Set when the note changed between being read and being written. Nothing
   // was written, and the caller reads the note again before asking for this.
   bool changed = 2;
+}
+
+// Naming is which of the three a note is shown by, and so which one a rename
+// wrote.
+enum Naming {
+  NAMING_UNSPECIFIED = 0;
+
+  // The `title` key of the frontmatter.
+  NAMING_FRONTMATTER = 1;
+
+  // The first level-one heading of the prose.
+  NAMING_HEADING = 2;
+
+  // The filename, which a rename moves and does not write.
+  NAMING_FILENAME = 3;
+}
+
+message RenameRequest {
+  // The note to rename.
+  string path = 1;
+
+  // What the note is called from now on. The file is named after it.
+  string title = 2;
+}
+
+message RenameResponse {
+  // Where the note is filed. The note is brought into line before the file is,
+  // so a refused move answers with the path the note still has.
+  string path = 1;
+
+  // What the note is called.
+  string title = 2;
+
+  // Which of the three the rename wrote.
+  Naming by = 3;
+
+  // What the file did. Absent when it stayed where it was.
+  optional Moved moved = 4;
+
+  // Set when the note was not renamed, and why.
+  optional Refusal refusal = 5;
+}
+
+// Moved is a file under a different name, and what that did to the links
+// written by the name it had.
+message Moved {
+  string from = 1;
+  string to = 2;
+
+  // The notes whose link stopped resolving and was written again, by name.
+  repeated string repaired = 3;
+
+  // The links that resolve to a different note now. They are not broken and
+  // are not repaired: this is what two notes sharing a name does, and it is
+  // the person's to settle.
+  repeated Retargeted retargeted = 4;
+}
+
+// Retargeted is one link that means something else now.
+message Retargeted {
+  // The note the link is written in.
+  string in = 1;
+
+  // What the link is written by: a name, or the path of a note. It is what
+  // names the link to the person.
+  string target = 2;
+
+  // The note it reaches now.
+  string now = 3;
+}
+
+message RemoveRequest {
+  // The note to remove.
+  string path = 1;
+
+  // Destroy takes the file off the disk. Nothing brings it back.
+  bool destroy = 2;
+}
+
+message RemoveResponse {
+  // Where the note sits in the trash. Empty when it was destroyed, and when
+  // nothing was removed.
+  string trashed = 1;
+
+  // The notes whose links pointed here and now reach nothing.
+  repeated string dangling = 2;
+
+  // Set when the note was not removed, and why.
+  optional Refusal refusal = 3;
 }
 
 message QuittingRequest {}
