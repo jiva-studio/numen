@@ -22,6 +22,13 @@ type Config struct {
 
 // Claude is how Claude Code is run.
 type Claude struct {
+	// Command starts it: the command line's path, and anything it is started
+	// through. Empty asks the path, then the folders its installers write to.
+	//
+	// Worth naming: an installation the folders do not cover, and one machine
+	// carrying several.
+	Command []string `json:"command"`
+
 	// Model is which of its models answers — `opus`, `sonnet`, or a full name.
 	// Empty takes whatever that installation answers with.
 	//
@@ -52,13 +59,15 @@ func Defaults() Config {
 // UnmarshalJSON keeps whatever the defaults set for the fields the file omits.
 func (c *Claude) UnmarshalJSON(raw []byte) error {
 	var f struct {
-		Model               *string `json:"model"`
-		MaxSteps            *int    `json:"max_steps"`
-		ReadsHooksAndSkills *bool   `json:"reads_hooks_and_skills"`
+		Command             *[]string `json:"command"`
+		Model               *string   `json:"model"`
+		MaxSteps            *int      `json:"max_steps"`
+		ReadsHooksAndSkills *bool     `json:"reads_hooks_and_skills"`
 	}
 	if err := unmarshal(raw, &f); err != nil {
 		return err
 	}
+	assign(&c.Command, f.Command)
 	assign(&c.Model, f.Model)
 	assign(&c.MaxSteps, f.MaxSteps)
 	assign(&c.ReadsHooksAndSkills, f.ReadsHooksAndSkills)
