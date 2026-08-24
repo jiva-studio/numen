@@ -5,7 +5,8 @@
  * out of sight, where there is none. What is drawn says so when it appears, and
  * measures again then.
  */
-import type { Reading, Run } from '../reading'
+import type { Run } from '../core'
+import type { Reading } from '../reading'
 import type { Host, Kind } from '../windowing'
 import { DOCUMENT } from '../workspace'
 import DocumentTab from './DocumentTab.vue'

@@ -9,7 +9,7 @@
  * without a screen.
  */
 import type { Notice } from '@numen/ui'
-import type { Task } from './showing'
+import type { Task } from './core'
 
 /** What the vault says about itself that the corner has anything to say about. */
 export interface Reading {

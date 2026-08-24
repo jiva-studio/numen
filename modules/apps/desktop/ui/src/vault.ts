@@ -10,7 +10,7 @@ import { Counting, Owed, Refusal, VaultService, Way as Ways } from '@numen/proto
 import { asSeat } from './plex'
 import type { Asking, Way } from './finding'
 import type { Documents, Marked, Sheet } from './reading'
-import type { Answered, Core, Made, NewLink, Refused } from './showing'
+import type { Answered, Core, Made, NewLink, Refused } from './core'
 
 export const vault = createClient(
   VaultService,

@@ -18,7 +18,7 @@ import {
   type Tab,
   type Went,
 } from './tab'
-import type { Answered, Refused } from './showing'
+import type { Answered, Refused } from './core'
 
 /** One open note as the window draws it. */
 export interface Editing {

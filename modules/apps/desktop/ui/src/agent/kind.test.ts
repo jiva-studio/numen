@@ -9,7 +9,7 @@ import { ref } from 'vue'
 import type { Turn } from '@numen/ui'
 import { agentKind, talking, type Held } from './kind'
 import type { Conversation } from '../conversation'
-import type { Run } from '../reading'
+import type { Run } from '../core'
 import { windowing } from '../windowing'
 import { AGENT } from '../workspace'
 

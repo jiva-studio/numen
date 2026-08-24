@@ -10,6 +10,7 @@
  * Nothing happens here. What is decided is the change each note is drawn with,
  * and the interval a caller arms.
  */
+import type { Said } from './core'
 
 /** What is being drawn over one note. */
 export interface Change {
@@ -20,16 +21,6 @@ export interface Change {
   readonly to: number
   /** What is going in where that stretch stands. */
   readonly text: string
-}
-
-/** One report of a change being made. */
-export interface Said {
-  readonly change: string
-  readonly path: string
-  readonly from: number
-  readonly to: number
-  readonly text: string
-  readonly done: boolean
 }
 
 /** The two intervals a change that has ended waits on, in milliseconds. */

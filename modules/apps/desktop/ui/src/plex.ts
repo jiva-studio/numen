@@ -5,15 +5,15 @@
  * seat and edges between them; it is not told what a note is, and the schema
  * says nothing about drawing.
  */
-import { NeighbourhoodResponseSchema, Seat, type NeighbourhoodResponse } from '@numen/protocol'
+import { NeighbourhoodResponseSchema, Seat } from '@numen/protocol'
+import type { Neighbourhood } from './core'
 import type { PlexEdge, PlexNeighbourhood, PlexNode, PlexRelatedSeat } from '@numen/ui'
 
 /**
- * A neighbourhood, and the schema that builds one. The type is a generated
- * message branded with its own name, so one that did not come off the wire is
- * made with `create(NeighbourhoodSchema, …)`.
+ * The schema that builds a neighbourhood. The type is a generated message
+ * branded with its own name, so one that did not come off the wire is made
+ * with `create(NeighbourhoodSchema, …)`.
  */
-export type Neighbourhood = NeighbourhoodResponse
 export const NeighbourhoodSchema = NeighbourhoodResponseSchema
 
 /** A seat in the words the schema uses, for a link the window asks to be written. */

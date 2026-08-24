@@ -6,6 +6,7 @@
  * wide it is drawn, and what is lit over it are decisions, and a test asks them
  * without a browser.
  */
+import type { Run } from './core'
 import { computed, ref } from 'vue'
 
 /** Where something sits on a page, in fractions of it. */
@@ -20,12 +21,6 @@ export interface Rect {
 export interface Marked {
   readonly page: number
   readonly rects: readonly Rect[]
-}
-
-/** A stretch of a document's own text, counted in bytes. */
-export interface Run {
-  readonly start: number
-  readonly length: number
 }
 
 /** One page's size, in the page's own units. */

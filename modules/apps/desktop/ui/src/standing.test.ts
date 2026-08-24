@@ -7,7 +7,8 @@
 import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
 import { standing, type Neighbours } from './standing'
-import { NeighbourhoodSchema, type Neighbourhood } from './plex'
+import type { Neighbourhood } from './core'
+import { NeighbourhoodSchema } from './plex'
 
 const answer = (path: string): Neighbourhood =>
   create(NeighbourhoodSchema, { focus: { path, title: path, identifier: '' }, related: [] })

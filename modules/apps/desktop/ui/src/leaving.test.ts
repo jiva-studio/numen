@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 
 import { editing } from './editing'
 import { leaving, type Going, type Owed, type Question } from './leaving'
-import type { Answered, Core } from './showing'
+import type { Answered, Core } from './core'
 
 /** A vault that has been read and is doing nothing. */
 const idle = {

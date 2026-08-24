@@ -5,7 +5,8 @@
  * get rid of, and one dropped too early is a change that happens invisibly.
  */
 import { describe, expect, it } from 'vitest'
-import { drawing, holding, type Said } from './drawing'
+import type { Said } from './core'
+import { drawing, holding } from './drawing'
 
 const said = (over: Partial<Said> = {}): Said => ({
   change: 'one',

@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { cornerOf, type Reading } from './corner'
-import type { Task } from './showing'
+import type { Task } from './core'
 
 const words = { words: 'Searching by words only — no model set' }
 
