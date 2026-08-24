@@ -71,27 +71,14 @@ export function talking(talk: Conversation, deps: Talking) {
  * with no agent open opens one to carry it.
  */
 export function agentKind(host: Host, opens: () => Held) {
-  const talks = new Map<string, Held>()
-  /** The agent tab the person was last in, while the window still holds it. */
-  let last = ''
-
   const kind: Kind<Held> = {
     kind: AGENT,
-    opens: (_at, id) => {
-      const held = opens()
-      talks.set(id, held)
-      return held
-    },
+    opens,
     called: (held) =>
       shortened(held.turns.value.find((turn) => turn.voice === 'asked')?.text ?? '') || words.agent,
     draws: AgentTab,
-    shown: (_held, id) => {
-      last = id
-    },
-    shuts: (held, id) => {
+    shuts: (held) => {
       held.finish()
-      talks.delete(id)
-      if (last === id) last = ''
       return true
     },
     offers: words.newAgent,
@@ -99,8 +86,8 @@ export function agentKind(host: Host, opens: () => Held) {
 
   /** Something to ask, put in the agent the person was last in and put in front. */
   const asks = async (text: string) => {
-    const id = talks.has(last) ? last : await host.opens(AGENT)
-    talks.get(id)?.writing(text)
+    const id = host.last<Held>(AGENT)?.id ?? (await host.opens(AGENT))
+    host.holds<Held>(AGENT, id)?.writing(text)
     host.shows(id)
   }
 

@@ -10,7 +10,8 @@ import type { Turn } from '@numen/ui'
 import { agentKind, talking, type Held } from './kind'
 import type { Conversation } from '../conversation'
 import type { Run } from '../reading'
-import type { Host } from '../windowing'
+import { windowing } from '../windowing'
+import { AGENT } from '../workspace'
 
 /** A talk that records what it was asked, and the places its lines name. */
 const talked = (places: Record<string, { path: string; start: number; length: number }> = {}) => {
@@ -44,39 +45,35 @@ const tab = (
   return { held, opened, ...talk }
 }
 
-/** A window that opens agent tabs and records which one was put in front. */
-const host = (kind: () => { opens(at: string, id: string): unknown }) => {
-  const opened: string[] = []
-  const front: string[] = []
-  let next = 0
-  const given: Host = {
-    opens: async () => {
-      const id = `agent:${++next}`
-      kind().opens('', id)
-      opened.push(id)
-      front.push(id)
-      return id
-    },
-    beside: async () => '',
-    shows: (id) => front.push(id),
-    closes: () => {},
-  }
-  return { given, opened, front }
-}
-
-/** The agent tabs of a window, with a talk of its own for each. */
+/** A window of agent tabs, with a talk of its own for each. */
 const tabs = () => {
   const talks: ReturnType<typeof tab>[] = []
-  let made: ReturnType<typeof agentKind>
-  const window = host(() => made.kind)
-  made = agentKind(window.given, () => {
-    const one = tab()
-    talks.push(one)
-    return one.held
-  })
-  /** A tab of this window under an identity of its own, and what it holds. */
-  const holds = (id: string) => made.kind.opens('', id) as Held
-  return { kind: made.kind, asks: made.asks, holds, talks, ...window }
+  let agents!: ReturnType<typeof agentKind>
+  const held = windowing(
+    [
+      (host) => {
+        agents = agentKind(host, () => {
+          const one = tab()
+          talks.push(one)
+          return one.held
+        })
+        return agents.kind
+      },
+    ],
+    { newTab: 'New tab' },
+  )
+
+  /** An agent tab of this window, and what it holds. */
+  const holds = async () => {
+    const id = await held.opens(AGENT)
+    return { id, held: held.holdsIn<Held>(id, AGENT)! }
+  }
+  /** The person is in this tab now. */
+  const enters = (id: string) => held.shown(id)
+  const shuts = (id: string) => held.shut(id)
+  /** Every agent tab on screen, the one in front last. */
+  const open = () => held.tabs.value.map((one) => one.id)
+  return { ...agents, holds, enters, shuts, open, talks }
 }
 
 /** A line of an answer, as the panel hands one back. */
@@ -164,64 +161,63 @@ describe('something to ask about a note', () => {
 
     await window.asks('Note.md — ')
 
-    expect(window.opened).toHaveLength(1)
+    expect(window.open()).toHaveLength(1)
     expect(window.talks[0]?.held.asked.value).toBe('Note.md — ')
   })
 
   it('goes to the agent the person was last in, and puts it in front', async () => {
     const window = tabs()
-    const first = window.holds('agent:one')
-    const second = window.holds('agent:two')
-    window.kind.shown?.(first, 'agent:one')
-    window.kind.shown?.(second, 'agent:two')
+    const first = await window.holds()
+    const second = await window.holds()
+    window.enters(first.id)
+    window.enters(second.id)
 
     await window.asks('Note.md — ')
 
-    expect(window.opened).toEqual([])
-    expect(window.front.at(-1)).toBe('agent:two')
-    expect(window.talks[1]?.held.asked.value).toBe('Note.md — ')
-    expect(window.talks[0]?.held.asked.value).toBe('')
+    expect(window.open()).toHaveLength(2)
+    expect(second.held.asked.value).toBe('Note.md — ')
+    expect(first.held.asked.value).toBe('')
   })
 
   it('opens another once the one the person was last in has closed', async () => {
     const window = tabs()
-    const one = window.holds('agent:one')
-    window.kind.shown?.(one, 'agent:one')
-    window.kind.shuts?.(one, 'agent:one')
+    const one = await window.holds()
+    window.enters(one.id)
+    window.shuts(one.id)
 
     await window.asks('Note.md — ')
 
-    expect(window.opened).toHaveLength(1)
+    expect(window.open()).toHaveLength(1)
     expect(window.talks[1]?.held.asked.value).toBe('Note.md — ')
   })
 })
 
 describe('an agent tab that closes', () => {
-  it('tells the talk it is over, so the agent lets go of what it kept', () => {
+  it('tells the talk it is over, so the agent lets go of what it kept', async () => {
     const window = tabs()
-    const one = window.holds('agent:one')
+    const one = await window.holds()
 
-    window.kind.shuts?.(one, 'agent:one')
+    window.shuts(one.id)
 
     expect(window.talks[0]?.stopped).toEqual(['finish'])
   })
 })
 
 describe('what an agent tab is called', () => {
-  it('is the first thing asked of it, shortened', () => {
+  it('is the first thing asked of it, shortened', async () => {
     const window = tabs()
-    const one = window.holds('agent:one')
-    one.turns.value = [
+    const one = await window.holds()
+    one.held.turns.value = [
       { id: 'a', voice: 'asked', text: 'what is this whole vault about', state: 'done' },
     ] as unknown as Turn[]
 
-    expect(window.kind.called(one)).toBe('what is this whole…')
+    expect(window.kind.called(one.held)).toBe('what is this whole…')
   })
 
-  it('is the word for an agent while nothing has been asked of it', () => {
+  it('is the word for an agent while nothing has been asked of it', async () => {
     const window = tabs()
-    const one = window.holds('agent:one')
+    const one = await window.holds()
 
-    expect(window.kind.called(one)).toBe('Agent')
+    expect(window.kind.called(one.held)).toBe('Agent')
   })
 })

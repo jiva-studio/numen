@@ -63,6 +63,12 @@ export interface Open {
   readonly held: unknown
 }
 
+/** One tab of a kind, as that kind is given it back. */
+export interface Tabbed<Held> {
+  readonly id: string
+  readonly held: Held
+}
+
 /** What a kind may ask of the window its tabs are drawn in. */
 export interface Host {
   /** A tab of a kind, opened on something and put in front. */
@@ -73,6 +79,15 @@ export interface Host {
   shows(id: string): void
   /** A tab that took its own close, going now. */
   closes(id: string): void
+  /**
+   * Every tab of a kind, in the order the person was last in them. The last of
+   * them is the one in front.
+   */
+  each<Held>(kind: string): readonly Tabbed<Held>[]
+  /** The tab of a kind the person was last in, and nothing where it holds none. */
+  last<Held>(kind: string): Tabbed<Held> | null
+  /** What one tab of a kind holds, and nothing where the tab is another kind. */
+  holds<Held>(kind: string, id: string): Held | null
 }
 
 /** A kind, made knowing the window its tabs will be drawn in. */
@@ -94,11 +109,17 @@ export function windowing(declared: readonly Declared[], words: Words) {
     beside: (kind, at) => beside(kind, at),
     shows: (id) => shows(id),
     closes: (id) => closes(id),
+    each: <Held,>(kind: string) => each<Held>(kind),
+    last: <Held,>(kind: string) => each<Held>(kind).at(-1) ?? null,
+    holds: <Held,>(kind: string, id: string) => holdsIn<Held>(id, kind),
   }
 
   const kinds = declared.map((one) => one(host))
   const byKind = new Map(kinds.map((one) => [one.kind, one]))
-  /** Every tab the window holds, each under the identity it opened with. */
+  /**
+   * Every tab the window holds, each under the identity it opened with, in the
+   * order the person was last in them.
+   */
   const open = shallowRef<ReadonlyMap<string, Open>>(new Map())
   /** Tabs opened with nothing in them, each waiting to be told what it holds. */
   const blanks = ref<readonly string[]>([])
@@ -128,6 +149,12 @@ export function windowing(declared: readonly Declared[], words: Words) {
     const one = open.value.get(id)
     return one && one.kind.kind === kind ? (one.held as T) : null
   }
+
+  /** Every tab of a kind, the one the person was last in last. */
+  const each = <T,>(kind: string): readonly Tabbed<T>[] =>
+    [...open.value]
+      .filter(([, one]) => one.kind.kind === kind)
+      .map(([id, one]) => ({ id, held: one.held as T }))
 
   /**
    * A tab of a kind, on what it was given. A kind that takes its identity from
@@ -200,10 +227,15 @@ export function windowing(declared: readonly Declared[], words: Words) {
     kinds.filter((one) => one.offers).map((one) => ({ id: one.kind, title: one.offers ?? '' })),
   )
 
-  /** The tab now on screen, where what it holds has room to measure. */
+  /**
+   * The tab now on screen, where what it holds has room to measure. It goes to
+   * the end of what the window holds, which is the order they were last in.
+   */
   const shown = (id: string) => {
     const one = open.value.get(id)
-    one?.kind.shown?.(one.held, id)
+    if (!one) return
+    open.value = new Map([...without(open.value, id), [id, one]])
+    one.kind.shown?.(one.held, id)
   }
 
   /**

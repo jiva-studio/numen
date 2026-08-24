@@ -55,32 +55,22 @@ export type Held = ReturnType<typeof plexing>
  * the one a plex opened after it stands beside.
  */
 export function plexKind(host: Host, makes: () => Standing, deps: Plexing) {
-  const open = new Map<string, Held>()
-  /** The identities of the tabs, the last of them in front. */
-  let order: readonly string[] = []
-
-  /** What the plex in front holds, and nothing while the window holds none. */
-  const front = (): Held | null => open.get(order.at(-1) ?? '') ?? null
+  /** Every plex the window holds, and the one the person was last in. */
+  const all = () => host.each<Held>(PLEX)
+  const front = (): Held | null => host.last<Held>(PLEX)?.held ?? null
 
   const kind: Kind<Held> = {
     kind: PLEX,
-    opens: (at, id) => {
+    opens: (at) => {
       const held = plexing(makes(), deps)
       const from = at || looking() || deps.opening()
-      open.set(id, held)
-      order = [...order, id]
       if (from) void held.view.go(from)
       return held
     },
     called: (held) => plexCalled(words.plex, held.view.neighbourhood.value?.focus?.title ?? ''),
     draws: PlexTab,
-    shown: (_held, id) => {
-      if (open.has(id)) order = [...order.filter((one) => one !== id), id]
-    },
-    shuts: (held, id) => {
+    shuts: (held) => {
       held.view.close()
-      open.delete(id)
-      order = order.filter((one) => one !== id)
       return true
     },
     offers: words.newPlex,
@@ -108,7 +98,7 @@ export function plexKind(host: Host, makes: () => Standing, deps: Plexing) {
    * only while one of them has nowhere to stand.
    */
   const again = async () => {
-    if ([...open.values()].some((one) => !one.view.here.value)) {
+    if (all().some(({ held }) => !held.view.here.value)) {
       try {
         await deps.first()
       } catch {
@@ -116,9 +106,9 @@ export function plexKind(host: Host, makes: () => Standing, deps: Plexing) {
       }
     }
     await Promise.all(
-      [...open.values()].map((one) => {
-        const path = one.view.here.value || deps.opening()
-        return path ? one.view.go(path) : Promise.resolve()
+      all().map(({ held }) => {
+        const path = held.view.here.value || deps.opening()
+        return path ? held.view.go(path) : Promise.resolve()
       }),
     )
   }

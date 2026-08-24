@@ -7,10 +7,12 @@
  */
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
+import { panesOf } from '@numen/ui'
 import type { NeighbourhoodResponse } from '@numen/protocol'
 import { plexKind, plexing, type Held, type Making, type Plexing } from './kind'
 import type { Standing } from '../standing'
-import type { Host } from '../windowing'
+import { windowing } from '../windowing'
+import { PLEX } from '../workspace'
 
 /** A neighbourhood as the vault answers one: a focus, and what is around it. */
 const around = (focus: string, related: readonly string[] = []): NeighbourhoodResponse =>
@@ -215,107 +217,115 @@ describe('the picture', () => {
  */
 const window = (opening = 'Opening.md') => {
   const views: ReturnType<typeof standing>[] = []
-  const opened: string[] = []
-  const shown: string[] = []
   /** Every time the vault was asked where it opens, and what it answered then. */
   const asked: string[] = []
   let first = opening
-  const host: Host = {
-    opens: async (kind, at = '') => {
-      opened.push(`${kind} ${at}`)
-      return ''
-    },
-    beside: async () => '',
-    shows: (id) => shown.push(id),
-    closes: () => {},
-  }
+  let plexes!: ReturnType<typeof plexKind>
+
   const makes = () => {
     const view = standing('')
     views.push(view)
     return view.view
   }
-  const plexes = plexKind(host, makes, {
-    makes: making().makes,
-    ready: () => true,
-    opens: () => {},
-    asks: () => {},
-    opening: () => first,
-    first: async () => {
-      asked.push(first)
-      return first
-    },
-  })
-  /** A tab of this window under an identity of its own, and what it holds. */
-  const holds = (id: string, at = '') => plexes.kind.opens(at, id) as Held
+  const held = windowing(
+    [
+      (host) => {
+        plexes = plexKind(host, makes, {
+          makes: making().makes,
+          ready: () => true,
+          opens: () => {},
+          asks: () => {},
+          opening: () => first,
+          first: async () => {
+            asked.push(first)
+            return first
+          },
+        })
+        return plexes.kind
+      },
+    ],
+    { newTab: 'New tab' },
+  )
+
+  /** A plex tab of this window, opened on what it was given. */
+  const holds = async (at = '') => {
+    const id = await held.opens(PLEX, at)
+    return { id, held: held.holdsIn<Held>(id, PLEX)! }
+  }
+  /** The person is in this tab now. */
+  const enters = (id: string) => held.shown(id)
+  /** The tab closes, and the window lets go of what it held. */
+  const shuts = (id: string) => held.shut(id)
   /** The vault gained a note, which is what it opens with from now on. */
   const gains = (path: string) => {
     first = path
   }
-  return { ...plexes, holds, gains, views, opened, shown, asked }
+  const onScreen = () => panesOf(held.layout.value.root).flatMap((pane) => pane.tabs)
+  return { ...plexes, holds, enters, shuts, gains, onScreen, views, asked }
 }
 
 describe('a plex tab as it opens', () => {
-  it('stands on the note the vault opens with', () => {
+  it('stands on the note the vault opens with', async () => {
     const one = window('Opening.md')
 
-    const held = one.holds('plex:one')
+    const { held } = await one.holds()
 
     expect(held.view.here.value).toBe('Opening.md')
   })
 
-  it('stands where it was told to, whatever the vault opens with', () => {
+  it('stands where it was told to, whatever the vault opens with', async () => {
     const one = window('Opening.md')
 
-    const held = one.holds('plex:one', 'Told.md')
+    const { held } = await one.holds('Told.md')
 
     expect(held.view.here.value).toBe('Told.md')
   })
 
-  it('stands where the person is looking, when another one is open', () => {
+  it('stands where the person is looking, when another one is open', async () => {
     const one = window('Opening.md')
-    const first = one.holds('plex:one')
-    void first.view.go('Here.md')
+    const first = await one.holds()
+    await first.held.view.go('Here.md')
 
-    const second = one.holds('plex:two')
+    const second = await one.holds()
 
-    expect(second.view.here.value).toBe('Here.md')
+    expect(second.held.view.here.value).toBe('Here.md')
   })
 
-  it('stands nowhere while the vault opens with nothing', () => {
+  it('stands nowhere while the vault opens with nothing', async () => {
     const one = window('')
 
-    expect(one.holds('plex:one').view.here.value).toBe('')
+    expect((await one.holds()).held.view.here.value).toBe('')
   })
 })
 
 describe('the plex the person is looking at', () => {
-  it('is the one they were last in, and the window says its trouble', () => {
+  it('is the one they were last in, and the window says its trouble', async () => {
     const one = window()
-    const first = one.holds('plex:one', 'One.md')
-    const second = one.holds('plex:two', 'Two.md')
-    first.view.trouble.value = 'One.md is not in the vault'
+    const first = await one.holds('One.md')
+    const second = await one.holds('Two.md')
+    first.held.view.trouble.value = 'One.md is not in the vault'
 
-    one.kind.shown?.(first, 'plex:one')
+    one.enters(first.id)
     expect(one.looking()).toBe('One.md')
     expect(one.trouble()).toBe('One.md is not in the vault')
 
-    one.kind.shown?.(second, 'plex:two')
+    one.enters(second.id)
     expect(one.looking()).toBe('Two.md')
     expect(one.trouble()).toBe('')
   })
 
-  it('is the one before it when the tab in front closes', () => {
+  it('is the one before it when the tab in front closes', async () => {
     const one = window()
-    const first = one.holds('plex:one', 'One.md')
-    const second = one.holds('plex:two', 'Two.md')
-    const third = one.holds('plex:three', 'Three.md')
-    one.kind.shown?.(second, 'plex:two')
-    one.kind.shown?.(third, 'plex:three')
+    const first = await one.holds('One.md')
+    const second = await one.holds('Two.md')
+    const third = await one.holds('Three.md')
+    one.enters(second.id)
+    one.enters(third.id)
 
-    one.kind.shuts?.(third, 'plex:three')
+    one.shuts(third.id)
 
     expect(one.looking()).toBe('Two.md')
-    expect(first.view.here.value).toBe('One.md')
+    expect(first.held.view.here.value).toBe('One.md')
   })
 
   it('is nothing at all in a window holding no plex', () => {
@@ -329,14 +339,14 @@ describe('the plex the person is looking at', () => {
 describe('a note put in front of the person', () => {
   it('is where the plex they are looking at travels', async () => {
     const one = window()
-    const first = one.holds('plex:one', 'One.md')
-    const second = one.holds('plex:two', 'Two.md')
-    one.kind.shown?.(second, 'plex:two')
+    const first = await one.holds('One.md')
+    const second = await one.holds('Two.md')
+    one.enters(second.id)
 
     await one.travel('Wanted.md')
 
-    expect(second.view.here.value).toBe('Wanted.md')
-    expect(first.view.here.value).toBe('One.md')
+    expect(second.held.view.here.value).toBe('Wanted.md')
+    expect(first.held.view.here.value).toBe('One.md')
   })
 
   it('opens a plex of its own in a window holding none', async () => {
@@ -344,27 +354,27 @@ describe('a note put in front of the person', () => {
 
     await one.travel('Wanted.md')
 
-    expect(one.opened).toStrictEqual(['plex Wanted.md'])
+    expect(one.onScreen()).toHaveLength(1)
+    expect(one.looking()).toBe('Wanted.md')
   })
 })
 
 describe('every plex asked for its picture again', () => {
   it('asks for the note it is standing on, each of its own', async () => {
     const one = window()
-    const first = one.holds('plex:one', 'One.md')
-    const second = one.holds('plex:two', 'Two.md')
-    first.view.here.value = 'One.md'
+    await one.holds('One.md')
+    const second = await one.holds('Two.md')
 
     await one.again()
 
     expect(one.views[0]?.went).toContain('One.md')
     expect(one.views[1]?.went).toContain('Two.md')
-    expect(second.view.here.value).toBe('Two.md')
+    expect(second.held.view.here.value).toBe('Two.md')
   })
 
   it('gives one standing nowhere the note an empty vault has just gained', async () => {
     const one = window('')
-    const held = one.holds('plex:one')
+    const { held } = await one.holds()
     one.gains('First.md')
 
     await one.again()
@@ -374,9 +384,9 @@ describe('every plex asked for its picture again', () => {
 
   it('asks the vault where it opens once, however many stand nowhere', async () => {
     const one = window('')
-    one.holds('plex:one')
-    one.holds('plex:two')
-    one.holds('plex:three')
+    await one.holds()
+    await one.holds()
+    await one.holds()
 
     await one.again()
 
@@ -385,8 +395,8 @@ describe('every plex asked for its picture again', () => {
 
   it('asks it not at all while every one of them is standing somewhere', async () => {
     const one = window()
-    one.holds('plex:one', 'One.md')
-    one.holds('plex:two', 'Two.md')
+    await one.holds('One.md')
+    await one.holds('Two.md')
 
     await one.again()
 
@@ -395,14 +405,14 @@ describe('every plex asked for its picture again', () => {
 
   it('asks nothing for a plex whose tab has closed', async () => {
     const one = window()
-    const first = one.holds('plex:one', 'One.md')
-    const second = one.holds('plex:two', 'Two.md')
-    one.kind.shuts?.(second, 'plex:two')
+    const first = await one.holds('One.md')
+    const second = await one.holds('Two.md')
+    one.shuts(second.id)
 
     await one.again()
 
     expect(one.views[0]?.went).toContain('One.md')
     expect(one.views[1]?.went.filter((where) => where === 'Two.md')).toHaveLength(1)
-    expect(first.view.here.value).toBe('One.md')
+    expect(first.held.view.here.value).toBe('One.md')
   })
 })
