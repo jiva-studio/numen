@@ -141,11 +141,16 @@ colours only, so the filter it feeds is invalid and hover does nothing today.
 The two places that read it take `color-mix()` against the token beneath, and
 the token goes.
 
-### Six presets ship, beside this product's own
+### Twelve presets ship, beside this product's own
 
-`dracula`, `nord`, `solarized`, `catppuccin` and `gruvbox` are their publishers'
-palettes, taken from those publishers' own sources. What a palette does not name
-is derived from what it does, and the file says which.
+`github`, `one-dark`, `dracula`, `monokai`, `ayu`, `tokyo-night`, `cobalt2`,
+`nord`, `solarized`, `catppuccin` and `gruvbox` are their publishers' palettes,
+taken from those publishers' own sources, syntax colours among them. What a
+palette does not name is derived from what it does, and the file says which.
+
+A seat is moved off a published colour where that colour is the one the focused
+node is painted in. Those two stand side by side in the plex, and a palette
+published for a text editor has no seats to keep apart.
 
 `amber` is four colours read off a screenshot with the rest derived from them,
 and its name is provisional until someone gives it one.
@@ -155,9 +160,14 @@ nothing keeps every value that file holds.
 
 ### The palette offers the theme, and shows it as it is chosen
 
-One command in the band over the window, opening a step that lists the themes
-and applies each as the keyboard lands on it. Leaving without choosing puts back
-the one that was there.
+A theme is one thing and the half it is read as is another, so they are two
+commands in the band over the window. Each opens a step of its own — the themes
+in one, `system`, `light` and `dark` in the other — and each applies what the
+keyboard lands on. Leaving without choosing puts back what was there.
+
+The themes stand in two bands, the ones that ship and the person's own. A row
+says what is true of that row alone, and the shelf it came off is what the band
+above it says.
 
 `Palette.vue` emits what was chosen, gone back from and dismissed. It gains a
 fourth, for where the keyboard is standing, and the step applies a theme from
