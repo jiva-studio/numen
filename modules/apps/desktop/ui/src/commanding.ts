@@ -19,6 +19,37 @@ export interface Asking {
   names(query: string, limit: number): Promise<readonly Named[]>
 }
 
+/** One of a list the window itself holds, as the step that offers it draws it. */
+export interface Offered {
+  readonly id: string
+  readonly title: string
+  /** A second line: what is true of this row and not of the ones beside it. */
+  readonly detail?: string
+  /** Drawn, said, and not chosen. */
+  readonly disabled?: boolean
+}
+
+/** One band of such a list, named by whatever holds it. */
+export interface Offering {
+  readonly id: string
+  readonly title: string
+  readonly items: readonly Offered[]
+  /** What is said in its place where it holds nothing. */
+  readonly silence?: string
+}
+
+/**
+ * The lists the window holds, and what it does with the one the keyboard is
+ * standing on. A list is read again every time the step is drawn, so what the
+ * window holds may change while the step stands open.
+ */
+export interface Holds {
+  /** What this command offers now, in the bands it is drawn in. */
+  offers(command: string): readonly Offering[]
+  /** The one the keyboard is standing on, and nothing where it stands on none. */
+  shows(command: string, item: string): void
+}
+
 /**
  * What the window knows about a note by the name it is filed under. A step
  * stands open while the vault moves under it, and this is read again each time
@@ -34,8 +65,12 @@ export interface Knows {
 /** Which band a command is offered in. */
 export type Band = 'note' | 'window' | 'vault'
 
-/** Which step the palette is on: one being asked for, or the list of commands. */
-export type Step = 'commands' | 'naming' | 'picking' | 'asking' | 'exactly'
+/**
+ * Which step the palette is on: one being asked for, or the list of commands.
+ * `picking` asks the vault what it holds; `choosing` offers a list the window
+ * holds already.
+ */
+export type Step = 'commands' | 'naming' | 'picking' | 'choosing' | 'asking' | 'exactly'
 
 /** What a command wants before it can happen, which is the step that asks. */
 export type Needed = Exclude<Step, 'commands'>
@@ -85,7 +120,10 @@ export interface Deed {
    */
   readonly note: string | null
   readonly title: string
-  /** What was typed for it: a name to give, or a name typed back. */
+  /**
+   * What was typed for it: a name to give, or a name typed back. A step that
+   * offers a list the window holds puts the one that was chosen here.
+   */
   readonly name: string
   /** The kind of tab it was asked from, which is where a note it makes lands. */
   readonly kind: string | null
@@ -111,6 +149,9 @@ export interface Words extends Silences {
   readonly newPlex: string
   readonly newAgent: string
   readonly close: string
+  /** The two commands over how the window is drawn: the theme, and the halves. */
+  readonly appearance: string
+  readonly mode: string
   readonly find: string
   /** The keystroke the search answers to away from the palette. */
   readonly findKeys: string
@@ -133,6 +174,12 @@ export interface Words extends Silences {
   /** A note asked for, over the names in the vault. */
   readonly names: string
   readonly typeNote: string
+  /**
+   * One of a list the window holds: the field, and what Enter does. The bands
+   * such a list is drawn in are named by whatever holds it.
+   */
+  readonly typeChoice: string
+  readonly chooses: string
   /** The two answers to the confirmation: the one that changes nothing, first. */
   readonly asking: string
   readonly answer: string
@@ -158,6 +205,9 @@ export interface Words extends Silences {
 const NAME = 'name'
 const PICK = 'pick'
 const EXACT = 'exactly'
+
+/** The one thing every item of a list the window holds can be asked. */
+const CHOSEN = 'chosen'
 
 /** The two answers of the step that confirms. */
 const NO = 'no'
@@ -214,6 +264,8 @@ export const commandsOf = (words: Words): readonly Command[] => [
   { id: 'agent', text: words.newAgent, band: 'window', where: always },
   { id: 'close', text: words.close, band: 'window', where: (at) => at.tab !== '' },
   { id: 'find', text: words.find, keys: words.findKeys, band: 'window', where: always },
+  { id: 'appearance', text: words.appearance, band: 'window', needs: 'choosing', where: always },
+  { id: 'mode', text: words.mode, band: 'window', needs: 'choosing', where: always },
   { id: 'first', text: words.first, band: 'vault', where: (at) => at.ready },
   { id: 'goto', text: words.goto, band: 'vault', needs: 'picking', where: (at) => at.ready },
 ]
@@ -313,6 +365,7 @@ export function commanding(
   words: Words,
   at: () => Where,
   knows: Knows,
+  holds: Holds,
   wait: (ms: number) => Promise<unknown> = sleep,
 ) {
   /** Whether the commands are drawn at all. */
@@ -364,6 +417,8 @@ export function commanding(
         return words.typeName
       case 'picking':
         return words.typeNote
+      case 'choosing':
+        return words.typeChoice
       case 'asking':
         return words.answer
       case 'exactly':
@@ -510,6 +565,35 @@ export function commanding(
   }
 
   /**
+   * The bands a list the window holds is drawn in, narrowed by the words typed.
+   * They are read again on every keystroke, and a row drawn as not to be chosen
+   * is not chosen.
+   */
+  const choosing = (step: Asked, text: string): readonly PaletteBand[] => {
+    const word = text.trim().toLowerCase()
+    return holds.offers(step.command.id).map((band) => ({
+      id: band.id,
+      title: band.title,
+      items: band.items.map((one) => offered(one, word)).filter((item) => item !== null),
+      silence: band.silence ?? words.noneFound,
+    }))
+  }
+
+  /** One such row, and nothing where the words typed leave it out. */
+  const offered = (one: Offered, word: string): PaletteItem | null => {
+    const found = word === '' ? -1 : one.title.toLowerCase().indexOf(word)
+    if (word !== '' && found < 0) return null
+    return {
+      id: one.id,
+      title: one.title,
+      ...(found < 0 ? {} : { at: [{ from: found, to: found + word.length }] }),
+      ...(one.detail ? { detail: one.detail } : {}),
+      ...(one.disabled ? { disabled: true } : {}),
+      actions: [{ id: CHOSEN, text: words.chooses }],
+    }
+  }
+
+  /**
    * The two answers put before a note goes to the trash. The one that changes
    * nothing is drawn first, and it is the one the keyboard opens on. Each is
    * reached by the name it is offered under, as an item of any other step is.
@@ -563,6 +647,7 @@ export function commanding(
     if (!step) return listed(on.value, typed.value)
     if (step.step === 'naming') return [naming(typed.value)]
     if (step.step === 'picking') return [picking(typed.value)]
+    if (step.step === 'choosing') return choosing(step, typed.value)
     if (step.step === 'asking') return [asking(step, typed.value)]
     return [exactly(step, typed.value)]
   })
@@ -574,8 +659,18 @@ export function commanding(
     steps.value = [...steps.value, step]
   }
 
+  /**
+   * The item the keyboard is standing on, at a step that shows what it stands
+   * on. The window is told the empty string wherever it stands on nothing.
+   */
+  const lights = (item: string) => {
+    const step = here.value
+    if (step?.step === 'choosing') holds.shows(step.command.id, item)
+  }
+
   /** The step being asked goes, and the one under it is asked again. */
   const pops = () => {
+    lights('')
     drop()
     typed.value = ''
     steps.value = steps.value.slice(0, -1)
@@ -631,6 +726,12 @@ export function commanding(
       if (!name) return null
       return deed(step.command.id, step.on, name)
     }
+    if (step.step === 'choosing') {
+      const rows = holds.offers(step.command.id).flatMap((band) => band.items)
+      const one = rows.find((row) => row.id === item)
+      if (!one || one.disabled) return null
+      return deed(step.command.id, step.on, one.id)
+    }
     if (step.step === 'asking') {
       // The answer that changes nothing puts the step away.
       if (action === NO) {
@@ -648,6 +749,7 @@ export function commanding(
 
   /** The commands are opened, or put away and every step let go of. */
   const shows = (now: boolean) => {
+    lights('')
     open.value = now
     drop()
     typed.value = ''
@@ -682,6 +784,7 @@ export function commanding(
     step,
     placeholder,
     typing,
+    lights,
     shows,
     asks,
     refused,

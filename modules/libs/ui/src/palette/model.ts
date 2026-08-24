@@ -62,6 +62,12 @@ export interface PaletteBand {
   readonly silence?: string
 }
 
+/**
+ * The item the keyboard is standing on, by the identity it was given, and the
+ * empty string where it stands on none.
+ */
+export type PaletteLit = string
+
 /** One item, and the band it was drawn in. */
 export interface PalettePlace {
   readonly band: PaletteBand

@@ -2,15 +2,49 @@
 
 One file, JSON, named `numen.json` in the folder this desktop keeps a person's
 configuration in — `~/.config/numen/` on Linux, `~/Library/Application
-Support/numen/` on a mac. A run that finds none writes it, holding exactly what
-that run is doing, so the settings a person changes are the ones in front of
-them.
+Support/numen/` on a mac, `%AppData%\numen\` on Windows. A run that finds none
+writes it, holding exactly what that run is doing, so the settings a person
+changes are the ones in front of them.
 
 Every field left out keeps its default. A file naming one setting is a valid
 file.
 
-This document is the embedding section. The other sections — appearance,
-recognition, proofreading, agent — are named here only where they touch it.
+This document is the appearance and embedding sections. The others —
+recognition, proofreading, agent — are named here only where they touch them.
+
+## Appearance
+
+How the window is drawn: how large, which half of a colour pair, and which
+palette.
+
+```json
+{
+  "appearance": {
+    "zoom": 0,
+    "mode": "system",
+    "theme": "preset:numen"
+  }
+}
+```
+
+| | |
+| --- | --- |
+| `zoom` | how large everything is drawn, 1 being as designed. Zero asks the desktop: a session that set `GDK_DPI_SCALE` is drawn by that, and one that said nothing is drawn at 1. The `-zoom` flag says it for a single launch, over whatever is here. |
+| `mode` | which half of a colour pair is read: `system`, `light` or `dark`. Any other word is read as `system`. |
+| `theme` | the stylesheet the window wears, named by the shelf it came off and its filename: `preset:dracula` ships inside the application, `mine:dracula` is the person's file. |
+
+The tokens a theme sets, where the person's themes live, and how a file names
+itself light-and-dark or one half only are in [Themes](themes.md).
+
+A theme pinning `color-scheme` is published in one half, and `mode` has nothing
+left to choose while it is worn. A name matching nothing wears `preset:numen`,
+and the name that was not found is said; this file is left as it is.
+
+Choosing a theme, or light or dark, writes `appearance.theme` and
+`appearance.mode` back here — each is a command of its own in the palette, over
+the window. The file is read as an object, those two fields are set, and it is
+written back, so a key this build knows nothing about comes through the write
+unchanged. A file that does not parse is not written.
 
 ## What a vector is, and where it is made
 

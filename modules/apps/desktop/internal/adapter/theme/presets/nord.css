@@ -1,0 +1,65 @@
+/*
+ * Nord, from the sixteen colours published at nordtheme.com.
+ *
+ * `color-scheme` is pinned: the palette is published dark, and there is no
+ * light half for the setting to choose.
+ *
+ * The syntax colours are what Nord says each of its sixteen is for: nord9
+ * keywords, nord8 function names and calls, nord7 types, nord14 strings,
+ * nord15 numbers, nord3 comments and non-printable characters, and nord6 for
+ * plain text and the brackets that structure it.
+ *
+ * Mixed here, because the palette does not name them: the muted text, which
+ * stands between nord3 and nord4; the ground a field sits in, which is below
+ * nord0; the caution band; and the alpha the selection is laid on at.
+ */
+:root {
+  color-scheme: dark;
+
+  --numen-surface: #2e3440;
+  --numen-node-bg: #3b4252;
+  --numen-node-fg: #eceff4;
+  --numen-node-border: #434c5e;
+
+  --numen-focus-bg: #88c0d0;
+  --numen-focus-fg: #2e3440;
+  --numen-focus-border: #88c0d0;
+
+  --numen-seat-parent: #81a1c1;
+  --numen-seat-child: #a3be8c;
+  --numen-seat-jump: #ebcb8b;
+  --numen-seat-sibling: #b48ead;
+
+  --numen-edge: #434c5e;
+  --numen-edge-label: #929aaa;
+  --numen-ring: #88c0d0;
+  --numen-selection: #88c0d045;
+  --numen-selection-away: #88c0d024;
+  --numen-selection-match: #88c0d01f;
+  --numen-alarm: #bf616a;
+  --numen-caution-bg: #3b3a2e;
+  --numen-caution-fg: #ebcb8b;
+  --numen-highlight: #ebcb8b33;
+
+  /* Code and a table's head row take nord0, the ground a node is raised off. */
+  --numen-syntax-mark: #4c566a;
+  --numen-code-bg: #2e3440;
+  --numen-table-head-bg: #2e3440;
+  --numen-syntax-keyword: #81a1c1;
+  --numen-syntax-name: #88c0d0;
+  --numen-syntax-type: #8fbcbb;
+  --numen-syntax-string: #a3be8c;
+  --numen-syntax-number: #b48ead;
+  --numen-syntax-comment: #4c566a;
+  --numen-syntax-punctuation: #eceff4;
+
+  --numen-panel-bg: #3b4252cc;
+  --numen-panel-border: #ffffff1f;
+
+  --numen-field-bg: #272b35;
+  --numen-field-border: #434c5e;
+
+  --numen-bubble-bg: #434c5e;
+  --numen-bubble-fg: #eceff4;
+  --numen-answer-fg: #eceff4;
+}

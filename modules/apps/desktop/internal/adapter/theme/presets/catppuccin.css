@@ -1,0 +1,63 @@
+/*
+ * Catppuccin: Latte in the light, Mocha in the dark, from the hex values in
+ * catppuccin/palette.
+ *
+ * The ground is mantle and the card is base, which is the flavour's own
+ * guidance — base for the main pane, mantle beneath it. Code sits on crust,
+ * the tone below both.
+ *
+ * The syntax colours are the language defaults in the style guide: mauve
+ * keywords, blue methods and properties, yellow types, green strings, peach
+ * numbers, and overlay 2 for comments and delimiters alike.
+ *
+ * Mixed from the palette: the caution band, the marks in marked-up text, and
+ * the alpha the selection and the highlight are laid on at.
+ */
+:root {
+  --numen-surface: light-dark(#e6e9ef, #181825);
+  --numen-node-bg: light-dark(#eff1f5, #1e1e2e);
+  --numen-node-fg: light-dark(#4c4f69, #cdd6f4);
+  --numen-node-border: light-dark(#ccd0da, #313244);
+
+  --numen-focus-bg: light-dark(#8839ef, #cba6f7);
+  --numen-focus-fg: light-dark(#eff1f5, #1e1e2e);
+  --numen-focus-border: light-dark(#8839ef, #cba6f7);
+
+  --numen-seat-parent: light-dark(#1e66f5, #89b4fa);
+  --numen-seat-child: light-dark(#40a02b, #a6e3a1);
+  --numen-seat-jump: light-dark(#fe640b, #fab387);
+  --numen-seat-sibling: light-dark(#7287fd, #b4befe);
+
+  --numen-edge: light-dark(#bcc0cc, #45475a);
+  --numen-edge-label: light-dark(#6c6f85, #9399b2);
+  --numen-ring: light-dark(#1e66f5, #89b4fa);
+  --numen-selection: light-dark(#1e66f538, #89b4fa42);
+  --numen-selection-away: light-dark(#1e66f51f, #89b4fa24);
+  --numen-selection-match: light-dark(#1e66f51a, #89b4fa1f);
+  --numen-alarm: light-dark(#d20f39, #f38ba8);
+  --numen-caution-bg: light-dark(#f5e6cd, #302a1e);
+  --numen-caution-fg: light-dark(#df8e1d, #f9e2af);
+  --numen-highlight: light-dark(#df8e1d33, #f9e2af3d);
+
+  /* The marks take overlay 0, a step quieter than the comments. */
+  --numen-syntax-mark: light-dark(#9ca0b0, #6c7086);
+  --numen-code-bg: light-dark(#dce0e8, #11111b);
+  --numen-table-head-bg: light-dark(#dce0e8, #11111b);
+  --numen-syntax-keyword: light-dark(#8839ef, #cba6f7);
+  --numen-syntax-name: light-dark(#1e66f5, #89b4fa);
+  --numen-syntax-type: light-dark(#df8e1d, #f9e2af);
+  --numen-syntax-string: light-dark(#40a02b, #a6e3a1);
+  --numen-syntax-number: light-dark(#fe640b, #fab387);
+  --numen-syntax-comment: light-dark(#7c7f93, #9399b2);
+  --numen-syntax-punctuation: light-dark(#7c7f93, #9399b2);
+
+  --numen-panel-bg: light-dark(#eff1f5cc, #1e1e2ecc);
+  --numen-panel-border: light-dark(#00000014, #ffffff1f);
+
+  --numen-field-bg: light-dark(#eff1f5, #181825);
+  --numen-field-border: light-dark(#ccd0da, #313244);
+
+  --numen-bubble-bg: light-dark(#ccd0da, #313244);
+  --numen-bubble-fg: light-dark(#4c4f69, #cdd6f4);
+  --numen-answer-fg: light-dark(#4c4f69, #cdd6f4);
+}

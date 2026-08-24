@@ -39,6 +39,7 @@ import {
   stepIn,
   stepTo,
   type PaletteBand,
+  type PaletteLit,
 } from './model'
 
 const props = withDefaults(
@@ -96,6 +97,11 @@ const emit = defineEmits<{
    * caller's, handed back as given.
    */
   (event: 'choose', item: string, action: string): void
+  /**
+   * The item the keyboard is standing on, said whenever it moves. A list that
+   * changes under the keyboard says this once, when it has settled.
+   */
+  (event: 'lit', item: PaletteLit): void
   /**
    * Backspace was pressed in an empty field. The caller keeps the steps and
    * decides what going back means.
@@ -170,6 +176,13 @@ watch(
 watch(typed, () => {
   held.value = ''
 })
+
+/**
+ * Where the keyboard is standing, for a caller that shows what it is standing
+ * on. A pointer that has moved lights an item, so this is said for a pointer
+ * crossing the list too.
+ */
+watch(held, (now) => emit('lit', now), { flush: 'post' })
 
 /**
  * Where the pointer was. Only a pointer that has actually moved lights what it

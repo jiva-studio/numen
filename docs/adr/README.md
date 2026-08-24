@@ -59,6 +59,7 @@ Read these first; everything else is derived from them.
 - [ADR-0020 — How an interface component is built](0020-how-an-interface-component-is-built.md)
 - [ADR-0028 — The component library is shadcn-vue on Tailwind](0028-the-component-library-is-shadcn-vue.md)
 - [ADR-0025 — A client talks to the core through a schema](0025-a-client-talks-to-the-core-through-a-schema.md)
+- [ADR-0041 — A theme is a CSS file, and there is one of them](0041-a-theme-is-a-css-file.md)
 
 ## Agents
 

@@ -62,6 +62,8 @@ export const WORDS = {
   newPlex: plex.newPlex,
   newAgent: agent.newAgent,
   close: 'Close this tab',
+  appearance: 'Change the theme',
+  mode: 'Light or dark',
   findKeys: commandKeyWord(navigator.userAgent),
   first: 'Go to the note the vault opens with',
   goto: 'Go to a note',
@@ -75,6 +77,24 @@ export const WORDS = {
   typeName: 'What is it called',
   callIt: 'Call it',
   typeNote: 'Look for a note',
+  /** One of a list the window holds: the field, and what Enter does. */
+  typeChoice: 'Choose one',
+  chooses: 'Choose it',
+  /** The two shelves the themes are drawn in, and where a person's own go. */
+  shipping: 'Ships with numen',
+  owned: 'Your own themes',
+  noneOwned: 'A .css file in numen/themes/, beside numen.json, is one of these',
+  /** The band the three halves are drawn in, and the one worn now. */
+  half: 'Light and dark',
+  worn: 'Worn now',
+  /** The three halves, and why the theme worn leaves nothing to choose. */
+  system: 'Follow the system',
+  light: 'Light',
+  dark: 'Dark',
+  pinned: 'The theme worn sets this itself',
+  /** The themes could not be listed, and a theme's file could not be read. */
+  unlisted: 'The themes could not be listed',
+  unworn: 'That theme could not be read, so it is not worn',
   asking: 'Confirm',
   answer: 'Choose an answer',
   keeps: 'Keep the note',

@@ -19,6 +19,7 @@ export { commandKeyWord } from './palette/model'
 export type {
   PaletteAction,
   PaletteItem,
+  PaletteLit,
   PalettePart,
   PaletteBand,
   PaletteSpan,

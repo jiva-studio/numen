@@ -6,3 +6,4 @@
  */
 export * from './src/numen/v1/vault_pb.js'
 export * from './src/numen/v1/agent_pb.js'
+export * from './src/numen/v1/theme_pb.js'

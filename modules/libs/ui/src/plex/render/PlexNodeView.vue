@@ -213,15 +213,20 @@ const hue = computed(() => ({
 
 <style scoped>
 /* No transition on the position — it comes from the frame, and a CSS one here
-   would race it. Hover is a filter so that it leaves the box's own colours
-   alone: the fill is a token and the outline carries the seat's hue. */
+   would race it. */
 .plex__node {
   cursor: pointer;
-  transition: filter var(--numen-motion-hover) var(--numen-easing);
 }
 
-.plex__node:hover {
-  filter: brightness(var(--numen-hover-brightness));
+/* Hover mixes a little of a node's own text into the ground under it, which
+   darkens a light node and lightens a dark one. The outline is left to the
+   seat's hue, and the focused node is painted from the pair it wears. */
+.plex__node:hover .plex__box {
+  fill: color-mix(in oklab, var(--numen-node-bg), var(--numen-node-fg) 8%);
+}
+
+.plex__node--focus:hover .plex__box {
+  fill: color-mix(in oklab, var(--numen-focus-bg), var(--numen-focus-fg) 8%);
 }
 
 .plex__node--focus {
@@ -229,13 +234,21 @@ const hue = computed(() => ({
 }
 
 /* The hue comes from the node's own seat, so a new seat needs a token and
-   nothing here. It changes over the length of the move that changes the seat,
-   or a node would wear the focus colours while still halfway there. */
+   nothing here. The outline changes over the length of the move that changes
+   the seat; the fill answers the pointer at the speed a pointer is answered. */
 .plex__box {
   rx: var(--numen-radius);
   fill: var(--numen-node-bg);
   stroke: var(--numen-seat-hue, var(--numen-node-border));
   stroke-width: var(--numen-stroke);
+  transition:
+    fill var(--numen-motion-hover) var(--numen-easing),
+    stroke var(--numen-plex-move) var(--numen-easing);
+}
+
+/* While the plex is moving, the fill is a seat's colour too: the focused node
+   is painted from its own pair, and follows the move as the outline does. */
+[data-moving] .plex__box {
   transition:
     fill var(--numen-plex-move) var(--numen-easing),
     stroke var(--numen-plex-move) var(--numen-easing);

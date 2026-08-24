@@ -211,6 +211,88 @@ describe('walking the list', () => {
   })
 })
 
+describe('where the keyboard is standing', () => {
+  /** A pointer over an item, from wherever the one before it was. */
+  const passOver = async (item: Element | undefined, at: number) => {
+    item?.dispatchEvent(
+      new PointerEvent('pointermove', { bubbles: true, clientX: at, clientY: at }),
+    )
+    await nextTick()
+  }
+
+  it('says the item it opens on, and every item walked to', async () => {
+    const palette = mountPalette()
+    await settle()
+    expect(palette.emitted('lit')).toEqual([['entropy']])
+
+    await press('ArrowDown')
+    await press('ArrowDown')
+    expect(palette.emitted('lit')).toEqual([['entropy'], ['enthalpy'], ['engine']])
+  })
+
+  it('says nothing where there is nothing to stand on', async () => {
+    const palette = mountPalette({ bands: [{ id: 'names', title: 'Names', items: [] }] })
+    await settle()
+
+    await press('ArrowDown')
+    expect(palette.emitted('lit')).toBeUndefined()
+  })
+
+  it('says the item a pointer that has moved is over, and nothing for one standing still', async () => {
+    const palette = mountPalette()
+    await settle()
+
+    await passOver(options()[1], 40)
+    expect(palette.emitted('lit')?.at(-1)).toEqual(['enthalpy'])
+
+    // The list scrolled under a pointer that never moved, and the row under it
+    // is another one.
+    await passOver(options()[3], 40)
+    expect(palette.emitted('lit')).toHaveLength(2)
+  })
+
+  it('says nothing for a row the keyboard passes over', async () => {
+    const palette = mountPalette()
+    await settle()
+
+    await passOver(options()[2], 40)
+    await press('ArrowDown')
+    await press('ArrowDown')
+
+    expect(palette.emitted('lit')?.flat()).not.toContain('stuck')
+  })
+
+  it('says once what a fresh list settled on, and not the emptiness before it', async () => {
+    const palette = mountPalette()
+    await settle()
+
+    await palette.setProps({ modelValue: 'heat', bands: [SECTIONS[1]!] })
+    await settle()
+
+    expect(palette.emitted('lit')).toEqual([['entropy'], ['engine']])
+  })
+
+  it('says nothing when a band lands and what is lit stays where it was', async () => {
+    const palette = mountPalette({ bands: [SECTIONS[1]!] })
+    await settle()
+
+    await palette.setProps({ bands: SECTIONS })
+    await settle()
+
+    expect(palette.emitted('lit')).toEqual([['engine']])
+  })
+
+  it('stands on nothing once it is put away', async () => {
+    const palette = mountPalette()
+    await settle()
+
+    await palette.setProps({ open: false })
+    await settle()
+
+    expect(palette.emitted('lit')?.at(-1)).toEqual([''])
+  })
+})
+
 describe('choosing', () => {
   it('reaches the first action with Enter and the second with Shift', async () => {
     const palette = mountPalette()

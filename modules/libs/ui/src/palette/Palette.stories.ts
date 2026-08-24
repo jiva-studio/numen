@@ -27,6 +27,7 @@ interface Knobs {
   step: string
   name: string
   onChoose: (item: string, action: string) => void
+  onLit: (item: string) => void
   onDismiss: () => void
   onBack: () => void
 }
@@ -160,6 +161,7 @@ const over = (args: Knobs) => ({
         :step="args.step"
         :name="args.name"
         @choose="args.onChoose"
+        @lit="args.onLit"
         @back="args.onBack"
         @dismiss="open = false; args.onDismiss()"
       >
@@ -193,6 +195,7 @@ const meta = {
     bands: { table: { disable: true } },
     step: { table: { disable: true } },
     onChoose: { table: { disable: true } },
+    onLit: { table: { disable: true } },
     onDismiss: { table: { disable: true } },
     onBack: { table: { disable: true } },
   },
@@ -203,6 +206,7 @@ const meta = {
     step: '',
     name: 'Palette',
     onChoose: fn(),
+    onLit: fn(),
     onDismiss: fn(),
     onBack: fn(),
   },
@@ -236,6 +240,114 @@ export const Choosing: Story = {
 
     await userEvent.keyboard('{Shift>}{Enter}{/Shift}')
     await expect(args.onChoose).toHaveBeenCalledWith('entropy', 'read')
+  },
+}
+
+/**
+ * Where the keyboard is standing, said as it moves. A caller showing what is
+ * lit — a theme worn while it is walked past — draws from this alone.
+ */
+export const Lit: Story = {
+  play: async ({ args }) => {
+    await waitFor(() => expect(args.onLit).toHaveBeenCalledWith('entropy'))
+
+    await userEvent.keyboard('{ArrowDown}')
+    await waitFor(() => expect(args.onLit).toHaveBeenCalledWith('enthalpy'))
+
+    await userEvent.keyboard('{ArrowUp}')
+    await waitFor(() => expect(args.onLit).toHaveBeenLastCalledWith('entropy'))
+  },
+}
+
+/**
+ * One item, which is where it opens. Walking a list of one moves nothing, so
+ * it is said once and not again.
+ */
+export const LitAlone: Story = {
+  args: {
+    bands: [{ id: 'names', title: 'Names', items: [named('entropy', 'Entropy', 'ent')] }],
+  },
+  play: async ({ args }) => {
+    await waitFor(() => expect(args.onLit).toHaveBeenCalledWith('entropy'))
+
+    await userEvent.keyboard('{ArrowDown}')
+    await userEvent.keyboard('{End}')
+    await expect(args.onLit).toHaveBeenCalledTimes(1)
+  },
+}
+
+/** Every band came back with nothing, so there is nowhere to stand. */
+export const LitNothing: Story = {
+  args: {
+    bands: [{ id: 'names', title: 'Names', items: [], silence: 'No name holds those words' }],
+  },
+  play: async ({ args }) => {
+    await waitFor(() => expect(palette()).not.toBeNull())
+
+    await userEvent.keyboard('{ArrowDown}')
+    await expect(args.onLit).not.toHaveBeenCalled()
+  },
+}
+
+/** Far too many, walked to the end: every row it crosses is said, in order. */
+export const LitFarDown: Story = {
+  args: {
+    bands: [
+      {
+        id: 'names',
+        title: 'Names',
+        items: Array.from({ length: 60 }, (_, at) =>
+          named(`note-${at}`, `Entropy in ${at + 1} dimensions`, 'ent'),
+        ),
+      },
+    ],
+  },
+  play: async ({ args }) => {
+    await waitFor(() => expect(args.onLit).toHaveBeenCalledWith('note-0'))
+
+    for (let step = 0; step < 59; step += 1) await userEvent.keyboard('{ArrowDown}')
+
+    await waitFor(() => expect(args.onLit).toHaveBeenLastCalledWith('note-59'))
+    await expect(args.onLit).toHaveBeenCalledTimes(60)
+  },
+}
+
+/**
+ * What is never said: a row that cannot be chosen, and anything at all while
+ * the action panel stands. The panel is about the item that was lit when it
+ * opened, and the keyboard is in a list of its own.
+ */
+export const NotLit: Story = {
+  args: {
+    bands: [
+      {
+        id: 'names',
+        title: 'Names',
+        items: [
+          { ...named('entropy', 'Entropy', 'ent'), actions: EVERYTHING },
+          { id: 'stuck', title: 'Enthalpy — this file cannot be read', disabled: true },
+          named('gibbs', 'Gibbs free energy', 'e'),
+        ],
+      },
+    ],
+  },
+  play: async ({ args }) => {
+    await waitFor(() => expect(args.onLit).toHaveBeenCalledWith('entropy'))
+
+    await userEvent.keyboard('{ArrowDown}')
+    await waitFor(() => expect(args.onLit).toHaveBeenLastCalledWith('gibbs'))
+    await expect(args.onLit).not.toHaveBeenCalledWith('stuck')
+
+    await userEvent.click(within(document.body).getByText(/cannot be read/))
+    await expect(args.onLit).toHaveBeenLastCalledWith('gibbs')
+
+    await userEvent.keyboard('{ArrowUp}')
+    await waitFor(() => expect(args.onLit).toHaveBeenCalledTimes(3))
+
+    await userEvent.keyboard('{Control>}k{/Control}')
+    await waitFor(() => expect(sheet()).not.toBeNull())
+    await userEvent.keyboard('{ArrowDown}')
+    await expect(args.onLit).toHaveBeenCalledTimes(3)
   },
 }
 

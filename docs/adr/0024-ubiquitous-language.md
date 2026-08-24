@@ -17,10 +17,11 @@
 - **Extended:** 2026-08-23 — `arriving`, `landed`, `disown`, `fill`,
   `searchable`, `cutting`, `kept`, and the model that is not here yet
 - **Extended:** 2026-08-24 — `rename` and `move` settled apart (ADR-0040)
+- **Extended:** 2026-08-24 — `theme`, `preset`, `mode` (ADR-0041)
 - **Applies to:** the product as a whole
 - **Related:** ADR-0003, ADR-0006, ADR-0007, ADR-0011, ADR-0014, ADR-0020,
   ADR-0026, ADR-0031, ADR-0032, ADR-0034, ADR-0036, ADR-0037, ADR-0038,
-  ADR-0040
+  ADR-0040, ADR-0041
 
 ## Context
 
@@ -176,6 +177,9 @@ in one place, meaning the obvious thing, needs no entry.
 | keep | Writing an overtaken tab's prose over its file, when the person says so (ADR-0032) |
 | take | Replacing an overtaken tab's prose with its file's, when the person says so (ADR-0032) |
 | mark | The one word a tab carries beside its title for the state it is in, and what a screen reader reads out: `stuck`, `gone`, `overtaken` or `unsaved`, the first of those that holds |
+| theme | A CSS file redeclaring tokens under `:root`, applied whole. Exactly one is applied (ADR-0041) |
+| preset | A theme shipped inside the application, named `preset:`. A theme in the person's own folder is named `mine:` (ADR-0041) |
+| mode | Which half of a token's pair is taken: `system`, `light`, `dark`. A theme pinning `color-scheme` leaves it nothing to choose (ADR-0041) |
 
 ### Words that were spent twice, and how they are settled
 

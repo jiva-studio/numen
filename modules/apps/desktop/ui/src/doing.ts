@@ -52,6 +52,11 @@ export interface Doing {
   copies(path: string): void
   /** The search, in place of the commands. */
   searches(): void
+  /**
+   * The window drawn another way: a theme worn from now on, or which half of a
+   * colour pair the tokens are read as. The identity is the window's own.
+   */
+  appearance(chosen: string): Promise<void>
   /** What was done, or could not be, in words a person reads. */
   says(text: string): void
 }
@@ -99,6 +104,8 @@ const carried: Record<string, Carries> = {
   agent: (_, on) => on.opens(AGENT),
   close: (deed, on) => on.closes(deed.tab),
   find: (_, on) => on.searches(),
+  appearance: (deed, on) => on.appearance(deed.name),
+  mode: (deed, on) => on.appearance(deed.name),
   first: (_, on, words) => travels(on.opening(), on, words),
   goto: (deed, on, words) => travels(deed.path, on, words),
 }

@@ -1,16 +1,104 @@
 /*
  * The whole styling contract. Everything a component paints with is named
  * here, and no component reaches past a token for a value.
+ *
+ * Every token stands on the root alone, so a component inherits what it paints
+ * with and a stylesheet redeclaring one at the root reaches every component. A
+ * theme is such a stylesheet: what it sets is the first part below, and every
+ * token it does not name keeps the value here.
  */
 
 /* Which half of every pair below is taken. On the root alone, so everything
-   the page contains inherits the page's answer. */
+   the page contains inherits the page's answer; a theme published in one half
+   pins it and writes flat colours. */
 :where(:root) {
   color-scheme: light dark;
 }
 
-:where(:root),
-:where(.numen) {
+/*
+ * What a theme sets.
+ *
+ * Each pair is one colour in light and in dark. Where a token carries a length
+ * as well, it says so where it stands.
+ */
+:where(:root) {
+  --numen-surface: light-dark(#fbfbfa, #17181a);
+  --numen-node-bg: light-dark(#ffffff, #23262a);
+  --numen-node-fg: light-dark(#1d1f22, #dfe2e6);
+  --numen-node-border: light-dark(#d8d9dd, #34383e);
+
+  --numen-focus-bg: light-dark(#1d1f22, #e8eaee);
+  --numen-focus-fg: light-dark(#fbfbfa, #17181a);
+  --numen-focus-border: light-dark(#1d1f22, #e8eaee);
+
+  /* One hue per seat, carrying the meaning the position already carries: the
+     arrangement is what a reader learns, the colour is what they use first. */
+  --numen-seat-parent: light-dark(#3f6ca8, #7aa7dd);
+  --numen-seat-child: light-dark(#3d7f5f, #6fbd93);
+  --numen-seat-jump: light-dark(#9a6a2f, #d6a463);
+  --numen-seat-sibling: light-dark(#7a5490, #b48fcb);
+
+  --numen-edge: light-dark(#c3c6cc, #3d424a);
+  --numen-edge-label: light-dark(#7b7f87, #8b9098);
+  --numen-ring: light-dark(#2f6fd0, #78a9ef);
+  /* The ground under selected text. The second is the same selection where the
+     keyboard is somewhere else, the third every other place that text stands. */
+  --numen-selection: light-dark(#2f6fd038, #78a9ef42);
+  --numen-selection-away: light-dark(#2f6fd01f, #78a9ef24);
+  --numen-selection-match: light-dark(#2f6fd01a, #78a9ef1f);
+  --numen-alarm: light-dark(#a33a32, #e08b83);
+  /* The band something is said in that a person should read but need not act
+     on at once. */
+  --numen-caution-bg: light-dark(#fff4e5, #3a2e1c);
+  --numen-caution-fg: light-dark(#7a4b00, #f0c890);
+  /* The ground under a stretch of text something is about to change. It sits
+     under words that are still being read, so it is a tint and not a colour. */
+  --numen-highlight: light-dark(#d6a46333, #d6a4633d);
+
+  /* Text with marks in it: the marks themselves, the ground under code, and
+     the ground under the head row of a table. */
+  --numen-syntax-mark: light-dark(#b3b6bc, #5f656d);
+  --numen-code-bg: light-dark(#f2f2f0, #1d2023);
+  --numen-table-head-bg: light-dark(#f2f2f0, #22252a);
+  /* One hue per kind of word in a highlighted language. */
+  --numen-syntax-keyword: light-dark(#8250bf, #c39cf0);
+  --numen-syntax-name: light-dark(#1f5aa6, #7fb0ea);
+  --numen-syntax-type: light-dark(#0a6b74, #63bcc6);
+  --numen-syntax-string: light-dark(#2f7a4a, #7fc79b);
+  --numen-syntax-number: light-dark(#a35a12, #e0a668);
+  --numen-syntax-comment: light-dark(#8a8e96, #7b8089);
+  --numen-syntax-punctuation: light-dark(#6c7079, #979da6);
+
+  /* What a panel is tinted with, and what shows through it. The blur goes with
+     the alpha the tint carries: an opaque tint leaves nothing to blur, so a
+     theme setting one sets the other. */
+  --numen-panel-bg: light-dark(#ffffffcc, #23262acc);
+  --numen-panel-border: light-dark(#00000014, #ffffff1f);
+  --numen-panel-blur: 24px;
+  /* What a card is lifted off the window by, and what a panel is lifted by.
+     Each carries its offsets and its spread beside its colour, so a theme
+     setting one writes those lengths again. */
+  --numen-shadow-card: 0 0.5rem 1.5rem light-dark(#00000026, #00000059);
+  --numen-panel-shadow:
+    0 1px 2px light-dark(#0000001a, #00000047), 0 12px 32px
+    light-dark(#00000024, #00000059);
+  /* The wash a panel lays over what it covers. */
+  --numen-scrim: light-dark(#00000014, #0000005c);
+
+  --numen-field-bg: light-dark(#ffffff, #1d2023);
+  --numen-field-border: light-dark(#dcdde1, #383c43);
+
+  /* What was said is a bubble; what came back is text on the surface. */
+  --numen-bubble-bg: light-dark(#eceef2, #2b2f35);
+  --numen-bubble-fg: light-dark(#1d1f22, #dfe2e6);
+  --numen-answer-fg: light-dark(#1d1f22, #dfe2e6);
+}
+
+/*
+ * What a theme leaves alone: the type, the measures and the timings. They are
+ * the same under every palette.
+ */
+:where(:root) {
   --numen-font-sans:
     ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans',
     'Noto Sans Devanagari', 'Noto Sans Arabic', sans-serif;
@@ -42,39 +130,6 @@
   --numen-thread-dash: 4 4;
   --numen-ghost-dash: 6 4;
 
-  --numen-surface: light-dark(#fbfbfa, #17181a);
-  --numen-node-bg: light-dark(#ffffff, #23262a);
-  --numen-node-fg: light-dark(#1d1f22, #dfe2e6);
-  --numen-node-border: light-dark(#d8d9dd, #34383e);
-  --numen-hover-brightness: light-dark(0.965, 1.16);
-
-  --numen-focus-bg: light-dark(#1d1f22, #e8eaee);
-  --numen-focus-fg: light-dark(#fbfbfa, #17181a);
-  --numen-focus-border: light-dark(#1d1f22, #e8eaee);
-
-  /* One hue per seat, carrying the meaning the position already carries: the
-     arrangement is what a reader learns, the colour is what they use first. */
-  --numen-seat-parent: light-dark(#3f6ca8, #7aa7dd);
-  --numen-seat-child: light-dark(#3d7f5f, #6fbd93);
-  --numen-seat-jump: light-dark(#9a6a2f, #d6a463);
-  --numen-seat-sibling: light-dark(#7a5490, #b48fcb);
-
-  --numen-edge: light-dark(#c3c6cc, #3d424a);
-  --numen-edge-label: light-dark(#7b7f87, #8b9098);
-  --numen-ring: light-dark(#2f6fd0, #78a9ef);
-  /* The ground under selected text. The second is the same selection where the
-     keyboard is somewhere else. */
-  --numen-selection: light-dark(#2f6fd038, #78a9ef42);
-  --numen-selection-away: light-dark(#2f6fd01f, #78a9ef24);
-  --numen-alarm: light-dark(#a33a32, #e08b83);
-  /* The band something is said in that a person should read but need not act
-     on at once. */
-  --numen-caution-bg: light-dark(#fff4e5, #3a2e1c);
-  --numen-caution-fg: light-dark(#7a4b00, #f0c890);
-  /* The ground under a stretch of text something is about to change. It sits
-     under words that are still being read, so it is a tint and not a colour. */
-  --numen-highlight: light-dark(#d6a46333, #d6a4633d);
-
   /* The clearance reading keeps from the edge of the pane it fills. A note and
      a conversation are read at the same measure, so they keep the same one. */
   --numen-gutter: 20px;
@@ -83,22 +138,11 @@
   --numen-inset: 8px;
   --numen-inset-wide: 12px;
 
-  /* A panel floats: rounded on every side, with what it covers showing
-     through it. The tint and the blur go together when transparency is
-     turned down. */
+  /* A panel floats: rounded on every side, with what it holds clear of the
+     curve. */
   --numen-radius-panel: 12px;
   --numen-panel-padding: 12px;
   --numen-panel-gap: 10px;
-  --numen-panel-bg: light-dark(#ffffffcc, #23262acc);
-  --numen-panel-border: light-dark(#00000014, #ffffff1f);
-  --numen-panel-blur: 24px;
-  /* What a card is lifted off the window by, and the wash a panel lays over
-     what it covers. */
-  --numen-shadow-card: 0 0.5rem 1.5rem light-dark(#00000026, #00000059);
-  --numen-scrim: light-dark(#00000014, #0000005c);
-  --numen-panel-shadow:
-    0 1px 2px light-dark(#0000001a, #00000047), 0 12px 32px
-    light-dark(#00000024, #00000059);
 
   /* What floats over the window, in the order it stands. Everything that
      floats takes one of these, and nothing takes a number of its own. */
@@ -119,8 +163,6 @@
   --numen-radius-field: calc(var(--numen-field-min) / 2);
   /* The clearance the typing keeps from the ends, which is around the curve. */
   --numen-field-text-inset: 14px;
-  --numen-field-bg: light-dark(#ffffff, #1d2023);
-  --numen-field-border: light-dark(#dcdde1, #383c43);
   /* Lines of typing the field grows to before it scrolls. */
   --numen-field-lines: 10;
 
@@ -131,10 +173,6 @@
   --numen-dot-rise: 3px;
   --numen-dot-cycle: 1200ms;
 
-  /* What was said is a bubble; what came back is text on the surface. */
-  --numen-bubble-bg: light-dark(#eceef2, #2b2f35);
-  --numen-bubble-fg: light-dark(#1d1f22, #dfe2e6);
-  --numen-answer-fg: light-dark(#1d1f22, #dfe2e6);
   --numen-radius-bubble: 12px;
   --numen-turn-gap: 16px;
   /* How much of the width one bubble may take before it wraps. */

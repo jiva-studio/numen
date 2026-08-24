@@ -26,6 +26,10 @@ type Config struct {
 	IndexPath    string
 	RegistryPath string
 	ServiceDir   string
+	// SettingsPath is the file a person configures this installation in.
+	SettingsPath string
+	// ThemesPath is the folder the person's own themes are read from.
+	ThemesPath string
 	// Extensions are the file extensions treated as notes. Empty means the
 	// default, which is markdown alone.
 	Extensions []string
@@ -70,6 +74,37 @@ func (c Config) Indexing(said settings.Indexing) Config {
 	c.Recognition = said.Recognition
 	c.Proofreading = said.Proofreading
 	return c
+}
+
+// Settings are what a person has configured this installation to do. An
+// installation nobody has configured is written down as what it is doing.
+func (c Config) Settings() (settings.Config, error) {
+	path, err := c.settingsFile()
+	if err != nil {
+		return settings.Config{}, err
+	}
+	return settings.At(path)
+}
+
+// settingsFile is the file a person configures this installation in.
+func (c Config) settingsFile() (string, error) {
+	if c.SettingsPath != "" {
+		return c.SettingsPath, nil
+	}
+	if file, chosen := c.beside("numen.json"); chosen {
+		return file, nil
+	}
+	return settings.Path()
+}
+
+// beside is where this installation keeps a file of its own. A registry pointed
+// somewhere chosen takes everything else with it, which is what a test and a
+// second installation both need.
+func (c Config) beside(name string) (string, bool) {
+	if c.RegistryPath == "" {
+		return "", false
+	}
+	return filepath.Join(filepath.Dir(c.RegistryPath), name), true
 }
 
 // Registry is the list of vaults this installation knows: application state,

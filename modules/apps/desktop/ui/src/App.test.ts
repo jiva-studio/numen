@@ -5,7 +5,7 @@
  * a tab holds one, and that a vault which could not be read is not shown as an
  * empty one.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
 import { Agent, branch, Editor, pane, Palette, Plex, Reader, Workspace } from '@numen/ui'
@@ -28,8 +28,8 @@ const { said, held, asked } = vi.hoisted(() => ({
   async *held(): AsyncGenerator<never> {
     await new Promise<never>(() => {})
   },
-  /** What the window asked the vault to do to a note, in the order it asked. */
-  asked: { renamed: [] as string[], removed: [] as string[] },
+  /** What the window asked the application for, in the order it asked. */
+  asked: { renamed: [] as string[], removed: [] as string[], worn: [] as string[] },
 }))
 
 vi.mock('./vault', () => ({
@@ -78,6 +78,25 @@ vi.mock('./vault', () => ({
 
 vi.mock('./agent/core', () => ({ core: { ask: held, finish: async () => {} } }))
 
+vi.mock('./theme', () => ({
+  themes: {
+    catalogue: async () => ({
+      themes: [
+        { name: 'preset:numen', title: 'numen', shipped: true, pinned: false },
+        { name: 'mine:sea', title: 'sea', shipped: false, pinned: false },
+      ],
+      applied: 'preset:numen',
+      mode: 'system',
+    }),
+    text: async (name: string) => `:root { --numen-surface: ${name} }`,
+    chooses: async (name: string, mode: string) => {
+      asked.worn.push(`${name} ${mode}`)
+      return ''
+    },
+    changed: held,
+  },
+}))
+
 const App = (await import('./App.vue')).default
 
 /** A moment for whatever the window asked the vault for to come back. */
@@ -113,6 +132,7 @@ afterEach(() => {
   said.names = []
   asked.renamed = []
   asked.removed = []
+  asked.worn = []
 })
 
 /**
@@ -373,6 +393,160 @@ describe('the keyboard on a step that confirms', () => {
     await press('Enter')
 
     expect(asked.removed).toStrictEqual(['Root.md false'])
+  })
+})
+
+/** How the window is drawn, walked as a person walks it, with nothing stubbed. */
+describe('the two commands over how the window is drawn', () => {
+  /** What the mode's element holds while the tokens are read as a pair. */
+  const PAIR = ':root { color-scheme: light dark; }'
+  /** What the page was served wearing, which is the applied theme's file. */
+  const SERVED = ':root { --numen-surface: #101014 }'
+
+  const styled = (css: string) => {
+    const one = document.createElement('style')
+    one.textContent = css
+    return one
+  }
+
+  /** What the head is wearing, in the order the elements stand in it. */
+  const dressed = () =>
+    [...document.head.querySelectorAll('style')].map((one) => one.textContent)
+
+  const field = () => document.body.querySelector<HTMLInputElement>('.palette__field')
+
+  const press = async (key: string) => {
+    field()?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }))
+    await settles()
+  }
+
+  const type = async (text: string) => {
+    const into = field()
+    if (!into) return
+    into.value = text
+    into.dispatchEvent(new Event('input'))
+    await settles()
+  }
+
+  /** The page as the window's handler serves it, before the window is drawn. */
+  beforeEach(() => {
+    for (const one of document.head.querySelectorAll('style')) one.remove()
+    document.head.append(styled(PAIR), styled(SERVED))
+  })
+
+  /** The commands open, and the one the words typed name taken up. */
+  const over = async (typed: string) => {
+    const window = await drawnWithPalette()
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
+    await settles()
+    await type(typed)
+    await press('Enter')
+    return window
+  }
+
+  /** Every row the words typed leave, in the order they are drawn. */
+  const left = () =>
+    [...document.body.querySelectorAll('.palette__item')].map((one) =>
+      one.querySelector('.palette__name')?.textContent?.trim(),
+    )
+
+  /** The bands standing, by the name each carries. */
+  const bands = () =>
+    [...document.body.querySelectorAll('.palette__title')].map((one) => one.textContent?.trim())
+
+  describe('the words a person types for them', () => {
+    it('find the theme by “theme”, and light and dark by either word', async () => {
+      await drawnWithPalette()
+      globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
+      await settles()
+
+      await type('theme')
+      expect(left()).toStrictEqual(['Change the theme'])
+
+      await type('light')
+      expect(left()).toStrictEqual(['Light or dark'])
+
+      await type('dark')
+      expect(left()).toStrictEqual(['Light or dark'])
+    })
+  })
+
+  describe('the step that offers the themes', () => {
+    it('draws the shelves as bands, and opens on the theme the window wears', async () => {
+      await over('theme')
+
+      expect(bands()).toStrictEqual(['Ships with numen', 'Your own themes'])
+      expect(document.body.querySelector('[data-here]')?.textContent).toContain('numen')
+      expect(dressed()).toStrictEqual([PAIR, SERVED])
+    })
+
+    it('wears the theme the keyboard walks onto', async () => {
+      await over('theme')
+
+      await press('ArrowDown')
+
+      expect(dressed()).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }'])
+      expect(asked.worn).toStrictEqual([])
+    })
+
+    it('puts back the theme the settings name when the step is left', async () => {
+      await over('theme')
+      await press('ArrowDown')
+
+      await press('Escape')
+
+      expect(dressed()).toStrictEqual([PAIR, SERVED])
+      expect(asked.worn).toStrictEqual([])
+    })
+
+    it('keeps wearing the theme that was chosen, and writes it down', async () => {
+      await over('theme')
+      await press('ArrowDown')
+
+      await press('Enter')
+
+      expect(asked.worn).toStrictEqual(['mine:sea system'])
+      expect(dressed()).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }'])
+    })
+  })
+
+  describe('the step that offers light and dark', () => {
+    it('opens on the half the tokens are read as, in a band of its own', async () => {
+      await over('light')
+
+      expect(bands()).toStrictEqual(['Light and dark'])
+      expect(left()).toStrictEqual(['Follow the system', 'Light', 'Dark'])
+      expect(dressed()).toStrictEqual([PAIR, SERVED])
+    })
+
+    it('reads the tokens as the half the keyboard walks onto', async () => {
+      await over('light')
+
+      await press('ArrowDown')
+
+      expect(dressed()).toStrictEqual([':root { color-scheme: light; }', SERVED])
+      expect(asked.worn).toStrictEqual([])
+    })
+
+    it('puts back the half the settings name when the step is left', async () => {
+      await over('light')
+      await press('ArrowDown')
+
+      await press('Escape')
+
+      expect(dressed()).toStrictEqual([PAIR, SERVED])
+      expect(asked.worn).toStrictEqual([])
+    })
+
+    it('writes the half that was chosen, leaving the theme where it was', async () => {
+      await over('dark')
+      await press('End')
+
+      await press('Enter')
+
+      expect(asked.worn).toStrictEqual(['preset:numen dark'])
+      expect(dressed()).toStrictEqual([':root { color-scheme: dark; }', SERVED])
+    })
   })
 })
 

@@ -1,31 +1,32 @@
 /**
  * What the editor is painted in.
  *
- * The colours it shares with the rest of the product are tokens; the ones only
- * text with marks in it has a use for are named here and nowhere else.
+ * Every colour is a token, so a theme reaches marked-up text as it reaches
+ * everything else. The `--editor-` names are this file's own, and each stands
+ * for the token it is given.
  */
 import { EditorView } from '@codemirror/view'
 
 export const theme = EditorView.theme({
   '&': {
-    '--editor-mark': 'light-dark(#b3b6bc, #5f656d)',
+    '--editor-mark': 'var(--numen-syntax-mark)',
     '--editor-link': 'var(--numen-ring)',
     '--editor-marker': 'var(--numen-edge-label)',
-    '--editor-code-bg': 'light-dark(#f2f2f0, #1d2023)',
-    '--editor-head-bg': 'light-dark(#f2f2f0, #22252a)',
+    '--editor-code-bg': 'var(--numen-code-bg)',
+    '--editor-head-bg': 'var(--numen-table-head-bg)',
     '--editor-mono':
       "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace",
     '--editor-cell-padding': '4px 8px',
     '--editor-grow': '16px',
     '--editor-block-gap': '0.6em',
 
-    '--editor-keyword': 'light-dark(#8250bf, #c39cf0)',
-    '--editor-name': 'light-dark(#1f5aa6, #7fb0ea)',
-    '--editor-type': 'light-dark(#0a6b74, #63bcc6)',
-    '--editor-string': 'light-dark(#2f7a4a, #7fc79b)',
-    '--editor-number': 'light-dark(#a35a12, #e0a668)',
-    '--editor-comment': 'light-dark(#8a8e96, #7b8089)',
-    '--editor-punctuation': 'light-dark(#6c7079, #979da6)',
+    '--editor-keyword': 'var(--numen-syntax-keyword)',
+    '--editor-name': 'var(--numen-syntax-name)',
+    '--editor-type': 'var(--numen-syntax-type)',
+    '--editor-string': 'var(--numen-syntax-string)',
+    '--editor-number': 'var(--numen-syntax-number)',
+    '--editor-comment': 'var(--numen-syntax-comment)',
+    '--editor-punctuation': 'var(--numen-syntax-punctuation)',
 
     color: 'var(--numen-node-fg)',
     backgroundColor: 'transparent',
@@ -62,7 +63,7 @@ export const theme = EditorView.theme({
      one it picks for a light page. */
   '.cm-activeLine': { backgroundColor: 'transparent' },
   '.cm-specialChar': { color: 'var(--editor-mark)' },
-  '.cm-selectionMatch': { backgroundColor: 'light-dark(#2f6fd01a, #78a9ef1f)' },
+  '.cm-selectionMatch': { backgroundColor: 'var(--numen-selection-match)' },
 
   /* A heading is set by its level, and nothing else about it changes. */
   '.cm-heading': {
