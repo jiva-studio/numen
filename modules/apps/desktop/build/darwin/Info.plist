@@ -8,6 +8,8 @@
     <string>Numen</string>
     <key>CFBundleExecutable</key>
     <string>numen</string>
+    <key>CFBundleIconFile</key>
+    <string>numen</string>
     <key>CFBundleIdentifier</key>
     <string>studio.jiva.numen</string>
     <key>CFBundlePackageType</key>

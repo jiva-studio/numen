@@ -1,0 +1,741 @@
+/*
+ * The page's whole styling contract.
+ *
+ * The page is built as a plex: one hairline spine runs its length, and every
+ * band hangs off it at a node. Colour means direction and appears only where
+ * direction is meant — in the drawing and in the list beside it. Everything
+ * else is ink on paper.
+ *
+ * The ground and the three directions are the application's own values, so a
+ * picture of the window sits on a page painted the same.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  --paper: light-dark(#fbfbfa, #17181a);
+  --raised: light-dark(#ffffff, #212429);
+  --ink: light-dark(#191b1e, #e4e7ea);
+  --muted: light-dark(#6a6f77, #969ca5);
+  --rule: light-dark(#e4e4e7, #2a2e34);
+  --ring: light-dark(#2f6fd0, #78a9ef);
+
+  --up: light-dark(#3f6ca8, #7aa7dd);
+  --down: light-dark(#3d7f5f, #6fbd93);
+  --across: light-dark(#9a6a2f, #d6a463);
+
+  --display: 'Newsreader Variable', 'Newsreader', Georgia, 'Times New Roman', serif;
+  --sans: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+
+  /* The column the spine's labels stand in, and the room between line and text. */
+  --label: 9.5rem;
+  --step: 2.75rem;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.62;
+  font-feature-settings: 'kern';
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  text-wrap: balance;
+}
+
+h1,
+h2 {
+  font-family: var(--display);
+  font-weight: 500;
+  font-variation-settings: 'opsz' 36;
+  letter-spacing: -0.018em;
+}
+
+p {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+img,
+svg {
+  display: block;
+  max-inline-size: 100%;
+}
+
+.frame {
+  inline-size: min(100% - clamp(2rem, 7vw, 7rem), 78rem);
+  margin-inline: auto;
+}
+
+/* The strip at the top: the name, and the one thing there is to do. */
+.masthead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-block: 2rem;
+}
+
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--display);
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+
+.wordmark img {
+  border-radius: 22%;
+}
+
+.masthead a:not(.wordmark) {
+  font-size: 0.92rem;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.masthead a:not(.wordmark):hover {
+  color: var(--ink);
+}
+
+/* The first screen. It stands clear of the spine: it is what the spine hangs
+   from. */
+.hero {
+  padding-block: clamp(3.5rem, 9vw, 8rem) 0;
+}
+
+.hero h1 {
+  font-size: clamp(2.9rem, 7.4vw, 5.6rem);
+  line-height: 0.98;
+  max-inline-size: 15ch;
+}
+
+.hero h1 em {
+  font-style: italic;
+  font-variation-settings: 'opsz' 60;
+}
+
+.lead {
+  margin-block-start: 1.75rem;
+  max-inline-size: 44ch;
+  font-size: clamp(1.08rem, 1.6vw, 1.25rem);
+  color: var(--muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.85rem 1.4rem;
+  margin-block-start: 2.5rem;
+}
+
+.button {
+  display: inline-block;
+  padding: 0.72rem 1.5rem;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 0.98rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: transform 140ms ease, opacity 140ms ease;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+  opacity: 0.88;
+}
+
+.beside {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+
+/* The picture of the window, with the three directions washed faintly behind
+   it. */
+.stage {
+  /* How long one shot is held. Read here by the script that turns them, so
+     the fill in the dot and the turn itself are one number. */
+  --hold: 5200ms;
+
+  position: relative;
+  isolation: isolate;
+  /* Over the band below it: the picks hang past the picture, into ground the
+     next section owns, and whatever is drawn last there would take the press. */
+  z-index: 1;
+  margin-block-start: clamp(3rem, 6vw, 5rem);
+}
+
+.stage::before {
+  content: '';
+  position: absolute;
+  inset: -6% -5% -10%;
+  z-index: -1;
+  background:
+    radial-gradient(
+      58% 58% at 20% 28%,
+      color-mix(in oklab, var(--up) 26%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      52% 52% at 80% 74%,
+      color-mix(in oklab, var(--down) 22%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      42% 46% at 62% 12%,
+      color-mix(in oklab, var(--across) 18%, transparent),
+      transparent 72%
+    );
+  filter: blur(64px);
+  opacity: 0.55;
+}
+
+/* Every shot stands in the same place; the chosen one is the one lit. */
+.shots {
+  display: grid;
+}
+
+.shots > * {
+  grid-area: 1 / 1;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 280ms ease;
+}
+
+.stage:has(input[value='map']:checked) [data-shot='map'],
+.stage:has(input[value='writing']:checked) [data-shot='writing'],
+.stage:has(input[value='searching']:checked) [data-shot='searching'],
+.stage:has(input[value='asking']:checked) [data-shot='asking'] {
+  opacity: 1;
+  visibility: visible;
+}
+
+.shot {
+  display: block;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--raised);
+  box-shadow: 0 30px 70px light-dark(rgb(25 27 30 / 0.13), rgb(0 0 0 / 0.5));
+}
+
+.shot img {
+  display: block;
+  inline-size: 100%;
+  height: auto;
+}
+
+/* The row that changes which shot is on screen: under the picture's trailing
+   corner, and out of the flow, so the spine begins at the picture's own edge
+   and runs on unbroken. */
+.switch {
+  position: absolute;
+  inset-block-start: 100%;
+  inset-inline-end: 0;
+  display: flex;
+  gap: 0.45rem;
+  /* Less the room a pick keeps around its bar, so the bars sit where they
+     would without it. */
+  margin-block-start: calc(1.4rem - 12px);
+}
+
+/* One long dot per shot. What is drawn is three pixels tall; what can be
+   pressed is the whole height of the row. */
+.switch__pick {
+  display: flex;
+  align-items: center;
+  padding-block: 12px;
+  cursor: pointer;
+}
+
+.switch__bar {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  inline-size: 1.6rem;
+  block-size: 3px;
+  border-radius: 2px;
+  background: var(--rule);
+  transition: inline-size 240ms cubic-bezier(0.2, 0.7, 0.2, 1), background 200ms ease;
+}
+
+.switch__pick:hover .switch__bar {
+  background: color-mix(in oklab, var(--ink) 45%, var(--rule));
+}
+
+/* The chosen one is drawn out, and fills as its shot runs down. */
+.switch__pick:has(:checked) .switch__bar {
+  inline-size: 2.9rem;
+}
+
+.switch__bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+  background: var(--ink);
+}
+
+/* Standing still, the chosen dot is simply inked. */
+.switch__pick:has(:checked) .switch__bar::after {
+  transform: scaleX(1);
+}
+
+/* Going round, it fills over the time its shot is held. */
+.stage[data-turning] .switch__pick:has(:checked) .switch__bar::after {
+  animation: fill var(--hold) linear forwards;
+}
+
+.stage[data-held] .switch__pick:has(:checked) .switch__bar::after {
+  animation-play-state: paused;
+}
+
+@keyframes fill {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.switch__pick:has(:focus-visible) .switch__bar {
+  outline: 2px solid var(--ring);
+  outline-offset: 4px;
+}
+
+.switch__pick input,
+.switch__name {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shots > *,
+  .switch__bar {
+    transition: none;
+  }
+}
+
+/* Every band hangs off one hairline that runs the length of the page. */
+.band {
+  display: grid;
+  grid-template-columns: [label] var(--label) [body] minmax(0, 1fr);
+}
+
+.eyebrow {
+  grid-column: label;
+  padding-block-start: calc(var(--step) * 1.6 + 0.15rem);
+  padding-inline-end: 1.5rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: end;
+  color: var(--muted);
+}
+
+.band__body {
+  position: relative;
+  grid-column: body;
+  padding-inline-start: var(--step);
+  padding-block: calc(var(--step) * 1.6);
+  border-inline-start: 1px solid var(--rule);
+}
+
+/* The node the band hangs at, sitting on the line beside its heading. */
+.band__body::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: -4.5px;
+  inset-block-start: calc(var(--step) * 1.6 + 0.85rem);
+  inline-size: 8px;
+  block-size: 8px;
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  background: var(--paper);
+}
+
+.band h2 {
+  font-size: clamp(1.85rem, 3.6vw, 2.85rem);
+  line-height: 1.06;
+  max-inline-size: 20ch;
+}
+
+.band__lede {
+  margin-block-start: 1.15rem;
+  max-inline-size: 42ch;
+  font-size: 1.06rem;
+  color: var(--muted);
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 2.5rem 3rem;
+  margin-block-start: 3rem;
+}
+
+.features--four {
+  grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
+}
+
+.feature h3 {
+  font-family: var(--sans);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+.feature p {
+  margin-block-start: 0.55rem;
+  font-size: 0.96rem;
+  color: var(--muted);
+}
+
+/* The one band that puts a picture beside the prose. */
+.split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3rem;
+  align-items: center;
+}
+
+@media (min-width: 62rem) {
+  .split {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    gap: 4rem;
+  }
+}
+
+.roles {
+  display: grid;
+  gap: 1.1rem;
+  margin-block-start: 2.25rem;
+  padding: 0;
+  list-style: none;
+}
+
+.roles li {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: 1.25rem;
+  align-items: baseline;
+  font-size: 0.98rem;
+  color: var(--muted);
+}
+
+.roles b {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.roles li[data-role='up'] b {
+  color: var(--up);
+}
+
+.roles li[data-role='down'] b {
+  color: var(--down);
+}
+
+.roles li[data-role='across'] b {
+  color: var(--across);
+}
+
+/* Three notes and what joins them, drawn the way the application draws them. */
+.drawing {
+  inline-size: 100%;
+  block-size: auto;
+}
+
+.drawing__edges path {
+  fill: none;
+  stroke: light-dark(#c9ccd2, #3d424a);
+  stroke-width: 1.25;
+}
+
+.drawing__label {
+  fill: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.drawing__node rect {
+  fill: var(--raised);
+  stroke-width: 1;
+}
+
+.drawing__node text {
+  fill: var(--ink);
+  font-family: var(--sans);
+  font-size: 13.5px;
+  text-anchor: middle;
+}
+
+.drawing__node[data-seat='up'] rect {
+  stroke: var(--up);
+}
+
+.drawing__node[data-seat='down'] rect {
+  stroke: var(--down);
+}
+
+.drawing__node[data-seat='across'] rect {
+  stroke: var(--across);
+}
+
+.drawing__node[data-seat='focus'] rect {
+  fill: var(--ink);
+  stroke: var(--ink);
+}
+
+.drawing__node[data-seat='focus'] text {
+  fill: var(--paper);
+}
+
+.footnote {
+  margin-block-start: 2rem;
+  max-inline-size: 40ch;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+/* The end of the spine, and the one thing there is to do at it. */
+.close {
+  padding-block: clamp(5rem, 10vw, 8rem) clamp(3rem, 6vw, 5rem);
+  border-block-start: 1px solid var(--rule);
+  margin-block-start: calc(var(--step) * 1.6);
+}
+
+/* What there is to take: one row per machine, and what it can be taken as. */
+.shelf {
+  margin-block-start: 2.5rem;
+  max-inline-size: 46rem;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--raised);
+}
+
+.shelf__row {
+  display: grid;
+  grid-template-columns: 11rem minmax(0, 1fr);
+  gap: 1rem 1.5rem;
+  align-items: start;
+  padding: 1.35rem 1.6rem;
+}
+
+.shelf__row + .shelf__row {
+  border-block-start: 1px solid var(--rule);
+}
+
+.shelf__what {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding-block-start: 0.35rem;
+  font-size: 1.02rem;
+  font-weight: 600;
+}
+
+/* Said only of the row that matches the machine reading the page. */
+.shelf__yours {
+  display: none;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.shelf__row[data-yours] .shelf__yours {
+  display: inline-block;
+}
+
+.shelf__takes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.take {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.4rem 0.6rem;
+  margin-inline-start: -0.6rem;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background 140ms ease;
+}
+
+.take:hover {
+  background: color-mix(in oklab, var(--ink) 7%, transparent);
+}
+
+.take svg {
+  align-self: center;
+  inline-size: 1.05rem;
+  block-size: 1.05rem;
+  flex: none;
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.take:hover svg {
+  stroke: var(--ink);
+}
+
+.take b {
+  font-size: 0.98rem;
+  font-weight: 500;
+}
+
+.take span {
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.footnote a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in oklab, var(--muted) 55%, transparent);
+}
+
+.close h2 {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  line-height: 1.04;
+  max-inline-size: 16ch;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 2rem 3.5rem;
+  border-block-start: 1px solid var(--rule);
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+/* The studio is named as a link and drawn as one; the download beside it is a
+   destination the whole page has already offered, so it stays quiet. */
+.footer a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in oklab, var(--muted) 55%, transparent);
+}
+
+.footer nav a {
+  text-decoration: none;
+}
+
+.footer a:hover {
+  color: var(--ink);
+  text-decoration-color: currentColor;
+}
+
+/* Narrow: the spine folds away and the labels stand over what they name. */
+@media (max-width: 52rem) {
+  .band {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .eyebrow {
+    grid-column: 1;
+    padding-block: 3rem 0;
+    padding-inline-end: 0;
+    text-align: start;
+  }
+
+  .band__body {
+    grid-column: 1;
+    padding-inline-start: 0;
+    padding-block-start: 1rem;
+    border-inline-start: 0;
+  }
+
+  .band__body::before {
+    display: none;
+  }
+}
+
+/* What arrives, arrives once. The page is written visible, and only a document
+   that has said it will move things hides them to begin with. */
+:root[data-motion] .rise {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 640ms ease, transform 640ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+:root[data-motion] .hero .rise {
+  transition-delay: var(--wait, 0ms);
+}
+
+:root[data-motion] .rise[data-shown] {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+}

@@ -5,6 +5,8 @@
 # so that neither has to be remembered.
 
 DESKTOP  := modules/apps/desktop
+LANDING  := modules/apps/landing
+ICON     := modules/tools/icon
 UI       := modules/libs/ui
 PROTOCOL := modules/libs/protocol
 
@@ -28,6 +30,7 @@ install: ## fetch every module's dependencies
 	cd $(PROTOCOL) && npm install
 	cd $(UI) && npm install
 	cd $(DESKTOP)/ui && npm install
+	cd $(LANDING) && npm install
 
 .PHONY: generate
 generate: ## compile the schema into Go and TypeScript
@@ -51,6 +54,18 @@ interface: ## build the window's page into the binary's assets
 desktop: interface ## build the window
 	cd $(DESKTOP) && CGO_ENABLED=1 go build -o ../../../numen ./cmd/numen
 
+.PHONY: landing
+landing: ## build the page the product is read about on
+	cd $(LANDING) && npm run build
+
+.PHONY: shoot
+shoot: ## take the landing page's picture of the window from its story
+	cd $(LANDING) && npm run shoot
+
+.PHONY: icons
+icons: ## cut every platform's icon from the one drawing
+	cd $(ICON) && npm install && npm run build
+
 .PHONY: test
 test: ## run every test
 	cd $(DESKTOP) && go test ./... -race
@@ -63,3 +78,4 @@ lint: generate-check ## the checks CI runs, less the one needing a base branch
 	cd $(PROTOCOL) && buf lint
 	cd $(UI) && npm run typecheck
 	cd $(DESKTOP)/ui && npm run typecheck
+	cd $(LANDING) && npm run typecheck
