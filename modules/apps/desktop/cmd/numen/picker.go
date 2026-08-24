@@ -30,6 +30,12 @@ var _ port.Folders = (*picker)(nil)
 // on the thread that owns the window and hands the answer back here, so the
 // wait happens off that thread.
 func (p *picker) Choose(_ context.Context, title, startingAt string) (string, bool, error) {
+	// The library the picker is built by ends the process where this machine
+	// holds no settings for it to read, taking the window and whatever a person
+	// had not written down with it.
+	if !settled() {
+		return "", false, port.ErrNoPicker
+	}
 	if !p.alone() {
 		return "", false, port.ErrChoosing
 	}
