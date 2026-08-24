@@ -19,6 +19,26 @@ const BOTH = [
   { id: 'open', text: 'Open the note' },
 ]
 
+/** More actions than there are keys, which is what the action panel is for. */
+const MANY = [
+  { id: 'travel', text: 'Show in plex' },
+  { id: 'open', text: 'Open the note' },
+  { id: 'beside', text: 'Open beside' },
+  { id: 'rename', text: 'Rename' },
+  { id: 'remove', text: 'Move to trash' },
+]
+
+const OFFERING: PaletteBand[] = [
+  {
+    id: 'names',
+    title: 'Names',
+    items: [
+      { id: 'entropy', title: 'Entropy', actions: MANY, keys: '⌥1' },
+      { id: 'enthalpy', title: 'Enthalpy', actions: OPEN },
+    ],
+  },
+]
+
 const SECTIONS: PaletteBand[] = [
   {
     id: 'names',
@@ -63,8 +83,22 @@ const options = () => Array.from(document.body.querySelectorAll<HTMLElement>('[r
 const lit = () => document.body.querySelector<HTMLElement>('[data-here]')
 const keys = () => Array.from(document.body.querySelectorAll<HTMLElement>('.palette__key'))
 
-const press = async (key: string, more: KeyboardEventInit = {}) => {
-  field()?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, ...more }))
+const sheet = () => document.body.querySelector<HTMLElement>('.palette__actions')
+const hunt = () => document.body.querySelector<HTMLInputElement>('.palette__hunt')
+const deeds = () => Array.from(document.body.querySelectorAll<HTMLElement>('.palette__deed'))
+const litDeed = () => document.body.querySelector<HTMLElement>('.palette__deed[data-here]')
+
+const pressOn = async (on: Element | null, key: string, more: KeyboardEventInit = {}) => {
+  on?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, ...more }))
+  await nextTick()
+}
+
+const press = (key: string, more: KeyboardEventInit = {}) => pressOn(field(), key, more)
+
+const typeIn = async (into: HTMLInputElement | null, text: string) => {
+  if (!into) return
+  into.value = text
+  into.dispatchEvent(new Event('input'))
   await nextTick()
 }
 
@@ -440,5 +474,288 @@ describe('what the palette says about itself', () => {
 
     expect(off.getAttribute('data-here')).toBeNull()
     expect(lit()?.textContent).toContain('Entropy')
+  })
+})
+
+describe('an item offering more than two actions', () => {
+  it('says at the foot only what a key reaches, and where the rest are', async () => {
+    mountPalette({ bands: OFFERING })
+    await settle()
+
+    expect(keys().map((key) => key.textContent?.trim())).toEqual([
+      '↵ Show in plex',
+      '⇧↵ Open the note',
+    ])
+    expect(document.body.querySelector('.palette__more')?.textContent).toContain('Actions')
+  })
+
+  it('reaches the first two by key, and nothing past them', async () => {
+    const palette = mountPalette({ bands: OFFERING })
+    await settle()
+
+    await press('Enter')
+    expect(palette.emitted('choose')?.at(-1)).toEqual(['entropy', 'travel'])
+
+    await press('Enter', { shiftKey: true })
+    expect(palette.emitted('choose')?.at(-1)).toEqual(['entropy', 'open'])
+    expect(palette.emitted('choose')).toHaveLength(2)
+  })
+
+  it('writes the keystroke that reaches an item away from the palette', async () => {
+    mountPalette({ bands: OFFERING })
+    await settle()
+
+    expect(options()[0]?.querySelector('.palette__hint')?.textContent).toBe('⌥1')
+    expect(options()[1]?.querySelector('.palette__hint')).toBeNull()
+  })
+})
+
+describe('the action panel', () => {
+  const open = async () => {
+    const palette = mountPalette({ bands: OFFERING })
+    await settle()
+    await press('k', { ctrlKey: true })
+    await settle()
+    return palette
+  }
+
+  it('opens on the chord and lists everything the lit item offers', async () => {
+    await open()
+
+    expect(deeds().map((deed) => deed.textContent?.trim())).toEqual([
+      'Show in plex↵',
+      'Open the note⇧↵',
+      'Open beside',
+      'Rename',
+      'Move to trash',
+    ])
+  })
+
+  it('opens on the same chord held with the other key', async () => {
+    mountPalette({ bands: OFFERING })
+    await settle()
+
+    await press('k', { metaKey: true })
+    await settle()
+    expect(sheet()).not.toBeNull()
+  })
+
+  it('opens nothing for a list with nothing to be chosen in it', async () => {
+    mountPalette({ bands: [{ id: 'names', title: 'Names', items: [] }] })
+    await settle()
+
+    await press('k', { ctrlKey: true })
+    await settle()
+    expect(sheet()).toBeNull()
+  })
+
+  it('takes the keyboard into a field of its own', async () => {
+    await open()
+    expect(document.activeElement).toBe(hunt())
+  })
+
+  it('is a second list, and the one underneath is no longer the active one', async () => {
+    await open()
+
+    expect(field()?.getAttribute('aria-activedescendant')).toBeNull()
+    expect(hunt()?.getAttribute('aria-activedescendant')).toBe(deeds()[0]?.id)
+    expect(hunt()?.getAttribute('aria-controls')).toBe(
+      document.body.querySelector('.palette__deeds')?.id,
+    )
+    expect(deeds()[0]?.getAttribute('aria-selected')).toBe('true')
+    expect(deeds()[1]?.getAttribute('aria-selected')).toBe('false')
+  })
+
+  it('walks its own list, and leaves the list underneath where it was', async () => {
+    await open()
+
+    await pressOn(hunt(), 'ArrowDown')
+    expect(litDeed()?.textContent).toContain('Open the note')
+    expect(lit()?.textContent).toContain('Entropy')
+
+    await pressOn(hunt(), 'ArrowUp')
+    await pressOn(hunt(), 'ArrowUp')
+    expect(litDeed()?.textContent).toContain('Move to trash')
+  })
+
+  it('keeps to the actions the words in its field name', async () => {
+    await open()
+
+    await typeIn(hunt(), 'open')
+    expect(deeds().map((deed) => deed.textContent?.trim())).toEqual([
+      'Open the note⇧↵',
+      'Open beside',
+    ])
+    expect(litDeed()?.textContent).toContain('Open the note')
+
+    await typeIn(hunt(), 'nowhere')
+    expect(deeds()).toHaveLength(0)
+    expect(document.body.querySelector('.palette__deed-silence')).not.toBeNull()
+  })
+
+  it('runs the action it is on and puts itself away', async () => {
+    const palette = await open()
+
+    await typeIn(hunt(), 'trash')
+    await pressOn(hunt(), 'Enter')
+    await settle()
+
+    expect(palette.emitted('choose')?.at(-1)).toEqual(['entropy', 'remove'])
+    expect(sheet()).toBeNull()
+    expect(document.activeElement).toBe(field())
+  })
+
+  it('lights the action a pointer that has moved is over', async () => {
+    await open()
+
+    deeds()[2]?.dispatchEvent(
+      new PointerEvent('pointermove', { bubbles: true, clientX: 80, clientY: 80 }),
+    )
+    await nextTick()
+
+    expect(litDeed()?.textContent).toContain('Open beside')
+  })
+
+  it('runs the action a press lands on', async () => {
+    const palette = await open()
+
+    deeds()[3]?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await settle()
+
+    expect(palette.emitted('choose')?.at(-1)).toEqual(['entropy', 'rename'])
+    expect(sheet()).toBeNull()
+  })
+
+  it('closes on Escape and leaves the palette open', async () => {
+    const palette = await open()
+
+    await pressOn(hunt(), 'Escape')
+    await settle()
+
+    expect(palette.emitted('dismiss')).toBeUndefined()
+    expect(drawn()).not.toBeNull()
+    expect(sheet()).toBeNull()
+    expect(document.activeElement).toBe(field())
+  })
+
+  it('closes on the chord that opened it', async () => {
+    await open()
+
+    await pressOn(hunt(), 'k', { ctrlKey: true })
+    await settle()
+    expect(sheet()).toBeNull()
+  })
+
+  it('closes on a press anywhere but on itself', async () => {
+    await open()
+
+    document.body
+      .querySelector('.palette__list')
+      ?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+    await settle()
+
+    expect(sheet()).toBeNull()
+  })
+
+  it('keeps the item it is about while a pointer crosses the list', async () => {
+    await open()
+
+    options()[1]?.dispatchEvent(
+      new PointerEvent('pointermove', { bubbles: true, clientX: 40, clientY: 40 }),
+    )
+    await nextTick()
+
+    expect(lit()?.textContent).toContain('Entropy')
+    expect(deeds()).toHaveLength(5)
+  })
+
+  it('goes when the item it is about stops offering anything', async () => {
+    const palette = await open()
+
+    await palette.setProps({ bands: [{ id: 'names', title: 'Names', items: [] }] })
+    await settle()
+
+    expect(sheet()).toBeNull()
+  })
+
+  it('goes when the palette closes, and does not come back with it', async () => {
+    const palette = await open()
+
+    await palette.setProps({ open: false })
+    await settle()
+    await palette.setProps({ open: true })
+    await settle()
+
+    expect(sheet()).toBeNull()
+  })
+})
+
+describe('one step of several', () => {
+  it('says which step the field is on, and says it describes the field', async () => {
+    mountPalette({ bands: OFFERING, crumb: 'New name for «Entropy»' })
+    await settle()
+
+    const crumb = document.body.querySelector('.palette__crumb')
+    expect(crumb?.textContent).toBe('New name for «Entropy»')
+    expect(field()?.getAttribute('aria-describedby')).toBe(crumb?.id)
+  })
+
+  it('draws no chip and describes the field with nothing without one', async () => {
+    mountPalette({ bands: OFFERING })
+    await settle()
+
+    expect(document.body.querySelector('.palette__crumb')).toBeNull()
+    expect(field()?.getAttribute('aria-describedby')).toBeNull()
+  })
+
+  it('takes the keyboard back and selects what stands there when the step changes', async () => {
+    const palette = mountPalette({ bands: OFFERING, step: 'find' })
+    await settle()
+
+    await palette.setProps({ step: 'rename', modelValue: 'Entropy' })
+    await settle()
+
+    expect(document.activeElement).toBe(field())
+    expect(field()?.value).toBe('Entropy')
+    expect(field()?.selectionStart).toBe(0)
+    expect(field()?.selectionEnd).toBe('Entropy'.length)
+  })
+
+  it('puts the action panel away when the step changes', async () => {
+    const palette = mountPalette({ bands: OFFERING, step: 'find' })
+    await settle()
+    await press('k', { ctrlKey: true })
+    await settle()
+
+    await palette.setProps({ step: 'rename' })
+    await settle()
+
+    expect(sheet()).toBeNull()
+  })
+
+  it('asks for the step before on Backspace in an empty field', async () => {
+    const palette = mountPalette({ bands: OFFERING })
+    await settle()
+
+    await press('Backspace')
+    expect(palette.emitted('back')).toHaveLength(1)
+  })
+
+  it('asks for nothing on Backspace while something is typed', async () => {
+    const palette = mountPalette({ bands: OFFERING, modelValue: 'ent' })
+    await settle()
+
+    await press('Backspace')
+    expect(palette.emitted('back')).toBeUndefined()
+  })
+
+  it('asks for nothing on Backspace in the action panel', async () => {
+    const palette = mountPalette({ bands: OFFERING })
+    await settle()
+    await press('k', { ctrlKey: true })
+    await settle()
+
+    await pressOn(hunt(), 'Backspace')
+    expect(palette.emitted('back')).toBeUndefined()
   })
 })

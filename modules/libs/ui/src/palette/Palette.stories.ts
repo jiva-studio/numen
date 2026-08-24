@@ -23,9 +23,12 @@ import {
 interface Knobs {
   bands: readonly PaletteBand[]
   placeholder: string
+  crumb: string
+  step: string
   name: string
   onChoose: (item: string, action: string) => void
   onDismiss: () => void
+  onBack: () => void
 }
 
 /** What a plex can do with a name, and what a note can do with a place in it. */
@@ -34,6 +37,21 @@ const TRAVEL = [
   { id: 'read', text: 'Open the note' },
 ]
 const READ = [{ id: 'read', text: 'Open the note' }]
+
+/** What a command offers: doing it. */
+const RUN = [{ id: 'run', text: 'Run' }]
+
+/** Everything one thing can be asked, which is more than the keys reach. */
+const EVERYTHING = [
+  { id: 'travel', text: 'Show in plex' },
+  { id: 'read', text: 'Open the note' },
+  { id: 'beside', text: 'Open beside' },
+  { id: 'rename', text: 'Rename' },
+  { id: 'copy', text: 'Copy the link' },
+  { id: 'reveal', text: 'Show in the folder' },
+  { id: 'pin', text: 'Keep at the top' },
+  { id: 'remove', text: 'Move to trash' },
+]
 
 /**
  * Where a word stands in a line, every time it stands there. This is the
@@ -111,6 +129,12 @@ const MEANING: PaletteBand = {
 
 const ALL: PaletteBand[] = [NAMES, TEXT, { ...MEANING, working: true }]
 
+/** The same names, each offering more than two keys can reach. */
+const NAMED: PaletteBand = {
+  ...NAMES,
+  items: NAMES.items.map((one) => ({ ...one, actions: EVERYTHING.slice(0, 5) })),
+}
+
 /** A window with something in it, and a palette standing over the lot. */
 const over = (args: Knobs) => ({
   components: { Palette },
@@ -132,8 +156,11 @@ const over = (args: Knobs) => ({
         :bands="args.bands"
         :open="open"
         :placeholder="args.placeholder"
+        :crumb="args.crumb"
+        :step="args.step"
         :name="args.name"
         @choose="args.onChoose"
+        @back="args.onBack"
         @dismiss="open = false; args.onDismiss()"
       >
         <template #silence>Type to look for something</template>
@@ -161,17 +188,23 @@ const meta = {
   },
   argTypes: {
     placeholder: { control: 'text' },
+    crumb: { control: 'text' },
     name: { control: 'text' },
     bands: { table: { disable: true } },
+    step: { table: { disable: true } },
     onChoose: { table: { disable: true } },
     onDismiss: { table: { disable: true } },
+    onBack: { table: { disable: true } },
   },
   args: {
     bands: ALL,
     placeholder: 'Search',
+    crumb: '',
+    step: '',
     name: 'Palette',
     onChoose: fn(),
     onDismiss: fn(),
+    onBack: fn(),
   },
   render: over,
 } satisfies Meta<Knobs>
@@ -181,7 +214,11 @@ type Story = StoryObj<typeof meta>
 
 const palette = () => document.body.querySelector<HTMLElement>('.palette')
 const lit = () => document.body.querySelector<HTMLElement>('[data-here]')
-const options = () => Array.from(document.body.querySelectorAll<HTMLElement>('[role="option"]'))
+const options = () => Array.from(document.body.querySelectorAll<HTMLElement>('.palette__item'))
+const field = () => document.body.querySelector<HTMLInputElement>('.palette__field')
+const sheet = () => document.body.querySelector<HTMLElement>('.palette__actions')
+const hunt = () => document.body.querySelector<HTMLInputElement>('.palette__hunt')
+const deeds = () => Array.from(document.body.querySelectorAll<HTMLElement>('.palette__deed'))
 
 /** Every setting, live: three bands, one of them still on its way. */
 export const Playground: Story = {}
@@ -416,5 +453,195 @@ export const SomeCameBackEmpty: Story = {
     )
     await expect(drawn).toEqual(['Text', 'Meaning', 'Names'])
     await expect(lit()?.textContent).toContain('Heat engines')
+  },
+}
+
+/** One item offering five things, where two of them have a key. */
+export const FiveActions: Story = {
+  args: {
+    bands: [
+      {
+        id: 'names',
+        title: 'Names',
+        items: [
+          { ...named('entropy', 'Entropy', 'ent'), actions: EVERYTHING.slice(0, 5) },
+          named('enthalpy', 'Enthalpy of formation', 'ent'),
+        ],
+      },
+    ],
+  },
+  play: async ({ args }) => {
+    await waitFor(() => expect(lit()).not.toBeNull())
+
+    const said = Array.from(document.body.querySelectorAll('.palette__key')).map((one) =>
+      one.textContent?.trim(),
+    )
+    await expect(said).toEqual(['↵ Show in plex', '⇧↵ Open the note'])
+    await expect(document.body.querySelector('.palette__more')?.textContent).toContain('Actions')
+
+    await userEvent.keyboard('{Enter}')
+    await expect(args.onChoose).toHaveBeenCalledWith('entropy', 'travel')
+  },
+}
+
+/**
+ * The action panel, open over the item it is about.
+ *
+ * Eight things can be done and there are two keys, so the rest are reached by
+ * name. The panel has a field of its own and a list of its own, and the list
+ * underneath stays exactly where it was.
+ */
+export const ActionPanel: Story = {
+  args: {
+    bands: [
+      {
+        id: 'names',
+        title: 'Names',
+        items: [
+          { ...named('entropy', 'Entropy', 'ent'), actions: EVERYTHING },
+          named('enthalpy', 'Enthalpy of formation', 'ent'),
+        ],
+      },
+    ],
+  },
+  play: async () => {
+    await waitFor(() => expect(lit()).not.toBeNull())
+
+    await userEvent.keyboard('{Control>}k{/Control}')
+    await waitFor(() => expect(sheet()).not.toBeNull())
+
+    await expect(deeds()).toHaveLength(EVERYTHING.length)
+    await expect(document.activeElement).toBe(hunt())
+    await expect(field()?.getAttribute('aria-activedescendant')).toBeNull()
+    await expect(hunt()?.getAttribute('aria-activedescendant')).toBe(deeds()[0]?.id)
+
+    // Walking back from the first brings the last row into sight.
+    await userEvent.keyboard('{ArrowUp}')
+    const last = deeds().at(-1)!
+    const inside = last.getBoundingClientRect()
+    const room = document.body.querySelector<HTMLElement>('.palette__deeds')!.getBoundingClientRect()
+    await expect(inside.bottom).toBeLessThanOrEqual(Math.ceil(room.bottom))
+    await expect(inside.top).toBeGreaterThanOrEqual(Math.floor(room.top))
+
+    await userEvent.keyboard('{Home}')
+    await userEvent.keyboard('name')
+    await waitFor(() => expect(deeds()).toHaveLength(1))
+    await expect(deeds()[0]?.textContent).toContain('Rename')
+
+    await userEvent.clear(hunt()!)
+    await waitFor(() => expect(deeds()).toHaveLength(EVERYTHING.length))
+  },
+}
+
+/**
+ * Two steps: pick a thing, then name it. The palette draws one step at a time;
+ * the caller keeps the stack and swaps the bands, the words in the field and
+ * the chip that says which step this is.
+ *
+ * On the second step the current name stands in the field and is selected, so
+ * typing replaces it.
+ */
+export const Steps: Story = {
+  render: (args) => ({
+    components: { Palette },
+    setup() {
+      const open = ref(true)
+      const step = ref('find')
+      const typed = ref('')
+      const crumb = ref('')
+
+      const titleOf = (id: string) =>
+        NAMED.items.find((one) => one.id === id)?.title ?? ''
+
+      const choose = (item: string, action: string) => {
+        args.onChoose(item, action)
+        if (action !== 'rename') return
+        crumb.value = `New name for «${titleOf(item)}»`
+        typed.value = titleOf(item)
+        step.value = 'name'
+      }
+
+      const back = () => {
+        args.onBack()
+        crumb.value = ''
+        typed.value = ''
+        step.value = 'find'
+      }
+
+      return { args, open, step, typed, crumb, choose, back, NAMED }
+    },
+    template: `
+      <div class="numen" style="height:100vh;background:var(--numen-surface)">
+        <Palette
+          v-model="typed"
+          :bands="step === 'find' ? [NAMED] : []"
+          :open="open"
+          :step="step"
+          :crumb="crumb"
+          :placeholder="step === 'find' ? 'Search' : 'The new name'"
+          @choose="choose"
+          @back="back"
+          @dismiss="args.onDismiss"
+        />
+      </div>
+    `,
+  }),
+  play: async ({ args }) => {
+    await waitFor(() => expect(lit()).not.toBeNull())
+
+    // Backspace in an empty field is the gesture for the step before, at every
+    // step there is.
+    await userEvent.keyboard('{Backspace}')
+    await expect(args.onBack).toHaveBeenCalled()
+
+    await userEvent.keyboard('{Control>}k{/Control}')
+    await waitFor(() => expect(sheet()).not.toBeNull())
+    await userEvent.keyboard('name')
+    await waitFor(() => expect(deeds()).toHaveLength(1))
+    await userEvent.keyboard('{Enter}')
+
+    await waitFor(() =>
+      expect(document.body.querySelector('.palette__crumb')?.textContent).toBe(
+        'New name for «Entropy»',
+      ),
+    )
+
+    const input = field()!
+    await waitFor(() => expect(input.value).toBe('Entropy'))
+    await expect(document.activeElement).toBe(input)
+    await expect(input.selectionStart).toBe(0)
+    await expect(input.selectionEnd).toBe('Entropy'.length)
+  },
+}
+
+/** Items carrying the keystroke that reaches them away from the palette. */
+export const KeyHints: Story = {
+  args: {
+    bands: [
+      {
+        id: 'commands',
+        title: 'Commands',
+        items: [
+          { id: 'new', title: 'New note', keys: '⌘N', actions: RUN },
+          { id: 'plex', title: 'Show the plex', keys: '⌘⇧P', actions: RUN },
+          { id: 'save', title: 'Save', keys: '⌘S', actions: RUN },
+          { id: 'long', title: LONG, keys: '⌘⌥⇧L', actions: RUN },
+          { id: 'none', title: 'Reload the vault', actions: RUN },
+        ],
+      },
+    ],
+  },
+  play: async () => {
+    await waitFor(() => expect(lit()).not.toBeNull())
+
+    const hints = Array.from(document.body.querySelectorAll('.palette__hint')).map((one) =>
+      one.textContent?.trim(),
+    )
+    await expect(hints).toEqual(['⌘N', '⌘⇧P', '⌘S', '⌘⌥⇧L'])
+
+    // A title too long for the row gives way to the key, and neither wraps.
+    for (const option of options()) {
+      await expect(option.scrollWidth).toBeLessThanOrEqual(option.clientWidth + 1)
+    }
   },
 }
