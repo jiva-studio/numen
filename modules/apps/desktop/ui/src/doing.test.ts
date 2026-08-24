@@ -87,6 +87,7 @@ const window = (
     asks: (text) => void done.push(`asks ${text}`),
     copies: (path) => void done.push(`copies ${path}`),
     searches: () => void done.push('searches'),
+    appearance: async (chosen) => void done.push(`appearance ${chosen}`),
     says: (text) => void (text ? said.push(text) : undefined),
   }
   return { on, done, said }
@@ -440,6 +441,15 @@ describe('a command over the window', () => {
     await carry(deedOf('find', front()), one.on)
 
     expect(one.done).toStrictEqual(['searches'])
+  })
+
+  it('hands over the row that was chosen, and nothing about the note in front', async () => {
+    const one = window()
+
+    await carry(deedOf('appearance', front(), 'mine:sea'), one.on)
+    await carry(deedOf('appearance', front(), 'mode:dark'), one.on)
+
+    expect(one.done).toStrictEqual(['appearance mine:sea', 'appearance mode:dark'])
   })
 })
 

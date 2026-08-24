@@ -62,6 +62,7 @@ export const WORDS = {
   newPlex: plex.newPlex,
   newAgent: agent.newAgent,
   close: 'Close this tab',
+  appearance: 'Change how the window looks',
   findKeys: commandKeyWord(navigator.userAgent),
   first: 'Go to the note the vault opens with',
   goto: 'Go to a note',
@@ -75,6 +76,20 @@ export const WORDS = {
   typeName: 'What is it called',
   callIt: 'Call it',
   typeNote: 'Look for a note',
+  choosing: 'Appearance',
+  typeChoice: 'Look for a theme',
+  chooses: 'Wear it',
+  /** The two shelves a theme comes off, and the one worn now. */
+  shipped: 'Ships with numen',
+  ownFile: 'Your own file',
+  worn: 'Worn now',
+  /** The three shades, and why the theme applied leaves nothing to choose. */
+  system: 'Follow the system',
+  light: 'Light',
+  dark: 'Dark',
+  pinned: 'The theme worn sets this itself',
+  /** The themes could not be listed, or the one chosen could not be written. */
+  unlisted: 'The themes could not be listed',
   asking: 'Confirm',
   answer: 'Choose an answer',
   keeps: 'Keep the note',

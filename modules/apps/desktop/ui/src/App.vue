@@ -27,9 +27,12 @@ import {
   creates,
   MAKING,
   offering,
+  type Holds,
   type Knows,
   type Where,
 } from './commanding'
+import { themes } from './theme'
+import { APPEARANCE, wearing } from './wearing'
 import { does, type Doing } from './doing'
 import { finding } from './finding'
 import { lands } from './landing'
@@ -78,8 +81,8 @@ const { indexing, failure, trouble, unwatched, unreachable, holds } = window
 const warning = computed(() => window.lost.value || plexes.trouble())
 /** What carrying a command out left the person to be told. */
 const told = ref('')
-/** What a command said, and what could not be made or joined. */
-const unmade = computed(() => told.value || making.said.value)
+/** What a command said, and what could not be made, joined or worn. */
+const unmade = computed(() => told.value || making.said.value || dressed.said.value)
 const { chunks, embedded, embedding, tasks } = window
 
 /** How far this vault has been read for meaning, as the window last heard. */
@@ -173,8 +176,19 @@ const knows: Knows = {
   holding,
 }
 
+/** The theme the window wears, and the list of the ones it could. */
+const dressed = wearing(themes, words)
+
+/** The lists the window itself holds, which a step of a command offers. */
+const kept: Holds = {
+  offers: (command) => (command === APPEARANCE ? dressed.offers() : []),
+  shows: (command, item) => {
+    if (command === APPEARANCE) dressed.shows(item)
+  },
+}
+
 /** The commands, over whatever is in front. */
-const commands = commanding(core, words, where, knows)
+const commands = commanding(core, words, where, knows, kept)
 
 /** What the window offers a command being carried out. */
 const doing: Doing = {
@@ -203,6 +217,7 @@ const doing: Doing = {
     commands.shows(false)
     palette.shows(true)
   },
+  appearance: (chosen) => dressed.chooses(chosen),
   says: (text) => (told.value = text),
 }
 
@@ -324,6 +339,7 @@ onMounted(async () => {
   await starts()
   void window.start()
   void going.start()
+  void dressed.start()
 })
 onUnmounted(() => {
   globalThis.removeEventListener('keydown', asked)
@@ -331,6 +347,7 @@ onUnmounted(() => {
   drawings.close()
   going.close()
   held.close()
+  dressed.close()
 })
 </script>
 
@@ -389,6 +406,7 @@ onUnmounted(() => {
       :actions-silence="words.noAction"
       @update:model-value="typing"
       @choose="went"
+      @lit="commands.lights"
       @back="back"
       @dismiss="dismissed"
     />

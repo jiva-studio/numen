@@ -16,7 +16,9 @@ import {
   MAKING,
   offering,
   overNote,
+  type Holds,
   type Knows,
+  type Offered,
   type Where,
 } from './commanding'
 import type { Named } from './finding'
@@ -68,8 +70,23 @@ const held = () => {
   }
 }
 
+/** A list the window holds, and every row the step said it was standing on. */
+const holding = (offers: readonly Offered[]) => {
+  const list = ref(offers)
+  const shown: string[] = []
+  const holds: Holds = {
+    offers: () => list.value,
+    shows: (_, item) => void shown.push(item),
+  }
+  return { holds, list, shown }
+}
+
 /** The commands over what a test says is in front, asked without a hold. */
-const asking = (over: Partial<Where> = {}, found: readonly Named[] = []) => {
+const asking = (
+  over: Partial<Where> = {},
+  found: readonly Named[] = [],
+  offers: readonly Offered[] = [],
+) => {
   const at = ref(front(over))
   const asked: string[] = []
   const core = {
@@ -79,9 +96,17 @@ const asking = (over: Partial<Where> = {}, found: readonly Named[] = []) => {
     },
   }
   const window = held()
-  const commands = commanding(core, words, () => at.value, window.knows, async () => {})
+  const kept = holding(offers)
+  const commands = commanding(
+    core,
+    words,
+    () => at.value,
+    window.knows,
+    kept.holds,
+    async () => {},
+  )
   commands.shows(true)
-  return { commands, at, asked, ...window }
+  return { commands, at, asked, ...window, ...kept }
 }
 
 /** Every item drawn, band by band, under the band it stands in. */
@@ -98,7 +123,7 @@ describe('the commands as they open', () => {
 
     expect(drawn(commands.bands)).toStrictEqual({
       note: ['read', 'travel', 'child', 'parent', 'jump', 'title', 'remove', 'ask', 'copy'],
-      window: ['note', 'plex', 'agent', 'close', 'find'],
+      window: ['note', 'plex', 'agent', 'close', 'find', 'appearance'],
       vault: ['first', 'goto'],
     })
   })
@@ -164,7 +189,7 @@ describe('what is in front', () => {
 
     expect(drawn(commands.bands)).toStrictEqual({
       note: [],
-      window: ['plex', 'agent', 'close', 'find'],
+      window: ['plex', 'agent', 'close', 'find', 'appearance'],
       vault: [],
     })
     expect(silence(commands.bands, 'note')).toBe(words.indexing)
@@ -489,6 +514,7 @@ describe('a command that asks for a note', () => {
       words,
       () => at.value,
       { called: () => '', holding: () => null },
+      { offers: () => [], shows: () => {} },
       async () => {},
     )
     commands.shows(true)
@@ -497,6 +523,88 @@ describe('a command that asks for a note', () => {
     await commands.typing('en')
 
     expect(commands.bands.value[0]?.silence).toBe(words.notAsked)
+  })
+})
+
+describe('a command that offers a list the window holds', () => {
+  /** Two themes and a mode, the last of them drawn and not to be chosen. */
+  const THEMES: readonly Offered[] = [
+    { id: 'preset:numen', title: 'numen', detail: 'Ships with numen · Worn now' },
+    { id: 'mine:sea', title: 'sea', detail: 'Your own file' },
+    { id: 'mode:light', title: 'Light', detail: 'The theme worn sets this itself', disabled: true },
+  ]
+
+  it('offers the list the window holds, under the words the step is asked in', () => {
+    const { commands } = asking({}, [], THEMES)
+    commands.asks('appearance', front())
+
+    const band = commands.bands.value[0]
+    expect(commands.bands.value).toHaveLength(1)
+    expect(band?.title).toBe(words.choosing)
+    expect(commands.crumb.value).toBe(words.appearance)
+    expect(commands.placeholder.value).toBe(words.typeChoice)
+    expect(band?.items.map((item) => item.id)).toStrictEqual([
+      'preset:numen',
+      'mine:sea',
+      'mode:light',
+    ])
+  })
+
+  it('keeps to the rows the words typed name, and marks where they stand', async () => {
+    const { commands } = asking({}, [], THEMES)
+    commands.asks('appearance', front())
+
+    await commands.typing('sea')
+
+    const items = commands.bands.value[0]?.items ?? []
+    expect(items.map((item) => item.id)).toStrictEqual(['mine:sea'])
+    expect(items[0]?.at).toStrictEqual([{ from: 0, to: 3 }])
+  })
+
+  it('draws a row the window says cannot be chosen, and chooses nothing by it', () => {
+    const { commands } = asking({}, [], THEMES)
+    commands.asks('appearance', front())
+
+    const items = commands.bands.value[0]?.items ?? []
+    expect(items.at(-1)?.disabled).toBe(true)
+    expect(commands.chose('mode:light', 'chosen')).toBeNull()
+    expect(commands.chose('mine:tide', 'chosen')).toBeNull()
+  })
+
+  it('hands back the row that was chosen, as the deed the window carries out', () => {
+    const { commands } = asking({}, [], THEMES)
+    commands.asks('appearance', front())
+
+    expect(commands.chose('mine:sea', 'chosen')).toStrictEqual({
+      id: 'appearance',
+      path: 'physics/Ontology.md',
+      note: null,
+      title: 'Ontology',
+      name: 'mine:sea',
+      kind: 'note',
+      tab: 'tab',
+    })
+  })
+
+  it('says where the keyboard is standing, and that it stands nowhere once the step goes', () => {
+    const { commands, shown } = asking({}, [], THEMES)
+    commands.asks('appearance', front())
+
+    commands.lights('mine:sea')
+    commands.lights('preset:numen')
+    commands.leaves()
+
+    expect(shown).toStrictEqual(['mine:sea', 'preset:numen', ''])
+  })
+
+  it('says nothing about where the keyboard is at a step that shows nothing', () => {
+    const { commands, shown } = asking({}, [], THEMES)
+    commands.asks('child', front())
+
+    commands.lights('anything')
+    commands.leaves()
+
+    expect(shown).toStrictEqual([])
   })
 })
 

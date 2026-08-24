@@ -1,0 +1,360 @@
+/**
+ * The theme the window wears, without a window.
+ *
+ * Two things are asked here: that the theme's element is the one written over,
+ * since the mode's has to stand before it, and that leaving the list puts back
+ * the theme the settings name without reading a file for it.
+ */
+import { describe, expect, it } from 'vitest'
+import type { Catalogue, Themes } from './theme'
+import { wearing } from './wearing'
+import { WORDS as words } from './words'
+
+/** What the page was served wearing. */
+const SERVED = ':root { --numen-surface: #101014 }'
+
+/** What the mode's element holds while the tokens are read as a pair. */
+const PAIR = ':root { color-scheme: light dark; }'
+
+const styled = (sheet: Document, css: string): HTMLStyleElement => {
+  const one = sheet.createElement('style')
+  one.textContent = css
+  return one
+}
+
+/** A page as the window's handler serves one: the link, then the two elements. */
+const page = (): Document => {
+  const sheet = document.implementation.createHTMLDocument('numen')
+  sheet.head.append(sheet.createElement('link'), styled(sheet, PAIR), styled(sheet, SERVED))
+  return sheet
+}
+
+/** What the head is wearing, in the order the elements stand in it. */
+const dressing = (sheet: Document) =>
+  [...sheet.head.querySelectorAll('style')].map((one) => one.textContent)
+
+const CATALOGUE: Catalogue = {
+  themes: [
+    { name: 'preset:numen', title: 'numen', shipped: true, pinned: false },
+    { name: 'preset:dracula', title: 'dracula', shipped: true, pinned: true },
+    { name: 'mine:sea', title: 'sea', shipped: false, pinned: false },
+  ],
+  applied: 'preset:numen',
+  mode: 'system',
+}
+
+/** A moment for whatever was asked of the application to come back. */
+const settles = () => new Promise((done) => setTimeout(done, 0))
+
+/** The person's folder, which a test writes to. */
+const folder = () => {
+  let wake: ((names: readonly string[]) => void) | null = null
+  return {
+    changed: async function* (): AsyncIterable<readonly string[]> {
+      for (;;) yield await new Promise<readonly string[]>((now) => (wake = now))
+    },
+    /** These themes changed, and the window has answered for them. */
+    says: async (...names: readonly string[]) => {
+      wake?.(names)
+      await settles()
+    },
+  }
+}
+
+/** The window wearing a theme, over a page a test can read the head of. */
+const window = (over: Partial<Catalogue> = {}) => {
+  const sheet = page()
+  const said = folder()
+  const asked: string[] = []
+  const chosen: string[] = []
+  let catalogue: Catalogue = { ...CATALOGUE, ...over }
+  let listed = 0
+  let failed = ''
+  const texts: Record<string, string> = {}
+  const core: Themes = {
+    catalogue: async () => {
+      listed += 1
+      return catalogue
+    },
+    text: async (name) => {
+      asked.push(name)
+      return texts[name] ?? `:root { --numen-surface: ${name} }`
+    },
+    chooses: async (name, mode) => {
+      chosen.push(`${name} ${mode}`)
+      return failed
+    },
+    changed: said.changed,
+  }
+  return {
+    worn: wearing(core, words, sheet),
+    sheet,
+    asked,
+    chosen,
+    says: said.says,
+    listed: () => listed,
+    writes: (name: string, css: string) => (texts[name] = css),
+    fails: (why: string) => (failed = why),
+    holds: (next: Partial<Catalogue>) => (catalogue = { ...catalogue, ...next }),
+  }
+}
+
+/** The window listing what it can wear, over a page it was served dressed. */
+const dressed = async (over: Partial<Catalogue> = {}) => {
+  const one = window(over)
+  await one.worn.start()
+  await settles()
+  return one
+}
+
+describe('the page as it was served', () => {
+  it('wears what it arrived in, and reads no file to do it', async () => {
+    const one = await dressed()
+
+    expect(dressing(one.sheet)).toStrictEqual([PAIR, SERVED])
+    expect(one.asked).toStrictEqual([])
+  })
+
+  it('writes over the theme’s element, and moves neither of them', async () => {
+    const one = await dressed()
+    const before = [...one.sheet.head.querySelectorAll('style')]
+
+    one.worn.shows('mine:sea')
+    await settles()
+
+    expect([...one.sheet.head.querySelectorAll('style')]).toStrictEqual(before)
+    expect(one.sheet.head.lastElementChild).toBe(before[1])
+    expect(dressing(one.sheet)).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }'])
+  })
+
+  it('makes the pair itself, mode first, for a page served in nothing', async () => {
+    const sheet = document.implementation.createHTMLDocument('numen')
+    const bare = wearing(
+      {
+        catalogue: async () => CATALOGUE,
+        text: async (name) => `:root { --numen-surface: ${name} }`,
+        chooses: async () => '',
+        changed: async function* (): AsyncIterable<readonly string[]> {
+          await new Promise<never>(() => {})
+        },
+      },
+      words,
+      sheet,
+    )
+    await bare.start()
+
+    bare.shows('mine:sea')
+    await settles()
+
+    expect(dressing(sheet)).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }'])
+  })
+})
+
+describe('the theme the keyboard is standing on', () => {
+  it('is worn while it stands there', async () => {
+    const one = await dressed()
+
+    one.worn.shows('mine:sea')
+    await settles()
+
+    expect(dressing(one.sheet).at(-1)).toBe(':root { --numen-surface: mine:sea }')
+    expect(one.asked).toStrictEqual(['mine:sea'])
+  })
+
+  it('gives way to the one the settings name once the keyboard stands nowhere', async () => {
+    const one = await dressed()
+
+    one.worn.shows('mine:sea')
+    await settles()
+    one.worn.shows('')
+    await settles()
+
+    expect(dressing(one.sheet)).toStrictEqual([PAIR, SERVED])
+    // The theme the page arrived in is not read for again.
+    expect(one.asked).toStrictEqual(['mine:sea'])
+  })
+
+  it('is read once, however often the keyboard walks back over it', async () => {
+    const one = await dressed()
+
+    one.worn.shows('mine:sea')
+    await settles()
+    one.worn.shows('preset:dracula')
+    await settles()
+    one.worn.shows('mine:sea')
+    await settles()
+
+    expect(one.asked).toStrictEqual(['mine:sea', 'preset:dracula'])
+  })
+
+  it('is the last row the keyboard landed on, whatever order the files come back in', async () => {
+    const one = await dressed()
+
+    one.worn.shows('preset:dracula')
+    one.worn.shows('mine:sea')
+    await settles()
+
+    expect(dressing(one.sheet).at(-1)).toBe(':root { --numen-surface: mine:sea }')
+  })
+})
+
+describe('which half of a pair the tokens are read as', () => {
+  it('is written into the mode’s element, and leaves the theme where it was', async () => {
+    const one = await dressed()
+
+    one.worn.shows('mode:dark')
+    await settles()
+
+    expect(dressing(one.sheet)).toStrictEqual([':root { color-scheme: dark; }', SERVED])
+  })
+
+  it('goes back to what the settings say once the keyboard stands nowhere', async () => {
+    const one = await dressed({ mode: 'light' })
+
+    one.worn.shows('mode:dark')
+    await settles()
+    one.worn.shows('')
+    await settles()
+
+    expect(dressing(one.sheet).at(0)).toBe(':root { color-scheme: light; }')
+  })
+})
+
+describe('the list the step offers', () => {
+  it('stands the theme the settings name first, and the modes after every theme', async () => {
+    const one = await dressed({ applied: 'mine:sea' })
+
+    expect(one.worn.offers().map((row) => row.id)).toStrictEqual([
+      'mine:sea',
+      'preset:numen',
+      'preset:dracula',
+      'mode:system',
+      'mode:light',
+      'mode:dark',
+    ])
+  })
+
+  it('says where a theme came off, and which theme and mode are worn', async () => {
+    const one = await dressed()
+
+    const rows = one.worn.offers()
+    expect(rows[0]?.detail).toBe(`${words.shipped} · ${words.worn}`)
+    expect(rows.find((row) => row.id === 'mine:sea')?.detail).toBe(words.ownFile)
+    expect(rows.find((row) => row.id === 'mode:system')?.detail).toBe(words.worn)
+  })
+
+  it('draws a mode as not to be chosen while the theme worn pins light and dark', async () => {
+    const one = await dressed()
+
+    one.worn.shows('preset:dracula')
+    await settles()
+
+    const modes = one.worn.offers().filter((row) => row.id.startsWith('mode:'))
+    expect(modes.map((row) => row.disabled)).toStrictEqual([true, true, true])
+    expect(modes.map((row) => row.detail)).toStrictEqual([words.pinned, words.pinned, words.pinned])
+  })
+
+  it('draws every mode as one to choose again once such a theme is left', async () => {
+    const one = await dressed()
+
+    one.worn.shows('preset:dracula')
+    await settles()
+    one.worn.shows('')
+    await settles()
+
+    const modes = one.worn.offers().filter((row) => row.id.startsWith('mode:'))
+    expect(modes.map((row) => row.disabled)).toStrictEqual([undefined, undefined, undefined])
+  })
+})
+
+describe('the row that was chosen', () => {
+  it('is written into the settings, and is what the window wears from then on', async () => {
+    const one = await dressed()
+
+    await one.worn.chooses('mine:sea')
+
+    expect(one.chosen).toStrictEqual(['mine:sea system'])
+    expect(one.worn.applied.value).toBe('mine:sea')
+    expect(dressing(one.sheet).at(-1)).toBe(':root { --numen-surface: mine:sea }')
+  })
+
+  it('is the mode, written beside the theme the settings already name', async () => {
+    const one = await dressed()
+
+    await one.worn.chooses('mode:dark')
+
+    expect(one.chosen).toStrictEqual(['preset:numen dark'])
+    expect(one.worn.mode.value).toBe('dark')
+    expect(dressing(one.sheet)).toStrictEqual([':root { color-scheme: dark; }', SERVED])
+  })
+
+  it('says what the settings could not be written, and puts back what they hold', async () => {
+    const one = await dressed()
+    one.fails('the settings could not be written')
+
+    await one.worn.chooses('mine:sea')
+
+    expect(one.worn.said.value).toBe('the settings could not be written')
+    expect(one.worn.applied.value).toBe('preset:numen')
+    expect(dressing(one.sheet)).toStrictEqual([PAIR, SERVED])
+  })
+
+  it('is nothing at all where the window holds no such row', async () => {
+    const one = await dressed()
+
+    await one.worn.chooses('mine:tide')
+
+    expect(one.chosen).toStrictEqual([])
+    expect(dressing(one.sheet)).toStrictEqual([PAIR, SERVED])
+  })
+})
+
+describe('the person editing their own theme file', () => {
+  it('is followed: the file is read again, and the window wears what it now says', async () => {
+    const one = await dressed()
+    one.worn.shows('mine:sea')
+    await settles()
+
+    one.writes('mine:sea', ':root { --numen-surface: #001 }')
+    await one.says('mine:sea')
+
+    expect(one.asked).toStrictEqual(['mine:sea', 'mine:sea'])
+    expect(dressing(one.sheet).at(-1)).toBe(':root { --numen-surface: #001 }')
+  })
+
+  it('is followed while the theme is the one the settings name', async () => {
+    const one = await dressed({ applied: 'mine:sea' })
+
+    one.writes('mine:sea', ':root { --numen-surface: #002 }')
+    await one.says('mine:sea')
+
+    expect(dressing(one.sheet).at(-1)).toBe(':root { --numen-surface: #002 }')
+  })
+
+  it('leaves a theme the folder said nothing about where it was', async () => {
+    const one = await dressed()
+    one.worn.shows('mine:sea')
+    await settles()
+
+    await one.says('mine:tide')
+
+    expect(one.asked).toStrictEqual(['mine:sea'])
+    expect(dressing(one.sheet).at(-1)).toBe(':root { --numen-surface: mine:sea }')
+  })
+
+  it('lists what the folder holds again, so a file made or taken out is offered', async () => {
+    const one = await dressed()
+    one.holds({ themes: [...CATALOGUE.themes.slice(0, 2)] })
+
+    await one.says('mine:sea')
+
+    expect(one.listed()).toBe(2)
+    expect(one.worn.offers().map((row) => row.id)).toStrictEqual([
+      'preset:numen',
+      'preset:dracula',
+      'mode:system',
+      'mode:light',
+      'mode:dark',
+    ])
+  })
+})

@@ -78,6 +78,19 @@ vi.mock('./vault', () => ({
 
 vi.mock('./agent/core', () => ({ core: { ask: held, finish: async () => {} } }))
 
+vi.mock('./theme', () => ({
+  themes: {
+    catalogue: async () => ({
+      themes: [{ name: 'preset:numen', title: 'numen', shipped: true, pinned: false }],
+      applied: 'preset:numen',
+      mode: 'system',
+    }),
+    text: async () => ':root { --numen-surface: #fff }',
+    chooses: async () => '',
+    changed: held,
+  },
+}))
+
 const App = (await import('./App.vue')).default
 
 /** A moment for whatever the window asked the vault for to come back. */
