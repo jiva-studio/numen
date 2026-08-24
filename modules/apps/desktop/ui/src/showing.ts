@@ -7,6 +7,7 @@
  */
 import { ref } from 'vue'
 import type { Core, Run, Said, Task, Went } from './core'
+import { following } from './following'
 
 /**
  * The vault as the whole window reads it, and what it says when the vault
@@ -79,6 +80,14 @@ export function showing(
   let open = true
   /** Let go of every stream the window is listening to. */
   const listening = new AbortController()
+  /** Every stream is read the same way, and taken up again the same way. */
+  const follows = following({
+    open: () => open,
+    lost: (said) => {
+      lost.value = said
+    },
+    wait,
+  })
 
   /** The note the vault opens with, and whether it holds one at all. */
   async function first() {
@@ -104,119 +113,77 @@ export function showing(
   /**
    * Follow the vault.
    *
-   * Every change asks for the picture again, including changes to notes that
-   * are nowhere on it: a link is written at one end and shows at both, so a
-   * note edited somewhere else is exactly how a new parent arrives. What is on
-   * screen cannot answer whether a change reaches it.
-   *
-   * The stream ends when the core stops or the connection goes, and it is taken
-   * up again. A window that had stopped following would look exactly like one
-   * that is up to date.
+   * Every change is told, including changes to notes that are nowhere on
+   * screen: a link is written at one end and shows at both, so a note edited
+   * somewhere else is exactly how a new parent arrives. What is drawn cannot
+   * answer whether a change reaches it.
    */
-  async function follow() {
-    while (open) {
-      try {
-        for await (const change of core.changes(listening.signal)) {
-          if (!open) return
-          if (change.paths.length === 0 && !change.reload && change.renamed.length === 0) continue
-          await told(change.reload ? [] : change.paths, change.renamed)
-          try {
-            await ask()
-          } catch {
-            // The stream stays open. What a change means is already drawn; the
-            // counts come round with the next one.
-          }
+  const follow = () =>
+    follows(
+      () => core.changes(listening.signal),
+      async (change) => {
+        if (change.paths.length === 0 && !change.reload && change.renamed.length === 0) return
+        await told(change.reload ? [] : change.paths, change.renamed)
+        try {
+          await ask()
+        } catch {
+          // What a change means is already drawn; the counts come round with
+          // the next one.
         }
-      } catch (error) {
-        if (!open) return
-        lost.value = String(error)
-      }
-      await wait(1000)
-      // Taken up again, so what was said about losing it no longer holds.
-      if (open) lost.value = ''
-    }
-  }
+      },
+    )
 
-  /** Follows the changes being made to notes, and takes the stream up again. */
-  async function draw() {
-    while (open) {
-      try {
-        for await (const said of core.editing(listening.signal)) {
-          if (!open) return
-          // The stream opens by saying nothing, which is how an open one is
-          // told from one that never opened.
-          if (said.path) drawing(said)
-        }
-      } catch (error) {
-        if (!open) return
-        lost.value = String(error)
-      }
-      await wait(1000)
-    }
-  }
+  /** Follows the changes being made to notes. */
+  const draw = () =>
+    follows(
+      () => core.editing(listening.signal),
+      (said) => {
+        // The stream opens by saying nothing, which is how an open one is told
+        // from one that never opened.
+        if (said.path) drawing(said)
+      },
+    )
 
   /**
    * Travels to whatever is asked for while the window is open — an agent
    * working the vault beside the person naming the note it is talking about. A
    * focus naming a stretch of a source's text opens that source at it.
-   *
-   * Taken up again the way following is, and for the same reason.
    */
-  async function watch() {
-    while (open) {
-      try {
-        for await (const asked of core.focus(listening.signal)) {
-          if (!open) return
-          if (!asked.path) continue
-          if (asked.length) {
-            const also = (asked.also ?? [])
-              .filter((one) => (one.length ?? 0) > 0)
-              .map((one) => ({ start: one.start ?? 0, length: one.length ?? 0 }))
-            reads(asked.path, [{ start: asked.start ?? 0, length: asked.length }, ...also])
-          } else await wanted(asked.path)
-        }
-      } catch (error) {
-        if (!open) return
-        lost.value = String(error)
-      }
-      await wait(1000)
-    }
-  }
+  const watch = () =>
+    follows(
+      () => core.focus(listening.signal),
+      async (asked) => {
+        if (!asked.path) return
+        if (!asked.length) return void (await wanted(asked.path))
+        const also = (asked.also ?? [])
+          .filter((one) => (one.length ?? 0) > 0)
+          .map((one) => ({ start: one.start ?? 0, length: one.length ?? 0 }))
+        reads(asked.path, [{ start: asked.start ?? 0, length: asked.length }, ...also])
+      },
+    )
 
   /**
    * Keeps the list of what is being done up to date while the window is open.
    *
-   * Nothing is asked for on a timer. Work begins without the window: an agent is
-   * told to read a document, and the list says so the moment it starts.
-   *
-   * Taken up again the way following is, and for the same reason.
+   * Nothing is asked for on a timer. Work begins without the window: an agent
+   * is told to read a document, and the list says so the moment it starts.
    */
-  async function attend() {
-    while (open) {
-      try {
-        for await (const list of core.tasks(listening.signal)) {
-          if (!open) return
-          const ran = tasks.value.length > 0
-          tasks.value = list
-          // What the vault holds moves while a pass runs and settles when it
-          // ends, so it is asked for again the moment the list empties.
-          if (ran && list.length === 0) {
-            try {
-              await ask()
-            } catch {
-              // The stream stays open, and the pass after this one asks again.
-            }
-          }
+  const attend = () =>
+    follows(
+      () => core.tasks(listening.signal),
+      async (list) => {
+        const ran = tasks.value.length > 0
+        tasks.value = list
+        // What the vault holds moves while a pass runs and settles when it
+        // ends, so it is asked for again the moment the list empties.
+        if (!ran || list.length > 0) return
+        try {
+          await ask()
+        } catch {
+          // The pass after this one asks again.
         }
-      } catch (error) {
-        if (!open) return
-        lost.value = String(error)
-      }
-      await wait(1000)
-      // Taken up again, so what was said about losing it no longer holds.
-      if (open) lost.value = ''
-    }
-  }
+      },
+    )
 
   /** Waits for the scan to have stored something, then shows the first note. */
   async function start() {
