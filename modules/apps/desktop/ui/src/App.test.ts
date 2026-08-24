@@ -5,7 +5,7 @@
  * a tab holds one, and that a vault which could not be read is not shown as an
  * empty one.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
 import { Agent, branch, Editor, pane, Palette, Plex, Reader, Workspace } from '@numen/ui'
@@ -28,8 +28,8 @@ const { said, held, asked } = vi.hoisted(() => ({
   async *held(): AsyncGenerator<never> {
     await new Promise<never>(() => {})
   },
-  /** What the window asked the vault to do to a note, in the order it asked. */
-  asked: { renamed: [] as string[], removed: [] as string[] },
+  /** What the window asked the application for, in the order it asked. */
+  asked: { renamed: [] as string[], removed: [] as string[], worn: [] as string[] },
 }))
 
 vi.mock('./vault', () => ({
@@ -81,12 +81,18 @@ vi.mock('./agent/core', () => ({ core: { ask: held, finish: async () => {} } }))
 vi.mock('./theme', () => ({
   themes: {
     catalogue: async () => ({
-      themes: [{ name: 'preset:numen', title: 'numen', shipped: true, pinned: false }],
+      themes: [
+        { name: 'preset:numen', title: 'numen', shipped: true, pinned: false },
+        { name: 'mine:sea', title: 'sea', shipped: false, pinned: false },
+      ],
       applied: 'preset:numen',
       mode: 'system',
     }),
-    text: async () => ':root { --numen-surface: #fff }',
-    chooses: async () => '',
+    text: async (name: string) => `:root { --numen-surface: ${name} }`,
+    chooses: async (name: string, mode: string) => {
+      asked.worn.push(`${name} ${mode}`)
+      return ''
+    },
     changed: held,
   },
 }))
@@ -126,6 +132,7 @@ afterEach(() => {
   said.names = []
   asked.renamed = []
   asked.removed = []
+  asked.worn = []
 })
 
 /**
@@ -386,6 +393,101 @@ describe('the keyboard on a step that confirms', () => {
     await press('Enter')
 
     expect(asked.removed).toStrictEqual(['Root.md false'])
+  })
+})
+
+/** The themes walked as a person walks them, with nothing of the palette stubbed. */
+describe('the keyboard on the step that offers the themes', () => {
+  /** What the mode's element holds while the tokens are read as a pair. */
+  const PAIR = ':root { color-scheme: light dark; }'
+  /** What the page was served wearing, which is the applied theme's file. */
+  const SERVED = ':root { --numen-surface: #101014 }'
+
+  const styled = (css: string) => {
+    const one = document.createElement('style')
+    one.textContent = css
+    return one
+  }
+
+  /** What the head is wearing, in the order the elements stand in it. */
+  const dressed = () =>
+    [...document.head.querySelectorAll('style')].map((one) => one.textContent)
+
+  const field = () => document.body.querySelector<HTMLInputElement>('.palette__field')
+
+  const press = async (key: string) => {
+    field()?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }))
+    await settles()
+  }
+
+  const type = async (text: string) => {
+    const into = field()
+    if (!into) return
+    into.value = text
+    into.dispatchEvent(new Event('input'))
+    await settles()
+  }
+
+  /** The page as the window's handler serves it, before the window is drawn. */
+  beforeEach(() => {
+    for (const one of document.head.querySelectorAll('style')) one.remove()
+    document.head.append(styled(PAIR), styled(SERVED))
+  })
+
+  /** The step open, standing on the theme the settings name. */
+  const overThemes = async () => {
+    const window = await drawnWithPalette()
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
+    await settles()
+    await type('theme')
+    await press('Enter')
+    return window
+  }
+
+  it('opens standing on the theme the window already wears', async () => {
+    await overThemes()
+
+    expect(document.body.querySelector('[data-here]')?.textContent).toContain('numen')
+    expect(dressed()).toStrictEqual([PAIR, SERVED])
+  })
+
+  it('wears the theme the keyboard walks onto', async () => {
+    await overThemes()
+
+    await press('ArrowDown')
+
+    expect(dressed()).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }'])
+    expect(asked.worn).toStrictEqual([])
+  })
+
+  it('puts back the theme the settings name when the step is left', async () => {
+    await overThemes()
+    await press('ArrowDown')
+
+    await press('Escape')
+
+    expect(dressed()).toStrictEqual([PAIR, SERVED])
+    expect(asked.worn).toStrictEqual([])
+  })
+
+  it('keeps wearing the theme that was chosen, and writes it down', async () => {
+    await overThemes()
+    await press('ArrowDown')
+
+    await press('Enter')
+
+    expect(asked.worn).toStrictEqual(['mine:sea system'])
+    expect(dressed()).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }'])
+  })
+
+  it('reads the tokens as one half, leaving the theme where it was', async () => {
+    await overThemes()
+    await type('dark')
+
+    await press('Enter')
+
+    expect(asked.worn).toStrictEqual(['preset:numen dark'])
+    expect(dressed()).toStrictEqual([':root { color-scheme: dark; }', SERVED])
   })
 })
 

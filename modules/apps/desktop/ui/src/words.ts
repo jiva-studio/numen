@@ -62,7 +62,7 @@ export const WORDS = {
   newPlex: plex.newPlex,
   newAgent: agent.newAgent,
   close: 'Close this tab',
-  appearance: 'Change how the window looks',
+  appearance: 'Theme, and light or dark',
   findKeys: commandKeyWord(navigator.userAgent),
   first: 'Go to the note the vault opens with',
   goto: 'Go to a note',
