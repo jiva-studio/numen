@@ -70,6 +70,7 @@ const tab = (at: string, related: readonly string[] = [], takes = true) => {
     opens: (path, title, showing) => opened.push([path, title, showing]),
     asks: (text) => asked.push(text),
     opening: () => 'Opening.md',
+    first: async () => 'Opening.md',
   }
   return { held: plexing(plex.view, deps), went: plex.went, ...vault, opened, asked }
 }
@@ -199,6 +200,7 @@ describe('the picture', () => {
       opens: () => {},
       asks: () => {},
       opening: () => '',
+      first: async () => '',
     })
 
     expect(held.picture.value).toBeNull()
@@ -215,6 +217,9 @@ const window = (opening = 'Opening.md') => {
   const views: ReturnType<typeof standing>[] = []
   const opened: string[] = []
   const shown: string[] = []
+  /** Every time the vault was asked where it opens, and what it answered then. */
+  const asked: string[] = []
+  let first = opening
   const host: Host = {
     opens: async (kind, at = '') => {
       opened.push(`${kind} ${at}`)
@@ -234,11 +239,19 @@ const window = (opening = 'Opening.md') => {
     ready: () => true,
     opens: () => {},
     asks: () => {},
-    opening: () => opening,
+    opening: () => first,
+    first: async () => {
+      asked.push(first)
+      return first
+    },
   })
   /** A tab of this window under an identity of its own, and what it holds. */
   const holds = (id: string, at = '') => plexes.kind.opens(at, id) as Held
-  return { ...plexes, holds, views, opened, shown }
+  /** The vault gained a note, which is what it opens with from now on. */
+  const gains = (path: string) => {
+    first = path
+  }
+  return { ...plexes, holds, gains, views, opened, shown, asked }
 }
 
 describe('a plex tab as it opens', () => {
@@ -272,7 +285,6 @@ describe('a plex tab as it opens', () => {
     const one = window('')
 
     expect(one.holds('plex:one').view.here.value).toBe('')
-    expect(one.nowhere()).toBe(true)
   })
 })
 
@@ -350,14 +362,35 @@ describe('every plex asked for its picture again', () => {
     expect(second.view.here.value).toBe('Two.md')
   })
 
-  it('gives one standing nowhere the note the vault opens with', async () => {
-    const one = window('First.md')
+  it('gives one standing nowhere the note an empty vault has just gained', async () => {
+    const one = window('')
     const held = one.holds('plex:one')
-    held.view.here.value = ''
+    one.gains('First.md')
 
     await one.again()
 
     expect(held.view.here.value).toBe('First.md')
+  })
+
+  it('asks the vault where it opens once, however many stand nowhere', async () => {
+    const one = window('')
+    one.holds('plex:one')
+    one.holds('plex:two')
+    one.holds('plex:three')
+
+    await one.again()
+
+    expect(one.asked).toHaveLength(1)
+  })
+
+  it('asks it not at all while every one of them is standing somewhere', async () => {
+    const one = window()
+    one.holds('plex:one', 'One.md')
+    one.holds('plex:two', 'Two.md')
+
+    await one.again()
+
+    expect(one.asked).toStrictEqual([])
   })
 
   it('asks nothing for a plex whose tab has closed', async () => {

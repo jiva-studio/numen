@@ -38,8 +38,10 @@ export interface Plexing {
   opens(path: string, title: string, showing: PlexShowing): void
   /** Something to ask, put in the agent the person was last in. */
   asks(text: string): void
-  /** The note the vault opens with, where a plex has nowhere else to stand. */
+  /** The note the vault opens with, as it was last answered. */
   opening(): string
+  /** Asks the vault where it opens, for a plex that has nowhere to stand. */
+  first(): Promise<string>
 }
 
 /** What one plex tab holds. */
@@ -102,9 +104,17 @@ export function plexKind(host: Host, makes: () => Standing, deps: Plexing) {
 
   /**
    * Every plex asks for its picture again. One standing nowhere is given the
-   * note the vault opens with.
+   * note the vault opens with, which is asked for once for all of them and
+   * only while one of them has nowhere to stand.
    */
   const again = async () => {
+    if ([...open.values()].some((one) => !one.view.here.value)) {
+      try {
+        await deps.first()
+      } catch {
+        // The next change asks again.
+      }
+    }
     await Promise.all(
       [...open.values()].map((one) => {
         const path = one.view.here.value || deps.opening()
@@ -113,10 +123,7 @@ export function plexKind(host: Host, makes: () => Standing, deps: Plexing) {
     )
   }
 
-  /** Whether any plex is standing nowhere, and so wants a note to stand on. */
-  const nowhere = (): boolean => [...open.values()].some((one) => !one.view.here.value)
-
-  return { kind, looking, trouble, travel, again, nowhere }
+  return { kind, looking, trouble, travel, again }
 }
 
 export function plexing(view: Standing, deps: Plexing) {

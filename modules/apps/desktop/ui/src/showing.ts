@@ -154,45 +154,35 @@ export interface Made {
   refusal: Refused | null
 }
 
-/** The plexes of the window, as far as following the vault reads them. */
-export interface Plexes {
-  /** Whether any of them is standing nowhere, and so wants a note to stand on. */
-  nowhere(): boolean
-  /** Every one of them asks for its picture again. */
-  again(): Promise<void>
-  /** A note put in front of the person, in the plex they are looking at. */
-  travel(path: string): Promise<void>
-}
-
-/** Plexes for a window with none: nothing to ask again, and nowhere to travel. */
-const none: Plexes = { nowhere: () => false, again: async () => {}, travel: async () => {} }
-
 /**
- * The vault as the whole window reads it, and what it tells when the vault
+ * The vault as the whole window reads it, and what it says when the vault
  * changes.
  *
  * One window reads the vault once: one stream of changes, one stream of edits,
  * one stream of notes asked for, one stream of what is being done, and one set
- * of counts. Which tabs hear about a change, and what each makes of it, is
- * theirs.
+ * of counts. What is drawn from any of it, and by how many tabs, is the
+ * window's; nothing here knows what a tab holds.
  */
 export function showing(
   core: Core,
   wait: (ms: number) => Promise<unknown> = sleep,
   /**
-   * What else hears about a change. A change carrying no paths names nothing:
-   * everything showing the vault reads again.
+   * What hears that the vault changed, and is waited for. A change carrying no
+   * paths names nothing: everything showing the vault reads again.
    */
-  told: (paths: readonly string[], renamed?: readonly Went[]) => void = () => {},
+  told: (
+    paths: readonly string[],
+    renamed?: readonly Went[],
+  ) => void | Promise<void> = () => {},
   /** What hears about a change to a note while it is being made. */
   drawing: (said: Said) => void = () => {},
+  /** What puts a note in front of the person, asked for from outside the window. */
+  wanted: (path: string) => void | Promise<void> = () => {},
   /**
    * What opens a document at stretches of its own text, in the tab it is read
    * in. The person is taken to the first of them.
    */
   reads: (path: string, runs: readonly Run[]) => void = () => {},
-  /** The plexes the window draws, which follow the vault with it. */
-  plexes: Plexes = none,
 ) {
   const name = ref('')
   const indexing = ref(true)
@@ -206,7 +196,7 @@ export function showing(
   const unreachable = ref('')
   /** Whether the vault holds a note to show at all. */
   const holds = ref(false)
-  /** The note the vault opens with, which is where a plex standing nowhere goes. */
+  /** The note the vault opens with, for whatever has nowhere else to start. */
   const opening = ref('')
   /**
    * How much of the text the index holds carries a vector.
@@ -275,15 +265,7 @@ export function showing(
         for await (const change of core.changes(listening.signal)) {
           if (!open) return
           if (change.paths.length === 0 && !change.reload && change.renamed.length === 0) continue
-          told(change.reload ? [] : change.paths, change.renamed)
-          try {
-            // Asked once for the window, and only while a plex has nowhere to
-            // stand.
-            if (plexes.nowhere()) await first()
-          } catch {
-            // The next change asks again.
-          }
-          await plexes.again()
+          await told(change.reload ? [] : change.paths, change.renamed)
           try {
             await ask()
           } catch {
@@ -329,15 +311,15 @@ export function showing(
   async function watch() {
     while (open) {
       try {
-        for await (const wanted of core.focus(listening.signal)) {
+        for await (const asked of core.focus(listening.signal)) {
           if (!open) return
-          if (!wanted.path) continue
-          if (wanted.length) {
-            const also = (wanted.also ?? [])
+          if (!asked.path) continue
+          if (asked.length) {
+            const also = (asked.also ?? [])
               .filter((one) => (one.length ?? 0) > 0)
               .map((one) => ({ start: one.start ?? 0, length: one.length ?? 0 }))
-            reads(wanted.path, [{ start: wanted.start ?? 0, length: wanted.length }, ...also])
-          } else await plexes.travel(wanted.path)
+            reads(asked.path, [{ start: asked.start ?? 0, length: asked.length }, ...also])
+          } else await wanted(asked.path)
         }
       } catch (error) {
         if (!open) return
@@ -391,7 +373,8 @@ export function showing(
         if (!open) return
         if (note) {
           indexing.value = false
-          await plexes.again()
+          // The vault holds a note to show: everything showing it reads now.
+          await told([], [])
           void follow()
           void watch()
           void draw()
@@ -426,6 +409,7 @@ export function showing(
     unreachable,
     holds,
     opening,
+    first,
     chunks,
     embedded,
     embedding,

@@ -41,14 +41,13 @@ const making = creating(core)
 const window = showing(
   core,
   undefined,
-  notes.changed,
-  drawings.told,
-  (path, runs) => void opensAt(path, ...runs),
-  {
-    nowhere: () => plexes.nowhere(),
-    again: () => plexes.again(),
-    travel: (path) => plexes.travel(path),
+  async (paths, renamed) => {
+    notes.changed(paths, renamed)
+    await plexes.again()
   },
+  drawings.told,
+  (path) => plexes.travel(path),
+  (path, runs) => void opensAt(path, ...runs),
 )
 /** What the window answers when the application says it is going. */
 const going = leaving(core)
@@ -103,6 +102,7 @@ const held = windowing(
         opens: (path, title, showing) => openNote(path, title, showing),
         asks: (text) => void agents.asks(text),
         opening: () => window.opening.value,
+        first: () => window.first(),
       })
       return plexes.kind
     },

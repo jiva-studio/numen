@@ -6,7 +6,8 @@
  */
 import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
-import { showing, type Core, type Plexes, type Task } from './showing'
+import { showing, type Core, type Task } from './showing'
+import type { Run } from './reading'
 import { NeighbourhoodSchema, type Neighbourhood } from './plex'
 
 const answer = (path: string): Neighbourhood =>
@@ -64,22 +65,26 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
 const nap = () => new Promise((wake) => setTimeout(wake, 0))
 
 /**
- * The plexes of a window, as far as following the vault reads them. What one
- * of them does when it is asked again is asked of the plexes themselves.
+ * What the window makes of what it is told: that the vault changed, and that a
+ * note is wanted in front of the person. What each tab does about either is
+ * asked where that tab is.
  */
-const plexed = (nowhere = false) => {
-  const asked: string[] = []
-  const travelled: string[] = []
-  const port: Plexes = {
-    nowhere: () => nowhere,
-    again: async () => {
-      asked.push('again')
+const heard = (core: Core, reads?: (path: string, runs: readonly Run[]) => void) => {
+  const changed: string[] = []
+  const wanted: string[] = []
+  const showed = showing(
+    core,
+    async () => showed.close(),
+    async (paths, renamed) => {
+      changed.push([...paths, ...(renamed ?? []).map((one) => `${one.from} → ${one.to}`)].join(' '))
     },
-    travel: async (path) => {
-      travelled.push(path)
+    undefined,
+    async (path) => {
+      wanted.push(path)
     },
-  }
-  return { port, asked, travelled }
+    reads,
+  )
+  return { window: showed, changed, wanted }
 }
 
 describe('the stream of changes', () => {
@@ -121,100 +126,58 @@ describe('the stream of changes', () => {
     expect(window.lost.value).toContain('connection lost')
   })
 
-  it('asks the plexes for their pictures again for a change to any note', async () => {
+  it('says what changed, and waits for whatever is drawn from it', async () => {
     const core = fake({
       changes: async function* () {
         yield { paths: ['Somewhere/Else.md'], reload: false, renamed: [] }
       },
     })
-    const plexes = plexed()
-    const window = showing(
-      core,
-      async () => window.close(),
-      undefined,
-      undefined,
-      undefined,
-      plexes.port,
-    )
+    const one = heard(core)
 
-    await window.follow()
+    await one.window.follow()
 
-    expect(plexes.asked).toStrictEqual(['again'])
+    expect(one.changed).toStrictEqual(['Somewhere/Else.md'])
   })
 
-  it('asks where the vault opens once, however many plexes stand nowhere', async () => {
-    let openings = 0
+  it('says a reload names nothing at all, so everything reads again', async () => {
     const core = fake({
-      opening: async () => {
-        openings++
-        return null
-      },
       changes: async function* () {
-        yield { paths: ['Note.md'], reload: false, renamed: [] }
+        yield { paths: ['Note.md'], reload: true, renamed: [] }
       },
     })
-    const plexes = plexed(true)
-    const window = showing(
-      core,
-      async () => window.close(),
-      undefined,
-      undefined,
-      undefined,
-      plexes.port,
-    )
+    const one = heard(core)
 
-    await window.follow()
+    await one.window.follow()
 
-    expect(openings).toBe(1)
+    expect(one.changed).toStrictEqual([''])
   })
 
-  it('does not ask where the vault opens while every plex is standing somewhere', async () => {
-    let openings = 0
+  it('says where a note went, for whatever is showing it to follow', async () => {
     const core = fake({
-      opening: async () => {
-        openings++
-        return { path: 'Opening.md' }
-      },
       changes: async function* () {
-        yield { paths: ['Note.md'], reload: false, renamed: [] }
+        yield { paths: [], reload: false, renamed: [{ from: 'Note.md', to: 'Renamed.md' }] }
       },
     })
-    const plexes = plexed(false)
-    const window = showing(
-      core,
-      async () => window.close(),
-      undefined,
-      undefined,
-      undefined,
-      plexes.port,
-    )
+    const one = heard(core)
 
-    await window.follow()
+    await one.window.follow()
 
-    expect(openings).toBe(0)
+    expect(one.changed).toStrictEqual(['Note.md → Renamed.md'])
   })
 })
 
 describe('a note asked for from outside the window', () => {
-  it('is put in front of the plexes, which travel to it', async () => {
+  it('is put in front of the person, wherever the window draws it', async () => {
     const core = fake({
       focus: async function* () {
         yield { path: 'Wanted.md' }
       },
     })
-    const plexes = plexed()
-    const window = showing(
-      core,
-      async () => window.close(),
-      undefined,
-      undefined,
-      undefined,
-      plexes.port,
-    )
+    const one = heard(core)
 
-    await window.watch()
+    await one.window.watch()
 
-    expect(plexes.travelled).toStrictEqual(['Wanted.md'])
+    expect(one.wanted).toStrictEqual(['Wanted.md'])
   })
 })
 
@@ -222,31 +185,24 @@ describe('a place inside a source asked for from outside the window', () => {
   /** A window that records the documents it was asked to open, and where. */
   const watching = (core: Core) => {
     const opened: string[] = []
-    const plexes = plexed()
-    const window = showing(
-      core,
-      async () => window.close(),
-      undefined,
-      undefined,
-      (path, runs) =>
-        opened.push(`${path} ${runs.map((one) => `${one.start} ${one.length}`).join(' ')}`),
-      plexes.port,
+    const one = heard(core, (path, runs) =>
+      opened.push(`${path} ${runs.map((run) => `${run.start} ${run.length}`).join(' ')}`),
     )
-    return { window, opened, travelled: plexes.travelled }
+    return { window: one.window, opened, wanted: one.wanted }
   }
 
-  it('opens the document it stands in, and leaves the plexes where they are', async () => {
+  it('opens the document it stands in, and asks for no note at all', async () => {
     const core = fake({
       focus: async function* () {
         yield { path: 'library/mahabharata.epub', start: 40_512, length: 31 }
       },
     })
-    const { window, opened, travelled } = watching(core)
+    const { window, opened, wanted } = watching(core)
 
     await window.watch()
 
     expect(opened).toStrictEqual(['library/mahabharata.epub 40512 31'])
-    expect(travelled).toStrictEqual([])
+    expect(wanted).toStrictEqual([])
   })
 
   it('opens the document at every place the focus names, the first of them first', async () => {
@@ -271,18 +227,18 @@ describe('a place inside a source asked for from outside the window', () => {
     expect(opened).toStrictEqual(['library/mahabharata.epub 40512 31 41000 20'])
   })
 
-  it('travels the plexes for a focus that names no run of a source', async () => {
+  it('asks for the note itself where the focus names no run of a source', async () => {
     const core = fake({
       focus: async function* () {
         yield { path: 'Wanted.md', start: 0, length: 0 }
       },
     })
-    const { window, opened, travelled } = watching(core)
+    const { window, opened, wanted } = watching(core)
 
     await window.watch()
 
     expect(opened).toStrictEqual([])
-    expect(travelled).toStrictEqual(['Wanted.md'])
+    expect(wanted).toStrictEqual(['Wanted.md'])
   })
 })
 
