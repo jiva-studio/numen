@@ -40,10 +40,11 @@ A theme pinning `color-scheme` is published in one half, and `mode` has nothing
 left to choose while it is worn. A name matching nothing wears `preset:numen`,
 and the name that was not found is said; this file is left as it is.
 
-Choosing a theme writes `appearance.theme` and `appearance.mode` back here. The
-file is read as an object, those two fields are set, and it is written back, so
-a key this build knows nothing about comes through the write unchanged. A file
-that does not parse is not written.
+Choosing a theme, or light or dark, writes `appearance.theme` and
+`appearance.mode` back here — each is a command of its own in the palette, over
+the window. The file is read as an object, those two fields are set, and it is
+written back, so a key this build knows nothing about comes through the write
+unchanged. A file that does not parse is not written.
 
 ## What a vector is, and where it is made
 
