@@ -37,6 +37,37 @@ func TestAnUntouchedInstallationEmbedsLocallyAndIsDrawnAsDesigned(t *testing.T) 
 	if cfg.Appearance.Zoom != 0 {
 		t.Errorf("zoom is %v", cfg.Appearance.Zoom)
 	}
+	if cfg.Appearance.Mode != settings.ModeSystem {
+		t.Errorf("the colours are read as %q", cfg.Appearance.Mode)
+	}
+	if cfg.Appearance.Theme != settings.DefaultTheme {
+		t.Errorf("wears %q", cfg.Appearance.Theme)
+	}
+}
+
+// The window's settings are three fields of one section, and a file writing one
+// of them says nothing about the other two.
+func TestAFileNamingTheZoomStillWearsTheDefaultTheme(t *testing.T) {
+	cfg, err := settings.At(write(t, `{"appearance":{"zoom":1.5}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Appearance.Zoom != 1.5 {
+		t.Errorf("zoom is %v", cfg.Appearance.Zoom)
+	}
+	if cfg.Appearance.Mode != settings.ModeSystem || cfg.Appearance.Theme != settings.DefaultTheme {
+		t.Errorf("drawn as %+v", cfg.Appearance)
+	}
+}
+
+func TestAWindowIsDressedByWhatTheFileNames(t *testing.T) {
+	cfg, err := settings.At(write(t, `{"appearance":{"mode":"dark","theme":"mine:dracula"}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Appearance.Mode != settings.ModeDark || cfg.Appearance.Theme != "mine:dracula" {
+		t.Errorf("drawn as %+v", cfg.Appearance)
+	}
 }
 
 // A person who has run the binary and nothing else has a file to read and

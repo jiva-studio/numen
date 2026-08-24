@@ -48,7 +48,28 @@ type Appearance struct {
 	// Zoom is how large everything is drawn, 1 being as designed. Zero asks the
 	// desktop instead.
 	Zoom float64 `json:"zoom"`
+
+	// Mode is which half of a colour pair the window takes: ModeSystem,
+	// ModeLight or ModeDark. A theme that pins the two halves itself leaves
+	// this nothing to choose.
+	Mode string `json:"mode"`
+
+	// Theme is the stylesheet the window wears, named by the shelf it came off
+	// and its filename: `preset:dracula` ships here, `mine:dracula` is the
+	// person's file.
+	Theme string `json:"theme"`
 }
+
+// The modes a colour pair is read by.
+const (
+	ModeSystem = "system"
+	ModeLight  = "light"
+	ModeDark   = "dark"
+)
+
+// DefaultTheme is this product's own palette, which is what an installation
+// nobody has dressed wears.
+const DefaultTheme = "preset:numen"
 
 // Indexing is how a vault is made searchable.
 type Indexing struct {
@@ -67,7 +88,8 @@ type Indexing struct {
 // Defaults are what an installation nobody has configured does.
 func Defaults() Config {
 	return Config{
-		V: 1,
+		V:          1,
+		Appearance: Appearance{Mode: ModeSystem, Theme: DefaultTheme},
 		Indexing: Indexing{
 			Embedding:    embed.Defaults(),
 			Recognition:  recognition.Defaults(),
