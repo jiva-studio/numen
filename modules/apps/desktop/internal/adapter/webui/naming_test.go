@@ -30,13 +30,7 @@ func gone(t *testing.T, root, path string) bool {
 // already on disk into the index and the links they carry with them.
 func scanned(t *testing.T, f *going) {
 	t.Helper()
-	for range 500 {
-		if f.opened.API.Ready.Load() {
-			return
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
-	t.Fatal("the vault was not read")
+	waitFor(t, f.opened.API.Ready.Load)
 }
 
 // TestRenamingWritesTheNoteAndMovesTheFile. A note is shown by its title, so
@@ -111,9 +105,7 @@ func TestRenamingSaysWhichLinksReachSomethingElseNow(t *testing.T) {
 	}
 }
 
-// TestRenamingOntoATakenNameSaysWhatTheNoteIsCalled. The note is brought into
-// line before the file is, so a refused move leaves a note that says what it is
-// called under a filename that does not.
+// TestRenamingOntoATakenNameSaysWhatTheNoteIsCalled, and where it still is.
 func TestRenamingOntoATakenNameSaysWhatTheNoteIsCalled(t *testing.T) {
 	f := quitting(t, nil, map[string]string{
 		"Old.md":     "# Old\n",
@@ -141,31 +133,23 @@ func TestRenamingOntoATakenNameSaysWhatTheNoteIsCalled(t *testing.T) {
 }
 
 // TestRenamingRefusesATitleNoFileCanBeNamedAfter. The note is not opened for a
-// title that leaves nothing to name it.
+// title that leaves nothing to name it. The titles that exercise the rule are
+// the core's, in TestRenamingRefusesATitleNoNoteCanBeGiven.
 func TestRenamingRefusesATitleNoFileCanBeNamedAfter(t *testing.T) {
 	const held = "# Old\n"
 	f := quitting(t, nil, map[string]string{"Old.md": held})
 
-	for name, title := range map[string]string{
-		"nothing at all": "",
-		"only spaces":    "   ",
-		"only dots":      "...",
-		"a line break":   "one\ntwo",
-	} {
-		t.Run(name, func(t *testing.T) {
-			answer, err := f.client.Rename(t.Context(), connect.NewRequest(&v1.RenameRequest{
-				Path: "Old.md", Title: title,
-			}))
-			if err != nil {
-				t.Fatal(err)
-			}
-			if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNNAMEABLE {
-				t.Errorf("a title with no filename in it was answered with %v", refusal)
-			}
-			if now := fileAt(t, f.root, "Old.md"); now != held {
-				t.Errorf("the refused rename wrote to the note:\n%s", now)
-			}
-		})
+	answer, err := f.client.Rename(t.Context(), connect.NewRequest(&v1.RenameRequest{
+		Path: "Old.md", Title: "   ",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNNAMEABLE {
+		t.Errorf("a title with no filename in it was answered with %v", refusal)
+	}
+	if now := fileAt(t, f.root, "Old.md"); now != held {
+		t.Errorf("the refused rename wrote to the note:\n%s", now)
 	}
 }
 
@@ -363,42 +347,34 @@ func TestRenamingSaysWhatANoteCannotBeCalled(t *testing.T) {
 	}
 }
 
-// TestARenamedNoteIsStillLinkedTo. A rename that filed a note under a name no
-// link can be written by would break every link pointing at it, and nothing
-// could repair them.
+// TestARenamedNoteIsStillLinkedTo. A rename files a note under a name a link
+// can be written by, and the repair crosses to the window. The titles that
+// exercise the rule are the core's, in
+// TestARenamedNoteIsStillReachedByTheLinksThatNameIt.
 func TestARenamedNoteIsStillLinkedTo(t *testing.T) {
-	const pointing = "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n\n# Heat\n"
-	for name, title := range map[string]string{
-		"a title in double brackets": "Notes [[draft]]",
-		"a title carrying a hash":    "Issue #42",
-		"a title carrying a pipe":    "Either|Or",
-	} {
-		t.Run(name, func(t *testing.T) {
-			f := quitting(t, nil, map[string]string{
-				"Entropy.md": "# Entropy\n",
-				"Heat.md":    pointing,
-			})
-			scanned(t, f)
+	f := quitting(t, nil, map[string]string{
+		"Entropy.md": "# Entropy\n",
+		"Heat.md":    "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n\n# Heat\n",
+	})
+	scanned(t, f)
 
-			answer, err := f.client.Rename(t.Context(), connect.NewRequest(&v1.RenameRequest{
-				Path: "Entropy.md", Title: title,
-			}))
-			if err != nil {
-				t.Fatal(err)
-			}
-			if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-				t.Fatalf("the rename was refused: %v", refusal)
-			}
-			repaired := answer.Msg.GetMoved().GetRepaired()
-			if len(repaired) != 1 || repaired[0] != "Heat.md" {
-				t.Fatalf("want the note whose link broke repaired, got %v", repaired)
-			}
-			name := strings.TrimSuffix(answer.Msg.GetPath(), ".md")
-			if now := fileAt(t, f.root, "Heat.md"); !strings.Contains(now, "to: "+name) &&
-				!strings.Contains(now, "to: '"+name+"'") && !strings.Contains(now, `to: "`+name+`"`) {
-				t.Errorf("the link does not reach %q:\n%s", name, now)
-			}
-		})
+	answer, err := f.client.Rename(t.Context(), connect.NewRequest(&v1.RenameRequest{
+		Path: "Entropy.md", Title: "Notes [[draft]]",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
+		t.Fatalf("the rename was refused: %v", refusal)
+	}
+	repaired := answer.Msg.GetMoved().GetRepaired()
+	if len(repaired) != 1 || repaired[0] != "Heat.md" {
+		t.Fatalf("want the note whose link broke repaired, got %v", repaired)
+	}
+	name := strings.TrimSuffix(answer.Msg.GetPath(), ".md")
+	if now := fileAt(t, f.root, "Heat.md"); !strings.Contains(now, "to: "+name) &&
+		!strings.Contains(now, "to: '"+name+"'") && !strings.Contains(now, `to: "`+name+`"`) {
+		t.Errorf("the link does not reach %q:\n%s", name, now)
 	}
 }
 

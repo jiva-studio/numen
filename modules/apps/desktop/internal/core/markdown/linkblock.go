@@ -244,9 +244,7 @@ func (d *Document) PointLinksAt(from domain.Address, to string) (int, error) {
 // everything else on its line — a trailing comment, the spacing, the other keys
 // of the entry — exactly where it was.
 //
-// The span covers the whole token, quotes and all. A name in double brackets
-// opens with `[`, which reads as a sequence unless it is quoted, so the form a
-// person writes a link in is a quoted one and a rename has to reach it.
+// The span covers the whole token, quotes and all.
 //
 // A scalar written over lines of its own — with `|`, with `>`, or a quoted one
 // carried across a line break — is not one token on one line. Its link stays as
@@ -271,13 +269,14 @@ func (d *Document) scalarSpan(node *yaml.Node) (start, end int, ok bool) {
 			return 0, 0, false
 		}
 	case node.Style&yaml.SingleQuotedStyle != 0:
-		end, ok = quotedEnd(d.front, start, '\'')
+		if end, ok = quotedEnd(d.front, start, '\''); !ok {
+			return 0, 0, false
+		}
 	case node.Style&yaml.DoubleQuotedStyle != 0:
-		end, ok = quotedEnd(d.front, start, '"')
+		if end, ok = quotedEnd(d.front, start, '"'); !ok {
+			return 0, 0, false
+		}
 	default:
-		return 0, 0, false
-	}
-	if node.Style != 0 && !ok {
 		return 0, 0, false
 	}
 
@@ -460,10 +459,10 @@ func scalarLike(value string, style yaml.Style) (string, error) {
 	enc := yaml.NewEncoder(&out)
 	enc.SetIndent(2)
 	if err := enc.Encode(&yaml.Node{Kind: yaml.ScalarNode, Style: style, Value: value}); err != nil {
-		return scalar(value)
+		return "", err
 	}
 	if err := enc.Close(); err != nil {
-		return scalar(value)
+		return "", err
 	}
 	written := strings.TrimRight(out.String(), "\n")
 

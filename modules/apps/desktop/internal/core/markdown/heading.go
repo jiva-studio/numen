@@ -36,16 +36,12 @@ func (d *Document) SetHeading(text string) (bool, error) {
 	return false, nil
 }
 
-// InsertHeading opens the prose with a level-one heading. The prose it opens is
-// the same bytes underneath.
+// InsertHeading opens the prose with a level-one heading.
 func (d *Document) InsertHeading(text string) error {
 	if !Headable(text) {
 		return ErrNotAHeading
 	}
-	rest := d.body
-	for len(rest) > 0 && (rest[0] == '\n' || rest[0] == '\r') {
-		rest = rest[1:]
-	}
+	rest := bytes.TrimLeft(d.body, "\r\n")
 	if len(bytes.TrimSpace(rest)) == 0 {
 		d.body = []byte("# " + text + d.eol)
 		return nil

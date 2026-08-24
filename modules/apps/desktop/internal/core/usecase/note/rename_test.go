@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -14,10 +15,10 @@ import (
 )
 
 func (c changing) rename() note.Rename {
-	return note.Rename{
+	return note.Rename{Move: note.Move{
 		Readers: filesystem.Readers{}, Writers: filesystem.Writers{},
 		Links: c.db.Links(), Index: c.index,
-	}
+	}}
 }
 
 // title is what the vault shows the note at this path as, asked of the index
@@ -197,8 +198,7 @@ func TestATitleOnlyTheKeyCanCarryIsRefusedWhereThereIsNoKey(t *testing.T) {
 	}
 }
 
-// A link written by a name reaches the note the name is on, so a rename must
-// not leave a note under a name no link can be written by.
+// A link written by a name reaches the note the name is on.
 func TestARenamedNoteIsStillReachedByTheLinksThatNameIt(t *testing.T) {
 	for name, title := range map[string]string{
 		"a title in double brackets":   "Notes [[draft]]",
@@ -265,8 +265,6 @@ func TestRenamingCanLeaveTheFileWhereItIs(t *testing.T) {
 	}
 }
 
-// The note is brought into line before the file is, so a refused move leaves a
-// note that says what it is called under a filename that does not.
 func TestRenamingRefusesToLandOnAnExistingNote(t *testing.T) {
 	c := changeable(t, map[string]string{
 		"Old.md":     "# Old\n",
@@ -291,22 +289,19 @@ func TestRenamingRefusesToLandOnAnExistingNote(t *testing.T) {
 	}
 }
 
-// The file is where the answer says it is. Whatever goes wrong after the move
-// has landed, the note is not at the name it had, and a caller told otherwise
-// writes its next word to a path with no file.
+// The answer says where the file is. A move that landed says so however the
+// rest of the work goes.
 func TestAMoveThatLandedIsAnsweredWithEvenWhenWhatFollowsFails(t *testing.T) {
 	c := changeable(t, map[string]string{"Old.md": "# Old\n"})
 
 	sulk := errors.New("the index would not have it")
-	calls := 0
 	rename := c.rename()
 	rename.Index = func(ctx context.Context, v domain.Vault, paths []string) error {
-		calls++
-		// The first call is the edit's; the one after it follows the move.
-		if calls < 2 {
-			return c.index(ctx, v, paths)
+		// The path the file moved to is only ever brought level after the move.
+		if slices.Contains(paths, "Entropy.md") {
+			return sulk
 		}
-		return sulk
+		return c.index(ctx, v, paths)
 	}
 
 	renamed, err := rename.Execute(t.Context(), c.vault, "Old.md", "Entropy")
@@ -316,8 +311,8 @@ func TestAMoveThatLandedIsAnsweredWithEvenWhenWhatFollowsFails(t *testing.T) {
 	if renamed.Path != "Entropy.md" {
 		t.Errorf("the file is at Entropy.md and the answer says %q", renamed.Path)
 	}
-	if renamed.Moved == nil || !renamed.Moved.Landed {
-		t.Errorf("the file moved and the answer says %+v", renamed.Moved)
+	if renamed.Moved == nil {
+		t.Error("the file moved and the answer reports no move")
 	}
 	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "# Entropy") {
 		t.Errorf("the file is not where the answer says:\n%s", body)
@@ -421,8 +416,7 @@ func TestRenamingRepairsALinkThatStoppedResolving(t *testing.T) {
 }
 
 // A note the vault does not hold is named as one, and a vault that cannot be
-// reached is not. The window says the first to the person and stops the tab
-// saving, which is the wrong thing to say about a drive that is not plugged in.
+// reached is not.
 func TestOnlyAMissingNoteIsNamedAsOne(t *testing.T) {
 	c := changeable(t, map[string]string{"Old.md": "# Old\n"})
 

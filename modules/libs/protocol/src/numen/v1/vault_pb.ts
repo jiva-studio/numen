@@ -375,8 +375,8 @@ export const ChangesResponseSchema: GenMessage<ChangesResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 10);
 
 /**
- * Went is a note that is no longer where it was. A rename is one of the things
- * that moves a note, and `Moved` is what a rename answers with.
+ * Went is a note that is no longer where it was. The bytes do not change on the
+ * way, so this says nothing about what the note holds.
  *
  * @generated from message numen.v1.Went
  */
@@ -1308,8 +1308,7 @@ export type Retargeted = Message<"numen.v1.Retargeted"> & {
 
   /**
    * What the link is written by, with its scheme dropped: a name, or the path
-   * of a note. It is what names the link to the person, and not an address a
-   * link can be written from.
+   * of a note.
    *
    * @generated from field: string target = 2;
    */
@@ -1668,7 +1667,7 @@ export const WaySchema: GenEnum<Way> = /*@__PURE__*/
  */
 export enum Naming {
   /**
-   * Nothing named the note, because nothing was brought into line.
+   * Nothing named the note.
    *
    * @generated from enum value: NAMING_UNSPECIFIED = 0;
    */

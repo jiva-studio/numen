@@ -86,8 +86,7 @@ func TestATitleThatCannotBeAFilenameIsNoFilename(t *testing.T) {
 }
 
 // A note is reached by a link written by its name, so every filename a title
-// reduces to is one a link can be written by. A name that is not leaves the
-// links pointing at the note reaching nothing, and nothing can repair them.
+// reduces to is one a link can be written by.
 func TestEveryFilenameATitleReducesToCanBeWrittenAsALink(t *testing.T) {
 	for _, title := range []string{
 		"C#", "F# and C#", "#tag", "###",

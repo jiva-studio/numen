@@ -12,13 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 )
 
-// Rename gives a note a different name. Whichever of the title, the heading and
-// the filename names the note is brought into line, and the file is renamed
-// with it.
-//
-// The note is written before the file is moved, so a refused move answers with
-// the name the note now carries and the path it still has. A move that landed
-// answers with the path the file is at, whatever went wrong after it.
+// Rename gives a note a different name.
 func (a *API) Rename(ctx context.Context, r *connect.Request[v1.RenameRequest]) (*connect.Response[v1.RenameResponse], error) {
 	if a.Renames == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
@@ -99,8 +93,7 @@ func namingOf(by note.Naming) v1.Naming {
 }
 
 // movedOf is what the file did, as the schema carries it. A retargeted link
-// crosses as the address it was written by, which is what names the link to the
-// person.
+// crosses as the address it was written by.
 func movedOf(moved note.Moved) *v1.Moved {
 	out := &v1.Moved{From: moved.From, To: moved.To, Repaired: moved.Repaired}
 	for _, one := range moved.Retargeted {

@@ -284,7 +284,7 @@ func (Way) EnumDescriptor() ([]byte, []int) {
 type Naming int32
 
 const (
-	// Nothing named the note, because nothing was brought into line.
+	// Nothing named the note.
 	Naming_NAMING_UNSPECIFIED Naming = 0
 	// The `title` key of the frontmatter.
 	Naming_NAMING_FRONTMATTER Naming = 1
@@ -1068,8 +1068,8 @@ func (x *ChangesResponse) GetRenamed() []*Went {
 	return nil
 }
 
-// Went is a note that is no longer where it was. A rename is one of the things
-// that moves a note, and `Moved` is what a rename answers with.
+// Went is a note that is no longer where it was. The bytes do not change on the
+// way, so this says nothing about what the note holds.
 type Went struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Where the note was filed.
@@ -2877,8 +2877,7 @@ type Retargeted struct {
 	// The note the link is written in.
 	In string `protobuf:"bytes,1,opt,name=in,proto3" json:"in,omitempty"`
 	// What the link is written by, with its scheme dropped: a name, or the path
-	// of a note. It is what names the link to the person, and not an address a
-	// link can be written from.
+	// of a note.
 	Target string `protobuf:"bytes,2,opt,name=target,proto3" json:"target,omitempty"`
 	// The note it reaches now.
 	Now           string `protobuf:"bytes,3,opt,name=now,proto3" json:"now,omitempty"`

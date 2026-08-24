@@ -88,10 +88,8 @@ func TestAChangeDoesNotDisplaceOneToAnotherNote(t *testing.T) {
 	}
 }
 
-// A refusal is about the note the request named. The filesystem says "no such
-// file" about a vault on a drive that is not plugged in as readily as about a
-// note nobody wrote, and only the core knows which of the two it met — so only
-// what the core named is answered as a refusal.
+// A refusal is about the note the request named. Only what the core named as
+// missing is answered as one.
 func TestOnlyTheCoreSaysWhichNoteIsMissing(t *testing.T) {
 	for name, c := range map[string]struct {
 		err  error

@@ -443,9 +443,7 @@ func TestANoteWithAnUnclosedBlockIsNotWrittenTo(t *testing.T) {
 	}
 }
 
-// A name in double brackets opens with `[`, which YAML reads as a sequence, so
-// every link written the way a person writes one is quoted, and a rename
-// reaches a link in either form.
+// A rename reaches a link whether it is quoted or written plainly.
 func TestARenameReachesALinkHoweverItIsQuoted(t *testing.T) {
 	for _, one := range []struct {
 		name    string

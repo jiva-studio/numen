@@ -279,8 +279,8 @@ message ChangesResponse {
   repeated Went renamed = 3;
 }
 
-// Went is a note that is no longer where it was. A rename is one of the things
-// that moves a note, and `Moved` is what a rename answers with.
+// Went is a note that is no longer where it was. The bytes do not change on the
+// way, so this says nothing about what the note holds.
 message Went {
   // Where the note was filed.
   string from = 1;
@@ -558,7 +558,7 @@ message JoinResponse {
 // Naming is which of the three a note is shown by, and so which one a rename
 // brings into line.
 enum Naming {
-  // Nothing named the note, because nothing was brought into line.
+  // Nothing named the note.
   NAMING_UNSPECIFIED = 0;
 
   // The `title` key of the frontmatter.
@@ -628,8 +628,7 @@ message Retargeted {
   string in = 1;
 
   // What the link is written by, with its scheme dropped: a name, or the path
-  // of a note. It is what names the link to the person, and not an address a
-  // link can be written from.
+  // of a note.
   string target = 2;
 
   // The note it reaches now.

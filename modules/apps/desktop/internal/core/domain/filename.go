@@ -50,18 +50,13 @@ func Filename(title string) (name string, exact bool) {
 	return name, name == strings.TrimSpace(title)
 }
 
-// trimmedEnds is a name carrying at neither end a dot, which files the note
-// where nothing looks and which Windows drops, or a space, which is no part of
-// the name a link is written by. Taking one can expose the other, so they come
-// off until nothing more does.
+// trimmedEnds is a name carrying at neither end a dot or a space. A leading dot
+// files the note where nothing looks, a trailing one is dropped by Windows, and
+// a space is no part of the name a link is written by.
 func trimmedEnds(name string) string {
-	for {
-		cut := strings.Trim(strings.TrimSpace(name), ".")
-		if cut == name {
-			return name
-		}
-		name = cut
-	}
+	return strings.TrimFunc(name, func(r rune) bool {
+		return r == '.' || unicode.IsSpace(r)
+	})
 }
 
 // cutRunes shortens to at most n bytes without splitting a character in half.

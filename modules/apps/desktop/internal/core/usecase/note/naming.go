@@ -30,11 +30,8 @@ var ErrNotAHeading = markdown.ErrNotAHeading
 // nameOf is the filename a title is filed under, and whether the filename is
 // the whole of the title.
 //
-// Two titles are refused whatever the note. One that leaves no filename names
-// nothing. One carrying a line break is a name no list, tab or heading draws on
-// one line, and the filename joins its words without saying so.
-//
-// The title comes in trimmed.
+// Two titles are refused whatever the note: one that leaves no filename, and
+// one carrying a line break. The title comes in trimmed.
 func nameOf(title string) (name string, exact bool, err error) {
 	switch name, exact = domain.Filename(title); {
 	case name == "":
