@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"flag"
@@ -8,21 +9,43 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 )
 
+const vaultUsage = `usage:
+  numen-cli vault add <path> [--name <name>]
+  numen-cli vault list
+  numen-cli vault rename <vault> <new name>
+  numen-cli vault forget <vault>
+  numen-cli vault erase <vault> [--yes]
+  numen-cli vault open <vault>`
+
+// erasesInto is the trash an erased folder goes to. A test names another.
+var erasesInto = func(cfg container.Config) port.Trash { return cfg.Trash() }
+
 func vaultCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
 	if len(args) == 0 {
-		return errors.New("usage: numen-cli vault add <path> | numen-cli vault list")
+		return errors.New(vaultUsage)
 	}
 	switch args[0] {
 	case "add":
 		return vaultAdd(out, cfg, args[1:])
 	case "list":
 		return vaultList(out, cfg)
+	case "rename":
+		return vaultRename(ctx, out, cfg, args[1:])
+	case "forget":
+		return vaultForget(ctx, out, cfg, args[1:])
+	case "erase":
+		return vaultErase(ctx, out, cfg, args[1:])
+	case "open":
+		return vaultOpen(out, cfg, args[1:])
 	default:
 		return fmt.Errorf("unknown vault command %q", args[0])
 	}
@@ -74,14 +97,155 @@ func vaultList(out io.Writer, cfg container.Config) error {
 		fmt.Fprintln(out, "no vaults yet — add one with: numen-cli vault add <path>")
 		return nil
 	}
+	recent, recorded, err := registry.Last()
+	if err != nil {
+		return err
+	}
 	for _, v := range known {
-		marker := " "
+		last := " "
+		if recorded && v.ID == recent.ID {
+			// The vault the next window opens.
+			last = "*"
+		}
+		there := " "
 		if _, err := os.Stat(v.Path); err != nil {
 			// The registry remembers where a vault was last seen; the vault
 			// carries the identity. A folder that is not there is marked here.
-			marker = "?"
+			there = "?"
 		}
-		fmt.Fprintf(out, "%s %-20s %s\n  %s\n", marker, v.Name, v.ID, v.Path)
+		fmt.Fprintf(out, "%s%s %-20s %s\n  %s\n", last, there, v.Name, v.ID, v.Path)
 	}
+	return nil
+}
+
+func vaultRename(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
+	if len(args) != 2 {
+		return errors.New("usage: numen-cli vault rename <vault> <new name>")
+	}
+	v, err := findVault(cfg, args[0])
+	if err != nil {
+		return err
+	}
+	registry, err := cfg.Registry()
+	if err != nil {
+		return err
+	}
+	db, err := cfg.OpenIndex(ctx)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	renamed, err := vault.Rename{Registry: registry, Index: db.Vaults()}.Execute(ctx, v, args[1])
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(out, "renamed %s to %s\n  the folder is still %s\n", v.Name, renamed.Name, renamed.Path)
+	return nil
+}
+
+func vaultForget(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
+	if len(args) != 1 {
+		return errors.New("usage: numen-cli vault forget <vault>")
+	}
+	v, err := findVault(cfg, args[0])
+	if err != nil {
+		return err
+	}
+	registry, err := cfg.Registry()
+	if err != nil {
+		return err
+	}
+	db, err := cfg.OpenIndex(ctx)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	forget := vault.Forget{Registry: registry, Index: db.Vaults()}
+	if err := forget.Execute(ctx, v); err != nil {
+		return err
+	}
+	fmt.Fprintf(out, "forgot %s\n  the folder is still %s, and adding it again brings back the same vault\n",
+		v.Name, v.Path)
+	return nil
+}
+
+func vaultErase(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
+	fs := flag.NewFlagSet("vault erase", flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+	yes := fs.Bool("yes", false, "erase without asking")
+	rest, err := parseInterspersed(fs, args)
+	if err != nil {
+		return err
+	}
+	if len(rest) != 1 {
+		return errors.New("usage: numen-cli vault erase <vault> [--yes]")
+	}
+	v, err := findVault(cfg, rest[0])
+	if err != nil {
+		return err
+	}
+	if !*yes && !agreed(out, v) {
+		return fmt.Errorf("%s was not erased", v.Name)
+	}
+
+	registry, err := cfg.Registry()
+	if err != nil {
+		return err
+	}
+	db, err := cfg.OpenIndex(ctx)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// What will be said is worked out while the folder is still there.
+	went := fmt.Sprintf("%s went to the trash this machine keeps", v.Path)
+	if _, err := os.Stat(v.Path); err != nil {
+		went = fmt.Sprintf("nothing was at %s", v.Path)
+	}
+
+	err = vault.Erase{
+		Identity: cfg.VaultIdentity(),
+		Trash:    erasesInto(cfg),
+		Forget:   vault.Forget{Registry: registry, Index: db.Vaults()},
+	}.Execute(ctx, v)
+	if errors.Is(err, port.ErrNoTrash) {
+		return fmt.Errorf("%w — take it off the list with: numen-cli vault forget %s", err, v.Name)
+	}
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintf(out, "erased %s\n  %s\n", v.Name, went)
+	return nil
+}
+
+// agreed says what erasing does and reads the answer from the terminal this was
+// typed at. Only yes is a yes.
+func agreed(out io.Writer, v domain.Vault) bool {
+	fmt.Fprintf(out, "erase %s?\n  %s goes to the trash this machine keeps\n"+
+		"  the vault leaves the list and the index\ntype yes to erase it: ", v.Name, v.Path)
+	answer, _ := bufio.NewReader(os.Stdin).ReadString('\n')
+	return strings.EqualFold(strings.TrimSpace(answer), "yes")
+}
+
+func vaultOpen(out io.Writer, cfg container.Config, args []string) error {
+	if len(args) != 1 {
+		return errors.New("usage: numen-cli vault open <vault>")
+	}
+	v, err := findVault(cfg, args[0])
+	if err != nil {
+		return err
+	}
+	registry, err := cfg.Registry()
+	if err != nil {
+		return err
+	}
+	if err := registry.Opened(v.ID); err != nil {
+		return err
+	}
+	fmt.Fprintf(out, "the next window opens %s\n  path %s\n", v.Name, v.Path)
 	return nil
 }

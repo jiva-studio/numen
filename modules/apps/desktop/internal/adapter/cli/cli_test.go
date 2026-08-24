@@ -3,6 +3,10 @@ package cli_test
 import (
 	"bytes"
 	"context"
+	"errors"
+	"fmt"
+	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,6 +14,8 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/cli"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
+	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/testsupport"
 )
 
@@ -49,6 +55,65 @@ func (s *session) mustRun(args ...string) string {
 		s.t.Fatalf("numen-cli %s: %v\n%s", strings.Join(args, " "), err, out)
 	}
 	return out
+}
+
+// another is a second vault of this installation, with an identity of its own.
+// An installation keeps a vault, so a test that forgets or erases one has two.
+func (s *session) another(name string) string {
+	s.t.Helper()
+	dir := s.t.TempDir()
+	s.mustRun("vault", "add", dir, "--name", name)
+	return dir
+}
+
+// types is what the person answers when a command asks.
+func (s *session) types(answer string) {
+	s.t.Helper()
+	read, write, err := os.Pipe()
+	if err != nil {
+		s.t.Fatal(err)
+	}
+	if _, err := io.WriteString(write, answer); err != nil {
+		s.t.Fatal(err)
+	}
+	write.Close()
+	was := os.Stdin
+	os.Stdin = read
+	s.t.Cleanup(func() { os.Stdin = was; read.Close() })
+}
+
+// bin is a trash of this test's own: it moves what it is given into a folder the
+// test made, and answers refuse where that is set.
+type bin struct {
+	into   string
+	refuse error
+	took   []string
+}
+
+func (b *bin) Trash(path string) error {
+	if b.refuse != nil {
+		return fmt.Errorf("%s: %w", path, b.refuse)
+	}
+	b.took = append(b.took, path)
+	return os.Rename(path, filepath.Join(b.into, filepath.Base(path)))
+}
+
+// trash puts a bin where an erased folder goes, for as long as the test runs.
+func (s *session) trash(refuse error) *bin {
+	s.t.Helper()
+	b := &bin{into: s.t.TempDir(), refuse: refuse}
+	s.t.Cleanup(cli.ErasesInto(b))
+	return b
+}
+
+// marks is the two characters vault list puts before a vault's name.
+func marks(listing, name string) string {
+	for _, line := range strings.Split(listing, "\n") {
+		if len(line) > 2 && strings.HasPrefix(strings.TrimLeft(line, " *?"), name) {
+			return line[:2]
+		}
+	}
+	return ""
 }
 
 func TestAddScanSearch(t *testing.T) {
@@ -259,6 +324,196 @@ func TestLinksShowsBothDirections(t *testing.T) {
 	broken := s.mustRun("links", "demo", "edge/broken-links.md")
 	if !strings.Contains(broken, "nothing by that name") {
 		t.Errorf("a dangling link was not reported:\n%s", broken)
+	}
+}
+
+func TestRenamingLeavesTheFolderWhereItIs(t *testing.T) {
+	// The name is what a person calls the collection; the folder keeps the name
+	// the filesystem gives it.
+	s := newSession(t)
+	s.mustRun("vault", "add", s.vault, "--name", "before")
+
+	out := s.mustRun("vault", "rename", "before", "after")
+	if !strings.Contains(out, "after") || !strings.Contains(out, s.vault) {
+		t.Errorf("vault rename said:\n%s", out)
+	}
+	if _, err := os.Stat(s.vault); err != nil {
+		t.Errorf("the folder is not where it was: %v", err)
+	}
+
+	listed := s.mustRun("vault", "list")
+	if !strings.Contains(listed, "after") || strings.Contains(listed, "before") {
+		t.Errorf("vault list after the rename:\n%s", listed)
+	}
+}
+
+func TestForgettingKeepsTheFolderAndSaysSo(t *testing.T) {
+	s := newSession(t)
+	added := s.mustRun("vault", "add", s.vault, "--name", "leaving")
+	s.another("staying")
+
+	out := s.mustRun("vault", "forget", "leaving")
+	if !strings.Contains(out, s.vault) || !strings.Contains(out, "the folder is still") {
+		t.Errorf("vault forget said:\n%s", out)
+	}
+	if _, err := os.Stat(s.vault); err != nil {
+		t.Errorf("the folder went with the entry: %v", err)
+	}
+	if listed := s.mustRun("vault", "list"); strings.Contains(listed, "leaving") {
+		t.Errorf("the vault is still on the list:\n%s", listed)
+	}
+
+	// The identity stayed in the folder, so the vault that comes back is the one
+	// that left.
+	again := s.mustRun("vault", "add", s.vault, "--name", "leaving")
+	if identity(again) != identity(added) {
+		t.Errorf("adding it again made another vault:\n%s\n%s", added, again)
+	}
+}
+
+func TestErasingAsksBeforeItActs(t *testing.T) {
+	s := newSession(t)
+	s.mustRun("vault", "add", s.vault, "--name", "asked")
+	s.another("other")
+	b := s.trash(nil)
+	s.types("\n")
+
+	out, err := s.run("vault", "erase", "asked")
+	if err == nil {
+		t.Fatalf("an unanswered erase went ahead:\n%s", out)
+	}
+	// What will happen, and what folder it is.
+	for _, want := range []string{"trash", s.vault} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the question does not mention %q:\n%s", want, out)
+		}
+	}
+	if len(b.took) != 0 {
+		t.Errorf("a folder went to the trash unasked: %v", b.took)
+	}
+	if _, err := os.Stat(s.vault); err != nil {
+		t.Errorf("the folder went: %v", err)
+	}
+	if listed := s.mustRun("vault", "list"); !strings.Contains(listed, "asked") {
+		t.Errorf("the vault left the list:\n%s", listed)
+	}
+}
+
+func TestErasingWithYesTrashesTheFolderAndForgetsTheVault(t *testing.T) {
+	s := newSession(t)
+	s.mustRun("vault", "add", s.vault, "--name", "erased")
+	s.another("other")
+	b := s.trash(nil)
+
+	out := s.mustRun("vault", "erase", "erased", "--yes")
+	if !strings.Contains(out, "erased") {
+		t.Errorf("vault erase said:\n%s", out)
+	}
+	if len(b.took) != 1 || b.took[0] != s.vault {
+		t.Errorf("what went to the trash was %v, want %s", b.took, s.vault)
+	}
+	if _, err := os.Stat(s.vault); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("the folder is still at %s: %v", s.vault, err)
+	}
+	if listed := s.mustRun("vault", "list"); strings.Contains(listed, "erased") {
+		t.Errorf("the vault is still on the list:\n%s", listed)
+	}
+}
+
+func TestAMachineWithNowhereToPutItDeletesNothing(t *testing.T) {
+	s := newSession(t)
+	s.mustRun("vault", "add", s.vault, "--name", "kept")
+	s.another("other")
+	s.trash(port.ErrNoTrash)
+
+	out, err := s.run("vault", "erase", "kept", "--yes")
+	if !errors.Is(err, port.ErrNoTrash) {
+		t.Fatalf("erasing gave %v, want %v\n%s", err, port.ErrNoTrash, out)
+	}
+	if _, err := os.Stat(s.vault); err != nil {
+		t.Errorf("the folder went with nowhere to put it: %v", err)
+	}
+	if listed := s.mustRun("vault", "list"); !strings.Contains(listed, "kept") {
+		t.Errorf("the vault left the list:\n%s", listed)
+	}
+}
+
+func TestOpenRecordsTheVaultTheNextWindowOpens(t *testing.T) {
+	s := newSession(t)
+	s.mustRun("vault", "add", s.vault, "--name", "first")
+	s.another("second")
+
+	if mark := marks(s.mustRun("vault", "list"), "second"); mark != "  " {
+		t.Errorf("a vault is marked %q before any was opened", mark)
+	}
+
+	out := s.mustRun("vault", "open", "second")
+	if !strings.Contains(out, "second") {
+		t.Errorf("vault open said:\n%s", out)
+	}
+
+	listed := s.mustRun("vault", "list")
+	if mark := marks(listed, "second"); mark != "* " {
+		t.Errorf("the vault opened last is marked %q:\n%s", mark, listed)
+	}
+	if mark := marks(listed, "first"); mark != "  " {
+		t.Errorf("a vault that was not opened is marked %q:\n%s", mark, listed)
+	}
+
+	// The mark for a folder that is not there is its own, and a vault can carry
+	// both.
+	if err := os.Rename(s.vault, filepath.Join(filepath.Dir(s.vault), "elsewhere")); err != nil {
+		t.Fatal(err)
+	}
+	if mark := marks(s.mustRun("vault", "list"), "first"); mark != " ?" {
+		t.Errorf("a vault whose folder is gone is marked %q", mark)
+	}
+}
+
+func TestAVaultThatMatchesNothingNamesWhatWasTyped(t *testing.T) {
+	s := newSession(t)
+	s.mustRun("vault", "add", s.vault, "--name", "here")
+	for _, args := range [][]string{
+		{"vault", "rename", "nowhere", "elsewhere"},
+		{"vault", "forget", "nowhere"},
+		{"vault", "erase", "nowhere", "--yes"},
+		{"vault", "open", "nowhere"},
+	} {
+		out, err := s.run(args...)
+		if err == nil {
+			t.Errorf("numen-cli %s succeeded:\n%s", strings.Join(args, " "), out)
+			continue
+		}
+		if !strings.Contains(err.Error(), "nowhere") {
+			t.Errorf("numen-cli %s: the error does not name what was typed: %v",
+				strings.Join(args, " "), err)
+		}
+	}
+}
+
+func TestTheOnlyVaultAnInstallationHasStays(t *testing.T) {
+	s := newSession(t)
+	s.mustRun("vault", "add", s.vault, "--name", "single")
+	b := s.trash(nil)
+
+	for _, args := range [][]string{
+		{"vault", "forget", "single"},
+		{"vault", "erase", "single", "--yes"},
+	} {
+		out, err := s.run(args...)
+		if !errors.Is(err, usecase.ErrLastVault) {
+			t.Errorf("numen-cli %s gave %v, want %v\n%s",
+				strings.Join(args, " "), err, usecase.ErrLastVault, out)
+		}
+	}
+	if len(b.took) != 0 {
+		t.Errorf("a folder went to the trash: %v", b.took)
+	}
+	if _, err := os.Stat(s.vault); err != nil {
+		t.Errorf("the folder went: %v", err)
+	}
+	if listed := s.mustRun("vault", "list"); !strings.Contains(listed, "single") {
+		t.Errorf("the vault left the list:\n%s", listed)
 	}
 }
 
