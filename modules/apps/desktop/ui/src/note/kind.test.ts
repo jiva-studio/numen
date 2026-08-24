@@ -218,12 +218,12 @@ describe('a note tab closing', () => {
     one.noted.calls('Note.md', 'A note')
     const held = one.noted.opens('Note.md')
 
-    held.shuts()
+    held.shuts('note:Note.md')
     await nextTick()
 
     expect(one.shut).toEqual(['Note.md'])
     expect(one.drawings.shut).toEqual(['Note.md'])
-    await vi.waitFor(() => expect(one.closed).toEqual(['Note.md']))
+    await vi.waitFor(() => expect(one.closed).toEqual(['note:Note.md']))
     expect(one.noted.called('Note.md')).toBe('Note.md')
   })
 
@@ -233,7 +233,7 @@ describe('a note tab closing', () => {
     const held = one.noted.opens('Note.md')
     one.holds()
 
-    held.shuts()
+    held.shuts('note:Note.md')
     await nextTick()
     await nextTick()
 

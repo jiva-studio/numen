@@ -36,7 +36,7 @@ export interface Drawn {
 /** What a note tab asks of the window it is drawn in. */
 export interface Noting {
   /** The tab of a note that has written what it owed, going now. */
-  closes(path: string): void
+  closes(id: string): void
   /** A note made to fill a tab that was told to hold one; where it is filed. */
   makes(): Promise<string>
 }
@@ -60,7 +60,7 @@ export interface Held {
   drew(editor: unknown): void
   measure(): void
   /** The tab is closing, and what is unwritten goes to the file first. */
-  shuts(): void
+  shuts(id: string): void
 }
 
 /**
@@ -177,13 +177,13 @@ export function noting(vault: Called, notes: Notes, drawings: Drawings, deps: No
       enters(path)
     },
     /** The tab stands until the note says the write is done, and goes then. */
-    shuts: () => {
+    shuts: (id: string) => {
       owed.delete(path)
       drawings.shut(path)
       void notes.shut(path).then((gone) => {
         if (!gone) return
         forgets(path)
-        deps.closes(path)
+        deps.closes(id)
       })
     },
   })
@@ -205,8 +205,8 @@ export function noting(vault: Called, notes: Notes, drawings: Drawings, deps: No
     identity: (path) => path,
     makes: () => deps.makes(),
     shown: (held) => held.measure(),
-    shuts: (held) => {
-      held.shuts()
+    shuts: (held, id) => {
+      held.shuts(id)
       return false
     },
     // What an open note owes at the quit is written by the quit, which the

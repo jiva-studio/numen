@@ -132,11 +132,14 @@ export function windowing(declared: readonly Declared[], words: Words) {
   /**
    * A tab of a kind, on what it was given. A kind that takes its identity from
    * that answers with the tab it already has.
+   *
+   * What a kind calls one of its tabs is filed under that kind, so two kinds
+   * that name a tab after the same thing hold a tab each.
    */
   const makes = async (kind: string, at = ''): Promise<string> => {
     const one = byKind.get(kind)
     if (!one) return ''
-    const id = one.identity ? one.identity(at) : named(kind)
+    const id = one.identity ? `${kind}:${one.identity(at)}` : named(kind)
     if (open.value.has(id)) return id
     const held = await one.opens(at, id)
     open.value = new Map(open.value).set(id, { kind: one, held })

@@ -90,6 +90,19 @@ describe('a tab of a kind', () => {
     expect(thing.opened).toEqual(['Note.md'])
   })
 
+  it('is a tab of its own where another kind names one after the same thing', async () => {
+    const thing = kind({ identity: (at: string) => at })
+    const other = kind({ kind: 'other', identity: (at: string) => at })
+    const window = windowing([thing.declared, other.declared], words)
+
+    const one = await window.opens('thing', 'Note.md')
+    const another = await window.opens('other', 'Note.md')
+
+    expect(another).not.toBe(one)
+    expect(window.heldIn(one)?.kind.kind).toBe('thing')
+    expect(window.heldIn(another)?.kind.kind).toBe('other')
+  })
+
   it('is nothing for a kind the window was never told about', async () => {
     const window = windowing([kind().declared], words)
 
