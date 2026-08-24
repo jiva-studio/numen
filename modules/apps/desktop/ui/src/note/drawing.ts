@@ -10,7 +10,7 @@
  * Nothing happens here. What is decided is the change each note is drawn with,
  * and the interval a caller arms.
  */
-import type { Said } from './core'
+import type { Said } from '../core'
 
 /** What is being drawn over one note. */
 export interface Change {

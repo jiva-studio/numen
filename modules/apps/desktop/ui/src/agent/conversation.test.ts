@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { conversation, type Wording } from './conversation'
-import type { Agent, Place, Step } from './agent'
+import type { Agent, Place, Step } from './core'
 
 const words: Wording = {
   thinking: 'Thinking',

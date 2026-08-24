@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { raising, type Notes } from './raising'
 import type { Question } from './leaving'
-import type { State } from './tab'
+import type { State } from './note/tab'
 
 /** Notes in the states the test puts them in. */
 const notes = () => {

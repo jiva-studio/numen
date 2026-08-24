@@ -6,7 +6,7 @@
  * measures again then.
  */
 import type { Run } from '../core'
-import type { Reading } from '../reading'
+import type { Reading } from './reading'
 import type { Host, Kind } from '../windowing'
 import { DOCUMENT } from '../workspace'
 import DocumentTab from './DocumentTab.vue'

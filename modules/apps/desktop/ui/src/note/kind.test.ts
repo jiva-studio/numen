@@ -8,9 +8,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { noting, type Called, type Drawn } from './kind'
-import type { drawn } from '../drawn'
-import type { editing } from '../editing'
-import type { State } from '../tab'
+import type { drawn } from './drawn'
+import type { editing } from './editing'
+import type { State } from './tab'
 import { windowing } from '../windowing'
 
 /** A vault that answers with the heading written into each note. */

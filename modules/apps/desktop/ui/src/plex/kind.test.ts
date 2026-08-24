@@ -10,7 +10,7 @@ import { ref } from 'vue'
 import { panesOf } from '@numen/ui'
 import type { NeighbourhoodResponse } from '@numen/protocol'
 import { plexKind, plexing, type Held, type Making, type Plexing } from './kind'
-import type { Standing } from '../standing'
+import type { Standing } from './standing'
 import { windowing } from '../windowing'
 import { PLEX } from '../workspace'
 
@@ -73,6 +73,7 @@ const tab = (at: string, related: readonly string[] = [], takes = true) => {
     asks: (text) => asked.push(text),
     opening: () => 'Opening.md',
     first: async () => 'Opening.md',
+    creatable: ['parent', 'child', 'jump'],
   }
   return { held: plexing(plex.view, deps), went: plex.went, ...vault, opened, asked }
 }
@@ -203,6 +204,7 @@ describe('the picture', () => {
       asks: () => {},
       opening: () => '',
       first: async () => '',
+      creatable: ['parent', 'child', 'jump'],
     })
 
     expect(held.picture.value).toBeNull()
@@ -237,6 +239,7 @@ const window = (opening = 'Opening.md') => {
       asked.push(first)
       return first
     },
+    creatable: ['parent', 'child', 'jump'],
   })
   held.declares([plexes.kind])
 

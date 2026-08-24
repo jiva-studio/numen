@@ -6,7 +6,7 @@
  * says nothing about drawing.
  */
 import { NeighbourhoodResponseSchema, Seat } from '@numen/protocol'
-import type { Neighbourhood } from './core'
+import type { Neighbourhood } from '../core'
 import type { PlexEdge, PlexNeighbourhood, PlexNode, PlexRelatedSeat } from '@numen/ui'
 
 /**

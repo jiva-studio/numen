@@ -6,7 +6,7 @@
  * wide it is drawn, and what is lit over it are decisions, and a test asks them
  * without a browser.
  */
-import type { Run } from './core'
+import type { Run } from '../core'
 import { computed, ref } from 'vue'
 
 /** Where something sits on a page, in fractions of it. */

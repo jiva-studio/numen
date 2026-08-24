@@ -7,7 +7,7 @@
  */
 import { ref } from 'vue'
 import type { PlexRelatedSeat } from '@numen/ui'
-import type { Core, NewLink, Refused } from './core'
+import type { Core, NewLink, Refused } from '../core'
 
 /**
  * Seats a person may make a note in. A sibling is another child of a shared

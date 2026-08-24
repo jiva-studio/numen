@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { editing } from './editing'
+import { editing } from './note/editing'
 import { leaving, type Going, type Owed, type Question } from './leaving'
 import type { Answered, Core } from './core'
 

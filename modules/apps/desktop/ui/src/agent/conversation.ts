@@ -14,7 +14,7 @@
  */
 import { ref, type Ref } from 'vue'
 import { charsWord, type Turn } from '@numen/ui'
-import type { Agent, Place } from './agent'
+import type { Agent, Place } from './core'
 
 /** The words the panel puts up itself. */
 export interface Wording {

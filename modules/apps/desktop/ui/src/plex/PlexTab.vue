@@ -7,8 +7,7 @@
  */
 import { Menu, Plex } from '@numen/ui'
 import type { MenuOpening, PlexRelatedSeat, PlexShowing } from '@numen/ui'
-import { CREATABLE } from '../creating'
-import { ITEMS } from '../menu'
+import { ITEMS } from './menu'
 import type { Held } from './kind'
 
 const props = defineProps<{ held: Held }>()
@@ -18,7 +17,7 @@ const props = defineProps<{ held: Held }>()
   <Plex
     v-if="props.held.picture.value"
     :neighbourhood="props.held.picture.value!"
-    :creatable="CREATABLE"
+    :creatable="props.held.creatable"
     @activate="(path: string) => props.held.activate(path)"
     @create="(from: string, seat: PlexRelatedSeat) => void props.held.made(from, seat)"
     @link="

@@ -7,9 +7,9 @@
  */
 import { computed, ref } from 'vue'
 import type { MenuOpening, PlexNeighbourhood, PlexRelatedSeat, PlexShowing } from '@numen/ui'
-import { chose as carry } from '../menu'
-import { asPlex } from '../plex'
-import type { Standing } from '../standing'
+import { chose as carry } from './menu'
+import { asPlex } from './picture'
+import type { Standing } from './standing'
 import type { Host, Kind } from '../windowing'
 import { PLEX, plexCalled } from '../workspace'
 import PlexTab from './PlexTab.vue'
@@ -42,6 +42,8 @@ export interface Plexing {
   opening(): string
   /** Asks the vault where it opens, for a plex that has nowhere to stand. */
   first(): Promise<string>
+  /** The seats a gesture may make a note in, which the picture draws. */
+  readonly creatable: readonly PlexRelatedSeat[]
 }
 
 /** What one plex tab holds. */
@@ -183,5 +185,18 @@ export function plexing(view: Standing, deps: Plexing) {
     return near?.note?.title || (path.split('/').pop() ?? path).replace(/\.md$/, '')
   }
 
-  return { view, picture, menu, activate, made, joined, opens, asks, dismiss, chose, nameOf }
+  return {
+    view,
+    picture,
+    menu,
+    creatable: deps.creatable,
+    activate,
+    made,
+    joined,
+    opens,
+    asks,
+    dismiss,
+    chose,
+    nameOf,
+  }
 }

@@ -7,8 +7,8 @@
  */
 import { ref } from 'vue'
 import type { Turn } from '@numen/ui'
-import type { Conversation } from '../conversation'
-import { same, spotOf, spotsIn } from '../places'
+import type { Conversation } from './conversation'
+import { same, spotOf, spotsIn } from './places'
 import type { Run } from '../core'
 import type { Host, Kind } from '../windowing'
 import { AGENT, shortened } from '../workspace'

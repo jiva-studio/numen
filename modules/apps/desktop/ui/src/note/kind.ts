@@ -7,11 +7,11 @@
  * from that store, and everything a tab decides for itself is decided here.
  */
 import { nextTick, ref, watch } from 'vue'
-import type { Change } from '../drawing'
-import type { drawn } from '../drawn'
-import type { Editing, editing } from '../editing'
+import type { Change } from './drawing'
+import type { drawn } from './drawn'
+import type { Editing, editing } from './editing'
 import type { PlexShowing } from '@numen/ui'
-import { markOf } from '../tab'
+import { markOf } from './tab'
 import type { Host, Kind } from '../windowing'
 import { NOTE } from '../workspace'
 import NoteTab from './NoteTab.vue'

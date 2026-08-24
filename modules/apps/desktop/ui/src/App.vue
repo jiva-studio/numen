@@ -14,12 +14,12 @@ import type { Notice } from '@numen/ui'
 import '@numen/ui/styles.css'
 import { core, documents } from './vault'
 import { showing } from './showing'
-import { standing } from './standing'
-import { reading } from './reading'
+import { standing } from './plex/standing'
+import { reading } from './document/reading'
 import { cornerOf } from './corner'
-import { editing } from './editing'
-import { drawn } from './drawn'
-import { creating } from './creating'
+import { editing } from './note/editing'
+import { drawn } from './note/drawn'
+import { CREATABLE, creating } from './note/creating'
 import { finding } from './finding'
 import { leaving } from './leaving'
 import { raising } from './raising'
@@ -30,8 +30,8 @@ import { agentKind, talking } from './agent/kind'
 import { documentKind, documenting } from './document/kind'
 import { noting } from './note/kind'
 import { plexKind, plexing } from './plex/kind'
-import { core as agent } from './agent'
-import { conversation } from './conversation'
+import { core as agent } from './agent/core'
+import { conversation } from './agent/conversation'
 import { WORDS as talk } from './agent/words'
 import { WORDS as words } from './words'
 import { AGENT, CONVERSATION, PLEX, named, opening } from './workspace'
@@ -93,6 +93,7 @@ const plexes = plexKind(held.host, () => standing(core), {
   asks: (text) => void agents.asks(text),
   opening: () => window.opening.value,
   first: () => window.first(),
+  creatable: CREATABLE,
 })
 
 /** The agent tabs, and the one a question about a note is put in. */

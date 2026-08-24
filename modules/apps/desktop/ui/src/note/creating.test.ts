@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { CREATABLE, UNTITLED, creating } from './creating'
-import type { Core, Made, NewLink, NewNote } from './core'
+import type { Core, Made, NewLink, NewNote } from '../core'
 
 const pathOf = (note: NewNote): string =>
   note.folder ? `${note.folder}/${note.title}.md` : `${note.title}.md`

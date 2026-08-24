@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
 import { NeighbourhoodResponseSchema, Seat } from '@numen/protocol'
-import { asPlex } from './plex'
+import { asPlex } from './picture'
 
 const around = (focus: string, related: [string, Seat, string, string][]) =>
   create(NeighbourhoodResponseSchema, {

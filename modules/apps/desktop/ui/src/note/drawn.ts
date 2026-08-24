@@ -5,7 +5,7 @@
  * holding the answers where the template can draw them.
  */
 import { ref } from 'vue'
-import type { Said } from './core'
+import type { Said } from '../core'
 import { drawing, holding, type Arm, type Change, type Holding } from './drawing'
 
 export function drawn(limits: Holding = holding) {

@@ -6,7 +6,7 @@
  */
 import { watch } from 'vue'
 import type { Question } from './leaving'
-import type { State } from './tab'
+import type { State } from './note/tab'
 
 /** The notes of a window, as far as this reads them. */
 export interface Notes {

@@ -9,7 +9,7 @@ import { create } from '@bufbuild/protobuf'
 import { showing } from './showing'
 import type { Core, Run, Task } from './core'
 import type { Neighbourhood } from './core'
-import { NeighbourhoodSchema } from './plex'
+import { NeighbourhoodSchema } from './plex/picture'
 
 const answer = (path: string): Neighbourhood =>
   create(NeighbourhoodSchema, { focus: { path, title: path, identifier: '' }, related: [] })

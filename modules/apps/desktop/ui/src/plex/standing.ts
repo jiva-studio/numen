@@ -5,7 +5,7 @@
  * for the whole window, and `showing.ts` tells every plex when to ask again.
  */
 import { ref } from 'vue'
-import type { Neighbourhood } from './core'
+import type { Neighbourhood } from '../core'
 
 /** The one question a plex asks of the vault: what is around a note. */
 export interface Neighbours {

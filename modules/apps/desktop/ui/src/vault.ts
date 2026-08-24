@@ -7,9 +7,9 @@
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
 import { Counting, Owed, Refusal, VaultService, Way as Ways } from '@numen/protocol'
-import { asSeat } from './plex'
+import { asSeat } from './plex/picture'
 import type { Asking, Way } from './finding'
-import type { Documents, Marked, Sheet } from './reading'
+import type { Documents, Marked, Sheet } from './document/reading'
 import type { Answered, Core, Made, NewLink, Refused } from './core'
 
 export const vault = createClient(
