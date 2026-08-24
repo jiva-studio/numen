@@ -141,13 +141,17 @@ colours only, so the filter it feeds is invalid and hover does nothing today.
 The two places that read it take `color-mix()` against the token beneath, and
 the token goes.
 
-### Five presets ship, beside this product's own
+### Six presets ship, beside this product's own
 
-`dracula`, `nord`, `solarized`, `catppuccin`, `gruvbox`, beside `numen`. Each is
-its publisher's palette from that publisher's own source; what a palette does
-not name is derived from what it does, and the file says which.
+`dracula`, `nord`, `solarized`, `catppuccin` and `gruvbox` are their publishers'
+palettes, taken from those publishers' own sources. What a palette does not name
+is derived from what it does, and the file says which.
 
-`preset:numen` carries no `color-scheme`, so the mode chooses for it.
+`amber` is four colours read off a screenshot with the rest derived from them,
+and its name is provisional until someone gives it one.
+
+`preset:numen` names no token. `tokens.css` is this palette, and a theme naming
+nothing keeps every value that file holds.
 
 ### The palette offers the theme, and shows it as it is chosen
 
