@@ -75,11 +75,9 @@ func run(cfg container.Config, agents agentOptions, vault string, zoom float64) 
 	}
 	defer opened.Close()
 
-	// An agent nobody can reach is a panel that says so, not a window that does
-	// not open. Everything else the window does is the vault, and the vault is
-	// here.
+	// The agents' endpoint on the vault in the window, let in once the window is
+	// built.
 	reachable := &reaching{ctx: ctx, cfg: cfg, opened: opened, opts: agents, out: os.Stdout}
-	reachable.on()
 	defer reachable.off()
 
 	pages, err := webui.Pages()
@@ -130,6 +128,14 @@ func run(cfg container.Config, agents agentOptions, vault string, zoom float64) 
 		}()
 		return opened.Show(ctx, v)
 	}
+
+	// The picker and the swap above are what an agent adds and opens a vault
+	// through, and a tool is served where what it works through is there.
+	//
+	// An agent nobody can reach is a panel that says so, not a window that does
+	// not open. Everything else the window does is the vault, and the vault is
+	// here.
+	reachable.on()
 
 	// A hook runs before the window is destroyed and on a thread of its own, so
 	// the page is still drawn and still answered while what it owes is written.

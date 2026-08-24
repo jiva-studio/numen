@@ -74,9 +74,11 @@ func TestAnEditIsAboutTheNoteItChanges(t *testing.T) {
 // What a call does to the vault is written out beside the tools rather than
 // read off a schema, so a tool renamed without its entry says nothing.
 func TestEveryToolServedSaysWhatItDoes(t *testing.T) {
-	// The tools a window brings are served only where there is one, so a vault
-	// with somebody looking at it is asked as well.
-	for _, core := range []mcp.Core{{}, {View: &window{}}} {
+	// The tools a window brings are served only where there is one, and the
+	// tools for the list of vaults only where there is a list, so a vault with
+	// somebody looking at it and an installation holding several are asked as
+	// well.
+	for _, core := range []mcp.Core{{}, {View: &window{}}, onTheList(t).core} {
 		words, err := mcp.Vocabulary(t.Context(), core)
 		if err != nil {
 			t.Fatal(err)
