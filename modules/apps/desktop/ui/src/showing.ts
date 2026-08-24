@@ -42,7 +42,7 @@ export function showing(
   reloads: () => void = () => {},
 ) {
   const name = ref('')
-  /** The folder the vault the window is showing sits in, as it last read it. */
+  /** The folder the vault the window is showing sat in when the page was drawn. */
   const at = ref('')
   const indexing = ref(true)
   /** The core could not be reached: nothing else in the window is true. */
@@ -105,7 +105,8 @@ export function showing(
   async function ask() {
     const state = await core.state()
     name.value = state.name
-    at.value = state.path
+    // Read once: this is the folder the page was drawn on.
+    if (at.value === '') at.value = state.path
     trouble.value = state.failed
     unwatched.value = state.unwatched
     unreachable.value = state.unreachable
@@ -115,7 +116,7 @@ export function showing(
     return state
   }
 
-  /** Whether the vault the window is showing stands at another folder now. */
+  /** Whether the vault under this window stands at another folder than the page. */
   async function swapped() {
     const was = at.value
     try {
