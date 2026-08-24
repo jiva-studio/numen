@@ -444,8 +444,8 @@ func TestANoteWithAnUnclosedBlockIsNotWrittenTo(t *testing.T) {
 }
 
 // A name in double brackets opens with `[`, which YAML reads as a sequence, so
-// every link written the way a person writes one is quoted. A rename that
-// reached only the unquoted ones would leave the ordinary form behind.
+// every link written the way a person writes one is quoted, and a rename
+// reaches a link in either form.
 func TestARenameReachesALinkHoweverItIsQuoted(t *testing.T) {
 	for _, one := range []struct {
 		name    string
@@ -574,7 +574,7 @@ func TestARenameKeepsTheNotationItFound(t *testing.T) {
 		{"single stays single", `'[[The aggressor]]'`, `to: '[[Duryodhana]]'`},
 		{"an alias is left standing", `"[[The aggressor|him]]"`, `to: "[[Duryodhana|him]]"`},
 		{"a place inside is left standing", `"[[The aggressor#vow]]"`, `to: "[[Duryodhana#vow]]"`},
-		{"a quoted path stays a path", `"notes/The aggressor"`, `to: "Duryodhana"`},
+		{"a quoted path is repaired by name", `"notes/The aggressor"`, `to: "Duryodhana"`},
 		{"plainly written stays plain", `The aggressor`, `to: Duryodhana`},
 	} {
 		t.Run(one.name, func(t *testing.T) {

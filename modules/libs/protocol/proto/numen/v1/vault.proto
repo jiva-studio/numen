@@ -274,12 +274,16 @@ message ChangesResponse {
 
   // The notes that were renamed by this application, each by where it was and
   // where it now is. A client showing one of them follows it there.
-  repeated Renamed renamed = 3;
+  repeated Went renamed = 3;
 }
 
-// Renamed is a note that is no longer where it was.
-message Renamed {
+// Went is a note that is no longer where it was. A rename is one of the things
+// that moves a note, and `Moved` is what a rename answers with.
+message Went {
+  // Where the note was filed.
   string from = 1;
+
+  // Where it is filed now.
   string to = 2;
 }
 

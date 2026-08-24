@@ -2,8 +2,9 @@ package note
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	pathpkg "path"
+	"strings"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
@@ -52,11 +53,18 @@ type Created struct {
 }
 
 func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Created, error) {
-	name, exact := domain.Filename(in.Title)
-	if name == "" {
-		return Created{}, errors.New("a note needs a title that can be a filename")
+	title := strings.TrimSpace(in.Title)
+	name, exact, err := nameOf(title)
+	if err != nil {
+		return Created{}, err
 	}
 	path := pathpkg.Join(in.Folder, name+u.extension())
+
+	// Where the name cannot carry the title the body opens with it as a
+	// level-one heading, so the title has to be one a heading says.
+	if !exact && !markdown.Headable(title) {
+		return Created{}, fmt.Errorf("%s: %w", title, ErrNotAHeading)
+	}
 
 	// Before anything is made: a link the note cannot carry leaves no file.
 	for _, link := range in.Links {
@@ -74,7 +82,7 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 	if !exact {
 		// The name could not carry the title, so the body does. The order a
 		// note is named by finds it either way.
-		body = "# " + in.Title + "\n\n" + body
+		body = "# " + title + "\n\n" + body
 	}
 
 	content, err := joined(markdown.Create(identifier, body), in.Links)
@@ -94,7 +102,7 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 
 	// The note is on disk from here on, so everything after it answers with
 	// where it is, whether or not it succeeds.
-	made := Created{Path: path, Identifier: identifier, Title: in.Title}
+	made := Created{Path: path, Identifier: identifier, Title: title}
 	if err := u.index(ctx, v, path); err != nil {
 		return made, err
 	}

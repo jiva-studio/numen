@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	pathpkg "path"
+	"strings"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/markdown"
@@ -30,58 +31,59 @@ type Rename struct {
 type Renamed struct {
 	Path  string // where the note is filed now
 	Title string
-	By    string // "frontmatter" | "heading" | "filename"
-	Moved *Moved // nil when the file did not move
+	By    Naming
+	Moved *Moved // nil when the file is not at a different path
 }
 
-// unchanged ends the edit without writing. A note its filename names has
-// nothing in it to bring into line, and is moved and not edited.
-var unchanged = errors.New("the filename says it")
+// errFilenameNamesIt ends the edit without writing. A note its filename names
+// has nothing in it to bring into line, and is moved and not edited.
+var errFilenameNamesIt = errors.New("the filename says it")
 
 func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string) (Renamed, error) {
-	name, exact := domain.Filename(title)
-	if name == "" {
-		return Renamed{}, errors.New("a note needs a title that can be a filename")
-	}
-
-	by := ""
-	e := editing{readers: u.Readers, writers: u.Writers, index: u.Index}
-	_, err := e.apply(ctx, v, path, func(doc *markdown.Document) error {
-		if _, titled := doc.Title(); titled {
-			by = "frontmatter"
-			return doc.SetTitle(title)
-		}
-		if doc.SetHeading(title) {
-			by = "heading"
-			return nil
-		}
-		if exact {
-			by = "filename"
-			return unchanged
-		}
-		// The name cannot carry the title, so the body does. The order a note is
-		// named by finds it either way.
-		by = "heading"
-		doc.InsertHeading(title)
-		return nil
-	})
-	if err != nil && !errors.Is(err, unchanged) {
+	title = strings.TrimSpace(title)
+	name, exact, err := nameOf(title)
+	if err != nil {
 		return Renamed{}, err
 	}
 
-	// The note says what it is called from here on, so what follows answers with
-	// where the note is, whether or not it succeeds.
+	var by Naming
+	e := editing{readers: u.Readers, writers: u.Writers, index: u.Index}
+	_, err = e.apply(ctx, v, path, func(doc *markdown.Document) error {
+		if _, titled := doc.Title(); titled {
+			by = ByFrontmatter
+			return doc.SetTitle(title)
+		}
+		switch written, err := doc.SetHeading(title); {
+		case err != nil:
+			return err
+		case written:
+			by = ByHeading
+			return nil
+		}
+		if exact {
+			by = ByFilename
+			return errFilenameNamesIt
+		}
+		// The name cannot carry the title, so the body does. The order a note is
+		// named by finds it either way.
+		by = ByHeading
+		return doc.InsertHeading(title)
+	})
+	if err != nil && !errors.Is(err, errFilenameNamesIt) {
+		return Renamed{}, err
+	}
+
+	// The note says what it is called from here on, so the answer carries the
+	// name whatever the file does. It carries the file's new path from the
+	// moment the file is at it, and the path the note still has until then.
 	res := Renamed{Path: path, Title: title, By: by}
 	to := pathpkg.Join(pathpkg.Dir(path), name+pathpkg.Ext(path))
 	moved, err := Move{
 		Readers: u.Readers, Writers: u.Writers, Links: u.Links,
 		Index: u.Index, Moving: u.Moving,
 	}.Execute(ctx, v, path, to)
-	if err != nil {
-		return res, err
-	}
-	if moved.From != moved.To {
+	if moved.Landed {
 		res.Path, res.Moved = moved.To, &moved
 	}
-	return res, nil
+	return res, err
 }

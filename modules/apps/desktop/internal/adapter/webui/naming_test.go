@@ -147,6 +147,7 @@ func TestRenamingRefusesATitleNoFileCanBeNamedAfter(t *testing.T) {
 		"nothing at all": "",
 		"only spaces":    "   ",
 		"only dots":      "...",
+		"a line break":   "one\ntwo",
 	} {
 		t.Run(name, func(t *testing.T) {
 			answer, err := f.client.Rename(t.Context(), connect.NewRequest(&v1.RenameRequest{
@@ -290,5 +291,110 @@ func TestNeitherARenameNorARemoveIsTakenWhileTheWindowIsGoing(t *testing.T) {
 	}
 	if now := fileAt(t, f.root, "Entropy.md"); now != "# Entropy\n" {
 		t.Errorf("the note was written after the door was shut:\n%s", now)
+	}
+}
+
+// TestRenamingSaysWhatANoteCannotBeCalled. A title the vault cannot show the
+// note under is refused, and which of the three would have to say it decides
+// whether it can.
+func TestRenamingSaysWhatANoteCannotBeCalled(t *testing.T) {
+	for name, c := range map[string]struct {
+		held  string
+		title string
+		want  v1.Refusal
+		file  string
+	}{
+		"a heading closes on the hash the title ends with": {
+			held:  "# Old\n",
+			title: "C#",
+			want:  v1.Refusal_REFUSAL_UNNAMEABLE,
+		},
+		"a filename cannot carry it and a heading says it as something else": {
+			held:  "A measure.\n",
+			title: "C#",
+			want:  v1.Refusal_REFUSAL_UNNAMEABLE,
+		},
+		"a title over more than one line": {
+			held:  "---\ntitle: Old\n---\nbody\n",
+			title: "one\ntwo",
+			want:  v1.Refusal_REFUSAL_UNNAMEABLE,
+		},
+		"the key carries the hash, so the note is renamed": {
+			held:  "---\ntitle: Old\n---\nbody\n",
+			title: "C#",
+			file:  "---\ntitle: C#\n",
+		},
+		"a frontmatter written on one line cannot be changed a key at a time": {
+			held:  "---\n{title: Old, id: 01J8}\n---\n# Old\n",
+			title: "Entropy",
+			want:  v1.Refusal_REFUSAL_UNREADABLE,
+		},
+		"a frontmatter block that is never closed": {
+			held:  "---\ntitle: Old\n# Old\n",
+			title: "Entropy",
+			want:  v1.Refusal_REFUSAL_UNREADABLE,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			f := quitting(t, nil, map[string]string{"Old.md": c.held})
+
+			answer, err := f.client.Rename(t.Context(), connect.NewRequest(&v1.RenameRequest{
+				Path: "Old.md", Title: c.title,
+			}))
+			if err != nil {
+				t.Fatalf("want an answer the window can read, got %v", err)
+			}
+			if refusal := answer.Msg.GetRefusal(); refusal != c.want {
+				t.Errorf("want %v, got %v", c.want, refusal)
+			}
+			if c.want != v1.Refusal_REFUSAL_UNSPECIFIED {
+				if now := fileAt(t, f.root, "Old.md"); now != c.held {
+					t.Errorf("the refused rename wrote to the note:\n%s", now)
+				}
+				return
+			}
+			if now := fileAt(t, f.root, answer.Msg.GetPath()); !strings.HasPrefix(now, c.file) {
+				t.Errorf("the note holds:\n%s", now)
+			}
+		})
+	}
+}
+
+// TestARenamedNoteIsStillLinkedTo. A rename that filed a note under a name no
+// link can be written by would break every link pointing at it, and nothing
+// could repair them.
+func TestARenamedNoteIsStillLinkedTo(t *testing.T) {
+	const pointing = "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n\n# Heat\n"
+	for name, title := range map[string]string{
+		"a title in double brackets": "Notes [[draft]]",
+		"a title carrying a hash":    "Issue #42",
+		"a title carrying a pipe":    "Either|Or",
+	} {
+		t.Run(name, func(t *testing.T) {
+			f := quitting(t, nil, map[string]string{
+				"Entropy.md": "# Entropy\n",
+				"Heat.md":    pointing,
+			})
+			scanned(t, f)
+
+			answer, err := f.client.Rename(t.Context(), connect.NewRequest(&v1.RenameRequest{
+				Path: "Entropy.md", Title: title,
+			}))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
+				t.Fatalf("the rename was refused: %v", refusal)
+			}
+			repaired := answer.Msg.GetMoved().GetRepaired()
+			if len(repaired) != 1 || repaired[0] != "Heat.md" {
+				t.Fatalf("want the note whose link broke repaired, got %v", repaired)
+			}
+			name := strings.TrimSuffix(answer.Msg.GetPath(), ".md")
+			if now := fileAt(t, f.root, "Heat.md"); !strings.Contains(now, "to: "+name) &&
+				!strings.Contains(now, "to: '"+name+"'") && !strings.Contains(now, `to: "`+name+`"`) {
+				t.Errorf("the link does not reach %q:\n%s", name, now)
+			}
+		})
 	}
 }

@@ -84,3 +84,46 @@ func TestATitleThatCannotBeAFilenameIsNoFilename(t *testing.T) {
 		}
 	}
 }
+
+// A note is reached by a link written by its name, so every filename a title
+// reduces to is one a link can be written by. A name that is not leaves the
+// links pointing at the note reaching nothing, and nothing can repair them.
+func TestEveryFilenameATitleReducesToCanBeWrittenAsALink(t *testing.T) {
+	for _, title := range []string{
+		"C#", "F# and C#", "#tag", "###",
+		"Notes [[draft]]", "[[", "]]", "[[[deep]]]", "a [1980] note",
+		"Either|Or", "TCP/IP", "note://01J8", "a:b", "a\\b",
+		"  Entropy  ", " Entropy ", ".hidden", "trailing.",
+		"a .", "x" + strings.Repeat("é", 200) + "#",
+		"ordinary", "Ṛtu and the seasons",
+	} {
+		name, _ := domain.Filename(title)
+		if name == "" {
+			continue
+		}
+		if !domain.Nameable(name) {
+			t.Errorf("%q is filed as %q, and no link can be written by that", title, name)
+		}
+		if domain.Basename(name+".md") != name {
+			t.Errorf("%q is filed as %q, which is not the name a link resolves by", title, name)
+		}
+	}
+}
+
+// The characters a name cannot carry are reduced, and the ones it can are left
+// where the person put them.
+func TestAFilenameKeepsWhatALinkCanBeWrittenWith(t *testing.T) {
+	for title, want := range map[string]string{
+		"C#":              "C-",
+		"Issue #42":       "Issue -42",
+		"Notes [[draft]]": "Notes [draft]",
+		"a [1980] note":   "a [1980] note",
+		"Either|Or":       "Either-Or",
+		"TCP/IP":          "TCP-IP",
+		"Ṛtu":             "Ṛtu",
+	} {
+		if name, _ := domain.Filename(title); name != want {
+			t.Errorf("%q is filed as %q, want %q", title, name, want)
+		}
+	}
+}

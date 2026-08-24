@@ -1010,7 +1010,7 @@ type ChangesResponse struct {
 	Reload bool `protobuf:"varint,2,opt,name=reload,proto3" json:"reload,omitempty"`
 	// The notes that were renamed by this application, each by where it was and
 	// where it now is. A client showing one of them follows it there.
-	Renamed       []*Renamed `protobuf:"bytes,3,rep,name=renamed,proto3" json:"renamed,omitempty"`
+	Renamed       []*Went `protobuf:"bytes,3,rep,name=renamed,proto3" json:"renamed,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1059,36 +1059,39 @@ func (x *ChangesResponse) GetReload() bool {
 	return false
 }
 
-func (x *ChangesResponse) GetRenamed() []*Renamed {
+func (x *ChangesResponse) GetRenamed() []*Went {
 	if x != nil {
 		return x.Renamed
 	}
 	return nil
 }
 
-// Renamed is a note that is no longer where it was.
-type Renamed struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	From          string                 `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
-	To            string                 `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
+// Went is a note that is no longer where it was. A rename is one of the things
+// that moves a note, and `Moved` is what a rename answers with.
+type Went struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Where the note was filed.
+	From string `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
+	// Where it is filed now.
+	To            string `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Renamed) Reset() {
-	*x = Renamed{}
+func (x *Went) Reset() {
+	*x = Went{}
 	mi := &file_numen_v1_vault_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Renamed) String() string {
+func (x *Went) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Renamed) ProtoMessage() {}
+func (*Went) ProtoMessage() {}
 
-func (x *Renamed) ProtoReflect() protoreflect.Message {
+func (x *Went) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vault_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1100,19 +1103,19 @@ func (x *Renamed) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Renamed.ProtoReflect.Descriptor instead.
-func (*Renamed) Descriptor() ([]byte, []int) {
+// Deprecated: Use Went.ProtoReflect.Descriptor instead.
+func (*Went) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *Renamed) GetFrom() string {
+func (x *Went) GetFrom() string {
 	if x != nil {
 		return x.From
 	}
 	return ""
 }
 
-func (x *Renamed) GetTo() string {
+func (x *Went) GetTo() string {
 	if x != nil {
 		return x.To
 	}
@@ -3267,12 +3270,12 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x0fOpeningResponse\x12'\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteH\x00R\x04note\x88\x01\x01B\a\n" +
 	"\x05_note\"\x10\n" +
-	"\x0eChangesRequest\"l\n" +
+	"\x0eChangesRequest\"i\n" +
 	"\x0fChangesResponse\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\x12\x16\n" +
-	"\x06reload\x18\x02 \x01(\bR\x06reload\x12+\n" +
-	"\arenamed\x18\x03 \x03(\v2\x11.numen.v1.RenamedR\arenamed\"-\n" +
-	"\aRenamed\x12\x12\n" +
+	"\x06reload\x18\x02 \x01(\bR\x06reload\x12(\n" +
+	"\arenamed\x18\x03 \x03(\v2\x0e.numen.v1.WentR\arenamed\"*\n" +
+	"\x04Went\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to\"\x0e\n" +
 	"\fFocusRequest\"x\n" +
@@ -3505,7 +3508,7 @@ var file_numen_v1_vault_proto_goTypes = []any{
 	(*OpeningResponse)(nil),       // 14: numen.v1.OpeningResponse
 	(*ChangesRequest)(nil),        // 15: numen.v1.ChangesRequest
 	(*ChangesResponse)(nil),       // 16: numen.v1.ChangesResponse
-	(*Renamed)(nil),               // 17: numen.v1.Renamed
+	(*Went)(nil),                  // 17: numen.v1.Went
 	(*FocusRequest)(nil),          // 18: numen.v1.FocusRequest
 	(*FocusResponse)(nil),         // 19: numen.v1.FocusResponse
 	(*Stretch)(nil),               // 20: numen.v1.Stretch
@@ -3549,7 +3552,7 @@ var file_numen_v1_vault_proto_depIdxs = []int32{
 	12, // 2: numen.v1.TasksResponse.tasks:type_name -> numen.v1.Task
 	2,  // 3: numen.v1.Task.counting:type_name -> numen.v1.Counting
 	6,  // 4: numen.v1.OpeningResponse.note:type_name -> numen.v1.Note
-	17, // 5: numen.v1.ChangesResponse.renamed:type_name -> numen.v1.Renamed
+	17, // 5: numen.v1.ChangesResponse.renamed:type_name -> numen.v1.Went
 	20, // 6: numen.v1.FocusResponse.also:type_name -> numen.v1.Stretch
 	6,  // 7: numen.v1.NeighbourhoodResponse.focus:type_name -> numen.v1.Note
 	7,  // 8: numen.v1.NeighbourhoodResponse.related:type_name -> numen.v1.Seated

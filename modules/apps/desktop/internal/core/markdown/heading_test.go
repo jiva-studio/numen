@@ -1,6 +1,7 @@
 package markdown
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -95,9 +96,9 @@ func TestSetHeadingRewritesTheFirstLevelOneHeading(t *testing.T) {
 			want:  "# Entropy\n\ntext\n",
 			found: true,
 		},
-		"a heading that is the whole note": {
+		"a heading that is the whole note keeps the break it had": {
 			raw:   "# Old",
-			want:  "# Entropy\n",
+			want:  "# Entropy",
 			found: true,
 		},
 		"a note whose frontmatter is left alone": {
@@ -108,6 +109,11 @@ func TestSetHeadingRewritesTheFirstLevelOneHeading(t *testing.T) {
 		"a CRLF note is written with CRLF": {
 			raw:   "# Old\r\n\r\ntext\r\n",
 			want:  "# Entropy\r\n\r\ntext\r\n",
+			found: true,
+		},
+		"a note of both breaks keeps both": {
+			raw:   "# Old\nplain\r\nreturned\n",
+			want:  "# Entropy\nplain\r\nreturned\n",
 			found: true,
 		},
 		"a heading inside a code fence is an example of one": {
@@ -124,8 +130,12 @@ func TestSetHeadingRewritesTheFirstLevelOneHeading(t *testing.T) {
 			if err != nil {
 				t.Fatalf("open: %v", err)
 			}
-			if got := d.SetHeading("Entropy"); got != c.found {
-				t.Fatalf("want found=%v, got %v", c.found, got)
+			found, err := d.SetHeading("Entropy")
+			if err != nil {
+				t.Fatalf("set heading: %v", err)
+			}
+			if found != c.found {
+				t.Fatalf("want found=%v, got %v", c.found, found)
 			}
 			if got := string(d.Bytes()); got != c.want {
 				t.Errorf("want %q, got %q", c.want, got)
@@ -151,17 +161,92 @@ func TestInsertHeadingOpensTheProse(t *testing.T) {
 			raw:  "---\nid: 01J8\n---\n\nA measure.\n",
 			want: "---\nid: 01J8\n---\n# Entropy\n\nA measure.\n",
 		},
+		"a note whose prose keeps the breaks it had": {
+			raw:  "plain\r\nreturned\n",
+			want: "# Entropy\n\nplain\r\nreturned\n",
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			d, err := Open([]byte(c.raw))
 			if err != nil {
 				t.Fatalf("open: %v", err)
 			}
-			d.InsertHeading("Entropy")
+			if err := d.InsertHeading("Entropy"); err != nil {
+				t.Fatalf("insert heading: %v", err)
+			}
 			if got := string(d.Bytes()); got != c.want {
 				t.Fatalf("want %q, got %q", c.want, got)
 			}
 		})
+	}
+}
+
+// A heading says what a reader takes out of it, and a text a reader takes
+// something else out of is refused by both writers rather than written.
+func TestAHeadingIsNotWrittenWhereItWouldBeReadAsSomethingElse(t *testing.T) {
+	for name, text := range map[string]string{
+		"a trailing hash closes the heading":  "C#",
+		"a run of trailing hashes":            "Old ###",
+		"a hash with nothing after it":        "Draft #",
+		"a line break is a second line":       "one\ntwo",
+		"a line break makes a second heading": "one\n# two",
+		"nothing at all":                      "",
+		"space on the ends":                   "  spaced  ",
+	} {
+		t.Run(name, func(t *testing.T) {
+			if Headable(text) {
+				t.Fatalf("a heading was said to say %q", text)
+			}
+
+			const raw = "# Old\n\nA measure.\n"
+			d, err := Open([]byte(raw))
+			if err != nil {
+				t.Fatalf("open: %v", err)
+			}
+			found, err := d.SetHeading(text)
+			if !errors.Is(err, ErrNotAHeading) {
+				t.Errorf("want ErrNotAHeading, got %v", err)
+			}
+			if found {
+				t.Error("the heading was said to be written")
+			}
+			if got := string(d.Bytes()); got != raw {
+				t.Errorf("the note was written:\n%q", got)
+			}
+
+			e, err := Open([]byte("A measure.\n"))
+			if err != nil {
+				t.Fatalf("open: %v", err)
+			}
+			if err := e.InsertHeading(text); !errors.Is(err, ErrNotAHeading) {
+				t.Errorf("want ErrNotAHeading, got %v", err)
+			}
+			if got := string(e.Bytes()); got != "A measure.\n" {
+				t.Errorf("the note was written:\n%q", got)
+			}
+		})
+	}
+}
+
+// What a heading is written with is what a reader takes back out of it.
+func TestAHeadingSaysWhatItWasWritten(t *testing.T) {
+	for _, text := range []string{
+		"Entropy", "Issue #42", "C sharp", "a\tb", "#tag", "```", "Notes [[draft]]",
+	} {
+		if !Headable(text) {
+			t.Errorf("a heading was said not to say %q", text)
+			continue
+		}
+		d, err := Open([]byte("# Old\n"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := d.SetHeading(text); err != nil {
+			t.Fatalf("set heading %q: %v", text, err)
+		}
+		if got := Parse(domain.FileRef{Path: "note.md"}, d.Bytes()).Title; got != text {
+			t.Errorf("the note is shown as %q, and was named %q", got, text)
+		}
 	}
 }
 

@@ -201,9 +201,9 @@ func (a *API) Changes(
 			if !open {
 				return nil
 			}
-			renamed := make([]*v1.Renamed, 0, len(what.renamed))
+			renamed := make([]*v1.Went, 0, len(what.renamed))
 			for _, went := range what.renamed {
-				renamed = append(renamed, &v1.Renamed{From: went.From, To: went.To})
+				renamed = append(renamed, &v1.Went{From: went.From, To: went.To})
 			}
 			if err := out.Send(&v1.ChangesResponse{
 				Paths: what.paths, Reload: what.reload, Renamed: renamed,

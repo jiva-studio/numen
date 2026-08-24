@@ -330,7 +330,7 @@ func renderEntry(l domain.Link, indent, eol string) ([]byte, error) {
 	enc := yaml.NewEncoder(&out)
 	enc.SetIndent(2)
 	if err := enc.Encode([]linkEntry{{
-		To:    asWritten(l.Target),
+		To:    l.Target.Written(),
 		Role:  string(l.Role),
 		Type:  l.Type,
 		Note:  l.Note,
@@ -450,10 +450,8 @@ func asItWasWritten(was, to string) string {
 }
 
 // scalarLike is a value spelled the way the value it replaces was spelled. How
-// somebody quotes their own frontmatter is theirs, and a rename that changed
-// every link it touched from one quote to the other would be a diff nobody
-// asked for. A style the value cannot be written in is written as YAML has to
-// spell it.
+// somebody quotes their own frontmatter is theirs. A style the value cannot be
+// written in is written as YAML has to spell it.
 func scalarLike(value string, style yaml.Style) (string, error) {
 	if style == 0 {
 		return scalar(value)

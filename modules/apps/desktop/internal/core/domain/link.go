@@ -42,6 +42,16 @@ const (
 
 func (a Address) String() string { return a.Scheme + "://" + a.Value }
 
+// Written is an address as it goes into a file, and as it is shown to the
+// person who wrote it. A name is written as itself: `name://` is how the index
+// holds it and never appears in a note.
+func (a Address) Written() string {
+	if a.Scheme == SchemeName {
+		return a.Value
+	}
+	return a.String()
+}
+
 // ParseAddress reads what was written in a file.
 //
 // A wikilink carries two things the address does not: an alias after `|`, which

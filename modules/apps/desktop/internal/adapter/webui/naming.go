@@ -7,7 +7,6 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 )
 
@@ -16,16 +15,11 @@ import (
 // with it.
 //
 // The note is written before the file is moved, so a refused move answers with
-// the name the note now carries and the path it still has.
+// the name the note now carries and the path it still has. A move that landed
+// answers with the path the file is at, whatever went wrong after it.
 func (a *API) Rename(ctx context.Context, r *connect.Request[v1.RenameRequest]) (*connect.Response[v1.RenameResponse], error) {
 	if a.Renames == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
-	}
-	// A title that leaves no filename names nothing, and the note is not opened
-	// for it.
-	if name, _ := domain.Filename(r.Msg.GetTitle()); name == "" {
-		refusal := v1.Refusal_REFUSAL_UNNAMEABLE
-		return connect.NewResponse(&v1.RenameResponse{Refusal: &refusal}), nil
 	}
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
@@ -38,16 +32,15 @@ func (a *API) Rename(ctx context.Context, r *connect.Request[v1.RenameRequest]) 
 		Title: renamed.Title,
 		By:    namingOf(renamed.By),
 	}
+	if renamed.Moved != nil {
+		out.Moved = movedOf(*renamed.Moved)
+	}
 	if err != nil {
 		refusal, refused := refusedBy(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		out.Refusal = &refusal
-		return connect.NewResponse(out), nil
-	}
-	if renamed.Moved != nil {
-		out.Moved = movedOf(*renamed.Moved)
 	}
 	return connect.NewResponse(out), nil
 }
@@ -86,13 +79,13 @@ func (a *API) removal(ctx context.Context, path string, destroy bool) (note.Remo
 }
 
 // namingOf is which of the three a rename wrote, as the schema carries it.
-func namingOf(by string) v1.Naming {
+func namingOf(by note.Naming) v1.Naming {
 	switch by {
-	case "frontmatter":
+	case note.ByFrontmatter:
 		return v1.Naming_NAMING_FRONTMATTER
-	case "heading":
+	case note.ByHeading:
 		return v1.Naming_NAMING_HEADING
-	case "filename":
+	case note.ByFilename:
 		return v1.Naming_NAMING_FILENAME
 	default:
 		return v1.Naming_NAMING_UNSPECIFIED
@@ -100,13 +93,13 @@ func namingOf(by string) v1.Naming {
 }
 
 // movedOf is what the file did, as the schema carries it. A retargeted link
-// crosses as the value of the address it was written by, which is what names
-// the link to the person.
+// crosses as the address it was written by, which is what names the link to the
+// person.
 func movedOf(moved note.Moved) *v1.Moved {
 	out := &v1.Moved{From: moved.From, To: moved.To, Repaired: moved.Repaired}
 	for _, one := range moved.Retargeted {
 		out.Retargeted = append(out.Retargeted, &v1.Retargeted{
-			In: one.In, Target: one.Target.Value, Now: one.Now,
+			In: one.In, Target: one.Target.Written(), Now: one.Now,
 		})
 	}
 	return out

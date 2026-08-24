@@ -2,7 +2,9 @@ package note
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io/fs"
 	pathpkg "path"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
@@ -30,6 +32,10 @@ type Move struct {
 type Moved struct {
 	From string
 	To   string
+	// Landed is whether the file is at To. It is false for a move that was
+	// refused and for one that was not needed, and it stays true once the file
+	// is there however the rest of the work goes.
+	Landed bool
 	// Repaired is the notes whose link stopped resolving and was written
 	// again, by name.
 	Repaired []string
@@ -66,8 +72,9 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (Mov
 		return res, err
 	}
 	if err := writer.Move(ctx, from, to); err != nil {
-		return res, err
+		return res, missing(err)
 	}
+	res.Landed = true
 	if err := u.index(ctx, v, from, to); err != nil {
 		return res, err
 	}
@@ -150,6 +157,11 @@ func (u Move) repair(ctx context.Context, v domain.Vault, in string, address dom
 		return false, err
 	}
 	raw, err := reader.Read(ctx, in)
+	if errors.Is(err, fs.ErrNotExist) {
+		// The note that wrote the link went between the backlinks being read
+		// and this. Its link went with it.
+		return false, nil
+	}
 	if err != nil {
 		return false, fmt.Errorf("read %s: %w", in, err)
 	}

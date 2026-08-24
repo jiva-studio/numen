@@ -1,11 +1,14 @@
 package note_test
 
 import (
+	"context"
 	"errors"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 )
@@ -35,7 +38,7 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 		raw   string
 		title string
 		path  string
-		by    string
+		by    note.Naming
 		holds []string
 		lacks []string
 	}{
@@ -43,14 +46,14 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 			raw:   "---\ntitle: Old\n---\n# Old\n",
 			title: "Entropy",
 			path:  "Entropy.md",
-			by:    "frontmatter",
+			by:    note.ByFrontmatter,
 			holds: []string{"title: Entropy", "# Old"},
 		},
 		"a level-one heading": {
 			raw:   "# Old\n\nA measure.\n",
 			title: "Entropy",
 			path:  "Entropy.md",
-			by:    "heading",
+			by:    note.ByHeading,
 			holds: []string{"# Entropy", "A measure.", "id: "},
 			lacks: []string{"# Old", "title:"},
 		},
@@ -58,7 +61,7 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 			raw:   "A measure.\n",
 			title: "TCP/IP",
 			path:  "TCP-IP.md",
-			by:    "heading",
+			by:    note.ByHeading,
 			holds: []string{"# TCP/IP", "A measure.", "id: "},
 			lacks: []string{"title:"},
 		},
@@ -66,7 +69,7 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 			raw:   "A measure.\n",
 			title: "Entropy",
 			path:  "Entropy.md",
-			by:    "filename",
+			by:    note.ByFilename,
 			holds: []string{"A measure."},
 			lacks: []string{"id: ", "# Entropy", "title:"},
 		},
@@ -104,6 +107,125 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 			}
 			if got := v.title(t, renamed.Path); got != c.title {
 				t.Errorf("the vault shows it as %q", got)
+			}
+		})
+	}
+}
+
+// The vault shows the note under the title the rename was given, whichever of
+// the three carries it. A title the heading or the filename says as something
+// else is the note named something the person did not ask for.
+func TestTheVaultShowsTheTitleTheRenameWasGiven(t *testing.T) {
+	for name, c := range map[string]struct {
+		raw   string
+		title string
+	}{
+		"a hash inside the title, on a note named by its heading": {
+			raw:   "# Old\n\nA measure.\n",
+			title: "Issue #42",
+		},
+		"a hash the frontmatter carries, on a note carrying the key": {
+			raw:   "---\ntitle: Old\n---\nA measure.\n",
+			title: "C# and F#",
+		},
+		"a title in double brackets": {
+			raw:   "# Old\n\nA measure.\n",
+			title: "Notes [[draft]]",
+		},
+		"a title that is a path": {
+			raw:   "# Old\n\nA measure.\n",
+			title: "TCP/IP",
+		},
+		"a title a filename takes whole": {
+			raw:   "A measure.\n",
+			title: "Thermodynamics",
+		},
+		"a title carrying a pipe": {
+			raw:   "# Old\n\nA measure.\n",
+			title: "Either|Or",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			v := changeable(t, map[string]string{"Old.md": c.raw})
+
+			renamed, err := v.rename().Execute(t.Context(), v.vault, "Old.md", c.title)
+			if err != nil {
+				t.Fatalf("the rename was refused: %v", err)
+			}
+			if renamed.Title != c.title {
+				t.Errorf("the answer says the note is called %q", renamed.Title)
+			}
+			if got := v.title(t, renamed.Path); got != c.title {
+				t.Errorf("the vault shows the note as %q, and it was named %q", got, c.title)
+			}
+		})
+	}
+}
+
+// A title only the `title` key can carry is written there where the note
+// already carries the key, and refused where the heading or the filename would
+// have to say it.
+func TestATitleOnlyTheKeyCanCarryIsRefusedWhereThereIsNoKey(t *testing.T) {
+	for name, c := range map[string]struct {
+		raw     string
+		refused bool
+	}{
+		"a note carrying the key":      {raw: "---\ntitle: Old\n---\nA measure.\n"},
+		"a note named by its heading":  {raw: "# Old\n\nA measure.\n", refused: true},
+		"a note named by its filename": {raw: "A measure.\n", refused: true},
+	} {
+		t.Run(name, func(t *testing.T) {
+			v := changeable(t, map[string]string{"Old.md": c.raw})
+
+			renamed, err := v.rename().Execute(t.Context(), v.vault, "Old.md", "C#")
+			if c.refused {
+				if !errors.Is(err, note.ErrNotAHeading) {
+					t.Fatalf("want ErrNotAHeading, got %v", err)
+				}
+				if body := v.read(t, "Old.md"); body != c.raw {
+					t.Errorf("the refused rename wrote to the note:\n%s", body)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("the rename was refused: %v", err)
+			}
+			if got := v.title(t, renamed.Path); got != "C#" {
+				t.Errorf("the vault shows the note as %q", got)
+			}
+		})
+	}
+}
+
+// A link written by a name reaches the note the name is on, so a rename must
+// not leave a note under a name no link can be written by.
+func TestARenamedNoteIsStillReachedByTheLinksThatNameIt(t *testing.T) {
+	for name, title := range map[string]string{
+		"a title in double brackets":   "Notes [[draft]]",
+		"a title carrying a pipe":      "Either|Or",
+		"a title carrying a hash":      "Issue #42",
+		"a title with nothing awkward": "Thermodynamics",
+	} {
+		t.Run(name, func(t *testing.T) {
+			c := changeable(t, map[string]string{
+				"Entropy.md": "# Entropy\n",
+				"Heat.md":    "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
+			})
+
+			renamed, err := c.rename().Execute(t.Context(), c.vault, "Entropy.md", title)
+			if err != nil {
+				t.Fatalf("the rename was refused: %v", err)
+			}
+			if !domain.Nameable(domain.Basename(renamed.Path)) {
+				t.Fatalf("no link can be written by the name of %q", renamed.Path)
+			}
+
+			found := links(t, c.db, c.vault, "Heat.md")
+			if len(found.Links) != 1 {
+				t.Fatalf("want the one link, got %+v", found.Links)
+			}
+			if found.Links[0].To != renamed.Path {
+				t.Errorf("the link reaches %q, and the note is at %q", found.Links[0].To, renamed.Path)
 			}
 		})
 	}
@@ -158,6 +280,9 @@ func TestRenamingRefusesToLandOnAnExistingNote(t *testing.T) {
 	if renamed.Path != "Old.md" {
 		t.Errorf("want the note where it still is, got %s", renamed.Path)
 	}
+	if renamed.Moved != nil {
+		t.Errorf("the file did not move, and the answer says %+v", renamed.Moved)
+	}
 	if body := c.read(t, "Old.md"); !strings.Contains(body, "# Entropy") {
 		t.Errorf("the title was not written:\n%s", body)
 	}
@@ -166,23 +291,82 @@ func TestRenamingRefusesToLandOnAnExistingNote(t *testing.T) {
 	}
 }
 
-func TestRenamingRefusesATitleThatCannotBeAFilename(t *testing.T) {
+// The file is where the answer says it is. Whatever goes wrong after the move
+// has landed, the note is not at the name it had, and a caller told otherwise
+// writes its next word to a path with no file.
+func TestAMoveThatLandedIsAnsweredWithEvenWhenWhatFollowsFails(t *testing.T) {
+	c := changeable(t, map[string]string{"Old.md": "# Old\n"})
+
+	sulk := errors.New("the index would not have it")
+	calls := 0
+	rename := c.rename()
+	rename.Index = func(ctx context.Context, v domain.Vault, paths []string) error {
+		calls++
+		// The first call is the edit's; the one after it follows the move.
+		if calls < 2 {
+			return c.index(ctx, v, paths)
+		}
+		return sulk
+	}
+
+	renamed, err := rename.Execute(t.Context(), c.vault, "Old.md", "Entropy")
+	if !errors.Is(err, sulk) {
+		t.Fatalf("want the index's own error, got %v", err)
+	}
+	if renamed.Path != "Entropy.md" {
+		t.Errorf("the file is at Entropy.md and the answer says %q", renamed.Path)
+	}
+	if renamed.Moved == nil || !renamed.Moved.Landed {
+		t.Errorf("the file moved and the answer says %+v", renamed.Moved)
+	}
+	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "# Entropy") {
+		t.Errorf("the file is not where the answer says:\n%s", body)
+	}
+}
+
+func TestRenamingRefusesATitleNoNoteCanBeGiven(t *testing.T) {
 	for name, title := range map[string]string{
-		"nothing at all": "",
-		"only spaces":    "   ",
-		"only dots":      "...",
-		"only controls":  "\x00\x01",
+		"nothing at all":                "",
+		"only spaces":                   "   ",
+		"only dots":                     "...",
+		"only controls":                 "\x00\x01",
+		"a line break":                  "one\ntwo",
+		"a line break making a heading": "one\n# two",
 	} {
 		t.Run(name, func(t *testing.T) {
 			c := changeable(t, map[string]string{"Old.md": "# Old\n"})
 
-			if _, err := c.rename().Execute(t.Context(), c.vault, "Old.md", title); err == nil {
-				t.Fatal("want a refusal")
+			renamed, err := c.rename().Execute(t.Context(), c.vault, "Old.md", title)
+			if !errors.Is(err, note.ErrUnnameable) {
+				t.Fatalf("want ErrUnnameable, got %v", err)
+			}
+			if renamed.Path != "" {
+				t.Errorf("a refused rename answered with %q", renamed.Path)
 			}
 			if body := c.read(t, "Old.md"); body != "# Old\n" {
 				t.Errorf("the refused rename wrote to the note:\n%s", body)
 			}
 		})
+	}
+}
+
+// The title is trimmed once, so the name, the note and the answer all say the
+// same thing.
+func TestRenamingTrimsTheTitleItIsGiven(t *testing.T) {
+	c := changeable(t, map[string]string{"Old.md": "# Old\n"})
+
+	renamed, err := c.rename().Execute(t.Context(), c.vault, "Old.md", "  Entropy  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if renamed.Title != "Entropy" {
+		t.Errorf("the answer says the note is called %q", renamed.Title)
+	}
+	if renamed.Path != "Entropy.md" {
+		t.Errorf("the note is filed at %q", renamed.Path)
+	}
+	if got := c.title(t, renamed.Path); got != "Entropy" {
+		t.Errorf("the vault shows it as %q", got)
 	}
 }
 
@@ -199,7 +383,7 @@ func TestALongTitleIsCutFromTheNameAndKeptWhole(t *testing.T) {
 	if len(renamed.Path) >= len(title) {
 		t.Errorf("the name was not cut: %s", renamed.Path)
 	}
-	if renamed.By != "heading" {
+	if renamed.By != note.ByHeading {
 		t.Errorf("want named by heading, got %s", renamed.By)
 	}
 	if body := c.read(t, renamed.Path); !strings.Contains(body, "# "+title) {
@@ -233,5 +417,40 @@ func TestRenamingRepairsALinkThatStoppedResolving(t *testing.T) {
 	found := links(t, c.db, c.vault, "physics/Heat.md")
 	if len(found.Links) != 1 || found.Links[0].To != renamed.Path {
 		t.Errorf("the repaired link does not reach the note: %+v", found.Links)
+	}
+}
+
+// A note the vault does not hold is named as one, and a vault that cannot be
+// reached is not. The window says the first to the person and stops the tab
+// saving, which is the wrong thing to say about a drive that is not plugged in.
+func TestOnlyAMissingNoteIsNamedAsOne(t *testing.T) {
+	c := changeable(t, map[string]string{"Old.md": "# Old\n"})
+
+	if _, err := c.rename().Execute(t.Context(), c.vault, "Missing.md", "Entropy"); !errors.Is(err, note.ErrNoNote) {
+		t.Errorf("want ErrNoNote for a note that is not there, got %v", err)
+	}
+
+	elsewhere := c.vault
+	elsewhere.Path = filepath.Join(t.TempDir(), "no vault here")
+	_, err := c.rename().Execute(t.Context(), elsewhere, "Old.md", "Entropy")
+	if err == nil {
+		t.Fatal("want the vault's own error")
+	}
+	if errors.Is(err, note.ErrNoNote) {
+		t.Errorf("a vault that is not there was named as a missing note: %v", err)
+	}
+}
+
+// A note taken out of the vault is taken out of it, and one that was never
+// there is said to be missing rather than reported as the vault failing.
+func TestRemovingSaysWhenThereIsNoSuchNote(t *testing.T) {
+	c := changeable(t, map[string]string{"Old.md": "# Old\n"})
+	remove := note.Remove{
+		Readers: filesystem.Readers{}, Writers: filesystem.Writers{},
+		Links: c.db.Links(), Index: c.index,
+	}
+
+	if _, err := remove.Execute(t.Context(), c.vault, "Missing.md"); !errors.Is(err, note.ErrNoNote) {
+		t.Errorf("want ErrNoNote, got %v", err)
 	}
 }

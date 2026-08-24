@@ -7,8 +7,6 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v3"
-
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 )
 
 // ErrUnreadable is what opening a note says when its frontmatter is not YAML.
@@ -328,13 +326,4 @@ type linkEntry struct {
 	Type  string `yaml:"type,omitempty"`
 	Note  string `yaml:"note,omitempty"`
 	Label string `yaml:"label,omitempty"`
-}
-
-// asWritten is an address as it goes into a file. A name is written as itself:
-// `name://` is how the index holds it and never appears in a note.
-func asWritten(a domain.Address) string {
-	if a.Scheme == domain.SchemeName {
-		return a.Value
-	}
-	return a.String()
 }
