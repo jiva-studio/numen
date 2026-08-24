@@ -394,3 +394,64 @@ describe('a note tab closing', () => {
     expect(one.noted.called('Note.md')).toBe('A note')
   })
 })
+
+describe('a note the window is told to let go of', () => {
+  it('is let go of by the tab holding it, under the identity it opened under', async () => {
+    const one = window()
+    one.noted.shows('Note.md', 'A note')
+    await nextTick()
+
+    one.noted.shuts(one.idOf('Note.md'))
+    await nextTick()
+
+    expect(one.shut).toEqual(['Note.md'])
+    await vi.waitFor(() => expect(one.open()).toEqual([]))
+  })
+
+  it('is let go of at the name it now has, wherever its file went', async () => {
+    const one = window()
+    one.noted.shows('Note.md', 'A note')
+    await nextTick()
+    const id = one.idOf('Note.md')
+    one.moves('Note.md', 'Moved.md')
+    await nextTick()
+
+    one.noted.shuts(id)
+    await nextTick()
+
+    expect(one.shut).toEqual(['Moved.md'])
+  })
+
+  it('is nothing to a window holding no tab of it', async () => {
+    const one = window()
+    one.noted.shows('Note.md', 'A note')
+    await nextTick()
+
+    one.noted.shuts('never opened')
+    await nextTick()
+
+    expect(one.shut).toEqual([])
+    expect(one.open()).toHaveLength(1)
+  })
+})
+
+describe('what a note is called under the identity it opened under', () => {
+  it('is what the window calls it, wherever its file went', async () => {
+    const one = window()
+    one.noted.shows('Note.md', 'A note')
+    await nextTick()
+    const id = one.idOf('Note.md')
+    one.moves('Note.md', 'Moved.md')
+    await nextTick()
+
+    expect(one.noted.titled(id)).toBe('A note')
+  })
+
+  it('is the file it stands at while nothing has named it', async () => {
+    const one = window()
+    one.noted.shows('Note.md')
+    await nextTick()
+
+    expect(one.noted.titled(one.idOf('Note.md'))).toBe('Note.md')
+  })
+})

@@ -11,21 +11,21 @@ import { raising, type Notes } from './raising'
 import type { Question } from './leaving'
 import type { State } from './note/tab'
 
-/** Notes in the states the test puts them in. */
+/** Notes in the states the test puts them in, each under its own identity. */
 const notes = () => {
   const states = ref<Record<string, State>>({})
   const said: string[] = []
   const store: Notes = {
     all: () => Object.keys(states.value),
-    shown: (path) => ({ state: states.value[path] ?? 'clean' }),
-    keep: (path) => said.push(`keep ${path}`),
-    take: (path) => said.push(`take ${path}`),
+    shown: (id) => ({ state: states.value[id] ?? 'clean' }),
+    keep: (id) => said.push(`keep ${id}`),
+    take: (id) => said.push(`take ${id}`),
   }
   return {
     store,
     said,
-    stands: (path: string, state: State) => {
-      states.value = { ...states.value, [path]: state }
+    stands: (id: string, state: State) => {
+      states.value = { ...states.value, [id]: state }
     },
   }
 }
@@ -36,12 +36,12 @@ const quit = () => {
   return {
     going: {
       raise: (one: Question) => {
-        standing.set(one.path, one)
-        return () => standing.delete(one.path)
+        standing.set(one.note, one)
+        return () => standing.delete(one.note)
       },
     },
     paths: () => [...standing.keys()],
-    answer: async (path: string, how: 'keep' | 'take') => standing.get(path)?.[how](),
+    answer: async (id: string, how: 'keep' | 'take') => standing.get(id)?.[how](),
   }
 }
 

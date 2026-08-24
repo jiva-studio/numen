@@ -1,9 +1,10 @@
 /**
  * The menu on a node: what it offers, and what choosing an item comes to.
  *
- * What it offers is every command over a note, so a person who never opens the
- * palette reaches all of them, and the two lists are one list. Apart from the
- * template, so that both can be asked without a screen.
+ * What it offers is every command over a note that has a row of its own. A
+ * command another one reaches on its row is left out, and the palette is where
+ * it is reached. Apart from the template, so that both can be asked without a
+ * screen.
  */
 import type { MenuItem } from '@numen/ui'
 import { commandsOf, overNote } from '../commanding'

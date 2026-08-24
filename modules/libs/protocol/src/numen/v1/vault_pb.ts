@@ -1525,7 +1525,9 @@ export enum Refusal {
   OCCUPIED = 7,
 
   /**
-   * The title leaves nothing a file can be named after. Nothing is written.
+   * A note cannot be called this: the title leaves nothing a file can be named
+   * after, it is more than one line, or a heading would read it back as
+   * something else. Nothing is written.
    *
    * @generated from enum value: REFUSAL_UNNAMEABLE = 8;
    */

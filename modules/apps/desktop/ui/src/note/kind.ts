@@ -120,6 +120,12 @@ export function noting(vault: Called, notes: Notes, drawings: Drawings, host: Ho
   /** A note given the keyboard on a line, in whichever tab holds it. */
   const entersAt = (path: string, line?: number) => keyboard.owes(opened(path), line)
 
+  /** The tab holding a note lets go of it, wherever the window draws it. */
+  const shuts = (id: string) => {
+    const tab = host.each<Held>(NOTE).find((one) => one.held.id === id)
+    tab?.held.shuts(tab.id)
+  }
+
   /**
    * What one tab of a note holds. What is being drawn over a note is filed by
    * the file it is being drawn on, which is where the note stands now.
@@ -181,7 +187,10 @@ export function noting(vault: Called, notes: Notes, drawings: Drawings, host: Ho
     titles: names.titles,
     calls: (path: string, title: string) => names.calls(mints(path), title),
     called: (path: string) => names.called(opened(path)),
+    /** What the note that opened under an identity is called. */
+    titled: (id: string) => names.called(id),
     entersAt,
+    shuts,
     /**
      * The identity the note standing at a file opened under, and nothing where
      * none stands there. It is what the store answers to.

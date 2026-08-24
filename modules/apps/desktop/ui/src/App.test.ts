@@ -9,19 +9,26 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
-import { Agent, Editor, Palette, Plex, Reader } from '@numen/ui'
+import { Agent, branch, Editor, pane, Palette, Plex, Reader, Workspace } from '@numen/ui'
 import AgentTab from './agent/AgentTab.vue'
 import DocumentTab from './document/DocumentTab.vue'
 import NoteTab from './note/NoteTab.vue'
 import PlexTab from './plex/PlexTab.vue'
 
-const { said, held } = vi.hoisted(() => ({
+const { said, held, asked } = vi.hoisted(() => ({
   /** What the mocked vault answers about itself, set before the window draws. */
-  said: { ready: true, failed: '', opening: 'Root.md' as string | null },
+  said: {
+    ready: true,
+    failed: '',
+    opening: 'Root.md' as string | null,
+    names: [] as { path: string; title: string; heading: string; line: number; at: [] }[],
+  },
   /** A stream that stays open, so nothing the window follows ever ends. */
   async *held(): AsyncGenerator<never> {
     await new Promise<never>(() => {})
   },
+  /** What the window asked the vault to do to a note, in the order it asked. */
+  asked: { renamed: [] as string[], removed: [] as string[] },
 }))
 
 vi.mock('./vault', () => ({
@@ -49,13 +56,21 @@ vi.mock('./vault', () => ({
     }),
     read: async () => ({ body: 'what is written', at: 'a1' }),
     write: async () => ({ at: 'a2' }),
+    rename: async (path: string, title: string) => {
+      asked.renamed.push(`${path} ${title}`)
+      return { path, title, by: 'frontmatter', moved: null, refusal: null }
+    },
+    remove: async (path: string, destroy?: boolean) => {
+      asked.removed.push(`${path} ${destroy ?? false}`)
+      return { trashed: `.trash/${path}`, dangling: [], refusal: null }
+    },
     changes: held,
     editing: held,
     tasks: held,
     focus: held,
     quitting: held,
     flushed: async () => {},
-    names: async () => [],
+    names: async () => said.names,
     search: async () => [],
   },
 }))
@@ -89,6 +104,11 @@ const windows: { unmount(): void }[] = []
 
 afterEach(() => {
   for (const window of windows.splice(0)) window.unmount()
+  said.ready = true
+  said.opening = 'Root.md'
+  said.names = []
+  asked.renamed = []
+  asked.removed = []
 })
 
 /**
@@ -98,6 +118,21 @@ afterEach(() => {
 async function drawn() {
   const window = mount(App, {
     global: { stubs: { Plex: true, Editor: editor, Agent: true, Reader: reader, Palette: true } },
+  })
+  windows.push(window)
+  await settles()
+  await settles()
+  return window
+}
+
+/**
+ * The window with a palette a person can type into. The palette draws itself at
+ * the end of the document, so it is read off the document rather than off here.
+ */
+async function drawnWithPalette() {
+  const window = mount(App, {
+    global: { stubs: { Plex: true, Editor: editor, Agent: true, Reader: reader } },
+    attachTo: document.body,
   })
   windows.push(window)
   await settles()
@@ -198,6 +233,155 @@ describe('the palette', () => {
     await settles()
 
     expect(bandsOf(window)).toStrictEqual(['note', 'window', 'vault'])
+  })
+
+  /** What the note band says the commands in it are over. */
+  const overNote = (window: Awaited<ReturnType<typeof drawn>>) => {
+    const bands = window.findComponent(Palette).props('bands') as readonly {
+      id: string
+      items: readonly { detail?: string }[]
+    }[]
+    return bands.find((one) => one.id === 'note')?.items[0]?.detail
+  }
+
+  /** The tab of each plex the window holds, under the note it is standing on. */
+  const plexTabs = (window: Awaited<ReturnType<typeof drawn>>) =>
+    new Map(
+      (window.findComponent(Workspace).props('tabs') as readonly { id: string; title: string }[])
+        .filter((one) => one.title.startsWith('Plex · '))
+        .map((one) => [one.title.replace('Plex · ', ''), one.id]),
+    )
+
+  /**
+   * Two plexes, in panes of their own, standing on notes of their own. The one
+   * in front is the one the person is in; the other was put in front last.
+   */
+  const split = async () => {
+    said.names = [{ path: 'physics/Entropy.md', title: 'Entropy', heading: '', line: -1, at: [] }]
+    const window = await drawn()
+
+    pressed('p')
+    await settles()
+    window.findComponent(Palette).vm.$emit('choose', 'plex', 'plex')
+    await settles()
+
+    pressed('k')
+    await settles()
+    window.findComponent(Palette).vm.$emit('update:modelValue', 'en')
+    await new Promise((done) => setTimeout(done, 200))
+    window.findComponent(Palette).vm.$emit('choose', 'physics/Entropy.md', 'plex')
+    await settles()
+
+    const tabs = plexTabs(window)
+    expect([...tabs.keys()].sort()).toStrictEqual(['Root', 'physics/Entropy'])
+    // A tab dragged into a pane of its own. The pane the person is in is the
+    // one it was dragged out of, which no tab of it changed.
+    window.findComponent(Workspace).vm.$emit('update:modelValue', {
+      root: branch(
+        'root',
+        [pane('main', [tabs.get('Root')!]), pane('aside', [tabs.get('physics/Entropy')!])],
+        [0.5, 0.5],
+      ),
+      axis: 'horizontal',
+      focus: 'main',
+    })
+    await settles()
+    return window
+  }
+
+  it('is over the plex in the tab in front, not the plex last put in front', async () => {
+    const window = await split()
+
+    pressed('p')
+    await settles()
+
+    expect(overNote(window)).toBe('Root')
+  })
+})
+
+describe('a command asked for on a node of the plex', () => {
+  /** The menu on a node, and an item of it chosen. */
+  const chose = async (window: Awaited<ReturnType<typeof drawn>>, id: string) => {
+    const plex = window.findComponent(PlexTab).props('held') as {
+      asks: (one: unknown) => void
+      chose: (id: string) => void
+    }
+    plex.asks({ path: 'Root.md', at: { x: 0, y: 0 }, from: null, opening: 'below' })
+    plex.chose(id)
+    await settles()
+  }
+
+  it('says the vault is still being read where that is why it did nothing', async () => {
+    said.ready = false
+    said.opening = null
+    const window = await drawn()
+
+    await chose(window, 'title')
+
+    expect(window.find('[role="alert"]').text()).toBe('The vault is still being read')
+  })
+
+  it('says nothing where it was taken up', async () => {
+    const window = await drawn()
+
+    await chose(window, 'title')
+
+    expect(window.find('[role="alert"]').exists()).toBe(false)
+    expect(window.findComponent(Palette).props('crumb')).toBe('Change title')
+  })
+})
+
+/**
+ * The palette drawn as a person meets it, so that what a keystroke reaches is
+ * what the row the keyboard opened on offers.
+ */
+describe('the keyboard on a step that confirms', () => {
+  const field = () => document.body.querySelector<HTMLInputElement>('.palette__field')
+
+  const press = async (key: string) => {
+    field()?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }))
+    await settles()
+  }
+
+  const type = async (text: string) => {
+    const into = field()
+    if (!into) return
+    into.value = text
+    into.dispatchEvent(new Event('input'))
+    await settles()
+  }
+
+  /** The commands open, with the one that removes a note lit. */
+  const overRemove = async () => {
+    const window = await drawnWithPalette()
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
+    await settles()
+    await type('remove')
+    await press('Enter')
+    return window
+  }
+
+  it('opens the confirmation on the answer that changes nothing', async () => {
+    await overRemove()
+
+    expect(document.body.querySelector('[data-here]')?.textContent).toContain('Keep the note')
+  })
+
+  it('removes nothing when the keystroke that opened it lands twice', async () => {
+    await overRemove()
+
+    await press('Enter')
+
+    expect(asked.removed).toStrictEqual([])
+  })
+
+  it('removes the note when the answer that removes it is the one chosen', async () => {
+    await overRemove()
+
+    await press('ArrowDown')
+    await press('Enter')
+
+    expect(asked.removed).toStrictEqual(['Root.md false'])
   })
 })
 

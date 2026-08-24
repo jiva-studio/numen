@@ -16,6 +16,7 @@ import {
   MAKING,
   offering,
   overNote,
+  type Knows,
   type Where,
 } from './commanding'
 import type { Named } from './finding'
@@ -40,6 +41,33 @@ const name = (path: string, title: string, heading = ''): Named => ({
   at: [{ from: 0, to: 1 }],
 })
 
+/**
+ * What the window calls the notes it holds, and which of them a tab holds. A
+ * test moves a note under an open step by writing here.
+ */
+const held = () => {
+  const titles = ref<Record<string, string>>({ 'physics/Ontology.md': 'Ontology' })
+  const tabs = ref<Record<string, string>>({})
+  const knows: Knows = {
+    called: (path) => titles.value[path] ?? '',
+    holding: (path) => tabs.value[path] ?? null,
+  }
+  return {
+    knows,
+    /** The note filed at a name is now filed at another, under another name. */
+    moves: (from: string, to: string, title: string) => {
+      titles.value = { ...titles.value, [to]: title }
+      delete titles.value[from]
+      const was = tabs.value[from]
+      if (was) tabs.value = { [to]: was }
+    },
+    /** A tab of the window holds the note filed at a name. */
+    opens: (path: string, tab: string) => {
+      tabs.value = { ...tabs.value, [path]: tab }
+    },
+  }
+}
+
 /** The commands over what a test says is in front, asked without a hold. */
 const asking = (over: Partial<Where> = {}, found: readonly Named[] = []) => {
   const at = ref(front(over))
@@ -50,9 +78,10 @@ const asking = (over: Partial<Where> = {}, found: readonly Named[] = []) => {
       return found
     },
   }
-  const commands = commanding(core, words, () => at.value, async () => {})
+  const window = held()
+  const commands = commanding(core, words, () => at.value, window.knows, async () => {})
   commands.shows(true)
-  return { commands, at, asked }
+  return { commands, at, asked, ...window }
 }
 
 /** Every item drawn, band by band, under the band it stands in. */
@@ -163,11 +192,19 @@ describe('a command that needs nothing', () => {
     expect(commands.chose('read', 'read')).toStrictEqual({
       id: 'read',
       path: 'physics/Ontology.md',
+      note: null,
       title: 'Ontology',
       name: '',
       kind: 'note',
       tab: 'tab',
     })
+  })
+
+  it('carries the identity of the tab holding the note it is over', () => {
+    const { commands, opens } = asking()
+    opens('physics/Ontology.md', 'held')
+
+    expect(commands.chose('read', 'read')?.note).toBe('held')
   })
 
   it('is the second one where Shift and Enter reached it', () => {
@@ -211,6 +248,7 @@ describe('a command that asks for a name', () => {
     expect(commands.chose('name', 'name')).toStrictEqual({
       id: 'child',
       path: 'physics/Ontology.md',
+      note: null,
       title: 'Ontology',
       name: 'Entropy',
       kind: 'note',
@@ -240,8 +278,21 @@ describe('removing a note', () => {
 
     commands.asks('remove', front())
 
-    expect(commands.bands.value[0]?.items[0]?.title).toBe('Remove “Ontology”')
-    expect(commands.bands.value[0]?.items[0]?.detail).toBe(words.trashed)
+    expect(commands.bands.value[0]?.items[1]?.title).toBe('Remove “Ontology”')
+    expect(commands.bands.value[0]?.items[1]?.detail).toBe(words.trashed)
+  })
+
+  /**
+   * The keyboard opens on the first row of a band, so an Enter that repeats or
+   * lands twice reaches whichever answer stands first.
+   */
+  it('offers the answer that changes nothing first', () => {
+    const { commands } = asking()
+
+    commands.asks('remove', front())
+
+    expect(commands.bands.value[0]?.items.map((item) => item.id)).toStrictEqual(['no', 'yes'])
+    expect(commands.bands.value[0]?.items[0]?.title).toBe(words.keeps)
   })
 
   it('is a deed once that question is answered', () => {
@@ -249,6 +300,44 @@ describe('removing a note', () => {
     commands.asks('remove', front())
 
     expect(commands.chose('yes', 'yes')?.id).toBe('remove')
+  })
+
+  it('is nothing at all where the answer that changes nothing was chosen', () => {
+    const { commands } = asking()
+    commands.asks('remove', front())
+
+    expect(commands.chose('no', 'no')).toBeNull()
+    expect(commands.bands.value.map((band) => band.id)).toStrictEqual(['note', 'window', 'vault'])
+  })
+
+  it('is nothing for an answer the step does not offer', () => {
+    const { commands } = asking()
+    commands.asks('remove', front())
+
+    expect(commands.chose('yes', 'destroy')).toBeNull()
+  })
+
+  it('keeps the answers the words typed name, so the field means something', () => {
+    const { commands } = asking()
+    commands.asks('remove', front())
+
+    void commands.typing('rem')
+
+    expect(commands.bands.value[0]?.items.map((item) => item.id)).toStrictEqual(['yes'])
+
+    void commands.typing('keep')
+
+    expect(commands.bands.value[0]?.items.map((item) => item.id)).toStrictEqual(['no'])
+  })
+
+  it('offers neither answer to words that name neither', () => {
+    const { commands } = asking()
+    commands.asks('remove', front())
+
+    void commands.typing('Ontology')
+
+    expect(commands.bands.value[0]?.items).toStrictEqual([])
+    expect(commands.bands.value[0]?.silence).toBe(words.answer)
   })
 })
 
@@ -272,6 +361,92 @@ describe('destroying a note', () => {
 
     expect(commands.bands.value[0]?.items[0]?.disabled).toBe(false)
     expect(commands.chose('exactly', 'exactly')?.id).toBe('destroy')
+  })
+})
+
+/**
+ * The vault moves while a person is answering. A step is about the note they
+ * named, and the name that note is filed under is not what it was.
+ */
+describe('a note that moves under an open step', () => {
+  it('is confirmed under the name it has now, and removed where it now is', () => {
+    const { commands, moves } = asking()
+    commands.asks('remove', front())
+    expect(commands.bands.value[0]?.items[1]?.title).toBe('Remove “Ontology”')
+
+    moves('physics/Ontology.md', 'physics/Being.md', 'Being')
+    commands.follows([{ from: 'physics/Ontology.md', to: 'physics/Being.md' }])
+
+    expect(commands.bands.value[0]?.items[1]?.title).toBe('Remove “Being”')
+    expect(commands.chose('yes', 'yes')?.path).toBe('physics/Being.md')
+  })
+
+  it('is renamed where it now is, and never at the name it left', () => {
+    const { commands, moves } = asking()
+    commands.asks('title', front())
+    moves('physics/Ontology.md', 'physics/Being.md', 'Being')
+    commands.follows([{ from: 'physics/Ontology.md', to: 'physics/Being.md' }])
+
+    void commands.typing('Substance')
+
+    expect(commands.chose('name', 'name')?.path).toBe('physics/Being.md')
+  })
+
+  it('is not destroyed by the name it had, and is by the name it has', () => {
+    const { commands, moves } = asking()
+    commands.asks('destroy', front())
+    moves('physics/Ontology.md', 'physics/Being.md', 'Being')
+    commands.follows([{ from: 'physics/Ontology.md', to: 'physics/Being.md' }])
+
+    void commands.typing('Ontology')
+
+    expect(commands.bands.value[0]?.items[0]?.disabled).toBe(true)
+    expect(commands.chose('exactly', 'exactly')).toBeNull()
+
+    void commands.typing('Being')
+
+    expect(commands.bands.value[0]?.items[0]?.title).toBe('Destroy “Being”')
+    expect(commands.chose('exactly', 'exactly')?.path).toBe('physics/Being.md')
+  })
+
+  it('carries the tab holding it, so the deed reaches it wherever it went', () => {
+    const { commands, opens } = asking()
+    opens('physics/Ontology.md', 'held')
+    commands.asks('remove', front())
+
+    expect(commands.chose('yes', 'yes')?.note).toBe('held')
+  })
+
+  it('leaves a step over another note where it stands', () => {
+    const { commands } = asking()
+    commands.asks('remove', front())
+
+    commands.follows([{ from: 'Elsewhere.md', to: 'Moved.md' }])
+
+    expect(commands.chose('yes', 'yes')?.path).toBe('physics/Ontology.md')
+  })
+})
+
+describe('a command that was not offered over what it was asked over', () => {
+  it('says the vault is still being read', () => {
+    const { commands } = asking({ ready: false })
+
+    expect(commands.refused('remove', front({ ready: false }))).toBe(words.indexing)
+  })
+
+  it('says nothing in front is a note', () => {
+    const { commands } = asking()
+
+    expect(commands.refused('remove', front({ kind: 'document', path: '', title: '' }))).toBe(
+      words.noNote,
+    )
+  })
+
+  it('says nothing at all about one that was taken up', () => {
+    const { commands } = asking()
+
+    expect(commands.refused('remove', front())).toBe('')
+    expect(commands.refused('nothing of the sort', front())).toBe('')
   })
 })
 
@@ -301,6 +476,7 @@ describe('a command that asks for a note', () => {
     expect(commands.chose('physics/Entropy.md', 'pick')).toStrictEqual({
       id: 'goto',
       path: 'physics/Entropy.md',
+      note: null,
       title: 'Entropy',
       name: '',
       kind: 'note',
@@ -315,6 +491,7 @@ describe('a command that asks for a note', () => {
       { names: async () => Promise.reject(new Error('no model is set')) },
       words,
       () => at.value,
+      { called: () => '', holding: () => null },
       async () => {},
     )
     commands.shows(true)
@@ -434,6 +611,7 @@ describe('a search that turned up nothing', () => {
     expect(creates('Entropy', front())).toStrictEqual({
       id: 'note',
       path: '',
+      note: null,
       title: '',
       name: 'Entropy',
       kind: 'note',

@@ -110,6 +110,18 @@ export function plexKind(host: Host, makes: () => Standing, deps: Plexing) {
   }
 
   /**
+   * Every plex standing on a note travels to another one. A plex standing
+   * anywhere else stays where it is.
+   */
+  const leaves = async (from: string, to: string) => {
+    await Promise.all(
+      all()
+        .filter(({ held }) => held.view.here.value === from)
+        .map(({ held }) => held.view.go(to)),
+    )
+  }
+
+  /**
    * Every plex asks for its picture again, following whatever moved: a plex
    * standing on a note that was renamed stands on where it went. One standing
    * nowhere is given the note the vault opens with, which is asked for once for
@@ -132,7 +144,7 @@ export function plexKind(host: Host, makes: () => Standing, deps: Plexing) {
     )
   }
 
-  return { kind, looking, trouble, names, travel, again }
+  return { kind, looking, trouble, names, travel, leaves, again }
 }
 
 export function plexing(view: Standing, deps: Plexing) {

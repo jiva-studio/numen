@@ -5,16 +5,11 @@
  * the code that draws it. What is left here is the window itself: its tabs,
  * the palette, the commands, the corner, and the quit.
  */
+import { commandKeyWord } from '@numen/ui'
 import type { Refused } from './core'
 import { WORDS as agent } from './agent/words'
 import { WORDS as note } from './note/words'
 import { WORDS as plex } from './plex/words'
-
-/**
- * The key a keystroke is held with, as this keyboard writes it: Command on
- * Apple keyboards and Control everywhere else.
- */
-const held = /mac|iphone|ipad|ipod/i.test(navigator.userAgent) ? '⌘' : '⌃'
 
 /** What the vault refused a command, in words a person reads. */
 const REFUSED: Record<Refused, string> = {
@@ -25,7 +20,7 @@ const REFUSED: Record<Refused, string> = {
   bodyRefused: 'that text cannot be written into a note',
   unreadable: 'the frontmatter of that note cannot be read',
   occupied: 'a note of that name is filed there, so the note was renamed and its file was not',
-  unnameable: 'no file can be named that',
+  unnameable: 'a note cannot be called that',
 }
 
 export const WORDS = {
@@ -66,7 +61,7 @@ export const WORDS = {
   newPlex: plex.newPlex,
   newAgent: agent.newAgent,
   close: 'Close this tab',
-  findKeys: `${held}K`,
+  findKeys: commandKeyWord(navigator.userAgent),
   first: 'Go to the note the vault opens with',
   goto: 'Go to a note',
   /** Why nothing can be done to a note: the vault is unread, or none is in front. */
@@ -80,7 +75,9 @@ export const WORDS = {
   callIt: 'Call it',
   typeNote: 'Look for a note',
   asking: 'Confirm',
-  goOn: 'Press ↵ to go on',
+  answer: 'Choose an answer',
+  keeps: 'Keep the note',
+  kept: 'Nothing happens to it',
   removes: 'Remove',
   trashed: 'It goes to the .trash folder of the vault',
   exactly: 'This cannot be undone',
@@ -95,6 +92,11 @@ export const WORDS = {
   retargeted: 'These notes link by a name that means another note now:',
   dangling: 'These notes link to nothing now:',
   nowhere: 'The vault has no note to open with',
+  unanswered: 'that note changed on disk, and its tab is waiting for an answer',
+  /** What the action panel of the palette is called. */
+  actions: 'Actions',
+  findAction: 'Search actions',
+  noAction: 'Nothing by that name',
   /** The corner where what is running behind the window is shown. */
   words: 'Searching by words only — no model set',
   working: 'Background work',

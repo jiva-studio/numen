@@ -38,10 +38,26 @@ const removed = (over: Partial<Removed> = {}): Removed => ({
   ...over,
 })
 
-/** A window that writes down everything a command asked of it, in order. */
-const window = (answers: { renamed?: Renamed; removed?: Removed; made?: boolean } = {}) => {
+/**
+ * A window that writes down everything a command asked of it, in order.
+ *
+ * The note the window holds stands at a file the test can move, so a deed made
+ * before it moved can be carried out after.
+ */
+const window = (
+  answers: {
+    renamed?: Renamed
+    removed?: Removed
+    made?: boolean
+    /** Where the tab holding the note stands now. */
+    at?: string
+    /** The note is waiting on the person, so nothing may move its file. */
+    asking?: boolean
+  } = {},
+) => {
   const done: string[] = []
   const said: string[] = []
+  const at = answers.at ?? 'physics/Ontology.md'
   const on: Doing = {
     makes: async (title, from, seat) => {
       done.push(`makes ${title} ${from || '—'} ${seat ?? '—'}`)
@@ -56,12 +72,15 @@ const window = (answers: { renamed?: Renamed; removed?: Removed; made?: boolean 
       return answers.removed ?? removed()
     },
     notes: {
-      holding: (path) => (path === 'physics/Ontology.md' ? 'held' : null),
+      holding: (path) => (path === at ? 'held' : null),
+      where: (id) => (id === 'held' ? at : id),
+      asking: () => answers.asking === true,
       settles: async (id) => void done.push(`settles ${id}`),
+      shuts: (id) => void done.push(`shuts ${id}`),
       shows: (path, title, showing) => void done.push(`shows ${path} ${title} ${showing}`),
     },
     travel: async (path) => void done.push(`travel ${path}`),
-    standing: () => 'physics/Ontology.md',
+    leaves: async (from, to) => void done.push(`leaves ${from} ${to}`),
     opening: () => 'Root.md',
     opens: (kind) => void done.push(`opens ${kind}`),
     closes: (tab) => void done.push(`closes ${tab}`),
@@ -168,6 +187,15 @@ describe('a note renamed', () => {
     expect(one.done).toStrictEqual(['settles held', 'renames physics/Ontology.md Entropy'])
   })
 
+  it('is refused while the note is waiting on the person', async () => {
+    const one = window({ asking: true })
+
+    await carry(deedOf('title', front(), 'Entropy'), one.on)
+
+    expect(one.done).toStrictEqual([])
+    expect(one.said).toStrictEqual([words.unanswered])
+  })
+
   it('is renamed where no tab of the window holds it', async () => {
     const one = window()
 
@@ -262,20 +290,37 @@ describe('a note removed', () => {
     expect(one.said).toStrictEqual([`${words.dangling} Order.md, Notes.md`])
   })
 
-  it('leaves the plex standing on the note the vault opens with', async () => {
+  it('leaves every plex standing on it at the note the vault opens with', async () => {
     const one = window()
 
     await carry(deedOf('remove', front()), one.on)
 
-    expect(one.done.at(-1)).toBe('travel Root.md')
+    expect(one.done.at(-1)).toBe('leaves physics/Ontology.md Root.md')
   })
 
-  it('leaves a plex standing elsewhere where it was standing', async () => {
+  it('leaves the plexes alone where the vault opens with no note at all', async () => {
+    const one = window()
+    const nowhere: Doing = { ...one.on, opening: () => '' }
+
+    await carry(deedOf('remove', front()), nowhere)
+
+    expect(one.done.some((step) => step.startsWith('leaves'))).toBe(false)
+  })
+
+  it('lets go of the tab that was reading it', async () => {
     const one = window()
 
-    await carry(deedOf('remove', front({ path: 'Elsewhere.md' })), one.on)
+    await carry(deedOf('remove', front(), '', 'held'), one.on)
 
-    expect(one.done).toStrictEqual(['removes Elsewhere.md false'])
+    expect(one.done).toContain('shuts held')
+  })
+
+  it('keeps the tab of a note the vault would not remove', async () => {
+    const one = window({ removed: removed({ refusal: 'missing' }) })
+
+    await carry(deedOf('remove', front(), '', 'held'), one.on)
+
+    expect(one.done).not.toContain('shuts held')
   })
 
   it('says a note that is not in the vault, and takes the plex nowhere', async () => {
@@ -285,6 +330,45 @@ describe('a note removed', () => {
 
     expect(one.said).toStrictEqual([words.refused.missing])
     expect(one.done.at(-1)).toBe('removes physics/Ontology.md false')
+  })
+
+  it('is refused while the note is waiting on the person', async () => {
+    const one = window({ asking: true })
+
+    await carry(deedOf('remove', front()), one.on)
+
+    expect(one.done).toStrictEqual([])
+    expect(one.said).toStrictEqual([words.unanswered])
+  })
+})
+
+/**
+ * A deed is made when a person answers and carried out a moment later, and the
+ * vault moves in between. The tab holding the note is what says where it is.
+ */
+describe('a note that moved between the answer and the deed', () => {
+  it('is renamed where it stands now, not at the name the deed was made over', async () => {
+    const one = window({ at: 'physics/Being.md' })
+
+    await carry(deedOf('title', front(), 'Substance', 'held'), one.on)
+
+    expect(one.done).toStrictEqual(['settles held', 'renames physics/Being.md Substance'])
+  })
+
+  it('is removed where it stands now', async () => {
+    const one = window({ at: 'physics/Being.md' })
+
+    await carry(deedOf('remove', front(), '', 'held'), one.on)
+
+    expect(one.done.slice(0, 2)).toStrictEqual(['settles held', 'removes physics/Being.md false'])
+  })
+
+  it('is left at the name it was made over where no tab holds it', async () => {
+    const one = window({ at: 'physics/Being.md' })
+
+    await carry(deedOf('remove', front()), one.on)
+
+    expect(one.done[0]).toBe('removes physics/Ontology.md false')
   })
 })
 

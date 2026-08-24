@@ -52,7 +52,9 @@ const (
 	// A file is already where the note would go. Nothing is written there; a
 	// rename may already have written the note it was moving.
 	Refusal_REFUSAL_OCCUPIED Refusal = 7
-	// The title leaves nothing a file can be named after. Nothing is written.
+	// A note cannot be called this: the title leaves nothing a file can be named
+	// after, it is more than one line, or a heading would read it back as
+	// something else. Nothing is written.
 	Refusal_REFUSAL_UNNAMEABLE Refusal = 8
 )
 

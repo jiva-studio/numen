@@ -15,8 +15,14 @@ import { AGENT, NOTE, PLEX } from './workspace'
 export interface Notes {
   /** The identity of the tab standing at a file, and nothing where none does. */
   holding(path: string): string | null
+  /** The file a note stands at now, under the identity it opened under. */
+  where(id: string): string
+  /** Whether the note owes the person an answer about what its file now holds. */
+  asking(id: string): boolean
   /** Answers once nothing of that note is on its way to the file. */
   settles(id: string): Promise<void>
+  /** The tab holding a note lets go of it. */
+  shuts(id: string): void
   /** A note put in front of the person, in a tab of its own or one beside it. */
   shows(path: string, title: string, showing: 'here' | 'beside'): void
 }
@@ -32,8 +38,8 @@ export interface Doing {
   readonly notes: Notes
   /** A note put in front of the person, in the plex they are looking at. */
   travel(path: string): Promise<void>
-  /** The note that plex is standing on. */
-  standing(): string
+  /** Every plex standing on a note travels to another one. */
+  leaves(from: string, to: string): Promise<void>
   /** The note the vault opens with. */
   opening(): string
   /** A tab of a kind, opened and put in front. */
@@ -60,6 +66,8 @@ export interface Words {
   readonly dangling: string
   /** The vault opens with no note at all. */
   readonly nowhere: string
+  /** The note is waiting on the person, and its file stays where it is. */
+  readonly unanswered: string
 }
 
 /** One command, carried out. */
@@ -94,10 +102,33 @@ export async function does(deed: Deed | null, on: Doing, words: Words): Promise<
   if (!carry) return
   on.says('')
   try {
-    await carry(deed, on, words)
+    await carry(standing(deed, on), on, words)
   } catch (error) {
     on.says(String(error))
   }
+}
+
+/**
+ * The deed at the file its note stands at now. One over a note no tab of the
+ * window holds is at the name it was made over.
+ */
+const standing = (deed: Deed, on: Doing): Deed =>
+  deed.note ? { ...deed, path: on.notes.where(deed.note) } : deed
+
+/** Whether the tab holding a note is waiting on the person to answer for it. */
+const waiting = (path: string, on: Doing): boolean => {
+  const held = on.notes.holding(path)
+  return held !== null && on.notes.asking(held)
+}
+
+/**
+ * Nothing of the note is on its way to its file. It answers with the tab
+ * holding it, and with nothing where no tab does.
+ */
+const settles = async (path: string, on: Doing): Promise<string | null> => {
+  const held = on.notes.holding(path)
+  if (held) await on.notes.settles(held)
+  return held
 }
 
 /**
@@ -120,7 +151,8 @@ const makes = async (
 /** A note given a different name, and whatever that did to the links reported. */
 const renames = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
   if (!deed.name || deed.name === deed.title) return
-  await settled(deed.path, on)
+  if (waiting(deed.path, on)) return on.says(words.unanswered)
+  await settles(deed.path, on)
   const answer = await on.renames(deed.path, deed.name)
   // The note is brought into line before its file is, so a refusal to move the
   // file leaves the note under its new name.
@@ -129,29 +161,18 @@ const renames = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
 }
 
 /** A note taken out of the vault, and whatever now links to nothing reported. */
-const removes = async (
-  deed: Deed,
-  destroy: boolean,
-  on: Doing,
-  words: Words,
-): Promise<void> => {
-  await settled(deed.path, on)
+const removes = async (deed: Deed, destroy: boolean, on: Doing, words: Words): Promise<void> => {
+  if (waiting(deed.path, on)) return on.says(words.unanswered)
+  const held = await settles(deed.path, on)
   const answer = await on.removes(deed.path, destroy)
   if (answer.refusal) return on.says(words.refused[answer.refusal])
+  // The note is out of the vault, and the tab reading it lets go of it.
+  if (held) on.notes.shuts(held)
   on.says(dangling(answer.dangling, words))
-  // A plex standing on the note that went is left standing on nothing, so it
-  // travels to the note the vault opens with.
-  if (on.standing() === deed.path && on.opening()) await on.travel(on.opening())
-}
-
-/**
- * Nothing of the note is on its way to its file. The window writes a note over
- * whatever the file holds, and a write that lands after the file has moved
- * writes the note back where it was.
- */
-const settled = async (path: string, on: Doing): Promise<void> => {
-  const id = on.notes.holding(path)
-  if (id) await on.notes.settles(id)
+  // Every plex standing on the note that went travels to the note the vault
+  // opens with.
+  const opening = on.opening()
+  if (opening) await on.leaves(deed.path, opening)
 }
 
 /** A note travelled to, and a vault with none to travel to said. */

@@ -12,7 +12,7 @@ import { WORDS as words } from './words'
 const props = defineProps<{
   questions: readonly Standing[]
   /** What each note is called, for a person to tell them apart by. */
-  called: (path: string) => string
+  called: (note: string) => string
 }>()
 </script>
 
@@ -20,8 +20,8 @@ const props = defineProps<{
   <section v-if="props.questions.length" role="alertdialog" class="leaving">
     <p class="leaving__says">{{ words.going }}</p>
     <ul class="leaving__notes">
-      <li v-for="one in props.questions" :key="one.path" class="leaving__note">
-        <span class="leaving__title">{{ props.called(one.path) }}</span>
+      <li v-for="one in props.questions" :key="one.note" class="leaving__note">
+        <span class="leaving__title">{{ props.called(one.note) }}</span>
         <button type="button" class="leaving__answer" @click="void one.keep()">
           {{ note.keep }}
         </button>

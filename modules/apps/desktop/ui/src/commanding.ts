@@ -11,11 +11,24 @@
  */
 import { computed, ref, shallowRef } from 'vue'
 import type { PaletteBand, PaletteItem } from '@numen/ui'
+import type { Went } from './core'
 import type { Named } from './finding'
 
 /** The one question the commands ask of the vault: the names in it that match. */
 export interface Asking {
   names(query: string, limit: number): Promise<readonly Named[]>
+}
+
+/**
+ * What the window knows about a note by the name it is filed under. A step
+ * stands open while the vault moves under it, and this is read again each time
+ * the step is drawn and once more as the deed is made.
+ */
+export interface Knows {
+  /** What it is called now, and nothing where the window names it nothing. */
+  called(path: string): string
+  /** The identity of the tab holding it, and nothing where none holds it. */
+  holding(path: string): string | null
 }
 
 /** Which band a command is offered in. */
@@ -69,6 +82,12 @@ export interface Deed {
   readonly id: string
   /** The note it is over. Empty for a command over the window or the vault. */
   readonly path: string
+  /**
+   * The identity of the tab holding that note, and nothing where none holds it.
+   * A note that moves is at another name by the time the deed is carried out,
+   * and this is what reaches it there.
+   */
+  readonly note: string | null
   readonly title: string
   /** What was typed for it: a name to give, or a name typed back. */
   readonly name: string
@@ -118,9 +137,11 @@ export interface Words {
   /** A note asked for, over the names in the vault. */
   readonly names: string
   readonly typeNote: string
-  /** The light confirmation, which names the note and says where it goes. */
+  /** The two answers to the confirmation: the one that changes nothing, first. */
   readonly asking: string
-  readonly goOn: string
+  readonly answer: string
+  readonly keeps: string
+  readonly kept: string
   readonly removes: string
   readonly trashed: string
   /** The name typed back, which is what destroying asks for. */
@@ -139,8 +160,11 @@ export interface Words {
 /** The one item of a step that asks for one thing. */
 const NAME = 'name'
 const PICK = 'pick'
-const YES = 'yes'
 const EXACT = 'exactly'
+
+/** The two answers of the step that confirms. */
+const NO = 'no'
+const YES = 'yes'
 
 /** The band and the item that offer to make the note a search did not find. */
 export const MAKING = 'creating'
@@ -237,9 +261,10 @@ export const overNote = (commands: readonly Command[]): readonly Command[] => {
 export const asksCommands = (was: string, now: string): boolean => was === '' && now === '>'
 
 /** One command as it is carried out, over what it was asked over. */
-export const deedOf = (id: string, at: Where, name = ''): Deed => ({
+export const deedOf = (id: string, at: Where, name = '', note: string | null = null): Deed => ({
   id,
   path: at.path,
+  note,
   title: at.title,
   name,
   kind: at.kind,
@@ -291,6 +316,7 @@ export function commanding(
   core: Asking,
   words: Words,
   at: () => Where,
+  knows: Knows,
   wait: (ms: number) => Promise<unknown> = sleep,
 ) {
   /** Whether the commands are drawn at all. */
@@ -322,6 +348,13 @@ export function commanding(
   /** What the commands are over, as the window stands now. */
   const on = computed<Where>(() => at())
 
+  /** One command as it is carried out, over the note the window holds it by. */
+  const deed = (id: string, over: Where, name = ''): Deed =>
+    deedOf(id, over, name, over.path ? knows.holding(over.path) : null)
+
+  /** What the note a step is over is called now. */
+  const calling = (step: Asked): string => knows.called(step.on.path) || step.on.title
+
   /** The step being asked, and nothing at the list of commands. */
   const here = computed<Asked | null>(() => steps.value.at(-1) ?? null)
 
@@ -336,7 +369,7 @@ export function commanding(
       case 'picking':
         return words.typeNote
       case 'asking':
-        return words.goOn
+        return words.answer
       case 'exactly':
         return words.typeBack
       default:
@@ -483,41 +516,61 @@ export function commanding(
     }
   }
 
-  /** The one light question asked before a note goes to the trash. */
-  const asking = (step: Asked): PaletteBand => ({
-    id: 'asking',
-    title: words.asking,
-    items: [
+  /**
+   * The two answers put before a note goes to the trash. The one that changes
+   * nothing is drawn first, and it is the one the keyboard opens on. Each is
+   * reached by the name it is offered under, as an item of any other step is.
+   */
+  const asking = (step: Asked, text: string): PaletteBand => {
+    const word = text.trim().toLowerCase()
+    const items: PaletteItem[] = [
+      {
+        id: NO,
+        title: words.keeps,
+        detail: words.kept,
+        actions: [{ id: NO, text: words.keeps }],
+      },
       {
         id: YES,
-        title: `${words.removes} “${step.on.title}”`,
+        title: `${words.removes} “${calling(step)}”`,
         detail: words.trashed,
         actions: [{ id: YES, text: words.removes }],
       },
-    ],
-  })
+    ]
+    return {
+      id: 'asking',
+      title: words.asking,
+      items: word
+        ? items.filter((one) => (one.actions?.[0]?.text ?? '').toLowerCase().includes(word))
+        : items,
+      silence: words.answer,
+    }
+  }
 
   /** The name typed back, which is the one thing that reaches destroying. */
-  const exactly = (step: Asked, text: string): PaletteBand => ({
-    id: 'exactly',
-    title: words.exactly,
-    items: [
-      {
-        id: EXACT,
-        title: `${words.destroys} “${step.on.title}”`,
-        detail: words.forever,
-        disabled: text.trim() !== step.on.title,
-        actions: [{ id: EXACT, text: words.destroys }],
-      },
-    ],
-  })
+  const exactly = (step: Asked, text: string): PaletteBand => {
+    const title = calling(step)
+    return {
+      id: 'exactly',
+      title: words.exactly,
+      items: [
+        {
+          id: EXACT,
+          title: `${words.destroys} “${title}”`,
+          detail: words.forever,
+          disabled: text.trim() !== title,
+          actions: [{ id: EXACT, text: words.destroys }],
+        },
+      ],
+    }
+  }
 
   const bands = computed<readonly PaletteBand[]>(() => {
     const step = here.value
     if (!step) return listed(on.value, typed.value)
     if (step.step === 'naming') return [naming(typed.value)]
     if (step.step === 'picking') return [picking(typed.value)]
-    if (step.step === 'asking') return [asking(step)]
+    if (step.step === 'asking') return [asking(step, typed.value)]
     return [exactly(step, typed.value)]
   })
 
@@ -543,13 +596,32 @@ export function commanding(
   const asks = (id: string, over: Where): Deed | null => {
     const command = byId.get(id)
     if (!command || !command.where(over)) return null
-    if (!command.needs) return deedOf(command.id, over)
+    if (!command.needs) return deed(command.id, over)
     if (!open.value) {
       steps.value = []
       open.value = true
     }
     puts({ step: STEPS[command.needs], command, on: over })
     return null
+  }
+
+  /**
+   * Why a command asked for did nothing: the vault is unread, or what it was
+   * asked over is not a note. One that was taken up says nothing.
+   */
+  const refused = (id: string, over: Where): string => {
+    const command = byId.get(id)
+    if (!command || command.where(over)) return ''
+    return over.ready ? words.noNote : words.indexing
+  }
+
+  /** A note that moved. A step open over it is asked at the name it now has. */
+  const follows = (renamed: readonly Went[] = []) => {
+    if (!renamed.length) return
+    steps.value = steps.value.map((step) => {
+      const went = renamed.find((one) => one.from === step.on.path)
+      return went ? { ...step, on: { ...step.on, path: went.to } } : step
+    })
   }
 
   /** An item chosen, and what was asked of it. */
@@ -560,17 +632,25 @@ export function commanding(
     if (step.step === 'picking') {
       const one = found.value.find((found) => found.path === item)
       if (!one) return null
-      return deedOf(step.command.id, {
-        ...step.on,
-        path: one.path,
-        title: one.title || one.path,
-      })
+      return deed(step.command.id, { ...step.on, path: one.path, title: one.title || one.path })
     }
-    if (step.step === 'naming' && !name) return null
-    // Destroying is the one irreversible thing here, and the name typed back is
-    // what reaches it.
-    if (step.step === 'exactly' && name !== step.on.title) return null
-    return deedOf(step.command.id, step.on, name)
+    if (step.step === 'naming') {
+      if (!name) return null
+      return deed(step.command.id, step.on, name)
+    }
+    if (step.step === 'asking') {
+      // The answer that changes nothing puts the step away.
+      if (action === NO) {
+        pops()
+        return null
+      }
+      if (action !== YES) return null
+      return deed(step.command.id, step.on)
+    }
+    // The name typed back is what reaches destroying, measured against the name
+    // the note carries now.
+    if (action !== EXACT || name !== calling(step)) return null
+    return deed(step.command.id, step.on, name)
   }
 
   /** The commands are opened, or put away and every step let go of. */
@@ -601,5 +681,20 @@ export function commanding(
     return true
   }
 
-  return { open, typed, bands, crumb, step, placeholder, typing, shows, asks, chose, leaves, backs }
+  return {
+    open,
+    typed,
+    bands,
+    crumb,
+    step,
+    placeholder,
+    typing,
+    shows,
+    asks,
+    refused,
+    follows,
+    chose,
+    leaves,
+    backs,
+  }
 }

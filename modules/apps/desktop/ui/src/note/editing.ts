@@ -132,6 +132,9 @@ export function editing(
    */
   const where = (id: string): string => tabs.value.get(id)?.path ?? id
 
+  /** Whether the window has this note open at all. */
+  const has = (id: string): boolean => tabs.value.has(id)
+
   /** The person typed. */
   const typed = (id: string, body: string): void => {
     bodies.value.set(id, body)
@@ -313,6 +316,7 @@ export function editing(
     shut,
     settles,
     where,
+    has,
     typed,
     changed,
     save,

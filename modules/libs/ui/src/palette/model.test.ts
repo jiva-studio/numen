@@ -14,6 +14,7 @@ import {
   commandKeyWord,
   flatten,
   keptAt,
+  keptOn,
   keyed,
   opensActions,
   ordered,
@@ -300,6 +301,28 @@ describe('the actions the panel draws', () => {
   it('draws nothing for an item offering nothing', () => {
     expect(placeActions()).toEqual([])
     expect(placeActions([], 'open')).toEqual([])
+  })
+})
+
+describe('a list of actions changing under the panel', () => {
+  it('keeps the action it was on, wherever the words put it', () => {
+    expect(keptOn(placeActions(MANY, 'open'), 'beside')).toBe(1)
+    expect(keptOn(placeActions(MANY), 'beside')).toBe(2)
+  })
+
+  it('keeps it across a list offered again in arrays of its own', () => {
+    const fresh = MANY.map((one) => ({ ...one }))
+
+    expect(keptOn(placeActions(fresh), 'rename')).toBe(3)
+  })
+
+  it('hands it to the first action when the one it was on is gone', () => {
+    expect(keptOn(placeActions(MANY, 'plex'), 'rename')).toBe(0)
+  })
+
+  it('takes it nowhere in a list holding none', () => {
+    expect(keptOn([], 'rename')).toBe(-1)
+    expect(keptOn(placeActions(MANY, 'nowhere'), 'rename')).toBe(-1)
   })
 })
 

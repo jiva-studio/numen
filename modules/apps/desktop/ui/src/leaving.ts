@@ -27,8 +27,8 @@ export type Owing = () => Promise<unknown>
 
 /** Text that could not be written, and the two ways out of it. */
 export interface Question {
-  /** The note the text belongs to. */
-  readonly path: string
+  /** The identity the note holding the text opened under. */
+  readonly note: string
   /** Write what the person has, over what the file holds. */
   readonly keep: () => Promise<unknown>
   /** Take what the file holds, and let the typing go. */
@@ -37,7 +37,7 @@ export interface Question {
 
 /** A question as the window draws it. */
 export interface Standing {
-  readonly path: string
+  readonly note: string
   readonly keep: () => Promise<unknown>
   readonly take: () => Promise<unknown>
   /** Put it off. It stays standing, undrawn, and the window stays. */
@@ -65,7 +65,7 @@ export function leaving(core: Going, wait: (ms: number) => Promise<unknown> = sl
   let writing: Promise<unknown> | null = null
   /** Every question a person has to answer, drawn or put off. */
   const outstanding = new Set<Question>()
-  /** The paths a person put off. They stand and are not drawn. */
+  /** The notes a person put off. They stand and are not drawn. */
   const put = new Set<string>()
   /** The questions to draw, which is everything standing bar what was put off. */
   const questions = ref([]) as Ref<readonly Standing[]>
@@ -86,7 +86,7 @@ export function leaving(core: Going, wait: (ms: number) => Promise<unknown> = sl
     void say()
     return () => {
       if (!outstanding.delete(one)) return
-      put.delete(one.path)
+      put.delete(one.note)
       void say()
     }
   }
@@ -112,10 +112,10 @@ export function leaving(core: Going, wait: (ms: number) => Promise<unknown> = sl
     const token = under
     if (token === null) return
     const standing = [...outstanding]
-    for (const path of [...put]) {
-      if (!standing.some((one) => one.path === path)) put.delete(path)
+    for (const note of [...put]) {
+      if (!standing.some((one) => one.note === note)) put.delete(note)
     }
-    questions.value = standing.filter((one) => !put.has(one.path)).map(drawn)
+    questions.value = standing.filter((one) => !put.has(one.note)).map(drawn)
     // A write still in the air is not something a person answers, and it is
     // not an answer either.
     if (standing.length === 0 && writing !== null) return
@@ -127,12 +127,12 @@ export function leaving(core: Going, wait: (ms: number) => Promise<unknown> = sl
 
   /** One question with the three ways out of it. */
   const drawn = (one: Question): Standing => ({
-    path: one.path,
+    note: one.note,
     keep: one.keep,
     take: one.take,
     later: () => {
-      put.add(one.path)
-      questions.value = questions.value.filter((drawing) => drawing.path !== one.path)
+      put.add(one.note)
+      questions.value = questions.value.filter((drawing) => drawing.note !== one.note)
     },
   })
 

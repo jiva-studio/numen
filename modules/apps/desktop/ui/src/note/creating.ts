@@ -41,7 +41,7 @@ const words: Record<Refused, string> = {
   bodyRefused: 'that text cannot be written into a note',
   unreadable: 'the frontmatter of that note cannot be read',
   occupied: 'a note of that name is filed there already',
-  unnameable: 'no file can be named that',
+  unnameable: 'a note cannot be called that',
 }
 
 /** What a person is told when the vault took none of the names it was offered. */

@@ -169,12 +169,12 @@ export const opensActions = (event: {
 }): boolean => (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k'
 
 /**
- * What the key that opens the action panel is written as, from the platform a
- * browser reports. It is Command on Apple keyboards and Control everywhere
- * else.
+ * What the key that opens the action panel is written as, from what a browser
+ * says it is running on. It is Command on Apple keyboards and Control
+ * everywhere else.
  */
-export const commandKeyWord = (platform: string): string =>
-  /mac|iphone|ipad|ipod/i.test(platform) ? '⌘K' : '⌃K'
+export const commandKeyWord = (agent: string): string =>
+  /mac|iphone|ipad|ipod/i.test(agent) ? '⌘K' : '⌃K'
 
 /**
  * A line split into the runs that are why the item is here and the runs that
@@ -315,4 +315,14 @@ export const placeActions = (
     })
   }
   return out
+}
+
+/**
+ * Where the panel stands once its list has changed under it: on the action it
+ * was on, wherever that action has moved to. An action that is gone hands it to
+ * the first there is; a list holding none takes it nowhere.
+ */
+export const keptOn = (actions: readonly PlacedAction[], was: string): number => {
+  const held = actions.findIndex((one) => one.action.id === was)
+  return held >= 0 ? held : stepIn(actions.length, -1, 1)
 }

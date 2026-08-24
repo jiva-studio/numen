@@ -375,6 +375,25 @@ describe('where a note stands', () => {
 
     expect(notes.where('Heat.md')).toBe('Entropy.md')
   })
+
+  /**
+   * A note stands at the name of its identity while the window has none open
+   * under it, so whether the window has one at all is asked apart.
+   */
+  it('is answered for only while the window holds the note', async () => {
+    const { core, files } = fake()
+    files.set('Heat.md', 'one')
+    const notes = editing(core, quick)
+    notes.open('held', 'Heat.md')
+    await settle()
+
+    expect(notes.has('held')).toBe(true)
+    expect(notes.has('never opened')).toBe(false)
+
+    await notes.shut('held')
+
+    expect(notes.has('held')).toBe(false)
+  })
 })
 
 describe('a save asked for now', () => {

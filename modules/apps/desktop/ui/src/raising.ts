@@ -8,12 +8,12 @@ import { watch } from 'vue'
 import type { Question } from './leaving'
 import type { State } from './note/tab'
 
-/** The notes of a window, as far as this reads them. */
+/** The notes of a window, each under the identity its tab opened under. */
 export interface Notes {
   all(): readonly string[]
-  shown(path: string): { state: State }
-  keep(path: string): void
-  take(path: string): void
+  shown(id: string): { state: State }
+  keep(id: string): void
+  take(id: string): void
 }
 
 /** What the window answers when the application says it is going. */
@@ -25,23 +25,23 @@ export function raising(notes: Notes, going: Quit) {
   const raised = new Map<string, () => void>()
 
   watch(
-    () => notes.all().filter((path) => notes.shown(path).state === 'overtaken'),
+    () => notes.all().filter((id) => notes.shown(id).state === 'overtaken'),
     (standing) => {
-      for (const path of standing) {
-        if (raised.has(path)) continue
+      for (const id of standing) {
+        if (raised.has(id)) continue
         raised.set(
-          path,
+          id,
           going.raise({
-            path,
-            keep: async () => notes.keep(path),
-            take: async () => notes.take(path),
+            note: id,
+            keep: async () => notes.keep(id),
+            take: async () => notes.take(id),
           }),
         )
       }
-      for (const [path, drop] of raised) {
-        if (standing.includes(path)) continue
+      for (const [id, drop] of raised) {
+        if (standing.includes(id)) continue
         drop()
-        raised.delete(path)
+        raised.delete(id)
       }
     },
     { deep: true },

@@ -360,6 +360,27 @@ describe('a note put in front of the person', () => {
     expect(one.onScreen()).toHaveLength(1)
     expect(one.looking()).toBe('Wanted.md')
   })
+})
+
+describe('a note that is no longer in the vault', () => {
+  it('leaves every plex standing on it somewhere else', async () => {
+    const one = window()
+    const first = await one.holds('Gone.md')
+    const second = await one.holds('Gone.md')
+    const third = await one.holds('Elsewhere.md')
+
+    await one.leaves('Gone.md', 'Root.md')
+
+    expect(first.held.view.here.value).toBe('Root.md')
+    expect(second.held.view.here.value).toBe('Root.md')
+    expect(third.held.view.here.value).toBe('Elsewhere.md')
+  })
+
+  it('leaves a window holding no plex at all alone', async () => {
+    const one = window()
+
+    await expect(one.leaves('Gone.md', 'Root.md')).resolves.toBeUndefined()
+  })
 
   it('brings the plex in front of the person, who was in another tab', async () => {
     const one = window()

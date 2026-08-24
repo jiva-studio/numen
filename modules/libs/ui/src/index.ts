@@ -15,7 +15,7 @@ export { landsOn, placeMenu, stepTo, MENU_OPENINGS } from './menu/model'
 export type { MenuItem, MenuOpening, MenuPlacement, MenuPlacing } from './menu/model'
 
 export { default as Palette } from './palette/Palette.vue'
-export { PALETTE_KEYS } from './palette/model'
+export { commandKeyWord, keptOn, PALETTE_KEYS } from './palette/model'
 export type {
   PaletteAction,
   PaletteItem,

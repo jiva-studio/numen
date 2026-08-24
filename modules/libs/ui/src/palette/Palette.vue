@@ -30,6 +30,7 @@ import {
   commandKeyWord,
   flatten,
   keptAt,
+  keptOn,
   keyed,
   opensActions,
   ordered,
@@ -68,6 +69,12 @@ const props = withDefaults(
     to?: string | HTMLElement
     /** What it is announced as. */
     name?: string
+    /** What the action panel is announced as, and what the key to it is called. */
+    actionsName?: string
+    /** The words standing in for what has not been typed in the panel's field. */
+    actionsPlaceholder?: string
+    /** What the panel says when the words in its field leave no action. */
+    actionsSilence?: string
   }>(),
   {
     bands: () => [],
@@ -78,6 +85,9 @@ const props = withDefaults(
     from: null,
     to: 'body',
     name: 'Palette',
+    actionsName: 'Actions',
+    actionsPlaceholder: 'Search actions',
+    actionsSilence: 'Nothing by that name',
   },
 )
 
@@ -200,13 +210,16 @@ const panel = ref(false)
 /** What is typed in the panel's field, which narrows the actions and nothing else. */
 const hunted = ref('')
 
-/** Which action the panel is on, counted over the actions the words left. */
-const actionHere = ref(-1)
+/** The action the panel is on, by its identity rather than by where it sits. */
+const chosen = ref('')
 
 const actions = computed(() => placeActions(offered.value, hunted.value))
 
+/** Which row that action stands on, counted over the actions the words left. */
+const actionHere = computed(() => actions.value.findIndex((one) => one.action.id === chosen.value))
+
 const goToAction = (to: number) => {
-  actionHere.value = to
+  chosen.value = actions.value[to]?.action.id ?? ''
 }
 
 const overAction = (to: number, event: PointerEvent) => {
@@ -222,7 +235,7 @@ const raise = async () => {
   if (!offered.value.length) return
   panel.value = true
   hunted.value = ''
-  goToAction(stepIn(actions.value.length, -1, 1))
+  goToAction(keptOn(actions.value, ''))
   await nextTick()
   hunt.value?.focus()
 }
@@ -230,7 +243,7 @@ const raise = async () => {
 const shut = async () => {
   if (!panel.value) return
   panel.value = false
-  actionHere.value = -1
+  chosen.value = ''
   await nextTick()
   field.value?.focus()
 }
@@ -243,9 +256,9 @@ const run = (to: number) => {
   void shut()
 }
 
-/** The words in the panel's field decide a fresh list, lit at its first row. */
+/** A fresh list keeps the action the panel was on, wherever the words put it. */
 watch(actions, (now) => {
-  if (panel.value) goToAction(stepIn(now.length, -1, 1))
+  if (panel.value) goToAction(keptOn(now, chosen.value))
 })
 
 /** An item that stops offering anything leaves the panel about nothing. */
@@ -263,7 +276,9 @@ const onKey = (event: KeyboardEvent) => {
     goTo(stepTo(places.value, from, by))
     void reveal()
   }
+  // A chord that opens nothing is left to whoever else answers it.
   if (opensActions(event)) {
+    if (!offered.value.length) return
     event.preventDefault()
     void raise()
   } else if (event.key === 'ArrowDown') step(1)
@@ -280,6 +295,8 @@ const onKey = (event: KeyboardEvent) => {
     event.preventDefault()
     emit('dismiss')
   }
+  // The keyboard stays in the field for as long as the palette stands.
+  else if (event.key === 'Tab') event.preventDefault()
 }
 
 /**
@@ -303,6 +320,8 @@ const onActionKey = (event: KeyboardEvent) => {
     event.preventDefault()
     run(actionHere.value)
   }
+  // The keyboard stays in the panel's field for as long as the panel stands.
+  else if (event.key === 'Tab') event.preventDefault()
 }
 
 /** A press anywhere but on the action panel puts the action panel away. */
@@ -312,9 +331,15 @@ const onPress = (event: PointerEvent) => {
   void shut()
 }
 
+/** A press on the ground: the action panel goes, and the palette under it. */
+const onGround = () => {
+  if (panel.value) return void shut()
+  emit('dismiss')
+}
+
 const enter = async () => {
   panel.value = false
-  actionHere.value = -1
+  chosen.value = ''
   goTo(keptAt(places.value, held.value))
   await nextTick()
   field.value?.focus()
@@ -324,7 +349,7 @@ const enter = async () => {
 
 const leave = () => {
   panel.value = false
-  actionHere.value = -1
+  chosen.value = ''
   held.value = ''
   const back = props.from
   if (back?.isConnected) back.focus()
@@ -363,7 +388,7 @@ onBeforeUnmount(() => {
     <div
       v-if="open"
       class="palette numen font-sans text-base text-ink"
-      @pointerdown.self="emit('dismiss')"
+      @pointerdown.self="onGround"
     >
       <div
         class="palette__panel relative flex min-h-0 flex-col rounded-panel border border-panel-rule bg-panel shadow-panel backdrop-blur-panel"
@@ -482,14 +507,14 @@ onBeforeUnmount(() => {
           ref="sheet"
           class="palette__actions flex flex-col rounded-panel border border-panel-rule bg-panel shadow-panel backdrop-blur-panel"
           role="dialog"
-          aria-label="Actions"
+          :aria-label="actionsName"
           @keydown.stop="onActionKey"
         >
           <div
             :id="`${uid}-actions`"
             class="palette__deeds min-h-0 flex-1"
             role="listbox"
-            aria-label="Actions"
+            :aria-label="actionsName"
           >
             <div
               v-for="deed in actions"
@@ -516,7 +541,7 @@ onBeforeUnmount(() => {
           </div>
 
           <p v-if="!actions.length" class="palette__deed-silence px-2 py-1.5 text-hushed">
-            Nothing by that name
+            {{ actionsSilence }}
           </p>
 
           <input
@@ -527,8 +552,8 @@ onBeforeUnmount(() => {
             role="combobox"
             autocomplete="off"
             spellcheck="false"
-            placeholder="Search actions"
-            aria-label="Search actions"
+            :placeholder="actionsPlaceholder"
+            :aria-label="actionsPlaceholder"
             :aria-expanded="actions.length !== 0"
             :aria-controls="`${uid}-actions`"
             :aria-activedescendant="actionHere >= 0 ? actionName(actionHere) : undefined"
@@ -547,7 +572,7 @@ onBeforeUnmount(() => {
           </span>
           <span class="palette__more ml-auto">
             <kbd>{{ command }}</kbd>
-            Actions
+            {{ actionsName }}
           </span>
         </footer>
       </div>

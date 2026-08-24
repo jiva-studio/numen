@@ -89,11 +89,26 @@ const deeds = () => Array.from(document.body.querySelectorAll<HTMLElement>('.pal
 const litDeed = () => document.body.querySelector<HTMLElement>('.palette__deed[data-here]')
 
 const pressOn = async (on: Element | null, key: string, more: KeyboardEventInit = {}) => {
-  on?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, ...more }))
+  const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...more })
+  on?.dispatchEvent(event)
   await nextTick()
+  return event
 }
 
 const press = (key: string, more: KeyboardEventInit = {}) => pressOn(field(), key, more)
+
+/**
+ * The same bands again, in arrays of their own. A caller that builds its bands
+ * from what the window holds hands over fresh arrays every time it is read.
+ */
+const again = (bands: readonly PaletteBand[]): PaletteBand[] =>
+  bands.map((band) => ({
+    ...band,
+    items: band.items.map((item) => ({
+      ...item,
+      ...(item.actions ? { actions: item.actions.map((action) => ({ ...action })) } : {}),
+    })),
+  }))
 
 const typeIn = async (into: HTMLInputElement | null, text: string) => {
   if (!into) return
@@ -687,6 +702,112 @@ describe('the action panel', () => {
     await settle()
 
     expect(sheet()).toBeNull()
+  })
+
+  it('stays on the action it is on when the list is offered again', async () => {
+    const palette = await open()
+    await pressOn(hunt(), 'ArrowDown')
+    await pressOn(hunt(), 'ArrowDown')
+    expect(litDeed()?.textContent).toContain('Open beside')
+
+    await palette.setProps({ bands: again(OFFERING) })
+    await settle()
+
+    expect(litDeed()?.textContent).toContain('Open beside')
+  })
+
+  it('stands on the first action left when the one it was on is gone', async () => {
+    const palette = await open()
+    await pressOn(hunt(), 'ArrowDown')
+    expect(litDeed()?.textContent).toContain('Open the note')
+
+    await palette.setProps({
+      bands: [
+        {
+          id: 'names',
+          title: 'Names',
+          items: [{ id: 'entropy', title: 'Entropy', actions: [{ id: 'travel', text: 'Show in plex' }] }],
+        },
+      ],
+    })
+    await settle()
+
+    expect(litDeed()?.textContent).toContain('Show in plex')
+  })
+
+  it('goes on a press on the ground, and the palette stays where it is', async () => {
+    const palette = await open()
+
+    drawn()?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+    await settle()
+
+    expect(sheet()).toBeNull()
+    expect(drawn()).not.toBeNull()
+    expect(palette.emitted('dismiss')).toBeUndefined()
+  })
+
+  it('keeps the keyboard in its own field on Tab', async () => {
+    await open()
+
+    const event = await pressOn(hunt(), 'Tab')
+    expect(event.defaultPrevented).toBe(true)
+  })
+})
+
+describe('the chord that opens the action panel', () => {
+  it('is left to whoever else answers it when nothing is lit', async () => {
+    mountPalette({ bands: [{ id: 'names', title: 'Names', items: [] }] })
+    await settle()
+
+    const event = await press('k', { ctrlKey: true })
+
+    expect(sheet()).toBeNull()
+    expect(event.defaultPrevented).toBe(false)
+  })
+
+  it('is taken when there is something lit to act on', async () => {
+    mountPalette({ bands: OFFERING })
+    await settle()
+
+    const event = await press('k', { ctrlKey: true })
+
+    expect(sheet()).not.toBeNull()
+    expect(event.defaultPrevented).toBe(true)
+  })
+})
+
+describe('the keyboard while the palette stands', () => {
+  it('stays in the field on Tab', async () => {
+    mountPalette({ bands: OFFERING })
+    await settle()
+
+    const event = await press('Tab')
+
+    expect(event.defaultPrevented).toBe(true)
+  })
+})
+
+describe('what the action panel is called', () => {
+  it('is said by whoever offers it', async () => {
+    mountPalette({
+      bands: OFFERING,
+      actionsName: 'Deeds',
+      actionsPlaceholder: 'Look for a deed',
+      actionsSilence: 'No deed by that name',
+    })
+    await settle()
+    await press('k', { ctrlKey: true })
+    await settle()
+
+    expect(sheet()?.getAttribute('aria-label')).toBe('Deeds')
+    expect(hunt()?.getAttribute('aria-label')).toBe('Look for a deed')
+    expect(hunt()?.placeholder).toBe('Look for a deed')
+    expect(document.body.querySelector('.palette__more')?.textContent).toContain('Deeds')
+
+    await typeIn(hunt(), 'zzz')
+    expect(document.body.querySelector('.palette__deed-silence')?.textContent?.trim()).toBe(
+      'No deed by that name',
+    )
   })
 })
 

@@ -20,7 +20,15 @@ import { cornerOf } from './corner'
 import { editing } from './note/editing'
 import { drawn } from './note/drawn'
 import { CREATABLE, creating } from './note/creating'
-import { asksCommands, commanding, creates, MAKING, offering, type Where } from './commanding'
+import {
+  asksCommands,
+  commanding,
+  creates,
+  MAKING,
+  offering,
+  type Knows,
+  type Where,
+} from './commanding'
 import { does, type Doing } from './doing'
 import { finding } from './finding'
 import { lands } from './landing'
@@ -33,7 +41,7 @@ import Trouble from './Trouble.vue'
 import { agentKind, talking } from './agent/kind'
 import { documentKind, documenting } from './document/kind'
 import { noting, type Held as NoteHeld } from './note/kind'
-import { plexKind, plexing } from './plex/kind'
+import { plexKind, plexing, type Held as PlexHeld } from './plex/kind'
 import { core as agent } from './agent/core'
 import { conversation } from './agent/conversation'
 import { WORDS as talk } from './agent/words'
@@ -48,6 +56,7 @@ const window = showing(
   undefined,
   async (paths, renamed) => {
     notes.changed(paths, renamed)
+    commands.follows(renamed)
     await plexes.again(renamed)
   },
   drawings.told,
@@ -122,9 +131,10 @@ held.declares([noted.kind, plexes.kind, agents.kind, read.kind])
 const palette = finding(core, words)
 
 /**
- * What a command is over: the tab in front, and the note it means. A tab
- * holding a note means that note; a plex and the agent beside it mean the note
- * the plex is standing on; anything else means none.
+ * What a command is over: the tab in front, and the note it means. A note tab
+ * means the note it holds and a plex tab the note it is standing on; an agent
+ * means the note the plex the person was last in is standing on; anything else
+ * means none.
  */
 const where = (): Where => {
   const ready = !failure.value && !indexing.value
@@ -133,18 +143,29 @@ const where = (): Where => {
   const kind = front?.kind ?? null
   if (kind === NOTE) {
     const note = held.host.holds<NoteHeld>(NOTE, tab)
-    const path = note ? notes.where(note.id) : ''
+    const path = note && notes.has(note.id) ? notes.where(note.id) : ''
     return { tab, kind, path, title: path ? noted.called(path) : '', ready }
   }
-  if (kind === PLEX || kind === AGENT) {
+  if (kind === PLEX) {
+    const plex = held.host.holds<PlexHeld>(PLEX, tab)
+    const path = plex?.view.here.value ?? ''
+    return { tab, kind, path, title: (path && plex?.nameOf(path)) || path, ready }
+  }
+  if (kind === AGENT) {
     const path = plexes.looking()
     return { tab, kind, path, title: plexes.names(path) || path, ready }
   }
   return { tab, kind, path: '', title: '', ready }
 }
 
+/** What the window knows about a note by the name it is filed under. */
+const knows: Knows = {
+  called: (path) => (noted.holding(path) ? noted.called(path) : plexes.names(path)),
+  holding: (path) => noted.holding(path),
+}
+
 /** The commands, over whatever is in front. */
-const commands = commanding(core, words, where)
+const commands = commanding(core, words, where, knows)
 
 /** What the window offers a command being carried out. */
 const doing: Doing = {
@@ -153,11 +174,14 @@ const doing: Doing = {
   removes: (path, destroy) => core.remove(path, destroy),
   notes: {
     holding: (path) => noted.holding(path),
+    where: (id) => notes.where(id),
+    asking: (id) => notes.overtaken(id) !== null,
     settles: (id) => notes.settles(id),
+    shuts: (id) => noted.shuts(id),
     shows: (path, title, showing) => noted.shows(path, title, showing),
   },
   travel: (path) => plexes.travel(path),
-  standing: () => plexes.looking(),
+  leaves: (from, to) => plexes.leaves(from, to),
   opening: () => window.opening.value,
   opens: (kind) => void held.opens(kind),
   // A kind with something to finish keeps its tab and closes it itself.
@@ -175,12 +199,14 @@ const doing: Doing = {
 
 /**
  * A command asked for, from the palette or from a menu on a node. One that
- * needs something asks for it, and the palette stands where it asks.
+ * needs something asks for it, and the palette stands where it asks. One that
+ * is not offered over what it was asked over says why.
  */
 const carries = (id: string, at: Where) => {
   const deed = commands.asks(id, at)
-  if (deed) void does(deed, doing, words)
-  else if (commands.open.value) palette.shows(false)
+  if (deed) return void does(deed, doing, words)
+  if (commands.open.value) return palette.shows(false)
+  told.value = commands.refused(id, at)
 }
 
 /**
@@ -188,9 +214,7 @@ const carries = (id: string, at: Where) => {
  * belongs to no pane.
  */
 const asked = (event: KeyboardEvent) => {
-  // A pane that has already answered this keystroke has answered it: an editor
-  // binds Ctrl-K to a cut of its own, and the open palette binds it to the
-  // actions of what is lit.
+  // A pane that has answered this keystroke keeps it.
   if (event.defaultPrevented) return
   if (event.altKey || !(event.metaKey || event.ctrlKey)) return
   const key = event.key.toLowerCase()
@@ -341,7 +365,7 @@ onUnmounted(() => {
 
     <Notices :notices="notices" :name="words.working" :put-away="words.putAway" />
 
-    <Leaving :questions="going.questions.value" :called="noted.called" />
+    <Leaving :questions="going.questions.value" :called="noted.titled" />
 
     <Palette
       :model-value="field.typed"
@@ -351,6 +375,9 @@ onUnmounted(() => {
       :crumb="field.crumb"
       :step="field.step"
       :name="words.find"
+      :actions-name="words.actions"
+      :actions-placeholder="words.findAction"
+      :actions-silence="words.noAction"
       @update:model-value="typing"
       @choose="went"
       @back="back"
