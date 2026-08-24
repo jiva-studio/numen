@@ -83,7 +83,8 @@ let agents: ReturnType<typeof agentKind>
  */
 const held = windowing(
   [
-    (host) =>
+    () => noted.kind,
+    () =>
       plexKind((at) =>
         plexing(window.plex(at), {
           makes: making,
@@ -103,7 +104,6 @@ const held = windowing(
       return agents.kind
     },
     () => documentKind((path) => documenting(reading(documents, path))),
-    () => noted.kind,
   ],
   words,
 )
@@ -159,10 +159,14 @@ const went = async (item: string, action: string) => {
   if (landing.line !== undefined) noted.entersAt(landing.path, landing.line)
 }
 
-/** A note opens where the person asked for it, under the name it is called by. */
+/**
+ * A note opens where the person asked for it, under the name it is called by,
+ * and takes the keyboard. A note already open takes it where it stands.
+ */
 const openNote = (path: string, title: string, showing: PlexShowing = 'here') => {
   noted.calls(path, title)
   void (showing === 'beside' ? held.beside(NOTE, path) : held.opens(NOTE, path))
+  noted.entersAt(path)
 }
 
 /**
@@ -180,9 +184,11 @@ const starts = async () => {
   layout.value = opening(plex, talk)
 }
 
-onMounted(() => {
+onMounted(async () => {
   globalThis.addEventListener('keydown', asked)
-  void starts()
+  // The layout the window opens with stands before anything the vault says can
+  // open a tab of its own.
+  await starts()
   void window.start()
   void going.start()
 })

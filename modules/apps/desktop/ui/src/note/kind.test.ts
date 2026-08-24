@@ -139,6 +139,19 @@ describe('a note opened', () => {
     expect(drew.focused).toEqual([-1])
   })
 
+  it('takes the keyboard again when it is asked for while it is already open', async () => {
+    const one = window()
+    const held = one.noted.opens('Note.md')
+    const drew = editor()
+    held.drew(drew.drawn)
+    await nextTick()
+
+    one.noted.entersAt('Note.md')
+    await nextTick()
+
+    expect(drew.focused).toEqual([-1, -1])
+  })
+
   it('is called what it was opened under', () => {
     const one = window()
     one.noted.calls('Deep/Note.md', 'A note')
@@ -184,6 +197,18 @@ describe('the word a note tab carries', () => {
 
     expect(one.noted.marked('Note.md')).toBe('unsaved')
     expect(one.noted.marked('Other.md')).toBeUndefined()
+  })
+})
+
+describe('the window going', () => {
+  it('leaves an open note alone, since the quit is what writes what it owes', () => {
+    const one = window()
+    const held = one.noted.opens('Note.md')
+
+    one.noted.kind.gone?.(held, 'Note.md')
+
+    expect(one.shut).toEqual([])
+    expect(one.drawings.shut).toEqual([])
   })
 })
 

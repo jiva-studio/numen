@@ -145,8 +145,11 @@ export function noting(vault: Called, notes: Notes, drawings: Drawings, deps: No
     return held(path)
   }
 
-  /** The line an open note is to stand on, asked for after it was opened. */
-  const entersAt = (path: string, line: number) => {
+  /**
+   * The line an open note is to stand on, asked for after it was opened. A
+   * note asked for again takes the keyboard again, wherever it already stands.
+   */
+  const entersAt = (path: string, line = ITSELF) => {
     owed.set(path, line)
     void nextTick(() => enters(path))
   }
@@ -210,6 +213,9 @@ export function noting(vault: Called, notes: Notes, drawings: Drawings, deps: No
       held.shuts()
       return false
     },
+    // What an open note owes at the quit is written by the quit, which the
+    // window waits for.
+    gone: () => {},
     offers: words.newNote,
   }
 

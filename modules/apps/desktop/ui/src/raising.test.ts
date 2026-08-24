@@ -9,10 +9,11 @@ import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { raising, type Notes } from './raising'
 import type { Question } from './leaving'
+import type { State } from './tab'
 
 /** Notes in the states the test puts them in. */
 const notes = () => {
-  const states = ref<Record<string, string>>({})
+  const states = ref<Record<string, State>>({})
   const said: string[] = []
   const store: Notes = {
     all: () => Object.keys(states.value),
@@ -23,7 +24,7 @@ const notes = () => {
   return {
     store,
     said,
-    stands: (path: string, state: string) => {
+    stands: (path: string, state: State) => {
       states.value = { ...states.value, [path]: state }
     },
   }

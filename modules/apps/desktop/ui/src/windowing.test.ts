@@ -251,4 +251,16 @@ describe('the window going', () => {
 
     expect(thing.shut).toEqual(['One.md', 'Two.md'])
   })
+
+  it('lets a kind that has its own way of going take it, and asks no more', async () => {
+    const going: string[] = []
+    const thing = kind({ gone: (held: { at: string }) => going.push(held.at) })
+    const window = windowing([thing.declared], words)
+    await window.opens('thing', 'One.md')
+
+    window.close()
+
+    expect(going).toEqual(['One.md'])
+    expect(thing.shut).toEqual([])
+  })
 })

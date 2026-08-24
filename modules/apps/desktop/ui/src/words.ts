@@ -52,5 +52,3 @@ export const WORDS = {
   closer: 'Closer',
   further: 'Further',
 }
-
-export type Words = typeof WORDS

@@ -39,10 +39,14 @@ export interface Kind<Held> {
   shown?(held: Held, id: string): void
   /**
    * The tab lets go of what it held. False keeps it on screen: what it holds
-   * has something to finish, and closes the tab itself once it has. The window
-   * going says this once and waits for nothing.
+   * has something to finish, and closes the tab itself once it has.
    */
   shuts?(held: Held, id: string): boolean
+  /**
+   * The window is going, and nothing this tab holds outlives it. A kind that
+   * says nothing here lets go the way a tab of it closes.
+   */
+  gone?(held: Held, id: string): void
   /** What a blank tab offers to become, or nothing. */
   readonly offers?: string
 }
@@ -220,7 +224,10 @@ export function windowing(declared: readonly Declared[], words: Words) {
 
   /** The window is going, and nothing a tab holds outlives it. */
   const close = () => {
-    for (const [id, one] of open.value) one.kind.shuts?.(one.held, id)
+    for (const [id, one] of open.value) {
+      if (one.kind.gone) one.kind.gone(one.held, id)
+      else one.kind.shuts?.(one.held, id)
+    }
   }
 
   return {

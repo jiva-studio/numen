@@ -6,11 +6,12 @@
  */
 import { watch } from 'vue'
 import type { Question } from './leaving'
+import type { State } from './tab'
 
 /** The notes of a window, as far as this reads them. */
 export interface Notes {
   all(): readonly string[]
-  shown(path: string): { state: string }
+  shown(path: string): { state: State }
   keep(path: string): void
   take(path: string): void
 }
