@@ -87,6 +87,8 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
     },
     create: async () => ({ path: '', refusal: null }),
     join: async () => null,
+    rename: async (path, title) => ({ path, title, by: null, moved: null, refusal: null }),
+    remove: async () => ({ trashed: '', dangling: [], refusal: null }),
   }
   return {
     core,

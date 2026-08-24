@@ -154,6 +154,8 @@ export type Event =
     }
   /** A save is asked for now. */
   | { readonly kind: 'saving' }
+  /** The file is about to be renamed or removed. */
+  | { readonly kind: 'settling' }
   /** The person keeps theirs: what is shown goes to the file. */
   | { readonly kind: 'keeping' }
   /** The person takes the file's: it is read again. */
@@ -177,6 +179,8 @@ export type Effect =
     }
   /** Arm the interval to fire after this many milliseconds. */
   | { readonly kind: 'arm'; readonly after: number }
+  /** Let go of the interval, so what it was waiting on never fires. */
+  | { readonly kind: 'disarm' }
   /** Replace the document with this body. */
   | { readonly kind: 'replace'; readonly body: string }
   /** Keep the tab until the write in the air answers. */
@@ -233,6 +237,8 @@ export const tabAfter = (tab: Tab, event: Event, limits: Waiting = waiting): Nex
       return changed(tab, event.paths, event.renamed)
     case 'saving':
       return saving(tab)
+    case 'settling':
+      return settling(tab)
     case 'keeping':
       return keeping(tab)
     case 'taking':
@@ -375,6 +381,23 @@ const saving = (tab: Tab): Next => {
   if (state === 'unsaved') return begins(tab, seenOf(tab))
   if (state === 'saving') return { tab: { ...tab, owed: true }, effects: [] }
   return still(tab)
+}
+
+/**
+ * The file is about to be renamed or removed: the interval goes, and what is
+ * unsaved reaches the path the tab still stands at. The tab stays where it is
+ * and follows the note wherever it went.
+ */
+const settling = (tab: Tab): Next => {
+  const state = stateOf(tab)
+  if (state === 'unsaved') {
+    const going = begins(tab, seenOf(tab))
+    return { tab: going.tab, effects: [{ kind: 'disarm' }, ...going.effects] }
+  }
+  if (state === 'saving') {
+    return { tab: { ...tab, owed: dirty(tab) }, effects: [{ kind: 'disarm' }] }
+  }
+  return { tab, effects: [{ kind: 'disarm' }] }
 }
 
 /** Keep: what is shown goes to the file, over whatever the file holds. */

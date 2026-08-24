@@ -7,6 +7,7 @@
  * from that store. What a note is called is in `naming.ts`, and the keyboard
  * it is owed is in `entering.ts`.
  */
+import { computed } from 'vue'
 import type { PlexShowing } from '@numen/ui'
 import type { Host, Kind } from '../windowing'
 import { NOTE } from '../workspace'
@@ -34,7 +35,8 @@ export interface Noting {
 
 /** What one note tab holds: its text, and the answers a person gives it. */
 export interface Held {
-  readonly path: string
+  /** The identity this note opened under, which its tab keeps wherever it goes. */
+  readonly id: string
   /** The note as the window draws it: the body, and the state it is in. */
   shown(): Editing
   /** What could not be read or written, in words a person reads. */
@@ -59,13 +61,49 @@ export function noting(vault: Called, notes: Notes, drawings: Drawings, host: Ho
   const keyboard = entering()
 
   /**
-   * A note opened. It is owed its keyboard from here until an editor has taken
-   * it, on the line it was told to stand on before it was drawn.
+   * Every open note under the file it stands at now, against the identity it
+   * opened under. A note that moved is looked up here to reach the tab already
+   * holding it.
    */
-  const opens = (path: string, line = ITSELF) => {
-    notes.open(path)
-    keyboard.owes(path, line)
-    return held(path)
+  const tabbed = computed<ReadonlyMap<string, string>>(
+    () => new Map(notes.all().map((id) => [notes.where(id), id])),
+  )
+
+  /**
+   * The identity minted for a note asked for by name, until its tab opens under
+   * it. A note is named and shown in two steps, and both name the same tab.
+   */
+  const minting = new Map<string, string>()
+  const minted = new Map<string, string>()
+
+  /**
+   * The identity of the tab standing at a file, minted where none stands there.
+   * A name a note let go of is a name another note can be given, and each of
+   * them opens under an identity of its own.
+   */
+  const mints = (path: string): string => {
+    const standing = tabbed.value.get(path) ?? minting.get(path)
+    if (standing) return standing
+    const id = crypto.randomUUID()
+    minting.set(path, id)
+    minted.set(id, path)
+    return id
+  }
+
+  /** The identity of the tab standing at a file, and the name itself where none does. */
+  const opened = (path: string): string => tabbed.value.get(path) ?? minting.get(path) ?? path
+
+  /**
+   * A note opened under the identity it was minted. It is owed its keyboard
+   * from here until an editor has taken it, on the line it was told to stand on.
+   */
+  const opens = (id: string, line = ITSELF) => {
+    const path = minted.get(id) ?? id
+    notes.open(id, path)
+    minting.delete(path)
+    minted.delete(id)
+    keyboard.owes(id, line)
+    return held(id)
   }
 
   /**
@@ -73,47 +111,57 @@ export function noting(vault: Called, notes: Notes, drawings: Drawings, host: Ho
    * tab of its own. It takes the keyboard, opened now or already open.
    */
   const shows = (path: string, title = '', showing: PlexShowing = 'here') => {
-    if (title) names.calls(path, title)
-    void (showing === 'beside' ? host.beside(NOTE, path) : host.opens(NOTE, path))
-    keyboard.owes(path)
+    const id = mints(path)
+    if (title) names.calls(id, title)
+    void (showing === 'beside' ? host.beside(NOTE, id) : host.opens(NOTE, id))
+    keyboard.owes(id)
   }
 
-  /** What one tab of a note holds. */
-  const held = (path: string): Held => ({
-    path,
-    shown: () => notes.shown(path),
-    saying: () => notes.saying(path),
-    change: () => drawings.shown(path),
-    typed: (body: string) => notes.typed(path, body),
-    save: () => notes.save(path),
-    keep: () => notes.keep(path),
-    take: () => notes.take(path),
-    drew: (editor: unknown) => keyboard.drew(path, editor),
-    measure: () => keyboard.measure(path),
+  /** A note given the keyboard on a line, in whichever tab holds it. */
+  const entersAt = (path: string, line?: number) => keyboard.owes(opened(path), line)
+
+  /**
+   * What one tab of a note holds. What is being drawn over a note is filed by
+   * the file it is being drawn on, which is where the note stands now.
+   */
+  const held = (id: string): Held => ({
+    id,
+    shown: () => notes.shown(id),
+    saying: () => notes.saying(id),
+    change: () => drawings.shown(notes.where(id)),
+    typed: (body: string) => notes.typed(id, body),
+    save: () => notes.save(id),
+    keep: () => notes.keep(id),
+    take: () => notes.take(id),
+    drew: (editor: unknown) => keyboard.drew(id, editor),
+    measure: () => keyboard.measure(id),
     /** The tab stands until the note says the write is done, and goes then. */
-    shuts: (id: string) => {
-      keyboard.drops(path)
-      drawings.shut(path)
-      void notes.shut(path).then((gone) => {
+    shuts: (tab: string) => {
+      keyboard.drops(id)
+      drawings.shut(notes.where(id))
+      void notes.shut(id).then((gone) => {
         if (!gone) return
-        names.forgets(path)
-        host.closes(id)
+        names.forgets(id)
+        host.closes(tab)
       })
     },
   })
 
   /**
    * A note tab as the window keeps it. A note is its own tab, filed under the
-   * path it is written at.
+   * identity it opened under.
    */
   const kind: Kind<Held> = {
     kind: NOTE,
-    opens: (path) => opens(path),
-    called: (held) => names.called(held.path),
-    marked: (held) => markOf(notes.shown(held.path).state),
+    opens: (id) => opens(id),
+    called: (held) => names.called(held.id),
+    marked: (held) => markOf(notes.shown(held.id).state),
     draws: NoteTab,
-    identity: (path) => path,
-    makes: () => deps.makes(),
+    identity: (id) => id,
+    makes: async () => {
+      const path = await deps.makes()
+      return path ? mints(path) : ''
+    },
     shown: (held) => held.measure(),
     shuts: (held, id) => {
       held.shuts(id)
@@ -131,8 +179,13 @@ export function noting(vault: Called, notes: Notes, drawings: Drawings, host: Ho
     opens,
     shows,
     titles: names.titles,
-    calls: names.calls,
-    called: names.called,
-    entersAt: keyboard.owes,
+    calls: (path: string, title: string) => names.calls(mints(path), title),
+    called: (path: string) => names.called(opened(path)),
+    entersAt,
+    /**
+     * The identity the note standing at a file opened under, and nothing where
+     * none stands there. It is what the store answers to.
+     */
+    holding: (path: string): string | null => tabbed.value.get(path) ?? null,
   }
 }

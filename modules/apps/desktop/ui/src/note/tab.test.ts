@@ -598,6 +598,74 @@ describe('a save is asked for', () => {
   })
 })
 
+describe('a file about to be renamed or removed', () => {
+  it('lets go of the interval, so nothing fires against the path it is leaving', () => {
+    const clean = tab()
+
+    expect(tabAfter(clean, { kind: 'settling' })).toEqual({
+      tab: clean,
+      effects: [{ kind: 'disarm' }],
+    })
+  })
+
+  it('writes what is unsaved to the path it still stands at', () => {
+    const next = tabAfter(tab({ shown: 'two', since: 10 }), { kind: 'settling' })
+
+    expect(next.effects).toEqual([
+      { kind: 'disarm' },
+      { kind: 'write', path: 'Note.md', body: 'two', seen: { prose: 'one', at: 'a1' } },
+    ])
+    expect(stateOf(next.tab)).toBe('saving')
+  })
+
+  it('owes a write for what is unsaved behind one already in the air', () => {
+    const next = tabAfter(tab({ shown: 'three', flight: { body: 'two' }, since: 10 }), {
+      kind: 'settling',
+    })
+
+    expect(next.tab.owed).toBe(true)
+    expect(kinds(next.effects)).toEqual(['disarm'])
+  })
+
+  it('owes nothing behind a write that carries everything typed', () => {
+    const next = tabAfter(tab({ flight: { body: 'one' } }), { kind: 'settling' })
+
+    expect(next.tab.owed).toBe(false)
+    expect(kinds(next.effects)).toEqual(['disarm'])
+  })
+
+  it('writes nothing for an overtaken tab, whose question is the person to answer', () => {
+    const stopped = overtaken()
+    const next = tabAfter(stopped, { kind: 'settling' })
+
+    expect(next.tab).toEqual(stopped)
+    expect(kinds(next.effects)).toEqual(['disarm'])
+  })
+
+  it('writes nothing for a tab whose note is no longer there', () => {
+    const missing = tabAfter(tab({ reading: 1 }), {
+      kind: 'read',
+      generation: 1,
+      answer: { kind: 'missing' },
+    }).tab
+    const next = tabAfter(missing, { kind: 'settling' })
+
+    expect(next.tab).toEqual(missing)
+    expect(kinds(next.effects)).toEqual(['disarm'])
+  })
+
+  it('leaves the tab where it is, so the note is followed wherever it went', () => {
+    const settled = tabAfter(tab(), { kind: 'settling' }).tab
+    const next = tabAfter(settled, {
+      kind: 'changed',
+      paths: [],
+      renamed: [{ from: 'Note.md', to: 'Moved.md' }],
+    })
+
+    expect(next.tab.path).toBe('Moved.md')
+  })
+})
+
 describe('a write answers a refusal', () => {
   it('sticks the tab, drops what was owed, and leaves the buffer editable', () => {
     const next = tabAfter(tab({ shown: 'two', flight: { body: 'two' }, owed: true, since: 10 }), {

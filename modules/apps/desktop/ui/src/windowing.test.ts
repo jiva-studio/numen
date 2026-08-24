@@ -249,6 +249,48 @@ describe('the tab now on screen', () => {
   })
 })
 
+describe('the tab the person is looking at', () => {
+  it('is the one showing in the pane in front, with its kind and what it holds', async () => {
+    const thing = kind()
+    const window = told([thing.declared])
+    await window.opens('thing', 'One.md')
+    const two = await window.opens('thing', 'Two.md')
+
+    expect(window.host.front()).toEqual({
+      id: two,
+      kind: 'thing',
+      held: { at: 'Two.md', title: 'Two.md' },
+    })
+  })
+
+  it('is the tab of the pane in front, whichever pane reported itself last', async () => {
+    const thing = kind()
+    const window = told([thing.declared])
+    const one = await window.opens('thing', 'One.md')
+    const two = await window.host.beside('thing', 'Two.md')
+    window.shows(one)
+    // Every pane says what it is showing when it is drawn, and the order they
+    // are said in is no answer to which of them the person is in.
+    window.shown(two)
+
+    expect(window.host.front()?.id).toBe(one)
+    expect(window.host.last('thing')?.id).toBe(two)
+  })
+
+  it('answers under no kind for a tab with nothing in it yet', () => {
+    const window = told([kind().declared])
+    window.blanked('main')
+
+    expect(window.host.front()).toEqual({ id: window.blanks.value[0], kind: null, held: null })
+  })
+
+  it('is nothing while the pane in front holds no tab', () => {
+    const window = told([kind().declared])
+
+    expect(window.host.front()).toBeNull()
+  })
+})
+
 describe('the window going', () => {
   it('says so to every tab, and waits for none of them', async () => {
     const thing = kind({ keeps: true })

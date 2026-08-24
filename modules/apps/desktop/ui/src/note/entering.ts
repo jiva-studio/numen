@@ -24,46 +24,47 @@ export const ITSELF = -1
 export function entering() {
   /**
    * The notes owed their keyboard, and the line each was asked to open on,
-   * until there is an editor to hand it to.
+   * until there is an editor to hand it to. Each is under the identity its tab
+   * opened with, which it keeps wherever its file goes.
    */
   const owed = new Map<string, number>()
 
   /** The editor of each open note, for as long as its tab is drawn. */
   const editors = new Map<string, Drawn>()
 
-  const enters = (path: string) => {
-    const line = owed.get(path)
-    const editor = editors.get(path)
+  const enters = (id: string) => {
+    const line = owed.get(id)
+    const editor = editors.get(id)
     if (line === undefined || !editor) return
     // An editor is registered as it is drawn, a moment before it exists to take
     // anything. The note is owed its keyboard until one has.
-    if (line >= 0 ? editor.reveal(line) : editor.focus()) owed.delete(path)
+    if (line >= 0 ? editor.reveal(line) : editor.focus()) owed.delete(id)
   }
 
   /** A note owed the keyboard, on the line it is to stand on. */
-  const owes = (path: string, line = ITSELF) => {
-    owed.set(path, line)
-    void nextTick(() => enters(path))
+  const owes = (id: string, line = ITSELF) => {
+    owed.set(id, line)
+    void nextTick(() => enters(id))
   }
 
   /** The editor of one note, as it is drawn and as it goes. */
-  const drew = (path: string, editor: unknown) => {
+  const drew = (id: string, editor: unknown) => {
     if (!editor) {
-      editors.delete(path)
+      editors.delete(id)
       return
     }
-    editors.set(path, editor as Drawn)
-    void nextTick(() => enters(path))
+    editors.set(id, editor as Drawn)
+    void nextTick(() => enters(id))
   }
 
   /** The note is on screen: its editor measures, and takes what it is owed. */
-  const measure = (path: string) => {
-    editors.get(path)?.measure()
-    enters(path)
+  const measure = (id: string) => {
+    editors.get(id)?.measure()
+    enters(id)
   }
 
   /** The note is closing, and is owed nothing more. */
-  const drops = (path: string) => owed.delete(path)
+  const drops = (id: string) => owed.delete(id)
 
   return { owes, drew, measure, drops }
 }

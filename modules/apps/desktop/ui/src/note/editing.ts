@@ -71,15 +71,21 @@ export function editing(
   /** What hears that a note on screen was replaced by what its file holds. */
   replaced: (path: string) => void = () => {},
 ) {
+  /**
+   * Every open note, under an identity its caller mints and this never reads
+   * into. A note is asked for by name and answered by identity, so a name a
+   * note let go of and another note took names one tab each.
+   */
   const tabs = ref(new Map<string, Tab>())
   /** The interval each tab is waiting on, so arming again replaces it. */
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
   /** The bodies the editors are showing, which Vue writes into as a person types. */
   const bodies = ref(new Map<string, string>())
 
-  const open = (path: string): void => {
-    if (tabs.value.has(path)) return
-    carry(path, opening(path))
+  /** A note opened under an identity, on the file it opens at. */
+  const open = (id: string, path: string = id): void => {
+    if (tabs.value.has(id)) return
+    carry(id, opening(path))
   }
 
   /**
@@ -88,15 +94,15 @@ export function editing(
    * A tab that cannot be written is held once and says why. Asked a second time
    * it goes: the person has been told, and insisting is theirs to do.
    */
-  const shut = (path: string): Promise<boolean> =>
+  const shut = (id: string): Promise<boolean> =>
     new Promise((done) => {
-      if (!tabs.value.has(path)) return done(true)
-      if (told.has(path)) {
-        forget(path)
+      if (!tabs.value.has(id)) return done(true)
+      if (told.has(id)) {
+        forget(id)
         return done(true)
       }
-      closing.set(path, done)
-      turn(path, { kind: 'closing' })
+      closing.set(id, done)
+      turn(id, { kind: 'closing' })
     })
 
   /** The tabs that were held once, and go the next time they are asked. */
@@ -104,33 +110,53 @@ export function editing(
 
   /** Who is waiting for a tab to finish going. */
   const closing = new Map<string, (gone: boolean) => void>()
-  /** The last refusal a person was told about, which outlives its tab. */
+
+  /** Who is waiting for a note to have nothing more on its way to the file. */
+  const settling = new Map<string, () => void>()
+
+  /**
+   * A note whose file is about to be renamed or removed. Its interval goes and
+   * what it owes reaches the path it still stands at, and it answers once
+   * nothing more of it is on its way there.
+   */
+  const settles = (id: string): Promise<void> =>
+    new Promise((done) => {
+      if (!tabs.value.has(id)) return done()
+      settling.set(id, done)
+      turn(id, { kind: 'settling' })
+    })
+
+  /**
+   * The file an open note stands at now, under the identity it opened under. A
+   * note that moved is followed by the tab that opened it.
+   */
+  const where = (id: string): string => tabs.value.get(id)?.path ?? id
 
   /** The person typed. */
-  const typed = (path: string, body: string): void => {
-    bodies.value.set(path, body)
-    turn(path, { kind: 'typed', body, at: Date.now() })
+  const typed = (id: string, body: string): void => {
+    bodies.value.set(id, body)
+    turn(id, { kind: 'typed', body, at: Date.now() })
   }
 
   /** The vault changed. Every open note hears it and decides for itself. */
   const changed = (paths: readonly string[], renamed: readonly Went[] = []): void => {
-    for (const path of [...tabs.value.keys()]) turn(path, { kind: 'changed', paths, renamed })
+    for (const id of [...tabs.value.keys()]) turn(id, { kind: 'changed', paths, renamed })
   }
 
   /** A save asked for now. */
-  const save = (path: string): void => turn(path, { kind: 'saving' })
+  const save = (id: string): void => turn(id, { kind: 'saving' })
 
   /** The person keeps what they have written. */
-  const keep = (path: string): void => turn(path, { kind: 'keeping' })
+  const keep = (id: string): void => turn(id, { kind: 'keeping' })
 
   /** The person takes what the file holds. */
-  const take = (path: string): void => turn(path, { kind: 'taking' })
+  const take = (id: string): void => turn(id, { kind: 'taking' })
 
-  const shown = (path: string): Editing => {
-    const tab = tabs.value.get(path)
+  const shown = (id: string): Editing => {
+    const tab = tabs.value.get(id)
     return {
-      path,
-      body: bodies.value.get(path) ?? '',
+      path: tab?.path ?? id,
+      body: bodies.value.get(id) ?? '',
       state: tab ? stateOf(tab) : 'loading',
       refusal: tab?.refused ?? null,
     }
@@ -139,86 +165,98 @@ export function editing(
   /** Everything open, for a caller that draws them all. */
   const all = (): readonly string[] => [...tabs.value.keys()]
 
-  const sayingOf = (path: string): string => {
-    const refusal = tabs.value.get(path)?.refused
+  const sayingOf = (id: string): string => {
+    const refusal = tabs.value.get(id)?.refused
     return refusal ? words[refusal] : ''
   }
 
   /** What an overtaken note puts to the person, for the window to draw. */
-  const overtakenOf = (path: string): Overtaken | null => {
-    const tab = tabs.value.get(path)
+  const overtakenOf = (id: string): Overtaken | null => {
+    const tab = tabs.value.get(id)
     return tab && stateOf(tab) === 'overtaken' ? overtaken : null
   }
 
-  function turn(path: string, event: Event): void {
-    const tab = tabs.value.get(path)
+  function turn(id: string, event: Event): void {
+    const tab = tabs.value.get(id)
     if (!tab) return
-    carry(path, tabAfter(tab, event, limits))
+    carry(id, tabAfter(tab, event, limits))
   }
 
-  function carry(path: string, next: ReturnType<typeof tabAfter>): void {
-    tabs.value.set(path, next.tab)
+  function carry(id: string, next: ReturnType<typeof tabAfter>): void {
+    tabs.value.set(id, next.tab)
     tabs.value = new Map(tabs.value)
-    for (const effect of next.effects) act(path, effect)
+    for (const effect of next.effects) act(id, effect)
 
     // Held with nothing on its way to the file: the tab stays, and whoever
     // asked for it to close hears that it did not.
     const held = next.effects.some((effect) => effect.kind === 'hold')
     const writing = next.effects.some((effect) => effect.kind === 'write')
-    if (held && !writing) closing.get(path)?.(false)
+    if (held && !writing) closing.get(id)?.(false)
+
+    // A note settling is done the moment nothing of it is on its way.
+    if (!next.tab.flight) settled(id)
   }
 
-  function act(path: string, effect: Effect): void {
+  function settled(id: string): void {
+    settling.get(id)?.()
+    settling.delete(id)
+  }
+
+  function act(id: string, effect: Effect): void {
     switch (effect.kind) {
       case 'read':
-        void read(path, effect.path, effect.generation)
+        void read(id, effect.path, effect.generation)
         return
       case 'write':
-        void write(path, effect.path, effect.body, effect.seen)
+        void write(id, effect.path, effect.body, effect.seen)
         return
       case 'arm':
-        arm(path, effect.after)
+        arm(id, effect.after)
+        return
+      case 'disarm':
+        clearTimeout(timers.get(id))
+        timers.delete(id)
         return
       case 'replace':
-        bodies.value.set(path, effect.body)
+        bodies.value.set(id, effect.body)
         bodies.value = new Map(bodies.value)
-        replaced(path)
+        replaced(where(id))
         return
       case 'hold':
         return
       case 'say':
         // The tab has said why for as long as it has been open. Held once here,
         // so a person who meant it can ask again.
-        told.add(path)
+        told.add(id)
         return
       case 'close':
-        forget(path)
+        forget(id)
         return
     }
   }
 
-  function arm(path: string, after: number): void {
-    clearTimeout(timers.get(path))
+  function arm(id: string, after: number): void {
+    clearTimeout(timers.get(id))
     timers.set(
-      path,
+      id,
       setTimeout(() => {
-        timers.delete(path)
-        turn(path, { kind: 'fired' })
+        timers.delete(id)
+        turn(id, { kind: 'fired' })
       }, after),
     )
   }
 
-  async function read(key: string, path: string, generation: number): Promise<void> {
+  async function read(id: string, path: string, generation: number): Promise<void> {
     let answered: Answered & { at?: string }
     try {
       answered = await core.read(path)
     } catch {
       // The core did not answer. What is on screen is still here, and asking
       // again is what finds out whether the vault came back.
-      turn(key, { kind: 'read', generation, answer: { kind: 'refused', refusal: 'unreachable' } })
+      turn(id, { kind: 'read', generation, answer: { kind: 'refused', refusal: 'unreachable' } })
       return
     }
-    turn(key, {
+    turn(id, {
       kind: 'read',
       generation,
       answer:
@@ -230,15 +268,15 @@ export function editing(
     })
   }
 
-  async function write(key: string, path: string, body: string, seen: Seen | null): Promise<void> {
+  async function write(id: string, path: string, body: string, seen: Seen | null): Promise<void> {
     let answered: Answered & { at?: string; changed?: boolean }
     try {
       answered = await core.write(path, body, seen)
     } catch {
-      turn(key, { kind: 'written', answer: { kind: 'refused', refusal: 'unreachable' } })
+      turn(id, { kind: 'written', answer: { kind: 'refused', refusal: 'unreachable' } })
       return
     }
-    turn(key, {
+    turn(id, {
       kind: 'written',
       // A file that moved past what the tab read is put to the person.
       answer: answered.changed
@@ -249,19 +287,20 @@ export function editing(
     })
     // A tab held for its write is asked about again, so the model decides what
     // the answer means for a close it already agreed to.
-    if (closing.has(key)) turn(key, { kind: 'closing' })
+    if (closing.has(id)) turn(id, { kind: 'closing' })
   }
 
-  function forget(path: string): void {
-    clearTimeout(timers.get(path))
-    timers.delete(path)
-    tabs.value.delete(path)
+  function forget(id: string): void {
+    clearTimeout(timers.get(id))
+    timers.delete(id)
+    tabs.value.delete(id)
     tabs.value = new Map(tabs.value)
-    bodies.value.delete(path)
+    bodies.value.delete(id)
     bodies.value = new Map(bodies.value)
-    closing.get(path)?.(true)
-    closing.delete(path)
-    told.delete(path)
+    closing.get(id)?.(true)
+    closing.delete(id)
+    settled(id)
+    told.delete(id)
   }
 
   /** Every tab writes what it owes, for a window that is going. */
@@ -272,6 +311,8 @@ export function editing(
   return {
     open,
     shut,
+    settles,
+    where,
     typed,
     changed,
     save,
@@ -290,8 +331,8 @@ export function editing(
  * A refusal in the words the tab model uses.
  *
  * A write never answers `missing`, because a save creates the file it does not
- * find, and a read answers it as its own kind. `occupied` is a note being made,
- * which is not something a tab does.
+ * find, and a read answers it as its own kind. `occupied` is a note being made
+ * and `unnameable` a note being named, neither of which is something a tab does.
  */
 const refusalOf = (from: Refused): Refusal =>
-  from === 'missing' || from === 'occupied' ? 'unreadable' : from
+  from === 'missing' || from === 'occupied' || from === 'unnameable' ? 'unreadable' : from

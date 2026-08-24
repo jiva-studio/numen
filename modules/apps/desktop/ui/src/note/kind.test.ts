@@ -22,22 +22,39 @@ const vault = (titles: Record<string, string> = {}): Called => ({
   },
 })
 
-/** The notes of a window, as far as anything here reads them. */
+/**
+ * The notes of a window, as far as anything here reads them. Each is filed
+ * under the identity it opened under, and stands at a file of its own.
+ */
 const notes = (states: Record<string, State> = {}) => {
+  /** The identity of every open note. */
   const open = ref<string[]>([])
+  /** Where each open note stands now, under the identity it opened under. */
+  const at = ref<Record<string, string>>({})
   const shut: string[] = []
   const said: string[] = []
   let goes = true
+  const where = (id: string) => at.value[id] ?? id
   const store = {
-    open: (path: string) => {
-      if (!open.value.includes(path)) open.value = [...open.value, path]
+    open: (id: string, path: string = id) => {
+      if (open.value.includes(id)) return
+      open.value = [...open.value, id]
+      at.value = { ...at.value, [id]: path }
     },
-    shut: async (path: string) => {
-      shut.push(path)
-      return goes
+    shut: async (id: string) => {
+      shut.push(where(id))
+      if (!goes) return false
+      open.value = open.value.filter((one) => one !== id)
+      return true
     },
     all: () => open.value,
-    shown: (path: string) => ({ path, body: '', state: states[path] ?? 'clean', refusal: null }),
+    shown: (id: string) => ({
+      path: where(id),
+      body: '',
+      state: states[where(id)] ?? 'clean',
+      refusal: null,
+    }),
+    where,
     saying: () => '',
     typed: () => {},
     save: () => {},
@@ -48,6 +65,13 @@ const notes = (states: Record<string, State> = {}) => {
     store: store as unknown as ReturnType<typeof editing>,
     shut,
     said,
+    /** The identity of the note standing at a file, for a test that has its name. */
+    idOf: (path: string) => open.value.find((id) => where(id) === path) ?? '',
+    /** The note standing at a file moved to another, the way a rename moves one. */
+    moves: (path: string, to: string) => {
+      const id = open.value.find((one) => where(one) === path)
+      if (id) at.value = { ...at.value, [id]: to }
+    },
     holds: () => {
       goes = false
     },
@@ -171,6 +195,93 @@ describe('a note opened', () => {
   })
 })
 
+describe('a note that was renamed', () => {
+  it('is shown in the tab already holding it, and no second tab is opened on it', async () => {
+    const one = window()
+    one.noted.shows('Note.md', 'A note')
+    await nextTick()
+    const [tab] = one.open()
+    one.moves('Note.md', 'Renamed.md')
+    await nextTick()
+
+    one.noted.shows('Renamed.md')
+    await nextTick()
+
+    expect(one.open()).toEqual([tab])
+  })
+
+  it('is called what the window calls it under the name it now has', async () => {
+    const one = window()
+    one.noted.shows('Note.md', 'A note')
+    await nextTick()
+    one.moves('Note.md', 'Renamed.md')
+    await nextTick()
+
+    one.noted.calls('Renamed.md', 'Renamed')
+
+    expect(one.noted.called('Renamed.md')).toBe('Renamed')
+    expect(one.noted.kind.called(one.noted.held(one.idOf('Renamed.md')))).toBe('Renamed')
+  })
+
+  it('leaves the name it had free, so a note made under it opens a tab of its own', async () => {
+    const one = window()
+    one.noted.shows('Foo.md', 'The first')
+    await nextTick()
+    const first = one.open()[0]
+    one.moves('Foo.md', 'Bar.md')
+    await nextTick()
+
+    one.noted.calls('Foo.md', 'The second')
+    one.noted.shows('Foo.md')
+    await nextTick()
+
+    const open = one.open()
+    expect(open).toHaveLength(2)
+    expect(open[0]).toBe(first)
+    expect(one.idOf('Bar.md')).not.toBe(one.idOf('Foo.md'))
+    expect(one.noted.called('Bar.md')).toBe('The first')
+    expect(one.noted.called('Foo.md')).toBe('The second')
+  })
+
+  it('answers to the store under the identity it opened with, at the name it now has', async () => {
+    const one = window()
+    one.noted.shows('Note.md')
+    await nextTick()
+    const id = one.noted.holding('Note.md')
+    one.moves('Note.md', 'Renamed.md')
+    await nextTick()
+
+    expect(one.noted.holding('Renamed.md')).toBe(id)
+    expect(one.noted.holding('Note.md')).toBeNull()
+    expect(one.noted.held(id ?? '').shown().path).toBe('Renamed.md')
+  })
+
+  it('is called by the file it now stands at while nothing has named it', async () => {
+    const one = window()
+    one.noted.shows('Note.md')
+    await nextTick()
+    one.moves('Note.md', 'Renamed.md')
+    await nextTick()
+
+    expect(one.held.tabs.value.map((tab) => tab.title)).toEqual(['Renamed.md'])
+  })
+
+  it('takes the keyboard in the tab holding it, under the name it now has', async () => {
+    const one = window()
+    const held = one.noted.opens('Note.md')
+    const drew = editor()
+    held.drew(drew.drawn)
+    await nextTick()
+    one.moves('Note.md', 'Renamed.md')
+    await nextTick()
+
+    one.noted.entersAt('Renamed.md', 4)
+    await nextTick()
+
+    expect(drew.focused).toEqual([-1, 4])
+  })
+})
+
 describe('what a note is called', () => {
   it('is the heading the vault reads out of it once what was typed has landed', async () => {
     const one = window({ 'Note.md': 'What it is about' })
@@ -184,12 +295,23 @@ describe('what a note is called', () => {
   it('is the name it had when the vault cannot answer', async () => {
     const one = window()
     one.noted.calls('Note.md', 'Untitled note')
-    one.noted.opens('Note.md')
+    one.noted.shows('Note.md')
 
     await nextTick()
     await nextTick()
 
     expect(one.noted.called('Note.md')).toBe('Untitled note')
+  })
+
+  it('is what a note was called before its tab opened, kept by the tab that opens', async () => {
+    const one = window()
+    one.noted.calls('Made.md', 'A new note')
+
+    one.noted.shows('Made.md')
+    await nextTick()
+
+    expect(one.noted.called('Made.md')).toBe('A new note')
+    expect(one.held.tabs.value.map((tab) => tab.title)).toEqual(['A new note'])
   })
 })
 
@@ -215,6 +337,29 @@ describe('the window going', () => {
 
     expect(one.shut).toEqual([])
     expect(one.drawings.shut).toEqual([])
+  })
+})
+
+describe('a tab told to hold a note it has to make first', () => {
+  it('opens one tab on what was made, under the name it was given as it was made', async () => {
+    const store = notes()
+    const drawing = drawings()
+    const held = windowing({ newTab: 'New tab' })
+    // The window names a note as it is made, a moment before its tab opens.
+    const noted = noting(vault(), store.store, drawing.store, held.host, {
+      makes: async () => {
+        noted.calls('Made.md', 'A made note')
+        return 'Made.md'
+      },
+    })
+    held.declares([noted.kind])
+    held.blanked('main')
+
+    await held.becomeIt(held.blanks.value[0] ?? '', 'note')
+    await nextTick()
+
+    expect(held.tabs.value.map((tab) => tab.title)).toEqual(['A made note'])
+    expect(noted.called('Made.md')).toBe('A made note')
   })
 })
 

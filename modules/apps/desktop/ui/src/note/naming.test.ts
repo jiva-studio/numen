@@ -18,17 +18,25 @@ const vault = (titles: Record<string, string> = {}): Called => ({
   },
 })
 
-/** The notes of a window, each in the state the test puts it in. */
+/**
+ * The notes of a window, each in the state the test puts it in and at the file
+ * the test moved it to.
+ */
 const notes = () => {
   const states = ref<Record<string, State>>({})
+  const at = ref<Record<string, string>>({})
   const store = {
     all: () => Object.keys(states.value),
     shown: (path: string) => ({ state: states.value[path] ?? 'loading' }),
+    where: (path: string) => at.value[path] ?? path,
   }
   return {
     store: store as unknown as ReturnType<typeof editing>,
     stands: (path: string, state: State) => {
       states.value = { ...states.value, [path]: state }
+    },
+    moves: (path: string, to: string) => {
+      at.value = { ...at.value, [path]: to }
     },
   }
 }
@@ -81,6 +89,35 @@ describe('what a note is called', () => {
     await nextTick()
 
     expect(names.called('Note.md')).toBe('Untitled note')
+  })
+
+  it('is asked for again at the file a note moved to, and follows the rename', async () => {
+    const store = notes()
+    const said = vault({ 'Note.md': 'What it is about', 'Renamed.md': 'Renamed' })
+    const names = naming(said, store.store)
+    store.stands('Note.md', 'clean')
+    await nextTick()
+    await vi.waitFor(() => expect(names.called('Note.md')).toBe('What it is about'))
+
+    store.moves('Note.md', 'Renamed.md')
+    await nextTick()
+
+    await vi.waitFor(() => expect(names.called('Note.md')).toBe('Renamed'))
+  })
+
+  it('is asked for at the file a note moved to once it settles there', async () => {
+    const store = notes()
+    const names = naming(vault({ 'Renamed.md': 'Renamed' }), store.store)
+    names.calls('Note.md', 'Untitled note')
+    store.stands('Note.md', 'unsaved')
+    store.moves('Note.md', 'Renamed.md')
+    await nextTick()
+    expect(names.called('Note.md')).toBe('Untitled note')
+
+    store.stands('Note.md', 'clean')
+    await nextTick()
+
+    await vi.waitFor(() => expect(names.called('Note.md')).toBe('Renamed'))
   })
 
   it('is forgotten with the note, so a name is not left behind it', () => {

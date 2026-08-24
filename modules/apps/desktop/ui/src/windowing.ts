@@ -7,7 +7,7 @@
  * about it twice.
  */
 import { computed, ref, shallowRef, type Component, type Ref } from 'vue'
-import { closeTab, openTab, openTabBeside, pane, paneWithTab } from '@numen/ui'
+import { closeTab, openTab, openTabBeside, pane, paneById, paneWithTab } from '@numen/ui'
 import type { NodeId, Tab, WorkspaceLayout } from '@numen/ui'
 import { BLANK, named } from './workspace'
 
@@ -65,6 +65,15 @@ export interface Tabbed<Held> {
   readonly held: Held
 }
 
+/** The tab the person is looking at, whichever kind it turns out to be. */
+export interface Fronted {
+  readonly id: string
+  /** The word its kind is filed under, and nothing for a tab holding nothing yet. */
+  readonly kind: string | null
+  /** What its kind gave it to hold, and nothing for a tab holding nothing yet. */
+  readonly held: unknown
+}
+
 /** What a kind may ask of the window its tabs are drawn in. */
 export interface Host {
   /** A tab of a kind, opened on something and put in front. */
@@ -82,6 +91,11 @@ export interface Host {
   each<Held>(kind: string): readonly Tabbed<Held>[]
   /** The tab of a kind the person was last in, and nothing where it holds none. */
   last<Held>(kind: string): Tabbed<Held> | null
+  /**
+   * The tab showing in the pane the person is in, of whatever kind. A pane
+   * holding nothing answers with nothing.
+   */
+  front(): Fronted | null
   /** What one tab of a kind holds, and nothing where the tab is another kind. */
   holds<Held>(kind: string, id: string): Held | null
 }
@@ -107,6 +121,7 @@ export function windowing(words: Words) {
     closes: (id) => closes(id),
     each: <Held,>(kind: string) => each<Held>(kind),
     last: <Held,>(kind: string) => each<Held>(kind).at(-1) ?? null,
+    front: () => front(),
     holds: <Held,>(kind: string, id: string) => holdsIn<Held>(id, kind),
   }
 
@@ -155,6 +170,18 @@ export function windowing(words: Words) {
   const holdsIn = <T,>(id: string, kind: string): T | null => {
     const one = open.value.get(id)
     return one && one.kind.kind === kind ? (one.held as T) : null
+  }
+
+  /**
+   * The tab the person is looking at, which is the one showing in the pane the
+   * layout is focused on. A tab told what to hold answers under its kind, and
+   * one still waiting to be told answers under none.
+   */
+  const front = (): Fronted | null => {
+    const id = paneById(layout.value.root, layout.value.focus)?.active
+    if (!id) return null
+    const one = open.value.get(id)
+    return one ? { id, kind: one.kind.kind, held: one.held } : { id, kind: null, held: null }
   }
 
   /** Every tab of a kind, the one the person was last in last. */
