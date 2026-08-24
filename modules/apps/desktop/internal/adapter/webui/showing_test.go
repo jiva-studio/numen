@@ -387,6 +387,31 @@ func (f *showing) listens(t *testing.T) (*connect.ServerStreamForClient[v1.Quitt
 	}
 }
 
+// TestAPageThatSaysNothingCostsTheSwapItsBound. A page whose script has stopped
+// answers never, and the vault asked for arrives once the bound is spent.
+func TestAPageThatSaysNothingCostsTheSwapItsBound(t *testing.T) {
+	f := swapping(t)
+
+	// A page that listens and answers nothing.
+	_, done := f.listens(t)
+	defer done()
+
+	swapped := make(chan error, 1)
+	go func() { swapped <- f.opened.Show(context.Background(), f.second) }()
+
+	select {
+	case err := <-swapped:
+		if err != nil {
+			t.Fatalf("the second vault would not open: %v", err)
+		}
+	case <-time.After(30 * time.Second):
+		t.Fatal("a page that says nothing held the swap with nothing to wait for")
+	}
+	if got := f.opened.Showing(); got.ID != f.second.ID {
+		t.Errorf("the window is showing %s", got.Name)
+	}
+}
+
 // TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff. What a person is being
 // asked about is theirs to answer, and the vault it was typed in stays in front
 // of them.

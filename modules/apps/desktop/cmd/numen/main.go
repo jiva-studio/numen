@@ -17,7 +17,6 @@ import (
 	"os"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
@@ -125,12 +124,9 @@ func run(cfg container.Config, agents agentOptions, vault string, zoom float64) 
 	// vault they are working when their session opens, so the endpoint they
 	// reach it through is stopped and started again around the swap.
 	opened.API.Opens = func(ctx context.Context, v domain.Vault) error {
-		reachable.off()
-		defer func() {
-			reachable.on()
-			window.SetTitle("numen — " + opened.Showing().Name)
-		}()
-		return opened.Show(ctx, v)
+		err := reachable.around(func() error { return opened.Show(ctx, v) })
+		window.SetTitle("numen — " + opened.Showing().Name)
+		return err
 	}
 
 	// The picker and the swap above are what an agent adds and opens a vault
@@ -166,8 +162,26 @@ type reaching struct {
 	opts   agentOptions
 	out    io.Writer
 
+	// turn is one swap. It is held from the endpoint stopping to the endpoint
+	// being served again, so a second swap waits for the first.
+	turn sync.Mutex
+
 	mu   sync.Mutex
 	shut func() error
+}
+
+// around runs one swap with the tools taken away, and serves them again on the
+// vault the window then has.
+//
+// One swap holds this at a time, so the endpoint is started again by the swap
+// that stopped it and on the vault that swap ended on.
+func (r *reaching) around(swap func() error) error {
+	r.turn.Lock()
+	defer r.turn.Unlock()
+
+	r.off()
+	defer r.on()
+	return swap()
 }
 
 // on serves the tools against the vault in the window. A window standing on no
@@ -246,11 +260,8 @@ func asked(g *going, quit func()) bool {
 }
 
 // quitBound is how long the window waits for a page that says nothing to write
-// what only it holds. A page whose script has stopped — a wedged webview, one
-// already torn down — answers never, and this is how long that costs. A page
-// raising a question has answered, and the bound is not what its wait is
-// measured by.
-const quitBound = 3 * time.Second
+// what only it holds. A vault being changed waits under the same bound.
+const quitBound = webui.HandedOverIn
 
 // going is the vault settling, whichever way the window is asked to go.
 //

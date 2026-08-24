@@ -315,7 +315,11 @@ func (o *Opened) Show(ctx context.Context, v domain.Vault) error {
 	}
 	defer o.free()
 
-	if !settling(ctx, &o.API.Leaving, &o.API.Writing) {
+	// A page that says nothing is waited for HandedOverIn and no longer.
+	held, spent := context.WithTimeout(ctx, HandedOverIn)
+	defer spent()
+
+	if !settling(held, &o.API.Leaving, &o.API.Writing) {
 		return errAsking
 	}
 
@@ -653,6 +657,11 @@ const (
 	// wearingATheme is a theme the settings name that the catalogue has not.
 	wearingATheme = "wearing a theme"
 )
+
+// HandedOverIn is how long a page has to write what only it holds when the
+// vault it is drawing goes. A page raising a question has answered, and the
+// wait from there is on a person.
+const HandedOverIn = 3 * time.Second
 
 // settled is how long the vault has to have been still before the notes written
 // into it are embedded. It is longer than the bound in ui/src/tab.ts, which

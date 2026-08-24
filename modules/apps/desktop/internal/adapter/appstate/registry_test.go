@@ -94,6 +94,28 @@ func TestFindAcceptsNamePathAndIdentity(t *testing.T) {
 	}
 }
 
+// TestNothingNamesNoVault. A path is resolved against the folder this process
+// was started in, and a client that named no vault would otherwise reach the
+// one standing there — a forget or an erase among them.
+func TestNothingNamesNoVault(t *testing.T) {
+	here, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := newRegistry(t)
+	if err := r.Save(domain.Vault{ID: "01AAA", Name: "personal", Path: here}); err != nil {
+		t.Fatal(err)
+	}
+
+	got, found, err := r.Find("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if found {
+		t.Errorf("nothing named the vault %s at %s", got.Name, got.Path)
+	}
+}
+
 func TestRemoveTakesAVaultOffTheList(t *testing.T) {
 	r := newRegistry(t)
 	kept := domain.Vault{ID: "01AAA", Name: "personal", Path: "/notes"}
