@@ -1,0 +1,74 @@
+---
+/**
+ * The document around a page: what the browser is told, and nothing else.
+ *
+ * The faces are carried by the site, so reading the page asks nothing of
+ * anybody else's server.
+ */
+import '@fontsource-variable/newsreader'
+import '@fontsource-variable/newsreader/opsz-italic.css'
+import '@fontsource/ibm-plex-sans/400.css'
+import '@fontsource/ibm-plex-sans/500.css'
+import '@fontsource/ibm-plex-sans/600.css'
+import '@fontsource/ibm-plex-mono/500.css'
+import '../styles/landing.css'
+
+interface Props {
+  title: string
+  description: string
+}
+
+const { title, description } = Astro.props
+// The page's address without the file the build happens to write it to.
+const canonical = new URL(Astro.url.pathname.replace(/index\.html$/, ''), Astro.site)
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical.href} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical.href} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="generator" content={Astro.generator} />
+    <script is:inline>
+      // Said before the first paint, so nothing is hidden that this document
+      // is not about to bring in.
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.documentElement.setAttribute('data-motion', '')
+      }
+    </script>
+  </head>
+  <body>
+    <slot />
+
+    <script>
+      // What rises, rises once, and only in a document that hid it.
+      if (document.documentElement.hasAttribute('data-motion')) {
+        const watching = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (!entry.isIntersecting) continue
+              entry.target.setAttribute('data-shown', '')
+              watching.unobserve(entry.target)
+            }
+          },
+          // A fixed margin rather than a share of the viewport: what stands at
+          // the foot of a page that cannot scroll any further still arrives.
+          { rootMargin: '0px 0px -60px 0px' },
+        )
+        document
+          .querySelectorAll<HTMLElement>('.rise')
+          .forEach((element) => watching.observe(element))
+      }
+    </script>
+  </body>
+</html>
