@@ -19,12 +19,10 @@ const kind = ({ keeps = false, ...over }: Partial<Kept> & { keeps?: boolean } = 
   const opened: string[] = []
   const shut: string[] = []
   const seen: string[] = []
-  const ids: string[] = []
   const one: Kept = {
     kind: 'thing',
-    opens: (at: string, id: string) => {
+    opens: (at: string) => {
       opened.push(at)
-      ids.push(id)
       return { at, title: at || 'a thing' }
     },
     called: (held: { title: string }) => held.title,
@@ -38,7 +36,7 @@ const kind = ({ keeps = false, ...over }: Partial<Kept> & { keeps?: boolean } = 
     },
     ...over,
   }
-  return { declared: () => one, one, opened, ids, shut, seen }
+  return { declared: () => one, one, opened, shut, seen }
 }
 
 /** A window told what kinds it draws, each of them made with what it is given. */
@@ -115,15 +113,6 @@ describe('a tab of a kind', () => {
 
     expect(await window.opens('nothing')).toBe('')
     expect(onScreen(window.layout.value)).toEqual([])
-  })
-
-  it('is told the identity it will carry, so its kind can find it again', async () => {
-    const thing = kind()
-    const window = told([thing.declared])
-
-    const id = await window.opens('thing', 'Note.md')
-
-    expect(thing.ids).toEqual([id])
   })
 })
 

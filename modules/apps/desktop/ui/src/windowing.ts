@@ -15,12 +15,8 @@ import { BLANK, named } from './workspace'
 export interface Kind<Held> {
   /** The word the identities of its tabs are filed under. */
   readonly kind: string
-  /**
-   * What one of its tabs holds, made as the tab opens on what it was given.
-   * The identity the tab will carry comes with it, for a kind that keeps track
-   * of its own tabs.
-   */
-  opens(at: string, id: string): Held | Promise<Held>
+  /** What one of its tabs holds, made as the tab opens on what it was given. */
+  opens(at: string): Held | Promise<Held>
   /** What the tab is called, as what it holds now stands. */
   called(held: Held): string
   /** The one word the tab carries beside its title, or nothing. */
@@ -179,7 +175,7 @@ export function windowing(words: Words) {
     if (!one) return ''
     const id = one.identity ? `${kind}:${one.identity(at)}` : named(kind)
     if (open.value.has(id)) return id
-    const held = await one.opens(at, id)
+    const held = await one.opens(at)
     open.value = new Map(open.value).set(id, { kind: one, held })
     return id
   }

@@ -192,7 +192,7 @@ export function showing(
   const lost = ref('')
   const trouble = ref('')
   const unwatched = ref('')
-  /** Why an agent cannot be reached, said in the panel that would have asked it. */
+  /** Why an agent cannot be reached, as the vault last answered. */
   const unreachable = ref('')
   /** Whether the vault holds a note to show at all. */
   const holds = ref(false)
