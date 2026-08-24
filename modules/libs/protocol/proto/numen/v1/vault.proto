@@ -126,7 +126,8 @@ enum Refusal {
   // from here.
   REFUSAL_UNREADABLE = 6;
 
-  // A file is already where the note would be made. Nothing is written.
+  // A file is already where the note would go. Nothing is written there; a
+  // rename may already have written the note it was moving.
   REFUSAL_OCCUPIED = 7;
 
   // The title leaves nothing a file can be named after. Nothing is written.
@@ -276,8 +277,7 @@ message ChangesResponse {
   repeated Renamed renamed = 3;
 }
 
-// Renamed is a note that is no longer where it was. The bytes do not change on
-// the way, so this says nothing about what the note holds.
+// Renamed is a note that is no longer where it was.
 message Renamed {
   string from = 1;
   string to = 2;
@@ -550,8 +550,9 @@ message JoinResponse {
 }
 
 // Naming is which of the three a note is shown by, and so which one a rename
-// wrote.
+// brings into line.
 enum Naming {
+  // Nothing named the note, because nothing was brought into line.
   NAMING_UNSPECIFIED = 0;
 
   // The `title` key of the frontmatter.
@@ -573,27 +574,33 @@ message RenameRequest {
 }
 
 message RenameResponse {
-  // Where the note is filed. The note is brought into line before the file is,
-  // so a refused move answers with the path the note still has.
+  // Where the note is filed. Empty when the note was never opened. The note is
+  // brought into line before the file is, so a refused move answers with the
+  // path the note still has.
   string path = 1;
 
-  // What the note is called.
+  // What the note is called. Empty when the note was never opened.
   string title = 2;
 
-  // Which of the three the rename wrote.
+  // Which of the three names the note, and so which the rename brought into
+  // line. NAMING_UNSPECIFIED when the note was never opened.
   Naming by = 3;
 
   // What the file did. Absent when it stayed where it was.
   optional Moved moved = 4;
 
-  // Set when the note was not renamed, and why.
+  // Set when the rename did not finish, and why. The note may already have been
+  // written: `path`, `title` and `by` say what stands.
   optional Refusal refusal = 5;
 }
 
 // Moved is a file under a different name, and what that did to the links
 // written by the name it had.
 message Moved {
+  // Where the file was.
   string from = 1;
+
+  // Where it is now.
   string to = 2;
 
   // The notes whose link stopped resolving and was written again, by name.
@@ -610,8 +617,9 @@ message Retargeted {
   // The note the link is written in.
   string in = 1;
 
-  // What the link is written by: a name, or the path of a note. It is what
-  // names the link to the person.
+  // What the link is written by, with its scheme dropped: a name, or the path
+  // of a note. It is what names the link to the person, and not an address a
+  // link can be written from.
   string target = 2;
 
   // The note it reaches now.

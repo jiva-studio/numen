@@ -5,7 +5,8 @@
 - **Applies to:** the vault format — every application that writes one
 - **Partly supersedes:** ADR-0012 and ADR-0027 — the `title` key, for a rename
   alone
-- **Related:** ADR-0009, ADR-0011, ADR-0012, ADR-0024, ADR-0026, ADR-0027, ADR-0032
+- **Related:** ADR-0009, ADR-0011, ADR-0012, ADR-0024, ADR-0025, ADR-0026,
+  ADR-0027, ADR-0032, ADR-0033, ADR-0035
 
 ## Context
 
@@ -20,14 +21,16 @@ its file changes the path and changes nothing a person sees — the list says wh
 it said before, the tab says what it said before, and the note is somewhere else
 on disk.
 
-Notes this application creates land in that class by its own hand. Where a title
-cannot survive as a filename, ADR-0027 reduces the name to what will fit and
-opens the body with the exact title as a level-one heading. So a note numen made
-is one numen cannot rename.
+Some of the notes this application creates land in that class by its own hand.
+Where a title cannot survive as a filename, ADR-0027 reduces the name to what
+will fit and opens the body with the exact title as a level-one heading. So a
+note numen made from a title a filename could not carry is one numen cannot
+rename.
 
-`note_rename` (ADR-0026) has done exactly this since it was first served, and it
-worked out the file it was moving to inside the adapter, so the rule about what a
-note is called lived outside the core that owns every other one.
+`note_rename` (ADR-0026) has moved the file and nothing else since it was first
+served, and it worked out the file it was moving to inside the adapter, so the
+rule about what a note is called lived outside the core that owns every other
+one.
 
 ## Decision
 
@@ -35,7 +38,7 @@ note is called lived outside the core that owns every other one.
 
 One title is asked for, and one of these is written:
 
-- the note carries a `title` — the key is given the new title;
+- the note carries a non-empty `title` — the key is given the new title;
 - the note has a level-one heading — the text of the first one is rewritten;
 - the note has neither, and the title cannot survive as a filename — the body
   opens with the exact title as a level-one heading;
@@ -48,6 +51,15 @@ whether the title survived. **Creating a note and renaming one are the same
 convention read in two directions**, so a note arrives named the way a rename
 would name it.
 
+**A title that leaves nothing to name a file after is refused.** The reduction
+drops what a filename cannot hold, and a title made of nothing else comes out
+empty. There is no name to file the note under, so the note is not opened and
+nothing is written. Creating a note refuses such a title for the same reason,
+which keeps the two directions of the convention the same one.
+
+A title that only fails to survive whole is a different case: it is reduced, the
+body carries it, and the rename goes through.
+
 **The file keeps the extension it had.** What a vault files new notes under is a
 setting about creating one and says nothing about a note that already exists.
 
@@ -58,8 +70,8 @@ A move can be refused — something already sits where the note would go
 leaves the title right and the filename behind, which is a rename asked for again
 once the name is free.
 
-The other order leaves a note showing its old name under a new filename, with
-every link that pointed at it repaired for a rename that did not happen.
+The other order leaves a note showing its old name under a filename that claims
+a new one, and a refusal there is undone only by moving the file back.
 
 ### `title` is written into a note that already carries it, and never added
 
@@ -77,7 +89,7 @@ and the rename is a move. It takes no identifier, which is ADR-0027 and ADR-0009
 unchanged: a move is not an edit.
 
 A rename that writes the key or the heading **is** an edit, and stamps an
-identifier the way every other edit does.
+identifier the way every other edit does (ADR-0027).
 
 ### The file half is a move, whole
 
@@ -119,15 +131,18 @@ the note means. It says so and changes nothing.
 - **A setext heading is not a heading here.** ADR-0012 resolves a name through
   the first level-one heading, and what reads one recognises `#` and not a line
   underlined with `=`. A note titled that way is taken to be named by its
-  filename, so a rename writes a `#` heading above the underlined one and the
-  note then shows two names. This decision inherits that reading and does not
-  improve it.
+  filename, and moving its file is the whole of its rename. That shows the new
+  name, because the same reading names the note in the list. Where the title
+  cannot survive as a filename the body opens with a `#` heading above the
+  underlined one, and the file carries two. This decision inherits that reading
+  and does not improve it.
 - A rename is two acts where a move is one. A machine that dies between them
   leaves the note titled and the file where it was — the same state a refusal
   leaves, and one nothing else produces.
 - **The word `rename` now names an operation that edits a note.** ADR-0027 uses
-  it for the filesystem call a move makes, and both readings are in the record. A
-  sentence carrying it alone has to say which. It is not yet entered in ADR-0024.
+  it for the filesystem call a move makes, and both readings are in the record.
+  ADR-0024 settles the two apart, and the sentences written before it stand as
+  they were written: a reader meeting one of them translates.
 
 ## Alternatives considered
 
@@ -147,6 +162,7 @@ reads.
 move is the half that can be refused, and a refusal there leaves the worse of the
 two halves standing.
 
-**Refuse a title that cannot survive as a filename.** Rejected: creating a note
-with one is allowed and the body carries the title there, so refusing it here
-would make a note that can be created and not renamed.
+**Refuse a title that cannot survive whole as a filename.** Rejected: creating a
+note with one is allowed and the body carries the title there, so refusing it
+here would make a note that can be created and not renamed. A title that reduces
+to nothing at all is refused, and is refused by creating too.

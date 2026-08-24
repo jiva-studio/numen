@@ -49,7 +49,8 @@ const (
 	// The frontmatter cannot be read, so the note can be neither read nor written
 	// from here.
 	Refusal_REFUSAL_UNREADABLE Refusal = 6
-	// A file is already where the note would be made. Nothing is written.
+	// A file is already where the note would go. Nothing is written there; a
+	// rename may already have written the note it was moving.
 	Refusal_REFUSAL_OCCUPIED Refusal = 7
 	// The title leaves nothing a file can be named after. Nothing is written.
 	Refusal_REFUSAL_UNNAMEABLE Refusal = 8
@@ -277,10 +278,11 @@ func (Way) EnumDescriptor() ([]byte, []int) {
 }
 
 // Naming is which of the three a note is shown by, and so which one a rename
-// wrote.
+// brings into line.
 type Naming int32
 
 const (
+	// Nothing named the note, because nothing was brought into line.
 	Naming_NAMING_UNSPECIFIED Naming = 0
 	// The `title` key of the frontmatter.
 	Naming_NAMING_FRONTMATTER Naming = 1
@@ -1064,8 +1066,7 @@ func (x *ChangesResponse) GetRenamed() []*Renamed {
 	return nil
 }
 
-// Renamed is a note that is no longer where it was. The bytes do not change on
-// the way, so this says nothing about what the note holds.
+// Renamed is a note that is no longer where it was.
 type Renamed struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	From          string                 `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
@@ -2696,16 +2697,19 @@ func (x *RenameRequest) GetTitle() string {
 
 type RenameResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Where the note is filed. The note is brought into line before the file is,
-	// so a refused move answers with the path the note still has.
+	// Where the note is filed. Empty when the note was never opened. The note is
+	// brought into line before the file is, so a refused move answers with the
+	// path the note still has.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	// What the note is called.
+	// What the note is called. Empty when the note was never opened.
 	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	// Which of the three the rename wrote.
+	// Which of the three names the note, and so which the rename brought into
+	// line. NAMING_UNSPECIFIED when the note was never opened.
 	By Naming `protobuf:"varint,3,opt,name=by,proto3,enum=numen.v1.Naming" json:"by,omitempty"`
 	// What the file did. Absent when it stayed where it was.
 	Moved *Moved `protobuf:"bytes,4,opt,name=moved,proto3,oneof" json:"moved,omitempty"`
-	// Set when the note was not renamed, and why.
+	// Set when the rename did not finish, and why. The note may already have been
+	// written: `path`, `title` and `by` say what stands.
 	Refusal       *Refusal `protobuf:"varint,5,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2780,8 +2784,10 @@ func (x *RenameResponse) GetRefusal() Refusal {
 // written by the name it had.
 type Moved struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	From  string                 `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
-	To    string                 `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
+	// Where the file was.
+	From string `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
+	// Where it is now.
+	To string `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
 	// The notes whose link stopped resolving and was written again, by name.
 	Repaired []string `protobuf:"bytes,3,rep,name=repaired,proto3" json:"repaired,omitempty"`
 	// The links that resolve to a different note now. They are not broken and
@@ -2855,8 +2861,9 @@ type Retargeted struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The note the link is written in.
 	In string `protobuf:"bytes,1,opt,name=in,proto3" json:"in,omitempty"`
-	// What the link is written by: a name, or the path of a note. It is what
-	// names the link to the person.
+	// What the link is written by, with its scheme dropped: a name, or the path
+	// of a note. It is what names the link to the person, and not an address a
+	// link can be written from.
 	Target string `protobuf:"bytes,2,opt,name=target,proto3" json:"target,omitempty"`
 	// The note it reaches now.
 	Now           string `protobuf:"bytes,3,opt,name=now,proto3" json:"now,omitempty"`

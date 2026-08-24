@@ -375,8 +375,7 @@ export const ChangesResponseSchema: GenMessage<ChangesResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 10);
 
 /**
- * Renamed is a note that is no longer where it was. The bytes do not change on
- * the way, so this says nothing about what the note holds.
+ * Renamed is a note that is no longer where it was.
  *
  * @generated from message numen.v1.Renamed
  */
@@ -1190,22 +1189,24 @@ export const RenameRequestSchema: GenMessage<RenameRequest> = /*@__PURE__*/
  */
 export type RenameResponse = Message<"numen.v1.RenameResponse"> & {
   /**
-   * Where the note is filed. The note is brought into line before the file is,
-   * so a refused move answers with the path the note still has.
+   * Where the note is filed. Empty when the note was never opened. The note is
+   * brought into line before the file is, so a refused move answers with the
+   * path the note still has.
    *
    * @generated from field: string path = 1;
    */
   path: string;
 
   /**
-   * What the note is called.
+   * What the note is called. Empty when the note was never opened.
    *
    * @generated from field: string title = 2;
    */
   title: string;
 
   /**
-   * Which of the three the rename wrote.
+   * Which of the three names the note, and so which the rename brought into
+   * line. NAMING_UNSPECIFIED when the note was never opened.
    *
    * @generated from field: numen.v1.Naming by = 3;
    */
@@ -1219,7 +1220,8 @@ export type RenameResponse = Message<"numen.v1.RenameResponse"> & {
   moved?: Moved | undefined;
 
   /**
-   * Set when the note was not renamed, and why.
+   * Set when the rename did not finish, and why. The note may already have been
+   * written: `path`, `title` and `by` say what stands.
    *
    * @generated from field: optional numen.v1.Refusal refusal = 5;
    */
@@ -1241,11 +1243,15 @@ export const RenameResponseSchema: GenMessage<RenameResponse> = /*@__PURE__*/
  */
 export type Moved = Message<"numen.v1.Moved"> & {
   /**
+   * Where the file was.
+   *
    * @generated from field: string from = 1;
    */
   from: string;
 
   /**
+   * Where it is now.
+   *
    * @generated from field: string to = 2;
    */
   to: string;
@@ -1288,8 +1294,9 @@ export type Retargeted = Message<"numen.v1.Retargeted"> & {
   in: string;
 
   /**
-   * What the link is written by: a name, or the path of a note. It is what
-   * names the link to the person.
+   * What the link is written by, with its scheme dropped: a name, or the path
+   * of a note. It is what names the link to the person, and not an address a
+   * link can be written from.
    *
    * @generated from field: string target = 2;
    */
@@ -1505,7 +1512,8 @@ export enum Refusal {
   UNREADABLE = 6,
 
   /**
-   * A file is already where the note would be made. Nothing is written.
+   * A file is already where the note would go. Nothing is written there; a
+   * rename may already have written the note it was moving.
    *
    * @generated from enum value: REFUSAL_OCCUPIED = 7;
    */
@@ -1639,12 +1647,14 @@ export const WaySchema: GenEnum<Way> = /*@__PURE__*/
 
 /**
  * Naming is which of the three a note is shown by, and so which one a rename
- * wrote.
+ * brings into line.
  *
  * @generated from enum numen.v1.Naming
  */
 export enum Naming {
   /**
+   * Nothing named the note, because nothing was brought into line.
+   *
    * @generated from enum value: NAMING_UNSPECIFIED = 0;
    */
   UNSPECIFIED = 0,

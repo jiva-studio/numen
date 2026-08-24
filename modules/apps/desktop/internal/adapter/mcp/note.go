@@ -355,10 +355,11 @@ func addNoteTools(server *sdk.Server, core Core) {
 		Title: "Rename a note",
 		Description: "Give a note a different name. A note is shown by its title, else by " +
 			"its first heading, else by its filename: whichever of the three names it is " +
-			"written, and the file is renamed with it. The answer says which of them did " +
-			"the naming, and what the file did. Links written by the old name are repaired " +
-			"only where they stopped resolving; anything that now means a different note " +
-			"comes back under the move's `retargeted`.",
+			"brought into line, and the file is renamed with it. A note its filename names " +
+			"is moved and not written. The answer says which of them named it, and what the " +
+			"file did. Links written by the old name are repaired only where they stopped " +
+			"resolving; anything that now means a different note comes back under the " +
+			"move's `retargeted`.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path  string `json:"path" jsonschema:"the note to rename"`
 		Title string `json:"title" jsonschema:"what it is called from now on"`
