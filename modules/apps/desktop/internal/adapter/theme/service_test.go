@@ -92,7 +92,7 @@ func TestAThemeIsAskedForByNameAndAnyOtherNameIsNothing(t *testing.T) {
 
 	for name, want := range map[string]string{
 		"mine:kept":                 "#123456",
-		theme.Default:               "--numen-surface",
+		"preset:dracula":            "--numen-surface",
 		"mine:../../../.ssh/id_rsa": "",
 		"mine:gone":                 "",
 	} {
@@ -107,6 +107,17 @@ func TestAThemeIsAskedForByNameAndAnyOtherNameIsNothing(t *testing.T) {
 		if want != "" && !strings.Contains(answer.Msg.GetCss(), want) {
 			t.Errorf("%s answered with %q", name, answer.Msg.GetCss())
 		}
+	}
+
+	// This product's own palette names no token: what `tokens.css` holds is
+	// what it is. It answers with its file all the same.
+	answer, err := worn.service.Theme(t.Context(),
+		connect.NewRequest(&v1.ThemeRequest{Name: theme.Default}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if answer.Msg.GetCss() == "" {
+		t.Errorf("%s answered with nothing", theme.Default)
 	}
 }
 
