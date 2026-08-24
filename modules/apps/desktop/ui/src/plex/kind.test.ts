@@ -8,8 +8,9 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import type { NeighbourhoodResponse } from '@numen/protocol'
-import { plexing, type Making, type Plexing } from './kind'
-import type { Plexed } from '../showing'
+import { plexKind, plexing, type Held, type Making, type Plexing } from './kind'
+import type { Standing } from '../standing'
+import type { Host } from '../windowing'
 
 /** A neighbourhood as the vault answers one: a focus, and what is around it. */
 const around = (focus: string, related: readonly string[] = []): NeighbourhoodResponse =>
@@ -35,10 +36,9 @@ const standing = (at: string, related: readonly string[] = []) => {
       view.here.value = path
       view.neighbourhood.value = around(path)
     },
-    looking: () => {},
     close: () => {},
   }
-  return { view: view as unknown as Plexed, went }
+  return { view: view as unknown as Standing, went }
 }
 
 /** A vault that takes every note it is asked to make, and records the asking. */
@@ -69,6 +69,7 @@ const tab = (at: string, related: readonly string[] = [], takes = true) => {
     ready: () => true,
     opens: (path, title, showing) => opened.push([path, title, showing]),
     asks: (text) => asked.push(text),
+    opening: () => 'Opening.md',
   }
   return { held: plexing(plex.view, deps), went: plex.went, ...vault, opened, asked }
 }
@@ -197,8 +198,178 @@ describe('the picture', () => {
       ready: () => false,
       opens: () => {},
       asks: () => {},
+      opening: () => '',
     })
 
     expect(held.picture.value).toBeNull()
+  })
+})
+
+/**
+ * The plexes of a window, each standing where it was told to.
+ *
+ * A note is asked for somewhere the window cannot see — the palette, an agent
+ * working the vault beside the person — and one of these has to take it.
+ */
+const window = (opening = 'Opening.md') => {
+  const views: ReturnType<typeof standing>[] = []
+  const opened: string[] = []
+  const shown: string[] = []
+  const host: Host = {
+    opens: async (kind, at = '') => {
+      opened.push(`${kind} ${at}`)
+      return ''
+    },
+    beside: async () => '',
+    shows: (id) => shown.push(id),
+    closes: () => {},
+  }
+  const makes = () => {
+    const view = standing('')
+    views.push(view)
+    return view.view
+  }
+  const plexes = plexKind(host, makes, {
+    makes: making().makes,
+    ready: () => true,
+    opens: () => {},
+    asks: () => {},
+    opening: () => opening,
+  })
+  /** A tab of this window under an identity of its own, and what it holds. */
+  const holds = (id: string, at = '') => plexes.kind.opens(at, id) as Held
+  return { ...plexes, holds, views, opened, shown }
+}
+
+describe('a plex tab as it opens', () => {
+  it('stands on the note the vault opens with', () => {
+    const one = window('Opening.md')
+
+    const held = one.holds('plex:one')
+
+    expect(held.view.here.value).toBe('Opening.md')
+  })
+
+  it('stands where it was told to, whatever the vault opens with', () => {
+    const one = window('Opening.md')
+
+    const held = one.holds('plex:one', 'Told.md')
+
+    expect(held.view.here.value).toBe('Told.md')
+  })
+
+  it('stands where the person is looking, when another one is open', () => {
+    const one = window('Opening.md')
+    const first = one.holds('plex:one')
+    void first.view.go('Here.md')
+
+    const second = one.holds('plex:two')
+
+    expect(second.view.here.value).toBe('Here.md')
+  })
+
+  it('stands nowhere while the vault opens with nothing', () => {
+    const one = window('')
+
+    expect(one.holds('plex:one').view.here.value).toBe('')
+    expect(one.nowhere()).toBe(true)
+  })
+})
+
+describe('the plex the person is looking at', () => {
+  it('is the one they were last in, and the window says its trouble', () => {
+    const one = window()
+    const first = one.holds('plex:one', 'One.md')
+    const second = one.holds('plex:two', 'Two.md')
+    first.view.trouble.value = 'One.md is not in the vault'
+
+    one.kind.shown?.(first, 'plex:one')
+    expect(one.looking()).toBe('One.md')
+    expect(one.trouble()).toBe('One.md is not in the vault')
+
+    one.kind.shown?.(second, 'plex:two')
+    expect(one.looking()).toBe('Two.md')
+    expect(one.trouble()).toBe('')
+  })
+
+  it('is the one before it when the tab in front closes', () => {
+    const one = window()
+    const first = one.holds('plex:one', 'One.md')
+    const second = one.holds('plex:two', 'Two.md')
+    const third = one.holds('plex:three', 'Three.md')
+    one.kind.shown?.(second, 'plex:two')
+    one.kind.shown?.(third, 'plex:three')
+
+    one.kind.shuts?.(third, 'plex:three')
+
+    expect(one.looking()).toBe('Two.md')
+    expect(first.view.here.value).toBe('One.md')
+  })
+
+  it('is nothing at all in a window holding no plex', () => {
+    const one = window()
+
+    expect(one.looking()).toBe('')
+    expect(one.trouble()).toBe('')
+  })
+})
+
+describe('a note put in front of the person', () => {
+  it('is where the plex they are looking at travels', async () => {
+    const one = window()
+    const first = one.holds('plex:one', 'One.md')
+    const second = one.holds('plex:two', 'Two.md')
+    one.kind.shown?.(second, 'plex:two')
+
+    await one.travel('Wanted.md')
+
+    expect(second.view.here.value).toBe('Wanted.md')
+    expect(first.view.here.value).toBe('One.md')
+  })
+
+  it('opens a plex of its own in a window holding none', async () => {
+    const one = window()
+
+    await one.travel('Wanted.md')
+
+    expect(one.opened).toStrictEqual(['plex Wanted.md'])
+  })
+})
+
+describe('every plex asked for its picture again', () => {
+  it('asks for the note it is standing on, each of its own', async () => {
+    const one = window()
+    const first = one.holds('plex:one', 'One.md')
+    const second = one.holds('plex:two', 'Two.md')
+    first.view.here.value = 'One.md'
+
+    await one.again()
+
+    expect(one.views[0]?.went).toContain('One.md')
+    expect(one.views[1]?.went).toContain('Two.md')
+    expect(second.view.here.value).toBe('Two.md')
+  })
+
+  it('gives one standing nowhere the note the vault opens with', async () => {
+    const one = window('First.md')
+    const held = one.holds('plex:one')
+    held.view.here.value = ''
+
+    await one.again()
+
+    expect(held.view.here.value).toBe('First.md')
+  })
+
+  it('asks nothing for a plex whose tab has closed', async () => {
+    const one = window()
+    const first = one.holds('plex:one', 'One.md')
+    const second = one.holds('plex:two', 'Two.md')
+    one.kind.shuts?.(second, 'plex:two')
+
+    await one.again()
+
+    expect(one.views[0]?.went).toContain('One.md')
+    expect(one.views[1]?.went.filter((where) => where === 'Two.md')).toHaveLength(1)
+    expect(first.view.here.value).toBe('One.md')
   })
 })

@@ -14,6 +14,7 @@ import type { Notice, PlexShowing } from '@numen/ui'
 import '@numen/ui/styles.css'
 import { core, documents } from './vault'
 import { showing } from './showing'
+import { standing } from './standing'
 import { reading, type Run } from './reading'
 import { cornerOf } from './corner'
 import { editing } from './editing'
@@ -42,8 +43,12 @@ const window = showing(
   undefined,
   notes.changed,
   drawings.told,
-  (path) => void held.opens(PLEX, path),
   (path, runs) => void opensAt(path, ...runs),
+  {
+    nowhere: () => plexes.nowhere(),
+    again: () => plexes.again(),
+    travel: (path) => plexes.travel(path),
+  },
 )
 /** What the window answers when the application says it is going. */
 const going = leaving(core)
@@ -51,7 +56,12 @@ going.holds(notes.flush)
 
 raising(notes, going)
 
-const { indexing, failure, warning, trouble, unwatched, unreachable, holds, looking } = window
+const { indexing, failure, trouble, unwatched, unreachable, holds } = window
+/**
+ * The one thing the window says while it still works: what it lost touch with,
+ * or what the plex in front could not show.
+ */
+const warning = computed(() => window.lost.value || plexes.trouble())
 /** What could not be made or joined, in words a person reads. */
 const unmade = computed(() => making.said.value)
 const { chunks, embedding, tasks } = window
@@ -72,6 +82,8 @@ const noted = noting(core, notes, drawings, {
   },
 })
 
+/** The plex tabs, and the one the person is looking at. */
+let plexes: ReturnType<typeof plexKind>
 /** The agent tabs, and the one a question about a note is put in. */
 let agents: ReturnType<typeof agentKind>
 
@@ -84,19 +96,20 @@ let agents: ReturnType<typeof agentKind>
 const held = windowing(
   [
     () => noted.kind,
-    () =>
-      plexKind((at) =>
-        plexing(window.plex(at), {
-          makes: making,
-          ready: () => !failure.value && !indexing.value,
-          opens: (path, title, showing) => openNote(path, title, showing),
-          asks: (text) => void agents.asks(text),
-        }),
-      ),
+    (host) => {
+      plexes = plexKind(host, () => standing(core), {
+        makes: making,
+        ready: () => !failure.value && !indexing.value,
+        opens: (path, title, showing) => openNote(path, title, showing),
+        asks: (text) => void agents.asks(text),
+        opening: () => window.opening.value,
+      })
+      return plexes.kind
+    },
     (host) => {
       agents = agentKind(host, () =>
         talking(conversation(agent, words, named(CONVERSATION)), {
-          looking: () => looking.value,
+          looking: () => plexes.looking(),
           opens: (path, ...runs) => void opensAt(path, ...runs),
           unreachable: () => unreachable.value,
         }),
@@ -148,7 +161,7 @@ const went = async (item: string, action: string) => {
   if (!landing) return
 
   if (landing.at === 'plex') {
-    void window.travel(landing.path)
+    void plexes.travel(landing.path)
     return
   }
   if (landing.at === 'document') {

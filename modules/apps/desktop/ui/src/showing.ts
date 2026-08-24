@@ -5,10 +5,9 @@
  * window keeps up with the vault, and a rule inside a component is a rule that
  * is only exercised by looking at the screen.
  */
-import { computed, ref, shallowRef } from 'vue'
+import { ref } from 'vue'
 import type { Counting, PlexRelatedSeat } from '@numen/ui'
 import type { Neighbourhood } from './plex'
-import { standing, type Standing } from './standing'
 import type { Said } from './drawing'
 import type { Run } from './reading'
 import type { Went } from './tab'
@@ -155,21 +154,27 @@ export interface Made {
   refusal: Refused | null
 }
 
-/** One plex as its tab holds it: where it stands, and letting go of it. */
-export interface Plexed extends Standing {
-  /** The person is looking at this plex. */
-  looking(): void
-  /** The tab has closed, and nothing is asked for this plex again. */
-  close(): void
+/** The plexes of the window, as far as following the vault reads them. */
+export interface Plexes {
+  /** Whether any of them is standing nowhere, and so wants a note to stand on. */
+  nowhere(): boolean
+  /** Every one of them asks for its picture again. */
+  again(): Promise<void>
+  /** A note put in front of the person, in the plex they are looking at. */
+  travel(path: string): Promise<void>
 }
 
+/** Plexes for a window with none: nothing to ask again, and nowhere to travel. */
+const none: Plexes = { nowhere: () => false, again: async () => {}, travel: async () => {} }
+
 /**
- * The vault as the whole window reads it, and the plexes it keeps up to date.
+ * The vault as the whole window reads it, and what it tells when the vault
+ * changes.
  *
  * One window reads the vault once: one stream of changes, one stream of edits,
  * one stream of notes asked for, one stream of what is being done, and one set
- * of counts. A plex tab holds where it is standing and nothing more, and hears
- * from here when to ask again.
+ * of counts. Which tabs hear about a change, and what each makes of it, is
+ * theirs.
  */
 export function showing(
   core: Core,
@@ -181,13 +186,13 @@ export function showing(
   told: (paths: readonly string[], renamed?: readonly Went[]) => void = () => {},
   /** What hears about a change to a note while it is being made. */
   drawing: (said: Said) => void = () => {},
-  /** What opens a plex on a note, for a window with none open to show it in. */
-  shows: (path: string) => void = () => {},
   /**
    * What opens a document at stretches of its own text, in the tab it is read
    * in. The person is taken to the first of them.
    */
   reads: (path: string, runs: readonly Run[]) => void = () => {},
+  /** The plexes the window draws, which follow the vault with it. */
+  plexes: Plexes = none,
 ) {
   const name = ref('')
   const indexing = ref(true)
@@ -227,61 +232,9 @@ export function showing(
    */
   const tasks = ref<readonly Task[]>([])
 
-  /**
-   * The plexes open in the window, each in a tab of its own, in the order the
-   * person was last in them. The last one is the plex in front.
-   */
-  const plexes = shallowRef<readonly Standing[]>([])
-  /**
-   * The plex the person is looking at. A note asked for from outside the window
-   * is put in front of it.
-   */
-  const ahead = computed<Standing | null>(() => plexes.value.at(-1) ?? null)
-  /** The note the person is looking at, which is what a question is about. */
-  const looking = computed(() => ahead.value?.here.value ?? '')
-  /**
-   * The one thing the window says while it still works: what it lost touch
-   * with, or what the plex in front could not show.
-   */
-  const warning = computed(() => lost.value || ahead.value?.trouble.value || '')
-
   let open = true
   /** Let go of every stream the window is listening to. */
   const listening = new AbortController()
-
-  /**
-   * A plex of its own, followed for as long as its tab is open. It opens where
-   * it is told to, where the person is looking, or on the note the vault opens
-   * with. Closing it is what stops it being asked for.
-   */
-  function plex(at = ''): Plexed {
-    const view = standing(core)
-    const from = at || ahead.value?.here.value || opening.value
-    plexes.value = [...plexes.value, view]
-    if (from) void view.go(from)
-
-    return {
-      ...view,
-      /** The person is looking at this plex. */
-      looking: () => {
-        if (!plexes.value.includes(view)) return
-        plexes.value = [...plexes.value.filter((one) => one !== view), view]
-      },
-      close: () => {
-        view.close()
-        plexes.value = plexes.value.filter((one) => one !== view)
-      },
-    }
-  }
-
-  /**
-   * One plex asks for its picture again. A plex standing nowhere is given the
-   * note the vault opens with.
-   */
-  async function again(view: Standing) {
-    const path = view.here.value || opening.value
-    if (path) await view.go(path)
-  }
 
   /** The note the vault opens with, and whether it holds one at all. */
   async function first() {
@@ -326,11 +279,11 @@ export function showing(
           try {
             // Asked once for the window, and only while a plex has nowhere to
             // stand.
-            if (plexes.value.some((view) => !view.here.value)) await first()
+            if (plexes.nowhere()) await first()
           } catch {
             // The next change asks again.
           }
-          await Promise.all(plexes.value.map((view) => again(view)))
+          await plexes.again()
           try {
             await ask()
           } catch {
@@ -367,15 +320,6 @@ export function showing(
   }
 
   /**
-   * A note put in front of the person: the plex they are looking at travels
-   * there, and a window holding no plex at all opens one on it.
-   */
-  async function travel(path: string) {
-    if (ahead.value) await ahead.value.go(path)
-    else shows(path)
-  }
-
-  /**
    * Travels to whatever is asked for while the window is open — an agent
    * working the vault beside the person naming the note it is talking about. A
    * focus naming a stretch of a source's text opens that source at it.
@@ -393,7 +337,7 @@ export function showing(
               .filter((one) => (one.length ?? 0) > 0)
               .map((one) => ({ start: one.start ?? 0, length: one.length ?? 0 }))
             reads(wanted.path, [{ start: wanted.start ?? 0, length: wanted.length }, ...also])
-          } else await travel(wanted.path)
+          } else await plexes.travel(wanted.path)
         }
       } catch (error) {
         if (!open) return
@@ -447,7 +391,7 @@ export function showing(
         if (!open) return
         if (note) {
           indexing.value = false
-          await Promise.all(plexes.value.map((view) => again(view)))
+          await plexes.again()
           void follow()
           void watch()
           void draw()
@@ -476,18 +420,16 @@ export function showing(
     name,
     indexing,
     failure,
-    warning,
+    lost,
     trouble,
     unwatched,
     unreachable,
     holds,
-    looking,
-    travel,
+    opening,
     chunks,
     embedded,
     embedding,
     tasks,
-    plex,
     start,
     follow,
     watch,
