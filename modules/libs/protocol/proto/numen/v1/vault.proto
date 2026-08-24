@@ -598,6 +598,10 @@ message RenameResponse {
   // Set when the rename did not finish, and why. The note may already have been
   // written: `path`, `title` and `by` say what stands.
   optional Refusal refusal = 5;
+
+  // The note holds prose the caller never saw, so nothing was written. Read it
+  // again and ask again.
+  bool changed = 6;
 }
 
 // Moved is a file under a different name, and what that did to the links

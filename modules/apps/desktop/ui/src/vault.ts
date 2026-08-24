@@ -77,6 +77,7 @@ export const core: Core & Asking = {
       by: naming[answer.by],
       moved: answer.moved ? filed(answer.moved) : null,
       refusal: refusalIn(answer),
+      changed: answer.changed,
     } satisfies Renamed
   },
   remove: async (path, destroy) => {

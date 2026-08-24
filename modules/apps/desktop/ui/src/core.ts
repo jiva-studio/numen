@@ -203,6 +203,8 @@ export interface Renamed {
   /** What the file did. Null when it stayed where it was. */
   moved: Moved | null
   refusal: Refused | null
+  /** The note holds prose nobody here has seen, and nothing was written. */
+  changed: boolean
 }
 
 /**

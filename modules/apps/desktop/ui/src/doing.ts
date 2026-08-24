@@ -68,6 +68,8 @@ export interface Words {
   readonly nowhere: string
   /** The note is waiting on the person, and its file stays where it is. */
   readonly unanswered: string
+  /** The note holds prose nobody here has seen, so nothing was written. */
+  readonly overtaken: string
 }
 
 /** One command, carried out. */
@@ -154,6 +156,7 @@ const renames = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
   if (waiting(deed.path, on)) return on.says(words.unanswered)
   await settles(deed.path, on)
   const answer = await on.renames(deed.path, deed.name)
+  if (answer.changed) return on.says(words.overtaken)
   // The note is brought into line before its file is, so a refusal to move the
   // file leaves the note under its new name.
   if (answer.refusal) return on.says(words.refused[answer.refusal])

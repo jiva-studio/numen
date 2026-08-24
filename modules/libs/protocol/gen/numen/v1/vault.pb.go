@@ -2715,7 +2715,10 @@ type RenameResponse struct {
 	Moved *Moved `protobuf:"bytes,4,opt,name=moved,proto3,oneof" json:"moved,omitempty"`
 	// Set when the rename did not finish, and why. The note may already have been
 	// written: `path`, `title` and `by` say what stands.
-	Refusal       *Refusal `protobuf:"varint,5,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Refusal *Refusal `protobuf:"varint,5,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	// The note holds prose the caller never saw, so nothing was written. Read it
+	// again and ask again.
+	Changed       bool `protobuf:"varint,6,opt,name=changed,proto3" json:"changed,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2783,6 +2786,13 @@ func (x *RenameResponse) GetRefusal() Refusal {
 		return *x.Refusal
 	}
 	return Refusal_REFUSAL_UNSPECIFIED
+}
+
+func (x *RenameResponse) GetChanged() bool {
+	if x != nil {
+		return x.Changed
+	}
+	return false
 }
 
 // Moved is a file under a different name, and what that did to the links
@@ -3385,13 +3395,14 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\b_refusal\"9\n" +
 	"\rRenameRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\"\xd0\x01\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"\xea\x01\n" +
 	"\x0eRenameResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
 	"\x02by\x18\x03 \x01(\x0e2\x10.numen.v1.NamingR\x02by\x12*\n" +
 	"\x05moved\x18\x04 \x01(\v2\x0f.numen.v1.MovedH\x00R\x05moved\x88\x01\x01\x120\n" +
-	"\arefusal\x18\x05 \x01(\x0e2\x11.numen.v1.RefusalH\x01R\arefusal\x88\x01\x01B\b\n" +
+	"\arefusal\x18\x05 \x01(\x0e2\x11.numen.v1.RefusalH\x01R\arefusal\x88\x01\x01\x12\x18\n" +
+	"\achanged\x18\x06 \x01(\bR\achangedB\b\n" +
 	"\x06_movedB\n" +
 	"\n" +
 	"\b_refusal\"}\n" +

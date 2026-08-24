@@ -56,7 +56,14 @@ function fake(over: Partial<Faked> = {}) {
     },
     create: async () => ({ path: '', refusal: null }),
     join: async () => null,
-    rename: async (path) => ({ path, title: '', by: null, moved: null, refusal: null }),
+    rename: async (path) => ({
+      path,
+      title: '',
+      by: null,
+      moved: null,
+      refusal: null,
+      changed: false,
+    }),
     remove: async () => ({ trashed: '', dangling: [], refusal: null }),
     ...over,
   }

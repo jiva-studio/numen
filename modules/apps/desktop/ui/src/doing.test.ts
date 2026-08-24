@@ -28,6 +28,7 @@ const renamed = (over: Partial<Renamed> = {}): Renamed => ({
   by: 'frontmatter',
   moved: null,
   refusal: null,
+  changed: false,
   ...over,
 })
 
@@ -194,6 +195,14 @@ describe('a note renamed', () => {
 
     expect(one.done).toStrictEqual([])
     expect(one.said).toStrictEqual([words.unanswered])
+  })
+
+  it('says the note was written elsewhere while this was asked', async () => {
+    const one = window({ renamed: renamed({ changed: true }) })
+
+    await carry(deedOf('title', front(), 'Entropy'), one.on)
+
+    expect(one.said).toStrictEqual([words.overtaken])
   })
 
   it('is renamed where no tab of the window holds it', async () => {

@@ -93,6 +93,7 @@ export const WORDS = {
   dangling: 'These notes link to nothing now:',
   nowhere: 'The vault has no note to open with',
   unanswered: 'that note changed on disk, and its tab is waiting for an answer',
+  overtaken: 'that note changed on disk while this was asked, so nothing was written',
   /** What the action panel of the palette is called. */
   actions: 'Actions',
   findAction: 'Search actions',

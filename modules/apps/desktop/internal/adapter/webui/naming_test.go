@@ -11,6 +11,9 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
 // The window renames a note and takes one out of the vault. What the vault
@@ -396,5 +399,53 @@ func TestARenamedNoteIsStillLinkedTo(t *testing.T) {
 				t.Errorf("the link does not reach %q:\n%s", name, now)
 			}
 		})
+	}
+}
+
+// overtaking is the vault's writers, with the write refused the way one is when
+// something outside this process wrote the file in the meantime.
+type overtaking struct{ port.VaultWriters }
+
+func (o overtaking) Open(v domain.Vault) (port.VaultWriter, error) {
+	writer, err := o.VaultWriters.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return overtaken{VaultWriter: writer}, nil
+}
+
+type overtaken struct{ port.VaultWriter }
+
+func (overtaken) Write(
+	context.Context, string, []byte, domain.FileRef,
+) (domain.FileRef, error) {
+	return domain.FileRef{}, port.ErrChanged
+}
+
+// TestRenamingANoteWrittenElsewhereIsAQuestion. A note holding prose nobody
+// here has read is something the person settles, the way a save and a join
+// already put it to them.
+func TestRenamingANoteWrittenElsewhereIsAQuestion(t *testing.T) {
+	f := quitting(t, nil, map[string]string{
+		"Old.md": "---\ntitle: Old\n---\n\n# Old\n",
+	})
+	scanned(t, f)
+	f.opened.API.Renames.Writers = overtaking{VaultWriters: f.opened.API.Renames.Writers}
+
+	out, err := f.opened.API.Rename(t.Context(), connect.NewRequest(&v1.RenameRequest{
+		Path:  "Old.md",
+		Title: "New",
+	}))
+	if err != nil {
+		t.Fatalf("a note written elsewhere came back as an error: %v", err)
+	}
+	if !out.Msg.GetChanged() {
+		t.Error("the rename did not say the note changed")
+	}
+	if refusal := out.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
+		t.Errorf("a note that changed was answered as a refusal: %v", refusal)
+	}
+	if gone(t, f.opened.API.Vault.Path, "Old.md") {
+		t.Error("the file moved for a rename that wrote nothing")
 	}
 }
