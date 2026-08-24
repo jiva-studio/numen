@@ -611,7 +611,6 @@ onBeforeUnmount(() => {
    the field is on stands inside that clearance, at the head of the row. */
 .palette__ask {
   padding-inline-start: var(--numen-field-text-inset);
-  border-block-end: var(--numen-stroke) solid var(--numen-panel-border);
 }
 
 .palette__crumb {
@@ -640,6 +639,13 @@ onBeforeUnmount(() => {
 .palette__field::placeholder,
 .palette__hunt::placeholder {
   color: var(--numen-edge-label);
+}
+
+/* The line under the field belongs to what stands beneath it, so a palette
+   holding only a field draws one edge and not two. */
+.palette__list,
+.palette__nothing {
+  border-block-start: var(--numen-stroke) solid var(--numen-panel-border);
 }
 
 .palette__list {
