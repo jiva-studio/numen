@@ -7,6 +7,7 @@
 package mcp
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
+	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 )
 
 // Version is what an agent is told it is talking to.
@@ -36,6 +38,23 @@ type Core struct {
 	// View is the person's window, where there is one. Without it an agent is
 	// served the vault and nothing that puts a note in front of anybody.
 	View port.View
+
+	// Vaults is the list of vaults this installation holds. Without it an agent
+	// is told of the vault it is working and of no other.
+	Vaults port.VaultRegistry
+	// Choosing puts this machine's own folder picker in front of the person, for
+	// a vault added without a path. Without it a folder is named or nothing is
+	// added.
+	Choosing port.Folders
+	// Adding turns a folder into a vault, Renaming is what a person calls one,
+	// and Forgetting takes one off the list. Each tool is served where what it
+	// works through is here.
+	Adding     *usecase.Add
+	Renaming   *usecase.Rename
+	Forgetting *usecase.Forget
+	// Opens puts another vault in the window. The tools are served for the vault
+	// that is going, so the session asking for the swap ends with it.
+	Opens func(context.Context, domain.Vault) error
 
 	// Sources and Recognise are the documents a vault holds beside its notes.
 	// Without them the tools for those documents are not added.
@@ -99,6 +118,7 @@ func New(core Core) *sdk.Server {
 	addNoteTools(server, core)
 	addLinkTools(server, core)
 	addVaultTools(server, core)
+	addVaultsTools(server, core)
 	addViewTools(server, core)
 	addSourceTools(server, core)
 	return server
