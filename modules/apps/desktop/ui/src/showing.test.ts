@@ -6,8 +6,10 @@
  */
 import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
-import { showing, type Core, type Task } from './showing'
-import { NeighbourhoodSchema, type Neighbourhood } from './plex'
+import { showing } from './showing'
+import type { Core, Run, Task } from './core'
+import type { Neighbourhood } from './core'
+import { NeighbourhoodSchema } from './plex/picture'
 
 const answer = (path: string): Neighbourhood =>
   create(NeighbourhoodSchema, { focus: { path, title: path, identifier: '' }, related: [] })
@@ -63,143 +65,28 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
 
 const nap = () => new Promise((wake) => setTimeout(wake, 0))
 
-describe('a plex the window is following', () => {
-  it('opens on the note the vault opens with', async () => {
-    const window = showing(fake(), async () => window.close())
-    await window.start()
-
-    const plex = window.plex()
-    await nap()
-
-    expect(plex.here.value).toBe('Opening.md')
-  })
-
-  it('opens where the person is looking, when another one is open', async () => {
-    const window = showing(fake(), async () => window.close())
-    const first = window.plex()
-    await nap()
-    await first.go('Here.md')
-
-    const second = window.plex()
-    await nap()
-
-    expect(second.here.value).toBe('Here.md')
-  })
-
-  it('asks the vault once at launch, and not once for the plex as well', async () => {
-    let openings = 0
-    const core = fake({
-      opening: async () => {
-        openings++
-        return { path: 'Opening.md' }
-      },
-    })
-    const window = showing(core, async () => window.close())
-
-    const plex = window.plex()
-    await window.start()
-    await nap()
-
-    expect(plex.here.value).toBe('Opening.md')
-    expect(openings).toBe(1)
-  })
-
-  it('says what it could not show, where the window says everything else', async () => {
-    const core = fake({ neighbourhood: async () => nothing() })
-    const window = showing(core, async () => window.close())
-
-    await window.plex().go('Gone.md')
-
-    expect(window.warning.value).toContain('Gone.md')
-  })
-
-  it('says nothing again once the note it could not show comes back', async () => {
-    let holds = false
-    const core = fake({
-      neighbourhood: async (path) => (holds ? answer(path) : nothing()),
-    })
-    const window = showing(core, async () => window.close())
-    const plex = window.plex()
-
-    await plex.go('Note.md')
-    expect(window.warning.value).toContain('Note.md')
-
-    holds = true
-    await plex.go('Note.md')
-
-    expect(window.warning.value).toBe('')
-  })
-
-  it('says the trouble of the plex the person is in, and not that of another', async () => {
-    const core = fake({
-      neighbourhood: async (path) => (path === 'Gone.md' ? nothing() : answer(path)),
-    })
-    const window = showing(core, async () => window.close())
-    const one = window.plex()
-    const two = window.plex()
-
-    one.looking()
-    await one.go('Gone.md')
-    await two.go('Two.md')
-
-    // Two is standing where it asked to be, and one is not: the window says so
-    // while the person is in one, and holds its tongue while they are in two.
-    expect(window.warning.value).toContain('Gone.md')
-    two.looking()
-    expect(window.warning.value).toBe('')
-    one.looking()
-    expect(window.warning.value).toContain('Gone.md')
-  })
-
-  it('says nothing for a plex whose tab has closed', async () => {
-    const core = fake({ neighbourhood: async () => nothing() })
-    const window = showing(core, async () => window.close())
-    const one = window.plex()
-    const two = window.plex()
-
-    const going = two.go('Gone.md')
-    two.close()
-    await going
-
-    expect(window.warning.value).toBe('')
-    expect(one.here.value).toBe('')
-  })
-
-  it('hands the front to the plex the person was in before, when one closes', async () => {
-    const window = showing(fake(), async () => window.close())
-    const one = window.plex()
-    const two = window.plex()
-    const three = window.plex()
-    await one.go('One.md')
-    await two.go('Two.md')
-    await three.go('Three.md')
-
-    two.looking()
-    three.looking()
-    three.close()
-
-    expect(window.looking.value).toBe('Two.md')
-  })
-
-  it('says nothing about an unreachable core beyond the failure itself', async () => {
-    const core = fake({
-      opening: async () => {
-        throw new Error('[unavailable] connection refused')
-      },
-      state: async () => {
-        throw new Error('[unavailable] connection refused')
-      },
-    })
-    const window = showing(core, async () => window.close())
-
-    window.plex()
-    await window.start()
-    await nap()
-
-    expect(window.failure.value).toContain('connection refused')
-    expect(window.warning.value).toBe('')
-  })
-})
+/**
+ * What the window makes of what it is told: that the vault changed, and that a
+ * note is wanted in front of the person. What each tab does about either is
+ * asked where that tab is.
+ */
+const heard = (core: Core, reads?: (path: string, runs: readonly Run[]) => void) => {
+  const changed: string[] = []
+  const wanted: string[] = []
+  const showed = showing(
+    core,
+    async () => showed.close(),
+    async (paths, renamed) => {
+      changed.push([...paths, ...(renamed ?? []).map((one) => `${one.from} → ${one.to}`)].join(' '))
+    },
+    undefined,
+    async (path) => {
+      wanted.push(path)
+    },
+    reads,
+  )
+  return { window: showed, changed, wanted }
+}
 
 describe('the stream of changes', () => {
   it('is taken up again when it ends', async () => {
@@ -237,176 +124,61 @@ describe('the stream of changes', () => {
     await window.follow()
 
     expect(streams).toBeGreaterThanOrEqual(2)
-    expect(window.warning.value).toContain('connection lost')
+    expect(window.lost.value).toContain('connection lost')
   })
 
-  it('asks for the picture again for a change to any note', async () => {
+  it('says what changed, and waits for whatever is drawn from it', async () => {
     const core = fake({
       changes: async function* () {
         yield { paths: ['Somewhere/Else.md'], reload: false, renamed: [] }
       },
     })
-    const window = showing(core, async () => window.close())
-    const plex = window.plex()
-    await nap()
+    const one = heard(core)
 
-    await plex.go('Here.md')
-    core.asked.length = 0
-    await window.follow()
+    await one.window.follow()
 
-    expect(core.asked).toContain('Here.md')
+    expect(one.changed).toStrictEqual(['Somewhere/Else.md'])
   })
 
-  it('asks every plex, since each is standing somewhere of its own', async () => {
+  it('says a reload names nothing at all, so everything reads again', async () => {
     const core = fake({
       changes: async function* () {
-        yield { paths: ['Somewhere/Else.md'], reload: false, renamed: [] }
+        yield { paths: ['Note.md'], reload: true, renamed: [] }
       },
     })
-    const window = showing(core, async () => window.close())
-    const one = window.plex()
-    const two = window.plex()
-    await nap()
+    const one = heard(core)
 
-    await one.go('One.md')
-    await two.go('Two.md')
-    core.asked.length = 0
-    await window.follow()
+    await one.window.follow()
 
-    expect(core.asked).toContain('One.md')
-    expect(core.asked).toContain('Two.md')
+    expect(one.changed).toStrictEqual([''])
   })
 
-  it('asks where the vault opens once, however many plexes stand nowhere', async () => {
-    let openings = 0
-    const core = fake({
-      opening: async () => {
-        openings++
-        return null
-      },
-      changes: async function* () {
-        yield { paths: ['Note.md'], reload: false, renamed: [] }
-      },
-    })
-    const window = showing(core, async () => window.close())
-    window.plex()
-    window.plex()
-    window.plex()
-    await nap()
-
-    await window.follow()
-
-    expect(openings).toBe(1)
-  })
-
-  it('does not ask where the vault opens while every plex is standing somewhere', async () => {
-    let openings = 0
-    const core = fake({
-      opening: async () => {
-        openings++
-        return { path: 'Opening.md' }
-      },
-      changes: async function* () {
-        yield { paths: ['Note.md'], reload: false, renamed: [] }
-      },
-    })
-    const window = showing(core, async () => window.close())
-    const one = window.plex()
-    const two = window.plex()
-    await one.go('One.md')
-    await two.go('Two.md')
-    openings = 0
-
-    await window.follow()
-
-    expect(openings).toBe(0)
-  })
-
-  it('gives a plex standing nowhere the note an empty vault has just gained', async () => {
-    let note: { path: string } | null = null
-    const core = fake({
-      opening: async () => note,
-      changes: async function* () {
-        note = { path: 'First.md' }
-        yield { paths: ['First.md'], reload: false, renamed: [] }
-      },
-    })
-    const window = showing(core, async () => window.close())
-    const plex = window.plex()
-    await nap()
-    expect(plex.here.value).toBe('')
-
-    await window.follow()
-
-    expect(plex.here.value).toBe('First.md')
-    expect(window.holds.value).toBe(true)
-  })
-
-  it('stops asking for a plex whose tab has closed', async () => {
+  it('says where a note went, for whatever is showing it to follow', async () => {
     const core = fake({
       changes: async function* () {
-        yield { paths: ['Somewhere/Else.md'], reload: false, renamed: [] }
+        yield { paths: [], reload: false, renamed: [{ from: 'Note.md', to: 'Renamed.md' }] }
       },
     })
-    const window = showing(core, async () => window.close())
-    const one = window.plex()
-    const two = window.plex()
-    await nap()
+    const one = heard(core)
 
-    await one.go('One.md')
-    await two.go('Two.md')
-    two.close()
-    core.asked.length = 0
-    await window.follow()
+    await one.window.follow()
 
-    expect(core.asked).toContain('One.md')
-    expect(core.asked).not.toContain('Two.md')
+    expect(one.changed).toStrictEqual(['Note.md → Renamed.md'])
   })
 })
 
 describe('a note asked for from outside the window', () => {
-  it('is put in front of the plex the person is looking at', async () => {
+  it('is put in front of the person, wherever the window draws it', async () => {
     const core = fake({
       focus: async function* () {
         yield { path: 'Wanted.md' }
       },
     })
-    const window = showing(core, async () => window.close())
-    const one = window.plex()
-    const two = window.plex()
-    await one.go('Opening.md')
-    await nap()
+    const one = heard(core)
 
-    two.looking()
-    await window.watch()
+    await one.window.watch()
 
-    expect(two.here.value).toBe('Wanted.md')
-    expect(one.here.value).toBe('Opening.md')
-  })
-
-  it('opens a plex on it when the window has none, rather than being dropped', async () => {
-    const core = fake({
-      focus: async function* () {
-        yield { path: 'Wanted.md' }
-      },
-    })
-    const opened: string[] = []
-    const window = showing(
-      core,
-      async () => window.close(),
-      undefined,
-      undefined,
-      (path) => {
-        opened.push(path)
-        void window.plex(path)
-      },
-    )
-
-    await window.watch()
-    await nap()
-
-    expect(opened).toStrictEqual(['Wanted.md'])
-    expect(window.looking.value).toBe('Wanted.md')
+    expect(one.wanted).toStrictEqual(['Wanted.md'])
   })
 })
 
@@ -414,33 +186,24 @@ describe('a place inside a source asked for from outside the window', () => {
   /** A window that records the documents it was asked to open, and where. */
   const watching = (core: Core) => {
     const opened: string[] = []
-    const window = showing(
-      core,
-      async () => window.close(),
-      undefined,
-      undefined,
-      undefined,
-      (path, runs) =>
-        opened.push(`${path} ${runs.map((one) => `${one.start} ${one.length}`).join(' ')}`),
+    const one = heard(core, (path, runs) =>
+      opened.push(`${path} ${runs.map((run) => `${run.start} ${run.length}`).join(' ')}`),
     )
-    return { window, opened }
+    return { window: one.window, opened, wanted: one.wanted }
   }
 
-  it('opens the document it stands in, and leaves the plex where it is', async () => {
+  it('opens the document it stands in, and asks for no note at all', async () => {
     const core = fake({
       focus: async function* () {
         yield { path: 'library/mahabharata.epub', start: 40_512, length: 31 }
       },
     })
-    const { window, opened } = watching(core)
-    const plex = window.plex()
-    await plex.go('Opening.md')
-    await nap()
+    const { window, opened, wanted } = watching(core)
 
     await window.watch()
 
     expect(opened).toStrictEqual(['library/mahabharata.epub 40512 31'])
-    expect(plex.here.value).toBe('Opening.md')
+    expect(wanted).toStrictEqual([])
   })
 
   it('opens the document at every place the focus names, the first of them first', async () => {
@@ -465,21 +228,18 @@ describe('a place inside a source asked for from outside the window', () => {
     expect(opened).toStrictEqual(['library/mahabharata.epub 40512 31 41000 20'])
   })
 
-  it('travels the plex for a focus that names no run of a source', async () => {
+  it('asks for the note itself where the focus names no run of a source', async () => {
     const core = fake({
       focus: async function* () {
         yield { path: 'Wanted.md', start: 0, length: 0 }
       },
     })
-    const { window, opened } = watching(core)
-    const plex = window.plex()
-    await plex.go('Opening.md')
-    await nap()
+    const { window, opened, wanted } = watching(core)
 
     await window.watch()
 
     expect(opened).toStrictEqual([])
-    expect(plex.here.value).toBe('Wanted.md')
+    expect(wanted).toStrictEqual(['Wanted.md'])
   })
 })
 
@@ -609,7 +369,7 @@ describe('what the application is doing', () => {
     expect(opened).toBeGreaterThan(1)
     expect(window.tasks.value.map((one) => one.done)).toEqual([48])
     // A stream taken up again is not a stream that was lost.
-    expect(window.warning.value).toBe('')
+    expect(window.lost.value).toBe('')
 
     window.close()
   })

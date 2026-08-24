@@ -205,3 +205,49 @@ func TestTwoNotesAreJoinedFromTheOneTheLinkIsWrittenIn(t *testing.T) {
 		t.Errorf("the note at the other end was written:\n%s", now)
 	}
 }
+
+// TestANoteIsMadeUnderTheNoteItWasMadeFromAndNotItsNamesake. A name is read
+// back as an exact path from the root before it is read as a neighbour, so a
+// note made from one of two notes sharing a name carries the path it was made
+// from. Written by name, it would hang off the other one, and the picture the
+// person is looking at would not draw it at all.
+func TestANoteIsMadeUnderTheNoteItWasMadeFromAndNotItsNamesake(t *testing.T) {
+	f := quitting(t, nil, nil)
+	// Both are made through the window, which is what puts them in the index:
+	// the vault is scanned at startup, and a test is not started.
+	for _, folder := range []string{"", "physics"} {
+		if _, err := f.client.Create(t.Context(), connect.NewRequest(&v1.CreateRequest{
+			Title: "Ontology", Folder: folder,
+		})); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	answer, err := f.client.Create(t.Context(), connect.NewRequest(&v1.CreateRequest{
+		Title:  "Entropy",
+		Folder: "physics",
+		Links:  []*v1.NewLink{{To: "physics/Ontology.md", Seat: v1.Seat_SEAT_PARENT}},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if made := fileAt(t, f.root, answer.Msg.GetPath()); !strings.Contains(made, "to: physics/Ontology") {
+		t.Errorf("the link was written by a name two notes answer to:\n%s", made)
+	}
+
+	around, err := f.client.Neighbourhood(t.Context(),
+		connect.NewRequest(&v1.NeighbourhoodRequest{Path: "physics/Ontology.md"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var children []string
+	for _, related := range around.Msg.GetRelated() {
+		if related.GetSeat() == v1.Seat_SEAT_CHILD {
+			children = append(children, related.GetNote().GetPath())
+		}
+	}
+	if len(children) != 1 || children[0] != "physics/Entropy.md" {
+		t.Errorf("the note it was made from has children %v, want the note just made", children)
+	}
+}

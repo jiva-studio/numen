@@ -81,7 +81,7 @@ func (a *API) Create(ctx context.Context, r *connect.Request[v1.CreateRequest]) 
 	if a.Makes == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
-	links, err := written(r.Msg.GetLinks())
+	links, err := a.written(ctx, r.Msg.GetLinks())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
@@ -117,7 +117,7 @@ func (a *API) Join(ctx context.Context, r *connect.Request[v1.JoinRequest]) (*co
 	if a.Joins == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
-	link, err := writes(r.Msg.GetLink())
+	link, err := a.writes(ctx, r.Msg.GetLink())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
@@ -144,13 +144,13 @@ func (a *API) Join(ctx context.Context, r *connect.Request[v1.JoinRequest]) (*co
 
 // written turns the links a request carries into the links a note is written
 // with, and refuses the lot where one of them cannot be written.
-func written(links []*v1.NewLink) ([]domain.Link, error) {
+func (a *API) written(ctx context.Context, links []*v1.NewLink) ([]domain.Link, error) {
 	if len(links) == 0 {
 		return nil, nil
 	}
 	out := make([]domain.Link, 0, len(links))
 	for _, l := range links {
-		link, err := writes(l)
+		link, err := a.writes(ctx, l)
 		if err != nil {
 			return nil, err
 		}
@@ -161,22 +161,31 @@ func written(links []*v1.NewLink) ([]domain.Link, error) {
 
 // writes is one link as the note it is written in declares it.
 //
-// A link is written by the other note's name, which is what the path it is
-// filed under is called without its folder or its extension.
-func writes(l *v1.NewLink) (domain.Link, error) {
+// The window names the note at the other end by the path it is filed under.
+// How much of that path the link carries is `note.Addressed`: a name where it
+// means one note, and the path where it would mean another.
+func (a *API) writes(ctx context.Context, l *v1.NewLink) (domain.Link, error) {
 	role, ok := roleOf(l.GetSeat())
 	if !ok {
 		return domain.Link{}, fmt.Errorf("no link seats a note as %v", l.GetSeat())
 	}
-	name := domain.Basename(l.GetTo())
-	if name == "" {
+	if l.GetTo() == "" {
 		return domain.Link{}, errors.New("a link needs a note to go to")
 	}
-	return domain.Link{
-		Target: domain.Address{Scheme: domain.SchemeName, Value: name},
-		Role:   role,
-		Label:  l.GetLabel(),
-	}, nil
+	target, err := a.addressed(ctx, l.GetTo())
+	if err != nil {
+		return domain.Link{}, err
+	}
+	return domain.Link{Target: target, Role: role, Label: l.GetLabel()}, nil
+}
+
+// addressed is the note at the other end as a link carries it. A build with no
+// index cannot ask what else is filed under the name, and writes the name.
+func (a *API) addressed(ctx context.Context, to string) (domain.Address, error) {
+	if a.Notes == nil {
+		return domain.Address{Scheme: domain.SchemeName, Value: domain.Basename(to)}, nil
+	}
+	return note.Addressed(ctx, a.Notes, a.Vault.ID, to)
 }
 
 // roleOf is the role a link carries to put the note at its other end in a seat.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
@@ -85,6 +86,44 @@ func (u Linking) Remove(ctx context.Context, v domain.Vault, from string, to dom
 		return nil
 	})
 	return err
+}
+
+// Names is the one question writing a link asks of the vault.
+type Names interface {
+	// Named is the paths of every note filed under one name. More than one is
+	// what makes a link written by that name mean the wrong note.
+	Named(ctx context.Context, vaultID, name string) ([]string, error)
+}
+
+// Addressed is how a note the application knows by path is written into a
+// link: by its name, or by its path where the name would mean another note.
+//
+// A name is read back as an exact path from the root before it is read as a
+// neighbour, so a note filed beside a note of the same name at the root is
+// reached only by writing the path. Which of the two it is, only the vault
+// knows, and it is asked here.
+func Addressed(ctx context.Context, names Names, vaultID, path string) (domain.Address, error) {
+	name := domain.Basename(path)
+	if name == "" {
+		return domain.Address{}, errors.New("a link needs a note to go to")
+	}
+	shares, err := names.Named(ctx, vaultID, name)
+	if err != nil {
+		return domain.Address{}, err
+	}
+	if len(shares) < 2 {
+		return domain.Address{Scheme: domain.SchemeName, Value: name}, nil
+	}
+	return domain.Address{Scheme: domain.SchemeName, Value: withoutExtension(path)}, nil
+}
+
+// withoutExtension is a path as a link carries one: what a person writing the
+// same link by hand would write, and what the same resolution reads back.
+func withoutExtension(path string) string {
+	if i := strings.LastIndexByte(path, '.'); i > strings.LastIndexByte(path, '/')+1 {
+		return path[:i]
+	}
+	return path
 }
 
 // Writable is what a link must carry before anything will write it.

@@ -1,0 +1,177 @@
+/**
+ * Everything the window asks of the vault, and the words the vault speaks.
+ *
+ * Nothing here is about drawing: a kind translates these into what it holds,
+ * and this is what every one of them starts from.
+ */
+import type { Counting, PlexRelatedSeat } from '@numen/ui'
+import type { NeighbourhoodResponse } from '@numen/protocol'
+
+/** A note that is no longer where it was, and where it now is. */
+export interface Went {
+  readonly from: string
+  readonly to: string
+}
+
+/** A stretch of a source's own text, counted in bytes. */
+export interface Run {
+  readonly start: number
+  readonly length: number
+}
+
+/**
+ * One report of a change being made to the prose of a note, while it is being
+ * made: which change it belongs to, where it lands, and what goes in.
+ */
+export interface Said {
+  readonly change: string
+  readonly path: string
+  readonly from: number
+  readonly to: number
+  readonly text: string
+  readonly done: boolean
+}
+
+/** A neighbourhood of a note, as the vault answers one. */
+export type Neighbourhood = NeighbourhoodResponse
+
+/**
+ * One piece of work the application is doing behind the window.
+ *
+ * Every kind of work is one of these, which is what keeps the window from
+ * growing a branch per kind: it draws the list it is given.
+ */
+export interface Task {
+  /** What the work is called, so that the same work reported again replaces it. */
+  readonly id: string
+  /** The work, in the words to show, and what it is on. */
+  readonly doing: string
+  readonly about: string
+  /** How far it has got, where there is a total to count against. */
+  readonly done: number
+  readonly total: number
+  /** What that count counts. */
+  readonly counting: Counting
+  /** Why it stopped, when it stopped badly. */
+  readonly failed: string
+  /** Whether a person asked for this and is waiting to be told it began. */
+  readonly asked: boolean
+}
+
+export interface Core {
+  neighbourhood(path: string): Promise<Neighbourhood>
+  opening(): Promise<{ path: string } | null>
+  state(): Promise<{
+    name: string
+    ready: boolean
+    failed: string
+    unwatched: string
+    unreachable: string
+    /** Spans of text the index holds, and how many of them carry a vector. */
+    chunks: bigint
+    embedded: bigint
+    /** Whether anything is going to turn the chunks into vectors. */
+    embedding: boolean
+  }>
+  changes(signal: AbortSignal): AsyncIterable<{
+    paths: string[]
+    reload: boolean
+    renamed: readonly Went[]
+  }>
+  /** A change being made to a note's prose, reported while it is being made. */
+  editing(signal: AbortSignal): AsyncIterable<Said>
+  /**
+   * Everything the application is doing behind the window, for as long as the
+   * window listens.
+   *
+   * The whole list arrives whenever any of it changes, and the first arrives at
+   * once. It is a stream because work can begin without the window asking for
+   * it: an agent is told to read a document, and this is where the person
+   * watching sees it happen.
+   */
+  tasks(signal: AbortSignal): AsyncIterable<readonly Task[]>
+  /**
+   * The places something else asked to be put in front of the person: a
+   * source, and the stretch of its own text meant, counted in bytes. A length
+   * of zero names the source and no place inside it.
+   */
+  focus(signal: AbortSignal): AsyncIterable<{
+    path: string
+    start?: number
+    length?: number
+    also?: readonly { start?: number; length?: number }[]
+  }>
+  /** The prose of a note, below its frontmatter, and the file it came out of. */
+  read(path: string): Promise<Answered & { at?: string }>
+  /**
+   * Prose into a note, keeping the frontmatter the file has when it lands.
+   *
+   * Seen is what a read gave this caller. Prose on disk that the caller never
+   * saw comes back as changed, and nothing is written. Nothing seen writes
+   * over whatever is there.
+   */
+  write(
+    path: string,
+    body: string,
+    seen: { prose: string; at: string } | null,
+  ): Promise<Answered & { at?: string; changed?: boolean }>
+  /** A note made, named after the title it is given and joined as it is written. */
+  create(note: NewNote): Promise<Made>
+  /**
+   * A relationship written into one note. The note at the other end is left
+   * alone: a link is one end's account of a relationship.
+   */
+  join(path: string, link: NewLink): Promise<Refused | null>
+  /**
+   * The window going, for as long as the client listens. The stream opens with
+   * the token this client answers under.
+   */
+  quitting(signal: AbortSignal): AsyncIterable<{ token: string; flush: boolean }>
+  /** Everything this client owed has been written. */
+  flushed(token: string, owed?: 'written' | 'asking'): Promise<void>
+}
+
+/**
+ * What a read or a write came back with. A refusal carries no body, and the
+ * words for one belong to whatever shows it.
+ */
+export interface Answered {
+  body: string
+  refusal: Refused | null
+}
+
+export type Refused =
+  | 'missing'
+  | 'notANote'
+  | 'notText'
+  | 'tooLarge'
+  | 'bodyRefused'
+  | 'unreadable'
+  | 'occupied'
+
+/** A note to make: what it is called, where it goes, and what it arrives joined to. */
+export interface NewNote {
+  title: string
+  /** Where in the vault it goes, relative to the root. Empty is the root. */
+  folder: string
+  links: readonly NewLink[]
+}
+
+/**
+ * One relationship as the note it is written in declares it: the note at the
+ * other end, by the path it is filed under, and where that note sits seen from
+ * this one.
+ */
+export interface NewLink {
+  to: string
+  seat: PlexRelatedSeat
+  /** What the person calls this relationship, when they call it anything. */
+  label?: string
+}
+
+/** What making a note came back with. */
+export interface Made {
+  /** Where the note is filed. Empty when nothing was made. */
+  path: string
+  refusal: Refused | null
+}
