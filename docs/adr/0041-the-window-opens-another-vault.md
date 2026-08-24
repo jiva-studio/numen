@@ -144,6 +144,15 @@ is asked for in front of them.
 - **The index file does not shrink when a vault is forgotten.** The space is
   reused and the file is the size it was.
 
+- **The folder picker is the first thing here built on the desktop's own
+  settings, and a machine without them ends the process.** The library that puts
+  the picker up calls `abort` where the settings a file chooser reads are not
+  installed, and no code of ours runs after it. The picker is asked for only
+  where compiled settings are found, which turns the common case into words —
+  and it catches only a machine holding none at all. A machine holding settings
+  without the one a file chooser reads still ends. What closes that is the
+  package naming what it needs, not a check here.
+
 ## Alternatives considered
 
 **Restart the process on the chosen vault**, which is what "one lifetime" read as
