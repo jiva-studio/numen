@@ -1,61 +1,7 @@
 /*
- * numen's own palette: the values tokens.css declares, written out as a theme
- * like any other.
+ * numen's own palette, which is what `tokens.css` declares.
  *
- * Every colour is a pair, light first. Which half of each pair is taken is the
- * mode setting's to choose.
+ * A token a theme does not name keeps the value that file holds, and this
+ * theme names none of them. Nothing here pins which half of a pair is read,
+ * so the mode setting chooses.
  */
-:root {
-  --numen-surface: light-dark(#fbfbfa, #17181a);
-  --numen-node-bg: light-dark(#ffffff, #23262a);
-  --numen-node-fg: light-dark(#1d1f22, #dfe2e6);
-  --numen-node-border: light-dark(#d8d9dd, #34383e);
-
-  --numen-focus-bg: light-dark(#1d1f22, #e8eaee);
-  --numen-focus-fg: light-dark(#fbfbfa, #17181a);
-  --numen-focus-border: light-dark(#1d1f22, #e8eaee);
-
-  /* One hue per seat, carrying the meaning the position already carries. */
-  --numen-seat-parent: light-dark(#3f6ca8, #7aa7dd);
-  --numen-seat-child: light-dark(#3d7f5f, #6fbd93);
-  --numen-seat-jump: light-dark(#9a6a2f, #d6a463);
-  --numen-seat-sibling: light-dark(#7a5490, #b48fcb);
-
-  --numen-edge: light-dark(#c3c6cc, #3d424a);
-  --numen-edge-label: light-dark(#7b7f87, #8b9098);
-  --numen-ring: light-dark(#2f6fd0, #78a9ef);
-  /* The ground under selected text. The second is the same selection where the
-     keyboard is somewhere else. */
-  --numen-selection: light-dark(#2f6fd038, #78a9ef42);
-  --numen-selection-away: light-dark(#2f6fd01f, #78a9ef24);
-  --numen-alarm: light-dark(#a33a32, #e08b83);
-  /* The band something is said in that a person should read but need not act
-     on at once. */
-  --numen-caution-bg: light-dark(#fff4e5, #3a2e1c);
-  --numen-caution-fg: light-dark(#7a4b00, #f0c890);
-  /* The ground under a stretch of text something is about to change. It sits
-     under words that are still being read, so it is a tint. */
-  --numen-highlight: light-dark(#d6a46333, #d6a4633d);
-
-  /* What a panel is tinted with, and what shows through it. The blur goes with
-     the alpha the tint carries. */
-  --numen-panel-bg: light-dark(#ffffffcc, #23262acc);
-  --numen-panel-border: light-dark(#00000014, #ffffff1f);
-  --numen-panel-blur: 24px;
-  /* What a card is lifted off the window by, and what a panel is. Each carries
-     its offsets and its blur beside its colour. */
-  --numen-shadow-card: 0 0.5rem 1.5rem light-dark(#00000026, #00000059);
-  --numen-panel-shadow:
-    0 1px 2px light-dark(#0000001a, #00000047), 0 12px 32px
-    light-dark(#00000024, #00000059);
-  /* The wash a panel lays over what it covers. */
-  --numen-scrim: light-dark(#00000014, #0000005c);
-
-  --numen-field-bg: light-dark(#ffffff, #1d2023);
-  --numen-field-border: light-dark(#dcdde1, #383c43);
-
-  /* What was said is a bubble; what came back is text on the surface. */
-  --numen-bubble-bg: light-dark(#eceef2, #2b2f35);
-  --numen-bubble-fg: light-dark(#1d1f22, #dfe2e6);
-  --numen-answer-fg: light-dark(#1d1f22, #dfe2e6);
-}
