@@ -11,6 +11,7 @@ import { noting, type Called, type Drawn } from './kind'
 import type { drawn } from '../drawn'
 import type { editing } from '../editing'
 import type { State } from '../tab'
+import { windowing } from '../windowing'
 
 /** A vault that answers with the heading written into each note. */
 const vault = (titles: Record<string, string> = {}): Called => ({
@@ -76,16 +77,18 @@ const editor = (takes = true) => {
   return { drawn, focused }
 }
 
-/** A window with its notes, and what it was told to close. */
+/** A window holding notes, and what it draws while it holds them. */
 const window = (titles: Record<string, string> = {}, states: Record<string, State> = {}) => {
   const store = notes(states)
   const drawing = drawings()
-  const closed: string[] = []
-  const noted = noting(vault(titles), store.store, drawing.store, {
-    closes: (path) => closed.push(path),
+  const held = windowing({ newTab: 'New tab' })
+  const noted = noting(vault(titles), store.store, drawing.store, held.host, {
     makes: async () => 'Made.md',
   })
-  return { noted, closed, ...store, drawings: drawing }
+  held.declares([noted.kind])
+  /** Every note tab the window holds now. */
+  const open = () => held.tabs.value.map((tab) => tab.id)
+  return { noted, held, open, ...store, drawings: drawing }
 }
 
 describe('a note opened', () => {
@@ -213,31 +216,33 @@ describe('the window going', () => {
 })
 
 describe('a note tab closing', () => {
-  it('writes what it owes, and the window closes it when the note has gone', async () => {
+  it('writes what it owes, and goes when the note says it is done', async () => {
     const one = window()
-    one.noted.calls('Note.md', 'A note')
-    const held = one.noted.opens('Note.md')
+    one.noted.shows('Note.md', 'A note')
+    await nextTick()
+    const [id] = one.open()
 
-    held.shuts('note:Note.md')
+    one.held.shut(id ?? '')
     await nextTick()
 
     expect(one.shut).toEqual(['Note.md'])
     expect(one.drawings.shut).toEqual(['Note.md'])
-    await vi.waitFor(() => expect(one.closed).toEqual(['note:Note.md']))
+    await vi.waitFor(() => expect(one.open()).toEqual([]))
     expect(one.noted.called('Note.md')).toBe('Note.md')
   })
 
   it('stays open while the note is not done with it', async () => {
     const one = window()
-    one.noted.calls('Note.md', 'A note')
-    const held = one.noted.opens('Note.md')
+    one.noted.shows('Note.md', 'A note')
+    await nextTick()
+    const [id] = one.open()
     one.holds()
 
-    held.shuts('note:Note.md')
+    one.held.shut(id ?? '')
     await nextTick()
     await nextTick()
 
-    expect(one.closed).toEqual([])
+    expect(one.open()).toEqual([id])
     expect(one.noted.called('Note.md')).toBe('A note')
   })
 })

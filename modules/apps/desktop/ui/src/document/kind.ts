@@ -5,8 +5,8 @@
  * out of sight, where there is none. What is drawn says so when it appears, and
  * measures again then.
  */
-import type { Reading } from '../reading'
-import type { Kind } from '../windowing'
+import type { Reading, Run } from '../reading'
+import type { Host, Kind } from '../windowing'
 import { DOCUMENT } from '../workspace'
 import DocumentTab from './DocumentTab.vue'
 
@@ -19,21 +19,36 @@ export interface Drawn {
 export type Held = ReturnType<typeof documenting>
 
 /**
- * A document tab as the window keeps it. A document is its own tab, so the
- * same one opened again is the tab it is already read in.
+ * The document tabs of a window. A document is its own tab, so the same one
+ * opened again is the tab it is already read in.
  */
-export const documentKind = (opens: (path: string) => Held): Kind<Held> => ({
-  kind: DOCUMENT,
-  opens,
-  called: (held) => held.path.split('/').pop() ?? held.path,
-  draws: DocumentTab,
-  identity: (path) => path,
-  shown: (held) => held.measure(),
-  shuts: (held) => {
-    held.close()
-    return true
-  },
-})
+export function documentKind(host: Host, opens: (path: string) => Held) {
+  const kind: Kind<Held> = {
+    kind: DOCUMENT,
+    opens,
+    called: (held) => held.path.split('/').pop() ?? held.path,
+    draws: DocumentTab,
+    identity: (path) => path,
+    shown: (held) => held.measure(),
+    shuts: (held) => {
+      held.close()
+      return true
+    },
+  }
+
+  /**
+   * A document put in front of the person, opened at a stretch of its own
+   * text. What stands there is lit, and the tab turns to the first page of it.
+   * The places named after it are lit where they fall, each of them somewhere
+   * else to look.
+   */
+  const opensAt = async (path: string, ...runs: readonly Run[]) => {
+    const id = await host.opens(DOCUMENT, path)
+    void host.holds<Held>(DOCUMENT, id)?.reach(...runs)
+  }
+
+  return { kind, opensAt }
+}
 
 export function documenting(read: Reading) {
   /** The page of this document, for as long as its tab is drawn. */

@@ -10,12 +10,12 @@
  */
 import { computed, onMounted, onUnmounted } from 'vue'
 import { Notices, Palette, Workspace } from '@numen/ui'
-import type { Notice, PlexShowing } from '@numen/ui'
+import type { Notice } from '@numen/ui'
 import '@numen/ui/styles.css'
 import { core, documents } from './vault'
 import { showing } from './showing'
 import { standing } from './standing'
-import { reading, type Run } from './reading'
+import { reading } from './reading'
 import { cornerOf } from './corner'
 import { editing } from './editing'
 import { drawn } from './drawn'
@@ -27,13 +27,13 @@ import { windowing } from './windowing'
 import BlankTab from './BlankTab.vue'
 import Leaving from './Leaving.vue'
 import { agentKind, talking } from './agent/kind'
-import { documentKind, documenting, type Held as Read } from './document/kind'
+import { documentKind, documenting } from './document/kind'
 import { noting } from './note/kind'
 import { plexKind, plexing } from './plex/kind'
 import { core as agent } from './agent'
 import { conversation } from './conversation'
 import { WORDS as words } from './words'
-import { AGENT, CONVERSATION, DOCUMENT, NOTE, PLEX, named, opening } from './workspace'
+import { AGENT, CONVERSATION, PLEX, named, opening } from './workspace'
 
 const drawings = drawn()
 const notes = editing(core, undefined, drawings.arrived)
@@ -47,7 +47,7 @@ const window = showing(
   },
   drawings.told,
   (path) => plexes.travel(path),
-  (path, runs) => void opensAt(path, ...runs),
+  (path, runs) => void read.opensAt(path, ...runs),
 )
 /** What the window answers when the application says it is going. */
 const going = leaving(core)
@@ -70,9 +70,12 @@ const notices = computed<readonly Notice[]>(() =>
   cornerOf(tasks.value, { chunks: chunks.value, embedding: embedding.value }, words),
 )
 
+/** The tabs of this window, whatever kind each of them holds. */
+const held = windowing(words)
+const { layout, blanks, becomes } = held
+
 /** The notes the window has open: what each is called, and what each tab of one holds. */
-const noted = noting(core, notes, drawings, {
-  closes: (path) => held.closes(path),
+const noted = noting(core, notes, drawings, held.host, {
   makes: async () => {
     const made = await making.start()
     if (!made) return ''
@@ -81,15 +84,11 @@ const noted = noting(core, notes, drawings, {
   },
 })
 
-/** The tabs of this window, whatever kind each of them holds. */
-const held = windowing(words)
-const { layout, blanks, becomes } = held
-
 /** The plex tabs, and the one the person is looking at. */
 const plexes = plexKind(held.host, () => standing(core), {
   makes: making,
   ready: () => !failure.value && !indexing.value,
-  opens: (path, title, showing) => openNote(path, title, showing),
+  opens: (path, title, showing) => noted.shows(path, title, showing),
   asks: (text) => void agents.asks(text),
   opening: () => window.opening.value,
   first: () => window.first(),
@@ -99,16 +98,16 @@ const plexes = plexKind(held.host, () => standing(core), {
 const agents = agentKind(held.host, () =>
   talking(conversation(agent, words, named(CONVERSATION)), {
     looking: () => plexes.looking(),
-    opens: (path, ...runs) => void opensAt(path, ...runs),
+    opens: (path, ...runs) => void read.opensAt(path, ...runs),
     unreachable: () => unreachable.value,
   }),
 )
 
 /** The document tabs, each reading the document it is filed at. */
-const documented = documentKind((path) => documenting(reading(documents, path)))
+const read = documentKind(held.host, (path) => documenting(reading(documents, path)))
 
 /** The kinds this window draws, in the order a blank tab offers them. */
-held.declares([noted.kind, plexes.kind, agents.kind, documented])
+held.declares([noted.kind, plexes.kind, agents.kind, read.kind])
 
 /** The palette: one keystroke, and everything the words typed turn up. */
 const palette = finding(core, words)
@@ -127,17 +126,6 @@ const asked = (event: KeyboardEvent) => {
 }
 
 /**
- * A document put in front of the person, opened at a stretch of its own text.
- * What stands there is lit, and the tab turns to the first page of it. The
- * places named after it are lit where they fall, each of them somewhere else to
- * look.
- */
-const opensAt = async (path: string, ...runs: readonly Run[]) => {
-  const id = await held.opens(DOCUMENT, path)
-  void held.holdsIn<Read>(id, DOCUMENT)?.reach(...runs)
-}
-
-/**
  * Somewhere the palette was asked to go. A name is a thing and travels in the
  * plex the person is looking at; a heading and a passage are places in a note,
  * and open it where they stand. A passage from a source that is not a note
@@ -153,21 +141,11 @@ const went = async (item: string, action: string) => {
     return
   }
   if (landing.at === 'document') {
-    await opensAt(landing.path, { start: landing.start ?? 0, length: landing.length ?? 0 })
+    await read.opensAt(landing.path, { start: landing.start ?? 0, length: landing.length ?? 0 })
     return
   }
-  openNote(landing.path, landing.title || landing.path)
+  noted.shows(landing.path, landing.title || landing.path)
   if (landing.line !== undefined) noted.entersAt(landing.path, landing.line)
-}
-
-/**
- * A note opens where the person asked for it, under the name it is called by,
- * and takes the keyboard. A note already open takes it where it stands.
- */
-const openNote = (path: string, title: string, showing: PlexShowing = 'here') => {
-  noted.calls(path, title)
-  void (showing === 'beside' ? held.beside(NOTE, path) : held.opens(NOTE, path))
-  noted.entersAt(path)
 }
 
 /** A tab lets go of what it held. A kind with something to finish keeps it. */

@@ -10,8 +10,9 @@ import { nextTick, ref, watch } from 'vue'
 import type { Change } from '../drawing'
 import type { drawn } from '../drawn'
 import type { Editing, editing } from '../editing'
+import type { PlexShowing } from '@numen/ui'
 import { markOf } from '../tab'
-import type { Kind } from '../windowing'
+import type { Host, Kind } from '../windowing'
 import { WORDS as words } from '../words'
 import { NOTE } from '../workspace'
 import NoteTab from './NoteTab.vue'
@@ -33,10 +34,8 @@ export interface Drawn {
   reveal(line: number): boolean
 }
 
-/** What a note tab asks of the window it is drawn in. */
+/** What the notes of a window ask of the vault they are read from. */
 export interface Noting {
-  /** The tab of a note that has written what it owed, going now. */
-  closes(id: string): void
   /** A note made to fill a tab that was told to hold one; where it is filed. */
   makes(): Promise<string>
 }
@@ -69,7 +68,13 @@ export interface Held {
  */
 const ITSELF = -1
 
-export function noting(vault: Called, notes: Notes, drawings: Drawings, deps: Noting) {
+export function noting(
+  vault: Called,
+  notes: Notes,
+  drawings: Drawings,
+  host: Host,
+  deps: Noting,
+) {
   /** What each note is called, as the vault last said it. */
   const titles = ref<ReadonlyMap<string, string>>(new Map())
 
@@ -146,6 +151,16 @@ export function noting(vault: Called, notes: Notes, drawings: Drawings, deps: No
   }
 
   /**
+   * A note put in front of the person, under the name it is called by and in
+   * a tab of its own. It takes the keyboard, opened now or already open.
+   */
+  const shows = (path: string, title = '', showing: PlexShowing = 'here') => {
+    if (title) calls(path, title)
+    void (showing === 'beside' ? host.beside(NOTE, path) : host.opens(NOTE, path))
+    entersAt(path)
+  }
+
+  /**
    * The line an open note is to stand on, asked for after it was opened. A
    * note asked for again takes the keyboard again, wherever it already stands.
    */
@@ -183,7 +198,7 @@ export function noting(vault: Called, notes: Notes, drawings: Drawings, deps: No
       void notes.shut(path).then((gone) => {
         if (!gone) return
         forgets(path)
-        deps.closes(id)
+        host.closes(id)
       })
     },
   })
@@ -215,5 +230,5 @@ export function noting(vault: Called, notes: Notes, drawings: Drawings, deps: No
     offers: words.newNote,
   }
 
-  return { kind, titles, calls, forgets, opens, entersAt, held, called, marked }
+  return { kind, titles, calls, forgets, opens, shows, entersAt, held, called, marked }
 }
