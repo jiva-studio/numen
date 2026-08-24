@@ -1,0 +1,195 @@
+syntax = "proto3";
+
+// What a client may ask about the vaults an installation holds.
+//
+// A vault is one entry on a list: a folder this installation knows about, by
+// the identity that folder carries. What is inside one is vault.proto, which
+// answers about the vault a client is looking at.
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// VaultsService answers about the vaults this installation holds, and changes
+// which of them a window is showing.
+service VaultsService {
+  // List is every vault the installation holds, and which of them this window
+  // is showing.
+  rpc List(VaultsServiceListRequest) returns (VaultsServiceListResponse);
+
+  // Choose puts this machine's own folder picker in front of the person and
+  // answers with the folder they chose. A person who closes the picker has
+  // chosen nothing, and the answer says so.
+  rpc Choose(VaultsServiceChooseRequest) returns (VaultsServiceChooseResponse);
+
+  // Add turns a folder into a vault and puts it on the list. The folder is
+  // given an identity that stays with it, and is the same vault wherever it
+  // moves to.
+  rpc Add(VaultsServiceAddRequest) returns (VaultsServiceAddResponse);
+
+  // Rename is what a person calls a vault. The folder keeps the name the
+  // filesystem gives it.
+  rpc Rename(VaultsServiceRenameRequest) returns (VaultsServiceRenameResponse);
+
+  // Forget takes a vault off the list and out of the index. The folder stays
+  // where it is, and adding it again brings back the same vault.
+  rpc Forget(VaultsServiceForgetRequest) returns (VaultsServiceForgetResponse);
+
+  // Erase is Forget, and the folder goes to the place this machine keeps what
+  // a person deleted.
+  rpc Erase(VaultsServiceEraseRequest) returns (VaultsServiceEraseResponse);
+
+  // Open shows another vault in this window. What the window was showing is
+  // let go of, and everything a client asked about it is asked again of the
+  // vault that arrives.
+  rpc Open(VaultsServiceOpenRequest) returns (VaultsServiceOpenResponse);
+}
+
+// VaultsRefusal is why the list is as it was, or why the window is still
+// showing the vault it was showing.
+enum VaultsRefusal {
+  VAULTS_REFUSAL_UNSPECIFIED = 0;
+
+  // The path is not a folder, or cannot be read.
+  VAULTS_REFUSAL_UNREADABLE = 1;
+
+  // The folder carries an identity registered at another path, and that path
+  // still carries it: the two are copies of one vault, and one index cannot
+  // hold both.
+  VAULTS_REFUSAL_COPY = 2;
+
+  // The folder lies inside a vault that is on the list, or holds one.
+  VAULTS_REFUSAL_OVERLAPS = 3;
+
+  // Another vault is called this. It reaches Rename; Add appends a number to a
+  // taken name.
+  VAULTS_REFUSAL_NAME_TAKEN = 4;
+
+  // It is the only vault this installation has.
+  VAULTS_REFUSAL_LAST_VAULT = 5;
+
+  // It is the vault this window is showing.
+  VAULTS_REFUSAL_SHOWING = 6;
+
+  // No vault of that identity is on the list.
+  VAULTS_REFUSAL_UNKNOWN = 7;
+
+  // This machine has nowhere to put what is deleted, so the folder stays where
+  // it is and the vault stays on the list.
+  VAULTS_REFUSAL_NO_TRASH = 8;
+
+  // A tab is holding text the person has to answer for, so the window stayed
+  // where it was.
+  VAULTS_REFUSAL_ASKING = 9;
+}
+
+// Known is one vault the installation holds, as the list has it.
+message Known {
+  // Id is the identity the folder carries, and how this vault is asked for
+  // again. It survives the folder moving and the vault being renamed.
+  string id = 1;
+
+  // Name is what the person calls the collection. It lives on the list and not
+  // in the folder.
+  string name = 2;
+
+  // Path is the folder, absolute on this machine.
+  string path = 3;
+
+  // Set when nothing is at the path. The vault stays on the list, and the
+  // folder is found again if it comes back.
+  bool missing = 4;
+}
+
+message VaultsServiceListRequest {}
+
+message VaultsServiceListResponse {
+  // Every vault the installation holds.
+  repeated Known vaults = 1;
+
+  // The identity of the vault this window is showing, empty in a window that
+  // is showing none.
+  string showing = 2;
+}
+
+message VaultsServiceChooseRequest {
+  // What the picker is titled. Empty takes the words the application chooses.
+  string title = 1;
+
+  // The folder the picker opens in. Empty opens wherever this machine opens a
+  // picker that was told nothing.
+  string starting_at = 2;
+}
+
+message VaultsServiceChooseResponse {
+  // The folder that was chosen, empty when none was.
+  string path = 1;
+
+  // Set when the person chose a folder. False is a picker they closed, which
+  // is an ordinary answer.
+  bool chose = 2;
+}
+
+message VaultsServiceAddRequest {
+  // The folder to add, absolute on this machine.
+  string path = 1;
+
+  // What to call the vault. Empty takes the folder's own name, and a name
+  // another vault has gets a number appended.
+  string name = 2;
+}
+
+message VaultsServiceAddResponse {
+  // The vault that joined the list. Absent when nothing was added.
+  optional Known vault = 1;
+
+  // Set when nothing was added, and why.
+  optional VaultsRefusal refusal = 2;
+}
+
+message VaultsServiceRenameRequest {
+  // The vault to rename, by its identity.
+  string id = 1;
+
+  // What the vault is called from now on.
+  string name = 2;
+}
+
+message VaultsServiceRenameResponse {
+  // The vault under its new name. Absent when it was not renamed. The name a
+  // vault already has is not a change and answers with the vault as it stands.
+  optional Known vault = 1;
+
+  // Set when the vault was not renamed, and why.
+  optional VaultsRefusal refusal = 2;
+}
+
+message VaultsServiceForgetRequest {
+  // The vault to forget, by its identity.
+  string id = 1;
+}
+
+message VaultsServiceForgetResponse {
+  // Set when the vault is still on the list, and why.
+  optional VaultsRefusal refusal = 1;
+}
+
+message VaultsServiceEraseRequest {
+  // The vault to erase, by its identity.
+  string id = 1;
+}
+
+message VaultsServiceEraseResponse {
+  // Set when the vault is still on the list, and why. The folder is where it
+  // was.
+  optional VaultsRefusal refusal = 1;
+}
+
+message VaultsServiceOpenRequest {
+  // The vault to show, by its identity.
+  string id = 1;
+}
+
+message VaultsServiceOpenResponse {
+  // Set when the window is showing what it was, and why.
+  optional VaultsRefusal refusal = 1;
+}
