@@ -156,6 +156,17 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		api.Recipe.Store(model.Recipe())
 	}
 
+	// The themes are the installation's, and a folder that could not be made
+	// leaves the ones this binary ships. A theme the settings name that the
+	// catalogue has not is said where the person is.
+	themes, why := cfg.Themes(func(said string) {
+		api.say(task.Task{ID: wearingATheme, Doing: "Wearing a theme", Failed: said})
+	})
+	if why != nil {
+		fmt.Fprintf(out, "themes: %v\n", why)
+	}
+	api.Themes = themes
+
 	// The search the window offers is the search the application already does.
 	// It is built once the embedder is settled, so a model that could not be
 	// fitted leaves the words half to answer on its own.
@@ -311,6 +322,8 @@ const (
 	makingVectors = "making the vectors"
 	// wordsAlone is a search answered short of the half that asks by meaning.
 	wordsAlone = "answering by words alone"
+	// wearingATheme is a theme the settings name that the catalogue has not.
+	wearingATheme = "wearing a theme"
 )
 
 // settled is how long the vault has to have been still before the notes written

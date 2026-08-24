@@ -13,6 +13,7 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agent"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
@@ -116,6 +117,11 @@ type API struct {
 	// Recipe is everything that decides what a vector is, which is what a
 	// vector is found by.
 	Recipe atomic.Value
+
+	// Themes are the stylesheets the window may be dressed in. They belong to
+	// the installation, so they arrive here from whatever put the window
+	// together. Nil answers that this build has none.
+	Themes numenv1connect.ThemeServiceHandler
 }
 
 // failure is what stopped the scan, or empty while nothing has.

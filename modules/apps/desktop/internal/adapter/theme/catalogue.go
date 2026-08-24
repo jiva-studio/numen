@@ -155,9 +155,13 @@ func (c Catalogue) Text(name string) (string, error) {
 		return string(text), nil
 	}
 	if c.dir == "" {
-		return "", fmt.Errorf("%s: there is no themes folder", name)
+		return "", fmt.Errorf("%s: %w", name, ErrNoFolder)
 	}
-	return read(filepath.Join(c.dir, title+Extension))
+	text, err := read(filepath.Join(c.dir, title+Extension))
+	if err != nil {
+		return "", fmt.Errorf("%s: %w", name, err)
+	}
+	return text, nil
 }
 
 // Applied is the theme a name asks for. A name matching nothing wears this

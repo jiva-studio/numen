@@ -21,7 +21,6 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/webui"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 )
@@ -51,7 +50,7 @@ func run(cfg container.Config, agents agentOptions, zoom float64) error {
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
 
-	chosen, err := settings.Open()
+	chosen, err := cfg.Settings()
 	if err != nil {
 		return err
 	}

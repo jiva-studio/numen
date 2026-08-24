@@ -41,6 +41,7 @@ const policy = "default-src 'self'; img-src 'self'; style-src 'self' 'unsafe-inl
 func (a *API) Serving(files http.Handler) http.Handler {
 	route, questions := numenv1connect.NewVaultServiceHandler(a)
 	asking, tasks := numenv1connect.NewAgentServiceHandler(a)
+	dressing, themes := numenv1connect.NewThemeServiceHandler(a.dressed())
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", policy)
 		switch {
@@ -48,6 +49,8 @@ func (a *API) Serving(files http.Handler) http.Handler {
 			questions.ServeHTTP(w, r)
 		case strings.HasPrefix(r.URL.Path, asking):
 			tasks.ServeHTTP(w, r)
+		case strings.HasPrefix(r.URL.Path, dressing):
+			themes.ServeHTTP(w, r)
 		case strings.HasPrefix(r.URL.EscapedPath(), assetsRoute):
 			a.Asset(w, r)
 		default:
