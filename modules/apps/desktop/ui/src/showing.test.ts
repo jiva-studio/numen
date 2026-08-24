@@ -235,11 +235,15 @@ describe('another vault under this window', () => {
     return { window, drawn }
   }
 
-  /** A vault that reloads, with every other stream of the window left open. */
-  const reloading = (state: Core['state']) =>
+  /**
+   * A vault that reloads, with every other stream of the window left open. The
+   * notes named are changes the stream carries ahead of the reload.
+   */
+  const reloading = (state: Core['state'], ahead: readonly string[] = []) =>
     fake({
       state,
       changes: async function* () {
+        for (const path of ahead) yield { paths: [path], reload: false, renamed: [] }
         yield { paths: [], reload: true, renamed: [] }
         await held()
       },
@@ -260,6 +264,29 @@ describe('another vault under this window', () => {
     await nap()
     await nap()
 
+    expect(one.drawn.at(-1)).toBe('reloads')
+
+    one.window.close()
+  })
+
+  /**
+   * The vault is read again for every change it reports, and a change of the
+   * vault that arrived reaches the window before the reload does. The folder
+   * the page was drawn on is what the reload is measured against.
+   */
+  it('draws the page again where the vault that arrived was read first', async () => {
+    /** The folder the vault stands at: the first read is the page's own. */
+    const folders = ['/vaults/Physics']
+    const one = swapping(
+      reloading(async () => ({ ...settled, path: folders.shift() ?? '/vaults/Heat' }), ['Heat.md']),
+    )
+
+    await one.window.start()
+    await nap()
+    await nap()
+    await nap()
+
+    expect(one.drawn).toContain('told Heat.md')
     expect(one.drawn.at(-1)).toBe('reloads')
 
     one.window.close()
