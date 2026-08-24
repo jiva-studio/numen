@@ -1,9 +1,10 @@
 /**
- * Every kind of tab the window declares, drawn in a document.
+ * The window drawn, in a document, with both ports mocked away.
  *
- * The window is told about its kinds in one list and draws whichever the tab
- * holds. Nothing else asks whether that list and what is drawn agree: a kind
- * declared and never drawn looks exactly like a window with fewer kinds.
+ * Two things are asked here that nothing else can ask: that every kind the
+ * window declares is drawn when a tab holds one, and that a vault which could
+ * not be read is not shown as an empty one. The failure of the second is
+ * silent — one wrong line and an unreadable vault reads as an empty one.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
@@ -14,14 +15,15 @@ import DocumentTab from './document/DocumentTab.vue'
 import NoteTab from './note/NoteTab.vue'
 import PlexTab from './plex/PlexTab.vue'
 
-const { held } = vi.hoisted(() => ({
+const { said, held } = vi.hoisted(() => ({
+  /** What the mocked vault answers about itself, set before the window draws. */
+  said: { ready: true, failed: '', opening: 'Root.md' as string | null },
   /** A stream that stays open, so nothing the window follows ever ends. */
   async *held(): AsyncGenerator<never> {
     await new Promise<never>(() => {})
   },
 }))
 
-/** A vault holding one note, and one document to read. */
 vi.mock('./vault', () => ({
   vault: {},
   documents: {
@@ -32,15 +34,15 @@ vi.mock('./vault', () => ({
   core: {
     state: async () => ({
       name: 'Vault',
-      ready: true,
-      failed: '',
+      ready: said.ready,
+      failed: said.failed,
       unwatched: '',
       unreachable: '',
       chunks: 0n,
       embedded: 0n,
       embedding: false,
     }),
-    opening: async () => ({ path: 'Root.md' }),
+    opening: async () => (said.opening ? { path: said.opening } : null),
     neighbourhood: async (path: string) => ({
       focus: { path, title: path.replace(/\.md$/, '') },
       related: [],
@@ -58,7 +60,7 @@ vi.mock('./vault', () => ({
   },
 }))
 
-vi.mock('./agent', () => ({ core: { ask: held, finish: async () => {} } }))
+vi.mock('./agent/core', () => ({ core: { ask: held, finish: async () => {} } }))
 
 const App = (await import('./App.vue')).default
 
@@ -141,5 +143,27 @@ describe('a place an answer names', () => {
 
     expect(window.findComponent(DocumentTab).exists()).toBe(true)
     expect(window.findComponent(DocumentTab).findComponent(Reader).exists()).toBe(true)
+  })
+})
+
+describe('the window with no note to show', () => {
+  it('says nothing was read when the vault could not be read', async () => {
+    said.opening = null
+    said.failed = 'the vault folder is not there'
+
+    const window = await drawn()
+
+    expect(window.find('.waiting').text()).toBe('nothing was read')
+    expect(window.find('.warning').text()).toContain('the vault folder is not there')
+  })
+
+  it('says nothing when the vault was read and holds none', async () => {
+    said.opening = null
+    said.failed = ''
+
+    const window = await drawn()
+
+    expect(window.find('.waiting').exists()).toBe(false)
+    expect(window.find('.warning').exists()).toBe(false)
   })
 })

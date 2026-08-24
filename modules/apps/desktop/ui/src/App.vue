@@ -21,11 +21,13 @@ import { editing } from './note/editing'
 import { drawn } from './note/drawn'
 import { CREATABLE, creating } from './note/creating'
 import { finding } from './finding'
+import { lands } from './landing'
 import { leaving } from './leaving'
 import { raising } from './raising'
 import { windowing } from './windowing'
 import BlankTab from './BlankTab.vue'
 import Leaving from './Leaving.vue'
+import Trouble from './Trouble.vue'
 import { agentKind, talking } from './agent/kind'
 import { documentKind, documenting } from './document/kind'
 import { noting } from './note/kind'
@@ -127,27 +129,16 @@ const asked = (event: KeyboardEvent) => {
   palette.shows(!palette.open.value)
 }
 
-/**
- * Somewhere the palette was asked to go. A name is a thing and travels in the
- * plex the person is looking at; a heading and a passage are places in a note,
- * and open it where they stand. A passage from a source that is not a note
- * opens that source where it stands.
- */
+/** Somewhere the palette was asked to go, and the window taken there. */
 const went = async (item: string, action: string) => {
   const landing = palette.chose(item, action)
   palette.shows(false)
-  if (!landing) return
-
-  if (landing.at === 'plex') {
-    void plexes.travel(landing.path)
-    return
-  }
-  if (landing.at === 'document') {
-    await read.opensAt(landing.path, { start: landing.start ?? 0, length: landing.length ?? 0 })
-    return
-  }
-  noted.shows(landing.path, landing.title || landing.path)
-  if (landing.line !== undefined) noted.entersAt(landing.path, landing.line)
+  await lands(landing, {
+    travel: (path) => plexes.travel(path),
+    opensAt: (path, run) => read.opensAt(path, run),
+    shows: (path, title) => noted.shows(path, title),
+    entersAt: (path, line) => noted.entersAt(path, line),
+  })
 }
 
 /** A tab lets go of what it held. A kind with something to finish keeps it. */
@@ -181,15 +172,15 @@ onUnmounted(() => {
 
 <template>
   <main>
-    <p v-if="unwatched" class="warning">not following the vault — {{ unwatched }}</p>
-    <p v-if="trouble" class="warning">the vault could not be read — {{ trouble }}</p>
-    <p v-if="warning" class="warning">{{ warning }}</p>
-
-    <p v-if="unmade" role="alert" class="warning">{{ unmade }}</p>
-
-    <p v-if="failure" class="failure">{{ failure }}</p>
-    <p v-else-if="indexing" class="waiting">reading the vault…</p>
-    <p v-else-if="!holds && trouble" class="waiting">nothing was read</p>
+    <Trouble
+      :unwatched="unwatched"
+      :trouble="trouble"
+      :warning="warning"
+      :unmade="unmade"
+      :failure="failure"
+      :indexing="indexing"
+      :holds="holds"
+    />
 
     <Workspace
       v-model="layout"
@@ -318,31 +309,4 @@ main {
   outline-offset: 2px;
 }
 
-.waiting,
-.failure {
-  margin: auto;
-  font-family: var(--numen-font-sans);
-  font-size: 0.9rem;
-  opacity: 0.6;
-}
-
-/* A warning and a failure carry filesystem paths, and a long one breaks where
-   it stands. */
-.warning {
-  margin: 0;
-  padding: 0.4rem 1rem;
-  font-family: var(--numen-font-sans);
-  font-size: 0.8rem;
-  background: var(--numen-caution-bg);
-  color: var(--numen-caution-fg);
-  overflow-wrap: break-word;
-}
-
-.failure {
-  color: var(--numen-alarm);
-  opacity: 1;
-  max-width: 40rem;
-  text-align: center;
-  overflow-wrap: break-word;
-}
 </style>

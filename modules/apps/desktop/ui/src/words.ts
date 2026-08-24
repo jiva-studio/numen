@@ -7,6 +7,11 @@
  */
 export const WORDS = {
   newTab: 'New tab',
+  /** What the window says above the work while something is wrong. */
+  unwatched: 'not following the vault',
+  unread: 'the vault could not be read',
+  reading: 'reading the vault…',
+  nothingRead: 'nothing was read',
   choose: 'What goes in this tab',
   going: 'These notes stopped saving because their files changed. The window waits.',
   later: 'Not yet',
