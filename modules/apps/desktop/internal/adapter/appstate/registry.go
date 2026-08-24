@@ -156,8 +156,13 @@ func (r *VaultRegistry) Last() (domain.Vault, bool, error) {
 	return domain.Vault{}, false, nil
 }
 
-// Find resolves what the user typed: an identity, a name, or a path.
+// Find resolves what the user typed: an identity, a name, or a path. Nothing
+// typed names no vault: an empty path is the folder this process was started
+// in.
 func (r *VaultRegistry) Find(nameOrPath string) (domain.Vault, bool, error) {
+	if nameOrPath == "" {
+		return domain.Vault{}, false, nil
+	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	f, err := r.load()
