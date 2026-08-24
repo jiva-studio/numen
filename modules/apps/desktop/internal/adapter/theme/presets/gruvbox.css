@@ -1,0 +1,43 @@
+/*
+ * Gruvbox, from morhetz's published palette. Light takes bg0 and the faded
+ * accents, dark takes bg0_hard and the bright ones, so each half keeps the
+ * contrast the palette was drawn for.
+ *
+ * Orange is the accent, which is what the focus, the ring and the selection
+ * are. Nothing here is mixed: the palette names every colour this needs.
+ */
+:root {
+  --numen-surface: light-dark(#fbf1c7, #1d2021);
+  --numen-node-bg: light-dark(#f9f5d7, #282828);
+  --numen-node-fg: light-dark(#3c3836, #ebdbb2);
+  --numen-node-border: light-dark(#d5c4a1, #3c3836);
+
+  --numen-focus-bg: light-dark(#af3a03, #fe8019);
+  --numen-focus-fg: light-dark(#fbf1c7, #282828);
+  --numen-focus-border: light-dark(#af3a03, #fe8019);
+
+  --numen-seat-parent: light-dark(#076678, #83a598);
+  --numen-seat-child: light-dark(#79740e, #b8bb26);
+  --numen-seat-jump: light-dark(#b57614, #fabd2f);
+  --numen-seat-sibling: light-dark(#8f3f71, #d3869b);
+
+  --numen-edge: light-dark(#d5c4a1, #504945);
+  --numen-edge-label: light-dark(#7c6f64, #928374);
+  --numen-ring: light-dark(#af3a03, #fe8019);
+  --numen-selection: light-dark(#af3a0330, #fe801938);
+  --numen-selection-away: light-dark(#af3a031a, #fe80191f);
+  --numen-alarm: light-dark(#9d0006, #fb4934);
+  --numen-caution-bg: light-dark(#f2e5bc, #32302f);
+  --numen-caution-fg: light-dark(#b57614, #fabd2f);
+  --numen-highlight: light-dark(#b5761433, #fabd2f3d);
+
+  --numen-panel-bg: light-dark(#fbf1c7cc, #282828cc);
+  --numen-panel-border: light-dark(#00000014, #ffffff1f);
+
+  --numen-field-bg: light-dark(#f9f5d7, #1d2021);
+  --numen-field-border: light-dark(#d5c4a1, #504945);
+
+  --numen-bubble-bg: light-dark(#ebdbb2, #3c3836);
+  --numen-bubble-fg: light-dark(#3c3836, #ebdbb2);
+  --numen-answer-fg: light-dark(#3c3836, #ebdbb2);
+}
