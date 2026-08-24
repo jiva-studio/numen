@@ -23,6 +23,7 @@ const held = () => new Promise<never>(() => {})
 
 const settled = {
   name: 'Vault',
+  path: '/vaults/Physics',
   ready: true,
   failed: '',
   unwatched: '',
@@ -210,6 +211,71 @@ describe('the stream of changes', () => {
 
     expect(one.window.opening.value).toBe('Opening.md')
     expect(asked).toBe(1)
+  })
+})
+
+/**
+ * A vault is swapped from outside this window, and the reload that says so
+ * looks exactly like the one that says the whole vault changed on disk. The
+ * folder it stands at is what tells them apart.
+ */
+describe('another vault under this window', () => {
+  /** What the window did about a reload: drew the page again, or read again. */
+  const swapping = (core: Core) => {
+    const drawn: string[] = []
+    const window = showing(
+      core,
+      async () => {},
+      async (paths) => void drawn.push(`told ${paths.join(' ')}`),
+      undefined,
+      undefined,
+      undefined,
+      () => void drawn.push('reloads'),
+    )
+    return { window, drawn }
+  }
+
+  /** A vault that reloads, with every other stream of the window left open. */
+  const reloading = (state: Core['state']) =>
+    fake({
+      state,
+      changes: async function* () {
+        yield { paths: [], reload: true, renamed: [] }
+        await held()
+      },
+      focus: async function* () {
+        await held()
+      },
+      editing: async function* () {
+        await held()
+      },
+    })
+
+  it('draws the page again where the reload stands at another folder', async () => {
+    /** The folder the vault stands at, which the swap moves between reads. */
+    const folders = ['/vaults/Physics', '/vaults/Heat']
+    const one = swapping(reloading(async () => ({ ...settled, path: folders.shift() ?? '' })))
+
+    await one.window.start()
+    await nap()
+    await nap()
+
+    expect(one.drawn.at(-1)).toBe('reloads')
+
+    one.window.close()
+  })
+
+  it('reads the vault again where the reload stands where it stood', async () => {
+    const one = swapping(reloading(async () => settled))
+
+    await one.window.start()
+    await nap()
+    await nap()
+
+    expect(one.drawn).not.toContain('reloads')
+    expect(one.drawn.at(-1)).toBe('told ')
+
+    one.window.close()
   })
 })
 

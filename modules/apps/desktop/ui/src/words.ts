@@ -6,7 +6,7 @@
  * the palette, the commands, the corner, and the quit.
  */
 import { commandKeyWord } from '@numen/ui'
-import type { Refused } from './core'
+import type { Refused, VaultRefused } from './core'
 import { WORDS as agent } from './agent/words'
 import { WORDS as note } from './note/words'
 import { WORDS as plex } from './plex/words'
@@ -21,6 +21,19 @@ export const REFUSED: Record<Refused, string> = {
   unreadable: 'the frontmatter of that note cannot be read',
   occupied: 'a note of that name is filed there, so the note was renamed and its file was not',
   unnameable: 'a note cannot be called that',
+}
+
+/** What the list of vaults refused a command, in words a person reads. */
+export const UNVAULTED: Record<VaultRefused, string> = {
+  unreadable: 'that folder is not there, or cannot be read',
+  copy: 'that folder is a copy of a vault this installation already holds',
+  overlaps: 'that folder is inside a vault already added, or holds one',
+  nameTaken: 'a vault is already called that',
+  lastVault: 'that is the only vault this installation has',
+  showing: 'that is the vault in front of you',
+  unknown: 'that vault is not on the list',
+  noTrash: 'this machine has nowhere to put what is deleted',
+  asking: 'a tab is holding text you have to answer for, so the window stayed where it was',
 }
 
 export const WORDS = {
@@ -67,6 +80,11 @@ export const WORDS = {
   findKeys: commandKeyWord(navigator.userAgent),
   first: 'Go to the note the vault opens with',
   goto: 'Go to a note',
+  openVault: 'Open vault',
+  newVault: 'New vault',
+  renameVault: 'Rename vault',
+  forgetVault: 'Forget vault',
+  eraseVault: 'Erase vault',
   /** Why nothing can be done to a note: the vault is unread, or none is in front. */
   indexing: 'The vault is still being read',
   noNote: 'Nothing in front of you is a note',
@@ -80,6 +98,12 @@ export const WORDS = {
   /** One of a list the window holds: the field, and what Enter does. */
   typeChoice: 'Choose one',
   chooses: 'Choose it',
+  /** The vaults the installation holds, and why one of them cannot be chosen. */
+  vaults: 'Vaults',
+  typeVault: 'Look for a vault',
+  gone: 'The folder is not there, at',
+  inFront: 'The vault in front of you, at',
+  folder: 'Choose a folder for the vault',
   /** The two shelves the themes are drawn in, and where a person's own go. */
   shipping: 'Ships with numen',
   owned: 'Your own themes',
@@ -101,10 +125,16 @@ export const WORDS = {
   kept: 'Nothing happens to it',
   removes: 'Remove',
   trashed: 'It goes to the .trash folder of the vault',
+  keepsVault: 'Keep the vault',
+  forgets: 'Forget',
+  stays: 'The folder stays where it is',
   exactly: 'This cannot be undone',
   typeBack: 'Type the name of the note',
   destroys: 'Destroy',
   forever: 'Nothing brings it back',
+  typeVaultBack: 'Type the name of the vault',
+  erases: 'Erase',
+  binned: 'The folder goes to the trash this machine keeps',
   /** The note a search did not find, offered as one to make. */
   creating: 'Nothing was found',
   creates: 'Create a note called',
@@ -113,6 +143,7 @@ export const WORDS = {
   asJump: 'Create it as a jump',
   /** What a command could not do, and what it left behind. */
   refused: REFUSED,
+  unvaulted: UNVAULTED,
   retargeted: 'These notes link by a name that means another note now:',
   repaired: 'These notes linked by the name it had, and were written again:',
   dangling: 'These notes link to nothing now:',

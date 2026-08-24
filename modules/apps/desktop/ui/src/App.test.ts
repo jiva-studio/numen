@@ -16,7 +16,7 @@ import PlexTab from './plex/PlexTab.vue'
 import { WORDS as plexWords } from './plex/words'
 import { plexCalled } from './workspace'
 
-const { said, held, asked } = vi.hoisted(() => ({
+const { said, held, asked, listed } = vi.hoisted(() => ({
   /** What the mocked vault answers about itself, set before the window draws. */
   said: {
     ready: true,
@@ -30,18 +30,34 @@ const { said, held, asked } = vi.hoisted(() => ({
   },
   /** What the window asked the application for, in the order it asked. */
   asked: { renamed: [] as string[], removed: [] as string[], worn: [] as string[] },
+  /** The vaults this installation holds, and the one the window is showing. */
+  listed: {
+    vaults: [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', missing: false }],
+    showing: 'physics',
+  },
 }))
 
 vi.mock('./vault', () => ({
   vault: {},
+  vaults: {
+    list: async () => listed,
+    choose: async () => '',
+    add: async () => ({ vault: null, refusal: null }),
+    rename: async () => ({ vault: null, refusal: null }),
+    forget: async () => null,
+    erase: async () => null,
+    open: async () => null,
+  },
   documents: {
     shape: async () => ({ pages: 1, sheets: [{ wide: 100, high: 100 }] }),
     page: () => '',
     places: async () => [],
   },
   core: {
+    vaults: async () => listed,
     state: async () => ({
       name: 'Vault',
+      path: '/vaults/Physics',
       ready: said.ready,
       failed: said.failed,
       unwatched: '',

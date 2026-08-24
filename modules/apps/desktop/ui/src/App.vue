@@ -12,7 +12,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { closeTab, Notices, Palette, Workspace } from '@numen/ui'
 import type { Notice } from '@numen/ui'
 import '@numen/ui/styles.css'
-import { core, documents } from './vault'
+import { core, documents, vaults } from './vault'
 import { showing } from './showing'
 import { standing } from './plex/standing'
 import { reading } from './document/reading'
@@ -29,6 +29,7 @@ import {
   offering,
   type Holds,
   type Knows,
+  type Shown,
   type Where,
 } from './commanding'
 import { themes } from './theme'
@@ -55,6 +56,8 @@ import { AGENT, CONVERSATION, NOTE, PLEX, named, opening } from './workspace'
 const drawings = drawn()
 const notes = editing(core, undefined, drawings.arrived)
 const making = creating(core)
+/** The page drawn again, which is a clean window on the vault that arrived. */
+const reloads = () => globalThis.location.reload()
 const window = showing(
   core,
   undefined,
@@ -66,6 +69,7 @@ const window = showing(
   drawings.told,
   (path) => plexes.travel(path),
   (path, runs) => void read.opensAt(path, ...runs),
+  reloads,
 )
 /** What the window answers when the application says it is going. */
 const going = leaving(core)
@@ -139,6 +143,20 @@ held.declares([noted.kind, plexes.kind, agents.kind, read.kind])
 /** The palette: one keystroke, and everything the words typed turn up. */
 const palette = finding(core, words, undefined, meaning)
 
+/** The vault this window is showing, as the list of vaults has it. */
+const shown = ref<Shown>({ id: '', name: '' })
+
+/** Which of the vaults on the list this window is showing, and what it is called. */
+const listing = async () => {
+  try {
+    const listed = await core.vaults()
+    const one = listed.vaults.find((vault) => vault.id === listed.showing)
+    shown.value = one ? { id: one.id, name: one.name } : { id: '', name: '' }
+  } catch {
+    // The commands over this vault are offered once the list has answered.
+  }
+}
+
 /**
  * What a command is over: the tab in front, and the note it means. A note tab
  * means the note it holds and a plex tab the note it is standing on; an agent
@@ -147,24 +165,25 @@ const palette = finding(core, words, undefined, meaning)
  */
 const where = (): Where => {
   const ready = !failure.value && !indexing.value
+  const vault = shown.value
   const front = held.host.front()
   const tab = front?.id ?? ''
   const kind = front?.kind ?? null
   if (kind === NOTE) {
     const note = held.host.holds<NoteHeld>(NOTE, tab)
     const path = note && notes.has(note.id) ? notes.where(note.id) : ''
-    return { tab, kind, path, title: note && path ? noted.titled(note.id) : '', ready }
+    return { tab, kind, path, title: note && path ? noted.titled(note.id) : '', vault, ready }
   }
   if (kind === PLEX) {
     const plex = held.host.holds<PlexHeld>(PLEX, tab)
     const path = plex?.view.here.value ?? ''
-    return { tab, kind, path, title: (path && plex?.nameOf(path)) || path, ready }
+    return { tab, kind, path, title: (path && plex?.nameOf(path)) || path, vault, ready }
   }
   if (kind === AGENT) {
     const path = plexes.looking()
-    return { tab, kind, path, title: plexes.names(path) || path, ready }
+    return { tab, kind, path, title: plexes.names(path) || path, vault, ready }
   }
-  return { tab, kind, path: '', title: '', ready }
+  return { tab, kind, path: '', title: '', vault, ready }
 }
 
 /** The identity of the note tab standing at a file, and nothing where none does. */
@@ -207,6 +226,9 @@ const doing: Doing = {
     shuts: (id) => noted.shuts(id),
     shows: (path, title, showing) => noted.shows(path, title, showing),
   },
+  vaults,
+  calls: (vault) => (shown.value = vault),
+  reloads,
   travel: (path) => plexes.travel(path),
   leaves: (from, to) => plexes.leaves(from, to),
   opening: () => window.opening.value,
@@ -341,6 +363,7 @@ onMounted(async () => {
   // The layout the window opens with stands before anything the vault says can
   // open a tab of its own.
   await starts()
+  void listing()
   void window.start()
   void going.start()
   void dressed.start()
