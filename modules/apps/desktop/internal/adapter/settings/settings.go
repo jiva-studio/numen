@@ -1,9 +1,9 @@
 // Package settings is what a person configures about this installation.
 //
-// One file, JSON, at `~/.config/numen/numen.json`. Everything a person may want
-// to change is a section of it, so finding a setting is finding one file. It is
-// named after the application, so the name says what it configures wherever it
-// is read out or copied to.
+// One file, JSON, in the folder this desktop keeps a person's configuration in.
+// Everything a person may want to change is a section of it, so finding a
+// setting is finding one file. It is named after the application, so the name
+// says what it configures wherever it is read out or copied to.
 // The list of vaults is not here: the application writes that itself when a
 // vault is added, and a file the application rewrites is no place for something
 // typed by hand.

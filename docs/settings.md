@@ -1,8 +1,10 @@
 # Settings
 
-One file, JSON, at `~/.config/numen/numen.json`. A run that finds none writes
-it, holding exactly what that run is doing, so the settings a person changes are
-the ones in front of them.
+One file, JSON, named `numen.json` in the folder this desktop keeps a person's
+configuration in — `~/.config/numen/` on Linux, `~/Library/Application
+Support/numen/` on a mac. A run that finds none writes it, holding exactly what
+that run is doing, so the settings a person changes are the ones in front of
+them.
 
 Every field left out keeps its default. A file naming one setting is a valid
 file.
