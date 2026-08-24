@@ -14,6 +14,147 @@ func theme(name string) settings.Setting {
 	return settings.Setting{At: []string{"appearance", "theme"}, Value: name}
 }
 
+// arranged is a file as somebody wrote it by hand: their order, their
+// indentation, their sections spaced out, and a number written to two places.
+const arranged = `{
+    "v": 1,
+
+    "appearance": {
+        "zoom": 1.5,
+        "theme": "preset:numen",
+        "mode": "system"
+    },
+
+    "indexing": {
+        "embedding": {
+            "indexing": {
+                "use": "service",
+                "service": {
+                    "key": "sk-the-persons-own",
+                    "name": "text-embedding-3-small"
+                }
+            }
+        },
+        "proofreading": {"letters_apart": 0.30}
+    },
+
+    "agent": {"use": "claude"}
+}
+`
+
+// The one test that would have caught a file being rewritten from a map: what
+// comes back is the file, with the bytes of one value replaced and nothing else
+// touched.
+func TestAHandArrangedFileComesBackWithOneValueChanged(t *testing.T) {
+	path := write(t, arranged)
+	if err := settings.Save(path, theme("mine:dracula")); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := strings.Replace(arranged, `"theme": "preset:numen"`, `"theme": "mine:dracula"`, 1)
+	if string(raw) != want {
+		t.Errorf("the file came back as:\n%s\nand not as:\n%s", raw, want)
+	}
+}
+
+// Two settings at once, and the file is still the person's arrangement.
+func TestTheThemeAndTheModeAreWrittenWithoutMovingAnythingElse(t *testing.T) {
+	path := write(t, arranged)
+	if err := settings.Save(path, theme("preset:nord"),
+		settings.Setting{At: []string{"appearance", "mode"}, Value: settings.ModeDark}); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := strings.Replace(arranged, `"theme": "preset:numen"`, `"theme": "preset:nord"`, 1)
+	want = strings.Replace(want, `"mode": "system"`, `"mode": "dark"`, 1)
+	if string(raw) != want {
+		t.Errorf("the file came back as:\n%s\nand not as:\n%s", raw, want)
+	}
+}
+
+// A name nobody has written yet goes at the end of the section it belongs to.
+// The order of the rest of it is the person's.
+func TestAFieldTheFileHasNotGotIsAppendedToItsSection(t *testing.T) {
+	path := write(t, `{
+  "appearance": {
+    "zoom": 1.5
+  },
+  "agent": {"use": "claude"}
+}
+`)
+	if err := settings.Save(path, theme("mine:dracula")); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := `{
+  "appearance": {
+    "zoom": 1.5,
+    "theme": "mine:dracula"
+  },
+  "agent": {"use": "claude"}
+}
+`
+	if string(raw) != want {
+		t.Errorf("the file came back as:\n%s\nand not as:\n%s", raw, want)
+	}
+}
+
+// A section nobody has written yet is made where it belongs, laid out against
+// the name it hangs from.
+func TestASectionTheFileHasNotGotIsMadeAtTheEnd(t *testing.T) {
+	path := write(t, `{
+  "v": 1,
+  "agent": {"use": "claude"}
+}
+`)
+	if err := settings.Save(path, theme("mine:dracula")); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := `{
+  "v": 1,
+  "agent": {"use": "claude"},
+  "appearance": {
+    "theme": "mine:dracula"
+  }
+}
+`
+	if string(raw) != want {
+		t.Errorf("the file came back as:\n%s\nand not as:\n%s", raw, want)
+	}
+}
+
+// A file written on one line takes another field on that line.
+func TestAFileOnOneLineStaysOnOneLine(t *testing.T) {
+	path := write(t, `{"appearance": {"zoom": 1.5}}`)
+	if err := settings.Save(path, theme("mine:dracula")); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := `{"appearance": {"zoom": 1.5, "theme": "mine:dracula"}}`; string(raw) != want {
+		t.Errorf("the file came back as %s, and not as %s", raw, want)
+	}
+}
+
 // The one thing a patch is for. A round trip through Config would come back
 // without the key, because the key is never something this application writes.
 func TestAKeyAPersonTypedIsStillThereAfterAThemeIsSaved(t *testing.T) {
