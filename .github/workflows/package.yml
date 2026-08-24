@@ -21,10 +21,6 @@ on:
         description: macOS
         type: boolean
         default: true
-      cli:
-        description: Command line tool
-        type: boolean
-        default: true
       # Signing is not this. A mac build is signed either way; notarizing is
       # Apple checking it and answering with a ticket the image carries, and
       # that answer takes minutes.
@@ -32,6 +28,10 @@ on:
         description: Notarize the mac build
         type: boolean
         default: true
+      publish:
+        description: Put the builds on the shelf the page links to
+        type: boolean
+        default: false
 
 jobs:
   linux:
@@ -202,6 +202,7 @@ jobs:
           mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
           mv "$RUNNER_TEMP/numen" "$APP/Contents/MacOS/numen"
           cp modules/apps/desktop/build/darwin/Info.plist "$APP/Contents/Info.plist"
+          cp modules/apps/desktop/build/darwin/numen.icns "$APP/Contents/Resources/numen.icns"
           printf 'APPL????' > "$APP/Contents/PkgInfo"
           plutil -replace CFBundleShortVersionString -string "$VERSION" "$APP/Contents/Info.plist"
           plutil -replace CFBundleVersion -string "$VERSION" "$APP/Contents/Info.plist"
@@ -309,41 +310,142 @@ jobs:
         if: always()
         run: security delete-keychain "$RUNNER_TEMP/signing.keychain-db" || true
 
-  # The command line tool carries no webview, so one machine builds it for every
-  # other.
-  cli:
-    if: inputs.cli
+  # The shelf the page links to. One name per file, never a version in it: a
+  # link written on the page once goes on working after every release, and the
+  # storage holds the latest build and nothing older.
+  publish:
+    if: ${{ !cancelled() && inputs.publish }}
+    needs: [linux, windows, macos]
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      # Every one of these has to be set before a build can go anywhere, and a
+      # missing one is worth saying by name rather than as a 401 further down.
+      - name: What this needs
+        env:
+          ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
+          ZONE: ${{ vars.BUNNY_STORAGE_ZONE }}
+          PULL_ZONE: ${{ vars.BUNNY_PULL_ZONE_ID }}
+          SERVED_FROM: ${{ vars.BUNNY_SERVED_FROM }}
+          KEY: ${{ secrets.BUNNY_STORAGE_KEY }}
+          API_KEY: ${{ secrets.BUNNY_API_KEY }}
+        run: |
+          missing=
+          for name in ENDPOINT ZONE PULL_ZONE SERVED_FROM KEY API_KEY; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::nothing is set up to publish to:$missing"
+            exit 1
+          fi
 
-      - uses: actions/setup-go@v5
+      - uses: actions/download-artifact@v4
         with:
-          go-version: "1.26"
-          cache-dependency-path: modules/apps/desktop/go.sum
+          path: ${{ runner.temp }}/built
 
-      - name: Build
-        working-directory: modules/apps/desktop
+      # Whatever was built this run is renamed to the name the page asks for.
+      # A platform that was not built leaves its shelf alone.
+      - name: Name them
         env:
           VERSION: ${{ inputs.version }}
         run: |
-          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do
-            os=${target%/*}
-            arch=${target#*/}
-            work="$RUNNER_TEMP/cli/$os-$arch"
-            mkdir -p "$work"
-            if [ "$os" = windows ]; then
-              binary="$work/numen-cli.exe"
-            else
-              binary="$work/numen-cli"
-            fi
-            CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" go build -trimpath -o "$binary" ./cmd/numen-cli
-            tar czf "$RUNNER_TEMP/cli/numen-cli_${VERSION}_${os}_${arch}.tar.gz" -C "$work" .
-          done
-          ls -la "$RUNNER_TEMP/cli"
+          set -euo pipefail
+          built="$RUNNER_TEMP/built"
+          shelf="$RUNNER_TEMP/shelf"
+          mkdir -p "$shelf"
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: numen-cli
-          path: ${{ runner.temp }}/cli/*.tar.gz
-          if-no-files-found: error
+          take() {
+            found=$(find "$built" -name "$1" -print -quit)
+            if [ -n "$found" ]; then
+              cp "$found" "$shelf/$2"
+              echo "  $2 <- $(basename "$found")"
+            fi
+          }
+
+          take "Numen-*.dmg"                  numen-macos.dmg
+          take "Numen-*.exe"                  numen-windows-setup.exe
+          take "numen_*_windows_amd64.zip"    numen-windows-amd64.zip
+          take "numen_*_linux_amd64.tar.gz"   numen-linux-amd64.tar.gz
+          take "*.deb"                        numen-linux-amd64.deb
+          take "*.rpm"                        numen-linux-amd64.rpm
+
+          ls -la "$shelf"
+
+      # What the shelf holds, for anything that wants to know before it fetches.
+      - name: Say what is on it
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          shelf="$RUNNER_TEMP/shelf"
+          {
+            printf '{\n  "version": "%s",\n' "$VERSION"
+            printf '  "built": "%s",\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            printf '  "files": [\n'
+            first=1
+            for file in "$shelf"/*; do
+              name=$(basename "$file")
+              [ "$name" = latest.json ] && continue
+              [ $first -eq 1 ] || printf ',\n'
+              first=0
+              printf '    { "name": "%s", "size": %s, "sha256": "%s" }' \
+                "$name" "$(stat -c%s "$file")" "$(sha256sum "$file" | cut -d' ' -f1)"
+            done
+            printf '\n  ]\n}\n'
+          } > "$shelf/latest.json"
+          cat "$shelf/latest.json"
+
+      # Bunny takes a file by PUT at the path it is stored under. Storage is
+      # never readable without its password: the pull zone in front of it is
+      # what serves these to the world, and it has a zone of its own so that
+      # nothing else the product keeps is reachable through it.
+      - name: Onto the shelf
+        env:
+          ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
+          ZONE: ${{ vars.BUNNY_STORAGE_ZONE }}
+          KEY: ${{ secrets.BUNNY_STORAGE_KEY }}
+        run: |
+          set -euo pipefail
+          for file in "$RUNNER_TEMP/shelf"/*; do
+            name=$(basename "$file")
+            code=$(curl -sS -o /dev/null -w '%{http_code}' \
+              -X PUT "https://$ENDPOINT/$ZONE/latest/$name" \
+              -H "AccessKey: $KEY" \
+              -H 'Content-Type: application/octet-stream' \
+              --data-binary "@$file")
+            echo "$code  $name"
+            case "$code" in 20*) ;; *) echo "::error::$name was refused with $code"; exit 1 ;; esac
+          done
+
+      # The edge holds what it was given until it is told otherwise, and every
+      # name here is one it has served before.
+      - name: Forget the old copies
+        env:
+          PULL_ZONE: ${{ vars.BUNNY_PULL_ZONE_ID }}
+          API_KEY: ${{ secrets.BUNNY_API_KEY }}
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -X POST "https://api.bunny.net/pullzone/$PULL_ZONE/purgeCache" \
+            -H "AccessKey: $API_KEY" -H 'Content-Length: 0')
+          echo "purge $code"
+          case "$code" in 20*) ;; *) echo "::error::the cache was not purged: $code"; exit 1 ;; esac
+
+      # The one thing worth proving: that a stranger with no key can fetch what
+      # was just put up, at the address the page sends them to, and that what
+      # comes back is the file that went up.
+      - name: Fetch it as a stranger would
+        env:
+          SERVED_FROM: ${{ vars.BUNNY_SERVED_FROM }}
+        run: |
+          set -euo pipefail
+          for file in "$RUNNER_TEMP/shelf"/*; do
+            name=$(basename "$file")
+            read -r code length < <(curl -fsS -o /dev/null -L \
+              -w '%{http_code} %{size_download}' "$SERVED_FROM/latest/$name")
+            want=$(stat -c%s "$file")
+            echo "$code  $name  $length of $want"
+            if [ "$code" != 200 ] || [ "$length" != "$want" ]; then
+              echo "::error::$name did not come back whole from $SERVED_FROM"
+              exit 1
+            fi
+          done
