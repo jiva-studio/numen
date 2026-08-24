@@ -15,15 +15,13 @@ export { landsOn, placeMenu, stepTo, MENU_OPENINGS } from './menu/model'
 export type { MenuItem, MenuOpening, MenuPlacement, MenuPlacing } from './menu/model'
 
 export { default as Palette } from './palette/Palette.vue'
-export { commandKeyWord, keptOn, PALETTE_KEYS } from './palette/model'
+export { commandKeyWord } from './palette/model'
 export type {
   PaletteAction,
   PaletteItem,
-  PaletteKeyed,
   PalettePart,
   PaletteBand,
   PaletteSpan,
-  PlacedAction,
 } from './palette/model'
 
 /** For arranging without drawing, or drawing without this renderer. */

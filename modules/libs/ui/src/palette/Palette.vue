@@ -59,8 +59,7 @@ const props = withDefaults(
     crumb?: string
     /**
      * Which step the caller is on. The identifier is opaque; changing it hands
-     * the keyboard back to the field with what stands there selected, so a name
-     * put there for editing is replaced by typing.
+     * the keyboard back to the field with what stands there selected.
      */
     step?: string
     /** Where the keyboard goes back to once it closes. */
@@ -607,8 +606,8 @@ onBeforeUnmount(() => {
   max-block-size: calc(var(--tallest) + 2 * var(--numen-action-size));
 }
 
-/* One row tall, with the clearance a field keeps from its own ends. What step
-   the field is on stands inside that clearance, at the head of the row. */
+/* The clearance at the head of the row, which the step the field is on stands
+   inside. */
 .palette__ask {
   padding-inline-start: var(--numen-field-text-inset);
 }
@@ -641,8 +640,7 @@ onBeforeUnmount(() => {
   color: var(--numen-edge-label);
 }
 
-/* The line under the field belongs to what stands beneath it, so a palette
-   holding only a field draws one edge and not two. */
+/* The line under the field belongs to what stands beneath it. */
 .palette__list,
 .palette__nothing {
   border-block-start: var(--numen-stroke) solid var(--numen-panel-border);

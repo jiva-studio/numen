@@ -71,11 +71,7 @@ export function editing(
   /** What hears that a note on screen was replaced by what its file holds. */
   replaced: (path: string) => void = () => {},
 ) {
-  /**
-   * Every open note, under an identity its caller mints and this never reads
-   * into. A note is asked for by name and answered by identity, so a name a
-   * note let go of and another note took names one tab each.
-   */
+  /** Every open note, under an identity its caller mints and this never reads into. */
   const tabs = ref(new Map<string, Tab>())
   /** The interval each tab is waiting on, so arming again replaces it. */
   const timers = new Map<string, ReturnType<typeof setTimeout>>()

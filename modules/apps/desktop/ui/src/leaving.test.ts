@@ -90,7 +90,7 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
     rename: async (path, title) => ({
       path,
       title,
-      by: null,
+      frontmatter: false,
       moved: null,
       refusal: null,
       changed: false,

@@ -59,7 +59,7 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     rename: async (path, title) => ({
       path,
       title,
-      by: null,
+      frontmatter: false,
       moved: null,
       refusal: null,
       changed: false,

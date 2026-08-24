@@ -269,8 +269,7 @@ describe('the tab the person is looking at', () => {
     const one = await window.opens('thing', 'One.md')
     const two = await window.host.beside('thing', 'Two.md')
     window.shows(one)
-    // Every pane says what it is showing when it is drawn, and the order they
-    // are said in is no answer to which of them the person is in.
+    // Every pane says what it is showing when it is drawn.
     window.shown(two)
 
     expect(window.host.front()?.id).toBe(one)

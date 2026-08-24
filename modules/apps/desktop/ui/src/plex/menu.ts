@@ -3,8 +3,7 @@
  *
  * What it offers is every command over a note that has a row of its own. A
  * command another one reaches on its row is left out, and the palette is where
- * it is reached. Apart from the template, so that both can be asked without a
- * screen.
+ * it is reached. Apart from the template.
  */
 import type { MenuItem } from '@numen/ui'
 import { commandsOf, overNote } from '../commanding'
@@ -16,16 +15,5 @@ export const ITEMS: readonly MenuItem[] = overNote(commandsOf(words)).map(({ id,
   text,
 }))
 
-/** Where a choice goes. A command is carried out by the window, not by a menu. */
-export interface Choices {
-  /** A command asked for on a note, under the name the picture gives it. */
-  runs(id: string, path: string, title: string): void
-}
-
-const offered = new Set(ITEMS.map((item) => item.id))
-
-/** Carry out a choice. An identifier the menu does not offer does nothing. */
-export function chose(id: string, path: string, title: string, choices: Choices): void {
-  if (!offered.has(id)) return
-  choices.runs(id, path, title)
-}
+/** What the menu offers, by identity. A choice outside this is not the menu's. */
+export const OFFERED: ReadonlySet<string> = new Set(ITEMS.map((item) => item.id))

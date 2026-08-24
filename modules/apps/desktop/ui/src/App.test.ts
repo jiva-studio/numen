@@ -1,10 +1,9 @@
 /**
  * The window drawn, in a document, with both ports mocked away.
  *
- * Two things are asked here that nothing else can ask: that every kind the
- * window declares is drawn when a tab holds one, and that a vault which could
- * not be read is not shown as an empty one. The failure of the second is
- * silent — one wrong line and an unreadable vault reads as an empty one.
+ * Two things are asked here: that every kind the window declares is drawn when
+ * a tab holds one, and that a vault which could not be read is not shown as an
+ * empty one.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
@@ -14,6 +13,8 @@ import AgentTab from './agent/AgentTab.vue'
 import DocumentTab from './document/DocumentTab.vue'
 import NoteTab from './note/NoteTab.vue'
 import PlexTab from './plex/PlexTab.vue'
+import { WORDS as plexWords } from './plex/words'
+import { plexCalled } from './workspace'
 
 const { said, held, asked } = vi.hoisted(() => ({
   /** What the mocked vault answers about itself, set before the window draws. */
@@ -82,6 +83,9 @@ const App = (await import('./App.vue')).default
 /** A moment for whatever the window asked the vault for to come back. */
 const settles = () => new Promise((done) => setTimeout(done, 0))
 
+/** Longer than the palette holds a keystroke before it asks the vault. */
+const HELD = 200
+
 /** Something drawn in a pane that answers what the window asks of it. */
 const answers = (name: string, drawn: Record<string, unknown>) =>
   defineComponent({
@@ -127,7 +131,7 @@ async function drawn() {
 
 /**
  * The window with a palette a person can type into. The palette draws itself at
- * the end of the document, so it is read off the document rather than off here.
+ * the end of the document, and is read off the document.
  */
 async function drawnWithPalette() {
   const window = mount(App, {
@@ -244,53 +248,43 @@ describe('the palette', () => {
     return bands.find((one) => one.id === 'note')?.items[0]?.detail
   }
 
-  /** The tab of each plex the window holds, under the note it is standing on. */
-  const plexTabs = (window: Awaited<ReturnType<typeof drawn>>) =>
-    new Map(
-      (window.findComponent(Workspace).props('tabs') as readonly { id: string; title: string }[])
-        .filter((one) => one.title.startsWith('Plex · '))
-        .map((one) => [one.title.replace('Plex · ', ''), one.id]),
-    )
+  /** The tab of the plex standing on that note, as the window calls it. */
+  const plexTab = (window: Awaited<ReturnType<typeof drawn>>, note: string): string =>
+    (window.findComponent(Workspace).props('tabs') as readonly { id: string; title: string }[])
+      .find((one) => one.title === plexCalled(plexWords.plex, note))
+      ?.id ?? ''
 
-  /**
-   * Two plexes, in panes of their own, standing on notes of their own. The one
-   * in front is the one the person is in; the other was put in front last.
-   */
-  const split = async () => {
+  it('is over the plex in the tab in front, not the plex last put in front', async () => {
     said.names = [{ path: 'physics/Entropy.md', title: 'Entropy', heading: '', line: -1, at: [] }]
     const window = await drawn()
 
+    // A second plex, standing on a note of its own, put in front last.
     pressed('p')
     await settles()
     window.findComponent(Palette).vm.$emit('choose', 'plex', 'plex')
     await settles()
-
     pressed('k')
     await settles()
     window.findComponent(Palette).vm.$emit('update:modelValue', 'en')
-    await new Promise((done) => setTimeout(done, 200))
+    await new Promise((done) => setTimeout(done, HELD))
     window.findComponent(Palette).vm.$emit('choose', 'physics/Entropy.md', 'plex')
     await settles()
 
-    const tabs = plexTabs(window)
-    expect([...tabs.keys()].sort()).toStrictEqual(['Root', 'physics/Entropy'])
-    // A tab dragged into a pane of its own. The pane the person is in is the
-    // one it was dragged out of, which no tab of it changed.
+    // Each of the two dragged into a pane of its own. The pane the person is in
+    // is the one holding the plex on the note the vault opens with.
     window.findComponent(Workspace).vm.$emit('update:modelValue', {
       root: branch(
         'root',
-        [pane('main', [tabs.get('Root')!]), pane('aside', [tabs.get('physics/Entropy')!])],
+        [
+          pane('main', [plexTab(window, 'Root')]),
+          pane('aside', [plexTab(window, 'physics/Entropy')]),
+        ],
         [0.5, 0.5],
       ),
       axis: 'horizontal',
       focus: 'main',
     })
     await settles()
-    return window
-  }
-
-  it('is over the plex in the tab in front, not the plex last put in front', async () => {
-    const window = await split()
 
     pressed('p')
     await settles()
@@ -311,7 +305,7 @@ describe('a command asked for on a node of the plex', () => {
     await settles()
   }
 
-  it('says the vault is still being read where that is why it did nothing', async () => {
+  it('says the vault is still being read, and carries no command out', async () => {
     said.ready = false
     said.opening = null
     const window = await drawn()
@@ -331,10 +325,7 @@ describe('a command asked for on a node of the plex', () => {
   })
 })
 
-/**
- * The palette drawn as a person meets it, so that what a keystroke reaches is
- * what the row the keyboard opened on offers.
- */
+/** The palette drawn as a person meets it, with nothing of it stubbed. */
 describe('the keyboard on a step that confirms', () => {
   const field = () => document.body.querySelector<HTMLInputElement>('.palette__field')
 

@@ -7,7 +7,7 @@
  */
 import { computed, ref } from 'vue'
 import type { MenuOpening, PlexNeighbourhood, PlexRelatedSeat, PlexShowing } from '@numen/ui'
-import { chose as carry } from './menu'
+import { OFFERED } from './menu'
 import { asPlex } from './picture'
 import type { Standing } from './standing'
 import type { Went } from '../core'
@@ -96,8 +96,7 @@ export function plexKind(host: Host, makes: () => Standing, deps: Plexing) {
   /**
    * A note put in front of the person: the plex they are looking at travels
    * there and comes to the front, and a window holding no plex at all opens one
-   * on it. The person asked to see the note, so the tab showing it is the tab
-   * they are left in.
+   * on it.
    */
   const travel = async (path: string) => {
     const one = host.last<Held>(PLEX)
@@ -194,8 +193,8 @@ export function plexing(view: Standing, deps: Plexing) {
   const chose = (id: string) => {
     const asking = menu.value
     menu.value = null
-    if (!asking) return
-    carry(id, asking.path, nameOf(asking.path), deps)
+    if (!asking || !OFFERED.has(id)) return
+    deps.runs(id, asking.path, nameOf(asking.path))
   }
 
   /**

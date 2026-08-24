@@ -59,7 +59,7 @@ function fake(over: Partial<Faked> = {}) {
     rename: async (path) => ({
       path,
       title: '',
-      by: null,
+      frontmatter: false,
       moved: null,
       refusal: null,
       changed: false,
@@ -272,7 +272,7 @@ describe('closing', () => {
 })
 
 describe('a note whose file is about to be renamed or removed', () => {
-  it('writes what is unsaved before it answers, so the caller can move the file', async () => {
+  it('writes what is unsaved before it answers', async () => {
     const { core, files, wrote } = fake()
     files.set('Heat.md', 'one')
     const notes = editing(core, { quiet: 10_000, bound: 10_000 })
@@ -305,8 +305,7 @@ describe('a note whose file is about to be renamed or removed', () => {
   it('fires nothing at the path it is leaving once it has settled', async () => {
     const { core, files, wrote } = fake()
     files.set('Heat.md', 'one')
-    // A write slow enough that the interval armed by the keystroke before it
-    // would fire while it is still in the air.
+    // A write slower than the interval armed by the keystroke before it.
     const slow: Faked = {
       ...core,
       write: async (path, body, seen) => {

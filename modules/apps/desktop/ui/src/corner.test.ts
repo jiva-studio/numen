@@ -6,13 +6,15 @@
  * nothing to do with each other.
  */
 import { describe, expect, it } from 'vitest'
-import { cornerOf, type Reading } from './corner'
+import { cornerOf } from './corner'
 import type { Task } from './core'
+import type { Meaning } from './meaning'
 
-const words = { words: 'Searching by words only — no model set' }
+const words = { wordsOnly: 'Searching by words only — no model set' }
 
-const vault = (over: Partial<Reading> = {}): Reading => ({
+const vault = (over: Partial<Meaning> = {}): Meaning => ({
   chunks: 0,
+  embedded: 0,
   embedding: true,
   ...over,
 })
@@ -74,7 +76,7 @@ describe('chunks with nothing to embed them', () => {
     const drawn = cornerOf([], vault({ chunks: 4823, embedding: false }), words)
 
     expect(drawn).toHaveLength(1)
-    expect(drawn[0]?.says).toBe(words.words)
+    expect(drawn[0]?.says).toBe(words.wordsOnly)
     expect(drawn[0]?.working).toBe(false)
   })
 

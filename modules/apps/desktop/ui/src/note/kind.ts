@@ -76,11 +76,7 @@ export function noting(vault: Called, notes: Notes, drawings: Drawings, host: Ho
   const minting = new Map<string, string>()
   const minted = new Map<string, string>()
 
-  /**
-   * The identity of the tab standing at a file, minted where none stands there.
-   * A name a note let go of is a name another note can be given, and each of
-   * them opens under an identity of its own.
-   */
+  /** The identity of the tab standing at a file, minted where none stands there. */
   const mints = (path: string): string => {
     const standing = tabbed.value.get(path) ?? minting.get(path)
     if (standing) return standing

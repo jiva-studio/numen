@@ -7,20 +7,11 @@
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
 import { Counting, Naming, Owed, Refusal, VaultService, Way as Ways } from '@numen/protocol'
+import type { Moved as MovedMessage } from '@numen/protocol'
 import { asSeat } from './plex/picture'
 import type { Asking, Way } from './finding'
 import type { Documents, Marked, Sheet } from './document/reading'
-import type {
-  Answered,
-  Core,
-  Made,
-  Moved,
-  NamedBy,
-  NewLink,
-  Refused,
-  Removed,
-  Renamed,
-} from './core'
+import type { Answered, Core, Made, Moved, NewLink, Refused, Removed, Renamed } from './core'
 
 export const vault = createClient(
   VaultService,
@@ -74,7 +65,7 @@ export const core: Core & Asking = {
     return {
       path: answer.path,
       title: answer.title,
-      by: naming[answer.by],
+      frontmatter: answer.by === Naming.FRONTMATTER,
       moved: answer.moved ? filed(answer.moved) : null,
       refusal: refusalIn(answer),
       changed: answer.changed,
@@ -235,21 +226,8 @@ const refused: Record<Refusal, Refused> = {
   [Refusal.UNNAMEABLE]: 'unnameable',
 }
 
-/** Which of the three a rename wrote, in the words the window uses. */
-const naming: Record<Naming, NamedBy | null> = {
-  [Naming.UNSPECIFIED]: null,
-  [Naming.FRONTMATTER]: 'frontmatter',
-  [Naming.HEADING]: 'heading',
-  [Naming.FILENAME]: 'filename',
-}
-
 /** What the file did, in the shape the window carries it. */
-const filed = (moved: {
-  from: string
-  to: string
-  repaired: readonly string[]
-  retargeted: readonly { in: string; target: string; now: string }[]
-}): Moved => ({
+const filed = (moved: MovedMessage): Moved => ({
   from: moved.from,
   to: moved.to,
   repaired: moved.repaired,

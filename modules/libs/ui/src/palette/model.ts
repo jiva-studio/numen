@@ -133,11 +133,7 @@ export const keptAt = (places: readonly PalettePlace[], was: string): number => 
   return held >= 0 ? held : stepTo(places, -1, 1)
 }
 
-/**
- * The keys that reach an item's actions, in the order the actions are offered.
- * An item may offer more actions than there are keys, and those are reached by
- * name in the action panel.
- */
+/** The keys that reach an item's actions, in the order the actions are offered. */
 export const PALETTE_KEYS = ['↵', '⇧↵'] as const
 
 /** One action, and the key that reaches it straight from the list. */
@@ -158,8 +154,10 @@ export const keyed = (item: PaletteItem | undefined): readonly PaletteKeyed[] =>
 }
 
 /** What the action Enter reaches is, and Shift and Enter the second. */
-export const actionAt = (item: PaletteItem | undefined, second: boolean): string =>
-  keyed(item)[second ? 1 : 0]?.action.id ?? ''
+export const actionAt = (item: PaletteItem | undefined, second: boolean): string => {
+  const actions = item && choosable(item) ? item.actions : undefined
+  return actions?.[second ? 1 : 0]?.id ?? ''
+}
 
 /** Whether this keystroke asks for the action panel. */
 export const opensActions = (event: {
@@ -324,5 +322,6 @@ export const placeActions = (
  */
 export const keptOn = (actions: readonly PlacedAction[], was: string): number => {
   const held = actions.findIndex((one) => one.action.id === was)
-  return held >= 0 ? held : stepIn(actions.length, -1, 1)
+  if (held >= 0) return held
+  return actions.length > 0 ? 0 : -1
 }

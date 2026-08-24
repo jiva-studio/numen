@@ -11,6 +11,7 @@
  */
 import { computed, ref, shallowRef } from 'vue'
 import type { PaletteItem, PaletteBand } from '@numen/ui'
+import { wordsOnly, type Meaning } from './meaning'
 
 /** A run of a name or a passage, counted the way this window counts text. */
 export interface Span {
@@ -62,8 +63,16 @@ export interface Asking {
   search(query: string, way: Way, limit: number): Promise<readonly Passage[]>
 }
 
+/** What a band of a palette says when it holds nothing. */
+export interface Silences {
+  /** What a band says when it came back with nothing. */
+  readonly noneFound: string
+  /** What a band says when the vault could not answer at all. */
+  readonly notAsked: string
+}
+
 /** Everything the palette says in the window's voice. */
-export interface Words {
+export interface Words extends Silences {
   names: string
   text: string
   meaning: string
@@ -73,25 +82,10 @@ export interface Words {
   readAt: string
   /** What opening a document where the words were found is called. */
   readDocument: string
-  /** What a band says when it came back with nothing. */
-  noneFound: string
-  /** What a band says when the vault could not answer at all. */
-  notAsked: string
   /** Nothing is set to turn what the vault holds into vectors. */
-  noModel: string
+  wordsOnly: string
   /** A model is set and no vector has been made under it yet. */
   notEmbedded: string
-}
-
-/**
- * How far the vault has been read for meaning. A search by meaning is asked of
- * the vectors, and a vault holding none answers nothing however it is asked.
- */
-export interface Reading {
-  /** Whether anything is going to turn what the vault holds into vectors. */
-  embedding: boolean
-  /** How many of the spans the index holds carry one. */
-  embedded: number
 }
 
 /** Where an item chosen takes the person. */
@@ -146,8 +140,9 @@ const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
 export function finding(
   core: Asking,
   words: Words,
-  reading: () => Reading = () => ({ embedding: true, embedded: 1 }),
   wait: (ms: number) => Promise<unknown> = sleep,
+  /** How far the vault has been read for meaning, where the window knows. */
+  reading?: () => Meaning,
 ) {
   /** Whether the palette is drawn at all. */
   const open = ref(false)
@@ -321,16 +316,14 @@ export function finding(
 
   /**
    * Why a band holds nothing. A search by meaning is asked of the vectors, so a
-   * vault that has none says so: the same empty band otherwise reads as an
-   * answer, and the question was never put.
+   * vault that has none says so.
    */
   const silenceOf = (id: Band): string => {
     if (said.value[id]) return said.value[id]
-    if (id !== 'meaning') return words.noneFound
-    const read = reading()
-    if (!read.embedding) return words.noModel
-    if (read.embedded === 0) return words.notEmbedded
-    return words.noneFound
+    const read = id === 'meaning' ? reading?.() : undefined
+    if (!read) return words.noneFound
+    if (wordsOnly(read)) return words.wordsOnly
+    return read.embedded === 0 ? words.notEmbedded : words.noneFound
   }
 
   /** What the bands hold, and where each thing in them stands in the vault. */

@@ -17,6 +17,7 @@ import { showing } from './showing'
 import { standing } from './plex/standing'
 import { reading } from './document/reading'
 import { cornerOf } from './corner'
+import type { Meaning } from './meaning'
 import { editing } from './note/editing'
 import { drawn } from './note/drawn'
 import { CREATABLE, creating } from './note/creating'
@@ -79,12 +80,17 @@ const warning = computed(() => window.lost.value || plexes.trouble())
 const told = ref('')
 /** What a command said, and what could not be made or joined. */
 const unmade = computed(() => told.value || making.said.value)
-const { chunks, embedding, tasks } = window
+const { chunks, embedded, embedding, tasks } = window
+
+/** How far this vault has been read for meaning, as the window last heard. */
+const meaning = (): Meaning => ({
+  chunks: chunks.value,
+  embedded: embedded.value,
+  embedding: embedding.value,
+})
 
 /** Everything running behind the window, as the corner draws it. */
-const notices = computed<readonly Notice[]>(() =>
-  cornerOf(tasks.value, { chunks: chunks.value, embedding: embedding.value }, words),
-)
+const notices = computed<readonly Notice[]>(() => cornerOf(tasks.value, meaning(), words))
 
 /** The tabs of this window, whatever kind each of them holds. */
 const held = windowing(words)
@@ -128,10 +134,7 @@ const read = documentKind(held.host, (path) => documenting(reading(documents, pa
 held.declares([noted.kind, plexes.kind, agents.kind, read.kind])
 
 /** The palette: one keystroke, and everything the words typed turn up. */
-const palette = finding(core, words, () => ({
-  embedding: embedding.value,
-  embedded: window.embedded.value,
-}))
+const palette = finding(core, words, undefined, meaning)
 
 /**
  * What a command is over: the tab in front, and the note it means. A note tab
@@ -147,7 +150,7 @@ const where = (): Where => {
   if (kind === NOTE) {
     const note = held.host.holds<NoteHeld>(NOTE, tab)
     const path = note && notes.has(note.id) ? notes.where(note.id) : ''
-    return { tab, kind, path, title: path ? noted.called(path) : '', ready }
+    return { tab, kind, path, title: note && path ? noted.titled(note.id) : '', ready }
   }
   if (kind === PLEX) {
     const plex = held.host.holds<PlexHeld>(PLEX, tab)
@@ -161,10 +164,13 @@ const where = (): Where => {
   return { tab, kind, path: '', title: '', ready }
 }
 
+/** The identity of the note tab standing at a file, and nothing where none does. */
+const holding = (path: string): string | null => noted.holding(path)
+
 /** What the window knows about a note by the name it is filed under. */
 const knows: Knows = {
-  called: (path) => (noted.holding(path) ? noted.called(path) : plexes.names(path)),
-  holding: (path) => noted.holding(path),
+  called: (path) => (holding(path) ? noted.called(path) : plexes.names(path)),
+  holding,
 }
 
 /** The commands, over whatever is in front. */
@@ -176,7 +182,7 @@ const doing: Doing = {
   renames: (path, title) => core.rename(path, title),
   removes: (path, destroy) => core.remove(path, destroy),
   notes: {
-    holding: (path) => noted.holding(path),
+    holding,
     where: (id) => notes.where(id),
     asking: (id) => notes.overtaken(id) !== null,
     settles: (id) => notes.settles(id),
@@ -228,7 +234,7 @@ const asked = (event: KeyboardEvent) => {
     return
   }
   if (key !== 'p') return
-  // The webview prints on this keystroke, and the window takes it.
+  // The window takes this keystroke.
   event.preventDefault()
   palette.shows(false)
   commands.shows(!commands.open.value)

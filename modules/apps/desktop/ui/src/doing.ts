@@ -7,7 +7,7 @@
  */
 import type { PlexRelatedSeat } from '@numen/ui'
 import type { Deed } from './commanding'
-import type { Refused, Removed, Renamed, Retargeted } from './core'
+import type { Refused, Removed, Renamed } from './core'
 import type { Made } from './note/creating'
 import { AGENT, NOTE, PLEX } from './workspace'
 
@@ -62,8 +62,14 @@ export interface Words {
   readonly refused: Record<Refused, string>
   /** The links that mean another note now, which nothing repairs. */
   readonly retargeted: string
+  /** The links in other people's notes that were written again. */
+  readonly repaired: string
   /** The links that reach nothing now, which nothing repairs either. */
   readonly dangling: string
+  /** Where a removed note landed, which is the only way back to it. */
+  readonly trashedAt: string
+  /** The rename wrote in the frontmatter, which is the person's own. */
+  readonly titled: string
   /** The vault opens with no note at all. */
   readonly nowhere: string
   /** The note is waiting on the person, and its file stays where it is. */
@@ -117,20 +123,22 @@ export async function does(deed: Deed | null, on: Doing, words: Words): Promise<
 const standing = (deed: Deed, on: Doing): Deed =>
   deed.note ? { ...deed, path: on.notes.where(deed.note) } : deed
 
-/** Whether the tab holding a note is waiting on the person to answer for it. */
-const waiting = (path: string, on: Doing): boolean => {
-  const held = on.notes.holding(path)
-  return held !== null && on.notes.asking(held)
+/** A tab asked to settle: which one it was, and whether it is still waiting. */
+interface Settled {
+  readonly held: string | null
+  readonly waiting: boolean
 }
 
 /**
- * Nothing of the note is on its way to its file. It answers with the tab
- * holding it, and with nothing where no tab does.
+ * The tab holding a note, once nothing of the note is on its way to its file.
+ * A tab waiting on the person to answer for it settles nothing and says so.
  */
-const settles = async (path: string, on: Doing): Promise<string | null> => {
+const settles = async (path: string, on: Doing): Promise<Settled> => {
   const held = on.notes.holding(path)
-  if (held) await on.notes.settles(held)
-  return held
+  if (held === null) return { held, waiting: false }
+  if (on.notes.asking(held)) return { held, waiting: true }
+  await on.notes.settles(held)
+  return { held, waiting: false }
 }
 
 /**
@@ -153,27 +161,34 @@ const makes = async (
 /** A note given a different name, and whatever that did to the links reported. */
 const renames = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
   if (!deed.name || deed.name === deed.title) return
-  if (waiting(deed.path, on)) return on.says(words.unanswered)
-  await settles(deed.path, on)
+  const tab = await settles(deed.path, on)
+  if (tab.waiting) return on.says(words.unanswered)
   const answer = await on.renames(deed.path, deed.name)
   if (answer.changed) return on.says(words.overtaken)
-  // The note is brought into line before its file is, so a refusal to move the
-  // file leaves the note under its new name.
   if (answer.refusal) return on.says(words.refused[answer.refusal])
-  on.says(retargeted(answer.moved?.retargeted ?? [], words))
+  const moved = answer.moved
+  on.says(
+    all(
+      answer.frontmatter ? words.titled : '',
+      naming(words.repaired, moved?.repaired ?? []),
+      naming(words.retargeted, (moved?.retargeted ?? []).map((one) => one.in)),
+    ),
+  )
 }
 
-/** A note taken out of the vault, and whatever now links to nothing reported. */
+/** A note taken out of the vault, and where it went and what it left reported. */
 const removes = async (deed: Deed, destroy: boolean, on: Doing, words: Words): Promise<void> => {
-  if (waiting(deed.path, on)) return on.says(words.unanswered)
-  const held = await settles(deed.path, on)
+  const tab = await settles(deed.path, on)
+  if (tab.waiting) return on.says(words.unanswered)
   const answer = await on.removes(deed.path, destroy)
   if (answer.refusal) return on.says(words.refused[answer.refusal])
-  // The note is out of the vault, and the tab reading it lets go of it.
-  if (held) on.notes.shuts(held)
-  on.says(dangling(answer.dangling, words))
-  // Every plex standing on the note that went travels to the note the vault
-  // opens with.
+  if (tab.held) on.notes.shuts(tab.held)
+  on.says(
+    all(
+      answer.trashed ? `${words.trashedAt} ${answer.trashed}` : '',
+      naming(words.dangling, answer.dangling),
+    ),
+  )
   const opening = on.opening()
   if (opening) await on.leaves(deed.path, opening)
 }
@@ -184,12 +199,11 @@ const travels = async (path: string, on: Doing, words: Words): Promise<void> => 
   await on.travel(path)
 }
 
-/** The links that mean another note now, which are reported and not repaired. */
-const retargeted = (links: readonly Retargeted[], words: Words): string => {
-  const notes = [...new Set(links.map((one) => one.in))]
-  return notes.length === 0 ? '' : `${words.retargeted} ${notes.join(', ')}`
+/** What a command did to other notes, named once each under what it did. */
+const naming = (says: string, notes: readonly string[]): string => {
+  const named = [...new Set(notes)]
+  return named.length === 0 ? '' : `${says} ${named.join(', ')}`
 }
 
-/** The links that reach nothing now, which are reported and not repaired. */
-const dangling = (notes: readonly string[], words: Words): string =>
-  notes.length === 0 ? '' : `${words.dangling} ${notes.join(', ')}`
+/** Everything one command has to say, as the one line the window says it in. */
+const all = (...says: readonly string[]): string => says.filter((one) => one).join('. ')

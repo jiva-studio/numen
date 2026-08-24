@@ -2,9 +2,9 @@
  * What is offered over what is in front, and what a step asks for, without a
  * window.
  *
- * Two things are asked here that nothing else can ask: that a tab holding
- * something that is not a note is offered nothing to do to a note, and that
- * destroying is reached by typing the name of the note and by nothing else.
+ * Two things are asked here: that a tab holding something that is not a note is
+ * offered nothing to do to a note, and that destroying is reached by typing the
+ * name of the note and by nothing else.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
@@ -159,7 +159,7 @@ describe('what is in front', () => {
     expect(drawn(commands.bands).note).toStrictEqual([])
   })
 
-  it('says the vault is still being read rather than quietly offering less', () => {
+  it('says the vault is still being read, and offers nothing over the note', () => {
     const { commands } = asking({ ready: false })
 
     expect(drawn(commands.bands)).toStrictEqual({
@@ -282,10 +282,7 @@ describe('removing a note', () => {
     expect(commands.bands.value[0]?.items[1]?.detail).toBe(words.trashed)
   })
 
-  /**
-   * The keyboard opens on the first row of a band, so an Enter that repeats or
-   * lands twice reaches whichever answer stands first.
-   */
+  /** The keyboard opens on the first row of a band. */
   it('offers the answer that changes nothing first', () => {
     const { commands } = asking()
 

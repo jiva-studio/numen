@@ -11,8 +11,8 @@
  */
 import { computed, ref, shallowRef } from 'vue'
 import type { PaletteBand, PaletteItem } from '@numen/ui'
-import type { Went } from './core'
-import type { Named } from './finding'
+import { wentTo, type Went } from './core'
+import type { Named, Silences } from './finding'
 
 /** The one question the commands ask of the vault: the names in it that match. */
 export interface Asking {
@@ -34,16 +34,15 @@ export interface Knows {
 /** Which band a command is offered in. */
 export type Band = 'note' | 'window' | 'vault'
 
-/** What a command wants before it can happen. */
-export type Needed = 'name' | 'note' | 'yes' | 'exactly'
-
-/** Which step the palette is on. */
+/** Which step the palette is on: one being asked for, or the list of commands. */
 export type Step = 'commands' | 'naming' | 'picking' | 'asking' | 'exactly'
+
+/** What a command wants before it can happen, which is the step that asks. */
+export type Needed = Exclude<Step, 'commands'>
 
 /**
  * What is in front of the person, and the note it means. An agent tab means
- * the note the plex is standing on, so the note is asked for once here and
- * every command reads it.
+ * the note the plex is standing on.
  */
 export interface Where {
   /** The tab in front, for a command about the tab itself. */
@@ -69,8 +68,6 @@ export interface Command {
   readonly band: Band
   /** Whether it is offered at all over what is in front. */
   where(at: Where): boolean
-  /** The second line it is drawn with. */
-  about?(at: Where): string
   /** What stands in the field when its step opens, for the person to replace. */
   filled?(at: Where): string
   /** The command Shift and Enter reach on the same row. */
@@ -84,8 +81,7 @@ export interface Deed {
   readonly path: string
   /**
    * The identity of the tab holding that note, and nothing where none holds it.
-   * A note that moves is at another name by the time the deed is carried out,
-   * and this is what reaches it there.
+   * A note that moves is at another name by the time the deed is carried out.
    */
   readonly note: string | null
   readonly title: string
@@ -98,7 +94,7 @@ export interface Deed {
 }
 
 /** Everything the commands say in the window's voice. */
-export interface Words {
+export interface Words extends Silences {
   /** The commands, each in the words it is offered by. */
   readonly read: string
   readonly beside: string
@@ -149,9 +145,6 @@ export interface Words {
   readonly typeBack: string
   readonly destroys: string
   readonly forever: string
-  /** What a band says when it holds nothing, and when it could not be asked. */
-  readonly noneFound: string
-  readonly notAsked: string
   /** The note the vault could not find, offered as one to make. */
   readonly creating: string
   readonly creates: string
@@ -179,19 +172,8 @@ const EACH = 8
 /** How long a keystroke waits before the vault is asked. */
 const HOLD = 120
 
-/** Which step each command asks its question on. */
-const STEPS: Record<Needed, Exclude<Step, 'commands'>> = {
-  name: 'naming',
-  note: 'picking',
-  yes: 'asking',
-  exactly: 'exactly',
-}
-
 /** A command over the note in front, which there has to be one of. */
 const onNote = (at: Where): boolean => at.ready && at.path !== ''
-
-/** What the command is over, drawn under it. */
-const named = (at: Where): string => at.title
 
 const always = (): boolean => true
 
@@ -202,47 +184,38 @@ const always = (): boolean => true
  * too and drawn nowhere: the row it belongs to is the one that names it.
  */
 export const commandsOf = (words: Words): readonly Command[] => [
-  { id: 'read', text: words.read, band: 'note', where: onNote, about: named, also: 'beside' },
-  { id: 'beside', text: words.beside, band: 'note', where: onNote, about: named },
-  { id: 'travel', text: words.travel, band: 'note', where: onNote, about: named },
-  { id: 'child', text: words.child, band: 'note', needs: 'name', where: onNote, about: named },
-  { id: 'parent', text: words.parent, band: 'note', needs: 'name', where: onNote, about: named },
-  { id: 'jump', text: words.jump, band: 'note', needs: 'name', where: onNote, about: named },
+  { id: 'read', text: words.read, band: 'note', where: onNote, also: 'beside' },
+  { id: 'beside', text: words.beside, band: 'note', where: onNote },
+  { id: 'travel', text: words.travel, band: 'note', where: onNote },
+  { id: 'child', text: words.child, band: 'note', needs: 'naming', where: onNote },
+  { id: 'parent', text: words.parent, band: 'note', needs: 'naming', where: onNote },
+  { id: 'jump', text: words.jump, band: 'note', needs: 'naming', where: onNote },
   {
     id: 'title',
     text: words.title,
     band: 'note',
-    needs: 'name',
+    needs: 'naming',
     where: onNote,
-    about: named,
-    filled: named,
+    filled: (at) => at.title,
   },
   {
     id: 'remove',
     text: words.remove,
     band: 'note',
-    needs: 'yes',
+    needs: 'asking',
     where: onNote,
-    about: named,
     also: 'destroy',
   },
-  {
-    id: 'destroy',
-    text: words.destroy,
-    band: 'note',
-    needs: 'exactly',
-    where: onNote,
-    about: named,
-  },
-  { id: 'ask', text: words.ask, band: 'note', where: onNote, about: named },
-  { id: 'copy', text: words.copy, band: 'note', where: onNote, about: named },
-  { id: 'note', text: words.newNote, band: 'window', needs: 'name', where: (at) => at.ready },
+  { id: 'destroy', text: words.destroy, band: 'note', needs: 'exactly', where: onNote },
+  { id: 'ask', text: words.ask, band: 'note', where: onNote },
+  { id: 'copy', text: words.copy, band: 'note', where: onNote },
+  { id: 'note', text: words.newNote, band: 'window', needs: 'naming', where: (at) => at.ready },
   { id: 'plex', text: words.newPlex, band: 'window', where: always },
   { id: 'agent', text: words.newAgent, band: 'window', where: always },
   { id: 'close', text: words.close, band: 'window', where: (at) => at.tab !== '' },
   { id: 'find', text: words.find, keys: words.findKeys, band: 'window', where: always },
   { id: 'first', text: words.first, band: 'vault', where: (at) => at.ready },
-  { id: 'goto', text: words.goto, band: 'vault', needs: 'note', where: (at) => at.ready },
+  { id: 'goto', text: words.goto, band: 'vault', needs: 'picking', where: (at) => at.ready },
 ]
 
 /**
@@ -328,7 +301,7 @@ export const offering = (
 
 /** One step of a command: what it asks for, and what it is over. */
 interface Asked {
-  readonly step: Exclude<Step, 'commands'>
+  readonly step: Needed
   readonly command: Command
   readonly on: Where
 }
@@ -400,11 +373,7 @@ export function commanding(
     }
   })
 
-  /**
-   * Which step the palette is on, as one word it hands back. It changes with
-   * every step, which is what hands the keyboard back to the field with what
-   * stands there selected.
-   */
+  /** Which step the palette is on, as one word it hands back. */
   const step = computed(
     () => `${steps.value.length}:${here.value?.command.id ?? ''}:${here.value?.step ?? 'commands'}`,
   )
@@ -440,8 +409,8 @@ export function commanding(
     } catch (error) {
       if (mine !== asked) return
       found.value = []
-      // What went wrong is said in the window's own voice. The reason belongs
-      // where a person reading it can do something about it.
+      // The reason goes to the console; the person is told in the window's
+      // own voice.
       console.error(error)
       said.value = words.notAsked
     } finally {
@@ -459,7 +428,8 @@ export function commanding(
   const drawn = (one: Command, over: Where, word: string): PaletteItem | null => {
     const found = word === '' ? -1 : one.text.toLowerCase().indexOf(word)
     if (word !== '' && found < 0) return null
-    const detail = one.about?.(over) ?? ''
+    // A command over a note is drawn with the note it is over.
+    const detail = one.band === 'note' ? over.title : ''
     const also = one.also ? byId.get(one.also) : undefined
     return {
       id: one.id,
@@ -624,7 +594,7 @@ export function commanding(
       steps.value = []
       open.value = true
     }
-    puts({ step: STEPS[command.needs], command, on: over })
+    puts({ step: command.needs, command, on: over })
     return null
   }
 
@@ -642,8 +612,8 @@ export function commanding(
   const follows = (renamed: readonly Went[] = []) => {
     if (!renamed.length) return
     steps.value = steps.value.map((step) => {
-      const went = renamed.find((one) => one.from === step.on.path)
-      return went ? { ...step, on: { ...step.on, path: went.to } } : step
+      const to = wentTo(renamed, step.on.path)
+      return to ? { ...step, on: { ...step.on, path: to } } : step
     })
   }
 

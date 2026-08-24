@@ -12,20 +12,12 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import Palette from './Palette.vue'
 import type { PaletteBand } from './model'
+import { MANY } from './fixtures/actions'
 
 const OPEN = [{ id: 'open', text: 'Open the note' }]
 const BOTH = [
   { id: 'travel', text: 'Show in plex' },
   { id: 'open', text: 'Open the note' },
-]
-
-/** More actions than there are keys, which is what the action panel is for. */
-const MANY = [
-  { id: 'travel', text: 'Show in plex' },
-  { id: 'open', text: 'Open the note' },
-  { id: 'beside', text: 'Open beside' },
-  { id: 'rename', text: 'Rename' },
-  { id: 'remove', text: 'Move to trash' },
 ]
 
 const OFFERING: PaletteBand[] = [
@@ -96,19 +88,6 @@ const pressOn = async (on: Element | null, key: string, more: KeyboardEventInit 
 }
 
 const press = (key: string, more: KeyboardEventInit = {}) => pressOn(field(), key, more)
-
-/**
- * The same bands again, in arrays of their own. A caller that builds its bands
- * from what the window holds hands over fresh arrays every time it is read.
- */
-const again = (bands: readonly PaletteBand[]): PaletteBand[] =>
-  bands.map((band) => ({
-    ...band,
-    items: band.items.map((item) => ({
-      ...item,
-      ...(item.actions ? { actions: item.actions.map((action) => ({ ...action })) } : {}),
-    })),
-  }))
 
 const typeIn = async (into: HTMLInputElement | null, text: string) => {
   if (!into) return
@@ -569,7 +548,7 @@ describe('the action panel', () => {
     expect(document.activeElement).toBe(hunt())
   })
 
-  it('is a second list, and the one underneath is no longer the active one', async () => {
+  it('is a second list, and takes the active one from the list underneath', async () => {
     await open()
 
     expect(field()?.getAttribute('aria-activedescendant')).toBeNull()
@@ -710,7 +689,25 @@ describe('the action panel', () => {
     await pressOn(hunt(), 'ArrowDown')
     expect(litDeed()?.textContent).toContain('Open beside')
 
-    await palette.setProps({ bands: again(OFFERING) })
+    // The same bands in arrays of their own, as a caller building them from
+    // what the window holds hands over.
+    await palette.setProps({
+      bands: [
+        {
+          id: 'names',
+          title: 'Names',
+          items: [
+            {
+              id: 'entropy',
+              title: 'Entropy',
+              actions: MANY.map((one) => ({ ...one })),
+              keys: '⌥1',
+            },
+            { id: 'enthalpy', title: 'Enthalpy', actions: OPEN },
+          ],
+        },
+      ],
+    })
     await settle()
 
     expect(litDeed()?.textContent).toContain('Open beside')

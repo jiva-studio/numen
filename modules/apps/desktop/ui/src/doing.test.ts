@@ -1,10 +1,9 @@
 /**
  * Carrying a command out, asked without a window.
  *
- * Two things are asked here that nothing else can ask: that a note is settled
- * before its file is renamed or removed, and that what a rename and a remove
- * leave behind is put to the person, because nothing repairs it and nothing
- * undoes it.
+ * Two things are asked here: that a note is settled before its file is renamed
+ * or removed, and that what a rename and a remove leave behind is put to the
+ * person.
  */
 import { describe, expect, it } from 'vitest'
 import { commandsOf, deedOf, type Deed, type Where } from './commanding'
@@ -25,7 +24,7 @@ const front = (over: Partial<Where> = {}): Where => ({
 const renamed = (over: Partial<Renamed> = {}): Renamed => ({
   path: 'physics/Entropy.md',
   title: 'Entropy',
-  by: 'frontmatter',
+  frontmatter: false,
   moved: null,
   refusal: null,
   changed: false,
@@ -227,7 +226,7 @@ describe('a note renamed', () => {
         moved: {
           from: 'physics/Ontology.md',
           to: 'physics/Entropy.md',
-          repaired: ['Notes.md'],
+          repaired: [],
           retargeted: [
             { in: 'Order.md', target: 'Entropy', now: 'other/Entropy.md' },
             { in: 'Order.md', target: 'Entropy', now: 'other/Entropy.md' },
@@ -239,6 +238,31 @@ describe('a note renamed', () => {
     await carry(deedOf('title', front(), 'Entropy'), one.on)
 
     expect(one.said).toStrictEqual([`${words.retargeted} Order.md`])
+  })
+
+  it('says the notes whose links it wrote again, which the person did not touch', async () => {
+    const one = window({
+      renamed: renamed({
+        moved: {
+          from: 'physics/Ontology.md',
+          to: 'physics/Entropy.md',
+          repaired: ['Notes.md', 'Order.md'],
+          retargeted: [],
+        },
+      }),
+    })
+
+    await carry(deedOf('title', front(), 'Entropy'), one.on)
+
+    expect(one.said).toStrictEqual([`${words.repaired} Notes.md, Order.md`])
+  })
+
+  it('says the title went into the frontmatter, which is the person’s own', async () => {
+    const one = window({ renamed: renamed({ frontmatter: true }) })
+
+    await carry(deedOf('title', front(), 'Entropy'), one.on)
+
+    expect(one.said).toStrictEqual([words.titled])
   })
 
   it('says nothing where the rename left every link meaning what it meant', async () => {
@@ -291,12 +315,30 @@ describe('a note removed', () => {
     expect(one.done[1]).toBe('removes physics/Ontology.md true')
   })
 
-  it('says the notes that link to nothing now, which nothing repairs', async () => {
+  it('says where in the trash it landed, which is the way back to it', async () => {
+    const one = window()
+
+    await carry(deedOf('remove', front()), one.on)
+
+    expect(one.said).toStrictEqual([`${words.trashedAt} .trash/Ontology.md`])
+  })
+
+  it('says nothing about the trash where the note was destroyed', async () => {
+    const one = window({ removed: removed({ trashed: '' }) })
+
+    await carry(deedOf('destroy', front(), 'Ontology'), one.on)
+
+    expect(one.said).toStrictEqual([])
+  })
+
+  it('says where it went, and the notes that link to nothing now', async () => {
     const one = window({ removed: removed({ dangling: ['Order.md', 'Notes.md'] }) })
 
     await carry(deedOf('remove', front()), one.on)
 
-    expect(one.said).toStrictEqual([`${words.dangling} Order.md, Notes.md`])
+    expect(one.said).toStrictEqual([
+      `${words.trashedAt} .trash/Ontology.md. ${words.dangling} Order.md, Notes.md`,
+    ])
   })
 
   it('leaves every plex standing on it at the note the vault opens with', async () => {

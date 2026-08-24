@@ -12,7 +12,7 @@ import { WORDS as note } from './note/words'
 import { WORDS as plex } from './plex/words'
 
 /** What the vault refused a command, in words a person reads. */
-const REFUSED: Record<Refused, string> = {
+export const REFUSED: Record<Refused, string> = {
   missing: 'that note is not in the vault',
   notANote: 'that file is not a note',
   notText: 'that file is not text',
@@ -44,7 +44,6 @@ export const WORDS = {
   readDocument: 'Open the document here',
   noneFound: 'Nothing',
   notAsked: 'The vault could not answer',
-  noModel: 'Nothing is set to read this vault for meaning',
   notEmbedded: 'This vault has not been read for meaning yet',
   /** The commands, and the three bands they are drawn in. */
   overNote: 'This note',
@@ -95,7 +94,12 @@ export const WORDS = {
   /** What a command could not do, and what it left behind. */
   refused: REFUSED,
   retargeted: 'These notes link by a name that means another note now:',
+  repaired: 'These notes linked by the name it had, and were written again:',
   dangling: 'These notes link to nothing now:',
+  /** Where a removed note landed, which is the only way back to it. */
+  trashedAt: 'The note is in the trash, at',
+  /** The rename wrote in the frontmatter, which is the person's own. */
+  titled: 'The title is written in the frontmatter of the note',
   nowhere: 'The vault has no note to open with',
   unanswered: 'that note changed on disk, and its tab is waiting for an answer',
   overtaken: 'that note changed on disk while this was asked, so nothing was written',
@@ -104,7 +108,7 @@ export const WORDS = {
   findAction: 'Search actions',
   noAction: 'Nothing by that name',
   /** The corner where what is running behind the window is shown. */
-  words: 'Searching by words only — no model set',
+  wordsOnly: 'Searching by words only — no model set',
   working: 'Background work',
   putAway: 'Put away',
 }

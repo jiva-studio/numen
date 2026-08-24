@@ -13,6 +13,10 @@ export interface Went {
   readonly to: string
 }
 
+/** Where a note went, and nothing where none of these moved it. */
+export const wentTo = (renamed: readonly Went[], path: string): string =>
+  renamed.find((one) => one.from === path)?.to ?? ''
+
 /** A stretch of a source's own text, counted in bytes. */
 export interface Run {
   readonly start: number
@@ -187,9 +191,6 @@ export interface Made {
   refusal: Refused | null
 }
 
-/** Which of the three a note is shown by, and so which one a rename wrote. */
-export type NamedBy = 'frontmatter' | 'heading' | 'filename'
-
 /** What renaming a note came back with. */
 export interface Renamed {
   /**
@@ -198,8 +199,8 @@ export interface Renamed {
    */
   path: string
   title: string
-  /** Which of the three the rename wrote. */
-  by: NamedBy | null
+  /** Whether the rename wrote the title into the frontmatter of the note. */
+  frontmatter: boolean
   /** What the file did. Null when it stayed where it was. */
   moved: Moved | null
   refusal: Refused | null

@@ -124,8 +124,7 @@ export function showing(
       async (change) => {
         if (change.paths.length === 0 && !change.reload && change.renamed.length === 0) return
         await told(change.reload ? [] : change.paths, change.renamed)
-        // The note the vault opens with is one of the notes that move, and
-        // whoever is sent there is sent by the name it is asked for under.
+        // The note the vault opens with is asked for again when it moves.
         if (change.renamed.some((went) => went.from === opening.value)) {
           try {
             await first()

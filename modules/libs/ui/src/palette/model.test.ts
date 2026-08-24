@@ -26,20 +26,12 @@ import {
   type PaletteItem,
   type PaletteBand,
 } from './model'
+import { MANY } from './fixtures/actions'
 
 const OPEN = [{ id: 'open', text: 'Open' }]
 const BOTH = [
   { id: 'travel', text: 'Show in plex' },
   { id: 'open', text: 'Open the note' },
-]
-
-/** More actions than there are keys, which is what the action panel is for. */
-const MANY = [
-  { id: 'travel', text: 'Show in plex' },
-  { id: 'open', text: 'Open the note' },
-  { id: 'beside', text: 'Open beside' },
-  { id: 'rename', text: 'Rename' },
-  { id: 'remove', text: 'Move to trash' },
 ]
 
 const item = (id: string, more: Partial<PaletteItem> = {}): PaletteItem => ({
@@ -244,9 +236,8 @@ describe('walking a list where every row can be landed on', () => {
     expect(stepIn(3, 0, -1)).toBe(2)
   })
 
-  it('is asked for the first by counting from nowhere, and the last by counting back', () => {
+  it('is asked for the first by counting from nowhere', () => {
     expect(stepIn(3, -1, 1)).toBe(0)
-    expect(stepIn(3, 0, -1)).toBe(2)
   })
 
   it('lands nowhere in a list with nothing in it', () => {

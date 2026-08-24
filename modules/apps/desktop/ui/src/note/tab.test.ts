@@ -599,7 +599,7 @@ describe('a save is asked for', () => {
 })
 
 describe('a file about to be renamed or removed', () => {
-  it('lets go of the interval, so nothing fires against the path it is leaving', () => {
+  it('lets go of the interval it is waiting on', () => {
     const clean = tab()
 
     expect(tabAfter(clean, { kind: 'settling' })).toEqual({

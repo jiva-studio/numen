@@ -8,6 +8,7 @@
 import { ref } from 'vue'
 import type { PlexRelatedSeat } from '@numen/ui'
 import type { Core, NewLink, Refused } from '../core'
+import { REFUSED } from '../words'
 
 /**
  * Seats a person may make a note in. A sibling is another child of a shared
@@ -26,22 +27,29 @@ const facing: Partial<Record<PlexRelatedSeat, PlexRelatedSeat>> = {
   jump: 'jump',
 }
 
+/**
+ * What a new note writes to sit in that seat of another one. A note in no seat
+ * writes nothing, and a seat nothing faces is not a seat to make one in.
+ */
+const seatedOn = (from: string, seat: PlexRelatedSeat | null): readonly NewLink[] | null => {
+  if (!seat) return []
+  const opposite = facing[seat]
+  return opposite ? [{ to: from, seat: opposite }] : null
+}
+
 /** What a note is called before the person has called it anything. */
 export const UNTITLED = 'Untitled note'
 
 /** How many names are asked for before the vault refusing them all is said. */
 const names = 100
 
-/** What a person is told when a note could not be made or joined. */
+/**
+ * What a person is told when a note could not be made or joined. A name that
+ * is taken is a name to choose again, and nothing has been renamed.
+ */
 const words: Record<Refused, string> = {
-  missing: 'that note is not in the vault',
-  notANote: 'that file is not a note',
-  notText: 'that file is not text',
-  tooLarge: 'that note is longer than this writes',
-  bodyRefused: 'that text cannot be written into a note',
-  unreadable: 'the frontmatter of that note cannot be read',
+  ...REFUSED,
   occupied: 'a note of that name is filed there already',
-  unnameable: 'a note cannot be called that',
 }
 
 /** What a person is told when the vault took none of the names it was offered. */
@@ -58,6 +66,25 @@ export function creating(core: Core) {
   const said = ref('')
 
   /**
+   * One note asked for. A name the vault has already filed is handed back as
+   * `occupied` for the caller to answer for.
+   */
+  async function creates(
+    title: string,
+    folder: string,
+    links: readonly NewLink[],
+  ): Promise<Made | Refused | null> {
+    try {
+      const made = await core.create({ title, folder, links })
+      if (made.refusal !== null) return made.refusal
+      return { path: made.path, title }
+    } catch (error) {
+      said.value = String(error)
+      return null
+    }
+  }
+
+  /**
    * A note under the first name the vault has free.
    *
    * The name is asked for again for as long as the vault answers that it is
@@ -66,20 +93,9 @@ export function creating(core: Core) {
    */
   async function named(folder: string, links: readonly NewLink[]): Promise<Made | null> {
     for (let taken = 1; taken <= names; taken++) {
-      const title = nameAt(taken)
-      try {
-        const made = await core.create({ title, folder, links })
-        if (made.refusal === 'occupied') continue
-        if (made.refusal !== null) {
-          said.value = words[made.refusal]
-          return null
-        }
-        said.value = ''
-        return { path: made.path, title }
-      } catch (error) {
-        said.value = String(error)
-        return null
-      }
+      const made = await creates(nameAt(taken), folder, links)
+      if (made === 'occupied') continue
+      return answered(made)
     }
     said.value = exhausted
     return null
@@ -94,32 +110,31 @@ export function creating(core: Core) {
     from: string,
     seat: PlexRelatedSeat | null,
   ): Promise<Made | null> {
-    const opposite = seat ? facing[seat] : undefined
-    if (seat && !opposite) return null
-    const links = opposite ? [{ to: from, seat: opposite }] : []
-    try {
-      const made = await core.create({ title, folder: from ? folderOf(from) : '', links })
-      if (made.refusal !== null) {
-        said.value = words[made.refusal]
-        return null
-      }
-      said.value = ''
-      return { path: made.path, title }
-    } catch (error) {
-      said.value = String(error)
-      return null
-    }
+    const links = seatedOn(from, seat)
+    if (!links) return null
+    return answered(await creates(title, from ? folderOf(from) : '', links))
   }
 
   /** Make a note in a seat of another one, filed in the folder that one is in. */
   async function make(from: string, seat: PlexRelatedSeat): Promise<Made | null> {
-    const opposite = facing[seat]
-    if (!opposite) return null
-    return named(folderOf(from), [{ to: from, seat: opposite }])
+    const links = seatedOn(from, seat)
+    if (!links) return null
+    return named(folderOf(from), links)
   }
 
   /** A note standing on its own, filed at the top of the vault. */
   const start = (): Promise<Made | null> => named('', [])
+
+  /** What a note that was asked for came to, said to the person where it failed. */
+  const answered = (made: Made | Refused | null): Made | null => {
+    if (made === null) return null
+    if (typeof made === 'string') {
+      said.value = words[made]
+      return null
+    }
+    said.value = ''
+    return made
+  }
 
   /**
    * Join two notes that are both there. The link is written in the one the

@@ -179,7 +179,7 @@ export type Effect =
     }
   /** Arm the interval to fire after this many milliseconds. */
   | { readonly kind: 'arm'; readonly after: number }
-  /** Let go of the interval, so what it was waiting on never fires. */
+  /** Let go of the interval the tab is waiting on. */
   | { readonly kind: 'disarm' }
   /** Replace the document with this body. */
   | { readonly kind: 'replace'; readonly body: string }

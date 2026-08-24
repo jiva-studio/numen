@@ -158,6 +158,8 @@ describe('the menu on a node', () => {
     }
     one.held.asks(asked('Child.md'))
     one.held.chose('constructor')
+    one.held.asks(asked('Child.md'))
+    one.held.chose('destroy')
 
     expect(one.ran.map(([id]) => id)).toStrictEqual(ITEMS.map((item) => item.id))
   })
