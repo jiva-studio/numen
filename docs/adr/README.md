@@ -47,6 +47,7 @@ Read these first; everything else is derived from them.
 - [ADR-0032 — The window saves a note as it is typed, and stops at an unseen edit](0032-the-window-saves-a-note-as-it-is-typed.md)
 - [ADR-0033 — One process, one writer, one lifetime](0033-one-process-one-writer-one-lifetime.md)
 - [ADR-0035 — What the application cannot do, it says](0035-what-the-application-cannot-do-it-says.md)
+- [ADR-0041 — The window opens another vault](0041-the-window-opens-another-vault.md)
 - [ADR-0040 — A note is renamed by whatever names it](0040-a-note-is-renamed-by-whatever-names-it.md)
 
 ## The note file
