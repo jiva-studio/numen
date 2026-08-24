@@ -589,26 +589,26 @@ describe('a search that turned up nothing', () => {
   ]
 
   it('offers to make the note that was looked for', () => {
-    const offered = offering(bands(0), 'Entropy', words)
+    const offered = offering(bands(0), 'Entropy', words, front())
 
     expect(offered.at(-1)?.id).toBe(MAKING)
     expect(offered.at(-1)?.items[0]?.title).toBe('Create a note called “Entropy”')
   })
 
   it('offers nothing while a band is still waiting on the vault', () => {
-    expect(offering(bands(0, true), 'Entropy', words)).toHaveLength(1)
+    expect(offering(bands(0, true), 'Entropy', words, front())).toHaveLength(1)
   })
 
   it('offers nothing where a band turned something up', () => {
-    expect(offering(bands(1), 'Entropy', words)).toHaveLength(1)
+    expect(offering(bands(1), 'Entropy', words, front())).toHaveLength(1)
   })
 
   it('offers nothing where nothing was looked for', () => {
-    expect(offering(bands(0), '   ', words)).toHaveLength(1)
+    expect(offering(bands(0), '   ', words, front())).toHaveLength(1)
   })
 
   it('makes the note where the person is standing, under the words looked for', () => {
-    expect(creates('Entropy', front())).toStrictEqual({
+    expect(creates('creating', 'Entropy', front())).toStrictEqual({
       id: 'note',
       path: '',
       note: null,
@@ -616,6 +616,42 @@ describe('a search that turned up nothing', () => {
       name: 'Entropy',
       kind: 'note',
       tab: 'tab',
+    })
+  })
+
+  it('offers the seats of the note in front, and says which note that is', () => {
+    const item = offering(bands(0), 'Entropy', words, front()).at(-1)?.items[0]
+
+    expect(item?.actions?.map((one) => one.id)).toStrictEqual([
+      MAKING,
+      'child',
+      'parent',
+      'jump',
+    ])
+    expect(item?.detail).toBe(front().title)
+  })
+
+  it('offers no seat where nothing in front is a note', () => {
+    const item = offering(bands(0), 'Entropy', words, front({ path: '', title: '' })).at(-1)
+      ?.items[0]
+
+    expect(item?.actions?.map((one) => one.id)).toStrictEqual([MAKING])
+    expect(item?.detail).toBeUndefined()
+  })
+
+  it('hangs the note off the one in front when a seat was chosen', () => {
+    expect(creates('child', 'Entropy', front())).toMatchObject({
+      id: 'child',
+      path: front().path,
+      name: 'Entropy',
+    })
+  })
+
+  it('stands the note on its own where a seat has no note to hang it off', () => {
+    expect(creates('child', 'Entropy', front({ path: '', title: '' }))).toMatchObject({
+      id: 'note',
+      path: '',
+      name: 'Entropy',
     })
   })
 })

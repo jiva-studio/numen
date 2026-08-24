@@ -155,6 +155,10 @@ export interface Words {
   /** The note the vault could not find, offered as one to make. */
   readonly creating: string
   readonly creates: string
+  /** The seats it can be made in, off the note in front. */
+  readonly asChild: string
+  readonly asParent: string
+  readonly asJump: string
 }
 
 /** The one item of a step that asks for one thing. */
@@ -271,9 +275,17 @@ export const deedOf = (id: string, at: Where, name = '', note: string | null = n
   tab: at.tab,
 })
 
-/** The note a search did not find, made under the words that were looked for. */
-export const creates = (name: string, at: Where): Deed =>
-  deedOf('note', { ...at, path: '', title: '' }, name)
+/**
+ * The note a search did not find, made under the words that were looked for.
+ * A seat hangs it off the note in front; anything else stands it on its own.
+ */
+export const creates = (seat: string, name: string, at: Where): Deed =>
+  SEATED.includes(seat) && at.path
+    ? deedOf(seat, at, name)
+    : deedOf('note', { ...at, path: '', title: '' }, name)
+
+/** The seats a note the search did not find can be made in. */
+const SEATED: readonly string[] = ['child', 'parent', 'jump']
 
 /**
  * The bands of a search, and the offer to make a note where every one of them
@@ -283,10 +295,20 @@ export const offering = (
   bands: readonly PaletteBand[],
   typed: string,
   words: Words,
+  at: Where,
 ): readonly PaletteBand[] => {
   const name = typed.trim()
   const empty = bands.length > 0 && bands.every((one) => one.items.length === 0 && !one.working)
   if (!name || !empty) return bands
+  // A note made from a search stands on its own, and the note in front is what
+  // it can be joined to as it is made.
+  const seats = at.path
+    ? [
+        { id: 'child', text: words.asChild },
+        { id: 'parent', text: words.asParent },
+        { id: 'jump', text: words.asJump },
+      ]
+    : []
   return [
     ...bands,
     {
@@ -296,7 +318,8 @@ export const offering = (
         {
           id: MAKING,
           title: `${words.creates} “${name}”`,
-          actions: [{ id: MAKING, text: words.creates }],
+          ...(at.path ? { detail: at.title || at.path } : {}),
+          actions: [{ id: MAKING, text: words.creates }, ...seats],
         },
       ],
     },

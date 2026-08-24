@@ -44,6 +44,8 @@ export const WORDS = {
   readDocument: 'Open the document here',
   noneFound: 'Nothing',
   notAsked: 'The vault could not answer',
+  noModel: 'Nothing is set to read this vault for meaning',
+  notEmbedded: 'This vault has not been read for meaning yet',
   /** The commands, and the three bands they are drawn in. */
   overNote: 'This note',
   overWindow: 'This window',
@@ -87,6 +89,9 @@ export const WORDS = {
   /** The note a search did not find, offered as one to make. */
   creating: 'Nothing was found',
   creates: 'Create a note called',
+  asChild: 'Create it as a child',
+  asParent: 'Create it as a parent',
+  asJump: 'Create it as a jump',
   /** What a command could not do, and what it left behind. */
   refused: REFUSED,
   retargeted: 'These notes link by a name that means another note now:',

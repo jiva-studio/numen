@@ -77,6 +77,21 @@ export interface Words {
   noneFound: string
   /** What a band says when the vault could not answer at all. */
   notAsked: string
+  /** Nothing is set to turn what the vault holds into vectors. */
+  noModel: string
+  /** A model is set and no vector has been made under it yet. */
+  notEmbedded: string
+}
+
+/**
+ * How far the vault has been read for meaning. A search by meaning is asked of
+ * the vectors, and a vault holding none answers nothing however it is asked.
+ */
+export interface Reading {
+  /** Whether anything is going to turn what the vault holds into vectors. */
+  embedding: boolean
+  /** How many of the spans the index holds carry one. */
+  embedded: number
 }
 
 /** Where an item chosen takes the person. */
@@ -131,6 +146,7 @@ const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
 export function finding(
   core: Asking,
   words: Words,
+  reading: () => Reading = () => ({ embedding: true, embedded: 1 }),
   wait: (ms: number) => Promise<unknown> = sleep,
 ) {
   /** Whether the palette is drawn at all. */
@@ -303,6 +319,20 @@ export function finding(
     },
   })
 
+  /**
+   * Why a band holds nothing. A search by meaning is asked of the vectors, so a
+   * vault that has none says so: the same empty band otherwise reads as an
+   * answer, and the question was never put.
+   */
+  const silenceOf = (id: Band): string => {
+    if (said.value[id]) return said.value[id]
+    if (id !== 'meaning') return words.noneFound
+    const read = reading()
+    if (!read.embedding) return words.noModel
+    if (read.embedded === 0) return words.notEmbedded
+    return words.noneFound
+  }
+
   /** What the bands hold, and where each thing in them stands in the vault. */
   const built = computed(() => {
     const held = new Map<string, Stands>()
@@ -315,7 +345,7 @@ export function finding(
         title,
         items: drawn.map((one) => one.item),
         working: waiting.value[id],
-        silence: said.value[id] || words.noneFound,
+        silence: silenceOf(id),
       }
     }
 

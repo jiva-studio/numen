@@ -128,7 +128,10 @@ const read = documentKind(held.host, (path) => documenting(reading(documents, pa
 held.declares([noted.kind, plexes.kind, agents.kind, read.kind])
 
 /** The palette: one keystroke, and everything the words typed turn up. */
-const palette = finding(core, words)
+const palette = finding(core, words, () => ({
+  embedding: embedding.value,
+  embedded: window.embedded.value,
+}))
 
 /**
  * What a command is over: the tab in front, and the note it means. A note tab
@@ -245,7 +248,7 @@ const field = computed(() =>
     : {
         open: palette.open.value,
         typed: palette.typed.value,
-        bands: offering(palette.bands.value, palette.typed.value, words),
+        bands: offering(palette.bands.value, palette.typed.value, words, where()),
         crumb: '',
         step: '',
         placeholder: words.find,
@@ -272,10 +275,10 @@ const went = async (item: string, action: string) => {
     await does(deed, doing, words)
     return
   }
-  if (action === MAKING) {
+  if (item === MAKING) {
     const name = palette.typed.value.trim()
     palette.shows(false)
-    await does(creates(name, where()), doing, words)
+    await does(creates(action, name, where()), doing, words)
     return
   }
   const landing = palette.chose(item, action)
