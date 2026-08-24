@@ -238,9 +238,15 @@ func refOf(at *v1.Fingerprint) domain.FileRef {
 // question for the person.
 func refusedBy(err error) (v1.Refusal, bool) {
 	switch {
+	case errors.Is(err, note.ErrNoNote):
+		return v1.Refusal_REFUSAL_MISSING, true
 	case errors.Is(err, note.ErrTooLarge):
 		return v1.Refusal_REFUSAL_TOO_LARGE, true
-	case errors.Is(err, note.ErrUnreadable):
+	case errors.Is(err, note.ErrUnnameable), errors.Is(err, note.ErrNotAHeading):
+		return v1.Refusal_REFUSAL_UNNAMEABLE, true
+	case errors.Is(err, note.ErrUnreadable),
+		errors.Is(err, note.ErrInline),
+		errors.Is(err, note.ErrUnterminated):
 		return v1.Refusal_REFUSAL_UNREADABLE, true
 	case errors.Is(err, note.ErrBodyRefused):
 		return v1.Refusal_REFUSAL_BODY_REFUSED, true

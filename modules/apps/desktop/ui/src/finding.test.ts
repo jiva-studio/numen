@@ -19,6 +19,8 @@ const WORDS: Words = {
   readDocument: 'Open the document',
   noneFound: 'Nothing',
   notAsked: 'The vault could not answer',
+  wordsOnly: 'Searching by words only — no model set',
+  notEmbedded: 'This vault has not been read for meaning yet',
 }
 
 /** An answer the test hands over when it chooses to. */
@@ -204,6 +206,36 @@ describe('answers arriving', () => {
     await settled()
 
     expect(bandOf(palette.bands.value, 'names')?.silence).toBe('Nothing')
+  })
+
+  it('says the vault holds no vectors, where meaning came back with nothing', async () => {
+    const vault = asking()
+    const read = { chunks: 4, embedded: 0, embedding: true }
+    const palette = finding(vault.core, WORDS, now, () => read)
+
+    void palette.typing('ent')
+    await settled()
+    vault.way('meaning')?.answers([])
+    vault.names[0]?.answers([])
+    await settled()
+
+    expect(bandOf(palette.bands.value, 'meaning')?.silence).toBe(WORDS.notEmbedded)
+    // The other bands are asked of the words, which a vault holding no vector
+    // still answers.
+    expect(bandOf(palette.bands.value, 'names')?.silence).toBe(WORDS.noneFound)
+  })
+
+  it('says nothing reads the vault for meaning, where nothing is set to', async () => {
+    const vault = asking()
+    const read = { chunks: 4, embedded: 0, embedding: false }
+    const palette = finding(vault.core, WORDS, now, () => read)
+
+    void palette.typing('ent')
+    await settled()
+    vault.way('meaning')?.answers([])
+    await settled()
+
+    expect(bandOf(palette.bands.value, 'meaning')?.silence).toBe(WORDS.wordsOnly)
   })
 
   it('lets go of everything when the palette is put away', async () => {

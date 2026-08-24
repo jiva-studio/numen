@@ -68,6 +68,10 @@ const (
 	VaultServiceCreateProcedure = "/numen.v1.VaultService/Create"
 	// VaultServiceJoinProcedure is the fully-qualified name of the VaultService's Join RPC.
 	VaultServiceJoinProcedure = "/numen.v1.VaultService/Join"
+	// VaultServiceRenameProcedure is the fully-qualified name of the VaultService's Rename RPC.
+	VaultServiceRenameProcedure = "/numen.v1.VaultService/Rename"
+	// VaultServiceRemoveProcedure is the fully-qualified name of the VaultService's Remove RPC.
+	VaultServiceRemoveProcedure = "/numen.v1.VaultService/Remove"
 	// VaultServiceQuittingProcedure is the fully-qualified name of the VaultService's Quitting RPC.
 	VaultServiceQuittingProcedure = "/numen.v1.VaultService/Quitting"
 	// VaultServiceFlushedProcedure is the fully-qualified name of the VaultService's Flushed RPC.
@@ -130,6 +134,14 @@ type VaultServiceClient interface {
 	// Join writes a relationship into one note. The note at the other end is left
 	// alone: a link is one end's account of a relationship.
 	Join(context.Context, *connect.Request[v1.JoinRequest]) (*connect.Response[v1.JoinResponse], error)
+	// Rename gives a note a different name. A note is shown by its title, else by
+	// its first level-one heading, else by its filename: whichever of the three
+	// names it is brought into line, and the file is renamed with it.
+	Rename(context.Context, *connect.Request[v1.RenameRequest]) (*connect.Response[v1.RenameResponse], error)
+	// Remove takes a note out of the vault, into the trash it can be brought back
+	// from. The links that pointed at it are left as they were written: a link is
+	// not wrong because the note it names is gone.
+	Remove(context.Context, *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error)
 	// Quitting says the window is going, for as long as the caller listens. A
 	// caller holding work that is only in its own memory writes it now and
 	// answers with Flushed.
@@ -229,6 +241,18 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(vaultServiceMethods.ByName("Join")),
 			connect.WithClientOptions(opts...),
 		),
+		rename: connect.NewClient[v1.RenameRequest, v1.RenameResponse](
+			httpClient,
+			baseURL+VaultServiceRenameProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Rename")),
+			connect.WithClientOptions(opts...),
+		),
+		remove: connect.NewClient[v1.RemoveRequest, v1.RemoveResponse](
+			httpClient,
+			baseURL+VaultServiceRemoveProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Remove")),
+			connect.WithClientOptions(opts...),
+		),
 		quitting: connect.NewClient[v1.QuittingRequest, v1.QuittingResponse](
 			httpClient,
 			baseURL+VaultServiceQuittingProcedure,
@@ -259,6 +283,8 @@ type vaultServiceClient struct {
 	write         *connect.Client[v1.WriteRequest, v1.WriteResponse]
 	create        *connect.Client[v1.CreateRequest, v1.CreateResponse]
 	join          *connect.Client[v1.JoinRequest, v1.JoinResponse]
+	rename        *connect.Client[v1.RenameRequest, v1.RenameResponse]
+	remove        *connect.Client[v1.RemoveRequest, v1.RemoveResponse]
 	quitting      *connect.Client[v1.QuittingRequest, v1.QuittingResponse]
 	flushed       *connect.Client[v1.FlushedRequest, v1.FlushedResponse]
 }
@@ -328,6 +354,16 @@ func (c *vaultServiceClient) Join(ctx context.Context, req *connect.Request[v1.J
 	return c.join.CallUnary(ctx, req)
 }
 
+// Rename calls numen.v1.VaultService.Rename.
+func (c *vaultServiceClient) Rename(ctx context.Context, req *connect.Request[v1.RenameRequest]) (*connect.Response[v1.RenameResponse], error) {
+	return c.rename.CallUnary(ctx, req)
+}
+
+// Remove calls numen.v1.VaultService.Remove.
+func (c *vaultServiceClient) Remove(ctx context.Context, req *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {
+	return c.remove.CallUnary(ctx, req)
+}
+
 // Quitting calls numen.v1.VaultService.Quitting.
 func (c *vaultServiceClient) Quitting(ctx context.Context, req *connect.Request[v1.QuittingRequest]) (*connect.ServerStreamForClient[v1.QuittingResponse], error) {
 	return c.quitting.CallServerStream(ctx, req)
@@ -394,6 +430,14 @@ type VaultServiceHandler interface {
 	// Join writes a relationship into one note. The note at the other end is left
 	// alone: a link is one end's account of a relationship.
 	Join(context.Context, *connect.Request[v1.JoinRequest]) (*connect.Response[v1.JoinResponse], error)
+	// Rename gives a note a different name. A note is shown by its title, else by
+	// its first level-one heading, else by its filename: whichever of the three
+	// names it is brought into line, and the file is renamed with it.
+	Rename(context.Context, *connect.Request[v1.RenameRequest]) (*connect.Response[v1.RenameResponse], error)
+	// Remove takes a note out of the vault, into the trash it can be brought back
+	// from. The links that pointed at it are left as they were written: a link is
+	// not wrong because the note it names is gone.
+	Remove(context.Context, *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error)
 	// Quitting says the window is going, for as long as the caller listens. A
 	// caller holding work that is only in its own memory writes it now and
 	// answers with Flushed.
@@ -489,6 +533,18 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(vaultServiceMethods.ByName("Join")),
 		connect.WithHandlerOptions(opts...),
 	)
+	vaultServiceRenameHandler := connect.NewUnaryHandler(
+		VaultServiceRenameProcedure,
+		svc.Rename,
+		connect.WithSchema(vaultServiceMethods.ByName("Rename")),
+		connect.WithHandlerOptions(opts...),
+	)
+	vaultServiceRemoveHandler := connect.NewUnaryHandler(
+		VaultServiceRemoveProcedure,
+		svc.Remove,
+		connect.WithSchema(vaultServiceMethods.ByName("Remove")),
+		connect.WithHandlerOptions(opts...),
+	)
 	vaultServiceQuittingHandler := connect.NewServerStreamHandler(
 		VaultServiceQuittingProcedure,
 		svc.Quitting,
@@ -529,6 +585,10 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 			vaultServiceCreateHandler.ServeHTTP(w, r)
 		case VaultServiceJoinProcedure:
 			vaultServiceJoinHandler.ServeHTTP(w, r)
+		case VaultServiceRenameProcedure:
+			vaultServiceRenameHandler.ServeHTTP(w, r)
+		case VaultServiceRemoveProcedure:
+			vaultServiceRemoveHandler.ServeHTTP(w, r)
 		case VaultServiceQuittingProcedure:
 			vaultServiceQuittingHandler.ServeHTTP(w, r)
 		case VaultServiceFlushedProcedure:
@@ -592,6 +652,14 @@ func (UnimplementedVaultServiceHandler) Create(context.Context, *connect.Request
 
 func (UnimplementedVaultServiceHandler) Join(context.Context, *connect.Request[v1.JoinRequest]) (*connect.Response[v1.JoinResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Join is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) Rename(context.Context, *connect.Request[v1.RenameRequest]) (*connect.Response[v1.RenameResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Rename is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) Remove(context.Context, *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Remove is not implemented"))
 }
 
 func (UnimplementedVaultServiceHandler) Quitting(context.Context, *connect.Request[v1.QuittingRequest], *connect.ServerStream[v1.QuittingResponse]) error {

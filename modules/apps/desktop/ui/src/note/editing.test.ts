@@ -56,6 +56,15 @@ function fake(over: Partial<Faked> = {}) {
     },
     create: async () => ({ path: '', refusal: null }),
     join: async () => null,
+    rename: async (path) => ({
+      path,
+      title: '',
+      frontmatter: false,
+      moved: null,
+      refusal: null,
+      changed: false,
+    }),
+    remove: async () => ({ trashed: '', dangling: [], refusal: null }),
     ...over,
   }
   return { core, files, wrote }
@@ -259,6 +268,137 @@ describe('closing', () => {
 
     expect(wrote.map((w) => w.path).sort()).toEqual(['a.md', 'b.md'])
     expect(notes.all()).toEqual([])
+  })
+})
+
+describe('a note whose file is about to be renamed or removed', () => {
+  it('writes what is unsaved before it answers', async () => {
+    const { core, files, wrote } = fake()
+    files.set('Heat.md', 'one')
+    const notes = editing(core, { quiet: 10_000, bound: 10_000 })
+    notes.open('Heat.md')
+    await settle()
+
+    notes.typed('Heat.md', 'one two')
+    await notes.settles('Heat.md')
+
+    expect(wrote).toEqual([{ path: 'Heat.md', body: 'one two' }])
+    expect(notes.shown('Heat.md').state).toBe('clean')
+  })
+
+  it('answers what a write in the air still owes before it says it has settled', async () => {
+    const { core, files, wrote } = fake()
+    files.set('Heat.md', 'one')
+    const notes = editing(core, { quiet: 10_000, bound: 10_000 })
+    notes.open('Heat.md')
+    await settle()
+
+    notes.typed('Heat.md', 'one two')
+    notes.save('Heat.md')
+    notes.typed('Heat.md', 'one two three')
+    await notes.settles('Heat.md')
+
+    expect(wrote.map((one) => one.body)).toEqual(['one two', 'one two three'])
+    expect(files.get('Heat.md')).toBe('one two three')
+  })
+
+  it('fires nothing at the path it is leaving once it has settled', async () => {
+    const { core, files, wrote } = fake()
+    files.set('Heat.md', 'one')
+    // A write slower than the interval armed by the keystroke before it.
+    const slow: Faked = {
+      ...core,
+      write: async (path, body, seen) => {
+        await new Promise((wake) => setTimeout(wake, 20))
+        return core.write(path, body, seen)
+      },
+    }
+    const notes = editing(slow, quick)
+    notes.open('Heat.md')
+    await settle()
+
+    notes.typed('Heat.md', 'one two')
+    await notes.settles('Heat.md')
+    await new Promise((wake) => setTimeout(wake, 20))
+
+    expect(wrote).toEqual([{ path: 'Heat.md', body: 'one two' }])
+  })
+
+  it('answers at once for a note with nothing unsaved, and for one it never held', async () => {
+    const { core, files, wrote } = fake()
+    files.set('Heat.md', 'one')
+    const notes = editing(core, quick)
+    notes.open('Heat.md')
+    await settle()
+
+    await notes.settles('Heat.md')
+    await notes.settles('Nowhere.md')
+
+    expect(wrote).toEqual([])
+    expect(notes.all()).toEqual(['Heat.md'])
+  })
+
+  it('leaves the tab open, so the note is followed wherever it went', async () => {
+    const { core, files } = fake()
+    files.set('Heat.md', 'one')
+    files.set('Warmth.md', 'one')
+    const notes = editing(core, quick)
+    notes.open('Heat.md')
+    await settle()
+
+    await notes.settles('Heat.md')
+    notes.changed(['Warmth.md'], [{ from: 'Heat.md', to: 'Warmth.md' }])
+    await settle()
+
+    expect(notes.all()).toEqual(['Heat.md'])
+    expect(notes.where('Heat.md')).toBe('Warmth.md')
+  })
+})
+
+describe('where a note stands', () => {
+  it('is the file its tab opened with while nothing has moved it', async () => {
+    const { core, files } = fake()
+    files.set('Heat.md', 'one')
+    const notes = editing(core, quick)
+    notes.open('Heat.md')
+    await settle()
+
+    expect(notes.where('Heat.md')).toBe('Heat.md')
+    expect(notes.where('Nowhere.md')).toBe('Nowhere.md')
+  })
+
+  it('follows each rename, so a note moved twice stands at the last of them', async () => {
+    const { core, files } = fake()
+    files.set('Heat.md', 'one')
+    const notes = editing(core, quick)
+    notes.open('Heat.md')
+    await settle()
+
+    notes.changed([], [{ from: 'Heat.md', to: 'Warmth.md' }])
+    await settle()
+    notes.changed([], [{ from: 'Warmth.md', to: 'Entropy.md' }])
+    await settle()
+
+    expect(notes.where('Heat.md')).toBe('Entropy.md')
+  })
+
+  /**
+   * A note stands at the name of its identity while the window has none open
+   * under it, so whether the window has one at all is asked apart.
+   */
+  it('is answered for only while the window holds the note', async () => {
+    const { core, files } = fake()
+    files.set('Heat.md', 'one')
+    const notes = editing(core, quick)
+    notes.open('held', 'Heat.md')
+    await settle()
+
+    expect(notes.has('held')).toBe(true)
+    expect(notes.has('never opened')).toBe(false)
+
+    await notes.shut('held')
+
+    expect(notes.has('held')).toBe(false)
   })
 })
 

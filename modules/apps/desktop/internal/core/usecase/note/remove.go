@@ -62,7 +62,7 @@ func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (Remov
 			break
 		}
 		if !errors.Is(err, port.ErrOccupied) {
-			return res, err
+			return res, missing(err)
 		}
 		if attempt > 100 {
 			return res, fmt.Errorf("remove %s: the trash already holds it", path)
@@ -93,7 +93,7 @@ func (u Remove) Destroy(ctx context.Context, v domain.Vault, path string) (Remov
 		return res, err
 	}
 	if err := writer.Remove(ctx, path); err != nil {
-		return res, err
+		return res, missing(err)
 	}
 	if err := u.index(ctx, v, path); err != nil {
 		return res, err

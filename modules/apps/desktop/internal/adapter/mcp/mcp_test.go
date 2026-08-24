@@ -94,6 +94,7 @@ func built(t *testing.T, notes map[string]string) (domain.Vault, mcp.Core) {
 		Write:   note.Write{Readers: readers, Writers: writers, Index: index},
 		Replace: note.Replace{Readers: readers, Writers: writers, Index: index},
 		Move:    note.Move{Readers: readers, Writers: writers, Links: db.Links(), Index: index},
+		Rename:  note.Rename{Move: note.Move{Readers: readers, Writers: writers, Links: db.Links(), Index: index}},
 		Remove:  note.Remove{Readers: readers, Writers: writers, Links: db.Links(), Index: index},
 		Linking: note.Linking{Readers: readers, Writers: writers, Index: index},
 	}

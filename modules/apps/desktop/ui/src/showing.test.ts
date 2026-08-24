@@ -56,6 +56,15 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     write: async () => ({ body: '', refusal: null }),
     create: async () => ({ path: '', refusal: null }),
     join: async () => null,
+    rename: async (path, title) => ({
+      path,
+      title,
+      frontmatter: false,
+      moved: null,
+      refusal: null,
+      changed: false,
+    }),
+    remove: async () => ({ trashed: '', dangling: [], refusal: null }),
     // eslint-disable-next-line require-yield
     quitting: async function* () {},
     flushed: async () => {},
@@ -164,6 +173,43 @@ describe('the stream of changes', () => {
     await one.window.follow()
 
     expect(one.changed).toStrictEqual(['Note.md → Renamed.md'])
+  })
+
+  it('asks where the vault opens again when that is the note that moved', async () => {
+    let opens = 'Opening.md'
+    const core = fake({
+      opening: async () => ({ path: opens }),
+      changes: async function* () {
+        opens = 'Renamed.md'
+        yield { paths: [], reload: false, renamed: [{ from: 'Opening.md', to: 'Renamed.md' }] }
+      },
+    })
+    const one = heard(core)
+    await one.window.first()
+
+    await one.window.follow()
+
+    expect(one.window.opening.value).toBe('Renamed.md')
+  })
+
+  it('leaves where the vault opens alone when another note moved', async () => {
+    let asked = 0
+    const core = fake({
+      opening: async () => {
+        asked++
+        return { path: 'Opening.md' }
+      },
+      changes: async function* () {
+        yield { paths: [], reload: false, renamed: [{ from: 'Other.md', to: 'Renamed.md' }] }
+      },
+    })
+    const one = heard(core)
+    await one.window.first()
+
+    await one.window.follow()
+
+    expect(one.window.opening.value).toBe('Opening.md')
+    expect(asked).toBe(1)
   })
 })
 

@@ -13,6 +13,19 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/ulid"
 )
 
+// ErrNoNote is what an operation gets when the vault holds no note at the path
+// it was given. A vault that cannot be reached at all comes back as it arrived.
+var ErrNoNote = errors.New("the vault holds no note at this path")
+
+// missing is ErrNoNote where the vault holds no note at the path, and the error
+// as it arrived otherwise.
+func missing(err error) error {
+	if errors.Is(err, fs.ErrNotExist) {
+		return ErrNoNote
+	}
+	return err
+}
+
 // editing is what every change to the contents of an existing note needs.
 //
 // It is one function because the shape is always the same and the rules in it
@@ -79,7 +92,7 @@ func (e editing) splice(
 		// arrives when the application changes a note's contents.
 		raw = nil
 	default:
-		return domain.FileRef{}, fmt.Errorf("read %s: %w", path, err)
+		return domain.FileRef{}, fmt.Errorf("read %s: %w", path, missing(err))
 	}
 
 	// Every edit is a read, a think and a write, and the person may save the
@@ -89,7 +102,7 @@ func (e editing) splice(
 	against := e.fingerprint
 	if against == (domain.FileRef{}) && !e.overwrite {
 		if looked != nil {
-			return domain.FileRef{}, fmt.Errorf("look at %s: %w", path, looked)
+			return domain.FileRef{}, fmt.Errorf("look at %s: %w", path, missing(looked))
 		}
 		against = on
 	}

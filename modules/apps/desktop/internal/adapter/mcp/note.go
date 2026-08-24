@@ -2,9 +2,7 @@ package mcp
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	pathpkg "path"
 	"strconv"
 	"strings"
 
@@ -355,20 +353,18 @@ func addNoteTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "note_rename",
 		Title: "Rename a note",
-		Description: "Give a note a different name. The file is renamed with it. Links " +
-			"written by the old name are repaired only where they stopped resolving; " +
-			"anything that now means a different note comes back under `retargeted`.",
+		Description: "Give a note a different name. " + namingOrder + " Whichever of the " +
+			"three names it is brought into line, and the file is renamed with it. A note " +
+			"its filename names is moved and not written. The answer says which of them " +
+			"named it, and what the file did. Links written by the old name are repaired " +
+			"only where they stopped resolving; anything that now means a different note " +
+			"comes back under the move's `retargeted`.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path  string `json:"path" jsonschema:"the note to rename"`
 		Title string `json:"title" jsonschema:"what it is called from now on"`
-	}) (*sdk.CallToolResult, note.Moved, error) {
-		name, _ := domain.Filename(in.Title)
-		if name == "" {
-			return nil, note.Moved{}, errors.New("a note needs a title that can be a filename")
-		}
-		to := pathpkg.Join(pathpkg.Dir(in.Path), name+pathpkg.Ext(in.Path))
-		moved, err := core.Move.Execute(ctx, core.Vault, in.Path, to)
-		return nil, moved, err
+	}) (*sdk.CallToolResult, note.Renamed, error) {
+		renamed, err := core.Rename.Execute(ctx, core.Vault, in.Path, in.Title)
+		return nil, renamed, err
 	})
 
 	sdk.AddTool(server, &sdk.Tool{

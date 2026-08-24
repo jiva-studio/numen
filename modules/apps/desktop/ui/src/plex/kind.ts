@@ -7,9 +7,10 @@
  */
 import { computed, ref } from 'vue'
 import type { MenuOpening, PlexNeighbourhood, PlexRelatedSeat, PlexShowing } from '@numen/ui'
-import { chose as carry } from './menu'
+import { OFFERED } from './menu'
 import { asPlex } from './picture'
 import type { Standing } from './standing'
+import type { Went } from '../core'
 import type { Host, Kind } from '../windowing'
 import { PLEX, plexCalled } from '../workspace'
 import PlexTab from './PlexTab.vue'
@@ -38,6 +39,11 @@ export interface Plexing {
   opens(path: string, title: string, showing: PlexShowing): void
   /** Something to ask, put in the agent the person was last in. */
   asks(text: string): void
+  /**
+   * A command asked for on a node, on the note it stands for. One that needs
+   * something asks for it in the palette; the rest happen where they stand.
+   */
+  runs(id: string, path: string, title: string): void
   /** The note the vault opens with, as it was last answered. */
   opening(): string
   /** Asks the vault where it opens, for a plex that has nowhere to stand. */
@@ -84,22 +90,44 @@ export function plexKind(host: Host, makes: () => Standing, deps: Plexing) {
   /** What the plex in front could not show, for the window to put up. */
   const trouble = (): string => front()?.view.trouble.value ?? ''
 
+  /** What the plex in front calls a note, and nothing where it names none. */
+  const names = (path: string): string => (path ? (front()?.nameOf(path) ?? '') : '')
+
   /**
    * A note put in front of the person: the plex they are looking at travels
-   * there, and a window holding no plex at all opens one on it.
+   * there and comes to the front, and a window holding no plex at all opens one
+   * on it.
    */
   const travel = async (path: string) => {
-    const one = front()
-    if (one) await one.view.go(path)
-    else await host.opens(PLEX, path)
+    const one = host.last<Held>(PLEX)
+    if (!one) {
+      await host.opens(PLEX, path)
+      return
+    }
+    host.shows(one.id)
+    await one.held.view.go(path)
   }
 
   /**
-   * Every plex asks for its picture again. One standing nowhere is given the
-   * note the vault opens with, which is asked for once for all of them and
-   * only while one of them has nowhere to stand.
+   * Every plex standing on a note travels to another one. A plex standing
+   * anywhere else stays where it is.
    */
-  const again = async () => {
+  const leaves = async (from: string, to: string) => {
+    await Promise.all(
+      all()
+        .filter(({ held }) => held.view.here.value === from)
+        .map(({ held }) => held.view.go(to)),
+    )
+  }
+
+  /**
+   * Every plex asks for its picture again, following whatever moved: a plex
+   * standing on a note that was renamed stands on where it went. One standing
+   * nowhere is given the note the vault opens with, which is asked for once for
+   * all of them and only while one of them has nowhere to stand.
+   */
+  const again = async (renamed: readonly Went[] = []) => {
+    if (renamed.length) for (const { held } of all()) held.view.follows(renamed)
     if (all().some(({ held }) => !held.view.here.value)) {
       try {
         await deps.first()
@@ -115,7 +143,7 @@ export function plexKind(host: Host, makes: () => Standing, deps: Plexing) {
     )
   }
 
-  return { kind, looking, trouble, travel, again }
+  return { kind, looking, trouble, names, travel, leaves, again }
 }
 
 export function plexing(view: Standing, deps: Plexing) {
@@ -165,13 +193,8 @@ export function plexing(view: Standing, deps: Plexing) {
   const chose = (id: string) => {
     const asking = menu.value
     menu.value = null
-    if (!asking) return
-    carry(id, asking.path, {
-      open: (path) => opens(path),
-      child: (path) => void made(path, 'child'),
-      ask: (path) => deps.asks(`${path} — `),
-      copy: (path) => void navigator.clipboard?.writeText(path),
-    })
+    if (!asking || !OFFERED.has(id)) return
+    deps.runs(id, asking.path, nameOf(asking.path))
   }
 
   /**

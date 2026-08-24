@@ -198,6 +198,21 @@ func Open(ctx context.Context, cfg container.Config, out io.Writer) (*Opened, er
 		Writers: cfg.VaultWriters(),
 		Index:   level,
 	}
+	api.Renames = &note.Rename{Move: note.Move{
+		Readers: cfg.VaultReaders(),
+		Writers: cfg.VaultWriters(),
+		Links:   api.Links,
+		Index:   level,
+		Moving: func(ctx context.Context, went domain.Went) {
+			_ = api.Viewing().Moved(ctx, went)
+		},
+	}}
+	api.Removes = &note.Remove{
+		Readers: cfg.VaultReaders(),
+		Writers: cfg.VaultWriters(),
+		Links:   api.Links,
+		Index:   level,
+	}
 
 	follow := usecase.Follow{
 		Watcher: cfg.VaultWatcher(),

@@ -16,8 +16,8 @@ export interface PalettePart {
 
 /**
  * One thing that can be done to an item, named by whoever offers it. The first
- * is what Enter reaches and the second what Shift and Enter reach; an item
- * offering one action offers Shift nothing.
+ * is what Enter reaches and the second what Shift and Enter reach; every one of
+ * them is reached by its name in the action panel.
  */
 export interface PaletteAction {
   readonly id: string
@@ -41,6 +41,11 @@ export interface PaletteItem {
   readonly detailAt?: readonly PaletteSpan[]
   /** What can be done to it. An item offering none is drawn and not chosen. */
   readonly actions?: readonly PaletteAction[]
+  /**
+   * The keystroke that reaches this item away from the palette, written as the
+   * caller writes it. Drawn at the end of the row.
+   */
+  readonly keys?: string
   /** Drawn and announced, and not choosable. */
   readonly disabled?: boolean
 }
@@ -109,6 +114,16 @@ export const stepTo = (
 }
 
 /**
+ * Where the keyboard lands in a list of this many, counting from `from`. It
+ * wraps, and answers -1 for a list holding nothing. Every row of such a list
+ * can be landed on.
+ */
+export const stepIn = (total: number, from: number, by: number): number => {
+  if (total <= 0) return -1
+  return (((from + by) % total) + total) % total
+}
+
+/**
  * Where the keyboard stands once the list has changed under it: on the item it
  * was on, wherever that item has moved to. An item that is gone hands it to the
  * first item there is; a list with nothing to land on takes it nowhere.
@@ -118,11 +133,46 @@ export const keptAt = (places: readonly PalettePlace[], was: string): number => 
   return held >= 0 ? held : stepTo(places, -1, 1)
 }
 
+/** The keys that reach an item's actions, in the order the actions are offered. */
+export const PALETTE_KEYS = ['↵', '⇧↵'] as const
+
+/** One action, and the key that reaches it straight from the list. */
+export interface PaletteKeyed {
+  readonly action: PaletteAction
+  readonly key: string
+}
+
+/**
+ * The actions of this item a key reaches, in the order they are offered. This
+ * is what the foot of the palette says, and where the keys are decided.
+ */
+export const keyed = (item: PaletteItem | undefined): readonly PaletteKeyed[] => {
+  const actions = item && choosable(item) ? (item.actions ?? []) : []
+  return actions
+    .slice(0, PALETTE_KEYS.length)
+    .map((action, at) => ({ action, key: PALETTE_KEYS[at] ?? '' }))
+}
+
 /** What the action Enter reaches is, and Shift and Enter the second. */
 export const actionAt = (item: PaletteItem | undefined, second: boolean): string => {
   const actions = item && choosable(item) ? item.actions : undefined
   return actions?.[second ? 1 : 0]?.id ?? ''
 }
+
+/** Whether this keystroke asks for the action panel. */
+export const opensActions = (event: {
+  readonly key: string
+  readonly ctrlKey: boolean
+  readonly metaKey: boolean
+}): boolean => (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k'
+
+/**
+ * What the key that opens the action panel is written as, from what a browser
+ * says it is running on. It is Command on Apple keyboards and Control
+ * everywhere else.
+ */
+export const commandKeyWord = (agent: string): string =>
+  /mac|iphone|ipad|ipod/i.test(agent) ? '⌘K' : '⌃K'
 
 /**
  * A line split into the runs that are why the item is here and the runs that
@@ -225,4 +275,53 @@ export const placePalette = (bands: readonly PaletteBand[]): readonly PlacedBand
       detail: partsOf(item.detail ?? '', item.detailAt),
     })),
   }))
+}
+
+/** One action as it is drawn in the action panel. */
+export interface PlacedAction {
+  readonly action: PaletteAction
+  /** Its number in the panel, which is what the keyboard counts in. */
+  readonly at: number
+  /** Its name, with the run the words in the panel's field picked out. */
+  readonly name: readonly PalettePart[]
+  /** The key that reaches it without the panel, and nothing where none does. */
+  readonly key: string
+}
+
+/**
+ * Every action the words in the panel's field leave, numbered as it is drawn.
+ * The order is the order they were offered in, which is the order the keys were
+ * handed out in, so an action keeps its key wherever the words put it.
+ *
+ * A word is looked for anywhere in the name, and case is not part of the
+ * question. Nothing typed leaves every action.
+ */
+export const placeActions = (
+  actions: readonly PaletteAction[] = [],
+  typed = '',
+): readonly PlacedAction[] => {
+  const word = typed.trim().toLowerCase()
+  const out: PlacedAction[] = []
+  for (const [offered, action] of actions.entries()) {
+    const found = word === '' ? -1 : action.text.toLowerCase().indexOf(word)
+    if (word !== '' && found < 0) continue
+    out.push({
+      action,
+      at: out.length,
+      name: partsOf(action.text, found < 0 ? [] : [{ from: found, to: found + word.length }]),
+      key: PALETTE_KEYS[offered] ?? '',
+    })
+  }
+  return out
+}
+
+/**
+ * Where the panel stands once its list has changed under it: on the action it
+ * was on, wherever that action has moved to. An action that is gone hands it to
+ * the first there is; a list holding none takes it nowhere.
+ */
+export const keptOn = (actions: readonly PlacedAction[], was: string): number => {
+  const held = actions.findIndex((one) => one.action.id === was)
+  if (held >= 0) return held
+  return actions.length > 0 ? 0 : -1
 }

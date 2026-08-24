@@ -58,6 +58,7 @@ type Core struct {
 	Write   note.Write
 	Replace note.Replace
 	Move    note.Move
+	Rename  note.Rename
 	Remove  note.Remove
 	Linking note.Linking
 }
@@ -82,6 +83,11 @@ func New(core Core) *sdk.Server {
 	return server
 }
 
+// namingOrder is how a note comes by the name it is shown under. The
+// instructions and the tool that changes it say it in these words.
+const namingOrder = "A note is shown by its title, else by its first heading, " +
+	"else by its filename."
+
 // instructions is what an agent is told once, before it calls anything.
 //
 // The vault's location is said once, here. A note has one address, and an
@@ -98,7 +104,8 @@ func instructions(core Core) string {
 	b.WriteString("files, `note_read` gives you the same text.\n\n")
 
 	b.WriteString("What is worth knowing before changing anything:\n")
-	b.WriteString("- A note is named by its file. Renaming a note renames the file.\n")
+	b.WriteString("- " + namingOrder + " `note_rename` brings whichever of the three names it ")
+	b.WriteString("into line and files the note under the new name.\n")
 	b.WriteString("- A link written as a name finds its note wherever it moves to, so moving ")
 	b.WriteString("notes between folders is safe and does not need links rewritten.\n")
 	b.WriteString("- Two notes filed under one name make every link written by that name ")
@@ -106,7 +113,7 @@ func instructions(core Core) string {
 	b.WriteString("- Folders are for the person's convenience. The hierarchy the product ")
 	b.WriteString("draws is the parent and child links, not the folder tree.\n")
 	b.WriteString("- Prose is yours to write; the frontmatter is the person's. Change it with ")
-	b.WriteString("the link tools rather than by writing the file yourself.\n")
+	b.WriteString("the link and rename tools rather than by writing the file yourself.\n")
 	b.WriteString("- A removed note goes to the vault's trash rather than being destroyed.\n\n")
 
 	b.WriteString("A vault holds books and papers beside its notes, and asking them is not ")

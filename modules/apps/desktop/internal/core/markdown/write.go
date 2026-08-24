@@ -7,8 +7,6 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v3"
-
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 )
 
 // ErrUnreadable is what opening a note says when its frontmatter is not YAML.
@@ -137,6 +135,32 @@ func (d *Document) Identifier() (string, bool) {
 // SetIdentifier writes the identifier the note is to carry from now on.
 func (d *Document) SetIdentifier(identifier string) error {
 	return d.set("id", []byte("id: "+identifier+d.eol))
+}
+
+// Title is what the frontmatter says the note is called, and whether it says.
+// A key with nothing in it names nothing, and the note is named by what comes
+// after it.
+func (d *Document) Title() (string, bool) {
+	node, err := d.mapping()
+	if err != nil || node == nil {
+		return "", false
+	}
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		if node.Content[i].Value == "title" {
+			title := strings.TrimSpace(node.Content[i+1].Value)
+			return title, title != ""
+		}
+	}
+	return "", false
+}
+
+// SetTitle writes the title the note is shown by from now on.
+func (d *Document) SetTitle(title string) error {
+	written, err := scalar(title)
+	if err != nil {
+		return err
+	}
+	return d.set("title", []byte("title: "+strings.ReplaceAll(written, "\n", d.eol)+d.eol))
 }
 
 // set replaces the lines one top-level key occupies, or appends them when the
@@ -302,13 +326,4 @@ type linkEntry struct {
 	Type  string `yaml:"type,omitempty"`
 	Note  string `yaml:"note,omitempty"`
 	Label string `yaml:"label,omitempty"`
-}
-
-// asWritten is an address as it goes into a file. A name is written as itself:
-// `name://` is how the index holds it and never appears in a note.
-func asWritten(a domain.Address) string {
-	if a.Scheme == domain.SchemeName {
-		return a.Value
-	}
-	return a.String()
 }

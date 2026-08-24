@@ -6,11 +6,12 @@
  */
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
-import { Counting, Owed, Refusal, VaultService, Way as Ways } from '@numen/protocol'
+import { Counting, Naming, Owed, Refusal, VaultService, Way as Ways } from '@numen/protocol'
+import type { Moved as MovedMessage } from '@numen/protocol'
 import { asSeat } from './plex/picture'
 import type { Asking, Way } from './finding'
 import type { Documents, Marked, Sheet } from './document/reading'
-import type { Answered, Core, Made, NewLink, Refused } from './core'
+import type { Answered, Core, Made, Moved, NewLink, Refused, Removed, Renamed } from './core'
 
 export const vault = createClient(
   VaultService,
@@ -59,6 +60,25 @@ export const core: Core & Asking = {
     return { path: answer.path, refusal: refusalIn(answer) } satisfies Made
   },
   join: async (path, link) => refusalIn(await vault.join({ path, link: written(link) })),
+  rename: async (path, title) => {
+    const answer = await vault.rename({ path, title })
+    return {
+      path: answer.path,
+      title: answer.title,
+      frontmatter: answer.by === Naming.FRONTMATTER,
+      moved: answer.moved ? filed(answer.moved) : null,
+      refusal: refusalIn(answer),
+      changed: answer.changed,
+    } satisfies Renamed
+  },
+  remove: async (path, destroy) => {
+    const answer = await vault.remove({ path, destroy: destroy ?? false })
+    return {
+      trashed: answer.trashed,
+      dangling: answer.dangling,
+      refusal: refusalIn(answer),
+    } satisfies Removed
+  },
   quitting: (signal) => vault.quitting({}, { signal }),
   flushed: async (token, owed) => {
     await vault.flushed({ token, owed: owing[owed ?? 'nothing'] })
@@ -203,7 +223,20 @@ const refused: Record<Refusal, Refused> = {
   [Refusal.BODY_REFUSED]: 'bodyRefused',
   [Refusal.UNREADABLE]: 'unreadable',
   [Refusal.OCCUPIED]: 'occupied',
+  [Refusal.UNNAMEABLE]: 'unnameable',
 }
+
+/** What the file did, in the shape the window carries it. */
+const filed = (moved: MovedMessage): Moved => ({
+  from: moved.from,
+  to: moved.to,
+  repaired: moved.repaired,
+  retargeted: moved.retargeted.map((one) => ({
+    in: one.in,
+    target: one.target,
+    now: one.now,
+  })),
+})
 
 /** What a client has left, as the schema names it. */
 const owing: Record<'nothing' | 'written' | 'asking', Owed> = {

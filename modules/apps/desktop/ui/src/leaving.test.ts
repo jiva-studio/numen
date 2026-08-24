@@ -87,6 +87,15 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
     },
     create: async () => ({ path: '', refusal: null }),
     join: async () => null,
+    rename: async (path, title) => ({
+      path,
+      title,
+      frontmatter: false,
+      moved: null,
+      refusal: null,
+      changed: false,
+    }),
+    remove: async () => ({ trashed: '', dangling: [], refusal: null }),
   }
   return {
     core,
@@ -109,17 +118,17 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
  * each way out would do is not this file's subject; what it records is which
  * way the person took.
  */
-function conflicted(path: string) {
+function conflicted(note: string) {
   const took: string[] = []
   let drop = () => {}
   const question: Question = {
-    path,
+    note,
     keep: async () => {
-      took.push('keep ' + path)
+      took.push('keep ' + note)
       drop()
     },
     take: async () => {
-      took.push('take ' + path)
+      took.push('take ' + note)
       drop()
     },
   }
@@ -234,7 +243,7 @@ describe('a page holding text the file changed under', () => {
     await settle()
 
     expect(at.answered).toEqual([{ token: '4', owed: 'asking' }])
-    expect(going.questions.value.map((one) => one.path)).toEqual(['Note.md'])
+    expect(going.questions.value.map((one) => one.note)).toEqual(['Note.md'])
   })
 
   it('says so before the writes it owes have landed', async () => {
@@ -281,14 +290,14 @@ describe('a page holding text the file changed under', () => {
 
     expect(at.answered).toEqual([{ token: '6', owed: 'asking' }])
 
-    await going.questions.value.find((one) => one.path === 'One.md')?.keep()
+    await going.questions.value.find((one) => one.note === 'One.md')?.keep()
     await settle()
 
     // One of the two is answered, so the window is still owed something.
     expect(at.answered.at(-1)).toEqual({ token: '6', owed: 'asking' })
-    expect(going.questions.value.map((one) => one.path)).toEqual(['Two.md'])
+    expect(going.questions.value.map((one) => one.note)).toEqual(['Two.md'])
 
-    await going.questions.value.find((one) => one.path === 'Two.md')?.take()
+    await going.questions.value.find((one) => one.note === 'Two.md')?.take()
     await settle()
 
     expect(at.answered.at(-1)).toEqual({ token: '6', owed: 'written' })

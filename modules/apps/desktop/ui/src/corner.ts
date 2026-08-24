@@ -5,24 +5,16 @@
  * new kind of work is an entry in that list and nothing here.
  *
  * The one card that is not work is the one saying this installation will not
- * embed what it cut. It is a rule, and it is here so that a test can ask it
- * without a screen.
+ * embed what it cut.
  */
 import type { Notice } from '@numen/ui'
 import type { Task } from './core'
-
-/** What the vault says about itself that the corner has anything to say about. */
-export interface Reading {
-  /** Spans of text the index holds. */
-  readonly chunks: number
-  /** Whether anything is going to turn the chunks into vectors. */
-  readonly embedding: boolean
-}
+import { wordsOnly, type Meaning } from './meaning'
 
 /** The sentences the corner draws that are the window's own. */
 export interface Words {
   /** One way of asking is missing and nothing is going to bring it. */
-  readonly words: string
+  readonly wordsOnly: string
 }
 
 /**
@@ -33,7 +25,7 @@ export interface Words {
  */
 export const cornerOf = (
   tasks: readonly Task[],
-  vault: Reading,
+  vault: Meaning,
   words: Words,
 ): readonly Notice[] => {
   const out: Notice[] = tasks.map((at) => ({
@@ -47,8 +39,8 @@ export const cornerOf = (
   }))
 
   // Said once and quietly, and it is so whether or not anything is running.
-  if (vault.chunks > 0 && !vault.embedding) {
-    out.push({ id: 'wordsOnly', says: words.words, about: '', working: false })
+  if (wordsOnly(vault)) {
+    out.push({ id: 'wordsOnly', says: words.wordsOnly, about: '', working: false })
   }
   return out
 }

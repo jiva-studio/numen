@@ -13,6 +13,10 @@ export interface Went {
   readonly to: string
 }
 
+/** Where a note went, and nothing where none of these moved it. */
+export const wentTo = (renamed: readonly Went[], path: string): string =>
+  renamed.find((one) => one.from === path)?.to ?? ''
+
 /** A stretch of a source's own text, counted in bytes. */
 export interface Run {
   readonly start: number
@@ -123,6 +127,16 @@ export interface Core {
    */
   join(path: string, link: NewLink): Promise<Refused | null>
   /**
+   * A note given a different name. Whichever of the title, the heading and the
+   * filename names it is brought into line, and the file is renamed with it.
+   */
+  rename(path: string, title: string): Promise<Renamed>
+  /**
+   * A note taken out of the vault, into the trash it can be brought back from.
+   * Destroying it takes the file off the disk, and nothing brings it back.
+   */
+  remove(path: string, destroy?: boolean): Promise<Removed>
+  /**
    * The window going, for as long as the client listens. The stream opens with
    * the token this client answers under.
    */
@@ -148,6 +162,7 @@ export type Refused =
   | 'bodyRefused'
   | 'unreadable'
   | 'occupied'
+  | 'unnameable'
 
 /** A note to make: what it is called, where it goes, and what it arrives joined to. */
 export interface NewNote {
@@ -173,5 +188,54 @@ export interface NewLink {
 export interface Made {
   /** Where the note is filed. Empty when nothing was made. */
   path: string
+  refusal: Refused | null
+}
+
+/** What renaming a note came back with. */
+export interface Renamed {
+  /**
+   * Where the note is filed. The note is brought into line before the file is,
+   * so a refused move comes back with the path the note still has.
+   */
+  path: string
+  title: string
+  /** Whether the rename wrote the title into the frontmatter of the note. */
+  frontmatter: boolean
+  /** What the file did. Null when it stayed where it was. */
+  moved: Moved | null
+  refusal: Refused | null
+  /** The note holds prose nobody here has seen, and nothing was written. */
+  changed: boolean
+}
+
+/**
+ * A file under a different name, and what that did to the links written by the
+ * name it had.
+ */
+export interface Moved {
+  readonly from: string
+  readonly to: string
+  /** The notes whose link stopped resolving and was written again, by name. */
+  readonly repaired: readonly string[]
+  /** The links that resolve to a different note now. */
+  readonly retargeted: readonly Retargeted[]
+}
+
+/** One link that means something else now. */
+export interface Retargeted {
+  /** The note the link is written in. */
+  readonly in: string
+  /** What the link is written by: a name, or the path of a note. */
+  readonly target: string
+  /** The note it reaches now. */
+  readonly now: string
+}
+
+/** What removing a note came back with. */
+export interface Removed {
+  /** Where the note sits in the trash. Empty when it was destroyed. */
+  trashed: string
+  /** The notes whose links pointed at it and now reach nothing. */
+  dangling: readonly string[]
   refusal: Refused | null
 }

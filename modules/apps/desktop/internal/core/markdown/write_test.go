@@ -442,3 +442,154 @@ func TestANoteWithAnUnclosedBlockIsNotWrittenTo(t *testing.T) {
 		t.Errorf("the note changed\n want %q\n  got %q", raw, got)
 	}
 }
+
+// A rename reaches a link whether it is quoted or written plainly.
+func TestARenameReachesALinkHoweverItIsQuoted(t *testing.T) {
+	for _, one := range []struct {
+		name    string
+		written string
+		target  string
+	}{
+		{"double quoted brackets", `"[[The aggressor]]"`, "[[The aggressor]]"},
+		{"single quoted brackets", `'[[The aggressor]]'`, "[[The aggressor]]"},
+		{"double quoted path", `"notes/The aggressor"`, "notes/The aggressor"},
+		{"single quoted path", `'notes/The aggressor'`, "notes/The aggressor"},
+		{"plainly written", `notes/The aggressor`, "notes/The aggressor"},
+	} {
+		t.Run(one.name, func(t *testing.T) {
+			raw := "---\n" +
+				"links:\n" +
+				"  - to: " + one.written + "   # where it sat\n" +
+				"    role: child\n" +
+				"---\n" +
+				"body\n"
+
+			d, err := Open([]byte(raw))
+			if err != nil {
+				t.Fatal(err)
+			}
+			moved, err := d.PointLinksAt(domain.ParseAddress(one.target), "Duryodhana")
+			if err != nil {
+				t.Fatalf("point links: %v", err)
+			}
+			if moved != 1 {
+				t.Fatalf("want the link moved, got %d\n%s", moved, d.Bytes())
+			}
+
+			got := string(d.Bytes())
+			after, err := Open(d.Bytes())
+			if err != nil {
+				t.Fatalf("the note stopped being readable: %v\n%s", err, got)
+			}
+			links, err := after.Links()
+			if err != nil {
+				t.Fatalf("links: %v", err)
+			}
+			if len(links) != 1 || links[0].Target.Value != "Duryodhana" {
+				t.Errorf("want the link at Duryodhana, got %+v\n%s", links, got)
+			}
+			for _, kept := range []string{"# where it sat", "role: child\n"} {
+				if !strings.Contains(got, kept) {
+					t.Errorf("lost %q from\n%s", kept, got)
+				}
+			}
+			if strings.Contains(got, "aggressor") {
+				t.Errorf("the old address is still written:\n%s", got)
+			}
+		})
+	}
+}
+
+// A quote inside a quoted name is written the way that quoting writes one, and
+// the span has to end at the quote that closes the scalar and not at that one.
+func TestARenameReadsPastAQuoteInsideTheName(t *testing.T) {
+	for _, one := range []struct {
+		name    string
+		written string
+		target  string
+	}{
+		{"a doubled quote", `'Bhishma''s vow'`, "Bhishma's vow"},
+		{"an escaped quote", `"Bhishma\"s vow"`, `Bhishma"s vow`},
+		{"a hash that is not a comment", `"Sabha #LXVI"`, "Sabha #LXVI"},
+	} {
+		t.Run(one.name, func(t *testing.T) {
+			raw := "---\nlinks:\n  - to: " + one.written + "\n    role: child\n---\nbody\n"
+			d, err := Open([]byte(raw))
+			if err != nil {
+				t.Fatal(err)
+			}
+			moved, err := d.PointLinksAt(domain.ParseAddress(one.target), "Duryodhana")
+			if err != nil {
+				t.Fatalf("point links: %v", err)
+			}
+			if moved != 1 {
+				t.Fatalf("want the link moved, got %d\n%s", moved, d.Bytes())
+			}
+			after, err := Open(d.Bytes())
+			if err != nil {
+				t.Fatalf("the note stopped being readable: %v\n%s", err, d.Bytes())
+			}
+			links, err := after.Links()
+			if err != nil {
+				t.Fatalf("links: %v", err)
+			}
+			if len(links) != 1 || links[0].Target.Value != "Duryodhana" {
+				t.Errorf("want the link at Duryodhana, got %+v\n%s", links, d.Bytes())
+			}
+		})
+	}
+}
+
+// A scalar written over lines of its own is not one token on one line. The link
+// stays as it was written, and the note is left readable.
+func TestARenameLeavesABlockScalarAlone(t *testing.T) {
+	raw := "---\nlinks:\n  - to: >-\n      The aggressor\n    role: child\n---\nbody\n"
+	d, err := Open([]byte(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	moved, err := d.PointLinksAt(domain.ParseAddress("The aggressor"), "Duryodhana")
+	if err != nil {
+		t.Fatalf("point links: %v", err)
+	}
+	if moved != 0 {
+		t.Fatalf("want nothing moved, got %d\n%s", moved, d.Bytes())
+	}
+	if got := string(d.Bytes()); got != raw {
+		t.Errorf("the note changed\n want %q\n  got %q", raw, got)
+	}
+}
+
+// How somebody writes their own links is theirs: the quotes around the name and
+// the brackets inside them are how they wrote it, and a rename changes the name.
+func TestARenameKeepsTheNotationItFound(t *testing.T) {
+	for _, one := range []struct {
+		name    string
+		written string
+		wants   string
+	}{
+		{"double stays double", `"[[The aggressor]]"`, `to: "[[Duryodhana]]"`},
+		{"single stays single", `'[[The aggressor]]'`, `to: '[[Duryodhana]]'`},
+		{"an alias is left standing", `"[[The aggressor|him]]"`, `to: "[[Duryodhana|him]]"`},
+		{"a place inside is left standing", `"[[The aggressor#vow]]"`, `to: "[[Duryodhana#vow]]"`},
+		{"a quoted path is repaired by name", `"notes/The aggressor"`, `to: "Duryodhana"`},
+		{"plainly written stays plain", `The aggressor`, `to: Duryodhana`},
+	} {
+		t.Run(one.name, func(t *testing.T) {
+			raw := "---\nlinks:\n  - to: " + one.written + "\n    role: child\n---\nbody\n"
+			d, err := Open([]byte(raw))
+			if err != nil {
+				t.Fatal(err)
+			}
+			target := strings.Trim(one.written, `"'`)
+			if _, err := d.PointLinksAt(domain.ParseAddress(target), "Duryodhana"); err != nil {
+				t.Fatalf("point links: %v", err)
+			}
+
+			got := string(d.Bytes())
+			if !strings.Contains(got, one.wants) {
+				t.Errorf("want %q in\n%s", one.wants, got)
+			}
+		})
+	}
+}

@@ -65,6 +65,12 @@ type API struct {
 	Makes *note.Create
 	Joins *note.Linking
 
+	// Renames gives a note a different name, and Removes takes one out of the
+	// vault. A build without them answers that a note cannot be renamed or
+	// removed here.
+	Renames *note.Rename
+	Removes *note.Remove
+
 	// Finds is how the window searches the text the vault holds, by the words
 	// in it and by what it means. A build without one answers that it cannot be
 	// searched, and the names a vault holds are answered all the same.
@@ -195,9 +201,9 @@ func (a *API) Changes(
 			if !open {
 				return nil
 			}
-			renamed := make([]*v1.Renamed, 0, len(what.renamed))
+			renamed := make([]*v1.Went, 0, len(what.renamed))
 			for _, went := range what.renamed {
-				renamed = append(renamed, &v1.Renamed{From: went.From, To: went.To})
+				renamed = append(renamed, &v1.Went{From: went.From, To: went.To})
 			}
 			if err := out.Send(&v1.ChangesResponse{
 				Paths: what.paths, Reload: what.reload, Renamed: renamed,

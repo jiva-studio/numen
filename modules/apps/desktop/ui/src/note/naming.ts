@@ -16,42 +16,65 @@ export interface Called {
   neighbourhood(path: string): Promise<{ focus?: { title?: string } | undefined }>
 }
 
+/** One settled note: the identity it opened under, and the file it settled at. */
+interface Standing {
+  readonly id: string
+  readonly at: string
+}
+
 export function naming(vault: Called, notes: Notes) {
-  /** What each note is called, as the vault last said it. */
+  /**
+   * What each note is called, as the vault last said it, under the identity its
+   * tab opened under. A note keeps what it is called wherever its file goes.
+   */
   const titles = ref<ReadonlyMap<string, string>>(new Map())
 
-  const calls = (path: string, name: string): void => {
-    titles.value = new Map(titles.value).set(path, name)
+  const calls = (id: string, name: string): void => {
+    titles.value = new Map(titles.value).set(id, name)
   }
 
-  const forgets = (path: string): void => {
+  const forgets = (id: string): void => {
     const rest = new Map(titles.value)
-    rest.delete(path)
+    rest.delete(id)
     titles.value = rest
   }
 
-  /** A vault that cannot answer leaves the note under the name it had. */
-  const asks = async (path: string): Promise<void> => {
+  /**
+   * A note is asked about at the file it stands at now. A vault that cannot
+   * answer leaves it under the name it had.
+   */
+  const asks = async (id: string): Promise<void> => {
     try {
-      const said = (await vault.neighbourhood(path)).focus?.title
-      if (said) calls(path, said)
+      const said = (await vault.neighbourhood(notes.where(id))).focus?.title
+      if (said) calls(id, said)
     } catch {
       return
     }
   }
 
+  /** Every note that has settled, each with the file it settled at. */
+  const settled = (): readonly Standing[] =>
+    notes
+      .all()
+      .filter((id) => notes.shown(id).state === 'clean')
+      .map((id) => ({ id, at: notes.where(id) }))
+
+  /**
+   * A note is asked what it is called once what was typed into it has landed,
+   * and again once it settles at another file.
+   */
   watch(
-    () => notes.all().filter((path) => notes.shown(path).state === 'clean'),
-    (settled, before) => {
-      for (const path of settled) {
-        if (!before?.includes(path)) void asks(path)
+    settled,
+    (now, before) => {
+      for (const one of now) {
+        if (!before?.some((was) => was.id === one.id && was.at === one.at)) void asks(one.id)
       }
     },
     { deep: true },
   )
 
-  /** What one note is called, and the path it is filed at while nothing else is. */
-  const called = (path: string): string => titles.value.get(path) ?? path
+  /** What one note is called, and the file it stands at while nothing has named it. */
+  const called = (id: string): string => titles.value.get(id) ?? notes.where(id)
 
   return { titles, calls, forgets, called }
 }

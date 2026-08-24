@@ -11,15 +11,22 @@ import { describe, expect, it } from 'vitest'
 import {
   actionAt,
   choosable,
+  commandKeyWord,
   flatten,
   keptAt,
+  keptOn,
+  keyed,
+  opensActions,
   ordered,
   partsOf,
+  placeActions,
   placePalette,
+  stepIn,
   stepTo,
   type PaletteItem,
   type PaletteBand,
 } from './model'
+import { MANY } from './fixtures/actions'
 
 const OPEN = [{ id: 'open', text: 'Open' }]
 const BOTH = [
@@ -172,6 +179,141 @@ describe('what a key reaches', () => {
   it('reaches nothing on an item that cannot be chosen', () => {
     expect(actionAt(item('one', { disabled: true, actions: BOTH }), false)).toBe('')
     expect(actionAt(undefined, false)).toBe('')
+  })
+
+  it('hands out a key each, in the order the actions are offered', () => {
+    expect(keyed(item('one', { actions: BOTH }))).toEqual([
+      { action: BOTH[0], key: '↵' },
+      { action: BOTH[1], key: '⇧↵' },
+    ])
+  })
+
+  it('says nothing of the actions past the keys', () => {
+    expect(keyed(item('one', { actions: MANY })).map((one) => one.action.id)).toEqual([
+      'travel',
+      'open',
+    ])
+  })
+
+  it('says nothing at all of an item that cannot be chosen', () => {
+    expect(keyed(item('one', { disabled: true, actions: MANY }))).toEqual([])
+    expect(keyed(undefined)).toEqual([])
+  })
+})
+
+describe('the keystroke that opens the action panel', () => {
+  const chord = (more: Partial<{ key: string; ctrlKey: boolean; metaKey: boolean }>) => ({
+    key: 'k',
+    ctrlKey: false,
+    metaKey: false,
+    ...more,
+  })
+
+  it('is K held with either of the two keys that hold a chord', () => {
+    expect(opensActions(chord({ ctrlKey: true }))).toBe(true)
+    expect(opensActions(chord({ metaKey: true }))).toBe(true)
+  })
+
+  it('is the same key in either case', () => {
+    expect(opensActions(chord({ key: 'K', ctrlKey: true }))).toBe(true)
+  })
+
+  it('is not the letter on its own, and not another letter', () => {
+    expect(opensActions(chord({}))).toBe(false)
+    expect(opensActions(chord({ key: 'j', ctrlKey: true }))).toBe(false)
+  })
+
+  it('is written the way the keyboard in hand writes it', () => {
+    expect(commandKeyWord('MacIntel')).toBe('⌘K')
+    expect(commandKeyWord('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)')).toBe('⌘K')
+    expect(commandKeyWord('Linux x86_64')).toBe('⌃K')
+  })
+})
+
+describe('walking a list where every row can be landed on', () => {
+  it('wraps at either end', () => {
+    expect(stepIn(3, 2, 1)).toBe(0)
+    expect(stepIn(3, 0, -1)).toBe(2)
+  })
+
+  it('is asked for the first by counting from nowhere', () => {
+    expect(stepIn(3, -1, 1)).toBe(0)
+  })
+
+  it('lands nowhere in a list with nothing in it', () => {
+    expect(stepIn(0, -1, 1)).toBe(-1)
+  })
+})
+
+describe('the actions the panel draws', () => {
+  it('draws every action when nothing has been typed', () => {
+    expect(placeActions(MANY).map((one) => one.action.id)).toEqual([
+      'travel',
+      'open',
+      'beside',
+      'rename',
+      'remove',
+    ])
+  })
+
+  it('numbers them as they are drawn, so one number says which action', () => {
+    expect(placeActions(MANY, 'open').map((one) => one.at)).toEqual([0, 1])
+  })
+
+  it('keeps only the actions the words are in, wherever in the name they stand', () => {
+    expect(placeActions(MANY, 'note').map((one) => one.action.id)).toEqual(['open'])
+    expect(placeActions(MANY, 'OPEN').map((one) => one.action.id)).toEqual(['open', 'beside'])
+    expect(placeActions(MANY, '  plex  ').map((one) => one.action.id)).toEqual(['travel'])
+  })
+
+  it('keeps nothing when no name holds the words', () => {
+    expect(placeActions(MANY, 'nowhere')).toEqual([])
+  })
+
+  it('marks the run the words stand in, and marks nothing where nothing was typed', () => {
+    expect(placeActions(MANY, 'name')[0]?.name).toEqual([
+      { text: 'Re', hit: false },
+      { text: 'name', hit: true },
+    ])
+    expect(placeActions(MANY)[3]?.name).toEqual([{ text: 'Rename', hit: false }])
+  })
+
+  it('carries the key of an action a key reaches, and nothing for the rest', () => {
+    expect(placeActions(MANY).map((one) => one.key)).toEqual(['↵', '⇧↵', '', '', ''])
+  })
+
+  it('leaves an action its key wherever the words put it', () => {
+    expect(placeActions(MANY, 'open')).toMatchObject([
+      { action: { id: 'open' }, at: 0, key: '⇧↵' },
+      { action: { id: 'beside' }, at: 1, key: '' },
+    ])
+  })
+
+  it('draws nothing for an item offering nothing', () => {
+    expect(placeActions()).toEqual([])
+    expect(placeActions([], 'open')).toEqual([])
+  })
+})
+
+describe('a list of actions changing under the panel', () => {
+  it('keeps the action it was on, wherever the words put it', () => {
+    expect(keptOn(placeActions(MANY, 'open'), 'beside')).toBe(1)
+    expect(keptOn(placeActions(MANY), 'beside')).toBe(2)
+  })
+
+  it('keeps it across a list offered again in arrays of its own', () => {
+    const fresh = MANY.map((one) => ({ ...one }))
+
+    expect(keptOn(placeActions(fresh), 'rename')).toBe(3)
+  })
+
+  it('hands it to the first action when the one it was on is gone', () => {
+    expect(keptOn(placeActions(MANY, 'plex'), 'rename')).toBe(0)
+  })
+
+  it('takes it nowhere in a list holding none', () => {
+    expect(keptOn([], 'rename')).toBe(-1)
+    expect(keptOn(placeActions(MANY, 'nowhere'), 'rename')).toBe(-1)
   })
 })
 

@@ -5,7 +5,8 @@
 - **Applies to:** the vault format — every application that reads or writes one
 - **Partly superseded by:** ADR-0032 — a note a person opens and types in acquires
   no identifier
-- **Related:** ADR-0001, ADR-0003, ADR-0011, ADR-0012, ADR-0027, ADR-0032
+- **Related:** ADR-0001, ADR-0003, ADR-0011, ADR-0012, ADR-0027, ADR-0032,
+  ADR-0040
 
 ## Context
 

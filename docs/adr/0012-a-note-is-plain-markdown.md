@@ -1,8 +1,10 @@
 # ADR-0012: A note is plain markdown any editor can open
 
-- **Status:** Accepted
+- **Status:** Accepted, except where noted below
 - **Date:** 2026-08-15
 - **Applies to:** the vault format — every application that reads or writes one
+- **Partly superseded by:** ADR-0040 — `title` is written when a note already
+  carrying it is renamed
 - **Related:** ADR-0000, ADR-0001
 
 ## Context
@@ -80,6 +82,10 @@ The key is **read and never written**. The application does not add a `title` to
 a note that has none and does not rewrite one it finds, so claiming this key
 costs the user nothing except the word itself, which they were already using for
 this purpose in every other tool.
+
+> **Partly superseded by [ADR-0040](0040-a-note-is-renamed-by-whatever-names-it.md).**
+> A note carrying this key is renamed by writing it. Nothing adds the key to a note
+> that has none, and nothing else rewrites one it finds.
 
 The frontmatter is shared with the user, not owned by the application, and three
 rules follow:

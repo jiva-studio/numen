@@ -1,44 +1,30 @@
 /**
- * The menu on a node: what it offers, and what a choice comes to.
+ * The menu on a node, and what it offers.
+ *
+ * What it offers is every command over a note that has a row of its own, which
+ * is the same list the palette draws over one.
  */
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { ITEMS, chose } from './menu'
-
-const choices = () => ({
-  open: vi.fn(),
-  child: vi.fn(),
-  ask: vi.fn(),
-  copy: vi.fn(),
-})
+import { ITEMS, OFFERED } from './menu'
+import { commandsOf, overNote } from '../commanding'
+import { WORDS as words } from '../words'
 
 describe('what the menu offers', () => {
-  it('offers four things, in the order they are drawn', () => {
-    expect(ITEMS.map((item) => item.id)).toStrictEqual(['open', 'child', 'ask', 'copy'])
+  it('offers every command over a note, in the order the commands are drawn', () => {
+    expect(ITEMS.map((item) => item.id)).toStrictEqual(
+      overNote(commandsOf(words)).map((one) => one.id),
+    )
   })
 
   it('says what each of them does', () => {
     for (const item of ITEMS) expect(item.text).not.toBe('')
   })
-})
 
-describe('choosing one', () => {
-  it('hands the note it was asked for on to the item chosen, and to no other', () => {
-    for (const item of ITEMS) {
-      const on = choices()
-      chose(item.id, 'physics/Ontology.md', on)
+  it('holds every item it draws, and no command reached on another one’s row', () => {
+    for (const item of ITEMS) expect(OFFERED.has(item.id)).toBe(true)
 
-      const called = Object.entries(on).filter(([, what]) => what.mock.calls.length > 0)
-      expect(called.map(([id]) => id)).toStrictEqual([item.id])
-      expect(called[0]?.[1]).toHaveBeenCalledWith('physics/Ontology.md')
-    }
-  })
-
-  it('does nothing for an identifier the menu does not offer', () => {
-    const on = choices()
-    chose('constructor', 'Ontology.md', on)
-    chose('', 'Ontology.md', on)
-
-    for (const what of Object.values(on)) expect(what).not.toHaveBeenCalled()
+    expect(OFFERED.has('destroy')).toBe(false)
+    expect(OFFERED.has('constructor')).toBe(false)
   })
 })

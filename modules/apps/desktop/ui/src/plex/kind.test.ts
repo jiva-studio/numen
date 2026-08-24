@@ -7,9 +7,10 @@
  */
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
-import { panesOf } from '@numen/ui'
+import { paneById, panesOf } from '@numen/ui'
 import type { NeighbourhoodResponse } from '@numen/protocol'
 import { plexKind, plexing, type Held, type Making, type Plexing } from './kind'
+import { ITEMS } from './menu'
 import type { Standing } from './standing'
 import { windowing } from '../windowing'
 import { PLEX } from '../workspace'
@@ -37,6 +38,10 @@ const standing = (at: string, related: readonly string[] = []) => {
       went.push(path)
       view.here.value = path
       view.neighbourhood.value = around(path)
+    },
+    follows: (renamed: readonly { from: string; to: string }[]) => {
+      const one = renamed.find((went) => went.from === view.here.value)
+      if (one) view.here.value = one.to
     },
     close: () => {},
   }
@@ -66,16 +71,18 @@ const tab = (at: string, related: readonly string[] = [], takes = true) => {
   const vault = making(takes)
   const opened: [string, string, string][] = []
   const asked: string[] = []
+  const ran: [string, string, string][] = []
   const deps: Plexing = {
     makes: vault.makes,
     ready: () => true,
     opens: (path, title, showing) => opened.push([path, title, showing]),
     asks: (text) => asked.push(text),
+    runs: (id, path, title) => ran.push([id, path, title]),
     opening: () => 'Opening.md',
     first: async () => 'Opening.md',
     creatable: ['parent', 'child', 'jump'],
   }
-  return { held: plexing(plex.view, deps), went: plex.went, ...vault, opened, asked }
+  return { held: plexing(plex.view, deps), went: plex.went, ...vault, opened, asked, ran }
 }
 
 describe('a note made from a node', () => {
@@ -133,41 +140,36 @@ describe('the menu on a node', () => {
     opening: 'pointer' as const,
   })
 
-  it('opens the note it was asked for on, called what the picture calls it', () => {
+  it('hands the command the note it was asked for on, called what the picture calls it', () => {
     const one = tab('Root.md', ['Child.md'])
     one.held.asks(asked('Child.md'))
 
-    one.held.chose('open')
+    one.held.chose('read')
 
-    expect(one.opened).toEqual([['Child.md', 'Child', 'here']])
+    expect(one.ran).toEqual([['read', 'Child.md', 'Child']])
     expect(one.held.menu.value).toBeNull()
   })
 
-  it('makes a child of it, and the plex stands on it', async () => {
+  it('hands over every command it offers, and nothing it does not', () => {
     const one = tab('Root.md', ['Child.md'])
+    for (const item of ITEMS) {
+      one.held.asks(asked('Child.md'))
+      one.held.chose(item.id)
+    }
     one.held.asks(asked('Child.md'))
-
-    one.held.chose('child')
-    await Promise.resolve()
-
-    expect(one.made).toEqual([['Child.md', 'child']])
-  })
-
-  it('puts a question about it to the agent', () => {
-    const one = tab('Root.md', ['Child.md'])
+    one.held.chose('constructor')
     one.held.asks(asked('Child.md'))
+    one.held.chose('destroy')
 
-    one.held.chose('ask')
-
-    expect(one.asked).toEqual(['Child.md — '])
+    expect(one.ran.map(([id]) => id)).toStrictEqual(ITEMS.map((item) => item.id))
   })
 
   it('does nothing when it stands on nothing', () => {
     const one = tab('Root.md')
 
-    one.held.chose('open')
+    one.held.chose('read')
 
-    expect(one.opened).toEqual([])
+    expect(one.ran).toEqual([])
   })
 
   it('goes when the picture under it does', () => {
@@ -202,6 +204,7 @@ describe('the picture', () => {
       ready: () => false,
       opens: () => {},
       asks: () => {},
+      runs: () => {},
       opening: () => '',
       first: async () => '',
       creatable: ['parent', 'child', 'jump'],
@@ -234,6 +237,7 @@ const window = (opening = 'Opening.md') => {
     ready: () => true,
     opens: () => {},
     asks: () => {},
+    runs: () => {},
     opening: () => first,
     first: async () => {
       asked.push(first)
@@ -257,7 +261,12 @@ const window = (opening = 'Opening.md') => {
     first = path
   }
   const onScreen = () => panesOf(held.layout.value.root).flatMap((pane) => pane.tabs)
-  return { ...plexes, holds, enters, shuts, gains, onScreen, views, asked }
+  /** The tab the person is in, which is the active tab of the pane they are in. */
+  const active = () =>
+    paneById(held.layout.value.root, held.layout.value.focus)?.active ?? ''
+  /** A tab holding no plex, opened in front of the person. */
+  const elsewhere = () => held.blanked(held.layout.value.focus)
+  return { ...plexes, holds, enters, shuts, gains, onScreen, active, elsewhere, views, asked }
 }
 
 describe('a plex tab as it opens', () => {
@@ -355,6 +364,38 @@ describe('a note put in front of the person', () => {
   })
 })
 
+describe('a note that is no longer in the vault', () => {
+  it('leaves every plex standing on it somewhere else', async () => {
+    const one = window()
+    const first = await one.holds('Gone.md')
+    const second = await one.holds('Gone.md')
+    const third = await one.holds('Elsewhere.md')
+
+    await one.leaves('Gone.md', 'Root.md')
+
+    expect(first.held.view.here.value).toBe('Root.md')
+    expect(second.held.view.here.value).toBe('Root.md')
+    expect(third.held.view.here.value).toBe('Elsewhere.md')
+  })
+
+  it('leaves a window holding no plex at all alone', async () => {
+    const one = window()
+
+    await expect(one.leaves('Gone.md', 'Root.md')).resolves.toBeUndefined()
+  })
+
+  it('brings the plex in front of the person, who was in another tab', async () => {
+    const one = window()
+    const plex = await one.holds('One.md')
+    one.elsewhere()
+
+    await one.travel('Wanted.md')
+
+    expect(one.active()).toBe(plex.id)
+    expect(plex.held.view.here.value).toBe('Wanted.md')
+  })
+})
+
 describe('every plex asked for its picture again', () => {
   it('asks for the note it is standing on, each of its own', async () => {
     const one = window()
@@ -366,6 +407,25 @@ describe('every plex asked for its picture again', () => {
     expect(one.views[0]?.went).toContain('One.md')
     expect(one.views[1]?.went).toContain('Two.md')
     expect(second.held.view.here.value).toBe('Two.md')
+  })
+
+  it('stands a plex on where the note under it went', async () => {
+    const one = window()
+    const plex = await one.holds('One.md')
+
+    await one.again([{ from: 'One.md', to: 'Renamed.md' }])
+
+    expect(plex.held.view.here.value).toBe('Renamed.md')
+    expect(one.views[0]?.went.at(-1)).toBe('Renamed.md')
+  })
+
+  it('leaves a plex standing on a note nothing moved', async () => {
+    const one = window()
+    const plex = await one.holds('One.md')
+
+    await one.again([{ from: 'Other.md', to: 'Renamed.md' }])
+
+    expect(plex.held.view.here.value).toBe('One.md')
   })
 
   it('gives one standing nowhere the note an empty vault has just gained', async () => {
