@@ -58,6 +58,7 @@ type Core struct {
 	Write   note.Write
 	Replace note.Replace
 	Move    note.Move
+	Rename  note.Rename
 	Remove  note.Remove
 	Linking note.Linking
 }

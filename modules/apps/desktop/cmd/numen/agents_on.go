@@ -177,6 +177,14 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 		}
 		_ = viewing.Editing(ctx, said)
 	})
+	// Where a note went reaches the window the same way, so that whoever is
+	// showing it at the name it had follows it.
+	went := note.Moving(func(ctx context.Context, gone domain.Went) {
+		if viewing == nil {
+			return
+		}
+		_ = viewing.Moved(ctx, gone)
+	})
 
 	return mcp.Core{
 		Vault:   opened.Vault,
@@ -204,9 +212,11 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 		Replace: note.Replace{Readers: readers, Writers: writers, Index: index, Telling: tells},
 		Move: note.Move{
 			Readers: readers, Writers: writers, Links: opened.Index.Links(), Index: index,
-			Moving: func(ctx context.Context, went domain.Went) {
-				_ = opened.API.Viewing().Moved(ctx, went)
-			},
+			Moving: went,
+		},
+		Rename: note.Rename{
+			Readers: readers, Writers: writers, Links: opened.Index.Links(), Index: index,
+			Moving: went,
 		},
 		Remove:  note.Remove{Readers: readers, Writers: writers, Links: opened.Index.Links(), Index: index},
 		Linking: note.Linking{Readers: readers, Writers: writers, Index: index},

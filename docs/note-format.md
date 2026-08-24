@@ -54,8 +54,8 @@ The frontmatter is shared, not owned:
 
 | Key | Meaning | Decided in |
 | --- | --- | --- |
-| `title` | The name a note is shown by. Read, never written: the application does not add one and does not rewrite one it finds. | ADR-0012 |
-| `id` | The identity of the note, a ULID. Written when the application creates a note, moves it or changes its links, never backfilled and never written by a person typing in it. | ADR-0009, ADR-0032 |
+| `title` | The name a note is shown by. Written only when a note already carrying the key is renamed; the application does not add one to a note that has none. | ADR-0012, ADR-0040 |
+| `id` | The identity of the note, a ULID. Written when the application creates a note or changes what is in it, never backfilled and never written by a person typing in it. A note that was moved carries the identifier it carried before. | ADR-0009, ADR-0027, ADR-0032 |
 | `links` | Links that carry a role, and optionally a type, a label and a note. | ADR-0003 |
 
 A note with no `title` is named by its first level-one heading, else by its

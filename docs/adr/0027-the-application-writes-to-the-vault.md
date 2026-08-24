@@ -4,6 +4,8 @@
 - **Date:** 2026-08-16
 - **Applies to:** the vault format — every application that writes one
 - **Partly superseded by:** ADR-0032 — the identifier, for the window's save alone
+- **Partly superseded by:** ADR-0040 — `title` is written when a note already
+  carrying it is renamed
 - **Related:** ADR-0001, ADR-0009, ADR-0011, ADR-0012, ADR-0022, ADR-0023
 
 ## Context
@@ -95,6 +97,12 @@ resolution does the rest.
 
 **`title` is still never written.** It is read and not written (ADR-0012), and
 nothing here needs it to be otherwise.
+
+> **Partly superseded by [ADR-0040](0040-a-note-is-renamed-by-whatever-names-it.md).**
+> Renaming a note needs it. A rename brings into line whichever of the `title`, the
+> first level-one heading and the filename names the note, and does that before the
+> file is moved. The key is written into a note that already carries it and is never
+> added to one that does not. A note its filename names keeps the bytes it had.
 
 ### Removing a note moves it to `.trash/`
 
