@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { commandsOf, deedOf, type Deed, type Where } from './commanding'
 import { does, type Doing } from './doing'
-import type { Removed, Renamed } from './core'
+import type { Added, Known, Removed, Renamed, VaultRefused } from './core'
 import { WORDS as words } from './words'
 
 /** What is in front, which every deed is carried out over. */
@@ -17,8 +17,17 @@ const front = (over: Partial<Where> = {}): Where => ({
   kind: 'plex',
   path: 'physics/Ontology.md',
   title: 'Ontology',
+  vault: { id: 'physics', name: 'Physics' },
   ready: true,
   ...over,
+})
+
+/** One vault as the list answers one. */
+const known = (id: string, name: string): Known => ({
+  id,
+  name,
+  path: `/vaults/${name}`,
+  missing: false,
 })
 
 const renamed = (over: Partial<Renamed> = {}): Renamed => ({
@@ -53,11 +62,18 @@ const window = (
     at?: string
     /** The note is waiting on the person, so nothing may move its file. */
     asking?: boolean
+    /** The folder the person chose in the machine's own picker. */
+    chose?: string
+    /** What the list of vaults answered adding or renaming one. */
+    added?: Added
+    /** What the list of vaults refused forgetting, erasing or opening one. */
+    turnedDown?: VaultRefused
   } = {},
 ) => {
   const done: string[] = []
   const said: string[] = []
   const at = answers.at ?? 'physics/Ontology.md'
+  const refusal = answers.turnedDown ?? null
   const on: Doing = {
     makes: async (title, from, seat) => {
       done.push(`makes ${title} ${from || '—'} ${seat ?? '—'}`)
@@ -79,6 +95,35 @@ const window = (
       shuts: (id) => void done.push(`shuts ${id}`),
       shows: (path, title, showing) => void done.push(`shows ${path} ${title} ${showing}`),
     },
+    vaults: {
+      list: async () => ({ vaults: [known('physics', 'Physics')], showing: 'physics' }),
+      choose: async (title) => {
+        done.push(`choose ${title}`)
+        return answers.chose ?? '/vaults/Heat'
+      },
+      add: async (path, name) => {
+        done.push(`add ${path} ${name || '—'}`)
+        return answers.added ?? { vault: known('heat', 'Heat'), refusal: null }
+      },
+      rename: async (id, name) => {
+        done.push(`renames vault ${id} ${name}`)
+        return answers.added ?? { vault: known(id, name), refusal: null }
+      },
+      forget: async (id) => {
+        done.push(`forgets ${id}`)
+        return refusal
+      },
+      erase: async (id) => {
+        done.push(`erases ${id}`)
+        return refusal
+      },
+      open: async (id) => {
+        done.push(`opens vault ${id}`)
+        return refusal
+      },
+    },
+    calls: (vault) => void done.push(`calls ${vault.id} ${vault.name}`),
+    reloads: () => void done.push('reloads'),
     travel: async (path) => void done.push(`travel ${path}`),
     leaves: async (from, to) => void done.push(`leaves ${from} ${to}`),
     opening: () => 'Root.md',
@@ -480,6 +525,143 @@ describe('what the window is asked about a note', () => {
     await carry(deedOf('copy', front()), one.on)
 
     expect(one.done).toStrictEqual(['asks physics/Ontology.md — ', 'copies physics/Ontology.md'])
+  })
+})
+
+describe('another vault under this window', () => {
+  const heat = () => front({ vault: { id: 'heat', name: 'Heat' } })
+
+  it('is opened, and the page drawn again on it', async () => {
+    const one = window()
+
+    await carry(deedOf('openVault', heat()), one.on)
+
+    expect(one.done).toStrictEqual(['opens vault heat', 'reloads'])
+  })
+
+  it('leaves the page where it stands where the vault would not open', async () => {
+    const one = window({ turnedDown: 'showing' })
+
+    await carry(deedOf('openVault', heat()), one.on)
+
+    expect(one.done).toStrictEqual(['opens vault heat'])
+    expect(one.said).toStrictEqual([words.unvaulted.showing])
+  })
+})
+
+describe('a vault made', () => {
+  it('is the folder chosen in the machine’s own picker, and is opened', async () => {
+    const one = window()
+
+    await carry(deedOf('newVault', front()), one.on)
+
+    expect(one.done).toStrictEqual([
+      `choose ${words.folder}`,
+      'add /vaults/Heat —',
+      'opens vault heat',
+      'reloads',
+    ])
+  })
+
+  it('is nothing at all where the person closed the picker', async () => {
+    const one = window({ chose: '' })
+
+    await carry(deedOf('newVault', front()), one.on)
+
+    expect(one.done).toStrictEqual([`choose ${words.folder}`])
+    expect(one.said).toStrictEqual([])
+  })
+
+  it('says a folder that lies inside a vault already added', async () => {
+    const one = window({ added: { vault: null, refusal: 'overlaps' } })
+
+    await carry(deedOf('newVault', front()), one.on)
+
+    expect(one.said).toStrictEqual([words.unvaulted.overlaps])
+  })
+})
+
+describe('a vault renamed', () => {
+  it('is called what was typed, and the window calls it that from now on', async () => {
+    const one = window()
+
+    await carry(deedOf('renameVault', front(), 'Heat'), one.on)
+
+    expect(one.done).toStrictEqual(['renames vault physics Heat', 'calls physics Heat'])
+  })
+
+  it('is left alone where the name it was given is the name it has', async () => {
+    const one = window()
+
+    await carry(deedOf('renameVault', front(), 'Physics'), one.on)
+
+    expect(one.done).toStrictEqual([])
+  })
+
+  it('says a name another vault is already called', async () => {
+    const one = window({ added: { vault: null, refusal: 'nameTaken' } })
+
+    await carry(deedOf('renameVault', front(), 'Heat'), one.on)
+
+    expect(one.said).toStrictEqual([words.unvaulted.nameTaken])
+  })
+})
+
+/** The vault taken off the list is the one that was chosen, never the one in front. */
+describe('a vault taken off the list', () => {
+  const heat = () => front({ vault: { id: 'heat', name: 'Heat' } })
+
+  it('is forgotten, and its folder left where it is', async () => {
+    const one = window()
+
+    await carry(deedOf('forgetVault', heat()), one.on)
+
+    expect(one.done).toStrictEqual(['forgets heat'])
+  })
+
+  it('says the only vault this installation has stays on it', async () => {
+    const one = window({ turnedDown: 'lastVault' })
+
+    await carry(deedOf('forgetVault', heat()), one.on)
+
+    expect(one.said).toStrictEqual([words.unvaulted.lastVault])
+  })
+
+  it('is erased where erasing was what was asked', async () => {
+    const one = window()
+
+    await carry(deedOf('eraseVault', heat(), 'Heat'), one.on)
+
+    expect(one.done).toStrictEqual(['erases heat'])
+  })
+
+  it('says a machine with nowhere to put what is deleted', async () => {
+    const one = window({ turnedDown: 'noTrash' })
+
+    await carry(deedOf('eraseVault', heat(), 'Heat'), one.on)
+
+    expect(one.said).toStrictEqual([words.unvaulted.noTrash])
+  })
+
+  it('says the vault in front of the person, which the window stands on', async () => {
+    const one = window({ turnedDown: 'showing' })
+
+    await carry(deedOf('forgetVault', front()), one.on)
+
+    expect(one.said).toStrictEqual([words.unvaulted.showing])
+  })
+})
+
+describe('what the list of vaults refused', () => {
+  it('reaches the person in the window’s own words, whichever it was', async () => {
+    for (const refusal of Object.keys(words.unvaulted) as VaultRefused[]) {
+      const one = window({ turnedDown: refusal })
+
+      await carry(deedOf('openVault', front()), one.on)
+
+      expect(words.unvaulted[refusal], refusal).not.toBe('')
+      expect(one.said, refusal).toStrictEqual([words.unvaulted[refusal]])
+    }
   })
 })
 

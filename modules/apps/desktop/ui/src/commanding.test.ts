@@ -21,6 +21,7 @@ import {
   type Offering,
   type Where,
 } from './commanding'
+import type { Known, Listed } from './core'
 import type { Named } from './finding'
 import { WORDS as words } from './words'
 
@@ -30,6 +31,7 @@ const front = (over: Partial<Where> = {}): Where => ({
   kind: 'note',
   path: 'physics/Ontology.md',
   title: 'Ontology',
+  vault: { id: 'physics', name: 'Physics' },
   ready: true,
   ...over,
 })
@@ -41,6 +43,20 @@ const name = (path: string, title: string, heading = ''): Named => ({
   heading,
   line: heading ? 4 : -1,
   at: [{ from: 0, to: 1 }],
+})
+
+/** One vault as the list answers one. */
+const vault = (id: string, name: string, missing = false): Known => ({
+  id,
+  name,
+  path: `/vaults/${name}`,
+  missing,
+})
+
+/** The vaults the installation holds, with the one in front named. */
+const installation = (...vaults: readonly Known[]): Listed => ({
+  vaults,
+  showing: 'physics',
 })
 
 /**
@@ -86,6 +102,7 @@ const asking = (
   over: Partial<Where> = {},
   found: readonly Named[] = [],
   offers: Record<string, readonly Offering[]> = {},
+  listed: Listed = installation(vault('physics', 'Physics')),
 ) => {
   const at = ref(front(over))
   const asked: string[] = []
@@ -94,6 +111,7 @@ const asking = (
       asked.push(query)
       return found
     },
+    vaults: async () => listed,
   }
   const window = held()
   const kept = holding(offers)
@@ -108,6 +126,9 @@ const asking = (
   commands.shows(true)
   return { commands, at, asked, ...window, ...kept }
 }
+
+/** A moment for the list of vaults to come back. */
+const settles = () => new Promise((done) => setTimeout(done, 0))
 
 /** Every item drawn, band by band, under the band it stands in. */
 const drawn = (bands: ReturnType<typeof asking>['commands']['bands']) =>
@@ -124,7 +145,15 @@ describe('the commands as they open', () => {
     expect(drawn(commands.bands)).toStrictEqual({
       note: ['read', 'travel', 'child', 'parent', 'jump', 'title', 'remove', 'ask', 'copy'],
       window: ['note', 'plex', 'agent', 'close', 'find', 'appearance', 'mode'],
-      vault: ['first', 'goto'],
+      vault: [
+        'first',
+        'goto',
+        'openVault',
+        'newVault',
+        'renameVault',
+        'forgetVault',
+        'eraseVault',
+      ],
     })
   })
 
@@ -184,13 +213,14 @@ describe('what is in front', () => {
     expect(drawn(commands.bands).note).toStrictEqual([])
   })
 
+  /** A vault that will not read is the one a person most needs to leave. */
   it('says the vault is still being read, and offers nothing over the note', () => {
     const { commands } = asking({ ready: false })
 
     expect(drawn(commands.bands)).toStrictEqual({
       note: [],
       window: ['plex', 'agent', 'close', 'find', 'appearance', 'mode'],
-      vault: [],
+      vault: ['openVault', 'newVault', 'renameVault', 'forgetVault', 'eraseVault'],
     })
     expect(silence(commands.bands, 'note')).toBe(words.indexing)
   })
@@ -217,6 +247,7 @@ describe('a command that needs nothing', () => {
     expect(commands.chose('read', 'read')).toStrictEqual({
       id: 'read',
       path: 'physics/Ontology.md',
+      vault: { id: 'physics', name: 'Physics' },
       note: null,
       title: 'Ontology',
       name: '',
@@ -273,6 +304,7 @@ describe('a command that asks for a name', () => {
     expect(commands.chose('name', 'name')).toStrictEqual({
       id: 'child',
       path: 'physics/Ontology.md',
+      vault: { id: 'physics', name: 'Physics' },
       note: null,
       title: 'Ontology',
       name: 'Entropy',
@@ -498,6 +530,7 @@ describe('a command that asks for a note', () => {
     expect(commands.chose('physics/Entropy.md', 'pick')).toStrictEqual({
       id: 'goto',
       path: 'physics/Entropy.md',
+      vault: { id: 'physics', name: 'Physics' },
       note: null,
       title: 'Entropy',
       name: '',
@@ -510,7 +543,10 @@ describe('a command that asks for a note', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
     const at = ref(front())
     const commands = commanding(
-      { names: async () => Promise.reject(new Error('no model is set')) },
+      {
+        names: async () => Promise.reject(new Error('no model is set')),
+        vaults: async () => installation(),
+      },
       words,
       () => at.value,
       { called: () => '', holding: () => null },
@@ -612,6 +648,7 @@ describe('a command that offers a list the window holds', () => {
       name: 'preset:dracula',
       kind: 'note',
       tab: 'tab',
+      vault: { id: 'physics', name: 'Physics' },
     })
   })
 
@@ -752,6 +789,7 @@ describe('a search that turned up nothing', () => {
     expect(creates('creating', 'Entropy', front())).toStrictEqual({
       id: 'note',
       path: '',
+      vault: { id: 'physics', name: 'Physics' },
       note: null,
       title: '',
       name: 'Entropy',
@@ -803,5 +841,232 @@ describe('the commands over a note', () => {
 
     expect(over).not.toContain('beside')
     expect(over).not.toContain('destroy')
+  })
+})
+
+describe('the commands over the vaults an installation holds', () => {
+  it('are offered in the band of the vault in front', () => {
+    const over = commandsOf(words)
+      .filter((one) => one.band === 'vault')
+      .map((one) => one.id)
+
+    expect(over).toStrictEqual([
+      'first',
+      'goto',
+      'openVault',
+      'newVault',
+      'renameVault',
+      'forgetVault',
+      'eraseVault',
+    ])
+  })
+
+  /** Only renaming is over the vault in front. The rest ask for one first. */
+  it('leave out the rename where the window is showing no vault', () => {
+    const { commands } = asking({ vault: { id: '', name: '' } })
+
+    expect(drawn(commands.bands).vault).toStrictEqual([
+      'first',
+      'goto',
+      'openVault',
+      'newVault',
+      'forgetVault',
+      'eraseVault',
+    ])
+  })
+})
+
+describe('a command that asks for a vault', () => {
+  const two = () => installation(vault('physics', 'Physics'), vault('heat', 'Heat'))
+
+  it('lists the vaults the installation holds, each at the folder it stands in', async () => {
+    const { commands } = asking({}, [], {}, two())
+    commands.asks('openVault', front())
+
+    await settles()
+
+    expect(commands.bands.value[0]?.items.map((item) => item.id)).toStrictEqual(['physics', 'heat'])
+    expect(commands.bands.value[0]?.items[1]?.detail).toBe('/vaults/Heat')
+  })
+
+  /** The folder may be on a volume nobody has mounted, and the vault stays. */
+  it('marks the vault whose folder is not there, and names where it looked', async () => {
+    const { commands } = asking({}, [], {}, installation(vault('gone', 'Gone', true)))
+    commands.asks('openVault', front())
+    await settles()
+
+    expect(commands.bands.value[0]?.items[0]?.disabled).toBe(true)
+    expect(commands.bands.value[0]?.items[0]?.detail).toBe(`${words.gone} /vaults/Gone`)
+    expect(commands.chose('gone', 'open')).toBeNull()
+  })
+
+  /**
+   * The window always stands on something, so the vault in front is not one
+   * the list takes. A person meets that rule here and not after answering.
+   */
+  it('marks the vault the window is showing, and will not take it', async () => {
+    const { commands } = asking({}, [], {}, two())
+    commands.asks('openVault', front())
+    await settles()
+
+    expect(commands.bands.value[0]?.items[0]?.disabled).toBe(true)
+    expect(commands.bands.value[0]?.items[0]?.detail).toBe(`${words.inFront} /vaults/Physics`)
+    expect(commands.chose('physics', 'open')).toBeNull()
+  })
+
+  it('says on every row what choosing it asks for', async () => {
+    const { commands } = asking({}, [], {}, two())
+    commands.asks('forgetVault', front())
+    await settles()
+
+    expect(commands.bands.value[0]?.items[1]?.actions?.[0]?.text).toBe(words.forgetVault)
+  })
+
+  it('carries the vault that was picked, not the one the window is showing', async () => {
+    const { commands } = asking({}, [], {}, two())
+    commands.asks('openVault', front())
+    await settles()
+
+    expect(commands.chose('heat', 'open')).toMatchObject({
+      id: 'openVault',
+      vault: { id: 'heat', name: 'Heat' },
+    })
+  })
+
+  it('keeps the vaults the words typed name, so the field means something', async () => {
+    const { commands } = asking({}, [], {}, two())
+    commands.asks('openVault', front())
+    await settles()
+
+    await commands.typing('hea')
+
+    expect(commands.bands.value[0]?.items.map((item) => item.id)).toStrictEqual(['heat'])
+  })
+
+  it('says the list could not be asked, in the window’s own words', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const at = ref(front())
+    const commands = commanding(
+      {
+        names: async () => [],
+        vaults: async () => Promise.reject(new Error('the list is not there')),
+      },
+      words,
+      () => at.value,
+      { called: () => '', holding: () => null },
+      { offers: () => [], shows: () => {} },
+      async () => {},
+    )
+    commands.shows(true)
+
+    commands.asks('openVault', front())
+    await settles()
+
+    expect(commands.bands.value[0]?.silence).toBe(words.notAsked)
+  })
+})
+
+describe('renaming the vault in front', () => {
+  it('stands filled with the name the vault has now', () => {
+    const { commands } = asking()
+
+    commands.asks('renameVault', front())
+
+    expect(commands.crumb.value).toBe(words.renameVault)
+    expect(commands.typed.value).toBe('Physics')
+  })
+
+  it('carries the name to the vault the window is showing', () => {
+    const { commands } = asking()
+    commands.asks('renameVault', front())
+    void commands.typing('Heat')
+
+    expect(commands.chose('name', 'name')).toMatchObject({
+      id: 'renameVault',
+      name: 'Heat',
+      vault: { id: 'physics', name: 'Physics' },
+    })
+  })
+})
+
+/**
+ * The window always stands on a vault, so neither of these is over the one in
+ * front. Both ask for a vault first, and everything they say after is about
+ * the vault that was chosen.
+ */
+describe('a vault taken off the list', () => {
+  /** The list opened, and the vault the window is not showing chosen off it. */
+  const chose = async (id: string) => {
+    const { commands } = asking(
+      {},
+      [],
+      {},
+      installation(vault('physics', 'Physics'), vault('heat', 'Heat')),
+    )
+    commands.asks(id, front())
+    await settles()
+    commands.chose('heat', 'open')
+    return commands
+  }
+
+  it('is confirmed over the vault that was chosen, saying the folder stays', async () => {
+    const commands = await chose('forgetVault')
+
+    expect(commands.bands.value[0]?.items.map((item) => item.id)).toStrictEqual(['no', 'yes'])
+    expect(commands.bands.value[0]?.items[0]?.title).toBe(words.keepsVault)
+    expect(commands.bands.value[0]?.items[1]?.title).toBe('Forget “Heat”')
+    expect(commands.bands.value[0]?.items[1]?.detail).toBe(words.stays)
+  })
+
+  it('is a deed over that vault once the question is answered', async () => {
+    const commands = await chose('forgetVault')
+
+    expect(commands.chose('yes', 'yes')).toMatchObject({
+      id: 'forgetVault',
+      vault: { id: 'heat', name: 'Heat' },
+    })
+  })
+
+  it('hands back the list, with the vaults on it, where the step is left', async () => {
+    const commands = await chose('forgetVault')
+
+    commands.leaves()
+    await settles()
+
+    expect(commands.bands.value[0]?.id).toBe('vaults')
+    expect(commands.bands.value[0]?.items.map((item) => item.id)).toStrictEqual([
+      'physics',
+      'heat',
+    ])
+  })
+
+  it('waits for the name of the vault chosen, and says where its folder goes', async () => {
+    const commands = await chose('eraseVault')
+
+    expect(commands.bands.value[0]?.items[0]?.title).toBe('Erase “Heat”')
+    expect(commands.bands.value[0]?.items[0]?.detail).toBe(words.binned)
+    expect(commands.bands.value[0]?.items[0]?.disabled).toBe(true)
+    expect(commands.placeholder.value).toBe(words.typeVaultBack)
+    expect(commands.chose('exactly', 'exactly')).toBeNull()
+  })
+
+  it('goes once the name of that vault is what was typed', async () => {
+    const commands = await chose('eraseVault')
+
+    void commands.typing('Heat')
+
+    expect(commands.bands.value[0]?.items[0]?.disabled).toBe(false)
+    expect(commands.chose('exactly', 'exactly')).toMatchObject({
+      id: 'eraseVault',
+      vault: { id: 'heat', name: 'Heat' },
+    })
+  })
+
+  it('is not reached by the name of the vault the window is showing', async () => {
+    const commands = await chose('eraseVault')
+
+    void commands.typing('Physics')
+
+    expect(commands.chose('exactly', 'exactly')).toBeNull()
   })
 })

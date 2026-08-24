@@ -6,8 +6,8 @@
  * list. Nothing here draws anything.
  */
 import type { PlexRelatedSeat } from '@numen/ui'
-import type { Deed } from './commanding'
-import type { Refused, Removed, Renamed } from './core'
+import type { Deed, Shown } from './commanding'
+import type { Refused, Removed, Renamed, VaultRefused, Vaults } from './core'
 import type { Made } from './note/creating'
 import { AGENT, NOTE, PLEX } from './workspace'
 
@@ -36,6 +36,15 @@ export interface Doing {
   /** A note taken out of the vault, into the trash or off the disk. */
   removes(path: string, destroy: boolean): Promise<Removed>
   readonly notes: Notes
+  /** The vaults this installation holds, and what changes them. */
+  readonly vaults: Vaults
+  /** The vault the window is showing, under the name it has now. */
+  calls(vault: Shown): void
+  /**
+   * The page drawn again, on the vault the window shows now. Every tab and
+   * every plex belonged to the vault that has gone.
+   */
+  reloads(): void
   /** A note put in front of the person, in the plex they are looking at. */
   travel(path: string): Promise<void>
   /** Every plex standing on a note travels to another one. */
@@ -65,6 +74,10 @@ export interface Doing {
 export interface Words {
   /** What the vault refused, in words a person reads. */
   readonly refused: Record<Refused, string>
+  /** What the list of vaults refused, in words a person reads. */
+  readonly unvaulted: Record<VaultRefused, string>
+  /** What the machine's own folder picker is titled. */
+  readonly folder: string
   /** The links that mean another note now, which nothing repairs. */
   readonly retargeted: string
   /** The links in other people's notes that were written again. */
@@ -108,6 +121,11 @@ const carried: Record<string, Carries> = {
   mode: (deed, on) => on.appearance(deed.name),
   first: (_, on, words) => travels(on.opening(), on, words),
   goto: (deed, on, words) => travels(deed.path, on, words),
+  openVault: (deed, on, words) => shows(deed.vault.id, on, words),
+  newVault: (_, on, words) => adds(on, words),
+  renameVault: (deed, on, words) => calls(deed, on, words),
+  forgetVault: (deed, on, words) => forgets(deed, false, on, words),
+  eraseVault: (deed, on, words) => forgets(deed, true, on, words),
 }
 
 /** A command carried out. Nothing chosen does nothing at all. */
@@ -198,6 +216,48 @@ const removes = async (deed: Deed, destroy: boolean, on: Doing, words: Words): P
   )
   const opening = on.opening()
   if (opening) await on.leaves(deed.path, opening)
+}
+
+/**
+ * Another vault under this window. What the page holds belongs to the vault
+ * that has gone, so the page is drawn again on the one that arrived.
+ */
+const shows = async (id: string, on: Doing, words: Words): Promise<void> => {
+  if (!id) return
+  const refusal = await on.vaults.open(id)
+  if (refusal) return on.says(words.unvaulted[refusal])
+  on.reloads()
+}
+
+/**
+ * A folder chosen on this machine, added as a vault and opened. A person who
+ * chose no folder has asked for nothing.
+ */
+const adds = async (on: Doing, words: Words): Promise<void> => {
+  const path = await on.vaults.choose(words.folder)
+  if (!path) return
+  const answer = await on.vaults.add(path, '')
+  if (answer.refusal) return on.says(words.unvaulted[answer.refusal])
+  if (!answer.vault) return
+  await shows(answer.vault.id, on, words)
+}
+
+/** A vault called something else. Its folder keeps the name it has on disk. */
+const calls = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
+  if (!deed.name || deed.name === deed.vault.name) return
+  const answer = await on.vaults.rename(deed.vault.id, deed.name)
+  if (answer.refusal) return on.says(words.unvaulted[answer.refusal])
+  if (answer.vault) on.calls({ id: answer.vault.id, name: answer.vault.name })
+}
+
+/**
+ * A vault taken off the list. Erasing it puts the folder in the trash this
+ * machine keeps; forgetting it leaves the folder where it is.
+ */
+const forgets = async (deed: Deed, erase: boolean, on: Doing, words: Words): Promise<void> => {
+  const id = deed.vault.id
+  const refusal = erase ? await on.vaults.erase(id) : await on.vaults.forget(id)
+  if (refusal) on.says(words.unvaulted[refusal])
 }
 
 /** A note travelled to, and a vault with none to travel to said. */

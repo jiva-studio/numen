@@ -38,8 +38,12 @@ export function showing(
    * in. The person is taken to the first of them.
    */
   reads: (path: string, runs: readonly Run[]) => void = () => {},
+  /** What draws the page again, once another vault is under this window. */
+  reloads: () => void = () => {},
 ) {
   const name = ref('')
+  /** The folder the vault the window is showing sits in, as it last read it. */
+  const at = ref('')
   const indexing = ref(true)
   /** The core could not be reached: nothing else in the window is true. */
   const failure = ref('')
@@ -101,6 +105,7 @@ export function showing(
   async function ask() {
     const state = await core.state()
     name.value = state.name
+    at.value = state.path
     trouble.value = state.failed
     unwatched.value = state.unwatched
     unreachable.value = state.unreachable
@@ -108,6 +113,18 @@ export function showing(
     embedded.value = Number(state.embedded)
     embedding.value = state.embedding
     return state
+  }
+
+  /** Whether the vault the window is showing stands at another folder now. */
+  async function swapped() {
+    const was = at.value
+    try {
+      const state = await ask()
+      return was !== '' && state.path !== was
+    } catch {
+      // The next change asks again.
+      return false
+    }
   }
 
   /**
@@ -123,6 +140,9 @@ export function showing(
       () => core.changes(listening.signal),
       async (change) => {
         if (change.paths.length === 0 && !change.reload && change.renamed.length === 0) return
+        // A reload standing at another folder is another vault under this
+        // window, and the page is drawn again on it.
+        if (change.reload && (await swapped())) return void reloads()
         await told(change.reload ? [] : change.paths, change.renamed)
         // The note the vault opens with is asked for again when it moves.
         if (change.renamed.some((went) => went.from === opening.value)) {

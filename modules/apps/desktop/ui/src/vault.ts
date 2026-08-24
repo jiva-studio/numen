@@ -6,20 +6,62 @@
  */
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
-import { Counting, Naming, Owed, Refusal, VaultService, Way as Ways } from '@numen/protocol'
-import type { Moved as MovedMessage } from '@numen/protocol'
+import {
+  Counting,
+  Naming,
+  Owed,
+  Refusal,
+  VaultService,
+  VaultsRefusal,
+  VaultsService,
+  Way as Ways,
+} from '@numen/protocol'
+import type { Known as KnownMessage, Moved as MovedMessage } from '@numen/protocol'
 import { asSeat } from './plex/picture'
+import type { Asking as Commanding } from './commanding'
 import type { Asking, Way } from './finding'
 import type { Documents, Marked, Sheet } from './document/reading'
-import type { Answered, Core, Made, Moved, NewLink, Refused, Removed, Renamed } from './core'
+import type {
+  Added,
+  Answered,
+  Core,
+  Known,
+  Made,
+  Moved,
+  NewLink,
+  Refused,
+  Removed,
+  Renamed,
+  VaultRefused,
+  Vaults,
+} from './core'
 
-export const vault = createClient(
-  VaultService,
-  createConnectTransport({ baseUrl: window.location.origin }),
-)
+const transport = createConnectTransport({ baseUrl: window.location.origin })
+
+export const vault = createClient(VaultService, transport)
+
+const listing = createClient(VaultsService, transport)
+
+/** The vaults this installation holds, in the shape the window asks about them. */
+export const vaults: Vaults = {
+  list: async () => {
+    const answer = await listing.list({})
+    return { vaults: answer.vaults.map(held), showing: answer.showing }
+  },
+  choose: async (title) => {
+    const answer = await listing.choose({ title, startingAt: '' })
+    return answer.chose ? answer.path : ''
+  },
+  add: async (path, name) => added(await listing.add({ path, name })),
+  rename: async (id, name) => added(await listing.rename({ id, name })),
+  forget: async (id) => turnedDown(await listing.forget({ id })),
+  erase: async (id) => turnedDown(await listing.erase({ id })),
+  open: async (id) => turnedDown(await listing.open({ id })),
+}
 
 /** The same questions, in the shape the window asks them. */
-export const core: Core & Asking = {
+export const core: Core & Asking & Commanding = {
+  vaults: () => vaults.list(),
   neighbourhood: (path) => vault.neighbourhood({ path }),
   opening: async () => (await vault.opening({})).note ?? null,
   state: () => vault.state({}),
@@ -213,6 +255,38 @@ const answered = (from: {
 
 const refusalIn = (from: { refusal?: Refusal | undefined }): Refused | null =>
   from.refusal === undefined ? null : refused[from.refusal]
+
+/** One vault of the list, kept as the plain value the window carries it as. */
+const held = (one: KnownMessage): Known => ({
+  id: one.id,
+  name: one.name,
+  path: one.path,
+  missing: one.missing,
+})
+
+const added = (from: {
+  vault?: KnownMessage | undefined
+  refusal?: VaultsRefusal | undefined
+}): Added => ({
+  vault: from.vault ? held(from.vault) : null,
+  refusal: turnedDown(from),
+})
+
+const turnedDown = (from: { refusal?: VaultsRefusal | undefined }): VaultRefused | null =>
+  from.refusal === undefined ? null : unvaulted[from.refusal]
+
+const unvaulted: Record<VaultsRefusal, VaultRefused> = {
+  [VaultsRefusal.UNSPECIFIED]: 'unreadable',
+  [VaultsRefusal.UNREADABLE]: 'unreadable',
+  [VaultsRefusal.COPY]: 'copy',
+  [VaultsRefusal.OVERLAPS]: 'overlaps',
+  [VaultsRefusal.NAME_TAKEN]: 'nameTaken',
+  [VaultsRefusal.LAST_VAULT]: 'lastVault',
+  [VaultsRefusal.SHOWING]: 'showing',
+  [VaultsRefusal.UNKNOWN]: 'unknown',
+  [VaultsRefusal.NO_TRASH]: 'noTrash',
+  [VaultsRefusal.ASKING]: 'asking',
+}
 
 const refused: Record<Refusal, Refused> = {
   [Refusal.UNSPECIFIED]: 'unreadable',

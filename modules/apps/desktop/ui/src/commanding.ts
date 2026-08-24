@@ -6,17 +6,20 @@
  * and what it wants typed before it can happen. Carrying one out is `doing.ts`.
  *
  * A command that needs nothing is a deed the moment it is chosen. One that
- * needs a name, a note or an answer puts the palette on a step of its own, and
- * the step it is on is what the field means.
+ * needs a name, a note, a vault or an answer puts the palette on a step of its
+ * own, and the step it is on is what the field means.
  */
 import { computed, ref, shallowRef } from 'vue'
 import type { PaletteBand, PaletteItem } from '@numen/ui'
-import { wentTo, type Went } from './core'
+import { wentTo, type Known, type Listed, type Went } from './core'
 import type { Named, Silences } from './finding'
 
-/** The one question the commands ask of the vault: the names in it that match. */
+/** What the commands ask of the application before anything is chosen. */
 export interface Asking {
+  /** The names in the vault that match. */
   names(query: string, limit: number): Promise<readonly Named[]>
+  /** Every vault the installation holds, and which of them this window shows. */
+  vaults(): Promise<Listed>
 }
 
 /** One of a list the window itself holds, as the step that offers it draws it. */
@@ -67,13 +70,26 @@ export type Band = 'note' | 'window' | 'vault'
 
 /**
  * Which step the palette is on: one being asked for, or the list of commands.
- * `picking` asks the vault what it holds; `choosing` offers a list the window
- * holds already.
+ * `picking` asks the vault what it holds and `vaults` asks the installation;
+ * `choosing` offers a list the window holds already.
  */
-export type Step = 'commands' | 'naming' | 'picking' | 'choosing' | 'asking' | 'exactly'
+export type Step =
+  | 'commands'
+  | 'naming'
+  | 'picking'
+  | 'vaults'
+  | 'choosing'
+  | 'asking'
+  | 'exactly'
 
 /** What a command wants before it can happen, which is the step that asks. */
 export type Needed = Exclude<Step, 'commands'>
+
+/** The vault a command is over: the identity the list gives it, and its name. */
+export interface Shown {
+  readonly id: string
+  readonly name: string
+}
 
 /**
  * What is in front of the person, and the note it means. An agent tab means
@@ -87,8 +103,29 @@ export interface Where {
   /** The note it means, and nothing where it means none. */
   readonly path: string
   readonly title: string
+  /** The vault the window is showing, and nothing where it shows none. */
+  readonly vault: Shown
   /** Whether the vault has been read and can be asked to do anything. */
   readonly ready: boolean
+}
+
+/** The words the step that asks for the name typed back is drawn in. */
+export interface Warns {
+  /** What it does, and what it leaves behind. */
+  readonly does: string
+  readonly then: string
+  /** What stands in the field: the name of the thing, typed back. */
+  readonly back: string
+}
+
+/** The words the step that confirms is drawn in. */
+export interface Answers {
+  /** The answer that changes nothing, and what it leaves. */
+  readonly keeps: string
+  readonly kept: string
+  /** The answer that does it, and what it leaves. */
+  readonly does: string
+  readonly then: string
 }
 
 /** One thing a person can ask for. */
@@ -99,12 +136,17 @@ export interface Command {
   readonly keys?: string
   /** What it asks for before it happens. */
   readonly needs?: Needed
+  /** The step it asks for once the first one is answered. */
+  readonly next?: Needed
   /** The band it is offered in. */
   readonly band: Band
   /** Whether it is offered at all over what is in front. */
   where(at: Where): boolean
   /** What stands in the field when its step opens, for the person to replace. */
   filled?(at: Where): string
+  /** What its step says, where that step confirms or asks for the name back. */
+  readonly answers?: Answers
+  readonly warns?: Warns
   /** The command Shift and Enter reach on the same row. */
   readonly also?: string
 }
@@ -114,6 +156,8 @@ export interface Deed {
   readonly id: string
   /** The note it is over. Empty for a command over the window or the vault. */
   readonly path: string
+  /** The vault it is over, which is the one the window shows until a step picks another. */
+  readonly vault: Shown
   /**
    * The identity of the tab holding that note, and nothing where none holds it.
    * A note that moves is at another name by the time the deed is carried out.
@@ -157,6 +201,12 @@ export interface Words extends Silences {
   readonly findKeys: string
   readonly first: string
   readonly goto: string
+  /** The commands over the vaults this installation holds. */
+  readonly openVault: string
+  readonly newVault: string
+  readonly renameVault: string
+  readonly forgetVault: string
+  readonly eraseVault: string
   /** The three bands the commands are drawn in. */
   readonly overNote: string
   readonly overWindow: string
@@ -180,6 +230,12 @@ export interface Words extends Silences {
    */
   readonly typeChoice: string
   readonly chooses: string
+  /** A vault asked for, over the vaults the installation holds. */
+  readonly vaults: string
+  readonly typeVault: string
+  /** The two vaults the list draws and does not offer to choose. */
+  readonly gone: string
+  readonly inFront: string
   /** The two answers to the confirmation: the one that changes nothing, first. */
   readonly asking: string
   readonly answer: string
@@ -187,11 +243,19 @@ export interface Words extends Silences {
   readonly kept: string
   readonly removes: string
   readonly trashed: string
+  /** The same two answers over a vault, whose folder is left where it is. */
+  readonly keepsVault: string
+  readonly forgets: string
+  readonly stays: string
   /** The name typed back, which is what destroying asks for. */
   readonly exactly: string
   readonly typeBack: string
   readonly destroys: string
   readonly forever: string
+  /** The same, over a vault whose folder goes to the trash this machine keeps. */
+  readonly typeVaultBack: string
+  readonly erases: string
+  readonly binned: string
   /** The note the vault could not find, offered as one to make. */
   readonly creating: string
   readonly creates: string
@@ -204,6 +268,7 @@ export interface Words extends Silences {
 /** The one item of a step that asks for one thing. */
 const NAME = 'name'
 const PICK = 'pick'
+const OPEN = 'open'
 const EXACT = 'exactly'
 
 /** The one thing every item of a list the window holds can be asked. */
@@ -224,6 +289,9 @@ const HOLD = 120
 
 /** A command over the note in front, which there has to be one of. */
 const onNote = (at: Where): boolean => at.ready && at.path !== ''
+
+/** A command over the vault in front, which there has to be one of. */
+const onVault = (at: Where): boolean => at.vault.id !== ''
 
 const always = (): boolean => true
 
@@ -254,9 +322,22 @@ export const commandsOf = (words: Words): readonly Command[] => [
     band: 'note',
     needs: 'asking',
     where: onNote,
+    answers: {
+      keeps: words.keeps,
+      kept: words.kept,
+      does: words.removes,
+      then: words.trashed,
+    },
     also: 'destroy',
   },
-  { id: 'destroy', text: words.destroy, band: 'note', needs: 'exactly', where: onNote },
+  {
+    id: 'destroy',
+    text: words.destroy,
+    band: 'note',
+    needs: 'exactly',
+    where: onNote,
+    warns: { does: words.destroys, then: words.forever, back: words.typeBack },
+  },
   { id: 'ask', text: words.ask, band: 'note', where: onNote },
   { id: 'copy', text: words.copy, band: 'note', where: onNote },
   { id: 'note', text: words.newNote, band: 'window', needs: 'naming', where: (at) => at.ready },
@@ -268,6 +349,39 @@ export const commandsOf = (words: Words): readonly Command[] => [
   { id: 'mode', text: words.mode, band: 'window', needs: 'choosing', where: always },
   { id: 'first', text: words.first, band: 'vault', where: (at) => at.ready },
   { id: 'goto', text: words.goto, band: 'vault', needs: 'picking', where: (at) => at.ready },
+  { id: 'openVault', text: words.openVault, band: 'vault', needs: 'vaults', where: always },
+  { id: 'newVault', text: words.newVault, band: 'vault', where: always },
+  {
+    id: 'renameVault',
+    text: words.renameVault,
+    band: 'vault',
+    needs: 'naming',
+    where: onVault,
+    filled: (at) => at.vault.name,
+  },
+  {
+    id: 'forgetVault',
+    text: words.forgetVault,
+    band: 'vault',
+    needs: 'vaults',
+    next: 'asking',
+    where: always,
+    answers: {
+      keeps: words.keepsVault,
+      kept: words.kept,
+      does: words.forgets,
+      then: words.stays,
+    },
+  },
+  {
+    id: 'eraseVault',
+    text: words.eraseVault,
+    band: 'vault',
+    needs: 'vaults',
+    next: 'exactly',
+    where: always,
+    warns: { does: words.erases, then: words.binned, back: words.typeVaultBack },
+  },
 ]
 
 /**
@@ -293,6 +407,7 @@ export const asksCommands = (was: string, now: string): boolean => was === '' &&
 export const deedOf = (id: string, at: Where, name = '', note: string | null = null): Deed => ({
   id,
   path: at.path,
+  vault: at.vault,
   note,
   title: at.title,
   name,
@@ -384,6 +499,10 @@ export function commanding(
 
   /** The names the vault answered the step that picks a note with. */
   const found = shallowRef<readonly Named[]>([])
+  /** The vaults the installation answered the step that lists them with. */
+  const known = shallowRef<readonly Known[]>([])
+  /** Which of them that answer said this window is showing. */
+  const showing = ref('')
   const waiting = ref(false)
   /** What the vault could not be asked, in words a person reads. */
   const said = ref('')
@@ -401,8 +520,15 @@ export function commanding(
   const deed = (id: string, over: Where, name = ''): Deed =>
     deedOf(id, over, name, over.path ? knows.holding(over.path) : null)
 
-  /** What the note a step is over is called now. */
-  const calling = (step: Asked): string => knows.called(step.on.path) || step.on.title
+  /**
+   * What the thing a step is over is called now. A command over the vault is
+   * over the one the window shows; one over a note is over the note at the name
+   * it is filed under now.
+   */
+  const calling = (step: Asked): string =>
+    step.command.band === 'vault'
+      ? step.on.vault.name
+      : knows.called(step.on.path) || step.on.title
 
   /** The step being asked, and nothing at the list of commands. */
   const here = computed<Asked | null>(() => steps.value.at(-1) ?? null)
@@ -412,17 +538,20 @@ export function commanding(
 
   /** What the words typed here will mean, drawn in place of them. */
   const placeholder = computed(() => {
-    switch (here.value?.step) {
+    const step = here.value
+    switch (step?.step) {
       case 'naming':
         return words.typeName
       case 'picking':
         return words.typeNote
       case 'choosing':
         return words.typeChoice
+      case 'vaults':
+        return words.typeVault
       case 'asking':
         return words.answer
       case 'exactly':
-        return words.typeBack
+        return step.command.warns?.back ?? words.typeBack
       default:
         return words.typeCommand
     }
@@ -437,6 +566,8 @@ export function commanding(
   const drop = () => {
     asked += 1
     found.value = []
+    known.value = []
+    showing.value = ''
     waiting.value = false
     said.value = ''
   }
@@ -464,6 +595,28 @@ export function commanding(
     } catch (error) {
       if (mine !== asked) return
       found.value = []
+      // The reason goes to the console; the person is told in the window's
+      // own voice.
+      console.error(error)
+      said.value = words.notAsked
+    } finally {
+      if (mine === asked) waiting.value = false
+    }
+  }
+
+  /** Every vault the installation holds, asked for as the step that lists them opens. */
+  const lists = async () => {
+    const mine = ++asked
+    waiting.value = true
+    said.value = ''
+    try {
+      const listed = await core.vaults()
+      if (mine !== asked) return
+      known.value = listed.vaults
+      showing.value = listed.showing
+    } catch (error) {
+      if (mine !== asked) return
+      known.value = []
       // The reason goes to the console; the person is told in the window's
       // own voice.
       console.error(error)
@@ -594,24 +747,65 @@ export function commanding(
   }
 
   /**
+   * Why a vault the list holds is drawn and not chosen: its folder is not
+   * there, or it is the one the window is showing. A vault that can be chosen
+   * says nothing but where it stands.
+   */
+  const aside = (one: Known): string =>
+    one.missing
+      ? `${words.gone} ${one.path}`
+      : one.id === showing.value
+        ? `${words.inFront} ${one.path}`
+        : ''
+
+  /**
+   * The vaults the installation holds. The two it will not take are drawn and
+   * say why, so a person meets that rule here and not after answering.
+   */
+  const listing = (text: string, step: Asked): PaletteBand => {
+    const word = text.trim().toLowerCase()
+    const items: PaletteItem[] = known.value
+      .filter((one) => word === '' || one.name.toLowerCase().includes(word))
+      .map((one) => {
+        const why = aside(one)
+        return {
+          id: one.id,
+          title: one.name,
+          detail: why || one.path,
+          ...(why ? { disabled: true } : {}),
+          actions: [{ id: OPEN, text: step.command.text }],
+        }
+      })
+    return {
+      id: 'vaults',
+      title: words.vaults,
+      items,
+      working: waiting.value,
+      silence: said.value || words.noneFound,
+    }
+  }
+
+  /**
    * The two answers put before a note goes to the trash. The one that changes
    * nothing is drawn first, and it is the one the keyboard opens on. Each is
    * reached by the name it is offered under, as an item of any other step is.
    */
   const asking = (step: Asked, text: string): PaletteBand => {
     const word = text.trim().toLowerCase()
+    const { keeps = '', kept = '', does = '', then = '' }: Partial<Answers> =
+      step.command.answers ?? {}
     const items: PaletteItem[] = [
       {
         id: NO,
-        title: words.keeps,
-        detail: words.kept,
-        actions: [{ id: NO, text: words.keeps }],
+        title: keeps,
+        detail: kept,
+        actions: [{ id: NO, text: keeps }],
       },
       {
         id: YES,
-        title: `${words.removes} “${calling(step)}”`,
-        detail: words.trashed,
-        actions: [{ id: YES, text: words.removes }],
+        title: `${does} “${calling(step)}”`,
+        detail: then,
+        actions: [{ id: YES, text: does }],
       },
     ]
     return {
@@ -627,16 +821,17 @@ export function commanding(
   /** The name typed back, which is the one thing that reaches destroying. */
   const exactly = (step: Asked, text: string): PaletteBand => {
     const title = calling(step)
+    const { does = '', then = '' }: Partial<Warns> = step.command.warns ?? {}
     return {
       id: 'exactly',
       title: words.exactly,
       items: [
         {
           id: EXACT,
-          title: `${words.destroys} “${title}”`,
-          detail: words.forever,
+          title: `${does} “${title}”`,
+          detail: then,
           disabled: text.trim() !== title,
-          actions: [{ id: EXACT, text: words.destroys }],
+          actions: [{ id: EXACT, text: does }],
         },
       ],
     }
@@ -648,15 +843,22 @@ export function commanding(
     if (step.step === 'naming') return [naming(typed.value)]
     if (step.step === 'picking') return [picking(typed.value)]
     if (step.step === 'choosing') return choosing(step, typed.value)
+    if (step.step === 'vaults') return [listing(typed.value, step)]
     if (step.step === 'asking') return [asking(step, typed.value)]
     return [exactly(step, typed.value)]
   })
+
+  /** What a step asks of the application as it is put in front of the person. */
+  const begins = (step: Asked | null) => {
+    if (step?.step === 'vaults') void lists()
+  }
 
   /** A step opened, with whatever it wants the person to replace standing in it. */
   const puts = (step: Asked) => {
     drop()
     typed.value = step.command.filled?.(step.on) ?? ''
     steps.value = [...steps.value, step]
+    begins(step)
   }
 
   /**
@@ -674,6 +876,7 @@ export function commanding(
     drop()
     typed.value = ''
     steps.value = steps.value.slice(0, -1)
+    begins(here.value)
   }
 
   /**
@@ -721,6 +924,16 @@ export function commanding(
       const one = found.value.find((found) => found.path === item)
       if (!one) return null
       return deed(step.command.id, { ...step.on, path: one.path, title: one.title || one.path })
+    }
+    if (step.step === 'vaults') {
+      const one = known.value.find((vault) => vault.id === item)
+      // The two the list draws and does not take are the ones it says so on.
+      if (!one || aside(one)) return null
+      const on = { ...step.on, vault: { id: one.id, name: one.name } }
+      if (!step.command.next) return deed(step.command.id, on)
+      // The vault chosen is what the step after this one is over.
+      puts({ step: step.command.next, command: step.command, on })
+      return null
     }
     if (step.step === 'naming') {
       if (!name) return null
