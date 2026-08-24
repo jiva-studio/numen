@@ -2,11 +2,15 @@ package vault
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
+
+// ErrLastVault is the one vault an installation has left. It stays on the list.
+var ErrLastVault = errors.New("an installation keeps a vault")
 
 // Forget takes a vault off the list this installation keeps, and out of the
 // index. The folder stays where it is, with the identity it carries, and adding
@@ -37,7 +41,7 @@ func keepTheLastVault(registry port.VaultRegistry, v domain.Vault) error {
 		return err
 	}
 	if len(known) == 1 && known[0].ID == v.ID {
-		return fmt.Errorf("%s is the only vault this installation has", v.Name)
+		return fmt.Errorf("%w: %s is the only vault this installation has", ErrLastVault, v.Name)
 	}
 	return nil
 }

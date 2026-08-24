@@ -63,9 +63,12 @@ func (a *API) Serving(files http.Handler) http.Handler {
 	route, questions := numenv1connect.NewVaultServiceHandler(a)
 	asking, tasks := numenv1connect.NewAgentServiceHandler(a)
 	dressing, themes := numenv1connect.NewThemeServiceHandler(a.dressed())
+	listing, held := numenv1connect.NewVaultsServiceHandler(vaults{api: a})
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", policy)
 		switch {
+		case strings.HasPrefix(r.URL.Path, listing):
+			held.ServeHTTP(w, r)
 		case strings.HasPrefix(r.URL.Path, route):
 			questions.ServeHTTP(w, r)
 		case strings.HasPrefix(r.URL.Path, asking):

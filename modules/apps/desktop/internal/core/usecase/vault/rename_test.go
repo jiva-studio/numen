@@ -1,6 +1,7 @@
 package vault_test
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -41,8 +42,9 @@ func TestANameAnotherVaultHasIsRefused(t *testing.T) {
 
 	// The comparison is the one the list is searched by: without case, over
 	// normalised text.
-	if _, err := (usecase.Rename{Registry: registry, Index: index}).Execute(t.Context(), renamed, "PERSONAL"); err == nil {
-		t.Fatalf("two vaults are now called %s", taken.Name)
+	_, err := (usecase.Rename{Registry: registry, Index: index}).Execute(t.Context(), renamed, "PERSONAL")
+	if !errors.Is(err, usecase.ErrNameTaken) {
+		t.Fatalf("a name %s already has was answered %v", taken.Name, err)
 	}
 	onTheList, found, err := registry.Find(renamed.ID)
 	if err != nil || !found {

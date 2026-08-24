@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/recognition"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/trash"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
@@ -136,6 +137,9 @@ func (c Config) VaultWatcher() port.VaultWatcher {
 func (c Config) VaultIdentity() port.VaultIdentity {
 	return filesystem.Identity{Options: c.VaultOptions()}
 }
+
+// Trash is the place this machine keeps what a person deleted.
+func (c Config) Trash() port.Trash { return trash.New() }
 
 // VaultOptions is how a vault on disk is read: which folder is ours, and which
 // files count as notes and as books. The same answer for whatever looks at it.

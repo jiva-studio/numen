@@ -32,7 +32,7 @@ func (u Erase) Execute(ctx context.Context, v domain.Vault) error {
 		return u.Forget.Execute(ctx, v)
 	}
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: %w", ErrUnreadable, err)
 	}
 
 	carried, carriesOne, err := u.Identity.Of(v.Path)
@@ -40,7 +40,8 @@ func (u Erase) Execute(ctx context.Context, v domain.Vault) error {
 		return err
 	}
 	if !carriesOne || carried != v.ID {
-		return fmt.Errorf("%s no longer carries the identity of the vault %s, so it stays where it is", v.Path, v.Name)
+		return fmt.Errorf("%w: %s no longer carries the identity of the vault %s, so it stays where it is",
+			ErrUnreadable, v.Path, v.Name)
 	}
 
 	if err := u.Trash.Trash(v.Path); err != nil {

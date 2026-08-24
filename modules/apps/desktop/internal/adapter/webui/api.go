@@ -45,6 +45,23 @@ type API struct {
 	// another vault.
 	Opens func(context.Context, domain.Vault) error
 
+	// Vaults is the list of vaults this installation holds, the one the window
+	// is showing among them. A build without one answers that it holds no list.
+	Vaults port.VaultRegistry
+
+	// Choosing puts this machine's own folder picker in front of the person.
+	// Only an application with a window has one, and a build without it answers
+	// that a folder cannot be picked here.
+	Choosing port.Folders
+
+	// Adding turns a folder into a vault, Renaming is what a person calls one,
+	// and Forgetting and Erasing take one off the list. A build without them
+	// answers that the list cannot be changed here.
+	Adding     *usecase.Add
+	Renaming   *usecase.Rename
+	Forgetting *usecase.Forget
+	Erasing    *usecase.Erase
+
 	// taking is the agent the panel's tasks go to. A vault without one answers
 	// that it has none, and the rest of the window works as it did. It is
 	// replaced while requests are being served, so it is taken through

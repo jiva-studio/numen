@@ -1,6 +1,7 @@
 package vault_test
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"slices"
@@ -70,8 +71,8 @@ func TestEraseRefusesAFolderThatNoLongerCarriesTheIdentity(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := erase.Execute(t.Context(), gone); err == nil {
-		t.Fatal("a folder that is not the vault was taken away")
+	if err := erase.Execute(t.Context(), gone); !errors.Is(err, usecase.ErrUnreadable) {
+		t.Fatalf("a folder that is not the vault was answered %v", err)
 	}
 	if len(trash.moved) != 0 {
 		t.Errorf("trashed %v", trash.moved)
@@ -114,8 +115,8 @@ func TestEraseRefusesTheOnlyVaultBeforeTouchingItsFolder(t *testing.T) {
 	}
 	erase, trash, _, _ := erasing(registry)
 
-	if err := erase.Execute(t.Context(), only); err == nil {
-		t.Fatal("the last vault was erased")
+	if err := erase.Execute(t.Context(), only); !errors.Is(err, usecase.ErrLastVault) {
+		t.Fatalf("the last vault was answered %v", err)
 	}
 	if len(trash.moved) != 0 {
 		t.Errorf("trashed %v", trash.moved)
