@@ -42,9 +42,10 @@
   --numen-edge-label: light-dark(#7b7f87, #8b9098);
   --numen-ring: light-dark(#2f6fd0, #78a9ef);
   /* The ground under selected text. The second is the same selection where the
-     keyboard is somewhere else. */
+     keyboard is somewhere else, the third every other place that text stands. */
   --numen-selection: light-dark(#2f6fd038, #78a9ef42);
   --numen-selection-away: light-dark(#2f6fd01f, #78a9ef24);
+  --numen-selection-match: light-dark(#2f6fd01a, #78a9ef1f);
   --numen-alarm: light-dark(#a33a32, #e08b83);
   /* The band something is said in that a person should read but need not act
      on at once. */
@@ -53,6 +54,20 @@
   /* The ground under a stretch of text something is about to change. It sits
      under words that are still being read, so it is a tint and not a colour. */
   --numen-highlight: light-dark(#d6a46333, #d6a4633d);
+
+  /* Text with marks in it: the marks themselves, the ground under code, and
+     the ground under the head row of a table. */
+  --numen-syntax-mark: light-dark(#b3b6bc, #5f656d);
+  --numen-code-bg: light-dark(#f2f2f0, #1d2023);
+  --numen-table-head-bg: light-dark(#f2f2f0, #22252a);
+  /* One hue per kind of word in a highlighted language. */
+  --numen-syntax-keyword: light-dark(#8250bf, #c39cf0);
+  --numen-syntax-name: light-dark(#1f5aa6, #7fb0ea);
+  --numen-syntax-type: light-dark(#0a6b74, #63bcc6);
+  --numen-syntax-string: light-dark(#2f7a4a, #7fc79b);
+  --numen-syntax-number: light-dark(#a35a12, #e0a668);
+  --numen-syntax-comment: light-dark(#8a8e96, #7b8089);
+  --numen-syntax-punctuation: light-dark(#6c7079, #979da6);
 
   /* What a panel is tinted with, and what shows through it. The blur goes with
      the alpha the tint carries: an opaque tint leaves nothing to blur, so a
