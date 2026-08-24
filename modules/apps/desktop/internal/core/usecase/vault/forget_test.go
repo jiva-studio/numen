@@ -89,8 +89,9 @@ func TestForgetRefusesTheOnlyVault(t *testing.T) {
 	}
 	index := &indexRows{}
 
-	if err := (usecase.Forget{Registry: registry, Index: index}).Execute(t.Context(), only); err == nil {
-		t.Fatal("the last vault was forgotten")
+	err = (usecase.Forget{Registry: registry, Index: index}).Execute(t.Context(), only)
+	if !errors.Is(err, usecase.ErrLastVault) {
+		t.Fatalf("the last vault was answered %v", err)
 	}
 	known, err := registry.All()
 	if err != nil {

@@ -9,6 +9,9 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
+// ErrNameTaken is a name another vault on the list already has.
+var ErrNameTaken = errors.New("another vault is called this")
+
 // Rename gives a vault another name. The name is what a person calls the
 // collection and lives in the list this installation keeps; the folder keeps
 // the name the filesystem gives it.
@@ -33,7 +36,8 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, name string) (domai
 	}
 	for _, other := range known {
 		if other.ID != v.ID && sameName(other.Name, name) {
-			return domain.Vault{}, fmt.Errorf("the vault at %s is already called %s", other.Path, other.Name)
+			return domain.Vault{}, fmt.Errorf("%w: the vault at %s is already called %s",
+				ErrNameTaken, other.Path, other.Name)
 		}
 	}
 

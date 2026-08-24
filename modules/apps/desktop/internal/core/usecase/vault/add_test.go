@@ -1,6 +1,7 @@
 package vault_test
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -93,8 +94,8 @@ func TestAVaultInsideAnotherIsRefused(t *testing.T) {
 	if err := os.MkdirAll(inner, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := add.Execute(inner, ""); err == nil {
-		t.Error("a folder inside a vault was added as a vault of its own")
+	if _, err := add.Execute(inner, ""); !errors.Is(err, usecase.ErrOverlaps) {
+		t.Errorf("a folder inside a vault was answered %v", err)
 	}
 	if _, carriesOne, err := (filesystem.Identity{}).Of(inner); err != nil || carriesOne {
 		t.Errorf("the refused folder was given an identity: %v %v", carriesOne, err)
@@ -111,8 +112,8 @@ func TestAVaultHoldingAnotherIsRefused(t *testing.T) {
 	if _, err := add.Execute(inner, ""); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := add.Execute(outer, ""); err == nil {
-		t.Error("a folder holding a vault was added as a vault of its own")
+	if _, err := add.Execute(outer, ""); !errors.Is(err, usecase.ErrOverlaps) {
+		t.Errorf("a folder holding a vault was answered %v", err)
 	}
 }
 

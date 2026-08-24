@@ -232,6 +232,23 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Index:   opened.level,
 	}
 
+	// The vaults this installation holds, beside the one the window is showing.
+	// Erase is Forget and a folder that goes, so the two hold one Forget.
+	forget := usecase.Forget{Registry: registry, Index: db.Vaults()}
+	api.Vaults = registry
+	api.Adding = &usecase.Add{
+		Identity: cfg.VaultIdentity(),
+		Registry: registry,
+		Now:      time.Now,
+	}
+	api.Renaming = &usecase.Rename{Registry: registry, Index: db.Vaults()}
+	api.Forgetting = &forget
+	api.Erasing = &usecase.Erase{
+		Identity: cfg.VaultIdentity(),
+		Trash:    cfg.Trash(),
+		Forget:   forget,
+	}
+
 	// Reading every file again is what this launch was asked for, and is not
 	// carried to a vault opened later.
 	if err := opened.arrive(first, cfg.RebuildIndex); err != nil {
@@ -561,14 +578,14 @@ func (o *Opened) scanning(ctx context.Context, v domain.Vault) (usecase.ScanResu
 func readable(cfg container.Config, v domain.Vault) error {
 	identity := cfg.VaultIdentity()
 	if err := identity.Readable(v.Path); err != nil {
-		return err
+		return fmt.Errorf("%w: %w", usecase.ErrUnreadable, err)
 	}
 	carried, found, err := identity.Of(v.Path)
 	if err != nil {
 		return err
 	}
 	if !found || carried != v.ID {
-		return fmt.Errorf("%s is no longer the vault %s", v.Path, v.Name)
+		return fmt.Errorf("%w: %s is no longer the vault %s", usecase.ErrUnreadable, v.Path, v.Name)
 	}
 	return nil
 }

@@ -116,6 +116,9 @@ func run(cfg container.Config, agents agentOptions, vault string, zoom float64) 
 		Zoom:   drawnAt(zoom, chosen.Appearance.Zoom),
 	})
 
+	// Picking a folder is the machine's own, and it opens over this window.
+	opened.API.Choosing = &picker{window: window}
+
 	// Opening another vault, as a person asks for it. The agents are told which
 	// vault they are working when their session opens, so the endpoint they
 	// reach it through is stopped and started again around the swap.

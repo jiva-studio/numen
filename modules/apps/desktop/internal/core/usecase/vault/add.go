@@ -1,6 +1,7 @@
 package vault
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -11,6 +12,17 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
+
+// ErrUnreadable is a path that is not a folder, or a folder this application
+// cannot read as the vault it was asked about.
+var ErrUnreadable = errors.New("this folder cannot be read as a vault")
+
+// ErrOverlaps is a folder that lies inside a vault on the list, or holds one.
+var ErrOverlaps = errors.New("a vault does not lie inside another")
+
+// ErrCopy is one identity carried by two folders that are both there. One index
+// cannot hold both.
+var ErrCopy = errors.New("one vault cannot be in two places")
 
 // Add turns a folder into a vault this installation knows about.
 //
@@ -38,7 +50,7 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		root = resolved
 	}
 	if err := u.Identity.Readable(root); err != nil {
-		return domain.Vault{}, err
+		return domain.Vault{}, fmt.Errorf("%w: %w", ErrUnreadable, err)
 	}
 
 	known, err := u.Registry.All()
@@ -72,10 +84,10 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		}
 		if carriesIt && stillThere == id {
 			return domain.Vault{}, fmt.Errorf(
-				"%s and %s both carry the identity %s, so they are copies of one "+
+				"%w: %s and %s both carry the identity %s, so they are copies of one "+
 					"vault and cannot both be indexed. To make this a separate "+
 					"vault, delete its service folder and add it again",
-				root, existing.Path, id)
+				ErrCopy, root, existing.Path, id)
 		}
 		// The old location is gone, or is no longer this vault: the folder
 		// moved, and the registry is what has to catch up.
@@ -101,10 +113,12 @@ func roomFor(root string, known []domain.Vault) error {
 			continue
 		}
 		if within(root, other.Path) {
-			return fmt.Errorf("%s is inside the vault %s at %s", root, other.Name, other.Path)
+			return fmt.Errorf("%w: %s is inside the vault %s at %s",
+				ErrOverlaps, root, other.Name, other.Path)
 		}
 		if within(other.Path, root) {
-			return fmt.Errorf("%s holds the vault %s at %s", root, other.Name, other.Path)
+			return fmt.Errorf("%w: %s holds the vault %s at %s",
+				ErrOverlaps, root, other.Name, other.Path)
 		}
 	}
 	return nil
