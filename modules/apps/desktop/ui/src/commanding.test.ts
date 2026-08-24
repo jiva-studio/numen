@@ -902,7 +902,8 @@ describe('a command that asks for a vault', () => {
 
   /**
    * The window always stands on something, so the vault in front is not one
-   * the list takes. A person meets that rule here and not after answering.
+   * the list takes. It is drawn with the reason beside it, and choosing it
+   * does nothing.
    */
   it('marks the vault the window is showing, and will not take it', async () => {
     const { commands } = asking({}, [], {}, two())

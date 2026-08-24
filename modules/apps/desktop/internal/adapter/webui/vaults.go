@@ -14,8 +14,8 @@ import (
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 )
 
-// vaults answers about the vaults this installation holds. A note and a vault
-// are each renamed, and one object answers to one Rename.
+// vaults answers about the vaults this installation holds, over the API this
+// window serves.
 type vaults struct{ api *API }
 
 // errNoVaults is what a build that holds no list of vaults answers.
