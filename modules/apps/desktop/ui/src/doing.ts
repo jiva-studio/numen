@@ -105,6 +105,7 @@ const carried: Record<string, Carries> = {
   close: (deed, on) => on.closes(deed.tab),
   find: (_, on) => on.searches(),
   appearance: (deed, on) => on.appearance(deed.name),
+  mode: (deed, on) => on.appearance(deed.name),
   first: (_, on, words) => travels(on.opening(), on, words),
   goto: (deed, on, words) => travels(deed.path, on, words),
 }

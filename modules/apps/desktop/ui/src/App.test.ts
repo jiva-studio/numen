@@ -396,8 +396,8 @@ describe('the keyboard on a step that confirms', () => {
   })
 })
 
-/** The themes walked as a person walks them, with nothing of the palette stubbed. */
-describe('the keyboard on the step that offers the themes', () => {
+/** How the window is drawn, walked as a person walks it, with nothing stubbed. */
+describe('the two commands over how the window is drawn', () => {
   /** What the mode's element holds while the tokens are read as a pair. */
   const PAIR = ':root { color-scheme: light dark; }'
   /** What the page was served wearing, which is the applied theme's file. */
@@ -434,60 +434,119 @@ describe('the keyboard on the step that offers the themes', () => {
     document.head.append(styled(PAIR), styled(SERVED))
   })
 
-  /** The step open, standing on the theme the settings name. */
-  const overThemes = async () => {
+  /** The commands open, and the one the words typed name taken up. */
+  const over = async (typed: string) => {
     const window = await drawnWithPalette()
     globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
     await settles()
-    await type('theme')
+    await type(typed)
     await press('Enter')
     return window
   }
 
-  it('opens standing on the theme the window already wears', async () => {
-    await overThemes()
+  /** Every row the words typed leave, in the order they are drawn. */
+  const left = () =>
+    [...document.body.querySelectorAll('.palette__item')].map((one) =>
+      one.querySelector('.palette__name')?.textContent?.trim(),
+    )
 
-    expect(document.body.querySelector('[data-here]')?.textContent).toContain('numen')
-    expect(dressed()).toStrictEqual([PAIR, SERVED])
+  /** The bands standing, by the name each carries. */
+  const bands = () =>
+    [...document.body.querySelectorAll('.palette__title')].map((one) => one.textContent?.trim())
+
+  describe('the words a person types for them', () => {
+    it('find the theme by “theme”, and light and dark by either word', async () => {
+      await drawnWithPalette()
+      globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
+      await settles()
+
+      await type('theme')
+      expect(left()).toStrictEqual(['Change the theme'])
+
+      await type('light')
+      expect(left()).toStrictEqual(['Light or dark'])
+
+      await type('dark')
+      expect(left()).toStrictEqual(['Light or dark'])
+    })
   })
 
-  it('wears the theme the keyboard walks onto', async () => {
-    await overThemes()
+  describe('the step that offers the themes', () => {
+    it('draws the shelves as bands, and opens on the theme the window wears', async () => {
+      await over('theme')
 
-    await press('ArrowDown')
+      expect(bands()).toStrictEqual(['Ships with numen', 'Your own themes'])
+      expect(document.body.querySelector('[data-here]')?.textContent).toContain('numen')
+      expect(dressed()).toStrictEqual([PAIR, SERVED])
+    })
 
-    expect(dressed()).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }'])
-    expect(asked.worn).toStrictEqual([])
+    it('wears the theme the keyboard walks onto', async () => {
+      await over('theme')
+
+      await press('ArrowDown')
+
+      expect(dressed()).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }'])
+      expect(asked.worn).toStrictEqual([])
+    })
+
+    it('puts back the theme the settings name when the step is left', async () => {
+      await over('theme')
+      await press('ArrowDown')
+
+      await press('Escape')
+
+      expect(dressed()).toStrictEqual([PAIR, SERVED])
+      expect(asked.worn).toStrictEqual([])
+    })
+
+    it('keeps wearing the theme that was chosen, and writes it down', async () => {
+      await over('theme')
+      await press('ArrowDown')
+
+      await press('Enter')
+
+      expect(asked.worn).toStrictEqual(['mine:sea system'])
+      expect(dressed()).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }'])
+    })
   })
 
-  it('puts back the theme the settings name when the step is left', async () => {
-    await overThemes()
-    await press('ArrowDown')
+  describe('the step that offers light and dark', () => {
+    it('opens on the half the tokens are read as, in a band of its own', async () => {
+      await over('light')
 
-    await press('Escape')
+      expect(bands()).toStrictEqual(['Light and dark'])
+      expect(left()).toStrictEqual(['Follow the system', 'Light', 'Dark'])
+      expect(dressed()).toStrictEqual([PAIR, SERVED])
+    })
 
-    expect(dressed()).toStrictEqual([PAIR, SERVED])
-    expect(asked.worn).toStrictEqual([])
-  })
+    it('reads the tokens as the half the keyboard walks onto', async () => {
+      await over('light')
 
-  it('keeps wearing the theme that was chosen, and writes it down', async () => {
-    await overThemes()
-    await press('ArrowDown')
+      await press('ArrowDown')
 
-    await press('Enter')
+      expect(dressed()).toStrictEqual([':root { color-scheme: light; }', SERVED])
+      expect(asked.worn).toStrictEqual([])
+    })
 
-    expect(asked.worn).toStrictEqual(['mine:sea system'])
-    expect(dressed()).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }'])
-  })
+    it('puts back the half the settings name when the step is left', async () => {
+      await over('light')
+      await press('ArrowDown')
 
-  it('reads the tokens as one half, leaving the theme where it was', async () => {
-    await overThemes()
-    await type('dark')
+      await press('Escape')
 
-    await press('Enter')
+      expect(dressed()).toStrictEqual([PAIR, SERVED])
+      expect(asked.worn).toStrictEqual([])
+    })
 
-    expect(asked.worn).toStrictEqual(['preset:numen dark'])
-    expect(dressed()).toStrictEqual([':root { color-scheme: dark; }', SERVED])
+    it('writes the half that was chosen, leaving the theme where it was', async () => {
+      await over('dark')
+      await press('End')
+
+      await press('Enter')
+
+      expect(asked.worn).toStrictEqual(['preset:numen dark'])
+      expect(dressed()).toStrictEqual([':root { color-scheme: dark; }', SERVED])
+    })
   })
 })
 

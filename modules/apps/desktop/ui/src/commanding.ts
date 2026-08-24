@@ -23,10 +23,19 @@ export interface Asking {
 export interface Offered {
   readonly id: string
   readonly title: string
-  /** A second line: what is worth knowing about it before it is chosen. */
+  /** A second line: what is true of this row and not of the ones beside it. */
   readonly detail?: string
   /** Drawn, said, and not chosen. */
   readonly disabled?: boolean
+}
+
+/** One band of such a list, named by whatever holds it. */
+export interface Offering {
+  readonly id: string
+  readonly title: string
+  readonly items: readonly Offered[]
+  /** What is said in its place where it holds nothing. */
+  readonly silence?: string
 }
 
 /**
@@ -35,8 +44,8 @@ export interface Offered {
  * window holds may change while the step stands open.
  */
 export interface Holds {
-  /** What this command offers now. */
-  offers(command: string): readonly Offered[]
+  /** What this command offers now, in the bands it is drawn in. */
+  offers(command: string): readonly Offering[]
   /** The one the keyboard is standing on, and nothing where it stands on none. */
   shows(command: string, item: string): void
 }
@@ -140,7 +149,9 @@ export interface Words extends Silences {
   readonly newPlex: string
   readonly newAgent: string
   readonly close: string
+  /** The two commands over how the window is drawn: the theme, and the halves. */
   readonly appearance: string
+  readonly mode: string
   readonly find: string
   /** The keystroke the search answers to away from the palette. */
   readonly findKeys: string
@@ -163,8 +174,10 @@ export interface Words extends Silences {
   /** A note asked for, over the names in the vault. */
   readonly names: string
   readonly typeNote: string
-  /** One of a list the window holds: the band, the field, and what Enter does. */
-  readonly choosing: string
+  /**
+   * One of a list the window holds: the field, and what Enter does. The bands
+   * such a list is drawn in are named by whatever holds it.
+   */
   readonly typeChoice: string
   readonly chooses: string
   /** The two answers to the confirmation: the one that changes nothing, first. */
@@ -252,6 +265,7 @@ export const commandsOf = (words: Words): readonly Command[] => [
   { id: 'close', text: words.close, band: 'window', where: (at) => at.tab !== '' },
   { id: 'find', text: words.find, keys: words.findKeys, band: 'window', where: always },
   { id: 'appearance', text: words.appearance, band: 'window', needs: 'choosing', where: always },
+  { id: 'mode', text: words.mode, band: 'window', needs: 'choosing', where: always },
   { id: 'first', text: words.first, band: 'vault', where: (at) => at.ready },
   { id: 'goto', text: words.goto, band: 'vault', needs: 'picking', where: (at) => at.ready },
 ]
@@ -551,25 +565,32 @@ export function commanding(
   }
 
   /**
-   * A list the window holds, narrowed by the words typed. It is read again on
-   * every keystroke, and an item it draws as not to be chosen is not chosen.
+   * The bands a list the window holds is drawn in, narrowed by the words typed.
+   * They are read again on every keystroke, and a row drawn as not to be chosen
+   * is not chosen.
    */
-  const choosing = (step: Asked, text: string): PaletteBand => {
+  const choosing = (step: Asked, text: string): readonly PaletteBand[] => {
     const word = text.trim().toLowerCase()
-    const items: PaletteItem[] = []
-    for (const one of holds.offers(step.command.id)) {
-      const found = word === '' ? -1 : one.title.toLowerCase().indexOf(word)
-      if (word !== '' && found < 0) continue
-      items.push({
-        id: one.id,
-        title: one.title,
-        ...(found < 0 ? {} : { at: [{ from: found, to: found + word.length }] }),
-        ...(one.detail ? { detail: one.detail } : {}),
-        ...(one.disabled ? { disabled: true } : {}),
-        actions: [{ id: CHOSEN, text: words.chooses }],
-      })
+    return holds.offers(step.command.id).map((band) => ({
+      id: band.id,
+      title: band.title,
+      items: band.items.map((one) => offered(one, word)).filter((item) => item !== null),
+      silence: band.silence ?? words.noneFound,
+    }))
+  }
+
+  /** One such row, and nothing where the words typed leave it out. */
+  const offered = (one: Offered, word: string): PaletteItem | null => {
+    const found = word === '' ? -1 : one.title.toLowerCase().indexOf(word)
+    if (word !== '' && found < 0) return null
+    return {
+      id: one.id,
+      title: one.title,
+      ...(found < 0 ? {} : { at: [{ from: found, to: found + word.length }] }),
+      ...(one.detail ? { detail: one.detail } : {}),
+      ...(one.disabled ? { disabled: true } : {}),
+      actions: [{ id: CHOSEN, text: words.chooses }],
     }
-    return { id: 'choosing', title: words.choosing, items, silence: words.noneFound }
   }
 
   /**
@@ -626,7 +647,7 @@ export function commanding(
     if (!step) return listed(on.value, typed.value)
     if (step.step === 'naming') return [naming(typed.value)]
     if (step.step === 'picking') return [picking(typed.value)]
-    if (step.step === 'choosing') return [choosing(step, typed.value)]
+    if (step.step === 'choosing') return choosing(step, typed.value)
     if (step.step === 'asking') return [asking(step, typed.value)]
     return [exactly(step, typed.value)]
   })
@@ -706,7 +727,8 @@ export function commanding(
       return deed(step.command.id, step.on, name)
     }
     if (step.step === 'choosing') {
-      const one = holds.offers(step.command.id).find((offered) => offered.id === item)
+      const rows = holds.offers(step.command.id).flatMap((band) => band.items)
+      const one = rows.find((row) => row.id === item)
       if (!one || one.disabled) return null
       return deed(step.command.id, step.on, one.id)
     }

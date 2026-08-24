@@ -5,7 +5,8 @@
  * since the mode's has to stand before it, and that leaving the list puts back
  * the theme the settings name without reading a file for it.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import type { Offering } from './commanding'
 import type { Catalogue, Themes } from './theme'
 import { wearing } from './wearing'
 import { WORDS as words } from './words'
@@ -70,6 +71,7 @@ const window = (over: Partial<Catalogue> = {}) => {
   let catalogue: Catalogue = { ...CATALOGUE, ...over }
   let listed = 0
   let failed = ''
+  let refused = ''
   const texts: Record<string, string> = {}
   const core: Themes = {
     catalogue: async () => {
@@ -78,6 +80,7 @@ const window = (over: Partial<Catalogue> = {}) => {
     },
     text: async (name) => {
       asked.push(name)
+      if (refused) throw new Error(refused)
       return texts[name] ?? `:root { --numen-surface: ${name} }`
     },
     chooses: async (name, mode) => {
@@ -95,6 +98,7 @@ const window = (over: Partial<Catalogue> = {}) => {
     listed: () => listed,
     writes: (name: string, css: string) => (texts[name] = css),
     fails: (why: string) => (failed = why),
+    refuses: (why: string) => (refused = why),
     holds: (next: Partial<Catalogue>) => (catalogue = { ...catalogue, ...next }),
   }
 }
@@ -187,6 +191,18 @@ describe('the theme the keyboard is standing on', () => {
     expect(one.asked).toStrictEqual(['mine:sea', 'preset:dracula'])
   })
 
+  it('is said to be unreadable where its file is, and the window keeps what it wears', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const one = await dressed()
+    one.refuses('the file is gone')
+
+    one.worn.shows('mine:sea')
+    await settles()
+
+    expect(one.worn.said.value).toBe(words.unworn)
+    expect(dressing(one.sheet)).toStrictEqual([PAIR, SERVED])
+  })
+
   it('is the last row the keyboard landed on, whatever order the files come back in', async () => {
     const one = await dressed()
 
@@ -220,41 +236,74 @@ describe('which half of a pair the tokens are read as', () => {
   })
 })
 
-describe('the list the step offers', () => {
-  it('stands the theme the settings name first, and the modes after every theme', async () => {
-    const one = await dressed({ applied: 'mine:sea' })
+describe('the themes the step offers', () => {
+  /** Every band, by its identity, and the rows standing in each. */
+  const listed = (rows: readonly Offering[]) =>
+    Object.fromEntries(rows.map((band) => [band.id, band.items.map((row) => row.id)]))
 
-    expect(one.worn.offers().map((row) => row.id)).toStrictEqual([
-      'mine:sea',
-      'preset:numen',
-      'preset:dracula',
-      'mode:system',
-      'mode:light',
-      'mode:dark',
-    ])
-  })
-
-  it('says where a theme came off, and which theme and mode are worn', async () => {
+  it('draws the themes in the two bands they come off, and nothing else', async () => {
     const one = await dressed()
 
-    const rows = one.worn.offers()
-    expect(rows[0]?.detail).toBe(`${words.shipped} · ${words.worn}`)
-    expect(rows.find((row) => row.id === 'mine:sea')?.detail).toBe(words.ownFile)
-    expect(rows.find((row) => row.id === 'mode:system')?.detail).toBe(words.worn)
+    expect(listed(one.worn.offers())).toStrictEqual({
+      shipping: ['preset:numen', 'preset:dracula'],
+      owned: ['mine:sea'],
+    })
   })
 
-  it('draws a mode as not to be chosen while the theme worn pins light and dark', async () => {
+  it('stands the band the theme worn came off first, and it first inside it', async () => {
+    const one = await dressed({ applied: 'preset:dracula' })
+    const other = await dressed({ applied: 'mine:sea' })
+
+    expect(listed(one.worn.offers())).toStrictEqual({
+      shipping: ['preset:dracula', 'preset:numen'],
+      owned: ['mine:sea'],
+    })
+    expect(other.worn.offers().map((band) => band.id)).toStrictEqual(['owned', 'shipping'])
+  })
+
+  it('says on a row only what is true of that row: that it is the one worn', async () => {
+    const one = await dressed()
+
+    const rows = one.worn.offers().flatMap((band) => band.items)
+    expect(rows.map((row) => row.detail)).toStrictEqual([words.worn, undefined, undefined])
+  })
+
+  it('says where a person’s own themes go while they have none', async () => {
+    const one = await dressed({ themes: CATALOGUE.themes.slice(0, 2) })
+
+    const own = one.worn.offers().find((band) => band.id === 'owned')
+    expect(own?.items).toStrictEqual([])
+    expect(own?.silence).toBe(words.noneOwned)
+  })
+})
+
+describe('the three halves the step offers', () => {
+  const rows = (one: Awaited<ReturnType<typeof dressed>>) =>
+    one.worn.modes().flatMap((band) => band.items)
+
+  it('draws the three in one band of their own, and says which is read', async () => {
+    const one = await dressed({ mode: 'light' })
+
+    expect(one.worn.modes().map((band) => band.id)).toStrictEqual(['half'])
+    expect(rows(one).map((row) => row.id)).toStrictEqual(['mode:system', 'mode:light', 'mode:dark'])
+    expect(rows(one).map((row) => row.detail)).toStrictEqual([undefined, words.worn, undefined])
+  })
+
+  it('draws each as not to be chosen while the theme worn pins light and dark', async () => {
     const one = await dressed()
 
     one.worn.shows('preset:dracula')
     await settles()
 
-    const modes = one.worn.offers().filter((row) => row.id.startsWith('mode:'))
-    expect(modes.map((row) => row.disabled)).toStrictEqual([true, true, true])
-    expect(modes.map((row) => row.detail)).toStrictEqual([words.pinned, words.pinned, words.pinned])
+    expect(rows(one).map((row) => row.disabled)).toStrictEqual([true, true, true])
+    expect(rows(one).map((row) => row.detail)).toStrictEqual([
+      words.pinned,
+      words.pinned,
+      words.pinned,
+    ])
   })
 
-  it('draws every mode as one to choose again once such a theme is left', async () => {
+  it('draws each as one to choose again once such a theme is left', async () => {
     const one = await dressed()
 
     one.worn.shows('preset:dracula')
@@ -262,8 +311,7 @@ describe('the list the step offers', () => {
     one.worn.shows('')
     await settles()
 
-    const modes = one.worn.offers().filter((row) => row.id.startsWith('mode:'))
-    expect(modes.map((row) => row.disabled)).toStrictEqual([undefined, undefined, undefined])
+    expect(rows(one).map((row) => row.disabled)).toStrictEqual([undefined, undefined, undefined])
   })
 })
 
@@ -349,12 +397,9 @@ describe('the person editing their own theme file', () => {
     await one.says('mine:sea')
 
     expect(one.listed()).toBe(2)
-    expect(one.worn.offers().map((row) => row.id)).toStrictEqual([
+    expect(one.worn.offers().flatMap((band) => band.items.map((row) => row.id))).toStrictEqual([
       'preset:numen',
       'preset:dracula',
-      'mode:system',
-      'mode:light',
-      'mode:dark',
     ])
   })
 })

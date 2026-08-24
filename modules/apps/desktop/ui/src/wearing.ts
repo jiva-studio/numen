@@ -10,15 +10,18 @@
  * settings name is put back the moment the keyboard leaves the list.
  */
 import { computed, ref, shallowRef } from 'vue'
-import type { Offered } from './commanding'
+import type { Offered, Offering } from './commanding'
 import { following } from './following'
 import type { Catalogue, Mode, Themes, Wearable } from './theme'
 
 /** Everything the appearance says in the window's voice. */
 export interface Words {
-  /** Where a theme came off, said on its row. */
-  readonly shipped: string
-  readonly ownFile: string
+  /** The two shelves the themes are drawn in, and where a person's own go. */
+  readonly shipping: string
+  readonly owned: string
+  readonly noneOwned: string
+  /** The band the three modes are drawn in. */
+  readonly half: string
   /** The theme and the mode the settings name, said on their rows. */
   readonly worn: string
   /** The three modes, by the name each is offered under. */
@@ -29,20 +32,22 @@ export interface Words {
   readonly pinned: string
   /** The themes could not be listed, and one theme's file could not be read. */
   readonly unlisted: string
-  readonly unread: string
+  readonly unworn: string
 }
 
-/** The command whose step offers the themes and the modes. */
+/** The command whose step offers the themes, and the one that offers the modes. */
 export const APPEARANCE = 'appearance'
-
-/**
- * What a mode is offered under. A theme is named by its shelf, and there are
- * two shelves, so no theme is ever named this.
- */
-const MODE = 'mode:'
+export const MODE = 'mode'
 
 /** The modes, in the order they are offered. */
 const MODES: readonly Mode[] = ['system', 'light', 'dark']
+
+/**
+ * What a mode is offered under: the command it belongs to, and the mode. A
+ * theme is named by its shelf, and there are two shelves, so no theme is ever
+ * named this.
+ */
+const named = (one: Mode): string => `${MODE}:${one}`
 
 /** What `color-scheme` is written as for each mode. */
 const SCHEMES: Record<Mode, string> = {
@@ -52,10 +57,8 @@ const SCHEMES: Record<Mode, string> = {
 }
 
 /** The mode a row names, and nothing for a row naming a theme. */
-const modeOf = (item: string): Mode | null => {
-  const said = item.startsWith(MODE) ? item.slice(MODE.length) : ''
-  return MODES.find((mode) => mode === said) ?? null
-}
+const modeOf = (item: string): Mode | null =>
+  MODES.find((one) => named(one) === item) ?? null
 
 /** The two elements the page carries: the mode's, and the theme's after it. */
 interface Dressed {
@@ -168,7 +171,7 @@ export function wearing(
       // The reason goes to the console; the person is told in the window's
       // own voice.
       console.error(error)
-      if (mine === asked) said.value = words.unread
+      if (mine === asked) said.value = words.unworn
     }
   }
 
@@ -219,10 +222,38 @@ export function wearing(
     listening.abort()
   }
 
-  /** Where a theme came off, and whether it is the one the settings name. */
-  const about = (one: Wearable): string => {
-    const shelf = one.shipped ? words.shipped : words.ownFile
-    return one.name === applied.value ? `${shelf} · ${words.worn}` : shelf
+  /**
+   * The themes off one shelf, the one the settings name first. Where a theme
+   * came off is said by the band it stands in, so a row says only what is
+   * true of it alone.
+   */
+  const shelf = (shipping: boolean): readonly Offered[] => {
+    const off = list.value.filter((one) => one.shipped === shipping)
+    const named = (one: Wearable): Offered => ({
+      id: one.name,
+      title: one.title,
+      ...(one.name === applied.value ? { detail: words.worn } : {}),
+    })
+    return [
+      ...off.filter((one) => one.name === applied.value).map(named),
+      ...off.filter((one) => one.name !== applied.value).map(named),
+    ]
+  }
+
+  /**
+   * The themes, in the two bands they come off. The band the theme worn came
+   * off stands first, so opening the list stands on what the window wears.
+   */
+  const offers = (): readonly Offering[] => {
+    const shipping = { id: 'shipping', title: words.shipping, items: shelf(true) }
+    const own = {
+      id: 'owned',
+      title: words.owned,
+      items: shelf(false),
+      silence: words.noneOwned,
+    }
+    const worn = list.value.find((one) => one.name === applied.value)
+    return worn && !worn.shipped ? [own, shipping] : [shipping, own]
   }
 
   /** What is said about a mode: why it cannot be chosen, or that it is the one. */
@@ -232,24 +263,22 @@ export function wearing(
   }
 
   /**
-   * Every theme, and the three modes after them. The theme the settings name
-   * stands first, so opening the list stands on what the window already wears.
-   *
-   * A mode is drawn as not to be chosen while the theme worn pins light and
-   * dark: it is there, it says why, and the keyboard passes over it.
+   * The three modes. Each is drawn as not to be chosen while the theme worn
+   * pins light and dark: it is there, it says why, and the keyboard passes
+   * over it.
    */
-  const offers = (): readonly Offered[] => [
-    ...[
-      ...list.value.filter((one) => one.name === applied.value),
-      ...list.value.filter((one) => one.name !== applied.value),
-    ].map((one) => ({ id: one.name, title: one.title, detail: about(one) })),
-    ...MODES.map((one) => ({
-      id: MODE + one,
-      title: words[one],
-      detail: beside(one),
-      ...(pinned.value ? { disabled: true } : {}),
-    })),
-  ]
+  const modes = (): readonly Offering[] => {
+    const row = (one: Mode): Offered => {
+      const detail = beside(one)
+      return {
+        id: named(one),
+        title: words[one],
+        ...(detail ? { detail } : {}),
+        ...(pinned.value ? { disabled: true } : {}),
+      }
+    }
+    return [{ id: 'half', title: words.half, items: MODES.map(row) }]
+  }
 
   /**
    * The row the keyboard is standing on, worn while it stands there. Nothing
@@ -283,7 +312,7 @@ export function wearing(
     await puts()
   }
 
-  return { list, applied, mode, said, offers, shows, chooses, start, close }
+  return { list, applied, mode, said, offers, modes, shows, chooses, start, close }
 }
 
 const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))

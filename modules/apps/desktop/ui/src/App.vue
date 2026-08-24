@@ -32,7 +32,7 @@ import {
   type Where,
 } from './commanding'
 import { themes } from './theme'
-import { APPEARANCE, wearing } from './wearing'
+import { APPEARANCE, MODE, wearing } from './wearing'
 import { does, type Doing } from './doing'
 import { finding } from './finding'
 import { lands } from './landing'
@@ -181,9 +181,13 @@ const dressed = wearing(themes, words)
 
 /** The lists the window itself holds, which a step of a command offers. */
 const kept: Holds = {
-  offers: (command) => (command === APPEARANCE ? dressed.offers() : []),
+  offers: (command) => {
+    if (command === APPEARANCE) return dressed.offers()
+    if (command === MODE) return dressed.modes()
+    return []
+  },
   shows: (command, item) => {
-    if (command === APPEARANCE) dressed.shows(item)
+    if (command === APPEARANCE || command === MODE) dressed.shows(item)
   },
 }
 
