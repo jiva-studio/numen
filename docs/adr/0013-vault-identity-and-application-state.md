@@ -1,9 +1,11 @@
 # ADR-0013: Vault identity, the service folder, and application state
 
-- **Status:** Accepted
+- **Status:** Accepted, except where noted below
 - **Date:** 2026-08-15
 - **Applies to:** the vault format and application state — every application
-- **Related:** ADR-0000, ADR-0001, ADR-0002
+- **Partly superseded by:** ADR-0041 — the settings file, for the chosen theme
+  alone
+- **Related:** ADR-0000, ADR-0001, ADR-0002, ADR-0041
 
 ## Context
 
@@ -80,6 +82,12 @@ part it belongs to.
 
 The file is named after the application, so the name says what it configures
 wherever it is read out or copied to.
+
+> **Partly superseded by [ADR-0041](0041-a-theme-is-a-css-file.md).** The theme
+> a person chose is written here, because a theme is a setting and a person
+> looks for it among the settings. The file is patched as an object: every field
+> the application does not know keeps its place. Nothing else in the file is
+> written.
 
 **The registry of vaults is a separate file.** Which vaults exist, where they are
 and which was open last is written by the application, when a person adds a vault.
