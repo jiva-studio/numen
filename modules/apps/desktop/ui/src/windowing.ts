@@ -55,7 +55,7 @@ export interface Kind<Held> {
  * A kind as the window keeps it. What its tabs hold is the kind's own affair,
  * and the window hands it back to the kind untouched.
  */
-export type Kept = Kind<any>
+export type Kept = Kind<unknown>
 
 /** What one tab is: its kind, and what that kind gave it to hold. */
 export interface Open {
