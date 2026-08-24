@@ -404,16 +404,20 @@ const openNote = (tab: string, path: string, showing: PlexShowing = 'here') => {
 /**
  * A note made in a seat of another one. It is in the index by the time the
  * answer arrives, so the picture is asked for again and it is drawn in it.
+ *
+ * The plex stands on the note it was made from: a neighbourhood is one seat
+ * deep, and that is the seat the new note sits in.
  */
 const made = async (tab: string, from: string, seat: PlexRelatedSeat) => {
-  const view = plexIn(tab)
-  if ((await making.make(from, seat)) && view?.here.value) await view.go(view.here.value)
+  if (await making.make(from, seat)) await plexIn(tab)?.go(from)
 }
 
-/** Two notes the person drew a line between. */
+/**
+ * Two notes the person drew a line between. The plex stands on the note the
+ * line was drawn from, which is the one the link is written in.
+ */
 const joined = async (tab: string, from: string, to: string, seat: PlexRelatedSeat) => {
-  const view = plexIn(tab)
-  if ((await making.join(from, to, seat)) && view?.here.value) await view.go(view.here.value)
+  if (await making.join(from, to, seat)) await plexIn(tab)?.go(from)
 }
 
 const nameOf = (tab: string, path: string): string => {
