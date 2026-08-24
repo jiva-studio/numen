@@ -1,48 +1,27 @@
 /*
  * The whole styling contract. Everything a component paints with is named
  * here, and no component reaches past a token for a value.
+ *
+ * Every token stands on the root alone, so a component inherits what it paints
+ * with and a stylesheet redeclaring one at the root reaches every component. A
+ * theme is such a stylesheet: what it sets is the first part below, and every
+ * token it does not name keeps the value here.
  */
 
 /* Which half of every pair below is taken. On the root alone, so everything
-   the page contains inherits the page's answer. */
+   the page contains inherits the page's answer; a theme published in one half
+   pins it and writes flat colours. */
 :where(:root) {
   color-scheme: light dark;
 }
 
-/* Every token is on the root alone, so a component inherits what it paints
-   with and a stylesheet redeclaring a token at the root reaches every one. */
+/*
+ * What a theme sets.
+ *
+ * Each pair is one colour in light and in dark. Where a token carries a length
+ * as well, it says so where it stands.
+ */
 :where(:root) {
-  --numen-font-sans:
-    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans',
-    'Noto Sans Devanagari', 'Noto Sans Arabic', sans-serif;
-  --numen-font-size: 13px;
-  --numen-line-height: 1.35;
-
-  --numen-radius: 6px;
-  --numen-radius-focus: 8px;
-  --numen-stroke: 1px;
-  --numen-ring-width: 2px;
-
-  /* Inside a node: the clearance around its label, and between an icon and it. */
-  --numen-node-padding: 10px;
-  --numen-node-gap: 6px;
-  /* The handle a gesture is reached out from: the disc, and the cross on it.
-     The arms read as a plus sign at about half the radius. */
-  --numen-handle-radius: 9px;
-  --numen-handle-arm: 4px;
-  --numen-handle-stroke: 1.5px;
-  /* Set wider than a sentence, for the few words that are set in capitals. */
-  --numen-caps-tracking: 0.08em;
-
-  --numen-edge-width: 1.25px;
-  --numen-edge-label-size: 10px;
-  /* The halo that keeps an edge label legible where it crosses its own line. */
-  --numen-edge-label-halo: 3px;
-  /* Two dashed things, told apart by their stroke: the thread a gesture drags
-     behind it, and the outline of the node letting go would make. */
-  --numen-thread-dash: 4 4;
-  --numen-ghost-dash: 6 4;
-
   --numen-surface: light-dark(#fbfbfa, #17181a);
   --numen-node-bg: light-dark(#ffffff, #23262a);
   --numen-node-fg: light-dark(#1d1f22, #dfe2e6);
@@ -75,6 +54,67 @@
      under words that are still being read, so it is a tint and not a colour. */
   --numen-highlight: light-dark(#d6a46333, #d6a4633d);
 
+  /* What a panel is tinted with, and what shows through it. The blur goes with
+     the alpha the tint carries: an opaque tint leaves nothing to blur, so a
+     theme setting one sets the other. */
+  --numen-panel-bg: light-dark(#ffffffcc, #23262acc);
+  --numen-panel-border: light-dark(#00000014, #ffffff1f);
+  --numen-panel-blur: 24px;
+  /* What a card is lifted off the window by, and what a panel is lifted by.
+     Each carries its offsets and its spread beside its colour, so a theme
+     setting one writes those lengths again. */
+  --numen-shadow-card: 0 0.5rem 1.5rem light-dark(#00000026, #00000059);
+  --numen-panel-shadow:
+    0 1px 2px light-dark(#0000001a, #00000047), 0 12px 32px
+    light-dark(#00000024, #00000059);
+  /* The wash a panel lays over what it covers. */
+  --numen-scrim: light-dark(#00000014, #0000005c);
+
+  --numen-field-bg: light-dark(#ffffff, #1d2023);
+  --numen-field-border: light-dark(#dcdde1, #383c43);
+
+  /* What was said is a bubble; what came back is text on the surface. */
+  --numen-bubble-bg: light-dark(#eceef2, #2b2f35);
+  --numen-bubble-fg: light-dark(#1d1f22, #dfe2e6);
+  --numen-answer-fg: light-dark(#1d1f22, #dfe2e6);
+}
+
+/*
+ * What a theme leaves alone: the type, the measures and the timings. They are
+ * the same under every palette.
+ */
+:where(:root) {
+  --numen-font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans',
+    'Noto Sans Devanagari', 'Noto Sans Arabic', sans-serif;
+  --numen-font-size: 13px;
+  --numen-line-height: 1.35;
+
+  --numen-radius: 6px;
+  --numen-radius-focus: 8px;
+  --numen-stroke: 1px;
+  --numen-ring-width: 2px;
+
+  /* Inside a node: the clearance around its label, and between an icon and it. */
+  --numen-node-padding: 10px;
+  --numen-node-gap: 6px;
+  /* The handle a gesture is reached out from: the disc, and the cross on it.
+     The arms read as a plus sign at about half the radius. */
+  --numen-handle-radius: 9px;
+  --numen-handle-arm: 4px;
+  --numen-handle-stroke: 1.5px;
+  /* Set wider than a sentence, for the few words that are set in capitals. */
+  --numen-caps-tracking: 0.08em;
+
+  --numen-edge-width: 1.25px;
+  --numen-edge-label-size: 10px;
+  /* The halo that keeps an edge label legible where it crosses its own line. */
+  --numen-edge-label-halo: 3px;
+  /* Two dashed things, told apart by their stroke: the thread a gesture drags
+     behind it, and the outline of the node letting go would make. */
+  --numen-thread-dash: 4 4;
+  --numen-ghost-dash: 6 4;
+
   /* The clearance reading keeps from the edge of the pane it fills. A note and
      a conversation are read at the same measure, so they keep the same one. */
   --numen-gutter: 20px;
@@ -83,22 +123,11 @@
   --numen-inset: 8px;
   --numen-inset-wide: 12px;
 
-  /* A panel floats: rounded on every side, with what it covers showing
-     through it. The tint and the blur go together when transparency is
-     turned down. */
+  /* A panel floats: rounded on every side, with what it holds clear of the
+     curve. */
   --numen-radius-panel: 12px;
   --numen-panel-padding: 12px;
   --numen-panel-gap: 10px;
-  --numen-panel-bg: light-dark(#ffffffcc, #23262acc);
-  --numen-panel-border: light-dark(#00000014, #ffffff1f);
-  --numen-panel-blur: 24px;
-  /* What a card is lifted off the window by, and the wash a panel lays over
-     what it covers. */
-  --numen-shadow-card: 0 0.5rem 1.5rem light-dark(#00000026, #00000059);
-  --numen-scrim: light-dark(#00000014, #0000005c);
-  --numen-panel-shadow:
-    0 1px 2px light-dark(#0000001a, #00000047), 0 12px 32px
-    light-dark(#00000024, #00000059);
 
   /* What floats over the window, in the order it stands. Everything that
      floats takes one of these, and nothing takes a number of its own. */
@@ -119,8 +148,6 @@
   --numen-radius-field: calc(var(--numen-field-min) / 2);
   /* The clearance the typing keeps from the ends, which is around the curve. */
   --numen-field-text-inset: 14px;
-  --numen-field-bg: light-dark(#ffffff, #1d2023);
-  --numen-field-border: light-dark(#dcdde1, #383c43);
   /* Lines of typing the field grows to before it scrolls. */
   --numen-field-lines: 10;
 
@@ -131,10 +158,6 @@
   --numen-dot-rise: 3px;
   --numen-dot-cycle: 1200ms;
 
-  /* What was said is a bubble; what came back is text on the surface. */
-  --numen-bubble-bg: light-dark(#eceef2, #2b2f35);
-  --numen-bubble-fg: light-dark(#1d1f22, #dfe2e6);
-  --numen-answer-fg: light-dark(#1d1f22, #dfe2e6);
   --numen-radius-bubble: 12px;
   --numen-turn-gap: 16px;
   /* How much of the width one bubble may take before it wraps. */
