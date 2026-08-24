@@ -117,7 +117,8 @@ func drawnFrom(t *testing.T, from *paper) (*API, http.Handler) {
 		another: "the bytes of a second scan",
 		beside:  "a file the vault leaves alone",
 	})
-	api := &API{Vault: vault, Readers: filesystem.Readers{}, Viewer: looking(pdf.Documents{})}
+	api := &API{Readers: filesystem.Readers{}, Viewer: looking(pdf.Documents{})}
+	api.show(vault)
 	api.Viewer.open = from.opened
 	t.Cleanup(api.Viewer.close)
 	return api, api.Serving(http.NotFoundHandler())
@@ -134,7 +135,8 @@ func alone(api *API) { api.Viewer.reading = make(chan struct{}) }
 func fromTheLibrary(t *testing.T, raw string) (*API, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{book: raw})
-	api := &API{Vault: vault, Readers: filesystem.Readers{}, Viewer: looking(pdf.Documents{})}
+	api := &API{Readers: filesystem.Readers{}, Viewer: looking(pdf.Documents{})}
+	api.show(vault)
 	api.Viewer.patience = time.Minute
 	t.Cleanup(api.Viewer.close)
 	return api, api.Serving(http.NotFoundHandler())
@@ -303,7 +305,7 @@ func TestAPageDroppedForRoomIsDrawnAgain(t *testing.T) {
 	from := sheets(4)
 	api, handler := drawnFrom(t, from)
 	alone(api)
-	api.Viewer.drawn.most = 1
+	api.Viewer.drawn.Load().most = 1
 
 	if out := ask(handler, pageOf(book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d", out.Code)
@@ -442,7 +444,7 @@ func TestADocumentNobodyIsLookingAtIsClosed(t *testing.T) {
 	from := sheets(4)
 	api, handler := drawnFrom(t, from)
 	alone(api)
-	api.Viewer.docs.idleFor = 10 * time.Millisecond
+	api.Viewer.docs.Load().idleFor = 10 * time.Millisecond
 
 	if out := ask(handler, pageOf(book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d", out.Code)
@@ -466,7 +468,7 @@ func TestOnlySoManyDocumentsAreHeldOpen(t *testing.T) {
 	from := sheets(4)
 	api, handler := drawnFrom(t, from)
 	alone(api)
-	api.Viewer.docs.most = 1
+	api.Viewer.docs.Load().most = 1
 
 	for _, path := range []string{book, another} {
 		if out := ask(handler, pageOf(path, 0, 400)); out.Code != http.StatusOK {

@@ -13,6 +13,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"sync"
@@ -23,14 +24,18 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/webui"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 )
 
 func main() {
 	var cfg container.Config
 	var agents agentOptions
 	var zoom float64
+	var vault string
 	flag.StringVar(&cfg.IndexPath, "index", "", "path to the index database")
 	flag.StringVar(&cfg.RegistryPath, "registry", "", "path to the vault list")
+	flag.StringVar(&vault, "vault", "",
+		"the vault to open: a name, a path or an identity; the one opened last by default")
 	flag.StringVar(&agents.addr, "mcp-addr", defaultAgentAddr,
 		"where agents reach this vault; anything but a loopback address opens it to the network")
 	flag.BoolVar(&agents.off, "no-mcp", false, "do not let agents reach this vault")
@@ -39,14 +44,14 @@ func main() {
 		"read every file and put it in the index again, whatever the index remembers")
 	flag.Parse()
 
-	if err := run(cfg, agents, zoom); err != nil {
+	if err := run(cfg, agents, vault, zoom); err != nil {
 		fmt.Fprintln(os.Stderr, "numen:", err)
 		refuse(cfg, err, zoom)
 		os.Exit(1)
 	}
 }
 
-func run(cfg container.Config, agents agentOptions, zoom float64) error {
+func run(cfg container.Config, agents agentOptions, vault string, zoom float64) error {
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
 
@@ -64,7 +69,7 @@ func run(cfg container.Config, agents agentOptions, zoom float64) error {
 		fmt.Fprintln(os.Stderr, "numen: nothing to read a scan with:", err)
 	}
 
-	opened, err := webui.Open(ctx, cfg, os.Stdout)
+	opened, err := webui.Open(ctx, cfg, vault, os.Stdout)
 	if err != nil {
 		return err
 	}
@@ -73,13 +78,9 @@ func run(cfg container.Config, agents agentOptions, zoom float64) error {
 	// An agent nobody can reach is a panel that says so, not a window that does
 	// not open. Everything else the window does is the vault, and the vault is
 	// here.
-	closeAgents, err := serveAgents(ctx, cfg, opened, agents, os.Stdout)
-	if err != nil {
-		opened.API.Unreachable.Store(err.Error())
-		fmt.Fprintln(os.Stderr, "numen: no agent:", err)
-		closeAgents = func() error { return nil }
-	}
-	defer closeAgents()
+	reachable := &reaching{ctx: ctx, cfg: cfg, opened: opened, opts: agents, out: os.Stdout}
+	reachable.on()
+	defer reachable.off()
 
 	pages, err := webui.Pages()
 	if err != nil {
@@ -115,6 +116,18 @@ func run(cfg container.Config, agents agentOptions, zoom float64) error {
 		Zoom:   drawnAt(zoom, chosen.Appearance.Zoom),
 	})
 
+	// Opening another vault, as a person asks for it. The agents are told which
+	// vault they are working when their session opens, so the endpoint they
+	// reach it through is stopped and started again around the swap.
+	opened.API.Opens = func(ctx context.Context, v domain.Vault) error {
+		reachable.off()
+		defer func() {
+			reachable.on()
+			window.SetTitle("numen — " + opened.Showing().Name)
+		}()
+		return opened.Show(ctx, v)
+	}
+
 	// A hook runs before the window is destroyed and on a thread of its own, so
 	// the page is still drawn and still answered while what it owes is written.
 	// A cancelled event is where the hooks stop, and the destroy the window
@@ -126,6 +139,56 @@ func run(cfg container.Config, agents agentOptions, zoom float64) error {
 	})
 
 	return app.Run()
+}
+
+// reaching is the agents' endpoint on the vault the window is showing.
+//
+// What an agent is told about the vault it is working is said once, when its
+// session opens, so a window that changes vault stops the endpoint and starts
+// it again.
+type reaching struct {
+	ctx    context.Context
+	cfg    container.Config
+	opened *webui.Opened
+	opts   agentOptions
+	out    io.Writer
+
+	mu   sync.Mutex
+	shut func() error
+}
+
+// on serves the tools against the vault in the window. A window standing on no
+// vault serves none.
+func (r *reaching) on() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if r.shut != nil || r.opened.Showing().ID == "" {
+		return
+	}
+	r.opened.API.Unreachable.Store("")
+	shut, err := serveAgents(r.ctx, r.cfg, r.opened, r.opts, r.out)
+	if err != nil {
+		r.opened.API.Unreachable.Store(err.Error())
+		fmt.Fprintln(os.Stderr, "numen: no agent:", err)
+		return
+	}
+	r.shut = shut
+}
+
+// off stops the endpoint and the agents this window started.
+func (r *reaching) off() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if r.shut == nil {
+		return
+	}
+	if err := r.shut(); err != nil {
+		fmt.Fprintln(os.Stderr, "numen: agents:", err)
+	}
+	r.shut = nil
+	r.opened.API.Answers(nil)
 }
 
 // closing is the window being asked to go, and answers with whether it may.

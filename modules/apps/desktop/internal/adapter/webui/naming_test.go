@@ -421,7 +421,7 @@ func TestRenamingANoteWrittenElsewhereIsAQuestion(t *testing.T) {
 	if refusal := out.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
 		t.Errorf("a note that changed was answered as a refusal: %v", refusal)
 	}
-	if gone(t, f.opened.API.Vault.Path, "Old.md") {
+	if gone(t, f.opened.API.Showing().Path, "Old.md") {
 		t.Error("the file moved for a rename that wrote nothing")
 	}
 }

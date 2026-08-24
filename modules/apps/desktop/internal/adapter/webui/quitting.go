@@ -155,6 +155,20 @@ func (l *leaving) ask() *round {
 	return l.round
 }
 
+// over ends the round that was running, and lets go of whoever was waiting on
+// it. What the pages hold from here belongs to the vault in front of them.
+func (l *leaving) over() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	if !l.asking() {
+		return
+	}
+	l.round.past = true
+	close(l.round.over)
+	l.round = nil
+}
+
 // current is the round running, or nothing.
 func (l *leaving) current() *round {
 	l.mu.Lock()

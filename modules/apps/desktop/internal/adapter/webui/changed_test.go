@@ -23,11 +23,12 @@ import (
 // What is asked here is what the schema carries.
 func editable(t *testing.T, notes map[string]string) *API {
 	t.Helper()
-	return &API{
-		Vault: testsupport.NewVault(t, notes),
+	api := &API{
 		Reads: &note.Read{Readers: filesystem.Readers{}},
 		Saves: &note.Write{Readers: filesystem.Readers{}, Writers: filesystem.Writers{}},
 	}
+	api.show(testsupport.NewVault(t, notes))
+	return api
 }
 
 func at(t *testing.T, api *API, path string) *v1.Seen {
@@ -50,7 +51,7 @@ func TestAWriteOverProseTheClientNeverReadIsAnsweredChanged(t *testing.T) {
 	seen := at(t, api, "Entropy.md")
 
 	theirs := "# Entropy\n\nTheirs.\n"
-	on := filepath.Join(api.Vault.Path, "Entropy.md")
+	on := filepath.Join(api.Showing().Path, "Entropy.md")
 	if err := os.WriteFile(on, []byte(theirs), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -115,7 +116,7 @@ func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 		t.Error("the write after a write said the note changed")
 	}
 
-	raw, err := os.ReadFile(filepath.Join(api.Vault.Path, "Entropy.md"))
+	raw, err := os.ReadFile(filepath.Join(api.Showing().Path, "Entropy.md"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -159,7 +160,7 @@ func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
 		"Entropy.md": "# Entropy\n",
 		"Heat.md":    "# Heat\n",
 	})
-	on := filepath.Join(api.Vault.Path, "Heat.md")
+	on := filepath.Join(api.Showing().Path, "Heat.md")
 
 	var once sync.Once
 	api.Joins = &note.Linking{

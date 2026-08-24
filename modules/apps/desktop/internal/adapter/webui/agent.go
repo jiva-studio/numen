@@ -17,12 +17,13 @@ import (
 // The work is stopped on the way out, whether it finished, failed or the client
 // went away. Nothing outlives the panel it was asked from.
 func (a *API) Ask(ctx context.Context, r *connect.Request[v1.AskRequest], stream *connect.ServerStream[v1.AskResponse]) error {
-	if a.Agent == nil {
+	taking := a.Answering()
+	if taking == nil {
 		return connect.NewError(connect.CodeUnimplemented,
 			errors.New("no agent is set up for this vault"))
 	}
 
-	work, err := a.Agent.Take(ctx, agent.Task{
+	work, err := taking.Take(ctx, agent.Task{
 		Asked:        r.Msg.GetAsked(),
 		Focus:        r.Msg.GetFocus(),
 		Conversation: r.Msg.GetConversation(),
@@ -54,12 +55,13 @@ func (a *API) Ask(ctx context.Context, r *connect.Request[v1.AskRequest], stream
 
 // Finish says a conversation is over, and hands that on to the agent.
 func (a *API) Finish(ctx context.Context, r *connect.Request[v1.FinishRequest]) (*connect.Response[v1.FinishResponse], error) {
-	if a.Agent == nil {
+	taking := a.Answering()
+	if taking == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented,
 			errors.New("no agent is set up for this vault"))
 	}
 
-	if err := a.Agent.Finish(ctx, r.Msg.GetConversation()); err != nil {
+	if err := taking.Finish(ctx, r.Msg.GetConversation()); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&v1.FinishResponse{}), nil

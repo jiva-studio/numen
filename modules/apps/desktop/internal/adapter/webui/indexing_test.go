@@ -25,15 +25,16 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
 	api := &API{
-		Vault:    testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)}),
 		Tasking:  task.New(),
 		Progress: db.Progress(),
 	}
+	api.show(v)
 	api.Recipe.Store(model.Model().Recipe())
 	cut(t, db, api)
 
-	embedSources(t.Context(), cfg, db, api, filesystem.Readers{}, model)
+	embedSources(t.Context(), cfg, db, api, v, filesystem.Readers{}, model)
 
 	at := listed(t, api, makingVectors)
 	if at == nil {
@@ -53,15 +54,16 @@ func TestAPassThatEmbeddedLeavesTheList(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
 	api := &API{
-		Vault:    testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)}),
 		Tasking:  task.New(),
 		Progress: db.Progress(),
 	}
+	api.show(v)
 	api.Recipe.Store(model.Model().Recipe())
 	cut(t, db, api)
 
-	embedSources(t.Context(), cfg, db, api, filesystem.Readers{}, model)
+	embedSources(t.Context(), cfg, db, api, v, filesystem.Readers{}, model)
 
 	if at := listed(t, api, makingVectors); at != nil {
 		t.Errorf("a pass that embedded what was owed is still being done: %+v", *at)
@@ -73,17 +75,16 @@ func TestAPassThatEmbeddedLeavesTheList(t *testing.T) {
 // what stopped it.
 func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
 	cfg, db := reading(t)
-	api := &API{
-		Vault:   testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)}),
-		Tasking: task.New(),
-	}
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	api := &API{Tasking: task.New()}
+	api.show(v)
 	// The index the pass asks what owes its text is gone, which is what it
 	// looks like from here when the answer cannot be had.
 	if err := db.Close(); err != nil {
 		t.Fatal(err)
 	}
 
-	readSources(t.Context(), cfg, db, api, filesystem.Readers{}, nil, io.Discard)
+	readSources(t.Context(), cfg, db, api, v, filesystem.Readers{}, nil, io.Discard)
 
 	at := listed(t, api, readingBooks)
 	if at == nil {
@@ -120,7 +121,7 @@ func cut(t *testing.T, db *container.Index, api *API) {
 		Known:       db.Queries(),
 		Maintenance: db.Maintenance(),
 	}
-	if _, err := scan.Execute(t.Context(), api.Vault); err != nil {
+	if _, err := scan.Execute(t.Context(), api.Showing()); err != nil {
 		t.Fatal(err)
 	}
 }

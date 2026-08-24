@@ -22,7 +22,7 @@ func TestAnInstallationWithNoVaultIsGivenOne(t *testing.T) {
 		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
 		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
 	}
-	opened, err := webui.Open(t.Context(), cfg, os.Stderr)
+	opened, err := webui.Open(t.Context(), cfg, "", os.Stderr)
 	if err != nil {
 		t.Fatalf("an installation with no vault could not be opened: %v", err)
 	}
@@ -32,10 +32,10 @@ func TestAnInstallationWithNoVaultIsGivenOne(t *testing.T) {
 	if info, err := os.Stat(root); err != nil || !info.IsDir() {
 		t.Fatalf("no folder to write in at %s: %v", root, err)
 	}
-	if opened.Vault.Path != root {
-		t.Errorf("the vault opened is %s, want the one just made", opened.Vault.Path)
+	if opened.Showing().Path != root {
+		t.Errorf("the vault opened is %s, want the one just made", opened.Showing().Path)
 	}
-	if opened.Vault.ID == "" {
+	if opened.Showing().ID == "" {
 		t.Error("the vault carries no identity, so moving its folder would lose it")
 	}
 

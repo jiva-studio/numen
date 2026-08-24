@@ -26,10 +26,9 @@ const Version = "0.1.0"
 // query the rest of the application already has: nothing about a vault is
 // decided here.
 type Core struct {
-	Vault domain.Vault
-	// Root is where the vault sits on this machine. An agent that can open
-	// files joins it to a path itself; one that cannot reads through a tool.
-	Root string
+	// Showing is the vault the tools work, asked at every call so that they
+	// follow the window.
+	Showing func() Shown
 
 	Readers port.VaultReaders
 	Notes   port.NoteQueries
@@ -61,6 +60,28 @@ type Core struct {
 	Rename  note.Rename
 	Remove  note.Remove
 	Linking note.Linking
+}
+
+// Shown is the vault a call is answered about: the vault itself, and where it
+// sits on this machine. An agent that can open files joins the folder to a
+// path itself; one that cannot reads through a tool.
+type Shown struct {
+	Vault domain.Vault
+	Root  string
+}
+
+// shown is the vault this call is about. A build that named none answers about
+// no vault at all.
+func (c Core) shown() Shown {
+	if c.Showing == nil {
+		return Shown{}
+	}
+	return c.Showing()
+}
+
+// One is a Core working one vault for as long as it is served.
+func One(v domain.Vault, root string) func() Shown {
+	return func() Shown { return Shown{Vault: v, Root: root} }
 }
 
 // New builds the server an agent connects to.
@@ -97,7 +118,8 @@ func instructions(core Core) string {
 	b.WriteString("These tools work on one numen vault: markdown notes in an ordinary folder, ")
 	b.WriteString("joined by typed links into a graph.\n\n")
 
-	fmt.Fprintf(&b, "The vault %q is at %s on this machine.\n", core.Vault.Name, core.Root)
+	shown := core.shown()
+	fmt.Fprintf(&b, "The vault %q is at %s on this machine.\n", shown.Vault.Name, shown.Root)
 	b.WriteString("Every note is addressed by its path relative to that folder, with forward ")
 	b.WriteString("slashes — `notes/entropy.md`. That path is what every tool takes and returns. ")
 	b.WriteString("To open a note as a file, join it to the folder above; if you cannot read ")

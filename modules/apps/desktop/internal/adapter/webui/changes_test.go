@@ -60,7 +60,7 @@ func opened(t *testing.T, notes map[string]string) (numenv1connect.VaultServiceC
 		t.Fatal(err)
 	}
 
-	opened, err := webui.Open(t.Context(), settings, os.Stderr)
+	opened, err := webui.Open(t.Context(), settings, "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}

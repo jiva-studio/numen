@@ -28,14 +28,15 @@ func addVaultTools(server *sdk.Server, core Core) {
 			Notes    int    `json:"notes"`
 			Headings int    `json:"headings"`
 		}
-		summary, err := core.Notes.Summary(ctx, core.Vault.ID)
+		shown := core.shown()
+		summary, err := core.Notes.Summary(ctx, shown.Vault.ID)
 		if err != nil {
 			return nil, out{}, err
 		}
 		return nil, out{
-			Name:     core.Vault.Name,
-			Folder:   core.Root,
-			ID:       core.Vault.ID,
+			Name:     shown.Vault.Name,
+			Folder:   shown.Root,
+			ID:       shown.Vault.ID,
 			Notes:    summary.Notes,
 			Headings: summary.Headings,
 		}, nil
@@ -65,7 +66,7 @@ func addVaultTools(server *sdk.Server, core Core) {
 		for _, name := range in.Checks {
 			named = append(named, domain.Check(name))
 		}
-		found, err := core.Problems.Run(ctx, core.Vault, named...)
+		found, err := core.Problems.Run(ctx, core.shown().Vault, named...)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -104,7 +105,7 @@ func addVaultTools(server *sdk.Server, core Core) {
 		type out = struct {
 			Paths []string `json:"paths"`
 		}
-		paths, err := core.Notes.Named(ctx, core.Vault.ID, domain.Basename(in.Name))
+		paths, err := core.Notes.Named(ctx, core.shown().Vault.ID, domain.Basename(in.Name))
 		if err != nil {
 			return nil, out{}, err
 		}

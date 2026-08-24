@@ -87,7 +87,7 @@ func quitting(t *testing.T, hold *held, notes map[string]string) *going {
 		t.Fatal(err)
 	}
 
-	opened, err := webui.Open(t.Context(), settings, os.Stderr)
+	opened, err := webui.Open(t.Context(), settings, "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}

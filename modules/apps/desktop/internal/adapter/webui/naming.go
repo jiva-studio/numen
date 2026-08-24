@@ -22,7 +22,7 @@ func (a *API) Rename(ctx context.Context, r *connect.Request[v1.RenameRequest]) 
 	}
 	defer a.Writing.done()
 
-	renamed, err := a.Renames.Execute(ctx, a.Vault, r.Msg.GetPath(), r.Msg.GetTitle())
+	renamed, err := a.Renames.Execute(ctx, a.Showing(), r.Msg.GetPath(), r.Msg.GetTitle())
 	out := &v1.RenameResponse{
 		Path:  renamed.Path,
 		Title: renamed.Title,
@@ -73,9 +73,9 @@ func (a *API) Remove(ctx context.Context, r *connect.Request[v1.RemoveRequest]) 
 // removal is the two ways a note leaves the vault.
 func (a *API) removal(ctx context.Context, path string, destroy bool) (note.Removed, error) {
 	if destroy {
-		return a.Removes.Destroy(ctx, a.Vault, path)
+		return a.Removes.Destroy(ctx, a.Showing(), path)
 	}
-	return a.Removes.Execute(ctx, a.Vault, path)
+	return a.Removes.Execute(ctx, a.Showing(), path)
 }
 
 // namingOf is which of the three a rename wrote, as the schema carries it.

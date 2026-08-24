@@ -27,7 +27,10 @@ import (
 
 // API is the vault a client is looking at and what can be asked about it.
 type API struct {
-	Vault domain.Vault
+	// vault is the vault the window has open. It is replaced while requests are
+	// being served, so every reader takes it through Showing.
+	vault atomic.Pointer[domain.Vault]
+
 	Notes port.NoteQueries
 	Links port.LinkQueries
 
@@ -36,9 +39,17 @@ type API struct {
 	Scan      func(context.Context, domain.Vault) (usecase.ScanResult, error)
 	Listeners audience[changed]
 
-	// Agent takes the tasks the panel sends. A vault without one answers that
-	// it has none, and the rest of the window works as it did.
-	Agent agent.Agent
+	// Opens puts another vault in the window: the agents are stopped, the vault
+	// is swapped, and the agents are started again against the one that
+	// arrived. A build without one answers that the window cannot be moved to
+	// another vault.
+	Opens func(context.Context, domain.Vault) error
+
+	// taking is the agent the panel's tasks go to. A vault without one answers
+	// that it has none, and the rest of the window works as it did. It is
+	// replaced while requests are being served, so it is taken through
+	// Answering.
+	taking atomic.Pointer[agent.Agent]
 
 	// Reads and Saves are how the window opens a note and puts it back. A build
 	// without them answers that a note cannot be edited here.
@@ -124,6 +135,37 @@ type API struct {
 	Themes numenv1connect.ThemeServiceHandler
 }
 
+// Showing is the vault the window has open. A window standing on nothing
+// answers with no vault at all.
+func (a *API) Showing() domain.Vault {
+	if v := a.vault.Load(); v != nil {
+		return *v
+	}
+	return domain.Vault{}
+}
+
+// show puts a vault in front of whoever asks from now on.
+func (a *API) show(v domain.Vault) { a.vault.Store(&v) }
+
+// Answering is the agent the panel's tasks go to, and nothing where the vault
+// has none.
+func (a *API) Answering() agent.Agent {
+	if taking := a.taking.Load(); taking != nil {
+		return *taking
+	}
+	return nil
+}
+
+// Answers is who takes the panel's tasks from now on. Nothing leaves the vault
+// with no agent.
+func (a *API) Answers(taking agent.Agent) {
+	if taking == nil {
+		a.taking.Store(nil)
+		return
+	}
+	a.taking.Store(&taking)
+}
+
 // failure is what stopped the scan, or empty while nothing has.
 func (a *API) failure() string { return text(&a.Failed) }
 
@@ -133,9 +175,10 @@ func text(v *atomic.Value) string {
 }
 
 func (a *API) State(ctx context.Context, _ *connect.Request[v1.StateRequest]) (*connect.Response[v1.StateResponse], error) {
+	showing := a.Showing()
 	out := &v1.StateResponse{
-		Name:        a.Vault.Name,
-		Path:        a.Vault.Path,
+		Name:        showing.Name,
+		Path:        showing.Path,
 		Ready:       a.Ready.Load(),
 		Failed:      a.failure(),
 		Unwatched:   text(&a.Unwatched),
@@ -145,7 +188,7 @@ func (a *API) State(ctx context.Context, _ *connect.Request[v1.StateRequest]) (*
 	// A count that cannot be taken leaves the pair at nothing, and the rest of
 	// the state is answered as it stands.
 	if a.Progress != nil {
-		if held, embedded, err := a.Progress.Progress(ctx, a.Vault.ID, text(&a.Recipe)); err == nil {
+		if held, embedded, err := a.Progress.Progress(ctx, showing.ID, text(&a.Recipe)); err == nil {
 			out.Chunks, out.Embedded = held, embedded
 		}
 	}
@@ -153,7 +196,7 @@ func (a *API) State(ctx context.Context, _ *connect.Request[v1.StateRequest]) (*
 }
 
 func (a *API) Opening(ctx context.Context, _ *connect.Request[v1.OpeningRequest]) (*connect.Response[v1.OpeningResponse], error) {
-	ref, found, err := a.Notes.Opening(ctx, a.Vault.ID)
+	ref, found, err := a.Notes.Opening(ctx, a.Showing().ID)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -166,7 +209,7 @@ func (a *API) Opening(ctx context.Context, _ *connect.Request[v1.OpeningRequest]
 
 func (a *API) Neighbourhood(ctx context.Context, r *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error) {
 	found, err := note.ShowNeighbourhood{Links: a.Links, Notes: a.Notes}.
-		Execute(ctx, a.Vault, r.Msg.GetPath())
+		Execute(ctx, a.Showing(), r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
