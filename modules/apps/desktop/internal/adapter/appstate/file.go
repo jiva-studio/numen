@@ -6,6 +6,9 @@ import "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 // read it years from now, and a file that does not say what it is is a file
 // nobody dares change.
 type file struct {
-	V      int            `json:"v"`
+	V int `json:"v"`
+	// Last is the identity of the vault opened most recently, and is absent
+	// until one has been opened.
+	Last   string         `json:"last,omitempty"`
 	Vaults []domain.Vault `json:"vaults"`
 }

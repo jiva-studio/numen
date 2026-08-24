@@ -3,7 +3,10 @@ package vault
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 	"time"
+
+	"golang.org/x/text/unicode/norm"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
@@ -14,6 +17,9 @@ import (
 // Two things happen, in this order and no other: the folder is given an
 // identity that stays with it, and that identity is remembered here. A folder
 // is recognised after it moves by the identity it carries.
+//
+// A name another vault has gets a number appended, and the person renames it
+// afterwards.
 type Add struct {
 	Identity port.VaultIdentity
 	Registry port.VaultRegistry
@@ -27,7 +33,19 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 	if !filepath.IsAbs(root) {
 		return domain.Vault{}, fmt.Errorf("vault path must be absolute, got %q", root)
 	}
+	// One folder has one name here, whichever route reached it.
+	if resolved, err := filepath.EvalSymlinks(root); err == nil {
+		root = resolved
+	}
 	if err := u.Identity.Readable(root); err != nil {
+		return domain.Vault{}, err
+	}
+
+	known, err := u.Registry.All()
+	if err != nil {
+		return domain.Vault{}, err
+	}
+	if err := roomFor(root, known); err != nil {
 		return domain.Vault{}, err
 	}
 
@@ -68,8 +86,65 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		// The folder name is what the user already calls this collection.
 		v.Name = filepath.Base(root)
 	}
+	v.Name = free(v.Name, known, id)
 	if err := u.Registry.Save(v); err != nil {
 		return domain.Vault{}, err
 	}
 	return v, nil
+}
+
+// roomFor refuses a root that lies inside a vault already registered, and one
+// that holds such a vault.
+func roomFor(root string, known []domain.Vault) error {
+	for _, other := range known {
+		if other.Path == root {
+			continue
+		}
+		if within(root, other.Path) {
+			return fmt.Errorf("%s is inside the vault %s at %s", root, other.Name, other.Path)
+		}
+		if within(other.Path, root) {
+			return fmt.Errorf("%s holds the vault %s at %s", root, other.Name, other.Path)
+		}
+	}
+	return nil
+}
+
+// within reports whether path lies below root.
+func within(path, root string) bool {
+	rel, err := filepath.Rel(root, path)
+	if err != nil || rel == "." {
+		return false
+	}
+	return rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+}
+
+// free answers with the name, or with the lowest free number appended to it.
+// The vault named self keeps the name it has: it is being added again, from
+// wherever it moved to.
+func free(name string, known []domain.Vault, self string) string {
+	taken := func(candidate string) bool {
+		for _, v := range known {
+			if v.ID != self && sameName(v.Name, candidate) {
+				return true
+			}
+		}
+		return false
+	}
+	if !taken(name) {
+		return name
+	}
+	for n := 2; ; n++ {
+		numbered := fmt.Sprintf("%s %d", name, n)
+		if !taken(numbered) {
+			return numbered
+		}
+	}
+}
+
+// sameName reports whether two names name one vault. A name from a file picker
+// and the same name typed at a command line are composed differently, and the
+// case is the person's to choose.
+func sameName(a, b string) bool {
+	return strings.EqualFold(norm.NFC.String(a), norm.NFC.String(b))
 }
