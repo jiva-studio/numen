@@ -36,7 +36,7 @@ const CHROME = [
   '--numen-turn-gap',
 ] as const
 
-/** What follows the text: the size the text a person reads is set at. */
+/** What the text multiplier reaches, over whatever the interface is drawing. */
 const READING = ['--numen-reading-size'] as const
 
 /** What follows neither: one line, whatever it separates. */
@@ -84,12 +84,12 @@ const ROOT_AS_DESIGNED = 16
 const KINDS = [
   {
     name: 'The interface',
-    says: 'Chrome, controls, spacing, and the type in them. Each is in rem, and the root’s font size carries them all.',
+    says: 'A magnifier over the whole window: chrome, controls, spacing, and the type in them. Each is in rem, and the root’s font size carries them all — the size below with them.',
     tokens: CHROME,
   },
   {
     name: 'The text',
-    says: 'The size a note, a book, an answer and the editor are set at.',
+    says: 'The size a note, a book, an answer and the editor are set at. The interface carries it like everything else, and this is a second multiplier over that.',
     tokens: READING,
   },
   {
@@ -207,12 +207,12 @@ export const Playground: Story = {
         await each(NEITHER, 1)
       }
 
-      // The interface multiplier moves the chrome and leaves what is read.
+      // The interface magnifies the window, and what is read is in the window.
       for (const times of [0.8, 1.25, 1.5, 2]) {
         wear(String(times), '')
         await expect(root()).toBeCloseTo(ROOT_AS_DESIGNED * times, 1)
         await each(CHROME, times)
-        await each(READING, 1)
+        await each(READING, times)
         await each(NEITHER, 1)
       }
 
@@ -225,16 +225,18 @@ export const Playground: Story = {
         await each(NEITHER, 1)
       }
 
-      // Both at once, at either end: every line is the line it was.
+      // Both at once, at either end: they compose, and every line is the line
+      // it was.
       const ends: readonly (readonly [number, number])[] = [
         [0.8, 1.75],
         [2, 0.8],
+        [1.5, 1.5],
       ]
       for (const [drawnAt, setAt] of ends) {
         wear(String(drawnAt), String(setAt))
         await each(NEITHER, 1)
         await each(CHROME, drawnAt)
-        await each(READING, setAt)
+        await each(READING, drawnAt * setAt)
       }
     } finally {
       wear(held.drawnAt, held.setAt)

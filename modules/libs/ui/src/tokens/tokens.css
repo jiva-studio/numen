@@ -190,13 +190,14 @@
 }
 
 /*
- * What follows the text: the size the text a person reads is set at.
- * Everything set from it is written as a multiple of it.
+ * What the text multiplier reaches as well: the size the text a person reads
+ * is set at. The interface carries it as it carries every `rem`, and this is
+ * a second multiplier over that.
  */
 
 /* A page carrying no multiplier sets it as it is designed. */
 :where(:root) {
-  --numen-reading-size: calc(13px * var(--numen-font, 1));
+  --numen-reading-size: calc(0.8125rem * var(--numen-font, 1));
 }
 
 /*
