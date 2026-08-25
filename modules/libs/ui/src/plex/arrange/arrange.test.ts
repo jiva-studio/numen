@@ -316,6 +316,32 @@ describe('the same input gives the same numbers', () => {
   })
 })
 
+describe('the lines of a seat are shared out evenly', () => {
+  it('keeps every line within one node of every other', () => {
+    const children = withSeat(
+      arrangePlex(neighbourhoods.typical, { options: { maxPerLine: 4 } }),
+      'child',
+    )
+    const lines = new Map<number, number>()
+    for (const node of children) lines.set(node.y, (lines.get(node.y) ?? 0) + 1)
+
+    const lengths = [...lines.values()]
+    expect(Math.max(...lengths) - Math.min(...lengths)).toBeLessThanOrEqual(1)
+  })
+
+  it('never puts more on a line than the limit allows', () => {
+    for (const maxPerLine of [1, 2, 3, 4, 5]) {
+      const children = withSeat(
+        arrangePlex(neighbourhoods.crowded, { options: { maxPerLine } }),
+        'child',
+      )
+      const lines = new Map<number, number>()
+      for (const node of children) lines.set(node.y, (lines.get(node.y) ?? 0) + 1)
+      expect(Math.max(...lines.values())).toBeLessThanOrEqual(maxPerLine)
+    }
+  })
+})
+
 describe('order along a line follows the order given', () => {
   it('numbers each seat outward from the focus', () => {
     const children = withSeat(arrangePlex(neighbourhoods.crowded), 'child')
@@ -326,7 +352,8 @@ describe('order along a line follows the order given', () => {
 
   it('lays a row out left to right', () => {
     const children = withSeat(arrangePlex(neighbourhoods.typical), 'child')
-    const firstLine = children.slice(0, DEFAULT_OPTIONS.maxPerLine)
+    const firstLine = children.filter((node) => node.y === children[0]!.y)
+    expect(firstLine.length).toBeGreaterThan(1)
     for (let i = 1; i < firstLine.length; i++) {
       const previous = firstLine[i - 1]
       const current = firstLine[i]
@@ -338,7 +365,7 @@ describe('order along a line follows the order given', () => {
   it('puts the second line further from the focus than the first', () => {
     const children = withSeat(arrangePlex(neighbourhoods.crowded), 'child')
     const first = children[0]
-    const onSecondLine = children[DEFAULT_OPTIONS.maxPerLine]
+    const onSecondLine = children.find((node) => node.y !== first!.y)
     expect(first).toBeDefined()
     expect(onSecondLine).toBeDefined()
     expect(onSecondLine!.y).toBeGreaterThan(first!.y)

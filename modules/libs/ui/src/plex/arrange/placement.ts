@@ -178,17 +178,23 @@ function inColumns(
 }
 
 /**
- * The nodes of a seat cut into lines of `perLine`, nearest the focus first.
- * `depth` counts the lines out from the focus and `first` the nodes before.
+ * The nodes of a seat cut into lines, nearest the focus first. `depth` counts
+ * the lines out from the focus and `first` the nodes before.
+ *
+ * `perLine` is the longest a line may be, and the lines a seat runs to share
+ * its nodes out evenly: every line is within one node of every other.
  */
 function* lines(
   nodes: readonly PlexNode[],
   perLine: number,
 ): Generator<{ ofLine: readonly PlexNode[]; depth: number; first: number }> {
-  for (let first = 0; first < nodes.length; first += perLine) {
+  const count = Math.ceil(nodes.length / perLine)
+  const each = Math.ceil(nodes.length / count)
+
+  for (let first = 0; first < nodes.length; first += each) {
     yield {
-      ofLine: nodes.slice(first, first + perLine),
-      depth: first / perLine,
+      ofLine: nodes.slice(first, first + each),
+      depth: first / each,
       first,
     }
   }

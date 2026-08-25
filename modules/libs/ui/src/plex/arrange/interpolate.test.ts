@@ -227,13 +227,16 @@ describe('the title a line carries while the picture moves', () => {
 
   it('holds where along the line the words sit', () => {
     const wide = (label: string) => 6 * [...label].length
+
+    // A window that wraps the fan, at the settings: what this is about is a
+    // title moving off the middle, not how much room the window has to spare.
     const titled = (neighbourhood: PlexNeighbourhood) =>
       arrangePlex(
         {
           ...neighbourhood,
           edges: neighbourhood.edges.map((edge) => ({ ...edge, label: 'contains' })),
         },
-        { measureLabel: wide, options: { viewport: { width: 1200, height: 800 } } },
+        { measureLabel: wide, options: { viewport: { width: 900, height: 800 }, spread: 1 } },
       )
 
     // A fan wide enough that its titles cannot all keep the middle.

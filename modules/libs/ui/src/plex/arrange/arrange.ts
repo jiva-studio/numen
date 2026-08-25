@@ -15,10 +15,12 @@ import {
   type PlexNode,
   type PlexRelatedSeat,
 } from '../model'
+import { crowdingFor } from './crowding'
 import { limitsFor, type Limits } from './limits'
 import { resolveOptions, type PlexOptions, type PlexOptionsInput } from './options'
 import { rowsAndColumns, type Placement, type Seating, type Widths } from './placement'
 import { routeEdges, routingFor } from './routing'
+import { spacingFor, type Spacing } from './spacing'
 import { settleTitles } from './titles'
 
 export interface ArrangeInput {
@@ -54,8 +56,13 @@ export function arrangePlex(
     labelDepth,
   }: ArrangeInput = {},
 ): PlexFrame {
-  const resolved = resolveOptions(options)
+  const asked = resolveOptions(options)
   const focusNode = assertNeighbourhood(neighbourhood)
+  const counts = countSeats(neighbourhood.nodes)
+
+  // Packed as closely as this window needs and no closer, so a box narrows
+  // and a gap closes before a seat is given up.
+  const resolved = crowdingFor(asked, counts)
   const widthOf = widthsFor(resolved, measure)
 
   const focus: PlacedNode = {
@@ -68,11 +75,18 @@ export function arrangePlex(
     opacity: 1,
   }
 
-  const counts = countSeats(neighbourhood.nodes)
   const limits = limitsFor(resolved, counts)
 
   const { seating, overflow } = admit(neighbourhood.nodes, limits)
-  const nodes = [focus, ...placement.place(seating, focus, resolved, limits, widthOf)]
+
+  // How much is admitted is settled at that packing, and the gaps then open
+  // into the room that is left. The opening is measured against the
+  // arrangement itself, so a placement of any shape keeps the window.
+  const lay = (spacing: Spacing) =>
+    placement.place(seating, focus, { ...resolved, ...spacing }, limits, widthOf)
+  const spacing = spacingFor(resolved, (candidate) => within(lay(candidate), resolved))
+
+  const nodes = [focus, ...lay(spacing)]
 
   const byId = new Map(nodes.map((node) => [node.id, node]))
   const routing = routingFor(resolved, measureLabel, labelDepth)
@@ -100,6 +114,20 @@ function widthsFor(
     if (!measure) return widest
     return Math.min(widest, Math.max(options.minWidth, measure(node)))
   }
+}
+
+/** Whether every node stays inside the window, the margin kept clear. */
+function within(nodes: readonly PlacedNode[], options: PlexOptions): boolean {
+  const { viewport, margin } = options
+  if (!viewport) return true
+
+  const halfWidth = viewport.width / 2 - margin
+  const halfHeight = viewport.height / 2 - margin
+  return nodes.every(
+    (node) =>
+      Math.abs(node.x) + node.width / 2 <= halfWidth &&
+      Math.abs(node.y) + node.height / 2 <= halfHeight,
+  )
 }
 
 function countSeats(nodes: readonly PlexNode[]): Record<PlexRelatedSeat, number> {

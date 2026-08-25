@@ -32,10 +32,24 @@ export interface BoxOptions {
   readonly focusGap: number
   /** Kept clear of the window edge, so nothing sits flush against it. */
   readonly margin: number
+  /**
+   * How far a gap may open beyond its setting when the window has room. This
+   * multiple of a gap is the most it is given. At one, a gap never opens.
+   */
+  readonly spread: number
+  /**
+   * How far a gap closes below its setting when the window is short of room.
+   * This fraction of a gap is the least it is given, and a box narrows towards
+   * `minWidth` alongside it. At one, nothing closes.
+   */
+  readonly squeeze: number
 }
 
 export interface LimitOptions {
-  /** How many nodes fit on one line before a second line is started. */
+  /**
+   * How many nodes go on one line before a second line is started, when there
+   * is no window to measure a line against.
+   */
   readonly maxPerLine: number
   /** Lines per seat. Nodes past the last line are reported as overflow. */
   readonly maxLines: number
@@ -81,9 +95,9 @@ export interface PlexOptions extends BoxOptions, LimitOptions {
   readonly gesture: GestureOptions
   readonly direction: Readonly<Record<PlexRelatedSeat, Direction>>
   /**
-   * The window the plex is drawn in. Given one, a row too wide for it wraps
-   * sooner and runs deeper rather than reaching past the edge. Without one,
-   * the limits above are taken literally.
+   * The window the plex is drawn in. Given one, a line runs as long as the
+   * window holds and the gaps open into whatever room is left over. Without
+   * one, the limits above are taken literally.
    */
   readonly viewport?: Size | undefined
 }
@@ -102,6 +116,8 @@ export const DEFAULT_OPTIONS: PlexOptions = {
   lineGap: 20,
   focusGap: 56,
   margin: 16,
+  spread: 2.5,
+  squeeze: 0.35,
   maxPerLine: 5,
   maxLines: 4,
   routing: { curvature: 0.55, minReach: 22, arrowRoom: 14 },

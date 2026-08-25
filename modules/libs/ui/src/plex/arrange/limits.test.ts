@@ -125,6 +125,21 @@ describe('the rows keep the room when it runs out', () => {
     expect(limits.jump.lines).toBeGreaterThanOrEqual(1)
   })
 
+  it('keeps the room when no row width seats a column at all', () => {
+    // A window this narrow has nowhere to put a jump or a sibling, and the
+    // room a column cannot use is the room the children are read in.
+    const viewport = { width: 600, height: 1400 }
+    const counts = { parent: 1, child: 6, jump: 1, sibling: 2 }
+    const limits = limitsFor({ ...DEFAULT_OPTIONS, viewport }, counts)
+
+    expect(limits.jump.lines).toBe(0)
+    expect(limits.child.perLine).toBeGreaterThan(1)
+
+    const frame = arrangePlex(build('A node', counts), { options: { viewport } })
+    expect(frame.overflow.child).toBeUndefined()
+    expect(escapes(frame, viewport).map((n) => n.title)).toStrictEqual([])
+  })
+
   it('gives a row the whole window when nothing sits beside it', () => {
     const viewport = { width: 1000, height: 800 }
     const alone = limitsFor(
