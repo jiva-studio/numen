@@ -440,6 +440,65 @@ export const MakingOne: Story = {
   },
 }
 
+/** Whether a focus reads as the keyboard's. Browsers take it; the types do not. */
+interface KeyboardFocus extends FocusOptions {
+  focusVisible?: boolean
+}
+
+/**
+ * Where the handle is, and how few of them there are.
+ *
+ * A handle belongs to the box under the hand, and to the box the keyboard is
+ * visibly on. A click leaves a box holding a focus that is neither, so a box
+ * clicked and then left alone wears nothing at all.
+ *
+ * Only a browser can answer any of it: a click and a tab leave the same focus
+ * behind, and which of them the keyboard is visibly on is the browser's own
+ * reckoning. A hand driven from a story is untrusted and does not reach that
+ * reckoning, so the focus a click leaves behind is named here outright.
+ */
+export const OneHandleAtATime: Story = {
+  args: invented.args,
+  render: invented.render,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const handles = () => canvasElement.querySelectorAll('.plex__handle')
+    const boxes = [
+      canvas.getByLabelText(/, focus$/),
+      ...canvas.getAllByLabelText(/, (parent|child|jump|sibling)$/).slice(0, 3),
+    ]
+    const first = boxes[0]!
+
+    // A picture nobody is on offers nothing.
+    await expect(handles()).toHaveLength(0)
+
+    // The focus a click leaves is one the keyboard is not visibly on, and no
+    // hand is anywhere near.
+    first.focus({ focusVisible: false } as KeyboardFocus)
+    await expect(first).toHaveFocus()
+    await expect(handles()).toHaveLength(0)
+
+    // The hand across the picture, box after box. One handle in the whole
+    // plex, on the box the hand is on, and none left behind it.
+    for (const box of boxes) {
+      await userEvent.hover(box)
+      await expect(handles()).toHaveLength(1)
+      await expect(box.querySelector('.plex__handle')).not.toBeNull()
+      await userEvent.unhover(box)
+      await expect(handles()).toHaveLength(0)
+    }
+
+    // Arriving by tab is the keyboard being used, and the box it stops at
+    // wears one.
+    first.blur()
+    await userEvent.tab()
+    const stop = canvasElement.ownerDocument.activeElement!
+    await expect(stop).toHaveClass('plex__node')
+    await expect(handles()).toHaveLength(1)
+    await expect(stop.querySelector('.plex__handle')).not.toBeNull()
+  },
+}
+
 /**
  * Asking a node for a menu.
  *

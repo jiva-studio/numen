@@ -1,6 +1,9 @@
 /**
  * What a node decides on its own: whether it can be chosen, what it tells a
  * screen reader, and what the handle does that the box must not.
+ *
+ * jsdom has no `:focus-visible`, so here the keyboard is never visibly on a
+ * node and the handle it offers the keyboard is left to `Plex.stories.ts`.
  */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
@@ -155,6 +158,29 @@ describe('the handle', () => {
     await hover(node)
     expect(node.find('.plex__handle').exists()).toBe(true)
 
+    await node.trigger('pointerleave')
+    expect(node.find('.plex__handle').exists()).toBe(false)
+  })
+
+  it('is not offered to a focus the keyboard is not visibly on', async () => {
+    // Which is every focus jsdom has: whether the keyboard is visibly on a
+    // node is a browser's own reckoning.
+    const node = mountNode()
+    await node.trigger('focusin')
+    expect(node.find('.plex__handle').exists()).toBe(false)
+  })
+
+  it('stays while the focus travels from the node onto it', async () => {
+    const node = await hover(mountNode())
+    const disc = node.get('.plex__handle').element
+    await node.trigger('focusout', { relatedTarget: disc })
+    await node.trigger('pointerleave')
+    expect(node.find('.plex__handle').exists()).toBe(true)
+  })
+
+  it('goes when the focus leaves the node altogether', async () => {
+    const node = await hover(mountNode())
+    await node.trigger('focusout', { relatedTarget: document.body })
     await node.trigger('pointerleave')
     expect(node.find('.plex__handle').exists()).toBe(false)
   })

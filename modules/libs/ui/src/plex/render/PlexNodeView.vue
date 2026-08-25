@@ -121,19 +121,37 @@ const onKey = (event: KeyboardEvent) => {
 }
 
 /**
- * Where the attention is, whichever way it arrived. `focusout` carries where
- * it went, so moving from the node onto its own handle is not leaving.
+ * Whether the keyboard is visibly on an element, which the browser works out
+ * from how the focus got there. Where there is no such state, the answer is no.
  */
-const attend = (event: FocusEvent) => {
-  const within = event.currentTarget as Element
-  const next = event.relatedTarget as Node | null
-  attended.value = event.type === 'focusin' || !!(next && within.contains(next))
+const keyboardOn = (element: Element) => {
+  try {
+    return element.matches(':focus-visible')
+  } catch {
+    return false
+  }
 }
 
 /**
- * When there is a handle to press. Under the hand or under the keyboard, or
- * held there for as long as the gesture that left from it lasts. A node on
- * its way in or out offers nothing: it is about to be somewhere else.
+ * Where the attention is: the keyboard counts while it is the thing in use.
+ * `focusout` carries where the focus went, so moving from the node onto its
+ * own handle is not leaving.
+ */
+const attend = (event: FocusEvent) => {
+  const within = event.currentTarget as Element
+  if (event.type === 'focusout') {
+    const next = event.relatedTarget as Node | null
+    attended.value = !!(next && within.contains(next))
+    return
+  }
+  attended.value = keyboardOn(event.target as Element)
+}
+
+/**
+ * When there is a handle to press. Under the hand, or under the keyboard while
+ * the keyboard is what is being used, or held there for as long as the gesture
+ * that left from it lasts. A node on its way in or out offers nothing: it is
+ * about to be somewhere else.
  */
 const offering = computed(
   () =>
