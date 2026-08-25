@@ -1,14 +1,15 @@
 /**
- * The theme the window wears, without a window.
+ * How the window is drawn, without a window.
  *
- * Two things are asked here: that the theme's element is the one written over,
- * since the mode's has to stand before it, and that leaving the list puts back
- * the theme the settings name without reading a file for it.
+ * Three things are asked here: that the theme's element is the one written
+ * over, since the mode's has to stand before it; that leaving a list puts back
+ * what the settings name without reading a file for it; and that a size is
+ * drawn only once the keyboard has stood on its row.
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { Offering } from './commanding'
 import type { Catalogue, Themes } from './theme'
-import { wearing } from './wearing'
+import { FONT, INTERFACE, wearing } from './wearing'
 import { WORDS as words } from './words'
 
 /** What the page was served wearing. */
@@ -17,22 +18,36 @@ const SERVED = ':root { --numen-surface: #101014 }'
 /** What the mode's element holds while the tokens are read as a pair. */
 const PAIR = ':root { color-scheme: light dark; }'
 
+/** What the sizes' element holds while the window is drawn as designed. */
+const SIZED = ':root { --numen-interface: 1; --numen-font: 1; }'
+
 const styled = (sheet: Document, css: string): HTMLStyleElement => {
   const one = sheet.createElement('style')
   one.textContent = css
   return one
 }
 
-/** A page as the window's handler serves one: the link, then the two elements. */
+/** A page as the window's handler serves one: the link, then the three elements. */
 const page = (): Document => {
   const sheet = document.implementation.createHTMLDocument('numen')
-  sheet.head.append(sheet.createElement('link'), styled(sheet, PAIR), styled(sheet, SERVED))
+  sheet.head.append(
+    sheet.createElement('link'),
+    styled(sheet, PAIR),
+    styled(sheet, SERVED),
+    styled(sheet, SIZED),
+  )
   return sheet
 }
 
 /** What the head is wearing, in the order the elements stand in it. */
 const dressing = (sheet: Document) =>
   [...sheet.head.querySelectorAll('style')].map((one) => one.textContent)
+
+/** What the theme's element holds, which is the second of the three. */
+const themed = (sheet: Document) => dressing(sheet)[1]
+
+/** What the sizes' element holds, which is the last of them. */
+const sizes = (sheet: Document) => dressing(sheet)[2]
 
 const CATALOGUE: Catalogue = {
   themes: [
@@ -42,10 +57,18 @@ const CATALOGUE: Catalogue = {
   ],
   applied: 'preset:numen',
   mode: 'system',
+  sizes: { interface: 1, font: 1 },
+  bounds: { interface: { least: 0.8, most: 2 }, font: { least: 0.8, most: 1.75 } },
 }
 
 /** A moment for whatever was asked of the application to come back. */
 const settles = () => new Promise((done) => setTimeout(done, 0))
+
+/** The keyboard stood on a row for longer than the window holds a size. */
+const stands = () => new Promise((done) => setTimeout(done, 200))
+
+/** A range narrower than the one the application answers with. */
+const NARROW = { least: 1, most: 1.5 }
 
 /** The person's folder, which a test writes to. */
 const folder = () => {
@@ -83,8 +106,8 @@ const window = (over: Partial<Catalogue> = {}) => {
       if (refused) throw new Error(refused)
       return texts[name] ?? `:root { --numen-surface: ${name} }`
     },
-    chooses: async (name, mode) => {
-      chosen.push(`${name} ${mode}`)
+    chooses: async (name, mode, sizes) => {
+      chosen.push(`${name} ${mode} ${sizes.interface}/${sizes.font}`)
       return failed
     },
     changed: said.changed,
@@ -115,11 +138,11 @@ describe('the page as it was served', () => {
   it('wears what it arrived in, and reads no file to do it', async () => {
     const one = await dressed()
 
-    expect(dressing(one.sheet)).toStrictEqual([PAIR, SERVED])
+    expect(dressing(one.sheet)).toStrictEqual([PAIR, SERVED, SIZED])
     expect(one.asked).toStrictEqual([])
   })
 
-  it('writes over the theme’s element, and moves neither of them', async () => {
+  it('writes over the theme’s element, and moves none of them', async () => {
     const one = await dressed()
     const before = [...one.sheet.head.querySelectorAll('style')]
 
@@ -127,8 +150,12 @@ describe('the page as it was served', () => {
     await settles()
 
     expect([...one.sheet.head.querySelectorAll('style')]).toStrictEqual(before)
-    expect(one.sheet.head.lastElementChild).toBe(before[1])
-    expect(dressing(one.sheet)).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }'])
+    expect(one.sheet.head.lastElementChild).toBe(before[2])
+    expect(dressing(one.sheet)).toStrictEqual([
+      PAIR,
+      ':root { --numen-surface: mine:sea }',
+      SIZED,
+    ])
   })
 
   it('makes the pair itself, mode first, for a page served in nothing', async () => {
@@ -161,7 +188,7 @@ describe('the theme the keyboard is standing on', () => {
     one.worn.shows('mine:sea')
     await settles()
 
-    expect(dressing(one.sheet).at(-1)).toBe(':root { --numen-surface: mine:sea }')
+    expect(themed(one.sheet)).toBe(':root { --numen-surface: mine:sea }')
     expect(one.asked).toStrictEqual(['mine:sea'])
   })
 
@@ -173,7 +200,7 @@ describe('the theme the keyboard is standing on', () => {
     one.worn.shows('')
     await settles()
 
-    expect(dressing(one.sheet)).toStrictEqual([PAIR, SERVED])
+    expect(dressing(one.sheet)).toStrictEqual([PAIR, SERVED, SIZED])
     // The theme the page arrived in is not read for again.
     expect(one.asked).toStrictEqual(['mine:sea'])
   })
@@ -200,7 +227,7 @@ describe('the theme the keyboard is standing on', () => {
     await settles()
 
     expect(one.worn.said.value).toBe(words.unworn)
-    expect(dressing(one.sheet)).toStrictEqual([PAIR, SERVED])
+    expect(dressing(one.sheet)).toStrictEqual([PAIR, SERVED, SIZED])
   })
 
   it('is the last row the keyboard landed on, whatever order the files come back in', async () => {
@@ -210,7 +237,7 @@ describe('the theme the keyboard is standing on', () => {
     one.worn.shows('mine:sea')
     await settles()
 
-    expect(dressing(one.sheet).at(-1)).toBe(':root { --numen-surface: mine:sea }')
+    expect(themed(one.sheet)).toBe(':root { --numen-surface: mine:sea }')
   })
 })
 
@@ -221,7 +248,11 @@ describe('which half of a pair the tokens are read as', () => {
     one.worn.shows('mode:dark')
     await settles()
 
-    expect(dressing(one.sheet)).toStrictEqual([':root { color-scheme: dark; }', SERVED])
+    expect(dressing(one.sheet)).toStrictEqual([
+      ':root { color-scheme: dark; }',
+      SERVED,
+      SIZED,
+    ])
   })
 
   it('goes back to what the settings say once the keyboard stands nowhere', async () => {
@@ -315,15 +346,163 @@ describe('the three halves the step offers', () => {
   })
 })
 
+describe('the sizes the two steps offer', () => {
+  const rows = (one: Awaited<ReturnType<typeof dressed>>, command: string) =>
+    one.worn.sizes(command).flatMap((band) => band.items)
+
+  it('walks each range from end to end, in quarters, with both ends on it', async () => {
+    const one = await dressed()
+
+    expect(rows(one, INTERFACE).map((row) => row.title)).toStrictEqual([
+      '80%',
+      '100%',
+      '125%',
+      '150%',
+      '175%',
+      '200%',
+    ])
+    expect(rows(one, FONT).map((row) => row.title)).toStrictEqual([
+      '80%',
+      '100%',
+      '125%',
+      '150%',
+      '175%',
+    ])
+  })
+
+  it('draws each in a band of its own, named for what that size moves', async () => {
+    const one = await dressed()
+
+    expect(one.worn.sizes(INTERFACE).map((band) => band.title)).toStrictEqual([words.drawing])
+    expect(one.worn.sizes(FONT).map((band) => band.title)).toStrictEqual([words.setting])
+  })
+
+  it('offers nothing at all until the application has said how far a size goes', async () => {
+    const one = await dressed({ bounds: { interface: { least: 0, most: 0 }, font: NARROW } })
+
+    expect(rows(one, INTERFACE)).toStrictEqual([])
+    expect(rows(one, FONT).map((row) => row.title)).toStrictEqual(['100%', '125%', '150%'])
+  })
+
+  it('says on a row that it is the size now, and on the row of 1 that it is as designed', async () => {
+    const one = await dressed({ sizes: { interface: 1.5, font: 1 } })
+
+    expect(rows(one, INTERFACE).map((row) => row.detail)).toStrictEqual([
+      undefined,
+      words.designed,
+      undefined,
+      words.sized,
+      undefined,
+      undefined,
+    ])
+    expect(rows(one, FONT).map((row) => row.detail)?.[1]).toBe(words.sized)
+  })
+})
+
+describe('the size the keyboard is standing on', () => {
+  it('is not drawn while the keyboard is still walking over rows', async () => {
+    const one = await dressed()
+
+    one.worn.shows('interface:1.5')
+    await settles()
+    one.worn.shows('interface:1.75')
+    await settles()
+
+    expect(sizes(one.sheet)).toBe(SIZED)
+  })
+
+  it('is drawn once the keyboard has stood on it', async () => {
+    const one = await dressed()
+
+    one.worn.shows('interface:1.5')
+    await stands()
+
+    expect(sizes(one.sheet)).toBe(':root { --numen-interface: 1.5; --numen-font: 1; }')
+  })
+
+  it('is drawn once, at the row the keyboard came to rest on', async () => {
+    const one = await dressed()
+
+    one.worn.shows('interface:1.25')
+    one.worn.shows('interface:1.5')
+    one.worn.shows('font:1.25')
+    await stands()
+
+    expect(sizes(one.sheet)).toBe(':root { --numen-interface: 1; --numen-font: 1.25; }')
+  })
+
+  it('gives way to the size the settings name once the keyboard stands nowhere', async () => {
+    const one = await dressed()
+    one.worn.shows('font:1.5')
+    await stands()
+
+    one.worn.shows('')
+    await settles()
+
+    expect(sizes(one.sheet)).toBe(SIZED)
+    expect(one.chosen).toStrictEqual([])
+  })
+
+  it('leaves the theme and the mode where they stand', async () => {
+    const one = await dressed()
+
+    one.worn.shows('interface:2')
+    await stands()
+
+    expect(dressing(one.sheet).slice(0, 2)).toStrictEqual([PAIR, SERVED])
+  })
+})
+
+describe('the size that was chosen', () => {
+  it('is drawn at once, whatever the hold was waiting for, and written down', async () => {
+    const one = await dressed()
+    one.worn.shows('interface:1.25')
+
+    await one.worn.chooses('interface:1.5')
+
+    expect(one.chosen).toStrictEqual(['preset:numen system 1.5/1'])
+    expect(sizes(one.sheet)).toBe(':root { --numen-interface: 1.5; --numen-font: 1; }')
+  })
+
+  it('is written beside the other size, which stands where it was', async () => {
+    const one = await dressed({ sizes: { interface: 1.25, font: 1 } })
+
+    await one.worn.chooses('font:1.75')
+
+    expect(one.chosen).toStrictEqual(['preset:numen system 1.25/1.75'])
+    expect(sizes(one.sheet)).toBe(':root { --numen-interface: 1.25; --numen-font: 1.75; }')
+  })
+
+  it('says what the settings refused, and goes back to the size they hold', async () => {
+    const one = await dressed()
+    one.fails('appearance.interface is 3, which is outside 0.8 to 2')
+
+    await one.worn.chooses('interface:2')
+    await settles()
+
+    expect(one.worn.said.value).toBe('appearance.interface is 3, which is outside 0.8 to 2')
+    expect(sizes(one.sheet)).toBe(SIZED)
+  })
+
+  it('is nothing at all where the range the window holds does not reach it', async () => {
+    const one = await dressed()
+
+    await one.worn.chooses('interface:1.3')
+
+    expect(one.chosen).toStrictEqual([])
+    expect(sizes(one.sheet)).toBe(SIZED)
+  })
+})
+
 describe('the row that was chosen', () => {
   it('is written into the settings, and is what the window wears from then on', async () => {
     const one = await dressed()
 
     await one.worn.chooses('mine:sea')
 
-    expect(one.chosen).toStrictEqual(['mine:sea system'])
+    expect(one.chosen).toStrictEqual(['mine:sea system 1/1'])
     expect(one.worn.applied.value).toBe('mine:sea')
-    expect(dressing(one.sheet).at(-1)).toBe(':root { --numen-surface: mine:sea }')
+    expect(themed(one.sheet)).toBe(':root { --numen-surface: mine:sea }')
   })
 
   it('is the mode, written beside the theme the settings already name', async () => {
@@ -331,9 +510,13 @@ describe('the row that was chosen', () => {
 
     await one.worn.chooses('mode:dark')
 
-    expect(one.chosen).toStrictEqual(['preset:numen dark'])
+    expect(one.chosen).toStrictEqual(['preset:numen dark 1/1'])
     expect(one.worn.mode.value).toBe('dark')
-    expect(dressing(one.sheet)).toStrictEqual([':root { color-scheme: dark; }', SERVED])
+    expect(dressing(one.sheet)).toStrictEqual([
+      ':root { color-scheme: dark; }',
+      SERVED,
+      SIZED,
+    ])
   })
 
   it('says what the settings could not be written, and puts back what they hold', async () => {
@@ -344,7 +527,7 @@ describe('the row that was chosen', () => {
 
     expect(one.worn.said.value).toBe('the settings could not be written')
     expect(one.worn.applied.value).toBe('preset:numen')
-    expect(dressing(one.sheet)).toStrictEqual([PAIR, SERVED])
+    expect(dressing(one.sheet)).toStrictEqual([PAIR, SERVED, SIZED])
   })
 
   it('is nothing at all where the window holds no such row', async () => {
@@ -353,7 +536,7 @@ describe('the row that was chosen', () => {
     await one.worn.chooses('mine:tide')
 
     expect(one.chosen).toStrictEqual([])
-    expect(dressing(one.sheet)).toStrictEqual([PAIR, SERVED])
+    expect(dressing(one.sheet)).toStrictEqual([PAIR, SERVED, SIZED])
   })
 })
 
@@ -367,7 +550,7 @@ describe('the person editing their own theme file', () => {
     await one.says('mine:sea')
 
     expect(one.asked).toStrictEqual(['mine:sea', 'mine:sea'])
-    expect(dressing(one.sheet).at(-1)).toBe(':root { --numen-surface: #001 }')
+    expect(themed(one.sheet)).toBe(':root { --numen-surface: #001 }')
   })
 
   it('is followed while the theme is the one the settings name', async () => {
@@ -376,7 +559,7 @@ describe('the person editing their own theme file', () => {
     one.writes('mine:sea', ':root { --numen-surface: #002 }')
     await one.says('mine:sea')
 
-    expect(dressing(one.sheet).at(-1)).toBe(':root { --numen-surface: #002 }')
+    expect(themed(one.sheet)).toBe(':root { --numen-surface: #002 }')
   })
 
   it('leaves a theme the folder said nothing about where it was', async () => {
@@ -387,7 +570,7 @@ describe('the person editing their own theme file', () => {
     await one.says('mine:tide')
 
     expect(one.asked).toStrictEqual(['mine:sea'])
-    expect(dressing(one.sheet).at(-1)).toBe(':root { --numen-surface: mine:sea }')
+    expect(themed(one.sheet)).toBe(':root { --numen-surface: mine:sea }')
   })
 
   it('lists what the folder holds again, so a file made or taken out is offered', async () => {

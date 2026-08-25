@@ -33,7 +33,7 @@ import {
   type Where,
 } from './commanding'
 import { themes } from './theme'
-import { APPEARANCE, MODE, wearing } from './wearing'
+import { APPEARANCE, DRESSING, FONT, INTERFACE, MODE, wearing } from './wearing'
 import { does, type Doing } from './doing'
 import { finding } from './finding'
 import { lands } from './landing'
@@ -195,7 +195,7 @@ const knows: Knows = {
   holding,
 }
 
-/** The theme the window wears, and the list of the ones it could. */
+/** How the window is drawn: the theme it wears, its half of a pair, its sizes. */
 const dressed = wearing(themes, words)
 
 /** The lists the window itself holds, which a step of a command offers. */
@@ -203,10 +203,11 @@ const kept: Holds = {
   offers: (command) => {
     if (command === APPEARANCE) return dressed.offers()
     if (command === MODE) return dressed.modes()
+    if (command === INTERFACE || command === FONT) return dressed.sizes(command)
     return []
   },
   shows: (command, item) => {
-    if (command === APPEARANCE || command === MODE) dressed.shows(item)
+    if (DRESSING.includes(command)) dressed.shows(item)
   },
 }
 

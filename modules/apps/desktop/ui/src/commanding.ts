@@ -193,9 +193,14 @@ export interface Words extends Silences {
   readonly newPlex: string
   readonly newAgent: string
   readonly close: string
-  /** The two commands over how the window is drawn: the theme, and the halves. */
+  /**
+   * The four commands over how the window is drawn: the theme, the halves, and
+   * the two sizes.
+   */
   readonly appearance: string
   readonly mode: string
+  readonly interface: string
+  readonly font: string
   readonly find: string
   /** The keystroke the search answers to away from the palette. */
   readonly findKeys: string
@@ -347,6 +352,8 @@ export const commandsOf = (words: Words): readonly Command[] => [
   { id: 'find', text: words.find, keys: words.findKeys, band: 'window', where: always },
   { id: 'appearance', text: words.appearance, band: 'window', needs: 'choosing', where: always },
   { id: 'mode', text: words.mode, band: 'window', needs: 'choosing', where: always },
+  { id: 'interface', text: words.interface, band: 'window', needs: 'choosing', where: always },
+  { id: 'font', text: words.font, band: 'window', needs: 'choosing', where: always },
   { id: 'first', text: words.first, band: 'vault', where: (at) => at.ready },
   { id: 'goto', text: words.goto, band: 'vault', needs: 'picking', where: (at) => at.ready },
   { id: 'openVault', text: words.openVault, band: 'vault', needs: 'vaults', where: always },
