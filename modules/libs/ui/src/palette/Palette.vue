@@ -509,7 +509,7 @@ onBeforeUnmount(() => {
               </span>
 
               <!-- What reaches this item away from the palette. -->
-              <kbd v-if="drawn.item.keys" class="palette__hint text-small text-hushed">{{
+              <kbd v-if="drawn.item.keys" class="palette__hint text-small">{{
                 drawn.item.keys
               }}</kbd>
             </div>
@@ -560,7 +560,7 @@ onBeforeUnmount(() => {
                   >{{ part.text }}</span
                 >
               </span>
-              <kbd v-if="deed.key" class="palette__hint text-small text-hushed">{{ deed.key }}</kbd>
+              <kbd v-if="deed.key" class="palette__hint text-small">{{ deed.key }}</kbd>
             </div>
           </div>
 
@@ -737,15 +737,24 @@ onBeforeUnmount(() => {
   border-block-start: var(--numen-stroke) solid var(--numen-panel-border);
 }
 
+/* A cap: the keystroke on a ground of its own, in the face where every glyph
+   is one width. The clearance and the least width it takes are in `em`, so the
+   cap is the same shape at every size the interface is drawn at. */
 .palette__key kbd,
 .palette__more kbd,
 .palette__hint {
-  margin-inline-end: 0.35em;
-  padding: 0.05em 0.35em;
-  border: var(--numen-stroke) solid var(--numen-panel-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 1.75em;
+  margin-inline-end: 0.4em;
+  padding: 0.15em 0.4em;
   border-radius: var(--numen-radius);
-  background: var(--numen-node-bg);
-  font: inherit;
+  background: var(--numen-focus-bg);
+  color: var(--numen-focus-fg);
+  font-family: var(--numen-font-mono);
+  font-size: inherit;
+  line-height: inherit;
 }
 
 /* A key written on a row is the last thing on it, and is read after the name. */
