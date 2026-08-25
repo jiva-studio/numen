@@ -47,7 +47,7 @@ Read these first; everything else is derived from them.
 - [ADR-0032 — The window saves a note as it is typed, and stops at an unseen edit](0032-the-window-saves-a-note-as-it-is-typed.md)
 - [ADR-0033 — One process, one writer, one lifetime](0033-one-process-one-writer-one-lifetime.md)
 - [ADR-0035 — What the application cannot do, it says](0035-what-the-application-cannot-do-it-says.md)
-- [ADR-0041 — The window opens another vault](0041-the-window-opens-another-vault.md)
+- [ADR-0042 — The window opens another vault](0042-the-window-opens-another-vault.md)
 - [ADR-0040 — A note is renamed by whatever names it](0040-a-note-is-renamed-by-whatever-names-it.md)
 
 ## The note file
@@ -61,6 +61,7 @@ Read these first; everything else is derived from them.
 - [ADR-0028 — The component library is shadcn-vue on Tailwind](0028-the-component-library-is-shadcn-vue.md)
 - [ADR-0025 — A client talks to the core through a schema](0025-a-client-talks-to-the-core-through-a-schema.md)
 - [ADR-0041 — A theme is a CSS file, and there is one of them](0041-a-theme-is-a-css-file.md)
+- [ADR-0043 — How large the interface is drawn, and how large the text is set](0043-how-large-the-interface-is-drawn.md)
 
 ## Agents
 

@@ -18,10 +18,12 @@
   `searchable`, `cutting`, `kept`, and the model that is not here yet
 - **Extended:** 2026-08-24 — `rename` and `move` settled apart (ADR-0040)
 - **Extended:** 2026-08-24 — `theme`, `preset`, `mode` (ADR-0041)
+- **Extended:** 2026-08-25 — `interface` and `font`; `zoom` left with one
+  meaning (ADR-0043)
 - **Applies to:** the product as a whole
 - **Related:** ADR-0003, ADR-0006, ADR-0007, ADR-0011, ADR-0014, ADR-0020,
   ADR-0026, ADR-0031, ADR-0032, ADR-0034, ADR-0036, ADR-0037, ADR-0038,
-  ADR-0040, ADR-0041
+  ADR-0040, ADR-0041, ADR-0043
 
 ## Context
 
@@ -180,6 +182,8 @@ in one place, meaning the obvious thing, needs no entry.
 | theme | A CSS file redeclaring tokens under `:root`, applied whole. Exactly one is applied (ADR-0041) |
 | preset | A theme shipped inside the application, named `preset:`. A theme in the person's own folder is named `mine:` (ADR-0041) |
 | mode | Which half of a token's pair is taken: `system`, `light`, `dark`. A theme pinning `color-scheme` leaves it nothing to choose (ADR-0041) |
+| interface | How large the interface is drawn — chrome, controls, spacing, panels, and the type in them. A multiplier, 1 being as designed (ADR-0043) |
+| font | How large the text a person reads is set — a note, a book, an answer, the editor. A multiplier, 1 being as designed (ADR-0043) |
 
 ### Words that were spent twice, and how they are settled
 
@@ -378,6 +382,11 @@ So a rename is always a move and is an edit as well whenever it writes the note.
 It reports the kind `move`: one call is drawn under one kind, and the file is the
 half every rename has. Where a sentence written before this says a move renames a
 file, it means the filesystem call, and that reading stays inside the call.
+
+**`zoom`.** How large a page of a document is drawn (ADR-0037). The window's own
+zoom goes (ADR-0043), and the word is left with that one meaning: how large the
+interface is drawn is `interface`, and how large the text a person reads is set
+is `font`.
 
 **`note`, twice.** A note is a file. A link's `note` is why it exists. This one
 is kept: the key was chosen for the file format, where it is read by people and

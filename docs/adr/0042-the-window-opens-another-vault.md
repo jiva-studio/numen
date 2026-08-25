@@ -1,4 +1,4 @@
-# ADR-0041: The window opens another vault
+# ADR-0042: The window opens another vault
 
 - **Status:** Accepted
 - **Date:** 2026-08-24
