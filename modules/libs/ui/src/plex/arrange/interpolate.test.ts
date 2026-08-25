@@ -173,21 +173,21 @@ describe('the edges follow the boxes', () => {
 })
 
 /**
- * A title set along its line and one lying flat at the midpoint are two
- * different drawings, and a heading read off the frame in flight changes
- * several times over one movement.
+ * A title belongs to a line that has settled. The words it was cut to and the
+ * way round they are read come from the arrangements being moved between, and
+ * a curve in flight decides neither.
  */
-describe('the heading a title is set at while the picture moves', () => {
+describe('the title a line carries while the picture moves', () => {
   const named = (edge: { from: string; to: string }) => `${edge.from}->${edge.to}`
 
-  it('holds the heading of the arrangement it is moving to', () => {
+  it('holds the way round the words are read', () => {
     const settled = new Map(to.edges.map((edge) => [named(edge), edge.heading]))
 
-    // A child promoted to the focus swings its edge through the steep
-    // boundary, and halfway along the curve reads as running across the page.
+    // A child promoted to the focus swings its edge across the page, and
+    // halfway over it runs the other way round from the way it ends.
     const swung = interpolatePlex(from, to, 0.5).edges.find((e) => e.to === 'a')!
-    expect(swung.heading).toBe('none')
-    expect(headingOf(swung)).toBe('left')
+    expect(swung.heading).toBe('along')
+    expect(headingOf(swung)).toBe('against')
 
     for (let t = 0.05; t < 1; t += 0.05) {
       for (const edge of interpolatePlex(from, to, t).edges) {
@@ -198,17 +198,46 @@ describe('the heading a title is set at while the picture moves', () => {
     }
   })
 
-  it('holds the heading of the arrangement it is leaving for a line only there', () => {
+  it('holds the words a settled line was cut to', () => {
+    // Wide letters and a long label, so the cut is well short of the whole.
+    const wide = (label: string) => 30 * [...label].length
+    const saying = (neighbourhood: PlexNeighbourhood) =>
+      arrangePlex(
+        {
+          ...neighbourhood,
+          edges: neighbourhood.edges.map((edge) => ({
+            ...edge,
+            label: 'the scene in the assembly',
+          })),
+        },
+        { measureLabel: wide },
+      )
+
+    const start = saying(before)
+    const end = saying(after)
+    const cut = end.edges.find((e) => e.to === 'a')!.words!
+    expect(cut.endsWith('…')).toBe(true)
+
+    for (let t = 0.05; t < 1; t += 0.05) {
+      const edge = interpolatePlex(start, end, t).edges.find((e) => e.to === 'a')!
+      expect(edge.words, `at ${t.toFixed(2)}`).toBe(cut)
+    }
+  })
+
+  it('holds the title of the arrangement it is leaving for a line only there', () => {
     const marked: PlexFrame = {
       ...from,
       edges: from.edges.map((edge) =>
-        edge.to === 'b' ? { ...edge, heading: 'left' as const } : edge,
+        edge.to === 'b'
+          ? { ...edge, heading: 'against' as const, words: 'went that way…' }
+          : edge,
       ),
     }
     const going = interpolatePlex(marked, to, 0.5).edges.find((e) => e.to === 'b')!
 
-    expect(going.heading).toBe('left')
-    expect(headingOf(going)).toBe('right')
+    expect(going.heading).toBe('against')
+    expect(going.words).toBe('went that way…')
+    expect(headingOf(going)).toBe('along')
   })
 })
 

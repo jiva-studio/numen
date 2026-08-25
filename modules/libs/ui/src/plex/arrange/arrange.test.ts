@@ -239,8 +239,8 @@ describe('a label is as long as its words', () => {
     edges: [{ from: 'aside', to: 'focus', label: 'the scene in the assembly' }],
   }
 
-  const headingOf = (measureLabel?: (label: string) => number) =>
-    arrangePlex(labelled, { measureLabel }).edges[0]!.heading
+  const wordsOf = (measureLabel?: (label: string) => number) =>
+    arrangePlex(labelled, { measureLabel }).edges[0]!.words
 
   it('asks the measurer for the words a line carries', () => {
     const asked: string[] = []
@@ -253,13 +253,16 @@ describe('a label is as long as its words', () => {
     expect(asked).toStrictEqual(['the scene in the assembly'])
   })
 
-  it('takes words too long for their line off it', () => {
-    expect(headingOf(() => 4000)).toBe('none')
-    expect(headingOf(() => 1)).not.toBe('none')
+  it('cuts words too long for their line', () => {
+    expect(wordsOf(() => 4000)).toBe('…')
   })
 
-  it('sets a title along its line where nothing measured it', () => {
-    expect(headingOf()).not.toBe('none')
+  it('leaves words that fit as they were written', () => {
+    expect(wordsOf(() => 1)).toBe('the scene in the assembly')
+  })
+
+  it('draws the whole label where nothing measured it', () => {
+    expect(wordsOf()).toBe('the scene in the assembly')
   })
 })
 

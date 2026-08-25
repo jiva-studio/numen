@@ -11,7 +11,6 @@ import PlexNodeView from './PlexNodeView.vue'
 import {
   edgeKey,
   handleIn,
-  midpointOf,
   seatWord,
   type NodeStanding,
   type PlacedEdge,
@@ -93,7 +92,7 @@ const path = (edge: PlacedEdge) =>
 
 /** The same curve, running the way its words are read. */
 const readingLine = (edge: PlacedEdge) =>
-  edge.heading === 'left'
+  edge.heading === 'against'
     ? `M ${edge.toPoint.x} ${edge.toPoint.y}` +
       ` C ${edge.control2.x} ${edge.control2.y}` +
       ` ${edge.control1.x} ${edge.control1.y}` +
@@ -105,9 +104,8 @@ const uid = useId()
 
 /**
  * Every edge with what the drawing asks of it: the two keys it is remembered
- * by, the curve, and the line its title is set along. A title follows the curve
- * where it holds one direction across the page, and sits flat at the midpoint
- * where it does not.
+ * by, the curve, and the line its title is set along. A title is always set
+ * along the line it belongs to, in the words the arrangement cut for it.
  */
 const lines = computed(() =>
   props.frame.edges.map((edge, at) => ({
@@ -117,7 +115,7 @@ const lines = computed(() =>
     /** What the hand is on: two lines between one pair are one line to point at. */
     pair: edgeKey(edge),
     d: path(edge),
-    titlePath: edge.label && edge.heading !== 'none' ? `${uid}-title-${at}` : null,
+    titlePath: edge.words ? `${uid}-title-${at}` : null,
     titleLine: readingLine(edge),
   })),
 )
@@ -235,9 +233,10 @@ const ghost = computed<PlacedNode | null>(() => {
 
     <g v-if="showEdgeLabels" aria-hidden="true">
       <template v-for="line in resting" :key="`title:${line.key}`">
-        <template v-for="layer in TITLE_LAYERS" :key="layer">
+        <template v-if="line.titlePath">
           <text
-            v-if="line.titlePath"
+            v-for="layer in TITLE_LAYERS"
+            :key="layer"
             class="plex__edge-label"
             :class="`plex__edge-label--${layer}`"
             :opacity="line.edge.opacity"
@@ -246,17 +245,7 @@ const ghost = computed<PlacedNode | null>(() => {
           ><textPath
             :href="`#${line.titlePath}`"
             startOffset="50%"
-          >{{ line.edge.label }}</textPath></text>
-          <text
-            v-else-if="line.edge.label"
-            class="plex__edge-label"
-            :class="`plex__edge-label--${layer}`"
-            :x="midpointOf(line.edge).x"
-            :y="midpointOf(line.edge).y"
-            :opacity="line.edge.opacity"
-            text-anchor="middle"
-            dominant-baseline="middle"
-          >{{ line.edge.label }}</text>
+          >{{ line.edge.words }}</textPath></text>
         </template>
       </template>
     </g>
@@ -280,30 +269,19 @@ const ghost = computed<PlacedNode | null>(() => {
     <g v-if="lifted.length" class="plex__lift" aria-hidden="true">
       <template v-for="line in lifted" :key="line.key">
         <path class="plex__edge" :d="line.d" :opacity="line.edge.opacity" />
-        <template v-if="showEdgeLabels && line.edge.label">
-          <template v-for="layer in TITLE_LAYERS" :key="layer">
-            <text
-              v-if="line.titlePath"
-              class="plex__edge-label"
-              :class="`plex__edge-label--${layer}`"
-              :opacity="line.edge.opacity"
-              text-anchor="middle"
-              dominant-baseline="middle"
-            ><textPath
-              :href="`#${line.titlePath}`"
-              startOffset="50%"
-            >{{ line.edge.label }}</textPath></text>
-            <text
-              v-else
-              class="plex__edge-label"
-              :class="`plex__edge-label--${layer}`"
-              :x="midpointOf(line.edge).x"
-              :y="midpointOf(line.edge).y"
-              :opacity="line.edge.opacity"
-              text-anchor="middle"
-              dominant-baseline="middle"
-            >{{ line.edge.label }}</text>
-          </template>
+        <template v-if="showEdgeLabels && line.titlePath">
+          <text
+            v-for="layer in TITLE_LAYERS"
+            :key="layer"
+            class="plex__edge-label"
+            :class="`plex__edge-label--${layer}`"
+            :opacity="line.edge.opacity"
+            text-anchor="middle"
+            dominant-baseline="middle"
+          ><textPath
+            :href="`#${line.titlePath}`"
+            startOffset="50%"
+          >{{ line.edge.words }}</textPath></text>
         </template>
       </template>
     </g>

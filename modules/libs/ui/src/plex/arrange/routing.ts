@@ -1,5 +1,6 @@
 import {
   headingOf,
+  lengthOf,
   type EdgeCurve,
   type PlacedEdge,
   type PlacedNode,
@@ -16,8 +17,7 @@ export interface Routing extends RoutingOptions {
   readonly axisOf: (node: { seat: PlexSeat }) => Axis
   /**
    * How wide a title is set. Text is measured where the plex is drawn; here it
-   * arrives as a number, and without a measurer a title is judged by direction
-   * and turn alone.
+   * arrives as a number, and without a measurer the whole label is drawn.
    */
   readonly labelWidth?: ((label: string) => number) | undefined
 }
@@ -41,6 +41,35 @@ export function routingFor(
           ? 'vertical'
           : 'horizontal',
   }
+}
+
+/** The one character a cut title ends in. */
+const ELLIPSIS = '…'
+
+/**
+ * The words a curve has room for: the longest start of the label that fits it,
+ * the ellipsis included. The prefix is found by halving, and a curve with room
+ * for nothing carries the ellipsis alone.
+ */
+function cutToFit(
+  label: string,
+  room: number,
+  width: (label: string) => number,
+): string {
+  if (width(label) <= room) return label
+
+  const letters = [...label]
+  const ended = (count: number) =>
+    `${letters.slice(0, count).join('').trimEnd()}${ELLIPSIS}`
+
+  let fits = 0
+  let over = letters.length
+  while (fits + 1 < over) {
+    const middle = Math.floor((fits + over) / 2)
+    if (width(ended(middle)) <= room) fits = middle
+    else over = middle
+  }
+  return ended(fits)
 }
 
 /** A fixed point on a border, so a row of edges reads as a fan. */
@@ -122,9 +151,12 @@ export function routeEdge(
         toPoint: firstGate,
       }
 
-  const words = edge.label === undefined ? undefined : routing.labelWidth?.(edge.label)
+  const words =
+    edge.label !== undefined && routing.labelWidth
+      ? cutToFit(edge.label, lengthOf(curve), routing.labelWidth)
+      : edge.label
 
-  return { ...edge, ...curve, opacity, heading: headingOf(curve, words) }
+  return { ...edge, ...curve, opacity, heading: headingOf(curve), words }
 }
 
 export function routeEdges(

@@ -534,9 +534,9 @@ export const Overcrowded: Story = {
 }
 
 /**
- * One title for each way a line can carry one: along a curve that runs across
- * the page, flat on a curve that loops out of its column, and flat again where
- * the words are longer than the curve they would be set on.
+ * Titles on every shape of line a plex draws: across the page, down it, and
+ * round out of a column. One of them is far longer than the curve it is set
+ * on, and is cut to it.
  */
 const titledLines: PlexNeighbourhood = {
   nodes: [
@@ -557,11 +557,12 @@ const titledLines: PlexNeighbourhood = {
 }
 
 /**
- * What a line does with the title it carries.
+ * What a line does with the title it carries: it is set along it, and cut to
+ * it where the words are longer.
  *
  * Only a browser can answer any of it: how wide the words are in the type they
- * are set in, how long the curve is that they would be set on, and whether the
- * two layers a title is painted in land on one another.
+ * are set in, how long the curve is that they are set on, and whether the two
+ * layers a title is painted in land on one another.
  *
  * The picture arrives at once, since a title is a property of a line that has
  * come to rest, and a line on its way somewhere cannot be pointed at.
@@ -575,19 +576,12 @@ export const TitledLines: Story = {
         (text) => text.textContent === words,
       )
 
-    /** The line a flat title is drawn at the middle of. */
-    const lineUnder = (text: SVGTextElement) => {
-      const at = { x: Number(text.getAttribute('x')), y: Number(text.getAttribute('y')) }
-      const away = (line: SVGPathElement) => {
-        const middle = line.getPointAtLength(line.getTotalLength() / 2)
-        return Math.hypot(middle.x - at.x, middle.y - at.y)
-      }
-      const lines = [
-        ...canvasElement.querySelectorAll<SVGPathElement>('path.plex__edge'),
-      ]
-      return lines.reduce((nearest, line) =>
-        away(line) < away(nearest) ? line : nearest,
-      )
+    /** The line a title is set along, by the path it names. */
+    const lineOf = (text: SVGTextElement) => {
+      const href = text.querySelector('textPath')!.getAttribute('href')!
+      return canvasElement.querySelector<SVGPathElement>(
+        `defs path[id="${href.slice(1)}"]`,
+      )!
     }
 
     // The window is measured after the first drawing, so the plex settles on
@@ -596,8 +590,28 @@ export const TitledLines: Story = {
       await expect(title('contains')).toHaveLength(2)
     })
 
-    // A title on a line that runs across the page is set along it, in two
-    // layers that land on one another.
+    // Every title is set along the line it belongs to, and none of them is
+    // drawn wider than the curve it is set on.
+    const titles = [
+      ...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label'),
+    ]
+    await expect(titles.length).toBeGreaterThan(0)
+    for (const text of titles) {
+      await expect(text.querySelector('textPath')).not.toBeNull()
+      await expect(text.getComputedTextLength()).toBeLessThanOrEqual(
+        lineOf(text).getTotalLength(),
+      )
+    }
+
+    // Words longer than their curve are cut to it and end in an ellipsis.
+    await expect(title('the scene in the assembly')).toHaveLength(0)
+    const cut = titles.filter((text) => text.textContent!.endsWith('…'))
+    await expect(cut).toHaveLength(2)
+    await expect(
+      'the scene in the assembly'.startsWith(cut[0]!.textContent!.slice(0, -1)),
+    ).toBe(true)
+
+    // A title is painted in two layers that land on one another.
     const [halo, letters] = title('contains')
     await expect(halo!.querySelector('textPath')).not.toBeNull()
     await expect(getComputedStyle(halo!).fill).toBe('none')
@@ -630,20 +644,12 @@ export const TitledLines: Story = {
     )
     await userEvent.unhover(band!)
 
-    // Words longer than the curve they would be set on lie flat, where every
-    // one of them is drawn.
-    const long = title('the scene in the assembly')[0]!
-    await expect(long.querySelector('textPath')).toBeNull()
-    await expect(long.getComputedTextLength()).toBeGreaterThan(
-      lineUnder(long).getTotalLength(),
-    )
-
-    // A jump that leaves its column and comes round holds no one direction,
-    // and lies flat although its words would fit.
+    // A jump that leaves its column and comes round is set along its line like
+    // any other, and its words are short enough to stay whole.
     const loop = title('see also')[0]!
-    await expect(loop.querySelector('textPath')).toBeNull()
+    await expect(loop.querySelector('textPath')).not.toBeNull()
     await expect(loop.getComputedTextLength()).toBeLessThan(
-      lineUnder(loop).getTotalLength(),
+      lineOf(loop).getTotalLength(),
     )
   },
 }

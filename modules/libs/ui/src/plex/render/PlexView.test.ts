@@ -187,8 +187,8 @@ describe('what the drawing does with an opacity', () => {
  */
 describe('the line under the hand', () => {
   const titledFrame = arrangePlex(titled)
-  const down = titledFrame.edges.findIndex((edge) => edge.heading === 'none')
-  const across = titledFrame.edges.findIndex((edge) => edge.heading === 'left')
+  const down = titledFrame.edges.findIndex((edge) => edge.to === 'below')
+  const across = titledFrame.edges.findIndex((edge) => edge.to === 'aside')
 
   const mountTitled = () =>
     mount(PlexView, {
@@ -298,36 +298,38 @@ describe('the line under the hand', () => {
     }
   })
 
-  it('paints a flat lifted title in the same two layers', async () => {
+  it('sets every title along the line it belongs to', () => {
     const view = mountTitled()
-    await reach(view, down).trigger('pointerenter')
-    const titles = view.get('.plex__lift').findAll('.plex__edge-label')
 
-    expect(titles).toHaveLength(2)
-    expect(titles[0]!.classes()).toContain('plex__edge-label--halo')
-    expect(titles[1]!.classes()).toContain('plex__edge-label--letters')
-    expect(titles[0]!.attributes('x')).toBe(titles[1]!.attributes('x'))
-    expect(titles[0]!.find('textPath').exists()).toBe(false)
+    // One line down the page and one across it, and both carry their words.
+    for (const at of [down, across]) {
+      expect(title(view, at)[0]!.find('textPath').exists()).toBe(true)
+      expect(title(view, at)[0]!.attributes('x')).toBeUndefined()
+    }
   })
 
-  it('sets a title along its line where the line runs across the page', () => {
-    const view = mountTitled()
+  it('draws the words the arrangement cut, and not the label as written', () => {
+    const cut = arrangePlex(titled, { measureLabel: (label) => 30 * label.length })
+    const view = mount(PlexView, {
+      props: { frame: cut, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
+    })
+    const edge = cut.edges[across]!
 
-    expect(title(view, across)[0]!.find('textPath').exists()).toBe(true)
-    // A line holding no one direction takes flat words at the midpoint.
-    expect(title(view, down)[0]!.find('textPath').exists()).toBe(false)
-    expect(title(view, down)[0]!.attributes('x')).toBeDefined()
+    expect(edge.label).toBe('the scene in the assembly')
+    expect(edge.words!.endsWith('…')).toBe(true)
+    expect(title(view, across)[0]!.text()).toBe(edge.words)
   })
 
   it('sets a title on a line running the way the words are read', () => {
     const view = mountTitled()
     const edge = titledFrame.edges[across]!
-    expect(edge.heading).toBe('left')
+    expect(edge.heading).toBe('against')
 
-    const href = view.get('textPath').attributes('href')!
-    const along = view.get(`defs path[id="${href.slice(1)}"]`)
-    const numbers = along.attributes('d')!.match(/-?\d+(?:\.\d+)?/g)!.map(Number)
+    const href = title(view, across)[0]!.get('textPath').attributes('href')!
+    const line = view.get(`defs path[id="${href.slice(1)}"]`)
+    const numbers = line.attributes('d')!.match(/-?\d+(?:\.\d+)?/g)!.map(Number)
 
+    // Taken the other way round, so the words are not upside down.
     expect(numbers[0]).toBe(edge.toPoint.x)
     expect(numbers.at(-2)).toBe(edge.fromPoint.x)
   })
