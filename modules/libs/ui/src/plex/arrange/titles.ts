@@ -1,8 +1,12 @@
 /**
- * Where along its line each title sits.
+ * Where along its line each title sits, and how much of it stands there.
  *
- * A title stays on its own line: at the middle of it while the middle is free,
- * and slid along the same curve to the nearest free place while it is not.
+ * A title stays on its own line, clear of every box and of every other title:
+ * at the middle of the line while the middle is clear, and slid along the same
+ * curve to the nearest clear place while it is not. Where the whole of the
+ * words stand nowhere they are cut to the longest clear stretch, and a stretch
+ * holding less than half of them carries no title at all.
+ *
  * Pure, and worked out in the plex's own coordinates — two titles far apart
  * along their curves can still be one on top of the other in the picture.
  */
@@ -14,7 +18,7 @@ import {
   type PlacedNode,
   type Point,
 } from '../model'
-import { MIDDLE, type Routing } from './routing'
+import { cutToFit, MIDDLE, type Routing } from './routing'
 
 /** An upright box in the plex's own coordinates. */
 interface Box {
@@ -24,10 +28,28 @@ interface Box {
   readonly maxY: number
 }
 
-/** How far one try along a line stands from the last, in plex units. */
+/** A run of one line, as fractions of its length. */
+interface Stretch {
+  readonly from: number
+  readonly to: number
+}
+
+/** What a line offers the title it carries. */
+interface Room {
+  readonly arc: number
+  readonly extent: number
+}
+
+/** How long a piece of line is looked at on its own, in plex units. */
 const STEP = 3
 
-/** How many points along a title's run the box around it is drawn from. */
+/** The least of a title worth setting on a line, as a part of the whole. */
+const LEAST = 0.5
+
+/** How much of a line's depth a title keeps clear of whatever it stands near. */
+const APART = 0.25
+
+/** How many points along a run the box around it is drawn from. */
 const RUN_SAMPLES = 8
 
 const meets = (one: Box, other: Box): boolean =>
@@ -36,17 +58,22 @@ const meets = (one: Box, other: Box): boolean =>
   one.minY < other.maxY &&
   other.minY < one.maxY
 
-const boxOf = (node: PlacedNode): Box => ({
-  minX: node.x - node.width / 2,
-  minY: node.y - node.height / 2,
-  maxX: node.x + node.width / 2,
-  maxY: node.y + node.height / 2,
+const boxOf = (node: PlacedNode, apart: number): Box => ({
+  minX: node.x - node.width / 2 - apart,
+  minY: node.y - node.height / 2 - apart,
+  maxX: node.x + node.width / 2 + apart,
+  maxY: node.y + node.height / 2 + apart,
 })
 
+const spanOf = (stretch: Stretch): number => stretch.to - stretch.from
+
 /**
- * Give every title a place on its line, in the order the edges arrive. Each
- * one is kept clear of the boxes and of every title already settled, so a fan
- * of lines out of one node reads as a list.
+ * Give every title a place on its line. Each one is kept clear of the boxes
+ * and of every title already settled, so a fan of lines out of one node reads
+ * as a list.
+ *
+ * The tightest line goes first: a line barely longer than its words has one
+ * place to put them, and a roomy one takes what is left.
  *
  * Where nothing measured the words there is no extent to keep clear of, and
  * every title stays where it was put.
@@ -59,50 +86,177 @@ export function settleTitles(
   const width = routing.labelWidth
   if (!width) return [...edges]
 
-  const boxes = nodes.map(boxOf)
+  const apart = APART * routing.labelDepth
+  const boxes = nodes.map((node) => boxOf(node, apart))
   const titles: Box[] = []
+  const settled = [...edges]
 
-  return edges.map((edge) => {
-    if (!edge.words) return edge
+  for (const { edge, at, room } of tightestFirst(edges, width)) {
+    const boxAt = runBoxes(edge, routing.labelDepth + 2 * apart)
+    const ends = (edge.arrow ? routing.arrowRoom : 0) / room.arc
+    const clear = clearStretches(boxAt, [...boxes, ...titles], ends, STEP / room.arc)
 
-    const arc = lengthOf(edge)
-    const extent = width(edge.words)
-    if (arc <= 0 || extent <= 0) return edge
+    const found = settle(clear, edge.words!, room, width)
+    if (!found) {
+      settled[at] = { ...edge, words: undefined, wordsAt: MIDDLE }
+      continue
+    }
 
-    const boxAt = titleBoxes(edge, arc, extent, routing.labelDepth)
-    const ends = (extent / 2 + (edge.arrow ? routing.arrowRoom : 0)) / arc
-    const at = freePlace(boxAt, boxes, titles, ends, STEP / arc)
-
-    // A title with nowhere clear still stands somewhere, and the next one along
-    // keeps off it.
-    titles.push(boxAt(at))
+    const half = found.extent / 2 / room.arc
+    titles.push(...ribbonOf(boxAt, found.at - half, found.at + half, STEP / room.arc))
 
     // The reading direction is the tangent where the words end up, and the
     // words of a curve taken the other way round are read from its far end.
-    const heading = headingOf(edge, at)
-    return { ...edge, heading, wordsAt: heading === 'against' ? 1 - at : at }
-  })
+    const heading = headingOf(edge, found.at)
+    settled[at] = {
+      ...edge,
+      words: found.words,
+      heading,
+      wordsAt: heading === 'against' ? 1 - found.at : found.at,
+    }
+  }
+
+  return settled
 }
 
 /**
- * The box a title fills where it is set at a fraction of the curve. The words
- * follow the line, so the run is sampled along it and each sample carries the
- * depth of a line of type across the line, which is where the letters stand.
+ * The edges carrying measurable words, the least room first, each with the
+ * place it holds in the picture. A line as long as its words comes before one
+ * with room to spare, and edges alike in that keep the order they arrived in.
  */
-function titleBoxes(
-  edge: PlacedEdge,
-  arc: number,
-  extent: number,
-  depth: number,
-): (at: number) => Box {
+function tightestFirst(
+  edges: readonly PlacedEdge[],
+  width: (label: string) => number,
+): { edge: PlacedEdge; at: number; room: Room }[] {
+  const measured: { edge: PlacedEdge; at: number; room: Room }[] = []
+
+  for (const [at, edge] of edges.entries()) {
+    if (!edge.words) continue
+    const arc = lengthOf(edge)
+    const extent = width(edge.words)
+    if (arc <= 0 || extent <= 0) continue
+    measured.push({ edge, at, room: { arc, extent } })
+  }
+
+  return measured.sort(
+    (one, other) =>
+      one.room.arc - one.room.extent - (other.room.arc - other.room.extent) ||
+      one.at - other.at,
+  )
+}
+
+/**
+ * The words that stand on a line and where: the whole of them at the clear
+ * place nearest the middle, else as many as the longest clear stretch holds,
+ * set in the middle of that stretch. Nothing where that stretch holds less
+ * than `LEAST` of them.
+ */
+function settle(
+  clear: readonly Stretch[],
+  words: string,
+  room: Room,
+  width: (label: string) => number,
+): { words: string; at: number; extent: number } | null {
+  const whole = nearestPlace(clear, room.extent / 2 / room.arc)
+  if (whole !== null) return { words, at: whole, extent: room.extent }
+
+  const longest = clear.reduce<Stretch | null>(
+    (widest, stretch) => (!widest || spanOf(stretch) > spanOf(widest) ? stretch : widest),
+    null,
+  )
+  if (!longest) return null
+
+  const held = spanOf(longest) * room.arc
+  if (held < LEAST * room.extent) return null
+
+  const cut = cutToFit(words, held, width)
+  return { words: cut, at: (longest.from + longest.to) / 2, extent: width(cut) }
+}
+
+/**
+ * The room a title takes up, step by step along the run it is set on.
+ *
+ * A title set across the picture is a ribbon and not a rectangle: the box
+ * around the whole of a diagonal run stands over most of a quarter of the
+ * picture, and a line crossing anywhere near it would find nowhere to be.
+ */
+function ribbonOf(
+  boxAt: (from: number, to: number) => Box,
+  from: number,
+  to: number,
+  step: number,
+): Box[] {
+  const boxes: Box[] = []
+  for (let at = from; at < to; at += step) {
+    boxes.push(boxAt(at, Math.min(at + step, to)))
+  }
+  return boxes
+}
+
+/**
+ * The runs of a line with nothing in the way, `ends` of it kept clear at
+ * either end for whatever is drawn there. Every step of the line is looked at
+ * on its own, so a line crossing a box comes back as the stretches to either
+ * side of it.
+ */
+function clearStretches(
+  boxAt: (from: number, to: number) => Box,
+  standing: readonly Box[],
+  ends: number,
+  step: number,
+): Stretch[] {
+  const last = 1 - ends
+  if (ends >= last || step <= 0) return []
+
+  const stretches: Stretch[] = []
+  let open: number | null = null
+
+  for (let at = ends; at < last; at += step) {
+    const box = boxAt(at, Math.min(at + step, last))
+    if (standing.some((other) => meets(other, box))) {
+      if (open !== null) stretches.push({ from: open, to: at })
+      open = null
+    } else if (open === null) {
+      open = at
+    }
+  }
+  if (open !== null) stretches.push({ from: open, to: last })
+
+  return stretches
+}
+
+/**
+ * Where a title of this half-length stands: the place nearest the middle of
+ * the line that leaves the whole of the words inside one clear stretch.
+ * Nothing where no stretch is long enough to hold them.
+ */
+function nearestPlace(clear: readonly Stretch[], half: number): number | null {
+  let nearest: number | null = null
+
+  for (const stretch of clear) {
+    if (spanOf(stretch) < 2 * half) continue
+    const at = Math.min(Math.max(MIDDLE, stretch.from + half), stretch.to - half)
+    if (nearest === null || Math.abs(at - MIDDLE) < Math.abs(nearest - MIDDLE)) {
+      nearest = at
+    }
+  }
+
+  return nearest
+}
+
+/**
+ * The box a run of the line fills. The words follow the line, so the run is
+ * sampled along it and each sample carries the depth of a line of type across
+ * the line, which is where the letters stand.
+ */
+function runBoxes(edge: PlacedEdge, depth: number): (from: number, to: number) => Box {
   const along = rulerOf(edge)
-  const half = extent / 2 / arc
   const deep = depth / 2
 
-  return (at) => {
+  return (from, to) => {
     const run: Point[] = []
     for (let sample = 0; sample <= RUN_SAMPLES; sample += 1) {
-      run.push(along(at - half + (2 * half * sample) / RUN_SAMPLES))
+      run.push(along(from + ((to - from) * sample) / RUN_SAMPLES))
     }
 
     let minX = Infinity
@@ -125,39 +279,4 @@ function titleBoxes(
 
     return { minX, minY, maxX, maxY }
   }
-}
-
-/**
- * The fraction of the curve a title is set at: the middle, else the nearest
- * place to it on either side, stepping outwards for as long as the whole of
- * the words still stands on the line.
- *
- * A line offering nowhere clear of everything gives up the boxes before it
- * gives up its neighbours, since two titles set one over the other can be read
- * as neither. A line offering nowhere at all keeps its title at the middle.
- */
-function freePlace(
-  boxAt: (at: number) => Box,
-  boxes: readonly Box[],
-  titles: readonly Box[],
-  ends: number,
-  step: number,
-): number {
-  if (ends > MIDDLE || step <= 0) return MIDDLE
-
-  const tries: number[] = []
-  for (let away = 0; away <= MIDDLE - ends; away += step) {
-    if (away === 0) tries.push(MIDDLE)
-    else tries.push(MIDDLE + away, MIDDLE - away)
-  }
-
-  // The box a try stands in is drawn once and held against everything.
-  const clearOf = (standing: readonly Box[]) => (at: number) => {
-    const box = boxAt(at)
-    return !standing.some((other) => meets(other, box))
-  }
-
-  return (
-    tries.find(clearOf([...boxes, ...titles])) ?? tries.find(clearOf(titles)) ?? MIDDLE
-  )
 }

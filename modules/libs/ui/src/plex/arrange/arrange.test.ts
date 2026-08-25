@@ -259,7 +259,11 @@ describe('a label is as long as its words', () => {
   })
 
   it('cuts words too long for their line', () => {
-    expect(wordsOf(() => 4000)).toBe('…')
+    expect(wordsOf((label) => 6 * [...label].length)).toBe('the scen…')
+  })
+
+  it('writes no words at all where the line holds none of them', () => {
+    expect(wordsOf(() => 4000)).toBeUndefined()
   })
 
   it('leaves words that fit as they were written', () => {

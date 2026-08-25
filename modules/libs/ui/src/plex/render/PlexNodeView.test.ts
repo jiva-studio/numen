@@ -5,10 +5,12 @@
  * jsdom has no `:focus-visible`, so here the keyboard is never visibly on a
  * node and the handle it offers the keyboard is left to `Plex.stories.ts`.
  */
-import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { mount, type VueWrapper } from '@vue/test-utils'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import PlexNodeView from './PlexNodeView.vue'
-import type { PlacedNode, PlexSeat } from '../model'
+import { OPENING, type Widened } from '../dwell'
+import { stubEnvironment } from '../fixtures/clock'
+import type { NodeStanding, PlacedNode, PlexSeat } from '../model'
 
 const nodeAt = (over: Partial<PlacedNode> = {}): PlacedNode => ({
   id: 'one',
@@ -299,5 +301,162 @@ describe('what a node is drawn as', () => {
 
   it('has a name for a screen reader even with no title at all', () => {
     expect(mountNode({ title: '' }).attributes('aria-label')).toBe('Untitled, child')
+  })
+})
+
+describe('a box with more of its title to show', () => {
+  const WIDE = { width: 400, offset: 0 }
+  const WAIT = 500
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  const mountWide = (
+    wide: Widened | null = WIDE,
+    over: Partial<PlacedNode> = {},
+    standing: NodeStanding = 'open',
+  ) => {
+    vi.useFakeTimers()
+    const world = stubEnvironment()
+    const node = mount(PlexNodeView, {
+      props: { node: nodeAt(over), wide, dwell: WAIT, standing, environment: world.environment },
+    })
+    return { node, world }
+  }
+
+  /** How wide the box is drawn, and where its leading edge stands. */
+  const boxOf = (node: VueWrapper) => {
+    const rect = node.get('rect')
+    return {
+      width: Number(rect.attributes('width')),
+      x: Number(rect.attributes('x')),
+    }
+  }
+
+  /** The hand arrives, stays, and the opening is drawn to its end. */
+  const rest = async (mounted: ReturnType<typeof mountWide>) => {
+    await mounted.node.trigger('pointerenter')
+    await vi.advanceTimersByTimeAsync(WAIT)
+    mounted.world.run()
+    await mounted.node.vm.$nextTick()
+    return mounted.node
+  }
+
+  it('is drawn as it was placed until the hand has been on it a while', async () => {
+    const mounted = mountWide()
+    await mounted.node.trigger('pointerenter')
+    await vi.advanceTimersByTimeAsync(WAIT - 1)
+    expect(boxOf(mounted.node)).toStrictEqual({ width: 144, x: -72 })
+  })
+
+  it('opens across several frames rather than in one', async () => {
+    const mounted = mountWide()
+    await mounted.node.trigger('pointerenter')
+    await vi.advanceTimersByTimeAsync(WAIT)
+
+    mounted.world.tick(0)
+    mounted.world.tick(OPENING / 2)
+    await mounted.node.vm.$nextTick()
+    const halfway = boxOf(mounted.node).width
+    expect(halfway).toBeGreaterThan(144)
+    expect(halfway).toBeLessThan(400)
+  })
+
+  it('widens where it stands once the hand has rested there', async () => {
+    const node = await rest(mountWide())
+    expect(boxOf(node)).toStrictEqual({ width: 400, x: -200 })
+  })
+
+  it('carries its title and its handle out to the widened edge', async () => {
+    const node = await rest(mountWide())
+    const title = node.get('foreignObject')
+    expect(Number(title.attributes('width'))).toBe(400)
+    expect(Number(title.attributes('x'))).toBe(-200)
+    expect(node.get('.plex__handle-at').attributes('transform')).toBe('translate(200 0)')
+  })
+
+  it('is drawn where the widening was told to put it', async () => {
+    const node = await rest(mountWide({ width: 400, offset: -60 }))
+    expect(boxOf(node)).toStrictEqual({ width: 400, x: -260 })
+    expect(node.get('.plex__handle-at').attributes('transform')).toBe('translate(140 0)')
+  })
+
+  it('says so as it begins to open, since only the whole picture can lift it', async () => {
+    const mounted = mountWide()
+    await mounted.node.trigger('pointerenter')
+    await vi.advanceTimersByTimeAsync(WAIT)
+
+    mounted.world.tick(0)
+    mounted.world.tick(OPENING / 2)
+    await mounted.node.vm.$nextTick()
+    expect(mounted.node.emitted('rest')).toStrictEqual([[true]])
+  })
+
+  it('is put back once the hand has left it', async () => {
+    const mounted = mountWide()
+    await rest(mounted)
+
+    await mounted.node.trigger('pointerleave')
+    mounted.world.run(1000)
+    await mounted.node.vm.$nextTick()
+
+    expect(boxOf(mounted.node)).toStrictEqual({ width: 144, x: -72 })
+    expect(mounted.node.emitted('rest')).toStrictEqual([[true], [false]])
+  })
+
+  it('begins the wait again where the picture moved it under the hand', async () => {
+    const mounted = mountWide()
+    await mounted.node.trigger('pointerenter')
+    await vi.advanceTimersByTimeAsync(WAIT - 1)
+
+    await mounted.node.setProps({ node: nodeAt({ x: 40 }) })
+    await vi.advanceTimersByTimeAsync(WAIT - 1)
+    expect(boxOf(mounted.node)).toStrictEqual({ width: 144, x: -72 })
+
+    await vi.advanceTimersByTimeAsync(1)
+    mounted.world.run()
+    await mounted.node.vm.$nextTick()
+    expect(boxOf(mounted.node)).toStrictEqual({ width: 400, x: -200 })
+  })
+})
+
+describe('a box with nothing more to show', () => {
+  const WAIT = 500
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  const rest = async (props: Record<string, unknown>) => {
+    vi.useFakeTimers()
+    const world = stubEnvironment()
+    const node = mount(PlexNodeView, {
+      props: { node: nodeAt(), dwell: WAIT, environment: world.environment, ...props },
+    })
+    await node.trigger('pointerenter')
+    await vi.advanceTimersByTimeAsync(WAIT)
+    world.run()
+    await node.vm.$nextTick()
+    return node
+  }
+
+  it('stays as it was placed however long the hand is on it', async () => {
+    const node = await rest({ wide: null })
+    expect(Number(node.get('rect').attributes('width'))).toBe(144)
+    expect(node.emitted('rest')).toBeUndefined()
+  })
+
+  it('stays as it was placed while a gesture is under way', async () => {
+    const node = await rest({ wide: { width: 400, offset: 0 }, standing: 'source' })
+    expect(Number(node.get('rect').attributes('width'))).toBe(144)
+  })
+
+  it('stays as it was placed while it is on its way in or out', async () => {
+    const node = await rest({
+      node: nodeAt({ opacity: 0.4 }),
+      wide: { width: 400, offset: 0 },
+    })
+    expect(Number(node.get('rect').attributes('width'))).toBe(144)
   })
 })

@@ -19,11 +19,13 @@ import {
 } from 'vue'
 import PlexView from './render/PlexView.vue'
 import { useTitleWidths } from './measure'
+import { DWELL, widenedFor } from './dwell'
 import { usePlexTransition, browserEnvironment, type Environment } from './transition'
 import type { Placement, PlexOptionsInput } from './arrange'
 import {
   countOf,
   seatWord,
+  type PlacedNode,
   type PlexNeighbourhood,
   type PlexRelatedSeat,
   type PlexShowing,
@@ -53,6 +55,11 @@ const props = withDefaults(
     /** How far a gesture travels before it is a drag and not a click. */
     dragThreshold?: number
     /**
+     * How long the attention rests on a box before it widens to the whole of
+     * its title. Milliseconds; nothing at all never widens.
+     */
+    dwell?: number
+    /**
      * What to call a seat. The plex has to write one into the picture — the
      * outline a gesture draws says which seat it would take — and the words
      * for it belong to whoever renders the plex, as they do for the overflow
@@ -66,6 +73,7 @@ const props = withDefaults(
     environment: () => browserEnvironment,
     creatable: () => ['parent', 'child', 'jump'],
     dragThreshold: 8,
+    dwell: DWELL,
     seatName: seatWord,
   },
 )
@@ -134,6 +142,22 @@ const iconRoom = computed(() => (slots.icon ? options.value.iconWidth : 0))
  * that type.
  */
 const measures = useTitleWidths(() => iconRoom.value)
+
+/**
+ * How wide a box is drawn while the attention rests on it: the room its whole
+ * title asks for, held inside the window.
+ *
+ * A title measured at no more than the box it is already in widens nothing,
+ * and where there was nothing to measure the text with, nothing widens at all.
+ */
+const widen = computed(() => {
+  const measure = measures.value?.node
+  if (!measure) return undefined
+
+  const { margin } = options.value
+  const within = viewport.value
+  return (node: PlacedNode) => widenedFor(node, measure(node), within, margin)
+})
 
 const { frame, moving } = usePlexTransition(
   () => props.neighbourhood,
@@ -211,6 +235,9 @@ defineExpose({ moving: toRef(moving) })
       :show-edge-labels="showEdgeLabels"
       :may-reach="mayReach"
       :seat-name="seatName"
+      :widen="widen"
+      :dwell="dwell"
+      :environment="environment"
       :gesture-from="gesture.from.value"
       :gesture-at="gesture.at.value"
       :gesture-outcome="gesture.outcome.value"

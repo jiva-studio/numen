@@ -20,6 +20,8 @@ import {
   type PlexShowing,
   type Point,
 } from '../model'
+import { DWELL, type Widened } from '../dwell'
+import { browserEnvironment, type Environment } from '../transition'
 import type { Drop } from '../arrange'
 import type { MenuOpening } from '../../menu/model'
 
@@ -40,6 +42,16 @@ const props = withDefaults(
      * picture: the outline a gesture draws says which one it would take.
      */
     seatName?: (seat: PlexRelatedSeat) => string
+    /**
+     * The box a node widens to while the attention rests on it, and nothing
+     * for a node with no more of its title to show. Text is measured where the
+     * plex is drawn, so this arrives already worked out.
+     */
+    widen?: ((node: PlacedNode) => Widened | null) | undefined
+    /** How long the attention rests on a box before it widens. Milliseconds. */
+    dwell?: number
+    /** The clock a box opens on. Browser by default; a test hands in its own. */
+    environment?: Environment
     /** A gesture in progress: where it started, where it is, what it means. */
     gestureFrom?: string | null
     gestureAt?: Point | null
@@ -49,6 +61,8 @@ const props = withDefaults(
     showEdgeLabels: true,
     mayReach: true,
     seatName: seatWord,
+    dwell: DWELL,
+    environment: () => browserEnvironment,
     gestureFrom: null,
     gestureAt: null,
     gestureOutcome: null,
@@ -172,6 +186,24 @@ const standingOf = (node: PlacedNode): NodeStanding => {
   return props.mayReach && props.gestureFrom === null ? 'open' : 'closed'
 }
 
+/** The node the attention has settled on, as that node reports it. */
+const restedOn = ref<string | null>(null)
+
+const rest = (id: string, settled: boolean) => {
+  if (settled) restedOn.value = id
+  else if (restedOn.value === id) restedOn.value = null
+}
+
+/**
+ * The boxes in the order they are drawn, the one being rested on last. It is
+ * drawn wider than it was placed, and what it covers is drawn under it.
+ */
+const drawn = computed(() => {
+  const node = props.frame.nodes.find((each) => each.id === restedOn.value)
+  if (!node) return props.frame.nodes
+  return [...props.frame.nodes.filter((each) => each.id !== node.id), node]
+})
+
 /** The line a gesture drags behind it, from the handle to the pointer. */
 const thread = computed(() => {
   const source = props.frame.nodes.find((node) => node.id === props.gestureFrom)
@@ -270,15 +302,19 @@ const ghost = computed<PlacedNode | null>(() => {
     </g>
 
     <PlexNodeView
-      v-for="node in frame.nodes"
+      v-for="node in drawn"
       :key="node.id"
       :node="node"
       :standing="standingOf(node)"
+      :wide="widen?.(node) ?? null"
+      :dwell="dwell"
+      :environment="environment"
       @activate="emit('activate', node.id)"
       @show="emit('show', node.id, $event)"
       @reach="emit('reach', node.id, $event)"
       @ask="emit('ask', node.id)"
       @menu="(at, from, opening) => emit('menu', node.id, at, from, opening)"
+      @rest="rest(node.id, $event)"
     >
       <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
     </PlexNodeView>
