@@ -8,7 +8,7 @@
  * here is the vault this window reads, the kinds it draws, and the few things
  * one kind asks of another.
  */
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { closeTab, Notices, Palette, Workspace } from '@numen/ui'
 import type { Notice } from '@numen/ui'
 import '@numen/ui/styles.css'
@@ -197,6 +197,11 @@ const knows: Knows = {
 
 /** How the window is drawn: the theme it wears, its half of a pair, its sizes. */
 const dressed = wearing(themes, words)
+
+// A size is drawn, and every open editor takes its measurements again. An
+// editor watches its own box, and a size changes the type inside that box
+// while the box itself stands.
+watch(dressed.sized, () => noted.measures())
 
 /** The lists the window itself holds, which a step of a command offers. */
 const kept: Holds = {

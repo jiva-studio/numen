@@ -31,7 +31,13 @@ const { said, held, asked, listed } = vi.hoisted(() => ({
     await new Promise<never>(() => {})
   },
   /** What the window asked the application for, in the order it asked. */
-  asked: { renamed: [] as string[], removed: [] as string[], worn: [] as string[] },
+  asked: {
+    renamed: [] as string[],
+    removed: [] as string[],
+    worn: [] as string[],
+    /** How often an open editor was told to take its measurements again. */
+    measured: 0,
+  },
   /** The vaults this installation holds, and the one the window is showing. */
   listed: {
     vaults: [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', missing: false }],
@@ -136,7 +142,11 @@ const answers = (name: string, drawn: Record<string, unknown>) =>
   })
 
 /** An editor answers the three things a note asks of one; a page, the one. */
-const editor = answers('Editor', { focus: () => true, measure: () => {}, reveal: () => true })
+const editor = answers('Editor', {
+  focus: () => true,
+  measure: () => (asked.measured += 1),
+  reveal: () => true,
+})
 const reader = answers('Reader', { measure: () => {} })
 
 /**
@@ -154,6 +164,7 @@ afterEach(() => {
   asked.renamed = []
   asked.removed = []
   asked.worn = []
+  asked.measured = 0
 })
 
 /**
@@ -653,6 +664,53 @@ describe('the four commands over how the window is drawn', () => {
 
       expect(window.find('.warning').text()).toContain('outside 0.8 to 1.5')
       expect(dressed()).toStrictEqual([PAIR, SERVED, SIZED])
+    })
+  })
+
+  describe('the editor of an open note', () => {
+    /** A note in a tab of its own, with the editor's measurements taken. */
+    const opened = async () => {
+      const window = await drawnWithPalette()
+      window.findComponent(Plex).vm.$emit('show', 'Root.md', 'here')
+      await settles()
+      asked.measured = 0
+      globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
+      await settles()
+      return window
+    }
+
+    it('takes its measurements again at the size the keyboard is held on', async () => {
+      await opened()
+      await type('interface')
+      await press('Enter')
+
+      await press('End')
+      await stands()
+
+      expect(asked.measured).toBe(1)
+    })
+
+    it('takes them again at the size that was chosen', async () => {
+      await opened()
+      await type('reading')
+      await press('Enter')
+
+      await press('End')
+      await press('Enter')
+      await settles()
+
+      expect(asked.measured).toBe(1)
+    })
+
+    it('is left alone while the keyboard is walking rows, and by a theme', async () => {
+      await opened()
+      await type('theme')
+      await press('Enter')
+
+      await press('ArrowDown')
+      await walking()
+
+      expect(asked.measured).toBe(0)
     })
   })
 
