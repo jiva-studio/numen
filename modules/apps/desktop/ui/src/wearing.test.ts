@@ -129,11 +129,14 @@ const window = (over: Partial<Catalogue> = {}) => {
     },
     changed: said.changed,
   }
+  /** What the window was told, in the order it was told. */
+  const told: { text: string; kind: string }[] = []
   return {
-    worn: wearing(core, words, sheet),
+    worn: wearing(core, words, (text, kind = 'report') => void told.push({ text, kind }), sheet),
     sheet,
     asked,
     chosen,
+    told,
     says: said.says,
     listed: () => listed,
     writes: (name: string, css: string) => (texts[name] = css),
@@ -187,6 +190,7 @@ describe('the page as it was served', () => {
         },
       },
       words,
+      () => {},
       sheet,
     )
     await bare.start()
@@ -243,7 +247,7 @@ describe('the theme the keyboard is standing on', () => {
     one.worn.shows('mine:sea')
     await settles()
 
-    expect(one.worn.said.value).toBe(words.unworn)
+    expect(one.told.at(-1)).toStrictEqual({ text: words.unworn, kind: 'refusal' })
     expect(dressing(one.sheet)).toStrictEqual([PAIR, SERVED, SIZED])
   })
 
@@ -571,7 +575,10 @@ describe('the size that was chosen', () => {
     await one.worn.chooses('interfaceScale:2')
     await settles()
 
-    expect(one.worn.said.value).toBe('appearance.interface_scale is 3, which is outside 0.8 to 2')
+    expect(one.told.at(-1)).toStrictEqual({
+      text: 'appearance.interface_scale is 3, which is outside 0.8 to 2',
+      kind: 'refusal',
+    })
     expect(sizes(one.sheet)).toBe(SIZED)
   })
 
@@ -618,7 +625,10 @@ describe('the row that was chosen', () => {
 
     await one.worn.chooses('mine:sea')
 
-    expect(one.worn.said.value).toBe('the settings could not be written')
+    expect(one.told.at(-1)).toStrictEqual({
+      text: 'the settings could not be written',
+      kind: 'refusal',
+    })
     expect(one.worn.applied.value).toBe('preset:numen')
     expect(dressing(one.sheet)).toStrictEqual([PAIR, SERVED, SIZED])
   })

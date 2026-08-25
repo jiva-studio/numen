@@ -15,6 +15,7 @@
 import { computed, ref, shallowRef, watch } from 'vue'
 import type { Offered, Offering } from './commanding'
 import { following } from './following'
+import type { Says } from './telling'
 import type { Both, Bounds, Catalogue, Mode, Ranges, Sizes, Themes, Wearable } from './theme'
 
 /** Everything the appearance says in the window's voice. */
@@ -217,6 +218,7 @@ const onto = <T,>(both: Both<T>, which: Which, one: T): Both<T> => ({ ...both, [
 export function wearing(
   core: Themes,
   words: Words,
+  said: Says,
   sheet: Document = document,
   wait: (ms: number) => Promise<unknown> = sleep,
 ) {
@@ -235,8 +237,13 @@ export function wearing(
   const settings = ref<Sizes>({ interfaceScale: DESIGNED, textScale: DESIGNED })
   const bounds = ref<Ranges>({ interfaceScale: NOWHERE, textScale: NOWHERE })
 
-  /** What could not be listed, read or written, in words a person reads. */
-  const said = ref('')
+  /**
+   * What the catalogue lost touch with, said until it has it back.
+   *
+   * It is a state and not a word, so the window carries it where it carries
+   * everything else that is simply so.
+   */
+  const lost = ref('')
 
   /** The text of every theme that has been worn, by name. */
   const files = new Map<string, string>()
@@ -285,9 +292,7 @@ export function wearing(
   const listening = new AbortController()
   const follows = following({
     open: () => open,
-    lost: (lost) => {
-      said.value = lost
-    },
+    lost: (gone) => (lost.value = gone),
     wait,
   })
 
@@ -314,7 +319,7 @@ export function wearing(
       // The reason goes to the console; the person is told in the window's
       // own voice.
       console.error(error)
-      if (mine === asked) said.value = words.unworn
+      if (mine === asked) said(words.unworn, 'refusal')
     }
   }
 
@@ -340,7 +345,7 @@ export function wearing(
       answer = await core.catalogue()
     } catch (error) {
       console.error(error)
-      said.value = words.unlisted
+      said(words.unlisted, 'refusal')
       return
     }
     list.value = answer.themes
@@ -501,7 +506,7 @@ export function wearing(
     const chosen = modeOf(item)
     if (!chosen && !list.value.some((one) => one.name === item)) return
     if (chosen && pinned.value) return
-    said.value = ''
+    said('')
     applied.value = chosen ? was.applied : item
     mode.value = chosen ?? was.mode
     stood.value = ''
@@ -509,7 +514,7 @@ export function wearing(
 
     const failed = await core.chooses(applied.value, mode.value, settings.value)
     if (!failed) return
-    said.value = failed
+    said(failed, 'refusal')
     applied.value = was.applied
     mode.value = was.mode
     await puts()
@@ -523,7 +528,7 @@ export function wearing(
   const picks = async (chosen: Sized) => {
     if (!reaches(its(bounds.value, chosen.which), chosen.size)) return
     const was = settings.value
-    said.value = ''
+    said('')
     clearTimeout(holds)
     holding.value = null
     stood.value = ''
@@ -531,7 +536,7 @@ export function wearing(
 
     const failed = await core.chooses(applied.value, mode.value, settings.value)
     if (!failed) return
-    said.value = failed
+    said(failed, 'refusal')
     settings.value = was
   }
 
@@ -540,7 +545,7 @@ export function wearing(
     applied,
     mode,
     sized,
-    said,
+    lost,
     offers,
     modes,
     sizes,

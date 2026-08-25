@@ -13,7 +13,11 @@ interface Knobs {
   notices: readonly Notice[]
   name: string
   putAway: string
+  more: string
   wait: number
+  room: number
+  clock: () => number
+  hidden: () => boolean
 }
 
 const EMBEDDING: Notice = {
@@ -44,18 +48,51 @@ const READING: Notice = {
   working: true,
 }
 
+const RENAMED: Notice = {
+  id: 'renamed',
+  says: 'Renamed',
+  stay: 'read',
+  asked: true,
+}
+
+const OCCUPIED: Notice = {
+  id: 'occupied',
+  says: 'A note of that name is filed there already',
+  tone: 'alarm',
+  stay: 'kept',
+  asked: true,
+}
+
+/**
+ * A clock that runs fast, so a story does not wait as long as a person does.
+ *
+ * What a card decides is decided against elapsed time, so the moment it starts
+ * from does not matter and every story may share one of these.
+ */
+const hurried = (times: number): (() => number) => {
+  const from = Date.now()
+  return () => from + (Date.now() - from) * times
+}
+
+/** Longer than a card stands when nothing is holding it. */
+const AWHILE = 1200
+
 /** A window with something in it, and the cards over its corner. */
 const over = (args: Knobs) => ({
   components: { Notices },
   setup: () => ({ args }),
   template: `
     <div class="numen" style="height:100vh;background:var(--numen-surface);color:var(--numen-node-fg);font-family:var(--numen-font-sans);padding:24px">
-      The window, with what is running behind it in the corner.
+      The window, with what it has to say in the corner.
       <Notices
         :notices="args.notices"
         :name="args.name"
         :put-away="args.putAway"
+        :more="args.more"
         :wait="args.wait"
+        :room="args.room"
+        :clock="args.clock"
+        :hidden="args.hidden"
       />
     </div>
   `,
@@ -69,37 +106,60 @@ const meta = {
     docs: {
       description: {
         component:
-          'What is running behind the window, as cards in its bottom corner. ' +
-          'A card is there while its work is, and each can be put away.',
+          'What the window has to say, as cards in its bottom corner. Work stands ' +
+          'while it runs, something said stands to be read, and trouble stands ' +
+          'until it is put away.',
       },
     },
   },
   argTypes: {
     name: { control: 'text' },
     putAway: { control: 'text' },
+    more: { control: 'text' },
     wait: { control: 'number' },
+    room: { control: 'number' },
     notices: { table: { disable: true } },
+    clock: { table: { disable: true } },
+    hidden: { table: { disable: true } },
   },
   // The stories draw at once. How long work runs before it is worth a card has
   // a story of its own.
-  args: { notices: [EMBEDDING], name: 'Background work', putAway: 'Put away', wait: 0 },
+  args: {
+    notices: [EMBEDDING],
+    name: 'Background work',
+    putAway: 'Put away',
+    more: 'more',
+    wait: 0,
+    room: 4,
+    clock: () => Date.now(),
+    hidden: () => false,
+  },
   render: over,
 } satisfies Meta<Knobs>
 
 export default meta
 type Story = StoryObj<typeof meta>
 
-const cards = () => document.querySelectorAll<HTMLElement>('.notice')
+const cards = () => document.querySelectorAll<HTMLElement>('article.notice')
+const folded = () => document.querySelector<HTMLElement>('.notice__folded')
 
 /** One thing running, counting, with everything it can say. */
 export const Playground: Story = {}
 
-/** Nothing is running, and the corner is empty of anything to click through. */
+/**
+ * Nothing to say, and no card to click through.
+ *
+ * What reads a card out stands empty from the first drawing, before there is a
+ * card to read.
+ */
 export const Quiet: Story = {
   args: { notices: [] },
   play: async () => {
     await waitFor(() => expect(cards()).toHaveLength(0))
-    await expect(document.querySelector('.notices')).toBeNull()
+    await expect(document.querySelectorAll('[aria-live]')).toHaveLength(2)
+    for (const region of document.querySelectorAll('[aria-live]')) {
+      await expect(region.textContent).toBe('')
+    }
   },
 }
 
@@ -126,6 +186,108 @@ export const Resting: Story = {
   args: { notices: [{ id: 'words', says: 'Searching by words only — no model set' }] },
 }
 
+/** Work, something that is so, and something that happened, in one stack. */
+export const WorkAndWords: Story = {
+  args: {
+    notices: [
+      READING,
+      {
+        id: 'unwatched',
+        says: 'The vault is not being watched',
+        about: '/home/vault',
+        tone: 'caution',
+      },
+      { id: 'nowhere', says: 'No tab of this window is over a note', tone: 'caution', stay: 'kept' },
+      OCCUPIED,
+    ],
+  },
+  play: async () => {
+    await waitFor(() => expect(cards()).toHaveLength(4))
+
+    const tones = [...cards()].map((card) => card.getAttribute('data-tone'))
+    await expect(tones).toEqual(['plain', 'caution', 'caution', 'alarm'])
+  },
+}
+
+/** Something said goes once it has been read. */
+export const SaidAndGone: Story = {
+  args: { notices: [RENAMED], clock: hurried(8) },
+  play: async () => {
+    await waitFor(() => expect(cards()).toHaveLength(1))
+    await waitFor(() => expect(cards()).toHaveLength(0), { timeout: 5000 })
+  },
+}
+
+/** Trouble does not go by itself. A person who has to act on it has to see it. */
+export const TroubleStays: Story = {
+  args: { notices: [OCCUPIED], clock: hurried(8) },
+  play: async () => {
+    await waitFor(() => expect(cards()).toHaveLength(1))
+    await new Promise((rest) => setTimeout(rest, AWHILE))
+    await expect(cards()).toHaveLength(1)
+    await expect(cards()[0]!.getAttribute('data-tone')).toBe('alarm')
+  },
+}
+
+/** Time spent with the corner under a pointer is not time spent reading it. */
+export const HeldUnderThePointer: Story = {
+  args: { notices: [RENAMED], clock: hurried(8) },
+  play: async () => {
+    await waitFor(() => expect(cards()).toHaveLength(1))
+    await userEvent.hover(cards()[0]!)
+    await new Promise((rest) => setTimeout(rest, AWHILE))
+
+    await expect(cards()).toHaveLength(1)
+  },
+}
+
+/** Nobody reads a window they are not looking at. */
+export const NobodyLooking: Story = {
+  args: { notices: [RENAMED], clock: hurried(8), hidden: () => true },
+  play: async () => {
+    await waitFor(() => expect(cards()).toHaveLength(1))
+    await new Promise((rest) => setTimeout(rest, AWHILE))
+
+    await expect(cards()).toHaveLength(1)
+  },
+}
+
+/**
+ * More said at once than there is room for.
+ *
+ * What folds is what has been said. Work and what is so are what the corner is
+ * for, and they stand however many of them there are.
+ */
+export const MoreThanThereIsRoomFor: Story = {
+  args: {
+    room: 3,
+    notices: [
+      { id: 'a', says: 'Renamed', stay: 'read', asked: true },
+      { id: 'b', says: 'Links repaired in One.md', stay: 'kept', asked: true },
+      { id: 'c', says: 'The note is in the trash', stay: 'kept', asked: true },
+      { id: 'd', says: 'A theme by that name is not in the catalogue', tone: 'alarm', stay: 'kept', asked: true },
+      READING,
+      EMBEDDING,
+    ],
+  },
+  play: async () => {
+    await waitFor(() => expect(folded()).not.toBeNull())
+    await expect(folded()!.textContent).toContain('3 more')
+    await expect(cards()).toHaveLength(3)
+
+    // What folds is what has gone right. Trouble and work are what the corner
+    // is for.
+    const left = [...cards()].map((card) => card.textContent ?? '')
+    await expect(left.some((words) => words.includes('not in the catalogue'))).toBe(true)
+    await expect(left.some((words) => words.includes('Reading the vault'))).toBe(true)
+
+    await userEvent.click(folded()!)
+
+    await waitFor(() => expect(cards()).toHaveLength(6))
+    await waitFor(() => expect(folded()).toBeNull())
+  },
+}
+
 /** One put away goes, and what is left stays. */
 export const PutOneAway: Story = {
   args: { notices: [READING, EMBEDDING] },
@@ -144,27 +306,32 @@ export const PutOneAway: Story = {
  * Words far past the room there is, in a script that is not Latin and in one
  * with nothing to break at, beside one short word.
  *
- * Neither makes a card taller than the short one, and neither pushes the
- * window wider than itself. A card's height is its type and the clearance
- * around it, both of which the interface multiplier moves, so the short card
- * is the height to measure against at every size.
+ * A card with a count keeps to the short one's height: the numbers beside it
+ * are what the room is for. A card carrying only words is carrying a path or a
+ * reason, and gives them three rows. Neither pushes the window wider than
+ * itself.
+ *
+ * A row is the type and the clearance around it, both of which the interface
+ * multiplier moves, so the short card is what every size measures against.
  */
 export const TooMuchToSay: Story = {
   args: {
     notices: [
       { id: 'one', says: RUSSIAN, about: LONG, done: 1, total: 2, working: true },
       { id: 'two', says: UNBREAKABLE, about: UNBREAKABLE, working: true },
+      { id: 'three', says: RUSSIAN, about: LONG, tone: 'alarm', stay: 'kept', asked: true },
       { id: 'brief', says: 'Reading', working: true },
     ],
   },
   play: async () => {
-    await waitFor(() => expect(cards()).toHaveLength(3))
+    await waitFor(() => expect(cards()).toHaveLength(4))
 
     const height = (card: HTMLElement) => card.getBoundingClientRect().height
-    const row = height(cards()[2]!)
+    const row = height(cards()[3]!)
 
+    await expect(height(cards()[0]!)).toBeLessThanOrEqual(row + 1)
     for (const card of cards()) {
-      await expect(height(card)).toBeLessThanOrEqual(row + 1)
+      await expect(height(card)).toBeLessThanOrEqual(row * 3 + 1)
       await expect(card.scrollWidth).toBeLessThanOrEqual(card.clientWidth + 1)
     }
     await expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
@@ -199,5 +366,19 @@ export const EachCardNamesWhatItPutsAway: Story = {
     await expect(named[0]).toContain('Reading the vault')
     await expect(named[1]).toContain('Preparing search by meaning')
     await expect(named[0]).not.toBe(named[1])
+  },
+}
+
+/** What a person was told, and what they were told over whatever they were reading. */
+export const ReadOutInTurnAndOverTheRest: Story = {
+  args: { notices: [READING, OCCUPIED] },
+  play: async () => {
+    await waitFor(() => expect(cards()).toHaveLength(2))
+
+    const polite = document.querySelector('[aria-live="polite"]')
+    const urgent = document.querySelector('[aria-live="assertive"]')
+    await waitFor(() => expect(polite?.textContent).toContain('Reading the vault'))
+    await expect(urgent?.textContent).toContain('A note of that name is filed there already')
+    await expect(polite?.textContent).not.toContain('filed there already')
   },
 }

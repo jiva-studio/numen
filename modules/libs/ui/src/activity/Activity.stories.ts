@@ -5,7 +5,7 @@
  * state with no story is a state nothing draws.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, within } from 'storybook/test'
+import { expect } from 'storybook/test'
 import Activity from './Activity.vue'
 
 const meta = {
@@ -16,11 +16,14 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
+/** The line itself, which is what every story reads. */
+const lineIn = (canvas: HTMLElement): HTMLElement | null => canvas.querySelector('.activity')
+
 /** Nothing to say draws nothing. Quiet is not the same as finished. */
 export const Quiet: Story = {
   args: { says: '' },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).queryByRole('status')).toBeNull()
+    await expect(lineIn(canvasElement)).toBeNull()
   },
 }
 
@@ -28,7 +31,7 @@ export const Quiet: Story = {
 export const Working: Story = {
   args: { says: 'Reading', about: 'Sabhaparva.epub', working: true },
   play: async ({ canvasElement }) => {
-    const line = within(canvasElement).getByRole('status')
+    const line = lineIn(canvasElement)
     await expect(line).toHaveAttribute('data-state', 'working')
     await expect(line).toHaveTextContent('Sabhaparva.epub')
   },
@@ -43,7 +46,7 @@ export const Counting: Story = {
     left: 'about 2 hours left',
   },
   play: async ({ canvasElement }) => {
-    const line = within(canvasElement).getByRole('status')
+    const line = lineIn(canvasElement)
     await expect(line).toHaveTextContent('1 200 of 36 560')
     await expect(line).toHaveTextContent('3%')
     await expect(line).toHaveTextContent('about 2 hours left')
@@ -57,16 +60,31 @@ export const Counting: Story = {
 export const Resting: Story = {
   args: { says: 'Searching by words — no model to learn what it says' },
   play: async ({ canvasElement }) => {
-    const line = within(canvasElement).getByRole('status')
+    const line = lineIn(canvasElement)
     await expect(line).toHaveAttribute('data-state', 'resting')
   },
 }
 
-/** Trouble outranks a count: a line that is both failing and counting says it is failing. */
-export const Trouble: Story = {
-  args: { says: 'Reading', tally: { done: 2, total: 8 }, trouble: 'permission denied' },
+/** A caution is read at leisure, and is marked so it is read. */
+export const Caution: Story = {
+  args: { says: 'No tab of this window is over a note', tone: 'caution' },
   play: async ({ canvasElement }) => {
-    const line = within(canvasElement).getByRole('status')
+    const line = lineIn(canvasElement)
+    await expect(line).toHaveAttribute('data-tone', 'caution')
+    await expect(line).toHaveAttribute('data-state', 'resting')
+  },
+}
+
+/** Alarm outranks a count: a line that is both failing and counting says it is failing. */
+export const Trouble: Story = {
+  args: {
+    says: 'Reading',
+    about: 'permission denied',
+    tally: { done: 2, total: 8 },
+    tone: 'alarm',
+  },
+  play: async ({ canvasElement }) => {
+    const line = lineIn(canvasElement)
     await expect(line).toHaveAttribute('data-state', 'trouble')
     await expect(line).toHaveTextContent('permission denied')
     await expect(line).not.toHaveTextContent('2 of 8')

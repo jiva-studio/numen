@@ -38,7 +38,7 @@ export const UNVAULTED: Record<VaultRefused, string> = {
 
 export const WORDS = {
   newTab: 'New tab',
-  /** What the window says above the work while something is wrong. */
+  /** What the corner says while something about the vault is wrong. */
   unwatched: 'not following the vault',
   unread: 'the vault could not be read',
   reading: 'reading the vault…',
@@ -167,4 +167,5 @@ export const WORDS = {
   wordsOnly: 'Searching by words only — no model set',
   working: 'Background work',
   putAway: 'Put away',
+  more: 'more',
 }

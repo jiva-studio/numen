@@ -59,8 +59,8 @@ export type Held = ReturnType<typeof plexing>
  * The plex tabs of a window, in the order the person was last in them.
  *
  * The plex the person is looking at is the one a note asked for from outside
- * the window is put in front of, the one whose trouble the window says, and
- * the one a plex opened after it stands beside.
+ * the window is put in front of, and the one a plex opened after it stands
+ * beside.
  */
 export function plexKind(host: Host, makes: () => Standing, deps: Plexing) {
   /** Every plex the window holds, and the one the person was last in. */
@@ -86,9 +86,6 @@ export function plexKind(host: Host, makes: () => Standing, deps: Plexing) {
 
   /** The note the person is looking at, which is what a question is about. */
   const looking = (): string => front()?.view.here.value ?? ''
-
-  /** What the plex in front could not show, for the window to put up. */
-  const trouble = (): string => front()?.view.trouble.value ?? ''
 
   /** What the plex in front calls a note, and nothing where it names none. */
   const names = (path: string): string => (path ? (front()?.nameOf(path) ?? '') : '')
@@ -143,7 +140,7 @@ export function plexKind(host: Host, makes: () => Standing, deps: Plexing) {
     )
   }
 
-  return { kind, looking, trouble, names, travel, leaves, again }
+  return { kind, looking, names, travel, leaves, again }
 }
 
 export function plexing(view: Standing, deps: Plexing) {
