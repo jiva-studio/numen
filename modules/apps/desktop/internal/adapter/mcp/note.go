@@ -222,6 +222,7 @@ func addNoteTools(server *sdk.Server, core Core) {
 				Seat:    string(related.Seat),
 				Label:   related.Label,
 				Through: related.Through,
+				Mutual:  related.Mutual,
 			})
 		}
 		return nil, res, nil
@@ -481,6 +482,7 @@ type Seated struct {
 	Seat    string `json:"seat" jsonschema:"parent, child, sibling or jump"`
 	Label   string `json:"label,omitempty" jsonschema:"what the person calls this relationship"`
 	Through string `json:"through,omitempty" jsonschema:"the note they share, when they are siblings"`
+	Mutual  bool   `json:"mutual,omitempty" jsonschema:"set when both notes name this relationship, the label being then the word the note in focus wrote"`
 }
 
 // fingerprintOf is what a note was when it was read, in a form an agent hands

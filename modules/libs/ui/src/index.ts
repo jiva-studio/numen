@@ -41,6 +41,10 @@ export {
 /** The size a node's label is being set at, and the plex drawn to hold it. */
 export { optionsForType, scaleOptions, useTypeSize, DESIGNED_TYPE } from './plex/sizing'
 
+/** How wide a title needs its box, measured against the type the page is set in. */
+export { titleWidths, useTitleWidths } from './plex/measure'
+export type { Measure, Measures } from './plex/measure'
+
 export type {
   ArrangeInput,
   Direction,
@@ -50,6 +54,7 @@ export type {
   PlexOptionsInput,
   Seating,
   Size,
+  Widths,
 } from './plex/arrange'
 export { default as Panel } from './panel/Panel.vue'
 
@@ -134,7 +139,11 @@ export type {
 
 export type { Environment, PlexTransition } from './plex/transition'
 export type {
+  EdgeArrow,
+  EdgeCurve,
+  EdgeHeading,
   Extent,
+  PlacedArrow,
   PlacedEdge,
   PlacedNode,
   PlexEdge,

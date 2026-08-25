@@ -7,8 +7,18 @@
  * who is related to whom. Answer `activate` with the next neighbourhood and it
  * travels there by itself.
  */
-import { computed, onMounted, onScopeDispose, ref, toRef, useTemplateRef, watch } from 'vue'
+import {
+  computed,
+  onMounted,
+  onScopeDispose,
+  ref,
+  toRef,
+  useSlots,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import PlexView from './render/PlexView.vue'
+import { useTitleWidths } from './measure'
 import { usePlexTransition, browserEnvironment, type Environment } from './transition'
 import type { Placement, PlexOptionsInput } from './arrange'
 import {
@@ -106,11 +116,32 @@ onMounted(() => {
   onScopeDispose(() => observer.disconnect())
 })
 
+/** Settled once and read by the measuring, the gesture and the drawing. */
+const options = computed(() => resolveOptions({ ...props.options, viewport: viewport.value }))
+
+const slots = useSlots()
+
+/**
+ * Room for the icon a caller draws beside a title, and none where the slot is
+ * not filled.
+ */
+const iconRoom = computed(() => (slots.icon ? options.value.iconWidth : 0))
+
+/**
+ * How wide each title needs its box to be, and each label its line, measured
+ * against the type the theme is written in. Taken before the first arrangement,
+ * so a box is drawn at the size it keeps, and taken again when a theme changes
+ * that type.
+ */
+const measures = useTitleWidths(() => iconRoom.value)
+
 const { frame, moving } = usePlexTransition(
   () => props.neighbourhood,
   () => ({
     options: { ...props.options, viewport: viewport.value },
     placement: props.placement,
+    measure: measures.value?.node,
+    measureLabel: measures.value?.label,
   }),
   () => props.duration,
   props.environment,
@@ -122,9 +153,6 @@ const { frame, moving } = usePlexTransition(
  * node's own affair, and never reaches this far.
  */
 const mayReach = computed(() => props.creatable.length > 0)
-
-/** Settled once and read by both the gesture and the drawing. */
-const options = computed(() => resolveOptions({ ...props.options, viewport: viewport.value }))
 
 /**
  * Reaching out from a node.

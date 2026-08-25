@@ -9,8 +9,21 @@ export interface Size {
 }
 
 export interface BoxOptions {
+  /** The focus box. Its width is the widest that box is drawn. */
   readonly focusSize: Size
+  /**
+   * Every other box. Its width is the widest one is drawn, and the width
+   * admission is worked out from.
+   */
   readonly nodeSize: Size
+  /** The narrowest a box is drawn, however little its title needs. */
+  readonly minWidth: number
+  /**
+   * Room kept beside a title for the icon a caller draws there, a gap from it
+   * and inside the same padding. A box is drawn this much wider wherever an
+   * icon is drawn, the plex having no way to measure one.
+   */
+  readonly iconWidth: number
   /** Between neighbouring nodes along one line. */
   readonly gap: number
   /** Between one line and the next, further from the focus. */
@@ -33,6 +46,11 @@ export interface RoutingOptions {
   readonly curvature: number
   /** And never less than this, or a short edge sets off crooked. */
   readonly minReach: number
+  /**
+   * How much of a line an arrowhead takes. A title is set about the middle of
+   * its line, so a line carrying one has this much less room at either end.
+   */
+  readonly arrowRoom: number
 }
 
 /**
@@ -78,13 +96,15 @@ export const DEFAULT_DIRECTION: Readonly<Record<PlexRelatedSeat, Direction>> =
 export const DEFAULT_OPTIONS: PlexOptions = {
   focusSize: { width: 176, height: 44 },
   nodeSize: { width: 144, height: 36 },
+  minWidth: 72,
+  iconWidth: 16,
   gap: 16,
   lineGap: 20,
   focusGap: 56,
   margin: 16,
   maxPerLine: 5,
   maxLines: 4,
-  routing: { curvature: 0.55, minReach: 22 },
+  routing: { curvature: 0.55, minReach: 22, arrowRoom: 14 },
   motion: { arriveAfter: 0.35, leaveBefore: 0.45 },
   gesture: { verticalBias: 4 },
   direction: DEFAULT_DIRECTION,

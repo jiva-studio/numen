@@ -87,6 +87,9 @@ func (u ShowNeighbourhood) around(ctx context.Context, v domain.Vault, path stri
 	if err != nil {
 		return nil, err
 	}
+	// The notes this one names. One that names it back makes the edge mutual,
+	// and a mutual edge takes its label from this end.
+	named := map[string]bool{}
 	for _, l := range links {
 		if l.To == "" || l.ToVault != v.ID {
 			// Dangling, or landed in another vault. Neither has a seat here:
@@ -94,6 +97,7 @@ func (u ShowNeighbourhood) around(ctx context.Context, v domain.Vault, path stri
 			continue
 		}
 		if seat, navigable := seatFor(l.Role); navigable {
+			named[l.To] = true
 			seats.take(domain.Seated{
 				NoteRef: domain.NoteRef{Path: l.To},
 				Seat:    seat,
@@ -109,13 +113,20 @@ func (u ShowNeighbourhood) around(ctx context.Context, v domain.Vault, path stri
 	for _, l := range backlinks {
 		// The role is read from the other end, so it means the opposite: a note
 		// that calls this one its parent is its child.
-		if seat, navigable := seatFor(mirror(l.Role)); navigable {
-			seats.take(domain.Seated{
-				NoteRef: domain.NoteRef{Path: l.From},
-				Seat:    seat,
-				Label:   l.Label,
-			})
+		seat, navigable := seatFor(mirror(l.Role))
+		if !navigable {
+			continue
 		}
+		seated := domain.Seated{
+			NoteRef: domain.NoteRef{Path: l.From},
+			Seat:    seat,
+			Label:   l.Label,
+		}
+		if named[l.From] {
+			seats.mutually(seated)
+			continue
+		}
+		seats.take(seated)
 	}
 	return seats, nil
 }
@@ -170,6 +181,27 @@ func (s *seating) take(seated domain.Seated) {
 	if domain.SeatRank(seated.Seat) < domain.SeatRank(s.order[i].Seat) {
 		s.order[i] = seated
 	}
+}
+
+// mutually seats a note that the one in focus names too. Both ends naming the
+// same seat is one relationship named twice, and the word for it is the
+// focus's own where it wrote one.
+func (s *seating) mutually(seated domain.Seated) {
+	i, taken := s.at[seated.Path]
+	if !taken {
+		s.take(seated)
+		return
+	}
+	held := s.order[i]
+	if held.Seat != seated.Seat {
+		s.take(seated)
+		return
+	}
+	held.Mutual = true
+	if held.Label == "" {
+		held.Label = seated.Label
+	}
+	s.order[i] = held
 }
 
 func (s *seating) drop(path string) {

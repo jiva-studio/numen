@@ -3,6 +3,7 @@ package note_test
 import (
 	"fmt"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
@@ -49,6 +50,123 @@ func TestBothEndsOfAnEdgeAreOneRelationship(t *testing.T) {
 	}, "Area.md")
 	if got := seatsOf(reversed); !slices.Equal(got, []string{"child Idea.md"}) {
 		t.Errorf("the same edge written from the other end: %v", got)
+	}
+}
+
+// drawnOn renders the line between two notes as it is seen from one of them:
+// the seat, the label where there is one, and whether the edge is mutual.
+func drawnOn(t *testing.T, files map[string]string, from, to string) string {
+	t.Helper()
+	for _, r := range neighbourhoodOf(t, files, from).Related {
+		if r.Path != to {
+			continue
+		}
+		drawn := []string{string(r.Seat)}
+		if r.Label != "" {
+			drawn = append(drawn, r.Label)
+		}
+		if r.Mutual {
+			drawn = append(drawn, "mutual")
+		}
+		return strings.Join(drawn, " ")
+	}
+	return "nothing"
+}
+
+// TestALabelWrittenAtEitherEndIsDrawn.
+//
+// Either end of a relationship can name it, and both ends naming it makes the
+// edge mutual. The word shown is then the one the note in focus wrote, so the
+// two notes read the same edge in their own language.
+func TestALabelWrittenAtEitherEndIsDrawn(t *testing.T) {
+	written := func(title, links string) string {
+		if links == "" {
+			return "---\ntitle: " + title + "\n---\n\n# " + title + "\n"
+		}
+		return "---\ntitle: " + title + "\nlinks:\n" + links + "---\n\n# " + title + "\n"
+	}
+
+	for _, c := range []struct {
+		name               string
+		area, idea         string
+		fromArea, fromIdea string
+	}{
+		{
+			name:     "the far end alone names it",
+			area:     "  - to: \"[[Idea]]\"\n    role: parent\n",
+			idea:     "  - to: \"[[Area]]\"\n    role: child\n    label: Жлоб\n",
+			fromArea: "parent Жлоб mutual",
+			fromIdea: "child Жлоб mutual",
+		},
+		{
+			name:     "each end has its own word for it",
+			area:     "  - to: \"[[Idea]]\"\n    role: jump\n    label: внучатый племянник\n",
+			idea:     "  - to: \"[[Area]]\"\n    role: jump\n    label: питамаха, дед рода\n",
+			fromArea: "jump внучатый племянник mutual",
+			fromIdea: "jump питамаха, дед рода mutual",
+		},
+		{
+			name:     "the near end alone names it",
+			area:     "  - to: \"[[Idea]]\"\n    role: parent\n    label: дом\n",
+			idea:     "  - to: \"[[Area]]\"\n    role: child\n",
+			fromArea: "parent дом mutual",
+			fromIdea: "child дом mutual",
+		},
+		{
+			name:     "written at one end only",
+			area:     "  - to: \"[[Idea]]\"\n    role: parent\n    label: дом\n",
+			idea:     "",
+			fromArea: "parent дом",
+			fromIdea: "child дом",
+		},
+		{
+			name:     "mutual and named by neither",
+			area:     "  - to: \"[[Idea]]\"\n    role: parent\n",
+			idea:     "  - to: \"[[Area]]\"\n    role: child\n",
+			fromArea: "parent mutual",
+			fromIdea: "child mutual",
+		},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			files := map[string]string{
+				"Area.md": written("Area", c.area),
+				"Idea.md": written("Idea", c.idea),
+			}
+			if got := drawnOn(t, files, "Area.md", "Idea.md"); got != c.fromArea {
+				t.Errorf("from Area: got %q, want %q", got, c.fromArea)
+			}
+			if got := drawnOn(t, files, "Idea.md", "Area.md"); got != c.fromIdea {
+				t.Errorf("from Idea: got %q, want %q", got, c.fromIdea)
+			}
+		})
+	}
+}
+
+// TestEndsThatDisagreeAnswerNothing. A pair who are each other's parent name
+// two relationships, and the one drawn is the one whose seat wins.
+func TestEndsThatDisagreeAnswerNothing(t *testing.T) {
+	mutualParents := map[string]string{
+		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: parent\n    label: несушка\n---\n\n# Chicken\n",
+		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: parent\n    label: из яйца\n---\n\n# Egg\n",
+	}
+	if got := drawnOn(t, mutualParents, "Chicken.md", "Egg.md"); got != "parent несушка" {
+		t.Errorf("got %q, want the parent seat and the word written here", got)
+	}
+	if got := drawnOn(t, mutualParents, "Egg.md", "Chicken.md"); got != "parent из яйца" {
+		t.Errorf("got %q, want the parent seat and the word written here", got)
+	}
+
+	// Each calls the other its child, so the parent seat is earned from the far
+	// end and carries the word written there.
+	mutualChildren := map[string]string{
+		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: child\n    label: снесённое\n---\n\n# Chicken\n",
+		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: child\n    label: вылупившийся\n---\n\n# Egg\n",
+	}
+	if got := drawnOn(t, mutualChildren, "Chicken.md", "Egg.md"); got != "parent вылупившийся" {
+		t.Errorf("got %q, want the parent seat and the word written at the end it came from", got)
+	}
+	if got := drawnOn(t, mutualChildren, "Egg.md", "Chicken.md"); got != "parent снесённое" {
+		t.Errorf("got %q, want the parent seat and the word written at the end it came from", got)
 	}
 }
 

@@ -54,6 +54,7 @@ interface Knobs {
 
   curvature: number
   minReach: number
+  arrowRoom: number
 
   arriveAfter: number
   leaveBefore: number
@@ -86,7 +87,7 @@ const knobbed = (a: Knobs): PlexOptionsInput => ({
   margin: a.margin,
   maxPerLine: a.maxPerLine,
   maxLines: a.maxLines,
-  routing: { curvature: a.curvature, minReach: a.minReach },
+  routing: { curvature: a.curvature, minReach: a.minReach, arrowRoom: a.arrowRoom },
   motion: { arriveAfter: a.arriveAfter, leaveBefore: a.leaveBefore },
   direction:
     a.orientation === 'parents below'
@@ -287,6 +288,7 @@ const meta = {
 
     curvature: { ...range(0, 1, 0.05, 'Edges'), table: { category: 'Edges' } },
     minReach: { ...range(0, 120, 2, 'Edges'), table: { category: 'Edges' } },
+    arrowRoom: { ...range(0, 40, 1, 'Edges'), table: { category: 'Edges' } },
     showEdgeLabels: { control: 'boolean', table: { category: 'Edges' } },
 
     duration: {
@@ -342,6 +344,7 @@ const meta = {
 
     curvature: 0.55,
     minReach: 22,
+    arrowRoom: 14,
     arriveAfter: 0.35,
     leaveBefore: 0.45,
 
@@ -434,6 +437,65 @@ export const MakingOne: Story = {
     await waitFor(async () => {
       await expect(canvas.getByLabelText('Reached for, parent')).toBeInTheDocument()
     })
+  },
+}
+
+/** Whether a focus reads as the keyboard's. Browsers take it; the types do not. */
+interface KeyboardFocus extends FocusOptions {
+  focusVisible?: boolean
+}
+
+/**
+ * Where the handle is, and how few of them there are.
+ *
+ * A handle belongs to the box under the hand, and to the box the keyboard is
+ * visibly on. A click leaves a box holding a focus that is neither, so a box
+ * clicked and then left alone wears nothing at all.
+ *
+ * Only a browser can answer any of it: a click and a tab leave the same focus
+ * behind, and which of them the keyboard is visibly on is the browser's own
+ * reckoning. A hand driven from a story is untrusted and does not reach that
+ * reckoning, so the focus a click leaves behind is named here outright.
+ */
+export const OneHandleAtATime: Story = {
+  args: invented.args,
+  render: invented.render,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const handles = () => canvasElement.querySelectorAll('.plex__handle')
+    const boxes = [
+      canvas.getByLabelText(/, focus$/),
+      ...canvas.getAllByLabelText(/, (parent|child|jump|sibling)$/).slice(0, 3),
+    ]
+    const first = boxes[0]!
+
+    // A picture nobody is on offers nothing.
+    await expect(handles()).toHaveLength(0)
+
+    // The focus a click leaves is one the keyboard is not visibly on, and no
+    // hand is anywhere near.
+    first.focus({ focusVisible: false } as KeyboardFocus)
+    await expect(first).toHaveFocus()
+    await expect(handles()).toHaveLength(0)
+
+    // The hand across the picture, box after box. One handle in the whole
+    // plex, on the box the hand is on, and none left behind it.
+    for (const box of boxes) {
+      await userEvent.hover(box)
+      await expect(handles()).toHaveLength(1)
+      await expect(box.querySelector('.plex__handle')).not.toBeNull()
+      await userEvent.unhover(box)
+      await expect(handles()).toHaveLength(0)
+    }
+
+    // Arriving by tab is the keyboard being used, and the box it stops at
+    // wears one.
+    first.blur()
+    await userEvent.tab()
+    const stop = canvasElement.ownerDocument.activeElement!
+    await expect(stop).toHaveClass('plex__node')
+    await expect(handles()).toHaveLength(1)
+    await expect(stop.querySelector('.plex__handle')).not.toBeNull()
   },
 }
 
@@ -531,6 +593,267 @@ export const SeveralParents: Story = {
 /** Past every limit. What the overflow line at the bottom is for. */
 export const Overcrowded: Story = {
   args: { neighbourhood: neighbourhoods.overcrowded },
+}
+
+/**
+ * Titles on every shape of line a plex draws: across the page, down it, and
+ * round out of a column. One of them is far longer than the curve it is set
+ * on, and is cut to it.
+ */
+const titledLines: PlexNeighbourhood = {
+  nodes: [
+    { id: 'focus', title: 'The assembly', seat: 'focus' },
+    { id: 'parent', title: 'Chapters', seat: 'parent' },
+    { id: 'earlier', title: 'The morning', seat: 'jump' },
+    { id: 'across', title: 'Elsewhere', seat: 'jump' },
+    { id: 'later', title: 'The evening', seat: 'jump' },
+    { id: 'sibling', title: 'The garden', seat: 'sibling' },
+  ],
+  edges: [
+    { from: 'parent', to: 'focus', label: 'is a' },
+    { from: 'parent', to: 'sibling', label: 'contains' },
+    { from: 'earlier', to: 'focus', label: 'see also' },
+    { from: 'across', to: 'focus', label: 'the scene in the assembly' },
+    { from: 'later', to: 'focus', label: 'and also' },
+  ],
+}
+
+/**
+ * What a line does with the title it carries: it is set along it, and cut to
+ * it where the words are longer.
+ *
+ * Only a browser can answer any of it: how wide the words are in the type they
+ * are set in, how long the curve is that they are set on, and whether the two
+ * layers a title is painted in land on one another.
+ *
+ * The picture arrives at once, since a title is a property of a line that has
+ * come to rest, and a line on its way somewhere cannot be pointed at.
+ */
+export const TitledLines: Story = {
+  args: { neighbourhood: titledLines, duration: 0 },
+  play: async ({ canvasElement }) => {
+    /** Both layers of one title: the halo first, the letters over it. */
+    const title = (words: string) =>
+      [...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label')].filter(
+        (text) => text.textContent === words,
+      )
+
+    /** The line a title is set along, by the path it names. */
+    const lineOf = (text: SVGTextElement) => {
+      const href = text.querySelector('textPath')!.getAttribute('href')!
+      return canvasElement.querySelector<SVGPathElement>(
+        `defs path[id="${href.slice(1)}"]`,
+      )!
+    }
+
+    // The window is measured after the first drawing, so the plex settles on
+    // its second.
+    await waitFor(async () => {
+      await expect(title('contains')).toHaveLength(2)
+    })
+
+    // Every title is set along the line it belongs to, and none of them is
+    // drawn wider than the curve it is set on.
+    const titles = [
+      ...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label'),
+    ]
+    await expect(titles.length).toBeGreaterThan(0)
+    for (const text of titles) {
+      await expect(text.querySelector('textPath')).not.toBeNull()
+      await expect(text.getComputedTextLength()).toBeLessThanOrEqual(
+        lineOf(text).getTotalLength(),
+      )
+    }
+
+    // Words longer than their curve are cut to it and end in an ellipsis.
+    await expect(title('the scene in the assembly')).toHaveLength(0)
+    const cut = titles.filter((text) => text.textContent!.endsWith('…'))
+    await expect(cut).toHaveLength(2)
+    await expect(
+      'the scene in the assembly'.startsWith(cut[0]!.textContent!.slice(0, -1)),
+    ).toBe(true)
+
+    // A title is painted in two layers that land on one another.
+    const [halo, letters] = title('contains')
+    await expect(halo!.querySelector('textPath')).not.toBeNull()
+    await expect(getComputedStyle(halo!).fill).toBe('none')
+    await expect(getComputedStyle(letters!).stroke).toBe('none')
+    await expect(halo!.getComputedTextLength()).toBe(letters!.getComputedTextLength())
+    const haloAtRest = parseFloat(getComputedStyle(halo!).strokeWidth)
+
+    // The hand on that line lifts it, and the lifted title is painted the same
+    // way on a heavier halo.
+    const along = halo!.querySelector('textPath')!.getAttribute('href')!
+    const drawn = canvasElement
+      .querySelector(`defs path[id="${along.slice(1)}"]`)!
+      .getAttribute('d')
+    const band = [
+      ...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge-hit'),
+    ].find((line) => line.getAttribute('d') === drawn)
+    await userEvent.hover(band!)
+
+    const lifted = canvasElement.querySelectorAll<SVGTextElement>(
+      '.plex__lift .plex__edge-label',
+    )
+    await expect(lifted).toHaveLength(2)
+    await expect(getComputedStyle(lifted[0]!).fill).toBe('none')
+    await expect(getComputedStyle(lifted[1]!).stroke).toBe('none')
+    await expect(parseFloat(getComputedStyle(lifted[0]!).strokeWidth)).toBeGreaterThan(
+      haloAtRest,
+    )
+    await expect(lifted[0]!.getComputedTextLength()).toBe(
+      lifted[1]!.getComputedTextLength(),
+    )
+    await userEvent.unhover(band!)
+
+    // A jump that leaves its column and comes round is set along its line like
+    // any other, and its words are short enough to stay whole.
+    const loop = title('see also')[0]!
+    await expect(loop.querySelector('textPath')).not.toBeNull()
+    await expect(loop.getComputedTextLength()).toBeLessThan(
+      lineOf(loop).getTotalLength(),
+    )
+  },
+}
+
+/**
+ * One note's lines as the demo vault has them: two the plex is asked to draw
+ * an arrow on, one it is not, and a sibling's line hanging off the parent the
+ * two of them share.
+ */
+const arrowedLines: PlexNeighbourhood = {
+  nodes: [
+    { id: 'duryodhana', title: 'Duryodhana, The King', seat: 'focus' },
+    { id: 'mahabharata', title: 'Mahabharata', seat: 'parent' },
+    { id: 'bhishma', title: 'Bhishma', seat: 'jump' },
+    { id: 'ebanko', title: 'Ebanko', seat: 'jump' },
+    { id: 'draupadi', title: 'The question of Draupadi', seat: 'sibling' },
+  ],
+  edges: [
+    { from: 'mahabharata', to: 'duryodhana', arrow: 'from' },
+    { from: 'bhishma', to: 'duryodhana', label: 'питамаха, дед рода', arrow: 'from' },
+    { from: 'ebanko', to: 'duryodhana', label: 'яд, поджог, засада' },
+    { from: 'mahabharata', to: 'draupadi', label: 'the scene in the assembly' },
+  ],
+}
+
+/**
+ * The arrow a line carries, drawn at whichever of its two ends it was given.
+ *
+ * Only a browser can answer any of it: whether a head comes out of the style
+ * at all, where it lands once the turn it is given is applied, and which side
+ * of the box it ends up on.
+ *
+ * The picture arrives at once: a line on its way somewhere has not reached the
+ * end its arrow belongs at.
+ */
+export const ArrowedLines: Story = {
+  args: { neighbourhood: arrowedLines, duration: 0 },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const svg = canvasElement.querySelector('svg')!
+
+    /** Whether a box holds a point, give or take a pixel. */
+    const holds = (box: DOMRect, at: DOMPoint) =>
+      at.x >= box.left - 1 &&
+      at.x <= box.right + 1 &&
+      at.y >= box.top - 1 &&
+      at.y <= box.bottom + 1
+
+    /** Every line drawn, with both its ends where they land on the screen. */
+    const lines = () => {
+      const onScreen = svg.getScreenCTM()!
+      return [...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge')].map(
+        (line) => ({
+          line,
+          ends: [
+            line.getPointAtLength(0),
+            line.getPointAtLength(line.getTotalLength()),
+          ].map((point) => point.matrixTransform(onScreen)),
+        }),
+      )
+    }
+
+    /** The line that touches a node's box, and the end of it that does. */
+    const lineAt = (name: string) => {
+      const box = canvas.getByLabelText(name).getBoundingClientRect()
+      for (const { line, ends } of lines()) {
+        const end = ends.find((point) => holds(box, point))
+        if (end) return { line, end }
+      }
+      throw new Error(`no line touches ${name}`)
+    }
+
+    const endAt = (name: string) => lineAt(name).end
+
+    const heads = () => [
+      ...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge-arrow'),
+    ]
+
+    /** Whether an arrowhead was drawn on a given end of a line. */
+    const headAt = (end: DOMPoint) =>
+      heads().some((head) => holds(head.getBoundingClientRect(), end))
+
+    // The window is measured after the first drawing, so the plex settles on
+    // its second.
+    await waitFor(async () => {
+      await expect(heads()).toHaveLength(2)
+    })
+
+    // A head is really drawn, and is not an empty path.
+    for (const head of heads()) {
+      const box = head.getBoundingClientRect()
+      await expect(box.width).toBeGreaterThan(0)
+      await expect(box.height).toBeGreaterThan(0)
+    }
+
+    // Each of them at the far end of its own line, away from the focus.
+    await expect(headAt(endAt('Mahabharata, parent'))).toBe(true)
+    await expect(headAt(endAt('Bhishma, jump'))).toBe(true)
+
+    // The lines given none carry none, the sibling's line among them.
+    await expect(headAt(endAt('Ebanko, jump'))).toBe(false)
+    await expect(headAt(endAt('The question of Draupadi, sibling'))).toBe(false)
+
+    // The head stands outside the box it points into: it is turned along the
+    // line, and its tip is what touches the border.
+    const jump = lineAt('Bhishma, jump')
+    const box = canvas.getByLabelText('Bhishma, jump').getBoundingClientRect()
+    const head = heads().find((one) => holds(one.getBoundingClientRect(), jump.end))!
+    const drawn = head.getBoundingClientRect()
+    await expect(
+      holds(box, new DOMPoint(drawn.x + drawn.width / 2, drawn.y + drawn.height / 2)),
+    ).toBe(false)
+
+    // The title on that line is cut short of the head, at either end of the
+    // words: neither the letters nor the halo under them reach it.
+    const clear = Math.max(drawn.width, drawn.height)
+    const title = [
+      ...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label'),
+    ].find((text) => text.textContent!.startsWith('пит'))!
+    const letters = title.getNumberOfChars()
+    const onScreen = svg.getScreenCTM()!
+    for (const glyph of [
+      title.getStartPositionOfChar(0),
+      title.getEndPositionOfChar(letters - 1),
+    ]) {
+      const at = new DOMPoint(glyph.x, glyph.y).matrixTransform(onScreen)
+      await expect(Math.hypot(at.x - jump.end.x, at.y - jump.end.y)).toBeGreaterThan(clear)
+    }
+
+    // The hand on that line lifts it, and the head is brightened with it.
+    const resting = getComputedStyle(head).fill
+    const band = [
+      ...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge-hit'),
+    ].find((line) => line.getAttribute('d') === jump.line.getAttribute('d'))!
+    await userEvent.hover(band)
+
+    const lifted = canvasElement.querySelector<SVGPathElement>(
+      '.plex__lift .plex__edge-arrow',
+    )!
+    await expect(lifted).not.toBeNull()
+    await expect(getComputedStyle(lifted).fill).not.toBe(resting)
+  },
 }
 
 /**

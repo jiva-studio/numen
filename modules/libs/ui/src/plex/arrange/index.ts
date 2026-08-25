@@ -10,7 +10,7 @@ export {
   type DropInput,
 } from './drop'
 export { interpolatePlex } from './interpolate'
-export { rowsAndColumns, type Placement, type Seating } from './placement'
+export { rowsAndColumns, type Placement, type Seating, type Widths } from './placement'
 export { routeEdge, routeEdges, routingFor, type Axis, type Routing } from './routing'
 export { clamp01, easeOut, lerp, lerpExtent } from './math'
 export {

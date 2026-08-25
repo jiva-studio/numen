@@ -463,7 +463,11 @@ type Seated struct {
 	Label string `protobuf:"bytes,3,opt,name=label,proto3" json:"label,omitempty"`
 	// The note the relationship runs from, when that is not the one in focus: a
 	// sibling is another child of a shared parent, and this is that parent.
-	Through       string `protobuf:"bytes,4,opt,name=through,proto3" json:"through,omitempty"`
+	Through string `protobuf:"bytes,4,opt,name=through,proto3" json:"through,omitempty"`
+	// Set when both notes name this relationship, each in its own words. The
+	// label is then the one the note in focus wrote, and the arrow drawn on the
+	// line points at the note it was written about.
+	Mutual        bool `protobuf:"varint,5,opt,name=mutual,proto3" json:"mutual,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -524,6 +528,13 @@ func (x *Seated) GetThrough() string {
 		return x.Through
 	}
 	return ""
+}
+
+func (x *Seated) GetMutual() bool {
+	if x != nil {
+		return x.Mutual
+	}
+	return false
 }
 
 type StateRequest struct {
@@ -3245,12 +3256,13 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1e\n" +
 	"\n" +
 	"identifier\x18\x03 \x01(\tR\n" +
-	"identifier\"\x80\x01\n" +
+	"identifier\"\x98\x01\n" +
 	"\x06Seated\x12\"\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04note\x12\"\n" +
 	"\x04seat\x18\x02 \x01(\x0e2\x0e.numen.v1.SeatR\x04seat\x12\x14\n" +
 	"\x05label\x18\x03 \x01(\tR\x05label\x12\x18\n" +
-	"\athrough\x18\x04 \x01(\tR\athrough\"\x0e\n" +
+	"\athrough\x18\x04 \x01(\tR\athrough\x12\x16\n" +
+	"\x06mutual\x18\x05 \x01(\bR\x06mutual\"\x0e\n" +
 	"\fStateRequest\"\xcb\x02\n" +
 	"\rStateResponse\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +

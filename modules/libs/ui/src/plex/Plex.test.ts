@@ -3,8 +3,10 @@
  * most here: they are what fails silently and still looks right.
  */
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import Plex from './Plex.vue'
+import { DEFAULT_OPTIONS } from './arrange'
 import { neighbourhoods } from './fixtures/neighbourhoods'
 
 /** No movement unless a test is about movement. */
@@ -157,6 +159,133 @@ describe('what did not fit', () => {
       slots: { overflow: '<span class="hushed" />' },
     })
     expect(plex.get('[role="status"]').text()).toBe('')
+  })
+})
+
+describe('how wide a box is drawn', () => {
+  const boxes = (plex: ReturnType<typeof mountPlex>) =>
+    plex.findAll('.plex__node--child .plex__box').map((box) => box.attributes('width'))
+
+  /** The type the page is set in, which a theme may rewrite at any moment. */
+  let theme = { size: 13, padding: 10, gap: 6, label: 10 }
+
+  /** A canvas that measures by the character. jsdom has none of its own. */
+  const stubCanvas = () => {
+    vi.stubGlobal('CanvasRenderingContext2D', function () {})
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      font: '',
+      measureText: (text: string) => ({ width: text.length * 7 }) as TextMetrics,
+    } as unknown as CanvasRenderingContext2D)
+  }
+
+  /**
+   * The document, resolving the tokens a box carries into pixels. jsdom
+   * resolves no custom property, so this stands in for the engine that does.
+   */
+  const stubStyles = () => {
+    const engine = window.getComputedStyle.bind(window)
+
+    vi.spyOn(window, 'getComputedStyle').mockImplementation(((
+      element: Element,
+      pseudo?: string | null,
+    ) => {
+      const declared = (element as HTMLElement).style?.getPropertyValue('font-size') ?? ''
+      if (!declared.startsWith('var(--numen')) return engine(element, pseudo)
+
+      return {
+        fontSize: `${declared.includes('edge-label') ? theme.label : theme.size}px`,
+        fontFamily: 'Test Sans',
+        paddingInlineStart: `${theme.padding}px`,
+        columnGap: `${theme.gap}px`,
+      } as CSSStyleDeclaration
+    }) as typeof window.getComputedStyle)
+  }
+
+  /** A window that says something has changed size when a test says it has. */
+  const stubObserver = (): (() => void)[] => {
+    const rings: (() => void)[] = []
+
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(private readonly ring: ResizeObserverCallback) {}
+        observe() {
+          rings.push(() => this.ring([], this as unknown as ResizeObserver))
+        }
+        disconnect() {}
+      },
+    )
+
+    return rings
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+    theme = { size: 13, padding: 10, gap: 6, label: 10 }
+    document.body.replaceChildren()
+  })
+
+  it('is the widest a box gets where there is nothing to measure with', () => {
+    // jsdom has no canvas, as a page rendered on a server has none.
+    for (const width of boxes(mountPlex())) {
+      expect(width).toBe(String(DEFAULT_OPTIONS.nodeSize.width))
+    }
+  })
+
+  it('follows the title where there is, from the first render on', async () => {
+    // Measured before the first arrangement, so nothing is drawn at a width it
+    // then has to leave: the reader is never shown a box shrinking into place.
+    stubCanvas()
+    stubStyles()
+
+    const plex = mountPlex({ duration: 400 })
+    const painted = boxes(plex)
+
+    expect(new Set(painted).size).toBeGreaterThan(1)
+    expect(painted).not.toContain(String(DEFAULT_OPTIONS.nodeSize.width))
+
+    await nextTick()
+    expect(boxes(plex)).toStrictEqual(painted)
+    expect(plex.vm.moving).toBe(false)
+  })
+
+  it('stands still while the type it was measured in stands', async () => {
+    // The box of the plex's own type is watched, and it is looked at again
+    // whenever the window says it may have moved.
+    stubCanvas()
+    stubStyles()
+    const rings = stubObserver()
+
+    const plex = mountPlex({ duration: 400 })
+    const painted = boxes(plex)
+
+    for (const ring of rings) ring()
+    await nextTick()
+
+    expect(boxes(plex)).toStrictEqual(painted)
+    expect(plex.vm.moving).toBe(false)
+  })
+
+  it('measures again when a theme changes the type under it', async () => {
+    // A theme is worn by rewriting a style element, with nothing remounted.
+    // Every box then holds a title set in type the plex has never measured.
+    stubCanvas()
+    stubStyles()
+    const rings = stubObserver()
+
+    const plex = mountPlex()
+    const painted = boxes(plex)
+
+    theme = { ...theme, size: 20, padding: 24 }
+    for (const ring of rings) ring()
+    await nextTick()
+
+    const measured = boxes(plex)
+    expect(measured).not.toStrictEqual(painted)
+    for (const [at, width] of measured.entries()) {
+      expect(Number(width)).toBeGreaterThan(Number(painted[at]))
+    }
   })
 })
 

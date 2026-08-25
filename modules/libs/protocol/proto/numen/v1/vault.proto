@@ -165,6 +165,11 @@ message Seated {
   // The note the relationship runs from, when that is not the one in focus: a
   // sibling is another child of a shared parent, and this is that parent.
   string through = 4;
+
+  // Set when both notes name this relationship, each in its own words. The
+  // label is then the one the note in focus wrote, and the arrow drawn on the
+  // line points at the note it was written about.
+  bool mutual = 5;
 }
 
 message StateRequest {}

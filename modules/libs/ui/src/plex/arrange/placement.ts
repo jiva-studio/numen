@@ -5,12 +5,16 @@ import { isVertical, type Direction, type PlexOptions } from './options'
 /** The nodes admitted to the picture, grouped by the seat they take. */
 export type Seating = Readonly<Partial<Record<PlexRelatedSeat, readonly PlexNode[]>>>
 
+/** How wide a node's box is drawn, clamped before a strategy is called. */
+export type Widths = (node: PlexNode) => number
+
 /**
  * Where the nodes go. A strategy, so a radial mind map is another
  * implementation rather than a branch inside this one.
  *
  * It decides coordinates and nothing else: how much is admitted is settled
- * before it is called, and routing follows from where the boxes ended up.
+ * before it is called, how wide each box is comes in as a number, and routing
+ * follows from where the boxes ended up.
  */
 export interface Placement {
   readonly name: string
@@ -20,6 +24,7 @@ export interface Placement {
     focus: PlacedNode,
     options: PlexOptions,
     limits: Limits,
+    width: Widths,
   ): PlacedNode[]
 }
 
@@ -27,7 +32,7 @@ export interface Placement {
 export const rowsAndColumns: Placement = {
   name: 'rows-and-columns',
 
-  place(seating, focus, options, limits) {
+  place(seating, focus, options, limits, width) {
     const placed: PlacedNode[] = [focus]
 
     // Rows first. A row of children is as wide as the plex gets, so a column
@@ -40,7 +45,14 @@ export const rowsAndColumns: Placement = {
 
     for (const [seat, nodes] of rows) {
       placed.push(
-        ...line(nodes, options.direction[seat], options, limits[seat], focus.height / 2),
+        ...line(
+          nodes,
+          options.direction[seat],
+          options,
+          limits[seat],
+          width,
+          focus.height / 2,
+        ),
       )
     }
 
@@ -60,7 +72,7 @@ export const rowsAndColumns: Placement = {
 
     for (const [seat, nodes] of columns) {
       placed.push(
-        ...line(nodes, options.direction[seat], options, limits[seat], clearance),
+        ...line(nodes, options.direction[seat], options, limits[seat], width, clearance),
       )
     }
 
@@ -69,43 +81,117 @@ export const rowsAndColumns: Placement = {
 }
 
 /**
- * One seat, in lines running away from the focus, each line centred on the
- * focus axis. `clearance` is what the first line has to clear.
+ * One seat, in lines running away from the focus. `clearance` is what the
+ * first line has to clear.
  */
 function line(
   nodes: readonly PlexNode[],
   direction: Direction,
   options: PlexOptions,
   limits: RoleLimits,
+  width: Widths,
   clearance: number,
 ): PlacedNode[] {
-  const { width, height } = options.nodeSize
-  const vertical = isVertical(direction)
   const sign = direction === 'up' || direction === 'left' ? -1 : 1
+  const near = clearance + options.focusGap
+  return isVertical(direction)
+    ? inRows(nodes, sign, near, options, limits, width)
+    : inColumns(nodes, sign, near, options, limits, width)
+}
 
-  const alongStep = (vertical ? width : height) + options.gap
-  const awayStep = (vertical ? height : width) + options.lineGap
-  const firstOffset =
-    clearance + options.focusGap + (vertical ? height : width) / 2
+/**
+ * A row is as long as its boxes and the gaps between them, and is centred on
+ * the focus. Heights are uniform, so each line stands one box beyond the last.
+ */
+function inRows(
+  nodes: readonly PlexNode[],
+  sign: number,
+  near: number,
+  options: PlexOptions,
+  limits: RoleLimits,
+  width: Widths,
+): PlacedNode[] {
+  const { height } = options.nodeSize
+  const placed: PlacedNode[] = []
 
-  return nodes.map((node, index) => {
-    const row = Math.floor(index / limits.perLine)
-    const withinRow = index % limits.perLine
-    const rowLength = Math.min(limits.perLine, nodes.length - row * limits.perLine)
+  for (const { ofLine, depth, first } of lines(nodes, limits.perLine)) {
+    const widths = ofLine.map(width)
+    const length = widths.reduce((sum, each) => sum + each + options.gap, -options.gap)
+    const away = sign * (near + depth * (height + options.lineGap) + height / 2)
 
-    const along = (withinRow - (rowLength - 1) / 2) * alongStep
-    const away = sign * (firstOffset + row * awayStep)
+    let edge = -length / 2
+    ofLine.forEach((node, index) => {
+      const box = widths[index]!
+      placed.push({
+        ...node,
+        x: edge + box / 2,
+        y: away,
+        width: box,
+        height,
+        order: first + index,
+        opacity: 1,
+      })
+      edge += box + options.gap
+    })
+  }
 
-    return {
-      ...node,
-      x: vertical ? along : away,
-      y: vertical ? away : along,
-      width,
-      height,
-      order: index,
-      opacity: 1,
+  return placed
+}
+
+/**
+ * Every box of a column turns the same edge towards the focus, whatever it
+ * measures. A line stands clear of the widest box of the line before it.
+ */
+function inColumns(
+  nodes: readonly PlexNode[],
+  sign: number,
+  near: number,
+  options: PlexOptions,
+  limits: RoleLimits,
+  width: Widths,
+): PlacedNode[] {
+  const { height } = options.nodeSize
+  const step = height + options.gap
+  const placed: PlacedNode[] = []
+  let edge = near
+
+  for (const { ofLine, first } of lines(nodes, limits.perLine)) {
+    const widths = ofLine.map(width)
+
+    ofLine.forEach((node, index) => {
+      const box = widths[index]!
+      placed.push({
+        ...node,
+        x: sign * (edge + box / 2),
+        y: (index - (ofLine.length - 1) / 2) * step,
+        width: box,
+        height,
+        order: first + index,
+        opacity: 1,
+      })
+    })
+
+    edge += Math.max(...widths) + options.lineGap
+  }
+
+  return placed
+}
+
+/**
+ * The nodes of a seat cut into lines of `perLine`, nearest the focus first.
+ * `depth` counts the lines out from the focus and `first` the nodes before.
+ */
+function* lines(
+  nodes: readonly PlexNode[],
+  perLine: number,
+): Generator<{ ofLine: readonly PlexNode[]; depth: number; first: number }> {
+  for (let first = 0; first < nodes.length; first += perLine) {
+    yield {
+      ofLine: nodes.slice(first, first + perLine),
+      depth: first / perLine,
+      first,
     }
-  })
+  }
 }
 
 /** How far above and below the focus a column of `count` nodes reaches. */

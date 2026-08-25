@@ -16,6 +16,14 @@ import { clamp01, lerp, lerpExtent } from './math'
 import { resolveOptions, type PlexOptionsInput } from './options'
 import { routeEdges, routingFor } from './routing'
 
+/** What a settled arrangement says about the title an edge carries. */
+type Title = Pick<PlacedEdge, 'heading' | 'words'>
+
+const titleOf = (edge: PlacedEdge): Title => ({
+  heading: edge.heading,
+  words: edge.words,
+})
+
 export function interpolatePlex(
   from: PlexFrame,
   to: PlexFrame,
@@ -85,12 +93,19 @@ export function interpolatePlex(
     return willEdge.has(key) ? arriving : leaving
   }
 
+  // A title belongs to a settled arrangement: the words it was cut to and the
+  // way round they are read come from where the edge is going, or from where
+  // it is leaving for an edge that only rests there.
+  const settled = new Map<string, Title>()
+  for (const edge of from.edges) settled.set(edgeKey(edge), titleOf(edge))
+  for (const edge of to.edges) settled.set(edgeKey(edge), titleOf(edge))
+
   const edges: PlacedEdge[] = routeEdges(
     both,
     byId,
     routingFor(resolved),
     edgeOpacity,
-  )
+  ).map((edge) => ({ ...edge, ...settled.get(edgeKey(edge)) }))
 
   return {
     nodes,

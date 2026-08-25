@@ -50,6 +50,10 @@ type Seated struct {
 	// Label is what the person wrote on the link.
 	Label string
 
+	// Mutual is set when both notes name this relationship, each in its own
+	// words. Label is then the word the note in focus wrote for it.
+	Mutual bool
+
 	// Through is the note the relationship runs from, when that is not the one
 	// in focus. A sibling is another child of a shared parent, and which parent
 	// is a fact about the vault.

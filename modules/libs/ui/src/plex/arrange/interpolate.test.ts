@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { interpolatePlex } from './interpolate'
 import { easeOut } from './math'
-import type { PlexFrame, PlexNeighbourhood } from '../model'
+import { headingOf, type PlexFrame, type PlexNeighbourhood } from '../model'
 
 /** Focus on `focus`, with two children and one parent. */
 const before: PlexNeighbourhood = {
@@ -169,6 +169,103 @@ describe('the edges follow the boxes', () => {
     // Out of sight well before it is out of the frame.
     expect(late.edges.find((e) => e.to === 'b')?.opacity).toBe(0)
     expect(to.edges.find((e) => e.to === 'b')).toBeUndefined()
+  })
+})
+
+/**
+ * A title belongs to a line that has settled. The words it was cut to and the
+ * way round they are read come from the arrangements being moved between, and
+ * a curve in flight decides neither.
+ */
+describe('the title a line carries while the picture moves', () => {
+  const named = (edge: { from: string; to: string }) => `${edge.from}->${edge.to}`
+
+  it('holds the way round the words are read', () => {
+    const settled = new Map(to.edges.map((edge) => [named(edge), edge.heading]))
+
+    // A child promoted to the focus swings its edge across the page, and
+    // halfway over it runs the other way round from the way it ends.
+    const swung = interpolatePlex(from, to, 0.5).edges.find((e) => e.to === 'a')!
+    expect(swung.heading).toBe('along')
+    expect(headingOf(swung)).toBe('against')
+
+    for (let t = 0.05; t < 1; t += 0.05) {
+      for (const edge of interpolatePlex(from, to, t).edges) {
+        const heading = settled.get(named(edge))
+        if (heading === undefined) continue
+        expect(edge.heading, `${named(edge)} at ${t.toFixed(2)}`).toBe(heading)
+      }
+    }
+  })
+
+  it('holds the words a settled line was cut to', () => {
+    // Wide letters and a long label, so the cut is well short of the whole.
+    const wide = (label: string) => 30 * [...label].length
+    const saying = (neighbourhood: PlexNeighbourhood) =>
+      arrangePlex(
+        {
+          ...neighbourhood,
+          edges: neighbourhood.edges.map((edge) => ({
+            ...edge,
+            label: 'the scene in the assembly',
+          })),
+        },
+        { measureLabel: wide },
+      )
+
+    const start = saying(before)
+    const end = saying(after)
+    const cut = end.edges.find((e) => e.to === 'a')!.words!
+    expect(cut.endsWith('…')).toBe(true)
+
+    for (let t = 0.05; t < 1; t += 0.05) {
+      const edge = interpolatePlex(start, end, t).edges.find((e) => e.to === 'a')!
+      expect(edge.words, `at ${t.toFixed(2)}`).toBe(cut)
+    }
+  })
+
+  it('holds the title of the arrangement it is leaving for a line only there', () => {
+    const marked: PlexFrame = {
+      ...from,
+      edges: from.edges.map((edge) =>
+        edge.to === 'b'
+          ? { ...edge, heading: 'against' as const, words: 'went that way…' }
+          : edge,
+      ),
+    }
+    const going = interpolatePlex(marked, to, 0.5).edges.find((e) => e.to === 'b')!
+
+    expect(going.heading).toBe('against')
+    expect(going.words).toBe('went that way…')
+    expect(headingOf(going)).toBe('along')
+  })
+})
+
+describe('the arrow a line carries while the picture moves', () => {
+  const marked = (neighbourhood: PlexNeighbourhood): PlexNeighbourhood => ({
+    ...neighbourhood,
+    edges: neighbourhood.edges.map((edge) =>
+      edge.to === 'a' ? { ...edge, arrow: 'to' as const } : edge,
+    ),
+  })
+
+  const start = arrangePlex(marked(before))
+  const end = arrangePlex(marked(after))
+
+  it('keeps it on the end of the line, wherever the line has got to', () => {
+    for (let t = 0.05; t < 1; t += 0.05) {
+      const edge = interpolatePlex(start, end, t).edges.find((e) => e.to === 'a')!
+      expect(edge.arrowhead, `at ${t.toFixed(2)}`).toBeDefined()
+      expect(edge.arrowhead!.at.x).toBe(edge.toPoint.x)
+      expect(edge.arrowhead!.at.y).toBe(edge.toPoint.y)
+    }
+  })
+
+  it('aims it out of the box it arrives at, which it meets square on', () => {
+    for (let t = 0.05; t < 1; t += 0.05) {
+      const edge = interpolatePlex(start, end, t).edges.find((e) => e.to === 'a')!
+      expect(edge.arrowhead!.angle, `at ${t.toFixed(2)}`).toBeCloseTo(90)
+    }
   })
 })
 

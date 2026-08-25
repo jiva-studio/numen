@@ -1,8 +1,16 @@
 /** How a line is drawn between two boxes. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
+import { DEFAULT_OPTIONS } from './options'
+import { routeEdges, routingFor } from './routing'
 import { neighbourhoods } from '../fixtures/neighbourhoods'
-import type { PlacedNode, PlexSeat } from '../model'
+import {
+  lengthOf,
+  type EdgeArrow,
+  type PlacedNode,
+  type PlexNeighbourhood,
+  type PlexSeat,
+} from '../model'
 
 const withSeat = (frame: { nodes: readonly PlacedNode[] }, seat: PlexSeat) =>
   frame.nodes.filter((node) => node.seat === seat)
@@ -98,6 +106,57 @@ describe('edges', () => {
     expect(edge!.control2.x).toBeLessThan(edge!.toPoint.x)
   })
 
+  it('takes the heading from the curve, and not from the seat', () => {
+    const layout = arrangePlex(neighbourhoods.typical)
+
+    // A sibling is seated under a parent, and its line runs left to right.
+    for (const sibling of withSeat(layout, 'sibling')) {
+      const edge = layout.edges.find((e) => e.to === sibling.id)!
+      expect(edge.heading, `sibling ${sibling.id}`).toBe('along')
+    }
+
+    // A jump is seated sideways, and its line arrives from the left.
+    for (const jump of withSeat(layout, 'jump')) {
+      const edge = layout.edges.find((e) => e.from === jump.id)!
+      expect(edge.heading, `jump ${jump.id}`).toBe('along')
+    }
+  })
+
+  it('takes a curve running up the page the other way round', () => {
+    // A parent is above the focus, and the line is written from it downwards.
+    const layout = arrangePlex(neighbourhoods.typical)
+    const down = layout.edges.find((e) => e.to === 'focus' && e.from === 'parent-0')!
+    expect(down.fromPoint.y).toBeLessThan(down.toPoint.y)
+    expect(down.heading).toBe('along')
+
+    // The same pair written the other way about runs up it, and is read down.
+    const up = arrangePlex({
+      nodes: [
+        { id: 'focus', title: 'Here', seat: 'focus' },
+        { id: 'over', title: 'Over', seat: 'parent' },
+      ],
+      edges: [{ from: 'focus', to: 'over' }],
+    })
+    expect(up.edges[0]!.fromPoint.y).toBeGreaterThan(up.edges[0]!.toPoint.y)
+    expect(up.edges[0]!.heading).toBe('against')
+  })
+
+  it('takes the reading direction from the curve, not from which end is which', () => {
+    // One jump sits level with the focus, so the line between them is straight
+    // and runs whichever way the pair was written.
+    const nodes = [
+      { id: 'focus', title: 'Here', seat: 'focus' as const },
+      { id: 'aside', title: 'Aside', seat: 'jump' as const },
+    ]
+    const outward = arrangePlex({ nodes, edges: [{ from: 'focus', to: 'aside' }] })
+    const inward = arrangePlex({ nodes, edges: [{ from: 'aside', to: 'focus' }] })
+
+    expect(outward.edges[0]!.heading).toBe('against')
+    expect(outward.edges[0]!.fromPoint.x).toBeGreaterThan(outward.edges[0]!.toPoint.x)
+    expect(inward.edges[0]!.heading).toBe('along')
+    expect(inward.edges[0]!.fromPoint.x).toBeLessThan(inward.edges[0]!.toPoint.x)
+  })
+
   it('drops an edge from a node to itself', () => {
     const nodes = [{ id: 'a', title: 'A', seat: 'focus' as const }]
     const layout = arrangePlex({ nodes, edges: [{ from: 'a', to: 'a' }] })
@@ -105,3 +164,154 @@ describe('edges', () => {
   })
 })
 
+/**
+ * A title is always set along its line, so words longer than the line are cut
+ * to it. What the person wrote is kept; what is drawn is the cut.
+ */
+describe('a title cut to the line it is set on', () => {
+  const sideways: PlexNeighbourhood = {
+    nodes: [
+      { id: 'focus', title: 'Here', seat: 'focus' },
+      { id: 'aside', title: 'Aside', seat: 'jump' },
+    ],
+    edges: [{ from: 'aside', to: 'focus', label: 'the scene in the assembly' }],
+  }
+
+  const placed = arrangePlex(sideways)
+  const byId = new Map(placed.nodes.map((node) => [node.id, node]))
+  const curve = placed.edges[0]!
+  const arc = lengthOf(curve)
+
+  const routed = (measureLabel?: (label: string) => number) =>
+    routeEdges(sideways.edges, byId, routingFor(DEFAULT_OPTIONS, measureLabel))[0]!
+
+  it('estimates the curve between its chord and the way round its controls', () => {
+    const step = (a: { x: number; y: number }, b: { x: number; y: number }) =>
+      Math.hypot(b.x - a.x, b.y - a.y)
+    const chord = step(curve.fromPoint, curve.toPoint)
+    const round =
+      step(curve.fromPoint, curve.control1) +
+      step(curve.control1, curve.control2) +
+      step(curve.control2, curve.toPoint)
+
+    expect(arc).toBeGreaterThanOrEqual(chord)
+    expect(arc).toBeLessThanOrEqual(round)
+  })
+
+  /** A letter of a fixed width, so what fits is a matter of counting. */
+  const perLetter = (width: number) => (label: string) => width * [...label].length
+
+  it('draws the whole label where it fits the curve', () => {
+    const edge = routed(perLetter(1))
+    expect(edge.words).toBe('the scene in the assembly')
+    expect(edge.label).toBe('the scene in the assembly')
+  })
+
+  it('draws the whole label where nothing measured it', () => {
+    expect(routed().words).toBe('the scene in the assembly')
+  })
+
+  it('cuts words longer than the curve, and ends them in an ellipsis', () => {
+    const width = perLetter(arc / 10)
+    const edge = routed(width)
+
+    expect(edge.words).not.toBe(edge.label)
+    expect(edge.words!.endsWith('…')).toBe(true)
+    expect(edge.label!.startsWith(edge.words!.slice(0, -1))).toBe(true)
+    expect(width(edge.words!)).toBeLessThanOrEqual(arc)
+  })
+
+  it('leaves no space hanging before the ellipsis', () => {
+    // Ten letters' room, and the tenth letter of this label is a space.
+    const edge = routed(perLetter(arc / 10))
+    expect(edge.words).toBe('the scene…')
+  })
+
+  it('carries the ellipsis alone where there is room for nothing', () => {
+    expect(routed(perLetter(arc)).words).toBe('…')
+  })
+
+  it('measures the words it carries, and no other', () => {
+    const asked: string[] = []
+    routed((label) => {
+      asked.push(label)
+      return 0
+    })
+    expect(asked).toStrictEqual(['the scene in the assembly'])
+  })
+
+  it('halves in on the cut rather than stepping through the label', () => {
+    const label = 'a'.repeat(400)
+    const asked: string[] = []
+    routeEdges(
+      [{ from: 'aside', to: 'focus', label }],
+      byId,
+      routingFor(DEFAULT_OPTIONS, (words) => {
+        asked.push(words)
+        return [...words].length
+      }),
+    )
+    expect(asked.length).toBeLessThan(20)
+  })
+})
+
+
+/**
+ * An arrowhead is drawn at one end of the line and aimed out of it. Which end
+ * comes down with the edge; where and which way round is worked out here.
+ */
+describe('the arrowhead a line carries', () => {
+  const nodes = [
+    { id: 'focus', title: 'Here', seat: 'focus' as const },
+    { id: 'below', title: 'Below', seat: 'child' as const },
+  ]
+
+  /** One line straight down the page, so its ends are a quarter turn apart. */
+  const routed = (arrow?: EdgeArrow) =>
+    arrangePlex({
+      nodes,
+      edges: [{ from: 'focus', to: 'below', ...(arrow ? { arrow } : {}) }],
+    }).edges[0]!
+
+  it('sits where the line arrives, aimed the way it is going', () => {
+    const edge = routed('to')
+    expect(edge.arrowhead!.at.x).toBe(edge.toPoint.x)
+    expect(edge.arrowhead!.at.y).toBe(edge.toPoint.y)
+    expect(edge.arrowhead!.angle).toBeCloseTo(90)
+  })
+
+  it('sits where the line leaves, aimed back out of it', () => {
+    const edge = routed('from')
+    expect(edge.arrowhead!.at.x).toBe(edge.fromPoint.x)
+    expect(edge.arrowhead!.at.y).toBe(edge.fromPoint.y)
+    expect(edge.arrowhead!.angle).toBeCloseTo(-90)
+  })
+
+  it('is drawn on no line that was given no arrow', () => {
+    expect(routed().arrowhead).toBeUndefined()
+  })
+
+  it('leaves the title of its line short of the head', () => {
+    const measure = (words: string) => 4 * [...words].length
+    const byId = new Map(
+      arrangePlex({ nodes, edges: [] }).nodes.map((node) => [node.id, node]),
+    )
+    const words = (arrow?: EdgeArrow) =>
+      routeEdges(
+        [
+          {
+            from: 'focus',
+            to: 'below',
+            label: 'the scene in the assembly',
+            ...(arrow ? { arrow } : {}),
+          },
+        ],
+        byId,
+        routingFor(DEFAULT_OPTIONS, measure),
+      )[0]!.words!
+
+    const room = lengthOf(routed()) - 2 * DEFAULT_OPTIONS.routing.arrowRoom
+    expect(measure(words('to'))).toBeLessThanOrEqual(room)
+    expect(measure(words())).toBeGreaterThan(room)
+  })
+})

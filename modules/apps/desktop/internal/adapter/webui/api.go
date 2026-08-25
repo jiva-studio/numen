@@ -238,6 +238,7 @@ func (a *API) Neighbourhood(ctx context.Context, r *connect.Request[v1.Neighbour
 			Seat:    seatOf(related.Seat),
 			Label:   related.Label,
 			Through: related.Through,
+			Mutual:  related.Mutual,
 		})
 	}
 	return connect.NewResponse(out), nil

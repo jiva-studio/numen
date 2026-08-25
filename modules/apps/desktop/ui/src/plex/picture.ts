@@ -7,7 +7,13 @@
  */
 import { NeighbourhoodResponseSchema, Seat } from '@numen/protocol'
 import type { Neighbourhood } from '../core'
-import type { PlexEdge, PlexNeighbourhood, PlexNode, PlexRelatedSeat } from '@numen/ui'
+import type {
+  EdgeArrow,
+  PlexEdge,
+  PlexNeighbourhood,
+  PlexNode,
+  PlexRelatedSeat,
+} from '@numen/ui'
 
 /**
  * The schema that builds a neighbourhood. The type is a generated message
@@ -40,8 +46,10 @@ const seats: Record<Seat, PlexRelatedSeat | null> = {
  *
  * An edge runs the way the relationship runs, and a sibling's does not touch
  * the focus at all: it is another of a parent's children, so it hangs off that
- * parent. Which parent is a question about the vault, which is why it is
- * answered here and not by the plex.
+ * parent. Which parent that is comes from the vault, and this file names it.
+ *
+ * A relationship both notes named is drawn with an arrow at the end away from
+ * the focus, the words along the line being the ones the note in focus wrote.
  */
 export function asPlex(neighbourhood: Neighbourhood): PlexNeighbourhood {
   const focus: PlexNode = {
@@ -51,7 +59,13 @@ export function asPlex(neighbourhood: Neighbourhood): PlexNeighbourhood {
   }
 
   const nodes: PlexNode[] = [focus]
-  const seated: { id: string; seat: PlexRelatedSeat; label: string; through: string }[] = []
+  const seated: {
+    id: string
+    seat: PlexRelatedSeat
+    label: string
+    through: string
+    mutual: boolean
+  }[] = []
   for (const related of neighbourhood.related) {
     const seat = seats[related.seat]
     if (!seat || !related.note) continue
@@ -64,16 +78,24 @@ export function asPlex(neighbourhood: Neighbourhood): PlexNeighbourhood {
       // one they had written themselves.
       label: related.label,
       through: related.through,
+      mutual: related.mutual,
     })
   }
 
   const shown = new Set(nodes.map((node) => node.id))
-  const edges: PlexEdge[] = seated.flatMap(({ id, seat, label, through }) => {
+  const edges: PlexEdge[] = seated.flatMap(({ id, seat, label, through, mutual }) => {
     const line = label ? { label } : {}
-    if (seat === 'parent' || seat === 'jump') return [{ from: id, to: focus.id, ...line }]
-    if (seat === 'child') return [{ from: focus.id, to: id, ...line }]
+    // A mutual line carries an arrow at the end away from the note in focus,
+    // whichever end of the line that is. A relationship named at one end only
+    // has one wording, and nothing for an arrow to choose between.
+    const head = (end: EdgeArrow) => (mutual ? { arrow: end } : {})
+    if (seat === 'parent' || seat === 'jump') {
+      return [{ from: id, to: focus.id, ...line, ...head('from') }]
+    }
+    if (seat === 'child') return [{ from: focus.id, to: id, ...line, ...head('to') }]
     // A sibling hangs off the parent it shares, which the answer names. With
-    // that parent off the screen it hangs off nothing.
+    // that parent off the screen it hangs off nothing. Neither end of that line
+    // is the note in focus, so no arrow is drawn on it.
     return shown.has(through) ? [{ from: through, to: id, ...line }] : []
   })
 

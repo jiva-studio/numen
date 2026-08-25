@@ -1,4 +1,14 @@
-import type { PlacedEdge, PlacedNode, PlexEdge, PlexSeat, Point } from '../model'
+import {
+  arrowOf,
+  headingOf,
+  lengthOf,
+  type EdgeCurve,
+  type PlacedEdge,
+  type PlacedNode,
+  type PlexEdge,
+  type PlexSeat,
+  type Point,
+} from '../model'
 import { isVertical, type PlexOptions, type RoutingOptions } from './options'
 
 /** `auto` means take the axis from the geometry. */
@@ -6,6 +16,11 @@ export type Axis = 'vertical' | 'horizontal' | 'auto'
 
 export interface Routing extends RoutingOptions {
   readonly axisOf: (node: { seat: PlexSeat }) => Axis
+  /**
+   * How wide a title is set. Text is measured where the plex is drawn; here it
+   * arrives as a number, and without a measurer the whole label is drawn.
+   */
+  readonly labelWidth?: ((label: string) => number) | undefined
 }
 
 /**
@@ -13,9 +28,13 @@ export interface Routing extends RoutingOptions {
  * last child in a wide row is further sideways than it is down, and measuring
  * would send its edge out of the focus's side.
  */
-export function routingFor(options: PlexOptions): Routing {
+export function routingFor(
+  options: PlexOptions,
+  measureLabel?: (label: string) => number,
+): Routing {
   return {
     ...options.routing,
+    labelWidth: measureLabel,
     axisOf: (node) =>
       node.seat === 'focus'
         ? 'auto'
@@ -23,6 +42,35 @@ export function routingFor(options: PlexOptions): Routing {
           ? 'vertical'
           : 'horizontal',
   }
+}
+
+/** The one character a cut title ends in. */
+const ELLIPSIS = '…'
+
+/**
+ * The words a curve has room for: the longest start of the label that fits it,
+ * the ellipsis included. The prefix is found by halving, and a curve with room
+ * for nothing carries the ellipsis alone.
+ */
+function cutToFit(
+  label: string,
+  room: number,
+  width: (label: string) => number,
+): string {
+  if (width(label) <= room) return label
+
+  const letters = [...label]
+  const ended = (count: number) =>
+    `${letters.slice(0, count).join('').trimEnd()}${ELLIPSIS}`
+
+  let fits = 0
+  let over = letters.length
+  while (fits + 1 < over) {
+    const middle = Math.floor((fits + over) / 2)
+    if (width(ended(middle)) <= room) fits = middle
+    else over = middle
+  }
+  return ended(fits)
 }
 
 /** A fixed point on a border, so a row of edges reads as a fan. */
@@ -88,23 +136,33 @@ export function routeEdge(
     ? { x: secondGate.x, y: secondGate.y - reach }
     : { x: secondGate.x - reach, y: secondGate.y }
 
-  return fromFirst
+  // The caller's from and to are kept, so the curve may run right to left or
+  // bottom to top.
+  const curve: EdgeCurve = fromFirst
     ? {
-        ...edge,
         fromPoint: firstGate,
         control1: firstControl,
         control2: secondControl,
         toPoint: secondGate,
-        opacity,
       }
     : {
-        ...edge,
         fromPoint: secondGate,
         control1: secondControl,
         control2: firstControl,
         toPoint: firstGate,
-        opacity,
       }
+
+  // A title is set about the middle of its line and an arrowhead sits on one
+  // end, so a line carrying one has room for fewer words.
+  const room = lengthOf(curve) - (edge.arrow ? 2 * routing.arrowRoom : 0)
+  const words =
+    edge.label !== undefined && routing.labelWidth
+      ? cutToFit(edge.label, room, routing.labelWidth)
+      : edge.label
+
+  const arrowhead = edge.arrow ? arrowOf(curve, edge.arrow) : undefined
+
+  return { ...edge, ...curve, opacity, heading: headingOf(curve), words, arrowhead }
 }
 
 export function routeEdges(
