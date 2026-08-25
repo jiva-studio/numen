@@ -45,18 +45,18 @@ grows inside a box that does not is a label that ellipsises.
 
 ### Two settings, because a person means two things
 
-**`appearance.interface`** is how large the interface is drawn: chrome,
+**`appearance.interface_scale`** is how large the interface is drawn: chrome,
 controls, spacing, panels, and the type in them. A palette row, a menu item, a
 tab and a button grow together, because that is what a larger interface is.
 
-**`appearance.font`** is how large the text a person reads is set: a note, a
-book, an answer, the editor.
+**`appearance.text_scale`** is how large the text a person reads is set: a note,
+a book, an answer, the editor.
 
 Each is a multiplier, 1 being as designed.
 
-A settings file naming `zoom` names `interface`. The two say the same thing, so
-the value carries over and a window drawn at 1.5 goes on being drawn at 1.5; one
-outside the range is said, and the window is drawn as designed.
+A settings file naming `zoom` names `interface_scale`. The two say the same
+thing, so the value carries over and a window drawn at 1.5 goes on being drawn
+at 1.5; one outside the range is said, and the window is drawn as designed.
 
 A file that names no size, and `zoom: 0` names none, is drawn at what the
 desktop asks for: `GDK_DPI_SCALE` is how large a session has its text scaled,
@@ -65,7 +65,7 @@ and the interface is drawn to match. A number outside the range is not seeded.
 ### The interface size is the root's font size, and 1 changes nothing
 
 ```css
-:where(:root) { font-size: calc(16px * var(--numen-interface, 1)); }
+:where(:root) { font-size: calc(16px * var(--numen-interface-scale, 1)); }
 ```
 
 A length in `rem` is already a multiple of 16px everywhere in this product and
@@ -88,10 +88,10 @@ and the root carries it, with the lengths that surround it — the height of a
 field and a button, the clearance inside a node, the inset typing keeps from the
 end of its field. A theme declaring `--numen-font-size` declares it.
 
-The text a person reads has a token of its own, and `appearance.font` is what
-multiplies it. `prose-sm` states its base in `rem` and everything above it in
-`em`, so stating that base from this token brings the whole scale onto it. The
-editor is set from it too.
+The text a person reads has a token of its own, and `appearance.text_scale` is
+what multiplies it. `prose-sm` states its base in `rem` and everything above it
+in `em`, so stating that base from this token brings the whole scale onto it.
+The editor is set from it too.
 
 ### What follows which, and what follows neither
 
@@ -133,8 +133,8 @@ reason and the same hold applies here.
 Both settings are bounded, and a number outside the bound is refused and said.
 
 A window can still be made hard to read, and the palette is drawn at whatever
-was chosen. `-interface` and `-font` say it for one launch, over the file, the
-way `-zoom` did.
+was chosen. `-interface-scale` and `-text-scale` say it for one launch, over the
+file, the way `-zoom` did.
 
 ## Consequences
 
