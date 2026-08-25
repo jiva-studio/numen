@@ -103,6 +103,32 @@ describe('a note owed the keyboard', () => {
   })
 })
 
+describe('the window drawn at another size', () => {
+  it('has every open editor measure again', async () => {
+    const owed = entering()
+    const one = editor()
+    const other = editor()
+    owed.drew('One.md', one.drawn)
+    owed.drew('Other.md', other.drawn)
+
+    owed.measures()
+
+    expect(one.measured).toHaveLength(1)
+    expect(other.measured).toHaveLength(1)
+  })
+
+  it('has nothing to say to an editor whose tab has let go of it', async () => {
+    const owed = entering()
+    const drew = editor()
+    owed.drew('Note.md', drew.drawn)
+    owed.drew('Note.md', null)
+
+    owed.measures()
+
+    expect(drew.measured).toEqual([])
+  })
+})
+
 describe('an editor that goes', () => {
   it('is not handed anything after it has', async () => {
     const owed = entering()

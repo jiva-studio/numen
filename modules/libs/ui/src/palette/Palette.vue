@@ -24,10 +24,11 @@ import {
   watch,
 } from 'vue'
 import Waiting from '../waiting/Waiting.vue'
+import KeyCap from './KeyCap.vue'
 import {
   actionAt,
   choosable,
-  commandKeyWord,
+  commandKeyChord,
   flatten,
   keptAt,
   keptOn,
@@ -63,6 +64,12 @@ const props = withDefaults(
      * the keyboard back to the field with what stands there selected.
      */
     step?: string
+    /**
+     * The item the keyboard stands on as a step opens: for a list of values,
+     * the value in force. A list of no value, and a value with no item to
+     * stand on, open on the first item there is.
+     */
+    opensOn?: string
     /** Where the keyboard goes back to once it closes. */
     from?: HTMLElement | null
     /** Where it is drawn. The end of the document by default. */
@@ -82,6 +89,7 @@ const props = withDefaults(
     placeholder: 'Search',
     crumb: '',
     step: '',
+    opensOn: '',
     from: null,
     to: 'body',
     name: 'Palette',
@@ -118,8 +126,8 @@ defineSlots<{
 
 const typed = defineModel<string>({ default: '' })
 
-/** What the key that opens the action panel is written as on this keyboard. */
-const command = commandKeyWord(navigator.userAgent)
+/** The keystroke that opens the action panel on this keyboard. */
+const command = commandKeyChord(navigator.userAgent)
 
 const uid = useId()
 const optionName = (at: number): string => `${uid}-option-${at}`
@@ -349,10 +357,15 @@ const onGround = () => {
   emit('dismiss')
 }
 
+/**
+ * The keyboard put where the step wants it: on the value in force, else on
+ * whatever it was standing on. Opening a step this way moves nothing, so a
+ * caller that acts on what is lit acts on what is already so.
+ */
 const enter = async () => {
   panel.value = false
   chosen.value = ''
-  goTo(keptAt(places.value, held.value))
+  goTo(keptAt(places.value, props.opensOn || held.value))
   await nextTick()
   field.value?.focus()
   field.value?.select()
@@ -497,9 +510,7 @@ onBeforeUnmount(() => {
               </span>
 
               <!-- What reaches this item away from the palette. -->
-              <kbd v-if="drawn.item.keys" class="palette__hint text-small text-hushed">{{
-                drawn.item.keys
-              }}</kbd>
+              <KeyCap v-if="drawn.item.keys" class="palette__hint" :keys="drawn.item.keys" />
             </div>
 
             <p v-if="!one.items.length" class="palette__silence px-2 py-1.5 text-hushed">
@@ -548,7 +559,7 @@ onBeforeUnmount(() => {
                   >{{ part.text }}</span
                 >
               </span>
-              <kbd v-if="deed.key" class="palette__hint text-small text-hushed">{{ deed.key }}</kbd>
+              <KeyCap v-if="deed.key" class="palette__hint" :keys="deed.key" />
             </div>
           </div>
 
@@ -579,11 +590,11 @@ onBeforeUnmount(() => {
           class="palette__keys flex items-center gap-3 text-small text-hushed"
         >
           <span v-for="one in hinted" :key="one.action.id" class="palette__key">
-            <kbd>{{ one.key }}</kbd>
+            <KeyCap v-if="one.key" :keys="one.key" />
             {{ one.action.text }}
           </span>
           <span class="palette__more ml-auto">
-            <kbd>{{ command }}</kbd>
+            <KeyCap :keys="command" />
             {{ actionsName }}
           </span>
         </footer>
@@ -725,21 +736,17 @@ onBeforeUnmount(() => {
   border-block-start: var(--numen-stroke) solid var(--numen-panel-border);
 }
 
-.palette__key kbd,
-.palette__more kbd,
-.palette__hint {
-  margin-inline-end: 0.35em;
-  padding: 0.05em 0.35em;
-  border: var(--numen-stroke) solid var(--numen-panel-border);
-  border-radius: var(--numen-radius);
-  background: var(--numen-node-bg);
-  font: inherit;
+/* What a key reaches stands beside the cap that reaches it. */
+.palette__key,
+.palette__more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
 }
 
 /* A key written on a row is the last thing on it, and is read after the name. */
 .palette__hint {
   flex: none;
-  margin-inline-end: 0;
 }
 
 /* The actions stand over the foot of the palette, at the corner the keys are

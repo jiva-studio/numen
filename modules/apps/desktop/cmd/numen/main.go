@@ -15,12 +15,12 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strconv"
 	"sync"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/webui"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
@@ -29,7 +29,7 @@ import (
 func main() {
 	var cfg container.Config
 	var agents agentOptions
-	var zoom float64
+	var said sizes
 	var vault string
 	flag.StringVar(&cfg.IndexPath, "index", "", "path to the index database")
 	flag.StringVar(&cfg.RegistryPath, "registry", "", "path to the vault list")
@@ -38,19 +38,44 @@ func main() {
 	flag.StringVar(&agents.addr, "mcp-addr", defaultAgentAddr,
 		"where agents reach this vault; anything but a loopback address opens it to the network")
 	flag.BoolVar(&agents.off, "no-mcp", false, "do not let agents reach this vault")
-	flag.Float64Var(&zoom, "zoom", 0, "how large everything is drawn, 1 being as designed")
+	flag.Float64Var(&said.drawn, "interface-scale", 0,
+		"how large the interface is drawn, 1 being as designed; this launch alone")
+	flag.Float64Var(&said.set, "text-scale", 0,
+		"how large the text a person reads is set, 1 being as designed; this launch alone")
 	flag.BoolVar(&cfg.RebuildIndex, "rebuild-index", false,
 		"read every file and put it in the index again, whatever the index remembers")
 	flag.Parse()
 
-	if err := run(cfg, agents, vault, zoom); err != nil {
+	if err := run(cfg, agents, vault, said); err != nil {
 		fmt.Fprintln(os.Stderr, "numen:", err)
-		refuse(cfg, err, zoom)
+		refuse(cfg, err)
 		os.Exit(1)
 	}
 }
 
-func run(cfg container.Config, agents agentOptions, vault string, zoom float64) error {
+// sizes are what the command line said about size: how large the interface is
+// drawn, and how large the text a person reads is set. Zero is not said, and
+// the settings file stands.
+type sizes struct{ drawn, set float64 }
+
+// check is what is wrong with a number the setting it says does not take.
+func (s sizes) check() error {
+	if s.drawn > 0 {
+		if err := settings.InterfaceScaleBounds.Check("-interface-scale", s.drawn); err != nil {
+			return err
+		}
+	}
+	if s.set > 0 {
+		return settings.TextScaleBounds.Check("-text-scale", s.set)
+	}
+	return nil
+}
+
+func run(cfg container.Config, agents agentOptions, vault string, said sizes) error {
+	if err := said.check(); err != nil {
+		return err
+	}
+
 	// Before anything draws: the settings a folder picker reads are looked for
 	// once, the first time something asks for one.
 	findSchemas()
@@ -64,6 +89,7 @@ func run(cfg container.Config, agents agentOptions, vault string, zoom float64) 
 	}
 	cfg = cfg.Indexing(chosen.Indexing)
 	cfg.Agent = chosen.Agent
+	cfg.InterfaceScale, cfg.TextScale = said.drawn, said.set
 
 	// Before the window: every page this process reads is read through the
 	// runtime made here, and one made after the window reads a page as nothing.
@@ -77,6 +103,10 @@ func run(cfg container.Config, agents agentOptions, vault string, zoom float64) 
 		return err
 	}
 	defer opened.Close()
+
+	// What reading the settings had to tell a person goes where they are: a
+	// window opened from a desktop entry has no terminal to write to.
+	opened.Says(chosen.Said)
 
 	// The agents' endpoint on the vault in the window, let in once the window is
 	// built.
@@ -114,7 +144,6 @@ func run(cfg container.Config, agents agentOptions, vault string, zoom float64) 
 		Width:  1280,
 		Height: 860,
 		URL:    "/",
-		Zoom:   drawnAt(zoom, chosen.Appearance.Zoom),
 	})
 
 	// Picking a folder is the machine's own, and it opens over this window.
@@ -320,26 +349,6 @@ func (g *going) begin(this *turn) {
 	this.settled = settled
 	g.done = settled
 	g.turn = nil
-}
-
-// drawnAt is how large everything is drawn.
-//
-// A screen says how many pixels it has and not how large they are, so the
-// desktop is asked: GDK_DPI_SCALE is what the person told their session text
-// should be scaled by, and this window is drawn to match. The settings and the
-// flag each say it outright, the flag last, so that one launch can differ from
-// every other without the file changing.
-func drawnAt(asked, configured float64) float64 {
-	if asked > 0 {
-		return asked
-	}
-	if configured > 0 {
-		return configured
-	}
-	if scale, err := strconv.ParseFloat(os.Getenv("GDK_DPI_SCALE"), 64); err == nil && scale > 0 {
-		return scale
-	}
-	return 1
 }
 
 // agentOptions is what the person said about letting agents in.

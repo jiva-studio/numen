@@ -4,7 +4,8 @@
 // 	protoc        (unknown)
 // source: numen/v1/theme.proto
 
-// What a client may ask about the themes it can wear.
+// What a client may ask about how the window is drawn: the themes it can wear,
+// and how large it and the text in it are.
 //
 // A theme is one stylesheet that redeclares the tokens the interface draws
 // with. Nothing here reads inside one: what travels is its name, the text of
@@ -210,6 +211,60 @@ func (x *Theme) GetPinned() bool {
 	return false
 }
 
+// Bounds is how far a size goes, at each end. A number outside them is
+// refused.
+type Bounds struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Least         float64                `protobuf:"fixed64,1,opt,name=least,proto3" json:"least,omitempty"`
+	Most          float64                `protobuf:"fixed64,2,opt,name=most,proto3" json:"most,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Bounds) Reset() {
+	*x = Bounds{}
+	mi := &file_numen_v1_theme_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Bounds) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Bounds) ProtoMessage() {}
+
+func (x *Bounds) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_theme_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Bounds.ProtoReflect.Descriptor instead.
+func (*Bounds) Descriptor() ([]byte, []int) {
+	return file_numen_v1_theme_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Bounds) GetLeast() float64 {
+	if x != nil {
+		return x.Least
+	}
+	return 0
+}
+
+func (x *Bounds) GetMost() float64 {
+	if x != nil {
+		return x.Most
+	}
+	return 0
+}
+
 type ThemesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -218,7 +273,7 @@ type ThemesRequest struct {
 
 func (x *ThemesRequest) Reset() {
 	*x = ThemesRequest{}
-	mi := &file_numen_v1_theme_proto_msgTypes[1]
+	mi := &file_numen_v1_theme_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -230,7 +285,7 @@ func (x *ThemesRequest) String() string {
 func (*ThemesRequest) ProtoMessage() {}
 
 func (x *ThemesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_theme_proto_msgTypes[1]
+	mi := &file_numen_v1_theme_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -243,7 +298,7 @@ func (x *ThemesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ThemesRequest.ProtoReflect.Descriptor instead.
 func (*ThemesRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_theme_proto_rawDescGZIP(), []int{1}
+	return file_numen_v1_theme_proto_rawDescGZIP(), []int{2}
 }
 
 type ThemesResponse struct {
@@ -253,14 +308,22 @@ type ThemesResponse struct {
 	// The theme that is applied, by its name.
 	Applied string `protobuf:"bytes,2,opt,name=applied,proto3" json:"applied,omitempty"`
 	// Which half of a pair the tokens resolve to.
-	Mode          Mode `protobuf:"varint,3,opt,name=mode,proto3,enum=numen.v1.Mode" json:"mode,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Mode Mode `protobuf:"varint,3,opt,name=mode,proto3,enum=numen.v1.Mode" json:"mode,omitempty"`
+	// How large the interface is drawn, and how large the text a person reads is
+	// set. Each is a multiplier, one being as designed.
+	InterfaceScale float64 `protobuf:"fixed64,4,opt,name=interface_scale,json=interfaceScale,proto3" json:"interface_scale,omitempty"`
+	TextScale      float64 `protobuf:"fixed64,5,opt,name=text_scale,json=textScale,proto3" json:"text_scale,omitempty"`
+	// How far each of the two goes. A client asking a person for a number says
+	// these.
+	InterfaceScaleBounds *Bounds `protobuf:"bytes,6,opt,name=interface_scale_bounds,json=interfaceScaleBounds,proto3" json:"interface_scale_bounds,omitempty"`
+	TextScaleBounds      *Bounds `protobuf:"bytes,7,opt,name=text_scale_bounds,json=textScaleBounds,proto3" json:"text_scale_bounds,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *ThemesResponse) Reset() {
 	*x = ThemesResponse{}
-	mi := &file_numen_v1_theme_proto_msgTypes[2]
+	mi := &file_numen_v1_theme_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -272,7 +335,7 @@ func (x *ThemesResponse) String() string {
 func (*ThemesResponse) ProtoMessage() {}
 
 func (x *ThemesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_theme_proto_msgTypes[2]
+	mi := &file_numen_v1_theme_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -285,7 +348,7 @@ func (x *ThemesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ThemesResponse.ProtoReflect.Descriptor instead.
 func (*ThemesResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_theme_proto_rawDescGZIP(), []int{2}
+	return file_numen_v1_theme_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ThemesResponse) GetThemes() []*Theme {
@@ -309,6 +372,34 @@ func (x *ThemesResponse) GetMode() Mode {
 	return Mode_MODE_UNSPECIFIED
 }
 
+func (x *ThemesResponse) GetInterfaceScale() float64 {
+	if x != nil {
+		return x.InterfaceScale
+	}
+	return 0
+}
+
+func (x *ThemesResponse) GetTextScale() float64 {
+	if x != nil {
+		return x.TextScale
+	}
+	return 0
+}
+
+func (x *ThemesResponse) GetInterfaceScaleBounds() *Bounds {
+	if x != nil {
+		return x.InterfaceScaleBounds
+	}
+	return nil
+}
+
+func (x *ThemesResponse) GetTextScaleBounds() *Bounds {
+	if x != nil {
+		return x.TextScaleBounds
+	}
+	return nil
+}
+
 type ThemeRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The theme, by its name.
@@ -319,7 +410,7 @@ type ThemeRequest struct {
 
 func (x *ThemeRequest) Reset() {
 	*x = ThemeRequest{}
-	mi := &file_numen_v1_theme_proto_msgTypes[3]
+	mi := &file_numen_v1_theme_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -331,7 +422,7 @@ func (x *ThemeRequest) String() string {
 func (*ThemeRequest) ProtoMessage() {}
 
 func (x *ThemeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_theme_proto_msgTypes[3]
+	mi := &file_numen_v1_theme_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -344,7 +435,7 @@ func (x *ThemeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ThemeRequest.ProtoReflect.Descriptor instead.
 func (*ThemeRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_theme_proto_rawDescGZIP(), []int{3}
+	return file_numen_v1_theme_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ThemeRequest) GetName() string {
@@ -365,7 +456,7 @@ type ThemeResponse struct {
 
 func (x *ThemeResponse) Reset() {
 	*x = ThemeResponse{}
-	mi := &file_numen_v1_theme_proto_msgTypes[4]
+	mi := &file_numen_v1_theme_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -377,7 +468,7 @@ func (x *ThemeResponse) String() string {
 func (*ThemeResponse) ProtoMessage() {}
 
 func (x *ThemeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_theme_proto_msgTypes[4]
+	mi := &file_numen_v1_theme_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -390,7 +481,7 @@ func (x *ThemeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ThemeResponse.ProtoReflect.Descriptor instead.
 func (*ThemeResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_theme_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_theme_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ThemeResponse) GetCss() string {
@@ -406,14 +497,19 @@ type ChooseRequest struct {
 	// the settings are left as they are.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Which half of a pair the tokens resolve to from now on.
-	Mode          Mode `protobuf:"varint,2,opt,name=mode,proto3,enum=numen.v1.Mode" json:"mode,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Mode Mode `protobuf:"varint,2,opt,name=mode,proto3,enum=numen.v1.Mode" json:"mode,omitempty"`
+	// How large the interface is drawn, and how large the text a person reads is
+	// set. Each is a multiplier, one being as designed, and a size left unset
+	// stands as it is.
+	InterfaceScale *float64 `protobuf:"fixed64,3,opt,name=interface_scale,json=interfaceScale,proto3,oneof" json:"interface_scale,omitempty"`
+	TextScale      *float64 `protobuf:"fixed64,4,opt,name=text_scale,json=textScale,proto3,oneof" json:"text_scale,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ChooseRequest) Reset() {
 	*x = ChooseRequest{}
-	mi := &file_numen_v1_theme_proto_msgTypes[5]
+	mi := &file_numen_v1_theme_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -425,7 +521,7 @@ func (x *ChooseRequest) String() string {
 func (*ChooseRequest) ProtoMessage() {}
 
 func (x *ChooseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_theme_proto_msgTypes[5]
+	mi := &file_numen_v1_theme_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -438,7 +534,7 @@ func (x *ChooseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChooseRequest.ProtoReflect.Descriptor instead.
 func (*ChooseRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_theme_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_theme_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ChooseRequest) GetName() string {
@@ -455,6 +551,20 @@ func (x *ChooseRequest) GetMode() Mode {
 	return Mode_MODE_UNSPECIFIED
 }
 
+func (x *ChooseRequest) GetInterfaceScale() float64 {
+	if x != nil && x.InterfaceScale != nil {
+		return *x.InterfaceScale
+	}
+	return 0
+}
+
+func (x *ChooseRequest) GetTextScale() float64 {
+	if x != nil && x.TextScale != nil {
+		return *x.TextScale
+	}
+	return 0
+}
+
 type ChooseResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Why the settings were not written, when they were not.
@@ -465,7 +575,7 @@ type ChooseResponse struct {
 
 func (x *ChooseResponse) Reset() {
 	*x = ChooseResponse{}
-	mi := &file_numen_v1_theme_proto_msgTypes[6]
+	mi := &file_numen_v1_theme_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -477,7 +587,7 @@ func (x *ChooseResponse) String() string {
 func (*ChooseResponse) ProtoMessage() {}
 
 func (x *ChooseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_theme_proto_msgTypes[6]
+	mi := &file_numen_v1_theme_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -490,7 +600,7 @@ func (x *ChooseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChooseResponse.ProtoReflect.Descriptor instead.
 func (*ChooseResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_theme_proto_rawDescGZIP(), []int{6}
+	return file_numen_v1_theme_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ChooseResponse) GetFailed() string {
@@ -508,7 +618,7 @@ type ChangedRequest struct {
 
 func (x *ChangedRequest) Reset() {
 	*x = ChangedRequest{}
-	mi := &file_numen_v1_theme_proto_msgTypes[7]
+	mi := &file_numen_v1_theme_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -520,7 +630,7 @@ func (x *ChangedRequest) String() string {
 func (*ChangedRequest) ProtoMessage() {}
 
 func (x *ChangedRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_theme_proto_msgTypes[7]
+	mi := &file_numen_v1_theme_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -533,7 +643,7 @@ func (x *ChangedRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChangedRequest.ProtoReflect.Descriptor instead.
 func (*ChangedRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_theme_proto_rawDescGZIP(), []int{7}
+	return file_numen_v1_theme_proto_rawDescGZIP(), []int{8}
 }
 
 type ChangedResponse struct {
@@ -547,7 +657,7 @@ type ChangedResponse struct {
 
 func (x *ChangedResponse) Reset() {
 	*x = ChangedResponse{}
-	mi := &file_numen_v1_theme_proto_msgTypes[8]
+	mi := &file_numen_v1_theme_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -559,7 +669,7 @@ func (x *ChangedResponse) String() string {
 func (*ChangedResponse) ProtoMessage() {}
 
 func (x *ChangedResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_theme_proto_msgTypes[8]
+	mi := &file_numen_v1_theme_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -572,7 +682,7 @@ func (x *ChangedResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChangedResponse.ProtoReflect.Descriptor instead.
 func (*ChangedResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_theme_proto_rawDescGZIP(), []int{8}
+	return file_numen_v1_theme_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ChangedResponse) GetNames() []string {
@@ -591,19 +701,32 @@ const file_numen_v1_theme_proto_rawDesc = "" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12%\n" +
 	"\x05shelf\x18\x03 \x01(\x0e2\x0f.numen.v1.ShelfR\x05shelf\x12\x16\n" +
-	"\x06pinned\x18\x04 \x01(\bR\x06pinned\"\x0f\n" +
-	"\rThemesRequest\"w\n" +
+	"\x06pinned\x18\x04 \x01(\bR\x06pinned\"2\n" +
+	"\x06Bounds\x12\x14\n" +
+	"\x05least\x18\x01 \x01(\x01R\x05least\x12\x12\n" +
+	"\x04most\x18\x02 \x01(\x01R\x04most\"\x0f\n" +
+	"\rThemesRequest\"\xc5\x02\n" +
 	"\x0eThemesResponse\x12'\n" +
 	"\x06themes\x18\x01 \x03(\v2\x0f.numen.v1.ThemeR\x06themes\x12\x18\n" +
 	"\aapplied\x18\x02 \x01(\tR\aapplied\x12\"\n" +
-	"\x04mode\x18\x03 \x01(\x0e2\x0e.numen.v1.ModeR\x04mode\"\"\n" +
+	"\x04mode\x18\x03 \x01(\x0e2\x0e.numen.v1.ModeR\x04mode\x12'\n" +
+	"\x0finterface_scale\x18\x04 \x01(\x01R\x0einterfaceScale\x12\x1d\n" +
+	"\n" +
+	"text_scale\x18\x05 \x01(\x01R\ttextScale\x12F\n" +
+	"\x16interface_scale_bounds\x18\x06 \x01(\v2\x10.numen.v1.BoundsR\x14interfaceScaleBounds\x12<\n" +
+	"\x11text_scale_bounds\x18\a \x01(\v2\x10.numen.v1.BoundsR\x0ftextScaleBounds\"\"\n" +
 	"\fThemeRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\"!\n" +
 	"\rThemeResponse\x12\x10\n" +
-	"\x03css\x18\x01 \x01(\tR\x03css\"G\n" +
+	"\x03css\x18\x01 \x01(\tR\x03css\"\xbc\x01\n" +
 	"\rChooseRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\"\n" +
-	"\x04mode\x18\x02 \x01(\x0e2\x0e.numen.v1.ModeR\x04mode\"(\n" +
+	"\x04mode\x18\x02 \x01(\x0e2\x0e.numen.v1.ModeR\x04mode\x12,\n" +
+	"\x0finterface_scale\x18\x03 \x01(\x01H\x00R\x0einterfaceScale\x88\x01\x01\x12\"\n" +
+	"\n" +
+	"text_scale\x18\x04 \x01(\x01H\x01R\ttextScale\x88\x01\x01B\x12\n" +
+	"\x10_interface_scaleB\r\n" +
+	"\v_text_scale\"(\n" +
 	"\x0eChooseResponse\x12\x16\n" +
 	"\x06failed\x18\x01 \x01(\tR\x06failed\"\x10\n" +
 	"\x0eChangedRequest\"'\n" +
@@ -639,38 +762,41 @@ func file_numen_v1_theme_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_theme_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_numen_v1_theme_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_numen_v1_theme_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_numen_v1_theme_proto_goTypes = []any{
 	(Shelf)(0),              // 0: numen.v1.Shelf
 	(Mode)(0),               // 1: numen.v1.Mode
 	(*Theme)(nil),           // 2: numen.v1.Theme
-	(*ThemesRequest)(nil),   // 3: numen.v1.ThemesRequest
-	(*ThemesResponse)(nil),  // 4: numen.v1.ThemesResponse
-	(*ThemeRequest)(nil),    // 5: numen.v1.ThemeRequest
-	(*ThemeResponse)(nil),   // 6: numen.v1.ThemeResponse
-	(*ChooseRequest)(nil),   // 7: numen.v1.ChooseRequest
-	(*ChooseResponse)(nil),  // 8: numen.v1.ChooseResponse
-	(*ChangedRequest)(nil),  // 9: numen.v1.ChangedRequest
-	(*ChangedResponse)(nil), // 10: numen.v1.ChangedResponse
+	(*Bounds)(nil),          // 3: numen.v1.Bounds
+	(*ThemesRequest)(nil),   // 4: numen.v1.ThemesRequest
+	(*ThemesResponse)(nil),  // 5: numen.v1.ThemesResponse
+	(*ThemeRequest)(nil),    // 6: numen.v1.ThemeRequest
+	(*ThemeResponse)(nil),   // 7: numen.v1.ThemeResponse
+	(*ChooseRequest)(nil),   // 8: numen.v1.ChooseRequest
+	(*ChooseResponse)(nil),  // 9: numen.v1.ChooseResponse
+	(*ChangedRequest)(nil),  // 10: numen.v1.ChangedRequest
+	(*ChangedResponse)(nil), // 11: numen.v1.ChangedResponse
 }
 var file_numen_v1_theme_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.Theme.shelf:type_name -> numen.v1.Shelf
 	2,  // 1: numen.v1.ThemesResponse.themes:type_name -> numen.v1.Theme
 	1,  // 2: numen.v1.ThemesResponse.mode:type_name -> numen.v1.Mode
-	1,  // 3: numen.v1.ChooseRequest.mode:type_name -> numen.v1.Mode
-	3,  // 4: numen.v1.ThemeService.Themes:input_type -> numen.v1.ThemesRequest
-	5,  // 5: numen.v1.ThemeService.Theme:input_type -> numen.v1.ThemeRequest
-	7,  // 6: numen.v1.ThemeService.Choose:input_type -> numen.v1.ChooseRequest
-	9,  // 7: numen.v1.ThemeService.Changed:input_type -> numen.v1.ChangedRequest
-	4,  // 8: numen.v1.ThemeService.Themes:output_type -> numen.v1.ThemesResponse
-	6,  // 9: numen.v1.ThemeService.Theme:output_type -> numen.v1.ThemeResponse
-	8,  // 10: numen.v1.ThemeService.Choose:output_type -> numen.v1.ChooseResponse
-	10, // 11: numen.v1.ThemeService.Changed:output_type -> numen.v1.ChangedResponse
-	8,  // [8:12] is the sub-list for method output_type
-	4,  // [4:8] is the sub-list for method input_type
-	4,  // [4:4] is the sub-list for extension type_name
-	4,  // [4:4] is the sub-list for extension extendee
-	0,  // [0:4] is the sub-list for field type_name
+	3,  // 3: numen.v1.ThemesResponse.interface_scale_bounds:type_name -> numen.v1.Bounds
+	3,  // 4: numen.v1.ThemesResponse.text_scale_bounds:type_name -> numen.v1.Bounds
+	1,  // 5: numen.v1.ChooseRequest.mode:type_name -> numen.v1.Mode
+	4,  // 6: numen.v1.ThemeService.Themes:input_type -> numen.v1.ThemesRequest
+	6,  // 7: numen.v1.ThemeService.Theme:input_type -> numen.v1.ThemeRequest
+	8,  // 8: numen.v1.ThemeService.Choose:input_type -> numen.v1.ChooseRequest
+	10, // 9: numen.v1.ThemeService.Changed:input_type -> numen.v1.ChangedRequest
+	5,  // 10: numen.v1.ThemeService.Themes:output_type -> numen.v1.ThemesResponse
+	7,  // 11: numen.v1.ThemeService.Theme:output_type -> numen.v1.ThemeResponse
+	9,  // 12: numen.v1.ThemeService.Choose:output_type -> numen.v1.ChooseResponse
+	11, // 13: numen.v1.ThemeService.Changed:output_type -> numen.v1.ChangedResponse
+	10, // [10:14] is the sub-list for method output_type
+	6,  // [6:10] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_theme_proto_init() }
@@ -678,13 +804,14 @@ func file_numen_v1_theme_proto_init() {
 	if File_numen_v1_theme_proto != nil {
 		return
 	}
+	file_numen_v1_theme_proto_msgTypes[6].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_theme_proto_rawDesc), len(file_numen_v1_theme_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

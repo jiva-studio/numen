@@ -63,8 +63,17 @@ export function entering() {
     enters(id)
   }
 
+  /**
+   * Every editor there is measures again. An editor measures the type it draws
+   * once and keeps that; the type has changed inside a box whose own size has
+   * not, so nothing else tells it to.
+   */
+  const measures = () => {
+    for (const editor of editors.values()) editor.measure()
+  }
+
   /** The note is closing, and is owed nothing more. */
   const drops = (id: string) => owed.delete(id)
 
-  return { owes, drew, measure, drops }
+  return { owes, drew, measure, measures, drops }
 }

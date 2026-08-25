@@ -5,7 +5,7 @@
  * the code that draws it. What is left here is the window itself: its tabs,
  * the palette, the commands, the corner, and the quit.
  */
-import { commandKeyWord } from '@numen/ui'
+import { commandKeyChord } from '@numen/ui'
 import type { Refused, VaultRefused } from './core'
 import { WORDS as agent } from './agent/words'
 import { WORDS as note } from './note/words'
@@ -77,7 +77,9 @@ export const WORDS = {
   close: 'Close this tab',
   appearance: 'Change the theme',
   mode: 'Light or dark',
-  findKeys: commandKeyWord(navigator.userAgent),
+  interfaceScale: 'Interface size',
+  textScale: 'Reading font size',
+  findKeys: commandKeyChord(navigator.userAgent),
   first: 'Go to the note the vault opens with',
   goto: 'Go to a note',
   openVault: 'Open vault',
@@ -101,21 +103,24 @@ export const WORDS = {
   /** The vaults the installation holds, and why one of them cannot be chosen. */
   vaults: 'Vaults',
   typeVault: 'Look for a vault',
-  gone: 'The folder is not there, at',
-  inFront: 'The vault in front of you, at',
+  gone: 'Missing',
   folder: 'Choose a folder for the vault',
+  /** The row a list of values opens on, which is the value in force. */
+  current: 'Current',
   /** The two shelves the themes are drawn in, and where a person's own go. */
   shipping: 'Ships with numen',
   owned: 'Your own themes',
   noneOwned: 'A .css file in numen/themes/, beside numen.json, is one of these',
-  /** The band the three halves are drawn in, and the one worn now. */
+  /** The band the three halves are drawn in. */
   half: 'Light and dark',
-  worn: 'Worn now',
   /** The three halves, and why the theme worn leaves nothing to choose. */
   system: 'Follow the system',
   light: 'Light',
   dark: 'Dark',
-  pinned: 'The theme worn sets this itself',
+  pinned: 'Set by the theme',
+  /** The band each of the two sizes is drawn in. */
+  drawing: 'How large the interface is drawn',
+  setting: 'How large the text is set',
   /** The themes could not be listed, and a theme's file could not be read. */
   unlisted: 'The themes could not be listed',
   unworn: 'That theme could not be read, so it is not worn',

@@ -5,7 +5,8 @@
 - **Applies to:** the vault format and application state — every application
 - **Partly superseded by:** ADR-0041 — the settings file, for the chosen theme
   alone
-- **Related:** ADR-0000, ADR-0001, ADR-0002, ADR-0041
+- **Partly superseded by:** ADR-0043 — the settings file, for the two sizes
+- **Related:** ADR-0000, ADR-0001, ADR-0002, ADR-0041, ADR-0043
 
 ## Context
 
@@ -88,6 +89,11 @@ wherever it is read out or copied to.
 > looks for it among the settings. The file is patched as an object: every field
 > the application does not know keeps its place. Nothing else in the file is
 > written.
+
+> **Partly superseded by
+> [ADR-0043](0043-how-large-the-interface-is-drawn.md).** How large the
+> interface is drawn and how large text is set are written here as well, by the
+> same patch. Four fields are written and no others.
 
 **The registry of vaults is a separate file.** Which vaults exist, where they are
 and which was open last is written by the application, when a person adds a vault.

@@ -8,7 +8,7 @@
  * here is the vault this window reads, the kinds it draws, and the few things
  * one kind asks of another.
  */
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { closeTab, Notices, Palette, Workspace } from '@numen/ui'
 import type { Notice } from '@numen/ui'
 import '@numen/ui/styles.css'
@@ -32,8 +32,9 @@ import {
   type Shown,
   type Where,
 } from './commanding'
+import { chorded, commandFor } from './keying'
 import { themes } from './theme'
-import { APPEARANCE, MODE, wearing } from './wearing'
+import { APPEARANCE, DRESSING, INTERFACE_SCALE, MODE, TEXT_SCALE, wearing } from './wearing'
 import { does, type Doing } from './doing'
 import { finding } from './finding'
 import { lands } from './landing'
@@ -195,18 +196,24 @@ const knows: Knows = {
   holding,
 }
 
-/** The theme the window wears, and the list of the ones it could. */
+/** How the window is drawn: the theme it wears, its half of a pair, its sizes. */
 const dressed = wearing(themes, words)
+
+// A size is drawn, and every open editor takes its measurements again. An
+// editor watches its own box, and a size changes the type inside that box
+// while the box itself stands.
+watch(dressed.sized, () => noted.measures())
 
 /** The lists the window itself holds, which a step of a command offers. */
 const kept: Holds = {
-  offers: (command) => {
+  offers: (command, typed) => {
     if (command === APPEARANCE) return dressed.offers()
     if (command === MODE) return dressed.modes()
+    if (command === INTERFACE_SCALE || command === TEXT_SCALE) return dressed.sizes(command, typed)
     return []
   },
   shows: (command, item) => {
-    if (command === APPEARANCE || command === MODE) dressed.shows(item)
+    if (DRESSING.includes(command)) dressed.shows(item)
   },
 }
 
@@ -260,25 +267,33 @@ const carries = (id: string, at: Where) => {
 }
 
 /**
- * The palette is opened and put away by two keystrokes, taken on the window: it
- * belongs to no pane.
+ * The keystrokes taken on the window: they belong to no pane. Two put the
+ * palette up and take it down again, and the rest carry out the command the
+ * chords name, which is the one written on that command's row.
  */
 const asked = (event: KeyboardEvent) => {
   // A pane that has answered this keystroke keeps it.
   if (event.defaultPrevented) return
-  if (event.altKey || !(event.metaKey || event.ctrlKey)) return
+  if (!chorded(event)) return
   const key = event.key.toLowerCase()
-  if (key === 'k') {
+  // The two the window puts up are that letter alone. The same letter with
+  // Shift is a chord of its own, and goes to whoever the table gives it to.
+  if (!event.shiftKey && key === 'k') {
     event.preventDefault()
     commands.shows(false)
     palette.shows(!palette.open.value)
     return
   }
-  if (key !== 'p') return
-  // The window takes this keystroke.
+  if (!event.shiftKey && key === 'p') {
+    event.preventDefault()
+    palette.shows(false)
+    commands.shows(!commands.open.value)
+    return
+  }
+  const command = commandFor(key, event.shiftKey)
+  if (!command) return
   event.preventDefault()
-  palette.shows(false)
-  commands.shows(!commands.open.value)
+  carries(command, where())
 }
 
 /** What the palette draws: the commands while they are open, the search under. */
@@ -290,6 +305,7 @@ const field = computed(() =>
         bands: commands.bands.value,
         crumb: commands.crumb.value,
         step: commands.step.value,
+        opensOn: commands.opensOn.value,
         placeholder: commands.placeholder.value,
       }
     : {
@@ -298,6 +314,7 @@ const field = computed(() =>
         bands: offering(palette.bands.value, palette.typed.value, words, where()),
         crumb: '',
         step: '',
+        opensOn: '',
         placeholder: words.find,
       },
 )
@@ -427,6 +444,7 @@ onUnmounted(() => {
       :placeholder="field.placeholder"
       :crumb="field.crumb"
       :step="field.step"
+      :opens-on="field.opensOn"
       :name="words.find"
       :actions-name="words.actions"
       :actions-placeholder="words.findAction"

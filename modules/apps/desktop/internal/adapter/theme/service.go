@@ -10,12 +10,25 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
-// Dress is what the window wears: which theme, and which half of a colour pair
-// its tokens are read as.
+// Dress is what the window wears: which theme, which half of a colour pair its
+// tokens are read as, and how large it is drawn and its reading text set.
 type Dress struct {
 	Theme string
 	Mode  v1.Mode
+
+	// InterfaceScale is how large the window is drawn and TextScale how large the
+	// text a person reads is set, AsDesigned being the size each was designed at.
+	// Zero is a size nobody named: in a choice it stands as it is, and in what is
+	// worn the tokens hold their own.
+	InterfaceScale, TextScale float64
 }
+
+// Bounds is how far a size goes, at each end. A client asking a person for a
+// number says these.
+type Bounds struct{ Least, Most float64 }
+
+// AsDesigned is the multiplier that draws everything the size it was drawn at.
+const AsDesigned = 1
 
 // Service answers what a client may ask about themes.
 //
@@ -29,8 +42,13 @@ type Service struct {
 	Dressed func() (Dress, error)
 
 	// Wear writes a dress into the settings, and leaves the rest of them as
-	// they are.
+	// they are. A number outside the bounds of the size it is written into is
+	// refused and nothing is written.
 	Wear func(Dress) error
+
+	// InterfaceScaleBounds and TextScaleBounds are how far each of the two sizes
+	// goes.
+	InterfaceScaleBounds, TextScaleBounds Bounds
 
 	// Say is where a person is told what this could not do: a theme named in
 	// the settings that is not in the catalogue, and settings that could not be
@@ -64,10 +82,19 @@ func (s *Service) Themes(
 		})
 	}
 	return connect.NewResponse(&v1.ThemesResponse{
-		Themes:  listed,
-		Applied: applied,
-		Mode:    worn.Mode,
+		Themes:               listed,
+		Applied:              applied,
+		Mode:                 worn.Mode,
+		InterfaceScale:       worn.InterfaceScale,
+		TextScale:            worn.TextScale,
+		InterfaceScaleBounds: bounded(s.InterfaceScaleBounds),
+		TextScaleBounds:      bounded(s.TextScaleBounds),
 	}), nil
+}
+
+// bounded is how far a size goes, as the schema says it.
+func bounded(held Bounds) *v1.Bounds {
+	return &v1.Bounds{Least: held.Least, Most: held.Most}
 }
 
 // Theme is one theme's file, as the file stands.
@@ -82,11 +109,12 @@ func (s *Service) Theme(
 	return connect.NewResponse(&v1.ThemeResponse{Css: text}), nil
 }
 
-// Choose writes the theme and the mode into the settings.
+// Choose writes the theme, the mode and the two sizes into the settings.
 //
-// A theme that is not there and a mode that was not said are both refused, and
-// the settings are left as they are. What stopped the write is answered with:
-// the person is standing in front of the list they chose from.
+// A theme that is not there, a mode that was not said and a size outside what
+// it goes to are all refused, and the settings are left as they are. What
+// stopped the write is answered with: the person is standing in front of the
+// list they chose from. A size the choice does not name stands as it is.
 func (s *Service) Choose(
 	_ context.Context,
 	req *connect.Request[v1.ChooseRequest],
@@ -105,7 +133,13 @@ func (s *Service) Choose(
 	if s.Wear == nil {
 		return failed("this build writes no settings")
 	}
-	if err := s.Wear(Dress{Theme: name, Mode: req.Msg.GetMode()}); err != nil {
+	chosen := Dress{
+		Theme:          name,
+		Mode:           req.Msg.GetMode(),
+		InterfaceScale: req.Msg.GetInterfaceScale(),
+		TextScale:      req.Msg.GetTextScale(),
+	}
+	if err := s.Wear(chosen); err != nil {
 		return failed(err.Error())
 	}
 	return connect.NewResponse(&v1.ChooseResponse{}), nil
@@ -137,10 +171,16 @@ func (s *Service) Changed(
 	}
 }
 
-// worn is what the settings say, and this product's own palette under the
-// system's choice where they say nothing or could not be read.
+// worn is what the settings say, and this product's own palette at the size it
+// was designed at, under the system's choice, where they say nothing or could
+// not be read.
 func (s *Service) worn() Dress {
-	worn := Dress{Theme: Default, Mode: v1.Mode_MODE_SYSTEM}
+	worn := Dress{
+		Theme:          Default,
+		Mode:           v1.Mode_MODE_SYSTEM,
+		InterfaceScale: AsDesigned,
+		TextScale:      AsDesigned,
+	}
 	if s.Dressed == nil {
 		return worn
 	}
@@ -154,6 +194,12 @@ func (s *Service) worn() Dress {
 	}
 	if said.Mode != v1.Mode_MODE_UNSPECIFIED {
 		worn.Mode = said.Mode
+	}
+	if said.InterfaceScale > 0 {
+		worn.InterfaceScale = said.InterfaceScale
+	}
+	if said.TextScale > 0 {
+		worn.TextScale = said.TextScale
 	}
 	return worn
 }

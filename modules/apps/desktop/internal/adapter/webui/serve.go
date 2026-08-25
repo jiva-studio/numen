@@ -656,7 +656,22 @@ const (
 	wordsAlone = "answering by words alone"
 	// wearingATheme is a theme the settings name that the catalogue has not.
 	wearingATheme = "wearing a theme"
+	// readingTheSettings is a name the settings file holds that this build
+	// reads under another one. Each sentence stands under this and its place.
+	readingTheSettings = "reading the settings"
 )
+
+// Says puts what reading the settings had to tell a person in the list of what
+// is being done, which is where a person is.
+func (o *Opened) Says(said []string) {
+	for at, one := range said {
+		o.API.say(task.Task{
+			ID:     fmt.Sprintf("%s %d", readingTheSettings, at),
+			Doing:  "Reading the settings",
+			Failed: one,
+		})
+	}
+}
 
 // HandedOverIn is how long a page has to write what only it holds when the
 // vault it is drawing goes. A page raising a question has answered, and the

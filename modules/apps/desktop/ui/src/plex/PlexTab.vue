@@ -5,18 +5,27 @@
  * Every gesture is handed to what the tab holds. The menu stands on a node of
  * this picture and goes when the picture does.
  */
-import { Menu, Plex } from '@numen/ui'
+import { computed } from 'vue'
+import { Menu, optionsForType, Plex, useTypeSize } from '@numen/ui'
 import type { MenuOpening, PlexRelatedSeat, PlexShowing } from '@numen/ui'
 import { ITEMS } from './menu'
 import type { Held } from './kind'
 
 const props = defineProps<{ held: Held }>()
+
+/**
+ * How large the picture is drawn. A node's label is set in the window's type,
+ * so the boxes and the clearances between them are handed in to hold it.
+ */
+const type = useTypeSize()
+const options = computed(() => optionsForType(type.value))
 </script>
 
 <template>
   <Plex
     v-if="props.held.picture.value"
     :neighbourhood="props.held.picture.value!"
+    :options="options"
     :creatable="props.held.creatable"
     @activate="(path: string) => props.held.activate(path)"
     @create="(from: string, seat: PlexRelatedSeat) => void props.held.made(from, seat)"

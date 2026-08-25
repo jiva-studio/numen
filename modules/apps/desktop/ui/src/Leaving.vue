@@ -49,7 +49,7 @@ const props = defineProps<{
   color: var(--numen-caution-fg);
   box-shadow: var(--numen-panel-shadow);
   font-family: var(--numen-font-sans);
-  font-size: 0.85rem;
+  font-size: calc(var(--numen-font-size) * 13.6 / 13);
 }
 
 .leaving__says {

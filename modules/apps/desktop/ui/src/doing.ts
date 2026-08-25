@@ -62,8 +62,9 @@ export interface Doing {
   /** The search, in place of the commands. */
   searches(): void
   /**
-   * The window drawn another way: a theme worn from now on, or which half of a
-   * colour pair the tokens are read as. The identity is the window's own.
+   * The window drawn another way: a theme worn from now on, which half of a
+   * colour pair the tokens are read as, or how large one of the two kinds of
+   * text is set. The identity is the window's own.
    */
   appearance(chosen: string): Promise<void>
   /** What was done, or could not be, in words a person reads. */
@@ -119,6 +120,8 @@ const carried: Record<string, Carries> = {
   find: (_, on) => on.searches(),
   appearance: (deed, on) => on.appearance(deed.name),
   mode: (deed, on) => on.appearance(deed.name),
+  interfaceScale: (deed, on) => on.appearance(deed.name),
+  textScale: (deed, on) => on.appearance(deed.name),
   first: (_, on, words) => travels(on.opening(), on, words),
   goto: (deed, on, words) => travels(deed.path, on, words),
   openVault: (deed, on, words) => shows(deed.vault.id, on, words),

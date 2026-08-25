@@ -2,7 +2,8 @@
 //
 // Source: numen/v1/theme.proto
 
-// What a client may ask about the themes it can wear.
+// What a client may ask about how the window is drawn: the themes it can wear,
+// and how large it and the text in it are.
 //
 // A theme is one stylesheet that redeclares the tokens the interface draws
 // with. Nothing here reads inside one: what travels is its name, the text of
@@ -51,14 +52,17 @@ const (
 // ThemeServiceClient is a client for the numen.v1.ThemeService service.
 type ThemeServiceClient interface {
 	// Themes is every theme there is — the ones this application ships and the
-	// ones in the person's themes folder — and which of them is applied.
+	// ones in the person's themes folder — which of them is applied, and the two
+	// sizes the window is drawn at.
 	Themes(context.Context, *connect.Request[v1.ThemesRequest]) (*connect.Response[v1.ThemesResponse], error)
 	// Theme is the text of one theme's file, as the file stands when it is
 	// asked for. It is asked once for each theme that is tried on, and again
 	// when that theme's file changes.
 	Theme(context.Context, *connect.Request[v1.ThemeRequest]) (*connect.Response[v1.ThemeResponse], error)
-	// Choose writes the theme and the mode into the settings. The file is
-	// patched as an object, so every key a person typed stays where it was.
+	// Choose writes the theme, the mode and the two sizes into the settings. The
+	// file is patched as an object, so every key a person typed stays where it
+	// was. A size outside its bounds is refused and the settings are left as
+	// they are.
 	Choose(context.Context, *connect.Request[v1.ChooseRequest]) (*connect.Response[v1.ChooseResponse], error)
 	// Changed reports the person's themes folder having changed, for as long as
 	// the caller listens. It says which themes, and nothing about them: the
@@ -135,14 +139,17 @@ func (c *themeServiceClient) Changed(ctx context.Context, req *connect.Request[v
 // ThemeServiceHandler is an implementation of the numen.v1.ThemeService service.
 type ThemeServiceHandler interface {
 	// Themes is every theme there is — the ones this application ships and the
-	// ones in the person's themes folder — and which of them is applied.
+	// ones in the person's themes folder — which of them is applied, and the two
+	// sizes the window is drawn at.
 	Themes(context.Context, *connect.Request[v1.ThemesRequest]) (*connect.Response[v1.ThemesResponse], error)
 	// Theme is the text of one theme's file, as the file stands when it is
 	// asked for. It is asked once for each theme that is tried on, and again
 	// when that theme's file changes.
 	Theme(context.Context, *connect.Request[v1.ThemeRequest]) (*connect.Response[v1.ThemeResponse], error)
-	// Choose writes the theme and the mode into the settings. The file is
-	// patched as an object, so every key a person typed stays where it was.
+	// Choose writes the theme, the mode and the two sizes into the settings. The
+	// file is patched as an object, so every key a person typed stays where it
+	// was. A size outside its bounds is refused and the settings are left as
+	// they are.
 	Choose(context.Context, *connect.Request[v1.ChooseRequest]) (*connect.Response[v1.ChooseResponse], error)
 	// Changed reports the person's themes folder having changed, for as long as
 	// the caller listens. It says which themes, and nothing about them: the

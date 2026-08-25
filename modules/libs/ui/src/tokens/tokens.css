@@ -96,53 +96,64 @@
 
 /*
  * What a theme leaves alone: the type, the measures and the timings. They are
- * the same under every palette.
+ * the same under every palette, and each stands under what it follows.
  */
+
+/*
+ * What follows the interface: the chrome, the type it is set in, and every
+ * length that surrounds that type. Each is in `rem`, and the root's font size
+ * carries them all.
+ */
+
+/* How large the interface is drawn. A page carrying no multiplier is drawn as
+   it is designed. */
+:where(:root) {
+  font-size: calc(16px * var(--numen-interface-scale, 1));
+}
+
 :where(:root) {
   --numen-font-sans:
     ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans',
     'Noto Sans Devanagari', 'Noto Sans Arabic', sans-serif;
-  --numen-font-size: 13px;
+  --numen-font-size: 0.8125rem;
   --numen-line-height: 1.35;
-
-  --numen-radius: 6px;
-  --numen-radius-focus: 8px;
-  --numen-stroke: 1px;
-  --numen-ring-width: 2px;
-
-  /* Inside a node: the clearance around its label, and between an icon and it. */
-  --numen-node-padding: 10px;
-  --numen-node-gap: 6px;
-  /* The handle a gesture is reached out from: the disc, and the cross on it.
-     The arms read as a plus sign at about half the radius. */
-  --numen-handle-radius: 9px;
-  --numen-handle-arm: 4px;
-  --numen-handle-stroke: 1.5px;
   /* Set wider than a sentence, for the few words that are set in capitals. */
   --numen-caps-tracking: 0.08em;
 
-  --numen-edge-width: 1.25px;
-  --numen-edge-label-size: 10px;
-  /* The halo that keeps an edge label legible where it crosses its own line. */
-  --numen-edge-label-halo: 3px;
-  /* Two dashed things, told apart by their stroke: the thread a gesture drags
-     behind it, and the outline of the node letting go would make. */
-  --numen-thread-dash: 4 4;
-  --numen-ghost-dash: 6 4;
+  /* Inside a node: the clearance around its label, and between an icon and it. */
+  --numen-node-padding: 0.625rem;
+  --numen-node-gap: 0.375rem;
+
+  --numen-edge-label-size: 0.625rem;
 
   /* The clearance reading keeps from the edge of the pane it fills. A note and
      a conversation are read at the same measure, so they keep the same one. */
-  --numen-gutter: 20px;
+  --numen-gutter: 1.25rem;
 
   /* The clearance a line of small print keeps from the corner it sits in. */
-  --numen-inset: 8px;
-  --numen-inset-wide: 12px;
+  --numen-inset: 0.5rem;
+  --numen-inset-wide: 0.75rem;
+
+  /* The corner of a box drawn in the page: a button, an item in a list, a
+     block of code, the tab a gesture would drop where it is held. */
+  --numen-radius: 0.375rem;
+
+  /* The corner of a node's box, and the corner of the box around the one in
+     front. */
+  --numen-plex-radius: 0.375rem;
+  --numen-plex-radius-focus: 0.5rem;
+  /* The handle a gesture is reached out from: the disc, and the cross on it.
+     The arms read as a plus sign at about half the radius. */
+  --numen-handle-radius: 0.5625rem;
+  --numen-handle-arm: 0.25rem;
+  /* The halo that keeps an edge label legible where it crosses its own line. */
+  --numen-edge-label-halo: 0.1875rem;
 
   /* A panel floats: rounded on every side, with what it holds clear of the
      curve. */
-  --numen-radius-panel: 12px;
-  --numen-panel-padding: 12px;
-  --numen-panel-gap: 10px;
+  --numen-radius-panel: 0.75rem;
+  --numen-panel-padding: 0.75rem;
+  --numen-panel-gap: 0.625rem;
 
   /* What floats over the window, in the order it stands. Everything that
      floats takes one of these, and nothing takes a number of its own. */
@@ -151,32 +162,62 @@
   --numen-lift-palette: 70;
   --numen-lift-going: 80;
 
+  /* Wider than any box it rounds. */
   --numen-radius-pill: 999px;
   /* A field at rest is one row tall. The row is what the button is drawn at
      and what one line of typing is set to fill, so the two share a middle
      without either being measured. */
-  --numen-action-size: 32px;
-  --numen-field-padding: 6px;
+  --numen-action-size: 2rem;
+  --numen-field-padding: 0.375rem;
   --numen-field-min: calc(var(--numen-action-size) + 2 * var(--numen-field-padding));
   /* Half the height at rest: a lozenge while the field holds one line, a
      rounded box once it grows. */
   --numen-radius-field: calc(var(--numen-field-min) / 2);
   /* The clearance the typing keeps from the ends, which is around the curve. */
-  --numen-field-text-inset: 14px;
+  --numen-field-text-inset: 0.875rem;
   /* Lines of typing the field grows to before it scrolls. */
   --numen-field-lines: 10;
 
-  /* Three dots saying something is being written. Each rises a third of a
-     cycle behind the one before it, so they read left to right. */
-  --numen-dot-size: 4px;
-  --numen-dot-gap: 3px;
-  --numen-dot-rise: 3px;
-  --numen-dot-cycle: 1200ms;
+  /* Three dots saying something is being written. */
+  --numen-dot-size: 0.25rem;
+  --numen-dot-gap: 0.1875rem;
+  --numen-dot-rise: 0.1875rem;
 
-  --numen-radius-bubble: 12px;
-  --numen-turn-gap: 16px;
+  --numen-radius-bubble: 0.75rem;
+  --numen-turn-gap: 1rem;
   /* How much of the width one bubble may take before it wraps. */
   --numen-bubble-measure: 80%;
+}
+
+/*
+ * What the text multiplier reaches as well: the size the text a person reads
+ * is set at. The interface carries it as it carries every `rem`, and this is
+ * a second multiplier over that.
+ */
+
+/* A page carrying no multiplier sets it as it is designed. */
+:where(:root) {
+  --numen-reading-size: calc(0.8125rem * var(--numen-text-scale, 1));
+}
+
+/*
+ * What follows neither. A line is one line whatever it separates, and a time
+ * is not a length.
+ */
+:where(:root) {
+  --numen-stroke: 1px;
+  --numen-ring-width: 2px;
+  /* The bar the cross on a handle is drawn with. */
+  --numen-handle-stroke: 1.5px;
+  --numen-edge-width: 1.25px;
+  /* Two dashed things, told apart by their stroke: the thread a gesture drags
+     behind it, and the outline of the node letting go would make. */
+  --numen-thread-dash: 4 4;
+  --numen-ghost-dash: 6 4;
+
+  /* Each dot rises a third of a cycle behind the one before it, so they read
+     left to right. */
+  --numen-dot-cycle: 1200ms;
 
   --numen-motion: 220ms;
   /* A pointer answers now; it is not waiting on a navigation. */

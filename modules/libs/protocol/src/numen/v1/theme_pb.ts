@@ -2,7 +2,8 @@
 // @generated from file numen/v1/theme.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-// What a client may ask about the themes it can wear.
+// What a client may ask about how the window is drawn: the themes it can wear,
+// and how large it and the text in it are.
 //
 // A theme is one stylesheet that redeclares the tokens the interface draws
 // with. Nothing here reads inside one: what travels is its name, the text of
@@ -16,7 +17,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/theme.proto.
  */
 export const file_numen_v1_theme: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS90aGVtZS5wcm90bxIIbnVtZW4udjEiVAoFVGhlbWUSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRIeCgVzaGVsZhgDIAEoDjIPLm51bWVuLnYxLlNoZWxmEg4KBnBpbm5lZBgEIAEoCCIPCg1UaGVtZXNSZXF1ZXN0ImAKDlRoZW1lc1Jlc3BvbnNlEh8KBnRoZW1lcxgBIAMoCzIPLm51bWVuLnYxLlRoZW1lEg8KB2FwcGxpZWQYAiABKAkSHAoEbW9kZRgDIAEoDjIOLm51bWVuLnYxLk1vZGUiHAoMVGhlbWVSZXF1ZXN0EgwKBG5hbWUYASABKAkiHAoNVGhlbWVSZXNwb25zZRILCgNjc3MYASABKAkiOwoNQ2hvb3NlUmVxdWVzdBIMCgRuYW1lGAEgASgJEhwKBG1vZGUYAiABKA4yDi5udW1lbi52MS5Nb2RlIiAKDkNob29zZVJlc3BvbnNlEg4KBmZhaWxlZBgBIAEoCSIQCg5DaGFuZ2VkUmVxdWVzdCIgCg9DaGFuZ2VkUmVzcG9uc2USDQoFbmFtZXMYASADKAkqQAoFU2hlbGYSFQoRU0hFTEZfVU5TUEVDSUZJRUQQABIQCgxTSEVMRl9QUkVTRVQQARIOCgpTSEVMRl9NSU5FEAIqTAoETW9kZRIUChBNT0RFX1VOU1BFQ0lGSUVEEAASDwoLTU9ERV9TWVNURU0QARIOCgpNT0RFX0xJR0hUEAISDQoJTU9ERV9EQVJLEAMyhAIKDFRoZW1lU2VydmljZRI7CgZUaGVtZXMSFy5udW1lbi52MS5UaGVtZXNSZXF1ZXN0GhgubnVtZW4udjEuVGhlbWVzUmVzcG9uc2USOAoFVGhlbWUSFi5udW1lbi52MS5UaGVtZVJlcXVlc3QaFy5udW1lbi52MS5UaGVtZVJlc3BvbnNlEjsKBkNob29zZRIXLm51bWVuLnYxLkNob29zZVJlcXVlc3QaGC5udW1lbi52MS5DaG9vc2VSZXNwb25zZRJACgdDaGFuZ2VkEhgubnVtZW4udjEuQ2hhbmdlZFJlcXVlc3QaGS5udW1lbi52MS5DaGFuZ2VkUmVzcG9uc2UwAUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChRudW1lbi92MS90aGVtZS5wcm90bxIIbnVtZW4udjEiVAoFVGhlbWUSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRIeCgVzaGVsZhgDIAEoDjIPLm51bWVuLnYxLlNoZWxmEg4KBnBpbm5lZBgEIAEoCCIlCgZCb3VuZHMSDQoFbGVhc3QYASABKAESDAoEbW9zdBgCIAEoASIPCg1UaGVtZXNSZXF1ZXN0IuwBCg5UaGVtZXNSZXNwb25zZRIfCgZ0aGVtZXMYASADKAsyDy5udW1lbi52MS5UaGVtZRIPCgdhcHBsaWVkGAIgASgJEhwKBG1vZGUYAyABKA4yDi5udW1lbi52MS5Nb2RlEhcKD2ludGVyZmFjZV9zY2FsZRgEIAEoARISCgp0ZXh0X3NjYWxlGAUgASgBEjAKFmludGVyZmFjZV9zY2FsZV9ib3VuZHMYBiABKAsyEC5udW1lbi52MS5Cb3VuZHMSKwoRdGV4dF9zY2FsZV9ib3VuZHMYByABKAsyEC5udW1lbi52MS5Cb3VuZHMiHAoMVGhlbWVSZXF1ZXN0EgwKBG5hbWUYASABKAkiHAoNVGhlbWVSZXNwb25zZRILCgNjc3MYASABKAkilQEKDUNob29zZVJlcXVlc3QSDAoEbmFtZRgBIAEoCRIcCgRtb2RlGAIgASgOMg4ubnVtZW4udjEuTW9kZRIcCg9pbnRlcmZhY2Vfc2NhbGUYAyABKAFIAIgBARIXCgp0ZXh0X3NjYWxlGAQgASgBSAGIAQFCEgoQX2ludGVyZmFjZV9zY2FsZUINCgtfdGV4dF9zY2FsZSIgCg5DaG9vc2VSZXNwb25zZRIOCgZmYWlsZWQYASABKAkiEAoOQ2hhbmdlZFJlcXVlc3QiIAoPQ2hhbmdlZFJlc3BvbnNlEg0KBW5hbWVzGAEgAygJKkAKBVNoZWxmEhUKEVNIRUxGX1VOU1BFQ0lGSUVEEAASEAoMU0hFTEZfUFJFU0VUEAESDgoKU0hFTEZfTUlORRACKkwKBE1vZGUSFAoQTU9ERV9VTlNQRUNJRklFRBAAEg8KC01PREVfU1lTVEVNEAESDgoKTU9ERV9MSUdIVBACEg0KCU1PREVfREFSSxADMoQCCgxUaGVtZVNlcnZpY2USOwoGVGhlbWVzEhcubnVtZW4udjEuVGhlbWVzUmVxdWVzdBoYLm51bWVuLnYxLlRoZW1lc1Jlc3BvbnNlEjgKBVRoZW1lEhYubnVtZW4udjEuVGhlbWVSZXF1ZXN0GhcubnVtZW4udjEuVGhlbWVSZXNwb25zZRI7CgZDaG9vc2USFy5udW1lbi52MS5DaG9vc2VSZXF1ZXN0GhgubnVtZW4udjEuQ2hvb3NlUmVzcG9uc2USQAoHQ2hhbmdlZBIYLm51bWVuLnYxLkNoYW5nZWRSZXF1ZXN0GhkubnVtZW4udjEuQ2hhbmdlZFJlc3BvbnNlMAFCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * Theme is one theme as the list refers to it. Its text is asked for by the
@@ -62,6 +63,31 @@ export const ThemeSchema: GenMessage<Theme> = /*@__PURE__*/
   messageDesc(file_numen_v1_theme, 0);
 
 /**
+ * Bounds is how far a size goes, at each end. A number outside them is
+ * refused.
+ *
+ * @generated from message numen.v1.Bounds
+ */
+export type Bounds = Message<"numen.v1.Bounds"> & {
+  /**
+   * @generated from field: double least = 1;
+   */
+  least: number;
+
+  /**
+   * @generated from field: double most = 2;
+   */
+  most: number;
+};
+
+/**
+ * Describes the message numen.v1.Bounds.
+ * Use `create(BoundsSchema)` to create a new message.
+ */
+export const BoundsSchema: GenMessage<Bounds> = /*@__PURE__*/
+  messageDesc(file_numen_v1_theme, 1);
+
+/**
  * @generated from message numen.v1.ThemesRequest
  */
 export type ThemesRequest = Message<"numen.v1.ThemesRequest"> & {
@@ -72,7 +98,7 @@ export type ThemesRequest = Message<"numen.v1.ThemesRequest"> & {
  * Use `create(ThemesRequestSchema)` to create a new message.
  */
 export const ThemesRequestSchema: GenMessage<ThemesRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_theme, 1);
+  messageDesc(file_numen_v1_theme, 2);
 
 /**
  * @generated from message numen.v1.ThemesResponse
@@ -98,6 +124,32 @@ export type ThemesResponse = Message<"numen.v1.ThemesResponse"> & {
    * @generated from field: numen.v1.Mode mode = 3;
    */
   mode: Mode;
+
+  /**
+   * How large the interface is drawn, and how large the text a person reads is
+   * set. Each is a multiplier, one being as designed.
+   *
+   * @generated from field: double interface_scale = 4;
+   */
+  interfaceScale: number;
+
+  /**
+   * @generated from field: double text_scale = 5;
+   */
+  textScale: number;
+
+  /**
+   * How far each of the two goes. A client asking a person for a number says
+   * these.
+   *
+   * @generated from field: numen.v1.Bounds interface_scale_bounds = 6;
+   */
+  interfaceScaleBounds?: Bounds | undefined;
+
+  /**
+   * @generated from field: numen.v1.Bounds text_scale_bounds = 7;
+   */
+  textScaleBounds?: Bounds | undefined;
 };
 
 /**
@@ -105,7 +157,7 @@ export type ThemesResponse = Message<"numen.v1.ThemesResponse"> & {
  * Use `create(ThemesResponseSchema)` to create a new message.
  */
 export const ThemesResponseSchema: GenMessage<ThemesResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_theme, 2);
+  messageDesc(file_numen_v1_theme, 3);
 
 /**
  * @generated from message numen.v1.ThemeRequest
@@ -124,7 +176,7 @@ export type ThemeRequest = Message<"numen.v1.ThemeRequest"> & {
  * Use `create(ThemeRequestSchema)` to create a new message.
  */
 export const ThemeRequestSchema: GenMessage<ThemeRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_theme, 3);
+  messageDesc(file_numen_v1_theme, 4);
 
 /**
  * @generated from message numen.v1.ThemeResponse
@@ -144,7 +196,7 @@ export type ThemeResponse = Message<"numen.v1.ThemeResponse"> & {
  * Use `create(ThemeResponseSchema)` to create a new message.
  */
 export const ThemeResponseSchema: GenMessage<ThemeResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_theme, 4);
+  messageDesc(file_numen_v1_theme, 5);
 
 /**
  * @generated from message numen.v1.ChooseRequest
@@ -164,6 +216,20 @@ export type ChooseRequest = Message<"numen.v1.ChooseRequest"> & {
    * @generated from field: numen.v1.Mode mode = 2;
    */
   mode: Mode;
+
+  /**
+   * How large the interface is drawn, and how large the text a person reads is
+   * set. Each is a multiplier, one being as designed, and a size left unset
+   * stands as it is.
+   *
+   * @generated from field: optional double interface_scale = 3;
+   */
+  interfaceScale?: number | undefined;
+
+  /**
+   * @generated from field: optional double text_scale = 4;
+   */
+  textScale?: number | undefined;
 };
 
 /**
@@ -171,7 +237,7 @@ export type ChooseRequest = Message<"numen.v1.ChooseRequest"> & {
  * Use `create(ChooseRequestSchema)` to create a new message.
  */
 export const ChooseRequestSchema: GenMessage<ChooseRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_theme, 5);
+  messageDesc(file_numen_v1_theme, 6);
 
 /**
  * @generated from message numen.v1.ChooseResponse
@@ -190,7 +256,7 @@ export type ChooseResponse = Message<"numen.v1.ChooseResponse"> & {
  * Use `create(ChooseResponseSchema)` to create a new message.
  */
 export const ChooseResponseSchema: GenMessage<ChooseResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_theme, 6);
+  messageDesc(file_numen_v1_theme, 7);
 
 /**
  * @generated from message numen.v1.ChangedRequest
@@ -203,7 +269,7 @@ export type ChangedRequest = Message<"numen.v1.ChangedRequest"> & {
  * Use `create(ChangedRequestSchema)` to create a new message.
  */
 export const ChangedRequestSchema: GenMessage<ChangedRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_theme, 7);
+  messageDesc(file_numen_v1_theme, 8);
 
 /**
  * @generated from message numen.v1.ChangedResponse
@@ -223,7 +289,7 @@ export type ChangedResponse = Message<"numen.v1.ChangedResponse"> & {
  * Use `create(ChangedResponseSchema)` to create a new message.
  */
 export const ChangedResponseSchema: GenMessage<ChangedResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_theme, 8);
+  messageDesc(file_numen_v1_theme, 9);
 
 /**
  * Shelf is where a theme came off: this application, or the person's themes
@@ -295,14 +361,16 @@ export const ModeSchema: GenEnum<Mode> = /*@__PURE__*/
   enumDesc(file_numen_v1_theme, 1);
 
 /**
- * ThemeService answers what themes there are, and is told which one is chosen.
+ * ThemeService answers how the window is drawn, and is told what a person
+ * chose.
  *
  * @generated from service numen.v1.ThemeService
  */
 export const ThemeService: GenService<{
   /**
    * Themes is every theme there is — the ones this application ships and the
-   * ones in the person's themes folder — and which of them is applied.
+   * ones in the person's themes folder — which of them is applied, and the two
+   * sizes the window is drawn at.
    *
    * @generated from rpc numen.v1.ThemeService.Themes
    */
@@ -324,8 +392,10 @@ export const ThemeService: GenService<{
     output: typeof ThemeResponseSchema;
   },
   /**
-   * Choose writes the theme and the mode into the settings. The file is
-   * patched as an object, so every key a person typed stays where it was.
+   * Choose writes the theme, the mode and the two sizes into the settings. The
+   * file is patched as an object, so every key a person typed stays where it
+   * was. A size outside its bounds is refused and the settings are left as
+   * they are.
    *
    * @generated from rpc numen.v1.ThemeService.Choose
    */

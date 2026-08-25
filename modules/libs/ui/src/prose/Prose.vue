@@ -49,6 +49,12 @@ const pressed = (press: MouseEvent) => {
 </template>
 
 <style scoped>
+/* An answer is set a shade above the size a note is read at, and every size in
+   the scale above it is in `em`. */
+.prose {
+  font-size: calc(var(--numen-reading-size) * 14 / 13);
+}
+
 /* A table wider than the measure scrolls inside itself, carrying its own
    scrollbar. */
 .prose :deep(table) {

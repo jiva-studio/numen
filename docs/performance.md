@@ -912,3 +912,36 @@ other, and it changes the text a vector is made from: the recipe changes, and
 every chunk of every recognised document is embedded again. Only the words half
 was measured here — what a vector that knows its chapter is worth cannot be
 known without buying those vectors. The number to beat is 346 and 346.
+
+## Changing how large the window is drawn
+
+Recorded 2026-08-25 in Chrome 149, over a window holding a 400-line editor and
+three thousand rows of chrome.
+
+| the multiplier changed | forced layout |
+| --- | --- |
+| `--numen-interface-scale` | 27–39 ms |
+| `--numen-text-scale` | 4–6 ms |
+
+The interface is the root's font size, so every length written in `rem` is
+measured again and the whole document is laid out. The reading size is written
+in `rem` as well, so the interface carries the editor and marked-up text along
+with everything else: what the reading size moves stands inside what the
+interface moves, and not beside it.
+
+The editor draws only the lines that are on screen — thirty-six of the four
+hundred — so what it adds to either is a screen of text, whatever the note is
+worth. Marked-up text draws all of it. The same window with four hundred blocks
+of a note on screen, over the whole stylesheet rather than the tokens alone:
+
+| the multiplier changed | with the note | without it |
+| --- | --- | --- |
+| `--numen-interface-scale` | 45–71 ms | 32–43 ms |
+| `--numen-text-scale` | 9–13 ms | 7–11 ms |
+
+Those two columns are read against each other. A page carrying the whole
+stylesheet costs more to recalculate than one carrying the tokens, which is why
+neither column meets the table above.
+
+A held arrow key crosses a row of the size list every 40 ms, and a size is worn
+once the keyboard has stood on a row for 150 ms.

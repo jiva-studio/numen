@@ -33,7 +33,7 @@ defineEmits<{ (event: 'choose', kind: string): void }>()
   block-size: 100%;
   padding: var(--numen-gutter);
   font-family: var(--numen-font-sans);
-  font-size: 0.85rem;
+  font-size: calc(var(--numen-font-size) * 13.6 / 13);
 }
 
 .blank__says {

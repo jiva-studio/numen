@@ -9,7 +9,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { onMounted, onUnmounted, ref } from 'vue'
 import Palette from './Palette.vue'
-import type { PaletteBand, PaletteSpan } from './model'
+import { keyChord, type PaletteBand, type PaletteSpan } from './model'
 import {
   ARABIC,
   DEVANAGARI,
@@ -25,6 +25,7 @@ interface Knobs {
   placeholder: string
   crumb: string
   step: string
+  opensOn: string
   name: string
   onChoose: (item: string, action: string) => void
   onLit: (item: string) => void
@@ -159,6 +160,7 @@ const over = (args: Knobs) => ({
         :placeholder="args.placeholder"
         :crumb="args.crumb"
         :step="args.step"
+        :opens-on="args.opensOn"
         :name="args.name"
         @choose="args.onChoose"
         @lit="args.onLit"
@@ -192,6 +194,7 @@ const meta = {
     placeholder: { control: 'text' },
     crumb: { control: 'text' },
     name: { control: 'text' },
+    opensOn: { control: 'text' },
     bands: { table: { disable: true } },
     step: { table: { disable: true } },
     onChoose: { table: { disable: true } },
@@ -204,6 +207,7 @@ const meta = {
     placeholder: 'Search',
     crumb: '',
     step: '',
+    opensOn: '',
     name: 'Palette',
     onChoose: fn(),
     onLit: fn(),
@@ -223,6 +227,17 @@ const field = () => document.body.querySelector<HTMLInputElement>('.palette__fie
 const sheet = () => document.body.querySelector<HTMLElement>('.palette__actions')
 const hunt = () => document.body.querySelector<HTMLInputElement>('.palette__hunt')
 const deeds = () => Array.from(document.body.querySelectorAll<HTMLElement>('.palette__deed'))
+
+/** What a line says, with the runs it is written in run together. */
+const said = (of: Element | null | undefined): string =>
+  (of?.textContent ?? '').replace(/\s+/g, ' ').trim()
+
+/** The keystroke a cap is announced as, which is all of it a reader hears. */
+const spoken = (cap: Element | null | undefined): string => said(cap?.querySelector('.sr-only'))
+
+/** The two keyboards a keystroke is written for. */
+const APPLE = 'MacIntel'
+const OTHER = 'Linux x86_64'
 
 /** Every setting, live: three bands, one of them still on its way. */
 export const Playground: Story = {}
@@ -256,6 +271,35 @@ export const Lit: Story = {
 
     await userEvent.keyboard('{ArrowUp}')
     await waitFor(() => expect(args.onLit).toHaveBeenLastCalledWith('entropy'))
+  },
+}
+
+/**
+ * A list of values opens standing on the value in force, wherever in the list
+ * it sits. Nothing has to be walked back, and a caller acting on what is lit
+ * acts on what is already so.
+ */
+export const OpensOnAValue: Story = {
+  args: { opensOn: 'gibbs' },
+  play: async ({ args }) => {
+    await waitFor(() => expect(lit()).not.toBeNull())
+
+    await expect(lit()?.textContent).toContain('Gibbs free energy')
+    await expect(args.onLit).toHaveBeenLastCalledWith('gibbs')
+  },
+}
+
+/**
+ * A value with no item to stand on: the list holds none of it, and the first
+ * item is where it opens.
+ */
+export const OpensOnNothingThere: Story = {
+  args: { opensOn: 'nowhere' },
+  play: async ({ args }) => {
+    await waitFor(() => expect(lit()).not.toBeNull())
+
+    await expect(lit()?.textContent).toContain('Entropy')
+    await expect(args.onLit).toHaveBeenLastCalledWith('entropy')
   },
 }
 
@@ -445,11 +489,13 @@ export const FarTooMany: Story = {
     const last = options().at(-1)!
     await expect(last.getAttribute('aria-selected')).toBe('true')
 
+    // A row is as tall as the type it is set in, so it lands on a fraction of
+    // a pixel and is brought into sight to within one.
     const list = document.body.querySelector<HTMLElement>('.palette__list')!
     const inside = last.getBoundingClientRect()
     const room = list.getBoundingClientRect()
-    await expect(inside.bottom).toBeLessThanOrEqual(Math.ceil(room.bottom))
-    await expect(inside.top).toBeGreaterThanOrEqual(Math.floor(room.top))
+    await expect(inside.bottom).toBeLessThanOrEqual(room.bottom + 1)
+    await expect(inside.top).toBeGreaterThanOrEqual(room.top - 1)
   },
 }
 
@@ -473,8 +519,10 @@ export const NotLatin: Story = {
 /**
  * Lines past any width, and words with nowhere to break.
  *
- * Each is one line and then an ellipsis, and none of them makes the panel any
- * wider than it is.
+ * Each is one line and then an ellipsis. The panel keeps the clearance it is
+ * drawn with on either side, and nothing in it pushes the window wider. The
+ * clearance is a length the interface multiplier moves, so it is read from the
+ * panel rather than named.
  */
 export const TooLong: Story = {
   args: {
@@ -494,10 +542,19 @@ export const TooLong: Story = {
     await waitFor(() => expect(palette()).not.toBeNull())
 
     const panel = document.body.querySelector<HTMLElement>('.palette__panel')!
-    await expect(panel.getBoundingClientRect().width).toBeLessThanOrEqual(640)
+    const over = document.body.querySelector<HTMLElement>('.palette')!
+    const clear = parseFloat(getComputedStyle(over).paddingInlineStart)
+    const drawn = panel.getBoundingClientRect()
+    const room = over.getBoundingClientRect()
+
+    await expect(drawn.left).toBeGreaterThanOrEqual(room.left + clear - 1)
+    await expect(drawn.right).toBeLessThanOrEqual(room.right - clear + 1)
     for (const option of options()) {
       await expect(option.scrollWidth).toBeLessThanOrEqual(option.clientWidth + 1)
     }
+    await expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
+      document.documentElement.clientWidth + 1,
+    )
   },
 }
 
@@ -585,10 +642,8 @@ export const FiveActions: Story = {
   play: async ({ args }) => {
     await waitFor(() => expect(lit()).not.toBeNull())
 
-    const said = Array.from(document.body.querySelectorAll('.palette__key')).map((one) =>
-      one.textContent?.trim(),
-    )
-    await expect(said).toEqual(['↵ Show in plex', '⇧↵ Open the note'])
+    const reach = Array.from(document.body.querySelectorAll('.palette__key')).map(said)
+    await expect(reach).toEqual(['Return Show in plex', 'Shift Return Open the note'])
     await expect(document.body.querySelector('.palette__more')?.textContent).toContain('Actions')
 
     await userEvent.keyboard('{Enter}')
@@ -726,7 +781,11 @@ export const Steps: Story = {
   },
 }
 
-/** Items carrying the keystroke that reaches them away from the palette. */
+/**
+ * Items carrying the keystroke that reaches them away from the palette: an
+ * Apple keyboard's row, the row of every other keyboard, and a cap holding one
+ * mark and a cap holding four.
+ */
 export const KeyHints: Story = {
   args: {
     bands: [
@@ -734,10 +793,17 @@ export const KeyHints: Story = {
         id: 'commands',
         title: 'Commands',
         items: [
-          { id: 'new', title: 'New note', keys: '⌘N', actions: RUN },
-          { id: 'plex', title: 'Show the plex', keys: '⌘⇧P', actions: RUN },
-          { id: 'save', title: 'Save', keys: '⌘S', actions: RUN },
-          { id: 'long', title: LONG, keys: '⌘⌥⇧L', actions: RUN },
+          { id: 'new', title: 'New note', keys: keyChord('n', APPLE), actions: RUN },
+          { id: 'plex', title: 'Show the plex', keys: keyChord('p', APPLE, true), actions: RUN },
+          { id: 'close', title: 'Close this tab', keys: keyChord('w', OTHER, true), actions: RUN },
+          { id: 'goto', title: 'Go to a note', keys: keyChord('g', OTHER), actions: RUN },
+          { id: 'run', title: 'Run it', keys: { marks: ['return'], letter: '' }, actions: RUN },
+          {
+            id: 'long',
+            title: LONG,
+            keys: { marks: ['command', 'option', 'shift'], letter: 'L' },
+            actions: RUN,
+          },
           { id: 'none', title: 'Reload the vault', actions: RUN },
         ],
       },
@@ -746,10 +812,19 @@ export const KeyHints: Story = {
   play: async () => {
     await waitFor(() => expect(lit()).not.toBeNull())
 
-    const hints = Array.from(document.body.querySelectorAll('.palette__hint')).map((one) =>
-      one.textContent?.trim(),
-    )
-    await expect(hints).toEqual(['⌘N', '⌘⇧P', '⌘S', '⌘⌥⇧L'])
+    const hints = Array.from(document.body.querySelectorAll('.palette__hint'))
+    await expect(hints.map(spoken)).toEqual([
+      'Command N',
+      'Command Shift P',
+      'Control Shift W',
+      'Control G',
+      'Return',
+      'Command Option Shift L',
+    ])
+
+    // A cap holding one mark is as tall as a cap holding three.
+    const heights = new Set(hints.map((cap) => Math.round(cap.getBoundingClientRect().height)))
+    await expect(heights.size).toBe(1)
 
     // A title too long for the row gives way to the key, and neither wraps.
     for (const option of options()) {

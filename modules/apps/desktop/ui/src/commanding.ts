@@ -10,8 +10,9 @@
  * own, and the step it is on is what the field means.
  */
 import { computed, ref, shallowRef } from 'vue'
-import type { PaletteBand, PaletteItem } from '@numen/ui'
+import type { PaletteBand, PaletteItem, PaletteKeys } from '@numen/ui'
 import { wentTo, type Known, type Listed, type Went } from './core'
+import { keysOf } from './keying'
 import type { Named, Silences } from './finding'
 
 /** What the commands ask of the application before anything is chosen. */
@@ -30,6 +31,8 @@ export interface Offered {
   readonly detail?: string
   /** Drawn, said, and not chosen. */
   readonly disabled?: boolean
+  /** The value the setting this list is of holds now, which is where it opens. */
+  readonly inForce?: boolean
 }
 
 /** One band of such a list, named by whatever holds it. */
@@ -47,8 +50,11 @@ export interface Offering {
  * window holds may change while the step stands open.
  */
 export interface Holds {
-  /** What this command offers now, in the bands it is drawn in. */
-  offers(command: string): readonly Offering[]
+  /**
+   * What this command offers now, in the bands it is drawn in. The words typed
+   * come too: a list may hold a row made out of them.
+   */
+  offers(command: string, typed: string): readonly Offering[]
   /** The one the keyboard is standing on, and nothing where it stands on none. */
   shows(command: string, item: string): void
 }
@@ -133,7 +139,7 @@ export interface Command {
   readonly id: string
   readonly text: string
   /** The keystroke that reaches it away from the palette. */
-  readonly keys?: string
+  readonly keys?: PaletteKeys
   /** What it asks for before it happens. */
   readonly needs?: Needed
   /** The step it asks for once the first one is answered. */
@@ -193,12 +199,17 @@ export interface Words extends Silences {
   readonly newPlex: string
   readonly newAgent: string
   readonly close: string
-  /** The two commands over how the window is drawn: the theme, and the halves. */
+  /**
+   * The four commands over how the window is drawn: the theme, the halves, and
+   * the two sizes.
+   */
   readonly appearance: string
   readonly mode: string
+  readonly interfaceScale: string
+  readonly textScale: string
   readonly find: string
   /** The keystroke the search answers to away from the palette. */
-  readonly findKeys: string
+  readonly findKeys: PaletteKeys
   readonly first: string
   readonly goto: string
   /** The commands over the vaults this installation holds. */
@@ -235,7 +246,8 @@ export interface Words extends Silences {
   readonly typeVault: string
   /** The two vaults the list draws and does not offer to choose. */
   readonly gone: string
-  readonly inFront: string
+  /** The row a list of values opens on, which is the value in force. */
+  readonly current: string
   /** The two answers to the confirmation: the one that changes nothing, first. */
   readonly asking: string
   readonly answer: string
@@ -296,16 +308,27 @@ const onVault = (at: Where): boolean => at.vault.id !== ''
 const always = (): boolean => true
 
 /**
- * Every command, in the order it is drawn.
+ * Every command, in the order it is drawn. The keyboard it is being read on
+ * decides how the keystrokes on it are written.
  *
  * A command reached by Shift and Enter on another one's row is offered here
  * too and drawn nowhere: the row it belongs to is the one that names it.
  */
-export const commandsOf = (words: Words): readonly Command[] => [
+export const commandsOf = (
+  words: Words,
+  agent: string = navigator.userAgent,
+): readonly Command[] => [
   { id: 'read', text: words.read, band: 'note', where: onNote, also: 'beside' },
   { id: 'beside', text: words.beside, band: 'note', where: onNote },
-  { id: 'travel', text: words.travel, band: 'note', where: onNote },
-  { id: 'child', text: words.child, band: 'note', needs: 'naming', where: onNote },
+  { id: 'travel', text: words.travel, ...keysOf('travel', agent), band: 'note', where: onNote },
+  {
+    id: 'child',
+    text: words.child,
+    ...keysOf('child', agent),
+    band: 'note',
+    needs: 'naming',
+    where: onNote,
+  },
   { id: 'parent', text: words.parent, band: 'note', needs: 'naming', where: onNote },
   { id: 'jump', text: words.jump, band: 'note', needs: 'naming', where: onNote },
   {
@@ -340,15 +363,43 @@ export const commandsOf = (words: Words): readonly Command[] => [
   },
   { id: 'ask', text: words.ask, band: 'note', where: onNote },
   { id: 'copy', text: words.copy, band: 'note', where: onNote },
-  { id: 'note', text: words.newNote, band: 'window', needs: 'naming', where: (at) => at.ready },
+  {
+    id: 'note',
+    text: words.newNote,
+    ...keysOf('note', agent),
+    band: 'window',
+    needs: 'naming',
+    where: (at) => at.ready,
+  },
   { id: 'plex', text: words.newPlex, band: 'window', where: always },
-  { id: 'agent', text: words.newAgent, band: 'window', where: always },
-  { id: 'close', text: words.close, band: 'window', where: (at) => at.tab !== '' },
+  { id: 'agent', text: words.newAgent, ...keysOf('agent', agent), band: 'window', where: always },
+  {
+    id: 'close',
+    text: words.close,
+    ...keysOf('close', agent),
+    band: 'window',
+    where: (at) => at.tab !== '',
+  },
   { id: 'find', text: words.find, keys: words.findKeys, band: 'window', where: always },
   { id: 'appearance', text: words.appearance, band: 'window', needs: 'choosing', where: always },
   { id: 'mode', text: words.mode, band: 'window', needs: 'choosing', where: always },
+  {
+    id: 'interfaceScale',
+    text: words.interfaceScale,
+    band: 'window',
+    needs: 'choosing',
+    where: always,
+  },
+  { id: 'textScale', text: words.textScale, band: 'window', needs: 'choosing', where: always },
   { id: 'first', text: words.first, band: 'vault', where: (at) => at.ready },
-  { id: 'goto', text: words.goto, band: 'vault', needs: 'picking', where: (at) => at.ready },
+  {
+    id: 'goto',
+    text: words.goto,
+    ...keysOf('goto', agent),
+    band: 'vault',
+    needs: 'picking',
+    where: (at) => at.ready,
+  },
   { id: 'openVault', text: words.openVault, band: 'vault', needs: 'vaults', where: always },
   { id: 'newVault', text: words.newVault, band: 'vault', where: always },
   {
@@ -562,6 +613,17 @@ export function commanding(
     () => `${steps.value.length}:${here.value?.command.id ?? ''}:${here.value?.step ?? 'commands'}`,
   )
 
+  /**
+   * The row the step opens standing on: the value the list it offers is of.
+   * A step offering a list of no value opens where the palette would.
+   */
+  const opensOn = computed(() => {
+    const step = here.value
+    if (step?.step !== 'choosing') return ''
+    const rows = holds.offers(step.command.id, typed.value).flatMap((band) => band.items)
+    return rows.find((one) => one.inForce)?.id ?? ''
+  })
+
   /** Nothing is being asked, and nothing already asked for will be drawn. */
   const drop = () => {
     asked += 1
@@ -636,14 +698,11 @@ export function commanding(
   const drawn = (one: Command, over: Where, word: string): PaletteItem | null => {
     const found = word === '' ? -1 : one.text.toLowerCase().indexOf(word)
     if (word !== '' && found < 0) return null
-    // A command over a note is drawn with the note it is over.
-    const detail = one.band === 'note' ? over.title : ''
     const also = one.also ? byId.get(one.also) : undefined
     return {
       id: one.id,
       title: one.text,
       ...(found < 0 ? {} : { at: [{ from: found, to: found + word.length }] }),
-      ...(detail ? { detail } : {}),
       ...(one.keys ? { keys: one.keys } : {}),
       actions: [
         { id: one.id, text: one.text },
@@ -724,7 +783,7 @@ export function commanding(
    */
   const choosing = (step: Asked, text: string): readonly PaletteBand[] => {
     const word = text.trim().toLowerCase()
-    return holds.offers(step.command.id).map((band) => ({
+    return holds.offers(step.command.id, text).map((band) => ({
       id: band.id,
       title: band.title,
       items: band.items.map((one) => offered(one, word)).filter((item) => item !== null),
@@ -749,18 +808,15 @@ export function commanding(
   /**
    * Why a vault the list holds is drawn and not chosen: its folder is not
    * there, or it is the one the window is showing. A vault that can be chosen
-   * says nothing but where it stands.
+   * is marked with nothing.
    */
   const aside = (one: Known): string =>
-    one.missing
-      ? `${words.gone} ${one.path}`
-      : one.id === showing.value
-        ? `${words.inFront} ${one.path}`
-        : ''
+    one.missing ? words.gone : one.id === showing.value ? words.current : ''
 
   /**
-   * The vaults the installation holds. The two it will not take are drawn with
-   * the reason beside them, and cannot be chosen.
+   * The vaults the installation holds. The two it will not take are marked
+   * ahead of their folder, and cannot be chosen. The folder is what tells one
+   * vault from another, so it keeps the room.
    */
   const listing = (text: string, step: Asked): PaletteBand => {
     const word = text.trim().toLowerCase()
@@ -771,7 +827,7 @@ export function commanding(
         return {
           id: one.id,
           title: one.name,
-          detail: why || one.path,
+          detail: why ? `${why} · ${one.path}` : one.path,
           ...(why ? { disabled: true } : {}),
           actions: [{ id: OPEN, text: step.command.text }],
         }
@@ -940,7 +996,7 @@ export function commanding(
       return deed(step.command.id, step.on, name)
     }
     if (step.step === 'choosing') {
-      const rows = holds.offers(step.command.id).flatMap((band) => band.items)
+      const rows = holds.offers(step.command.id, typed.value).flatMap((band) => band.items)
       const one = rows.find((row) => row.id === item)
       if (!one || one.disabled) return null
       return deed(step.command.id, step.on, one.id)
@@ -995,6 +1051,7 @@ export function commanding(
     bands,
     crumb,
     step,
+    opensOn,
     placeholder,
     typing,
     lights,

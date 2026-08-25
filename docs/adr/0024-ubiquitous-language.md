@@ -18,10 +18,14 @@
   `searchable`, `cutting`, `kept`, and the model that is not here yet
 - **Extended:** 2026-08-24 — `rename` and `move` settled apart (ADR-0040)
 - **Extended:** 2026-08-24 — `theme`, `preset`, `mode` (ADR-0041)
+- **Extended:** 2026-08-25 — `interface_scale` and `text_scale`; `zoom` left
+  with one meaning (ADR-0043)
+- **Extended:** 2026-08-25 — `current`, one word for the row in force
+- **Extended:** 2026-08-25 — `gone` names a vault as well as a tab (ADR-0042)
 - **Applies to:** the product as a whole
 - **Related:** ADR-0003, ADR-0006, ADR-0007, ADR-0011, ADR-0014, ADR-0020,
   ADR-0026, ADR-0031, ADR-0032, ADR-0034, ADR-0036, ADR-0037, ADR-0038,
-  ADR-0040, ADR-0041
+  ADR-0040, ADR-0041, ADR-0042, ADR-0043
 
 ## Context
 
@@ -172,7 +176,7 @@ in one place, meaning the obvious thing, needs no entry.
 | menu | A list of things that can be done, opened on what they are done to |
 | unsaved | A tab whose text is not the text in its file |
 | stuck | A tab whose file can be neither read nor written: not a note, not text, over the ceiling, or frontmatter that will not parse (ADR-0032) |
-| gone | A tab whose name has no file behind it, so its save stopped (ADR-0032) |
+| gone | What a name points to is not on disk: a tab whose name has no file behind it, so its save stopped, and a vault with nothing at its path (ADR-0032, ADR-0042) |
 | overtaken | A tab whose file no longer holds the prose the tab read, so its save stopped (ADR-0032) |
 | keep | Writing an overtaken tab's prose over its file, when the person says so (ADR-0032) |
 | take | Replacing an overtaken tab's prose with its file's, when the person says so (ADR-0032) |
@@ -180,6 +184,9 @@ in one place, meaning the obvious thing, needs no entry.
 | theme | A CSS file redeclaring tokens under `:root`, applied whole. Exactly one is applied (ADR-0041) |
 | preset | A theme shipped inside the application, named `preset:`. A theme in the person's own folder is named `mine:` (ADR-0041) |
 | mode | Which half of a token's pair is taken: `system`, `light`, `dark`. A theme pinning `color-scheme` leaves it nothing to choose (ADR-0041) |
+| interface_scale | How large the interface is drawn — chrome, controls, spacing, panels, and the type in them. A multiplier, 1 being as designed (ADR-0043) |
+| text_scale | How large the text a person reads is set — a note, a book, an answer, the editor. A multiplier, 1 being as designed (ADR-0043) |
+| current | The row a list opens on, which is the one in force: the theme shelf, light and dark, the two size ladders, the vaults. Never *worn now*, which echoed a theme being worn and said it of that list alone, and never *the size now* |
 
 ### Words that were spent twice, and how they are settled
 
@@ -378,6 +385,11 @@ So a rename is always a move and is an edit as well whenever it writes the note.
 It reports the kind `move`: one call is drawn under one kind, and the file is the
 half every rename has. Where a sentence written before this says a move renames a
 file, it means the filesystem call, and that reading stays inside the call.
+
+**`zoom`.** How large a page of a document is drawn (ADR-0037). The window's own
+zoom goes (ADR-0043), and the word is left with that one meaning: how large the
+interface is drawn is `interface_scale`, and how large the text a person reads
+is set is `text_scale`.
 
 **`note`, twice.** A note is a file. A link's `note` is why it exists. This one
 is kept: the key was chosen for the file format, where it is read by people and

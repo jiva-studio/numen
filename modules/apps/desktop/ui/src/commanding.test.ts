@@ -144,7 +144,7 @@ describe('the commands as they open', () => {
 
     expect(drawn(commands.bands)).toStrictEqual({
       note: ['read', 'travel', 'child', 'parent', 'jump', 'title', 'remove', 'ask', 'copy'],
-      window: ['note', 'plex', 'agent', 'close', 'find', 'appearance', 'mode'],
+      window: ['note', 'plex', 'agent', 'close', 'find', 'appearance', 'mode', 'interfaceScale', 'textScale'],
       vault: [
         'first',
         'goto',
@@ -177,10 +177,10 @@ describe('the commands as they open', () => {
     expect(window.find((item) => item.id === 'find')?.keys).toBe(words.findKeys)
   })
 
-  it('says what each command over the note is over', () => {
+  it('writes nothing under a command that its whole band is over', () => {
     const { commands } = asking()
 
-    for (const item of commands.bands.value[0]?.items ?? []) expect(item.detail).toBe('Ontology')
+    for (const item of commands.bands.value[0]?.items ?? []) expect(item.detail).toBeUndefined()
   })
 
   it('keeps the commands the words typed leave, and lights where they stand', () => {
@@ -219,7 +219,7 @@ describe('what is in front', () => {
 
     expect(drawn(commands.bands)).toStrictEqual({
       note: [],
-      window: ['plex', 'agent', 'close', 'find', 'appearance', 'mode'],
+      window: ['plex', 'agent', 'close', 'find', 'appearance', 'mode', 'interfaceScale', 'textScale'],
       vault: ['openVault', 'newVault', 'renameVault', 'forgetVault', 'eraseVault'],
     })
     expect(silence(commands.bands, 'note')).toBe(words.indexing)
@@ -569,7 +569,7 @@ describe('a command that offers a list the window holds', () => {
       id: 'shipping',
       title: 'Ships with numen',
       items: [
-        { id: 'preset:numen', title: 'numen', detail: 'Worn now' },
+        { id: 'preset:numen', title: 'numen', detail: 'Current' },
         { id: 'preset:dracula', title: 'dracula' },
       ],
     },
@@ -896,7 +896,7 @@ describe('a command that asks for a vault', () => {
     await settles()
 
     expect(commands.bands.value[0]?.items[0]?.disabled).toBe(true)
-    expect(commands.bands.value[0]?.items[0]?.detail).toBe(`${words.gone} /vaults/Gone`)
+    expect(commands.bands.value[0]?.items[0]?.detail).toBe(`${words.gone} · /vaults/Gone`)
     expect(commands.chose('gone', 'open')).toBeNull()
   })
 
@@ -911,7 +911,7 @@ describe('a command that asks for a vault', () => {
     await settles()
 
     expect(commands.bands.value[0]?.items[0]?.disabled).toBe(true)
-    expect(commands.bands.value[0]?.items[0]?.detail).toBe(`${words.inFront} /vaults/Physics`)
+    expect(commands.bands.value[0]?.items[0]?.detail).toBe(`${words.current} · /vaults/Physics`)
     expect(commands.chose('physics', 'open')).toBeNull()
   })
 

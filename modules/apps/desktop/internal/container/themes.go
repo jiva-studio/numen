@@ -1,6 +1,8 @@
 package container
 
 import (
+	"sync"
+
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
@@ -15,12 +17,51 @@ import (
 // offered either way. Whatever a person is told is told through say.
 func (c Config) Themes(say func(string)) (*theme.Service, error) {
 	catalogue, err := c.catalogue()
+	said := &launched{drawn: c.InterfaceScale, set: c.TextScale}
 	return &theme.Service{
 		Catalogue: catalogue,
 		Say:       say,
-		Dressed:   c.dressed,
-		Wear:      c.wear,
+		Dressed:   func() (theme.Dress, error) { return c.dressed(said) },
+		Wear:      func(chosen theme.Dress) error { return c.wear(chosen, said) },
+		InterfaceScaleBounds: theme.Bounds{
+			Least: settings.InterfaceScaleBounds.Least, Most: settings.InterfaceScaleBounds.Most,
+		},
+		TextScaleBounds: theme.Bounds{
+			Least: settings.TextScaleBounds.Least, Most: settings.TextScaleBounds.Most,
+		},
 	}, err
+}
+
+// launched is what the command line said about size. Each stands over the file
+// until a person chooses that size themselves, and zero is not said.
+type launched struct {
+	mu         sync.Mutex
+	drawn, set float64
+}
+
+// over puts what was said this launch over what the file holds.
+func (l *launched) over(worn *theme.Dress) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.drawn > 0 {
+		worn.InterfaceScale = l.drawn
+	}
+	if l.set > 0 {
+		worn.TextScale = l.set
+	}
+}
+
+// chose lets go of what was said this launch about a size a person has now
+// chosen for themselves.
+func (l *launched) chose(chosen theme.Dress) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if chosen.InterfaceScale > 0 {
+		l.drawn = 0
+	}
+	if chosen.TextScale > 0 {
+		l.set = 0
+	}
 }
 
 func (c Config) catalogue() (theme.Catalogue, error) {
@@ -34,28 +75,58 @@ func (c Config) catalogue() (theme.Catalogue, error) {
 }
 
 // dressed and wear are the settings file as the themes need it: one section of
-// it read, and two fields of it written.
-func (c Config) dressed() (theme.Dress, error) {
+// it read, and up to four fields of it written.
+func (c Config) dressed(said *launched) (theme.Dress, error) {
 	path, err := c.settingsFile()
 	if err != nil {
 		return theme.Dress{}, err
 	}
-	said, err := settings.At(path)
+	held, err := settings.At(path)
 	if err != nil {
 		return theme.Dress{}, err
 	}
-	return theme.Dress{Theme: said.Appearance.Theme, Mode: mode(said.Appearance.Mode)}, nil
+	worn := theme.Dress{
+		Theme:          held.Appearance.Theme,
+		Mode:           mode(held.Appearance.Mode),
+		InterfaceScale: held.Appearance.InterfaceScale,
+		TextScale:      held.Appearance.TextScale,
+	}
+	said.over(&worn)
+	return worn, nil
 }
 
-func (c Config) wear(worn theme.Dress) error {
+// wear writes a choice into the file. Both sizes are checked before any of it
+// is written, so a number outside what its setting goes to leaves the file as
+// it stands.
+func (c Config) wear(chosen theme.Dress, said *launched) error {
 	path, err := c.settingsFile()
 	if err != nil {
 		return err
 	}
-	return settings.Save(path,
-		settings.Setting{At: []string{"appearance", "theme"}, Value: worn.Theme},
-		settings.Setting{At: []string{"appearance", "mode"}, Value: word(worn.Mode)},
-	)
+	writing := []settings.Setting{
+		{At: []string{"appearance", "theme"}, Value: chosen.Theme},
+		{At: []string{"appearance", "mode"}, Value: word(chosen.Mode)},
+	}
+	if chosen.InterfaceScale > 0 {
+		err := settings.InterfaceScaleBounds.Check("appearance.interface_scale", chosen.InterfaceScale)
+		if err != nil {
+			return err
+		}
+		writing = append(writing,
+			settings.Setting{At: []string{"appearance", "interface_scale"}, Value: chosen.InterfaceScale})
+	}
+	if chosen.TextScale > 0 {
+		if err := settings.TextScaleBounds.Check("appearance.text_scale", chosen.TextScale); err != nil {
+			return err
+		}
+		writing = append(writing,
+			settings.Setting{At: []string{"appearance", "text_scale"}, Value: chosen.TextScale})
+	}
+	if err := settings.Save(path, writing...); err != nil {
+		return err
+	}
+	said.chose(chosen)
+	return nil
 }
 
 // mode and word are the settings' word for a mode and the schema's value for

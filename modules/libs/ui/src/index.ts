@@ -15,11 +15,14 @@ export { landsOn, placeMenu, stepTo, MENU_OPENINGS } from './menu/model'
 export type { MenuItem, MenuOpening, MenuPlacement, MenuPlacing } from './menu/model'
 
 export { default as Palette } from './palette/Palette.vue'
-export { commandKeyWord } from './palette/model'
+export { default as KeyCap } from './palette/KeyCap.vue'
+export { commandKeyChord, keyChord, overlayMark } from './palette/model'
 export type {
   PaletteAction,
   PaletteItem,
+  PaletteKeys,
   PaletteLit,
+  PaletteMark,
   PalettePart,
   PaletteBand,
   PaletteSpan,
@@ -34,6 +37,9 @@ export {
   DEFAULT_OPTIONS,
   DEFAULT_DIRECTION,
 } from './plex/arrange'
+
+/** The size a node's label is being set at, and the plex drawn to hold it. */
+export { optionsForType, scaleOptions, useTypeSize, DESIGNED_TYPE } from './plex/sizing'
 
 export type {
   ArrangeInput,

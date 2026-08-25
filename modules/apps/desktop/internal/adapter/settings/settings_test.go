@@ -2,6 +2,7 @@ package settings_test
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,6 +13,13 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
 )
+
+// A file naming no size is drawn at what the desktop asks for, so the session
+// these tests run in is asked nothing.
+func TestMain(m *testing.M) {
+	os.Unsetenv("GDK_DPI_SCALE")
+	os.Exit(m.Run())
+}
 
 func write(t *testing.T, body string) string {
 	t.Helper()
@@ -33,9 +41,13 @@ func TestAnUntouchedInstallationEmbedsLocallyAndIsDrawnAsDesigned(t *testing.T) 
 	if cfg.Indexing.Embedding.Indexing.Local.Name == "" || cfg.Indexing.Embedding.Model.Dimensions == 0 {
 		t.Errorf("no model to run: %+v", cfg.Indexing.Embedding)
 	}
-	// Zero is what says the desktop decides, so nothing may fill it in.
-	if cfg.Appearance.Zoom != 0 {
-		t.Errorf("zoom is %v", cfg.Appearance.Zoom)
+	// Both sizes are as designed, so an installation nobody has sized draws
+	// every length at the number it was drawn with.
+	if cfg.Appearance.InterfaceScale != 1 || cfg.Appearance.TextScale != 1 {
+		t.Errorf("drawn at %+v", cfg.Appearance)
+	}
+	if len(cfg.Said) != 0 {
+		t.Errorf("a file nobody wrote says %q", cfg.Said)
 	}
 	if cfg.Appearance.Mode != settings.ModeSystem {
 		t.Errorf("the colours are read as %q", cfg.Appearance.Mode)
@@ -45,18 +57,349 @@ func TestAnUntouchedInstallationEmbedsLocallyAndIsDrawnAsDesigned(t *testing.T) 
 	}
 }
 
-// The window's settings are three fields of one section, and a file writing one
-// of them says nothing about the other two.
-func TestAFileNamingTheZoomStillWearsTheDefaultTheme(t *testing.T) {
+// The window's settings are four fields of one section, and a file writing one
+// of them says nothing about the rest.
+func TestAFileNamingTheTextSizeStillWearsTheDefaultTheme(t *testing.T) {
+	cfg, err := settings.At(write(t, `{"appearance":{"text_scale":1.5}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Appearance.TextScale != 1.5 || cfg.Appearance.InterfaceScale != 1 {
+		t.Errorf("drawn at %+v", cfg.Appearance)
+	}
+	if cfg.Appearance.Mode != settings.ModeSystem || cfg.Appearance.Theme != settings.DefaultTheme {
+		t.Errorf("drawn as %+v", cfg.Appearance)
+	}
+}
+
+// A number the setting does not take stops the settings being read. Nothing is
+// drawn at a number nobody asked for, and the file says what a person wrote.
+func TestASizeOutsideWhatItGoesToIsRefused(t *testing.T) {
+	for _, body := range []string{
+		`{"appearance":{"interface_scale":2.5}}`,
+		`{"appearance":{"interface_scale":0.5}}`,
+		`{"appearance":{"interface_scale":0}}`,
+		`{"appearance":{"text_scale":1.9}}`,
+		`{"appearance":{"text_scale":0}}`,
+	} {
+		if _, err := settings.At(write(t, body)); err == nil {
+			t.Errorf("%s was read", body)
+		}
+	}
+
+	_, err := settings.At(write(t, `{"appearance":{"text_scale":3}}`))
+	var outside *settings.Outside
+	if !errors.As(err, &outside) {
+		t.Fatalf("refused with %v", err)
+	}
+	if outside.At != "appearance.text_scale" || outside.Value != 3 {
+		t.Errorf("refused %+v", outside)
+	}
+	if outside.Least != settings.TextScaleBounds.Least || outside.Most != settings.TextScaleBounds.Most {
+		t.Errorf("said the setting goes from %v to %v", outside.Least, outside.Most)
+	}
+	// What is wrong is the number and how far the setting goes, in the sentence
+	// a person is shown.
+	if said := outside.Error(); !strings.Contains(said, "appearance.text_scale is 3") {
+		t.Errorf("says %q", said)
+	}
+}
+
+func TestASizeAtEitherEndIsTaken(t *testing.T) {
+	cfg, err := settings.At(write(t, `{"appearance":{"interface_scale":0.8,"text_scale":1.75}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Appearance.InterfaceScale != 0.8 || cfg.Appearance.TextScale != 1.75 {
+		t.Errorf("drawn at %+v", cfg.Appearance)
+	}
+}
+
+// A window drawn at 1.5 goes on being drawn at 1.5. The two names are one
+// setting, and the field is given the name this build reads.
+func TestAFileNamingTheZoomIsGivenTheNameThatReplacedIt(t *testing.T) {
+	path := write(t, `{"appearance":{"zoom":1.5}}`)
+	cfg, err := settings.At(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Appearance.InterfaceScale != 1.5 {
+		t.Errorf("drawn at %v", cfg.Appearance.InterfaceScale)
+	}
+	// The text is untouched by it: the window is larger and a note is set as it
+	// was.
+	if cfg.Appearance.TextScale != 1 {
+		t.Errorf("text is set at %v", cfg.Appearance.TextScale)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := `{"appearance":{"interface_scale":1.5}}`; string(raw) != want {
+		t.Errorf("the file is now %s, and not %s", raw, want)
+	}
+	// Nothing to tell a person: the window is the size it was, and the file
+	// says what this build reads.
+	if len(cfg.Said) != 0 {
+		t.Errorf("the person is told %q", cfg.Said)
+	}
+}
+
+// The file a person arranged comes back from the renaming with one word of it
+// changed, down to the blank lines and a number written to two places.
+func TestTheRenamingLeavesEveryOtherByteOfTheFileWhereItWas(t *testing.T) {
+	path := write(t, arranged)
+	if _, err := settings.At(path); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := strings.Replace(arranged, `"zoom": 1.5`, `"interface_scale": 1.5`, 1)
+	if string(raw) != want {
+		t.Errorf("the file came back as:\n%s\nand not as:\n%s", raw, want)
+	}
+}
+
+// The renaming happens once. Every launch after it reads a file naming the
+// setting, so there is nothing to carry and nothing to say, ever again.
+func TestASecondLaunchRenamesNothingAndSaysNothing(t *testing.T) {
+	path := write(t, arranged)
+	if _, err := settings.At(path); err != nil {
+		t.Fatal(err)
+	}
+	renamed, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(renamed), `"zoom"`) {
+		t.Fatalf("the first launch left the file as:\n%s", renamed)
+	}
+
+	for launch := range 3 {
+		cfg, err := settings.At(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.Appearance.InterfaceScale != 1.5 {
+			t.Errorf("launch %d is drawn at %v", launch, cfg.Appearance.InterfaceScale)
+		}
+		if len(cfg.Said) != 0 {
+			t.Errorf("launch %d tells the person %q", launch, cfg.Said)
+		}
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(raw) != string(renamed) {
+			t.Errorf("launch %d left the file as:\n%s", launch, raw)
+		}
+	}
+}
+
+// A file naming both is drawn at the one this build reads, and keeps both
+// names: one section holds one of a name.
+func TestAFileNamingBothIsDrawnAtTheOneThisBuildReads(t *testing.T) {
+	const both = `{"appearance":{"zoom":1.5,"interface_scale":1.25}}`
+	path := write(t, both)
+	cfg, err := settings.At(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Appearance.InterfaceScale != 1.25 {
+		t.Errorf("drawn at %v", cfg.Appearance.InterfaceScale)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(raw) != both {
+		t.Errorf("the file is now %s", raw)
+	}
+	if len(cfg.Said) != 0 {
+		t.Errorf("the person is told %q", cfg.Said)
+	}
+}
+
+// A folder nothing may be written into is a window that opens, drawn at the
+// size the file names under the name it names it by.
+func TestAFileThatCannotBeWrittenIsReadAndDrawnAtTheSizeItNames(t *testing.T) {
+	folder := t.TempDir()
+	path := filepath.Join(folder, "numen.json")
+	if err := os.WriteFile(path, []byte(arranged), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(folder, 0o555); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(folder, 0o700) })
+
+	for launch := range 2 {
+		cfg, err := settings.At(path)
+		if err != nil {
+			t.Fatalf("launch %d: %v", launch, err)
+		}
+		if cfg.Appearance.InterfaceScale != 1.5 {
+			t.Errorf("launch %d is drawn at %v", launch, cfg.Appearance.InterfaceScale)
+		}
+		if len(cfg.Said) != 0 {
+			t.Errorf("launch %d tells the person %q", launch, cfg.Said)
+		}
+	}
+
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(raw) != arranged {
+		t.Errorf("the file is now:\n%s", raw)
+	}
+}
+
+// Zero named no size, and every file this application has ever written for
+// itself holds one.
+func TestAZoomNamingNoSizeCarriesNothingAndSaysNothing(t *testing.T) {
+	cfg, err := settings.At(write(t, `{"appearance":{"zoom":0}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Appearance.InterfaceScale != 1 {
+		t.Errorf("drawn at %v", cfg.Appearance.InterfaceScale)
+	}
+	if len(cfg.Said) != 0 {
+		t.Errorf("the person is told %q", cfg.Said)
+	}
+}
+
+// A session that scaled its own text goes on being drawn by it, whether the
+// file names nothing about size or names the size of the text alone.
+func TestAFileNamingNoSizeIsDrawnAtWhatTheDesktopAsksFor(t *testing.T) {
+	t.Setenv("GDK_DPI_SCALE", "1.5")
+	for _, body := range []string{`{}`, `{"appearance":{"zoom":0}}`, `{"appearance":{"text_scale":1.25}}`} {
+		cfg, err := settings.At(write(t, body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.Appearance.InterfaceScale != 1.5 {
+			t.Errorf("%s is drawn at %v", body, cfg.Appearance.InterfaceScale)
+		}
+	}
+}
+
+// A file naming a size is drawn at it, under either name.
+func TestWhatTheDesktopAsksForIsNotReadOverTheFile(t *testing.T) {
+	t.Setenv("GDK_DPI_SCALE", "1.5")
+	for body, drawn := range map[string]float64{
+		`{"appearance":{"interface_scale":1.25}}`: 1.25,
+		`{"appearance":{"zoom":1.25}}`:            1.25,
+	} {
+		cfg, err := settings.At(write(t, body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.Appearance.InterfaceScale != drawn {
+			t.Errorf("%s is drawn at %v", body, cfg.Appearance.InterfaceScale)
+		}
+	}
+}
+
+// A number the setting does not take is not one it is seeded with.
+func TestADesktopScaleOutsideWhatTheSizeGoesToIsNotTaken(t *testing.T) {
+	t.Setenv("GDK_DPI_SCALE", "3")
+	cfg, err := settings.At(write(t, `{}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Appearance.InterfaceScale != 1 {
+		t.Errorf("drawn at %v", cfg.Appearance.InterfaceScale)
+	}
+}
+
+// A number the setting does not take is not carried onto it, and a window whose
+// file was written by an older build opens. The field keeps the name it has, so
+// the launch after this one is not refused over a number a person never wrote
+// under that name.
+func TestAZoomOutsideWhatTheSizeGoesToIsNotCarried(t *testing.T) {
+	const held = `{"appearance":{"zoom":3}}`
+	path := write(t, held)
+	cfg, err := settings.At(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Appearance.InterfaceScale != 1 {
+		t.Errorf("drawn at %v", cfg.Appearance.InterfaceScale)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(raw) != held {
+		t.Errorf("the file is now %s", raw)
+	}
+
+	// The one thing a person is told, and the only thing here they can do
+	// something about: the field, the setting it would be read as, and how far
+	// that setting goes.
+	if len(cfg.Said) != 1 {
+		t.Fatalf("the person is told %q", cfg.Said)
+	}
+	for _, about := range []string{"appearance.zoom", "interface_scale", "0.8", "2"} {
+		if !strings.Contains(cfg.Said[0], about) {
+			t.Errorf("%q says nothing about %s", cfg.Said[0], about)
+		}
+	}
+}
+
+// The line is shown on one line of a band, which gives it about sixty
+// characters and cuts what is past that off the end. The end is where what a
+// person can do about it is written, so the line is one a number cannot
+// lengthen: every number a setting refuses says the same thing.
+func TestWhatIsSaidFitsTheLineItIsShownOn(t *testing.T) {
+	// Numbers a file can hold and this setting will not take, written the ways
+	// a person and a machine write them.
+	for _, zoom := range []string{
+		"3",
+		"2.0001",
+		"3.141592653589793",
+		"0.7999999999999999",
+		"123456789.12",
+		"1e308",
+		"1e-300",
+		"0.0000000000000000000000001",
+		"12345678901234567890123456789",
+	} {
+		cfg, err := settings.At(write(t, `{"appearance":{"zoom":`+zoom+`}}`))
+		if err != nil {
+			t.Fatalf("%s: %v", zoom, err)
+		}
+		if len(cfg.Said) != 1 {
+			t.Fatalf("%s: the person is told %q", zoom, cfg.Said)
+		}
+		if said := cfg.Said[0]; len(said) > 62 {
+			t.Errorf("%s: %d characters, cut at 62: %q", zoom, len(said), said)
+		}
+	}
+}
+
+// What the file holds is what is written back, and the two names are not both
+// written.
+func TestWhatIsWrittenBackNamesTheSettingThisBuildReads(t *testing.T) {
 	cfg, err := settings.At(write(t, `{"appearance":{"zoom":1.5}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Appearance.Zoom != 1.5 {
-		t.Errorf("zoom is %v", cfg.Appearance.Zoom)
+	raw, err := json.Marshal(cfg)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if cfg.Appearance.Mode != settings.ModeSystem || cfg.Appearance.Theme != settings.DefaultTheme {
-		t.Errorf("drawn as %+v", cfg.Appearance)
+	if strings.Contains(string(raw), `"zoom"`) || !strings.Contains(string(raw), `"interface_scale":1.5`) {
+		t.Errorf("written back as %s", raw)
+	}
+	// What a person is told is about the file and is not a field of it.
+	if strings.Contains(string(raw), "appearance.zoom") {
+		t.Errorf("written back as %s", raw)
 	}
 }
 
@@ -100,12 +443,12 @@ func TestAnInstallationNobodyConfiguredWritesItsSettingsDown(t *testing.T) {
 }
 
 func TestOneSettingIsAValidFile(t *testing.T) {
-	cfg, err := settings.At(write(t, `{"appearance":{"zoom":1.5}}`))
+	cfg, err := settings.At(write(t, `{"appearance":{"interface_scale":1.5}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Appearance.Zoom != 1.5 {
-		t.Errorf("zoom is %v", cfg.Appearance.Zoom)
+	if cfg.Appearance.InterfaceScale != 1.5 {
+		t.Errorf("drawn at %v", cfg.Appearance.InterfaceScale)
 	}
 	// A file that names the window must leave the embedder alone. Both are
 	// sections of one file, and the section nobody wrote about is unchanged.

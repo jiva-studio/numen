@@ -181,6 +181,8 @@ export function noting(vault: Called, notes: Notes, drawings: Drawings, host: Ho
     opens,
     shows,
     titles: names.titles,
+    /** Every open note's editor takes its measurements again. */
+    measures: keyboard.measures,
     calls: (path: string, title: string) => names.calls(mints(path), title),
     called: (path: string) => names.called(opened(path)),
     /** What the note that opened under an identity is called. */

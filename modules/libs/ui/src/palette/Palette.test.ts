@@ -11,8 +11,11 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import Palette from './Palette.vue'
-import type { PaletteBand } from './model'
+import type { PaletteBand, PaletteKeys } from './model'
 import { MANY } from './fixtures/actions'
+
+/** A keystroke that reaches an item away from the palette. */
+const OPTION_1: PaletteKeys = { marks: ['option'], letter: '1' }
 
 const OPEN = [{ id: 'open', text: 'Open the note' }]
 const BOTH = [
@@ -25,7 +28,7 @@ const OFFERING: PaletteBand[] = [
     id: 'names',
     title: 'Names',
     items: [
-      { id: 'entropy', title: 'Entropy', actions: MANY, keys: '⌥1' },
+      { id: 'entropy', title: 'Entropy', actions: MANY, keys: OPTION_1 },
       { id: 'enthalpy', title: 'Enthalpy', actions: OPEN },
     ],
   },
@@ -74,6 +77,19 @@ const field = () => document.body.querySelector<HTMLInputElement>('.palette__fie
 const options = () => Array.from(document.body.querySelectorAll<HTMLElement>('[role="option"]'))
 const lit = () => document.body.querySelector<HTMLElement>('[data-here]')
 const keys = () => Array.from(document.body.querySelectorAll<HTMLElement>('.palette__key'))
+
+/** What a line says, with the runs it is written in run together. */
+const said = (of: Element | null | undefined): string =>
+  (of?.textContent ?? '').replace(/\s+/g, ' ').trim()
+
+/** The keystroke a cap is announced as, which is all of it a reader hears. */
+const spoken = (cap: Element | null | undefined): string => said(cap?.querySelector('.sr-only'))
+
+/** The marks a cap draws, by the name Lucide files each under. */
+const marksOf = (cap: Element | null | undefined): readonly string[] =>
+  Array.from(cap?.querySelectorAll('svg') ?? []).map(
+    (mark) => /lucide-([a-z-]+)-icon/.exec(mark.getAttribute('class') ?? '')?.[1] ?? '',
+  )
 
 const sheet = () => document.body.querySelector<HTMLElement>('.palette__actions')
 const hunt = () => document.body.querySelector<HTMLInputElement>('.palette__hunt')
@@ -341,14 +357,20 @@ describe('choosing', () => {
   it('says what the keys reach for the item that is lit', async () => {
     mountPalette()
     await settle()
-    expect(keys().map((key) => key.textContent?.trim())).toEqual([
-      '↵ Show in plex',
-      '⇧↵ Open the note',
-    ])
+    expect(keys().map(said)).toEqual(['Return Show in plex', 'Shift Return Open the note'])
 
     await press('ArrowDown')
     await press('ArrowDown')
-    expect(keys().map((key) => key.textContent?.trim())).toEqual(['↵ Open the note'])
+    expect(keys().map(said)).toEqual(['Return Open the note'])
+  })
+
+  it('draws each key held as its own mark, in the order it is held', async () => {
+    mountPalette()
+    await settle()
+    expect(keys().map((key) => marksOf(key.querySelector('.cap')))).toEqual([
+      ['corner-down-left'],
+      ['arrow-big-up', 'corner-down-left'],
+    ])
   })
 })
 
@@ -558,10 +580,7 @@ describe('an item offering more than two actions', () => {
     mountPalette({ bands: OFFERING })
     await settle()
 
-    expect(keys().map((key) => key.textContent?.trim())).toEqual([
-      '↵ Show in plex',
-      '⇧↵ Open the note',
-    ])
+    expect(keys().map(said)).toEqual(['Return Show in plex', 'Shift Return Open the note'])
     expect(document.body.querySelector('.palette__more')?.textContent).toContain('Actions')
   })
 
@@ -581,7 +600,9 @@ describe('an item offering more than two actions', () => {
     mountPalette({ bands: OFFERING })
     await settle()
 
-    expect(options()[0]?.querySelector('.palette__hint')?.textContent).toBe('⌥1')
+    const hint = options()[0]?.querySelector('.palette__hint')
+    expect(marksOf(hint)).toEqual(['option'])
+    expect(spoken(hint)).toBe('Option 1')
     expect(options()[1]?.querySelector('.palette__hint')).toBeNull()
   })
 })
@@ -598,12 +619,19 @@ describe('the action panel', () => {
   it('opens on the chord and lists everything the lit item offers', async () => {
     await open()
 
-    expect(deeds().map((deed) => deed.textContent?.trim())).toEqual([
-      'Show in plex↵',
-      'Open the note⇧↵',
+    expect(deeds().map((deed) => said(deed.querySelector('.palette__deed-name')))).toEqual([
+      'Show in plex',
+      'Open the note',
       'Open beside',
       'Rename',
       'Move to trash',
+    ])
+    expect(deeds().map((deed) => spoken(deed.querySelector('.palette__hint')))).toEqual([
+      'Return',
+      'Shift Return',
+      '',
+      '',
+      '',
     ])
   })
 
@@ -658,8 +686,8 @@ describe('the action panel', () => {
     await open()
 
     await typeIn(hunt(), 'open')
-    expect(deeds().map((deed) => deed.textContent?.trim())).toEqual([
-      'Open the note⇧↵',
+    expect(deeds().map((deed) => said(deed.querySelector('.palette__deed-name')))).toEqual([
+      'Open the note',
       'Open beside',
     ])
     expect(litDeed()?.textContent).toContain('Open the note')
@@ -783,7 +811,7 @@ describe('the action panel', () => {
               id: 'entropy',
               title: 'Entropy',
               actions: MANY.map((one) => ({ ...one })),
-              keys: '⌥1',
+              keys: OPTION_1,
             },
             { id: 'enthalpy', title: 'Enthalpy', actions: OPEN },
           ],

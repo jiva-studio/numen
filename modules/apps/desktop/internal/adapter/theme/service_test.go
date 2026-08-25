@@ -26,8 +26,10 @@ func dressed(t *testing.T, worn theme.Dress) *dressing {
 	t.Helper()
 	kept := &dressing{worn: worn}
 	kept.service = &theme.Service{
-		Catalogue: folder(t),
-		Dressed:   func() (theme.Dress, error) { return kept.worn, nil },
+		Catalogue:            folder(t),
+		InterfaceScaleBounds: theme.Bounds{Least: 0.8, Most: 2},
+		TextScaleBounds:      theme.Bounds{Least: 0.8, Most: 1.75},
+		Dressed:              func() (theme.Dress, error) { return kept.worn, nil },
 		Wear: func(one theme.Dress) error {
 			if kept.refuses != nil {
 				return kept.refuses
@@ -131,6 +133,64 @@ func TestChoosingWritesTheThemeAndTheHalfItIsReadAs(t *testing.T) {
 	}
 	if answer := worn.themes(t); answer.GetApplied() != "preset:nord" {
 		t.Errorf("wears %q", answer.GetApplied())
+	}
+}
+
+// A client says how far a size goes before a person types a number into it.
+func TestTheListSaysTheTwoSizesAndHowFarEachGoes(t *testing.T) {
+	worn := dressed(t, theme.Dress{
+		Theme:          theme.Default,
+		Mode:           v1.Mode_MODE_SYSTEM,
+		InterfaceScale: 1.25,
+		TextScale:      1.5,
+	})
+
+	answer := worn.themes(t)
+	if answer.GetInterfaceScale() != 1.25 || answer.GetTextScale() != 1.5 {
+		t.Errorf("drawn at %v and set at %v", answer.GetInterfaceScale(), answer.GetTextScale())
+	}
+	if answer.GetInterfaceScaleBounds().GetLeast() != 0.8 || answer.GetInterfaceScaleBounds().GetMost() != 2 {
+		t.Errorf("the interface goes %v", answer.GetInterfaceScaleBounds())
+	}
+	if answer.GetTextScaleBounds().GetLeast() != 0.8 || answer.GetTextScaleBounds().GetMost() != 1.75 {
+		t.Errorf("the text goes %v", answer.GetTextScaleBounds())
+	}
+}
+
+// A window that has been dressed by nothing is drawn at the size it was
+// designed at.
+func TestASettingsFileNamingNoSizeIsDrawnAsDesigned(t *testing.T) {
+	worn := dressed(t, theme.Dress{Theme: theme.Default, Mode: v1.Mode_MODE_SYSTEM})
+
+	answer := worn.themes(t)
+	if answer.GetInterfaceScale() != theme.AsDesigned || answer.GetTextScale() != theme.AsDesigned {
+		t.Errorf("drawn at %v and set at %v", answer.GetInterfaceScale(), answer.GetTextScale())
+	}
+}
+
+// One size is one command, and choosing it says nothing about the other.
+func TestChoosingOneSizeLeavesTheOtherAsItStands(t *testing.T) {
+	worn := dressed(t, theme.Dress{
+		Theme:          theme.Default,
+		Mode:           v1.Mode_MODE_SYSTEM,
+		InterfaceScale: 1.25,
+		TextScale:      1.5,
+	})
+
+	drawn := 1.75
+	answer, err := worn.service.Choose(t.Context(), connect.NewRequest(&v1.ChooseRequest{
+		Name:           "preset:nord",
+		Mode:           v1.Mode_MODE_DARK,
+		InterfaceScale: &drawn,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if failed := answer.Msg.GetFailed(); failed != "" {
+		t.Fatalf("refused: %s", failed)
+	}
+	if len(worn.written) != 1 || worn.written[0].InterfaceScale != 1.75 || worn.written[0].TextScale != 0 {
+		t.Fatalf("written: %+v", worn.written)
 	}
 }
 
