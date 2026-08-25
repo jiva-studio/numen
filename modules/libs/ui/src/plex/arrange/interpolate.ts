@@ -17,11 +17,12 @@ import { resolveOptions, type PlexOptionsInput } from './options'
 import { routeEdges, routingFor } from './routing'
 
 /** What a settled arrangement says about the title an edge carries. */
-type Title = Pick<PlacedEdge, 'heading' | 'words'>
+type Title = Pick<PlacedEdge, 'heading' | 'words' | 'wordsAt'>
 
 const titleOf = (edge: PlacedEdge): Title => ({
   heading: edge.heading,
   words: edge.words,
+  wordsAt: edge.wordsAt,
 })
 
 export function interpolatePlex(
@@ -93,9 +94,10 @@ export function interpolatePlex(
     return willEdge.has(key) ? arriving : leaving
   }
 
-  // A title belongs to a settled arrangement: the words it was cut to and the
-  // way round they are read come from where the edge is going, or from where
-  // it is leaving for an edge that only rests there.
+  // A title belongs to a settled arrangement: the words it was cut to, the way
+  // round they are read and where along the line they sit come from where the
+  // edge is going, or from where it is leaving for an edge that only rests
+  // there. A title held this way stays put for the length of a movement.
   const settled = new Map<string, Title>()
   for (const edge of from.edges) settled.set(edgeKey(edge), titleOf(edge))
   for (const edge of to.edges) settled.set(edgeKey(edge), titleOf(edge))

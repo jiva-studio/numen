@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { interpolatePlex } from './interpolate'
 import { easeOut } from './math'
+import { MIDDLE } from './routing'
 import { headingOf, type PlexFrame, type PlexNeighbourhood } from '../model'
 
 /** Focus on `focus`, with two children and one parent. */
@@ -187,7 +188,7 @@ describe('the title a line carries while the picture moves', () => {
     // halfway over it runs the other way round from the way it ends.
     const swung = interpolatePlex(from, to, 0.5).edges.find((e) => e.to === 'a')!
     expect(swung.heading).toBe('along')
-    expect(headingOf(swung)).toBe('against')
+    expect(headingOf(swung, MIDDLE)).toBe('against')
 
     for (let t = 0.05; t < 1; t += 0.05) {
       for (const edge of interpolatePlex(from, to, t).edges) {
@@ -224,6 +225,50 @@ describe('the title a line carries while the picture moves', () => {
     }
   })
 
+  it('holds where along the line the words sit', () => {
+    const wide = (label: string) => 6 * [...label].length
+    const titled = (neighbourhood: PlexNeighbourhood) =>
+      arrangePlex(
+        {
+          ...neighbourhood,
+          edges: neighbourhood.edges.map((edge) => ({ ...edge, label: 'contains' })),
+        },
+        { measureLabel: wide, options: { viewport: { width: 1200, height: 800 } } },
+      )
+
+    // A fan wide enough that its titles cannot all keep the middle.
+    const fanned: PlexNeighbourhood = {
+      nodes: [
+        ...after.nodes,
+        { id: 'a4', title: 'A four', seat: 'child' },
+        { id: 'a5', title: 'A five', seat: 'child' },
+        { id: 'a6', title: 'A six', seat: 'child' },
+      ],
+      edges: [
+        ...after.edges,
+        { from: 'a', to: 'a4' },
+        { from: 'a', to: 'a5' },
+        { from: 'a', to: 'a6' },
+      ],
+    }
+
+    const start = titled(before)
+    const end = titled(fanned)
+    const settled = new Map(end.edges.map((edge) => [named(edge), edge.wordsAt]))
+
+    // Some of the lines out of one node had to move their titles to stand
+    // clear, and those are the ones a movement could set crawling.
+    expect(end.edges.some((edge) => edge.wordsAt !== 0.5)).toBe(true)
+
+    for (let t = 0.05; t < 1; t += 0.05) {
+      for (const edge of interpolatePlex(start, end, t).edges) {
+        const at = settled.get(named(edge))
+        if (at === undefined) continue
+        expect(edge.wordsAt, `${named(edge)} at ${t.toFixed(2)}`).toBe(at)
+      }
+    }
+  })
+
   it('holds the title of the arrangement it is leaving for a line only there', () => {
     const marked: PlexFrame = {
       ...from,
@@ -237,7 +282,7 @@ describe('the title a line carries while the picture moves', () => {
 
     expect(going.heading).toBe('against')
     expect(going.words).toBe('went that way…')
-    expect(headingOf(going)).toBe('along')
+    expect(headingOf(going, MIDDLE)).toBe('along')
   })
 })
 

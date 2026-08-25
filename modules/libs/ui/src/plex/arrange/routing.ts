@@ -21,6 +21,12 @@ export interface Routing extends RoutingOptions {
    * arrives as a number, and without a measurer the whole label is drawn.
    */
   readonly labelWidth?: ((label: string) => number) | undefined
+  /**
+   * How deep one line of a title stands, across the line it is set on. It is
+   * measured in the type a title is set in, which is a type of its own, and is
+   * nothing where nothing measured it.
+   */
+  readonly labelDepth: number
 }
 
 /**
@@ -31,10 +37,12 @@ export interface Routing extends RoutingOptions {
 export function routingFor(
   options: PlexOptions,
   measureLabel?: (label: string) => number,
+  labelDepth = 0,
 ): Routing {
   return {
     ...options.routing,
     labelWidth: measureLabel,
+    labelDepth,
     axisOf: (node) =>
       node.seat === 'focus'
         ? 'auto'
@@ -46,6 +54,9 @@ export function routingFor(
 
 /** The one character a cut title ends in. */
 const ELLIPSIS = '…'
+
+/** The middle of a line, where a title is set until something is in the way. */
+export const MIDDLE = 0.5
 
 /**
  * The words a curve has room for: the longest start of the label that fits it,
@@ -162,7 +173,15 @@ export function routeEdge(
 
   const arrowhead = edge.arrow ? arrowOf(curve, edge.arrow) : undefined
 
-  return { ...edge, ...curve, opacity, heading: headingOf(curve), words, arrowhead }
+  return {
+    ...edge,
+    ...curve,
+    opacity,
+    heading: headingOf(curve, MIDDLE),
+    words,
+    wordsAt: MIDDLE,
+    arrowhead,
+  }
 }
 
 export function routeEdges(

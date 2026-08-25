@@ -16,6 +16,8 @@ export interface Measures {
   readonly node: Measure
   /** The words of a label, which stand on a line and carry no padding. */
   readonly label: (label: string) => number
+  /** How deep one line of a label stands, across the line it is set on. */
+  readonly labelDepth: number
 }
 
 /** The type and the lengths a plex is drawn with, in pixels. */
@@ -174,7 +176,20 @@ function measuresFor(type: PlexType, icon: number): Measures | undefined {
   return {
     node: (node) => Math.ceil(title(node.title) + room),
     label: (words) => Math.ceil(label(words)),
+    labelDepth: lineDepth(context, type.labelFont),
   }
+}
+
+/**
+ * How deep a line of one type stands: what the font gives its letters above the
+ * baseline and below it. The size the type is set at where a platform reports
+ * no such thing.
+ */
+function lineDepth(context: CanvasRenderingContext2D, font: string): number {
+  context.font = font
+  const line = context.measureText(SAMPLE)
+  const deep = line.fontBoundingBoxAscent + line.fontBoundingBoxDescent
+  return Math.ceil(deep) || pixelsOf(font)
 }
 
 /** Text in one type, each distinct string measured once. */

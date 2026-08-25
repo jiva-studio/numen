@@ -49,6 +49,12 @@ export interface PlacedEdge extends PlexEdge, EdgeCurve {
    * ellipsis. The whole of it where nothing measured the words.
    */
   readonly words?: string | undefined
+  /**
+   * Where those words sit: the fraction of the line they are read along that
+   * the middle of them stands on. The middle of the line, unless the title
+   * had to slide along it to find room.
+   */
+  readonly wordsAt: number
   /** Where the arrowhead goes and which way it is aimed, for an edge with one. */
   readonly arrowhead?: PlacedArrow | undefined
 }
@@ -90,19 +96,51 @@ const pointAt = (edge: EdgeCurve, t: number): Point => {
 const LENGTH_SAMPLES = 24
 
 /**
- * How long the curve is, as an estimate: the chords between two dozen points
- * along it, summed. A chord is shorter than the arc it spans, so the answer
- * runs a little under.
+ * How far along the curve each of two dozen points on it lies, the whole
+ * length last. Every step is a chord, which is shorter than the arc it spans,
+ * so the answer runs a little under.
  */
-export const lengthOf = (edge: EdgeCurve): number => {
-  let total = 0
+function measureAlong(edge: EdgeCurve): number[] {
+  const along = [0]
   let previous = edge.fromPoint
   for (let step = 1; step <= LENGTH_SAMPLES; step += 1) {
     const point = pointAt(edge, step / LENGTH_SAMPLES)
-    total += Math.hypot(point.x - previous.x, point.y - previous.y)
+    along.push(along[step - 1]! + Math.hypot(point.x - previous.x, point.y - previous.y))
     previous = point
   }
-  return total
+  return along
+}
+
+/** How long the curve is, as an estimate. */
+export const lengthOf = (edge: EdgeCurve): number => measureAlong(edge)[LENGTH_SAMPLES]!
+
+/**
+ * Which `t` stands a fraction of the way along the measured length. The steps
+ * are chords of even parameter, so the answer walks them and lands between the
+ * two the fraction falls across.
+ */
+function parameterAt(along: readonly number[], fraction: number): number {
+  const total = along[LENGTH_SAMPLES]!
+  if (total <= 0) return 0
+  const wanted = Math.min(Math.max(fraction, 0), 1) * total
+
+  let step = 1
+  while (step < LENGTH_SAMPLES && along[step]! < wanted) step += 1
+
+  const start = along[step - 1]!
+  const span = along[step]! - start
+  const within = span <= 0 ? 0 : (wanted - start) / span
+  return (step - 1 + within) / LENGTH_SAMPLES
+}
+
+/**
+ * A ruler along the curve: where it has got to a fraction of the way along its
+ * length. The curve is measured once and read many times, since a title is
+ * tried at several places on the same line.
+ */
+export function rulerOf(edge: EdgeCurve): (fraction: number) => Point {
+  const along = measureAlong(edge)
+  return (fraction) => pointAt(edge, parameterAt(along, fraction))
 }
 
 /** Which way the curve is travelling at `t`, as a direction of any length. */
@@ -125,17 +163,17 @@ const tangentAt = (edge: EdgeCurve, t: number): Point => {
 
 /**
  * Which way round a curve is taken for the words set on it, read off the
- * tangent where the middle of the title sits. A curve with no sideways run at
- * all is taken down the page.
+ * tangent at `at`, where the middle of the title sits. A curve with no
+ * sideways run at all is taken down the page.
  *
  * A seat says which way an edge was routed, and the curve says something else:
  * one that loops out of a column arrives at its midpoint running back the way
- * it came.
+ * it came, and one that doubles back turns twice over a short run.
  */
-export const headingOf = (edge: EdgeCurve): EdgeHeading => {
-  const middle = tangentAt(edge, 0.5)
-  if (middle.x !== 0) return middle.x < 0 ? 'against' : 'along'
-  return middle.y < 0 ? 'against' : 'along'
+export const headingOf = (edge: EdgeCurve, at: number): EdgeHeading => {
+  const way = tangentAt(edge, parameterAt(measureAlong(edge), at))
+  if (way.x !== 0) return way.x < 0 ? 'against' : 'along'
+  return way.y < 0 ? 'against' : 'along'
 }
 
 /**

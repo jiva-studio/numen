@@ -19,6 +19,7 @@ import { limitsFor, type Limits } from './limits'
 import { resolveOptions, type PlexOptions, type PlexOptionsInput } from './options'
 import { rowsAndColumns, type Placement, type Seating, type Widths } from './placement'
 import { routeEdges, routingFor } from './routing'
+import { settleTitles } from './titles'
 
 export interface ArrangeInput {
   readonly options?: PlexOptionsInput | undefined
@@ -35,11 +36,23 @@ export interface ArrangeInput {
    * drawn. Without one a label is written at whatever length it has.
    */
   readonly measureLabel?: ((label: string) => number) | undefined
+  /**
+   * How deep a label's line stands, across the line it is set on, measured
+   * where the plex is drawn. A label is set in a type of its own, and one
+   * given no depth takes up none.
+   */
+  readonly labelDepth?: number | undefined
 }
 
 export function arrangePlex(
   neighbourhood: PlexNeighbourhood,
-  { options, placement = rowsAndColumns, measure, measureLabel }: ArrangeInput = {},
+  {
+    options,
+    placement = rowsAndColumns,
+    measure,
+    measureLabel,
+    labelDepth,
+  }: ArrangeInput = {},
 ): PlexFrame {
   const resolved = resolveOptions(options)
   const focusNode = assertNeighbourhood(neighbourhood)
@@ -62,7 +75,12 @@ export function arrangePlex(
   const nodes = [focus, ...placement.place(seating, focus, resolved, limits, widthOf)]
 
   const byId = new Map(nodes.map((node) => [node.id, node]))
-  const edges = routeEdges(neighbourhood.edges, byId, routingFor(resolved, measureLabel))
+  const routing = routingFor(resolved, measureLabel, labelDepth)
+  const edges = settleTitles(
+    routeEdges(neighbourhood.edges, byId, routing),
+    nodes,
+    routing,
+  )
 
   return { nodes, edges, extent: extentOf(nodes), overflow }
 }
