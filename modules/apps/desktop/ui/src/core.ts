@@ -4,7 +4,7 @@
  * Nothing here is about drawing: a kind translates these into what it holds,
  * and this is what every one of them starts from.
  */
-import type { Counting, PlexRelatedSeat } from '@numen/ui'
+import type { Counting } from '@numen/ui'
 import type { NeighbourhoodResponse } from '@numen/protocol'
 
 /** A note that is no longer where it was, and where it now is. */
@@ -175,13 +175,19 @@ export interface NewNote {
 }
 
 /**
+ * What kind of relationship a link is. The list is closed: navigation and
+ * drawing read it, so a role nobody decided on has no behaviour.
+ */
+export type Role = 'parent' | 'child' | 'jump' | 'ref' | 'attachment'
+
+/**
  * One relationship as the note it is written in declares it: the note at the
- * other end, by the path it is filed under, and where that note sits seen from
- * this one.
+ * other end, by the path it is filed under, and what kind of relationship it
+ * is.
  */
 export interface NewLink {
   to: string
-  seat: PlexRelatedSeat
+  role: Role
   /** What the person calls this relationship, when they call it anything. */
   label?: string
 }

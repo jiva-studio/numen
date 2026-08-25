@@ -165,9 +165,9 @@ func (a *API) written(ctx context.Context, links []*v1.NewLink) ([]domain.Link, 
 // How much of that path the link carries is `note.Addressed`: a name where it
 // means one note, and the path where it would mean another.
 func (a *API) writes(ctx context.Context, l *v1.NewLink) (domain.Link, error) {
-	role, ok := roleOf(l.GetSeat())
+	role, ok := roleOf(l.GetRole())
 	if !ok {
-		return domain.Link{}, fmt.Errorf("no link seats a note as %v", l.GetSeat())
+		return domain.Link{}, fmt.Errorf("no link carries the role %v", l.GetRole())
 	}
 	if l.GetTo() == "" {
 		return domain.Link{}, errors.New("a link needs a note to go to")
@@ -188,15 +188,20 @@ func (a *API) addressed(ctx context.Context, to string) (domain.Address, error) 
 	return note.Addressed(ctx, a.Notes, a.Showing().ID, to)
 }
 
-// roleOf is the role a link carries to put the note at its other end in a seat.
-func roleOf(seat v1.Seat) (domain.LinkRole, bool) {
-	switch seat {
-	case v1.Seat_SEAT_PARENT:
+// roleOf is the role a link carries, in the core's words. A link is written
+// only with a role the schema names.
+func roleOf(role v1.Role) (domain.LinkRole, bool) {
+	switch role {
+	case v1.Role_ROLE_PARENT:
 		return domain.RoleParent, true
-	case v1.Seat_SEAT_CHILD:
+	case v1.Role_ROLE_CHILD:
 		return domain.RoleChild, true
-	case v1.Seat_SEAT_JUMP:
+	case v1.Role_ROLE_JUMP:
 		return domain.RoleJump, true
+	case v1.Role_ROLE_REF:
+		return domain.RoleRef, true
+	case v1.Role_ROLE_ATTACHMENT:
+		return domain.RoleAttachment, true
 	default:
 		return "", false
 	}
