@@ -234,11 +234,11 @@ func (a *API) Neighbourhood(ctx context.Context, r *connect.Request[v1.Neighbour
 	out := &v1.NeighbourhoodResponse{Focus: noteOf(found.Focus)}
 	for _, related := range found.Related {
 		out.Related = append(out.Related, &v1.Seated{
-			Note:     noteOf(related.NoteRef),
-			Seat:     seatOf(related.Seat),
-			Label:    related.Label,
-			Through:  related.Through,
-			Answered: related.Answered,
+			Note:    noteOf(related.NoteRef),
+			Seat:    seatOf(related.Seat),
+			Label:   related.Label,
+			Through: related.Through,
+			Mutual:  related.Mutual,
 		})
 	}
 	return connect.NewResponse(out), nil

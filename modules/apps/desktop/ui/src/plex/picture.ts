@@ -46,8 +46,7 @@ const seats: Record<Seat, PlexRelatedSeat | null> = {
  *
  * An edge runs the way the relationship runs, and a sibling's does not touch
  * the focus at all: it is another of a parent's children, so it hangs off that
- * parent. Which parent is a question about the vault, which is why it is
- * answered here and not by the plex.
+ * parent. Which parent that is comes from the vault, and this file names it.
  *
  * A relationship both notes named is drawn with an arrow at the end away from
  * the focus, the words along the line being the ones the note in focus wrote.
@@ -65,7 +64,7 @@ export function asPlex(neighbourhood: Neighbourhood): PlexNeighbourhood {
     seat: PlexRelatedSeat
     label: string
     through: string
-    answered: boolean
+    mutual: boolean
   }[] = []
   for (const related of neighbourhood.related) {
     const seat = seats[related.seat]
@@ -79,17 +78,17 @@ export function asPlex(neighbourhood: Neighbourhood): PlexNeighbourhood {
       // one they had written themselves.
       label: related.label,
       through: related.through,
-      answered: related.answered,
+      mutual: related.mutual,
     })
   }
 
   const shown = new Set(nodes.map((node) => node.id))
-  const edges: PlexEdge[] = seated.flatMap(({ id, seat, label, through, answered }) => {
+  const edges: PlexEdge[] = seated.flatMap(({ id, seat, label, through, mutual }) => {
     const line = label ? { label } : {}
-    // An arrow is drawn at the end away from the note in focus, whichever end
-    // of the line that is. A relationship named at one end only has one
-    // wording, and nothing for an arrow to choose between.
-    const head = (end: EdgeArrow) => (answered ? { arrow: end } : {})
+    // A mutual line carries an arrow at the end away from the note in focus,
+    // whichever end of the line that is. A relationship named at one end only
+    // has one wording, and nothing for an arrow to choose between.
+    const head = (end: EdgeArrow) => (mutual ? { arrow: end } : {})
     if (seat === 'parent' || seat === 'jump') {
       return [{ from: id, to: focus.id, ...line, ...head('from') }]
     }

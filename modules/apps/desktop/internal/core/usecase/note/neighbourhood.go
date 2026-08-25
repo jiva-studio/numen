@@ -87,8 +87,8 @@ func (u ShowNeighbourhood) around(ctx context.Context, v domain.Vault, path stri
 	if err != nil {
 		return nil, err
 	}
-	// The notes this one names. What comes back from any of them is an answer,
-	// and an answered edge takes its label from this end.
+	// The notes this one names. One that names it back makes the edge mutual,
+	// and a mutual edge takes its label from this end.
 	named := map[string]bool{}
 	for _, l := range links {
 		if l.To == "" || l.ToVault != v.ID {
@@ -123,7 +123,7 @@ func (u ShowNeighbourhood) around(ctx context.Context, v domain.Vault, path stri
 			Label:   l.Label,
 		}
 		if named[l.From] {
-			seats.answer(seated)
+			seats.mutually(seated)
 			continue
 		}
 		seats.take(seated)
@@ -183,10 +183,10 @@ func (s *seating) take(seated domain.Seated) {
 	}
 }
 
-// answer seats a note that the one in focus names too. Both ends naming the
-// same seat is one relationship answered, and the word for it is the focus's
-// own where it wrote one.
-func (s *seating) answer(seated domain.Seated) {
+// mutually seats a note that the one in focus names too. Both ends naming the
+// same seat is one relationship named twice, and the word for it is the
+// focus's own where it wrote one.
+func (s *seating) mutually(seated domain.Seated) {
 	i, taken := s.at[seated.Path]
 	if !taken {
 		s.take(seated)
@@ -197,7 +197,7 @@ func (s *seating) answer(seated domain.Seated) {
 		s.take(seated)
 		return
 	}
-	held.Answered = true
+	held.Mutual = true
 	if held.Label == "" {
 		held.Label = seated.Label
 	}

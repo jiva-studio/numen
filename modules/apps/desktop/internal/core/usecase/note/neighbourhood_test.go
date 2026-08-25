@@ -54,7 +54,7 @@ func TestBothEndsOfAnEdgeAreOneRelationship(t *testing.T) {
 }
 
 // drawnOn renders the line between two notes as it is seen from one of them:
-// the seat, the label where there is one, and whether the edge is answered.
+// the seat, the label where there is one, and whether the edge is mutual.
 func drawnOn(t *testing.T, files map[string]string, from, to string) string {
 	t.Helper()
 	for _, r := range neighbourhoodOf(t, files, from).Related {
@@ -65,8 +65,8 @@ func drawnOn(t *testing.T, files map[string]string, from, to string) string {
 		if r.Label != "" {
 			drawn = append(drawn, r.Label)
 		}
-		if r.Answered {
-			drawn = append(drawn, "answered")
+		if r.Mutual {
+			drawn = append(drawn, "mutual")
 		}
 		return strings.Join(drawn, " ")
 	}
@@ -75,9 +75,9 @@ func drawnOn(t *testing.T, files map[string]string, from, to string) string {
 
 // TestALabelWrittenAtEitherEndIsDrawn.
 //
-// Either end of a relationship can name it, and both ends naming it is an edge
-// answered. The word shown is then the one the note in focus wrote, so the two
-// notes read the same edge in their own language.
+// Either end of a relationship can name it, and both ends naming it makes the
+// edge mutual. The word shown is then the one the note in focus wrote, so the
+// two notes read the same edge in their own language.
 func TestALabelWrittenAtEitherEndIsDrawn(t *testing.T) {
 	written := func(title, links string) string {
 		if links == "" {
@@ -95,22 +95,22 @@ func TestALabelWrittenAtEitherEndIsDrawn(t *testing.T) {
 			name:     "the far end alone names it",
 			area:     "  - to: \"[[Idea]]\"\n    role: parent\n",
 			idea:     "  - to: \"[[Area]]\"\n    role: child\n    label: Жлоб\n",
-			fromArea: "parent Жлоб answered",
-			fromIdea: "child Жлоб answered",
+			fromArea: "parent Жлоб mutual",
+			fromIdea: "child Жлоб mutual",
 		},
 		{
 			name:     "each end has its own word for it",
 			area:     "  - to: \"[[Idea]]\"\n    role: jump\n    label: внучатый племянник\n",
 			idea:     "  - to: \"[[Area]]\"\n    role: jump\n    label: питамаха, дед рода\n",
-			fromArea: "jump внучатый племянник answered",
-			fromIdea: "jump питамаха, дед рода answered",
+			fromArea: "jump внучатый племянник mutual",
+			fromIdea: "jump питамаха, дед рода mutual",
 		},
 		{
 			name:     "the near end alone names it",
 			area:     "  - to: \"[[Idea]]\"\n    role: parent\n    label: дом\n",
 			idea:     "  - to: \"[[Area]]\"\n    role: child\n",
-			fromArea: "parent дом answered",
-			fromIdea: "child дом answered",
+			fromArea: "parent дом mutual",
+			fromIdea: "child дом mutual",
 		},
 		{
 			name:     "written at one end only",
@@ -120,11 +120,11 @@ func TestALabelWrittenAtEitherEndIsDrawn(t *testing.T) {
 			fromIdea: "child дом",
 		},
 		{
-			name:     "answered by both and named by neither",
+			name:     "mutual and named by neither",
 			area:     "  - to: \"[[Idea]]\"\n    role: parent\n",
 			idea:     "  - to: \"[[Area]]\"\n    role: child\n",
-			fromArea: "parent answered",
-			fromIdea: "child answered",
+			fromArea: "parent mutual",
+			fromIdea: "child mutual",
 		},
 	} {
 		t.Run(c.name, func(t *testing.T) {

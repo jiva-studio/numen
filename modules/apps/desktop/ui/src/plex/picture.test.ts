@@ -10,12 +10,12 @@ type Related = [string, Seat, string, string, boolean?]
 const around = (focus: string, related: Related[]) =>
   create(NeighbourhoodResponseSchema, {
     focus: { path: focus, title: focus, identifier: '' },
-    related: related.map(([path, seat, label, through, answered]) => ({
+    related: related.map(([path, seat, label, through, mutual]) => ({
       note: { path, title: path, identifier: '' },
       seat,
       label,
       through,
-      answered: answered ?? false,
+      mutual: mutual ?? false,
     })),
   })
 
