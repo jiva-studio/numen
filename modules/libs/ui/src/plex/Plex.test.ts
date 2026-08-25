@@ -3,8 +3,10 @@
  * most here: they are what fails silently and still looks right.
  */
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import Plex from './Plex.vue'
+import { DEFAULT_OPTIONS } from './arrange'
 import { neighbourhoods } from './fixtures/neighbourhoods'
 
 /** No movement unless a test is about movement. */
@@ -157,6 +159,43 @@ describe('what did not fit', () => {
       slots: { overflow: '<span class="hushed" />' },
     })
     expect(plex.get('[role="status"]').text()).toBe('')
+  })
+})
+
+describe('how wide a box is drawn', () => {
+  const boxes = (plex: ReturnType<typeof mountPlex>) =>
+    plex.findAll('.plex__node--child .plex__box').map((box) => box.attributes('width'))
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  it('is the widest a box gets where there is nothing to measure with', () => {
+    // jsdom has no canvas, as a page rendered on a server has none.
+    for (const width of boxes(mountPlex())) {
+      expect(width).toBe(String(DEFAULT_OPTIONS.nodeSize.width))
+    }
+  })
+
+  it('follows the title where there is, from the first render on', async () => {
+    // Measured before the first arrangement, so nothing is drawn at a width it
+    // then has to leave: the reader is never shown a box shrinking into place.
+    vi.stubGlobal('CanvasRenderingContext2D', function () {})
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      font: '',
+      measureText: (text: string) => ({ width: text.length * 7 }) as TextMetrics,
+    } as unknown as CanvasRenderingContext2D)
+
+    const plex = mountPlex({ duration: 400 })
+    const painted = boxes(plex)
+
+    expect(new Set(painted).size).toBeGreaterThan(1)
+    expect(painted).not.toContain(String(DEFAULT_OPTIONS.nodeSize.width))
+
+    await nextTick()
+    expect(boxes(plex)).toStrictEqual(painted)
+    expect(plex.vm.moving).toBe(false)
   })
 })
 

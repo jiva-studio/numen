@@ -9,8 +9,15 @@ export interface Size {
 }
 
 export interface BoxOptions {
+  /** The focus box. Its width is the widest that box is drawn. */
   readonly focusSize: Size
+  /**
+   * Every other box. Its width is the widest one is drawn, and the width
+   * admission is worked out from.
+   */
   readonly nodeSize: Size
+  /** The narrowest a box is drawn, however little its title needs. */
+  readonly minWidth: number
   /** Between neighbouring nodes along one line. */
   readonly gap: number
   /** Between one line and the next, further from the focus. */
@@ -78,6 +85,7 @@ export const DEFAULT_DIRECTION: Readonly<Record<PlexRelatedSeat, Direction>> =
 export const DEFAULT_OPTIONS: PlexOptions = {
   focusSize: { width: 176, height: 44 },
   nodeSize: { width: 144, height: 36 },
+  minWidth: 72,
   gap: 16,
   lineGap: 20,
   focusGap: 56,

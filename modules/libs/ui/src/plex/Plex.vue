@@ -9,6 +9,7 @@
  */
 import { computed, onMounted, onScopeDispose, ref, toRef, useTemplateRef, watch } from 'vue'
 import PlexView from './render/PlexView.vue'
+import { titleWidths } from './measure'
 import { usePlexTransition, browserEnvironment, type Environment } from './transition'
 import type { Placement, PlexOptionsInput } from './arrange'
 import {
@@ -106,11 +107,19 @@ onMounted(() => {
   onScopeDispose(() => observer.disconnect())
 })
 
+/**
+ * How wide each title needs its box to be, measured against the type the theme
+ * is written in. Settled before the first arrangement and the same one
+ * thereafter, so a box is drawn at the size it keeps.
+ */
+const measure = computed(() => titleWidths())
+
 const { frame, moving } = usePlexTransition(
   () => props.neighbourhood,
   () => ({
     options: { ...props.options, viewport: viewport.value },
     placement: props.placement,
+    measure: measure.value,
   }),
   () => props.duration,
   props.environment,
