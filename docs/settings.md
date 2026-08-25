@@ -20,8 +20,8 @@ palette.
 ```json
 {
   "appearance": {
-    "interface": 1,
-    "font": 1,
+    "interface_scale": 1,
+    "text_scale": 1,
     "mode": "system",
     "theme": "preset:numen"
   }
@@ -30,18 +30,18 @@ palette.
 
 | | |
 | --- | --- |
-| `interface` | how large the interface is drawn — its chrome, its controls, the spacing between them and the type in them. 1 is as designed, and it goes from 0.8 to 2. |
-| `font` | how large the text a person reads is set: a note, a book, an answer, the editor. 1 is as designed, and it goes from 0.8 to 1.75. |
+| `interface_scale` | how large the interface is drawn — its chrome, its controls, the spacing between them and the type in them. 1 is as designed, and it goes from 0.8 to 2. |
+| `text_scale` | how large the text a person reads is set: a note, a book, an answer, the editor. 1 is as designed, and it goes from 0.8 to 1.75. |
 | `mode` | which half of a colour pair is read: `system`, `light` or `dark`. Any other word is read as `system`. |
 | `theme` | the stylesheet the window wears, named by the shelf it came off and its filename: `preset:dracula` ships inside the application, `mine:dracula` is the person's file. |
 
-Each size is a multiplier. `interface` is the root's font size, and every length
-in the window is a multiple of it: the height of a field and a button, the
-clearance inside a node, the radii, the spacing, and the type throughout. `font`
-is a second multiplier over the text a person reads — the editor, and marked-up
-text with the scale above it, its headings, code, lists and quotations. A
-hairline, a border, a focus ring and the stroke of a handle are one physical
-line under either.
+Each size is a multiplier. `interface_scale` is the root's font size, and every
+length in the window is a multiple of it: the height of a field and a button,
+the clearance inside a node, the radii, the spacing, and the type throughout.
+`text_scale` is a second multiplier over the text a person reads — the editor,
+and marked-up text with the scale above it, its headings, code, lists and
+quotations. A hairline, a border, a focus ring and the stroke of a handle are
+one physical line under either.
 
 A number outside what its setting goes to is refused: the window does not open,
 and a page in its place names the field, what was written and how far the
@@ -49,21 +49,22 @@ setting goes. The number is left as it was written.
 
 A file naming no size at all asks the desktop: a session that set
 `GDK_DPI_SCALE` draws its interface by that, and one that said nothing is drawn
-at 1. A scale outside what `interface` goes to is not one it is seeded with.
+at 1. A scale outside what `interface_scale` goes to is not one it is seeded
+with.
 
-`-interface` and `-font` say a size for a single launch, over whatever is here.
-Each stands until that size is chosen in the window, and choosing it is what
-writes it down.
+`-interface-scale` and `-text-scale` say a size for a single launch, over
+whatever is here. Each stands until that size is chosen in the window, and
+choosing it is what writes it down.
 
 A file naming `appearance.zoom` is drawn at that number, and the field is given
-the name `appearance.interface` where it is written. Its value, its place among
-the fields around it and every other byte of this file stay as they were.
+the name `appearance.interface_scale` where it is written. Its value, its place
+among the fields around it and every other byte of this file stay as they were.
 
-A `zoom` outside what `interface` goes to keeps its name and is said, and the
-window is drawn as designed until a number in range is written. `zoom: 0` names
-no size, so the desktop is asked. A file naming a size under both names is drawn
-at `interface` and keeps both names. A file nothing may be written into is read
-the same way at every launch, and drawn at the same size.
+A `zoom` outside what `interface_scale` goes to keeps its name and is said, and
+the window is drawn as designed until a number in range is written. `zoom: 0`
+names no size, so the desktop is asked. A file naming a size under both names is
+drawn at `interface_scale` and keeps both names. A file nothing may be written
+into is read the same way at every launch, and drawn at the same size.
 
 `zoom` is the reader's word: how large a page of a document is drawn. It is
 turned in the document in front of a person and it is not a setting.
