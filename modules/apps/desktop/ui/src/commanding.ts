@@ -211,6 +211,9 @@ export interface Words extends Silences {
   readonly findKeys: string
   readonly first: string
   readonly goto: string
+  /** The keystrokes written on the two commands one reaches. */
+  readonly noteKeys: string
+  readonly gotoKeys: string
   /** The commands over the vaults this installation holds. */
   readonly openVault: string
   readonly newVault: string
@@ -351,7 +354,14 @@ export const commandsOf = (words: Words): readonly Command[] => [
   },
   { id: 'ask', text: words.ask, band: 'note', where: onNote },
   { id: 'copy', text: words.copy, band: 'note', where: onNote },
-  { id: 'note', text: words.newNote, band: 'window', needs: 'naming', where: (at) => at.ready },
+  {
+    id: 'note',
+    text: words.newNote,
+    keys: words.noteKeys,
+    band: 'window',
+    needs: 'naming',
+    where: (at) => at.ready,
+  },
   { id: 'plex', text: words.newPlex, band: 'window', where: always },
   { id: 'agent', text: words.newAgent, band: 'window', where: always },
   { id: 'close', text: words.close, band: 'window', where: (at) => at.tab !== '' },
@@ -361,7 +371,14 @@ export const commandsOf = (words: Words): readonly Command[] => [
   { id: 'interface', text: words.interface, band: 'window', needs: 'choosing', where: always },
   { id: 'font', text: words.font, band: 'window', needs: 'choosing', where: always },
   { id: 'first', text: words.first, band: 'vault', where: (at) => at.ready },
-  { id: 'goto', text: words.goto, band: 'vault', needs: 'picking', where: (at) => at.ready },
+  {
+    id: 'goto',
+    text: words.goto,
+    keys: words.gotoKeys,
+    band: 'vault',
+    needs: 'picking',
+    where: (at) => at.ready,
+  },
   { id: 'openVault', text: words.openVault, band: 'vault', needs: 'vaults', where: always },
   { id: 'newVault', text: words.newVault, band: 'vault', where: always },
   {

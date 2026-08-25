@@ -32,6 +32,7 @@ import {
   type Shown,
   type Where,
 } from './commanding'
+import { chorded, commandFor } from './keying'
 import { themes } from './theme'
 import { APPEARANCE, DRESSING, FONT, INTERFACE, MODE, wearing } from './wearing'
 import { does, type Doing } from './doing'
@@ -266,13 +267,14 @@ const carries = (id: string, at: Where) => {
 }
 
 /**
- * The palette is opened and put away by two keystrokes, taken on the window: it
- * belongs to no pane.
+ * The keystrokes taken on the window: they belong to no pane. Two put the
+ * palette up and take it down again, and the rest carry out the command the
+ * chords name, which is the one written on that command's row.
  */
 const asked = (event: KeyboardEvent) => {
   // A pane that has answered this keystroke keeps it.
   if (event.defaultPrevented) return
-  if (event.altKey || !(event.metaKey || event.ctrlKey)) return
+  if (!chorded(event)) return
   const key = event.key.toLowerCase()
   if (key === 'k') {
     event.preventDefault()
@@ -280,11 +282,16 @@ const asked = (event: KeyboardEvent) => {
     palette.shows(!palette.open.value)
     return
   }
-  if (key !== 'p') return
-  // The window takes this keystroke.
+  if (key === 'p') {
+    event.preventDefault()
+    palette.shows(false)
+    commands.shows(!commands.open.value)
+    return
+  }
+  const command = commandFor(key)
+  if (!command) return
   event.preventDefault()
-  palette.shows(false)
-  commands.shows(!commands.open.value)
+  carries(command, where())
 }
 
 /** What the palette draws: the commands while they are open, the search under. */

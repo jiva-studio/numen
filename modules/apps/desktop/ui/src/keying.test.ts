@@ -1,0 +1,96 @@
+/**
+ * The keystrokes that reach a command, asked without a window.
+ *
+ * The failure this is here for is a key drawn on a row that does nothing: the
+ * table is read twice, once to bind and once to draw, and a letter naming a
+ * command the window does not have would draw a cap over silence.
+ */
+import { describe, expect, it } from 'vitest'
+import { chorded, commandFor, keyOf, CHORDS } from './keying'
+import { commandsOf } from './commanding'
+import { WORDS as words } from './words'
+
+const pressing = (over: Partial<KeyboardEventInit> = {}) => ({
+  altKey: false,
+  ctrlKey: false,
+  metaKey: false,
+  ...over,
+})
+
+describe('a keystroke the window answers', () => {
+  it('is one letter held with Control, or with Command', () => {
+    expect(chorded(pressing({ ctrlKey: true }))).toBe(true)
+    expect(chorded(pressing({ metaKey: true }))).toBe(true)
+  })
+
+  it('belongs to nobody while Alt is held with it', () => {
+    expect(chorded(pressing({ ctrlKey: true, altKey: true }))).toBe(false)
+    expect(chorded(pressing({ metaKey: true, altKey: true }))).toBe(false)
+  })
+
+  it('belongs to nobody with neither of the two held', () => {
+    expect(chorded(pressing())).toBe(false)
+  })
+})
+
+describe('the command a letter asks for', () => {
+  it('is the one the chord beside it names', () => {
+    expect(commandFor('n')).toBe('note')
+    expect(commandFor('g')).toBe('goto')
+  })
+
+  it('is the same command in either case', () => {
+    expect(commandFor('N')).toBe('note')
+  })
+
+  it('is nothing where no command answers to the letter', () => {
+    expect(commandFor('q')).toBe('')
+  })
+
+  it('is nothing for the two letters the window keeps for itself', () => {
+    expect(commandFor('k')).toBe('')
+    expect(commandFor('p')).toBe('')
+  })
+})
+
+describe('how a keystroke is written on the row that names it', () => {
+  it('is the sign the keyboard in hand uses, and the letter in capitals', () => {
+    expect(keyOf('note', 'MacIntel')).toBe('⌘N')
+    expect(keyOf('note', 'Linux x86_64')).toBe('⌃N')
+    expect(keyOf('goto', 'Linux x86_64')).toBe('⌃G')
+  })
+
+  it('is nothing for a command no keystroke reaches', () => {
+    expect(keyOf('destroy', 'Linux x86_64')).toBe('')
+  })
+})
+
+describe('every keystroke the table holds', () => {
+  const commands = commandsOf(words)
+
+  it('names a command the window has', () => {
+    const known = new Set(commands.map((one) => one.id))
+    for (const held of CHORDS) expect(known.has(held.command)).toBe(true)
+  })
+
+  it('is drawn on the row of the command it names', () => {
+    for (const held of CHORDS) {
+      const command = commands.find((one) => one.id === held.command)
+      expect(command?.keys).toBe(keyOf(held.command, navigator.userAgent))
+    }
+  })
+
+  it('takes a letter no other chord in the table has taken', () => {
+    const letters = CHORDS.map((one) => one.letter)
+    expect(new Set(letters).size).toBe(letters.length)
+  })
+
+  it('leaves alone the two letters that put the palette up', () => {
+    for (const held of CHORDS) expect(['k', 'p']).not.toContain(held.letter)
+  })
+
+  it('reaches nothing that removes a note, a file or a vault', () => {
+    const destroys = ['remove', 'destroy', 'forgetVault', 'eraseVault']
+    for (const held of CHORDS) expect(destroys).not.toContain(held.command)
+  })
+})

@@ -36,6 +36,7 @@ const { said, held, asked, listed } = vi.hoisted(() => ({
   },
   /** What the window asked the application for, in the order it asked. */
   asked: {
+    made: [] as string[],
     renamed: [] as string[],
     removed: [] as string[],
     worn: [] as string[],
@@ -85,6 +86,10 @@ vi.mock('./vault', () => ({
     }),
     read: async () => ({ body: 'what is written', at: 'a1' }),
     write: async () => ({ at: 'a2' }),
+    create: async ({ title }: { title: string }) => {
+      asked.made.push(title)
+      return { path: `${title}.md`, refusal: null }
+    },
     rename: async (path: string, title: string) => {
       asked.renamed.push(`${path} ${title}`)
       return { path, title, by: 'frontmatter', moved: null, refusal: null }
@@ -168,6 +173,7 @@ afterEach(() => {
   said.applied = 'preset:numen'
   said.mode = 'system'
   said.sizes = { interface: 1, font: 1 }
+  asked.made = []
   asked.renamed = []
   asked.removed = []
   asked.worn = []
@@ -349,6 +355,125 @@ describe('the palette', () => {
     await settles()
 
     expect(overNote(window)).toBe('Root')
+  })
+})
+
+/**
+ * The keystrokes drawn on a command's row. Each is asked for on the window, as
+ * a person presses it with the palette nowhere in sight.
+ */
+describe('a command reached by its own keystroke', () => {
+  const field = () => document.body.querySelector<HTMLInputElement>('.palette__field')
+
+  /** A keystroke taken on the window, and whether the window took it. */
+  const pressed = (key: string, over: Partial<KeyboardEventInit> = {}) => {
+    const event = new KeyboardEvent('keydown', { key, ctrlKey: true, cancelable: true, ...over })
+    globalThis.dispatchEvent(event)
+    return event
+  }
+
+  const type = async (text: string) => {
+    const into = field()
+    if (!into) return
+    into.value = text
+    into.dispatchEvent(new Event('input'))
+    await settles()
+  }
+
+  const press = async (key: string) => {
+    field()?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }))
+    await settles()
+  }
+
+  /** The row of a command in the list of commands, by the identity it is drawn under. */
+  const rowOf = (window: Awaited<ReturnType<typeof drawn>>, id: string) => {
+    const bands = window.findComponent(Palette).props('bands') as readonly {
+      items: readonly { id: string; keys?: string }[]
+    }[]
+    return bands.flatMap((band) => band.items).find((one) => one.id === id)
+  }
+
+  it('draws the keystroke on its row, written for the keyboard in hand', async () => {
+    const window = await drawn()
+
+    pressed('p')
+    await settles()
+
+    expect(rowOf(window, 'note')?.keys).toBe('⌃N')
+    expect(rowOf(window, 'goto')?.keys).toBe('⌃G')
+  })
+
+  it('draws no keystroke on the rows no keystroke reaches', async () => {
+    const window = await drawn()
+
+    pressed('p')
+    await settles()
+
+    expect(rowOf(window, 'destroy')?.keys).toBeUndefined()
+    expect(rowOf(window, 'eraseVault')?.keys).toBeUndefined()
+  })
+
+  it('makes a note under the name typed, on the keystroke the new note draws', async () => {
+    await drawnWithPalette()
+
+    const event = pressed('n')
+    await settles()
+    await type('Entropy')
+    await press('Enter')
+    await settles()
+
+    expect(event.defaultPrevented).toBe(true)
+    expect(asked.made).toStrictEqual(['Entropy'])
+  })
+
+  it('opens the step that picks a note, on the keystroke going to one draws', async () => {
+    said.names = [{ path: 'physics/Entropy.md', title: 'Entropy', heading: '', line: -1, at: [] }]
+    const window = await drawnWithPalette()
+
+    const event = pressed('g')
+    await settles()
+
+    expect(event.defaultPrevented).toBe(true)
+    expect(window.findComponent(Palette).props('crumb')).toBe('Go to a note')
+  })
+
+  it('travels to the note picked on that step', async () => {
+    said.names = [{ path: 'physics/Entropy.md', title: 'Entropy', heading: '', line: -1, at: [] }]
+    const window = await drawnWithPalette()
+
+    pressed('g')
+    await settles()
+    await type('en')
+    await new Promise((done) => setTimeout(done, HELD))
+    await press('Enter')
+    await settles()
+
+    const plex = window.findComponent(PlexTab).props('held') as {
+      view: { here: { value: string } }
+    }
+    expect(plex.view.here.value).toBe('physics/Entropy.md')
+  })
+
+  it('leaves a keystroke alone while Alt is held with it', async () => {
+    const window = await drawn()
+
+    const event = pressed('n', { altKey: true })
+    await settles()
+
+    expect(event.defaultPrevented).toBe(false)
+    expect(window.findComponent(Palette).props('open')).toBe(false)
+    expect(asked.made).toStrictEqual([])
+  })
+
+  it('leaves a keystroke a pane has already answered alone', async () => {
+    const window = await drawn()
+
+    const event = new KeyboardEvent('keydown', { key: 'n', ctrlKey: true, cancelable: true })
+    event.preventDefault()
+    globalThis.dispatchEvent(event)
+    await settles()
+
+    expect(window.findComponent(Palette).props('open')).toBe(false)
   })
 })
 
