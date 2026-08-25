@@ -9,7 +9,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Offering } from './commanding'
 import type { Catalogue, Themes } from './theme'
-import { FONT, INTERFACE, wearing } from './wearing'
+import { INTERFACE_SCALE, TEXT_SCALE, wearing } from './wearing'
 import { WORDS as words } from './words'
 
 /** What the page was served wearing. */
@@ -57,8 +57,8 @@ const CATALOGUE: Catalogue = {
   ],
   applied: 'preset:numen',
   mode: 'system',
-  sizes: { interface: 1, font: 1 },
-  bounds: { interface: { least: 0.8, most: 2 }, font: { least: 0.8, most: 1.75 } },
+  sizes: { interfaceScale: 1, textScale: 1 },
+  bounds: { interfaceScale: { least: 0.8, most: 2 }, textScale: { least: 0.8, most: 1.75 } },
 }
 
 /** A moment for whatever was asked of the application to come back. */
@@ -124,7 +124,7 @@ const window = (over: Partial<Catalogue> = {}) => {
       return texts[name] ?? `:root { --numen-surface: ${name} }`
     },
     chooses: async (name, mode, sizes) => {
-      chosen.push(`${name} ${mode} ${sizes.interface}/${sizes.font}`)
+      chosen.push(`${name} ${mode} ${sizes.interfaceScale}/${sizes.textScale}`)
       return failed
     },
     changed: said.changed,
@@ -370,9 +370,9 @@ describe('the sizes the two steps offer', () => {
   it('walks each range from end to end, in quarters, with both ends on it', async () => {
     const one = await dressed()
 
-    expect(rows(one, INTERFACE).map((row) => row.title)).toStrictEqual(TENTHS)
+    expect(rows(one, INTERFACE_SCALE).map((row) => row.title)).toStrictEqual(TENTHS)
     // The far end of this one falls between two steps, and is offered there.
-    expect(rows(one, FONT).map((row) => row.title)).toStrictEqual([
+    expect(rows(one, TEXT_SCALE).map((row) => row.title)).toStrictEqual([
       ...TENTHS.slice(0, 10),
       '175%',
     ])
@@ -381,15 +381,17 @@ describe('the sizes the two steps offer', () => {
   it('draws each in a band of its own, named for what that size moves', async () => {
     const one = await dressed()
 
-    expect(one.worn.sizes(INTERFACE).map((band) => band.title)).toStrictEqual([words.drawing])
-    expect(one.worn.sizes(FONT).map((band) => band.title)).toStrictEqual([words.setting])
+    expect(one.worn.sizes(INTERFACE_SCALE).map((band) => band.title)).toStrictEqual([words.drawing])
+    expect(one.worn.sizes(TEXT_SCALE).map((band) => band.title)).toStrictEqual([words.setting])
   })
 
   it('offers nothing at all until the application has said how far a size goes', async () => {
-    const one = await dressed({ bounds: { interface: { least: 0, most: 0 }, font: NARROW } })
+    const one = await dressed({
+      bounds: { interfaceScale: { least: 0, most: 0 }, textScale: NARROW },
+    })
 
-    expect(rows(one, INTERFACE)).toStrictEqual([])
-    expect(rows(one, FONT).map((row) => row.title)).toStrictEqual([
+    expect(rows(one, INTERFACE_SCALE)).toStrictEqual([])
+    expect(rows(one, TEXT_SCALE).map((row) => row.title)).toStrictEqual([
       '100%',
       '110%',
       '120%',
@@ -400,19 +402,19 @@ describe('the sizes the two steps offer', () => {
   })
 
   it('says on one row that it is the size now, and says nothing on any other', async () => {
-    const one = await dressed({ sizes: { interface: 1.5, font: 1 } })
+    const one = await dressed({ sizes: { interfaceScale: 1.5, textScale: 1 } })
 
-    expect(rows(one, INTERFACE).map((row) => row.detail)).toStrictEqual(
+    expect(rows(one, INTERFACE_SCALE).map((row) => row.detail)).toStrictEqual(
       TENTHS.map((title) => (title === '150%' ? words.current : undefined)),
     )
   })
 
   it('holds the size the window is drawn at, wherever between the steps it falls', async () => {
-    const one = await dressed({ sizes: { interface: 1.17, font: 1 } })
+    const one = await dressed({ sizes: { interfaceScale: 1.17, textScale: 1 } })
 
-    const rung = rows(one, INTERFACE).find((row) => row.detail === words.current)
+    const rung = rows(one, INTERFACE_SCALE).find((row) => row.detail === words.current)
     expect(rung?.title).toBe('117%')
-    expect(rows(one, INTERFACE).map((row) => row.title)).toStrictEqual([
+    expect(rows(one, INTERFACE_SCALE).map((row) => row.title)).toStrictEqual([
       ...TENTHS.slice(0, 4),
       '117%',
       ...TENTHS.slice(4),
@@ -420,14 +422,14 @@ describe('the sizes the two steps offer', () => {
   })
 
   it('says nothing beside 100%, which a person reading percentages knows', async () => {
-    const one = await dressed({ sizes: { interface: 1.5, font: 1 } })
+    const one = await dressed({ sizes: { interfaceScale: 1.5, textScale: 1 } })
 
     const hundred = (command: string) =>
       rows(one, command).find((row) => row.title === '100%')?.detail
 
-    expect(hundred(INTERFACE)).toBeUndefined()
+    expect(hundred(INTERFACE_SCALE)).toBeUndefined()
     // The reading text is set at 100%, so on its list that row is the one.
-    expect(hundred(FONT)).toBe(words.current)
+    expect(hundred(TEXT_SCALE)).toBe(words.current)
   })
 })
 
@@ -438,20 +440,20 @@ describe('the number a person types at a size', () => {
   it('stands as a row of its own, in its place between the steps', async () => {
     const one = await dressed()
 
-    expect(rows(one, INTERFACE, '137').map((row) => row.title)).toStrictEqual([
+    expect(rows(one, INTERFACE_SCALE, '137').map((row) => row.title)).toStrictEqual([
       ...TENTHS.slice(0, 6),
       '137%',
       ...TENTHS.slice(6),
     ])
-    expect(rows(one, INTERFACE, '137').find((row) => row.title === '137%')?.id).toBe(
-      'interface:1.37',
+    expect(rows(one, INTERFACE_SCALE, '137').find((row) => row.title === '137%')?.id).toBe(
+      'interfaceScale:1.37',
     )
   })
 
   it('is taken with the sign a person reads on the rows, and with none', async () => {
     const one = await dressed()
 
-    const titles = (typed: string) => rows(one, INTERFACE, typed).map((row) => row.title)
+    const titles = (typed: string) => rows(one, INTERFACE_SCALE, typed).map((row) => row.title)
     expect(titles('137%')).toStrictEqual(titles('137'))
     expect(titles(' 137 ')).toStrictEqual(titles('137'))
   })
@@ -459,29 +461,29 @@ describe('the number a person types at a size', () => {
   it('is not offered at all where the range does not reach it', async () => {
     const one = await dressed()
 
-    expect(rows(one, INTERFACE, '250').map((row) => row.title)).toStrictEqual(TENTHS)
-    expect(rows(one, FONT, '190').map((row) => row.title)).not.toContain('190%')
+    expect(rows(one, INTERFACE_SCALE, '250').map((row) => row.title)).toStrictEqual(TENTHS)
+    expect(rows(one, TEXT_SCALE, '190').map((row) => row.title)).not.toContain('190%')
   })
 
   it('is not offered twice where the list already holds that size', async () => {
     const one = await dressed()
 
-    expect(rows(one, INTERFACE, '150').map((row) => row.title)).toStrictEqual(TENTHS)
+    expect(rows(one, INTERFACE_SCALE, '150').map((row) => row.title)).toStrictEqual(TENTHS)
   })
 
   it('is nothing at all where what was typed is not a whole number', async () => {
     const one = await dressed()
 
-    expect(rows(one, INTERFACE, 'large').map((row) => row.title)).toStrictEqual(TENTHS)
-    expect(rows(one, INTERFACE, '1.37').map((row) => row.title)).toStrictEqual(TENTHS)
+    expect(rows(one, INTERFACE_SCALE, 'large').map((row) => row.title)).toStrictEqual(TENTHS)
+    expect(rows(one, INTERFACE_SCALE, '1.37').map((row) => row.title)).toStrictEqual(TENTHS)
   })
 
   it('is drawn and written like any other row', async () => {
     const one = await dressed()
 
-    one.worn.shows('interface:1.37')
+    one.worn.shows('interfaceScale:1.37')
     await stands()
-    await one.worn.chooses('interface:1.37')
+    await one.worn.chooses('interfaceScale:1.37')
 
     expect(one.chosen).toStrictEqual(['preset:numen system 1.37/1'])
     expect(sizes(one.sheet)).toBe(':root { --numen-interface: 1.37; --numen-font: 1; }')
@@ -492,9 +494,9 @@ describe('the size the keyboard is standing on', () => {
   it('is not drawn while the keyboard is still walking over rows', async () => {
     const one = await dressed()
 
-    one.worn.shows('interface:1.5')
+    one.worn.shows('interfaceScale:1.5')
     await settles()
-    one.worn.shows('interface:1.75')
+    one.worn.shows('interfaceScale:1.75')
     await settles()
 
     expect(sizes(one.sheet)).toBe(SIZED)
@@ -503,7 +505,7 @@ describe('the size the keyboard is standing on', () => {
   it('is drawn once the keyboard has stood on it', async () => {
     const one = await dressed()
 
-    one.worn.shows('interface:1.5')
+    one.worn.shows('interfaceScale:1.5')
     await stands()
 
     expect(sizes(one.sheet)).toBe(':root { --numen-interface: 1.5; --numen-font: 1; }')
@@ -512,9 +514,9 @@ describe('the size the keyboard is standing on', () => {
   it('is drawn once, at the row the keyboard came to rest on', async () => {
     const one = await dressed()
 
-    one.worn.shows('interface:1.25')
-    one.worn.shows('interface:1.5')
-    one.worn.shows('font:1.25')
+    one.worn.shows('interfaceScale:1.25')
+    one.worn.shows('interfaceScale:1.5')
+    one.worn.shows('textScale:1.25')
     await stands()
 
     expect(sizes(one.sheet)).toBe(':root { --numen-interface: 1; --numen-font: 1.25; }')
@@ -522,7 +524,7 @@ describe('the size the keyboard is standing on', () => {
 
   it('gives way to the size the settings name once the keyboard stands nowhere', async () => {
     const one = await dressed()
-    one.worn.shows('font:1.5')
+    one.worn.shows('textScale:1.5')
     await stands()
 
     one.worn.shows('')
@@ -535,7 +537,7 @@ describe('the size the keyboard is standing on', () => {
   it('leaves the theme and the mode where they stand', async () => {
     const one = await dressed()
 
-    one.worn.shows('interface:2')
+    one.worn.shows('interfaceScale:2')
     await stands()
 
     expect(dressing(one.sheet).slice(0, 2)).toStrictEqual([PAIR, SERVED])
@@ -545,18 +547,18 @@ describe('the size the keyboard is standing on', () => {
 describe('the size that was chosen', () => {
   it('is drawn at once, whatever the hold was waiting for, and written down', async () => {
     const one = await dressed()
-    one.worn.shows('interface:1.25')
+    one.worn.shows('interfaceScale:1.25')
 
-    await one.worn.chooses('interface:1.5')
+    await one.worn.chooses('interfaceScale:1.5')
 
     expect(one.chosen).toStrictEqual(['preset:numen system 1.5/1'])
     expect(sizes(one.sheet)).toBe(':root { --numen-interface: 1.5; --numen-font: 1; }')
   })
 
   it('is written beside the other size, which stands where it was', async () => {
-    const one = await dressed({ sizes: { interface: 1.25, font: 1 } })
+    const one = await dressed({ sizes: { interfaceScale: 1.25, textScale: 1 } })
 
-    await one.worn.chooses('font:1.75')
+    await one.worn.chooses('textScale:1.75')
 
     expect(one.chosen).toStrictEqual(['preset:numen system 1.25/1.75'])
     expect(sizes(one.sheet)).toBe(':root { --numen-interface: 1.25; --numen-font: 1.75; }')
@@ -564,20 +566,20 @@ describe('the size that was chosen', () => {
 
   it('says what the settings refused, and goes back to the size they hold', async () => {
     const one = await dressed()
-    one.fails('appearance.interface is 3, which is outside 0.8 to 2')
+    one.fails('appearance.interface_scale is 3, which is outside 0.8 to 2')
 
-    await one.worn.chooses('interface:2')
+    await one.worn.chooses('interfaceScale:2')
     await settles()
 
-    expect(one.worn.said.value).toBe('appearance.interface is 3, which is outside 0.8 to 2')
+    expect(one.worn.said.value).toBe('appearance.interface_scale is 3, which is outside 0.8 to 2')
     expect(sizes(one.sheet)).toBe(SIZED)
   })
 
   it('is nothing at all where the range the window holds does not reach it', async () => {
     const one = await dressed()
 
-    await one.worn.chooses('interface:3')
-    one.worn.shows('font:3')
+    await one.worn.chooses('interfaceScale:3')
+    one.worn.shows('textScale:3')
     await stands()
 
     expect(one.chosen).toStrictEqual([])

@@ -205,8 +205,8 @@ export interface Words extends Silences {
    */
   readonly appearance: string
   readonly mode: string
-  readonly interface: string
-  readonly font: string
+  readonly interfaceScale: string
+  readonly textScale: string
   readonly find: string
   /** The keystroke the search answers to away from the palette. */
   readonly findKeys: PaletteKeys
@@ -383,8 +383,14 @@ export const commandsOf = (
   { id: 'find', text: words.find, keys: words.findKeys, band: 'window', where: always },
   { id: 'appearance', text: words.appearance, band: 'window', needs: 'choosing', where: always },
   { id: 'mode', text: words.mode, band: 'window', needs: 'choosing', where: always },
-  { id: 'interface', text: words.interface, band: 'window', needs: 'choosing', where: always },
-  { id: 'font', text: words.font, band: 'window', needs: 'choosing', where: always },
+  {
+    id: 'interfaceScale',
+    text: words.interfaceScale,
+    band: 'window',
+    needs: 'choosing',
+    where: always,
+  },
+  { id: 'textScale', text: words.textScale, band: 'window', needs: 'choosing', where: always },
   { id: 'first', text: words.first, band: 'vault', where: (at) => at.ready },
   {
     id: 'goto',

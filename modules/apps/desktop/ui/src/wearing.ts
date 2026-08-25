@@ -46,14 +46,14 @@ export const APPEARANCE = 'appearance'
 export const MODE = 'mode'
 
 /** The command that offers how large the interface is drawn, and how large the text is set. */
-export const INTERFACE = 'interface'
-export const FONT = 'font'
+export const INTERFACE_SCALE = 'interfaceScale'
+export const TEXT_SCALE = 'textScale'
 
 /** The commands whose step offers a list this holds. */
-export const DRESSING: readonly string[] = [APPEARANCE, MODE, INTERFACE, FONT]
+export const DRESSING: readonly string[] = [APPEARANCE, MODE, INTERFACE_SCALE, TEXT_SCALE]
 
 /** Which of the two sizes a row is one of. */
-type Which = typeof INTERFACE | typeof FONT
+type Which = typeof INTERFACE_SCALE | typeof TEXT_SCALE
 
 /** One size, and which of the two it is. */
 interface Sized {
@@ -112,7 +112,7 @@ const sizing = (which: Which, size: number): string => `${which}:${size}`
 /** The size a row names, and nothing for a row naming anything else. */
 const sizeOf = (item: string): Sized | null => {
   const [which, said] = item.split(':')
-  if (which !== INTERFACE && which !== FONT) return null
+  if (which !== INTERFACE_SCALE && which !== TEXT_SCALE) return null
   const size = Number(said)
   return size > 0 ? { which, size } : null
 }
@@ -159,7 +159,7 @@ const after = (before: HTMLStyleElement, sheet: Document): HTMLStyleElement => {
 
 /** The two multipliers as the page carries them. */
 const declared = (sizes: Sizes): string =>
-  `:root { --numen-interface: ${sizes.interface}; --numen-font: ${sizes.font}; }`
+  `:root { --numen-interface: ${sizes.interfaceScale}; --numen-font: ${sizes.textScale}; }`
 
 /** Whether a range reaches a size. A range holding nothing reaches none. */
 const reaches = (range: Bounds, size: number): boolean =>
@@ -209,12 +209,10 @@ const once = (rows: readonly Offered[]): readonly Offered[] => {
 const NOWHERE: Bounds = { least: 0, most: 0 }
 
 /** What is said of one of the two sizes. */
-const its = <T,>(both: Both<T>, which: Which): T =>
-  which === INTERFACE ? both.interface : both.font
+const its = <T,>(both: Both<T>, which: Which): T => both[which]
 
 /** The pair with what is said of one of the two put in its place. */
-const onto = <T,>(both: Both<T>, which: Which, one: T): Both<T> =>
-  which === INTERFACE ? { ...both, interface: one } : { ...both, font: one }
+const onto = <T,>(both: Both<T>, which: Which, one: T): Both<T> => ({ ...both, [which]: one })
 
 export function wearing(
   core: Themes,
@@ -234,8 +232,8 @@ export function wearing(
   const mode = ref<Mode>('system')
 
   /** The two sizes the settings name, and how far each of them goes. */
-  const settings = ref<Sizes>({ interface: DESIGNED, font: DESIGNED })
-  const bounds = ref<Ranges>({ interface: NOWHERE, font: NOWHERE })
+  const settings = ref<Sizes>({ interfaceScale: DESIGNED, textScale: DESIGNED })
+  const bounds = ref<Ranges>({ interfaceScale: NOWHERE, textScale: NOWHERE })
 
   /** What could not be listed, read or written, in words a person reads. */
   const said = ref('')
@@ -459,7 +457,7 @@ export function wearing(
    * where a person is standing before they walk.
    */
   const sizes = (command: string, typed = ''): readonly Offering[] => {
-    const which: Which = command === FONT ? FONT : INTERFACE
+    const which: Which = command === TEXT_SCALE ? TEXT_SCALE : INTERFACE_SCALE
     const range = its(bounds.value, which)
     const now = its(settings.value, which)
     const said = typedSize(typed)
@@ -471,7 +469,7 @@ export function wearing(
     const held = [...ladder(range), now, ...(said === null ? [] : [said])]
       .filter((size) => reaches(range, size))
       .sort((first, second) => first - second)
-    const title = which === INTERFACE ? words.drawing : words.setting
+    const title = which === INTERFACE_SCALE ? words.drawing : words.setting
     return [{ id: which, title, items: once(held.map(row)) }]
   }
 

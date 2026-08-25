@@ -35,8 +35,8 @@ export interface Wearable {
  * and how large the text a person reads is set.
  */
 export interface Both<T> {
-  readonly interface: T
-  readonly font: T
+  readonly interfaceScale: T
+  readonly textScale: T
 }
 
 /** How far a size goes, at each end. A number outside them is refused. */
@@ -90,10 +90,10 @@ export const themes: Themes = {
       })),
       applied: answer.applied,
       mode: worded(answer.mode),
-      sizes: { interface: answer.interfaceScale, font: answer.textScale },
+      sizes: { interfaceScale: answer.interfaceScale, textScale: answer.textScale },
       bounds: {
-        interface: ranged(answer.interfaceScaleBounds),
-        font: ranged(answer.textScaleBounds),
+        interfaceScale: ranged(answer.interfaceScaleBounds),
+        textScale: ranged(answer.textScaleBounds),
       },
     }
   },
@@ -103,8 +103,8 @@ export const themes: Themes = {
       await dressing.choose({
         name,
         mode: ASKED[mode],
-        interfaceScale: sizes.interface,
-        textScale: sizes.font,
+        interfaceScale: sizes.interfaceScale,
+        textScale: sizes.textScale,
       })
     ).failed,
   changed: async function* (signal) {

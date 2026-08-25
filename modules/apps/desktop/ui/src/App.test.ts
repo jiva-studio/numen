@@ -38,7 +38,7 @@ const { said, held, asked, listed } = vi.hoisted(() => ({
     /** What the settings say the window is drawn as, which a test may set. */
     applied: 'preset:numen',
     mode: 'system' as 'system' | 'light' | 'dark',
-    sizes: { interface: 1, font: 1 },
+    sizes: { interfaceScale: 1, textScale: 1 },
   },
   /** A stream that stays open, so nothing the window follows ever ends. */
   async *held(): AsyncGenerator<never> {
@@ -131,11 +131,15 @@ vi.mock('./theme', () => ({
       applied: said.applied,
       mode: said.mode,
       sizes: said.sizes,
-      bounds: { interface: { least: 0.8, most: 2 }, font: { least: 0.8, most: 1.75 } },
+      bounds: { interfaceScale: { least: 0.8, most: 2 }, textScale: { least: 0.8, most: 1.75 } },
     }),
     text: async (name: string) => `:root { --numen-surface: ${name} }`,
-    chooses: async (name: string, mode: string, sizes: { interface: number; font: number }) => {
-      asked.worn.push(`${name} ${mode} ${sizes.interface}/${sizes.font}`)
+    chooses: async (
+      name: string,
+      mode: string,
+      sizes: { interfaceScale: number; textScale: number },
+    ) => {
+      asked.worn.push(`${name} ${mode} ${sizes.interfaceScale}/${sizes.textScale}`)
       return said.refused
     },
     changed: held,
@@ -182,7 +186,7 @@ afterEach(() => {
   said.refused = ''
   said.applied = 'preset:numen'
   said.mode = 'system'
-  said.sizes = { interface: 1, font: 1 }
+  said.sizes = { interfaceScale: 1, textScale: 1 }
   asked.made = []
   asked.renamed = []
   asked.removed = []
@@ -918,7 +922,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('stands on the size the interface is drawn at, and leaves it there', async () => {
-      said.sizes = { interface: 1.5, font: 1 }
+      said.sizes = { interfaceScale: 1.5, textScale: 1 }
       const was = serves(PAIR, ':root { --numen-interface: 1.5; --numen-font: 1; }')
 
       await over('interface')
@@ -929,7 +933,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('stands on a size between two steps, which is the row put in for it', async () => {
-      said.sizes = { interface: 1, font: 1.17 }
+      said.sizes = { interfaceScale: 1, textScale: 1.17 }
       const was = serves(PAIR, ':root { --numen-interface: 1; --numen-font: 1.17; }')
 
       await over('reading')
@@ -940,7 +944,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('leaves the keyboard where typing puts it, and does not walk it back', async () => {
-      said.sizes = { interface: 1.5, font: 1 }
+      said.sizes = { interfaceScale: 1.5, textScale: 1 }
       serves(PAIR, ':root { --numen-interface: 1.5; --numen-font: 1; }')
       await over('interface')
 
@@ -1036,7 +1040,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('says what the settings refused, where the window says what it could not do', async () => {
-      said.refused = 'appearance.interface is 2, which is outside 0.8 to 1.5'
+      said.refused = 'appearance.interface_scale is 2, which is outside 0.8 to 1.5'
       const window = await over('interface')
       await press('End')
 

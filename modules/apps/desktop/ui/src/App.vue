@@ -34,7 +34,7 @@ import {
 } from './commanding'
 import { chorded, commandFor } from './keying'
 import { themes } from './theme'
-import { APPEARANCE, DRESSING, FONT, INTERFACE, MODE, wearing } from './wearing'
+import { APPEARANCE, DRESSING, INTERFACE_SCALE, MODE, TEXT_SCALE, wearing } from './wearing'
 import { does, type Doing } from './doing'
 import { finding } from './finding'
 import { lands } from './landing'
@@ -209,7 +209,7 @@ const kept: Holds = {
   offers: (command, typed) => {
     if (command === APPEARANCE) return dressed.offers()
     if (command === MODE) return dressed.modes()
-    if (command === INTERFACE || command === FONT) return dressed.sizes(command, typed)
+    if (command === INTERFACE_SCALE || command === TEXT_SCALE) return dressed.sizes(command, typed)
     return []
   },
   shows: (command, item) => {
