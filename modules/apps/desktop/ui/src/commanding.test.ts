@@ -569,7 +569,7 @@ describe('a command that offers a list the window holds', () => {
       id: 'shipping',
       title: 'Ships with numen',
       items: [
-        { id: 'preset:numen', title: 'numen', detail: 'Worn now' },
+        { id: 'preset:numen', title: 'numen', detail: 'Current' },
         { id: 'preset:dracula', title: 'dracula' },
       ],
     },
