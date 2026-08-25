@@ -104,6 +104,13 @@
  * length that surrounds that type. Each is in `rem`, and the root's font size
  * carries them all.
  */
+
+/* How large the interface is drawn. A page carrying no multiplier is drawn as
+   it is designed. */
+:where(:root) {
+  font-size: calc(16px * var(--numen-interface, 1));
+}
+
 :where(:root) {
   --numen-font-sans:
     ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans',
@@ -175,8 +182,10 @@
  * What follows the text: the size the text a person reads is set at.
  * Everything set from it is written as a multiple of it.
  */
+
+/* A page carrying no multiplier sets it as it is designed. */
 :where(:root) {
-  --numen-reading-size: 13px;
+  --numen-reading-size: calc(13px * var(--numen-font, 1));
 }
 
 /*
