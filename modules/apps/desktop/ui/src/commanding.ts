@@ -12,6 +12,7 @@
 import { computed, ref, shallowRef } from 'vue'
 import type { PaletteBand, PaletteItem } from '@numen/ui'
 import { wentTo, type Known, type Listed, type Went } from './core'
+import { keyOf } from './keying'
 import type { Named, Silences } from './finding'
 
 /** What the commands ask of the application before anything is chosen. */
@@ -211,9 +212,6 @@ export interface Words extends Silences {
   readonly findKeys: string
   readonly first: string
   readonly goto: string
-  /** The keystrokes written on the two commands one reaches. */
-  readonly noteKeys: string
-  readonly gotoKeys: string
   /** The commands over the vaults this installation holds. */
   readonly openVault: string
   readonly newVault: string
@@ -310,16 +308,27 @@ const onVault = (at: Where): boolean => at.vault.id !== ''
 const always = (): boolean => true
 
 /**
- * Every command, in the order it is drawn.
+ * Every command, in the order it is drawn. The keyboard it is being read on
+ * decides how the keystrokes on it are written.
  *
  * A command reached by Shift and Enter on another one's row is offered here
  * too and drawn nowhere: the row it belongs to is the one that names it.
  */
-export const commandsOf = (words: Words): readonly Command[] => [
+export const commandsOf = (
+  words: Words,
+  agent: string = navigator.userAgent,
+): readonly Command[] => [
   { id: 'read', text: words.read, band: 'note', where: onNote, also: 'beside' },
   { id: 'beside', text: words.beside, band: 'note', where: onNote },
-  { id: 'travel', text: words.travel, band: 'note', where: onNote },
-  { id: 'child', text: words.child, band: 'note', needs: 'naming', where: onNote },
+  { id: 'travel', text: words.travel, keys: keyOf('travel', agent), band: 'note', where: onNote },
+  {
+    id: 'child',
+    text: words.child,
+    keys: keyOf('child', agent),
+    band: 'note',
+    needs: 'naming',
+    where: onNote,
+  },
   { id: 'parent', text: words.parent, band: 'note', needs: 'naming', where: onNote },
   { id: 'jump', text: words.jump, band: 'note', needs: 'naming', where: onNote },
   {
@@ -357,14 +366,20 @@ export const commandsOf = (words: Words): readonly Command[] => [
   {
     id: 'note',
     text: words.newNote,
-    keys: words.noteKeys,
+    keys: keyOf('note', agent),
     band: 'window',
     needs: 'naming',
     where: (at) => at.ready,
   },
   { id: 'plex', text: words.newPlex, band: 'window', where: always },
-  { id: 'agent', text: words.newAgent, band: 'window', where: always },
-  { id: 'close', text: words.close, band: 'window', where: (at) => at.tab !== '' },
+  { id: 'agent', text: words.newAgent, keys: keyOf('agent', agent), band: 'window', where: always },
+  {
+    id: 'close',
+    text: words.close,
+    keys: keyOf('close', agent),
+    band: 'window',
+    where: (at) => at.tab !== '',
+  },
   { id: 'find', text: words.find, keys: words.findKeys, band: 'window', where: always },
   { id: 'appearance', text: words.appearance, band: 'window', needs: 'choosing', where: always },
   { id: 'mode', text: words.mode, band: 'window', needs: 'choosing', where: always },
@@ -374,7 +389,7 @@ export const commandsOf = (words: Words): readonly Command[] => [
   {
     id: 'goto',
     text: words.goto,
-    keys: words.gotoKeys,
+    keys: keyOf('goto', agent),
     band: 'vault',
     needs: 'picking',
     where: (at) => at.ready,

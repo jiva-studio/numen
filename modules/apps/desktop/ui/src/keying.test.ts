@@ -35,21 +35,35 @@ describe('a keystroke the window answers', () => {
 
 describe('the command a letter asks for', () => {
   it('is the one the chord beside it names', () => {
-    expect(commandFor('n')).toBe('note')
-    expect(commandFor('g')).toBe('goto')
+    expect(commandFor('n', false)).toBe('note')
+    expect(commandFor('g', false)).toBe('goto')
   })
 
   it('is the same command in either case', () => {
-    expect(commandFor('N')).toBe('note')
+    expect(commandFor('N', false)).toBe('note')
+  })
+
+  it('is another command entirely when Shift is held with the letter', () => {
+    expect(commandFor('p', true)).toBe('travel')
+    expect(commandFor('c', true)).toBe('child')
+    expect(commandFor('a', true)).toBe('agent')
+    expect(commandFor('w', true)).toBe('close')
+  })
+
+  it('is nothing when a letter is held with the wrong half of the chord', () => {
+    expect(commandFor('n', true)).toBe('')
+    expect(commandFor('c', false)).toBe('')
+    expect(commandFor('w', false)).toBe('')
   })
 
   it('is nothing where no command answers to the letter', () => {
-    expect(commandFor('q')).toBe('')
+    expect(commandFor('q', false)).toBe('')
+    expect(commandFor('q', true)).toBe('')
   })
 
   it('is nothing for the two letters the window keeps for itself', () => {
-    expect(commandFor('k')).toBe('')
-    expect(commandFor('p')).toBe('')
+    expect(commandFor('k', false)).toBe('')
+    expect(commandFor('p', false)).toBe('')
   })
 })
 
@@ -60,13 +74,19 @@ describe('how a keystroke is written on the row that names it', () => {
     expect(keyOf('goto', 'Linux x86_64')).toBe('⌃G')
   })
 
+  it('carries Shift where the chord holds it', () => {
+    expect(keyOf('travel', 'MacIntel')).toBe('⌘⇧P')
+    expect(keyOf('close', 'Linux x86_64')).toBe('⌃⇧W')
+  })
+
   it('is nothing for a command no keystroke reaches', () => {
     expect(keyOf('destroy', 'Linux x86_64')).toBe('')
   })
 })
 
 describe('every keystroke the table holds', () => {
-  const commands = commandsOf(words)
+  const APPLE = 'MacIntel'
+  const commands = commandsOf(words, APPLE)
 
   it('names a command the window has', () => {
     const known = new Set(commands.map((one) => one.id))
@@ -76,21 +96,39 @@ describe('every keystroke the table holds', () => {
   it('is drawn on the row of the command it names', () => {
     for (const held of CHORDS) {
       const command = commands.find((one) => one.id === held.command)
-      expect(command?.keys).toBe(keyOf(held.command, navigator.userAgent))
+      expect(command?.keys).toBe(keyOf(held.command, APPLE))
     }
   })
 
-  it('takes a letter no other chord in the table has taken', () => {
-    const letters = CHORDS.map((one) => one.letter)
-    expect(new Set(letters).size).toBe(letters.length)
+  it('is the only chord holding that letter with that half of the pair', () => {
+    const held = CHORDS.map((one) => `${one.letter}${one.shift ? '+shift' : ''}`)
+    expect(new Set(held).size).toBe(held.length)
   })
 
   it('leaves alone the two letters that put the palette up', () => {
-    for (const held of CHORDS) expect(['k', 'p']).not.toContain(held.letter)
+    const alone = CHORDS.filter((one) => !one.shift).map((one) => one.letter)
+    expect(alone).not.toContain('k')
+    expect(alone).not.toContain('p')
   })
 
   it('reaches nothing that removes a note, a file or a vault', () => {
     const destroys = ['remove', 'destroy', 'forgetVault', 'eraseVault']
     for (const held of CHORDS) expect(destroys).not.toContain(held.command)
+  })
+
+  /**
+   * What the editor and the window's own menu answer to. A chord in the table
+   * that either of them takes first is a key drawn over silence.
+   */
+  it('takes no letter the editor or the application menu has taken', () => {
+    // `Shift-Mod-k` and `Shift-Mod-\` in @codemirror/commands, and `Mod-Shift-u`
+    // and `Mod-Shift-z` on Apple keyboards.
+    const editor = ['k', '\\', 'u', 'z']
+    // Redo and force reload, the whole of what the default menu holds with Shift.
+    const menu = ['z', 'r']
+    for (const held of CHORDS.filter((one) => one.shift)) {
+      expect(editor).not.toContain(held.letter)
+      expect(menu).not.toContain(held.letter)
+    }
   })
 })

@@ -276,19 +276,21 @@ const asked = (event: KeyboardEvent) => {
   if (event.defaultPrevented) return
   if (!chorded(event)) return
   const key = event.key.toLowerCase()
-  if (key === 'k') {
+  // The two the window puts up are that letter alone. The same letter with
+  // Shift is a chord of its own, and goes to whoever the table gives it to.
+  if (!event.shiftKey && key === 'k') {
     event.preventDefault()
     commands.shows(false)
     palette.shows(!palette.open.value)
     return
   }
-  if (key === 'p') {
+  if (!event.shiftKey && key === 'p') {
     event.preventDefault()
     palette.shows(false)
     commands.shows(!commands.open.value)
     return
   }
-  const command = commandFor(key)
+  const command = commandFor(key, event.shiftKey)
   if (!command) return
   event.preventDefault()
   carries(command, where())

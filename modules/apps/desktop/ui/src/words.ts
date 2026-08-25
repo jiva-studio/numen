@@ -6,7 +6,6 @@
  * the palette, the commands, the corner, and the quit.
  */
 import { commandKeyWord } from '@numen/ui'
-import { keyOf } from './keying'
 import type { Refused, VaultRefused } from './core'
 import { WORDS as agent } from './agent/words'
 import { WORDS as note } from './note/words'
@@ -83,9 +82,6 @@ export const WORDS = {
   findKeys: commandKeyWord(navigator.userAgent),
   first: 'Go to the note the vault opens with',
   goto: 'Go to a note',
-  /** The keystrokes, written for the keyboard this window is being used on. */
-  noteKeys: keyOf('note', navigator.userAgent),
-  gotoKeys: keyOf('goto', navigator.userAgent),
   openVault: 'Open vault',
   newVault: 'New vault',
   renameVault: 'Rename vault',

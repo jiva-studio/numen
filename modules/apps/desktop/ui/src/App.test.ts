@@ -477,6 +477,116 @@ describe('a command reached by its own keystroke', () => {
   })
 })
 
+/**
+ * The keystrokes that hold Shift. The letter each holds is spoken for on its
+ * own, so what the window does with it turns on Shift alone.
+ */
+describe('a command reached by a keystroke holding Shift', () => {
+  /** A keystroke taken on the window, and whether the window took it. */
+  const pressed = (key: string, over: Partial<KeyboardEventInit> = {}) => {
+    const event = new KeyboardEvent('keydown', { key, ctrlKey: true, cancelable: true, ...over })
+    globalThis.dispatchEvent(event)
+    return event
+  }
+
+  const tabs = (window: Awaited<ReturnType<typeof drawn>>) =>
+    (window.findComponent(Workspace).props('tabs') as readonly { id: string }[]) ?? []
+
+  it('no longer puts the palette up on the letter that puts it up alone', async () => {
+    const window = await drawn()
+
+    const event = pressed('K', { shiftKey: true })
+    await settles()
+
+    expect(event.defaultPrevented).toBe(false)
+    expect(window.findComponent(Palette).props('open')).toBe(false)
+  })
+
+  it('no longer puts the commands up on the letter that puts them up alone', async () => {
+    const window = await drawn()
+
+    pressed('P', { shiftKey: true })
+    await settles()
+
+    // The plex the window opened with is the one it is standing on, which is
+    // what showing the note in the plex leaves in front.
+    expect(window.findComponent(Palette).props('bands')).toStrictEqual([])
+  })
+
+  it('opens an agent in a tab of its own', async () => {
+    const window = await drawn()
+    const before = window.findAllComponents(AgentTab).length
+
+    const event = pressed('A', { shiftKey: true })
+    await settles()
+
+    expect(event.defaultPrevented).toBe(true)
+    expect(window.findAllComponents(AgentTab).length).toBe(before + 1)
+  })
+
+  it('closes the tab in front', async () => {
+    const window = await drawn()
+    const before = tabs(window).length
+
+    const event = pressed('W', { shiftKey: true })
+    await settles()
+
+    expect(event.defaultPrevented).toBe(true)
+    expect(tabs(window).length).toBe(before - 1)
+  })
+
+  it('makes a child note of the note in front, under the name typed', async () => {
+    const window = await drawnWithPalette()
+
+    const event = pressed('C', { shiftKey: true })
+    await settles()
+    expect(window.findComponent(Palette).props('crumb')).toBe('New child note')
+
+    const field = document.body.querySelector<HTMLInputElement>('.palette__field')
+    if (field) {
+      field.value = 'Entropy'
+      field.dispatchEvent(new Event('input'))
+      await settles()
+      field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+      await settles()
+    }
+
+    expect(event.defaultPrevented).toBe(true)
+    expect(asked.made).toStrictEqual(['Entropy'])
+  })
+
+  it('shows the note in front in the plex', async () => {
+    const window = await drawn()
+
+    const event = pressed('P', { shiftKey: true })
+    await settles()
+
+    expect(event.defaultPrevented).toBe(true)
+    const plex = window.findComponent(PlexTab).props('held') as {
+      view: { here: { value: string } }
+    }
+    expect(plex.view.here.value).toBe('Root.md')
+  })
+
+  it('draws every keystroke that holds Shift on the row that names it', async () => {
+    const window = await drawn()
+
+    pressed('p')
+    await settles()
+
+    const bands = window.findComponent(Palette).props('bands') as readonly {
+      items: readonly { id: string; keys?: string }[]
+    }[]
+    const drawnKeys = Object.fromEntries(
+      bands.flatMap((band) => band.items).map((one) => [one.id, one.keys]),
+    )
+    expect(drawnKeys['travel']).toBe('⌃⇧P')
+    expect(drawnKeys['child']).toBe('⌃⇧C')
+    expect(drawnKeys['agent']).toBe('⌃⇧A')
+    expect(drawnKeys['close']).toBe('⌃⇧W')
+  })
+})
+
 describe('a command asked for on a node of the plex', () => {
   /** The menu on a node, and an item of it chosen. */
   const chose = async (window: Awaited<ReturnType<typeof drawn>>, id: string) => {
