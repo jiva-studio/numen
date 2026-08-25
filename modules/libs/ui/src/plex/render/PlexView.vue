@@ -102,6 +102,12 @@ const readingLine = (edge: PlacedEdge) =>
 /** Two plexes on one page each name their own paths. */
 const uid = useId()
 
+/**
+ * The head itself, drawn about its own tip. It stands in the markup, where
+ * every renderer reads geometry.
+ */
+const ARROWHEAD = 'M 0 0 L -9 3 L -9 -3 Z'
+
 /** An arrowhead, put on its end of the line and turned along it. */
 const arrowhead = (edge: PlacedEdge) =>
   edge.arrowhead
@@ -223,6 +229,7 @@ const ghost = computed<PlacedNode | null>(() => {
         <path
           v-if="line.arrow"
           class="plex__edge-arrow"
+          :d="ARROWHEAD"
           :transform="line.arrow"
           :opacity="line.edge.opacity"
         />
@@ -283,6 +290,7 @@ const ghost = computed<PlacedNode | null>(() => {
         <path
           v-if="line.arrow"
           class="plex__edge-arrow"
+          :d="ARROWHEAD"
           :transform="line.arrow"
           :opacity="line.edge.opacity"
         />
@@ -332,7 +340,6 @@ const ghost = computed<PlacedNode | null>(() => {
    transform it is given. It stays within the room the arrangement keeps for it
    at the end of a line. */
 .plex__edge-arrow {
-  d: path('M 0 0 L -9 3 L -9 -3 Z');
   fill: var(--numen-edge);
 }
 
