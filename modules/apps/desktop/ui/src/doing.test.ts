@@ -286,7 +286,7 @@ describe('a note renamed', () => {
     expect(one.said).toStrictEqual([`${words.retargeted} Order.md`])
   })
 
-  it('says the notes whose links it wrote again, which the person did not touch', async () => {
+  it('says nothing of the notes whose links it wrote again', async () => {
     const one = window({
       renamed: renamed({
         moved: {
@@ -300,15 +300,15 @@ describe('a note renamed', () => {
 
     await carry(deedOf('title', front(), 'Entropy'), one.on)
 
-    expect(one.said).toStrictEqual([`${words.repaired} Notes.md, Order.md`])
+    expect(one.said).toStrictEqual([])
   })
 
-  it('says the title went into the frontmatter, which is the person’s own', async () => {
+  it('says nothing of the title it wrote into the frontmatter', async () => {
     const one = window({ renamed: renamed({ frontmatter: true }) })
 
     await carry(deedOf('title', front(), 'Entropy'), one.on)
 
-    expect(one.said).toStrictEqual([words.titled])
+    expect(one.said).toStrictEqual([])
   })
 
   it('says nothing where the rename left every link meaning what it meant', async () => {

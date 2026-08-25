@@ -85,14 +85,10 @@ export interface Words {
   readonly folder: string
   /** The links that mean another note now, which nothing repairs. */
   readonly retargeted: string
-  /** The links in other people's notes that were written again. */
-  readonly repaired: string
   /** The links that reach nothing now, which nothing repairs either. */
   readonly dangling: string
   /** Where a removed note landed, which is the only way back to it. */
   readonly trashedAt: string
-  /** The rename wrote in the frontmatter, which is the person's own. */
-  readonly titled: string
   /** The vault opens with no note at all. */
   readonly nowhere: string
   /** The note is waiting on the person, and its file stays where it is. */
@@ -190,7 +186,7 @@ const makes = async (
   await travels(made.path, on, words)
 }
 
-/** A note given a different name, and whatever that did to the links reported. */
+/** A note given a different name, and the links that mean another note now. */
 const renames = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
   if (!deed.name || deed.name === deed.title) return
   const tab = await settles(deed.path, on)
@@ -198,14 +194,8 @@ const renames = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
   const answer = await on.renames(deed.path, deed.name)
   if (answer.changed) return on.says(words.overtaken, 'caution')
   if (answer.refusal) return on.says(words.refused[answer.refusal], 'refusal')
-  const moved = answer.moved
-  on.says(
-    all(
-      answer.frontmatter ? words.titled : '',
-      naming(words.repaired, moved?.repaired ?? []),
-      naming(words.retargeted, (moved?.retargeted ?? []).map((one) => one.in)),
-    ),
-  )
+  const retargeted = answer.moved?.retargeted ?? []
+  on.says(naming(words.retargeted, retargeted.map((one) => one.in)))
 }
 
 /** A note taken out of the vault, and where it went and what it left reported. */
