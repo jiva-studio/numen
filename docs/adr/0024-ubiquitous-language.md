@@ -21,10 +21,11 @@
 - **Extended:** 2026-08-25 — `interface` and `font`; `zoom` left with one
   meaning (ADR-0043)
 - **Extended:** 2026-08-25 — `current`, one word for the row in force
+- **Extended:** 2026-08-25 — `gone` names a vault as well as a tab (ADR-0042)
 - **Applies to:** the product as a whole
 - **Related:** ADR-0003, ADR-0006, ADR-0007, ADR-0011, ADR-0014, ADR-0020,
   ADR-0026, ADR-0031, ADR-0032, ADR-0034, ADR-0036, ADR-0037, ADR-0038,
-  ADR-0040, ADR-0041, ADR-0043
+  ADR-0040, ADR-0041, ADR-0042, ADR-0043
 
 ## Context
 
@@ -175,7 +176,7 @@ in one place, meaning the obvious thing, needs no entry.
 | menu | A list of things that can be done, opened on what they are done to |
 | unsaved | A tab whose text is not the text in its file |
 | stuck | A tab whose file can be neither read nor written: not a note, not text, over the ceiling, or frontmatter that will not parse (ADR-0032) |
-| gone | A tab whose name has no file behind it, so its save stopped (ADR-0032) |
+| gone | What a name points to is not on disk: a tab whose name has no file behind it, so its save stopped, and a vault with nothing at its path (ADR-0032, ADR-0042) |
 | overtaken | A tab whose file no longer holds the prose the tab read, so its save stopped (ADR-0032) |
 | keep | Writing an overtaken tab's prose over its file, when the person says so (ADR-0032) |
 | take | Replacing an overtaken tab's prose with its file's, when the person says so (ADR-0032) |
