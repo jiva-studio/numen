@@ -55,7 +55,8 @@ book, an answer, the editor.
 Each is a multiplier, 1 being as designed.
 
 A settings file naming `zoom` names `interface`. The two say the same thing, so
-the value carries over and a window drawn at 1.5 goes on being drawn at 1.5.
+the value carries over and a window drawn at 1.5 goes on being drawn at 1.5; one
+outside the range is said, and the window is drawn as designed.
 
 A file that names no size, and `zoom: 0` names none, is drawn at what the
 desktop asks for: `GDK_DPI_SCALE` is how large a session has its text scaled,
@@ -115,6 +116,9 @@ DOM, and it goes on receiving numbers.
 They join the mode and the theme in the head of the served page, so no frame is
 drawn at a size nobody asked for. A size arriving after the first frame is a
 reflow, which is more than the repaint a colour would cost.
+
+The two stand last of the three, so they are what the window is drawn at: a
+declaration after them could put it outside the range.
 
 Each is a command in the band over the window. What the keyboard lands on is
 applied, and leaving without choosing puts back what was there.
