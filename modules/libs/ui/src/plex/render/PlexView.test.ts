@@ -2,8 +2,9 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import PlexView from './PlexView.vue'
+import PlexNodeView from './PlexNodeView.vue'
 import { arrangePlex, DEFAULT_OPTIONS, interpolatePlex } from '../arrange'
-import type { PlexNeighbourhood } from '../model'
+import type { PlacedNode, PlexNeighbourhood } from '../model'
 
 const before: PlexNeighbourhood = {
   nodes: [
@@ -385,6 +386,72 @@ describe('a node keeps its own drawing across a change', () => {
     await view.setProps({ frame: midMove })
 
     expect(view.get('[aria-label^="Going"]').element).toBe(was)
+  })
+})
+
+/**
+ * A box widens under a resting hand, and a widened box covers what stands
+ * beside it. When it has settled is the box's own affair; the order they are
+ * drawn in is nobody's but the picture's.
+ */
+describe('the box the attention has settled on', () => {
+  const drawn = (view: ReturnType<typeof mountView>) =>
+    view.findAll('.plex__node').map((node) => node.attributes('aria-label'))
+
+  const boxOf = (view: ReturnType<typeof mountView>, name: string) =>
+    view.findAllComponents(PlexNodeView).find((node) => node.props('node').id === name)!
+
+  const resting = () =>
+    mount(PlexView, {
+      props: {
+        frame: arrangePlex(before),
+        viewport: VIEWPORT,
+        nodeSize: DEFAULT_OPTIONS.nodeSize,
+      },
+    })
+
+  it('is drawn last of all, so its widened box stands over its neighbours', async () => {
+    const view = resting()
+    expect(drawn(view)).toStrictEqual(['Start, focus', 'Staying, child', 'Going, child'])
+
+    boxOf(view, 'staying').vm.$emit('rest', true)
+    await view.vm.$nextTick()
+    expect(drawn(view)).toStrictEqual(['Start, focus', 'Going, child', 'Staying, child'])
+  })
+
+  it('is the same element there as it was where it stood', async () => {
+    const view = resting()
+    const was = view.get('[aria-label^="Staying"]').element
+
+    boxOf(view, 'staying').vm.$emit('rest', true)
+    await view.vm.$nextTick()
+
+    expect(view.get('[aria-label^="Staying"]').element).toBe(was)
+  })
+
+  it('goes back to where it was drawn once the hand has left it', async () => {
+    const view = resting()
+    boxOf(view, 'staying').vm.$emit('rest', true)
+    await view.vm.$nextTick()
+
+    boxOf(view, 'staying').vm.$emit('rest', false)
+    await view.vm.$nextTick()
+    expect(drawn(view)).toStrictEqual(['Start, focus', 'Staying, child', 'Going, child'])
+  })
+
+  it('is handed the box the widening worked out for it', () => {
+    const wide = { width: 400, offset: -12 }
+    const view = mount(PlexView, {
+      props: {
+        frame: arrangePlex(before),
+        viewport: VIEWPORT,
+        nodeSize: DEFAULT_OPTIONS.nodeSize,
+        widen: (node: PlacedNode) => (node.id === 'going' ? wide : null),
+      },
+    })
+
+    expect(boxOf(view, 'going').props('wide')).toStrictEqual(wide)
+    expect(boxOf(view, 'staying').props('wide')).toBeNull()
   })
 })
 

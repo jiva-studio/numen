@@ -10,9 +10,12 @@
  * The title goes through a `foreignObject`: SVG text cannot ellipsise and does
  * not reorder a right-to-left run.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import PlexNodeHandle from './PlexNodeHandle.vue'
 import { isMenuKey, isPress, isShowKey } from './keys'
+import { DWELL, useDwell, type Widened } from '../dwell'
+import { lerp } from '../arrange'
+import { browserEnvironment, type Environment } from '../transition'
 import type { MenuOpening } from '../../menu/model'
 import {
   handleIn,
@@ -31,8 +34,18 @@ const props = withDefaults(
     node: PlacedNode
     /** What this node is to the gesture. The one thing it cannot work out. */
     standing?: NodeStanding
+    /**
+     * The box it widens to while the attention rests on it, and nothing where
+     * it has no more of its title to show. How wide the whole title runs, and
+     * how much window there is to grow into, are the picture's to work out.
+     */
+    wide?: Widened | null
+    /** How long the attention rests before it widens. Milliseconds. */
+    dwell?: number
+    /** The clock the opening is drawn on. Browser by default. */
+    environment?: Environment
   }>(),
-  { standing: 'open' },
+  { standing: 'open', wide: null, dwell: DWELL, environment: () => browserEnvironment },
 )
 
 const emit = defineEmits<{
@@ -53,6 +66,11 @@ const emit = defineEmits<{
    * carries both.
    */
   (event: 'menu', at: Point, from: SVGGElement, opening: MenuOpening): void
+  /**
+   * The attention has settled on this node, or has left it. A widened box is
+   * drawn last of all, and which box that is only the whole picture knows.
+   */
+  (event: 'rest', resting: boolean): void
 }>()
 
 const over = ref(false)
@@ -160,8 +178,48 @@ const offering = computed(
       (props.standing === 'open' && (over.value || attended.value))),
 )
 
+/**
+ * What the attention is on, and where that stands. A box that moves under the
+ * hand is somewhere else, and is settled on afresh.
+ *
+ * A gesture is under way at every standing but `open`, and nothing widens
+ * while one is.
+ */
+const under = computed(() =>
+  props.wide &&
+  props.node.opacity >= 1 &&
+  props.standing === 'open' &&
+  (over.value || attended.value)
+    ? `${props.node.x} ${props.node.y}`
+    : null,
+)
+
+const open = useDwell(() => under.value, () => props.dwell, props.environment)
+
+/** The box as it is drawn: the one it was placed with, opened towards the widened one. */
+const box = computed<Widened>(() => {
+  const wide = props.wide
+  if (!wide || open.value <= 0) return { width: props.node.width, offset: 0 }
+  return {
+    width: lerp(props.node.width, wide.width, open.value),
+    offset: lerp(0, wide.offset, open.value),
+  }
+})
+
+/** Where the box begins, which everything drawn in it is placed from. */
+const startsAt = computed(() => box.value.offset - box.value.width / 2)
+
+// A box that has begun to open is already over its neighbours.
+watch(
+  () => open.value > 0,
+  (now) => emit('rest', now),
+)
+
 /** Where the handle sits. What it is made of is all sizes, and so all tokens. */
-const handle = computed(() => handleIn(props.node))
+const handle = computed(() => {
+  const at = handleIn({ ...props.node, width: box.value.width })
+  return { x: at.x + box.value.offset, y: at.y }
+})
 
 /**
  * One hue per seat, from a token named after it.
@@ -197,15 +255,15 @@ const hue = computed(() => ({
   >
     <rect
       class="plex__box"
-      :x="-node.width / 2"
+      :x="startsAt"
       :y="-node.height / 2"
-      :width="node.width"
+      :width="box.width"
       :height="node.height"
     />
     <foreignObject
-      :x="-node.width / 2"
+      :x="startsAt"
       :y="-node.height / 2"
-      :width="node.width"
+      :width="box.width"
       :height="node.height"
     >
       <div class="plex__title">

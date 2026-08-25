@@ -120,6 +120,39 @@ export const awkwardLabels: PlexNeighbourhood = neighbourhood(
   ],
 )
 
+/**
+ * Every line named, and more children than one row holds. The lines to the far
+ * row cross the near one, so their titles are looking for room in a band the
+ * near row's titles are already standing in.
+ */
+export const labelledRows: PlexNeighbourhood = {
+  nodes: [
+    { id: 'focus', title: 'Mahabharata', seat: 'focus' },
+    { id: 'parent-0', title: 'Untitled note 3', seat: 'parent' },
+    { id: 'child-0', title: 'Bhishma', seat: 'child' },
+    { id: 'child-1', title: 'The question of Draupadi', seat: 'child' },
+    { id: 'child-2', title: 'Dharma is subtle', seat: 'child' },
+    { id: 'child-3', title: 'A king who does not protect', seat: 'child' },
+    { id: 'child-4', title: 'Duryodhana, The King', seat: 'child' },
+    { id: 'child-5', title: 'Кого дозволено бить', seat: 'child' },
+    { id: 'jump-0', title: 'xxxx', seat: 'jump' },
+    { id: 'sibling-0', title: 'Untitled note 4', seat: 'sibling' },
+    { id: 'sibling-1', title: 'Untitled note 5', seat: 'sibling' },
+  ],
+  edges: [
+    { from: 'parent-0', to: 'focus' },
+    { from: 'focus', to: 'child-0', label: 'the grandsire' },
+    { from: 'focus', to: 'child-1', label: 'the scene in the assembly' },
+    { from: 'focus', to: 'child-2', label: 'the doctrine invoked there' },
+    { from: 'focus', to: 'child-3', label: 'when a ruler may be killed' },
+    { from: 'focus', to: 'child-4', label: 'царь, начавший с яда' },
+    { from: 'focus', to: 'child-5', label: 'часть свода' },
+    { from: 'jump-0', to: 'focus' },
+    { from: 'parent-0', to: 'sibling-0' },
+    { from: 'parent-0', to: 'sibling-1' },
+  ],
+}
+
 /** Every fixture, for the stories and for the tests that sweep all of them. */
 export const neighbourhoods = {
   solitary,
@@ -130,6 +163,7 @@ export const neighbourhoods = {
   crowded,
   overcrowded,
   awkwardLabels,
+  labelledRows,
 } as const
 
 export type FixtureName = keyof typeof neighbourhoods

@@ -63,7 +63,7 @@ export const MIDDLE = 0.5
  * the ellipsis included. The prefix is found by halving, and a curve with room
  * for nothing carries the ellipsis alone.
  */
-function cutToFit(
+export function cutToFit(
   label: string,
   room: number,
   width: (label: string) => number,
