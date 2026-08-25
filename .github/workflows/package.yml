@@ -82,6 +82,8 @@ jobs:
           cp "$RUNNER_TEMP/numen" "$staged/numen"
           cp modules/apps/desktop/build/linux/numen.desktop "$staged/"
           cp modules/apps/desktop/build/linux/nfpm.yaml "$staged/"
+          cp modules/apps/desktop/build/linux/numen.svg "$staged/"
+          cp -r modules/apps/desktop/build/linux/icons "$staged/"
 
           cd "$staged"
           for kind in deb rpm; do
@@ -440,9 +442,15 @@ jobs:
           set -euo pipefail
           for file in "$RUNNER_TEMP/shelf"/*; do
             name=$(basename "$file")
-            read -r code length < <(curl -fsS -o /dev/null -L \
-              -w '%{http_code} %{size_download}' "$SERVED_FROM/latest/$name")
             want=$(stat -c%s "$file")
+            # A purge is answered before it has reached every edge, so a name
+            # asked for straight after it can still be the old answer or none.
+            for attempt in 1 2 3 4 5 6; do
+              read -r code length < <(curl -sS -o /dev/null -L \
+                -w '%{http_code} %{size_download}' "$SERVED_FROM/latest/$name")
+              [ "$code" = 200 ] && [ "$length" = "$want" ] && break
+              sleep 5
+            done
             echo "$code  $name  $length of $want"
             if [ "$code" != 200 ] || [ "$length" != "$want" ]; then
               echo "::error::$name did not come back whole from $SERVED_FROM"
