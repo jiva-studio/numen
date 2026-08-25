@@ -80,6 +80,74 @@ func TestTheThemeAndTheModeAreWrittenWithoutMovingAnythingElse(t *testing.T) {
 	}
 }
 
+// The two sizes are written where they sit, and a number a person wrote to two
+// places beside them comes back written to two places.
+func TestTheTwoSizesAreWrittenWithoutMovingAnythingElse(t *testing.T) {
+	const sized = `{
+    "appearance": {
+        "interface": 1.00,
+        "font": 1.00,
+        "theme": "preset:numen"
+    }
+}
+`
+	path := write(t, sized)
+	if err := settings.Save(path,
+		settings.Setting{At: []string{"appearance", "interface"}, Value: 1.25},
+		settings.Setting{At: []string{"appearance", "font"}, Value: 1.5}); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := strings.Replace(sized, `"interface": 1.00`, `"interface": 1.25`, 1)
+	want = strings.Replace(want, `"font": 1.00`, `"font": 1.5`, 1)
+	if string(raw) != want {
+		t.Errorf("the file came back as:\n%s\nand not as:\n%s", raw, want)
+	}
+}
+
+// The size a file names under the name it had is left where the person wrote
+// it, and the setting that replaced it is written beside it.
+func TestASizeIsWrittenBesideTheZoomAFileStillNames(t *testing.T) {
+	path := write(t, `{
+  "appearance": {
+    "zoom": 1.5
+  }
+}
+`)
+	if err := settings.Save(path,
+		settings.Setting{At: []string{"appearance", "interface"}, Value: 1.25}); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := `{
+  "appearance": {
+    "zoom": 1.5,
+    "interface": 1.25
+  }
+}
+`
+	if string(raw) != want {
+		t.Errorf("the file came back as:\n%s\nand not as:\n%s", raw, want)
+	}
+
+	// Both names in one file: the window is drawn at the one this build reads.
+	cfg, err := settings.At(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Appearance.Interface != 1.25 {
+		t.Errorf("drawn at %v", cfg.Appearance.Interface)
+	}
+}
+
 // A name nobody has written yet goes at the end of the section it belongs to.
 // The order of the rest of it is the person's.
 func TestAFieldTheFileHasNotGotIsAppendedToItsSection(t *testing.T) {

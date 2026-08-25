@@ -2,6 +2,7 @@ package settings_test
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -33,9 +34,13 @@ func TestAnUntouchedInstallationEmbedsLocallyAndIsDrawnAsDesigned(t *testing.T) 
 	if cfg.Indexing.Embedding.Indexing.Local.Name == "" || cfg.Indexing.Embedding.Model.Dimensions == 0 {
 		t.Errorf("no model to run: %+v", cfg.Indexing.Embedding)
 	}
-	// Zero is what says the desktop decides, so nothing may fill it in.
-	if cfg.Appearance.Zoom != 0 {
-		t.Errorf("zoom is %v", cfg.Appearance.Zoom)
+	// Both sizes are as designed, so an installation nobody has sized draws
+	// every length at the number it was drawn with.
+	if cfg.Appearance.Interface != 1 || cfg.Appearance.Font != 1 {
+		t.Errorf("drawn at %+v", cfg.Appearance)
+	}
+	if len(cfg.Said) != 0 {
+		t.Errorf("a file nobody wrote says %q", cfg.Said)
 	}
 	if cfg.Appearance.Mode != settings.ModeSystem {
 		t.Errorf("the colours are read as %q", cfg.Appearance.Mode)
@@ -45,18 +50,144 @@ func TestAnUntouchedInstallationEmbedsLocallyAndIsDrawnAsDesigned(t *testing.T) 
 	}
 }
 
-// The window's settings are three fields of one section, and a file writing one
-// of them says nothing about the other two.
-func TestAFileNamingTheZoomStillWearsTheDefaultTheme(t *testing.T) {
+// The window's settings are four fields of one section, and a file writing one
+// of them says nothing about the rest.
+func TestAFileNamingTheTextSizeStillWearsTheDefaultTheme(t *testing.T) {
+	cfg, err := settings.At(write(t, `{"appearance":{"font":1.5}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Appearance.Font != 1.5 || cfg.Appearance.Interface != 1 {
+		t.Errorf("drawn at %+v", cfg.Appearance)
+	}
+	if cfg.Appearance.Mode != settings.ModeSystem || cfg.Appearance.Theme != settings.DefaultTheme {
+		t.Errorf("drawn as %+v", cfg.Appearance)
+	}
+}
+
+// A number the setting does not take stops the settings being read. Nothing is
+// drawn at a number nobody asked for, and the file says what a person wrote.
+func TestASizeOutsideWhatItGoesToIsRefused(t *testing.T) {
+	for _, body := range []string{
+		`{"appearance":{"interface":2.5}}`,
+		`{"appearance":{"interface":0.5}}`,
+		`{"appearance":{"interface":0}}`,
+		`{"appearance":{"font":1.9}}`,
+		`{"appearance":{"font":0}}`,
+	} {
+		if _, err := settings.At(write(t, body)); err == nil {
+			t.Errorf("%s was read", body)
+		}
+	}
+
+	_, err := settings.At(write(t, `{"appearance":{"font":3}}`))
+	var outside *settings.Outside
+	if !errors.As(err, &outside) {
+		t.Fatalf("refused with %v", err)
+	}
+	if outside.At != "appearance.font" || outside.Value != 3 {
+		t.Errorf("refused %+v", outside)
+	}
+	if outside.Least != settings.FontBounds.Least || outside.Most != settings.FontBounds.Most {
+		t.Errorf("said the setting goes from %v to %v", outside.Least, outside.Most)
+	}
+	// What is wrong is the number and how far the setting goes, in the sentence
+	// a person is shown.
+	if said := outside.Error(); !strings.Contains(said, "appearance.font is 3") {
+		t.Errorf("says %q", said)
+	}
+}
+
+func TestASizeAtEitherEndIsTaken(t *testing.T) {
+	cfg, err := settings.At(write(t, `{"appearance":{"interface":0.8,"font":1.75}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Appearance.Interface != 0.8 || cfg.Appearance.Font != 1.75 {
+		t.Errorf("drawn at %+v", cfg.Appearance)
+	}
+}
+
+// A window drawn at 1.5 goes on being drawn at 1.5. The two names are one
+// setting, and the number carries over as it stands.
+func TestAFileNamingTheZoomIsDrawnAtItUnderTheNameThatReplacedIt(t *testing.T) {
 	cfg, err := settings.At(write(t, `{"appearance":{"zoom":1.5}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Appearance.Zoom != 1.5 {
-		t.Errorf("zoom is %v", cfg.Appearance.Zoom)
+	if cfg.Appearance.Interface != 1.5 {
+		t.Errorf("drawn at %v", cfg.Appearance.Interface)
 	}
-	if cfg.Appearance.Mode != settings.ModeSystem || cfg.Appearance.Theme != settings.DefaultTheme {
-		t.Errorf("drawn as %+v", cfg.Appearance)
+	// The text is untouched by it: the window is larger and a note is set as it
+	// was.
+	if cfg.Appearance.Font != 1 {
+		t.Errorf("text is set at %v", cfg.Appearance.Font)
+	}
+	if len(cfg.Said) != 1 || !strings.Contains(cfg.Said[0], "appearance.interface") {
+		t.Errorf("the person is told %q", cfg.Said)
+	}
+}
+
+func TestAFileNamingBothIsDrawnAtTheOneThisBuildReads(t *testing.T) {
+	cfg, err := settings.At(write(t, `{"appearance":{"zoom":1.5,"interface":1.25}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Appearance.Interface != 1.25 {
+		t.Errorf("drawn at %v", cfg.Appearance.Interface)
+	}
+	if len(cfg.Said) != 1 || !strings.Contains(cfg.Said[0], "1.25") {
+		t.Errorf("the person is told %q", cfg.Said)
+	}
+}
+
+// Zero named no size, and every file this application has ever written for
+// itself holds one.
+func TestAZoomNamingNoSizeCarriesNothingAndSaysNothing(t *testing.T) {
+	cfg, err := settings.At(write(t, `{"appearance":{"zoom":0}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Appearance.Interface != 1 {
+		t.Errorf("drawn at %v", cfg.Appearance.Interface)
+	}
+	if len(cfg.Said) != 0 {
+		t.Errorf("the person is told %q", cfg.Said)
+	}
+}
+
+// A number the setting does not take is not carried onto it, and a window whose
+// file was written by an older build opens.
+func TestAZoomOutsideWhatTheSizeGoesToIsNotCarried(t *testing.T) {
+	cfg, err := settings.At(write(t, `{"appearance":{"zoom":3}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Appearance.Interface != 1 {
+		t.Errorf("drawn at %v", cfg.Appearance.Interface)
+	}
+	if len(cfg.Said) != 1 || !strings.Contains(cfg.Said[0], "0.8") {
+		t.Errorf("the person is told %q", cfg.Said)
+	}
+}
+
+// What the file holds is what is written back, and the two names are not both
+// written.
+func TestWhatIsWrittenBackNamesTheSettingThisBuildReads(t *testing.T) {
+	cfg, err := settings.At(write(t, `{"appearance":{"zoom":1.5}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, err := json.Marshal(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(raw), `"zoom"`) || !strings.Contains(string(raw), `"interface":1.5`) {
+		t.Errorf("written back as %s", raw)
+	}
+	// What a person is told is about the file and is not a field of it.
+	if strings.Contains(string(raw), "appearance.zoom") {
+		t.Errorf("written back as %s", raw)
 	}
 }
 
@@ -100,12 +231,12 @@ func TestAnInstallationNobodyConfiguredWritesItsSettingsDown(t *testing.T) {
 }
 
 func TestOneSettingIsAValidFile(t *testing.T) {
-	cfg, err := settings.At(write(t, `{"appearance":{"zoom":1.5}}`))
+	cfg, err := settings.At(write(t, `{"appearance":{"interface":1.5}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Appearance.Zoom != 1.5 {
-		t.Errorf("zoom is %v", cfg.Appearance.Zoom)
+	if cfg.Appearance.Interface != 1.5 {
+		t.Errorf("drawn at %v", cfg.Appearance.Interface)
 	}
 	// A file that names the window must leave the embedder alone. Both are
 	// sections of one file, and the section nobody wrote about is unchanged.

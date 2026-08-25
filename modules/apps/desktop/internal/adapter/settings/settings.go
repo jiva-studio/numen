@@ -15,6 +15,7 @@ package settings
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -41,13 +42,23 @@ type Config struct {
 
 	// Agent is which agent answers in the panel, and what it may reach.
 	Agent agent.Config `json:"agent"`
+
+	// Said is what reading the file has to tell a person: a name it holds that
+	// this build reads under another one. Whoever read the settings puts it
+	// where the person is.
+	Said []string `json:"-"`
 }
 
 // Appearance is how the window is drawn.
 type Appearance struct {
-	// Zoom is how large everything is drawn, 1 being as designed. Zero asks the
-	// desktop instead.
-	Zoom float64 `json:"zoom"`
+	// Interface is how large the window is drawn: its chrome, its controls, the
+	// spacing between them and the type in them. A number outside
+	// InterfaceBounds is refused.
+	Interface float64 `json:"interface"`
+
+	// Font is how large the text a person reads is set: a note, a book, an
+	// answer, the editor. A number outside FontBounds is refused.
+	Font float64 `json:"font"`
 
 	// Mode is which half of a colour pair the window takes: ModeSystem,
 	// ModeLight or ModeDark. A theme that pins the two halves itself leaves
@@ -66,6 +77,59 @@ const (
 	ModeLight  = "light"
 	ModeDark   = "dark"
 )
+
+// AsDesigned is the multiplier that draws everything the size it was drawn at.
+const AsDesigned = 1
+
+// Bounds is how far a multiplier goes, at each end.
+type Bounds struct{ Least, Most float64 }
+
+// How far each of the two goes.
+//
+// The interface holds while the smallest control it draws is a target a
+// pointer finds, and while a window 1280 across still stands its panes side by
+// side. Text holds while the smallest of it is still read, and while a line of
+// typing still fits the row it is typed in.
+var (
+	InterfaceBounds = Bounds{Least: 0.8, Most: 2}
+	FontBounds      = Bounds{Least: 0.8, Most: 1.75}
+)
+
+// Holds is whether a number is one the setting takes.
+func (b Bounds) Holds(value float64) bool {
+	return value >= b.Least && value <= b.Most
+}
+
+// Check hands back what is wrong with a number the setting does not take, and
+// nothing for one it does. at is where the number sits in the file.
+func (b Bounds) Check(at string, value float64) error {
+	if b.Holds(value) {
+		return nil
+	}
+	return &Outside{At: at, Value: value, Bounds: b}
+}
+
+// Outside is a number a setting does not take, and how far that setting goes.
+// The number is left as the person wrote it and nothing is drawn at it.
+type Outside struct {
+	// At is where the number sits in the file: `appearance.font`.
+	At    string
+	Value float64
+	Bounds
+}
+
+func (o *Outside) Error() string {
+	return fmt.Sprintf("%s is %v, and goes from %v to %v", o.At, o.Value, o.Least, o.Most)
+}
+
+// Check is what is wrong with the two sizes, and nothing where each is a
+// number its setting takes.
+func (a Appearance) Check() error {
+	if err := InterfaceBounds.Check("appearance.interface", a.Interface); err != nil {
+		return err
+	}
+	return FontBounds.Check("appearance.font", a.Font)
+}
 
 // DefaultTheme is this product's own palette, which is what an installation
 // nobody has dressed wears.
@@ -88,8 +152,13 @@ type Indexing struct {
 // Defaults are what an installation nobody has configured does.
 func Defaults() Config {
 	return Config{
-		V:          1,
-		Appearance: Appearance{Mode: ModeSystem, Theme: DefaultTheme},
+		V: 1,
+		Appearance: Appearance{
+			Interface: AsDesigned,
+			Font:      AsDesigned,
+			Mode:      ModeSystem,
+			Theme:     DefaultTheme,
+		},
 		Indexing: Indexing{
 			Embedding:    embed.Defaults(),
 			Recognition:  recognition.Defaults(),
@@ -137,7 +206,52 @@ func At(path string) (Config, error) {
 	if cfg.V == 0 {
 		cfg.V = 1
 	}
+	cfg.carrying(raw)
+	if err := cfg.Appearance.Check(); err != nil {
+		return Config{}, err
+	}
 	return cfg, nil
+}
+
+// carrying reads `appearance.zoom` as the setting that replaced it. Both are
+// how large the window is drawn, so the number stands as it was; where the
+// file names the setting itself, that is the one the window is drawn at.
+//
+// The file is left as the person wrote it, so what it says goes on being said
+// every time it is read.
+func (c *Config) carrying(raw []byte) {
+	var file struct {
+		Appearance struct {
+			Zoom      *float64 `json:"zoom"`
+			Interface *float64 `json:"interface"`
+		} `json:"appearance"`
+	}
+	if err := json.Unmarshal(raw, &file); err != nil || file.Appearance.Zoom == nil {
+		return
+	}
+	// Zero named no size.
+	zoom := *file.Appearance.Zoom
+	if zoom <= 0 {
+		return
+	}
+
+	switch {
+	case file.Appearance.Interface != nil:
+		c.say("appearance.zoom is not read. The window is drawn at appearance.interface, %v.",
+			*file.Appearance.Interface)
+	case InterfaceBounds.Holds(zoom):
+		c.Appearance.Interface = zoom
+		c.say("appearance.zoom is now appearance.interface. The window is drawn at %v, as it was.",
+			zoom)
+	default:
+		c.say("appearance.zoom is now appearance.interface, which goes from %v to %v. "+
+			"The window is drawn as designed until one is written.",
+			InterfaceBounds.Least, InterfaceBounds.Most)
+	}
+}
+
+func (c *Config) say(said string, about ...any) {
+	c.Said = append(c.Said, fmt.Sprintf(said, about...))
 }
 
 // write puts the settings where they are read from. The key is not among what
