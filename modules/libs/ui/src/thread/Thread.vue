@@ -62,7 +62,7 @@ const toolOf = (entry: PlacedTurn) => ({
             <button
               v-if="entry.turn.opens"
               type="button"
-              class="thread__opens w-full cursor-pointer rounded-node text-start outline-none focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring"
+              class="thread__opens block w-full cursor-pointer rounded-node text-start outline-none focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring"
               @click="emit('open', entry.turn)"
             >
               <Tool v-bind="toolOf(entry)" />
