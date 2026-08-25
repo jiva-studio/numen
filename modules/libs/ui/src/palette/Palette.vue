@@ -509,7 +509,7 @@ onBeforeUnmount(() => {
               </span>
 
               <!-- What reaches this item away from the palette. -->
-              <kbd v-if="drawn.item.keys" class="palette__hint text-small">{{
+              <kbd v-if="drawn.item.keys" class="palette__hint">{{
                 drawn.item.keys
               }}</kbd>
             </div>
@@ -560,7 +560,7 @@ onBeforeUnmount(() => {
                   >{{ part.text }}</span
                 >
               </span>
-              <kbd v-if="deed.key" class="palette__hint text-small">{{ deed.key }}</kbd>
+              <kbd v-if="deed.key" class="palette__hint">{{ deed.key }}</kbd>
             </div>
           </div>
 
@@ -614,6 +614,8 @@ onBeforeUnmount(() => {
   --drop: 12vh;
   --widest: 640px;
   --tallest: 50vh;
+  /* The corner of a key cap, which is tighter than the corner of a node. */
+  --cap-radius: 0.25rem;
 
   position: fixed;
   inset: 0;
@@ -737,24 +739,32 @@ onBeforeUnmount(() => {
   border-block-start: var(--numen-stroke) solid var(--numen-panel-border);
 }
 
-/* A cap: the keystroke on a ground of its own, in the face where every glyph
-   is one width. The clearance and the least width it takes are in `em`, so the
-   cap is the same shape at every size the interface is drawn at. */
+/* A cap: small print on the ground a box is drawn on, sitting a line above the
+   sharp shadow that is its depth. The type is a token rather than a share of
+   whatever it stands beside, so a cap in the foot and a cap on a row are one
+   object; every clearance is in `em` against that type, so the cap is one shape
+   at every size the interface is drawn at. The line, the depth and the spread
+   are each one physical line, as every stroke in the window is. */
 .palette__key kbd,
 .palette__more kbd,
 .palette__hint {
+  position: relative;
+  inset-block-start: calc(-1 * var(--numen-stroke));
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-inline-size: 1.75em;
+  block-size: 1.6em;
+  min-inline-size: 1.6em;
   margin-inline-end: 0.4em;
-  padding: 0.15em 0.4em;
-  border-radius: var(--numen-radius);
-  background: var(--numen-focus-bg);
-  color: var(--numen-focus-fg);
-  font-family: var(--numen-font-mono);
-  font-size: inherit;
-  line-height: inherit;
+  padding-inline: 0.45em;
+  border: var(--numen-stroke) solid var(--numen-node-border);
+  border-radius: var(--cap-radius);
+  background: var(--numen-node-bg);
+  box-shadow: 0 2px 0 var(--numen-stroke) var(--numen-node-border);
+  color: var(--numen-node-fg);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-edge-label-size);
+  line-height: 1;
 }
 
 /* A key written on a row is the last thing on it, and is read after the name. */
