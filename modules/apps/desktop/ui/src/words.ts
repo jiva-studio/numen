@@ -150,12 +150,9 @@ export const WORDS = {
   refused: REFUSED,
   unvaulted: UNVAULTED,
   retargeted: 'These notes link by a name that means another note now:',
-  repaired: 'These notes linked by the name it had, and were written again:',
   dangling: 'These notes link to nothing now:',
   /** Where a removed note landed, which is the only way back to it. */
   trashedAt: 'The note is in the trash, at',
-  /** The rename wrote in the frontmatter, which is the person's own. */
-  titled: 'The title is written in the frontmatter of the note',
   nowhere: 'The vault has no note to open with',
   unanswered: 'that note changed on disk, and its tab is waiting for an answer',
   overtaken: 'that note changed on disk while this was asked, so nothing was written',
