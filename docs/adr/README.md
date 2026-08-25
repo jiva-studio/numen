@@ -1,25 +1,14 @@
 # Architecture decisions
 
-A file here records **one decision**: something that could have been settled
-another way, that constrains how the code is built, and that is expensive to
-revisit. One decision, one file. A file holding two decisions is split.
+A file here records **one decision**: something that could have been settled another way, that constrains how the code is built, and that is expensive to revisit. One decision, one file. A file holding two decisions is split.
 
-**What is not here.** How the product behaves for a person, and what the words
-of the domain mean, are specifications rather than decisions. They live beside
-this folder as plain pages, listed at the end. Measurements live in
-[performance.md](../performance.md) and nowhere else — an ADR may state a target,
-never a number it was measured at.
+**What is not here.** How the product behaves for a person, and what the words of the domain mean, are specifications rather than decisions. They live beside this folder as plain pages, listed at the end. Measurements live in [performance.md](../performance.md) and nowhere else — an ADR may state a target, never a number it was measured at.
 
-**Every ADR says what it applies to.** This repository holds several
-applications, and a decision about one of them is not a decision about the
-product. The header of each says which.
+**Every ADR says what it applies to.** This repository holds several applications, and a decision about one of them is not a decision about the product. The header of each says which.
 
-**A rule is written once, in the present tense, as it now stands.** An ADR is
-not a changelog of itself. To change an accepted decision, rewrite the file and
-let git hold what was believed before.
+**A rule is written once, in the present tense, as it now stands.** An ADR is not a changelog of itself. To change an accepted decision, rewrite the file and let git hold what was believed before.
 
-**A decision is in the record once it is on the default branch.** Until then it
-is its pull request's draft, and a draft is edited in place.
+**A decision is in the record once it is on the default branch.** Until then it is its pull request's draft, and a draft is edited in place.
 
 ## Reading order
 

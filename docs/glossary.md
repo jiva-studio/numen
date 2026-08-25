@@ -1,13 +1,8 @@
 # Glossary
 
-The words this product is written in: the domain, the storage, the wire between
-the core and a client, and the strings a person reads. Only a word that crosses
-a boundary or has been contested is here — a word used in one place, meaning the
-obvious thing, needs no entry. A new term is added here in the change that
-introduces it.
+The words this product is written in: the domain, the storage, the wire between the core and a client, and the strings a person reads. Only a word that crosses a boundary or has been contested is here — a word used in one place, meaning the obvious thing, needs no entry. A new term is added here in the change that introduces it.
 
-One concept has one name, and one name means one thing:
-[ADR-0026](adr/0026-one-name-per-concept.md).
+One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-name-per-concept.md).
 
 ## What the person writes
 

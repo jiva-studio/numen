@@ -1,11 +1,8 @@
 # Themes
 
-A theme is one CSS file that redeclares the tokens the interface draws with.
-Some ship inside the application and the rest are files in a folder of the
-person's; they are one list, one format, and one line applies either.
+A theme is one CSS file that redeclares the tokens the interface draws with. Some ship inside the application and the rest are files in a folder of the person's; they are one list, one format, and one line applies either.
 
-Every token a theme leaves out keeps the value `tokens.css` holds. A file
-naming one token is a theme.
+Every token a theme leaves out keeps the value `tokens.css` holds. A file naming one token is a theme.
 
 ## The file
 
@@ -17,19 +14,13 @@ naming one token is a theme.
 }
 ```
 
-Every token stands on the root, and a component inherits what it paints with,
-so a `:root` block reaches every component. A custom property declared on an
-element beats the same property inherited from the root, whatever the selectors
-weigh, so `:root` is where a theme is written.
+Every token stands on the root, and a component inherits what it paints with, so a `:root` block reaches every component. A custom property declared on an element beats the same property inherited from the root, whatever the selectors weigh, so `:root` is where a theme is written.
 
-It is an ordinary stylesheet, applied whole. Nothing reads inside it beyond
-whether it sets `color-scheme`. A file that hides the window is the person's
-file, and the way back is `appearance.theme` in the settings.
+It is an ordinary stylesheet, applied whole. Nothing reads inside it beyond whether it sets `color-scheme`. A file that hides the window is the person's file, and the way back is `appearance.theme` in the settings.
 
 ## Light and dark
 
-A palette published in two halves writes `light-dark()` pairs and says nothing
-about `color-scheme`:
+A palette published in two halves writes `light-dark()` pairs and says nothing about `color-scheme`:
 
 ```css
 :root {
@@ -48,29 +39,17 @@ A palette published in one half writes flat colours and pins the half it is:
 }
 ```
 
-Such a theme is listed as pinned, and the mode has nothing left to choose.
-What counts as pinning is the property with a colon after it, anywhere in the
-file; the comments are cut away first, so a comment saying `color-scheme` pins
-nothing.
+Such a theme is listed as pinned, and the mode has nothing left to choose. What counts as pinning is the property with a colon after it, anywhere in the file; the comments are cut away first, so a comment saying `color-scheme` pins nothing.
 
 ## The window opens wearing it
 
-`index.html` is not served by the file server. A handler reads it and splices
-three elements into the end of the head — which half of a colour pair the tokens
-are read as, the theme's own file, and the two sizes — then writes the page. No
-frame is drawn in the default colours.
+`index.html` is not served by the file server. A handler reads it and splices three elements into the end of the head — which half of a colour pair the tokens are read as, the theme's own file, and the two sizes — then writes the page. No frame is drawn in the default colours.
 
-They stand after everything the build put in the head, the built stylesheet's
-link last among them, and they are read for every request: a theme chosen, a
-size chosen, or a file in the person's folder saved over is worn by the next
-reload. A build carrying no interface, and a page with no head, are served as
-the file server has them.
+They stand after everything the build put in the head, the built stylesheet's link last among them, and they are read for every request: a theme chosen, a size chosen, or a file in the person's folder saved over is worn by the next reload. A build carrying no interface, and a page with no head, are served as the file server has them.
 
 ## Where a theme lives
 
-The themes folder is `numen/themes/` in the folder this desktop keeps a
-person's configuration in, beside `numen.json` — see [Settings](settings.md).
-It is made, empty, on the first run.
+The themes folder is `numen/themes/` in the folder this desktop keeps a person's configuration in, beside `numen.json` — see [Settings](settings.md). It is made, empty, on the first run.
 
 | | |
 | --- | --- |
@@ -79,25 +58,17 @@ It is made, empty, on the first run.
 | 262144 bytes | a file past that is neither offered nor read. Every shipped palette is under two kilobytes. |
 | Readable | a link to nothing, a file the disk refuses: not in the list. A name in the list is a theme that can be worn. |
 
-A folder that is not there or cannot be read leaves the list holding what
-ships.
+A folder that is not there or cannot be read leaves the list holding what ships.
 
-The folder is watched at that one level: a theme written, saved over or taken
-out of it is noticed by name as it happens.
+The folder is watched at that one level: a theme written, saved over or taken out of it is noticed by name as it happens.
 
 ## What a theme is called
 
-`preset:dracula` ships inside the application; `mine:dracula` is the file
-`dracula.css` in the themes folder. Both shelves may carry one filename, and
-neither hides the other.
+`preset:dracula` ships inside the application; `mine:dracula` is the file `dracula.css` in the themes folder. Both shelves may carry one filename, and neither hides the other.
 
-The half after the shelf is one filename in that folder.
-`mine:../../../.ssh/id_rsa`, `mine:..`, `dracula` and `shelfless:dracula` name
-no theme.
+The half after the shelf is one filename in that folder. `mine:../../../.ssh/id_rsa`, `mine:..`, `dracula` and `shelfless:dracula` name no theme.
 
-A name matching nothing wears `preset:numen`, and the name that was not found
-is said. The settings are left as they are: putting the file back is all it
-takes.
+A name matching nothing wears `preset:numen`, and the name that was not found is said. The settings are left as they are: putting the file back is all it takes.
 
 ## The tokens a theme sets
 
@@ -177,21 +148,11 @@ Forty-two, each a colour except where it says otherwise.
 
 ## What a theme leaves alone
 
-The type, the measures and the timings: the font stack, the two text sizes and
-the line height, the radii and strokes, the clearances, the sizes of a handle
-and a field, the order things float in, the durations and the easing. They are
-the same under every palette, and `tokens.css` holds them under the palette in
-three groups — what follows the interface, what the text multiplier reaches as
-well, and what follows neither.
+The type, the measures and the timings: the font stack, the two text sizes and the line height, the radii and strokes, the clearances, the sizes of a handle and a field, the order things float in, the durations and the easing. They are the same under every palette, and `tokens.css` holds them under the palette in three groups — what follows the interface, what the text multiplier reaches as well, and what follows neither.
 
-Nothing bounds a theme to the palette. A theme declaring `--numen-font-size`
-declares it, and a length written in `rem` goes on following the interface.
+Nothing bounds a theme to the palette. A theme declaring `--numen-font-size` declares it, and a length written in `rem` goes on following the interface.
 
-The two multipliers are what a theme does not reach. `--numen-interface-scale`
-and `--numen-text-scale` stand in the element the head ends with, after the
-mode's and the theme's, so a theme naming either is the earlier of two
-declarations weighing the same and the window is drawn at the size a person
-chose.
+The two multipliers are what a theme does not reach. `--numen-interface-scale` and `--numen-text-scale` stand in the element the head ends with, after the mode's and the theme's, so a theme naming either is the earlier of two declarations weighing the same and the window is drawn at the size a person chose.
 
 ## What ships
 
@@ -211,14 +172,9 @@ chose.
 | `preset:cobalt2` | dark, pinned: yellow on navy. |
 | `preset:amber` | dark, pinned: four colours, and the rest derived from them. |
 
-Each is its publisher's palette from that publisher's own source; what a
-palette does not name is derived from what it does, and the file says which.
-Each names the colours its publisher names and leaves the rest — marked-up text
-among them — as `tokens.css` has it.
+Each is its publisher's palette from that publisher's own source; what a palette does not name is derived from what it does, and the file says which. Each names the colours its publisher names and leaves the rest — marked-up text among them — as `tokens.css` has it.
 
-The files are in `modules/apps/desktop/internal/adapter/theme/presets/`. A
-first theme is one of them copied into the themes folder under a name of its
-own: `mine:dracula` stands in the list beside `preset:dracula`.
+The files are in `modules/apps/desktop/internal/adapter/theme/presets/`. A first theme is one of them copied into the themes folder under a name of its own: `mine:dracula` stands in the list beside `preset:dracula`.
 
 ## What is written down
 
