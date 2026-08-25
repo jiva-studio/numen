@@ -1,7 +1,14 @@
 # Performance
 
-The targets are in [ADR-0019](adr/0019-performance-targets.md). This page is
-what they measure to.
+A target is a decision, and every one this application holds itself to is in the
+Target column below and nowhere else. A measurement carries the date it was
+taken and the machine it was taken on, and lives here beside the target it
+answers.
+
+The load test reports and does not assert. It runs on whatever laptop is at
+hand, and the numbers come here, where a person compares them with what was
+there before. A target is set at roughly twice what is measured, which leaves
+room to notice a regression before a user does.
 
 ## Running it
 
@@ -31,7 +38,8 @@ A hundred thousand notes, from the load test.
 | --- | --- | --- |
 | Cold scan | 1 m 22 s (0.82 ms/note, 1216 notes/s) | under 3 minutes |
 | Warm scan — what a startup pays | 0.52 s | under 1 second |
-| Index size | 162 MB (1.6 MB per thousand notes) | under 5 MB per thousand |
+| An edit the watcher names, until a client is told | 66 ms | under 100 ms |
+| Index size | 162 MB (1.6 MB per thousand notes) | not decided |
 | Search, rare term, under load | p50 2 ms · p95 4 ms · p99 5 ms · max 42 ms | p95 under 50 ms |
 | Search, term matching every note | p50 0.90 s · p95 1.01 s | not covered |
 
@@ -64,10 +72,17 @@ Recorded 2026-08-15 on an AMD Ryzen 7 6800U, `modernc.org/sqlite`, WAL with
 Neither link figure grows with the vault: the two columns are ten times apart in
 size and within a fraction of a millisecond of each other.
 
-A search costs about a third more while a scan is continuously rewriting the
-index. That is the number ADR-0018 exists to keep honest: WAL lets a reader
-answer without waiting for the writer, and the write pool is capped at one
-connection so writers queue in Go rather than collide in SQLite.
+A search costs more while a scan is continuously rewriting the index. That is
+the number ADR-0004 exists to keep honest: WAL lets a reader answer without
+waiting for the writer, and the write pool is capped at one connection, so
+writers queue in Go.
+
+**How much more is unsettled.** The two rows above are 20 ms quiet against 60 ms
+under a scan — the same query, the same ten thousand notes, three times as long.
+`BenchmarkSearchDuringScan` was reported on the same date as **64 ms against
+48 ms** on a quiet database, which is a third more. The loaded figures are close
+and the quiet ones are not, and nothing establishes which quiet run the table
+holds. Both are 2026-08-15.
 
 ## What these numbers are not
 
@@ -79,8 +94,9 @@ query that matches a handful of notes.
 **The incremental figure is a full walk**: one edited note, found by asking
 every file in the vault what it looks like. That is what a scan at startup pays,
 and it is not what an edit costs while the application is running — the watcher
-names the path and only that path is read. The 100 ms budget is written for the
-watcher's path, which nothing here measures yet.
+names the path and only that path is read. The 100 ms target is written for the
+watcher's path, and that path is measured further down, from the save to a
+client being told.
 
 **The cold scan reads notes this same process wrote seconds earlier**, so the
 read side is measured against a warm page cache. On a real vault that has been
@@ -90,12 +106,19 @@ sitting on disk, this is optimistic about I/O.
 
 ## Where the time goes
 
-A cold scan, by profile: 1 % reading the files, 5 % parsing them, 77 % storing
-what was parsed — of which the transaction boundaries are the largest single
-part. Parsing in parallel is therefore worth at most a few percent, and has been
+A cold scan, by profile, taken 2026-08-15 with one transaction per note: 1 %
+reading the files, 5 % parsing them, 77 % storing what was parsed — of which
+**43 % of the whole scan is ending transactions**, the largest single part.
+Parsing in parallel is therefore worth at most a few percent, and has been
 measured and left alone.
 
-The full-text index accounts for about 45 % of what a write costs.
+The full-text index accounts for about 45 % of what a write costs, which is
+most of what the 43 % leaves inside the 77 %.
+
+A transaction boundary costs the same whether one note crossed it or five
+hundred did, which is why notes are written in groups. A cgo build of SQLite is
+roughly twice as fast on inserts in published comparisons; it is not measured
+here, and it costs the cross-compilation the pure-Go driver is chosen for.
 
 A warm scan of ten thousand notes is 50 ms: 13 ms asking the index what it knows
 about every file, and 34 ms walking the vault and asking the file system. The
@@ -136,6 +159,7 @@ Measured, on ten thousand notes written in groups of five hundred.
 | Merge thresholds either way (`automerge` 8 and 16, `crisismerge` 8) | no difference |
 | Page cache of 4 MB, 64 MB, 256 MB | no difference |
 | Reusing prepared statements across a group | no difference |
+| Groups of five thousand | 7 % faster than five hundred, for ten times the memory |
 | `synchronous = OFF` | 13 % faster, and the file can be corrupt rather than merely stale |
 
 The first two are what a search returns for "slow SQLite inserts".
@@ -151,7 +175,8 @@ rowid.
 picks between indexes from what it knows about how much is stored, and a
 database filled by a scan has never been asked. The rule of thumb for backlinks
 is to narrow to the vault and read every link in it. A scan measures the index
-when it changed it, and a test asserts the index each question is answered
+when it changed it, and backlinks are then answered in about a millisecond and
+do not grow with the vault. A test asserts the index each question is answered
 through — a test that only forbids reading a whole table passes on the slow
 plan, because reading every link in a vault is an index search.
 
@@ -159,7 +184,8 @@ plan, because reading every link in a vault is an index search.
 
 The numbers above are the note index. These are the source layer: text cut into
 chunks, embedded, and searched. The decisions they were taken for are in
-ADR-0006, ADR-0007, ADR-0029 and ADR-0030.
+[ADR-0010](adr/0010-a-source-is-text-in-one-table.md) and the four decisions
+after it.
 
 Recorded 2026-08-17 on the same AMD Ryzen 7 6800U, `modernc.org/sqlite` v1.56
 with the bundled `sqlite-vec` v0.1.9, WAL with `synchronous = NORMAL`.
@@ -189,6 +215,9 @@ Embedded with `bge-m3` at 1024 dimensions, through a hosted API.
 The same corpus embedded on this laptop's CPU instead, with a small
 English-only model, runs at 10.8 chunks per second.
 
+Cut this way, the sources come to about **2 240 small windows per megabyte of
+text**.
+
 ### The window decides what can be found
 
 One passage, one query, four windows cut around the same sentence. The score is
@@ -205,7 +234,7 @@ The best score anything in the corpus reaches for that query is 0.639. At 25
 words the passage would lead by a wide margin; at 200 it ranks **401st of
 36 560**, which is not a result anybody sees.
 
-This is the measurement ADR-0007 exists for. Nothing about the index changed
+This is the measurement ADR-0005 exists for. Nothing about the index changed
 between those rows.
 
 The window also has to fit the model. Cut on the sections a translation already
@@ -317,7 +346,8 @@ by resolving 20 enclosing windows where there were 100.
 
 The words half measures 1.1 ms median and about 39 ms p95 on a long natural
 language query, where the FTS expression becomes a wide OR. A search running
-both halves on such a query stands over ADR-0019's 50 ms and did before this.
+both halves on such a query stands over the 50 ms target above, and did before
+this.
 
 ### A partition key charges for every partition
 
@@ -378,7 +408,7 @@ the reference, so a representation scoring 0.975 reproduces what this model
 believes — including where it is wrong.
 
 **The sizes are one corpus.** Window sizes tuned here are not guaranteed
-elsewhere, which is why ADR-0007 makes the acceptance set the check rather than
+elsewhere, which is why ADR-0005 makes the acceptance set the check rather than
 the sizes.
 
 **Sanskrit is indexed and does not surface.** No question in the set returned a
@@ -401,6 +431,24 @@ anything. The recall figures from clustering come from the real corpus at
 | Indexing a note whole beside windowed sources | Erratic — 4th on one question, 14 510th on another |
 | Writing chunks scattered across partitions | 1 900 rows/s against 40 000 grouped |
 | Cutting a window by lines | One file put a book on four lines and produced a chunk of a million characters |
+
+### What a second engine would cost
+
+Nothing measured here argues for one. Two are reachable from Go if one is ever
+wanted, and the numbers above are what a candidate has to beat:
+
+| Candidate | Reached from Go by | What it would cost |
+| --- | --- | --- |
+| `usearch` | Official bindings; the index memory-maps from disk | cgo, and cross-compilation from one machine |
+| Qdrant Edge | A Rust crate, in-process, no bindings today | cgo, and bindings to write |
+
+LanceDB has no Go bindings at all: reaching it means writing foreign-function
+bindings by hand, or running a second process beside the application.
+
+An index that has to be held in memory to be searched is out whatever its speed.
+At the size this is designed for it asks for gigabytes, and it competes with
+everything else on the person's machine. That is what left quantisation and a
+staged retrieval as the direction measured above.
 
 ### What was invisible in review
 
@@ -461,7 +509,7 @@ absent.
 | Slowest book | 0.26 s |
 
 Reading a passage back, which is what a result costs when the extracted text is
-not stored (ADR-0006):
+not stored ([ADR-0015](adr/0015-a-books-text-is-a-cache-or-an-artifact.md)):
 
 | | |
 | --- | --- |
@@ -523,7 +571,7 @@ For comparison, a hosted service embedded 145 800 chunks of the source corpus in
 What that means for the default: a personal vault of a few thousand notes is ten
 to twenty thousand chunks, which finishes locally in one to two hours. A hundred
 thousand notes is four hundred thousand chunks, and local is then a day and a
-half of background work. ADR-0002 already says the vector index fills in behind
+half of background work. ADR-0001 already says the vector index fills in behind
 the lexical one and may never finish, so neither figure blocks anything — but only
 the service answers a corpus of that size in a sitting.
 
@@ -541,28 +589,6 @@ Two more shapes in the same corpus would have cost whole books. Three books
 declare their spine documents as `media-type="text/html"`, so filtering the spine
 by media type loses them entirely. Five carry no `dc:title` at all, so an empty
 title is a correct answer rather than a parse failure.
-
-### What a chunked index will cost
-
-**An extrapolation, not a measurement.** The chunk rate is from the source corpus
-above; the vault it is applied to is generated markdown of a different shape, and
-nothing has yet built this index.
-
-The sources cut about **2 240 small windows per megabyte of text**. The load-test
-vault is 164 MB of markdown, so a hundred thousand notes cut the same way
-(ADR-0007) come to **370 000 – 400 000 chunks**.
-
-| | |
-| --- | --- |
-| int8 vectors, 1024 B each | ~400 MB |
-| Bit vectors, 128 B each | ~50 MB |
-| Chunk rows | ~30 MB |
-| Full-text index over chunks | ~100 MB |
-| The note index as it stands | 162 MB |
-| | **about 750 MB** |
-
-ADR-0019's target of 5 MB per thousand notes allows 500 MB. This is the
-arithmetic ADR-0030 rebudgets against.
 
 ## Editing a note in a tab
 
@@ -912,6 +938,46 @@ other, and it changes the text a vector is made from: the recipe changes, and
 every chunk of every recognised document is embedded again. Only the words half
 was measured here — what a vector that knows its chapter is worth cannot be
 known without buying those vectors. The number to beat is 346 and 346.
+
+## Putting a reading right
+
+Recorded 2026-08-21 over the same 546-page scan, through a hosted model.
+
+**The unit is the printed line.** The reply carries only the lines that changed,
+and what comes back is 31.2 % of the book when the page is asked as whole
+blocks, 14.3 % as sentences, and **3.8 % as the printed line**. A line of the
+recogniser's own is one run of words read in one go — 31 characters on average,
+50 841 of them in this book — and about a fifth of blocks carry a misread word.
+
+**Two models, over 58 pages spread through the book.**
+
+| | pages the gates refused | output tokens | a book |
+| --- | --- | --- | --- |
+| `gemini-2.5-flash-lite` | 67 % | 25 005 per 10 pages | $0.14 |
+| `gemini-2.5-flash` | 8.6 % | 6 919 per 20 pages | $0.29 |
+
+The cheap model reports lines it did not change, which is where its output goes.
+A chain running it first pays $0.14 for a reply it throws away and $0.29 for the
+good model after it. The good model alone is $0.29, about 1 165 000 tokens in
+and 194 000 out. A refused page asked again answers the same.
+
+**Where the letters-apart threshold comes from.** Over 931 corrections the
+distribution has a hole in it: 36 stand further apart than 0.50, 47 than 0.30,
+49 than 0.20, 70 than 0.10. Above 0.30 every correction read was damage — text
+dragged in from the next line, or one corrected word in place of a whole line —
+and below it every one was a correction. The threshold is the hole and not a
+round number, and it is in the settings file because it was measured on one
+book.
+
+**A reply row is written two ways.** Over one batch of 40 pages the model
+answered 15 pages with `2544|the line` and 25 with `2544 the line`, each page in
+one style throughout.
+
+A queue is half the price of asking a page at a time and waiting.
+
+Folding diacritics before embedding measures +0.08 to +0.11 of cosine for a
+person who types plainly. It is not general: it eats `q̇`, a vector arrow and a
+bar, which in a book of mathematics are the content.
 
 ## Changing how large the window is drawn
 

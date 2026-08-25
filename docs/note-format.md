@@ -1,26 +1,24 @@
 # Note format
 
 The on-disk format of a single note. This is a specification, not a decision
-record: every rule here traces to an accepted ADR, and where a decision has not
-been taken yet the gap is marked rather than filled in.
+record: every rule here traces to an accepted ADR.
 
 Scope is the **note file only**. The layout of the vault around it — the service
-folder, assets, artifacts written by submodules — is a separate document, written
-when the decisions it depends on exist.
+folder and what is kept there — is in
+[ADR-0003](adr/0003-a-vault-carries-its-identity.md).
 
 ## What a note is
 
 A UTF-8 file whose extension is one of those configured as notes, in any folder
-of the vault the user likes. The default is `.md` alone (ADR-0012).
+of the vault the user likes. The default is `.md` alone (ADR-0008).
 
-Two places are never notes: the service folder — `.numen` by default (ADR-0013) —
-and any directory whose name begins with a dot, which holds some tool state
-rather than anything a person wrote. Both are skipped whole. The application
-neither imposes nor rearranges layout (ADR-0001).
+Two places are never notes: the service folder — `.numen` by default — and any
+directory whose name begins with a dot, which holds tool state. Both are skipped
+whole. The application neither imposes nor rearranges layout (ADR-0001).
 
 A markdown file written by anything else — vim, a script, another editor — is a
 valid note from the first byte. Nothing has to be registered, imported or
-converted (ADR-0012).
+converted (ADR-0008).
 
 ## Structure
 
@@ -36,7 +34,7 @@ Frontmatter is optional. A note with no frontmatter is a normal note.
 
 ## Frontmatter
 
-Fields the application owns live here rather than in the body (ADR-0012). The
+Fields the application owns live here rather than in the body (ADR-0008). The
 body is prose the user wrote; the frontmatter is where machine-readable facts
 about the note as a whole belong.
 
@@ -54,26 +52,25 @@ The frontmatter is shared, not owned:
 
 | Key | Meaning | Decided in |
 | --- | --- | --- |
-| `title` | The name a note is shown by. Written only when a note that already has a non-empty one is renamed; the application does not add one to a note that has none. | ADR-0012, ADR-0040 |
-| `id` | The identity of the note, a ULID. Written when the application creates a note or changes what is in it, never backfilled and never written by a person typing in it. A note that was moved carries the identifier it carried before. | ADR-0009, ADR-0027, ADR-0032 |
-| `links` | Links that carry a role, and optionally a type, a label and a note. | ADR-0003 |
+| `title` | The name a note is shown by. Written only when a note that already has a non-empty one is renamed; the application does not add one to a note that has none. | ADR-0008 |
+| `id` | The identity of the note, a ULID. Written when the application creates a note or changes what is in it, never backfilled and never written by a person typing in it. A note that was moved carries the identifier it carried before. | ADR-0008, ADR-0007 |
+| `links` | Links that carry a role, and optionally a type, a label and a note. | [Links](links.md) |
 
 A note with no `title` is named by its first level-one heading, else by its
 filename. The order is fixed so that a name does not move between versions.
 
 A note carrying no `id` is indexed in full and simply cannot be a *target*:
-nothing points at it with `note://`, and nothing is attached to it (ADR-0009).
+nothing points at it with `note://`, and nothing is attached to it (ADR-0008).
 
 ## What the application may add
 
-The complete permitted set, from ADR-0012. Everything must survive a third-party
+The complete permitted set, from ADR-0008. Everything must survive a third-party
 markdown editor and stay readable to a human.
 
 | Addition | Where | Status |
 | --- | --- | --- |
 | YAML frontmatter | top of file | allowed; key set not yet fixed |
-| `[[wikilink]]` | body | a link with the role `ref`, resolved by name (ADR-0011) |
-| `^anchor` | end of a line | allowed; syntax and scope not yet fixed (ADR-0009) |
+| `[[wikilink]]` | body | a link with the role `ref`, resolved by name ([Links](links.md)) |
 
 Nothing else is permitted: no custom fences, no HTML comments carrying data, no
 sidecar files, no private extension.
@@ -91,22 +88,9 @@ application is a guest in a file the user also edits.
   body written with LF, and a new file is written with LF. The frontmatter arrives on
   the other side as the bytes it went in as, so a file whose breaks are mixed above
   the body keeps that mixture and a save that changes no text leaves the file byte for
-  byte as it was (ADR-0027, ADR-0032).
+  byte as it was (ADR-0007).
 - **Unknown frontmatter keys are preserved verbatim.** The application reads the
   keys it owns and leaves everything else untouched, including keys it will own
   in a future version.
 - **A file that fails to parse is not rewritten.** Broken YAML is reported, never
   repaired in place — repairing it means guessing at content the user wrote.
-
-## Not decided yet
-
-These are open, and this document will be extended as each is settled. Nothing
-below should be implemented from guesswork.
-
-| Question | Where it is decided |
-| --- | --- |
-| Card syntax in the body, and how a card keeps its identity across edits | ADR-0008 |
-| What a submodule may write into the service folder | ADR-0004 |
-
-Anchors are decided (ADR-0009) and not yet read: nothing attaches to a block, so
-the parser leaves `^anchor` as the text it is.

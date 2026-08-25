@@ -1,97 +1,92 @@
 # Architecture decisions
 
-Numbers are identity, not order. An ADR keeps its number forever, including when
-it is superseded, so that every reference to it stays valid. Decisions arrive in
-whatever order the work demands, which is rarely the order they are best read in.
+A file here records **one decision**: something that could have been settled
+another way, that constrains how the code is built, and that is expensive to
+revisit. One decision, one file. A file holding two decisions is split.
 
-**This page is the reading order.** The numbers on the files are not.
+**What is not here.** How the product behaves for a person, and what the words
+of the domain mean, are specifications rather than decisions. They live beside
+this folder as plain pages, listed at the end. Measurements live in
+[performance.md](../performance.md) and nowhere else — an ADR may state a target,
+never a number it was measured at.
 
 **Every ADR says what it applies to.** This repository holds several
 applications, and a decision about one of them is not a decision about the
-product. The header of each says which: the product as a whole, the vault
-format, or a named application. Without that line a reader has to guess whether
-a rule binds them, and guessing wrong in either direction is expensive.
+product. The header of each says which.
 
-To change an accepted decision, write a new ADR that supersedes it and mark the
-old one `Superseded by ADR-NNNN`. Do not edit the old file into agreement with
-the new one — the point of the record is that it shows what was believed and why.
+**A rule is written once, in the present tense, as it now stands.** An ADR is
+not a changelog of itself. To change an accepted decision, rewrite the file and
+let git hold what was believed before.
 
 **A decision is in the record once it is on the default branch.** Until then it
 is its pull request's draft, and a draft is edited in place.
 
-## Foundations
+## Reading order
 
-Read these first; everything else is derived from them.
+The numbers are identity, not order. This list is the order.
 
-- [ADR-0000 — Data is either artifact or cache](0000-artifact-vs-cache.md)
+### What is kept, and where
+
 - [ADR-0001 — Files on disk are the source of truth](0001-files-are-the-source-of-truth.md)
-- [ADR-0002 — SQLite is a cache, one database for all vaults](0002-sqlite-is-a-cache.md)
-- [ADR-0024 — Ubiquitous language](0024-ubiquitous-language.md)
+- [ADR-0002 — One database for all vaults, outside them](0002-one-database-for-all-vaults.md)
+- [ADR-0003 — A vault carries its identity, and application state lives with the application](0003-a-vault-carries-its-identity.md)
 
-## Vaults and code
+### The shape of the code
 
-- [ADR-0013 — Vault identity, the service folder, and application state](0013-vault-identity-and-application-state.md)
-- [ADR-0014 — One binary, hexagonal core in Go](0014-one-binary-hexagonal-core-in-go.md)
-- [ADR-0015 — A schema change migrates the index instead of rebuilding it](0015-schema-changes-are-migrations.md)
-- [ADR-0016 — What a scan stores about a note](0016-what-the-index-stores.md)
-- [ADR-0017 — How the desktop application is tested](0017-how-the-desktop-application-is-tested.md)
-- [ADR-0018 — A scan runs in the background, and there is one writer](0018-a-scan-runs-in-the-background.md)
-- [ADR-0019 — Performance targets for indexing and search](0019-performance-targets.md)
-- [ADR-0021 — The index measures itself after a scan](0021-the-index-measures-itself.md)
-- [ADR-0022 — Notes are indexed in groups](0022-notes-are-indexed-in-groups.md)
-- [ADR-0023 — The vault is watched](0023-the-vault-is-watched.md)
-- [ADR-0029 — The vector index stays inside SQLite, and what that costs](0029-the-vector-index-and-what-it-costs.md)
-- [ADR-0030 — The index-size budget, and where an exact scan ends](0030-index-size-and-approximate-search.md)
-- [ADR-0031 — The agent this application starts, and what it may reach](0031-the-agent-this-application-starts.md)
-- [ADR-0027 — The application writes to the vault](0027-the-application-writes-to-the-vault.md)
-- [ADR-0032 — The window saves a note as it is typed, and stops at an unseen edit](0032-the-window-saves-a-note-as-it-is-typed.md)
-- [ADR-0033 — One process, one writer, one lifetime](0033-one-process-one-writer-one-lifetime.md)
-- [ADR-0035 — What the application cannot do, it says](0035-what-the-application-cannot-do-it-says.md)
-- [ADR-0042 — The window opens another vault](0042-the-window-opens-another-vault.md)
-- [ADR-0040 — A note is renamed by whatever names it](0040-a-note-is-renamed-by-whatever-names-it.md)
+- [ADR-0004 — A hexagonal core in Go](0004-a-hexagonal-core-in-go.md)
+- [ADR-0005 — A client is generated from the protocol](0005-a-client-is-generated-from-the-protocol.md)
+- [ADR-0025 — How this application is tested](0025-how-this-application-is-tested.md)
+- [ADR-0026 — One name per concept](0026-one-name-per-concept.md)
 
-## The note file
+### The index
 
-- [ADR-0012 — A note is plain markdown any editor can open](0012-a-note-is-plain-markdown.md)
-- Format specification: [note-format.md](../note-format.md)
+- [ADR-0006 — What the index stores](0006-what-the-index-stores.md)
+- [ADR-0007 — A schema change is a numbered migration](0007-a-schema-change-is-a-numbered-migration.md)
+- [ADR-0008 — A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md)
+- [ADR-0009 — The vault is watched](0009-the-vault-is-watched.md)
 
-## The interface
+### Search
 
-- [ADR-0020 — How an interface component is built](0020-how-an-interface-component-is-built.md)
-- [ADR-0028 — The component library is shadcn-vue on Tailwind](0028-the-component-library-is-shadcn-vue.md)
-- [ADR-0025 — A client talks to the core through a schema](0025-a-client-talks-to-the-core-through-a-schema.md)
-- [ADR-0041 — A theme is a CSS file, and there is one of them](0041-a-theme-is-a-css-file.md)
-- [ADR-0043 — How large the interface is drawn, and how large the text is set](0043-how-large-the-interface-is-drawn.md)
+- [ADR-0010 — A source is text in one table](0010-a-source-is-text-in-one-table.md)
+- [ADR-0011 — Text is cut twice](0011-text-is-cut-twice.md)
+- [ADR-0012 — A chunk is identified by its text](0012-a-chunk-is-identified-by-its-text.md)
+- [ADR-0013 — The vector index stays inside SQLite](0013-the-vector-index-stays-inside-sqlite.md)
+- [ADR-0014 — One search, three rankings, merged by rank](0014-one-search-three-rankings.md)
 
-## Agents
+### Books and passages
 
-- [ADR-0026 — An agent reaches the vault through tools](0026-an-agent-reaches-the-vault-through-tools.md)
+- [ADR-0015 — A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md)
+- [ADR-0016 — A passage is a range of bytes](0016-a-passage-is-a-range-of-bytes.md)
 
-## Links and addressing
+### The vault, written
 
-- [ADR-0003 — A link is one object carrying a role and an optional type](0003-a-link-carries-a-role.md)
-- [ADR-0009 — Identifiers for notes and blocks](0009-identifiers.md)
-- [ADR-0010 — Attachments are links](0010-attachments-are-links.md)
-- [ADR-0011 — Links are written by name; `note://` is the auxiliary form](0011-links-are-written-by-name.md)
+- [ADR-0017 — The application writes to the vault](0017-the-application-writes-to-the-vault.md)
+- [ADR-0018 — The note file](0018-the-note-file.md)
+- [ADR-0019 — A note is identified by a ULID in its frontmatter](0019-a-note-is-identified-by-a-ulid.md)
+- [ADR-0020 — One process, one lifetime](0020-one-process-one-lifetime.md)
 
-## Vault layout and sources
+### Agents
 
-- [ADR-0006 — Sources: extracted text into the cache, unreproducible output into the vault](0006-sources.md)
-- [ADR-0007 — Structural chunking, and how a passage is found](0007-structural-chunking-and-hybrid-search.md)
-- [ADR-0034 — A chunk is identified by the text it holds](0034-a-chunk-is-identified-by-its-text.md)
-- [ADR-0036 — A PDF's text layer is a cache; reading it with a model is an artifact a person asks for](0036-a-pdf-is-read-twice.md)
-- [ADR-0037 — A passage is shown where it was read, and one shape says where that is](0037-a-passage-is-shown-where-it-was-read.md)
-- [ADR-0038 — Where a passage is in a book, said so a person can find it](0038-where-a-passage-is-in-a-book.md)
-- [ADR-0039 — A reading is proofread, where a person configured something to proofread it with](0039-a-reading-is-proofread.md)
+- [ADR-0021 — An agent reaches the vault through tools](0021-an-agent-reaches-the-vault-through-tools.md)
+- [ADR-0022 — The agent this application starts is a port](0022-the-agent-this-application-starts-is-a-port.md)
 
-Not yet written.
+### The interface
 
-- ADR-0004 — A submodule mechanism for extension-produced artifacts ([#5](https://github.com/jiva-studio/numen/issues/5))
+- [ADR-0023 — How an interface component is built](0023-how-an-interface-component-is-built.md)
+- [ADR-0024 — The component library is shadcn-vue on Tailwind](0024-the-component-library-is-shadcn-vue.md)
 
-## Spaced repetition
+## The specifications
 
-Not yet written. Implementation is priority 2, but the formats are fixed early
-because the note file and the index depend on them.
+What the product does, and what its words mean.
 
-- ADR-0005 — Event sourcing for spaced repetition ([#6](https://github.com/jiva-studio/numen/issues/6))
-- ADR-0008 — Card identity lives in the text ([#9](https://github.com/jiva-studio/numen/issues/9))
+- [glossary.md](../glossary.md) — the ubiquitous language, term by term
+- [note-format.md](../note-format.md) — the note file, key by key
+- [links.md](../links.md) — the link record, and how a name resolves
+- [editing.md](../editing.md) — a note in a tab: saving, renaming, removing
+- [vaults.md](../vaults.md) — several vaults, one window
+- [reading.md](../reading.md) — how a book is read, and proofread
+- [agents.md](../agents.md) — what the panel's agent can reach
+- [starting.md](../starting.md) — what the application says when it cannot start
+- [settings.md](../settings.md) — every setting
+- [themes.md](../themes.md) — what a theme is
+- [performance.md](../performance.md) — every measurement, dated

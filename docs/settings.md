@@ -9,8 +9,9 @@ changes are the ones in front of them.
 Every field left out keeps its default. A file naming one setting is a valid
 file.
 
-This document is the appearance and embedding sections. The others —
-recognition, proofreading, agent — are named here only where they touch them.
+This document is every section of the file, and it is the one place a key is
+written down. Where what a key does is specified elsewhere, the page that
+specifies it is linked from the section.
 
 ## Appearance
 
@@ -43,9 +44,9 @@ and marked-up text with the scale above it, its headings, code, lists and
 quotations. A hairline, a border, a focus ring and the stroke of a handle are
 one physical line under either.
 
-A number outside what its setting goes to is refused: the window does not open,
-and a page in its place names the field, what was written and how far the
-setting goes. The number is left as it was written.
+A number outside what its setting goes to is refused. What stands in the
+window's place is in [Starting](starting.md). The number is left as it was
+written.
 
 A file naming no size at all asks the desktop: a session that set
 `GDK_DPI_SCALE` draws its interface by that, and one that said nothing is drawn
@@ -199,7 +200,7 @@ The key is read from `key` if the file names one, otherwise from the environment
 variable `key_env` names. It is never written back: rewriting this file is not
 how a key is set.
 
-## Worked examples
+## Worked examples, embedding
 
 ### Nothing configured
 
@@ -308,4 +309,104 @@ network, and every search is the lexical half answering alone.
 ```json
 { "indexing": { "embedding": { "indexing": { "use": "" } } } }
 ```
+
+## Reading a scanned document
+
+`indexing.recognition` is how a scanned page is read. Nothing here runs on its
+own: a person asks for a reading, and what one is and where it is kept is in
+[Reading](reading.md).
+
+```json
+{
+  "indexing": {
+    "recognition": {
+      "detect": { "expand": 18 }
+    }
+  }
+}
+```
+
+| | |
+| --- | --- |
+| `detect.expand` | how many pixels a found line is widened by, in the image the detector reads: the part of the page scaled to the longest side it is read at. One number serves a heading and a paragraph, because that scaling brings the two to nearly one size. |
+
+The boundary the detector answers with is the text's own outline drawn inside
+the letters, short by a share of the line's height, and the widening is a flat
+number of pixels. At 10 the top of every capital and the last letter of every
+line were cut away. 18 is the middle of where it stops mattering, and it is a
+setting because it was measured on one book at one resolution — the sweep is in
+[Performance](performance.md).
+
+## Putting a reading right
+
+`indexing.proofreading` is what corrects a reading. Naming nothing here names no
+proofreader: a reading is used exactly as it was read, and nothing asks for a
+key or a network. What a correction may change, and what refuses one, is in
+[Reading](reading.md).
+
+```json
+{
+  "indexing": {
+    "proofreading": {
+      "use": "service",
+      "service": {
+        "base_url": "https://openrouter.ai/api/v1",
+        "batch_url": "https://openrouter.ai/api/beta/batches",
+        "name": "google/gemini-2.5-flash",
+        "key_env": "NUMEN_PROOFREADING_KEY",
+        "pages_at_once": 40,
+        "letters_apart": 0.30
+      }
+    }
+  }
+}
+```
+
+| | |
+| --- | --- |
+| `use` | `service`, or nothing at all. A section naming no model proofreads nothing. |
+| `service.base_url` | anything speaking the `/v1/chat/completions` request shape. |
+| `service.batch_url` | the queue pages are left in and collected later, at half the price. Empty asks a page at a time and waits. A batch outlives the run that left it, so one left before the application closed is collected when it opens. |
+| `service.name` | which model answers. The name of the model that corrected a line stands beside what it corrected. |
+| `service.pages_at_once` | how many pages one request carries. |
+| `service.letters_apart` | how far a correction may move a line's letters and still be a correction, as a share of the longer of the two. A correction standing further apart is dropped and that line is left as it was read. |
+| `service.key_env` | the environment variable holding the key. |
+| `service.key` | the key, where a person writes it into the file. It is never written back: rewriting this file is not how a key is set. |
+
+`letters_apart` is 0.30 because the measured distribution has a hole there. Over
+931 corrections of one book, every correction standing further apart than 0.30
+was damage — text dragged in from the next line, or one corrected word in place
+of a whole line — and every one below it was a correction. It is a setting
+because the next book is not that book; the figures are in
+[Performance](performance.md).
+
+## Which agent answers
+
+`agent` is which agent answers in the panel, and what it may reach. What an
+agent may ask of a vault is in [Agents](agents.md).
+
+```json
+{
+  "agent": {
+    "use": "claude",
+    "claude": {
+      "command": [],
+      "model": "",
+      "max_steps": 30,
+      "reads_hooks_and_skills": false
+    }
+  }
+}
+```
+
+| | |
+| --- | --- |
+| `use` | which agent answers. `claude` is Claude Code, reached by starting it and reading what it prints. Empty answers with none, and the panel says so. |
+| `claude.command` | what starts it: the command line's path, and anything it is started through. Empty asks the path, then the folders its installers write to. Worth naming for an installation those folders do not cover, and for one machine carrying several. |
+| `claude.model` | which of its models answers — `opus`, `sonnet`, or a full name. Empty takes whatever that installation answers with. Worth naming because a panel is read while somebody waits. |
+| `claude.max_steps` | how many times it may go to the model before it is stopped. 30. |
+| `claude.reads_hooks_and_skills` | whether it reads what this machine holds configured for it: hooks, skills, standing instructions in `CLAUDE.md`, plugins. Off. A hook is a shell command Claude Code runs itself, and a question typed into a panel is not asking for one. On, what is configured for this person is read; what a vault carries is refused either way, since a vault arrives from elsewhere. |
+
+A section is kept whether it is the one in use or not, so trying another agent
+for an afternoon costs nothing.
 

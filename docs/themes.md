@@ -53,6 +53,19 @@ What counts as pinning is the property with a colon after it, anywhere in the
 file; the comments are cut away first, so a comment saying `color-scheme` pins
 nothing.
 
+## The window opens wearing it
+
+`index.html` is not served by the file server. A handler reads it and splices
+three elements into the end of the head — which half of a colour pair the tokens
+are read as, the theme's own file, and the two sizes — then writes the page. No
+frame is drawn in the default colours.
+
+They stand after everything the build put in the head, the built stylesheet's
+link last among them, and they are read for every request: a theme chosen, a
+size chosen, or a file in the person's folder saved over is worn by the next
+reload. A build carrying no interface, and a page with no head, are served as
+the file server has them.
+
 ## Where a theme lives
 
 The themes folder is `numen/themes/` in the folder this desktop keeps a
