@@ -1,0 +1,51 @@
+---
+title: The plex
+description: The map around one note — parents above, children below, jumps and siblings to the sides — and how to move and build in it.
+---
+
+The plex is the shape of your links, drawn around one note at a time. It is not a picture of the
+whole vault: it is where you are, and everything one step away from you.
+
+## How it is laid out
+
+The note you are on stands in the middle. Around it:
+
+| | |
+| --- | --- |
+| <span class="up">above</span> | its parents — what it hangs under. |
+| <span class="down">below</span> | its children. |
+| <span class="across">to the left</span> | its jumps, the links that cross the hierarchy. |
+| to the right | its siblings — the other children of its parents. |
+
+Walk one step and the map rearranges around where you arrived. What was a child above you is
+now the middle, with its own parents overhead.
+
+## Moving
+
+| | |
+| --- | --- |
+| Click a node | go there. It becomes the middle, and the plex is redrawn around it. |
+| Double-click a node | open that note in a tab. |
+| <kbd>Alt</kbd> double-click | open it in a pane beside the one you are in. |
+| <kbd>Enter</kbd> or <kbd>Space</kbd> | go to the node the keyboard is on. |
+| <kbd>⇧</kbd> <kbd>Enter</kbd> | open it. Hold <kbd>Alt</kbd> as well to open it beside. |
+| Right-click, or <kbd>⇧</kbd> <kbd>F10</kbd> | the node's menu: everything the commands offer over a note. |
+
+**Show in plex** on the note you are reading — or <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd>
+<kbd>P</kbd> — brings the plex to that note.
+
+## Building with it
+
+Every node carries a small handle: a disc with a cross in it. Press it and pull away from the
+node, and a thread follows your hand. Let go where you want the new note, and it is made there —
+above the node it is a parent, below it is a child, to the side it is a jump.
+
+The link and the note arrive together. There is no separate step where you go and connect them.
+
+<kbd>Escape</kbd> in the middle of a drag calls it off and nothing is made.
+
+## Reading the lines
+
+A line between two nodes is a link. Where you gave the link a
+[label](/links/#what-it-looks-like-in-the-file), the label is written along the line, so the map
+says *why* two notes are connected and not only *that* they are.

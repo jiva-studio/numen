@@ -1,0 +1,35 @@
+---
+title: Books and PDFs
+description: PDFs and EPUBs in the vault are read, searched and opened at the page a passage stands on.
+---
+
+A vault holds more than notes. PDFs and EPUBs sitting in the folder are read as documents: their
+text is searched along with everything else, and a result opens the book at the page the words
+are on.
+
+## Reading one
+
+Open a document in a tab as you would a note. It opens at the page a search sent you to, and the
+passage that matched is shown where it stands on the page — in the book, not lifted out of it.
+
+Page numbers are positions in the file. An EPUB has no pages of its own, so where the file
+carries the page breaks of the printed edition it was set from, those are the names its pages
+have.
+
+## Scanned books
+
+A book that is scans of paper carries no text to read. Ask the [agent](/agent/) to read it, and
+the pages are read here on your machine: nothing is uploaded, no account is involved.
+
+It runs behind the window and shows its progress in the corner. The book answers searches over
+the pages already read while the rest are still being read, so a long book becomes useful before
+it is finished.
+
+What comes out is kept inside the vault's own `.numen/` folder, named after the bytes of the
+document. Move or rename the book and its reading follows it; keep two copies of the same book
+in a vault and they share one reading.
+
+## Quoting into a note
+
+The agent can read a run of a document's text and write it into a note. It can also put a
+passage in front of you — the document opens at that page, at the words in question.

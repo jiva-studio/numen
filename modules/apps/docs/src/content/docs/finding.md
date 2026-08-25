@@ -1,0 +1,53 @@
+---
+title: Finding
+description: One search over names, words and meaning — and what to do when what you wanted is not there yet.
+---
+
+<kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>K</kbd> searches the vault. One field, and the answers arrive
+in three bands:
+
+| | |
+| --- | --- |
+| **Names** | notes whose title matches what you typed. |
+| **Text** | notes whose words match, and the headings inside them. |
+| **Meaning** | notes that are about what you typed, whether or not they use those words. |
+
+Type a few letters and the first band answers immediately. The other two follow as they are
+worked out.
+
+## What you can do with a result
+
+Choose it to open the note. A result found at a particular heading opens the note *at that
+heading*, and a result inside a [document](/documents/) opens the document at the passage the
+words were found in.
+
+<kbd>↑</kbd> and <kbd>↓</kbd> walk the list, <kbd>Enter</kbd> takes what is highlighted, and
+<kbd>Escape</kbd> puts the panel away.
+
+**Go to a note** — <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>G</kbd> — is the shorter version: names
+only, for when you know exactly which note you want.
+
+## When it finds nothing
+
+The panel offers to write the note instead: *create a note called…*, and — if you were standing
+on a note at the time — to make it as a **child**, as a **parent** or as a **jump** from where
+you are.
+
+A search that finds nothing is usually a note you have not written yet, so this is the shortest
+path between noticing that and having it.
+
+## Search by meaning
+
+The first two bands are words: they need no model, no account and no network, and they work on
+a vault the moment it is scanned.
+
+The third band is different. It needs a model to read your notes with, and numen fetches a small
+one to your machine on first use — it runs there, and nothing you write leaves the computer.
+Until that has happened you will see *searching by words only* in the corner, and the Meaning
+band will say the vault has not been read for meaning yet.
+
+A large vault takes a while to be read the first time. It happens behind the window, the rest of
+the search works throughout, and the corner shows how far it has got.
+
+If you would rather have no such model at all — or would rather one ran on a service you already
+pay for — that is a [setting](/settings/).

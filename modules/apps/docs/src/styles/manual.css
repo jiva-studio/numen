@@ -1,0 +1,143 @@
+/*
+ * The manual, painted in the application's own values.
+ *
+ * Starlight draws everything through its own custom properties, so what is
+ * here is that set given the colours and faces the product already has. Dark
+ * stands on `:root` and light replaces it, which is the order Starlight sets
+ * them in.
+ *
+ * Colour means direction and appears only where direction is meant — the three
+ * roles a link carries. Everything else is ink on paper.
+ */
+
+:root {
+  --sl-font: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --sl-font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+  --numen-display: 'Newsreader Variable', 'Newsreader', Georgia, 'Times New Roman', serif;
+
+  --sl-color-accent-low: #17293f;
+  --sl-color-accent: #3f6ca8;
+  --sl-color-accent-high: #a8c6e8;
+
+  --sl-color-white: #f4f6f8;
+  --sl-color-gray-1: #e4e7ea;
+  --sl-color-gray-2: #c2c7ce;
+  --sl-color-gray-3: #969ca5;
+  --sl-color-gray-4: #656b74;
+  --sl-color-gray-5: #3b4046;
+  --sl-color-gray-6: #2a2e34;
+  --sl-color-black: #17181a;
+
+  --sl-color-bg: #17181a;
+  --sl-color-bg-nav: #1b1d20;
+  --sl-color-bg-sidebar: #17181a;
+  --sl-color-bg-inline-code: #212429;
+
+  --numen-up: #7aa7dd;
+  --numen-down: #6fbd93;
+  --numen-across: #d6a463;
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #dce7f5;
+  --sl-color-accent: #2f5d94;
+  --sl-color-accent-high: #1e3a5c;
+
+  --sl-color-white: #191b1e;
+  --sl-color-gray-1: #2b2e33;
+  --sl-color-gray-2: #4a4f57;
+  --sl-color-gray-3: #6a6f77;
+  --sl-color-gray-4: #9aa0a8;
+  --sl-color-gray-5: #d6d8dc;
+  --sl-color-gray-6: #e4e4e7;
+  --sl-color-gray-7: #f2f2f3;
+  --sl-color-black: #fbfbfa;
+
+  --sl-color-bg: #fbfbfa;
+  --sl-color-bg-nav: #ffffff;
+  --sl-color-bg-sidebar: #fbfbfa;
+  --sl-color-bg-inline-code: #eeeeef;
+
+  --numen-up: #3f6ca8;
+  --numen-down: #3d7f5f;
+  --numen-across: #9a6a2f;
+}
+
+/* The name in the corner is set the way it is set on the page the product is
+   read about on. */
+.site-title {
+  font-family: var(--numen-display);
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.site-title img {
+  border-radius: 22%;
+}
+
+.sl-markdown-content h1,
+.sl-markdown-content h2,
+.content-panel h1 {
+  font-family: var(--numen-display);
+  font-weight: 500;
+  font-variation-settings: 'opsz' 34;
+  letter-spacing: -0.015em;
+}
+
+.sl-markdown-content {
+  --sl-text-body: 1.0625rem;
+  line-height: 1.65;
+}
+
+.sl-markdown-content p,
+.sl-markdown-content li {
+  text-wrap: pretty;
+}
+
+/* A table of two columns is the shape most of this manual answers in: a thing
+   on the left, what it means on the right. */
+.sl-markdown-content table {
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+
+.sl-markdown-content th {
+  font-weight: 600;
+  text-align: start;
+}
+
+.sl-markdown-content :is(th, td) {
+  border-block-end: 1px solid var(--sl-color-gray-6);
+  padding-block: 0.55rem;
+  padding-inline-end: 1.25rem;
+  vertical-align: baseline;
+}
+
+.sl-markdown-content kbd {
+  font-family: var(--sl-font-mono);
+  font-size: 0.85em;
+  padding: 0.1em 0.42em;
+  border: 1px solid var(--sl-color-gray-5);
+  border-block-end-width: 2px;
+  border-radius: 4px;
+  background: var(--sl-color-bg-inline-code);
+  white-space: nowrap;
+}
+
+/* The three directions a link is drawn in, wherever one is named in the text. */
+.up {
+  color: var(--numen-up);
+}
+
+.down {
+  color: var(--numen-down);
+}
+
+.across {
+  color: var(--numen-across);
+}
+
+:is(.up, .down, .across) code {
+  color: inherit;
+}
