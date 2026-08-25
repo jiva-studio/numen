@@ -139,9 +139,11 @@ export type {
 
 export type { Environment, PlexTransition } from './plex/transition'
 export type {
+  EdgeArrow,
   EdgeCurve,
   EdgeHeading,
   Extent,
+  PlacedArrow,
   PlacedEdge,
   PlacedNode,
   PlexEdge,

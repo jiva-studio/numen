@@ -6,6 +6,7 @@ import { routeEdges, routingFor } from './routing'
 import { neighbourhoods } from '../fixtures/neighbourhoods'
 import {
   lengthOf,
+  type EdgeArrow,
   type PlacedNode,
   type PlexNeighbourhood,
   type PlexSeat,
@@ -254,3 +255,63 @@ describe('a title cut to the line it is set on', () => {
   })
 })
 
+
+/**
+ * An arrowhead is drawn at one end of the line and aimed out of it. Which end
+ * comes down with the edge; where and which way round is worked out here.
+ */
+describe('the arrowhead a line carries', () => {
+  const nodes = [
+    { id: 'focus', title: 'Here', seat: 'focus' as const },
+    { id: 'below', title: 'Below', seat: 'child' as const },
+  ]
+
+  /** One line straight down the page, so its ends are a quarter turn apart. */
+  const routed = (arrow?: EdgeArrow) =>
+    arrangePlex({
+      nodes,
+      edges: [{ from: 'focus', to: 'below', ...(arrow ? { arrow } : {}) }],
+    }).edges[0]!
+
+  it('sits where the line arrives, aimed the way it is going', () => {
+    const edge = routed('to')
+    expect(edge.arrowhead!.at.x).toBe(edge.toPoint.x)
+    expect(edge.arrowhead!.at.y).toBe(edge.toPoint.y)
+    expect(edge.arrowhead!.angle).toBeCloseTo(90)
+  })
+
+  it('sits where the line leaves, aimed back out of it', () => {
+    const edge = routed('from')
+    expect(edge.arrowhead!.at.x).toBe(edge.fromPoint.x)
+    expect(edge.arrowhead!.at.y).toBe(edge.fromPoint.y)
+    expect(edge.arrowhead!.angle).toBeCloseTo(-90)
+  })
+
+  it('is drawn on no line that was given no arrow', () => {
+    expect(routed().arrowhead).toBeUndefined()
+  })
+
+  it('leaves the title of its line short of the head', () => {
+    const measure = (words: string) => 4 * [...words].length
+    const byId = new Map(
+      arrangePlex({ nodes, edges: [] }).nodes.map((node) => [node.id, node]),
+    )
+    const words = (arrow?: EdgeArrow) =>
+      routeEdges(
+        [
+          {
+            from: 'focus',
+            to: 'below',
+            label: 'the scene in the assembly',
+            ...(arrow ? { arrow } : {}),
+          },
+        ],
+        byId,
+        routingFor(DEFAULT_OPTIONS, measure),
+      )[0]!.words!
+
+    const room = lengthOf(routed()) - 2 * DEFAULT_OPTIONS.routing.arrowRoom
+    expect(measure(words('to'))).toBeLessThanOrEqual(room)
+    expect(measure(words())).toBeGreaterThan(room)
+  })
+})

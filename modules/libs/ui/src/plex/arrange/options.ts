@@ -46,6 +46,11 @@ export interface RoutingOptions {
   readonly curvature: number
   /** And never less than this, or a short edge sets off crooked. */
   readonly minReach: number
+  /**
+   * How much of a line an arrowhead takes. A title is set about the middle of
+   * its line, so a line carrying one has this much less room at either end.
+   */
+  readonly arrowRoom: number
 }
 
 /**
@@ -99,7 +104,7 @@ export const DEFAULT_OPTIONS: PlexOptions = {
   margin: 16,
   maxPerLine: 5,
   maxLines: 4,
-  routing: { curvature: 0.55, minReach: 22 },
+  routing: { curvature: 0.55, minReach: 22, arrowRoom: 14 },
   motion: { arriveAfter: 0.35, leaveBefore: 0.45 },
   gesture: { verticalBias: 4 },
   direction: DEFAULT_DIRECTION,

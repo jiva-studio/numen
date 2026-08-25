@@ -387,3 +387,87 @@ describe('a node keeps its own drawing across a change', () => {
     expect(view.get('[aria-label^="Going"]').element).toBe(was)
   })
 })
+
+/**
+ * An arrow is drawn on a line whose relationship both ends named, at the end
+ * the edge asks for. A line given none carries none.
+ */
+describe('the arrow on a line', () => {
+  const named: PlexNeighbourhood = {
+    nodes: [
+      { id: 'focus', title: 'Start', seat: 'focus' },
+      { id: 'below', title: 'Below', seat: 'child' },
+      { id: 'above', title: 'Above', seat: 'parent' },
+      { id: 'aside', title: 'Aside', seat: 'jump' },
+    ],
+    edges: [
+      { from: 'focus', to: 'below', label: 'holds', arrow: 'to' },
+      { from: 'above', to: 'focus', arrow: 'from' },
+      { from: 'aside', to: 'focus', label: 'see also' },
+    ],
+  }
+
+  const frame = arrangePlex(named)
+
+  const mountNamed = () =>
+    mount(PlexView, {
+      props: { frame, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
+    })
+
+  /** Where an arrowhead was put, and the turn it was given. */
+  const put = (transform: string) => {
+    const [x, y, angle] = transform.match(/-?\d+(?:\.\d+)?/g)!.map(Number)
+    return { x: x!, y: y!, angle: angle! }
+  }
+
+  it('draws one arrowhead for each line that asked for one', () => {
+    expect(mountNamed().findAll('.plex__edge-arrow')).toHaveLength(2)
+  })
+
+  it('puts each one on its own end of its own line, turned along it', () => {
+    const view = mountNamed()
+    const drawn = view.findAll('.plex__edge-arrow')
+
+    for (const [at, edge] of [frame.edges[0]!, frame.edges[1]!].entries()) {
+      const head = put(drawn[at]!.attributes('transform')!)
+      expect(head.x).toBeCloseTo(edge.arrowhead!.at.x)
+      expect(head.y).toBeCloseTo(edge.arrowhead!.at.y)
+      expect(head.angle).toBeCloseTo(edge.arrowhead!.angle)
+    }
+
+    // The two ends of one picture: one arrow points down out of the focus and
+    // the other back up out of it.
+    expect(put(drawn[0]!.attributes('transform')!).angle).toBeCloseTo(90)
+    expect(put(drawn[1]!.attributes('transform')!).angle).toBeCloseTo(-90)
+  })
+
+  it('fades an arrow with the line it is drawn on', () => {
+    const view = mount(PlexView, {
+      props: {
+        frame: { ...frame, edges: frame.edges.map((edge) => ({ ...edge, opacity: 0.4 })) },
+        viewport: VIEWPORT,
+        nodeSize: DEFAULT_OPTIONS.nodeSize,
+      },
+    })
+    for (const arrow of view.findAll('.plex__edge-arrow')) {
+      expect(arrow.attributes('opacity')).toBe('0.4')
+    }
+  })
+
+  it('draws an arrow before every title, which stands over it', () => {
+    const view = mountNamed()
+    const arrow = view.findAll('.plex__edge-arrow')[0]!.element
+    for (const title of view.findAll('.plex__edge-label')) {
+      const where = arrow.compareDocumentPosition(title.element)
+      expect(where & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    }
+  })
+
+  it('lifts the arrow with the line the hand comes to rest on', async () => {
+    const view = mountNamed()
+    await view.findAll('.plex__edge-hit')[0]!.trigger('pointerenter')
+
+    expect(view.get('.plex__lift').findAll('.plex__edge-arrow')).toHaveLength(1)
+    expect(view.findAll('.plex__edge-arrow')).toHaveLength(2)
+  })
+})

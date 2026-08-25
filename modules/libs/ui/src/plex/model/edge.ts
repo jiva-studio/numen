@@ -1,10 +1,15 @@
 import type { Point } from './node'
 
+/** The end of a line an arrowhead is drawn at, pointing out of the line there. */
+export type EdgeArrow = 'from' | 'to'
+
 export interface PlexEdge {
   readonly from: string
   readonly to: string
   /** Drawn along the line when present; the plex never invents one. */
   readonly label?: string
+  /** The end an arrowhead is drawn at. A line given none carries none. */
+  readonly arrow?: EdgeArrow
 }
 
 /**
@@ -26,6 +31,15 @@ export interface EdgeCurve {
  */
 export type EdgeHeading = 'along' | 'against'
 
+/**
+ * An arrowhead as it is drawn: the point of the curve it sits on, and the turn
+ * that aims it along the line there, in degrees clockwise from the x axis.
+ */
+export interface PlacedArrow {
+  readonly at: Point
+  readonly angle: number
+}
+
 /** An edge routed between two placed nodes. */
 export interface PlacedEdge extends PlexEdge, EdgeCurve {
   readonly opacity: number
@@ -35,6 +49,8 @@ export interface PlacedEdge extends PlexEdge, EdgeCurve {
    * ellipsis. The whole of it where nothing measured the words.
    */
   readonly words?: string | undefined
+  /** Where the arrowhead goes and which way it is aimed, for an edge with one. */
+  readonly arrowhead?: PlacedArrow | undefined
 }
 
 /**
@@ -120,4 +136,16 @@ export const headingOf = (edge: EdgeCurve): EdgeHeading => {
   const middle = tangentAt(edge, 0.5)
   if (middle.x !== 0) return middle.x < 0 ? 'against' : 'along'
   return middle.y < 0 ? 'against' : 'along'
+}
+
+/**
+ * The arrowhead at one end of a curve. It sits on the end itself and is aimed
+ * out of the line: at the end the curve leaves from, that is the tangent there
+ * taken backwards.
+ */
+export const arrowOf = (edge: EdgeCurve, end: EdgeArrow): PlacedArrow => {
+  const t = end === 'to' ? 1 : 0
+  const way = tangentAt(edge, t)
+  const out = end === 'to' ? way : { x: -way.x, y: -way.y }
+  return { at: pointAt(edge, t), angle: (Math.atan2(out.y, out.x) * 180) / Math.PI }
 }

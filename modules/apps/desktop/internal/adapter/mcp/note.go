@@ -218,10 +218,11 @@ func addNoteTools(server *sdk.Server, core Core) {
 		res := out{Focus: noteOf(found.Focus)}
 		for _, related := range found.Related {
 			res.Related = append(res.Related, Seated{
-				Note:    noteOf(related.NoteRef),
-				Seat:    string(related.Seat),
-				Label:   related.Label,
-				Through: related.Through,
+				Note:     noteOf(related.NoteRef),
+				Seat:     string(related.Seat),
+				Label:    related.Label,
+				Through:  related.Through,
+				Answered: related.Answered,
 			})
 		}
 		return nil, res, nil
@@ -477,10 +478,11 @@ func why(c note.Contents) string {
 
 // Seated is a note in the picture around another one.
 type Seated struct {
-	Note    Note   `json:"note"`
-	Seat    string `json:"seat" jsonschema:"parent, child, sibling or jump"`
-	Label   string `json:"label,omitempty" jsonschema:"what the person calls this relationship"`
-	Through string `json:"through,omitempty" jsonschema:"the note they share, when they are siblings"`
+	Note     Note   `json:"note"`
+	Seat     string `json:"seat" jsonschema:"parent, child, sibling or jump"`
+	Label    string `json:"label,omitempty" jsonschema:"what the person calls this relationship"`
+	Through  string `json:"through,omitempty" jsonschema:"the note they share, when they are siblings"`
+	Answered bool   `json:"answered,omitempty" jsonschema:"set when both notes name this relationship, the label being then the word the note in focus wrote"`
 }
 
 // fingerprintOf is what a note was when it was read, in a form an agent hands

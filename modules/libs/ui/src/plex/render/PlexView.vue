@@ -102,10 +102,18 @@ const readingLine = (edge: PlacedEdge) =>
 /** Two plexes on one page each name their own paths. */
 const uid = useId()
 
+/** An arrowhead, put on its end of the line and turned along it. */
+const arrowhead = (edge: PlacedEdge) =>
+  edge.arrowhead
+    ? `translate(${edge.arrowhead.at.x} ${edge.arrowhead.at.y})` +
+      ` rotate(${edge.arrowhead.angle})`
+    : null
+
 /**
  * Every edge with what the drawing asks of it: the two keys it is remembered
- * by, the curve, and the line its title is set along. A title is always set
- * along the line it belongs to, in the words the arrangement cut for it.
+ * by, the curve, the line its title is set along, and the arrowhead it ends
+ * in. A title is always set along the line it belongs to, in the words the
+ * arrangement cut for it.
  */
 const lines = computed(() =>
   props.frame.edges.map((edge, at) => ({
@@ -115,6 +123,7 @@ const lines = computed(() =>
     /** What the hand is on: two lines between one pair are one line to point at. */
     pair: edgeKey(edge),
     d: path(edge),
+    arrow: arrowhead(edge),
     titlePath: edge.words ? `${uid}-title-${at}` : null,
     titleLine: readingLine(edge),
   })),
@@ -209,13 +218,15 @@ const ghost = computed<PlacedNode | null>(() => {
     </defs>
 
     <g aria-hidden="true">
-      <path
-        v-for="line in resting"
-        :key="line.key"
-        class="plex__edge"
-        :d="line.d"
-        :opacity="line.edge.opacity"
-      />
+      <template v-for="line in resting" :key="line.key">
+        <path class="plex__edge" :d="line.d" :opacity="line.edge.opacity" />
+        <path
+          v-if="line.arrow"
+          class="plex__edge-arrow"
+          :transform="line.arrow"
+          :opacity="line.edge.opacity"
+        />
+      </template>
     </g>
 
     <!-- The band a line is found by. It paints nothing, and the nodes come
@@ -269,6 +280,12 @@ const ghost = computed<PlacedNode | null>(() => {
     <g v-if="lifted.length" class="plex__lift" aria-hidden="true">
       <template v-for="line in lifted" :key="line.key">
         <path class="plex__edge" :d="line.d" :opacity="line.edge.opacity" />
+        <path
+          v-if="line.arrow"
+          class="plex__edge-arrow"
+          :transform="line.arrow"
+          :opacity="line.edge.opacity"
+        />
         <template v-if="showEdgeLabels && line.titlePath">
           <text
             v-for="layer in TITLE_LAYERS"
@@ -311,6 +328,14 @@ const ghost = computed<PlacedNode | null>(() => {
   stroke-linecap: round;
 }
 
+/* The head, drawn about its own tip and turned onto its end of the line by the
+   transform it is given. It stays within the room the arrangement keeps for it
+   at the end of a line. */
+.plex__edge-arrow {
+  d: path('M 0 0 L -9 3 L -9 -3 Z');
+  fill: var(--numen-edge);
+}
+
 .plex__edge-label {
   fill: var(--numen-edge-label);
   font-size: var(--numen-edge-label-size);
@@ -348,6 +373,10 @@ const ghost = computed<PlacedNode | null>(() => {
 
 .plex__lift .plex__edge {
   stroke: color-mix(in oklab, var(--numen-edge), var(--numen-node-fg) 55%);
+}
+
+.plex__lift .plex__edge-arrow {
+  fill: color-mix(in oklab, var(--numen-edge), var(--numen-node-fg) 55%);
 }
 
 /* The title stands over the boxes here, on a halo as heavy as that asks for. */

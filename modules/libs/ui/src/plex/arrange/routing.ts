@@ -1,4 +1,5 @@
 import {
+  arrowOf,
   headingOf,
   lengthOf,
   type EdgeCurve,
@@ -151,12 +152,17 @@ export function routeEdge(
         toPoint: firstGate,
       }
 
+  // A title is set about the middle of its line and an arrowhead sits on one
+  // end, so a line carrying one has room for fewer words.
+  const room = lengthOf(curve) - (edge.arrow ? 2 * routing.arrowRoom : 0)
   const words =
     edge.label !== undefined && routing.labelWidth
-      ? cutToFit(edge.label, lengthOf(curve), routing.labelWidth)
+      ? cutToFit(edge.label, room, routing.labelWidth)
       : edge.label
 
-  return { ...edge, ...curve, opacity, heading: headingOf(curve), words }
+  const arrowhead = edge.arrow ? arrowOf(curve, edge.arrow) : undefined
+
+  return { ...edge, ...curve, opacity, heading: headingOf(curve), words, arrowhead }
 }
 
 export function routeEdges(

@@ -241,6 +241,34 @@ describe('the title a line carries while the picture moves', () => {
   })
 })
 
+describe('the arrow a line carries while the picture moves', () => {
+  const marked = (neighbourhood: PlexNeighbourhood): PlexNeighbourhood => ({
+    ...neighbourhood,
+    edges: neighbourhood.edges.map((edge) =>
+      edge.to === 'a' ? { ...edge, arrow: 'to' as const } : edge,
+    ),
+  })
+
+  const start = arrangePlex(marked(before))
+  const end = arrangePlex(marked(after))
+
+  it('keeps it on the end of the line, wherever the line has got to', () => {
+    for (let t = 0.05; t < 1; t += 0.05) {
+      const edge = interpolatePlex(start, end, t).edges.find((e) => e.to === 'a')!
+      expect(edge.arrowhead, `at ${t.toFixed(2)}`).toBeDefined()
+      expect(edge.arrowhead!.at.x).toBe(edge.toPoint.x)
+      expect(edge.arrowhead!.at.y).toBe(edge.toPoint.y)
+    }
+  })
+
+  it('aims it out of the box it arrives at, which it meets square on', () => {
+    for (let t = 0.05; t < 1; t += 0.05) {
+      const edge = interpolatePlex(start, end, t).edges.find((e) => e.to === 'a')!
+      expect(edge.arrowhead!.angle, `at ${t.toFixed(2)}`).toBeCloseTo(90)
+    }
+  })
+})
+
 describe('the frame the viewport is fitted to', () => {
   it('travels from one extent to the other rather than jumping', () => {
     const half = interpolatePlex(from, to, 0.5).extent
