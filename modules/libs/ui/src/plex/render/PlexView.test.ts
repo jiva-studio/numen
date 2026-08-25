@@ -203,6 +203,10 @@ describe('the line under the hand', () => {
   const reach = (view: ReturnType<typeof mountTitled>, at: number) =>
     view.findAll('.plex__edge-hit')[at]!
 
+  /** The two layers one resting title is painted in, in the same order. */
+  const title = (view: ReturnType<typeof mountTitled>, at: number) =>
+    view.findAll('.plex__edge-label').slice(2 * at, 2 * at + 2)
+
   it('lifts the line the hand comes to rest on, and puts it back after', async () => {
     const view = mountTitled()
     expect(view.find('.plex__lift').exists()).toBe(false)
@@ -241,8 +245,9 @@ describe('the line under the hand', () => {
     const view = mountTitled()
     const lines = titledFrame.edges.length
 
+    // Every title is painted twice over, resting or lifted.
     expect(view.findAll('.plex__edge')).toHaveLength(lines)
-    expect(view.findAll('.plex__edge-label')).toHaveLength(lines)
+    expect(view.findAll('.plex__edge-label')).toHaveLength(2 * lines)
 
     await reach(view, across).trigger('pointerenter')
 
@@ -251,10 +256,24 @@ describe('the line under the hand', () => {
       reach(view, across).attributes('d'),
     )
 
-    // Its title leaves the resting layer for the lift, where it is painted
-    // twice over.
+    // Its title leaves the resting layer for the lift.
     expect(view.get('.plex__lift').findAll('.plex__edge-label')).toHaveLength(2)
-    expect(view.findAll('.plex__edge-label')).toHaveLength(lines + 1)
+    expect(view.findAll('.plex__edge-label')).toHaveLength(2 * lines)
+  })
+
+  it('paints a resting title as a halo under its letters, as the lift does', () => {
+    const view = mountTitled()
+    const [halo, letters] = title(view, across)
+
+    expect(halo!.classes()).toContain('plex__edge-label--halo')
+    expect(letters!.classes()).toContain('plex__edge-label--letters')
+
+    // One lands on the other: the same words, on the same line, at the same
+    // place along it.
+    expect(halo!.text()).toBe(letters!.text())
+    expect(halo!.get('textPath').attributes('href')).toBe(
+      letters!.get('textPath').attributes('href'),
+    )
   })
 
   it('paints the lifted title as a halo under its letters, on one line', async () => {
@@ -263,11 +282,10 @@ describe('the line under the hand', () => {
     const [halo, letters] = view.get('.plex__lift').findAll('.plex__edge-label')
 
     // A glyph set along a path is painted as a run of its own, so a halo drawn
-    // with the letters lies over the one beside it.
+    // with the letters lies over the one beside it. What each layer paints is
+    // a class, and is checked in a browser.
     expect(halo!.classes()).toContain('plex__edge-label--halo')
-    expect(halo!.attributes('fill')).toBe('none')
     expect(letters!.classes()).toContain('plex__edge-label--letters')
-    expect(letters!.attributes('stroke')).toBe('none')
 
     // One lands on the other: the same words, on the same line, at the same
     // place along it.
@@ -286,20 +304,19 @@ describe('the line under the hand', () => {
     const titles = view.get('.plex__lift').findAll('.plex__edge-label')
 
     expect(titles).toHaveLength(2)
-    expect(titles[0]!.attributes('fill')).toBe('none')
-    expect(titles[1]!.attributes('stroke')).toBe('none')
+    expect(titles[0]!.classes()).toContain('plex__edge-label--halo')
+    expect(titles[1]!.classes()).toContain('plex__edge-label--letters')
     expect(titles[0]!.attributes('x')).toBe(titles[1]!.attributes('x'))
     expect(titles[0]!.find('textPath').exists()).toBe(false)
   })
 
   it('sets a title along its line where the line runs across the page', () => {
     const view = mountTitled()
-    const titles = view.findAll('.plex__edge-label')
 
-    expect(titles[across]!.find('textPath').exists()).toBe(true)
+    expect(title(view, across)[0]!.find('textPath').exists()).toBe(true)
     // A line holding no one direction takes flat words at the midpoint.
-    expect(titles[down]!.find('textPath').exists()).toBe(false)
-    expect(titles[down]!.attributes('x')).toBeDefined()
+    expect(title(view, down)[0]!.find('textPath').exists()).toBe(false)
+    expect(title(view, down)[0]!.attributes('x')).toBeDefined()
   })
 
   it('sets a title on a line running the way the words are read', () => {
@@ -313,6 +330,37 @@ describe('the line under the hand', () => {
 
     expect(numbers[0]).toBe(edge.toPoint.x)
     expect(numbers.at(-2)).toBe(edge.fromPoint.x)
+  })
+})
+
+/**
+ * A pair joined twice over: one relationship out and another back. The hand is
+ * on the pair, and the drawing is one line for each direction.
+ */
+describe('two lines between one pair', () => {
+  const paired = arrangePlex({
+    nodes: [
+      { id: 'focus', title: 'Start', seat: 'focus' },
+      { id: 'aside', title: 'Aside', seat: 'jump' },
+    ],
+    edges: [
+      { from: 'focus', to: 'aside', label: 'out' },
+      { from: 'aside', to: 'focus', label: 'back' },
+    ],
+  })
+
+  it('draws both, and leaves neither behind when the hand comes to rest', async () => {
+    const view = mount(PlexView, {
+      props: { frame: paired, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
+    })
+    expect(view.findAll('.plex__edge')).toHaveLength(2)
+    expect(view.findAll('.plex__edge-label')).toHaveLength(4)
+
+    await view.findAll('.plex__edge-hit')[0]!.trigger('pointerenter')
+
+    expect(view.findAll('.plex__edge')).toHaveLength(2)
+    expect(view.findAll('.plex__edge-label')).toHaveLength(4)
+    expect(view.get('.plex__lift').findAll('.plex__edge')).toHaveLength(2)
   })
 })
 

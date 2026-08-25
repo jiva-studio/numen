@@ -14,6 +14,12 @@ export type Axis = 'vertical' | 'horizontal' | 'auto'
 
 export interface Routing extends RoutingOptions {
   readonly axisOf: (node: { seat: PlexSeat }) => Axis
+  /**
+   * How wide a title is set. Text is measured where the plex is drawn; here it
+   * arrives as a number, and without a measurer a title is judged by direction
+   * and turn alone.
+   */
+  readonly labelWidth?: ((label: string) => number) | undefined
 }
 
 /**
@@ -21,9 +27,13 @@ export interface Routing extends RoutingOptions {
  * last child in a wide row is further sideways than it is down, and measuring
  * would send its edge out of the focus's side.
  */
-export function routingFor(options: PlexOptions): Routing {
+export function routingFor(
+  options: PlexOptions,
+  measureLabel?: (label: string) => number,
+): Routing {
   return {
     ...options.routing,
+    labelWidth: measureLabel,
     axisOf: (node) =>
       node.seat === 'focus'
         ? 'auto'
@@ -112,7 +122,9 @@ export function routeEdge(
         toPoint: firstGate,
       }
 
-  return { ...edge, ...curve, opacity, heading: headingOf(curve) }
+  const words = edge.label === undefined ? undefined : routing.labelWidth?.(edge.label)
+
+  return { ...edge, ...curve, opacity, heading: headingOf(curve, words) }
 }
 
 export function routeEdges(

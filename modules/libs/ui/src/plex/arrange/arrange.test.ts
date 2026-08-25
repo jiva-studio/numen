@@ -229,6 +229,40 @@ describe('a box is as wide as its title needs', () => {
   })
 })
 
+describe('a label is as long as its words', () => {
+  /** One line, running sideways, with words written along it. */
+  const labelled: PlexNeighbourhood = {
+    nodes: [
+      { id: 'focus', title: 'Here', seat: 'focus' },
+      { id: 'aside', title: 'Aside', seat: 'jump' },
+    ],
+    edges: [{ from: 'aside', to: 'focus', label: 'the scene in the assembly' }],
+  }
+
+  const headingOf = (measureLabel?: (label: string) => number) =>
+    arrangePlex(labelled, { measureLabel }).edges[0]!.heading
+
+  it('asks the measurer for the words a line carries', () => {
+    const asked: string[] = []
+    arrangePlex(labelled, {
+      measureLabel: (label) => {
+        asked.push(label)
+        return 0
+      },
+    })
+    expect(asked).toStrictEqual(['the scene in the assembly'])
+  })
+
+  it('takes words too long for their line off it', () => {
+    expect(headingOf(() => 4000)).toBe('none')
+    expect(headingOf(() => 1)).not.toBe('none')
+  })
+
+  it('sets a title along its line where nothing measured it', () => {
+    expect(headingOf()).not.toBe('none')
+  })
+})
+
 describe('no two nodes are drawn on top of each other', () => {
   const noneOverlap = (nodes: readonly PlacedNode[]) => {
     for (let i = 0; i < nodes.length; i++) {

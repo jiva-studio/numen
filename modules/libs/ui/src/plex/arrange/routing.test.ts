@@ -1,8 +1,15 @@
 /** How a line is drawn between two boxes. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
+import { DEFAULT_OPTIONS } from './options'
+import { routeEdges, routingFor } from './routing'
 import { neighbourhoods } from '../fixtures/neighbourhoods'
-import type { PlacedNode, PlexSeat } from '../model'
+import {
+  lengthOf,
+  type PlacedNode,
+  type PlexNeighbourhood,
+  type PlexSeat,
+} from '../model'
 
 const withSeat = (frame: { nodes: readonly PlacedNode[] }, seat: PlexSeat) =>
   frame.nodes.filter((node) => node.seat === seat)
@@ -154,6 +161,62 @@ describe('edges', () => {
     const nodes = [{ id: 'a', title: 'A', seat: 'focus' as const }]
     const layout = arrangePlex({ nodes, edges: [{ from: 'a', to: 'a' }] })
     expect(layout.edges).toHaveLength(0)
+  })
+})
+
+/**
+ * A title set along a path keeps the glyphs that fall on it and drops the rest,
+ * so a long one on a short line arrives as the middle of itself.
+ */
+describe('a title measured against the line it would be set on', () => {
+  const sideways: PlexNeighbourhood = {
+    nodes: [
+      { id: 'focus', title: 'Here', seat: 'focus' },
+      { id: 'aside', title: 'Aside', seat: 'jump' },
+    ],
+    edges: [{ from: 'aside', to: 'focus', label: 'the scene in the assembly' }],
+  }
+
+  const placed = arrangePlex(sideways)
+  const byId = new Map(placed.nodes.map((node) => [node.id, node]))
+  const curve = placed.edges[0]!
+  const arc = lengthOf(curve)
+
+  const routed = (measureLabel?: (label: string) => number) =>
+    routeEdges(sideways.edges, byId, routingFor(DEFAULT_OPTIONS, measureLabel))[0]!
+
+  it('estimates the curve between its chord and the way round its controls', () => {
+    const step = (a: { x: number; y: number }, b: { x: number; y: number }) =>
+      Math.hypot(b.x - a.x, b.y - a.y)
+    const chord = step(curve.fromPoint, curve.toPoint)
+    const round =
+      step(curve.fromPoint, curve.control1) +
+      step(curve.control1, curve.control2) +
+      step(curve.control2, curve.toPoint)
+
+    expect(arc).toBeGreaterThanOrEqual(chord)
+    expect(arc).toBeLessThanOrEqual(round)
+  })
+
+  it('lies flat where the words are longer than the curve', () => {
+    expect(routed(() => arc + 1).heading).toBe('none')
+  })
+
+  it('is set along the line where they fit on it', () => {
+    expect(routed(() => arc - 1).heading).toBe('right')
+  })
+
+  it('is judged by direction and turn alone where there is no measurer', () => {
+    expect(routed().heading).toBe('right')
+  })
+
+  it('measures the words it carries, and no other', () => {
+    const asked: string[] = []
+    routed((label) => {
+      asked.push(label)
+      return 0
+    })
+    expect(asked).toStrictEqual(['the scene in the assembly'])
   })
 })
 

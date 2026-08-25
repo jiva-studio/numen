@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { interpolatePlex } from './interpolate'
 import { easeOut } from './math'
-import type { PlexFrame, PlexNeighbourhood } from '../model'
+import { headingOf, type PlexFrame, type PlexNeighbourhood } from '../model'
 
 /** Focus on `focus`, with two children and one parent. */
 const before: PlexNeighbourhood = {
@@ -169,6 +169,46 @@ describe('the edges follow the boxes', () => {
     // Out of sight well before it is out of the frame.
     expect(late.edges.find((e) => e.to === 'b')?.opacity).toBe(0)
     expect(to.edges.find((e) => e.to === 'b')).toBeUndefined()
+  })
+})
+
+/**
+ * A title set along its line and one lying flat at the midpoint are two
+ * different drawings, and a heading read off the frame in flight changes
+ * several times over one movement.
+ */
+describe('the heading a title is set at while the picture moves', () => {
+  const named = (edge: { from: string; to: string }) => `${edge.from}->${edge.to}`
+
+  it('holds the heading of the arrangement it is moving to', () => {
+    const settled = new Map(to.edges.map((edge) => [named(edge), edge.heading]))
+
+    // A child promoted to the focus swings its edge through the steep
+    // boundary, and halfway along the curve reads as running across the page.
+    const swung = interpolatePlex(from, to, 0.5).edges.find((e) => e.to === 'a')!
+    expect(swung.heading).toBe('none')
+    expect(headingOf(swung)).toBe('left')
+
+    for (let t = 0.05; t < 1; t += 0.05) {
+      for (const edge of interpolatePlex(from, to, t).edges) {
+        const heading = settled.get(named(edge))
+        if (heading === undefined) continue
+        expect(edge.heading, `${named(edge)} at ${t.toFixed(2)}`).toBe(heading)
+      }
+    }
+  })
+
+  it('holds the heading of the arrangement it is leaving for a line only there', () => {
+    const marked: PlexFrame = {
+      ...from,
+      edges: from.edges.map((edge) =>
+        edge.to === 'b' ? { ...edge, heading: 'left' as const } : edge,
+      ),
+    }
+    const going = interpolatePlex(marked, to, 0.5).edges.find((e) => e.to === 'b')!
+
+    expect(going.heading).toBe('left')
+    expect(headingOf(going)).toBe('right')
   })
 })
 

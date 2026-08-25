@@ -104,15 +104,18 @@ const readingLine = (edge: PlacedEdge) =>
 const uid = useId()
 
 /**
- * Every edge with what the drawing asks of it: the curve, the key it is
- * remembered by, and the line its title is set along. A title follows the
- * curve where it holds one direction across the page, and sits flat at the
- * midpoint where it does not.
+ * Every edge with what the drawing asks of it: the two keys it is remembered
+ * by, the curve, and the line its title is set along. A title follows the curve
+ * where it holds one direction across the page, and sits flat at the midpoint
+ * where it does not.
  */
 const lines = computed(() =>
   props.frame.edges.map((edge, at) => ({
     edge,
-    key: edgeKey(edge),
+    /** One drawing per pair and direction, so a pair may carry two lines. */
+    key: `${edge.from}->${edge.to}`,
+    /** What the hand is on: two lines between one pair are one line to point at. */
+    pair: edgeKey(edge),
     d: path(edge),
     titlePath: edge.label && edge.heading !== 'none' ? `${uid}-title-${at}` : null,
     titleLine: readingLine(edge),
@@ -131,20 +134,17 @@ watch(
   },
 )
 
-/** The one line drawn over the boxes, and every other, drawn under them. */
-const lifted = computed(() => lines.value.find((line) => line.key === over.value) ?? null)
+/** The lines drawn over the boxes, and every other, drawn under them. */
+const lifted = computed(() => lines.value.filter((line) => line.pair === over.value))
 
-const resting = computed(() => lines.value.filter((line) => line.key !== over.value))
+const resting = computed(() => lines.value.filter((line) => line.pair !== over.value))
 
 /**
- * A lifted title is painted twice over, the halo finished before a letter is
- * drawn. Each glyph set along a path is a run of its own, and a halo painted
- * with the letters lies over the one beside it.
+ * A title is painted twice over, the halo finished before a letter is drawn.
+ * Each glyph set along a path is a run of its own, and a halo painted with the
+ * letters lies over the one beside it.
  */
-const TITLE_LAYERS = [
-  { name: 'halo', paints: { fill: 'none' } },
-  { name: 'letters', paints: { stroke: 'none' } },
-] as const
+const TITLE_LAYERS = ['halo', 'letters'] as const
 
 /**
  * What each node is to the gesture. Only the node it left from keeps a handle
@@ -228,32 +228,36 @@ const ghost = computed<PlacedNode | null>(() => {
         :key="`reach:${line.key}`"
         class="plex__edge-hit"
         :d="line.d"
-        @pointerenter="over = line.key"
+        @pointerenter="over = line.pair"
         @pointerleave="over = null"
       />
     </g>
 
     <g v-if="showEdgeLabels" aria-hidden="true">
       <template v-for="line in resting" :key="`title:${line.key}`">
-        <text
-          v-if="line.titlePath"
-          class="plex__edge-label"
-          :opacity="line.edge.opacity"
-          text-anchor="middle"
-          dominant-baseline="middle"
-        ><textPath
-          :href="`#${line.titlePath}`"
-          startOffset="50%"
-        >{{ line.edge.label }}</textPath></text>
-        <text
-          v-else-if="line.edge.label"
-          class="plex__edge-label"
-          :x="midpointOf(line.edge).x"
-          :y="midpointOf(line.edge).y"
-          :opacity="line.edge.opacity"
-          text-anchor="middle"
-          dominant-baseline="middle"
-        >{{ line.edge.label }}</text>
+        <template v-for="layer in TITLE_LAYERS" :key="layer">
+          <text
+            v-if="line.titlePath"
+            class="plex__edge-label"
+            :class="`plex__edge-label--${layer}`"
+            :opacity="line.edge.opacity"
+            text-anchor="middle"
+            dominant-baseline="middle"
+          ><textPath
+            :href="`#${line.titlePath}`"
+            startOffset="50%"
+          >{{ line.edge.label }}</textPath></text>
+          <text
+            v-else-if="line.edge.label"
+            class="plex__edge-label"
+            :class="`plex__edge-label--${layer}`"
+            :x="midpointOf(line.edge).x"
+            :y="midpointOf(line.edge).y"
+            :opacity="line.edge.opacity"
+            text-anchor="middle"
+            dominant-baseline="middle"
+          >{{ line.edge.label }}</text>
+        </template>
       </template>
     </g>
 
@@ -273,33 +277,33 @@ const ghost = computed<PlacedNode | null>(() => {
 
     <!-- The line under the hand, drawn after the boxes so it stands over
          them, and with it the title it carries. -->
-    <g v-if="lifted" class="plex__lift" aria-hidden="true">
-      <path class="plex__edge" :d="lifted.d" :opacity="lifted.edge.opacity" />
-      <template v-if="showEdgeLabels && lifted.edge.label">
-        <template v-for="layer in TITLE_LAYERS" :key="layer.name">
-          <text
-            v-if="lifted.titlePath"
-            class="plex__edge-label"
-            :class="`plex__edge-label--${layer.name}`"
-            v-bind="layer.paints"
-            :opacity="lifted.edge.opacity"
-            text-anchor="middle"
-            dominant-baseline="middle"
-          ><textPath
-            :href="`#${lifted.titlePath}`"
-            startOffset="50%"
-          >{{ lifted.edge.label }}</textPath></text>
-          <text
-            v-else
-            class="plex__edge-label"
-            :class="`plex__edge-label--${layer.name}`"
-            v-bind="layer.paints"
-            :x="midpointOf(lifted.edge).x"
-            :y="midpointOf(lifted.edge).y"
-            :opacity="lifted.edge.opacity"
-            text-anchor="middle"
-            dominant-baseline="middle"
-          >{{ lifted.edge.label }}</text>
+    <g v-if="lifted.length" class="plex__lift" aria-hidden="true">
+      <template v-for="line in lifted" :key="line.key">
+        <path class="plex__edge" :d="line.d" :opacity="line.edge.opacity" />
+        <template v-if="showEdgeLabels && line.edge.label">
+          <template v-for="layer in TITLE_LAYERS" :key="layer">
+            <text
+              v-if="line.titlePath"
+              class="plex__edge-label"
+              :class="`plex__edge-label--${layer}`"
+              :opacity="line.edge.opacity"
+              text-anchor="middle"
+              dominant-baseline="middle"
+            ><textPath
+              :href="`#${line.titlePath}`"
+              startOffset="50%"
+            >{{ line.edge.label }}</textPath></text>
+            <text
+              v-else
+              class="plex__edge-label"
+              :class="`plex__edge-label--${layer}`"
+              :x="midpointOf(line.edge).x"
+              :y="midpointOf(line.edge).y"
+              :opacity="line.edge.opacity"
+              text-anchor="middle"
+              dominant-baseline="middle"
+            >{{ line.edge.label }}</text>
+          </template>
         </template>
       </template>
     </g>
@@ -332,11 +336,19 @@ const ghost = computed<PlacedNode | null>(() => {
 .plex__edge-label {
   fill: var(--numen-edge-label);
   font-size: var(--numen-edge-label-size);
-  paint-order: stroke;
   stroke: var(--numen-surface);
   stroke-width: var(--numen-edge-label-halo);
   stroke-linejoin: round;
   pointer-events: none;
+}
+
+/* The halo is stroke alone; the letters over it, fill alone. */
+.plex__edge-label--halo {
+  fill: none;
+}
+
+.plex__edge-label--letters {
+  stroke: none;
 }
 
 /* Wide enough for a hand to land on, and unpainted. */

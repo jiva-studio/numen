@@ -7,6 +7,7 @@
  */
 import {
   edgeKey,
+  type EdgeHeading,
   type PlacedEdge,
   type PlacedNode,
   type PlexEdge,
@@ -85,12 +86,18 @@ export function interpolatePlex(
     return willEdge.has(key) ? arriving : leaving
   }
 
+  // A heading belongs to a settled arrangement: the one an edge has where it
+  // is going, and the one it is leaving with for an edge that only rests there.
+  const settled = new Map<string, EdgeHeading>()
+  for (const edge of from.edges) settled.set(edgeKey(edge), edge.heading)
+  for (const edge of to.edges) settled.set(edgeKey(edge), edge.heading)
+
   const edges: PlacedEdge[] = routeEdges(
     both,
     byId,
     routingFor(resolved),
     edgeOpacity,
-  )
+  ).map((edge) => ({ ...edge, heading: settled.get(edgeKey(edge)) ?? edge.heading }))
 
   return {
     nodes,

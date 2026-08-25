@@ -41,9 +41,9 @@ export {
 /** The size a node's label is being set at, and the plex drawn to hold it. */
 export { optionsForType, scaleOptions, useTypeSize, DESIGNED_TYPE } from './plex/sizing'
 
-/** How wide a title needs its box, measured against the type on the root. */
-export { titleWidths } from './plex/measure'
-export type { Measure } from './plex/measure'
+/** How wide a title needs its box, measured against the type the page is set in. */
+export { titleWidths, useTitleWidths } from './plex/measure'
+export type { Measure, Measures } from './plex/measure'
 
 export type {
   ArrangeInput,
@@ -139,6 +139,8 @@ export type {
 
 export type { Environment, PlexTransition } from './plex/transition'
 export type {
+  EdgeCurve,
+  EdgeHeading,
   Extent,
   PlacedEdge,
   PlacedNode,

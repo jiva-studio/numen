@@ -23,8 +23,9 @@ export interface EdgeCurve {
  * Which way the words of a title run along a curve. `left` is across the page
  * against reading, so the title is set on the curve taken the other way round.
  *
- * A curve running up or down the page, or turning hard under the length of a
- * word, holds no direction the words can take, and carries `none`.
+ * A curve running up or down the page, turning hard under the length of a
+ * word, or shorter than the words it would carry, holds no direction the words
+ * can take, and carries `none`.
  */
 export type EdgeHeading = 'left' | 'right' | 'none'
 
@@ -46,11 +47,48 @@ export interface PlacedEdge extends PlexEdge, EdgeCurve {
 export const edgeKey = (edge: PlexEdge): string =>
   edge.from < edge.to ? `${edge.from} ${edge.to}` : `${edge.to} ${edge.from}`
 
+/** Where the curve has got to at `t`. */
+const pointAt = (edge: EdgeCurve, t: number): Point => {
+  const back = 1 - t
+  const leaving = back * back * back
+  const first = 3 * back * back * t
+  const second = 3 * back * t * t
+  const arriving = t * t * t
+  return {
+    x:
+      leaving * edge.fromPoint.x +
+      first * edge.control1.x +
+      second * edge.control2.x +
+      arriving * edge.toPoint.x,
+    y:
+      leaving * edge.fromPoint.y +
+      first * edge.control1.y +
+      second * edge.control2.y +
+      arriving * edge.toPoint.y,
+  }
+}
+
 /** Halfway along the curve, where a label sits clear of the line. */
-export const midpointOf = (edge: EdgeCurve): Point => ({
-  x: (edge.fromPoint.x + 3 * edge.control1.x + 3 * edge.control2.x + edge.toPoint.x) / 8,
-  y: (edge.fromPoint.y + 3 * edge.control1.y + 3 * edge.control2.y + edge.toPoint.y) / 8,
-})
+export const midpointOf = (edge: EdgeCurve): Point => pointAt(edge, 0.5)
+
+/** How finely the curve is cut up to be measured. */
+const LENGTH_SAMPLES = 24
+
+/**
+ * How long the curve is, as an estimate: the chords between two dozen points
+ * along it, summed. A chord is shorter than the arc it spans, so the answer
+ * runs a little under.
+ */
+export const lengthOf = (edge: EdgeCurve): number => {
+  let total = 0
+  let previous = edge.fromPoint
+  for (let step = 1; step <= LENGTH_SAMPLES; step += 1) {
+    const point = pointAt(edge, step / LENGTH_SAMPLES)
+    total += Math.hypot(point.x - previous.x, point.y - previous.y)
+    previous = point
+  }
+  return total
+}
 
 /** Which way the curve is travelling at `t`, as a direction of any length. */
 const tangentAt = (edge: EdgeCurve, t: number): Point => {
@@ -85,15 +123,16 @@ const TITLE_STRETCH = [0.25, 0.75] as const
 const TURN_LIMIT = Math.PI / 6
 
 /**
- * Which way a curve runs where its title sits, and whether it holds that
- * direction for the length of a word.
+ * Which way a curve runs where its title sits, whether it holds that direction
+ * for the length of a word, and whether the words fit at all. How wide they are
+ * set arrives as a number, and without one the words are taken to fit.
  *
  * A seat says which way an edge was routed, and the curve says something else:
  * one that loops out of a column arrives at its midpoint running down the
  * page, and one joining two boxes closer together than the reach it leaves
  * with doubles back on itself.
  */
-export const headingOf = (edge: EdgeCurve): EdgeHeading => {
+export const headingOf = (edge: EdgeCurve, words?: number): EdgeHeading => {
   const middle = tangentAt(edge, 0.5)
   if (Math.abs(middle.y) > Math.abs(middle.x)) return 'none'
 
@@ -101,6 +140,10 @@ export const headingOf = (edge: EdgeCurve): EdgeHeading => {
     ...TITLE_STRETCH.map((t) => angleBetween(tangentAt(edge, t), middle)),
   )
   if (turn > TURN_LIMIT) return 'none'
+
+  // A title set along a path keeps the glyphs that fall on it and drops the
+  // rest.
+  if (words !== undefined && words > lengthOf(edge)) return 'none'
 
   return middle.x < 0 ? 'left' : 'right'
 }

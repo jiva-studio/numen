@@ -30,11 +30,16 @@ export interface ArrangeInput {
    * every box is drawn at its widest.
    */
   readonly measure?: ((node: PlexNode) => number) | undefined
+  /**
+   * The width a label's words need on their line, measured where the plex is
+   * drawn. Without one a label is written at whatever length it has.
+   */
+  readonly measureLabel?: ((label: string) => number) | undefined
 }
 
 export function arrangePlex(
   neighbourhood: PlexNeighbourhood,
-  { options, placement = rowsAndColumns, measure }: ArrangeInput = {},
+  { options, placement = rowsAndColumns, measure, measureLabel }: ArrangeInput = {},
 ): PlexFrame {
   const resolved = resolveOptions(options)
   const focusNode = assertNeighbourhood(neighbourhood)
@@ -57,7 +62,7 @@ export function arrangePlex(
   const nodes = [focus, ...placement.place(seating, focus, resolved, limits, widthOf)]
 
   const byId = new Map(nodes.map((node) => [node.id, node]))
-  const edges = routeEdges(neighbourhood.edges, byId, routingFor(resolved))
+  const edges = routeEdges(neighbourhood.edges, byId, routingFor(resolved, measureLabel))
 
   return { nodes, edges, extent: extentOf(nodes), overflow }
 }

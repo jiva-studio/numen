@@ -534,6 +534,121 @@ export const Overcrowded: Story = {
 }
 
 /**
+ * One title for each way a line can carry one: along a curve that runs across
+ * the page, flat on a curve that loops out of its column, and flat again where
+ * the words are longer than the curve they would be set on.
+ */
+const titledLines: PlexNeighbourhood = {
+  nodes: [
+    { id: 'focus', title: 'The assembly', seat: 'focus' },
+    { id: 'parent', title: 'Chapters', seat: 'parent' },
+    { id: 'earlier', title: 'The morning', seat: 'jump' },
+    { id: 'across', title: 'Elsewhere', seat: 'jump' },
+    { id: 'later', title: 'The evening', seat: 'jump' },
+    { id: 'sibling', title: 'The garden', seat: 'sibling' },
+  ],
+  edges: [
+    { from: 'parent', to: 'focus', label: 'is a' },
+    { from: 'parent', to: 'sibling', label: 'contains' },
+    { from: 'earlier', to: 'focus', label: 'see also' },
+    { from: 'across', to: 'focus', label: 'the scene in the assembly' },
+    { from: 'later', to: 'focus', label: 'and also' },
+  ],
+}
+
+/**
+ * What a line does with the title it carries.
+ *
+ * Only a browser can answer any of it: how wide the words are in the type they
+ * are set in, how long the curve is that they would be set on, and whether the
+ * two layers a title is painted in land on one another.
+ *
+ * The picture arrives at once, since a title is a property of a line that has
+ * come to rest, and a line on its way somewhere cannot be pointed at.
+ */
+export const TitledLines: Story = {
+  args: { neighbourhood: titledLines, duration: 0 },
+  play: async ({ canvasElement }) => {
+    /** Both layers of one title: the halo first, the letters over it. */
+    const title = (words: string) =>
+      [...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label')].filter(
+        (text) => text.textContent === words,
+      )
+
+    /** The line a flat title is drawn at the middle of. */
+    const lineUnder = (text: SVGTextElement) => {
+      const at = { x: Number(text.getAttribute('x')), y: Number(text.getAttribute('y')) }
+      const away = (line: SVGPathElement) => {
+        const middle = line.getPointAtLength(line.getTotalLength() / 2)
+        return Math.hypot(middle.x - at.x, middle.y - at.y)
+      }
+      const lines = [
+        ...canvasElement.querySelectorAll<SVGPathElement>('path.plex__edge'),
+      ]
+      return lines.reduce((nearest, line) =>
+        away(line) < away(nearest) ? line : nearest,
+      )
+    }
+
+    // The window is measured after the first drawing, so the plex settles on
+    // its second.
+    await waitFor(async () => {
+      await expect(title('contains')).toHaveLength(2)
+    })
+
+    // A title on a line that runs across the page is set along it, in two
+    // layers that land on one another.
+    const [halo, letters] = title('contains')
+    await expect(halo!.querySelector('textPath')).not.toBeNull()
+    await expect(getComputedStyle(halo!).fill).toBe('none')
+    await expect(getComputedStyle(letters!).stroke).toBe('none')
+    await expect(halo!.getComputedTextLength()).toBe(letters!.getComputedTextLength())
+    const haloAtRest = parseFloat(getComputedStyle(halo!).strokeWidth)
+
+    // The hand on that line lifts it, and the lifted title is painted the same
+    // way on a heavier halo.
+    const along = halo!.querySelector('textPath')!.getAttribute('href')!
+    const drawn = canvasElement
+      .querySelector(`defs path[id="${along.slice(1)}"]`)!
+      .getAttribute('d')
+    const band = [
+      ...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge-hit'),
+    ].find((line) => line.getAttribute('d') === drawn)
+    await userEvent.hover(band!)
+
+    const lifted = canvasElement.querySelectorAll<SVGTextElement>(
+      '.plex__lift .plex__edge-label',
+    )
+    await expect(lifted).toHaveLength(2)
+    await expect(getComputedStyle(lifted[0]!).fill).toBe('none')
+    await expect(getComputedStyle(lifted[1]!).stroke).toBe('none')
+    await expect(parseFloat(getComputedStyle(lifted[0]!).strokeWidth)).toBeGreaterThan(
+      haloAtRest,
+    )
+    await expect(lifted[0]!.getComputedTextLength()).toBe(
+      lifted[1]!.getComputedTextLength(),
+    )
+    await userEvent.unhover(band!)
+
+    // Words longer than the curve they would be set on lie flat, where every
+    // one of them is drawn.
+    const long = title('the scene in the assembly')[0]!
+    await expect(long.querySelector('textPath')).toBeNull()
+    await expect(long.getComputedTextLength()).toBeGreaterThan(
+      lineUnder(long).getTotalLength(),
+    )
+
+    // A jump that leaves its column and comes round holds no one direction,
+    // and lies flat although its words would fit.
+    const loop = title('see also')[0]!
+    await expect(loop.querySelector('textPath')).toBeNull()
+    await expect(loop.getComputedTextLength()).toBeLessThan(
+      lineUnder(loop).getTotalLength(),
+    )
+  },
+}
+
+/**
  * Not Latin, far too long, nothing to break at, and nothing at all — the whole
  * arrangement made of them, to see that text nothing fits into still leaves a
  * plex rather than a pile.

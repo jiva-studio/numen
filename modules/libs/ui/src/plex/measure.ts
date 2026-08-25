@@ -1,52 +1,196 @@
 /**
- * How wide a box has to be to hold its title.
+ * How wide a box has to be to hold its title, and how far a label's words run
+ * along their line.
  *
  * The plex measures its own text: the type a title is set in is the type it is
  * arranged from. The answer comes at once, while the arrangement is worked out.
  */
+import { computed, onScopeDispose, shallowRef, type Ref } from 'vue'
 import type { PlexNode } from './model'
 
 /** The width a node's box needs, padding included. */
 export type Measure = (node: PlexNode) => number
 
-/** Whitespace in a token is however it was written; a font shorthand is one line. */
-const oneLine = (value: string): string => value.trim().replace(/\s+/g, ' ')
+/** What a plex measures its own text with. */
+export interface Measures {
+  readonly node: Measure
+  /** The words of a label, which stand on a line and carry no padding. */
+  readonly label: (label: string) => number
+}
 
-const numberOf = (value: string, fallback: number): number => {
-  const parsed = Number.parseFloat(value)
-  return Number.isFinite(parsed) ? parsed : fallback
+/** The type and the lengths a plex is drawn with, in pixels. */
+interface PlexType {
+  /** A font shorthand, ready for a canvas. */
+  readonly font: string
+  readonly labelFont: string
+  readonly padding: number
+  readonly gap: number
 }
 
 /**
- * A measurer for the titles a plex draws, taking its type and padding from the
- * root, which is where a theme writes them. The root stands before anything is
- * mounted, so the first arrangement is measured like every one after it.
+ * The declarations a title is drawn under, carried by a box the document
+ * resolves them against: a token written in any unit comes back in pixels. The
+ * box holds a word in each size a plex sets text in, so its own width answers a
+ * change in any of the tokens it names.
+ */
+const PROBE = [
+  'position:fixed',
+  'inset-block-start:0',
+  'inset-inline-start:0',
+  'visibility:hidden',
+  'pointer-events:none',
+  'white-space:pre',
+  'display:inline-flex',
+  'font-family:var(--numen-font-sans)',
+  'font-size:var(--numen-font-size)',
+  'padding-inline:var(--numen-node-padding)',
+  'column-gap:var(--numen-node-gap)',
+].join(';')
+
+/** The word beside it, set as a label on a line is. */
+const LABEL = 'font-size:var(--numen-edge-label-size)'
+
+/** Something with a width, in each of the two sizes. */
+const SAMPLE = 'Hxg'
+
+interface Probe {
+  readonly box: HTMLElement
+  readonly label: HTMLElement
+}
+
+/** A resolved length, which a document writes in pixels. */
+const pixelsOf = (value: string): number => {
+  const parsed = Number.parseFloat(value)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+/**
+ * A measurer for the titles a plex draws, taking its type and its lengths from
+ * the document, which is where a theme's units are resolved. It stands before
+ * anything is mounted, so the first arrangement is measured like every one
+ * after it.
+ *
+ * `icon` is the room to keep beside a title for an icon the caller draws there,
+ * and nothing where none is drawn.
  *
  * Nothing where there is no canvas to measure against — jsdom, or a page
  * rendered on a server — and the arrangement then draws every box at its widest.
  */
-export function titleWidths(): Measure | undefined {
-  if (typeof document === 'undefined') return undefined
+export function titleWidths(icon = 0): Measures | undefined {
+  const probe = openProbe()
+  if (!probe) return undefined
 
+  const type = typeOf(probe)
+  probe.box.remove()
+  return measuresFor(type, icon)
+}
+
+/**
+ * The same measurers, remade whenever the type a title is set in changes. A
+ * theme worn by a plex already standing rewrites the tokens under it, and the
+ * probe's own width says so.
+ *
+ * The first reading is taken here, before anything is drawn, and a reading that
+ * says what the last one said changes nothing: a box moves when the type moves
+ * and at no other time.
+ */
+export function useTitleWidths(icon: () => number): Ref<Measures | undefined> {
+  const probe = openProbe()
+  if (!probe) return shallowRef<Measures | undefined>(undefined)
+
+  const type = shallowRef(typeOf(probe))
+
+  if (typeof ResizeObserver === 'undefined') {
+    probe.box.remove()
+  } else {
+    const observer = new ResizeObserver(() => {
+      const now = typeOf(probe)
+      if (!sameType(now, type.value)) type.value = now
+    })
+    observer.observe(probe.box, { box: 'border-box' })
+
+    onScopeDispose(() => {
+      observer.disconnect()
+      probe.box.remove()
+    }, true)
+  }
+
+  return computed(() => measuresFor(type.value, icon()))
+}
+
+/** A box of the plex's own type, standing in the page. */
+function openProbe(): Probe | null {
+  if (typeof document === 'undefined' || !document.body) return null
+
+  const box = document.createElement('div')
+  box.setAttribute('aria-hidden', 'true')
+  box.style.cssText = PROBE
+
+  const title = word('')
+  const label = word(LABEL)
+  box.append(title, label)
+  document.body.append(box)
+
+  return { box, label }
+}
+
+function word(style: string): HTMLElement {
+  const span = document.createElement('span')
+  span.style.cssText = style
+  span.textContent = SAMPLE
+  return span
+}
+
+/** What the document makes of the tokens, read off the probe. */
+function typeOf(probe: Probe): PlexType {
+  const box = getComputedStyle(probe.box)
+  const label = getComputedStyle(probe.label)
+  const family = box.fontFamily || 'sans-serif'
+
+  return {
+    font: `${box.fontSize} ${family}`,
+    labelFont: `${label.fontSize} ${family}`,
+    padding: pixelsOf(box.paddingInlineStart),
+    gap: pixelsOf(box.columnGap),
+  }
+}
+
+const sameType = (one: PlexType, other: PlexType): boolean =>
+  one.font === other.font &&
+  one.labelFont === other.labelFont &&
+  one.padding === other.padding &&
+  one.gap === other.gap
+
+function measuresFor(type: PlexType, icon: number): Measures | undefined {
   const context = measuringContext()
   if (!context) return undefined
 
-  const styles = getComputedStyle(document.documentElement)
-  const size = oneLine(styles.getPropertyValue('--numen-font-size')) || '13px'
-  const family = oneLine(styles.getPropertyValue('--numen-font-sans')) || 'sans-serif'
-  const padding = numberOf(styles.getPropertyValue('--numen-node-padding'), 10)
+  const title = textWidths(context, type.font)
+  const label = textWidths(context, type.labelFont)
 
-  context.font = `${size} ${family}`
+  // An icon stands a gap from the title, and both stand inside the padding.
+  const room = 2 * type.padding + (icon > 0 ? icon + type.gap : 0)
 
-  // Keyed by the string: one measurement for each distinct title.
+  return {
+    node: (node) => Math.ceil(title(node.title) + room),
+    label: (words) => Math.ceil(label(words)),
+  }
+}
+
+/** Text in one type, each distinct string measured once. */
+function textWidths(
+  context: CanvasRenderingContext2D,
+  font: string,
+): (text: string) => number {
   const widths = new Map<string, number>()
 
-  return (node: PlexNode): number => {
-    const known = widths.get(node.title)
+  return (text) => {
+    const known = widths.get(text)
     if (known !== undefined) return known
 
-    const width = Math.ceil(context.measureText(node.title).width + 2 * padding)
-    widths.set(node.title, width)
+    context.font = font
+    const width = context.measureText(text).width
+    widths.set(text, width)
     return width
   }
 }
