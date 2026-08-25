@@ -164,13 +164,20 @@ Forty-two, each a colour except where it says otherwise.
 
 ## What a theme leaves alone
 
-The type, the measures and the timings: the font stack, the text size and line
-height, the radii and strokes, the clearances, the sizes of a handle and a
-field, the order things float in, the durations and the easing. They are the
-same under every palette, and `tokens.css` holds them in a second block under
-the first.
+The type, the measures and the timings: the font stack, the two text sizes and
+the line height, the radii and strokes, the clearances, the sizes of a handle
+and a field, the order things float in, the durations and the easing. They are
+the same under every palette, and `tokens.css` holds them under the palette in
+three groups — what follows how large the interface is drawn, what follows how
+large the text is set, and what follows neither.
 
-Nothing bounds a theme to the first block. A palette stays in it.
+Nothing bounds a theme to the palette. A theme declaring `--numen-font-size`
+declares it, and a length written in `rem` goes on following the interface.
+
+The two multipliers are what a theme does not reach. `--numen-interface` and
+`--numen-font` stand in the element the head ends with, after the mode's and the
+theme's, so a theme naming either is the earlier of two declarations weighing
+the same and the window is drawn at the size a person chose.
 
 ## What ships
 
