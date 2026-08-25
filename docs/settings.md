@@ -298,12 +298,13 @@ The boundary the detector answers with is the text's own outline drawn inside th
 
 ## Which agent answers
 
-`agent` is which agent answers in the panel, and what it may reach. What an agent may ask of a vault is in [Agents](agents.md).
+`agent` is which agent answers in the panel, what it may reach, and whether the tools go on a port. What an agent may ask of a vault is in [Agents](agents.md).
 
 ```json
 {
   "agent": {
     "use": "claude",
+    "serve_tools": false,
     "claude": {
       "command": [],
       "model": "",
@@ -317,10 +318,13 @@ The boundary the detector answers with is the text's own outline drawn inside th
 | | |
 | --- | --- |
 | `use` | which agent answers. `claude` is Claude Code, reached by starting it and reading what it prints. Empty answers with none, and the panel says so. |
+| `serve_tools` | whether the tools go on a port, which is how an agent a person runs themselves reaches this vault. Off. The agent `use` names is served either way, so an installation naming one has the port open for it. |
 | `claude.command` | what starts it: the command line's path, and anything it is started through. Empty asks the path, then the folders its installers write to. Worth naming for an installation those folders do not cover, and for one machine carrying several. |
 | `claude.model` | which of its models answers — `opus`, `sonnet`, or a full name. Empty takes whatever that installation answers with. Worth naming because a panel is read while somebody waits. |
 | `claude.max_steps` | how many times it may go to the model before it is stopped. 30. |
 | `claude.reads_hooks_and_skills` | whether it reads what this machine holds configured for it: hooks, skills, standing instructions in `CLAUDE.md`, plugins. Off. A hook is a shell command Claude Code runs itself, and a question typed into a panel is not asking for one. On, what is configured for this person is read; what a vault carries is refused either way, since a vault arrives from elsewhere. |
 
 A section is kept whether it is the one in use or not, so trying another agent for an afternoon costs nothing.
+
+An installation naming no agent and asking for no tools opens no port and writes no token file: a person who never asked for an agent is running a window and nothing else. Where the port is open, `-mcp-addr` says which address it answers on for a single launch and `-no-mcp` shuts it for one, whatever this file says.
 

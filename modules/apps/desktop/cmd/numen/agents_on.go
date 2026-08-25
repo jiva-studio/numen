@@ -32,8 +32,19 @@ const defaultAgentAddr = mcp.DefaultAddr
 // without a bound.
 const agentBound = 2 * time.Second
 
+// unnamed is what the panel is told where the settings name no agent.
+const unnamed = "no agent is named in the settings"
+
 func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened, opts agentOptions, out io.Writer) (func() error, error) {
 	if opts.off {
+		return func() error { return nil }, nil
+	}
+
+	// The settings say whether the tools go on a port: an agent named for the
+	// panel puts them there, and so does a person asking for the port itself.
+	// An installation asking for neither opens no port and mints no token.
+	if !cfg.Agent.Serving() {
+		opened.API.Unreachable.Store(unnamed)
 		return func() error { return nil }, nil
 	}
 
@@ -63,6 +74,18 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 		fmt.Fprintf(out, "agents: %s is reachable from the network, not only from this machine\n", opts.addr)
 	}
 
+	// The panel answers with the agent the settings name. An installation
+	// naming none is served the tools alone, and the panel says so.
+	if cfg.Agent.Use != agent.UseClaude {
+		opened.API.Unreachable.Store(unnamed)
+		return func() error {
+			forget()
+			shutdown, cancel := context.WithTimeout(context.Background(), agentBound)
+			defer cancel()
+			return endpoint.Close(shutdown)
+		}, nil
+	}
+
 	// What the window says about a call is what the tool declared about
 	// itself, asked for over the protocol an agent is answered by.
 	words, err := mcp.Vocabulary(ctx, core)
@@ -88,18 +111,6 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 			return markdown.Counted(contents.Body, at[0].From),
 				markdown.Counted(contents.Body, at[0].To), true
 		},
-	}
-	// The settings name which agent answers in the panel. An installation that
-	// names none still serves the tools, so an agent a person runs themselves
-	// reaches the vault.
-	if cfg.Agent.Use != agent.UseClaude {
-		opened.API.Unreachable.Store("no agent is named in the settings")
-		return func() error {
-			forget()
-			shutdown, cancel := context.WithTimeout(context.Background(), agentBound)
-			defer cancel()
-			return endpoint.Close(shutdown)
-		}, nil
 	}
 
 	started := claude(cfg, root, endpoint.URL, secret, words, drafting, out)

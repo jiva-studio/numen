@@ -59,9 +59,15 @@ A call that carries names takes as many as are wanted — at most fifty for a lo
 
 A tool that writes returns only once the index is level again. An agent that creates a note and searches for it in the next breath finds it.
 
+## An agent a person runs themselves
+
+The tools are served on a port, and the panel's agent is one caller of it. An agent somebody has configured in their own terminal is another, and `agent.serve_tools` is what serves them to it: on, the endpoint answers whether or not the panel has an agent, and where to reach it and what to present are written to `agents.json` beside this installation's own state, at mode `0600`. The file is removed when the window goes, so a live-looking token never outlives the port it was for.
+
+It is off. An installation that names no agent and asks for no tools opens no port and writes no token file — a person who never asked for an agent is running a window and nothing besides.
+
 ## Settings
 
-`agent.use` names which agent answers, and empty names none. `agent.claude.*` is how Claude Code is run: `command` starts it, `model` is which of its models answers, `max_steps` is how many times it may go to the model before it is stopped, and `reads_hooks_and_skills` is what this machine holds for it. A section is kept whether it is the one in use or not. See [Settings](settings.md).
+`agent.use` names which agent answers, and empty names none. `agent.serve_tools` puts the tools on a port for an agent a person runs themselves, and is off. `agent.claude.*` is how Claude Code is run: `command` starts it, `model` is which of its models answers, `max_steps` is how many times it may go to the model before it is stopped, and `reads_hooks_and_skills` is what this machine holds for it. A section is kept whether it is the one in use or not. See [Settings](settings.md).
 
 Where `command` is empty, the path is asked first, then the folders the command line's installers write to.
 

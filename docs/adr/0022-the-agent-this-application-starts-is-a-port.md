@@ -17,7 +17,7 @@ The folder it is started in is the vault, and a vault arrives from elsewhere: sy
 
 A task goes in and steps come out. Everything above that interface sees one agent and never which. Starting a program, writing its command line and reading what it prints is an adapter behind the port, and one program's stream is that adapter's business alone.
 
-Which agent answers is a setting, and each carries a section of its own; a section is kept whether it is the one in use or not. Empty names no agent, and the panel says there is none. An installation that names none still serves the tools (ADR-0021).
+Which agent answers is a setting, and each carries a section of its own; a section is kept whether it is the one in use or not. Empty names no agent, and the panel says there is none. Whether the tools go on a port is a setting of its own, so an installation that names none opens one only where it asks for one (ADR-0021).
 
 ### What that agent may reach is constructed here
 
