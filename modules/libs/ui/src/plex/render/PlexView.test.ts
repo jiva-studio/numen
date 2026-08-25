@@ -29,6 +29,19 @@ const after: PlexNeighbourhood = {
   ],
 }
 
+/** One title down the page and one across it, the second longer than its gap. */
+const titled: PlexNeighbourhood = {
+  nodes: [
+    { id: 'focus', title: 'Start', seat: 'focus' },
+    { id: 'below', title: 'Below', seat: 'child' },
+    { id: 'aside', title: 'Aside', seat: 'jump' },
+  ],
+  edges: [
+    { from: 'focus', to: 'below', label: 'holds' },
+    { from: 'focus', to: 'aside', label: 'the scene in the assembly' },
+  ],
+}
+
 /** A third of the way across: one node leaving, one arriving, one travelling. */
 const midMove = interpolatePlex(arrangePlex(before), arrangePlex(after), 0.3)
 
@@ -165,6 +178,141 @@ describe('what the drawing does with an opacity', () => {
       .findAll('path.plex__edge')
       .map((path) => Number(path.attributes('opacity')))
     expect(faded.some((value) => value > 0 && value < 1)).toBe(true)
+  })
+})
+
+/**
+ * A title runs into the box beside it, and the boxes are painted after the
+ * titles. What answers that is the line the hand is on, drawn again after them.
+ */
+describe('the line under the hand', () => {
+  const titledFrame = arrangePlex(titled)
+  const down = titledFrame.edges.findIndex((edge) => edge.heading === 'none')
+  const across = titledFrame.edges.findIndex((edge) => edge.heading === 'left')
+
+  const mountTitled = () =>
+    mount(PlexView, {
+      props: {
+        frame: titledFrame,
+        viewport: VIEWPORT,
+        nodeSize: DEFAULT_OPTIONS.nodeSize,
+      },
+    })
+
+  /** The band drawn over one line, in the order the frame gave the edges. */
+  const reach = (view: ReturnType<typeof mountTitled>, at: number) =>
+    view.findAll('.plex__edge-hit')[at]!
+
+  it('lifts the line the hand comes to rest on, and puts it back after', async () => {
+    const view = mountTitled()
+    expect(view.find('.plex__lift').exists()).toBe(false)
+
+    await reach(view, across).trigger('pointerenter')
+    expect(view.find('.plex__lift').exists()).toBe(true)
+
+    await reach(view, across).trigger('pointerleave')
+    expect(view.find('.plex__lift').exists()).toBe(false)
+  })
+
+  it('puts the lifted line down again as soon as the picture moves', async () => {
+    const view = mountTitled()
+    await reach(view, across).trigger('pointerenter')
+    expect(view.find('.plex__lift').exists()).toBe(true)
+
+    // A move hands the view a frame a frame at a time, and the hand is left
+    // pointing at wherever the line used to be.
+    await view.setProps({ frame: arrangePlex(titled) })
+
+    expect(view.find('.plex__lift').exists()).toBe(false)
+  })
+
+  it('draws the lifted line after every box, so it stands over them', async () => {
+    const view = mountTitled()
+    await reach(view, across).trigger('pointerenter')
+    const lift = view.get('.plex__lift').element
+
+    for (const node of view.findAll('.plex__node')) {
+      const where = node.element.compareDocumentPosition(lift)
+      expect(where & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    }
+  })
+
+  it('draws the lifted line once, and not also where it was resting', async () => {
+    const view = mountTitled()
+    const lines = titledFrame.edges.length
+
+    expect(view.findAll('.plex__edge')).toHaveLength(lines)
+    expect(view.findAll('.plex__edge-label')).toHaveLength(lines)
+
+    await reach(view, across).trigger('pointerenter')
+
+    expect(view.findAll('.plex__edge')).toHaveLength(lines)
+    expect(view.get('.plex__lift .plex__edge').attributes('d')).toBe(
+      reach(view, across).attributes('d'),
+    )
+
+    // Its title leaves the resting layer for the lift, where it is painted
+    // twice over.
+    expect(view.get('.plex__lift').findAll('.plex__edge-label')).toHaveLength(2)
+    expect(view.findAll('.plex__edge-label')).toHaveLength(lines + 1)
+  })
+
+  it('paints the lifted title as a halo under its letters, on one line', async () => {
+    const view = mountTitled()
+    await reach(view, across).trigger('pointerenter')
+    const [halo, letters] = view.get('.plex__lift').findAll('.plex__edge-label')
+
+    // A glyph set along a path is painted as a run of its own, so a halo drawn
+    // with the letters lies over the one beside it.
+    expect(halo!.classes()).toContain('plex__edge-label--halo')
+    expect(halo!.attributes('fill')).toBe('none')
+    expect(letters!.classes()).toContain('plex__edge-label--letters')
+    expect(letters!.attributes('stroke')).toBe('none')
+
+    // One lands on the other: the same words, on the same line, at the same
+    // place along it.
+    expect(halo!.text()).toBe(letters!.text())
+    for (const named of ['href', 'startOffset']) {
+      expect(halo!.get('textPath').attributes(named)).toBe(
+        letters!.get('textPath').attributes(named),
+      )
+      expect(halo!.get('textPath').attributes(named)).toBeDefined()
+    }
+  })
+
+  it('paints a flat lifted title in the same two layers', async () => {
+    const view = mountTitled()
+    await reach(view, down).trigger('pointerenter')
+    const titles = view.get('.plex__lift').findAll('.plex__edge-label')
+
+    expect(titles).toHaveLength(2)
+    expect(titles[0]!.attributes('fill')).toBe('none')
+    expect(titles[1]!.attributes('stroke')).toBe('none')
+    expect(titles[0]!.attributes('x')).toBe(titles[1]!.attributes('x'))
+    expect(titles[0]!.find('textPath').exists()).toBe(false)
+  })
+
+  it('sets a title along its line where the line runs across the page', () => {
+    const view = mountTitled()
+    const titles = view.findAll('.plex__edge-label')
+
+    expect(titles[across]!.find('textPath').exists()).toBe(true)
+    // A line holding no one direction takes flat words at the midpoint.
+    expect(titles[down]!.find('textPath').exists()).toBe(false)
+    expect(titles[down]!.attributes('x')).toBeDefined()
+  })
+
+  it('sets a title on a line running the way the words are read', () => {
+    const view = mountTitled()
+    const edge = titledFrame.edges[across]!
+    expect(edge.heading).toBe('left')
+
+    const href = view.get('textPath').attributes('href')!
+    const along = view.get(`defs path[id="${href.slice(1)}"]`)
+    const numbers = along.attributes('d')!.match(/-?\d+(?:\.\d+)?/g)!.map(Number)
+
+    expect(numbers[0]).toBe(edge.toPoint.x)
+    expect(numbers.at(-2)).toBe(edge.fromPoint.x)
   })
 })
 

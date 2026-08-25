@@ -98,6 +98,58 @@ describe('edges', () => {
     expect(edge!.control2.x).toBeLessThan(edge!.toPoint.x)
   })
 
+  it('takes the heading from the curve, and not from the seat', () => {
+    const layout = arrangePlex(neighbourhoods.typical)
+    const focus = focusOf(layout)
+
+    // A jump is seated sideways. The ones above and below the focus leave
+    // their column and come round, and at the midpoint they run down the page.
+    const offRow = withSeat(layout, 'jump').filter((node) => node.y !== focus.y)
+    expect(offRow.length).toBeGreaterThan(0)
+    for (const jump of offRow) {
+      const edge = layout.edges.find((e) => e.from === jump.id)!
+      expect(edge.heading, `jump ${jump.id}`).toBe('none')
+    }
+
+    // A sibling is seated under a parent, and runs across the page.
+    for (const sibling of withSeat(layout, 'sibling')) {
+      const edge = layout.edges.find((e) => e.to === sibling.id)!
+      expect(edge.heading, `sibling ${sibling.id}`).toBe('right')
+    }
+  })
+
+  it('takes no heading from a curve that doubles back on itself', () => {
+    // Two boxes side by side in one row sit closer together than the reach an
+    // edge leaves with, so their gates are passed before the curve turns for
+    // them. The one word this edge carries is set flat.
+    const layout = arrangePlex(neighbourhoods.diamond)
+    const doubled = layout.edges.find(
+      (e) => e.from === 'parent-0' && e.to === 'parent-1',
+    )!
+    expect(doubled.label).toBe('contains')
+    expect(doubled.heading).toBe('none')
+
+    // The steepest curve in the same picture that still reads is left alone.
+    const leaning = layout.edges.find((e) => e.from === 'parent-1' && e.to === 'focus')!
+    expect(leaning.heading).toBe('left')
+  })
+
+  it('takes the reading direction from the curve, not from which end is which', () => {
+    // One jump sits level with the focus, so the line between them is straight
+    // and runs whichever way the pair was written.
+    const nodes = [
+      { id: 'focus', title: 'Here', seat: 'focus' as const },
+      { id: 'aside', title: 'Aside', seat: 'jump' as const },
+    ]
+    const outward = arrangePlex({ nodes, edges: [{ from: 'focus', to: 'aside' }] })
+    const inward = arrangePlex({ nodes, edges: [{ from: 'aside', to: 'focus' }] })
+
+    expect(outward.edges[0]!.heading).toBe('left')
+    expect(outward.edges[0]!.fromPoint.x).toBeGreaterThan(outward.edges[0]!.toPoint.x)
+    expect(inward.edges[0]!.heading).toBe('right')
+    expect(inward.edges[0]!.fromPoint.x).toBeLessThan(inward.edges[0]!.toPoint.x)
+  })
+
   it('drops an edge from a node to itself', () => {
     const nodes = [{ id: 'a', title: 'A', seat: 'focus' as const }]
     const layout = arrangePlex({ nodes, edges: [{ from: 'a', to: 'a' }] })

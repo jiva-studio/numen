@@ -1,4 +1,12 @@
-import type { PlacedEdge, PlacedNode, PlexEdge, PlexSeat, Point } from '../model'
+import {
+  headingOf,
+  type EdgeCurve,
+  type PlacedEdge,
+  type PlacedNode,
+  type PlexEdge,
+  type PlexSeat,
+  type Point,
+} from '../model'
 import { isVertical, type PlexOptions, type RoutingOptions } from './options'
 
 /** `auto` means take the axis from the geometry. */
@@ -88,23 +96,23 @@ export function routeEdge(
     ? { x: secondGate.x, y: secondGate.y - reach }
     : { x: secondGate.x - reach, y: secondGate.y }
 
-  return fromFirst
+  // The caller's from and to are kept, so the curve may run right to left or
+  // bottom to top.
+  const curve: EdgeCurve = fromFirst
     ? {
-        ...edge,
         fromPoint: firstGate,
         control1: firstControl,
         control2: secondControl,
         toPoint: secondGate,
-        opacity,
       }
     : {
-        ...edge,
         fromPoint: secondGate,
         control1: secondControl,
         control2: firstControl,
         toPoint: firstGate,
-        opacity,
       }
+
+  return { ...edge, ...curve, opacity, heading: headingOf(curve) }
 }
 
 export function routeEdges(
