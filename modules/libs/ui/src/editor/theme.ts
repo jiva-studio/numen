@@ -31,7 +31,7 @@ export const theme = EditorView.theme({
     color: 'var(--numen-node-fg)',
     backgroundColor: 'transparent',
     fontFamily: 'var(--numen-font-sans)',
-    fontSize: 'var(--numen-font-size)',
+    fontSize: 'var(--numen-reading-size)',
     lineHeight: '1.6',
     height: '100%',
   },

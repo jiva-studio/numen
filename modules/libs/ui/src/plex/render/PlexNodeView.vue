@@ -237,7 +237,7 @@ const hue = computed(() => ({
    nothing here. The outline changes over the length of the move that changes
    the seat; the fill answers the pointer at the speed a pointer is answered. */
 .plex__box {
-  rx: var(--numen-radius);
+  rx: var(--numen-plex-radius);
   fill: var(--numen-node-bg);
   stroke: var(--numen-seat-hue, var(--numen-node-border));
   stroke-width: var(--numen-stroke);
@@ -330,7 +330,7 @@ const hue = computed(() => ({
 }
 
 .plex__node--focus .plex__box {
-  rx: var(--numen-radius-focus);
+  rx: var(--numen-plex-radius-focus);
   fill: var(--numen-focus-bg);
   stroke: var(--numen-focus-border);
 }

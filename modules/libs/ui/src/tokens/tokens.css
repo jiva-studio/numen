@@ -127,6 +127,10 @@
   --numen-inset: 0.5rem;
   --numen-inset-wide: 0.75rem;
 
+  /* The corner of a box drawn in the page: a button, an item in a list, a
+     block of code, the tab a gesture would drop where it is held. */
+  --numen-radius: 0.375rem;
+
   /* A panel floats: rounded on every side, with what it holds clear of the
      curve. */
   --numen-radius-panel: 0.75rem;
@@ -183,11 +187,10 @@
   --numen-stroke: 1px;
   --numen-ring-width: 2px;
 
-  /* Drawn in the plex's coordinates: the corner of a node's box, and the
-     corner of the box around the one in front. The first is also what rounds a
-     block of code. */
-  --numen-radius: 6px;
-  --numen-radius-focus: 8px;
+  /* The corner of a node's box, and the corner of the box around the one in
+     front. */
+  --numen-plex-radius: 6px;
+  --numen-plex-radius-focus: 8px;
   /* The handle a gesture is reached out from: the disc, and the cross on it.
      The arms read as a plus sign at about half the radius. */
   --numen-handle-radius: 9px;
