@@ -21,6 +21,12 @@ export interface Routing extends RoutingOptions {
    * arrives as a number, and without a measurer the whole label is drawn.
    */
   readonly labelWidth?: ((label: string) => number) | undefined
+  /**
+   * How deep one line of a title stands, across the line it is set on. It is
+   * measured in the type a title is set in, which is a type of its own, and is
+   * nothing where nothing measured it.
+   */
+  readonly labelDepth: number
 }
 
 /**
@@ -31,33 +37,18 @@ export interface Routing extends RoutingOptions {
 export function routingFor(
   options: PlexOptions,
   measureLabel?: (label: string) => number,
+  labelDepth = 0,
 ): Routing {
   return {
     ...options.routing,
-    labelWidth: measureLabel && measuredOnce(measureLabel),
+    labelWidth: measureLabel,
+    labelDepth,
     axisOf: (node) =>
       node.seat === 'focus'
         ? 'auto'
         : isVertical(options.direction[node.seat])
           ? 'vertical'
           : 'horizontal',
-  }
-}
-
-/**
- * The measurer as the arrangement asks it: each distinct string once, however
- * many times the passes over one arrangement want the same words.
- */
-function measuredOnce(measure: (label: string) => number): (label: string) => number {
-  const widths = new Map<string, number>()
-
-  return (label) => {
-    const known = widths.get(label)
-    if (known !== undefined) return known
-
-    const width = measure(label)
-    widths.set(label, width)
-    return width
   }
 }
 
@@ -186,7 +177,7 @@ export function routeEdge(
     ...edge,
     ...curve,
     opacity,
-    heading: headingOf(curve),
+    heading: headingOf(curve, MIDDLE),
     words,
     wordsAt: MIDDLE,
     arrowhead,

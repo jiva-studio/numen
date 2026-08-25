@@ -744,10 +744,12 @@ export const TitlesFindRoom: Story = {
       ...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label--letters'),
     ]
 
-    // The window is measured after the first drawing, so the plex settles on
-    // its second.
+    // The plex draws on a fallback window until the canvas has been measured,
+    // and the counts below belong to the arrangement the measured one settles.
     await waitFor(async () => {
-      await expect(titles().length).toBeGreaterThan(8)
+      const svg = canvasElement.querySelector('svg')!
+      const drawnFor = Number(svg.getAttribute('viewBox')!.split(' ')[2])
+      await expect(Math.abs(drawnFor - svg.getBoundingClientRect().width)).toBeLessThan(1)
     })
 
     const drawn = titles().map((text) => ({

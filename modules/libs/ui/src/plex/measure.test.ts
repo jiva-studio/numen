@@ -169,7 +169,9 @@ describe('what a title needs', () => {
     measures.node({ id: 'b', title: 'Adapter', seat: 'parent' })
     measures.node(node('Port'))
 
-    expect(asked).toStrictEqual(['Adapter', 'Port'])
+    // The sample word comes first: how deep a line stands is taken off the
+    // type when the measurer is made.
+    expect(asked).toStrictEqual(['Hxg', 'Adapter', 'Port'])
   })
 })
 
@@ -208,6 +210,30 @@ describe('what a label needs', () => {
 
     measures.label('names')
     expect(context.font).toBe('10px Test Sans, sans-serif')
+  })
+
+  it('stands as deep as the font sets its letters about the baseline', () => {
+    const { context } = stubCanvas()
+    stubStyles()
+    themed()
+    context.measureText = (text: string) =>
+      ({
+        width: text.length * PER_CHARACTER,
+        fontBoundingBoxAscent: 9.5,
+        fontBoundingBoxDescent: 2.5,
+      }) as TextMetrics
+
+    expect(titleWidths()!.labelDepth).toBe(12)
+  })
+
+  it('is as deep as a label is set, however tall a title is set', () => {
+    // The two sizes are separate tokens, and a theme is free to raise one of
+    // them alone.
+    stubCanvas()
+    stubStyles()
+    themed({ '--numen-font-size': '20px', '--numen-edge-label-size': '11px' })
+
+    expect(titleWidths()!.labelDepth).toBe(11)
   })
 })
 

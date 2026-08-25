@@ -115,26 +115,32 @@ function measureAlong(edge: EdgeCurve): number[] {
 export const lengthOf = (edge: EdgeCurve): number => measureAlong(edge)[LENGTH_SAMPLES]!
 
 /**
+ * Which `t` stands a fraction of the way along the measured length. The steps
+ * are chords of even parameter, so the answer walks them and lands between the
+ * two the fraction falls across.
+ */
+function parameterAt(along: readonly number[], fraction: number): number {
+  const total = along[LENGTH_SAMPLES]!
+  if (total <= 0) return 0
+  const wanted = Math.min(Math.max(fraction, 0), 1) * total
+
+  let step = 1
+  while (step < LENGTH_SAMPLES && along[step]! < wanted) step += 1
+
+  const start = along[step - 1]!
+  const span = along[step]! - start
+  const within = span <= 0 ? 0 : (wanted - start) / span
+  return (step - 1 + within) / LENGTH_SAMPLES
+}
+
+/**
  * A ruler along the curve: where it has got to a fraction of the way along its
  * length. The curve is measured once and read many times, since a title is
  * tried at several places on the same line.
  */
 export function rulerOf(edge: EdgeCurve): (fraction: number) => Point {
   const along = measureAlong(edge)
-  const total = along[LENGTH_SAMPLES]!
-
-  return (fraction) => {
-    if (total <= 0) return edge.fromPoint
-    const wanted = Math.min(Math.max(fraction, 0), 1) * total
-
-    let step = 1
-    while (step < LENGTH_SAMPLES && along[step]! < wanted) step += 1
-
-    const start = along[step - 1]!
-    const span = along[step]! - start
-    const within = span <= 0 ? 0 : (wanted - start) / span
-    return pointAt(edge, (step - 1 + within) / LENGTH_SAMPLES)
-  }
+  return (fraction) => pointAt(edge, parameterAt(along, fraction))
 }
 
 /** Which way the curve is travelling at `t`, as a direction of any length. */
@@ -157,17 +163,17 @@ const tangentAt = (edge: EdgeCurve, t: number): Point => {
 
 /**
  * Which way round a curve is taken for the words set on it, read off the
- * tangent where the middle of the title sits. A curve with no sideways run at
- * all is taken down the page.
+ * tangent at `at`, where the middle of the title sits. A curve with no
+ * sideways run at all is taken down the page.
  *
  * A seat says which way an edge was routed, and the curve says something else:
  * one that loops out of a column arrives at its midpoint running back the way
- * it came.
+ * it came, and one that doubles back turns twice over a short run.
  */
-export const headingOf = (edge: EdgeCurve): EdgeHeading => {
-  const middle = tangentAt(edge, 0.5)
-  if (middle.x !== 0) return middle.x < 0 ? 'against' : 'along'
-  return middle.y < 0 ? 'against' : 'along'
+export const headingOf = (edge: EdgeCurve, at: number): EdgeHeading => {
+  const way = tangentAt(edge, parameterAt(measureAlong(edge), at))
+  if (way.x !== 0) return way.x < 0 ? 'against' : 'along'
+  return way.y < 0 ? 'against' : 'along'
 }
 
 /**

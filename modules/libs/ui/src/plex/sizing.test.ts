@@ -46,7 +46,6 @@ describe('a label half again as large', () => {
     expect(larger.minWidth).toBe(108)
     expect(larger.iconWidth).toBe(24)
     expect(larger.routing.arrowRoom).toBe(21)
-    expect(larger.routing.labelHeight).toBe(21)
   })
 
   // Every length is multiplied, so one added and left out of the multiplying

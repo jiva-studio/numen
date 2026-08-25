@@ -7,6 +7,7 @@
  * along their curves can still be one on top of the other in the picture.
  */
 import {
+  headingOf,
   lengthOf,
   rulerOf,
   type PlacedEdge,
@@ -68,7 +69,7 @@ export function settleTitles(
     const extent = width(edge.words)
     if (arc <= 0 || extent <= 0) return edge
 
-    const boxAt = titleBoxes(edge, arc, extent, routing.labelHeight)
+    const boxAt = titleBoxes(edge, arc, extent, routing.labelDepth)
     const ends = (extent / 2 + (edge.arrow ? routing.arrowRoom : 0)) / arc
     const at = freePlace(boxAt, boxes, titles, ends, STEP / arc)
 
@@ -76,8 +77,10 @@ export function settleTitles(
     // keeps off it.
     titles.push(boxAt(at))
 
-    // The words of a curve taken the other way round are read from its far end.
-    return { ...edge, wordsAt: edge.heading === 'against' ? 1 - at : at }
+    // The reading direction is the tangent where the words end up, and the
+    // words of a curve taken the other way round are read from its far end.
+    const heading = headingOf(edge, at)
+    return { ...edge, heading, wordsAt: heading === 'against' ? 1 - at : at }
   })
 }
 
@@ -90,11 +93,11 @@ function titleBoxes(
   edge: PlacedEdge,
   arc: number,
   extent: number,
-  height: number,
+  depth: number,
 ): (at: number) => Box {
   const along = rulerOf(edge)
   const half = extent / 2 / arc
-  const deep = height / 2
+  const deep = depth / 2
 
   return (at) => {
     const run: Point[] = []
@@ -148,8 +151,11 @@ function freePlace(
     else tries.push(MIDDLE + away, MIDDLE - away)
   }
 
-  const clearOf = (standing: readonly Box[]) => (at: number) =>
-    !standing.some((box) => meets(box, boxAt(at)))
+  // The box a try stands in is drawn once and held against everything.
+  const clearOf = (standing: readonly Box[]) => (at: number) => {
+    const box = boxAt(at)
+    return !standing.some((other) => meets(other, box))
+  }
 
   return (
     tries.find(clearOf([...boxes, ...titles])) ?? tries.find(clearOf(titles)) ?? MIDDLE

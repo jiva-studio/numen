@@ -51,11 +51,6 @@ export interface RoutingOptions {
    * its line, so a line carrying one has this much less room at either end.
    */
   readonly arrowRoom: number
-  /**
-   * How tall one line of a title stands. It is the depth of the box a title
-   * fills, which is what says whether two of them are clear of one another.
-   */
-  readonly labelHeight: number
 }
 
 /**
@@ -109,7 +104,7 @@ export const DEFAULT_OPTIONS: PlexOptions = {
   margin: 16,
   maxPerLine: 5,
   maxLines: 4,
-  routing: { curvature: 0.55, minReach: 22, arrowRoom: 14, labelHeight: 14 },
+  routing: { curvature: 0.55, minReach: 22, arrowRoom: 14 },
   motion: { arriveAfter: 0.35, leaveBefore: 0.45 },
   gesture: { verticalBias: 4 },
   direction: DEFAULT_DIRECTION,
