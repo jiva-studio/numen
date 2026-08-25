@@ -172,7 +172,7 @@ func TestASectionIsTheFirstOfWhatADocumentAnswersWith(t *testing.T) {
 }
 
 func TestOnePlaceIsOnePassageHoweverManyRowsStandThere(t *testing.T) {
-	// A hit and the window enclosing it are two rows saying the same place.
+	// A hit and the chunk enclosing it are two rows saying the same place.
 	fused := []domain.Passage{
 		{Chunk: 7, Source: "book.epub", Start: 100, Length: 20},
 		{Chunk: 8, Source: "book.epub", Start: 100, Length: 20},

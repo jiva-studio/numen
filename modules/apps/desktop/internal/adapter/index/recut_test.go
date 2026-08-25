@@ -10,16 +10,16 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/markdown"
 )
 
-// A note is cut into one large window over the whole of it, tiled into the small
-// windows that carry the vectors, once inside each section the note's headings
+// A note is cut into one large chunk over the whole of it, tiled into the small
+// chunks that carry the vectors, once inside each section the note's headings
 // name. These tests are about what a second cut of the same note keeps.
 
 // wordsOf is a body of n words, each one different from every other, so that a
-// window is recognisable by what it holds and no two windows of one note hold
+// chunk is recognisable by what it holds and no two chunks of one note hold
 // the same text.
 func wordsOf(n int) string { return wordsBetween(0, n) }
 
-// wordsBetween is the words from one place in that body to another.
+// wordsBetween is the words from one point in that body to another.
 func wordsBetween(from, to int) string {
 	out := make([]string, 0, to-from)
 	for i := from; i < to; i++ {
@@ -29,7 +29,7 @@ func wordsBetween(from, to int) string {
 }
 
 // sectionsOf is a body of n words under a heading every per of them. At 48 words
-// a section holds what one small window is cut at, so a section is one window
+// a section holds what one small chunk is cut at, so a section is one chunk
 // and an edit inside it is recognisable.
 func sectionsOf(n, per int) string {
 	var parts []string
@@ -39,7 +39,7 @@ func sectionsOf(n, per int) string {
 	return strings.Join(parts, "\n\n")
 }
 
-// typedBefore is the body with a word put in front of the word at that place.
+// typedBefore is the body with a word put in front of the word at that point.
 // The words after it keep their spelling and move.
 func typedBefore(body string, at int) string {
 	word := "word" + spelt(at)
@@ -47,7 +47,7 @@ func typedBefore(body string, at int) string {
 }
 
 // spelt writes a number in letters, so that a word is letters throughout and a
-// window made of these reads as text.
+// chunk made of these reads as text.
 func spelt(i int) string {
 	digits := []byte(strconv.Itoa(i))
 	for at, d := range digits {
@@ -71,10 +71,10 @@ func parsedAt(path, body string) domain.Note {
 	return markdown.Parse(domain.FileRef{Path: path, Size: int64(len(body)), MTime: 1}, []byte(body))
 }
 
-// unplaced is the same note with nothing naming a section in it. A note that
-// names no place is one span over its whole body, and its windows tile from the
-// first word of the note.
-func unplaced(n domain.Note) domain.Note {
+// noParts is the same note with nothing naming a section in it. A note that
+// names no part is one division over its whole body, and its chunks tile from
+// the first word of the note.
+func noParts(n domain.Note) domain.Note {
 	n.Headings = nil
 	return n
 }
@@ -101,10 +101,10 @@ func (e embedder) run(t *testing.T, db *DB, vault domain.Vault) int {
 	return len(owing)
 }
 
-// smallWindows is the windows of one note that carry a vector, in the order they
+// smallChunks is the chunks of one note that carry a vector, in the order they
 // sit in the file. The vault is named as well as the path: one database holds
 // every vault, and two vaults here hold a note at the same path.
-func smallWindows(t *testing.T, db *DB, vault domain.Vault, path string) []int64 {
+func smallChunks(t *testing.T, db *DB, vault domain.Vault, path string) []int64 {
 	t.Helper()
 	return rowsOf(t, db, `SELECT c.id FROM chunks c
 	                      JOIN sources s ON s.id = c.source_id
@@ -113,15 +113,15 @@ func smallWindows(t *testing.T, db *DB, vault domain.Vault, path string) []int64
 	                      ORDER BY c.start, c.length`, vault.ID, path)
 }
 
-// largeWindow is the window enclosing a note, which is the note itself.
-func largeWindow(t *testing.T, db *DB, vault domain.Vault, path string) int64 {
+// largeChunk is the chunk enclosing a note, which is the note itself.
+func largeChunk(t *testing.T, db *DB, vault domain.Vault, path string) int64 {
 	t.Helper()
 	rows := rowsOf(t, db, `SELECT c.id FROM chunks c
 	                       JOIN sources s ON s.id = c.source_id
 	                       JOIN vaults v ON v.id = c.vault_id
 	                       WHERE v.identifier = ? AND s.path = ? AND c.parent IS NULL`, vault.ID, path)
 	if len(rows) != 1 {
-		t.Fatalf("%d large windows for %s", len(rows), path)
+		t.Fatalf("%d large chunks for %s", len(rows), path)
 	}
 	return rows[0]
 }
@@ -168,9 +168,9 @@ func vectored(t *testing.T, db *DB, chunk int64) bool {
 }
 
 func TestEditingTheEndOfANoteAsksForOneVector(t *testing.T) {
-	// A person types a word at the end of a note. The windows before the edit
+	// A person types a word at the end of a note. The chunks before the edit
 	// hold the text they held, so they keep their rows and their vectors, and the
-	// model is asked for the one window the edit landed in.
+	// model is asked for the one chunk the edit landed in.
 	db := opened(t)
 	model := embedder{seed: 0x11}
 
@@ -181,43 +181,43 @@ func TestEditingTheEndOfANoteAsksForOneVector(t *testing.T) {
 	if asked := model.run(t, db, first); asked != 5 {
 		t.Fatalf("a note of 200 words owes %d vectors, want 5", asked)
 	}
-	was := smallWindows(t, db, first, n.Ref.Path)
+	was := smallChunks(t, db, first, n.Ref.Path)
 	if len(was) != 5 {
-		t.Fatalf("%d windows carry a vector", len(was))
+		t.Fatalf("%d chunks carry a vector", len(was))
 	}
 
 	save(t, db, first, noteAt(n.Ref.Path, n.Title, body+" wordzz"))
 
-	now := smallWindows(t, db, first, n.Ref.Path)
+	now := smallChunks(t, db, first, n.Ref.Path)
 	if len(now) != 5 {
-		t.Fatalf("%d windows carry a vector after the edit", len(now))
+		t.Fatalf("%d chunks carry a vector after the edit", len(now))
 	}
-	// Every window before the edit is the window it was, on the row it was on.
+	// Every chunk before the edit is the chunk it was, on the row it was on.
 	for at, row := range was[:4] {
 		if now[at] != row {
-			t.Errorf("the window at %d is row %d, and was row %d", at, now[at], row)
+			t.Errorf("the chunk at %d is row %d, and was row %d", at, now[at], row)
 		}
 		if !vectored(t, db, row) {
 			t.Errorf("row %d lost its vector, and the text it holds did not change", row)
 		}
 	}
 	if now[4] == was[4] {
-		t.Errorf("the window the edit landed in is row %d, the row of the text before it", now[4])
+		t.Errorf("the chunk the edit landed in is row %d, the row of the text before it", now[4])
 	}
 	if vectored(t, db, now[4]) {
-		t.Error("the window the edit landed in carries a vector made from other text")
+		t.Error("the chunk the edit landed in carries a vector made from other text")
 	}
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 4 {
-		t.Errorf("%d vectors survived the edit, want the four windows before it", got)
+		t.Errorf("%d vectors survived the edit, want the four chunks before it", got)
 	}
 	if asked := model.run(t, db, first); asked != 1 {
 		t.Errorf("editing the end of a note asked for %d vectors, want 1", asked)
 	}
 }
 
-func TestAWindowThatMovedInTheFileKeepsItsVector(t *testing.T) {
+func TestAChunkThatMovedInTheFileKeepsItsVector(t *testing.T) {
 	// A chunk is a place in a file, and the body of a note begins after its
-	// frontmatter. A line added to the frontmatter moves every window in the file
+	// frontmatter. A line added to the frontmatter moves every chunk in the file
 	// and changes the text of none of them, so every row is kept and every one is
 	// moved to where its text now is.
 	ctx := t.Context()
@@ -229,28 +229,28 @@ func TestAWindowThatMovedInTheFileKeepsItsVector(t *testing.T) {
 	save(t, db, first, n)
 	model.run(t, db, first)
 
-	was := smallWindows(t, db, first, n.Ref.Path)
-	enclosing := largeWindow(t, db, first, n.Ref.Path)
+	was := smallChunks(t, db, first, n.Ref.Path)
+	enclosing := largeChunk(t, db, first, n.Ref.Path)
 
 	const frontmatter = 20
 	moved := n
 	moved.Ref.Size = int64(len(body) + frontmatter)
 	save(t, db, first, moved)
 
-	if got := smallWindows(t, db, first, n.Ref.Path); !slices.Equal(got, was) {
-		t.Errorf("the windows are rows %v, and were rows %v", got, was)
+	if got := smallChunks(t, db, first, n.Ref.Path); !slices.Equal(got, was) {
+		t.Errorf("the chunks are rows %v, and were rows %v", got, was)
 	}
-	if got := largeWindow(t, db, first, n.Ref.Path); got != enclosing {
-		t.Errorf("the large window is row %d, and was row %d", got, enclosing)
+	if got := largeChunk(t, db, first, n.Ref.Path); got != enclosing {
+		t.Errorf("the large chunk is row %d, and was row %d", got, enclosing)
 	}
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != len(was) {
-		t.Errorf("%d vectors, want the %d windows that carry one", got, len(was))
+		t.Errorf("%d vectors, want the %d chunks that carry one", got, len(was))
 	}
 	if asked := model.run(t, db, first); asked != 0 {
 		t.Errorf("a note whose body did not change asked for %d vectors", asked)
 	}
 
-	// Every window is read from where its text is now.
+	// Every chunk is read from where its text is now.
 	for _, row := range append(was, enclosing) {
 		p, found, err := db.ChunkQueries().Passage(ctx, first.ID, row)
 		if err != nil {
@@ -267,9 +267,9 @@ func TestAWindowThatMovedInTheFileKeepsItsVector(t *testing.T) {
 }
 
 func TestEditingTheMiddleOfANoteRecutsWhatFollowsIt(t *testing.T) {
-	// A note that names no place is tiled from its first word, so a word typed
-	// half way down it moves the window it landed in and every window after that.
-	// The windows in front of it hold the text they held.
+	// A note that names no part is tiled from its first word, so a word typed
+	// half way down it moves the chunk it landed in and every chunk after that.
+	// The chunks in front of it hold the text they held.
 	db := opened(t)
 	model := embedder{seed: 0x11}
 
@@ -280,18 +280,18 @@ func TestEditingTheMiddleOfANoteRecutsWhatFollowsIt(t *testing.T) {
 	if asked := model.run(t, db, first); asked != 5 {
 		t.Fatalf("a note of 200 words owes %d vectors, want 5", asked)
 	}
-	was := smallWindows(t, db, first, n.Ref.Path)
+	was := smallChunks(t, db, first, n.Ref.Path)
 
 	save(t, db, first, noteAt(n.Ref.Path, n.Title, typedBefore(body, 96)))
 
-	now := smallWindows(t, db, first, n.Ref.Path)
+	now := smallChunks(t, db, first, n.Ref.Path)
 	if len(now) != 5 {
-		t.Fatalf("%d windows carry a vector after the edit", len(now))
+		t.Fatalf("%d chunks carry a vector after the edit", len(now))
 	}
-	// The word landed in the third window, which is tiled from word 80.
+	// The word landed in the third chunk, which is tiled from word 80.
 	for at, row := range was[:2] {
 		if now[at] != row {
-			t.Errorf("the window at %d is row %d, and was row %d", at, now[at], row)
+			t.Errorf("the chunk at %d is row %d, and was row %d", at, now[at], row)
 		}
 		if !vectored(t, db, row) {
 			t.Errorf("row %d lost its vector, and the text it holds did not change", row)
@@ -299,10 +299,10 @@ func TestEditingTheMiddleOfANoteRecutsWhatFollowsIt(t *testing.T) {
 	}
 	for at := 2; at < len(now); at++ {
 		if slices.Contains(was, now[at]) {
-			t.Errorf("the window at %d is row %d, the row of the text before the edit", at, now[at])
+			t.Errorf("the chunk at %d is row %d, the row of the text before the edit", at, now[at])
 		}
 		if vectored(t, db, now[at]) {
-			t.Errorf("the window at %d carries a vector made from other text", at)
+			t.Errorf("the chunk at %d carries a vector made from other text", at)
 		}
 	}
 	if asked := model.run(t, db, first); asked != 3 {
@@ -313,14 +313,14 @@ func TestEditingTheMiddleOfANoteRecutsWhatFollowsIt(t *testing.T) {
 // cost is what one save of a note costs the model, and how much of what the
 // index held survived it.
 type cost struct {
-	// asked is the vectors the save left owing, kept the windows that carried one
-	// and still do, and was and now how many windows carry a vector on either
+	// asked is the vectors the save left owing, kept the chunks that carried one
+	// and still do, and was and now how many chunks carry a vector on either
 	// side of the save.
 	asked, kept, was, now int
 }
 
-// costOf saves a note, embeds every window of it, saves the note as edited, and
-// reports what the second save cost. A window that kept its row is asserted to
+// costOf saves a note, embeds every chunk of it, saves the note as edited, and
+// reports what the second save cost. A chunk that kept its row is asserted to
 // have kept its vector with it.
 func costOf(t *testing.T, before, after domain.Note) cost {
 	t.Helper()
@@ -331,10 +331,10 @@ func costOf(t *testing.T, before, after domain.Note) cost {
 	if asked := model.run(t, db, first); asked == 0 {
 		t.Fatal("the note owes no vector, so this measures nothing")
 	}
-	was := smallWindows(t, db, first, before.Ref.Path)
+	was := smallChunks(t, db, first, before.Ref.Path)
 
 	save(t, db, first, after)
-	now := smallWindows(t, db, first, after.Ref.Path)
+	now := smallChunks(t, db, first, after.Ref.Path)
 
 	kept := 0
 	for _, row := range now {
@@ -350,9 +350,9 @@ func costOf(t *testing.T, before, after domain.Note) cost {
 }
 
 func TestAHeadingBoundsWhatAnEditRecuts(t *testing.T) {
-	// A note of 200 words under four headings, edited in four places. The same
+	// A note of 200 words under four headings, edited at four points. The same
 	// words are cut twice: once with the headings naming the sections they open,
-	// and once with nothing naming a place, where the note is one span.
+	// and once with nothing naming a part, where the note is one division.
 	//
 	// Every figure here is in docs/performance.md.
 	const path = "notes/Entropy.md"
@@ -362,49 +362,49 @@ func TestAHeadingBoundsWhatAnEditRecuts(t *testing.T) {
 	frontmattered.Ref.Size += 20
 
 	for _, edit := range []struct {
-		name            string
-		note            domain.Note
-		placed, unnamed cost
+		name           string
+		note           domain.Note
+		named, unnamed cost
 	}{
 		{
 			name:    "a line added to the frontmatter",
 			note:    frontmattered,
-			placed:  cost{asked: 0, kept: 4, was: 4, now: 4},
+			named:   cost{asked: 0, kept: 4, was: 4, now: 4},
 			unnamed: cost{asked: 0, kept: 5, was: 5, now: 5},
 		},
 		{
 			name:    "at the end of the body",
 			note:    parsedAt(path, body+" wordzz"),
-			placed:  cost{asked: 1, kept: 4, was: 4, now: 5},
+			named:   cost{asked: 1, kept: 4, was: 4, now: 5},
 			unnamed: cost{asked: 1, kept: 4, was: 5, now: 5},
 		},
 		{
 			name:    "in the middle of the body",
 			note:    parsedAt(path, typedBefore(body, 96)),
-			placed:  cost{asked: 2, kept: 3, was: 4, now: 5},
+			named:   cost{asked: 2, kept: 3, was: 4, now: 5},
 			unnamed: cost{asked: 3, kept: 2, was: 5, now: 5},
 		},
 		{
 			name:    "at the start of the body",
 			note:    parsedAt(path, typedBefore(body, 0)),
-			placed:  cost{asked: 2, kept: 3, was: 4, now: 5},
+			named:   cost{asked: 2, kept: 3, was: 4, now: 5},
 			unnamed: cost{asked: 5, kept: 0, was: 5, now: 5},
 		},
 	} {
 		t.Run(edit.name, func(t *testing.T) {
-			if got := costOf(t, parsedAt(path, body), edit.note); got != edit.placed {
-				t.Errorf("with the headings as places: %+v, want %+v", got, edit.placed)
+			if got := costOf(t, parsedAt(path, body), edit.note); got != edit.named {
+				t.Errorf("with the headings as parts: %+v, want %+v", got, edit.named)
 			}
-			if got := costOf(t, unplaced(parsedAt(path, body)), unplaced(edit.note)); got != edit.unnamed {
-				t.Errorf("with no place named: %+v, want %+v", got, edit.unnamed)
+			if got := costOf(t, noParts(parsedAt(path, body)), noParts(edit.note)); got != edit.unnamed {
+				t.Errorf("with no part named: %+v, want %+v", got, edit.unnamed)
 			}
 		})
 	}
 }
 
 func TestEditingTheStartOfANoteRecutsAllOfIt(t *testing.T) {
-	// Windows are tiled from the first word of the note, so a word put in front
-	// of it moves every window after it, and every one owes a vector again.
+	// Chunks are tiled from the first word of the note, so a word put in front
+	// of it moves every chunk after it, and every one owes a vector again.
 	db := opened(t)
 	model := embedder{seed: 0x11}
 
@@ -415,29 +415,29 @@ func TestEditingTheStartOfANoteRecutsAllOfIt(t *testing.T) {
 	if asked := model.run(t, db, first); asked != 5 {
 		t.Fatalf("a note of 200 words owes %d vectors, want 5", asked)
 	}
-	was := smallWindows(t, db, first, n.Ref.Path)
+	was := smallChunks(t, db, first, n.Ref.Path)
 
 	save(t, db, first, noteAt(n.Ref.Path, n.Title, "wordzz "+body))
 
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
 		t.Errorf("%d vectors survived an edit at the start of the note", got)
 	}
-	now := smallWindows(t, db, first, n.Ref.Path)
+	now := smallChunks(t, db, first, n.Ref.Path)
 	for _, row := range now {
 		if slices.Contains(was, row) {
 			t.Errorf("row %d holds text it did not hold before", row)
 		}
 	}
 	if asked := model.run(t, db, first); asked != len(now) {
-		t.Errorf("editing the start of a note asked for %d vectors, want its %d windows", asked, len(now))
+		t.Errorf("editing the start of a note asked for %d vectors, want its %d chunks", asked, len(now))
 	}
 }
 
-func TestARecutKeepsAWindowInsideALargeOneThatChanged(t *testing.T) {
-	// The large window covers the whole note, so its text moves on every edit and
+func TestARecutKeepsAChunkInsideALargeOneThatChanged(t *testing.T) {
+	// The large chunk covers the whole note, so its text moves on every edit and
 	// it is a new row every time. `chunks.parent … ON DELETE CASCADE` takes every
-	// window inside a large one with it, so the windows that were kept are
-	// pointed at the new large window before the old one comes out.
+	// chunk inside a large one with it, so the chunks that were kept are
+	// pointed at the new large chunk before the old one comes out.
 	db := opened(t)
 	model := embedder{seed: 0x22}
 
@@ -446,26 +446,26 @@ func TestARecutKeepsAWindowInsideALargeOneThatChanged(t *testing.T) {
 	save(t, db, first, n)
 	model.run(t, db, first)
 
-	enclosing := largeWindow(t, db, first, n.Ref.Path)
-	kept := smallWindows(t, db, first, n.Ref.Path)[0]
+	enclosing := largeChunk(t, db, first, n.Ref.Path)
+	kept := smallChunks(t, db, first, n.Ref.Path)[0]
 	if !vectored(t, db, kept) {
-		t.Fatal("the window this is about carries no vector, so it would pass either way")
+		t.Fatal("the chunk this is about carries no vector, so it would pass either way")
 	}
 
 	save(t, db, first, noteAt(n.Ref.Path, n.Title, body+" wordzz"))
 
-	now := largeWindow(t, db, first, n.Ref.Path)
+	now := largeChunk(t, db, first, n.Ref.Path)
 	if now == enclosing {
-		t.Fatalf("the large window is row %d after the note was edited, so its text did not move", now)
+		t.Fatalf("the large chunk is row %d after the note was edited, so its text did not move", now)
 	}
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE id = ?`, kept); got != 1 {
-		t.Fatal("the window whose text did not change went with the large window enclosing it")
+		t.Fatal("the chunk whose text did not change went with the large chunk enclosing it")
 	}
 	if !vectored(t, db, kept) {
-		t.Error("the window whose text did not change lost its vector")
+		t.Error("the chunk whose text did not change lost its vector")
 	}
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE id = ? AND parent = ?`, kept, now); got != 1 {
-		t.Error("the window that was kept does not sit inside the large window that is there now")
+		t.Error("the chunk that was kept does not sit inside the large chunk that is there now")
 	}
 }
 
@@ -479,14 +479,14 @@ func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
 	n := noteAt("notes/Entropy.md", "Entropy", body)
 	save(t, db, first, n)
 
-	kept := smallWindows(t, db, first, n.Ref.Path)[0]
-	// A word of the first window, which an edit at the other end does not reach.
+	kept := smallChunks(t, db, first, n.Ref.Path)[0]
+	// A word of the first chunk, which an edit at the other end does not reach.
 	opening := "word" + spelt(3)
 
 	save(t, db, first, noteAt(n.Ref.Path, n.Title, body+" wordzz"))
 
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_fts WHERE rowid = ?`, kept); got != 1 {
-		t.Errorf("%d full-text rows for the window that was kept", got)
+		t.Errorf("%d full-text rows for the chunk that was kept", got)
 	}
 	// One row per chunk, and none naming a chunk that is gone.
 	chunks := counted(t, db, `SELECT COUNT(*) FROM chunks`)
@@ -503,7 +503,7 @@ func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(found) == 0 {
-		t.Fatalf("the note is not findable by %s, which is in the window that was kept", opening)
+		t.Fatalf("the note is not findable by %s, which is in the chunk that was kept", opening)
 	}
 	for _, p := range found {
 		if p.Source != n.Ref.Path {
@@ -535,9 +535,9 @@ func TestARecutStaysInsideItsVault(t *testing.T) {
 	model.run(t, db, first)
 	model.run(t, db, second)
 
-	untouched := smallWindows(t, db, second, theirs.Ref.Path)
+	untouched := smallChunks(t, db, second, theirs.Ref.Path)
 	if len(untouched) == 0 {
-		t.Fatal("the second vault holds no window that carries a vector")
+		t.Fatal("the second vault holds no chunk that carries a vector")
 	}
 	was := chunksIn(t, db, second)
 	vectors := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`)
@@ -553,7 +553,7 @@ func TestARecutStaysInsideItsVault(t *testing.T) {
 		t.Errorf("the second vault holds %d chunks, and held %d before the first vault's note was cut", got, was)
 	}
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != vectors-1 {
-		t.Errorf("%d vectors, want %d: the one window the edit landed in", got, vectors-1)
+		t.Errorf("%d vectors, want %d: the one chunk the edit landed in", got, vectors-1)
 	}
 
 	// Neither vault answers for the other.
@@ -577,8 +577,8 @@ func TestARecutStaysInsideItsVault(t *testing.T) {
 	}
 }
 
-// locationsOf is what the windows of one note are called, in the order they sit
-// in the file. A small window is named after the section it was cut inside.
+// locationsOf is what the chunks of one note are called, in the order they sit
+// in the file. A small chunk is named after the section it was cut inside.
 func locationsOf(t *testing.T, db *DB, vault domain.Vault, path string) []string {
 	t.Helper()
 	rows, err := db.read.QueryContext(t.Context(), `SELECT COALESCE(c.location, '') FROM chunks c
@@ -605,8 +605,8 @@ func locationsOf(t *testing.T, db *DB, vault domain.Vault, path string) []string
 	return out
 }
 
-func TestAWindowIsNamedAfterTheSectionItWasCutInside(t *testing.T) {
-	// A heading names the text under it, and that name is on every window cut
+func TestAChunkIsNamedAfterTheSectionItWasCutInside(t *testing.T) {
+	// A heading names the text under it, and that name is on every chunk cut
 	// there, which is what a result has to show to say where the passage is.
 	db := opened(t)
 
@@ -615,12 +615,12 @@ func TestAWindowIsNamedAfterTheSectionItWasCutInside(t *testing.T) {
 
 	want := []string{"Sectiona", "Sectionei", "Sectionjg", "Sectionbee"}
 	if got := locationsOf(t, db, first, n.Ref.Path); !slices.Equal(got, want) {
-		t.Errorf("the windows are located %v, want %v", got, want)
+		t.Errorf("the chunks are located %v, want %v", got, want)
 	}
 }
 
 func TestANoteWithSectionsIsStillFoundByItsTitle(t *testing.T) {
-	// One large window encloses the whole note however many sections it holds, and
+	// One large chunk encloses the whole note however many sections it holds, and
 	// the note's title is in the text of it, so a note answers to the name it was
 	// given and not only to the words in it.
 	ctx := t.Context()
@@ -640,25 +640,25 @@ func TestANoteWithSectionsIsStillFoundByItsTitle(t *testing.T) {
 	if len(found) == 0 {
 		t.Fatalf("the note is not findable by %q, which is its title", n.Title)
 	}
-	// The enclosing window is the note: it begins at the first word of the body and
+	// The enclosing chunk is the note: it begins at the first word of the body and
 	// ends at the last.
-	p, ok, err := db.ChunkQueries().Passage(ctx, first.ID, largeWindow(t, db, first, n.Ref.Path))
+	p, ok, err := db.ChunkQueries().Passage(ctx, first.ID, largeChunk(t, db, first, n.Ref.Path))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !ok {
-		t.Fatal("the window enclosing the note is gone")
+		t.Fatal("the chunk enclosing the note is gone")
 	}
 	if p.Start != 0 || p.Length != len(body) {
-		t.Errorf("the enclosing window is at %d for %d, and the body is %d bytes", p.Start, p.Length, len(body))
+		t.Errorf("the enclosing chunk is at %d for %d, and the body is %d bytes", p.Start, p.Length, len(body))
 	}
 }
 
 func TestCuttingOneSectionStaysInsideItsVault(t *testing.T) {
 	// One database holds every vault. The two notes here are at one path, are cut
-	// into sections of the same shape, and share no word of prose, so a window that
+	// into sections of the same shape, and share no word of prose, so a chunk that
 	// arrived from the wrong vault is recognisable and a cut that reached across
-	// would take the other vault's windows with it.
+	// would take the other vault's chunks with it.
 	ctx := t.Context()
 	db := opened(t)
 	model := embedder{seed: 0x33}
@@ -673,9 +673,9 @@ func TestCuttingOneSectionStaysInsideItsVault(t *testing.T) {
 	model.run(t, db, first)
 	model.run(t, db, second)
 
-	untouched := smallWindows(t, db, second, path)
+	untouched := smallChunks(t, db, second, path)
 	if len(untouched) == 0 {
-		t.Fatal("the second vault holds no window that carries a vector")
+		t.Fatal("the second vault holds no chunk that carries a vector")
 	}
 	was := chunksIn(t, db, second)
 	vectors := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`)
@@ -691,7 +691,7 @@ func TestCuttingOneSectionStaysInsideItsVault(t *testing.T) {
 	if got := chunksIn(t, db, second); got != was {
 		t.Errorf("the second vault holds %d chunks, and held %d before the first vault's note was cut", got, was)
 	}
-	// The section the word landed in is cut into two windows, and both of them owe
+	// The section the word landed in is cut into two chunks, and both of them owe
 	// a vector; the sections it did not reach keep theirs.
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != vectors-1 {
 		t.Errorf("%d vectors, want %d", got, vectors-1)
@@ -722,11 +722,11 @@ func TestCuttingOneSectionStaysInsideItsVault(t *testing.T) {
 }
 
 func TestTheWorstCaseIsBoundedByTheSectionAndNotByTheNote(t *testing.T) {
-	// A note of a thousand words under five headings, edited in the same four
-	// places. What an edit re-cuts is every window of the span it lands in: a note
-	// that names no place is one span, so a longer note has more of them, and a
-	// heading opening each section makes it the windows of one section at any
-	// length.
+	// A note of a thousand words under five headings, edited at the same four
+	// points. What an edit re-cuts is every chunk of the division it lands in: a
+	// note that names no part is one division, so a longer note has more of
+	// them, and a heading opening each section makes it the chunks of one
+	// section at any length.
 	//
 	// Every figure here is in docs/performance.md.
 	const path = "notes/Entropy.md"
@@ -736,49 +736,49 @@ func TestTheWorstCaseIsBoundedByTheSectionAndNotByTheNote(t *testing.T) {
 	frontmattered.Ref.Size += 20
 
 	for _, edit := range []struct {
-		name            string
-		note            domain.Note
-		placed, unnamed cost
+		name           string
+		note           domain.Note
+		named, unnamed cost
 	}{
 		{
 			name:    "a line added to the frontmatter",
 			note:    frontmattered,
-			placed:  cost{asked: 0, kept: 25, was: 25, now: 25},
+			named:   cost{asked: 0, kept: 25, was: 25, now: 25},
 			unnamed: cost{asked: 0, kept: 25, was: 25, now: 25},
 		},
 		{
 			name:    "at the end of the body",
 			note:    parsedAt(path, body+" wordzz"),
-			placed:  cost{asked: 1, kept: 24, was: 25, now: 25},
+			named:   cost{asked: 1, kept: 24, was: 25, now: 25},
 			unnamed: cost{asked: 1, kept: 25, was: 25, now: 26},
 		},
 		{
 			name:    "in the middle of the body",
 			note:    parsedAt(path, typedBefore(body, 500)),
-			placed:  cost{asked: 3, kept: 22, was: 25, now: 25},
+			named:   cost{asked: 3, kept: 22, was: 25, now: 25},
 			unnamed: cost{asked: 14, kept: 12, was: 25, now: 26},
 		},
 		{
 			name:    "at the start of the body",
 			note:    parsedAt(path, typedBefore(body, 0)),
-			placed:  cost{asked: 5, kept: 20, was: 25, now: 25},
+			named:   cost{asked: 5, kept: 20, was: 25, now: 25},
 			unnamed: cost{asked: 26, kept: 0, was: 25, now: 26},
 		},
 	} {
 		t.Run(edit.name, func(t *testing.T) {
-			if got := costOf(t, parsedAt(path, body), edit.note); got != edit.placed {
-				t.Errorf("with the headings as places: %+v, want %+v", got, edit.placed)
+			if got := costOf(t, parsedAt(path, body), edit.note); got != edit.named {
+				t.Errorf("with the headings as parts: %+v, want %+v", got, edit.named)
 			}
-			if got := costOf(t, unplaced(parsedAt(path, body)), unplaced(edit.note)); got != edit.unnamed {
-				t.Errorf("with no place named: %+v, want %+v", got, edit.unnamed)
+			if got := costOf(t, noParts(parsedAt(path, body)), noParts(edit.note)); got != edit.unnamed {
+				t.Errorf("with no part named: %+v, want %+v", got, edit.unnamed)
 			}
 		})
 	}
 }
 
-func TestASectionShorterThanAWindowIsAWindowOfItsOwn(t *testing.T) {
-	// What places cost. A window is cut inside one section and never across a
-	// heading, so a note of many short sections is cut into many short windows, and
+func TestASectionShorterThanAChunkIsAChunkOfItsOwn(t *testing.T) {
+	// What parts cost. A chunk is cut inside one section and never across a
+	// heading, so a note of many short sections is cut into many short chunks, and
 	// every one of them owes a vector of its own.
 	//
 	// The figures are in docs/performance.md.
@@ -786,14 +786,14 @@ func TestASectionShorterThanAWindowIsAWindowOfItsOwn(t *testing.T) {
 
 	body := sectionsOf(200, 5)
 	named := parsedAt("notes/Named.md", body)
-	unnamed := unplaced(parsedAt("notes/Unnamed.md", body))
+	unnamed := noParts(parsedAt("notes/Unnamed.md", body))
 	save(t, db, first, named)
 	save(t, db, first, unnamed)
 
-	if got := len(smallWindows(t, db, first, named.Ref.Path)); got != 40 {
-		t.Errorf("a note of forty sections is cut into %d windows, want 40", got)
+	if got := len(smallChunks(t, db, first, named.Ref.Path)); got != 40 {
+		t.Errorf("a note of forty sections is cut into %d chunks, want 40", got)
 	}
-	if got := len(smallWindows(t, db, first, unnamed.Ref.Path)); got != 7 {
-		t.Errorf("the same words with no place named are cut into %d windows, want 7", got)
+	if got := len(smallChunks(t, db, first, unnamed.Ref.Path)); got != 7 {
+		t.Errorf("the same words with no part named are cut into %d chunks, want 7", got)
 	}
 }

@@ -1,8 +1,8 @@
 -- A search asked by words: the chunks of one vault whose text matches the words
 -- typed, best first.
 --
--- The row that comes back is the large window enclosing the hit, which is what
--- a result shows, and where the hit itself stands inside it. A window with
+-- The row that comes back is the large chunk enclosing the hit, which is what
+-- a result shows, and where the hit itself stands inside it. A chunk with
 -- nothing enclosing it is its own, and stands at its own beginning.
 --
 -- The kinds are a JSON array, and an empty one is every kind: a question that

@@ -44,7 +44,7 @@ graph TD
 
 Plain text. Each page opens with a pair of form feeds and the newline closing them, and the page's prose follows, one blank line between the regions the layout model found. A recogniser has no character for a form feed, so nothing in the prose is escaped.
 
-The marks are taken out when the artifact is read. An offset in what comes back is an offset in the prose, and a window cut from it holds what the page says. Text standing before the first mark belongs to no page and is kept.
+The marks are taken out when the artifact is read. An offset in what comes back is an offset in the prose, and a chunk cut from it holds what the page says. Text standing before the first mark belongs to no page and is kept.
 
 A page with nothing on it is written, and its mark is what makes the page after it findable. A document with nothing on it writes nothing at all, and the source goes back on its own text layer.
 
@@ -62,7 +62,7 @@ An EPUB is the exception. A book made for a screen has no pages of its own, so t
 
 A reading names its parts. The layout model names the headings, and one record a heading goes into `.parts`: where the heading begins in the prose, how far it runs, and how deep it sits, counted from zero with a document title above the section titles within it.
 
-Places are built from that sidecar, so a recognised document names its parts as a book with an outline does. A part is named by the run of prose its heading occupies, read as the scan was read. Structure is kept, and never inferred from the recognised words.
+Parts are built from that sidecar, so a recognised document names them as a book with an outline does. A part is named by the run of prose its heading occupies, read as the scan was read. Structure is kept, and never inferred from the recognised words.
 
 A parts sidecar whose records run backwards, or reach past the end of the prose, was written for other bytes. None of it is used and the reading is located by its pages alone.
 
@@ -123,7 +123,7 @@ A run asks about pages in batches — `indexing.proofreading.service.pages_at_on
 
 Recognition itself resumes the same way: pages are appended to the partial in batches — sixteen at a time — and the count is appended after them, on a line beginning with a byte no recogniser can write, which the artifact's own reader passes over.
 
-A window whose text did not change keeps the vector already made for it.
+A chunk whose text did not change keeps the vector already made for it.
 
 Where the service has a queue, one run collects the batch that is out and leaves the next, and the batch's name stands in `.proofread` beside the count. A batch outlives the run that left it, so one left before the application closed is collected when it opens. A batch that cannot be collected is forgotten, and the pages it covered are left again by the next run. `indexing.proofreading.service.batch_url` empty asks a page at a time and waits.
 

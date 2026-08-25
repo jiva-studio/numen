@@ -33,7 +33,7 @@ The coarse representation is addressed by the chunk's own row number, which is t
 
 The `vectors` table is keyed by the hash of the text that was embedded and the recipe it was embedded under. The recipe names everything that decides what the vector is: the model, its width, where the text is cut off, how the model's output becomes one vector, and how the numbers are stored. Change any of them and the old rows are not found, still there, and found again if the setting goes back.
 
-A vector is kept where no renumbering of chunks and no rebuilding of the index reaches it. A window whose text was embedded before is not asked for again, whichever row now holds that text (ADR-0012).
+A vector is kept where no renumbering of chunks and no rebuilding of the index reaches it. A chunk whose text was embedded before is not asked for again, whichever row now holds that text (ADR-0012).
 
 **A vector is forgotten only where a source was cut again and no chunk holds that text any more.** A source whose folder could not be read takes nothing with it, so an unreadable folder and a deleted one leave the same thing behind, and a vault on a detached drive loses nothing bought.
 
@@ -43,7 +43,7 @@ The source a passage came from is an ordinary column. Nothing is partitioned by 
 
 ### Three staleness keys, and each is a query
 
-The file changed; the recipe that produced the text changed; the recipe the vectors were made under changed. A source owes its text when its recipe is not one now in use. A window owes a vector when no row holds one for its text under the recipe in use.
+The file changed; the recipe that produced the text changed; the recipe the vectors were made under changed. A source owes its text when its recipe is not one now in use. A chunk owes a vector when no row holds one for its text under the recipe in use.
 
 ## Consequences
 

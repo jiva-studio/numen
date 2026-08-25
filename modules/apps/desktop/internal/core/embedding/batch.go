@@ -7,7 +7,7 @@ const DefaultBatchCharacters = 32000
 
 // Batches groups texts into requests, bounded by the characters of the whole
 // group. A model bounds a request by everything in it, and a count of texts says
-// nothing about their size: the same number of windows carries several times the
+// nothing about their size: the same number of chunks carries several times the
 // tokens in transliterated Sanskrit that it does in English.
 //
 // The groups are subslices, in order, so their answers concatenate into an

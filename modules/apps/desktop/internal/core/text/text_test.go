@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/cutting"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/ocr"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/text"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
 )
 
 // The book is the chapter as the models read it: the titles come out mangled,
@@ -90,17 +90,17 @@ func TestAReadingWithPartsLocatesAPassageBySectionAndPage(t *testing.T) {
 	located(t, doc, birth, docTitle+", page 2 of the file")
 }
 
-func TestAReadingWithPartsNamesThemAsPlaces(t *testing.T) {
+func TestAReadingWithPartsNamesThem(t *testing.T) {
 	raw, parts := written(t)
 	doc := text.Recognised(raw, parts, nil, nil)
 
-	want := []window.Place{
+	want := []cutting.Part{
 		{Title: docTitle, Offset: at(t, doc, docTitle)},
 		{Title: sectionOne, Offset: at(t, doc, sectionOne)},
 		{Title: sectionTwo, Offset: at(t, doc, sectionTwo)},
 	}
-	if !slices.Equal(doc.Places, want) {
-		t.Errorf("the document names %+v, want %+v", doc.Places, want)
+	if !slices.Equal(doc.Parts, want) {
+		t.Errorf("the document names %+v, want %+v", doc.Parts, want)
 	}
 }
 
@@ -110,8 +110,8 @@ func TestAReadingWithNoPartsLocatesAPassageByPageAlone(t *testing.T) {
 
 	located(t, doc, ganges, "page 3 of the file")
 	located(t, doc, padmavati, "page 4 of the file")
-	if len(doc.Places) != 0 {
-		t.Errorf("a reading with no parts names %+v", doc.Places)
+	if len(doc.Parts) != 0 {
+		t.Errorf("a reading with no parts names %+v", doc.Parts)
 	}
 }
 
@@ -148,8 +148,8 @@ func TestPartsOutOfOrderAreNotTrusted(t *testing.T) {
 	})
 	doc := text.Recognised(raw, parts, nil, nil)
 
-	if len(doc.Places) != 0 {
-		t.Errorf("the document names %+v", doc.Places)
+	if len(doc.Parts) != 0 {
+		t.Errorf("the document names %+v", doc.Parts)
 	}
 	located(t, doc, ganges, "page 3 of the file")
 }
@@ -163,8 +163,8 @@ func TestPartsNamingOffsetsPastTheTextAreNotTrusted(t *testing.T) {
 	})
 	doc := text.Recognised(raw, parts, nil, nil)
 
-	if len(doc.Places) != 0 {
-		t.Errorf("the document names %+v", doc.Places)
+	if len(doc.Parts) != 0 {
+		t.Errorf("the document names %+v", doc.Parts)
 	}
 	located(t, doc, ganges, "page 3 of the file")
 }

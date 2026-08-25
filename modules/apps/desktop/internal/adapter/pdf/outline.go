@@ -14,9 +14,9 @@ const (
 	mostDepth   = 32
 )
 
-// outline is what the document's own outline names, as places in its text.
+// outline is what the document's own outline names, as parts of its text.
 //
-// An entry points at a page, so a place begins where that page begins. That is
+// An entry points at a page, so a part begins where that page begins. That is
 // coarser than an EPUB's anchor, which points inside a document, and it is what
 // the format offers: a destination carries a position on the page, but the text
 // layer's order is not the page's geometry, so a position cannot be turned into
@@ -24,8 +24,8 @@ const (
 //
 // starts is where each page's text begins, so an entry pointing past the pages
 // that were read names nothing and is dropped.
-func (d *document) outline(starts []int) []Place {
-	var places []Place
+func (d *document) outline(starts []int) []Part {
+	var parts []Part
 	seen := map[references.FPDF_BOOKMARK]bool{}
 
 	var walk func(bookmark *references.FPDF_BOOKMARK, level int)
@@ -40,14 +40,14 @@ func (d *document) outline(starts []int) []Place {
 			return
 		}
 		for at := child.Bookmark; at != nil; {
-			if len(places) >= mostEntries || seen[*at] {
+			if len(parts) >= mostEntries || seen[*at] {
 				// An outline that points back at itself is read once.
 				return
 			}
 			seen[*at] = true
 
-			if place, ok := d.place(*at, level, starts); ok {
-				places = append(places, place)
+			if part, ok := d.part(*at, level, starts); ok {
+				parts = append(parts, part)
 			}
 			walk(at, level+1)
 
@@ -61,25 +61,25 @@ func (d *document) outline(starts []int) []Place {
 		}
 	}
 	walk(nil, 1)
-	return places
+	return parts
 }
 
-// place is one outline entry, as a name and the offset of the page it leads to.
-// An entry with no name, or one that leads nowhere, is not a place.
-func (d *document) place(bookmark references.FPDF_BOOKMARK, level int, starts []int) (Place, bool) {
+// part is one outline entry, as a name and the offset of the page it leads to.
+// An entry with no name, or one that leads nowhere, is not a part.
+func (d *document) part(bookmark references.FPDF_BOOKMARK, level int, starts []int) (Part, bool) {
 	named, err := d.worker.FPDFBookmark_GetTitle(&requests.FPDFBookmark_GetTitle{Bookmark: bookmark})
 	if err != nil {
-		return Place{}, false
+		return Part{}, false
 	}
 	title := tidy(named.Title)
 	if title == "" {
-		return Place{}, false
+		return Part{}, false
 	}
 	page, ok := d.destination(bookmark)
 	if !ok || page < 0 || page >= len(starts) {
-		return Place{}, false
+		return Part{}, false
 	}
-	return Place{Title: title, Offset: starts[page], Level: level}, true
+	return Part{Title: title, Offset: starts[page], Level: level}, true
 }
 
 // destination is the page an outline entry leads to.

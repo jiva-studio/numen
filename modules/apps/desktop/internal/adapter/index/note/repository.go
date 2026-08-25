@@ -14,8 +14,8 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index/sqlfile"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/cutting"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
 )
 
 //go:embed sql/*.sql
@@ -34,15 +34,15 @@ type Repository struct {
 	db *sql.DB
 
 	// sizes are what a note is cut at. A repository told none cuts at the sizes
-	// the window package names.
-	sizes window.Sizes
+	// the cutting package names.
+	sizes cutting.Sizes
 }
 
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 
 // Cut is the repository, cutting a note at the sizes given. The settings decide
 // them, and what has read the settings passes them in here.
-func (r *Repository) Cut(sizes window.Sizes) *Repository {
+func (r *Repository) Cut(sizes cutting.Sizes) *Repository {
 	return &Repository{db: r.db, sizes: sizes}
 }
 
@@ -85,7 +85,7 @@ func (r *Repository) Save(ctx context.Context, vaultID string, notes []domain.No
 	return nil
 }
 
-func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes window.Sizes) error {
+func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes cutting.Sizes) error {
 	frontmatter, storeErr := encodeFrontmatter(n)
 	problem := n.FrontmatterErr
 	if storeErr != "" {
@@ -115,8 +115,8 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes
 			return err
 		}
 	}
-	// The note goes in as its own large window, so the words in it are findable
-	// as soon as it is indexed. A window whose text is what it was keeps its
+	// The note goes in as its own large chunk, so the words in it are findable
+	// as soon as it is indexed. A chunk whose text is what it was keeps its
 	// row, and the vector made from it.
 	if err := chunk.Replace(ctx, tx, row, vault, cut(n, sizes)); err != nil {
 		return err
@@ -160,62 +160,62 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes
 	return nil
 }
 
-// cut is how a note is cut: one large window over the whole of it, and the small
-// windows inside that carry the vectors. The small windows are cut at the sizes
-// a book's are, and a mixed vault ranks by what a passage says.
+// cut is how a note is cut: one large chunk over the whole of it, and the small
+// chunks inside that carry the vectors. The small chunks are cut at the sizes a
+// book's are, and a mixed vault ranks by what a passage says.
 //
-// The large window is the note itself. The sizes decide the small windows inside
+// The large chunk is the note itself. The sizes decide the small chunks inside
 // it.
 //
-// The note's headings are its places, so the small windows of one section are
-// tiled inside that section and no window runs across a heading.
+// The note's headings are its parts, so the small chunks of one section are
+// tiled inside that section and no chunk runs across a heading.
 //
 // Offsets are into the file. The body begins after the frontmatter, and every
-// window is moved out by as much.
-func cut(n domain.Note, sizes window.Sizes) []chunk.Window {
+// chunk is moved out by as much.
+func cut(n domain.Note, sizes cutting.Sizes) []chunk.Chunk {
 	at := int(n.Ref.Size) - len(n.Body)
 	if at < 0 {
 		at = 0
 	}
-	sizes.Large = window.Whole
+	sizes.Large = cutting.Whole
 
-	out := make([]chunk.Window, 0, 1)
-	for _, large := range window.Cut(n.Body, places(n), sizes) {
+	out := make([]chunk.Chunk, 0, 1)
+	for _, large := range cutting.Cut(n.Body, parts(n), sizes) {
 		// The title is searched together with the body: a note is looked for by
 		// the name it was given.
-		w := chunk.Window{
+		c := chunk.Chunk{
 			Start:    at + large.Start,
 			Length:   large.Length,
 			Location: large.Location,
 			Text:     n.Title + "\n" + large.Slice(n.Body),
 		}
 		for _, small := range large.Small {
-			w.Small = append(w.Small, chunk.Window{
+			c.Small = append(c.Small, chunk.Chunk{
 				Start:    at + small.Start,
 				Length:   small.Length,
 				Location: small.Location,
 				Text:     small.Slice(n.Body),
 			})
 		}
-		out = append(out, w)
+		out = append(out, c)
 	}
 	if len(out) == 0 {
 		// A note of a title and no words is answered by its title.
-		out = append(out, chunk.Window{Start: at, Length: len(n.Body), Text: n.Title})
+		out = append(out, chunk.Chunk{Start: at, Length: len(n.Body), Text: n.Title})
 	}
 	return out
 }
 
-// places is where a note names the section that follows. A heading carries the
-// byte its line begins at in the body, which is the offset a window is cut
+// parts is where a note names the section that follows. A heading carries the
+// byte its line begins at in the body, which is the offset a chunk is cut
 // against, and the heading's own text is what the section is called.
-func places(n domain.Note) []window.Place {
+func parts(n domain.Note) []cutting.Part {
 	if len(n.Headings) == 0 {
 		return nil
 	}
-	out := make([]window.Place, 0, len(n.Headings))
+	out := make([]cutting.Part, 0, len(n.Headings))
 	for _, h := range n.Headings {
-		out = append(out, window.Place{Title: h.Text, Offset: h.Offset})
+		out = append(out, cutting.Part{Title: h.Text, Offset: h.Offset})
 	}
 	return out
 }

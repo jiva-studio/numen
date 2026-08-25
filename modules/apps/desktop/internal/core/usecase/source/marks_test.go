@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/pdf"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/fixes"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lit"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/text"
 )
@@ -19,15 +19,15 @@ import (
 // with what the test put in.
 type layered struct {
 	port.Documents
-	where func(raw []byte, pages []int) ([]placed.Box, error)
+	where func(raw []byte, pages []int) ([]lit.Box, error)
 }
 
-func (l layered) Placed(_ context.Context, raw []byte, _ []int, pages []int) ([]placed.Box, error) {
+func (l layered) Lit(_ context.Context, raw []byte, _ []int, pages []int) ([]lit.Box, error) {
 	return l.where(raw, pages)
 }
 
 // answering is the use case with the test's own answer for where words sit.
-func answering(u Marks, where func(raw []byte, pages []int) ([]placed.Box, error)) Marks {
+func answering(u Marks, where func(raw []byte, pages []int) ([]lit.Box, error)) Marks {
 	u.Documents = layered{Documents: pdf.Documents{}, where: where}
 	return u
 }
@@ -80,11 +80,11 @@ func run(t *testing.T, book *pdf.Book, word string) (start, length int) {
 	return at, len(word)
 }
 
-// lit is where one run of a source's text sits, asked about on its own. A
-// source that is placed nowhere is lit nowhere.
-func lit(t *testing.T, u Marks, path string, start, length int) []placed.Page {
+// litOn is where one run of a source's text sits, asked about on its own. A
+// source with no reading and no layer is lit nowhere.
+func litOn(t *testing.T, u Marks, path string, start, length int) []lit.Page {
 	t.Helper()
-	found, err := u.Execute(t.Context(), first, path, []placed.Run{{Start: start, Length: length}})
+	found, err := u.Execute(t.Context(), first, path, []lit.Run{{Start: start, Length: length}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,27 +100,27 @@ func lit(t *testing.T, u Marks, path string, start, length int) []placed.Page {
 func TestARecognisedSourceIsLitFromWhatWasReadInIt(t *testing.T) {
 	u, index, store, _, _, shelved := placing(t, "tiny.pdf")
 	holds(t, index, shelved, "ocr", "abc123")
-	u = answering(u, func([]byte, []int) ([]placed.Box, error) {
+	u = answering(u, func([]byte, []int) ([]lit.Box, error) {
 		t.Error("the document's own layer was read for a source standing on a reading")
 		return nil, nil
 	})
 
 	// Two words on one page and a third on the next, as a model reading the
 	// pages wrote them down.
-	written := []placed.Box{
+	written := []lit.Box{
 		{Page: 4, Start: 0, Length: 5, MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23},
 		{Page: 4, Start: 6, Length: 4, MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23},
 		{Page: 5, Start: 11, Length: 5, MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53},
 	}
-	if err := store.Write(t.Context(), text.Boxes("ocr", "abc123"), placed.Pack(written)); err != nil {
+	if err := store.Write(t.Context(), text.Boxes("ocr", "abc123"), lit.Pack(written)); err != nil {
 		t.Fatal(err)
 	}
 
-	found := lit(t, u, documentPath, 0, 10)
+	found := litOn(t, u, documentPath, 0, 10)
 	if len(found) != 1 || found[0].Page != 4 || len(found[0].Rects) != 2 {
-		t.Fatalf("the run was placed at %+v", found)
+		t.Fatalf("the run was lit at %+v", found)
 	}
-	want := placed.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}
+	want := lit.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}
 	if found[0].Rects[0] != want {
 		t.Errorf("the first word is at %+v, want %+v", found[0].Rects[0], want)
 	}
@@ -133,20 +133,20 @@ func TestASourceWithNoReadingIsLitFromItsOwnLayer(t *testing.T) {
 	holds(t, index, shelved, "", "abc123")
 
 	start, length := run(t, book, "gamma")
-	found := lit(t, u, documentPath, start, length)
+	found := litOn(t, u, documentPath, start, length)
 	if len(found) != 1 || found[0].Page != 0 || len(found[0].Rects) != 1 {
-		t.Fatalf("%q was placed at %+v", "gamma", found)
+		t.Fatalf("%q was lit at %+v", "gamma", found)
 	}
 
 	// The rectangle is the one the document puts that word in.
-	boxes, err := book.Placed(raw, []int{0})
+	boxes, err := book.Lit(raw, []int{0})
 	if err != nil {
 		t.Fatal(err)
 	}
-	var want placed.Rect
+	var want lit.Rect
 	for _, box := range boxes {
 		if box.Start == start {
-			want = placed.Rect{MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY}
+			want = lit.Rect{MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY}
 		}
 	}
 	if found[0].Rects[0] != want {
@@ -163,9 +163,9 @@ func TestARunCrossingAPageIsOnBothOfThem(t *testing.T) {
 
 	from, _ := run(t, book, "gamma")
 	to, length := run(t, book, "Delta")
-	found := lit(t, u, documentPath, from, to+length-from)
+	found := litOn(t, u, documentPath, from, to+length-from)
 	if len(found) != 2 || found[0].Page != 0 || found[1].Page != 1 {
-		t.Fatalf("a run across a page was placed at %+v", found)
+		t.Fatalf("a run across a page was lit at %+v", found)
 	}
 	for _, page := range found {
 		if len(page.Rects) != 1 {
@@ -183,31 +183,31 @@ func TestAWordIsLitOnThePageItIsPrintedOn(t *testing.T) {
 	holds(t, index, shelved, "", "abc123")
 
 	start, length := run(t, book, "Afterword")
-	found := lit(t, u, documentPath, start, length)
+	found := litOn(t, u, documentPath, start, length)
 	if len(found) != 1 || found[0].Page != 3 {
-		t.Fatalf("%q is printed on page 3 and was placed at %+v", "Afterword", found)
+		t.Fatalf("%q is printed on page 3 and was lit at %+v", "Afterword", found)
 	}
 }
 
-// One page of a document is placed, and the rest of it is not. A question about
+// One page of a document is lit, and the rest of it is not. A question about
 // a paragraph is not a reason to read a book.
-func TestOnlyThePagesARunFallsOnArePlaced(t *testing.T) {
+func TestOnlyThePagesARunFallsOnAreLit(t *testing.T) {
 	u, index, _, book, _, shelved := placing(t, "outline.pdf")
 	holds(t, index, shelved, "", "abc123")
 
 	var asked []int
-	u = answering(u, func(raw []byte, pages []int) ([]placed.Box, error) {
+	u = answering(u, func(raw []byte, pages []int) ([]lit.Box, error) {
 		asked = pages
-		return book.Placed(raw, pages)
+		return book.Lit(raw, pages)
 	})
 
 	start, length := run(t, book, "closer")
-	found := lit(t, u, documentPath, start, length)
+	found := litOn(t, u, documentPath, start, length)
 	if !slices.Equal(asked, []int{2}) {
 		t.Errorf("a word on page 2 of %d asked for pages %v", len(book.Pages), asked)
 	}
 	if len(found) != 1 || found[0].Page != 2 {
-		t.Errorf("%q was placed at %+v", "closer", found)
+		t.Errorf("%q was lit at %+v", "closer", found)
 	}
 }
 
@@ -219,14 +219,14 @@ func TestSeveralPlacesAreAskedAboutAtOnce(t *testing.T) {
 	holds(t, index, shelved, "", "abc123")
 
 	var asked [][]int
-	u = answering(u, func(raw []byte, pages []int) ([]placed.Box, error) {
+	u = answering(u, func(raw []byte, pages []int) ([]lit.Box, error) {
 		asked = append(asked, pages)
-		return book.Placed(raw, pages)
+		return book.Lit(raw, pages)
 	})
 
 	after, afterLength := run(t, book, "Afterword")
 	closer, closerLength := run(t, book, "closer")
-	found, err := u.Execute(t.Context(), first, documentPath, []placed.Run{
+	found, err := u.Execute(t.Context(), first, documentPath, []lit.Run{
 		{Start: after, Length: afterLength},
 		{Start: closer, Length: closerLength},
 	})
@@ -237,10 +237,10 @@ func TestSeveralPlacesAreAskedAboutAtOnce(t *testing.T) {
 		t.Fatalf("two places were asked about and %d came back: %+v", len(found), found)
 	}
 	if len(found[0]) != 1 || found[0][0].Page != 3 {
-		t.Errorf("%q is printed on page 3 and was placed at %+v", "Afterword", found[0])
+		t.Errorf("%q is printed on page 3 and was lit at %+v", "Afterword", found[0])
 	}
 	if len(found[1]) != 1 || found[1][0].Page != 2 {
-		t.Errorf("%q is printed on page 2 and was placed at %+v", "closer", found[1])
+		t.Errorf("%q is printed on page 2 and was lit at %+v", "closer", found[1])
 	}
 	if len(asked) != 1 || !slices.Equal(asked[0], []int{2, 3}) {
 		t.Errorf("the layer was asked for %v, want both pages once", asked)
@@ -248,14 +248,14 @@ func TestSeveralPlacesAreAskedAboutAtOnce(t *testing.T) {
 }
 
 // A path the vault does not hold is refused, and so is one leaving it. Nothing
-// is read and nothing is placed.
+// is read and nothing is lit.
 func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
 	u, index, _, _, _, shelved := placing(t, "tiny.pdf")
 	holds(t, index, shelved, "", "abc123")
 
 	for _, path := range []string{"library/nothing.pdf", "../outside.pdf"} {
 		t.Run(path, func(t *testing.T) {
-			found, err := u.Execute(t.Context(), first, path, []placed.Run{{Start: 0, Length: 5}})
+			found, err := u.Execute(t.Context(), first, path, []lit.Run{{Start: 0, Length: 5}})
 			if err == nil {
 				t.Errorf("%s was answered with %+v", path, found)
 			}
@@ -263,31 +263,31 @@ func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
 	}
 }
 
-// A source the index does not hold is placed nowhere: which producer made its
+// A source the index does not hold is lit nowhere: which producer made its
 // text is what says where its offsets are, and nothing has said.
-func TestASourceTheIndexDoesNotHoldIsPlacedNowhere(t *testing.T) {
+func TestASourceTheIndexDoesNotHoldIsLitNowhere(t *testing.T) {
 	u, _, _, book, _, _ := placing(t, "tiny.pdf")
-	u = answering(u, func([]byte, []int) ([]placed.Box, error) {
+	u = answering(u, func([]byte, []int) ([]lit.Box, error) {
 		t.Error("a source the index does not hold was read")
 		return nil, nil
 	})
 
 	start, length := run(t, book, "gamma")
-	found := lit(t, u, documentPath, start, length)
+	found := litOn(t, u, documentPath, start, length)
 	if len(found) != 0 {
-		t.Errorf("a source the index does not hold was placed at %+v", found)
+		t.Errorf("a source the index does not hold was lit at %+v", found)
 	}
 }
 
-// A run past the end of the text is placed nowhere, and a reading that is not
+// A run past the end of the text is lit nowhere, and a reading that is not
 // there says nothing.
-func TestNothingIsPlacedWhereThereIsNothingToPlace(t *testing.T) {
+func TestNothingIsLitWhereThereIsNothingToLight(t *testing.T) {
 	t.Run("past the end", func(t *testing.T) {
 		u, index, _, book, _, shelved := placing(t, "tiny.pdf")
 		holds(t, index, shelved, "", "abc123")
 
-		if found := lit(t, u, documentPath, len(book.Text)+100, 10); len(found) != 0 {
-			t.Errorf("a run past the end was placed at %+v", found)
+		if found := litOn(t, u, documentPath, len(book.Text)+100, 10); len(found) != 0 {
+			t.Errorf("a run past the end was lit at %+v", found)
 		}
 	})
 
@@ -295,13 +295,13 @@ func TestNothingIsPlacedWhereThereIsNothingToPlace(t *testing.T) {
 		u, index, _, _, _, shelved := placing(t, "tiny.pdf")
 		holds(t, index, shelved, "ocr", "abc123")
 
-		if found := lit(t, u, documentPath, 0, 10); len(found) != 0 {
-			t.Errorf("a reading nothing kept was placed at %+v", found)
+		if found := litOn(t, u, documentPath, 0, 10); len(found) != 0 {
+			t.Errorf("a reading nothing kept was lit at %+v", found)
 		}
 	})
 }
 
-func TestAFileRewrittenSinceItWasReadIsPlacedFromItself(t *testing.T) {
+func TestAFileRewrittenSinceItWasReadIsLitFromItself(t *testing.T) {
 	// A reading is of the bytes that were there when it was made, and its
 	// coordinates describe those. Put against a file rewritten since, they fall
 	// where those words no longer are, and nothing on the page says so.
@@ -310,16 +310,16 @@ func TestAFileRewrittenSinceItWasReadIsPlacedFromItself(t *testing.T) {
 	holds(t, index, shelved, "ocr", "abc123")
 
 	// A reading whose words sit at the top of the first page.
-	if err := store.Write(ctx, text.Boxes("ocr", "abc123"), placed.Pack([]placed.Box{
+	if err := store.Write(ctx, text.Boxes("ocr", "abc123"), lit.Pack([]lit.Box{
 		{Page: 0, Start: 0, Length: 400, MinX: 0.1, MinY: 0.1, MaxX: 0.9, MaxY: 0.2},
 	})); err != nil {
 		t.Fatal(err)
 	}
 	start, length := run(t, book, "Afterword")
 
-	standing := lit(t, u, documentPath, start, length)
+	standing := litOn(t, u, documentPath, start, length)
 	if len(standing) == 0 {
-		t.Fatal("the reading placed nothing, so rewriting the file proves nothing")
+		t.Fatal("the reading lit nothing, so rewriting the file proves nothing")
 	}
 
 	// The same document, written again.
@@ -329,9 +329,9 @@ func TestAFileRewrittenSinceItWasReadIsPlacedFromItself(t *testing.T) {
 	}
 	shelved.hold(documentPath, domain.KindBook, raw, 2)
 
-	after := lit(t, u, documentPath, start, length)
+	after := litOn(t, u, documentPath, start, length)
 	if len(after) == 1 && len(after[0].Rects) == 1 && after[0].Rects[0].MinY == 0.1 {
-		t.Error("the reading of other bytes was placed on the file that is there now")
+		t.Error("the reading of other bytes was lit on the file that is there now")
 	}
 }
 
@@ -342,12 +342,12 @@ func TestAProofreadReadingIsLitWhereItsWordsNowStand(t *testing.T) {
 	u, index, store, _, _, shelved := placing(t, "tiny.pdf")
 	holds(t, index, shelved, "ocr", "abc123")
 
-	written := []placed.Box{
+	written := []lit.Box{
 		{Page: 4, Start: 0, Length: 5, MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23},
 		{Page: 4, Start: 6, Length: 4, MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23},
 		{Page: 5, Start: 11, Length: 5, MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53},
 	}
-	if err := store.Write(t.Context(), text.Boxes("ocr", "abc123"), placed.Pack(written)); err != nil {
+	if err := store.Write(t.Context(), text.Boxes("ocr", "abc123"), lit.Pack(written)); err != nil {
 		t.Fatal(err)
 	}
 	// The first line is put right and grows by three bytes, so the third line
@@ -357,8 +357,8 @@ func TestAProofreadReadingIsLitWhereItsWordsNowStand(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found := lit(t, u, documentPath, 16, 3)
+	found := litOn(t, u, documentPath, 16, 3)
 	if len(found) != 1 || found[0].Page != 5 || len(found[0].Rects) != 1 {
-		t.Fatalf("the run was placed at %+v", found)
+		t.Fatalf("the run was lit at %+v", found)
 	}
 }

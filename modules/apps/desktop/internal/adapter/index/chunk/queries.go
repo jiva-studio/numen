@@ -21,8 +21,8 @@ func NewQueries(db *sql.DB) *Queries { return &Queries{db: db} }
 
 // Passage is one chunk, and where its text is read from.
 //
-// `Parent` is the large window this one sits inside, and is zero for a large
-// window.
+// `Parent` is the large chunk this one sits inside, and is zero for a large
+// chunk.
 type Passage struct {
 	Chunk    int64
 	Path     string
@@ -85,7 +85,7 @@ func kinds(chosen []domain.SourceKind) (string, error) {
 // Lexical is a search asked by words: the chunks of one vault whose text
 // matches what was typed, best first.
 //
-// What comes back is the large window enclosing each hit, which is what a
+// What comes back is the large chunk enclosing each hit, which is what a
 // result shows.
 func (q *Queries) Lexical(ctx context.Context, vaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error) {
 	if limit <= 0 {
@@ -227,7 +227,7 @@ func (q *Queries) coarse(ctx context.Context, vault int64, query []float32, k in
 	return near, rows.Err()
 }
 
-// enclosing is the large window each chunk sits inside, in the order given.
+// enclosing is the large chunk each chunk sits inside, in the order given.
 //
 // The nearest-neighbour question is asked of the vector index alone: it takes
 // its own ordering and does not join. Where each answer is read from is a
@@ -284,7 +284,7 @@ func scanPassage(row *sql.Row, chunk int64) (Passage, bool, error) {
 	return p, true, nil
 }
 
-// Unchunked is the sources of one kind with no small window: the file changed,
+// Unchunked is the sources of one kind with no small chunk: the file changed,
 // or it has never been cut.
 func (q *Queries) Unchunked(ctx context.Context, vaultID, kind string, limit int) ([]string, error) {
 	return q.paths(ctx, vaultID, "unchunked", limit, func(vault int64) []any {
@@ -304,7 +304,7 @@ func (q *Queries) ByOtherRecipe(ctx context.Context, vaultID, kind string, recip
 	})
 }
 
-// Unembedded is the small windows of a vault with no vector from the model in
+// Unembedded is the small chunks of a vault with no vector from the model in
 // use, from `after` onwards. Asked with the last id of the previous answer, it
 // resumes.
 func (q *Queries) Unembedded(ctx context.Context, vaultID, recipe string, after int64, limit int) ([]Passage, error) {

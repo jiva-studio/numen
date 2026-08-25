@@ -9,8 +9,8 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/fixes"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lit"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/ocr"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/proofread"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/text"
@@ -199,7 +199,7 @@ func (u Proofread) lines(
 		return nil, err
 	}
 	prose, _ := ocr.Read(artifact)
-	return proofread.Pages(prose, placed.Unpack(boxes)), nil
+	return proofread.Pages(prose, lit.Unpack(boxes)), nil
 }
 
 // gathered is what a run of pages had put right, and how many of them answered

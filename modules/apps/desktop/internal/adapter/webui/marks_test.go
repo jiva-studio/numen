@@ -96,7 +96,7 @@ func TestARunOfTheProseComesBackAsPagesAndRectangles(t *testing.T) {
 		t.Errorf("where the word is is kept: %q", said)
 	}
 
-	var told lit
+	var told covering
 	if err := json.NewDecoder(out.Body).Decode(&told); err != nil {
 		t.Fatal(err)
 	}
@@ -116,7 +116,7 @@ func TestARunOfTheProseComesBackAsPagesAndRectangles(t *testing.T) {
 	}
 }
 
-// A source the index does not hold is placed nowhere, and the window is told a
+// A source the index does not hold is lit nowhere, and the window is told a
 // list of no pages.
 func TestASourceNothingIsKnownAboutComesBackWithNoPages(t *testing.T) {
 	api, handler, doc := placing(t)
@@ -134,7 +134,7 @@ func TestASourceNothingIsKnownAboutComesBackWithNoPages(t *testing.T) {
 // A path the vault does not hold is refused, and so is a path that leaves it
 // and a file the vault holds as nothing. The path goes to the vault the way
 // every path from outside does, and it answers for all three.
-func TestAPathTheVaultDoesNotHoldIsNotPlaced(t *testing.T) {
+func TestAPathTheVaultDoesNotHoldIsNotLit(t *testing.T) {
 	for _, path := range []string{
 		"../outside.pdf",
 		"library/../../outside.pdf",

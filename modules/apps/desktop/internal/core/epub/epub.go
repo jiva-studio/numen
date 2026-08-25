@@ -32,15 +32,15 @@ type Book struct {
 	// Documents are the spine documents and where each begins in Text.
 	Documents []Document
 
-	// Places are what the book names, ascending by offset. Structure says where
+	// Parts are what the book names, ascending by offset. Structure says where
 	// they came from.
-	Places []Place
+	Parts []Part
 
 	// Pages are the pages of the printed book this file was made from,
 	// ascending by offset. Most books carry none.
 	Pages []Page
 
-	// Structure names the tier that produced Places.
+	// Structure names the tier that produced Parts.
 	Structure Structure
 }
 
@@ -54,13 +54,13 @@ type Document struct {
 	Length int
 }
 
-// A Place is somewhere in the book that carries a name.
-type Place struct {
+// A Part is a named division of the book.
+type Part struct {
 	Title string
 	// Offset is where the named text begins in the book's Text.
 	Offset int
-	// Level is the depth of the heading a place came from, and 0 for a place
-	// that came from the navigation document.
+	// Level is the depth of the heading a part came from, and 0 for a part that
+	// came from the navigation document.
 	Level int
 }
 
@@ -83,9 +83,9 @@ const (
 	FromNothing Structure = "none"
 )
 
-// A book that names one place names its cover or its own title. Structure begins
+// A book that names one part names its cover or its own title. Structure begins
 // at two.
-const minimumPlaces = 2
+const minimumParts = 2
 
 // The three ways a file can fail to be a book.
 var (
@@ -129,17 +129,17 @@ func Read(raw []byte) (*Book, error) {
 	}
 	book.Text = string(text.out)
 
-	named := navigationPlaces(files, pkg, text)
+	named := navigationParts(files, pkg, text)
 	switch {
-	case len(named) >= minimumPlaces:
-		book.Places, book.Structure = named, FromNavigation
-	case len(text.headings) >= minimumPlaces:
-		book.Places, book.Structure = text.headings, FromHeadings
+	case len(named) >= minimumParts:
+		book.Parts, book.Structure = named, FromNavigation
+	case len(text.headings) >= minimumParts:
+		book.Parts, book.Structure = text.headings, FromHeadings
 	default:
 		book.Structure = FromNothing
 	}
-	sort.SliceStable(book.Places, func(i, j int) bool {
-		return book.Places[i].Offset < book.Places[j].Offset
+	sort.SliceStable(book.Parts, func(i, j int) bool {
+		return book.Parts[i].Offset < book.Parts[j].Offset
 	})
 
 	book.Pages = text.pagesAt(pageEntries(files, pkg))
@@ -153,11 +153,11 @@ func Read(raw []byte) (*Book, error) {
 type Location struct {
 	// Document is the spine document holding the offset.
 	Document string
-	// Place is the nearest name at or before the offset, and empty when the
+	// Part is the nearest name at or before the offset, and empty when the
 	// offset precedes every name.
-	Place string
-	// PlaceOffset is where that place begins.
-	PlaceOffset int
+	Part string
+	// PartOffset is where that part begins.
+	PartOffset int
 	// Page is the printed page in force, and empty when the book has none.
 	Page string
 }
@@ -168,8 +168,8 @@ func (b *Book) Locate(offset int) Location {
 	if i := preceding(len(b.Documents), offset, func(i int) int { return b.Documents[i].Offset }); i >= 0 {
 		at.Document = b.Documents[i].Path
 	}
-	if i := preceding(len(b.Places), offset, func(i int) int { return b.Places[i].Offset }); i >= 0 {
-		at.Place, at.PlaceOffset = b.Places[i].Title, b.Places[i].Offset
+	if i := preceding(len(b.Parts), offset, func(i int) int { return b.Parts[i].Offset }); i >= 0 {
+		at.Part, at.PartOffset = b.Parts[i].Title, b.Parts[i].Offset
 	}
 	if i := preceding(len(b.Pages), offset, func(i int) int { return b.Pages[i].Offset }); i >= 0 {
 		at.Page = b.Pages[i].Label

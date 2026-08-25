@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/fixes"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lit"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/text"
 )
@@ -21,8 +21,7 @@ import (
 // answered by the same column: an offset belongs to one producer's text, and the
 // other producer's rectangles cover other words.
 //
-// A source with no reading and no layer is placed nowhere, and that is an
-// answer.
+// A source with no reading and no layer is lit nowhere, and that is an answer.
 type Marks struct {
 	Readers port.VaultReaders
 	Sources port.SourceQueries
@@ -43,8 +42,8 @@ func (u Marks) Execute(
 	ctx context.Context,
 	v domain.Vault,
 	path string,
-	runs []placed.Run,
-) ([][]placed.Page, error) {
+	runs []lit.Run,
+) ([][]lit.Page, error) {
 	reader, err := u.Readers.Open(v)
 	if err != nil {
 		return nil, err
@@ -66,7 +65,7 @@ func (u Marks) Execute(
 	// A reading is of the bytes the index last saw, and its coordinates
 	// describe those. A file rewritten since is read from its own layer, which
 	// is the words that are there now.
-	var boxes []placed.Box
+	var boxes []lit.Box
 	if said.From != "" && ref.Unchanged(domain.FileRef{Size: said.Size, MTime: said.MTime}) {
 		boxes, err = u.read(ctx, v, said)
 	} else {
@@ -80,10 +79,10 @@ func (u Marks) Execute(
 
 // over is where each run sits, in the order the runs were asked about. A run
 // standing nowhere is lit nowhere and keeps its place in the answer.
-func over(boxes []placed.Box, runs []placed.Run) [][]placed.Page {
-	out := make([][]placed.Page, 0, len(runs))
+func over(boxes []lit.Box, runs []lit.Run) [][]lit.Page {
+	out := make([][]lit.Page, 0, len(runs))
 	for _, one := range runs {
-		out = append(out, placed.Marks(boxes, one.Start, one.Length))
+		out = append(out, lit.Marks(boxes, one.Start, one.Length))
 	}
 	return out
 }
@@ -95,7 +94,7 @@ func (u Marks) read(
 	ctx context.Context,
 	v domain.Vault,
 	said port.Recognised,
-) ([]placed.Box, error) {
+) ([]lit.Box, error) {
 	if u.Derived == nil {
 		return nil, nil
 	}
@@ -111,7 +110,7 @@ func (u Marks) read(
 	if err != nil {
 		return nil, err
 	}
-	boxes := placed.Unpack(raw)
+	boxes := lit.Unpack(raw)
 
 	// A reading that was proofread is read with its corrections in it, so a run
 	// of its text is a run of the corrected prose and the coordinates say where
@@ -132,8 +131,8 @@ func (u Marks) layer(
 	ctx context.Context,
 	reader port.VaultReader,
 	ref domain.FileRef,
-	runs []placed.Run,
-) ([]placed.Box, error) {
+	runs []lit.Run,
+) ([]lit.Box, error) {
 	if name, ok := text.ReaderName(ref); !ok || name != text.ReaderPDF {
 		// A book made for a screen is set afresh wherever it is shown, and
 		// carries no rectangles.
@@ -154,12 +153,12 @@ func (u Marks) layer(
 	if len(pages) == 0 {
 		return nil, nil
 	}
-	return u.Documents.Placed(ctx, raw, book.Pages, pages)
+	return u.Documents.Lit(ctx, raw, book.Pages, pages)
 }
 
 // every is the pages all the runs fall on, in order and each of them once. Two
 // runs on one page are one page read.
-func every(book port.Reading, runs []placed.Run) []int {
+func every(book port.Reading, runs []lit.Run) []int {
 	held := map[int]bool{}
 	var out []int
 	for _, one := range runs {

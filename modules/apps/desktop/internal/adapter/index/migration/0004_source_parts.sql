@@ -29,6 +29,6 @@ CREATE VIRTUAL TABLE parts_fts USING fts5 (
 --
 -- Owing its text is how a source asks to be cut again. What it was read from
 -- stays: a recognition is an hour of a machine, and cutting is reading files
--- that are on disk. A window that says the same thing keeps its row, so the
+-- that are on disk. A chunk that says the same thing keeps its row, so the
 -- vectors are kept with it.
 UPDATE sources SET recipe = NULL;

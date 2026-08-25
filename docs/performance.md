@@ -78,7 +78,7 @@ A warm scan of ten thousand notes is 50 ms: 13 ms asking the index what it knows
 
 ## Looking a vault over
 
-`BenchmarkRun` in `internal/core/lint`, on a vault where every name answers for many notes and every link is written by one — the worst case the ambiguity check has, because every link in it is a candidate.
+`BenchmarkRun` in `internal/core/check`, on a vault where every name answers for many notes and every link is written by one — the worst case the ambiguity check has, because every link in it is a candidate.
 
 | | Measured |
 | --- | --- |
@@ -136,13 +136,13 @@ Embedded with `bge-m3` at 1024 dimensions, through a hosted API.
 
 The same corpus embedded on this laptop's CPU instead, with a small English-only model, runs at 10.8 chunks per second.
 
-Cut this way, the sources come to about **2 240 small windows per megabyte of text**.
+Cut this way, the sources come to about **2 240 small chunks per megabyte of text**.
 
-### The window decides what can be found
+### The chunk decides what can be found
 
-One passage, one query, four windows cut around the same sentence. The score is against a query that paraphrases the sentence in another language.
+One passage, one query, four chunks cut around the same sentence. The score is against a query that paraphrases the sentence in another language.
 
-| Window | Similarity |
+| Size | Similarity |
 | --- | --- |
 | 25 words | 0.751 |
 | 50 words | 0.648 |
@@ -153,9 +153,9 @@ The best score anything in the corpus reaches for that query is 0.639. At 25 wor
 
 This is the measurement ADR-0005 exists for. Nothing about the index changed between those rows.
 
-The window also has to fit the model. Cut on the sections a translation already carries, in words:
+The chunk also has to fit the model. Cut on the sections a translation already carries, in words:
 
-| Window | Chunks | Median tokens | Over the 512-token limit |
+| Size | Chunks | Median tokens | Over the 512-token limit |
 | --- | --- | --- | --- |
 | 350 words | 9 115 | 488 | 22.6 % |
 | 250 words | 13 207 | 350 | 0.6 % |
@@ -231,7 +231,7 @@ The curve flattens after eight while the coarse pass costs close to linear in k:
 | Coarse k=160, rerank, floor | 26.2 ms | 30.9 ms |
 | Coarse k=160 alone | 26.3 ms | 29.9 ms |
 
-The rerank is 0.4 ms of that: one `json_each` join, 160 int8 blobs, 160×1024 dot products, a sort. The 7 ms is the wider coarse pass, less the 0.7 ms saved by resolving 20 enclosing windows where there were 100.
+The rerank is 0.4 ms of that: one `json_each` join, 160 int8 blobs, 160×1024 dot products, a sort. The 7 ms is the wider coarse pass, less the 0.7 ms saved by resolving 20 enclosing chunks where there were 100.
 
 The words half measures 1.1 ms median and about 39 ms p95 on a long natural language query, where the FTS expression becomes a wide OR. A search running both halves on such a query stands over the 50 ms target above, and did before this.
 
@@ -266,14 +266,14 @@ Both return the same rows. The partition key prunes; the column filters what it 
 
 | Indexed as | Ranks |
 | --- | --- |
-| A window of a source | 1, 1, 1, 8, 1, 1 |
+| A chunk of a source | 1, 1, 1, 8, 1, 1 |
 | A note cut the same way | 2, 7, 19, 1, 91, 7865 |
 | A whole note, 283–357 words | 2045, 4, 318, 3, 127, 14510 |
 | A note's title | 580, 4590, 5541, 2, 510, 23808 |
 
-Notes are not buried by the imbalance: ranking is by similarity and carries no prior. What does bury them is being indexed whole — the same dilution the window table shows, on a note instead of a book.
+Notes are not buried by the imbalance: ranking is by similarity and carries no prior. What does bury them is being indexed whole — the same dilution the chunk table shows, on a note instead of a book.
 
-One question was answered by seven windows of a single note taking the top seven places. That is what collapsing a document to one result is for.
+One question was answered by seven chunks of a single note taking the top seven places. That is what collapsing a document to one result is for.
 
 ### What these numbers are not
 
@@ -281,7 +281,7 @@ One question was answered by seven windows of a single note taking the top seven
 
 **Agreement is with the model, not with a reader.** The full-precision ranking is the reference, so a representation scoring 0.975 reproduces what this model believes — including where it is wrong.
 
-**The sizes are one corpus.** Window sizes tuned here are not guaranteed elsewhere, which is why ADR-0005 makes the acceptance set the check rather than the sizes.
+**The sizes are one corpus.** Chunk sizes tuned here are not guaranteed elsewhere, which is why ADR-0005 makes the acceptance set the check rather than the sizes.
 
 **Sanskrit is indexed and does not surface.** No question in the set returned a passage from the critical edition, in any configuration tried. Whether that is the model, the transliteration or the way verse is cut is not established.
 
@@ -294,9 +294,9 @@ One question was answered by seven windows of a single note taking the top seven
 | Reducing dimensions instead of precision | Loses a quarter to a half at equal storage |
 | Truncating a vector this model produces | Worse than projecting, at every size tried |
 | Indexing a title | Ranks near-randomly; the lexical index already matches it |
-| Indexing a note whole beside windowed sources | Erratic — 4th on one question, 14 510th on another |
+| Indexing a note whole beside sources cut into chunks | Erratic — 4th on one question, 14 510th on another |
 | Writing chunks scattered across partitions | 1 900 rows/s against 40 000 grouped |
-| Cutting a window by lines | One file put a book on four lines and produced a chunk of a million characters |
+| Cutting a chunk by lines | One file put a book on four lines and produced a chunk of a million characters |
 
 ### What a second engine would cost
 
@@ -364,7 +364,7 @@ What structure the forty carry, **measured with the Go extractor**:
 
 Half the corpus offers nothing to cut on, which is what ADR-0006 requires extraction to survive.
 
-A tier answers only when it names at least two places. One named place is a cover or a book's own title, and it carries no cut a caller does not already have, because the offset of every spine document is reported separately. Four books turn on that rule: they carry a single heading each, one of them across 853 spine documents. Counting a lone heading as structure puts those four in the heading tier and reads 16 / 8 / 16.
+A tier answers only when it names at least two parts. One named part is a cover or a book's own title, and it carries no cut a caller does not already have, because the offset of every spine document is reported separately. Four books turn on that rule: they carry a single heading each, one of them across 853 spine documents. Counting a lone heading as structure puts those four in the heading tier and reads 16 / 8 / 16.
 
 Cover-only navigation is not a curiosity: eighteen books carry a single navPoint labelled `Начать` pointing at the title page, which is why a tier is judged by its usable entries rather than by whether the file exists.
 
@@ -372,7 +372,7 @@ Five of the forty carry the page numbers of a print edition, 54 to 311 targets e
 
 ### Embedding, locally and through a service
 
-Recorded 2026-08-17 on the same AMD Ryzen 7 6800U — 16 threads, AVX2 and no AVX-512 — with `CGO_ENABLED=0`, `intfloat/multilingual-e5-small`, real tokenisation and 256-token windows.
+Recorded 2026-08-17 on the same AMD Ryzen 7 6800U — 16 threads, AVX2 and no AVX-512 — with `CGO_ENABLED=0`, `intfloat/multilingual-e5-small`, real tokenisation and 256-token inputs.
 
 | Local, pure Go | Chunks/s | 400 000 chunks |
 | --- | --- | --- |
@@ -451,11 +451,11 @@ go test ./internal/adapter/index/ -count=1
 
 These are assertions rather than timings: the count of vectors a save asks the model for. Chunks are tiled at fifty words with ten of overlap, and a chunk is identified by the hash of its text, so one whose text did not change keeps its row and the vector on it.
 
-A note's headings are its places. The chunks of one section are tiled inside that section, and a note that names no place is one span tiled from its first word. The two columns below are the same words cut both ways.
+A note's headings are its parts. The chunks of one section are tiled inside that section, and a note that names no part is one division tiled from its first word. The two columns below are the same words cut both ways.
 
 **A 200-word note under four headings**, one every 48 words. It holds five small chunks over the whole body and four with the headings naming the sections.
 
-| the edit is | no place named | the headings as places |
+| the edit is | no part named | the headings as parts |
 |---|---|---|
 | a line added to the frontmatter | 0 asked · 5 of 5 kept | 0 asked · 4 of 4 kept |
 | at the end of the body | 1 · 4 of 5 | 1 · 4 of 4 |
@@ -464,7 +464,7 @@ A note's headings are its places. The chunks of one section are tiled inside tha
 
 **A 1000-word note under five headings**, one every 200 words. It holds 25 small chunks either way.
 
-| the edit is | no place named | the headings as places |
+| the edit is | no part named | the headings as parts |
 |---|---|---|
 | a line added to the frontmatter | 0 asked · 25 of 25 kept | 0 asked · 25 of 25 kept |
 | at the end of the body | 1 · 25 of 25 | 1 · 24 of 25 |
@@ -522,7 +522,7 @@ The recogniser is chosen for what it keeps rather than for its size. Measured ov
 
 No model in the family can write a consonant with a dot below it. Small and medium delete the letter they cannot spell — `ṭuṭaba hṛdayaka` becomes `uaba hdayaka` — and one Sanskrit word in five loses a letter. Tiny writes the plain letter instead, so the word keeps its length and a search still reaches it. The smallest is also the fastest and, on this book, the best.
 
-A recogniser that cannot spell a script at all writes plausible nonsense: the same models over a Russian document return Latin gibberish, and what keeps most of it out of the index is `window.legible` refusing to cut it.
+A recogniser that cannot spell a script at all writes plausible nonsense: the same models over a Russian document return Latin gibberish, and what keeps most of it out of the index is `cutting.legible` refusing to cut it.
 
 ## Where a document's own words sit
 

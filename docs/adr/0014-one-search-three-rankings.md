@@ -22,7 +22,7 @@ graph TD
     RM["ranked by meaning<br/>the coarse pass, then the rerank"]
     RN["ranked by name<br/>parts_fts"]
     RRF["merged by rank"]
-    CO["collapsed to the large window,<br/>keeping the best score"]
+    CO["collapsed to the large chunk,<br/>keeping the best score"]
     P["passages, each a start and a length"]
 
     Q --> RW
@@ -39,7 +39,7 @@ graph TD
 
 A chunk's score is the sum of `1 / (k + rank)` over the rankings that returned it, counting from one. **Scores are never combined.** Equal scores are ordered by source and then by chunk, so one index gives one answer.
 
-**The lexical half stays exact.** Anything spelled precisely — a name, a citation, a phrase quoted the way it is written — is a lexical question, and no window size makes it a dense one.
+**The lexical half stays exact.** Anything spelled precisely — a name, a citation, a phrase quoted the way it is written — is a lexical question, and no chunk size makes it a dense one.
 
 ### How many passages one document answers with is the caller's
 
@@ -62,6 +62,6 @@ Search is checked by a set of questions whose answers are known, and what is che
 
 **Combine the scores.** Rejected: BM25 and cosine similarity are not comparable — one is unbounded and drawn from the corpus, the other a bounded angle — so a weighted sum is a calibration per corpus and per model, and merging ranks calibrates nothing.
 
-**One dense ranking, with the window size tuned to carry the lexical work.** Rejected: a name, a citation and a quoted phrase are asked for as spelled, and no window size makes them findable by meaning.
+**One dense ranking, with the chunk size tuned to carry the lexical work.** Rejected: a name, a citation and a quoted phrase are asked for as spelled, and no chunk size makes them findable by meaning.
 
 **Fix the number of passages a document answers with at one.** Rejected: a reader who cannot turn the page wants every place a book speaks about a thing, and one line per book is a different question asked of the same index.

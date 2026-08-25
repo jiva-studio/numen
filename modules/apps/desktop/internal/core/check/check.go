@@ -1,4 +1,4 @@
-// Package lint is what a vault is checked against.
+// Package check is what a vault is checked against.
 //
 // A vault is edited by hand, by other tools and by whatever else the person
 // runs, so it accumulates things the application will not act on and will not
@@ -8,7 +8,7 @@
 //
 // The shape is a list of checks, one to a file. A new thing worth noticing is a
 // new file and a line in Standard, and nothing that already works changes.
-package lint
+package check
 
 import (
 	"context"
@@ -34,19 +34,19 @@ type Checker interface {
 	Quiet() bool
 }
 
-// Linter runs the checks over one vault.
+// Checks is the set of checks run over one vault.
 //
 // Nothing is kept. Two of these checks read what a scan already stored, and two
 // work the whole vault out from scratch — and those two must not be stored,
 // because what they answer stops being true when a note somewhere else moves,
 // and a written-down answer would go on saying it.
-type Linter struct {
+type Checks struct {
 	Checks []Checker
 }
 
 // Standard is the set of checks a vault is held to.
-func Standard(queries port.ProblemQueries) Linter {
-	return Linter{Checks: []Checker{
+func Standard(queries port.ProblemQueries) Checks {
+	return Checks{Checks: []Checker{
 		parse{queries},
 		frontmatter{queries},
 		ambiguous{queries},
@@ -59,8 +59,8 @@ func Standard(queries port.ProblemQueries) Linter {
 // Named checks are the ones that run; naming none runs every check that is not
 // quiet. A quiet check is one whose findings are ordinary in a vault somebody is
 // still writing, and which would bury the rest if it arrived unasked.
-func (l Linter) Run(ctx context.Context, v domain.Vault, named ...domain.Check) ([]domain.VaultProblem, error) {
-	wanted, err := l.wanted(named)
+func (c Checks) Run(ctx context.Context, v domain.Vault, named ...domain.Check) ([]domain.VaultProblem, error) {
+	wanted, err := c.wanted(named)
 	if err != nil {
 		return nil, err
 	}
@@ -86,30 +86,30 @@ func (l Linter) Run(ctx context.Context, v domain.Vault, named ...domain.Check) 
 }
 
 // Names is every check there is, quiet ones included.
-func (l Linter) Names() []domain.Check {
-	out := make([]domain.Check, 0, len(l.Checks))
-	for _, check := range l.Checks {
+func (c Checks) Names() []domain.Check {
+	out := make([]domain.Check, 0, len(c.Checks))
+	for _, check := range c.Checks {
 		out = append(out, check.Name())
 	}
 	return out
 }
 
-func (l Linter) wanted(named []domain.Check) ([]Checker, error) {
+func (c Checks) wanted(named []domain.Check) ([]Checker, error) {
 	if len(named) == 0 {
-		return l.loud(), nil
+		return c.loud(), nil
 	}
 
 	var out []Checker
 	for _, name := range named {
 		found := false
-		for _, check := range l.Checks {
+		for _, check := range c.Checks {
 			if check.Name() == name {
 				out, found = append(out, check), true
 				break
 			}
 		}
 		if !found {
-			return nil, fmt.Errorf("there is no %q check; there is %s", name, list(l.Names()))
+			return nil, fmt.Errorf("there is no %q check; there is %s", name, list(c.Names()))
 		}
 	}
 	return out, nil
@@ -124,18 +124,18 @@ func list(names []domain.Check) string {
 }
 
 // Loud is the name of every check that runs when none is named.
-func (l Linter) Loud() []domain.Check {
+func (c Checks) Loud() []domain.Check {
 	var out []domain.Check
-	for _, check := range l.loud() {
+	for _, check := range c.loud() {
 		out = append(out, check.Name())
 	}
 	return out
 }
 
 // loud is every check that does not wait to be asked for.
-func (l Linter) loud() []Checker {
+func (c Checks) loud() []Checker {
 	var out []Checker
-	for _, check := range l.Checks {
+	for _, check := range c.Checks {
 		if !check.Quiet() {
 			out = append(out, check)
 		}

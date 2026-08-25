@@ -10,15 +10,15 @@ import (
 	"strconv"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lit"
 )
 
 // errNoMarking is what a build with nothing to place a passage with answers.
 var errNoMarking = errors.New("this build cannot say where a passage is")
 
-// lit is what the window is told the runs of the prose cover, one entry per run
-// and in the order they were asked about.
-type lit struct {
+// covering is what the window is told the runs of the prose cover, one entry per
+// run and in the order they were asked about.
+type covering struct {
 	Runs []covered `json:"runs"`
 }
 
@@ -67,7 +67,7 @@ func (a *API) Marks(w http.ResponseWriter, r *http.Request, path string) {
 		return
 	}
 
-	told := lit{Runs: make([]covered, 0, len(found))}
+	told := covering{Runs: make([]covered, 0, len(found))}
 	for _, pages := range found {
 		one := covered{Marks: make([]onPage, 0, len(pages))}
 		for _, page := range pages {
@@ -94,7 +94,7 @@ const longestRun = 100_000
 
 // places is which parts of the source's text the window is asking about: a
 // `start` and a `length` for each of them, paired in the order they are given.
-func places(query url.Values) ([]placed.Run, error) {
+func places(query url.Values) ([]lit.Run, error) {
 	starts, lengths := query["start"], query["length"]
 	if len(starts) != len(lengths) {
 		return nil, fmt.Errorf("%d places begin and %d have a length", len(starts), len(lengths))
@@ -102,7 +102,7 @@ func places(query url.Values) ([]placed.Run, error) {
 	if len(starts) == 0 || len(starts) > domain.MostLit {
 		return nil, fmt.Errorf("ask about between one and %d places, not %d", domain.MostLit, len(starts))
 	}
-	runs := make([]placed.Run, 0, len(starts))
+	runs := make([]lit.Run, 0, len(starts))
 	for i, at := range starts {
 		start, err := strconv.Atoi(at)
 		if err != nil || start < 0 {
@@ -112,7 +112,7 @@ func places(query url.Values) ([]placed.Run, error) {
 		if err != nil || length < 1 || length > longestRun {
 			return nil, fmt.Errorf("length: %q is not a run of the text", lengths[i])
 		}
-		runs = append(runs, placed.Run{Start: start, Length: length})
+		runs = append(runs, lit.Run{Start: start, Length: length})
 	}
 	return runs, nil
 }

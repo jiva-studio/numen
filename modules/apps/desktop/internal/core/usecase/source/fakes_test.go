@@ -46,7 +46,7 @@ type store struct {
 	kept map[string][]byte
 }
 
-// storedChunk is one row of chunks. `parent` is zero for a large window.
+// storedChunk is one row of chunks. `parent` is zero for a large chunk.
 type storedChunk struct {
 	id       int64
 	vault    string
@@ -77,7 +77,7 @@ func (s *store) SaveExtraction(_ context.Context, vaultID string, e port.Extract
 	s.put(vaultID, e.Source)
 	s.clear(vaultID, e.Source.Ref.Path)
 
-	for _, large := range e.Windows {
+	for _, large := range e.Chunks {
 		parent := s.insert(vaultID, e.Source.Ref, large, 0)
 		for _, small := range large.Small {
 			s.insert(vaultID, e.Source.Ref, small, parent)
@@ -202,11 +202,11 @@ func (s *store) clear(vaultID, path string) {
 	s.chunks = kept
 }
 
-func (s *store) insert(vaultID string, ref domain.FileRef, w port.Window, parent int64) int64 {
+func (s *store) insert(vaultID string, ref domain.FileRef, c port.Chunk, parent int64) int64 {
 	s.next++
 	s.chunks = append(s.chunks, storedChunk{
 		id: s.next, vault: vaultID, path: ref.Path, kind: ref.Kind,
-		start: w.Start, length: w.Length, location: w.Location, text: w.Text, parent: parent,
+		start: c.Start, length: c.Length, location: c.Location, text: c.Text, parent: parent,
 	})
 	return s.next
 }
@@ -230,7 +230,7 @@ func (s *store) paths(vaultID string, kind domain.SourceKind, limit int, owing f
 	return out, nil
 }
 
-// cut says whether a source has a small window, which is what having been cut
+// cut says whether a source has a small chunk, which is what having been cut
 // means.
 func (s *store) cut(vaultID, path string) bool {
 	for _, c := range s.chunks {
@@ -268,7 +268,7 @@ func (s *store) ordered() []storedChunk {
 	return out
 }
 
-// small is the chunks of one vault that carry a vector: the windows a search
+// small is the chunks of one vault that carry a vector: the chunks a search
 // runs over.
 func (s *store) small(vaultID string) []storedChunk {
 	var out []storedChunk

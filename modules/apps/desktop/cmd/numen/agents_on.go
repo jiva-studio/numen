@@ -14,8 +14,8 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/webui"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/check"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lint"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/markdown"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 )
@@ -221,7 +221,7 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 			func(err error) { fmt.Fprintln(out, "agents: answering by words alone:", err) }),
 		Neighbourhood: note.ShowNeighbourhood{Links: opened.Index.Links(), Notes: queries},
 		Links:         note.ShowLinks{Links: opened.Index.Links()},
-		Problems:      lint.Standard(opened.Index.Problems()),
+		Problems:      check.Standard(opened.Index.Problems()),
 
 		Create: note.Create{
 			Writers: writers, Names: queries, Index: index,

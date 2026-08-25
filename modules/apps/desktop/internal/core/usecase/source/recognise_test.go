@@ -13,8 +13,8 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/pdf"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lit"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/ocr"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/text"
 )
@@ -206,7 +206,7 @@ func TestWhatIsReadIsWrittenDownAndClaimed(t *testing.T) {
 		t.Errorf("the artifact names %d pages and the document has %d", len(marks), res.Pages)
 	}
 
-	// No recipe, so the source owes its text: cutting it into windows is
+	// No recipe, so the source owes its text: cutting it into chunks is
 	// extraction's, which is the one thing that knows the sizes.
 	if src.Recipe != "" {
 		t.Errorf("recognition wrote a recipe: %q", src.Recipe)
@@ -367,7 +367,7 @@ func document(t *testing.T) string {
 //
 // The offsets rise, because the prose of every page written before this one
 // stands in front of it.
-func reads(t *testing.T, prose string, boxes []placed.Box, says string) {
+func reads(t *testing.T, prose string, boxes []lit.Box, says string) {
 	t.Helper()
 	at := -1
 	for i, box := range boxes {
@@ -430,7 +430,7 @@ func TestEveryCoordinateNamesTheWordsItWasReadFrom(t *testing.T) {
 	}
 
 	prose, _ := ocr.Read(raw)
-	boxes := placed.Unpack(packed)
+	boxes := lit.Unpack(packed)
 	if len(boxes) != res.Pages {
 		t.Fatalf("%d coordinates over %d pages", len(boxes), res.Pages)
 	}
@@ -457,7 +457,7 @@ func TestCoordinatesAheadOfTheCountAreDropped(t *testing.T) {
 	if _, err := u.Execute(ctx, v, documentPath); !errors.Is(err, context.Canceled) {
 		t.Fatalf("stopping gave %v", err)
 	}
-	stray := placed.Pack([]placed.Box{{Page: 2, Start: 9000, Length: 7}})
+	stray := lit.Pack([]lit.Box{{Page: 2, Start: 9000, Length: 7}})
 	if err := shelf.Append(t.Context(), text.Boxes("ocr", document(t)), stray); err != nil {
 		t.Fatal(err)
 	}
@@ -478,7 +478,7 @@ func TestCoordinatesAheadOfTheCountAreDropped(t *testing.T) {
 	}
 
 	prose, _ := ocr.Read(raw)
-	boxes := placed.Unpack(packed)
+	boxes := lit.Unpack(packed)
 	if len(boxes) != res.Pages {
 		t.Fatalf("%d coordinates over %d pages", len(boxes), res.Pages)
 	}
@@ -552,7 +552,7 @@ func TestABatchThatDidNotLandWholeIsReadAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	reads(t, prose, placed.Unpack(packed), says)
+	reads(t, prose, lit.Unpack(packed), says)
 }
 
 func TestAPartialCarryingNoCountIsReadFromTheBeginning(t *testing.T) {
@@ -607,7 +607,7 @@ func TestAPartialCarryingNoCountIsReadFromTheBeginning(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	reads(t, prose, placed.Unpack(packed), says)
+	reads(t, prose, lit.Unpack(packed), says)
 }
 
 func TestCoordinatesThatDidNotLandWholeAreNotReadAsRecords(t *testing.T) {
@@ -645,7 +645,7 @@ func TestCoordinatesThatDidNotLandWholeAreNotReadAsRecords(t *testing.T) {
 		t.Fatal(err)
 	}
 	prose, _ := ocr.Read(raw)
-	boxes := placed.Unpack(packed)
+	boxes := lit.Unpack(packed)
 	if len(boxes) != res.Pages {
 		t.Fatalf("%d coordinates over %d pages", len(boxes), res.Pages)
 	}
@@ -693,16 +693,16 @@ func TestAReadingNamesItsParts(t *testing.T) {
 	}
 
 	doc := text.Recognised(raw, parts, nil, nil)
-	if len(doc.Places) != res.Pages {
-		t.Fatalf("the reading names %d parts over %d pages", len(doc.Places), res.Pages)
+	if len(doc.Parts) != res.Pages {
+		t.Fatalf("the reading names %d parts over %d pages", len(doc.Parts), res.Pages)
 	}
-	for i, place := range doc.Places {
+	for i, part := range doc.Parts {
 		want := fmt.Sprintf("IAYADEVA GOSVAMI %d", i+1)
-		if place.Title != want {
-			t.Errorf("part %d is called %q, want %q", i, place.Title, want)
+		if part.Title != want {
+			t.Errorf("part %d is called %q, want %q", i, part.Title, want)
 		}
-		if got := doc.Text[place.Offset : place.Offset+len(want)]; got != want {
-			t.Errorf("part %d begins at %d, which reads %q", i, place.Offset, got)
+		if got := doc.Text[part.Offset : part.Offset+len(want)]; got != want {
+			t.Errorf("part %d begins at %d, which reads %q", i, part.Offset, got)
 		}
 	}
 }
@@ -744,20 +744,20 @@ func TestPartsAheadOfTheCountAreDropped(t *testing.T) {
 	}
 
 	doc := text.Recognised(raw, parts, nil, nil)
-	if len(doc.Places) != res.Pages {
-		t.Fatalf("the reading names %d parts over %d pages", len(doc.Places), res.Pages)
+	if len(doc.Parts) != res.Pages {
+		t.Fatalf("the reading names %d parts over %d pages", len(doc.Parts), res.Pages)
 	}
 	// A part carries a run of the prose, so the one thing every part has to be
 	// is where its heading stands.
-	for i, place := range doc.Places {
-		if !strings.HasPrefix(place.Title, "A part ") {
-			t.Errorf("part %d is called %q", i, place.Title)
+	for i, part := range doc.Parts {
+		if !strings.HasPrefix(part.Title, "A part ") {
+			t.Errorf("part %d is called %q", i, part.Title)
 		}
-		at := place.Offset
-		if at < 0 || at+len(place.Title) > len(doc.Text) {
+		at := part.Offset
+		if at < 0 || at+len(part.Title) > len(doc.Text) {
 			t.Fatalf("part %d begins at %d, and the prose is %d long", i, at, len(doc.Text))
 		}
-		if got := doc.Text[at : at+len(place.Title)]; got != place.Title {
+		if got := doc.Text[at : at+len(part.Title)]; got != part.Title {
 			t.Errorf("part %d begins at %d, which reads %q", i, at, got)
 		}
 	}

@@ -3,7 +3,7 @@ package domain
 // Passage is what a search returns: the text around a hit, and where it came
 // from. It is a read model — a chunk is not reconstructed from it.
 //
-// `Start` and `Length` address the large window enclosing the hit, in the bytes
+// `Start` and `Length` address the large chunk enclosing the hit, in the bytes
 // of the file `Source` names, and `Text` is what stands there once the file has
 // been read.
 type Passage struct {
@@ -31,7 +31,7 @@ type Passage struct {
 	Hash string
 
 	// HitAt is where the chunk that matched begins inside Text, in bytes. A
-	// passage whose hit is the window itself begins at its own beginning.
+	// passage whose hit is the chunk itself begins at its own beginning.
 	HitAt int
 
 	// Fingerprint is the text this chunk holds, as the index recorded it. It is

@@ -122,41 +122,41 @@ func TestStructureFallsThroughTheTiers(t *testing.T) {
 		name    string
 		replace map[string]string
 		want    epub.Structure
-		places  []string
+		parts   []string
 	}{{
 		name:    "a control file that names the parts answers",
 		replace: chapters,
 		want:    epub.FromNavigation,
-		places:  []string{"Of the Beginning", "Alpha", "Of the Middle"},
+		parts:   []string{"Of the Beginning", "Alpha", "Of the Middle"},
 	}, {
 		name:    "an EPUB 3 navigation document answers when the control file names only the cover",
 		replace: navigation,
 		want:    epub.FromNavigation,
-		places:  []string{"Of the Beginning", "Of the Middle"},
+		parts:   []string{"Of the Beginning", "Of the Middle"},
 	}, {
 		name:    "headings answer when no navigation document does",
 		replace: nil,
 		want:    epub.FromHeadings,
-		places:  []string{"Of the Beginning", "Of the Middle"},
+		parts:   []string{"Of the Beginning", "Of the Middle"},
 	}, {
 		name:    "a book that names nothing is a book",
 		replace: plain,
 		want:    epub.FromNothing,
-		places:  nil,
+		parts:   nil,
 	}} {
 		t.Run(c.name, func(t *testing.T) {
 			book := read(t, tinyBook(t, c.replace))
 
 			if book.Structure != c.want {
-				t.Errorf("structure = %q, want %q (places: %v)", book.Structure, c.want, titles(book))
+				t.Errorf("structure = %q, want %q (parts: %v)", book.Structure, c.want, titles(book))
 			}
-			if got := titles(book); !slices.Equal(got, c.places) {
-				t.Errorf("places = %v, want %v", got, c.places)
+			if got := titles(book); !slices.Equal(got, c.parts) {
+				t.Errorf("parts = %v, want %v", got, c.parts)
 			}
-			for _, place := range book.Places {
-				if !strings.HasPrefix(book.Text[place.Offset:], place.Title) {
-					t.Errorf("place %q does not begin at its offset %d: %q",
-						place.Title, place.Offset, excerpt(book.Text, place.Offset))
+			for _, part := range book.Parts {
+				if !strings.HasPrefix(book.Text[part.Offset:], part.Title) {
+					t.Errorf("part %q does not begin at its offset %d: %q",
+						part.Title, part.Offset, excerpt(book.Text, part.Offset))
 				}
 			}
 		})
@@ -168,9 +168,9 @@ func TestHeadingsAreReadAtAnyLevel(t *testing.T) {
 
 	// The fixture heads its sections with h4. The level a book chose is kept and
 	// says nothing about whether the heading counts.
-	for _, place := range book.Places {
-		if place.Level != 4 {
-			t.Errorf("place %q is at level %d, want the level the markup wrote", place.Title, place.Level)
+	for _, part := range book.Parts {
+		if part.Level != 4 {
+			t.Errorf("part %q is at level %d, want the level the markup wrote", part.Title, part.Level)
 		}
 	}
 }
@@ -225,29 +225,29 @@ func TestLocate(t *testing.T) {
 		name     string
 		offset   int
 		document string
-		place    string
+		part     string
 		page     string
 	}{
 		{name: "the first byte of the book", offset: 0, document: coverDoc},
 		{name: "before the first heading", offset: at("Cover"), document: coverDoc},
-		{name: "inside the first section", offset: at("Gamma"), document: firstDoc, place: "Of the Beginning"},
-		{name: "inside the second section", offset: at("Delta"), document: secondDoc, place: "Of the Middle"},
-		{name: "after the page break", offset: at("Epsilon"), document: secondDoc, place: "Of the Middle", page: "42"},
-		{name: "the last byte", offset: len(book.Text) - 1, document: secondDoc, place: "Of the Middle", page: "42"},
+		{name: "inside the first section", offset: at("Gamma"), document: firstDoc, part: "Of the Beginning"},
+		{name: "inside the second section", offset: at("Delta"), document: secondDoc, part: "Of the Middle"},
+		{name: "after the page break", offset: at("Epsilon"), document: secondDoc, part: "Of the Middle", page: "42"},
+		{name: "the last byte", offset: len(book.Text) - 1, document: secondDoc, part: "Of the Middle", page: "42"},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			got := book.Locate(c.offset)
 			if got.Document != c.document {
 				t.Errorf("document = %q, want %q", got.Document, c.document)
 			}
-			if got.Place != c.place {
-				t.Errorf("place = %q, want %q", got.Place, c.place)
+			if got.Part != c.part {
+				t.Errorf("part = %q, want %q", got.Part, c.part)
 			}
 			if got.Page != c.page {
 				t.Errorf("page = %q, want %q", got.Page, c.page)
 			}
-			if got.Place != "" && got.PlaceOffset > c.offset {
-				t.Errorf("place offset %d is after the offset asked about", got.PlaceOffset)
+			if got.Part != "" && got.PartOffset > c.offset {
+				t.Errorf("part offset %d is after the offset asked about", got.PartOffset)
 			}
 		})
 	}
@@ -265,8 +265,8 @@ func TestTheSameBytesGiveTheSameText(t *testing.T) {
 	if !slices.Equal(first.Documents, second.Documents) {
 		t.Errorf("documents differ: %v and %v", first.Documents, second.Documents)
 	}
-	if !slices.Equal(first.Places, second.Places) {
-		t.Errorf("places differ: %v and %v", first.Places, second.Places)
+	if !slices.Equal(first.Parts, second.Parts) {
+		t.Errorf("parts differ: %v and %v", first.Parts, second.Parts)
 	}
 }
 
@@ -315,8 +315,8 @@ func read(t *testing.T, raw []byte) *epub.Book {
 
 func titles(book *epub.Book) []string {
 	var out []string
-	for _, place := range book.Places {
-		out = append(out, place.Title)
+	for _, part := range book.Parts {
+		out = append(out, part.Title)
 	}
 	return out
 }

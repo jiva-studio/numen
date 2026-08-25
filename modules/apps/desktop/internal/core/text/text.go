@@ -2,7 +2,7 @@
 // file say, and where in it is any offset.
 //
 // Three callers ask it — an extractor cutting a source, a search showing a
-// passage, an embedder re-slicing a window — and they have to agree. A chunk
+// passage, an embedder re-slicing a chunk — and they have to agree. A chunk
 // keeps an offset into the text a reader produced; a second reader producing
 // other text at other offsets reads the wrong place and says so with
 // confidence.
@@ -20,10 +20,10 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/cutting"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/epub"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
 )
 
 // ErrUnreadable is a file that is there and says nothing this can use. It is
@@ -36,9 +36,9 @@ type Document struct {
 	// offset into it.
 	Text string
 
-	// Places are where the source names something, and are what windows are cut
+	// Parts are where the source names something, and are what chunks are cut
 	// inside so that one never runs across a part into the next.
-	Places []window.Place
+	Parts []cutting.Part
 
 	// named and paged are what the source calls the place an offset falls in,
 	// in the vocabulary of its own format. Both ascend by offset, and either may
@@ -155,8 +155,8 @@ func fromEPUB(raw []byte) (*Document, error) {
 		return nil, ErrUnreadable
 	}
 	doc := &Document{Text: book.Text}
-	for _, p := range book.Places {
-		doc.Places = append(doc.Places, window.Place{Title: p.Title, Offset: p.Offset})
+	for _, p := range book.Parts {
+		doc.Parts = append(doc.Parts, cutting.Part{Title: p.Title, Offset: p.Offset})
 		doc.named = append(doc.named, mark{Offset: p.Offset, Name: p.Title})
 	}
 	// A book made for a screen has no pages of its own, and those it names are
@@ -181,8 +181,8 @@ func fromPages(ctx context.Context, docs port.Documents, raw []byte) (*Document,
 		return nil, ErrUnreadable
 	}
 	doc := &Document{Text: book.Text}
-	for _, p := range book.Places {
-		doc.Places = append(doc.Places, p)
+	for _, p := range book.Parts {
+		doc.Parts = append(doc.Parts, p)
 		doc.named = append(doc.named, mark{Offset: p.Offset, Name: p.Title})
 	}
 	for i, at := range book.Pages {

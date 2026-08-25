@@ -43,7 +43,7 @@ func (q *Queries) Fingerprints(ctx context.Context, vaultID string) (map[string]
 }
 
 // Search is the notes whose text matches the words typed, each ranked by its
-// best window. A search over everything the vault holds answers with passages;
+// best chunk. A search over everything the vault holds answers with passages;
 // this answers with notes.
 func (q *Queries) Search(ctx context.Context, vaultID, query string, limit int) ([]domain.NoteMatch, error) {
 	if limit <= 0 {

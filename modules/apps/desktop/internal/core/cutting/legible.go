@@ -1,13 +1,13 @@
-package window
+package cutting
 
 import (
 	"strings"
 	"unicode"
 )
 
-// legible says whether a window reads as text. Recognition that went wrong reads
+// legible says whether a chunk reads as text. Recognition that went wrong reads
 // as punctuation with letters in it, and it is caught by two fractions: how much
-// of the window is letters, and how many of its words carry a mark inside them.
+// of the chunk is letters, and how many of its words carry a mark inside them.
 //
 // Both thresholds are configuration, because where they sit depends on the
 // scripts a corpus is written in.

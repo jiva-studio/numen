@@ -19,17 +19,17 @@ What goes from a search, or from an agent, to the thing that shows a passage is 
 
 ### One shape says where a run of text sits, and it has two producers
 
-`internal/core/placed` holds it: a box is a page, a run of bytes, and a rectangle in **fractions of the page**, so a page drawn at any size lines up by multiplying.
+`internal/core/lit` holds it: a box is a page, a run of bytes, and a rectangle in **fractions of the page**, so a page drawn at any size lines up by multiplying.
 
 Two things produce it and nothing above asks which: a recognition, kept on disk because a model made it and no machine here remakes it cheaply, and a document's own text layer, kept nowhere because it answers per word on demand.
 
-Which one answers is decided by `text_from` together with a check that the file is still the bytes the reading was made from. A document rewritten since is placed by its own layer, which is the words that are there now.
+Which one answers is decided by `text_from` together with a check that the file is still the bytes the reading was made from. A document rewritten since is lit from its own layer, which is the words that are there now.
 
 **The layer's boxes are never written down.** A file of them would need invalidating, sweeping, and a rule for the day a recognition arrives, and the wrong answer to that last one puts one producer's rectangles against another producer's offsets, which lights the wrong words and says nothing.
 
 ### Pages are drawn in this process, and the document never travels
 
-The window is sent a picture of a page. A scan is hundreds of megabytes, PDF is a poor format to deliver a piece at a time, and what makes such a book's words placeable is the recognition, which is here.
+The window is sent a picture of a page. A scan is hundreds of megabytes, PDF is a poor format to deliver a piece at a time, and what says where such a book's words sit is the recognition, which is here.
 
 ### A vault file is an asset
 
@@ -64,7 +64,7 @@ What a page is called, and what a location says to a person, is [`../reading.md`
 
 **The text layer's boxes written to disk beside the recognition.** Rejected: they are cheap to ask again and expensive to keep true, and the day a recognition arrives for the same document there are two files claiming the same words.
 
-**The document streamed to the window and drawn there.** Rejected: a scan is hundreds of megabytes over a loopback port for one page, and where a scanned book's words sit is worked out in this process.
+**The document streamed to the window and drawn there.** Rejected: a scan is hundreds of megabytes over a loopback port for one page, and where a scanned book's words sit on the page is worked out in this process.
 
 ## Notes
 

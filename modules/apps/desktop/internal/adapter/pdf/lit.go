@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lit"
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/klippa-app/go-pdfium/responses"
 )
@@ -18,15 +18,15 @@ const (
 	wordGap = 0.25
 )
 
-// Placed is where the words of some pages of the document sit: one box a word,
-// at the offset in Text where that word begins.
+// Lit is where the words of some pages of the document sit: one box a word, at
+// the offset in Text where that word begins.
 //
 // The pages wanted are given by their index, and only those are read. The
 // boxes come back ascending by offset.
 //
 // A page whose text layer says nothing gives no boxes, and a scan gives none at
 // all.
-func (b *Book) Placed(raw []byte, pages []int) ([]placed.Box, error) {
+func (b *Book) Lit(raw []byte, pages []int) ([]lit.Box, error) {
 	wanted := ordered(pages, len(b.Pages))
 	if len(wanted) == 0 {
 		return nil, nil
@@ -38,7 +38,7 @@ func (b *Book) Placed(raw []byte, pages []int) ([]placed.Box, error) {
 	}
 	defer doc.close()
 
-	var boxes []placed.Box
+	var boxes []lit.Box
 	for _, page := range wanted {
 		boxes = append(boxes, doc.words(page, b.Pages[page].Offset)...)
 	}
@@ -66,7 +66,7 @@ func ordered(pages []int, most int) []int {
 //
 // A page that cannot be measured, or cannot be read, says nothing about where
 // its words are.
-func (d *document) words(index, offset int) []placed.Box {
+func (d *document) words(index, offset int) []lit.Box {
 	page := requests.Page{ByIndex: &requests.PageByIndex{Document: d.ref, Index: index}}
 	sheet, ok := d.paper(page)
 	if !ok {
@@ -80,7 +80,7 @@ func (d *document) words(index, offset int) []placed.Box {
 		return nil
 	}
 
-	var boxes []placed.Box
+	var boxes []lit.Box
 	// The word being read: where it covers the page, where it begins in the
 	// text, and how far it has got.
 	var word responses.CharPosition
@@ -168,10 +168,10 @@ func (d *document) paper(page requests.Page) (paper, bool) {
 }
 
 // box is one word of a page, over the fraction of it the word covers.
-func (p paper) box(page, start, length int, word responses.CharPosition) placed.Box {
+func (p paper) box(page, start, length int, word responses.CharPosition) lit.Box {
 	x0, y0 := p.drawn(word.Left, word.Top)
 	x1, y1 := p.drawn(word.Right, word.Bottom)
-	return placed.Box{
+	return lit.Box{
 		Page:   page,
 		Start:  start,
 		Length: length,

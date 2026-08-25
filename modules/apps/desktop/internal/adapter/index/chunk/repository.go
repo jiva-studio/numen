@@ -1,4 +1,4 @@
-// Package chunk stores the windows a source's text is cut into, and the vectors
+// Package chunk stores the chunks a source's text is cut into, and the vectors
 // made from them.
 //
 // The text itself is not stored. A chunk is a place in a file — where it starts
@@ -48,25 +48,25 @@ type Source struct {
 	TextFrom string
 }
 
-// Window is one cut of a source's text. `Location` is what the source's own
-// numbering calls the place, and is empty when the format offered none.
+// Chunk is one cut of a source's text. `Location` is where it sits in the terms
+// the source's own numbering uses, and is empty when the format offered none.
 //
-// `Text` is what the window holds, and is indexed and hashed, not kept: it is
-// the text at `Start` for `Length` in the file, so a window whose text says
-// something the file does not is a window that cannot be read back.
+// `Text` is what the chunk holds, and is indexed and hashed, not kept: it is
+// the text at `Start` for `Length` in the file, so a chunk whose text says
+// something the file does not is a chunk that cannot be read back.
 //
-// `Small` are the windows inside this one. A Window with none of its own is a
-// large window all the same: what makes it large is that nothing encloses it.
-type Window struct {
+// `Small` are the chunks inside this one. A Chunk with none of its own is a
+// large chunk all the same: what makes it large is that nothing encloses it.
+type Chunk struct {
 	Start    int
 	Length   int
 	Location string
 	Text     string
-	// Opens are the parts of the source that begin exactly where this window
-	// does: what a section starting here is called. Empty for a window that
+	// Opens are the parts of the source that begin exactly where this chunk
+	// does: what a section starting here is called. Empty for a chunk that
 	// opens none, which is most of them.
 	Opens []string
-	Small []Window
+	Small []Chunk
 }
 
 // Vector is one chunk's embedding in both representations that are stored.
@@ -111,12 +111,12 @@ func (r *Repository) SaveSource(ctx context.Context, vaultID string, s Source) e
 	return nil
 }
 
-// SaveExtraction records what a file is and replaces its chunks with the windows
+// SaveExtraction records what a file is and replaces its chunks with the ones
 // its text was cut into, in one transaction.
 //
 // One write, because a recipe names the sizes a source's chunks were cut into:
 // the recipe and the chunks it describes are recorded together.
-func (r *Repository) SaveExtraction(ctx context.Context, vaultID string, s Source, windows []Window) error {
+func (r *Repository) SaveExtraction(ctx context.Context, vaultID string, s Source, chunks []Chunk) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
@@ -132,7 +132,7 @@ func (r *Repository) SaveExtraction(ctx context.Context, vaultID string, s Sourc
 		vault, s.Path, s.Kind, s.Size, s.MTime, nullable(s.Hash), nullable(s.Recipe), nullable(s.TextFrom)).Scan(&source); err != nil {
 		return fmt.Errorf("save_source %s: %w", s.Path, err)
 	}
-	if err := Replace(ctx, tx, source, vault, windows); err != nil {
+	if err := Replace(ctx, tx, source, vault, chunks); err != nil {
 		return err
 	}
 	if err := tx.Commit(); err != nil {
@@ -141,8 +141,8 @@ func (r *Repository) SaveExtraction(ctx context.Context, vaultID string, s Sourc
 	return nil
 }
 
-// SaveWindows makes the chunks of one source the windows given.
-func (r *Repository) SaveWindows(ctx context.Context, vaultID, kind, path string, windows []Window) error {
+// SaveChunks makes the chunks of one source the ones given.
+func (r *Repository) SaveChunks(ctx context.Context, vaultID, kind, path string, chunks []Chunk) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
@@ -160,7 +160,7 @@ func (r *Repository) SaveWindows(ctx context.Context, vaultID, kind, path string
 	if err != nil {
 		return err
 	}
-	if err := Replace(ctx, tx, source, vault, windows); err != nil {
+	if err := Replace(ctx, tx, source, vault, chunks); err != nil {
 		return err
 	}
 	if err := tx.Commit(); err != nil {
@@ -257,28 +257,28 @@ func Clear(ctx context.Context, tx *sql.Tx, source int64) error {
 	return exec(ctx, tx, "clear_chunks", source)
 }
 
-// Replace makes the chunks of one source the windows given, inside a
-// transaction that is already open.
+// Replace makes the chunks of one source the ones given, inside a transaction
+// that is already open.
 //
-// A chunk is identified by the hash of its text. A window whose hash is on a row
+// A chunk is identified by the hash of its text. A chunk whose hash is on a row
 // of this source keeps that row, and its vector and its full-text row with it;
-// the row is moved to where the text now is. A window whose hash is on no row is
-// a new chunk, and a row whose hash is in no window is a chunk that is gone.
+// the row is moved to where the text now is. A chunk whose hash is on no row is
+// a new chunk, and a row whose hash is in no chunk is a chunk that is gone.
 //
-// A large window covers the whole of a note, so its hash moves whenever the note
-// is edited at all, and `chunks.parent … ON DELETE CASCADE` takes every window
-// inside a large one with it. The new rows go in first, the windows that were
-// kept are then pointed at the large window they now sit in, and the rows that
+// A large chunk covers the whole of a note, so its hash moves whenever the note
+// is edited at all, and `chunks.parent … ON DELETE CASCADE` takes every chunk
+// inside a large one with it. The new rows go in first, the chunks that were
+// kept are then pointed at the large chunk they now sit in, and the rows that
 // are gone come out last.
 //
-// Every window written is indexed for the words it holds, large and small alike,
+// Every chunk written is indexed for the words it holds, large and small alike,
 // so that a search asked by words and one asked by meaning name one kind of row.
-func Replace(ctx context.Context, tx *sql.Tx, source, vault int64, windows []Window) error {
+func Replace(ctx context.Context, tx *sql.Tx, source, vault int64, chunks []Chunk) error {
 	held, err := chunksOf(ctx, tx, source)
 	if err != nil {
 		return err
 	}
-	// A window that says the same thing keeps its row through a cut, so the
+	// A chunk that says the same thing keeps its row through a cut, so the
 	// names of the parts are dropped by the source and not with the chunks.
 	if _, err := tx.ExecContext(ctx, stmt.Get("clear_parts"), source); err != nil {
 		return fmt.Errorf("clear_parts: %w", err)
@@ -290,7 +290,7 @@ func Replace(ctx context.Context, tx *sql.Tx, source, vault int64, windows []Win
 	}
 	defer w.close()
 
-	for _, large := range windows {
+	for _, large := range chunks {
 		row, err := w.put(ctx, held, source, vault, large, nil)
 		if err != nil {
 			return err
@@ -307,7 +307,7 @@ func Replace(ctx context.Context, tx *sql.Tx, source, vault int64, windows []Win
 	return forget(ctx, tx, held.forgotten())
 }
 
-// writer is the statements a cut runs per window, prepared once for the whole
+// writer is the statements a cut runs per chunk, prepared once for the whole
 // source.
 type writer struct{ insert, index, names, move *sql.Stmt }
 
@@ -340,17 +340,17 @@ func (w writer) close() {
 	}
 }
 
-// put is the row one window is held on, and moves or writes it.
+// put is the row one chunk is held on, and moves or writes it.
 //
-// A window inside another arrives with the row enclosing it, and a large window
+// A chunk inside another arrives with the row enclosing it, and a large chunk
 // with nothing, which is also what the row's `parent` becomes.
-func (w writer) put(ctx context.Context, held *held, source, vault int64, win Window, parent any) (int64, error) {
-	key := text{hash: hashOf(win.Text), small: parent != nil}
+func (w writer) put(ctx context.Context, held *held, source, vault int64, c Chunk, parent any) (int64, error) {
+	key := text{hash: hashOf(c.Text), small: parent != nil}
 	if row, kept := held.claim(key); kept {
-		if _, err := w.move.ExecContext(ctx, win.Start, win.Length, parent, nullable(win.Location), row); err != nil {
+		if _, err := w.move.ExecContext(ctx, c.Start, c.Length, parent, nullable(c.Location), row); err != nil {
 			return 0, fmt.Errorf("move_chunk: %w", err)
 		}
-		if err := w.opens(ctx, row, win); err != nil {
+		if err := w.opens(ctx, row, c); err != nil {
 			return 0, err
 		}
 		return row, nil
@@ -358,33 +358,33 @@ func (w writer) put(ctx context.Context, held *held, source, vault int64, win Wi
 
 	var row int64
 	err := w.insert.QueryRowContext(ctx,
-		source, vault, win.Start, win.Length, parent, nullable(win.Location), key.hash).Scan(&row)
+		source, vault, c.Start, c.Length, parent, nullable(c.Location), key.hash).Scan(&row)
 	if err != nil {
 		return 0, fmt.Errorf("insert_chunk: %w", err)
 	}
-	if _, err := w.index.ExecContext(ctx, row, win.Text); err != nil {
+	if _, err := w.index.ExecContext(ctx, row, c.Text); err != nil {
 		return 0, fmt.Errorf("insert_fts: %w", err)
 	}
-	if err := w.opens(ctx, row, win); err != nil {
+	if err := w.opens(ctx, row, c); err != nil {
 		return 0, err
 	}
 	return row, nil
 }
 
-// opens keeps the names of the parts one window begins, so a section can be
+// opens keeps the names of the parts one chunk begins, so a section can be
 // found by its name and answer with the chunk it opens.
-func (w writer) opens(ctx context.Context, row int64, win Window) error {
-	if len(win.Opens) == 0 {
+func (w writer) opens(ctx context.Context, row int64, c Chunk) error {
+	if len(c.Opens) == 0 {
 		return nil
 	}
-	if _, err := w.names.ExecContext(ctx, row, strings.Join(win.Opens, "\n")); err != nil {
+	if _, err := w.names.ExecContext(ctx, row, strings.Join(c.Opens, "\n")); err != nil {
 		return fmt.Errorf("insert_part: %w", err)
 	}
 	return nil
 }
 
-// text is what a window has to hold to be held on a row: the same text, cut at
-// the same size. A vector belongs to a window that sits inside another, so the
+// text is what a chunk has to hold to be held on a row: the same text, cut at
+// the same size. A vector belongs to a chunk that sits inside another, so the
 // two sizes are separate populations.
 type text struct {
 	hash  string
@@ -434,7 +434,7 @@ func (h *held) claim(key text) (int64, bool) {
 	return row, true
 }
 
-// unclaimed is the rows of the source no window holds, in order, so that a cut
+// unclaimed is the rows of the source no chunk holds, in order, so that a cut
 // writes the same thing twice running.
 func (h *held) unclaimed() []int64 {
 	out := make([]int64, 0, len(h.left))
@@ -449,7 +449,7 @@ func (h *held) unclaimed() []int64 {
 //
 // The rows in the two virtual tables go first, by the chunk's own number.
 // Nothing cascades into a virtual table, and a row left in either answers a
-// search with a chunk that no longer exists. A large window takes the windows
+// search with a chunk that no longer exists. A large chunk takes the chunks
 // inside it, so a row here may already be gone from `chunks` by the time it is
 // reached.
 func remove(ctx context.Context, tx *sql.Tx, rows []int64) error {
@@ -463,7 +463,7 @@ func remove(ctx context.Context, tx *sql.Tx, rows []int64) error {
 	return nil
 }
 
-// hashOf addresses a window by the text it holds. A chunk keeps its row, and its
+// hashOf addresses a chunk by the text it holds. A chunk keeps its row, and its
 // vector and its full-text row with it, for as long as this value stays the same.
 func hashOf(s string) string {
 	sum := sha256.Sum256([]byte(s))
@@ -511,7 +511,7 @@ func nullable(s string) any {
 	return s
 }
 
-// forgotten is the text of the rows no window holds: what this source used to
+// forgotten is the text of the rows no chunk holds: what this source used to
 // hold and does not any more.
 func (h *held) forgotten() []string {
 	out := make([]string, 0, len(h.left))

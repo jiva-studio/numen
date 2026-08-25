@@ -1,5 +1,5 @@
-// Package placed says where a run of a source's text sits on the page it was
-// read from.
+// Package lit says where a run of a source's text falls on the page it was read
+// from.
 //
 // It is pure: no filesystem, no clock, no model. Two things produce what is
 // here — a model reading a scan, and a document's own text layer — and nothing
@@ -8,7 +8,7 @@
 //
 // The rectangle is a fraction of the page, so a page drawn at any size lines up
 // by multiplying and nothing is recomputed.
-package placed
+package lit
 
 import "sort"
 

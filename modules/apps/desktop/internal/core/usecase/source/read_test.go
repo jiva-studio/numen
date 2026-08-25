@@ -15,7 +15,7 @@ func reader(t *testing.T) (Read, *shelf) {
 	return Read{Readers: read.Readers, Sources: index, Derived: shelved}, shelved
 }
 
-func TestWhatStandsAfterAWindowIsRead(t *testing.T) {
+func TestWhatStandsAfterAChunkIsRead(t *testing.T) {
 	u, _ := reader(t)
 
 	whole, err := u.Execute(t.Context(), first, documentPath, 0, MostRead)
@@ -26,7 +26,7 @@ func TestWhatStandsAfterAWindowIsRead(t *testing.T) {
 		t.Fatalf("the document says nothing: %+v", whole)
 	}
 
-	// A window that ends part way through, and what stands after it.
+	// A chunk that ends part way through, and what stands after it.
 	on, err := u.Execute(t.Context(), first, documentPath, 4, whole.Whole)
 	if err != nil {
 		t.Fatal(err)

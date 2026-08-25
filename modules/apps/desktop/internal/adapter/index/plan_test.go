@@ -180,8 +180,8 @@ func populated(t *testing.T) *DB {
 	return db
 }
 
-// cut writes one source's windows: a large one, and two small ones inside it
-// carrying a vector each. Every window is indexed for its words, as the
+// cut writes one source's chunks: a large one, and two small ones inside it
+// carrying a vector each. Every chunk is indexed for its words, as the
 // repository indexes them.
 func cut(t *testing.T, tx *sql.Tx, source, vault int64) {
 	t.Helper()

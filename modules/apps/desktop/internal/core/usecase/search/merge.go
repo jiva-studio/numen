@@ -51,7 +51,7 @@ func merge(rankings ...[]domain.Passage) []domain.Passage {
 	return fused
 }
 
-// where is one place in one file. A hit and the window enclosing it are two
+// where is one place in one file. A hit and the chunk enclosing it are two
 // rows standing in the same place, and one place is one passage.
 type where struct {
 	source        string
