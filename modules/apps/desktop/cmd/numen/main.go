@@ -38,9 +38,9 @@ func main() {
 	flag.StringVar(&agents.addr, "mcp-addr", defaultAgentAddr,
 		"where agents reach this vault; anything but a loopback address opens it to the network")
 	flag.BoolVar(&agents.off, "no-mcp", false, "do not let agents reach this vault")
-	flag.Float64Var(&said.drawn, "interface", 0,
+	flag.Float64Var(&said.drawn, "interface-scale", 0,
 		"how large the interface is drawn, 1 being as designed; this launch alone")
-	flag.Float64Var(&said.set, "font", 0,
+	flag.Float64Var(&said.set, "text-scale", 0,
 		"how large the text a person reads is set, 1 being as designed; this launch alone")
 	flag.BoolVar(&cfg.RebuildIndex, "rebuild-index", false,
 		"read every file and put it in the index again, whatever the index remembers")
@@ -61,12 +61,12 @@ type sizes struct{ drawn, set float64 }
 // check is what is wrong with a number the setting it says does not take.
 func (s sizes) check() error {
 	if s.drawn > 0 {
-		if err := settings.InterfaceScaleBounds.Check("-interface", s.drawn); err != nil {
+		if err := settings.InterfaceScaleBounds.Check("-interface-scale", s.drawn); err != nil {
 			return err
 		}
 	}
 	if s.set > 0 {
-		return settings.TextScaleBounds.Check("-font", s.set)
+		return settings.TextScaleBounds.Check("-text-scale", s.set)
 	}
 	return nil
 }
