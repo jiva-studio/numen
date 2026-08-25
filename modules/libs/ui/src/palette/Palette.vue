@@ -739,17 +739,13 @@ onBeforeUnmount(() => {
   border-block-start: var(--numen-stroke) solid var(--numen-panel-border);
 }
 
-/* A cap: small print on the ground a box is drawn on, sitting a line above the
-   sharp shadow that is its depth. The type is a token rather than a share of
-   whatever it stands beside, so a cap in the foot and a cap on a row are one
-   object; every clearance is in `em` against that type, so the cap is one shape
-   at every size the interface is drawn at. The line, the depth and the spread
-   are each one physical line, as every stroke in the window is. */
+/* A cap: small print on the ground a box is drawn on, inside a line that is a
+   quarter of the ink it is set in. The type is a token, so a cap in the foot
+   and a cap on a row are one object; every clearance is in `em` against that
+   type, so the cap is one shape at every size the interface is drawn at. */
 .palette__key kbd,
 .palette__more kbd,
 .palette__hint {
-  position: relative;
-  inset-block-start: calc(-1 * var(--numen-stroke));
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -757,10 +753,10 @@ onBeforeUnmount(() => {
   min-inline-size: 1.6em;
   margin-inline-end: 0.4em;
   padding-inline: 0.45em;
-  border: var(--numen-stroke) solid var(--numen-node-border);
+  border: var(--numen-stroke) solid
+    color-mix(in oklab, var(--numen-node-bg), var(--numen-node-fg) 25%);
   border-radius: var(--cap-radius);
   background: var(--numen-node-bg);
-  box-shadow: 0 2px 0 var(--numen-stroke) var(--numen-node-border);
   color: var(--numen-node-fg);
   font-family: var(--numen-font-sans);
   font-size: var(--numen-edge-label-size);
