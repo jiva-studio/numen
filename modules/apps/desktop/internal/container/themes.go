@@ -17,14 +17,18 @@ import (
 // offered either way. Whatever a person is told is told through say.
 func (c Config) Themes(say func(string)) (*theme.Service, error) {
 	catalogue, err := c.catalogue()
-	said := &launched{drawn: c.Interface, set: c.Font}
+	said := &launched{drawn: c.InterfaceScale, set: c.TextScale}
 	return &theme.Service{
-		Catalogue:       catalogue,
-		Say:             say,
-		Dressed:         func() (theme.Dress, error) { return c.dressed(said) },
-		Wear:            func(chosen theme.Dress) error { return c.wear(chosen, said) },
-		InterfaceBounds: theme.Bounds{Least: settings.InterfaceBounds.Least, Most: settings.InterfaceBounds.Most},
-		FontBounds:      theme.Bounds{Least: settings.FontBounds.Least, Most: settings.FontBounds.Most},
+		Catalogue: catalogue,
+		Say:       say,
+		Dressed:   func() (theme.Dress, error) { return c.dressed(said) },
+		Wear:      func(chosen theme.Dress) error { return c.wear(chosen, said) },
+		InterfaceScaleBounds: theme.Bounds{
+			Least: settings.InterfaceScaleBounds.Least, Most: settings.InterfaceScaleBounds.Most,
+		},
+		TextScaleBounds: theme.Bounds{
+			Least: settings.TextScaleBounds.Least, Most: settings.TextScaleBounds.Most,
+		},
 	}, err
 }
 
@@ -40,10 +44,10 @@ func (l *launched) over(worn *theme.Dress) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if l.drawn > 0 {
-		worn.Interface = l.drawn
+		worn.InterfaceScale = l.drawn
 	}
 	if l.set > 0 {
-		worn.Font = l.set
+		worn.TextScale = l.set
 	}
 }
 
@@ -52,10 +56,10 @@ func (l *launched) over(worn *theme.Dress) {
 func (l *launched) chose(chosen theme.Dress) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	if chosen.Interface > 0 {
+	if chosen.InterfaceScale > 0 {
 		l.drawn = 0
 	}
-	if chosen.Font > 0 {
+	if chosen.TextScale > 0 {
 		l.set = 0
 	}
 }
@@ -82,10 +86,10 @@ func (c Config) dressed(said *launched) (theme.Dress, error) {
 		return theme.Dress{}, err
 	}
 	worn := theme.Dress{
-		Theme:     held.Appearance.Theme,
-		Mode:      mode(held.Appearance.Mode),
-		Interface: held.Appearance.Interface,
-		Font:      held.Appearance.Font,
+		Theme:          held.Appearance.Theme,
+		Mode:           mode(held.Appearance.Mode),
+		InterfaceScale: held.Appearance.InterfaceScale,
+		TextScale:      held.Appearance.TextScale,
 	}
 	said.over(&worn)
 	return worn, nil
@@ -103,19 +107,20 @@ func (c Config) wear(chosen theme.Dress, said *launched) error {
 		{At: []string{"appearance", "theme"}, Value: chosen.Theme},
 		{At: []string{"appearance", "mode"}, Value: word(chosen.Mode)},
 	}
-	if chosen.Interface > 0 {
-		if err := settings.InterfaceBounds.Check("appearance.interface", chosen.Interface); err != nil {
+	if chosen.InterfaceScale > 0 {
+		err := settings.InterfaceScaleBounds.Check("appearance.interface_scale", chosen.InterfaceScale)
+		if err != nil {
 			return err
 		}
 		writing = append(writing,
-			settings.Setting{At: []string{"appearance", "interface"}, Value: chosen.Interface})
+			settings.Setting{At: []string{"appearance", "interface_scale"}, Value: chosen.InterfaceScale})
 	}
-	if chosen.Font > 0 {
-		if err := settings.FontBounds.Check("appearance.font", chosen.Font); err != nil {
+	if chosen.TextScale > 0 {
+		if err := settings.TextScaleBounds.Check("appearance.text_scale", chosen.TextScale); err != nil {
 			return err
 		}
 		writing = append(writing,
-			settings.Setting{At: []string{"appearance", "font"}, Value: chosen.Font})
+			settings.Setting{At: []string{"appearance", "text_scale"}, Value: chosen.TextScale})
 	}
 	if err := settings.Save(path, writing...); err != nil {
 		return err

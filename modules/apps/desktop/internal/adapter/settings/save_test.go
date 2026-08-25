@@ -85,16 +85,16 @@ func TestTheThemeAndTheModeAreWrittenWithoutMovingAnythingElse(t *testing.T) {
 func TestTheTwoSizesAreWrittenWithoutMovingAnythingElse(t *testing.T) {
 	const sized = `{
     "appearance": {
-        "interface": 1.00,
-        "font": 1.00,
+        "interface_scale": 1.00,
+        "text_scale": 1.00,
         "theme": "preset:numen"
     }
 }
 `
 	path := write(t, sized)
 	if err := settings.Save(path,
-		settings.Setting{At: []string{"appearance", "interface"}, Value: 1.25},
-		settings.Setting{At: []string{"appearance", "font"}, Value: 1.5}); err != nil {
+		settings.Setting{At: []string{"appearance", "interface_scale"}, Value: 1.25},
+		settings.Setting{At: []string{"appearance", "text_scale"}, Value: 1.5}); err != nil {
 		t.Fatal(err)
 	}
 	raw, err := os.ReadFile(path)
@@ -102,8 +102,8 @@ func TestTheTwoSizesAreWrittenWithoutMovingAnythingElse(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := strings.Replace(sized, `"interface": 1.00`, `"interface": 1.25`, 1)
-	want = strings.Replace(want, `"font": 1.00`, `"font": 1.5`, 1)
+	want := strings.Replace(sized, `"interface_scale": 1.00`, `"interface_scale": 1.25`, 1)
+	want = strings.Replace(want, `"text_scale": 1.00`, `"text_scale": 1.5`, 1)
 	if string(raw) != want {
 		t.Errorf("the file came back as:\n%s\nand not as:\n%s", raw, want)
 	}
@@ -119,7 +119,7 @@ func TestASizeIsWrittenBesideTheZoomAFileStillNames(t *testing.T) {
 }
 `)
 	if err := settings.Save(path,
-		settings.Setting{At: []string{"appearance", "interface"}, Value: 1.25}); err != nil {
+		settings.Setting{At: []string{"appearance", "interface_scale"}, Value: 1.25}); err != nil {
 		t.Fatal(err)
 	}
 	raw, err := os.ReadFile(path)
@@ -130,7 +130,7 @@ func TestASizeIsWrittenBesideTheZoomAFileStillNames(t *testing.T) {
 	want := `{
   "appearance": {
     "zoom": 1.5,
-    "interface": 1.25
+    "interface_scale": 1.25
   }
 }
 `
@@ -143,8 +143,8 @@ func TestASizeIsWrittenBesideTheZoomAFileStillNames(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Appearance.Interface != 1.25 {
-		t.Errorf("drawn at %v", cfg.Appearance.Interface)
+	if cfg.Appearance.InterfaceScale != 1.25 {
+		t.Errorf("drawn at %v", cfg.Appearance.InterfaceScale)
 	}
 }
 

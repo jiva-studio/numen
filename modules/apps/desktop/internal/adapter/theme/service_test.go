@@ -26,10 +26,10 @@ func dressed(t *testing.T, worn theme.Dress) *dressing {
 	t.Helper()
 	kept := &dressing{worn: worn}
 	kept.service = &theme.Service{
-		Catalogue:       folder(t),
-		InterfaceBounds: theme.Bounds{Least: 0.8, Most: 2},
-		FontBounds:      theme.Bounds{Least: 0.8, Most: 1.75},
-		Dressed:         func() (theme.Dress, error) { return kept.worn, nil },
+		Catalogue:            folder(t),
+		InterfaceScaleBounds: theme.Bounds{Least: 0.8, Most: 2},
+		TextScaleBounds:      theme.Bounds{Least: 0.8, Most: 1.75},
+		Dressed:              func() (theme.Dress, error) { return kept.worn, nil },
 		Wear: func(one theme.Dress) error {
 			if kept.refuses != nil {
 				return kept.refuses
@@ -139,10 +139,10 @@ func TestChoosingWritesTheThemeAndTheHalfItIsReadAs(t *testing.T) {
 // A client says how far a size goes before a person types a number into it.
 func TestTheListSaysTheTwoSizesAndHowFarEachGoes(t *testing.T) {
 	worn := dressed(t, theme.Dress{
-		Theme:     theme.Default,
-		Mode:      v1.Mode_MODE_SYSTEM,
-		Interface: 1.25,
-		Font:      1.5,
+		Theme:          theme.Default,
+		Mode:           v1.Mode_MODE_SYSTEM,
+		InterfaceScale: 1.25,
+		TextScale:      1.5,
 	})
 
 	answer := worn.themes(t)
@@ -171,10 +171,10 @@ func TestASettingsFileNamingNoSizeIsDrawnAsDesigned(t *testing.T) {
 // One size is one command, and choosing it says nothing about the other.
 func TestChoosingOneSizeLeavesTheOtherAsItStands(t *testing.T) {
 	worn := dressed(t, theme.Dress{
-		Theme:     theme.Default,
-		Mode:      v1.Mode_MODE_SYSTEM,
-		Interface: 1.25,
-		Font:      1.5,
+		Theme:          theme.Default,
+		Mode:           v1.Mode_MODE_SYSTEM,
+		InterfaceScale: 1.25,
+		TextScale:      1.5,
 	})
 
 	drawn := 1.75
@@ -189,7 +189,7 @@ func TestChoosingOneSizeLeavesTheOtherAsItStands(t *testing.T) {
 	if failed := answer.Msg.GetFailed(); failed != "" {
 		t.Fatalf("refused: %s", failed)
 	}
-	if len(worn.written) != 1 || worn.written[0].Interface != 1.75 || worn.written[0].Font != 0 {
+	if len(worn.written) != 1 || worn.written[0].InterfaceScale != 1.75 || worn.written[0].TextScale != 0 {
 		t.Fatalf("written: %+v", worn.written)
 	}
 }

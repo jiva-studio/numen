@@ -53,15 +53,15 @@ type Config struct {
 
 // Appearance is how the window is drawn.
 type Appearance struct {
-	// Interface is how large the window is drawn: its chrome, its controls, the
-	// spacing between them and the type in them. A number outside
-	// InterfaceBounds is refused, and a file naming no size at all is drawn at
-	// what the desktop asks for.
-	Interface float64 `json:"interface"`
+	// InterfaceScale is how large the window is drawn: its chrome, its controls,
+	// the spacing between them and the type in them. A number outside
+	// InterfaceScaleBounds is refused, and a file naming no size at all is drawn
+	// at what the desktop asks for.
+	InterfaceScale float64 `json:"interface_scale"`
 
-	// Font is how large the text a person reads is set: a note, a book, an
-	// answer, the editor. A number outside FontBounds is refused.
-	Font float64 `json:"font"`
+	// TextScale is how large the text a person reads is set: a note, a book, an
+	// answer, the editor. A number outside TextScaleBounds is refused.
+	TextScale float64 `json:"text_scale"`
 
 	// Mode is which half of a colour pair the window takes: ModeSystem,
 	// ModeLight or ModeDark. A theme that pins the two halves itself leaves
@@ -94,8 +94,8 @@ type Bounds struct{ Least, Most float64 }
 // side. Text holds while the smallest of it is still read, and while a line of
 // typing still fits the row it is typed in.
 var (
-	InterfaceBounds = Bounds{Least: 0.8, Most: 2}
-	FontBounds      = Bounds{Least: 0.8, Most: 1.75}
+	InterfaceScaleBounds = Bounds{Least: 0.8, Most: 2}
+	TextScaleBounds      = Bounds{Least: 0.8, Most: 1.75}
 )
 
 // Holds is whether a number is one the setting takes.
@@ -115,7 +115,7 @@ func (b Bounds) Check(at string, value float64) error {
 // Outside is a number a setting does not take, and how far that setting goes.
 // The number is left as the person wrote it and nothing is drawn at it.
 type Outside struct {
-	// At is where the number sits in the file: `appearance.font`.
+	// At is where the number sits in the file: `appearance.text_scale`.
 	At    string
 	Value float64
 	Bounds
@@ -128,10 +128,10 @@ func (o *Outside) Error() string {
 // Check is what is wrong with the two sizes, and nothing where each is a
 // number its setting takes.
 func (a Appearance) Check() error {
-	if err := InterfaceBounds.Check("appearance.interface", a.Interface); err != nil {
+	if err := InterfaceScaleBounds.Check("appearance.interface_scale", a.InterfaceScale); err != nil {
 		return err
 	}
-	return FontBounds.Check("appearance.font", a.Font)
+	return TextScaleBounds.Check("appearance.text_scale", a.TextScale)
 }
 
 // DefaultTheme is this product's own palette, which is what an installation
@@ -157,10 +157,10 @@ func Defaults() Config {
 	return Config{
 		V: 1,
 		Appearance: Appearance{
-			Interface: AsDesigned,
-			Font:      AsDesigned,
-			Mode:      ModeSystem,
-			Theme:     DefaultTheme,
+			InterfaceScale: AsDesigned,
+			TextScale:      AsDesigned,
+			Mode:           ModeSystem,
+			Theme:          DefaultTheme,
 		},
 		Indexing: Indexing{
 			Embedding:    embed.Defaults(),
@@ -197,7 +197,7 @@ func At(path string) (Config, error) {
 		// An installation nobody has configured is written down as what it is
 		// doing, the size the desktop asks for included. A machine that will
 		// not take the file runs on the same settings.
-		cfg.Appearance.Interface = fromDesktop()
+		cfg.Appearance.InterfaceScale = fromDesktop()
 		_ = write(path, cfg)
 		return cfg, nil
 	}
@@ -226,8 +226,8 @@ func At(path string) (Config, error) {
 func (c *Config) carrying(path string, raw []byte) {
 	var file struct {
 		Appearance struct {
-			Zoom      *float64 `json:"zoom"`
-			Interface *float64 `json:"interface"`
+			Zoom           *float64 `json:"zoom"`
+			InterfaceScale *float64 `json:"interface_scale"`
 		} `json:"appearance"`
 	}
 	if err := json.Unmarshal(raw, &file); err != nil {
@@ -235,7 +235,7 @@ func (c *Config) carrying(path string, raw []byte) {
 	}
 	// A file naming the size is drawn at it, and keeps the names it holds: one
 	// section holds one of a name.
-	if file.Appearance.Interface != nil {
+	if file.Appearance.InterfaceScale != nil {
 		return
 	}
 
@@ -246,16 +246,16 @@ func (c *Config) carrying(path string, raw []byte) {
 	}
 	switch {
 	case zoom <= 0:
-		c.Appearance.Interface = fromDesktop()
-	case InterfaceBounds.Holds(zoom):
-		c.Appearance.Interface = zoom
-		_ = rename(path, []string{"appearance", "zoom"}, "interface")
+		c.Appearance.InterfaceScale = fromDesktop()
+	case InterfaceScaleBounds.Holds(zoom):
+		c.Appearance.InterfaceScale = zoom
+		_ = rename(path, []string{"appearance", "zoom"}, "interface_scale")
 	default:
 		// One line of a band: the setting the number would be read as, and how
 		// far that goes. The number itself stays in the file, where a person
 		// wrote it and where they will read it again.
-		c.say("appearance.zoom is outside what interface takes, %v to %v",
-			InterfaceBounds.Least, InterfaceBounds.Most)
+		c.say("appearance.zoom is outside interface_scale, %v to %v",
+			InterfaceScaleBounds.Least, InterfaceScaleBounds.Most)
 	}
 }
 
@@ -264,10 +264,10 @@ func (c *Config) carrying(path string, raw []byte) {
 // A screen says how many pixels it has and not how large they are, so the
 // desktop is asked: GDK_DPI_SCALE is what a person told their session text
 // should be scaled by, and the interface is drawn to match. A number outside
-// InterfaceBounds is not one the setting is seeded with.
+// InterfaceScaleBounds is not one the setting is seeded with.
 func fromDesktop() float64 {
 	scale, err := strconv.ParseFloat(os.Getenv("GDK_DPI_SCALE"), 64)
-	if err != nil || !InterfaceBounds.Holds(scale) {
+	if err != nil || !InterfaceScaleBounds.Holds(scale) {
 		return AsDesigned
 	}
 	return scale

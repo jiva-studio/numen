@@ -126,7 +126,7 @@ func TestASizeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if said.Appearance.Interface != 1.5 || said.Appearance.Font != 1 {
+	if said.Appearance.InterfaceScale != 1.5 || said.Appearance.TextScale != 1 {
 		t.Errorf("the file says %+v", said.Appearance)
 	}
 
@@ -158,7 +158,7 @@ func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsWritten(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if failed := chosen.Msg.GetFailed(); !strings.Contains(failed, "appearance.font") {
+	if failed := chosen.Msg.GetFailed(); !strings.Contains(failed, "appearance.text_scale") {
 		t.Errorf("refused with %q", failed)
 	}
 
@@ -175,7 +175,7 @@ func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsWritten(t *testing.T) {
 // size for themselves is what it is let go of for.
 func TestASizeSaidForOneLaunchStandsUntilAPersonChoosesOne(t *testing.T) {
 	cfg := installed(t)
-	cfg.Interface = 1.25
+	cfg.InterfaceScale = 1.25
 	client := dressing(t, cfg)
 
 	answer, err := client.Themes(t.Context(), connect.NewRequest(&v1.ThemesRequest{}))

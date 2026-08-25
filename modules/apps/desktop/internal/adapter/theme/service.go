@@ -16,11 +16,11 @@ type Dress struct {
 	Theme string
 	Mode  v1.Mode
 
-	// Interface is how large the window is drawn and Font how large the text a
-	// person reads is set, AsDesigned being the size each was designed at. Zero
-	// is a size nobody named: in a choice it stands as it is, and in what is
+	// InterfaceScale is how large the window is drawn and TextScale how large the
+	// text a person reads is set, AsDesigned being the size each was designed at.
+	// Zero is a size nobody named: in a choice it stands as it is, and in what is
 	// worn the tokens hold their own.
-	Interface, Font float64
+	InterfaceScale, TextScale float64
 }
 
 // Bounds is how far a size goes, at each end. A client asking a person for a
@@ -46,8 +46,9 @@ type Service struct {
 	// refused and nothing is written.
 	Wear func(Dress) error
 
-	// InterfaceBounds and FontBounds are how far each of the two sizes goes.
-	InterfaceBounds, FontBounds Bounds
+	// InterfaceScaleBounds and TextScaleBounds are how far each of the two sizes
+	// goes.
+	InterfaceScaleBounds, TextScaleBounds Bounds
 
 	// Say is where a person is told what this could not do: a theme named in
 	// the settings that is not in the catalogue, and settings that could not be
@@ -84,10 +85,10 @@ func (s *Service) Themes(
 		Themes:          listed,
 		Applied:         applied,
 		Mode:            worn.Mode,
-		Interface:       worn.Interface,
-		Font:            worn.Font,
-		InterfaceBounds: bounded(s.InterfaceBounds),
-		FontBounds:      bounded(s.FontBounds),
+		Interface:       worn.InterfaceScale,
+		Font:            worn.TextScale,
+		InterfaceBounds: bounded(s.InterfaceScaleBounds),
+		FontBounds:      bounded(s.TextScaleBounds),
 	}), nil
 }
 
@@ -133,10 +134,10 @@ func (s *Service) Choose(
 		return failed("this build writes no settings")
 	}
 	chosen := Dress{
-		Theme:     name,
-		Mode:      req.Msg.GetMode(),
-		Interface: req.Msg.GetInterface(),
-		Font:      req.Msg.GetFont(),
+		Theme:          name,
+		Mode:           req.Msg.GetMode(),
+		InterfaceScale: req.Msg.GetInterface(),
+		TextScale:      req.Msg.GetFont(),
 	}
 	if err := s.Wear(chosen); err != nil {
 		return failed(err.Error())
@@ -175,10 +176,10 @@ func (s *Service) Changed(
 // not be read.
 func (s *Service) worn() Dress {
 	worn := Dress{
-		Theme:     Default,
-		Mode:      v1.Mode_MODE_SYSTEM,
-		Interface: AsDesigned,
-		Font:      AsDesigned,
+		Theme:          Default,
+		Mode:           v1.Mode_MODE_SYSTEM,
+		InterfaceScale: AsDesigned,
+		TextScale:      AsDesigned,
 	}
 	if s.Dressed == nil {
 		return worn
@@ -194,11 +195,11 @@ func (s *Service) worn() Dress {
 	if said.Mode != v1.Mode_MODE_UNSPECIFIED {
 		worn.Mode = said.Mode
 	}
-	if said.Interface > 0 {
-		worn.Interface = said.Interface
+	if said.InterfaceScale > 0 {
+		worn.InterfaceScale = said.InterfaceScale
 	}
-	if said.Font > 0 {
-		worn.Font = said.Font
+	if said.TextScale > 0 {
+		worn.TextScale = said.TextScale
 	}
 	return worn
 }

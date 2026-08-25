@@ -32,11 +32,11 @@ type Config struct {
 	// ThemesPath is the folder the person's own themes are read from.
 	ThemesPath string
 
-	// Interface is how large the window is drawn and Font how large the text a
-	// person reads is set, said for this launch alone. Each stands over the
-	// settings file until a person chooses that size themselves, and zero is
+	// InterfaceScale is how large the window is drawn and TextScale how large the
+	// text a person reads is set, said for this launch alone. Each stands over
+	// the settings file until a person chooses that size themselves, and zero is
 	// not said.
-	Interface, Font float64
+	InterfaceScale, TextScale float64
 	// Extensions are the file extensions treated as notes. Empty means the
 	// default, which is markdown alone.
 	Extensions []string

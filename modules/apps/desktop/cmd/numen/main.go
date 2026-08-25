@@ -61,12 +61,12 @@ type sizes struct{ drawn, set float64 }
 // check is what is wrong with a number the setting it says does not take.
 func (s sizes) check() error {
 	if s.drawn > 0 {
-		if err := settings.InterfaceBounds.Check("-interface", s.drawn); err != nil {
+		if err := settings.InterfaceScaleBounds.Check("-interface", s.drawn); err != nil {
 			return err
 		}
 	}
 	if s.set > 0 {
-		return settings.FontBounds.Check("-font", s.set)
+		return settings.TextScaleBounds.Check("-font", s.set)
 	}
 	return nil
 }
@@ -89,7 +89,7 @@ func run(cfg container.Config, agents agentOptions, vault string, said sizes) er
 	}
 	cfg = cfg.Indexing(chosen.Indexing)
 	cfg.Agent = chosen.Agent
-	cfg.Interface, cfg.Font = said.drawn, said.set
+	cfg.InterfaceScale, cfg.TextScale = said.drawn, said.set
 
 	// Before the window: every page this process reads is read through the
 	// runtime made here, and one made after the window reads a page as nothing.

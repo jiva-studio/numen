@@ -12,7 +12,7 @@ func TestWhatIsNotRenamed(t *testing.T) {
 		at   []string
 	}{
 		"a section already holding the name": {
-			`{"appearance":{"zoom":1.5,"interface":1.25}}`, []string{"appearance", "zoom"},
+			`{"appearance":{"zoom":1.5,"interface_scale":1.25}}`, []string{"appearance", "zoom"},
 		},
 		"a name the file has not got": {
 			`{"appearance":{"theme":"preset:numen"}}`, []string{"appearance", "zoom"},
@@ -33,7 +33,7 @@ func TestWhatIsNotRenamed(t *testing.T) {
 			`{"appearance":{"zoom":1.5}}`, nil,
 		},
 	} {
-		back, done := named([]byte(held.file), held.at, "interface")
+		back, done := named([]byte(held.file), held.at, "interface_scale")
 		if done {
 			t.Errorf("%s: renamed, leaving %s", what, back)
 		}
@@ -47,11 +47,11 @@ func TestWhatIsNotRenamed(t *testing.T) {
 // whatever lies between the two.
 func TestARenamedFieldKeepsItsValueAndItsPlace(t *testing.T) {
 	const held = "{\n  \"appearance\": {\n    \"zoom\"  :  1.50,\n    \"mode\": \"dark\"\n  }\n}\n"
-	back, done := named([]byte(held), []string{"appearance", "zoom"}, "interface")
+	back, done := named([]byte(held), []string{"appearance", "zoom"}, "interface_scale")
 	if !done {
 		t.Fatal("nothing was renamed")
 	}
-	want := "{\n  \"appearance\": {\n    \"interface\"  :  1.50,\n    \"mode\": \"dark\"\n  }\n}\n"
+	want := "{\n  \"appearance\": {\n    \"interface_scale\"  :  1.50,\n    \"mode\": \"dark\"\n  }\n}\n"
 	if string(back) != want {
 		t.Errorf("the file came back as:\n%s\nand not as:\n%s", back, want)
 	}
