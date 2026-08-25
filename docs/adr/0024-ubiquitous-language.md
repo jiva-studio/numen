@@ -20,6 +20,7 @@
 - **Extended:** 2026-08-24 — `theme`, `preset`, `mode` (ADR-0041)
 - **Extended:** 2026-08-25 — `interface` and `font`; `zoom` left with one
   meaning (ADR-0043)
+- **Extended:** 2026-08-25 — `current`, one word for the row in force
 - **Applies to:** the product as a whole
 - **Related:** ADR-0003, ADR-0006, ADR-0007, ADR-0011, ADR-0014, ADR-0020,
   ADR-0026, ADR-0031, ADR-0032, ADR-0034, ADR-0036, ADR-0037, ADR-0038,
@@ -184,6 +185,7 @@ in one place, meaning the obvious thing, needs no entry.
 | mode | Which half of a token's pair is taken: `system`, `light`, `dark`. A theme pinning `color-scheme` leaves it nothing to choose (ADR-0041) |
 | interface | How large the interface is drawn — chrome, controls, spacing, panels, and the type in them. A multiplier, 1 being as designed (ADR-0043) |
 | font | How large the text a person reads is set — a note, a book, an answer, the editor. A multiplier, 1 being as designed (ADR-0043) |
+| current | The row a list opens on, which is the one in force: the theme shelf, light and dark, the two size ladders, the vaults. Never *worn now*, which echoed a theme being worn and said it of that list alone, and never *the size now* |
 
 ### Words that were spent twice, and how they are settled
 
