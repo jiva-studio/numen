@@ -238,17 +238,22 @@ func TestAMoveOntoATakenNameLeavesBothWhereTheyAre(t *testing.T) {
 	}
 }
 
-// TestAMoveOfAPathWithNothingAtItLeavesNothingBehind. Only the core names a
-// path as missing, so a move the filesystem turned down crosses as the vault
-// being out of reach.
+// TestAMoveOfAPathWithNothingAtItLeavesNothingBehind, and says so as a
+// refusal: the core is what names a path as missing.
 func TestAMoveOfAPathWithNothingAtItLeavesNothingBehind(t *testing.T) {
 	f := quitting(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
 
-	_, err := f.client.Move(t.Context(), connect.NewRequest(&v1.MoveRequest{
+	answer, err := f.client.Move(t.Context(), connect.NewRequest(&v1.MoveRequest{
 		From: "physics", To: "science",
 	}))
-	if code := connect.CodeOf(err); code != connect.CodeInternal {
-		t.Errorf("a path with nothing at it was answered with %v", code)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_MISSING {
+		t.Errorf("a path with nothing at it was answered with %v", refusal)
+	}
+	if answer.Msg.GetMoved() != nil {
+		t.Error("a move that did not happen came back with a file under a different name")
 	}
 	if folder(t, f.root, "science") {
 		t.Error("a move that did not happen left a folder behind")
