@@ -142,23 +142,29 @@ export const PutOneAway: Story = {
 
 /**
  * Words far past the room there is, in a script that is not Latin and in one
- * with nothing to break at.
+ * with nothing to break at, beside one short word.
  *
- * Neither makes a card taller than its one line, and neither pushes the window
- * wider than itself.
+ * Neither makes a card taller than the short one, and neither pushes the
+ * window wider than itself. A card's height is its type and the clearance
+ * around it, both of which the interface multiplier moves, so the short card
+ * is the height to measure against at every size.
  */
 export const TooMuchToSay: Story = {
   args: {
     notices: [
       { id: 'one', says: RUSSIAN, about: LONG, done: 1, total: 2, working: true },
       { id: 'two', says: UNBREAKABLE, about: UNBREAKABLE, working: true },
+      { id: 'brief', says: 'Reading', working: true },
     ],
   },
   play: async () => {
-    await waitFor(() => expect(cards()).toHaveLength(2))
+    await waitFor(() => expect(cards()).toHaveLength(3))
+
+    const height = (card: HTMLElement) => card.getBoundingClientRect().height
+    const row = height(cards()[2]!)
 
     for (const card of cards()) {
-      await expect(card.getBoundingClientRect().height).toBeLessThan(48)
+      await expect(height(card)).toBeLessThanOrEqual(row + 1)
       await expect(card.scrollWidth).toBeLessThanOrEqual(card.clientWidth + 1)
     }
     await expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(

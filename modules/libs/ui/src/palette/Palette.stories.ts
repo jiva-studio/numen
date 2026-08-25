@@ -445,11 +445,13 @@ export const FarTooMany: Story = {
     const last = options().at(-1)!
     await expect(last.getAttribute('aria-selected')).toBe('true')
 
+    // A row is as tall as the type it is set in, so it lands on a fraction of
+    // a pixel and is brought into sight to within one.
     const list = document.body.querySelector<HTMLElement>('.palette__list')!
     const inside = last.getBoundingClientRect()
     const room = list.getBoundingClientRect()
-    await expect(inside.bottom).toBeLessThanOrEqual(Math.ceil(room.bottom))
-    await expect(inside.top).toBeGreaterThanOrEqual(Math.floor(room.top))
+    await expect(inside.bottom).toBeLessThanOrEqual(room.bottom + 1)
+    await expect(inside.top).toBeGreaterThanOrEqual(room.top - 1)
   },
 }
 
@@ -473,8 +475,10 @@ export const NotLatin: Story = {
 /**
  * Lines past any width, and words with nowhere to break.
  *
- * Each is one line and then an ellipsis, and none of them makes the panel any
- * wider than it is.
+ * Each is one line and then an ellipsis. The panel keeps the clearance it is
+ * drawn with on either side, and nothing in it pushes the window wider. The
+ * clearance is a length the interface multiplier moves, so it is read from the
+ * panel rather than named.
  */
 export const TooLong: Story = {
   args: {
@@ -494,10 +498,19 @@ export const TooLong: Story = {
     await waitFor(() => expect(palette()).not.toBeNull())
 
     const panel = document.body.querySelector<HTMLElement>('.palette__panel')!
-    await expect(panel.getBoundingClientRect().width).toBeLessThanOrEqual(640)
+    const over = document.body.querySelector<HTMLElement>('.palette')!
+    const clear = parseFloat(getComputedStyle(over).paddingInlineStart)
+    const drawn = panel.getBoundingClientRect()
+    const room = over.getBoundingClientRect()
+
+    await expect(drawn.left).toBeGreaterThanOrEqual(room.left + clear - 1)
+    await expect(drawn.right).toBeLessThanOrEqual(room.right - clear + 1)
     for (const option of options()) {
       await expect(option.scrollWidth).toBeLessThanOrEqual(option.clientWidth + 1)
     }
+    await expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
+      document.documentElement.clientWidth + 1,
+    )
   },
 }
 
