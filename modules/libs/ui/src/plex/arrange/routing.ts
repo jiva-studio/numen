@@ -34,7 +34,7 @@ export function routingFor(
 ): Routing {
   return {
     ...options.routing,
-    labelWidth: measureLabel,
+    labelWidth: measureLabel && measuredOnce(measureLabel),
     axisOf: (node) =>
       node.seat === 'focus'
         ? 'auto'
@@ -44,8 +44,28 @@ export function routingFor(
   }
 }
 
+/**
+ * The measurer as the arrangement asks it: each distinct string once, however
+ * many times the passes over one arrangement want the same words.
+ */
+function measuredOnce(measure: (label: string) => number): (label: string) => number {
+  const widths = new Map<string, number>()
+
+  return (label) => {
+    const known = widths.get(label)
+    if (known !== undefined) return known
+
+    const width = measure(label)
+    widths.set(label, width)
+    return width
+  }
+}
+
 /** The one character a cut title ends in. */
 const ELLIPSIS = '…'
+
+/** The middle of a line, where a title is set until something is in the way. */
+export const MIDDLE = 0.5
 
 /**
  * The words a curve has room for: the longest start of the label that fits it,
@@ -162,7 +182,15 @@ export function routeEdge(
 
   const arrowhead = edge.arrow ? arrowOf(curve, edge.arrow) : undefined
 
-  return { ...edge, ...curve, opacity, heading: headingOf(curve), words, arrowhead }
+  return {
+    ...edge,
+    ...curve,
+    opacity,
+    heading: headingOf(curve),
+    words,
+    wordsAt: MIDDLE,
+    arrowhead,
+  }
 }
 
 export function routeEdges(

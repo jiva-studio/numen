@@ -41,6 +41,7 @@ export const scaleOptions = (options: PlexOptions, by: number): PlexOptions => (
     ...options.routing,
     minReach: options.routing.minReach * by,
     arrowRoom: options.routing.arrowRoom * by,
+    labelHeight: options.routing.labelHeight * by,
   },
 })
 

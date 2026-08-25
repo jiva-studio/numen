@@ -717,6 +717,67 @@ export const TitledLines: Story = {
 }
 
 /**
+ * How much of the picture the titles cover each other in. The playground's own
+ * neighbourhood, which is the crowded one: a fan of lines out of every node,
+ * many of them saying the same word.
+ *
+ * Two counts, and the assertion is the count itself, so a picture that gets
+ * worse says by how much. Only a browser can answer either: how wide the words
+ * are in the type they are set in, and where the glyphs land once they are
+ * bent along their curves.
+ *
+ * It stands on its own, since the playground is a plex to turn knobs on.
+ */
+export const TitlesFindRoom: Story = {
+  args: { ...invented.args, duration: 0 },
+  render: invented.render,
+  play: async ({ canvasElement }) => {
+    /** Whether two boxes on the screen share any of it. */
+    const meets = (one: DOMRect, other: DOMRect) =>
+      one.left < other.right &&
+      other.left < one.right &&
+      one.top < other.bottom &&
+      other.top < one.bottom
+
+    /** The letters of each title, which is the layer the halo is painted for. */
+    const titles = () => [
+      ...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label--letters'),
+    ]
+
+    // The window is measured after the first drawing, so the plex settles on
+    // its second.
+    await waitFor(async () => {
+      await expect(titles().length).toBeGreaterThan(8)
+    })
+
+    const drawn = titles().map((text) => ({
+      words: text.textContent,
+      box: text.getBoundingClientRect(),
+    }))
+    const boxes = [
+      ...canvasElement.querySelectorAll<SVGRectElement>('.plex__box'),
+    ].map((box) => box.getBoundingClientRect())
+
+    const piled: string[] = []
+    for (const [at, title] of drawn.entries()) {
+      for (const other of drawn.slice(at + 1)) {
+        if (meets(title.box, other.box)) piled.push(`${title.words} × ${other.words}`)
+      }
+    }
+
+    const overBoxes = drawn
+      .filter((title) => boxes.some((box) => meets(title.box, box)))
+      .map((title) => title.words)
+
+    // What is left is the crowding no line can slide its way out of: three
+    // jumps sitting a title's width from the focus, and two children reached
+    // through a gap between boxes narrower than a title.
+    await expect(piled).toHaveLength(3)
+    await expect(overBoxes).toHaveLength(3)
+  },
+}
+
+/**
  * One note's lines as the demo vault has them: two the plex is asked to draw
  * an arrow on, one it is not, and a sibling's line hanging off the parent the
  * two of them share.

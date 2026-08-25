@@ -119,7 +119,7 @@ const arrowhead = (edge: PlacedEdge) =>
  * Every edge with what the drawing asks of it: the two keys it is remembered
  * by, the curve, the line its title is set along, and the arrowhead it ends
  * in. A title is always set along the line it belongs to, in the words the
- * arrangement cut for it.
+ * arrangement cut for it and at the place along it the arrangement chose.
  */
 const lines = computed(() =>
   props.frame.edges.map((edge, at) => ({
@@ -132,6 +132,7 @@ const lines = computed(() =>
     arrow: arrowhead(edge),
     titlePath: edge.words ? `${uid}-title-${at}` : null,
     titleLine: readingLine(edge),
+    titleAt: `${100 * edge.wordsAt}%`,
   })),
 )
 
@@ -262,7 +263,7 @@ const ghost = computed<PlacedNode | null>(() => {
             dominant-baseline="middle"
           ><textPath
             :href="`#${line.titlePath}`"
-            startOffset="50%"
+            :startOffset="line.titleAt"
           >{{ line.edge.words }}</textPath></text>
         </template>
       </template>
@@ -305,7 +306,7 @@ const ghost = computed<PlacedNode | null>(() => {
             dominant-baseline="middle"
           ><textPath
             :href="`#${line.titlePath}`"
-            startOffset="50%"
+            :startOffset="line.titleAt"
           >{{ line.edge.words }}</textPath></text>
         </template>
       </template>
