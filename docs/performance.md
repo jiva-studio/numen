@@ -920,13 +920,28 @@ three thousand rows of chrome.
 
 | the multiplier changed | forced layout |
 | --- | --- |
-| `--numen-interface` | 29–36 ms |
-| `--numen-font` | 4–5 ms |
+| `--numen-interface` | 27–39 ms |
+| `--numen-font` | 4–6 ms |
 
 The interface is the root's font size, so every length written in `rem` is
-measured again and the whole document is laid out. What follows the reading size
-is the editor and marked-up text, which is a part of the page and not the whole
-of it.
+measured again and the whole document is laid out. The reading size is written
+in `rem` as well, so the interface carries the editor and marked-up text along
+with everything else: what the reading size moves stands inside what the
+interface moves, and not beside it.
+
+The editor draws only the lines that are on screen — thirty-six of the four
+hundred — so what it adds to either is a screen of text, whatever the note is
+worth. Marked-up text draws all of it. The same window with four hundred blocks
+of a note on screen, over the whole stylesheet rather than the tokens alone:
+
+| the multiplier changed | with the note | without it |
+| --- | --- | --- |
+| `--numen-interface` | 45–71 ms | 32–43 ms |
+| `--numen-font` | 9–13 ms | 7–11 ms |
+
+Those two columns are read against each other. A page carrying the whole
+stylesheet costs more to recalculate than one carrying the tokens, which is why
+neither column meets the table above.
 
 A held arrow key crosses a row of the size list every 40 ms, and a size is worn
 once the keyboard has stood on a row for 150 ms.
