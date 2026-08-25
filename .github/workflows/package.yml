@@ -445,9 +445,10 @@ jobs:
             want=$(stat -c%s "$file")
             # A purge is answered before it has reached every edge, so a name
             # asked for straight after one can come back as nothing yet.
+            # -w ends no line of its own, and read wants one.
             read -r code length < <(curl -sS -o /dev/null -L \
               --retry 6 --retry-delay 5 --retry-all-errors -f \
-              -w '%{http_code} %{size_download}' "$SERVED_FROM/latest/$name" || true)
+              -w '%{http_code} %{size_download}\n' "$SERVED_FROM/latest/$name" || true)
             echo "${code:-—}  $name  ${length:-0} of $want"
             if [ "${code:-0}" != 200 ] || [ "${length:-0}" != "$want" ]; then
               echo "::error::$name did not come back whole from $SERVED_FROM"
