@@ -33,11 +33,16 @@ export interface BoxOptions {
   /** Kept clear of the window edge, so nothing sits flush against it. */
   readonly margin: number
   /**
-   * How far a gap may open beyond its setting when the window has room. The
-   * gaps above are the least a gap is given; this multiple of them is the
-   * most. At one, a gap is its setting and nothing else.
+   * How far a gap may open beyond its setting when the window has room. This
+   * multiple of a gap is the most it is given. At one, a gap never opens.
    */
   readonly spread: number
+  /**
+   * How far a gap closes below its setting when the window is short of room.
+   * This fraction of a gap is the least it is given, and a box narrows towards
+   * `minWidth` alongside it. At one, nothing closes.
+   */
+  readonly squeeze: number
 }
 
 export interface LimitOptions {
@@ -112,6 +117,7 @@ export const DEFAULT_OPTIONS: PlexOptions = {
   focusGap: 56,
   margin: 16,
   spread: 2.5,
+  squeeze: 0.35,
   maxPerLine: 5,
   maxLines: 4,
   routing: { curvature: 0.55, minReach: 22, arrowRoom: 14 },

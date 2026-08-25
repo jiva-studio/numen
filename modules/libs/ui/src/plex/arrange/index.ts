@@ -1,5 +1,6 @@
 /** The decisions, as values: no DOM, no Vue, no clock. */
 export { arrangePlex, type ArrangeInput } from './arrange'
+export { crowdingFor, packed, type Counts } from './crowding'
 export { limitsFor, type Limits, type RoleLimits } from './limits'
 export {
   nodeAt,

@@ -15,6 +15,7 @@ import {
   type PlexNode,
   type PlexRelatedSeat,
 } from '../model'
+import { crowdingFor } from './crowding'
 import { limitsFor, type Limits } from './limits'
 import { resolveOptions, type PlexOptions, type PlexOptionsInput } from './options'
 import { rowsAndColumns, type Placement, type Seating, type Widths } from './placement'
@@ -55,8 +56,13 @@ export function arrangePlex(
     labelDepth,
   }: ArrangeInput = {},
 ): PlexFrame {
-  const resolved = resolveOptions(options)
+  const asked = resolveOptions(options)
   const focusNode = assertNeighbourhood(neighbourhood)
+  const counts = countSeats(neighbourhood.nodes)
+
+  // Packed as closely as this window needs and no closer, so a box narrows
+  // and a gap closes before a seat is given up.
+  const resolved = crowdingFor(asked, counts)
   const widthOf = widthsFor(resolved, measure)
 
   const focus: PlacedNode = {
@@ -69,12 +75,11 @@ export function arrangePlex(
     opacity: 1,
   }
 
-  const counts = countSeats(neighbourhood.nodes)
   const limits = limitsFor(resolved, counts)
 
   const { seating, overflow } = admit(neighbourhood.nodes, limits)
 
-  // How much is admitted is settled at the settings, and the gaps then open
+  // How much is admitted is settled at that packing, and the gaps then open
   // into the room that is left. The opening is measured against the
   // arrangement itself, so a placement of any shape keeps the window.
   const lay = (spacing: Spacing) =>

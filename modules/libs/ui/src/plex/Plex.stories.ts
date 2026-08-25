@@ -49,6 +49,7 @@ interface Knobs {
   focusGap: number
   margin: number
   spread: number
+  squeeze: number
   maxPerLine: number
   maxLines: number
   orientation: 'parents above' | 'parents below'
@@ -86,6 +87,7 @@ const knobbed = (a: Knobs): PlexOptionsInput => ({
   lineGap: a.lineGap,
   focusGap: a.focusGap,
   margin: a.margin,
+  squeeze: a.squeeze,
   spread: a.spread,
   maxPerLine: a.maxPerLine,
   maxLines: a.maxLines,
@@ -275,6 +277,7 @@ const meta = {
     focusGap: range(8, 200, 4),
     margin: range(0, 160, 4),
     spread: range(1, 4, 0.1),
+    squeeze: range(0.2, 1, 0.05),
     maxPerLine: range(1, 12),
     maxLines: range(1, 8),
     orientation: {
@@ -342,6 +345,7 @@ const meta = {
     focusGap: 56,
     margin: 16,
     spread: 2.5,
+    squeeze: 0.35,
     maxPerLine: 5,
     maxLines: 4,
     orientation: 'parents above',
@@ -634,7 +638,9 @@ const titledLines: PlexNeighbourhood = {
  * come to rest, and a line on its way somewhere cannot be pointed at.
  */
 export const TitledLines: Story = {
-  args: { neighbourhood: titledLines, duration: 0 },
+  // At the settings, so the story is about the cutting and not about how far
+  // a roomy window opens the gaps a title is set along.
+  args: { neighbourhood: titledLines, duration: 0, spread: 1 },
   play: async ({ canvasElement }) => {
     /** Both layers of one title: the halo first, the letters over it. */
     const title = (words: string) =>
@@ -775,11 +781,10 @@ export const TitlesFindRoom: Story = {
       .filter((title) => boxes.some((box) => meets(title.box, box)))
       .map((title) => title.words)
 
-    // What is left is the crowding no line can slide its way out of: three
-    // jumps sitting a title's width from the focus, and two children reached
-    // through a gap between boxes narrower than a title.
-    await expect(piled).toHaveLength(3)
-    await expect(overBoxes).toHaveLength(3)
+    // Every title has somewhere to be: none of them lies on another, and none
+    // of them lies over a box.
+    await expect(piled).toHaveLength(0)
+    await expect(overBoxes).toHaveLength(0)
   },
 }
 
