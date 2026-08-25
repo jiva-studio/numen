@@ -5,7 +5,7 @@
  * the code that draws it. What is left here is the window itself: its tabs,
  * the palette, the commands, the corner, and the quit.
  */
-import { commandKeyWord } from '@numen/ui'
+import { commandKeyChord } from '@numen/ui'
 import type { Refused, VaultRefused } from './core'
 import { WORDS as agent } from './agent/words'
 import { WORDS as note } from './note/words'
@@ -79,7 +79,7 @@ export const WORDS = {
   mode: 'Light or dark',
   interface: 'Interface size',
   font: 'Reading font size',
-  findKeys: commandKeyWord(navigator.userAgent),
+  findKeys: commandKeyChord(navigator.userAgent),
   first: 'Go to the note the vault opens with',
   goto: 'Go to a note',
   openVault: 'Open vault',

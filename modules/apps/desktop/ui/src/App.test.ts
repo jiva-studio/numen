@@ -8,7 +8,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
-import { Agent, branch, Editor, pane, Palette, Plex, Reader, Workspace } from '@numen/ui'
+import {
+  Agent,
+  branch,
+  Editor,
+  pane,
+  Palette,
+  Plex,
+  Reader,
+  Workspace,
+  type PaletteBand,
+} from '@numen/ui'
 import AgentTab from './agent/AgentTab.vue'
 import DocumentTab from './document/DocumentTab.vue'
 import NoteTab from './note/NoteTab.vue'
@@ -385,9 +395,7 @@ describe('a command reached by its own keystroke', () => {
 
   /** The row of a command in the list of commands, by the identity it is drawn under. */
   const rowOf = (window: Awaited<ReturnType<typeof drawn>>, id: string) => {
-    const bands = window.findComponent(Palette).props('bands') as readonly {
-      items: readonly { id: string; keys?: string }[]
-    }[]
+    const bands = window.findComponent(Palette).props('bands') as readonly PaletteBand[]
     return bands.flatMap((band) => band.items).find((one) => one.id === id)
   }
 
@@ -397,8 +405,8 @@ describe('a command reached by its own keystroke', () => {
     pressed('p')
     await settles()
 
-    expect(rowOf(window, 'note')?.keys).toBe('⌃N')
-    expect(rowOf(window, 'goto')?.keys).toBe('⌃G')
+    expect(rowOf(window, 'note')?.keys).toEqual({ marks: ['control'], letter: 'N' })
+    expect(rowOf(window, 'goto')?.keys).toEqual({ marks: ['control'], letter: 'G' })
   })
 
   it('draws no keystroke on the rows no keystroke reaches', async () => {
@@ -572,16 +580,14 @@ describe('a command reached by a keystroke holding Shift', () => {
     pressed('p')
     await settles()
 
-    const bands = window.findComponent(Palette).props('bands') as readonly {
-      items: readonly { id: string; keys?: string }[]
-    }[]
+    const bands = window.findComponent(Palette).props('bands') as readonly PaletteBand[]
     const drawnKeys = Object.fromEntries(
       bands.flatMap((band) => band.items).map((one) => [one.id, one.keys]),
     )
-    expect(drawnKeys['travel']).toBe('⌃⇧P')
-    expect(drawnKeys['child']).toBe('⌃⇧C')
-    expect(drawnKeys['agent']).toBe('⌃⇧A')
-    expect(drawnKeys['close']).toBe('⌃⇧W')
+    expect(drawnKeys['travel']).toEqual({ marks: ['control', 'shift'], letter: 'P' })
+    expect(drawnKeys['child']).toEqual({ marks: ['control', 'shift'], letter: 'C' })
+    expect(drawnKeys['agent']).toEqual({ marks: ['control', 'shift'], letter: 'A' })
+    expect(drawnKeys['close']).toEqual({ marks: ['control', 'shift'], letter: 'W' })
   })
 })
 

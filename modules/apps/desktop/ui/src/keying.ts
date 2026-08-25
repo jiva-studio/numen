@@ -10,7 +10,7 @@
  * `p` the commands; neither is a command being carried out, and each is that
  * letter with Shift left alone.
  */
-import { keyWord } from '@numen/ui'
+import { keyChord, type PaletteKeys } from '@numen/ui'
 
 /** One command a keystroke reaches. */
 export interface Chord {
@@ -50,8 +50,17 @@ export const chorded = (event: {
 export const commandFor = (letter: string, shift: boolean): string =>
   CHORDS.find((one) => one.letter === letter.toLowerCase() && one.shift === shift)?.command ?? ''
 
-/** How a command's keystroke is written on the keyboard in hand. */
-export const keyOf = (command: string, agent: string): string => {
+/**
+ * How a command's keystroke is drawn on the keyboard in hand, and nothing for
+ * a command no keystroke reaches.
+ */
+export const keyOf = (command: string, agent: string): PaletteKeys | undefined => {
   const chord = CHORDS.find((one) => one.command === command)
-  return chord ? keyWord(chord.letter, agent, chord.shift) : ''
+  return chord ? keyChord(chord.letter, agent, chord.shift) : undefined
+}
+
+/** That keystroke as a row of the palette takes it. */
+export const keysOf = (command: string, agent: string): { keys?: PaletteKeys } => {
+  const drawn = keyOf(command, agent)
+  return drawn ? { keys: drawn } : {}
 }

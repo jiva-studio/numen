@@ -10,9 +10,9 @@
  * own, and the step it is on is what the field means.
  */
 import { computed, ref, shallowRef } from 'vue'
-import type { PaletteBand, PaletteItem } from '@numen/ui'
+import type { PaletteBand, PaletteItem, PaletteKeys } from '@numen/ui'
 import { wentTo, type Known, type Listed, type Went } from './core'
-import { keyOf } from './keying'
+import { keysOf } from './keying'
 import type { Named, Silences } from './finding'
 
 /** What the commands ask of the application before anything is chosen. */
@@ -139,7 +139,7 @@ export interface Command {
   readonly id: string
   readonly text: string
   /** The keystroke that reaches it away from the palette. */
-  readonly keys?: string
+  readonly keys?: PaletteKeys
   /** What it asks for before it happens. */
   readonly needs?: Needed
   /** The step it asks for once the first one is answered. */
@@ -209,7 +209,7 @@ export interface Words extends Silences {
   readonly font: string
   readonly find: string
   /** The keystroke the search answers to away from the palette. */
-  readonly findKeys: string
+  readonly findKeys: PaletteKeys
   readonly first: string
   readonly goto: string
   /** The commands over the vaults this installation holds. */
@@ -320,11 +320,11 @@ export const commandsOf = (
 ): readonly Command[] => [
   { id: 'read', text: words.read, band: 'note', where: onNote, also: 'beside' },
   { id: 'beside', text: words.beside, band: 'note', where: onNote },
-  { id: 'travel', text: words.travel, keys: keyOf('travel', agent), band: 'note', where: onNote },
+  { id: 'travel', text: words.travel, ...keysOf('travel', agent), band: 'note', where: onNote },
   {
     id: 'child',
     text: words.child,
-    keys: keyOf('child', agent),
+    ...keysOf('child', agent),
     band: 'note',
     needs: 'naming',
     where: onNote,
@@ -366,17 +366,17 @@ export const commandsOf = (
   {
     id: 'note',
     text: words.newNote,
-    keys: keyOf('note', agent),
+    ...keysOf('note', agent),
     band: 'window',
     needs: 'naming',
     where: (at) => at.ready,
   },
   { id: 'plex', text: words.newPlex, band: 'window', where: always },
-  { id: 'agent', text: words.newAgent, keys: keyOf('agent', agent), band: 'window', where: always },
+  { id: 'agent', text: words.newAgent, ...keysOf('agent', agent), band: 'window', where: always },
   {
     id: 'close',
     text: words.close,
-    keys: keyOf('close', agent),
+    ...keysOf('close', agent),
     band: 'window',
     where: (at) => at.tab !== '',
   },
@@ -389,7 +389,7 @@ export const commandsOf = (
   {
     id: 'goto',
     text: words.goto,
-    keys: keyOf('goto', agent),
+    ...keysOf('goto', agent),
     band: 'vault',
     needs: 'picking',
     where: (at) => at.ready,

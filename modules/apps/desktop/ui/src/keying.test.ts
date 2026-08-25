@@ -6,7 +6,7 @@
  * command the window does not have would draw a cap over silence.
  */
 import { describe, expect, it } from 'vitest'
-import { chorded, commandFor, keyOf, CHORDS } from './keying'
+import { chorded, commandFor, keyOf, keysOf, CHORDS } from './keying'
 import { commandsOf } from './commanding'
 import { WORDS as words } from './words'
 
@@ -67,20 +67,21 @@ describe('the command a letter asks for', () => {
   })
 })
 
-describe('how a keystroke is written on the row that names it', () => {
-  it('is the sign the keyboard in hand uses, and the letter in capitals', () => {
-    expect(keyOf('note', 'MacIntel')).toBe('⌘N')
-    expect(keyOf('note', 'Linux x86_64')).toBe('⌃N')
-    expect(keyOf('goto', 'Linux x86_64')).toBe('⌃G')
+describe('how a keystroke is drawn on the row that names it', () => {
+  it('is the key the keyboard in hand holds, and the letter in capitals', () => {
+    expect(keyOf('note', 'MacIntel')).toEqual({ marks: ['command'], letter: 'N' })
+    expect(keyOf('note', 'Linux x86_64')).toEqual({ marks: ['control'], letter: 'N' })
+    expect(keyOf('goto', 'Linux x86_64')).toEqual({ marks: ['control'], letter: 'G' })
   })
 
   it('carries Shift where the chord holds it', () => {
-    expect(keyOf('travel', 'MacIntel')).toBe('⌘⇧P')
-    expect(keyOf('close', 'Linux x86_64')).toBe('⌃⇧W')
+    expect(keyOf('travel', 'MacIntel')).toEqual({ marks: ['command', 'shift'], letter: 'P' })
+    expect(keyOf('close', 'Linux x86_64')).toEqual({ marks: ['control', 'shift'], letter: 'W' })
   })
 
   it('is nothing for a command no keystroke reaches', () => {
-    expect(keyOf('destroy', 'Linux x86_64')).toBe('')
+    expect(keyOf('destroy', 'Linux x86_64')).toBeUndefined()
+    expect(keysOf('destroy', 'Linux x86_64')).toEqual({})
   })
 })
 
@@ -96,7 +97,7 @@ describe('every keystroke the table holds', () => {
   it('is drawn on the row of the command it names', () => {
     for (const held of CHORDS) {
       const command = commands.find((one) => one.id === held.command)
-      expect(command?.keys).toBe(keyOf(held.command, APPLE))
+      expect(command?.keys).toEqual(keyOf(held.command, APPLE))
     }
   })
 
