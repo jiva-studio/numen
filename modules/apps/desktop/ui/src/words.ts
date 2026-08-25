@@ -118,11 +118,10 @@ export const WORDS = {
   light: 'Light',
   dark: 'Dark',
   pinned: 'The theme worn sets this itself',
-  /** The band each of the two sizes is drawn in, and what is said on a row. */
+  /** The band each of the two sizes is drawn in, and the size drawn now. */
   drawing: 'How large the interface is drawn',
   setting: 'How large the text is set',
   sized: 'The size now',
-  designed: 'As designed',
   /** The themes could not be listed, and a theme's file could not be read. */
   unlisted: 'The themes could not be listed',
   unworn: 'That theme could not be read, so it is not worn',

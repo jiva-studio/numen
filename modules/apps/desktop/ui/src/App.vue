@@ -205,10 +205,10 @@ watch(dressed.sized, () => noted.measures())
 
 /** The lists the window itself holds, which a step of a command offers. */
 const kept: Holds = {
-  offers: (command) => {
+  offers: (command, typed) => {
     if (command === APPEARANCE) return dressed.offers()
     if (command === MODE) return dressed.modes()
-    if (command === INTERFACE || command === FONT) return dressed.sizes(command)
+    if (command === INTERFACE || command === FONT) return dressed.sizes(command, typed)
     return []
   },
   shows: (command, item) => {

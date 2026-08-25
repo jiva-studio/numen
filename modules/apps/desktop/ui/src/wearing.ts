@@ -36,9 +36,8 @@ export interface Words {
   /** The band each of the two sizes is drawn in. */
   readonly drawing: string
   readonly setting: string
-  /** The size the settings name, and the size everything was designed at. */
+  /** The size the settings name, said on its row. */
   readonly sized: string
-  readonly designed: string
   /** The themes could not be listed, and one theme's file could not be read. */
   readonly unlisted: string
   readonly unworn: string
@@ -67,8 +66,15 @@ interface Sized {
 /** The multiplier that draws everything the size it was designed at. */
 const DESIGNED = 1
 
-/** How far apart the sizes a person is offered stand. */
-const APART = 0.25
+/** How many sizes stand between one whole and the next. */
+const STEPS = 10
+
+/**
+ * A number a person typed, which is a whole number of percent. The row it makes
+ * is titled in the digits that were typed, so the words typed always leave it
+ * standing.
+ */
+const TYPED = /^(\d+)\s*%?$/
 
 /**
  * How long the keyboard has to have stood on a size before the window is drawn
@@ -157,24 +163,49 @@ const after = (before: HTMLStyleElement, sheet: Document): HTMLStyleElement => {
 const declared = (sizes: Sizes): string =>
   `:root { --numen-interface: ${sizes.interface}; --numen-font: ${sizes.font}; }`
 
+/** Whether a range reaches a size. A range holding nothing reaches none. */
+const reaches = (range: Bounds, size: number): boolean =>
+  range.most > range.least && range.least > 0 && size >= range.least && size <= range.most
+
 /**
- * The sizes offered between the ends of a range: every multiple of APART
- * inside it, with each end itself. A range holding nothing offers nothing.
+ * The sizes standing between the ends of a range: every step inside it, with
+ * each end itself, so the end is offered wherever it falls.
  */
-const ladder = (bounds: Bounds): readonly number[] => {
-  if (!(bounds.most > bounds.least) || bounds.least <= 0) return []
-  const rungs = [bounds.least]
-  const first = Math.ceil(bounds.least / APART)
-  const last = Math.floor(bounds.most / APART)
+const ladder = (range: Bounds): readonly number[] => {
+  if (!reaches(range, range.least)) return []
+  const rungs = [range.least]
+  const first = Math.ceil(range.least * STEPS)
+  const last = Math.floor(range.most * STEPS)
   for (let step = first; step <= last; step += 1) {
-    const size = step * APART
-    if (size > bounds.least && size < bounds.most) rungs.push(size)
+    const size = step / STEPS
+    if (size > range.least && size < range.most) rungs.push(size)
   }
-  return [...rungs, bounds.most]
+  return [...rungs, range.most]
+}
+
+/** The size those digits name, and nothing where what was typed is not digits. */
+const typedSize = (typed: string): number | null => {
+  const said = TYPED.exec(typed.trim())
+  return said ? Number(said[1]) / 100 : null
 }
 
 /** A multiplier as a person reads it. */
 const percent = (size: number): string => `${Math.round(size * 100)}%`
+
+/**
+ * The rows one to a title. A size the list already holds is not held twice, and
+ * the first of a pair is the one that stands.
+ */
+const once = (rows: readonly Offered[]): readonly Offered[] => {
+  const seen = new Set<string>()
+  const only: Offered[] = []
+  for (const one of rows) {
+    if (seen.has(one.title)) continue
+    seen.add(one.title)
+    only.push(one)
+  }
+  return only
+}
 
 /** A range until the application has said what one is. */
 const NOWHERE: Bounds = { least: 0, most: 0 }
@@ -419,28 +450,30 @@ export function wearing(
     return [{ id: 'half', title: words.half, items: MODES.map(row) }]
   }
 
-  /** What is said beside a size: that it is the one, or that it is as designed. */
-  const alongside = (which: Which, size: number): string => {
-    if (size === its(settings.value, which)) return words.sized
-    return size === DESIGNED ? words.designed : ''
-  }
-
   /**
-   * The sizes one of the two commands offers, in one band of its own. A range
-   * the application has not answered with offers nothing.
+   * The sizes one of the two commands offers, in one band of its own: every
+   * step the range reaches, the size the window is drawn at, and the number a
+   * person typed. Each stands once, in order, and the range is what a size has
+   * to be inside to stand at all.
+   *
+   * The one row that says anything is the size the window is drawn at, which is
+   * where a person is standing before they walk.
    */
-  const sizes = (command: string): readonly Offering[] => {
+  const sizes = (command: string, typed = ''): readonly Offering[] => {
     const which: Which = command === FONT ? FONT : INTERFACE
-    const row = (size: number): Offered => {
-      const detail = alongside(which, size)
-      return {
-        id: sizing(which, size),
-        title: percent(size),
-        ...(detail ? { detail } : {}),
-      }
-    }
+    const range = its(bounds.value, which)
+    const now = its(settings.value, which)
+    const said = typedSize(typed)
+    const row = (size: number): Offered => ({
+      id: sizing(which, size),
+      title: percent(size),
+      ...(size === now ? { detail: words.sized } : {}),
+    })
+    const held = [...ladder(range), now, ...(said === null ? [] : [said])]
+      .filter((size) => reaches(range, size))
+      .sort((first, second) => first - second)
     const title = which === INTERFACE ? words.drawing : words.setting
-    return [{ id: which, title, items: ladder(its(bounds.value, which)).map(row) }]
+    return [{ id: which, title, items: once(held.map(row)) }]
   }
 
   /**
@@ -452,7 +485,7 @@ export function wearing(
     stood.value = item
     clearTimeout(holds)
     const size = sizeOf(item)
-    if (size) {
+    if (size && reaches(its(bounds.value, size.which), size.size)) {
       holds = setTimeout(() => (holding.value = size), HELD)
       return
     }
@@ -491,7 +524,7 @@ export function wearing(
    * the settings refuse is said, and the window goes back to the size they hold.
    */
   const picks = async (chosen: Sized) => {
-    if (!ladder(its(bounds.value, chosen.which)).includes(chosen.size)) return
+    if (!reaches(its(bounds.value, chosen.which), chosen.size)) return
     const was = settings.value
     said.value = ''
     clearTimeout(holds)

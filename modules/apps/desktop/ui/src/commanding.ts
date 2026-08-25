@@ -47,8 +47,11 @@ export interface Offering {
  * window holds may change while the step stands open.
  */
 export interface Holds {
-  /** What this command offers now, in the bands it is drawn in. */
-  offers(command: string): readonly Offering[]
+  /**
+   * What this command offers now, in the bands it is drawn in. The words typed
+   * come too: a list may hold a row made out of them.
+   */
+  offers(command: string, typed: string): readonly Offering[]
   /** The one the keyboard is standing on, and nothing where it stands on none. */
   shows(command: string, item: string): void
 }
@@ -731,7 +734,7 @@ export function commanding(
    */
   const choosing = (step: Asked, text: string): readonly PaletteBand[] => {
     const word = text.trim().toLowerCase()
-    return holds.offers(step.command.id).map((band) => ({
+    return holds.offers(step.command.id, text).map((band) => ({
       id: band.id,
       title: band.title,
       items: band.items.map((one) => offered(one, word)).filter((item) => item !== null),
@@ -947,7 +950,7 @@ export function commanding(
       return deed(step.command.id, step.on, name)
     }
     if (step.step === 'choosing') {
-      const rows = holds.offers(step.command.id).flatMap((band) => band.items)
+      const rows = holds.offers(step.command.id, typed.value).flatMap((band) => band.items)
       const one = rows.find((row) => row.id === item)
       if (!one || one.disabled) return null
       return deed(step.command.id, step.on, one.id)

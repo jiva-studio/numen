@@ -70,6 +70,23 @@ const stands = () => new Promise((done) => setTimeout(done, 200))
 /** A range narrower than the one the application answers with. */
 const NARROW = { least: 1, most: 1.5 }
 
+/** Every tenth the interface goes between, as a person reads them. */
+const TENTHS = [
+  '80%',
+  '90%',
+  '100%',
+  '110%',
+  '120%',
+  '130%',
+  '140%',
+  '150%',
+  '160%',
+  '170%',
+  '180%',
+  '190%',
+  '200%',
+]
+
 /** The person's folder, which a test writes to. */
 const folder = () => {
   let wake: ((names: readonly string[]) => void) | null = null
@@ -353,19 +370,10 @@ describe('the sizes the two steps offer', () => {
   it('walks each range from end to end, in quarters, with both ends on it', async () => {
     const one = await dressed()
 
-    expect(rows(one, INTERFACE).map((row) => row.title)).toStrictEqual([
-      '80%',
-      '100%',
-      '125%',
-      '150%',
-      '175%',
-      '200%',
-    ])
+    expect(rows(one, INTERFACE).map((row) => row.title)).toStrictEqual(TENTHS)
+    // The far end of this one falls between two steps, and is offered there.
     expect(rows(one, FONT).map((row) => row.title)).toStrictEqual([
-      '80%',
-      '100%',
-      '125%',
-      '150%',
+      ...TENTHS.slice(0, 10),
       '175%',
     ])
   })
@@ -381,21 +389,102 @@ describe('the sizes the two steps offer', () => {
     const one = await dressed({ bounds: { interface: { least: 0, most: 0 }, font: NARROW } })
 
     expect(rows(one, INTERFACE)).toStrictEqual([])
-    expect(rows(one, FONT).map((row) => row.title)).toStrictEqual(['100%', '125%', '150%'])
+    expect(rows(one, FONT).map((row) => row.title)).toStrictEqual([
+      '100%',
+      '110%',
+      '120%',
+      '130%',
+      '140%',
+      '150%',
+    ])
   })
 
-  it('says on a row that it is the size now, and on the row of 1 that it is as designed', async () => {
+  it('says on one row that it is the size now, and says nothing on any other', async () => {
     const one = await dressed({ sizes: { interface: 1.5, font: 1 } })
 
-    expect(rows(one, INTERFACE).map((row) => row.detail)).toStrictEqual([
-      undefined,
-      words.designed,
-      undefined,
-      words.sized,
-      undefined,
-      undefined,
+    expect(rows(one, INTERFACE).map((row) => row.detail)).toStrictEqual(
+      TENTHS.map((title) => (title === '150%' ? words.sized : undefined)),
+    )
+  })
+
+  it('holds the size the window is drawn at, wherever between the steps it falls', async () => {
+    const one = await dressed({ sizes: { interface: 1.17, font: 1 } })
+
+    const rung = rows(one, INTERFACE).find((row) => row.detail === words.sized)
+    expect(rung?.title).toBe('117%')
+    expect(rows(one, INTERFACE).map((row) => row.title)).toStrictEqual([
+      ...TENTHS.slice(0, 4),
+      '117%',
+      ...TENTHS.slice(4),
     ])
-    expect(rows(one, FONT).map((row) => row.detail)?.[1]).toBe(words.sized)
+  })
+
+  it('says nothing beside 100%, which a person reading percentages knows', async () => {
+    const one = await dressed({ sizes: { interface: 1.5, font: 1 } })
+
+    const hundred = (command: string) =>
+      rows(one, command).find((row) => row.title === '100%')?.detail
+
+    expect(hundred(INTERFACE)).toBeUndefined()
+    // The reading text is set at 100%, so on its list that row is the one.
+    expect(hundred(FONT)).toBe(words.sized)
+  })
+})
+
+describe('the number a person types at a size', () => {
+  const rows = (one: Awaited<ReturnType<typeof dressed>>, command: string, typed: string) =>
+    one.worn.sizes(command, typed).flatMap((band) => band.items)
+
+  it('stands as a row of its own, in its place between the steps', async () => {
+    const one = await dressed()
+
+    expect(rows(one, INTERFACE, '137').map((row) => row.title)).toStrictEqual([
+      ...TENTHS.slice(0, 6),
+      '137%',
+      ...TENTHS.slice(6),
+    ])
+    expect(rows(one, INTERFACE, '137').find((row) => row.title === '137%')?.id).toBe(
+      'interface:1.37',
+    )
+  })
+
+  it('is taken with the sign a person reads on the rows, and with none', async () => {
+    const one = await dressed()
+
+    const titles = (typed: string) => rows(one, INTERFACE, typed).map((row) => row.title)
+    expect(titles('137%')).toStrictEqual(titles('137'))
+    expect(titles(' 137 ')).toStrictEqual(titles('137'))
+  })
+
+  it('is not offered at all where the range does not reach it', async () => {
+    const one = await dressed()
+
+    expect(rows(one, INTERFACE, '250').map((row) => row.title)).toStrictEqual(TENTHS)
+    expect(rows(one, FONT, '190').map((row) => row.title)).not.toContain('190%')
+  })
+
+  it('is not offered twice where the list already holds that size', async () => {
+    const one = await dressed()
+
+    expect(rows(one, INTERFACE, '150').map((row) => row.title)).toStrictEqual(TENTHS)
+  })
+
+  it('is nothing at all where what was typed is not a whole number', async () => {
+    const one = await dressed()
+
+    expect(rows(one, INTERFACE, 'large').map((row) => row.title)).toStrictEqual(TENTHS)
+    expect(rows(one, INTERFACE, '1.37').map((row) => row.title)).toStrictEqual(TENTHS)
+  })
+
+  it('is drawn and written like any other row', async () => {
+    const one = await dressed()
+
+    one.worn.shows('interface:1.37')
+    await stands()
+    await one.worn.chooses('interface:1.37')
+
+    expect(one.chosen).toStrictEqual(['preset:numen system 1.37/1'])
+    expect(sizes(one.sheet)).toBe(':root { --numen-interface: 1.37; --numen-font: 1; }')
   })
 })
 
@@ -487,7 +576,9 @@ describe('the size that was chosen', () => {
   it('is nothing at all where the range the window holds does not reach it', async () => {
     const one = await dressed()
 
-    await one.worn.chooses('interface:1.3')
+    await one.worn.chooses('interface:3')
+    one.worn.shows('font:3')
+    await stands()
 
     expect(one.chosen).toStrictEqual([])
     expect(sizes(one.sheet)).toBe(SIZED)

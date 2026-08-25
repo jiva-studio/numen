@@ -472,6 +472,23 @@ describe('the four commands over how the window is drawn', () => {
   const walking = () => new Promise((done) => setTimeout(done, 60))
   const stands = () => new Promise((done) => setTimeout(done, 200))
 
+  /** Every tenth the interface goes between, as a person reads them. */
+  const TENTHS = [
+    '80%',
+    '90%',
+    '100%',
+    '110%',
+    '120%',
+    '130%',
+    '140%',
+    '150%',
+    '160%',
+    '170%',
+    '180%',
+    '190%',
+    '200%',
+  ]
+
   /** The commands open, and the one the words typed name taken up. */
   const over = async (typed: string) => {
     const window = await drawnWithPalette()
@@ -491,6 +508,12 @@ describe('the four commands over how the window is drawn', () => {
   /** The bands standing, by the name each carries. */
   const bands = () =>
     [...document.body.querySelectorAll('.palette__title')].map((one) => one.textContent?.trim())
+
+  /** The second line of every row drawn, and nothing for a row carrying none. */
+  const beside = () =>
+    [...document.body.querySelectorAll('.palette__item')].map((one) =>
+      one.querySelector('.palette__detail')?.textContent?.trim(),
+    )
 
   describe('the words a person types for them', () => {
     it('find the theme by “theme”, and light and dark by either word', async () => {
@@ -617,8 +640,51 @@ describe('the four commands over how the window is drawn', () => {
       await over('interface')
 
       expect(bands()).toStrictEqual(['How large the interface is drawn'])
-      expect(left()).toStrictEqual(['80%', '100%', '125%', '150%', '175%', '200%'])
+      expect(left()).toStrictEqual(TENTHS)
       expect(dressed()).toStrictEqual([PAIR, SERVED, SIZED])
+    })
+
+    it('draws a second line on the one row the window is drawn at, and no other', async () => {
+      await over('interface')
+
+      expect(beside()).toStrictEqual(
+        TENTHS.map((title) => (title === '100%' ? 'The size now' : undefined)),
+      )
+    })
+
+    it('offers a number typed into the field, and narrows to it alone', async () => {
+      await over('interface')
+
+      await type('137')
+
+      expect(left()).toStrictEqual(['137%'])
+    })
+
+    it('draws and writes a number typed, the way it does a step', async () => {
+      await over('interface')
+      await type('137')
+
+      await press('Enter')
+
+      expect(asked.worn).toStrictEqual(['preset:numen system 1.37/1'])
+      expect(dressed().at(-1)).toBe(':root { --numen-interface: 1.37; --numen-font: 1; }')
+    })
+
+    it('offers no row for a number the range does not reach, and says nothing', async () => {
+      await over('interface')
+
+      await type('250')
+
+      expect(left()).toStrictEqual([])
+      expect(document.body.querySelector('.palette__silence')?.textContent?.trim()).toBe('Nothing')
+    })
+
+    it('narrows the steps, and offers nothing of its own, for digits inside one', async () => {
+      await over('interface')
+
+      await type('15')
+
+      expect(left()).toStrictEqual(['150%'])
     })
 
     it('holds the size until the keyboard has stood on the row it walked to', async () => {
@@ -719,7 +785,8 @@ describe('the four commands over how the window is drawn', () => {
       await over('reading')
 
       expect(bands()).toStrictEqual(['How large the text is set'])
-      expect(left()).toStrictEqual(['80%', '100%', '125%', '150%', '175%'])
+      // The far end of this one falls between two steps, and is offered there.
+      expect(left()).toStrictEqual([...TENTHS.slice(0, 10), '175%'])
     })
 
     it('writes the size that was chosen beside the interface’s, which stands', async () => {
