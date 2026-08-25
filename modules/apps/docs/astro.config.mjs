@@ -49,10 +49,7 @@ export default defineConfig({
             { slug: 'documents' },
           ],
         },
-        {
-          label: 'The agent',
-          items: [{ slug: 'agent' }],
-        },
+        { slug: 'agent' },
         {
           label: 'Settings',
           items: [
@@ -61,10 +58,7 @@ export default defineConfig({
             { slug: 'keyboard' },
           ],
         },
-        {
-          label: 'When something is wrong',
-          items: [{ slug: 'trouble' }],
-        },
+        { slug: 'trouble' },
         { label: 'Download numen', link: 'https://numen.md/#get' },
       ],
     }),

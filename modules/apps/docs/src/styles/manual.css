@@ -1,93 +1,231 @@
 /*
  * The manual, painted in the application's own values.
  *
- * Starlight draws everything through its own custom properties, so what is
- * here is that set given the colours and faces the product already has. Dark
- * stands on `:root` and light replaces it, which is the order Starlight sets
- * them in.
+ * Starlight draws everything through its own custom properties, so the first
+ * half of this file is that whole set given numen's colours, faces and sizes —
+ * dark on `:root`, light replacing it, which is the order Starlight sets them
+ * in. The second half is the few places a property cannot reach: the shape of
+ * the sidebar, the tables, and where the column of text sits.
  *
  * Colour means direction and appears only where direction is meant — the three
  * roles a link carries. Everything else is ink on paper.
  */
 
 :root {
+  /* Faces. Newsreader carries the two headings that name a page and its
+     sections; everything read at length is set in Plex. */
   --sl-font: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --sl-font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
   --numen-display: 'Newsreader Variable', 'Newsreader', Georgia, 'Times New Roman', serif;
 
-  --sl-color-accent-low: #17293f;
-  --sl-color-accent: #3f6ca8;
-  --sl-color-accent-high: #a8c6e8;
+  /* One step of 1.22 from the body upwards, so a heading is larger than what
+     it heads and no larger. */
+  --sl-text-body: 1.0625rem;
+  --sl-text-body-sm: 0.9375rem;
+  --sl-text-code: 0.9375rem;
+  --sl-text-code-sm: 0.875rem;
+  --sl-text-h1: 2.25rem;
+  --sl-text-h2: 1.6rem;
+  --sl-text-h3: 1.25rem;
+  --sl-text-h4: 1.0625rem;
+  --sl-text-h5: 1rem;
+  --sl-line-height: 1.7;
+  --sl-line-height-headings: 1.25;
 
-  --sl-color-white: #f4f6f8;
-  --sl-color-gray-1: #e4e7ea;
-  --sl-color-gray-2: #c2c7ce;
-  --sl-color-gray-3: #969ca5;
-  --sl-color-gray-4: #656b74;
-  --sl-color-gray-5: #3b4046;
-  --sl-color-gray-6: #2a2e34;
-  --sl-color-black: #17181a;
+  --numen-sidebar-text: 0.9375rem;
+  --numen-toc-text: 0.875rem;
 
-  --sl-color-bg: #17181a;
-  --sl-color-bg-nav: #1b1d20;
-  --sl-color-bg-sidebar: #17181a;
-  --sl-color-bg-inline-code: #212429;
+  /* The room the page is laid out in. */
+  --sl-nav-height: 4.25rem;
+  --sl-sidebar-width: 17rem;
+  --sl-content-width: 47rem;
+  --sl-content-pad-x: 2rem;
 
+  /* Dark, which is where this palette starts. A near-neutral ink with a trace
+     of blue in it, and three grounds a step apart so the page, the sidebar and
+     what floats over them are told apart without a border doing the work. */
+  --sl-color-white: #f3f5f8;
+  --sl-color-gray-1: #e2e6eb;
+  --sl-color-gray-2: #c3c9d2;
+  --sl-color-gray-3: #8d949e;
+  --sl-color-gray-4: #626871;
+  --sl-color-gray-5: #3a3e45;
+  --sl-color-gray-6: #24272c;
+  --sl-color-gray-7: #1b1e22;
+  --sl-color-black: #131518;
+
+  --sl-color-accent-low: #1b2c41;
+  --sl-color-accent: #7aa7dd;
+  --sl-color-accent-high: #bcd4ee;
+
+  --sl-color-bg: #131518;
+  --sl-color-bg-nav: #17191d;
+  --sl-color-bg-sidebar: #17191d;
+  --sl-color-bg-inline-code: #22252a;
+  --sl-color-hairline: #23262b;
+  --sl-color-hairline-light: #2c3037;
+  --sl-color-hairline-shade: #101215;
+
+  --numen-hover: #1e2126;
+  --numen-current: #1d2530;
   --numen-up: #7aa7dd;
   --numen-down: #6fbd93;
   --numen-across: #d6a463;
 }
 
 :root[data-theme='light'] {
-  --sl-color-accent-low: #dce7f5;
-  --sl-color-accent: #2f5d94;
-  --sl-color-accent-high: #1e3a5c;
+  --sl-color-white: #16181b;
+  --sl-color-gray-1: #22252a;
+  --sl-color-gray-2: #3c4149;
+  --sl-color-gray-3: #6a707a;
+  --sl-color-gray-4: #949aa3;
+  --sl-color-gray-5: #d3d6da;
+  --sl-color-gray-6: #e7e8ea;
+  --sl-color-gray-7: #f3f4f5;
+  --sl-color-black: #ffffff;
 
-  --sl-color-white: #191b1e;
-  --sl-color-gray-1: #2b2e33;
-  --sl-color-gray-2: #4a4f57;
-  --sl-color-gray-3: #6a6f77;
-  --sl-color-gray-4: #9aa0a8;
-  --sl-color-gray-5: #d6d8dc;
-  --sl-color-gray-6: #e4e4e7;
-  --sl-color-gray-7: #f2f2f3;
-  --sl-color-black: #fbfbfa;
+  --sl-color-accent-low: #dfe9f6;
+  --sl-color-accent: #2f5d94;
+  --sl-color-accent-high: #1d3a5e;
 
   --sl-color-bg: #fbfbfa;
   --sl-color-bg-nav: #ffffff;
-  --sl-color-bg-sidebar: #fbfbfa;
-  --sl-color-bg-inline-code: #eeeeef;
+  --sl-color-bg-sidebar: #f6f6f4;
+  --sl-color-bg-inline-code: #ecedee;
+  --sl-color-hairline: #e6e6e4;
+  --sl-color-hairline-light: #ededeb;
+  --sl-color-hairline-shade: #e6e6e4;
 
+  --numen-hover: #eeeeec;
+  --numen-current: #e6ecf5;
   --numen-up: #3f6ca8;
   --numen-down: #3d7f5f;
   --numen-across: #9a6a2f;
 }
 
-/* The name in the corner is set the way it is set on the page the product is
-   read about on. */
+/* Everything below stands after Starlight's own layers, so it is the last word
+   on the few things a custom property cannot say. */
+
+/* The bar across the top, and the name in the corner set as it is set on the
+   page the product is read about on. */
+header.header {
+  border-bottom: 1px solid var(--sl-color-hairline);
+}
+
 .site-title {
   font-family: var(--numen-display);
-  font-size: 1.3rem;
+  font-size: 1.35rem;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.012em;
+  gap: 0.55rem;
+  color: var(--sl-color-white);
 }
 
 .site-title img {
   border-radius: 22%;
 }
 
-.sl-markdown-content h1,
-.sl-markdown-content h2,
-.content-panel h1 {
-  font-family: var(--numen-display);
-  font-weight: 500;
-  font-variation-settings: 'opsz' 34;
-  letter-spacing: -0.015em;
+/* The column of text hugs the sidebar rather than the table of contents, and
+   stands clear of both. */
+@media (min-width: 72rem) {
+  :root[data-has-sidebar][data-has-toc] .main-pane {
+    --sl-content-margin-inline: 0 auto;
+  }
+
+  .content-panel {
+    padding-inline: 3rem;
+  }
 }
 
+/* The sidebar: a heading over each group, and rows that answer the pointer
+   without shouting. */
+.sidebar-content {
+  padding-top: 1.5rem;
+}
+
+.sidebar-content .top-level > li + li {
+  margin-top: 1.4rem;
+}
+
+/* The name of a group is a label over its items. */
+.sidebar-content summary {
+  padding: 0.2rem 0.6rem;
+  margin-bottom: 0.2rem;
+}
+
+.sidebar-content summary .group-label .large {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sl-color-gray-3);
+}
+
+.sidebar-content .caret {
+  color: var(--sl-color-gray-4);
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.sidebar-content a {
+  font-size: var(--numen-sidebar-text);
+  padding: 0.34rem 0.6rem;
+  border-radius: 6px;
+  color: var(--sl-color-gray-2);
+}
+
+/* A page reached from the top level is a page, drawn as one. */
+.sidebar-content .top-level > li > a.large {
+  font-size: var(--numen-sidebar-text);
+  font-weight: 500;
+  color: var(--sl-color-gray-1);
+}
+
+.sidebar-content a:hover,
+.sidebar-content a:focus {
+  background: var(--numen-hover);
+  color: var(--sl-color-white);
+}
+
+.sidebar-content a[aria-current='page'],
+.sidebar-content a[aria-current='page']:hover,
+.sidebar-content a[aria-current='page']:focus {
+  background: var(--numen-current);
+  color: var(--sl-color-accent-high);
+  font-weight: 500;
+}
+
+:root[data-theme='light'] .sidebar-content a[aria-current='page'],
+:root[data-theme='light'] .sidebar-content a[aria-current='page']:hover,
+:root[data-theme='light'] .sidebar-content a[aria-current='page']:focus {
+  color: var(--sl-color-accent);
+}
+
+/* A group's items sit under its heading rather than beside a rule. */
+.sidebar-content ul ul li {
+  border-inline-start: none;
+  margin-inline-start: 0;
+  padding-inline-start: 0;
+}
+
+/* What is on this page: quiet, and only as wide as it needs to be. */
+.right-sidebar starlight-toc a {
+  font-size: var(--numen-toc-text);
+  color: var(--sl-color-gray-3);
+  padding-block: 0.28rem;
+}
+
+.right-sidebar starlight-toc a[aria-current='true'] {
+  color: var(--sl-color-accent-high);
+}
+
+:root[data-theme='light'] .right-sidebar starlight-toc a[aria-current='true'] {
+  color: var(--sl-color-accent);
+}
+
+/* The prose. */
 .sl-markdown-content {
-  --sl-text-body: 1.0625rem;
-  line-height: 1.65;
+  color: var(--sl-color-gray-2);
 }
 
 .sl-markdown-content p,
@@ -95,34 +233,152 @@
   text-wrap: pretty;
 }
 
-/* A table of two columns is the shape most of this manual answers in: a thing
-   on the left, what it means on the right. */
-.sl-markdown-content table {
-  border-collapse: collapse;
-  font-size: 0.95em;
+.content-panel h1,
+.sl-markdown-content h2 {
+  font-family: var(--numen-display);
+  font-weight: 500;
+  font-variation-settings: 'opsz' 32;
+  letter-spacing: -0.014em;
+  color: var(--sl-color-white);
 }
 
-.sl-markdown-content th {
+.sl-markdown-content :is(h3, h4, h5, h6) {
   font-weight: 600;
+  letter-spacing: -0.006em;
+  color: var(--sl-color-white);
+}
+
+/* A section opens far enough below the one before it to be a section. The rule
+   above it is drawn on the wrapper the anchor link puts around a heading: the
+   heading itself is set inline, and a line on it would stop at its last word. */
+.sl-markdown-content .sl-heading-wrapper.level-h2 {
+  margin-top: 3rem;
+  padding-top: 1.6rem;
+  border-top: 1px solid var(--sl-color-hairline);
+}
+
+.sl-markdown-content .sl-heading-wrapper.level-h3 {
+  margin-top: 2.25rem;
+}
+
+.sl-markdown-content a:not(:where(.not-content *)) {
+  color: var(--sl-color-accent-high);
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+  text-underline-offset: 0.2em;
+}
+
+:root[data-theme='light'] .sl-markdown-content a:not(:where(.not-content *)) {
+  color: var(--sl-color-accent);
+}
+
+/* A table of two columns is the shape most of this manual answers in: a thing
+   on the left, what it means on the right. Where it has no head row, the row
+   of empty cells is taken out of the drawing. */
+.sl-markdown-content table:not(:where(.not-content *)) {
+  /* A table of prose fills the column and wraps inside it. Narrow enough that
+     it cannot, it goes back to scrolling in its own box. */
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 50em) {
+  .sl-markdown-content table:not(:where(.not-content *)) {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
+.sl-markdown-content thead:has(th:empty) {
+  display: none;
+}
+
+.sl-markdown-content :is(th, td):not(:where(.not-content *)) {
+  border: none;
+  border-bottom: 1px solid var(--sl-color-hairline);
+  padding: 0.7rem 1.5rem 0.7rem 0;
+  vertical-align: baseline;
   text-align: start;
 }
 
-.sl-markdown-content :is(th, td) {
-  border-block-end: 1px solid var(--sl-color-gray-6);
-  padding-block: 0.55rem;
-  padding-inline-end: 1.25rem;
-  vertical-align: baseline;
+.sl-markdown-content thead:not(:has(th:empty)) th {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sl-color-gray-3);
+  border-bottom-color: var(--sl-color-hairline-light);
+}
+
+/* The first cell of a row names what the row is about, and is set as such. */
+.sl-markdown-content tbody td:first-child {
+  color: var(--sl-color-white);
+  font-weight: 500;
+  padding-inline-end: 1.75rem;
+  width: 28%;
+}
+
+.sl-markdown-content tbody td:first-child code {
+  font-weight: 400;
+}
+
+/* Code, and keys. */
+.sl-markdown-content code:not(:where(.not-content *)) {
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 5px;
+  padding: 0.1em 0.36em;
+}
+
+.sl-markdown-content pre code {
+  border: none;
+  padding: 0;
 }
 
 .sl-markdown-content kbd {
   font-family: var(--sl-font-mono);
-  font-size: 0.85em;
-  padding: 0.1em 0.42em;
-  border: 1px solid var(--sl-color-gray-5);
-  border-block-end-width: 2px;
-  border-radius: 4px;
+  font-size: 0.82em;
+  line-height: 1;
+  padding: 0.28em 0.45em;
+  border: 1px solid var(--sl-color-hairline-light);
+  border-bottom-width: 2px;
+  border-radius: 5px;
   background: var(--sl-color-bg-inline-code);
+  color: var(--sl-color-gray-1);
   white-space: nowrap;
+}
+
+/* The front page: what it says stands near the top, and no wider than it reads
+   well at. */
+.hero {
+  padding-block: 2.5rem 1rem;
+}
+
+.hero h1 {
+  font-family: var(--numen-display);
+  font-weight: 500;
+  font-size: clamp(2.4rem, 5vw, 3.2rem);
+  letter-spacing: -0.02em;
+}
+
+.hero .tagline {
+  font-size: 1.15rem;
+  max-width: 46ch;
+  color: var(--sl-color-gray-2);
+}
+
+/* The cards on the front page. */
+.card {
+  border-color: var(--sl-color-hairline);
+  background: var(--sl-color-bg-sidebar);
+  border-radius: 10px;
+}
+
+.card .title {
+  font-family: var(--numen-display);
+  font-weight: 500;
+  color: var(--sl-color-white);
 }
 
 /* The three directions a link is drawn in, wherever one is named in the text. */
