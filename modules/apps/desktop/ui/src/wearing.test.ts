@@ -313,7 +313,7 @@ describe('the themes the step offers', () => {
     const one = await dressed()
 
     const rows = one.worn.offers().flatMap((band) => band.items)
-    expect(rows.map((row) => row.detail)).toStrictEqual([words.worn, undefined, undefined])
+    expect(rows.map((row) => row.detail)).toStrictEqual([words.current, undefined, undefined])
   })
 
   it('says where a person’s own themes go while they have none', async () => {
@@ -334,7 +334,7 @@ describe('the three halves the step offers', () => {
 
     expect(one.worn.modes().map((band) => band.id)).toStrictEqual(['half'])
     expect(rows(one).map((row) => row.id)).toStrictEqual(['mode:system', 'mode:light', 'mode:dark'])
-    expect(rows(one).map((row) => row.detail)).toStrictEqual([undefined, words.worn, undefined])
+    expect(rows(one).map((row) => row.detail)).toStrictEqual([undefined, words.current, undefined])
   })
 
   it('draws each as not to be chosen while the theme worn pins light and dark', async () => {
@@ -403,14 +403,14 @@ describe('the sizes the two steps offer', () => {
     const one = await dressed({ sizes: { interface: 1.5, font: 1 } })
 
     expect(rows(one, INTERFACE).map((row) => row.detail)).toStrictEqual(
-      TENTHS.map((title) => (title === '150%' ? words.sized : undefined)),
+      TENTHS.map((title) => (title === '150%' ? words.current : undefined)),
     )
   })
 
   it('holds the size the window is drawn at, wherever between the steps it falls', async () => {
     const one = await dressed({ sizes: { interface: 1.17, font: 1 } })
 
-    const rung = rows(one, INTERFACE).find((row) => row.detail === words.sized)
+    const rung = rows(one, INTERFACE).find((row) => row.detail === words.current)
     expect(rung?.title).toBe('117%')
     expect(rows(one, INTERFACE).map((row) => row.title)).toStrictEqual([
       ...TENTHS.slice(0, 4),
@@ -427,7 +427,7 @@ describe('the sizes the two steps offer', () => {
 
     expect(hundred(INTERFACE)).toBeUndefined()
     // The reading text is set at 100%, so on its list that row is the one.
-    expect(hundred(FONT)).toBe(words.sized)
+    expect(hundred(FONT)).toBe(words.current)
   })
 })
 

@@ -911,7 +911,7 @@ describe('a command that asks for a vault', () => {
     await settles()
 
     expect(commands.bands.value[0]?.items[0]?.disabled).toBe(true)
-    expect(commands.bands.value[0]?.items[0]?.detail).toBe(`${words.inFront} · /vaults/Physics`)
+    expect(commands.bands.value[0]?.items[0]?.detail).toBe(`${words.current} · /vaults/Physics`)
     expect(commands.chose('physics', 'open')).toBeNull()
   })
 

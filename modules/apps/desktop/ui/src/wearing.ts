@@ -25,8 +25,8 @@ export interface Words {
   readonly noneOwned: string
   /** The band the three modes are drawn in. */
   readonly half: string
-  /** The theme and the mode the settings name, said on their rows. */
-  readonly worn: string
+  /** The row a list of values opens on, which is the value in force. */
+  readonly current: string
   /** The three modes, by the name each is offered under. */
   readonly system: string
   readonly light: string
@@ -36,8 +36,6 @@ export interface Words {
   /** The band each of the two sizes is drawn in. */
   readonly drawing: string
   readonly setting: string
-  /** The size the settings name, said on its row. */
-  readonly sized: string
   /** The themes could not be listed, and one theme's file could not be read. */
   readonly unlisted: string
   readonly unworn: string
@@ -402,7 +400,7 @@ export function wearing(
     const named = (one: Wearable): Offered => ({
       id: one.name,
       title: one.title,
-      ...(one.name === applied.value ? { detail: words.worn } : {}),
+      ...(one.name === applied.value ? { detail: words.current, inForce: true } : {}),
     })
     return [
       ...off.filter((one) => one.name === applied.value).map(named),
@@ -429,7 +427,7 @@ export function wearing(
   /** What is said about a mode: why it cannot be chosen, or that it is the one. */
   const beside = (one: Mode): string => {
     if (pinned.value) return words.pinned
-    return one === mode.value ? words.worn : ''
+    return one === mode.value ? words.current : ''
   }
 
   /**
@@ -444,6 +442,7 @@ export function wearing(
         id: named(one),
         title: words[one],
         ...(detail ? { detail } : {}),
+        ...(one === mode.value ? { inForce: true } : {}),
         ...(pinned.value ? { disabled: true } : {}),
       }
     }
@@ -467,7 +466,7 @@ export function wearing(
     const row = (size: number): Offered => ({
       id: sizing(which, size),
       title: percent(size),
-      ...(size === now ? { detail: words.sized } : {}),
+      ...(size === now ? { detail: words.current, inForce: true } : {}),
     })
     const held = [...ladder(range), now, ...(said === null ? [] : [said])]
       .filter((size) => reaches(range, size))

@@ -104,24 +104,23 @@ export const WORDS = {
   vaults: 'Vaults',
   typeVault: 'Look for a vault',
   gone: 'Missing',
-  inFront: 'Current',
   folder: 'Choose a folder for the vault',
+  /** The row a list of values opens on, which is the value in force. */
+  current: 'Current',
   /** The two shelves the themes are drawn in, and where a person's own go. */
   shipping: 'Ships with numen',
   owned: 'Your own themes',
   noneOwned: 'A .css file in numen/themes/, beside numen.json, is one of these',
-  /** The band the three halves are drawn in, and the one worn now. */
+  /** The band the three halves are drawn in. */
   half: 'Light and dark',
-  worn: 'Worn now',
   /** The three halves, and why the theme worn leaves nothing to choose. */
   system: 'Follow the system',
   light: 'Light',
   dark: 'Dark',
   pinned: 'Set by the theme',
-  /** The band each of the two sizes is drawn in, and the size drawn now. */
+  /** The band each of the two sizes is drawn in. */
   drawing: 'How large the interface is drawn',
   setting: 'How large the text is set',
-  sized: 'The size now',
   /** The themes could not be listed, and a theme's file could not be read. */
   unlisted: 'The themes could not be listed',
   unworn: 'That theme could not be read, so it is not worn',

@@ -25,6 +25,10 @@ const { said, held, asked, listed } = vi.hoisted(() => ({
     names: [] as { path: string; title: string; heading: string; line: number; at: [] }[],
     /** What the settings refuse a choice, which is a size outside its bounds. */
     refused: '',
+    /** What the settings say the window is drawn as, which a test may set. */
+    applied: 'preset:numen',
+    mode: 'system' as 'system' | 'light' | 'dark',
+    sizes: { interface: 1, font: 1 },
   },
   /** A stream that stays open, so nothing the window follows ever ends. */
   async *held(): AsyncGenerator<never> {
@@ -109,9 +113,9 @@ vi.mock('./theme', () => ({
         { name: 'preset:numen', title: 'numen', shipped: true, pinned: false },
         { name: 'mine:sea', title: 'sea', shipped: false, pinned: false },
       ],
-      applied: 'preset:numen',
-      mode: 'system',
-      sizes: { interface: 1, font: 1 },
+      applied: said.applied,
+      mode: said.mode,
+      sizes: said.sizes,
       bounds: { interface: { least: 0.8, most: 2 }, font: { least: 0.8, most: 1.75 } },
     }),
     text: async (name: string) => `:root { --numen-surface: ${name} }`,
@@ -161,6 +165,9 @@ afterEach(() => {
   said.opening = 'Root.md'
   said.names = []
   said.refused = ''
+  said.applied = 'preset:numen'
+  said.mode = 'system'
+  said.sizes = { interface: 1, font: 1 }
   asked.renamed = []
   asked.removed = []
   asked.worn = []
@@ -635,6 +642,75 @@ describe('the four commands over how the window is drawn', () => {
     })
   })
 
+  /**
+   * The row the keyboard is standing on, read off the document rather than out
+   * of the list the window handed the palette.
+   */
+  const standingOn = () =>
+    document.body.querySelector('[data-here] .palette__name')?.textContent?.trim()
+
+  describe('a step opened over a setting', () => {
+    /** The page as the handler serves it, dressed as the settings say. */
+    const serves = (mode = PAIR, sizes = SIZED) => {
+      for (const one of document.head.querySelectorAll('style')) one.remove()
+      document.head.append(styled(mode), styled(SERVED), styled(sizes))
+      return [mode, SERVED, sizes]
+    }
+
+    it('stands on the theme the settings name, and goes on wearing it', async () => {
+      said.applied = 'mine:sea'
+      const was = serves()
+
+      await over('theme')
+
+      expect(standingOn()).toBe('sea')
+      expect(dressed()).toStrictEqual(was)
+      expect(asked.worn).toStrictEqual([])
+    })
+
+    it('stands on the half the tokens are read as, and goes on reading them so', async () => {
+      said.mode = 'dark'
+      const was = serves(':root { color-scheme: dark; }')
+
+      await over('light')
+
+      expect(standingOn()).toBe('Dark')
+      expect(dressed()).toStrictEqual(was)
+    })
+
+    it('stands on the size the interface is drawn at, and leaves it there', async () => {
+      said.sizes = { interface: 1.5, font: 1 }
+      const was = serves(PAIR, ':root { --numen-interface: 1.5; --numen-font: 1; }')
+
+      await over('interface')
+      await stands()
+
+      expect(standingOn()).toBe('150%')
+      expect(dressed()).toStrictEqual(was)
+    })
+
+    it('stands on a size between two steps, which is the row put in for it', async () => {
+      said.sizes = { interface: 1, font: 1.17 }
+      const was = serves(PAIR, ':root { --numen-interface: 1; --numen-font: 1.17; }')
+
+      await over('reading')
+      await stands()
+
+      expect(standingOn()).toBe('117%')
+      expect(dressed()).toStrictEqual(was)
+    })
+
+    it('leaves the keyboard where typing puts it, and does not walk it back', async () => {
+      said.sizes = { interface: 1.5, font: 1 }
+      serves(PAIR, ':root { --numen-interface: 1.5; --numen-font: 1; }')
+      await over('interface')
+
+      await type('137')
+
+      expect(standingOn()).toBe('137%')
+    })
+  })
+
   describe('the step that offers how large the interface is drawn', () => {
     it('opens on the size the window is drawn at, in a band of its own', async () => {
       await over('interface')
@@ -648,7 +724,7 @@ describe('the four commands over how the window is drawn', () => {
       await over('interface')
 
       expect(beside()).toStrictEqual(
-        TENTHS.map((title) => (title === '100%' ? 'The size now' : undefined)),
+        TENTHS.map((title) => (title === '100%' ? 'Current' : undefined)),
       )
     })
 

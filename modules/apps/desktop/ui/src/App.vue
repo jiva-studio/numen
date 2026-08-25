@@ -296,6 +296,7 @@ const field = computed(() =>
         bands: commands.bands.value,
         crumb: commands.crumb.value,
         step: commands.step.value,
+        opensOn: commands.opensOn.value,
         placeholder: commands.placeholder.value,
       }
     : {
@@ -304,6 +305,7 @@ const field = computed(() =>
         bands: offering(palette.bands.value, palette.typed.value, words, where()),
         crumb: '',
         step: '',
+        opensOn: '',
         placeholder: words.find,
       },
 )
@@ -433,6 +435,7 @@ onUnmounted(() => {
       :placeholder="field.placeholder"
       :crumb="field.crumb"
       :step="field.step"
+      :opens-on="field.opensOn"
       :name="words.find"
       :actions-name="words.actions"
       :actions-placeholder="words.findAction"

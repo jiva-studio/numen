@@ -30,6 +30,8 @@ export interface Offered {
   readonly detail?: string
   /** Drawn, said, and not chosen. */
   readonly disabled?: boolean
+  /** The value the setting this list is of holds now, which is where it opens. */
+  readonly inForce?: boolean
 }
 
 /** One band of such a list, named by whatever holds it. */
@@ -243,7 +245,8 @@ export interface Words extends Silences {
   readonly typeVault: string
   /** The two vaults the list draws and does not offer to choose. */
   readonly gone: string
-  readonly inFront: string
+  /** The row a list of values opens on, which is the value in force. */
+  readonly current: string
   /** The two answers to the confirmation: the one that changes nothing, first. */
   readonly asking: string
   readonly answer: string
@@ -572,6 +575,17 @@ export function commanding(
     () => `${steps.value.length}:${here.value?.command.id ?? ''}:${here.value?.step ?? 'commands'}`,
   )
 
+  /**
+   * The row the step opens standing on: the value the list it offers is of.
+   * A step offering a list of no value opens where the palette would.
+   */
+  const opensOn = computed(() => {
+    const step = here.value
+    if (step?.step !== 'choosing') return ''
+    const rows = holds.offers(step.command.id, typed.value).flatMap((band) => band.items)
+    return rows.find((one) => one.inForce)?.id ?? ''
+  })
+
   /** Nothing is being asked, and nothing already asked for will be drawn. */
   const drop = () => {
     asked += 1
@@ -762,7 +776,7 @@ export function commanding(
    * is marked with nothing.
    */
   const aside = (one: Known): string =>
-    one.missing ? words.gone : one.id === showing.value ? words.inFront : ''
+    one.missing ? words.gone : one.id === showing.value ? words.current : ''
 
   /**
    * The vaults the installation holds. The two it will not take are marked
@@ -1002,6 +1016,7 @@ export function commanding(
     bands,
     crumb,
     step,
+    opensOn,
     placeholder,
     typing,
     lights,
