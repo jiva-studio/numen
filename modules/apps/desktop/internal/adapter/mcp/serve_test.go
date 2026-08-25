@@ -34,6 +34,31 @@ func TestNothingReachesTheVaultWithoutTheToken(t *testing.T) {
 	}
 }
 
+// An agent that presents the token is answered, on the loopback port and
+// nowhere else. A path outside the endpoint's own is not served.
+func TestAnAgentPresentingTheTokenIsAnswered(t *testing.T) {
+	_, core := served(t)
+	endpoint, err := mcp.ServeHTTP(t.Context(), "127.0.0.1:0", "the-token", core, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { endpoint.Close(context.Background()) })
+
+	if !mcp.Local(strings.TrimSuffix(strings.TrimPrefix(endpoint.URL, "http://"), "/mcp")) {
+		t.Errorf("%s can be reached from off this machine", endpoint.URL)
+	}
+
+	res := ask(t, endpoint.URL, "Bearer the-token", "")
+	if res.StatusCode != http.StatusOK {
+		t.Errorf("want 200, got %s", res.Status)
+	}
+
+	elsewhere := ask(t, "http://"+res.Request.URL.Host+"/elsewhere", "Bearer the-token", "")
+	if elsewhere.StatusCode != http.StatusNotFound {
+		t.Errorf("want 404, got %s", elsewhere.Status)
+	}
+}
+
 // A page open in a browser can reach a port on this machine, and is the one
 // caller that arrives without being invited.
 func TestAPageInABrowserIsTurnedAway(t *testing.T) {
