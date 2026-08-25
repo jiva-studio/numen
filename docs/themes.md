@@ -174,10 +174,11 @@ well, and what follows neither.
 Nothing bounds a theme to the palette. A theme declaring `--numen-font-size`
 declares it, and a length written in `rem` goes on following the interface.
 
-The two multipliers are what a theme does not reach. `--numen-interface` and
-`--numen-font` stand in the element the head ends with, after the mode's and the
-theme's, so a theme naming either is the earlier of two declarations weighing
-the same and the window is drawn at the size a person chose.
+The two multipliers are what a theme does not reach. `--numen-interface-scale`
+and `--numen-text-scale` stand in the element the head ends with, after the
+mode's and the theme's, so a theme naming either is the earlier of two
+declarations weighing the same and the window is drawn at the size a person
+chose.
 
 ## What ships
 
