@@ -25,6 +25,7 @@ interface Knobs {
   placeholder: string
   crumb: string
   step: string
+  opensOn: string
   name: string
   onChoose: (item: string, action: string) => void
   onLit: (item: string) => void
@@ -159,6 +160,7 @@ const over = (args: Knobs) => ({
         :placeholder="args.placeholder"
         :crumb="args.crumb"
         :step="args.step"
+        :opens-on="args.opensOn"
         :name="args.name"
         @choose="args.onChoose"
         @lit="args.onLit"
@@ -192,6 +194,7 @@ const meta = {
     placeholder: { control: 'text' },
     crumb: { control: 'text' },
     name: { control: 'text' },
+    opensOn: { control: 'text' },
     bands: { table: { disable: true } },
     step: { table: { disable: true } },
     onChoose: { table: { disable: true } },
@@ -204,6 +207,7 @@ const meta = {
     placeholder: 'Search',
     crumb: '',
     step: '',
+    opensOn: '',
     name: 'Palette',
     onChoose: fn(),
     onLit: fn(),
@@ -256,6 +260,35 @@ export const Lit: Story = {
 
     await userEvent.keyboard('{ArrowUp}')
     await waitFor(() => expect(args.onLit).toHaveBeenLastCalledWith('entropy'))
+  },
+}
+
+/**
+ * A list of values opens standing on the value in force, wherever in the list
+ * it sits. Nothing has to be walked back, and a caller acting on what is lit
+ * acts on what is already so.
+ */
+export const OpensOnAValue: Story = {
+  args: { opensOn: 'gibbs' },
+  play: async ({ args }) => {
+    await waitFor(() => expect(lit()).not.toBeNull())
+
+    await expect(lit()?.textContent).toContain('Gibbs free energy')
+    await expect(args.onLit).toHaveBeenLastCalledWith('gibbs')
+  },
+}
+
+/**
+ * A value with no item to stand on: the list holds none of it, and the first
+ * item is where it opens.
+ */
+export const OpensOnNothingThere: Story = {
+  args: { opensOn: 'nowhere' },
+  play: async ({ args }) => {
+    await waitFor(() => expect(lit()).not.toBeNull())
+
+    await expect(lit()?.textContent).toContain('Entropy')
+    await expect(args.onLit).toHaveBeenLastCalledWith('entropy')
   },
 }
 

@@ -63,6 +63,12 @@ const props = withDefaults(
      * the keyboard back to the field with what stands there selected.
      */
     step?: string
+    /**
+     * The item the keyboard stands on as a step opens: for a list of values,
+     * the value in force. A list of no value, and a value with no item to
+     * stand on, open on the first item there is.
+     */
+    opensOn?: string
     /** Where the keyboard goes back to once it closes. */
     from?: HTMLElement | null
     /** Where it is drawn. The end of the document by default. */
@@ -82,6 +88,7 @@ const props = withDefaults(
     placeholder: 'Search',
     crumb: '',
     step: '',
+    opensOn: '',
     from: null,
     to: 'body',
     name: 'Palette',
@@ -349,10 +356,15 @@ const onGround = () => {
   emit('dismiss')
 }
 
+/**
+ * The keyboard put where the step wants it: on the value in force, else on
+ * whatever it was standing on. Opening a step this way moves nothing, so a
+ * caller that acts on what is lit acts on what is already so.
+ */
 const enter = async () => {
   panel.value = false
   chosen.value = ''
-  goTo(keptAt(places.value, held.value))
+  goTo(keptAt(places.value, props.opensOn || held.value))
   await nextTick()
   field.value?.focus()
   field.value?.select()
