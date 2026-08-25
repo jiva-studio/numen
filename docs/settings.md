@@ -65,11 +65,11 @@ Choosing a theme, light or dark, or either size writes the field it names back h
 
 `model` is what a vector **is**. `indexing` and `query` are where one is **made**.
 
-They are separate because a stored vector outlives the placement that made it. One model runs on this machine and behind a service, and a vault filled by the one is asked by the other — so what a vector is kept under names the model and not the address it came from.
+They are separate because a stored vector outlives the place that made it. One model runs on this machine and behind a service, and a vault filled by the one is asked by the other — so what a vector is kept under names the model and not the address it came from.
 
 | | |
 | --- | --- |
-| `model.name` | what the model is called here. Not how either placement reaches it: a repository and a service call one model by two names. |
+| `model.name` | what the model is called here. Not how either place reaches it: a repository and a service call one model by two names. |
 | `model.dimensions` | how wide its vectors are. The coarse index is built for one width, and changing it rebuilds that index from what has been made. |
 | `model.max_tokens` | where the model cuts off what it is given. A window cut somewhere else is a window whose vector describes text it does not hold. |
 | `model.pooling` | `mean` over the tokens, or `head` from the one that opens the text. |
@@ -86,7 +86,7 @@ A model gathers what a text says either into the token that opens it or across a
 
 Where a model's own output is already one vector per text, nothing is pooled and this says nothing about it.
 
-## The two placements
+## The two places
 
 Each is `{"use": "local" | "service", "local": {…}, "service": {…}}`. The sections not in use are kept, so trying the other for an afternoon costs nothing.
 
@@ -95,7 +95,7 @@ Each is `{"use": "local" | "service", "local": {…}, "service": {…}}`. The se
 - **Filling an index** is a pass over the whole vault, once. A service does in an hour what this machine does in a day.
 - **Asking a question** is twenty tokens, all day. This machine answers in milliseconds where a network is a round trip — and answers with no network at all.
 
-Two placements are asked whether they are one model: both embed the same short text at startup, and vectors that do not land in the same place mean the second is not used. Nothing in this file could show it — two placements name a model by whatever each of them calls it.
+Two places are asked whether they are one model: both embed the same short text at startup, and vectors that do not land together mean the second is not used. Nothing in this file could show it — two places name a model by whatever each of them calls it.
 
 ### local
 
