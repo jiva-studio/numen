@@ -138,6 +138,17 @@
      block of code, the tab a gesture would drop where it is held. */
   --numen-radius: 0.375rem;
 
+  /* The corner of a node's box, and the corner of the box around the one in
+     front. */
+  --numen-plex-radius: 0.375rem;
+  --numen-plex-radius-focus: 0.5rem;
+  /* The handle a gesture is reached out from: the disc, and the cross on it.
+     The arms read as a plus sign at about half the radius. */
+  --numen-handle-radius: 0.5625rem;
+  --numen-handle-arm: 0.25rem;
+  /* The halo that keeps an edge label legible where it crosses its own line. */
+  --numen-edge-label-halo: 0.1875rem;
+
   /* A panel floats: rounded on every side, with what it holds clear of the
      curve. */
   --numen-radius-panel: 0.75rem;
@@ -189,26 +200,15 @@
 }
 
 /*
- * What follows neither. A hairline is one physical line, the plex draws in its
- * own coordinates, and a time is not a length.
+ * What follows neither. A line is one line whatever it separates, and a time
+ * is not a length.
  */
 :where(:root) {
   --numen-stroke: 1px;
   --numen-ring-width: 2px;
-
-  /* The corner of a node's box, and the corner of the box around the one in
-     front. */
-  --numen-plex-radius: 6px;
-  --numen-plex-radius-focus: 8px;
-  /* The handle a gesture is reached out from: the disc, and the cross on it.
-     The arms read as a plus sign at about half the radius. */
-  --numen-handle-radius: 9px;
-  --numen-handle-arm: 4px;
+  /* The bar the cross on a handle is drawn with. */
   --numen-handle-stroke: 1.5px;
-
   --numen-edge-width: 1.25px;
-  /* The halo that keeps an edge label legible where it crosses its own line. */
-  --numen-edge-label-halo: 3px;
   /* Two dashed things, told apart by their stroke: the thread a gesture drags
      behind it, and the outline of the node letting go would make. */
   --numen-thread-dash: 4 4;

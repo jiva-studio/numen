@@ -22,6 +22,11 @@ const CHROME = [
   '--numen-inset',
   '--numen-inset-wide',
   '--numen-radius',
+  '--numen-plex-radius',
+  '--numen-plex-radius-focus',
+  '--numen-handle-radius',
+  '--numen-handle-arm',
+  '--numen-edge-label-halo',
   '--numen-radius-panel',
   '--numen-panel-padding',
   '--numen-action-size',
@@ -34,17 +39,12 @@ const CHROME = [
 /** What follows the text: the size the text a person reads is set at. */
 const READING = ['--numen-reading-size'] as const
 
-/** What follows neither: one physical line, and the plex's own coordinates. */
+/** What follows neither: one line, whatever it separates. */
 const NEITHER = [
   '--numen-stroke',
   '--numen-ring-width',
-  '--numen-plex-radius',
-  '--numen-plex-radius-focus',
-  '--numen-handle-radius',
-  '--numen-handle-arm',
   '--numen-handle-stroke',
   '--numen-edge-width',
-  '--numen-edge-label-halo',
 ] as const
 
 type Token = (typeof CHROME)[number] | (typeof READING)[number] | (typeof NEITHER)[number]
@@ -94,7 +94,7 @@ const KINDS = [
   },
   {
     name: 'Neither',
-    says: 'A hairline is one physical line, and the plex draws in its own coordinates.',
+    says: 'A line is one line whatever it separates.',
     tokens: NEITHER,
   },
 ]
@@ -225,8 +225,7 @@ export const Playground: Story = {
         await each(NEITHER, 1)
       }
 
-      // Both at once, at either end: the plex's own coordinates are where they
-      // were.
+      // Both at once, at either end: every line is the line it was.
       const ends: readonly (readonly [number, number])[] = [
         [0.8, 1.75],
         [2, 0.8],
