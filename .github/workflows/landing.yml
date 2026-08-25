@@ -136,6 +136,11 @@ jobs:
           SERVED_FROM: ${{ vars.BUNNY_SITE_SERVED_FROM }}
         run: |
           set -euo pipefail
-          code=$(curl -fsS -o /dev/null -L -w '%{http_code}' "$SERVED_FROM/")
+          # A purge is answered before it has reached every edge.
+          for attempt in 1 2 3 4 5 6; do
+            code=$(curl -sS -o /dev/null -L -w '%{http_code}' "$SERVED_FROM/")
+            [ "$code" = 200 ] && break
+            sleep 5
+          done
           echo "$code  $SERVED_FROM/"
           [ "$code" = 200 ] || { echo "::error::the page did not come back"; exit 1; }
