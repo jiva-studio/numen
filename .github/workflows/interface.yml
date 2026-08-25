@@ -33,9 +33,10 @@ jobs:
 
       # A story runs in a real browser, and several of them are the only test of
       # a thing a browser decides: what is clipped by an overflow, where a
-      # scroll lands, whether a key reaches an SVG group.
-      - name: The browser the stories run in
-        run: npx --prefix modules/libs/ui playwright install chromium --with-deps
+      # scroll lands, whether a key reaches an SVG group. The window is WebKit
+      # on a mac and on Linux and Chromium on Windows, so both are fetched.
+      - name: The browsers the stories run in
+        run: npx --prefix modules/libs/ui playwright install chromium webkit --with-deps
 
       - name: Build the components
         run: npm run build --prefix modules/libs/ui

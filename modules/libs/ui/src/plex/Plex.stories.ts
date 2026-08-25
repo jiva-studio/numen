@@ -408,8 +408,11 @@ export const MakingOne: Story = {
 
     // Nothing the hand crosses on the way is text to select — the labels a
     // connection carries least of all, since a gesture passes right over them.
+    // Read under the spelling WebKit answers for.
     await expect(
-      getComputedStyle(canvasElement.querySelector('.plex__edge-label')!).userSelect,
+      getComputedStyle(canvasElement.querySelector('.plex__edge-label')!).getPropertyValue(
+        '-webkit-user-select',
+      ),
     ).toBe('none')
 
     // Reaching upwards, where the parents are. Only a browser can answer this:
@@ -953,6 +956,26 @@ export const Walk: Story = {
     const canvas = within(canvasElement)
     const middle = canvasElement.getBoundingClientRect()
 
+    /**
+     * The plex has arrived when the node named stands in the middle of it.
+     *
+     * Measured on the box rather than the group around it: a node that has
+     * just been clicked holds the focus, and so wears a handle that hangs off
+     * its trailing edge and would count towards the group's width.
+     */
+    const arrived = async (label: string) =>
+      await waitFor(
+        async () => {
+          const box = canvas
+            .getByLabelText(label)
+            .querySelector('.plex__box')!
+            .getBoundingClientRect()
+          const centre = box.x + box.width / 2
+          await expect(Math.abs(centre - (middle.x + middle.width / 2))).toBeLessThan(2)
+        },
+        { timeout: 3000 },
+      )
+
     // The keyboard, in a real browser: whether tab actually stops on an SVG
     // group. The focus is a stop too, although it cannot be chosen — a menu is
     // asked for from wherever the keyboard is.
@@ -971,28 +994,17 @@ export const Walk: Story = {
     await userEvent.keyboard('{Enter}')
     await expect(args.onActivate).toHaveBeenCalledWith('architecture')
 
-    await userEvent.click(canvas.getByLabelText('Domain, child'))
+    await arrived('Architecture, focus')
 
-    // Where it ends up is what a browser is needed for: that a click on an SVG
-    // group lands, and that the plex settles with the chosen node centred.
-    //
-    // Measured on the box rather than the group around it: a node that has
-    // just been clicked holds the focus, and so wears a handle that hangs off
-    // its trailing edge and would count towards the group's width.
-    await waitFor(
-      async () => {
-        const focus = canvas
-          .getByLabelText('Domain, focus')
-          .querySelector('.plex__box')!
-          .getBoundingClientRect()
-        const centre = focus.x + focus.width / 2
-        await expect(Math.abs(centre - (middle.x + middle.width / 2))).toBeLessThan(2)
-      },
-      { timeout: 3000 },
-    )
+    // Go back the way you came. Where it ends up is what a browser is needed
+    // for: that a click on an SVG group lands, and that the plex settles with
+    // the chosen node centred.
+    await userEvent.click(canvas.getByLabelText('Hexagonal architecture, child'))
+    await arrived('Hexagonal architecture, focus')
 
-    // The old focus took the seat above, and the plex is a plex again.
-    await expect(canvas.getByLabelText('Hexagonal architecture, parent')).toBeInTheDocument()
+    // The node walked away from took the seat above, and the plex is a plex
+    // again.
+    await expect(canvas.getByLabelText('Architecture, parent')).toBeInTheDocument()
   },
   parameters: {
     docs: {

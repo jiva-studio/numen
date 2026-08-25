@@ -290,6 +290,7 @@ const hue = computed(() => ({
   line-height: var(--numen-line-height);
   pointer-events: none;
   user-select: none;
+  -webkit-user-select: none;
   transition: color var(--numen-plex-move) var(--numen-easing);
 }
 
