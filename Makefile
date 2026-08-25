@@ -66,10 +66,13 @@ shoot: ## take the landing page's picture of the window from its story
 icons: ## cut every platform's icon from the one drawing
 	cd $(ICON) && npm install && npm run build
 
+# The window's tests reach the library through its build, so the library is
+# built before they run.
 .PHONY: test
 test: ## run every test
 	cd $(DESKTOP) && go test ./... -race
 	cd $(UI) && npm test
+	cd $(UI) && npm run build
 	cd $(DESKTOP)/ui && npm test
 
 .PHONY: lint

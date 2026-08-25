@@ -5,9 +5,9 @@
  * written into it as it is made. What a seat means for what gets written is
  * decided here: the plex reports the shape of a gesture and nothing else.
  */
-import { ref } from 'vue'
 import type { PlexRelatedSeat } from '@numen/ui'
 import type { Core, NewLink, Refused } from '../core'
+import type { Says } from '../telling'
 import { REFUSED } from '../words'
 
 /**
@@ -61,10 +61,7 @@ export interface Made {
   readonly title: string
 }
 
-export function creating(core: Core) {
-  /** What could not be done, in words a person reads. */
-  const said = ref('')
-
+export function creating(core: Core, said: Says) {
   /**
    * One note asked for. A name the vault has already filed is handed back as
    * `occupied` for the caller to answer for.
@@ -79,7 +76,7 @@ export function creating(core: Core) {
       if (made.refusal !== null) return made.refusal
       return { path: made.path, title }
     } catch (error) {
-      said.value = String(error)
+      said(String(error), 'refusal')
       return null
     }
   }
@@ -97,7 +94,7 @@ export function creating(core: Core) {
       if (made === 'occupied') continue
       return answered(made)
     }
-    said.value = exhausted
+    said(exhausted, 'refusal')
     return null
   }
 
@@ -129,10 +126,10 @@ export function creating(core: Core) {
   const answered = (made: Made | Refused | null): Made | null => {
     if (made === null) return null
     if (typeof made === 'string') {
-      said.value = words[made]
+      said(words[made], 'refusal')
       return null
     }
-    said.value = ''
+    said('')
     return made
   }
 
@@ -144,18 +141,18 @@ export function creating(core: Core) {
     try {
       const refusal = await core.join(from, { to, seat })
       if (refusal !== null) {
-        said.value = words[refusal]
+        said(words[refusal], 'refusal')
         return false
       }
-      said.value = ''
+      said('')
       return true
     } catch (error) {
-      said.value = String(error)
+      said(String(error), 'refusal')
       return false
     }
   }
 
-  return { make, calls, start, join, said }
+  return { make, calls, start, join }
 }
 
 /** The name the note asked for after that many taken ones is filed under. */

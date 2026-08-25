@@ -43,7 +43,8 @@ import { raising } from './raising'
 import { windowing } from './windowing'
 import BlankTab from './BlankTab.vue'
 import Leaving from './Leaving.vue'
-import Trouble from './Trouble.vue'
+import Failure from './Failure.vue'
+import { telling } from './telling'
 import { agentKind, talking } from './agent/kind'
 import { documentKind, documenting } from './document/kind'
 import { noting, type Held as NoteHeld } from './note/kind'
@@ -56,7 +57,9 @@ import { AGENT, CONVERSATION, NOTE, PLEX, named, opening } from './workspace'
 
 const drawings = drawn()
 const notes = editing(core, undefined, drawings.arrived)
-const making = creating(core)
+/** Everything the window has said, each part of it under a name of its own. */
+const tell = telling()
+const making = creating(core, tell.under('made'))
 /** The page drawn again, which is a clean window on the vault that arrived. */
 const reloads = () => globalThis.location.reload()
 const window = showing(
@@ -79,15 +82,8 @@ going.holds(notes.flush)
 raising(notes, going)
 
 const { indexing, failure, trouble, unwatched, unreachable, holds } = window
-/**
- * The one thing the window says while it still works: what it lost touch with,
- * or what the plex in front could not show.
- */
-const warning = computed(() => window.lost.value || plexes.trouble())
-/** What carrying a command out left the person to be told. */
-const told = ref('')
-/** What a command said, and what could not be made, joined or worn. */
-const unmade = computed(() => told.value || making.said.value || dressed.said.value)
+/** What carrying a command out leaves the person to be told. */
+const told = tell.under('command')
 const { chunks, embedded, embedding, tasks } = window
 
 /** How far this vault has been read for meaning, as the window last heard. */
@@ -97,8 +93,22 @@ const meaning = (): Meaning => ({
   embedding: embedding.value,
 })
 
-/** Everything running behind the window, as the corner draws it. */
-const notices = computed<readonly Notice[]>(() => cornerOf(tasks.value, meaning(), words))
+/** Everything the window has to say, as the corner draws it. */
+const notices = computed<readonly Notice[]>(() =>
+  cornerOf(
+    tasks.value,
+    tell.said.value,
+    {
+      unwatched: unwatched.value,
+      unread: trouble.value,
+      lost: window.lost.value || dressed.lost.value,
+      reading: indexing.value,
+      holds: holds.value,
+    },
+    meaning(),
+    words,
+  ),
+)
 
 /** The tabs of this window, whatever kind each of them holds. */
 const held = windowing(words)
@@ -197,7 +207,7 @@ const knows: Knows = {
 }
 
 /** How the window is drawn: the theme it wears, its half of a pair, its sizes. */
-const dressed = wearing(themes, words)
+const dressed = wearing(themes, words, tell.under('worn'))
 
 // A size is drawn, and every open editor takes its measurements again. An
 // editor watches its own box, and a size changes the type inside that box
@@ -251,7 +261,7 @@ const doing: Doing = {
     palette.shows(true)
   },
   appearance: (chosen) => dressed.chooses(chosen),
-  says: (text) => (told.value = text),
+  says: told,
 }
 
 /**
@@ -263,7 +273,7 @@ const carries = (id: string, at: Where) => {
   const deed = commands.asks(id, at)
   if (deed) return void does(deed, doing, words)
   if (commands.open.value) return palette.shows(false)
-  told.value = commands.refused(id, at)
+  told(commands.refused(id, at), 'refusal')
 }
 
 /**
@@ -397,15 +407,7 @@ onUnmounted(() => {
 
 <template>
   <main>
-    <Trouble
-      :unwatched="unwatched"
-      :trouble="trouble"
-      :warning="warning"
-      :unmade="unmade"
-      :failure="failure"
-      :indexing="indexing"
-      :holds="holds"
-    />
+    <Failure :failure="failure" />
 
     <Workspace
       v-model="layout"
@@ -433,7 +435,13 @@ onUnmounted(() => {
       </template>
     </Workspace>
 
-    <Notices :notices="notices" :name="words.working" :put-away="words.putAway" />
+    <Notices
+      :notices="notices"
+      :name="words.working"
+      :put-away="words.putAway"
+      :more="words.more"
+      @gone="tell.forget"
+    />
 
     <Leaving :questions="going.questions.value" :called="noted.titled" />
 

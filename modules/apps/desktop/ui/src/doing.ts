@@ -9,6 +9,7 @@ import type { PlexRelatedSeat } from '@numen/ui'
 import type { Deed, Shown } from './commanding'
 import type { Refused, Removed, Renamed, VaultRefused, Vaults } from './core'
 import type { Made } from './note/creating'
+import type { Says } from './telling'
 import { AGENT, NOTE, PLEX } from './workspace'
 
 /** The notes the window has open, as a command reaches them. */
@@ -67,8 +68,11 @@ export interface Doing {
    * text is set. The identity is the window's own.
    */
   appearance(chosen: string): Promise<void>
-  /** What was done, or could not be, in words a person reads. */
-  says(text: string): void
+  /**
+   * What was done, or could not be, in words a person reads. One command's
+   * word replaces the last, and nothing said clears it.
+   */
+  readonly says: Says
 }
 
 /** Everything carrying a command out says in the window's voice. */
@@ -140,7 +144,7 @@ export async function does(deed: Deed | null, on: Doing, words: Words): Promise<
   try {
     await carry(standing(deed, on), on, words)
   } catch (error) {
-    on.says(String(error))
+    on.says(String(error), 'refusal')
   }
 }
 
@@ -190,10 +194,10 @@ const makes = async (
 const renames = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
   if (!deed.name || deed.name === deed.title) return
   const tab = await settles(deed.path, on)
-  if (tab.waiting) return on.says(words.unanswered)
+  if (tab.waiting) return on.says(words.unanswered, 'caution')
   const answer = await on.renames(deed.path, deed.name)
-  if (answer.changed) return on.says(words.overtaken)
-  if (answer.refusal) return on.says(words.refused[answer.refusal])
+  if (answer.changed) return on.says(words.overtaken, 'caution')
+  if (answer.refusal) return on.says(words.refused[answer.refusal], 'refusal')
   const moved = answer.moved
   on.says(
     all(
@@ -207,9 +211,9 @@ const renames = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
 /** A note taken out of the vault, and where it went and what it left reported. */
 const removes = async (deed: Deed, destroy: boolean, on: Doing, words: Words): Promise<void> => {
   const tab = await settles(deed.path, on)
-  if (tab.waiting) return on.says(words.unanswered)
+  if (tab.waiting) return on.says(words.unanswered, 'caution')
   const answer = await on.removes(deed.path, destroy)
-  if (answer.refusal) return on.says(words.refused[answer.refusal])
+  if (answer.refusal) return on.says(words.refused[answer.refusal], 'refusal')
   if (tab.held) on.notes.shuts(tab.held)
   on.says(
     all(
@@ -228,7 +232,7 @@ const removes = async (deed: Deed, destroy: boolean, on: Doing, words: Words): P
 const shows = async (id: string, on: Doing, words: Words): Promise<void> => {
   if (!id) return
   const refusal = await on.vaults.open(id)
-  if (refusal) return on.says(words.unvaulted[refusal])
+  if (refusal) return on.says(words.unvaulted[refusal], 'refusal')
   on.reloads()
 }
 
@@ -240,7 +244,7 @@ const adds = async (on: Doing, words: Words): Promise<void> => {
   const path = await on.vaults.choose(words.folder)
   if (!path) return
   const answer = await on.vaults.add(path, '')
-  if (answer.refusal) return on.says(words.unvaulted[answer.refusal])
+  if (answer.refusal) return on.says(words.unvaulted[answer.refusal], 'refusal')
   if (!answer.vault) return
   await shows(answer.vault.id, on, words)
 }
@@ -249,7 +253,7 @@ const adds = async (on: Doing, words: Words): Promise<void> => {
 const calls = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
   if (!deed.name || deed.name === deed.vault.name) return
   const answer = await on.vaults.rename(deed.vault.id, deed.name)
-  if (answer.refusal) return on.says(words.unvaulted[answer.refusal])
+  if (answer.refusal) return on.says(words.unvaulted[answer.refusal], 'refusal')
   if (answer.vault) on.calls({ id: answer.vault.id, name: answer.vault.name })
 }
 
@@ -260,12 +264,12 @@ const calls = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
 const forgets = async (deed: Deed, erase: boolean, on: Doing, words: Words): Promise<void> => {
   const id = deed.vault.id
   const refusal = erase ? await on.vaults.erase(id) : await on.vaults.forget(id)
-  if (refusal) on.says(words.unvaulted[refusal])
+  if (refusal) on.says(words.unvaulted[refusal], 'refusal')
 }
 
 /** A note travelled to, and a vault with none to travel to said. */
 const travels = async (path: string, on: Doing, words: Words): Promise<void> => {
-  if (!path) return on.says(words.nowhere)
+  if (!path) return on.says(words.nowhere, 'caution')
   await on.travel(path)
 }
 

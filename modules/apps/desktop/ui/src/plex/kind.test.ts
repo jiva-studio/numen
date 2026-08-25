@@ -304,19 +304,28 @@ describe('a plex tab as it opens', () => {
 })
 
 describe('the plex the person is looking at', () => {
-  it('is the one they were last in, and the window says its trouble', async () => {
+  it('is the one they were last in', async () => {
     const one = window()
     const first = await one.holds('One.md')
     const second = await one.holds('Two.md')
-    first.held.view.trouble.value = 'One.md is not in the vault'
 
     one.enters(first.id)
     expect(one.looking()).toBe('One.md')
-    expect(one.trouble()).toBe('One.md is not in the vault')
 
     one.enters(second.id)
     expect(one.looking()).toBe('Two.md')
-    expect(one.trouble()).toBe('')
+  })
+
+  it('does not carry the trouble of a tab that closed to the one before it', async () => {
+    const one = window()
+    const first = await one.holds('One.md')
+    const second = await one.holds('Two.md')
+    second.held.view.trouble.value = 'Two.md is not in the vault'
+
+    one.shuts(second.id)
+
+    expect(one.looking()).toBe('One.md')
+    expect(first.held.view.trouble.value).toBe('')
   })
 
   it('is the one before it when the tab in front closes', async () => {
@@ -337,7 +346,6 @@ describe('the plex the person is looking at', () => {
     const one = window()
 
     expect(one.looking()).toBe('')
-    expect(one.trouble()).toBe('')
   })
 })
 

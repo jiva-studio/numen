@@ -3,7 +3,12 @@
  */
 import { describe, expect, it } from 'vitest'
 import {
+  PER_WORD,
+  SETTLE,
   arrivals,
+  dwellOf,
+  finished,
+  folded,
   measured,
   remembered,
   showing,
@@ -121,6 +126,98 @@ describe('a notice somebody asked for', () => {
     const arrived = arrivals(new Map(), [asked], 0)
 
     expect(showing([asked], arrived, new Set(['reading']), 0)).toEqual([])
+  })
+})
+
+describe('how long something said stands to be read', () => {
+  it('gives more time to more words', () => {
+    expect(dwellOf('Renamed')).toBe(SETTLE + PER_WORD)
+    expect(dwellOf('Renamed', 'One.md')).toBe(SETTLE + 2 * PER_WORD)
+  })
+
+  it('never runs out for a notice too long to be read in passing', () => {
+    const list = Array.from({ length: 21 }, (_, at) => `Note${at}.md`).join(' ')
+
+    expect(dwellOf('Links repaired in', list)).toBe(Infinity)
+  })
+
+  it('is drawn the moment it arrives and goes once it has been read', () => {
+    const said: Notice = { id: 'renamed', says: 'Renamed', stay: 'read' }
+    const arrived = arrivals(new Map(), [said], 1000)
+
+    expect(showing([said], arrived, new Set(), 1000).map((each) => each.id)).toEqual(['renamed'])
+    expect(showing([said], arrived, new Set(), 1000 + SETTLE + PER_WORD - 1)).toHaveLength(1)
+    expect(showing([said], arrived, new Set(), 1000 + SETTLE + PER_WORD)).toEqual([])
+  })
+
+  it('stands until it is put away where it was not asked to be read in passing', () => {
+    const kept: Notice = { id: 'occupied', says: 'A note of that name is filed there', stay: 'kept' }
+    const arrived = arrivals(new Map(), [kept], 0)
+
+    expect(showing([kept], arrived, new Set(), 10_000_000).map((each) => each.id)).toEqual([
+      'occupied',
+    ])
+  })
+
+  it('keeps a notice too long to be read in passing standing, and never finishes it', () => {
+    const list = Array.from({ length: 21 }, (_, at) => `Note${at}.md`).join(' ')
+    const long: Notice = { id: 'repaired', says: 'Links repaired in', about: list, stay: 'read' }
+    const arrived = arrivals(new Map(), [long], 0)
+
+    expect(showing([long], arrived, new Set(), 10_000_000).map((each) => each.id)).toEqual([
+      'repaired',
+    ])
+    expect(finished([long], arrived, 10_000_000)).toEqual([])
+  })
+
+  it('names the ones whose caller may forget them, and only those', () => {
+    const said: Notice = { id: 'renamed', says: 'Renamed', stay: 'read' }
+    const kept: Notice = { id: 'occupied', says: 'Filed there already', stay: 'kept' }
+    const work: Notice = { id: 'embedding', says: 'Indexing', working: true }
+    const all = [said, kept, work]
+    const arrived = arrivals(new Map(), all, 0)
+
+    expect(finished(all, arrived, 0)).toEqual([])
+    expect(finished(all, arrived, 1_000_000)).toEqual(['renamed'])
+  })
+})
+
+describe('how many cards stand at once', () => {
+  const work = (id: string): Notice => ({ id, says: 'Indexing', working: true })
+  const word = (id: string): Notice => ({ id, says: 'Renamed', stay: 'read' })
+
+  it('folds nothing while there is room', () => {
+    expect(folded([work('a'), word('b')], 4)).toEqual({ shown: [work('a'), word('b')], over: 0 })
+  })
+
+  it('folds the oldest of what has been said, and counts them', () => {
+    const drawn = [word('a'), word('b'), work('c'), word('d')]
+
+    expect(folded(drawn, 2)).toEqual({ shown: [work('c'), word('d')], over: 2 })
+  })
+
+  it('folds no work and nothing that is so, however many there are', () => {
+    const drawn = [work('a'), work('b'), work('c'), work('d'), work('e')]
+
+    expect(folded(drawn, 2)).toEqual({ shown: drawn, over: 0 })
+  })
+
+  it('keeps the order of what it did not fold', () => {
+    const drawn = [word('a'), word('b'), word('c')]
+
+    expect(folded(drawn, 2).shown.map((each) => each.id)).toEqual(['b', 'c'])
+  })
+
+  it('folds nothing that stopped badly, wherever it stands', () => {
+    // Trouble is what a person has to see, and it arrives before the reports
+    // that pile up behind it.
+    const trouble: Notice = { id: 'failed', says: 'Reading', tone: 'alarm', stay: 'kept' }
+    const drawn = [trouble, word('a'), word('b'), word('c')]
+
+    const { shown, over } = folded(drawn, 2)
+
+    expect(shown.map((each) => each.id)).toEqual(['failed', 'c'])
+    expect(over).toBe(2)
   })
 })
 

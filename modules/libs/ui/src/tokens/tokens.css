@@ -47,6 +47,8 @@
   --numen-selection-away: light-dark(#2f6fd01f, #78a9ef24);
   --numen-selection-match: light-dark(#2f6fd01a, #78a9ef1f);
   --numen-alarm: light-dark(#a33a32, #e08b83);
+  /* The ground a card carrying an alarm stands on. */
+  --numen-alarm-bg: light-dark(#fdeceb, #3a201e);
   /* The band something is said in that a person should read but need not act
      on at once. */
   --numen-caution-bg: light-dark(#fff4e5, #3a2e1c);

@@ -9,9 +9,24 @@ import { describe, expect, it } from 'vitest'
 
 import { CREATABLE, UNTITLED, creating } from './creating'
 import type { Core, Made, NewLink, NewNote } from '../core'
+import type { Kind, Says } from '../telling'
 
 const pathOf = (note: NewNote): string =>
   note.folder ? `${note.folder}/${note.title}.md` : `${note.title}.md`
+
+/**
+ * A voice that keeps what it was told, and what the last of it was.
+ *
+ * A voice that was never spoken through has no last word, which is not the
+ * same as having said nothing.
+ */
+function voice() {
+  const told: { text: string; kind: Kind }[] = []
+  const said: Says = (text, kind = 'report') => {
+    told.push({ text, kind })
+  }
+  return { said, told, last: () => told.at(-1)?.text }
+}
 
 /**
  * A core that keeps what it was asked to write and answers what a test told it
@@ -30,13 +45,13 @@ function fake(answers: Made[] = [], refusals: Made['refusal'][] = []) {
       return refusals.shift() ?? null
     },
   } as unknown as Core
-  return { core, asked, joined }
+  return { core, asked, joined, ...voice() }
 }
 
 describe('making a note in a seat of another', () => {
   it('writes the note it was made from into it, in the seat facing the one asked for', async () => {
-    const { core, asked } = fake()
-    const made = await creating(core).make('Ontology.md', 'child')
+    const { core, asked, said } = fake()
+    const made = await creating(core, said).make('Ontology.md', 'child')
 
     expect(made).toStrictEqual({ path: `${UNTITLED}.md`, title: UNTITLED })
     expect(asked).toStrictEqual([
@@ -45,15 +60,15 @@ describe('making a note in a seat of another', () => {
   })
 
   it('makes a parent the new note is the child of', async () => {
-    const { core, asked } = fake()
-    await creating(core).make('Ontology.md', 'parent')
+    const { core, asked, said } = fake()
+    await creating(core, said).make('Ontology.md', 'parent')
 
     expect(asked[0]?.links).toStrictEqual([{ to: 'Ontology.md', seat: 'child' }])
   })
 
   it('files it in the folder the note it was made from is in', async () => {
-    const { core, asked } = fake()
-    const made = await creating(core).make('physics/Ontology.md', 'child')
+    const { core, asked, said } = fake()
+    const made = await creating(core, said).make('physics/Ontology.md', 'child')
 
     expect(asked[0]?.folder).toBe('physics')
     expect(made?.path).toBe(`physics/${UNTITLED}.md`)
@@ -61,25 +76,25 @@ describe('making a note in a seat of another', () => {
 
   it('can make a note in every seat it offers', async () => {
     for (const seat of CREATABLE) {
-      const { core, asked } = fake()
-      expect(await creating(core).make('Ontology.md', seat)).not.toBeNull()
+      const { core, asked, said } = fake()
+      expect(await creating(core, said).make('Ontology.md', seat)).not.toBeNull()
       expect(asked[0]?.links).toHaveLength(1)
     }
   })
 
   it('makes nothing in a seat no link writes', async () => {
-    const { core, asked } = fake()
+    const { core, asked, said } = fake()
 
-    expect(await creating(core).make('Ontology.md', 'sibling')).toBeNull()
+    expect(await creating(core, said).make('Ontology.md', 'sibling')).toBeNull()
     expect(asked).toStrictEqual([])
   })
 
   it('asks for the next name for as long as the vault says the last one is taken', async () => {
-    const { core, asked } = fake([
+    const { core, asked, said, last } = fake([
       { path: '', refusal: 'occupied' },
       { path: '', refusal: 'occupied' },
     ])
-    const making = creating(core)
+    const making = creating(core, said)
     const made = await making.make('Ontology.md', 'child')
 
     expect(asked.map((note) => note.title)).toStrictEqual([
@@ -88,16 +103,17 @@ describe('making a note in a seat of another', () => {
       `${UNTITLED} 3`,
     ])
     expect(made).toStrictEqual({ path: `${UNTITLED} 3.md`, title: `${UNTITLED} 3` })
-    expect(making.said.value).toBe('')
+    expect(last()).toBe('')
   })
 
   it('says a refusal that is not a name already taken, and asks for nothing more', async () => {
-    const { core, asked } = fake([{ path: '', refusal: 'notANote' }])
-    const making = creating(core)
+    const { core, asked, said, told } = fake([{ path: '', refusal: 'notANote' }])
+    const making = creating(core, said)
 
     expect(await making.make('Ontology.md', 'child')).toBeNull()
     expect(asked).toHaveLength(1)
-    expect(making.said.value).not.toBe('')
+    expect(told.at(-1)?.text).not.toBe('')
+    expect(told.at(-1)?.kind).toBe('refusal')
   })
 
   it('says a core that could not be reached', async () => {
@@ -106,57 +122,60 @@ describe('making a note in a seat of another', () => {
         throw new Error('the vault is out of reach')
       },
     } as unknown as Core
-    const making = creating(core)
+    const { said, last } = voice()
+    const making = creating(core, said)
 
     expect(await making.make('Ontology.md', 'child')).toBeNull()
-    expect(making.said.value).toContain('out of reach')
+    expect(last()).toContain('out of reach')
   })
 })
 
 describe('a note made on its own', () => {
   it('is filed at the top of the vault, joined to nothing', async () => {
-    const { core, asked } = fake()
-    const made = await creating(core).start()
+    const { core, asked, said } = fake()
+    const made = await creating(core, said).start()
 
     expect(made).toStrictEqual({ path: `${UNTITLED}.md`, title: UNTITLED })
     expect(asked).toStrictEqual([{ title: UNTITLED, folder: '', links: [] }])
   })
 
   it('takes the next free name, as a note made in a seat does', async () => {
-    const { core } = fake([{ path: '', refusal: 'occupied' }])
+    const { core, said } = fake([{ path: '', refusal: 'occupied' }])
 
-    expect(await creating(core).start()).toStrictEqual({
+    expect(await creating(core, said).start()).toStrictEqual({
       path: `${UNTITLED} 2.md`,
       title: `${UNTITLED} 2`,
     })
   })
 
   it('is nothing when the vault refused, and the refusal is said', async () => {
-    const { core } = fake([{ path: '', refusal: 'unreadable' }])
-    const making = creating(core)
+    const { core, said, told } = fake([{ path: '', refusal: 'unreadable' }])
+    const making = creating(core, said)
 
     expect(await making.start()).toBeNull()
-    expect(making.said.value).not.toBe('')
+    expect(told.at(-1)?.text).not.toBe('')
+    expect(told.at(-1)?.kind).toBe('refusal')
   })
 })
 
 describe('joining two notes that are both there', () => {
   it('writes the link in the note the gesture came from, in the seat it landed in', async () => {
-    const { core, joined } = fake()
-    const making = creating(core)
+    const { core, joined, said, last } = fake()
+    const making = creating(core, said)
 
     expect(await making.join('Ontology.md', 'Entropy.md', 'child')).toBe(true)
     expect(joined).toStrictEqual([
       { path: 'Ontology.md', link: { to: 'Entropy.md', seat: 'child' } },
     ])
-    expect(making.said.value).toBe('')
+    expect(last()).toBe('')
   })
 
   it('says why nothing was written', async () => {
-    const { core } = fake([], ['unreadable'])
-    const making = creating(core)
+    const { core, said, told } = fake([], ['unreadable'])
+    const making = creating(core, said)
 
     expect(await making.join('Ontology.md', 'Entropy.md', 'jump')).toBe(false)
-    expect(making.said.value).not.toBe('')
+    expect(told.at(-1)?.text).not.toBe('')
+    expect(told.at(-1)?.kind).toBe('refusal')
   })
 })

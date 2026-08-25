@@ -4,10 +4,12 @@
  *
  * Quiet by design: it says what is running and roughly how far, and it is the
  * only thing on screen that moves while nobody is asking for anything.
+ *
+ * It is a line, and whoever draws it announces it.
  */
 import { computed } from 'vue'
 import Waiting from '../waiting/Waiting.vue'
-import { activity, percentWord, tallyWord, type Counting, type Tally } from './model'
+import { activity, percentWord, tallyWord, type Counting, type Tally, type Tone } from './model'
 
 const props = withDefaults(
   defineProps<{
@@ -35,22 +37,22 @@ const props = withDefaults(
     rate?: string
     /** How much longer, in words, from the same place. */
     left?: string
-    /** Something is wrong and this is what it says. */
-    trouble?: string
+    /** How the line reads. An alarm is a line that stopped badly. */
+    tone?: Tone
   }>(),
-  { says: '', about: '', counting: 'things', working: false, rate: '', left: '', trouble: '' },
+  { says: '', about: '', counting: 'things', working: false, rate: '', left: '', tone: 'plain' },
 )
 
 const shown = computed(() =>
   activity({
-    says: props.trouble || props.says,
-    ...(props.trouble ? { trouble: true } : {}),
+    says: props.says,
+    ...(props.tone === 'alarm' ? { trouble: true } : {}),
     ...(props.working ? { working: true } : {}),
     ...(props.tally ? { tally: props.tally } : {}),
   }),
 )
 
-const words = computed(() => props.trouble || props.says)
+const words = computed(() => props.says)
 const count = computed(() =>
   shown.value.counts && props.tally ? tallyWord(props.tally, props.counting) : '',
 )
@@ -60,19 +62,33 @@ const percent = computed(() =>
 /** Both are only shown beside a count, since both are read off one. */
 const rate = computed(() => (shown.value.counts ? props.rate : ''))
 const left = computed(() => (shown.value.counts ? props.left : ''))
+
+/**
+ * How the words give way.
+ *
+ * A count needs the room beside it and keeps the line to one. A line carrying
+ * only words is carrying a path or a reason, and those are read to the end.
+ */
+const gives = computed(() => (shown.value.counts ? 'truncate' : 'line-clamp-3'))
+
+/**
+ * A line about work is hushed. A line with a tone is drawn in it, and takes the
+ * colour of whatever ground that tone put it on.
+ */
+const strength = computed(() => (props.tone === 'plain' ? 'text-hushed' : ''))
 </script>
 
 <template>
   <p
     v-if="shown.state !== 'quiet'"
-    class="activity numen flex items-center gap-2 font-sans text-small text-hushed"
+    class="activity numen flex items-center gap-2 font-sans text-small"
+    :class="strength"
     :data-state="shown.state"
-    role="status"
-    aria-live="polite"
+    :data-tone="tone"
   >
-    <span class="activity__mark" />
-    <span class="activity__says min-w-0 truncate">{{ words }}</span>
-    <span v-if="about" class="activity__about min-w-0 flex-1 truncate opacity-70">{{ about }}</span>
+    <span v-if="tone === 'plain'" class="activity__mark" />
+    <span class="activity__says min-w-0" :class="gives">{{ words }}</span>
+    <span v-if="about" class="activity__about min-w-0 flex-1" :class="gives">{{ about }}</span>
     <span v-else class="activity__gap flex-1" />
     <span v-if="count" class="activity__count tabular-nums opacity-70">{{ count }}</span>
     <span v-if="percent" class="activity__percent tabular-nums opacity-70">{{ percent }}</span>
@@ -88,6 +104,12 @@ const left = computed(() => (shown.value.counts ? props.left : ''))
 </template>
 
 <style scoped>
+/* A path and a reason carry no spaces to break at, so they break anywhere. */
+.activity__says,
+.activity__about {
+  overflow-wrap: anywhere;
+}
+
 /* Every state of the line stands the same height. */
 .activity {
   min-block-size: calc(var(--numen-line-height) * 1em);
@@ -111,11 +133,6 @@ const left = computed(() => (shown.value.counts ? props.left : ''))
   opacity: 0.35;
 }
 
-.activity[data-state='trouble'] .activity__mark {
-  opacity: 1;
-  background: currentColor;
-  box-shadow: 0 0 0 0.15em color-mix(in oklab, currentColor 25%, transparent);
-}
 
 /* The numbers keep their own line. They are short, and the words beside them
    are what gives way. */

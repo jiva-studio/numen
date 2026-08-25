@@ -7,11 +7,12 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
-import { mount } from '@vue/test-utils'
+import { mount, type VueWrapper } from '@vue/test-utils'
 import {
   Agent,
   branch,
   Editor,
+  Notices,
   pane,
   Palette,
   Plex,
@@ -207,6 +208,10 @@ async function drawn() {
   await settles()
   return window
 }
+
+/** What the corner of the window is saying, one string per card. */
+const cards = (window: VueWrapper): readonly string[] =>
+  window.findAll('article.notice').map((card) => card.text())
 
 /**
  * The window with a palette a person can type into. The palette draws itself at
@@ -614,7 +619,34 @@ describe('a command asked for on a node of the plex', () => {
 
     await chose(window, 'title')
 
-    expect(window.find('[role="alert"]').text()).toBe('The vault is still being read')
+    expect(cards(window)).toStrictEqual(['reading the vault…', 'The vault is still being read'])
+  })
+
+  it('lets a person put away what it told them, and forgets it', async () => {
+    said.ready = false
+    said.opening = null
+    const window = await drawn()
+
+    await chose(window, 'title')
+    await window.findAll('article.notice button')[1]!.trigger('click')
+    await settles()
+
+    expect(cards(window)).toStrictEqual(['reading the vault…'])
+    // Put away is put away for good: the window stops handing the corner a card
+    // it has been told the person is finished with.
+    expect(window.findComponent(Notices).props('notices')).toHaveLength(1)
+  })
+
+  it('says in the tab what that tab could not show', async () => {
+    const window = await drawn()
+    const tab = window.findComponent(PlexTab)
+    const held = tab.props('held') as { view: { trouble: { value: string } } }
+
+    held.view.trouble.value = 'Gone.md is not in the vault'
+    await settles()
+
+    expect(tab.find('.warning').text()).toBe('Gone.md is not in the vault')
+    expect(cards(window)).toStrictEqual([])
   })
 
   it('says nothing where it was taken up', async () => {
@@ -622,7 +654,7 @@ describe('a command asked for on a node of the plex', () => {
 
     await chose(window, 'title')
 
-    expect(window.find('[role="alert"]').exists()).toBe(false)
+    expect(cards(window)).toStrictEqual([])
     expect(window.findComponent(Palette).props('crumb')).toBe('Change title')
   })
 })
@@ -1047,7 +1079,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('Enter')
       await settles()
 
-      expect(window.find('.warning').text()).toContain('outside 0.8 to 1.5')
+      expect(cards(window).join(' ')).toContain('outside 0.8 to 1.5')
       expect(dressed()).toStrictEqual([PAIR, SERVED, SIZED])
     })
   })
@@ -1121,14 +1153,15 @@ describe('the four commands over how the window is drawn', () => {
 })
 
 describe('the window with no note to show', () => {
-  it('says nothing was read when the vault could not be read', async () => {
+  it('says the vault could not be read, and that nothing was read from it', async () => {
     said.opening = null
     said.failed = 'the vault folder is not there'
 
     const window = await drawn()
 
-    expect(window.find('.waiting').text()).toBe('nothing was read')
-    expect(window.find('.warning').text()).toContain('the vault folder is not there')
+    const corner = cards(window)
+    expect(corner[0]).toContain('the vault folder is not there')
+    expect(corner[1]).toBe('nothing was read')
   })
 
   it('says nothing when the vault was read and holds none', async () => {
@@ -1137,7 +1170,6 @@ describe('the window with no note to show', () => {
 
     const window = await drawn()
 
-    expect(window.find('.waiting').exists()).toBe(false)
-    expect(window.find('.warning').exists()).toBe(false)
+    expect(cards(window)).toStrictEqual([])
   })
 })

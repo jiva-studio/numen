@@ -17,6 +17,14 @@ import { grouped } from '../counting'
  */
 export type ActivityState = 'quiet' | 'working' | 'resting' | 'trouble'
 
+/**
+ * How a line reads.
+ *
+ * Given by whoever draws the line, where the state above is worked out from the
+ * count. Alarm is what a line in trouble is drawn with.
+ */
+export type Tone = 'plain' | 'caution' | 'alarm'
+
 /** A count of things done out of things to do. */
 export interface Tally {
   readonly done: number
@@ -58,8 +66,9 @@ export const shareOf = (tally: Tally): number | undefined => {
 /**
  * What to draw for a piece of work.
  *
- * Trouble outranks everything: a line that is both failing and counting says it
- * is failing. Nothing to say is quiet, and quiet draws nothing — which is not
+ * Nothing to say is quiet, and a line with nothing to say draws nothing.
+ * Trouble outranks every other state: a line that is both failing and counting
+ * says it is failing. Quiet draws nothing — which is not
  * the same as finished. Everything else is resting or working, and a count is
  * what makes the difference visible.
  */
@@ -69,8 +78,8 @@ export const activity = (input: {
   readonly working?: boolean
   readonly tally?: Tally
 }): ActivityDescriptor => {
-  if (input.trouble) return { state: 'trouble', counts: false }
   if (!input.says) return { state: 'quiet', counts: false }
+  if (input.trouble) return { state: 'trouble', counts: false }
 
   // Work is claimed, not assumed. Words alone say something is so, and a caller
   // that means "this is happening now" says that too.
