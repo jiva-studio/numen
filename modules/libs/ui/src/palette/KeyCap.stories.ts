@@ -1,17 +1,21 @@
 /**
  * Every cap the palette can be asked to draw, and the two measurements that say
- * a cap is one object: every mark is centred on the letter's ink, and every
- * mark is stroked as thick as the letter's stem.
+ * a cap is one object: every mark is centred on the line the letter is set on,
+ * and every mark is stroked as thick as every other.
  *
  * Those measurements are why these are stories rather than tests in jsdom. A
  * mark's ink is where a browser paints it, and nothing else can say where.
+ *
+ * Both are held against the cap's own boxes, which come from the tokens. How
+ * thick a face draws its stems and where it puts ink in its em box are that
+ * face's own, and differ wherever the installed fonts differ.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
 import KeyCap from './KeyCap.vue'
 import { MARKS } from './marks'
 import type { PaletteKeys, PaletteMark } from './model'
-import { letterInk, markInk } from '@/fixtures/ink'
+import { markInk } from '@/fixtures/ink'
 
 const meta = {
   title: 'Generic/KeyCap',
@@ -54,19 +58,28 @@ export const EveryMark: Story = {
     const caps = Array.from(canvasElement.querySelectorAll('.cap'))
     await expect(caps).toHaveLength(EVERY.length)
 
+    const weights: number[] = []
     for (const cap of caps) {
-      // The letter beside it is what a mark is measured against.
-      const letter = letterInk(cap.querySelector('span[aria-hidden="true"]')!)
-      const mark = await markInk(cap.querySelector('svg')!)
       const set = parseFloat(getComputedStyle(cap).fontSize)
+      const box = cap.getBoundingClientRect()
+      const middle = box.top + box.height / 2
 
-      // One line: a mark's ink is centred on the letter's, within a fiftieth
-      // of the type they are both drawn at.
-      await expect(Math.abs(mark.middle - letter.middle) / set).toBeLessThanOrEqual(0.02)
+      // The line the letter is set on is the middle of the box holding it,
+      // which is one line-height tall whatever the face.
+      const line = cap.querySelector('span[aria-hidden="true"]')!.getBoundingClientRect()
+      await expect(Math.abs(line.top + line.height / 2 - middle) / set).toBeLessThanOrEqual(0.02)
 
-      // One weight: a mark is stroked within a tenth of the letter's stem.
-      await expect(Math.abs(mark.stroke - letter.stroke) / letter.stroke).toBeLessThanOrEqual(0.1)
+      // One line: a mark's ink is centred on that line, within a fiftieth of
+      // the type the cap is set in. What is left over is the asymmetry of the
+      // mark's own grid.
+      const mark = await markInk(cap.querySelector('svg')!)
+      await expect(Math.abs(mark.middle - middle) / set).toBeLessThanOrEqual(0.02)
+      weights.push(mark.stroke / set)
     }
+
+    // One weight: every mark's ink is as thick as every other's, which is what
+    // the thinner stroke of a mark drawn larger is for.
+    await expect(Math.max(...weights) / Math.min(...weights) - 1).toBeLessThanOrEqual(0.05)
   },
 }
 

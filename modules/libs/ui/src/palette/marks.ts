@@ -19,9 +19,11 @@ import type { PaletteMark } from './model'
  * How thick a mark is stroked, in the 24 units it is drawn on, for a mark
  * filling the cap's mark box exactly.
  *
- * The letter's stem is 0.086em at the type a cap is set in and its capitals are
- * 0.713em tall, so a box of 0.85em carries a 20-unit mark at that height and
- * 2.4 units of stroke land on that stem.
+ * In the sans face this is designed against, the letter's stem is 0.086em at
+ * the type a cap is set in and its capitals are 0.713em tall; a box of 0.85em
+ * carries a 20-unit mark at that height, and 2.4 units of stroke land on that
+ * stem. A face that draws its stems differently moves what the marks sit
+ * beside, and none of it moves the marks.
  */
 const STROKE = 2.4
 
