@@ -173,12 +173,15 @@ export const opensActions = (event: {
 }): boolean => (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k'
 
 /**
- * What the key that opens the action panel is written as, from what a browser
- * says it is running on. It is Command on Apple keyboards and Control
- * everywhere else.
+ * What a keystroke of one letter and the key beside the space bar is written as,
+ * from what a browser says it is running on. It is Command on Apple keyboards
+ * and Control everywhere else.
  */
-export const commandKeyWord = (agent: string): string =>
-  /mac|iphone|ipad|ipod/i.test(agent) ? '⌘K' : '⌃K'
+export const keyWord = (letter: string, agent: string): string =>
+  `${/mac|iphone|ipad|ipod/i.test(agent) ? '⌘' : '⌃'}${letter.toUpperCase()}`
+
+/** What the key that opens the action panel is written as. */
+export const commandKeyWord = (agent: string): string => keyWord('k', agent)
 
 /**
  * A line split into the runs that are why the item is here and the runs that

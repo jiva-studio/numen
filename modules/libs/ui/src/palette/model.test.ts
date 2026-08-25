@@ -16,6 +16,7 @@ import {
   keptAt,
   keptOn,
   keyed,
+  keyWord,
   opensActions,
   ordered,
   partsOf,
@@ -227,6 +228,17 @@ describe('the keystroke that opens the action panel', () => {
     expect(commandKeyWord('MacIntel')).toBe('⌘K')
     expect(commandKeyWord('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)')).toBe('⌘K')
     expect(commandKeyWord('Linux x86_64')).toBe('⌃K')
+  })
+})
+
+describe('a keystroke of one letter and the key beside the space bar', () => {
+  it('is written with the sign the keyboard in hand uses', () => {
+    expect(keyWord('g', 'MacIntel')).toBe('⌘G')
+    expect(keyWord('g', 'Linux x86_64')).toBe('⌃G')
+  })
+
+  it('is written in capitals, whichever case it was named in', () => {
+    expect(keyWord('G', 'Linux x86_64')).toBe('⌃G')
   })
 })
 
