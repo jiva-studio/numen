@@ -19,7 +19,7 @@ const SERVED = ':root { --numen-surface: #101014 }'
 const PAIR = ':root { color-scheme: light dark; }'
 
 /** What the sizes' element holds while the window is drawn as designed. */
-const SIZED = ':root { --numen-interface: 1; --numen-font: 1; }'
+const SIZED = ':root { --numen-interface-scale: 1; --numen-text-scale: 1; }'
 
 const styled = (sheet: Document, css: string): HTMLStyleElement => {
   const one = sheet.createElement('style')
@@ -486,7 +486,7 @@ describe('the number a person types at a size', () => {
     await one.worn.chooses('interfaceScale:1.37')
 
     expect(one.chosen).toStrictEqual(['preset:numen system 1.37/1'])
-    expect(sizes(one.sheet)).toBe(':root { --numen-interface: 1.37; --numen-font: 1; }')
+    expect(sizes(one.sheet)).toBe(':root { --numen-interface-scale: 1.37; --numen-text-scale: 1; }')
   })
 })
 
@@ -508,7 +508,7 @@ describe('the size the keyboard is standing on', () => {
     one.worn.shows('interfaceScale:1.5')
     await stands()
 
-    expect(sizes(one.sheet)).toBe(':root { --numen-interface: 1.5; --numen-font: 1; }')
+    expect(sizes(one.sheet)).toBe(':root { --numen-interface-scale: 1.5; --numen-text-scale: 1; }')
   })
 
   it('is drawn once, at the row the keyboard came to rest on', async () => {
@@ -519,7 +519,7 @@ describe('the size the keyboard is standing on', () => {
     one.worn.shows('textScale:1.25')
     await stands()
 
-    expect(sizes(one.sheet)).toBe(':root { --numen-interface: 1; --numen-font: 1.25; }')
+    expect(sizes(one.sheet)).toBe(':root { --numen-interface-scale: 1; --numen-text-scale: 1.25; }')
   })
 
   it('gives way to the size the settings name once the keyboard stands nowhere', async () => {
@@ -552,7 +552,7 @@ describe('the size that was chosen', () => {
     await one.worn.chooses('interfaceScale:1.5')
 
     expect(one.chosen).toStrictEqual(['preset:numen system 1.5/1'])
-    expect(sizes(one.sheet)).toBe(':root { --numen-interface: 1.5; --numen-font: 1; }')
+    expect(sizes(one.sheet)).toBe(':root { --numen-interface-scale: 1.5; --numen-text-scale: 1; }')
   })
 
   it('is written beside the other size, which stands where it was', async () => {
@@ -561,7 +561,7 @@ describe('the size that was chosen', () => {
     await one.worn.chooses('textScale:1.75')
 
     expect(one.chosen).toStrictEqual(['preset:numen system 1.25/1.75'])
-    expect(sizes(one.sheet)).toBe(':root { --numen-interface: 1.25; --numen-font: 1.75; }')
+    expect(sizes(one.sheet)).toBe(':root { --numen-interface-scale: 1.25; --numen-text-scale: 1.75; }')
   })
 
   it('says what the settings refused, and goes back to the size they hold', async () => {

@@ -150,7 +150,7 @@ func TestTheStyleElementsAreTheLastThingInTheHead(t *testing.T) {
 		t.Fatal("the page has no head")
 	}
 
-	const drawn = "<style>:root { --numen-interface: 1.25; --numen-font: 1.5; }</style>"
+	const drawn = "<style>:root { --numen-interface-scale: 1.25; --numen-text-scale: 1.5; }</style>"
 	link := strings.LastIndex(head, "<link")
 	mode := strings.Index(head, "<style>:root { color-scheme: dark; }</style>")
 	worn := strings.Index(head, mine)
@@ -177,7 +177,7 @@ func TestAFileNamingTheZoomOpensTheWindowDrawnAtIt(t *testing.T) {
 	}
 	handler, _ := window(t, cfg)
 
-	if !strings.Contains(handed(handler, "/").Body.String(), "--numen-interface: 1.5") {
+	if !strings.Contains(handed(handler, "/").Body.String(), "--numen-interface-scale: 1.5") {
 		t.Error("the page is not drawn at what the file says")
 	}
 }

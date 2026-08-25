@@ -161,10 +161,10 @@ func (a *API) dress(ctx context.Context) string {
 func sized(drawn, set float64) string {
 	var held []string
 	if drawn > 0 {
-		held = append(held, "--numen-interface: "+number(drawn))
+		held = append(held, "--numen-interface-scale: "+number(drawn))
 	}
 	if set > 0 {
-		held = append(held, "--numen-font: "+number(set))
+		held = append(held, "--numen-text-scale: "+number(set))
 	}
 	if len(held) == 0 {
 		return ""

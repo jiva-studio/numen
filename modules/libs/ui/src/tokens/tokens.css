@@ -108,7 +108,7 @@
 /* How large the interface is drawn. A page carrying no multiplier is drawn as
    it is designed. */
 :where(:root) {
-  font-size: calc(16px * var(--numen-interface, 1));
+  font-size: calc(16px * var(--numen-interface-scale, 1));
 }
 
 :where(:root) {
@@ -197,7 +197,7 @@
 
 /* A page carrying no multiplier sets it as it is designed. */
 :where(:root) {
-  --numen-reading-size: calc(0.8125rem * var(--numen-font, 1));
+  --numen-reading-size: calc(0.8125rem * var(--numen-text-scale, 1));
 }
 
 /*

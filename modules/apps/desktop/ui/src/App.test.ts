@@ -685,7 +685,7 @@ describe('the four commands over how the window is drawn', () => {
   /** What the page was served wearing, which is the applied theme's file. */
   const SERVED = ':root { --numen-surface: #101014 }'
   /** What the page was served drawn at, which is as it is designed. */
-  const SIZED = ':root { --numen-interface: 1; --numen-font: 1; }'
+  const SIZED = ':root { --numen-interface-scale: 1; --numen-text-scale: 1; }'
 
   const styled = (css: string) => {
     const one = document.createElement('style')
@@ -923,7 +923,7 @@ describe('the four commands over how the window is drawn', () => {
 
     it('stands on the size the interface is drawn at, and leaves it there', async () => {
       said.sizes = { interfaceScale: 1.5, textScale: 1 }
-      const was = serves(PAIR, ':root { --numen-interface: 1.5; --numen-font: 1; }')
+      const was = serves(PAIR, ':root { --numen-interface-scale: 1.5; --numen-text-scale: 1; }')
 
       await over('interface')
       await stands()
@@ -934,7 +934,7 @@ describe('the four commands over how the window is drawn', () => {
 
     it('stands on a size between two steps, which is the row put in for it', async () => {
       said.sizes = { interfaceScale: 1, textScale: 1.17 }
-      const was = serves(PAIR, ':root { --numen-interface: 1; --numen-font: 1.17; }')
+      const was = serves(PAIR, ':root { --numen-interface-scale: 1; --numen-text-scale: 1.17; }')
 
       await over('reading')
       await stands()
@@ -945,7 +945,7 @@ describe('the four commands over how the window is drawn', () => {
 
     it('leaves the keyboard where typing puts it, and does not walk it back', async () => {
       said.sizes = { interfaceScale: 1.5, textScale: 1 }
-      serves(PAIR, ':root { --numen-interface: 1.5; --numen-font: 1; }')
+      serves(PAIR, ':root { --numen-interface-scale: 1.5; --numen-text-scale: 1; }')
       await over('interface')
 
       await type('137')
@@ -986,7 +986,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('Enter')
 
       expect(asked.worn).toStrictEqual(['preset:numen system 1.37/1'])
-      expect(dressed().at(-1)).toBe(':root { --numen-interface: 1.37; --numen-font: 1; }')
+      expect(dressed().at(-1)).toBe(':root { --numen-interface-scale: 1.37; --numen-text-scale: 1; }')
     })
 
     it('offers no row for a number the range does not reach, and says nothing', async () => {
@@ -1014,7 +1014,7 @@ describe('the four commands over how the window is drawn', () => {
       expect(dressed()).toStrictEqual([PAIR, SERVED, SIZED])
 
       await stands()
-      expect(dressed().at(-1)).toBe(':root { --numen-interface: 2; --numen-font: 1; }')
+      expect(dressed().at(-1)).toBe(':root { --numen-interface-scale: 2; --numen-text-scale: 1; }')
       expect(asked.worn).toStrictEqual([])
     })
 
@@ -1036,7 +1036,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('Enter')
 
       expect(asked.worn).toStrictEqual(['preset:numen system 2/1'])
-      expect(dressed().at(-1)).toBe(':root { --numen-interface: 2; --numen-font: 1; }')
+      expect(dressed().at(-1)).toBe(':root { --numen-interface-scale: 2; --numen-text-scale: 1; }')
     })
 
     it('says what the settings refused, where the window says what it could not do', async () => {
@@ -1115,7 +1115,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('Enter')
 
       expect(asked.worn).toStrictEqual(['preset:numen system 1/1.75'])
-      expect(dressed().at(-1)).toBe(':root { --numen-interface: 1; --numen-font: 1.75; }')
+      expect(dressed().at(-1)).toBe(':root { --numen-interface-scale: 1; --numen-text-scale: 1.75; }')
     })
   })
 })

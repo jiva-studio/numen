@@ -157,16 +157,16 @@ const root = () => parseFloat(getComputedStyle(document.documentElement).fontSiz
 
 /** Both multipliers as the page is wearing them. An empty string is neither. */
 const wearing = () => ({
-  drawnAt: document.documentElement.style.getPropertyValue('--numen-interface'),
-  setAt: document.documentElement.style.getPropertyValue('--numen-font'),
+  drawnAt: document.documentElement.style.getPropertyValue('--numen-interface-scale'),
+  setAt: document.documentElement.style.getPropertyValue('--numen-text-scale'),
 })
 
 /** Put the two on the page, the way the served page carries them. */
 const wear = (drawnAt: string, setAt: string) => {
   const style = document.documentElement.style
   for (const [name, size] of [
-    ['--numen-interface', drawnAt],
-    ['--numen-font', setAt],
+    ['--numen-interface-scale', drawnAt],
+    ['--numen-text-scale', setAt],
   ] as const) {
     if (size) style.setProperty(name, size)
     else style.removeProperty(name)

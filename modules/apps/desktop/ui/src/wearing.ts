@@ -129,7 +129,7 @@ interface Dressed {
 const SCHEME = /^\s*:root\s*\{\s*color-scheme:/
 
 /** The declaration the two multipliers stand in. */
-const SIZED = /--numen-(?:interface|font)\s*:/
+const SIZED = /--numen-(?:interface|text)-scale\s*:/
 
 /**
  * The elements the head ends with. A page served by something that dresses it
@@ -159,7 +159,7 @@ const after = (before: HTMLStyleElement, sheet: Document): HTMLStyleElement => {
 
 /** The two multipliers as the page carries them. */
 const declared = (sizes: Sizes): string =>
-  `:root { --numen-interface: ${sizes.interfaceScale}; --numen-font: ${sizes.textScale}; }`
+  `:root { --numen-interface-scale: ${sizes.interfaceScale}; --numen-text-scale: ${sizes.textScale}; }`
 
 /** Whether a range reaches a size. A range holding nothing reaches none. */
 const reaches = (range: Bounds, size: number): boolean =>

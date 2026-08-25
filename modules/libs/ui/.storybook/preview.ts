@@ -64,8 +64,11 @@ const preview: Preview = {
       root.style.colorScheme = theme
       // On the root, where the window puts them, so every story is looked at
       // through the same two numbers the window is drawn through.
-      root.style.setProperty('--numen-interface', chosen(context.globals['interface'], INTERFACE))
-      root.style.setProperty('--numen-font', chosen(context.globals['font'], READING))
+      root.style.setProperty(
+        '--numen-interface-scale',
+        chosen(context.globals['interface'], INTERFACE),
+      )
+      root.style.setProperty('--numen-text-scale', chosen(context.globals['font'], READING))
       return { components: { story }, template: '<story />' }
     },
   ],
