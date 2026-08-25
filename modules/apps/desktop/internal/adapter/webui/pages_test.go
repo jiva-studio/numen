@@ -49,7 +49,13 @@ func puts(t *testing.T, cfg container.Config, name, body string) {
 
 func choose(t *testing.T, themes numenv1connect.ThemeServiceHandler, name string, mode v1.Mode) {
 	t.Helper()
-	out, err := themes.Choose(t.Context(), connect.NewRequest(&v1.ChooseRequest{Name: name, Mode: mode}))
+	chose(t, themes, &v1.ChooseRequest{Name: name, Mode: mode})
+}
+
+// chose is one choice as a client makes it, whatever of it the client names.
+func chose(t *testing.T, themes numenv1connect.ThemeServiceHandler, asked *v1.ChooseRequest) {
+	t.Helper()
+	out, err := themes.Choose(t.Context(), connect.NewRequest(asked))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,6 +63,9 @@ func choose(t *testing.T, themes numenv1connect.ThemeServiceHandler, name string
 		t.Fatalf("refused: %s", failed)
 	}
 }
+
+// size is a size a choice names.
+func size(said float64) *float64 { return &said }
 
 // handed is what comes back at exactly this path. The page is handed over as
 // the empty path as well, which no URL parses to.
@@ -116,33 +125,45 @@ func TestThePageOpensWearingTheTheme(t *testing.T) {
 	}
 }
 
-// The mode's element and the theme's are the last two things in the head.
+// The mode's element, the theme's and the two sizes are the last three things
+// in the head, in that order.
 //
 // A theme and the built stylesheet both declare `color-scheme` at the root and
 // weigh the same, so the later of them holds. The built stylesheet's link is
 // the last element the build puts in the head, and the theme goes after the
-// mode so that a theme pinning the scheme is the one that holds.
-func TestBothStyleElementsAreTheLastThingInTheHead(t *testing.T) {
+// mode so that a theme pinning the scheme is the one that holds. The sizes go
+// after the theme: they are what a person set this window to, inside the bounds
+// each goes to, and the window is drawn at what they say.
+func TestTheStyleElementsAreTheLastThingInTheHead(t *testing.T) {
 	cfg := installed(t)
 	handler, themes := window(t, cfg)
 	puts(t, cfg, "sea.css", mine)
-	choose(t, themes, "mine:sea", v1.Mode_MODE_DARK)
+	chose(t, themes, &v1.ChooseRequest{
+		Name:      "mine:sea",
+		Mode:      v1.Mode_MODE_DARK,
+		Interface: size(1.25),
+		Font:      size(1.5),
+	})
 
 	head, _, found := strings.Cut(handed(handler, "/").Body.String(), headEnd)
 	if !found {
 		t.Fatal("the page has no head")
 	}
 
+	const drawn = "<style>:root { --numen-interface: 1.25; --numen-font: 1.5; }</style>"
 	link := strings.LastIndex(head, "<link")
 	mode := strings.Index(head, "<style>:root { color-scheme: dark; }</style>")
 	worn := strings.Index(head, mine)
-	if link < 0 || mode < 0 || worn < 0 {
-		t.Fatalf("the link is at %d, the mode at %d, the theme at %d", link, mode, worn)
+	sizes := strings.Index(head, drawn)
+	if link < 0 || mode < 0 || worn < 0 || sizes < 0 {
+		t.Fatalf("the link is at %d, the mode at %d, the theme at %d, the sizes at %d",
+			link, mode, worn, sizes)
 	}
-	if link > mode || mode > worn {
-		t.Errorf("the link is at %d, the mode at %d, the theme at %d", link, mode, worn)
+	if link > mode || mode > worn || worn > sizes {
+		t.Errorf("the link is at %d, the mode at %d, the theme at %d, the sizes at %d",
+			link, mode, worn, sizes)
 	}
-	if after := strings.TrimSpace(head[worn+len(mine):]); after != "</style>" {
+	if after := strings.TrimSpace(head[sizes+len(drawn):]); after != "" {
 		t.Errorf("the head ends with %q", after)
 	}
 }
@@ -226,7 +247,7 @@ func TestAThemeCannotEndTheElementItIsIn(t *testing.T) {
 	if strings.Contains(rest, "out here") {
 		t.Error("a theme wrote into the body")
 	}
-	if strings.Count(head, "</style>") != 2 {
+	if strings.Count(head, "</style>") != 3 {
 		t.Errorf("the head holds %d style elements", strings.Count(head, "</style>"))
 	}
 	if !strings.Contains(head, `<\/STYLE>`) {

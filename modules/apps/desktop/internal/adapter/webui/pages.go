@@ -88,8 +88,8 @@ func (a *API) Serving(files http.Handler) http.Handler {
 // openedAt are the addresses the window is handed for the page itself.
 var openedAt = []string{"", "/", "/" + opensAt}
 
-// headEnd is where the two style elements go: after everything the build put in
-// the head, the built stylesheet's link last among them.
+// headEnd is where the three style elements go: after everything the build put
+// in the head, the built stylesheet's link last among them.
 const headEnd = "</head>"
 
 // Window is the page, already wearing what the settings say. The bytes are
@@ -121,12 +121,17 @@ func (a *API) Window(w http.ResponseWriter, r *http.Request, files http.Handler)
 	_, _ = w.Write(text)
 }
 
-// dress is what the window wears, as the two elements the head ends with: which
-// half of a colour pair the tokens are read as, and the theme's own file.
+// dress is what the window wears, as the three elements the head ends with:
+// which half of a colour pair the tokens are read as, the theme's own file, and
+// the two sizes it is drawn and set at.
 //
-// It is read for every request, so a theme chosen, or a file in the person's
-// folder edited, is worn by the next reload. A build that cannot say what it
-// wears dresses the page in nothing, and `tokens.css` stands.
+// The page arrives wearing all three, so no frame is drawn in the default
+// colours or at a size nobody asked for. A size arriving after the first frame
+// relays out the document.
+//
+// It is read for every request, so a theme chosen, a size chosen, or a file in
+// the person's folder edited, is worn by the next reload. A build that cannot
+// say what it wears dresses the page in nothing, and `tokens.css` stands.
 func (a *API) dress(ctx context.Context) string {
 	if a.Themes == nil {
 		return ""
@@ -141,11 +146,35 @@ func (a *API) dress(ctx context.Context) string {
 	// then that theme's own.
 	dressed := styled(":root { color-scheme: " + scheme(worn.Msg.GetMode()) + "; }")
 	text, err := a.Themes.Theme(ctx, connect.NewRequest(&v1.ThemeRequest{Name: worn.Msg.GetApplied()}))
-	if err != nil || text.Msg.GetCss() == "" {
-		return dressed
+	if err == nil && text.Msg.GetCss() != "" {
+		dressed += styled(text.Msg.GetCss())
 	}
-	return dressed + styled(text.Msg.GetCss())
+	// The two sizes last. They are what a person set this window to, inside the
+	// bounds each goes to, and the element carrying them is the last word on
+	// them.
+	return dressed + sized(worn.Msg.GetInterface(), worn.Msg.GetFont())
 }
+
+// sized is the two multipliers as the page carries them: how large the
+// interface is drawn, which is the root's font size, and how large the text a
+// person reads is set. A size nobody named is left to what `tokens.css` holds.
+func sized(drawn, set float64) string {
+	var held []string
+	if drawn > 0 {
+		held = append(held, "--numen-interface: "+number(drawn))
+	}
+	if set > 0 {
+		held = append(held, "--numen-font: "+number(set))
+	}
+	if len(held) == 0 {
+		return ""
+	}
+	return styled(":root { " + strings.Join(held, "; ") + "; }")
+}
+
+// number is a multiplier as CSS takes it, at the shortest that reads back as
+// the number it was given.
+func number(size float64) string { return strconv.FormatFloat(size, 'f', -1, 64) }
 
 // scheme is which half of every colour pair the tokens are read as.
 func scheme(mode v1.Mode) string {
