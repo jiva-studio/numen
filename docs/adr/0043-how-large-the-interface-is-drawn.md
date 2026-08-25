@@ -57,6 +57,10 @@ Each is a multiplier, 1 being as designed.
 A settings file naming `zoom` names `interface`. The two say the same thing, so
 the value carries over and a window drawn at 1.5 goes on being drawn at 1.5.
 
+A file that names no size, and `zoom: 0` names none, is drawn at what the
+desktop asks for: `GDK_DPI_SCALE` is how large a session has its text scaled,
+and the interface is drawn to match. A number outside the range is not seeded.
+
 ### The interface size is the root's font size, and 1 changes nothing
 
 ```css
