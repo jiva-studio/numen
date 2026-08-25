@@ -58,6 +58,67 @@ func Save(path string, settings ...Setting) error {
 	return replace(path, raw)
 }
 
+// rename gives one field of the file another name. Its value, its place among
+// the fields around it and every other byte of the file stay as they are, so a
+// file comes back from a rename the way its person wrote it, under one word.
+//
+// A file that has not got the field is left alone. A field whose new name the
+// section already holds is left alone as well: one section holds one of a name.
+func rename(path string, at []string, to string) error {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	// The whole file has to parse before any of it is written, since what is
+	// written is the file itself with one span of it replaced.
+	var whole json.RawMessage
+	if err := json.Unmarshal(raw, &whole); err != nil {
+		return fmt.Errorf("%s: %w", path, err)
+	}
+
+	renamed, done := named(raw, at, to)
+	if !done {
+		return nil
+	}
+	return replace(path, renamed)
+}
+
+// named hands back the object's bytes with one member's name changed, and
+// whether it found the member to change.
+func named(object []byte, at []string, to string) ([]byte, bool) {
+	if len(at) == 0 {
+		return object, false
+	}
+	held, err := members(object)
+	if err != nil {
+		return object, false
+	}
+
+	for _, one := range held.pairs {
+		if one.key != at[0] {
+			continue
+		}
+		if len(at) > 1 {
+			section, done := named(object[one.from:one.to], at[1:], to)
+			if !done {
+				return object, false
+			}
+			return spliced(object, one.from, one.to, section), true
+		}
+		if one.nameTo == 0 || held.holds(to) {
+			return object, false
+		}
+		name, err := json.Marshal(to)
+		if err != nil {
+			return object, false
+		}
+		return spliced(object, one.nameFrom, one.nameTo, name), true
+	}
+
+	return object, false
+}
+
 // errNotASection is a name on the way to a setting that the file holds as
 // something other than an object.
 var errNotASection = errors.New("a setting goes inside a section")
@@ -101,11 +162,15 @@ func put(object []byte, at []string, value []byte, outer string) ([]byte, error)
 	return held.appending(object, at, value, outer), nil
 }
 
-// pair is one member of an object: its name, and where its value sits in the
-// bytes the object was read from.
+// pair is one member of an object: its name, where that name is written, and
+// where its value sits in the bytes the object was read from.
 type pair struct {
-	key      string
-	from, to int
+	key string
+	// nameFrom and nameTo are the name as the file has it, quotes and all. Both
+	// are nought for a name written with escapes in it, which is a name this
+	// stands well back from.
+	nameFrom, nameTo int
+	from, to         int
 }
 
 // shape is an object as the file has it: its members in the order they were
@@ -142,6 +207,18 @@ func members(object []byte) (shape, error) {
 		if !is {
 			return shape{}, errNotASection
 		}
+		// A name is read up to its closing quote, so the quoted name ends where
+		// the decoder now stands. It is the file's own bytes only where they are
+		// the plain quoting of it.
+		one := pair{key: key}
+		quoted, err := json.Marshal(key)
+		if err != nil {
+			return shape{}, err
+		}
+		if head := object[:int(decoder.InputOffset())]; bytes.HasSuffix(head, quoted) {
+			one.nameFrom, one.nameTo = len(head)-len(quoted), len(head)
+		}
+
 		var value json.RawMessage
 		if err := decoder.Decode(&value); err != nil {
 			return shape{}, err
@@ -149,7 +226,8 @@ func members(object []byte) (shape, error) {
 		// A decoded value is the exact bytes of it, so where it ends and how
 		// long it is say where it began.
 		end := int(decoder.InputOffset())
-		held.pairs = append(held.pairs, pair{key: key, from: end - len(value), to: end})
+		one.from, one.to = end-len(value), end
+		held.pairs = append(held.pairs, one)
 		held.last = end
 	}
 	if _, err := decoder.Token(); err != nil {
@@ -159,6 +237,16 @@ func members(object []byte) (shape, error) {
 		held.indent = indentOf(object, held.pairs[0].from)
 	}
 	return held, nil
+}
+
+// holds is whether the object has a member of this name.
+func (s shape) holds(key string) bool {
+	for _, one := range s.pairs {
+		if one.key == key {
+			return true
+		}
+	}
+	return false
 }
 
 // appending puts a member at the end of the object, laid out the way the object

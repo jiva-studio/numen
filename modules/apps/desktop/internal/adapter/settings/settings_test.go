@@ -116,9 +116,10 @@ func TestASizeAtEitherEndIsTaken(t *testing.T) {
 }
 
 // A window drawn at 1.5 goes on being drawn at 1.5. The two names are one
-// setting, and the number carries over as it stands.
-func TestAFileNamingTheZoomIsDrawnAtItUnderTheNameThatReplacedIt(t *testing.T) {
-	cfg, err := settings.At(write(t, `{"appearance":{"zoom":1.5}}`))
+// setting, and the field is given the name this build reads.
+func TestAFileNamingTheZoomIsGivenTheNameThatReplacedIt(t *testing.T) {
+	path := write(t, `{"appearance":{"zoom":1.5}}`)
+	cfg, err := settings.At(path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,21 +131,130 @@ func TestAFileNamingTheZoomIsDrawnAtItUnderTheNameThatReplacedIt(t *testing.T) {
 	if cfg.Appearance.Font != 1 {
 		t.Errorf("text is set at %v", cfg.Appearance.Font)
 	}
-	if len(cfg.Said) != 1 || !strings.Contains(cfg.Said[0], "appearance.interface") {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := `{"appearance":{"interface":1.5}}`; string(raw) != want {
+		t.Errorf("the file is now %s, and not %s", raw, want)
+	}
+	// Nothing to tell a person: the window is the size it was, and the file
+	// says what this build reads.
+	if len(cfg.Said) != 0 {
 		t.Errorf("the person is told %q", cfg.Said)
 	}
 }
 
+// The file a person arranged comes back from the renaming with one word of it
+// changed, down to the blank lines and a number written to two places.
+func TestTheRenamingLeavesEveryOtherByteOfTheFileWhereItWas(t *testing.T) {
+	path := write(t, arranged)
+	if _, err := settings.At(path); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := strings.Replace(arranged, `"zoom": 1.5`, `"interface": 1.5`, 1)
+	if string(raw) != want {
+		t.Errorf("the file came back as:\n%s\nand not as:\n%s", raw, want)
+	}
+}
+
+// The renaming happens once. Every launch after it reads a file naming the
+// setting, so there is nothing to carry and nothing to say, ever again.
+func TestASecondLaunchRenamesNothingAndSaysNothing(t *testing.T) {
+	path := write(t, arranged)
+	if _, err := settings.At(path); err != nil {
+		t.Fatal(err)
+	}
+	renamed, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(renamed), `"zoom"`) {
+		t.Fatalf("the first launch left the file as:\n%s", renamed)
+	}
+
+	for launch := range 3 {
+		cfg, err := settings.At(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.Appearance.Interface != 1.5 {
+			t.Errorf("launch %d is drawn at %v", launch, cfg.Appearance.Interface)
+		}
+		if len(cfg.Said) != 0 {
+			t.Errorf("launch %d tells the person %q", launch, cfg.Said)
+		}
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(raw) != string(renamed) {
+			t.Errorf("launch %d left the file as:\n%s", launch, raw)
+		}
+	}
+}
+
+// A file naming both is drawn at the one this build reads, and keeps both
+// names: one section holds one of a name.
 func TestAFileNamingBothIsDrawnAtTheOneThisBuildReads(t *testing.T) {
-	cfg, err := settings.At(write(t, `{"appearance":{"zoom":1.5,"interface":1.25}}`))
+	const both = `{"appearance":{"zoom":1.5,"interface":1.25}}`
+	path := write(t, both)
+	cfg, err := settings.At(path)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if cfg.Appearance.Interface != 1.25 {
 		t.Errorf("drawn at %v", cfg.Appearance.Interface)
 	}
-	if len(cfg.Said) != 1 || !strings.Contains(cfg.Said[0], "1.25") {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(raw) != both {
+		t.Errorf("the file is now %s", raw)
+	}
+	if len(cfg.Said) != 0 {
 		t.Errorf("the person is told %q", cfg.Said)
+	}
+}
+
+// A folder nothing may be written into is a window that opens, drawn at the
+// size the file names under the name it names it by.
+func TestAFileThatCannotBeWrittenIsReadAndDrawnAtTheSizeItNames(t *testing.T) {
+	folder := t.TempDir()
+	path := filepath.Join(folder, "numen.json")
+	if err := os.WriteFile(path, []byte(arranged), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(folder, 0o555); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(folder, 0o700) })
+
+	for launch := range 2 {
+		cfg, err := settings.At(path)
+		if err != nil {
+			t.Fatalf("launch %d: %v", launch, err)
+		}
+		if cfg.Appearance.Interface != 1.5 {
+			t.Errorf("launch %d is drawn at %v", launch, cfg.Appearance.Interface)
+		}
+		if len(cfg.Said) != 0 {
+			t.Errorf("launch %d tells the person %q", launch, cfg.Said)
+		}
+	}
+
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(raw) != arranged {
+		t.Errorf("the file is now:\n%s", raw)
 	}
 }
 
@@ -208,17 +318,42 @@ func TestADesktopScaleOutsideWhatTheSizeGoesToIsNotTaken(t *testing.T) {
 }
 
 // A number the setting does not take is not carried onto it, and a window whose
-// file was written by an older build opens.
+// file was written by an older build opens. The field keeps the name it has, so
+// the launch after this one is not refused over a number a person never wrote
+// under that name.
 func TestAZoomOutsideWhatTheSizeGoesToIsNotCarried(t *testing.T) {
-	cfg, err := settings.At(write(t, `{"appearance":{"zoom":3}}`))
+	const held = `{"appearance":{"zoom":3}}`
+	path := write(t, held)
+	cfg, err := settings.At(path)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if cfg.Appearance.Interface != 1 {
 		t.Errorf("drawn at %v", cfg.Appearance.Interface)
 	}
-	if len(cfg.Said) != 1 || !strings.Contains(cfg.Said[0], "0.8") {
-		t.Errorf("the person is told %q", cfg.Said)
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(raw) != held {
+		t.Errorf("the file is now %s", raw)
+	}
+
+	// The one thing a person is told, and the only thing here they can do
+	// something about: the number, and how far the setting goes.
+	if len(cfg.Said) != 1 {
+		t.Fatalf("the person is told %q", cfg.Said)
+	}
+	said := cfg.Said[0]
+	for _, about := range []string{"appearance.zoom", "3", "0.8", "2"} {
+		if !strings.Contains(said, about) {
+			t.Errorf("%q says nothing about %s", said, about)
+		}
+	}
+	// It is shown on one line of a band the width of a panel, which cuts a
+	// longer sentence off in the middle of itself.
+	if len(said) > 60 {
+		t.Errorf("%d characters: %q", len(said), said)
 	}
 }
 

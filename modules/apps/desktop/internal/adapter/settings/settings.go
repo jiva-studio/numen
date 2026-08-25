@@ -44,9 +44,9 @@ type Config struct {
 	// Agent is which agent answers in the panel, and what it may reach.
 	Agent agent.Config `json:"agent"`
 
-	// Said is what reading the file has to tell a person: a name it holds that
-	// this build reads under another one. Whoever read the settings puts it
-	// where the person is.
+	// Said is what reading the file leaves a person something to do about: a
+	// number written where a setting does not go that far. It is one line long,
+	// and whoever read the settings puts it where the person is.
 	Said []string `json:"-"`
 }
 
@@ -209,20 +209,20 @@ func At(path string) (Config, error) {
 	if cfg.V == 0 {
 		cfg.V = 1
 	}
-	cfg.carrying(raw)
+	cfg.carrying(path, raw)
 	if err := cfg.Appearance.Check(); err != nil {
 		return Config{}, err
 	}
 	return cfg, nil
 }
 
-// carrying reads `appearance.zoom` as the setting that replaced it. Both are
-// how large the window is drawn, so the number stands as it was; where the
-// file names the setting itself, that is the one the window is drawn at.
+// carrying reads `appearance.zoom` as the setting that replaced it, and gives
+// the field that name in the file. Both are how large the window is drawn, so
+// the number stands as it was and the window is drawn the size it was.
 //
-// The file is left as the person wrote it, so what it says goes on being said
-// every time it is read.
-func (c *Config) carrying(raw []byte) {
+// A file that cannot be written is read this way at every launch, and drawn at
+// the same size at every launch.
+func (c *Config) carrying(path string, raw []byte) {
 	var file struct {
 		Appearance struct {
 			Zoom      *float64 `json:"zoom"`
@@ -232,11 +232,9 @@ func (c *Config) carrying(raw []byte) {
 	if err := json.Unmarshal(raw, &file); err != nil {
 		return
 	}
+	// A file naming the size is drawn at it, and keeps the names it holds: one
+	// section holds one of a name.
 	if file.Appearance.Interface != nil {
-		if file.Appearance.Zoom != nil && *file.Appearance.Zoom > 0 {
-			c.say("appearance.zoom is not read. The window is drawn at appearance.interface, %v.",
-				*file.Appearance.Interface)
-		}
 		return
 	}
 
@@ -250,12 +248,12 @@ func (c *Config) carrying(raw []byte) {
 		c.Appearance.Interface = fromDesktop()
 	case InterfaceBounds.Holds(zoom):
 		c.Appearance.Interface = zoom
-		c.say("appearance.zoom is now appearance.interface. The window is drawn at %v, as it was.",
-			zoom)
+		_ = rename(path, []string{"appearance", "zoom"}, "interface")
 	default:
-		c.say("appearance.zoom is now appearance.interface, which goes from %v to %v. "+
-			"The window is drawn as designed until one is written.",
-			InterfaceBounds.Least, InterfaceBounds.Most)
+		// The one number here a person has something to do about: it is the
+		// size the window is not drawn at.
+		c.say("appearance.zoom is %v, and interface goes from %v to %v",
+			zoom, InterfaceBounds.Least, InterfaceBounds.Most)
 	}
 }
 
