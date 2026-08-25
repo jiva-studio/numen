@@ -170,15 +170,17 @@ export const opensActions = (event: {
   readonly key: string
   readonly ctrlKey: boolean
   readonly metaKey: boolean
-}): boolean => (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k'
+  readonly shiftKey: boolean
+}): boolean =>
+  (event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === 'k'
 
 /**
  * What a keystroke of one letter and the key beside the space bar is written as,
  * from what a browser says it is running on. It is Command on Apple keyboards
- * and Control everywhere else.
+ * and Control everywhere else, and Shift stands between that key and the letter.
  */
-export const keyWord = (letter: string, agent: string): string =>
-  `${/mac|iphone|ipad|ipod/i.test(agent) ? '⌘' : '⌃'}${letter.toUpperCase()}`
+export const keyWord = (letter: string, agent: string, shift = false): string =>
+  `${/mac|iphone|ipad|ipod/i.test(agent) ? '⌘' : '⌃'}${shift ? '⇧' : ''}${letter.toUpperCase()}`
 
 /** What the key that opens the action panel is written as. */
 export const commandKeyWord = (agent: string): string => keyWord('k', agent)

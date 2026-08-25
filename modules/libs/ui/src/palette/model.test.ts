@@ -203,10 +203,13 @@ describe('what a key reaches', () => {
 })
 
 describe('the keystroke that opens the action panel', () => {
-  const chord = (more: Partial<{ key: string; ctrlKey: boolean; metaKey: boolean }>) => ({
+  const chord = (
+    more: Partial<{ key: string; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }>,
+  ) => ({
     key: 'k',
     ctrlKey: false,
     metaKey: false,
+    shiftKey: false,
     ...more,
   })
 
@@ -224,6 +227,11 @@ describe('the keystroke that opens the action panel', () => {
     expect(opensActions(chord({ key: 'j', ctrlKey: true }))).toBe(false)
   })
 
+  it('is not the same chord with Shift held, which belongs to whoever takes it', () => {
+    expect(opensActions(chord({ ctrlKey: true, shiftKey: true }))).toBe(false)
+    expect(opensActions(chord({ metaKey: true, shiftKey: true }))).toBe(false)
+  })
+
   it('is written the way the keyboard in hand writes it', () => {
     expect(commandKeyWord('MacIntel')).toBe('⌘K')
     expect(commandKeyWord('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)')).toBe('⌘K')
@@ -239,6 +247,11 @@ describe('a keystroke of one letter and the key beside the space bar', () => {
 
   it('is written in capitals, whichever case it was named in', () => {
     expect(keyWord('G', 'Linux x86_64')).toBe('⌃G')
+  })
+
+  it('carries Shift between the two where the chord holds it', () => {
+    expect(keyWord('p', 'MacIntel', true)).toBe('⌘⇧P')
+    expect(keyWord('p', 'Linux x86_64', true)).toBe('⌃⇧P')
   })
 })
 
