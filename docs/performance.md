@@ -920,8 +920,8 @@ three thousand rows of chrome.
 
 | the multiplier changed | forced layout |
 | --- | --- |
-| `--numen-interface` | 27–39 ms |
-| `--numen-font` | 4–6 ms |
+| `--numen-interface-scale` | 27–39 ms |
+| `--numen-text-scale` | 4–6 ms |
 
 The interface is the root's font size, so every length written in `rem` is
 measured again and the whole document is laid out. The reading size is written
@@ -936,8 +936,8 @@ of a note on screen, over the whole stylesheet rather than the tokens alone:
 
 | the multiplier changed | with the note | without it |
 | --- | --- | --- |
-| `--numen-interface` | 45–71 ms | 32–43 ms |
-| `--numen-font` | 9–13 ms | 7–11 ms |
+| `--numen-interface-scale` | 45–71 ms | 32–43 ms |
+| `--numen-text-scale` | 9–13 ms | 7–11 ms |
 
 Those two columns are read against each other. A page carrying the whole
 stylesheet costs more to recalculate than one carrying the tokens, which is why
