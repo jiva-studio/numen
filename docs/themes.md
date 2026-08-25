@@ -168,8 +168,8 @@ The type, the measures and the timings: the font stack, the two text sizes and
 the line height, the radii and strokes, the clearances, the sizes of a handle
 and a field, the order things float in, the durations and the easing. They are
 the same under every palette, and `tokens.css` holds them under the palette in
-three groups — what follows how large the interface is drawn, what follows how
-large the text is set, and what follows neither.
+three groups — what follows the interface, what the text multiplier reaches as
+well, and what follows neither.
 
 Nothing bounds a theme to the palette. A theme declaring `--numen-font-size`
 declares it, and a length written in `rem` goes on following the interface.
