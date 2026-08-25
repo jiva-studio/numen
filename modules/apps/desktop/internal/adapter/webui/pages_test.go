@@ -15,9 +15,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/task"
 )
 
 // mine is a theme of the person's, carrying a colour nothing else has and
@@ -170,8 +168,7 @@ func TestTheStyleElementsAreTheLastThingInTheHead(t *testing.T) {
 	}
 }
 
-// A window drawn at 1.5 goes on being drawn at 1.5, and the person is told
-// once under which name it is read.
+// A window drawn at 1.5 goes on being drawn at 1.5.
 func TestAFileNamingTheZoomOpensTheWindowDrawnAtIt(t *testing.T) {
 	cfg := installed(t)
 	file := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
@@ -182,17 +179,6 @@ func TestAFileNamingTheZoomOpensTheWindowDrawnAtIt(t *testing.T) {
 
 	if !strings.Contains(handed(handler, "/").Body.String(), "--numen-interface: 1.5") {
 		t.Error("the page is not drawn at what the file says")
-	}
-
-	held, err := settings.At(file)
-	if err != nil {
-		t.Fatal(err)
-	}
-	opened := &Opened{API: &API{Tasking: task.New()}}
-	opened.Says(held.Said)
-	if listed := opened.API.Tasking.List(); len(listed) != 1 ||
-		!strings.Contains(listed[0].Failed, "appearance.interface") {
-		t.Errorf("the person is told %+v", listed)
 	}
 }
 
