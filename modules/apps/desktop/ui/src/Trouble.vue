@@ -43,7 +43,7 @@ const props = defineProps<{
 .failure {
   margin: auto;
   font-family: var(--numen-font-sans);
-  font-size: 0.9rem;
+  font-size: calc(var(--numen-font-size) * 14.4 / 13);
   opacity: 0.6;
 }
 
@@ -53,7 +53,7 @@ const props = defineProps<{
   margin: 0;
   padding: 0.4rem 1rem;
   font-family: var(--numen-font-sans);
-  font-size: 0.8rem;
+  font-size: calc(var(--numen-font-size) * 12.8 / 13);
   background: var(--numen-caution-bg);
   color: var(--numen-caution-fg);
   overflow-wrap: break-word;
