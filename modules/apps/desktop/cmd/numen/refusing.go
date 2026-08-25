@@ -19,7 +19,7 @@ import (
 // A person who opened numen from a dock has no terminal, and a message written
 // to one is a window that never appeared. Whatever this build could not do, it
 // says here, with what it knows about the state it found.
-func refuse(cfg container.Config, why error, zoom float64) {
+func refuse(cfg container.Config, why error) {
 	page, err := refusal{}.page(cfg, why)
 	if err != nil {
 		return
@@ -39,7 +39,6 @@ func refuse(cfg container.Config, why error, zoom float64) {
 		Width:  720,
 		Height: 520,
 		URL:    "/",
-		Zoom:   drawnAt(zoom, 0),
 	})
 	_ = app.Run()
 }

@@ -1,6 +1,8 @@
 package container
 
 import (
+	"sync"
+
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
@@ -15,12 +17,47 @@ import (
 // offered either way. Whatever a person is told is told through say.
 func (c Config) Themes(say func(string)) (*theme.Service, error) {
 	catalogue, err := c.catalogue()
+	said := &launched{drawn: c.Interface, set: c.Font}
 	return &theme.Service{
-		Catalogue: catalogue,
-		Say:       say,
-		Dressed:   c.dressed,
-		Wear:      c.wear,
+		Catalogue:       catalogue,
+		Say:             say,
+		Dressed:         func() (theme.Dress, error) { return c.dressed(said) },
+		Wear:            func(chosen theme.Dress) error { return c.wear(chosen, said) },
+		InterfaceBounds: theme.Bounds{Least: settings.InterfaceBounds.Least, Most: settings.InterfaceBounds.Most},
+		FontBounds:      theme.Bounds{Least: settings.FontBounds.Least, Most: settings.FontBounds.Most},
 	}, err
+}
+
+// launched is what the command line said about size. Each stands over the file
+// until a person chooses that size themselves, and zero is not said.
+type launched struct {
+	mu         sync.Mutex
+	drawn, set float64
+}
+
+// over puts what was said this launch over what the file holds.
+func (l *launched) over(worn *theme.Dress) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.drawn > 0 {
+		worn.Interface = l.drawn
+	}
+	if l.set > 0 {
+		worn.Font = l.set
+	}
+}
+
+// chose lets go of what was said this launch about a size a person has now
+// chosen for themselves.
+func (l *launched) chose(chosen theme.Dress) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if chosen.Interface > 0 {
+		l.drawn = 0
+	}
+	if chosen.Font > 0 {
+		l.set = 0
+	}
 }
 
 func (c Config) catalogue() (theme.Catalogue, error) {
@@ -34,28 +71,57 @@ func (c Config) catalogue() (theme.Catalogue, error) {
 }
 
 // dressed and wear are the settings file as the themes need it: one section of
-// it read, and two fields of it written.
-func (c Config) dressed() (theme.Dress, error) {
+// it read, and up to four fields of it written.
+func (c Config) dressed(said *launched) (theme.Dress, error) {
 	path, err := c.settingsFile()
 	if err != nil {
 		return theme.Dress{}, err
 	}
-	said, err := settings.At(path)
+	held, err := settings.At(path)
 	if err != nil {
 		return theme.Dress{}, err
 	}
-	return theme.Dress{Theme: said.Appearance.Theme, Mode: mode(said.Appearance.Mode)}, nil
+	worn := theme.Dress{
+		Theme:     held.Appearance.Theme,
+		Mode:      mode(held.Appearance.Mode),
+		Interface: held.Appearance.Interface,
+		Font:      held.Appearance.Font,
+	}
+	said.over(&worn)
+	return worn, nil
 }
 
-func (c Config) wear(worn theme.Dress) error {
+// wear writes a choice into the file. Both sizes are checked before any of it
+// is written, so a number outside what its setting goes to leaves the file as
+// it stands.
+func (c Config) wear(chosen theme.Dress, said *launched) error {
 	path, err := c.settingsFile()
 	if err != nil {
 		return err
 	}
-	return settings.Save(path,
-		settings.Setting{At: []string{"appearance", "theme"}, Value: worn.Theme},
-		settings.Setting{At: []string{"appearance", "mode"}, Value: word(worn.Mode)},
-	)
+	writing := []settings.Setting{
+		{At: []string{"appearance", "theme"}, Value: chosen.Theme},
+		{At: []string{"appearance", "mode"}, Value: word(chosen.Mode)},
+	}
+	if chosen.Interface > 0 {
+		if err := settings.InterfaceBounds.Check("appearance.interface", chosen.Interface); err != nil {
+			return err
+		}
+		writing = append(writing,
+			settings.Setting{At: []string{"appearance", "interface"}, Value: chosen.Interface})
+	}
+	if chosen.Font > 0 {
+		if err := settings.FontBounds.Check("appearance.font", chosen.Font); err != nil {
+			return err
+		}
+		writing = append(writing,
+			settings.Setting{At: []string{"appearance", "font"}, Value: chosen.Font})
+	}
+	if err := settings.Save(path, writing...); err != nil {
+		return err
+	}
+	said.chose(chosen)
+	return nil
 }
 
 // mode and word are the settings' word for a mode and the schema's value for

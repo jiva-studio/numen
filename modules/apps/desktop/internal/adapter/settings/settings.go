@@ -19,6 +19,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/agent"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/embed"
@@ -53,7 +54,8 @@ type Config struct {
 type Appearance struct {
 	// Interface is how large the window is drawn: its chrome, its controls, the
 	// spacing between them and the type in them. A number outside
-	// InterfaceBounds is refused.
+	// InterfaceBounds is refused, and a file naming no size at all is drawn at
+	// what the desktop asks for.
 	Interface float64 `json:"interface"`
 
 	// Font is how large the text a person reads is set: a note, a book, an
@@ -192,8 +194,9 @@ func At(path string) (Config, error) {
 	raw, err := os.ReadFile(path)
 	if errors.Is(err, fs.ErrNotExist) {
 		// An installation nobody has configured is written down as what it is
-		// doing. A machine that will not take the file runs on the same
-		// settings.
+		// doing, the size the desktop asks for included. A machine that will
+		// not take the file runs on the same settings.
+		cfg.Appearance.Interface = fromDesktop()
 		_ = write(path, cfg)
 		return cfg, nil
 	}
@@ -226,19 +229,25 @@ func (c *Config) carrying(raw []byte) {
 			Interface *float64 `json:"interface"`
 		} `json:"appearance"`
 	}
-	if err := json.Unmarshal(raw, &file); err != nil || file.Appearance.Zoom == nil {
+	if err := json.Unmarshal(raw, &file); err != nil {
 		return
 	}
-	// Zero named no size.
-	zoom := *file.Appearance.Zoom
-	if zoom <= 0 {
+	if file.Appearance.Interface != nil {
+		if file.Appearance.Zoom != nil && *file.Appearance.Zoom > 0 {
+			c.say("appearance.zoom is not read. The window is drawn at appearance.interface, %v.",
+				*file.Appearance.Interface)
+		}
 		return
 	}
 
+	// Zero named no size, and neither did a file that named neither.
+	var zoom float64
+	if file.Appearance.Zoom != nil {
+		zoom = *file.Appearance.Zoom
+	}
 	switch {
-	case file.Appearance.Interface != nil:
-		c.say("appearance.zoom is not read. The window is drawn at appearance.interface, %v.",
-			*file.Appearance.Interface)
+	case zoom <= 0:
+		c.Appearance.Interface = fromDesktop()
 	case InterfaceBounds.Holds(zoom):
 		c.Appearance.Interface = zoom
 		c.say("appearance.zoom is now appearance.interface. The window is drawn at %v, as it was.",
@@ -248,6 +257,20 @@ func (c *Config) carrying(raw []byte) {
 			"The window is drawn as designed until one is written.",
 			InterfaceBounds.Least, InterfaceBounds.Most)
 	}
+}
+
+// fromDesktop is how large the interface is drawn where the file names no size.
+//
+// A screen says how many pixels it has and not how large they are, so the
+// desktop is asked: GDK_DPI_SCALE is what a person told their session text
+// should be scaled by, and the interface is drawn to match. A number outside
+// InterfaceBounds is not one the setting is seeded with.
+func fromDesktop() float64 {
+	scale, err := strconv.ParseFloat(os.Getenv("GDK_DPI_SCALE"), 64)
+	if err != nil || !InterfaceBounds.Holds(scale) {
+		return AsDesigned
+	}
+	return scale
 }
 
 func (c *Config) say(said string, about ...any) {

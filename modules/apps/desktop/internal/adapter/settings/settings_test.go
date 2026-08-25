@@ -14,6 +14,13 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
 )
 
+// A file naming no size is drawn at what the desktop asks for, so the session
+// these tests run in is asked nothing.
+func TestMain(m *testing.M) {
+	os.Unsetenv("GDK_DPI_SCALE")
+	os.Exit(m.Run())
+}
+
 func write(t *testing.T, body string) string {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "numen.json")
@@ -153,6 +160,50 @@ func TestAZoomNamingNoSizeCarriesNothingAndSaysNothing(t *testing.T) {
 	}
 	if len(cfg.Said) != 0 {
 		t.Errorf("the person is told %q", cfg.Said)
+	}
+}
+
+// A session that scaled its own text goes on being drawn by it, whether the
+// file names nothing about size or names the size of the text alone.
+func TestAFileNamingNoSizeIsDrawnAtWhatTheDesktopAsksFor(t *testing.T) {
+	t.Setenv("GDK_DPI_SCALE", "1.5")
+	for _, body := range []string{`{}`, `{"appearance":{"zoom":0}}`, `{"appearance":{"font":1.25}}`} {
+		cfg, err := settings.At(write(t, body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.Appearance.Interface != 1.5 {
+			t.Errorf("%s is drawn at %v", body, cfg.Appearance.Interface)
+		}
+	}
+}
+
+// A file naming a size is drawn at it, under either name.
+func TestWhatTheDesktopAsksForIsNotReadOverTheFile(t *testing.T) {
+	t.Setenv("GDK_DPI_SCALE", "1.5")
+	for body, drawn := range map[string]float64{
+		`{"appearance":{"interface":1.25}}`: 1.25,
+		`{"appearance":{"zoom":1.25}}`:      1.25,
+	} {
+		cfg, err := settings.At(write(t, body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.Appearance.Interface != drawn {
+			t.Errorf("%s is drawn at %v", body, cfg.Appearance.Interface)
+		}
+	}
+}
+
+// A number the setting does not take is not one it is seeded with.
+func TestADesktopScaleOutsideWhatTheSizeGoesToIsNotTaken(t *testing.T) {
+	t.Setenv("GDK_DPI_SCALE", "3")
+	cfg, err := settings.At(write(t, `{}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Appearance.Interface != 1 {
+		t.Errorf("drawn at %v", cfg.Appearance.Interface)
 	}
 }
 
