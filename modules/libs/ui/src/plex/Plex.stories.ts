@@ -10,7 +10,8 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { computed, ref } from 'vue'
 import Plex from './Plex.vue'
-import { rowsAndColumns, type Placement, type PlexOptionsInput } from './arrange'
+import { resolveOptions, rowsAndColumns, type Placement, type PlexOptionsInput } from './arrange'
+import { optionsForType, useTypeSize } from './sizing'
 import { neighbourhoods } from './fixtures/neighbourhoods'
 import { neighbourhoodOf, walkStart } from './fixtures/walk'
 import { around, build, type Named } from './fixtures/build'
@@ -76,7 +77,7 @@ interface Knobs {
   environment?: Environment
 }
 
-const optionsFrom = (a: Knobs): PlexOptionsInput => ({
+const knobbed = (a: Knobs): PlexOptionsInput => ({
   focusSize: { width: a.focusWidth, height: a.focusHeight },
   nodeSize: { width: a.nodeWidth, height: a.nodeHeight },
   gap: a.gap,
@@ -92,6 +93,14 @@ const optionsFrom = (a: Knobs): PlexOptionsInput => ({
       ? { parent: 'down', child: 'up', jump: 'left', sibling: 'right' }
       : { parent: 'up', child: 'down', jump: 'left', sibling: 'right' },
 })
+
+/**
+ * The knobs, at the size the type in a node is being set at. The toolbar says
+ * how large the interface is drawn, the label follows it, and the boxes and
+ * the clearances are handed in to hold that label.
+ */
+const optionsFrom = (a: Knobs, type: number): PlexOptionsInput =>
+  optionsForType(type, resolveOptions(knobbed(a)))
 
 const range = (min: number, max: number, step = 1, category = 'Layout') => ({
   control: { type: 'range' as const, min, max, step },
@@ -117,6 +126,7 @@ const countsFrom = (a: Knobs) => ({
 const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) => ({
   components: { Plex },
   setup() {
+    const type = useTypeSize()
     const focus = ref<Named | null>(null)
     const cameFrom = ref<Named | null>(null)
 
@@ -179,7 +189,7 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
       create,
       link,
       neighbourhood,
-      options: computed(() => optionsFrom(args)),
+      options: computed(() => optionsFrom(args, type.value)),
     }
   },
   template: `
@@ -211,12 +221,13 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
 const walking = (args: Knobs) => ({
   components: { Plex },
   setup() {
+    const type = useTypeSize()
     const focused = ref(walkStart)
     return {
       args,
       focused,
       neighbourhood: computed(() => neighbourhoodOf(focused.value)),
-      options: computed(() => optionsFrom(args)),
+      options: computed(() => optionsFrom(args, type.value)),
     }
   },
   template: `
@@ -606,7 +617,10 @@ export const SmallWindow: Story = {
   args: { neighbourhood: neighbourhoods.crowded },
   render: (args) => ({
     components: { Plex },
-    setup: () => ({ args, options: computed(() => optionsFrom(args)) }),
+    setup: () => {
+      const type = useTypeSize()
+      return { args, options: computed(() => optionsFrom(args, type.value)) }
+    },
     template: `
       <div style="height:100vh;display:grid;place-items:center;background:#8883">
         <div style="width:420px;height:320px;outline:1px solid var(--numen-node-border)">

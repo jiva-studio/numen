@@ -35,6 +35,9 @@ export {
   DEFAULT_DIRECTION,
 } from './plex/arrange'
 
+/** The size a node's label is being set at, and the plex drawn to hold it. */
+export { optionsForType, scaleOptions, useTypeSize, DESIGNED_TYPE } from './plex/sizing'
+
 export type {
   ArrangeInput,
   Direction,
