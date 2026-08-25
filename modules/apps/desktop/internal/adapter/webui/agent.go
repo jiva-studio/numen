@@ -8,7 +8,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agent"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
 // Ask hands the person's task to the agent and reports what it does for as long
@@ -23,7 +23,7 @@ func (a *API) Ask(ctx context.Context, r *connect.Request[v1.AskRequest], stream
 			errors.New("no agent is set up for this vault"))
 	}
 
-	work, err := taking.Take(ctx, agent.Task{
+	work, err := taking.Take(ctx, port.Task{
 		Asked:        r.Msg.GetAsked(),
 		Focus:        r.Msg.GetFocus(),
 		Conversation: r.Msg.GetConversation(),
@@ -46,7 +46,7 @@ func (a *API) Ask(ctx context.Context, r *connect.Request[v1.AskRequest], stream
 					return err
 				}
 			}
-			if step.Kind == agent.Stopped {
+			if step.Kind == port.StepStopped {
 				return nil
 			}
 		}
@@ -71,9 +71,10 @@ func (a *API) Finish(ctx context.Context, r *connect.Request[v1.FinishRequest]) 
 //
 // Every kind that names a tool is drawn as one, whatever that tool does to the
 // vault, and carries where in the vault it is working.
-func stepsOf(step agent.Step) []*v1.AskResponse {
+func stepsOf(step port.Step) []*v1.AskResponse {
 	switch step.Kind {
-	case agent.Calling, agent.Read, agent.Edit, agent.Remove, agent.Move, agent.Search:
+	case port.StepCalling, port.StepRead, port.StepEdit,
+		port.StepRemove, port.StepMove, port.StepSearch:
 		return []*v1.AskResponse{{Step: &v1.AskResponse_Doing{
 			Doing: &v1.Doing{
 				Tool:    step.Tool,
@@ -84,11 +85,11 @@ func stepsOf(step agent.Step) []*v1.AskResponse {
 				Length:  int32(step.Place.Length),
 			},
 		}}}
-	case agent.Answered:
+	case port.StepAnswered:
 		return []*v1.AskResponse{{Step: &v1.AskResponse_Answered{Answered: &v1.Answered{}}}}
-	case agent.Thinking:
+	case port.StepThinking:
 		return []*v1.AskResponse{{Step: &v1.AskResponse_Thinking{Thinking: &v1.Thinking{}}}}
-	case agent.Stopped:
+	case port.StepStopped:
 		return []*v1.AskResponse{{Step: &v1.AskResponse_Stopped{Stopped: step.Failed}}}
 	default:
 		return []*v1.AskResponse{{Step: &v1.AskResponse_Said{Said: step.Text}}}

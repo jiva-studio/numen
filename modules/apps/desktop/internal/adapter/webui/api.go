@@ -15,7 +15,6 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agent"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/task"
@@ -66,7 +65,7 @@ type API struct {
 	// that it has none, and the rest of the window works as it did. It is
 	// replaced while requests are being served, so it is taken through
 	// Answering.
-	taking atomic.Pointer[agent.Agent]
+	taking atomic.Pointer[port.Agent]
 
 	// Reads and Saves are how the window opens a note and puts it back. A build
 	// without them answers that a note cannot be edited here.
@@ -166,7 +165,7 @@ func (a *API) show(v domain.Vault) { a.vault.Store(&v) }
 
 // Answering is the agent the panel's tasks go to, and nothing where the vault
 // has none.
-func (a *API) Answering() agent.Agent {
+func (a *API) Answering() port.Agent {
 	if taking := a.taking.Load(); taking != nil {
 		return *taking
 	}
@@ -175,7 +174,7 @@ func (a *API) Answering() agent.Agent {
 
 // Answers is who takes the panel's tasks from now on. Nothing leaves the vault
 // with no agent.
-func (a *API) Answers(taking agent.Agent) {
+func (a *API) Answers(taking port.Agent) {
 	if taking == nil {
 		a.taking.Store(nil)
 		return

@@ -1,12 +1,13 @@
-// Package agent is what an agent is, in the words everything above it uses.
-//
-// An agent works a vault on a person's behalf, through tools. The window asks;
-// something outside this application answers.
-package agent
+package port
 
-import "context"
+import (
+	"context"
 
-// Agent takes tasks.
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+)
+
+// Agent takes tasks. It works a vault on a person's behalf, through tools: the
+// window asks, and something outside this application answers.
 //
 // What answers is a program of somebody else's making, reached over a protocol
 // of its own. Everything above this interface sees one agent and never which.
@@ -43,42 +44,42 @@ type Work interface {
 	Stop() error
 }
 
-// Kind is what a step is.
+// StepKind is what a step is.
 //
 // A step naming a call says what that call does to the vault. A call whose kind
-// is not known is Calling.
-type Kind int
+// is not known is StepCalling.
+type StepKind int
 
 const (
-	// Calling names a tool the agent is using. It arrives more than once for one
-	// call: the tool is named as soon as it is reached for, and again as its
+	// StepCalling names a tool the agent is using. It arrives more than once for
+	// one call: the tool is named as soon as it is reached for, and again as its
 	// arguments are written, because writing them is most of the wait.
-	Calling Kind = iota
-	// Read names a call that reads the vault and leaves it as it was.
-	Read
-	// Edit names a call that writes a note.
-	Edit
-	// Remove names a call that takes a note out of the vault.
-	Remove
-	// Move names a call that files a note elsewhere.
-	Move
-	// Search names a call that looks for notes.
-	Search
-	// Saying carries a piece of what the agent is telling the person.
-	Saying
-	// Answered says the tool is finished. What follows is not this application's
-	// and is not quick.
-	Answered
-	// Thinking says a request to the model has begun. It is the moment a wait
-	// starts, and the only step that says nothing is being done here.
-	Thinking
-	// Stopped is the last step of any work.
-	Stopped
+	StepCalling StepKind = iota
+	// StepRead names a call that reads the vault and leaves it as it was.
+	StepRead
+	// StepEdit names a call that writes a note.
+	StepEdit
+	// StepRemove names a call that takes a note out of the vault.
+	StepRemove
+	// StepMove names a call that files a note elsewhere.
+	StepMove
+	// StepSearch names a call that looks for notes.
+	StepSearch
+	// StepSaying carries a piece of what the agent is telling the person.
+	StepSaying
+	// StepAnswered says the tool is finished. What follows is not this
+	// application's and is not quick.
+	StepAnswered
+	// StepThinking says a request to the model has begun. It is the moment a
+	// wait starts, and the only step that says nothing is being done here.
+	StepThinking
+	// StepStopped is the last step of any work.
+	StepStopped
 )
 
 // Step is one thing the agent said, did, or stopped for.
 type Step struct {
-	Kind Kind
+	Kind StepKind
 	// Call is what the agent named this call. Every step of one call carries the
 	// same name, and a step that is not a call carries none.
 	Call string
@@ -91,22 +92,11 @@ type Step struct {
 	About string
 	// Place is where in the vault the call is working, empty when what the
 	// call is about is not a source the vault holds.
-	Place Place
+	Place domain.Place
 	// Written is how much of the call has been written, in characters. A call
 	// carrying the text of a note is written for minutes, and this is the only
 	// thing that moves while it is.
 	Written int
 	// Failed is why the work stopped, empty when the agent was done.
 	Failed string
-}
-
-// Place is where a call is working: a source, by its path, and the stretch of
-// that source's text the call names.
-type Place struct {
-	Path string
-	// Start and Length are the stretch, counted in bytes over the text the
-	// source is read as. A length of zero is a call that named the source and
-	// no place inside it.
-	Start  int
-	Length int
 }

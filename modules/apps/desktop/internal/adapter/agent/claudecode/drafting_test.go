@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/agent/claudecode"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agent"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
 // drawn is a window that keeps what it was told about a change being made, and
@@ -34,7 +34,7 @@ func (d *drawn) drafting() claudecode.Drafting {
 }
 
 // drafting is the agent with a window behind it, fed a canned stream.
-func drafting(t *testing.T, window *drawn, prints string) agent.Work {
+func drafting(t *testing.T, window *drawn, prints string) port.Work {
 	t.Helper()
 
 	dir := t.TempDir()
@@ -49,13 +49,13 @@ func drafting(t *testing.T, window *drawn, prints string) agent.Work {
 		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
 		Words: map[string]claudecode.Words{
 			claudecode.Tool("note_edit"): {
-				Title: "Edit a note", About: "path", Kind: agent.Edit,
+				Title: "Edit a note", About: "path", Kind: port.StepEdit,
 				Stood: "stood", Becomes: "becomes",
 			},
 		},
 		Drafting: window.drafting(),
 	}
-	work, err := claude.Take(t.Context(), agent.Task{Asked: "change it"})
+	work, err := claude.Take(t.Context(), port.Task{Asked: "change it"})
 	if err != nil {
 		t.Fatal(err)
 	}
