@@ -1,7 +1,7 @@
 /** The plex at another size: what a size carries, and what it leaves alone. */
 import { describe, expect, it } from 'vitest'
 import { DESIGNED_TYPE, optionsForType, scaleOptions } from './sizing'
-import { arrangePlex, DEFAULT_OPTIONS } from './arrange'
+import { arrangePlex, DEFAULT_OPTIONS, type PlexOptions } from './arrange'
 import { build } from './fixtures/build'
 
 const HALF_AGAIN = 1.5
@@ -40,6 +40,33 @@ describe('a label half again as large', () => {
     expect(larger.focusGap).toBe(84)
     expect(larger.margin).toBe(24)
     expect(larger.routing.minReach).toBe(33)
+  })
+
+  it('is held by every length inside a box, and beside the line it hangs on', () => {
+    expect(larger.minWidth).toBe(108)
+    expect(larger.iconWidth).toBe(24)
+    expect(larger.routing.arrowRoom).toBe(21)
+  })
+
+  // Every length is multiplied, so one added and left out of the multiplying
+  // would draw at the size the plex was designed at while the rest grew.
+  it('leaves no length behind', () => {
+    const lengths = (options: PlexOptions): number[] =>
+      Object.entries(options)
+        .flatMap(([name, value]) =>
+          name === 'routing' ? Object.entries(value as object) : [[name, value] as const],
+        )
+        .filter(([name, value]) => typeof value === 'number' && name !== 'curvature')
+        .filter(([name]) => !['maxPerLine', 'maxLines'].includes(name))
+        .map(([, value]) => value as number)
+        .concat(
+          [options.nodeSize, options.focusSize].flatMap((size) => [size.width, size.height]),
+        )
+
+    const was = lengths(DEFAULT_OPTIONS)
+    const now = lengths(larger)
+    expect(now).toHaveLength(was.length)
+    for (let i = 0; i < was.length; i++) expect(now[i]).toBeCloseTo(was[i]! * HALF_AGAIN)
   })
 
   it('leaves the counts, the fractions and the directions where they were', () => {

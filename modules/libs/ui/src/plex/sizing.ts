@@ -31,11 +31,17 @@ export const scaleOptions = (options: PlexOptions, by: number): PlexOptions => (
   ...options,
   focusSize: larger(options.focusSize, by),
   nodeSize: larger(options.nodeSize, by),
+  minWidth: options.minWidth * by,
+  iconWidth: options.iconWidth * by,
   gap: options.gap * by,
   lineGap: options.lineGap * by,
   focusGap: options.focusGap * by,
   margin: options.margin * by,
-  routing: { ...options.routing, minReach: options.routing.minReach * by },
+  routing: {
+    ...options.routing,
+    minReach: options.routing.minReach * by,
+    arrowRoom: options.routing.arrowRoom * by,
+  },
 })
 
 /** A plex drawn to hold a label set at this size. */
