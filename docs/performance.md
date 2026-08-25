@@ -912,3 +912,21 @@ other, and it changes the text a vector is made from: the recipe changes, and
 every chunk of every recognised document is embedded again. Only the words half
 was measured here — what a vector that knows its chapter is worth cannot be
 known without buying those vectors. The number to beat is 346 and 346.
+
+## Changing how large the window is drawn
+
+Recorded 2026-08-25 in Chrome 149, over a window holding a 400-line editor and
+three thousand rows of chrome.
+
+| the multiplier changed | forced layout |
+| --- | --- |
+| `--numen-interface` | 29–36 ms |
+| `--numen-font` | 4–5 ms |
+
+The interface is the root's font size, so every length written in `rem` is
+measured again and the whole document is laid out. What follows the reading size
+is the editor and marked-up text, which is a part of the page and not the whole
+of it.
+
+A held arrow key crosses a row of the size list every 40 ms, and a size is worn
+once the keyboard has stood on a row for 150 ms.
