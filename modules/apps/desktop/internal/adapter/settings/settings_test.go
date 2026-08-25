@@ -340,20 +340,46 @@ func TestAZoomOutsideWhatTheSizeGoesToIsNotCarried(t *testing.T) {
 	}
 
 	// The one thing a person is told, and the only thing here they can do
-	// something about: the number, and how far the setting goes.
+	// something about: the field, the setting it would be read as, and how far
+	// that setting goes.
 	if len(cfg.Said) != 1 {
 		t.Fatalf("the person is told %q", cfg.Said)
 	}
-	said := cfg.Said[0]
-	for _, about := range []string{"appearance.zoom", "3", "0.8", "2"} {
-		if !strings.Contains(said, about) {
-			t.Errorf("%q says nothing about %s", said, about)
+	for _, about := range []string{"appearance.zoom", "interface", "0.8", "2"} {
+		if !strings.Contains(cfg.Said[0], about) {
+			t.Errorf("%q says nothing about %s", cfg.Said[0], about)
 		}
 	}
-	// It is shown on one line of a band the width of a panel, which cuts a
-	// longer sentence off in the middle of itself.
-	if len(said) > 60 {
-		t.Errorf("%d characters: %q", len(said), said)
+}
+
+// The line is shown on one line of a band, which gives it about sixty
+// characters and cuts what is past that off the end. The end is where what a
+// person can do about it is written, so the line is one a number cannot
+// lengthen: every number a setting refuses says the same thing.
+func TestWhatIsSaidFitsTheLineItIsShownOn(t *testing.T) {
+	// Numbers a file can hold and this setting will not take, written the ways
+	// a person and a machine write them.
+	for _, zoom := range []string{
+		"3",
+		"2.0001",
+		"3.141592653589793",
+		"0.7999999999999999",
+		"123456789.12",
+		"1e308",
+		"1e-300",
+		"0.0000000000000000000000001",
+		"12345678901234567890123456789",
+	} {
+		cfg, err := settings.At(write(t, `{"appearance":{"zoom":`+zoom+`}}`))
+		if err != nil {
+			t.Fatalf("%s: %v", zoom, err)
+		}
+		if len(cfg.Said) != 1 {
+			t.Fatalf("%s: the person is told %q", zoom, cfg.Said)
+		}
+		if said := cfg.Said[0]; len(said) > 62 {
+			t.Errorf("%s: %d characters, cut at 62: %q", zoom, len(said), said)
+		}
 	}
 }
 

@@ -45,8 +45,9 @@ type Config struct {
 	Agent agent.Config `json:"agent"`
 
 	// Said is what reading the file leaves a person something to do about: a
-	// number written where a setting does not go that far. It is one line long,
-	// and whoever read the settings puts it where the person is.
+	// number written where a setting does not go that far. Each is one line of
+	// a band, which gives a line about sixty characters, and whoever read the
+	// settings puts it where the person is.
 	Said []string `json:"-"`
 }
 
@@ -250,10 +251,11 @@ func (c *Config) carrying(path string, raw []byte) {
 		c.Appearance.Interface = zoom
 		_ = rename(path, []string{"appearance", "zoom"}, "interface")
 	default:
-		// The one number here a person has something to do about: it is the
-		// size the window is not drawn at.
-		c.say("appearance.zoom is %v, and interface goes from %v to %v",
-			zoom, InterfaceBounds.Least, InterfaceBounds.Most)
+		// One line of a band: the setting the number would be read as, and how
+		// far that goes. The number itself stays in the file, where a person
+		// wrote it and where they will read it again.
+		c.say("appearance.zoom is outside what interface takes, %v to %v",
+			InterfaceBounds.Least, InterfaceBounds.Most)
 	}
 }
 
