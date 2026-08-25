@@ -55,9 +55,8 @@ func (a Address) Written() string {
 // ParseAddress reads what was written in a file.
 //
 // A wikilink carries two things the address does not: an alias after `|`, which
-// is how the link is displayed, and a fragment after `#`, which points at a
-// block. Both are dropped here — nothing reads them yet, and storing what
-// nothing reads is how a guess becomes permanent.
+// is how the link is read in the sentence, and a fragment after `#`, which names
+// a place inside the note. Both are dropped here.
 func ParseAddress(raw string) Address {
 	target := strings.TrimSpace(raw)
 	target = strings.TrimPrefix(target, "[[")

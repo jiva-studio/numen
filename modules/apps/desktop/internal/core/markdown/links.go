@@ -10,7 +10,7 @@ import (
 )
 
 // A wikilink is the ordinary link people write. Anything inside the brackets is
-// the target, an alias, or a block fragment; the address parser sorts that out.
+// the target, an alias, or a fragment; the address parser sorts that out.
 var wikilinkRe = regexp.MustCompile(`\[\[([^\]\[]+)\]\]`)
 
 // bodyLinks finds the links written in prose. They carry no role of their own,

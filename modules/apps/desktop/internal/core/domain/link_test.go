@@ -50,8 +50,7 @@ func TestAWrittenSchemeIsRead(t *testing.T) {
 	}
 }
 
-// What a link is displayed as and which block it points at are not part of
-// where it points.
+// An alias and a fragment are not part of where a link points.
 func TestAnAliasAndAFragmentAreNotPartOfTheAddress(t *testing.T) {
 	want := domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}
 	for _, raw := range []string{
