@@ -48,7 +48,8 @@ const (
 
 // Embedder is one model, loaded and compiled.
 type Embedder struct {
-	name       string
+	name string
+	// from is where these vectors are made, which is part of what they are.
 	from       string
 	dimensions int
 	maxTokens  int
@@ -77,7 +78,10 @@ type Fetching func(done, total int64)
 // Open loads the model and compiles it, fetching it first where this machine
 // does not hold it. It is expensive — the weights are read and converted — and
 // the result is reusable for the life of the process.
-func Open(ctx context.Context, is embed.Model, cfg embed.LocalModel, tell Fetching) (*Embedder, error) {
+//
+// is is the identity the vectors this model returns are kept under, which the
+// settings decide.
+func Open(ctx context.Context, is port.EmbeddingModel, cfg embed.LocalModel, tell Fetching) (*Embedder, error) {
 	if is.Dimensions <= 0 {
 		return nil, fmt.Errorf("%s: dimensions must be known before a vector is stored", cfg.Name)
 	}
@@ -105,7 +109,7 @@ func Open(ctx context.Context, is embed.Model, cfg embed.LocalModel, tell Fetchi
 
 	e := &Embedder{
 		name:       is.Name,
-		from:       paths.model,
+		from:       is.From,
 		dimensions: is.Dimensions,
 		maxTokens:  is.MaxTokens,
 		pooling:    is.Pooling,
@@ -180,6 +184,7 @@ func (e *Embedder) Close() error {
 func (e *Embedder) Model() port.EmbeddingModel {
 	return port.EmbeddingModel{
 		Name: e.name, Dimensions: e.dimensions, MaxTokens: e.maxTokens, Pooling: e.pooling,
+		From: e.from,
 	}
 }
 
@@ -330,7 +335,7 @@ type paths struct {
 // when the configuration names none.
 const (
 	modelFolder = "onnx"
-	modelFile   = "model.onnx"
+	modelFile   = embed.ModelFile
 	tokenFile   = "tokenizer.json"
 )
 

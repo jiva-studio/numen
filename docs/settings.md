@@ -65,7 +65,9 @@ Choosing a theme, light or dark, or either size writes the field it names back h
 
 `model` is what a vector **is**. `indexing` and `query` are where one is **made**.
 
-They are separate because a stored vector outlives the place that made it. One model runs on this machine and behind a service, and a vault filled by the one is asked by the other — so what a vector is kept under names the model and not the address it came from.
+They are separate because a stored vector outlives the place that made it. One name is run on this machine and served by more than one place, and the numbers each gives for one text are its own — so what a vector is kept under names the model and the address it was made at.
+
+A vault is filled by `indexing` and asked wherever `query` says, and both read the rows `indexing` made. What holds the two together is the comparison between them at startup, and not the name they are called by.
 
 | | |
 | --- | --- |
@@ -75,7 +77,7 @@ They are separate because a stored vector outlives the place that made it. One m
 | `model.pooling` | `mean` over the tokens, or `head` from the one that opens the text. |
 | `floor` | how near a question a passage stands to be an answer, in cosine similarity. Zero takes what the search was built against. Where a model puts two pieces of text about different things is a fact about that model, so a model changed is a floor measured again. |
 
-Change any of `name`, `dimensions`, `max_tokens` or `pooling` and every stored vector is made again: they are what a vector is kept under. Nothing is thrown away, and setting them back finds the old vectors where they were.
+Change any of `name`, `dimensions`, `max_tokens` or `pooling` and every stored vector is made again: they are what a vector is kept under. So is where `indexing` makes them — its `service.base_url` and `service.name`, or its `local.name`, `local.dir` and `local.file`. Nothing is thrown away, and setting them back finds the old vectors where they were.
 
 ### pooling
 
@@ -88,7 +90,9 @@ Where a model's own output is already one vector per text, nothing is pooled and
 
 ## The two places
 
-Each is `{"use": "local" | "service", "local": {…}, "service": {…}}`. The sections not in use are kept, so trying the other for an afternoon costs nothing.
+Each is `{"use": "local" | "service", "local": {…}, "service": {…}}`. The sections not in use are kept, so the other is a word away.
+
+Trying the other for an afternoon costs nothing under `query`. Under `indexing` it is every vector made again, and the old ones are where they were if it goes back.
 
 `query` left with no `use` asks the way the vault was indexed. Naming it is what separates the two, and the reason to is that their costs are opposite:
 
