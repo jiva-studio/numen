@@ -304,13 +304,11 @@ describe('the palette', () => {
     expect(bandsOf(window)).toStrictEqual(['note', 'window', 'vault'])
   })
 
-  /** What the note band says the commands in it are over. */
-  const overNote = (window: Awaited<ReturnType<typeof drawn>>) => {
-    const bands = window.findComponent(Palette).props('bands') as readonly {
-      id: string
-      items: readonly { detail?: string }[]
-    }[]
-    return bands.find((one) => one.id === 'note')?.items[0]?.detail
+  /** The note the commands are over, which the step that renames one opens on. */
+  const overNote = async (window: Awaited<ReturnType<typeof drawn>>) => {
+    window.findComponent(Palette).vm.$emit('choose', 'title', 'title')
+    await settles()
+    return window.findComponent(Palette).props('modelValue')
   }
 
   /** The tab of the plex standing on that note, as the window calls it. */
@@ -354,7 +352,7 @@ describe('the palette', () => {
     pressed('p')
     await settles()
 
-    expect(overNote(window)).toBe('Root')
+    expect(await overNote(window)).toBe('Root')
   })
 })
 

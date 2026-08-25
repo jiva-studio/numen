@@ -177,10 +177,10 @@ describe('the commands as they open', () => {
     expect(window.find((item) => item.id === 'find')?.keys).toBe(words.findKeys)
   })
 
-  it('says what each command over the note is over', () => {
+  it('writes nothing under a command that its whole band is over', () => {
     const { commands } = asking()
 
-    for (const item of commands.bands.value[0]?.items ?? []) expect(item.detail).toBe('Ontology')
+    for (const item of commands.bands.value[0]?.items ?? []) expect(item.detail).toBeUndefined()
   })
 
   it('keeps the commands the words typed leave, and lights where they stand', () => {

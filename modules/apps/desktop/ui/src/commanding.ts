@@ -692,14 +692,11 @@ export function commanding(
   const drawn = (one: Command, over: Where, word: string): PaletteItem | null => {
     const found = word === '' ? -1 : one.text.toLowerCase().indexOf(word)
     if (word !== '' && found < 0) return null
-    // A command over a note is drawn with the note it is over.
-    const detail = one.band === 'note' ? over.title : ''
     const also = one.also ? byId.get(one.also) : undefined
     return {
       id: one.id,
       title: one.text,
       ...(found < 0 ? {} : { at: [{ from: found, to: found + word.length }] }),
-      ...(detail ? { detail } : {}),
       ...(one.keys ? { keys: one.keys } : {}),
       actions: [
         { id: one.id, text: one.text },
