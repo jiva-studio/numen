@@ -14,8 +14,7 @@ export const theme = EditorView.theme({
     '--editor-marker': 'var(--numen-edge-label)',
     '--editor-code-bg': 'var(--numen-code-bg)',
     '--editor-head-bg': 'var(--numen-table-head-bg)',
-    '--editor-mono':
-      "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace",
+    '--editor-mono': 'var(--numen-font-mono)',
     '--editor-cell-padding': '4px 8px',
     '--editor-grow': '16px',
     '--editor-block-gap': '0.6em',
