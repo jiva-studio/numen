@@ -111,9 +111,9 @@ func TestASizeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 
 	drawn := 1.5
 	chosen, err := client.Choose(t.Context(), connect.NewRequest(&v1.ChooseRequest{
-		Name:      settings.DefaultTheme,
-		Mode:      v1.Mode_MODE_LIGHT,
-		Interface: &drawn,
+		Name:           settings.DefaultTheme,
+		Mode:           v1.Mode_MODE_LIGHT,
+		InterfaceScale: &drawn,
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -134,8 +134,8 @@ func TestASizeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetInterface() != 1.5 || answer.Msg.GetFont() != 1 {
-		t.Errorf("drawn at %v and set at %v", answer.Msg.GetInterface(), answer.Msg.GetFont())
+	if answer.Msg.GetInterfaceScale() != 1.5 || answer.Msg.GetTextScale() != 1 {
+		t.Errorf("drawn at %v and set at %v", answer.Msg.GetInterfaceScale(), answer.Msg.GetTextScale())
 	}
 }
 
@@ -151,9 +151,9 @@ func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsWritten(t *testing.T) {
 	client := dressing(t, cfg)
 	set := 4.0
 	chosen, err := client.Choose(t.Context(), connect.NewRequest(&v1.ChooseRequest{
-		Name: settings.DefaultTheme,
-		Mode: v1.Mode_MODE_LIGHT,
-		Font: &set,
+		Name:      settings.DefaultTheme,
+		Mode:      v1.Mode_MODE_LIGHT,
+		TextScale: &set,
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -182,15 +182,15 @@ func TestASizeSaidForOneLaunchStandsUntilAPersonChoosesOne(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetInterface() != 1.25 {
-		t.Errorf("drawn at %v", answer.Msg.GetInterface())
+	if answer.Msg.GetInterfaceScale() != 1.25 {
+		t.Errorf("drawn at %v", answer.Msg.GetInterfaceScale())
 	}
 
 	drawn := 1.5
 	if _, err := client.Choose(t.Context(), connect.NewRequest(&v1.ChooseRequest{
-		Name:      settings.DefaultTheme,
-		Mode:      v1.Mode_MODE_LIGHT,
-		Interface: &drawn,
+		Name:           settings.DefaultTheme,
+		Mode:           v1.Mode_MODE_LIGHT,
+		InterfaceScale: &drawn,
 	})); err != nil {
 		t.Fatal(err)
 	}
@@ -199,8 +199,8 @@ func TestASizeSaidForOneLaunchStandsUntilAPersonChoosesOne(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetInterface() != 1.5 {
-		t.Errorf("drawn at %v", answer.Msg.GetInterface())
+	if answer.Msg.GetInterfaceScale() != 1.5 {
+		t.Errorf("drawn at %v", answer.Msg.GetInterfaceScale())
 	}
 }
 

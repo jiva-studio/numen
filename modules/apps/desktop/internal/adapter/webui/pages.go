@@ -152,7 +152,7 @@ func (a *API) dress(ctx context.Context) string {
 	// The two sizes last. They are what a person set this window to, inside the
 	// bounds each goes to, and the element carrying them is the last word on
 	// them.
-	return dressed + sized(worn.Msg.GetInterface(), worn.Msg.GetFont())
+	return dressed + sized(worn.Msg.GetInterfaceScale(), worn.Msg.GetTextScale())
 }
 
 // sized is the two multipliers as the page carries them: how large the

@@ -96,14 +96,14 @@ message ThemesResponse {
   Mode mode = 3;
 
   // How large the interface is drawn, and how large the text a person reads is
-  // set. One is as designed.
-  double interface = 4;
-  double font = 5;
+  // set. Each is a multiplier, one being as designed.
+  double interface_scale = 4;
+  double text_scale = 5;
 
   // How far each of the two goes. A client asking a person for a number says
   // these.
-  Bounds interface_bounds = 6;
-  Bounds font_bounds = 7;
+  Bounds interface_scale_bounds = 6;
+  Bounds text_scale_bounds = 7;
 }
 
 message ThemeRequest {
@@ -126,9 +126,10 @@ message ChooseRequest {
   Mode mode = 2;
 
   // How large the interface is drawn, and how large the text a person reads is
-  // set. One is as designed, and a size left unset stands as it is.
-  optional double interface = 3;
-  optional double font = 4;
+  // set. Each is a multiplier, one being as designed, and a size left unset
+  // stands as it is.
+  optional double interface_scale = 3;
+  optional double text_scale = 4;
 }
 
 message ChooseResponse {

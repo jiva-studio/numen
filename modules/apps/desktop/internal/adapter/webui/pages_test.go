@@ -139,10 +139,10 @@ func TestTheStyleElementsAreTheLastThingInTheHead(t *testing.T) {
 	handler, themes := window(t, cfg)
 	puts(t, cfg, "sea.css", mine)
 	chose(t, themes, &v1.ChooseRequest{
-		Name:      "mine:sea",
-		Mode:      v1.Mode_MODE_DARK,
-		Interface: size(1.25),
-		Font:      size(1.5),
+		Name:           "mine:sea",
+		Mode:           v1.Mode_MODE_DARK,
+		InterfaceScale: size(1.25),
+		TextScale:      size(1.5),
 	})
 
 	head, _, found := strings.Cut(handed(handler, "/").Body.String(), headEnd)

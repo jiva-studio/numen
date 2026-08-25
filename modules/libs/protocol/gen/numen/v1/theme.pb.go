@@ -310,15 +310,15 @@ type ThemesResponse struct {
 	// Which half of a pair the tokens resolve to.
 	Mode Mode `protobuf:"varint,3,opt,name=mode,proto3,enum=numen.v1.Mode" json:"mode,omitempty"`
 	// How large the interface is drawn, and how large the text a person reads is
-	// set. One is as designed.
-	Interface float64 `protobuf:"fixed64,4,opt,name=interface,proto3" json:"interface,omitempty"`
-	Font      float64 `protobuf:"fixed64,5,opt,name=font,proto3" json:"font,omitempty"`
+	// set. Each is a multiplier, one being as designed.
+	InterfaceScale float64 `protobuf:"fixed64,4,opt,name=interface_scale,json=interfaceScale,proto3" json:"interface_scale,omitempty"`
+	TextScale      float64 `protobuf:"fixed64,5,opt,name=text_scale,json=textScale,proto3" json:"text_scale,omitempty"`
 	// How far each of the two goes. A client asking a person for a number says
 	// these.
-	InterfaceBounds *Bounds `protobuf:"bytes,6,opt,name=interface_bounds,json=interfaceBounds,proto3" json:"interface_bounds,omitempty"`
-	FontBounds      *Bounds `protobuf:"bytes,7,opt,name=font_bounds,json=fontBounds,proto3" json:"font_bounds,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	InterfaceScaleBounds *Bounds `protobuf:"bytes,6,opt,name=interface_scale_bounds,json=interfaceScaleBounds,proto3" json:"interface_scale_bounds,omitempty"`
+	TextScaleBounds      *Bounds `protobuf:"bytes,7,opt,name=text_scale_bounds,json=textScaleBounds,proto3" json:"text_scale_bounds,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *ThemesResponse) Reset() {
@@ -372,30 +372,30 @@ func (x *ThemesResponse) GetMode() Mode {
 	return Mode_MODE_UNSPECIFIED
 }
 
-func (x *ThemesResponse) GetInterface() float64 {
+func (x *ThemesResponse) GetInterfaceScale() float64 {
 	if x != nil {
-		return x.Interface
+		return x.InterfaceScale
 	}
 	return 0
 }
 
-func (x *ThemesResponse) GetFont() float64 {
+func (x *ThemesResponse) GetTextScale() float64 {
 	if x != nil {
-		return x.Font
+		return x.TextScale
 	}
 	return 0
 }
 
-func (x *ThemesResponse) GetInterfaceBounds() *Bounds {
+func (x *ThemesResponse) GetInterfaceScaleBounds() *Bounds {
 	if x != nil {
-		return x.InterfaceBounds
+		return x.InterfaceScaleBounds
 	}
 	return nil
 }
 
-func (x *ThemesResponse) GetFontBounds() *Bounds {
+func (x *ThemesResponse) GetTextScaleBounds() *Bounds {
 	if x != nil {
-		return x.FontBounds
+		return x.TextScaleBounds
 	}
 	return nil
 }
@@ -499,11 +499,12 @@ type ChooseRequest struct {
 	// Which half of a pair the tokens resolve to from now on.
 	Mode Mode `protobuf:"varint,2,opt,name=mode,proto3,enum=numen.v1.Mode" json:"mode,omitempty"`
 	// How large the interface is drawn, and how large the text a person reads is
-	// set. One is as designed, and a size left unset stands as it is.
-	Interface     *float64 `protobuf:"fixed64,3,opt,name=interface,proto3,oneof" json:"interface,omitempty"`
-	Font          *float64 `protobuf:"fixed64,4,opt,name=font,proto3,oneof" json:"font,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// set. Each is a multiplier, one being as designed, and a size left unset
+	// stands as it is.
+	InterfaceScale *float64 `protobuf:"fixed64,3,opt,name=interface_scale,json=interfaceScale,proto3,oneof" json:"interface_scale,omitempty"`
+	TextScale      *float64 `protobuf:"fixed64,4,opt,name=text_scale,json=textScale,proto3,oneof" json:"text_scale,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ChooseRequest) Reset() {
@@ -550,16 +551,16 @@ func (x *ChooseRequest) GetMode() Mode {
 	return Mode_MODE_UNSPECIFIED
 }
 
-func (x *ChooseRequest) GetInterface() float64 {
-	if x != nil && x.Interface != nil {
-		return *x.Interface
+func (x *ChooseRequest) GetInterfaceScale() float64 {
+	if x != nil && x.InterfaceScale != nil {
+		return *x.InterfaceScale
 	}
 	return 0
 }
 
-func (x *ChooseRequest) GetFont() float64 {
-	if x != nil && x.Font != nil {
-		return *x.Font
+func (x *ChooseRequest) GetTextScale() float64 {
+	if x != nil && x.TextScale != nil {
+		return *x.TextScale
 	}
 	return 0
 }
@@ -704,28 +705,28 @@ const file_numen_v1_theme_proto_rawDesc = "" +
 	"\x06Bounds\x12\x14\n" +
 	"\x05least\x18\x01 \x01(\x01R\x05least\x12\x12\n" +
 	"\x04most\x18\x02 \x01(\x01R\x04most\"\x0f\n" +
-	"\rThemesRequest\"\x99\x02\n" +
+	"\rThemesRequest\"\xc5\x02\n" +
 	"\x0eThemesResponse\x12'\n" +
 	"\x06themes\x18\x01 \x03(\v2\x0f.numen.v1.ThemeR\x06themes\x12\x18\n" +
 	"\aapplied\x18\x02 \x01(\tR\aapplied\x12\"\n" +
-	"\x04mode\x18\x03 \x01(\x0e2\x0e.numen.v1.ModeR\x04mode\x12\x1c\n" +
-	"\tinterface\x18\x04 \x01(\x01R\tinterface\x12\x12\n" +
-	"\x04font\x18\x05 \x01(\x01R\x04font\x12;\n" +
-	"\x10interface_bounds\x18\x06 \x01(\v2\x10.numen.v1.BoundsR\x0finterfaceBounds\x121\n" +
-	"\vfont_bounds\x18\a \x01(\v2\x10.numen.v1.BoundsR\n" +
-	"fontBounds\"\"\n" +
+	"\x04mode\x18\x03 \x01(\x0e2\x0e.numen.v1.ModeR\x04mode\x12'\n" +
+	"\x0finterface_scale\x18\x04 \x01(\x01R\x0einterfaceScale\x12\x1d\n" +
+	"\n" +
+	"text_scale\x18\x05 \x01(\x01R\ttextScale\x12F\n" +
+	"\x16interface_scale_bounds\x18\x06 \x01(\v2\x10.numen.v1.BoundsR\x14interfaceScaleBounds\x12<\n" +
+	"\x11text_scale_bounds\x18\a \x01(\v2\x10.numen.v1.BoundsR\x0ftextScaleBounds\"\"\n" +
 	"\fThemeRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\"!\n" +
 	"\rThemeResponse\x12\x10\n" +
-	"\x03css\x18\x01 \x01(\tR\x03css\"\x9a\x01\n" +
+	"\x03css\x18\x01 \x01(\tR\x03css\"\xbc\x01\n" +
 	"\rChooseRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\"\n" +
-	"\x04mode\x18\x02 \x01(\x0e2\x0e.numen.v1.ModeR\x04mode\x12!\n" +
-	"\tinterface\x18\x03 \x01(\x01H\x00R\tinterface\x88\x01\x01\x12\x17\n" +
-	"\x04font\x18\x04 \x01(\x01H\x01R\x04font\x88\x01\x01B\f\n" +
+	"\x04mode\x18\x02 \x01(\x0e2\x0e.numen.v1.ModeR\x04mode\x12,\n" +
+	"\x0finterface_scale\x18\x03 \x01(\x01H\x00R\x0einterfaceScale\x88\x01\x01\x12\"\n" +
 	"\n" +
-	"_interfaceB\a\n" +
-	"\x05_font\"(\n" +
+	"text_scale\x18\x04 \x01(\x01H\x01R\ttextScale\x88\x01\x01B\x12\n" +
+	"\x10_interface_scaleB\r\n" +
+	"\v_text_scale\"(\n" +
 	"\x0eChooseResponse\x12\x16\n" +
 	"\x06failed\x18\x01 \x01(\tR\x06failed\"\x10\n" +
 	"\x0eChangedRequest\"'\n" +
@@ -780,8 +781,8 @@ var file_numen_v1_theme_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.Theme.shelf:type_name -> numen.v1.Shelf
 	2,  // 1: numen.v1.ThemesResponse.themes:type_name -> numen.v1.Theme
 	1,  // 2: numen.v1.ThemesResponse.mode:type_name -> numen.v1.Mode
-	3,  // 3: numen.v1.ThemesResponse.interface_bounds:type_name -> numen.v1.Bounds
-	3,  // 4: numen.v1.ThemesResponse.font_bounds:type_name -> numen.v1.Bounds
+	3,  // 3: numen.v1.ThemesResponse.interface_scale_bounds:type_name -> numen.v1.Bounds
+	3,  // 4: numen.v1.ThemesResponse.text_scale_bounds:type_name -> numen.v1.Bounds
 	1,  // 5: numen.v1.ChooseRequest.mode:type_name -> numen.v1.Mode
 	4,  // 6: numen.v1.ThemeService.Themes:input_type -> numen.v1.ThemesRequest
 	6,  // 7: numen.v1.ThemeService.Theme:input_type -> numen.v1.ThemeRequest

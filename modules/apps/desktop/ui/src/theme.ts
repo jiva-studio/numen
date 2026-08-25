@@ -90,8 +90,11 @@ export const themes: Themes = {
       })),
       applied: answer.applied,
       mode: worded(answer.mode),
-      sizes: { interface: answer.interface, font: answer.font },
-      bounds: { interface: ranged(answer.interfaceBounds), font: ranged(answer.fontBounds) },
+      sizes: { interface: answer.interfaceScale, font: answer.textScale },
+      bounds: {
+        interface: ranged(answer.interfaceScaleBounds),
+        font: ranged(answer.textScaleBounds),
+      },
     }
   },
   text: async (name) => (await dressing.theme({ name })).css,
@@ -100,8 +103,8 @@ export const themes: Themes = {
       await dressing.choose({
         name,
         mode: ASKED[mode],
-        interface: sizes.interface,
-        font: sizes.font,
+        interfaceScale: sizes.interface,
+        textScale: sizes.font,
       })
     ).failed,
   changed: async function* (signal) {

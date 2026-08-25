@@ -146,14 +146,14 @@ func TestTheListSaysTheTwoSizesAndHowFarEachGoes(t *testing.T) {
 	})
 
 	answer := worn.themes(t)
-	if answer.GetInterface() != 1.25 || answer.GetFont() != 1.5 {
-		t.Errorf("drawn at %v and set at %v", answer.GetInterface(), answer.GetFont())
+	if answer.GetInterfaceScale() != 1.25 || answer.GetTextScale() != 1.5 {
+		t.Errorf("drawn at %v and set at %v", answer.GetInterfaceScale(), answer.GetTextScale())
 	}
-	if answer.GetInterfaceBounds().GetLeast() != 0.8 || answer.GetInterfaceBounds().GetMost() != 2 {
-		t.Errorf("the interface goes %v", answer.GetInterfaceBounds())
+	if answer.GetInterfaceScaleBounds().GetLeast() != 0.8 || answer.GetInterfaceScaleBounds().GetMost() != 2 {
+		t.Errorf("the interface goes %v", answer.GetInterfaceScaleBounds())
 	}
-	if answer.GetFontBounds().GetLeast() != 0.8 || answer.GetFontBounds().GetMost() != 1.75 {
-		t.Errorf("the text goes %v", answer.GetFontBounds())
+	if answer.GetTextScaleBounds().GetLeast() != 0.8 || answer.GetTextScaleBounds().GetMost() != 1.75 {
+		t.Errorf("the text goes %v", answer.GetTextScaleBounds())
 	}
 }
 
@@ -163,8 +163,8 @@ func TestASettingsFileNamingNoSizeIsDrawnAsDesigned(t *testing.T) {
 	worn := dressed(t, theme.Dress{Theme: theme.Default, Mode: v1.Mode_MODE_SYSTEM})
 
 	answer := worn.themes(t)
-	if answer.GetInterface() != theme.AsDesigned || answer.GetFont() != theme.AsDesigned {
-		t.Errorf("drawn at %v and set at %v", answer.GetInterface(), answer.GetFont())
+	if answer.GetInterfaceScale() != theme.AsDesigned || answer.GetTextScale() != theme.AsDesigned {
+		t.Errorf("drawn at %v and set at %v", answer.GetInterfaceScale(), answer.GetTextScale())
 	}
 }
 
@@ -179,9 +179,9 @@ func TestChoosingOneSizeLeavesTheOtherAsItStands(t *testing.T) {
 
 	drawn := 1.75
 	answer, err := worn.service.Choose(t.Context(), connect.NewRequest(&v1.ChooseRequest{
-		Name:      "preset:nord",
-		Mode:      v1.Mode_MODE_DARK,
-		Interface: &drawn,
+		Name:           "preset:nord",
+		Mode:           v1.Mode_MODE_DARK,
+		InterfaceScale: &drawn,
 	}))
 	if err != nil {
 		t.Fatal(err)

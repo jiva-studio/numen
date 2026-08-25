@@ -17,7 +17,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/theme.proto.
  */
 export const file_numen_v1_theme: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS90aGVtZS5wcm90bxIIbnVtZW4udjEiVAoFVGhlbWUSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRIeCgVzaGVsZhgDIAEoDjIPLm51bWVuLnYxLlNoZWxmEg4KBnBpbm5lZBgEIAEoCCIlCgZCb3VuZHMSDQoFbGVhc3QYASABKAESDAoEbW9zdBgCIAEoASIPCg1UaGVtZXNSZXF1ZXN0ItQBCg5UaGVtZXNSZXNwb25zZRIfCgZ0aGVtZXMYASADKAsyDy5udW1lbi52MS5UaGVtZRIPCgdhcHBsaWVkGAIgASgJEhwKBG1vZGUYAyABKA4yDi5udW1lbi52MS5Nb2RlEhEKCWludGVyZmFjZRgEIAEoARIMCgRmb250GAUgASgBEioKEGludGVyZmFjZV9ib3VuZHMYBiABKAsyEC5udW1lbi52MS5Cb3VuZHMSJQoLZm9udF9ib3VuZHMYByABKAsyEC5udW1lbi52MS5Cb3VuZHMiHAoMVGhlbWVSZXF1ZXN0EgwKBG5hbWUYASABKAkiHAoNVGhlbWVSZXNwb25zZRILCgNjc3MYASABKAkifQoNQ2hvb3NlUmVxdWVzdBIMCgRuYW1lGAEgASgJEhwKBG1vZGUYAiABKA4yDi5udW1lbi52MS5Nb2RlEhYKCWludGVyZmFjZRgDIAEoAUgAiAEBEhEKBGZvbnQYBCABKAFIAYgBAUIMCgpfaW50ZXJmYWNlQgcKBV9mb250IiAKDkNob29zZVJlc3BvbnNlEg4KBmZhaWxlZBgBIAEoCSIQCg5DaGFuZ2VkUmVxdWVzdCIgCg9DaGFuZ2VkUmVzcG9uc2USDQoFbmFtZXMYASADKAkqQAoFU2hlbGYSFQoRU0hFTEZfVU5TUEVDSUZJRUQQABIQCgxTSEVMRl9QUkVTRVQQARIOCgpTSEVMRl9NSU5FEAIqTAoETW9kZRIUChBNT0RFX1VOU1BFQ0lGSUVEEAASDwoLTU9ERV9TWVNURU0QARIOCgpNT0RFX0xJR0hUEAISDQoJTU9ERV9EQVJLEAMyhAIKDFRoZW1lU2VydmljZRI7CgZUaGVtZXMSFy5udW1lbi52MS5UaGVtZXNSZXF1ZXN0GhgubnVtZW4udjEuVGhlbWVzUmVzcG9uc2USOAoFVGhlbWUSFi5udW1lbi52MS5UaGVtZVJlcXVlc3QaFy5udW1lbi52MS5UaGVtZVJlc3BvbnNlEjsKBkNob29zZRIXLm51bWVuLnYxLkNob29zZVJlcXVlc3QaGC5udW1lbi52MS5DaG9vc2VSZXNwb25zZRJACgdDaGFuZ2VkEhgubnVtZW4udjEuQ2hhbmdlZFJlcXVlc3QaGS5udW1lbi52MS5DaGFuZ2VkUmVzcG9uc2UwAUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChRudW1lbi92MS90aGVtZS5wcm90bxIIbnVtZW4udjEiVAoFVGhlbWUSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRIeCgVzaGVsZhgDIAEoDjIPLm51bWVuLnYxLlNoZWxmEg4KBnBpbm5lZBgEIAEoCCIlCgZCb3VuZHMSDQoFbGVhc3QYASABKAESDAoEbW9zdBgCIAEoASIPCg1UaGVtZXNSZXF1ZXN0IuwBCg5UaGVtZXNSZXNwb25zZRIfCgZ0aGVtZXMYASADKAsyDy5udW1lbi52MS5UaGVtZRIPCgdhcHBsaWVkGAIgASgJEhwKBG1vZGUYAyABKA4yDi5udW1lbi52MS5Nb2RlEhcKD2ludGVyZmFjZV9zY2FsZRgEIAEoARISCgp0ZXh0X3NjYWxlGAUgASgBEjAKFmludGVyZmFjZV9zY2FsZV9ib3VuZHMYBiABKAsyEC5udW1lbi52MS5Cb3VuZHMSKwoRdGV4dF9zY2FsZV9ib3VuZHMYByABKAsyEC5udW1lbi52MS5Cb3VuZHMiHAoMVGhlbWVSZXF1ZXN0EgwKBG5hbWUYASABKAkiHAoNVGhlbWVSZXNwb25zZRILCgNjc3MYASABKAkilQEKDUNob29zZVJlcXVlc3QSDAoEbmFtZRgBIAEoCRIcCgRtb2RlGAIgASgOMg4ubnVtZW4udjEuTW9kZRIcCg9pbnRlcmZhY2Vfc2NhbGUYAyABKAFIAIgBARIXCgp0ZXh0X3NjYWxlGAQgASgBSAGIAQFCEgoQX2ludGVyZmFjZV9zY2FsZUINCgtfdGV4dF9zY2FsZSIgCg5DaG9vc2VSZXNwb25zZRIOCgZmYWlsZWQYASABKAkiEAoOQ2hhbmdlZFJlcXVlc3QiIAoPQ2hhbmdlZFJlc3BvbnNlEg0KBW5hbWVzGAEgAygJKkAKBVNoZWxmEhUKEVNIRUxGX1VOU1BFQ0lGSUVEEAASEAoMU0hFTEZfUFJFU0VUEAESDgoKU0hFTEZfTUlORRACKkwKBE1vZGUSFAoQTU9ERV9VTlNQRUNJRklFRBAAEg8KC01PREVfU1lTVEVNEAESDgoKTU9ERV9MSUdIVBACEg0KCU1PREVfREFSSxADMoQCCgxUaGVtZVNlcnZpY2USOwoGVGhlbWVzEhcubnVtZW4udjEuVGhlbWVzUmVxdWVzdBoYLm51bWVuLnYxLlRoZW1lc1Jlc3BvbnNlEjgKBVRoZW1lEhYubnVtZW4udjEuVGhlbWVSZXF1ZXN0GhcubnVtZW4udjEuVGhlbWVSZXNwb25zZRI7CgZDaG9vc2USFy5udW1lbi52MS5DaG9vc2VSZXF1ZXN0GhgubnVtZW4udjEuQ2hvb3NlUmVzcG9uc2USQAoHQ2hhbmdlZBIYLm51bWVuLnYxLkNoYW5nZWRSZXF1ZXN0GhkubnVtZW4udjEuQ2hhbmdlZFJlc3BvbnNlMAFCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * Theme is one theme as the list refers to it. Its text is asked for by the
@@ -127,29 +127,29 @@ export type ThemesResponse = Message<"numen.v1.ThemesResponse"> & {
 
   /**
    * How large the interface is drawn, and how large the text a person reads is
-   * set. One is as designed.
+   * set. Each is a multiplier, one being as designed.
    *
-   * @generated from field: double interface = 4;
+   * @generated from field: double interface_scale = 4;
    */
-  interface: number;
+  interfaceScale: number;
 
   /**
-   * @generated from field: double font = 5;
+   * @generated from field: double text_scale = 5;
    */
-  font: number;
+  textScale: number;
 
   /**
    * How far each of the two goes. A client asking a person for a number says
    * these.
    *
-   * @generated from field: numen.v1.Bounds interface_bounds = 6;
+   * @generated from field: numen.v1.Bounds interface_scale_bounds = 6;
    */
-  interfaceBounds?: Bounds | undefined;
+  interfaceScaleBounds?: Bounds | undefined;
 
   /**
-   * @generated from field: numen.v1.Bounds font_bounds = 7;
+   * @generated from field: numen.v1.Bounds text_scale_bounds = 7;
    */
-  fontBounds?: Bounds | undefined;
+  textScaleBounds?: Bounds | undefined;
 };
 
 /**
@@ -219,16 +219,17 @@ export type ChooseRequest = Message<"numen.v1.ChooseRequest"> & {
 
   /**
    * How large the interface is drawn, and how large the text a person reads is
-   * set. One is as designed, and a size left unset stands as it is.
+   * set. Each is a multiplier, one being as designed, and a size left unset
+   * stands as it is.
    *
-   * @generated from field: optional double interface = 3;
+   * @generated from field: optional double interface_scale = 3;
    */
-  interface?: number | undefined;
+  interfaceScale?: number | undefined;
 
   /**
-   * @generated from field: optional double font = 4;
+   * @generated from field: optional double text_scale = 4;
    */
-  font?: number | undefined;
+  textScale?: number | undefined;
 };
 
 /**

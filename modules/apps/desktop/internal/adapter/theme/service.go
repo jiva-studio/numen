@@ -82,13 +82,13 @@ func (s *Service) Themes(
 		})
 	}
 	return connect.NewResponse(&v1.ThemesResponse{
-		Themes:          listed,
-		Applied:         applied,
-		Mode:            worn.Mode,
-		Interface:       worn.InterfaceScale,
-		Font:            worn.TextScale,
-		InterfaceBounds: bounded(s.InterfaceScaleBounds),
-		FontBounds:      bounded(s.TextScaleBounds),
+		Themes:               listed,
+		Applied:              applied,
+		Mode:                 worn.Mode,
+		InterfaceScale:       worn.InterfaceScale,
+		TextScale:            worn.TextScale,
+		InterfaceScaleBounds: bounded(s.InterfaceScaleBounds),
+		TextScaleBounds:      bounded(s.TextScaleBounds),
 	}), nil
 }
 
@@ -136,8 +136,8 @@ func (s *Service) Choose(
 	chosen := Dress{
 		Theme:          name,
 		Mode:           req.Msg.GetMode(),
-		InterfaceScale: req.Msg.GetInterface(),
-		TextScale:      req.Msg.GetFont(),
+		InterfaceScale: req.Msg.GetInterfaceScale(),
+		TextScale:      req.Msg.GetTextScale(),
 	}
 	if err := s.Wear(chosen); err != nil {
 		return failed(err.Error())
