@@ -26,6 +26,21 @@ export interface PaletteAction {
 }
 
 /**
+ * A key that is held rather than typed. A cap draws each of these as a mark and
+ * the letter as type.
+ */
+export type PaletteMark = 'control' | 'shift' | 'command' | 'option' | 'return'
+
+/**
+ * One keystroke as it is drawn: the keys held, in the order they are read, and
+ * the letter held with them. A keystroke that is marks alone carries no letter.
+ */
+export interface PaletteKeys {
+  readonly marks: readonly PaletteMark[]
+  readonly letter: string
+}
+
+/**
  * One thing that can be chosen. The identifier is opaque: the palette has no
  * way to ask what it addresses, and hands it back as given.
  */
@@ -42,10 +57,10 @@ export interface PaletteItem {
   /** What can be done to it. An item offering none is drawn and not chosen. */
   readonly actions?: readonly PaletteAction[]
   /**
-   * The keystroke that reaches this item away from the palette, written as the
-   * caller writes it. Drawn at the end of the row.
+   * The keystroke that reaches this item away from the palette, as the caller
+   * holds it. Drawn at the end of the row.
    */
-  readonly keys?: string
+  readonly keys?: PaletteKeys
   /** Drawn and announced, and not choosable. */
   readonly disabled?: boolean
 }
@@ -140,12 +155,15 @@ export const keptAt = (places: readonly PalettePlace[], was: string): number => 
 }
 
 /** The keys that reach an item's actions, in the order the actions are offered. */
-export const PALETTE_KEYS = ['↵', '⇧↵'] as const
+export const PALETTE_KEYS: readonly PaletteKeys[] = [
+  { marks: ['return'], letter: '' },
+  { marks: ['shift', 'return'], letter: '' },
+]
 
 /** One action, and the key that reaches it straight from the list. */
 export interface PaletteKeyed {
   readonly action: PaletteAction
-  readonly key: string
+  readonly key: PaletteKeys | null
 }
 
 /**
@@ -156,7 +174,7 @@ export const keyed = (item: PaletteItem | undefined): readonly PaletteKeyed[] =>
   const actions = item && choosable(item) ? (item.actions ?? []) : []
   return actions
     .slice(0, PALETTE_KEYS.length)
-    .map((action, at) => ({ action, key: PALETTE_KEYS[at] ?? '' }))
+    .map((action, at) => ({ action, key: PALETTE_KEYS[at] ?? null }))
 }
 
 /** What the action Enter reaches is, and Shift and Enter the second. */
@@ -175,15 +193,23 @@ export const opensActions = (event: {
   (event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === 'k'
 
 /**
- * What a keystroke of one letter and the key beside the space bar is written as,
- * from what a browser says it is running on. It is Command on Apple keyboards
- * and Control everywhere else, and Shift stands between that key and the letter.
+ * The key beside the space bar on the keyboard a browser says it is running
+ * on: Command on Apple keyboards, Control everywhere else.
  */
-export const keyWord = (letter: string, agent: string, shift = false): string =>
-  `${/mac|iphone|ipad|ipod/i.test(agent) ? '⌘' : '⌃'}${shift ? '⇧' : ''}${letter.toUpperCase()}`
+export const overlayMark = (agent: string): PaletteMark =>
+  /mac|iphone|ipad|ipod/i.test(agent) ? 'command' : 'control'
 
-/** What the key that opens the action panel is written as. */
-export const commandKeyWord = (agent: string): string => keyWord('k', agent)
+/**
+ * A keystroke of one letter and the key beside the space bar, as it is drawn.
+ * Shift stands between that key and the letter.
+ */
+export const keyChord = (letter: string, agent: string, shift = false): PaletteKeys => ({
+  marks: shift ? [overlayMark(agent), 'shift'] : [overlayMark(agent)],
+  letter: letter.toUpperCase(),
+})
+
+/** The keystroke that opens the action panel. */
+export const commandKeyChord = (agent: string): PaletteKeys => keyChord('k', agent)
 
 /**
  * A line split into the runs that are why the item is here and the runs that
@@ -296,7 +322,7 @@ export interface PlacedAction {
   /** Its name, with the run the words in the panel's field picked out. */
   readonly name: readonly PalettePart[]
   /** The key that reaches it without the panel, and nothing where none does. */
-  readonly key: string
+  readonly key: PaletteKeys | null
 }
 
 /**
@@ -320,7 +346,7 @@ export const placeActions = (
       action,
       at: out.length,
       name: partsOf(action.text, found < 0 ? [] : [{ from: found, to: found + word.length }]),
-      key: PALETTE_KEYS[offered] ?? '',
+      key: PALETTE_KEYS[offered] ?? null,
     })
   }
   return out

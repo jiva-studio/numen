@@ -15,11 +15,14 @@ export { landsOn, placeMenu, stepTo, MENU_OPENINGS } from './menu/model'
 export type { MenuItem, MenuOpening, MenuPlacement, MenuPlacing } from './menu/model'
 
 export { default as Palette } from './palette/Palette.vue'
-export { commandKeyWord, keyWord } from './palette/model'
+export { default as KeyCap } from './palette/KeyCap.vue'
+export { commandKeyChord, keyChord, overlayMark } from './palette/model'
 export type {
   PaletteAction,
   PaletteItem,
+  PaletteKeys,
   PaletteLit,
+  PaletteMark,
   PalettePart,
   PaletteBand,
   PaletteSpan,

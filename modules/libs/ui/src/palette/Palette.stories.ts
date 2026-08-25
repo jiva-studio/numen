@@ -9,7 +9,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { onMounted, onUnmounted, ref } from 'vue'
 import Palette from './Palette.vue'
-import type { PaletteBand, PaletteSpan } from './model'
+import { keyChord, type PaletteBand, type PaletteSpan } from './model'
 import {
   ARABIC,
   DEVANAGARI,
@@ -227,6 +227,17 @@ const field = () => document.body.querySelector<HTMLInputElement>('.palette__fie
 const sheet = () => document.body.querySelector<HTMLElement>('.palette__actions')
 const hunt = () => document.body.querySelector<HTMLInputElement>('.palette__hunt')
 const deeds = () => Array.from(document.body.querySelectorAll<HTMLElement>('.palette__deed'))
+
+/** What a line says, with the runs it is written in run together. */
+const said = (of: Element | null | undefined): string =>
+  (of?.textContent ?? '').replace(/\s+/g, ' ').trim()
+
+/** The keystroke a cap is announced as, which is all of it a reader hears. */
+const spoken = (cap: Element | null | undefined): string => said(cap?.querySelector('.sr-only'))
+
+/** The two keyboards a keystroke is written for. */
+const APPLE = 'MacIntel'
+const OTHER = 'Linux x86_64'
 
 /** Every setting, live: three bands, one of them still on its way. */
 export const Playground: Story = {}
@@ -631,10 +642,8 @@ export const FiveActions: Story = {
   play: async ({ args }) => {
     await waitFor(() => expect(lit()).not.toBeNull())
 
-    const said = Array.from(document.body.querySelectorAll('.palette__key')).map((one) =>
-      one.textContent?.trim(),
-    )
-    await expect(said).toEqual(['↵ Show in plex', '⇧↵ Open the note'])
+    const reach = Array.from(document.body.querySelectorAll('.palette__key')).map(said)
+    await expect(reach).toEqual(['Return Show in plex', 'Shift Return Open the note'])
     await expect(document.body.querySelector('.palette__more')?.textContent).toContain('Actions')
 
     await userEvent.keyboard('{Enter}')
@@ -772,7 +781,11 @@ export const Steps: Story = {
   },
 }
 
-/** Items carrying the keystroke that reaches them away from the palette. */
+/**
+ * Items carrying the keystroke that reaches them away from the palette: an
+ * Apple keyboard's row, the row of every other keyboard, and a cap holding one
+ * mark and a cap holding four.
+ */
 export const KeyHints: Story = {
   args: {
     bands: [
@@ -780,10 +793,17 @@ export const KeyHints: Story = {
         id: 'commands',
         title: 'Commands',
         items: [
-          { id: 'new', title: 'New note', keys: '⌘N', actions: RUN },
-          { id: 'plex', title: 'Show the plex', keys: '⌘⇧P', actions: RUN },
-          { id: 'save', title: 'Save', keys: '⌘S', actions: RUN },
-          { id: 'long', title: LONG, keys: '⌘⌥⇧L', actions: RUN },
+          { id: 'new', title: 'New note', keys: keyChord('n', APPLE), actions: RUN },
+          { id: 'plex', title: 'Show the plex', keys: keyChord('p', APPLE, true), actions: RUN },
+          { id: 'close', title: 'Close this tab', keys: keyChord('w', OTHER, true), actions: RUN },
+          { id: 'goto', title: 'Go to a note', keys: keyChord('g', OTHER), actions: RUN },
+          { id: 'run', title: 'Run it', keys: { marks: ['return'], letter: '' }, actions: RUN },
+          {
+            id: 'long',
+            title: LONG,
+            keys: { marks: ['command', 'option', 'shift'], letter: 'L' },
+            actions: RUN,
+          },
           { id: 'none', title: 'Reload the vault', actions: RUN },
         ],
       },
@@ -792,10 +812,19 @@ export const KeyHints: Story = {
   play: async () => {
     await waitFor(() => expect(lit()).not.toBeNull())
 
-    const hints = Array.from(document.body.querySelectorAll('.palette__hint')).map((one) =>
-      one.textContent?.trim(),
-    )
-    await expect(hints).toEqual(['⌘N', '⌘⇧P', '⌘S', '⌘⌥⇧L'])
+    const hints = Array.from(document.body.querySelectorAll('.palette__hint'))
+    await expect(hints.map(spoken)).toEqual([
+      'Command N',
+      'Command Shift P',
+      'Control Shift W',
+      'Control G',
+      'Return',
+      'Command Option Shift L',
+    ])
+
+    // A cap holding one mark is as tall as a cap holding three.
+    const heights = new Set(hints.map((cap) => Math.round(cap.getBoundingClientRect().height)))
+    await expect(heights.size).toBe(1)
 
     // A title too long for the row gives way to the key, and neither wraps.
     for (const option of options()) {

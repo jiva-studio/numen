@@ -24,10 +24,11 @@ import {
   watch,
 } from 'vue'
 import Waiting from '../waiting/Waiting.vue'
+import KeyCap from './KeyCap.vue'
 import {
   actionAt,
   choosable,
-  commandKeyWord,
+  commandKeyChord,
   flatten,
   keptAt,
   keptOn,
@@ -125,8 +126,8 @@ defineSlots<{
 
 const typed = defineModel<string>({ default: '' })
 
-/** What the key that opens the action panel is written as on this keyboard. */
-const command = commandKeyWord(navigator.userAgent)
+/** The keystroke that opens the action panel on this keyboard. */
+const command = commandKeyChord(navigator.userAgent)
 
 const uid = useId()
 const optionName = (at: number): string => `${uid}-option-${at}`
@@ -509,9 +510,7 @@ onBeforeUnmount(() => {
               </span>
 
               <!-- What reaches this item away from the palette. -->
-              <kbd v-if="drawn.item.keys" class="palette__hint">{{
-                drawn.item.keys
-              }}</kbd>
+              <KeyCap v-if="drawn.item.keys" class="palette__hint" :keys="drawn.item.keys" />
             </div>
 
             <p v-if="!one.items.length" class="palette__silence px-2 py-1.5 text-hushed">
@@ -560,7 +559,7 @@ onBeforeUnmount(() => {
                   >{{ part.text }}</span
                 >
               </span>
-              <kbd v-if="deed.key" class="palette__hint">{{ deed.key }}</kbd>
+              <KeyCap v-if="deed.key" class="palette__hint" :keys="deed.key" />
             </div>
           </div>
 
@@ -591,11 +590,11 @@ onBeforeUnmount(() => {
           class="palette__keys flex items-center gap-3 text-small text-hushed"
         >
           <span v-for="one in hinted" :key="one.action.id" class="palette__key">
-            <kbd>{{ one.key }}</kbd>
+            <KeyCap v-if="one.key" :keys="one.key" />
             {{ one.action.text }}
           </span>
           <span class="palette__more ml-auto">
-            <kbd>{{ command }}</kbd>
+            <KeyCap :keys="command" />
             {{ actionsName }}
           </span>
         </footer>
@@ -614,8 +613,6 @@ onBeforeUnmount(() => {
   --drop: 12vh;
   --widest: 640px;
   --tallest: 50vh;
-  /* The corner of a key cap, which is tighter than the corner of a node. */
-  --cap-radius: 0.25rem;
 
   position: fixed;
   inset: 0;
@@ -739,34 +736,17 @@ onBeforeUnmount(() => {
   border-block-start: var(--numen-stroke) solid var(--numen-panel-border);
 }
 
-/* A cap: small print on the ground a box is drawn on, inside a line that is a
-   quarter of the ink it is set in. The type is a token, so a cap in the foot
-   and a cap on a row are one object; every clearance is in `em` against that
-   type, so the cap is one shape at every size the interface is drawn at. */
-.palette__key kbd,
-.palette__more kbd,
-.palette__hint {
+/* What a key reaches stands beside the cap that reaches it. */
+.palette__key,
+.palette__more {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  block-size: 1.6em;
-  min-inline-size: 1.6em;
-  margin-inline-end: 0.4em;
-  padding-inline: 0.45em;
-  border: var(--numen-stroke) solid
-    color-mix(in oklab, var(--numen-node-bg), var(--numen-node-fg) 25%);
-  border-radius: var(--cap-radius);
-  background: var(--numen-node-bg);
-  color: var(--numen-node-fg);
-  font-family: var(--numen-font-sans);
-  font-size: var(--numen-edge-label-size);
-  line-height: 1;
+  gap: 0.4em;
 }
 
 /* A key written on a row is the last thing on it, and is read after the name. */
 .palette__hint {
   flex: none;
-  margin-inline-end: 0;
 }
 
 /* The actions stand over the foot of the palette, at the corner the keys are
