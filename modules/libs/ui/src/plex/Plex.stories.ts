@@ -48,6 +48,7 @@ interface Knobs {
   lineGap: number
   focusGap: number
   margin: number
+  spread: number
   maxPerLine: number
   maxLines: number
   orientation: 'parents above' | 'parents below'
@@ -85,6 +86,7 @@ const knobbed = (a: Knobs): PlexOptionsInput => ({
   lineGap: a.lineGap,
   focusGap: a.focusGap,
   margin: a.margin,
+  spread: a.spread,
   maxPerLine: a.maxPerLine,
   maxLines: a.maxLines,
   routing: { curvature: a.curvature, minReach: a.minReach, arrowRoom: a.arrowRoom },
@@ -272,6 +274,7 @@ const meta = {
     lineGap: range(0, 64, 2),
     focusGap: range(8, 200, 4),
     margin: range(0, 160, 4),
+    spread: range(1, 4, 0.1),
     maxPerLine: range(1, 12),
     maxLines: range(1, 8),
     orientation: {
@@ -338,6 +341,7 @@ const meta = {
     lineGap: 20,
     focusGap: 56,
     margin: 16,
+    spread: 2.5,
     maxPerLine: 5,
     maxLines: 4,
     orientation: 'parents above',

@@ -60,8 +60,10 @@ export function limitsFor(
     )
 
   // The widest row that still leaves the window able to hold it — and, when
-  // there is anything off to the side, room for a column beyond it.
-  const row = widestRow(options.maxPerLine, (perLine) => {
+  // there is anything off to the side, room for a column beyond it. It is
+  // measured from what the window holds at the settings, which are the closest
+  // the gaps ever pack.
+  const row = widestRow(along(2 * halfWidth, width, options.gap), (perLine) => {
     if (rowHalf(perLine) > halfWidth) return false
     return !hasColumns || columnsBeside(perLine) >= 1
   })
