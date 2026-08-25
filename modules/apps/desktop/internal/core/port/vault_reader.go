@@ -40,6 +40,16 @@ type VaultReader interface {
 	// saying which kind it is. The service folder is not reported, and neither
 	// is a file of no kind the application reads.
 	Walk(ctx context.Context, fn func(domain.FileRef) error) error
+	// List reports the entries of one folder, without descending: the files of
+	// every kind and the folders under it. The empty path is the vault root.
+	//
+	// What a walk leaves out is left out here as well. Folders come first,
+	// then files, each by name compared without regard to case, and that is
+	// the order to draw them in.
+	//
+	// ErrOutside for a path that leaves the vault, fs.ErrNotExist for a folder
+	// that is not there.
+	List(ctx context.Context, folder string) ([]domain.Entry, error)
 	// Read returns the bytes of one file, addressed by a path a walk reported.
 	Read(ctx context.Context, path string) ([]byte, error)
 	// Stat answers what a walk reports about one path: its kind, its size and

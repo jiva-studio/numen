@@ -2,6 +2,7 @@ package filesystem_test
 
 import (
 	"errors"
+	"io/fs"
 	"maps"
 	"os"
 	"path/filepath"
@@ -204,6 +205,123 @@ func TestWalkReportsSizeAndTime(t *testing.T) {
 		return nil
 	}); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// listing is the names of what one folder holds, in the order they came back.
+func listing(t *testing.T, src *filesystem.VaultReader, folder string) []string {
+	t.Helper()
+	entries, err := src.List(t.Context(), folder)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, e := range entries {
+		names = append(names, e.Name)
+	}
+	return names
+}
+
+// A listing holds every file of the folder and every folder under it, and what
+// the vault says to leave alone is left out. Folders come first, and names are
+// compared without regard to case.
+func TestAListingIsOrderedAndLeavesTheHiddenOut(t *testing.T) {
+	v := testsupport.NewVault(t, map[string]string{
+		"alpha/Entropy.md":       "# Entropy\n",
+		"Zulu/Heat.md":           "# Heat\n",
+		"Banana.md":              "# Banana\n",
+		".secret.md":             "# Secret\n",
+		".obsidian/workspace.md": "{}\n",
+	})
+	laid(t, v.Path, "apple.txt")
+
+	src, err := filesystem.Open(v.Path, filesystem.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"alpha", "Zulu", "apple.txt", "Banana.md"}
+	if got := listing(t, src, ""); !slices.Equal(got, want) {
+		t.Errorf("the root listed as\n  %v\nwant\n  %v", got, want)
+	}
+}
+
+// A listing says which kind of source each file is, and names a file nothing
+// reads all the same. A folder is of no kind and is what a listing of its own
+// answers to.
+func TestAListingSaysWhatEachEntryIs(t *testing.T) {
+	v := testsupport.NewVault(t, map[string]string{
+		"library/Notes.md":      "# Notes\n",
+		"library/deeper/Old.md": "# Old\n",
+	})
+	laid(t, v.Path, "library/A Book.epub")
+	laid(t, v.Path, "library/scan.png")
+
+	src, err := filesystem.Open(v.Path, filesystem.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	entries, err := src.List(t.Context(), "library")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []domain.Entry{
+		{Path: "library/deeper", Name: "deeper", Folder: true},
+		{Path: "library/A Book.epub", Name: "A Book.epub", Kind: domain.KindBook},
+		{Path: "library/Notes.md", Name: "Notes.md", Kind: domain.KindNote},
+		{Path: "library/scan.png", Name: "scan.png"},
+	}
+	if len(entries) != len(want) {
+		t.Fatalf("listed %v, want %v", entries, want)
+	}
+	for i, e := range entries {
+		if e.Path != want[i].Path || e.Name != want[i].Name || e.Folder != want[i].Folder || e.Kind != want[i].Kind {
+			t.Errorf("entry %d is %+v, want %+v", i, e, want[i])
+		}
+		if e.MTime == 0 {
+			t.Errorf("%s has no modification time", e.Path)
+		}
+		if !e.Folder && e.Size <= 0 {
+			t.Errorf("%s has size %d", e.Path, e.Size)
+		}
+	}
+}
+
+// The service folder's name is a setting, and a listing leaves it out whether
+// the name begins with a dot or not.
+func TestAListingLeavesTheServiceFolderOut(t *testing.T) {
+	v := testsupport.NewVault(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	laid(t, v.Path, "store/state.json")
+
+	src, err := filesystem.Open(v.Path, filesystem.Options{ServiceDir: "store"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"Entropy.md"}
+	if got := listing(t, src, ""); !slices.Equal(got, want) {
+		t.Errorf("the root listed as\n  %v\nwant\n  %v", got, want)
+	}
+}
+
+// A path that leaves the vault is refused, and a folder that is not there is
+// answered as what it is.
+func TestAListingOfWhatTheVaultHasNotIsRefused(t *testing.T) {
+	v := testsupport.NewVault(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	src, err := filesystem.Open(v.Path, filesystem.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, folder := range []string{"../", "notes/../../elsewhere"} {
+		if _, err := src.List(t.Context(), folder); !errors.Is(err, filesystem.ErrOutside) {
+			t.Errorf("list %q: want ErrOutside, got %v", folder, err)
+		}
+	}
+	if _, err := src.List(t.Context(), "nowhere"); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("list of a folder that is not there: want fs.ErrNotExist, got %v", err)
+	}
+	if _, err := src.List(t.Context(), filesystem.DefaultServiceDir); err == nil {
+		t.Error("the service folder was listed")
 	}
 }
 
@@ -433,11 +551,9 @@ func TestAPathThatLeavesTheVaultIsRefused(t *testing.T) {
 	}
 }
 
-// The writer holds the same rules the reader does. Without that, an agent could
-// remove the vault's attachments, another tool's state, or the repository the
-// vault is kept in — while the reader was already saying those paths do not
-// exist.
-func TestTheWriterOnlyTouchesNotes(t *testing.T) {
+// Writing is a thing only a note is open to. The vault holds a book and an
+// attachment, and neither is a file this application puts bytes into.
+func TestOnlyANoteIsWrittenTo(t *testing.T) {
 	root := t.TempDir()
 	for _, path := range []string{".git/config", "photo.png", "library/A Book.epub", "notes/keep.md"} {
 		if err := os.MkdirAll(filepath.Join(root, filepath.Dir(path)), 0o755); err != nil {
@@ -452,14 +568,9 @@ func TestTheWriterOnlyTouchesNotes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// A book is among them: the reader says the vault holds it, and writing is
-	// still a thing only a note is open to.
 	for _, path := range []string{".git/config", "photo.png", "library/A Book.epub"} {
 		if _, err := writer.Write(t.Context(), path, []byte("mine"), domain.FileRef{}); !errors.Is(err, filesystem.ErrNotANote) {
 			t.Errorf("write %s: want ErrNotANote, got %v", path, err)
-		}
-		if err := writer.Remove(t.Context(), path); !errors.Is(err, filesystem.ErrNotANote) {
-			t.Errorf("remove %s: want ErrNotANote, got %v", path, err)
 		}
 		if kept, _ := os.ReadFile(filepath.Join(root, filepath.FromSlash(path))); string(kept) != "theirs" {
 			t.Errorf("%s was written to anyway", path)

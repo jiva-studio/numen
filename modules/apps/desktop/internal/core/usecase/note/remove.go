@@ -6,6 +6,7 @@ import (
 	"fmt"
 	pathpkg "path"
 	"strconv"
+	"strings"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
@@ -16,11 +17,11 @@ import (
 // plex by machinery that already exists, without being destroyed.
 const TrashDir = ".trash"
 
-// Remove takes a note out of the vault.
+// Remove takes a file or a folder out of the vault.
 //
-// It moves the file into the vault's trash. Everything the index knows is
-// rebuilt from the file, so losing the index costs a scan; the file is the one
-// thing nothing rebuilds.
+// It moves it into the vault's trash. Everything the index knows is rebuilt
+// from the file, so losing the index costs a scan; the file is the one thing
+// nothing rebuilds.
 type Remove struct {
 	Readers port.VaultReaders
 	Writers port.VaultWriters
@@ -28,24 +29,38 @@ type Remove struct {
 	Index   func(ctx context.Context, v domain.Vault, paths []string) error
 }
 
-// Removed says what happened to one note and what it leaves behind.
+// Removed says what happened to what was removed and what it leaves behind.
 type Removed struct {
 	Path string
-	// Trashed is where the note now sits, empty when it was destroyed.
+	// Trashed is where it now sits, empty when it was destroyed.
 	Trashed string
-	// Dangling is the notes whose links pointed here and now reach nothing.
-	// They are reported and not repaired: the link is not wrong, its target is
-	// gone, and only the person knows what they meant.
+	// Dangling is the notes whose links pointed at what went and now reach
+	// nothing. They are reported and not repaired: the link is not wrong, its
+	// target is gone, and only the person knows what they meant.
 	Dangling []string
 }
 
-// Execute puts the note in the trash. Destroy takes it out of the world.
+// Execute puts the file or the folder in the trash, with everything a folder
+// holds. Destroy takes one note out of the world.
 func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (Removed, error) {
 	res := Removed{Path: path}
 
-	pointing, err := u.Links.Backlinks(ctx, v.ID, path)
+	went, err := u.sources(ctx, v, path)
 	if err != nil {
 		return res, err
+	}
+	// Asked before the move, because afterwards nothing points at the old paths
+	// and there is nothing left to ask about.
+	var pointing []domain.ResolvedLink
+	for _, source := range went {
+		if source.Kind != domain.KindNote {
+			continue
+		}
+		links, err := u.Links.Backlinks(ctx, v.ID, source.Path)
+		if err != nil {
+			return res, err
+		}
+		pointing = append(pointing, links...)
 	}
 
 	writer, err := u.Writers.Open(v)
@@ -71,13 +86,48 @@ func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (Remov
 	}
 	res.Trashed = target
 
-	if err := u.index(ctx, v, path); err != nil {
+	// The index is brought level with what the vault held at each path, and with
+	// the path itself where it held nothing.
+	level := make([]string, 0, len(went))
+	inside := make(map[string]bool, len(went))
+	for _, source := range went {
+		level = append(level, source.Path)
+		inside[source.Path] = true
+	}
+	if len(level) == 0 {
+		level = append(level, path)
+	}
+	if err := u.index(ctx, v, level...); err != nil {
 		return res, err
 	}
 	for _, was := range pointing {
+		// A note that wrote a link and went to the trash beside its target has
+		// nothing left to reach from.
+		if inside[was.From] {
+			continue
+		}
 		res.Dangling = append(res.Dangling, was.From)
 	}
 	return res, nil
+}
+
+// sources is every source the vault holds at or under a path: the file itself,
+// or everything under a folder.
+func (u Remove) sources(ctx context.Context, v domain.Vault, path string) ([]domain.FileRef, error) {
+	reader, err := u.Readers.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	var found []domain.FileRef
+	if err := reader.Walk(ctx, func(ref domain.FileRef) error {
+		if ref.Path == path || strings.HasPrefix(ref.Path, path+"/") {
+			found = append(found, ref)
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	return found, nil
 }
 
 // Destroy takes the file off the disk. Nothing brings it back.

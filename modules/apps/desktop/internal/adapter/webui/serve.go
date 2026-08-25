@@ -149,6 +149,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Saves:     &note.Write{Readers: cfg.VaultReaders(), Writers: cfg.VaultWriters()},
 		Wrote:     func() { raise(wake.notes) },
 		Readers:   cfg.VaultReaders(),
+		Writers:   cfg.VaultWriters(),
 		Viewer:    keepingDrawings(cfg.Documents()),
 		// Where a passage sits on the page is asked of whichever producer made
 		// the text it is a place in, which is what the index records.
@@ -216,7 +217,9 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Writers: cfg.VaultWriters(),
 		Index:   opened.level,
 	}
-	api.Renames = &note.Rename{Move: note.Move{
+	// One note.Move settles every note that travelled, whether a rename sent it
+	// or a move did.
+	moving := note.Move{
 		Readers: cfg.VaultReaders(),
 		Writers: cfg.VaultWriters(),
 		Links:   api.Links,
@@ -224,7 +227,15 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Moving: func(ctx context.Context, went domain.Went) {
 			_ = api.Viewing().Moved(ctx, went)
 		},
-	}}
+	}
+	api.Renames = &note.Rename{Move: moving}
+	api.Moves = &usecase.Move{
+		Readers: cfg.VaultReaders(),
+		Writers: cfg.VaultWriters(),
+		Links:   api.Links,
+		Index:   opened.level,
+		Notes:   moving,
+	}
 	api.Removes = &note.Remove{
 		Readers: cfg.VaultReaders(),
 		Writers: cfg.VaultWriters(),

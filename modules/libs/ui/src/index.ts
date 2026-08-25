@@ -137,6 +137,20 @@ export type {
   WorkspaceNode,
 } from './workspace/model'
 
+export { default as Tree } from './tree/Tree.vue'
+
+/** For arranging rows without drawing them, or reading a gesture without this renderer. */
+export {
+  flatten,
+  holderOf,
+  isTreeKey,
+  landing,
+  refuses,
+  stepTo as stepToRow,
+  TREE_KEYS,
+} from './tree/model'
+export type { Landing, Row, RowId, ShownRow, Step, TreeKey } from './tree/model'
+
 export type { Environment, PlexTransition } from './plex/transition'
 export type {
   EdgeArrow,

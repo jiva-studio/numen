@@ -7,10 +7,10 @@
  */
 import type { PlexRelatedSeat } from '@numen/ui'
 import type { Deed, Shown } from './commanding'
-import type { Refused, Removed, Renamed, VaultRefused, Vaults } from './core'
+import type { Movement, Refused, Removed, Renamed, VaultRefused, Vaults } from './core'
 import type { Made } from './note/creating'
 import type { Says } from './telling'
-import { AGENT, NOTE, PLEX } from './workspace'
+import { AGENT, FILES, NOTE, PLEX } from './workspace'
 
 /** The notes the window has open, as a command reaches them. */
 export interface Notes {
@@ -36,6 +36,15 @@ export interface Doing {
   renames(path: string, title: string): Promise<Renamed>
   /** A note taken out of the vault, into the trash or off the disk. */
   removes(path: string, destroy: boolean): Promise<Removed>
+  /**
+   * A file or a folder filed somewhere else. The last segment of `to` is what
+   * it is called from now on.
+   */
+  moves(from: string, to: string): Promise<Movement>
+  /** An empty folder. The folders above it are made with it. */
+  makesFolder(path: string): Promise<Refused | null>
+  /** The files of the vault put in front of the person, opened down to a path. */
+  reveals(path: string): void
   readonly notes: Notes
   /** The vaults this installation holds, and what changes them. */
   readonly vaults: Vaults
@@ -95,6 +104,8 @@ export interface Words {
   readonly unanswered: string
   /** The note holds prose nobody here has seen, so nothing was written. */
   readonly overtaken: string
+  /** A name at the destination is taken, and the file stayed where it was. */
+  readonly occupied: string
 }
 
 /** One command, carried out. */
@@ -114,7 +125,11 @@ const carried: Record<string, Carries> = {
   destroy: (deed, on, words) => removes(deed, true, on, words),
   ask: (deed, on) => on.asks(`${deed.path} — `),
   copy: (deed, on) => on.copies(deed.path),
+  reveal: (deed, on) => on.reveals(deed.path),
+  move: (deed, on, words) => moves(deed, on, words),
+  makeFolder: (deed, on, words) => makesFolder(deed, on, words),
   plex: (_, on) => on.opens(PLEX),
+  files: (_, on) => on.opens(FILES),
   agent: (_, on) => on.opens(AGENT),
   close: (deed, on) => on.closes(deed.tab),
   find: (_, on) => on.searches(),
@@ -196,6 +211,29 @@ const renames = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
   if (answer.refusal) return on.says(words.refused[answer.refusal], 'refusal')
   const retargeted = answer.moved?.retargeted ?? []
   on.says(naming(words.retargeted, retargeted.map((one) => one.in)))
+}
+
+/**
+ * A file or a folder filed somewhere else, carrying the name the path ends in.
+ * A destination that is taken leaves it where it was.
+ */
+const moves = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
+  if (!deed.name || deed.name === deed.path) return
+  const tab = await settles(deed.path, on)
+  if (tab.waiting) return on.says(words.unanswered, 'caution')
+  const answer = await on.moves(deed.path, deed.name)
+  if (answer.refusal === 'occupied') return on.says(words.occupied, 'refusal')
+  if (answer.refusal) return on.says(words.refused[answer.refusal], 'refusal')
+  const retargeted = answer.moved?.retargeted ?? []
+  on.says(naming(words.retargeted, retargeted.map((one) => one.in)))
+}
+
+/** An empty folder, made under the path that was typed. */
+const makesFolder = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
+  if (!deed.name) return
+  const refusal = await on.makesFolder(deed.name)
+  if (refusal === 'occupied') return on.says(words.occupied, 'refusal')
+  if (refusal) on.says(words.refused[refusal], 'refusal')
 }
 
 /** A note taken out of the vault, and where it went and what it left reported. */

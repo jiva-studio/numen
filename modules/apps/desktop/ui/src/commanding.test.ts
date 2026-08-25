@@ -143,8 +143,30 @@ describe('the commands as they open', () => {
     const { commands } = asking()
 
     expect(drawn(commands.bands)).toStrictEqual({
-      note: ['read', 'travel', 'child', 'parent', 'jump', 'title', 'remove', 'ask', 'copy'],
-      window: ['note', 'plex', 'agent', 'close', 'find', 'appearance', 'mode', 'interfaceScale', 'textScale'],
+      note: [
+        'read',
+        'travel',
+        'child',
+        'parent',
+        'jump',
+        'title',
+        'remove',
+        'ask',
+        'copy',
+        'reveal',
+      ],
+      window: [
+        'note',
+        'plex',
+        'files',
+        'agent',
+        'close',
+        'find',
+        'appearance',
+        'mode',
+        'interfaceScale',
+        'textScale',
+      ],
       vault: [
         'first',
         'goto',
@@ -219,7 +241,17 @@ describe('what is in front', () => {
 
     expect(drawn(commands.bands)).toStrictEqual({
       note: [],
-      window: ['plex', 'agent', 'close', 'find', 'appearance', 'mode', 'interfaceScale', 'textScale'],
+      window: [
+        'plex',
+        'files',
+        'agent',
+        'close',
+        'find',
+        'appearance',
+        'mode',
+        'interfaceScale',
+        'textScale',
+      ],
       vault: ['openVault', 'newVault', 'renameVault', 'forgetVault', 'eraseVault'],
     })
     expect(silence(commands.bands, 'note')).toBe(words.indexing)

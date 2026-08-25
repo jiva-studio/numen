@@ -74,7 +74,17 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (Mov
 	if err := writer.Move(ctx, from, to); err != nil {
 		return res, missing(err)
 	}
-	res.Landed = true
+	return u.Settle(ctx, v, from, to, pointing)
+}
+
+// Settle is the work a move leaves once the file is where it was sent: the
+// index level with both paths, whoever is drawing the note told, and the links
+// written by the name it had pointed at where it now is.
+//
+// Pointing is what pointed at the note before it went, read while there was
+// still something to read.
+func (u Move) Settle(ctx context.Context, v domain.Vault, from, to string, pointing []domain.ResolvedLink) (Moved, error) {
+	res := Moved{From: from, To: to, Landed: true}
 	if err := u.index(ctx, v, from, to); err != nil {
 		return res, err
 	}

@@ -60,6 +60,8 @@ const (
 	VaultServiceEditingProcedure = "/numen.v1.VaultService/Editing"
 	// VaultServiceTasksProcedure is the fully-qualified name of the VaultService's Tasks RPC.
 	VaultServiceTasksProcedure = "/numen.v1.VaultService/Tasks"
+	// VaultServiceListProcedure is the fully-qualified name of the VaultService's List RPC.
+	VaultServiceListProcedure = "/numen.v1.VaultService/List"
 	// VaultServiceReadProcedure is the fully-qualified name of the VaultService's Read RPC.
 	VaultServiceReadProcedure = "/numen.v1.VaultService/Read"
 	// VaultServiceWriteProcedure is the fully-qualified name of the VaultService's Write RPC.
@@ -70,8 +72,12 @@ const (
 	VaultServiceJoinProcedure = "/numen.v1.VaultService/Join"
 	// VaultServiceRenameProcedure is the fully-qualified name of the VaultService's Rename RPC.
 	VaultServiceRenameProcedure = "/numen.v1.VaultService/Rename"
+	// VaultServiceMoveProcedure is the fully-qualified name of the VaultService's Move RPC.
+	VaultServiceMoveProcedure = "/numen.v1.VaultService/Move"
 	// VaultServiceRemoveProcedure is the fully-qualified name of the VaultService's Remove RPC.
 	VaultServiceRemoveProcedure = "/numen.v1.VaultService/Remove"
+	// VaultServiceMakeFolderProcedure is the fully-qualified name of the VaultService's MakeFolder RPC.
+	VaultServiceMakeFolderProcedure = "/numen.v1.VaultService/MakeFolder"
 	// VaultServiceQuittingProcedure is the fully-qualified name of the VaultService's Quitting RPC.
 	VaultServiceQuittingProcedure = "/numen.v1.VaultService/Quitting"
 	// VaultServiceFlushedProcedure is the fully-qualified name of the VaultService's Flushed RPC.
@@ -121,6 +127,9 @@ type VaultServiceClient interface {
 	// the window asking for it — an agent is told to read a document, and this is
 	// where the person watching sees it happen.
 	Tasks(context.Context, *connect.Request[v1.TasksRequest]) (*connect.ServerStreamForClient[v1.TasksResponse], error)
+	// List is what one folder of the vault holds. A tree asks for a folder as it
+	// is opened, one folder to a request.
+	List(context.Context, *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error)
 	// Read answers with the prose of a note, below its frontmatter.
 	Read(context.Context, *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error)
 	// Write puts prose into a note, keeping the frontmatter the file has when the
@@ -138,10 +147,15 @@ type VaultServiceClient interface {
 	// its first level-one heading, else by its filename: whichever of the three
 	// names it is brought into line, and the file is renamed with it.
 	Rename(context.Context, *connect.Request[v1.RenameRequest]) (*connect.Response[v1.RenameResponse], error)
-	// Remove takes a note out of the vault, into the trash it can be brought back
-	// from. The links that pointed at it are left as they were written: a link is
-	// not wrong because the note it names is gone.
+	// Move puts a file or a folder somewhere else in the vault. Renaming a file
+	// is a move within one folder.
+	Move(context.Context, *connect.Request[v1.MoveRequest]) (*connect.Response[v1.MoveResponse], error)
+	// Remove takes a file or a folder out of the vault, into the trash it can be
+	// brought back from. The links that pointed at it are left as they were
+	// written: a link is not wrong because the note it names is gone.
 	Remove(context.Context, *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error)
+	// MakeFolder makes an empty folder. The folders above it are made with it.
+	MakeFolder(context.Context, *connect.Request[v1.MakeFolderRequest]) (*connect.Response[v1.MakeFolderResponse], error)
 	// Quitting says the window is going, for as long as the caller listens. A
 	// caller holding work that is only in its own memory writes it now and
 	// answers with Flushed.
@@ -217,6 +231,12 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(vaultServiceMethods.ByName("Tasks")),
 			connect.WithClientOptions(opts...),
 		),
+		list: connect.NewClient[v1.ListRequest, v1.ListResponse](
+			httpClient,
+			baseURL+VaultServiceListProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("List")),
+			connect.WithClientOptions(opts...),
+		),
 		read: connect.NewClient[v1.ReadRequest, v1.ReadResponse](
 			httpClient,
 			baseURL+VaultServiceReadProcedure,
@@ -247,10 +267,22 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(vaultServiceMethods.ByName("Rename")),
 			connect.WithClientOptions(opts...),
 		),
+		move: connect.NewClient[v1.MoveRequest, v1.MoveResponse](
+			httpClient,
+			baseURL+VaultServiceMoveProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Move")),
+			connect.WithClientOptions(opts...),
+		),
 		remove: connect.NewClient[v1.RemoveRequest, v1.RemoveResponse](
 			httpClient,
 			baseURL+VaultServiceRemoveProcedure,
 			connect.WithSchema(vaultServiceMethods.ByName("Remove")),
+			connect.WithClientOptions(opts...),
+		),
+		makeFolder: connect.NewClient[v1.MakeFolderRequest, v1.MakeFolderResponse](
+			httpClient,
+			baseURL+VaultServiceMakeFolderProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("MakeFolder")),
 			connect.WithClientOptions(opts...),
 		),
 		quitting: connect.NewClient[v1.QuittingRequest, v1.QuittingResponse](
@@ -279,12 +311,15 @@ type vaultServiceClient struct {
 	focus         *connect.Client[v1.FocusRequest, v1.FocusResponse]
 	editing       *connect.Client[v1.EditingRequest, v1.EditingResponse]
 	tasks         *connect.Client[v1.TasksRequest, v1.TasksResponse]
+	list          *connect.Client[v1.ListRequest, v1.ListResponse]
 	read          *connect.Client[v1.ReadRequest, v1.ReadResponse]
 	write         *connect.Client[v1.WriteRequest, v1.WriteResponse]
 	create        *connect.Client[v1.CreateRequest, v1.CreateResponse]
 	join          *connect.Client[v1.JoinRequest, v1.JoinResponse]
 	rename        *connect.Client[v1.RenameRequest, v1.RenameResponse]
+	move          *connect.Client[v1.MoveRequest, v1.MoveResponse]
 	remove        *connect.Client[v1.RemoveRequest, v1.RemoveResponse]
+	makeFolder    *connect.Client[v1.MakeFolderRequest, v1.MakeFolderResponse]
 	quitting      *connect.Client[v1.QuittingRequest, v1.QuittingResponse]
 	flushed       *connect.Client[v1.FlushedRequest, v1.FlushedResponse]
 }
@@ -334,6 +369,11 @@ func (c *vaultServiceClient) Tasks(ctx context.Context, req *connect.Request[v1.
 	return c.tasks.CallServerStream(ctx, req)
 }
 
+// List calls numen.v1.VaultService.List.
+func (c *vaultServiceClient) List(ctx context.Context, req *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error) {
+	return c.list.CallUnary(ctx, req)
+}
+
 // Read calls numen.v1.VaultService.Read.
 func (c *vaultServiceClient) Read(ctx context.Context, req *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error) {
 	return c.read.CallUnary(ctx, req)
@@ -359,9 +399,19 @@ func (c *vaultServiceClient) Rename(ctx context.Context, req *connect.Request[v1
 	return c.rename.CallUnary(ctx, req)
 }
 
+// Move calls numen.v1.VaultService.Move.
+func (c *vaultServiceClient) Move(ctx context.Context, req *connect.Request[v1.MoveRequest]) (*connect.Response[v1.MoveResponse], error) {
+	return c.move.CallUnary(ctx, req)
+}
+
 // Remove calls numen.v1.VaultService.Remove.
 func (c *vaultServiceClient) Remove(ctx context.Context, req *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {
 	return c.remove.CallUnary(ctx, req)
+}
+
+// MakeFolder calls numen.v1.VaultService.MakeFolder.
+func (c *vaultServiceClient) MakeFolder(ctx context.Context, req *connect.Request[v1.MakeFolderRequest]) (*connect.Response[v1.MakeFolderResponse], error) {
+	return c.makeFolder.CallUnary(ctx, req)
 }
 
 // Quitting calls numen.v1.VaultService.Quitting.
@@ -417,6 +467,9 @@ type VaultServiceHandler interface {
 	// the window asking for it — an agent is told to read a document, and this is
 	// where the person watching sees it happen.
 	Tasks(context.Context, *connect.Request[v1.TasksRequest], *connect.ServerStream[v1.TasksResponse]) error
+	// List is what one folder of the vault holds. A tree asks for a folder as it
+	// is opened, one folder to a request.
+	List(context.Context, *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error)
 	// Read answers with the prose of a note, below its frontmatter.
 	Read(context.Context, *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error)
 	// Write puts prose into a note, keeping the frontmatter the file has when the
@@ -434,10 +487,15 @@ type VaultServiceHandler interface {
 	// its first level-one heading, else by its filename: whichever of the three
 	// names it is brought into line, and the file is renamed with it.
 	Rename(context.Context, *connect.Request[v1.RenameRequest]) (*connect.Response[v1.RenameResponse], error)
-	// Remove takes a note out of the vault, into the trash it can be brought back
-	// from. The links that pointed at it are left as they were written: a link is
-	// not wrong because the note it names is gone.
+	// Move puts a file or a folder somewhere else in the vault. Renaming a file
+	// is a move within one folder.
+	Move(context.Context, *connect.Request[v1.MoveRequest]) (*connect.Response[v1.MoveResponse], error)
+	// Remove takes a file or a folder out of the vault, into the trash it can be
+	// brought back from. The links that pointed at it are left as they were
+	// written: a link is not wrong because the note it names is gone.
 	Remove(context.Context, *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error)
+	// MakeFolder makes an empty folder. The folders above it are made with it.
+	MakeFolder(context.Context, *connect.Request[v1.MakeFolderRequest]) (*connect.Response[v1.MakeFolderResponse], error)
 	// Quitting says the window is going, for as long as the caller listens. A
 	// caller holding work that is only in its own memory writes it now and
 	// answers with Flushed.
@@ -509,6 +567,12 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(vaultServiceMethods.ByName("Tasks")),
 		connect.WithHandlerOptions(opts...),
 	)
+	vaultServiceListHandler := connect.NewUnaryHandler(
+		VaultServiceListProcedure,
+		svc.List,
+		connect.WithSchema(vaultServiceMethods.ByName("List")),
+		connect.WithHandlerOptions(opts...),
+	)
 	vaultServiceReadHandler := connect.NewUnaryHandler(
 		VaultServiceReadProcedure,
 		svc.Read,
@@ -539,10 +603,22 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(vaultServiceMethods.ByName("Rename")),
 		connect.WithHandlerOptions(opts...),
 	)
+	vaultServiceMoveHandler := connect.NewUnaryHandler(
+		VaultServiceMoveProcedure,
+		svc.Move,
+		connect.WithSchema(vaultServiceMethods.ByName("Move")),
+		connect.WithHandlerOptions(opts...),
+	)
 	vaultServiceRemoveHandler := connect.NewUnaryHandler(
 		VaultServiceRemoveProcedure,
 		svc.Remove,
 		connect.WithSchema(vaultServiceMethods.ByName("Remove")),
+		connect.WithHandlerOptions(opts...),
+	)
+	vaultServiceMakeFolderHandler := connect.NewUnaryHandler(
+		VaultServiceMakeFolderProcedure,
+		svc.MakeFolder,
+		connect.WithSchema(vaultServiceMethods.ByName("MakeFolder")),
 		connect.WithHandlerOptions(opts...),
 	)
 	vaultServiceQuittingHandler := connect.NewServerStreamHandler(
@@ -577,6 +653,8 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 			vaultServiceEditingHandler.ServeHTTP(w, r)
 		case VaultServiceTasksProcedure:
 			vaultServiceTasksHandler.ServeHTTP(w, r)
+		case VaultServiceListProcedure:
+			vaultServiceListHandler.ServeHTTP(w, r)
 		case VaultServiceReadProcedure:
 			vaultServiceReadHandler.ServeHTTP(w, r)
 		case VaultServiceWriteProcedure:
@@ -587,8 +665,12 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 			vaultServiceJoinHandler.ServeHTTP(w, r)
 		case VaultServiceRenameProcedure:
 			vaultServiceRenameHandler.ServeHTTP(w, r)
+		case VaultServiceMoveProcedure:
+			vaultServiceMoveHandler.ServeHTTP(w, r)
 		case VaultServiceRemoveProcedure:
 			vaultServiceRemoveHandler.ServeHTTP(w, r)
+		case VaultServiceMakeFolderProcedure:
+			vaultServiceMakeFolderHandler.ServeHTTP(w, r)
 		case VaultServiceQuittingProcedure:
 			vaultServiceQuittingHandler.ServeHTTP(w, r)
 		case VaultServiceFlushedProcedure:
@@ -638,6 +720,10 @@ func (UnimplementedVaultServiceHandler) Tasks(context.Context, *connect.Request[
 	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Tasks is not implemented"))
 }
 
+func (UnimplementedVaultServiceHandler) List(context.Context, *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.List is not implemented"))
+}
+
 func (UnimplementedVaultServiceHandler) Read(context.Context, *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Read is not implemented"))
 }
@@ -658,8 +744,16 @@ func (UnimplementedVaultServiceHandler) Rename(context.Context, *connect.Request
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Rename is not implemented"))
 }
 
+func (UnimplementedVaultServiceHandler) Move(context.Context, *connect.Request[v1.MoveRequest]) (*connect.Response[v1.MoveResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Move is not implemented"))
+}
+
 func (UnimplementedVaultServiceHandler) Remove(context.Context, *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Remove is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) MakeFolder(context.Context, *connect.Request[v1.MakeFolderRequest]) (*connect.Response[v1.MakeFolderResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.MakeFolder is not implemented"))
 }
 
 func (UnimplementedVaultServiceHandler) Quitting(context.Context, *connect.Request[v1.QuittingRequest], *connect.ServerStream[v1.QuittingResponse]) error {

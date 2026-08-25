@@ -12,12 +12,17 @@ import {
   Owed,
   Refusal,
   Role as Roles,
+  SourceKind,
   VaultService,
   VaultsRefusal,
   VaultsService,
   Way as Ways,
 } from '@numen/protocol'
-import type { Known as KnownMessage, Moved as MovedMessage } from '@numen/protocol'
+import type {
+  Entry as EntryMessage,
+  Known as KnownMessage,
+  Moved as MovedMessage,
+} from '@numen/protocol'
 import type { Asking as Commanding } from './commanding'
 import type { Asking, Way } from './finding'
 import type { Documents, Marked, Sheet } from './document/reading'
@@ -25,14 +30,17 @@ import type {
   Added,
   Answered,
   Core,
+  Entry,
   Known,
   Made,
   Moved,
+  Movement,
   NewLink,
   Refused,
   Removed,
   Renamed,
   Role,
+  Source,
   VaultRefused,
   Vaults,
 } from './core'
@@ -122,6 +130,15 @@ export const core: Core & Asking & Commanding = {
       refusal: refusalIn(answer),
     } satisfies Removed
   },
+  list: async (folder) => (await vault.list({ folder })).entries.map(listed),
+  move: async (from, to) => {
+    const answer = await vault.move({ from, to })
+    return {
+      moved: answer.moved ? filed(answer.moved) : null,
+      refusal: refusalIn(answer),
+    } satisfies Movement
+  },
+  makeFolder: async (path) => refusalIn(await vault.makeFolder({ path })),
   quitting: (signal) => vault.quitting({}, { signal }),
   flushed: async (token, owed) => {
     await vault.flushed({ token, owed: owing[owed ?? 'nothing'] })
@@ -265,6 +282,22 @@ const answered = (from: {
 
 const refusalIn = (from: { refusal?: Refusal | undefined }): Refused | null =>
   from.refusal === undefined ? null : refused[from.refusal]
+
+/** One row of a listing, kept as the plain value the window carries it as. */
+const listed = (one: EntryMessage): Entry => ({
+  path: one.path,
+  name: one.name,
+  folder: one.folder,
+  kind: holding[one.kind],
+  size: Number(one.size),
+})
+
+/** What the vault holds at a path, in the words the window uses. */
+const holding: Record<SourceKind, Source> = {
+  [SourceKind.UNSPECIFIED]: 'other',
+  [SourceKind.NOTE]: 'note',
+  [SourceKind.BOOK]: 'book',
+}
 
 /** One vault of the list, kept as the plain value the window carries it as. */
 const held = (one: KnownMessage): Known => ({

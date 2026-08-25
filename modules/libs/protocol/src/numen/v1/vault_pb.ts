@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/vault.proto.
  */
 export const file_numen_v1_vault: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiNwoETm90ZRIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJEhIKCmlkZW50aWZpZXIYAyABKAkidAoGU2VhdGVkEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEhwKBHNlYXQYAiABKA4yDi5udW1lbi52MS5TZWF0Eg0KBWxhYmVsGAMgASgJEg8KB3Rocm91Z2gYBCABKAkSDgoGbXV0dWFsGAUgASgIIg4KDFN0YXRlUmVxdWVzdCL7AQoNU3RhdGVSZXNwb25zZRIMCgRuYW1lGAEgASgJEgwKBHBhdGgYAiABKAkSDQoFcmVhZHkYBCABKAgSDgoGZmFpbGVkGAUgASgJEhEKCXVud2F0Y2hlZBgGIAEoCRITCgt1bnJlYWNoYWJsZRgRIAEoCRIOCgZjaHVua3MYByABKAMSEAoIZW1iZWRkZWQYCCABKAMSEQoJZW1iZWRkaW5nGAogASgISgQIAxAESgQICRAKSgQICxARUgVib29rc1IKYm9va3NfcmVhZFIEYnVzeVIHaW5kZXhlZFIIbGVhcm5pbmdSBG1hZGVSBW93aW5nUgdyZWFkaW5nIg4KDFRhc2tzUmVxdWVzdCIuCg1UYXNrc1Jlc3BvbnNlEh0KBXRhc2tzGAEgAygLMg4ubnVtZW4udjEuVGFzayKSAQoEVGFzaxIKCgJpZBgBIAEoCRINCgVkb2luZxgCIAEoCRINCgVhYm91dBgDIAEoCRIMCgRkb25lGAQgASgDEg0KBXRvdGFsGAUgASgDEg4KBmZhaWxlZBgGIAEoCRINCgVhc2tlZBgHIAEoCBIkCghjb3VudGluZxgIIAEoDjISLm51bWVuLnYxLkNvdW50aW5nIhAKDk9wZW5pbmdSZXF1ZXN0Ij0KD09wZW5pbmdSZXNwb25zZRIhCgRub3RlGAEgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBQgcKBV9ub3RlIhAKDkNoYW5nZXNSZXF1ZXN0IlEKD0NoYW5nZXNSZXNwb25zZRINCgVwYXRocxgBIAMoCRIOCgZyZWxvYWQYAiABKAgSHwoHcmVuYW1lZBgDIAMoCzIOLm51bWVuLnYxLldlbnQiIAoEV2VudBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIg4KDEZvY3VzUmVxdWVzdCJdCg1Gb2N1c1Jlc3BvbnNlEgwKBHBhdGgYASABKAkSDQoFc3RhcnQYAiABKAUSDgoGbGVuZ3RoGAMgASgFEh8KBGFsc28YBCADKAsyES5udW1lbi52MS5TdHJldGNoIigKB1N0cmV0Y2gSDQoFc3RhcnQYASABKAUSDgoGbGVuZ3RoGAIgASgFIhAKDkVkaXRpbmdSZXF1ZXN0ImUKD0VkaXRpbmdSZXNwb25zZRIOCgZjaGFuZ2UYASABKAkSDAoEcGF0aBgCIAEoCRIMCgRmcm9tGAMgASgFEgoKAnRvGAQgASgFEgwKBHRleHQYBSABKAkSDAoEZG9uZRgGIAEoCCIkChROZWlnaGJvdXJob29kUmVxdWVzdBIMCgRwYXRoGAEgASgJIlkKFU5laWdoYm91cmhvb2RSZXNwb25zZRIdCgVmb2N1cxgBIAEoCzIOLm51bWVuLnYxLk5vdGUSIQoHcmVsYXRlZBgCIAMoCzIQLm51bWVuLnYxLlNlYXRlZCIsCgxOYW1lc1JlcXVlc3QSDQoFcXVlcnkYASABKAkSDQoFbGltaXQYAiABKAUiLwoNTmFtZXNSZXNwb25zZRIeCgVmb3VuZBgBIAMoCzIPLm51bWVuLnYxLk5hbWVkInYKBU5hbWVkEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEicKB2hlYWRpbmcYAiABKAsyES5udW1lbi52MS5IZWFkaW5nSACIAQESGgoCYXQYAyADKAsyDi5udW1lbi52MS5TcGFuQgoKCF9oZWFkaW5nIiUKB0hlYWRpbmcSDAoEdGV4dBgBIAEoCRIMCgRsaW5lGAIgASgFIiAKBFNwYW4SDAoEZnJvbRgBIAEoBRIKCgJ0bxgCIAEoBSJJCg1TZWFyY2hSZXF1ZXN0Eg0KBXF1ZXJ5GAEgASgJEg0KBWxpbWl0GAIgASgFEhoKA3dheRgDIAEoDjINLm51bWVuLnYxLldheSIyCg5TZWFyY2hSZXNwb25zZRIgCgVmb3VuZBgBIAMoCzIRLm51bWVuLnYxLlBhc3NhZ2UingEKB1Bhc3NhZ2USDAoEcGF0aBgBIAEoCRIhCgRub3RlGAIgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBEgwKBHRleHQYAyABKAkSGgoCYXQYBCADKAsyDi5udW1lbi52MS5TcGFuEhAKCGxvY2F0aW9uGAUgASgJEg0KBXN0YXJ0GAYgASgFEg4KBmxlbmd0aBgHIAEoBUIHCgVfbm90ZSIbCgtSZWFkUmVxdWVzdBIMCgRwYXRoGAEgASgJIoABCgxSZWFkUmVzcG9uc2USDAoEYm9keRgBIAEoCRInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBEiYKAmF0GAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAYgBAUIKCghfcmVmdXNhbEIFCgNfYXQiOAoLRmluZ2VycHJpbnQSDAoEcGF0aBgBIAEoCRIMCgRzaXplGAIgASgDEg0KBW10aW1lGAMgASgDIjgKBFNlZW4SDQoFcHJvc2UYASABKAkSIQoCYXQYAiABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludCJWCgxXcml0ZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIMCgRib2R5GAIgASgJEiEKBHNlZW4YAyABKAsyDi5udW1lbi52MS5TZWVuSACIAQFCBwoFX3NlZW4ihAEKDVdyaXRlUmVzcG9uc2USJwoHcmVmdXNhbBgBIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBARIPCgdjaGFuZ2VkGAIgASgIEiYKAmF0GAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAYgBAUIKCghfcmVmdXNhbEIFCgNfYXQiQgoHTmV3TGluaxIKCgJ0bxgBIAEoCRIcCgRyb2xlGAIgASgOMg4ubnVtZW4udjEuUm9sZRINCgVsYWJlbBgDIAEoCSJQCg1DcmVhdGVSZXF1ZXN0Eg0KBXRpdGxlGAEgASgJEg4KBmZvbGRlchgCIAEoCRIgCgVsaW5rcxgDIAMoCzIRLm51bWVuLnYxLk5ld0xpbmsiUwoOQ3JlYXRlUmVzcG9uc2USDAoEcGF0aBgBIAEoCRInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsIjwKC0pvaW5SZXF1ZXN0EgwKBHBhdGgYASABKAkSHwoEbGluaxgCIAEoCzIRLm51bWVuLnYxLk5ld0xpbmsiVAoMSm9pblJlc3BvbnNlEicKB3JlZnVzYWwYASABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQESDwoHY2hhbmdlZBgCIAEoCEIKCghfcmVmdXNhbCIsCg1SZW5hbWVSZXF1ZXN0EgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkiwAEKDlJlbmFtZVJlc3BvbnNlEgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkSHAoCYnkYAyABKA4yEC5udW1lbi52MS5OYW1pbmcSIwoFbW92ZWQYBCABKAsyDy5udW1lbi52MS5Nb3ZlZEgAiAEBEicKB3JlZnVzYWwYBSABKA4yES5udW1lbi52MS5SZWZ1c2FsSAGIAQESDwoHY2hhbmdlZBgGIAEoCEIICgZfbW92ZWRCCgoIX3JlZnVzYWwiXQoFTW92ZWQSDAoEZnJvbRgBIAEoCRIKCgJ0bxgCIAEoCRIQCghyZXBhaXJlZBgDIAMoCRIoCgpyZXRhcmdldGVkGAQgAygLMhQubnVtZW4udjEuUmV0YXJnZXRlZCI1CgpSZXRhcmdldGVkEgoKAmluGAEgASgJEg4KBnRhcmdldBgCIAEoCRILCgNub3cYAyABKAkiLgoNUmVtb3ZlUmVxdWVzdBIMCgRwYXRoGAEgASgJEg8KB2Rlc3Ryb3kYAiABKAgiaAoOUmVtb3ZlUmVzcG9uc2USDwoHdHJhc2hlZBgBIAEoCRIQCghkYW5nbGluZxgCIAMoCRInCgdyZWZ1c2FsGAMgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsIhEKD1F1aXR0aW5nUmVxdWVzdCIwChBRdWl0dGluZ1Jlc3BvbnNlEg0KBXRva2VuGAEgASgJEg0KBWZsdXNoGAIgASgIIj0KDkZsdXNoZWRSZXF1ZXN0Eg0KBXRva2VuGAEgASgJEhwKBG93ZWQYAiABKA4yDi5udW1lbi52MS5Pd2VkIhEKD0ZsdXNoZWRSZXNwb25zZSrcAQoHUmVmdXNhbBIXChNSRUZVU0FMX1VOU1BFQ0lGSUVEEAASEwoPUkVGVVNBTF9NSVNTSU5HEAESFgoSUkVGVVNBTF9OT1RfQV9OT1RFEAISFAoQUkVGVVNBTF9OT1RfVEVYVBADEhUKEVJFRlVTQUxfVE9PX0xBUkdFEAQSGAoUUkVGVVNBTF9CT0RZX1JFRlVTRUQQBRIWChJSRUZVU0FMX1VOUkVBREFCTEUQBhIUChBSRUZVU0FMX09DQ1VQSUVEEAcSFgoSUkVGVVNBTF9VTk5BTUVBQkxFEAgqXgoEU2VhdBIUChBTRUFUX1VOU1BFQ0lGSUVEEAASDwoLU0VBVF9QQVJFTlQQARIOCgpTRUFUX0NISUxEEAISDQoJU0VBVF9KVU1QEAMSEAoMU0VBVF9TSUJMSU5HEAQqTQoIQ291bnRpbmcSGAoUQ09VTlRJTkdfVU5TUEVDSUZJRUQQABITCg9DT1VOVElOR19USElOR1MQARISCg5DT1VOVElOR19CWVRFUxACKkkKA1dheRITCg9XQVlfVU5TUEVDSUZJRUQQABINCglXQVlfV09SRFMQARIPCgtXQVlfTUVBTklORxACEg0KCVdBWV9OQU1FUxADKm8KBFJvbGUSFAoQUk9MRV9VTlNQRUNJRklFRBAAEg8KC1JPTEVfUEFSRU5UEAESDgoKUk9MRV9DSElMRBACEg0KCVJPTEVfSlVNUBADEgwKCFJPTEVfUkVGEAQSEwoPUk9MRV9BVFRBQ0hNRU5UEAUqYQoGTmFtaW5nEhYKEk5BTUlOR19VTlNQRUNJRklFRBAAEhYKEk5BTUlOR19GUk9OVE1BVFRFUhABEhIKDk5BTUlOR19IRUFESU5HEAISEwoPTkFNSU5HX0ZJTEVOQU1FEAMqPwoET3dlZBIUChBPV0VEX1VOU1BFQ0lGSUVEEAASEAoMT1dFRF9XUklUVEVOEAESDwoLT1dFRF9BU0tJTkcQAjKxCAoMVmF1bHRTZXJ2aWNlEjgKBVN0YXRlEhYubnVtZW4udjEuU3RhdGVSZXF1ZXN0GhcubnVtZW4udjEuU3RhdGVSZXNwb25zZRI+CgdPcGVuaW5nEhgubnVtZW4udjEuT3BlbmluZ1JlcXVlc3QaGS5udW1lbi52MS5PcGVuaW5nUmVzcG9uc2USUAoNTmVpZ2hib3VyaG9vZBIeLm51bWVuLnYxLk5laWdoYm91cmhvb2RSZXF1ZXN0Gh8ubnVtZW4udjEuTmVpZ2hib3VyaG9vZFJlc3BvbnNlEjgKBU5hbWVzEhYubnVtZW4udjEuTmFtZXNSZXF1ZXN0GhcubnVtZW4udjEuTmFtZXNSZXNwb25zZRI7CgZTZWFyY2gSFy5udW1lbi52MS5TZWFyY2hSZXF1ZXN0GhgubnVtZW4udjEuU2VhcmNoUmVzcG9uc2USQAoHQ2hhbmdlcxIYLm51bWVuLnYxLkNoYW5nZXNSZXF1ZXN0GhkubnVtZW4udjEuQ2hhbmdlc1Jlc3BvbnNlMAESOgoFRm9jdXMSFi5udW1lbi52MS5Gb2N1c1JlcXVlc3QaFy5udW1lbi52MS5Gb2N1c1Jlc3BvbnNlMAESQAoHRWRpdGluZxIYLm51bWVuLnYxLkVkaXRpbmdSZXF1ZXN0GhkubnVtZW4udjEuRWRpdGluZ1Jlc3BvbnNlMAESOgoFVGFza3MSFi5udW1lbi52MS5UYXNrc1JlcXVlc3QaFy5udW1lbi52MS5UYXNrc1Jlc3BvbnNlMAESNQoEUmVhZBIVLm51bWVuLnYxLlJlYWRSZXF1ZXN0GhYubnVtZW4udjEuUmVhZFJlc3BvbnNlEjgKBVdyaXRlEhYubnVtZW4udjEuV3JpdGVSZXF1ZXN0GhcubnVtZW4udjEuV3JpdGVSZXNwb25zZRI7CgZDcmVhdGUSFy5udW1lbi52MS5DcmVhdGVSZXF1ZXN0GhgubnVtZW4udjEuQ3JlYXRlUmVzcG9uc2USNQoESm9pbhIVLm51bWVuLnYxLkpvaW5SZXF1ZXN0GhYubnVtZW4udjEuSm9pblJlc3BvbnNlEjsKBlJlbmFtZRIXLm51bWVuLnYxLlJlbmFtZVJlcXVlc3QaGC5udW1lbi52MS5SZW5hbWVSZXNwb25zZRI7CgZSZW1vdmUSFy5udW1lbi52MS5SZW1vdmVSZXF1ZXN0GhgubnVtZW4udjEuUmVtb3ZlUmVzcG9uc2USQwoIUXVpdHRpbmcSGS5udW1lbi52MS5RdWl0dGluZ1JlcXVlc3QaGi5udW1lbi52MS5RdWl0dGluZ1Jlc3BvbnNlMAESPgoHRmx1c2hlZBIYLm51bWVuLnYxLkZsdXNoZWRSZXF1ZXN0GhkubnVtZW4udjEuRmx1c2hlZFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiNwoETm90ZRIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJEhIKCmlkZW50aWZpZXIYAyABKAkidAoGU2VhdGVkEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEhwKBHNlYXQYAiABKA4yDi5udW1lbi52MS5TZWF0Eg0KBWxhYmVsGAMgASgJEg8KB3Rocm91Z2gYBCABKAkSDgoGbXV0dWFsGAUgASgIIg4KDFN0YXRlUmVxdWVzdCL7AQoNU3RhdGVSZXNwb25zZRIMCgRuYW1lGAEgASgJEgwKBHBhdGgYAiABKAkSDQoFcmVhZHkYBCABKAgSDgoGZmFpbGVkGAUgASgJEhEKCXVud2F0Y2hlZBgGIAEoCRITCgt1bnJlYWNoYWJsZRgRIAEoCRIOCgZjaHVua3MYByABKAMSEAoIZW1iZWRkZWQYCCABKAMSEQoJZW1iZWRkaW5nGAogASgISgQIAxAESgQICRAKSgQICxARUgVib29rc1IKYm9va3NfcmVhZFIEYnVzeVIHaW5kZXhlZFIIbGVhcm5pbmdSBG1hZGVSBW93aW5nUgdyZWFkaW5nIg4KDFRhc2tzUmVxdWVzdCIuCg1UYXNrc1Jlc3BvbnNlEh0KBXRhc2tzGAEgAygLMg4ubnVtZW4udjEuVGFzayKSAQoEVGFzaxIKCgJpZBgBIAEoCRINCgVkb2luZxgCIAEoCRINCgVhYm91dBgDIAEoCRIMCgRkb25lGAQgASgDEg0KBXRvdGFsGAUgASgDEg4KBmZhaWxlZBgGIAEoCRINCgVhc2tlZBgHIAEoCBIkCghjb3VudGluZxgIIAEoDjISLm51bWVuLnYxLkNvdW50aW5nIhAKDk9wZW5pbmdSZXF1ZXN0Ij0KD09wZW5pbmdSZXNwb25zZRIhCgRub3RlGAEgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBQgcKBV9ub3RlIhAKDkNoYW5nZXNSZXF1ZXN0IlEKD0NoYW5nZXNSZXNwb25zZRINCgVwYXRocxgBIAMoCRIOCgZyZWxvYWQYAiABKAgSHwoHcmVuYW1lZBgDIAMoCzIOLm51bWVuLnYxLldlbnQiIAoEV2VudBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIg4KDEZvY3VzUmVxdWVzdCJdCg1Gb2N1c1Jlc3BvbnNlEgwKBHBhdGgYASABKAkSDQoFc3RhcnQYAiABKAUSDgoGbGVuZ3RoGAMgASgFEh8KBGFsc28YBCADKAsyES5udW1lbi52MS5TdHJldGNoIigKB1N0cmV0Y2gSDQoFc3RhcnQYASABKAUSDgoGbGVuZ3RoGAIgASgFIhAKDkVkaXRpbmdSZXF1ZXN0ImUKD0VkaXRpbmdSZXNwb25zZRIOCgZjaGFuZ2UYASABKAkSDAoEcGF0aBgCIAEoCRIMCgRmcm9tGAMgASgFEgoKAnRvGAQgASgFEgwKBHRleHQYBSABKAkSDAoEZG9uZRgGIAEoCCIkChROZWlnaGJvdXJob29kUmVxdWVzdBIMCgRwYXRoGAEgASgJIlkKFU5laWdoYm91cmhvb2RSZXNwb25zZRIdCgVmb2N1cxgBIAEoCzIOLm51bWVuLnYxLk5vdGUSIQoHcmVsYXRlZBgCIAMoCzIQLm51bWVuLnYxLlNlYXRlZCIsCgxOYW1lc1JlcXVlc3QSDQoFcXVlcnkYASABKAkSDQoFbGltaXQYAiABKAUiLwoNTmFtZXNSZXNwb25zZRIeCgVmb3VuZBgBIAMoCzIPLm51bWVuLnYxLk5hbWVkInYKBU5hbWVkEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEicKB2hlYWRpbmcYAiABKAsyES5udW1lbi52MS5IZWFkaW5nSACIAQESGgoCYXQYAyADKAsyDi5udW1lbi52MS5TcGFuQgoKCF9oZWFkaW5nIiUKB0hlYWRpbmcSDAoEdGV4dBgBIAEoCRIMCgRsaW5lGAIgASgFIiAKBFNwYW4SDAoEZnJvbRgBIAEoBRIKCgJ0bxgCIAEoBSJJCg1TZWFyY2hSZXF1ZXN0Eg0KBXF1ZXJ5GAEgASgJEg0KBWxpbWl0GAIgASgFEhoKA3dheRgDIAEoDjINLm51bWVuLnYxLldheSIyCg5TZWFyY2hSZXNwb25zZRIgCgVmb3VuZBgBIAMoCzIRLm51bWVuLnYxLlBhc3NhZ2UingEKB1Bhc3NhZ2USDAoEcGF0aBgBIAEoCRIhCgRub3RlGAIgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBEgwKBHRleHQYAyABKAkSGgoCYXQYBCADKAsyDi5udW1lbi52MS5TcGFuEhAKCGxvY2F0aW9uGAUgASgJEg0KBXN0YXJ0GAYgASgFEg4KBmxlbmd0aBgHIAEoBUIHCgVfbm90ZSIdCgtMaXN0UmVxdWVzdBIOCgZmb2xkZXIYASABKAkiMAoMTGlzdFJlc3BvbnNlEiAKB2VudHJpZXMYASADKAsyDy5udW1lbi52MS5FbnRyeSJlCgVFbnRyeRIMCgRwYXRoGAEgASgJEgwKBG5hbWUYAiABKAkSDgoGZm9sZGVyGAMgASgIEiIKBGtpbmQYBCABKA4yFC5udW1lbi52MS5Tb3VyY2VLaW5kEgwKBHNpemUYBSABKAMiGwoLUmVhZFJlcXVlc3QSDAoEcGF0aBgBIAEoCSKAAQoMUmVhZFJlc3BvbnNlEgwKBGJvZHkYASABKAkSJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBARImCgJhdBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAGIAQFCCgoIX3JlZnVzYWxCBQoDX2F0IjgKC0ZpbmdlcnByaW50EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyI4CgRTZWVuEg0KBXByb3NlGAEgASgJEiEKAmF0GAIgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnQiVgoMV3JpdGVSZXF1ZXN0EgwKBHBhdGgYASABKAkSDAoEYm9keRgCIAEoCRIhCgRzZWVuGAMgASgLMg4ubnVtZW4udjEuU2VlbkgAiAEBQgcKBV9zZWVuIoQBCg1Xcml0ZVJlc3BvbnNlEicKB3JlZnVzYWwYASABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQESDwoHY2hhbmdlZBgCIAEoCBImCgJhdBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAGIAQFCCgoIX3JlZnVzYWxCBQoDX2F0IkIKB05ld0xpbmsSCgoCdG8YASABKAkSHAoEcm9sZRgCIAEoDjIOLm51bWVuLnYxLlJvbGUSDQoFbGFiZWwYAyABKAkiUAoNQ3JlYXRlUmVxdWVzdBINCgV0aXRsZRgBIAEoCRIOCgZmb2xkZXIYAiABKAkSIAoFbGlua3MYAyADKAsyES5udW1lbi52MS5OZXdMaW5rIlMKDkNyZWF0ZVJlc3BvbnNlEgwKBHBhdGgYASABKAkSJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBAUIKCghfcmVmdXNhbCI8CgtKb2luUmVxdWVzdBIMCgRwYXRoGAEgASgJEh8KBGxpbmsYAiABKAsyES5udW1lbi52MS5OZXdMaW5rIlQKDEpvaW5SZXNwb25zZRInCgdyZWZ1c2FsGAEgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBEg8KB2NoYW5nZWQYAiABKAhCCgoIX3JlZnVzYWwiLAoNUmVuYW1lUmVxdWVzdBIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJIsABCg5SZW5hbWVSZXNwb25zZRIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJEhwKAmJ5GAMgASgOMhAubnVtZW4udjEuTmFtaW5nEiMKBW1vdmVkGAQgASgLMg8ubnVtZW4udjEuTW92ZWRIAIgBARInCgdyZWZ1c2FsGAUgASgOMhEubnVtZW4udjEuUmVmdXNhbEgBiAEBEg8KB2NoYW5nZWQYBiABKAhCCAoGX21vdmVkQgoKCF9yZWZ1c2FsIl0KBU1vdmVkEgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkSEAoIcmVwYWlyZWQYAyADKAkSKAoKcmV0YXJnZXRlZBgEIAMoCzIULm51bWVuLnYxLlJldGFyZ2V0ZWQiNQoKUmV0YXJnZXRlZBIKCgJpbhgBIAEoCRIOCgZ0YXJnZXQYAiABKAkSCwoDbm93GAMgASgJIicKC01vdmVSZXF1ZXN0EgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkicgoMTW92ZVJlc3BvbnNlEiMKBW1vdmVkGAEgASgLMg8ubnVtZW4udjEuTW92ZWRIAIgBARInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgBiAEBQggKBl9tb3ZlZEIKCghfcmVmdXNhbCIhChFNYWtlRm9sZGVyUmVxdWVzdBIMCgRwYXRoGAEgASgJIkkKEk1ha2VGb2xkZXJSZXNwb25zZRInCgdyZWZ1c2FsGAEgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsIi4KDVJlbW92ZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIPCgdkZXN0cm95GAIgASgIImgKDlJlbW92ZVJlc3BvbnNlEg8KB3RyYXNoZWQYASABKAkSEAoIZGFuZ2xpbmcYAiADKAkSJwoHcmVmdXNhbBgDIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBAUIKCghfcmVmdXNhbCIRCg9RdWl0dGluZ1JlcXVlc3QiMAoQUXVpdHRpbmdSZXNwb25zZRINCgV0b2tlbhgBIAEoCRINCgVmbHVzaBgCIAEoCCI9Cg5GbHVzaGVkUmVxdWVzdBINCgV0b2tlbhgBIAEoCRIcCgRvd2VkGAIgASgOMg4ubnVtZW4udjEuT3dlZCIRCg9GbHVzaGVkUmVzcG9uc2Uq3AEKB1JlZnVzYWwSFwoTUkVGVVNBTF9VTlNQRUNJRklFRBAAEhMKD1JFRlVTQUxfTUlTU0lORxABEhYKElJFRlVTQUxfTk9UX0FfTk9URRACEhQKEFJFRlVTQUxfTk9UX1RFWFQQAxIVChFSRUZVU0FMX1RPT19MQVJHRRAEEhgKFFJFRlVTQUxfQk9EWV9SRUZVU0VEEAUSFgoSUkVGVVNBTF9VTlJFQURBQkxFEAYSFAoQUkVGVVNBTF9PQ0NVUElFRBAHEhYKElJFRlVTQUxfVU5OQU1FQUJMRRAIKl4KBFNlYXQSFAoQU0VBVF9VTlNQRUNJRklFRBAAEg8KC1NFQVRfUEFSRU5UEAESDgoKU0VBVF9DSElMRBACEg0KCVNFQVRfSlVNUBADEhAKDFNFQVRfU0lCTElORxAEKk0KCENvdW50aW5nEhgKFENPVU5USU5HX1VOU1BFQ0lGSUVEEAASEwoPQ09VTlRJTkdfVEhJTkdTEAESEgoOQ09VTlRJTkdfQllURVMQAipJCgNXYXkSEwoPV0FZX1VOU1BFQ0lGSUVEEAASDQoJV0FZX1dPUkRTEAESDwoLV0FZX01FQU5JTkcQAhINCglXQVlfTkFNRVMQAypVCgpTb3VyY2VLaW5kEhsKF1NPVVJDRV9LSU5EX1VOU1BFQ0lGSUVEEAASFAoQU09VUkNFX0tJTkRfTk9URRABEhQKEFNPVVJDRV9LSU5EX0JPT0sQAipvCgRSb2xlEhQKEFJPTEVfVU5TUEVDSUZJRUQQABIPCgtST0xFX1BBUkVOVBABEg4KClJPTEVfQ0hJTEQQAhINCglST0xFX0pVTVAQAxIMCghST0xFX1JFRhAEEhMKD1JPTEVfQVRUQUNITUVOVBAFKmEKBk5hbWluZxIWChJOQU1JTkdfVU5TUEVDSUZJRUQQABIWChJOQU1JTkdfRlJPTlRNQVRURVIQARISCg5OQU1JTkdfSEVBRElORxACEhMKD05BTUlOR19GSUxFTkFNRRADKj8KBE93ZWQSFAoQT1dFRF9VTlNQRUNJRklFRBAAEhAKDE9XRURfV1JJVFRFThABEg8KC09XRURfQVNLSU5HEAIy6AkKDFZhdWx0U2VydmljZRI4CgVTdGF0ZRIWLm51bWVuLnYxLlN0YXRlUmVxdWVzdBoXLm51bWVuLnYxLlN0YXRlUmVzcG9uc2USPgoHT3BlbmluZxIYLm51bWVuLnYxLk9wZW5pbmdSZXF1ZXN0GhkubnVtZW4udjEuT3BlbmluZ1Jlc3BvbnNlElAKDU5laWdoYm91cmhvb2QSHi5udW1lbi52MS5OZWlnaGJvdXJob29kUmVxdWVzdBofLm51bWVuLnYxLk5laWdoYm91cmhvb2RSZXNwb25zZRI4CgVOYW1lcxIWLm51bWVuLnYxLk5hbWVzUmVxdWVzdBoXLm51bWVuLnYxLk5hbWVzUmVzcG9uc2USOwoGU2VhcmNoEhcubnVtZW4udjEuU2VhcmNoUmVxdWVzdBoYLm51bWVuLnYxLlNlYXJjaFJlc3BvbnNlEkAKB0NoYW5nZXMSGC5udW1lbi52MS5DaGFuZ2VzUmVxdWVzdBoZLm51bWVuLnYxLkNoYW5nZXNSZXNwb25zZTABEjoKBUZvY3VzEhYubnVtZW4udjEuRm9jdXNSZXF1ZXN0GhcubnVtZW4udjEuRm9jdXNSZXNwb25zZTABEkAKB0VkaXRpbmcSGC5udW1lbi52MS5FZGl0aW5nUmVxdWVzdBoZLm51bWVuLnYxLkVkaXRpbmdSZXNwb25zZTABEjoKBVRhc2tzEhYubnVtZW4udjEuVGFza3NSZXF1ZXN0GhcubnVtZW4udjEuVGFza3NSZXNwb25zZTABEjUKBExpc3QSFS5udW1lbi52MS5MaXN0UmVxdWVzdBoWLm51bWVuLnYxLkxpc3RSZXNwb25zZRI1CgRSZWFkEhUubnVtZW4udjEuUmVhZFJlcXVlc3QaFi5udW1lbi52MS5SZWFkUmVzcG9uc2USOAoFV3JpdGUSFi5udW1lbi52MS5Xcml0ZVJlcXVlc3QaFy5udW1lbi52MS5Xcml0ZVJlc3BvbnNlEjsKBkNyZWF0ZRIXLm51bWVuLnYxLkNyZWF0ZVJlcXVlc3QaGC5udW1lbi52MS5DcmVhdGVSZXNwb25zZRI1CgRKb2luEhUubnVtZW4udjEuSm9pblJlcXVlc3QaFi5udW1lbi52MS5Kb2luUmVzcG9uc2USOwoGUmVuYW1lEhcubnVtZW4udjEuUmVuYW1lUmVxdWVzdBoYLm51bWVuLnYxLlJlbmFtZVJlc3BvbnNlEjUKBE1vdmUSFS5udW1lbi52MS5Nb3ZlUmVxdWVzdBoWLm51bWVuLnYxLk1vdmVSZXNwb25zZRI7CgZSZW1vdmUSFy5udW1lbi52MS5SZW1vdmVSZXF1ZXN0GhgubnVtZW4udjEuUmVtb3ZlUmVzcG9uc2USRwoKTWFrZUZvbGRlchIbLm51bWVuLnYxLk1ha2VGb2xkZXJSZXF1ZXN0GhwubnVtZW4udjEuTWFrZUZvbGRlclJlc3BvbnNlEkMKCFF1aXR0aW5nEhkubnVtZW4udjEuUXVpdHRpbmdSZXF1ZXN0GhoubnVtZW4udjEuUXVpdHRpbmdSZXNwb25zZTABEj4KB0ZsdXNoZWQSGC5udW1lbi52MS5GbHVzaGVkUmVxdWVzdBoZLm51bWVuLnYxLkZsdXNoZWRSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * Note is a note as something else refers to it.
@@ -848,6 +848,94 @@ export const PassageSchema: GenMessage<Passage> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 26);
 
 /**
+ * @generated from message numen.v1.ListRequest
+ */
+export type ListRequest = Message<"numen.v1.ListRequest"> & {
+  /**
+   * The folder to list, relative to the root. Empty is the root.
+   *
+   * @generated from field: string folder = 1;
+   */
+  folder: string;
+};
+
+/**
+ * Describes the message numen.v1.ListRequest.
+ * Use `create(ListRequestSchema)` to create a new message.
+ */
+export const ListRequestSchema: GenMessage<ListRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 27);
+
+/**
+ * @generated from message numen.v1.ListResponse
+ */
+export type ListResponse = Message<"numen.v1.ListResponse"> & {
+  /**
+   * What the folder holds, folders first and then files, each group by name
+   * with case ignored. This is the order to draw them in.
+   *
+   * @generated from field: repeated numen.v1.Entry entries = 1;
+   */
+  entries: Entry[];
+};
+
+/**
+ * Describes the message numen.v1.ListResponse.
+ * Use `create(ListResponseSchema)` to create a new message.
+ */
+export const ListResponseSchema: GenMessage<ListResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 28);
+
+/**
+ * Entry is one file or folder, as a listing of the folder it sits in reports
+ * it.
+ *
+ * @generated from message numen.v1.Entry
+ */
+export type Entry = Message<"numen.v1.Entry"> & {
+  /**
+   * Path is what the vault calls it, relative to the root, with forward
+   * slashes.
+   *
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * The last segment of the path.
+   *
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: bool folder = 3;
+   */
+  folder: boolean;
+
+  /**
+   * What the vault holds here.
+   *
+   * @generated from field: numen.v1.SourceKind kind = 4;
+   */
+  kind: SourceKind;
+
+  /**
+   * How much the file holds, in bytes. Zero for a folder.
+   *
+   * @generated from field: int64 size = 5;
+   */
+  size: bigint;
+};
+
+/**
+ * Describes the message numen.v1.Entry.
+ * Use `create(EntrySchema)` to create a new message.
+ */
+export const EntrySchema: GenMessage<Entry> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 29);
+
+/**
  * @generated from message numen.v1.ReadRequest
  */
 export type ReadRequest = Message<"numen.v1.ReadRequest"> & {
@@ -862,7 +950,7 @@ export type ReadRequest = Message<"numen.v1.ReadRequest"> & {
  * Use `create(ReadRequestSchema)` to create a new message.
  */
 export const ReadRequestSchema: GenMessage<ReadRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 27);
+  messageDesc(file_numen_v1_vault, 30);
 
 /**
  * @generated from message numen.v1.ReadResponse
@@ -896,7 +984,7 @@ export type ReadResponse = Message<"numen.v1.ReadResponse"> & {
  * Use `create(ReadResponseSchema)` to create a new message.
  */
 export const ReadResponseSchema: GenMessage<ReadResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 28);
+  messageDesc(file_numen_v1_vault, 31);
 
 /**
  * Fingerprint is which file this is: where it is filed, how big it is, and when
@@ -928,7 +1016,7 @@ export type Fingerprint = Message<"numen.v1.Fingerprint"> & {
  * Use `create(FingerprintSchema)` to create a new message.
  */
 export const FingerprintSchema: GenMessage<Fingerprint> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 29);
+  messageDesc(file_numen_v1_vault, 32);
 
 /**
  * Seen is what a caller last saw of a note: the prose a read gave it, and the
@@ -959,7 +1047,7 @@ export type Seen = Message<"numen.v1.Seen"> & {
  * Use `create(SeenSchema)` to create a new message.
  */
 export const SeenSchema: GenMessage<Seen> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 30);
+  messageDesc(file_numen_v1_vault, 33);
 
 /**
  * @generated from message numen.v1.WriteRequest
@@ -991,7 +1079,7 @@ export type WriteRequest = Message<"numen.v1.WriteRequest"> & {
  * Use `create(WriteRequestSchema)` to create a new message.
  */
 export const WriteRequestSchema: GenMessage<WriteRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 31);
+  messageDesc(file_numen_v1_vault, 34);
 
 /**
  * @generated from message numen.v1.WriteResponse
@@ -1026,7 +1114,7 @@ export type WriteResponse = Message<"numen.v1.WriteResponse"> & {
  * Use `create(WriteResponseSchema)` to create a new message.
  */
 export const WriteResponseSchema: GenMessage<WriteResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 32);
+  messageDesc(file_numen_v1_vault, 35);
 
 /**
  * NewLink is one relationship as the note it is written in declares it: the
@@ -1059,7 +1147,7 @@ export type NewLink = Message<"numen.v1.NewLink"> & {
  * Use `create(NewLinkSchema)` to create a new message.
  */
 export const NewLinkSchema: GenMessage<NewLink> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 33);
+  messageDesc(file_numen_v1_vault, 36);
 
 /**
  * @generated from message numen.v1.CreateRequest
@@ -1092,7 +1180,7 @@ export type CreateRequest = Message<"numen.v1.CreateRequest"> & {
  * Use `create(CreateRequestSchema)` to create a new message.
  */
 export const CreateRequestSchema: GenMessage<CreateRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 34);
+  messageDesc(file_numen_v1_vault, 37);
 
 /**
  * @generated from message numen.v1.CreateResponse
@@ -1118,7 +1206,7 @@ export type CreateResponse = Message<"numen.v1.CreateResponse"> & {
  * Use `create(CreateResponseSchema)` to create a new message.
  */
 export const CreateResponseSchema: GenMessage<CreateResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 35);
+  messageDesc(file_numen_v1_vault, 38);
 
 /**
  * @generated from message numen.v1.JoinRequest
@@ -1142,7 +1230,7 @@ export type JoinRequest = Message<"numen.v1.JoinRequest"> & {
  * Use `create(JoinRequestSchema)` to create a new message.
  */
 export const JoinRequestSchema: GenMessage<JoinRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 36);
+  messageDesc(file_numen_v1_vault, 39);
 
 /**
  * @generated from message numen.v1.JoinResponse
@@ -1169,7 +1257,7 @@ export type JoinResponse = Message<"numen.v1.JoinResponse"> & {
  * Use `create(JoinResponseSchema)` to create a new message.
  */
 export const JoinResponseSchema: GenMessage<JoinResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 37);
+  messageDesc(file_numen_v1_vault, 40);
 
 /**
  * @generated from message numen.v1.RenameRequest
@@ -1195,7 +1283,7 @@ export type RenameRequest = Message<"numen.v1.RenameRequest"> & {
  * Use `create(RenameRequestSchema)` to create a new message.
  */
 export const RenameRequestSchema: GenMessage<RenameRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 38);
+  messageDesc(file_numen_v1_vault, 41);
 
 /**
  * @generated from message numen.v1.RenameResponse
@@ -1254,7 +1342,7 @@ export type RenameResponse = Message<"numen.v1.RenameResponse"> & {
  * Use `create(RenameResponseSchema)` to create a new message.
  */
 export const RenameResponseSchema: GenMessage<RenameResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 39);
+  messageDesc(file_numen_v1_vault, 42);
 
 /**
  * Moved is a file under a different name, and what that did to the links
@@ -1299,7 +1387,7 @@ export type Moved = Message<"numen.v1.Moved"> & {
  * Use `create(MovedSchema)` to create a new message.
  */
 export const MovedSchema: GenMessage<Moved> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 40);
+  messageDesc(file_numen_v1_vault, 43);
 
 /**
  * Retargeted is one link that means something else now.
@@ -1335,21 +1423,113 @@ export type Retargeted = Message<"numen.v1.Retargeted"> & {
  * Use `create(RetargetedSchema)` to create a new message.
  */
 export const RetargetedSchema: GenMessage<Retargeted> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 41);
+  messageDesc(file_numen_v1_vault, 44);
+
+/**
+ * @generated from message numen.v1.MoveRequest
+ */
+export type MoveRequest = Message<"numen.v1.MoveRequest"> & {
+  /**
+   * The file or folder to move, as the vault calls it.
+   *
+   * @generated from field: string from = 1;
+   */
+  from: string;
+
+  /**
+   * Where it is filed from now on. The last segment is what it is called.
+   *
+   * @generated from field: string to = 2;
+   */
+  to: string;
+};
+
+/**
+ * Describes the message numen.v1.MoveRequest.
+ * Use `create(MoveRequestSchema)` to create a new message.
+ */
+export const MoveRequestSchema: GenMessage<MoveRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 45);
+
+/**
+ * @generated from message numen.v1.MoveResponse
+ */
+export type MoveResponse = Message<"numen.v1.MoveResponse"> & {
+  /**
+   * What the file did. Absent when nothing was moved.
+   *
+   * @generated from field: optional numen.v1.Moved moved = 1;
+   */
+  moved?: Moved | undefined;
+
+  /**
+   * Set when nothing was moved, and why.
+   *
+   * @generated from field: optional numen.v1.Refusal refusal = 2;
+   */
+  refusal?: Refusal | undefined;
+};
+
+/**
+ * Describes the message numen.v1.MoveResponse.
+ * Use `create(MoveResponseSchema)` to create a new message.
+ */
+export const MoveResponseSchema: GenMessage<MoveResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 46);
+
+/**
+ * @generated from message numen.v1.MakeFolderRequest
+ */
+export type MakeFolderRequest = Message<"numen.v1.MakeFolderRequest"> & {
+  /**
+   * Where the folder goes, relative to the root. The folders above it are made
+   * with it.
+   *
+   * @generated from field: string path = 1;
+   */
+  path: string;
+};
+
+/**
+ * Describes the message numen.v1.MakeFolderRequest.
+ * Use `create(MakeFolderRequestSchema)` to create a new message.
+ */
+export const MakeFolderRequestSchema: GenMessage<MakeFolderRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 47);
+
+/**
+ * @generated from message numen.v1.MakeFolderResponse
+ */
+export type MakeFolderResponse = Message<"numen.v1.MakeFolderResponse"> & {
+  /**
+   * Set when nothing was made, and why.
+   *
+   * @generated from field: optional numen.v1.Refusal refusal = 1;
+   */
+  refusal?: Refusal | undefined;
+};
+
+/**
+ * Describes the message numen.v1.MakeFolderResponse.
+ * Use `create(MakeFolderResponseSchema)` to create a new message.
+ */
+export const MakeFolderResponseSchema: GenMessage<MakeFolderResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 48);
 
 /**
  * @generated from message numen.v1.RemoveRequest
  */
 export type RemoveRequest = Message<"numen.v1.RemoveRequest"> & {
   /**
-   * The note to remove.
+   * The file or folder to remove.
    *
    * @generated from field: string path = 1;
    */
   path: string;
 
   /**
-   * Destroy takes the file off the disk. Nothing brings it back.
+   * Destroy takes the file off the disk. Nothing brings it back, and only a
+   * note is destroyed.
    *
    * @generated from field: bool destroy = 2;
    */
@@ -1361,29 +1541,29 @@ export type RemoveRequest = Message<"numen.v1.RemoveRequest"> & {
  * Use `create(RemoveRequestSchema)` to create a new message.
  */
 export const RemoveRequestSchema: GenMessage<RemoveRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 42);
+  messageDesc(file_numen_v1_vault, 49);
 
 /**
  * @generated from message numen.v1.RemoveResponse
  */
 export type RemoveResponse = Message<"numen.v1.RemoveResponse"> & {
   /**
-   * Where the note sits in the trash. Empty when it was destroyed, and when
-   * nothing was removed.
+   * Where the file or folder sits in the trash. Empty when it was destroyed,
+   * and when nothing was removed.
    *
    * @generated from field: string trashed = 1;
    */
   trashed: string;
 
   /**
-   * The notes whose links pointed here and now reach nothing.
+   * The notes whose links pointed at what was removed and now reach nothing.
    *
    * @generated from field: repeated string dangling = 2;
    */
   dangling: string[];
 
   /**
-   * Set when the note was not removed, and why.
+   * Set when nothing was removed, and why.
    *
    * @generated from field: optional numen.v1.Refusal refusal = 3;
    */
@@ -1395,7 +1575,7 @@ export type RemoveResponse = Message<"numen.v1.RemoveResponse"> & {
  * Use `create(RemoveResponseSchema)` to create a new message.
  */
 export const RemoveResponseSchema: GenMessage<RemoveResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 43);
+  messageDesc(file_numen_v1_vault, 50);
 
 /**
  * @generated from message numen.v1.QuittingRequest
@@ -1408,7 +1588,7 @@ export type QuittingRequest = Message<"numen.v1.QuittingRequest"> & {
  * Use `create(QuittingRequestSchema)` to create a new message.
  */
 export const QuittingRequestSchema: GenMessage<QuittingRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 44);
+  messageDesc(file_numen_v1_vault, 51);
 
 /**
  * @generated from message numen.v1.QuittingResponse
@@ -1435,7 +1615,7 @@ export type QuittingResponse = Message<"numen.v1.QuittingResponse"> & {
  * Use `create(QuittingResponseSchema)` to create a new message.
  */
 export const QuittingResponseSchema: GenMessage<QuittingResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 45);
+  messageDesc(file_numen_v1_vault, 52);
 
 /**
  * @generated from message numen.v1.FlushedRequest
@@ -1461,7 +1641,7 @@ export type FlushedRequest = Message<"numen.v1.FlushedRequest"> & {
  * Use `create(FlushedRequestSchema)` to create a new message.
  */
 export const FlushedRequestSchema: GenMessage<FlushedRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 46);
+  messageDesc(file_numen_v1_vault, 53);
 
 /**
  * @generated from message numen.v1.FlushedResponse
@@ -1474,7 +1654,7 @@ export type FlushedResponse = Message<"numen.v1.FlushedResponse"> & {
  * Use `create(FlushedResponseSchema)` to create a new message.
  */
 export const FlushedResponseSchema: GenMessage<FlushedResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 47);
+  messageDesc(file_numen_v1_vault, 54);
 
 /**
  * Refusal is why a note could not be read or written.
@@ -1668,6 +1848,35 @@ export const WaySchema: GenEnum<Way> = /*@__PURE__*/
   enumDesc(file_numen_v1_vault, 3);
 
 /**
+ * SourceKind is what the vault holds at a path. A file the index holds no text
+ * for — a picture, an archive — is unspecified.
+ *
+ * @generated from enum numen.v1.SourceKind
+ */
+export enum SourceKind {
+  /**
+   * @generated from enum value: SOURCE_KIND_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: SOURCE_KIND_NOTE = 1;
+   */
+  NOTE = 1,
+
+  /**
+   * @generated from enum value: SOURCE_KIND_BOOK = 2;
+   */
+  BOOK = 2,
+}
+
+/**
+ * Describes the enum numen.v1.SourceKind.
+ */
+export const SourceKindSchema: GenEnum<SourceKind> = /*@__PURE__*/
+  enumDesc(file_numen_v1_vault, 4);
+
+/**
  * Role is what kind of relationship a link is. The list is closed: navigation
  * and drawing read it, so a role nobody decided on has no behaviour.
  *
@@ -1709,7 +1918,7 @@ export enum Role {
  * Describes the enum numen.v1.Role.
  */
 export const RoleSchema: GenEnum<Role> = /*@__PURE__*/
-  enumDesc(file_numen_v1_vault, 4);
+  enumDesc(file_numen_v1_vault, 5);
 
 /**
  * Naming is which of the three a note is shown by, and so which one a rename
@@ -1751,7 +1960,7 @@ export enum Naming {
  * Describes the enum numen.v1.Naming.
  */
 export const NamingSchema: GenEnum<Naming> = /*@__PURE__*/
-  enumDesc(file_numen_v1_vault, 5);
+  enumDesc(file_numen_v1_vault, 6);
 
 /**
  * Owed is what a caller has left when it answers.
@@ -1786,7 +1995,7 @@ export enum Owed {
  * Describes the enum numen.v1.Owed.
  */
 export const OwedSchema: GenEnum<Owed> = /*@__PURE__*/
-  enumDesc(file_numen_v1_vault, 6);
+  enumDesc(file_numen_v1_vault, 7);
 
 /**
  * VaultService answers questions about the one vault a client is looking at.
@@ -1908,6 +2117,17 @@ export const VaultService: GenService<{
     output: typeof TasksResponseSchema;
   },
   /**
+   * List is what one folder of the vault holds. A tree asks for a folder as it
+   * is opened, one folder to a request.
+   *
+   * @generated from rpc numen.v1.VaultService.List
+   */
+  list: {
+    methodKind: "unary";
+    input: typeof ListRequestSchema;
+    output: typeof ListResponseSchema;
+  },
+  /**
    * Read answers with the prose of a note, below its frontmatter.
    *
    * @generated from rpc numen.v1.VaultService.Read
@@ -1965,9 +2185,20 @@ export const VaultService: GenService<{
     output: typeof RenameResponseSchema;
   },
   /**
-   * Remove takes a note out of the vault, into the trash it can be brought back
-   * from. The links that pointed at it are left as they were written: a link is
-   * not wrong because the note it names is gone.
+   * Move puts a file or a folder somewhere else in the vault. Renaming a file
+   * is a move within one folder.
+   *
+   * @generated from rpc numen.v1.VaultService.Move
+   */
+  move: {
+    methodKind: "unary";
+    input: typeof MoveRequestSchema;
+    output: typeof MoveResponseSchema;
+  },
+  /**
+   * Remove takes a file or a folder out of the vault, into the trash it can be
+   * brought back from. The links that pointed at it are left as they were
+   * written: a link is not wrong because the note it names is gone.
    *
    * @generated from rpc numen.v1.VaultService.Remove
    */
@@ -1975,6 +2206,16 @@ export const VaultService: GenService<{
     methodKind: "unary";
     input: typeof RemoveRequestSchema;
     output: typeof RemoveResponseSchema;
+  },
+  /**
+   * MakeFolder makes an empty folder. The folders above it are made with it.
+   *
+   * @generated from rpc numen.v1.VaultService.MakeFolder
+   */
+  makeFolder: {
+    methodKind: "unary";
+    input: typeof MakeFolderRequestSchema;
+    output: typeof MakeFolderResponseSchema;
   },
   /**
    * Quitting says the window is going, for as long as the caller listens. A

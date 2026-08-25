@@ -64,6 +64,10 @@ service VaultService {
   // where the person watching sees it happen.
   rpc Tasks(TasksRequest) returns (stream TasksResponse);
 
+  // List is what one folder of the vault holds. A tree asks for a folder as it
+  // is opened, one folder to a request.
+  rpc List(ListRequest) returns (ListResponse);
+
   // Read answers with the prose of a note, below its frontmatter.
   rpc Read(ReadRequest) returns (ReadResponse);
 
@@ -86,10 +90,17 @@ service VaultService {
   // names it is brought into line, and the file is renamed with it.
   rpc Rename(RenameRequest) returns (RenameResponse);
 
-  // Remove takes a note out of the vault, into the trash it can be brought back
-  // from. The links that pointed at it are left as they were written: a link is
-  // not wrong because the note it names is gone.
+  // Move puts a file or a folder somewhere else in the vault. Renaming a file
+  // is a move within one folder.
+  rpc Move(MoveRequest) returns (MoveResponse);
+
+  // Remove takes a file or a folder out of the vault, into the trash it can be
+  // brought back from. The links that pointed at it are left as they were
+  // written: a link is not wrong because the note it names is gone.
   rpc Remove(RemoveRequest) returns (RemoveResponse);
+
+  // MakeFolder makes an empty folder. The folders above it are made with it.
+  rpc MakeFolder(MakeFolderRequest) returns (MakeFolderResponse);
 
   // Quitting says the window is going, for as long as the caller listens. A
   // caller holding work that is only in its own memory writes it now and
@@ -452,6 +463,44 @@ message Passage {
   int32 length = 7;
 }
 
+message ListRequest {
+  // The folder to list, relative to the root. Empty is the root.
+  string folder = 1;
+}
+
+message ListResponse {
+  // What the folder holds, folders first and then files, each group by name
+  // with case ignored. This is the order to draw them in.
+  repeated Entry entries = 1;
+}
+
+// Entry is one file or folder, as a listing of the folder it sits in reports
+// it.
+message Entry {
+  // Path is what the vault calls it, relative to the root, with forward
+  // slashes.
+  string path = 1;
+
+  // The last segment of the path.
+  string name = 2;
+
+  bool folder = 3;
+
+  // What the vault holds here.
+  SourceKind kind = 4;
+
+  // How much the file holds, in bytes. Zero for a folder.
+  int64 size = 5;
+}
+
+// SourceKind is what the vault holds at a path. A file the index holds no text
+// for — a picture, an archive — is unspecified.
+enum SourceKind {
+  SOURCE_KIND_UNSPECIFIED = 0;
+  SOURCE_KIND_NOTE = 1;
+  SOURCE_KIND_BOOK = 2;
+}
+
 message ReadRequest {
   string path = 1;
 }
@@ -650,23 +699,51 @@ message Retargeted {
   string now = 3;
 }
 
+message MoveRequest {
+  // The file or folder to move, as the vault calls it.
+  string from = 1;
+
+  // Where it is filed from now on. The last segment is what it is called.
+  string to = 2;
+}
+
+message MoveResponse {
+  // What the file did. Absent when nothing was moved.
+  optional Moved moved = 1;
+
+  // Set when nothing was moved, and why.
+  optional Refusal refusal = 2;
+}
+
+message MakeFolderRequest {
+  // Where the folder goes, relative to the root. The folders above it are made
+  // with it.
+  string path = 1;
+}
+
+message MakeFolderResponse {
+  // Set when nothing was made, and why.
+  optional Refusal refusal = 1;
+}
+
 message RemoveRequest {
-  // The note to remove.
+  // The file or folder to remove.
   string path = 1;
 
-  // Destroy takes the file off the disk. Nothing brings it back.
+  // Destroy takes the file off the disk. Nothing brings it back, and only a
+  // note is destroyed.
   bool destroy = 2;
 }
 
 message RemoveResponse {
-  // Where the note sits in the trash. Empty when it was destroyed, and when
-  // nothing was removed.
+  // Where the file or folder sits in the trash. Empty when it was destroyed,
+  // and when nothing was removed.
   string trashed = 1;
 
-  // The notes whose links pointed here and now reach nothing.
+  // The notes whose links pointed at what was removed and now reach nothing.
   repeated string dangling = 2;
 
-  // Set when the note was not removed, and why.
+  // Set when nothing was removed, and why.
   optional Refusal refusal = 3;
 }
 

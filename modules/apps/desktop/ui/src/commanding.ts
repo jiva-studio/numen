@@ -195,8 +195,12 @@ export interface Words extends Silences {
   readonly destroy: string
   readonly ask: string
   readonly copy: string
+  /** The note in front, shown where the vault files it. */
+  readonly reveal: string
   readonly newNote: string
   readonly newPlex: string
+  /** The folders and files of the vault, put in front of the person. */
+  readonly files: string
   readonly newAgent: string
   readonly close: string
   /**
@@ -363,6 +367,7 @@ export const commandsOf = (
   },
   { id: 'ask', text: words.ask, band: 'note', where: onNote },
   { id: 'copy', text: words.copy, band: 'note', where: onNote },
+  { id: 'reveal', text: words.reveal, band: 'note', where: onNote },
   {
     id: 'note',
     text: words.newNote,
@@ -372,6 +377,7 @@ export const commandsOf = (
     where: (at) => at.ready,
   },
   { id: 'plex', text: words.newPlex, band: 'window', where: always },
+  { id: 'files', text: words.files, band: 'window', where: always },
   { id: 'agent', text: words.newAgent, ...keysOf('agent', agent), band: 'window', where: always },
   {
     id: 'close',

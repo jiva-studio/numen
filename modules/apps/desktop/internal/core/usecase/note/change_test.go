@@ -267,6 +267,41 @@ func TestRemovingPutsTheNoteInTheTrashAndOutOfTheIndex(t *testing.T) {
 	}
 }
 
+// A folder goes to the trash whole, in one move, and the notes that pointed
+// into it are named. A note that went with the folder points at nothing from
+// the trash, so it is not among them.
+func TestRemovingAFolderTakesWhatIsUnderItAndNamesTheLinksLeft(t *testing.T) {
+	c := changeable(t, map[string]string{
+		"physics/Entropy.md": "# Entropy\n\nA measure of disorder.\n",
+		"physics/Heat.md":    "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
+		"Outside.md":         "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Outside\n",
+	})
+
+	removed, err := c.remove().Execute(t.Context(), c.vault, "physics")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if removed.Trashed != ".trash/physics" {
+		t.Errorf("want the folder kept under its own path, got %q", removed.Trashed)
+	}
+	if len(removed.Dangling) != 1 || removed.Dangling[0] != "Outside.md" {
+		t.Errorf("want the note left pointing at nothing, got %v", removed.Dangling)
+	}
+	for _, path := range []string{"Entropy.md", "Heat.md"} {
+		if _, err := os.Stat(filepath.Join(c.vault.Path, ".trash", "physics", path)); err != nil {
+			t.Errorf("%s is not in the trash: %v", path, err)
+		}
+	}
+
+	found, err := c.search().Execute(t.Context(), c.vault, "disorder", search.Parameters{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) != 0 {
+		t.Errorf("a note under the removed folder is still in the index: %v", found)
+	}
+}
+
 func TestLinkingWritesTheIdentifierTheNoteDidNotHave(t *testing.T) {
 	c := changeable(t, map[string]string{
 		"Entropy.md": "# Entropy\n",

@@ -17,17 +17,19 @@ import {
   Palette,
   Plex,
   Reader,
+  Tree,
   Workspace,
   type PaletteBand,
 } from '@numen/ui'
 import AgentTab from './agent/AgentTab.vue'
 import DocumentTab from './document/DocumentTab.vue'
+import FilesTab from './files/FilesTab.vue'
 import NoteTab from './note/NoteTab.vue'
 import PlexTab from './plex/PlexTab.vue'
 import { WORDS as plexWords } from './plex/words'
 import { plexCalled } from './workspace'
 
-const { said, held, asked, listed } = vi.hoisted(() => ({
+const { said, held, asked, listed, folders } = vi.hoisted(() => ({
   /** What the mocked vault answers about itself, set before the window draws. */
   said: {
     ready: true,
@@ -50,6 +52,8 @@ const { said, held, asked, listed } = vi.hoisted(() => ({
     made: [] as string[],
     renamed: [] as string[],
     removed: [] as string[],
+    moved: [] as string[],
+    folders: [] as string[],
     worn: [] as string[],
     /** How often an open editor was told to take its measurements again. */
     measured: 0,
@@ -59,6 +63,17 @@ const { said, held, asked, listed } = vi.hoisted(() => ({
     vaults: [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', missing: false }],
     showing: 'physics',
   },
+  /** What each folder of the vault holds, as a listing answers it. */
+  folders: {
+    '': [
+      { path: 'physics', name: 'physics', folder: true, kind: 'other', size: 0 },
+      { path: 'Root.md', name: 'Root.md', folder: false, kind: 'note', size: 1 },
+      { path: 'Cover.png', name: 'Cover.png', folder: false, kind: 'other', size: 1 },
+    ],
+    physics: [
+      { path: 'physics/Entropy.md', name: 'Entropy.md', folder: false, kind: 'note', size: 1 },
+    ],
+  } as Record<string, readonly Record<string, unknown>[]>,
 }))
 
 vi.mock('./vault', () => ({
@@ -108,6 +123,15 @@ vi.mock('./vault', () => ({
     remove: async (path: string, destroy?: boolean) => {
       asked.removed.push(`${path} ${destroy ?? false}`)
       return { trashed: `.trash/${path}`, dangling: [], refusal: null }
+    },
+    list: async (folder: string) => folders[folder] ?? [],
+    move: async (from: string, to: string) => {
+      asked.moved.push(`${from} ${to}`)
+      return { moved: null, refusal: null }
+    },
+    makeFolder: async (path: string) => {
+      asked.folders.push(path)
+      return null
     },
     changes: held,
     editing: held,
@@ -191,6 +215,8 @@ afterEach(() => {
   asked.made = []
   asked.renamed = []
   asked.removed = []
+  asked.moved = []
+  asked.folders = []
   asked.worn = []
   asked.measured = 0
 })
@@ -201,7 +227,9 @@ afterEach(() => {
  */
 async function drawn() {
   const window = mount(App, {
-    global: { stubs: { Plex: true, Editor: editor, Agent: true, Reader: reader, Palette: true } },
+    global: {
+      stubs: { Plex: true, Editor: editor, Agent: true, Reader: reader, Palette: true, Tree: true },
+    },
   })
   windows.push(window)
   await settles()
@@ -219,7 +247,7 @@ const cards = (window: VueWrapper): readonly string[] =>
  */
 async function drawnWithPalette() {
   const window = mount(App, {
-    global: { stubs: { Plex: true, Editor: editor, Agent: true, Reader: reader } },
+    global: { stubs: { Plex: true, Editor: editor, Agent: true, Reader: reader, Tree: true } },
     attachTo: document.body,
   })
   windows.push(window)
@@ -229,11 +257,20 @@ async function drawnWithPalette() {
 }
 
 describe('the window as it opens', () => {
-  it('draws a plex and an agent, each in a tab of its own', async () => {
+  it('draws the files, a plex and an agent, each in a tab of its own', async () => {
     const window = await drawn()
 
+    expect(window.findComponent(FilesTab).exists()).toBe(true)
     expect(window.findComponent(PlexTab).exists()).toBe(true)
     expect(window.findComponent(AgentTab).exists()).toBe(true)
+  })
+
+  it('hands the tree what the root of the vault holds', async () => {
+    const window = await drawn()
+
+    expect(
+      (window.findComponent(Tree).props('rows') as readonly { id: string }[]).map((one) => one.id),
+    ).toStrictEqual(['physics', 'Root.md', 'Cover.png'])
   })
 
   it('offers a note, a plex and an agent to a tab with nothing in it', async () => {
@@ -246,6 +283,35 @@ describe('the window as it opens', () => {
       'New plex',
       'New agent',
     ])
+  })
+})
+
+describe('a row activated in the files', () => {
+  const activated = async (path: string) => {
+    const window = await drawn()
+    window.findComponent(Tree).vm.$emit('activate', path)
+    await settles()
+    await settles()
+    return window
+  }
+
+  it('opens a note in a tab of its own', async () => {
+    const window = await activated('Root.md')
+
+    expect(window.findComponent(NoteTab).exists()).toBe(true)
+  })
+
+  it('opens nothing at all for a file the vault holds no source for', async () => {
+    const window = await activated('Cover.png')
+
+    expect(window.findComponent(NoteTab).exists()).toBe(false)
+    expect(window.findComponent(DocumentTab).exists()).toBe(false)
+  })
+
+  it('opens nothing for a folder, which turns where it stands', async () => {
+    const window = await activated('physics')
+
+    expect(window.findComponent(NoteTab).exists()).toBe(false)
   })
 })
 

@@ -45,8 +45,8 @@ func (a *API) Rename(ctx context.Context, r *connect.Request[v1.RenameRequest]) 
 	return connect.NewResponse(out), nil
 }
 
-// Remove takes a note out of the vault. It goes to the trash, and a request
-// that says so destroys it.
+// Remove takes a file or a folder out of the vault. It goes to the trash, and
+// a request that says so destroys a note.
 func (a *API) Remove(ctx context.Context, r *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {
 	if a.Removes == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
@@ -70,7 +70,7 @@ func (a *API) Remove(ctx context.Context, r *connect.Request[v1.RemoveRequest]) 
 	}), nil
 }
 
-// removal is the two ways a note leaves the vault.
+// removal is the two ways something leaves the vault.
 func (a *API) removal(ctx context.Context, path string, destroy bool) (note.Removed, error) {
 	if destroy {
 		return a.Removes.Destroy(ctx, a.Showing(), path)

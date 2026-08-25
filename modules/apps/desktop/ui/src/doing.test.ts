@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { commandsOf, deedOf, type Deed, type Where } from './commanding'
 import { does, type Doing } from './doing'
-import type { Added, Known, Removed, Renamed, VaultRefused } from './core'
+import type { Added, Known, Movement, Refused, Removed, Renamed, VaultRefused } from './core'
 import { WORDS as words } from './words'
 
 /** What is in front, which every deed is carried out over. */
@@ -68,6 +68,10 @@ const window = (
     added?: Added
     /** What the list of vaults refused forgetting, erasing or opening one. */
     turnedDown?: VaultRefused
+    /** What moving a file came back with. */
+    movement?: Movement
+    /** What making a folder was refused with. */
+    folderRefused?: Refused
   } = {},
 ) => {
   const done: string[] = []
@@ -87,6 +91,15 @@ const window = (
       done.push(`removes ${path} ${destroy}`)
       return answers.removed ?? removed()
     },
+    moves: async (from, to) => {
+      done.push(`moves ${from} ${to}`)
+      return answers.movement ?? { moved: null, refusal: null }
+    },
+    makesFolder: async (path) => {
+      done.push(`makes folder ${path}`)
+      return answers.folderRefused ?? null
+    },
+    reveals: (path) => void done.push(`reveals ${path}`),
     notes: {
       holding: (path) => (path === at ? 'held' : null),
       where: (id) => (id === 'held' ? at : id),
@@ -436,6 +449,106 @@ describe('a note removed', () => {
 
     expect(one.done).toStrictEqual([])
     expect(one.said).toStrictEqual([words.unanswered])
+  })
+})
+
+describe('a file filed somewhere else', () => {
+  /** The destination is the whole path, so a name changed in one folder is a move. */
+  const moved = (to: string) => deedOf('move', front(), to)
+
+  it('is asked of the vault under the path it is filed at from now on', async () => {
+    const one = window()
+
+    await carry(moved('notes/Ontology.md'), one.on)
+
+    expect(one.done).toStrictEqual(['settles held', 'moves physics/Ontology.md notes/Ontology.md'])
+  })
+
+  it('settles the tab holding it before its file goes anywhere', async () => {
+    const one = window()
+
+    await carry(moved('notes/Ontology.md'), one.on)
+
+    expect(one.done.indexOf('settles held')).toBeLessThan(
+      one.done.indexOf('moves physics/Ontology.md notes/Ontology.md'),
+    )
+  })
+
+  it('stays where it is while its tab is waiting on the person', async () => {
+    const one = window({ asking: true })
+
+    await carry(moved('notes/Ontology.md'), one.on)
+
+    expect(one.done).toStrictEqual([])
+    expect(one.said).toStrictEqual([words.unanswered])
+  })
+
+  it('stays where it is where something of that name is filed there', async () => {
+    const one = window({ movement: { moved: null, refusal: 'occupied' } })
+
+    await carry(moved('notes/Ontology.md'), one.on)
+
+    expect(one.said).toStrictEqual([words.occupied])
+  })
+
+  it('says nothing of a note renamed, which is what a move is not', async () => {
+    const one = window({ movement: { moved: null, refusal: 'occupied' } })
+
+    await carry(moved('notes/Ontology.md'), one.on)
+
+    expect(one.said).not.toContain(words.refused.occupied)
+  })
+
+  it('names the notes whose links mean another note now', async () => {
+    const one = window({
+      movement: {
+        moved: {
+          from: 'physics/Ontology.md',
+          to: 'notes/Ontology.md',
+          repaired: [],
+          retargeted: [{ in: 'physics/Being.md', target: 'Ontology', now: 'notes/Ontology.md' }],
+        },
+        refusal: null,
+      },
+    })
+
+    await carry(moved('notes/Ontology.md'), one.on)
+
+    expect(one.said.at(-1)).toContain('physics/Being.md')
+  })
+
+  it('asks the vault for nothing where it landed where it already was', async () => {
+    const one = window()
+
+    await carry(moved('physics/Ontology.md'), one.on)
+
+    expect(one.done).toStrictEqual([])
+  })
+})
+
+describe('a folder made', () => {
+  it('is asked of the vault under the path it goes at', async () => {
+    const one = window()
+
+    await carry(deedOf('makeFolder', front(), 'physics/heat'), one.on)
+
+    expect(one.done).toStrictEqual(['makes folder physics/heat'])
+  })
+
+  it('is not made where something of that name is filed there', async () => {
+    const one = window({ folderRefused: 'occupied' })
+
+    await carry(deedOf('makeFolder', front(), 'physics/heat'), one.on)
+
+    expect(one.said).toStrictEqual([words.occupied])
+  })
+
+  it('asks the vault for nothing where no path was given', async () => {
+    const one = window()
+
+    await carry(deedOf('makeFolder', front()), one.on)
+
+    expect(one.done).toStrictEqual([])
   })
 })
 

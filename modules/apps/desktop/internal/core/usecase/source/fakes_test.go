@@ -283,6 +283,9 @@ func (s *store) small(vaultID string) []storedChunk {
 // library is one vault as a set of files. It counts what was read, so a test can
 // say that an unchanged file was not opened.
 type library struct {
+	// The interface is embedded for the listing, which no source scenario asks
+	// for.
+	port.VaultReader
 	files map[string]*shelved
 	reads map[string]int
 }
