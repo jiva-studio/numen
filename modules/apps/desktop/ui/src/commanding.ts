@@ -759,18 +759,15 @@ export function commanding(
   /**
    * Why a vault the list holds is drawn and not chosen: its folder is not
    * there, or it is the one the window is showing. A vault that can be chosen
-   * says nothing but where it stands.
+   * is marked with nothing.
    */
   const aside = (one: Known): string =>
-    one.missing
-      ? `${words.gone} ${one.path}`
-      : one.id === showing.value
-        ? `${words.inFront} ${one.path}`
-        : ''
+    one.missing ? words.gone : one.id === showing.value ? words.inFront : ''
 
   /**
-   * The vaults the installation holds. The two it will not take are drawn with
-   * the reason beside them, and cannot be chosen.
+   * The vaults the installation holds. The two it will not take are marked
+   * ahead of their folder, and cannot be chosen. The folder is what tells one
+   * vault from another, so it keeps the room.
    */
   const listing = (text: string, step: Asked): PaletteBand => {
     const word = text.trim().toLowerCase()
@@ -781,7 +778,7 @@ export function commanding(
         return {
           id: one.id,
           title: one.name,
-          detail: why || one.path,
+          detail: why ? `${why} · ${one.path}` : one.path,
           ...(why ? { disabled: true } : {}),
           actions: [{ id: OPEN, text: step.command.text }],
         }

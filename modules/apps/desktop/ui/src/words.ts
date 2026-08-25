@@ -103,8 +103,8 @@ export const WORDS = {
   /** The vaults the installation holds, and why one of them cannot be chosen. */
   vaults: 'Vaults',
   typeVault: 'Look for a vault',
-  gone: 'The folder is not there, at',
-  inFront: 'The vault in front of you, at',
+  gone: 'Missing',
+  inFront: 'Current',
   folder: 'Choose a folder for the vault',
   /** The two shelves the themes are drawn in, and where a person's own go. */
   shipping: 'Ships with numen',
@@ -117,7 +117,7 @@ export const WORDS = {
   system: 'Follow the system',
   light: 'Light',
   dark: 'Dark',
-  pinned: 'The theme worn sets this itself',
+  pinned: 'Set by the theme',
   /** The band each of the two sizes is drawn in, and the size drawn now. */
   drawing: 'How large the interface is drawn',
   setting: 'How large the text is set',
