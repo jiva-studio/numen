@@ -9,7 +9,7 @@ import { describe, expect, it, vi } from 'vitest'
 import Workspace from './Workspace.vue'
 import WorkspacePane from './render/WorkspacePane.vue'
 import { type Tab, type Workspace as State } from './model'
-import { oneStack, stack, workspaceOf } from './fixtures/build'
+import { oneStack, sideBySide, stack, workspaceOf } from './fixtures/build'
 
 const TABS: readonly Tab[] = [
   { id: 'plex', title: 'Plex' },
@@ -125,6 +125,33 @@ describe('what a tab carries', () => {
 
     expect(held.find('.mine').text()).toBe('chat: stuck')
     expect(held.find('.tab__mark').exists()).toBe(false)
+  })
+})
+
+/**
+ * A workspace is one pane or a branch of them, and a slot reaches a tab down
+ * whichever of the two it was drawn as.
+ */
+describe('what is drawn before a tab’s name', () => {
+  const drawn = (state: State) =>
+    mountWorkspace(state, {}, { icon: '<i class="mine">{{ params.id }}</i>' })
+
+  it('reaches the tabs of a workspace of one pane', () => {
+    const held = drawn(oneStack())
+
+    expect(held.findAll('.mine').map((one) => one.text())).toStrictEqual(['plex', 'chat'])
+  })
+
+  it('reaches the tabs of every pane of a workspace that is split', () => {
+    const held = drawn(sideBySide())
+
+    expect(held.findAll('.mine').map((one) => one.text())).toStrictEqual(['plex', 'chat'])
+  })
+
+  it('is nothing where the caller draws none, and takes no room', () => {
+    const held = mountWorkspace(sideBySide())
+
+    expect(held.find('.tab__icon').exists()).toBe(false)
   })
 })
 

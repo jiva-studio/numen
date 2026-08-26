@@ -44,6 +44,7 @@ const passed = {
 
 defineSlots<{
   tab(props: { id: TabId }): unknown
+  icon(props: { id: TabId }): unknown
   mark(props: { id: TabId; mark: string }): unknown
   silence(): unknown
 }>()
@@ -187,6 +188,7 @@ function handling(now: boolean): void {
           @resize="(branch, next) => emit('resize', branch, next)"
         >
           <template #tab="bound"><slot name="tab" v-bind="bound" /></template>
+          <template v-if="$slots.icon" #icon="bound"><slot name="icon" v-bind="bound" /></template>
           <template v-if="$slots.mark" #mark="bound"><slot name="mark" v-bind="bound" /></template>
           <template #silence><slot name="silence" /></template>
         </WorkspaceBranch>
@@ -201,6 +203,7 @@ function handling(now: boolean): void {
           @claim="emit('claim', child.id)"
         >
           <template #tab="bound"><slot name="tab" v-bind="bound" /></template>
+          <template v-if="$slots.icon" #icon="bound"><slot name="icon" v-bind="bound" /></template>
           <template v-if="$slots.mark" #mark="bound"><slot name="mark" v-bind="bound" /></template>
           <template #silence><slot name="silence" /></template>
         </WorkspacePane>
