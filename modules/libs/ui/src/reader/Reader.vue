@@ -168,10 +168,31 @@ onBeforeUnmount(() => {
   clearTimeout(settling)
 })
 
-/** The row moved, so the page in front is whichever is under the room now. */
+/** Where the row was told to stand, while it is on its way there. */
+let heading: number | undefined
+/** How near the row has to be to count as standing there, in CSS pixels. */
+const THERE = 1
+
+/**
+ * How far along the row is, or will be: where it was sent, and otherwise where
+ * the room says it stands. A scroll moves the room before an event reports it.
+ */
+const whereabouts = () => heading ?? area.value?.scrollLeft ?? along.value
+
+/**
+ * The row moved, so the page in front is whichever is under the room now.
+ *
+ * A row travelling to where it was told to stand says nothing until it gets
+ * there. The pages it passes over on the way are pages nobody turned to, and
+ * the answer to one of them is a scroll back to it.
+ */
 const scrolled = () => {
   if (!area.value) return
   along.value = area.value.scrollLeft
+  if (heading !== undefined) {
+    if (Math.abs(along.value - heading) > THERE) return
+    heading = undefined
+  }
   if (middle.value !== props.at) emit('go', middle.value)
 }
 
@@ -198,6 +219,8 @@ const pulled = (event: PointerEvent) => {
   const stands = hand.to({ x: event.clientX, y: event.clientY })
   if (!stands) return
   dragging.value = true
+  // The hand has the row now, wherever it was being taken.
+  heading = undefined
   area.value.scrollLeft = stands.x
   area.value.scrollTop = stands.y
   follow(event)
@@ -236,6 +259,8 @@ const turned = (event: WheelEvent) => {
   const by = wheeled({ x: event.deltaX, y: event.deltaY }, hasBelow)
   if (by.x === 0 && by.y === 0) return
   event.preventDefault()
+  // The wheel has the row now, wherever it was being taken.
+  heading = undefined
   area.value.scrollLeft += by.x
   area.value.scrollTop += by.y
 }
@@ -244,7 +269,17 @@ const turned = (event: WheelEvent) => {
 const stand = (page: number, how: ScrollBehavior) => {
   const begins = standAt(laid.value, page)
   if (!area.value || begins === undefined) return
-  area.value.scrollTo({ left: begins, behavior: how })
+
+  // As far as the row goes: the last page cannot be brought any further left
+  // than the end of it.
+  const furthest = Math.max(laid.value.length - room.value.wide, 0)
+  const target = Math.min(Math.max(begins, 0), furthest)
+  if (Math.abs(area.value.scrollLeft - target) <= THERE) return
+
+  heading = target
+  // A scroll that does not travel is over as soon as it is asked for.
+  if (how === 'auto') along.value = target
+  area.value.scrollTo({ left: target, behavior: how })
 }
 
 // A page turned to from outside — a search hit, the agent, the field — is
@@ -252,7 +287,7 @@ const stand = (page: number, how: ScrollBehavior) => {
 watch(
   () => props.at,
   (page) => {
-    if (page !== middle.value) stand(page, 'smooth')
+    if (page !== inFront(laid.value, room.value, whereabouts())) stand(page, 'smooth')
   },
 )
 
@@ -347,5 +382,6 @@ defineExpose({
 .reader__room--held {
   cursor: grabbing;
   user-select: none;
+  -webkit-user-select: none;
 }
 </style>
