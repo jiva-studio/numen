@@ -14,8 +14,18 @@ A key you leave out keeps its default, so a file naming one setting is a complet
 numen does not know is carried through untouched. A row with no kind beside it is a group
 holding the keys under it.
 
+Two things are not settings and are not in here: which files count as notes, and what a vault's
+own folder is called. Both are asked for on the command line, by
+[`numen-cli`](/cli/#where-it-puts-things).
+
 <!-- BEGIN AUTOGEN -->
+| | | |
+| --- | --- | --- |
+| `v` | a number | the shape of the file. Nothing reads it yet, and it is written so that the day a section changes shape there is something to tell the two apart. |
+
 ### `appearance`
+
+How the window is drawn.
 
 | | | |
 | --- | --- | --- |
@@ -25,6 +35,8 @@ holding the keys under it.
 | `theme` | text | the stylesheet the window wears, named by the shelf it came off and its filename: `preset:dracula` ships here, `mine:dracula` is the person's file. |
 
 ### `indexing.embedding`
+
+Which model turns text into vectors, and how it is reached.
 
 | | | |
 | --- | --- | --- |
@@ -63,6 +75,8 @@ holding the keys under it.
 
 ### `indexing.recognition`
 
+How a scanned document is read when a person asks for it.
+
 | | | |
 | --- | --- | --- |
 | `runtime` | text | the ONNX shared library. Empty means the one beside the application, and then the one the platform holds. |
@@ -97,6 +111,8 @@ holding the keys under it.
 
 ### `indexing.proofreading`
 
+What puts a reading right. Naming nothing here is naming no proofreader, and a reading is used as it was read.
+
 | | | |
 | --- | --- | --- |
 | `use` | text | `service`, or empty for an installation that proofreads nothing. |
@@ -109,6 +125,8 @@ holding the keys under it.
 | `service.letters_apart` | a number | how far a correction may move a line's letters and still be a correction, as a share of the longer of the two. |
 
 ### `agent`
+
+Which agent answers in the panel, and what it may reach.
 
 | | | |
 | --- | --- | --- |

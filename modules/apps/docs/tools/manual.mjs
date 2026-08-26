@@ -218,14 +218,18 @@ const meaning = (doc, name, keys) => {
   return written.replace(/^([A-Z])(?![A-Z])/, (letter) => letter.toLowerCase())
 }
 
-/** Where a section of the settings comes from, and what it is called there. */
-const SECTIONS = [
-  { path: 'appearance', file: 'settings/settings.go', type: 'Appearance' },
-  { path: 'indexing.embedding', file: 'embed/config.go', type: 'Config' },
-  { path: 'indexing.recognition', file: 'recognition/config.go', type: 'Config' },
-  { path: 'indexing.proofreading', file: 'proofreading/config.go', type: 'Config' },
-  { path: 'agent', file: 'agent/config.go', type: 'Config' },
-]
+/**
+ * Which file declares each package's settings, so the walk crosses from one
+ * to the next by itself. The whole file is walked from `settings.Config` down:
+ * a section nobody listed here is still a section a key can hide in.
+ */
+const FILES = {
+  settings: 'settings/settings.go',
+  embed: 'embed/config.go',
+  recognition: 'recognition/config.go',
+  proofreading: 'proofreading/config.go',
+  agent: 'agent/config.go',
+}
 
 /** Every Go name in one file, against the key it is written under. */
 const named = (source) => {
@@ -238,8 +242,17 @@ const named = (source) => {
   return keys
 }
 
-/** Every key of one section, its own and those of the sections inside it. */
-const keysOf = async (file, type, under, seen = new Set()) => {
+/** Where a field's type is declared: in this file, or in another package's. */
+const declaredIn = (file, type) => {
+  const bare = type.replace(/^\*/, '')
+  const elsewhere = bare.match(/^([a-z][a-z0-9]*)\.([A-Z][A-Za-z0-9]*)$/)
+  if (!elsewhere) return { file, type: bare }
+  const [, pkg, name] = elsewhere
+  return FILES[pkg] ? { file: FILES[pkg], type: name } : null
+}
+
+/** Every key under one type, its own and those of the sections inside it. */
+const keysOf = async (file, type, under, depth = 0, seen = new Set()) => {
   const source = await read(GO, file)
   const keys = named(source)
   const fields = structOf(source, type)
@@ -248,28 +261,68 @@ const keysOf = async (file, type, under, seen = new Set()) => {
   const out = []
   for (const field of fields) {
     const path = under ? `${under}.${field.key}` : field.key
-    const bare = field.type.replace(/^\*/, '')
-    const inside = structOf(source, bare)
-    if (inside && !seen.has(bare)) {
-      const doc = field.doc || docOf(source, bare)
-      out.push({ path, meaning: meaning(doc, field.go, keys), kind: '' })
-      out.push(...(await keysOf(file, bare, path, new Set([...seen, bare]))))
+    const at = declaredIn(file, field.type)
+    const inside = at && structOf(await read(GO, at.file), at.type)
+    const stamp = at && `${at.file}:${at.type}`
+
+    if (inside && !seen.has(stamp)) {
+      const doc = field.doc || docOf(await read(GO, at.file), at.type)
+      out.push({ path, depth, group: true, meaning: meaning(doc, field.go, keys), kind: '' })
+      out.push(...(await keysOf(at.file, at.type, path, depth + 1, new Set([...seen, stamp]))))
       continue
     }
-    out.push({ path, meaning: meaning(field.doc, field.go, keys), kind: kindOf(field.type) })
+    out.push({
+      path,
+      depth,
+      group: false,
+      meaning: meaning(field.doc, field.go, keys),
+      kind: kindOf(field.type),
+    })
+  }
+  return out
+}
+
+/**
+ * Which groups get a heading of their own.
+ *
+ * The ones at the top, except that a group holding nothing but groups hands
+ * the heading to each of them: `indexing` is three sections and not one.
+ */
+const sectioned = (keys) => {
+  const under = (path, depth) =>
+    keys.filter((key) => key.depth === depth && key.path.startsWith(`${path}.`))
+
+  const out = []
+  for (const key of keys.filter((one) => one.depth === 0 && one.group)) {
+    const children = under(key.path, 1)
+    if (children.length > 0 && children.every((child) => child.group)) out.push(...children)
+    else out.push(key)
   }
   return out
 }
 
 const settings = async () => {
+  // The whole file, walked from the top: a section nobody thought to list is
+  // still walked into, and a key added to one turns up here.
+  const keys = await keysOf(FILES.settings, 'Config', '')
+
+  const row = (key, section) =>
+    `| \`${section ? key.path.slice(section.length + 1) : key.path}\` | ${key.kind} | ${key.meaning} |`
+
   const out = []
-  for (const section of SECTIONS) {
-    // A section is a heading and its keys are written under it, so a key is
-    // read at the length it has in the file rather than at the length of the
-    // whole path down to it.
-    out.push(`### \`${section.path}\``, '', '| | | |', '| --- | --- | --- |')
-    for (const key of await keysOf(section.file, section.type, '')) {
-      out.push(`| \`${key.path}\` | ${key.kind} | ${key.meaning} |`)
+  const loose = keys.filter((key) => key.depth === 0 && !key.group)
+  if (loose.length > 0) {
+    out.push('| | | |', '| --- | --- | --- |', ...loose.map((key) => row(key)), '')
+  }
+
+  // A section is a heading, and its keys are written under it the way they are
+  // written inside it rather than as the whole path down to them.
+  for (const section of sectioned(keys)) {
+    out.push(`### \`${section.path}\``, '')
+    if (section.meaning) out.push(section.meaning.replace(/^./, (c) => c.toUpperCase()), '')
+    out.push('| | | |', '| --- | --- | --- |')
+    for (const key of keys.filter((one) => one.path.startsWith(`${section.path}.`))) {
+      out.push(row(key, section.path))
     }
     out.push('')
   }
