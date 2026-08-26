@@ -171,13 +171,18 @@ defineEmits<{
   outline-offset: 1px;
 }
 
-/* A name is as long as a person makes it, and a long one ends in an ellipsis. */
+/* A name is as long as a person makes it, and a long one ends in an ellipsis.
+   It takes the room a row leaves it; inside a name over its second line the
+   column above holds the room, and the name takes the height of its own line. */
 .welcome__what {
-  flex: 1;
   min-inline-size: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.welcome__row > .welcome__what {
+  flex: 1;
 }
 
 /* One line, then an ellipsis: a path is as long as the machine makes it. */
