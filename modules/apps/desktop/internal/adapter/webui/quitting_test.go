@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/webui"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
@@ -52,9 +53,23 @@ func (o *order) taken() []string {
 	return append([]string(nil), o.said...)
 }
 
-// quitting opens a vault the way the window does, with the moment of each
-// write kept and, where a test asked for one, the write held there.
+// quitting opens a vault the way the window does for an installation nobody has
+// configured, with the moment of each write kept and, where a test asked for
+// one, the write held there.
 func quitting(t *testing.T, hold *held, notes map[string]string) *going {
+	t.Helper()
+	return opening(t, hold, notes, true)
+}
+
+// naming is the settings section a rename reads, written as a person writes it.
+func naming(sync note.Sync) settings.Naming {
+	said := bool(sync)
+	return settings.Naming{SyncTitleAndFilename: &said}
+}
+
+// opening is quitting with a title and a filename told apart or kept as one
+// name, which is the one setting a rename reads.
+func opening(t *testing.T, hold *held, notes map[string]string, sync note.Sync) *going {
 	t.Helper()
 
 	root := t.TempDir()
@@ -71,31 +86,32 @@ func quitting(t *testing.T, hold *held, notes map[string]string) *going {
 		t.Fatal(err)
 	}
 
-	settings := container.Config{
+	cfg := container.Config{
 		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
 		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
+		Naming:       naming(sync),
 	}
-	registry, err := settings.Registry()
+	registry, err := cfg.Registry()
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := (usecase.Add{
 		Registry: registry,
-		Identity: settings.VaultIdentity(),
+		Identity: cfg.VaultIdentity(),
 		Now:      time.Now,
 	}).Execute(root, "quitting"); err != nil {
 		t.Fatal(err)
 	}
 
-	opened, err := webui.Open(t.Context(), settings, "", os.Stderr)
+	opened, err := webui.Open(t.Context(), cfg, "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	recorded := &order{}
 	opened.API.Saves = &note.Write{
-		Readers: settings.VaultReaders(),
-		Writers: recording{VaultWriters: settings.VaultWriters(), order: recorded, hold: hold},
+		Readers: cfg.VaultReaders(),
+		Writers: recording{VaultWriters: cfg.VaultWriters(), order: recorded, hold: hold},
 	}
 
 	route, handler := numenv1connect.NewVaultServiceHandler(opened.API)

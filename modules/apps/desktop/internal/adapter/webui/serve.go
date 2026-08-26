@@ -228,6 +228,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Moving: func(ctx context.Context, went domain.Went) {
 			_ = api.Viewing().Moved(ctx, went)
 		},
+		Sync: cfg.Sync(),
 	}
 	api.Renames = &note.Rename{Move: moving}
 	api.Moves = &usecase.Move{

@@ -129,6 +129,28 @@ func TestASaveThatComparesNothingLands(t *testing.T) {
 	}
 }
 
+// A save puts down the text a person typed and adds nothing to it, so a note
+// given a new level-one heading at the keyboard stays in the file it is in.
+func TestSavingANewHeadingLeavesTheFileWhereItIs(t *testing.T) {
+	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	seen := c.opened(t, "Entropy.md")
+
+	if _, err := c.saving().Save(t.Context(), c.vault, "Entropy.md", "# Disorder\n", seen); err != nil {
+		t.Fatal(err)
+	}
+	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "# Disorder") {
+		t.Errorf("the save did not land:\n%s", body)
+	}
+	if !gone(t, c, "Disorder.md") {
+		t.Error("the file is at Disorder.md")
+	}
+	// The vault shows the note under the heading it now carries, and the file
+	// it is filed under is the one the person typed in.
+	if got := c.title(t, "Entropy.md"); got != "Disorder" {
+		t.Errorf("the vault shows it as %q", got)
+	}
+}
+
 // A synchroniser, a checkout and a touch all move a file's time over text that
 // did not change. This is the rule that keeps the question off the screen of a
 // person whose vault is in a synchronised folder.
@@ -360,6 +382,7 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 		Links:   c.db.Links(),
 		Sources: c.db.Sources(),
 		Index:   c.index,
+		Sync:    true,
 	}
 
 	saveAsking := make(chan struct{})

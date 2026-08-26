@@ -89,6 +89,7 @@ func run(cfg container.Config, agents agentOptions, vault string, said sizes) er
 	}
 	cfg = cfg.Indexing(chosen.Indexing)
 	cfg.Agent = chosen.Agent
+	cfg.Naming = chosen.Naming
 	cfg.InterfaceScale, cfg.TextScale = said.drawn, said.set
 
 	// Before the window: every page this process reads is read through the

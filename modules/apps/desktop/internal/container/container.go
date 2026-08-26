@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/trash"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 )
 
 // Config is what the user may point somewhere else. Empty fields mean the
@@ -62,6 +63,11 @@ type Config struct {
 	// does.
 	Agent adapteragent.Config
 
+	// Naming is how a note's title and the name of its file are held together.
+	// It arrives the way Embedding does, and a section nobody wrote keeps the
+	// two one name.
+	Naming settings.Naming
+
 	// RebuildIndex reads every file and puts it in the index again, whatever the
 	// index remembers about it. Both entry points offer it under one name: a
 	// person with a vault restored from an archive is not asked which binary they
@@ -82,6 +88,9 @@ func (c Config) Indexing(said settings.Indexing) Config {
 	c.Proofreading = said.Proofreading
 	return c
 }
+
+// Sync is whether a note's title and its filename are kept as one name.
+func (c Config) Sync() note.Sync { return note.Sync(c.Naming.Sync()) }
 
 // Settings are what a person has configured this installation to do. An
 // installation nobody has configured is written down as what it is doing.

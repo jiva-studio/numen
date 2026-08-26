@@ -158,8 +158,8 @@ export function filing(list: Listing, deps: Filing) {
   const select = (paths: readonly string[]) => list.chooses(paths)
 
   /**
-   * A row given a different name. Only the file is renamed: what a note calls
-   * itself is its own, and stays as it was.
+   * A row given a different name. What a note calls itself follows where a
+   * title and a filename are kept as one name.
    */
   const rename = async (path: string, name: string) => {
     const to = renamedTo(path, name)

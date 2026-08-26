@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io/fs"
+	pathpkg "path"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
@@ -15,7 +16,9 @@ import (
 // folder.
 //
 // Every note that travelled is filed where it now is, and a link that stopped
-// reaching one is written again by its name.
+// reaching one is written again by its name. A note given a different name
+// inside its own folder is called by that name, where a title and a filename
+// are kept as one name.
 type Move struct {
 	Writers port.VaultWriters
 	Links   port.LinkQueries
@@ -79,6 +82,14 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 		return res, err
 	}
 
+	// A refusal here is carried past the settling: the file is where it was
+	// sent, and whoever is drawing the note has to be told wherever the note's
+	// own name ended up.
+	var called error
+	if renaming(travelling, from, to) {
+		called = u.Notes.Called(ctx, v, to)
+	}
+
 	for _, source := range travelling {
 		if source.Kind != domain.KindNote {
 			continue
@@ -89,7 +100,21 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 			return res, err
 		}
 	}
-	return res, nil
+	return res, called
+}
+
+// renaming is whether this move is one note given a different name, in the
+// folder and under the extension it already has. Travelling is everything the
+// index files under from.
+func renaming(travelling []domain.FileRef, from, to string) bool {
+	if pathpkg.Dir(from) != pathpkg.Dir(to) || pathpkg.Ext(from) != pathpkg.Ext(to) {
+		return false
+	}
+	if domain.Basename(from) == domain.Basename(to) {
+		return false
+	}
+	return len(travelling) == 1 &&
+		travelling[0].Path == from && travelling[0].Kind == domain.KindNote
 }
 
 // relocated is where a path under from is once from is at to.
