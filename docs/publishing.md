@@ -115,7 +115,9 @@ files the keyboard page is written from.
 
 **The builds.** `package.yml` runs on a tag beginning with `v` and builds every platform, and it runs when it is asked for by hand and builds what it was asked for. A tag is named by the tag and goes into `latest/` and `releases/`; a run asked for by hand is named by what it was asked for, goes into `dev/`, and publishes only when it was told to. Either way it renames what each platform produced to the names above, writes `latest.json`, uploads, purges, and fetches every file back over the public address, checking that what comes down is the size of what went up.
 
-`latest/latest.json` is the one file asked for over and over by machines that already hold the rest, and the pull zone has to be told to hold it no longer than a minute. Everything under `releases/` is written once, and the zone can hold it for as long as it likes.
+`latest/latest.json` is the one file asked for over and over by machines that already hold the rest, and the pull zone has to be told to hold it no longer than a minute — today it says thirty days. Everything under `releases/` is written once, and the zone can hold it for as long as it likes.
+
+The page stands on one host and the builds on another, so the builds' zone has to send `Access-Control-Allow-Origin` for the page to read the manifest at all. Until it does, the page keeps the links it was written with, which reach the newest build under names that carry no version.
 
 ## The names on the web
 

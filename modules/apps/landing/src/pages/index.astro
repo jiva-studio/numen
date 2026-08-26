@@ -428,13 +428,14 @@ const description =
               <div class="shelf__takes">
                 {
                   build.takes.map((take) => (
-                    <a class="take" href={`${SHELF}/${take.file}`} download>
+                    <a class="take" href={`${SHELF}/${take.file}`} data-file={take.file} download>
                       <svg viewBox="0 0 20 20" aria-hidden="true">
                         <circle cx="10" cy="10" r="8.5" />
                         <path d="M10 6v7m0 0 3-3m-3 3-3-3" />
                       </svg>
                       <b>{take.name}</b>
                       <span>{take.note}</span>
+                      <em class="take__weight" />
                     </a>
                   ))
                 }
@@ -443,6 +444,8 @@ const description =
           ))
         }
       </div>
+
+      <p class="said" hidden />
 
     </section>
 
@@ -468,6 +471,53 @@ const description =
           ? 'linux'
           : ''
     if (yours) document.querySelector(`.shelf__row[data-for="${yours}"]`)?.setAttribute('data-yours', '')
+  </script>
+
+  <script>
+    // Which build the shelf is holding, asked of the shelf itself, so a release
+    // needs no new page. The links written into the page reach the newest build
+    // under a name that carries no version; each is moved to the copy that
+    // keeps this one, and a person taking it gets a file that says which it is.
+    //
+    // The shelf answering with nothing leaves the page as it was written, and
+    // every link on it still reaches the newest build.
+    /** What the manifest says, of everything it holds, that this page asks for. */
+    interface Shelf {
+      version?: string
+      released?: string
+      files?: readonly { name: string; url: string; size: number }[]
+    }
+
+    const takes = [...document.querySelectorAll<HTMLAnchorElement>('.take[data-file]')]
+    const first = takes[0]
+
+    if (first) {
+      try {
+        const answer = await fetch(new URL('latest.json', first.href), { cache: 'no-cache' })
+        if (!answer.ok) throw new Error(String(answer.status))
+        const shelf: Shelf = await answer.json()
+
+        for (const take of takes) {
+          const file = shelf.files?.find((one) => one.name === take.dataset['file'])
+          if (!file?.url) continue
+          take.href = file.url
+          const weight = take.querySelector('.take__weight')
+          if (weight && file.size) weight.textContent = `${Math.round(file.size / 1e6)} MB`
+        }
+
+        const said = document.querySelector('.said')
+        if (said && shelf.version) {
+          const day = new Date(shelf.released ?? '')
+          const when = Number.isNaN(day.valueOf())
+            ? ''
+            : ` · ${day.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`
+          said.textContent = `Version ${shelf.version}${when}`
+          said.removeAttribute('hidden')
+        }
+      } catch {
+        // The page stands as it was written.
+      }
+    }
   </script>
 
   <script>
