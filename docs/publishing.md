@@ -52,8 +52,8 @@ what it made and nothing else.
 
 ## Where the page looks for them
 
-`PUBLIC_NUMEN_DOWNLOADS_BASE`, read when the page is built. Unset, it is
-`https://numen-dl.b-cdn.net`; once `dl.numen.md` answers, it is that.
+`PUBLIC_NUMEN_DOWNLOADS_BASE`, read when the page is built and set to
+`https://dl.numen.md`. Unset, it is `https://numen-dl.b-cdn.net`.
 
 ## What the workflows are told
 
@@ -64,13 +64,14 @@ Variables:
 | `BUNNY_STORAGE_ENDPOINT` | `storage.bunnycdn.com` |
 | `BUNNY_STORAGE_ZONE` | `numen` |
 | `BUNNY_PULL_ZONE_ID` | `6406732` |
-| `BUNNY_SERVED_FROM` | `https://numen-dl.b-cdn.net` |
+| `BUNNY_SERVED_FROM` | `https://dl.numen.md` |
 | `BUNNY_SITE_STORAGE_ZONE` | `numen-site` |
 | `BUNNY_SITE_PULL_ZONE_ID` | `6406733` |
-| `BUNNY_SITE_SERVED_FROM` | `https://numen-site.b-cdn.net` |
+| `BUNNY_SITE_SERVED_FROM` | `https://numen.md` |
 | `BUNNY_DOCS_STORAGE_ZONE` | `numen-docs` |
 | `BUNNY_DOCS_PULL_ZONE_ID` | `6415145` |
-| `BUNNY_DOCS_SERVED_FROM` | `https://numen-docs.b-cdn.net` |
+| `BUNNY_DOCS_SERVED_FROM` | `https://docs.numen.md` |
+| `PUBLIC_NUMEN_DOWNLOADS_BASE` | `https://dl.numen.md` |
 
 Secrets: `BUNNY_STORAGE_KEY`, `BUNNY_SITE_STORAGE_KEY` and
 `BUNNY_DOCS_STORAGE_KEY` are the three stores' own passwords; `BUNNY_API_KEY`
@@ -99,11 +100,8 @@ address, checking that what comes down is the size of what went up.
 
 ## The names on the web
 
-`numen.md`, `www.numen.md` and `dl.numen.md` answer, each with a certificate of
-its own. A name is put on the web in three steps: add the hostname to the pull
-zone, point a CNAME at the zone's `b-cdn.net` address, and ask for the free
-certificate — which is refused until the CNAME resolves.
-
-`docs.numen.md` is attached to its pull zone and waits on the record
-`docs → numen-docs.b-cdn.net`. Until it resolves, the manual is served from
-`numen-docs.b-cdn.net`, which is what `BUNNY_DOCS_SERVED_FROM` names.
+`numen.md`, `www.numen.md`, `docs.numen.md` and `dl.numen.md` answer, each with
+a certificate of its own, and each is what its `SERVED_FROM` variable names. A
+name is put on the web in three steps: add the hostname to the pull zone, point
+a CNAME at the zone's `b-cdn.net` address, and ask for the free certificate —
+which is refused until the CNAME resolves.

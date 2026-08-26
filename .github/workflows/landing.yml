@@ -37,6 +37,8 @@ jobs:
         run: npm run typecheck --prefix modules/apps/landing
 
       - name: Build
+        env:
+          PUBLIC_NUMEN_DOWNLOADS_BASE: ${{ vars.PUBLIC_NUMEN_DOWNLOADS_BASE }}
         run: npm run build --prefix modules/apps/landing
 
       - uses: actions/upload-artifact@v4
