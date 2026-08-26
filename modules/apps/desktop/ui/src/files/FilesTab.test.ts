@@ -40,7 +40,7 @@ const drawn = async (open: readonly string[] = []) => {
     lands: (landing) => void done.push(`lands ${landing ? `${landing.at} ${landing.path}` : '—'}`),
     runs: (id, paths, name) => void done.push(`runs ${id} ${paths.join(' ')} ${name}`),
     moves: async (from, to) => void done.push(`moves ${from} ${to}`),
-    carries: (path) => void done.push(`carries ${path || '—'}`),
+    carries: (paths) => void done.push(`carries ${paths.join(' ') || '—'}`),
     makes: async (path) => void done.push(`makes ${path}`),
     writes: async (folder) => `${folder}Untitled note.md`,
     says: (text) => void done.push(`says ${text}`),

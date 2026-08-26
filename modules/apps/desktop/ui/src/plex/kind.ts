@@ -51,10 +51,12 @@ export interface Plexing {
   /** The note the vault opens with, as it was last answered. */
   opening(): string
   /**
-   * The note the window is carrying over the picture, and nothing while it
-   * carries none.
+   * The notes the window is carrying over the picture, and none while it
+   * carries nothing.
    */
-  carried(): string
+  carried(): readonly string[]
+  /** What could not be done, in words a person reads. */
+  says(text: string): void
   /** Asks the vault where it opens, for a plex that has nowhere to stand. */
   first(): Promise<string>
   /** The seats a gesture may make a note in, which the picture draws. */
@@ -169,16 +171,15 @@ export function plexing(view: Standing, deps: Plexing) {
   })
 
   /**
-   * The note carried over this picture from elsewhere in the window.
+   * The notes carried over this picture from elsewhere in the window.
    *
-   * Nothing is carried over a plex with nothing true to draw, and nothing over
-   * the picture the note itself is the focus of. Neither draws a line.
+   * A plex with nothing true to draw carries nothing, and the note the plex
+   * stands on is left out of what is carried over it.
    */
-  const carried = computed(() => {
-    if (!deps.ready() || !view.neighbourhood.value) return null
-    const path = deps.carried()
+  const carried = computed<readonly string[]>(() => {
     const here = view.here.value
-    return path && here && path !== here ? path : null
+    if (!deps.ready() || !view.neighbourhood.value || !here) return []
+    return deps.carried().filter((path) => path !== here)
   })
 
   /** The menu on a node, for as long as it stands. */
@@ -213,16 +214,28 @@ export function plexing(view: Standing, deps: Plexing) {
   }
 
   /**
-   * A note carried in from the vault and let go over the picture. It is a path
-   * already, having never been drawn as a node of this picture.
+   * Notes carried in from the vault and let go over the picture. They are
+   * paths already, having never been drawn as nodes of this picture.
    *
-   * The plex stands on the note the line was drawn from, which is the one the
-   * link is written in.
+   * Each takes the one seat in the note the plex stands on, which is the one
+   * every link is written in. A note the vault refused stays unjoined and is
+   * said; the picture is asked for again once any of them was written.
    */
-  const brought = async (carried: string, seat: PlexRelatedSeat) => {
+  const brought = async (carried: readonly string[], seat: PlexRelatedSeat) => {
     const here = view.here.value
-    if (!carried || !here || carried === here) return
-    if (await deps.makes.join(here, carried, seat)) await view.go(here)
+    if (!here) return
+
+    const refused: string[] = []
+    let written = false
+
+    for (const path of carried) {
+      if (path === here) continue
+      if (await deps.makes.join(here, path, seat)) written = true
+      else refused.push(nameOf(path))
+    }
+
+    if (refused.length > 0) deps.says(`${words.refused} ${refused.join(', ')}`)
+    if (written) await view.go(here)
   }
 
   /** A note opened where the person asked for it, called what the picture calls it. */

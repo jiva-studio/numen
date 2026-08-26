@@ -68,11 +68,11 @@ const props = withDefaults(
      */
     seatName?: (seat: PlexRelatedSeat) => string
     /**
-     * Something carried over the picture from somewhere else. The identifier
-     * is opaque and is handed back untouched; nothing at all is nothing
-     * carried, and the picture then draws none of it.
+     * What is being carried over the picture from somewhere else. Each
+     * identifier is opaque and all of them are handed back untouched; an empty
+     * list is nothing carried, and the picture then draws none of it.
      */
-    carried?: string | null
+    carried?: readonly string[]
     /**
      * What to call what letting go with something carried in would do. English
      * by default, because something has to be drawn.
@@ -87,7 +87,7 @@ const props = withDefaults(
     dragThreshold: 8,
     dwell: DWELL,
     seatName: seatWord,
-    carried: null,
+    carried: () => [],
     carriedName: seatWord,
   },
 )
@@ -106,10 +106,11 @@ const emit = defineEmits<{
   /** Reached out onto another node: relate the two in this seat. */
   (event: 'link', from: string, to: string, seat: PlexRelatedSeat): void
   /**
-   * Something carried in from outside was let go over the picture: relate it
-   * to the focus in this seat. The identifier is the one it was handed in as.
+   * What was carried in from outside was let go over the picture: relate each
+   * of them to the focus in this seat. The identifiers are the ones they were
+   * handed in as.
    */
-  (event: 'bring', carried: string, seat: PlexRelatedSeat): void
+  (event: 'bring', carried: readonly string[], seat: PlexRelatedSeat): void
   /**
    * A menu was asked for on a node. The point is in the coordinates of the
    * screen; the element is what it was asked from, which is the only thing a

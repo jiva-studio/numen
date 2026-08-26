@@ -22,7 +22,7 @@ const held = () =>
       ],
       edges: [{ from: 'Root.md', to: 'Child.md' }],
     }),
-    carried: ref(null),
+    carried: ref([]),
     menu: ref(null),
     creatable: ['child'],
     activate: () => {},

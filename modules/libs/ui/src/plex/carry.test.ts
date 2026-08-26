@@ -15,7 +15,10 @@ import type { PlexRelatedSeat } from './model'
 const NEIGHBOURHOOD = build('A node', { parent: 1, child: 2, jump: 1 })
 
 /** What is being carried, which the plex never looks inside. */
-const CARRIED = 'physics/Entropy.md'
+const CARRIED = ['physics/Entropy.md']
+
+/** Several at once, which the plex draws one line and one shape for. */
+const SEVERAL = ['physics/Entropy.md', 'physics/Kelvin.md', 'Heat.md']
 
 /**
  * One plex unit to the pixel, origin in the middle, as the browser draws it.
@@ -141,12 +144,57 @@ describe('letting go of something carried in', () => {
     expect(plex.emitted('bring')).toBeUndefined()
   })
 
+  it('hands every one of them back, in the one seat', async () => {
+    const plex = mountPlex({ carried: SEVERAL })
+    await letGo(plex, 600, 760)
+
+    expect(plex.emitted('bring')).toStrictEqual([[SEVERAL, 'child']])
+  })
+
   it('joins nothing while nothing at all is being carried', async () => {
-    const plex = mountPlex({ carried: null })
+    const plex = mountPlex({ carried: [] })
     await letGo(plex, 600, 40)
 
     expect(plex.emitted('bring')).toBeUndefined()
     expect(carriedIn(plex).exists()).toBe(false)
+  })
+
+  it('joins them before whoever is carrying them hears the same release', async () => {
+    // Whoever is carrying them is listening for the release too, and put them
+    // down as soon as it hears one. This has to have answered by then.
+    const plex = mountPlex({ carried: [] })
+
+    let answered: boolean | null = null
+    const carrier = () => {
+      answered = plex.emitted('bring') !== undefined
+    }
+    // Listening from before the plex was given anything, as anyone carrying
+    // something here has been.
+    window.addEventListener('pointerup', carrier)
+
+    await plex.setProps({ carried: CARRIED })
+    window.dispatchEvent(pointer('pointermove', 600, 40))
+    await plex.vm.$nextTick()
+
+    plex.find('svg').element.dispatchEvent(pointer('pointerup', 600, 40))
+    window.removeEventListener('pointerup', carrier)
+    await plex.vm.$nextTick()
+
+    expect(plex.emitted('bring')).toStrictEqual([[CARRIED, 'parent']])
+    expect(answered).toBe(true)
+  })
+
+  it('joins what it was handed, whatever the caller says it is carrying by then', async () => {
+    const plex = mountPlex()
+    window.dispatchEvent(pointer('pointermove', 600, 40))
+    await plex.vm.$nextTick()
+
+    // A carry holds what it was handed for as long as it runs.
+    await plex.setProps({ carried: SEVERAL })
+    window.dispatchEvent(pointer('pointerup', 600, 40))
+    await plex.vm.$nextTick()
+
+    expect(plex.emitted('bring')).toStrictEqual([[CARRIED, 'parent']])
   })
 
   it('joins nothing after Escape, and nothing after the pointer is taken away', async () => {
@@ -207,7 +255,7 @@ describe('while something is being carried over the plex', () => {
     await plex.vm.$nextTick()
     expect(carriedIn(plex).exists()).toBe(true)
 
-    await plex.setProps({ carried: null })
+    await plex.setProps({ carried: [] })
     expect(carriedIn(plex).exists()).toBe(false)
   })
 

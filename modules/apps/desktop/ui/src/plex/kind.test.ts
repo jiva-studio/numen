@@ -14,6 +14,7 @@ import { plexKind, plexing, type Held, type Making, type Plexing } from './kind'
 import { ITEMS } from './menu'
 import { NeighbourhoodSchema } from './picture'
 import { standing as stands, type Standing } from './standing'
+import { WORDS as words } from './words'
 import { wentTo, type Went } from '../core'
 import { windowing } from '../windowing'
 import { PLEX } from '../workspace'
@@ -55,6 +56,8 @@ const standing = (at: string, related: readonly string[] = []) => {
 const making = (takes = true) => {
   const made: [string, string][] = []
   const joined: [string, string, string][] = []
+  /** The notes this vault will write no link to, which a test names. */
+  const refuses = new Set<string>()
   const makes: Making = {
     make: async (from, seat) => {
       made.push([from, seat])
@@ -62,10 +65,10 @@ const making = (takes = true) => {
     },
     join: async (from, to, seat) => {
       joined.push([from, to, seat])
-      return takes
+      return takes && !refuses.has(to)
     },
   }
-  return { makes, made, joined }
+  return { makes, made, joined, refuses }
 }
 
 /** A plex tab with the window it is drawn in written down. */
@@ -75,8 +78,9 @@ const tab = (at: string, related: readonly string[] = [], takes = true) => {
   const opened: [string, string, string][] = []
   const asked: string[] = []
   const ran: [string, string, string][] = []
-  /** The note the window is carrying over this picture, which a test sets. */
-  const carrying = ref('')
+  const said: string[] = []
+  /** The notes the window is carrying over this picture, which a test sets. */
+  const carrying = ref<readonly string[]>([])
   const deps: Plexing = {
     makes: vault.makes,
     ready: () => true,
@@ -86,12 +90,13 @@ const tab = (at: string, related: readonly string[] = [], takes = true) => {
     opening: () => 'Opening.md',
     first: async () => 'Opening.md',
     carried: () => carrying.value,
+    says: (text) => said.push(text),
     creatable: ['parent', 'child', 'jump'],
   }
   const held = plexing(plex.view, deps)
   /** What the picture calls a note, which is what a gesture in it carries. */
   const node = (path: string) => nodeFor(held, path.replace(/\.md$/, ''))
-  return { held, node, carrying, went: plex.went, ...vault, opened, asked, ran }
+  return { held, node, carrying, went: plex.went, ...vault, opened, asked, ran, said }
 }
 
 /** The node of the picture drawn for the note of this title, if it draws one. */
@@ -220,31 +225,45 @@ describe('the picture', () => {
       runs: () => {},
       opening: () => '',
       first: async () => '',
-      carried: () => 'Entropy.md',
+      carried: () => ['Entropy.md'],
+      says: () => {},
       creatable: ['parent', 'child', 'jump'],
     })
 
     expect(held.picture.value).toBeNull()
     // Nothing is drawn, so nothing can be carried onto it.
-    expect(held.carried.value).toBeNull()
+    expect(held.carried.value).toStrictEqual([])
   })
 })
 
-describe('a note carried in and let go over the picture', () => {
+describe('notes carried in and let go over the picture', () => {
   it('writes the link into the note the plex stands on, naming the carried one second', async () => {
     const one = tab('Root.md', ['Child.md'])
 
-    await one.held.brought('physics/Entropy.md', 'child')
+    await one.held.brought(['physics/Entropy.md'], 'child')
 
     expect(one.joined).toEqual([['Root.md', 'physics/Entropy.md', 'child']])
+    expect(one.went).toEqual(['Root.md'])
+  })
+
+  it('writes one for each of them, to the one note in the one seat', async () => {
+    const one = tab('Root.md')
+
+    await one.held.brought(['Entropy.md', 'Kelvin.md', 'Heat.md'], 'child')
+
+    expect(one.joined).toEqual([
+      ['Root.md', 'Entropy.md', 'child'],
+      ['Root.md', 'Kelvin.md', 'child'],
+      ['Root.md', 'Heat.md', 'child'],
+    ])
     expect(one.went).toEqual(['Root.md'])
   })
 
   it('takes the seat the carry named, whichever it was', async () => {
     const one = tab('Root.md')
 
-    await one.held.brought('Entropy.md', 'parent')
-    await one.held.brought('Heat.md', 'jump')
+    await one.held.brought(['Entropy.md'], 'parent')
+    await one.held.brought(['Heat.md'], 'jump')
 
     expect(one.joined).toEqual([
       ['Root.md', 'Entropy.md', 'parent'],
@@ -252,48 +271,69 @@ describe('a note carried in and let go over the picture', () => {
     ])
   })
 
+  it('writes the rest where one of them was refused, and says which stayed', async () => {
+    const one = tab('Root.md')
+    one.refuses.add('Kelvin.md')
+
+    await one.held.brought(['Entropy.md', 'Kelvin.md', 'Heat.md'], 'child')
+
+    expect(one.joined).toEqual([
+      ['Root.md', 'Entropy.md', 'child'],
+      ['Root.md', 'Kelvin.md', 'child'],
+      ['Root.md', 'Heat.md', 'child'],
+    ])
+    expect(one.said).toEqual([`${words.refused} Kelvin`])
+    expect(one.went).toEqual(['Root.md'])
+  })
+
+  it('says every one of them where the vault would write none, and travels nowhere', async () => {
+    const one = tab('Root.md', [], false)
+
+    await one.held.brought(['Entropy.md', 'Heat.md'], 'child')
+
+    expect(one.said).toEqual([`${words.refused} Entropy, Heat`])
+    expect(one.went).toEqual([])
+  })
+
   it('joins nothing where the plex has nowhere to stand', async () => {
     const one = tab('')
 
-    await one.held.brought('Entropy.md', 'child')
+    await one.held.brought(['Entropy.md'], 'child')
 
     expect(one.joined).toEqual([])
+    expect(one.said).toEqual([])
   })
 
-  it('joins nothing where the note carried in is the one the plex stands on', async () => {
+  it('leaves the note the plex stands on out, and joins the rest', async () => {
     const one = tab('Root.md')
 
-    await one.held.brought('Root.md', 'child')
+    await one.held.brought(['Root.md', 'Entropy.md'], 'child')
 
-    expect(one.joined).toEqual([])
-  })
-
-  it('travels nowhere when nothing was written', async () => {
-    const one = tab('Root.md', [], false)
-
-    await one.held.brought('Entropy.md', 'child')
-
-    expect(one.went).toEqual([])
+    expect(one.joined).toEqual([['Root.md', 'Entropy.md', 'child']])
+    expect(one.said).toEqual([])
   })
 })
 
 describe('what the picture draws a line to', () => {
-  it('is the note the window says it is carrying', () => {
+  it('is what the window says it is carrying', () => {
     const one = tab('Root.md')
-    one.carrying.value = 'physics/Entropy.md'
+    one.carrying.value = ['physics/Entropy.md', 'physics/Kelvin.md']
 
-    expect(one.held.carried.value).toBe('physics/Entropy.md')
+    expect(one.held.carried.value).toStrictEqual([
+      'physics/Entropy.md',
+      'physics/Kelvin.md',
+    ])
   })
 
   it('is nothing while the window is carrying none', () => {
-    expect(tab('Root.md').held.carried.value).toBeNull()
+    expect(tab('Root.md').held.carried.value).toStrictEqual([])
   })
 
-  it('is nothing where the note carried is the one the plex stands on', () => {
+  it('leaves out the note the plex stands on, and keeps the rest', () => {
     const one = tab('Root.md')
-    one.carrying.value = 'Root.md'
+    one.carrying.value = ['Root.md', 'Entropy.md']
 
-    expect(one.held.carried.value).toBeNull()
+    expect(one.held.carried.value).toStrictEqual(['Entropy.md'])
   })
 })
 
@@ -346,7 +386,8 @@ const inVault = async (focus: string, beside: readonly Beside[] = []) => {
     runs: (id, path, title) => ran.push([id, path, title]),
     opening: () => '',
     first: async () => '',
-    carried: () => '',
+    carried: () => [],
+    says: () => {},
     creatable: ['parent', 'child', 'jump'],
   })
   await view.go(focus)
@@ -654,7 +695,8 @@ const window = (opening = 'Opening.md') => {
       asked.push(first)
       return first
     },
-    carried: () => '',
+    carried: () => [],
+    says: () => {},
     creatable: ['parent', 'child', 'jump'],
   })
   held.declares([plexes.kind])

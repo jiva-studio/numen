@@ -51,7 +51,7 @@ const tab = (refuses = false) => {
     lands: (landing) => void done.push(`lands ${landing ? `${landing.at} ${landing.path}` : '—'}`),
     runs: (id, paths, name) => void done.push(`runs ${id} ${paths.join(' ')} ${name}`),
     moves: async (from, to) => void done.push(`moves ${from} ${to}`),
-    carries: (path) => void done.push(`carries ${path || '—'}`),
+    carries: (paths) => void done.push(`carries ${paths.join(' ') || '—'}`),
     makes: async (path) => {
       done.push(`makes ${path}`)
       if (refuses) return
@@ -168,7 +168,7 @@ describe('a row activated', () => {
 })
 
 describe('rows carried out of the tree', () => {
-  it('are the one note, which is something to join to a note elsewhere', async () => {
+  it('are the note the row stands for', async () => {
     const { done, list, one } = tab()
     await list.opens(ROOT)
 
@@ -177,27 +177,33 @@ describe('rows carried out of the tree', () => {
     expect(done).toStrictEqual(['carries Entropy.md'])
   })
 
-  it('are nothing where several rows are carried at once', async () => {
-    // A join names one note, and a line drawn to one shape that wrote several
-    // links would be a picture that lied.
+  it('are every note of a selection, in the order the rows were carried', async () => {
     const { done, list, one } = tab()
     await list.opens(ROOT)
+    await list.opens('physics')
 
     one.carry(['Entropy.md', 'physics/Kelvin.md'])
 
-    expect(done).toStrictEqual(['carries —'])
+    expect(done).toStrictEqual(['carries Entropy.md physics/Kelvin.md'])
   })
 
-  it('are nothing for a folder, a book or a file the vault holds no note for', async () => {
+  it('are the notes of a mixed selection, and the rest stay where they are', async () => {
     // The vault's links are between notes.
     const { done, list, one } = tab()
     await list.opens(ROOT)
 
-    one.carry(['physics'])
-    one.carry(['Heat.pdf'])
-    one.carry(['Cover.png'])
+    one.carry(['physics', 'Entropy.md', 'Heat.pdf', 'Cover.png'])
 
-    expect(done).toStrictEqual(['carries —', 'carries —', 'carries —'])
+    expect(done).toStrictEqual(['carries Entropy.md'])
+  })
+
+  it('are nothing where the rows hold no note at all', async () => {
+    const { done, list, one } = tab()
+    await list.opens(ROOT)
+
+    one.carry(['physics', 'Heat.pdf', 'Cover.png'])
+
+    expect(done).toStrictEqual(['carries —'])
   })
 
   it('are nothing for a row the tree is no longer drawing', async () => {

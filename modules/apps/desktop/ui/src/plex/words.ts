@@ -5,6 +5,8 @@ import type { PlexRelatedSeat } from '@numen/ui'
 export const WORDS = {
   plex: 'Plex',
   newPlex: 'New plex',
-  /** What the shape under the pointer says while a note is carried over the picture. */
+  /** What the shape under the pointer says while notes are carried over the picture. */
   carried: (seat: PlexRelatedSeat) => `as ${seatWord(seat)}`,
+  /** The notes that stayed unjoined, because the vault would not write the link. */
+  refused: 'These were not joined:',
 }

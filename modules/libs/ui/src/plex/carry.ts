@@ -8,6 +8,8 @@ import { seatCarried, type PlexOptions, type Size } from './arrange'
 import { pointIn } from './gesture'
 import type { PlexFrame, PlexRelatedSeat, Point } from './model'
 
+const CAPTURE = { capture: true } as const
+
 export interface Carrying {
   /** Where the pointer is, in the plex's own coordinates. */
   readonly at: Ref<Point | null>
@@ -19,8 +21,8 @@ export interface Carrying {
 export interface Carry {
   /** The drawing, which turns screen pixels into the plex's own coordinates. */
   readonly surface: () => SVGSVGElement | null
-  /** What is being carried, opaque, and nothing at all while nothing is. */
-  readonly carried: () => string | null
+  /** What is being carried, each of them opaque. Empty while nothing is. */
+  readonly carried: () => readonly string[]
   readonly frame: () => PlexFrame
   readonly options: () => PlexOptions
   readonly viewport: () => Size
@@ -28,7 +30,7 @@ export interface Carry {
   readonly allowed: () => readonly PlexRelatedSeat[]
   /** How far from the focus the pointer stands before it names a direction. */
   readonly threshold: () => number
-  readonly settle: (carried: string, seat: PlexRelatedSeat) => void
+  readonly settle: (carried: readonly string[], seat: PlexRelatedSeat) => void
 }
 
 /**
@@ -59,10 +61,17 @@ export function usePlexCarry(carry: Carry): Carrying {
   /** What the carry under way installed on the window, if anything. */
   let detach: (() => void) | null = null
 
+  /**
+   * What the carry was handed, held for the life of the gesture. Whoever is
+   * carrying them may put them down on the same release this settles on.
+   */
+  let holding: readonly string[] = []
+
   const stop = () => {
     detach?.()
     detach = null
     at.value = null
+    holding = []
   }
 
   const move = (event: PointerEvent) => {
@@ -72,14 +81,15 @@ export function usePlexCarry(carry: Carry): Carrying {
 
   const finish = (event: PointerEvent) => {
     move(event)
-    const carried = carry.carried()
+    const carried = holding
     const settled = seat.value
     stop()
-    if (carried && settled) carry.settle(carried, settled)
+    if (carried.length > 0 && settled) carry.settle(carried, settled)
   }
 
   const follow = () => {
     if (detach) return
+    holding = carry.carried()
 
     const onMove = (moved: PointerEvent) => move(moved)
     const onUp = (up: PointerEvent) => finish(up)
@@ -91,20 +101,22 @@ export function usePlexCarry(carry: Carry): Carrying {
 
     detach = () => {
       window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointerup', onUp, CAPTURE)
       window.removeEventListener('pointercancel', onLost)
       window.removeEventListener('keydown', onKey)
     }
 
     window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
+    // The release is answered on its way down the page, ahead of whoever is
+    // carrying them and puts them down on the way back up.
+    window.addEventListener('pointerup', onUp, CAPTURE)
     window.addEventListener('pointercancel', onLost)
     window.addEventListener('keydown', onKey)
   }
 
   watch(
-    () => carry.carried(),
-    (held) => (held ? follow() : stop()),
+    () => carry.carried().length > 0,
+    (carrying) => (carrying ? follow() : stop()),
     { immediate: true },
   )
 

@@ -39,7 +39,7 @@ interface Knobs {
   onShow: (id: string, showing: PlexShowing) => void
   onCreate: (from: string, seat: PlexRelatedSeat) => void
   onLink: (from: string, to: string, seat: PlexRelatedSeat) => void
-  onBring: (carried: string, seat: PlexRelatedSeat) => void
+  onBring: (carried: readonly string[], seat: PlexRelatedSeat) => void
   onMenu: (id: string, at: Point, from: SVGGElement, opening: MenuOpening) => void
   onDismiss: () => void
 
@@ -79,11 +79,11 @@ interface Knobs {
   naming: () => string
 
   /**
-   * What is being carried over the picture from somewhere else, opaque, and
-   * nothing while nothing is. The story plays the part of whoever is carrying
-   * it, since a plex has no way to pick anything up.
+   * What is being carried over the picture from somewhere else, each of them
+   * opaque, and empty while nothing is. The story plays the part of whoever is
+   * carrying them, since a plex has no way to pick anything up.
    */
-  carried: string | null
+  carried: readonly string[]
 
   /** What the shape under the pointer says while something is carried in. */
   carriedName: (seat: PlexRelatedSeat) => string
@@ -200,13 +200,15 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
     }
 
     /**
-     * Something carried in from outside, seated beside the focus and called by
-     * the identifier it was carried in as. What that identifier addresses is
-     * the story's to know, and the plex handed it back untouched.
+     * What was carried in from outside, each seated beside the focus in the
+     * one seat and called by the identifier it was carried in as. What those
+     * identifiers address is the story's to know, and the plex handed them
+     * back untouched.
      */
-    const bring = (carried: string, seat: PlexRelatedSeat) => {
+    const bring = (carried: readonly string[], seat: PlexRelatedSeat) => {
       const here = neighbourhood.value.nodes.find((node) => node.seat === 'focus')
-      if (here) seats(here.id, carried, seat)
+      if (!here) return
+      for (const one of carried) seats(here.id, one, seat)
     }
 
     const link = (from: string, to: string, seat: PlexRelatedSeat) => {
@@ -378,7 +380,7 @@ const meta = {
     onMenu: fn(),
     onDismiss: fn(),
     naming: nameNow,
-    carried: null,
+    carried: [],
     carriedName: (seat: PlexRelatedSeat) => `as ${seat}`,
 
     focusWidth: 176,
@@ -500,16 +502,22 @@ export const MakingOne: Story = {
  * Something carried over the picture from outside it.
  *
  * The gesture starts where the plex cannot see it, so all the plex is handed
- * is an identifier and all it answers is a seat, measured from the focus. The
- * line and the words are drawn while the pointer travels, so what letting go
- * would do is plain before it happens — which is what this is here to be
+ * is a list of identifiers and all it answers is a seat, measured from the
+ * focus. Several are one line and one seat, and whoever is carrying them says
+ * how many, at the pointer, in its own words.
+ *
+ * The line and the words are drawn while the pointer travels, so what letting
+ * go would do is plain before it happens — which is what this is here to be
  * looked at for, and it is left mid-carry.
  *
  * Only a browser can answer any of it: a real matrix, a pointer the plex never
  * took hold of, and a drawing that follows it across.
  */
-export const CarryingOneIn: Story = {
-  args: { ...invented.args, carried: 'physics/Entropy.md' },
+export const CarryingThemIn: Story = {
+  args: {
+    ...invented.args,
+    carried: ['physics/Entropy.md', 'physics/Kelvin.md', 'Heat.md'],
+  },
   render: invented.render,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)

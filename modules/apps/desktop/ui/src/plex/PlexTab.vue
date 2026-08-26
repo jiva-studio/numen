@@ -43,7 +43,10 @@ const options = computed(() => optionsForType(type.value))
       @link="
         (from: string, to: string, seat: PlexRelatedSeat) => void props.held.joined(from, to, seat)
       "
-      @bring="(carried: string, seat: PlexRelatedSeat) => void props.held.brought(carried, seat)"
+      @bring="
+        (carried: readonly string[], seat: PlexRelatedSeat) =>
+          void props.held.brought(carried, seat)
+      "
       @menu="
         (
           node: string,

@@ -39,10 +39,10 @@ export interface Filing {
   /** A file or a folder filed somewhere else, under the name the path ends in. */
   moves(from: string, to: string): Promise<void>
   /**
-   * The note the tree is carrying over the rest of the window, and nothing
-   * once it has let go.
+   * The notes the tree is carrying over the rest of the window, and none once
+   * it has let go.
    */
-  carries(path: string): void
+  carries(paths: readonly string[]): void
   /** An empty folder. The folders above it are made with it. */
   makes(path: string): Promise<void>
   /**
@@ -204,18 +204,21 @@ export function filing(list: Listing, deps: Filing) {
   /**
    * Rows lifted clear of the tree and carried over the rest of the window.
    *
-   * One note is something to join to a note elsewhere. A folder, a file the
-   * vault holds no note for, and a selection of several are each nothing to
-   * carry, and the window is told so.
+   * The vault's links are between notes, so the notes among the rows are what
+   * is carried and the rest stay where they are. Rows holding no note at all
+   * carry nothing.
    */
   const carry = (paths: readonly string[]) => {
-    const path = paths.length === 1 ? paths[0] : undefined
-    const entry = path === undefined ? undefined : list.entryAt(path)
-    deps.carries(entry && !entry.folder && entry.kind === 'note' ? entry.path : '')
+    deps.carries(
+      paths.filter((path) => {
+        const entry = list.entryAt(path)
+        return !!entry && !entry.folder && entry.kind === 'note'
+      }),
+    )
   }
 
   /** The rows let go of, wherever that was. */
-  const drop = () => deps.carries('')
+  const drop = () => deps.carries([])
 
   /** The rows asked to go, handed to the window as one command over all of them. */
   const remove = (paths: readonly string[]) => {
