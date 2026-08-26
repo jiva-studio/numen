@@ -64,6 +64,17 @@ func (c Config) Embedder(ctx context.Context) (port.Embedder, func() error, erro
 	return held.Filling(), held.Close, nil
 }
 
+// Asking is what embeds a question, for a run that fills no index. Only the
+// placement that answers questions is opened, and it answers under the identity
+// the index is filled with.
+func (c Config) Asking(ctx context.Context) (port.Embedder, func() error, error) {
+	held, err := c.placed(ctx, c.Embedding.Asking(), forQuery, nil)
+	if err != nil || held == nil {
+		return nil, nil, err
+	}
+	return held.Filling(), held.Close, nil
+}
+
 // Searching is the search a question is answered by, put together the one way:
 // the passages, the vault's files, the text read out of books, and the model a
 // question is embedded by.
@@ -78,20 +89,23 @@ func (c Config) Searching(db *Index, asking port.Embedder, trouble func(error)) 
 // placed is what one placement makes: a service, which answers at once, or a
 // model on this machine, which is loaded behind the window. Nothing for a
 // placement that names neither.
+//
+// Whichever it is, it answers under the identity the index is filled with, and
+// the two placements are held to it by being compared as one model.
 func (c Config) placed(ctx context.Context, where embed.Placement, role string, tasks *task.Tasks) (*embedding.Embedding, error) {
+	is := c.Embedding.Stored()
 	switch where.Use {
 	case embed.UseService:
-		client, err := openai.New(c.Embedding.Model, where.Service)
+		client, err := openai.New(is, where.Service)
 		if err != nil {
 			return nil, err
 		}
-		held := embedding.Arriving(client.Model())
+		held := embedding.Arriving(is)
 		held.Landed(client, nil)
 		return held, nil
 
 	case embed.UseLocal:
-		is := c.Embedding.Model
-		held := embedding.Arriving(is.Stored())
+		held := embedding.Arriving(is)
 		at := arriving(role, where)
 		doing := preparing(tasks, at)
 		doing(0, 0)

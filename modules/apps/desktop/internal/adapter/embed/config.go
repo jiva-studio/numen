@@ -3,6 +3,8 @@ package embed
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
@@ -24,6 +26,10 @@ const (
 // KeyEnvVar is where the service key is read from when the configuration file
 // does not carry one.
 const KeyEnvVar = "NUMEN_EMBEDDING_KEY"
+
+// ModelFile is the build inside a repository or a directory that is run when
+// the configuration names none.
+const ModelFile = "model.onnx"
 
 // Config is the embedding section of this installation's settings: what a
 // vector is, where it is made, and how near the query a passage stands to be an
@@ -65,15 +71,16 @@ type Model struct {
 	Pooling string `json:"pooling"`
 }
 
-// Stored is this model in the words a vector is kept under. It is the one
-// crossing between the settings and the index, so nothing copies the fields
-// across by hand.
-func (m Model) Stored() port.EmbeddingModel {
+// Stored is this model in the words a vector is kept under, made at the address
+// given. It is the one crossing between the settings and the index, so nothing
+// copies the fields across by hand.
+func (m Model) Stored(from string) port.EmbeddingModel {
 	return port.EmbeddingModel{
 		Name:       m.Name,
 		Dimensions: m.Dimensions,
 		MaxTokens:  m.MaxTokens,
 		Pooling:    m.Pooling,
+		From:       from,
 	}
 }
 
@@ -82,6 +89,19 @@ type Placement struct {
 	Use     string       `json:"use"`
 	Local   LocalModel   `json:"local"`
 	Service ServiceModel `json:"service"`
+}
+
+// From is this placement as the address its vectors are kept under. It leads
+// with the word that says which of the two it is, because one name is both a
+// repository and something a service answers to.
+func (p Placement) From() string {
+	switch p.Use {
+	case UseLocal:
+		return p.Local.From()
+	case UseService:
+		return p.Service.From()
+	}
+	return ""
 }
 
 // LocalModel is how this machine reaches a model it runs.
@@ -101,6 +121,24 @@ type LocalModel struct {
 	Download bool `json:"download"`
 }
 
+// From is where this machine reads the weights: the directory when one is
+// named, and the repository otherwise, with the file that is run inside it. A
+// quantised build is a file of its own and answers with numbers of its own.
+//
+// The file and the directory are settled to one form, so one set of weights has
+// one address whichever way the configuration writes it.
+func (m LocalModel) From() string {
+	at := m.Name
+	if m.Dir != "" {
+		at = filepath.ToSlash(filepath.Clean(m.Dir))
+	}
+	file := m.File
+	if file == "" {
+		file = ModelFile
+	}
+	return UseLocal + ":" + at + "/" + file
+}
+
 // ServiceModel is how a hosted model is reached over HTTP.
 type ServiceModel struct {
 	BaseURL string `json:"base_url"`
@@ -114,6 +152,12 @@ type ServiceModel struct {
 	// key is unexported: no value a caller formats or serialises carries it.
 	// Key reads it.
 	key string
+}
+
+// From is the service and the name it is asked for there. Two services
+// answering to one name are two models, and the key is no part of this.
+func (s ServiceModel) From() string {
+	return UseService + ":" + strings.TrimSuffix(s.BaseURL, "/") + "/" + s.Name
 }
 
 // Defaults embed on this machine: no key and no account. The model itself is
@@ -151,11 +195,11 @@ func (c Config) Asking() Placement {
 	return c.Query
 }
 
-// As is a configuration in which this placement is the one that makes every
-// vector. A run that asks questions and fills no index opens the placement that
-// answers them and no other.
-func (p Placement) As(is Model) Config {
-	return Config{Model: is, Indexing: p}
+// Stored is the identity every vector this installation keeps is filed under:
+// the model, made where the index is filled. A question is embedded wherever
+// the settings place it and claims the rows already there.
+func (c Config) Stored() port.EmbeddingModel {
+	return c.Model.Stored(c.Indexing.From())
 }
 
 // UnmarshalJSON keeps whatever the defaults set for the fields the file omits.

@@ -193,9 +193,12 @@ func TestAnOlderIndexIsMigratedRatherThanRebuilt(t *testing.T) {
 	}
 }
 
-// A vector is bought with minutes of a machine or with money, so a key that
-// changes shape is a key rewritten and not a vault embedded again.
-func TestVectorsSurviveTheRecipeChangingShape(t *testing.T) {
+// A vector kept under a key that does not say where it was made goes.
+//
+// Nothing in the index says which of the places serving one model name made it,
+// and a vector taken for one made somewhere else is answered with as though the
+// two agreed to the last digit.
+func TestAVectorThatDoesNotSayWhereItWasMadeIsDropped(t *testing.T) {
 	ctx := t.Context()
 	path := filepath.Join(t.TempDir(), "index.db")
 
@@ -215,10 +218,27 @@ func TestVectorsSurviveTheRecipeChangingShape(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	// The key as it was written: where the vector was made, then the model.
-	const was = "https://api.openai.com/v1|text-embedding-3-small|1536|0|int8"
+	// Both keys a vector has been kept under: the first named an address that
+	// was empty for a model run on this machine, and the second named none. One
+	// text each, because the two keys become one key on the way here.
+	for _, kept := range []struct {
+		print  []byte
+		recipe string
+	}{
+		{[]byte{0x01}, "https://api.openai.com/v1|text-embedding-3-small|1536|0|int8"},
+		{[]byte{0x02}, "text-embedding-3-small|1536|0|mean|int8"},
+	} {
+		if _, err := db.ExecContext(ctx,
+			`INSERT INTO vectors (fingerprint, recipe, v) VALUES (?, ?, x'02')`,
+			kept.print, kept.recipe); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// The coarse form of one of them, which is a reading of a vector that is
+	// about to go.
 	if _, err := db.ExecContext(ctx,
-		`INSERT INTO vectors (fingerprint, recipe, v) VALUES (x'01', ?, x'02')`, was); err != nil {
+		`INSERT INTO chunks_vec (chunk_id, vault_id, embedding) VALUES (1, 1, vec_bit(?))`,
+		make([]byte, 128)); err != nil {
 		t.Fatal(err)
 	}
 	if err := db.Close(); err != nil {
@@ -231,16 +251,32 @@ func TestVectorsSurviveTheRecipeChangingShape(t *testing.T) {
 	}
 	defer upgraded.Close()
 
-	want := port.EmbeddingModel{
-		Name: "text-embedding-3-small", Dimensions: 1536, Pooling: "mean",
-	}.Recipe()
-	var recipe string
-	if err := upgraded.write.QueryRowContext(ctx,
-		`SELECT recipe FROM vectors WHERE fingerprint = x'01'`).Scan(&recipe); err != nil {
-		t.Fatalf("the vector did not survive the migration: %v", err)
+	var held int
+	if err := upgraded.write.QueryRowContext(ctx, `SELECT count(*) FROM vectors`).Scan(&held); err != nil {
+		t.Fatal(err)
 	}
-	if recipe != want {
-		t.Errorf("kept under %q, asked for under %q", recipe, want)
+	if held != 0 {
+		t.Errorf("the index kept %d vectors that do not say where they were made", held)
+	}
+	var coarse int
+	if err := upgraded.write.QueryRowContext(ctx, `SELECT count(*) FROM chunks_vec`).Scan(&coarse); err != nil {
+		t.Fatal(err)
+	}
+	if coarse != 0 {
+		t.Errorf("the coarse index kept %d readings of vectors that went", coarse)
+	}
+
+	// Nor is one of them handed to the model now configured.
+	asked := port.EmbeddingModel{
+		Name: "text-embedding-3-small", Dimensions: 1536, Pooling: "mean",
+		From: "service:https://api.openai.com/v1/text-embedding-3-small",
+	}.Recipe()
+	kept, err := upgraded.ChunkQueries().Kept(ctx, asked, [][]byte{{0x01}, {0x02}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(kept) != 0 {
+		t.Errorf("a vector made nobody knows where answered for %s: %v", asked, kept)
 	}
 }
 

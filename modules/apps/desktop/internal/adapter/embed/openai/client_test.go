@@ -28,10 +28,11 @@ func client(t *testing.T, baseURL string, dimensions int) *openai.Client {
 	t.Helper()
 	t.Setenv(embed.KeyEnvVar, "test-key")
 	cfg := embed.Defaults()
+	cfg.Indexing.Use = embed.UseService
 	cfg.Model.Dimensions = dimensions
 	cfg.Indexing.Service.BaseURL = baseURL
 	cfg.Indexing.Service.Name = "test-embed"
-	c, err := openai.New(cfg.Model, cfg.Indexing.Service)
+	c, err := openai.New(cfg.Stored(), cfg.Indexing.Service)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -233,13 +234,14 @@ func TestABatchIsCutByCharacters(t *testing.T) {
 	})
 	t.Setenv(embed.KeyEnvVar, "test-key")
 	cfg := embed.Defaults()
+	cfg.Indexing.Use = embed.UseService
 	cfg.Model.Dimensions = 4
 	cfg.Indexing.Service.BaseURL = s.URL
 	cfg.Indexing.Service.Name = "test-embed"
 	// A verse in Devanagari: the same number of texts, far more tokens.
 	verse := strings.Repeat("धर्मक्षेत्रे कुरुक्षेत्रे ", 10)
 	cfg.Indexing.Service.BatchCharacters = len([]rune(verse)) * 2
-	c, err := openai.New(cfg.Model, cfg.Indexing.Service)
+	c, err := openai.New(cfg.Stored(), cfg.Indexing.Service)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -273,8 +275,9 @@ func TestNoTextsIsNoRequest(t *testing.T) {
 func TestAServiceWithoutAKeyIsRefusedBeforeAnyRequest(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "")
 	cfg := embed.Defaults()
+	cfg.Indexing.Use = embed.UseService
 	cfg.Indexing.Service.BaseURL = "http://127.0.0.1:1"
-	if _, err := openai.New(cfg.Model, cfg.Indexing.Service); !errors.Is(err, openai.ErrNoKey) {
+	if _, err := openai.New(cfg.Stored(), cfg.Indexing.Service); !errors.Is(err, openai.ErrNoKey) {
 		t.Fatalf("got %v", err)
 	}
 }
