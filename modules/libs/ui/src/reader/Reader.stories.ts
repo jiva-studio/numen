@@ -12,6 +12,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
 import Reader from './Reader.vue'
+import { GAP } from './strip'
 import { framed } from '@/fixtures/frame'
 
 const meta = {
@@ -27,6 +28,12 @@ type Render = NonNullable<Story['render']>
 /** A short book, and one long enough that drawing all of it would show. */
 const PAGES = 12
 const MANY = 500
+
+/**
+ * How long a wait goes on where the browser sets the pace: a scroll it
+ * animates itself, or a page refused four times over.
+ */
+const ITS_OWN_PACE = 10_000
 
 /** Where something sits on a page, in fractions of it. */
 interface Lit {
@@ -113,6 +120,21 @@ const pictureAt = (canvasElement: HTMLElement, page: number) =>
 const roomOf = (canvasElement: HTMLElement) =>
   canvasElement.querySelector('.reader__room') as HTMLElement
 
+/**
+ * The row has arrived at a page when that page stands against the near edge of
+ * the room. A turn is a scroll the browser animates at its own pace, and this
+ * is where it ends.
+ */
+const arrived = async (canvasElement: HTMLElement, page: number) =>
+  await waitFor(
+    async () => {
+      const room = roomOf(canvasElement).getBoundingClientRect()
+      const sheet = sheetAt(canvasElement, page)!.getBoundingClientRect()
+      await expect(Math.abs(sheet.x - room.x - GAP)).toBeLessThan(2)
+    },
+    { timeout: ITS_OWN_PACE },
+  )
+
 /** Turn the pages, scroll the strip, type a page to go to, and draw it closer. */
 export const Playground: Story = {
   render: book(LIT),
@@ -168,10 +190,14 @@ export const Turning: Story = {
     const canvas = within(canvasElement)
     await waitFor(async () => await expect(pictureAt(canvasElement, 0)).toBeInTheDocument())
 
+    // The row travels to the page turned to, and what the controls say is
+    // where the row stands, so each is pressed once the last one has arrived.
     await userEvent.click(canvas.getByLabelText('Next page'))
+    await arrived(canvasElement, 1)
     await waitFor(async () => await expect(canvas.getByLabelText('Page')).toHaveValue(2))
 
     await userEvent.click(canvas.getByLabelText('Previous page'))
+    await arrived(canvasElement, 0)
     await waitFor(async () => await expect(canvas.getByLabelText('Page')).toHaveValue(1))
 
     // Nowhere to turn back to from the first page.
@@ -180,7 +206,7 @@ export const Turning: Story = {
     const field = canvas.getByLabelText('Page')
     await userEvent.clear(field)
     await userEvent.type(field, '5{Enter}')
-    await waitFor(async () => await expect(sheetAt(canvasElement, 4)).toBeInTheDocument())
+    await arrived(canvasElement, 4)
   },
 }
 
@@ -283,7 +309,7 @@ export const Undrawn: Story = {
     await waitFor(
       async () =>
         await expect(canvas.getAllByText('This page would not come.')[0]).toBeInTheDocument(),
-      { timeout: 5000 },
+      { timeout: ITS_OWN_PACE },
     )
   },
 }
