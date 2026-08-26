@@ -64,7 +64,7 @@ What a page is called, and what a location says to a person, is [`../reading.md`
 
 **The text layer's boxes written to disk beside the recognition.** Rejected: they are cheap to ask again and expensive to keep true, and the day a recognition arrives for the same document there are two files claiming the same words.
 
-**The document streamed to the window and drawn there.** Rejected: a scan is hundreds of megabytes over a loopback port for one page, and the placement of a scanned book's words lives in this process.
+**The document streamed to the window and drawn there.** Rejected: a scan is hundreds of megabytes over a loopback port for one page, and where a scanned book's words sit is worked out in this process.
 
 ## Notes
 
