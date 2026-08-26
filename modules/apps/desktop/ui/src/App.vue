@@ -128,6 +128,13 @@ const noted = noting(core, notes, drawings, held.host, {
   },
 })
 
+/**
+ * The notes being carried from one pane of the window to another: the tree
+ * says what it has lifted, and a plex draws a line to them. Neither knows the
+ * other is there.
+ */
+const carried = ref<readonly string[]>([])
+
 /** The plex tabs, and the one the person is looking at. */
 const plexes = plexKind(held.host, () => standing(core), {
   makes: making,
@@ -137,6 +144,8 @@ const plexes = plexKind(held.host, () => standing(core), {
   runs: (id, path, title) => carries(id, { ...where(), path, title }),
   opening: () => window.opening.value,
   first: () => window.first(),
+  carried: () => carried.value,
+  says: (text) => told(text, 'refusal'),
   creatable: CREATABLE,
 })
 
@@ -166,6 +175,9 @@ const files = filesKind(held.host, () => folders(core), {
   runs: (id, paths, name) =>
     carries(id, { ...where(), path: paths[0] ?? '', title: name, others: paths.slice(1) }),
   moves: (from, to) => does(deedOf('move', { ...where(), path: from }, to), doing, words),
+  carries: (paths) => {
+    carried.value = paths
+  },
   makes: (path) => does(deedOf('makeFolder', where(), path), doing, words),
   writes: async (folder) => (await making.named(folder, []))?.path ?? '',
   says: (text) => told(text, 'refusal'),

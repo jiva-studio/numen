@@ -56,6 +56,19 @@ const props = withDefaults(
     gestureFrom?: string | null
     gestureAt?: Point | null
     gestureOutcome?: Drop | null
+    /**
+     * Something carried over the picture from outside it: where the pointer
+     * is, and the seat letting go there comes to. Both, or the picture draws
+     * none of it.
+     */
+    carriedAt?: Point | null
+    carriedSeat?: PlexRelatedSeat | null
+    /**
+     * What to call what letting go with something carried in would do, for the
+     * one place it is written into the picture. English by default, because
+     * something has to be drawn.
+     */
+    carriedName?: (seat: PlexRelatedSeat) => string
   }>(),
   {
     showEdgeLabels: true,
@@ -66,6 +79,9 @@ const props = withDefaults(
     gestureFrom: null,
     gestureAt: null,
     gestureOutcome: null,
+    carriedAt: null,
+    carriedSeat: null,
+    carriedName: seatWord,
   },
 )
 
@@ -204,18 +220,49 @@ const drawn = computed(() => {
   return [...props.frame.nodes.filter((each) => each.id !== node.id), node]
 })
 
+/** A line under the hand: out of where it left, and into where it is. */
+const threadTo = (start: Point, to: Point): string => {
+  const reachOut = Math.abs(to.x - start.x) / 2
+  return (
+    `M ${start.x} ${start.y}` +
+    ` C ${start.x + reachOut} ${start.y} ${to.x - reachOut} ${to.y} ${to.x} ${to.y}`
+  )
+}
+
 /** The line a gesture drags behind it, from the handle to the pointer. */
 const thread = computed(() => {
   const source = props.frame.nodes.find((node) => node.id === props.gestureFrom)
   const to = props.gestureAt
   if (!source || !to) return null
   const offset = handleIn(source)
-  const start = { x: source.x + offset.x, y: source.y + offset.y }
-  const reachOut = Math.abs(to.x - start.x) / 2
-  return (
-    `M ${start.x} ${start.y}` +
-    ` C ${start.x + reachOut} ${start.y} ${to.x - reachOut} ${to.y} ${to.x} ${to.y}`
-  )
+  return threadTo({ x: source.x + offset.x, y: source.y + offset.y }, to)
+})
+
+/**
+ * Something carried over the picture: the line from the focus to the pointer,
+ * and the shape letting go would leave there.
+ *
+ * Drawn only where letting go comes to a seat, so what the reader sees and
+ * what the gesture answers are the one thing. The shape is a box like any
+ * other, saying which seat it would take in whatever words it was given.
+ */
+const carrying = computed(() => {
+  const seat = props.carriedSeat
+  const to = props.carriedAt
+  const focus = props.frame.nodes.find((node) => node.seat === 'focus')
+  if (!seat || !to || !focus) return null
+
+  const ghost: PlacedNode = {
+    id: 'carried',
+    title: props.carriedName(seat),
+    seat,
+    x: to.x,
+    y: to.y,
+    ...props.nodeSize,
+    order: 0,
+    opacity: 1,
+  }
+  return { thread: threadTo(focus, to), ghost }
 })
 
 /**
@@ -353,6 +400,12 @@ const ghost = computed<PlacedNode | null>(() => {
       <path class="plex__thread" :d="thread" aria-hidden="true" />
       <PlexNodeView v-if="ghost" :node="ghost" standing="ghost" />
     </g>
+
+    <!-- Something carried in from outside, drawn over everything it crosses. -->
+    <g v-if="carrying" class="plex__carried">
+      <path class="plex__thread" :d="carrying.thread" aria-hidden="true" />
+      <PlexNodeView :node="carrying.ghost" standing="ghost" />
+    </g>
   </svg>
 </template>
 
@@ -434,6 +487,11 @@ const ghost = computed<PlacedNode | null>(() => {
 }
 
 .plex__reach {
+  pointer-events: none;
+}
+
+/* What is carried across the picture catches nothing on its way over. */
+.plex__carried {
   pointer-events: none;
 }
 

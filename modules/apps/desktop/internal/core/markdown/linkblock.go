@@ -108,17 +108,24 @@ func (d *Document) block() (block, error) {
 }
 
 // AddLink writes one relationship into the block, leaving every other entry as
-// the bytes it was. A link to the same place with the same role is already
-// there, and writing it again changes nothing.
+// the bytes it was.
+//
+// A note names another in one role: the place already named takes the role
+// written, and what the person wrote on that entry is kept.
 func (d *Document) AddLink(add domain.Link) error {
 	b, err := d.block()
 	if err != nil {
 		return err
 	}
 	for _, e := range b.entries {
-		if e.link.Target == add.Target && e.link.Role == add.Role {
+		if e.link.Target != add.Target {
+			continue
+		}
+		if e.link.Role == add.Role {
 			return nil
 		}
+		_, err := d.UpdateLink(add.Target, add)
+		return err
 	}
 
 	rendered, err := renderEntry(add, b.indent, d.eol)

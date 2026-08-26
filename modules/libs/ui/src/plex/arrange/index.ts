@@ -5,8 +5,10 @@ export { limitsFor, type Limits, type RoleLimits } from './limits'
 export {
   nodeAt,
   resolveDrop,
+  seatCarried,
   seatTowards,
   seatWithoutDirection,
+  type CarriedInput,
   type Drop,
   type DropInput,
 } from './drop'

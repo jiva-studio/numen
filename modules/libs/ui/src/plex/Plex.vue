@@ -32,6 +32,7 @@ import {
   type Point,
 } from './model'
 import { resolveOptions } from './arrange'
+import { usePlexCarry } from './carry'
 import { usePlexGesture } from './gesture'
 import type { MenuOpening } from '../menu/model'
 
@@ -66,6 +67,17 @@ const props = withDefaults(
      * line. English by default, because something has to be drawn.
      */
     seatName?: (seat: PlexRelatedSeat) => string
+    /**
+     * What is being carried over the picture from somewhere else. Each
+     * identifier is opaque and all of them are handed back untouched; an empty
+     * list is nothing carried, and the picture then draws none of it.
+     */
+    carried?: readonly string[]
+    /**
+     * What to call what letting go with something carried in would do. English
+     * by default, because something has to be drawn.
+     */
+    carriedName?: (seat: PlexRelatedSeat) => string
   }>(),
   {
     showEdgeLabels: true,
@@ -75,6 +87,8 @@ const props = withDefaults(
     dragThreshold: 8,
     dwell: DWELL,
     seatName: seatWord,
+    carried: () => [],
+    carriedName: seatWord,
   },
 )
 
@@ -92,6 +106,12 @@ const emit = defineEmits<{
   /** Reached out onto another node: relate the two in this seat. */
   (event: 'link', from: string, to: string, seat: PlexRelatedSeat): void
   /**
+   * What was carried in from outside was let go over the picture: relate each
+   * of them to the focus in this seat. The identifiers are the ones they were
+   * handed in as.
+   */
+  (event: 'bring', carried: readonly string[], seat: PlexRelatedSeat): void
+  /**
    * A menu was asked for on a node. The point is in the coordinates of the
    * screen; the element is what it was asked from, which is the only thing a
    * keypress hands over; the opening is what asked for it.
@@ -108,6 +128,8 @@ const emit = defineEmits<{
 const FALLBACK = { width: 1200, height: 800 }
 
 const frameElement = useTemplateRef<HTMLElement>('frame')
+/** The drawing, which a carry crossing the plex is measured against. */
+const view = useTemplateRef<InstanceType<typeof PlexView>>('view')
 const viewport = ref(FALLBACK)
 
 onMounted(() => {
@@ -198,6 +220,23 @@ const gesture = usePlexGesture(
 )
 
 /**
+ * Something carried across the picture from outside it.
+ *
+ * The plex works out which seat letting go comes to, measured from the focus,
+ * and says so. What is being carried it never looks at.
+ */
+const carrying = usePlexCarry({
+  surface: () => view.value?.svg ?? null,
+  carried: () => props.carried,
+  frame: () => frame.value,
+  options: () => options.value,
+  viewport: () => viewport.value,
+  allowed: () => props.creatable,
+  threshold: () => props.dragThreshold,
+  settle: (carried, seat) => emit('bring', carried, seat),
+})
+
+/**
  * A neighbourhood is drawn from the node it is seen from, so every node walks
  * to a new seat when another one arrives. A menu is anchored where one of them
  * was.
@@ -229,6 +268,7 @@ defineExpose({ moving: toRef(moving) })
     :style="{ '--numen-plex-move': `${duration}ms` }"
   >
     <PlexView
+      ref="view"
       :frame="frame"
       :viewport="viewport"
       :node-size="options.nodeSize"
@@ -241,6 +281,9 @@ defineExpose({ moving: toRef(moving) })
       :gesture-from="gesture.from.value"
       :gesture-at="gesture.at.value"
       :gesture-outcome="gesture.outcome.value"
+      :carried-at="carrying.at.value"
+      :carried-seat="carrying.seat.value"
+      :carried-name="carriedName"
       @activate="emit('activate', $event)"
       @show="(id, showing) => emit('show', id, showing)"
       @reach="gesture.begin"

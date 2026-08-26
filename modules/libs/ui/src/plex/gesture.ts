@@ -34,7 +34,7 @@ export interface GestureHandlers {
  * happens to be drawn at one unit to the pixel today, and arithmetic that
  * assumed so would break silently the first time that changed.
  */
-function pointIn(svg: SVGSVGElement, event: PointerEvent): Point | null {
+export function pointIn(svg: SVGSVGElement, event: PointerEvent): Point | null {
   const screen = svg.getScreenCTM?.()
   if (!screen) return null
   const m = screen.inverse()

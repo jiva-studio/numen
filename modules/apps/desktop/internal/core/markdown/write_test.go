@@ -593,3 +593,33 @@ func TestARenameKeepsTheNotationItFound(t *testing.T) {
 		})
 	}
 }
+
+// A note names another in one role, so a role written where one already
+// stands is the role it stands in from then on.
+func TestALinkWrittenAgainInAnotherRoleIsReseated(t *testing.T) {
+	raw := "---\n" +
+		"links:\n" +
+		"  - to: \"[[Entropy]]\"\n" +
+		"    role: child\n" +
+		"---\n" +
+		"body\n"
+
+	d, err := Open([]byte(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := d.AddLink(domain.Link{
+		Target: domain.Address{Scheme: domain.SchemeName, Value: "Entropy"},
+		Role:   domain.RoleParent,
+	}); err != nil {
+		t.Fatalf("add: %v", err)
+	}
+
+	out := string(d.Bytes())
+	if strings.Count(out, "to:") != 1 {
+		t.Errorf("the note names it twice:\n%s", out)
+	}
+	if !strings.Contains(out, "role: parent") || strings.Contains(out, "role: child") {
+		t.Errorf("it did not take the new role:\n%s", out)
+	}
+}

@@ -107,6 +107,7 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | tree | A hierarchy of rows drawn as an indented list, some of them holding others. The vault's folders and files are shown in one. | |
 | row | One line of a tree: an entry, at the depth it sits. | node |
 | selection | The rows of a tree chosen together. A gesture made on one of them is made on all of them. | |
+| carry | A gesture that lifts something in one part of the window and lets it go in another. The tree says what it has lifted; the plex says which seat letting go over it comes to, and never what is being carried. | drag |
 | anchor | The row a selection is reached from, which is where a plain or joining press last landed. | |
 | unsaved | A tab whose text is not the text in its file. | dirty |
 | stuck | A tab whose file can be neither read nor written: not a note, not text, over the ceiling, or frontmatter that will not parse. | |

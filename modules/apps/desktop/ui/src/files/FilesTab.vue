@@ -82,6 +82,8 @@ onUnmounted(() => globalThis.removeEventListener('focus', props.held.list.again)
       @activate="(row: string) => props.held.activate(row)"
       @rename="(row: string, name: string) => void props.held.rename(row, name)"
       @move="(rows: readonly string[], at: Dropped) => void props.held.move(rows, at)"
+      @carry="(rows: readonly string[]) => props.held.carry(rows)"
+      @drop="props.held.drop()"
       @remove="(rows: readonly string[]) => props.held.remove(rows)"
       @menu="(row: string | null, at: Point) => props.held.asks({ path: row, at })"
     >
