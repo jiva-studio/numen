@@ -8,6 +8,15 @@ on:
   push:
     branches: [main]
 
+# One run at a time per branch, and the newest is the one that matters. Two
+# deploys share one storage zone, and the second takes down what the first has
+# not finished putting up. A deploy that is overtaken is stopped: every deploy
+# writes the whole site and then removes what it did not write, so the one that
+# follows leaves the zone whole.
+concurrency:
+  group: landing-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # The page is static and carries no framework, so what there is to check is
   # that its markup typechecks and that the site builds — pictures included,
