@@ -1,4 +1,4 @@
-package lint_test
+package check_test
 
 import (
 	"path/filepath"
@@ -7,14 +7,14 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/check"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lint"
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/testsupport"
 )
 
-// checked scans a vault and hands back the linter over it.
-func checked(t *testing.T, notes map[string]string) (lint.Linter, domain.Vault) {
+// checked scans a vault and hands back the checks over it.
+func checked(t *testing.T, notes map[string]string) (check.Checks, domain.Vault) {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
 	db, err := container.Config{
@@ -32,10 +32,10 @@ func checked(t *testing.T, notes map[string]string) (lint.Linter, domain.Vault) 
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	return lint.Standard(db.Problems()), v
+	return check.Standard(db.Problems()), v
 }
 
-func run(t *testing.T, l lint.Linter, v domain.Vault, named ...domain.Check) []domain.VaultProblem {
+func run(t *testing.T, l check.Checks, v domain.Vault, named ...domain.Check) []domain.VaultProblem {
 	t.Helper()
 	found, err := l.Run(t.Context(), v, named...)
 	if err != nil {
@@ -160,13 +160,13 @@ func TestAskingForACheckThatDoesNotExistSaysWhatDoes(t *testing.T) {
 	}
 }
 
-// Adding a check is adding a file, and the linter runs whatever it is given.
-func TestTheSetOfChecksIsWhatTheLinterIsGiven(t *testing.T) {
+// Adding a check is adding a file, and what runs is whatever the set holds.
+func TestTheSetOfChecksIsWhatRuns(t *testing.T) {
 	l, v := checked(t, map[string]string{"Heat.md": "---\nlinks:\n  - to: Entropy\n---\n# Heat\n"})
 	l.Checks = nil
 
 	if found := run(t, l, v); len(found) != 0 {
-		t.Errorf("a linter with no checks finds nothing: %+v", found)
+		t.Errorf("an empty set of checks found %+v", found)
 	}
 }
 

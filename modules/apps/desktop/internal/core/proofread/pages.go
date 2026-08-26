@@ -1,6 +1,6 @@
 package proofread
 
-import "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
+import "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lit"
 
 // Pages are the printed lines of a reading, gathered by the page they were read
 // from.
@@ -11,7 +11,7 @@ import "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
 //
 // A box reaching past the prose was written for other bytes, and the reading is
 // refused whole.
-func Pages(prose string, boxes []placed.Box) []Page {
+func Pages(prose string, boxes []lit.Box) []Page {
 	var out []Page
 	for at, box := range boxes {
 		if box.Length <= 0 {

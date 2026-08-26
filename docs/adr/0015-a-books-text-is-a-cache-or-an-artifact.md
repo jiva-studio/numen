@@ -69,7 +69,7 @@ Rule 3 is also what a sweep asks. A source that leaves the vault takes the files
 
 ### One reader type answers for every kind of source
 
-An extractor cutting a source, a search showing a passage and an embedder re-slicing a window all ask the same type. Three answers that drift are three ways to read the wrong place.
+An extractor cutting a source, a search showing a passage and an embedder re-slicing a chunk all ask the same type. Three answers that drift are three ways to read the wrong place.
 
 ### The artifact lives in the service folder
 

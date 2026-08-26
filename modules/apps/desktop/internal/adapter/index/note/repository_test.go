@@ -5,15 +5,15 @@ import (
 	"testing"
 	"unicode/utf8"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/cutting"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
 )
 
-// A note is cut at the sizes the repository was told, and the window that
-// carries a vector stays under the limit. A window over the model's input limit
+// A note is cut at the sizes the repository was told, and the chunk that
+// carries a vector stays under the limit. A chunk over the model's input limit
 // is embedded truncated, and then it indexes text it does not hold.
-func TestASmallWindowIsCutUnderTheLimitGiven(t *testing.T) {
-	body := strings.TrimSpace(strings.Repeat("windows carry vectors ", 200))
+func TestASmallChunkIsCutUnderTheLimitGiven(t *testing.T) {
+	body := strings.TrimSpace(strings.Repeat("chunks carry vectors ", 200))
 	n := domain.Note{
 		Ref:   domain.FileRef{Path: "notes/cut.md", Size: int64(len(body)), MTime: 1},
 		Title: "Cut",
@@ -21,19 +21,19 @@ func TestASmallWindowIsCutUnderTheLimitGiven(t *testing.T) {
 	}
 
 	for _, limit := range []int{64, 512} {
-		windows := cut(n, window.Sizes{Limit: limit})
-		if len(windows) != 1 {
-			t.Fatalf("a note is one large window, and it was cut into %d", len(windows))
+		chunks := cut(n, cutting.Sizes{Limit: limit})
+		if len(chunks) != 1 {
+			t.Fatalf("a note is one large chunk, and it was cut into %d", len(chunks))
 		}
-		if windows[0].Length != len(body) {
-			t.Errorf("the large window holds %d bytes of a note of %d", windows[0].Length, len(body))
+		if chunks[0].Length != len(body) {
+			t.Errorf("the large chunk holds %d bytes of a note of %d", chunks[0].Length, len(body))
 		}
-		if len(windows[0].Small) == 0 {
+		if len(chunks[0].Small) == 0 {
 			t.Fatalf("nothing inside the note carries a vector at a limit of %d", limit)
 		}
-		for _, small := range windows[0].Small {
+		for _, small := range chunks[0].Small {
 			if held := utf8.RuneCountInString(small.Text); held > limit {
-				t.Errorf("a window holds %d characters, told to hold %d", held, limit)
+				t.Errorf("a chunk holds %d characters, told to hold %d", held, limit)
 			}
 		}
 	}

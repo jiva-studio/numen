@@ -107,19 +107,19 @@ func checkBook(t *testing.T, book *epub.Book) {
 		}
 	}
 
-	for i, place := range book.Places {
-		if place.Offset < 0 || place.Offset > len(book.Text) {
-			t.Fatalf("place %q is at %d, outside the text", place.Title, place.Offset)
+	for i, part := range book.Parts {
+		if part.Offset < 0 || part.Offset > len(book.Text) {
+			t.Fatalf("part %q is at %d, outside the text", part.Title, part.Offset)
 		}
-		if i > 0 && book.Places[i-1].Offset > place.Offset {
-			t.Fatalf("place %q is out of order", place.Title)
+		if i > 0 && book.Parts[i-1].Offset > part.Offset {
+			t.Fatalf("part %q is out of order", part.Title)
 		}
-		if book.Structure == epub.FromHeadings && !strings.HasPrefix(book.Text[place.Offset:], place.Title) {
-			t.Fatalf("heading %q does not begin at its offset %d", place.Title, place.Offset)
+		if book.Structure == epub.FromHeadings && !strings.HasPrefix(book.Text[part.Offset:], part.Title) {
+			t.Fatalf("heading %q does not begin at its offset %d", part.Title, part.Offset)
 		}
-		at := book.Locate(place.Offset)
-		if at.PlaceOffset != place.Offset {
-			t.Fatalf("place %q at %d is located at %d", place.Title, place.Offset, at.PlaceOffset)
+		at := book.Locate(part.Offset)
+		if at.PartOffset != part.Offset {
+			t.Fatalf("part %q at %d is located at %d", part.Title, part.Offset, at.PartOffset)
 		}
 	}
 
@@ -132,8 +132,8 @@ func checkBook(t *testing.T, book *epub.Book) {
 		}
 	}
 
-	if book.Structure == epub.FromNothing && len(book.Places) != 0 {
-		t.Errorf("a book that names nothing came back with %d places", len(book.Places))
+	if book.Structure == epub.FromNothing && len(book.Parts) != 0 {
+		t.Errorf("a book that names nothing came back with %d parts", len(book.Parts))
 	}
 }
 

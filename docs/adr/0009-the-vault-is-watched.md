@@ -21,7 +21,7 @@ macOS and Windows watch a tree in one call; Linux and BSD take one directory eac
 
 What counts as a note, what the service folder is called, and what the vault says to leave alone are asked of the same reader by the walk and by the watcher. What is configured, and in what syntax, is in [settings](../settings.md) and [the note format](../note-format.md).
 
-### Events fold by path over a hold window
+### Events fold by path over a hold
 
 One save is several events and a path arrives many times in a moment. Events are read into a buffer, held briefly, and folded so a path is reported once however often it was named. The hold is measured from the first event of a batch.
 

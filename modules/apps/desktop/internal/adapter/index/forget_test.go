@@ -15,8 +15,8 @@ import (
 const sharedText = "a passage that both vaults hold word for word"
 
 // filled puts a row in every table the index has, for one vault: a note with
-// a heading, a link and a problem, a book cut into windows and embedded, and a
-// book whose windows open named sections.
+// a heading, a link and a problem, a book cut into chunks and embedded, and a
+// book whose chunks open named sections.
 //
 // Every text carries the stem, so a row that arrives from the wrong vault is
 // recognisable. The one exception is the shared passage.
@@ -45,17 +45,17 @@ func filled(t *testing.T, db *DB, vault domain.Vault, stem string, seed byte) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Chunks().SaveWindows(ctx, vault.ID, "book", path, []chunk.Window{
+	if err := db.Chunks().SaveChunks(ctx, vault.ID, "book", path, []chunk.Chunk{
 		{
 			Start: 0, Length: 100, Location: stem + " section",
 			Opens: []string{stem + " section"},
 			Text:  stem + " section opens here",
-			Small: []chunk.Window{{Start: 0, Length: 100, Text: stem + " section opens here"}},
+			Small: []chunk.Chunk{{Start: 0, Length: 100, Text: stem + " section opens here"}},
 		},
 		{
 			Start: 100, Length: 100, Location: "the shared passage",
 			Text:  sharedText,
-			Small: []chunk.Window{{Start: 100, Length: 100, Text: sharedText}},
+			Small: []chunk.Chunk{{Start: 100, Length: 100, Text: sharedText}},
 		},
 	}); err != nil {
 		t.Fatal(err)

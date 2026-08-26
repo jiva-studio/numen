@@ -1,8 +1,8 @@
--- Sources of one kind with no small window: the file changed, or it has never
+-- Sources of one kind with no small chunk: the file changed, or it has never
 -- been cut. Both owe the same work.
 --
--- A source that has only the window enclosing it owes the cut, because a small
--- window is what carries a vector.
+-- A source that has only the chunk enclosing it owes the cut, because a small
+-- chunk is what carries a vector.
 SELECT path
 FROM sources s
 WHERE s.vault_id = ? AND s.kind = ?

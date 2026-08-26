@@ -9,10 +9,10 @@ import (
 	"io/fs"
 	"slices"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/cutting"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/text"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
 )
 
 // extractor names the reader that takes text out of a book. It is part of the
@@ -27,7 +27,7 @@ const sourcesPerQuery = 100
 //
 // It runs in two passes. The first records what the vault has, opening nothing.
 // The second takes the text out of every source that owes it and cuts it into
-// windows, one write per source.
+// chunks, one write per source.
 type Extract struct {
 	Readers port.VaultReaders
 	Sources port.SourceRepository
@@ -44,7 +44,7 @@ type Extract struct {
 
 	// Sizes are how the text is cut. They are named in the recipe, so a source
 	// cut at other sizes owes its text again.
-	Sizes window.Sizes
+	Sizes cutting.Sizes
 
 	// RebuildIndex reads every file and puts it in the index again, whatever the
 	// index remembers about it.
@@ -71,7 +71,7 @@ type ExtractResult struct {
 	Recorded   int    // new or changed, so owing their text
 	Unchanged  int    // skipped on size and modification time alone
 	Extracted  int    // read, cut and written
-	Chunks     int    // windows written, of both sizes
+	Chunks     int    // chunks written, of both sizes
 	Unreadable int    // read, and not a book
 	Removed    int    // held by the index, no longer in the vault
 	Forgotten  int    // read by a model once, and that reading is gone
@@ -273,7 +273,7 @@ func (u Extract) holds(ctx context.Context, names ...string) bool {
 // cut extracts and cuts every source that owes its text.
 //
 // Which those are is asked of the data, on both keys that answer it: a source
-// with no small window has never been cut, and a source carrying another recipe
+// with no small chunk has never been cut, and a source carrying another recipe
 // was cut by another extractor or at other sizes. Each question is asked again
 // until it names nothing that has not been tried, so a run that stopped part way
 // is continued by starting another.
@@ -331,7 +331,7 @@ func (u Extract) One(ctx context.Context, v domain.Vault, path string) (ExtractR
 	return res, u.source(ctx, v, reader, path, u.sizes(), &res)
 }
 
-// source takes the text out of one book and writes the windows it was cut into.
+// source takes the text out of one book and writes the chunks it was cut into.
 //
 // A file that will not parse is counted and the run goes on. Extraction never
 // refuses: no structure is an ordinary outcome, and one bad book must not stop a
@@ -344,7 +344,7 @@ func (u Extract) source(
 	v domain.Vault,
 	reader port.VaultReader,
 	path string,
-	sizes window.Sizes,
+	sizes cutting.Sizes,
 	res *ExtractResult,
 ) error {
 	res.Reading = path
@@ -394,7 +394,7 @@ func (u Extract) source(
 		return nil
 	}
 
-	windows := windowsOf(doc, sizes)
+	chunks := chunksOf(doc, sizes)
 	extraction := port.Extraction{
 		Source: port.Source{
 			Ref:      ref,
@@ -402,51 +402,51 @@ func (u Extract) source(
 			Recipe:   recipe(name, sizes),
 			TextFrom: from,
 		},
-		Windows: windows,
+		Chunks: chunks,
 	}
 	if err := u.Sources.SaveExtraction(ctx, v.ID, extraction); err != nil {
 		return fmt.Errorf("write the chunks of %s: %w", path, err)
 	}
 	res.Extracted++
-	res.Chunks += counted(windows)
+	res.Chunks += counted(chunks)
 	u.progress(*res)
 	return nil
 }
 
-// windowsOf cuts one source's text: the large windows a result shows, each
-// holding the small windows that carry a vector.
-func windowsOf(doc *text.Document, sizes window.Sizes) []port.Window {
-	var out []port.Window
-	for _, large := range window.Cut(doc.Text, doc.Places, sizes) {
-		w := windowAt(doc, large)
-		// The name of a section is kept on the window that begins it, and on that
-		// one only: a small window standing at the same place is inside it, and
+// chunksOf cuts one source's text: the large chunks a result shows, each
+// holding the small chunks that carry a vector.
+func chunksOf(doc *text.Document, sizes cutting.Sizes) []port.Chunk {
+	var out []port.Chunk
+	for _, large := range cutting.Cut(doc.Text, doc.Parts, sizes) {
+		c := chunkAt(doc, large)
+		// The name of a section is kept on the chunk that begins it, and on that
+		// one only: a small chunk standing at the same offset is inside it, and
 		// one section named twice is one section answering twice.
-		w.Opens = doc.Opens(large.Start)
+		c.Opens = doc.Opens(large.Start)
 		for _, small := range large.Small {
-			w.Small = append(w.Small, windowAt(doc, small))
+			c.Small = append(c.Small, chunkAt(doc, small))
 		}
-		out = append(out, w)
+		out = append(out, c)
 	}
 	return out
 }
 
-// windowAt is one window with what it holds and where the source says it is.
-// The text goes with it to be indexed for its words and is not kept.
-func windowAt(doc *text.Document, w window.Window) port.Window {
-	return port.Window{
-		Start:    w.Start,
-		Length:   w.Length,
-		Location: doc.Locate(w.Start),
-		Text:     w.Slice(doc.Text),
+// chunkAt is one chunk with what it holds and where the source says it is. The
+// text goes with it to be indexed for its words and is not kept.
+func chunkAt(doc *text.Document, c cutting.Chunk) port.Chunk {
+	return port.Chunk{
+		Start:    c.Start,
+		Length:   c.Length,
+		Location: doc.Locate(c.Start),
+		Text:     c.Slice(doc.Text),
 	}
 }
 
-// counted is how many windows of both sizes a cut produced.
-func counted(windows []port.Window) int {
-	n := len(windows)
-	for _, w := range windows {
-		n += len(w.Small)
+// counted is how many chunks of both sizes a cut produced.
+func counted(chunks []port.Chunk) int {
+	n := len(chunks)
+	for _, c := range chunks {
+		n += len(c.Small)
 	}
 	return n
 }
@@ -454,14 +454,14 @@ func counted(windows []port.Window) int {
 // recipe names what produced a source's text: the reader that took it out, and
 // the sizes it was cut into. Both are asked as one question — a source whose
 // recipe is not this one owes its text again.
-func recipe(reader string, s window.Sizes) string {
+func recipe(reader string, s cutting.Sizes) string {
 	return fmt.Sprintf("%s/large=%d+%d/small=%d+%d/limit=%d",
 		reader, s.Large, s.LargeOverlap, s.Small, s.SmallOverlap, s.Limit)
 }
 
 // recipes are what every reader would produce at these sizes. A source carrying
 // none of them owes its text: its own reader has changed, or the sizes have.
-func recipes(s window.Sizes) []string {
+func recipes(s cutting.Sizes) []string {
 	named := []string{text.ReaderEPUB, text.ReaderPDF}
 	out := make([]string, 0, len(named))
 	for _, reader := range named {
@@ -472,22 +472,22 @@ func recipes(s window.Sizes) []string {
 
 // sizes fills in what configuration left unset with the defaults the cut applies,
 // so that the recipe names the sizes the text was cut into.
-func (u Extract) sizes() window.Sizes {
+func (u Extract) sizes() cutting.Sizes {
 	s := u.Sizes
 	if s.Large == 0 {
-		s.Large = window.DefaultLarge
+		s.Large = cutting.DefaultLarge
 	}
 	if s.Small <= 0 {
-		s.Small = window.DefaultSmall
+		s.Small = cutting.DefaultSmall
 	}
 	if s.LargeOverlap == 0 {
-		s.LargeOverlap = window.DefaultLargeOverlap
+		s.LargeOverlap = cutting.DefaultLargeOverlap
 	}
 	if s.SmallOverlap == 0 {
-		s.SmallOverlap = window.DefaultSmallOverlap
+		s.SmallOverlap = cutting.DefaultSmallOverlap
 	}
 	if s.Limit <= 0 {
-		s.Limit = window.DefaultLimit
+		s.Limit = cutting.DefaultLimit
 	}
 	return s
 }
@@ -516,7 +516,7 @@ func (u Extract) text(ctx context.Context, ref domain.FileRef, raw []byte, hash 
 		for _, name := range []string{text.Artifact(from, hash), text.Partial(from, hash)} {
 			switch found, err := u.Derived.Read(ctx, name); {
 			case err == nil:
-				// The parts of a reading bound the windows it is cut into, the
+				// The parts of a reading bound the chunks it is cut into, the
 				// way an outline bounds a book's.
 				doc, err := text.Composed(ctx, u.Derived, from, hash, found)
 				if err != nil {

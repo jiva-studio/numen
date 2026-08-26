@@ -73,8 +73,8 @@ func indexed(t *testing.T) corpus {
 	return c
 }
 
-// cut replaces one note's windows with a large one and the small ones named,
-// each carrying its own words. A small window is what a vector belongs to.
+// cut replaces one note's chunks with a large one and the small ones named,
+// each carrying its own words. A small chunk is what a vector belongs to.
 func (c corpus) cut(t *testing.T, v domain.Vault, path string, small ...string) {
 	t.Helper()
 	reader, err := filesystem.Readers{}.Open(v)
@@ -85,16 +85,16 @@ func (c corpus) cut(t *testing.T, v domain.Vault, path string, small ...string) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	windows := chunk.Window{Start: 0, Length: len(raw), Text: string(raw)}
+	chunks := chunk.Chunk{Start: 0, Length: len(raw), Text: string(raw)}
 	for _, text := range small {
-		windows.Small = append(windows.Small, chunk.Window{Start: 0, Length: len(raw), Text: text})
+		chunks.Small = append(chunks.Small, chunk.Chunk{Start: 0, Length: len(raw), Text: text})
 	}
-	if err := c.db.Chunks().SaveWindows(t.Context(), v.ID, "note", path, []chunk.Window{windows}); err != nil {
+	if err := c.db.Chunks().SaveChunks(t.Context(), v.ID, "note", path, []chunk.Chunk{chunks}); err != nil {
 		t.Fatal(err)
 	}
 }
 
-// vectorise gives every small window of one vault a vector pointing the way
+// vectorise gives every small chunk of one vault a vector pointing the way
 // given, in both of the representations a chunk carries.
 func (c corpus) vectorise(t *testing.T, v domain.Vault, direction []float32) {
 	t.Helper()
@@ -333,13 +333,13 @@ func TestFiveMatchingChunksOfOneNoteAreOneResult(t *testing.T) {
 		"disorder once", "disorder twice", "disorder again",
 		"disorder once more", "disorder at last")
 
-	// Every window of the note matches, the large one included.
+	// Every chunk of the note matches, the large one included.
 	hits, err := c.db.ChunkQueries().Lexical(ctx, c.first.ID, "disorder", nil, 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(hits) != 6 {
-		t.Fatalf("%d chunks of the note match, want its five small windows and the large one", len(hits))
+		t.Fatalf("%d chunks of the note match, want its five small chunks and the large one", len(hits))
 	}
 
 	found := c.searchIn(t, c.first, "disorder", nil)
@@ -367,14 +367,14 @@ func TestAPassageIsReadFromTheFileAndNotFromTheIndex(t *testing.T) {
 	}
 }
 
-// sectioned replaces one note's windows with three, of which the first opens a
+// sectioned replaces one note's chunks with three, of which the first opens a
 // section whose name the section after it says over and over.
 //
 // This is the shape a chapter of a book has: the chapter names its subject once,
 // in its heading, and a paragraph further on says it four times.
 func (c corpus) sectioned(t *testing.T, v domain.Vault, path string) {
 	t.Helper()
-	windows := []chunk.Window{
+	chunks := []chunk.Chunk{
 		{
 			Start: 0, Length: 40, Location: "Madhavendra Puri",
 			Opens: []string{"Madhavendra Puri"},
@@ -387,7 +387,7 @@ func (c corpus) sectioned(t *testing.T, v domain.Vault, path string) {
 				"Madhavendra Puri is said. Madhavendra Puri again.",
 		},
 	}
-	if err := c.db.Chunks().SaveWindows(t.Context(), v.ID, "note", path, windows); err != nil {
+	if err := c.db.Chunks().SaveChunks(t.Context(), v.ID, "note", path, chunks); err != nil {
 		t.Fatal(err)
 	}
 }

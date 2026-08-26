@@ -5,18 +5,18 @@ import (
 	"errors"
 	"io/fs"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/cutting"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/fixes"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lit"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/ocr"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
 )
 
 // A Reader is where a source's text comes from: the file itself, or the file a
 // recognition wrote.
 //
 // It is the one type that answers this, because a search showing a passage, an
-// embedder re-slicing a window and an extractor cutting a source all ask it, and
+// embedder re-slicing a chunk and an extractor cutting a source all ask it, and
 // three answers that drift are three ways to read the wrong place.
 type Reader struct {
 	Vault   port.VaultReader
@@ -121,11 +121,11 @@ func Recognised(raw, parts, boxes, corrections []byte) *Document {
 	prose, marks := ocr.Read(raw)
 	named := ocr.Unpack(parts)
 	if put := fixes.Unpack(corrections); len(put) > 0 {
-		prose, marks, named = fixes.Prose(prose, marks, placed.Unpack(boxes), named, put)
+		prose, marks, named = fixes.Prose(prose, marks, lit.Unpack(boxes), named, put)
 	}
 	doc := &Document{Text: prose}
 	for _, p := range divided(prose, named) {
-		doc.Places = append(doc.Places, p)
+		doc.Parts = append(doc.Parts, p)
 		doc.named = append(doc.named, mark{Offset: p.Offset, Name: p.Title})
 	}
 	for i, m := range marks {
@@ -134,26 +134,26 @@ func Recognised(raw, parts, boxes, corrections []byte) *Document {
 	return doc
 }
 
-// divided is the parts a sidecar names, as places in the prose. A part is named
+// divided is the parts a sidecar names, as parts of the prose. A part is named
 // by its heading run as the scan was read, mangled or not.
 //
 // The parts of one artifact begin in the order the prose is read and end within
 // it. A sidecar that says otherwise was written for other bytes, and none of it
 // is used.
-func divided(prose string, parts []ocr.Part) []window.Place {
-	places := make([]window.Place, 0, len(parts))
+func divided(prose string, parts []ocr.Part) []cutting.Part {
+	out := make([]cutting.Part, 0, len(parts))
 	at := 0
 	for _, p := range parts {
 		if p.Start < at || p.Length <= 0 || p.Start+p.Length > len(prose) {
 			return nil
 		}
 		at = p.Start
-		places = append(places, window.Place{
+		out = append(out, cutting.Part{
 			Title:  prose[p.Start : p.Start+p.Length],
 			Offset: p.Start,
 		})
 	}
-	return places
+	return out
 }
 
 // Artifact is the name a producer's recognition of these bytes is kept under.

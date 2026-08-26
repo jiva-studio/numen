@@ -87,8 +87,8 @@ erDiagram
         INTEGER vault_id FK
         INTEGER start "bytes into the text"
         INTEGER length
-        INTEGER parent FK "null for the window a result shows"
-        TEXT location "what the source's own numbering calls the place"
+        INTEGER parent FK "null for the chunk a result shows"
+        TEXT location "where it sits, in the source's own numbering"
         TEXT hash "the address its text gives it"
     }
     vectors {

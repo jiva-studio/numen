@@ -3,7 +3,7 @@ package ocr
 import (
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lit"
 )
 
 // The artifact is plain text with the pages marked in it:
@@ -40,9 +40,9 @@ type Mark struct {
 // A box and a part are both placed in the prose, which is what Read gives back.
 // The mark and the newline closing it are bookkeeping and are counted in none of
 // them.
-func Write(pages []Page) ([]byte, []placed.Box, []Part) {
+func Write(pages []Page) ([]byte, []lit.Box, []Part) {
 	var out strings.Builder
-	var boxes []placed.Box
+	var boxes []lit.Box
 	var parts []Part
 	prose := 0
 	for _, page := range pages {
@@ -70,14 +70,14 @@ func Write(pages []Page) ([]byte, []placed.Box, []Part) {
 // within is where each span of a block sits: at its offset from base in the
 // prose, and over the fraction of the page its rectangle covers. A page nothing
 // was measured on gives no boxes, having no size to take a fraction of.
-func within(page Page, block Block, base int) []placed.Box {
+func within(page Page, block Block, base int) []lit.Box {
 	if page.Size.X <= 0 || page.Size.Y <= 0 {
 		return nil
 	}
 	wide, high := float32(page.Size.X), float32(page.Size.Y)
-	boxes := make([]placed.Box, 0, len(block.Spans))
+	boxes := make([]lit.Box, 0, len(block.Spans))
 	for _, span := range block.Spans {
-		boxes = append(boxes, placed.Box{
+		boxes = append(boxes, lit.Box{
 			Page:   page.At,
 			Start:  base + span.Start,
 			Length: span.Length,
@@ -99,7 +99,7 @@ const Note = "\x00"
 // text names.
 //
 // The marks are taken out of the text: an offset in what comes back is an offset
-// in the prose, so a window cut from it holds what the page says and not the
+// in the prose, so a chunk cut from it holds what the page says and not the
 // bookkeeping around it.
 //
 // Anything before the first mark is prose belonging to no page, which is what a

@@ -5,8 +5,8 @@ import (
 	"errors"
 	"image"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/cutting"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lit"
 )
 
 // Documents reads a file whose text is laid out on printed pages: what it
@@ -15,14 +15,14 @@ import (
 // The format needs a library to read, and the library holds workers for as long
 // as the application does. What the core knows of it is here.
 type Documents interface {
-	// Read is the whole of what a document says, the places it names, and where
+	// Read is the whole of what a document says, the parts it names, and where
 	// each of its pages begins in that text.
 	Read(ctx context.Context, raw []byte) (Reading, error)
 
-	// Placed is where the words of the pages named sit, as fractions of the
-	// page, one box a word. Starts is where each page begins, as Read answered,
-	// and pages are the ones wanted, by index.
-	Placed(ctx context.Context, raw []byte, starts []int, pages []int) ([]placed.Box, error)
+	// Lit is where the words of the pages named sit, as fractions of the page,
+	// one box a word. Starts is where each page begins, as Read answered, and
+	// pages are the ones wanted, by index.
+	Lit(ctx context.Context, raw []byte, starts []int, pages []int) ([]lit.Box, error)
 
 	// Draw holds a document open so its pages can be drawn. It holds a worker
 	// until it is closed, and there are as many workers as this machine has
@@ -35,8 +35,8 @@ type Reading struct {
 	// Text is every page's text in the order the document is paginated, as one
 	// stream. Every offset below is an offset into it.
 	Text string
-	// Places are the names the document gives parts of itself.
-	Places []window.Place
+	// Parts are the names the document gives divisions of itself.
+	Parts []cutting.Part
 	// Pages is where each page begins.
 	Pages []int
 }

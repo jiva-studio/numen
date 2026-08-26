@@ -24,7 +24,7 @@ type extractor struct {
 	// at. This is how a navigation entry that points inside a document lands.
 	anchors map[string]int
 
-	headings   []Place
+	headings   []Part
 	pagebreaks []Page
 
 	// preformatted counts the pre elements open around the text being written.
@@ -101,7 +101,7 @@ func (x *extractor) node(n *html.Node) {
 
 	if level := headingLevel(n.DataAtom); level > 0 {
 		if title := tidy(string(x.out[start:])); title != "" {
-			x.headings = append(x.headings, Place{Title: title, Offset: start, Level: level})
+			x.headings = append(x.headings, Part{Title: title, Offset: start, Level: level})
 		}
 	}
 	if label, ok := printedPage(n); ok {
@@ -158,10 +158,10 @@ func (x *extractor) last() (byte, bool) {
 	return x.out[len(x.out)-1], true
 }
 
-// named turns navigation entries into places. An entry whose document is not in
+// named turns navigation entries into parts. An entry whose document is not in
 // the book, or which carries no name, is not one.
-func (x *extractor) named(entries []entry) []Place {
-	var out []Place
+func (x *extractor) named(entries []entry) []Part {
+	var out []Part
 	for _, e := range entries {
 		title := tidy(e.title)
 		if title == "" {
@@ -171,7 +171,7 @@ func (x *extractor) named(entries []entry) []Place {
 		if !ok {
 			continue
 		}
-		out = append(out, Place{Title: title, Offset: offset})
+		out = append(out, Part{Title: title, Offset: offset})
 	}
 	return out
 }

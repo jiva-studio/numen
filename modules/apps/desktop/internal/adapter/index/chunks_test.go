@@ -77,10 +77,10 @@ func opened(t *testing.T) *DB {
 	return db
 }
 
-// book puts one source in, cuts it into a large window with two small ones
+// book puts one source in, cuts it into a large chunk with two small ones
 // inside it, and embeds the small ones at the seed given.
 //
-// Every window carries the stem of its own path among its words, so a hit says
+// Every chunk carries the stem of its own path among its words, so a hit says
 // which vault it came from.
 func book(t *testing.T, db *DB, vault domain.Vault, path string, seed byte) {
 	t.Helper()
@@ -93,10 +93,10 @@ func book(t *testing.T, db *DB, vault domain.Vault, path string, seed byte) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := chunks.SaveWindows(ctx, vault.ID, "book", path, []chunk.Window{{
+	if err := chunks.SaveChunks(ctx, vault.ID, "book", path, []chunk.Chunk{{
 		Start: 0, Length: 100, Location: "chapter 1",
 		Text: stem + " opening " + stem + " middle",
-		Small: []chunk.Window{
+		Small: []chunk.Chunk{
 			{Start: 0, Length: 50, Text: stem + " opening"},
 			{Start: 50, Length: 50, Text: stem + " middle"},
 		},
@@ -228,8 +228,8 @@ func TestASearchByWordsStaysInsideItsVault(t *testing.T) {
 	}
 }
 
-func TestAHitComesBackAsTheWindowThatIsRead(t *testing.T) {
-	// A small window is searched and the large window enclosing it is read, so a
+func TestAHitComesBackAsTheChunkThatIsRead(t *testing.T) {
+	// A small chunk is searched and the large chunk enclosing it is read, so a
 	// result arrives with enough text around it to be understood.
 	ctx := t.Context()
 	db := opened(t)
@@ -241,23 +241,23 @@ func TestAHitComesBackAsTheWindowThatIsRead(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(dense) != 2 {
-		t.Fatalf("%d matches, want the two small windows", len(dense))
+		t.Fatalf("%d matches, want the two small chunks", len(dense))
 	}
-	// The words half finds the small windows and the large one, which is one row
-	// per window of the book.
+	// The words half finds the small chunks and the large one, which is one row
+	// per chunk of the book.
 	lexical, err := queries.Lexical(ctx, first.ID, "first", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(lexical) != 3 {
-		t.Fatalf("%d matches, want every window of the one book", len(lexical))
+		t.Fatalf("%d matches, want every chunk of the one book", len(lexical))
 	}
 
 	for _, p := range append(dense, lexical...) {
 		if p.Source != "library/first.epub" || p.Start != 0 || p.Length != 100 {
-			t.Errorf("%+v does not read the whole of the window enclosing it", p)
+			t.Errorf("%+v does not read the whole of the chunk enclosing it", p)
 		}
-		// The large window carries the human location, and a hit inside it is
+		// The large chunk carries the human location, and a hit inside it is
 		// read at that place.
 		if p.Location != "chapter 1" {
 			t.Errorf("a hit came back at the location %q", p.Location)
@@ -316,13 +316,13 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// A note is cut the way a book is: one large window over the whole of it, and
-	// the small windows inside it that carry the vectors.
+	// A note is cut the way a book is: one large chunk over the whole of it, and
+	// the small chunks inside it that carry the vectors.
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE parent IS NULL`); got != 1 {
-		t.Errorf("%d large windows for one note", got)
+		t.Errorf("%d large chunks for one note", got)
 	}
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE parent IS NOT NULL`); got == 0 {
-		t.Fatal("a note has no small windows, so nothing about it can be embedded")
+		t.Fatal("a note has no small chunks, so nothing about it can be embedded")
 	}
 	vectorise(t, db, first, 0x00)
 	was := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`)
@@ -338,12 +338,12 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 
 	// What is left is the note as it stands now, cut once.
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE parent IS NULL`); got != 1 {
-		t.Errorf("%d large windows after a note was rewritten", got)
+		t.Errorf("%d large chunks after a note was rewritten", got)
 	}
 	if got := counted(t, db,
 		`SELECT COUNT(*) FROM chunks c WHERE c.parent IS NOT NULL
 		   AND c.parent NOT IN (SELECT id FROM chunks WHERE parent IS NULL)`); got != 0 {
-		t.Errorf("%d small windows sit inside a large one that is gone", got)
+		t.Errorf("%d small chunks sit inside a large one that is gone", got)
 	}
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
 		t.Errorf("%d vectors describe a note that has been rewritten", got)
@@ -369,10 +369,10 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 	}
 }
 
-// A note is searchable by its meaning, which needs the windows that carry
-// vectors. One large window and nothing inside it is a note the dense half can
+// A note is searchable by its meaning, which needs the chunks that carry
+// vectors. One large chunk and nothing inside it is a note the dense half can
 // never return.
-func TestANoteIsCutIntoWindowsThatCanCarryAVector(t *testing.T) {
+func TestANoteIsCutIntoChunksThatCanCarryAVector(t *testing.T) {
 	ctx := t.Context()
 	db := opened(t)
 
@@ -391,12 +391,12 @@ func TestANoteIsCutIntoWindowsThatCanCarryAVector(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(owing) < 2 {
-		t.Fatalf("%d windows of a note owe a vector, so its text is one window", len(owing))
+		t.Fatalf("%d chunks of a note owe a vector, so its text is one chunk", len(owing))
 	}
 	// Every offset is into the file, so the text of a passage can be read back.
 	for _, p := range owing {
 		if p.Start < 0 || p.Start+p.Length > int(note.Ref.Size) {
-			t.Errorf("a window lies outside the file: %+v", p)
+			t.Errorf("a chunk lies outside the file: %+v", p)
 		}
 	}
 }
@@ -451,9 +451,9 @@ func TestRemovingANoteTakesItsIndexedRows(t *testing.T) {
 	if err := db.Notes().Save(ctx, first.ID, []domain.Note{note}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Chunks().SaveWindows(ctx, first.ID, "note", note.Ref.Path, []chunk.Window{{
+	if err := db.Chunks().SaveChunks(ctx, first.ID, "note", note.Ref.Path, []chunk.Chunk{{
 		Start: 0, Length: 6, Text: note.Body,
-		Small: []chunk.Window{{Start: 0, Length: 6, Text: note.Body}},
+		Small: []chunk.Chunk{{Start: 0, Length: 6, Text: note.Body}},
 	}}); err != nil {
 		t.Fatal(err)
 	}
@@ -600,7 +600,7 @@ func TestWhatIsStaleIsAskedOnThreeKeys(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(owing) != 2 {
-		t.Errorf("%d chunks owe a vector from another model, want the two small windows", len(owing))
+		t.Errorf("%d chunks owe a vector from another model, want the two small chunks", len(owing))
 	}
 	for _, p := range owing {
 		if !strings.HasPrefix(p.Path, "library/cut") {
@@ -688,20 +688,20 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	// Two large windows, each holding two small ones. Only the small ones ever
+	// Two large chunks, each holding two small ones. Only the small ones ever
 	// carry a vector.
-	large := make([]chunk.Window, 0, 2)
+	large := make([]chunk.Chunk, 0, 2)
 	for _, at := range []int{0, 100} {
-		large = append(large, chunk.Window{
+		large = append(large, chunk.Chunk{
 			Start: at, Length: 100, Location: "chapter",
 			Text: "whole",
-			Small: []chunk.Window{
+			Small: []chunk.Chunk{
 				{Start: at, Length: 50, Text: "first half"},
 				{Start: at + 50, Length: 50, Text: "second half"},
 			},
 		})
 	}
-	if err := db.Chunks().SaveWindows(ctx, vault.ID, "book", "library/one.epub", large); err != nil {
+	if err := db.Chunks().SaveChunks(ctx, vault.ID, "book", "library/one.epub", large); err != nil {
 		t.Fatal(err)
 	}
 
@@ -745,8 +745,8 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 	}
 }
 
-// cutInto records one book and makes its chunks the small windows named, each
-// under a large window of its own.
+// cutInto records one book and makes its chunks the small chunks named, each
+// under a large chunk of its own.
 func cutInto(t *testing.T, db *DB, vault domain.Vault, path string, texts ...string) {
 	t.Helper()
 	ctx := t.Context()
@@ -756,14 +756,14 @@ func cutInto(t *testing.T, db *DB, vault domain.Vault, path string, texts ...str
 	}); err != nil {
 		t.Fatal(err)
 	}
-	windows := make([]chunk.Window, 0, len(texts))
+	cut := make([]chunk.Chunk, 0, len(texts))
 	for i, text := range texts {
-		windows = append(windows, chunk.Window{
+		cut = append(cut, chunk.Chunk{
 			Start: i * 100, Length: 100, Text: path + " " + text,
-			Small: []chunk.Window{{Start: i * 100, Length: 50, Text: text}},
+			Small: []chunk.Chunk{{Start: i * 100, Length: 50, Text: text}},
 		})
 	}
-	if err := db.Chunks().SaveWindows(ctx, vault.ID, "book", path, windows); err != nil {
+	if err := db.Chunks().SaveChunks(ctx, vault.ID, "book", path, cut); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -843,7 +843,7 @@ func TestAChunkTooFarFromTheQueryIsNoAnswer(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(near) != 2 {
-		t.Errorf("%d answers, want the book's two small windows", len(near))
+		t.Errorf("%d answers, want the book's two small chunks", len(near))
 	}
 }
 
@@ -862,7 +862,7 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(owing) != 2 {
-		t.Fatalf("%d chunks owe a vector, want the two small windows", len(owing))
+		t.Fatalf("%d chunks owe a vector, want the two small chunks", len(owing))
 	}
 	if err := db.Chunks().SaveVectors(ctx, []chunk.Vector{{
 		Chunk: owing[0].Chunk, Fingerprint: fingerprintOf(t, db, owing[0].Chunk), Recipe: "model",
@@ -1012,7 +1012,7 @@ func TestTextThatWentTakesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(owing) != 2 {
-		t.Fatalf("%d chunks owe a vector, want the two small windows", len(owing))
+		t.Fatalf("%d chunks owe a vector, want the two small chunks", len(owing))
 	}
 	made := make([]chunk.Vector, 0, len(owing))
 	for _, p := range owing {
@@ -1167,12 +1167,12 @@ func sectioned(t *testing.T, db *DB, vault domain.Vault, path string) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	windows := []chunk.Window{
+	cut := []chunk.Chunk{
 		{
 			Start: 0, Length: 100, Location: "Madhavendra Puri",
 			Opens: []string{"Madhavendra Puri"},
 			Text:  "Madhavendra Puri appeared in the fourteenth century.",
-			Small: []chunk.Window{{Start: 0, Length: 100, Text: "Madhavendra Puri appeared."}},
+			Small: []chunk.Chunk{{Start: 0, Length: 100, Text: "Madhavendra Puri appeared."}},
 		},
 		{
 			Start: 100, Length: 100, Location: "The Disciplic Succession",
@@ -1180,16 +1180,16 @@ func sectioned(t *testing.T, db *DB, vault domain.Vault, path string) {
 			Text: "Madhavendra Puri was the disciple of Laksmipati. " +
 				"Madhavendra Puri's disciples included Isvara Puri. " +
 				"Madhavendra Puri is said to be. Madhavendra Puri again.",
-			Small: []chunk.Window{{Start: 100, Length: 100, Text: "Madhavendra Puri four times over."}},
+			Small: []chunk.Chunk{{Start: 100, Length: 100, Text: "Madhavendra Puri four times over."}},
 		},
 		{
 			Start: 200, Length: 100, Location: "Nityananda Prabhu",
 			Opens: []string{"Nityananda Prabhu"},
 			Text:  "Nityananda Prabhu met him at a holy place.",
-			Small: []chunk.Window{{Start: 200, Length: 100, Text: "Nityananda Prabhu met him."}},
+			Small: []chunk.Chunk{{Start: 200, Length: 100, Text: "Nityananda Prabhu met him."}},
 		},
 	}
-	if err := chunks.SaveWindows(ctx, vault.ID, "book", path, windows); err != nil {
+	if err := chunks.SaveChunks(ctx, vault.ID, "book", path, cut); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -1232,8 +1232,8 @@ func TestASectionIsFoundByItsName(t *testing.T) {
 	}
 }
 
-func TestOnlyTheWindowThatOpensASectionCarriesItsName(t *testing.T) {
-	// A small window standing where a section begins is inside the window that
+func TestOnlyTheChunkThatOpensASectionCarriesItsName(t *testing.T) {
+	// A small chunk standing where a section begins is inside the chunk that
 	// opens it. One section named twice is one section answering twice, and the
 	// second answer is the same place said again.
 	ctx := t.Context()
@@ -1265,7 +1265,7 @@ func TestASearchByNameStaysInsideItsVault(t *testing.T) {
 }
 
 func TestASectionCutAwayIsNotFoundByItsName(t *testing.T) {
-	// A window keeps its row through a cut when it says the same thing, so a
+	// A chunk keeps its row through a cut when it says the same thing, so a
 	// name is not dropped with the chunk. A section that is no longer there
 	// answering by name is a passage opening where nothing begins.
 	ctx := t.Context()
@@ -1273,11 +1273,11 @@ func TestASectionCutAwayIsNotFoundByItsName(t *testing.T) {
 	sectioned(t, db, first, "library/chaitanya.pdf")
 
 	// Cut again, and this time nothing opens a section.
-	if err := db.Chunks().SaveWindows(ctx, first.ID, "book", "library/chaitanya.pdf",
-		[]chunk.Window{{
+	if err := db.Chunks().SaveChunks(ctx, first.ID, "book", "library/chaitanya.pdf",
+		[]chunk.Chunk{{
 			Start: 0, Length: 100, Location: "Madhavendra Puri",
 			Text:  "Madhavendra Puri appeared in the fourteenth century.",
-			Small: []chunk.Window{{Start: 0, Length: 100, Text: "Madhavendra Puri appeared."}},
+			Small: []chunk.Chunk{{Start: 0, Length: 100, Text: "Madhavendra Puri appeared."}},
 		}}); err != nil {
 		t.Fatal(err)
 	}
@@ -1292,7 +1292,7 @@ func TestASectionCutAwayIsNotFoundByItsName(t *testing.T) {
 }
 
 func TestASectionSurvivesTheWayASourceIsHandedOver(t *testing.T) {
-	// A source is written through the port, which is a second shape of a window
+	// A source is written through the port, which is a second shape of a chunk
 	// and a place a field is dropped in silence. Everything below here can be
 	// right and a section still be unfindable.
 	ctx := t.Context()
@@ -1306,11 +1306,11 @@ func TestASectionSurvivesTheWayASourceIsHandedOver(t *testing.T) {
 			Hash:   "hash",
 			Recipe: "pdf",
 		},
-		Windows: []port.Window{{
+		Chunks: []port.Chunk{{
 			Start: 0, Length: 60, Location: "Madhavendra Puri",
 			Opens: []string{"Madhavendra Puri"},
 			Text:  "Madhavendra Puri appeared in the fourteenth century.",
-			Small: []port.Window{{Start: 0, Length: 60, Text: "Madhavendra Puri appeared."}},
+			Small: []port.Chunk{{Start: 0, Length: 60, Text: "Madhavendra Puri appeared."}},
 		}},
 	}); err != nil {
 		t.Fatal(err)

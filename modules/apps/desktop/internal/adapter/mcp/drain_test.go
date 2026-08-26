@@ -13,8 +13,8 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/check"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lint"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
@@ -97,7 +97,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 		Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
 		Neighbourhood: note.ShowNeighbourhood{Links: db.Links(), Notes: queries},
 		Links:         note.ShowLinks{Links: db.Links()},
-		Problems:      lint.Standard(db.Problems()),
+		Problems:      check.Standard(db.Problems()),
 		Create:        note.Create{Writers: writers, Names: queries, Index: index},
 		Write:         note.Write{Readers: readers, Writers: writers, Index: index},
 		Move:          note.Move{Readers: readers, Writers: writers, Links: db.Links(), Index: index},

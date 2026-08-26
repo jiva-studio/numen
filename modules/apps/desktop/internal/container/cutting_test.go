@@ -12,9 +12,9 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/cutting"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
 )
 
 // The sizes are part of what a chunk is kept under, and the one thing that
@@ -36,20 +36,20 @@ func TestTheCutAssembledCarriesTheSizes(t *testing.T) {
 func TestAVaultWithNoModelIsCutAtTheDefaultBound(t *testing.T) {
 	cfg := embed.Defaults()
 	cfg.Indexing.Use = ""
-	if got := (container.Config{Embedding: cfg}).Cutting(); got != (window.Sizes{}) {
+	if got := (container.Config{Embedding: cfg}).Cutting(); got != (cutting.Sizes{}) {
 		t.Errorf("got %+v", got)
 	}
 }
 
-func TestTheModelSaidIsWhatAWindowIsCutUnder(t *testing.T) {
+func TestTheModelSaidIsWhatAChunkIsCutUnder(t *testing.T) {
 	cfg := embed.Defaults()
 	cfg.Model.MaxTokens = 512
-	if got := (container.Config{Embedding: cfg}).Cutting().Limit; got != window.Under(512) {
-		t.Errorf("cut at %d, under %d", got, window.Under(512))
+	if got := (container.Config{Embedding: cfg}).Cutting().Limit; got != cutting.Under(512) {
+		t.Errorf("cut at %d, under %d", got, cutting.Under(512))
 	}
 }
 
-// A note is cut at the sizes the settings say. The windows a vault owes vectors
+// A note is cut at the sizes the settings say. The chunks a vault owes vectors
 // for are its small ones, and each is under the input limit of the model that
 // will read it.
 func TestANoteIsCutAtTheSettingsSizes(t *testing.T) {
@@ -72,7 +72,7 @@ func TestANoteIsCutAtTheSettingsSizes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	body := strings.TrimSpace(strings.Repeat("windows carry vectors ", 100))
+	body := strings.TrimSpace(strings.Repeat("chunks carry vectors ", 100))
 	n := domain.Note{
 		Ref:   domain.FileRef{Path: "notes/cut.md", Size: int64(len(body)), MTime: 1},
 		Title: "Cut",
@@ -89,10 +89,10 @@ func TestANoteIsCutAtTheSettingsSizes(t *testing.T) {
 	if len(owing) == 0 {
 		t.Fatal("a note of a hundred lines owes no vector")
 	}
-	limit := window.Under(cfg.Model.MaxTokens)
+	limit := cutting.Under(cfg.Model.MaxTokens)
 	for _, p := range owing {
 		if p.Length > limit {
-			t.Errorf("a window of %d characters is embedded by a model that reads %d", p.Length, limit)
+			t.Errorf("a chunk of %d characters is embedded by a model that reads %d", p.Length, limit)
 		}
 	}
 }
@@ -131,7 +131,7 @@ func (wide) Embed(context.Context, []string) ([][]float32, error) { return nil, 
 
 func (wide) Close() error { return nil }
 
-// Nothing outside this package builds a source.Extract or a window.Sizes of its
+// Nothing outside this package builds a source.Extract or a cutting.Sizes of its
 // own. The sizes decide what a chunk is kept under, and a second assembly is a
 // second answer for one settings file.
 func TestNothingElseAssemblesACut(t *testing.T) {
@@ -139,7 +139,7 @@ func TestNothingElseAssemblesACut(t *testing.T) {
 	within := func(path, dir string) bool {
 		return strings.HasPrefix(filepath.ToSlash(path), filepath.ToSlash(filepath.Join(root, dir))+"/")
 	}
-	var built, sized, cutting []string
+	var built, sized, untold []string
 	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
@@ -158,7 +158,7 @@ func TestNothingElseAssemblesACut(t *testing.T) {
 			if call, ok := n.(*ast.CallExpr); ok {
 				if named, ok := call.Fun.(*ast.SelectorExpr); ok && named.Sel.Name == "Notes" {
 					if held, ok := named.X.(*ast.Ident); ok && held.Name == "db" {
-						cutting = append(cutting, path)
+						untold = append(untold, path)
 					}
 				}
 			}
@@ -177,7 +177,7 @@ func TestNothingElseAssemblesACut(t *testing.T) {
 			switch {
 			case pkg.Name == "source" && named.Sel.Name == "Extract" && !within(path, "core/usecase/source"):
 				built = append(built, path)
-			case pkg.Name == "window" && named.Sel.Name == "Sizes":
+			case pkg.Name == "cutting" && named.Sel.Name == "Sizes":
 				sized = append(sized, path)
 			}
 			return true
@@ -193,7 +193,7 @@ func TestNothingElseAssemblesACut(t *testing.T) {
 	if len(sized) != 0 {
 		t.Errorf("sizes are assembled outside the composition root: %v", sized)
 	}
-	if len(cutting) != 0 {
-		t.Errorf("a note repository is taken without being told its sizes: %v", cutting)
+	if len(untold) != 0 {
+		t.Errorf("a note repository is taken without being told its sizes: %v", untold)
 	}
 }

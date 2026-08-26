@@ -19,17 +19,17 @@ What only a note has — its title, its identifier, its frontmatter and the base
 
 No ranking asks what kind a source is. A question may name the kinds it is about, and that is the only place on the search path the kind is read.
 
-Source, note, book, chunk and window are named in [the glossary](../glossary.md), and the columns they occupy are ADR-0006.
+Source, note, book and chunk are named in [the glossary](../glossary.md), and the columns they occupy are ADR-0006.
 
 ### Nothing stores the text
 
 The index keeps where a passage is. Showing one re-reads the file.
 
-The full-text index over chunks is contentless and keeps no copy of what it indexed. It does keep term positions, so the sequence of words in a window is recovered from it without opening the file, lowercased and without punctuation.
+The full-text index over chunks is contentless and keeps no copy of what it indexed. It does keep term positions, so the sequence of words in a chunk is recovered from it without opening the file, lowercased and without punctuation.
 
 ### Extraction never refuses
 
-An extractor that finds text returns it. **No structure is a normal outcome**: a book with no navigation document and no headings is one span. A part that will not parse is dropped and the rest is returned.
+An extractor that finds text returns it. **No structure is a normal outcome**: a book with no navigation document and no headings is one division. A part that will not parse is dropped and the rest is returned.
 
 Structure is taken at the best level the file offers, and each level is judged by what it yields. A navigation document with two usable entries over a whole book is not structure.
 

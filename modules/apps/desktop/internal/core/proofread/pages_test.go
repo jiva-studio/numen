@@ -3,18 +3,18 @@ package proofread_test
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lit"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/proofread"
 )
 
 // box is one printed line on a page, over a run of the prose.
-func box(page, start, length int) placed.Box {
-	return placed.Box{Page: page, Start: start, Length: length}
+func box(page, start, length int) lit.Box {
+	return lit.Box{Page: page, Start: start, Length: length}
 }
 
 func TestALineIsKnownByItsPlaceInTheWholeReading(t *testing.T) {
 	prose := "one two three four "
-	boxes := []placed.Box{
+	boxes := []lit.Box{
 		box(4, 0, 4), box(4, 4, 4),
 		box(5, 8, 6), box(5, 14, 5),
 	}
@@ -49,7 +49,7 @@ func TestALineIsKnownByItsPlaceInTheWholeReading(t *testing.T) {
 
 func TestBoxesWrittenForOtherBytesGiveNothing(t *testing.T) {
 	prose := "one two"
-	boxes := []placed.Box{box(1, 0, 4), box(1, 4, 90)}
+	boxes := []lit.Box{box(1, 0, 4), box(1, 4, 90)}
 
 	if pages := proofread.Pages(prose, boxes); pages != nil {
 		t.Errorf("a reading of other bytes came back as %v", pages)
@@ -58,7 +58,7 @@ func TestBoxesWrittenForOtherBytesGiveNothing(t *testing.T) {
 
 func TestABoxWithNoLengthCarriesNoLine(t *testing.T) {
 	prose := "one two "
-	boxes := []placed.Box{box(1, 0, 4), box(1, 4, 0), box(1, 4, 4)}
+	boxes := []lit.Box{box(1, 0, 4), box(1, 4, 0), box(1, 4, 4)}
 
 	pages := proofread.Pages(prose, boxes)
 	if len(pages) != 1 {

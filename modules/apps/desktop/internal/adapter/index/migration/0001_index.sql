@@ -129,20 +129,20 @@ CREATE TABLE problems (
 
 CREATE INDEX problems_by_note ON problems (note_id);
 
--- One window of a source's text. `start` and `length` are the machine location
+-- One chunk of a source's text. `start` and `length` are the machine location
 -- and are always there. The text itself is not stored and is read back from the
 -- file at those offsets.
 --
--- The text is cut twice. A window with no parent is the large one, which is
--- what a result shows, and the windows inside it are what carries a vector.
+-- The text is cut twice. A chunk with no parent is the large one, which is
+-- what a result shows, and the chunks inside it are what carries a vector.
 --
--- `hash` is the address the window's text gives it, and is what identifies the
--- chunk. Cutting a source again is a comparison against this column: a window
+-- `hash` is the address the chunk's text gives it, and is what identifies the
+-- chunk. Cutting a source again is a comparison against this column: a chunk
 -- whose hash is already on a row keeps that row, and its full-text row with it.
 -- It is also how the vector made from that text is found.
 --
--- `location` is what the source's own numbering calls the place — a chapter, a
--- printed page. It is a projection of whatever the format offered, so it is
+-- `location` is where the chunk sits in the source's own numbering — a chapter,
+-- a printed page. It is a projection of whatever the format offered, so it is
 -- nullable, and "nothing was written" stays a different answer from "an empty
 -- value was written".
 --
@@ -166,7 +166,7 @@ CREATE TABLE chunks (
 -- cascade finds them by.
 CREATE INDEX chunks_by_source ON chunks (source_id, vault_id);
 
--- A cascade finds the windows inside a large one by this key, and reads the
+-- A cascade finds the chunks inside a large one by this key, and reads the
 -- whole table without it.
 CREATE INDEX chunks_by_parent ON chunks (parent);
 
@@ -174,7 +174,7 @@ CREATE INDEX chunks_by_parent ON chunks (parent);
 -- answer resumes.
 CREATE INDEX chunks_by_vault ON chunks (vault_id, id);
 
--- How far embedding has got is asked of the windows that carry vectors. A chunk
+-- How far embedding has got is asked of the chunks that carry vectors. A chunk
 -- that encloses others carries none, so the total counts only the ones that do.
 CREATE INDEX chunks_by_vault_parent ON chunks (vault_id, parent, id);
 

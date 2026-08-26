@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/fixes"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lit"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/ocr"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
 )
 
 // perPage is how many printed lines a page of the little book holds.
@@ -17,15 +17,15 @@ const perPage = 3
 // begins, one box for each line, and the two parts it divides into. The
 // rectangle follows the line's number, so a box that keeps its place keeps its
 // rectangle too.
-func reading(lines []string) (string, []ocr.Mark, []placed.Box, []ocr.Part) {
+func reading(lines []string) (string, []ocr.Mark, []lit.Box, []ocr.Part) {
 	var marks []ocr.Mark
-	var boxes []placed.Box
+	var boxes []lit.Box
 	at := 0
 	for i, line := range lines {
 		if i%perPage == 0 {
 			marks = append(marks, ocr.Mark{Offset: at})
 		}
-		boxes = append(boxes, placed.Box{
+		boxes = append(boxes, lit.Box{
 			Page: i / perPage, Start: at, Length: len(line),
 			MinX: 0.1, MinY: float32(i) / 100, MaxX: 0.9, MaxY: float32(i+1) / 100,
 		})

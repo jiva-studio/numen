@@ -16,14 +16,14 @@ type entry struct {
 	href  string
 }
 
-// navigationPlaces reads the places a book names, from whichever navigation
+// navigationParts reads the parts a book names, from whichever navigation
 // document it carries. What counts is the entries that land in the text: a
 // document whose entries do not is a document the book does not have, so the
 // other one is read.
-func navigationPlaces(files map[string]*zip.File, read packageDoc, text *extractor) []Place {
+func navigationParts(files map[string]*zip.File, read packageDoc, text *extractor) []Part {
 	if raw, ok := contents(files[read.ncx]); ok {
-		if places := text.named(ncxNavMap(raw, path.Dir(read.ncx))); len(places) >= minimumPlaces {
-			return places
+		if parts := text.named(ncxNavMap(raw, path.Dir(read.ncx))); len(parts) >= minimumParts {
+			return parts
 		}
 	}
 	if raw, ok := contents(files[read.nav]); ok {

@@ -18,11 +18,11 @@ type EmbeddingModel struct {
 	Dimensions int
 
 	// MaxTokens is where the model truncates what it is given. Zero is a model
-	// that did not say, and then a window is cut at whatever the caller asks.
+	// that did not say, and then a chunk is cut at whatever the caller asks.
 	//
-	// A window is cut in words and bounded in characters, so this is turned into
+	// A chunk is cut in words and bounded in characters, so this is turned into
 	// characters by a floor and not a measurement: text of another script takes
-	// several tokens a word, and a window silently truncated is a window indexed
+	// several tokens a word, and a chunk silently truncated is a chunk indexed
 	// for text it does not contain.
 	MaxTokens int
 

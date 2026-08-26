@@ -13,7 +13,7 @@ import (
 // Read is a run of one source's text, as the reader that made that text wrote
 // it.
 //
-// A search answers with a window, and a window ends where it was cut, which is
+// A search answers with a chunk, and a chunk ends where it was cut, which is
 // mid-sentence as often as not. This is what stands around it: the same text a
 // chunk is a place in, so an offset means one thing to both.
 type Read struct {

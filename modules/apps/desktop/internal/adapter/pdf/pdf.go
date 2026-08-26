@@ -36,20 +36,20 @@ type Book struct {
 	// made for a screen, a PDF always has them.
 	Pages []Page
 
-	// Places are what the outline names, ascending by offset. Structure says
+	// Parts are what the outline names, ascending by offset. Structure says
 	// where they came from.
-	Places []Place
+	Parts []Part
 
-	// Structure names the tier that produced Places.
+	// Structure names the tier that produced Parts.
 	Structure Structure
 }
 
-// A Place is somewhere in the document that carries a name.
-type Place struct {
+// A Part is a named division of the document.
+type Part struct {
 	Title string
 	// Offset is where the named text begins in the document's Text.
 	Offset int
-	// Level is the depth of the outline entry a place came from, counting from
+	// Level is the depth of the outline entry a part came from, counting from
 	// one. The depth an outline chose carries no meaning of its own.
 	Level int
 }
@@ -76,9 +76,9 @@ const (
 	FromNothing Structure = "none"
 )
 
-// A document that names one place names its cover or its own title. Structure
+// A document that names one part names its cover or its own title. Structure
 // begins at two.
-const minimumPlaces = 2
+const minimumParts = 2
 
 // What one document may spend.
 //
@@ -130,24 +130,24 @@ func Read(raw []byte) (*Book, error) {
 	}
 	book.Text = text.String()
 
-	if named := doc.outline(starts); len(named) >= minimumPlaces {
-		book.Places, book.Structure = named, FromOutline
+	if named := doc.outline(starts); len(named) >= minimumParts {
+		book.Parts, book.Structure = named, FromOutline
 	} else {
 		book.Structure = FromNothing
 	}
-	sort.SliceStable(book.Places, func(i, j int) bool {
-		return book.Places[i].Offset < book.Places[j].Offset
+	sort.SliceStable(book.Parts, func(i, j int) bool {
+		return book.Parts[i].Offset < book.Parts[j].Offset
 	})
 	return book, nil
 }
 
 // A Location is where an offset in the text falls.
 type Location struct {
-	// Place is the nearest name at or before the offset, and empty when the
+	// Part is the nearest name at or before the offset, and empty when the
 	// offset precedes every name.
-	Place string
-	// PlaceOffset is where that place begins.
-	PlaceOffset int
+	Part string
+	// PartOffset is where that part begins.
+	PartOffset int
 	// At is where the page the offset falls on stands in the file, counted from
 	// the first. It is known for every page, and it is the one thing a page is
 	// called.
@@ -157,8 +157,8 @@ type Location struct {
 // Locate answers where one offset in the document's text is.
 func (b *Book) Locate(offset int) Location {
 	var at Location
-	if i := preceding(len(b.Places), offset, func(i int) int { return b.Places[i].Offset }); i >= 0 {
-		at.Place, at.PlaceOffset = b.Places[i].Title, b.Places[i].Offset
+	if i := preceding(len(b.Parts), offset, func(i int) int { return b.Parts[i].Offset }); i >= 0 {
+		at.Part, at.PartOffset = b.Parts[i].Title, b.Parts[i].Offset
 	}
 	if i := preceding(len(b.Pages), offset, func(i int) int { return b.Pages[i].Offset }); i >= 0 {
 		at.At = i

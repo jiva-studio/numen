@@ -169,7 +169,7 @@ func TestFittingToAnotherWidthKeepsWhatWasMade(t *testing.T) {
 // narrowRecipe is what a model of the width given writes its vectors under.
 func narrowRecipe(dims int) string { return "model/" + strconv.Itoa(dims) }
 
-// narrow cuts one source and embeds its small windows at the width given.
+// narrow cuts one source and embeds its small chunks at the width given.
 func narrow(t *testing.T, db *DB, vault domain.Vault, dims int) {
 	t.Helper()
 	ctx := t.Context()
@@ -180,9 +180,9 @@ func narrow(t *testing.T, db *DB, vault domain.Vault, dims int) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Chunks().SaveWindows(ctx, vault.ID, "book", path, []chunk.Window{{
+	if err := db.Chunks().SaveChunks(ctx, vault.ID, "book", path, []chunk.Chunk{{
 		Start: 0, Length: 50, Text: "whole",
-		Small: []chunk.Window{{Start: 0, Length: 50, Text: "a window of text"}},
+		Small: []chunk.Chunk{{Start: 0, Length: 50, Text: "a chunk of text"}},
 	}}); err != nil {
 		t.Fatal(err)
 	}
@@ -196,7 +196,7 @@ func narrow(t *testing.T, db *DB, vault domain.Vault, dims int) {
 	}
 	vectors := make([]chunk.Vector, 0, len(owing))
 	for _, p := range owing {
-		// A vector is found by the text the window holds, which is the chunk's
+		// A vector is found by the text the chunk holds, which is the chunk's
 		// own hash.
 		print, err := hex.DecodeString(p.Fingerprint)
 		if err != nil || len(print) == 0 {

@@ -3,11 +3,11 @@ package container
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/cutting"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
 )
 
 // Cutting is how a source's text is cut into chunks.
@@ -17,16 +17,16 @@ import (
 // another way in a terminal is a source cut again every time the two take
 // turns. This is where the number comes from, and there is nowhere else to
 // take it from.
-func (c Config) Cutting() window.Sizes {
+func (c Config) Cutting() cutting.Sizes {
 	if c.Embedding.Indexing.Use == "" {
-		return window.Sizes{}
+		return cutting.Sizes{}
 	}
-	return window.Sizes{Limit: window.Under(c.Embedding.Model.MaxTokens)}
+	return cutting.Sizes{Limit: cutting.Under(c.Embedding.Model.MaxTokens)}
 }
 
 // NotesCutAt is the note repository, told the sizes a note is cut at. A note is
 // cut in the adapter that stores it, and the sizes reach that adapter from here.
-func (i *Index) NotesCutAt(sizes window.Sizes) port.NoteRepository {
+func (i *Index) NotesCutAt(sizes cutting.Sizes) port.NoteRepository {
 	return i.db.Notes().Cut(sizes)
 }
 

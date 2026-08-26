@@ -1,23 +1,23 @@
-// Package window cuts a source's text into the chunks the index holds: a small
-// window that carries a vector, and the large window enclosing it that a result
+// Package cutting cuts a source's text into the chunks the index holds: a small
+// chunk that carries a vector, and the large chunk enclosing it that a result
 // shows.
 //
 // It is pure: no filesystem, no clock, no database. The same text and the same
-// places give the same offsets, which is what lets a chunk keep an offset and
+// parts give the same offsets, which is what lets a chunk keep an offset and
 // not the text.
 //
-// Every offset is a byte offset into the text given, and a window's own text is
-// text[Start : Start+Length]. A window is bounded in words, so a file that puts
+// Every offset is a byte offset into the text given, and a chunk's own text is
+// text[Start : Start+Length]. A chunk is bounded in words, so a file that puts
 // a whole book on one line is cut like any other.
 //
-// Windows are cut inside a span — the text from one named place to the next —
-// and never run across one. A text that names no places is one span, which is
-// the ordinary case for half the books read.
+// Chunks are cut inside one division — the text from one named part to the next
+// — and never run across one. A text that names no parts is one division, which
+// is the ordinary case for half the books read.
 //
 // Sizes.Limit is characters, and the caller sets it under the input limit of the
-// model that will embed a small window. What a word costs in tokens differs by
+// model that will embed a small chunk. What a word costs in tokens differs by
 // script and is recorded in docs/performance.md.
-package window
+package cutting
 
 import (
 	"sort"
@@ -25,8 +25,8 @@ import (
 	"unicode/utf8"
 )
 
-// Whole, as Sizes.Large, cuts one large window over the whole text: the window
-// enclosing every small window is the source itself. This is how a note is cut.
+// Whole, as Sizes.Large, cuts one large chunk over the whole text: the chunk
+// enclosing every small chunk is the source itself. This is how a note is cut.
 const Whole = -1
 
 // The sizes and thresholds used where configuration names none.
@@ -43,12 +43,12 @@ const (
 // CharactersPerToken is the floor a token is worth in characters.
 //
 // Latin runs about four; Devanagari and transliterated Sanskrit run under two, and
-// Cyrillic between. Two is the floor, so a window cut under a model's limit by
-// this is under it for every script — at the cost of a shorter window for Latin
+// Cyrillic between. Two is the floor, so a chunk cut under a model's limit by
+// this is under it for every script — at the cost of a shorter chunk for Latin
 // than the model could hold.
 const CharactersPerToken = 2
 
-// Under is the character bound that keeps a window inside a model's token limit.
+// Under is the character bound that keeps a chunk inside a model's token limit.
 // Zero tokens is a model that did not say, and takes the default bound.
 func Under(tokens int) int {
 	if tokens <= 0 {
@@ -57,123 +57,123 @@ func Under(tokens int) int {
 	return tokens * CharactersPerToken
 }
 
-// Sizes are how large a chunk is cut and what makes a window legible enough to
+// Sizes are how large a chunk is cut and what makes a chunk legible enough to
 // index. A zero field takes its default.
 type Sizes struct {
-	// Large and Small are how many words a window of each size holds. Large is
-	// Whole when one large window encloses the whole text.
+	// Large and Small are how many words a chunk of each size holds. Large is
+	// Whole when one large chunk encloses the whole text.
 	Large int
 	Small int
 
-	// LargeOverlap and SmallOverlap are how many words two consecutive windows
+	// LargeOverlap and SmallOverlap are how many words two consecutive chunks
 	// of a size share. Each is at most one word short of its size, so that
 	// tiling advances.
 	LargeOverlap int
 	SmallOverlap int
 
-	// Limit is the most characters a small window may hold. A window over it is
+	// Limit is the most characters a small chunk may hold. A chunk over it is
 	// cut further at a word, and a single word over it is not indexable.
 	Limit int
 
-	// Alphabetic is the least fraction of a window's characters that must be
+	// Alphabetic is the least fraction of a chunk's characters that must be
 	// letters, and Dirty the most fraction of its words that may carry a
 	// non-letter inside. A negative value asks for no threshold.
 	Alphabetic float64
 	Dirty      float64
 }
 
-// A Place is somewhere in the text that carries a name. Places bound the spans
-// windows are cut inside, and need not arrive in order.
-type Place struct {
+// A Part is somewhere in the text that carries a name. Parts bound the divisions
+// chunks are cut inside, and need not arrive in order.
+type Part struct {
 	Title  string
 	Offset int
 }
 
-// A Window is one cut of the text. Location is what the source's own numbering
-// calls the place the window sits in, and is empty where the text named none.
+// A Chunk is one cut of the text. Location is where the chunk sits in the terms
+// the source's own numbering uses, and is empty where the text named none.
 //
-// Small are the windows inside this one. A Window with none of its own is a
-// large window all the same: what makes it large is that nothing encloses it.
-type Window struct {
+// Small are the chunks inside this one. A Chunk with none of its own is a large
+// chunk all the same: what makes it large is that nothing encloses it.
+type Chunk struct {
 	Start    int
 	Length   int
 	Location string
-	Small    []Window
+	Small    []Chunk
 }
 
-// Slice is the window's own text.
-func (w Window) Slice(text string) string { return text[w.Start : w.Start+w.Length] }
+// Slice is the chunk's own text.
+func (c Chunk) Slice(text string) string { return text[c.Start : c.Start+c.Length] }
 
-// middle is the byte the window is centred on, and is what decides which large
-// window a small one belongs to.
-func (w Window) middle() int { return w.Start + w.Length/2 }
+// middle is the byte the chunk is centred on, and is what decides which large
+// chunk a small one belongs to.
+func (c Chunk) middle() int { return c.Start + c.Length/2 }
 
-// Cut returns the large windows of the text, each carrying the small windows
+// Cut returns the large chunks of the text, each carrying the small chunks
 // inside it.
-func Cut(text string, places []Place, sizes Sizes) []Window {
+func Cut(text string, parts []Part, sizes Sizes) []Chunk {
 	s := sizes.resolve()
-	spans := spansOf(text, places)
+	divisions := divisionsOf(text, parts)
 
 	if s.Large == Whole {
-		return whole(text, spans, s)
+		return whole(text, divisions, s)
 	}
-	var out []Window
-	for _, sp := range spans {
-		out = append(out, cutSpan(text, sp, s)...)
+	var out []Chunk
+	for _, d := range divisions {
+		out = append(out, cutDivision(text, d, s)...)
 	}
 	return out
 }
 
-// A span is the text one named place covers: from that place to the next.
-type span struct {
+// A division is the text one named part covers: from that part to the next.
+type division struct {
 	from, to int
 	location string
 }
 
-// spansOf divides the text at the places it names. The places are copied before
-// they are ordered, so that Cut leaves its arguments as it found them. Where two
-// places share an offset, the last of them names the text after it.
-func spansOf(text string, places []Place) []span {
-	named := make([]Place, 0, len(places))
-	for _, p := range places {
+// divisionsOf divides the text at the parts it names. The parts are copied
+// before they are ordered, so that Cut leaves its arguments as it found them.
+// Where two parts share an offset, the last of them names the text after it.
+func divisionsOf(text string, parts []Part) []division {
+	named := make([]Part, 0, len(parts))
+	for _, p := range parts {
 		if p.Offset >= 0 && p.Offset < len(text) {
 			named = append(named, p)
 		}
 	}
 	sort.SliceStable(named, func(i, j int) bool { return named[i].Offset < named[j].Offset })
 
-	var spans []span
+	var divisions []division
 	at, location := 0, ""
 	for _, p := range named {
 		if p.Offset > at {
-			spans = append(spans, span{from: at, to: p.Offset, location: location})
+			divisions = append(divisions, division{from: at, to: p.Offset, location: location})
 		}
 		at, location = p.Offset, p.Title
 	}
-	return append(spans, span{from: at, to: len(text), location: location})
+	return append(divisions, division{from: at, to: len(text), location: location})
 }
 
-// cutSpan tiles one span twice and puts each small window under the large one
-// its middle falls in.
-func cutSpan(text string, sp span, s Sizes) []Window {
-	words := wordsIn(text, sp.from, sp.to)
+// cutDivision tiles one division twice and puts each small chunk under the large
+// one its middle falls in.
+func cutDivision(text string, d division, s Sizes) []Chunk {
+	words := wordsIn(text, d.from, d.to)
 	if len(words) == 0 {
 		return nil
 	}
-	var large []Window
+	var large []Chunk
 	for _, at := range tile(len(words), s.Large, s.LargeOverlap) {
-		w := extent(words, at, sp.location)
-		if !legible(w.Slice(text), s) {
+		c := extent(words, at, d.location)
+		if !legible(c.Slice(text), s) {
 			continue
 		}
-		large = append(large, w)
+		large = append(large, c)
 	}
-	return enclose(large, smallWindows(text, words, sp.location, s))
+	return enclose(large, smallChunks(text, words, d.location, s))
 }
 
-// whole makes the text itself the large window and cuts the small windows on the
+// whole makes the text itself the large chunk and cuts the small chunks on the
 // structure inside it.
-func whole(text string, spans []span, s Sizes) []Window {
+func whole(text string, divisions []division, s Sizes) []Chunk {
 	words := wordsIn(text, 0, len(text))
 	if len(words) == 0 {
 		return nil
@@ -182,45 +182,45 @@ func whole(text string, spans []span, s Sizes) []Window {
 	if !legible(large.Slice(text), s) {
 		return nil
 	}
-	var small []Window
-	for _, sp := range spans {
-		small = append(small, smallWindows(text, wordsIn(text, sp.from, sp.to), sp.location, s)...)
+	var small []Chunk
+	for _, d := range divisions {
+		small = append(small, smallChunks(text, wordsIn(text, d.from, d.to), d.location, s)...)
 	}
-	return enclose([]Window{large}, small)
+	return enclose([]Chunk{large}, small)
 }
 
-// smallWindows tiles the words of one span into the windows that carry a vector.
-// A window over the character limit is cut further at a word, and one that is
-// still over it after that is a single word and is dropped.
-func smallWindows(text string, words []word, location string, s Sizes) []Window {
-	var out []Window
+// smallChunks tiles the words of one division into the chunks that carry a
+// vector. A chunk over the character limit is cut further at a word, and one
+// that is still over it after that is a single word and is dropped.
+func smallChunks(text string, words []word, location string, s Sizes) []Chunk {
+	var out []Chunk
 	for _, at := range tile(len(words), s.Small, s.SmallOverlap) {
 		for _, piece := range limited(text, words, at, s.Limit) {
-			w := extent(words, piece, location)
-			body := w.Slice(text)
+			c := extent(words, piece, location)
+			body := c.Slice(text)
 			if utf8.RuneCountInString(body) > s.Limit || !legible(body, s) {
 				continue
 			}
-			out = append(out, w)
+			out = append(out, c)
 		}
 	}
 	return out
 }
 
-// enclose puts each small window under the first large window holding its
-// middle. Both lists ascend, so one pass over each is enough. A small window that
-// no large window holds is produced only where a large window holds its middle.
-func enclose(large, small []Window) []Window {
+// enclose puts each small chunk under the first large chunk holding its middle.
+// Both lists ascend, so one pass over each is enough. A small chunk that no
+// large chunk holds is produced only where a large chunk holds its middle.
+func enclose(large, small []Chunk) []Chunk {
 	at := 0
-	for _, w := range small {
-		for at < len(large) && large[at].Start+large[at].Length <= w.middle() {
+	for _, c := range small {
+		for at < len(large) && large[at].Start+large[at].Length <= c.middle() {
 			at++
 		}
 		if at == len(large) {
 			break
 		}
-		if large[at].Start <= w.middle() {
-			large[at].Small = append(large[at].Small, w)
+		if large[at].Start <= c.middle() {
+			large[at].Small = append(large[at].Small, c)
 		}
 	}
 	return large
@@ -252,7 +252,7 @@ func wordsIn(text string, from, to int) []word {
 }
 
 // tile covers n words with ranges of size words sharing overlap of them. The
-// last range ends at n, so a span shorter than one window is one window.
+// last range ends at n, so a division shorter than one chunk is one chunk.
 func tile(n, size, overlap int) [][2]int {
 	step := size - overlap
 	var out [][2]int
@@ -287,10 +287,10 @@ func limited(text string, words []word, at [2]int, limit int) [][2]int {
 	return append(out, [2]int{start, to})
 }
 
-// extent is the window covering a range of words.
-func extent(words []word, at [2]int, location string) Window {
+// extent is the chunk covering a range of words.
+func extent(words []word, at [2]int, location string) Chunk {
 	start, end := words[at[0]].start, words[at[1]-1].end
-	return Window{Start: start, Length: end - start, Location: location}
+	return Chunk{Start: start, Length: end - start, Location: location}
 }
 
 // resolve fills in what configuration left unset and keeps every size usable.

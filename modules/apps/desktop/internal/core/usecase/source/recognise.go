@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lit"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/ocr"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/text"
 )
@@ -156,7 +156,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 		for i := range named {
 			named[i].Start += prose
 		}
-		if err := store.Append(ctx, boxes, placed.Pack(found)); err != nil {
+		if err := store.Append(ctx, boxes, lit.Pack(found)); err != nil {
 			return err
 		}
 		if len(named) > 0 {
@@ -285,8 +285,8 @@ func trimmed(ctx context.Context, store port.DerivedStore, name string, done int
 	if err != nil {
 		return err
 	}
-	held := placed.Unpack(raw)
-	kept := make([]placed.Box, 0, len(held))
+	held := lit.Unpack(raw)
+	kept := make([]lit.Box, 0, len(held))
 	for _, box := range held {
 		if box.Page < done {
 			kept = append(kept, box)
@@ -295,7 +295,7 @@ func trimmed(ctx context.Context, store port.DerivedStore, name string, done int
 	// Written back whatever was dropped. An append that did not land whole
 	// leaves bytes that are not a record, and every record appended after them
 	// is read at a shifted offset.
-	return store.Write(ctx, name, placed.Pack(kept))
+	return store.Write(ctx, name, lit.Pack(kept))
 }
 
 // shortened drops the parts no count claims: those opening past the prose the
@@ -320,7 +320,7 @@ func shortened(ctx context.Context, store port.DerivedStore, name string, prose 
 
 // claim records which producer made this source's text.
 //
-// No recipe is written, so the source owes its text: what cuts it into windows
+// No recipe is written, so the source owes its text: what cuts it into chunks
 // is extraction, which knows the sizes and is the one place that does.
 func (u Recognise) claim(ctx context.Context, v domain.Vault, ref domain.FileRef, hash, from string) error {
 	return u.Sources.SaveSource(ctx, v.ID, port.Source{Ref: ref, Hash: hash, TextFrom: from})

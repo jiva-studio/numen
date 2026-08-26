@@ -1,7 +1,7 @@
 -- The notes whose text matches the words typed, best first.
 --
 -- The words are indexed over chunks, so a note matching in several of its
--- windows is grouped back to the one note and ranked by its best window.
+-- chunks is grouped back to the one note and ranked by its best chunk.
 --
 -- `rank` is the full-text table's own score for the row, which is what an
 -- aggregate can be taken of.

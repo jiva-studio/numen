@@ -7,8 +7,8 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/check"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lint"
 )
 
 func problemsCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
@@ -30,7 +30,7 @@ func problemsCommand(ctx context.Context, out io.Writer, cfg container.Config, a
 		named = append(named, domain.Check(name))
 	}
 
-	found, err := lint.Standard(db.Problems()).Run(ctx, v, named...)
+	found, err := check.Standard(db.Problems()).Run(ctx, v, named...)
 	if err != nil {
 		return err
 	}

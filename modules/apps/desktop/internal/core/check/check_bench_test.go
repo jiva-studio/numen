@@ -1,4 +1,4 @@
-package lint_test
+package check_test
 
 import (
 	"fmt"
@@ -7,8 +7,8 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/check"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lint"
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/testsupport"
 )
@@ -61,7 +61,7 @@ func vaultOf(b *testing.B, notes int) map[string]string {
 	return out
 }
 
-func scanned(b *testing.B, notes map[string]string) (lint.Linter, domain.Vault) {
+func scanned(b *testing.B, notes map[string]string) (check.Checks, domain.Vault) {
 	b.Helper()
 	v := testsupport.NewVault(b, notes)
 	db, err := container.Config{
@@ -79,5 +79,5 @@ func scanned(b *testing.B, notes map[string]string) (lint.Linter, domain.Vault) 
 	if _, err := scan.Execute(b.Context(), v); err != nil {
 		b.Fatal(err)
 	}
-	return lint.Standard(db.Problems()), v
+	return check.Standard(db.Problems()), v
 }

@@ -6,21 +6,21 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/cutting"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/epub"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/text"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
 )
 
 const bookPath = "library/book.epub"
 
-func TestABookIsCutIntoWindowsRecordedWithTheRecipeThatCutThem(t *testing.T) {
+func TestABookIsCutIntoChunksRecordedWithTheRecipeThatCutThem(t *testing.T) {
 	cases := []struct {
 		name  string
-		sizes window.Sizes
+		sizes cutting.Sizes
 	}{
-		{"at the sizes configuration names none for", window.Sizes{}},
-		{"at sizes of its own", window.Sizes{Large: 60, LargeOverlap: 10, Small: 20, SmallOverlap: 5}},
+		{"at the sizes configuration names none for", cutting.Sizes{}},
+		{"at sizes of its own", cutting.Sizes{Large: 60, LargeOverlap: 10, Small: 20, SmallOverlap: 5}},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -79,7 +79,7 @@ func TestABookIsCutIntoWindowsRecordedWithTheRecipeThatCutThem(t *testing.T) {
 				}
 			}
 			if large == 0 || small == 0 {
-				t.Errorf("%d large windows and %d small ones, want both sizes", large, small)
+				t.Errorf("%d large chunks and %d small ones, want both sizes", large, small)
 			}
 			if located == 0 {
 				t.Error("no chunk is where the book says it is: nothing carries the name of a part")
@@ -172,12 +172,12 @@ func TestWhatHasNotChangedIsNotOpenedAgain(t *testing.T) {
 
 func TestTheRecipeFollowsTheCutSizesAndStalenessFollowsTheRecipe(t *testing.T) {
 	ctx := t.Context()
-	one := window.Sizes{Large: 100, LargeOverlap: 20, Small: 20, SmallOverlap: 5}
+	one := cutting.Sizes{Large: 100, LargeOverlap: 20, Small: 20, SmallOverlap: 5}
 	other := one
 	other.Small = 21
 
 	if recipe(text.ReaderEPUB, one) == recipe(text.ReaderEPUB, other) {
-		t.Fatal("one word of difference in a window size is not in the recipe")
+		t.Fatal("one word of difference in a chunk size is not in the recipe")
 	}
 
 	index, shelf := newStore(), newLibrary()

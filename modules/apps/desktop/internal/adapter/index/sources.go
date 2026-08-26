@@ -29,7 +29,7 @@ func (s sources) SaveSource(ctx context.Context, vaultID string, src port.Source
 // SaveExtraction records the source and replaces its chunks in one write, so a
 // recipe is never recorded for chunks that are not there.
 func (s sources) SaveExtraction(ctx context.Context, vaultID string, e port.Extraction) error {
-	return s.write.SaveExtraction(ctx, vaultID, stored(e.Source), windows(e.Windows))
+	return s.write.SaveExtraction(ctx, vaultID, stored(e.Source), chunks(e.Chunks))
 }
 
 // RemoveSources takes out the sources at the paths given, and their chunks and
@@ -99,16 +99,16 @@ func stored(s port.Source) chunk.Source {
 	}
 }
 
-func windows(in []port.Window) []chunk.Window {
-	out := make([]chunk.Window, 0, len(in))
-	for _, w := range in {
-		out = append(out, chunk.Window{
-			Start:    w.Start,
-			Length:   w.Length,
-			Location: w.Location,
-			Text:     w.Text,
-			Opens:    w.Opens,
-			Small:    windows(w.Small),
+func chunks(in []port.Chunk) []chunk.Chunk {
+	out := make([]chunk.Chunk, 0, len(in))
+	for _, c := range in {
+		out = append(out, chunk.Chunk{
+			Start:    c.Start,
+			Length:   c.Length,
+			Location: c.Location,
+			Text:     c.Text,
+			Opens:    c.Opens,
+			Small:    chunks(c.Small),
 		})
 	}
 	return out

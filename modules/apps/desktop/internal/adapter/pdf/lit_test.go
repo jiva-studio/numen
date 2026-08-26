@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lit"
 	"github.com/klippa-app/go-pdfium/requests"
 )
 
@@ -30,7 +30,7 @@ func TestTheCharactersOfAPageAreItsText(t *testing.T) {
 
 			for i := 0; i < doc.pages; i++ {
 				said := doc.text(i)
-				placed, err := doc.worker.GetPageTextStructured(&requests.GetPageTextStructured{
+				read, err := doc.worker.GetPageTextStructured(&requests.GetPageTextStructured{
 					Page: requests.Page{ByIndex: &requests.PageByIndex{Document: doc.ref, Index: i}},
 					Mode: requests.GetPageTextStructuredModeChars,
 				})
@@ -38,7 +38,7 @@ func TestTheCharactersOfAPageAreItsText(t *testing.T) {
 					t.Fatalf("page %d: %v", i, err)
 				}
 				var joined strings.Builder
-				for _, one := range placed.Chars {
+				for _, one := range read.Chars {
 					joined.WriteString(one.Text)
 				}
 				if joined.String() != said {
@@ -50,8 +50,8 @@ func TestTheCharactersOfAPageAreItsText(t *testing.T) {
 	}
 }
 
-// place reads a fixture and says where the words of some of its pages are.
-func place(t *testing.T, name string, pages ...int) (*Book, []placed.Box) {
+// where reads a fixture and says where the words of some of its pages are.
+func where(t *testing.T, name string, pages ...int) (*Book, []lit.Box) {
 	t.Helper()
 	raw, err := os.ReadFile("testdata/" + name)
 	if err != nil {
@@ -61,7 +61,7 @@ func place(t *testing.T, name string, pages ...int) (*Book, []placed.Box) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	boxes, err := book.Placed(raw, pages)
+	boxes, err := book.Lit(raw, pages)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +71,7 @@ func place(t *testing.T, name string, pages ...int) (*Book, []placed.Box) {
 // A box says both where a run of the text is on the page and which run of the
 // text it is, and the two are the same run.
 func TestABoxCoversTheWordsItNames(t *testing.T) {
-	book, boxes := place(t, "tiny.pdf", 0, 1)
+	book, boxes := where(t, "tiny.pdf", 0, 1)
 
 	words := []string{"Alpha", "beta", "gamma", "Delta", "epsilon", "zeta"}
 	pages := []int{0, 0, 0, 1, 1, 1}
@@ -93,9 +93,9 @@ func TestABoxCoversTheWordsItNames(t *testing.T) {
 func TestEveryBoxCoversOneWord(t *testing.T) {
 	for _, name := range []string{"tiny.pdf", "outline.pdf", "labels.pdf", "turned.pdf"} {
 		t.Run(name, func(t *testing.T) {
-			book, boxes := place(t, name, pagesOf(t, name)...)
+			book, boxes := where(t, name, pagesOf(t, name)...)
 			if len(boxes) == 0 {
-				t.Fatal("a document with a text layer placed nothing")
+				t.Fatal("a document with a text layer lit nothing")
 			}
 			for _, box := range boxes {
 				if box.Start < 0 || box.Start+box.Length > len(book.Text) {
@@ -119,7 +119,7 @@ func isSpace(r rune) bool { return strings.ContainsRune(" \t\r\n\f", r) }
 // pagesOf is every page of a fixture.
 func pagesOf(t *testing.T, name string) []int {
 	t.Helper()
-	book, _ := place(t, name)
+	book, _ := where(t, name)
 	pages := make([]int, len(book.Pages))
 	for i := range pages {
 		pages[i] = i
@@ -127,13 +127,13 @@ func pagesOf(t *testing.T, name string) []int {
 	return pages
 }
 
-func TestAScanPlacesNothing(t *testing.T) {
+func TestAScanLightsNothing(t *testing.T) {
 	// A document with no text layer says nothing about where its words are,
 	// and that is the whole of what a scan is.
-	_, boxes := place(t, "scan.pdf", 0, 1)
+	_, boxes := where(t, "scan.pdf", 0, 1)
 
 	if len(boxes) != 0 {
-		t.Errorf("a scan placed %d boxes", len(boxes))
+		t.Errorf("a scan lit %d boxes", len(boxes))
 	}
 }
 
@@ -142,7 +142,7 @@ func TestARectangleIsAFractionOfThePage(t *testing.T) {
 	// somewhere between nothing and the whole page.
 	for _, name := range []string{"tiny.pdf", "outline.pdf", "labels.pdf", "turned.pdf"} {
 		t.Run(name, func(t *testing.T) {
-			_, boxes := place(t, name, pagesOf(t, name)...)
+			_, boxes := where(t, name, pagesOf(t, name)...)
 			for _, box := range boxes {
 				if box.MinX < 0 || box.MinY < 0 || box.MaxX > 1 || box.MaxY > 1 {
 					t.Errorf("a box covers %v, which is off the page", box)
@@ -158,7 +158,7 @@ func TestARectangleIsAFractionOfThePage(t *testing.T) {
 func TestBoxesRiseInOrder(t *testing.T) {
 	// A run of the text is found by halving the boxes, which holds only while
 	// they ascend.
-	book, boxes := place(t, "outline.pdf", 3, 0, 2, 1)
+	book, boxes := where(t, "outline.pdf", 3, 0, 2, 1)
 
 	if len(book.Pages) != 4 || len(boxes) == 0 {
 		t.Fatalf("%d boxes over %d pages", len(boxes), len(book.Pages))
@@ -171,18 +171,18 @@ func TestBoxesRiseInOrder(t *testing.T) {
 	}
 }
 
-// One page is placed on its own. A document is placed a few pages at a time,
-// and the pages nobody asked about are not read.
-func TestOnePageIsPlacedAndTheRestAreNot(t *testing.T) {
-	book, boxes := place(t, "outline.pdf", 2)
+// One page is lit on its own. A document is lit a few pages at a time, and the
+// pages nobody asked about are not read.
+func TestOnePageIsLitAndTheRestAreNot(t *testing.T) {
+	book, boxes := where(t, "outline.pdf", 2)
 
 	if len(boxes) == 0 {
-		t.Fatal("the page placed nothing")
+		t.Fatal("the page lit nothing")
 	}
 	from, to := book.Pages[2].Offset, book.Pages[3].Offset
 	for _, box := range boxes {
 		if box.Page != 2 {
-			t.Errorf("page %d was placed and nobody asked about it", box.Page)
+			t.Errorf("page %d was lit and nobody asked about it", box.Page)
 		}
 		if box.Start < from || box.Start >= to {
 			t.Errorf("a box begins at %d, outside the page's %d..%d", box.Start, from, to)
@@ -190,8 +190,8 @@ func TestOnePageIsPlacedAndTheRestAreNot(t *testing.T) {
 	}
 }
 
-func TestPagesTheDocumentDoesNotHaveArePlacedNowhere(t *testing.T) {
-	_, boxes := place(t, "tiny.pdf", -1, 7)
+func TestPagesTheDocumentDoesNotHaveAreLitNowhere(t *testing.T) {
+	_, boxes := where(t, "tiny.pdf", -1, 7)
 
 	if len(boxes) != 0 {
 		t.Errorf("%d boxes for pages the document does not have", len(boxes))
@@ -200,8 +200,8 @@ func TestPagesTheDocumentDoesNotHaveArePlacedNowhere(t *testing.T) {
 
 // A page is drawn turned by however much it asks to be, and a box is a fraction
 // of the page as it is drawn. A line of a turned page runs down it.
-func TestATurnedPageIsPlacedTheWayItIsDrawn(t *testing.T) {
-	book, boxes := place(t, "turned.pdf", 0)
+func TestATurnedPageIsLitTheWayItIsDrawn(t *testing.T) {
+	book, boxes := where(t, "turned.pdf", 0)
 
 	if len(boxes) != 3 {
 		t.Fatalf("%d boxes, want the three words the page says", len(boxes))

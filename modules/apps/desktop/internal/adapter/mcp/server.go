@@ -13,8 +13,8 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/check"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lint"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
@@ -70,7 +70,7 @@ type Core struct {
 	Search        search.Search
 	Neighbourhood note.ShowNeighbourhood
 	Links         note.ShowLinks
-	Problems      lint.Linter
+	Problems      check.Checks
 
 	Create  note.Create
 	Write   note.Write

@@ -265,8 +265,8 @@ func extracted(ctx context.Context, of text.Reader, path, from, hash string) (st
 	return doc.Text, nil
 }
 
-// span is the text a window addresses, bounded by what the source holds now. A
-// source edited since it was indexed is shorter than the window says.
+// span is the text a chunk addresses, bounded by what the source holds now. A
+// source edited since it was indexed is shorter than the chunk says.
 func span(raw string, start, length int) string {
 	if start < 0 || start >= len(raw) || length <= 0 {
 		return ""

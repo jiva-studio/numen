@@ -27,7 +27,7 @@ type Embed struct {
 	Chunks  port.VectorQueries
 	Vectors port.VectorRepository
 
-	// Derived holds what a recogniser wrote. A window of a recognised document
+	// Derived holds what a recogniser wrote. A chunk of a recognised document
 	// is re-sliced out of that and not out of the document.
 	Derived port.DerivedStore
 	// Documents reads a format that needs a library, for a source standing on
@@ -263,7 +263,7 @@ type extracted struct {
 // holds a source with text at that path.
 //
 // One reader for every kind and for every place a text may live, so that a
-// window is re-sliced out of the text it was cut from.
+// chunk is re-sliced out of the text it was cut from.
 func (e *extracted) textOf(ctx context.Context, path, from, hash string) (string, bool, error) {
 	if e.path == path {
 		return e.text, e.held, nil

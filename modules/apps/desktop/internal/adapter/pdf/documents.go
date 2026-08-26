@@ -5,15 +5,15 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/placed"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/cutting"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/lit"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/window"
 )
 
 // Documents is this library, as the core asks for one.
 type Documents struct{}
 
-// Read is what one document says, with the places it names and where each of
+// Read is what one document says, with the parts it names and where each of
 // its pages begins.
 func (Documents) Read(ctx context.Context, raw []byte) (port.Reading, error) {
 	if err := ctx.Err(); err != nil {
@@ -24,8 +24,8 @@ func (Documents) Read(ctx context.Context, raw []byte) (port.Reading, error) {
 		return port.Reading{}, refused(err)
 	}
 	out := port.Reading{Text: book.Text}
-	for _, p := range book.Places {
-		out.Places = append(out.Places, window.Place{Title: p.Title, Offset: p.Offset})
+	for _, p := range book.Parts {
+		out.Parts = append(out.Parts, cutting.Part{Title: p.Title, Offset: p.Offset})
 	}
 	for _, p := range book.Pages {
 		out.Pages = append(out.Pages, p.Offset)
@@ -33,8 +33,8 @@ func (Documents) Read(ctx context.Context, raw []byte) (port.Reading, error) {
 	return out, nil
 }
 
-// Placed is where the words of the pages named sit on them.
-func (Documents) Placed(ctx context.Context, raw []byte, starts []int, pages []int) ([]placed.Box, error) {
+// Lit is where the words of the pages named sit on them.
+func (Documents) Lit(ctx context.Context, raw []byte, starts []int, pages []int) ([]lit.Box, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (Documents) Placed(ctx context.Context, raw []byte, starts []int, pages []i
 	for _, at := range starts {
 		book.Pages = append(book.Pages, Page{Offset: at})
 	}
-	boxes, err := book.Placed(raw, pages)
+	boxes, err := book.Lit(raw, pages)
 	if err != nil {
 		return nil, refused(err)
 	}

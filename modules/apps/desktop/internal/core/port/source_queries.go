@@ -16,7 +16,7 @@ type SourceQueries interface {
 	// by path, so a walk can decide what to read without opening anything.
 	Fingerprints(ctx context.Context, vaultID string, kind domain.SourceKind) (map[string]domain.FileRef, error)
 
-	// Unchunked is the sources of one kind with no small window: the file
+	// Unchunked is the sources of one kind with no small chunk: the file
 	// changed, or nothing has cut it yet.
 	Unchunked(ctx context.Context, vaultID string, kind domain.SourceKind, limit int) ([]string, error)
 

@@ -80,16 +80,16 @@ func TestAPageIsWhereItStandsInTheFile(t *testing.T) {
 
 func TestStructureComesFromTheOutlineOrFromNothing(t *testing.T) {
 	tests := []struct {
-		name   string
-		file   string
-		want   pdf.Structure
-		places []string
+		name  string
+		file  string
+		want  pdf.Structure
+		parts []string
 	}{
 		{
-			name:   "an outline names the parts",
-			file:   outline,
-			want:   pdf.FromOutline,
-			places: []string{"The First Part", "A Closer Reading", "Afterword"},
+			name:  "an outline names the parts",
+			file:  outline,
+			want:  pdf.FromOutline,
+			parts: []string{"The First Part", "A Closer Reading", "Afterword"},
 		},
 		{
 			name: "a document with no outline names nothing",
@@ -109,44 +109,44 @@ func TestStructureComesFromTheOutlineOrFromNothing(t *testing.T) {
 				t.Errorf("structure is %q, want %q", book.Structure, c.want)
 			}
 			var named []string
-			for _, p := range book.Places {
+			for _, p := range book.Parts {
 				named = append(named, p.Title)
 			}
-			if len(named) != len(c.places) {
-				t.Fatalf("places are %q, want %q", named, c.places)
+			if len(named) != len(c.parts) {
+				t.Fatalf("parts are %q, want %q", named, c.parts)
 			}
 			for i := range named {
-				if named[i] != c.places[i] {
-					t.Errorf("place %d is %q, want %q", i, named[i], c.places[i])
+				if named[i] != c.parts[i] {
+					t.Errorf("part %d is %q, want %q", i, named[i], c.parts[i])
 				}
 			}
 		})
 	}
 }
 
-func TestAPlaceCarriesTheDepthTheOutlineGaveIt(t *testing.T) {
+func TestAPartCarriesTheDepthTheOutlineGaveIt(t *testing.T) {
 	book := read(t, outline)
 
 	want := []int{1, 2, 1}
 	for i, level := range want {
-		if book.Places[i].Level != level {
-			t.Errorf("%q is at level %d, want %d", book.Places[i].Title, book.Places[i].Level, level)
+		if book.Parts[i].Level != level {
+			t.Errorf("%q is at level %d, want %d", book.Parts[i].Title, book.Parts[i].Level, level)
 		}
 	}
 }
 
-func TestAPlaceBeginsWhereItsPageBegins(t *testing.T) {
+func TestAPartBeginsWhereItsPageBegins(t *testing.T) {
 	book := read(t, outline)
 
-	for _, place := range book.Places {
+	for _, part := range book.Parts {
 		at := -1
 		for _, page := range book.Pages {
-			if page.Offset == place.Offset {
+			if page.Offset == part.Offset {
 				at = page.Offset
 			}
 		}
 		if at < 0 {
-			t.Errorf("%q begins at %d, which is not where any page begins", place.Title, place.Offset)
+			t.Errorf("%q begins at %d, which is not where any page begins", part.Title, part.Offset)
 		}
 	}
 }
@@ -182,19 +182,19 @@ func TestLocate(t *testing.T) {
 	tests := []struct {
 		name  string
 		at    int
-		place string
+		part  string
 		sheet int
 	}{
-		{name: "before every name", at: at("Front"), place: "", sheet: 0},
-		{name: "at a name", at: at("Opening"), place: "The First Part", sheet: 1},
-		{name: "inside a nested name", at: at("closer"), place: "A Closer Reading", sheet: 2},
-		{name: "after the last name", at: at("Afterword"), place: "Afterword", sheet: 3},
+		{name: "before every name", at: at("Front"), part: "", sheet: 0},
+		{name: "at a name", at: at("Opening"), part: "The First Part", sheet: 1},
+		{name: "inside a nested name", at: at("closer"), part: "A Closer Reading", sheet: 2},
+		{name: "after the last name", at: at("Afterword"), part: "Afterword", sheet: 3},
 	}
 	for _, c := range tests {
 		t.Run(c.name, func(t *testing.T) {
 			where := book.Locate(c.at)
-			if where.Place != c.place {
-				t.Errorf("place is %q, want %q", where.Place, c.place)
+			if where.Part != c.part {
+				t.Errorf("part is %q, want %q", where.Part, c.part)
 			}
 			if where.At != c.sheet {
 				t.Errorf("page stands at %d in the file, want %d", where.At, c.sheet)
@@ -219,12 +219,12 @@ func TestTheSameBytesGiveTheSameText(t *testing.T) {
 	if first.Text != second.Text {
 		t.Error("the same file read twice gives two texts")
 	}
-	if len(first.Places) != len(second.Places) {
-		t.Fatalf("the same file names %d places and then %d", len(first.Places), len(second.Places))
+	if len(first.Parts) != len(second.Parts) {
+		t.Fatalf("the same file names %d parts and then %d", len(first.Parts), len(second.Parts))
 	}
-	for i := range first.Places {
-		if first.Places[i] != second.Places[i] {
-			t.Errorf("place %d is %+v and then %+v", i, first.Places[i], second.Places[i])
+	for i := range first.Parts {
+		if first.Parts[i] != second.Parts[i] {
+			t.Errorf("part %d is %+v and then %+v", i, first.Parts[i], second.Parts[i])
 		}
 	}
 }
