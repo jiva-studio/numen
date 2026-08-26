@@ -693,6 +693,11 @@ svg {
   text-decoration: none;
 }
 
+.footer__links {
+  display: flex;
+  gap: 1.6rem;
+}
+
 .footer a:hover {
   color: var(--ink);
   text-decoration-color: currentColor;
