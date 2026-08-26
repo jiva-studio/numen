@@ -116,3 +116,11 @@
 ::selection {
   background-color: var(--numen-selection);
 }
+
+/* Where the keyboard stands is said in the window's own ink, by whatever is
+   drawing it, and nowhere else. Left to itself the webview rings the element in
+   the machine's accent colour, which belongs to no theme numen wears.
+   Specificity is nil, so anything that draws its own ring keeps it. */
+:where(.numen, .numen *):where(:focus, :focus-visible) {
+  outline: none;
+}
