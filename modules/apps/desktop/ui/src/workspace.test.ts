@@ -49,16 +49,13 @@ describe('the name a conversation is answered under', () => {
 })
 
 describe('what a plex tab is called', () => {
-  it('is the note it stands on, under the word for a plex', () => {
-    expect(plexCalled('Plex', 'Entropy')).toBe('Plex · Entropy')
+  /** The tab's own icon says it is a plex, so the word is not said twice. */
+  it('is the note it stands on', () => {
+    expect(plexCalled('Plex', 'Entropy')).toBe('Entropy')
   })
 
-  it('is the word alone while it stands nowhere', () => {
+  it('is the word for a plex while it stands nowhere', () => {
     expect(plexCalled('Plex', '')).toBe('Plex')
-  })
-
-  it('is never what the tab holding that note is called', () => {
-    expect(plexCalled('Plex', 'Entropy')).not.toBe('Entropy')
   })
 })
 

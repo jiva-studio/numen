@@ -25,8 +25,11 @@ export const CONVERSATION = 'conversation'
  */
 export const named = (kind: string): string => `${kind}:${crypto.randomUUID()}`
 
-/** What a plex tab is called: the note it stands on, under the word for a plex. */
-export const plexCalled = (word: string, note: string): string => (note ? `${word} · ${note}` : word)
+/**
+ * What a plex tab is called: the note it stands on. The tab's own icon says it
+ * is a plex, so the word is only there for one standing on nothing.
+ */
+export const plexCalled = (word: string, note: string): string => note || word
 
 /**
  * What a tab is called by a question put in it: the first line with anything on

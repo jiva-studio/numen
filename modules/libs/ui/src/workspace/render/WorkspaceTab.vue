@@ -87,7 +87,7 @@ const onPointerDown = (event: PointerEvent) => {
      name and the cross is the same, so the cross stands with equal air on
      either side of it. */
   --height: 1.4rem;
-  --pad: 0.5rem;
+  --pad: 0.4rem;
 
   block-size: var(--height);
   padding-inline: var(--pad);
@@ -104,11 +104,12 @@ const onPointerDown = (event: PointerEvent) => {
   color: var(--numen-node-fg);
 }
 
-/* What kind of tab this is, drawn before its name. */
+
+/* What kind of tab this is, drawn before its name. The row's own gap is the
+   room after it, so it stands with the same air on either side. */
 .tab__icon {
   inline-size: 0.875rem;
   block-size: 0.875rem;
-  margin-inline-end: var(--pad);
 }
 
 /* What the tab is carrying, drawn as a dot in the colour of the text. */
