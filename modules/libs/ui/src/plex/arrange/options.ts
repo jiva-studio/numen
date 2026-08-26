@@ -120,7 +120,7 @@ export const DEFAULT_OPTIONS: PlexOptions = {
   squeeze: 0.35,
   maxPerLine: 5,
   maxLines: 4,
-  routing: { curvature: 0.55, minReach: 22, arrowRoom: 14 },
+  routing: { curvature: 0.55, minReach: 22, arrowRoom: 20 },
   motion: { arriveAfter: 0.35, leaveBefore: 0.45 },
   gesture: { verticalBias: 4 },
   direction: DEFAULT_DIRECTION,
