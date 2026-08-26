@@ -90,3 +90,19 @@ func TestAMovedFolderMovesInOneVaultAlone(t *testing.T) {
 		t.Errorf("the other vault was given %v", got)
 	}
 }
+
+// A path is bytes on disk and characters in the index, and a folder whose name
+// is not Latin holds the two apart.
+func TestAMovedFolderCarriesANameThatIsNotLatin(t *testing.T) {
+	db := opened(t)
+	noted(t, db, first, "физика/Энтропия.md", "Энтропия")
+
+	if err := db.Sources().MoveSources(t.Context(), first.ID, "физика", "physics"); err != nil {
+		t.Fatal(err)
+	}
+
+	want := []string{"physics/Энтропия.md"}
+	if got := under(t, db, first, "physics"); !slices.Equal(got, want) {
+		t.Errorf("the folder now holds %v, want %v", got, want)
+	}
+}

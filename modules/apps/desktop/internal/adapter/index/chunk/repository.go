@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index/sqlfile"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
@@ -268,7 +269,10 @@ func (r *Repository) MoveSources(ctx context.Context, vaultID, from, to string) 
 		return err
 	}
 	first, past := under(from)
-	if err := exec(ctx, tx, "move_sources", to, len(from)+1, vault, from, first, past); err != nil {
+	// What a path keeps is counted off it in characters: that is what the
+	// statement cuts by, and a path is not Latin alone.
+	kept := utf8.RuneCountInString(from) + 1
+	if err := exec(ctx, tx, "move_sources", to, kept, vault, from, first, past); err != nil {
 		return err
 	}
 	if err := tx.Commit(); err != nil {
