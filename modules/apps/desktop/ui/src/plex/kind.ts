@@ -175,6 +175,11 @@ export function plexing(view: Standing, deps: Plexing) {
     return drawn
   })
 
+  /** Whether the vault has been read and holds no note for this plex to draw. */
+  const empty = computed(
+    () => deps.ready() && !view.here.value && !deps.opening() && !view.neighbourhood.value,
+  )
+
   /**
    * The notes carried over this picture from elsewhere in the window.
    *
@@ -304,6 +309,7 @@ export function plexing(view: Standing, deps: Plexing) {
   return {
     view,
     picture,
+    empty,
     carried,
     menu,
     creatable: deps.creatable,

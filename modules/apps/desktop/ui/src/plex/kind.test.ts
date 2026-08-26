@@ -223,6 +223,53 @@ describe('the menu on a node', () => {
   })
 })
 
+/**
+ * A picture is nothing for more reasons than an empty vault, and only one of
+ * them is a plex to offer a note over.
+ */
+describe('a plex drawing nothing', () => {
+  const standing = (over: Partial<Plexing>) => {
+    const view = {
+      neighbourhood: ref(null),
+      here: ref(''),
+      trouble: ref(''),
+      go: async () => {},
+      follows: () => {},
+      close: () => {},
+    }
+    return plexing(view as unknown as Standing, {
+      makes: making().makes,
+      ready: () => true,
+      opens: () => {},
+      asks: () => {},
+      runs: () => {},
+      opening: () => '',
+      first: async () => '',
+      carried: () => [],
+      says: () => {},
+      writes: async () => '',
+      creatable: ['parent', 'child', 'jump'],
+      ...over,
+    })
+  }
+
+  it('is an empty vault where the vault is read and opens with no note', () => {
+    expect(standing({}).empty.value).toBe(true)
+  })
+
+  it('is not an empty vault while the vault is still being read', () => {
+    expect(standing({ ready: () => false }).empty.value).toBe(false)
+  })
+
+  it('is not an empty vault while the first answer is on its way', () => {
+    expect(standing({ opening: () => 'Opening.md' }).empty.value).toBe(false)
+  })
+
+  it('is not an empty vault once the plex stands on a note', () => {
+    expect(tab('Root.md').held.empty.value).toBe(false)
+  })
+})
+
 describe('the menu off every node', () => {
   const asked = { node: null, at: { x: 1, y: 2 }, from: null, opening: 'pointer' as const }
 

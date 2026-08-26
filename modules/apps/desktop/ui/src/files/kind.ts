@@ -71,13 +71,22 @@ export const landingOf = (entry: Entry): Landing | null => {
 const fileOf = (path: string): string => path.split('/').pop() ?? path
 
 /**
+ * Where a name's ending begins, and nowhere for a name carrying none. An ending
+ * is the last dot and what follows it, and what follows it holds no space.
+ */
+const endingAt = (name: string): number => {
+  const cut = name.lastIndexOf('.')
+  return cut >= 0 && !/\s/u.test(name.slice(cut)) ? cut : -1
+}
+
+/**
  * The ending a name carries, the dot with it, and nothing where it carries
  * none. A name that is a dot and an ending carries none: that is its whole
- * name.
+ * name, and it has none to lend.
  */
 const endingOf = (name: string): string => {
-  const cut = name.lastIndexOf('.')
-  return cut > 0 ? name.slice(cut) : ''
+  const at = endingAt(name)
+  return at > 0 ? name.slice(at) : ''
 }
 
 /**
@@ -92,7 +101,8 @@ export const renamedTo = (path: string, name: string, folder = false): string =>
   const typed = name.trim()
   if (!typed || typed.includes('/')) return ''
 
-  const called = folder || endingOf(typed) ? typed : `${typed}${endingOf(fileOf(path))}`
+  const carries = endingAt(typed) >= 0
+  const called = folder || carries ? typed : `${typed}${endingOf(fileOf(path))}`
   if (called === fileOf(path)) return ''
 
   const under = folderOf(path)

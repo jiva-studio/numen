@@ -29,10 +29,11 @@ const items = computed(() => (props.held.menu.value?.node === null ? NONE : ITEM
 
 /**
  * A menu asked for over a tab drawing no picture, which is a vault holding no
- * note to draw one around. A tab drawing one leaves the picture to answer.
+ * note to draw one around. A tab drawing one leaves the picture to answer, and
+ * so does a vault that has notes and has not been read yet.
  */
 const asks = (event: MouseEvent) => {
-  if (props.held.picture.value) return
+  if (!props.held.empty.value) return
   event.preventDefault()
   props.held.asks({
     node: null,

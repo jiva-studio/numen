@@ -24,6 +24,7 @@ const held = () =>
       edges: [{ from: 'Root.md', to: 'Child.md' }],
     }),
     carried: ref([]),
+    empty: ref(false),
     menu: ref(null),
     creatable: ['child'],
     activate: () => {},
@@ -95,6 +96,7 @@ describe('a menu asked for over a tab drawing no picture', () => {
     const tab = {
       ...held(),
       picture: ref(null),
+      empty: ref(true),
       asks: (one: Asked) => void asked.push(one),
     } as unknown as Held
     return { tab, asked }
