@@ -1,12 +1,12 @@
 ---
 title: Window and tabs
-description: Panes, tabs and the four things a tab can hold.
+description: Panes, tabs and the five things a tab can hold.
 ---
 
 The window opens with the [plex](/plex/) holding the room and the [agent](/agent/) along the
 edge. Everything else you do happens in tabs inside that arrangement.
 
-## Four things a tab can hold
+## Five things a tab can hold
 
 | | |
 | --- | --- |
@@ -14,10 +14,26 @@ edge. Everything else you do happens in tabs inside that arrangement.
 | A plex | the map of what a note is connected to. |
 | An agent | a conversation about the vault. |
 | A document | a book or a PDF, [read where it stands](/documents/). |
+| The files | the folders of the vault as they are on disk. |
 
-A new tab asks what goes in it and lists those four. Every kind opens as many times as you like:
+A new tab asks what goes in it and lists those five. Every kind opens as many times as you like:
 two notes side by side, two plexes standing at different notes, a second agent working on
 something else.
+
+## The files
+
+The plex is the shape of your links; the files tab is the shape of your folders — the vault
+exactly as it sits on disk, pictures and spreadsheets included.
+
+Drag rows to move them: one, or several at once, and the pointer says how many it is carrying.
+A file whose name is already taken in the folder you dropped it on stays where it was, and numen
+names the ones it left behind.
+
+The menu on a row renames, removes, makes a note, and makes a folder — and over a note it offers
+everything [the commands](/commands/) do. Moving and renaming a note here is a proper rename:
+links that would otherwise be left pointing at nothing are [put right](/links/#after-a-rename-or-a-move).
+
+**Show this note in the files** finds the note you are reading in the tree.
 
 ## Panes
 

@@ -40,6 +40,7 @@ disappearing.
 | Destroy note |  |
 | Ask the agent about this note |  |
 | Copy path |  |
+| Show this note in the files |  |
 
 ### This window
 
@@ -47,6 +48,7 @@ disappearing.
 | --- | --- |
 | New note | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>N</kbd> |
 | New plex |  |
+| Show the files of the vault |  |
 | New agent | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>A</kbd> |
 | Close this tab | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>W</kbd> |
 | Search the vault | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>K</kbd> |
