@@ -7,10 +7,10 @@
  */
 import type { PlexRelatedSeat } from '@numen/ui'
 import type { Deed, Shown } from './commanding'
-import type { Refused, Removed, Renamed, VaultRefused, Vaults } from './core'
+import type { Movement, Refused, Removed, Renamed, VaultRefused, Vaults } from './core'
 import type { Made } from './note/creating'
 import type { Says } from './telling'
-import { AGENT, NOTE, PLEX } from './workspace'
+import { AGENT, FILES, NOTE, PLEX } from './workspace'
 
 /** The notes the window has open, as a command reaches them. */
 export interface Notes {
@@ -36,6 +36,15 @@ export interface Doing {
   renames(path: string, title: string): Promise<Renamed>
   /** A note taken out of the vault, into the trash or off the disk. */
   removes(path: string, destroy: boolean): Promise<Removed>
+  /**
+   * A file or a folder filed somewhere else. The last segment of `to` is what
+   * it is called from now on.
+   */
+  moves(from: string, to: string): Promise<Movement>
+  /** An empty folder. The folders above it are made with it. */
+  makesFolder(path: string): Promise<Refused | null>
+  /** The files of the vault put in front of the person, opened down to a path. */
+  reveals(path: string): void
   readonly notes: Notes
   /** The vaults this installation holds, and what changes them. */
   readonly vaults: Vaults
@@ -83,9 +92,7 @@ export interface Words {
   readonly unvaulted: Record<VaultRefused, string>
   /** What the machine's own folder picker is titled. */
   readonly folder: string
-  /** The links that mean another note now, which nothing repairs. */
-  readonly retargeted: string
-  /** The links that reach nothing now, which nothing repairs either. */
+  /** The links that reach nothing now, which nothing repairs. */
   readonly dangling: string
   /** Where a removed note landed, which is the only way back to it. */
   readonly trashedAt: string
@@ -95,6 +102,8 @@ export interface Words {
   readonly unanswered: string
   /** The note holds prose nobody here has seen, so nothing was written. */
   readonly overtaken: string
+  /** A name at the destination is taken, and the file stayed where it was. */
+  readonly occupied: string
 }
 
 /** One command, carried out. */
@@ -114,7 +123,11 @@ const carried: Record<string, Carries> = {
   destroy: (deed, on, words) => removes(deed, true, on, words),
   ask: (deed, on) => on.asks(`${deed.path} — `),
   copy: (deed, on) => on.copies(deed.path),
+  reveal: (deed, on) => on.reveals(deed.path),
+  move: (deed, on, words) => moves(deed, on, words),
+  makeFolder: (deed, on, words) => makesFolder(deed, on, words),
   plex: (_, on) => on.opens(PLEX),
+  files: (_, on) => on.opens(FILES),
   agent: (_, on) => on.opens(AGENT),
   close: (deed, on) => on.closes(deed.tab),
   find: (_, on) => on.searches(),
@@ -186,33 +199,78 @@ const makes = async (
   await travels(made.path, on, words)
 }
 
-/** A note given a different name, and the links that mean another note now. */
+/**
+ * A note given a different name, and its file renamed with it. Prose on disk
+ * that nobody here has seen leaves the note as it is.
+ */
 const renames = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
   if (!deed.name || deed.name === deed.title) return
   const tab = await settles(deed.path, on)
   if (tab.waiting) return on.says(words.unanswered, 'caution')
   const answer = await on.renames(deed.path, deed.name)
   if (answer.changed) return on.says(words.overtaken, 'caution')
-  if (answer.refusal) return on.says(words.refused[answer.refusal], 'refusal')
-  const retargeted = answer.moved?.retargeted ?? []
-  on.says(naming(words.retargeted, retargeted.map((one) => one.in)))
+  if (answer.refusal) on.says(words.refused[answer.refusal], 'refusal')
 }
 
-/** A note taken out of the vault, and where it went and what it left reported. */
-const removes = async (deed: Deed, destroy: boolean, on: Doing, words: Words): Promise<void> => {
+/**
+ * A file or a folder filed somewhere else, carrying the name the path ends in.
+ * A destination that is taken leaves it where it was.
+ */
+const moves = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
+  if (!deed.name || deed.name === deed.path) return
   const tab = await settles(deed.path, on)
   if (tab.waiting) return on.says(words.unanswered, 'caution')
-  const answer = await on.removes(deed.path, destroy)
-  if (answer.refusal) return on.says(words.refused[answer.refusal], 'refusal')
-  if (tab.held) on.notes.shuts(tab.held)
-  on.says(
-    all(
-      answer.trashed ? `${words.trashedAt} ${answer.trashed}` : '',
-      naming(words.dangling, answer.dangling),
-    ),
-  )
+  const answer = await on.moves(deed.path, deed.name)
+  if (answer.refusal === 'occupied') return on.says(words.occupied, 'refusal')
+  if (answer.refusal) on.says(words.refused[answer.refusal], 'refusal')
+}
+
+/** An empty folder, made under the path that was typed. */
+const makesFolder = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
+  if (!deed.name) return
+  const refusal = await on.makesFolder(deed.name)
+  if (refusal === 'occupied') return on.says(words.occupied, 'refusal')
+  if (refusal) on.says(words.refused[refusal], 'refusal')
+}
+
+/**
+ * The files a deed is over: the one it names, and the rest of the selection it
+ * was asked over.
+ */
+const over = (deed: Deed): readonly string[] => [deed.path, ...deed.others]
+
+/**
+ * Files taken out of the vault, and where each went and what each left
+ * reported. One the vault refuses leaves the rest to go, and what was refused
+ * is what the person is told.
+ */
+const removes = async (deed: Deed, destroy: boolean, on: Doing, words: Words): Promise<void> => {
+  const report: string[] = []
+  const dangling: string[] = []
+  const refused: string[] = []
+  let waiting = false
   const opening = on.opening()
-  if (opening) await on.leaves(deed.path, opening)
+
+  for (const path of over(deed)) {
+    const tab = await settles(path, on)
+    if (tab.waiting) {
+      waiting = true
+      continue
+    }
+    const answer = await on.removes(path, destroy)
+    if (answer.refusal) {
+      refused.push(words.refused[answer.refusal])
+      continue
+    }
+    if (tab.held) on.notes.shuts(tab.held)
+    if (answer.trashed) report.push(`${words.trashedAt} ${answer.trashed}`)
+    dangling.push(...answer.dangling)
+    if (opening) await on.leaves(path, opening)
+  }
+
+  if (refused.length > 0) return on.says(all(...refused), 'refusal')
+  if (waiting) return on.says(words.unanswered, 'caution')
+  on.says(all(...report, naming(words.dangling, dangling)))
 }
 
 /**

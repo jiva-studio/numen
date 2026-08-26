@@ -66,6 +66,9 @@ function fake(over: Partial<Faked> = {}) {
       changed: false,
     }),
     remove: async () => ({ trashed: '', dangling: [], refusal: null }),
+    list: async () => [],
+    move: async () => ({ moved: null, refusal: null }),
+    makeFolder: async () => null,
     ...over,
   }
   return { core, files, wrote }

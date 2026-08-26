@@ -8,7 +8,7 @@
  * chosen; what the items are and what choosing one does are the caller's.
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { landsOn, placeMenu, stepTo, type MenuItem, type MenuOpening } from './model'
+import { banded, landsOn, placeMenu, stepTo, type MenuItem, type MenuOpening } from './model'
 import type { Point } from '../plex/model'
 import type { Size } from '../plex/arrange'
 
@@ -63,6 +63,9 @@ const size = ref<Size>({ width: 0, height: 0 })
 
 /** Which item the keyboard is on, or -1 when it is on none. */
 const here = ref(-1)
+
+/** The items with the rules that stand between their bands. */
+const rows = computed(() => banded(props.items))
 
 /** The area to stay inside. The browser's, unless a caller measures its own. */
 const room = computed<Size>(
@@ -204,19 +207,21 @@ onBeforeUnmount(leave)
       :style="{ left: `${placed.x}px`, top: `${placed.y}px` }"
       @keydown="onKey"
     >
-      <button
-        v-for="(item, index) in items"
-        :key="item.id"
-        class="menu__item flex w-full items-center rounded-node px-2 py-1.5 text-left"
-        type="button"
-        role="menuitem"
-        tabindex="-1"
-        :disabled="item.disabled"
-        @focus="here = index"
-        @click="choose(item)"
-      >
-        <span class="menu__text min-w-0">{{ item.text }}</span>
-      </button>
+      <template v-for="(item, index) in rows" :key="item.id">
+        <hr v-if="item.rule" class="menu__rule" role="separator" />
+
+        <button
+          class="menu__item flex w-full items-center rounded-node px-2 py-1.5 text-left"
+          type="button"
+          role="menuitem"
+          tabindex="-1"
+          :disabled="item.disabled"
+          @focus="here = index"
+          @click="choose(item)"
+        >
+          <span class="menu__text min-w-0">{{ item.text }}</span>
+        </button>
+      </template>
 
       <p v-if="!items.length" class="menu__silence px-2 py-1.5 text-hushed">
         <slot name="silence">Nothing to do</slot>
@@ -235,6 +240,8 @@ onBeforeUnmount(leave)
   --widest: 320px;
   --tallest: 60vh;
   --lift: var(--numen-lift-menu);
+  /* The room a rule keeps on each side of itself. */
+  --parting: 0.25rem;
 
   position: fixed;
   z-index: var(--lift);
@@ -247,6 +254,15 @@ onBeforeUnmount(leave)
 
 .menu:focus-visible {
   outline: none;
+}
+
+/* One physical line, so it stays a hairline however large the interface is
+   drawn. */
+.menu__rule {
+  block-size: 0;
+  margin-block: var(--parting);
+  border: 0;
+  border-block-start: 1px solid var(--numen-panel-border);
 }
 
 .menu__item {

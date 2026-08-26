@@ -66,6 +66,9 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
       changed: false,
     }),
     remove: async () => ({ trashed: '', dangling: [], refusal: null }),
+    list: async () => [],
+    move: async () => ({ moved: null, refusal: null }),
+    makeFolder: async () => null,
     // eslint-disable-next-line require-yield
     quitting: async function* () {},
     flushed: async () => {},

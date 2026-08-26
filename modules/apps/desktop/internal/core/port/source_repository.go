@@ -73,4 +73,14 @@ type SourceRepository interface {
 	// read, so a passage naming it can never be shown: leaving it in the index
 	// leaves a row that answers a search and then cannot be looked at.
 	RemoveSources(ctx context.Context, vaultID string, kind domain.SourceKind, paths []string) error
+
+	// MoveSources files what the vault held at one path under another, with
+	// everything under it. The path of a source is this port's, whatever kind of
+	// file it is, so a folder of notes and books travels in one write.
+	//
+	// A note is called by the filename it lands under where nothing inside the
+	// file names it, and where the new filename is the name its own title is
+	// filed under. A note carrying a name the filename is not takes that name
+	// with it.
+	MoveSources(ctx context.Context, vaultID, from, to string) error
 }

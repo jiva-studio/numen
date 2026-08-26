@@ -38,6 +38,17 @@ func (s sources) RemoveSources(ctx context.Context, vaultID string, kind domain.
 	return s.write.RemoveSources(ctx, vaultID, string(kind), paths)
 }
 
+// MoveSources files what was at one path, and everything under it, where it now
+// is. A note its filename names is called by the one it lands under.
+func (s sources) MoveSources(ctx context.Context, vaultID, from, to string) error {
+	return s.write.MoveSources(ctx, vaultID, from, to)
+}
+
+// Under is every source the vault holds at a path and beneath it.
+func (s sources) Under(ctx context.Context, vaultID, path string) ([]domain.FileRef, error) {
+	return s.read.Under(ctx, vaultID, path)
+}
+
 func (s sources) Fingerprints(ctx context.Context, vaultID string, kind domain.SourceKind) (map[string]domain.FileRef, error) {
 	return s.read.Fingerprints(ctx, vaultID, string(kind))
 }

@@ -71,9 +71,11 @@ export const WORDS = {
   destroy: 'Destroy note',
   ask: 'Ask the agent about this note',
   copy: 'Copy path',
+  reveal: 'Show this note in the files',
   newNote: note.newNote,
   newPlex: plex.newPlex,
   newAgent: agent.newAgent,
+  files: 'Show the files of the vault',
   close: 'Close this tab',
   appearance: 'Change the theme',
   mode: 'Light or dark',
@@ -125,6 +127,7 @@ export const WORDS = {
   unlisted: 'The themes could not be listed',
   unworn: 'That theme could not be read, so it is not worn',
   asking: 'Confirm',
+  several: (files: number) => `${files} files`,
   answer: 'Choose an answer',
   keeps: 'Keep the note',
   kept: 'Nothing happens to it',
@@ -149,13 +152,14 @@ export const WORDS = {
   /** What a command could not do, and what it left behind. */
   refused: REFUSED,
   unvaulted: UNVAULTED,
-  retargeted: 'These notes link by a name that means another note now:',
   dangling: 'These notes link to nothing now:',
   /** Where a removed note landed, which is the only way back to it. */
   trashedAt: 'The note is in the trash, at',
   nowhere: 'The vault has no note to open with',
   unanswered: 'that note changed on disk, and its tab is waiting for an answer',
   overtaken: 'that note changed on disk while this was asked, so nothing was written',
+  /** A file landed where something of its name is filed, and stayed where it was. */
+  occupied: 'something of that name is filed there, so the file stayed where it was',
   /** What the action panel of the palette is called. */
   actions: 'Actions',
   findAction: 'Search actions',

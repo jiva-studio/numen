@@ -97,6 +97,9 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
       changed: false,
     }),
     remove: async () => ({ trashed: '', dangling: [], refusal: null }),
+    list: async () => [],
+    move: async () => ({ moved: null, refusal: null }),
+    makeFolder: async () => null,
   }
   return {
     core,

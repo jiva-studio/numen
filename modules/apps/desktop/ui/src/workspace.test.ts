@@ -6,7 +6,8 @@
  * the two: a question lands in a talk nobody can see.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { AGENT, CONVERSATION, PLEX, named, plexCalled, shortened } from './workspace'
+import { panesOf } from '@numen/ui'
+import { AGENT, CONVERSATION, PLEX, named, opening, plexCalled, shortened } from './workspace'
 
 describe('the name a tab is filed under', () => {
   it('is a new one every time, so a second of a kind is a second tab', () => {
@@ -58,6 +59,34 @@ describe('what a plex tab is called', () => {
 
   it('is never what the tab holding that note is called', () => {
     expect(plexCalled('Plex', 'Entropy')).not.toBe('Entropy')
+  })
+})
+
+describe('the layout the window opens with', () => {
+  const layout = opening('files:tree', 'plex:one', 'agent:one')
+
+  it('holds three panes, a tab in each', () => {
+    expect(panesOf(layout.root).map((one) => one.tabs)).toStrictEqual([
+      ['files:tree'],
+      ['plex:one'],
+      ['agent:one'],
+    ])
+  })
+
+  it('gives the plex the room, and the files the least of it', () => {
+    const sizes = layout.root.kind === 'branch' ? layout.root.sizes : []
+
+    expect(sizes).toStrictEqual([0.18, 0.56, 0.26])
+    expect(Math.max(...sizes)).toBe(sizes[1])
+  })
+
+  it('divides the width, so the three stand side by side', () => {
+    expect(layout.axis).toBe('horizontal')
+  })
+
+  it('leaves the person in the plex', () => {
+    expect(layout.focus).toBe('main')
+    expect(panesOf(layout.root).find((one) => one.id === 'main')?.tabs).toStrictEqual(['plex:one'])
   })
 })
 

@@ -8,6 +8,7 @@ import (
 	"os"
 	pathpkg "path"
 	"path/filepath"
+	"strings"
 
 	ignore "github.com/sabhiram/go-gitignore"
 
@@ -166,26 +167,24 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	// What moves has to be a note. Where it goes has to be a place a note may
-	// live, or this application's own folder — which is where a note goes when it
-	// is taken out of the vault's sight, and is deliberately not a note-place.
-	//
-	// Anywhere else in the vault is refused, another tool's dot-folder included:
-	// a folder something else reads is a folder that acts on what it finds, and a
-	// file left there is one the index does not know about and nothing shows.
-	source, err := w.note(from)
+	// A file of any kind moves, and so does a folder. Both ends have to be a
+	// place this vault keeps the person's files or one this application keeps
+	// for itself.
+	source, err := w.reach(from)
 	if err != nil {
 		return err
 	}
-	target, err := w.inside(to)
+	target, err := w.reach(to)
 	if err != nil {
 		return err
-	}
-	if !w.holds(to) && !w.ours(to) {
-		return fmt.Errorf("%s: %w", to, ErrNotANote)
 	}
 	if source == target {
 		return nil
+	}
+	// A folder does not go inside itself: the destination is a place the folder
+	// itself holds.
+	if strings.HasPrefix(target, source+string(filepath.Separator)) {
+		return fmt.Errorf("move %s to %s: %w", from, to, port.ErrOccupied)
 	}
 
 	switch _, err := os.Lstat(target); {
@@ -201,11 +200,28 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
 	return os.Rename(source, target)
 }
 
+func (w *VaultWriter) MakeFolder(ctx context.Context, path string) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	target, err := w.reach(path)
+	if err != nil {
+		return err
+	}
+	switch info, err := os.Stat(target); {
+	case err == nil && !info.IsDir():
+		return fmt.Errorf("make %s: %w", path, port.ErrOccupied)
+	case err != nil && !errors.Is(err, fs.ErrNotExist):
+		return err
+	}
+	return os.MkdirAll(target, 0o755)
+}
+
 func (w *VaultWriter) Remove(ctx context.Context, path string) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	target, err := w.note(path)
+	target, err := w.reach(path)
 	if err != nil {
 		return err
 	}
@@ -229,6 +245,19 @@ func (w *VaultWriter) note(path string) (string, error) {
 		return "", err
 	}
 	if !w.holds(path) {
+		return "", fmt.Errorf("%s: %w", path, ErrNotANote)
+	}
+	return target, nil
+}
+
+// reach is where a path is on this machine, for work that takes a file of any
+// kind and a folder alike.
+func (w *VaultWriter) reach(path string) (string, error) {
+	target, err := w.inside(path)
+	if err != nil {
+		return "", err
+	}
+	if !w.reachable(path) {
 		return "", fmt.Errorf("%s: %w", path, ErrNotANote)
 	}
 	return target, nil
@@ -281,6 +310,26 @@ func (w *VaultWriter) ours(path string) bool {
 		}
 	}
 	return false
+}
+
+// reachable answers whether a path in this vault is one the writer may put a
+// file at or take one away from, whatever the file is and whether it is a
+// folder. What the vault says to leave alone is left alone, and the folders
+// this application keeps for itself are its own.
+func (w *VaultWriter) reachable(path string) bool {
+	clean := pathpkg.Clean(filepath.ToSlash(path))
+	if w.ours(clean) {
+		return true
+	}
+	if w.ignored.MatchesPath(clean) {
+		return false
+	}
+	for dir := pathpkg.Dir(clean); dir != "." && dir != "/"; dir = pathpkg.Dir(dir) {
+		if pathpkg.Base(dir) == w.opts.serviceDir() {
+			return false
+		}
+	}
+	return true
 }
 
 // holds answers the same question about a path that a walk answers about the

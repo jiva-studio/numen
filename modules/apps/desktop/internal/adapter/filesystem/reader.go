@@ -8,6 +8,8 @@ import (
 	"os"
 	pathpkg "path"
 	"path/filepath"
+	"slices"
+	"strings"
 
 	ignore "github.com/sabhiram/go-gitignore"
 
@@ -102,6 +104,78 @@ func (s *VaultReader) Walk(ctx context.Context, fn func(domain.FileRef) error) e
 			MTime: info.ModTime().UnixNano(),
 		})
 	})
+}
+
+// List reports what one folder holds, without descending. Every file is
+// reported whether anything reads it or not, and so is every folder under it;
+// what the vault's ignore rules name and the service folder are left out.
+//
+// Folders come first, then files, each by name compared without regard to
+// case. That is the order to draw them in.
+//
+// A path holding a file holds no folder, and is answered as a folder that is
+// not there.
+func (s *VaultReader) List(ctx context.Context, folder string) ([]domain.Entry, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+	target := s.root
+	if folder != "" {
+		var err error
+		if target, err = inside(s.root, folder, s.opts.serviceDir()); err != nil {
+			return nil, err
+		}
+		folder = pathpkg.Clean(filepath.ToSlash(folder))
+	}
+	switch info, err := os.Stat(target); {
+	case err != nil:
+		return nil, err
+	case !info.IsDir():
+		return nil, fmt.Errorf("list %s: %w", folder, fs.ErrNotExist)
+	}
+	read, err := os.ReadDir(target)
+	if err != nil {
+		return nil, err
+	}
+
+	entries := make([]domain.Entry, 0, len(read))
+	for _, d := range read {
+		rel := pathpkg.Join(folder, d.Name())
+		var kind domain.SourceKind
+		if d.IsDir() {
+			if d.Name() == s.opts.serviceDir() || s.ignored.MatchesPath(rel+"/") {
+				continue
+			}
+		} else {
+			if s.ignored.MatchesPath(rel) {
+				continue
+			}
+			kind, _ = s.opts.kind(d.Name())
+		}
+		entries = append(entries, domain.Entry{
+			Path:   rel,
+			Name:   d.Name(),
+			Folder: d.IsDir(),
+			Kind:   kind,
+		})
+	}
+	slices.SortFunc(entries, inOrder)
+	return entries, nil
+}
+
+// inOrder is folders before files, and names compared without regard to case.
+// Two names differing only in case keep a settled order of their own.
+func inOrder(a, b domain.Entry) int {
+	if a.Folder != b.Folder {
+		if a.Folder {
+			return -1
+		}
+		return 1
+	}
+	if by := strings.Compare(strings.ToLower(a.Name), strings.ToLower(b.Name)); by != 0 {
+		return by
+	}
+	return strings.Compare(a.Name, b.Name)
 }
 
 func (s *VaultReader) Read(ctx context.Context, path string) ([]byte, error) {

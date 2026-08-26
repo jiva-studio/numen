@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -53,14 +54,14 @@ func (c changing) create() note.Create {
 func (c changing) move() note.Move {
 	return note.Move{
 		Readers: filesystem.Readers{}, Writers: filesystem.Writers{},
-		Links: c.db.Links(), Index: c.index,
+		Links: c.db.Links(), Sources: c.db.Sources(), Index: c.index,
 	}
 }
 
 func (c changing) remove() note.Remove {
 	return note.Remove{
-		Readers: filesystem.Readers{}, Writers: filesystem.Writers{},
-		Links: c.db.Links(), Index: c.index,
+		Writers: filesystem.Writers{},
+		Links:   c.db.Links(), Known: c.db.SourcesKnown(), Index: c.index,
 	}
 }
 
@@ -179,12 +180,98 @@ func TestMovingLeavesLinksWrittenByNameAlone(t *testing.T) {
 	}
 }
 
-// A link written as a path is the one that can break. Renaming the note changes
-// its filename too, so neither the path nor the name finds it any more — and
-// the repair writes the new name, which survives every later move.
+// A note its title names is called that wherever its file goes, so the name a
+// link is written by still finds it after the file is renamed.
+func TestRenamingTheFileOfATitledNoteLeavesTheNameLinksFindItBy(t *testing.T) {
+	c := changeable(t, map[string]string{
+		"physics/Old.md": "---\ntitle: Entropy\n---\nA measure of disorder.\n",
+		"Heat.md":        "---\nlinks:\n  - to: Old\n    role: parent\n---\n# Heat\n",
+	})
+	before := c.read(t, "Heat.md")
+
+	moved, err := c.move().Execute(t.Context(), c.vault, "physics/Old.md", "physics/Thermodynamics.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(moved.Repaired) != 0 {
+		t.Errorf("the link still reaches the note, so nothing is repaired: %v", moved.Repaired)
+	}
+	if got := c.read(t, "Heat.md"); got != before {
+		t.Errorf("the note that pointed at it was rewritten:\n%s", got)
+	}
+
+	found := links(t, c.db, c.vault, "Heat.md")
+	if len(found.Links) != 1 || found.Links[0].To != "physics/Thermodynamics.md" {
+		t.Errorf("the link written by the name reaches %+v", found.Links)
+	}
+}
+
+// A `title` key names the note whatever the filename says, so a file renamed
+// under it leaves the note called what the file says it is called.
+func TestRenamingTheFileOfATitledNoteLeavesTheTitleAlone(t *testing.T) {
+	c := changeable(t, map[string]string{
+		"physics/Entropy.md": "---\ntitle: Entropy\n---\nA measure of disorder.\n",
+	})
+
+	if _, err := c.move().Execute(t.Context(), c.vault, "physics/Entropy.md", "physics/Old.md"); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := c.title(t, "physics/Old.md"); got != "Entropy" {
+		t.Errorf("the vault shows the note as %q, and the file says Entropy", got)
+	}
+	named, err := c.db.Queries().Named(t.Context(), c.vault.ID, "Entropy")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(named, []string{"physics/Old.md"}) {
+		t.Errorf("the vault files %v under the name the note carries", named)
+	}
+}
+
+// A note with neither a title nor a heading is called by its filename, so
+// renaming the file renames the note, and a link written by the old name is
+// written again by the new one.
+func TestRenamingTheFileOfAnUntitledNoteNamesItByItsNewFilename(t *testing.T) {
+	c := changeable(t, map[string]string{
+		"physics/Old.md": "A measure of disorder.\n",
+		"Heat.md":        "---\nlinks:\n  - to: Old\n    role: parent\n---\n# Heat\n",
+	})
+
+	moved, err := c.move().Execute(t.Context(), c.vault, "physics/Old.md", "physics/Entropy.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(moved.Repaired) != 1 || moved.Repaired[0] != "Heat.md" {
+		t.Fatalf("want the note whose link stopped resolving, got %+v", moved)
+	}
+	if body := c.read(t, "Heat.md"); !strings.Contains(body, "to: Entropy") {
+		t.Errorf("the repair writes the new name:\n%s", body)
+	}
+
+	found := links(t, c.db, c.vault, "Heat.md")
+	if len(found.Links) != 1 || found.Links[0].To != "physics/Entropy.md" {
+		t.Errorf("the repaired link reaches %+v", found.Links)
+	}
+
+	// The note answers to the name it is filed under now, wherever a link
+	// naming it is written.
+	named, err := c.db.Queries().Named(t.Context(), c.vault.ID, "Entropy")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(named, "physics/Entropy.md") {
+		t.Errorf("the vault files %v under the name", named)
+	}
+}
+
+// A link written as a path is the one that can break. A note its filename names
+// is called by the filename it lands under, so neither the path nor the name
+// finds it any more — and the repair writes the new name, which survives every
+// later move.
 func TestMovingRepairsALinkThatStoppedResolving(t *testing.T) {
 	c := changeable(t, map[string]string{
-		"physics/Entropy.md": "# Entropy\n",
+		"physics/Entropy.md": "A measure of disorder.\n",
 		"physics/Heat.md":    "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n---\n# Heat\n",
 	})
 
@@ -194,9 +281,6 @@ func TestMovingRepairsALinkThatStoppedResolving(t *testing.T) {
 	}
 	if len(moved.Repaired) != 1 || moved.Repaired[0] != "physics/Heat.md" {
 		t.Fatalf("want the note whose link broke, got %+v", moved)
-	}
-	if len(moved.Retargeted) != 0 {
-		t.Errorf("nothing was retargeted: %+v", moved.Retargeted)
 	}
 
 	body := c.read(t, "physics/Heat.md")
@@ -214,8 +298,8 @@ func TestMovingRepairsALinkThatStoppedResolving(t *testing.T) {
 }
 
 // A link that reaches a different note of the same name is not broken, so it is
-// reported rather than rewritten.
-func TestMovingReportsALinkThatNowMeansAnotherNote(t *testing.T) {
+// left alone: which of two notes under one name it means is the person's.
+func TestMovingLeavesALinkThatNowMeansAnotherNote(t *testing.T) {
 	c := changeable(t, map[string]string{
 		"physics/Entropy.md":   "# Entropy\n",
 		"chemistry/Entropy.md": "# Entropy\n",
@@ -230,11 +314,11 @@ func TestMovingReportsALinkThatNowMeansAnotherNote(t *testing.T) {
 	if len(moved.Repaired) != 0 {
 		t.Errorf("nothing was broken, so nothing is repaired: %+v", moved.Repaired)
 	}
-	if len(moved.Retargeted) != 1 || moved.Retargeted[0].Now != "chemistry/Entropy.md" {
-		t.Fatalf("want the note it reaches now, got %+v", moved.Retargeted)
-	}
 	if got := c.read(t, "chemistry/Heat.md"); got != before {
 		t.Errorf("a link that was not broken was rewritten")
+	}
+	if to := links(t, c.db, c.vault, "chemistry/Heat.md").Links[0].To; to != "chemistry/Entropy.md" {
+		t.Errorf("the link reaches %q", to)
 	}
 }
 
@@ -264,6 +348,41 @@ func TestRemovingPutsTheNoteInTheTrashAndOutOfTheIndex(t *testing.T) {
 	}
 	if len(found) != 0 {
 		t.Errorf("a removed note is still in the index: %v", found)
+	}
+}
+
+// A folder goes to the trash whole, in one move, and the notes that pointed
+// into it are named. A note that went with the folder points at nothing from
+// the trash, so it is not among them.
+func TestRemovingAFolderTakesWhatIsUnderItAndNamesTheLinksLeft(t *testing.T) {
+	c := changeable(t, map[string]string{
+		"physics/Entropy.md": "# Entropy\n\nA measure of disorder.\n",
+		"physics/Heat.md":    "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
+		"Outside.md":         "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Outside\n",
+	})
+
+	removed, err := c.remove().Execute(t.Context(), c.vault, "physics")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if removed.Trashed != ".trash/physics" {
+		t.Errorf("want the folder kept under its own path, got %q", removed.Trashed)
+	}
+	if len(removed.Dangling) != 1 || removed.Dangling[0] != "Outside.md" {
+		t.Errorf("want the note left pointing at nothing, got %v", removed.Dangling)
+	}
+	for _, path := range []string{"Entropy.md", "Heat.md"} {
+		if _, err := os.Stat(filepath.Join(c.vault.Path, ".trash", "physics", path)); err != nil {
+			t.Errorf("%s is not in the trash: %v", path, err)
+		}
+	}
+
+	found, err := c.search().Execute(t.Context(), c.vault, "disorder", search.Parameters{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) != 0 {
+		t.Errorf("a note under the removed folder is still in the index: %v", found)
 	}
 }
 

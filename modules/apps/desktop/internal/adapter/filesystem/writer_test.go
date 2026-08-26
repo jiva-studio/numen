@@ -30,11 +30,14 @@ func writing(t *testing.T) (port.VaultWriter, string) {
 // working the vault names where a note goes, and a note that lands in one of
 // those is a file the index does not know about, that nothing on screen shows,
 // and that another program obeys.
-func TestANoteCannotBeMovedIntoAnotherToolsFolder(t *testing.T) {
+func TestNothingIsMovedIntoAnotherToolsFolder(t *testing.T) {
 	w, root := writing(t)
 	ctx := t.Context()
 
 	if err := w.Create(ctx, "SKILL.md", []byte("# Skill\n")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "scan.png"), []byte("PNG"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -44,13 +47,22 @@ func TestANoteCannotBeMovedIntoAnotherToolsFolder(t *testing.T) {
 		".git/hooks/SKILL.md",
 		".obsidian/SKILL.md",
 		".trash/../.claude/planted.md",
+		"notes/.claude/skills/evil/SKILL.md",
+		"notes/.git/hooks/SKILL.md",
 	} {
-		if err := w.Move(ctx, "SKILL.md", to); err == nil {
-			t.Errorf("moving to %s was allowed", to)
+		for _, from := range []string{"SKILL.md", "scan.png"} {
+			if err := w.Move(ctx, from, to); err == nil {
+				t.Errorf("moving %s to %s was allowed", from, to)
+			}
 		}
 		if _, err := os.Lstat(filepath.Join(root, filepath.FromSlash(to))); !errors.Is(err, fs.ErrNotExist) {
 			t.Errorf("%s was written: %v", to, err)
 		}
+	}
+
+	// Making a folder answers to the same rule.
+	if err := w.MakeFolder(ctx, ".git/hooks"); err == nil {
+		t.Error("a folder was made where another tool keeps its state")
 	}
 }
 
@@ -84,6 +96,132 @@ func TestANoteMovesWhereANoteMayLive(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(root, "physics", "Entropy.md")); err != nil {
 		t.Errorf("the note did not move: %v", err)
+	}
+}
+
+// laid puts a file in the vault behind the writer's back, for the kinds the
+// writer does not create.
+func laid(t *testing.T, root, path string) {
+	t.Helper()
+	full := filepath.Join(root, filepath.FromSlash(path))
+	if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(full, []byte("theirs"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// A vault holds books and whatever else the person filed there, and every one
+// of them moves.
+func TestAnyFileOfTheVaultMoves(t *testing.T) {
+	w, root := writing(t)
+	ctx := t.Context()
+
+	moves := map[string]string{
+		"A Book.epub": "library/A Book.epub",
+		"scan.png":    "assets/scan.png",
+		"notes.txt":   "assets/notes.txt",
+	}
+	for from := range moves {
+		laid(t, root, from)
+	}
+
+	for from, to := range moves {
+		if err := w.Move(ctx, from, to); err != nil {
+			t.Errorf("move %s: %v", from, err)
+			continue
+		}
+		if _, err := os.Stat(filepath.Join(root, filepath.FromSlash(to))); err != nil {
+			t.Errorf("%s is not at %s: %v", from, to, err)
+		}
+		if _, err := os.Lstat(filepath.Join(root, filepath.FromSlash(from))); !errors.Is(err, fs.ErrNotExist) {
+			t.Errorf("%s is still where it was: %v", from, err)
+		}
+	}
+}
+
+// A folder moves whole, and everything under it arrives with it.
+func TestAFolderMovesWithWhatIsUnderIt(t *testing.T) {
+	w, root := writing(t)
+	ctx := t.Context()
+
+	laid(t, root, "physics/Entropy.md")
+	laid(t, root, "physics/deeper/Heat.md")
+	laid(t, root, "physics/A Book.epub")
+
+	if err := w.Move(ctx, "physics", "science/physics"); err != nil {
+		t.Fatalf("the folder did not move: %v", err)
+	}
+	for _, path := range []string{"science/physics/Entropy.md", "science/physics/deeper/Heat.md", "science/physics/A Book.epub"} {
+		if _, err := os.Stat(filepath.Join(root, filepath.FromSlash(path))); err != nil {
+			t.Errorf("%s did not arrive: %v", path, err)
+		}
+	}
+	if _, err := os.Lstat(filepath.Join(root, "physics")); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("the folder is still where it was: %v", err)
+	}
+}
+
+// A destination that is taken is refused, and what was going there stays where
+// it is.
+func TestAMoveOntoATakenNameIsRefused(t *testing.T) {
+	w, root := writing(t)
+	ctx := t.Context()
+
+	laid(t, root, "scan.png")
+	laid(t, root, "assets/scan.png")
+
+	if err := w.Move(ctx, "scan.png", "assets/scan.png"); !errors.Is(err, port.ErrOccupied) {
+		t.Errorf("want ErrOccupied, got %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(root, "scan.png")); err != nil {
+		t.Errorf("the file did not stay where it was: %v", err)
+	}
+}
+
+// Taking a file off the disk is open to every file the vault holds.
+func TestAnyFileOfTheVaultIsRemoved(t *testing.T) {
+	w, root := writing(t)
+	ctx := t.Context()
+
+	for _, path := range []string{"library/A Book.epub", "assets/scan.png", "notes/Entropy.md"} {
+		laid(t, root, path)
+		if err := w.Remove(ctx, path); err != nil {
+			t.Errorf("remove %s: %v", path, err)
+		}
+		if _, err := os.Lstat(filepath.Join(root, filepath.FromSlash(path))); !errors.Is(err, fs.ErrNotExist) {
+			t.Errorf("%s is still there: %v", path, err)
+		}
+	}
+}
+
+// A folder is made on its own, with the folders above it, and one that is
+// already there is the outcome that was asked for.
+func TestAFolderIsMade(t *testing.T) {
+	w, root := writing(t)
+	ctx := t.Context()
+
+	if err := w.MakeFolder(ctx, "science/physics"); err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(filepath.Join(root, "science", "physics"))
+	if err != nil {
+		t.Fatalf("the folder was not made: %v", err)
+	}
+	if !info.IsDir() {
+		t.Error("what was made is not a folder")
+	}
+	if err := w.MakeFolder(ctx, "science/physics"); err != nil {
+		t.Errorf("making it again: %v", err)
+	}
+
+	laid(t, root, "science/Entropy.md")
+	if err := w.MakeFolder(ctx, "science/Entropy.md"); !errors.Is(err, port.ErrOccupied) {
+		t.Errorf("a folder over a file: want ErrOccupied, got %v", err)
+	}
+	if err := w.MakeFolder(ctx, "../outside"); !errors.Is(err, filesystem.ErrOutside) {
+		t.Errorf("a folder outside the vault: want ErrOutside, got %v", err)
 	}
 }
 
@@ -228,5 +366,44 @@ func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 				t.Errorf("%s was written: %q", at.makes, raw)
 			}
 		})
+	}
+}
+
+// A folder does not go inside itself. The window's tree refuses the gesture, and
+// a caller that asks for it anyway is refused here.
+func TestAFolderIsNotMovedInsideItself(t *testing.T) {
+	w, root := writing(t)
+	ctx := t.Context()
+
+	if err := w.Create(ctx, "physics/Entropy.md", []byte("# Entropy\n")); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, to := range []string{"physics/inner", "physics/inner/deeper", "physics/inner/physics"} {
+		if err := w.Move(ctx, "physics", to); !errors.Is(err, port.ErrOccupied) {
+			t.Errorf("moving physics to %s gave %v, want ErrOccupied", to, err)
+		}
+		if _, err := os.Lstat(filepath.Join(root, filepath.FromSlash(to))); !errors.Is(err, fs.ErrNotExist) {
+			t.Errorf("%s was made: %v", to, err)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(root, "physics", "Entropy.md")); err != nil {
+		t.Errorf("the folder did not stay where it was: %v", err)
+	}
+}
+
+// A folder whose name begins with another folder's is not inside it.
+func TestAFolderMovesBesideOneWhoseNameItBegins(t *testing.T) {
+	w, root := writing(t)
+	ctx := t.Context()
+
+	if err := w.Create(ctx, "physics/Entropy.md", []byte("# Entropy\n")); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Move(ctx, "physics", "physics-old"); err != nil {
+		t.Fatalf("the move was refused: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(root, "physics-old", "Entropy.md")); err != nil {
+		t.Errorf("the folder did not arrive: %v", err)
 	}
 }

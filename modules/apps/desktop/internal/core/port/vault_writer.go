@@ -44,13 +44,18 @@ type VaultWriter interface {
 
 	Create(ctx context.Context, path string, content []byte) error
 
-	// Move renames a file, creating the folders above its destination. The
-	// bytes do not change, so a note that carried no identifier still carries
-	// none afterwards.
+	// Move renames a file or a folder, creating the folders above its
+	// destination. The bytes do not change, so a note that carried no
+	// identifier still carries none afterwards.
 	//
 	// A destination that is taken is refused: two notes arriving at one path
 	// is a question only whoever asked for the move can answer.
 	Move(ctx context.Context, from, to string) error
+
+	// MakeFolder puts an empty folder at a path, creating the folders above
+	// it. A folder that is already there is the outcome that was asked for; a
+	// file there is refused with ErrOccupied.
+	MakeFolder(ctx context.Context, path string) error
 
 	// Remove takes a file out of the vault for good. Putting a note in the
 	// trash is a move, and is not this.

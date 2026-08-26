@@ -3,7 +3,7 @@
  * The window: one vault, and tabs to divide the screen between.
  *
  * What a tab of each kind holds is that kind's own, in `plex/`, `agent/`,
- * `document/` and `note/`; keeping tabs of any kind at all is in
+ * `document/`, `note/` and `files/`; keeping tabs of any kind at all is in
  * `windowing.ts`; when to ask the vault again is in `showing.ts`. What is left
  * here is the vault this window reads, the kinds it draws, and the few things
  * one kind asks of another.
@@ -25,6 +25,7 @@ import {
   asksCommands,
   commanding,
   creates,
+  deedOf,
   MAKING,
   offering,
   type Holds,
@@ -37,7 +38,7 @@ import { themes } from './theme'
 import { APPEARANCE, DRESSING, INTERFACE_SCALE, MODE, TEXT_SCALE, wearing } from './wearing'
 import { does, type Doing } from './doing'
 import { finding } from './finding'
-import { lands } from './landing'
+import { lands, type Places } from './landing'
 import { leaving } from './leaving'
 import { raising } from './raising'
 import { windowing } from './windowing'
@@ -47,13 +48,15 @@ import Failure from './Failure.vue'
 import { telling } from './telling'
 import { agentKind, talking } from './agent/kind'
 import { documentKind, documenting } from './document/kind'
+import { filesKind } from './files/kind'
+import { listing as folders } from './files/listing'
 import { noting, type Held as NoteHeld } from './note/kind'
 import { plexKind, plexing, type Held as PlexHeld } from './plex/kind'
 import { core as agent } from './agent/core'
 import { conversation } from './agent/conversation'
 import { WORDS as talk } from './agent/words'
 import { WORDS as words } from './words'
-import { AGENT, CONVERSATION, NOTE, PLEX, named, opening } from './workspace'
+import { AGENT, CONVERSATION, FILES, NOTE, PLEX, named, opening } from './workspace'
 
 const drawings = drawn()
 const notes = editing(core, undefined, drawings.arrived)
@@ -68,6 +71,7 @@ const window = showing(
   async (paths, renamed) => {
     notes.changed(paths, renamed)
     commands.follows(renamed)
+    await files.changed(paths, renamed)
     await plexes.again(renamed)
   },
   drawings.told,
@@ -148,8 +152,27 @@ const agents = agentKind(held.host, () =>
 /** The document tabs, each reading the document it is filed at. */
 const read = documentKind(held.host, (path) => documenting(reading(documents, path)))
 
+/** Where the window is taken when something is chosen, wherever it was chosen. */
+const places: Places = {
+  travel: (path) => plexes.travel(path),
+  opensAt: (path, run) => read.opensAt(path, run),
+  shows: (path, title) => noted.shows(path, title),
+  entersAt: (path, line) => noted.entersAt(path, line),
+}
+
+/** The tree of the vault, and what a gesture on a row of it comes to. */
+const files = filesKind(held.host, () => folders(core), {
+  lands: (landing) => void lands(landing, places),
+  runs: (id, paths, name) =>
+    carries(id, { ...where(), path: paths[0] ?? '', title: name, others: paths.slice(1) }),
+  moves: (from, to) => does(deedOf('move', { ...where(), path: from }, to), doing, words),
+  makes: (path) => does(deedOf('makeFolder', where(), path), doing, words),
+  writes: async (folder) => (await making.named(folder, []))?.path ?? '',
+  says: (text) => told(text, 'refusal'),
+})
+
 /** The kinds this window draws, in the order a blank tab offers them. */
-held.declares([noted.kind, plexes.kind, agents.kind, read.kind])
+held.declares([noted.kind, plexes.kind, agents.kind, read.kind, files.kind])
 
 /** The palette: one keystroke, and everything the words typed turn up. */
 const palette = finding(core, words, undefined, meaning)
@@ -235,6 +258,9 @@ const doing: Doing = {
   makes: (title, from, seat) => making.calls(title, from, seat),
   renames: (path, title) => core.rename(path, title),
   removes: (path, destroy) => core.remove(path, destroy),
+  moves: (from, to) => core.move(from, to),
+  makesFolder: (path) => core.makeFolder(path),
+  reveals: (path) => void files.reveals(path),
   notes: {
     holding,
     where: (id) => notes.where(id),
@@ -357,12 +383,7 @@ const went = async (item: string, action: string) => {
   }
   const landing = palette.chose(item, action)
   palette.shows(false)
-  await lands(landing, {
-    travel: (path) => plexes.travel(path),
-    opensAt: (path, run) => read.opensAt(path, run),
-    shows: (path, title) => noted.shows(path, title),
-    entersAt: (path, line) => noted.entersAt(path, line),
-  })
+  await lands(landing, places)
 }
 
 /** Escape: a step of a command goes, and the palette itself at the last of them. */
@@ -378,11 +399,15 @@ const shut = (id: string, hold: () => void) => {
   if (!held.shut(id)) hold()
 }
 
-/** The window opens with a plex holding the room and an agent along the edge. */
+/**
+ * The window opens with the files along one edge, a plex holding the room, and
+ * an agent along the other.
+ */
 const starts = async () => {
+  const tree = await held.opens(FILES)
   const plex = await held.opens(PLEX)
   const talk = await held.opens(AGENT)
-  layout.value = opening(plex, talk)
+  layout.value = opening(tree, plex, talk)
 }
 
 onMounted(async () => {

@@ -100,9 +100,9 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 		Problems:      check.Standard(db.Problems()),
 		Create:        note.Create{Writers: writers, Names: queries, Index: index},
 		Write:         note.Write{Readers: readers, Writers: writers, Index: index},
-		Move:          note.Move{Readers: readers, Writers: writers, Links: db.Links(), Index: index},
-		Rename:        note.Rename{Move: note.Move{Readers: readers, Writers: writers, Links: db.Links(), Index: index}},
-		Remove:        note.Remove{Readers: readers, Writers: writers, Links: db.Links(), Index: index},
+		Move:          note.Move{Readers: readers, Writers: writers, Links: db.Links(), Sources: db.Sources(), Index: index},
+		Rename:        note.Rename{Move: note.Move{Readers: readers, Writers: writers, Links: db.Links(), Sources: db.Sources(), Index: index}},
+		Remove:        note.Remove{Writers: writers, Links: db.Links(), Known: db.SourcesKnown(), Index: index},
 		Linking:       note.Linking{Readers: readers, Writers: writers, Index: index},
 	}
 

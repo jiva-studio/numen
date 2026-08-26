@@ -45,8 +45,8 @@ func (a *API) Rename(ctx context.Context, r *connect.Request[v1.RenameRequest]) 
 	return connect.NewResponse(out), nil
 }
 
-// Remove takes a note out of the vault. It goes to the trash, and a request
-// that says so destroys it.
+// Remove takes a file or a folder out of the vault. It goes to the trash, and
+// a request that says so destroys a note.
 func (a *API) Remove(ctx context.Context, r *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {
 	if a.Removes == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
@@ -70,7 +70,7 @@ func (a *API) Remove(ctx context.Context, r *connect.Request[v1.RemoveRequest]) 
 	}), nil
 }
 
-// removal is the two ways a note leaves the vault.
+// removal is the two ways something leaves the vault.
 func (a *API) removal(ctx context.Context, path string, destroy bool) (note.Removed, error) {
 	if destroy {
 		return a.Removes.Destroy(ctx, a.Showing(), path)
@@ -92,14 +92,7 @@ func namingOf(by note.Naming) v1.Naming {
 	}
 }
 
-// movedOf is what the file did, as the schema carries it. A retargeted link
-// crosses as the address it was written by.
+// movedOf is what the file did, as the schema carries it.
 func movedOf(moved note.Moved) *v1.Moved {
-	out := &v1.Moved{From: moved.From, To: moved.To, Repaired: moved.Repaired}
-	for _, one := range moved.Retargeted {
-		out.Retargeted = append(out.Retargeted, &v1.Retargeted{
-			In: one.In, Target: one.Target.Written(), Now: one.Now,
-		})
-	}
-	return out
+	return &v1.Moved{From: moved.From, To: moved.To, Repaired: moved.Repaired}
 }

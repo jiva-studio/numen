@@ -40,6 +40,29 @@ export interface Said {
 export type Neighbourhood = NeighbourhoodResponse
 
 /**
+ * What the vault holds at a path. A file it holds no source for — a picture,
+ * an archive — is neither of the two.
+ */
+export type Source = 'note' | 'book' | 'other'
+
+/** One file or folder, as a listing of the folder it sits in reports it. */
+export interface Entry {
+  /** What the vault calls it, relative to the root, with forward slashes. */
+  readonly path: string
+  /** The last segment of the path. */
+  readonly name: string
+  readonly folder: boolean
+  readonly kind: Source
+}
+
+/** What moving a file or a folder came back with. */
+export interface Movement {
+  /** What the file did. Null when it stayed where it was. */
+  moved: Moved | null
+  refusal: Refused | null
+}
+
+/**
  * One piece of work the application is doing behind the window.
  *
  * Every kind of work is one of these, which is what keeps the window from
@@ -134,10 +157,24 @@ export interface Core {
    */
   rename(path: string, title: string): Promise<Renamed>
   /**
-   * A note taken out of the vault, into the trash it can be brought back from.
-   * Destroying it takes the file off the disk, and nothing brings it back.
+   * A file or a folder taken out of the vault, into the trash it can be brought
+   * back from. Destroying takes the file off the disk and brings nothing back,
+   * and is asked of a note only.
    */
   remove(path: string, destroy?: boolean): Promise<Removed>
+  /**
+   * What one folder of the vault holds, in the order to draw it: folders first
+   * and then files, each group by name with case ignored. The root is the empty
+   * path, and hidden files are in none of the answers.
+   */
+  list(folder: string): Promise<readonly Entry[]>
+  /**
+   * A file or a folder filed somewhere else. The last segment of `to` is what
+   * it is called from now on, so a name changed within one folder is a move.
+   */
+  move(from: string, to: string): Promise<Movement>
+  /** An empty folder. The folders above it are made with it. */
+  makeFolder(path: string): Promise<Refused | null>
   /**
    * The window going, for as long as the client listens. The stream opens with
    * the token this client answers under.
@@ -225,18 +262,6 @@ export interface Moved {
   readonly to: string
   /** The notes whose link stopped resolving and was written again, by name. */
   readonly repaired: readonly string[]
-  /** The links that resolve to a different note now. */
-  readonly retargeted: readonly Retargeted[]
-}
-
-/** One link that means something else now. */
-export interface Retargeted {
-  /** The note the link is written in. */
-  readonly in: string
-  /** What the link is written by: a name, or the path of a note. */
-  readonly target: string
-  /** The note it reaches now. */
-  readonly now: string
 }
 
 /** What removing a note came back with. */

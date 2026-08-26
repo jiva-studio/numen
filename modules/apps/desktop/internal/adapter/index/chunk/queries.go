@@ -68,6 +68,35 @@ func (q *Queries) Fingerprints(ctx context.Context, vaultID, kind string) (map[s
 	return out, rows.Err()
 }
 
+// Under is every source the vault holds at a path and beneath it, by path: the
+// one file, or everything a folder holds.
+func (q *Queries) Under(ctx context.Context, vaultID, path string) ([]domain.FileRef, error) {
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	first, past := under(path)
+	rows, err := q.db.QueryContext(ctx, stmt.Get("sources_under"), vault, path, vault, first, past)
+	if err != nil {
+		return nil, fmt.Errorf("sources_under: %w", err)
+	}
+	defer rows.Close()
+
+	var out []domain.FileRef
+	for rows.Next() {
+		var ref domain.FileRef
+		if err := rows.Scan(&ref.Path, &ref.Kind, &ref.Size, &ref.MTime); err != nil {
+			return nil, err
+		}
+		out = append(out, ref)
+	}
+	return out, rows.Err()
+}
+
 // kinds is what a caller's chosen kinds are on the wire: a JSON array, empty
 // for a question that says nothing about what sort of file it wants.
 func kinds(chosen []domain.SourceKind) (string, error) {

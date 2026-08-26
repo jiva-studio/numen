@@ -165,7 +165,7 @@ export function creating(core: Core, said: Says) {
     }
   }
 
-  return { make, calls, start, join }
+  return { make, named, calls, start, join }
 }
 
 /** The name the note asked for after that many taken ones is filed under. */

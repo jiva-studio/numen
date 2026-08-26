@@ -195,7 +195,8 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 		_ = viewing.Moved(ctx, gone)
 	})
 	moves := note.Move{
-		Readers: readers, Writers: writers, Links: opened.Index.Links(), Index: index,
+		Readers: readers, Writers: writers, Links: opened.Index.Links(),
+		Sources: opened.Index.Sources(), Index: index,
 		Moving: went,
 	}
 
@@ -231,7 +232,7 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 		Replace: note.Replace{Readers: readers, Writers: writers, Index: index, Telling: tells},
 		Move:    moves,
 		Rename:  note.Rename{Move: moves},
-		Remove:  note.Remove{Readers: readers, Writers: writers, Links: opened.Index.Links(), Index: index},
+		Remove:  note.Remove{Writers: writers, Links: opened.Index.Links(), Known: opened.Index.SourcesKnown(), Index: index},
 		Linking: note.Linking{Readers: readers, Writers: writers, Index: index},
 	}
 }

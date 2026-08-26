@@ -11,6 +11,7 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | vault | A folder the person added, carrying its own identity. | |
 | note | A markdown file in a vault. Its shape is [Note format](note-format.md). | |
 | asset | A file in a vault that is not a note. | |
+| entry | One file or folder, as a listing of a folder reports it. | item |
 | title | The name a note is shown by, and one of the keys the application owns — [Note format](note-format.md). A title names a note; a label names a relationship. | label |
 | link | One relationship, as written in a file — [Links](links.md). | connection |
 | role | What kind of relationship a link is, from a closed list of five — [Links](links.md). | seat |
@@ -101,6 +102,11 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | pane | One part of a branch, holding tabs and showing one of them. | group |
 | tab | One thing a pane holds open, shown by its title. | |
 | menu | A list of things that can be done, opened on what they are done to. | |
+| band | A stretch of one list of things to choose. The palette gives each a title; a menu draws a rule where one band gives way to the next. | group, section |
+| tree | A hierarchy of rows drawn as an indented list, some of them holding others. The vault's folders and files are shown in one. | |
+| row | One line of a tree: an entry, at the depth it sits. | node |
+| selection | The rows of a tree chosen together. A gesture made on one of them is made on all of them. | |
+| anchor | The row a selection is reached from, which is where a plain or joining press last landed. | |
 | unsaved | A tab whose text is not the text in its file. | dirty |
 | stuck | A tab whose file can be neither read nor written: not a note, not text, over the ceiling, or frontmatter that will not parse. | |
 | gone | What a name points to is not on disk: a tab whose name has no file behind it, so its save stopped, and a vault with nothing at its path. | |

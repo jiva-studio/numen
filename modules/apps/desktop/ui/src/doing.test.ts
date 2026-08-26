@@ -2,13 +2,12 @@
  * Carrying a command out, asked without a window.
  *
  * Two things are asked here: that a note is settled before its file is renamed
- * or removed, and that what a rename and a remove leave behind is put to the
- * person.
+ * or removed, and that what a remove leaves behind is put to the person.
  */
 import { describe, expect, it } from 'vitest'
 import { commandsOf, deedOf, type Deed, type Where } from './commanding'
 import { does, type Doing } from './doing'
-import type { Added, Known, Removed, Renamed, VaultRefused } from './core'
+import type { Added, Known, Movement, Refused, Removed, Renamed, VaultRefused } from './core'
 import { WORDS as words } from './words'
 
 /** What is in front, which every deed is carried out over. */
@@ -68,6 +67,10 @@ const window = (
     added?: Added
     /** What the list of vaults refused forgetting, erasing or opening one. */
     turnedDown?: VaultRefused
+    /** What moving a file came back with. */
+    movement?: Movement
+    /** What making a folder was refused with. */
+    folderRefused?: Refused
   } = {},
 ) => {
   const done: string[] = []
@@ -87,6 +90,15 @@ const window = (
       done.push(`removes ${path} ${destroy}`)
       return answers.removed ?? removed()
     },
+    moves: async (from, to) => {
+      done.push(`moves ${from} ${to}`)
+      return answers.movement ?? { moved: null, refusal: null }
+    },
+    makesFolder: async (path) => {
+      done.push(`makes folder ${path}`)
+      return answers.folderRefused ?? null
+    },
+    reveals: (path) => void done.push(`reveals ${path}`),
     notes: {
       holding: (path) => (path === at ? 'held' : null),
       where: (id) => (id === 'held' ? at : id),
@@ -266,26 +278,6 @@ describe('a note renamed', () => {
     expect(one.done).toStrictEqual([])
   })
 
-  it('says the links that mean another note now, which nothing repairs', async () => {
-    const one = window({
-      renamed: renamed({
-        moved: {
-          from: 'physics/Ontology.md',
-          to: 'physics/Entropy.md',
-          repaired: [],
-          retargeted: [
-            { in: 'Order.md', target: 'Entropy', now: 'other/Entropy.md' },
-            { in: 'Order.md', target: 'Entropy', now: 'other/Entropy.md' },
-          ],
-        },
-      }),
-    })
-
-    await carry(deedOf('title', front(), 'Entropy'), one.on)
-
-    expect(one.said).toStrictEqual([`${words.retargeted} Order.md`])
-  })
-
   it('says nothing of the notes whose links it wrote again', async () => {
     const one = window({
       renamed: renamed({
@@ -293,7 +285,6 @@ describe('a note renamed', () => {
           from: 'physics/Ontology.md',
           to: 'physics/Entropy.md',
           repaired: ['Notes.md', 'Order.md'],
-          retargeted: [],
         },
       }),
     })
@@ -305,14 +296,6 @@ describe('a note renamed', () => {
 
   it('says nothing of the title it wrote into the frontmatter', async () => {
     const one = window({ renamed: renamed({ frontmatter: true }) })
-
-    await carry(deedOf('title', front(), 'Entropy'), one.on)
-
-    expect(one.said).toStrictEqual([])
-  })
-
-  it('says nothing where the rename left every link meaning what it meant', async () => {
-    const one = window()
 
     await carry(deedOf('title', front(), 'Entropy'), one.on)
 
@@ -436,6 +419,141 @@ describe('a note removed', () => {
 
     expect(one.done).toStrictEqual([])
     expect(one.said).toStrictEqual([words.unanswered])
+  })
+})
+
+describe('several files removed at once', () => {
+  const both = front({ others: ['physics/Heat.pdf'] })
+
+  it('takes each of them out of the vault, in the order they were given', async () => {
+    const one = window()
+
+    await carry(deedOf('remove', both), one.on)
+
+    expect(one.done.filter((step) => step.startsWith('removes'))).toStrictEqual([
+      'removes physics/Ontology.md false',
+      'removes physics/Heat.pdf false',
+    ])
+  })
+
+  it('takes every plex standing on one of them to the note the vault opens with', async () => {
+    const one = window()
+
+    await carry(deedOf('remove', both), one.on)
+
+    expect(one.done.filter((step) => step.startsWith('leaves'))).toStrictEqual([
+      'leaves physics/Ontology.md Root.md',
+      'leaves physics/Heat.pdf Root.md',
+    ])
+  })
+
+  it('says the notes that link to nothing now, each of them once', async () => {
+    const one = window({ removed: removed({ trashed: '', dangling: ['Order.md'] }) })
+
+    await carry(deedOf('remove', both), one.on)
+
+    expect(one.said).toStrictEqual([`${words.dangling} Order.md`])
+  })
+
+  it('takes the rest out where the vault refuses one, and says what it refused', async () => {
+    const one = window()
+    const picky: Doing = {
+      ...one.on,
+      removes: async (path, destroy) => {
+        one.done.push(`removes ${path} ${destroy}`)
+        return removed(path === 'physics/Ontology.md' ? { refusal: 'missing' } : {})
+      },
+    }
+
+    await carry(deedOf('remove', both), picky)
+
+    expect(one.done.filter((step) => step.startsWith('removes'))).toStrictEqual([
+      'removes physics/Ontology.md false',
+      'removes physics/Heat.pdf false',
+    ])
+    expect(one.said).toStrictEqual([words.refused.missing])
+  })
+})
+
+describe('a file filed somewhere else', () => {
+  /** The destination is the whole path, so a name changed in one folder is a move. */
+  const moved = (to: string) => deedOf('move', front(), to)
+
+  it('is asked of the vault under the path it is filed at from now on', async () => {
+    const one = window()
+
+    await carry(moved('notes/Ontology.md'), one.on)
+
+    expect(one.done).toStrictEqual(['settles held', 'moves physics/Ontology.md notes/Ontology.md'])
+  })
+
+  it('settles the tab holding it before its file goes anywhere', async () => {
+    const one = window()
+
+    await carry(moved('notes/Ontology.md'), one.on)
+
+    expect(one.done.indexOf('settles held')).toBeLessThan(
+      one.done.indexOf('moves physics/Ontology.md notes/Ontology.md'),
+    )
+  })
+
+  it('stays where it is while its tab is waiting on the person', async () => {
+    const one = window({ asking: true })
+
+    await carry(moved('notes/Ontology.md'), one.on)
+
+    expect(one.done).toStrictEqual([])
+    expect(one.said).toStrictEqual([words.unanswered])
+  })
+
+  it('stays where it is where something of that name is filed there', async () => {
+    const one = window({ movement: { moved: null, refusal: 'occupied' } })
+
+    await carry(moved('notes/Ontology.md'), one.on)
+
+    expect(one.said).toStrictEqual([words.occupied])
+  })
+
+  it('says nothing of a note renamed, which is what a move is not', async () => {
+    const one = window({ movement: { moved: null, refusal: 'occupied' } })
+
+    await carry(moved('notes/Ontology.md'), one.on)
+
+    expect(one.said).not.toContain(words.refused.occupied)
+  })
+
+  it('asks the vault for nothing where it landed where it already was', async () => {
+    const one = window()
+
+    await carry(moved('physics/Ontology.md'), one.on)
+
+    expect(one.done).toStrictEqual([])
+  })
+})
+
+describe('a folder made', () => {
+  it('is asked of the vault under the path it goes at', async () => {
+    const one = window()
+
+    await carry(deedOf('makeFolder', front(), 'physics/heat'), one.on)
+
+    expect(one.done).toStrictEqual(['makes folder physics/heat'])
+  })
+
+  it('is not made where something of that name is filed there', async () => {
+    const one = window({ folderRefused: 'occupied' })
+
+    await carry(deedOf('makeFolder', front(), 'physics/heat'), one.on)
+
+    expect(one.said).toStrictEqual([words.occupied])
+  })
+
+  it('asks the vault for nothing where no path was given', async () => {
+    const one = window()
+
+    await carry(deedOf('makeFolder', front()), one.on)
+
+    expect(one.done).toStrictEqual([])
   })
 })
 

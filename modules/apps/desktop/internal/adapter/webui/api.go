@@ -72,10 +72,13 @@ type API struct {
 	Reads *note.Read
 	Saves *note.Write
 
-	// Readers open the vault a document is drawn from. A path from outside
-	// arrives at the vault through them, and one leaving the vault is refused
-	// there.
+	// Readers open the vault a document is drawn from and a folder is listed
+	// out of. A path from outside arrives at the vault through them, and one
+	// leaving the vault is refused there.
 	Readers port.VaultReaders
+	// Writers open the vault a folder is made in. A build without them answers
+	// that a folder cannot be made here.
+	Writers port.VaultWriters
 	// Viewer holds the documents the window has open and the pages it has
 	// drawn. A build without one answers that it cannot draw a document.
 	Viewer *viewer
@@ -93,10 +96,11 @@ type API struct {
 	Makes *note.Create
 	Joins *note.Linking
 
-	// Renames gives a note a different name, and Removes takes one out of the
-	// vault. A build without them answers that a note cannot be renamed or
-	// removed here.
+	// Renames gives a note a different name, Moves puts a file or a folder
+	// somewhere else in the vault, and Removes takes one out of it. A build
+	// without them answers that nothing can be renamed, moved or removed here.
 	Renames *note.Rename
+	Moves   *usecase.Move
 	Removes *note.Remove
 
 	// Finds is how the window searches the text the vault holds, by the words

@@ -42,6 +42,10 @@ func (i indexed) Recognised(context.Context, string, domain.SourceKind) ([]port.
 	return nil, nil
 }
 
+func (i indexed) Under(context.Context, string, string) ([]domain.FileRef, error) {
+	return nil, nil
+}
+
 // placing is a window over a vault holding one document with a text layer, and
 // that document read, so a test can name a word and ask where it is.
 func placing(t *testing.T) (*API, http.Handler, *pdf.Book) {

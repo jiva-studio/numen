@@ -38,6 +38,12 @@ var expectedPlans = []struct {
 	{chunk.Statements(), "identify", []any{1, "book", "p"}, []string{"(vault_id=? AND path=?)"}},
 	{chunk.Statements(), "fingerprints", []any{1, "book"}, []string{"sources_by_fingerprint"}},
 	{chunk.Statements(), "reading", []any{1, "library/note.epub"}, []string{"(vault_id=? AND path=?)"}},
+	{chunk.Statements(), "sources_under", []any{1, "folder", 1, "folder/", "folder0"}, []string{"(vault_id=? AND path=?)", "(vault_id=? AND path>? AND path<?)"}},
+	// A folder and everything under it are filed at their new paths through the
+	// same two lookups, and the note at the path itself is renamed by its own.
+	{chunk.Statements(), "move_sources", []any{"science/folder", 7, 1, "folder", "folder/", "folder0"}, []string{"(vault_id=? AND path=?)", "(vault_id=? AND path>? AND path<?)"}},
+	{chunk.Statements(), "note_naming", []any{1, "folder/note-00001.md"}, []string{"(vault_id=? AND path=?)", "INTEGER PRIMARY KEY"}},
+	{chunk.Statements(), "rename_note", []any{"Entropy", "Entropy", 1, "folder/note-00001.md"}, []string{"(vault_id=? AND path=?)"}},
 	{chunk.Statements(), "unchunked", []any{1, "book", 50}, []string{"sources_by_fingerprint", "chunks_by_source"}},
 	{chunk.Statements(), "stale_recipe", []any{1, "book", `["epub-1","pdf-1"]`, 50}, []string{"sources_by_fingerprint"}},
 	{chunk.Statements(), "unembedded", []any{"model", 1, 0, 50}, []string{"chunks_by_vault", "vectors_of"}},

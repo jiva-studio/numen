@@ -190,6 +190,39 @@ func (s *store) RemoveSources(_ context.Context, vaultID string, kind domain.Sou
 	return nil
 }
 
+// MoveSources files what was at one path, and everything under it, where it now
+// is. The chunks travel with the source, as they do in the database.
+func (s *store) MoveSources(_ context.Context, vaultID, from, to string) error {
+	held := s.sources[vaultID]
+	for path, src := range held {
+		if path != from && !strings.HasPrefix(path, from+"/") {
+			continue
+		}
+		landed := to + path[len(from):]
+		delete(held, path)
+		src.Ref.Path = landed
+		held[landed] = src
+		for i, c := range s.chunks {
+			if c.vault == vaultID && c.path == path {
+				s.chunks[i].path = landed
+			}
+		}
+	}
+	return nil
+}
+
+// Under is every source the store holds at a path and beneath it.
+func (s *store) Under(_ context.Context, vaultID, path string) ([]domain.FileRef, error) {
+	var out []domain.FileRef
+	for held, src := range s.sources[vaultID] {
+		if held == path || strings.HasPrefix(held, path+"/") {
+			out = append(out, src.Ref)
+		}
+	}
+	slices.SortFunc(out, func(a, b domain.FileRef) int { return strings.Compare(a.Path, b.Path) })
+	return out, nil
+}
+
 func (s *store) clear(vaultID, path string) {
 	kept := s.chunks[:0]
 	for _, c := range s.chunks {
@@ -283,6 +316,9 @@ func (s *store) small(vaultID string) []storedChunk {
 // library is one vault as a set of files. It counts what was read, so a test can
 // say that an unchanged file was not opened.
 type library struct {
+	// The interface is embedded for the listing, which no source scenario asks
+	// for.
+	port.VaultReader
 	files map[string]*shelved
 	reads map[string]int
 }

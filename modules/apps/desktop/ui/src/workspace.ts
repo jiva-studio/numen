@@ -13,6 +13,8 @@ export const BLANK = 'blank'
 export const NOTE = 'note'
 /** A document read in the window, under the path the vault files it at. */
 export const DOCUMENT = 'document'
+/** The folders and files of the vault, one tab of them to a window. */
+export const FILES = 'files'
 
 /** One thread of talk, under the name the agent hears it by. */
 export const CONVERSATION = 'conversation'
@@ -40,9 +42,16 @@ export const shortened = (question: string, most = 24): string => {
   return `${(space > most / 3 ? cut.slice(0, space) : cut).trimEnd()}…`
 }
 
-/** The plex with the room, and the agent along the trailing edge. */
-export const opening = (plex: string, agent: string): WorkspaceLayout => ({
-  root: branch('root', [pane('main', [plex]), pane('aside', [agent])], [0.72, 0.28]),
+/**
+ * The files along the leading edge, the plex with the room, and the agent along
+ * the trailing edge. The person begins in the plex.
+ */
+export const opening = (files: string, plex: string, agent: string): WorkspaceLayout => ({
+  root: branch(
+    'root',
+    [pane('files', [files]), pane('main', [plex]), pane('aside', [agent])],
+    [0.18, 0.56, 0.26],
+  ),
   axis: 'horizontal',
   focus: 'main',
 })

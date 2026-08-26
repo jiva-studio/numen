@@ -21,6 +21,9 @@ type Move struct {
 	Readers port.VaultReaders
 	Writers port.VaultWriters
 	Links   port.LinkQueries
+	// Sources is where the index files each file. A move tells it that what was
+	// at one path is at another.
+	Sources port.SourceRepository
 	Index   func(ctx context.Context, v domain.Vault, paths []string) error
 	// Moving is told where the note went, so that whoever is showing it at the
 	// name it had follows it. Nothing is told where nobody is drawing.
@@ -39,19 +42,6 @@ type Moved struct {
 	// Repaired is the notes whose link stopped resolving and was written
 	// again, by name.
 	Repaired []string
-	// Retargeted is the links that now resolve to a different note. They are
-	// not broken and are not repaired: this is what two notes sharing a name
-	// does, and it is the person's to settle.
-	Retargeted []Retargeted
-}
-
-// Retargeted is one link that means something else now.
-type Retargeted struct {
-	// In is the note the link is written in; Target is where it goes; Now is
-	// the note it currently reaches.
-	In     string
-	Target domain.Address
-	Now    string
 }
 
 func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (Moved, error) {
@@ -75,9 +65,26 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (Mov
 		return res, missing(err)
 	}
 	res.Landed = true
-	if err := u.index(ctx, v, from, to); err != nil {
+	if err := u.filed(ctx, v, from, to); err != nil {
 		return res, err
 	}
+	return u.Settle(ctx, v, from, to, pointing)
+}
+
+// filed tells the index that what was at one path is at another. The bytes do
+// not change, so nothing is read.
+func (u Move) filed(ctx context.Context, v domain.Vault, from, to string) error {
+	return u.Sources.MoveSources(ctx, v.ID, from, to)
+}
+
+// Settle is the work a move leaves once the file is where it was sent and the
+// index is level with it: whoever is drawing the note told, and the links
+// written by the name it had pointed at where it now is.
+//
+// Pointing is what pointed at the note before it went, read while there was
+// still something to read.
+func (u Move) Settle(ctx context.Context, v domain.Vault, from, to string, pointing []domain.ResolvedLink) (Moved, error) {
+	res := Moved{From: from, To: to, Landed: true}
 
 	// The file is where it now is and the index is level with it. Whoever is
 	// reading this note at the name it had is reading a name with no file.
@@ -108,9 +115,8 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (Mov
 				res.Repaired = append(res.Repaired, was.From)
 			}
 		default:
-			res.Retargeted = append(res.Retargeted, Retargeted{
-				In: was.From, Target: was.Target, Now: lands,
-			})
+			// It reaches another note of the same name. The link is not broken,
+			// and which of the two a name means is the person's to settle.
 		}
 	}
 	if len(res.Repaired) > 0 {
