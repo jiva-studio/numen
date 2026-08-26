@@ -35,20 +35,20 @@ const options = computed(() => optionsForType(type.value))
       :neighbourhood="props.held.picture.value!"
       :options="options"
       :creatable="props.held.creatable"
-      @activate="(path: string) => props.held.activate(path)"
+      @activate="(node: string) => props.held.activate(node)"
       @create="(from: string, seat: PlexRelatedSeat) => void props.held.made(from, seat)"
       @link="
         (from: string, to: string, seat: PlexRelatedSeat) => void props.held.joined(from, to, seat)
       "
       @menu="
         (
-          path: string,
+          node: string,
           at: { x: number; y: number },
           from: SVGGElement,
           opening: MenuOpening,
-        ) => props.held.asks({ path, at, from, opening })
+        ) => props.held.asks({ node, at, from, opening })
       "
-      @show="(path: string, how: PlexShowing) => props.held.opens(path, how)"
+      @show="(node: string, how: PlexShowing) => props.held.opens(node, how)"
       @dismiss="props.held.dismiss()"
     />
 

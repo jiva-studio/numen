@@ -4,21 +4,25 @@
  * The plex reports the shape of a gesture and nothing else. What making a note
  * from a node comes to, what the menu on a node offers, and which note a click
  * opens are decided here, so a test can ask them without a screen.
+ *
+ * A gesture names a node by its ticket. This is the edge where a ticket becomes
+ * the path the vault is asked about, and past it every note is a path.
  */
 import { computed, ref } from 'vue'
 import type { MenuOpening, PlexNeighbourhood, PlexRelatedSeat, PlexShowing } from '@numen/ui'
 import { OFFERED } from './menu'
 import { asPlex } from './picture'
 import type { Standing } from './standing'
+import { ticketing } from './tickets'
 import type { Went } from '../core'
 import type { Host, Kind } from '../windowing'
 import { PLEX, plexCalled } from '../workspace'
 import PlexTab from './PlexTab.vue'
 import { WORDS as words } from './words'
 
-/** Where the menu on a node stands, and what it was asked for on. */
+/** Where the menu on a node stands, and the node it was asked for on. */
 export interface Asked {
-  readonly path: string
+  readonly node: string
   readonly at: { x: number; y: number }
   readonly from: HTMLElement | SVGElement | null
   readonly opening: MenuOpening
@@ -124,7 +128,7 @@ export function plexKind(host: Host, makes: () => Standing, deps: Plexing) {
    * all of them and only while one of them has nowhere to stand.
    */
   const again = async (renamed: readonly Went[] = []) => {
-    if (renamed.length) for (const { held } of all()) held.view.follows(renamed)
+    if (renamed.length) for (const { held } of all()) held.follows(renamed)
     if (all().some(({ held }) => !held.view.here.value)) {
       try {
         await deps.first()
@@ -144,16 +148,29 @@ export function plexKind(host: Host, makes: () => Standing, deps: Plexing) {
 }
 
 export function plexing(view: Standing, deps: Plexing) {
-  /** The picture as the plex reads it, and nothing while the window has none. */
-  const picture = computed<PlexNeighbourhood | null>(() =>
-    deps.ready() && view.neighbourhood.value ? asPlex(view.neighbourhood.value) : null,
-  )
+  /** What this plex calls each note it draws. */
+  const tickets = ticketing()
+
+  /**
+   * The picture as the plex reads it, and nothing while the window has none.
+   * The notes it draws are the notes this plex holds a ticket for.
+   */
+  const picture = computed<PlexNeighbourhood | null>(() => {
+    const around = view.neighbourhood.value
+    if (!deps.ready() || !around) return null
+    const drawn = asPlex(around, tickets.of)
+    tickets.keeps(drawn.nodes.map((node) => node.id))
+    return drawn
+  })
 
   /** The menu on a node, for as long as it stands. */
   const menu = ref<Asked | null>(null)
 
   /** A node chosen: the plex travels there, and the picture is asked for again. */
-  const activate = (path: string) => void view.go(path)
+  const activate = (node: string) => {
+    const path = tickets.note(node)
+    if (path) void view.go(path)
+  }
 
   /**
    * A note made in a seat of another one. It is in the index by the time the
@@ -163,7 +180,8 @@ export function plexing(view: Standing, deps: Plexing) {
    * deep, and that is the seat the new note sits in.
    */
   const made = async (from: string, seat: PlexRelatedSeat) => {
-    if (await deps.makes.make(from, seat)) await view.go(from)
+    const path = tickets.note(from)
+    if (path && (await deps.makes.make(path, seat))) await view.go(path)
   }
 
   /**
@@ -171,12 +189,16 @@ export function plexing(view: Standing, deps: Plexing) {
    * line was drawn from, which is the one the link is written in.
    */
   const joined = async (from: string, to: string, seat: PlexRelatedSeat) => {
-    if (await deps.makes.join(from, to, seat)) await view.go(from)
+    const one = tickets.note(from)
+    const other = tickets.note(to)
+    if (one && other && (await deps.makes.join(one, other, seat))) await view.go(one)
   }
 
   /** A note opened where the person asked for it, called what the picture calls it. */
-  const opens = (path: string, showing: PlexShowing = 'here') =>
-    deps.opens(path, nameOf(path), showing)
+  const opens = (node: string, showing: PlexShowing = 'here') => {
+    const path = tickets.note(node)
+    if (path) deps.opens(path, nameOf(path), showing)
+  }
 
   /** A menu asked for on a node, and one put away. */
   const asks = (asked: Asked) => {
@@ -191,7 +213,17 @@ export function plexing(view: Standing, deps: Plexing) {
     const asking = menu.value
     menu.value = null
     if (!asking || !OFFERED.has(id)) return
-    deps.runs(id, asking.path, nameOf(asking.path))
+    const path = tickets.note(asking.node)
+    if (path) deps.runs(id, path, nameOf(path))
+  }
+
+  /**
+   * Notes that moved. The plex follows the one it stands on, and every note it
+   * draws keeps the ticket it holds.
+   */
+  const follows = (renamed: readonly Went[]) => {
+    view.follows(renamed)
+    tickets.moved(renamed)
   }
 
   /**
@@ -217,6 +249,7 @@ export function plexing(view: Standing, deps: Plexing) {
     asks,
     dismiss,
     chose,
+    follows,
     nameOf,
   }
 }

@@ -59,10 +59,15 @@ export function standing(core: Neighbours) {
     }
   }
 
-  /** A note that moved. A plex standing on it stands on where it went. */
+  /**
+   * A note that moved. A plex standing on it stands on where it went, and an
+   * answer on its way is let go of.
+   */
   const follows = (renamed: readonly Went[]) => {
     const to = wentTo(renamed, here.value)
-    if (to) here.value = to
+    if (!to) return
+    here.value = to
+    asked++
   }
 
   /** The tab has closed. An answer still on its way is let go of. */

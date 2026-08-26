@@ -240,6 +240,17 @@ const cards = (window: VueWrapper): readonly string[] =>
   window.findAll('article.notice').map((card) => card.text())
 
 /**
+ * What the plex calls the note it is standing on, which is what every gesture
+ * it reports carries. The vault is asked about a path, and this is not one.
+ */
+const nodeInPlex = (window: VueWrapper): string => {
+  const held = window.findComponent(PlexTab).props('held') as {
+    picture: { value: { nodes: readonly { id: string }[] } | null }
+  }
+  return held.picture.value?.nodes[0]?.id ?? ''
+}
+
+/**
  * The window with a palette a person can type into. The palette draws itself at
  * the end of the document, and is read off the document.
  */
@@ -317,11 +328,20 @@ describe('a note asked for in the plex', () => {
   it('is drawn in a tab of its own', async () => {
     const window = await drawn()
 
-    window.findComponent(Plex).vm.$emit('show', 'Root.md', 'here')
+    window.findComponent(Plex).vm.$emit('show', nodeInPlex(window), 'here')
     await settles()
 
     expect(window.findComponent(NoteTab).exists()).toBe(true)
     expect(window.findComponent(NoteTab).findComponent(Editor).exists()).toBe(true)
+  })
+
+  it('is asked for by the node, and a path opens nothing', async () => {
+    const window = await drawn()
+
+    window.findComponent(Plex).vm.$emit('show', 'Root.md', 'here')
+    await settles()
+
+    expect(window.findComponent(NoteTab).exists()).toBe(false)
   })
 })
 
@@ -671,35 +691,10 @@ describe('a command asked for on a node of the plex', () => {
       asks: (one: unknown) => void
       chose: (id: string) => void
     }
-    plex.asks({ path: 'Root.md', at: { x: 0, y: 0 }, from: null, opening: 'below' })
+    plex.asks({ node: nodeInPlex(window), at: { x: 0, y: 0 }, from: null, opening: 'below' })
     plex.chose(id)
     await settles()
   }
-
-  it('says the vault is still being read, and carries no command out', async () => {
-    said.ready = false
-    said.opening = null
-    const window = await drawn()
-
-    await chose(window, 'title')
-
-    expect(cards(window)).toStrictEqual(['reading the vault…', 'The vault is still being read'])
-  })
-
-  it('lets a person put away what it told them, and forgets it', async () => {
-    said.ready = false
-    said.opening = null
-    const window = await drawn()
-
-    await chose(window, 'title')
-    await window.findAll('article.notice button')[1]!.trigger('click')
-    await settles()
-
-    expect(cards(window)).toStrictEqual(['reading the vault…'])
-    // Put away is put away for good: the window stops handing the corner a card
-    // it has been told the person is finished with.
-    expect(window.findComponent(Notices).props('notices')).toHaveLength(1)
-  })
 
   it('says in the tab what that tab could not show', async () => {
     const window = await drawn()
@@ -720,6 +715,44 @@ describe('a command asked for on a node of the plex', () => {
 
     expect(cards(window)).toStrictEqual([])
     expect(window.findComponent(Palette).props('crumb')).toBe('Change title')
+  })
+})
+
+/**
+ * A vault still being read draws no picture, so a command over it is reached by
+ * the keyboard: this is the window a person meets while a vault is opening.
+ */
+describe('a command asked for while the vault is being read', () => {
+  /** The keystroke for a new note, which is a command over the window. */
+  const askedFor = async () => {
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'n', ctrlKey: true }))
+    await settles()
+  }
+
+  it('says the vault is still being read, and carries no command out', async () => {
+    said.ready = false
+    said.opening = null
+    const window = await drawn()
+
+    await askedFor()
+
+    expect(cards(window)).toStrictEqual(['reading the vault…', 'The vault is still being read'])
+    expect(asked.made).toStrictEqual([])
+  })
+
+  it('lets a person put away what it told them, and forgets it', async () => {
+    said.ready = false
+    said.opening = null
+    const window = await drawn()
+
+    await askedFor()
+    await window.findAll('article.notice button')[1]!.trigger('click')
+    await settles()
+
+    expect(cards(window)).toStrictEqual(['reading the vault…'])
+    // Put away is put away for good: the window stops handing the corner a card
+    // it has been told the person is finished with.
+    expect(window.findComponent(Notices).props('notices')).toHaveLength(1)
   })
 })
 
@@ -1152,7 +1185,7 @@ describe('the four commands over how the window is drawn', () => {
     /** A note in a tab of its own, with the editor's measurements taken. */
     const opened = async () => {
       const window = await drawnWithPalette()
-      window.findComponent(Plex).vm.$emit('show', 'Root.md', 'here')
+      window.findComponent(Plex).vm.$emit('show', nodeInPlex(window), 'here')
       await settles()
       asked.measured = 0
       globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
