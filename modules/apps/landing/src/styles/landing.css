@@ -672,6 +672,25 @@ svg {
   white-space: nowrap;
 }
 
+/* What a file weighs, and which build the shelf holds: both are asked of the
+   shelf once the page is up, and both stand as nothing until it has answered. */
+.take__weight,
+.said {
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  font-style: normal;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.take__weight:empty {
+  display: none;
+}
+
+.said {
+  margin-block-start: 1.1rem;
+}
+
 /* Narrow: the machine stands over what it can be taken as, and the whole shelf
    has the width of the page. */
 @media (max-width: 40rem) {
