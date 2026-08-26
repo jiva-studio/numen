@@ -20,17 +20,21 @@ const KeyEnvVar = "NUMEN_PROOFREADING_KEY"
 // Config is the proofreading section of this installation's settings: whether
 // anything proofreads at all, and what it is reached through.
 type Config struct {
+	// Use is `service`, or empty for an installation that proofreads nothing.
 	Use     string  `json:"use"`
 	Service Service `json:"service"`
 }
 
 // Service is a hosted model reached over HTTP.
 type Service struct {
+	// BaseURL points at anything speaking the /v1/chat/completions request shape.
 	BaseURL string `json:"base_url"`
 	// BatchURL is a queue the pages are left in and collected from later, at
 	// half the price. Empty asks a page at a time and waits.
 	BatchURL string `json:"batch_url"`
-	Name     string `json:"name"`
+	// Name is which model corrects a reading. It stands beside every line it
+	// corrected.
+	Name string `json:"name"`
 	// KeyEnv names the environment variable holding the key, for an
 	// installation that keeps it out of the file.
 	KeyEnv string `json:"key_env"`

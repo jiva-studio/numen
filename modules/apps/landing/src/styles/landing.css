@@ -61,7 +61,8 @@ h1,
 h2 {
   font-family: var(--display);
   font-weight: 500;
-  font-variation-settings: 'opsz' 36;
+  /* The size a heading is set at decides which cut of the face draws it. */
+  font-optical-sizing: auto;
   letter-spacing: -0.018em;
 }
 
@@ -115,6 +116,12 @@ svg {
   border-radius: 22%;
 }
 
+.masthead__links {
+  display: flex;
+  align-items: center;
+  gap: 1.6rem;
+}
+
 .masthead a:not(.wordmark) {
   font-size: 0.92rem;
   color: var(--muted);
@@ -139,7 +146,6 @@ svg {
 
 .hero h1 em {
   font-style: italic;
-  font-variation-settings: 'opsz' 60;
 }
 
 .lead {
@@ -234,13 +240,8 @@ svg {
   transition: opacity 280ms ease;
 }
 
-.stage:has(input[value='map']:checked) [data-shot='map'],
-.stage:has(input[value='writing']:checked) [data-shot='writing'],
-.stage:has(input[value='searching']:checked) [data-shot='searching'],
-.stage:has(input[value='asking']:checked) [data-shot='asking'] {
-  opacity: 1;
-  visibility: visible;
-}
+/* Which one is lit is written by the page, from the same list the shots are
+   drawn from: a name in one place and not the other lights nothing. */
 
 .shot {
   display: block;
@@ -685,6 +686,11 @@ svg {
 
 .footer nav a {
   text-decoration: none;
+}
+
+.footer__links {
+  display: flex;
+  gap: 1.6rem;
 }
 
 .footer a:hover {

@@ -1,27 +1,29 @@
-name: landing
+name: docs
 
 on:
   pull_request:
     paths:
-      - "modules/apps/landing/**"
-      - ".github/workflows/landing.yml"
+      - "modules/apps/docs/**"
+      # What the manual writes itself from.
+      - "modules/apps/desktop/ui/src/keying.ts"
+      - "modules/apps/desktop/ui/src/words.ts"
+      - "modules/apps/desktop/ui/src/commanding.ts"
+      - "modules/apps/desktop/cmd/numen/main.go"
+      - "modules/apps/desktop/internal/adapter/cli/cli.go"
+      - "modules/apps/desktop/internal/adapter/settings/settings.go"
+      - "modules/apps/desktop/internal/adapter/embed/config.go"
+      - "modules/apps/desktop/internal/adapter/recognition/config.go"
+      - "modules/apps/desktop/internal/adapter/proofreading/config.go"
+      - "modules/apps/desktop/internal/adapter/agent/config.go"
+      - ".github/workflows/docs.yml"
   push:
     branches: [main]
 
-# One run at a time per branch, and the newest is the one that matters. Two
-# deploys share one storage zone, and the second takes down what the first has
-# not finished putting up. A deploy that is overtaken is stopped: every deploy
-# writes the whole site and then removes what it did not write, so the one that
-# follows leaves the zone whole.
-concurrency:
-  group: landing-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  # The page is static and carries no framework, so what there is to check is
-  # that its markup typechecks and that the site builds — pictures included,
-  # which is where a missing asset turns up.
-  page:
+  # The manual is markdown and carries no framework, so what there is to check
+  # is that the site builds and that the keyboard page still says what the
+  # window does.
+  manual:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,37 +33,38 @@ jobs:
           node-version: "22"
 
       - name: Install
-        run: npm ci --prefix modules/apps/landing
+        run: npm ci --prefix modules/apps/docs
+
+      - name: The manual says what the application does
+        run: npm run manual:check --prefix modules/apps/docs
 
       - name: Typecheck
-        run: npm run typecheck --prefix modules/apps/landing
+        run: npm run typecheck --prefix modules/apps/docs
 
       - name: Build
-        env:
-          PUBLIC_NUMEN_DOWNLOADS_BASE: ${{ vars.PUBLIC_NUMEN_DOWNLOADS_BASE }}
-        run: npm run build --prefix modules/apps/landing
+        run: npm run build --prefix modules/apps/docs
 
       - uses: actions/upload-artifact@v4
         with:
-          name: landing
-          path: modules/apps/landing/dist
+          name: docs
+          path: modules/apps/docs/dist
           if-no-files-found: error
 
   # What is on the default branch is what is on the web. Storage is never
   # readable without its password: the pull zone in front of it is what serves
-  # the page, and the page has a storage zone of its own.
+  # the manual, and the manual has a storage zone of its own.
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: page
+    needs: manual
     runs-on: ubuntu-latest
     steps:
       - name: What this needs
         env:
           ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
-          ZONE: ${{ vars.BUNNY_SITE_STORAGE_ZONE }}
-          PULL_ZONE: ${{ vars.BUNNY_SITE_PULL_ZONE_ID }}
-          SERVED_FROM: ${{ vars.BUNNY_SITE_SERVED_FROM }}
-          KEY: ${{ secrets.BUNNY_SITE_STORAGE_KEY }}
+          ZONE: ${{ vars.BUNNY_DOCS_STORAGE_ZONE }}
+          PULL_ZONE: ${{ vars.BUNNY_DOCS_PULL_ZONE_ID }}
+          SERVED_FROM: ${{ vars.BUNNY_DOCS_SERVED_FROM }}
+          KEY: ${{ secrets.BUNNY_DOCS_STORAGE_KEY }}
           API_KEY: ${{ secrets.BUNNY_API_KEY }}
         run: |
           missing=
@@ -75,14 +78,14 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: landing
+          name: docs
           path: dist
 
       - name: Up
         env:
           ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
-          ZONE: ${{ vars.BUNNY_SITE_STORAGE_ZONE }}
-          KEY: ${{ secrets.BUNNY_SITE_STORAGE_KEY }}
+          ZONE: ${{ vars.BUNNY_DOCS_STORAGE_ZONE }}
+          KEY: ${{ secrets.BUNNY_DOCS_STORAGE_KEY }}
         run: |
           set -euo pipefail
           cd dist
@@ -96,14 +99,14 @@ jobs:
             case "$code" in 20*) ;; *) echo "::error::$path was refused with $code"; exit 1 ;; esac
           done
 
-      # A page removed from the site is still on the disk it was put on. What
+      # A page removed from the manual is still on the disk it was put on. What
       # this build did not write is taken down, so what is served is what was
       # built and nothing else.
       - name: Down with what is no longer there
         env:
           ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
-          ZONE: ${{ vars.BUNNY_SITE_STORAGE_ZONE }}
-          KEY: ${{ secrets.BUNNY_SITE_STORAGE_KEY }}
+          ZONE: ${{ vars.BUNNY_DOCS_STORAGE_ZONE }}
+          KEY: ${{ secrets.BUNNY_DOCS_STORAGE_KEY }}
         run: |
           set -euo pipefail
           built=$(cd dist && find . -type f | sed 's|^\./||' | sort)
@@ -132,7 +135,7 @@ jobs:
 
       - name: Forget the old copies
         env:
-          PULL_ZONE: ${{ vars.BUNNY_SITE_PULL_ZONE_ID }}
+          PULL_ZONE: ${{ vars.BUNNY_DOCS_PULL_ZONE_ID }}
           API_KEY: ${{ secrets.BUNNY_API_KEY }}
         run: |
           set -euo pipefail
@@ -144,7 +147,7 @@ jobs:
 
       - name: Fetch it as a stranger would
         env:
-          SERVED_FROM: ${{ vars.BUNNY_SITE_SERVED_FROM }}
+          SERVED_FROM: ${{ vars.BUNNY_DOCS_SERVED_FROM }}
         run: |
           set -euo pipefail
           # A purge is answered before it has reached every edge.
@@ -152,4 +155,4 @@ jobs:
             --retry 6 --retry-delay 5 --retry-all-errors \
             -w '%{http_code}' "$SERVED_FROM/" || true)
           echo "${code:-—}  $SERVED_FROM/"
-          [ "$code" = 200 ] || { echo "::error::the page did not come back"; exit 1; }
+          [ "$code" = 200 ] || { echo "::error::the manual did not come back"; exit 1; }

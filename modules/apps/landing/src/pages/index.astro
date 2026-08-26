@@ -7,14 +7,16 @@
  */
 import { getImage } from 'astro:assets'
 import Page from '../layouts/Page.astro'
-import mapLight from '../assets/window-map-light.png'
-import mapDark from '../assets/window-map-dark.png'
-import writingLight from '../assets/window-writing-light.png'
-import writingDark from '../assets/window-writing-dark.png'
-import searchingLight from '../assets/window-searching-light.png'
-import searchingDark from '../assets/window-searching-dark.png'
-import askingLight from '../assets/window-asking-light.png'
-import askingDark from '../assets/window-asking-dark.png'
+import mapLight from '../assets/window-map-light.webp'
+import mapDark from '../assets/window-map-dark.webp'
+import writingLight from '../assets/window-writing-light.webp'
+import writingDark from '../assets/window-writing-dark.webp'
+import filingLight from '../assets/window-filing-light.webp'
+import filingDark from '../assets/window-filing-dark.webp'
+import searchingLight from '../assets/window-searching-light.webp'
+import searchingDark from '../assets/window-searching-dark.webp'
+import askingLight from '../assets/window-asking-light.webp'
+import askingDark from '../assets/window-asking-dark.webp'
 
 /**
  * Where the builds are served from. A store of their own, in front of which
@@ -56,18 +58,22 @@ const BUILDS = [
 
 const DOWNLOAD = '#get'
 
+/** The manual and the forum, each a site of its own. */
+const DOCS = 'https://docs.numen.md'
+const FORUM = 'https://forum.numen.md'
+
 const STUDIO = 'https://jiva.studio'
 
 /** What the window is shown doing, in the order the switch offers it. */
 const SHOTS = [
   {
-    id: 'map',
-    name: 'The map',
-    caption: 'Everything joined to the note you are on, drawn around it.',
-    alt: 'The numen window: a map of notes around one called Entropy, with the '
-      + 'assistant along the edge.',
-    light: mapLight,
-    dark: mapDark,
+    id: 'filing',
+    name: 'Files',
+    caption: 'Your folders as they are on disk — move a note and its links follow.',
+    alt: 'The numen window: the folders of the vault, the map over the note it '
+      + 'is about, and the assistant along the edge.',
+    light: filingLight,
+    dark: filingDark,
   },
   {
     id: 'writing',
@@ -76,6 +82,15 @@ const SHOTS = [
     alt: 'The numen window: a note being written in markdown, the map beside it.',
     light: writingLight,
     dark: writingDark,
+  },
+  {
+    id: 'map',
+    name: 'The map',
+    caption: 'Everything joined to the note you are on, drawn around it.',
+    alt: 'The numen window: a map of notes around one called Entropy, with the '
+      + 'assistant along the edge.',
+    light: mapLight,
+    dark: mapDark,
   },
   {
     id: 'searching',
@@ -120,7 +135,11 @@ const description =
         <img src="/favicon.svg" width="26" height="26" alt="" />
         numen
       </a>
-      <a href={DOWNLOAD}>Download</a>
+      <nav class="masthead__links">
+        <a href={DOCS}>Docs</a>
+        <a href={FORUM}>Forum</a>
+        <a href={DOWNLOAD}>Download</a>
+      </nav>
     </header>
 
     <section class="hero">
@@ -133,6 +152,13 @@ const description =
         <a class="button" href={DOWNLOAD}>Download</a>
         <span class="beside">macOS · Windows · Linux</span>
       </div>
+
+      <style
+        is:inline
+        set:html={`${SHOTS.map(
+          ({ id }) => `.stage:has(input[value='${id}']:checked) [data-shot='${id}']`,
+        ).join(',')}{opacity:1;visibility:visible}`}
+      />
 
       <div class="stage rise" style="--wait: 260ms">
         <div class="shots">
@@ -419,7 +445,11 @@ const description =
 
     <footer class="footer">
       <span>numen — <a href={STUDIO}>jiva studio</a></span>
-      <a href={DOWNLOAD}>Download</a>
+      <nav class="footer__links">
+        <a href={DOCS}>Docs</a>
+        <a href={FORUM}>Forum</a>
+        <a href={DOWNLOAD}>Download</a>
+      </nav>
     </footer>
   </div>
 

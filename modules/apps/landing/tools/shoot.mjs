@@ -9,14 +9,19 @@ import { accessSync, constants } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
+import sharp from 'sharp'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const UI = join(HERE, '..', '..', '..', 'libs', 'ui')
 const INTO = join(HERE, '..', 'src', 'assets')
 
-const PORT = 6099
+/** A Storybook already running, for a machine that keeps one up. */
+const GIVEN = process.env['STORYBOOK_PORT']
+const PORT = GIVEN ? Number(GIVEN) : 6099
+/** How hard the pictures are pressed. The build presses them again. */
+const QUALITY = 90
 /** What the page shows, in the order the switcher offers them. */
-const SHOTS = ['map', 'writing', 'searching', 'asking']
+const SHOTS = ['filing', 'writing', 'map', 'searching', 'asking']
 /*
  * A window narrower than the column it is drawn in, so the application's own
  * text lands on the page larger than it stands on screen and can be read at a
@@ -66,11 +71,13 @@ const answering = async (url) => {
   throw new Error(`Storybook did not answer at ${url}`)
 }
 
-const storybook = spawn(
-  'npx',
-  ['storybook', 'dev', '-p', String(PORT), '--no-open', '--quiet'],
-  { cwd: UI, detached: true, stdio: 'ignore' },
-)
+const storybook = GIVEN
+  ? { pid: 0 }
+  : spawn('npx', ['storybook', 'dev', '-p', String(PORT), '--no-open', '--quiet'], {
+      cwd: UI,
+      detached: true,
+      stdio: 'ignore',
+    })
 
 try {
   const base = `http://localhost:${PORT}`
@@ -91,8 +98,8 @@ try {
         { waitUntil: 'networkidle' },
       )
       await page.waitForTimeout(SETTLING)
-      const name = `window-${shot}-${theme}.png`
-      await page.screenshot({ path: join(INTO, name) })
+      const name = `window-${shot}-${theme}.webp`
+      await sharp(await page.screenshot()).webp({ quality: QUALITY }).toFile(join(INTO, name))
       console.log(name)
     }
     await page.close()

@@ -62,8 +62,11 @@ type Config struct {
 // reaches it: a repository and a service call one model by two names, and
 // vectors made under both are kept under this one.
 type Model struct {
-	Name       string `json:"name"`
-	Dimensions int    `json:"dimensions"`
+	// Name is what the model is called here.
+	Name string `json:"name"`
+	// Dimensions is how wide its vectors are. The coarse index is built for one
+	// width, and changing it builds that index again from the vectors held.
+	Dimensions int `json:"dimensions"`
 	// MaxTokens is where the model truncates what it is given. A window cut
 	// somewhere else is a window whose vector describes text it does not hold.
 	MaxTokens int `json:"max_tokens"`
@@ -86,6 +89,8 @@ func (m Model) Stored(from string) port.EmbeddingModel {
 
 // Station is where a vector is made: on this machine, or by a service.
 type Station struct {
+	// Use is `local` or `service`, and names which of the two sections below is
+	// the one in force.
 	Use     string       `json:"use"`
 	Local   LocalModel   `json:"local"`
 	Service ServiceModel `json:"service"`
@@ -141,8 +146,10 @@ func (m LocalModel) From() string {
 
 // ServiceModel is how a hosted model is reached over HTTP.
 type ServiceModel struct {
+	// BaseURL points at anything speaking the /v1/embeddings request shape.
 	BaseURL string `json:"base_url"`
-	Name    string `json:"name"`
+	// Name is what that service calls the model.
+	Name string `json:"name"`
 	// BatchCharacters bounds one request by the characters of everything in it.
 	BatchCharacters int `json:"batch_characters"`
 	// KeyEnv names the environment variable holding the key, for an
