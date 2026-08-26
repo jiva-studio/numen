@@ -39,3 +39,5 @@ the window is what writes it down; these do not.
 **`-no-mcp`** starts the window with no door for agents at all. Without it, agents reach this
 vault at `127.0.0.1:7717`, which is this machine and nothing else; `-mcp-addr` moves that, and
 anything other than a loopback address opens the vault to the network.
+
+The other program, [`numen-cli`](/cli/), takes flags of its own.

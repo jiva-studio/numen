@@ -289,6 +289,50 @@ const flags = async () => {
   return ['| | |', '| --- | --- |', ...rows].join('\n')
 }
 
+/* ------------------------------------------------------------ the command line */
+
+const CLI = new URL('../../desktop/internal/adapter/cli/', import.meta.url)
+
+/**
+ * What the command line says it takes, out of the one string it prints when
+ * asked. Two of its blocks are read: the commands, and the options standing
+ * over all of them. The line above them says what the program is, which is
+ * prose and is written on the page.
+ */
+const cli = async () => {
+  const source = await read(CLI, 'cli.go')
+  const usage = source.match(/const usage = `([\s\S]*?)`/)
+  if (!usage) die('cli.go no longer prints a usage string')
+
+  const blocks = { usage: [], options: [] }
+  let holding = null
+  for (const line of usage[1].split('\n')) {
+    const opens = line.match(/^(usage|options):\s*$/)
+    if (opens) {
+      holding = opens[1]
+      continue
+    }
+    if (line.trim() === '') {
+      holding = null
+      continue
+    }
+    if (!holding) continue
+    const said = line.trim().match(/^(.*?)\s{2,}(.*)$/)
+    if (said) blocks[holding].push([said[1], said[2]])
+  }
+  if (blocks.usage.length === 0) die('cli.go lists no commands')
+
+  const rows = (of) => ['| | |', '| --- | --- |', ...of.map(([what, does]) => `| \`${what}\` | ${does} |`)]
+
+  return [
+    ...rows(blocks.usage),
+    '',
+    '### Over every command',
+    '',
+    ...rows(blocks.options),
+  ].join('\n')
+}
+
 /* ------------------------------------------------------------------ page */
 
 const WRITES = [
@@ -296,6 +340,7 @@ const WRITES = [
   ['commands.md', commands],
   ['reference.md', settings],
   ['starting.md', flags],
+  ['cli.md', cli],
 ]
 
 const checking = process.argv.includes('--check')

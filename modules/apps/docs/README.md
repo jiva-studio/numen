@@ -17,7 +17,7 @@ Only what somebody using numen needs. The specifications under `docs/` in this
 repository — the note format, the index, the performance targets, the decision
 records — are how the application is built, and stay there.
 
-## Four pages write themselves
+## Five pages write themselves
 
 | Page | Written from |
 | --- | --- |
@@ -25,6 +25,7 @@ records — are how the application is built, and stay there.
 | `commands.md` | every row of `ui/src/commanding.ts`, in the words `words.ts` draws them with |
 | `reference.md` | the settings structs: `settings`, `embed`, `recognition`, `proofreading`, `agent` |
 | `starting.md` | the flags `cmd/numen/main.go` declares |
+| `cli.md` | what `numen-cli` prints when it is asked, in `adapter/cli/cli.go` |
 
 Each is one block between `<!-- BEGIN AUTOGEN -->` and `<!-- END AUTOGEN -->`;
 the prose around it is written by hand.

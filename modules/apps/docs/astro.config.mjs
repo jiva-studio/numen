@@ -49,7 +49,10 @@ export default defineConfig({
             { slug: 'documents' },
           ],
         },
-        { slug: 'agent' },
+        {
+          label: 'The agent',
+          items: [{ slug: 'agent' }, { slug: 'connect' }],
+        },
         {
           label: 'Settings',
           items: [
@@ -66,6 +69,7 @@ export default defineConfig({
             { slug: 'keyboard' },
             { slug: 'reference' },
             { slug: 'starting' },
+            { slug: 'cli' },
           ],
         },
         { slug: 'trouble' },

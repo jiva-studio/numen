@@ -9,6 +9,7 @@ on:
       - "modules/apps/desktop/ui/src/words.ts"
       - "modules/apps/desktop/ui/src/commanding.ts"
       - "modules/apps/desktop/cmd/numen/main.go"
+      - "modules/apps/desktop/internal/adapter/cli/cli.go"
       - "modules/apps/desktop/internal/adapter/settings/settings.go"
       - "modules/apps/desktop/internal/adapter/embed/config.go"
       - "modules/apps/desktop/internal/adapter/recognition/config.go"

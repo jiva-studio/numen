@@ -77,6 +77,12 @@ it and there is nothing to configure.
 | `model` | `opus`, `sonnet`, or a full model name. Empty takes whatever that installation answers with. |
 | `max_steps` | how many turns it may take before it is stopped. |
 
+## Another agent, in another window
+
+The panel is not the only way in. While the window is open, the same tools are served over MCP
+on this machine, so an assistant you already use elsewhere can work in the vault too — see
+[connect another agent](/connect/).
+
 ## Where it runs, and what it costs
 
 The agent runs on your machine and answers through your own account with whoever provides the
