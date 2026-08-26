@@ -127,8 +127,6 @@ func namingOf(by note.Naming) v1.Naming {
 	switch by {
 	case note.ByFrontmatter:
 		return v1.Naming_NAMING_FRONTMATTER
-	case note.ByHeading:
-		return v1.Naming_NAMING_HEADING
 	case note.ByFilename:
 		return v1.Naming_NAMING_FILENAME
 	default:

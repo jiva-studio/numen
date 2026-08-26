@@ -144,9 +144,9 @@ func TestSavingANewHeadingLeavesTheFileWhereItIs(t *testing.T) {
 	if !gone(t, c, "Disorder.md") {
 		t.Error("the file is at Disorder.md")
 	}
-	// The vault shows the note under the heading it now carries, and the file
-	// it is filed under is the one the person typed in.
-	if got := c.title(t, "Entropy.md"); got != "Disorder" {
+	// A heading is prose. The note is shown by its `title` key, else by the file
+	// it is filed under, and neither of those is what the person typed.
+	if got := c.title(t, "Entropy.md"); got != "Entropy" {
 		t.Errorf("the vault shows it as %q", got)
 	}
 }

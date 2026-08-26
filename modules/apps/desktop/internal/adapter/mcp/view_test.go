@@ -49,28 +49,28 @@ func watched(t *testing.T, notes map[string]string) (*sdk.ClientSession, *window
 }
 
 func TestFocusPutsANoteInFrontOfThePerson(t *testing.T) {
-	session, looking := watched(t, map[string]string{"notes/entropy.md": "# Entropy\n"})
+	session, looking := watched(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
 
 	out := call[struct {
 		Focused struct {
 			Path  string `json:"path"`
 			Title string `json:"title"`
 		} `json:"focused"`
-	}](t, session, "note_focus", map[string]any{"path": "notes/entropy.md"})
+	}](t, session, "note_focus", map[string]any{"path": "notes/Entropy.md"})
 
-	if out.Focused.Path != "notes/entropy.md" || out.Focused.Title != "Entropy" {
+	if out.Focused.Path != "notes/Entropy.md" || out.Focused.Title != "Entropy" {
 		t.Errorf("answered with %+v", out.Focused)
 	}
 	// A note is put in front of the person whole. Nothing about it names a
 	// stretch, so nothing is asked for one.
-	want := domain.Place{Path: "notes/entropy.md"}
+	want := domain.Place{Path: "notes/Entropy.md"}
 	if len(looking.asked) != 1 || !reflect.DeepEqual(looking.asked[0], want) {
 		t.Errorf("the window was asked for %v", looking.asked)
 	}
 }
 
 func TestFocusRefusesANoteTheVaultDoesNotHold(t *testing.T) {
-	session, looking := watched(t, map[string]string{"notes/entropy.md": "# Entropy\n"})
+	session, looking := watched(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
 
 	res, err := session.CallTool(t.Context(), &sdk.CallToolParams{
 		Name: "note_focus", Arguments: map[string]any{"path": "notes/nowhere.md"},
@@ -87,12 +87,12 @@ func TestFocusRefusesANoteTheVaultDoesNotHold(t *testing.T) {
 }
 
 func TestFocusSaysSoWhenTheWindowWouldNot(t *testing.T) {
-	_, core := built(t, map[string]string{"notes/entropy.md": "# Entropy\n"})
+	_, core := built(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
 	core.View = &window{fails: errors.New("nobody is looking")}
 	session := connectedTo(t, core)
 
 	res, err := session.CallTool(t.Context(), &sdk.CallToolParams{
-		Name: "note_focus", Arguments: map[string]any{"path": "notes/entropy.md"},
+		Name: "note_focus", Arguments: map[string]any{"path": "notes/Entropy.md"},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -105,7 +105,7 @@ func TestFocusSaysSoWhenTheWindowWouldNot(t *testing.T) {
 // Without a window there is nobody to show anything to, and the tools an agent
 // would call are not there to call.
 func TestNoWindowMeansNoTool(t *testing.T) {
-	_, core := built(t, map[string]string{"notes/entropy.md": "# Entropy\n"})
+	_, core := built(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
 	session := connectedTo(t, core)
 
 	listed, err := session.ListTools(t.Context(), nil)
@@ -121,7 +121,7 @@ func TestNoWindowMeansNoTool(t *testing.T) {
 
 // library is a vault holding a document beside its notes.
 var library = map[string]string{
-	"notes/entropy.md":    "# Entropy\n",
+	"notes/Entropy.md":    "# Entropy\n",
 	"library/A Book.epub": "a document nothing here reads",
 }
 

@@ -64,9 +64,9 @@ Choosing a theme, light or dark, or either size writes the field it names back h
 | --- | --- |
 | `sync_title_and_filename` | whether renaming either of the two brings the other into line. On. |
 
-A note is shown by its `title`, else by its first level-one heading, else by its filename — [Note format](note-format.md). On, giving a note a different name renames its file after that name, and renaming its file writes the new name into whichever of the three names it. Off, the two are told apart in both directions: a new name is written into the note and the file stays where it is, and a renamed file leaves the note as it was written.
+A note is shown by its `title`, else by its filename — [Note format](note-format.md). On, giving a note a different name renames its file after that name, and renaming its file writes the new name into the key where the note carries one. Off, the two are told apart in both directions: a new name is written into the note and the file stays where it is, and a renamed file leaves the note as it was written.
 
-A note carrying neither a `title` nor a level-one heading is named by its file, and nothing else in it can carry a name. Renaming such a note renames its file whichever way this is set, and no key is written into it.
+A note carrying no `title` is named by its file, and nothing else in it can carry a name. Renaming such a note renames its file whichever way this is set, and no key is written into it unless the filename cannot carry the whole title.
 
 Renaming a file into another folder is not renaming a note, and neither is renaming a folder. Neither changes what a note is called.
 

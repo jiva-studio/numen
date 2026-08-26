@@ -252,8 +252,8 @@ func TestRenamingOntoATakenNameSaysWhatTheNoteIsCalled(t *testing.T) {
 	if path := answer.Msg.GetPath(); path != "Old.md" {
 		t.Errorf("the note is filed at %q", path)
 	}
-	if by := answer.Msg.GetBy(); by != v1.Naming_NAMING_HEADING {
-		t.Errorf("the heading named the note and the answer says %v", by)
+	if by := answer.Msg.GetBy(); by != v1.Naming_NAMING_FILENAME {
+		t.Errorf("the filename names the note and the answer says %v", by)
 	}
 	if now := fileAt(t, f.root, "Entropy.md"); now != "# Entropy\n" {
 		t.Errorf("the note already there was written:\n%s", now)
@@ -410,8 +410,8 @@ func TestNeitherARenameNorARemoveIsTakenWhileTheWindowIsGoing(t *testing.T) {
 }
 
 // TestRenamingSaysWhatANoteCannotBeCalled. A title the vault cannot show the
-// note under is refused, and which of the three would have to say it decides
-// whether it can.
+// note under is refused, and a title the `title` key can carry is written there
+// whatever the note held before.
 func TestRenamingSaysWhatANoteCannotBeCalled(t *testing.T) {
 	for name, c := range map[string]struct {
 		held  string
@@ -419,15 +419,15 @@ func TestRenamingSaysWhatANoteCannotBeCalled(t *testing.T) {
 		want  v1.Refusal
 		file  string
 	}{
-		"a heading closes on the hash the title ends with": {
+		"a note carrying a heading takes the key, the heading naming nothing": {
 			held:  "# Old\n",
 			title: "C#",
-			want:  v1.Refusal_REFUSAL_UNNAMEABLE,
+			file:  "---\ntitle: C#\n",
 		},
-		"a filename cannot carry it and a heading says it as something else": {
+		"a filename that cannot carry it hands the title to the key": {
 			held:  "A measure.\n",
 			title: "C#",
-			want:  v1.Refusal_REFUSAL_UNNAMEABLE,
+			file:  "---\ntitle: C#\n",
 		},
 		"a title over more than one line": {
 			held:  "---\ntitle: Old\n---\nbody\n",
@@ -444,10 +444,12 @@ func TestRenamingSaysWhatANoteCannotBeCalled(t *testing.T) {
 			title: "Entropy",
 			want:  v1.Refusal_REFUSAL_UNREADABLE,
 		},
+		// Nothing closes the block, so nothing in the file is frontmatter and
+		// the filename names the note. The file moves and is not written to.
 		"a frontmatter block that is never closed": {
 			held:  "---\ntitle: Old\n# Old\n",
 			title: "Entropy",
-			want:  v1.Refusal_REFUSAL_UNREADABLE,
+			file:  "---\ntitle: Old\n# Old\n",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {

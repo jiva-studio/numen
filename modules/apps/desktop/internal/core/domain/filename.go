@@ -12,11 +12,9 @@ const maxFilename = 120
 // Filename is what a note called this is filed under, and whether the title
 // survived the trip.
 //
-// A note is shown by its `title`, else by its first level-one heading, else by
-// its filename. So a file named after the title needs no `title` key
-// at all — which is what keeps that key read-and-never-written. When the title
-// cannot be a filename, `exact` is false and the caller writes the title as a
-// heading instead, where the same rule finds it.
+// A note is shown by its `title`, else by its filename. So a file named after
+// the title needs no `title` key at all. When the title cannot be a filename,
+// `exact` is false and the caller writes the title into that key instead.
 //
 // Every name that comes back is one Nameable accepts, so a link written by it
 // reaches the note back.

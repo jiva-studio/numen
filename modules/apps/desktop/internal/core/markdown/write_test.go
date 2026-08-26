@@ -189,8 +189,8 @@ func TestCreateIsReadBackByTheParser(t *testing.T) {
 	if n.ID != identifier {
 		t.Errorf("identifier not read back: %q", n.ID)
 	}
-	if n.Title != "Entropy" {
-		t.Errorf("title comes from the heading, got %q", n.Title)
+	if n.Title != "entropy" {
+		t.Errorf("title comes from the filename, got %q", n.Title)
 	}
 	if len(n.Problems) != 0 {
 		t.Errorf("a note the application wrote has problems: %v", n.Problems)

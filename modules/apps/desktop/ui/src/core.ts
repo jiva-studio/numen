@@ -152,9 +152,9 @@ export interface Core {
    */
   join(path: string, link: NewLink): Promise<Refused | null>
   /**
-   * A note given a different name. Whichever of the title, the heading and the
-   * filename names it is brought into line, and the file follows where a title
-   * and a filename are kept as one name.
+   * A note given a different name. Whichever of the title and the filename
+   * names it is brought into line, and the file follows where a title and a
+   * filename are kept as one name.
    */
   rename(path: string, title: string): Promise<Renamed>
   /**

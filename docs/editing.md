@@ -68,7 +68,7 @@ A keystroke is worth trying again after three of them — `tooLarge`, `bodyRefus
 
 The buffer holds the body. The save reads the file under the vault's write lock, takes the frontmatter as it then stands, puts the body on it, and replaces the file. The read and the rename are one act against every other write that reads a note and puts it back — see [ADR-0020](adr/0020-one-process-one-lifetime.md).
 
-**A save writes no identifier.** What it puts in the note is the person's. A note the save makes — a name with no file behind it, kept — is made with no frontmatter at all. An identifier arrives from the operations that change what is in a note: a create, a link, a rename that writes the `title` key or the heading. See [ADR-0019](adr/0019-a-note-is-identified-by-a-ulid.md).
+**A save writes no identifier.** What it puts in the note is the person's. A note the save makes — a name with no file behind it, kept — is made with no frontmatter at all. An identifier arrives from the operations that change what is in a note: a create, a link, a rename that writes the `title` key. See [ADR-0019](adr/0019-a-note-is-identified-by-a-ulid.md).
 
 **A note this application moves is followed.** The move knows both names, so the tab takes the one the note now has and goes on reading and writing it there. It is the move that says so, and this holds for every caller of one.
 
@@ -90,11 +90,11 @@ The read is the check. A name is called gone when a read of it finds nothing, an
 
 ## Creating a note
 
-`note_create` is given a title. The file is named after it, and that is the whole mechanism: a note is shown by its `title`, else by its first level-one heading, else by its filename. The note is filed under the first extension the vault holds as notes, `.md` by default.
+`note_create` is given a title. The file is named after it, and that is the whole mechanism: a note is shown by its `title`, else by its filename. The note is filed under the first extension the vault holds as notes, `.md` by default.
 
 The reduction from a title to a filename drops control characters, writes `-` for each of `/ \ : * ? " < > | #`, collapses a doubled `[` or `]` to one, cuts the name to 120 bytes without splitting a character in half, and trims a dot or a space off either end.
 
-Where a title survives that whole, the filename says it and nothing is written into the body. Where it does not, the name is what survived and the body opens with the exact title as a level-one heading.
+Where a title survives that whole, the filename says it and nothing is written into the frontmatter. Where it does not, the name is what survived and the frontmatter carries the exact title under `title`.
 
 A title that leaves nothing a file can be named after is refused, and so is one carrying a line break. Nothing is written.
 
@@ -102,30 +102,27 @@ Creating a note under a name another note already has is allowed and said out lo
 
 ## Renaming
 
-Renaming brings into line whichever of the three names the note. One title is asked for, and one of these is written:
+Renaming brings into line whichever of the two names the note. One title is asked for, and one of these is written:
 
 - the note carries a non-empty `title` — the key is given the new title;
-- the note has a level-one heading — the text of the first one is rewritten;
-- the note has neither, and the title cannot survive as a filename — the body opens with the exact title as a level-one heading;
-- the note has neither, and the title can — nothing is written, and the filename says it.
+- the note has none, and the title cannot survive as a filename — the key is added, carrying the exact title;
+- the note has none, and the title can — nothing is written, and the filename says it.
 
 Creating a note and renaming one are the same convention read in two directions: the same characters are refused, the same length is the ceiling, and the same answer says whether the title survived.
 
-**A title that reduces to nothing is refused**, by renaming and by creating alike. There is no name to file the note under, so the note is not opened and nothing is written. A title that only fails to survive whole is reduced, the body carries it, and the rename goes through.
-
-**A title a level-one heading is read back as something else is refused to a note its heading names.** A heading is one line, and a run of hashes at the end of one closes it, so `Draft #`, `Old ###` and `C#` come back out of a heading as something other than what went in. Such a title is refused where the rename would write a heading — a note whose first level-one heading names it, and a note whose filename cannot carry the title. A note the `title` key names takes it: the key holds what a heading cannot, and the file is filed under the reduced name.
+**A title that reduces to nothing is refused**, by renaming and by creating alike. There is no name to file the note under, so the note is not opened and nothing is written. A title that only fails to survive whole is reduced, the frontmatter carries it, and the rename goes through.
 
 **The note is brought into line before the file is moved.** A move can be refused — something already sits where the note would go — and a refusal there leaves the title right and the filename behind, which is a rename asked for again once the name is free.
 
-**`title` is written into a note that already carries it, and never added to one that does not.** A vault of notes without the key stays a vault of notes without the key.
+**`title` is added only where the filename cannot carry the title whole.** A vault of notes whose filenames say their names stays a vault of notes without the key.
 
-**A note its filename names keeps its bytes.** Nothing in it has to be brought into line, so nothing is written and the rename is a move. It takes no identifier. A rename that writes the key or the heading is an edit, and stamps one the way every other edit does.
+**A note its filename names keeps its bytes.** Nothing in it has to be brought into line, so nothing is written and the rename is a move. It takes no identifier. A rename that writes the key is an edit, and stamps one the way every other edit does.
 
 **A note whose frontmatter cannot be read is not renamed.** The order above cannot be walked without reading the frontmatter, and a block that does not parse is one the application refuses to read past. It cannot be known whether the note carries a `title`, so it cannot be known what renaming the note means. The application says so and changes nothing.
 
 **The file keeps the extension it had.** What a vault files new notes under is a setting about creating one.
 
-A setext heading — a line underlined with `=` — is not a heading here. What reads a heading recognises `#`. A note titled that way is taken to be named by its filename, and moving its file is the whole of its rename. Where the title cannot survive as a filename, the body opens with a `#` heading above the underlined one, and the file carries two.
+**A heading in the prose names nothing.** What a person types into the body is the body: writing `# Something` at the top of a note does not rename it, and neither does changing one. The name is the `title` key, else the filename.
 
 ## After a move
 

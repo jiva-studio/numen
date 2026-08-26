@@ -148,7 +148,7 @@ func TestANoteWithoutAnIdentifierIsStillANote(t *testing.T) {
 	if n.ID != "" {
 		t.Errorf("id = %q, want empty", n.ID)
 	}
-	if n.Title != "Title" || n.Body == "" {
+	if n.Title != "Source" || n.Body == "" {
 		t.Error("the rest of the note was not parsed")
 	}
 }

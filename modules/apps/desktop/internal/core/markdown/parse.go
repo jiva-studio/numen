@@ -115,17 +115,11 @@ func headings(body []byte) []domain.Heading {
 	return out
 }
 
-// title prefers an explicit frontmatter title, then the first level-one heading,
-// and falls back to the filename — which is what the user sees in a file
-// manager, so it is never empty.
+// title prefers an explicit frontmatter title and falls back to the filename —
+// which is what the user sees in a file manager, so it is never empty.
 func title(n domain.Note, notePath string) string {
 	if t, ok := n.Frontmatter["title"].(string); ok && strings.TrimSpace(t) != "" {
 		return strings.TrimSpace(t)
-	}
-	for _, h := range n.Headings {
-		if h.Level == 1 {
-			return h.Text
-		}
 	}
 	return strings.TrimSuffix(path.Base(notePath), path.Ext(notePath))
 }

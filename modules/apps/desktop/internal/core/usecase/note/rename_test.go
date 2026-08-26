@@ -40,8 +40,8 @@ func (c changing) title(t *testing.T, path string) string {
 	return shown[path].Title
 }
 
-// Whichever of the title, the heading and the filename names the note is the
-// one brought into line, and the ones below it are left as they were written.
+// Whichever of the title and the filename names the note is the one brought
+// into line, and whatever the prose says is left as it was written.
 func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 	for name, c := range map[string]struct {
 		raw   string
@@ -58,23 +58,23 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 			by:    note.ByFrontmatter,
 			holds: []string{"title: Entropy", "# Old"},
 		},
-		"a level-one heading": {
+		"a level-one heading, which names nothing and is left standing": {
 			raw:   "# Old\n\nA measure.\n",
 			title: "Entropy",
 			path:  "Entropy.md",
-			by:    note.ByHeading,
-			holds: []string{"# Entropy", "A measure.", "id: "},
-			lacks: []string{"# Old", "title:"},
+			by:    note.ByFilename,
+			holds: []string{"# Old", "A measure."},
+			lacks: []string{"title:", "id: "},
 		},
-		"neither, and the filename cannot carry the title": {
+		"no key, and the filename cannot carry the title": {
 			raw:   "A measure.\n",
 			title: "TCP/IP",
 			path:  "TCP-IP.md",
-			by:    note.ByHeading,
-			holds: []string{"# TCP/IP", "A measure.", "id: "},
-			lacks: []string{"title:"},
+			by:    note.ByFrontmatter,
+			holds: []string{"title: TCP/IP", "A measure.", "id: "},
+			lacks: []string{"# TCP/IP"},
 		},
-		"neither, and the filename says it": {
+		"no key, and the filename says it": {
 			raw:   "A measure.\n",
 			title: "Entropy",
 			path:  "Entropy.md",
@@ -122,14 +122,14 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 }
 
 // The vault shows the note under the title the rename was given, whichever of
-// the three carries it. A title the heading or the filename says as something
-// else is the note named something the person did not ask for.
+// the two carries it. A title the filename says as something else is the note
+// named something the person did not ask for.
 func TestTheVaultShowsTheTitleTheRenameWasGiven(t *testing.T) {
 	for name, c := range map[string]struct {
 		raw   string
 		title string
 	}{
-		"a hash inside the title, on a note named by its heading": {
+		"a hash inside the title, on a note with no key": {
 			raw:   "# Old\n\nA measure.\n",
 			title: "Issue #42",
 		},
@@ -138,11 +138,11 @@ func TestTheVaultShowsTheTitleTheRenameWasGiven(t *testing.T) {
 			title: "C# and F#",
 		},
 		"a title in double brackets": {
-			raw:   "# Old\n\nA measure.\n",
+			raw:   "A measure.\n",
 			title: "Notes [[draft]]",
 		},
 		"a title that is a path": {
-			raw:   "# Old\n\nA measure.\n",
+			raw:   "A measure.\n",
 			title: "TCP/IP",
 		},
 		"a title a filename takes whole": {
@@ -150,7 +150,7 @@ func TestTheVaultShowsTheTitleTheRenameWasGiven(t *testing.T) {
 			title: "Thermodynamics",
 		},
 		"a title carrying a pipe": {
-			raw:   "# Old\n\nA measure.\n",
+			raw:   "A measure.\n",
 			title: "Either|Or",
 		},
 	} {
@@ -171,33 +171,23 @@ func TestTheVaultShowsTheTitleTheRenameWasGiven(t *testing.T) {
 	}
 }
 
-// A title only the `title` key can carry is written there where the note
-// already carries the key, and refused where the heading or the filename would
-// have to say it.
-func TestATitleOnlyTheKeyCanCarryIsRefusedWhereThereIsNoKey(t *testing.T) {
-	for name, c := range map[string]struct {
-		raw     string
-		refused bool
-	}{
-		"a note carrying the key":      {raw: "---\ntitle: Old\n---\nA measure.\n"},
-		"a note named by its heading":  {raw: "# Old\n\nA measure.\n", refused: true},
-		"a note named by its filename": {raw: "A measure.\n", refused: true},
+// A title no filename can carry is written into the `title` key, whether or not
+// the note already carries one.
+func TestATitleOnlyTheKeyCanCarryIsWrittenThere(t *testing.T) {
+	for name, raw := range map[string]string{
+		"a note carrying the key":      "---\ntitle: Old\n---\nA measure.\n",
+		"a note carrying a heading":    "# Old\n\nA measure.\n",
+		"a note named by its filename": "A measure.\n",
 	} {
 		t.Run(name, func(t *testing.T) {
-			v := changeable(t, map[string]string{"Old.md": c.raw})
+			v := changeable(t, map[string]string{"Old.md": raw})
 
 			renamed, err := v.rename().Execute(t.Context(), v.vault, "Old.md", "C#")
-			if c.refused {
-				if !errors.Is(err, note.ErrNotAHeading) {
-					t.Fatalf("want ErrNotAHeading, got %v", err)
-				}
-				if body := v.read(t, "Old.md"); body != c.raw {
-					t.Errorf("the refused rename wrote to the note:\n%s", body)
-				}
-				return
-			}
 			if err != nil {
 				t.Fatalf("the rename was refused: %v", err)
+			}
+			if renamed.By != note.ByFrontmatter {
+				t.Errorf("want named by the frontmatter, got %s", renamed.By)
 			}
 			if got := v.title(t, renamed.Path); got != "C#" {
 				t.Errorf("the vault shows the note as %q", got)
@@ -256,7 +246,7 @@ func TestRenamingByTheFilenameAloneLeavesTheBytesAlone(t *testing.T) {
 // The filename is already what the title reduces to, so there is nothing for
 // the file to do and nothing to report about it.
 func TestRenamingCanLeaveTheFileWhereItIs(t *testing.T) {
-	c := changeable(t, map[string]string{"Entropy.md": "# Old\n"})
+	c := changeable(t, map[string]string{"Entropy.md": "---\ntitle: Old\n---\nA measure.\n"})
 
 	renamed, err := c.rename().Execute(t.Context(), c.vault, "Entropy.md", "Entropy")
 	if err != nil {
@@ -268,14 +258,14 @@ func TestRenamingCanLeaveTheFileWhereItIs(t *testing.T) {
 	if renamed.Path != "Entropy.md" {
 		t.Errorf("want Entropy.md, got %s", renamed.Path)
 	}
-	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "# Entropy") {
-		t.Errorf("the heading was not rewritten:\n%s", body)
+	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "title: Entropy") {
+		t.Errorf("the title was not rewritten:\n%s", body)
 	}
 }
 
 func TestRenamingRefusesToLandOnAnExistingNote(t *testing.T) {
 	c := changeable(t, map[string]string{
-		"Old.md":     "# Old\n",
+		"Old.md":     "---\ntitle: Old\n---\nA measure.\n",
 		"Entropy.md": "# Entropy\n",
 	})
 
@@ -289,7 +279,7 @@ func TestRenamingRefusesToLandOnAnExistingNote(t *testing.T) {
 	if renamed.Moved != nil {
 		t.Errorf("the file did not move, and the answer says %+v", renamed.Moved)
 	}
-	if body := c.read(t, "Old.md"); !strings.Contains(body, "# Entropy") {
+	if body := c.read(t, "Old.md"); !strings.Contains(body, "title: Entropy") {
 		t.Errorf("the title was not written:\n%s", body)
 	}
 	if body := c.read(t, "Entropy.md"); body != "# Entropy\n" {
@@ -324,7 +314,7 @@ func TestAMoveThatLandedIsAnsweredWithEvenWhenWhatFollowsFails(t *testing.T) {
 	if renamed.Moved == nil {
 		t.Error("the file moved and the answer reports no move")
 	}
-	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "# Entropy") {
+	if body := c.read(t, "Entropy.md"); body != "# Old\n" {
 		t.Errorf("the file is not where the answer says:\n%s", body)
 	}
 }
@@ -388,10 +378,10 @@ func TestALongTitleIsCutFromTheNameAndKeptWhole(t *testing.T) {
 	if len(renamed.Path) >= len(title) {
 		t.Errorf("the name was not cut: %s", renamed.Path)
 	}
-	if renamed.By != note.ByHeading {
-		t.Errorf("want named by heading, got %s", renamed.By)
+	if renamed.By != note.ByFrontmatter {
+		t.Errorf("want named by the frontmatter, got %s", renamed.By)
 	}
-	if body := c.read(t, renamed.Path); !strings.Contains(body, "# "+title) {
+	if body := c.read(t, renamed.Path); !strings.Contains(body, "title: "+title) {
 		t.Errorf("the whole title is not in the note:\n%s", body)
 	}
 	if got := c.title(t, renamed.Path); got != title {
@@ -497,20 +487,27 @@ func TestARenamedNoteIsFoundByItsNewName(t *testing.T) {
 func TestRenamingLeavesTheFileWhereItIsWhereTheTwoAreToldApart(t *testing.T) {
 	for name, c := range map[string]struct {
 		raw   string
+		title string
 		by    note.Naming
 		holds string
 	}{
 		"a title in the frontmatter": {
-			raw: "---\ntitle: Old\n---\nA measure.\n", by: note.ByFrontmatter, holds: "title: Entropy",
+			raw:   "---\ntitle: Old\n---\nA measure.\n",
+			title: "Entropy",
+			by:    note.ByFrontmatter,
+			holds: "title: Entropy",
 		},
-		"a level-one heading": {
-			raw: "# Old\n\nA measure.\n", by: note.ByHeading, holds: "# Entropy",
+		"no key, and a title the filename cannot carry": {
+			raw:   "# Old\n\nA measure.\n",
+			title: "TCP/IP",
+			by:    note.ByFrontmatter,
+			holds: "title: TCP/IP",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			v := changeable(t, map[string]string{"Old.md": c.raw})
 
-			renamed, err := v.apart().Execute(t.Context(), v.vault, "Old.md", "Entropy")
+			renamed, err := v.apart().Execute(t.Context(), v.vault, "Old.md", c.title)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -526,7 +523,7 @@ func TestRenamingLeavesTheFileWhereItIsWhereTheTwoAreToldApart(t *testing.T) {
 			if body := v.read(t, "Old.md"); !strings.Contains(body, c.holds) {
 				t.Errorf("want %q in\n%s", c.holds, body)
 			}
-			if got := v.title(t, "Old.md"); got != "Entropy" {
+			if got := v.title(t, "Old.md"); got != c.title {
 				t.Errorf("the vault shows it as %q", got)
 			}
 			if !gone(t, v, "Entropy.md") {

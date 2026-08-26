@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 )
 
@@ -26,8 +25,8 @@ func (f filing) title(t *testing.T, path string) string {
 	return shown[path].Title
 }
 
-// Whichever of the title, the heading and the filename names the note is the
-// one brought into line, and a note its filename names has nothing to write.
+// Whichever of the title and the filename names the note is the one brought
+// into line, and a note its filename names has nothing to write.
 func TestARenamedFileCallsTheNoteByTheNameItNowCarries(t *testing.T) {
 	for name, c := range map[string]struct {
 		raw   string
@@ -38,10 +37,10 @@ func TestARenamedFileCallsTheNoteByTheNameItNowCarries(t *testing.T) {
 			raw:   "---\ntitle: Entropy\n---\n# Entropy\n",
 			holds: []string{"title: Disorder", "# Entropy"},
 		},
-		"a level-one heading, and no key added": {
+		"a level-one heading, which names nothing and is left standing": {
 			raw:   "# Entropy\n\nA measure.\n",
-			holds: []string{"# Disorder", "A measure.", "id: "},
-			lacks: []string{"# Entropy", "title:"},
+			holds: []string{"# Entropy", "A measure."},
+			lacks: []string{"# Disorder", "title:", "id: "},
 		},
 		"neither, so the file carried the name and nothing was added": {
 			raw:   "A measure.\n",
@@ -88,8 +87,8 @@ func TestARenamedFileLeavesTheNoteAloneWhereTheTwoAreToldApart(t *testing.T) {
 		"a title in the frontmatter": {
 			raw: "---\ntitle: Entropy\n---\nA measure.\n", shown: "Entropy",
 		},
-		"a level-one heading": {
-			raw: "# Entropy\n\nA measure.\n", shown: "Entropy",
+		"a level-one heading, which names nothing": {
+			raw: "# Entropy\n\nA measure.\n", shown: "Disorder",
 		},
 		"neither, so the file carries the name": {
 			raw: "A measure.\n", shown: "Disorder",
@@ -164,16 +163,15 @@ func TestARenamedFolderWritesToNothingUnderIt(t *testing.T) {
 	}
 }
 
-// A level-one heading is read back as something else when the name closes it
-// with a hash. The file is where it was sent, and the note keeps the name it
-// had.
-func TestARenameToANameAHeadingCannotSayIsRefused(t *testing.T) {
+// A note its filename names carries its name nowhere else, so a renamed file is
+// the whole of the rename and the prose is left as it was written.
+func TestARenamedFileLeavesANoteCarryingNoTitleAlone(t *testing.T) {
 	raw := "# Entropy\n\nA measure.\n"
 	f := fileable(t, map[string]string{"Entropy.md": raw})
 
 	moved, err := f.move().Execute(t.Context(), f.vault, "Entropy.md", "Note #.md")
-	if !errors.Is(err, note.ErrNotAHeading) {
-		t.Fatalf("want ErrNotAHeading, got %v", err)
+	if err != nil {
+		t.Fatalf("the rename was refused: %v", err)
 	}
 	if !moved.Landed {
 		t.Error("the file is at Note #.md and the answer says it did not move")
@@ -185,11 +183,11 @@ func TestARenameToANameAHeadingCannotSayIsRefused(t *testing.T) {
 
 // A move that landed is settled whatever the note's own name did. Whoever is
 // drawing the note at the name it had is reading a name with no file behind it.
-func TestAMoveThatLandedIsSettledEvenWhereTheNoteCannotBeCalledByIt(t *testing.T) {
+func TestAMoveThatLandedIsSettled(t *testing.T) {
 	f := fileable(t, map[string]string{"Entropy.md": "# Entropy\n\nA measure.\n"})
 
-	if _, err := f.move().Execute(t.Context(), f.vault, "Entropy.md", "Note #.md"); err == nil {
-		t.Fatal("want the refusal the name earns")
+	if _, err := f.move().Execute(t.Context(), f.vault, "Entropy.md", "Note #.md"); err != nil {
+		t.Fatal(err)
 	}
 	if len(*f.went) != 1 || (*f.went)[0].To != "Note #.md" {
 		t.Errorf("whoever is drawing it was told %+v", *f.went)

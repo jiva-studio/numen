@@ -7,7 +7,7 @@ import (
 )
 
 // One rule answers for both halves of a name, at either setting and for each of
-// the three that name a note.
+// the two that name a note.
 func TestWhatARenameBringsIntoLine(t *testing.T) {
 	for name, c := range map[string]struct {
 		sync   note.Sync
@@ -18,17 +18,11 @@ func TestWhatARenameBringsIntoLine(t *testing.T) {
 		"one name, a title in the frontmatter": {
 			sync: true, by: note.ByFrontmatter, moves: true, writes: true,
 		},
-		"one name, a level-one heading": {
-			sync: true, by: note.ByHeading, moves: true, writes: true,
-		},
 		"one name, and the filename says it": {
 			sync: true, by: note.ByFilename, moves: true, writes: false,
 		},
 		"told apart, a title in the frontmatter": {
 			sync: false, by: note.ByFrontmatter, moves: false, writes: false,
-		},
-		"told apart, a level-one heading": {
-			sync: false, by: note.ByHeading, moves: false, writes: false,
 		},
 		"told apart, and the filename says it": {
 			sync: false, by: note.ByFilename, moves: true, writes: false,

@@ -17,8 +17,8 @@ import (
 
 func TestANoteIsFoundByName(t *testing.T) {
 	client, _ := opened(t, map[string]string{
-		"entropy.md": "# Entropy\n\n## Heat and work\n\nA reversible engine.\n",
-		"engine.md":  "# Engines\n",
+		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n\n## Heat and work\n\nA reversible engine.\n",
+		"Engines.md": "---\ntitle: Engines\n---\n\n# Engines\n",
 	})
 
 	answer, err := client.Names(t.Context(), connect.NewRequest(&v1.NamesRequest{Query: "entro"}))
@@ -44,7 +44,7 @@ func TestANoteIsFoundByName(t *testing.T) {
 
 func TestAHeadingIsFoundWithTheLineItStandsOn(t *testing.T) {
 	client, _ := opened(t, map[string]string{
-		"entropy.md": "# Entropy\n\n## Heat and work\n\nA reversible engine.\n",
+		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n\n## Heat and work\n\nA reversible engine.\n",
 	})
 
 	answer, err := client.Names(t.Context(), connect.NewRequest(&v1.NamesRequest{Query: "heat"}))
@@ -67,7 +67,7 @@ func TestAHeadingIsFoundWithTheLineItStandsOn(t *testing.T) {
 
 func TestEachWayIsAskedByItself(t *testing.T) {
 	client, _ := opened(t, map[string]string{
-		"engine.md": "# Engines\n\nNo engine beats a reversible engine.\n",
+		"Engines.md": "---\ntitle: Engines\n---\n\n# Engines\n\nNo engine beats a reversible engine.\n",
 	})
 
 	// No model is set here, so the meaning half has nothing to answer with and
@@ -96,7 +96,7 @@ func TestEachWayIsAskedByItself(t *testing.T) {
 
 func TestAPassageSaysWhichNoteItCameOutOf(t *testing.T) {
 	client, _ := opened(t, map[string]string{
-		"engine.md": "# Engines\n\nNo engine beats a reversible engine.\n",
+		"Engines.md": "---\ntitle: Engines\n---\n\n# Engines\n\nNo engine beats a reversible engine.\n",
 	})
 
 	answer, err := client.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{
@@ -126,7 +126,7 @@ func TestAPassageSaysWhichNoteItCameOutOf(t *testing.T) {
 // opens the source there, and nothing the client holds says it.
 func TestAPassageSaysWhereInItsSourceItStands(t *testing.T) {
 	client, _ := opened(t, map[string]string{
-		"engine.md": "# Engines\n\nNo engine beats a reversible engine.\n",
+		"Engines.md": "---\ntitle: Engines\n---\n\n# Engines\n\nNo engine beats a reversible engine.\n",
 	})
 
 	answer, err := client.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{

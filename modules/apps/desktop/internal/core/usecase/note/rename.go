@@ -12,11 +12,10 @@ import (
 
 // Rename gives a note a different name.
 //
-// A note is shown by its `title`, else by its first level-one heading, else by
-// its filename, and whichever of the three names it is brought into line first.
-// The file follows where a title and a filename are kept as one name, and a move
-// refused because the name is taken leaves a note that says what it is called
-// under a filename that does not.
+// A note is shown by its `title`, else by its filename, and whichever of the
+// two names it is brought into line first. The file follows where a title and a
+// filename are kept as one name, and a move refused because the name is taken
+// leaves a note that says what it is called under a filename that does not.
 type Rename struct{ Move }
 
 // Renamed says what the note is called now and what the file did.
@@ -45,21 +44,13 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 			by = ByFrontmatter
 			return doc.SetTitle(title)
 		}
-		switch written, err := doc.SetHeading(title); {
-		case err != nil:
-			return err
-		case written:
-			by = ByHeading
-			return nil
-		}
 		if exact {
 			by = ByFilename
 			return errFilenameNamesIt
 		}
-		// The name cannot carry the title, so the body does. The order a note is
-		// named by finds it either way.
-		by = ByHeading
-		return doc.InsertHeading(title)
+		// The filename cannot carry the title, so the frontmatter takes it.
+		by = ByFrontmatter
+		return doc.SetTitle(title)
 	})
 	if err != nil && !errors.Is(err, errFilenameNamesIt) {
 		return Renamed{}, err
@@ -83,8 +74,7 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 // title and a filename are kept as one name. A note its filename names carries
 // its name nowhere else, and nothing is added to it.
 func (u Move) Called(ctx context.Context, v domain.Vault, path string) error {
-	// The note is opened only where the setting writes into it. Both of the two
-	// that carry a name of their own answer alike.
+	// The note is opened only where the setting writes into it.
 	if _, writes := u.Sync.Kept().Renaming(ByFrontmatter); !writes {
 		return nil
 	}
@@ -94,12 +84,6 @@ func (u Move) Called(ctx context.Context, v domain.Vault, path string) error {
 	_, err := e.apply(ctx, v, path, func(doc *markdown.Document) error {
 		if _, titled := doc.Title(); titled {
 			return doc.SetTitle(name)
-		}
-		switch written, err := doc.SetHeading(name); {
-		case err != nil:
-			return err
-		case written:
-			return nil
 		}
 		return errFilenameNamesIt
 	})

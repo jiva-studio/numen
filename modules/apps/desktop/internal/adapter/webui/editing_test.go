@@ -109,11 +109,6 @@ func TestOnlyTheCoreSaysWhichNoteIsMissing(t *testing.T) {
 			want: v1.Refusal_REFUSAL_UNNAMEABLE,
 			is:   true,
 		},
-		"a heading that says the title as something else": {
-			err:  fmt.Errorf("Old.md: %w", note.ErrNotAHeading),
-			want: v1.Refusal_REFUSAL_UNNAMEABLE,
-			is:   true,
-		},
 		"a frontmatter written on one line": {
 			err:  fmt.Errorf("Old.md: %w", note.ErrInline),
 			want: v1.Refusal_REFUSAL_UNREADABLE,

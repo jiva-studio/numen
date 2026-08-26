@@ -283,10 +283,10 @@ func (r *Repository) MoveSources(ctx context.Context, vaultID, from, to string) 
 
 // rename says what the note at a path is called once its file is at another.
 //
-// A note is called by its `title` key, else by its level-one heading, else by
-// its filename. It takes the name of the file it lands under where nothing
-// inside the file names it, and where that filename is the one its own title is
-// filed under; otherwise it carries the name it has.
+// A note is called by its `title` key, else by its filename. It takes the name
+// of the file it lands under where the file carries no key, and where that
+// filename is the one its own title is filed under; otherwise it carries the
+// name it has.
 func rename(ctx context.Context, tx *sql.Tx, vault int64, from, to string) error {
 	name := domain.Basename(to)
 	if name == domain.Basename(from) {

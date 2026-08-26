@@ -109,8 +109,8 @@ func TestACreatedNoteIsNamedAfterItsTitleAndFoundByIt(t *testing.T) {
 	}
 }
 
-// A title that cannot be a filename still names the note, from the heading.
-func TestATitleThatCannotBeAFilenameBecomesAHeading(t *testing.T) {
+// A title that cannot be a filename still names the note, from the `title` key.
+func TestATitleThatCannotBeAFilenameGoesIntoTheKey(t *testing.T) {
 	c := changeable(t, nil)
 
 	created, err := c.create().Execute(t.Context(), c.vault, note.NewNote{Title: "TCP/IP"})
@@ -120,7 +120,7 @@ func TestATitleThatCannotBeAFilenameBecomesAHeading(t *testing.T) {
 	if strings.Contains(created.Path, "TCP/IP") {
 		t.Errorf("the slash made a folder: %s", created.Path)
 	}
-	if body := c.read(t, created.Path); !strings.Contains(body, "# TCP/IP") {
+	if body := c.read(t, created.Path); !strings.Contains(body, "title: TCP/IP") {
 		t.Errorf("the exact title is not in the note:\n%s", body)
 	}
 

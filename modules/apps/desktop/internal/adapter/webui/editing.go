@@ -263,7 +263,7 @@ func refusedBy(err error) (v1.Refusal, bool) {
 		return v1.Refusal_REFUSAL_MISSING, true
 	case errors.Is(err, note.ErrTooLarge):
 		return v1.Refusal_REFUSAL_TOO_LARGE, true
-	case errors.Is(err, note.ErrUnnameable), errors.Is(err, note.ErrNotAHeading):
+	case errors.Is(err, note.ErrUnnameable):
 		return v1.Refusal_REFUSAL_UNNAMEABLE, true
 	case errors.Is(err, note.ErrUnreadable),
 		errors.Is(err, note.ErrInline),

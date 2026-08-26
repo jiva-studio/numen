@@ -42,11 +42,11 @@ func TestTitlePreferenceOrder(t *testing.T) {
 	if got := parseFile(t, "Thermodynamics.md").Title; got != "Thermodynamics" {
 		t.Errorf("explicit title = %q", got)
 	}
-	// No title key: the first level-one heading stands in.
+	// No title key: the filename stands in, whatever the prose says.
 	if got := parseFile(t, "notes/Entropy.md").Title; got != "Entropy" {
-		t.Errorf("title from heading = %q", got)
+		t.Errorf("title from the filename = %q", got)
 	}
-	if got := parseFile(t, "daily/2026-08-15.md").Title; got != "Journal" {
+	if got := parseFile(t, "daily/2026-08-15.md").Title; got != "2026-08-15" {
 		t.Errorf("title of a note with no frontmatter = %q", got)
 	}
 }
@@ -145,8 +145,8 @@ func TestBrokenFrontmatterIsReportedNotFatal(t *testing.T) {
 	if n.Body == "" {
 		t.Error("body was dropped along with the broken frontmatter")
 	}
-	if n.Title != "Broken frontmatter" {
-		t.Errorf("title = %q, want the heading", n.Title)
+	if n.Title != "broken-frontmatter" {
+		t.Errorf("title = %q, want the filename", n.Title)
 	}
 }
 
@@ -177,7 +177,7 @@ func TestHorizontalRuleIsNotFrontmatter(t *testing.T) {
 	if n.Frontmatter != nil {
 		t.Errorf("a rule mid-document was read as frontmatter: %v", n.Frontmatter)
 	}
-	if n.Title != "Title" {
+	if n.Title != "x" {
 		t.Errorf("title = %q", n.Title)
 	}
 }

@@ -38,11 +38,11 @@ The frontmatter is shared, not owned:
 
 | Key | Meaning | Decided in |
 | --- | --- | --- |
-| `title` | The name a note is shown by. Written only when a note that already has a non-empty one is renamed; the application does not add one to a note that has none. | ADR-0008 |
+| `title` | The name a note is shown by. Written when a note that already has a non-empty one is renamed, and when a title no filename can carry whole is given to one that has none. | ADR-0008 |
 | `id` | The identity of the note, a ULID. Written when the application creates a note or changes what is in it, never backfilled and never written by a person typing in it. A note that was moved carries the identifier it carried before. | ADR-0008, ADR-0007 |
 | `links` | Links that carry a role, and optionally a type, a label and a note. | [Links](links.md) |
 
-A note with no `title` is named by its first level-one heading, else by its filename. The order is fixed so that a name does not move between versions.
+A note with no `title` is named by its filename. A heading in the prose names nothing: what a person writes in the body is the body, and typing one does not rename the note.
 
 How far a rename reaches — whether a new title renames the file, and whether a renamed file writes the new name into the note — is `naming.sync_title_and_filename` in [Settings](settings.md).
 

@@ -126,8 +126,7 @@ func New(core Core) *sdk.Server {
 
 // namingOrder is how a note comes by the name it is shown under. The
 // instructions and the tool that changes it say it in these words.
-const namingOrder = "A note is shown by its title, else by its first heading, " +
-	"else by its filename."
+const namingOrder = "A note is shown by its title, else by its filename."
 
 // instructions is what an agent is told once, before it calls anything.
 //

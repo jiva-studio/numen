@@ -2,7 +2,6 @@ package note
 
 import (
 	"context"
-	"fmt"
 	pathpkg "path"
 	"strings"
 	"time"
@@ -16,8 +15,8 @@ import (
 // Create makes a note.
 //
 // The title is the whole of the naming: the file is named after it, and a note
-// is shown by its title, else by its first heading, else by its filename.
-// Nothing writes a `title` key, because nothing needs to.
+// is shown by its `title`, else by its filename. A title the filename cannot
+// carry whole is written into the frontmatter, and nothing else writes that key.
 type Create struct {
 	Writers port.VaultWriters
 	Names   port.NoteQueries
@@ -60,12 +59,6 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 	}
 	path := pathpkg.Join(in.Folder, name+u.extension())
 
-	// Where the name cannot carry the title the body opens with it as a
-	// level-one heading, so the title has to be one a heading says.
-	if !exact && !markdown.Headable(title) {
-		return Created{}, fmt.Errorf("%s: %w", title, ErrNotAHeading)
-	}
-
 	// Before anything is made: a link the note cannot carry leaves no file.
 	for _, link := range in.Links {
 		if err := Writable(link); err != nil {
@@ -78,14 +71,11 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 		return Created{}, err
 	}
 
-	body := in.Body
-	if !exact {
-		// The name could not carry the title, so the body does. The order a
-		// note is named by finds it either way.
-		body = "# " + title + "\n\n" + body
+	content, err := titled(markdown.Create(identifier, in.Body), title, exact)
+	if err != nil {
+		return Created{}, err
 	}
-
-	content, err := joined(markdown.Create(identifier, body), in.Links)
+	content, err = joined(content, in.Links)
 	if err != nil {
 		return Created{}, err
 	}
@@ -112,6 +102,23 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 	}
 	made.Shares = without(shares, path)
 	return made, nil
+}
+
+// titled writes the note's name into its frontmatter, where the filename
+// cannot carry the whole of it. A filename that carries it names the note, and
+// nothing is written.
+func titled(content []byte, title string, exact bool) ([]byte, error) {
+	if exact {
+		return content, nil
+	}
+	doc, err := markdown.Open(content)
+	if err != nil {
+		return nil, err
+	}
+	if err := doc.SetTitle(title); err != nil {
+		return nil, err
+	}
+	return doc.Bytes(), nil
 }
 
 // joined writes relationships into frontmatter that has just been made, through
