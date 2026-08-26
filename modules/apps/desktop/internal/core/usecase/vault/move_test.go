@@ -50,7 +50,14 @@ func fileable(t *testing.T, notes map[string]string) filing {
 	}
 }
 
-func (f filing) move() usecase.Move {
+// move is the move an installation nobody has configured does: a title and a
+// filename kept as one name.
+func (f filing) move() usecase.Move { return f.moving(true) }
+
+// apart is the move an installation that has turned the two apart does.
+func (f filing) apart() usecase.Move { return f.moving(false) }
+
+func (f filing) moving(sync note.Sync) usecase.Move {
 	return usecase.Move{
 		Writers: filesystem.Writers{},
 		Links:   f.db.Links(),
@@ -62,6 +69,7 @@ func (f filing) move() usecase.Move {
 			Links:   f.db.Links(),
 			Sources: f.db.Sources(),
 			Index:   f.index,
+			Sync:    sync,
 		},
 	}
 }

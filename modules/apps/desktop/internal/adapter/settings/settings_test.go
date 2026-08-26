@@ -728,3 +728,60 @@ func TestTheProofreadersKeyStaysOutOfWhatIsWrittenBack(t *testing.T) {
 		t.Errorf("the key is in %s", cfg.Indexing.Proofreading.Service)
 	}
 }
+
+// A setting that is on where a file says nothing is read through a pointer:
+// leaving the section out, leaving the field out and writing false are three
+// different things a person can write, and the last of them is the only one
+// that turns it off.
+func TestATitleAndAFilenameAreOneNameUntilTheFileSaysOtherwise(t *testing.T) {
+	for name, c := range map[string]struct {
+		file  string
+		sync  bool
+		wrote bool
+	}{
+		"a file nobody wrote":     {sync: true},
+		"a file naming no naming": {file: `{"appearance":{"text_scale":1.5}}`, sync: true, wrote: true},
+		"a section naming no field": {
+			file: `{"naming":{}}`, sync: true, wrote: true,
+		},
+		"a field naming one name": {
+			file: `{"naming":{"sync_title_and_filename":true}}`, sync: true, wrote: true,
+		},
+		"a field naming nothing": {
+			file: `{"naming":{"sync_title_and_filename":null}}`, sync: true, wrote: true,
+		},
+		"a field telling the two apart": {
+			file: `{"naming":{"sync_title_and_filename":false}}`, sync: false, wrote: true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "numen.json")
+			if c.wrote {
+				path = write(t, c.file)
+			}
+			cfg, err := settings.At(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cfg.Sync() != c.sync {
+				t.Errorf("a title and a filename are one name: %v", cfg.Sync())
+			}
+		})
+	}
+}
+
+// An installation nobody has configured is written down as what it is doing, so
+// the setting a person turns off is in front of them.
+func TestAnUntouchedInstallationWritesTheNamingDown(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "numen.json")
+	if _, err := settings.At(path); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(raw), `"sync_title_and_filename": true`) {
+		t.Errorf("the naming is not in the file it wrote:\n%s", raw)
+	}
+}

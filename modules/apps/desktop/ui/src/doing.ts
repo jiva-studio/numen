@@ -32,7 +32,7 @@ export interface Notes {
 export interface Doing {
   /** A note made under the name it is given, in a seat of another one. */
   makes(title: string, from: string, seat: PlexRelatedSeat | null): Promise<Made | null>
-  /** A note given a different name, and its file renamed with it. */
+  /** A note given a different name, and its file renamed with it where the two are one name. */
   renames(path: string, title: string): Promise<Renamed>
   /** A note taken out of the vault, into the trash or off the disk. */
   removes(path: string, destroy: boolean): Promise<Removed>
@@ -200,8 +200,8 @@ const makes = async (
 }
 
 /**
- * A note given a different name, and its file renamed with it. Prose on disk
- * that nobody here has seen leaves the note as it is.
+ * A note given a different name, and its file renamed with it where the two are
+ * one name. Prose on disk that nobody here has seen leaves the note as it is.
  */
 const renames = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
   if (!deed.name || deed.name === deed.title) return

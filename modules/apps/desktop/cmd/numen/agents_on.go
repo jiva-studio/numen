@@ -198,6 +198,7 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 		Readers: readers, Writers: writers, Links: opened.Index.Links(),
 		Sources: opened.Index.Sources(), Index: index,
 		Moving: went,
+		Sync:   cfg.Sync,
 	}
 
 	return mcp.Core{

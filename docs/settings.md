@@ -48,6 +48,30 @@ A theme pinning `color-scheme` is published in one half, and `mode` has nothing 
 
 Choosing a theme, light or dark, or either size writes the field it names back here — each is a command of its own in the palette, over the window. The file is read as an object, the named fields are set, and it is written back, so a key this build knows nothing about comes through the write unchanged. A file that does not parse is not written.
 
+## What a note is called
+
+`naming` is how a note's title and the name of its file are held together.
+
+```json
+{
+  "naming": {
+    "sync_title_and_filename": true
+  }
+}
+```
+
+| | |
+| --- | --- |
+| `sync_title_and_filename` | whether renaming either of the two brings the other into line. On. |
+
+A note is shown by its `title`, else by its first level-one heading, else by its filename — [Note format](note-format.md). On, giving a note a different name renames its file after that name, and renaming its file writes the new name into whichever of the three names it. Off, the two are told apart in both directions: a new name is written into the note and the file stays where it is, and a renamed file leaves the note as it was written.
+
+A note carrying neither a `title` nor a level-one heading is named by its file, and nothing else in it can carry a name. Renaming such a note renames its file whichever way this is set, and no key is written into it.
+
+Renaming a file into another folder is not renaming a note, and neither is renaming a folder. Neither changes what a note is called.
+
+Typing a new `# Heading` into a note does not rename its file. A save puts down the text a person typed and adds nothing to it.
+
 ## What a vector is, and where it is made
 
 ```json

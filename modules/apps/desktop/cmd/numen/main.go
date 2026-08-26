@@ -24,6 +24,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/webui"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 )
 
 func main() {
@@ -89,6 +90,7 @@ func run(cfg container.Config, agents agentOptions, vault string, said sizes) er
 	}
 	cfg = cfg.Indexing(chosen.Indexing)
 	cfg.Agent = chosen.Agent
+	cfg.Sync = note.Sync(chosen.Sync())
 	cfg.InterfaceScale, cfg.TextScale = said.drawn, said.set
 
 	// Before the window: every page this process reads is read through the

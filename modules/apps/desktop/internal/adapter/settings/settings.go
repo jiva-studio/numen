@@ -44,6 +44,9 @@ type Config struct {
 	// Agent is which agent answers in the panel, and what it may reach.
 	Agent agent.Config `json:"agent"`
 
+	// Naming is how a note's title and the name of its file are held together.
+	Naming Naming `json:"naming"`
+
 	// Said is what reading the file leaves a person something to do about: a
 	// number written where a setting does not go that far. Each is one line of
 	// a band, which gives a line about sixty characters, and whoever read the
@@ -152,6 +155,25 @@ type Indexing struct {
 	Proofreading proofreading.Config `json:"proofreading"`
 }
 
+// Naming is how a note's title and the name of its file are held together.
+type Naming struct {
+	// SyncTitleAndFilename is whether renaming either of the two brings the
+	// other into line. A file leaving it out keeps them one name, and a file
+	// naming false is what tells them apart.
+	SyncTitleAndFilename *bool `json:"sync_title_and_filename"`
+}
+
+// Sync is whether a note's title and its filename are kept as one name.
+func (c Config) Sync() bool {
+	return c.Naming.SyncTitleAndFilename == nil || *c.Naming.SyncTitleAndFilename
+}
+
+// on is a setting turned on.
+func on() *bool {
+	set := true
+	return &set
+}
+
 // Defaults are what an installation nobody has configured does.
 func Defaults() Config {
 	return Config{
@@ -167,7 +189,8 @@ func Defaults() Config {
 			Recognition:  recognition.Defaults(),
 			Proofreading: proofreading.Defaults(),
 		},
-		Agent: agent.Defaults(),
+		Agent:  agent.Defaults(),
+		Naming: Naming{SyncTitleAndFilename: on()},
 	}
 }
 

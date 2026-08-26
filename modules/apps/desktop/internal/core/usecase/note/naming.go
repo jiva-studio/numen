@@ -19,6 +19,21 @@ const (
 	ByFilename    Naming = "filename"
 )
 
+// Sync is whether a note's title and its filename are kept as one name.
+type Sync bool
+
+// Renaming is what one rename brings into line: whether a new title moves the
+// file, and whether a new filename is written into the note.
+//
+// A note its filename names carries its name nowhere else, so its file moves
+// whatever this is set to and nothing is written into it.
+func (s Sync) Renaming(by Naming) (moves, writes bool) {
+	if by == ByFilename {
+		return true, false
+	}
+	return bool(s), bool(s)
+}
+
 // ErrUnnameable is a title no note can be given. Nothing is written.
 var ErrUnnameable = errors.New("a note cannot be given this title")
 

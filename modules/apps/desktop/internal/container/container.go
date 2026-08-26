@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/trash"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 )
 
 // Config is what the user may point somewhere else. Empty fields mean the
@@ -61,6 +62,10 @@ type Config struct {
 	// Agent is which agent answers in the panel. It arrives the way Embedding
 	// does.
 	Agent adapteragent.Config
+
+	// Sync is whether a note's title and its filename are kept as one name. It
+	// arrives the way Embedding does.
+	Sync note.Sync
 
 	// RebuildIndex reads every file and puts it in the index again, whatever the
 	// index remembers about it. Both entry points offer it under one name: a

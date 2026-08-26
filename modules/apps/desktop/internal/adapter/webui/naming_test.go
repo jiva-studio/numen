@@ -14,6 +14,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 )
 
 // The window renames a note and takes one out of the vault. What the vault
@@ -67,6 +68,57 @@ func TestRenamingWritesTheNoteAndMovesTheFile(t *testing.T) {
 	}
 	if now := fileAt(t, f.root, "Entropy.md"); !strings.Contains(now, "title: Entropy") {
 		t.Errorf("the title was not written:\n%s", now)
+	}
+}
+
+// TestTheWindowRenamesTheWayTheSettingsSay. The palette and the plex menu both
+// ask for a rename by title, and the file tree asks for a move. The window
+// carries the one setting to all three.
+func TestTheWindowRenamesTheWayTheSettingsSay(t *testing.T) {
+	for name, c := range map[string]struct {
+		sync note.Sync
+		// at is where the renamed note is filed, and called what the moved one
+		// is called.
+		at     string
+		called string
+	}{
+		"one name":   {sync: true, at: "Disorder.md", called: "Warmth"},
+		"told apart": {sync: false, at: "Entropy.md", called: "Heat"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			f := opening(t, nil, map[string]string{
+				"Entropy.md": "---\ntitle: Entropy\n---\nA measure.\n",
+				"Heat.md":    "---\ntitle: Heat\n---\nA measure.\n",
+			}, c.sync)
+			scanned(t, f)
+
+			// The palette and the plex menu: a title, and the file follows it
+			// where the two are one name.
+			renamed, err := f.client.Rename(t.Context(), connect.NewRequest(&v1.RenameRequest{
+				Path: "Entropy.md", Title: "Disorder",
+			}))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := renamed.Msg.GetPath(); got != c.at {
+				t.Errorf("the note is filed at %q", got)
+			}
+
+			// The file tree: a name, and the note is called by it where the two
+			// are one name.
+			if _, err := f.client.Move(t.Context(), connect.NewRequest(&v1.MoveRequest{
+				From: "Heat.md", To: "Warmth.md",
+			})); err != nil {
+				t.Fatal(err)
+			}
+			if !gone(t, f.root, "Heat.md") {
+				t.Error("the file is still filed under the name it had")
+			}
+			want := "title: " + c.called
+			if now := fileAt(t, f.root, "Warmth.md"); !strings.Contains(now, want) {
+				t.Errorf("want %q in\n%s", want, now)
+			}
+		})
 	}
 }
 

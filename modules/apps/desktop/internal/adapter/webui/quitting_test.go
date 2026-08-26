@@ -52,9 +52,17 @@ func (o *order) taken() []string {
 	return append([]string(nil), o.said...)
 }
 
-// quitting opens a vault the way the window does, with the moment of each
-// write kept and, where a test asked for one, the write held there.
+// quitting opens a vault the way the window does for an installation nobody has
+// configured, with the moment of each write kept and, where a test asked for
+// one, the write held there.
 func quitting(t *testing.T, hold *held, notes map[string]string) *going {
+	t.Helper()
+	return opening(t, hold, notes, true)
+}
+
+// opening is quitting with a title and a filename told apart or kept as one
+// name, which is the one setting a rename reads.
+func opening(t *testing.T, hold *held, notes map[string]string, sync note.Sync) *going {
 	t.Helper()
 
 	root := t.TempDir()
@@ -74,6 +82,7 @@ func quitting(t *testing.T, hold *held, notes map[string]string) *going {
 	settings := container.Config{
 		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
 		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
+		Sync:         sync,
 	}
 	registry, err := settings.Registry()
 	if err != nil {

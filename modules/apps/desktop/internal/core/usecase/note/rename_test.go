@@ -3,6 +3,8 @@ package note_test
 import (
 	"context"
 	"errors"
+	"io/fs"
+	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -14,11 +16,17 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 )
 
+// rename is the rename an installation nobody has configured does: a title and
+// a filename kept as one name.
 func (c changing) rename() note.Rename {
-	return note.Rename{Move: note.Move{
-		Readers: filesystem.Readers{}, Writers: filesystem.Writers{},
-		Links: c.db.Links(), Sources: c.db.Sources(), Index: c.index,
-	}}
+	return note.Rename{Move: c.move()}
+}
+
+// apart is the rename an installation that has turned the two apart does.
+func (c changing) apart() note.Rename {
+	moving := c.move()
+	moving.Sync = false
+	return note.Rename{Move: moving}
 }
 
 // title is what the vault shows the note at this path as, asked of the index
@@ -482,4 +490,85 @@ func TestARenamedNoteIsFoundByItsNewName(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Where a title and a filename are told apart, a new title is written into the
+// note and the file stays where it is.
+func TestRenamingLeavesTheFileWhereItIsWhereTheTwoAreToldApart(t *testing.T) {
+	for name, c := range map[string]struct {
+		raw   string
+		by    note.Naming
+		holds string
+	}{
+		"a title in the frontmatter": {
+			raw: "---\ntitle: Old\n---\nA measure.\n", by: note.ByFrontmatter, holds: "title: Entropy",
+		},
+		"a level-one heading": {
+			raw: "# Old\n\nA measure.\n", by: note.ByHeading, holds: "# Entropy",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			v := changeable(t, map[string]string{"Old.md": c.raw})
+
+			renamed, err := v.apart().Execute(t.Context(), v.vault, "Old.md", "Entropy")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if renamed.Path != "Old.md" {
+				t.Errorf("the note is filed at %q", renamed.Path)
+			}
+			if renamed.Moved != nil {
+				t.Errorf("the file moved: %+v", renamed.Moved)
+			}
+			if renamed.By != c.by {
+				t.Errorf("want named by %s, got %s", c.by, renamed.By)
+			}
+			if body := v.read(t, "Old.md"); !strings.Contains(body, c.holds) {
+				t.Errorf("want %q in\n%s", c.holds, body)
+			}
+			if got := v.title(t, "Old.md"); got != "Entropy" {
+				t.Errorf("the vault shows it as %q", got)
+			}
+			if !gone(t, v, "Entropy.md") {
+				t.Error("the file is at Entropy.md")
+			}
+		})
+	}
+}
+
+// A note its filename names carries its name nowhere else, so its file moves
+// however a title and a filename are held.
+func TestRenamingANoteItsFilenameNamesMovesTheFileEitherWay(t *testing.T) {
+	for name, renaming := range map[string]func(changing) note.Rename{
+		"one name":   changing.rename,
+		"told apart": changing.apart,
+	} {
+		t.Run(name, func(t *testing.T) {
+			v := changeable(t, map[string]string{"Old.md": "A measure.\n"})
+
+			renamed, err := renaming(v).Execute(t.Context(), v.vault, "Old.md", "Entropy")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if renamed.Path != "Entropy.md" {
+				t.Fatalf("the note is filed at %q", renamed.Path)
+			}
+			if renamed.By != note.ByFilename {
+				t.Errorf("want named by filename, got %s", renamed.By)
+			}
+			if body := v.read(t, "Entropy.md"); body != "A measure.\n" {
+				t.Errorf("want the note untouched, got %q", body)
+			}
+			if got := v.title(t, "Entropy.md"); got != "Entropy" {
+				t.Errorf("the vault shows it as %q", got)
+			}
+		})
+	}
+}
+
+// gone says whether the vault holds nothing at a path.
+func gone(t *testing.T, c changing, path string) bool {
+	t.Helper()
+	_, err := os.Stat(filepath.Join(c.vault.Path, filepath.FromSlash(path)))
+	return errors.Is(err, fs.ErrNotExist)
 }

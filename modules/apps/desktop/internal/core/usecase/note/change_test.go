@@ -55,6 +55,7 @@ func (c changing) move() note.Move {
 	return note.Move{
 		Readers: filesystem.Readers{}, Writers: filesystem.Writers{},
 		Links: c.db.Links(), Sources: c.db.Sources(), Index: c.index,
+		Sync: true,
 	}
 }
 
