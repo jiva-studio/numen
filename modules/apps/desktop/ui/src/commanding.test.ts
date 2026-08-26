@@ -365,93 +365,37 @@ describe('a command that asks for a name', () => {
   })
 })
 
+/** The note goes to the vault's .trash folder, so nothing is asked over it. */
 describe('removing a note', () => {
-  it('asks once, naming the note and saying where it goes', () => {
+  it('is a deed the moment it is asked for, over the note in front', () => {
     const { commands } = asking()
 
-    commands.asks('remove', front())
+    const deed = commands.asks('remove', front())
 
-    expect(commands.bands.value[0]?.items[1]?.title).toBe('Remove “Ontology”')
-    expect(commands.bands.value[0]?.items[1]?.detail).toBe(words.trashed)
-  })
-
-  /** The keyboard opens on the first row of a band. */
-  it('offers the answer that changes nothing first', () => {
-    const { commands } = asking()
-
-    commands.asks('remove', front())
-
-    expect(commands.bands.value[0]?.items.map((item) => item.id)).toStrictEqual(['no', 'yes'])
-    expect(commands.bands.value[0]?.items[0]?.title).toBe(words.keeps)
-  })
-
-  it('names the one thing it is over by the name it carries', () => {
-    const { commands } = asking()
-
-    commands.asks('remove', front())
-
-    expect(commands.bands.value[0]?.items[1]?.title).toBe(`${words.removes} “Ontology”`)
-  })
-
-  it('says how many it is over, where it is over several', () => {
-    const { commands } = asking()
-
-    commands.asks('remove', front({ others: ['physics/Heat.pdf', 'physics/Cover.png'] }))
-
-    expect(commands.bands.value[0]?.items[1]?.title).toBe(`${words.removes} ${words.several(3)}`)
-  })
-
-  it('is a deed once that question is answered', () => {
-    const { commands } = asking()
-    commands.asks('remove', front())
-
-    expect(commands.chose('yes', 'yes')?.id).toBe('remove')
+    expect(deed?.id).toBe('remove')
+    expect(deed?.path).toBe('physics/Ontology.md')
   })
 
   it('carries every file it was over into the deed', () => {
     const { commands } = asking()
     const others = ['physics/Heat.pdf']
-    commands.asks('remove', front({ others }))
 
-    expect(commands.chose('yes', 'yes')?.others).toStrictEqual(others)
+    expect(commands.asks('remove', front({ others }))?.others).toStrictEqual(others)
   })
 
-  it('is nothing at all where the answer that changes nothing was chosen', () => {
+  it('carries the tab holding it, so the deed reaches it wherever it went', () => {
+    const { commands, opens } = asking()
+    opens('physics/Ontology.md', 'held')
+
+    expect(commands.asks('remove', front())?.note).toBe('held')
+  })
+
+  it('leaves the palette on the commands, having nothing to ask', () => {
     const { commands } = asking()
+
     commands.asks('remove', front())
 
-    expect(commands.chose('no', 'no')).toBeNull()
     expect(commands.bands.value.map((band) => band.id)).toStrictEqual(['note', 'window', 'vault'])
-  })
-
-  it('is nothing for an answer the step does not offer', () => {
-    const { commands } = asking()
-    commands.asks('remove', front())
-
-    expect(commands.chose('yes', 'destroy')).toBeNull()
-  })
-
-  it('keeps the answers the words typed name, so the field means something', () => {
-    const { commands } = asking()
-    commands.asks('remove', front())
-
-    void commands.typing('rem')
-
-    expect(commands.bands.value[0]?.items.map((item) => item.id)).toStrictEqual(['yes'])
-
-    void commands.typing('keep')
-
-    expect(commands.bands.value[0]?.items.map((item) => item.id)).toStrictEqual(['no'])
-  })
-
-  it('offers neither answer to words that name neither', () => {
-    const { commands } = asking()
-    commands.asks('remove', front())
-
-    void commands.typing('Ontology')
-
-    expect(commands.bands.value[0]?.items).toStrictEqual([])
-    expect(commands.bands.value[0]?.silence).toBe(words.answer)
   })
 })
 
@@ -483,18 +427,6 @@ describe('destroying a note', () => {
  * named, and the name that note is filed under is not what it was.
  */
 describe('a note that moves under an open step', () => {
-  it('is confirmed under the name it has now, and removed where it now is', () => {
-    const { commands, moves } = asking()
-    commands.asks('remove', front())
-    expect(commands.bands.value[0]?.items[1]?.title).toBe('Remove “Ontology”')
-
-    moves('physics/Ontology.md', 'physics/Being.md', 'Being')
-    commands.follows([{ from: 'physics/Ontology.md', to: 'physics/Being.md' }])
-
-    expect(commands.bands.value[0]?.items[1]?.title).toBe('Remove “Being”')
-    expect(commands.chose('yes', 'yes')?.path).toBe('physics/Being.md')
-  })
-
   it('is renamed where it now is, and never at the name it left', () => {
     const { commands, moves } = asking()
     commands.asks('title', front())
@@ -526,18 +458,22 @@ describe('a note that moves under an open step', () => {
   it('carries the tab holding it, so the deed reaches it wherever it went', () => {
     const { commands, opens } = asking()
     opens('physics/Ontology.md', 'held')
-    commands.asks('remove', front())
+    commands.asks('title', front())
 
-    expect(commands.chose('yes', 'yes')?.note).toBe('held')
+    void commands.typing('Substance')
+
+    expect(commands.chose('name', 'name')?.note).toBe('held')
   })
 
   it('leaves a step over another note where it stands', () => {
     const { commands } = asking()
-    commands.asks('remove', front())
+    commands.asks('title', front())
 
     commands.follows([{ from: 'Elsewhere.md', to: 'Moved.md' }])
 
-    expect(commands.chose('yes', 'yes')?.path).toBe('physics/Ontology.md')
+    void commands.typing('Substance')
+
+    expect(commands.chose('name', 'name')?.path).toBe('physics/Ontology.md')
   })
 })
 
@@ -797,9 +733,9 @@ describe('a command asked for from outside the palette', () => {
     const { commands } = asking()
     commands.shows(false)
 
-    expect(commands.asks('remove', front())).toBeNull()
+    expect(commands.asks('title', front())).toBeNull()
     expect(commands.open.value).toBe(true)
-    expect(commands.crumb.value).toBe(words.remove)
+    expect(commands.crumb.value).toBe(words.title)
   })
 
   it('leaves the palette shut where it needs nothing', () => {

@@ -99,8 +99,6 @@ export interface Words {
   readonly folder: string
   /** The links that reach nothing now, which nothing repairs. */
   readonly dangling: string
-  /** Where a removed note landed, which is the only way back to it. */
-  readonly trashedAt: string
   /** The vault opens with no note at all. */
   readonly nowhere: string
   /** The note is waiting on the person, and its file stays where it is. */
@@ -246,12 +244,12 @@ const makesFolder = async (deed: Deed, on: Doing, words: Words): Promise<void> =
 const over = (deed: Deed): readonly string[] => [deed.path, ...deed.others]
 
 /**
- * Files taken out of the vault, and where each went and what each left
- * reported. One the vault refuses leaves the rest to go, and what was refused
- * is what the person is told.
+ * Files taken out of the vault. A file that has gone is gone from the tree, so
+ * the notes left pointing at nothing are the whole of what is said. One the
+ * vault refuses leaves the rest to go, and what was refused is what the person
+ * is told.
  */
 const removes = async (deed: Deed, destroy: boolean, on: Doing, words: Words): Promise<void> => {
-  const report: string[] = []
   const dangling: string[] = []
   const refused: string[] = []
   let waiting = false
@@ -269,14 +267,13 @@ const removes = async (deed: Deed, destroy: boolean, on: Doing, words: Words): P
       continue
     }
     if (tab.held) on.notes.shuts(tab.held)
-    if (answer.trashed) report.push(`${words.trashedAt} ${answer.trashed}`)
     dangling.push(...answer.dangling)
     if (opening) await on.leaves(path, opening)
   }
 
   if (refused.length > 0) return on.says(all(...refused), 'refusal')
   if (waiting) return on.says(words.unanswered, 'caution')
-  on.says(all(...report, naming(words.dangling, dangling)))
+  on.says(naming(words.dangling, dangling))
 }
 
 /**

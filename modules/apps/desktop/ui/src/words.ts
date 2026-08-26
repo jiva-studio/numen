@@ -138,10 +138,7 @@ export const WORDS = {
   asking: 'Confirm',
   several: (files: number) => `${files} files`,
   answer: 'Choose an answer',
-  keeps: 'Keep the note',
   kept: 'Nothing happens to it',
-  removes: 'Remove',
-  trashed: 'It goes to the .trash folder of the vault',
   keepsVault: 'Keep the vault',
   forgets: 'Forget',
   stays: 'The folder stays where it is',
@@ -162,8 +159,7 @@ export const WORDS = {
   refused: REFUSED,
   unvaulted: UNVAULTED,
   dangling: 'These notes link to nothing now:',
-  /** Where a removed note landed, which is the only way back to it. */
-  trashedAt: 'The note is in the trash, at',
+  /** The vault opens with no note at all. */
   nowhere: 'The vault has no note to open with',
   unanswered: 'that note changed on disk, and its tab is waiting for an answer',
   overtaken: 'that note changed on disk while this was asked, so nothing was written',

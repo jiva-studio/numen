@@ -263,11 +263,8 @@ export interface Words extends Silences {
   /** How many files a command is over, where it is over several. */
   readonly several: (files: number) => string
   readonly answer: string
-  readonly keeps: string
   readonly kept: string
-  readonly removes: string
-  readonly trashed: string
-  /** The same two answers over a vault, whose folder is left where it is. */
+  /** The two answers over a vault, whose folder is left where it is. */
   readonly keepsVault: string
   readonly forgets: string
   readonly stays: string
@@ -351,20 +348,9 @@ export const commandsOf = (
     where: onNote,
     filled: (at) => at.title,
   },
-  {
-    id: 'remove',
-    text: words.remove,
-    band: 'note',
-    needs: 'asking',
-    where: onNote,
-    answers: {
-      keeps: words.keeps,
-      kept: words.kept,
-      does: words.removes,
-      then: words.trashed,
-    },
-    also: 'destroy',
-  },
+  // The note goes to the vault's .trash folder, and putting it back is a move.
+  // Destroy is the one that asks.
+  { id: 'remove', text: words.remove, band: 'note', where: onNote, also: 'destroy' },
   {
     id: 'destroy',
     text: words.destroy,

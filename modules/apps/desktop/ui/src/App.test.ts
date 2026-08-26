@@ -884,7 +884,8 @@ describe('a command asked for while the vault is being read', () => {
 })
 
 /** The palette drawn as a person meets it, with nothing of it stubbed. */
-describe('the keyboard on a step that confirms', () => {
+/** The note goes to the vault's .trash folder, so nothing is asked over it. */
+describe('the keyboard on the command that removes a note', () => {
   const field = () => document.body.querySelector<HTMLInputElement>('.palette__field')
 
   const press = async (key: string) => {
@@ -900,7 +901,7 @@ describe('the keyboard on a step that confirms', () => {
     await settles()
   }
 
-  /** The commands open, with the one that removes a note lit. */
+  /** The commands open, with the one that removes a note lit and taken. */
   const overRemove = async () => {
     const window = await drawnWithPalette()
     globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
@@ -910,27 +911,17 @@ describe('the keyboard on a step that confirms', () => {
     return window
   }
 
-  it('opens the confirmation on the answer that changes nothing', async () => {
+  it('removes the note the moment the command is chosen', async () => {
     await overRemove()
-
-    expect(document.body.querySelector('[data-here]')?.textContent).toContain('Keep the note')
-  })
-
-  it('removes nothing when the keystroke that opened it lands twice', async () => {
-    await overRemove()
-
-    await press('Enter')
-
-    expect(asked.removed).toStrictEqual([])
-  })
-
-  it('removes the note when the answer that removes it is the one chosen', async () => {
-    await overRemove()
-
-    await press('ArrowDown')
-    await press('Enter')
 
     expect(asked.removed).toStrictEqual(['Root.md false'])
+  })
+
+  it('stands on no step, and the palette goes with the choice', async () => {
+    const window = await overRemove()
+
+    expect(document.body.textContent).not.toContain('Keep the note')
+    expect(window.findComponent(Palette).props('open')).toBe(false)
   })
 })
 

@@ -345,30 +345,21 @@ describe('a note removed', () => {
     expect(one.done[1]).toBe('removes physics/Ontology.md true')
   })
 
-  it('says where in the trash it landed, which is the way back to it', async () => {
+  /** The row has gone from the tree, which is the whole of what a person needs. */
+  it('says nothing about a note that went where it was asked to go', async () => {
     const one = window()
 
     await carry(deedOf('remove', front()), one.on)
 
-    expect(one.said).toStrictEqual([`${words.trashedAt} .trash/Ontology.md`])
-  })
-
-  it('says nothing about the trash where the note was destroyed', async () => {
-    const one = window({ removed: removed({ trashed: '' }) })
-
-    await carry(deedOf('destroy', front(), 'Ontology'), one.on)
-
     expect(one.said).toStrictEqual([])
   })
 
-  it('says where it went, and the notes that link to nothing now', async () => {
+  it('says the notes that link to nothing now', async () => {
     const one = window({ removed: removed({ dangling: ['Order.md', 'Notes.md'] }) })
 
     await carry(deedOf('remove', front()), one.on)
 
-    expect(one.said).toStrictEqual([
-      `${words.trashedAt} .trash/Ontology.md. ${words.dangling} Order.md, Notes.md`,
-    ])
+    expect(one.said).toStrictEqual([`${words.dangling} Order.md, Notes.md`])
   })
 
   it('leaves every plex standing on it at the note the vault opens with', async () => {
