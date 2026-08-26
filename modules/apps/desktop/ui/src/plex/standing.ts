@@ -6,6 +6,7 @@
  */
 import { ref } from 'vue'
 import { wentTo, type Neighbourhood, type Went } from '../core'
+import { alike } from './picture'
 
 /** The one question a plex asks of the vault: what is around a note. */
 export interface Neighbours {
@@ -49,7 +50,9 @@ export function standing(core: Neighbours) {
       }
       trouble.value = ''
       here.value = path
-      neighbourhood.value = answer
+      // The picture on screen is kept where the answer draws the same one, so
+      // a vault that changed elsewhere leaves this plex standing.
+      if (!alike(neighbourhood.value, answer)) neighbourhood.value = answer
     } catch (error) {
       if (!open || mine !== asked) return
       trouble.value = String(error)

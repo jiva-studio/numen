@@ -58,7 +58,9 @@ beforeEach(() => {
       const beside = [...(this.parentElement?.children ?? [])]
       return boxOf(beside.indexOf(this) * HEIGHT, HEIGHT)
     }
-    return boxOf(0, this.getAttribute('role') === 'tree' ? 5 * HEIGHT : 0)
+    // The rows and the box around them stand as tall as the rows drawn.
+    const list = this.getAttribute('role') === 'tree' || this.classList.contains('tree')
+    return boxOf(0, list ? 5 * HEIGHT : 0)
   })
 })
 
@@ -413,6 +415,27 @@ describe('a drag', () => {
     const held = mountTree()
     await dragTo(held, 'work', 5 * HEIGHT - 2)
     expect(held.emitted('move')).toStrictEqual([[['work'], { into: null }]])
+  })
+
+  // The pointer is caught on the window, so a row let go over another pane is
+  // let go somewhere the tree does not answer for.
+  it('moves nothing let go beside the tree', async () => {
+    const held = mountTree()
+    const from = rowIn(held, 'work').element
+
+    pointer('pointerdown', middleOf(held, 'work'), from)
+    pointer('pointermove', 2 * HEIGHT, window, { clientX: 400 })
+    pointer('pointerup', 2 * HEIGHT, window, { clientX: 400 })
+    await held.vm.$nextTick()
+
+    expect(held.emitted('move')).toBeUndefined()
+  })
+
+  it('moves nothing let go below the tree', async () => {
+    const held = mountTree()
+    await dragTo(held, 'work', 9 * HEIGHT)
+
+    expect(held.emitted('move')).toBeUndefined()
   })
 
   it('moves nothing where the pointer did not travel far enough', async () => {

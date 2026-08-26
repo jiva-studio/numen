@@ -89,6 +89,9 @@ defineSlots<{
 
 const list = useTemplateRef<HTMLElement>('list')
 
+/** What the tree takes up on screen: a drop lands only over it. */
+const box = useTemplateRef<HTMLElement>('box')
+
 const shown = computed(() => flatten(props.rows, new Set(props.open)))
 
 /** The rows selected, for asking one row at a time. */
@@ -278,7 +281,7 @@ function drag(event: PointerEvent): void {
 
   dragging.value = { ...held, moved }
   point.value = moved ? { x: event.clientX, y: event.clientY } : null
-  at.value = moved ? landingAt(held.rows, event.clientY) : null
+  at.value = moved ? landingAt(held.rows, { x: event.clientX, y: event.clientY }) : null
 }
 
 function drop(): void {
@@ -303,12 +306,18 @@ function drop(): void {
  * Where the pointer is, asked of the drawing: the rows are one height each,
  * and the height is whatever they are drawn at.
  */
-function landingAt(rows: readonly RowId[], clientY: number): Landing | null {
+function landingAt(rows: readonly RowId[], at: Point): Landing | null {
   const drawn = list.value
-  if (!drawn) return null
+  const over = box.value?.getBoundingClientRect()
+  if (!drawn || !over) return null
+
+  // A pointer that has left the tree is carrying what it holds somewhere else.
+  const inside =
+    at.x >= over.left && at.x <= over.right && at.y >= over.top && at.y <= over.bottom
+  if (!inside) return null
 
   const height = drawn.querySelector('[data-tree-row]')?.getBoundingClientRect().height ?? 0
-  const found = landing(shown.value, rows, clientY - drawn.getBoundingClientRect().top, height)
+  const found = landing(shown.value, rows, at.y - drawn.getBoundingClientRect().top, height)
   if (!found) return null
 
   return refuses(props.rows, rows, holderOf(shown.value, found)) ? null : found
@@ -357,6 +366,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div
+    ref="box"
     class="tree numen min-h-0 bg-surface font-sans text-base text-ink"
     :data-into="at && 'into' in at && at.into === null ? '' : undefined"
     @contextmenu.prevent="askMenu(null, { x: $event.clientX, y: $event.clientY })"

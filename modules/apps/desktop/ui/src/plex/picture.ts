@@ -91,3 +91,31 @@ export function asPlex(neighbourhood: Neighbourhood): PlexNeighbourhood {
 
   return { nodes, edges }
 }
+
+/**
+ * Whether two neighbourhoods draw one picture: the note in focus, and every
+ * note joined to it in the order they arrived, each with what the line between
+ * them says.
+ *
+ * A vault that changed somewhere else answers with a neighbourhood equal to the
+ * one on screen, and a picture equal to the one on screen is left standing.
+ */
+export function alike(one: Neighbourhood | null, other: Neighbourhood | null): boolean {
+  if (one === null || other === null) return one === other
+  if (one.focus?.path !== other.focus?.path) return false
+  if (one.focus?.title !== other.focus?.title) return false
+  if (one.related.length !== other.related.length) return false
+
+  return one.related.every((related, at) => {
+    const against = other.related[at]
+    return (
+      against !== undefined &&
+      related.note?.path === against.note?.path &&
+      related.note?.title === against.note?.title &&
+      related.seat === against.seat &&
+      related.label === against.label &&
+      related.through === against.through &&
+      related.mutual === against.mutual
+    )
+  })
+}

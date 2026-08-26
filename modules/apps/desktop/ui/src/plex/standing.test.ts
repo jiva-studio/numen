@@ -108,3 +108,35 @@ describe('two plexes', () => {
     expect(two.neighbourhood.value?.focus?.path).toBe('Two.md')
   })
 })
+
+describe('a vault that changed somewhere else', () => {
+  it('leaves the picture on screen standing, answer for answer', async () => {
+    const plex = standing(fake(async (path) => answer(path)))
+    await plex.go('Entropy.md')
+    const drawn = plex.neighbourhood.value
+
+    await plex.go('Entropy.md')
+
+    expect(plex.neighbourhood.value).toBe(drawn)
+  })
+
+  it('draws again where what is around the note is different', async () => {
+    let related: string[] = []
+    const plex = standing(
+      fake(async (path) =>
+        create(NeighbourhoodSchema, {
+          focus: { path, title: path, identifier: '' },
+          related: related.map((to) => ({ note: { path: to, title: to, identifier: '' } })),
+        }),
+      ),
+    )
+    await plex.go('Entropy.md')
+    const drawn = plex.neighbourhood.value
+
+    related = ['Heat.md']
+    await plex.go('Entropy.md')
+
+    expect(plex.neighbourhood.value).not.toBe(drawn)
+    expect(plex.neighbourhood.value?.related).toHaveLength(1)
+  })
+})
