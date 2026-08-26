@@ -71,6 +71,10 @@ Every tool works the vault the window is showing, and no other. `vault_list`, `v
 
 The window opening another vault stops the endpoint and serves it again on the one the swap ended on. One swap holds that at a time, so a second waits for the first.
 
+### The port is opened where a person asks for it
+
+An agent named for the panel puts the tools on a port, since that is how the agent this window starts reaches them (ADR-0022). A person who runs an agent of their own asks for the port itself, by a setting. An installation asking for neither opens no port and mints no token: a port and a secret on somebody's machine belong to an installation that was asked for them.
+
 ### What is served, and to whom
 
 The loopback interface, on a fixed port, by default. Any other address is allowed, and choosing one is said plainly at startup.
@@ -95,7 +99,7 @@ The tools themselves, family by family, and the limits on what one call may carr
 
 ## Consequences
 
-- The repository opens a port, and what stands in front of it is a token and an origin check.
+- The repository opens a port where an installation asks for one, and what stands in front of it is a token and an origin check.
 - A second surface to keep true as the core changes. Nothing generates it against the schema; only tests hold it there.
 - An agent with write tools can damage a vault as thoroughly as a person can. The damage is visible and reversible (ADR-0017), which is weaker than prevention and is what is available.
 - A tool that writes waits for a refresh, so a write costs what indexing that note costs.

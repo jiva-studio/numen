@@ -1,10 +1,8 @@
 // Package markdown turns the bytes of a note into the parts the index stores.
 // It is pure: no filesystem, no clock, no database.
 //
-// The permitted additions to markdown are frontmatter, wikilinks and line
-// anchors. Frontmatter and links are read: what a link is has been decided, so
-// both the annotated records and the mentions in prose are parsed. Anchors are
-// not, because what an anchor addresses has not.
+// The permitted additions to markdown are frontmatter and wikilinks. Both are
+// read: the annotated records in the frontmatter, and the mentions in prose.
 package markdown
 
 import (

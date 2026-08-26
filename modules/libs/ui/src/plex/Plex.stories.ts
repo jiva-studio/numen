@@ -12,6 +12,7 @@ import { computed, ref } from 'vue'
 import Plex from './Plex.vue'
 import { resolveOptions, rowsAndColumns, type Placement, type PlexOptionsInput } from './arrange'
 import { optionsForType, useTypeSize } from './sizing'
+import { DWELL } from './dwell'
 import { neighbourhoods } from './fixtures/neighbourhoods'
 import { neighbourhoodOf, walkStart } from './fixtures/walk'
 import { around, build, type Named } from './fixtures/build'
@@ -33,6 +34,7 @@ interface Knobs {
   placement: Placement
   showEdgeLabels: boolean
   duration: number
+  dwell: number
   onActivate: (id: string) => void
   onShow: (id: string, showing: PlexShowing) => void
   onCreate: (from: string, seat: PlexRelatedSeat) => void
@@ -205,6 +207,7 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
         :options="options"
         :show-edge-labels="args.showEdgeLabels"
         :duration="args.duration"
+        :dwell="args.dwell"
         @activate="chose($event); args.onActivate($event)"
         @show="(id, showing) => args.onShow(id, showing)"
         @create="(from, seat) => { create(from, seat); args.onCreate(from, seat) }"
@@ -243,6 +246,7 @@ const walking = (args: Knobs) => ({
         :options="options"
         :show-edge-labels="args.showEdgeLabels"
         :duration="args.duration"
+        :dwell="args.dwell"
         @activate="focused = $event; args.onActivate($event)"
         @show="(id, showing) => args.onShow(id, showing)"
       />
@@ -301,6 +305,10 @@ const meta = {
       control: { type: 'range', min: 0, max: 3000, step: 20 },
       table: { category: 'Motion' },
     },
+    dwell: {
+      control: { type: 'range', min: 0, max: 2000, step: 20 },
+      table: { category: 'Motion' },
+    },
     arriveAfter: { ...range(0, 0.95, 0.05, 'Motion'), table: { category: 'Motion' } },
     leaveBefore: { ...range(0.05, 1, 0.05, 'Motion'), table: { category: 'Motion' } },
 
@@ -328,6 +336,7 @@ const meta = {
     placement: rowsAndColumns,
     showEdgeLabels: true,
     duration: 420,
+    dwell: DWELL,
     onActivate: fn(),
     onShow: fn(),
     onCreate: fn(),
@@ -729,6 +738,98 @@ export const TitledLines: Story = {
   },
 }
 
+/** What two things on the screen are held apart by. */
+interface Edges {
+  left: number
+  right: number
+  top: number
+  bottom: number
+}
+
+/**
+ * Every title that is drawn stands clear: none of its letters lies over a box,
+ * and none of them lies over another title's.
+ *
+ * Two counts, and the assertion is the count itself, so a picture that gets
+ * worse says by how much.
+ */
+const titlesStandClear = async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+  /** Whether two boxes on the screen share any of it. */
+  const meets = (one: Edges, other: Edges) =>
+    one.left < other.right &&
+    other.left < one.right &&
+    one.top < other.bottom &&
+    other.top < one.bottom
+
+  /**
+   * Where each letter of a title stands, on the screen. A title set along a
+   * curve is a ribbon of letters: the box around the whole of a diagonal one
+   * covers a quarter of the picture the letters are nowhere near.
+   */
+  const lettersOf = (text: SVGTextElement): Edges[] => {
+    const onScreen = text.getScreenCTM()!
+    const letters: Edges[] = []
+
+    for (let at = 0; at < text.getNumberOfChars(); at += 1) {
+      const letter = text.getExtentOfChar(at)
+      const corners = [
+        new DOMPoint(letter.x, letter.y),
+        new DOMPoint(letter.x + letter.width, letter.y),
+        new DOMPoint(letter.x, letter.y + letter.height),
+        new DOMPoint(letter.x + letter.width, letter.y + letter.height),
+      ].map((corner) => corner.matrixTransform(onScreen))
+
+      letters.push({
+        left: Math.min(...corners.map((corner) => corner.x)),
+        right: Math.max(...corners.map((corner) => corner.x)),
+        top: Math.min(...corners.map((corner) => corner.y)),
+        bottom: Math.max(...corners.map((corner) => corner.y)),
+      })
+    }
+
+    return letters
+  }
+
+  /** The letters of each title, which is the layer the halo is painted for. */
+  const titles = () => [
+    ...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label--letters'),
+  ]
+
+  // The plex draws on a fallback window until the canvas has been measured,
+  // and the counts below belong to the arrangement the measured one settles.
+  await waitFor(async () => {
+    const svg = canvasElement.querySelector('svg')!
+    const drawnFor = Number(svg.getAttribute('viewBox')!.split(' ')[2])
+    await expect(Math.abs(drawnFor - svg.getBoundingClientRect().width)).toBeLessThan(1)
+  })
+
+  const drawn = titles().map((text) => ({
+    words: text.textContent,
+    letters: lettersOf(text),
+  }))
+  const boxes = [...canvasElement.querySelectorAll<SVGRectElement>('.plex__box')].map(
+    (box) => box.getBoundingClientRect(),
+  )
+
+  const piled: string[] = []
+  for (const [at, title] of drawn.entries()) {
+    for (const other of drawn.slice(at + 1)) {
+      const touching = title.letters.some((letter) =>
+        other.letters.some((mine) => meets(letter, mine)),
+      )
+      if (touching) piled.push(`${title.words} × ${other.words}`)
+    }
+  }
+
+  const overBoxes = drawn
+    .filter((title) => title.letters.some((letter) => boxes.some((box) => meets(letter, box))))
+    .map((title) => title.words)
+
+  await expect(drawn.length).toBeGreaterThan(0)
+  await expect(piled).toHaveLength(0)
+  await expect(overBoxes).toHaveLength(0)
+}
+
 /**
  * How much of the picture the titles cover each other in. The playground's own
  * neighbourhood, which is the crowded one: a fan of lines out of every node,
@@ -744,51 +845,21 @@ export const TitledLines: Story = {
 export const TitlesFindRoom: Story = {
   args: { ...invented.args, duration: 0 },
   render: invented.render,
-  play: async ({ canvasElement }) => {
-    /** Whether two boxes on the screen share any of it. */
-    const meets = (one: DOMRect, other: DOMRect) =>
-      one.left < other.right &&
-      other.left < one.right &&
-      one.top < other.bottom &&
-      other.top < one.bottom
+  play: titlesStandClear,
+}
 
-    /** The letters of each title, which is the layer the halo is painted for. */
-    const titles = () => [
-      ...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label--letters'),
-    ]
-
-    // The plex draws on a fallback window until the canvas has been measured,
-    // and the counts below belong to the arrangement the measured one settles.
-    await waitFor(async () => {
-      const svg = canvasElement.querySelector('svg')!
-      const drawnFor = Number(svg.getAttribute('viewBox')!.split(' ')[2])
-      await expect(Math.abs(drawnFor - svg.getBoundingClientRect().width)).toBeLessThan(1)
-    })
-
-    const drawn = titles().map((text) => ({
-      words: text.textContent,
-      box: text.getBoundingClientRect(),
-    }))
-    const boxes = [
-      ...canvasElement.querySelectorAll<SVGRectElement>('.plex__box'),
-    ].map((box) => box.getBoundingClientRect())
-
-    const piled: string[] = []
-    for (const [at, title] of drawn.entries()) {
-      for (const other of drawn.slice(at + 1)) {
-        if (meets(title.box, other.box)) piled.push(`${title.words} × ${other.words}`)
-      }
-    }
-
-    const overBoxes = drawn
-      .filter((title) => boxes.some((box) => meets(title.box, box)))
-      .map((title) => title.words)
-
-    // Every title has somewhere to be: none of them lies on another, and none
-    // of them lies over a box.
-    await expect(piled).toHaveLength(0)
-    await expect(overBoxes).toHaveLength(0)
-  },
+/**
+ * The lines of one note of the demo vault, every one of them named, and more
+ * children than a row holds.
+ *
+ * The lines to the far row cross the near one, so their titles are looking for
+ * room in a band the near row's titles already stand in. A title with nowhere
+ * clear is cut to the room it has, and one with room for less than half of its
+ * words is not written at all.
+ */
+export const TitlesAcrossRows: Story = {
+  args: { neighbourhood: neighbourhoods.labelledRows, duration: 0 },
+  play: titlesStandClear,
 }
 
 /**
@@ -944,6 +1015,47 @@ export const AwkwardLabels: Story = {
 }
 
 /**
+ * A title too long for its box, read by leaving a hand on the box.
+ *
+ * Only a browser can answer it: how wide a title runs is what the type it is
+ * set in comes to, whether the box holds the whole of it is the browser's own
+ * reckoning, and a box drawn over its neighbours is a matter of what was
+ * painted last.
+ */
+export const RestingOnATitle: Story = {
+  args: { neighbourhood: neighbourhoods.awkwardLabels },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const node = canvas.getByLabelText(/^Supercalifragilistic/)
+    const beside = canvas.getByLabelText('日本語のノート, child')
+
+    const widthOf = (box: Element) => box.querySelector('.plex__box')!.getBoundingClientRect().width
+    const placed = widthOf(node)
+    const nextDoor = beside.getBoundingClientRect().x
+
+    // Cut short in the box the arrangement drew, and the whole of it under a
+    // hand that stays.
+    const words = node.querySelector<HTMLElement>('.plex__title-text')!
+    await expect(words.scrollWidth).toBeGreaterThan(words.clientWidth)
+
+    await userEvent.hover(node)
+    await waitFor(async () => await expect(widthOf(node)).toBeGreaterThan(placed), {
+      timeout: 3000,
+    })
+    await waitFor(async () => await expect(words.scrollWidth).toBeLessThanOrEqual(words.clientWidth))
+
+    // Nothing else moved for it, and it stands over what it now covers.
+    await expect(beside.getBoundingClientRect().x).toBe(nextDoor)
+    const boxes = canvasElement.querySelectorAll('.plex__node')
+    await expect(boxes[boxes.length - 1]).toBe(node)
+
+    // The hand leaves, and the picture is the one it was.
+    await userEvent.unhover(node)
+    await waitFor(async () => await expect(widthOf(node)).toBe(placed))
+  },
+}
+
+/**
  * Walk the graph. Go back the way you came: nodes in both pictures travel
  * rather than blinking out and in, because they are matched by identifier.
  */
@@ -1037,6 +1149,7 @@ export const SmallWindow: Story = {
             :options="options"
             :show-edge-labels="args.showEdgeLabels"
             :duration="args.duration"
+            :dwell="args.dwell"
             @activate="args.onActivate"
           />
         </div>

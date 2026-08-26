@@ -55,7 +55,7 @@ describe('making a note in a seat of another', () => {
 
     expect(made).toStrictEqual({ path: `${UNTITLED}.md`, title: UNTITLED })
     expect(asked).toStrictEqual([
-      { title: UNTITLED, folder: '', links: [{ to: 'Ontology.md', seat: 'parent' }] },
+      { title: UNTITLED, folder: '', links: [{ to: 'Ontology.md', role: 'parent' }] },
     ])
   })
 
@@ -63,7 +63,7 @@ describe('making a note in a seat of another', () => {
     const { core, asked, said } = fake()
     await creating(core, said).make('Ontology.md', 'parent')
 
-    expect(asked[0]?.links).toStrictEqual([{ to: 'Ontology.md', seat: 'child' }])
+    expect(asked[0]?.links).toStrictEqual([{ to: 'Ontology.md', role: 'child' }])
   })
 
   it('files it in the folder the note it was made from is in', async () => {
@@ -165,9 +165,16 @@ describe('joining two notes that are both there', () => {
 
     expect(await making.join('Ontology.md', 'Entropy.md', 'child')).toBe(true)
     expect(joined).toStrictEqual([
-      { path: 'Ontology.md', link: { to: 'Entropy.md', seat: 'child' } },
+      { path: 'Ontology.md', link: { to: 'Entropy.md', role: 'child' } },
     ])
     expect(last()).toBe('')
+  })
+
+  it('writes nothing for a seat no link writes', async () => {
+    const { core, joined, said } = fake()
+
+    expect(await creating(core, said).join('Ontology.md', 'Entropy.md', 'sibling')).toBe(false)
+    expect(joined).toStrictEqual([])
   })
 
   it('says why nothing was written', async () => {

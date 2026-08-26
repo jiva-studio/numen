@@ -22,16 +22,6 @@ import type {
  */
 export const NeighbourhoodSchema = NeighbourhoodResponseSchema
 
-/** A seat in the words the schema uses, for a link the window asks to be written. */
-export const asSeat = (seat: PlexRelatedSeat): Seat => written[seat]
-
-const written: Record<PlexRelatedSeat, Seat> = {
-  parent: Seat.PARENT,
-  child: Seat.CHILD,
-  jump: Seat.JUMP,
-  sibling: Seat.SIBLING,
-}
-
 const seats: Record<Seat, PlexRelatedSeat | null> = {
   [Seat.UNSPECIFIED]: null,
   [Seat.PARENT]: 'parent',

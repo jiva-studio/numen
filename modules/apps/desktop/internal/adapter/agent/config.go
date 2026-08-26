@@ -1,5 +1,6 @@
 // Package agent is the agent section of this installation's settings: which
-// agent answers in the panel, and what it may reach.
+// agent answers in the panel, what it may reach, and whether the tools are
+// served to an agent a person runs themselves.
 package agent
 
 // Which agent an installation answers with. One name per program, since a
@@ -16,9 +17,18 @@ type Config struct {
 	// Use names the agent. Empty answers with none, and the panel says so.
 	Use string `json:"use"`
 
+	// ServeTools puts the tools on a port, which is how an agent a person runs
+	// themselves reaches this vault. It is off; the agent Use names is served
+	// on the port either way.
+	ServeTools bool `json:"serve_tools"`
+
 	// Claude is Claude Code, reached by starting it and reading what it prints.
 	Claude Claude `json:"claude"`
 }
+
+// Serving reports whether the tools go on a port: an installation naming an
+// agent for the panel is one, and so is one asking for the port itself.
+func (c Config) Serving() bool { return c.Use == UseClaude || c.ServeTools }
 
 // Claude is how Claude Code is run.
 type Claude struct {

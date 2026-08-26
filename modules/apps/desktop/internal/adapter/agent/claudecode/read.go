@@ -10,8 +10,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agent"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
 // read turns what the agent prints into steps, and reports why it stopped when
@@ -24,7 +24,7 @@ import (
 func read(
 	ctx context.Context,
 	r io.Reader,
-	steps chan<- agent.Step,
+	steps chan<- port.Step,
 	words map[string]Words,
 	kept func(string),
 	draft Drafting,
@@ -53,7 +53,7 @@ const framePace = 50 * time.Millisecond
 
 // reader is what has been made of the stream so far.
 type reader struct {
-	steps chan<- agent.Step
+	steps chan<- port.Step
 	// words are what each tool this vault serves calls itself, and which
 	// argument says what a call was about.
 	words map[string]Words
@@ -102,7 +102,7 @@ func (rd *reader) line(ctx context.Context, line string) {
 		// The tool answered. Everything from here until the next block arrives
 		// is the model's, and the step says so.
 		if said.answers() {
-			rd.tell(ctx, agent.Step{Kind: agent.Answered})
+			rd.tell(ctx, port.Step{Kind: port.StepAnswered})
 		}
 	case "system":
 		switch said.Subtype {
@@ -115,7 +115,7 @@ func (rd *reader) line(ctx context.Context, line string) {
 			// `requesting` is written when a request to the model begins. It is
 			// the start of the wait, reported by the agent itself.
 			if said.Status == "requesting" {
-				rd.tell(ctx, agent.Step{Kind: agent.Thinking})
+				rd.tell(ctx, port.Step{Kind: port.StepThinking})
 			}
 		}
 	case "result":
@@ -148,7 +148,7 @@ func (rd *reader) piece(ctx context.Context, event streamed) {
 				return
 			}
 			rd.pieces = true
-			rd.tell(ctx, agent.Step{Kind: agent.Saying, Text: event.Delta.Text})
+			rd.tell(ctx, port.Step{Kind: port.StepSaying, Text: event.Delta.Text})
 		case "input_json_delta":
 			rd.written.WriteString(event.Delta.Partial)
 			// Reported as it is written, one writtenStep of characters at a
@@ -181,7 +181,7 @@ func (rd *reader) whole(ctx context.Context, said event) {
 		switch block.Type {
 		case "text":
 			if block.Text != "" {
-				rd.tell(ctx, agent.Step{Kind: agent.Saying, Text: block.Text})
+				rd.tell(ctx, port.Step{Kind: port.StepSaying, Text: block.Text})
 			}
 		case "tool_use":
 			rd.tell(ctx, rd.calls(block.ID, block.Name, string(block.Input)))
@@ -197,7 +197,7 @@ func (rd *reader) stop(why string) {
 }
 
 // tell hands a step over, or gives up when nobody is listening any more.
-func (rd *reader) tell(ctx context.Context, s agent.Step) {
+func (rd *reader) tell(ctx context.Context, s port.Step) {
 	select {
 	case rd.steps <- s:
 	case <-ctx.Done():
@@ -306,13 +306,13 @@ const (
 // its title, and what the call is about is the argument it declared it cannot be
 // called without. A tool this vault does not serve is named as it named itself
 // and is about nothing: nothing was declared here to read it by.
-func (rd *reader) calls(call, tool, arguments string) agent.Step {
+func (rd *reader) calls(call, tool, arguments string) port.Step {
 	words, served := rd.words[tool]
 	if !served {
-		return agent.Step{Kind: agent.Calling, Call: call, Tool: tool}
+		return port.Step{Kind: port.StepCalling, Call: call, Tool: tool}
 	}
 
-	step := agent.Step{Kind: words.Kind, Call: call, Tool: words.Title}
+	step := port.Step{Kind: words.Kind, Call: call, Tool: words.Title}
 	if words.About == "" {
 		return step
 	}
@@ -330,8 +330,8 @@ func (rd *reader) calls(call, tool, arguments string) agent.Step {
 //
 // The stretch is read once the arguments parse whole, so it arrives with the
 // report that ends the call. Half a number is another number.
-func placed(path, arguments string) agent.Place {
-	at := agent.Place{Path: path}
+func placed(path, arguments string) domain.Place {
+	at := domain.Place{Path: path}
 	var made map[string]any
 	if err := json.Unmarshal([]byte(arguments), &made); err != nil {
 		return at

@@ -1,44 +1,10 @@
 /** The clock, driven by hand: no waiting, no flakiness. */
 import { effectScope, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
-import { usePlexTransition, type Environment } from './transition'
+import { usePlexTransition } from './transition'
 import { neighbourhoods } from './fixtures/neighbourhoods'
+import { stubEnvironment } from './fixtures/clock'
 import type { PlacedNode, PlexNeighbourhood } from './model'
-
-/** A clock that only moves when a test says so. */
-function stubEnvironment() {
-  let clock = 0
-  let next: ((now: number) => void) | null = null
-  let handles = 0
-  const cancelled: number[] = []
-
-  const environment: Environment = {
-    now: () => clock,
-    schedule: (run) => {
-      next = run
-      return ++handles
-    },
-    cancel: (handle) => {
-      cancelled.push(handle)
-      next = null
-    },
-  }
-
-  return {
-    environment,
-    cancelled,
-    get pending() {
-      return next !== null
-    },
-    /** Advance to a moment and deliver the frame that was waiting for it. */
-    tick(to: number) {
-      clock = to
-      const run = next
-      next = null
-      run?.(clock)
-    },
-  }
-}
 
 /** Run a composable inside a scope, as a component would. */
 function inScope<T>(build: () => T): T {

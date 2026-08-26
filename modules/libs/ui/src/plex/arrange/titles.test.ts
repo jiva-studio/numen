@@ -5,6 +5,7 @@ import { DEFAULT_OPTIONS } from './options'
 import { MIDDLE, routeEdges, routingFor } from './routing'
 import { settleTitles } from './titles'
 import { build } from '../fixtures/build'
+import { neighbourhoods } from '../fixtures/neighbourhoods'
 import {
   headingOf,
   lengthOf,
@@ -26,6 +27,13 @@ const labelDepth = 12
 const measured = { measureLabel, labelDepth }
 
 const VIEWPORT = { width: 1200, height: 800 }
+
+/**
+ * How far along its line a title has moved when all it did was step clear of
+ * the boxes its own line joins: a nudge, and not the slide of a title that had
+ * to go looking for room.
+ */
+const A_NUDGE = 0.1
 
 interface Box {
   minX: number
@@ -76,18 +84,30 @@ const boxAround = (node: PlacedNode): Box => ({
   maxY: node.y + node.height / 2,
 })
 
+/** One line, with room along it for whatever words it is given. */
+const alone = (label: string): PlexNeighbourhood => ({
+  nodes: [
+    { id: 'focus', title: 'Here', seat: 'focus' },
+    { id: 'aside', title: 'Aside', seat: 'jump' },
+  ],
+  edges: [{ from: 'aside', to: 'focus', label }],
+})
+
 describe('a title finds room on its line', () => {
   it('keeps the middle of a line with nothing near it', () => {
-    const alone: PlexNeighbourhood = {
-      nodes: [
-        { id: 'focus', title: 'Here', seat: 'focus' },
-        { id: 'aside', title: 'Aside', seat: 'jump' },
-      ],
-      edges: [{ from: 'aside', to: 'focus', label: 'see also' }],
-    }
-    const frame = arrangePlex(alone, measured)
+    const frame = arrangePlex(alone('see'), measured)
 
     expect(frame.edges[0]!.wordsAt).toBe(0.5)
+  })
+
+  it('gives up the middle to stay clear of the boxes its own line joins', () => {
+    // Words nearly as long as the line they are set on: the middle would put
+    // them against a box at either end.
+    const frame = arrangePlex(alone('see also'), measured)
+
+    expect(frame.edges[0]!.words).toBe('see also')
+    expect(frame.edges[0]!.wordsAt).not.toBe(MIDDLE)
+    expect(Math.abs(frame.edges[0]!.wordsAt - MIDDLE)).toBeLessThan(A_NUDGE)
   })
 
   it('stands every title of a fan clear of the others', () => {
@@ -115,14 +135,8 @@ describe('a title finds room on its line', () => {
     expect(moved.length).toBeLessThan(frame.edges.length)
   })
 
-  it('keeps the middle of a line with nowhere clear along it', () => {
-    const pair: PlexNeighbourhood = {
-      nodes: [
-        { id: 'focus', title: 'Here', seat: 'focus' },
-        { id: 'aside', title: 'Aside', seat: 'jump' },
-      ],
-      edges: [{ from: 'aside', to: 'focus', label: 'see also' }],
-    }
+  it('writes nothing at all on a line with nowhere clear along it', () => {
+    const pair = alone('see also')
     const placed = arrangePlex(pair, measured)
     const byId = new Map(placed.nodes.map((node) => [node.id, node]))
     const routing = routingFor(DEFAULT_OPTIONS, measureLabel, labelDepth)
@@ -142,7 +156,7 @@ describe('a title finds room on its line', () => {
     }
     const settled = settleTitles(routed, [...placed.nodes, blanket], routing)
 
-    expect(settled[0]!.wordsAt).toBe(0.5)
+    expect(settled[0]!.words).toBeUndefined()
   })
 
   it('gives the same neighbourhood the same offsets twice over', () => {
@@ -179,49 +193,94 @@ describe('a title finds room on its line', () => {
   })
 
   it('reads the words the way the line runs where they end up', () => {
-    // Two nodes of one row, joined to each other. The gap between their gates
-    // is under the reach an edge holds, so each control point is thrown past
-    // the far gate and the little line doubles back twice over: at the middle
-    // it runs against the way it sets off and the way it arrives.
-    const row: PlexNeighbourhood = {
-      nodes: [
-        { id: 'focus', title: 'Here', seat: 'focus' },
-        { id: 'first', title: 'First', seat: 'parent' },
-        { id: 'second', title: 'Second', seat: 'parent' },
-      ],
-      edges: [{ from: 'first', to: 'second', label: 'and' }],
-    }
-
-    const placed = arrangePlex(row)
-    const byId = new Map(placed.nodes.map((node) => [node.id, node]))
-    const bare = routeEdges(row.edges, byId, routingFor(DEFAULT_OPTIONS))[0]!
-    expect(headingOf(bare, MIDDLE)).toBe('against')
-
-    // Words taking three fifths of that line, so the title has one step to
-    // either side of the middle and no further.
-    const arc = lengthOf(bare)
-    const routing = routingFor(DEFAULT_OPTIONS, () => 0.6 * arc, labelDepth)
-    const routed = routeEdges(row.edges, byId, routing)
-
-    // A box over the last quarter of the line, so the words slide back towards
-    // its start, which is past the turn the middle stands on.
-    const past = rulerOf(routed[0]!)(0.75)
-    const covering: PlacedNode = {
-      id: 'covering',
-      title: 'Covering',
-      seat: 'sibling',
-      x: past.x + 100,
-      y: past.y,
-      width: 200,
-      height: 200,
+    // A long line taken right to left, with a box over the middle of it. The
+    // words are read from the far end, so the fraction the title carries is a
+    // fraction of the line the words are read along and not of the curve.
+    const far: PlacedNode = {
+      id: 'far',
+      title: 'Far',
+      seat: 'jump',
+      x: -300,
+      y: 0,
+      width: 100,
+      height: 36,
       order: 0,
       opacity: 1,
     }
+    const here: PlacedNode = { ...far, id: 'here', title: 'Here', seat: 'focus', x: 300 }
+    const covering: PlacedNode = {
+      ...far,
+      id: 'covering',
+      title: 'Covering',
+      seat: 'sibling',
+      x: 0,
+      y: 40,
+      width: 100,
+      height: 100,
+    }
 
-    const settled = settleTitles(routed, [...placed.nodes, covering], routing)[0]!
+    const byId = new Map([far, here].map((node) => [node.id, node]))
+    const routing = routingFor(DEFAULT_OPTIONS, measureLabel, labelDepth)
+    const routed = routeEdges([{ from: 'here', to: 'far', label: 'see also' }], byId, routing)
+    expect(headingOf(routed[0]!, MIDDLE)).toBe('against')
+
+    const settled = settleTitles(routed, [far, here, covering], routing)[0]!
+    expect(settled.words).toBe('see also')
+    expect(settled.heading).toBe('against')
     expect(settled.wordsAt).not.toBe(MIDDLE)
-    expect(settled.heading).toBe('along')
-    expect(headingOf(settled, settled.wordsAt)).toBe('along')
+
+    // The place on the curve is the fraction taken the other way round.
+    expect(headingOf(settled, 1 - settled.wordsAt)).toBe('against')
+  })
+
+  it('keeps a title off the boxes its line crosses', () => {
+    const frame = arrangePlex(neighbourhoods.labelledRows, {
+      options: { viewport: VIEWPORT },
+      ...measured,
+    })
+    const boxes = frame.nodes.map(boxAround)
+
+    const over = frame.edges
+      .filter((edge) => edge.words)
+      .filter((edge) => boxes.some((box) => meets(box, boxOf(edge, measureLabel))))
+      .map((edge) => edge.words)
+
+    expect(over).toStrictEqual([])
+  })
+
+  it('cuts a title to the room its line has left, or writes none of it', () => {
+    const frame = arrangePlex(neighbourhoods.labelledRows, {
+      options: { viewport: VIEWPORT },
+      ...measured,
+    })
+    const named = neighbourhoods.labelledRows.edges.filter((edge) => edge.label)
+    const written = frame.edges.filter((edge) => edge.words)
+
+    // Some of them are there whole, and every one that is there is either the
+    // whole label or a cut of its start.
+    expect(written.length).toBeGreaterThan(0)
+    expect(written.length).toBeLessThan(named.length)
+    for (const edge of written) {
+      const label = named.find((one) => one.from === edge.from && one.to === edge.to)!
+      expect(label.label!.startsWith(edge.words!.replace(/…$/, ''))).toBe(true)
+    }
+  })
+
+  it('gives the line with the least room to spare its place first', () => {
+    // Two lines crossing one band: the tight one takes the middle it needs,
+    // and the roomy one goes round it.
+    const crossing = arrangePlex(neighbourhoods.labelledRows, {
+      options: { viewport: VIEWPORT },
+      ...measured,
+    })
+    // Its line is barely longer than its words, and it keeps the middle of it.
+    const tightest = crossing.edges.find((edge) => edge.to === 'child-1')!
+    expect(tightest.words!.startsWith('the scene in the asse')).toBe(true)
+    expect(Math.abs(tightest.wordsAt - MIDDLE)).toBeLessThan(A_NUDGE)
+
+    // The line to the row beyond has room to spare, and gives way.
+    const roomier = crossing.edges.find((edge) => edge.to === 'child-4')!
+    expect(roomier.words === undefined || roomier.wordsAt !== MIDDLE).toBe(true)
   })
 
   it('leaves every title at the middle where nothing measured the words', () => {

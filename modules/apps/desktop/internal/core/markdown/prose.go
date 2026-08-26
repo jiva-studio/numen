@@ -10,8 +10,8 @@ import (
 // another, and says how many it moved.
 //
 // Only the target inside the brackets changes. An alias after `|` is how the
-// person chose to read the sentence and a fragment after `#` names a place
-// inside the note; neither says where the link goes, so both survive.
+// link is read in the sentence and a fragment after `#` names a place inside
+// the note; both survive.
 func (d *Document) PointProseAt(from domain.Address, to string) int {
 	if !domain.Nameable(to) {
 		return 0

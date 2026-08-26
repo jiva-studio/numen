@@ -31,9 +31,8 @@ func TestWikilinksBecomeReferences(t *testing.T) {
 }
 
 func TestAnAliasAndABlockAreNotPartOfTheTarget(t *testing.T) {
-	// Both are about display and about a place inside the note. Nothing reads
-	// either yet, and storing what nothing reads is how a guess becomes
-	// permanent.
+	// An alias is how the link is read in the sentence and a fragment names a
+	// place inside the note. Neither is part of the target.
 	n := parse(t, "[[Entropy|the entropy note]] and [[Entropy#^a7f3d21e]]\n")
 	if got := targets(n); !slices.Equal(got, []string{"ref name://Entropy"}) {
 		t.Errorf("got %v", got)

@@ -64,7 +64,7 @@ A role, a state, a variant — anything a component enumerates — is declared i
 
 ### A second behaviour is a function, never a mode flag
 
-A component that will be asked to do a second thing takes the second thing as a function. The plex arranges a neighbourhood by handing the nodes to a placement strategy; rows-and-columns is the one that ships, and a radial mind map is another implementation of the same signature.
+A component that will be asked to do a second thing takes the second thing as a function. The plex arranges a neighbourhood by handing the nodes to a strategy that decides where each of them goes; rows-and-columns is the one that ships, and a radial mind map is another implementation of the same signature.
 
 This is taken only where a second implementation is intended. A knob with one setting is a knob nobody has read, and it costs a signature that has to be honoured forever.
 

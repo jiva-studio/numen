@@ -13,13 +13,13 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/agent/claudecode"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agent"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
 // started is an agent whose command line is a script printing what it was told
 // to print. What is tested is the reading and the stopping: the tools are the
 // server's business and the answering is the model's.
-func started(t *testing.T, prints string) agent.Work {
+func started(t *testing.T, prints string) port.Work {
 	t.Helper()
 
 	dir := t.TempDir()
@@ -36,10 +36,10 @@ func started(t *testing.T, prints string) agent.Work {
 		Words: map[string]claudecode.Words{
 			claudecode.Tool("note_search"): {Title: "Search notes", About: "query"},
 			claudecode.Tool("note_create"): {Title: "Create a note", About: "notes", Inside: "title"},
-			claudecode.Tool("note_write"):  {Title: "Write a note", About: "path", Kind: agent.Edit},
+			claudecode.Tool("note_write"):  {Title: "Write a note", About: "path", Kind: port.StepEdit},
 		},
 	}
-	work, err := claude.Take(t.Context(), agent.Task{Asked: "what is here?"})
+	work, err := claude.Take(t.Context(), port.Task{Asked: "what is here?"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,10 +48,10 @@ func started(t *testing.T, prints string) agent.Work {
 }
 
 // heard is every step of a piece of work, in order.
-func heard(t *testing.T, work agent.Work) []agent.Step {
+func heard(t *testing.T, work port.Work) []port.Step {
 	t.Helper()
 
-	var steps []agent.Step
+	var steps []port.Step
 	for step := range work.Steps() {
 		steps = append(steps, step)
 	}
@@ -70,10 +70,10 @@ func TestSaysWhatTheAgentSaid(t *testing.T) {
 	if len(steps) != 2 {
 		t.Fatalf("expected saying and stopping, got %d steps: %+v", len(steps), steps)
 	}
-	if steps[0].Kind != agent.Saying || steps[0].Text != "Two notes." {
+	if steps[0].Kind != port.StepSaying || steps[0].Text != "Two notes." {
 		t.Errorf("first step is %+v", steps[0])
 	}
-	if steps[1].Kind != agent.Stopped || steps[1].Failed != "" {
+	if steps[1].Kind != port.StepStopped || steps[1].Failed != "" {
 		t.Errorf("last step is %+v", steps[1])
 	}
 }
@@ -85,7 +85,7 @@ func TestNamesAToolAsItNamedItself(t *testing.T) {
 		`{"type":"result","subtype":"success","is_error":false}`)
 
 	steps := heard(t, work)
-	if steps[0].Kind != agent.Calling || steps[0].Tool != "Search notes" || steps[0].About != "entropy" {
+	if steps[0].Kind != port.StepCalling || steps[0].Tool != "Search notes" || steps[0].About != "entropy" {
 		t.Errorf("expected the tool's own title and what it was asked, got %+v", steps[0])
 	}
 }
@@ -118,12 +118,12 @@ func TestReadsWordsAndCallsAsTheyAreWritten(t *testing.T) {
 	steps := heard(t, work)
 
 	var said []string
-	var calls []agent.Step
+	var calls []port.Step
 	for _, step := range steps {
 		switch step.Kind {
-		case agent.Saying:
+		case port.StepSaying:
 			said = append(said, step.Text)
-		case agent.Calling:
+		case port.StepCalling:
 			calls = append(calls, step)
 		}
 	}
@@ -149,7 +149,7 @@ func TestPassesOverALineItCannotRead(t *testing.T) {
 		`{"type":"result","subtype":"success","is_error":false}`)
 
 	steps := heard(t, work)
-	if steps[0].Kind != agent.Saying || steps[0].Text != "still here" {
+	if steps[0].Kind != port.StepSaying || steps[0].Text != "still here" {
 		t.Errorf("a line it could not read stopped the work: %+v", steps)
 	}
 }
@@ -160,7 +160,7 @@ func TestSaysWhyItStopped(t *testing.T) {
 
 	steps := heard(t, work)
 	last := steps[len(steps)-1]
-	if last.Kind != agent.Stopped || last.Failed != "went round too many times" {
+	if last.Kind != port.StepStopped || last.Failed != "went round too many times" {
 		t.Errorf("last step is %+v", last)
 	}
 }
@@ -171,7 +171,7 @@ func TestSaysWhenTheVaultDidNotReachTheAgent(t *testing.T) {
 
 	steps := heard(t, work)
 	last := steps[len(steps)-1]
-	if last.Kind != agent.Stopped || !strings.Contains(last.Failed, "without this vault") {
+	if last.Kind != port.StepStopped || !strings.Contains(last.Failed, "without this vault") {
 		t.Errorf("an agent that never got the tools answered anyway: %+v", last)
 	}
 }
@@ -185,7 +185,7 @@ func TestReadsPastAMessageOfAnotherShape(t *testing.T) {
 		`{"type":"result","subtype":"success","is_error":false}`)
 
 	steps := heard(t, work)
-	if steps[0].Kind != agent.Saying || steps[0].Text != "after" {
+	if steps[0].Kind != port.StepSaying || steps[0].Text != "after" {
 		t.Errorf("steps are %+v", steps)
 	}
 }
@@ -216,7 +216,7 @@ func TestSaysNothingWhenTheLineSaysNothingAboutServers(t *testing.T) {
 
 	steps := heard(t, work)
 	last := steps[len(steps)-1]
-	if last.Kind != agent.Stopped || last.Failed != "" {
+	if last.Kind != port.StepStopped || last.Failed != "" {
 		t.Errorf("last step is %+v", last)
 	}
 }
@@ -247,7 +247,7 @@ func recordedWith(t *testing.T, change func(*claudecode.Agent)) []string {
 		Allowed: []string{claudecode.Tool("*")},
 	}
 	change(&claude)
-	work, err := claude.Take(t.Context(), agent.Task{Asked: "what is here?"})
+	work, err := claude.Take(t.Context(), port.Task{Asked: "what is here?"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -313,8 +313,8 @@ func TestTheAgentReachesThisVaultAndNothingElse(t *testing.T) {
 }
 
 // kinds is what a run said, as the kinds of its steps in order.
-func kinds(steps []agent.Step) []agent.Kind {
-	out := make([]agent.Kind, 0, len(steps))
+func kinds(steps []port.Step) []port.StepKind {
+	out := make([]port.StepKind, 0, len(steps))
 	for _, s := range steps {
 		out = append(out, s.Kind)
 	}
@@ -331,7 +331,7 @@ const (
 func TestSaysWhenTheModelWasAskedSomething(t *testing.T) {
 	steps := heard(t, started(t, strings.Join([]string{connected, requesting}, "\n")))
 
-	if !slices.Contains(kinds(steps), agent.Thinking) {
+	if !slices.Contains(kinds(steps), port.StepThinking) {
 		t.Errorf("nothing says the model was asked: %+v", steps)
 	}
 }
@@ -340,7 +340,7 @@ func TestSaysWhenTheModelWasAskedSomething(t *testing.T) {
 func TestSaysWhenTheToolAnswered(t *testing.T) {
 	steps := heard(t, started(t, strings.Join([]string{connected, answered}, "\n")))
 
-	if !slices.Contains(kinds(steps), agent.Answered) {
+	if !slices.Contains(kinds(steps), port.StepAnswered) {
 		t.Errorf("nothing says the tool finished: %+v", steps)
 	}
 }
@@ -361,9 +361,9 @@ func TestReportsACallWhileItIsStillBeingWritten(t *testing.T) {
 	}
 	steps := heard(t, started(t, strings.Join(lines, "\n")))
 
-	var calls []agent.Step
+	var calls []port.Step
 	for _, s := range steps {
-		if s.Kind == agent.Calling {
+		if s.Kind == port.StepCalling {
 			calls = append(calls, s)
 		}
 	}
@@ -436,11 +436,11 @@ func TestEveryReportOfOneCallCarriesTheNameTheAgentGaveIt(t *testing.T) {
 func TestSaysWhatACallDoesToTheVault(t *testing.T) {
 	steps := heard(t, started(t, connected+"\n"+wrote))
 
-	if steps[0].Kind != agent.Edit {
+	if steps[0].Kind != port.StepEdit {
 		t.Errorf("a call that writes a note is %+v", steps[0])
 	}
 	// A tool that declared nothing about what it does is a call and no more.
-	if steps[1].Kind != agent.Calling {
+	if steps[1].Kind != port.StepCalling {
 		t.Errorf("a call that says nothing about itself is %+v", steps[1])
 	}
 }
@@ -454,8 +454,8 @@ func TestSaysWhichNoteACallIsWorkingIn(t *testing.T) {
 		t.Errorf("the call is working in %+v", steps[0].Place)
 	}
 	// A query names no note, and nothing is opened for it.
-	if steps[1].Place != (agent.Place{}) {
-		t.Errorf("a search is working in %+v", steps[1].Place)
+	if at := steps[1].Place; at.Path != "" || at.Start != 0 || at.Length != 0 {
+		t.Errorf("a search is working in %+v", at)
 	}
 }
 
@@ -537,10 +537,10 @@ sleep 120
 		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
 	}
 	asked := map[string]string{"one": "left", "two": "right"}
-	works := map[string]agent.Work{}
+	works := map[string]port.Work{}
 	for conversation, question := range asked {
 		work, err := claude.Take(context.Background(),
-			agent.Task{Asked: question, Conversation: conversation})
+			port.Task{Asked: question, Conversation: conversation})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -599,7 +599,7 @@ sleep 120
 	}
 
 	// A window that has closed does not start another.
-	if _, err := claude.Take(context.Background(), agent.Task{Asked: "again"}); err == nil {
+	if _, err := claude.Take(context.Background(), port.Task{Asked: "again"}); err == nil {
 		t.Error("an agent was started after the window closed")
 	}
 }
@@ -629,7 +629,7 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 	}
 	asks := func(asked, conversation string) {
 		t.Helper()
-		work, err := claude.Take(t.Context(), agent.Task{Asked: asked, Conversation: conversation})
+		work, err := claude.Take(t.Context(), port.Task{Asked: asked, Conversation: conversation})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -685,9 +685,9 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 		Root:    dir,
 		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
 	}
-	takes := func(asked, conversation string) agent.Work {
+	takes := func(asked, conversation string) port.Work {
 		t.Helper()
-		work, err := claude.Take(t.Context(), agent.Task{Asked: asked, Conversation: conversation})
+		work, err := claude.Take(t.Context(), port.Task{Asked: asked, Conversation: conversation})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -729,7 +729,7 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 	}
 	asks := func(asked string) {
 		t.Helper()
-		work, err := claude.Take(t.Context(), agent.Task{Asked: asked})
+		work, err := claude.Take(t.Context(), port.Task{Asked: asked})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -771,9 +771,9 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 		Root:    dir,
 		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
 	}
-	takes := func(asked, conversation string) agent.Work {
+	takes := func(asked, conversation string) port.Work {
 		t.Helper()
-		work, err := claude.Take(context.Background(), agent.Task{Asked: asked, Conversation: conversation})
+		work, err := claude.Take(context.Background(), port.Task{Asked: asked, Conversation: conversation})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -800,7 +800,7 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 	}
 	var said []string
 	for step := range right.Steps() {
-		if step.Kind == agent.Saying {
+		if step.Kind == port.StepSaying {
 			said = append(said, step.Text)
 		}
 	}
@@ -854,7 +854,7 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 	}
 	asks := func(asked, conversation string) {
 		t.Helper()
-		work, err := claude.Take(t.Context(), agent.Task{Asked: asked, Conversation: conversation})
+		work, err := claude.Take(t.Context(), port.Task{Asked: asked, Conversation: conversation})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -901,9 +901,9 @@ sleep 120
 		Root:    dir,
 		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
 	}
-	takes := func(asked, conversation string) agent.Work {
+	takes := func(asked, conversation string) port.Work {
 		t.Helper()
-		work, err := claude.Take(context.Background(), agent.Task{Asked: asked, Conversation: conversation})
+		work, err := claude.Take(context.Background(), port.Task{Asked: asked, Conversation: conversation})
 		if err != nil {
 			t.Fatal(err)
 		}

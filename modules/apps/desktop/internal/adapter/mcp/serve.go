@@ -219,9 +219,3 @@ func behind(token string, next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
-
-// ServeStdio answers on this process's own pipes, for an agent that starts the
-// server itself. It returns when the agent disconnects.
-func ServeStdio(ctx context.Context, core Core) error {
-	return New(core).Run(ctx, &sdk.StdioTransport{})
-}
