@@ -11,23 +11,67 @@ import Workspace from '@/workspace/Workspace.vue'
 import Plex from '@/plex/Plex.vue'
 import Editor from '@/editor/Editor.vue'
 import Palette from '@/palette/Palette.vue'
+import Reader from '@/reader/Reader.vue'
+import Tree from '@/tree/Tree.vue'
 import Agent from './Agent.vue'
 import { branch, pane, type Tab, type Workspace as State } from '@/workspace/model'
-import type { PaletteBand, PaletteItem, PaletteSpan } from '@/palette/model'
+import { keyChord } from '@/palette/model'
+import type { PaletteBand, PaletteItem, PaletteKeys, PaletteSpan } from '@/palette/model'
 import type { PlexEdge, PlexNeighbourhood, PlexNode } from '@/plex/model'
+import type { Row } from '@/tree/model'
 import type { Turn } from '@/thread/model'
 
 const PLEX = 'plex'
 const NOTE = 'note'
 const BOOK = 'book'
 const AGENT = 'agent'
+const FILES = 'files'
 
 const TABS: readonly Tab[] = [
   { id: PLEX, title: 'Plex' },
   { id: NOTE, title: 'Entropy' },
   { id: BOOK, title: 'Boltzmann 1877' },
   { id: AGENT, title: 'Agent' },
+  { id: FILES, title: 'Files' },
 ]
+
+/** The folders of the vault the rest of this file is written about. */
+const ROWS: readonly Row[] = [
+  {
+    id: 'physics',
+    name: 'physics',
+    holds: true,
+    rows: [
+      { id: 'entropy', name: 'Entropy.md', holds: false },
+      { id: 'mixing', name: 'Entropy of mixing.md', holds: false },
+      { id: 'second-law', name: 'The second law.md', holds: false },
+      { id: 'free-energy', name: 'Free energy.md', holds: false },
+    ],
+  },
+  {
+    id: 'computation',
+    name: 'computation',
+    holds: true,
+    rows: [
+      { id: 'shannon-entropy', name: 'Shannon entropy.md', holds: false },
+      { id: 'landauer', name: "Landauer's principle.md", holds: false },
+    ],
+  },
+  {
+    id: 'reading',
+    name: 'reading',
+    holds: true,
+    rows: [
+      { id: 'boltzmann-pdf', name: 'Boltzmann 1877.pdf', holds: false },
+      { id: 'shannon-pdf', name: 'Shannon 1948.pdf', holds: false },
+    ],
+  },
+  { id: 'inbox', name: 'Inbox.md', holds: false },
+  { id: 'reading-list', name: 'Reading list.md', holds: false },
+]
+
+const OPEN = ['physics', 'computation', 'reading']
+const CARRIED = ['mixing', 'second-law']
 
 const node = (id: string, title: string, seat: PlexNode['seat']): PlexNode => ({
   id,
@@ -104,6 +148,100 @@ A demon that sorts fast molecules from slow ones appears to lower the entropy of
 
 Whether [[Free energy]] belongs under this note or beside it. The counting there assumes a temperature the surroundings hold fixed, and that assumption is nowhere above.
 `
+
+/**
+ * The document a search sends a person into, as the lines standing on each of
+ * its pages. It is set here rather than fetched, so the picture of a book is
+ * a book and not a placeholder — and broken into lines by hand, because what
+ * draws a page below cannot break one.
+ */
+const BOOK_PAGES: readonly (readonly string[])[] = [
+  [
+    '§ 6.  THE COUNT OF ARRANGEMENTS',
+    '',
+    'Let a quantity of gas be enclosed, and let the total energy',
+    'it holds be fixed. The molecules may then be arranged in a',
+    'great many ways without that total being disturbed, and no',
+    'measurement made upon the gas as a whole distinguishes one',
+    'such arrangement from another.',
+    '',
+    'The number of these arrangements is not a property of any',
+    'one of them. It belongs to the description: it says how much',
+    'that description has left open. Where the description is',
+    'exact, the number is one, and its logarithm vanishes.',
+    '',
+    'It is this logarithm, and not the heat, that the second law',
+    'is a statement about. A quantity of gas passes from an',
+    'arrangement that could have been reached in few ways to one',
+    'that could have been reached in many, because there are more',
+    'of the latter to be reached.',
+  ],
+  [
+    'The same counting serves wherever a description leaves some-',
+    'thing open. A channel that may carry any of a great number of',
+    'messages is described by the logarithm of that number, and',
+    'the description is improved exactly as the number falls.',
+    '',
+    'Nothing in the argument is peculiar to molecules. What is',
+    'counted are the possibilities a statement admits, and the',
+    'measure of them is the same whether the statement is made',
+    'about a gas, about a message, or about the contents of a',
+    'memory that is about to be cleared.',
+    '',
+    'The objection has been raised that a sufficiently attentive',
+    'observer, able to see each molecule and to open a door for',
+    'the swift ones alone, would lower the count without expend-',
+    'ing work, and so defeat the law.',
+  ],
+  [
+    'The objection does not hold. To open the door for the swift',
+    'ones the observer must know which are swift, and the knowing',
+    'occupies a memory. That memory is finite; to go on sorting,',
+    'the observer must clear it.',
+    '',
+    'The clearing is the payment. It is exacted not at the door',
+    'but at the moment the record of a molecule is destroyed, and',
+    'it is exacted at the same rate at which the sorting reduced',
+    'the count. The books balance, and the law stands.',
+    '',
+    'What the law forbids, then, is not a clever machine but a',
+    'description that improves itself for nothing.',
+  ],
+]
+
+/** How a page of that document is drawn: letter paper, one line at a time. */
+const PAPER = { wide: 612, high: 792 }
+const MARGIN = 84
+const FIRST = 132
+const LEADING = 27
+
+const escaped = (line: string) =>
+  line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+const drawnPage = (page: number): string => {
+  const lines = BOOK_PAGES[page] ?? []
+  const set = lines
+    .map((line, at) => {
+      const y = FIRST + at * LEADING
+      const weight = at === 0 && page === 0 ? ' font-weight="600" letter-spacing="1.2"' : ''
+      return `<text x="${MARGIN}" y="${y}" font-family="Georgia, serif" font-size="16"${weight} fill="#1b1b1b">${escaped(line)}</text>`
+    })
+    .join('')
+  const number = `<text x="${PAPER.wide / 2}" y="${PAPER.high - 54}" text-anchor="middle" font-family="Georgia, serif" font-size="13" fill="#5a5a5a">${373 + page}</text>`
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${PAPER.wide}" height="${PAPER.high}"><rect width="100%" height="100%" fill="#fbfaf7"/>${set}${number}</svg>`
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+}
+
+/** Where a run of lines stands on the page, in fractions of it. */
+const litLines = (from: number, to: number, ends: number) => ({
+  minX: (MARGIN - 4) / PAPER.wide,
+  maxX: (MARGIN + ends) / PAPER.wide,
+  minY: (FIRST + from * LEADING - 18) / PAPER.high,
+  maxY: (FIRST + to * LEADING + 6) / PAPER.high,
+})
+
+/** The passage a search found in it: the sentence the count is defined by. */
+const LIT = [litLines(8, 9, 420), litLines(10, 11, 360)]
 
 const said = (id: string, text: string): Turn => ({ id, voice: 'asked', text })
 
@@ -186,40 +324,119 @@ const BANDS: readonly PaletteBand[] = [
   },
 ]
 
+/** A keyboard to draw the chords for: this file settles on one. */
+const KEYBOARD = 'Macintosh'
+
+const RUN = [{ id: 'run', text: 'Run it' }]
+
+const command = (id: string, title: string, keys?: PaletteKeys): PaletteItem => ({
+  id,
+  title,
+  actions: RUN,
+  ...(keys ? { keys } : {}),
+})
+
+/** What the commands offer, in the three bands the window draws them in. */
+const COMMANDS: readonly PaletteBand[] = [
+  {
+    id: 'note',
+    title: 'This note',
+    items: [
+      command('read', 'Open the note'),
+      command('beside', 'Open beside'),
+      command('travel', 'Show in plex', keyChord('p', KEYBOARD, true)),
+      command('child', 'New child note', keyChord('c', KEYBOARD, true)),
+      command('parent', 'New parent note'),
+      command('ask', 'Ask the agent about this note'),
+    ],
+  },
+  {
+    id: 'window',
+    title: 'This window',
+    items: [
+      command('note', 'New note', keyChord('n', KEYBOARD)),
+      command('plex', 'New plex'),
+      command('agent', 'New agent', keyChord('a', KEYBOARD, true)),
+      command('appearance', 'Change the theme'),
+    ],
+  },
+  {
+    id: 'vault',
+    title: 'This vault',
+    items: [
+      command('goto', 'Go to a note', keyChord('g', KEYBOARD)),
+      command('openVault', 'Open vault'),
+    ],
+  },
+]
+
+/** A note carrying a table, for the picture of one being typed in. */
+const TABLED = `The three counts, held against each other. Same logarithm, three
+places it is taken.
+
+| Where | What is counted | Written |
+| --- | --- | --- |
+| A gas | arrangements of one energy | Boltzmann, 1877 |
+| A channel | messages it could carry | Shannon, 1948 |
+| A memory | what clearing one bit costs | Landauer, 1961 |
+
+The middle column is the one to watch: it is the same sentence three times, and
+only the noun changes.
+`
+
 interface Screen {
   /** How the window is divided, and which tab each pane shows. */
   readonly workspace: () => State
-  /** Whether the palette stands over it. */
-  readonly palette?: boolean
+  /** What stands over it: the search, the commands, or nothing. */
+  readonly panel?: 'search' | 'commands' | null
   /** What the map is looking at, which follows the room it is drawn in. */
   readonly neighbourhood?: PlexNeighbourhood
+  /** What the note in a tab holds. */
+  readonly markdown?: string
 }
 
 /** One arrangement of the window, drawn from the pieces above. */
 const screen = ({
   workspace,
-  palette = false,
+  panel = null,
   neighbourhood = NEIGHBOURHOOD,
+  markdown = MARKDOWN,
 }: Screen) => ({
-  components: { Workspace, Plex, Editor, Agent, Palette },
+  components: { Workspace, Plex, Editor, Agent, Palette, Reader, Tree },
   setup() {
     const held = ref<State>(workspace())
-    const text = ref(MARKDOWN)
+    const text = ref(markdown)
     const asking = ref('')
-    const typed = ref(palette ? 'entrop' : '')
+    const typed = ref(panel === 'search' ? 'entrop' : '')
+    const at = ref(0)
+
     return {
       held,
       text,
       asking,
       typed,
-      palette,
+      at,
+      panel,
       neighbourhood,
+      bands: panel === 'commands' ? COMMANDS : BANDS,
+      placeholder: panel === 'commands' ? 'Type a command' : 'Search',
+      pages: BOOK_PAGES.length,
+      sheets: BOOK_PAGES.map(() => PAPER),
+      picture: (page: number) => drawnPage(page),
+      litOn: (page: number) => (page === 0 ? LIT : []),
+      go: (page: number) => {
+        at.value = Math.min(Math.max(page, 0), BOOK_PAGES.length - 1)
+      },
       TURNS,
-      BANDS,
       TABS,
+      ROWS,
+      OPEN,
+      CARRIED,
       PLEX,
       NOTE,
+      BOOK,
       AGENT,
+      FILES,
     }
   },
   template: `
@@ -239,9 +456,32 @@ const screen = ({
             :turns="TURNS"
             placeholder="Ask about the vault"
           />
+          <Reader
+            v-else-if="id === BOOK"
+            class="h-full"
+            :pages="pages"
+            :sheets="sheets"
+            :at="at"
+            :picture="picture"
+            :lit="litOn"
+            @go="go"
+          />
+          <Tree
+            v-else-if="id === FILES"
+            :rows="ROWS"
+            :open="OPEN"
+            :selected="CARRIED"
+            name="The folders and files of the vault"
+          />
         </template>
       </Workspace>
-      <Palette v-if="palette" v-model="typed" :bands="BANDS" open placeholder="Search" />
+      <Palette
+        v-if="panel"
+        v-model="typed"
+        :bands="bands"
+        open
+        :placeholder="placeholder"
+      />
     </div>
   `,
 })
@@ -260,6 +500,19 @@ export const Map: Story = {
     screen({
       workspace: () => ({
         root: branch('root', [pane('main', [PLEX]), pane('aside', [AGENT])], [0.71, 0.29]),
+        axis: 'horizontal',
+        focus: 'main',
+      }),
+      neighbourhood: WIDE,
+    }),
+}
+
+/** The map with the whole window to itself. */
+export const Mapping: Story = {
+  render: () =>
+    screen({
+      workspace: () => ({
+        root: pane('main', [PLEX, NOTE, BOOK], PLEX),
         axis: 'horizontal',
         focus: 'main',
       }),
@@ -296,7 +549,24 @@ export const Searching: Story = {
         axis: 'horizontal',
         focus: 'middle',
       }),
-      palette: true,
+      panel: 'search',
+    }),
+}
+
+/** The commands, in the three bands they are drawn in. */
+export const Commanding: Story = {
+  render: () =>
+    screen({
+      workspace: () => ({
+        root: branch(
+          'root',
+          [pane('main', [PLEX]), pane('middle', [NOTE, BOOK], NOTE)],
+          [0.46, 0.54],
+        ),
+        axis: 'horizontal',
+        focus: 'middle',
+      }),
+      panel: 'commands',
     }),
 }
 
@@ -313,5 +583,54 @@ export const Asking: Story = {
         axis: 'horizontal',
         focus: 'aside',
       }),
+    }),
+}
+
+/** A document open where a search found something, and the note beside it. */
+export const Reading: Story = {
+  render: () =>
+    screen({
+      workspace: () => ({
+        root: branch(
+          'root',
+          [pane('main', [BOOK, NOTE], BOOK), pane('aside', [AGENT])],
+          [0.66, 0.34],
+        ),
+        axis: 'horizontal',
+        focus: 'main',
+      }),
+    }),
+}
+
+/** The folders of the vault, with rows chosen across two of them. */
+export const Filing: Story = {
+  render: () =>
+    screen({
+      workspace: () => ({
+        root: branch(
+          'root',
+          [pane('main', [FILES]), pane('middle', [NOTE, BOOK], NOTE)],
+          [0.32, 0.68],
+        ),
+        axis: 'horizontal',
+        focus: 'main',
+      }),
+    }),
+}
+
+/** A note holding a table, which is typed in as a table. */
+export const Tabling: Story = {
+  render: () =>
+    screen({
+      workspace: () => ({
+        root: branch(
+          'root',
+          [pane('main', [PLEX]), pane('middle', [NOTE, BOOK], NOTE)],
+          [0.3, 0.7],
+        ),
+        axis: 'horizontal',
+        focus: 'middle',
+      }),
+      markdown: TABLED,
     }),
 }

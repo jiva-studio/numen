@@ -7,7 +7,7 @@
  * so one command answers with the whole set.
  */
 import { spawn } from 'node:child_process'
-import { accessSync, constants } from 'node:fs'
+import { accessSync, constants, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
@@ -16,8 +16,12 @@ import sharp from 'sharp'
 const HERE = dirname(fileURLToPath(import.meta.url))
 const UI = join(HERE, '..', '..', '..', 'libs', 'ui')
 const INTO = join(HERE, '..', 'src', 'assets')
+/** The palettes that ship inside the application, as the window wears them. */
+const PRESETS = join(HERE, '..', '..', 'desktop', 'internal', 'adapter', 'theme', 'presets')
 
-const PORT = 6098
+/** A Storybook already running, for a machine that keeps one up. */
+const GIVEN = process.env['STORYBOOK_PORT']
+const PORT = GIVEN ? Number(GIVEN) : 6098
 /** Pixels for one, so a picture holds up on a screen that has them. */
 const SCALE = 2
 /** How hard the pictures are pressed. Text stays clean at this. */
@@ -36,14 +40,16 @@ const SETTLING = 2_000
  */
 export const SHOTS = [
   { name: 'window', story: 'application-window--map', width: 1180, height: 740 },
+  { name: 'theme-dracula', story: 'application-window--map', width: 1180, height: 740, preset: 'dracula' },
+  { name: 'theme-solarized', story: 'application-window--map', width: 1180, height: 740, preset: 'solarized' },
   { name: 'searching', story: 'application-window--searching', width: 1180, height: 740 },
   { name: 'asking', story: 'application-window--asking', width: 1180, height: 740 },
-  { name: 'plex', story: 'plex-plex--titled-lines', width: 1040, height: 700 },
-  { name: 'commands', story: 'generic-palette--key-hints', width: 900, height: 620 },
-  { name: 'writing', story: 'text-editor--playground', width: 900, height: 560 },
-  { name: 'table', story: 'text-editor--table', width: 900, height: 520 },
-  { name: 'reader', story: 'reading-reader--lit-over', width: 960, height: 700 },
-  { name: 'files', story: 'tree--several', width: 760, height: 560 },
+  { name: 'plex', story: 'application-window--mapping', width: 1180, height: 740 },
+  { name: 'commands', story: 'application-window--commanding', width: 1180, height: 740 },
+  { name: 'writing', story: 'application-window--writing', width: 1180, height: 740 },
+  { name: 'table', story: 'application-window--tabling', width: 1180, height: 740 },
+  { name: 'reader', story: 'application-window--reading', width: 1180, height: 740 },
+  { name: 'files', story: 'application-window--filing', width: 1180, height: 740 },
 ]
 
 const CANDIDATES = ['google-chrome-stable', 'google-chrome', 'chromium', 'chromium-browser']
@@ -87,11 +93,13 @@ const answering = async (url) => {
 if (process.argv[1] !== fileURLToPath(import.meta.url)) {
   // Nothing to do: the list above is the export.
 } else {
-  const storybook = spawn(
-    'npx',
-    ['storybook', 'dev', '-p', String(PORT), '--no-open', '--quiet'],
-    { cwd: UI, detached: true, stdio: 'ignore' },
-  )
+  const storybook = GIVEN
+    ? { pid: 0 }
+    : spawn('npx', ['storybook', 'dev', '-p', String(PORT), '--no-open', '--quiet'], {
+        cwd: UI,
+        detached: true,
+        stdio: 'ignore',
+      })
 
   try {
     const base = `http://localhost:${PORT}`
@@ -110,6 +118,13 @@ if (process.argv[1] !== fileURLToPath(import.meta.url)) {
           `${base}/iframe.html?id=${shot.story}&viewMode=story&globals=theme:${theme}`,
           { waitUntil: 'networkidle' },
         )
+        // A picture of a theme is the window wearing that theme: the palette
+        // that ships with the application, spliced in as the window splices it.
+        if (shot.preset) {
+          await page.addStyleTag({ content: readFileSync(join(PRESETS, `${shot.preset}.css`), 'utf8') })
+          await page.waitForTimeout(200)
+        }
+
         await page.waitForTimeout(SETTLING)
 
         // WebP, because these are checked in: the same picture is a third of
