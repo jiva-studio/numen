@@ -7,6 +7,7 @@
 import type { PaletteKeys } from '@numen/ui'
 import type { Listed } from '../core'
 import { keysOf } from '../keying'
+import { WORDS as own } from './words'
 
 /** What the welcome screen is drawn over. */
 export interface Standing {
@@ -23,10 +24,8 @@ export interface Words {
   readonly findKeys: PaletteKeys
   readonly commands: string
   readonly commandsKeys: PaletteKeys
-  /** What each of the four ways into the vault is called. */
+  /** What each of the ways into the vault the window names is called. */
   readonly newNote: string
-  readonly newPlex: string
-  readonly files: string
   readonly newAgent: string
   /** The vaults, and what a row of that list carries beside its name. */
   readonly vaults: string
@@ -56,9 +55,9 @@ export interface Held {
 
 /**
  * The ways into the vault the window is showing, in the order they are drawn.
- * A window showing none offers no way at all: a plex, a files tab and an agent
- * each stand on a vault, and the list below is where a person goes first. A
- * note is offered once the vault has been read.
+ * A window showing none offers no way at all: a plex and an agent each stand
+ * on a vault, and the list below is where a person goes first. A note is
+ * offered once the vault has been read.
  *
  * Every keystroke drawn here is the one the table binds, so a key a person sees
  * is a key that works.
@@ -72,8 +71,7 @@ export const waysIn = (at: Standing, words: Words, agent: string): readonly Way[
     { id: 'find', text: words.find, keys: words.findKeys },
     { id: COMMANDS, text: words.commands, keys: words.commandsKeys },
     ...note,
-    { id: 'plex', text: words.newPlex, ...keysOf('plex', agent) },
-    { id: 'files', text: words.files, ...keysOf('files', agent) },
+    { id: 'plex', text: own.plex, ...keysOf('plex', agent) },
     { id: 'agent', text: words.newAgent, ...keysOf('agent', agent) },
   ]
 }

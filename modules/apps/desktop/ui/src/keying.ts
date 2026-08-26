@@ -34,6 +34,7 @@ export const CHORDS: readonly Chord[] = [
   { command: 'note', letter: 'n', shift: false },
   { command: 'goto', letter: 'g', shift: false },
   { command: 'travel', letter: 'p', shift: true },
+  { command: 'plex', letter: 'x', shift: true },
   { command: 'child', letter: 'c', shift: true },
   { command: 'agent', letter: 'a', shift: true },
   { command: 'close', letter: 'w', shift: true },

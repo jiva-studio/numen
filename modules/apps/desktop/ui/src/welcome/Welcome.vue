@@ -65,7 +65,7 @@ defineEmits<{
    the rows read as a list and not as a page. */
 .welcome {
   /* How large the mark stands over the name. */
-  --mark: 3.5rem;
+  --mark: 6rem;
 
   display: flex;
   align-items: center;

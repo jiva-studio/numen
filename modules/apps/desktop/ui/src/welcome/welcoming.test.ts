@@ -10,6 +10,7 @@ import { keyChord } from '@numen/ui'
 import type { Known, Listed } from '../core'
 import { keyOf } from '../keying'
 import { COMMANDS, vaultsOn, waysIn, type Standing, type Words } from './welcoming'
+import { WORDS as own } from './words'
 
 const APPLE = 'MacIntel'
 const LINUX = 'Linux x86_64'
@@ -21,8 +22,6 @@ const words: Words = {
   commands: 'commands',
   commandsKeys: keyChord('p', APPLE),
   newNote: 'new note',
-  newPlex: 'new plex',
-  files: 'files',
   newAgent: 'new agent',
   vaults: 'vaults',
   current: 'current',
@@ -59,26 +58,18 @@ describe('the ways into the vault', () => {
     expect(waysIn(at({ vault: '' }), words, APPLE)).toStrictEqual([])
   })
 
-  it('are the six of a vault that has been read, in the order they are drawn', () => {
+  it('are the five of a vault that has been read, in the order they are drawn', () => {
     const ways = waysIn(at(), words, APPLE)
-    expect(ways.map((one) => one.id)).toStrictEqual([
-      'find',
-      COMMANDS,
-      'note',
-      'plex',
-      'files',
-      'agent',
-    ])
+    expect(ways.map((one) => one.id)).toStrictEqual(['find', COMMANDS, 'note', 'plex', 'agent'])
   })
 
-  it('are each called what the window calls them', () => {
+  it('are each called what the window calls them, and the plex what the screen does', () => {
     const ways = waysIn(at(), words, APPLE)
     expect(ways.map((one) => one.text)).toStrictEqual([
       words.find,
       words.commands,
       words.newNote,
-      words.newPlex,
-      words.files,
+      own.plex,
       words.newAgent,
     ])
   })
@@ -86,7 +77,7 @@ describe('the ways into the vault', () => {
   /** A note cannot be made in a vault the core has not read. The rest stand. */
   it('leave out the new note while the vault is still being read', () => {
     const ways = waysIn(at({ ready: false }), words, APPLE)
-    expect(ways.map((one) => one.id)).toStrictEqual(['find', COMMANDS, 'plex', 'files', 'agent'])
+    expect(ways.map((one) => one.id)).toStrictEqual(['find', COMMANDS, 'plex', 'agent'])
   })
 })
 
@@ -96,6 +87,7 @@ describe('the keystroke drawn on a way', () => {
 
   it('is the one the table binds to that command', () => {
     expect(keysOn('note')).toStrictEqual(keyOf('note', APPLE))
+    expect(keysOn('plex')).toStrictEqual(keyOf('plex', APPLE))
     expect(keysOn('agent')).toStrictEqual(keyOf('agent', APPLE))
   })
 
@@ -109,17 +101,6 @@ describe('the keystroke drawn on a way', () => {
     expect(keysOn(COMMANDS)).toBe(words.commandsKeys)
   })
 
-  it('is nothing on a way no keystroke reaches', () => {
-    const ways = waysIn(at(), words, APPLE)
-    expect(ways.find((one) => one.id === 'plex')).toStrictEqual({
-      id: 'plex',
-      text: words.newPlex,
-    })
-    expect(ways.find((one) => one.id === 'files')).toStrictEqual({
-      id: 'files',
-      text: words.files,
-    })
-  })
 })
 
 describe('the vaults the screen lists', () => {
