@@ -240,13 +240,8 @@ svg {
   transition: opacity 280ms ease;
 }
 
-.stage:has(input[value='map']:checked) [data-shot='map'],
-.stage:has(input[value='writing']:checked) [data-shot='writing'],
-.stage:has(input[value='searching']:checked) [data-shot='searching'],
-.stage:has(input[value='asking']:checked) [data-shot='asking'] {
-  opacity: 1;
-  visibility: visible;
-}
+/* Which one is lit is written by the page, from the same list the shots are
+   drawn from: a name in one place and not the other lights nothing. */
 
 .shot {
   display: block;

@@ -152,6 +152,13 @@ const description =
         <span class="beside">macOS · Windows · Linux</span>
       </div>
 
+      <style
+        is:inline
+        set:html={`${SHOTS.map(
+          ({ id }) => `.stage:has(input[value='${id}']:checked) [data-shot='${id}']`,
+        ).join(',')}{opacity:1;visibility:visible}`}
+      />
+
       <div class="stage rise" style="--wait: 260ms">
         <div class="shots">
           {
