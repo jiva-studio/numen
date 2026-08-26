@@ -68,7 +68,7 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 	// The answer carries the note's name whatever the file does, the file's new
 	// path once the file is at it, and the path it still has until then.
 	res := Renamed{Path: path, Title: title, By: by}
-	if moves, _ := u.Sync.Renaming(by); !moves {
+	if moves, _ := u.Sync.Kept().Renaming(by); !moves {
 		return res, nil
 	}
 	to := pathpkg.Join(pathpkg.Dir(path), name+pathpkg.Ext(path))
@@ -85,7 +85,7 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 func (u Move) Called(ctx context.Context, v domain.Vault, path string) error {
 	// The note is opened only where the setting writes into it. Both of the two
 	// that carry a name of their own answer alike.
-	if _, writes := u.Sync.Renaming(ByFrontmatter); !writes {
+	if _, writes := u.Sync.Kept().Renaming(ByFrontmatter); !writes {
 		return nil
 	}
 

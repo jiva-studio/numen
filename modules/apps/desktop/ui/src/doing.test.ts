@@ -145,6 +145,7 @@ const window = (
     copies: (path) => void done.push(`copies ${path}`),
     searches: () => void done.push('searches'),
     appearance: async (chosen) => void done.push(`appearance ${chosen}`),
+    syncing: async (chosen) => void done.push(`syncing ${chosen}`),
     says: (text) => void (text ? said.push(text) : undefined),
   }
   return { on, done, said }

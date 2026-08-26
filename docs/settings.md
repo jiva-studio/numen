@@ -72,6 +72,8 @@ Renaming a file into another folder is not renaming a note, and neither is renam
 
 Typing a new `# Heading` into a note does not rename its file. A save puts down the text a person typed and adds nothing to it.
 
+`Sync title and filename` is a command of its own in the palette, over the window. Choosing `On` or `Off` writes this field back here, and the next rename reads what was written.
+
 ## What a vector is, and where it is made
 
 ```json

@@ -2,6 +2,7 @@ package webui_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -16,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/webui"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
@@ -31,6 +31,9 @@ type going struct {
 	client numenv1connect.VaultServiceClient
 	opened *webui.Opened
 	root   string
+	// settings is the vault list this window keeps, which is the folder its
+	// settings file sits in.
+	settings string
 	// order is what happened, in the order it happened.
 	order *order
 }
@@ -61,10 +64,16 @@ func quitting(t *testing.T, hold *held, notes map[string]string) *going {
 	return opening(t, hold, notes, true)
 }
 
-// naming is the settings section a rename reads, written as a person writes it.
-func naming(sync note.Sync) settings.Naming {
-	said := bool(sync)
-	return settings.Naming{SyncTitleAndFilename: &said}
+// naming writes the settings file a rename reads, beside the vault list, which
+// is where an installation pointed somewhere of its own keeps one.
+func naming(t *testing.T, registry string, sync note.Sync) {
+	t.Helper()
+	body := fmt.Sprintf(`{"naming":{"sync_title_and_filename":%v}}`, bool(sync))
+	if err := os.WriteFile(
+		filepath.Join(filepath.Dir(registry), "numen.json"), []byte(body), 0o644,
+	); err != nil {
+		t.Fatal(err)
+	}
 }
 
 // opening is quitting with a title and a filename told apart or kept as one
@@ -89,8 +98,8 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.Sync) 
 	cfg := container.Config{
 		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
 		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
-		Naming:       naming(sync),
 	}
+	naming(t, cfg.RegistryPath, sync)
 	registry, err := cfg.Registry()
 	if err != nil {
 		t.Fatal(err)
@@ -124,10 +133,11 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.Sync) 
 	t.Cleanup(server.Close)
 
 	return &going{
-		client: numenv1connect.NewVaultServiceClient(server.Client(), server.URL),
-		opened: opened,
-		root:   root,
-		order:  recorded,
+		client:   numenv1connect.NewVaultServiceClient(server.Client(), server.URL),
+		opened:   opened,
+		root:     root,
+		settings: cfg.RegistryPath,
+		order:    recorded,
 	}
 }
 

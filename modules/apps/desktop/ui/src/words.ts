@@ -81,6 +81,7 @@ export const WORDS = {
   mode: 'Light or dark',
   interfaceScale: 'Interface size',
   textScale: 'Reading font size',
+  syncing: 'Sync title and filename',
   findKeys: commandKeyChord(navigator.userAgent),
   first: 'Go to the note the vault opens with',
   goto: 'Go to a note',
@@ -126,6 +127,11 @@ export const WORDS = {
   /** The themes could not be listed, and a theme's file could not be read. */
   unlisted: 'The themes could not be listed',
   unworn: 'That theme could not be read, so it is not worn',
+  /** The band the setting is drawn in, and the two it is. */
+  syncingBand: 'Sync title and filename',
+  on: 'On',
+  off: 'Off',
+  unturned: 'That setting could not be written:',
   asking: 'Confirm',
   several: (files: number) => `${files} files`,
   answer: 'Choose an answer',

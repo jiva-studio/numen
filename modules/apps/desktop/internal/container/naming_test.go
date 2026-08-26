@@ -1,31 +1,57 @@
 package container_test
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
 )
 
-// A configuration nobody has written a naming section into does what an
-// installation nobody has configured does. A caller that leaves the section out
-// leaves out nothing.
-func TestAConfigurationNamingNothingKeepsTheTwoOneName(t *testing.T) {
-	if !(container.Config{}).Sync() {
-		t.Error("a title and a filename are told apart")
+// wrote is a settings file beside the vault list, which is where an
+// installation pointed somewhere of its own keeps one.
+func wrote(t *testing.T, body string) container.Config {
+	t.Helper()
+	held := t.TempDir()
+	if body != "" {
+		path := filepath.Join(held, "numen.json")
+		if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
 	}
-	if !(container.Config{Naming: settings.Defaults().Naming}).Sync() {
-		t.Error("the defaults tell a title and a filename apart")
+	return container.Config{RegistryPath: filepath.Join(held, "vaults.json")}
+}
+
+// The setting is read as each rename is made, so a person who turns it in the
+// palette is answered by the next rename and not by the next launch.
+func TestTheSettingIsReadAsEachRenameIsMade(t *testing.T) {
+	cfg := wrote(t, `{"naming":{"sync_title_and_filename":true}}`)
+	asking := cfg.Syncing()
+	if !asking.Kept() {
+		t.Fatal("a title and a filename are told apart")
+	}
+
+	path := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
+	if err := os.WriteFile(path, []byte(`{"naming":{"sync_title_and_filename":false}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if asking.Kept() {
+		t.Error("the setting turned under it and the rename read the old one")
 	}
 }
 
-// The section a person wrote is the one the window is built from.
-func TestAConfigurationCarriesWhatTheSectionSays(t *testing.T) {
-	for name, said := range map[string]bool{"one name": true, "told apart": false} {
+// A file that names nothing, and one that cannot be read at all, keep the two
+// one name.
+func TestWhatIsReadWhereTheFileSaysNothing(t *testing.T) {
+	for name, body := range map[string]string{
+		"a file nobody wrote":        "",
+		"a file naming no section":   `{"appearance":{"text_scale":1.5}}`,
+		"a section naming no field":  `{"naming":{}}`,
+		"a file that does not parse": `{"naming":`,
+	} {
 		t.Run(name, func(t *testing.T) {
-			cfg := container.Config{Naming: settings.Naming{SyncTitleAndFilename: &said}}
-			if bool(cfg.Sync()) != said {
-				t.Errorf("the section says %v and the configuration says %v", said, cfg.Sync())
+			if !wrote(t, body).Syncing().Kept() {
+				t.Error("a title and a filename are told apart")
 			}
 		})
 	}

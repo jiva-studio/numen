@@ -78,6 +78,11 @@ export interface Doing {
    */
   appearance(chosen: string): Promise<void>
   /**
+   * Whether a note's title and the name of its file are kept as one name,
+   * written into the settings. The identity is the window's own.
+   */
+  syncing(chosen: string): Promise<void>
+  /**
    * What was done, or could not be, in words a person reads. One command's
    * word replaces the last, and nothing said clears it.
    */
@@ -135,6 +140,7 @@ const carried: Record<string, Carries> = {
   mode: (deed, on) => on.appearance(deed.name),
   interfaceScale: (deed, on) => on.appearance(deed.name),
   textScale: (deed, on) => on.appearance(deed.name),
+  syncing: (deed, on) => on.syncing(deed.name),
   first: (_, on, words) => travels(on.opening(), on, words),
   goto: (deed, on, words) => travels(deed.path, on, words),
   openVault: (deed, on, words) => shows(deed.vault.id, on, words),

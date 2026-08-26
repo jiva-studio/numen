@@ -45,6 +45,36 @@ func (a *API) Rename(ctx context.Context, r *connect.Request[v1.RenameRequest]) 
 	return connect.NewResponse(out), nil
 }
 
+// Syncing says whether a note's title and its filename are kept as one name.
+func (a *API) Syncing(
+	_ context.Context, _ *connect.Request[v1.SyncingRequest],
+) (*connect.Response[v1.SyncingResponse], error) {
+	return connect.NewResponse(&v1.SyncingResponse{
+		SyncTitleAndFilename: bool(a.Sync.Kept()),
+	}), nil
+}
+
+// ChooseSyncing writes that setting into the file a person configures this
+// installation in.
+func (a *API) ChooseSyncing(
+	_ context.Context, r *connect.Request[v1.ChooseSyncingRequest],
+) (*connect.Response[v1.ChooseSyncingResponse], error) {
+	if a.Chooses == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
+	}
+	if err := a.Chooses(note.Sync(r.Msg.GetSyncTitleAndFilename())); err != nil {
+		refusal, refused := refusedBy(err)
+		if !refused {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		return connect.NewResponse(&v1.ChooseSyncingResponse{Refusal: &refusal}), nil
+	}
+	return connect.NewResponse(&v1.ChooseSyncingResponse{}), nil
+}
+
+// errNoSettings is what a build that configures nothing answers.
+var errNoSettings = errors.New("this build cannot turn settings")
+
 // Remove takes a file or a folder out of the vault. It goes to the trash, and
 // a request that says so destroys a note.
 func (a *API) Remove(ctx context.Context, r *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {
