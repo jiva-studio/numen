@@ -47,6 +47,8 @@ func TestNothingIsMovedIntoAnotherToolsFolder(t *testing.T) {
 		".git/hooks/SKILL.md",
 		".obsidian/SKILL.md",
 		".trash/../.claude/planted.md",
+		"notes/.claude/skills/evil/SKILL.md",
+		"notes/.git/hooks/SKILL.md",
 	} {
 		for _, from := range []string{"SKILL.md", "scan.png"} {
 			if err := w.Move(ctx, from, to); err == nil {
