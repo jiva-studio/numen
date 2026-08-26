@@ -337,8 +337,10 @@ func TestALinkWrittenWhileASaveIsReadingSurvivesIt(t *testing.T) {
 // in, and the lock covers both. The repair lands while the save is waiting for
 // it, and the save carries it through.
 func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
+	// A note its filename names is called by the one it lands under, so the link
+	// written as the path it had is the link the move mends.
 	c := changeable(t, map[string]string{
-		"physics/Entropy.md": "# Entropy\n",
+		"physics/Entropy.md": "A measure of disorder.\n",
 		"physics/Heat.md": "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n---\n" +
 			"# Heat\n\nWhat was there.\n",
 	})
@@ -356,6 +358,7 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 		}},
 		Writers: filesystem.Writers{},
 		Links:   c.db.Links(),
+		Sources: c.db.Sources(),
 		Index:   c.index,
 	}
 

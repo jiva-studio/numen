@@ -92,14 +92,7 @@ func namingOf(by note.Naming) v1.Naming {
 	}
 }
 
-// movedOf is what the file did, as the schema carries it. A retargeted link
-// crosses as the address it was written by.
+// movedOf is what the file did, as the schema carries it.
 func movedOf(moved note.Moved) *v1.Moved {
-	out := &v1.Moved{From: moved.From, To: moved.To, Repaired: moved.Repaired}
-	for _, one := range moved.Retargeted {
-		out.Retargeted = append(out.Retargeted, &v1.Retargeted{
-			In: one.In, Target: one.Target.Written(), Now: one.Now,
-		})
-	}
-	return out
+	return &v1.Moved{From: moved.From, To: moved.To, Repaired: moved.Repaired}
 }

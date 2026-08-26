@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"io/fs"
-	"strings"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
@@ -18,12 +17,16 @@ import (
 // Every note that travelled is filed where it now is, and a link that stopped
 // reaching one is written again by its name.
 type Move struct {
-	Readers port.VaultReaders
 	Writers port.VaultWriters
 	Links   port.LinkQueries
-	Index   func(ctx context.Context, v domain.Vault, paths []string) error
-	// Notes is what settles each note that travelled: the index, whoever is
-	// drawing it, and the links written by its old name.
+	// Known is what the index holds about each file, and is what says which
+	// sources sit under the path being moved.
+	Known port.SourceQueries
+	// Sources is where the index files each file. A folder and everything under
+	// it are filed at their new paths in one write.
+	Sources port.SourceRepository
+	// Notes is what settles each note that travelled: whoever is drawing it, and
+	// the links written by its old name.
 	Notes note.Move
 }
 
@@ -38,7 +41,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 		return res, nil
 	}
 
-	travelling, err := u.sources(ctx, v, from)
+	travelling, err := u.Known.Under(ctx, v.ID, from)
 	if err != nil {
 		return res, err
 	}
@@ -70,53 +73,23 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 	}
 	res.Landed = true
 
-	var others []string
+	// Notes and books alike are filed under their new paths in one write, and
+	// what was derived from each of them travels with it.
+	if err := u.Sources.MoveSources(ctx, v.ID, from, to); err != nil {
+		return res, err
+	}
+
 	for _, source := range travelling {
-		landed := relocated(from, to, source.Path)
 		if source.Kind != domain.KindNote {
-			// A book that moved is read again from where it is now.
-			others = append(others, source.Path, landed)
 			continue
 		}
-		settled, err := u.Notes.Settle(ctx, v, source.Path, landed, pointing[source.Path])
+		settled, err := u.Notes.Settle(ctx, v, source.Path, relocated(from, to, source.Path), pointing[source.Path])
 		res.Repaired = append(res.Repaired, settled.Repaired...)
-		res.Retargeted = append(res.Retargeted, settled.Retargeted...)
 		if err != nil {
 			return res, err
 		}
 	}
-	if len(others) > 0 {
-		if err := u.index(ctx, v, others...); err != nil {
-			return res, err
-		}
-	}
 	return res, nil
-}
-
-func (u Move) index(ctx context.Context, v domain.Vault, paths ...string) error {
-	if u.Index == nil {
-		return nil
-	}
-	return u.Index(ctx, v, paths)
-}
-
-// sources is every source the vault holds at or under a path: the file itself,
-// or everything under a folder.
-func (u Move) sources(ctx context.Context, v domain.Vault, from string) ([]domain.FileRef, error) {
-	reader, err := u.Readers.Open(v)
-	if err != nil {
-		return nil, err
-	}
-	var found []domain.FileRef
-	if err := reader.Walk(ctx, func(ref domain.FileRef) error {
-		if ref.Path == from || strings.HasPrefix(ref.Path, from+"/") {
-			found = append(found, ref)
-		}
-		return nil
-	}); err != nil {
-		return nil, err
-	}
-	return found, nil
 }
 
 // relocated is where a path under from is once from is at to.

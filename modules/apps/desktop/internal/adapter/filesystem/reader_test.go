@@ -271,19 +271,8 @@ func TestAListingSaysWhatEachEntryIs(t *testing.T) {
 		{Path: "library/Notes.md", Name: "Notes.md", Kind: domain.KindNote},
 		{Path: "library/scan.png", Name: "scan.png"},
 	}
-	if len(entries) != len(want) {
-		t.Fatalf("listed %v, want %v", entries, want)
-	}
-	for i, e := range entries {
-		if e.Path != want[i].Path || e.Name != want[i].Name || e.Folder != want[i].Folder || e.Kind != want[i].Kind {
-			t.Errorf("entry %d is %+v, want %+v", i, e, want[i])
-		}
-		if e.MTime == 0 {
-			t.Errorf("%s has no modification time", e.Path)
-		}
-		if !e.Folder && e.Size <= 0 {
-			t.Errorf("%s has size %d", e.Path, e.Size)
-		}
+	if !slices.Equal(entries, want) {
+		t.Errorf("listed %+v, want %+v", entries, want)
 	}
 }
 
@@ -306,7 +295,11 @@ func TestAListingLeavesTheServiceFolderOut(t *testing.T) {
 // A path that leaves the vault is refused, and a folder that is not there is
 // answered as what it is.
 func TestAListingOfWhatTheVaultHasNotIsRefused(t *testing.T) {
-	v := testsupport.NewVault(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	v := testsupport.NewVault(t, map[string]string{
+		"Entropy.md":   "# Entropy\n",
+		"Notes.txt":    "a list\n",
+		"physics/x.md": "# X\n",
+	})
 	src, err := filesystem.Open(v.Path, filesystem.Options{})
 	if err != nil {
 		t.Fatal(err)
@@ -319,6 +312,12 @@ func TestAListingOfWhatTheVaultHasNotIsRefused(t *testing.T) {
 	}
 	if _, err := src.List(t.Context(), "nowhere"); !errors.Is(err, fs.ErrNotExist) {
 		t.Errorf("list of a folder that is not there: want fs.ErrNotExist, got %v", err)
+	}
+	// A listing is of a folder. A path holding a file of any kind holds none.
+	for _, folder := range []string{"Entropy.md", "Notes.txt", "physics/x.md"} {
+		if _, err := src.List(t.Context(), folder); !errors.Is(err, fs.ErrNotExist) {
+			t.Errorf("list of the file at %q: want fs.ErrNotExist, got %v", folder, err)
+		}
 	}
 	if _, err := src.List(t.Context(), filesystem.DefaultServiceDir); err == nil {
 		t.Error("the service folder was listed")

@@ -109,6 +109,8 @@ export interface Where {
   /** The note it means, and nothing where it means none. */
   readonly path: string
   readonly title: string
+  /** The other files it is over, beside the one at `path`. */
+  readonly others?: readonly string[]
   /** The vault the window is showing, and nothing where it shows none. */
   readonly vault: Shown
   /** Whether the vault has been read and can be asked to do anything. */
@@ -170,6 +172,8 @@ export interface Deed {
    */
   readonly note: string | null
   readonly title: string
+  /** The other files it is over, beside the one at `path`. */
+  readonly others: readonly string[]
   /**
    * What was typed for it: a name to give, or a name typed back. A step that
    * offers a list the window holds puts the one that was chosen here.
@@ -254,6 +258,8 @@ export interface Words extends Silences {
   readonly current: string
   /** The two answers to the confirmation: the one that changes nothing, first. */
   readonly asking: string
+  /** How many files a command is over, where it is over several. */
+  readonly several: (files: number) => string
   readonly answer: string
   readonly keeps: string
   readonly kept: string
@@ -467,6 +473,7 @@ export const deedOf = (id: string, at: Where, name = '', note: string | null = n
   vault: at.vault,
   note,
   title: at.title,
+  others: at.others ?? [],
   name,
   kind: at.kind,
   tab: at.tab,
@@ -586,6 +593,15 @@ export function commanding(
     step.command.band === 'vault'
       ? step.on.vault.name
       : knows.called(step.on.path) || step.on.title
+
+  /**
+   * What a step is over, as its answer names it: the one thing by the name it
+   * carries, or how many things there are.
+   */
+  const named = (step: Asked): string => {
+    const others = step.on.others?.length ?? 0
+    return others > 0 ? words.several(others + 1) : `“${calling(step)}”`
+  }
 
   /** The step being asked, and nothing at the list of commands. */
   const here = computed<Asked | null>(() => steps.value.at(-1) ?? null)
@@ -865,7 +881,7 @@ export function commanding(
       },
       {
         id: YES,
-        title: `${does} “${calling(step)}”`,
+        title: `${does} ${named(step)}`,
         detail: then,
         actions: [{ id: YES, text: does }],
       },

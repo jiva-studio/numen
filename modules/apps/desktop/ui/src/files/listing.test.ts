@@ -16,11 +16,10 @@ const file = (path: string, over: Partial<Entry> = {}): Entry => ({
   name: path.split('/').pop() ?? path,
   folder: false,
   kind: 'note',
-  size: 1,
   ...over,
 })
 
-const folder = (path: string): Entry => file(path, { folder: true, kind: 'other', size: 0 })
+const folder = (path: string): Entry => file(path, { folder: true, kind: 'other' })
 
 /**
  * A vault of two folders and a picture nothing holds a source for, and a count
@@ -254,16 +253,16 @@ describe('a change the vault reports', () => {
     expect([...asked].sort()).toStrictEqual(['notes', 'physics'])
   })
 
-  it('leaves the chosen row chosen at where it went', async () => {
+  it('leaves each chosen row chosen at where it went', async () => {
     const { core } = vault()
     const list = listing(core)
     await list.opens(ROOT)
     await list.opens('physics')
-    list.chooses('physics/Entropy.md')
+    list.chooses(['physics/Entropy.md', 'Cover.png'])
 
     await list.changed([], [{ from: 'physics/Entropy.md', to: 'notes/Entropy.md' }])
 
-    expect(list.chosen.value).toBe('notes/Entropy.md')
+    expect(list.chosen.value).toStrictEqual(['notes/Entropy.md', 'Cover.png'])
   })
 })
 
@@ -318,14 +317,15 @@ describe('the tree walked down to a path', () => {
     expect(paths(list.rows.value)).toContain('physics/heat/Kelvin.md')
   })
 
-  it('leaves the path chosen', async () => {
+  it('leaves the path the whole of what is chosen', async () => {
     const { core } = vault()
     const list = listing(core)
     await list.opens(ROOT)
+    list.chooses(['Cover.png'])
 
     await list.reveals('physics/heat/Kelvin.md')
 
-    expect(list.chosen.value).toBe('physics/heat/Kelvin.md')
+    expect(list.chosen.value).toStrictEqual(['physics/heat/Kelvin.md'])
   })
 })
 

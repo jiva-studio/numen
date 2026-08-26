@@ -489,8 +489,7 @@ message Entry {
   // What the vault holds here.
   SourceKind kind = 4;
 
-  // How much the file holds, in bytes. Zero for a folder.
-  int64 size = 5;
+  reserved 5;
 }
 
 // SourceKind is what the vault holds at a path. A file the index holds no text
@@ -680,23 +679,7 @@ message Moved {
   // The notes whose link stopped resolving and was written again, by name.
   repeated string repaired = 3;
 
-  // The links that resolve to a different note now. They are not broken and
-  // are not repaired: this is what two notes sharing a name does, and it is
-  // the person's to settle.
-  repeated Retargeted retargeted = 4;
-}
-
-// Retargeted is one link that means something else now.
-message Retargeted {
-  // The note the link is written in.
-  string in = 1;
-
-  // What the link is written by, with its scheme dropped: a name, or the path
-  // of a note.
-  string target = 2;
-
-  // The note it reaches now.
-  string now = 3;
+  reserved 4;
 }
 
 message MoveRequest {

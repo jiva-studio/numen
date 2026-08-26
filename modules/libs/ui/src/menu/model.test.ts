@@ -4,7 +4,7 @@
  * area it has to fit in.
  */
 import { describe, expect, it } from 'vitest'
-import { landsOn, placeMenu, stepTo, type MenuItem } from './model'
+import { banded, landsOn, placeMenu, stepTo, type MenuItem } from './model'
 
 const VIEWPORT = { width: 1000, height: 800 }
 const SIZE = { width: 200, height: 300 }
@@ -109,5 +109,56 @@ describe('where the keyboard lands as a menu opens', () => {
   it('is no item at all either way when there is nothing to land on', () => {
     expect(landsOn('keyboard', [])).toBe(-1)
     expect(landsOn('pointer', [])).toBe(-1)
+  })
+})
+
+describe('the rules a menu draws between its bands', () => {
+  const ruled = (items: readonly MenuItem[]) => banded(items).map((one) => one.rule)
+
+  it('stands where one band gives way to the next', () => {
+    expect(
+      ruled([
+        { id: 'open', text: 'Open', band: 'open' },
+        { id: 'note', text: 'New note', band: 'file' },
+        { id: 'folder', text: 'New folder', band: 'file' },
+        { id: 'remove', text: 'Remove', band: 'gone' },
+      ]),
+    ).toStrictEqual([false, true, false, true])
+  })
+
+  it('stands nowhere in a menu whose items name no band', () => {
+    expect(
+      ruled([
+        { id: 'open', text: 'Open' },
+        { id: 'copy', text: 'Copy path' },
+      ]),
+    ).toStrictEqual([false, false])
+  })
+
+  it('never stands above the first item, whatever band it names', () => {
+    expect(ruled([{ id: 'remove', text: 'Remove', band: 'gone' }])).toStrictEqual([false])
+  })
+
+  it('stands again where a band comes back after another', () => {
+    expect(
+      ruled([
+        { id: 'one', text: 'One', band: 'file' },
+        { id: 'two', text: 'Two', band: 'plex' },
+        { id: 'three', text: 'Three', band: 'file' },
+      ]),
+    ).toStrictEqual([false, true, true])
+  })
+
+  it('carries every item through, in the order it was given', () => {
+    const items: MenuItem[] = [
+      { id: 'one', text: 'One', band: 'file', disabled: true },
+      { id: 'two', text: 'Two', band: 'plex' },
+    ]
+    expect(banded(items).map((one) => one.id)).toStrictEqual(['one', 'two'])
+    expect(banded(items)[0]?.disabled).toBe(true)
+  })
+
+  it('has nothing to draw for a menu holding nothing', () => {
+    expect(banded([])).toStrictEqual([])
   })
 })

@@ -11,7 +11,5 @@ type Entry struct {
 	Folder bool
 	// Kind is what the file is, and is empty where the vault holds no source at
 	// the path: a folder, or a file nothing reads.
-	Kind  SourceKind
-	Size  int64
-	MTime int64
+	Kind SourceKind
 }

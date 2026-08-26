@@ -6,6 +6,8 @@
  * at.
  */
 
+import type { Point } from '../plex/model'
+
 /** A row's identity. What it stands for is the caller's to decide. */
 export type RowId = string
 
@@ -67,6 +69,119 @@ export function flatten(rows: readonly Row[], open: ReadonlySet<RowId>): readonl
 
   walk(rows, null, 1)
   return shown
+}
+
+/**
+ * What a press means for the selection: a row joining it or leaving it, or the
+ * rows from the anchor reaching this one. A press modified by neither makes the
+ * row the whole selection.
+ */
+export interface Press {
+  readonly joining: boolean
+  readonly reaching: boolean
+}
+
+/** A press with nothing held down. */
+export const PLAIN: Press = { joining: false, reaching: false }
+
+/** What a press comes to: the selection, and the row a reach is measured from. */
+export interface Pressed {
+  readonly rows: readonly RowId[]
+  readonly anchor: RowId | null
+}
+
+/**
+ * The rows from one to another in the order they are drawn, both ends among
+ * them, whichever way round the two stand. A range measured from a row that is
+ * not drawn is the row it reaches, alone.
+ */
+export function between(
+  shown: readonly ShownRow[],
+  from: RowId,
+  to: RowId,
+): readonly RowId[] {
+  const last = shown.findIndex((row) => row.id === to)
+  if (last === -1) return []
+
+  const first = shown.findIndex((row) => row.id === from)
+  if (first === -1) return [to]
+
+  const [start, end] = first <= last ? [first, last] : [last, first]
+  return shown.slice(start, end + 1).map((row) => row.id)
+}
+
+/** The rows of a set, in the order they are drawn. */
+const inOrder = (shown: readonly ShownRow[], held: ReadonlySet<RowId>): readonly RowId[] =>
+  shown.filter((row) => held.has(row.id)).map((row) => row.id)
+
+/**
+ * What a press on a row makes the selection.
+ *
+ * Reaching takes the rows from the anchor to this one and leaves the anchor
+ * where it stands; joining takes the row in or out and puts the anchor on it.
+ * The rows come back in the order they are drawn, and a row that is not drawn
+ * is among none of them.
+ */
+export function selects(
+  shown: readonly ShownRow[],
+  selected: readonly RowId[],
+  anchor: RowId | null,
+  row: RowId,
+  press: Press,
+): Pressed {
+  if (press.reaching) return { rows: between(shown, anchor ?? row, row), anchor: anchor ?? row }
+
+  if (press.joining) {
+    const held = new Set(selected)
+    if (held.has(row)) held.delete(row)
+    else held.add(row)
+    return { rows: inOrder(shown, held), anchor: row }
+  }
+
+  return { rows: [row], anchor: row }
+}
+
+/** Every row that is drawn, with the anchor left where it stands. */
+export const everyRow = (shown: readonly ShownRow[], anchor: RowId | null): Pressed => ({
+  rows: shown.map((row) => row.id),
+  anchor: anchor ?? shown[0]?.id ?? null,
+})
+
+/**
+ * The rows a press on a row carries: the selection, where the row stands in it,
+ * and the row alone where it stands outside.
+ */
+export const carries = (selected: readonly RowId[], row: RowId): readonly RowId[] =>
+  selected.includes(row) ? selected : [row]
+
+/** Whether two selections hold the same rows in the same order. */
+export const sameRows = (rows: readonly RowId[], others: readonly RowId[]): boolean =>
+  rows.length === others.length && rows.every((row, at) => row === others[at])
+
+/** What is drawn at the pointer while rows are carried. */
+export interface Carried {
+  /** The name of the one row carried, or how many there are. */
+  readonly says: string
+  /** Where the pointer is, which is where it is drawn. */
+  readonly at: Point
+}
+
+/**
+ * What follows the pointer while rows are carried, and nothing while none are.
+ * One row is said by its name; several are said by how many.
+ */
+export function carried(
+  shown: readonly ShownRow[],
+  rows: readonly RowId[],
+  at: Point,
+  counted: (rows: number) => string,
+): Carried | null {
+  const first = rows[0]
+  if (first === undefined) return null
+
+  const says =
+    rows.length === 1 ? (shown.find((row) => row.id === first)?.name ?? first) : counted(rows.length)
+  return { says, at }
 }
 
 /** The keys that move the keyboard about a tree, declared once. */
@@ -132,16 +247,17 @@ const named = (at: Landing): RowId => ('into' in at ? at.into : at.before)
  * A row that holds is read in three bands: the middle half means into it, and
  * the quarter at either end means between. Every other row is halved, and each
  * half means between. Past the last row there is nothing to come before, and a
- * landing naming the row being dragged moves nothing; both answer nothing.
+ * landing naming one of the rows being dragged moves nothing; both answer
+ * nothing.
  */
 export function landing(
   shown: readonly ShownRow[],
-  dragging: RowId,
+  dragging: readonly RowId[],
   y: number,
   height: number,
 ): Landing | null {
   const found = bandAt(shown, y, height)
-  return found && named(found) !== dragging ? found : null
+  return found && !dragging.includes(named(found)) ? found : null
 }
 
 /** The band a height falls in, as a landing. */
@@ -167,16 +283,22 @@ export const holderOf = (shown: readonly ShownRow[], at: Landing): RowId | null 
   'into' in at ? at.into : (shown.find((row) => row.id === at.before)?.parent ?? null)
 
 /**
- * A row cannot land in itself, nor in anything it holds. Everything else is
- * allowed, and the top level refuses nothing.
+ * Rows cannot land in one of themselves, nor in anything one of them holds.
+ * Everything else is allowed, and the top level refuses nothing.
  */
-export function refuses(rows: readonly Row[], dragging: RowId, into: RowId | null): boolean {
+export function refuses(
+  rows: readonly Row[],
+  dragging: readonly RowId[],
+  into: RowId | null,
+): boolean {
   if (into === null) return false
-  if (into === dragging) return true
+
+  const carried = new Set(dragging)
+  if (carried.has(into)) return true
 
   const below = (held: readonly Row[], within: boolean): boolean =>
     held.some(
-      (row) => (within && row.id === into) || below(row.rows ?? [], within || row.id === dragging),
+      (row) => (within && row.id === into) || below(row.rows ?? [], within || carried.has(row.id)),
     )
 
   return below(rows, false)

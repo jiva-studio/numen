@@ -368,3 +368,42 @@ func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 		})
 	}
 }
+
+// A folder does not go inside itself. The window's tree refuses the gesture, and
+// a caller that asks for it anyway is refused here.
+func TestAFolderIsNotMovedInsideItself(t *testing.T) {
+	w, root := writing(t)
+	ctx := t.Context()
+
+	if err := w.Create(ctx, "physics/Entropy.md", []byte("# Entropy\n")); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, to := range []string{"physics/inner", "physics/inner/deeper", "physics/inner/physics"} {
+		if err := w.Move(ctx, "physics", to); !errors.Is(err, port.ErrOccupied) {
+			t.Errorf("moving physics to %s gave %v, want ErrOccupied", to, err)
+		}
+		if _, err := os.Lstat(filepath.Join(root, filepath.FromSlash(to))); !errors.Is(err, fs.ErrNotExist) {
+			t.Errorf("%s was made: %v", to, err)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(root, "physics", "Entropy.md")); err != nil {
+		t.Errorf("the folder did not stay where it was: %v", err)
+	}
+}
+
+// A folder whose name begins with another folder's is not inside it.
+func TestAFolderMovesBesideOneWhoseNameItBegins(t *testing.T) {
+	w, root := writing(t)
+	ctx := t.Context()
+
+	if err := w.Create(ctx, "physics/Entropy.md", []byte("# Entropy\n")); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Move(ctx, "physics", "physics-old"); err != nil {
+		t.Fatalf("the move was refused: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(root, "physics-old", "Entropy.md")); err != nil {
+		t.Errorf("the folder did not arrive: %v", err)
+	}
+}

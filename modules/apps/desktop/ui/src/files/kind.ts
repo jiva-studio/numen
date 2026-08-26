@@ -11,19 +11,20 @@ import { ref } from 'vue'
 import type { Entry, Went } from '../core'
 import type { Landing } from '../finding'
 import { folderOf, landedIn, type Listing, ROOT } from './listing'
-import { NEW_FOLDER, OFFERED, RENAME } from './menu'
+import { NEW_FOLDER, NEW_NOTE, OFFERED, RENAME } from './menu'
 import type { Host, Kind } from '../windowing'
 import { FILES } from '../workspace'
 import FilesTab from './FilesTab.vue'
 import { WORDS as words } from './words'
 
-/** Where the menu on a row stands, and what it was asked for on. */
+/** Where the menu stands, and what it was asked for on. */
 export interface Asked {
-  readonly path: string
+  /** The row it was asked for on, and nothing where it was asked off every row. */
+  readonly path: string | null
   readonly at: { x: number; y: number }
 }
 
-/** Where a row let go of landed, as the tree reports it. */
+/** Where rows let go of landed, as the tree reports it. */
 export type Dropped = { readonly into: string } | { readonly before: string }
 
 /** What a files tab asks of the window it is drawn in. */
@@ -31,14 +32,21 @@ export interface Filing {
   /** Somewhere chosen, taken. Nothing chosen takes the person nowhere. */
   lands(landing: Landing | null): void
   /**
-   * A command asked for on a row, on the file it stands for. One that needs
+   * A command asked for on the files the rows stand for. One that needs
    * something asks for it in the palette; the rest happen where they stand.
    */
-  runs(id: string, path: string, name: string): void
+  runs(id: string, paths: readonly string[], name: string): void
   /** A file or a folder filed somewhere else, under the name the path ends in. */
   moves(from: string, to: string): Promise<void>
   /** An empty folder. The folders above it are made with it. */
   makes(path: string): Promise<void>
+  /**
+   * A note made in a folder, under a name nothing there carries. The path it
+   * landed at, and nothing where none was made.
+   */
+  writes(folder: string): Promise<string>
+  /** What could not be done, in words a person reads. */
+  says(text: string): void
 }
 
 /**
@@ -115,11 +123,25 @@ export function filing(list: Listing, deps: Filing) {
   /** The row whose name is in a field, and nothing while none is. */
   const renaming = ref<string | null>(null)
 
+  /** The files a gesture on a row is over: the selection it stands in, or it alone. */
+  const over = (path: string): readonly string[] =>
+    list.chosen.value.includes(path) ? list.chosen.value : [path]
+
+  /**
+   * The folder something made on a row lands in: the folder the row stands for,
+   * or the folder the row sits in. A gesture off every row lands at the root.
+   */
+  const folderFor = (path: string | null): string => {
+    if (path === null) return ROOT
+    const entry = list.entryAt(path)
+    return entry?.folder ? entry.path : folderOf(path)
+  }
+
   /** A row activated: what it stands for is put in front of the person. */
   const activate = (path: string) => {
     const entry = list.entryAt(path)
     if (!entry) return
-    list.chooses(path)
+    list.chooses([path])
     deps.lands(landingOf(entry))
   }
 
@@ -127,8 +149,8 @@ export function filing(list: Listing, deps: Filing) {
   const open = (path: string) => void list.opens(path)
   const close = (path: string) => list.closes(path)
 
-  /** The row the person is standing on. */
-  const select = (path: string) => list.chooses(path)
+  /** The rows the person is standing on. */
+  const select = (paths: readonly string[]) => list.chooses(paths)
 
   /**
    * A row given a different name. Only the file is renamed: what a note calls
@@ -142,26 +164,51 @@ export function filing(list: Listing, deps: Filing) {
   }
 
   /**
-   * A row let go of somewhere. The tree refuses a row dropped into itself or
-   * into anything under it, so what arrives here is somewhere else. A folder is
-   * carried whole, with everything filed inside it.
+   * Rows let go of somewhere, each filed in the folder the drop landed in
+   * under the name it carries. The tree refuses a drop into one of the rows or
+   * into anything under one, so what arrives here is somewhere else. A folder
+   * is carried whole, with everything filed inside it.
+   *
+   * A row whose name is taken in that folder stays where it is and is said;
+   * the rest go. The folders are read again once, when all of them are done.
    */
-  const move = async (path: string, at: Dropped) => {
+  const move = async (paths: readonly string[], at: Dropped) => {
+    if (paths.length === 0) return
+
     const into = landedIn(at)
-    const name = path.split('/').pop() ?? path
-    const to = into === ROOT ? name : `${into}/${name}`
-    if (to === path) return
-    await deps.moves(path, to)
+    await list.lists(into)
+    const taken = new Set(list.entriesIn(into).map((one) => one.name))
+    const refused: string[] = []
+
+    for (const path of paths) {
+      const name = path.split('/').pop() ?? path
+      const to = into === ROOT ? name : `${into}/${name}`
+      if (to === path) continue
+      if (taken.has(name)) {
+        refused.push(name)
+        continue
+      }
+      taken.add(name)
+      await deps.moves(path, to)
+    }
+
+    if (refused.length > 0) deps.says(`${words.taken} ${refused.join(', ')}`)
     await list.again()
+  }
+
+  /** The rows asked to go, handed to the window as one command over all of them. */
+  const remove = (paths: readonly string[]) => {
+    const first = paths[0]
+    if (first === undefined) return
+    deps.runs('remove', paths, nameOf(first))
   }
 
   /**
    * A folder made where the row stands, under a name nothing there carries, and
    * its name put in a field for the person to type over.
    */
-  const makes = async (path: string) => {
-    const entry = list.entryAt(path)
-    const into = entry?.folder ? entry.path : folderOf(path)
+  const makes = async (path: string | null) => {
+    const into = folderFor(path)
     const name = list.freeIn(into, words.folder)
     const made = into === ROOT ? name : `${into}/${name}`
     await deps.makes(made)
@@ -169,7 +216,19 @@ export function filing(list: Listing, deps: Filing) {
     renaming.value = made
   }
 
-  /** A menu asked for on a row, and one put away. */
+  /**
+   * A note made where the row stands, under a name nothing there carries, and
+   * its name put in a field for the person to type over.
+   */
+  const writes = async (path: string | null) => {
+    const into = folderFor(path)
+    const made = await deps.writes(into)
+    if (!made) return
+    await list.opens(into)
+    renaming.value = made
+  }
+
+  /** A menu asked for on a row or off every row, and one put away. */
   const asks = (asked: Asked) => {
     menu.value = asked
   }
@@ -177,17 +236,21 @@ export function filing(list: Listing, deps: Filing) {
     menu.value = null
   }
 
-  /** An item chosen in the menu, on the file it was asked for on. */
+  /** An item chosen in the menu, on the files it was asked for on. */
   const chose = (id: string) => {
     const asking = menu.value
     menu.value = null
     if (!asking || !OFFERED.has(id)) return
+    if (id === NEW_NOTE) return void writes(asking.path)
     if (id === NEW_FOLDER) return void makes(asking.path)
+
+    const path = asking.path
+    if (path === null) return
     if (id === RENAME) {
-      renaming.value = asking.path
+      renaming.value = path
       return
     }
-    deps.runs(id, asking.path, nameOf(asking.path))
+    deps.runs(id, over(path), nameOf(path))
   }
 
   /** What a file is called, which is the last segment of the path it is filed at. */
@@ -198,13 +261,16 @@ export function filing(list: Listing, deps: Filing) {
     list,
     menu,
     renaming,
+    over,
     activate,
     open,
     close,
     select,
     rename,
     move,
+    remove,
     makes,
+    writes,
     asks,
     dismiss,
     chose,

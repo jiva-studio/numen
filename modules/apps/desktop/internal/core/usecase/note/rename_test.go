@@ -17,7 +17,7 @@ import (
 func (c changing) rename() note.Rename {
 	return note.Rename{Move: note.Move{
 		Readers: filesystem.Readers{}, Writers: filesystem.Writers{},
-		Links: c.db.Links(), Index: c.index,
+		Links: c.db.Links(), Sources: c.db.Sources(), Index: c.index,
 	}}
 }
 
@@ -289,6 +289,14 @@ func TestRenamingRefusesToLandOnAnExistingNote(t *testing.T) {
 	}
 }
 
+// sulking is the index, refusing to be told where a file went.
+type sulking struct {
+	port.SourceRepository
+	refuse error
+}
+
+func (s sulking) MoveSources(context.Context, string, string, string) error { return s.refuse }
+
 // The answer says where the file is. A move that landed says so however the
 // rest of the work goes.
 func TestAMoveThatLandedIsAnsweredWithEvenWhenWhatFollowsFails(t *testing.T) {
@@ -296,13 +304,7 @@ func TestAMoveThatLandedIsAnsweredWithEvenWhenWhatFollowsFails(t *testing.T) {
 
 	sulk := errors.New("the index would not have it")
 	rename := c.rename()
-	rename.Index = func(ctx context.Context, v domain.Vault, paths []string) error {
-		// The path the file moved to is only ever brought level after the move.
-		if slices.Contains(paths, "Entropy.md") {
-			return sulk
-		}
-		return c.index(ctx, v, paths)
-	}
+	rename.Sources = sulking{SourceRepository: c.db.Sources(), refuse: sulk}
 
 	renamed, err := rename.Execute(t.Context(), c.vault, "Old.md", "Entropy")
 	if !errors.Is(err, sulk) {
@@ -440,11 +442,44 @@ func TestOnlyAMissingNoteIsNamedAsOne(t *testing.T) {
 func TestRemovingSaysWhenThereIsNoSuchNote(t *testing.T) {
 	c := changeable(t, map[string]string{"Old.md": "# Old\n"})
 	remove := note.Remove{
-		Readers: filesystem.Readers{}, Writers: filesystem.Writers{},
-		Links: c.db.Links(), Index: c.index,
+		Writers: filesystem.Writers{},
+		Links:   c.db.Links(), Known: c.db.SourcesKnown(), Index: c.index,
 	}
 
 	if _, err := remove.Execute(t.Context(), c.vault, "Missing.md"); !errors.Is(err, note.ErrNoNote) {
 		t.Errorf("want ErrNoNote, got %v", err)
+	}
+}
+
+// A renamed note is found by the name it was given, from any folder in the
+// vault. Whichever of the three carries the name, the note answers to it.
+func TestARenamedNoteIsFoundByItsNewName(t *testing.T) {
+	for name, raw := range map[string]string{
+		"a title in the frontmatter": "---\ntitle: Old\n---\nA measure.\n",
+		"a level-one heading":        "# Old\n\nA measure.\n",
+		"neither, so the filename":   "A measure.\n",
+	} {
+		t.Run(name, func(t *testing.T) {
+			c := changeable(t, map[string]string{"physics/Old.md": raw})
+
+			renamed, err := c.rename().Execute(t.Context(), c.vault, "physics/Old.md", "Entropy")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if renamed.Path != "physics/Entropy.md" {
+				t.Fatalf("the note is filed at %q", renamed.Path)
+			}
+			if got := c.title(t, renamed.Path); got != "Entropy" {
+				t.Errorf("the vault shows the note as %q", got)
+			}
+
+			found, err := c.db.Queries().Named(t.Context(), c.vault.ID, "Entropy")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !slices.Equal(found, []string{"physics/Entropy.md"}) {
+				t.Errorf("the vault files %v under the name it was given", found)
+			}
+		})
 	}
 }

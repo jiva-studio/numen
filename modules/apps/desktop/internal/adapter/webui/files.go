@@ -32,7 +32,6 @@ func (a *API) List(ctx context.Context, r *connect.Request[v1.ListRequest]) (*co
 			Name:   entry.Name,
 			Folder: entry.Folder,
 			Kind:   kindOf(entry.Kind),
-			Size:   entry.Size,
 		})
 	}
 	return connect.NewResponse(out), nil

@@ -47,10 +47,9 @@ func folder(t *testing.T, root, path string) bool {
 // TestListingAFolderAnswersInTheOrderToDrawItIn. Folders come first, then
 // files, each group by name with case ignored.
 func TestListingAFolderAnswersInTheOrderToDrawItIn(t *testing.T) {
-	const alpha = "# Alpha\n"
 	f := quitting(t, nil, map[string]string{
 		"Zeta.md":            "# Zeta\n",
-		"alpha.md":           alpha,
+		"alpha.md":           "# Alpha\n",
 		"Notes.txt":          "a list\n",
 		"physics/Heat.md":    "# Heat\n",
 		"physics/Entropy.md": "# Entropy\n",
@@ -71,9 +70,6 @@ func TestListingAFolderAnswersInTheOrderToDrawItIn(t *testing.T) {
 	}
 	if kind := held["alpha.md"].GetKind(); kind != v1.SourceKind_SOURCE_KIND_NOTE {
 		t.Errorf("a note is held as %v", kind)
-	}
-	if size := held["alpha.md"].GetSize(); size != int64(len(alpha)) {
-		t.Errorf("the note holds %d bytes", size)
 	}
 	if kind := held["Notes.txt"].GetKind(); kind != v1.SourceKind_SOURCE_KIND_UNSPECIFIED {
 		t.Errorf("a file the vault holds no source for is held as %v", kind)

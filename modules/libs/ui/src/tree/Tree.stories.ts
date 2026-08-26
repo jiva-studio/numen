@@ -26,22 +26,27 @@ const found = (rows: readonly Row[], id: RowId): Row | null => {
   return null
 }
 
-/** A row put where a landing says. */
-const put = (rows: readonly Row[], at: Landing, held: Row): readonly Row[] =>
+/** Rows put where a landing says, in the order they were carried. */
+const put = (rows: readonly Row[], at: Landing, held: readonly Row[]): readonly Row[] =>
   rows.flatMap((row) => {
     const below = row.rows ? { ...row, rows: put(row.rows, at, held) } : row
-    if ('before' in at && row.id === at.before) return [held, below]
+    if ('before' in at && row.id === at.before) return [...held, below]
     if ('into' in at && row.id === at.into) {
-      return [{ ...below, rows: [...(below.rows ?? []), held] }]
+      return [{ ...below, rows: [...(below.rows ?? []), ...held] }]
     }
     return [below]
   })
 
 /** The application's part: what a move comes to, in the rows it holds. */
-const moved = (rows: readonly Row[], row: RowId, at: Landing): readonly Row[] => {
-  const held = found(rows, row)
-  return held ? put(without(rows, row), at, held) : rows
+const moved = (rows: readonly Row[], carried: readonly RowId[], at: Landing): readonly Row[] => {
+  const held = carried.map((row) => found(rows, row)).filter((row): row is Row => row !== null)
+  const left = carried.reduce((rest, row) => without(rest, row), rows)
+  return held.length ? put(left, at, held) : rows
 }
+
+/** The application's part again: rows taken out of the tree. */
+const removed = (rows: readonly Row[], carried: readonly RowId[]): readonly Row[] =>
+  carried.reduce((rest, row) => without(rest, row), rows)
 
 /** The application's part again: a row under a new name. */
 const renamed = (rows: readonly Row[], row: RowId, name: string): readonly Row[] =>
@@ -148,10 +153,12 @@ interface Knobs {
   name: string
   /** The row whose name starts out in a field. */
   renaming: RowId | null
+  /** The rows the selection starts out on. */
+  selected: readonly RowId[]
   /** Given by the story, and nothing a reader turns. */
   rows?: never
   open?: never
-  selected?: never
+  counted?: never
   frame?: never
 }
 
@@ -168,18 +175,19 @@ const meta: Meta<Knobs> = {
     threshold: { control: { type: 'range', min: 0, max: 24, step: 1 } },
     name: { control: 'text' },
     renaming: { control: 'text' },
+    selected: { control: 'object' },
     rows: { table: { disable: true } },
     open: { table: { disable: true } },
-    selected: { table: { disable: true } },
+    counted: { table: { disable: true } },
     frame: { table: { disable: true } },
   },
-  args: { corpus: 'a few', threshold: 4, name: 'Tree', renaming: null },
+  args: { corpus: 'a few', threshold: 4, name: 'Tree', renaming: null, selected: [] },
   render: (args) => ({
     components: { Tree },
     setup() {
       const rows = ref<readonly Row[]>(CORPORA[args.corpus].rows)
       const open = ref<readonly RowId[]>(CORPORA[args.corpus].open)
-      const selected = ref<RowId | null>(null)
+      const selected = ref<readonly RowId[]>(args.selected)
       const renaming = ref<RowId | null>(args.renaming)
 
       watch(
@@ -187,7 +195,7 @@ const meta: Meta<Knobs> = {
         (next) => {
           rows.value = CORPORA[next].rows
           open.value = CORPORA[next].open
-          selected.value = null
+          selected.value = []
         },
       )
 
@@ -203,11 +211,15 @@ const meta: Meta<Knobs> = {
         onClose: (row: RowId) => {
           open.value = open.value.filter((each) => each !== row)
         },
-        onSelect: (row: RowId) => {
-          selected.value = row
+        onSelect: (picked: readonly RowId[]) => {
+          selected.value = picked
         },
-        onMove: (row: RowId, at: Landing) => {
-          rows.value = moved(rows.value, row, at)
+        onMove: (carried: readonly RowId[], at: Landing) => {
+          rows.value = moved(rows.value, carried, at)
+        },
+        onRemove: (carried: readonly RowId[]) => {
+          rows.value = removed(rows.value, carried)
+          selected.value = []
         },
         onRename: (row: RowId, name: string) => {
           rows.value = renamed(rows.value, row, name)
@@ -227,6 +239,7 @@ const meta: Meta<Knobs> = {
           @close="onClose"
           @select="onSelect"
           @move="onMove"
+          @remove="onRemove"
           @rename="onRename"
         >
           <template #icon="{ holds, open: shown }">
@@ -268,6 +281,12 @@ export const Empty: Story = { args: { corpus: 'empty' } }
 /** A name in a field, over the row it belongs to. */
 export const Renaming: Story = { args: { renaming: 'notes' } }
 
+/** Several rows selected at once. */
+export const Several: Story = { args: { selected: ['work', 'notes', 'loose'] } }
+
+/** A selection running from inside a folder out past the end of it. */
+export const AcrossAFolder: Story = { args: { selected: ['plans', 'notes', 'empty'] } }
+
 const rowIn = (canvas: HTMLElement, row: string) => {
   const held = canvas.querySelector<HTMLElement>(`[data-tree-row="${row}"]`)
   if (!held) throw new Error(`no row called ${row}`)
@@ -276,6 +295,12 @@ const rowIn = (canvas: HTMLElement, row: string) => {
 
 const drawn = (canvas: HTMLElement) =>
   [...canvas.querySelectorAll('[data-tree-row]')].map((row) => row.getAttribute('data-tree-row'))
+
+/** The rows the tree announces as selected, in the order they are drawn. */
+const selectedIn = (canvas: HTMLElement) =>
+  [...canvas.querySelectorAll('[aria-selected="true"]')].map((row) =>
+    row.getAttribute('data-tree-row'),
+  )
 
 const middleOf = (element: Element) => {
   const box = element.getBoundingClientRect()
@@ -337,6 +362,73 @@ export const DragsBetweenRows: Story = {
 
     await expect(drawn(canvasElement)).toStrictEqual(['loose', 'work', 'plans', 'notes', 'empty'])
     await expect(rowIn(canvasElement, 'loose').getAttribute('aria-level')).toBe('1')
+  },
+}
+
+/** A press with the join key held takes a row into the selection, and out of it again. */
+export const JoinsARow: Story = {
+  tags: ['!dev'],
+  play: async ({ canvasElement }) => {
+    // One hand, so what it holds down is still held down at the press.
+    const hand = userEvent.setup()
+    await hand.click(rowIn(canvasElement, 'work'))
+
+    await hand.keyboard('{Control>}')
+    await hand.click(rowIn(canvasElement, 'loose'))
+    await expect(selectedIn(canvasElement)).toStrictEqual(['work', 'loose'])
+
+    await hand.click(rowIn(canvasElement, 'loose'))
+    await expect(selectedIn(canvasElement)).toStrictEqual(['work'])
+    await hand.keyboard('{/Control}')
+  },
+}
+
+/** A press with Shift held reaches from the anchor, wherever the rows are drawn. */
+export const ReachesToARow: Story = {
+  tags: ['!dev'],
+  play: async ({ canvasElement }) => {
+    const hand = userEvent.setup()
+    await hand.click(rowIn(canvasElement, 'plans'))
+
+    await hand.keyboard('{Shift>}')
+    await hand.click(rowIn(canvasElement, 'empty'))
+    await expect(selectedIn(canvasElement)).toStrictEqual(['plans', 'notes', 'empty'])
+
+    await hand.click(rowIn(canvasElement, 'work'))
+    await expect(selectedIn(canvasElement)).toStrictEqual(['work', 'plans'])
+    await hand.keyboard('{/Shift}')
+  },
+}
+
+/** Two rows carried at once, held part way to the folder they are going into. */
+export const CarryingSeveral: Story = {
+  args: { selected: ['notes', 'loose'] },
+  play: async ({ canvasElement }) => {
+    const from = rowIn(canvasElement, 'loose')
+    const at = middleOf(from)
+    const to = middleOf(rowIn(canvasElement, 'work'))
+
+    await userEvent.pointer([
+      { keys: '[MouseLeft>]', target: from, coords: at },
+      { coords: { clientX: at.clientX, clientY: (at.clientY + to.clientY) / 2 } },
+      { coords: to },
+    ])
+
+    await expect(canvasElement.querySelector('.tree__carried')?.textContent?.trim()).toBe('2 rows')
+    await expect(rowIn(canvasElement, 'work').getAttribute('data-into')).toBe('true')
+  },
+}
+
+/** Two rows let go over a folder land in it together. */
+export const DragsSeveralIntoARow: Story = {
+  tags: ['!dev'],
+  args: { selected: ['notes', 'loose'] },
+  play: async ({ canvasElement }) => {
+    await dragTo(rowIn(canvasElement, 'loose'), middleOf(rowIn(canvasElement, 'work')))
+
+    await expect(drawn(canvasElement)).toStrictEqual(['work', 'plans', 'notes', 'loose', 'empty'])
+    await expect(rowIn(canvasElement, 'loose').getAttribute('aria-level')).toBe('2')
+    await expect(canvasElement.querySelector('.tree__carried')).toBeNull()
   },
 }
 

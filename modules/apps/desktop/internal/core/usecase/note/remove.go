@@ -6,7 +6,6 @@ import (
 	"fmt"
 	pathpkg "path"
 	"strconv"
-	"strings"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
@@ -23,10 +22,12 @@ const TrashDir = ".trash"
 // from the file, so losing the index costs a scan; the file is the one thing
 // nothing rebuilds.
 type Remove struct {
-	Readers port.VaultReaders
 	Writers port.VaultWriters
 	Links   port.LinkQueries
-	Index   func(ctx context.Context, v domain.Vault, paths []string) error
+	// Known is what the index holds about each file, and is what says which
+	// sources sit under the path being removed.
+	Known port.SourceQueries
+	Index func(ctx context.Context, v domain.Vault, paths []string) error
 }
 
 // Removed says what happened to what was removed and what it leaves behind.
@@ -45,7 +46,7 @@ type Removed struct {
 func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (Removed, error) {
 	res := Removed{Path: path}
 
-	went, err := u.sources(ctx, v, path)
+	went, err := u.Known.Under(ctx, v.ID, path)
 	if err != nil {
 		return res, err
 	}
@@ -109,25 +110,6 @@ func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (Remov
 		res.Dangling = append(res.Dangling, was.From)
 	}
 	return res, nil
-}
-
-// sources is every source the vault holds at or under a path: the file itself,
-// or everything under a folder.
-func (u Remove) sources(ctx context.Context, v domain.Vault, path string) ([]domain.FileRef, error) {
-	reader, err := u.Readers.Open(v)
-	if err != nil {
-		return nil, err
-	}
-	var found []domain.FileRef
-	if err := reader.Walk(ctx, func(ref domain.FileRef) error {
-		if ref.Path == path || strings.HasPrefix(ref.Path, path+"/") {
-			found = append(found, ref)
-		}
-		return nil
-	}); err != nil {
-		return nil, err
-	}
-	return found, nil
 }
 
 // Destroy takes the file off the disk. Nothing brings it back.

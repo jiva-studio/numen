@@ -19,11 +19,10 @@ const file = (path: string, over: Partial<Entry> = {}): Entry => ({
   name: path.split('/').pop() ?? path,
   folder: false,
   kind: 'note',
-  size: 1,
   ...over,
 })
 
-const folder = (path: string): Entry => file(path, { folder: true, kind: 'other', size: 0 })
+const folder = (path: string): Entry => file(path, { folder: true, kind: 'other' })
 
 const held: Record<string, readonly Entry[]> = {
   [ROOT]: [folder('physics'), file('Entropy.md'), file('Cover.png', { kind: 'other' })],
@@ -39,9 +38,11 @@ const drawn = async (open: readonly string[] = []) => {
   const list = listing({ list: async (at: string) => held[at] ?? [] })
   const tab: Held = filing(list, {
     lands: (landing) => void done.push(`lands ${landing ? `${landing.at} ${landing.path}` : '—'}`),
-    runs: (id, path, name) => void done.push(`runs ${id} ${path} ${name}`),
+    runs: (id, paths, name) => void done.push(`runs ${id} ${paths.join(' ')} ${name}`),
     moves: async (from, to) => void done.push(`moves ${from} ${to}`),
     makes: async (path) => void done.push(`makes ${path}`),
+    writes: async (folder) => `${folder}Untitled note.md`,
+    says: (text) => void done.push(`says ${text}`),
   })
   await list.opens(ROOT)
   for (const at of open) await list.opens(at)
@@ -110,10 +111,44 @@ describe('a row the tree reports', () => {
   it('is filed where it was let go of', async () => {
     const { done, window } = await drawn()
 
-    window.findComponent(Tree).vm.$emit('move', 'Entropy.md', { into: 'physics' })
+    window.findComponent(Tree).vm.$emit('move', ['Entropy.md'], { into: 'physics' })
     await settles()
 
     expect(done).toStrictEqual(['moves Entropy.md physics/Entropy.md'])
+  })
+
+  it('is one of several filed where they were all let go of', async () => {
+    const { done, window } = await drawn()
+
+    window.findComponent(Tree).vm.$emit('move', ['Entropy.md', 'Cover.png'], { into: 'physics' })
+    await settles()
+
+    expect(done).toStrictEqual([
+      'moves Entropy.md physics/Entropy.md',
+      'moves Cover.png physics/Cover.png',
+    ])
+  })
+
+  it('is one of the rows the tree hands back as chosen', async () => {
+    const { list, window } = await drawn()
+
+    window.findComponent(Tree).vm.$emit('select', ['Entropy.md', 'Cover.png'])
+    await settles()
+
+    expect(list.chosen.value).toStrictEqual(['Entropy.md', 'Cover.png'])
+    expect(window.findComponent(Tree).props('selected')).toStrictEqual([
+      'Entropy.md',
+      'Cover.png',
+    ])
+  })
+
+  it('is one of the rows asked to go, handed to the window as one command', async () => {
+    const { done, window } = await drawn()
+
+    window.findComponent(Tree).vm.$emit('remove', ['Entropy.md', 'Cover.png'])
+    await settles()
+
+    expect(done).toStrictEqual(['runs remove Entropy.md Cover.png Entropy.md'])
   })
 
   it('is filed under the name that was typed over it', async () => {
@@ -142,29 +177,71 @@ describe('the menu on a row', () => {
     expect(window.findComponent(Menu).exists()).toBe(false)
   })
 
-  const itemsOn = async (path: string) => {
-    const { window } = await drawn()
+  const menuOn = async (path: string | null, chosen: readonly string[] = []) => {
+    const { list, window } = await drawn()
+    if (chosen.length) list.chooses(chosen)
     window.findComponent(Tree).vm.$emit('menu', path, { x: 4, y: 8 })
     await settles()
-    return (window.findComponent(Menu).props('items') as readonly { id: string }[]).map(
-      (one) => one.id,
-    )
+    return window.findComponent(Menu).props('items') as readonly { id: string; band?: string }[]
   }
 
+  const itemsOn = async (path: string | null, chosen: readonly string[] = []) =>
+    (await menuOn(path, chosen)).map((one) => one.id)
+
   it('offers everything that can be done to a note it was asked for on', async () => {
-    expect(await itemsOn('Entropy.md')).toContain('travel')
+    expect(await itemsOn('Entropy.md')).toStrictEqual([
+      'read',
+      'travel',
+      'newNote',
+      'newFolder',
+      'rename',
+      'copy',
+      'child',
+      'parent',
+      'jump',
+      'title',
+      'ask',
+      'remove',
+    ])
+  })
+
+  it('stands the items of a note in the bands they belong to', async () => {
+    expect((await menuOn('Entropy.md')).map((one) => one.band)).toStrictEqual([
+      'open',
+      'open',
+      'file',
+      'file',
+      'file',
+      'file',
+      'plex',
+      'plex',
+      'plex',
+      'plex',
+      'agent',
+      'remove',
+    ])
   })
 
   it('offers no command over a note on a file the vault holds no source for', async () => {
-    expect(await itemsOn('Cover.png')).not.toContain('travel')
+    expect(await itemsOn('Cover.png')).toStrictEqual([
+      'newNote',
+      'newFolder',
+      'rename',
+      'copy',
+      'remove',
+    ])
   })
 
   it('offers no command over a note on a folder', async () => {
     expect(await itemsOn('physics')).not.toContain('title')
   })
 
-  it('offers a folder and a name on every row', async () => {
-    expect(await itemsOn('Cover.png')).toStrictEqual(['rename', 'newFolder', 'remove'])
+  it('offers what can be made at the root, asked off every row', async () => {
+    expect(await itemsOn(null)).toStrictEqual(['newNote', 'newFolder'])
+  })
+
+  it('offers removal alone over a selection of several', async () => {
+    expect(await itemsOn('Entropy.md', ['Entropy.md', 'Cover.png'])).toStrictEqual(['remove'])
   })
 })
 
@@ -180,6 +257,8 @@ describe('a folder that could not be read', () => {
       runs: () => {},
       moves: async () => {},
       makes: async () => {},
+      writes: async () => '',
+      says: () => {},
     })
     await list.opens(ROOT)
 

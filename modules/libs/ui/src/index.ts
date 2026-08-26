@@ -11,8 +11,14 @@ export { browserEnvironment } from './plex/transition'
 export { countOf, isStop, seatWord, showingOf, SEATS, SHOWINGS } from './plex/model'
 
 export { default as Menu } from './menu/Menu.vue'
-export { landsOn, placeMenu, stepTo, MENU_OPENINGS } from './menu/model'
-export type { MenuItem, MenuOpening, MenuPlacement, MenuPlacing } from './menu/model'
+export { banded, landsOn, placeMenu, stepTo, MENU_OPENINGS } from './menu/model'
+export type {
+  BandedItem,
+  MenuItem,
+  MenuOpening,
+  MenuPlacement,
+  MenuPlacing,
+} from './menu/model'
 
 export { default as Palette } from './palette/Palette.vue'
 export { default as KeyCap } from './palette/KeyCap.vue'
@@ -141,15 +147,31 @@ export { default as Tree } from './tree/Tree.vue'
 
 /** For arranging rows without drawing them, or reading a gesture without this renderer. */
 export {
+  between,
+  carried,
+  carries,
+  everyRow,
   flatten,
   holderOf,
   isTreeKey,
   landing,
   refuses,
+  sameRows,
+  selects,
   stepTo as stepToRow,
   TREE_KEYS,
 } from './tree/model'
-export type { Landing, Row, RowId, ShownRow, Step, TreeKey } from './tree/model'
+export type {
+  Carried,
+  Landing,
+  Press,
+  Pressed,
+  Row,
+  RowId,
+  ShownRow,
+  Step,
+  TreeKey,
+} from './tree/model'
 
 export type { Environment, PlexTransition } from './plex/transition'
 export type {

@@ -53,8 +53,6 @@ export interface Entry {
   readonly name: string
   readonly folder: boolean
   readonly kind: Source
-  /** How much the file holds, in bytes. Zero for a folder. */
-  readonly size: number
 }
 
 /** What moving a file or a folder came back with. */
@@ -264,18 +262,6 @@ export interface Moved {
   readonly to: string
   /** The notes whose link stopped resolving and was written again, by name. */
   readonly repaired: readonly string[]
-  /** The links that resolve to a different note now. */
-  readonly retargeted: readonly Retargeted[]
-}
-
-/** One link that means something else now. */
-export interface Retargeted {
-  /** The note the link is written in. */
-  readonly in: string
-  /** What the link is written by: a name, or the path of a note. */
-  readonly target: string
-  /** The note it reaches now. */
-  readonly now: string
 }
 
 /** What removing a note came back with. */

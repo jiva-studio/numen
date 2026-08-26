@@ -66,13 +66,11 @@ const { said, held, asked, listed, folders } = vi.hoisted(() => ({
   /** What each folder of the vault holds, as a listing answers it. */
   folders: {
     '': [
-      { path: 'physics', name: 'physics', folder: true, kind: 'other', size: 0 },
-      { path: 'Root.md', name: 'Root.md', folder: false, kind: 'note', size: 1 },
-      { path: 'Cover.png', name: 'Cover.png', folder: false, kind: 'other', size: 1 },
+      { path: 'physics', name: 'physics', folder: true, kind: 'other' },
+      { path: 'Root.md', name: 'Root.md', folder: false, kind: 'note' },
+      { path: 'Cover.png', name: 'Cover.png', folder: false, kind: 'other' },
     ],
-    physics: [
-      { path: 'physics/Entropy.md', name: 'Entropy.md', folder: false, kind: 'note', size: 1 },
-    ],
+    physics: [{ path: 'physics/Entropy.md', name: 'Entropy.md', folder: false, kind: 'note' }],
   } as Record<string, readonly Record<string, unknown>[]>,
 }))
 

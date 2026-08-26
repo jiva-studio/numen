@@ -344,3 +344,33 @@ export const NotChoosable: Story = {
     await expect(named('Open')).toHaveFocus()
   },
 }
+
+/**
+ * Bands, ruled where one gives way to the next. What the bands mean is the
+ * caller's; the menu draws a line where the word changes and nothing else.
+ */
+export const Banded: Story = {
+  args: {
+    items: [
+      { id: 'open', text: 'Open the note', band: 'open' },
+      { id: 'travel', text: 'Show in plex', band: 'open' },
+      { id: 'note', text: 'New note', band: 'file' },
+      { id: 'folder', text: 'New folder', band: 'file' },
+      { id: 'rename', text: 'Rename', band: 'file' },
+      { id: 'child', text: 'New child note', band: 'plex' },
+      { id: 'title', text: 'Change title', band: 'plex' },
+      { id: 'remove', text: 'Remove note', band: 'gone' },
+    ],
+  },
+  play: async () => {
+    const menu = within(menuElement()!)
+    // A rule stands at each of the three joins, and above none of the items
+    // that carry on a band.
+    await expect(menu.getAllByRole('separator')).toHaveLength(3)
+    // The keyboard passes over the rules: they are drawn, not chosen.
+    await userEvent.keyboard('{ArrowDown}')
+    await expect(menu.getByRole('menuitem', { name: 'Open the note' })).toHaveFocus()
+    await userEvent.keyboard('{ArrowUp}')
+    await expect(menu.getByRole('menuitem', { name: 'Remove note' })).toHaveFocus()
+  },
+}

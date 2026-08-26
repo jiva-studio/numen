@@ -1,6 +1,6 @@
 /**
  * What a files tab knows about the vault: what each open folder holds, which
- * folders are open, and which row is chosen.
+ * folders are open, and which rows are chosen.
  *
  * A folder is read again when it is opened, when something this tab did
  * finished, when a change names a path inside it, and when the window comes
@@ -68,8 +68,8 @@ export function listing(core: Folders) {
   const held = shallowRef<ReadonlyMap<string, readonly Entry[]>>(new Map())
   /** The folders drawn open. The root is one of them for as long as the tab is. */
   const open = ref<ReadonlySet<string>>(new Set([ROOT]))
-  /** The row the person is standing on, by the path it stands for. */
-  const chosen = ref('')
+  /** The rows the person is standing on, by the paths they stand for. */
+  const chosen = ref<readonly string[]>([])
   /** What the folders could not be read as, in words the window puts up for it. */
   const trouble = ref('')
 
@@ -132,21 +132,22 @@ export function listing(core: Folders) {
 
   const toggles = (folder: string) => (opened(folder) ? void closes(folder) : opens(folder))
 
-  /** The row the person is standing on. */
-  const chooses = (path: string) => {
-    chosen.value = path
+  /** The rows the person is standing on. */
+  const chooses = (paths: readonly string[]) => {
+    chosen.value = paths
   }
 
   /**
    * The tree walked down to a path: each folder above it is opened and read
-   * before the one under it is, and the path is left chosen.
+   * before the one under it is, and the path is left the whole of what is
+   * chosen.
    */
   const reveals = async (path: string) => {
     for (const folder of above(path)) {
       await opens(folder)
       if (!alive) return
     }
-    chosen.value = path
+    chosen.value = [path]
   }
 
   /** Every open folder read again. */
@@ -160,8 +161,9 @@ export function listing(core: Folders) {
    * chosen at where it went.
    */
   const changed = async (paths: readonly string[] = [], renamed: readonly Went[] = []) => {
-    const went = wentTo(renamed, chosen.value)
-    if (went) chosen.value = went
+    if (renamed.length > 0) {
+      chosen.value = chosen.value.map((one) => wentTo(renamed, one) || one)
+    }
     const named = [...paths, ...renamed.flatMap((one) => [one.from, one.to])]
     if (named.length === 0) return void (await again())
     const folders = new Set(named.map(folderOf).filter(opened))

@@ -92,9 +92,7 @@ export interface Words {
   readonly unvaulted: Record<VaultRefused, string>
   /** What the machine's own folder picker is titled. */
   readonly folder: string
-  /** The links that mean another note now, which nothing repairs. */
-  readonly retargeted: string
-  /** The links that reach nothing now, which nothing repairs either. */
+  /** The links that reach nothing now, which nothing repairs. */
   readonly dangling: string
   /** Where a removed note landed, which is the only way back to it. */
   readonly trashedAt: string
@@ -201,16 +199,17 @@ const makes = async (
   await travels(made.path, on, words)
 }
 
-/** A note given a different name, and the links that mean another note now. */
+/**
+ * A note given a different name, and its file renamed with it. Prose on disk
+ * that nobody here has seen leaves the note as it is.
+ */
 const renames = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
   if (!deed.name || deed.name === deed.title) return
   const tab = await settles(deed.path, on)
   if (tab.waiting) return on.says(words.unanswered, 'caution')
   const answer = await on.renames(deed.path, deed.name)
   if (answer.changed) return on.says(words.overtaken, 'caution')
-  if (answer.refusal) return on.says(words.refused[answer.refusal], 'refusal')
-  const retargeted = answer.moved?.retargeted ?? []
-  on.says(naming(words.retargeted, retargeted.map((one) => one.in)))
+  if (answer.refusal) on.says(words.refused[answer.refusal], 'refusal')
 }
 
 /**
@@ -223,9 +222,7 @@ const moves = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
   if (tab.waiting) return on.says(words.unanswered, 'caution')
   const answer = await on.moves(deed.path, deed.name)
   if (answer.refusal === 'occupied') return on.says(words.occupied, 'refusal')
-  if (answer.refusal) return on.says(words.refused[answer.refusal], 'refusal')
-  const retargeted = answer.moved?.retargeted ?? []
-  on.says(naming(words.retargeted, retargeted.map((one) => one.in)))
+  if (answer.refusal) on.says(words.refused[answer.refusal], 'refusal')
 }
 
 /** An empty folder, made under the path that was typed. */
@@ -236,21 +233,44 @@ const makesFolder = async (deed: Deed, on: Doing, words: Words): Promise<void> =
   if (refusal) on.says(words.refused[refusal], 'refusal')
 }
 
-/** A note taken out of the vault, and where it went and what it left reported. */
+/**
+ * The files a deed is over: the one it names, and the rest of the selection it
+ * was asked over.
+ */
+const over = (deed: Deed): readonly string[] => [deed.path, ...deed.others]
+
+/**
+ * Files taken out of the vault, and where each went and what each left
+ * reported. One the vault refuses leaves the rest to go, and what was refused
+ * is what the person is told.
+ */
 const removes = async (deed: Deed, destroy: boolean, on: Doing, words: Words): Promise<void> => {
-  const tab = await settles(deed.path, on)
-  if (tab.waiting) return on.says(words.unanswered, 'caution')
-  const answer = await on.removes(deed.path, destroy)
-  if (answer.refusal) return on.says(words.refused[answer.refusal], 'refusal')
-  if (tab.held) on.notes.shuts(tab.held)
-  on.says(
-    all(
-      answer.trashed ? `${words.trashedAt} ${answer.trashed}` : '',
-      naming(words.dangling, answer.dangling),
-    ),
-  )
+  const report: string[] = []
+  const dangling: string[] = []
+  const refused: string[] = []
+  let waiting = false
   const opening = on.opening()
-  if (opening) await on.leaves(deed.path, opening)
+
+  for (const path of over(deed)) {
+    const tab = await settles(path, on)
+    if (tab.waiting) {
+      waiting = true
+      continue
+    }
+    const answer = await on.removes(path, destroy)
+    if (answer.refusal) {
+      refused.push(words.refused[answer.refusal])
+      continue
+    }
+    if (tab.held) on.notes.shuts(tab.held)
+    if (answer.trashed) report.push(`${words.trashedAt} ${answer.trashed}`)
+    dangling.push(...answer.dangling)
+    if (opening) await on.leaves(path, opening)
+  }
+
+  if (refused.length > 0) return on.says(all(...refused), 'refusal')
+  if (waiting) return on.says(words.unanswered, 'caution')
+  on.says(all(...report, naming(words.dangling, dangling)))
 }
 
 /**

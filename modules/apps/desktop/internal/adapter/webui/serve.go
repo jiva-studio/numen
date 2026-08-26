@@ -223,6 +223,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Readers: cfg.VaultReaders(),
 		Writers: cfg.VaultWriters(),
 		Links:   api.Links,
+		Sources: db.Sources(),
 		Index:   opened.level,
 		Moving: func(ctx context.Context, went domain.Went) {
 			_ = api.Viewing().Moved(ctx, went)
@@ -230,16 +231,16 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	}
 	api.Renames = &note.Rename{Move: moving}
 	api.Moves = &usecase.Move{
-		Readers: cfg.VaultReaders(),
 		Writers: cfg.VaultWriters(),
 		Links:   api.Links,
-		Index:   opened.level,
+		Known:   db.SourcesKnown(),
+		Sources: db.Sources(),
 		Notes:   moving,
 	}
 	api.Removes = &note.Remove{
-		Readers: cfg.VaultReaders(),
 		Writers: cfg.VaultWriters(),
 		Links:   api.Links,
+		Known:   db.SourcesKnown(),
 		Index:   opened.level,
 	}
 

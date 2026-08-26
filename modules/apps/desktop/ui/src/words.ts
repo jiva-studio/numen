@@ -127,6 +127,7 @@ export const WORDS = {
   unlisted: 'The themes could not be listed',
   unworn: 'That theme could not be read, so it is not worn',
   asking: 'Confirm',
+  several: (files: number) => `${files} files`,
   answer: 'Choose an answer',
   keeps: 'Keep the note',
   kept: 'Nothing happens to it',
@@ -151,7 +152,6 @@ export const WORDS = {
   /** What a command could not do, and what it left behind. */
   refused: REFUSED,
   unvaulted: UNVAULTED,
-  retargeted: 'These notes link by a name that means another note now:',
   dangling: 'These notes link to nothing now:',
   /** Where a removed note landed, which is the only way back to it. */
   trashedAt: 'The note is in the trash, at',

@@ -163,9 +163,12 @@ const places: Places = {
 /** The tree of the vault, and what a gesture on a row of it comes to. */
 const files = filesKind(held.host, () => folders(core), {
   lands: (landing) => void lands(landing, places),
-  runs: (id, path, name) => carries(id, { ...where(), path, title: name }),
+  runs: (id, paths, name) =>
+    carries(id, { ...where(), path: paths[0] ?? '', title: name, others: paths.slice(1) }),
   moves: (from, to) => does(deedOf('move', { ...where(), path: from }, to), doing, words),
   makes: (path) => does(deedOf('makeFolder', where(), path), doing, words),
+  writes: async (folder) => (await making.named(folder, []))?.path ?? '',
+  says: (text) => told(text, 'refusal'),
 })
 
 /** The kinds this window draws, in the order a blank tab offers them. */

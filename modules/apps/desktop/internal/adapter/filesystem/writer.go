@@ -8,6 +8,7 @@ import (
 	"os"
 	pathpkg "path"
 	"path/filepath"
+	"strings"
 
 	ignore "github.com/sabhiram/go-gitignore"
 
@@ -179,6 +180,11 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
 	}
 	if source == target {
 		return nil
+	}
+	// A folder does not go inside itself: the destination is a place the folder
+	// itself holds.
+	if strings.HasPrefix(target, source+string(filepath.Separator)) {
+		return fmt.Errorf("move %s to %s: %w", from, to, port.ErrOccupied)
 	}
 
 	switch _, err := os.Lstat(target); {

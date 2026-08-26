@@ -112,6 +112,9 @@ func (s *VaultReader) Walk(ctx context.Context, fn func(domain.FileRef) error) e
 //
 // Folders come first, then files, each by name compared without regard to
 // case. That is the order to draw them in.
+//
+// A path holding a file holds no folder, and is answered as a folder that is
+// not there.
 func (s *VaultReader) List(ctx context.Context, folder string) ([]domain.Entry, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
@@ -123,6 +126,12 @@ func (s *VaultReader) List(ctx context.Context, folder string) ([]domain.Entry, 
 			return nil, err
 		}
 		folder = pathpkg.Clean(filepath.ToSlash(folder))
+	}
+	switch info, err := os.Stat(target); {
+	case err != nil:
+		return nil, err
+	case !info.IsDir():
+		return nil, fmt.Errorf("list %s: %w", folder, fs.ErrNotExist)
 	}
 	read, err := os.ReadDir(target)
 	if err != nil {
@@ -143,22 +152,11 @@ func (s *VaultReader) List(ctx context.Context, folder string) ([]domain.Entry, 
 			}
 			kind, _ = s.opts.kind(d.Name())
 		}
-		info, err := d.Info()
-		if errors.Is(err, fs.ErrNotExist) {
-			// The vault is edited while it is listed. What has gone between
-			// reading the directory and reaching it is not an error.
-			continue
-		}
-		if err != nil {
-			return nil, err
-		}
 		entries = append(entries, domain.Entry{
 			Path:   rel,
 			Name:   d.Name(),
 			Folder: d.IsDir(),
 			Kind:   kind,
-			Size:   info.Size(),
-			MTime:  info.ModTime().UnixNano(),
 		})
 	}
 	slices.SortFunc(entries, inOrder)

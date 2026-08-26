@@ -5,6 +5,8 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
@@ -12,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/testsupport"
 )
@@ -22,6 +25,9 @@ type filing struct {
 	db    *container.Index
 	vault domain.Vault
 	index func(ctx context.Context, v domain.Vault, paths []string) error
+	// readers is every reader this vault is opened through, keeping the tally of
+	// files whose bytes were read.
+	readers *countingReaders
 }
 
 func fileable(t *testing.T, notes map[string]string) filing {
@@ -31,10 +37,12 @@ func fileable(t *testing.T, notes map[string]string) filing {
 	if _, err := scanner(filesystem.Readers{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	refresh := usecase.Refresh{Readers: filesystem.Readers{}, Notes: db.Notes()}
+	readers := &countingReaders{VaultReaders: filesystem.Readers{}}
+	refresh := usecase.Refresh{Readers: readers, Notes: db.Notes()}
 	return filing{
-		db:    db,
-		vault: v,
+		db:      db,
+		vault:   v,
+		readers: readers,
 		index: func(ctx context.Context, v domain.Vault, paths []string) error {
 			_, err := refresh.Execute(ctx, v, paths)
 			return err
@@ -44,14 +52,15 @@ func fileable(t *testing.T, notes map[string]string) filing {
 
 func (f filing) move() usecase.Move {
 	return usecase.Move{
-		Readers: filesystem.Readers{},
 		Writers: filesystem.Writers{},
 		Links:   f.db.Links(),
-		Index:   f.index,
+		Known:   f.db.SourcesKnown(),
+		Sources: f.db.Sources(),
 		Notes: note.Move{
-			Readers: filesystem.Readers{},
+			Readers: f.readers,
 			Writers: filesystem.Writers{},
 			Links:   f.db.Links(),
+			Sources: f.db.Sources(),
 			Index:   f.index,
 		},
 	}
@@ -119,8 +128,112 @@ func TestAFolderMovesWithTheNotesUnderIt(t *testing.T) {
 	if len(moved.Repaired) != 0 {
 		t.Errorf("a name reaches its note wherever it is, so nothing is repaired: %v", moved.Repaired)
 	}
-	if len(moved.Retargeted) != 0 {
-		t.Errorf("nothing was retargeted: %+v", moved.Retargeted)
+}
+
+// sources is what the index holds at a path and beneath it, by path.
+func (f filing) sources(t *testing.T, path string) []string {
+	t.Helper()
+	found, err := f.db.SourcesKnown().Under(t.Context(), f.vault.ID, path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := make([]string, 0, len(found))
+	for _, ref := range found {
+		out = append(out, ref.Path)
+	}
+	return out
+}
+
+// What the vault holds under a path is asked of the index, and it is the same
+// answer walking the folder gives.
+func TestWhatIsUnderAPathIsWhatAWalkFinds(t *testing.T) {
+	f := fileable(t, map[string]string{
+		"physics/Entropy.md":      "# Entropy\n",
+		"physics/heat/Heat.md":    "# Heat\n",
+		"physics/heat/Carnot.md":  "# Carnot\n",
+		"physics-old/Stray.md":    "# Stray\n",
+		"chemistry/Reactions.md":  "# Reactions\n",
+		".trash/physics/Older.md": "# Older\n",
+		"physics/.hidden/Kept.md": "# Kept\n",
+		"physics/Notes.txt":       "a list\n",
+	})
+
+	// The folder holds the two notes and the folder under it, and neither the
+	// hidden folder, the file of no kind, the sibling nor the trash.
+	if got := f.sources(t, "physics"); len(got) != 3 {
+		t.Fatalf("the folder holds %v, and this test compares what is in it", got)
+	}
+	for _, path := range []string{"physics", "physics/heat", "physics/Entropy.md", "chemistry"} {
+		want := walked(t, f, path)
+		if got := f.sources(t, path); !slices.Equal(got, want) {
+			t.Errorf("the index holds %v under %s, and a walk finds %v", got, path, want)
+		}
+	}
+}
+
+// walked is every source a walk of the vault reports at a path and beneath it,
+// by path.
+func walked(t *testing.T, f filing, path string) []string {
+	t.Helper()
+	reader, err := filesystem.Readers{}.Open(f.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out []string
+	if err := reader.Walk(t.Context(), func(ref domain.FileRef) error {
+		if ref.Path == path || strings.HasPrefix(ref.Path, path+"/") {
+			out = append(out, ref.Path)
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	slices.Sort(out)
+	return out
+}
+
+// A folder that travelled is filed where it now is, and what was derived from
+// each source is still the source's. The files say what they said, so none of
+// them is opened.
+func TestAFolderThatMovedIsFiledWhereItIsWithoutBeingRead(t *testing.T) {
+	f := fileable(t, map[string]string{
+		"physics/Entropy.md":   "# Entropy\n\nA measure of disorder.\n",
+		"physics/heat/Heat.md": "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
+		"physics-old/Stray.md": "# Stray\n",
+	})
+	f.readers.reads = 0
+
+	if _, err := f.move().Execute(t.Context(), f.vault, "physics", "science/physics"); err != nil {
+		t.Fatal(err)
+	}
+
+	if read := f.readers.reads; read != 0 {
+		t.Errorf("the move read %d files, and a file that moved says what it said", read)
+	}
+
+	want := []string{"science/physics/Entropy.md", "science/physics/heat/Heat.md"}
+	if got := f.sources(t, "science/physics"); !slices.Equal(got, want) {
+		t.Errorf("the index files the folder as %v, want %v", got, want)
+	}
+	if got := f.sources(t, "physics"); len(got) != 0 {
+		t.Errorf("the index still files %v under the folder it left", got)
+	}
+	if got := f.sources(t, "physics-old"); !slices.Equal(got, []string{"physics-old/Stray.md"}) {
+		t.Errorf("a folder whose name begins with the one that moved travelled: %v", got)
+	}
+
+	// The chunks are still the source's, so a search answers with the note at
+	// the path it is filed under now.
+	searching := search.New(f.db.Passages(), filesystem.Readers{}, nil, nil, nil, 0, nil)
+	found, err := searching.Execute(t.Context(), f.vault, "disorder", search.Parameters{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) != 1 || found[0].Source != "science/physics/Entropy.md" {
+		t.Errorf("the passages of the note that moved are %+v", found)
+	}
+	if got := f.resolves(t, "science/physics/heat/Heat.md"); got != "science/physics/Entropy.md" {
+		t.Errorf("the link inside the folder reaches %q", got)
 	}
 }
 

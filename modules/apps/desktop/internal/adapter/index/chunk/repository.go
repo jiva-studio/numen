@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index/sqlfile"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 )
 
 //go:embed sql/*.sql
@@ -241,6 +242,75 @@ func (r *Repository) RemoveSources(ctx context.Context, vaultID, kind string, pa
 		return fmt.Errorf("commit: %w", err)
 	}
 	return nil
+}
+
+// MoveSources files what the vault held at one path, and everything under it,
+// where it now is. The chunks, the vectors, the links and the headings hang off
+// the source's own number and travel with it untouched.
+//
+// Only the file at the path itself can be called something else afterwards;
+// everything under a folder keeps the name it has.
+func (r *Repository) MoveSources(ctx context.Context, vaultID, from, to string) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin: %w", err)
+	}
+	defer tx.Rollback()
+
+	vault, err := vaultRow(ctx, tx, vaultID)
+	if errors.Is(err, errNoVault) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if err := rename(ctx, tx, vault, from, to); err != nil {
+		return err
+	}
+	first, past := under(from)
+	if err := exec(ctx, tx, "move_sources", to, len(from)+1, vault, from, first, past); err != nil {
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit: %w", err)
+	}
+	return nil
+}
+
+// rename says what the note at a path is called once its file is at another.
+//
+// A note is called by its `title` key, else by its level-one heading, else by
+// its filename. It takes the name of the file it lands under where nothing
+// inside the file names it, and where that filename is the one its own title is
+// filed under; otherwise it carries the name it has.
+func rename(ctx context.Context, tx *sql.Tx, vault int64, from, to string) error {
+	name := domain.Basename(to)
+	if name == domain.Basename(from) {
+		return nil
+	}
+
+	var title string
+	var named bool
+	err := tx.QueryRowContext(ctx, stmt.Get("note_naming"), vault, from).Scan(&title, &named)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("note_naming %s: %w", from, err)
+	}
+	if !named {
+		return exec(ctx, tx, "rename_note", name, name, vault, from)
+	}
+	if filed, _ := domain.Filename(title); !strings.EqualFold(filed, name) {
+		return nil
+	}
+	return exec(ctx, tx, "rename_note", name, title, vault, from)
+}
+
+// under is the range every path a folder holds falls in: from the folder's
+// slash to the byte after one.
+func under(folder string) (first, past string) {
+	return folder + "/", folder + "0"
 }
 
 // Clear takes out the chunks of one source, and everything indexed over them.

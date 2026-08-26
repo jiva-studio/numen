@@ -289,7 +289,6 @@ const listed = (one: EntryMessage): Entry => ({
   name: one.name,
   folder: one.folder,
   kind: holding[one.kind],
-  size: Number(one.size),
 })
 
 /** What the vault holds at a path, in the words the window uses. */
@@ -348,11 +347,6 @@ const filed = (moved: MovedMessage): Moved => ({
   from: moved.from,
   to: moved.to,
   repaired: moved.repaired,
-  retargeted: moved.retargeted.map((one) => ({
-    in: one.in,
-    target: one.target,
-    now: one.now,
-  })),
 })
 
 /** What a client has left, as the schema names it. */

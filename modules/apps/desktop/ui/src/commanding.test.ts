@@ -282,6 +282,7 @@ describe('a command that needs nothing', () => {
       vault: { id: 'physics', name: 'Physics' },
       note: null,
       title: 'Ontology',
+      others: [],
       name: '',
       kind: 'note',
       tab: 'tab',
@@ -339,6 +340,7 @@ describe('a command that asks for a name', () => {
       vault: { id: 'physics', name: 'Physics' },
       note: null,
       title: 'Ontology',
+      others: [],
       name: 'Entropy',
       kind: 'note',
       tab: 'tab',
@@ -381,11 +383,35 @@ describe('removing a note', () => {
     expect(commands.bands.value[0]?.items[0]?.title).toBe(words.keeps)
   })
 
+  it('names the one thing it is over by the name it carries', () => {
+    const { commands } = asking()
+
+    commands.asks('remove', front())
+
+    expect(commands.bands.value[0]?.items[1]?.title).toBe(`${words.removes} “Ontology”`)
+  })
+
+  it('says how many it is over, where it is over several', () => {
+    const { commands } = asking()
+
+    commands.asks('remove', front({ others: ['physics/Heat.pdf', 'physics/Cover.png'] }))
+
+    expect(commands.bands.value[0]?.items[1]?.title).toBe(`${words.removes} ${words.several(3)}`)
+  })
+
   it('is a deed once that question is answered', () => {
     const { commands } = asking()
     commands.asks('remove', front())
 
     expect(commands.chose('yes', 'yes')?.id).toBe('remove')
+  })
+
+  it('carries every file it was over into the deed', () => {
+    const { commands } = asking()
+    const others = ['physics/Heat.pdf']
+    commands.asks('remove', front({ others }))
+
+    expect(commands.chose('yes', 'yes')?.others).toStrictEqual(others)
   })
 
   it('is nothing at all where the answer that changes nothing was chosen', () => {
@@ -565,6 +591,7 @@ describe('a command that asks for a note', () => {
       vault: { id: 'physics', name: 'Physics' },
       note: null,
       title: 'Entropy',
+      others: [],
       name: '',
       kind: 'note',
       tab: 'tab',
@@ -677,6 +704,7 @@ describe('a command that offers a list the window holds', () => {
       path: 'physics/Ontology.md',
       note: null,
       title: 'Ontology',
+      others: [],
       name: 'preset:dracula',
       kind: 'note',
       tab: 'tab',
@@ -824,6 +852,7 @@ describe('a search that turned up nothing', () => {
       vault: { id: 'physics', name: 'Physics' },
       note: null,
       title: '',
+      others: [],
       name: 'Entropy',
       kind: 'note',
       tab: 'tab',

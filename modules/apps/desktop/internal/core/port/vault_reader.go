@@ -48,7 +48,7 @@ type VaultReader interface {
 	// the order to draw them in.
 	//
 	// ErrOutside for a path that leaves the vault, fs.ErrNotExist for a folder
-	// that is not there.
+	// that is not there and for a path that holds a file.
 	List(ctx context.Context, folder string) ([]domain.Entry, error)
 	// Read returns the bytes of one file, addressed by a path a walk reported.
 	Read(ctx context.Context, path string) ([]byte, error)

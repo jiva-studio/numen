@@ -44,10 +44,14 @@ const markOf = (id: string): Source | 'folder' => {
   return entry.folder ? 'folder' : entry.kind
 }
 
-/** What the menu offers, on the row it was asked for on. */
+/** What the menu offers: on the row it was asked for on, or off every row. */
 const items = computed(() => {
-  const entry = props.held.list.entryAt(props.held.menu.value?.path ?? '')
-  return itemsFor(entry?.kind ?? 'other', entry?.folder ?? false)
+  const asked = props.held.menu.value
+  if (!asked || asked.path === null) return itemsFor(null, false)
+
+  const entry = props.held.list.entryAt(asked.path)
+  const on = { source: entry?.kind ?? 'other', folder: entry?.folder ?? false }
+  return itemsFor(on, props.held.over(asked.path).length > 1)
 })
 
 /**
@@ -69,15 +73,17 @@ onUnmounted(() => globalThis.removeEventListener('focus', props.held.list.again)
       class="files__tree"
       :rows="rows"
       :open="props.held.list.openRows.value"
-      :selected="props.held.list.chosen.value || null"
+      :selected="props.held.list.chosen.value"
       :name="words.tree"
+      :counted="words.carrying"
       @open="(row: string) => props.held.open(row)"
       @close="(row: string) => props.held.close(row)"
-      @select="(row: string) => props.held.select(row)"
+      @select="(rows: readonly string[]) => props.held.select(rows)"
       @activate="(row: string) => props.held.activate(row)"
       @rename="(row: string, name: string) => void props.held.rename(row, name)"
-      @move="(row: string, at: Dropped) => void props.held.move(row, at)"
-      @menu="(row: string, at: Point) => props.held.asks({ path: row, at })"
+      @move="(rows: readonly string[], at: Dropped) => void props.held.move(rows, at)"
+      @remove="(rows: readonly string[]) => props.held.remove(rows)"
+      @menu="(row: string | null, at: Point) => props.held.asks({ path: row, at })"
     >
       <template #icon="{ id }">
         <svg class="files__mark" viewBox="0 0 16 16" aria-hidden="true">

@@ -70,13 +70,14 @@ func TestRenamingWritesTheNoteAndMovesTheFile(t *testing.T) {
 	}
 }
 
-// TestRenamingSaysWhichLinksReachSomethingElseNow. Two notes under one name is
-// the person's to settle, and the window can only say which link it is.
-func TestRenamingSaysWhichLinksReachSomethingElseNow(t *testing.T) {
+// TestRenamingLeavesALinkThatMeansAnotherNoteNow. Two notes under one name is
+// the person's to settle, and a link that resolves is not repaired.
+func TestRenamingLeavesALinkThatMeansAnotherNoteNow(t *testing.T) {
+	const heat = "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n\n# Heat\n"
 	f := quitting(t, nil, map[string]string{
 		"Entropy.md":         "# Entropy\n",
 		"physics/Entropy.md": "# Entropy\n",
-		"Heat.md":            "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n\n# Heat\n",
+		"Heat.md":            heat,
 	})
 	scanned(t, f)
 
@@ -89,19 +90,11 @@ func TestRenamingSaysWhichLinksReachSomethingElseNow(t *testing.T) {
 	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
 		t.Fatalf("the rename was refused: %v", refusal)
 	}
-
-	retargeted := answer.Msg.GetMoved().GetRetargeted()
-	if len(retargeted) != 1 {
-		t.Fatalf("want the one link that means something else, got %+v", retargeted)
+	if repaired := answer.Msg.GetMoved().GetRepaired(); len(repaired) != 0 {
+		t.Errorf("a link that resolves is not repaired: %v", repaired)
 	}
-	if in := retargeted[0].GetIn(); in != "Heat.md" {
-		t.Errorf("the link is written in %q", in)
-	}
-	if target := retargeted[0].GetTarget(); target != "Entropy" {
-		t.Errorf("the link is written by %q", target)
-	}
-	if now := retargeted[0].GetNow(); now != "physics/Entropy.md" {
-		t.Errorf("the link reaches %q", now)
+	if now := fileAt(t, f.root, "Heat.md"); now != heat {
+		t.Errorf("the note that pointed at it was rewritten:\n%s", now)
 	}
 }
 
