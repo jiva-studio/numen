@@ -531,7 +531,7 @@ type NewNote struct {
 type NewLink struct {
 	To    string `json:"to" jsonschema:"the other note's name, or note://<identifier> when the name is ambiguous"`
 	Role  string `json:"role" jsonschema:"what kind of relationship this is: parent, child, jump, ref or attachment"`
-	Type  string `json:"type,omitempty" jsonschema:"what the link is for, as a feature reads it"`
+	Type  string `json:"type,omitempty" jsonschema:"leave this out: a value is introduced together with the code that reads it, and none is defined yet"`
 	Label string `json:"label,omitempty" jsonschema:"a few words naming the relationship, shown along the line"`
 	Note  string `json:"note,omitempty" jsonschema:"why the link exists, in the person's words"`
 }

@@ -90,7 +90,7 @@ func addLinkTools(server *sdk.Server, core Core) {
 		From  string `json:"from" jsonschema:"the path of the note the link is written in"`
 		To    string `json:"to" jsonschema:"the target as it is written now"`
 		Role  string `json:"role,omitempty" jsonschema:"the role it should carry: parent, child, jump, ref or attachment"`
-		Type  string `json:"type,omitempty" jsonschema:"what the link is for, as a feature reads it"`
+		Type  string `json:"type,omitempty" jsonschema:"leave this out: a value is introduced together with the code that reads it, and none is defined yet"`
 		Label string `json:"label,omitempty" jsonschema:"a few words naming the relationship"`
 		Note  string `json:"note,omitempty" jsonschema:"why the link exists"`
 	}) (*sdk.CallToolResult, Done, error) {
