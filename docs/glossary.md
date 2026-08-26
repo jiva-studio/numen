@@ -88,6 +88,7 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | neighbourhood | One note and everything joined to it, seen from that note. | |
 | focus | A neighbourhood's: the note it is seen from. A workspace's: the pane a tab opens into. | the keyboard's position |
 | node | What is drawn in place of a note. | |
+| ticket | What the picture calls a note. The application mints one the first time a note is drawn, and the note holds it while its file moves. Every gesture the plex reports names a node by its ticket, and the application translates it back to a path. | identifier, id, key |
 | edge | A line drawn between two nodes. Two links can be one edge. | connection |
 | seat | Where a node sits relative to the focus: `parent`, `child`, `jump`, `sibling`. It is not a value that can be written to a note. | role |
 | viewport | The area the plex is drawn into. | window |

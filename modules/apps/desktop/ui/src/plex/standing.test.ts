@@ -39,6 +39,48 @@ describe('two questions in flight', () => {
   })
 })
 
+describe('a note that moved while a question was in flight', () => {
+  it('lets go of the answer about where it was', async () => {
+    let release = () => {}
+    let holding: Promise<void> | null = null
+    const plex = standing(
+      fake(async (path) => {
+        if (holding) await holding
+        return answer(path)
+      }),
+    )
+    await plex.go('Note.md')
+
+    holding = new Promise<void>((wake) => (release = wake))
+    const asking = plex.go('Note.md')
+    plex.follows([{ from: 'Note.md', to: 'moved/Note.md' }])
+    release()
+    await asking
+
+    expect(plex.here.value).toBe('moved/Note.md')
+    expect(plex.neighbourhood.value?.focus?.path).toBe('Note.md')
+  })
+
+  it('holds on to an answer about a note nothing moved', async () => {
+    let release = () => {}
+    let holding: Promise<void> | null = null
+    const plex = standing(
+      fake(async (path) => {
+        if (holding) await holding
+        return answer(path)
+      }),
+    )
+
+    holding = new Promise<void>((wake) => (release = wake))
+    const asking = plex.go('Note.md')
+    plex.follows([{ from: 'Elsewhere.md', to: 'moved/Elsewhere.md' }])
+    release()
+    await asking
+
+    expect(plex.here.value).toBe('Note.md')
+  })
+})
+
 describe('the note in focus goes away', () => {
   it('says so, keeps what it is showing, and can come back to it', async () => {
     let holds = true

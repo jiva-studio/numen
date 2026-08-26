@@ -31,8 +31,8 @@ const seats: Record<Seat, PlexRelatedSeat | null> = {
 }
 
 /**
- * A note is addressed by the path it is filed under: every note has one, and a
- * note written outside the application carries no identifier.
+ * A node is drawn under the ticket its note holds, and so is each end of an
+ * edge. The caller says what a note's ticket is.
  *
  * An edge runs the way the relationship runs, and a sibling's does not touch
  * the focus at all: it is another of a parent's children, so it hangs off that
@@ -41,9 +41,12 @@ const seats: Record<Seat, PlexRelatedSeat | null> = {
  * A relationship both notes named is drawn with an arrow at the end away from
  * the focus, the words along the line being the ones the note in focus wrote.
  */
-export function asPlex(neighbourhood: Neighbourhood): PlexNeighbourhood {
+export function asPlex(
+  neighbourhood: Neighbourhood,
+  ticket: (path: string) => string,
+): PlexNeighbourhood {
   const focus: PlexNode = {
-    id: neighbourhood.focus?.path ?? '',
+    id: ticket(neighbourhood.focus?.path ?? ''),
     title: neighbourhood.focus?.title ?? '',
     seat: 'focus',
   }
@@ -56,12 +59,16 @@ export function asPlex(neighbourhood: Neighbourhood): PlexNeighbourhood {
     through: string
     mutual: boolean
   }[] = []
+  /** The path of every note this picture draws, the note in focus included. */
+  const shown = new Set<string>([neighbourhood.focus?.path ?? ''])
   for (const related of neighbourhood.related) {
     const seat = seats[related.seat]
     if (!seat || !related.note) continue
-    nodes.push({ id: related.note.path, title: related.note.title, seat })
+    const id = ticket(related.note.path)
+    shown.add(related.note.path)
+    nodes.push({ id, title: related.note.title, seat })
     seated.push({
-      id: related.note.path,
+      id,
       seat,
       // What the person wrote on the link. A line with nothing written on it
       // carries nothing: a word put there by the application would be read as
@@ -72,7 +79,6 @@ export function asPlex(neighbourhood: Neighbourhood): PlexNeighbourhood {
     })
   }
 
-  const shown = new Set(nodes.map((node) => node.id))
   const edges: PlexEdge[] = seated.flatMap(({ id, seat, label, through, mutual }) => {
     const line = label ? { label } : {}
     // A mutual line carries an arrow at the end away from the note in focus,
@@ -86,7 +92,7 @@ export function asPlex(neighbourhood: Neighbourhood): PlexNeighbourhood {
     // A sibling hangs off the parent it shares, which the answer names. With
     // that parent off the screen it hangs off nothing. Neither end of that line
     // is the note in focus, so no arrow is drawn on it.
-    return shown.has(through) ? [{ from: through, to: id, ...line }] : []
+    return shown.has(through) ? [{ from: ticket(through), to: id, ...line }] : []
   })
 
   return { nodes, edges }
