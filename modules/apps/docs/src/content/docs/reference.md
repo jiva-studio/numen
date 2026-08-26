@@ -89,6 +89,7 @@ A row with no kind beside it is a section holding the keys under it.
 | `indexing.proofreading.service.pages_at_once` | a number | how many pages one request carries. |
 | `indexing.proofreading.service.letters_apart` | a number | how far a correction may move a line's letters and still be a correction, as a share of the longer of the two. |
 | `agent.use` | text | names the agent. Empty answers with none, and the panel says so. |
+| `agent.serve_tools` | yes or no | puts the tools on a port, which is how an agent a person runs themselves reaches this vault. |
 | `agent.claude` |  | code, reached by starting it and reading what it prints. |
 | `agent.claude.command` | a list of words | starts it: the command line's path, and anything it is started through. |
 | `agent.claude.model` | text | which of its models answers — `opus`, `sonnet`, or a full name. |

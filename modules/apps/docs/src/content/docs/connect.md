@@ -7,7 +7,15 @@ The [panel's agent](/agent/) is not the only one that can work in your vault. Wh
 open it serves the same tools over MCP, so an assistant you already use — in your terminal, in
 your editor — can search your notes, read them, write them and connect them.
 
-It is on by default, on this machine only.
+The port is open whenever the panel has an agent to answer with, which is the ordinary
+installation. Turn the panel's agent off and the port goes with it — unless you ask for the port
+on its own:
+
+```json
+{ "agent": { "use": "", "serve_tools": true } }
+```
+
+An installation asking for neither opens no port and mints no token at all.
 
 ## Where it listens
 
@@ -60,6 +68,7 @@ you.
 | --- | --- |
 | `numen -no-mcp` | starts the window with no door at all. Nothing is served and nothing is written down. |
 | `numen -mcp-addr <address>` | moves it. |
+| `agent.use: ""` and `serve_tools: false` | no port, for good, without a flag on every launch. |
 
 Anything other than a loopback address opens your vault to the network, and then the token is
 the only thing between your notes and whoever can reach that port.

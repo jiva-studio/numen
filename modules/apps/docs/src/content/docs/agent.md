@@ -60,6 +60,7 @@ it and there is nothing to configure.
 {
   "agent": {
     "use": "claude",
+    "serve_tools": false,
     "claude": {
       "command": [],
       "model": "",
@@ -73,6 +74,7 @@ it and there is nothing to configure.
 | | |
 | --- | --- |
 | `use` | which agent answers. Empty means none, and the panel says so. |
+| `serve_tools` | put the tools on a port even with no agent in the panel, for [an agent you run yourself](/connect/). |
 | `command` | how to start it. Empty looks on the path, then where its installers put it. Worth naming on a machine carrying several installations. |
 | `model` | `opus`, `sonnet`, or a full model name. Empty takes whatever that installation answers with. |
 | `max_steps` | how many turns it may take before it is stopped. |
