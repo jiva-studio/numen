@@ -24,7 +24,6 @@ Never the reverse, and never sideways.
 
 ```bash
 npm install
-npx playwright install chromium webkit
 npm run storybook     # http://localhost:6006 — every component, every state
 npm test
 npm run typecheck
@@ -32,32 +31,6 @@ npm run typecheck
 
 Storybook is the development environment. A component is built and judged
 there, in isolation, before any application renders it.
-
-## The engines the stories run in
-
-**A story is rendered in WebKit and in Chromium, because the window is both.**
-The desktop window is the platform's own webview: WebKit on a mac and on
-Linux, where it links against `webkitgtk-6.0`, and Chromium on Windows. A
-property one engine reads and the other does not — `user-select` against
-`-webkit-user-select` — then fails a test here.
-
-Chromium falls back to a browser already on the machine, which `CHROME_PATH`
-names. WebKit has no such fallback: Playwright drives its own build and
-nothing else, so `npx playwright install webkit` is what puts it there.
-
-**What the story level still does not prove.** Playwright's builds of the two
-engines are not the window's webview. The version is Playwright's rather than
-the machine's, and none of what the window adds around the page is there.
-
-On a distribution whose shared libraries Playwright's WebKit does not find —
-NixOS among them, where the build asks for `libicudata.so.74` and the rest by
-Ubuntu's names — the story level cannot run on the machine at all. It runs in
-the image Playwright publishes for the version in `package.json`:
-
-```bash
-docker run --rm --ipc=host -v "$PWD:/ui" -w /ui \
-  mcr.microsoft.com/playwright:v1.62.1-noble npx vitest run --project stories
-```
 
 ## Layout
 

@@ -92,15 +92,17 @@ const SANS =
   "local('DejaVu Sans'), local('Liberation Sans'), local('Noto Sans'), " +
   "local('FreeSans'), local('Nimbus Sans'), local('Arial'), local('Helvetica'), " +
   "local('Cantarell'), local('Ubuntu'), local('Roboto'), local('Verdana')"
-const TALL = { name: 'numen-tall', size: '150%' }
-const LOW = { name: 'numen-low', size: '60%' }
+const TALL = { name: 'numen-tall', ascent: '110%', descent: '40%' }
+const LOW = { name: 'numen-low', ascent: '60%', descent: '40%' }
 const FACES = [TALL, LOW]
 
 /** The two faces, handed to the page. */
 const cutting = () => {
   const sheet = document.createElement('style')
   sheet.textContent = FACES.map(
-    ({ name, size }) => `@font-face { font-family: '${name}'; src: ${SANS}; size-adjust: ${size} }`,
+    ({ name, ascent, descent }) =>
+      `@font-face { font-family: '${name}'; src: ${SANS};` +
+      ` ascent-override: ${ascent}; descent-override: ${descent} }`,
   ).join('\n')
   document.head.append(sheet)
   return Promise.all(FACES.map(({ name }) => document.fonts.load(`100px '${name}'`)))

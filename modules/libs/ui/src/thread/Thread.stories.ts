@@ -171,15 +171,41 @@ const framedIn = (point: Point): Point => {
 
 /**
  * A drag the browser makes itself, so the selection it leaves is the browser's
- * own. The points are told to the window the story is framed in, which is where
- * the pointer is driven.
+ * own. The pointer is put down, walked to where it is going a step at a time,
+ * and lifted.
  */
 const dragged = async (from: Point, to: Point): Promise<string | null> => {
   const context = await import('@vitest/browser/context').catch(() => null)
   if (!context) return null
 
+  const session = context.cdp() as unknown as {
+    send: (method: string, params: unknown) => Promise<unknown>
+  }
+  const at = (type: string, point: Point, buttons: number) =>
+    session.send('Input.dispatchMouseEvent', {
+      type,
+      ...framedIn(point),
+      button: 'left',
+      buttons,
+      ...(type === 'mouseMoved' ? {} : { clickCount: 1 }),
+    })
+
+  const STEPS = 12
   window.getSelection()?.removeAllRanges()
-  await context.commands.sweep(framedIn(from), framedIn(to))
+  await at('mouseMoved', from, 0)
+  await at('mousePressed', from, 1)
+  for (let step = 1; step <= STEPS; step += 1) {
+    await at(
+      'mouseMoved',
+      {
+        x: from.x + ((to.x - from.x) * step) / STEPS,
+        y: from.y + ((to.y - from.y) * step) / STEPS,
+      },
+      1,
+    )
+    await new Promise((done) => setTimeout(done, 16))
+  }
+  await at('mouseReleased', to, 0)
   await new Promise((done) => setTimeout(done, 16))
 
   return String(window.getSelection() ?? '')

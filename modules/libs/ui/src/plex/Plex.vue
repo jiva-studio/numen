@@ -268,7 +268,6 @@ defineExpose({ moving: toRef(moving) })
 .plex-frame__overflow {
   position: absolute;
   user-select: none;
-  -webkit-user-select: none;
   inset-block-end: var(--numen-inset);
   inset-inline-start: var(--numen-inset-wide);
   color: var(--numen-edge-label);

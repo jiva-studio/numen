@@ -1,11 +1,6 @@
 import type { Preview } from '@storybook/vue3-vite'
-import { configure } from 'storybook/test'
 import '../src/tokens/theme.css'
 import './preview.css'
-
-// A story waits on a real browser drawing a frame, and two engines draw at
-// once on one machine.
-configure({ asyncUtilTimeout: 5_000 })
 
 /**
  * The two multipliers, as far as each goes. The window refuses a number

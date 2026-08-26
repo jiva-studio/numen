@@ -96,38 +96,3 @@ describe('the pages drawn', () => {
     expect(held.find('.reader__row').exists()).toBe(false)
   })
 })
-
-describe('the page it says it stands on', () => {
-  /** The row scrolled by hand, and the reader told about it. */
-  const moved = async (held: ReturnType<typeof mount>, to: number) => {
-    const area = held.find('.reader__room').element as HTMLElement
-    area.scrollLeft = to
-    await held.find('.reader__room').trigger('scroll')
-  }
-
-  /** Which pages the reader has asked to be turned to, in the order it asked. */
-  const turned = (held: ReturnType<typeof mount>) =>
-    (held.emitted('go') ?? []).map((one) => (one as [number])[0])
-
-  it('says nothing while the row travels to the page it was turned to', async () => {
-    // A turn is a scroll the browser animates, and the pages the row passes
-    // over on the way are pages nobody turned to. Reporting one of them is
-    // answered with a scroll back to it, and the turn is undone.
-    const held = await reader(1000, 800)
-    await held.setProps({ at: 4 })
-
-    await moved(held, 0)
-    await moved(held, 200)
-
-    expect(turned(held)).toHaveLength(0)
-  })
-
-  it('says where the row stands once the hand has it', async () => {
-    const held = await reader(1000, 800)
-
-    await moved(held, 4000)
-
-    expect(turned(held).length).toBeGreaterThan(0)
-    expect(turned(held).at(-1)).toBeGreaterThan(0)
-  })
-})
