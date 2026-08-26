@@ -11,6 +11,7 @@ import { computed } from 'vue'
 import { Menu, optionsForType, Plex, useTypeSize } from '@numen/ui'
 import type { MenuOpening, PlexRelatedSeat, PlexShowing } from '@numen/ui'
 import { ITEMS, NONE } from './menu'
+import { iconFor } from '../icons'
 import type { Held } from './kind'
 import { WORDS as words } from './words'
 
@@ -86,7 +87,11 @@ const asks = (event: MouseEvent) => {
       open
       @choose="(id: string) => props.held.chose(id)"
       @dismiss="props.held.dismiss()"
-    />
+    >
+      <template #icon="{ id }">
+        <component :is="iconFor(id)" v-if="iconFor(id)" class="plex__icon" aria-hidden="true" />
+      </template>
+    </Menu>
   </div>
 </template>
 
@@ -101,6 +106,14 @@ const asks = (event: MouseEvent) => {
 .plex__picture {
   flex: 1;
   min-block-size: 0;
+}
+
+/* Lucide draws on a 24 grid, and the stroke is given in those units. */
+.plex__icon {
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
+  stroke-width: 1.875;
+  opacity: 0.75;
 }
 
 /* A warning carries a filesystem path, and a long one breaks where it stands. */

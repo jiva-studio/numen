@@ -12,6 +12,7 @@ import { Menu, Tree } from '@numen/ui'
 import type { Point, Row as TreeRow } from '@numen/ui'
 import { Book, File, FileText, Folder, FolderOpen, type LucideIcon } from '@lucide/vue'
 import type { Source } from '../core'
+import { iconFor } from '../icons'
 import type { Dropped, Held } from './kind'
 import type { Row } from './listing'
 import { itemsFor } from './menu'
@@ -38,22 +39,22 @@ const renaming = computed({
   },
 })
 
-/** What the vault holds at a row, which is the mark drawn beside its name. */
-const markOf = (id: string): Source | 'folder' => {
+/** What the vault holds at a row. */
+const kindOf = (id: string): Source | 'folder' => {
   const entry = props.held.list.entryAt(id)
   if (!entry) return 'other'
   return entry.folder ? 'folder' : entry.kind
 }
 
 /**
- * The mark drawn beside a name, which is Lucide's. A folder says whether what
- * it holds is drawn: the tree draws no other mark for it.
+ * The icon drawn beside a name. A folder says whether what it holds is drawn:
+ * the tree draws nothing else for it.
  */
-const iconFor = (id: string, open: boolean): LucideIcon => {
-  const mark = markOf(id)
-  if (mark === 'folder') return open ? FolderOpen : Folder
-  if (mark === 'book') return Book
-  return mark === 'note' ? FileText : File
+const entryIcon = (id: string, open: boolean): LucideIcon => {
+  const kind = kindOf(id)
+  if (kind === 'folder') return open ? FolderOpen : Folder
+  if (kind === 'book') return Book
+  return kind === 'note' ? FileText : File
 }
 
 /** What the menu offers: on the row it was asked for on, or off every row. */
@@ -100,7 +101,7 @@ onUnmounted(() => globalThis.removeEventListener('focus', props.held.list.again)
       @menu="(row: string | null, at: Point) => props.held.asks({ path: row, at })"
     >
       <template #icon="{ id, open }">
-        <component :is="iconFor(id, open)" class="files__mark" aria-hidden="true" />
+        <component :is="entryIcon(id, open)" class="files__icon" aria-hidden="true" />
       </template>
 
       <template #silence>{{ words.empty }}</template>
@@ -113,7 +114,11 @@ onUnmounted(() => globalThis.removeEventListener('focus', props.held.list.again)
       open
       @choose="(id: string) => props.held.chose(id)"
       @dismiss="props.held.dismiss()"
-    />
+    >
+      <template #icon="{ id }">
+        <component :is="iconFor(id)" v-if="iconFor(id)" class="files__icon" aria-hidden="true" />
+      </template>
+    </Menu>
   </div>
 </template>
 
@@ -131,7 +136,7 @@ onUnmounted(() => globalThis.removeEventListener('focus', props.held.list.again)
 }
 
 /* Lucide draws on a 24 grid, and the stroke is given in those units. */
-.files__mark {
+.files__icon {
   inline-size: 0.875rem;
   block-size: 0.875rem;
   stroke-width: 1.875;

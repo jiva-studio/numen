@@ -83,10 +83,10 @@ describe('the tree the tab draws', () => {
     expect(window.findComponent(Tree).props('open')).not.toContain('physics')
   })
 
-  it('draws a mark of its own beside every row', async () => {
+  it('draws an icon of its own beside every row', async () => {
     const { window } = await drawn()
 
-    expect(window.findAll('.files__mark')).toHaveLength(3)
+    expect(window.findAll('.files__icon')).toHaveLength(3)
   })
 })
 

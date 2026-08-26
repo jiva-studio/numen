@@ -52,6 +52,12 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
+  /**
+   * What is drawn before an item's words. The room for it is kept on every
+   * item once the slot is filled, so the words line up down the menu whether
+   * or not each of them draws anything.
+   */
+  icon(props: { id: string }): unknown
   /** What is said when there is nothing to choose. */
   silence(): unknown
 }>()
@@ -219,6 +225,9 @@ onBeforeUnmount(leave)
           @focus="here = index"
           @click="choose(item)"
         >
+          <span v-if="$slots.icon" class="menu__icon flex shrink-0 items-center">
+            <slot name="icon" :id="item.id" />
+          </span>
           <span class="menu__text min-w-0">{{ item.text }}</span>
         </button>
       </template>
@@ -242,6 +251,9 @@ onBeforeUnmount(leave)
   --lift: var(--numen-lift-menu);
   /* The room a rule keeps on each side of itself. */
   --parting: 0.25rem;
+  /* How large an icon is drawn, and the room between it and the words. */
+  --icon: 0.875rem;
+  --icon-gap: 0.5rem;
 
   position: fixed;
   z-index: var(--lift);
@@ -279,6 +291,14 @@ onBeforeUnmount(leave)
 
 .menu__item:disabled {
   color: var(--numen-edge-label);
+}
+
+/* The room an icon takes, kept whether or not the item draws one, so the words
+   line up down the menu. What is drawn in it is the caller's. */
+.menu__icon {
+  inline-size: var(--icon);
+  block-size: var(--icon);
+  margin-inline-end: var(--icon-gap);
 }
 
 /* One line, then an ellipsis. A menu is read down its leading edge. */

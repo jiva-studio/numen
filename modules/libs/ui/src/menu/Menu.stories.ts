@@ -6,13 +6,16 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, type Component } from 'vue'
+import { Copy, CornerDownRight, FileText } from '@lucide/vue'
 import Menu from './Menu.vue'
 import { MENU_OPENINGS_ALL, type MenuItem, type MenuOpening } from './model'
 import { ARABIC, DEVANAGARI, EMPTY, LINK, LONG, RUSSIAN, UNBREAKABLE } from '@/fixtures/prose'
 
 interface Knobs {
   items: readonly MenuItem[]
+  /** What each item is drawn with, by identity. Nothing named draws nothing. */
+  icons?: Readonly<Record<string, Component>>
   at: { x: number; y: number }
   opening: MenuOpening
   margin: number
@@ -74,7 +77,15 @@ const asked = (args: Knobs) => ({
         :name="args.name"
         @choose="args.onChoose"
         @dismiss="open = false; args.onDismiss()"
-      />
+      >
+        <template v-if="args.icons" #icon="{ id }">
+          <component
+            :is="args.icons[id]"
+            v-if="args.icons[id]"
+            style="inline-size:100%;block-size:100%;stroke-width:1.875"
+          />
+        </template>
+      </Menu>
     </div>
   `,
 })
@@ -100,6 +111,7 @@ const meta = {
     margin: { control: { type: 'range', min: 0, max: 48, step: 2 } },
     name: { control: 'text' },
     items: { table: { disable: true } },
+    icons: { table: { disable: true } },
     at: { table: { disable: true } },
     onChoose: { table: { disable: true } },
     onDismiss: { table: { disable: true } },
@@ -265,6 +277,17 @@ export const Empty: Story = {
 /** One thing to choose. */
 export const One: Story = {
   args: { items: [{ id: 'open', text: 'Open' }] },
+}
+
+/**
+ * Icons, which are the caller's. The room for one is kept on every item, so
+ * the words line up down the menu whether or not each of them draws anything.
+ */
+export const Icons: Story = {
+  args: {
+    items: [...ITEMS, { id: 'nothing', text: 'Drawn as nothing' }],
+    icons: { open: FileText, child: CornerDownRight, copy: Copy },
+  },
 }
 
 /** Far more than fits: the list scrolls and the menu still stands on screen. */
