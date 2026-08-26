@@ -1,0 +1,323 @@
+/**
+ * The four pages of the manual the application writes itself.
+ *
+ * A key on the keyboard page, a row on the commands page, a setting in the
+ * reference and a flag on the starting page are all read out of the code that
+ * answers to them, so a manual that says something the application does not do
+ * fails the build. Run with `--check` it writes nothing and says which page
+ * has drifted.
+ *
+ * What each of them means is prose, written by hand around the block. Only the
+ * list itself is written here.
+ */
+import { readFile, writeFile } from 'node:fs/promises'
+
+const UI = new URL('../../desktop/ui/src/', import.meta.url)
+const GO = new URL('../../desktop/internal/adapter/', import.meta.url)
+const CMD = new URL('../../desktop/cmd/numen/', import.meta.url)
+const PAGES = new URL('../src/content/docs/', import.meta.url)
+
+const BEGIN = '<!-- BEGIN AUTOGEN -->'
+const END = '<!-- END AUTOGEN -->'
+
+const die = (message) => {
+  process.stderr.write(`manual: ${message}\n`)
+  process.exit(1)
+}
+
+const read = (base, path) => readFile(new URL(path, base), 'utf8')
+
+/* ------------------------------------------------------------------ keys */
+
+/** Every chord the window carries out a command for, in the order it declares them. */
+const chords = (keying) => {
+  const found = [
+    ...keying.matchAll(
+      /\{\s*command:\s*'([a-z]+)',\s*letter:\s*'([a-z])',\s*shift:\s*(true|false)\s*\}/g,
+    ),
+  ].map(([, command, letter, shift]) => ({ command, letter, shift: shift === 'true' }))
+  if (found.length === 0) die('no chords are declared in keying.ts')
+  return found
+}
+
+/** The chord as it is drawn: Control and Command are one key. */
+const chordOf = ({ letter, shift }) => {
+  const keys = ['<kbd>Ctrl</kbd>/<kbd>⌘</kbd>']
+  if (shift) keys.push('<kbd>⇧</kbd>')
+  keys.push(`<kbd>${letter.toUpperCase()}</kbd>`)
+  return keys.join(' ')
+}
+
+/**
+ * What one entry of the words says. An entry standing for another module's is
+ * followed there, which is where the four tab kinds keep their own names.
+ */
+const said = async (whole, name, seen = new Set()) => {
+  // The words a person reads are one object. What is above it says what a
+  // refusal is called, under names a command has too.
+  const at = whole.indexOf('export const WORDS')
+  const words = at < 0 ? whole : whole.slice(at)
+
+  const literal = words.match(new RegExp(`^\\s*${name}:\\s*'([^']+)',`, 'm'))
+  if (literal) return literal[1]
+
+  const elsewhere = words.match(new RegExp(`^\\s*${name}:\\s*([a-z]+)\\.([A-Za-z]+),`, 'm'))
+  if (!elsewhere) die(`the words say nothing under '${name}'`)
+  const [, module, key] = elsewhere
+  if (seen.has(module)) die(`the words under '${name}' point at themselves`)
+  return said(await read(UI, `${module}/words.ts`), key, new Set([...seen, module]))
+}
+
+const keyboard = async () => {
+  const keying = await read(UI, 'keying.ts')
+  const words = await read(UI, 'words.ts')
+
+  // The two the window keeps for itself are not in that table: they put a
+  // panel up rather than carry a command out.
+  const app = await read(UI, 'App.vue')
+  for (const letter of ['k', 'p']) {
+    if (!app.includes(`key === '${letter}'`)) die(`the window no longer answers '${letter}' itself`)
+  }
+
+  const rows = [
+    `| ${chordOf({ letter: 'k' })} | ${await said(words, 'find')} |`,
+    `| ${chordOf({ letter: 'p' })} | Commands |`,
+  ]
+  for (const chord of chords(keying)) {
+    rows.push(`| ${chordOf(chord)} | ${await said(words, spoken(await read(UI, 'commanding.ts'), chord.command))} |`)
+  }
+  return ['| | |', '| --- | --- |', ...rows].join('\n')
+}
+
+/* -------------------------------------------------------------- commands */
+
+/** Which entry of the words a command is drawn with. */
+const spoken = (commanding, command) => {
+  const row = new RegExp(`id:\\s*'${command}',[\\s\\S]{0,140}?text:\\s*words\\.([A-Za-z]+)`)
+  const found = commanding.match(row)
+  if (!found) die(`no row in commanding.ts draws the command '${command}'`)
+  return found[1]
+}
+
+/** Every command the palette offers, in the order it draws them. */
+const commands = async () => {
+  const commanding = await read(UI, 'commanding.ts')
+  const words = await read(UI, 'words.ts')
+  const keying = await read(UI, 'keying.ts')
+  const table = chords(keying)
+
+  const listed = commanding.slice(commanding.indexOf('export const commandsOf'))
+  const rows = [
+    ...listed.matchAll(
+      /id:\s*'([A-Za-z]+)',\s*(?:\n\s*)?text:\s*words\.([A-Za-z]+),[\s\S]{0,220}?band:\s*'(note|window|vault)'/g,
+    ),
+  ].map(([, id, word, band]) => ({ id, word, band }))
+  if (rows.length === 0) die('no commands are declared in commanding.ts')
+
+  const bands = [
+    ['note', 'overNote'],
+    ['window', 'overWindow'],
+    ['vault', 'overVault'],
+  ]
+
+  const out = []
+  for (const [band, heading] of bands) {
+    out.push(`### ${await said(words, heading)}`, '', '| | |', '| --- | --- |')
+    for (const row of rows.filter((one) => one.band === band)) {
+      const chord = table.find((one) => one.command === row.id)
+      const key = chord ? chordOf(chord) : row.id === 'find' ? chordOf({ letter: 'k' }) : ''
+      out.push(`| ${await said(words, row.word)} | ${key} |`)
+    }
+    out.push('')
+  }
+  return out.join('\n').trimEnd()
+}
+
+/* -------------------------------------------------------------- settings */
+
+/** A Go type's fields, in the order the file declares them. */
+const structOf = (source, name) => {
+  const at = source.search(new RegExp(`^type ${name} struct \\{$`, 'm'))
+  if (at < 0) return null
+  const body = source.slice(at, source.indexOf('\n}', at))
+
+  const fields = []
+  let doc = []
+  for (const line of body.split('\n').slice(1)) {
+    const comment = line.match(/^\s*\/\/ ?(.*)$/)
+    if (comment) {
+      doc.push(comment[1])
+      continue
+    }
+    const field = line.match(/^\s*([A-Z][A-Za-z0-9]*)\s+([^\s]+)\s+`json:"([^",]+)([^"]*)"`/)
+    if (field) {
+      const [, go, type, key] = field
+      if (key !== '-') fields.push({ go, type, key, doc: doc.join(' ').trim() })
+    }
+    doc = []
+  }
+  return fields
+}
+
+/** What a Go type is called where a person reads it. */
+const kindOf = (type) => {
+  if (type === 'string') return 'text'
+  if (type === 'bool') return 'yes or no'
+  if (['int', 'int64', 'float32', 'float64'].includes(type)) return 'a number'
+  if (type === '[]string') return 'a list of words'
+  return ''
+}
+
+/** The doc comment over a type, which is what a section of the file is about. */
+const docOf = (source, name) => {
+  const at = source.search(new RegExp(`^type ${name} `, 'm'))
+  if (at < 0) return ''
+  const above = source.slice(0, at).split('\n').reverse()
+  const lines = []
+  for (const line of above.slice(1)) {
+    const comment = line.match(/^\/\/ ?(.*)$/)
+    if (!comment) break
+    lines.unshift(comment[1])
+  }
+  return lines.join(' ').replace(new RegExp(`^${name}\\s+`), '')
+}
+
+/**
+ * The words a constant is written as in the file, for the comments that name
+ * the constant rather than the value.
+ */
+const VALUES = {
+  ModeSystem: '`system`',
+  ModeLight: '`light`',
+  ModeDark: '`dark`',
+  PoolMean: '`mean`',
+  PoolHead: '`head`',
+}
+
+/**
+ * What a field's own comment says about it: enough sentences to say something,
+ * with the Go name taken off the front and every other name written as the key
+ * it is in the file.
+ */
+const meaning = (doc, name, keys) => {
+  const said = doc
+    .replace(new RegExp(`^${name}\\s+`), '')
+    .replace(/^(is|are)\s+/, '')
+    .replace(`${name} `, '')
+
+  const sentences = said.match(/[^.!?]+[.!?]?/g) ?? []
+  let out = ''
+  for (const sentence of sentences) {
+    out += sentence
+    if (out.trim().length >= 45) break
+  }
+
+  const written = out
+    .trim()
+    .replace(/\b[A-Z][A-Za-z]+\b/g, (word) => VALUES[word] ?? (keys.get(word) ? `\`${keys.get(word)}\`` : word))
+  return written.replace(/^([A-Z])(?![A-Z])/, (letter) => letter.toLowerCase())
+}
+
+/** Where a section of the settings comes from, and what it is called there. */
+const SECTIONS = [
+  { path: 'appearance', file: 'settings/settings.go', type: 'Appearance' },
+  { path: 'indexing.embedding', file: 'embed/config.go', type: 'Config' },
+  { path: 'indexing.recognition', file: 'recognition/config.go', type: 'Config' },
+  { path: 'indexing.proofreading', file: 'proofreading/config.go', type: 'Config' },
+  { path: 'agent', file: 'agent/config.go', type: 'Config' },
+]
+
+/** Every Go name in one file, against the key it is written under. */
+const named = (source) => {
+  const keys = new Map()
+  for (const [, go, key] of source.matchAll(
+    /^\s*([A-Z][A-Za-z0-9]*)\s+[^\s]+\s+`json:"([^",]+)/gm,
+  )) {
+    if (key !== '-') keys.set(go, key)
+  }
+  return keys
+}
+
+/** Every key of one section, its own and those of the sections inside it. */
+const keysOf = async (file, type, under, seen = new Set()) => {
+  const source = await read(GO, file)
+  const keys = named(source)
+  const fields = structOf(source, type)
+  if (!fields) die(`${file} declares no type ${type}`)
+
+  const out = []
+  for (const field of fields) {
+    const path = `${under}.${field.key}`
+    const bare = field.type.replace(/^\*/, '')
+    const inside = structOf(source, bare)
+    if (inside && !seen.has(bare)) {
+      const doc = field.doc || docOf(source, bare)
+      out.push({ path, meaning: meaning(doc, field.go, keys), kind: '' })
+      out.push(...(await keysOf(file, bare, path, new Set([...seen, bare]))))
+      continue
+    }
+    out.push({ path, meaning: meaning(field.doc, field.go, keys), kind: kindOf(field.type) })
+  }
+  return out
+}
+
+const settings = async () => {
+  const out = ['| | | |', '| --- | --- | --- |']
+  for (const section of SECTIONS) {
+    for (const key of await keysOf(section.file, section.type, section.path)) {
+      out.push(`| \`${key.path}\` | ${key.kind} | ${key.meaning} |`)
+    }
+  }
+  return out.join('\n')
+}
+
+/* -------------------------------------------------------------- starting */
+
+const flags = async () => {
+  const main = await read(CMD, 'main.go')
+  const found = [
+    ...main.matchAll(
+      /flag\.(?:String|Bool|Float64|Int)Var\(\s*&[^,]+,\s*"([^"]+)",\s*([^,]+),\s*(?:\n\s*)?"([^"]*)"\s*\)/g,
+    ),
+  ]
+  if (found.length === 0) die('no flags are declared in cmd/numen/main.go')
+
+  const rows = found.map(([, name, , usage]) => {
+    const said = usage.charAt(0).toUpperCase() + usage.slice(1)
+    return `| \`-${name}\` | ${said}. |`
+  })
+  return ['| | |', '| --- | --- |', ...rows].join('\n')
+}
+
+/* ------------------------------------------------------------------ page */
+
+const WRITES = [
+  ['keyboard.md', keyboard],
+  ['commands.md', commands],
+  ['reference.md', settings],
+  ['starting.md', flags],
+]
+
+const checking = process.argv.includes('--check')
+let drifted = false
+
+for (const [name, write] of WRITES) {
+  const page = await read(PAGES, name)
+  const begins = page.indexOf(BEGIN)
+  const ends = page.indexOf(END)
+  if (begins < 0 || ends < begins) die(`${name} has no autogen block`)
+
+  const written = `${page.slice(0, begins + BEGIN.length)}\n${await write()}\n${page.slice(ends)}`
+  if (written === page) continue
+
+  if (checking) {
+    process.stderr.write(`manual: ${name} is not what the application says\n`)
+    drifted = true
+  } else {
+    await writeFile(new URL(name, PAGES), written)
+    process.stdout.write(`manual: ${name} was written again\n`)
+  }
+}
+
+if (drifted) die('run `npm run manual`')
+if (checking) process.stdout.write('manual: every page says what the application does\n')

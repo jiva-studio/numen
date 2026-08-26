@@ -17,16 +17,23 @@ Only what somebody using numen needs. The specifications under `docs/` in this
 repository — the note format, the index, the performance targets, the decision
 records — are how the application is built, and stay there.
 
-## The keyboard page writes itself
+## Four pages write themselves
 
-The table of chords on `keyboard.md` is generated from the window's own table,
-`modules/apps/desktop/ui/src/keying.ts`, and the words the commands are drawn
-with. A key printed here is a key the application answers.
+| Page | Written from |
+| --- | --- |
+| `keyboard.md` | the window's table of chords, `ui/src/keying.ts` |
+| `commands.md` | every row of `ui/src/commanding.ts`, in the words `words.ts` draws them with |
+| `reference.md` | the settings structs: `settings`, `embed`, `recognition`, `proofreading`, `agent` |
+| `starting.md` | the flags `cmd/numen/main.go` declares |
+
+Each is one block between `<!-- BEGIN AUTOGEN -->` and `<!-- END AUTOGEN -->`;
+the prose around it is written by hand.
 
 ```
-npm run keys        # write the block again
-npm run keys:check  # fail where the page has drifted
+npm run manual        # write the blocks again
+npm run manual:check  # fail where a page has drifted
 ```
 
-`npm run build` writes it first, and the workflow checks it, so a chord added
-to the window without the page catching up is caught in CI.
+`npm run build` writes them first, and the workflow checks them, so a command,
+a chord, a setting or a flag added to the application without the manual
+catching up is caught in CI.

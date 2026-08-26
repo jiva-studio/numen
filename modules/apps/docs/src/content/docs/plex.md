@@ -42,6 +42,10 @@ above the node it is a parent, below it is a child, to the side it is a jump.
 
 The link and the note arrive together. There is no separate step where you go and connect them.
 
+**Clicking the handle** rather than dragging it makes one more child — the thing most often
+wanted, and the one a trackpad can ask for without holding a button down. <kbd>Enter</kbd> on
+the handle does the same from the keyboard.
+
 <kbd>Escape</kbd> in the middle of a drag calls it off and nothing is made.
 
 ## Reading the lines

@@ -55,7 +55,17 @@ export default defineConfig({
           items: [
             { slug: 'settings' },
             { slug: 'themes' },
+            { slug: 'meaning' },
+            { slug: 'reading' },
+          ],
+        },
+        {
+          label: 'Reference',
+          items: [
+            { slug: 'commands' },
             { slug: 'keyboard' },
+            { slug: 'reference' },
+            { slug: 'starting' },
           ],
         },
         { slug: 'trouble' },

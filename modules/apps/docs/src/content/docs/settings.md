@@ -1,6 +1,6 @@
 ---
 title: Settings
-description: What you can change from the window, and the one file that holds the rest.
+description: What you change from the window, where the settings file lives, and how it behaves.
 ---
 
 Most of what you would want to change is in the commands — <kbd>Ctrl</kbd>/<kbd>⌘</kbd>
@@ -14,6 +14,11 @@ Most of what you would want to change is in the commands — <kbd>Ctrl</kbd>/<kb
 | **Reading font size** | how large the text you read is set, over the size above. |
 
 Choosing one writes it down. There is no separate save.
+
+The two sizes are multipliers over what was designed. The interface goes from **0.8 to 2** and
+the text you read from **0.8 to 1.75**; hairlines, borders and focus rings stay one physical
+line under either. A number outside those bounds is refused, said out loud, and left in the file
+exactly as you wrote it.
 
 ## The file
 
@@ -35,54 +40,17 @@ parse is never written over — numen says so and leaves it alone.
 }
 ```
 
-## Search by meaning
+## What is in it
 
-The third band of [search](/finding/) needs a model to read your notes with. Out of the box a
-small one is fetched to your machine on first use and runs there — no key, no account, nothing
-sent anywhere.
+| | |
+| --- | --- |
+| `appearance` | the four above. |
+| `indexing.embedding` | the model that reads your notes so they can be found by meaning. See [search by meaning](/meaning/). |
+| `indexing.recognition` | how a scanned book is read. See [reading scanned books](/reading/). |
+| `indexing.proofreading` | what corrects a reading afterwards, and nothing by default. |
+| `agent` | which assistant answers in the panel, and how it is started. See [the agent](/agent/). |
 
-**To turn it off entirely.** Searching is then names and words alone, and nothing is ever
-fetched:
+[Every setting](/reference/) is the complete list, taken from the application itself.
 
-```json
-{ "indexing": { "embedding": { "indexing": { "use": "" } } } }
-```
-
-**To have a service do it instead.** Anything that speaks the usual embeddings request will do.
-Filling the index is the expensive half, and a service does in an hour what a laptop does in a
-day:
-
-```json
-{
-  "indexing": {
-    "embedding": {
-      "indexing": {
-        "use": "service",
-        "service": {
-          "base_url": "https://api.openai.com/v1",
-          "name": "text-embedding-3-small",
-          "key_env": "OPENAI_API_KEY"
-        }
-      }
-    }
-  }
-}
-```
-
-The key is read from the environment variable you name, and numen never writes a key back into
-this file.
-
-Choosing another model means the vault is read again under it. Nothing is thrown away: setting
-the old one back finds the old work where it was.
-
-## The agent
-
-`agent` is which assistant answers in the panel and how it is started — see
-[the agent](/agent/).
-
-## The rest of the file
-
-There is more in it: how a scanned page is read, how near a passage must stand to a question to
-count as an answer, which model corrects a reading. Every one has a default that works, and
-each was measured against something particular. Leave them as they are unless you have a reason
-of your own.
+A key never written back into this file is a key to a service: name the environment variable it
+is read from, and it stays out of your files.

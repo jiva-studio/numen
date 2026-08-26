@@ -13,6 +13,16 @@ writes what is owed and waits for it.
 Everything you write is found by name and by word as soon as it lands. Search
 [by meaning](/finding/) catches up a few seconds after you stop.
 
+## What you see as you write
+
+The note is markdown, and it is drawn as what it means: a heading is a heading, a link is a
+link, a list is a list. The marks themselves appear on the line the caret is on, so you can edit
+them, and step away and they are gone again.
+
+A table is a table you type in rather than a row of pipes and dashes: <kbd>Tab</kbd> walks the
+cells, <kbd>Tab</kbd> on the last one makes a new row, <kbd>Enter</kbd> drops to the cell below,
+and <kbd>Escape</kbd> puts you back in the text under it.
+
 ## What names a note
 
 Three things can, and the first of them that exists wins:

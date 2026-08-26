@@ -52,6 +52,7 @@ type LayoutModel struct {
 	// Name is where the model is fetched from, and Path is a file on this
 	// machine. A path is used as given; a name is looked for in Dir first.
 	Name string `json:"name"`
+	// Path is this model as a file on this machine.
 	Path string `json:"path"`
 
 	// Labels are the parts the model knows, in the order of its class ids.
@@ -69,7 +70,9 @@ type LayoutModel struct {
 
 // DetectModel finds the lines one part holds.
 type DetectModel struct {
+	// Name is where this model is fetched from.
 	Name string `json:"name"`
+	// Path is this model as a file on this machine.
 	Path string `json:"path"`
 
 	// MaxSide is the longest side a part is read at.
@@ -83,7 +86,9 @@ type DetectModel struct {
 
 // RecogniserModel reads what a line says.
 type RecogniserModel struct {
+	// Name is where this model is fetched from.
 	Name string `json:"name"`
+	// Path is this model as a file on this machine.
 	Path string `json:"path"`
 
 	// Dict is the model's characters, one to a line. Empty is the ordinary

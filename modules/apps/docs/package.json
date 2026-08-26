@@ -6,11 +6,11 @@
   "description": "The manual, for the person using the application. Knows nothing about a vault.",
   "scripts": {
     "dev": "astro dev",
-    "build": "npm run keys && astro build",
+    "build": "npm run manual && astro build",
     "preview": "astro preview",
     "typecheck": "astro check",
-    "keys": "node tools/keys.mjs",
-    "keys:check": "node tools/keys.mjs --check"
+    "manual": "node tools/manual.mjs",
+    "manual:check": "node tools/manual.mjs --check"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.41.9",
