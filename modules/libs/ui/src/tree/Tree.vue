@@ -208,6 +208,14 @@ const onKey = (event: KeyboardEvent): void => {
     return
   }
 
+  // The row the keyboard stands on joins the selection, or leaves it.
+  if (event.key === ' ') {
+    event.preventDefault()
+    const press: Press = { joining: true, reaching: false }
+    takes(selects(shown.value, props.selected, anchor.value, on.id, press))
+    return
+  }
+
   if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
     event.preventDefault()
     const box = rowFor(on.id)?.getBoundingClientRect()

@@ -288,6 +288,31 @@ describe('the keyboard', () => {
     expect(held.emitted('remove')).toBeUndefined()
   })
 
+  it('puts the row the keyboard stands on into the selection', async () => {
+    const held = mountTree({ selected: ['work'] })
+    await rowIn(held, 'notes').trigger('focus')
+    await types(held, 'notes', ' ')
+
+    expect(held.emitted('select')).toStrictEqual([[['work', 'notes']]])
+  })
+
+  it('takes that row out again where it already stood in it', async () => {
+    const held = mountTree({ selected: ['work', 'notes'] })
+    await rowIn(held, 'notes').trigger('focus')
+    await types(held, 'notes', ' ')
+
+    expect(held.emitted('select')).toStrictEqual([[['work']]])
+  })
+
+  // A space the tree lets by is a space the pane it stands in scrolls under.
+  it('keeps the space to itself', () => {
+    const held = mountTree({ selected: ['work'] })
+    const press = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true })
+    rowIn(held, 'notes').element.dispatchEvent(press)
+
+    expect(press.defaultPrevented).toBe(true)
+  })
+
   it('acts on a row that cannot hold, and opens nothing', async () => {
     const held = mountTree({ selected: ['notes'] })
     await types(held, 'notes', 'Enter')
