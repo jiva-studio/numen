@@ -241,10 +241,9 @@ export const Reaching: Story = {
     await expect(args.onActivate).toHaveBeenCalledTimes(1)
 
     // A drag across a title is a drag that meant to reach somewhere, so the
-    // text must not come away highlighted under it. Read under the spelling
-    // WebKit answers for.
+    // text must not come away highlighted under it.
     const title = node.querySelector('.plex__title')!
-    await expect(getComputedStyle(title).getPropertyValue('-webkit-user-select')).toBe('none')
+    await expect(getComputedStyle(title).userSelect).toBe('none')
   },
 }
 

@@ -89,7 +89,6 @@ const onPointerDown = (event: PointerEvent) => {
   border-inline-end: var(--numen-stroke) solid var(--numen-node-border);
   cursor: default;
   user-select: none;
-  -webkit-user-select: none;
   touch-action: none;
 }
 
