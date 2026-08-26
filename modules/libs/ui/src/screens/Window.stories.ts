@@ -6,6 +6,7 @@
  * product is taken from, so every piece is drawn in the state it settles in.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { Book, FileText, Folder, FolderOpen } from '@lucide/vue'
 import { ref } from 'vue'
 import Workspace from '@/workspace/Workspace.vue'
 import Plex from '@/plex/Plex.vue'
@@ -71,6 +72,14 @@ const ROWS: readonly Row[] = [
 ]
 
 const OPEN = ['physics', 'computation', 'reading']
+
+/** What is drawn beside a row: a folder says whether what it holds is drawn. */
+const iconFor = (id: string, open: boolean) => {
+  const row = ROWS.find((one) => one.id === id) ?? ROWS.flatMap((one) => one.rows ?? []).find((one) => one.id === id)
+  if (row?.holds) return open ? FolderOpen : Folder
+  if (row?.name.endsWith('.pdf')) return Book
+  return FileText
+}
 
 const node = (id: string, title: string, seat: PlexNode['seat']): PlexNode => ({
   id,
@@ -433,6 +442,7 @@ const screen = ({
       TABS,
       ROWS,
       OPEN,
+      iconFor,
       PLEX,
       NOTE,
       BOOK,
@@ -472,7 +482,11 @@ const screen = ({
             :rows="ROWS"
             :open="OPEN"
             name="The folders and files of the vault"
-          />
+          >
+            <template #icon="{ id, open }">
+              <component :is="iconFor(id, open)" class="size-4 shrink-0 text-hushed" />
+            </template>
+          </Tree>
         </template>
       </Workspace>
       <Palette
