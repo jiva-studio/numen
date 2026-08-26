@@ -47,7 +47,7 @@ const onPointerDown = (event: PointerEvent) => {
 
 <template>
   <div
-    class="tab numen flex min-w-0 max-w-56 shrink items-center gap-1.5 px-3 font-sans text-small text-hushed"
+    class="tab numen flex min-w-0 max-w-56 shrink items-center font-sans text-small text-hushed"
     role="tab"
     :aria-selected="showing"
     :tabindex="showing ? 0 : -1"
@@ -77,13 +77,15 @@ const onPointerDown = (event: PointerEvent) => {
 
 <style scoped>
 .tab {
-  /* How tall a strip stands, and how thick the line along the top of the one
-     showing is. */
+  /* How tall a strip stands, and the room at its edges. The room between the
+     name and the cross is the same, so the cross stands with equal air on
+     either side of it. */
   --height: 1.4rem;
-  --lift: 2px;
+  --pad: 0.5rem;
 
   block-size: var(--height);
-  border-inline-end: var(--numen-stroke) solid var(--numen-node-border);
+  padding-inline: var(--pad);
+  column-gap: var(--pad);
   cursor: default;
   user-select: none;
   -webkit-user-select: none;
@@ -94,11 +96,6 @@ const onPointerDown = (event: PointerEvent) => {
 .tab[data-showing] {
   background: var(--numen-node-bg);
   color: var(--numen-node-fg);
-}
-
-/* The line along the top belongs to the pane a tab would open into. */
-.tab[data-focused] {
-  box-shadow: inset 0 var(--lift) 0 0 var(--numen-ring);
 }
 
 /* What the tab is carrying, drawn as a dot in the colour of the text. */
