@@ -1,6 +1,6 @@
 /** What an agent tab says: the composer, the answers, and the tab's own name. */
 export const WORDS = {
-  ask: 'Ask about this note',
+  ask: 'Ask about the vault',
   send: 'Send',
   stop: 'Stop the agent',
   thinking: 'Thinking',

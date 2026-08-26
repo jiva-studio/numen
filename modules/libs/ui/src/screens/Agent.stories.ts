@@ -36,7 +36,7 @@ const TEMPLATE = `
     class="h-full"
     :turns="turns"
     :working="working"
-    placeholder="Ask about this note"
+    placeholder="Ask about the vault"
     @submit="onSubmit"
     @stop="onStop"
   />

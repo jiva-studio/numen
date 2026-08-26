@@ -237,7 +237,7 @@ const screen = ({
             v-else-if="id === AGENT"
             v-model="asking"
             :turns="TURNS"
-            placeholder="Ask about this note"
+            placeholder="Ask about the vault"
           />
         </template>
       </Workspace>

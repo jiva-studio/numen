@@ -27,6 +27,7 @@ const words: Words = {
   current: 'current',
   gone: 'gone',
   newVault: 'new vault',
+  newVaultDetail: 'choose a folder',
 }
 
 /** A window showing a vault it has read. */
@@ -111,22 +112,37 @@ describe('the vaults the screen lists', () => {
     expect(vaultsOn(two, words)[0]).toStrictEqual({
       id: 'a',
       name: 'Physics',
+      path: '/vaults/Physics',
       detail: words.current,
     })
   })
 
   it('marks one whose folder is not there', () => {
     const held = vaultsOn(listed([vault('b', 'Heat', true)], 'a'), words)
-    expect(held[0]).toStrictEqual({ id: 'b', name: 'Heat', detail: words.gone })
+    expect(held[0]).toStrictEqual({
+      id: 'b',
+      name: 'Heat',
+      path: '/vaults/Heat',
+      detail: words.gone,
+    })
   })
 
   it('says the folder is gone of the vault it is showing, which is the worse news', () => {
     const held = vaultsOn(listed([vault('a', 'Physics', true)], 'a'), words)
-    expect(held[0]).toStrictEqual({ id: 'a', name: 'Physics', detail: words.gone })
+    expect(held[0]).toStrictEqual({
+      id: 'a',
+      name: 'Physics',
+      path: '/vaults/Physics',
+      detail: words.gone,
+    })
   })
 
   it('says nothing beside a vault that is neither', () => {
-    expect(vaultsOn(two, words)[1]).toStrictEqual({ id: 'b', name: 'Heat' })
+    expect(vaultsOn(two, words)[1]).toStrictEqual({
+      id: 'b',
+      name: 'Heat',
+      path: '/vaults/Heat',
+    })
   })
 
   it('is empty where the installation holds no vault', () => {

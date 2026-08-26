@@ -12,6 +12,7 @@
 import {
   ALargeSmall,
   ArrowRightLeft,
+  BookOpen,
   Bot,
   Command,
   Compass,
@@ -23,6 +24,7 @@ import {
   FileText,
   FolderOpen,
   FolderPlus,
+  FolderRoot,
   FolderTree,
   Navigation,
   Palette,
@@ -34,11 +36,11 @@ import {
   SquareX,
   Trash2,
   Type,
-  Vault,
   Waypoints,
   X,
   type LucideIcon,
 } from '@lucide/vue'
+import { AGENT, DOCUMENT, FILES, NOTE, PLEX } from './workspace'
 
 /** What each command is drawn as. A map, so an identity answers for itself. */
 const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
@@ -75,7 +77,7 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   // Over the vault.
   ['first', Compass],
   ['goto', Navigation],
-  ['openVault', Vault],
+  ['openVault', FolderRoot],
   ['newVault', Plus],
   ['renameVault', PenLine],
   ['forgetVault', X],
@@ -84,3 +86,15 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
 
 /** The icon for a command, and nothing where it has none. */
 export const iconFor = (id: string): LucideIcon | null => ICONS.get(id) ?? null
+
+/** What each kind of tab is drawn as, before the name it carries. */
+const KINDS: ReadonlyMap<string, LucideIcon> = new Map([
+  [PLEX, Waypoints],
+  [AGENT, Bot],
+  [FILES, FolderTree],
+  [NOTE, FileText],
+  [DOCUMENT, BookOpen],
+])
+
+/** The icon for a kind of tab, and nothing for a kind that has none. */
+export const iconOfKind = (kind: string): LucideIcon | null => KINDS.get(kind) ?? null

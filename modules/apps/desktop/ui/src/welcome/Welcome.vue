@@ -6,7 +6,7 @@
  * reach them, and the vaults this installation holds.
  */
 import { KeyCap } from '@numen/ui'
-import { Vault } from '@lucide/vue'
+import { FolderRoot } from '@lucide/vue'
 import { iconFor } from '../icons'
 import Mark from './Mark.vue'
 import type { Held, Way, Words } from './welcoming'
@@ -49,17 +49,22 @@ defineEmits<{
               class="welcome__row welcome__row--vault"
               @click="$emit('opens', one.id)"
             >
-              <Vault class="welcome__icon" />
+              <FolderRoot class="welcome__icon" />
               <span class="welcome__named">
                 <span class="welcome__what">{{ one.name }}</span>
-                <span v-if="one.detail" class="welcome__aside">{{ one.detail }}</span>
+                <!-- The whole path is on the element, for one too long to be drawn. -->
+                <span class="welcome__aside" :title="one.path">{{ one.path }}</span>
               </span>
+              <span v-if="one.detail" class="welcome__state">{{ one.detail }}</span>
             </button>
           </li>
         </ul>
         <button type="button" class="welcome__row" @click="$emit('adds')">
           <component :is="iconFor('newVault')" class="welcome__icon" />
-          <span class="welcome__what">{{ words.newVault }}</span>
+          <span class="welcome__named">
+            <span class="welcome__what">{{ words.newVault }}</span>
+            <span class="welcome__aside">{{ words.newVaultDetail }}</span>
+          </span>
         </button>
       </section>
     </div>
@@ -70,8 +75,8 @@ defineEmits<{
 /* One column in the middle of the window, held to the width of a short line so
    the rows read as a list and not as a page. */
 .welcome {
-  /* How large the mark stands over the name. */
-  --mark: 6rem;
+  /* How tall the glyph stands over the name. */
+  --mark: 5.4rem;
 
   display: flex;
   align-items: center;
@@ -96,19 +101,22 @@ defineEmits<{
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
 }
 
 .welcome__mark {
-  inline-size: var(--mark);
+  inline-size: auto;
   block-size: var(--mark);
 }
 
+/* The name is set in the letters the mark is drawn in, which are a serif's.
+   Nothing else in the window is, so the family is this screen's own. */
 .welcome__name {
   margin: 0;
-  font-size: calc(var(--numen-font-size) * 24 / 13);
+  font-family: ui-serif, Georgia, 'Times New Roman', serif;
+  font-size: calc(var(--numen-font-size) * 21 / 13);
   font-weight: 400;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 
 .welcome__ways,
@@ -136,7 +144,6 @@ defineEmits<{
   cursor: pointer;
 }
 
-/* A vault stands over what is true of it. */
 /* Lucide draws on a 24 grid, and the stroke is given in those units. */
 .welcome__icon {
   flex: none;
@@ -146,9 +153,10 @@ defineEmits<{
   opacity: 0.75;
 }
 
-/* A vault is its name over what is said about it, beside the one icon. */
+/* A row is its name over what is said about it, beside the one icon. */
 .welcome__named {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 0.05rem;
   min-inline-size: 0;
@@ -172,7 +180,20 @@ defineEmits<{
   white-space: nowrap;
 }
 
+/* One line, then an ellipsis: a path is as long as the machine makes it. */
 .welcome__aside {
+  overflow: hidden;
+  color: var(--numen-edge-label);
+  font-size: var(--numen-edge-label-size);
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* What is true of one row of the list and not of the ones beside it, said at
+   the far end of it. */
+.welcome__state {
+  flex: none;
   color: var(--numen-edge-label);
   font-size: var(--numen-edge-label-size);
 }

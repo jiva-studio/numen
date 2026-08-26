@@ -88,6 +88,7 @@ export const WORDS = {
   goto: 'Go to a note',
   openVault: 'Open vault',
   newVault: 'New vault',
+  newVaultDetail: 'Choose a folder',
   renameVault: 'Rename vault',
   forgetVault: 'Forget vault',
   eraseVault: 'Erase vault',

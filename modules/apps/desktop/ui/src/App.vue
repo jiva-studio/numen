@@ -35,7 +35,7 @@ import {
   type Where,
 } from './commanding'
 import { chorded, commandFor } from './keying'
-import { iconFor } from './icons'
+import { iconFor, iconOfKind } from './icons'
 import { themes } from './theme'
 import { APPEARANCE, DRESSING, INTERFACE_SCALE, MODE, TEXT_SCALE, wearing } from './wearing'
 import { SYNCING, syncing } from './syncing'
@@ -237,6 +237,9 @@ const where = (): Where => {
   }
   return { tab, kind, path: '', title: '', vault, ready }
 }
+
+/** What kind of tab this is drawn as, before the name it carries. */
+const tabIcon = (id: string) => iconOfKind(held.heldIn(id)?.kind.kind ?? '')
 
 /** The identity of the note tab standing at a file, and nothing where none does. */
 const holding = (path: string): string | null => noted.holding(path)
@@ -492,6 +495,10 @@ onUnmounted(() => {
       @close="shut"
       @show="held.shown"
     >
+      <template #icon="{ id }">
+        <component :is="tabIcon(id)" v-if="tabIcon(id)" class="tab-icon" />
+      </template>
+
       <template #tab="{ id }">
         <component
           :is="held.heldIn(id)!.kind.draws"
@@ -564,7 +571,8 @@ main {
 }
 
 /* Lucide draws on a 24 grid, and the stroke is given in those units. */
-.command-icon {
+.command-icon,
+.tab-icon {
   inline-size: 100%;
   block-size: 100%;
   stroke-width: 1.75;

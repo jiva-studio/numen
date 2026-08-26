@@ -356,7 +356,7 @@ describe('the window holding no tab', () => {
     await closesEvery(window)
 
     expect(window.findComponent(Welcome).props('vaults')).toStrictEqual([
-      { id: 'physics', name: 'Physics', detail: 'Current' },
+      { id: 'physics', name: 'Physics', path: '/vaults/Physics', detail: 'Current' },
     ])
   })
 

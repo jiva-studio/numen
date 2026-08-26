@@ -29,6 +29,8 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
+  /** What is drawn before the name, which says what kind of tab it is. */
+  icon(): unknown
   /** What a mark is drawn as. Given one, the caller draws its own. */
   mark(props: { mark: string }): unknown
 }>()
@@ -56,6 +58,10 @@ const onPointerDown = (event: PointerEvent) => {
     :data-focused="focused || undefined"
     @pointerdown="onPointerDown"
   >
+    <span v-if="$slots.icon" class="tab__icon flex shrink-0 items-center">
+      <slot name="icon" />
+    </span>
+
     <!-- The whole name is on the element, for a title too long to be drawn. -->
     <span class="min-w-0 truncate" :title="title">{{ title }}</span>
 
@@ -96,6 +102,13 @@ const onPointerDown = (event: PointerEvent) => {
 .tab[data-showing] {
   background: var(--numen-node-bg);
   color: var(--numen-node-fg);
+}
+
+/* What kind of tab this is, drawn before its name. */
+.tab__icon {
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
+  margin-inline-end: var(--pad);
 }
 
 /* What the tab is carrying, drawn as a dot in the colour of the text. */

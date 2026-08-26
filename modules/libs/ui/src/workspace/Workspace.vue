@@ -46,6 +46,8 @@ const props = withDefaults(
 
 defineSlots<{
   tab(props: { id: TabId }): unknown
+  /** What is drawn before a tab's name, which says what kind of tab it is. */
+  icon(props: { id: TabId }): unknown
   /** What a mark is drawn as. Given none, a tab carrying one draws a dot. */
   mark(props: { id: TabId; mark: string }): unknown
   silence(): unknown
@@ -314,6 +316,7 @@ onBeforeUnmount(() => {
       @show="emit('show', $event)"
     >
       <template #tab="bound"><slot name="tab" v-bind="bound" /></template>
+      <template v-if="$slots.icon" #icon="bound"><slot name="icon" v-bind="bound" /></template>
       <template v-if="$slots.mark" #mark="bound"><slot name="mark" v-bind="bound" /></template>
       <template #silence><slot name="silence" /></template>
     </WorkspaceBranch>
@@ -331,6 +334,7 @@ onBeforeUnmount(() => {
       @show="emit('show', $event)"
     >
       <template #tab="bound"><slot name="tab" v-bind="bound" /></template>
+      <template v-if="$slots.icon" #icon="bound"><slot name="icon" v-bind="bound" /></template>
       <template v-if="$slots.mark" #mark="bound"><slot name="mark" v-bind="bound" /></template>
       <template #silence><slot name="silence" /></template>
     </WorkspacePane>

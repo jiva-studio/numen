@@ -32,6 +32,7 @@ export interface Words {
   readonly current: string
   readonly gone: string
   readonly newVault: string
+  readonly newVaultDetail: string
 }
 
 /** The row that puts the commands up, which is no command of its own. */
@@ -48,7 +49,9 @@ export interface Way {
 export interface Held {
   readonly id: string
   readonly name: string
-  /** A second line: what is true of this row and not of the ones beside it. */
+  /** The folder it stands for, absolute on this machine. */
+  readonly path: string
+  /** What is true of this row and not of the ones beside it. */
   readonly detail?: string
 }
 
@@ -82,5 +85,5 @@ export const waysIn = (at: Standing, words: Words, agent: string): readonly Way[
 export const vaultsOn = (listed: Listed, words: Words): readonly Held[] =>
   listed.vaults.map((one) => {
     const aside = one.missing ? words.gone : one.id === listed.showing ? words.current : ''
-    return { id: one.id, name: one.name, ...(aside ? { detail: aside } : {}) }
+    return { id: one.id, name: one.name, path: one.path, ...(aside ? { detail: aside } : {}) }
   })

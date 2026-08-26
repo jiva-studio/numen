@@ -97,7 +97,7 @@ export const AwkwardText: Story = { render: holding(LINK, DEVANAGARI, ARABIC) }
  * than the row holding them.
  */
 export const Narrow: Story = {
-  args: { placeholder: 'Ask about this note, or about anything else in the vault' },
+  args: { placeholder: 'Ask about the vault, or about anything else' },
   render: (args) => ({
     components: { Composer },
     setup: () => ({ args, empty: ref(''), typed: ref('x') }),

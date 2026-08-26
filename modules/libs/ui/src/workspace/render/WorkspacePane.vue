@@ -35,6 +35,7 @@ const emit = defineEmits<{
 
 defineSlots<{
   tab(props: { id: TabId }): unknown
+  icon(props: { id: TabId }): unknown
   mark(props: { id: TabId; mark: string }): unknown
   silence(): unknown
 }>()
@@ -138,6 +139,10 @@ function out(event: KeyboardEvent): void {
         @close="emit('close', tab)"
         @click="emit('choose', tab)"
       >
+        <template v-if="$slots.icon" #icon>
+          <slot name="icon" :id="tab" />
+        </template>
+
         <template v-if="$slots.mark" #mark="bound">
           <slot name="mark" :id="tab" v-bind="bound" />
         </template>

@@ -114,7 +114,7 @@ const meta: Meta<Knobs> = {
               v-model="text"
               :turns="turns"
               :working="working"
-              placeholder="Ask about this note"
+              placeholder="Ask about the vault"
               @submit="onSubmit"
             />
           </template>
