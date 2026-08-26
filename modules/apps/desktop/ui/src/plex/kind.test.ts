@@ -16,7 +16,7 @@ import { NeighbourhoodSchema } from './picture'
 import { standing as stands, type Standing } from './standing'
 import { WORDS as words } from './words'
 import { wentTo, type Went } from '../core'
-import { windowing } from '../windowing'
+import { windowing, type Kept } from '../windowing'
 import { PLEX } from '../workspace'
 
 /** A neighbourhood as the vault answers one: a focus, and what is around it. */
@@ -666,6 +666,14 @@ describe('a plex that travelled', () => {
   })
 })
 
+/** A kind that is not a plex, for the person to be in a tab of. */
+const other: Kept = {
+  kind: 'other',
+  opens: () => ({}),
+  called: () => 'Other',
+  draws: {},
+}
+
 /**
  * The plexes of a window, each standing where it was told to.
  *
@@ -683,7 +691,7 @@ const window = (opening = 'Opening.md') => {
     views.push(view)
     return view.view
   }
-  const held = windowing({ newTab: 'New tab' })
+  const held = windowing()
   const plexes = plexKind(held.host, makes, {
     makes: making().makes,
     ready: () => true,
@@ -699,7 +707,7 @@ const window = (opening = 'Opening.md') => {
     says: () => {},
     creatable: ['parent', 'child', 'jump'],
   })
-  held.declares([plexes.kind])
+  held.declares([plexes.kind, other])
 
   /** A plex tab of this window, opened on what it was given. */
   const holds = async (at = '') => {
@@ -719,7 +727,7 @@ const window = (opening = 'Opening.md') => {
   const active = () =>
     paneById(held.layout.value.root, held.layout.value.focus)?.active ?? ''
   /** A tab holding no plex, opened in front of the person. */
-  const elsewhere = () => held.blanked(held.layout.value.focus)
+  const elsewhere = () => held.opens(other.kind)
   return { ...plexes, holds, enters, shuts, gains, onScreen, active, elsewhere, views, asked }
 }
 
@@ -849,7 +857,7 @@ describe('a note that is no longer in the vault', () => {
   it('brings the plex in front of the person, who was in another tab', async () => {
     const one = window()
     const plex = await one.holds('One.md')
-    one.elsewhere()
+    await one.elsewhere()
 
     await one.travel('Wanted.md')
 

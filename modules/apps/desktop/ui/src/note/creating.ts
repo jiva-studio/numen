@@ -130,9 +130,6 @@ export function creating(core: Core, said: Says) {
     return named(folderOf(from), links)
   }
 
-  /** A note standing on its own, filed at the top of the vault. */
-  const start = (): Promise<Made | null> => named('', [])
-
   /** What a note that was asked for came to, said to the person where it failed. */
   const answered = (made: Made | Refused | null): Made | null => {
     if (made === null) return null
@@ -165,7 +162,7 @@ export function creating(core: Core, said: Says) {
     }
   }
 
-  return { make, named, calls, start, join }
+  return { make, named, calls, join }
 }
 
 /** The name the note asked for after that many taken ones is filed under. */

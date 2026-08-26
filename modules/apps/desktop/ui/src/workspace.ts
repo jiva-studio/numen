@@ -9,7 +9,6 @@ import { branch, pane, type WorkspaceLayout } from '@numen/ui'
 /** The kinds of tab the window can open a second of. */
 export const PLEX = 'plex'
 export const AGENT = 'agent'
-export const BLANK = 'blank'
 export const NOTE = 'note'
 /** A document read in the window, under the path the vault files it at. */
 export const DOCUMENT = 'document'
@@ -43,15 +42,11 @@ export const shortened = (question: string, most = 24): string => {
 }
 
 /**
- * The files along the leading edge, the plex with the room, and the agent along
- * the trailing edge. The person begins in the plex.
+ * The plex with the room, and one pane along the trailing edge holding the
+ * agent in front of the files. The person begins in the plex.
  */
-export const opening = (files: string, plex: string, agent: string): WorkspaceLayout => ({
-  root: branch(
-    'root',
-    [pane('files', [files]), pane('main', [plex]), pane('aside', [agent])],
-    [0.18, 0.56, 0.26],
-  ),
+export const opening = (plex: string, agent: string, files: string): WorkspaceLayout => ({
+  root: branch('root', [pane('main', [plex]), pane('aside', [agent, files])], [0.72, 0.28]),
   axis: 'horizontal',
   focus: 'main',
 })

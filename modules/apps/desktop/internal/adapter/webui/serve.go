@@ -83,15 +83,16 @@ var errSettling = errors.New("the window is settling what it owes")
 // asked about.
 var errAsking = errors.New("a page is holding work a person has to answer for")
 
-// errNoVault is a window standing on nothing: the vault it was showing was
-// taken down and neither it nor the one asked for came up.
+// errNoVault is a question about a vault, asked of a window standing on
+// nothing.
 var errNoVault = errors.New("the window has no vault")
 
 // Open puts together everything the window needs: the vault it shows, the
 // questions it may ask, and a scan running behind it.
 //
 // asked is the vault a person named — a name, a path or an identity. Naming
-// none opens the one shown last.
+// none opens the one shown last. An installation holding no vault opens a
+// window standing on nothing, and a person makes or adds one there.
 //
 // The scan is started and left running. A vault of a hundred thousand notes
 // takes a minute and a half, and the first note is answerable long before that.
@@ -105,7 +106,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	if err != nil {
 		return nil, err
 	}
-	first, err := chosen(cfg, registry, asked, out)
+	first, err := chosen(registry, asked)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +126,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	// compiled behind this, so the window is drawn while it arrives.
 	embedder, asking, closeEmbedder, why := cfg.Embedders(ctx, tasks)
 	if why != nil {
-		fmt.Fprintf(out, "not embedding %s: %v\n", first.Name, why)
+		fmt.Fprintf(out, "not embedding: %v\n", why)
 		// A station that made no model is an installation with no vectors for
 		// as long as the window is open. It stands in the list under what
 		// stopped it.
@@ -275,14 +276,11 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 }
 
 // chosen is the vault this window opens: the one a person named, else the one
-// shown last, else the first this installation holds, else one made to write
-// in.
-func chosen(
-	cfg container.Config,
-	registry port.VaultRegistry,
-	asked string,
-	out io.Writer,
-) (domain.Vault, error) {
+// shown last, else the first this installation holds. An installation holding
+// none answers with no vault at all.
+//
+// A vault named and not on the list is refused, and the window does not open.
+func chosen(registry port.VaultRegistry, asked string) (domain.Vault, error) {
 	if asked != "" {
 		return usecase.Find{Registry: registry}.Execute(asked)
 	}
@@ -300,15 +298,11 @@ func chosen(
 	if len(held) > 0 {
 		return held[0], nil
 	}
-	made, err := cfg.FirstVault(registry)
-	if err != nil {
-		return domain.Vault{}, err
-	}
-	fmt.Fprintf(out, "%s: a vault to write in, at %s\n", made.Name, made.Path)
-	return made, nil
+	return domain.Vault{}, nil
 }
 
-// Show puts another vault in the window. The index and the embedder belong to
+// Show puts a vault in the window: another in place of the one it has, or the
+// first where it is standing on nothing. The index and the embedder belong to
 // the installation and stay; what belongs to the vault is taken down and built
 // again.
 //
@@ -364,8 +358,16 @@ func (o *Opened) Show(ctx context.Context, v domain.Vault) error {
 }
 
 // arrive puts a vault in the window and builds everything that belongs to it.
+//
+// The zero vault is a window standing on nothing: it shows no vault, and no
+// pass runs behind it.
 func (o *Opened) arrive(v domain.Vault, rebuild bool) error {
 	o.API.show(v)
+	if v.ID == "" {
+		// Nothing is being read, so nothing is waited for.
+		o.API.Ready.Store(true)
+		return nil
+	}
 	// Recorded before the vault is built, so the next window opens on it. A
 	// list that could not be written is said and nothing more.
 	if err := o.registry.Opened(v.ID); err != nil {

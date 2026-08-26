@@ -22,7 +22,11 @@ func (a *API) Read(ctx context.Context, r *connect.Request[v1.ReadRequest]) (*co
 	if a.Reads == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
-	found, err := a.Reads.Execute(ctx, a.Showing(), r.Msg.GetPath())
+	showing, err := a.shown()
+	if err != nil {
+		return nil, err
+	}
+	found, err := a.Reads.Execute(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -44,13 +48,17 @@ func (a *API) Write(ctx context.Context, r *connect.Request[v1.WriteRequest]) (*
 	if a.Saves == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
+	showing, err := a.shown()
+	if err != nil {
+		return nil, err
+	}
 	// Counted around the write and not around the answer, so that closing waits
 	// for what reaches the vault.
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
 	defer a.Writing.done()
-	at, err := a.Saves.Save(ctx, a.Showing(), r.Msg.GetPath(), r.Msg.GetBody(), seenOf(r.Msg.GetSeen()))
+	at, err := a.Saves.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), seenOf(r.Msg.GetSeen()))
 	if err == nil {
 		// What the person typed owes its vectors. Which chunks owe them is not
 		// carried: the debt is in the index, so several saves are one pass.
@@ -81,6 +89,10 @@ func (a *API) Create(ctx context.Context, r *connect.Request[v1.CreateRequest]) 
 	if a.Makes == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
+	showing, err := a.shown()
+	if err != nil {
+		return nil, err
+	}
 	links, err := a.written(ctx, r.Msg.GetLinks())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
@@ -90,7 +102,7 @@ func (a *API) Create(ctx context.Context, r *connect.Request[v1.CreateRequest]) 
 	}
 	defer a.Writing.done()
 
-	made, err := a.Makes.Execute(ctx, a.Showing(), note.NewNote{
+	made, err := a.Makes.Execute(ctx, showing, note.NewNote{
 		Title:  r.Msg.GetTitle(),
 		Folder: r.Msg.GetFolder(),
 		Links:  links,
@@ -117,6 +129,10 @@ func (a *API) Join(ctx context.Context, r *connect.Request[v1.JoinRequest]) (*co
 	if a.Joins == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
+	showing, err := a.shown()
+	if err != nil {
+		return nil, err
+	}
 	link, err := a.writes(ctx, r.Msg.GetLink())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
@@ -126,7 +142,7 @@ func (a *API) Join(ctx context.Context, r *connect.Request[v1.JoinRequest]) (*co
 	}
 	defer a.Writing.done()
 
-	if err := a.Joins.Add(ctx, a.Showing(), r.Msg.GetPath(), link); err != nil {
+	if err := a.Joins.Add(ctx, showing, r.Msg.GetPath(), link); err != nil {
 		// A join reads a note, splices its frontmatter and puts it back. A note
 		// that moved in between is left alone, and the client reads it again
 		// before it asks for this.

@@ -127,3 +127,12 @@ defineExpose({
 <template>
   <div ref="host" class="editor numen h-full min-h-0 overflow-auto font-sans text-base text-ink" />
 </template>
+
+<style scoped>
+/* The prose a person is writing takes a selection, and the caret and the
+   clipboard work over it. */
+.editor {
+  user-select: text;
+  -webkit-user-select: text;
+}
+</style>

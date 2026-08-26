@@ -224,7 +224,7 @@ describe('what is in front', () => {
     expect(silence(commands.bands, 'note')).toBe(words.noNote)
   })
 
-  it('offers nothing over a note when the tab in front holds nothing yet', () => {
+  it('offers nothing over a note when the tab in front is of no kind', () => {
     const { commands } = asking({ kind: null, path: '', title: '' })
 
     expect(drawn(commands.bands).note).toStrictEqual([])

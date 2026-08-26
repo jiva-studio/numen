@@ -202,9 +202,14 @@ func (a *API) Page(w http.ResponseWriter, r *http.Request, path, page string) {
 // are, for the caches to key on.
 //
 // The path goes through the vault's readers the way everything from outside
-// does, so a path leaving the vault is refused there.
+// does, so a path leaving the vault is refused there. A window standing on
+// nothing holds no file to say anything about.
 func (a *API) standing(ctx context.Context, path string) (port.VaultReader, fingerprint, error) {
-	reader, err := a.Readers.Open(a.Showing())
+	showing := a.Showing()
+	if showing.ID == "" {
+		return nil, fingerprint{}, errNoVault
+	}
+	reader, err := a.Readers.Open(showing)
 	if err != nil {
 		return nil, fingerprint{}, err
 	}
@@ -366,6 +371,8 @@ func refuse(w http.ResponseWriter, err error) {
 		http.Error(w, err.Error(), http.StatusUnsupportedMediaType)
 	case errors.Is(err, errNoDrawing):
 		http.Error(w, err.Error(), http.StatusNotImplemented)
+	case errors.Is(err, errNoVault):
+		http.Error(w, err.Error(), http.StatusConflict)
 	default:
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

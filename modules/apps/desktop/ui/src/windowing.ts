@@ -7,9 +7,9 @@
  * about it twice.
  */
 import { computed, ref, shallowRef, type Component, type Ref } from 'vue'
-import { closeTab, openTab, openTabBeside, pane, paneById, paneWithTab } from '@numen/ui'
-import type { NodeId, Tab, WorkspaceLayout } from '@numen/ui'
-import { BLANK, named } from './workspace'
+import { closeTab, openTab, openTabBeside, pane, paneById } from '@numen/ui'
+import type { Tab, WorkspaceLayout } from '@numen/ui'
+import { named } from './workspace'
 
 /** A kind of tab: what it holds, what it is called, and what it lets go of. */
 export interface Kind<Held> {
@@ -29,8 +29,6 @@ export interface Kind<Held> {
    * tab it already has.
    */
   identity?(at: string): string
-  /** What a blank tab told to become one of these opens on. */
-  makes?(): Promise<string>
   /** The tab came on screen, where what it holds has room to measure. */
   shown?(held: Held, id: string): void
   /**
@@ -43,8 +41,6 @@ export interface Kind<Held> {
    * says nothing here lets go the way a tab of it closes.
    */
   gone?(held: Held, id: string): void
-  /** What a blank tab offers to become, or nothing. */
-  readonly offers?: string
 }
 
 /**
@@ -68,9 +64,9 @@ export interface Tabbed<Held> {
 /** The tab the person is looking at, whichever kind it turns out to be. */
 export interface Fronted {
   readonly id: string
-  /** The word its kind is filed under, and nothing for a tab holding nothing yet. */
+  /** The word its kind is filed under, and nothing where the window holds no such tab. */
   readonly kind: string | null
-  /** What its kind gave it to hold, and nothing for a tab holding nothing yet. */
+  /** What its kind gave it to hold, and nothing where the window holds no such tab. */
   readonly held: unknown
 }
 
@@ -100,16 +96,10 @@ export interface Host {
   holds<Held>(kind: string, id: string): Held | null
 }
 
-/** What the window itself says about its tabs. */
-export interface Words {
-  /** What a tab with nothing in it yet is called. */
-  readonly newTab: string
-}
-
 /** The identity a pane made by a split is filed under. */
 const naming = () => crypto.randomUUID()
 
-export function windowing(words: Words) {
+export function windowing() {
   /**
    * What every kind is given. It is there before any kind is, so a kind is
    * made with it and declared to the window it already has.
@@ -125,8 +115,7 @@ export function windowing(words: Words) {
     holds: <Held,>(kind: string, id: string) => holdsIn<Held>(id, kind),
   }
 
-  /** The kinds of tab this window draws, in the order they were declared. */
-  let kinds: readonly Kept[] = []
+  /** The kinds of tab this window draws, each under the word it is asked for by. */
   const byKind = new Map<string, Kept>()
 
   /**
@@ -134,7 +123,6 @@ export function windowing(words: Words) {
    * is opened.
    */
   const declares = (told: readonly Kept[]) => {
-    kinds = told
     for (const one of told) byKind.set(one.kind, one)
   }
 
@@ -143,8 +131,6 @@ export function windowing(words: Words) {
    * order the person was last in them.
    */
   const open = shallowRef<ReadonlyMap<string, Open>>(new Map())
-  /** Tabs opened with nothing in them, each waiting to be told what it holds. */
-  const blanks = ref<readonly string[]>([])
   const layout: Ref<WorkspaceLayout> = ref({
     root: pane('main', []),
     axis: 'horizontal',
@@ -152,13 +138,12 @@ export function windowing(words: Words) {
   })
 
   /** What each tab of the window is called, and the word it carries. */
-  const tabs = computed<readonly Tab[]>(() => [
-    ...[...open.value].map(([id, one]): Tab => {
+  const tabs = computed<readonly Tab[]>(() =>
+    [...open.value].map(([id, one]): Tab => {
       const mark = one.kind.marked?.(one.held)
       return { id, title: one.kind.called(one.held), ...(mark ? { mark } : {}) }
     }),
-    ...blanks.value.map((id): Tab => ({ id, title: words.newTab })),
-  ])
+  )
 
   /** What one tab holds, or nothing where the window holds no such tab. */
   const heldIn = (id: string): Open | null => open.value.get(id) ?? null
@@ -174,8 +159,8 @@ export function windowing(words: Words) {
 
   /**
    * The tab the person is looking at, which is the one showing in the pane the
-   * layout is focused on. A tab told what to hold answers under its kind, and
-   * one still waiting to be told answers under none.
+   * layout is focused on. A tab the window holds answers under its kind, and
+   * one it does not hold answers under none.
    */
   const front = (): Fronted | null => {
     const id = paneById(layout.value.root, layout.value.focus)?.active
@@ -232,35 +217,6 @@ export function windowing(words: Words) {
     layout.value = closeTab(layout.value, id)
   }
 
-  /** A tab opened empty, in the pane the plus was pressed in. */
-  const blanked = (pane: NodeId) => {
-    const id = named(BLANK)
-    blanks.value = [...blanks.value, id]
-    layout.value = openTab(layout.value, id, pane)
-  }
-
-  /**
-   * A blank tab told what to hold, and holding it where it stood. A kind that
-   * has to make something first says what its tab opens on.
-   */
-  const becomeIt = async (blank: string, kind: string) => {
-    const one = byKind.get(kind)
-    if (!one) return
-    const at = one.makes ? await one.makes() : ''
-    if (one.makes && !at) return
-    const id = await makes(kind, at)
-    if (!id) return
-    const pane = paneWithTab(layout.value.root, blank)?.id
-    layout.value = openTab(layout.value, id, pane ?? layout.value.focus)
-    layout.value = closeTab(layout.value, blank)
-    blanks.value = blanks.value.filter((one) => one !== blank)
-  }
-
-  /** What a blank tab offers to become, in the order the kinds were declared. */
-  const becomes = computed<readonly Tab[]>(() =>
-    kinds.filter((one) => one.offers).map((one) => ({ id: one.kind, title: one.offers ?? '' })),
-  )
-
   /**
    * The tab now on screen, where what it holds has room to measure. It goes to
    * the end of what the window holds, which is the order they were last in.
@@ -277,10 +233,6 @@ export function windowing(words: Words) {
    * something to finish keeps the tab and closes it itself.
    */
   const shut = (id: string): boolean => {
-    if (blanks.value.includes(id)) {
-      blanks.value = blanks.value.filter((one) => one !== id)
-      return true
-    }
     const one = open.value.get(id)
     if (!one) return true
     if (one.kind.shuts && !one.kind.shuts(one.held, id)) return false
@@ -299,8 +251,6 @@ export function windowing(words: Words) {
   return {
     layout,
     tabs,
-    blanks,
-    becomes,
     host,
     declares,
     heldIn,
@@ -309,8 +259,6 @@ export function windowing(words: Words) {
     beside,
     shows,
     closes,
-    blanked,
-    becomeIt,
     shown,
     shut,
     close,

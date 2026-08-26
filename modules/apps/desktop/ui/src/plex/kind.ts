@@ -92,7 +92,6 @@ export function plexKind(host: Host, makes: () => Standing, deps: Plexing) {
       held.view.close()
       return true
     },
-    offers: words.newPlex,
   }
 
   /** The note the person is looking at, which is what a question is about. */

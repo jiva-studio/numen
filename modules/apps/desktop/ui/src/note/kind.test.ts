@@ -106,10 +106,8 @@ const editor = (takes = true) => {
 const window = (titles: Record<string, string> = {}, states: Record<string, State> = {}) => {
   const store = notes(states)
   const drawing = drawings()
-  const held = windowing({ newTab: 'New tab' })
-  const noted = noting(vault(titles), store.store, drawing.store, held.host, {
-    makes: async () => 'Made.md',
-  })
+  const held = windowing()
+  const noted = noting(vault(titles), store.store, drawing.store, held.host)
   held.declares([noted.kind])
   /** Every note tab the window holds now. */
   const open = () => held.tabs.value.map((tab) => tab.id)
@@ -337,29 +335,6 @@ describe('the window going', () => {
 
     expect(one.shut).toEqual([])
     expect(one.drawings.shut).toEqual([])
-  })
-})
-
-describe('a tab told to hold a note it has to make first', () => {
-  it('opens one tab on what was made, under the name it was given as it was made', async () => {
-    const store = notes()
-    const drawing = drawings()
-    const held = windowing({ newTab: 'New tab' })
-    // The window names a note as it is made, a moment before its tab opens.
-    const noted = noting(vault(), store.store, drawing.store, held.host, {
-      makes: async () => {
-        noted.calls('Made.md', 'A made note')
-        return 'Made.md'
-      },
-    })
-    held.declares([noted.kind])
-    held.blanked('main')
-
-    await held.becomeIt(held.blanks.value[0] ?? '', 'note')
-    await nextTick()
-
-    expect(held.tabs.value.map((tab) => tab.title)).toEqual(['A made note'])
-    expect(noted.called('Made.md')).toBe('A made note')
   })
 })
 

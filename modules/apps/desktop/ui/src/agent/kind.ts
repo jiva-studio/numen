@@ -81,7 +81,6 @@ export function agentKind(host: Host, opens: () => Held) {
       held.finish()
       return true
     },
-    offers: words.newAgent,
   }
 
   /** Something to ask, put in the agent the person was last in and put in front. */

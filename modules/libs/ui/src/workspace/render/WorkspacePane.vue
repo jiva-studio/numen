@@ -19,15 +19,8 @@ const props = withDefaults(
     marks?: Readonly<Record<TabId, string>>
     /** The pane a tab would open into. */
     focused?: boolean
-    /** Whether the tabs here are offered a way to be closed. */
-    closable?: boolean
-    /**
-     * What the way to a new tab is called. A strip given no word for one
-     * offers no way to ask.
-     */
-    newTab?: string | undefined
   }>(),
-  { marks: () => ({}), focused: false, closable: true, newTab: undefined },
+  { marks: () => ({}), focused: false },
 )
 
 const emit = defineEmits<{
@@ -36,8 +29,6 @@ const emit = defineEmits<{
   (event: 'lift', tab: TabId, at: PointerEvent): void
   /** This pane asks to be the one a tab opens into. */
   (event: 'claim'): void
-  /** A new tab asked for here. What it holds is the caller's to decide. */
-  (event: 'open'): void
   /** The tab that is now the one showing, once it is on screen. */
   (event: 'show', tab: TabId): void
 }>()
@@ -124,48 +115,33 @@ function out(event: KeyboardEvent): void {
     :data-focused="focused || undefined"
     @pointerdown="claim"
   >
+    <!-- The strip is the list of tabs. A pane holding no tabs has none. -->
     <div
+      v-if="pane.tabs.length > 0"
       ref="strip"
-      class="pane__strip flex shrink-0 items-stretch overflow-hidden"
+      class="pane__strip flex min-w-0 shrink-0 items-stretch overflow-hidden"
+      role="tablist"
       :data-workspace-strip="pane.id"
+      @keydown="along"
     >
-      <!-- The list of tabs, and nothing else in it. -->
-      <div class="flex min-w-0 shrink items-stretch" role="tablist" @keydown="along">
-        <WorkspaceTab
-          v-for="(tab, at) in pane.tabs"
-          :id="tabName(at)"
-          :key="tab"
-          :aria-controls="panelName(at)"
-          :tab="tab"
-          :title="titles[tab] ?? tab"
-          :mark="marks[tab]"
-          :showing="tab === pane.active"
-          :focused="tab === pane.active && focused"
-          :closable="closable"
-          @lift="emit('lift', tab, $event)"
-          @close="emit('close', tab)"
-          @click="emit('choose', tab)"
-        >
-          <template v-if="$slots.mark" #mark="bound">
-            <slot name="mark" :id="tab" v-bind="bound" />
-          </template>
-        </WorkspaceTab>
-      </div>
-
-      <!-- One more tab, asked for beside the list of them. What it holds is
-           settled somewhere else entirely, and it keeps its width while the
-           tabs give theirs up. -->
-      <button
-        v-if="newTab"
-        class="pane__new shrink-0 cursor-default select-none font-sans text-small text-hushed"
-        type="button"
-        data-workspace-new
-        :aria-label="newTab"
-        :title="newTab"
-        @click="emit('open')"
+      <WorkspaceTab
+        v-for="(tab, at) in pane.tabs"
+        :id="tabName(at)"
+        :key="tab"
+        :aria-controls="panelName(at)"
+        :tab="tab"
+        :title="titles[tab] ?? tab"
+        :mark="marks[tab]"
+        :showing="tab === pane.active"
+        :focused="tab === pane.active && focused"
+        @lift="emit('lift', tab, $event)"
+        @close="emit('close', tab)"
+        @click="emit('choose', tab)"
       >
-        +
-      </button>
+        <template v-if="$slots.mark" #mark="bound">
+          <slot name="mark" :id="tab" v-bind="bound" />
+        </template>
+      </WorkspaceTab>
     </div>
 
     <div class="pane__body min-h-0 min-w-0 flex-1">
@@ -182,9 +158,11 @@ function out(event: KeyboardEvent): void {
       >
         <slot name="tab" :id="tab" />
       </div>
-      <p v-if="!pane.active" class="pane__silence font-sans text-small text-hushed">
-        <slot name="silence">Nothing open</slot>
-      </p>
+      <div v-if="pane.tabs.length === 0" class="pane__silence">
+        <slot name="silence">
+          <p class="pane__nothing font-sans text-small text-hushed">Nothing open</p>
+        </slot>
+      </div>
     </div>
   </section>
 </template>
@@ -197,16 +175,6 @@ function out(event: KeyboardEvent): void {
 /* Sits on the same surface as what it stands over, told apart by one line. */
 .pane__strip {
   border-block-end: var(--numen-stroke) solid var(--numen-node-border);
-}
-
-/* Faint until the hand is on it. */
-.pane__new {
-  padding-inline: var(--numen-node-padding);
-  opacity: 0.55;
-}
-
-.pane__new:hover {
-  opacity: 1;
 }
 
 .pane__body {
@@ -230,7 +198,12 @@ function out(event: KeyboardEvent): void {
   display: block;
 }
 
+/* The whole of a pane holding no tabs. Its size is all it hands down. */
 .pane__silence {
+  block-size: 100%;
+}
+
+.pane__nothing {
   display: grid;
   place-items: center;
   block-size: 100%;

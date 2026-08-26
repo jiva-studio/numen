@@ -15,17 +15,20 @@ import {
   Notices,
   pane,
   Palette,
+  panesOf,
   Plex,
   Reader,
   Tree,
   Workspace,
   type PaletteBand,
+  type WorkspaceLayout,
 } from '@numen/ui'
 import AgentTab from './agent/AgentTab.vue'
 import DocumentTab from './document/DocumentTab.vue'
 import FilesTab from './files/FilesTab.vue'
 import NoteTab from './note/NoteTab.vue'
 import PlexTab from './plex/PlexTab.vue'
+import Welcome from './welcome/Welcome.vue'
 import { WORDS as plexWords } from './plex/words'
 import { plexCalled } from './workspace'
 
@@ -36,6 +39,8 @@ const { said, held, asked, listed, folders } = vi.hoisted(() => ({
     failed: '',
     opening: 'Root.md' as string | null,
     names: [] as { path: string; title: string; heading: string; line: number; at: [] }[],
+    /** Whether the list of vaults answers at all. */
+    listable: true,
     /** What the settings refuse a choice, which is a size outside its bounds. */
     refused: '',
     /** What the settings say the window is drawn as, which a test may set. */
@@ -94,7 +99,10 @@ vi.mock('./vault', () => ({
     places: async () => [],
   },
   core: {
-    vaults: async () => listed,
+    vaults: async () => {
+      if (!said.listable) throw new Error('the vaults are not there')
+      return listed
+    },
     state: async () => ({
       name: 'Vault',
       path: '/vaults/Physics',
@@ -209,6 +217,7 @@ afterEach(() => {
   said.ready = true
   said.opening = 'Root.md'
   said.names = []
+  said.listable = true
   said.refused = ''
   said.applied = 'preset:numen'
   said.mode = 'system'
@@ -220,6 +229,8 @@ afterEach(() => {
   asked.folders = []
   asked.worn = []
   asked.measured = 0
+  listed.vaults = [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', missing: false }]
+  listed.showing = 'physics'
 })
 
 /**
@@ -233,6 +244,7 @@ async function drawn() {
     },
   })
   windows.push(window)
+  await settles()
   await settles()
   await settles()
   return window
@@ -265,16 +277,39 @@ async function drawnWithPalette() {
   windows.push(window)
   await settles()
   await settles()
+  await settles()
   return window
 }
 
+/** How the window is split, as the workspace it draws has it. */
+const layoutOf = (window: VueWrapper): WorkspaceLayout =>
+  window.findComponent(Workspace).props('modelValue') as WorkspaceLayout
+
+/** What each pane holds, by the kind each of its tabs is filed under. */
+const paneKinds = (window: VueWrapper): readonly (readonly string[])[] =>
+  panesOf(layoutOf(window).root).map((one) => one.tabs.map((tab) => tab.split(':')[0] ?? ''))
+
+/** What each tab of the window is called, in the order the strip has them. */
+const tabsOf = (window: VueWrapper): readonly { id: string; title: string }[] =>
+  (window.findComponent(Workspace).props('tabs') as readonly { id: string; title: string }[]) ?? []
+
 describe('the window as it opens', () => {
-  it('draws the files, a plex and an agent, each in a tab of its own', async () => {
+  it('draws a plex in the room, and an agent in front of the files beside it', async () => {
     const window = await drawn()
 
-    expect(window.findComponent(FilesTab).exists()).toBe(true)
+    expect(paneKinds(window)).toStrictEqual([['plex'], ['agent', 'files']])
+    expect(panesOf(layoutOf(window).root)[1]?.active).toMatch(/^agent:/)
     expect(window.findComponent(PlexTab).exists()).toBe(true)
     expect(window.findComponent(AgentTab).exists()).toBe(true)
+    expect(window.findComponent(FilesTab).exists()).toBe(true)
+  })
+
+  it('leaves the person in the plex, which holds the greater share', async () => {
+    const window = await drawn()
+    const root = layoutOf(window).root
+
+    expect(layoutOf(window).focus).toBe('main')
+    expect(root.kind === 'branch' ? root.sizes : []).toStrictEqual([0.72, 0.28])
   })
 
   it('hands the tree what the root of the vault holds', async () => {
@@ -284,17 +319,54 @@ describe('the window as it opens', () => {
       (window.findComponent(Tree).props('rows') as readonly { id: string }[]).map((one) => one.id),
     ).toStrictEqual(['physics', 'Root.md', 'Cover.png'])
   })
+})
 
-  it('offers a note, a plex and an agent to a tab with nothing in it', async () => {
+describe('the window holding no tab', () => {
+  /** Every tab closed, by the keystroke that closes the one in front. */
+  const closesEvery = async (window: VueWrapper) => {
+    for (let each = tabsOf(window).length; each > 0; each -= 1) {
+      globalThis.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'W', ctrlKey: true, shiftKey: true, cancelable: true }),
+      )
+      await settles()
+    }
+  }
+
+  it('opens on the welcome screen, holding nothing, while the list shows no vault', async () => {
+    listed.showing = ''
+
     const window = await drawn()
 
-    await window.find('[data-workspace-new]').trigger('click')
+    expect(tabsOf(window)).toStrictEqual([])
+    expect(window.findComponent(Welcome).exists()).toBe(true)
+  })
 
-    expect(window.findAll('.blank__choice').map((one) => one.text())).toEqual([
-      'New note',
-      'New plex',
-      'New agent',
+  it('comes to the same screen once every tab it opened with is closed', async () => {
+    const window = await drawn()
+
+    await closesEvery(window)
+
+    expect(tabsOf(window)).toStrictEqual([])
+    expect(window.findComponent(Welcome).exists()).toBe(true)
+  })
+
+  it('draws the vault the list is showing on it, said to be the one in front', async () => {
+    const window = await drawn()
+
+    await closesEvery(window)
+
+    expect(window.findComponent(Welcome).props('vaults')).toStrictEqual([
+      { id: 'physics', name: 'Physics', detail: 'Current' },
     ])
+  })
+
+  it('says in the corner that the vaults could not be listed, and draws none', async () => {
+    said.listable = false
+
+    const window = await drawn()
+
+    expect(cards(window).join(' ')).toContain('The vaults could not be listed')
+    expect(window.findComponent(Welcome).props('vaults')).toStrictEqual([])
   })
 })
 

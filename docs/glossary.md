@@ -97,6 +97,7 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | span | A run of text as a client counts it: `from` and `to`, in UTF-16 code units. The one form a run takes on the wire; in the core the same run is a stretch. | |
 | lit | Where a stretch of a document's text falls on the pages it was read from: the pages, and the rectangles covering it on each. | |
 | window | The application's window on screen, and nothing else. | |
+| standing on nothing | A window showing no vault: an installation that holds none, or one whose vault was taken down and nothing came up in its place. Every question that would reach into a vault is refused there, and the welcome screen offers the list and the way to add one. | empty vault, no workspace |
 | panel | The column beside the plex where a person asks an agent something. | |
 | turn | One thing shown in the panel's conversation: what was asked, what was answered, what is being done. | |
 | voice | Whose turn it is, and so how it is drawn. | |
@@ -104,6 +105,7 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | branch | A split of the workspace, drawn as two parts side by side. | |
 | pane | One part of a branch, holding tabs and showing one of them. | group |
 | tab | One thing a pane holds open, shown by its title. | |
+| welcome | What the window draws while it holds no tab: the mark, the ways into the vault, and the vaults this installation holds. | splash, start page |
 | menu | A list of things that can be done, opened on what they are done to. | |
 | band | A stretch of one list of things to choose. The palette gives each a title; a menu draws a rule where one band gives way to the next. | group, section |
 | tree | A hierarchy of rows drawn as an indented list, some of them holding others. The vault's folders and files are shown in one. | |

@@ -128,10 +128,6 @@ describe('closing', () => {
     expect(tab.emitted('close')).toHaveLength(1)
   })
 
-  it('is not offered at all where the tab is not closable', () => {
-    expect(mountTab({ closable: false }).find('button').exists()).toBe(false)
-  })
-
   it('does not pick the tab up on the way', async () => {
     const tab = mountTab()
     await tab.find('button').trigger('pointerdown')

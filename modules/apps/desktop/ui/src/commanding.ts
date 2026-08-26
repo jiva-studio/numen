@@ -384,7 +384,7 @@ export const commandsOf = (
     needs: 'naming',
     where: (at) => at.ready,
   },
-  { id: 'plex', text: words.newPlex, band: 'window', where: always },
+  { id: 'plex', text: words.newPlex, ...keysOf('plex', agent), band: 'window', where: always },
   { id: 'files', text: words.files, band: 'window', where: always },
   { id: 'agent', text: words.newAgent, ...keysOf('agent', agent), band: 'window', where: always },
   {

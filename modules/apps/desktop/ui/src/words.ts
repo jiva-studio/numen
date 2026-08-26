@@ -5,7 +5,7 @@
  * the code that draws it. What is left here is the window itself: its tabs,
  * the palette, the commands, the corner, and the quit.
  */
-import { commandKeyChord } from '@numen/ui'
+import { commandKeyChord, keyChord } from '@numen/ui'
 import type { Refused, VaultRefused } from './core'
 import { WORDS as agent } from './agent/words'
 import { WORDS as note } from './note/words'
@@ -37,13 +37,11 @@ export const UNVAULTED: Record<VaultRefused, string> = {
 }
 
 export const WORDS = {
-  newTab: 'New tab',
   /** What the corner says while something about the vault is wrong. */
   unwatched: 'not following the vault',
   unread: 'the vault could not be read',
   reading: 'reading the vault…',
   nothingRead: 'nothing was read',
-  choose: 'What goes in this tab',
   going: 'These notes stopped saving because their files changed. The window waits.',
   later: 'Not yet',
   /** The palette, and the three bands it draws. */
@@ -83,6 +81,9 @@ export const WORDS = {
   textScale: 'Reading font size',
   syncing: 'Sync title and filename',
   findKeys: commandKeyChord(navigator.userAgent),
+  /** The commands, under the second of the two keystrokes the window keeps for itself. */
+  commands: 'Show the commands',
+  commandsKeys: keyChord('p', navigator.userAgent),
   first: 'Go to the note the vault opens with',
   goto: 'Go to a note',
   openVault: 'Open vault',
@@ -108,6 +109,8 @@ export const WORDS = {
   typeVault: 'Look for a vault',
   gone: 'Missing',
   folder: 'Choose a folder for the vault',
+  /** The list of vaults did not answer. */
+  unlistedVaults: 'The vaults could not be listed',
   /** The row a list of values opens on, which is the value in force. */
   current: 'Current',
   /** The two shelves the themes are drawn in, and where a person's own go. */

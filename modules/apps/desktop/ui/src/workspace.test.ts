@@ -63,24 +63,27 @@ describe('what a plex tab is called', () => {
 })
 
 describe('the layout the window opens with', () => {
-  const layout = opening('files:tree', 'plex:one', 'agent:one')
+  const layout = opening('plex:one', 'agent:one', 'files:tree')
 
-  it('holds three panes, a tab in each', () => {
+  it('holds two panes, the plex alone and the agent over the files', () => {
     expect(panesOf(layout.root).map((one) => one.tabs)).toStrictEqual([
-      ['files:tree'],
       ['plex:one'],
-      ['agent:one'],
+      ['agent:one', 'files:tree'],
     ])
   })
 
-  it('gives the plex the room, and the files the least of it', () => {
-    const sizes = layout.root.kind === 'branch' ? layout.root.sizes : []
-
-    expect(sizes).toStrictEqual([0.18, 0.56, 0.26])
-    expect(Math.max(...sizes)).toBe(sizes[1])
+  it('stands the agent in front of the two the trailing pane holds', () => {
+    expect(panesOf(layout.root).find((one) => one.id === 'aside')?.active).toBe('agent:one')
   })
 
-  it('divides the width, so the three stand side by side', () => {
+  it('gives the plex the room, and the pane beside it the rest', () => {
+    const sizes = layout.root.kind === 'branch' ? layout.root.sizes : []
+
+    expect(sizes).toStrictEqual([0.72, 0.28])
+    expect(Math.max(...sizes)).toBe(sizes[0])
+  })
+
+  it('divides the width, so the two stand side by side', () => {
     expect(layout.axis).toBe('horizontal')
   })
 
