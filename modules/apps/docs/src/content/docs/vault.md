@@ -12,9 +12,15 @@ converted or rewritten.
 
 ## Opening one
 
-Open the commands with <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>P</kbd> and choose **New vault** for a
-folder numen makes, or **Open vault** for a folder you already have. Your machine's own folder
-picker opens.
+**The first launch stands on nothing.** numen does not make a folder for you before you have
+said anything: the window comes up showing its name, the vaults it knows — none yet — and the
+one thing there is to do, **New vault**.
+
+From then on it opens the vault you had last.
+
+**New vault** makes a folder, **Open vault** takes one you already have; either way your
+machine's own folder picker is what chooses it. Both are in the commands —
+<kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>P</kbd> — once a vault is open.
 
 The first scan runs behind the window: names and words are searchable almost at once, and larger
 vaults keep filling in while you work. What is still being done is shown in the corner of the

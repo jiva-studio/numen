@@ -22,6 +22,7 @@ undo. Nothing that removes a note, a vault or a file is ever one keystroke away.
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>N</kbd> | New note |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>G</kbd> | Go to a note |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>P</kbd> | Show in plex |
+| <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>X</kbd> | New plex |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>C</kbd> | New child note |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>A</kbd> | New agent |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>W</kbd> | Close this tab |

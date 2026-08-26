@@ -86,3 +86,9 @@ Each is filed against the note you would open to settle it:
 | --- | --- |
 | *the themes could not be listed* | the `themes/` folder is not there or cannot be read. What ships is still available. |
 | *that theme could not be read, so it is not worn* | the file named in the settings is missing or unreadable. numen falls back to its own palette and says which name it could not find; putting the file back is all it takes. |
+
+## About the settings
+
+| | |
+| --- | --- |
+| *that setting could not be written* | a choice made in the commands — a theme, a size, whether [a title and a filename are one name](/writing/#renaming) — did not reach `numen.json`. The window goes on as it was; the file is where to look. |

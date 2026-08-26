@@ -12,6 +12,7 @@ Most of what you would want to change is in the commands — <kbd>Ctrl</kbd>/<kb
 | **Light or dark** | follow the system, or pin one. A theme published in one half only leaves nothing to choose here. |
 | **Interface size** | how large the window is drawn: fields, buttons, spacing, type. |
 | **Reading font size** | how large the text you read is set, over the size above. |
+| **Sync title and filename** | whether renaming one renames the other. See [writing notes](/writing/#renaming). |
 
 Choosing one writes it down. There is no separate save.
 
