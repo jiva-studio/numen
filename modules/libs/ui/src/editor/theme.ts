@@ -19,6 +19,11 @@ export const theme = EditorView.theme({
     '--editor-cell-padding': '4px 8px',
     '--editor-grow': '16px',
     '--editor-block-gap': '0.6em',
+    /* The room above the first line. */
+    '--editor-room': '0.5rem',
+    /* How thick a quotation's rule is, and how much of the gutter it takes. */
+    '--editor-quote-rule': '3px',
+    '--editor-quote-room': '0.5rem',
 
     '--editor-keyword': 'var(--numen-syntax-keyword)',
     '--editor-name': 'var(--numen-syntax-name)',
@@ -37,7 +42,13 @@ export const theme = EditorView.theme({
   },
   '&.cm-focused': { outline: 'none' },
   '.cm-scroller': { fontFamily: 'inherit', lineHeight: 'inherit' },
-  '.cm-content': { caretColor: 'var(--numen-node-fg)', padding: 'var(--numen-gutter) 0' },
+  /* The prose opens close to the top of its box and keeps the gutter's room
+     below it, so the last line can be brought clear of the edge. */
+  '.cm-content': {
+    caretColor: 'var(--numen-node-fg)',
+    paddingTop: 'var(--editor-room)',
+    paddingBottom: 'var(--numen-gutter)',
+  },
   '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--numen-node-fg)' },
   '.cm-line': { padding: '0 var(--numen-gutter)' },
   '.cm-placeholder': { color: 'var(--numen-edge-label)' },
@@ -78,6 +89,9 @@ export const theme = EditorView.theme({
   '.cm-heading-5': { fontSize: '1.05em' },
   '.cm-heading-6': { fontSize: '1em' },
 
+  /* Nothing stands above the first line, so it takes no gap. */
+  '.cm-content > .cm-line:first-child': { paddingTop: '0' },
+
   '.cm-strong': { fontWeight: '600' },
   '.cm-em': { fontStyle: 'italic' },
   '.cm-strike': { textDecoration: 'line-through', opacity: '0.7' },
@@ -112,10 +126,12 @@ export const theme = EditorView.theme({
   },
 
   /* A quotation is prose a person reads, set apart by its rule and not by
-     being harder to see. */
+     being harder to see. The rule stands in the gutter, so the words of a
+     quotation begin where every other line's words begin. */
   '.cm-quote': {
-    borderLeft: '3px solid var(--numen-ring)',
-    paddingLeft: '10px',
+    borderLeft: 'var(--editor-quote-rule) solid var(--numen-ring)',
+    marginLeft: 'calc(var(--numen-gutter) - var(--editor-quote-room))',
+    paddingLeft: 'calc(var(--editor-quote-room) - var(--editor-quote-rule))',
     color: 'var(--numen-node-fg)',
     fontStyle: 'italic',
   },
