@@ -53,6 +53,8 @@ const pressed = (press: MouseEvent) => {
    the scale above it is in `em`. */
 .prose {
   font-size: calc(var(--numen-reading-size) * 14 / 13);
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 /* A table wider than the measure scrolls inside itself, carrying its own
