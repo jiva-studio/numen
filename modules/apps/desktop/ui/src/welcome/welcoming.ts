@@ -32,7 +32,6 @@ export interface Words {
   readonly current: string
   readonly gone: string
   readonly newVault: string
-  readonly noVaults: string
 }
 
 /** The row that puts the commands up, which is no command of its own. */

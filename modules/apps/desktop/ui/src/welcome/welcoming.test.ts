@@ -27,7 +27,6 @@ const words: Words = {
   current: 'current',
   gone: 'gone',
   newVault: 'new vault',
-  noVaults: 'no vaults',
 }
 
 /** A window showing a vault it has read. */

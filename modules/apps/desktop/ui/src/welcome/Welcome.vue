@@ -39,7 +39,7 @@ defineEmits<{
 
       <section class="welcome__vaults">
         <h2 class="welcome__heading">{{ words.vaults }}</h2>
-        <ul v-if="vaults.length" class="welcome__list">
+        <ul class="welcome__list">
           <li v-for="one in vaults" :key="one.id">
             <button
               type="button"
@@ -51,7 +51,6 @@ defineEmits<{
             </button>
           </li>
         </ul>
-        <p v-else class="welcome__none">{{ words.noVaults }}</p>
         <button type="button" class="welcome__row" @click="$emit('adds')">
           <span class="welcome__what">{{ words.newVault }}</span>
         </button>
@@ -168,11 +167,5 @@ defineEmits<{
   font-weight: inherit;
   letter-spacing: var(--numen-caps-tracking);
   text-transform: uppercase;
-}
-
-.welcome__none {
-  margin: 0;
-  padding: 0.3rem 0.6rem;
-  color: var(--numen-edge-label);
 }
 </style>

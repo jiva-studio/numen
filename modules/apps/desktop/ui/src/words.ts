@@ -103,10 +103,9 @@ export const WORDS = {
   /** One of a list the window holds: the field, and what Enter does. */
   typeChoice: 'Choose one',
   chooses: 'Choose it',
-  /** The vaults the installation holds, a list of none, and why one cannot be chosen. */
+  /** The vaults the installation holds, and why one of them cannot be chosen. */
   vaults: 'Vaults',
   typeVault: 'Look for a vault',
-  noVaults: 'This installation holds no vault',
   gone: 'Missing',
   folder: 'Choose a folder for the vault',
   /** The list of vaults did not answer. */
