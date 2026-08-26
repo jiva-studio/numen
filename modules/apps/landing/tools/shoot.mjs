@@ -21,7 +21,7 @@ const PORT = GIVEN ? Number(GIVEN) : 6099
 /** How hard the pictures are pressed. The build presses them again. */
 const QUALITY = 90
 /** What the page shows, in the order the switcher offers them. */
-const SHOTS = ['map', 'writing', 'searching', 'asking']
+const SHOTS = ['map', 'writing', 'filing', 'searching', 'asking']
 /*
  * A window narrower than the column it is drawn in, so the application's own
  * text lands on the page larger than it stands on screen and can be read at a
