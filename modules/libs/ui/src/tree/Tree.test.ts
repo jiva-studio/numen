@@ -139,7 +139,6 @@ describe('what is drawn', () => {
   it('says nothing about opening a row that cannot hold', () => {
     const held = mountTree()
     expect(rowIn(held, 'loose').attributes('aria-expanded')).toBeUndefined()
-    expect(rowIn(held, 'loose').find('[data-tree-twist]').exists()).toBe(false)
   })
 
   it('says it holds a selection of several, and which rows are in it', () => {
@@ -212,17 +211,17 @@ describe('a press', () => {
     expect(held.emitted('select')).toHaveLength(1)
   })
 
-  it('on the disclosure turns the row and selects nothing', async () => {
+  it('twice on a row that holds turns it', async () => {
     const held = mountTree()
-    await rowIn(held, 'plans').get('[data-tree-twist]').trigger('click')
+    await rowIn(held, 'plans').trigger('dblclick')
 
     expect(held.emitted('open')).toStrictEqual([['plans']])
-    expect(held.emitted('select')).toBeUndefined()
   })
 
-  it('on an open disclosure shuts the row', async () => {
+  it('twice on an open row shuts it', async () => {
     const held = mountTree()
-    await rowIn(held, 'work').get('[data-tree-twist]').trigger('click')
+    await rowIn(held, 'work').trigger('dblclick')
+
     expect(held.emitted('close')).toStrictEqual([['work']])
   })
 })

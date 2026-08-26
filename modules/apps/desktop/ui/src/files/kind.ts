@@ -67,16 +67,36 @@ export const landingOf = (entry: Entry): Landing | null => {
   return null
 }
 
+/** What a file is filed as, which is the last segment of the path. */
+const fileOf = (path: string): string => path.split('/').pop() ?? path
+
+/**
+ * The ending a name carries, the dot with it, and nothing where it carries
+ * none. A name that is a dot and an ending carries none: that is its whole
+ * name.
+ */
+const endingOf = (name: string): string => {
+  const cut = name.lastIndexOf('.')
+  return cut > 0 ? name.slice(cut) : ''
+}
+
 /**
  * A name typed over a row, as the path the file is filed under from now on.
+ * A name carrying no ending keeps the one the file has, so a note typed over
+ * stays a note. A folder keeps whatever was typed.
+ *
  * A name that is the one it carries, or that names a folder of its own, moves
  * nothing.
  */
-export const renamedTo = (path: string, name: string): string => {
-  const called = name.trim()
-  if (!called || called.includes('/') || called === path.split('/').pop()) return ''
-  const folder = folderOf(path)
-  return folder === ROOT ? called : `${folder}/${called}`
+export const renamedTo = (path: string, name: string, folder = false): string => {
+  const typed = name.trim()
+  if (!typed || typed.includes('/')) return ''
+
+  const called = folder || endingOf(typed) ? typed : `${typed}${endingOf(fileOf(path))}`
+  if (called === fileOf(path)) return ''
+
+  const under = folderOf(path)
+  return under === ROOT ? called : `${under}/${called}`
 }
 
 /** What one files tab holds. */
@@ -162,7 +182,7 @@ export function filing(list: Listing, deps: Filing) {
    * title and a filename are kept as one name.
    */
   const rename = async (path: string, name: string) => {
-    const to = renamedTo(path, name)
+    const to = renamedTo(path, name, list.entryAt(path)?.folder ?? false)
     if (!to) return
     await deps.moves(path, to)
     await list.again()

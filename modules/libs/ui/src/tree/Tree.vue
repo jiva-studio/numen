@@ -394,7 +394,7 @@ onBeforeUnmount(() => {
       <div
         v-for="row in shown"
         :key="row.id"
-        class="tree__row flex min-w-0 items-center gap-1.5"
+        class="tree__row flex min-w-0 items-center"
         role="treeitem"
         :aria-level="row.level"
         :aria-expanded="row.holds ? row.open : undefined"
@@ -413,18 +413,6 @@ onBeforeUnmount(() => {
         @dblclick="act(row)"
         @contextmenu.prevent.stop="askMenu(row, { x: $event.clientX, y: $event.clientY })"
       >
-        <button
-          v-if="row.holds"
-          class="tree__twist shrink-0"
-          type="button"
-          tabindex="-1"
-          aria-hidden="true"
-          data-tree-twist
-          @pointerdown.stop
-          @click.stop="turn(row)"
-        />
-        <span v-else class="tree__twist shrink-0" aria-hidden="true" />
-
         <span class="tree__icon flex shrink-0 items-center">
           <slot name="icon" :id="row.id" :holds="row.holds" :open="row.open" />
         </span>
@@ -462,13 +450,13 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .tree {
-  /* How far one level is set in, how tall a row stands, the reach of the
-     disclosure and the mark on it, and the line standing where a dragged row
-     would land. */
+  /* How far one level is set in, how tall a row stands, the room at the edges
+     of a row, the room between a mark and the name beside it, and the line
+     standing where a dragged row would land. */
   --indent: 0.875rem;
   --row: 1.5rem;
-  --twist: 0.75rem;
-  --twist-mark: 0.4rem;
+  --pad: 0.25rem;
+  --gap: 0.25rem;
   --caret: 2px;
   /* What is carried: how far it stands clear of the pointer, how far it
      reaches before the name is cut, the room the name is given, and how
@@ -478,15 +466,20 @@ onBeforeUnmount(() => {
   --carried-pad: 0.15rem 0.5rem;
   --carried-fade: 0.5;
 
+  display: flex;
+  flex-direction: column;
   block-size: 100%;
   overflow: auto;
+}
+
+.tree__rows {
+  flex: 0 0 auto;
 }
 
 .tree__row {
   position: relative;
   block-size: var(--row);
-  padding-inline: calc(var(--numen-inset) + var(--indent) * (var(--level) - 1))
-    var(--numen-inset);
+  padding-inline: calc(var(--pad) + var(--indent) * (var(--level) - 1)) var(--pad);
   cursor: default;
   user-select: none;
   touch-action: none;
@@ -531,34 +524,14 @@ onBeforeUnmount(() => {
   content: '';
   position: absolute;
   inset-block-start: 0;
-  inset-inline: calc(var(--numen-inset) + var(--indent) * (var(--level) - 1)) 0;
+  inset-inline: calc(var(--pad) + var(--indent) * (var(--level) - 1)) 0;
   block-size: var(--caret);
   background: var(--numen-ring);
 }
 
-/* A triangle lying on its side, standing up as what it holds is drawn. */
-.tree__twist {
-  inline-size: var(--twist);
-  block-size: var(--twist);
-}
-
-button.tree__twist::before {
-  content: '';
-  display: block;
-  inline-size: var(--twist-mark);
-  block-size: var(--twist-mark);
-  margin-inline: auto;
-  background: currentColor;
-  clip-path: polygon(20% 0%, 100% 50%, 20% 100%);
-  transition: transform var(--numen-motion-hover) var(--numen-easing);
-}
-
-.tree__row[aria-expanded='true'] button.tree__twist::before {
-  transform: rotate(90deg);
-}
-
-button.tree__twist:focus-visible {
-  outline: none;
+/* A name stands clear of the mark beside it. */
+.tree__icon {
+  margin-inline-end: var(--gap);
 }
 
 .tree__field {
@@ -573,8 +546,15 @@ button.tree__twist:focus-visible {
   outline-offset: calc(-1 * var(--numen-ring-width));
 }
 
+/* What is said in place of the rows stands in the middle of the room they
+   would have taken. */
 .tree__silence {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
   margin: 0;
+  text-align: center;
 }
 
 /* What is being carried, said beside the pointer and catching nothing. One
@@ -593,11 +573,5 @@ button.tree__twist:focus-visible {
   color: var(--numen-focus-fg);
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  button.tree__twist::before {
-    transition: none;
-  }
 }
 </style>

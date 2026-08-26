@@ -118,6 +118,28 @@ describe('a name typed over a row', () => {
   it('moves nothing where the name names a folder of its own', () => {
     expect(renamedTo('physics/Kelvin.md', 'heat/Kelvin.md')).toBe('')
   })
+
+  it('keeps the ending the file carries, where the name carries none', () => {
+    expect(renamedTo('physics/Kelvin.md', 'Celsius')).toBe('physics/Celsius.md')
+    expect(renamedTo('Cover.png', 'Jacket')).toBe('Jacket.png')
+  })
+
+  it('takes the ending the name carries, where it carries one', () => {
+    expect(renamedTo('Cover.png', 'Jacket.jpg')).toBe('Jacket.jpg')
+  })
+
+  it('moves nothing where the name is the one it carries, ending and all', () => {
+    expect(renamedTo('physics/Kelvin.md', 'Kelvin')).toBe('')
+  })
+
+  /** A name beginning with a dot is a name, and the whole of it. */
+  it('keeps nothing for a file whose name is an ending', () => {
+    expect(renamedTo('.keep', 'ignored')).toBe('ignored')
+  })
+
+  it('takes what was typed for a folder, which carries no ending at all', () => {
+    expect(renamedTo('physics/v1.0', 'v2', true)).toBe('physics/v2')
+  })
 })
 
 describe('a row activated', () => {
@@ -358,6 +380,24 @@ describe('a name given to a row', () => {
     await one.rename('Entropy.md', 'Entropy.md')
 
     expect(done).toStrictEqual([])
+  })
+
+  it('keeps the ending the file carries, so a note typed over stays a note', async () => {
+    const { done, list, one } = tab()
+    await list.opens(ROOT)
+
+    await one.rename('Entropy.md', 'Order')
+
+    expect(done).toStrictEqual(['moves Entropy.md Order.md'])
+  })
+
+  it('takes what was typed for a folder', async () => {
+    const { done, list, one } = tab()
+    await list.opens(ROOT)
+
+    await one.rename('physics', 'heat')
+
+    expect(done).toStrictEqual(['moves physics heat'])
   })
 })
 
