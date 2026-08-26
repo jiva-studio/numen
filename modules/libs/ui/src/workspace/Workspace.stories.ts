@@ -10,7 +10,6 @@ import { expect, userEvent, within } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Workspace from './Workspace.vue'
 import Filling from './fixtures/Filling.vue'
-import { openTab } from './edit'
 import { panesOf, type Tab, type Workspace as State } from './model'
 import { crowded, deep, empty, oneStack, sideBySide, stack, workspaceOf } from './fixtures/build'
 
@@ -49,8 +48,6 @@ interface Knobs {
   arrangement: Arrangement
   edge: number
   threshold: number
-  /** What the way to a new tab is called. Emptied, no strip offers one. */
-  newTab: string
   /** What each tab is carrying, by tab. */
   marks: Readonly<Record<string, string>>
   /** Given by the story, and nothing a reader turns. */
@@ -71,13 +68,12 @@ const meta: Meta<Knobs> = {
     },
     edge: { control: { type: 'range', min: 4, max: 80, step: 2 } },
     threshold: { control: { type: 'range', min: 0, max: 24, step: 1 } },
-    newTab: { control: 'text' },
     marks: { control: 'object' },
     tabs: { table: { disable: true } },
     naming: { table: { disable: true } },
     modelValue: { table: { disable: true } },
   },
-  args: { arrangement: 'side by side', edge: 22, threshold: 4, newTab: 'New tab', marks: {} },
+  args: { arrangement: 'side by side', edge: 22, threshold: 4, marks: {} },
   render: (args) => ({
     components: { Workspace, Filling },
     setup() {
@@ -90,13 +86,7 @@ const meta: Meta<Knobs> = {
       )
       const tabs = () => named(held.value, args.marks)
 
-      /** The application's part: the workspace says where, and this says what. */
-      let made = 0
-      const open = (pane: string) => {
-        held.value = openTab(held.value, `Untitled ${++made}`, pane)
-      }
-
-      return { held, args, tabs, open }
+      return { held, args, tabs }
     },
     template: `
       <div style="height: 100vh; padding: 0">
@@ -105,9 +95,7 @@ const meta: Meta<Knobs> = {
           :tabs="tabs()"
           :edge="args.edge"
           :threshold="args.threshold"
-          :new-tab="args.newTab"
           :naming="() => 'made-' + Math.random().toString(36).slice(2, 8)"
-          @open="open"
         >
           <template #tab="{ id }"><Filling :name="id" /></template>
         </Workspace>
@@ -131,7 +119,7 @@ export const Nested: Story = { args: { arrangement: 'nested' } }
 /** More tabs than a strip has room for. */
 export const Crowded: Story = { args: { arrangement: 'crowded' } }
 
-/** The last tab closed. */
+/** A workspace holding nothing: one pane, no strip, and the silence. */
 export const Empty: Story = { args: { arrangement: 'empty' } }
 
 /** Tabs carrying something: work not yet saved, and a tab that is stuck. */
@@ -139,9 +127,8 @@ export const Marked: Story = {
   args: { arrangement: 'crowded', marks: { one: 'unsaved', three: 'stuck' } },
 }
 
-/** One tab left in the workspace, which is offered no close. */
+/** One tab left in the workspace. */
 export const Alone: Story = { args: { arrangement: 'alone' } }
-
 
 const boxOf = (element: Element) => element.getBoundingClientRect()
 
@@ -294,6 +281,22 @@ export const ClosesAPane: Story = {
   },
 }
 
+/** Closing the last tab in the workspace leaves one pane, holding nothing. */
+export const ClosesTheLastTab: Story = {
+  tags: ['!dev'],
+  args: { arrangement: 'alone' },
+  play: async ({ canvasElement }) => {
+    const close = within(tabIn(canvasElement, 'plex') as HTMLElement).getByRole('button')
+
+    await userEvent.click(close)
+
+    await expect(canvasElement.querySelectorAll('[data-workspace-pane]')).toHaveLength(1)
+    await expect(canvasElement.querySelectorAll('[data-workspace-tab]')).toHaveLength(0)
+    await expect(canvasElement.querySelector('[data-workspace-strip]')).toBeNull()
+    await expect(within(canvasElement).getByText('Nothing open')).toBeInTheDocument()
+  },
+}
+
 /** The strip is walked with the arrows, and what is reached is shown. */
 export const WalksWithTheKeyboard: Story = {
   tags: ['!dev'],
@@ -349,39 +352,6 @@ export const LeavesAPanel: Story = {
     await userEvent.keyboard('{Escape}')
 
     await expect(document.activeElement).toBe(tabIn(canvasElement, 'plex'))
-  },
-}
-
-/**
- * The way to one more tab, at the end of a strip already too full for its own.
- *
- * The workspace says which pane it was asked in and opens nothing: what a tab
- * holds is settled here, which is the application's part being played.
- */
-export const AsksForANewTab: Story = {
-  tags: ['!dev'],
-  args: { arrangement: 'crowded' },
-  play: async ({ canvasElement }) => {
-    const strip = canvasElement.querySelector('[data-workspace-strip="main"]') as HTMLElement
-    const asking = strip.querySelector('[data-workspace-new]') as HTMLElement
-
-    // It keeps its whole width where the tabs beside it have given theirs up.
-    await expect(boxOf(asking).width).toBeGreaterThan(0)
-    await expect(boxOf(asking).right).toBeLessThanOrEqual(boxOf(strip).right + 1)
-    await expect(asking.tabIndex).toBe(0)
-
-    await userEvent.click(asking)
-
-    const now = [...strip.querySelectorAll('[data-workspace-tab]')]
-    await expect(now).toHaveLength(9)
-    await expect(now[8]?.getAttribute('aria-selected')).toBe('true')
-    await expect(within(now[8] as HTMLElement).getByTitle('Untitled 1')).toBeInTheDocument()
-
-    // The arrows walk the tabs and stop at their own ends, so the last of
-    // them steps round to the first.
-    ;(now[8] as HTMLElement).focus()
-    await userEvent.keyboard('{ArrowRight}')
-    await expect(document.activeElement).toBe(now[0])
   },
 }
 

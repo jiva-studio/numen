@@ -9,8 +9,6 @@ import { panesOf } from '@numen/ui'
 import type { WorkspaceLayout } from '@numen/ui'
 import { windowing, type Host, type Kept } from './windowing'
 
-const words = { newTab: 'New tab' }
-
 /**
  * A kind that records what it was asked to do, under the names it opened on. A
  * kind that keeps its tabs has something to finish and never lets one go.
@@ -41,7 +39,7 @@ const kind = ({ keeps = false, ...over }: Partial<Kept> & { keeps?: boolean } = 
 
 /** A window told what kinds it draws, each of them made with what it is given. */
 const told = (declared: readonly ((host: Host) => Kept)[]) => {
-  const window = windowing(words)
+  const window = windowing()
   window.declares(declared.map((one) => one(window.host)))
   return window
 }
@@ -144,6 +142,12 @@ describe('a tab that closes', () => {
     expect(window.heldIn(id)).toBeNull()
   })
 
+  it('says it went, for an identity the window does not hold', () => {
+    const window = told([kind().declared])
+
+    expect(window.shut('gone')).toBe(true)
+  })
+
   it('stays where it is while its kind has something to finish', async () => {
     const holding = kind({ keeps: true })
     const window = told([holding.declared])
@@ -164,67 +168,6 @@ describe('a tab that closes', () => {
 
     expect(window.heldIn(id)).toBeNull()
     expect(onScreen(window.layout.value)).not.toContain(id)
-  })
-})
-
-describe('a tab with nothing in it yet', () => {
-  it('is called the word for a new tab, and offers what the kinds offer', async () => {
-    const thing = kind({ offers: 'New thing' })
-    const other = kind({ kind: 'other', offers: 'New other' })
-    const quiet = kind({ kind: 'quiet' })
-    const window = told([thing.declared, other.declared, quiet.declared])
-
-    window.blanked('main')
-
-    expect(window.tabs.value).toEqual([{ id: window.blanks.value[0], title: 'New tab' }])
-    expect(window.becomes.value).toEqual([
-      { id: 'thing', title: 'New thing' },
-      { id: 'other', title: 'New other' },
-    ])
-  })
-
-  it('is what it was told to be, standing where it stood', async () => {
-    const thing = kind({ offers: 'New thing' })
-    const window = told([thing.declared])
-    window.blanked('main')
-    const blank = window.blanks.value[0] ?? ''
-
-    await window.becomeIt(blank, 'thing')
-
-    expect(window.blanks.value).toEqual([])
-    expect(onScreen(window.layout.value)).not.toContain(blank)
-    expect(onScreen(window.layout.value)).toHaveLength(1)
-  })
-
-  it('opens on what its kind had to make first', async () => {
-    const thing = kind({ offers: 'New thing', makes: async () => 'Made.md' })
-    const window = told([thing.declared])
-    window.blanked('main')
-
-    await window.becomeIt(window.blanks.value[0] ?? '', 'thing')
-
-    expect(thing.opened).toEqual(['Made.md'])
-  })
-
-  it('stays blank when its kind made nothing', async () => {
-    const thing = kind({ offers: 'New thing', makes: async () => '' })
-    const window = told([thing.declared])
-    window.blanked('main')
-    const blank = window.blanks.value[0] ?? ''
-
-    await window.becomeIt(blank, 'thing')
-
-    expect(thing.opened).toEqual([])
-    expect(window.blanks.value).toEqual([blank])
-  })
-
-  it('goes on its own when it is closed with nothing in it', () => {
-    const window = told([kind().declared])
-    window.blanked('main')
-    const blank = window.blanks.value[0] ?? ''
-
-    expect(window.shut(blank)).toBe(true)
-    expect(window.blanks.value).toEqual([])
   })
 })
 
@@ -276,11 +219,13 @@ describe('the tab the person is looking at', () => {
     expect(window.host.last('thing')?.id).toBe(two)
   })
 
-  it('answers under no kind for a tab with nothing in it yet', () => {
-    const window = told([kind().declared])
-    window.blanked('main')
+  it('answers under no kind for a tab the window has let go of', async () => {
+    const thing = kind()
+    const window = told([thing.declared])
+    const id = await window.opens('thing', 'Note.md')
+    window.shut(id)
 
-    expect(window.host.front()).toEqual({ id: window.blanks.value[0], kind: null, held: null })
+    expect(window.host.front()).toEqual({ id, kind: null, held: null })
   })
 
   it('is nothing while the pane in front holds no tab', () => {

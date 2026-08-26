@@ -48,7 +48,7 @@ const tab = (
 /** A window of agent tabs, with a talk of its own for each. */
 const tabs = () => {
   const talks: ReturnType<typeof tab>[] = []
-  const held = windowing({ newTab: 'New tab' })
+  const held = windowing()
   const agents = agentKind(held.host, () => {
     const one = tab()
     talks.push(one)

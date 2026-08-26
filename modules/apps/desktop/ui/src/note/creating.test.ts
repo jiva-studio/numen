@@ -130,31 +130,23 @@ describe('making a note in a seat of another', () => {
   })
 })
 
-describe('a note made on its own', () => {
-  it('is filed at the top of the vault, joined to nothing', async () => {
+describe('making a note under a name a person gave it', () => {
+  it('files it beside the note it was made from, in that note’s seat', async () => {
     const { core, asked, said } = fake()
-    const made = await creating(core, said).start()
+    const made = await creating(core, said).calls('Entropy', 'physics/Ontology.md', 'child')
 
-    expect(made).toStrictEqual({ path: `${UNTITLED}.md`, title: UNTITLED })
-    expect(asked).toStrictEqual([{ title: UNTITLED, folder: '', links: [] }])
+    expect(made).toStrictEqual({ path: 'physics/Entropy.md', title: 'Entropy' })
+    expect(asked).toStrictEqual([
+      { title: 'Entropy', folder: 'physics', links: [{ to: 'physics/Ontology.md', role: 'parent' }] },
+    ])
   })
 
-  it('takes the next free name, as a note made in a seat does', async () => {
-    const { core, said } = fake([{ path: '', refusal: 'occupied' }])
+  it('files it at the top of the vault, joined to nothing, when it stands on no note', async () => {
+    const { core, asked, said } = fake()
+    const made = await creating(core, said).calls('Entropy', '', null)
 
-    expect(await creating(core, said).start()).toStrictEqual({
-      path: `${UNTITLED} 2.md`,
-      title: `${UNTITLED} 2`,
-    })
-  })
-
-  it('is nothing when the vault refused, and the refusal is said', async () => {
-    const { core, said, told } = fake([{ path: '', refusal: 'unreadable' }])
-    const making = creating(core, said)
-
-    expect(await making.start()).toBeNull()
-    expect(told.at(-1)?.text).not.toBe('')
-    expect(told.at(-1)?.kind).toBe('refusal')
+    expect(made).toStrictEqual({ path: 'Entropy.md', title: 'Entropy' })
+    expect(asked).toStrictEqual([{ title: 'Entropy', folder: '', links: [] }])
   })
 })
 

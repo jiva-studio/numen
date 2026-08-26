@@ -9,7 +9,7 @@ import { describe, expect, it, vi } from 'vitest'
 import Workspace from './Workspace.vue'
 import WorkspacePane from './render/WorkspacePane.vue'
 import { type Tab, type Workspace as State } from './model'
-import { oneStack, split, stack, workspaceOf } from './fixtures/build'
+import { oneStack, stack, workspaceOf } from './fixtures/build'
 
 const TABS: readonly Tab[] = [
   { id: 'plex', title: 'Plex' },
@@ -73,21 +73,26 @@ describe('a close', () => {
 describe('the last tab in the workspace', () => {
   const alone = () => workspaceOf(stack('main', 'plex'))
 
-  it('is not offered a close', () => {
-    expect(closeOf(mountWorkspace(alone()), 'plex').exists()).toBe(false)
+  it('is offered a close, as every other tab is', () => {
+    expect(closeOf(mountWorkspace(alone()), 'plex').exists()).toBe(true)
   })
 
-  it('is not closed by a close asked for from anywhere else', async () => {
+  it('leaves one pane holding nothing where it is closed', async () => {
     const held = mountWorkspace(alone())
-    held.findComponent(WorkspacePane).vm.$emit('close', 'plex')
-    await held.vm.$nextTick()
+    await closeOf(held, 'plex').trigger('click')
 
-    expect(held.emitted('close')).toBeUndefined()
-    expect(held.emitted('update:modelValue')).toBeUndefined()
+    const after = held.emitted('update:modelValue')?.[0]?.[0] as State
+    expect(after.root.kind === 'pane' && after.root.tabs).toStrictEqual([])
+    expect(held.findAll('[data-workspace-tab]')).toHaveLength(0)
+    expect(held.findComponent(WorkspacePane).exists()).toBe(true)
   })
 
-  it('is offered a close again as soon as it is not the last', () => {
-    expect(closeOf(mountWorkspace(oneStack()), 'plex').exists()).toBe(true)
+  it('leaves the silence in its place', async () => {
+    const held = mountWorkspace(alone(), {}, { silence: '<p class="quiet">Nothing here</p>' })
+    await closeOf(held, 'plex').trigger('click')
+
+    expect(held.find('.quiet').exists()).toBe(true)
+    expect(held.find('[data-workspace-strip]').exists()).toBe(false)
   })
 })
 
@@ -120,33 +125,6 @@ describe('what a tab carries', () => {
 
     expect(held.find('.mine').text()).toBe('chat: stuck')
     expect(held.find('.tab__mark').exists()).toBe(false)
-  })
-})
-
-describe('a new tab asked for', () => {
-  it('carries the pane it was asked in, and opens nothing', async () => {
-    const held = mountWorkspace(oneStack(), { newTab: 'New tab' })
-    await held.get('[data-workspace-new]').trigger('click')
-
-    expect(held.emitted('open')).toStrictEqual([['main']])
-    expect(held.emitted('update:modelValue')).toBeUndefined()
-  })
-
-  it('names the pane under the pointer where the workspace is divided', async () => {
-    const divided = workspaceOf(
-      split('root', [stack('main', 'plex'), stack('aside', 'chat')]),
-      'horizontal',
-      'main',
-    )
-    const held = mountWorkspace(divided, { newTab: 'New tab' })
-    const asides = held.findAllComponents(WorkspacePane)[1]
-    await asides?.get('[data-workspace-new]').trigger('click')
-
-    expect(held.emitted('open')).toStrictEqual([['aside']])
-  })
-
-  it('is offered by no strip where no word for it was given', () => {
-    expect(mountWorkspace().find('[data-workspace-new]').exists()).toBe(false)
   })
 })
 

@@ -21,7 +21,6 @@ import {
 } from './edit'
 import { overlayFor, sideAt, slotAt } from './drop'
 import {
-  panesOf,
   type NodeId,
   type Rect,
   type Side,
@@ -41,13 +40,8 @@ const props = withDefaults(
     threshold?: number
     /** The least room a pane is worth drawing in. */
     minimum?: number
-    /**
-     * What the way to a new tab is called. A workspace given no word for one
-     * offers no way to ask.
-     */
-    newTab?: string | undefined
   }>(),
-  { edge: 22, threshold: 4, minimum: 220, newTab: undefined },
+  { edge: 22, threshold: 4, minimum: 220 },
 )
 
 defineSlots<{
@@ -68,11 +62,6 @@ const emit = defineEmits<{
   (event: 'close', tab: TabId, hold: () => void): void
   (event: 'activate', tab: TabId): void
   /**
-   * A new tab asked for, and the pane it was asked in. What a tab holds is
-   * the caller's, so nothing is opened here.
-   */
-  (event: 'open', pane: NodeId): void
-  /**
    * The tab a pane is now showing, once it is on screen. Every tab of a pane is
    * drawn and the ones not shown are held out of sight, so what a tab holds is
    * told here that it can measure itself.
@@ -90,14 +79,6 @@ const marks = computed(() =>
       tab.mark === undefined ? [] : [[tab.id, tab.mark]],
     ),
   ),
-)
-
-/**
- * The last tab in the workspace is offered no close, and a close asked for it
- * is refused. A workspace holding nothing has no way back to what it held.
- */
-const closable = computed(
-  () => panesOf(workspace.value.root).reduce((held, pane) => held + pane.tabs.length, 0) > 1,
 )
 
 /**
@@ -149,8 +130,6 @@ function choose(tab: TabId): void {
 }
 
 function close(tab: TabId): void {
-  if (!closable.value) return
-
   let held = false
   emit('close', tab, () => {
     held = true
@@ -327,13 +306,10 @@ onBeforeUnmount(() => {
       :marks="marks"
       :focus="workspace.focus"
       :minimum="minimum"
-      :closable="closable"
-      :new-tab="newTab"
       @choose="choose"
       @close="close"
       @lift="lift"
       @claim="claim"
-      @open="emit('open', $event)"
       @resize="resize"
       @show="emit('show', $event)"
     >
@@ -348,13 +324,10 @@ onBeforeUnmount(() => {
       :titles="titles"
       :marks="marks"
       :focused="workspace.root.id === workspace.focus"
-      :closable="closable"
-      :new-tab="newTab"
       @choose="choose"
       @close="close"
       @lift="lift"
       @claim="claim(workspace.root.id)"
-      @open="emit('open', workspace.root.id)"
       @show="emit('show', $event)"
     >
       <template #tab="bound"><slot name="tab" v-bind="bound" /></template>

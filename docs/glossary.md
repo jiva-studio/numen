@@ -104,6 +104,7 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | branch | A split of the workspace, drawn as two parts side by side. | |
 | pane | One part of a branch, holding tabs and showing one of them. | group |
 | tab | One thing a pane holds open, shown by its title. | |
+| welcome | What the window draws while it holds no tab: the mark, the ways into the vault, and the vaults this installation holds. | splash, start page |
 | menu | A list of things that can be done, opened on what they are done to. | |
 | band | A stretch of one list of things to choose. The palette gives each a title; a menu draws a rule where one band gives way to the next. | group, section |
 | tree | A hierarchy of rows drawn as an indented list, some of them holding others. The vault's folders and files are shown in one. | |

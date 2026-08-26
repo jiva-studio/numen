@@ -18,7 +18,6 @@ import { entering, ITSELF } from './entering'
 import { naming, type Called } from './naming'
 import NoteTab from './NoteTab.vue'
 import { markOf } from './tab'
-import { WORDS as words } from './words'
 
 /** The notes of the whole window, read and written by one store. */
 type Notes = ReturnType<typeof editing>
@@ -26,12 +25,6 @@ type Notes = ReturnType<typeof editing>
 type Drawings = ReturnType<typeof drawn>
 
 export type { Called }
-
-/** What the notes of a window ask of the vault they are read from. */
-export interface Noting {
-  /** A note made to fill a tab that was told to hold one; where it is filed. */
-  makes(): Promise<string>
-}
 
 /** What one note tab holds: its text, and the answers a person gives it. */
 export interface Held {
@@ -56,7 +49,7 @@ export interface Held {
   shuts(id: string): void
 }
 
-export function noting(vault: Called, notes: Notes, drawings: Drawings, host: Host, deps: Noting) {
+export function noting(vault: Called, notes: Notes, drawings: Drawings, host: Host) {
   const names = naming(vault, notes)
   const keyboard = entering()
 
@@ -160,10 +153,6 @@ export function noting(vault: Called, notes: Notes, drawings: Drawings, host: Ho
     marked: (held) => markOf(notes.shown(held.id).state),
     draws: NoteTab,
     identity: (id) => id,
-    makes: async () => {
-      const path = await deps.makes()
-      return path ? mints(path) : ''
-    },
     shown: (held) => held.measure(),
     shuts: (held, id) => {
       held.shuts(id)
@@ -172,7 +161,6 @@ export function noting(vault: Called, notes: Notes, drawings: Drawings, host: Ho
     // What an open note owes at the quit is written by the quit, which the
     // window waits for.
     gone: () => {},
-    offers: words.newNote,
   }
 
   return {

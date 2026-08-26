@@ -19,10 +19,8 @@ withDefaults(
     showing?: boolean
     /** Showing, in the pane a tab would open into. */
     focused?: boolean
-    /** Whether this tab is offered a way to be closed. */
-    closable?: boolean
   }>(),
-  { mark: undefined, showing: false, focused: false, closable: true },
+  { mark: undefined, showing: false, focused: false },
 )
 
 const emit = defineEmits<{
@@ -66,7 +64,6 @@ const onPointerDown = (event: PointerEvent) => {
     </slot>
 
     <button
-      v-if="closable"
       class="tab__close shrink-0 rounded-pill"
       type="button"
       :aria-label="`Close ${title}`"

@@ -13,6 +13,7 @@ import { closeTab, Notices, Palette, Workspace } from '@numen/ui'
 import type { Notice } from '@numen/ui'
 import '@numen/ui/styles.css'
 import { core, documents, vaults } from './vault'
+import type { Listed } from './core'
 import { showing } from './showing'
 import { standing } from './plex/standing'
 import { reading } from './document/reading'
@@ -42,9 +43,10 @@ import { lands, type Places } from './landing'
 import { leaving } from './leaving'
 import { raising } from './raising'
 import { windowing } from './windowing'
-import BlankTab from './BlankTab.vue'
 import Leaving from './Leaving.vue'
 import Failure from './Failure.vue'
+import Welcome from './welcome/Welcome.vue'
+import { COMMANDS, vaultsOn, waysIn } from './welcome/welcoming'
 import { telling } from './telling'
 import { agentKind, talking } from './agent/kind'
 import { documentKind, documenting } from './document/kind'
@@ -115,18 +117,11 @@ const notices = computed<readonly Notice[]>(() =>
 )
 
 /** The tabs of this window, whatever kind each of them holds. */
-const held = windowing(words)
-const { layout, blanks, becomes } = held
+const held = windowing()
+const { layout } = held
 
 /** The notes the window has open: what each is called, and what each tab of one holds. */
-const noted = noting(core, notes, drawings, held.host, {
-  makes: async () => {
-    const made = await making.start()
-    if (!made) return ''
-    noted.calls(made.path, made.title)
-    return made.path
-  },
-})
+const noted = noting(core, notes, drawings, held.host)
 
 /**
  * The notes being carried from one pane of the window to another: the tree
@@ -183,7 +178,7 @@ const files = filesKind(held.host, () => folders(core), {
   says: (text) => told(text, 'refusal'),
 })
 
-/** The kinds this window draws, in the order a blank tab offers them. */
+/** The kinds this window draws. */
 held.declares([noted.kind, plexes.kind, agents.kind, read.kind, files.kind])
 
 /** The palette: one keystroke, and everything the words typed turn up. */
@@ -192,14 +187,22 @@ const palette = finding(core, words, undefined, meaning)
 /** The vault this window is showing, as the list of vaults has it. */
 const shown = ref<Shown>({ id: '', name: '' })
 
+/** Every vault the installation holds, as the list last answered. */
+const listed = ref<Listed>({ vaults: [], showing: '' })
+
+/** What asking for the list of vaults leaves the person to be told. */
+const unlisted = tell.under('listed')
+
 /** Which of the vaults on the list this window is showing, and what it is called. */
 const listing = async () => {
   try {
-    const listed = await core.vaults()
-    const one = listed.vaults.find((vault) => vault.id === listed.showing)
+    const answer = await core.vaults()
+    listed.value = answer
+    const one = answer.vaults.find((vault) => vault.id === answer.showing)
     shown.value = one ? { id: one.id, name: one.name } : { id: '', name: '' }
   } catch {
-    // The commands over this vault are offered once the list has answered.
+    // The layout the window opens with is the one the list's answer decides.
+    unlisted(words.unlistedVaults, 'refusal')
   }
 }
 
@@ -314,6 +317,30 @@ const carries = (id: string, at: Where) => {
   told(commands.refused(id, at), 'refusal')
 }
 
+/** The ways in the welcome screen offers, and the vaults it draws. */
+const ways = computed(() =>
+  waysIn({ vault: shown.value.id, ready: where().ready }, words, navigator.userAgent),
+)
+const onList = computed(() => vaultsOn(listed.value, words))
+
+/**
+ * A way in taken on the welcome screen. The commands are the window's own; the
+ * rest are commands, and one that is refused says why.
+ */
+const runs = (id: string) => {
+  if (id !== COMMANDS) return carries(id, where())
+  palette.shows(false)
+  commands.shows(true)
+}
+
+/** A vault chosen on the welcome screen, shown in this window in place of none. */
+const opens = (id: string) => {
+  const one = listed.value.vaults.find((vault) => vault.id === id)
+  if (!one) return
+  const vault: Shown = { id: one.id, name: one.name }
+  void does(deedOf('openVault', { ...where(), vault }), doing, words)
+}
+
 /**
  * The keystrokes taken on the window: they belong to no pane. Two put the
  * palette up and take it down again, and the rest carry out the command the
@@ -412,22 +439,23 @@ const shut = (id: string, hold: () => void) => {
 }
 
 /**
- * The window opens with the files along one edge, a plex holding the room, and
- * an agent along the other.
+ * A vault showing opens a plex holding the room and an agent over the files
+ * beside it. Showing none, the window opens holding nothing at all.
  */
 const starts = async () => {
-  const tree = await held.opens(FILES)
+  if (!shown.value.id) return
   const plex = await held.opens(PLEX)
   const talk = await held.opens(AGENT)
-  layout.value = opening(tree, plex, talk)
+  const tree = await held.opens(FILES)
+  layout.value = opening(plex, talk, tree)
 }
 
 onMounted(async () => {
   globalThis.addEventListener('keydown', asked)
-  // The layout the window opens with stands before anything the vault says can
-  // open a tab of its own.
+  // The layout turns on which vault the list names, and stands before anything
+  // the vault says can open a tab of its own.
+  await listing()
   await starts()
-  void listing()
   void window.start()
   void going.start()
   void dressed.start()
@@ -450,10 +478,8 @@ onUnmounted(() => {
       v-model="layout"
       class="below"
       :tabs="held.tabs.value"
-      :new-tab="words.newTab"
       @close="shut"
       @show="held.shown"
-      @open="held.blanked"
     >
       <template #tab="{ id }">
         <component
@@ -462,13 +488,18 @@ onUnmounted(() => {
           :held="held.heldIn(id)!.held"
         />
 
-        <BlankTab
-          v-else-if="blanks.includes(id)"
-          :becomes="becomes"
-          @choose="(kind: string) => void held.becomeIt(id, kind)"
-        />
-
         <div v-else />
+      </template>
+
+      <template #silence>
+        <Welcome
+          :ways="ways"
+          :vaults="onList"
+          :words="words"
+          @runs="runs"
+          @opens="opens"
+          @adds="carries('newVault', where())"
+        />
       </template>
     </Workspace>
 
