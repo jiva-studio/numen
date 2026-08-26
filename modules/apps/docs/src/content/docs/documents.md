@@ -16,6 +16,11 @@ Page numbers are positions in the file. An EPUB has no pages of its own, so wher
 carries the page breaks of the printed edition it was set from, those are the names its pages
 have.
 
+The controls float over the page rather than taking a strip of the window for themselves: back
+and forward a page, the number of the page you are on — type another and press <kbd>Enter</kbd>
+to go there — and closer and further. The page starts at the size that fits the room, each press
+draws it a quarter larger, and six times that is as close as it goes.
+
 ## Scanned books
 
 A book that is scans of paper carries no text to read. Ask the [agent](/agent/) to read it, and

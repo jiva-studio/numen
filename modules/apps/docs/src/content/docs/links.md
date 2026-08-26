@@ -65,6 +65,23 @@ under two headings is filed under both, and neither copy is a duplicate.
 Siblings are not stored. Notes with a parent in common are siblings, which is a question asked
 whenever it is needed.
 
+## Attachments
+
+An `attachment` points at something that is not a note: a file sitting in the vault, or an
+address on the web. Nothing tries to resolve it as a note, and it takes no part in the
+hierarchy — a note with a scan attached to it is not the parent of that scan.
+
+```yaml
+---
+links:
+  - to: "scans/1897-letter.pdf"
+    role: attachment
+  - to: "https://example.org/the-paper"
+    role: attachment
+    label: "the paper this argues with"
+---
+```
+
 ## How a name finds its note
 
 `[[Entropy]]` is a name, not a path to a file, and it is resolved every time it is asked. In

@@ -51,7 +51,11 @@ about more than one tab at once, usually after a sync client has been through th
 
 ## About links
 
-Reported against the note you would open to settle them:
+Three of these are found whenever the vault is read, and dangling links only when they are asked
+for by name. Ask the [agent](/agent/) — *what could this vault not make sense of?* — and it puts
+the list in front of you; [`numen-cli problems`](/cli/) prints the same thing.
+
+Each is filed against the note you would open to settle it:
 
 | | |
 | --- | --- |

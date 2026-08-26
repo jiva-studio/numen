@@ -27,6 +27,21 @@ words were found in.
 **Go to a note** — <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>G</kbd> — is the shorter version: names
 only, for when you know exactly which note you want.
 
+**Go to the note the vault opens with** takes you to the first note the vault holds, which is
+where numen stands when nothing else has been chosen. It is the way back to the beginning when
+you have wandered.
+
+## What is searched
+
+Four things, separately, which is why a result can point at a place and not only at a file:
+
+| | |
+| --- | --- |
+| Titles | what a note is called. |
+| Headings | the headings inside it, so a result opens the note at the right one. |
+| The text | of notes, and of every [document](/documents/) the vault holds. |
+| Part names | the chapters and sections of a book, so a result names the part it was found in. |
+
 ## When it finds nothing
 
 The panel offers to write the note instead: *create a note called…*, and — if you were standing

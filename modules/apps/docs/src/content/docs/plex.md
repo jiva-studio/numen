@@ -48,6 +48,16 @@ the handle does the same from the keyboard.
 
 <kbd>Escape</kbd> in the middle of a drag calls it off and nothing is made.
 
+## Connecting two notes you already have
+
+The same gesture, let go **on another node** instead of on empty space, connects the two rather
+than making a third. The direction you dragged in is the relationship: upwards it becomes a
+parent, downwards a child, to the side a jump.
+
+Three directions make something, then. To the right is where siblings are drawn, and a sibling
+is not a link anybody writes — it is what two notes under one parent already are — so nothing
+is made there. Letting go on the node you started from does nothing either.
+
 ## Reading the lines
 
 A line between two nodes is a link. Where you gave the link a

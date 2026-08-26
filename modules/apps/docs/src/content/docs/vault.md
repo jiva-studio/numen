@@ -31,9 +31,16 @@ Two places are skipped whole:
 Files removed from the vault are moved into `.trash/` inside it, which is a dot-folder and so is
 out of the index as well. Nothing there is destroyed.
 
-Only markdown is read as a note. Everything else in the folder — images, PDFs, spreadsheets —
-stays where it is and can be [attached to a note](/links/) or, where numen can read it, opened
-as a [document](/documents/).
+## What a folder of yours becomes
+
+| | |
+| --- | --- |
+| `.md` files | notes: read, searched, linked, drawn in the plex. |
+| `.pdf` and `.epub` | [documents](/documents/): their text is searched and a result opens the book at the page. |
+| everything else | left exactly as it is. Images, spreadsheets, whatever else you keep there — numen does not touch them, and a note can [point at one](/links/) as an attachment. |
+
+Nothing is moved into a structure of numen's own. The folders you arranged are the folders you
+keep.
 
 ## Several vaults
 
