@@ -104,7 +104,6 @@ const onPointerDown = (event: PointerEvent) => {
   color: var(--numen-node-fg);
 }
 
-
 /* What kind of tab this is, drawn before its name. The row's own gap is the
    room after it, so it stands with the same air on either side. */
 .tab__icon {

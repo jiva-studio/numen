@@ -13,7 +13,7 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | asset | A file in a vault that is not a note. | |
 | entry | One file or folder, as a listing of a folder reports it. | item |
 | title | The name a note is shown by, and one of the keys the application owns — [Note format](note-format.md). A title names a note; a label names a relationship. | label |
-| naming | Which of the three carries a note's name: `frontmatter`, `heading` or `filename`. It is what a rename brings into line, and it is not the setting that says how far a rename reaches. | |
+| naming | Which of the two carries a note's name: `frontmatter` or `filename`. It is what a rename brings into line, and it is not the setting that says how far a rename reaches. | |
 | sync_title_and_filename | Whether renaming either a note's title or the name of its file brings the other into line — [Settings](settings.md). On. | |
 | link | One relationship, as written in a file — [Links](links.md). | connection |
 | role | What kind of relationship a link is, from a closed list of five — [Links](links.md). | seat |

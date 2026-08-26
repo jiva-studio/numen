@@ -27,7 +27,7 @@ stateDiagram-v2
     [*] --> has: created by the application
 
     none --> has: the application edits the contents — stamps
-    none --> has: a rename that writes the title or the heading — stamps
+    none --> has: a rename that writes the title — stamps
     none --> none: a move — does not
     none --> none: a rename the filename alone carries — does not
     none --> none: the save of typed text — does not
