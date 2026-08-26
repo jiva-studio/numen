@@ -31,6 +31,8 @@ func main() {
 	var agents agentOptions
 	var said sizes
 	var vault string
+	var telling bool
+	flag.BoolVar(&telling, "version", false, "say what this build is and stop")
 	flag.StringVar(&cfg.IndexPath, "index", "", "path to the index database")
 	flag.StringVar(&cfg.RegistryPath, "registry", "", "path to the vault list")
 	flag.StringVar(&vault, "vault", "",
@@ -45,6 +47,11 @@ func main() {
 	flag.BoolVar(&cfg.RebuildIndex, "rebuild-index", false,
 		"read every file and put it in the index again, whatever the index remembers")
 	flag.Parse()
+
+	if telling {
+		fmt.Println(built())
+		return
+	}
 
 	if err := run(cfg, agents, vault, said); err != nil {
 		fmt.Fprintln(os.Stderr, "numen:", err)
