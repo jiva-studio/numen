@@ -76,6 +76,7 @@ export default defineConfig({
           ],
         },
         { slug: 'trouble' },
+        { label: 'Forum', link: 'https://forum.numen.md' },
         { label: 'Download numen', link: 'https://numen.md/#get' },
       ],
     }),
