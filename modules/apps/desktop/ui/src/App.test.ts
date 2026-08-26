@@ -324,6 +324,47 @@ describe('a row activated in the files', () => {
   })
 })
 
+describe('a file carried out of the tree', () => {
+  /** The window with the physics folder open, and a row carried out of it. */
+  const carrying = async (rows: readonly string[]) => {
+    const window = await drawn()
+    const tree = window.findComponent(Tree)
+    tree.vm.$emit('open', 'physics')
+    await settles()
+    tree.vm.$emit('carry', rows)
+    await settles()
+    return window
+  }
+
+  const carried = (window: VueWrapper) => window.findComponent(Plex).props('carried')
+
+  it('is what the plex draws a line to, though neither knows the other is there', async () => {
+    expect(carried(await carrying(['physics/Entropy.md']))).toBe('physics/Entropy.md')
+  })
+
+  it('is nothing once it has been let go of, wherever that was', async () => {
+    const window = await carrying(['physics/Entropy.md'])
+
+    window.findComponent(Tree).vm.$emit('drop')
+    await settles()
+
+    expect(carried(window)).toBeNull()
+  })
+
+  it('is nothing for a file the vault holds no note for, or for a folder', async () => {
+    expect(carried(await carrying(['Cover.png']))).toBeNull()
+    expect(carried(await carrying(['physics']))).toBeNull()
+  })
+
+  it('is nothing where several rows are carried at once', async () => {
+    expect(carried(await carrying(['physics/Entropy.md', 'Cover.png']))).toBeNull()
+  })
+
+  it('is nothing where it is the note the plex is standing on', async () => {
+    expect(carried(await carrying(['Root.md']))).toBeNull()
+  })
+})
+
 describe('a note asked for in the plex', () => {
   it('is drawn in a tab of its own', async () => {
     const window = await drawn()

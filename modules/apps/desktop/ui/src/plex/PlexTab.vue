@@ -12,6 +12,7 @@ import { Menu, optionsForType, Plex, useTypeSize } from '@numen/ui'
 import type { MenuOpening, PlexRelatedSeat, PlexShowing } from '@numen/ui'
 import { ITEMS } from './menu'
 import type { Held } from './kind'
+import { WORDS as words } from './words'
 
 const props = defineProps<{ held: Held }>()
 
@@ -35,11 +36,14 @@ const options = computed(() => optionsForType(type.value))
       :neighbourhood="props.held.picture.value!"
       :options="options"
       :creatable="props.held.creatable"
+      :carried="props.held.carried.value"
+      :carried-name="words.carried"
       @activate="(node: string) => props.held.activate(node)"
       @create="(from: string, seat: PlexRelatedSeat) => void props.held.made(from, seat)"
       @link="
         (from: string, to: string, seat: PlexRelatedSeat) => void props.held.joined(from, to, seat)
       "
+      @bring="(carried: string, seat: PlexRelatedSeat) => void props.held.brought(carried, seat)"
       @menu="
         (
           node: string,

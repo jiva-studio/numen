@@ -1,7 +1,7 @@
 /** What a drag away from a node comes to, worked out without a pointer. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
-import { nodeAt, resolveDrop, seatTowards } from './drop'
+import { nodeAt, resolveDrop, seatCarried, seatTowards } from './drop'
 import { DEFAULT_OPTIONS, resolveOptions } from './options'
 import { build } from '../fixtures/build'
 import type { PlexFrame, PlexRelatedSeat } from '../model'
@@ -163,5 +163,89 @@ describe('the node under the pointer', () => {
     // The rule that decides the click and the tab stop decides this too: a link
     // to something the reader never saw is not what the gesture asked for.
     expect(nodeAt(origin, stacked({ id: 'leaving', opacity: 0.4 }))).toBeNull()
+  })
+})
+
+describe('the seat something carried in comes to', () => {
+  const VIEWPORT = { width: 1200, height: 800 }
+  const THRESHOLD = 8
+
+  const carried = (
+    at: { x: number; y: number },
+    over: Partial<Parameters<typeof seatCarried>[0]> = {},
+  ) =>
+    seatCarried({
+      frame,
+      options: DEFAULT_OPTIONS,
+      viewport: VIEWPORT,
+      at,
+      allowed: ALLOWED,
+      threshold: THRESHOLD,
+      ...over,
+    })
+
+  it('is a parent above the focus, a child below it, and a jump to the side', () => {
+    expect(carried({ x: focus.x, y: focus.y - 300 })).toBe('parent')
+    expect(carried({ x: focus.x, y: focus.y + 300 })).toBe('child')
+    expect(carried({ x: focus.x - 500, y: focus.y })).toBe('jump')
+  })
+
+  it('reads the arrangement rather than assuming which way is up', () => {
+    const upside = resolveOptions({
+      direction: { parent: 'down', child: 'up', jump: 'left', sibling: 'right' },
+    })
+    expect(carried({ x: focus.x, y: focus.y - 300 }, { options: upside })).toBe('child')
+    expect(carried({ x: focus.x, y: focus.y + 300 }, { options: upside })).toBe('parent')
+  })
+
+  it('counts a wide row as down, though it reaches further sideways', () => {
+    // The outermost child of a row is further from the focus sideways than it
+    // is downwards, and carrying a note to where the children plainly are has
+    // to name a child.
+    const leftmost = frame.nodes
+      .filter((n) => n.seat === 'child')
+      .reduce((a, b) => (a.x <= b.x ? a : b))
+    expect(Math.abs(leftmost.x)).toBeGreaterThan(Math.abs(leftmost.y))
+    expect(carried(leftmost)).toBe('child')
+
+    const flat = resolveOptions({ gesture: { verticalBias: 1 } })
+    expect(carried(leftmost, { options: flat })).toBe('jump')
+  })
+
+  it('is nothing towards a seat the caller did not allow', () => {
+    const beside = { x: focus.x + 500, y: focus.y }
+    expect(carried(beside)).toBeNull()
+    expect(carried(beside, { allowed: [...ALLOWED, 'sibling'] })).toBe('sibling')
+  })
+
+  it('is measured from the focus, wherever the focus is drawn', () => {
+    // The picture is drawn about its focus, and a rule written against the
+    // middle of the window answers for a picture that never moved.
+    const shifted: PlexFrame = {
+      ...frame,
+      nodes: frame.nodes.map((node) => ({ ...node, x: node.x + 300 })),
+    }
+    expect(carried({ x: 0, y: 0 }, { frame: shifted })).toBe('jump')
+    expect(carried({ x: 0, y: 0 })).toBeNull()
+  })
+
+  it('is nothing past the edge of the window, and a seat on it', () => {
+    expect(carried({ x: focus.x, y: 400 })).toBe('child')
+    expect(carried({ x: focus.x, y: 401 })).toBeNull()
+    expect(carried({ x: -600, y: focus.y })).toBe('jump')
+    expect(carried({ x: -601, y: focus.y })).toBeNull()
+  })
+
+  it('is nothing until the pointer stands clear of the focus', () => {
+    expect(carried({ x: focus.x, y: focus.y + THRESHOLD - 1 })).toBeNull()
+    expect(carried({ x: focus.x, y: focus.y + THRESHOLD })).toBe('child')
+  })
+
+  it('is nothing where there is no focus to measure from', () => {
+    const nowhere: PlexFrame = {
+      ...frame,
+      nodes: frame.nodes.filter((node) => node.seat !== 'focus'),
+    }
+    expect(carried({ x: focus.x, y: focus.y + 300 }, { frame: nowhere })).toBeNull()
   })
 })

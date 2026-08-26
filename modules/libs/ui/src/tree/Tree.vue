@@ -74,6 +74,13 @@ const emit = defineEmits<{
   (event: 'rename', row: RowId, name: string): void
   /** The rows let go somewhere, all of them landing in the one place. */
   (event: 'move', rows: readonly RowId[], at: Landing): void
+  /**
+   * The rows lifted clear of the tree, on their way across whatever is drawn
+   * beside it. Where they end up there is not the tree's to say.
+   */
+  (event: 'carry', rows: readonly RowId[]): void
+  /** The rows let go of, wherever the pointer had got to. */
+  (event: 'drop'): void
   /** The selection asked to go. */
   (event: 'remove', rows: readonly RowId[]): void
   /** A menu asked for, and where the pointer was. Nothing for a press off every row. */
@@ -282,6 +289,10 @@ function drag(event: PointerEvent): void {
   dragging.value = { ...held, moved }
   point.value = moved ? { x: event.clientX, y: event.clientY } : null
   at.value = moved ? landingAt(held.rows, { x: event.clientX, y: event.clientY }) : null
+
+  // The rows are clear of the tree the moment the press turns into a drag,
+  // and said once for the whole of it.
+  if (moved && !held.moved) emit('carry', held.rows)
 }
 
 function drop(): void {
@@ -293,6 +304,7 @@ function drop(): void {
   window.removeEventListener('pointercancel', drop)
 
   if (held?.moved && found) emit('move', held.rows, found)
+  if (held?.moved) emit('drop')
   at.value = null
   point.value = null
   // Held one frame longer: the click that follows the release reads it and

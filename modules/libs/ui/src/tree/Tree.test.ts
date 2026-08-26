@@ -466,6 +466,53 @@ describe('a drag', () => {
   })
 })
 
+describe('rows carried out of the tree', () => {
+  it('says which rows are being carried, once for the whole drag', async () => {
+    const held = mountTree({ selected: ['notes', 'loose'] })
+    const from = rowIn(held, 'loose').element
+
+    pointer('pointerdown', middleOf(held, 'loose'), from)
+    pointer('pointermove', 3 * HEIGHT)
+    pointer('pointermove', 4 * HEIGHT)
+    await held.vm.$nextTick()
+
+    expect(held.emitted('carry')).toStrictEqual([[['notes', 'loose']]])
+  })
+
+  it('says so for a drag over another pane, where nothing in the tree is landed on', async () => {
+    const held = mountTree()
+    const from = rowIn(held, 'work').element
+
+    pointer('pointerdown', middleOf(held, 'work'), from)
+    pointer('pointermove', 2 * HEIGHT, window, { clientX: 400 })
+    pointer('pointerup', 2 * HEIGHT, window, { clientX: 400 })
+    await held.vm.$nextTick()
+
+    expect(held.emitted('carry')).toStrictEqual([[['work']]])
+    expect(held.emitted('drop')).toStrictEqual([[]])
+    expect(held.emitted('move')).toBeUndefined()
+  })
+
+  it('says it has let go after saying where the rows landed', async () => {
+    const held = mountTree()
+    await dragTo(held, 'loose', 12)
+
+    expect(held.emitted('move')).toStrictEqual([[['loose'], { into: 'work' }]])
+    expect(held.emitted('drop')).toStrictEqual([[]])
+  })
+
+  it('carries nothing where the pointer did not travel far enough', async () => {
+    const held = mountTree()
+    pointer('pointerdown', 108, rowIn(held, 'loose').element)
+    pointer('pointermove', 110)
+    pointer('pointerup', 110)
+    await held.vm.$nextTick()
+
+    expect(held.emitted('carry')).toBeUndefined()
+    expect(held.emitted('drop')).toBeUndefined()
+  })
+})
+
 describe('what follows the pointer', () => {
   it('says the name of the one row being carried', async () => {
     const held = mountTree()

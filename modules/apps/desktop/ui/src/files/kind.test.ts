@@ -51,6 +51,7 @@ const tab = (refuses = false) => {
     lands: (landing) => void done.push(`lands ${landing ? `${landing.at} ${landing.path}` : '—'}`),
     runs: (id, paths, name) => void done.push(`runs ${id} ${paths.join(' ')} ${name}`),
     moves: async (from, to) => void done.push(`moves ${from} ${to}`),
+    carries: (path) => void done.push(`carries ${path || '—'}`),
     makes: async (path) => {
       done.push(`makes ${path}`)
       if (refuses) return
@@ -166,6 +167,58 @@ describe('a row activated', () => {
   })
 })
 
+describe('rows carried out of the tree', () => {
+  it('are the one note, which is something to join to a note elsewhere', async () => {
+    const { done, list, one } = tab()
+    await list.opens(ROOT)
+
+    one.carry(['Entropy.md'])
+
+    expect(done).toStrictEqual(['carries Entropy.md'])
+  })
+
+  it('are nothing where several rows are carried at once', async () => {
+    // A join names one note, and a line drawn to one shape that wrote several
+    // links would be a picture that lied.
+    const { done, list, one } = tab()
+    await list.opens(ROOT)
+
+    one.carry(['Entropy.md', 'physics/Kelvin.md'])
+
+    expect(done).toStrictEqual(['carries —'])
+  })
+
+  it('are nothing for a folder, a book or a file the vault holds no note for', async () => {
+    // The vault's links are between notes.
+    const { done, list, one } = tab()
+    await list.opens(ROOT)
+
+    one.carry(['physics'])
+    one.carry(['Heat.pdf'])
+    one.carry(['Cover.png'])
+
+    expect(done).toStrictEqual(['carries —', 'carries —', 'carries —'])
+  })
+
+  it('are nothing for a row the tree is no longer drawing', async () => {
+    const { done, one } = tab()
+
+    one.carry(['Entropy.md'])
+
+    expect(done).toStrictEqual(['carries —'])
+  })
+
+  it('are nothing once they have been let go of', async () => {
+    const { done, list, one } = tab()
+    await list.opens(ROOT)
+
+    one.carry(['Entropy.md'])
+    one.drop()
+
+    expect(done).toStrictEqual(['carries Entropy.md', 'carries —'])
+  })
+})
+
 describe('rows let go of', () => {
   it('are filed in the folder they went into, under the names they carry', async () => {
     const { done, list, one } = tab()
@@ -220,6 +273,7 @@ describe('rows let go of', () => {
       lands: () => {},
       runs: () => {},
       moves: async () => {},
+      carries: () => {},
       makes: async () => {},
       writes: async () => '',
       says: () => {},

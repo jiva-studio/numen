@@ -1,6 +1,6 @@
 import type { PlacedNode, PlexFrame, PlexRelatedSeat, Point } from '../model'
 import { RELATED_SEATS } from '../model'
-import type { Direction, PlexOptions } from './options'
+import type { Direction, PlexOptions, Size } from './options'
 
 /**
  * What dragging away from a node and letting go comes to.
@@ -127,4 +127,45 @@ export function resolveDrop({
   return landedOn
     ? { kind: 'link', from, to: landedOn.id, seat }
     : { kind: 'create', from, seat }
+}
+
+export interface CarriedInput {
+  readonly frame: PlexFrame
+  readonly options: PlexOptions
+  /** The window the plex is drawn in, centred on the focus. */
+  readonly viewport: Size
+  /** Where the pointer is, in the plex's own coordinates. */
+  readonly at: Point
+  /** Seats a gesture is allowed to produce. */
+  readonly allowed: readonly PlexRelatedSeat[]
+  /** How far from the focus the pointer stands before it names a direction. */
+  readonly threshold: number
+}
+
+/**
+ * The seat something carried in from outside comes to.
+ *
+ * Measured from the focus, which is what the arrangement is built around. A
+ * node the pointer crosses is not a landing: the seat is read off the
+ * direction, and letting go anywhere in the window is answered the same way.
+ */
+export function seatCarried({
+  frame,
+  options,
+  viewport,
+  at,
+  allowed,
+  threshold,
+}: CarriedInput): PlexRelatedSeat | null {
+  const focus = frame.nodes.find((node) => node.seat === 'focus')
+  if (!focus) return null
+
+  // Past the edge of the window is over whatever is drawn beside the plex.
+  if (Math.abs(at.x) > viewport.width / 2 || Math.abs(at.y) > viewport.height / 2) return null
+
+  // Close enough to the focus that the direction is the tremor of a hand.
+  if (Math.hypot(at.x - focus.x, at.y - focus.y) < threshold) return null
+
+  const seat = seatTowards(focus, at, options)
+  return seat && allowed.includes(seat) ? seat : null
 }

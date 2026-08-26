@@ -50,6 +50,11 @@ export interface Plexing {
   runs(id: string, path: string, title: string): void
   /** The note the vault opens with, as it was last answered. */
   opening(): string
+  /**
+   * The note the window is carrying over the picture, and nothing while it
+   * carries none.
+   */
+  carried(): string
   /** Asks the vault where it opens, for a plex that has nowhere to stand. */
   first(): Promise<string>
   /** The seats a gesture may make a note in, which the picture draws. */
@@ -163,6 +168,19 @@ export function plexing(view: Standing, deps: Plexing) {
     return drawn
   })
 
+  /**
+   * The note carried over this picture from elsewhere in the window.
+   *
+   * Nothing is carried over a plex with nothing true to draw, and nothing over
+   * the picture the note itself is the focus of. Neither draws a line.
+   */
+  const carried = computed(() => {
+    if (!deps.ready() || !view.neighbourhood.value) return null
+    const path = deps.carried()
+    const here = view.here.value
+    return path && here && path !== here ? path : null
+  })
+
   /** The menu on a node, for as long as it stands. */
   const menu = ref<Asked | null>(null)
 
@@ -192,6 +210,19 @@ export function plexing(view: Standing, deps: Plexing) {
     const one = tickets.note(from)
     const other = tickets.note(to)
     if (one && other && (await deps.makes.join(one, other, seat))) await view.go(one)
+  }
+
+  /**
+   * A note carried in from the vault and let go over the picture. It is a path
+   * already, having never been drawn as a node of this picture.
+   *
+   * The plex stands on the note the line was drawn from, which is the one the
+   * link is written in.
+   */
+  const brought = async (carried: string, seat: PlexRelatedSeat) => {
+    const here = view.here.value
+    if (!carried || !here || carried === here) return
+    if (await deps.makes.join(here, carried, seat)) await view.go(here)
   }
 
   /** A note opened where the person asked for it, called what the picture calls it. */
@@ -240,11 +271,13 @@ export function plexing(view: Standing, deps: Plexing) {
   return {
     view,
     picture,
+    carried,
     menu,
     creatable: deps.creatable,
     activate,
     made,
     joined,
+    brought,
     opens,
     asks,
     dismiss,
