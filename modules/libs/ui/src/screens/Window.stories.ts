@@ -71,7 +71,6 @@ const ROWS: readonly Row[] = [
 ]
 
 const OPEN = ['physics', 'computation', 'reading']
-const CARRIED = ['mixing', 'second-law']
 
 const node = (id: string, title: string, seat: PlexNode['seat']): PlexNode => ({
   id,
@@ -115,6 +114,9 @@ const around = (related: readonly PlexNode[]): PlexNeighbourhood => ({
 
 /** What a pane of a divided window has the width for. */
 const NEIGHBOURHOOD = around(RELATED)
+
+/** What a pane sharing its column with a note has the width for. */
+const CLOSE = around(RELATED.slice(0, 6))
 
 /**
  * What a pane with the window to itself has the room for: wider at the sides,
@@ -431,7 +433,6 @@ const screen = ({
       TABS,
       ROWS,
       OPEN,
-      CARRIED,
       PLEX,
       NOTE,
       BOOK,
@@ -470,7 +471,6 @@ const screen = ({
             v-else-if="id === FILES"
             :rows="ROWS"
             :open="OPEN"
-            :selected="CARRIED"
             name="The folders and files of the vault"
           />
         </template>
@@ -609,12 +609,19 @@ export const Filing: Story = {
       workspace: () => ({
         root: branch(
           'root',
-          [pane('main', [FILES]), pane('middle', [NOTE, BOOK], NOTE)],
-          [0.32, 0.68],
+          [
+            pane('main', [FILES]),
+            // A branch inside a horizontal one is drawn the other way, so the
+            // map stands over the note it is about.
+            branch('middle', [pane('map', [PLEX]), pane('note', [NOTE, BOOK], NOTE)], [0.52, 0.48]),
+            pane('aside', [AGENT]),
+          ],
+          [0.22, 0.5, 0.28],
         ),
         axis: 'horizontal',
-        focus: 'main',
+        focus: 'map',
       }),
+      neighbourhood: CLOSE,
     }),
 }
 
