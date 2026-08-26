@@ -97,6 +97,7 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | span | A run of text as a client counts it: `from` and `to`, in UTF-16 code units. The one form a run takes on the wire; in the core the same run is a stretch. | |
 | lit | Where a stretch of a document's text falls on the pages it was read from: the pages, and the rectangles covering it on each. | |
 | window | The application's window on screen, and nothing else. | |
+| standing on nothing | A window showing no vault: an installation that holds none, or one whose vault was taken down and nothing came up in its place. Every question that would reach into a vault is refused there, and the welcome screen offers the list and the way to add one. | empty vault, no workspace |
 | panel | The column beside the plex where a person asks an agent something. | |
 | turn | One thing shown in the panel's conversation: what was asked, what was answered, what is being done. | |
 | voice | Whose turn it is, and so how it is drawn. | |

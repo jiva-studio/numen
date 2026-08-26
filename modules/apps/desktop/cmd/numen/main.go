@@ -141,7 +141,7 @@ func run(cfg container.Config, agents agentOptions, vault string, said sizes) er
 	})
 
 	window := app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:  "numen — " + opened.API.Showing().Name,
+		Title:  titled(opened.Showing()),
 		Width:  1280,
 		Height: 860,
 		URL:    "/",
@@ -155,7 +155,7 @@ func run(cfg container.Config, agents agentOptions, vault string, said sizes) er
 	// reach it through is stopped and started again around the swap.
 	opened.API.Opens = func(ctx context.Context, v domain.Vault) error {
 		err := reachable.around(func() error { return opened.Show(ctx, v) })
-		window.SetTitle("numen — " + opened.Showing().Name)
+		window.SetTitle(titled(opened.Showing()))
 		return err
 	}
 
@@ -178,6 +178,15 @@ func run(cfg container.Config, agents agentOptions, vault string, said sizes) er
 	})
 
 	return app.Run()
+}
+
+// titled is what the window is called: the application, and the vault it is
+// showing where it is showing one.
+func titled(v domain.Vault) string {
+	if v.Name == "" {
+		return "numen"
+	}
+	return "numen — " + v.Name
 }
 
 // reaching is the agents' endpoint on the vault the window is showing.
