@@ -22,18 +22,21 @@ zone serves from every continent and holds what it was given for thirty days;
 the builds' zone is on the volume tier, which is what large files that are
 rarely fetched should be on.
 
-The page and the manual go into the root of their stores. The builds go into
-`latest/`.
+The page and the manual go into the root of their stores. The builds go into three folders of theirs.
 
 The manual is a folder of folders, each holding an `index.html`, and a pull
 zone in front of storage answers `/install/` and `/install` alike with the file
 inside. Nothing has to be configured for that.
 
-## What is in `latest/`
+## What is in the store
 
-Six files, and one name each. The name never carries a version, so a link
-written on the page once goes on working after every release, and the store
-holds the newest build and nothing older — each run writes over the same names.
+| Folder | What is in it |
+| --- | --- |
+| `latest/` | The newest release, under names that carry no version |
+| `releases/<version>/` | That release under names that carry it, kept |
+| `dev/` | The last build somebody asked for by hand |
+
+Six files in each, and one name each in `latest/` and `dev/`:
 
 | File | What it is |
 | --- | --- |
@@ -44,11 +47,28 @@ holds the newest build and nothing older — each run writes over the same names
 | `numen-linux-amd64.rpm` | Fedora and RHEL |
 | `numen-linux-amd64.tar.gz` | The window on its own |
 
-Beside them, `latest.json` says the version, when it was built, and the size
-and SHA-256 of each file.
+A name in `latest/` never carries a version, so a link written on the page once goes on working after every release, and each run writes over the same names. In `releases/` the same file is `numen-<version>-macos.dmg` and its neighbours, and what is written there is written once.
 
-A platform that was not built in a run leaves its files alone: the run writes
-what it made and nothing else.
+Beside the six, `latest.json` says the version, the build number, the channel, when it was released, and for each file its platform, architecture, kind, size, SHA-256, and the address of the copy under `releases/` that keeps this version. That last one is what a machine asking what is newest is sent to fetch.
+
+A platform that was not built in a run leaves its files alone: the run writes what it made and nothing else.
+
+## What a number means
+
+A release is named by a git tag, `v0.4.0-alpha.1`, and that tag is the only place the version is written down. Beside it stands the build number: how many commits stand behind the one that was built, which rises with every commit and never repeats.
+
+| Where | What it carries |
+| --- | --- |
+| The file names in `releases/` | The version |
+| `numen --version` | `numen 0.4.0-alpha.1 (build 364)` |
+| The corner of the welcome screen | The version |
+| macOS `CFBundleShortVersionString` | The version |
+| macOS `CFBundleVersion` | The build number, which is what macOS orders two builds of one version by |
+| Windows `VIProductVersion` | `0.4.0.364` — four numbers, the last of them the build |
+| The deb and the rpm | `0.4.0~alpha.1`, a tilde being where both managers sort a prerelease before the release it leads to |
+| `latest.json` | The version and the build number, as two fields |
+
+The version goes into the binary at the link, and a name the linker does not find is one it passes over in silence, so the Linux job asks the binary it just built what it calls itself and stops if the answer does not carry the version. It goes into the page as `VITE_NUMEN_VERSION` while the page is built, which is where the welcome screen reads it from.
 
 ## Where the page looks for them
 
@@ -93,10 +113,9 @@ one thing more before it builds: that the keyboard page still says what the
 window does. It runs on a pull request touching the manual and on the three
 files the keyboard page is written from.
 
-**The builds.** `package.yml` is asked for by hand, and publishes only when it
-is asked to. It renames what each platform produced to the names above, writes
-`latest.json`, uploads, purges, and fetches every file back over the public
-address, checking that what comes down is the size of what went up.
+**The builds.** `package.yml` runs on a tag beginning with `v` and builds every platform, and it runs when it is asked for by hand and builds what it was asked for. A tag is named by the tag and goes into `latest/` and `releases/`; a run asked for by hand is named by what it was asked for, goes into `dev/`, and publishes only when it was told to. Either way it renames what each platform produced to the names above, writes `latest.json`, uploads, purges, and fetches every file back over the public address, checking that what comes down is the size of what went up.
+
+`latest/latest.json` is the one file asked for over and over by machines that already hold the rest, and the pull zone has to be told to hold it no longer than a minute. Everything under `releases/` is written once, and the zone can hold it for as long as it likes.
 
 ## The names on the web
 

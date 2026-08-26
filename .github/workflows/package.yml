@@ -1,8 +1,11 @@
 name: package
 
-# Files to hand to somebody, asked for by hand. Every job keeps what it built as
-# an artefact; what a release contains is a separate question.
+# Files to hand to somebody. A tag is a release and is named by the tag; a run
+# asked for by hand is named by what it was asked for. Every job keeps what it
+# built as an artefact; what a release contains is a separate question.
 on:
+  push:
+    tags: ["v*"]
   workflow_dispatch:
     inputs:
       version:
@@ -29,13 +32,88 @@ on:
         type: boolean
         default: true
       publish:
-        description: Put the builds on the shelf the page links to
+        description: Put the builds up where nothing points at them
         type: boolean
         default: false
 
 jobs:
+  # What this run is called and where it goes. A tag is named by the tag and
+  # goes where the page looks; anything else goes where nothing points at it.
+  naming:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.said.outputs.version }}
+      build: ${{ steps.said.outputs.build }}
+      numeric: ${{ steps.said.outputs.numeric }}
+      channel: ${{ steps.said.outputs.channel }}
+      shelf: ${{ steps.said.outputs.shelf }}
+      linux: ${{ steps.said.outputs.linux }}
+      windows: ${{ steps.said.outputs.windows }}
+      macos: ${{ steps.said.outputs.macos }}
+      notarize: ${{ steps.said.outputs.notarize }}
+      publish: ${{ steps.said.outputs.publish }}
+    steps:
+      # The build number is how many commits stand behind this one, so the whole
+      # history has to be here for it to be counted.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: said
+        env:
+          EVENT: ${{ github.event_name }}
+          ASKED_VERSION: ${{ inputs.version }}
+          ASKED_LINUX: ${{ inputs.linux }}
+          ASKED_WINDOWS: ${{ inputs.windows }}
+          ASKED_MACOS: ${{ inputs.macos }}
+          ASKED_NOTARIZE: ${{ inputs.notarize }}
+          ASKED_PUBLISH: ${{ inputs.publish }}
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT" = push ]; then
+            version=${GITHUB_REF_NAME#v}
+            shelf=latest
+            linux=true
+            windows=true
+            macos=true
+            notarize=true
+            publish=true
+          else
+            version=$ASKED_VERSION
+            shelf=dev
+            linux=$ASKED_LINUX
+            windows=$ASKED_WINDOWS
+            macos=$ASKED_MACOS
+            notarize=$ASKED_NOTARIZE
+            publish=$ASKED_PUBLISH
+          fi
+
+          build=$(git rev-list --count HEAD)
+
+          # Windows takes four numbers and nothing else, and the last of them is
+          # what tells two builds of one version apart.
+          IFS=. read -r major minor patch _ <<< "${version%%-*}"
+          numeric="${major:-0}.${minor:-0}.${patch:-0}.$build"
+
+          case "$version" in
+            *-alpha*) channel=alpha ;;
+            *-beta*) channel=beta ;;
+            *-*) channel=prerelease ;;
+            *) channel=stable ;;
+          esac
+          if [ "$shelf" != latest ]; then
+            channel=dev
+          fi
+
+          for name in version build numeric channel shelf linux windows macos notarize publish; do
+            echo "$name=${!name}" >> "$GITHUB_OUTPUT"
+          done
+          cat "$GITHUB_OUTPUT"
+
   linux:
-    if: inputs.linux
+    needs: [naming]
+    if: needs.naming.outputs.linux == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -54,26 +132,46 @@ jobs:
       - name: Webview
         run: sudo apt-get update && sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev
 
+      # The number the window draws in its corner is written into the page here.
       - name: Interface
+        env:
+          VITE_NUMEN_VERSION: ${{ needs.naming.outputs.version }}
         run: |
           make install
           make interface
 
+      # What the binary answers `--version` with is written in at the link.
       - name: Window
         working-directory: modules/apps/desktop
-        run: CGO_ENABLED=1 go build -trimpath -o "$RUNNER_TEMP/numen" ./cmd/numen
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+          BUILD: ${{ needs.naming.outputs.build }}
+        run: |
+          CGO_ENABLED=1 go build -trimpath \
+            -ldflags "-X main.version=$VERSION -X main.build=$BUILD" \
+            -o "$RUNNER_TEMP/numen" ./cmd/numen
+
+          # A name the linker does not find is one it passes over in silence.
+          # What the binary answers with is what says the version went in.
+          said=$("$RUNNER_TEMP/numen" --version)
+          echo "$said"
+          case "$said" in
+            *"$VERSION"*) ;;
+            *) echo "::error::the binary calls itself $said"; exit 1 ;;
+          esac
 
       - name: Archive
         env:
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ needs.naming.outputs.version }}
         run: tar czf "$RUNNER_TEMP/numen_${VERSION}_linux_amd64.tar.gz" -C "$RUNNER_TEMP" numen
 
       # One description, both package managers. What goes into a package is
       # gathered beside it first, because the paths in it are read from
-      # wherever nfpm is run.
+      # wherever nfpm is run. A dash before a prerelease becomes a tilde in the
+      # package's own version, which is where both managers sort it earliest.
       - name: Packages
         env:
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ needs.naming.outputs.version }}
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.47.0
 
@@ -103,7 +201,8 @@ jobs:
   # Windows reaches the system's browser through a component written in Go, so
   # this one is built on the same machine as Linux.
   windows:
-    if: inputs.windows
+    needs: [naming]
+    if: needs.naming.outputs.windows == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -117,18 +216,27 @@ jobs:
         with:
           node-version: "22"
 
+      # The number the window draws in its corner is written into the page here.
       - name: Interface
+        env:
+          VITE_NUMEN_VERSION: ${{ needs.naming.outputs.version }}
         run: |
           make install
           make interface
 
       - name: Window
         working-directory: modules/apps/desktop
-        run: GOOS=windows GOARCH=amd64 go build -trimpath -o "$RUNNER_TEMP/numen.exe" ./cmd/numen
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+          BUILD: ${{ needs.naming.outputs.build }}
+        run: |
+          GOOS=windows GOARCH=amd64 go build -trimpath \
+            -ldflags "-X main.version=$VERSION -X main.build=$BUILD" \
+            -o "$RUNNER_TEMP/numen.exe" ./cmd/numen
 
       - name: Archive
         env:
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ needs.naming.outputs.version }}
         run: cd "$RUNNER_TEMP" && zip -q "numen_${VERSION}_windows_amd64.zip" numen.exe
 
       # The installer carries Microsoft's own bootstrapper and runs it on a
@@ -136,19 +244,16 @@ jobs:
       # through.
       - name: Installer
         env:
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ needs.naming.outputs.version }}
+          NUMERIC: ${{ needs.naming.outputs.numeric }}
         run: |
           sudo apt-get update && sudo apt-get install -y nsis
           curl -sfSL "https://go.microsoft.com/fwlink/p/?LinkId=2124703" \
             -o "$RUNNER_TEMP/webview2.exe"
 
-          numeric=${VERSION%%-*}
-          IFS=. read -r major minor patch _ <<< "$numeric"
-          numeric="${major:-0}.${minor:-0}.${patch:-0}.0"
-
           makensis -V2 \
             "-DVERSION=$VERSION" \
-            "-DNUMERIC_VERSION=$numeric" \
+            "-DNUMERIC_VERSION=$NUMERIC" \
             "-DBINARY=$RUNNER_TEMP/numen.exe" \
             "-DWEBVIEW2=$RUNNER_TEMP/webview2.exe" \
             "-DOUTFILE=$RUNNER_TEMP/Numen-${VERSION}.exe" \
@@ -164,7 +269,8 @@ jobs:
           if-no-files-found: error
 
   macos:
-    if: inputs.macos
+    needs: [naming]
+    if: needs.naming.outputs.macos == 'true'
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -178,7 +284,10 @@ jobs:
         with:
           node-version: "22"
 
+      # The number the window draws in its corner is written into the page here.
       - name: Interface
+        env:
+          VITE_NUMEN_VERSION: ${{ needs.naming.outputs.version }}
         run: |
           make install
           make interface
@@ -189,16 +298,23 @@ jobs:
         working-directory: modules/apps/desktop
         env:
           MACOSX_DEPLOYMENT_TARGET: "11.0"
+          VERSION: ${{ needs.naming.outputs.version }}
+          BUILD: ${{ needs.naming.outputs.build }}
         run: |
-          CGO_ENABLED=1 GOARCH=arm64 go build -trimpath -o "$RUNNER_TEMP/numen-arm64" ./cmd/numen
-          CGO_ENABLED=1 GOARCH=amd64 CC="clang -arch x86_64" go build -trimpath -o "$RUNNER_TEMP/numen-amd64" ./cmd/numen
+          stamp="-X main.version=$VERSION -X main.build=$BUILD"
+          CGO_ENABLED=1 GOARCH=arm64 go build -trimpath -ldflags "$stamp" -o "$RUNNER_TEMP/numen-arm64" ./cmd/numen
+          CGO_ENABLED=1 GOARCH=amd64 CC="clang -arch x86_64" go build -trimpath -ldflags "$stamp" -o "$RUNNER_TEMP/numen-amd64" ./cmd/numen
           lipo -create "$RUNNER_TEMP/numen-arm64" "$RUNNER_TEMP/numen-amd64" -output "$RUNNER_TEMP/numen"
           lipo -info "$RUNNER_TEMP/numen"
           rm "$RUNNER_TEMP/numen-arm64" "$RUNNER_TEMP/numen-amd64"
 
+      # The version a person reads stands in one key, and the number that rises
+      # with every build in the other, which is the only thing macOS orders two
+      # builds of one version by.
       - name: Bundle
         env:
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ needs.naming.outputs.version }}
+          BUILD: ${{ needs.naming.outputs.build }}
         run: |
           APP="$RUNNER_TEMP/Numen.app"
           mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
@@ -207,7 +323,7 @@ jobs:
           cp modules/apps/desktop/build/darwin/numen.icns "$APP/Contents/Resources/numen.icns"
           printf 'APPL????' > "$APP/Contents/PkgInfo"
           plutil -replace CFBundleShortVersionString -string "$VERSION" "$APP/Contents/Info.plist"
-          plutil -replace CFBundleVersion -string "$VERSION" "$APP/Contents/Info.plist"
+          plutil -replace CFBundleVersion -string "$BUILD" "$APP/Contents/Info.plist"
           plutil -lint "$APP/Contents/Info.plist"
 
       # The identity lives in a keychain of this run's own, which the last step
@@ -252,7 +368,7 @@ jobs:
 
       - name: Disk image
         env:
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ needs.naming.outputs.version }}
         run: |
           # A compressed image is written twice over before it is one, and the
           # machine this runs on has room for the application about three times.
@@ -274,9 +390,9 @@ jobs:
       # Apple looks inside and answers; the ticket is then attached to the image
       # so that a machine offline can still be told the answer.
       - name: Notarize
-        if: inputs.notarize
+        if: needs.naming.outputs.notarize == 'true'
         env:
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ needs.naming.outputs.version }}
           API_KEY: ${{ secrets.APPLE_NOTARY_API_KEY }}
           API_KEY_ID: ${{ secrets.APPLE_STORE_CONNECT_API_KEY_ID }}
           API_KEY_ISSUER: ${{ secrets.APPLE_STORE_CONNECT_API_KEY_ISSUER }}
@@ -293,9 +409,9 @@ jobs:
 
       # What a person's machine will say when they open it.
       - name: Gatekeeper
-        if: inputs.notarize
+        if: needs.naming.outputs.notarize == 'true'
         env:
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ needs.naming.outputs.version }}
         run: |
           hdiutil attach "$RUNNER_TEMP/Numen-${VERSION}.dmg" \
             -mountpoint "$RUNNER_TEMP/mounted" -nobrowse -quiet
@@ -312,12 +428,12 @@ jobs:
         if: always()
         run: security delete-keychain "$RUNNER_TEMP/signing.keychain-db" || true
 
-  # The shelf the page links to. One name per file, never a version in it: a
-  # link written on the page once goes on working after every release, and the
-  # storage holds the latest build and nothing older.
+  # Where the builds go. A release is put up twice: under the name the page
+  # links to, which carries no version and holds the newest build, and under a
+  # name carrying its version, in a folder that is written once and kept.
   publish:
-    if: ${{ !cancelled() && inputs.publish }}
-    needs: [linux, windows, macos]
+    if: ${{ !cancelled() && needs.naming.outputs.publish == 'true' }}
+    needs: [naming, linux, windows, macos]
     runs-on: ubuntu-24.04
     steps:
       # Every one of these has to be set before a build can go anywhere, and a
@@ -344,54 +460,88 @@ jobs:
         with:
           path: ${{ runner.temp }}/built
 
-      # Whatever was built this run is renamed to the name the page asks for.
-      # A platform that was not built leaves its shelf alone.
+      # Whatever was built this run is renamed to the name the page asks for,
+      # and a release is copied a second time under the name with its version
+      # in it. A platform that was not built leaves both alone.
       - name: Name them
         env:
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ needs.naming.outputs.version }}
+          SHELF: ${{ needs.naming.outputs.shelf }}
         run: |
           set -euo pipefail
           built="$RUNNER_TEMP/built"
-          shelf="$RUNNER_TEMP/shelf"
-          mkdir -p "$shelf"
+          upload="$RUNNER_TEMP/upload"
+          made="$RUNNER_TEMP/made"
 
-          take() {
-            found=$(find "$built" -name "$1" -print -quit)
-            if [ -n "$found" ]; then
-              cp "$found" "$shelf/$2"
-              echo "  $2 <- $(basename "$found")"
+          mkdir -p "$upload/$SHELF"
+          : > "$made"
+          if [ "$SHELF" = latest ]; then
+            mkdir -p "$upload/releases/$VERSION"
+          fi
+
+          # What was built, the name it goes up under, and what a machine has to
+          # know to pick its own out of the manifest.
+          builds=(
+            "Numen-*.dmg|numen-macos.dmg|macos|universal|dmg"
+            "Numen-*.exe|numen-windows-setup.exe|windows|amd64|exe"
+            "numen_*_windows_amd64.zip|numen-windows-amd64.zip|windows|amd64|zip"
+            "numen_*_linux_amd64.tar.gz|numen-linux-amd64.tar.gz|linux|amd64|tar.gz"
+            "*.deb|numen-linux-amd64.deb|linux|amd64|deb"
+            "*.rpm|numen-linux-amd64.rpm|linux|amd64|rpm"
+          )
+
+          for row in "${builds[@]}"; do
+            IFS='|' read -r glob stable platform arch kind <<< "$row"
+            found=$(find "$built" -name "$glob" -print -quit)
+            if [ -z "$found" ]; then
+              echo "  —  $stable"
+              continue
             fi
-          }
 
-          take "Numen-*.dmg"                  numen-macos.dmg
-          take "Numen-*.exe"                  numen-windows-setup.exe
-          take "numen_*_windows_amd64.zip"    numen-windows-amd64.zip
-          take "numen_*_linux_amd64.tar.gz"   numen-linux-amd64.tar.gz
-          take "*.deb"                        numen-linux-amd64.deb
-          take "*.rpm"                        numen-linux-amd64.rpm
+            cp "$found" "$upload/$SHELF/$stable"
+            at="$SHELF/$stable"
+            if [ "$SHELF" = latest ]; then
+              versioned=${stable/numen-/numen-$VERSION-}
+              cp "$found" "$upload/releases/$VERSION/$versioned"
+              at="releases/$VERSION/$versioned"
+            fi
 
-          ls -la "$shelf"
+            echo "  $at <- $(basename "$found")"
+            printf '%s|%s|%s|%s|%s\n' "$stable" "$platform" "$arch" "$kind" "$at" >> "$made"
+          done
+
+          find "$upload" -type f -printf '%P\n' | sort
 
       # What the shelf holds, for anything that wants to know before it fetches.
+      # Each file is given the address of the copy that keeps this version, so
+      # what a machine is sent to fetch stays the file it was told the size of.
       - name: Say what is on it
         env:
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ needs.naming.outputs.version }}
+          BUILD: ${{ needs.naming.outputs.build }}
+          CHANNEL: ${{ needs.naming.outputs.channel }}
+          SHELF: ${{ needs.naming.outputs.shelf }}
+          SERVED_FROM: ${{ vars.BUNNY_SERVED_FROM }}
         run: |
           set -euo pipefail
-          shelf="$RUNNER_TEMP/shelf"
+          shelf="$RUNNER_TEMP/upload/$SHELF"
           {
-            printf '{\n  "version": "%s",\n' "$VERSION"
-            printf '  "built": "%s",\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            printf '{\n'
+            printf '  "version": "%s",\n' "$VERSION"
+            printf '  "build": %s,\n' "$BUILD"
+            printf '  "channel": "%s",\n' "$CHANNEL"
+            printf '  "released": "%s",\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
             printf '  "files": [\n'
             first=1
-            for file in "$shelf"/*; do
-              name=$(basename "$file")
-              [ "$name" = latest.json ] && continue
+            while IFS='|' read -r name platform arch kind at; do
               [ $first -eq 1 ] || printf ',\n'
               first=0
-              printf '    { "name": "%s", "size": %s, "sha256": "%s" }' \
-                "$name" "$(stat -c%s "$file")" "$(sha256sum "$file" | cut -d' ' -f1)"
-            done
+              file="$shelf/$name"
+              printf '    { "name": "%s", "platform": "%s", "arch": "%s", "kind": "%s",\n' \
+                "$name" "$platform" "$arch" "$kind"
+              printf '      "url": "%s/%s", "size": %s, "sha256": "%s" }' \
+                "$SERVED_FROM" "$at" "$(stat -c%s "$file")" "$(sha256sum "$file" | cut -d' ' -f1)"
+            done < "$RUNNER_TEMP/made"
             printf '\n  ]\n}\n'
           } > "$shelf/latest.json"
           cat "$shelf/latest.json"
@@ -407,15 +557,16 @@ jobs:
           KEY: ${{ secrets.BUNNY_STORAGE_KEY }}
         run: |
           set -euo pipefail
-          for file in "$RUNNER_TEMP/shelf"/*; do
-            name=$(basename "$file")
+          cd "$RUNNER_TEMP/upload"
+          mapfile -t paths < <(find . -type f -printf '%P\n' | sort)
+          for at in "${paths[@]}"; do
             code=$(curl -sS -o /dev/null -w '%{http_code}' \
-              -X PUT "https://$ENDPOINT/$ZONE/latest/$name" \
+              -X PUT "https://$ENDPOINT/$ZONE/$at" \
               -H "AccessKey: $KEY" \
               -H 'Content-Type: application/octet-stream' \
-              --data-binary "@$file")
-            echo "$code  $name"
-            case "$code" in 20*) ;; *) echo "::error::$name was refused with $code"; exit 1 ;; esac
+              --data-binary "@$at")
+            echo "$code  $at"
+            case "$code" in 20*) ;; *) echo "::error::$at was refused with $code"; exit 1 ;; esac
           done
 
       # The edge holds what it was given until it is told otherwise, and every
@@ -440,18 +591,19 @@ jobs:
           SERVED_FROM: ${{ vars.BUNNY_SERVED_FROM }}
         run: |
           set -euo pipefail
-          for file in "$RUNNER_TEMP/shelf"/*; do
-            name=$(basename "$file")
-            want=$(stat -c%s "$file")
+          cd "$RUNNER_TEMP/upload"
+          mapfile -t paths < <(find . -type f -printf '%P\n' | sort)
+          for at in "${paths[@]}"; do
+            want=$(stat -c%s "$at")
             # A purge is answered before it has reached every edge, so a name
             # asked for straight after one can come back as nothing yet.
             # -w ends no line of its own, and read wants one.
             read -r code length < <(curl -sS -o /dev/null -L \
               --retry 6 --retry-delay 5 --retry-all-errors -f \
-              -w '%{http_code} %{size_download}\n' "$SERVED_FROM/latest/$name" || true)
-            echo "${code:-—}  $name  ${length:-0} of $want"
+              -w '%{http_code} %{size_download}\n' "$SERVED_FROM/$at" || true)
+            echo "${code:-—}  $at  ${length:-0} of $want"
             if [ "${code:-0}" != 200 ] || [ "${length:-0}" != "$want" ]; then
-              echo "::error::$name did not come back whole from $SERVED_FROM"
+              echo "::error::$at did not come back whole from $SERVED_FROM"
               exit 1
             fi
           done
