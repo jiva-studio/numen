@@ -3757,12 +3757,12 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\vListRequest\x12\x16\n" +
 	"\x06folder\x18\x01 \x01(\tR\x06folder\"9\n" +
 	"\fListResponse\x12)\n" +
-	"\aentries\x18\x01 \x03(\v2\x0f.numen.v1.EntryR\aentries\"w\n" +
+	"\aentries\x18\x01 \x03(\v2\x0f.numen.v1.EntryR\aentries\"}\n" +
 	"\x05Entry\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x16\n" +
 	"\x06folder\x18\x03 \x01(\bR\x06folder\x12(\n" +
-	"\x04kind\x18\x04 \x01(\x0e2\x14.numen.v1.SourceKindR\x04kindJ\x04\b\x05\x10\x06\"!\n" +
+	"\x04kind\x18\x04 \x01(\x0e2\x14.numen.v1.SourceKindR\x04kindJ\x04\b\x05\x10\x06R\x04size\"!\n" +
 	"\vReadRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"\x93\x01\n" +
 	"\fReadResponse\x12\x12\n" +
@@ -3824,11 +3824,12 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\achanged\x18\x06 \x01(\bR\achangedB\b\n" +
 	"\x06_movedB\n" +
 	"\n" +
-	"\b_refusal\"M\n" +
+	"\b_refusal\"Y\n" +
 	"\x05Moved\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to\x12\x1a\n" +
-	"\brepaired\x18\x03 \x03(\tR\brepairedJ\x04\b\x04\x10\x05\"1\n" +
+	"\brepaired\x18\x03 \x03(\tR\brepairedJ\x04\b\x04\x10\x05R\n" +
+	"retargeted\"1\n" +
 	"\vMoveRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to\"\x82\x01\n" +

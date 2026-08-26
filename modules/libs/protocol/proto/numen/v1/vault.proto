@@ -490,6 +490,7 @@ message Entry {
   SourceKind kind = 4;
 
   reserved 5;
+  reserved "size";
 }
 
 // SourceKind is what the vault holds at a path. A file the index holds no text
@@ -680,6 +681,7 @@ message Moved {
   repeated string repaired = 3;
 
   reserved 4;
+  reserved "retargeted";
 }
 
 message MoveRequest {
