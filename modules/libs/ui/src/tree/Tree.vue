@@ -358,6 +358,7 @@ onBeforeUnmount(() => {
 <template>
   <div
     class="tree numen min-h-0 bg-surface font-sans text-base text-ink"
+    :data-into="at && 'into' in at && at.into === null ? '' : undefined"
     @contextmenu.prevent="askMenu(null, { x: $event.clientX, y: $event.clientY })"
   >
     <div
@@ -483,13 +484,24 @@ onBeforeUnmount(() => {
   opacity: var(--carried-fade);
 }
 
+/* Where the keyboard stands. */
 .tree__row:focus-visible {
   outline: var(--numen-ring-width) solid var(--numen-ring);
   outline-offset: calc(-1 * var(--numen-ring-width));
 }
 
+/* A row the selection already marks is marked once. */
+.tree__row[data-selected]:focus-visible {
+  outline: none;
+}
+
 /* The row a drag would land inside, and the line a drag would land on. */
 .tree__row[data-into] {
+  box-shadow: inset 0 0 0 var(--numen-ring-width) var(--numen-ring);
+}
+
+/* The whole of it, for what would land at the top level. */
+.tree[data-into] {
   box-shadow: inset 0 0 0 var(--numen-ring-width) var(--numen-ring);
 }
 

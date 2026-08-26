@@ -37,10 +37,10 @@ export const folderOf = (path: string): string => {
 
 /**
  * The folder a row let go of lands in: the one it went into, or the one holding
- * the row it came before.
+ * the row it came before. Into no row at all is the root.
  */
-export const landedIn = (at: { into: string } | { before: string }): string =>
-  'into' in at ? at.into : folderOf(at.before)
+export const landedIn = (at: { into: string | null } | { before: string }): string =>
+  'into' in at ? (at.into ?? ROOT) : folderOf(at.before)
 
 /** The folders above a path, from the root down. The root itself is in none of them. */
 export const above = (path: string): readonly string[] => {

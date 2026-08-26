@@ -208,9 +208,13 @@ describe('where a drag lands', () => {
     expect(at(71)).toStrictEqual({ before: 'empty' })
   })
 
-  it('lands nowhere past the last row', () => {
-    expect(at(118)).toBeNull()
-    expect(at(200)).toBeNull()
+  it('lands at the top level past the last row, which is the tree’s own area', () => {
+    expect(at(118)).toStrictEqual({ into: null })
+    expect(at(200)).toStrictEqual({ into: null })
+  })
+
+  it('lands at the top level under the last row, where nothing comes after it', () => {
+    expect(at(112)).toStrictEqual({ into: null })
   })
 
   it('lands nowhere above the first row', () => {

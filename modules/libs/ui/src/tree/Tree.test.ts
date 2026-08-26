@@ -409,10 +409,10 @@ describe('a drag', () => {
     expect(held.emitted('move')).toBeUndefined()
   })
 
-  it('moves nothing let go past the last row', async () => {
+  it('takes a row to the top level, let go past the last row', async () => {
     const held = mountTree()
     await dragTo(held, 'work', 5 * HEIGHT - 2)
-    expect(held.emitted('move')).toBeUndefined()
+    expect(held.emitted('move')).toStrictEqual([[['work'], { into: null }]])
   })
 
   it('moves nothing where the pointer did not travel far enough', async () => {

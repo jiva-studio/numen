@@ -9,7 +9,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Entry } from '../core'
 import { filing, landingOf, renamedTo } from './kind'
-import { listing, ROOT } from './listing'
+import { folderOf, listing, ROOT } from './listing'
 import { NEW_FOLDER, NEW_NOTE, RENAME } from './menu'
 import { WORDS as words } from './words'
 
@@ -42,14 +42,22 @@ const held: Record<string, readonly Entry[]> = {
 const settles = () => new Promise((done) => setTimeout(done, 0))
 
 /** A tab of that vault, writing down everything it asked of the window. */
-const tab = () => {
+const tab = (refuses = false) => {
   const done: string[] = []
-  const list = listing({ list: async (at: string) => held[at] ?? [] })
+  // Its own copy, so a folder one test makes is not there for the next.
+  const vault: Record<string, readonly Entry[]> = { ...held }
+  const list = listing({ list: async (at: string) => vault[at] ?? [] })
   const gestures = filing(list, {
     lands: (landing) => void done.push(`lands ${landing ? `${landing.at} ${landing.path}` : '—'}`),
     runs: (id, paths, name) => void done.push(`runs ${id} ${paths.join(' ')} ${name}`),
     moves: async (from, to) => void done.push(`moves ${from} ${to}`),
-    makes: async (path) => void done.push(`makes ${path}`),
+    makes: async (path) => {
+      done.push(`makes ${path}`)
+      if (refuses) return
+      const into = folderOf(path)
+      vault[into] = [...(vault[into] ?? []), folder(path)]
+      vault[path] = []
+    },
     writes: async (folder) => {
       const made = folder === ROOT ? 'Untitled note.md' : `${folder}/Untitled note.md`
       done.push(`writes ${made}`)
@@ -295,8 +303,8 @@ describe('a name given to a row', () => {
 
 describe('an item chosen in the menu on a row', () => {
   /** The menu on a row of the vault, standing open. */
-  const asked = async (path: string | null = 'Entropy.md') => {
-    const held = tab()
+  const asked = async (path: string | null = 'Entropy.md', refuses = false) => {
+    const held = tab(refuses)
     await held.list.opens(ROOT)
     held.one.asks({ path, at: { x: 0, y: 0 } })
     return held
@@ -336,6 +344,17 @@ describe('an item chosen in the menu on a row', () => {
     await settles()
 
     expect(one.renaming.value).toBe('New folder')
+  })
+
+  // A field over a folder the vault does not hold renames nothing, and asks
+  // the person to name what is not there.
+  it('puts no name in a field where the folder was refused', async () => {
+    const { one } = await asked('Entropy.md', true)
+
+    one.chose(NEW_FOLDER)
+    await settles()
+
+    expect(one.renaming.value).toBeNull()
   })
 
   it('makes a note beside the row, and puts its name in a field', async () => {

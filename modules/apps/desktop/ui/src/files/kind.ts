@@ -213,7 +213,9 @@ export function filing(list: Listing, deps: Filing) {
     const made = into === ROOT ? name : `${into}/${name}`
     await deps.makes(made)
     await list.opens(into)
-    renaming.value = made
+    // The folder the vault holds is the one to name. Nothing there is a
+    // refusal, and it has already been said.
+    if (list.entryAt(made)) renaming.value = made
   }
 
   /**

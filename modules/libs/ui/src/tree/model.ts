@@ -236,19 +236,23 @@ export function stepTo(shown: readonly ShownRow[], from: RowId | null, key: Tree
 }
 
 /** Where a drag would put what is held. */
-export type Landing = { readonly into: RowId } | { readonly before: RowId }
+/**
+ * Where what is held would land: inside a row, or above one. Into no row at
+ * all is the top level.
+ */
+export type Landing = { readonly into: RowId | null } | { readonly before: RowId }
 
-/** The row a landing names. */
-const named = (at: Landing): RowId => ('into' in at ? at.into : at.before)
+/** The row a landing names, and nothing for the top level. */
+const named = (at: Landing): RowId | null => ('into' in at ? at.into : at.before)
 
 /**
  * What letting go at a height comes to.
  *
  * A row that holds is read in three bands: the middle half means into it, and
  * the quarter at either end means between. Every other row is halved, and each
- * half means between. Past the last row there is nothing to come before, and a
- * landing naming one of the rows being dragged moves nothing; both answer
- * nothing.
+ * half means between. Past the last row is the top level, which is what the
+ * tree's own empty area comes to. A landing naming one of the rows being
+ * dragged moves nothing and answers nothing.
  */
 export function landing(
   shown: readonly ShownRow[],
@@ -257,7 +261,10 @@ export function landing(
   height: number,
 ): Landing | null {
   const found = bandAt(shown, y, height)
-  return found && !dragging.includes(named(found)) ? found : null
+  if (!found) return null
+
+  const on = named(found)
+  return on !== null && dragging.includes(on) ? null : found
 }
 
 /** The band a height falls in, as a landing. */
@@ -266,7 +273,7 @@ function bandAt(shown: readonly ShownRow[], y: number, height: number): Landing 
 
   const at = Math.floor(y / height)
   const row = shown[at]
-  if (!row) return null
+  if (!row) return { into: null }
 
   const band = y - at * height
   const edge = row.holds ? height / 4 : height / 2
@@ -275,7 +282,7 @@ function bandAt(shown: readonly ShownRow[], y: number, height: number): Landing 
   if (band < height - edge) return { into: row.id }
 
   const next = shown[at + 1]
-  return next ? { before: next.id } : null
+  return next ? { before: next.id } : { into: null }
 }
 
 /** The row a landing puts what is held inside. Null at the top level. */

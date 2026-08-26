@@ -103,6 +103,12 @@ describe('where a row let go of lands', () => {
   it('is the root for a row that came before one at the top of the vault', () => {
     expect(landedIn({ before: 'Cover.png' })).toBe(ROOT)
   })
+
+  // A folder deep in the tree is brought out by letting it go on the tree's
+  // own area, which names no row.
+  it('is the root for a drop into no row at all', () => {
+    expect(landedIn({ into: null })).toBe(ROOT)
+  })
 })
 
 describe('the tree as it opens', () => {
