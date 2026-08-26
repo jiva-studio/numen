@@ -55,12 +55,18 @@ Any test about scoping populates two vaults whose notes share no words, and asse
 2. **The component in jsdom.** What is emitted, and what is drawn from the props it was handed. **The negatives belong here** — what the component does *not* emit, what is *not* drawn — because those fail silently and look right in every screenshot.
 3. **The stories, run as tests.** Each story is rendered in a browser, so a story that stops rendering is a failing test, and one fixture serves both the gallery and the suite.
 
+### A story is rendered in the engines the window is
+
+The window is the platform's own webview: WebKit on a mac and on Linux, where the desktop links against `webkitgtk-6.0`, and Chromium on Windows. Every story is therefore rendered in both, through Playwright's `webkit` and `chromium`. A difference between the engines — an unprefixed property one of them does not read, a font descriptor one of them ignores — then fails a test rather than waiting for somebody to open the application.
+
 ## Consequences
 
 - The suite runs on any machine, in any order, without arranging anything first and without leaving anything behind.
 - Breaking a rule to watch its test fail is a manual step that nothing enforces.
 - An awkward fixture is harder to read than a tidy one, and every edge case added to it makes every test that counts notes more brittle.
-- The stories run in a browser that is not the one the window is built on, so a green story is not a drawn window.
+- Every story is drawn twice, and the frames of all of them come off one machine.
+- The stories run in Playwright's builds of the two engines, at whatever versions Playwright carries. The window's own webview is a different build of the same engine at whatever version the machine carries, so a green story is still not a drawn window.
+- Both browsers have to be on the machine — `npx playwright install chromium webkit`. A distribution whose shared libraries Playwright's WebKit does not find cannot run the story level at all.
 
 ## Alternatives considered
 

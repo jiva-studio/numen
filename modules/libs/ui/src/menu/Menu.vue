@@ -252,6 +252,7 @@ onBeforeUnmount(leave)
 .menu__item {
   cursor: default;
   user-select: none;
+  -webkit-user-select: none;
 }
 
 .menu__item:hover:not(:disabled),

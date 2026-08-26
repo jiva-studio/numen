@@ -692,6 +692,7 @@ onBeforeUnmount(() => {
 .palette__item {
   cursor: default;
   user-select: none;
+  -webkit-user-select: none;
 }
 
 .palette__lines {
@@ -775,6 +776,7 @@ onBeforeUnmount(() => {
 .palette__deed {
   cursor: default;
   user-select: none;
+  -webkit-user-select: none;
 }
 
 .palette__deed[data-here] {

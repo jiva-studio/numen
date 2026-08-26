@@ -96,3 +96,57 @@ describe('the pages drawn', () => {
     expect(held.find('.reader__row').exists()).toBe(false)
   })
 })
+
+describe('the page it says it stands on', () => {
+  /** The row scrolled by hand, and the reader told about it. */
+  const moved = async (held: ReturnType<typeof mount>, to: number) => {
+    const area = held.find('.reader__room').element as HTMLElement
+    area.scrollLeft = to
+    await held.find('.reader__room').trigger('scroll')
+  }
+
+  /** Which pages the reader has asked to be turned to, in the order it asked. */
+  const turned = (held: ReturnType<typeof mount>) =>
+    (held.emitted('go') ?? []).map((one) => (one as [number])[0])
+
+  it('says nothing while the row travels to the page it was turned to', async () => {
+    // A turn is a scroll the browser animates, and the pages the row passes
+    // over on the way are pages nobody turned to. Reporting one of them is
+    // answered with a scroll back to it, and the turn is undone.
+    const held = await reader(1000, 800)
+    await held.setProps({ at: 4 })
+
+    await moved(held, 0)
+    await moved(held, 200)
+
+    expect(turned(held)).toHaveLength(0)
+  })
+
+  it('says where the row stands once the hand has it', async () => {
+    const held = await reader(1000, 800)
+
+    await moved(held, 4000)
+
+    expect(turned(held).length).toBeGreaterThan(0)
+    expect(turned(held).at(-1)).toBeGreaterThan(0)
+  })
+
+  it('turns again when the page changes before the row has said it arrived', async () => {
+    // The room moves when it is told to and the event saying so comes after.
+    // A turn asked for in between is a turn to a page the row is not on.
+    const held = await reader(1000, 800)
+    const area = held.find('.reader__room').element as HTMLElement
+    const sent: number[] = []
+    area.scrollTo = ((to: ScrollToOptions) => {
+      sent.push(to.left ?? 0)
+      area.scrollLeft = to.left ?? 0
+    }) as typeof area.scrollTo
+
+    await held.setProps({ at: 4 })
+    await held.setProps({ at: 0 })
+
+    expect(sent).toHaveLength(2)
+    expect(sent[0]).toBeGreaterThan(0)
+    expect(sent[1]).toBe(0)
+  })
+})
