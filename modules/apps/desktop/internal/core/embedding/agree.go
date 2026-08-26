@@ -12,7 +12,7 @@ const Asked = "Śrī Caitanya Mahāprabhu — Кришна — the holy name"
 // Agreed says whether two vectors of one text came from one model.
 //
 // A question embedded in another space finds nothing the first indexed. Two
-// placements name a model by whatever each of them calls it, so what they
+// stations name a model by whatever each of them calls it, so what they
 // answer is compared instead.
 func Agreed(a, b []float32) bool {
 	if len(a) == 0 || len(a) != len(b) {

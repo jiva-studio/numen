@@ -16,7 +16,7 @@ import (
 // Embedders are what makes the vectors a vault is searched by and what makes
 // the vector a question is asked with.
 //
-// They are one model where the settings name one placement. Naming a placement
+// They are one model where the settings name one station. Naming a station
 // for questions is what puts a vault indexed over a network within reach of a
 // machine that has none.
 //
@@ -24,8 +24,8 @@ import (
 // is drawn while it arrives. Until it is here the words answer alone, and the
 // model and its width are known from the settings.
 //
-// An embedder is optional: an installation naming no placement answers with
-// nothing. A placement that cannot be built — no key, no base URL — is a
+// An embedder is optional: an installation naming no station answers with
+// nothing. A station that cannot be built — no key, no base URL — is a
 // reason, and nothing is built at all.
 func (c Config) Embedders(ctx context.Context, tasks *task.Tasks) (indexing, asking port.Embedder, close func() error, why error) {
 	first, why := c.placed(ctx, c.Embedding.Indexing, forIndexing, tasks)
@@ -44,7 +44,7 @@ func (c Config) Embedders(ctx context.Context, tasks *task.Tasks) (indexing, ask
 	if second == nil {
 		return first.Filling(), nil, first.Close, nil
 	}
-	// Two placements are asked whether they are one model, once both are here.
+	// Two stations are asked whether they are one model, once both are here.
 	go func() {
 		if err := agreeing(ctx, first, second); err != nil {
 			_ = second.Disown(err)
@@ -65,7 +65,7 @@ func (c Config) Embedder(ctx context.Context) (port.Embedder, func() error, erro
 }
 
 // Asking is what embeds a question, for a run that fills no index. Only the
-// placement that answers questions is opened, and it answers under the identity
+// station that answers questions is opened, and it answers under the identity
 // the index is filled with.
 func (c Config) Asking(ctx context.Context) (port.Embedder, func() error, error) {
 	held, err := c.placed(ctx, c.Embedding.Asking(), forQuery, nil)
@@ -86,13 +86,13 @@ func (c Config) Searching(db *Index, asking port.Embedder, trouble func(error)) 
 		asking, c.Embedding.Floor, trouble)
 }
 
-// placed is what one placement makes: a service, which answers at once, or a
+// placed is what one station makes: a service, which answers at once, or a
 // model on this machine, which is loaded behind the window. Nothing for a
-// placement that names neither.
+// station that names neither.
 //
 // Whichever it is, it answers under the identity the index is filled with, and
-// the two placements are held to it by being compared as one model.
-func (c Config) placed(ctx context.Context, where embed.Placement, role string, tasks *task.Tasks) (*embedding.Embedding, error) {
+// the two stations are held to it by being compared as one model.
+func (c Config) placed(ctx context.Context, where embed.Station, role string, tasks *task.Tasks) (*embedding.Embedding, error) {
 	is := c.Embedding.Stored()
 	switch where.Use {
 	case embed.UseService:
@@ -130,10 +130,10 @@ func (c Config) placed(ctx context.Context, where embed.Placement, role string, 
 		where.Use, embed.UseLocal, embed.UseService)
 }
 
-// agreeing is the two placements answering one text alike, once both are here.
+// agreeing is the two stations answering one text alike, once both are here.
 //
 // A question embedded in another space finds nothing the first indexed, and
-// nothing in a settings file shows that two placements are one model. A
+// nothing in a settings file shows that two stations are one model. A
 // comparison that did not happen is not agreement, and only a context that
 // ended excuses one.
 func agreeing(ctx context.Context, first, second *embedding.Embedding) error {
@@ -169,23 +169,23 @@ func agreeing(ctx context.Context, first, second *embedding.Embedding) error {
 	return nil
 }
 
-// Which half of the work a placement is for. An arrival is called by its role
-// and its name, and two placements naming one repository are two lines.
+// Which half of the work a station is for. An arrival is called by its role
+// and its name, and two stations naming one repository are two lines.
 const (
 	forIndexing = "indexing"
 	forQuery    = "query"
 )
 
-// listing is one placement's arrival in the list of what is being done: what
+// listing is one station's arrival in the list of what is being done: what
 // that line is called, and the name to show on it.
 type listing struct {
 	id, name string
 }
 
-// arriving is how one placement appears while it is on its way. A model on this
+// arriving is how one station appears while it is on its way. A model on this
 // machine is named by its repository and a service by the model it is asked
 // for.
-func arriving(role string, where embed.Placement) listing {
+func arriving(role string, where embed.Station) listing {
 	name := where.Service.Name
 	if where.Use == embed.UseLocal {
 		name = where.Local.Name

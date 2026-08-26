@@ -10,8 +10,8 @@ import (
 // two are not one set of vectors.
 func TestAModelRunHereAndOneServedAreTwoAddresses(t *testing.T) {
 	name := "intfloat/multilingual-e5-small"
-	here := embed.Placement{Use: embed.UseLocal, Local: embed.LocalModel{Name: name}}
-	served := embed.Placement{
+	here := embed.Station{Use: embed.UseLocal, Local: embed.LocalModel{Name: name}}
+	served := embed.Station{
 		Use:     embed.UseService,
 		Service: embed.ServiceModel{BaseURL: "http://127.0.0.1:1/v1", Name: name},
 	}
@@ -61,17 +61,17 @@ func TestOneBuildOnThisMachineIsOneAddress(t *testing.T) {
 	}
 }
 
-// A placement naming neither is an installation with no model, and has no
+// A station naming neither is an installation with no model, and has no
 // address at all.
-func TestAPlacementThatNamesNeitherIsNowhere(t *testing.T) {
-	if got := (embed.Placement{}).From(); got != "" {
+func TestAStationThatNamesNeitherIsNowhere(t *testing.T) {
+	if got := (embed.Station{}).From(); got != "" {
 		t.Errorf("got %q", got)
 	}
 }
 
 // What a vector is kept under is the model, made where the index is filled. A
 // question placed elsewhere claims those rows.
-func TestVectorsAreKeptUnderThePlacementThatFillsTheIndex(t *testing.T) {
+func TestVectorsAreKeptUnderTheStationThatFillsTheIndex(t *testing.T) {
 	cfg := embed.Defaults()
 	cfg.Query.Use = embed.UseService
 
