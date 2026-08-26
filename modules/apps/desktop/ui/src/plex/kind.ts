@@ -10,7 +10,7 @@
  */
 import { computed, ref } from 'vue'
 import type { MenuOpening, PlexNeighbourhood, PlexRelatedSeat, PlexShowing } from '@numen/ui'
-import { OFFERED } from './menu'
+import { NEW_NOTE, OFFERED } from './menu'
 import { asPlex } from './picture'
 import type { Standing } from './standing'
 import { ticketing } from './tickets'
@@ -20,9 +20,10 @@ import { PLEX, plexCalled } from '../workspace'
 import PlexTab from './PlexTab.vue'
 import { WORDS as words } from './words'
 
-/** Where the menu on a node stands, and the node it was asked for on. */
+/** Where the menu stands, and the node it was asked for on. */
 export interface Asked {
-  readonly node: string
+  /** The node it was asked for on, and nothing where it was asked off every node. */
+  readonly node: string | null
   readonly at: { x: number; y: number }
   readonly from: HTMLElement | SVGElement | null
   readonly opening: MenuOpening
@@ -57,6 +58,11 @@ export interface Plexing {
   carried(): readonly string[]
   /** What could not be done, in words a person reads. */
   says(text: string): void
+  /**
+   * A note made at the top of the vault, under a name nothing there carries.
+   * The path it landed at, and nothing where none was made.
+   */
+  writes(): Promise<string>
   /** Asks the vault where it opens, for a plex that has nowhere to stand. */
   first(): Promise<string>
   /** The seats a gesture may make a note in, which the picture draws. */
@@ -243,7 +249,17 @@ export function plexing(view: Standing, deps: Plexing) {
     if (path) deps.opens(path, nameOf(path), showing)
   }
 
-  /** A menu asked for on a node, and one put away. */
+  /**
+   * A note made at the top of the vault, which the plex then stands on. It is
+   * in the index by the time the answer arrives, so the picture drawn around it
+   * is the one the vault holds.
+   */
+  const writes = async () => {
+    const path = await deps.writes()
+    if (path) await view.go(path)
+  }
+
+  /** A menu asked for on a node or off every node, and one put away. */
   const asks = (asked: Asked) => {
     menu.value = asked
   }
@@ -255,7 +271,12 @@ export function plexing(view: Standing, deps: Plexing) {
   const chose = (id: string) => {
     const asking = menu.value
     menu.value = null
-    if (!asking || !OFFERED.has(id)) return
+    if (!asking) return
+    if (asking.node === null) {
+      if (id === NEW_NOTE) void writes()
+      return
+    }
+    if (!OFFERED.has(id)) return
     const path = tickets.note(asking.node)
     if (path) deps.runs(id, path, nameOf(path))
   }
@@ -291,6 +312,7 @@ export function plexing(view: Standing, deps: Plexing) {
     joined,
     brought,
     opens,
+    writes,
     asks,
     dismiss,
     chose,

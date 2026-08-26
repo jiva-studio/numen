@@ -10,7 +10,7 @@
 import { computed } from 'vue'
 import { Menu, optionsForType, Plex, useTypeSize } from '@numen/ui'
 import type { MenuOpening, PlexRelatedSeat, PlexShowing } from '@numen/ui'
-import { ITEMS } from './menu'
+import { ITEMS, NONE } from './menu'
 import type { Held } from './kind'
 import { WORDS as words } from './words'
 
@@ -22,10 +22,28 @@ const props = defineProps<{ held: Held }>()
  */
 const type = useTypeSize()
 const options = computed(() => optionsForType(type.value))
+
+/** What the menu offers: on a node, or off every node. */
+const items = computed(() => (props.held.menu.value?.node === null ? NONE : ITEMS))
+
+/**
+ * A menu asked for over a tab drawing no picture, which is a vault holding no
+ * note to draw one around. A tab drawing one leaves the picture to answer.
+ */
+const asks = (event: MouseEvent) => {
+  if (props.held.picture.value) return
+  event.preventDefault()
+  props.held.asks({
+    node: null,
+    at: { x: event.clientX, y: event.clientY },
+    from: null,
+    opening: 'pointer',
+  })
+}
 </script>
 
 <template>
-  <div class="plex">
+  <div class="plex" @contextmenu="asks">
     <p v-if="props.held.view.trouble.value" class="warning">
       {{ props.held.view.trouble.value }}
     </p>
@@ -61,7 +79,7 @@ const options = computed(() => optionsForType(type.value))
 
     <Menu
       v-if="props.held.menu.value"
-      :items="ITEMS"
+      :items="items"
       :at="props.held.menu.value!.at"
       :from="props.held.menu.value!.from"
       :opening="props.held.menu.value!.opening"

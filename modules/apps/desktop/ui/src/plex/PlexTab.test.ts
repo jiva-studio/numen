@@ -1,5 +1,5 @@
 /**
- * How large the tab draws the picture.
+ * How large the tab draws the picture, and what it offers where it draws none.
  *
  * The window is drawn at whatever multiple of its designed size a person asked
  * for, and a node's label is set in the window's type. What is asked here is
@@ -9,7 +9,8 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import PlexTab from './PlexTab.vue'
-import type { Held } from './kind'
+import type { Asked, Held } from './kind'
+import { WORDS as words } from './words'
 
 /** A tab standing on one note, with a child beside it and no menu open. */
 const held = () =>
@@ -84,5 +85,53 @@ describe('the box a node is drawn in', () => {
     const view = mount(PlexTab, { props: { held: held() } })
     expect(widthOf(view, 'Root')).toBe(132)
     expect(widthOf(view, 'Child')).toBe(108)
+  })
+})
+
+describe('a menu asked for over a tab drawing no picture', () => {
+  /** A tab of a vault holding no note, with what it was asked written down. */
+  const empty = () => {
+    const asked: Asked[] = []
+    const tab = {
+      ...held(),
+      picture: ref(null),
+      asks: (one: Asked) => void asked.push(one),
+    } as unknown as Held
+    return { tab, asked }
+  }
+
+  it('is asked for off every node, where the pointer was', async () => {
+    drawing(13)
+    const { tab, asked } = empty()
+    const view = mount(PlexTab, { props: { held: tab } })
+
+    await view.get('.plex').trigger('contextmenu', { clientX: 12, clientY: 34 })
+
+    expect(asked).toStrictEqual([
+      { node: null, at: { x: 12, y: 34 }, from: null, opening: 'pointer' },
+    ])
+  })
+
+  it('offers a note to be made', async () => {
+    drawing(13)
+    const { tab } = empty()
+    tab.menu.value = { node: null, at: { x: 0, y: 0 }, from: null, opening: 'pointer' }
+    const view = mount(PlexTab, { props: { held: tab }, attachTo: document.body })
+
+    const items = document.body.querySelectorAll('[role="menuitem"]')
+
+    expect([...items].map((item) => item.textContent?.trim())).toStrictEqual([words.newNote])
+    view.unmount()
+  })
+
+  it('leaves a tab drawing a picture to answer for itself', async () => {
+    drawing(13)
+    const asked: Asked[] = []
+    const tab = { ...held(), asks: (one: Asked) => void asked.push(one) } as Held
+    const view = mount(PlexTab, { props: { held: tab } })
+
+    await view.get('.plex').trigger('contextmenu', { clientX: 12, clientY: 34 })
+
+    expect(asked).toStrictEqual([])
   })
 })

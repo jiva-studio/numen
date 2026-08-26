@@ -11,13 +11,16 @@ import { create } from '@bufbuild/protobuf'
 import { paneById, panesOf } from '@numen/ui'
 import { Seat, type NeighbourhoodResponse } from '@numen/protocol'
 import { plexKind, plexing, type Held, type Making, type Plexing } from './kind'
-import { ITEMS } from './menu'
+import { ITEMS, NEW_NOTE } from './menu'
 import { NeighbourhoodSchema } from './picture'
 import { standing as stands, type Standing } from './standing'
 import { WORDS as words } from './words'
 import { wentTo, type Went } from '../core'
 import { windowing, type Kept } from '../windowing'
 import { PLEX } from '../workspace'
+
+/** A moment for whatever a gesture asked the vault for to come back. */
+const settles = () => new Promise((done) => setTimeout(done, 0))
 
 /** A neighbourhood as the vault answers one: a focus, and what is around it. */
 const around = (focus: string, related: readonly string[] = []): NeighbourhoodResponse =>
@@ -79,8 +82,12 @@ const tab = (at: string, related: readonly string[] = [], takes = true) => {
   const asked: string[] = []
   const ran: [string, string, string][] = []
   const said: string[] = []
+  /** Every note the vault was asked to make on its own. */
+  const wrote: string[] = []
   /** The notes the window is carrying over this picture, which a test sets. */
   const carrying = ref<readonly string[]>([])
+  /** Where a note made on its own lands, which a test empties for a vault refusing. */
+  const writes = ref('Untitled note.md')
   const deps: Plexing = {
     makes: vault.makes,
     ready: () => true,
@@ -91,12 +98,28 @@ const tab = (at: string, related: readonly string[] = [], takes = true) => {
     first: async () => 'Opening.md',
     carried: () => carrying.value,
     says: (text) => said.push(text),
+    writes: async () => {
+      wrote.push(writes.value)
+      return writes.value
+    },
     creatable: ['parent', 'child', 'jump'],
   }
   const held = plexing(plex.view, deps)
   /** What the picture calls a note, which is what a gesture in it carries. */
   const node = (path: string) => nodeFor(held, path.replace(/\.md$/, ''))
-  return { held, node, carrying, went: plex.went, ...vault, opened, asked, ran, said }
+  return {
+    held,
+    node,
+    carrying,
+    writes,
+    wrote,
+    went: plex.went,
+    ...vault,
+    opened,
+    asked,
+    ran,
+    said,
+  }
 }
 
 /** The node of the picture drawn for the note of this title, if it draws one. */
@@ -200,6 +223,44 @@ describe('the menu on a node', () => {
   })
 })
 
+describe('the menu off every node', () => {
+  const asked = { node: null, at: { x: 1, y: 2 }, from: null, opening: 'pointer' as const }
+
+  it('makes a note, and the plex stands on it', async () => {
+    const one = tab('Root.md')
+    one.held.asks(asked)
+
+    one.held.chose(NEW_NOTE)
+    await settles()
+
+    expect(one.wrote).toStrictEqual(['Untitled note.md'])
+    expect(one.went).toContain('Untitled note.md')
+    expect(one.held.menu.value).toBeNull()
+  })
+
+  it('stands where it stood where the vault made none', async () => {
+    const one = tab('Root.md')
+    one.writes.value = ''
+    one.held.asks(asked)
+
+    one.held.chose(NEW_NOTE)
+    await settles()
+
+    expect(one.went).toStrictEqual([])
+  })
+
+  it('makes nothing of a command over a note, there being no note it is over', async () => {
+    const one = tab('Root.md')
+    one.held.asks(asked)
+
+    one.held.chose('read')
+    await settles()
+
+    expect(one.wrote).toStrictEqual([])
+    expect(one.ran).toStrictEqual([])
+  })
+})
+
 describe('what a note in the picture is called', () => {
   it('is the title the vault gave the focus', () => {
     expect(tab('Root.md').held.nameOf('Root.md')).toBe('Root')
@@ -227,6 +288,7 @@ describe('the picture', () => {
       first: async () => '',
       carried: () => ['Entropy.md'],
       says: () => {},
+      writes: async () => '',
       creatable: ['parent', 'child', 'jump'],
     })
 
@@ -388,6 +450,7 @@ const inVault = async (focus: string, beside: readonly Beside[] = []) => {
     first: async () => '',
     carried: () => [],
     says: () => {},
+    writes: async () => '',
     creatable: ['parent', 'child', 'jump'],
   })
   await view.go(focus)
@@ -705,6 +768,7 @@ const window = (opening = 'Opening.md') => {
     },
     carried: () => [],
     says: () => {},
+    writes: async () => '',
     creatable: ['parent', 'child', 'jump'],
   })
   held.declares([plexes.kind, other])

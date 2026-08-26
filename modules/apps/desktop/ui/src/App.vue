@@ -142,6 +142,7 @@ const plexes = plexKind(held.host, () => standing(core), {
   first: () => window.first(),
   carried: () => carried.value,
   says: (text) => told(text, 'refusal'),
+  writes: async () => (await making.named('', []))?.path ?? '',
   creatable: CREATABLE,
 })
 
