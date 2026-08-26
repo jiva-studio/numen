@@ -9,7 +9,7 @@
  */
 import { computed } from 'vue'
 import Waiting from '../waiting/Waiting.vue'
-import { activity, percentWord, tallyWord, type Counting, type Tally, type Tone } from './model'
+import { activity, percentWord, type Tally, type Tone } from './model'
 
 const props = withDefaults(
   defineProps<{
@@ -25,22 +25,14 @@ const props = withDefaults(
      * exist yet.
      */
     tally?: Tally | undefined
-    /** What the tally counts. */
-    counting?: Counting
     /** Whether the work named is happening now. */
     working?: boolean
-    /**
-     * How fast the count is moving, in words, from whoever is timing it. Empty
-     * until there is enough movement to say: a rate needs a clock and this has
-     * none.
-     */
-    rate?: string
-    /** How much longer, in words, from the same place. */
+    /** How much longer, in words, from whoever is timing the count. */
     left?: string
     /** How the line reads. An alarm is a line that stopped badly. */
     tone?: Tone
   }>(),
-  { says: '', about: '', counting: 'things', working: false, rate: '', left: '', tone: 'plain' },
+  { says: '', about: '', working: false, left: '', tone: 'plain' },
 )
 
 const shown = computed(() =>
@@ -53,14 +45,17 @@ const shown = computed(() =>
 )
 
 const words = computed(() => props.says)
-const count = computed(() =>
-  shown.value.counts && props.tally ? tallyWord(props.tally, props.counting) : '',
-)
+
+/**
+ * How far the work has got, said once.
+ *
+ * A share is drawn as a percentage and as nothing else.
+ */
 const percent = computed(() =>
   shown.value.share === undefined ? '' : percentWord(shown.value.share),
 )
-/** Both are only shown beside a count, since both are read off one. */
-const rate = computed(() => (shown.value.counts ? props.rate : ''))
+
+/** Read off the count, so it is shown only where there is one. */
 const left = computed(() => (shown.value.counts ? props.left : ''))
 
 /**
@@ -86,20 +81,15 @@ const strength = computed(() => (props.tone === 'plain' ? 'text-hushed' : ''))
     :data-state="shown.state"
     :data-tone="tone"
   >
-    <span v-if="tone === 'plain'" class="activity__mark" />
     <span class="activity__says min-w-0" :class="gives">{{ words }}</span>
     <span v-if="about" class="activity__about min-w-0 flex-1" :class="gives">{{ about }}</span>
     <span v-else class="activity__gap flex-1" />
-    <span v-if="count" class="activity__count tabular-nums opacity-70">{{ count }}</span>
     <span v-if="percent" class="activity__percent tabular-nums opacity-70">{{ percent }}</span>
-    <span v-if="rate" class="activity__rate tabular-nums opacity-70">{{ rate }}</span>
-    <span v-if="left" class="activity__left truncate opacity-70">{{ left }}</span>
-    <span
-      v-if="shown.share !== undefined"
-      class="activity__bar"
-      :style="{ '--activity-share': shown.share }"
+    <span v-if="left" class="activity__left opacity-70">{{ left }}</span>
+    <Waiting
+      v-if="shown.share === undefined && shown.state === 'working'"
+      class="activity__waiting"
     />
-    <Waiting v-else-if="shown.state === 'working'" class="activity__waiting" />
   </p>
 </template>
 
@@ -115,54 +105,10 @@ const strength = computed(() => (props.tone === 'plain' ? 'text-hushed' : ''))
   min-block-size: calc(var(--numen-line-height) * 1em);
 }
 
-.activity__mark {
-  flex: none;
-  inline-size: 0.4em;
-  block-size: 0.4em;
-  border-radius: var(--numen-radius-pill);
-  background: currentColor;
-  opacity: 0.5;
-}
-
-.activity[data-state='working'] .activity__mark {
-  opacity: 1;
-}
-
-/* Resting says something is so, not that it is happening. */
-.activity[data-state='resting'] .activity__mark {
-  opacity: 0.35;
-}
-
-
-/* The numbers keep their own line. They are short, and the words beside them
-   are what gives way. */
-.activity__count,
+/* How far and how long are short, and the words beside them are what gives
+   way. */
 .activity__percent,
-.activity__rate {
-  flex: none;
-}
-
 .activity__left {
-  min-inline-size: 0;
-}
-
-.activity__bar {
   flex: none;
-  inline-size: 4rem;
-  block-size: 0.25em;
-  border-radius: var(--numen-radius-pill);
-  background: color-mix(in oklab, currentColor 20%, transparent);
-  overflow: hidden;
-  position: relative;
-}
-
-.activity__bar::after {
-  content: '';
-  position: absolute;
-  inset-block: 0;
-  inset-inline-start: 0;
-  inline-size: calc(var(--activity-share) * 100%);
-  background: currentColor;
-  opacity: 0.7;
 }
 </style>
