@@ -49,6 +49,7 @@ parse is never written over — numen says so and leaves it alone.
 | `indexing.recognition` | how a scanned book is read. See [reading scanned books](/reading/). |
 | `indexing.proofreading` | what corrects a reading afterwards, and nothing by default. |
 | `agent` | which assistant answers in the panel, and how it is started. See [the agent](/agent/). |
+| `naming` | whether a note's title and its filename are kept as one name. See [writing notes](/writing/#renaming). |
 
 [Every setting](/reference/) is the complete list, taken from the application itself.
 

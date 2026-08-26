@@ -166,7 +166,10 @@ const structOf = (source, name) => {
 }
 
 /** What a Go type is called where a person reads it. */
-const kindOf = (type) => {
+const kindOf = (given) => {
+  // A field a file may leave out is written as a pointer, which says nothing
+  // about what a person puts there.
+  const type = given.replace(/^\*/, '')
   if (type === 'string') return 'text'
   if (type === 'bool') return 'yes or no'
   if (['int', 'int64', 'float32', 'float64'].includes(type)) return 'a number'

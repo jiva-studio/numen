@@ -48,6 +48,7 @@ export default defineConfig({
             { slug: 'writing' },
             { slug: 'links' },
             { slug: 'plex' },
+            { slug: 'files' },
             { slug: 'finding' },
             { slug: 'documents' },
           ],

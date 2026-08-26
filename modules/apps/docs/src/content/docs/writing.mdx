@@ -65,6 +65,15 @@ Two notes may share a name. numen says so when it happens and files both.
 **Change title** rewrites whichever of the three names the note: the `title:` key if it has one,
 the first heading if it has one of those, and otherwise the filename alone.
 
+**The title and the filename are kept as one name.** Change the title and the file moves to
+match; rename the file — in the [files tab](/files/) or in your own file manager —
+and the new name is written into the note. A note that only has a filename is unaffected: there
+is nothing inside it to bring into line.
+
+If you would rather they were two separate things, `naming.sync_title_and_filename: false` in
+[the settings](/settings/) tells them apart: a new title then stays inside the note, and a
+renamed file stays renamed.
+
 A vault of notes with no frontmatter stays a vault of notes with no frontmatter — the key is
 rewritten where it is already there, and never added to a note that has none.
 

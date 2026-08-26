@@ -111,7 +111,7 @@ How a scanned document is read when a person asks for it.
 
 ### `indexing.proofreading`
 
-What puts a reading right. Naming nothing here is naming no proofreader, and a reading is used as it was read.
+What puts a reading right. `naming` nothing here is naming no proofreader, and a reading is used as it was read.
 
 | | | |
 | --- | --- | --- |
@@ -137,4 +137,12 @@ Which agent answers in the panel, and what it may reach.
 | `claude.model` | text | which of its models answers — `opus`, `sonnet`, or a full name. |
 | `claude.max_steps` | a number | how many times it may go to the model before it is stopped. |
 | `claude.reads_hooks_and_skills` | yes or no | lets it read what is configured for it on this machine: hooks, skills, standing instructions in CLAUDE. |
+
+### `naming`
+
+How a note's title and the name of its file are held together.
+
+| | | |
+| --- | --- | --- |
+| `sync_title_and_filename` | yes or no | whether renaming either of the two brings the other into line. |
 <!-- END AUTOGEN -->
