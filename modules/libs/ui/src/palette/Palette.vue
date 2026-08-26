@@ -728,11 +728,20 @@ onBeforeUnmount(() => {
 
 /* One line each, then an ellipsis. A list is read down its leading edge. */
 .palette__name,
-.palette__detail,
 .palette__deed-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Two lines of what stands under a name. A passage is drawn for the words its
+   hit sits among, and one line holds too few of them to read. */
+.palette__detail {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
 }
 
 /* Why the item is here. It sits under words that are being read, so it is a

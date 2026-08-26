@@ -49,6 +49,18 @@ describe('a note owed the keyboard', () => {
     expect(drew.focused).toEqual([12])
   })
 
+  it('keeps the line it was owed when the note is asked for itself', async () => {
+    const owed = entering()
+    const drew = editor()
+
+    owed.owes('Note.md', 12)
+    owed.owes('Note.md')
+    owed.drew('Note.md', drew.drawn)
+    await nextTick()
+
+    expect(drew.focused).toEqual([12])
+  })
+
   it('stays owed while the editor cannot take it', async () => {
     const owed = entering()
     const early = editor(false)

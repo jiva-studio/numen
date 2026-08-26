@@ -33,6 +33,11 @@ var (
 	secondNotes = map[string]string{
 		"notes/Quasar.md": "# Quasar\n\nA distant beacon, shared by no textbook here.\n",
 	}
+
+	// A note whose prose stands under a frontmatter block, with the words
+	// looked for on the seventh line of that prose.
+	isotherm = "---\nid: 01M0DEM0000000000000000002\n---\n" +
+		"# Isotherm\n\nA curve of one temperature.\n\n## Below\n\nThe curve holds throughout.\n"
 )
 
 // corpus is two vaults, indexed and cut, and the one search over them.
@@ -420,6 +425,42 @@ func TestASearchAnswersWithTheSectionAskedAbout(t *testing.T) {
 	}
 	if found[0].Location != "Madhavendra Puri" {
 		t.Errorf("the search answered with %q", found[0].Location)
+	}
+}
+
+func TestAPassageCarriesTheLineItStandsOnInTheProse(t *testing.T) {
+	// The window puts the caret where the words were found. A note's
+	// frontmatter stands before its prose and is no line of it.
+	ctx := t.Context()
+	c := indexed(t)
+
+	const path = "notes/Isotherm.md"
+	const held = "The curve holds throughout."
+	v := testsupport.NewVault(t, map[string]string{path: isotherm})
+	scan := usecase.Scan{
+		Readers: filesystem.Readers{}, Vaults: c.db.Vaults(), Notes: c.db.Notes(),
+		Known: c.db.NoteQueries(), Maintenance: c.db.Statistics(),
+	}
+	if _, err := scan.Execute(ctx, v); err != nil {
+		t.Fatal(err)
+	}
+
+	at := strings.Index(isotherm, held)
+	whole := chunk.Chunk{
+		Start: 0, Length: len(isotherm), Text: isotherm,
+		Small: []chunk.Chunk{{Start: at, Length: len(held), Text: held}},
+	}
+	if err := c.db.Chunks().SaveChunks(ctx, v.ID, "note", path, []chunk.Chunk{whole}); err != nil {
+		t.Fatal(err)
+	}
+
+	found := c.searchIn(t, v, "throughout", nil)
+	if len(found) != 1 {
+		t.Fatalf("want the one note holding the word: %v", sources(found))
+	}
+	if found[0].Line != 6 {
+		t.Errorf("the passage stands on line %d, and the words are on the seventh line of the prose",
+			found[0].Line)
 	}
 }
 

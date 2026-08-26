@@ -41,9 +41,14 @@ export function entering() {
     if (line >= 0 ? editor.reveal(line) : editor.focus()) owed.delete(id)
   }
 
-  /** A note owed the keyboard, on the line it is to stand on. */
+  /**
+   * A note owed the keyboard, on the line it is to stand on. A line already
+   * owed stands: a note opened at a place is asked for itself again as its tab
+   * is drawn, and the place is what it was opened for.
+   */
   const owes = (id: string, line = ITSELF) => {
-    owed.set(id, line)
+    const standing = owed.get(id) ?? ITSELF
+    owed.set(id, line === ITSELF ? standing : line)
     void nextTick(() => enters(id))
   }
 

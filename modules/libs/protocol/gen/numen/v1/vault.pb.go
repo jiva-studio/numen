@@ -2036,8 +2036,11 @@ type Passage struct {
 	// Where the passage stands in the text of the source it was read out of,
 	// counted in bytes. It is what opens that source here, and a hit in a note
 	// carries it as every other hit does.
-	Start         int32 `protobuf:"varint,6,opt,name=start,proto3" json:"start,omitempty"`
-	Length        int32 `protobuf:"varint,7,opt,name=length,proto3" json:"length,omitempty"`
+	Start  int32 `protobuf:"varint,6,opt,name=start,proto3" json:"start,omitempty"`
+	Length int32 `protobuf:"varint,7,opt,name=length,proto3" json:"length,omitempty"`
+	// Where the chunk that matched stands, counted from the first line of the
+	// source's prose. It is the line a note opens on, and the caret stands there.
+	Line          int32 `protobuf:"varint,8,opt,name=line,proto3" json:"line,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2117,6 +2120,13 @@ func (x *Passage) GetStart() int32 {
 func (x *Passage) GetLength() int32 {
 	if x != nil {
 		return x.Length
+	}
+	return 0
+}
+
+func (x *Passage) GetLine() int32 {
+	if x != nil {
+		return x.Line
 	}
 	return 0
 }
@@ -3916,7 +3926,7 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x1f\n" +
 	"\x03way\x18\x03 \x01(\x0e2\r.numen.v1.WayR\x03way\"9\n" +
 	"\x0eSearchResponse\x12'\n" +
-	"\x05found\x18\x01 \x03(\v2\x11.numen.v1.PassageR\x05found\"\xcd\x01\n" +
+	"\x05found\x18\x01 \x03(\v2\x11.numen.v1.PassageR\x05found\"\xe1\x01\n" +
 	"\aPassage\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12'\n" +
 	"\x04note\x18\x02 \x01(\v2\x0e.numen.v1.NoteH\x00R\x04note\x88\x01\x01\x12\x12\n" +
@@ -3924,7 +3934,8 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x02at\x18\x04 \x03(\v2\x0e.numen.v1.SpanR\x02at\x12\x1a\n" +
 	"\blocation\x18\x05 \x01(\tR\blocation\x12\x14\n" +
 	"\x05start\x18\x06 \x01(\x05R\x05start\x12\x16\n" +
-	"\x06length\x18\a \x01(\x05R\x06lengthB\a\n" +
+	"\x06length\x18\a \x01(\x05R\x06length\x12\x12\n" +
+	"\x04line\x18\b \x01(\x05R\x04lineB\a\n" +
 	"\x05_note\"%\n" +
 	"\vListRequest\x12\x16\n" +
 	"\x06folder\x18\x01 \x01(\tR\x06folder\"9\n" +

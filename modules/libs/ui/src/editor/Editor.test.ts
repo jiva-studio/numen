@@ -14,7 +14,7 @@ import { marked, type EditorChange } from './change'
 import { opening, resolving } from './outside'
 
 type Props = InstanceType<typeof Editor>['$props']
-type Exposed = { focus: () => void; measure: () => void }
+type Exposed = { focus: () => void; measure: () => void; reveal: (line: number) => boolean }
 
 // Nothing here has a size, and the editor measures anyway.
 Range.prototype.getClientRects = () =>
@@ -254,6 +254,18 @@ describe('what a parent can ask for', () => {
     const { view, exposed } = editor({ modelValue: 'one' })
     exposed.focus()
     expect(document.activeElement).toBe(view.contentDOM)
+  })
+
+  it('is a line, with the caret put on it', () => {
+    const { view, exposed } = editor({ modelValue: 'one\ntwo\nthree' })
+
+    expect(exposed.reveal(2)).toBe(true)
+    expect(view.state.selection.main.head).toBe(view.state.doc.line(3).from)
+  })
+
+  it('is refused by an editor holding no text, which has no line to give', () => {
+    const { exposed } = editor({ modelValue: '' })
+    expect(exposed.reveal(2)).toBe(false)
   })
 
   it('is a measurement, for an editor that was drawn out of sight', () => {

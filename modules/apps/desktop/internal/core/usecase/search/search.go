@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/markdown"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/text"
 )
@@ -217,6 +219,8 @@ func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage
 	// many passages name it, so its path is the whole of the key.
 	read := map[string]string{}
 	gone := map[string]bool{}
+	// Where each of those texts turns into prose, found once for the same reason.
+	opens := map[string]int{}
 
 	out := make([]domain.Passage, 0, len(found))
 	for _, p := range found {
@@ -231,11 +235,13 @@ func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage
 				return nil, fmt.Errorf("read %s: %w", p.Source, err)
 			}
 			read[p.Source] = prose
+			opens[p.Source] = proseOpens(prose)
 		}
 		if gone[p.Source] {
 			continue
 		}
 		p.Text = span(prose, p.Start, p.Length)
+		p.Line = lineOf(prose, opens[p.Source], p.Start+p.HitAt)
 		out = append(out, p)
 	}
 	return out, nil
@@ -276,6 +282,29 @@ func span(raw string, start, length int) string {
 		end = len(raw)
 	}
 	return raw[start:end]
+}
+
+// lineOf is the line a passage begins on, counted from the first line of the
+// prose, which opens at `opens`.
+func lineOf(raw string, opens, start int) int {
+	if start > len(raw) {
+		start = len(raw)
+	}
+	if start <= opens {
+		return 0
+	}
+	return strings.Count(raw[opens:start], "\n")
+}
+
+// proseOpens is the byte a source's prose begins at. A note's frontmatter
+// stands before its prose; a text that opens with none is prose from its first
+// byte.
+func proseOpens(raw string) int {
+	doc, err := markdown.Open([]byte(raw))
+	if err != nil {
+		return 0
+	}
+	return len(raw) - len(doc.Body())
 }
 
 // Way is how a search is asked. Each way is an order of its own, and a search
