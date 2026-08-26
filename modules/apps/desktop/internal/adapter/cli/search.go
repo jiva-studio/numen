@@ -31,10 +31,9 @@ func searchCommand(ctx context.Context, out io.Writer, cfg container.Config, arg
 
 	// The same search the window runs. An installation with no model answers by
 	// words alone, and says nothing about it: half a search is a whole answer.
-	// Only the placement that embeds questions is opened: nothing here fills an
+	// Only the station that embeds questions is opened: nothing here fills an
 	// index.
-	asking := container.Config{Embedding: cfg.Embedding.Asking().As(cfg.Embedding.Model)}
-	embedder, closeEmbedder, why := asking.Embedder(ctx)
+	embedder, closeEmbedder, why := cfg.Asking(ctx)
 	if why != nil {
 		fmt.Fprintf(os.Stderr, "searching by words alone: %v\n", why)
 	}

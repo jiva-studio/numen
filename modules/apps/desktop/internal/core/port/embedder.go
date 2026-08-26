@@ -29,6 +29,11 @@ type EmbeddingModel struct {
 	// Pooling is how the model's output becomes one vector. Two poolings of one
 	// model put a text in two places, so it is part of the identity.
 	Pooling string
+
+	// From is where the vectors are made: the model run on this machine, or the
+	// service reached at one address. One name is run here and served by more
+	// than one place, and each of them answers with numbers of its own.
+	From string
 }
 
 // String is the identity as one value, for a column that holds it.
@@ -45,10 +50,11 @@ func (m EmbeddingModel) String() string {
 // found under a key that no longer describes it is worse than one that was
 // never kept.
 //
-// Where the vector was made is not part of it. One model runs on this machine
-// and behind a service, and a vault indexed by the one is asked by the other.
+// Where the vector was made leads it. Two places serving one name are two sets
+// of rows, and a question is asked under the recipe the index was filled with.
 func (m EmbeddingModel) Recipe() string {
-	return fmt.Sprintf("%s|%d|%d|%s|%s", m.Name, m.Dimensions, m.MaxTokens, m.Pooling, QuantisedInt8)
+	return fmt.Sprintf("%s|%s|%d|%d|%s|%s",
+		m.From, m.Name, m.Dimensions, m.MaxTokens, m.Pooling, QuantisedInt8)
 }
 
 // Embedder turns text into vectors. The core asks for it and does not know

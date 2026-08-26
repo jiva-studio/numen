@@ -30,7 +30,7 @@ var ErrNoKey = errors.New("no key in the configuration or the environment")
 // Client is one hosted model.
 type Client struct {
 	model embed.ServiceModel
-	is    embed.Model
+	is    port.EmbeddingModel
 	http  *http.Client
 
 	// Attempts is how many times one request is sent before its error is
@@ -43,7 +43,10 @@ type Client struct {
 // New builds a client from configuration. The key is never an argument: it is
 // read from the configuration or the environment, where no call site can copy
 // it into a log.
-func New(is embed.Model, model embed.ServiceModel) (*Client, error) {
+//
+// is is the identity the vectors this client returns are kept under, which the
+// settings decide.
+func New(is port.EmbeddingModel, model embed.ServiceModel) (*Client, error) {
 	if model.BaseURL == "" {
 		return nil, errors.New("no base URL for the embedding service")
 	}
@@ -65,7 +68,7 @@ func New(is embed.Model, model embed.ServiceModel) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) Model() port.EmbeddingModel { return c.is.Stored() }
+func (c *Client) Model() port.EmbeddingModel { return c.is }
 
 // Close releases what the model holds on this machine, which is nothing: the
 // weights are the service's.

@@ -31,7 +31,9 @@ The coarse representation is addressed by the chunk's own row number, which is t
 
 ### A vector is kept by its text and its recipe, and it outlives the chunk
 
-The `vectors` table is keyed by the hash of the text that was embedded and the recipe it was embedded under. The recipe names everything that decides what the vector is: the model, its width, where the text is cut off, how the model's output becomes one vector, and how the numbers are stored. Change any of them and the old rows are not found, still there, and found again if the setting goes back.
+The `vectors` table is keyed by the hash of the text that was embedded and the recipe it was embedded under. The recipe names everything that decides what the vector is: where it was made, the model, its width, where the text is cut off, how the model's output becomes one vector, and how the numbers are stored. Change any of them and the old rows are not found, still there, and found again if the setting goes back.
+
+Where it was made is the placement that fills the index: a model run on this machine, addressed by the weights that are run, or a service, addressed by the base URL and the name asked for there. One model name is run here and served by more than one place, and the numbers each of them gives for one text are its own. A question placed elsewhere is answered from the rows the index was filled with, and what holds the two together is that they are compared as one model when both are open.
 
 A vector is kept where no renumbering of chunks and no rebuilding of the index reaches it. A chunk whose text was embedded before is not asked for again, whichever row now holds that text (ADR-0012).
 

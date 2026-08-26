@@ -3,6 +3,8 @@ package embed
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
@@ -25,6 +27,10 @@ const (
 // does not carry one.
 const KeyEnvVar = "NUMEN_EMBEDDING_KEY"
 
+// ModelFile is the build inside a repository or a directory that is run when
+// the configuration names none.
+const ModelFile = "model.onnx"
+
 // Config is the embedding section of this installation's settings: what a
 // vector is, where it is made, and how near the query a passage stands to be an
 // answer at all.
@@ -40,8 +46,8 @@ type Config struct {
 	//
 	// A vault is indexed once and asked all day, and this machine answers a
 	// question without a network.
-	Indexing Placement `json:"indexing"`
-	Query    Placement `json:"query"`
+	Indexing Station `json:"indexing"`
+	Query    Station `json:"query"`
 
 	// Floor is the cosine similarity a passage reaches to be an answer, in the
 	// units the model in use measures in. Where a model puts two pieces of text
@@ -52,7 +58,7 @@ type Config struct {
 
 // Model is what a vector is: everything that decides the space it lands in.
 //
-// Name is what the model is called here, and is not how either placement
+// Name is what the model is called here, and is not how either station
 // reaches it: a repository and a service call one model by two names, and
 // vectors made under both are kept under this one.
 type Model struct {
@@ -65,23 +71,37 @@ type Model struct {
 	Pooling string `json:"pooling"`
 }
 
-// Stored is this model in the words a vector is kept under. It is the one
-// crossing between the settings and the index, so nothing copies the fields
-// across by hand.
-func (m Model) Stored() port.EmbeddingModel {
+// Stored is this model in the words a vector is kept under, made at the address
+// given. It is the one crossing between the settings and the index, so nothing
+// copies the fields across by hand.
+func (m Model) Stored(from string) port.EmbeddingModel {
 	return port.EmbeddingModel{
 		Name:       m.Name,
 		Dimensions: m.Dimensions,
 		MaxTokens:  m.MaxTokens,
 		Pooling:    m.Pooling,
+		From:       from,
 	}
 }
 
-// Placement is where a vector is made: on this machine, or by a service.
-type Placement struct {
+// Station is where a vector is made: on this machine, or by a service.
+type Station struct {
 	Use     string       `json:"use"`
 	Local   LocalModel   `json:"local"`
 	Service ServiceModel `json:"service"`
+}
+
+// From is this station as the address its vectors are kept under. It leads
+// with the word that says which of the two it is, because one name is both a
+// repository and something a service answers to.
+func (s Station) From() string {
+	switch s.Use {
+	case UseLocal:
+		return s.Local.From()
+	case UseService:
+		return s.Service.From()
+	}
+	return ""
 }
 
 // LocalModel is how this machine reaches a model it runs.
@@ -101,6 +121,24 @@ type LocalModel struct {
 	Download bool `json:"download"`
 }
 
+// From is where this machine reads the weights: the directory when one is
+// named, and the repository otherwise, with the file that is run inside it. A
+// quantised build is a file of its own and answers with numbers of its own.
+//
+// The file and the directory are settled to one form, so one set of weights has
+// one address whichever way the configuration writes it.
+func (m LocalModel) From() string {
+	at := m.Name
+	if m.Dir != "" {
+		at = filepath.ToSlash(filepath.Clean(m.Dir))
+	}
+	file := m.File
+	if file == "" {
+		file = ModelFile
+	}
+	return UseLocal + ":" + at + "/" + file
+}
+
 // ServiceModel is how a hosted model is reached over HTTP.
 type ServiceModel struct {
 	BaseURL string `json:"base_url"`
@@ -116,10 +154,16 @@ type ServiceModel struct {
 	key string
 }
 
+// From is the service and the name it is asked for there. Two services
+// answering to one name are two models, and the key is no part of this.
+func (s ServiceModel) From() string {
+	return UseService + ":" + strings.TrimSuffix(s.BaseURL, "/") + "/" + s.Name
+}
+
 // Defaults embed on this machine: no key and no account. The model itself is
 // fetched the first time it is wanted.
 func Defaults() Config {
-	here := Placement{
+	here := Station{
 		Local: LocalModel{Name: "intfloat/multilingual-e5-small", BatchTexts: 8, Download: true},
 		Service: ServiceModel{
 			BaseURL:         "https://api.openai.com/v1",
@@ -144,27 +188,27 @@ func Defaults() Config {
 
 // Asking is where the vector of a question is made. An installation that says
 // nothing about questions asks the way it indexed.
-func (c Config) Asking() Placement {
+func (c Config) Asking() Station {
 	if c.Query.Use == "" {
 		return c.Indexing
 	}
 	return c.Query
 }
 
-// As is a configuration in which this placement is the one that makes every
-// vector. A run that asks questions and fills no index opens the placement that
-// answers them and no other.
-func (p Placement) As(is Model) Config {
-	return Config{Model: is, Indexing: p}
+// Stored is the identity every vector this installation keeps is filed under:
+// the model, made where the index is filled. A question is embedded wherever
+// the settings place it and claims the rows already there.
+func (c Config) Stored() port.EmbeddingModel {
+	return c.Model.Stored(c.Indexing.From())
 }
 
 // UnmarshalJSON keeps whatever the defaults set for the fields the file omits.
 func (c *Config) UnmarshalJSON(raw []byte) error {
 	var f struct {
-		Model    *Model     `json:"model"`
-		Indexing *Placement `json:"indexing"`
-		Query    *Placement `json:"query"`
-		Floor    *float64   `json:"floor"`
+		Model    *Model   `json:"model"`
+		Indexing *Station `json:"indexing"`
+		Query    *Station `json:"query"`
+		Floor    *float64 `json:"floor"`
 	}
 	f.Model, f.Indexing, f.Query = &c.Model, &c.Indexing, &c.Query
 	if err := json.Unmarshal(raw, &f); err != nil {
@@ -264,17 +308,17 @@ func (m *LocalModel) UnmarshalJSON(raw []byte) error {
 }
 
 // UnmarshalJSON keeps whatever the defaults set for the fields the file omits.
-func (p *Placement) UnmarshalJSON(raw []byte) error {
+func (s *Station) UnmarshalJSON(raw []byte) error {
 	var f struct {
 		Use     *string       `json:"use"`
 		Local   *LocalModel   `json:"local"`
 		Service *ServiceModel `json:"service"`
 	}
-	f.Local, f.Service = &p.Local, &p.Service
+	f.Local, f.Service = &s.Local, &s.Service
 	if err := json.Unmarshal(raw, &f); err != nil {
 		return err
 	}
-	assign(&p.Use, f.Use)
+	assign(&s.Use, f.Use)
 	return nil
 }
 

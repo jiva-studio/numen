@@ -45,7 +45,8 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | fingerprint | Path, size and modification time — what says a note need not be read again. | |
 | vector | What a model made of one chunk's text. Kept by its text and its recipe. | embedding |
 | kept | Held past the run that made it, and claimed again by what it was made from. | stored |
-| recipe | Everything that decides what a thing made from text is: for a cut, the reader and the sizes; for a vector, which model, how wide, where the text was cut off and how it is kept. | |
+| recipe | Everything that decides what a thing made from text is: for a cut, the reader and the sizes; for a vector, where it was made, which model, how wide, where the text was cut off and how it is kept. | |
+| station | Where a vector is made: on this machine, or by a service. | placement |
 | arriving | A model that is not on this machine yet. What it is is known from the settings, so the index is fitted and vectors are claimed under its recipe while the weights come down. | |
 | landed | The model turning up, or the reason it never will. The first of the two counts, and one turning up after the wait is over is let go of. | |
 | disown | The model turning out not to be the one whose vectors are kept: it is let go of, and nothing is asked of it again. | |
