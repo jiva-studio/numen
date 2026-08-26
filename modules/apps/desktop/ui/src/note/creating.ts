@@ -6,7 +6,7 @@
  * decided here: the plex reports the shape of a gesture and nothing else.
  */
 import type { PlexRelatedSeat } from '@numen/ui'
-import type { Core, NewLink, Refused } from '../core'
+import type { Core, NewLink, Refused, Role } from '../core'
 import type { Says } from '../telling'
 import { REFUSED } from '../words'
 
@@ -28,13 +28,24 @@ const facing: Partial<Record<PlexRelatedSeat, PlexRelatedSeat>> = {
 }
 
 /**
+ * The role a link carries to seat a note where the gesture put it. A sibling is
+ * another child of a shared parent, so no link writes one.
+ */
+const carries: Partial<Record<PlexRelatedSeat, Role>> = {
+  parent: 'parent',
+  child: 'child',
+  jump: 'jump',
+}
+
+/**
  * What a new note writes to sit in that seat of another one. A note in no seat
  * writes nothing, and a seat nothing faces is not a seat to make one in.
  */
 const seatedOn = (from: string, seat: PlexRelatedSeat | null): readonly NewLink[] | null => {
   if (!seat) return []
   const opposite = facing[seat]
-  return opposite ? [{ to: from, seat: opposite }] : null
+  const role = opposite && carries[opposite]
+  return role ? [{ to: from, role }] : null
 }
 
 /** What a note is called before the person has called it anything. */
@@ -138,8 +149,10 @@ export function creating(core: Core, said: Says) {
    * gesture came from, and says where the other sits.
    */
   async function join(from: string, to: string, seat: PlexRelatedSeat): Promise<boolean> {
+    const role = carries[seat]
+    if (!role) return false
     try {
-      const refusal = await core.join(from, { to, seat })
+      const refusal = await core.join(from, { to, role })
       if (refusal !== null) {
         said(words[refusal], 'refusal')
         return false

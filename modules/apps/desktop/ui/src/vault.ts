@@ -11,13 +11,13 @@ import {
   Naming,
   Owed,
   Refusal,
+  Role as Roles,
   VaultService,
   VaultsRefusal,
   VaultsService,
   Way as Ways,
 } from '@numen/protocol'
 import type { Known as KnownMessage, Moved as MovedMessage } from '@numen/protocol'
-import { asSeat } from './plex/picture'
 import type { Asking as Commanding } from './commanding'
 import type { Asking, Way } from './finding'
 import type { Documents, Marked, Sheet } from './document/reading'
@@ -32,6 +32,7 @@ import type {
   Refused,
   Removed,
   Renamed,
+  Role,
   VaultRefused,
   Vaults,
 } from './core'
@@ -212,10 +213,19 @@ const ways: Record<Way, Ways> = {
 /** A run of text, kept as the plain pair the window carries it as. */
 const run = (span: { from: number; to: number }) => ({ from: span.from, to: span.to })
 
+/** What kind of relationship a link is, as the schema names it. */
+const roles: Record<Role, Roles> = {
+  parent: Roles.PARENT,
+  child: Roles.CHILD,
+  jump: Roles.JUMP,
+  ref: Roles.REF,
+  attachment: Roles.ATTACHMENT,
+}
+
 /** A link in the shape the schema carries it. */
 const written = (link: NewLink) => ({
   to: link.to,
-  seat: asSeat(link.seat),
+  role: roles[link.role],
   label: link.label ?? '',
 })
 

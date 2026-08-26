@@ -33,7 +33,7 @@ func TestANoteIsMadeCarryingTheLinkThatSeatsIt(t *testing.T) {
 
 	answer, err := f.client.Create(t.Context(), connect.NewRequest(&v1.CreateRequest{
 		Title: "Entropy",
-		Links: []*v1.NewLink{{To: "Ontology.md", Seat: v1.Seat_SEAT_PARENT}},
+		Links: []*v1.NewLink{{To: "Ontology.md", Role: v1.Role_ROLE_PARENT}},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -67,7 +67,7 @@ func TestANoteMadeInTheChildSeatIsTheParentsChild(t *testing.T) {
 
 	answer, err := f.client.Create(t.Context(), connect.NewRequest(&v1.CreateRequest{
 		Title: "Entropy",
-		Links: []*v1.NewLink{{To: "Ontology.md", Seat: v1.Seat_SEAT_CHILD, Label: "follows from"}},
+		Links: []*v1.NewLink{{To: "Ontology.md", Role: v1.Role_ROLE_CHILD, Label: "follows from"}},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -92,7 +92,7 @@ func TestANoteIsMadeInTheFolderItWasAskedFor(t *testing.T) {
 	answer, err := f.client.Create(t.Context(), connect.NewRequest(&v1.CreateRequest{
 		Title:  "Entropy",
 		Folder: "physics",
-		Links:  []*v1.NewLink{{To: "physics/Ontology.md", Seat: v1.Seat_SEAT_PARENT}},
+		Links:  []*v1.NewLink{{To: "physics/Ontology.md", Role: v1.Role_ROLE_PARENT}},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -116,7 +116,7 @@ func TestANoteMadeIsInTheIndexBeforeTheAnswerComesBack(t *testing.T) {
 
 	if _, err := f.client.Create(t.Context(), connect.NewRequest(&v1.CreateRequest{
 		Title: "Entropy",
-		Links: []*v1.NewLink{{To: "Ontology.md", Seat: v1.Seat_SEAT_PARENT}},
+		Links: []*v1.NewLink{{To: "Ontology.md", Role: v1.Role_ROLE_PARENT}},
 	})); err != nil {
 		t.Fatal(err)
 	}
@@ -154,19 +154,19 @@ func TestANoteMadeWhereOneAlreadyIsIsRefused(t *testing.T) {
 	}
 }
 
-// TestASeatNoLinkWritesLeavesNoNote. A sibling is another child of a shared
-// parent, so nothing writes one, and the refusal comes before the file does.
-func TestASeatNoLinkWritesLeavesNoNote(t *testing.T) {
+// TestALinkNamingNoRoleLeavesNoNote. A link the application acts on carries one
+// of the roles the schema names, and the refusal comes before the file does.
+func TestALinkNamingNoRoleLeavesNoNote(t *testing.T) {
 	f := quitting(t, nil, map[string]string{
 		"Ontology.md": "---\ntitle: Ontology\n---\n\n# Ontology\n",
 	})
 
 	_, err := f.client.Create(t.Context(), connect.NewRequest(&v1.CreateRequest{
 		Title: "Entropy",
-		Links: []*v1.NewLink{{To: "Ontology.md", Seat: v1.Seat_SEAT_SIBLING}},
+		Links: []*v1.NewLink{{To: "Ontology.md", Role: v1.Role_ROLE_UNSPECIFIED}},
 	}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
-		t.Fatalf("a sibling was answered with %v", err)
+		t.Fatalf("a link with no role was answered with %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(f.root, "Entropy.md")); err == nil {
 		t.Error("a note was made for a link that cannot be written")
@@ -184,7 +184,7 @@ func TestTwoNotesAreJoinedFromTheOneTheLinkIsWrittenIn(t *testing.T) {
 
 	answer, err := f.client.Join(t.Context(), connect.NewRequest(&v1.JoinRequest{
 		Path: "Ontology.md",
-		Link: &v1.NewLink{To: "Entropy.md", Seat: v1.Seat_SEAT_CHILD},
+		Link: &v1.NewLink{To: "Entropy.md", Role: v1.Role_ROLE_CHILD},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -226,7 +226,7 @@ func TestANoteIsMadeUnderTheNoteItWasMadeFromAndNotItsNamesake(t *testing.T) {
 	answer, err := f.client.Create(t.Context(), connect.NewRequest(&v1.CreateRequest{
 		Title:  "Entropy",
 		Folder: "physics",
-		Links:  []*v1.NewLink{{To: "physics/Ontology.md", Seat: v1.Seat_SEAT_PARENT}},
+		Links:  []*v1.NewLink{{To: "physics/Ontology.md", Role: v1.Role_ROLE_PARENT}},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -249,5 +249,40 @@ func TestANoteIsMadeUnderTheNoteItWasMadeFromAndNotItsNamesake(t *testing.T) {
 	}
 	if len(children) != 1 || children[0] != "physics/Entropy.md" {
 		t.Errorf("the note it was made from has children %v, want the note just made", children)
+	}
+}
+
+// TestEveryRoleTheSchemaNamesIsWrittenUnderThatWord. The wire and the core call
+// a link's role by one word, so the role a request names is the role the note
+// comes back carrying.
+func TestEveryRoleTheSchemaNamesIsWrittenUnderThatWord(t *testing.T) {
+	for _, one := range []struct {
+		role v1.Role
+		word string
+	}{
+		{v1.Role_ROLE_PARENT, "parent"},
+		{v1.Role_ROLE_CHILD, "child"},
+		{v1.Role_ROLE_JUMP, "jump"},
+		{v1.Role_ROLE_REF, "ref"},
+		{v1.Role_ROLE_ATTACHMENT, "attachment"},
+	} {
+		t.Run(one.word, func(t *testing.T) {
+			f := quitting(t, nil, map[string]string{
+				"Ontology.md": "---\ntitle: Ontology\n---\n\n# Ontology\n",
+			})
+
+			answer, err := f.client.Create(t.Context(), connect.NewRequest(&v1.CreateRequest{
+				Title: "Entropy",
+				Links: []*v1.NewLink{{To: "Ontology.md", Role: one.role}},
+			}))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			made := fileAt(t, f.root, answer.Msg.GetPath())
+			if !strings.Contains(made, "role: "+one.word) {
+				t.Errorf("the link does not carry the %s role:\n%s", one.word, made)
+			}
+		})
 	}
 }

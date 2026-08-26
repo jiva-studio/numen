@@ -179,7 +179,7 @@ func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
 
 	out, err := api.Join(t.Context(), connect.NewRequest(&v1.JoinRequest{
 		Path: "Heat.md",
-		Link: &v1.NewLink{To: "Entropy.md", Seat: v1.Seat_SEAT_PARENT},
+		Link: &v1.NewLink{To: "Entropy.md", Role: v1.Role_ROLE_PARENT},
 	}))
 	if err != nil {
 		t.Fatalf("a note that changed came back as an error: %v", err)

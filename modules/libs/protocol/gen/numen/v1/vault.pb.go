@@ -279,6 +279,66 @@ func (Way) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{3}
 }
 
+// Role is what kind of relationship a link is. The list is closed: navigation
+// and drawing read it, so a role nobody decided on has no behaviour.
+type Role int32
+
+const (
+	Role_ROLE_UNSPECIFIED Role = 0
+	Role_ROLE_PARENT      Role = 1
+	Role_ROLE_CHILD       Role = 2
+	Role_ROLE_JUMP        Role = 3
+	Role_ROLE_REF         Role = 4
+	Role_ROLE_ATTACHMENT  Role = 5
+)
+
+// Enum value maps for Role.
+var (
+	Role_name = map[int32]string{
+		0: "ROLE_UNSPECIFIED",
+		1: "ROLE_PARENT",
+		2: "ROLE_CHILD",
+		3: "ROLE_JUMP",
+		4: "ROLE_REF",
+		5: "ROLE_ATTACHMENT",
+	}
+	Role_value = map[string]int32{
+		"ROLE_UNSPECIFIED": 0,
+		"ROLE_PARENT":      1,
+		"ROLE_CHILD":       2,
+		"ROLE_JUMP":        3,
+		"ROLE_REF":         4,
+		"ROLE_ATTACHMENT":  5,
+	}
+)
+
+func (x Role) Enum() *Role {
+	p := new(Role)
+	*p = x
+	return p
+}
+
+func (x Role) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Role) Descriptor() protoreflect.EnumDescriptor {
+	return file_numen_v1_vault_proto_enumTypes[4].Descriptor()
+}
+
+func (Role) Type() protoreflect.EnumType {
+	return &file_numen_v1_vault_proto_enumTypes[4]
+}
+
+func (x Role) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Role.Descriptor instead.
+func (Role) EnumDescriptor() ([]byte, []int) {
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{4}
+}
+
 // Naming is which of the three a note is shown by, and so which one a rename
 // brings into line.
 type Naming int32
@@ -321,11 +381,11 @@ func (x Naming) String() string {
 }
 
 func (Naming) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_vault_proto_enumTypes[4].Descriptor()
+	return file_numen_v1_vault_proto_enumTypes[5].Descriptor()
 }
 
 func (Naming) Type() protoreflect.EnumType {
-	return &file_numen_v1_vault_proto_enumTypes[4]
+	return &file_numen_v1_vault_proto_enumTypes[5]
 }
 
 func (x Naming) Number() protoreflect.EnumNumber {
@@ -334,7 +394,7 @@ func (x Naming) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Naming.Descriptor instead.
 func (Naming) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{5}
 }
 
 // Owed is what a caller has left when it answers.
@@ -375,11 +435,11 @@ func (x Owed) String() string {
 }
 
 func (Owed) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_vault_proto_enumTypes[5].Descriptor()
+	return file_numen_v1_vault_proto_enumTypes[6].Descriptor()
 }
 
 func (Owed) Type() protoreflect.EnumType {
-	return &file_numen_v1_vault_proto_enumTypes[5]
+	return &file_numen_v1_vault_proto_enumTypes[6]
 }
 
 func (x Owed) Number() protoreflect.EnumNumber {
@@ -388,7 +448,7 @@ func (x Owed) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Owed.Descriptor instead.
 func (Owed) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{6}
 }
 
 // Note is a note as something else refers to it.
@@ -2368,13 +2428,12 @@ func (x *WriteResponse) GetAt() *Fingerprint {
 }
 
 // NewLink is one relationship as the note it is written in declares it: the
-// note at the other end, by the path it is filed under, and where that note
-// sits seen from this one. A sibling cannot be written — it is another child of
-// a shared parent.
+// note at the other end, by the path it is filed under, and what kind of
+// relationship it is.
 type NewLink struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	To    string                 `protobuf:"bytes,1,opt,name=to,proto3" json:"to,omitempty"`
-	Seat  Seat                   `protobuf:"varint,2,opt,name=seat,proto3,enum=numen.v1.Seat" json:"seat,omitempty"`
+	Role  Role                   `protobuf:"varint,2,opt,name=role,proto3,enum=numen.v1.Role" json:"role,omitempty"`
 	// What the person calls this relationship, when they call it anything.
 	Label         string `protobuf:"bytes,3,opt,name=label,proto3" json:"label,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -2418,11 +2477,11 @@ func (x *NewLink) GetTo() string {
 	return ""
 }
 
-func (x *NewLink) GetSeat() Seat {
+func (x *NewLink) GetRole() Role {
 	if x != nil {
-		return x.Seat
+		return x.Role
 	}
-	return Seat_SEAT_UNSPECIFIED
+	return Role_ROLE_UNSPECIFIED
 }
 
 func (x *NewLink) GetLabel() string {
@@ -3385,7 +3444,7 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x03_at\"S\n" +
 	"\aNewLink\x12\x0e\n" +
 	"\x02to\x18\x01 \x01(\tR\x02to\x12\"\n" +
-	"\x04seat\x18\x02 \x01(\x0e2\x0e.numen.v1.SeatR\x04seat\x12\x14\n" +
+	"\x04role\x18\x02 \x01(\x0e2\x0e.numen.v1.RoleR\x04role\x12\x14\n" +
 	"\x05label\x18\x03 \x01(\tR\x05label\"f\n" +
 	"\rCreateRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x16\n" +
@@ -3471,7 +3530,15 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x0fWAY_UNSPECIFIED\x10\x00\x12\r\n" +
 	"\tWAY_WORDS\x10\x01\x12\x0f\n" +
 	"\vWAY_MEANING\x10\x02\x12\r\n" +
-	"\tWAY_NAMES\x10\x03*a\n" +
+	"\tWAY_NAMES\x10\x03*o\n" +
+	"\x04Role\x12\x14\n" +
+	"\x10ROLE_UNSPECIFIED\x10\x00\x12\x0f\n" +
+	"\vROLE_PARENT\x10\x01\x12\x0e\n" +
+	"\n" +
+	"ROLE_CHILD\x10\x02\x12\r\n" +
+	"\tROLE_JUMP\x10\x03\x12\f\n" +
+	"\bROLE_REF\x10\x04\x12\x13\n" +
+	"\x0fROLE_ATTACHMENT\x10\x05*a\n" +
 	"\x06Naming\x12\x16\n" +
 	"\x12NAMING_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12NAMING_FRONTMATTER\x10\x01\x12\x12\n" +
@@ -3512,133 +3579,134 @@ func file_numen_v1_vault_proto_rawDescGZIP() []byte {
 	return file_numen_v1_vault_proto_rawDescData
 }
 
-var file_numen_v1_vault_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
+var file_numen_v1_vault_proto_enumTypes = make([]protoimpl.EnumInfo, 7)
 var file_numen_v1_vault_proto_msgTypes = make([]protoimpl.MessageInfo, 48)
 var file_numen_v1_vault_proto_goTypes = []any{
 	(Refusal)(0),                  // 0: numen.v1.Refusal
 	(Seat)(0),                     // 1: numen.v1.Seat
 	(Counting)(0),                 // 2: numen.v1.Counting
 	(Way)(0),                      // 3: numen.v1.Way
-	(Naming)(0),                   // 4: numen.v1.Naming
-	(Owed)(0),                     // 5: numen.v1.Owed
-	(*Note)(nil),                  // 6: numen.v1.Note
-	(*Seated)(nil),                // 7: numen.v1.Seated
-	(*StateRequest)(nil),          // 8: numen.v1.StateRequest
-	(*StateResponse)(nil),         // 9: numen.v1.StateResponse
-	(*TasksRequest)(nil),          // 10: numen.v1.TasksRequest
-	(*TasksResponse)(nil),         // 11: numen.v1.TasksResponse
-	(*Task)(nil),                  // 12: numen.v1.Task
-	(*OpeningRequest)(nil),        // 13: numen.v1.OpeningRequest
-	(*OpeningResponse)(nil),       // 14: numen.v1.OpeningResponse
-	(*ChangesRequest)(nil),        // 15: numen.v1.ChangesRequest
-	(*ChangesResponse)(nil),       // 16: numen.v1.ChangesResponse
-	(*Went)(nil),                  // 17: numen.v1.Went
-	(*FocusRequest)(nil),          // 18: numen.v1.FocusRequest
-	(*FocusResponse)(nil),         // 19: numen.v1.FocusResponse
-	(*Stretch)(nil),               // 20: numen.v1.Stretch
-	(*EditingRequest)(nil),        // 21: numen.v1.EditingRequest
-	(*EditingResponse)(nil),       // 22: numen.v1.EditingResponse
-	(*NeighbourhoodRequest)(nil),  // 23: numen.v1.NeighbourhoodRequest
-	(*NeighbourhoodResponse)(nil), // 24: numen.v1.NeighbourhoodResponse
-	(*NamesRequest)(nil),          // 25: numen.v1.NamesRequest
-	(*NamesResponse)(nil),         // 26: numen.v1.NamesResponse
-	(*Named)(nil),                 // 27: numen.v1.Named
-	(*Heading)(nil),               // 28: numen.v1.Heading
-	(*Span)(nil),                  // 29: numen.v1.Span
-	(*SearchRequest)(nil),         // 30: numen.v1.SearchRequest
-	(*SearchResponse)(nil),        // 31: numen.v1.SearchResponse
-	(*Passage)(nil),               // 32: numen.v1.Passage
-	(*ReadRequest)(nil),           // 33: numen.v1.ReadRequest
-	(*ReadResponse)(nil),          // 34: numen.v1.ReadResponse
-	(*Fingerprint)(nil),           // 35: numen.v1.Fingerprint
-	(*Seen)(nil),                  // 36: numen.v1.Seen
-	(*WriteRequest)(nil),          // 37: numen.v1.WriteRequest
-	(*WriteResponse)(nil),         // 38: numen.v1.WriteResponse
-	(*NewLink)(nil),               // 39: numen.v1.NewLink
-	(*CreateRequest)(nil),         // 40: numen.v1.CreateRequest
-	(*CreateResponse)(nil),        // 41: numen.v1.CreateResponse
-	(*JoinRequest)(nil),           // 42: numen.v1.JoinRequest
-	(*JoinResponse)(nil),          // 43: numen.v1.JoinResponse
-	(*RenameRequest)(nil),         // 44: numen.v1.RenameRequest
-	(*RenameResponse)(nil),        // 45: numen.v1.RenameResponse
-	(*Moved)(nil),                 // 46: numen.v1.Moved
-	(*Retargeted)(nil),            // 47: numen.v1.Retargeted
-	(*RemoveRequest)(nil),         // 48: numen.v1.RemoveRequest
-	(*RemoveResponse)(nil),        // 49: numen.v1.RemoveResponse
-	(*QuittingRequest)(nil),       // 50: numen.v1.QuittingRequest
-	(*QuittingResponse)(nil),      // 51: numen.v1.QuittingResponse
-	(*FlushedRequest)(nil),        // 52: numen.v1.FlushedRequest
-	(*FlushedResponse)(nil),       // 53: numen.v1.FlushedResponse
+	(Role)(0),                     // 4: numen.v1.Role
+	(Naming)(0),                   // 5: numen.v1.Naming
+	(Owed)(0),                     // 6: numen.v1.Owed
+	(*Note)(nil),                  // 7: numen.v1.Note
+	(*Seated)(nil),                // 8: numen.v1.Seated
+	(*StateRequest)(nil),          // 9: numen.v1.StateRequest
+	(*StateResponse)(nil),         // 10: numen.v1.StateResponse
+	(*TasksRequest)(nil),          // 11: numen.v1.TasksRequest
+	(*TasksResponse)(nil),         // 12: numen.v1.TasksResponse
+	(*Task)(nil),                  // 13: numen.v1.Task
+	(*OpeningRequest)(nil),        // 14: numen.v1.OpeningRequest
+	(*OpeningResponse)(nil),       // 15: numen.v1.OpeningResponse
+	(*ChangesRequest)(nil),        // 16: numen.v1.ChangesRequest
+	(*ChangesResponse)(nil),       // 17: numen.v1.ChangesResponse
+	(*Went)(nil),                  // 18: numen.v1.Went
+	(*FocusRequest)(nil),          // 19: numen.v1.FocusRequest
+	(*FocusResponse)(nil),         // 20: numen.v1.FocusResponse
+	(*Stretch)(nil),               // 21: numen.v1.Stretch
+	(*EditingRequest)(nil),        // 22: numen.v1.EditingRequest
+	(*EditingResponse)(nil),       // 23: numen.v1.EditingResponse
+	(*NeighbourhoodRequest)(nil),  // 24: numen.v1.NeighbourhoodRequest
+	(*NeighbourhoodResponse)(nil), // 25: numen.v1.NeighbourhoodResponse
+	(*NamesRequest)(nil),          // 26: numen.v1.NamesRequest
+	(*NamesResponse)(nil),         // 27: numen.v1.NamesResponse
+	(*Named)(nil),                 // 28: numen.v1.Named
+	(*Heading)(nil),               // 29: numen.v1.Heading
+	(*Span)(nil),                  // 30: numen.v1.Span
+	(*SearchRequest)(nil),         // 31: numen.v1.SearchRequest
+	(*SearchResponse)(nil),        // 32: numen.v1.SearchResponse
+	(*Passage)(nil),               // 33: numen.v1.Passage
+	(*ReadRequest)(nil),           // 34: numen.v1.ReadRequest
+	(*ReadResponse)(nil),          // 35: numen.v1.ReadResponse
+	(*Fingerprint)(nil),           // 36: numen.v1.Fingerprint
+	(*Seen)(nil),                  // 37: numen.v1.Seen
+	(*WriteRequest)(nil),          // 38: numen.v1.WriteRequest
+	(*WriteResponse)(nil),         // 39: numen.v1.WriteResponse
+	(*NewLink)(nil),               // 40: numen.v1.NewLink
+	(*CreateRequest)(nil),         // 41: numen.v1.CreateRequest
+	(*CreateResponse)(nil),        // 42: numen.v1.CreateResponse
+	(*JoinRequest)(nil),           // 43: numen.v1.JoinRequest
+	(*JoinResponse)(nil),          // 44: numen.v1.JoinResponse
+	(*RenameRequest)(nil),         // 45: numen.v1.RenameRequest
+	(*RenameResponse)(nil),        // 46: numen.v1.RenameResponse
+	(*Moved)(nil),                 // 47: numen.v1.Moved
+	(*Retargeted)(nil),            // 48: numen.v1.Retargeted
+	(*RemoveRequest)(nil),         // 49: numen.v1.RemoveRequest
+	(*RemoveResponse)(nil),        // 50: numen.v1.RemoveResponse
+	(*QuittingRequest)(nil),       // 51: numen.v1.QuittingRequest
+	(*QuittingResponse)(nil),      // 52: numen.v1.QuittingResponse
+	(*FlushedRequest)(nil),        // 53: numen.v1.FlushedRequest
+	(*FlushedResponse)(nil),       // 54: numen.v1.FlushedResponse
 }
 var file_numen_v1_vault_proto_depIdxs = []int32{
-	6,  // 0: numen.v1.Seated.note:type_name -> numen.v1.Note
+	7,  // 0: numen.v1.Seated.note:type_name -> numen.v1.Note
 	1,  // 1: numen.v1.Seated.seat:type_name -> numen.v1.Seat
-	12, // 2: numen.v1.TasksResponse.tasks:type_name -> numen.v1.Task
+	13, // 2: numen.v1.TasksResponse.tasks:type_name -> numen.v1.Task
 	2,  // 3: numen.v1.Task.counting:type_name -> numen.v1.Counting
-	6,  // 4: numen.v1.OpeningResponse.note:type_name -> numen.v1.Note
-	17, // 5: numen.v1.ChangesResponse.renamed:type_name -> numen.v1.Went
-	20, // 6: numen.v1.FocusResponse.also:type_name -> numen.v1.Stretch
-	6,  // 7: numen.v1.NeighbourhoodResponse.focus:type_name -> numen.v1.Note
-	7,  // 8: numen.v1.NeighbourhoodResponse.related:type_name -> numen.v1.Seated
-	27, // 9: numen.v1.NamesResponse.found:type_name -> numen.v1.Named
-	6,  // 10: numen.v1.Named.note:type_name -> numen.v1.Note
-	28, // 11: numen.v1.Named.heading:type_name -> numen.v1.Heading
-	29, // 12: numen.v1.Named.at:type_name -> numen.v1.Span
+	7,  // 4: numen.v1.OpeningResponse.note:type_name -> numen.v1.Note
+	18, // 5: numen.v1.ChangesResponse.renamed:type_name -> numen.v1.Went
+	21, // 6: numen.v1.FocusResponse.also:type_name -> numen.v1.Stretch
+	7,  // 7: numen.v1.NeighbourhoodResponse.focus:type_name -> numen.v1.Note
+	8,  // 8: numen.v1.NeighbourhoodResponse.related:type_name -> numen.v1.Seated
+	28, // 9: numen.v1.NamesResponse.found:type_name -> numen.v1.Named
+	7,  // 10: numen.v1.Named.note:type_name -> numen.v1.Note
+	29, // 11: numen.v1.Named.heading:type_name -> numen.v1.Heading
+	30, // 12: numen.v1.Named.at:type_name -> numen.v1.Span
 	3,  // 13: numen.v1.SearchRequest.way:type_name -> numen.v1.Way
-	32, // 14: numen.v1.SearchResponse.found:type_name -> numen.v1.Passage
-	6,  // 15: numen.v1.Passage.note:type_name -> numen.v1.Note
-	29, // 16: numen.v1.Passage.at:type_name -> numen.v1.Span
+	33, // 14: numen.v1.SearchResponse.found:type_name -> numen.v1.Passage
+	7,  // 15: numen.v1.Passage.note:type_name -> numen.v1.Note
+	30, // 16: numen.v1.Passage.at:type_name -> numen.v1.Span
 	0,  // 17: numen.v1.ReadResponse.refusal:type_name -> numen.v1.Refusal
-	35, // 18: numen.v1.ReadResponse.at:type_name -> numen.v1.Fingerprint
-	35, // 19: numen.v1.Seen.at:type_name -> numen.v1.Fingerprint
-	36, // 20: numen.v1.WriteRequest.seen:type_name -> numen.v1.Seen
+	36, // 18: numen.v1.ReadResponse.at:type_name -> numen.v1.Fingerprint
+	36, // 19: numen.v1.Seen.at:type_name -> numen.v1.Fingerprint
+	37, // 20: numen.v1.WriteRequest.seen:type_name -> numen.v1.Seen
 	0,  // 21: numen.v1.WriteResponse.refusal:type_name -> numen.v1.Refusal
-	35, // 22: numen.v1.WriteResponse.at:type_name -> numen.v1.Fingerprint
-	1,  // 23: numen.v1.NewLink.seat:type_name -> numen.v1.Seat
-	39, // 24: numen.v1.CreateRequest.links:type_name -> numen.v1.NewLink
+	36, // 22: numen.v1.WriteResponse.at:type_name -> numen.v1.Fingerprint
+	4,  // 23: numen.v1.NewLink.role:type_name -> numen.v1.Role
+	40, // 24: numen.v1.CreateRequest.links:type_name -> numen.v1.NewLink
 	0,  // 25: numen.v1.CreateResponse.refusal:type_name -> numen.v1.Refusal
-	39, // 26: numen.v1.JoinRequest.link:type_name -> numen.v1.NewLink
+	40, // 26: numen.v1.JoinRequest.link:type_name -> numen.v1.NewLink
 	0,  // 27: numen.v1.JoinResponse.refusal:type_name -> numen.v1.Refusal
-	4,  // 28: numen.v1.RenameResponse.by:type_name -> numen.v1.Naming
-	46, // 29: numen.v1.RenameResponse.moved:type_name -> numen.v1.Moved
+	5,  // 28: numen.v1.RenameResponse.by:type_name -> numen.v1.Naming
+	47, // 29: numen.v1.RenameResponse.moved:type_name -> numen.v1.Moved
 	0,  // 30: numen.v1.RenameResponse.refusal:type_name -> numen.v1.Refusal
-	47, // 31: numen.v1.Moved.retargeted:type_name -> numen.v1.Retargeted
+	48, // 31: numen.v1.Moved.retargeted:type_name -> numen.v1.Retargeted
 	0,  // 32: numen.v1.RemoveResponse.refusal:type_name -> numen.v1.Refusal
-	5,  // 33: numen.v1.FlushedRequest.owed:type_name -> numen.v1.Owed
-	8,  // 34: numen.v1.VaultService.State:input_type -> numen.v1.StateRequest
-	13, // 35: numen.v1.VaultService.Opening:input_type -> numen.v1.OpeningRequest
-	23, // 36: numen.v1.VaultService.Neighbourhood:input_type -> numen.v1.NeighbourhoodRequest
-	25, // 37: numen.v1.VaultService.Names:input_type -> numen.v1.NamesRequest
-	30, // 38: numen.v1.VaultService.Search:input_type -> numen.v1.SearchRequest
-	15, // 39: numen.v1.VaultService.Changes:input_type -> numen.v1.ChangesRequest
-	18, // 40: numen.v1.VaultService.Focus:input_type -> numen.v1.FocusRequest
-	21, // 41: numen.v1.VaultService.Editing:input_type -> numen.v1.EditingRequest
-	10, // 42: numen.v1.VaultService.Tasks:input_type -> numen.v1.TasksRequest
-	33, // 43: numen.v1.VaultService.Read:input_type -> numen.v1.ReadRequest
-	37, // 44: numen.v1.VaultService.Write:input_type -> numen.v1.WriteRequest
-	40, // 45: numen.v1.VaultService.Create:input_type -> numen.v1.CreateRequest
-	42, // 46: numen.v1.VaultService.Join:input_type -> numen.v1.JoinRequest
-	44, // 47: numen.v1.VaultService.Rename:input_type -> numen.v1.RenameRequest
-	48, // 48: numen.v1.VaultService.Remove:input_type -> numen.v1.RemoveRequest
-	50, // 49: numen.v1.VaultService.Quitting:input_type -> numen.v1.QuittingRequest
-	52, // 50: numen.v1.VaultService.Flushed:input_type -> numen.v1.FlushedRequest
-	9,  // 51: numen.v1.VaultService.State:output_type -> numen.v1.StateResponse
-	14, // 52: numen.v1.VaultService.Opening:output_type -> numen.v1.OpeningResponse
-	24, // 53: numen.v1.VaultService.Neighbourhood:output_type -> numen.v1.NeighbourhoodResponse
-	26, // 54: numen.v1.VaultService.Names:output_type -> numen.v1.NamesResponse
-	31, // 55: numen.v1.VaultService.Search:output_type -> numen.v1.SearchResponse
-	16, // 56: numen.v1.VaultService.Changes:output_type -> numen.v1.ChangesResponse
-	19, // 57: numen.v1.VaultService.Focus:output_type -> numen.v1.FocusResponse
-	22, // 58: numen.v1.VaultService.Editing:output_type -> numen.v1.EditingResponse
-	11, // 59: numen.v1.VaultService.Tasks:output_type -> numen.v1.TasksResponse
-	34, // 60: numen.v1.VaultService.Read:output_type -> numen.v1.ReadResponse
-	38, // 61: numen.v1.VaultService.Write:output_type -> numen.v1.WriteResponse
-	41, // 62: numen.v1.VaultService.Create:output_type -> numen.v1.CreateResponse
-	43, // 63: numen.v1.VaultService.Join:output_type -> numen.v1.JoinResponse
-	45, // 64: numen.v1.VaultService.Rename:output_type -> numen.v1.RenameResponse
-	49, // 65: numen.v1.VaultService.Remove:output_type -> numen.v1.RemoveResponse
-	51, // 66: numen.v1.VaultService.Quitting:output_type -> numen.v1.QuittingResponse
-	53, // 67: numen.v1.VaultService.Flushed:output_type -> numen.v1.FlushedResponse
+	6,  // 33: numen.v1.FlushedRequest.owed:type_name -> numen.v1.Owed
+	9,  // 34: numen.v1.VaultService.State:input_type -> numen.v1.StateRequest
+	14, // 35: numen.v1.VaultService.Opening:input_type -> numen.v1.OpeningRequest
+	24, // 36: numen.v1.VaultService.Neighbourhood:input_type -> numen.v1.NeighbourhoodRequest
+	26, // 37: numen.v1.VaultService.Names:input_type -> numen.v1.NamesRequest
+	31, // 38: numen.v1.VaultService.Search:input_type -> numen.v1.SearchRequest
+	16, // 39: numen.v1.VaultService.Changes:input_type -> numen.v1.ChangesRequest
+	19, // 40: numen.v1.VaultService.Focus:input_type -> numen.v1.FocusRequest
+	22, // 41: numen.v1.VaultService.Editing:input_type -> numen.v1.EditingRequest
+	11, // 42: numen.v1.VaultService.Tasks:input_type -> numen.v1.TasksRequest
+	34, // 43: numen.v1.VaultService.Read:input_type -> numen.v1.ReadRequest
+	38, // 44: numen.v1.VaultService.Write:input_type -> numen.v1.WriteRequest
+	41, // 45: numen.v1.VaultService.Create:input_type -> numen.v1.CreateRequest
+	43, // 46: numen.v1.VaultService.Join:input_type -> numen.v1.JoinRequest
+	45, // 47: numen.v1.VaultService.Rename:input_type -> numen.v1.RenameRequest
+	49, // 48: numen.v1.VaultService.Remove:input_type -> numen.v1.RemoveRequest
+	51, // 49: numen.v1.VaultService.Quitting:input_type -> numen.v1.QuittingRequest
+	53, // 50: numen.v1.VaultService.Flushed:input_type -> numen.v1.FlushedRequest
+	10, // 51: numen.v1.VaultService.State:output_type -> numen.v1.StateResponse
+	15, // 52: numen.v1.VaultService.Opening:output_type -> numen.v1.OpeningResponse
+	25, // 53: numen.v1.VaultService.Neighbourhood:output_type -> numen.v1.NeighbourhoodResponse
+	27, // 54: numen.v1.VaultService.Names:output_type -> numen.v1.NamesResponse
+	32, // 55: numen.v1.VaultService.Search:output_type -> numen.v1.SearchResponse
+	17, // 56: numen.v1.VaultService.Changes:output_type -> numen.v1.ChangesResponse
+	20, // 57: numen.v1.VaultService.Focus:output_type -> numen.v1.FocusResponse
+	23, // 58: numen.v1.VaultService.Editing:output_type -> numen.v1.EditingResponse
+	12, // 59: numen.v1.VaultService.Tasks:output_type -> numen.v1.TasksResponse
+	35, // 60: numen.v1.VaultService.Read:output_type -> numen.v1.ReadResponse
+	39, // 61: numen.v1.VaultService.Write:output_type -> numen.v1.WriteResponse
+	42, // 62: numen.v1.VaultService.Create:output_type -> numen.v1.CreateResponse
+	44, // 63: numen.v1.VaultService.Join:output_type -> numen.v1.JoinResponse
+	46, // 64: numen.v1.VaultService.Rename:output_type -> numen.v1.RenameResponse
+	50, // 65: numen.v1.VaultService.Remove:output_type -> numen.v1.RemoveResponse
+	52, // 66: numen.v1.VaultService.Quitting:output_type -> numen.v1.QuittingResponse
+	54, // 67: numen.v1.VaultService.Flushed:output_type -> numen.v1.FlushedResponse
 	51, // [51:68] is the sub-list for method output_type
 	34, // [34:51] is the sub-list for method input_type
 	34, // [34:34] is the sub-list for extension type_name
@@ -3666,7 +3734,7 @@ func file_numen_v1_vault_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_vault_proto_rawDesc), len(file_numen_v1_vault_proto_rawDesc)),
-			NumEnums:      6,
+			NumEnums:      7,
 			NumMessages:   48,
 			NumExtensions: 0,
 			NumServices:   1,

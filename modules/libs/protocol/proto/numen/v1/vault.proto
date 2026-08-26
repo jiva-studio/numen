@@ -514,13 +514,23 @@ message WriteResponse {
   optional Fingerprint at = 3;
 }
 
+// Role is what kind of relationship a link is. The list is closed: navigation
+// and drawing read it, so a role nobody decided on has no behaviour.
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_PARENT = 1;
+  ROLE_CHILD = 2;
+  ROLE_JUMP = 3;
+  ROLE_REF = 4;
+  ROLE_ATTACHMENT = 5;
+}
+
 // NewLink is one relationship as the note it is written in declares it: the
-// note at the other end, by the path it is filed under, and where that note
-// sits seen from this one. A sibling cannot be written — it is another child of
-// a shared parent.
+// note at the other end, by the path it is filed under, and what kind of
+// relationship it is.
 message NewLink {
   string to = 1;
-  Seat seat = 2;
+  Role role = 2;
 
   // What the person calls this relationship, when they call it anything.
   string label = 3;
