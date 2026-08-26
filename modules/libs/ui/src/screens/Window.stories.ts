@@ -39,7 +39,7 @@ const TABS: readonly Tab[] = [
 const ROWS: readonly Row[] = [
   {
     id: 'physics',
-    name: 'physics',
+    name: 'Physics',
     holds: true,
     rows: [
       { id: 'entropy', name: 'Entropy.md', holds: false },
@@ -50,7 +50,7 @@ const ROWS: readonly Row[] = [
   },
   {
     id: 'computation',
-    name: 'computation',
+    name: 'Computation',
     holds: true,
     rows: [
       { id: 'shannon-entropy', name: 'Shannon entropy.md', holds: false },
@@ -59,7 +59,7 @@ const ROWS: readonly Row[] = [
   },
   {
     id: 'reading',
-    name: 'reading',
+    name: 'Reading',
     holds: true,
     rows: [
       { id: 'boltzmann-pdf', name: 'Boltzmann 1877.pdf', holds: false },
