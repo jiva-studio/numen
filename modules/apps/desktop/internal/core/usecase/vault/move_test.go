@@ -60,7 +60,7 @@ func (f filing) move() usecase.Move { return f.moving(true) }
 // apart is the move an installation that has turned the two apart does.
 func (f filing) apart() usecase.Move { return f.moving(false) }
 
-func (f filing) moving(sync note.Sync) usecase.Move {
+func (f filing) moving(kept note.Sync) usecase.Move {
 	return usecase.Move{
 		Writers: filesystem.Writers{},
 		Links:   f.db.Links(),
@@ -72,7 +72,7 @@ func (f filing) moving(sync note.Sync) usecase.Move {
 			Links:   f.db.Links(),
 			Sources: f.db.Sources(),
 			Index:   f.index,
-			Sync:    sync,
+			Sync:    func() note.Sync { return kept },
 			Moving: func(_ context.Context, went domain.Went) {
 				*f.went = append(*f.went, went)
 			},

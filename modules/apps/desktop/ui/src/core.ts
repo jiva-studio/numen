@@ -174,6 +174,16 @@ export interface Core {
    * it is called from now on, so a name changed within one folder is a move.
    */
   move(from: string, to: string): Promise<Movement>
+  /**
+   * Whether renaming either a note's title or the name of its file brings the
+   * other into line, as the settings hold it.
+   */
+  syncing(): Promise<boolean>
+  /**
+   * That setting written into the settings file. What could not be written, and
+   * nothing where it was: the rename after this reads what was written.
+   */
+  choosesSyncing(kept: boolean): Promise<Refused | null>
   /** An empty folder. The folders above it are made with it. */
   makeFolder(path: string): Promise<Refused | null>
   /**

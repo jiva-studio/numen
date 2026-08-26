@@ -87,12 +87,22 @@ service VaultService {
 
   // Rename gives a note a different name. A note is shown by its title, else by
   // its first level-one heading, else by its filename: whichever of the three
-  // names it is brought into line, and the file is renamed with it.
+  // names it is brought into line, and the file follows it where a title and a
+  // filename are kept as one name.
   rpc Rename(RenameRequest) returns (RenameResponse);
 
   // Move puts a file or a folder somewhere else in the vault. Renaming a file
   // is a move within one folder.
   rpc Move(MoveRequest) returns (MoveResponse);
+
+  // Syncing is whether renaming either a note's title or the name of its file
+  // brings the other into line.
+  rpc Syncing(SyncingRequest) returns (SyncingResponse);
+
+  // ChooseSyncing writes that setting into the file a person configures this
+  // installation in. The file is patched as an object, so every key a person
+  // typed stays where it was, and the next rename reads what was written.
+  rpc ChooseSyncing(ChooseSyncingRequest) returns (ChooseSyncingResponse);
 
   // Remove takes a file or a folder out of the vault, into the trash it can be
   // brought back from. The links that pointed at it are left as they were
@@ -682,6 +692,24 @@ message Moved {
 
   reserved 4;
   reserved "retargeted";
+}
+
+message SyncingRequest {}
+
+message SyncingResponse {
+  // Whether renaming either a note's title or the name of its file brings the
+  // other into line. It is the `naming.sync_title_and_filename` of the settings
+  // file, and an installation nobody has configured keeps the two one name.
+  bool sync_title_and_filename = 1;
+}
+
+message ChooseSyncingRequest {
+  bool sync_title_and_filename = 1;
+}
+
+message ChooseSyncingResponse {
+  // Set when nothing was written, and why. What the settings hold is unchanged.
+  optional Refusal refusal = 1;
 }
 
 message MoveRequest {

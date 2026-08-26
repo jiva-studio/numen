@@ -215,6 +215,8 @@ export interface Words extends Silences {
   readonly mode: string
   readonly interfaceScale: string
   readonly textScale: string
+  /** The command over whether a note's title and its filename are one name. */
+  readonly syncing: string
   readonly find: string
   /** The keystroke the search answers to away from the palette. */
   readonly findKeys: PaletteKeys
@@ -403,6 +405,7 @@ export const commandsOf = (
     where: always,
   },
   { id: 'textScale', text: words.textScale, band: 'window', needs: 'choosing', where: always },
+  { id: 'syncing', text: words.syncing, band: 'window', needs: 'choosing', where: always },
   { id: 'first', text: words.first, band: 'vault', where: (at) => at.ready },
   {
     id: 'goto',

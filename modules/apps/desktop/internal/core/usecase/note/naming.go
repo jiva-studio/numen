@@ -34,6 +34,21 @@ func (s Sync) Renaming(by Naming) (moves, writes bool) {
 	return bool(s), bool(s)
 }
 
+// Syncing is asked as each rename is made, so a person who turns the setting is
+// answered by the next rename.
+//
+// Nothing asked keeps the two one name, which is what an installation nobody
+// has configured does.
+type Syncing func() Sync
+
+// Kept is what a rename reads.
+func (ask Syncing) Kept() Sync {
+	if ask == nil {
+		return true
+	}
+	return ask()
+}
+
 // ErrUnnameable is a title no note can be given. Nothing is written.
 var ErrUnnameable = errors.New("a note cannot be given this title")
 

@@ -382,7 +382,6 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 		Links:   c.db.Links(),
 		Sources: c.db.Sources(),
 		Index:   c.index,
-		Sync:    true,
 	}
 
 	saveAsking := make(chan struct{})

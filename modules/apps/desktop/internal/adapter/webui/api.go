@@ -103,6 +103,13 @@ type API struct {
 	Moves   *usecase.Move
 	Removes *note.Remove
 
+	// Sync reads whether a note's title and its filename are kept as one name,
+	// and Chooses writes it. A build with no Chooses answers that it configures
+	// nothing; one with no Sync reads what an installation nobody has
+	// configured does.
+	Sync    note.Syncing
+	Chooses func(kept note.Sync) error
+
 	// Finds is how the window searches the text the vault holds, by the words
 	// in it and by what it means. A build without one answers that it cannot be
 	// searched, and the names a vault holds are answered all the same.

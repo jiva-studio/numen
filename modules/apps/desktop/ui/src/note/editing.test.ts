@@ -69,6 +69,8 @@ function fake(over: Partial<Faked> = {}) {
     list: async () => [],
     move: async () => ({ moved: null, refusal: null }),
     makeFolder: async () => null,
+    syncing: async () => true,
+    choosesSyncing: async () => null,
     ...over,
   }
   return { core, files, wrote }

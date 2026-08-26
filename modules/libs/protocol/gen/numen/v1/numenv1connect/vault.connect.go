@@ -74,6 +74,11 @@ const (
 	VaultServiceRenameProcedure = "/numen.v1.VaultService/Rename"
 	// VaultServiceMoveProcedure is the fully-qualified name of the VaultService's Move RPC.
 	VaultServiceMoveProcedure = "/numen.v1.VaultService/Move"
+	// VaultServiceSyncingProcedure is the fully-qualified name of the VaultService's Syncing RPC.
+	VaultServiceSyncingProcedure = "/numen.v1.VaultService/Syncing"
+	// VaultServiceChooseSyncingProcedure is the fully-qualified name of the VaultService's
+	// ChooseSyncing RPC.
+	VaultServiceChooseSyncingProcedure = "/numen.v1.VaultService/ChooseSyncing"
 	// VaultServiceRemoveProcedure is the fully-qualified name of the VaultService's Remove RPC.
 	VaultServiceRemoveProcedure = "/numen.v1.VaultService/Remove"
 	// VaultServiceMakeFolderProcedure is the fully-qualified name of the VaultService's MakeFolder RPC.
@@ -145,11 +150,19 @@ type VaultServiceClient interface {
 	Join(context.Context, *connect.Request[v1.JoinRequest]) (*connect.Response[v1.JoinResponse], error)
 	// Rename gives a note a different name. A note is shown by its title, else by
 	// its first level-one heading, else by its filename: whichever of the three
-	// names it is brought into line, and the file is renamed with it.
+	// names it is brought into line, and the file follows it where a title and a
+	// filename are kept as one name.
 	Rename(context.Context, *connect.Request[v1.RenameRequest]) (*connect.Response[v1.RenameResponse], error)
 	// Move puts a file or a folder somewhere else in the vault. Renaming a file
 	// is a move within one folder.
 	Move(context.Context, *connect.Request[v1.MoveRequest]) (*connect.Response[v1.MoveResponse], error)
+	// Syncing is whether renaming either a note's title or the name of its file
+	// brings the other into line.
+	Syncing(context.Context, *connect.Request[v1.SyncingRequest]) (*connect.Response[v1.SyncingResponse], error)
+	// ChooseSyncing writes that setting into the file a person configures this
+	// installation in. The file is patched as an object, so every key a person
+	// typed stays where it was, and the next rename reads what was written.
+	ChooseSyncing(context.Context, *connect.Request[v1.ChooseSyncingRequest]) (*connect.Response[v1.ChooseSyncingResponse], error)
 	// Remove takes a file or a folder out of the vault, into the trash it can be
 	// brought back from. The links that pointed at it are left as they were
 	// written: a link is not wrong because the note it names is gone.
@@ -273,6 +286,18 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(vaultServiceMethods.ByName("Move")),
 			connect.WithClientOptions(opts...),
 		),
+		syncing: connect.NewClient[v1.SyncingRequest, v1.SyncingResponse](
+			httpClient,
+			baseURL+VaultServiceSyncingProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Syncing")),
+			connect.WithClientOptions(opts...),
+		),
+		chooseSyncing: connect.NewClient[v1.ChooseSyncingRequest, v1.ChooseSyncingResponse](
+			httpClient,
+			baseURL+VaultServiceChooseSyncingProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("ChooseSyncing")),
+			connect.WithClientOptions(opts...),
+		),
 		remove: connect.NewClient[v1.RemoveRequest, v1.RemoveResponse](
 			httpClient,
 			baseURL+VaultServiceRemoveProcedure,
@@ -318,6 +343,8 @@ type vaultServiceClient struct {
 	join          *connect.Client[v1.JoinRequest, v1.JoinResponse]
 	rename        *connect.Client[v1.RenameRequest, v1.RenameResponse]
 	move          *connect.Client[v1.MoveRequest, v1.MoveResponse]
+	syncing       *connect.Client[v1.SyncingRequest, v1.SyncingResponse]
+	chooseSyncing *connect.Client[v1.ChooseSyncingRequest, v1.ChooseSyncingResponse]
 	remove        *connect.Client[v1.RemoveRequest, v1.RemoveResponse]
 	makeFolder    *connect.Client[v1.MakeFolderRequest, v1.MakeFolderResponse]
 	quitting      *connect.Client[v1.QuittingRequest, v1.QuittingResponse]
@@ -404,6 +431,16 @@ func (c *vaultServiceClient) Move(ctx context.Context, req *connect.Request[v1.M
 	return c.move.CallUnary(ctx, req)
 }
 
+// Syncing calls numen.v1.VaultService.Syncing.
+func (c *vaultServiceClient) Syncing(ctx context.Context, req *connect.Request[v1.SyncingRequest]) (*connect.Response[v1.SyncingResponse], error) {
+	return c.syncing.CallUnary(ctx, req)
+}
+
+// ChooseSyncing calls numen.v1.VaultService.ChooseSyncing.
+func (c *vaultServiceClient) ChooseSyncing(ctx context.Context, req *connect.Request[v1.ChooseSyncingRequest]) (*connect.Response[v1.ChooseSyncingResponse], error) {
+	return c.chooseSyncing.CallUnary(ctx, req)
+}
+
 // Remove calls numen.v1.VaultService.Remove.
 func (c *vaultServiceClient) Remove(ctx context.Context, req *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {
 	return c.remove.CallUnary(ctx, req)
@@ -485,11 +522,19 @@ type VaultServiceHandler interface {
 	Join(context.Context, *connect.Request[v1.JoinRequest]) (*connect.Response[v1.JoinResponse], error)
 	// Rename gives a note a different name. A note is shown by its title, else by
 	// its first level-one heading, else by its filename: whichever of the three
-	// names it is brought into line, and the file is renamed with it.
+	// names it is brought into line, and the file follows it where a title and a
+	// filename are kept as one name.
 	Rename(context.Context, *connect.Request[v1.RenameRequest]) (*connect.Response[v1.RenameResponse], error)
 	// Move puts a file or a folder somewhere else in the vault. Renaming a file
 	// is a move within one folder.
 	Move(context.Context, *connect.Request[v1.MoveRequest]) (*connect.Response[v1.MoveResponse], error)
+	// Syncing is whether renaming either a note's title or the name of its file
+	// brings the other into line.
+	Syncing(context.Context, *connect.Request[v1.SyncingRequest]) (*connect.Response[v1.SyncingResponse], error)
+	// ChooseSyncing writes that setting into the file a person configures this
+	// installation in. The file is patched as an object, so every key a person
+	// typed stays where it was, and the next rename reads what was written.
+	ChooseSyncing(context.Context, *connect.Request[v1.ChooseSyncingRequest]) (*connect.Response[v1.ChooseSyncingResponse], error)
 	// Remove takes a file or a folder out of the vault, into the trash it can be
 	// brought back from. The links that pointed at it are left as they were
 	// written: a link is not wrong because the note it names is gone.
@@ -609,6 +654,18 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(vaultServiceMethods.ByName("Move")),
 		connect.WithHandlerOptions(opts...),
 	)
+	vaultServiceSyncingHandler := connect.NewUnaryHandler(
+		VaultServiceSyncingProcedure,
+		svc.Syncing,
+		connect.WithSchema(vaultServiceMethods.ByName("Syncing")),
+		connect.WithHandlerOptions(opts...),
+	)
+	vaultServiceChooseSyncingHandler := connect.NewUnaryHandler(
+		VaultServiceChooseSyncingProcedure,
+		svc.ChooseSyncing,
+		connect.WithSchema(vaultServiceMethods.ByName("ChooseSyncing")),
+		connect.WithHandlerOptions(opts...),
+	)
 	vaultServiceRemoveHandler := connect.NewUnaryHandler(
 		VaultServiceRemoveProcedure,
 		svc.Remove,
@@ -667,6 +724,10 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 			vaultServiceRenameHandler.ServeHTTP(w, r)
 		case VaultServiceMoveProcedure:
 			vaultServiceMoveHandler.ServeHTTP(w, r)
+		case VaultServiceSyncingProcedure:
+			vaultServiceSyncingHandler.ServeHTTP(w, r)
+		case VaultServiceChooseSyncingProcedure:
+			vaultServiceChooseSyncingHandler.ServeHTTP(w, r)
 		case VaultServiceRemoveProcedure:
 			vaultServiceRemoveHandler.ServeHTTP(w, r)
 		case VaultServiceMakeFolderProcedure:
@@ -746,6 +807,14 @@ func (UnimplementedVaultServiceHandler) Rename(context.Context, *connect.Request
 
 func (UnimplementedVaultServiceHandler) Move(context.Context, *connect.Request[v1.MoveRequest]) (*connect.Response[v1.MoveResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Move is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) Syncing(context.Context, *connect.Request[v1.SyncingRequest]) (*connect.Response[v1.SyncingResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Syncing is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) ChooseSyncing(context.Context, *connect.Request[v1.ChooseSyncingRequest]) (*connect.Response[v1.ChooseSyncingResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.ChooseSyncing is not implemented"))
 }
 
 func (UnimplementedVaultServiceHandler) Remove(context.Context, *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {

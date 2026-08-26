@@ -36,6 +36,7 @@ import {
 import { chorded, commandFor } from './keying'
 import { themes } from './theme'
 import { APPEARANCE, DRESSING, INTERFACE_SCALE, MODE, TEXT_SCALE, wearing } from './wearing'
+import { SYNCING, syncing } from './syncing'
 import { does, type Doing } from './doing'
 import { finding } from './finding'
 import { lands, type Places } from './landing'
@@ -244,6 +245,9 @@ const knows: Knows = {
 /** How the window is drawn: the theme it wears, its half of a pair, its sizes. */
 const dressed = wearing(themes, words, tell.under('worn'))
 
+/** Whether a note's title and the name of its file are kept as one name. */
+const oneName = syncing(core, words, tell.under('named'))
+
 // A size is drawn, and every open editor takes its measurements again. An
 // editor watches its own box, and a size changes the type inside that box
 // while the box itself stands.
@@ -255,8 +259,11 @@ const kept: Holds = {
     if (command === APPEARANCE) return dressed.offers()
     if (command === MODE) return dressed.modes()
     if (command === INTERFACE_SCALE || command === TEXT_SCALE) return dressed.sizes(command, typed)
+    if (command === SYNCING) return oneName.offers()
     return []
   },
+  // A theme and a size are worn where the keyboard stands, so that a person
+  // sees them. A setting is written only once it is chosen.
   shows: (command, item) => {
     if (DRESSING.includes(command)) dressed.shows(item)
   },
@@ -299,6 +306,7 @@ const doing: Doing = {
     palette.shows(true)
   },
   appearance: (chosen) => dressed.chooses(chosen),
+  syncing: (chosen) => oneName.chooses(chosen),
   says: told,
 }
 
@@ -431,6 +439,7 @@ onMounted(async () => {
   void window.start()
   void going.start()
   void dressed.start()
+  void oneName.start()
 })
 onUnmounted(() => {
   globalThis.removeEventListener('keydown', asked)

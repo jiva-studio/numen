@@ -28,8 +28,9 @@ type Move struct {
 	// Moving is told where the note went, so that whoever is showing it at the
 	// name it had follows it. Nothing is told where nobody is drawing.
 	Moving Moving
-	// Sync is whether a note's title and its filename are kept as one name.
-	Sync Sync
+	// Sync is asked, as each rename is made, whether a note's title and its
+	// filename are kept as one name.
+	Sync Syncing
 }
 
 // Moved says where the note went and what it did to the links that pointed at

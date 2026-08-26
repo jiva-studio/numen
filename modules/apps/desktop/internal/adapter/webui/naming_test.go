@@ -122,6 +122,89 @@ func TestTheWindowRenamesTheWayTheSettingsSay(t *testing.T) {
 	}
 }
 
+// TestTurningTheSettingIsAnsweredByTheNextRename. The palette turns it, the
+// file is written, and the rename after it reads what was written. Nothing is
+// launched again in between.
+func TestTurningTheSettingIsAnsweredByTheNextRename(t *testing.T) {
+	f := opening(t, nil, map[string]string{
+		"Entropy.md": "---\ntitle: Entropy\n---\nA measure.\n",
+		"Heat.md":    "---\ntitle: Heat\n---\nA measure.\n",
+	}, true)
+	scanned(t, f)
+
+	said, err := f.client.Syncing(t.Context(), connect.NewRequest(&v1.SyncingRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !said.Msg.GetSyncTitleAndFilename() {
+		t.Fatal("an installation nobody has configured tells the two apart")
+	}
+
+	turned, err := f.client.ChooseSyncing(t.Context(), connect.NewRequest(&v1.ChooseSyncingRequest{
+		SyncTitleAndFilename: false,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if refusal := turned.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
+		t.Fatalf("the setting was refused: %v", refusal)
+	}
+
+	// Read back through the same window, and then acted on by a rename.
+	said, err = f.client.Syncing(t.Context(), connect.NewRequest(&v1.SyncingRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if said.Msg.GetSyncTitleAndFilename() {
+		t.Error("the setting was turned and the window still says one name")
+	}
+
+	renamed, err := f.client.Rename(t.Context(), connect.NewRequest(&v1.RenameRequest{
+		Path: "Entropy.md", Title: "Disorder",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := renamed.Msg.GetPath(); got != "Entropy.md" {
+		t.Errorf("the file moved to %q under a setting that was turned off", got)
+	}
+	if _, err := f.client.Move(t.Context(), connect.NewRequest(&v1.MoveRequest{
+		From: "Heat.md", To: "Warmth.md",
+	})); err != nil {
+		t.Fatal(err)
+	}
+	if now := fileAt(t, f.root, "Warmth.md"); !strings.Contains(now, "title: Heat") {
+		t.Errorf("the note was called by its file under a setting that was turned off:\n%s", now)
+	}
+}
+
+// The setting a person turns is written where they will read it, and every
+// other byte of the file is left as they typed it.
+func TestTurningTheSettingLeavesTheRestOfTheFileAlone(t *testing.T) {
+	f := opening(t, nil, nil, true)
+	path := filepath.Join(filepath.Dir(f.settings), "numen.json")
+	if err := os.WriteFile(path, []byte("{\n  \"appearance\": {\"text_scale\": 1.5}\n}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := f.client.ChooseSyncing(t.Context(), connect.NewRequest(&v1.ChooseSyncingRequest{
+		SyncTitleAndFilename: false,
+	})); err != nil {
+		t.Fatal(err)
+	}
+
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(raw), `"text_scale": 1.5`) {
+		t.Errorf("what the person typed was rewritten:\n%s", raw)
+	}
+	if !strings.Contains(string(raw), `"sync_title_and_filename": false`) {
+		t.Errorf("the setting is not in the file:\n%s", raw)
+	}
+}
+
 // TestRenamingLeavesALinkThatMeansAnotherNoteNow. Two notes under one name is
 // the person's to settle, and a link that resolves is not repaired.
 func TestRenamingLeavesALinkThatMeansAnotherNoteNow(t *testing.T) {
