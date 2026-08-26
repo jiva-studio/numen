@@ -120,6 +120,12 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
+  /**
+   * What is drawn before a row's words. The room for it is kept on every row
+   * once the slot is filled, so the words line up down the list whether or not
+   * each of them draws anything.
+   */
+  icon(props: { id: string }): unknown
   /** What is said while there is no band to draw. */
   silence(): unknown
 }>()
@@ -486,6 +492,10 @@ onBeforeUnmount(() => {
               @pointerdown.prevent
               @click="choose(drawn.at, $event.shiftKey)"
             >
+              <span v-if="$slots.icon" class="palette__icon flex shrink-0 items-center">
+                <slot name="icon" :id="drawn.item.id" />
+              </span>
+
               <span class="palette__lines flex min-w-0 flex-1 flex-col">
                 <span class="palette__name min-w-0">
                   <span
@@ -613,6 +623,8 @@ onBeforeUnmount(() => {
   --drop: 12vh;
   --widest: 640px;
   --tallest: 50vh;
+  /* How large an icon is drawn on a row. */
+  --icon: 1rem;
 
   position: fixed;
   inset: 0;
@@ -697,6 +709,13 @@ onBeforeUnmount(() => {
 
 .palette__lines {
   gap: 0.1rem;
+}
+
+/* The room an icon takes, kept whether or not the row draws one, so the words
+   line up down the list. What is drawn in it is the caller's. */
+.palette__icon {
+  inline-size: var(--icon);
+  block-size: var(--icon);
 }
 
 .palette__item[data-here] {

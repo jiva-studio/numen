@@ -6,6 +6,8 @@
  * reach them, and the vaults this installation holds.
  */
 import { KeyCap } from '@numen/ui'
+import { Vault } from '@lucide/vue'
+import { iconFor } from '../icons'
 import Mark from './Mark.vue'
 import type { Held, Way, Words } from './welcoming'
 
@@ -31,6 +33,7 @@ defineEmits<{
       <ul v-if="ways.length" class="welcome__ways">
         <li v-for="one in ways" :key="one.id">
           <button type="button" class="welcome__row" @click="$emit('runs', one.id)">
+            <component :is="iconFor(one.id)" v-if="iconFor(one.id)" class="welcome__icon" />
             <span class="welcome__what">{{ one.text }}</span>
             <KeyCap v-if="one.keys" :keys="one.keys" />
           </button>
@@ -46,12 +49,16 @@ defineEmits<{
               class="welcome__row welcome__row--vault"
               @click="$emit('opens', one.id)"
             >
-              <span class="welcome__what">{{ one.name }}</span>
-              <span v-if="one.detail" class="welcome__aside">{{ one.detail }}</span>
+              <Vault class="welcome__icon" />
+              <span class="welcome__named">
+                <span class="welcome__what">{{ one.name }}</span>
+                <span v-if="one.detail" class="welcome__aside">{{ one.detail }}</span>
+              </span>
             </button>
           </li>
         </ul>
         <button type="button" class="welcome__row" @click="$emit('adds')">
+          <component :is="iconFor('newVault')" class="welcome__icon" />
           <span class="welcome__what">{{ words.newVault }}</span>
         </button>
       </section>
@@ -130,10 +137,21 @@ defineEmits<{
 }
 
 /* A vault stands over what is true of it. */
-.welcome__row--vault {
+/* Lucide draws on a 24 grid, and the stroke is given in those units. */
+.welcome__icon {
+  flex: none;
+  inline-size: 1rem;
+  block-size: 1rem;
+  stroke-width: 1.75;
+  opacity: 0.75;
+}
+
+/* A vault is its name over what is said about it, beside the one icon. */
+.welcome__named {
+  display: flex;
   flex-direction: column;
-  align-items: stretch;
   gap: 0.05rem;
+  min-inline-size: 0;
 }
 
 .welcome__row:hover {

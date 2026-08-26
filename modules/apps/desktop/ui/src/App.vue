@@ -35,6 +35,7 @@ import {
   type Where,
 } from './commanding'
 import { chorded, commandFor } from './keying'
+import { iconFor } from './icons'
 import { themes } from './theme'
 import { APPEARANCE, DRESSING, INTERFACE_SCALE, MODE, TEXT_SCALE, wearing } from './wearing'
 import { SYNCING, syncing } from './syncing'
@@ -540,7 +541,13 @@ onUnmounted(() => {
       @lit="commands.lights"
       @back="back"
       @dismiss="dismissed"
-    />
+    >
+      <!-- A command is drawn with its icon. What a search turns up is a note, a
+           heading or a passage, and none of those is a command. -->
+      <template v-if="commands.open.value" #icon="{ id }">
+        <component :is="iconFor(id)" v-if="iconFor(id)" class="command-icon" />
+      </template>
+    </Palette>
   </main>
 </template>
 
@@ -556,4 +563,11 @@ main {
   min-height: 0;
 }
 
+/* Lucide draws on a 24 grid, and the stroke is given in those units. */
+.command-icon {
+  inline-size: 100%;
+  block-size: 100%;
+  stroke-width: 1.75;
+  opacity: 0.75;
+}
 </style>

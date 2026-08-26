@@ -7,8 +7,11 @@
 import { describe, expect, it } from 'vitest'
 
 import { iconFor } from './icons'
+import { commandsOf } from './commanding'
 import { itemsFor } from './files/menu'
 import { ITEMS, NONE } from './plex/menu'
+import { waysIn } from './welcome/welcoming'
+import { WORDS as words } from './words'
 import type { Source } from './core'
 
 /** Every menu the tree draws: off every row, and on a row of each kind. */
@@ -38,8 +41,17 @@ describe('the icon a command is drawn with', () => {
     }
   })
 
-  it('is nothing for a command no menu offers', () => {
-    expect(iconFor('destroy')).toBeNull()
+  it('is there for every command the palette draws', () => {
+    for (const one of commandsOf(words)) expect(iconFor(one.id), one.id).not.toBeNull()
+  })
+
+  it('is there for every way into a vault the welcome screen offers', () => {
+    const ways = waysIn({ vault: 'physics', ready: true }, words, 'Linux')
+    for (const one of ways) expect(iconFor(one.id), one.id).not.toBeNull()
+  })
+
+  it('is nothing for an identity no list carries', () => {
     expect(iconFor('constructor')).toBeNull()
+    expect(iconFor('nothing of the sort')).toBeNull()
   })
 })

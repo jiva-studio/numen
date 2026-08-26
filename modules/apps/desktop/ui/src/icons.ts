@@ -10,8 +10,12 @@
  * offers has one.
  */
 import {
+  ALargeSmall,
   ArrowRightLeft,
   Bot,
+  Command,
+  Compass,
+  Contrast,
   Copy,
   CornerDownRight,
   CornerLeftUp,
@@ -19,28 +23,63 @@ import {
   FileText,
   FolderOpen,
   FolderPlus,
+  FolderTree,
+  Navigation,
+  Palette,
   PenLine,
+  Plus,
+  RefreshCw,
+  Ruler,
+  Search,
+  SquareX,
   Trash2,
   Type,
+  Vault,
   Waypoints,
+  X,
   type LucideIcon,
 } from '@lucide/vue'
 
 /** What each command is drawn as. A map, so an identity answers for itself. */
 const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
+  // Over the note in front.
   ['read', FileText],
+  ['beside', FileText],
   ['travel', Waypoints],
-  ['newNote', FilePlus],
-  ['newFolder', FolderPlus],
-  ['rename', PenLine],
-  ['copy', Copy],
-  ['reveal', FolderOpen],
   ['child', CornerDownRight],
   ['parent', CornerLeftUp],
   ['jump', ArrowRightLeft],
   ['title', Type],
   ['ask', Bot],
+  ['copy', Copy],
+  ['reveal', FolderOpen],
   ['remove', Trash2],
+  ['destroy', Trash2],
+  // What a tab of the tree does itself.
+  ['newNote', FilePlus],
+  ['newFolder', FolderPlus],
+  ['rename', PenLine],
+  // Over the window.
+  ['note', FilePlus],
+  ['plex', Waypoints],
+  ['agent', Bot],
+  ['files', FolderTree],
+  ['find', Search],
+  ['commands', Command],
+  ['close', SquareX],
+  ['appearance', Palette],
+  ['mode', Contrast],
+  ['interfaceScale', Ruler],
+  ['textScale', ALargeSmall],
+  ['syncing', RefreshCw],
+  // Over the vault.
+  ['first', Compass],
+  ['goto', Navigation],
+  ['openVault', Vault],
+  ['newVault', Plus],
+  ['renameVault', PenLine],
+  ['forgetVault', X],
+  ['eraseVault', Trash2],
 ])
 
 /** The icon for a command, and nothing where it has none. */
