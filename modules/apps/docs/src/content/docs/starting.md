@@ -22,6 +22,7 @@ numen -vault Research
 | `-interface-scale` | How large the interface is drawn, 1 being as designed; this launch alone. |
 | `-text-scale` | How large the text a person reads is set, 1 being as designed; this launch alone. |
 | `-rebuild-index` | Read every file and put it in the index again, whatever the index remembers. |
+| `-version` | Say what this build is and stop. |
 <!-- END AUTOGEN -->
 
 ## The ones worth knowing
