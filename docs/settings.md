@@ -88,7 +88,7 @@ A model gathers what a text says either into the token that opens it or across a
 
 Where a model's own output is already one vector per text, nothing is pooled and this says nothing about it.
 
-## The two places
+## The two stations
 
 Each is `{"use": "local" | "service", "local": {…}, "service": {…}}`. The sections not in use are kept, so the other is a word away.
 
@@ -99,7 +99,7 @@ Trying the other for an afternoon costs nothing under `query`. Under `indexing` 
 - **Filling an index** is a pass over the whole vault, once. A service does in an hour what this machine does in a day.
 - **Asking a question** is twenty tokens, all day. This machine answers in milliseconds where a network is a round trip — and answers with no network at all.
 
-Two places are asked whether they are one model: both embed the same short text at startup, and vectors that do not land together mean the second is not used. Nothing in this file could show it — two places name a model by whatever each of them calls it.
+Two stations are asked whether they are one model: both embed the same short text at startup, and vectors that do not land together mean the second is not used. Nothing in this file could show it — two stations name a model by whatever each of them calls it.
 
 ### local
 
