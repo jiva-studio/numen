@@ -37,7 +37,7 @@ export const Working: Story = {
   },
 }
 
-/** A count that moves, drawn as a bar and read as a number. */
+/** A count that moves: how far, and how long is left. */
 export const Counting: Story = {
   args: {
     says: 'Learning what it says',
@@ -47,9 +47,10 @@ export const Counting: Story = {
   },
   play: async ({ canvasElement }) => {
     const line = lineIn(canvasElement)
-    await expect(line).toHaveTextContent('1 200 of 36 560')
     await expect(line).toHaveTextContent('3%')
     await expect(line).toHaveTextContent('about 2 hours left')
+    await expect(line).not.toHaveTextContent('1 200')
+    await expect(line).not.toHaveTextContent('36 560')
   },
 }
 

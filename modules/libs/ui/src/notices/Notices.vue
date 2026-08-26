@@ -11,7 +11,7 @@
  */
 import { computed, nextTick, onMounted, ref, useTemplateRef, watch, watchEffect } from 'vue'
 import Activity from '../activity/Activity.vue'
-import { rateWord, remainingWord } from '../activity/model'
+import { remainingWord } from '../activity/model'
 import {
   arrivals,
   dwellOf,
@@ -125,9 +125,6 @@ watch(
   },
   { immediate: true },
 )
-
-const rateOn = (one: Notice): string =>
-  rateWord(moving.value.get(one.id)?.rate ?? 0, one.counting ?? 'things')
 
 const leftOn = (one: Notice): string => {
   const tally = tallyOf(one)
@@ -310,9 +307,7 @@ const lets = (event: FocusEvent) => {
             :says="one.says"
             :about="one.about ?? ''"
             :tally="tallyOf(one)"
-            :counting="one.counting ?? 'things'"
             :working="one.working ?? false"
-            :rate="rateOn(one)"
             :left="leftOn(one)"
             :tone="one.tone ?? 'plain'"
           />
