@@ -471,6 +471,10 @@ message Passage {
   // carries it as every other hit does.
   int32 start = 6;
   int32 length = 7;
+
+  // Where the chunk that matched stands, counted from the first line of the
+  // source's prose. It is the line a note opens on, and the caret stands there.
+  int32 line = 8;
 }
 
 message ListRequest {

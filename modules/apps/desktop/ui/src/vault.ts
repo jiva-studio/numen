@@ -170,6 +170,7 @@ export const core: Core & Asking & Commanding = {
       text: one.text,
       start: one.start,
       length: one.length,
+      line: one.line,
       at: one.at.map(run),
     }))
   },

@@ -109,9 +109,13 @@ defineExpose({
    * Put the caret on one line of the prose and bring it into sight. Lines are
    * counted from the first line of the prose, and one past the end lands on the
    * last line there is.
+   *
+   * An editor holding no text holds no lines, and says so. The prose of a note
+   * arrives after the tab it is drawn in, and a caret asked for a line stands
+   * on that line and not at the top.
    */
   reveal: (line: number) => {
-    if (!view) return false
+    if (!view || view.state.doc.length === 0) return false
     const at = Math.min(Math.max(Math.trunc(line), 0) + 1, view.state.doc.lines)
     const { from } = view.state.doc.line(at)
     view.dispatch({

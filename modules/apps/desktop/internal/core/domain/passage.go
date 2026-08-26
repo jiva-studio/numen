@@ -34,6 +34,11 @@ type Passage struct {
 	// passage whose hit is the chunk itself begins at its own beginning.
 	HitAt int
 
+	// Line is where the chunk that matched stands, counted from the first line
+	// of the source's prose. A note's frontmatter is not prose and is not
+	// counted.
+	Line int
+
 	// Fingerprint is the text this chunk holds, as the index recorded it. It is
 	// what a vector made from that text is found by.
 	Fingerprint string

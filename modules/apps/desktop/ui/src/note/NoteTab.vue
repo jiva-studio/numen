@@ -6,11 +6,21 @@
  * the two is theirs. A note whose file is gone keeps what is on screen and
  * offers to make it again.
  */
+import { watch } from 'vue'
 import { Editor } from '@numen/ui'
 import { WORDS as words } from './words'
 import type { Held } from './kind'
 
 const props = defineProps<{ held: Held }>()
+
+// The prose of a note arrives after the tab it is drawn in. The editor takes
+// the keyboard it is owed once there are lines for a caret to stand on.
+watch(
+  () => props.held.shown().body,
+  (body, was) => {
+    if (!was && body) props.held.measure()
+  },
+)
 </script>
 
 <template>

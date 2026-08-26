@@ -49,6 +49,8 @@ export interface Passage {
    */
   start: number
   length: number
+  /** Where the hit stands in the prose, counted from its first line. */
+  line: number
   at: readonly Span[]
 }
 
@@ -242,15 +244,17 @@ export function finding(
    * A name found is a thing, so it opens in the plex; a heading and a passage
    * are places in a note, so they open the note where they stand. Either way
    * the other is one key away.
+   *
+   * The name that matched stands first, and the note it was found in under it.
    */
   const nameItem = (one: Named): Drawn =>
     one.heading
       ? {
           item: {
             id: `${one.path}#${one.line}`,
-            title: one.title,
-            detail: one.heading,
-            detailAt: one.at,
+            title: one.heading,
+            at: one.at,
+            detail: one.title,
             actions: [
               { id: NOTE, text: words.readAt },
               { id: PLEX, text: words.travel },
@@ -307,7 +311,9 @@ export function finding(
     stands: {
       path: one.path,
       title: one.title,
-      line: -1,
+      // A note opens on the line the words were found on. A book is opened at
+      // the stretch of its own text instead, and stands on no line of prose.
+      line: one.isNote ? one.line : -1,
       start: one.start,
       length: one.length,
       offers: one.isNote ? [NOTE, PLEX] : [DOCUMENT],

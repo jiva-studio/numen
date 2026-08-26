@@ -89,6 +89,7 @@ const passage = (over: Partial<Passage> = {}): Passage => ({
   isNote: true,
   start: 0,
   length: 0,
+  line: 0,
   at: [{ from: 3, to: 9 }],
   ...over,
 })
@@ -306,14 +307,22 @@ describe('where a thing found takes the person', () => {
     })
   })
 
-  it('opens a passage as the note it was read out of, on no line in particular', async () => {
-    const palette = await filled()
+  it('opens a passage as the note it was read out of, on the line it stands on', async () => {
+    const vault = asking()
+    const palette = finding(vault.core, WORDS, now)
+    void palette.typing('ent')
+    await settled()
+
+    vault.names[0]?.answers([named()])
+    vault.way('words')?.answers([passage({ line: 12 })])
+    await settled()
     const item = bandOf(palette.bands.value, 'text')!.items[0]!
 
     expect(palette.chose(item.id, 'note')).toEqual({
       at: 'note',
       path: 'notes/heat.md',
       title: 'Heat engines',
+      line: 12,
     })
   })
 
