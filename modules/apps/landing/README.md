@@ -21,8 +21,8 @@ npm run shoot
 ```
 
 That starts Storybook, takes the window in light and in dark at twice the
-pixels, writes both into `src/assets/`, and stops Storybook again. The build
-turns them into WebP.
+pixels, writes both into `src/assets/` as WebP, and stops Storybook again.
+`STORYBOOK_PORT` names one already running instead.
 
 The browser it drives is whichever Chrome is already on the machine, else
 Playwright's own — the same rule the story tests follow. `CHROME_PATH` names
@@ -32,7 +32,7 @@ one directly:
 CHROME_PATH=/path/to/chrome npm run shoot
 ```
 
-Change what is in the picture by changing the story, not by editing the PNG.
+Change what is in the picture by changing the story, not by editing the file.
 
 ## Where it is published
 
