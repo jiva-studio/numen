@@ -26,9 +26,14 @@ const (
 )
 
 // Names hands the client the names in the vault that match what was typed: a
-// note's own title, and the headings inside notes.
+// note's own title, and the headings inside notes. A window standing on nothing
+// holds no names.
 func (a *API) Names(ctx context.Context, r *connect.Request[v1.NamesRequest]) (*connect.Response[v1.NamesResponse], error) {
-	found, err := a.Notes.Names(ctx, a.Showing().ID, r.Msg.GetQuery(), atMost(r.Msg.GetLimit()))
+	showing := a.Showing()
+	if showing.ID == "" {
+		return connect.NewResponse(&v1.NamesResponse{}), nil
+	}
+	found, err := a.Notes.Names(ctx, showing.ID, r.Msg.GetQuery(), atMost(r.Msg.GetLimit()))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -51,16 +56,18 @@ func (a *API) Names(ctx context.Context, r *connect.Request[v1.NamesRequest]) (*
 //
 // Which way it is asked is the client's, so a client drawing what is written apart
 // from what it means asks twice and each answer fills its own list.
+//
+// A window standing on nothing holds no text.
 func (a *API) Search(ctx context.Context, r *connect.Request[v1.SearchRequest]) (*connect.Response[v1.SearchResponse], error) {
 	if a.Finds == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSearching)
 	}
 	query := r.Msg.GetQuery()
-	if strings.TrimSpace(query) == "" {
+	showing := a.Showing()
+	if strings.TrimSpace(query) == "" || showing.ID == "" {
 		return connect.NewResponse(&v1.SearchResponse{}), nil
 	}
 
-	showing := a.Showing()
 	found, err := a.Finds.Execute(ctx, showing,
 		query, search.Typing(wayOf(r.Msg.GetWay()), atMost(r.Msg.GetLimit())))
 	if err != nil {

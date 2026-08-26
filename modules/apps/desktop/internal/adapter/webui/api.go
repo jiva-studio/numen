@@ -167,6 +167,16 @@ func (a *API) Showing() domain.Vault {
 // show puts a vault in front of whoever asks from now on.
 func (a *API) show(v domain.Vault) { a.vault.Store(&v) }
 
+// shown is the vault a question is answered over. A window standing on nothing
+// has none, and every question that would reach into a vault is refused there.
+func (a *API) shown() (domain.Vault, error) {
+	v := a.Showing()
+	if v.ID == "" {
+		return domain.Vault{}, connect.NewError(connect.CodeFailedPrecondition, errNoVault)
+	}
+	return v, nil
+}
+
 // Answering is the agent the panel's tasks go to, and nothing where the vault
 // has none.
 func (a *API) Answering() port.Agent {
@@ -206,8 +216,9 @@ func (a *API) State(ctx context.Context, _ *connect.Request[v1.StateRequest]) (*
 		Embedding:   text(&a.Model) != "",
 	}
 	// A count that cannot be taken leaves the pair at nothing, and the rest of
-	// the state is answered as it stands.
-	if a.Progress != nil {
+	// the state is answered as it stands. A window standing on nothing holds no
+	// chunks and counts none.
+	if a.Progress != nil && showing.ID != "" {
 		if held, embedded, err := a.Progress.Progress(ctx, showing.ID, text(&a.Recipe)); err == nil {
 			out.Chunks, out.Embedded = held, embedded
 		}
@@ -216,7 +227,12 @@ func (a *API) State(ctx context.Context, _ *connect.Request[v1.StateRequest]) (*
 }
 
 func (a *API) Opening(ctx context.Context, _ *connect.Request[v1.OpeningRequest]) (*connect.Response[v1.OpeningResponse], error) {
-	ref, found, err := a.Notes.Opening(ctx, a.Showing().ID)
+	showing := a.Showing()
+	if showing.ID == "" {
+		// A window standing on nothing opens on no note.
+		return connect.NewResponse(&v1.OpeningResponse{}), nil
+	}
+	ref, found, err := a.Notes.Opening(ctx, showing.ID)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -228,8 +244,12 @@ func (a *API) Opening(ctx context.Context, _ *connect.Request[v1.OpeningRequest]
 }
 
 func (a *API) Neighbourhood(ctx context.Context, r *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error) {
+	showing, err := a.shown()
+	if err != nil {
+		return nil, err
+	}
 	found, err := note.ShowNeighbourhood{Links: a.Links, Notes: a.Notes}.
-		Execute(ctx, a.Showing(), r.Msg.GetPath())
+		Execute(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}

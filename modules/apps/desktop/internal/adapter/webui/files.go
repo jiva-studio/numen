@@ -16,7 +16,11 @@ import (
 // List is what one folder of the vault holds. The vault settles the order the
 // entries come in, and they cross in it.
 func (a *API) List(ctx context.Context, r *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error) {
-	reader, err := a.Readers.Open(a.Showing())
+	showing, err := a.shown()
+	if err != nil {
+		return nil, err
+	}
+	reader, err := a.Readers.Open(showing)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -42,12 +46,16 @@ func (a *API) Move(ctx context.Context, r *connect.Request[v1.MoveRequest]) (*co
 	if a.Moves == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
+	showing, err := a.shown()
+	if err != nil {
+		return nil, err
+	}
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
 	defer a.Writing.done()
 
-	moved, err := a.Moves.Execute(ctx, a.Showing(), r.Msg.GetFrom(), r.Msg.GetTo())
+	moved, err := a.Moves.Execute(ctx, showing, r.Msg.GetFrom(), r.Msg.GetTo())
 	out := &v1.MoveResponse{}
 	if moved.Landed {
 		out.Moved = movedOf(moved)
@@ -67,12 +75,16 @@ func (a *API) MakeFolder(ctx context.Context, r *connect.Request[v1.MakeFolderRe
 	if a.Writers == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
+	showing, err := a.shown()
+	if err != nil {
+		return nil, err
+	}
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
 	defer a.Writing.done()
 
-	writer, err := a.Writers.Open(a.Showing())
+	writer, err := a.Writers.Open(showing)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}

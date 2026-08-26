@@ -49,6 +49,11 @@ func (a *API) Marks(w http.ResponseWriter, r *http.Request, path string) {
 		http.Error(w, errNoMarking.Error(), http.StatusNotImplemented)
 		return
 	}
+	showing := a.Showing()
+	if showing.ID == "" {
+		refuse(w, errNoVault)
+		return
+	}
 	runs, err := places(r.URL.Query())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -61,7 +66,7 @@ func (a *API) Marks(w http.ResponseWriter, r *http.Request, path string) {
 	ctx, cancel := context.WithTimeout(r.Context(), patience)
 	defer cancel()
 
-	found, err := a.Marking.Execute(ctx, a.Showing(), path, runs)
+	found, err := a.Marking.Execute(ctx, showing, path, runs)
 	if err != nil {
 		refuse(w, err)
 		return

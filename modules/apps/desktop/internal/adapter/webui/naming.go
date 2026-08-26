@@ -8,6 +8,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 )
@@ -17,12 +18,16 @@ func (a *API) Rename(ctx context.Context, r *connect.Request[v1.RenameRequest]) 
 	if a.Renames == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
+	showing, err := a.shown()
+	if err != nil {
+		return nil, err
+	}
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
 	defer a.Writing.done()
 
-	renamed, err := a.Renames.Execute(ctx, a.Showing(), r.Msg.GetPath(), r.Msg.GetTitle())
+	renamed, err := a.Renames.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetTitle())
 	out := &v1.RenameResponse{
 		Path:  renamed.Path,
 		Title: renamed.Title,
@@ -51,12 +56,16 @@ func (a *API) Remove(ctx context.Context, r *connect.Request[v1.RemoveRequest]) 
 	if a.Removes == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
+	showing, err := a.shown()
+	if err != nil {
+		return nil, err
+	}
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
 	defer a.Writing.done()
 
-	removed, err := a.removal(ctx, r.Msg.GetPath(), r.Msg.GetDestroy())
+	removed, err := a.removal(ctx, showing, r.Msg.GetPath(), r.Msg.GetDestroy())
 	if err != nil {
 		refusal, refused := refusedBy(err)
 		if !refused {
@@ -71,11 +80,16 @@ func (a *API) Remove(ctx context.Context, r *connect.Request[v1.RemoveRequest]) 
 }
 
 // removal is the two ways something leaves the vault.
-func (a *API) removal(ctx context.Context, path string, destroy bool) (note.Removed, error) {
+func (a *API) removal(
+	ctx context.Context,
+	v domain.Vault,
+	path string,
+	destroy bool,
+) (note.Removed, error) {
 	if destroy {
-		return a.Removes.Destroy(ctx, a.Showing(), path)
+		return a.Removes.Destroy(ctx, v, path)
 	}
-	return a.Removes.Execute(ctx, a.Showing(), path)
+	return a.Removes.Execute(ctx, v, path)
 }
 
 // namingOf is which of the three a rename wrote, as the schema carries it.
