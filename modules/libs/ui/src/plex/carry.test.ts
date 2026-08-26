@@ -93,7 +93,7 @@ describe('letting go of something carried in', () => {
     expect(beside.emitted('bring')).toStrictEqual([[CARRIED, 'jump']])
   })
 
-  it('reads the arrangement rather than assuming which way is up', async () => {
+  it('reads which way a seat lies off the arrangement', async () => {
     const plex = mountPlex({
       options: { direction: { parent: 'down', child: 'up', jump: 'left', sibling: 'right' } },
     })

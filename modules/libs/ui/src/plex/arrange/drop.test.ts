@@ -190,7 +190,7 @@ describe('the seat something carried in comes to', () => {
     expect(carried({ x: focus.x - 500, y: focus.y })).toBe('jump')
   })
 
-  it('reads the arrangement rather than assuming which way is up', () => {
+  it('reads which way a seat lies off the arrangement', () => {
     const upside = resolveOptions({
       direction: { parent: 'down', child: 'up', jump: 'left', sibling: 'right' },
     })
