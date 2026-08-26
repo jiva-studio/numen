@@ -183,6 +183,65 @@ func TestARenameToANameAHeadingCannotSayIsRefused(t *testing.T) {
 	}
 }
 
+// A move that landed is settled whatever the note's own name did. Whoever is
+// drawing the note at the name it had is reading a name with no file behind it.
+func TestAMoveThatLandedIsSettledEvenWhereTheNoteCannotBeCalledByIt(t *testing.T) {
+	f := fileable(t, map[string]string{"Entropy.md": "# Entropy\n\nA measure.\n"})
+
+	if _, err := f.move().Execute(t.Context(), f.vault, "Entropy.md", "Note #.md"); err == nil {
+		t.Fatal("want the refusal the name earns")
+	}
+	if len(*f.went) != 1 || (*f.went)[0].To != "Note #.md" {
+		t.Errorf("whoever is drawing it was told %+v", *f.went)
+	}
+}
+
+// A note whose frontmatter cannot be read is never written, and renaming its
+// file is not the moment to repair it.
+func TestARenamedFileLeavesANoteWhoseFrontmatterCannotBeReadAlone(t *testing.T) {
+	raw := "---\nid: [unterminated\n---\n# Entropy\n"
+	f := fileable(t, map[string]string{"Entropy.md": raw})
+
+	moved, err := f.move().Execute(t.Context(), f.vault, "Entropy.md", "Disorder.md")
+	if err != nil {
+		t.Fatalf("the rename was refused: %v", err)
+	}
+	if !moved.Landed {
+		t.Fatal("the file did not move")
+	}
+	if got := f.read(t, "Disorder.md"); got != raw {
+		t.Errorf("the note was written to:\n%s", got)
+	}
+}
+
+// Where the two are told apart, a renamed file is not read at all. The note is
+// opened only where the setting writes into it.
+func TestARenamedFileIsNotReadWhereTheTwoAreToldApart(t *testing.T) {
+	f := fileable(t, map[string]string{"Entropy.md": "---\ntitle: Entropy\n---\nA measure.\n"})
+	before := f.readers.reads
+
+	if _, err := f.apart().Execute(t.Context(), f.vault, "Entropy.md", "Disorder.md"); err != nil {
+		t.Fatal(err)
+	}
+	if got := f.readers.reads - before; got != 0 {
+		t.Errorf("%d files were read", got)
+	}
+}
+
+// A file filed under another extension is a file of another kind, so it is not
+// a note given a different name.
+func TestAFileGivenAnotherExtensionIsNotANoteRenamed(t *testing.T) {
+	raw := "---\ntitle: Entropy\n---\nA measure.\n"
+	f := fileable(t, map[string]string{"Entropy.md": raw})
+
+	if _, err := f.move().Execute(t.Context(), f.vault, "Entropy.md", "Notes.txt"); err != nil {
+		t.Fatal(err)
+	}
+	if got := f.read(t, "Notes.txt"); got != raw {
+		t.Errorf("a file that is no longer a note was written to:\n%s", got)
+	}
+}
+
 // A file the index holds nothing about is renamed like any other, and there is
 // no note in it to call anything.
 func TestRenamingAFileTheIndexHoldsNothingAbout(t *testing.T) {

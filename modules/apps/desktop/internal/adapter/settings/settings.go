@@ -163,10 +163,14 @@ type Naming struct {
 	SyncTitleAndFilename *bool `json:"sync_title_and_filename"`
 }
 
-// Sync is whether a note's title and its filename are kept as one name.
-func (c Config) Sync() bool {
-	return c.Naming.SyncTitleAndFilename == nil || *c.Naming.SyncTitleAndFilename
+// Sync is whether a note's title and its filename are kept as one name. A
+// section naming nothing keeps them one name.
+func (n Naming) Sync() bool {
+	return n.SyncTitleAndFilename == nil || *n.SyncTitleAndFilename
 }
+
+// Sync is whether a note's title and its filename are kept as one name.
+func (c Config) Sync() bool { return c.Naming.Sync() }
 
 // on is a setting turned on.
 func on() *bool {

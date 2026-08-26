@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 )
 
@@ -24,7 +25,8 @@ func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			opened, cfg := windowOn(t)
-			cfg.Sync = c.sync
+			said := bool(c.sync)
+			cfg.Naming = settings.Naming{SyncTitleAndFilename: &said}
 			v := opened.Showing()
 			raw := "---\ntitle: Entropy\n---\nA measure.\n"
 			if err := os.WriteFile(

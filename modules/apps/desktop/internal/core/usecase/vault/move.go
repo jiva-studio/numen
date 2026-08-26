@@ -82,10 +82,12 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 		return res, err
 	}
 
+	// A refusal here is carried past the settling: the file is where it was
+	// sent, and whoever is drawing the note has to be told wherever the note's
+	// own name ended up.
+	var called error
 	if renaming(travelling, from, to) {
-		if err := u.Notes.Called(ctx, v, to); err != nil {
-			return res, err
-		}
+		called = u.Notes.Called(ctx, v, to)
 	}
 
 	for _, source := range travelling {
@@ -98,13 +100,17 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 			return res, err
 		}
 	}
-	return res, nil
+	return res, called
 }
 
-// renaming is whether this move is one note given a different name inside the
-// folder it sits in. Travelling is everything the index files under from.
+// renaming is whether this move is one note given a different name, in the
+// folder and under the extension it already has. Travelling is everything the
+// index files under from.
 func renaming(travelling []domain.FileRef, from, to string) bool {
-	if pathpkg.Dir(from) != pathpkg.Dir(to) || domain.Basename(from) == domain.Basename(to) {
+	if pathpkg.Dir(from) != pathpkg.Dir(to) || pathpkg.Ext(from) != pathpkg.Ext(to) {
+		return false
+	}
+	if domain.Basename(from) == domain.Basename(to) {
 		return false
 	}
 	return len(travelling) == 1 &&

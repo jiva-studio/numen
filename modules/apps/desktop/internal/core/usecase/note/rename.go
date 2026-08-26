@@ -83,17 +83,17 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 // title and a filename are kept as one name. A note its filename names carries
 // its name nowhere else, and nothing is added to it.
 func (u Move) Called(ctx context.Context, v domain.Vault, path string) error {
+	// The note is opened only where the setting writes into it. Both of the two
+	// that carry a name of their own answer alike.
+	if _, writes := u.Sync.Renaming(ByFrontmatter); !writes {
+		return nil
+	}
+
 	name := domain.Basename(path)
 	e := editing{readers: u.Readers, writers: u.Writers, index: u.Index}
 	_, err := e.apply(ctx, v, path, func(doc *markdown.Document) error {
 		if _, titled := doc.Title(); titled {
-			if _, writes := u.Sync.Renaming(ByFrontmatter); !writes {
-				return errFilenameNamesIt
-			}
 			return doc.SetTitle(name)
-		}
-		if _, writes := u.Sync.Renaming(ByHeading); !writes {
-			return errFilenameNamesIt
 		}
 		switch written, err := doc.SetHeading(name); {
 		case err != nil:
@@ -103,7 +103,14 @@ func (u Move) Called(ctx context.Context, v domain.Vault, path string) error {
 		}
 		return errFilenameNamesIt
 	})
-	if errors.Is(err, errFilenameNamesIt) {
+	switch {
+	case errors.Is(err, errFilenameNamesIt):
+		return nil
+	case errors.Is(err, markdown.ErrUnreadable),
+		errors.Is(err, markdown.ErrInline),
+		errors.Is(err, markdown.ErrUnterminated):
+		// A note whose frontmatter cannot be read is never written, and its
+		// file is renamed like any other.
 		return nil
 	}
 	return err
