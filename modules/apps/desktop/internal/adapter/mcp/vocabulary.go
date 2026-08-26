@@ -2,9 +2,10 @@ package mcp
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agent"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
 // Words are how a tool is spoken about to a person: what it is called, and
@@ -21,7 +22,7 @@ type Words struct {
 	// titles, and the collection itself is about nothing a person can read.
 	Inside string
 	// Kind is what this call does to the vault.
-	Kind agent.Kind
+	Kind port.StepKind
 	// Stood and Becomes name the arguments carrying the text a call replaces
 	// and what it puts in that text's place. Both are empty for a call that
 	// replaces no stretch.
@@ -35,35 +36,35 @@ type Words struct {
 // The tools are written out by hand and so is this. A schema says what a call
 // takes and cannot say what taking it means.
 var doing = map[string]Words{
-	"note_search":        {Kind: agent.Search},
-	"note_get":           {Kind: agent.Read},
-	"note_read":          {Kind: agent.Read},
-	"note_neighbourhood": {Kind: agent.Read},
-	"note_create":        {Kind: agent.Edit},
-	"note_write":         {Kind: agent.Edit},
-	"note_edit":          {Kind: agent.Edit, Stood: "stood", Becomes: "becomes"},
-	"note_rename":        {Kind: agent.Move},
-	"note_move":          {Kind: agent.Move},
-	"note_remove":        {Kind: agent.Remove},
-	"note_focus":         {Kind: agent.Read},
-	"link_add":           {Kind: agent.Edit},
-	"link_update":        {Kind: agent.Edit},
-	"link_remove":        {Kind: agent.Edit},
-	"link_list":          {Kind: agent.Read},
-	"vault_get":          {Kind: agent.Read},
-	"vault_named":        {Kind: agent.Read},
-	"vault_problems":     {Kind: agent.Read},
-	"vault_list":         {Kind: agent.Read},
-	"vault_add":          {Kind: agent.Edit},
-	"vault_rename":       {Kind: agent.Move},
-	"vault_forget":       {Kind: agent.Remove},
-	"vault_open":         {Kind: agent.Read},
-	"source_list":        {Kind: agent.Read},
-	"source_read":        {Kind: agent.Read},
-	"source_show":        {Kind: agent.Read},
+	"note_search":        {Kind: port.StepSearch},
+	"note_get":           {Kind: port.StepRead},
+	"note_read":          {Kind: port.StepRead},
+	"note_neighbourhood": {Kind: port.StepRead},
+	"note_create":        {Kind: port.StepEdit},
+	"note_write":         {Kind: port.StepEdit},
+	"note_edit":          {Kind: port.StepEdit, Stood: "stood", Becomes: "becomes"},
+	"note_rename":        {Kind: port.StepMove},
+	"note_move":          {Kind: port.StepMove},
+	"note_remove":        {Kind: port.StepRemove},
+	"note_focus":         {Kind: port.StepRead},
+	"link_add":           {Kind: port.StepEdit},
+	"link_update":        {Kind: port.StepEdit},
+	"link_remove":        {Kind: port.StepEdit},
+	"link_list":          {Kind: port.StepRead},
+	"vault_get":          {Kind: port.StepRead},
+	"vault_named":        {Kind: port.StepRead},
+	"vault_problems":     {Kind: port.StepRead},
+	"vault_list":         {Kind: port.StepRead},
+	"vault_add":          {Kind: port.StepEdit},
+	"vault_rename":       {Kind: port.StepMove},
+	"vault_forget":       {Kind: port.StepRemove},
+	"vault_open":         {Kind: port.StepRead},
+	"source_list":        {Kind: port.StepRead},
+	"source_read":        {Kind: port.StepRead},
+	"source_show":        {Kind: port.StepRead},
 	// Reading a document changes what the vault holds — it writes down what a
 	// model saw — so it is shown as a change and not as a look.
-	"source_recognise": {Kind: agent.Edit},
+	"source_recognise": {Kind: port.StepEdit},
 }
 
 // Vocabulary asks the server what it serves, and reads the answer.

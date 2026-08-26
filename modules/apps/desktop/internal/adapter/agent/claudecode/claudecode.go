@@ -19,8 +19,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agent"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
 // Endpoint is where the agent reaches this vault's tools, and what it must
@@ -188,7 +188,7 @@ const Name = "numen"
 const DefaultTurns = 30
 
 // Take starts the agent on a task.
-func (a *Agent) Take(ctx context.Context, task agent.Task) (agent.Work, error) {
+func (a *Agent) Take(ctx context.Context, task port.Task) (port.Work, error) {
 	if a.Tools.URL == "" || a.Tools.Token == "" {
 		return nil, errors.New("no tools to give an agent")
 	}
@@ -219,7 +219,7 @@ func (a *Agent) Take(ctx context.Context, task agent.Task) (agent.Work, error) {
 		cmd:          cmd,
 		stop:         stop,
 		conversation: task.Conversation,
-		steps:        make(chan agent.Step, 16),
+		steps:        make(chan port.Step, 16),
 	}
 	if !a.hold(w) {
 		stop()
@@ -247,7 +247,7 @@ func (a *Agent) Take(ctx context.Context, task agent.Task) (agent.Work, error) {
 			failed = reason(err, said.String())
 		}
 		select {
-		case w.steps <- agent.Step{Kind: agent.Stopped, Failed: failed}:
+		case w.steps <- port.Step{Kind: port.StepStopped, Failed: failed}:
 		case <-running.Done():
 		}
 		if err != nil && a.Trouble != nil {
@@ -363,7 +363,7 @@ const brought = "WebSearch,WebFetch"
 // disabled. An agent works this vault through the tools this vault serves, and
 // every one of those goes through a use case that says what a note is and keeps
 // the index level with the file.
-func (a *Agent) arguments(task agent.Task) []string {
+func (a *Agent) arguments(task port.Task) []string {
 	turns := a.Turns
 	if turns <= 0 {
 		turns = DefaultTurns
@@ -443,7 +443,7 @@ func environment(held []string) []string {
 // A path is how a tool names a note. The person named it by writing a title on
 // it, and that is the name they know it by: a note is "Harmonic oscillator",
 // never `physics/classical/Harmonic oscillator.md`.
-func manners(task agent.Task) string {
+func manners(task port.Task) string {
 	var b strings.Builder
 	b.WriteString("You are answering inside the application the person keeps these notes in, ")
 	b.WriteString("beside the note they are looking at.\n\n")
@@ -504,8 +504,8 @@ type Words struct {
 	Stood   string
 	Becomes string
 	// Kind is what a call of this tool does to the vault. A tool that declares
-	// nothing about it is agent.Calling.
-	Kind agent.Kind
+	// nothing about it is port.StepCalling.
+	Kind port.StepKind
 }
 
 // work is one task being worked, and what stops it.
@@ -515,12 +515,12 @@ type work struct {
 	// conversation is the thread of talk this task was asked in, empty for a
 	// question asked in none. Finishing that conversation stops this work.
 	conversation string
-	steps        chan agent.Step
+	steps        chan port.Step
 	reading      sync.WaitGroup
 	once         sync.Once
 }
 
-func (w *work) Steps() <-chan agent.Step { return w.steps }
+func (w *work) Steps() <-chan port.Step { return w.steps }
 
 // Stop ends the child and everything it started, then waits for the reading to
 // finish so that nothing of this work is still running when it returns.

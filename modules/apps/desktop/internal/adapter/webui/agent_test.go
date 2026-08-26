@@ -13,24 +13,25 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/webui"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agent"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
 // asking is an agent that keeps the task it was given and takes the steps a
 // test told it to take. What is asked of it is the hop: what a client sends
 // arrives as a task, and what the agent does arrives back as steps.
 type asking struct {
-	took  chan agent.Task
-	takes []agent.Step
+	took  chan port.Task
+	takes []port.Step
 	// over is the conversations this agent was told are finished.
 	over chan string
 	// refuses is what finishing a conversation answers with.
 	refuses error
 }
 
-func (a *asking) Take(_ context.Context, task agent.Task) (agent.Work, error) {
+func (a *asking) Take(_ context.Context, task port.Task) (port.Work, error) {
 	a.took <- task
-	steps := make(chan agent.Step, len(a.takes))
+	steps := make(chan port.Step, len(a.takes))
 	for _, step := range a.takes {
 		steps <- step
 	}
@@ -44,13 +45,13 @@ func (a *asking) Finish(_ context.Context, conversation string) error {
 }
 
 // answering is work that has already been done.
-type answering struct{ steps chan agent.Step }
+type answering struct{ steps chan port.Step }
 
-func (a answering) Steps() <-chan agent.Step { return a.steps }
-func (a answering) Stop() error              { return nil }
+func (a answering) Steps() <-chan port.Step { return a.steps }
+func (a answering) Stop() error             { return nil }
 
 // panelling is a vault whose panel one agent answers.
-func panelling(taking agent.Agent) *webui.API {
+func panelling(taking port.Agent) *webui.API {
 	api := &webui.API{}
 	api.Answers(taking)
 	return api
@@ -97,7 +98,7 @@ func heard(t *testing.T, client numenv1connect.AgentServiceClient, ask *v1.AskRe
 // the question, the note in front of the person, and which conversation they
 // asked it in.
 func TestWhatTheClientAsksReachesTheAgent(t *testing.T) {
-	taking := &asking{took: make(chan agent.Task, 1), takes: []agent.Step{{Kind: agent.Stopped}}}
+	taking := &asking{took: make(chan port.Task, 1), takes: []port.Step{{Kind: port.StepStopped}}}
 	client := panelled(t, panelling(taking))
 
 	heard(t, client, &v1.AskRequest{
@@ -121,12 +122,12 @@ func TestWhatTheClientAsksReachesTheAgent(t *testing.T) {
 // TestEveryStepTheAgentTakesReachesTheClient, in the words the schema carries
 // and in the order they were taken.
 func TestEveryStepTheAgentTakesReachesTheClient(t *testing.T) {
-	taking := &asking{took: make(chan agent.Task, 1), takes: []agent.Step{
-		{Kind: agent.Thinking},
-		{Kind: agent.Calling, Tool: "note_write", About: "notes/Fugue.md", Written: 240},
-		{Kind: agent.Answered},
-		{Kind: agent.Saying, Text: "Rewritten."},
-		{Kind: agent.Stopped, Failed: "out of turns"},
+	taking := &asking{took: make(chan port.Task, 1), takes: []port.Step{
+		{Kind: port.StepThinking},
+		{Kind: port.StepCalling, Tool: "note_write", About: "notes/Fugue.md", Written: 240},
+		{Kind: port.StepAnswered},
+		{Kind: port.StepSaying, Text: "Rewritten."},
+		{Kind: port.StepStopped, Failed: "out of turns"},
 	}}
 	client := panelled(t, panelling(taking))
 
@@ -156,13 +157,13 @@ func TestEveryStepTheAgentTakesReachesTheClient(t *testing.T) {
 // place it stands on. A call the vault serves is drawn as a tool in hand
 // whatever that tool does to the vault.
 func TestACallSaysWhereItIsWorking(t *testing.T) {
-	taking := &asking{took: make(chan agent.Task, 1), takes: []agent.Step{
+	taking := &asking{took: make(chan port.Task, 1), takes: []port.Step{
 		{
-			Kind: agent.Read, Tool: "Show the person a passage of a document",
+			Kind: port.StepRead, Tool: "Show the person a passage of a document",
 			About: "library/A Book.epub",
-			Place: agent.Place{Path: "library/A Book.epub", Start: 1200, Length: 80},
+			Place: domain.Place{Path: "library/A Book.epub", Start: 1200, Length: 80},
 		},
-		{Kind: agent.Stopped},
+		{Kind: port.StepStopped},
 	}}
 	client := panelled(t, panelling(taking))
 

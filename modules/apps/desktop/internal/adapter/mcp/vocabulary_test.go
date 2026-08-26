@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/mcp"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agent"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 )
 
 // What the window says about a call is what the tool declared: a call names its
@@ -84,7 +84,7 @@ func TestEveryToolServedSaysWhatItDoes(t *testing.T) {
 			t.Fatal(err)
 		}
 		for name, said := range words {
-			if said.Kind == agent.Calling {
+			if said.Kind == port.StepCalling {
 				t.Errorf("%s says nothing about what it does", name)
 			}
 		}
