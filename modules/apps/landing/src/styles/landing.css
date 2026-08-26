@@ -101,6 +101,12 @@ svg {
   padding-block: 2rem;
 }
 
+.masthead__name {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
 .wordmark {
   display: flex;
   align-items: center;
@@ -120,6 +126,19 @@ svg {
   display: flex;
   align-items: center;
   gap: 1.6rem;
+}
+
+/* How far along the thing itself is, said beside its name. */
+.mark {
+  padding: 0.12rem 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 .masthead a:not(.wordmark) {
@@ -562,7 +581,7 @@ svg {
 
 .shelf__row {
   display: grid;
-  grid-template-columns: 11rem minmax(0, 1fr);
+  grid-template-columns: minmax(0, 11rem) minmax(0, 1fr);
   gap: 1rem 1.5rem;
   align-items: start;
   padding: 1.35rem 1.6rem;
@@ -606,10 +625,13 @@ svg {
   gap: 0.15rem;
 }
 
+/* The name and what it is are each one piece: where there is no room for both
+   on a line, the second goes under the first whole. */
 .take {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.6rem;
+  column-gap: 0.6rem;
   padding: 0.4rem 0.6rem;
   margin-inline-start: -0.6rem;
   border-radius: 6px;
@@ -640,12 +662,28 @@ svg {
 .take b {
   font-size: 0.98rem;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .take span {
   font-family: var(--mono);
   font-size: 0.76rem;
   color: var(--muted);
+  white-space: nowrap;
+}
+
+/* Narrow: the machine stands over what it can be taken as, and the whole shelf
+   has the width of the page. */
+@media (max-width: 40rem) {
+  .shelf__row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.6rem;
+    padding: 1.25rem 1.15rem;
+  }
+
+  .shelf__what {
+    padding-block-start: 0;
+  }
 }
 
 .footnote a {
