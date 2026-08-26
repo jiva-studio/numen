@@ -17,8 +17,14 @@ const GO = new URL('../../desktop/internal/adapter/', import.meta.url)
 const CMD = new URL('../../desktop/cmd/numen/', import.meta.url)
 const PAGES = new URL('../src/content/docs/', import.meta.url)
 
-const BEGIN = '<!-- BEGIN AUTOGEN -->'
-const END = '<!-- END AUTOGEN -->'
+/**
+ * Where a written block begins and ends. A page carrying a picture is MDX, and
+ * MDX has no HTML comment: what looks like one is markup it tries to read.
+ */
+const marks = (page) =>
+  page.endsWith('.mdx')
+    ? ['{/* BEGIN AUTOGEN */}', '{/* END AUTOGEN */}']
+    : ['<!-- BEGIN AUTOGEN -->', '<!-- END AUTOGEN -->']
 
 const die = (message) => {
   process.stderr.write(`manual: ${message}\n`)
@@ -391,11 +397,44 @@ const cli = async () => {
   ].join('\n')
 }
 
+/* --------------------------------------------------------------- pictures */
+
+/**
+ * Every picture in the manual is a story, and a story renamed is a picture
+ * that cannot be taken again. The names are held against the stories here, so
+ * the renaming is caught where it happens rather than the next time somebody
+ * runs the camera.
+ */
+const pictured = async () => {
+  const { SHOTS } = await import('./shoot.mjs')
+  const { readdir } = await import('node:fs/promises')
+
+  const files = (await readdir(new URL('../../../libs/ui/src/', import.meta.url), {
+    recursive: true,
+  })).filter((name) => name.endsWith('.stories.ts'))
+
+  const told = new Set()
+  for (const file of files) {
+    const source = await read(new URL('../../../libs/ui/src/', import.meta.url), file)
+    const meta = source.match(/const meta[^=]*=\s*\{[\s\S]{0,200}?title:\s*'([^']+)'/)
+    if (!meta) continue
+    const under = meta[1].toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    for (const [, name] of source.matchAll(/^export const ([A-Z][A-Za-z0-9]*)\s*:/gm)) {
+      told.add(`${under}--${name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()}`)
+    }
+  }
+
+  const gone = SHOTS.filter((shot) => !told.has(shot.story))
+  if (gone.length > 0) {
+    die(`no story called ${gone.map((shot) => shot.story).join(', ')} — the pictures cannot be taken again`)
+  }
+}
+
 /* ------------------------------------------------------------------ page */
 
 const WRITES = [
   ['keyboard.md', keyboard],
-  ['commands.md', commands],
+  ['commands.mdx', commands],
   ['reference.md', settings],
   ['starting.md', flags],
   ['cli.md', cli],
@@ -404,13 +443,16 @@ const WRITES = [
 const checking = process.argv.includes('--check')
 let drifted = false
 
+await pictured()
+
 for (const [name, write] of WRITES) {
   const page = await read(PAGES, name)
-  const begins = page.indexOf(BEGIN)
-  const ends = page.indexOf(END)
+  const [opens, closes] = marks(name)
+  const begins = page.indexOf(opens)
+  const ends = page.indexOf(closes)
   if (begins < 0 || ends < begins) die(`${name} has no autogen block`)
 
-  const written = `${page.slice(0, begins + BEGIN.length)}\n${await write()}\n${page.slice(ends)}`
+  const written = `${page.slice(0, begins + opens.length)}\n${await write()}\n${page.slice(ends)}`
   if (written === page) continue
 
   if (checking) {

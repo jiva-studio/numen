@@ -17,8 +17,11 @@ export default defineConfig({
         { tag: 'link', attrs: { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' } },
       ],
       customCss: [
-        '@fontsource-variable/newsreader',
-        '@fontsource-variable/newsreader/opsz-italic.css',
+        // Both axes: a heading set large is drawn with the letterforms cut for
+        // that size. The face's default is the cut for text, and a text cut
+        // enlarged is what reads as uneven.
+        '@fontsource-variable/newsreader/standard.css',
+        '@fontsource-variable/newsreader/standard-italic.css',
         '@fontsource/ibm-plex-sans/400.css',
         '@fontsource/ibm-plex-sans/500.css',
         '@fontsource/ibm-plex-sans/600.css',

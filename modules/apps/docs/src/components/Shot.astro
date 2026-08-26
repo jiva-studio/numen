@@ -1,0 +1,35 @@
+---
+/**
+ * A picture of the application, in the reader's own half of the colour pair.
+ *
+ * Both halves are drawn and one is shown, because which half a person is
+ * reading in is settled in the browser and not at build time. The pictures are
+ * taken by `tools/shoot.mjs` from the stories the application is built from.
+ */
+import { Image } from 'astro:assets'
+
+interface Props {
+  /** The name the shot was taken under, without the half or the extension. */
+  name: string
+  /** What the picture shows, for whoever is not looking at it. */
+  alt: string
+  /** What to notice in it, drawn under it. */
+  caption?: string
+}
+
+const { name, alt, caption } = Astro.props
+
+const taken = import.meta.glob<{ default: ImageMetadata }>('../assets/*.webp', { eager: true })
+
+const half = (theme: string): ImageMetadata => {
+  const found = taken[`../assets/${name}-${theme}.webp`]
+  if (!found) throw new Error(`the manual asks for a picture called ${name}-${theme}.webp`)
+  return found.default
+}
+---
+
+<figure class="shot">
+  <Image class="shot__half shot__half--light" src={half('light')} alt={alt} />
+  <Image class="shot__half shot__half--dark" src={half('dark')} alt="" aria-hidden="true" />
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>

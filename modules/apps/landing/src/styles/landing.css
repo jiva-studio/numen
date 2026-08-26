@@ -61,7 +61,8 @@ h1,
 h2 {
   font-family: var(--display);
   font-weight: 500;
-  font-variation-settings: 'opsz' 36;
+  /* The size a heading is set at decides which cut of the face draws it. */
+  font-optical-sizing: auto;
   letter-spacing: -0.018em;
 }
 
@@ -145,7 +146,6 @@ svg {
 
 .hero h1 em {
   font-style: italic;
-  font-variation-settings: 'opsz' 60;
 }
 
 .lead {

@@ -10,7 +10,8 @@
     "preview": "astro preview",
     "typecheck": "astro check",
     "manual": "node tools/manual.mjs",
-    "manual:check": "node tools/manual.mjs --check"
+    "manual:check": "node tools/manual.mjs --check",
+    "shoot": "node tools/shoot.mjs"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.41.9",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "playwright": "^1.62.1",
     "typescript": "^6.0.3"
   }
 }

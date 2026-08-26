@@ -237,7 +237,8 @@ header.header {
 .sl-markdown-content h2 {
   font-family: var(--numen-display);
   font-weight: 500;
-  font-variation-settings: 'opsz' 32;
+  /* The size a heading is set at decides which cut of the face draws it. */
+  font-optical-sizing: auto;
   letter-spacing: -0.014em;
   color: var(--sl-color-white);
 }
@@ -374,6 +375,7 @@ header.header {
 .hero h1 {
   font-family: var(--numen-display);
   font-weight: 500;
+  font-optical-sizing: auto;
   font-size: clamp(2.4rem, 5vw, 3.2rem);
   letter-spacing: -0.02em;
 }
@@ -395,6 +397,57 @@ header.header {
   font-family: var(--numen-display);
   font-weight: 500;
   color: var(--sl-color-white);
+}
+
+/* A picture of the application: both halves of the colour pair are in the page
+   and the reader's own is the one shown. */
+.shot {
+  margin-block: 2rem;
+}
+
+.shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 10px;
+}
+
+.shot figcaption {
+  margin-top: 0.7rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--sl-color-gray-3);
+}
+
+.shot__half--dark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .shot__half--light {
+    display: none;
+  }
+
+  :root:not([data-theme='light']) .shot__half--dark {
+    display: block;
+  }
+}
+
+:root[data-theme='dark'] .shot__half--light {
+  display: none;
+}
+
+:root[data-theme='dark'] .shot__half--dark {
+  display: block;
+}
+
+:root[data-theme='light'] .shot__half--light {
+  display: block;
+}
+
+:root[data-theme='light'] .shot__half--dark {
+  display: none;
 }
 
 /* The three directions a link is drawn in, wherever one is named in the text. */
