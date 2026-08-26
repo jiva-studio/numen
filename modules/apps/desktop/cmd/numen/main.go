@@ -32,7 +32,6 @@ func main() {
 	var said sizes
 	var vault string
 	var telling bool
-	flag.BoolVar(&telling, "version", false, "say what this build is and stop")
 	flag.StringVar(&cfg.IndexPath, "index", "", "path to the index database")
 	flag.StringVar(&cfg.RegistryPath, "registry", "", "path to the vault list")
 	flag.StringVar(&vault, "vault", "",
@@ -46,6 +45,7 @@ func main() {
 		"how large the text a person reads is set, 1 being as designed; this launch alone")
 	flag.BoolVar(&cfg.RebuildIndex, "rebuild-index", false,
 		"read every file and put it in the index again, whatever the index remembers")
+	flag.BoolVar(&telling, "version", false, "say what this build is and stop")
 	flag.Parse()
 
 	if telling {
