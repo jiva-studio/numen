@@ -60,6 +60,7 @@ import { core as agent } from './agent/core'
 import { conversation } from './agent/conversation'
 import { WORDS as talk } from './agent/words'
 import { WORDS as words } from './words'
+import { VERSION } from './version'
 import { AGENT, CONVERSATION, FILES, NOTE, PLEX, named, opening } from './workspace'
 
 const drawings = drawn()
@@ -514,6 +515,7 @@ onUnmounted(() => {
           :ways="ways"
           :vaults="onList"
           :words="words"
+          :version="VERSION"
           @runs="runs"
           @opens="opens"
           @adds="carries('newVault', where())"

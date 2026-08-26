@@ -3,7 +3,8 @@
  * What the window draws while it holds nothing open.
  *
  * The mark and the name, the ways into the vault under the keystrokes that
- * reach them, and the vaults this installation holds.
+ * reach them, the vaults this installation holds, and what build this is in the
+ * corner.
  */
 import { KeyCap } from '@numen/ui'
 import { FolderRoot } from '@lucide/vue'
@@ -11,7 +12,12 @@ import { iconFor } from '../icons'
 import Mark from './Mark.vue'
 import type { Held, Way, Words } from './welcoming'
 
-defineProps<{ ways: readonly Way[]; vaults: readonly Held[]; words: Words }>()
+defineProps<{
+  ways: readonly Way[]
+  vaults: readonly Held[]
+  words: Words
+  version: string
+}>()
 defineEmits<{
   /** A way chosen. `COMMANDS` means put the commands up; anything else is a command asked for. */
   (event: 'runs', id: string): void
@@ -68,6 +74,8 @@ defineEmits<{
         </button>
       </section>
     </div>
+
+    <span class="welcome__version">{{ version }}</span>
   </div>
 </template>
 
@@ -78,6 +86,7 @@ defineEmits<{
   /* How tall the glyph stands over the name. */
   --mark: 5.4rem;
 
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -87,6 +96,15 @@ defineEmits<{
   color: var(--numen-node-fg);
   font-family: var(--numen-font-sans);
   font-size: calc(var(--numen-font-size) * 13.6 / 13);
+}
+
+/* What build this is, in the far corner, where the column never reaches. */
+.welcome__version {
+  position: absolute;
+  inset-block-end: var(--numen-inset);
+  inset-inline-end: var(--numen-inset);
+  color: var(--numen-edge-label);
+  font-size: var(--numen-edge-label-size);
 }
 
 .welcome__column {
