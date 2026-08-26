@@ -1,5 +1,5 @@
 ---
-title: Your first vault
+title: Vaults
 description: A vault is an ordinary folder of markdown files. How to open one, keep several, and take one off the list.
 ---
 

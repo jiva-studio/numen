@@ -1,6 +1,6 @@
 ---
-title: The command line
-description: numen-cli — the same vault, the same index, reached from a terminal and from a script.
+title: numen-cli
+description: The same vault and the same index, reached from a terminal and from a script.
 ---
 
 `numen-cli` is the second way into a vault: no window, one command at a time, written for scripts

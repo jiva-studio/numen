@@ -1,5 +1,5 @@
 ---
-title: When something is wrong
+title: Troubleshooting
 description: What numen says when it will not do something, what it means, and what to do about it.
 ---
 

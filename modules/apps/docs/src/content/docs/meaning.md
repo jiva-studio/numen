@@ -1,5 +1,5 @@
 ---
-title: Search by meaning
+title: Semantic search
 description: The model that reads your notes — running it on your machine, handing it to a service, or turning it off.
 ---
 

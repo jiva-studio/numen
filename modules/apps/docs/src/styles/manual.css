@@ -320,6 +320,22 @@ header.header {
   width: 28%;
 }
 
+/* A table of three columns is a reference: a name, what it takes, and what it
+   means. The first two are as wide as they need to be and no wider, so the
+   sentence gets the room. */
+.sl-markdown-content table:has(th:nth-child(3)) tbody td:first-child {
+  width: 30%;
+  padding-inline-end: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.sl-markdown-content table:has(th:nth-child(3)) tbody td:nth-child(2) {
+  width: 6.5rem;
+  padding-inline-end: 1.25rem;
+  color: var(--sl-color-gray-3);
+  white-space: nowrap;
+}
+
 .sl-markdown-content tbody td:first-child code {
   font-weight: 400;
 }

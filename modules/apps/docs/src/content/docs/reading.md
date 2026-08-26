@@ -1,5 +1,5 @@
 ---
-title: Reading scanned books
+title: Scanned books
 description: How a scan of paper becomes text you can search, and the settings that decide how it is read.
 ---
 

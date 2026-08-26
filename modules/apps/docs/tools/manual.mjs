@@ -247,7 +247,7 @@ const keysOf = async (file, type, under, seen = new Set()) => {
 
   const out = []
   for (const field of fields) {
-    const path = `${under}.${field.key}`
+    const path = under ? `${under}.${field.key}` : field.key
     const bare = field.type.replace(/^\*/, '')
     const inside = structOf(source, bare)
     if (inside && !seen.has(bare)) {
@@ -262,13 +262,18 @@ const keysOf = async (file, type, under, seen = new Set()) => {
 }
 
 const settings = async () => {
-  const out = ['| | | |', '| --- | --- | --- |']
+  const out = []
   for (const section of SECTIONS) {
-    for (const key of await keysOf(section.file, section.type, section.path)) {
+    // A section is a heading and its keys are written under it, so a key is
+    // read at the length it has in the file rather than at the length of the
+    // whole path down to it.
+    out.push(`### \`${section.path}\``, '', '| | | |', '| --- | --- | --- |')
+    for (const key of await keysOf(section.file, section.type, '')) {
       out.push(`| \`${key.path}\` | ${key.kind} | ${key.meaning} |`)
     }
+    out.push('')
   }
-  return out.join('\n')
+  return out.join('\n').trimEnd()
 }
 
 /* -------------------------------------------------------------- starting */

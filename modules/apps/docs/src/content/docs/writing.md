@@ -1,5 +1,5 @@
 ---
-title: Writing
+title: Writing notes
 description: How a note saves, what names it, renaming, removing, and what happens when a file changes underneath you.
 ---
 

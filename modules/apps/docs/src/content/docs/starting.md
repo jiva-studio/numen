@@ -1,6 +1,6 @@
 ---
-title: Starting numen
-description: The flags numen takes on the command line, and what each is for.
+title: Command-line options
+description: The flags numen takes when it starts, and what each is for.
 ---
 
 numen opens the vault you had last and reads its settings from the usual place. The flags below

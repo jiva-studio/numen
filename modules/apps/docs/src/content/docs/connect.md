@@ -1,5 +1,5 @@
 ---
-title: Connect another agent
+title: MCP server
 description: The window serves your vault to any agent that speaks MCP — where it listens, what it needs, and how to shut the door.
 ---
 

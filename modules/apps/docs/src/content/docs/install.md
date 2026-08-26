@@ -1,5 +1,5 @@
 ---
-title: Install
+title: Installation
 description: Where to get numen for macOS, Windows and Linux, and where it keeps its own files.
 ---
 

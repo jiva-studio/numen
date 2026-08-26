@@ -1,5 +1,5 @@
 ---
-title: Finding
+title: Search
 description: One search over names, words and meaning — and what to do when what you wanted is not there yet.
 ---
 

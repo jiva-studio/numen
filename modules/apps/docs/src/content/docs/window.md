@@ -1,5 +1,5 @@
 ---
-title: The window
+title: Window and tabs
 description: Panes, tabs and the four things a tab can hold.
 ---
 

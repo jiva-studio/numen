@@ -1,5 +1,5 @@
 ---
-title: Keyboard
+title: Keyboard shortcuts
 description: Every key numen answers — in the panel, in the plex, in a note, in a table, in the agent.
 ---
 
