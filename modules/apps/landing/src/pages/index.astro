@@ -484,6 +484,8 @@ const description =
     /** What the manifest says, of everything it holds, that this page asks for. */
     interface Shelf {
       version?: string
+      build?: number
+      commit?: string
       released?: string
       files?: readonly { name: string; url: string; size: number }[]
     }
@@ -511,7 +513,10 @@ const description =
           const when = Number.isNaN(day.valueOf())
             ? ''
             : ` · ${day.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`
-          said.textContent = `Version ${shelf.version}${when}`
+          // Two builds of one version are told apart by the build number and
+          // the commit, and both stand in the file names the links now reach.
+          const which = shelf.build ? ` (build ${shelf.build}${shelf.commit ? ` · ${shelf.commit}` : ''})` : ''
+          said.textContent = `Version ${shelf.version}${which}${when}`
           said.removeAttribute('hidden')
         }
       } catch {
