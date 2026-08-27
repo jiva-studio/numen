@@ -13,6 +13,8 @@ Most of what you would want to change is in the commands — <kbd>Ctrl</kbd>/<kb
 | **Interface size** | how large the window is drawn: fields, buttons, spacing, type. |
 | **Reading font size** | how large the text you read is set, over the size above. |
 | **Sync title and filename** | whether renaming one renames the other. See [writing notes](/writing/#renaming). |
+| **Hang the parts of a note under its node** | whether a node on the map brings out the note's headings. See [the plex](/plex/#what-is-inside-a-note). |
+| **How many parts a node hangs** | how many of those headings stand at once, from one to twelve. |
 
 Choosing one writes it down. There is no separate save.
 
@@ -36,7 +38,9 @@ parse is never written over — numen says so and leaves it alone.
     "mode": "system",
     "theme": "preset:numen",
     "interface_scale": 1,
-    "text_scale": 1
+    "text_scale": 1,
+    "hang_parts_under_a_node": true,
+    "parts_under_a_node": 6
   }
 }
 ```
@@ -45,7 +49,7 @@ parse is never written over — numen says so and leaves it alone.
 
 | | |
 | --- | --- |
-| `appearance` | the four above. |
+| `appearance` | how the window is drawn: the theme, which half of it, the two sizes, and what a node hangs. |
 | `indexing.embedding` | the model that reads your notes so they can be found by meaning. See [search by meaning](/meaning/). |
 | `indexing.recognition` | how a scanned book is read. See [reading scanned books](/reading/). |
 | `indexing.proofreading` | what corrects a reading afterwards, and nothing by default. |

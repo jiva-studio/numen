@@ -18,7 +18,9 @@ import Agent from './Agent.vue'
 import { branch, pane, type Tab, type Workspace as State } from '@/workspace/model'
 import { keyChord } from '@/palette/model'
 import type { PaletteBand, PaletteItem, PaletteKeys, PaletteSpan } from '@/palette/model'
-import type { PlexEdge, PlexNeighbourhood, PlexNode } from '@/plex/model'
+import type { PlexPart } from '@/plex/inside'
+import { RELATED_SEATS } from '@/plex/model'
+import type { PlexEdge, PlexNeighbourhood, PlexNode, PlexRelatedSeat } from '@/plex/model'
 import type { Row } from '@/tree/model'
 import type { Turn } from '@/thread/model'
 
@@ -138,6 +140,28 @@ const WIDE = around([
   node('volume', 'Volume', 'sibling'),
   node('work', 'Work', 'sibling'),
 ])
+
+/**
+ * The headings of the notes on the map, by the node each stands in. More of
+ * them than stand at once, so the mark saying there is more to wind to is
+ * drawn as well.
+ */
+const PARTS: Readonly<Record<string, readonly PlexPart[]>> = {
+  focus: [
+    { id: '4', text: 'What it measures', level: 2 },
+    { id: '19', text: "Boltzmann's formula", level: 3 },
+    { id: '38', text: 'Gibbs and the ensemble', level: 3 },
+    { id: '57', text: 'The arrow of time', level: 2 },
+    { id: '76', text: 'Missing information', level: 2 },
+    { id: '94', text: "Shannon's H", level: 3 },
+    { id: '118', text: 'The demon, and its bookkeeping', level: 2 },
+  ],
+  'second-law': [
+    { id: '3', text: 'As Clausius put it', level: 2 },
+    { id: '21', text: 'As Kelvin put it', level: 2 },
+    { id: '44', text: 'Why the two are one', level: 2 },
+  ],
+}
 
 /**
  * A note is the prose below its frontmatter, which is what a tab holds. The
@@ -404,6 +428,13 @@ interface Screen {
   readonly neighbourhood?: PlexNeighbourhood
   /** What the note in a tab holds. */
   readonly markdown?: string
+  /** The headings a node hangs under its box, and none where there are none. */
+  readonly parts?: (id: string) => readonly PlexPart[]
+  /**
+   * The seats a new note may be made in. None leaves the map at rest, with no
+   * handle on any node and nothing coming out from under one.
+   */
+  readonly creatable?: readonly PlexRelatedSeat[]
 }
 
 /** One arrangement of the window, drawn from the pieces above. */
@@ -412,6 +443,8 @@ const screen = ({
   panel = null,
   neighbourhood = NEIGHBOURHOOD,
   markdown = MARKDOWN,
+  parts = () => [],
+  creatable = [],
 }: Screen) => ({
   components: { Workspace, Plex, Editor, Agent, Palette, Reader, Tree },
   setup() {
@@ -429,6 +462,8 @@ const screen = ({
       at,
       panel,
       neighbourhood,
+      parts,
+      creatable,
       bands: panel === 'commands' ? COMMANDS : BANDS,
       placeholder: panel === 'commands' ? 'Type a command' : 'Search',
       pages: BOOK_PAGES.length,
@@ -457,8 +492,9 @@ const screen = ({
           <Plex
             v-if="id === PLEX"
             :neighbourhood="neighbourhood"
-            :creatable="[]"
+            :creatable="creatable"
             :duration="0"
+            :parts="parts"
           />
           <Editor v-else-if="id === NOTE" v-model="text" />
           <Agent
@@ -531,6 +567,24 @@ export const Mapping: Story = {
         focus: 'main',
       }),
       neighbourhood: WIDE,
+    }),
+}
+
+/**
+ * The map with a hand left on a node, which hangs the headings of its note
+ * under the box.
+ */
+export const Hanging: Story = {
+  render: () =>
+    screen({
+      workspace: () => ({
+        root: pane('main', [PLEX, NOTE, BOOK], PLEX),
+        axis: 'horizontal',
+        focus: 'main',
+      }),
+      neighbourhood: WIDE,
+      parts: (id: string) => PARTS[id] ?? [],
+      creatable: RELATED_SEATS,
     }),
 }
 
