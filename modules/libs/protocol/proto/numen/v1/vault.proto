@@ -172,6 +172,16 @@ enum Refusal {
   // after, it is more than one line, or a heading would read it back as
   // something else. Nothing is written.
   REFUSAL_UNNAMEABLE = 8;
+
+  // The note at the path is not a stencil, and a stencil was asked for.
+  REFUSAL_NOT_A_STENCIL = 9;
+
+  // The note at the path is not a deck, and a deck was asked for.
+  REFUSAL_NOT_A_DECK = 10;
+
+  // The file is past the size a deck is read at, which stands above the size a
+  // note is read at.
+  REFUSAL_DECK_TOO_LARGE = 11;
 }
 
 // Note is a note as something else refers to it.
@@ -414,6 +424,10 @@ message Named {
   // in UTF-16 code units.
   // A word reached by its prefix is marked whole.
   repeated Span at = 3;
+
+  // Which of three the note is, so a client opens a deck and a stencil in the
+  // editor made for it.
+  NoteType type = 4;
 }
 
 // Heading is one line of a note that names what stands below it.
@@ -515,6 +529,10 @@ message Passage {
   // Where the chunk that matched stands, counted from the first line of the
   // source's prose. It is the line a note opens on, and the caret stands there.
   int32 line = 8;
+
+  // Which of three the note is, so a client opens a deck and a stencil in the
+  // editor made for it. Unspecified for a source that is not a note.
+  NoteType type = 9;
 }
 
 message ListRequest {
@@ -545,6 +563,10 @@ message Entry {
 
   reserved 5;
   reserved "size";
+
+  // Which of three the note is. It says nothing about an entry that is not a
+  // note.
+  NoteType type = 6;
 }
 
 // SourceKind is what the vault holds at a path. A file the index holds no text
@@ -553,6 +575,21 @@ enum SourceKind {
   SOURCE_KIND_UNSPECIFIED = 0;
   SOURCE_KIND_NOTE = 1;
   SOURCE_KIND_BOOK = 2;
+}
+
+// NoteType is which of three a note is: the `type` key of its frontmatter. It
+// says what the note is; whether the application reads text out of the file is
+// SourceKind.
+enum NoteType {
+  // An ordinary note, which is a note carrying no `type` at all and so nearly
+  // every note in a vault.
+  NOTE_TYPE_UNSPECIFIED = 0;
+
+  // A note whose body is cards.
+  NOTE_TYPE_DECK = 1;
+
+  // A note declaring the fields a card has and the faces it is shown by.
+  NOTE_TYPE_STENCIL = 2;
 }
 
 message ReadRequest {
