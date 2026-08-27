@@ -34,6 +34,7 @@ How the window is drawn.
 | `mode` | text | which half of a colour pair the window takes: `system`, `light` or `dark`. |
 | `theme` | text | the stylesheet the window wears, named by the shelf it came off and its filename: `preset:dracula` ships here, `mine:dracula` is the person's file. |
 | `hang_parts_under_a_node` | yes or no | whether a node in the plex hangs the headings of its note under the box. |
+| `parts_under_a_node` | a number | how many of those headings stand under a node at once, the rest being wound to. |
 
 ### `indexing.embedding`
 

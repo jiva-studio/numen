@@ -235,6 +235,8 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	api.Chooses = cfg.Turns()
 	api.Hangs = cfg.Hanging()
 	api.ChoosesHanging = cfg.TurnsHanging()
+	api.Parts = cfg.Parts()
+	api.ChoosesParts = cfg.TurnsParts()
 	api.Renames = &note.Rename{Move: moving}
 	api.Moves = &usecase.Move{
 		Writers: cfg.VaultWriters(),

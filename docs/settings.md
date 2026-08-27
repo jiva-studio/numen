@@ -17,7 +17,8 @@ How the window is drawn: how large, which half of a colour pair, and which palet
     "text_scale": 1,
     "mode": "system",
     "theme": "preset:numen",
-    "hang_parts_under_a_node": true
+    "hang_parts_under_a_node": true,
+    "parts_under_a_node": 6
   }
 }
 ```
@@ -29,6 +30,7 @@ How the window is drawn: how large, which half of a colour pair, and which palet
 | `mode` | which half of a colour pair is read: `system`, `light` or `dark`. Any other word is read as `system`. |
 | `theme` | the stylesheet the window wears, named by the shelf it came off and its filename: `preset:dracula` ships inside the application, `mine:dracula` is the person's file. |
 | `hang_parts_under_a_node` | whether a node hangs the parts of the note it stands for under its box. On. |
+| `parts_under_a_node` | how many of those parts stand under a node at once, the rest being wound to. 6, and it goes from 1 to 12. |
 
 Each size is a multiplier. `interface_scale` is the root's font size, and every length in the window is a multiple of it: the height of a field and a button, the clearance inside a node, the radii, the spacing, and the type throughout. `text_scale` is a second multiplier over the text a person reads — the editor, and marked-up text with the scale above it, its headings, code, lists and quotations. A hairline, a border, a focus ring and the stroke of a handle are one physical line under either.
 

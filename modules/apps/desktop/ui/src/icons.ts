@@ -32,6 +32,7 @@ import {
   PenLine,
   Plus,
   RefreshCw,
+  Rows3,
   Ruler,
   Search,
   SquareX,
@@ -76,6 +77,7 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['textScale', ALargeSmall],
   ['syncing', RefreshCw],
   ['hanging', ListTree],
+  ['parts', Rows3],
   // Over the vault.
   ['first', Compass],
   ['goto', Navigation],

@@ -57,7 +57,10 @@ describe('a label half again as large', () => {
           name === 'routing' ? Object.entries(value as object) : [[name, value] as const],
         )
         .filter(([name, value]) => typeof value === 'number' && name !== 'curvature')
-        .filter(([name]) => !['maxPerLine', 'maxLines', 'spread', 'squeeze'].includes(name))
+        .filter(
+          ([name]) =>
+            !['maxPerLine', 'maxLines', 'maxParts', 'spread', 'squeeze'].includes(name),
+        )
         .map(([, value]) => value as number)
         .concat(
           [options.nodeSize, options.focusSize].flatMap((size) => [size.width, size.height]),
@@ -72,6 +75,7 @@ describe('a label half again as large', () => {
   it('leaves the counts, the fractions and the directions where they were', () => {
     expect(larger.maxPerLine).toBe(DEFAULT_OPTIONS.maxPerLine)
     expect(larger.maxLines).toBe(DEFAULT_OPTIONS.maxLines)
+    expect(larger.maxParts).toBe(DEFAULT_OPTIONS.maxParts)
     expect(larger.routing.curvature).toBe(DEFAULT_OPTIONS.routing.curvature)
     expect(larger.spread).toBe(DEFAULT_OPTIONS.spread)
     expect(larger.squeeze).toBe(DEFAULT_OPTIONS.squeeze)

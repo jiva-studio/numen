@@ -57,6 +57,11 @@ export interface LimitOptions {
   readonly maxPerLine: number
   /** Lines per seat. Nodes past the last line are reported as overflow. */
   readonly maxLines: number
+  /**
+   * How many parts a node hangs under its box at once. The rest are wound to,
+   * and a node with less depth under it than this hangs what the depth holds.
+   */
+  readonly maxParts: number
 }
 
 export interface RoutingOptions {
@@ -126,6 +131,7 @@ export const DEFAULT_OPTIONS: PlexOptions = {
   squeeze: 0.35,
   maxPerLine: 5,
   maxLines: 4,
+  maxParts: 6,
   routing: { curvature: 0.55, minReach: 22, arrowRoom: 20 },
   motion: { arriveAfter: 0.35, leaveBefore: 0.45 },
   gesture: { verticalBias: 4 },

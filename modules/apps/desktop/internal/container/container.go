@@ -148,6 +148,42 @@ func (c Config) TurnsHanging() func(hangs bool) error {
 	}
 }
 
+// Parts reads, as the window asks, how many headings stand under a node at
+// once. A file that cannot be read stands the default of them.
+func (c Config) Parts() func() int {
+	return func() int {
+		path, err := c.settingsFile()
+		if err != nil {
+			return settings.DefaultParts
+		}
+		held, err := settings.At(path)
+		if err != nil {
+			return settings.DefaultParts
+		}
+		return held.Parts()
+	}
+}
+
+// TurnsParts writes into the settings how many headings stand under a node at
+// once. A number outside what the setting goes to is refused and the file is
+// left as it is.
+func (c Config) TurnsParts() func(parts int) error {
+	return func(parts int) error {
+		if err := settings.PartsUnderANodeBounds.Check(
+			"appearance.parts_under_a_node", float64(parts),
+		); err != nil {
+			return err
+		}
+		path, err := c.settingsFile()
+		if err != nil {
+			return err
+		}
+		return settings.Save(path, settings.Setting{
+			At: []string{"appearance", "parts_under_a_node"}, Value: parts,
+		})
+	}
+}
+
 // Settings are what a person has configured this installation to do. An
 // installation nobody has configured is written down as what it is doing.
 func (c Config) Settings() (settings.Config, error) {

@@ -52,6 +52,8 @@ export interface Plexing {
    * every node hangs nothing.
    */
   hangs(): boolean
+  /** How many of those parts stand under a node at once. The rest are wound to. */
+  parts(): number
   /** A note opened in a tab of its own, under the name the picture gives it. */
   opens(path: string, title: string, showing: PlexShowing): void
   /** An open note given the keyboard on one of its lines. */
@@ -264,6 +266,10 @@ export function plexing(view: Standing, deps: Plexing) {
   // headings were edited is drawn in the same picture, and `again` asks.
   watch(drawn, () => void reads(), { immediate: true })
 
+  // The setting turned: what each node hangs is asked for again, so a picture
+  // already drawn hangs what the setting now says.
+  watch(() => deps.hangs(), () => void reads())
+
   /** The parts of the note a ticket names, and none while the setting is off. */
   const partsOf = (node: string): readonly PlexPart[] =>
     deps.hangs() ? (parts.value.get(tickets.note(node) ?? '') ?? []) : []
@@ -403,6 +409,7 @@ export function plexing(view: Standing, deps: Plexing) {
     menu,
     creatable: deps.creatable,
     partsOf,
+    mostParts: () => deps.parts(),
     reads,
     entered,
     activate,

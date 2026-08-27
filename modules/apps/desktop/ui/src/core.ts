@@ -94,6 +94,12 @@ export interface Task {
   readonly asked: boolean
 }
 
+/** Whether a node hangs the parts of its note, and how many stand at once. */
+export interface Hanging {
+  readonly hangs: boolean
+  readonly parts: number
+}
+
 export interface Core {
   neighbourhood(path: string): Promise<Neighbourhood>
   /**
@@ -199,15 +205,15 @@ export interface Core {
    */
   choosesSyncing(kept: boolean): Promise<Refused | null>
   /**
-   * Whether a node in the plex hangs the parts of its note under the box, as
-   * the settings hold it.
+   * Whether a node in the plex hangs the parts of its note under the box, and
+   * how many of them stand there at once, as the settings hold them.
    */
-  hanging(): Promise<boolean>
+  hanging(): Promise<Hanging>
   /**
-   * That setting written into the settings file. What could not be written, and
-   * nothing where it was.
+   * Those settings written into the settings file. What could not be written,
+   * and nothing where it was. A count left out stands as it is.
    */
-  choosesHanging(hangs: boolean): Promise<Refused | null>
+  choosesHanging(hangs: boolean, parts?: number): Promise<Refused | null>
   /** An empty folder. The folders above it are made with it. */
   makeFolder(path: string): Promise<Refused | null>
   /**

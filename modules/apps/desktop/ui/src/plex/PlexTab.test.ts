@@ -27,6 +27,7 @@ const held = () =>
     empty: ref(false),
     menu: ref(null),
     creatable: ['child'],
+    mostParts: () => 6,
     activate: () => {},
     made: async () => {},
     joined: async () => {},

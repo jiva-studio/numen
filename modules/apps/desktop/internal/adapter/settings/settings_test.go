@@ -841,4 +841,73 @@ func TestAnUntouchedInstallationWritesTheHangingDown(t *testing.T) {
 	if !strings.Contains(string(raw), `"hang_parts_under_a_node": true`) {
 		t.Errorf("the hanging is not in the file it wrote:\n%s", raw)
 	}
+	if !strings.Contains(string(raw), `"parts_under_a_node": 6`) {
+		t.Errorf("the count is not in the file it wrote:\n%s", raw)
+	}
+}
+
+// How many parts stand under a node at once. A file naming no number stands the
+// default of them, and a number the setting takes is the number that stands.
+func TestANodeStandsAsManyPartsAsTheFileNames(t *testing.T) {
+	for name, c := range map[string]struct {
+		file  string
+		parts int
+		wrote bool
+	}{
+		"a file nobody wrote":         {parts: settings.DefaultParts},
+		"a file naming no appearance": {file: `{"naming":{}}`, parts: 6, wrote: true},
+		"a section naming no field": {
+			file: `{"appearance":{"text_scale":1.5}}`, parts: 6, wrote: true,
+		},
+		"a field naming a number": {
+			file: `{"appearance":{"parts_under_a_node":3}}`, parts: 3, wrote: true,
+		},
+		"a field at either end": {
+			file: `{"appearance":{"parts_under_a_node":12}}`, parts: 12, wrote: true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "numen.json")
+			if c.wrote {
+				path = write(t, c.file)
+			}
+			cfg, err := settings.At(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cfg.Parts() != c.parts {
+				t.Errorf("a node stands %d parts", cfg.Parts())
+			}
+		})
+	}
+}
+
+// A count the setting does not take stops the settings being read. Nothing is
+// drawn at a number nobody asked for, and the file says what a person wrote.
+func TestACountOfPartsOutsideWhatItGoesToIsRefused(t *testing.T) {
+	for _, body := range []string{
+		`{"appearance":{"parts_under_a_node":0}}`,
+		`{"appearance":{"parts_under_a_node":-1}}`,
+		`{"appearance":{"parts_under_a_node":13}}`,
+	} {
+		if _, err := settings.At(write(t, body)); err == nil {
+			t.Errorf("%s was read", body)
+		}
+	}
+
+	_, err := settings.At(write(t, `{"appearance":{"parts_under_a_node":20}}`))
+	var outside *settings.Outside
+	if !errors.As(err, &outside) {
+		t.Fatalf("refused with %v", err)
+	}
+	if outside.At != "appearance.parts_under_a_node" || outside.Value != 20 {
+		t.Errorf("refused %+v", outside)
+	}
+	if outside.Least != settings.PartsUnderANodeBounds.Least ||
+		outside.Most != settings.PartsUnderANodeBounds.Most {
+		t.Errorf("said the setting goes from %v to %v", outside.Least, outside.Most)
+	}
+	if said := outside.Error(); !strings.Contains(said, "appearance.parts_under_a_node is 20") {
+		t.Errorf("says %q", said)
+	}
 }

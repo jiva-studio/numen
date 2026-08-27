@@ -81,6 +81,7 @@ export const WORDS = {
   textScale: 'Reading font size',
   syncing: 'Sync title and filename',
   hanging: 'Hang the parts of a note under its node',
+  parts: 'How many parts a node hangs',
   findKeys: commandKeyChord(navigator.userAgent),
   /** The commands, under the second of the two keystrokes the window keeps for itself. */
   commands: 'Show the commands',
@@ -138,6 +139,8 @@ export const WORDS = {
   hangingBand: 'Hang the parts of a note under its node',
   on: 'On',
   off: 'Off',
+  /** The band the counts are drawn in. */
+  partsBand: 'How many parts stand under a node at once',
   unturned: 'That setting could not be written:',
   asking: 'Confirm',
   several: (files: number) => `${files} files`,
