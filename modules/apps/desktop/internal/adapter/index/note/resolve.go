@@ -89,6 +89,38 @@ func dedupe(links []domain.ResolvedLink) []domain.ResolvedLink {
 	return out
 }
 
+// Resolve answers where addresses written in one note land, keyed by what was
+// written. The priority is the one every name resolves by, so a wikilink
+// nobody recorded as a link is answered as a link is.
+func (q *Queries) Resolve(
+	ctx context.Context, vaultID, from string, written []string,
+) (map[string]string, error) {
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	asked := make(map[string]bool, len(written))
+	out := make(map[string]string, len(written))
+	for _, raw := range written {
+		if asked[raw] {
+			continue
+		}
+		asked[raw] = true
+		one := domain.ResolvedLink{Link: domain.Link{Target: domain.ParseAddress(raw)}}
+		if err := q.resolve(ctx, vault, vaultID, from, &one); err != nil {
+			return nil, err
+		}
+		if one.To != "" {
+			out[raw] = one.To
+		}
+	}
+	return out, nil
+}
+
 func (q *Queries) resolve(ctx context.Context, vault int64, vaultID, from string, r *domain.ResolvedLink) error {
 	switch r.Target.Scheme {
 	case domain.SchemeNote:

@@ -43,6 +43,22 @@ type NoteQueries interface {
 	// Named is the paths of every note filed under one name. More than one is
 	// what makes a link written by that name ambiguous.
 	Named(ctx context.Context, vaultID, name string) ([]string, error)
+
+	// Stencils is every stencil one vault holds, by path. A card names the
+	// stencil it is cut by, and this is the list those names are picked from.
+	Stencils(ctx context.Context, vaultID string) ([]Stencil, error)
+
+	// Types is what each of the notes asked about is, keyed by path. A path
+	// naming a file the index holds no note at is absent from the answer, and a
+	// listing draws such an entry as the file it is.
+	Types(ctx context.Context, vaultID string, paths []string) (map[string]domain.NoteType, error)
+}
+
+// Stencil is one stencil as a caller choosing between them sees it: where the
+// file is, and what it is called.
+type Stencil struct {
+	Path  string
+	Title string
 }
 
 // LinkQueries answers what points where. It is separate from NoteQueries
@@ -53,4 +69,10 @@ type LinkQueries interface {
 	// Backlinks returns what points at one note, by whichever address form was
 	// written: its identifier, or a name that resolves to it.
 	Backlinks(ctx context.Context, vaultID, to string) ([]domain.ResolvedLink, error)
+
+	// Resolve returns where each of those addresses lands, written in one note
+	// and keyed by what was written. It answers the question a link is answered
+	// with, asked about text nobody recorded as a link: the wikilink a card
+	// names its stencil by. An address that reaches nothing is absent.
+	Resolve(ctx context.Context, vaultID, from string, written []string) (map[string]string, error)
 }

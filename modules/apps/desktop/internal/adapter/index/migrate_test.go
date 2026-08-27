@@ -414,6 +414,75 @@ func TestAnIndexOfItsOwnIsNotBuiltAgain(t *testing.T) {
 	}
 }
 
+// A note indexed before the index held what a note is stays readable, and is a
+// note.
+//
+// The key did not exist when it was read, so nothing about the row says the
+// column is missing and no scan would notice.
+func TestANoteIndexedBeforeTheIndexHeldWhatANoteIsIsANote(t *testing.T) {
+	ctx := t.Context()
+	path := filepath.Join(t.TempDir(), "index.db")
+
+	db, err := sql.Open("sqlite", dsn(path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	available, err := loadMigrations()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var through []migration
+	for _, one := range available {
+		if one.version >= 7 {
+			break
+		}
+		through = append(through, one)
+	}
+	if len(through) == len(available) {
+		t.Skip("the index does not hold what a note is yet")
+	}
+	for _, one := range through {
+		if err := apply(ctx, db, one); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := db.ExecContext(ctx,
+		`INSERT INTO vaults (id, identifier, name, path) VALUES (1, '01AAA', 'kept', '/notes')`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx,
+		`INSERT INTO sources (id, vault_id, path, kind, size, modified_at)
+		 VALUES (1, 1, 'notes/entropy.md', 'note', 100, 1)`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx,
+		`INSERT INTO notes (source_id, vault_id, basename, title)
+		 VALUES (1, 1, 'entropy', 'Entropy')`); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	upgraded, err := Open(ctx, path)
+	if err != nil {
+		t.Fatalf("migrating an index written before the column: %v", err)
+	}
+	defer upgraded.Close()
+
+	var title, held string
+	if err := upgraded.write.QueryRowContext(ctx,
+		`SELECT title, type FROM notes WHERE source_id = 1`).Scan(&title, &held); err != nil {
+		t.Fatalf("the note did not survive the migration: %v", err)
+	}
+	if title != "Entropy" {
+		t.Errorf("title = %q", title)
+	}
+	if held != string(domain.TypeNote) {
+		t.Errorf("type = %q, want %q", held, domain.TypeNote)
+	}
+}
+
 // newest is the version the migrations this binary holds reach.
 func newest(t *testing.T) int {
 	t.Helper()

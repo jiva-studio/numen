@@ -1,0 +1,260 @@
+package cards
+
+import (
+	"context"
+	"fmt"
+	"slices"
+	"time"
+
+	format "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/cards"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/ulid"
+)
+
+// Field is which field of which stencil is being renamed, and to what.
+type Field struct {
+	// Stencil is where the stencil is filed.
+	Stencil string
+	From    string
+	To      string
+	// At is the stencil as the caller read it. A stencil that has changed since
+	// is left alone, and no deck is written.
+	At domain.FileRef
+}
+
+// NotWritten is one deck a rename did not reach. It keeps the old heading.
+type NotWritten struct {
+	Path    string
+	Problem format.Problem
+}
+
+// Renamed says what a rename reached and what it did not.
+type Renamed struct {
+	// Stencil is the fingerprint the stencil now stands at, which is what the
+	// caller presents at its next write.
+	Stencil domain.FileRef
+	// Decks is every deck a heading was rewritten in, and Cards is how many
+	// headings that was.
+	Decks []string
+	Cards int
+	// NotWritten is one entry per deck the rename could not be written to.
+	NotWritten []NotWritten
+}
+
+// RenameField gives one of a stencil's fields a different name.
+//
+// A field's name is written twice over: once where the stencil declares it, and
+// once as a heading in every card of every deck that stencil cuts. So the
+// rename reaches them. Every deck of the vault is read, the heading is
+// rewritten in the cards of that stencil, and what stands under it is
+// untouched.
+//
+// The first field is written in the stencil alone, so renaming it reaches no
+// deck and no deck is read.
+type RenameField struct {
+	Readers port.VaultReaders
+	Writers port.VaultWriters
+	Notes   port.NoteQueries
+	Index   func(ctx context.Context, v domain.Vault, paths []string) error
+	// Now is when this is happening. An identifier written here carries it.
+	Now func() time.Time
+}
+
+// stamp is the identifier a file this rename writes is to carry where it
+// carries none.
+func (u RenameField) stamp() (string, error) {
+	at := time.Now
+	if u.Now != nil {
+		at = u.Now
+	}
+	return ulid.New(at())
+}
+
+// Execute renames the field, in the stencil first and then in the vault.
+//
+// The stencil leads: a rename the stencil refused reaches no deck. A deck it
+// could not be written to keeps the old heading and comes back as a problem
+// against that deck, and the decks after it are written all the same.
+func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Field) (Renamed, error) {
+	if in.From == in.To {
+		return Renamed{Stencil: in.At}, nil
+	}
+
+	out, err := u.rename(ctx, v, in)
+	if err != nil || u.Index == nil {
+		return out, err
+	}
+	return out, u.Index(ctx, v, append([]string{in.Stencil}, out.Decks...))
+}
+
+// rename is the whole of the writing, under this vault's write lock from before
+// the stencil is read until after the last deck is replaced.
+func (u RenameField) rename(ctx context.Context, v domain.Vault, in Field) (Renamed, error) {
+	release, err := u.Writers.Hold(ctx, v)
+	if err != nil {
+		return Renamed{}, err
+	}
+	defer release()
+
+	reader, err := u.Readers.Open(v)
+	if err != nil {
+		return Renamed{}, err
+	}
+	writer, err := u.Writers.Open(v)
+	if err != nil {
+		return Renamed{}, err
+	}
+
+	var out Renamed
+	var first bool
+	out.Stencil, first, err = u.stencil(ctx, reader, writer, in)
+	if err != nil {
+		return Renamed{}, err
+	}
+	// The first field is written in `fields` and in the braces of the faces,
+	// and in no deck at all.
+	if first {
+		return out, nil
+	}
+
+	paths, err := u.decks(ctx, v)
+	if err != nil {
+		return out, err
+	}
+	// The name the cards write is the name the stencil is linked by.
+	named := domain.Basename(in.Stencil)
+	one := deck{reader: reader, writer: writer, stamp: u.stamped}
+	for _, path := range paths {
+		if err := ctx.Err(); err != nil {
+			return out, err
+		}
+		cards, err := one.rename(ctx, path, named, in)
+		if err != nil {
+			out.NotWritten = append(out.NotWritten, NotWritten{Path: path, Problem: format.OnFile(
+				format.CheckNotWritten,
+				"a field renamed in "+named+" did not reach this deck: "+err.Error(),
+			)})
+			continue
+		}
+		if cards > 0 {
+			out.Decks = append(out.Decks, path)
+			out.Cards += cards
+		}
+	}
+	return out, nil
+}
+
+// stencil writes the new name where the stencil declares the field, and says
+// whether the field renamed was the first one.
+func (u RenameField) stencil(
+	ctx context.Context, reader port.VaultReader, writer port.VaultWriter, in Field,
+) (domain.FileRef, bool, error) {
+	against := in.At
+	if against == (domain.FileRef{}) {
+		on, err := reader.Stat(ctx, in.Stencil)
+		if err != nil {
+			return domain.FileRef{}, false, fmt.Errorf("look at %s: %w", in.Stencil, err)
+		}
+		against = on
+	}
+
+	raw, err := reader.Read(ctx, in.Stencil)
+	if err != nil {
+		return domain.FileRef{}, false, fmt.Errorf("read %s: %w", in.Stencil, err)
+	}
+	f, err := format.OpenStencil(raw)
+	if err != nil {
+		return domain.FileRef{}, false, fmt.Errorf("%s: %w", in.Stencil, err)
+	}
+	declared := f.Fields()
+	first := len(declared) > 0 && declared[0] == in.From
+	if err := f.RenameField(in.From, in.To); err != nil {
+		return domain.FileRef{}, false, fmt.Errorf("%s: %w", in.Stencil, err)
+	}
+	if err := u.stamped(f.Stamped); err != nil {
+		return domain.FileRef{}, false, fmt.Errorf("%s: %w", in.Stencil, err)
+	}
+	at, err := writer.Write(ctx, in.Stencil, f.Bytes(), against)
+	return at, first, err
+}
+
+// stamped writes an identifier into a file that carries none, which is what
+// the application changing what a note holds does.
+func (u RenameField) stamped(into func(string) (bool, error)) error {
+	identifier, err := u.stamp()
+	if err != nil {
+		return err
+	}
+	_, err = into(identifier)
+	return err
+}
+
+// decks is every deck the vault holds, by path. The index answers what each
+// note is, so nothing here opens a file to find out.
+func (u RenameField) decks(ctx context.Context, v domain.Vault) ([]string, error) {
+	known, err := u.Notes.Fingerprints(ctx, v.ID)
+	if err != nil {
+		return nil, err
+	}
+	paths := make([]string, 0, len(known))
+	for path := range known {
+		paths = append(paths, path)
+	}
+	slices.Sort(paths)
+
+	types, err := u.Notes.Types(ctx, v.ID, paths)
+	if err != nil {
+		return nil, err
+	}
+	decks := paths[:0]
+	for _, path := range paths {
+		if types[path] == domain.TypeDeck {
+			decks = append(decks, path)
+		}
+	}
+	return decks, nil
+}
+
+// deck is one deck's read and write, so that what could not be done to it is
+// one error and the decks after it are written all the same.
+type deck struct {
+	reader port.VaultReader
+	writer port.VaultWriter
+	stamp  func(func(string) (bool, error)) error
+}
+
+// rename rewrites the heading in every card of this deck the stencil cuts, and
+// reports how many it rewrote. A deck holding none of them is not written.
+func (d deck) rename(ctx context.Context, path, named string, in Field) (int, error) {
+	on, err := d.reader.Stat(ctx, path)
+	if err != nil {
+		return 0, err
+	}
+	if on.Size > MaxBytes {
+		return 0, fmt.Errorf("it is %d bytes, and %d is the most a deck is read at", on.Size, MaxBytes)
+	}
+
+	raw, err := d.reader.Read(ctx, path)
+	if err != nil {
+		return 0, err
+	}
+	f, err := format.OpenDeck(raw)
+	if err != nil {
+		return 0, err
+	}
+	cards, err := f.RenameField(named, in.From, in.To)
+	if err != nil {
+		return 0, err
+	}
+	if cards == 0 {
+		return 0, nil
+	}
+	if err := d.stamp(f.Stamped); err != nil {
+		return 0, err
+	}
+	if _, err := d.writer.Write(ctx, path, f.Bytes(), on); err != nil {
+		return 0, err
+	}
+	return cards, nil
+}

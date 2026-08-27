@@ -118,6 +118,29 @@ func (d *Document) SetBody(body string) {
 	d.body = []byte(text)
 }
 
+// SpliceBody replaces one run of the prose, addressed by bytes of the body as
+// Body hands it over. Every byte outside the run is left as it arrived, and
+// what is written in its place takes the file's own line ending.
+func (d *Document) SpliceBody(start, end int, text string) error {
+	if d.unterminated {
+		return ErrUnterminated
+	}
+	if start < 0 || end < start || end > len(d.body) {
+		return fmt.Errorf("splice %d:%d is outside a body of %d bytes", start, end, len(d.body))
+	}
+
+	written := Normalised(text)
+	if d.eol == "\r\n" {
+		written = strings.ReplaceAll(written, "\n", "\r\n")
+	}
+
+	body := make([]byte, 0, len(d.body)-(end-start)+len(written))
+	body = append(body, d.body[:start]...)
+	body = append(body, written...)
+	d.body = append(body, d.body[end:]...)
+	return nil
+}
+
 // Identifier is what the note carries, and whether it carries one.
 func (d *Document) Identifier() (string, bool) {
 	node, err := d.mapping()
@@ -161,6 +184,101 @@ func (d *Document) SetTitle(title string) error {
 		return err
 	}
 	return d.set("title", []byte("title: "+strings.ReplaceAll(written, "\n", d.eol)+d.eol))
+}
+
+// List is the names one top-level frontmatter key holds, in the order they
+// stand in it. False when the key is not there, and when it holds anything but
+// a list. An entry that is not text is not a name and is not among them.
+func (d *Document) List(key string) ([]string, bool) {
+	node, err := d.mapping()
+	if err != nil || node == nil {
+		return nil, false
+	}
+	items := valueOf(node, key)
+	if items == nil || items.Kind != yaml.SequenceNode {
+		return nil, false
+	}
+	out := make([]string, 0, len(items.Content))
+	for _, item := range items.Content {
+		if item.Kind == yaml.ScalarNode && item.Tag == "!!str" {
+			out = append(out, item.Value)
+		}
+	}
+	return out, true
+}
+
+// SetList writes the names one top-level frontmatter key holds from now on,
+// one to a line. No names removes the key.
+//
+// A name already in the list is written the way it was written, because how
+// somebody spells their own frontmatter is theirs.
+func (d *Document) SetList(key string, names []string) error {
+	if len(names) == 0 {
+		return d.set(key, nil)
+	}
+
+	spelled := d.spelling(key)
+	seq := &yaml.Node{Kind: yaml.SequenceNode}
+	for _, name := range names {
+		seq.Content = append(seq.Content, &yaml.Node{
+			Kind: yaml.ScalarNode, Style: spelled[name], Value: name,
+		})
+	}
+	rendered, err := render(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{
+		{Kind: yaml.ScalarNode, Value: key}, seq,
+	}})
+	if err != nil {
+		return err
+	}
+	return d.set(key, []byte(strings.ReplaceAll(rendered, "\n", d.eol)))
+}
+
+// SetScalar writes what one top-level frontmatter key holds from now on. An
+// empty value removes the key.
+func (d *Document) SetScalar(key, value string) error {
+	if value == "" {
+		return d.set(key, nil)
+	}
+	written, err := scalar(value)
+	if err != nil {
+		return err
+	}
+	return d.set(key, []byte(key+": "+strings.ReplaceAll(written, "\n", d.eol)+d.eol))
+}
+
+// spelling is how each name of one key's list is quoted, so that a name coming
+// through a write untouched comes through spelled as it was.
+func (d *Document) spelling(key string) map[string]yaml.Style {
+	out := map[string]yaml.Style{}
+	node, err := d.mapping()
+	if err != nil || node == nil {
+		return out
+	}
+	items := valueOf(node, key)
+	if items == nil || items.Kind != yaml.SequenceNode {
+		return out
+	}
+	for _, item := range items.Content {
+		if item.Kind == yaml.ScalarNode {
+			out[item.Value] = item.Style
+		}
+	}
+	return out
+}
+
+// render is one node as YAML, ending with the break every block of it ends
+// with.
+func render(node *yaml.Node) (string, error) {
+	var out bytes.Buffer
+	enc := yaml.NewEncoder(&out)
+	enc.SetIndent(2)
+	if err := enc.Encode(node); err != nil {
+		return "", err
+	}
+	if err := enc.Close(); err != nil {
+		return "", err
+	}
+	return out.String(), nil
 }
 
 // set replaces the lines one top-level key occupies, or appends them when the

@@ -45,6 +45,43 @@ func (q *Queries) Notes(ctx context.Context, vaultID string, paths []string) (ma
 	return out, nil
 }
 
+// Types is what each of the paths asked about is. A path the index holds no
+// note at is left out, and so a listing draws it as the file it is.
+func (q *Queries) Types(ctx context.Context, vaultID string, paths []string) (map[string]domain.NoteType, error) {
+	out := map[string]domain.NoteType{}
+	if len(paths) == 0 {
+		return out, nil
+	}
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return out, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	// One prepared statement, asked repeatedly: the query's text is the same
+	// whatever number of paths arrive.
+	statement, err := q.db.PrepareContext(ctx, stmt.Get("type_at"))
+	if err != nil {
+		return nil, err
+	}
+	defer statement.Close()
+
+	for _, path := range paths {
+		var held string
+		err := statement.QueryRowContext(ctx, vault, path).Scan(&held)
+		if errors.Is(err, sql.ErrNoRows) {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		out[path] = domain.NoteType(held)
+	}
+	return out, nil
+}
+
 // Headings answers NoteQueries.Headings.
 func (q *Queries) Headings(ctx context.Context, vaultID string, paths []string) (map[string][]domain.Heading, error) {
 	out := map[string][]domain.Heading{}

@@ -43,6 +43,12 @@ func TestWalkReportsEverySourceAndNothingElse(t *testing.T) {
 	want := []string{
 		"Thermodynamics.md",
 		"assets/paper.pdf",
+		"cards/Animal.md",
+		"cards/Animals.md",
+		"cards/Term.md",
+		"cards/crlf-deck.md",
+		"cards/empty-deck.md",
+		"cards/fieldless-stencil.md",
 		"daily/2026-08-15.md",
 		"edge/broken-frontmatter.md",
 		"edge/broken-links.md",
@@ -93,8 +99,8 @@ func TestWalkSaysWhichKindEachSourceIs(t *testing.T) {
 			notes++
 		}
 	}
-	if notes != 8 {
-		t.Errorf("walked %d notes, want the 8 the fixture holds", notes)
+	if notes != 14 {
+		t.Errorf("walked %d notes, want the 14 the fixture holds", notes)
 	}
 }
 

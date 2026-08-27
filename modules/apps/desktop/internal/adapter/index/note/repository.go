@@ -102,7 +102,7 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes
 		return fmt.Errorf("save: %w", err)
 	}
 	if err := exec(ctx, tx, "save_note", row, vault, domain.Basename(n.Ref.Path),
-		n.Title, nullable(n.ID), frontmatter, nullable(problem)); err != nil {
+		n.Title, string(noteType(n)), nullable(n.ID), frontmatter, nullable(problem)); err != nil {
 		return err
 	}
 
@@ -278,6 +278,15 @@ func encodeFrontmatter(n domain.Note) (value any, problem string) {
 		return nil, "frontmatter could not be stored: " + err.Error()
 	}
 	return string(raw), ""
+}
+
+// noteType is what the file said it is. A note whose file says nothing is a
+// note, and the column holds one of the three words either way.
+func noteType(n domain.Note) domain.NoteType {
+	if n.Type == "" {
+		return domain.TypeNote
+	}
+	return n.Type
 }
 
 // nullable keeps an empty string out of the database, so that "nothing was
