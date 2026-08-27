@@ -1317,11 +1317,27 @@ export const PartsInside: Story = {
     // that one is nowhere to go.
     const many = canvas.getByLabelText(/, jump$/)
     await userEvent.hover(many)
-    await waitFor(async () => await expect(partsOf(many)).toHaveLength(MOST + 1), { timeout: 3000 })
-    await expect(partsOf(many).at(-1)!.textContent?.trim()).toBe('…')
+    await waitFor(async () => await expect(partsOf(many)).toHaveLength(MOST), { timeout: 3000 })
 
-    await userEvent.click(partsOf(many).at(-1)!)
-    await expect(args.onEnter).not.toHaveBeenCalledWith('focus/jump-0', expect.anything())
+    // A window on more than it holds is marked at the edge it may be wound
+    // towards, and winding it moves it by whole parts.
+    const marks = () => [...many.querySelectorAll('.plex__more')]
+    await expect(marks()).toHaveLength(1)
+
+    const wheel = (deltaY: number) =>
+      many.querySelector('.plex__inside')!.dispatchEvent(
+        new WheelEvent('wheel', { deltaY, bubbles: true, cancelable: true }),
+      )
+    wheel(1)
+    await waitFor(async () =>
+      await expect(partsOf(many)[0]!.textContent?.trim()).toBe('Section 2'),
+    )
+    await expect(marks()).toHaveLength(2)
+
+    wheel(-1)
+    await waitFor(async () =>
+      await expect(partsOf(many)[0]!.textContent?.trim()).toBe('Section 1'),
+    )
 
     // Choosing a part is not choosing the node it hangs from: the plex stays
     // where it is standing.

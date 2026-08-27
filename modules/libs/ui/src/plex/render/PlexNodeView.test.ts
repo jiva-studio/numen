@@ -9,7 +9,7 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import PlexNodeView from './PlexNodeView.vue'
 import { OPENING, type Widened } from '../dwell'
-import { MOST, REST, hangParts, type PlexPart } from '../inside'
+import { MOST, hangParts, type PlexPart } from '../inside'
 import { stubEnvironment } from '../fixtures/clock'
 import type { NodeStanding, PlacedNode, PlexSeat } from '../model'
 
@@ -532,13 +532,44 @@ describe('the parts a node hangs', () => {
     expect(node.emitted('activate')).toBeUndefined()
   })
 
-  it('says nothing for the one standing in for those that did not fit', async () => {
-    const node = await rest(mountInside(parts(MOST + 1)))
-    const drawn = node.findAll('.plex__part')
-    expect(drawn.at(-1)!.text()).toBe(REST)
+  it('stands the ceiling of them, and marks that there is more to wind to', async () => {
+    const node = await rest(mountInside(parts(MOST + 3)))
+    expect(node.findAll('.plex__part')).toHaveLength(MOST)
+    expect(node.findAll('.plex__more')).toHaveLength(1)
+  })
 
-    await drawn.at(-1)!.trigger('click')
-    expect(node.emitted('enter')).toBeUndefined()
+  it('winds the window down a part at a time, and back up again', async () => {
+    const node = await rest(mountInside(parts(MOST + 3)))
+    const first = () => node.findAll('.plex__part')[0]!.text()
+
+    await node.get('.plex__inside').trigger('wheel', { deltaY: 1 })
+    expect(first()).toBe('Part 1')
+
+    await node.get('.plex__inside').trigger('wheel', { deltaY: 1 })
+    expect(first()).toBe('Part 2')
+    expect(node.findAll('.plex__more')).toHaveLength(2)
+
+    await node.get('.plex__inside').trigger('wheel', { deltaY: -1 })
+    expect(first()).toBe('Part 1')
+  })
+
+  it('winds no further than either end of them', async () => {
+    const node = await rest(mountInside(parts(MOST + 1)))
+    const wheel = (deltaY: number) => node.get('.plex__inside').trigger('wheel', { deltaY })
+
+    await wheel(-1)
+    expect(node.findAll('.plex__part')[0]!.text()).toBe('Part 0')
+
+    for (let at = 0; at < 5; at++) await wheel(1)
+    expect(node.findAll('.plex__part').at(-1)!.text()).toBe(`Part ${MOST}`)
+  })
+
+  it('winds nothing where every one of them stands at once', async () => {
+    const node = await rest(mountInside(parts(3)))
+    expect(node.findAll('.plex__more')).toHaveLength(0)
+
+    await node.get('.plex__inside').trigger('wheel', { deltaY: 1 })
+    expect(node.findAll('.plex__part')[0]!.text()).toBe('Part 0')
   })
 
   it('is put away once the hand has left', async () => {
@@ -554,5 +585,24 @@ describe('the parts a node hangs', () => {
   it('is nothing a screen reader is told about, the palette being the way there', async () => {
     const node = await rest(mountInside(parts(2)))
     expect(node.get('.plex__inside').attributes('aria-hidden')).toBe('true')
+  })
+
+  it('fades out from where it was wound, and opens at the top again', async () => {
+    const mounted = mountInside(parts(MOST + 3))
+    await rest(mounted)
+    const first = () => mounted.node.findAll('.plex__part')[0]!.text()
+
+    await mounted.node.get('.plex__inside').trigger('wheel', { deltaY: 1 })
+    expect(first()).toBe('Part 1')
+
+    await mounted.node.trigger('pointerleave')
+    mounted.world.tick(0)
+    mounted.world.tick(OPENING / 2)
+    await mounted.node.vm.$nextTick()
+    expect(first()).toBe('Part 1')
+
+    mounted.world.run()
+    await rest(mounted)
+    expect(first()).toBe('Part 0')
   })
 })

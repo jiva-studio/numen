@@ -15,9 +15,6 @@ import type { PlacedNode } from './model'
 /** How many parts are drawn under a node. */
 export const MOST = 6
 
-/** What stands in place of the ones that did not fit. */
-export const REST = '…'
-
 /**
  * How far behind the one above it each part sets off, as a fraction of the
  * opening.
@@ -44,10 +41,7 @@ export interface PlexPart {
   readonly level: number
 }
 
-/**
- * One part where it hangs. A part with no identifier stands for the ones that
- * did not fit, and cannot be chosen.
- */
+/** One part where it hangs. */
 export interface HungPart {
   readonly id: string
   readonly text: string
@@ -64,6 +58,8 @@ export interface HungParts {
   readonly partHeight: number
   /** Ground kept clear around them, so none stands flush against an edge. */
   readonly pad: number
+  /** How many stand in the window at once. The rest are wound to. */
+  readonly shown: number
   /** As wide as the longest of them asks for, held inside the window. */
   readonly width: number
   /** How far their middle stands from where the node is placed. */
@@ -98,7 +94,11 @@ export interface OpenParts {
   readonly height: number
   /** How far that ground has come up. */
   readonly opacity: number
+  /** The parts standing in the window, in the order they stand. */
   readonly parts: readonly DrawnPart[]
+  /** Whether the window has parts above it, and parts below it. */
+  readonly above: boolean
+  readonly below: boolean
 }
 
 /**
@@ -136,30 +136,30 @@ export function hangParts(
   const rows = Math.min(MOST + 1, Math.floor((depth - 2 * pad) / partHeight))
   if (rows < 1) return null
 
-  const whole = parts.length <= Math.min(MOST, rows)
-  const drawn = whole ? parts : parts.slice(0, rows - 1)
-  const setIn = indents(drawn, partIndent)
+  const shown = Math.min(MOST, rows, parts.length)
+  const setIn = indents(parts, partIndent)
 
-  const hung: HungPart[] = drawn.map((part, at) => ({
+  const hung: HungPart[] = parts.map((part, at) => ({
     id: part.id,
     text: part.text,
     indent: setIn.get(part.level) ?? 0,
     at: at * partHeight,
   }))
 
-  if (!whole) {
-    hung.push({ id: '', text: REST, indent: 0, at: hung.length * partHeight })
-  }
-
   return {
     top,
     partHeight,
     pad,
+    shown,
     ...across(node, hung, pad, room),
     parts: hung,
-    height: hung.length * partHeight + 2 * pad,
+    height: shown * partHeight + 2 * pad,
   }
 }
+
+/** The furthest the window on the parts may be wound down, counted in parts. */
+export const furthest = (hung: HungParts): number =>
+  Math.max(0, hung.parts.length - hung.shown)
 
 /**
  * How wide the parts are drawn and where that width sits: the room the longest
@@ -197,22 +197,34 @@ function across(
  *
  * Nothing while it is shut, which is what a node draws nothing at all under.
  */
-export function openedTo(hung: HungParts, open: number): OpenParts | null {
+export function openedTo(hung: HungParts, open: number, wound = 0): OpenParts | null {
   const opened = clamp01(open)
   if (opened <= 0) return null
 
+  // The window stands whole on the parts: it is wound by one at a time, so no
+  // part is ever drawn half on the ground.
+  const first = Math.min(Math.max(Math.round(wound), 0), furthest(hung))
+  const standing = hung.parts.slice(first, first + hung.shown)
+
   // Each part sets off a lead behind the one above it, so what is left for any
   // one of them to run in is the opening less every lead before it.
-  const runs = Math.max(1 - LEAD * (hung.parts.length - 1), LEAD)
+  const runs = Math.max(1 - LEAD * (standing.length - 1), LEAD)
 
   /** The deepest a part may set off from and still stand on the ground. */
   const floor = hung.height - 2 * hung.pad - hung.partHeight
 
-  const parts = hung.parts.map((part, at) => {
+  const parts = standing.map((part, at) => {
     const own = easeOut(clamp01((opened - at * LEAD) / runs))
-    const from = Math.min(part.at + RISE * hung.partHeight, floor)
-    return { ...part, y: lerp(from, part.at, own), opacity: own }
+    const rests = at * hung.partHeight
+    const from = Math.min(rests + RISE * hung.partHeight, floor)
+    return { ...part, at: rests, y: lerp(from, rests, own), opacity: own }
   })
 
-  return { height: hung.height, opacity: easeOut(opened), parts }
+  return {
+    height: hung.height,
+    opacity: easeOut(opened),
+    parts,
+    above: first > 0,
+    below: first < furthest(hung),
+  }
 }

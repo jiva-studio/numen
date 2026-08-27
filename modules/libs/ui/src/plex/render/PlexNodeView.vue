@@ -14,7 +14,7 @@ import { computed, ref, watch } from 'vue'
 import PlexNodeHandle from './PlexNodeHandle.vue'
 import { isMenuKey, isPress, isShowKey } from './keys'
 import { DWELL, useDwell, type Widened } from '../dwell'
-import { openedTo, type HungParts } from '../inside'
+import { furthest, openedTo, type HungParts } from '../inside'
 import { lerp } from '../arrange'
 import { browserEnvironment, type Environment } from '../transition'
 import type { MenuOpening } from '../../menu/model'
@@ -227,8 +227,58 @@ const box = computed<Widened>(() => {
 /** Where the box begins, which everything drawn in it is placed from. */
 const startsAt = computed(() => box.value.offset - box.value.width / 2)
 
+/** How far the window on the parts has been wound down, counted in parts. */
+const wound = ref(0)
+
 /** The parts, as far out from under the box as they have come. */
-const opened = computed(() => (props.hung ? openedTo(props.hung, open.value) : null))
+const opened = computed(() =>
+  props.hung ? openedTo(props.hung, open.value, wound.value) : null,
+)
+
+// The window opens at the top each time the attention settles afresh. It is
+// left where it stands while the attention leaves, which is what the parts
+// fade out from.
+watch(under, (now) => {
+  if (now !== null) wound.value = 0
+})
+
+/**
+ * Winding the window over the parts, one at a time, so none is ever drawn
+ * half on the ground. A wheel that would go past either end is left alone.
+ */
+const wind = (event: WheelEvent) => {
+  const hung = props.hung
+  const shown = opened.value
+  const step = Math.sign(event.deltaY)
+  if (!hung || !shown || step === 0) return
+  if (step < 0 ? !shown.above : !shown.below) return
+
+  event.preventDefault()
+  event.stopPropagation()
+  wound.value = Math.min(Math.max(wound.value + step, 0), furthest(hung))
+}
+
+/** How large a mark at the edge of the ground is drawn. */
+const MARK = { wide: 4, deep: 2.5 }
+
+/** A mark at either edge, drawn where there is more to wind to. */
+const marks = computed(() => {
+  const hung = props.hung
+  const shown = opened.value
+  if (!hung || !shown) return []
+
+  const { wide, deep } = MARK
+  const middle = hung.offset
+  const chevron = (y: number, into: number) =>
+    `M ${middle - wide} ${y - into} L ${middle} ${y + into} L ${middle + wide} ${y - into}`
+
+  return [
+    ...(shown.above ? [{ at: 'above', d: chevron(hung.top + hung.pad / 2, -deep) }] : []),
+    ...(shown.below
+      ? [{ at: 'below', d: chevron(hung.top + shown.height - hung.pad / 2, deep) }]
+      : []),
+  ]
+})
 
 /** A part chosen. The one standing for those that did not fit names none. */
 const enter = (part: string) => {
@@ -304,7 +354,7 @@ const hue = computed(() => ({
 
     <!-- The parts, come out from under the box. They are for the hand; the
          same parts are reached by name in the palette. -->
-    <g v-if="hung && opened" class="plex__inside" aria-hidden="true">
+    <g v-if="hung && opened" class="plex__inside" aria-hidden="true" @wheel="wind">
       <!-- One ground under all of them, as deep as they have come. -->
       <rect
         class="plex__ground"
@@ -315,8 +365,8 @@ const hue = computed(() => ({
         :opacity="opened.opacity"
       />
       <g
-        v-for="(part, at) in opened.parts"
-        :key="part.id || `rest:${at}`"
+        v-for="part in opened.parts"
+        :key="part.id"
         :opacity="part.opacity"
         :transform="`translate(0 ${hung.top + hung.pad + part.y})`"
       >
@@ -328,7 +378,6 @@ const hue = computed(() => ({
         >
           <div
             class="plex__part"
-            :class="{ 'plex__part--rest': !part.id }"
             :style="{
               paddingInlineStart: `calc(var(--numen-node-padding) + ${part.indent}px)`,
             }"
@@ -339,6 +388,15 @@ const hue = computed(() => ({
           </div>
         </foreignObject>
       </g>
+
+      <!-- More of them than the window holds, the way they are wound to. -->
+      <path
+        v-for="mark in marks"
+        :key="mark.at"
+        class="plex__more"
+        :d="mark.d"
+        :opacity="opened.opacity"
+      />
     </g>
 
     <!-- Reach out from here to make something. Under the hand or under the
@@ -477,14 +535,14 @@ const hue = computed(() => ({
   white-space: nowrap;
 }
 
-/* What did not fit says so, and is not somewhere to go. */
-.plex__part--rest {
-  cursor: default;
-  color: var(--numen-edge-label);
-}
-
-.plex__part--rest:hover {
-  background: none;
+/* There is more to wind to this way. */
+.plex__more {
+  fill: none;
+  stroke: var(--numen-edge-label);
+  stroke-width: var(--numen-stroke);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
 }
 
 /* The node a link would be made to, while the pointer is still on it. */
