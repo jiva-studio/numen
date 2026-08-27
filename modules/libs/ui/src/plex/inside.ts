@@ -18,6 +18,13 @@ import type { PlacedNode, Point } from './model'
  */
 const LEAD = 0.12
 
+/**
+ * How much of the opening the leads take between them. However many parts
+ * stand, the last of them sets off with this much of the opening left to run
+ * in, and a wide window leads by less than a narrow one.
+ */
+const SPREAD = 0.6
+
 /** How far in a part is ever set, counted in levels. */
 const DEEPEST = 3
 
@@ -245,15 +252,18 @@ export function openedTo(hung: HungParts, open: number, wound = 0): OpenParts | 
   const first = Math.min(Math.max(Math.round(wound), 0), furthest(hung))
   const standing = hung.parts.slice(first, first + hung.shown)
 
-  // Each part sets off a lead behind the one above it, so what is left for any
-  // one of them to run in is the opening less every lead before it.
-  const runs = Math.max(1 - LEAD * (standing.length - 1), LEAD)
+  // Each part sets off a lead behind the one above it, and the leads together
+  // take the same share of the opening whatever number of parts stand. What is
+  // left for any one of them to run in is the opening less every lead before it.
+  const many = standing.length
+  const lead = many > 1 ? Math.min(LEAD, SPREAD / (many - 1)) : 0
+  const runs = 1 - lead * (many - 1)
 
   /** The deepest a part may set off from and still stand on the ground. */
   const floor = hung.height - 2 * hung.pad - hung.partHeight
 
   const parts = standing.map((part, at) => {
-    const own = easeOut(clamp01((opened - at * LEAD) / runs))
+    const own = easeOut(clamp01((opened - at * lead) / runs))
     const rests = at * hung.partHeight
     const from = Math.min(rests + RISE * hung.partHeight, floor)
     return { ...part, at: rests, y: lerp(from, rests, own), opacity: own }
