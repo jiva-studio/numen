@@ -44,6 +44,8 @@ jobs:
     outputs:
       version: ${{ steps.said.outputs.version }}
       build: ${{ steps.said.outputs.build }}
+      commit: ${{ steps.said.outputs.commit }}
+      stamp: ${{ steps.said.outputs.stamp }}
       numeric: ${{ steps.said.outputs.numeric }}
       channel: ${{ steps.said.outputs.channel }}
       shelf: ${{ steps.said.outputs.shelf }}
@@ -90,6 +92,11 @@ jobs:
           fi
 
           build=$(git rev-list --count HEAD)
+          commit=$(git rev-parse --short=7 HEAD)
+
+          # What every file this run puts up carries in its name, and what the
+          # three of them together name is one build and no other.
+          stamp="$version-$build-$commit"
 
           # Windows takes four numbers and nothing else, and the last of them is
           # what tells two builds of one version apart.
@@ -106,7 +113,7 @@ jobs:
             channel=dev
           fi
 
-          for name in version build numeric channel shelf linux windows macos notarize publish; do
+          for name in version build commit stamp numeric channel shelf linux windows macos notarize publish; do
             echo "$name=${!name}" >> "$GITHUB_OUTPUT"
           done
           cat "$GITHUB_OUTPUT"
@@ -146,17 +153,18 @@ jobs:
         env:
           VERSION: ${{ needs.naming.outputs.version }}
           BUILD: ${{ needs.naming.outputs.build }}
+          COMMIT: ${{ needs.naming.outputs.commit }}
         run: |
           CGO_ENABLED=1 go build -trimpath \
-            -ldflags "-X main.version=$VERSION -X main.build=$BUILD" \
+            -ldflags "-X main.version=$VERSION -X main.build=$BUILD -X main.commit=$COMMIT" \
             -o "$RUNNER_TEMP/numen" ./cmd/numen
 
           # A name the linker does not find is one it passes over in silence.
-          # What the binary answers with is what says the version went in.
+          # What the binary answers with is what says the three went in.
           said=$("$RUNNER_TEMP/numen" --version)
           echo "$said"
           case "$said" in
-            *"$VERSION"*) ;;
+            *"$VERSION"*"$BUILD"*"$COMMIT"*) ;;
             *) echo "::error::the binary calls itself $said"; exit 1 ;;
           esac
 
@@ -229,9 +237,10 @@ jobs:
         env:
           VERSION: ${{ needs.naming.outputs.version }}
           BUILD: ${{ needs.naming.outputs.build }}
+          COMMIT: ${{ needs.naming.outputs.commit }}
         run: |
           GOOS=windows GOARCH=amd64 go build -trimpath \
-            -ldflags "-X main.version=$VERSION -X main.build=$BUILD" \
+            -ldflags "-X main.version=$VERSION -X main.build=$BUILD -X main.commit=$COMMIT" \
             -o "$RUNNER_TEMP/numen.exe" ./cmd/numen
 
       - name: Archive
@@ -300,8 +309,9 @@ jobs:
           MACOSX_DEPLOYMENT_TARGET: "11.0"
           VERSION: ${{ needs.naming.outputs.version }}
           BUILD: ${{ needs.naming.outputs.build }}
+          COMMIT: ${{ needs.naming.outputs.commit }}
         run: |
-          stamp="-X main.version=$VERSION -X main.build=$BUILD"
+          stamp="-X main.version=$VERSION -X main.build=$BUILD -X main.commit=$COMMIT"
           CGO_ENABLED=1 GOARCH=arm64 go build -trimpath -ldflags "$stamp" -o "$RUNNER_TEMP/numen-arm64" ./cmd/numen
           CGO_ENABLED=1 GOARCH=amd64 CC="clang -arch x86_64" go build -trimpath -ldflags "$stamp" -o "$RUNNER_TEMP/numen-amd64" ./cmd/numen
           lipo -create "$RUNNER_TEMP/numen-arm64" "$RUNNER_TEMP/numen-amd64" -output "$RUNNER_TEMP/numen"
@@ -461,11 +471,13 @@ jobs:
           path: ${{ runner.temp }}/built
 
       # Whatever was built this run is renamed to the name the page asks for,
-      # and a release is copied a second time under the name with its version
-      # in it. A platform that was not built leaves both alone.
+      # and copied a second time under a name carrying its version, its build
+      # number and the commit it was made from. A platform that was not built
+      # leaves both alone.
       - name: Name them
         env:
           VERSION: ${{ needs.naming.outputs.version }}
+          STAMP: ${{ needs.naming.outputs.stamp }}
           SHELF: ${{ needs.naming.outputs.shelf }}
         run: |
           set -euo pipefail
@@ -473,11 +485,16 @@ jobs:
           upload="$RUNNER_TEMP/upload"
           made="$RUNNER_TEMP/made"
 
-          mkdir -p "$upload/$SHELF"
-          : > "$made"
+          # A release is kept under its version, and a build asked for by hand
+          # under the stamp, which is what tells two of them apart.
           if [ "$SHELF" = latest ]; then
-            mkdir -p "$upload/releases/$VERSION"
+            kept="releases/$VERSION"
+          else
+            kept="builds/$STAMP"
           fi
+
+          mkdir -p "$upload/$SHELF" "$upload/$kept"
+          : > "$made"
 
           # What was built, the name it goes up under, and what a machine has to
           # know to pick its own out of the manifest.
@@ -499,12 +516,9 @@ jobs:
             fi
 
             cp "$found" "$upload/$SHELF/$stable"
-            at="$SHELF/$stable"
-            if [ "$SHELF" = latest ]; then
-              versioned=${stable/numen-/numen-$VERSION-}
-              cp "$found" "$upload/releases/$VERSION/$versioned"
-              at="releases/$VERSION/$versioned"
-            fi
+            stamped=${stable/numen-/numen-$STAMP-}
+            cp "$found" "$upload/$kept/$stamped"
+            at="$kept/$stamped"
 
             echo "  $at <- $(basename "$found")"
             printf '%s|%s|%s|%s|%s\n' "$stable" "$platform" "$arch" "$kind" "$at" >> "$made"
@@ -513,12 +527,14 @@ jobs:
           find "$upload" -type f -printf '%P\n' | sort
 
       # What the shelf holds, for anything that wants to know before it fetches.
-      # Each file is given the address of the copy that keeps this version, so
+      # Each file is given the address of the copy that keeps this build, so
       # what a machine is sent to fetch stays the file it was told the size of.
       - name: Say what is on it
         env:
           VERSION: ${{ needs.naming.outputs.version }}
           BUILD: ${{ needs.naming.outputs.build }}
+          COMMIT: ${{ needs.naming.outputs.commit }}
+          STAMP: ${{ needs.naming.outputs.stamp }}
           CHANNEL: ${{ needs.naming.outputs.channel }}
           SHELF: ${{ needs.naming.outputs.shelf }}
           SERVED_FROM: ${{ vars.BUNNY_SERVED_FROM }}
@@ -529,6 +545,8 @@ jobs:
             printf '{\n'
             printf '  "version": "%s",\n' "$VERSION"
             printf '  "build": %s,\n' "$BUILD"
+            printf '  "commit": "%s",\n' "$COMMIT"
+            printf '  "stamp": "%s",\n' "$STAMP"
             printf '  "channel": "%s",\n' "$CHANNEL"
             printf '  "released": "%s",\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
             printf '  "files": [\n'

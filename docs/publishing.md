@@ -33,8 +33,9 @@ inside. Nothing has to be configured for that.
 | Folder | What is in it |
 | --- | --- |
 | `latest/` | The newest release, under names that carry no version |
-| `releases/<version>/` | That release under names that carry it, kept |
+| `releases/<version>/` | That release under names that carry the stamp, kept |
 | `dev/` | The last build somebody asked for by hand |
+| `builds/<stamp>/` | That build under names that carry the stamp, kept |
 
 Six files in each, and one name each in `latest/` and `dev/`:
 
@@ -47,28 +48,30 @@ Six files in each, and one name each in `latest/` and `dev/`:
 | `numen-linux-amd64.rpm` | Fedora and RHEL |
 | `numen-linux-amd64.tar.gz` | The window on its own |
 
-A name in `latest/` never carries a version, so a link written on the page once goes on working after every release, and each run writes over the same names. In `releases/` the same file is `numen-<version>-macos.dmg` and its neighbours, and what is written there is written once.
+A name in `latest/` or `dev/` never carries a version, so a link written on the page once goes on working after every release, and each run writes over the same names. Every file is put up a second time under a name carrying the stamp — `numen-0.4.0-alpha.1-364-283d1d5-macos.dmg` — and what is written under that name is written once and kept.
 
-Beside the six, `latest.json` says the version, the build number, the channel, when it was released, and for each file its platform, architecture, kind, size, SHA-256, and the address of the copy under `releases/` that keeps this version. That last one is what a machine asking what is newest is sent to fetch.
+Beside the six, `latest.json` says the version, the build number, the commit, the stamp, the channel, when it was released, and for each file its platform, architecture, kind, size, SHA-256, and the address of the stamped copy. That last one is what a machine asking what is newest is sent to fetch, and it is what the page moves its links to, so a file taken from the page says in its own name which build it is.
 
 A platform that was not built in a run leaves its files alone: the run writes what it made and nothing else.
 
 ## What a number means
 
-A release is named by a git tag, `v0.4.0-alpha.1`, and that tag is the only place the version is written down. Beside it stands the build number: how many commits stand behind the one that was built, which rises with every commit and never repeats.
+A release is named by a git tag, `v0.4.0-alpha.1`, and that tag is the only place the version is written down. Beside it stands the build number: how many commits stand behind the one that was built, which rises with every commit and never repeats. Beside those two stands the commit itself, seven characters of it, which names the source and nothing else.
+
+The three written with dashes between them are the stamp, `0.4.0-alpha.1-364-283d1d5`, and every file a run puts up carries it in its name.
 
 | Where | What it carries |
 | --- | --- |
-| The file names in `releases/` | The version |
-| `numen --version` | `numen 0.4.0-alpha.1 (build 364)` |
+| The stamped file names | The version, the build number and the commit |
+| `numen --version` | `numen 0.4.0-alpha.1 (build 364, commit 283d1d5)` |
 | The corner of the welcome screen | The version |
 | macOS `CFBundleShortVersionString` | The version |
 | macOS `CFBundleVersion` | The build number, which is what macOS orders two builds of one version by |
 | Windows `VIProductVersion` | `0.4.0.364` — four numbers, the last of them the build |
 | The deb and the rpm | `0.4.0~alpha.1`, a tilde being where both managers sort a prerelease before the release it leads to |
-| `latest.json` | The version and the build number, as two fields |
+| `latest.json` | The version, the build number, the commit and the stamp, as four fields |
 
-The version goes into the binary at the link, and a name the linker does not find is one it passes over in silence, so the Linux job asks the binary it just built what it calls itself and stops if the answer does not carry the version. It goes into the page as `VITE_NUMEN_VERSION` while the page is built, which is where the welcome screen reads it from.
+The version, the build number and the commit go into the binary at the link, and a name the linker does not find is one it passes over in silence, so the Linux job asks the binary it just built what it calls itself and stops if the answer does not carry all three. It goes into the page as `VITE_NUMEN_VERSION` while the page is built, which is where the welcome screen reads it from.
 
 ## Where the page looks for them
 
@@ -113,9 +116,9 @@ one thing more before it builds: that the keyboard page still says what the
 window does. It runs on a pull request touching the manual and on the three
 files the keyboard page is written from.
 
-**The builds.** `package.yml` runs on a tag beginning with `v` and builds every platform, and it runs when it is asked for by hand and builds what it was asked for. A tag is named by the tag and goes into `latest/` and `releases/`; a run asked for by hand is named by what it was asked for, goes into `dev/`, and publishes only when it was told to. Either way it renames what each platform produced to the names above, writes `latest.json`, uploads, purges, and fetches every file back over the public address, checking that what comes down is the size of what went up.
+**The builds.** `package.yml` runs on a tag beginning with `v` and builds every platform, and it runs when it is asked for by hand and builds what it was asked for. A tag is named by the tag and goes into `latest/` and `releases/`; a run asked for by hand is named by what it was asked for, goes into `dev/` and `builds/`, and publishes only when it was told to. Either way it renames what each platform produced to the names above, writes `latest.json`, uploads, purges, and fetches every file back over the public address, checking that what comes down is the size of what went up.
 
-`latest/latest.json` is the one file asked for over and over by machines that already hold the rest, and the pull zone has to be told to hold it no longer than a minute — today it says thirty days. Everything under `releases/` is written once, and the zone can hold it for as long as it likes.
+`latest/latest.json` is the one file asked for over and over by machines that already hold the rest, and the pull zone has to be told to hold it no longer than a minute — today it says thirty days. Everything under `releases/` and `builds/` is written once, and the zone can hold it for as long as it likes.
 
 The page stands on one host and the builds on another, so the builds' zone has to send `Access-Control-Allow-Origin` for the page to read the manifest at all. Until it does, the page keeps the links it was written with, which reach the newest build under names that carry no version.
 
