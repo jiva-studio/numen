@@ -59,9 +59,8 @@ func built(t *testing.T, notes map[string]string) (domain.Vault, mcp.Core) {
 	t.Helper()
 
 	v := testsupport.NewVault(t, notes)
-	db, err := container.Config{
-		IndexPath: filepath.Join(t.TempDir(), "index.db"),
-	}.OpenIndex(t.Context())
+	cfg := container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}
+	db, err := cfg.OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,8 +80,17 @@ func built(t *testing.T, notes map[string]string) (domain.Vault, mcp.Core) {
 		return err
 	}
 	queries := db.Queries()
+	cutting := cfg.Cards(queries, db.Links(), index)
 
 	core := mcp.Core{
+		Cards:       cutting.Read,
+		Stencils:    cutting.List,
+		Cuts:        cutting.Write,
+		Cutting:     cutting.Create,
+		FieldRename: cutting.Rename,
+		DeckBody:    container.DeckBody,
+		StencilBody: container.StencilBody,
+
 		Showing: mcp.One(v, v.Path), Readers: readers, Notes: queries,
 		Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
 		Neighbourhood: note.ShowNeighbourhood{Links: db.Links(), Notes: queries},

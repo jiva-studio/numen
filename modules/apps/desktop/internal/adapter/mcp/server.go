@@ -13,9 +13,11 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
+	format "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/cards"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/check"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
@@ -72,6 +74,20 @@ type Core struct {
 	Links         note.ShowLinks
 	Problems      check.Checks
 
+	// Cards reads a deck or a stencil, Stencils lists the stencils the vault
+	// holds, Cuts puts a deck back, Cutting makes a stencil and FieldRename
+	// gives one of a stencil's fields a different name in every card it cuts.
+	Cards       cards.Read
+	Stencils    cards.List
+	Cuts        cards.Write
+	Cutting     cards.Create
+	FieldRename cards.RenameField
+	// DeckBody is the markdown a deck of cards is written as, and StencilBody
+	// the markdown a stencil's faces are. A tool changes cards and hands them
+	// back; what the file then reads as is the format's.
+	DeckBody    func(preamble string, held []format.Card, tail string) (string, error)
+	StencilBody func(faces []format.Face) (string, error)
+
 	Create  note.Create
 	Write   note.Write
 	Replace note.Replace
@@ -116,6 +132,7 @@ func New(core Core) *sdk.Server {
 	)
 
 	addNoteTools(server, core)
+	addCardTools(server, core)
 	addLinkTools(server, core)
 	addVaultTools(server, core)
 	addVaultsTools(server, core)

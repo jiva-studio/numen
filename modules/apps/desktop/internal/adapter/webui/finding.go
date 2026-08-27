@@ -38,11 +38,19 @@ func (a *API) Names(ctx context.Context, r *connect.Request[v1.NamesRequest]) (*
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
+	// Which of three each note is, so the client opens a deck and a stencil in
+	// the editor made for it.
+	types, err := a.typesAt(ctx, showing, namedIn(found))
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
 	out := &v1.NamesResponse{Found: make([]*v1.Named, 0, len(found))}
 	for _, m := range found {
 		titled := &v1.Named{
 			Note: &v1.Note{Path: m.Path, Title: m.Title},
 			At:   spansOf(m.At),
+			Type: typeOf(types[m.Path]),
 		}
 		if m.Heading != "" {
 			titled.Heading = &v1.Heading{Text: m.Heading, Line: int32(m.Line)}
@@ -110,7 +118,15 @@ func (a *API) Search(ctx context.Context, r *connect.Request[v1.SearchRequest]) 
 	// The note each passage was read out of, asked once for the whole answer. A
 	// source that is not a note is absent, and a window offering to open notes
 	// offers nothing for it.
-	titles, err := a.Notes.Notes(ctx, showing.ID, sourcesOf(found))
+	sources := sourcesOf(found)
+	titles, err := a.Notes.Notes(ctx, showing.ID, sources)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	// Which of three each note is, so the client opens a deck and a stencil in
+	// the editor made for it.
+	types, err := a.typesAt(ctx, showing, sources)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -130,6 +146,7 @@ func (a *API) Search(ctx context.Context, r *connect.Request[v1.SearchRequest]) 
 			Start:    int32(p.Start),
 			Length:   int32(p.Length),
 			Line:     int32(p.Line),
+			Type:     typeOf(types[p.Source]),
 		}
 		if note, held := titles[p.Source]; held {
 			passage.Note = noteOf(note)
@@ -177,6 +194,21 @@ func eachOnce(paths []string) []string {
 		}
 		seen[path] = true
 		out = append(out, path)
+	}
+	return out
+}
+
+// namedIn is every note the names matched in, each named once. A note's own
+// title and a heading inside it are two matches on one file.
+func namedIn(found []domain.NameMatch) []string {
+	seen := make(map[string]bool, len(found))
+	out := make([]string, 0, len(found))
+	for _, m := range found {
+		if seen[m.Path] {
+			continue
+		}
+		seen[m.Path] = true
+		out = append(out, m.Path)
 	}
 	return out
 }

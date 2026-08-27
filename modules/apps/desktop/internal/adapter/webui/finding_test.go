@@ -168,6 +168,53 @@ func TestAnAnswerIsCutToWhatWasAskedFor(t *testing.T) {
 	}
 }
 
+// TestWhatIsFoundSaysWhichOfThreeTheNoteIs. A client opens a deck and a stencil
+// in the editor made for it, and what it was handed is what says which is which.
+func TestWhatIsFoundSaysWhichOfThreeTheNoteIs(t *testing.T) {
+	client, _ := opened(t, map[string]string{
+		"Animals.md": "---\ntype: deck\ntitle: Animals\n---\n\n## Llama\n\n[[Animal]]\n",
+		"Animal.md": "---\ntype: stencil\ntitle: Animal\nfields:\n  - Height\n---\n\n" +
+			"## Recognise\n\n### Front\n\nan animal\n\n### Back\n\n{{Height}}\n",
+		"Ontology.md": "---\ntitle: Animal ontology\n---\n\nan animal is a note\n",
+	})
+
+	named, err := client.Names(t.Context(), connect.NewRequest(&v1.NamesRequest{Query: "animal"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	types := map[string]v1.NoteType{}
+	for _, one := range named.Msg.GetFound() {
+		types[one.GetNote().GetPath()] = one.GetType()
+	}
+	want := map[string]v1.NoteType{
+		"Animals.md":  v1.NoteType_NOTE_TYPE_DECK,
+		"Animal.md":   v1.NoteType_NOTE_TYPE_STENCIL,
+		"Ontology.md": v1.NoteType_NOTE_TYPE_UNSPECIFIED,
+	}
+	for path, is := range want {
+		if got, held := types[path]; !held || got != is {
+			t.Errorf("the name %s came back as %v, want %v", path, got, is)
+		}
+	}
+
+	found, err := client.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{
+		Query: "animal", Way: v1.Way_WAY_WORDS,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	passages := map[string]v1.NoteType{}
+	for _, one := range found.Msg.GetFound() {
+		passages[one.GetPath()] = one.GetType()
+	}
+	if got := passages["Ontology.md"]; got != v1.NoteType_NOTE_TYPE_UNSPECIFIED {
+		t.Errorf("the passage out of the ordinary note came back as %v", got)
+	}
+	if got, held := passages["Animals.md"]; held && got != v1.NoteType_NOTE_TYPE_DECK {
+		t.Errorf("the passage out of the deck came back as %v", got)
+	}
+}
+
 func TestNothingTypedIsAnsweredWithNothing(t *testing.T) {
 	client, _ := opened(t, map[string]string{"a.md": "# Entropy\n"})
 

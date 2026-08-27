@@ -29,6 +29,13 @@ func (a *API) List(ctx context.Context, r *connect.Request[v1.ListRequest]) (*co
 		return nil, connect.NewError(listing(err), err)
 	}
 
+	// The folder says which of its entries are notes, and the index says what
+	// each of those notes is. A listing carries both.
+	types, err := a.typesOf(ctx, showing, held)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
 	out := &v1.ListResponse{Entries: make([]*v1.Entry, 0, len(held))}
 	for _, entry := range held {
 		out.Entries = append(out.Entries, &v1.Entry{
@@ -36,9 +43,32 @@ func (a *API) List(ctx context.Context, r *connect.Request[v1.ListRequest]) (*co
 			Name:   entry.Name,
 			Folder: entry.Folder,
 			Kind:   kindOf(entry.Kind),
+			Type:   typeOf(types[entry.Path]),
 		})
 	}
 	return connect.NewResponse(out), nil
+}
+
+// typesOf is what each note of a listing is, keyed by the path it is filed
+// under.
+func (a *API) typesOf(ctx context.Context, showing domain.Vault, held []domain.Entry) (map[string]domain.NoteType, error) {
+	paths := make([]string, 0, len(held))
+	for _, entry := range held {
+		if !entry.Folder && entry.Kind == domain.KindNote {
+			paths = append(paths, entry.Path)
+		}
+	}
+	return a.typesAt(ctx, showing, paths)
+}
+
+// typesAt is what each of the notes at those paths is, keyed by path. A build
+// holding no index answers nothing, and every file is then drawn as the file it
+// is.
+func (a *API) typesAt(ctx context.Context, showing domain.Vault, paths []string) (map[string]domain.NoteType, error) {
+	if a.Notes == nil || len(paths) == 0 {
+		return nil, nil
+	}
+	return a.Notes.Types(ctx, showing.ID, paths)
 }
 
 // Move puts a file or a folder somewhere else in the vault.
@@ -108,6 +138,19 @@ func listing(err error) connect.Code {
 		return connect.CodeNotFound
 	default:
 		return connect.CodeInternal
+	}
+}
+
+// typeOf is which of three a note is, as the schema carries it. A note carrying
+// no type of its own is an ordinary note.
+func typeOf(noteType domain.NoteType) v1.NoteType {
+	switch noteType {
+	case domain.TypeDeck:
+		return v1.NoteType_NOTE_TYPE_DECK
+	case domain.TypeStencil:
+		return v1.NoteType_NOTE_TYPE_STENCIL
+	default:
+		return v1.NoteType_NOTE_TYPE_UNSPECIFIED
 	}
 }
 

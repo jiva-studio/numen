@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/task"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/source"
@@ -95,6 +96,13 @@ type API struct {
 	// made here.
 	Makes *note.Create
 	Joins *note.Linking
+
+	// Cards reads a deck or a stencil, Offered lists the stencils the vault
+	// holds, and Cuts puts either back. A build without them answers that cards
+	// cannot be worked here.
+	Cards   *cards.Read
+	Offered *cards.List
+	Cuts    *cards.Write
 
 	// Renames gives a note a different name, Moves puts a file or a folder
 	// somewhere else in the vault, and Removes takes one out of it. A build

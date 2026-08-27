@@ -347,3 +347,35 @@ func TestAFolderIsNotMadeWhereAFileIsFiled(t *testing.T) {
 		t.Errorf("the file was written:\n%s", now)
 	}
 }
+
+// TestAListingSaysWhichOfThreeEachNoteIs. The folder says which of its entries
+// are notes and the index says what each of those notes is, so a tree draws a
+// deck as a deck without opening it.
+func TestAListingSaysWhichOfThreeEachNoteIs(t *testing.T) {
+	f := quitting(t, nil, map[string]string{
+		"Entropy.md": "# Entropy\n",
+		"Animal.md":  "---\ntype: stencil\nfields:\n  - Height\n---\n\n## Recognise\n",
+		"Animals.md": "---\ntype: deck\n---\n\n## Llama\n\n[[Animal]]\n",
+		"Notes.txt":  "a list\n",
+	})
+	if _, err := f.opened.API.Scan(t.Context(), f.opened.API.Showing()); err != nil {
+		t.Fatal(err)
+	}
+
+	held := map[string]*v1.Entry{}
+	for _, entry := range drawn(t, f, "") {
+		held[entry.GetName()] = entry
+	}
+
+	want := map[string]v1.NoteType{
+		"Animals.md": v1.NoteType_NOTE_TYPE_DECK,
+		"Animal.md":  v1.NoteType_NOTE_TYPE_STENCIL,
+		"Entropy.md": v1.NoteType_NOTE_TYPE_UNSPECIFIED,
+		"Notes.txt":  v1.NoteType_NOTE_TYPE_UNSPECIFIED,
+	}
+	for name, one := range want {
+		if got := held[name].GetType(); got != one {
+			t.Errorf("%s is drawn as %v, want %v", name, got, one)
+		}
+	}
+}

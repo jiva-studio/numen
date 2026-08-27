@@ -201,6 +201,8 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 		Sync:   cfg.Syncing(),
 	}
 
+	cutting := cfg.Cards(queries, opened.Index.Links(), index)
+
 	return mcp.Core{
 		Showing: mcp.One(opened.Showing(), root),
 		Readers: readers,
@@ -224,6 +226,14 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 		Neighbourhood: note.ShowNeighbourhood{Links: opened.Index.Links(), Notes: queries},
 		Links:         note.ShowLinks{Links: opened.Index.Links()},
 		Problems:      check.Standard(opened.Index.Problems()),
+
+		Cards:       cutting.Read,
+		Stencils:    cutting.List,
+		Cuts:        cutting.Write,
+		Cutting:     cutting.Create,
+		FieldRename: cutting.Rename,
+		DeckBody:    container.DeckBody,
+		StencilBody: container.StencilBody,
 
 		Create: note.Create{
 			Writers: writers, Names: queries, Index: index,
