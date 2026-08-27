@@ -3,6 +3,7 @@
  * where each stands partway through the opening.
  */
 import { describe, expect, it } from 'vitest'
+import { easeOut } from './arrange'
 import {
   furthest,
   hangParts,
@@ -360,5 +361,33 @@ describe('what a wheel winds', () => {
     const back = woundBy(settled(), pixels(-SIZES.partHeight - 6), 0)
     expect(back.by).toBe(-1)
     expect(back.left).toBe(-6)
+  })
+})
+
+describe('however many parts stand at once', () => {
+  /** A node with depth under it for as many parts as the ceiling allows. */
+  const room = (ceiling: number) =>
+    hangParts(NODE, parts(ceiling + 4), { ...SIZES, maxParts: ceiling }, ROOM)!
+
+  it('every one of them is up by the time it is all the way open', () => {
+    // A lead that outran the opening left the last of them at nothing at all,
+    // on a ground drawn deep enough to hold them.
+    for (const ceiling of [1, 2, 6, 9, 12, 20]) {
+      const settled = room(ceiling)
+      const drawn = openedTo(settled, 1)!.parts
+      expect(drawn).toHaveLength(settled.shown)
+      for (const part of drawn) expect(part.opacity).toBe(1)
+    }
+  })
+
+  it('the first of them is still ahead of the last partway through', () => {
+    for (const ceiling of [2, 6, 12, 20]) {
+      const drawn = openedTo(room(ceiling), 0.5)!.parts
+      expect(drawn[0]!.opacity).toBeGreaterThan(drawn.at(-1)!.opacity)
+    }
+  })
+
+  it('one alone opens with the whole of the opening to itself', () => {
+    expect(openedTo(room(1), 0.5)!.parts[0]!.opacity).toBe(easeOut(0.5))
   })
 })
