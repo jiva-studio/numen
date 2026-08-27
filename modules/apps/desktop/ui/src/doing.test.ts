@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { commandsOf, deedOf, type Deed, type Where } from './commanding'
-import { does, type Doing } from './doing'
+import { does, reaching, type Doing, type Store } from './doing'
 import type { Added, Known, Movement, Refused, Removed, Renamed, VaultRefused } from './core'
 import { WORDS as words } from './words'
 
@@ -98,6 +98,14 @@ const window = (
       done.push(`makes folder ${path}`)
       return answers.folderRefused ?? null
     },
+    cuts: async (folder, name) => {
+      done.push(`cuts ${folder || '—'} ${name}`)
+      return folder ? `${folder}/${name}` : name
+    },
+    stencils: async (folder, name) => {
+      done.push(`stencils ${folder || '—'} ${name}`)
+      return folder ? `${folder}/${name}` : name
+    },
     reveals: (path) => void done.push(`reveals ${path}`),
     notes: {
       holding: (path) => (path === at ? 'held' : null),
@@ -186,6 +194,40 @@ describe('a note put in front of the person', () => {
     await carry(deedOf('travel', front()), one.on)
 
     expect(one.done).toStrictEqual(['travel physics/Ontology.md'])
+  })
+})
+
+describe('a deck or a stencil made', () => {
+  it('is written at the top of the vault, in the file the name is given to', async () => {
+    const one = window()
+
+    await carry(deedOf('deck', front(), 'Animals'), one.on)
+
+    expect(one.done).toStrictEqual(['cuts — Animals.md'])
+  })
+
+  it('keeps the ending where the name already carries one', async () => {
+    const one = window()
+
+    await carry(deedOf('deck', front(), 'Animals.md'), one.on)
+
+    expect(one.done).toStrictEqual(['cuts — Animals.md'])
+  })
+
+  it('is a stencil where that is what was asked for', async () => {
+    const one = window()
+
+    await carry(deedOf('stencil', front(), 'Animal'), one.on)
+
+    expect(one.done).toStrictEqual(['stencils — Animal.md'])
+  })
+
+  it('is nothing at all where nothing was typed', async () => {
+    const one = window()
+
+    await carry(deedOf('deck', front(), ''), one.on)
+
+    expect(one.done).toStrictEqual([])
   })
 })
 
@@ -795,5 +837,52 @@ describe('nothing to carry out', () => {
     await does(deedOf('remove', front()), broken, words)
 
     expect(one.said).toStrictEqual(['Error: gone'])
+  })
+})
+
+describe('the open files a command reaches', () => {
+  /** One store, holding one file open at one path under one identity. */
+  const store = (id: string, path: string, done: string[]): Store => ({
+    has: (one) => one === id,
+    where: (one) => (one === id ? path : one),
+    called: (one) => (one === id ? `${id} called` : ''),
+    asking: () => false,
+    settles: async (one) => void done.push(`settles ${one}`),
+    shuts: (one) => void done.push(`shuts ${one}`),
+    holding: (one) => (one === path ? id : null),
+  })
+
+  const over = () => {
+    const done: string[] = []
+    const stores = [store('note', 'Ontology.md', done), store('Animals.md', 'Animals.md', done)]
+    return { done, notes: reaching(stores, () => {}) }
+  }
+
+  it('is the tab of whichever store stands at the file', () => {
+    const one = over()
+
+    expect(one.notes.holding('Ontology.md')).toBe('note')
+    expect(one.notes.holding('Animals.md')).toBe('Animals.md')
+    expect(one.notes.holding('Loose.md')).toBeNull()
+  })
+
+  it('settles and shuts the store holding the identity, and no other', async () => {
+    const one = over()
+
+    await one.notes.settles('Animals.md')
+    one.notes.shuts('Animals.md')
+
+    expect(one.done).toStrictEqual(['settles Animals.md', 'shuts Animals.md'])
+  })
+
+  it('leaves an identity no store holds where it was, and does nothing to it', async () => {
+    const one = over()
+
+    await one.notes.settles('Gone.md')
+    one.notes.shuts('Gone.md')
+
+    expect(one.notes.where('Gone.md')).toBe('Gone.md')
+    expect(one.notes.asking('Gone.md')).toBe(false)
+    expect(one.done).toStrictEqual([])
   })
 })

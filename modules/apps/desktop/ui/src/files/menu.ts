@@ -13,8 +13,10 @@ import type { Source } from '../core'
 import { WORDS as words } from '../words'
 import { WORDS as own } from './words'
 
-/** The three the tab does itself: a note made, a folder made, and a name put in a field. */
+/** What the tab does itself: the files it makes, and a name put in a field. */
 export const NEW_NOTE = 'newNote'
+export const NEW_DECK = 'newDeck'
+export const NEW_STENCIL = 'newStencil'
 export const NEW_FOLDER = 'newFolder'
 export const RENAME = 'rename'
 
@@ -41,6 +43,8 @@ const noted = (id: string, band: string): readonly MenuItem[] => {
 /** What the tab makes, offered wherever the menu was asked for. */
 const MADE: readonly MenuItem[] = [
   { id: NEW_NOTE, text: own.newNote, band: BAND.file },
+  { id: NEW_DECK, text: own.newDeck, band: BAND.file },
+  { id: NEW_STENCIL, text: own.newStencil, band: BAND.file },
   { id: NEW_FOLDER, text: own.newFolder, band: BAND.file },
 ]
 

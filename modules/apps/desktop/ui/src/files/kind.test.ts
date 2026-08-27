@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest'
 import type { Entry } from '../core'
 import { filing, landingOf, renamedTo } from './kind'
 import { folderOf, listing, ROOT } from './listing'
-import { NEW_FOLDER, NEW_NOTE, RENAME } from './menu'
+import { NEW_DECK, NEW_FOLDER, NEW_NOTE, NEW_STENCIL, RENAME } from './menu'
 import { WORDS as words } from './words'
 
 const file = (path: string, over: Partial<Entry> = {}): Entry => ({
@@ -18,6 +18,7 @@ const file = (path: string, over: Partial<Entry> = {}): Entry => ({
   name: path.split('/').pop() ?? path,
   folder: false,
   kind: 'note',
+  type: 'note',
   ...over,
 })
 
@@ -64,6 +65,20 @@ const tab = (refuses = false) => {
       done.push(`writes ${made}`)
       return made
     },
+    cuts: async (folder, name) => {
+      const made = folder === ROOT ? name : `${folder}/${name}`
+      done.push(`cuts ${made}`)
+      if (refuses) return ''
+      vault[folder] = [...(vault[folder] ?? []), file(made, { type: 'deck' })]
+      return made
+    },
+    stencils: async (folder, name) => {
+      const made = folder === ROOT ? name : `${folder}/${name}`
+      done.push(`stencils ${made}`)
+      if (refuses) return ''
+      vault[folder] = [...(vault[folder] ?? []), file(made, { type: 'stencil' })]
+      return made
+    },
     says: (text) => void done.push(`says ${text}`),
   })
   return { done, list, one: gestures }
@@ -76,6 +91,26 @@ describe('where a row activated takes the person', () => {
       path: 'Entropy.md',
       title: 'Entropy.md',
     })
+  })
+
+  it('is the deck it stands for, in the editor of its cards', () => {
+    expect(landingOf(file('Animals.md', { type: 'deck' }))).toStrictEqual({
+      at: 'deck',
+      path: 'Animals.md',
+      title: 'Animals.md',
+    })
+  })
+
+  it('is the stencil it stands for, in the editor of its fields and faces', () => {
+    expect(landingOf(file('Animal.md', { type: 'stencil' }))).toStrictEqual({
+      at: 'stencil',
+      path: 'Animal.md',
+      title: 'Animal.md',
+    })
+  })
+
+  it('is the text of a file the vault holds no type for', () => {
+    expect(landingOf(file('Entropy.md'))?.at).toBe('note')
   })
 
   it('is the book it stands for, opened where it begins', () => {
@@ -335,6 +370,8 @@ describe('rows let go of', () => {
       carries: () => {},
       makes: async () => {},
       writes: async () => '',
+      cuts: async () => '',
+      stencils: async () => '',
       says: () => {},
     })
     await list.opens(ROOT)
@@ -496,6 +533,43 @@ describe('an item chosen in the menu on a row', () => {
 
     expect(done).toStrictEqual(['writes Untitled note.md'])
     expect(one.renaming.value).toBe('Untitled note.md')
+  })
+
+  it('makes a deck beside the row, and puts its name in a field', async () => {
+    const { done, one } = await asked()
+
+    one.chose(NEW_DECK)
+    await settles()
+
+    expect(done).toStrictEqual([`cuts ${words.newDeck}.md`])
+    expect(one.renaming.value).toBe(`${words.newDeck}.md`)
+  })
+
+  it('makes a stencil the same way, under a name of its own', async () => {
+    const { done, one } = await asked()
+
+    one.chose(NEW_STENCIL)
+    await settles()
+
+    expect(done).toStrictEqual([`stencils ${words.newStencil}.md`])
+  })
+
+  it('makes a deck inside the row where the row is a folder', async () => {
+    const { done, one } = await asked('physics')
+
+    one.chose(NEW_DECK)
+    await settles()
+
+    expect(done).toStrictEqual([`cuts physics/${words.newDeck}.md`])
+  })
+
+  it('names nothing where the vault made no deck', async () => {
+    const { one } = await asked(undefined, true)
+
+    one.chose(NEW_DECK)
+    await settles()
+
+    expect(one.renaming.value).toBeNull()
   })
 
   it('makes a note inside the row where the row is a folder', async () => {

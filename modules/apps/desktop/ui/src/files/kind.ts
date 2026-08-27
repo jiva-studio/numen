@@ -11,7 +11,7 @@ import { ref } from 'vue'
 import type { Entry, Went } from '../core'
 import type { Landing } from '../finding'
 import { folderOf, landedIn, type Listing, ROOT } from './listing'
-import { NEW_FOLDER, NEW_NOTE, OFFERED, RENAME } from './menu'
+import { NEW_DECK, NEW_FOLDER, NEW_NOTE, NEW_STENCIL, OFFERED, RENAME } from './menu'
 import type { Host, Kind } from '../windowing'
 import { FILES } from '../workspace'
 import FilesTab from './FilesTab.vue'
@@ -50,17 +50,29 @@ export interface Filing {
    * landed at, and nothing where none was made.
    */
   writes(folder: string): Promise<string>
+  /**
+   * A deck made in a folder, under the name it is given. The path it landed at,
+   * and nothing where none was made.
+   */
+  cuts(folder: string, name: string): Promise<string>
+  /** A stencil made the same way. */
+  stencils(folder: string, name: string): Promise<string>
   /** What could not be done, in words a person reads. */
   says(text: string): void
 }
 
 /**
- * Where a row activated takes the person. A note is read, a book is opened at
- * its first page, and anything else is somewhere to go nowhere.
+ * Where a row activated takes the person. A note is read in the editor its
+ * `type` names, a book is opened at its first page, and anything else is
+ * somewhere to go nowhere.
  */
 export const landingOf = (entry: Entry): Landing | null => {
   if (entry.folder) return null
-  if (entry.kind === 'note') return { at: 'note', path: entry.path, title: entry.name }
+  if (entry.kind === 'note') {
+    if (entry.type === 'deck') return { at: 'deck', path: entry.path, title: entry.name }
+    if (entry.type === 'stencil') return { at: 'stencil', path: entry.path, title: entry.name }
+    return { at: 'note', path: entry.path, title: entry.name }
+  }
   if (entry.kind === 'book') {
     return { at: 'document', path: entry.path, title: entry.name, start: 0, length: 0 }
   }
@@ -284,6 +296,20 @@ export function filing(list: Listing, deps: Filing) {
     renaming.value = made
   }
 
+  /**
+   * A deck or a stencil made where the row stands, under a name nothing there
+   * carries, and its name put in a field for the person to type over.
+   */
+  const cuts = async (path: string | null, stencil: boolean) => {
+    const into = folderFor(path)
+    const word = stencil ? words.newStencil : words.newDeck
+    const name = list.freeIn(into, `${word}.md`)
+    const made = stencil ? await deps.stencils(into, name) : await deps.cuts(into, name)
+    if (!made) return
+    await list.opens(into)
+    if (list.entryAt(made)) renaming.value = made
+  }
+
   /** A menu asked for on a row or off every row, and one put away. */
   const asks = (asked: Asked) => {
     menu.value = asked
@@ -298,6 +324,8 @@ export function filing(list: Listing, deps: Filing) {
     menu.value = null
     if (!asking || !OFFERED.has(id)) return
     if (id === NEW_NOTE) return void writes(asking.path)
+    if (id === NEW_DECK) return void cuts(asking.path, false)
+    if (id === NEW_STENCIL) return void cuts(asking.path, true)
     if (id === NEW_FOLDER) return void makes(asking.path)
 
     const path = asking.path
@@ -329,6 +357,7 @@ export function filing(list: Listing, deps: Filing) {
     remove,
     makes,
     writes,
+    cuts,
     asks,
     dismiss,
     chose,

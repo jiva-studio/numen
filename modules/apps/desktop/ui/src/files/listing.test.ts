@@ -16,6 +16,7 @@ const file = (path: string, over: Partial<Entry> = {}): Entry => ({
   name: path.split('/').pop() ?? path,
   folder: false,
   kind: 'note',
+  type: 'note',
   ...over,
 })
 

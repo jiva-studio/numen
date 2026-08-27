@@ -11,6 +11,7 @@
  */
 import { computed, ref, shallowRef } from 'vue'
 import type { PaletteItem, PaletteBand } from '@numen/ui'
+import type { NoteType } from './core'
 import { wordsOnly, type Meaning } from './meaning'
 
 /** A run of a name or a passage, counted the way this window counts text. */
@@ -30,6 +31,8 @@ export interface Named {
   /** Where that heading stands, counted from the first line of the prose. */
   line: number
   at: readonly Span[]
+  /** Which of three the note is, which is the editor it opens in. */
+  type: NoteType
 }
 
 /** One passage: the text around a hit, and where it came from. */
@@ -52,6 +55,8 @@ export interface Passage {
   /** Where the hit stands in the prose, counted from its first line. */
   line: number
   at: readonly Span[]
+  /** Which of three the note is, which is the editor it opens in. */
+  type: NoteType
 }
 
 /** How a search over the text is asked. */
@@ -92,7 +97,7 @@ export interface Words extends Silences {
 
 /** Where an item chosen takes the person. */
 export interface Landing {
-  at: 'plex' | 'note' | 'document'
+  at: 'plex' | 'note' | 'document' | 'deck' | 'stencil'
   path: string
   /** What the note is called, for a tab that has not been opened before. */
   title: string
@@ -128,6 +133,8 @@ interface Stands {
   /** The stretch of the source's own text the item was found in. */
   start: number
   length: number
+  /** Which of three the note is, which is the editor it opens in. */
+  type: NoteType
   offers: readonly string[]
 }
 
@@ -266,6 +273,7 @@ export function finding(
             line: one.line,
             start: 0,
             length: 0,
+            type: one.type,
             offers: [NOTE, PLEX],
           },
         }
@@ -285,6 +293,7 @@ export function finding(
             line: -1,
             start: 0,
             length: 0,
+            type: one.type,
             offers: [PLEX, NOTE],
           },
         }
@@ -316,6 +325,7 @@ export function finding(
       line: one.isNote ? one.line : -1,
       start: one.start,
       length: one.length,
+      type: one.type,
       offers: one.isNote ? [NOTE, PLEX] : [DOCUMENT],
     },
   })
@@ -379,6 +389,10 @@ export function finding(
     if (action === DOCUMENT) {
       return { at: 'document', ...named, start: stands.start, length: stands.length }
     }
+    // A deck and a stencil open in the editor made for them, which draws cards
+    // and fields and stands on no line of prose.
+    if (stands.type === 'deck') return { at: 'deck', ...named }
+    if (stands.type === 'stencil') return { at: 'stencil', ...named }
     return stands.line >= 0
       ? { at: 'note', ...named, line: stands.line }
       : { at: 'note', ...named }

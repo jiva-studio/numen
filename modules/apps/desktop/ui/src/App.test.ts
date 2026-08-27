@@ -24,6 +24,7 @@ import {
   type WorkspaceLayout,
 } from '@numen/ui'
 import AgentTab from './agent/AgentTab.vue'
+import DeckTab from './cards/DeckTab.vue'
 import DocumentTab from './document/DocumentTab.vue'
 import FilesTab from './files/FilesTab.vue'
 import NoteTab from './note/NoteTab.vue'
@@ -38,7 +39,14 @@ const { said, held, asked, listed, folders } = vi.hoisted(() => ({
     ready: true,
     failed: '',
     opening: 'Root.md' as string | null,
-    names: [] as { path: string; title: string; heading: string; line: number; at: [] }[],
+    names: [] as {
+      path: string
+      title: string
+      heading: string
+      line: number
+      at: []
+      type: 'note' | 'deck' | 'stencil'
+    }[],
     /** Whether the list of vaults answers at all. */
     listable: true,
     /** What the settings refuse a choice, which is a size outside its bounds. */
@@ -59,6 +67,10 @@ const { said, held, asked, listed, folders } = vi.hoisted(() => ({
     removed: [] as string[],
     moved: [] as string[],
     folders: [] as string[],
+    /** The decks and the stencils the window wrote, in the order it wrote them. */
+    cut: [] as string[],
+    /** The cards each of those deck writes carried, by name. */
+    wrote: [] as string[],
     worn: [] as string[],
     /** How often an open editor was told to take its measurements again. */
     measured: 0,
@@ -97,6 +109,34 @@ vi.mock('./vault', () => ({
     shape: async () => ({ pages: 1, sheets: [{ wide: 100, high: 100 }] }),
     page: () => '',
     places: async () => [],
+  },
+  cards: {
+    // A card is named by the first field of the stencil it is cut by, so the
+    // window is told of one.
+    stencils: async () => ({
+      stencils: [{ path: 'Animal.md', title: 'Animal', fields: ['Name'] }],
+      held: 1,
+    }),
+    readDeck: async (path: string) => ({
+      deck: { path, title: path, preamble: '', cards: [], tail: '', problems: [] },
+      refusal: null,
+      at: 'a1',
+      bound: 0,
+    }),
+    writeDeck: async (path: string, deck: { cards: readonly { name: string }[] }) => {
+      asked.cut.push(`deck ${path}`)
+      asked.wrote.push(deck.cards.map((card) => card.name).join(', '))
+      return { refusal: null, changed: false, at: 'a2', bound: 0 }
+    },
+    readStencil: async (path: string) => ({
+      stencil: { path, title: path, fields: [], faces: [], problems: [] },
+      refusal: null,
+      at: 'a1',
+    }),
+    writeStencil: async (path: string) => {
+      asked.cut.push(`stencil ${path}`)
+      return { refusal: null, changed: false, at: 'a2' }
+    },
   },
   core: {
     vaults: async () => {
@@ -188,6 +228,16 @@ const settles = () => new Promise((done) => setTimeout(done, 0))
 /** Longer than the palette holds a keystroke before it asks the vault. */
 const HELD = 200
 
+/** One name the vault answers a search with, of a note of one of three kinds. */
+const nameSaid = (path: string, title: string, type: 'note' | 'deck' | 'stencil' = 'note') => ({
+  path,
+  title,
+  heading: '',
+  line: -1,
+  at: [] as [],
+  type,
+})
+
 /** Something drawn in a pane that answers what the window asks of it. */
 const answers = (name: string, drawn: Record<string, unknown>) =>
   defineComponent({
@@ -223,6 +273,8 @@ afterEach(() => {
   said.mode = 'system'
   said.sizes = { interfaceScale: 1, textScale: 1 }
   asked.made = []
+  asked.cut = []
+  asked.wrote = []
   asked.renamed = []
   asked.removed = []
   asked.moved = []
@@ -523,6 +575,47 @@ describe('the palette', () => {
     expect(bandsOf(window)).toStrictEqual([])
   })
 
+  /** A name the search turned up, chosen to be read. */
+  const reads = async (window: Awaited<ReturnType<typeof drawn>>, path: string) => {
+    pressed('k')
+    await settles()
+    window.findComponent(Palette).vm.$emit('update:modelValue', 'ani')
+    await new Promise((done) => setTimeout(done, HELD))
+    window.findComponent(Palette).vm.$emit('choose', path, 'note')
+    await settles()
+    await settles()
+  }
+
+  it('opens a deck it turned up in the editor of its cards', async () => {
+    said.names = [nameSaid('Animals.md', 'Animals', 'deck')]
+    const window = await drawn()
+
+    await reads(window, 'Animals.md')
+
+    expect(paneKinds(window).flat()).toContain('deck')
+    expect(window.findComponent(NoteTab).exists()).toBe(false)
+  })
+
+  it('opens a stencil it turned up in the editor of its fields and faces', async () => {
+    said.names = [nameSaid('Animal.md', 'Animal', 'stencil')]
+    const window = await drawn()
+
+    await reads(window, 'Animal.md')
+
+    expect(paneKinds(window).flat()).toContain('stencil')
+    expect(window.findComponent(NoteTab).exists()).toBe(false)
+  })
+
+  it('opens an ordinary note the same search turned up in a note tab', async () => {
+    said.names = [nameSaid('Animals.md', 'Animals')]
+    const window = await drawn()
+
+    await reads(window, 'Animals.md')
+
+    expect(paneKinds(window).flat()).not.toContain('deck')
+    expect(window.findComponent(NoteTab).exists()).toBe(true)
+  })
+
   it('turns from the search to the commands on the character that means them', async () => {
     const window = await drawn()
     pressed('k')
@@ -548,7 +641,7 @@ describe('the palette', () => {
       ?.id ?? ''
 
   it('is over the plex in the tab in front, not the plex last put in front', async () => {
-    said.names = [{ path: 'physics/Entropy.md', title: 'Entropy', heading: '', line: -1, at: [] }]
+    said.names = [nameSaid('physics/Entropy.md', 'Entropy')]
     const window = await drawn()
 
     // A second plex, standing on a note of its own, put in front last.
@@ -652,8 +745,38 @@ describe('a command reached by its own keystroke', () => {
     expect(asked.made).toStrictEqual(['Entropy'])
   })
 
+  it('makes a deck under the name typed, and opens it in the editor of its cards', async () => {
+    const window = await drawnWithPalette()
+
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
+    await settles()
+    await type('New deck')
+    await press('Enter')
+    await type('Animals')
+    await press('Enter')
+    await settles()
+
+    expect(asked.cut).toStrictEqual(['deck Animals.md'])
+    expect(paneKinds(window).flat()).toContain('deck')
+  })
+
+  it('makes a stencil the same way, and opens no deck', async () => {
+    const window = await drawnWithPalette()
+
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
+    await settles()
+    await type('New stencil')
+    await press('Enter')
+    await type('Animal')
+    await press('Enter')
+    await settles()
+
+    expect(asked.cut).toStrictEqual(['stencil Animal.md'])
+    expect(paneKinds(window).flat()).not.toContain('deck')
+  })
+
   it('opens the step that picks a note, on the keystroke going to one draws', async () => {
-    said.names = [{ path: 'physics/Entropy.md', title: 'Entropy', heading: '', line: -1, at: [] }]
+    said.names = [nameSaid('physics/Entropy.md', 'Entropy')]
     const window = await drawnWithPalette()
 
     const event = pressed('g')
@@ -664,7 +787,7 @@ describe('a command reached by its own keystroke', () => {
   })
 
   it('travels to the note picked on that step', async () => {
-    said.names = [{ path: 'physics/Entropy.md', title: 'Entropy', heading: '', line: -1, at: [] }]
+    said.names = [nameSaid('physics/Entropy.md', 'Entropy')]
     const window = await drawnWithPalette()
 
     pressed('g')
@@ -922,6 +1045,76 @@ describe('the keyboard on the command that removes a note', () => {
 
     expect(document.body.textContent).not.toContain('Keep the note')
     expect(window.findComponent(Palette).props('open')).toBe(false)
+  })
+})
+
+/** A deck and a stencil answer a removal the way a note does. */
+describe('a file the window has open in an editor of cards, removed from the tree', () => {
+  const field = () => document.body.querySelector<HTMLInputElement>('.palette__field')
+
+  const press = async (key: string) => {
+    field()?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }))
+    await settles()
+  }
+
+  const type = async (text: string) => {
+    const into = field()
+    if (!into) return
+    into.value = text
+    into.dispatchEvent(new Event('input'))
+    await settles()
+  }
+
+  /** The window with one deck or one stencil made and put in front. */
+  const holding = async (command: string, name: string) => {
+    const window = await drawnWithPalette()
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
+    await settles()
+    await type(command)
+    await press('Enter')
+    await type(name)
+    await press('Enter')
+    await settles()
+    return window
+  }
+
+  /** A row taken out of the vault, as the tree asks for it. */
+  const removes = async (window: VueWrapper, path: string) => {
+    window.findComponent(Tree).vm.$emit('remove', [path])
+    await settles()
+    await settles()
+  }
+
+  it('lets go of the tab holding a deck', async () => {
+    const window = await holding('New deck', 'Animals')
+    expect(paneKinds(window).flat()).toContain('deck')
+
+    await removes(window, 'Animals.md')
+
+    expect(asked.removed).toStrictEqual(['Animals.md false'])
+    expect(paneKinds(window).flat()).not.toContain('deck')
+  })
+
+  it('lets go of the tab holding a stencil', async () => {
+    const window = await holding('New stencil', 'Animal')
+    expect(paneKinds(window).flat()).toContain('stencil')
+
+    await removes(window, 'Animal.md')
+
+    expect(asked.removed).toStrictEqual(['Animal.md false'])
+    expect(paneKinds(window).flat()).not.toContain('stencil')
+  })
+
+  it('writes the card nobody had saved before the file goes', async () => {
+    const window = await holding('New deck', 'Animals')
+    const held = window.findComponent(DeckTab).props('held') as {
+      adds(name: string, stencil: string, values: readonly { field: string; text: string }[]): void
+    }
+
+    held.adds('Vicuña', 'Animal', [])
+    await removes(window, 'Animals.md')
+
+    expect(asked.wrote).toStrictEqual(['', 'Vicuña'])
   })
 })
 

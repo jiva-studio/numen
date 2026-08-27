@@ -1,0 +1,138 @@
+<script setup lang="ts">
+/**
+ * A deck tab: the cards as a grid, and the questions the file puts.
+ *
+ * The grid takes cards and hands identities back. What is wrong with a card
+ * stands on the tile that card is drawn as, so a card with no name and two
+ * cards of one name are each marked where they were read from.
+ */
+import { computed } from 'vue'
+import { Deck as DeckView } from '@numen/ui'
+import type { CardLanding, Filled } from '@numen/ui'
+import type { Held } from './deck'
+import { standingIn } from './model'
+import { WORDS as words } from './words'
+
+const props = defineProps<{ held: Held }>()
+
+const drawn = computed(() => props.held.drawn())
+const marks = computed(() => props.held.marks())
+
+/** What is wrong with one card, and nothing where nothing is. */
+const wrongWith = (card: string): readonly string[] => marks.value.at.get(card) ?? []
+
+/** The cards a mark stands on, so a tile with nothing wrong is drawn nothing. */
+const marked = computed(() => drawn.value.filter((card) => wrongWith(card.id).length > 0))
+</script>
+
+<template>
+  <div class="deck-tab">
+    <p v-if="props.held.saying()" role="alert" class="warning">{{ props.held.saying() }}</p>
+
+    <p v-if="props.held.shown().state === 'gone'" role="status" class="warning answering">
+      {{ words.gone }}
+      <button type="button" class="answering__answer" @click="props.held.keep()">
+        {{ words.makeAgain }}
+      </button>
+    </p>
+    <p v-if="props.held.shown().state === 'overtaken'" role="status" class="warning answering">
+      {{ words.overtaken }}
+      <button type="button" class="answering__answer" @click="props.held.keep()">
+        {{ words.keep }}
+      </button>
+      <button type="button" class="answering__answer" @click="props.held.take()">
+        {{ words.take }}
+      </button>
+    </p>
+
+    <ul v-if="marks.whole.length" class="warning wrong" :aria-label="words.problems">
+      <li v-for="(text, at) in marks.whole" :key="at">{{ text }}</li>
+    </ul>
+
+    <DeckView
+      class="deck-tab__grid"
+      :cards="drawn"
+      :cuts="props.held.cuts()"
+      :name="words.deck"
+      @add="
+        (name: string, stencil: string, filled: readonly Filled[]) =>
+          props.held.adds(name, stencil, filled)
+      "
+      @remove="(id: string) => props.held.removes(id)"
+      @move="(id: string, at: CardLanding) => props.held.moves(id, at)"
+      @write="(id: string, field: string, text: string) => props.held.writes(id, field, text)"
+    />
+
+    <!-- A mark stands inside the tile it is about, which the grid draws under
+         the identity the card carries. -->
+    <Teleport v-for="card in marked" :key="card.id" defer :to="standingIn('data-card', card.id)">
+      <ul class="wrong wrong--tile" :aria-label="words.wrong" data-wrong>
+        <li v-for="(text, at) in wrongWith(card.id)" :key="at">{{ text }}</li>
+      </ul>
+    </Teleport>
+  </div>
+</template>
+
+<style scoped>
+/* The grid takes what the bands above it leave, and scrolls inside itself. */
+.deck-tab {
+  display: flex;
+  flex-direction: column;
+  block-size: 100%;
+  min-block-size: 0;
+}
+
+.deck-tab__grid {
+  flex: 1;
+  min-block-size: 0;
+}
+
+/* A warning carries a filesystem path, and a long one breaks where it stands. */
+.warning {
+  margin: 0;
+  padding: 0.4rem 1rem;
+  font-family: var(--numen-font-sans);
+  font-size: calc(var(--numen-font-size) * 12.8 / 13);
+  background: var(--numen-caution-bg);
+  color: var(--numen-caution-fg);
+  overflow-wrap: break-word;
+}
+
+/* The question the file holds: the two answers on the line the sentence is on. */
+.answering {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.9rem;
+}
+
+.answering__answer {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+}
+
+.answering__answer:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 2px;
+}
+
+.wrong {
+  margin: 0;
+  padding-inline-start: 1.1rem;
+  list-style: disc;
+}
+
+/* The mark stands inside a tile, in the alarm the tile draws its own in. */
+.wrong--tile {
+  padding-block: 0;
+  color: var(--numen-alarm);
+  font-size: calc(var(--numen-font-size) * 12 / 13);
+  overflow-wrap: anywhere;
+}
+</style>

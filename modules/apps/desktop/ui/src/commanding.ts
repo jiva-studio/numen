@@ -202,6 +202,9 @@ export interface Words extends Silences {
   /** The note in front, shown where the vault files it. */
   readonly reveal: string
   readonly newNote: string
+  /** The two files a card is written in: the deck it is one of, and what cuts it. */
+  readonly newDeck: string
+  readonly newStencil: string
   readonly newPlex: string
   /** The folders and files of the vault, put in front of the person. */
   readonly files: string
@@ -370,6 +373,20 @@ export const commandsOf = (
     id: 'note',
     text: words.newNote,
     ...keysOf('note', agent),
+    band: 'window',
+    needs: 'naming',
+    where: (at) => at.ready,
+  },
+  {
+    id: 'deck',
+    text: words.newDeck,
+    band: 'window',
+    needs: 'naming',
+    where: (at) => at.ready,
+  },
+  {
+    id: 'stencil',
+    text: words.newStencil,
     band: 'window',
     needs: 'naming',
     where: (at) => at.ready,

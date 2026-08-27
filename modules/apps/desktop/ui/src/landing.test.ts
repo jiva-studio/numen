@@ -15,13 +15,16 @@ const window = () => {
   const opened: string[] = []
   const shown: string[] = []
   const entered: string[] = []
+  const cut: string[] = []
   const places: Places = {
     travel: async (path) => void travelled.push(path),
     opensAt: async (path, run) => void opened.push(`${path} ${run.start} ${run.length}`),
     shows: (path, title) => void shown.push(`${path} ${title}`),
+    deck: (path, title) => void cut.push(`deck ${path} ${title}`),
+    stencil: (path, title) => void cut.push(`stencil ${path} ${title}`),
     entersAt: (path, line) => void entered.push(`${path} ${line}`),
   }
-  return { places, travelled, opened, shown, entered }
+  return { places, travelled, opened, shown, entered, cut }
 }
 
 const landing = (over: Partial<Landing>): Landing => ({
@@ -39,6 +42,33 @@ describe('a name chosen', () => {
 
     expect(one.travelled).toStrictEqual(['Note.md'])
     expect(one.shown).toStrictEqual([])
+  })
+})
+
+describe('a deck or a stencil chosen', () => {
+  it('opens in the editor made for it, and in no text editor', async () => {
+    const one = window()
+
+    await lands(landing({ at: 'deck', path: 'Animals.md', title: 'Animals' }), one.places)
+
+    expect(one.cut).toStrictEqual(['deck Animals.md Animals'])
+    expect(one.shown).toStrictEqual([])
+  })
+
+  it('opens the stencil in the editor of its fields and faces', async () => {
+    const one = window()
+
+    await lands(landing({ at: 'stencil', path: 'Animal.md', title: 'Animal' }), one.places)
+
+    expect(one.cut).toStrictEqual(['stencil Animal.md Animal'])
+  })
+
+  it('is called by the path it is filed at where it has no name', async () => {
+    const one = window()
+
+    await lands(landing({ at: 'deck', path: 'Animals.md', title: '' }), one.places)
+
+    expect(one.cut).toStrictEqual(['deck Animals.md Animals.md'])
   })
 })
 

@@ -79,6 +79,7 @@ const named = (over: Partial<Named> = {}): Named => ({
   heading: '',
   line: -1,
   at: [{ from: 0, to: 3 }],
+  type: 'note',
   ...over,
 })
 
@@ -91,6 +92,7 @@ const passage = (over: Partial<Passage> = {}): Passage => ({
   length: 0,
   line: 0,
   at: [{ from: 3, to: 9 }],
+  type: 'note',
   ...over,
 })
 

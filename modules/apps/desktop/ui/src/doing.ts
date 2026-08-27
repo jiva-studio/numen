@@ -12,7 +12,10 @@ import type { Made } from './note/creating'
 import type { Says } from './telling'
 import { AGENT, FILES, NOTE, PLEX } from './workspace'
 
-/** The notes the window has open, as a command reaches them. */
+/**
+ * The files the window has an editor open on, as a command reaches them. A
+ * note, a deck and a stencil each answer here.
+ */
 export interface Notes {
   /** The identity of the tab standing at a file, and nothing where none does. */
   holding(path: string): string | null
@@ -26,6 +29,52 @@ export interface Notes {
   shuts(id: string): void
   /** A note put in front of the person, in a tab of its own or one beside it. */
   shows(path: string, title: string, showing: 'here' | 'beside'): void
+}
+
+/**
+ * One store of open files, as a command reaches what it holds. The notes, the
+ * decks and the stencils each keep one.
+ */
+export interface Store {
+  /** Whether this store holds a file open under that identity. */
+  has(id: string): boolean
+  /** The file one of them stands at now, under the identity it opened under. */
+  where(id: string): string
+  /** What it is called, under the identity it opened under. */
+  called(id: string): string
+  /** Whether it owes the person an answer about what its file now holds. */
+  asking(id: string): boolean
+  /** Answers once nothing of it is on its way to the file. */
+  settles(id: string): Promise<void>
+  /** The tab holding it lets go of it. */
+  shuts(id: string): void
+  /** The identity of the tab standing at a file, and nothing where none does. */
+  holding(path: string): string | null
+}
+
+/**
+ * The open files a command reaches, over every store the window keeps them in.
+ * An identity is answered by the store holding it, and one nobody holds by
+ * nothing at all.
+ */
+export const reaching = (stores: readonly Store[], shows: Notes['shows']): Notes => {
+  const holder = (id: string): Store | undefined => stores.find((one) => one.has(id))
+  return {
+    holding: (path) => {
+      for (const one of stores) {
+        const held = one.holding(path)
+        if (held !== null) return held
+      }
+      return null
+    },
+    where: (id) => holder(id)?.where(id) ?? id,
+    asking: (id) => holder(id)?.asking(id) ?? false,
+    settles: async (id) => {
+      await holder(id)?.settles(id)
+    },
+    shuts: (id) => holder(id)?.shuts(id),
+    shows,
+  }
 }
 
 /** What the window offers a command being carried out. */
@@ -43,6 +92,13 @@ export interface Doing {
   moves(from: string, to: string): Promise<Movement>
   /** An empty folder. The folders above it are made with it. */
   makesFolder(path: string): Promise<Refused | null>
+  /**
+   * A deck made in a folder under the name it is given, and put in front of the
+   * person. The path it landed at, and nothing where none was made.
+   */
+  cuts(folder: string, name: string): Promise<string>
+  /** A stencil made the same way. */
+  stencils(folder: string, name: string): Promise<string>
   /** The files of the vault put in front of the person, opened down to a path. */
   reveals(path: string): void
   readonly notes: Notes
@@ -131,6 +187,12 @@ const carried: Record<string, Carries> = {
   parent: (deed, on, words) => makes(deed, 'parent', on, words),
   jump: (deed, on, words) => makes(deed, 'jump', on, words),
   note: (deed, on, words) => makes(deed, null, on, words),
+  deck: async (deed, on) => {
+    if (deed.name) await on.cuts('', named(deed.name))
+  },
+  stencil: async (deed, on) => {
+    if (deed.name) await on.stencils('', named(deed.name))
+  },
   title: (deed, on, words) => renames(deed, on, words),
   remove: (deed, on, words) => removes(deed, false, on, words),
   destroy: (deed, on, words) => removes(deed, true, on, words),
@@ -329,6 +391,9 @@ const forgets = async (deed: Deed, erase: boolean, on: Doing, words: Words): Pro
   const refusal = erase ? await on.vaults.erase(id) : await on.vaults.forget(id)
   if (refusal) on.says(words.unvaulted[refusal], 'refusal')
 }
+
+/** The file a name typed for a deck or a stencil is written in. */
+const named = (name: string): string => (name.endsWith('.md') ? name : `${name}.md`)
 
 /** A note travelled to, and a vault with none to travel to said. */
 const travels = async (path: string, on: Doing, words: Words): Promise<void> => {

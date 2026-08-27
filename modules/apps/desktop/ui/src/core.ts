@@ -54,6 +54,12 @@ export interface Heading {
  */
 export type Source = 'note' | 'book' | 'other'
 
+/**
+ * Which of three a note is, as the `type` key of its frontmatter says. It says
+ * nothing about a file that is not a note.
+ */
+export type NoteType = 'note' | 'deck' | 'stencil'
+
 /** One file or folder, as a listing of the folder it sits in reports it. */
 export interface Entry {
   /** What the vault calls it, relative to the root, with forward slashes. */
@@ -62,6 +68,7 @@ export interface Entry {
   readonly name: string
   readonly folder: boolean
   readonly kind: Source
+  readonly type: NoteType
 }
 
 /** What moving a file or a folder came back with. */
@@ -243,6 +250,9 @@ export type Refused =
   | 'unreadable'
   | 'occupied'
   | 'unnameable'
+  | 'notAStencil'
+  | 'notADeck'
+  | 'deckTooLarge'
 
 /** A note to make: what it is called, where it goes, and what it arrives joined to. */
 export interface NewNote {
@@ -312,6 +322,163 @@ export interface Removed {
   /** The notes whose links pointed at it and now reach nothing. */
   dangling: readonly string[]
   refusal: Refused | null
+}
+
+/** One stencil as the list of them names it. */
+export interface Offer {
+  readonly path: string
+  readonly title: string
+  /** The names of the fields, in the order a person is asked for them. */
+  readonly fields: readonly string[]
+}
+
+/**
+ * What is wrong with a stencil or a deck. The list is closed: a mark is drawn
+ * by what is wrong with the card or the face it stands against.
+ */
+export type Fault =
+  | 'fieldDeclaredTwice'
+  | 'stencilWithoutFields'
+  | 'faceMissingASide'
+  | 'placeholderUndeclared'
+  | 'cardWithoutAStencil'
+  | 'stencilIsNotOne'
+  | 'cardWithoutAName'
+  | 'cardNamedTwice'
+  | 'fieldWrittenTwice'
+  | 'fieldNotRenamed'
+  | 'firstFieldWrittenTwice'
+  | 'unknown'
+
+/**
+ * Something in a file that could not be acted on and was not guessed at. The
+ * file is read either way, and where it stands is what the mark is drawn on.
+ */
+export interface Problem {
+  readonly fault: Fault
+  /** The card it stands against, counted from the first, or nothing. */
+  readonly card: number | null
+  /** The face it stands against, counted from the first, or nothing. */
+  readonly face: number | null
+  /** The field's name, as the file spells it. Empty for a problem against no field. */
+  readonly field: string
+  /** What is wrong, in the words to show. */
+  readonly text: string
+}
+
+/** What a person wrote under one of a card's fields. */
+export interface Value {
+  readonly field: string
+  readonly text: string
+}
+
+/** One card as the vault reads it. */
+export interface Carded {
+  /** The heading it stands under, which is what it is called. */
+  readonly name: string
+  /** The stencil it is cut by, as the wikilink beneath its heading names it. */
+  readonly stencil: string
+  /**
+   * Where that stencil is filed, as the wikilink resolves in the vault. Empty
+   * for a card naming none and for a name that reaches no note.
+   */
+  readonly stencilAt: string
+  /** The prose between that wikilink and the first field. */
+  readonly lead: string
+  readonly values: readonly Value[]
+}
+
+/** A deck as the vault reads it. */
+export interface Decked {
+  readonly path: string
+  readonly title: string
+  /** The prose below the frontmatter and above the first card. */
+  readonly preamble: string
+  readonly cards: readonly Carded[]
+  /** What the file ends with once the last value has been read. */
+  readonly tail: string
+  readonly problems: readonly Problem[]
+}
+
+/** One way a stencil shows a card. */
+export interface Faced {
+  readonly name: string
+  readonly front: string
+  readonly back: string
+}
+
+/** A stencil as the vault reads it. */
+export interface Stencilled {
+  readonly path: string
+  readonly title: string
+  readonly fields: readonly string[]
+  readonly faces: readonly Faced[]
+  readonly problems: readonly Problem[]
+}
+
+/** What reading a deck came back with. */
+export interface DeckRead {
+  /** Null when the deck was refused. */
+  readonly deck: Decked | null
+  readonly refusal: Refused | null
+  /** The file it came out of, to present at the next write. */
+  readonly at: string
+  /** The size a deck is read up to, in bytes. */
+  readonly bound: number
+}
+
+/** What writing a deck came back with. */
+export interface DeckWritten {
+  readonly refusal: Refused | null
+  /** The file is no longer the one this caller read, and nothing was written. */
+  readonly changed: boolean
+  readonly at: string
+  readonly bound: number
+}
+
+/** What reading a stencil came back with. */
+export interface StencilRead {
+  /** Null when the stencil was refused. */
+  readonly stencil: Stencilled | null
+  readonly refusal: Refused | null
+  readonly at: string
+}
+
+/** What writing a stencil came back with. */
+export interface StencilWritten {
+  readonly refusal: Refused | null
+  readonly changed: boolean
+  readonly at: string
+}
+
+/**
+ * The stencils and the decks of the vault this window is showing.
+ *
+ * Nothing here is laid out: a face travels as the markdown it was written as,
+ * and putting a card's values into it is the window's.
+ */
+export interface Cards {
+  /** Every stencil in the vault, by what it is called and what it asks for. */
+  stencils(limit?: number): Promise<{ stencils: readonly Offer[]; held: number }>
+  readDeck(path: string): Promise<DeckRead>
+  /**
+   * Cards into a deck, in the order they are given, making the file where
+   * there is none. Seen is what a read gave this caller, and a file that moved
+   * past it comes back changed with nothing written.
+   */
+  writeDeck(
+    path: string,
+    deck: { preamble: string; cards: readonly Carded[]; tail: string },
+    seen: string | null,
+  ): Promise<DeckWritten>
+  readStencil(path: string): Promise<StencilRead>
+  /** Fields and faces into a stencil, making the file where there is none. */
+  writeStencil(
+    path: string,
+    fields: readonly string[],
+    faces: readonly Faced[],
+    seen: string | null,
+  ): Promise<StencilWritten>
 }
 
 /** One vault the installation holds, as the list has it. */

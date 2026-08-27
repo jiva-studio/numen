@@ -8,6 +8,7 @@
 import { commandKeyChord, keyChord } from '@numen/ui'
 import type { Refused, VaultRefused } from './core'
 import { WORDS as agent } from './agent/words'
+import { WORDS as cards } from './cards/words'
 import { WORDS as note } from './note/words'
 import { WORDS as plex } from './plex/words'
 
@@ -21,6 +22,9 @@ export const REFUSED: Record<Refused, string> = {
   unreadable: 'the frontmatter of that note cannot be read',
   occupied: 'a note of that name is filed there, so the note was renamed and its file was not',
   unnameable: 'a note cannot be called that',
+  notAStencil: 'that note is not a stencil',
+  notADeck: 'that note is not a deck',
+  deckTooLarge: 'that deck is longer than this reads',
 }
 
 /** What the list of vaults refused a command, in words a person reads. */
@@ -71,6 +75,8 @@ export const WORDS = {
   copy: 'Copy path',
   reveal: 'Show this note in the files',
   newNote: note.newNote,
+  newDeck: cards.newDeck,
+  newStencil: cards.newStencil,
   newPlex: plex.newPlex,
   newAgent: agent.newAgent,
   files: 'Show the files of the vault',

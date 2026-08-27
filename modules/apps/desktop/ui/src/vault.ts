@@ -7,8 +7,11 @@
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
 import {
+  CardsService,
   Counting,
+  Fault as Faults,
   Naming,
+  NoteType as NoteTypes,
   Owed,
   Refusal,
   Role as Roles,
@@ -19,9 +22,13 @@ import {
   Way as Ways,
 } from '@numen/protocol'
 import type {
+  Card as CardMessage,
+  Deck as DeckMessage,
   Entry as EntryMessage,
   Known as KnownMessage,
   Moved as MovedMessage,
+  Problem as ProblemMessage,
+  Stencil as StencilMessage,
 } from '@numen/protocol'
 import type { Asking as Commanding } from './commanding'
 import type { Asking, Way } from './finding'
@@ -29,19 +36,28 @@ import type { Documents, Marked, Sheet } from './document/reading'
 import type {
   Added,
   Answered,
+  Cards,
+  Carded,
   Core,
+  Decked,
   Entry,
+  Faced,
+  Fault,
   Hanging,
   Known,
   Made,
   Moved,
   Movement,
   NewLink,
+  NoteType,
+  Offer,
+  Problem,
   Refused,
   Removed,
   Renamed,
   Role,
   Source,
+  Stencilled,
   VaultRefused,
   Vaults,
 } from './core'
@@ -51,6 +67,8 @@ const transport = createConnectTransport({ baseUrl: window.location.origin })
 export const vault = createClient(VaultService, transport)
 
 const listing = createClient(VaultsService, transport)
+
+const cutting = createClient(CardsService, transport)
 
 /** The vaults this installation holds, in the shape the window asks about them. */
 export const vaults: Vaults = {
@@ -67,6 +85,59 @@ export const vaults: Vaults = {
   forget: async (id) => turnedDown(await listing.forget({ id })),
   erase: async (id) => turnedDown(await listing.erase({ id })),
   open: async (id) => turnedDown(await listing.open({ id })),
+}
+
+/** The stencils and the decks of that vault, in the shape the window asks about them. */
+export const cards: Cards = {
+  stencils: async (limit) => {
+    const answer = await cutting.stencils({ limit: limit ?? 0 })
+    return { stencils: answer.stencils.map(offered), held: answer.held }
+  },
+  readDeck: async (path) => {
+    const answer = await cutting.readDeck({ path })
+    return {
+      deck: answer.deck ? decked(answer.deck) : null,
+      refusal: refusalIn(answer),
+      at: stamp(answer.at) ?? '',
+      bound: Number(answer.bound),
+    }
+  },
+  writeDeck: async (path, deck, seen) => {
+    const answer = await cutting.writeDeck({
+      path,
+      preamble: deck.preamble,
+      cards: deck.cards.map(carding),
+      tail: deck.tail,
+      ...(seen === null ? {} : { seen: fingerprint(seen) }),
+    })
+    return {
+      refusal: refusalIn(answer),
+      changed: answer.changed,
+      at: stamp(answer.at) ?? '',
+      bound: Number(answer.bound),
+    }
+  },
+  readStencil: async (path) => {
+    const answer = await cutting.readStencil({ path })
+    return {
+      stencil: answer.stencil ? stencilled(answer.stencil) : null,
+      refusal: refusalIn(answer),
+      at: stamp(answer.at) ?? '',
+    }
+  },
+  writeStencil: async (path, fields, faces, seen) => {
+    const answer = await cutting.writeStencil({
+      path,
+      fields: [...fields],
+      faces: faces.map((face) => ({ name: face.name, front: face.front, back: face.back })),
+      ...(seen === null ? {} : { seen: fingerprint(seen) }),
+    })
+    return {
+      refusal: refusalIn(answer),
+      changed: answer.changed,
+      at: stamp(answer.at) ?? '',
+    }
+  },
 }
 
 /** The same questions, in the shape the window asks them. */
@@ -184,6 +255,7 @@ export const core: Core & Asking & Commanding = {
       // A name with no heading stands on no line of the prose.
       line: one.heading?.line ?? -1,
       at: one.at.map(run),
+      type: typed[one.type],
     }))
   },
   /** The text the vault holds that answers what is typed, asked one way. */
@@ -200,6 +272,7 @@ export const core: Core & Asking & Commanding = {
       length: one.length,
       line: one.line,
       at: one.at.map(run),
+      type: typed[one.type],
     }))
   },
 }
@@ -289,13 +362,15 @@ const stamp = (at?: { path: string; size: bigint; mtime: bigint }): string | und
   at && `${at.size} ${at.mtime} ${at.path}`
 
 /** The two numbers first: a path holds spaces, and everything after them is it. */
-const seenOf = (seen: { prose: string; at: string }) => {
-  const [size = '0', mtime = '0', ...rest] = seen.at.split(' ')
-  return {
-    prose: seen.prose,
-    at: { path: rest.join(' '), size: BigInt(size), mtime: BigInt(mtime) },
-  }
+const fingerprint = (at: string) => {
+  const [size = '0', mtime = '0', ...rest] = at.split(' ')
+  return { path: rest.join(' '), size: BigInt(size), mtime: BigInt(mtime) }
 }
+
+const seenOf = (seen: { prose: string; at: string }) => ({
+  prose: seen.prose,
+  at: fingerprint(seen.at),
+})
 
 const answered = (from: {
   body?: string | undefined
@@ -321,6 +396,7 @@ const listed = (one: EntryMessage): Entry => ({
   name: one.name,
   folder: one.folder,
   kind: holding[one.kind],
+  type: typed[one.type],
 })
 
 /** What the vault holds at a path, in the words the window uses. */
@@ -328,6 +404,80 @@ const holding: Record<SourceKind, Source> = {
   [SourceKind.UNSPECIFIED]: 'other',
   [SourceKind.NOTE]: 'note',
   [SourceKind.BOOK]: 'book',
+}
+
+/** Which of three a note is, in the words the window uses. */
+const typed: Record<NoteTypes, NoteType> = {
+  [NoteTypes.UNSPECIFIED]: 'note',
+  [NoteTypes.DECK]: 'deck',
+  [NoteTypes.STENCIL]: 'stencil',
+}
+
+/** One stencil of the list, kept as the plain value the window carries it as. */
+const offered = (one: { path: string; title: string; fields: string[] }): Offer => ({
+  path: one.path,
+  title: one.title,
+  fields: one.fields,
+})
+
+/** A deck as the window carries it. */
+const decked = (one: DeckMessage): Decked => ({
+  path: one.path,
+  title: one.title,
+  preamble: one.preamble,
+  cards: one.cards.map(carded),
+  tail: one.tail,
+  problems: one.problems.map(problem),
+})
+
+/** A stencil as the window carries it. */
+const stencilled = (one: StencilMessage): Stencilled => ({
+  path: one.path,
+  title: one.title,
+  fields: one.fields,
+  faces: one.faces.map((face): Faced => ({ name: face.name, front: face.front, back: face.back })),
+  problems: one.problems.map(problem),
+})
+
+const carded = (one: CardMessage): Carded => ({
+  name: one.name,
+  stencil: one.stencil,
+  stencilAt: one.stencilAt,
+  lead: one.lead,
+  values: one.values.map((value) => ({ field: value.field, text: value.text })),
+})
+
+/** One card in the shape the schema carries it. */
+const carding = (one: Carded) => ({
+  name: one.name,
+  stencil: one.stencil,
+  lead: one.lead,
+  values: one.values.map((value) => ({ field: value.field, text: value.text })),
+})
+
+/** One problem, with where it stands kept as a number or as nothing. */
+const problem = (one: ProblemMessage): Problem => ({
+  fault: faulted[one.fault],
+  card: one.card ?? null,
+  face: one.face ?? null,
+  field: one.field,
+  text: one.text,
+})
+
+/** What a problem is, in the words the window uses. */
+const faulted: Record<Faults, Fault> = {
+  [Faults.UNSPECIFIED]: 'unknown',
+  [Faults.FIELD_DECLARED_TWICE]: 'fieldDeclaredTwice',
+  [Faults.STENCIL_WITHOUT_FIELDS]: 'stencilWithoutFields',
+  [Faults.FACE_MISSING_A_SIDE]: 'faceMissingASide',
+  [Faults.PLACEHOLDER_UNDECLARED]: 'placeholderUndeclared',
+  [Faults.CARD_WITHOUT_A_STENCIL]: 'cardWithoutAStencil',
+  [Faults.STENCIL_IS_NOT_ONE]: 'stencilIsNotOne',
+  [Faults.CARD_WITHOUT_A_NAME]: 'cardWithoutAName',
+  [Faults.CARD_NAMED_TWICE]: 'cardNamedTwice',
+  [Faults.FIELD_WRITTEN_TWICE]: 'fieldWrittenTwice',
+  [Faults.FIELD_NOT_RENAMED]: 'fieldNotRenamed',
+  [Faults.FIRST_FIELD_WRITTEN_TWICE]: 'firstFieldWrittenTwice',
 }
 
 /** One vault of the list, kept as the plain value the window carries it as. */
@@ -372,6 +522,9 @@ const refused: Record<Refusal, Refused> = {
   [Refusal.UNREADABLE]: 'unreadable',
   [Refusal.OCCUPIED]: 'occupied',
   [Refusal.UNNAMEABLE]: 'unnameable',
+  [Refusal.NOT_A_STENCIL]: 'notAStencil',
+  [Refusal.NOT_A_DECK]: 'notADeck',
+  [Refusal.DECK_TOO_LARGE]: 'deckTooLarge',
 }
 
 /** What the file did, in the shape the window carries it. */
