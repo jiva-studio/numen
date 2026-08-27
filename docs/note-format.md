@@ -41,6 +41,8 @@ The frontmatter is shared, not owned:
 | `title` | The name a note is shown by. Written when a note that already has a non-empty one is renamed, and when a title no filename can carry whole is given to one that has none. | ADR-0008 |
 | `id` | The identity of the note, a ULID. Written when the application creates a note or changes what is in it, never backfilled and never written by a person typing in it. A note that was moved carries the identifier it carried before. | ADR-0008, ADR-0007 |
 | `links` | Links that carry a role, and optionally a type, a label and a note. | [Links](links.md) |
+| `type` | Which of three this note is: `note`, `deck` or `stencil`. A note carrying none is a `note`. | ADR-0027 |
+| `fields` | The fields a card cut by this stencil has, in the order they are asked for. Read on a stencil and nowhere else. | ADR-0027 |
 
 A note with no `title` is named by its filename. A heading in the prose names nothing: what a person writes in the body is the body, and typing one does not rename the note.
 
@@ -56,6 +58,7 @@ The complete permitted set, from ADR-0008. Everything must survive a third-party
 | --- | --- | --- |
 | YAML frontmatter | top of file | allowed; key set not yet fixed |
 | `[[wikilink]]` | body | a link with the role `ref`, resolved by name ([Links](links.md)) |
+| `{{Field}}` | the body of a stencil | where a card's value goes on a face ([Cards](cards.md)) |
 
 Nothing else is permitted: no custom fences, no HTML comments carrying data, no sidecar files, no private extension.
 

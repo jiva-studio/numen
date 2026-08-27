@@ -18,11 +18,17 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | link | One relationship, as written in a file — [Links](links.md). | connection |
 | role | What kind of relationship a link is, from a closed list of five — [Links](links.md). | seat |
 | type | What a link is for, as a feature reads it. Open vocabulary — [Links](links.md). | |
+| type (of a note) | Which of three a note is: `note`, `deck` or `stencil`. Closed list, and absent means `note` — [Cards](cards.md). The word is spent twice: a link's `type` is what that link is for, and a note's `type` is what the file is. | |
 | label | The few words a person writes for what a relationship is called — [Links](links.md). | title |
 | note (on a link) | Why the link exists, in the person's words. The word is spent twice on purpose: a note is a file, and a link's `note` is why the link is there. | |
 | address | Scheme and value; the only thing that says where a link goes — [Links](links.md). | |
 | identifier | The ULID a note or a vault carries in the world — [Note format](note-format.md). The number a row has inside the index is not one and does not leave the storage. | |
 | stretch | A run of a source's text by where it stands: `Start` and `Length`, in bytes over the text the source is read as. A client counts the same run as a span. | |
+| stencil | A note declaring the fields a card has and the faces it is shown by — [Cards](cards.md). | note type, model, template |
+| field | One named slot of a stencil, and the heading a card writes its value under. | |
+| face | One way a stencil shows a card: a front and a back, written with `{{Field}}` where a value goes. A stencil has as many as the person writes. | template, side |
+| card | One filled-in set of a stencil's fields: a second-level heading in a deck, and the values under it. | |
+| deck | A note whose body is cards — [Cards](cards.md). | collection |
 
 ## What the application keeps
 

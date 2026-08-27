@@ -54,6 +54,10 @@ The numbers are identity, not order. This list is the order.
 - [ADR-0019 — A note is identified by a ULID in its frontmatter](0019-a-note-is-identified-by-a-ulid.md)
 - [ADR-0020 — One process, one lifetime](0020-one-process-one-lifetime.md)
 
+### Cards
+
+- [ADR-0027 — The stencil and the deck](0027-the-stencil-and-the-deck.md)
+
 ### Agents
 
 - [ADR-0021 — An agent reaches the vault through tools](0021-an-agent-reaches-the-vault-through-tools.md)
@@ -71,6 +75,7 @@ What the product does, and what its words mean.
 - [glossary.md](../glossary.md) — the ubiquitous language, term by term
 - [note-format.md](../note-format.md) — the note file, key by key
 - [links.md](../links.md) — the link record, and how a name resolves
+- [cards.md](../cards.md) — the stencil and the deck, field by field
 - [editing.md](../editing.md) — a note in a tab: saving, renaming, removing
 - [vaults.md](../vaults.md) — several vaults, one window
 - [reading.md](../reading.md) — how a book is read, and proofread

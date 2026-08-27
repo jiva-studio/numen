@@ -1,0 +1,19 @@
+---
+type: deck
+title: CRLF deck
+---
+
+A deck whose every line break is CRLF. Its bytes are the test, so this file is
+excluded from line-ending normalisation.
+
+## Guanaco
+
+[[Animal]]
+
+### Height
+
+about 43" (shoulder)
+
+### Life span
+
+about 25 years
