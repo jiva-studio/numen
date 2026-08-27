@@ -119,6 +119,20 @@ files the keyboard page is written from.
 
 The page stands on one host and the builds on another, so the builds' zone has to send `Access-Control-Allow-Origin` for the page to read the manifest at all. Until it does, the page keeps the links it was written with, which reach the newest build under names that carry no version.
 
+## How long a copy is held
+
+Two settings on every pull zone, and they are not the same one.
+
+**The edge holds what it was given for thirty days**, and each deploy purges the
+zone it wrote to, so what a stranger is handed is what was last published.
+
+**A browser is told sixty seconds.** A page names the files it was built with,
+and those names carry a hash of what is in them, so a browser holding a page for
+longer holds the names of files that are gone: the page comes back whole and its
+pictures do not. Sixty seconds is `CacheControlPublicMaxAgeOverride` on the zone,
+and it is the setting to look at when a change is published and somebody still
+sees what was there before.
+
 ## The names on the web
 
 `numen.md`, `www.numen.md`, `docs.numen.md` and `dl.numen.md` answer, each with
