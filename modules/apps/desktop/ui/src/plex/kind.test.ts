@@ -503,6 +503,39 @@ describe('the parts a node hangs', () => {
       { id: '4', text: 'Heat', level: 1 },
     ])
   })
+
+  it('are what the question asked last came back with, whatever order they land in', async () => {
+    // The first answer is held up until the second has settled, which is a
+    // change followed while a travel is still out.
+    const answers: ((held: ReadonlyMap<string, readonly Heading[]>) => void)[] = []
+    const one = tab('Root.md')
+    const plex = plexing(one.held.view, {
+      makes: making().makes,
+      ready: () => true,
+      opens: () => {},
+      entersAt: () => {},
+      inside: () => new Promise((done) => answers.push(done)),
+      asks: () => {},
+      runs: () => {},
+      opening: () => 'Root.md',
+      first: async () => 'Root.md',
+      carried: () => [],
+      says: () => {},
+      writes: async () => '',
+      creatable: ['parent', 'child', 'jump'],
+    })
+    const node = () => nodeFor(plex, 'Root')
+
+    // The picture asks once as it is built, and that answer is left pending.
+    const asked = answers.length
+    void plex.reads()
+    void plex.reads()
+    answers[asked + 1]?.(new Map([['Root.md', [heading('Fresh', 2)]]]))
+    answers[asked]?.(new Map([['Root.md', [heading('Stale', 1)]]]))
+    await settles()
+
+    expect(plex.partsOf(node())).toStrictEqual([{ id: '2', text: 'Fresh', level: 1 }])
+  })
 })
 
 describe('a part of a node chosen', () => {

@@ -221,3 +221,42 @@ describe('how wide the parts are drawn', () => {
     )
   })
 })
+
+describe('a node with little room under it', () => {
+  /** The same node, dropped so much of the window is left beneath it. */
+  const low = (left: number): PlacedNode => ({
+    ...NODE,
+    y: ROOM.viewport.height / 2 - ROOM.margin - NODE.height / 2 - left,
+  })
+
+  const under = (left: number, held = parts(MOST + 3)) =>
+    hangParts(low(left), held, SIZES, ROOM)
+
+  it('hangs nothing where there is depth for not one part', () => {
+    expect(under(SIZES.partHeight)).toBeNull()
+  })
+
+  it('hangs only what the depth left under it holds', () => {
+    const settled = under(3 * SIZES.partHeight + 10)!
+    expect(settled.parts).toHaveLength(3)
+  })
+
+  it('spends the last of that depth saying the rest did not fit', () => {
+    expect(under(3 * SIZES.partHeight + 10)!.parts.at(-1)?.text).toBe(REST)
+  })
+
+  it('keeps every part it does hang inside the window', () => {
+    for (const left of [60, 90, 140, 200, 400]) {
+      const settled = under(left)
+      if (!settled) continue
+      const bottom = low(left).y + settled.top + settled.height
+      expect(bottom).toBeLessThanOrEqual(ROOM.viewport.height / 2 - ROOM.margin)
+    }
+  })
+
+  it('hangs them whole where the depth holds every one of them', () => {
+    const settled = hangParts(low(400), parts(3), SIZES, ROOM)!
+    expect(settled.parts).toHaveLength(3)
+    expect(settled.parts.some((part) => part.id === '')).toBe(false)
+  })
+})

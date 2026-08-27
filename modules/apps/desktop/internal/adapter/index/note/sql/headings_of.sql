@@ -1,6 +1,5 @@
 -- What one note is divided into, in the order the headings stand in it. Asked
--- once per path rather than with a list, so that the statement is one the
--- database can keep.
+-- once per path, so the statement is one the database can keep.
 SELECT h.line, h.level, h.text
 FROM sources s
 JOIN notes n ON n.source_id = s.id

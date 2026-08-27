@@ -126,7 +126,18 @@ export function hangParts(
   if (parts.length === 0) return null
 
   const { partHeight, partIndent } = options
-  const drawn = parts.slice(0, MOST)
+  const pad = Math.round(PAD * partHeight)
+  const top = node.height / 2
+
+  // They hang below the node and stay inside the window, so how many of them
+  // are drawn is how many the depth left under it holds. A node with room for
+  // none hangs nothing.
+  const depth = room.viewport.height / 2 - room.margin - (node.y + top)
+  const rows = Math.min(MOST + 1, Math.floor((depth - 2 * pad) / partHeight))
+  if (rows < 1) return null
+
+  const whole = parts.length <= Math.min(MOST, rows)
+  const drawn = whole ? parts : parts.slice(0, rows - 1)
   const setIn = indents(drawn, partIndent)
 
   const hung: HungPart[] = drawn.map((part, at) => ({
@@ -136,13 +147,12 @@ export function hangParts(
     at: at * partHeight,
   }))
 
-  if (parts.length > drawn.length) {
+  if (!whole) {
     hung.push({ id: '', text: REST, indent: 0, at: hung.length * partHeight })
   }
 
-  const pad = Math.round(PAD * partHeight)
   return {
-    top: node.height / 2,
+    top,
     partHeight,
     pad,
     ...across(node, hung, pad, room),

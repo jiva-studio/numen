@@ -59,14 +59,13 @@ func (a *API) Headings(ctx context.Context, r *connect.Request[v1.HeadingsReques
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.HeadingsResponse{}), nil
 	}
-	paths := r.Msg.GetPaths()
+	paths := eachOnce(r.Msg.GetPaths())
 	found, err := a.Notes.Headings(ctx, showing.ID, paths)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	// In the order they were asked about, so a client reading the answer down
-	// reads it in the order it drew the question.
+	// In the order they were asked about.
 	out := &v1.HeadingsResponse{Found: make([]*v1.NoteHeadings, 0, len(found))}
 	for _, path := range paths {
 		headings, held := found[path]
@@ -161,6 +160,25 @@ func atMost(limit int32) int {
 		return mostFound
 	}
 	return min(int(limit), mostAsked)
+}
+
+// eachOnce is the paths a client asked about, each named once and no more of
+// them than the ceiling. Each costs a round trip of its own, and the answer
+// carries one entry per note.
+func eachOnce(paths []string) []string {
+	seen := make(map[string]bool, len(paths))
+	out := make([]string, 0, min(len(paths), mostAsked))
+	for _, path := range paths {
+		if len(out) == mostAsked {
+			break
+		}
+		if seen[path] {
+			continue
+		}
+		seen[path] = true
+		out = append(out, path)
+	}
+	return out
 }
 
 // sourcesOf is every file the passages came out of, each named once.

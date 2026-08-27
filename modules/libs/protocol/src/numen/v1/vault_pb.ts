@@ -702,7 +702,9 @@ export type Heading = Message<"numen.v1.Heading"> & {
   line: number;
 
   /**
-   * How deep it sits, from one for the shallowest a note can carry.
+   * How deep it sits, from one for the shallowest a note can carry. Zero where
+   * the answer does not say: a name that matched carries the heading's words
+   * and where it stands, and nothing about its depth.
    *
    * @generated from field: int32 level = 3;
    */
@@ -721,7 +723,8 @@ export const HeadingSchema: GenMessage<Heading> = /*@__PURE__*/
  */
 export type HeadingsRequest = Message<"numen.v1.HeadingsRequest"> & {
   /**
-   * The notes to answer about, by the paths the vault files them under.
+   * The notes to answer about, by the paths the vault files them under. The
+   * vault sets a ceiling on how many it answers at once.
    *
    * @generated from field: repeated string paths = 1;
    */
@@ -2146,10 +2149,11 @@ export const VaultService: GenService<{
   },
   /**
    * Headings is what each note asked about is divided into, in the order the
-   * headings stand in it. A path that names no note is absent from the answer.
+   * headings stand in it. A path that names no note, and a note carrying no
+   * headings, are both absent from the answer.
    *
-   * It is asked about notes already being shown, so a client drawing a note
-   * has what is inside it without asking again for each.
+   * The answer carries one entry per note, and a path named twice is answered
+   * once. A path past the ceiling the vault sets is not answered at all.
    *
    * @generated from rpc numen.v1.VaultService.Headings
    */

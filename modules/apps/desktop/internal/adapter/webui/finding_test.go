@@ -181,3 +181,71 @@ func TestNothingTypedIsAnsweredWithNothing(t *testing.T) {
 		}
 	}
 }
+
+// What a note is divided into, over the wire.
+
+func TestANoteSaysWhatItIsDividedInto(t *testing.T) {
+	client, _ := opened(t, map[string]string{
+		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n\n## Heat and work\n\nA reversible engine.\n",
+	})
+
+	answer, err := client.Headings(t.Context(),
+		connect.NewRequest(&v1.HeadingsRequest{Paths: []string{"Entropy.md"}}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	found := answer.Msg.GetFound()
+	if len(found) != 1 || found[0].GetPath() != "Entropy.md" {
+		t.Fatalf("found = %+v, want the one note asked about", found)
+	}
+
+	headings := found[0].GetHeadings()
+	if len(headings) != 2 {
+		t.Fatalf("headings = %+v, want the two the note carries", headings)
+	}
+	if headings[0].GetText() != "Entropy" || headings[0].GetLevel() != 1 {
+		t.Errorf("the first is %+v", headings[0])
+	}
+	if headings[1].GetText() != "Heat and work" || headings[1].GetLevel() != 2 {
+		t.Errorf("the second is %+v", headings[1])
+	}
+	if !(headings[0].GetLine() < headings[1].GetLine()) {
+		t.Errorf("lines are %d and %d, want them in the order they stand",
+			headings[0].GetLine(), headings[1].GetLine())
+	}
+}
+
+func TestAPathAskedTwiceIsAnsweredOnce(t *testing.T) {
+	client, _ := opened(t, map[string]string{
+		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
+	})
+
+	answer, err := client.Headings(t.Context(), connect.NewRequest(&v1.HeadingsRequest{
+		Paths: []string{"Entropy.md", "Entropy.md", "Entropy.md"},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if found := answer.Msg.GetFound(); len(found) != 1 {
+		t.Errorf("found = %+v, want one entry for the one note", found)
+	}
+}
+
+func TestANoteCarryingNoHeadingIsAbsent(t *testing.T) {
+	client, _ := opened(t, map[string]string{
+		"Plain.md": "---\ntitle: Plain\n---\n\nProse and nothing else.\n",
+	})
+
+	answer, err := client.Headings(t.Context(), connect.NewRequest(&v1.HeadingsRequest{
+		Paths: []string{"Plain.md", "Gone.md"},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if found := answer.Msg.GetFound(); len(found) != 0 {
+		t.Errorf("found = %+v, want nothing for a note with no headings", found)
+	}
+}

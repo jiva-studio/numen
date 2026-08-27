@@ -231,17 +231,26 @@ export function plexing(view: Standing, deps: Plexing) {
    * A vault that cannot answer leaves every node hanging nothing, which is
    * what a node with nothing inside it hangs.
    */
+  /**
+   * Which question about what the notes hold is the current one. Two answers
+   * can be in flight — a change followed while a travel is still out — and
+   * without this the slower one settles whatever was asked last.
+   */
+  let asking = 0
+
   const reads = async () => {
     const paths = drawn.value
+    const mine = ++asking
     if (paths.length === 0) {
       parts.value = new Map()
       return
     }
     try {
       const found = await deps.inside(paths)
+      if (mine !== asking) return
       parts.value = new Map([...found].map(([path, held]) => [path, asParts(held)]))
     } catch {
-      parts.value = new Map()
+      if (mine === asking) parts.value = new Map()
     }
   }
 
