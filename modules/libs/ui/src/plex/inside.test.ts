@@ -3,7 +3,7 @@
  * where each stands partway through the opening.
  */
 import { describe, expect, it } from 'vitest'
-import { MOST, REST, hangParts, openedTo, type PlexPart, type Room } from './inside'
+import { MOST, furthest, hangParts, openedTo, type PlexPart, type Room } from './inside'
 import type { PlacedNode } from './model'
 
 const NODE: PlacedNode = {
@@ -63,22 +63,64 @@ describe('what a node hangs', () => {
   })
 })
 
-describe('more parts than are drawn', () => {
-  it('draws the ceiling and one more for the rest', () => {
-    const held = hung(parts(MOST + 4))?.parts ?? []
-    expect(held).toHaveLength(MOST + 1)
-    expect(held.at(-1)?.text).toBe(REST)
+describe('more parts than the window holds', () => {
+  it('stands the ceiling of them in it, and keeps every one of them', () => {
+    const settled = hung(parts(MOST + 4))!
+    expect(settled.shown).toBe(MOST)
+    expect(settled.parts).toHaveLength(MOST + 4)
+    expect(furthest(settled)).toBe(4)
   })
 
-  it('leaves that one no identifier, so it is nowhere to go', () => {
-    const held = hung(parts(MOST + 1))?.parts ?? []
-    expect(held.at(-1)?.id).toBe('')
+  it('has nowhere to wind where every one of them stands at once', () => {
+    const settled = hung(parts(MOST))!
+    expect(settled.shown).toBe(MOST)
+    expect(furthest(settled)).toBe(0)
   })
 
-  it('draws no such part where every one of them fits', () => {
-    const held = hung(parts(MOST))?.parts ?? []
-    expect(held).toHaveLength(MOST)
-    expect(held.some((part) => part.id === '')).toBe(false)
+  it('stands as deep as the window, not as deep as it holds', () => {
+    const settled = hung(parts(MOST + 4))!
+    expect(settled.height).toBe(MOST * SIZES.partHeight + 2 * settled.pad)
+  })
+})
+
+describe('winding the window over the parts', () => {
+  const many = () => hung(parts(MOST + 3))!
+
+  it('opens on the first of them, with more below and none above', () => {
+    const shown = openedTo(many(), 1)!
+    expect(shown.parts[0]!.text).toBe('Part 0')
+    expect(shown.above).toBe(false)
+    expect(shown.below).toBe(true)
+  })
+
+  it('moves by whole parts, so none is ever half on the ground', () => {
+    const shown = openedTo(many(), 1, 2)!
+    expect(shown.parts[0]!.text).toBe('Part 2')
+    expect(shown.parts.map((part) => part.at)).toStrictEqual(
+      shown.parts.map((_, at) => at * SIZES.partHeight),
+    )
+  })
+
+  it('says there is more above it once it has been wound', () => {
+    expect(openedTo(many(), 1, 1)!.above).toBe(true)
+  })
+
+  it('winds no further than the last of them', () => {
+    const settled = many()
+    const shown = openedTo(settled, 1, 99)!
+    expect(shown.parts.at(-1)!.text).toBe(`Part ${settled.parts.length - 1}`)
+    expect(shown.below).toBe(false)
+  })
+
+  it('winds no further back than the first of them', () => {
+    expect(openedTo(many(), 1, -5)!.parts[0]!.text).toBe('Part 0')
+  })
+
+  it('stands the window full however far it is wound', () => {
+    const settled = many()
+    for (const wound of [0, 1, 2, 3, 99]) {
+      expect(openedTo(settled, 1, wound)!.parts).toHaveLength(settled.shown)
+    }
   })
 })
 
@@ -236,13 +278,10 @@ describe('a node with little room under it', () => {
     expect(under(SIZES.partHeight)).toBeNull()
   })
 
-  it('hangs only what the depth left under it holds', () => {
+  it('stands in its window only what the depth left under it holds', () => {
     const settled = under(3 * SIZES.partHeight + 10)!
-    expect(settled.parts).toHaveLength(3)
-  })
-
-  it('spends the last of that depth saying the rest did not fit', () => {
-    expect(under(3 * SIZES.partHeight + 10)!.parts.at(-1)?.text).toBe(REST)
+    expect(settled.shown).toBe(3)
+    expect(furthest(settled)).toBe(MOST)
   })
 
   it('keeps every part it does hang inside the window', () => {
@@ -254,9 +293,9 @@ describe('a node with little room under it', () => {
     }
   })
 
-  it('hangs them whole where the depth holds every one of them', () => {
+  it('stands them all at once where the depth holds every one of them', () => {
     const settled = hangParts(low(400), parts(3), SIZES, ROOM)!
-    expect(settled.parts).toHaveLength(3)
-    expect(settled.parts.some((part) => part.id === '')).toBe(false)
+    expect(settled.shown).toBe(3)
+    expect(furthest(settled)).toBe(0)
   })
 })
