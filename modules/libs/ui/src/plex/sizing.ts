@@ -33,6 +33,8 @@ export const scaleOptions = (options: PlexOptions, by: number): PlexOptions => (
   nodeSize: larger(options.nodeSize, by),
   minWidth: options.minWidth * by,
   iconWidth: options.iconWidth * by,
+  partHeight: options.partHeight * by,
+  partIndent: options.partIndent * by,
   gap: options.gap * by,
   lineGap: options.lineGap * by,
   focusGap: options.focusGap * by,

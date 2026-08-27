@@ -146,6 +146,20 @@ export const core: Core & Asking & Commanding = {
   flushed: async (token, owed) => {
     await vault.flushed({ token, owed: owing[owed ?? 'nothing'] })
   },
+  /** What each of the notes asked about is divided into. */
+  headings: async (paths) => {
+    const answer = await vault.headings({ paths: [...paths] })
+    return new Map(
+      answer.found.map((one) => [
+        one.path,
+        one.headings.map((heading) => ({
+          text: heading.text,
+          level: heading.level,
+          line: heading.line,
+        })),
+      ]),
+    )
+  },
   /** The names in the vault that match what is typed. */
   names: async (query, limit) => {
     const answer = await vault.names({ query, limit })

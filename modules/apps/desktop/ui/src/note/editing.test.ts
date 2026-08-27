@@ -28,6 +28,7 @@ function fake(over: Partial<Faked> = {}) {
   const wrote: { path: string; body: string }[] = []
   const core: Faked = {
     neighbourhood: async () => ({}) as never,
+    headings: async () => new Map(),
     opening: async () => null,
     state: async () => idle,
     // eslint-disable-next-line require-yield

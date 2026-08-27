@@ -58,6 +58,7 @@ const asks = (event: MouseEvent) => {
       :creatable="props.held.creatable"
       :carried="props.held.carried.value"
       :carried-name="words.carried"
+      :parts="props.held.partsOf"
       @activate="(node: string) => props.held.activate(node)"
       @create="(from: string, seat: PlexRelatedSeat) => void props.held.made(from, seat)"
       @link="
@@ -76,6 +77,7 @@ const asks = (event: MouseEvent) => {
         ) => props.held.asks({ node, at, from, opening })
       "
       @show="(node: string, how: PlexShowing) => props.held.opens(node, how)"
+      @enter="(node: string, part: string) => props.held.entered(node, part)"
       @dismiss="props.held.dismiss()"
     />
 

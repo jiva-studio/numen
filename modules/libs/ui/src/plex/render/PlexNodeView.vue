@@ -14,6 +14,7 @@ import { computed, ref, watch } from 'vue'
 import PlexNodeHandle from './PlexNodeHandle.vue'
 import { isMenuKey, isPress, isShowKey } from './keys'
 import { DWELL, useDwell, type Widened } from '../dwell'
+import { openedTo, type HungParts } from '../inside'
 import { lerp } from '../arrange'
 import { browserEnvironment, type Environment } from '../transition'
 import type { MenuOpening } from '../../menu/model'
@@ -40,12 +41,24 @@ const props = withDefaults(
      * how much window there is to grow into, are the picture's to work out.
      */
     wide?: Widened | null
+    /**
+     * The parts it hangs under its box while the attention rests, and nothing
+     * for a node with none. What they are and what choosing one does are the
+     * caller's.
+     */
+    hung?: HungParts | null
     /** How long the attention rests before it widens. Milliseconds. */
     dwell?: number
     /** The clock the opening is drawn on. Browser by default. */
     environment?: Environment
   }>(),
-  { standing: 'open', wide: null, dwell: DWELL, environment: () => browserEnvironment },
+  {
+    standing: 'open',
+    wide: null,
+    hung: null,
+    dwell: DWELL,
+    environment: () => browserEnvironment,
+  },
 )
 
 const emit = defineEmits<{
@@ -71,6 +84,8 @@ const emit = defineEmits<{
    * drawn last of all, and which box that is only the whole picture knows.
    */
   (event: 'rest', resting: boolean): void
+  /** A part of this node was chosen. The identifier is the caller's. */
+  (event: 'enter', part: string): void
 }>()
 
 const over = ref(false)
@@ -178,6 +193,9 @@ const offering = computed(
       (props.standing === 'open' && (over.value || attended.value))),
 )
 
+/** Whether there is anything to open: more of the title, or parts to hang. */
+const opens = computed(() => !!props.wide || !!props.hung)
+
 /**
  * What the attention is on, and where that stands. A box that moves under the
  * hand is somewhere else, and is settled on afresh.
@@ -186,7 +204,7 @@ const offering = computed(
  * while one is.
  */
 const under = computed(() =>
-  props.wide &&
+  opens.value &&
   props.node.opacity >= 1 &&
   props.standing === 'open' &&
   (over.value || attended.value)
@@ -208,6 +226,14 @@ const box = computed<Widened>(() => {
 
 /** Where the box begins, which everything drawn in it is placed from. */
 const startsAt = computed(() => box.value.offset - box.value.width / 2)
+
+/** The parts, as far out from under the box as they have come. */
+const opened = computed(() => (props.hung ? openedTo(props.hung, open.value) : null))
+
+/** A part chosen. The one standing for those that did not fit names none. */
+const enter = (part: string) => {
+  if (part) emit('enter', part)
+}
 
 // A box that has begun to open is already over its neighbours.
 watch(
@@ -275,6 +301,46 @@ const hue = computed(() => ({
         <span class="plex__title-text">{{ node.title }}</span>
       </div>
     </foreignObject>
+
+    <!-- The parts, come out from under the box. They are for the hand; the
+         same parts are reached by name in the palette. -->
+    <g v-if="hung && opened" class="plex__inside" aria-hidden="true">
+      <!-- One ground under all of them, as deep as they have come. -->
+      <rect
+        class="plex__ground"
+        :x="hung.offset - hung.width / 2"
+        :y="hung.top"
+        :width="hung.width"
+        :height="opened.height"
+        :opacity="opened.opacity"
+      />
+      <g
+        v-for="(part, at) in opened.parts"
+        :key="part.id || `rest:${at}`"
+        :opacity="part.opacity"
+        :transform="`translate(0 ${hung.top + part.y})`"
+      >
+        <foreignObject
+          :x="hung.offset - hung.width / 2"
+          y="0"
+          :width="hung.width"
+          :height="hung.partHeight"
+        >
+          <div
+            class="plex__part"
+            :class="{ 'plex__part--rest': !part.id }"
+            :style="{
+              paddingInlineStart: `calc(var(--numen-node-padding) + ${part.indent}px)`,
+            }"
+            @click.stop="enter(part.id)"
+            @dblclick.stop
+            @contextmenu.stop
+          >
+            <span class="plex__part-text">{{ part.text }}</span>
+          </div>
+        </foreignObject>
+      </g>
+    </g>
 
     <!-- Reach out from here to make something. Under the hand or under the
          keyboard, so it is there when wanted and out of the way when not. -->
@@ -367,6 +433,61 @@ const hue = computed(() => ({
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Clipped to what is hung: a part still behind the box has not come out yet
+   and is not drawn. */
+/* The ground the parts stand on: enough of it to hold them together, and thin
+   enough to read the picture through. */
+.plex__ground {
+  rx: var(--numen-plex-radius);
+  fill: color-mix(in oklab, var(--numen-node-bg), transparent 25%);
+  stroke: color-mix(in oklab, var(--numen-node-border), transparent 55%);
+  stroke-width: var(--numen-stroke);
+}
+
+/* Each part is drawn in a box of its own, and where that box goes and how far
+   it has faded up are SVG attributes on the group holding it. HTML inside a
+   `foreignObject` that takes a layer of its own — under `opacity`, under
+   `transform` — is drawn at the page's origin in WebKit, which is the engine
+   the window is drawn in. */
+.plex__part {
+  block-size: 100%;
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-edge-label-size);
+  color: var(--numen-node-fg);
+  user-select: none;
+  -webkit-user-select: none;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  padding-inline-end: var(--numen-node-padding);
+  border-radius: var(--numen-plex-radius);
+  cursor: pointer;
+  transition: background var(--numen-motion-hover) var(--numen-easing);
+}
+
+/* A ground under the one the hand is on, which is what says it can be pressed. */
+.plex__part:hover {
+  background: color-mix(in oklab, var(--numen-node-bg), var(--numen-node-fg) 12%);
+}
+
+/* One line, then an ellipsis, as a title is. */
+.plex__part-text {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* What did not fit says so, and is not somewhere to go. */
+.plex__part--rest {
+  cursor: default;
+  color: var(--numen-edge-label);
+}
+
+.plex__part--rest:hover {
+  background: none;
 }
 
 /* The node a link would be made to, while the pointer is still on it. */

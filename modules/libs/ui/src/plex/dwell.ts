@@ -17,8 +17,12 @@ import type { PlacedNode } from './model'
 /** How long a hand stays on a box before it opens, in milliseconds. */
 export const DWELL = 500
 
-/** How long the opening itself takes, in milliseconds. */
-export const OPENING = 180
+/**
+ * How long the opening itself takes, in milliseconds. It carries the places
+ * inside the node out from under the box as well as the width, and they leave
+ * one behind the next.
+ */
+export const OPENING = 280
 
 /** A box drawn wider than it was placed. */
 export interface Widened {

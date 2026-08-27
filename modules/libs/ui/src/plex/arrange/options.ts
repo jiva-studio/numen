@@ -24,6 +24,10 @@ export interface BoxOptions {
    * icon is drawn, the plex having no way to measure one.
    */
   readonly iconWidth: number
+  /** One place inside a node, as it is drawn under the box. */
+  readonly partHeight: number
+  /** How far one level of nesting sets a place in. */
+  readonly partIndent: number
   /** Between neighbouring nodes along one line. */
   readonly gap: number
   /** Between one line and the next, further from the focus. */
@@ -112,6 +116,8 @@ export const DEFAULT_OPTIONS: PlexOptions = {
   nodeSize: { width: 144, height: 36 },
   minWidth: 72,
   iconWidth: 16,
+  partHeight: 22,
+  partIndent: 12,
   gap: 16,
   lineGap: 20,
   focusGap: 56,

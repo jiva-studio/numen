@@ -21,6 +21,7 @@ import {
   type Point,
 } from '../model'
 import { DWELL, type Widened } from '../dwell'
+import type { HungParts } from '../inside'
 import { browserEnvironment, type Environment } from '../transition'
 import type { Drop } from '../arrange'
 import type { MenuOpening } from '../../menu/model'
@@ -48,6 +49,12 @@ const props = withDefaults(
      * plex is drawn, so this arrives already worked out.
      */
     widen?: ((node: PlacedNode) => Widened | null) | undefined
+    /**
+     * The parts a node hangs under its box while the attention rests on it,
+     * and nothing for a node with none. Which parts a node holds is the
+     * picture's to work out.
+     */
+    hung?: ((node: PlacedNode) => HungParts | null) | undefined
     /** How long the attention rests on a box before it widens. Milliseconds. */
     dwell?: number
     /** The clock a box opens on. Browser by default; a test hands in its own. */
@@ -96,6 +103,8 @@ const emit = defineEmits<{
   (event: 'ask', id: string): void
   /** A menu was asked for on a node: where, from what, and by what. */
   (event: 'menu', id: string, at: Point, from: SVGGElement, opening: MenuOpening): void
+  /** A part of a node was chosen. Both identifiers are the caller's. */
+  (event: 'enter', id: string, part: string): void
 }>()
 
 const svg = useTemplateRef<SVGSVGElement>('svg')
@@ -354,6 +363,7 @@ const ghost = computed<PlacedNode | null>(() => {
       :node="node"
       :standing="standingOf(node)"
       :wide="widen?.(node) ?? null"
+      :hung="hung?.(node) ?? null"
       :dwell="dwell"
       :environment="environment"
       @activate="emit('activate', node.id)"
@@ -361,6 +371,7 @@ const ghost = computed<PlacedNode | null>(() => {
       @reach="emit('reach', node.id, $event)"
       @ask="emit('ask', node.id)"
       @menu="(at, from, opening) => emit('menu', node.id, at, from, opening)"
+      @enter="(part) => emit('enter', node.id, part)"
       @rest="rest(node.id, $event)"
     >
       <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>

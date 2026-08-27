@@ -32,6 +32,13 @@ service VaultService {
   // Search, and that answers with passages.
   rpc Names(NamesRequest) returns (NamesResponse);
 
+  // Headings is what each note asked about is divided into, in the order the
+  // headings stand in it. A path that names no note is absent from the answer.
+  //
+  // It is asked about notes already being shown, so a client drawing a note
+  // has what is inside it without asking again for each.
+  rpc Headings(HeadingsRequest) returns (HeadingsResponse);
+
   // Search is the text a vault holds that answers what was typed, by the words
   // in it or by what it means or by what a section is called. The caller says
   // which way it is asked, so a client drawing them apart asks once for each.
@@ -405,6 +412,26 @@ message Heading {
 
   // The line it stands on, counted from the first line of the prose.
   int32 line = 2;
+
+  // How deep it sits, from one for the shallowest a note can carry.
+  int32 level = 3;
+}
+
+message HeadingsRequest {
+  // The notes to answer about, by the paths the vault files them under.
+  repeated string paths = 1;
+}
+
+message HeadingsResponse {
+  repeated NoteHeadings found = 1;
+}
+
+// NoteHeadings is what one note is divided into.
+message NoteHeadings {
+  string path = 1;
+
+  // In the order they stand in the note.
+  repeated Heading headings = 2;
 }
 
 // Span is a run of text, by where it begins and where it ends.

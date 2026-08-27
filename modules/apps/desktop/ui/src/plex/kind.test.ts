@@ -15,7 +15,7 @@ import { ITEMS, NEW_NOTE } from './menu'
 import { NeighbourhoodSchema } from './picture'
 import { standing as stands, type Standing } from './standing'
 import { WORDS as words } from './words'
-import { wentTo, type Went } from '../core'
+import { wentTo, type Heading, type Went } from '../core'
 import { windowing, type Kept } from '../windowing'
 import { PLEX } from '../workspace'
 
@@ -88,10 +88,16 @@ const tab = (at: string, related: readonly string[] = [], takes = true) => {
   const carrying = ref<readonly string[]>([])
   /** Where a note made on its own lands, which a test empties for a vault refusing. */
   const writes = ref('Untitled note.md')
+  /** Every note put in front of the person on a line of its own prose. */
+  const entered: [string, number][] = []
+  /** What the vault says each note is divided into, which a test sets. */
+  const divides = ref<ReadonlyMap<string, readonly Heading[]>>(new Map())
   const deps: Plexing = {
     makes: vault.makes,
     ready: () => true,
     opens: (path, title, showing) => opened.push([path, title, showing]),
+    entersAt: (path, line) => entered.push([path, line]),
+    inside: async () => divides.value,
     asks: (text) => asked.push(text),
     runs: (id, path, title) => ran.push([id, path, title]),
     opening: () => 'Opening.md',
@@ -116,6 +122,8 @@ const tab = (at: string, related: readonly string[] = [], takes = true) => {
     went: plex.went,
     ...vault,
     opened,
+    entered,
+    divides,
     asked,
     ran,
     said,
@@ -241,6 +249,8 @@ describe('a plex drawing nothing', () => {
       makes: making().makes,
       ready: () => true,
       opens: () => {},
+      entersAt: () => {},
+      inside: async () => new Map(),
       asks: () => {},
       runs: () => {},
       opening: () => '',
@@ -329,6 +339,8 @@ describe('the picture', () => {
       makes: making().makes,
       ready: () => false,
       opens: () => {},
+      entersAt: () => {},
+      inside: async () => new Map(),
       asks: () => {},
       runs: () => {},
       opening: () => '',
@@ -446,6 +458,91 @@ describe('what the picture draws a line to', () => {
   })
 })
 
+describe('the parts a node hangs', () => {
+  /** One heading of a note, as the vault answers one. */
+  const heading = (text: string, line: number, level = 1): Heading => ({ text, level, line })
+
+  it('are what the vault said that note is divided into', async () => {
+    const one = tab('Root.md', ['Child.md'])
+    one.divides.value = new Map([['Child.md', [heading('Heat', 4), heading('Cold', 9, 2)]]])
+
+    await one.held.reads()
+
+    expect(one.held.partsOf(one.node('Child.md'))).toStrictEqual([
+      { id: '4', text: 'Heat', level: 1 },
+      { id: '9', text: 'Cold', level: 2 },
+    ])
+  })
+
+  it('are none for a node the vault said nothing about', async () => {
+    const one = tab('Root.md', ['Child.md'])
+    one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])
+
+    await one.held.reads()
+
+    expect(one.held.partsOf(one.node('Root.md'))).toStrictEqual([])
+  })
+
+  it('are each named by the line it stands on', async () => {
+    const one = tab('Root.md')
+    one.divides.value = new Map([['Root.md', [heading('Heat', 12)]]])
+
+    await one.held.reads()
+
+    expect(one.held.partsOf(one.node('Root.md')).map((part) => part.id)).toStrictEqual(['12'])
+  })
+
+  it('are asked for again once the plex stands somewhere else', async () => {
+    const one = tab('Root.md', ['Child.md'])
+    one.divides.value = new Map([['Other.md', [heading('Heat', 4)]]])
+
+    await one.held.view.go('Other.md')
+    await settles()
+
+    expect(one.held.partsOf(one.node('Other.md'))).toStrictEqual([
+      { id: '4', text: 'Heat', level: 1 },
+    ])
+  })
+})
+
+describe('a part of a node chosen', () => {
+  it('opens the note it stands in, and puts the keyboard on its line', () => {
+    const one = tab('Root.md')
+
+    one.held.entered(one.node('Root.md'), '12')
+
+    expect(one.opened).toStrictEqual([['Root.md', 'Root', 'here']])
+    expect(one.entered).toStrictEqual([['Root.md', 12]])
+  })
+
+  it('opens the note the node stands for, the focus being another one', () => {
+    const one = tab('Root.md', ['Child.md'])
+
+    one.held.entered(one.node('Child.md'), '7')
+
+    expect(one.opened).toStrictEqual([['Child.md', 'Child', 'here']])
+    expect(one.entered).toStrictEqual([['Child.md', 7]])
+  })
+
+  it('stands the plex where it stood', () => {
+    const one = tab('Root.md', ['Child.md'])
+
+    one.held.entered(one.node('Child.md'), '7')
+
+    expect(one.went).toStrictEqual([])
+    expect(one.held.view.here.value).toBe('Root.md')
+  })
+
+  it('opens nothing for a part naming no line, which is the one standing for the rest', () => {
+    const one = tab('Root.md')
+
+    one.held.entered(one.node('Root.md'), '')
+
+    expect(one.opened).toStrictEqual([])
+    expect(one.entered).toStrictEqual([])
+  })
+})
+
 /** A note beside another: where it sits, and the note it comes through. */
 type Beside = readonly [path: string, seat: Seat, through?: string]
 
@@ -491,6 +588,8 @@ const inVault = async (focus: string, beside: readonly Beside[] = []) => {
     makes: vault.makes,
     ready: () => true,
     opens: (path, title, showing) => opened.push([path, title, showing]),
+    entersAt: () => {},
+    inside: async () => new Map(),
     asks: () => {},
     runs: (id, path, title) => ran.push([id, path, title]),
     opening: () => '',
@@ -806,6 +905,8 @@ const window = (opening = 'Opening.md') => {
     makes: making().makes,
     ready: () => true,
     opens: () => {},
+    entersAt: () => {},
+    inside: async () => new Map(),
     asks: () => {},
     runs: () => {},
     opening: () => first,

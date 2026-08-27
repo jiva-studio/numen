@@ -138,6 +138,8 @@ const plexes = plexKind(held.host, () => standing(core), {
   makes: making,
   ready: () => !failure.value && !indexing.value,
   opens: (path, title, showing) => noted.shows(path, title, showing),
+  entersAt: (path, line) => noted.entersAt(path, line),
+  inside: (paths) => core.headings(paths),
   asks: (text) => void agents.asks(text),
   runs: (id, path, title) => carries(id, { ...where(), path, title }),
   opening: () => window.opening.value,

@@ -39,6 +39,15 @@ export interface Said {
 /** A neighbourhood of a note, as the vault answers one. */
 export type Neighbourhood = NeighbourhoodResponse
 
+/** One heading inside a note, which is one of the parts the note divides into. */
+export interface Heading {
+  readonly text: string
+  /** How deep it sits, from one for the shallowest a note can carry. */
+  readonly level: number
+  /** The line it stands on, counted from the first line of the prose. */
+  readonly line: number
+}
+
 /**
  * What the vault holds at a path. A file it holds no source for — a picture,
  * an archive — is neither of the two.
@@ -87,6 +96,11 @@ export interface Task {
 
 export interface Core {
   neighbourhood(path: string): Promise<Neighbourhood>
+  /**
+   * What each of the notes asked about is divided into, by the path it was
+   * asked about. A note with no headings in it is absent.
+   */
+  headings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly Heading[]>>
   opening(): Promise<{ path: string } | null>
   state(): Promise<{
     name: string

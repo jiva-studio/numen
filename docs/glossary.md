@@ -35,7 +35,7 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | source | A thing the index holds text for. A note and a book are kinds of source. | |
 | chunk | One cut of a source's text, as a row. Both sizes are chunks; the large one is the chunk with no parent. | window |
 | cutting | How a source's text is cut into chunks: the sizes, taken from the settings and from one place, so a vault cut in a terminal and one cut in a window are cut alike. | |
-| part | A named division of a source: the heading that names it, and where in the source's text the division begins. A note's headings and a book's outline are both parts; where a call is working is a place. | place |
+| part | A named division of a source: the heading that names it, and where in the source's text the division begins. A note's headings and a book's outline are both parts; where a call is working is a place. A node hangs the parts of the note it stands for under its box, and choosing one opens that note where the part begins. | place |
 | page | One page of a document, at the offset where its text begins. Called by where it stands in the file, and by nothing else. | sheet |
 | sheet | One page as it was read off a scan: how big it is, and what was found on it. | page |
 | location | Where a chunk sits, in the terms its own format uses. Nullable, and never a key. | |
