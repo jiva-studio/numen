@@ -100,6 +100,7 @@ const tab = (at: string, related: readonly string[] = [], takes = true) => {
     makes: vault.makes,
     ready: () => true,
     hangs: () => hangs.value,
+    parts: () => 6,
     opens: (path, title, showing) => opened.push([path, title, showing]),
     entersAt: (path, line) => entered.push([path, line]),
     inside: async (paths) => {
@@ -259,6 +260,7 @@ describe('a plex drawing nothing', () => {
       makes: making().makes,
       ready: () => true,
       hangs: () => true,
+      parts: () => 6,
       opens: () => {},
       entersAt: () => {},
       inside: async () => new Map(),
@@ -350,6 +352,7 @@ describe('the picture', () => {
       makes: making().makes,
       ready: () => false,
       hangs: () => true,
+      parts: () => 6,
       opens: () => {},
       entersAt: () => {},
       inside: async () => new Map(),
@@ -525,6 +528,7 @@ describe('the parts a node hangs', () => {
       makes: making().makes,
       ready: () => true,
       hangs: () => true,
+      parts: () => 6,
       opens: () => {},
       entersAt: () => {},
       inside: () => new Promise((done) => answers.push(done)),
@@ -571,13 +575,16 @@ describe('the parts a node hangs', () => {
   })
 
   it('are hung again once the setting is turned back on', async () => {
+    // Turning it is all a person does; nothing else asks for them again.
     const one = tab('Root.md', ['Child.md'])
     one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])
+
     one.hangs.value = false
-    await one.held.reads()
+    await settles()
+    expect(one.held.partsOf(one.node('Child.md'))).toStrictEqual([])
 
     one.hangs.value = true
-    await one.held.reads()
+    await settles()
 
     expect(one.held.partsOf(one.node('Child.md'))).toStrictEqual([
       { id: '4', text: 'Heat', level: 1 },
@@ -668,6 +675,7 @@ const inVault = async (focus: string, beside: readonly Beside[] = []) => {
     makes: vault.makes,
     ready: () => true,
     hangs: () => true,
+    parts: () => 6,
     opens: (path, title, showing) => opened.push([path, title, showing]),
     entersAt: () => {},
     inside: async () => new Map(),
@@ -986,6 +994,7 @@ const window = (opening = 'Opening.md') => {
     makes: making().makes,
     ready: () => true,
     hangs: () => true,
+    parts: () => 6,
     opens: () => {},
     entersAt: () => {},
     inside: async () => new Map(),

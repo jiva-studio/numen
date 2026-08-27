@@ -178,9 +178,9 @@ type VaultServiceClient interface {
 	// typed stays where it was, and the next rename reads what was written.
 	ChooseSyncing(context.Context, *connect.Request[v1.ChooseSyncingRequest]) (*connect.Response[v1.ChooseSyncingResponse], error)
 	// Hanging is whether a node in the plex hangs the headings of its note under
-	// the box.
+	// the box, and how many of them stand there at once.
 	Hanging(context.Context, *connect.Request[v1.HangingRequest]) (*connect.Response[v1.HangingResponse], error)
-	// ChooseHanging writes that setting into the file a person configures this
+	// ChooseHanging writes those settings into the file a person configures this
 	// installation in. The file is patched as an object, so every key a person
 	// typed stays where it was.
 	ChooseHanging(context.Context, *connect.Request[v1.ChooseHangingRequest]) (*connect.Response[v1.ChooseHangingResponse], error)
@@ -600,9 +600,9 @@ type VaultServiceHandler interface {
 	// typed stays where it was, and the next rename reads what was written.
 	ChooseSyncing(context.Context, *connect.Request[v1.ChooseSyncingRequest]) (*connect.Response[v1.ChooseSyncingResponse], error)
 	// Hanging is whether a node in the plex hangs the headings of its note under
-	// the box.
+	// the box, and how many of them stand there at once.
 	Hanging(context.Context, *connect.Request[v1.HangingRequest]) (*connect.Response[v1.HangingResponse], error)
-	// ChooseHanging writes that setting into the file a person configures this
+	// ChooseHanging writes those settings into the file a person configures this
 	// installation in. The file is patched as an object, so every key a person
 	// typed stays where it was.
 	ChooseHanging(context.Context, *connect.Request[v1.ChooseHangingRequest]) (*connect.Response[v1.ChooseHangingResponse], error)

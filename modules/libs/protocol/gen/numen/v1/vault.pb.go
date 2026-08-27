@@ -3525,8 +3525,11 @@ type HangingResponse struct {
 	// is the `appearance.hang_parts_under_a_node` of the settings file, and an
 	// installation nobody has configured hangs them.
 	HangPartsUnderANode bool `protobuf:"varint,1,opt,name=hang_parts_under_a_node,json=hangPartsUnderANode,proto3" json:"hang_parts_under_a_node,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// How many of them stand under a node at once, the rest being wound to. It is
+	// the `appearance.parts_under_a_node` of the settings file.
+	PartsUnderANode int32 `protobuf:"varint,2,opt,name=parts_under_a_node,json=partsUnderANode,proto3" json:"parts_under_a_node,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *HangingResponse) Reset() {
@@ -3566,11 +3569,21 @@ func (x *HangingResponse) GetHangPartsUnderANode() bool {
 	return false
 }
 
+func (x *HangingResponse) GetPartsUnderANode() int32 {
+	if x != nil {
+		return x.PartsUnderANode
+	}
+	return 0
+}
+
 type ChooseHangingRequest struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
 	HangPartsUnderANode bool                   `protobuf:"varint,1,opt,name=hang_parts_under_a_node,json=hangPartsUnderANode,proto3" json:"hang_parts_under_a_node,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// How many of them stand under a node at once. A count left unset stands as
+	// it is.
+	PartsUnderANode *int32 `protobuf:"varint,2,opt,name=parts_under_a_node,json=partsUnderANode,proto3,oneof" json:"parts_under_a_node,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ChooseHangingRequest) Reset() {
@@ -3608,6 +3621,13 @@ func (x *ChooseHangingRequest) GetHangPartsUnderANode() bool {
 		return x.HangPartsUnderANode
 	}
 	return false
+}
+
+func (x *ChooseHangingRequest) GetPartsUnderANode() int32 {
+	if x != nil && x.PartsUnderANode != nil {
+		return *x.PartsUnderANode
+	}
+	return 0
 }
 
 type ChooseHangingResponse struct {
@@ -4357,11 +4377,14 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
 	"\n" +
 	"\b_refusal\"\x10\n" +
-	"\x0eHangingRequest\"G\n" +
+	"\x0eHangingRequest\"t\n" +
 	"\x0fHangingResponse\x124\n" +
-	"\x17hang_parts_under_a_node\x18\x01 \x01(\bR\x13hangPartsUnderANode\"L\n" +
+	"\x17hang_parts_under_a_node\x18\x01 \x01(\bR\x13hangPartsUnderANode\x12+\n" +
+	"\x12parts_under_a_node\x18\x02 \x01(\x05R\x0fpartsUnderANode\"\x95\x01\n" +
 	"\x14ChooseHangingRequest\x124\n" +
-	"\x17hang_parts_under_a_node\x18\x01 \x01(\bR\x13hangPartsUnderANode\"U\n" +
+	"\x17hang_parts_under_a_node\x18\x01 \x01(\bR\x13hangPartsUnderANode\x120\n" +
+	"\x12parts_under_a_node\x18\x02 \x01(\x05H\x00R\x0fpartsUnderANode\x88\x01\x01B\x15\n" +
+	"\x13_parts_under_a_node\"U\n" +
 	"\x15ChooseHangingResponse\x120\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
 	"\n" +
@@ -4678,6 +4701,7 @@ func file_numen_v1_vault_proto_init() {
 	file_numen_v1_vault_proto_msgTypes[43].OneofWrappers = []any{}
 	file_numen_v1_vault_proto_msgTypes[45].OneofWrappers = []any{}
 	file_numen_v1_vault_proto_msgTypes[50].OneofWrappers = []any{}
+	file_numen_v1_vault_proto_msgTypes[53].OneofWrappers = []any{}
 	file_numen_v1_vault_proto_msgTypes[54].OneofWrappers = []any{}
 	file_numen_v1_vault_proto_msgTypes[56].OneofWrappers = []any{}
 	file_numen_v1_vault_proto_msgTypes[58].OneofWrappers = []any{}

@@ -47,6 +47,67 @@ func TestTurningTheHangingIsAnsweredByTheNextQuestion(t *testing.T) {
 	}
 }
 
+// How many parts stand under a node is turned the same way, and a request
+// naming no count leaves the one the settings hold where it was.
+func TestTurningTheCountOfPartsIsAnsweredByTheNextQuestion(t *testing.T) {
+	f := opening(t, nil, nil, true)
+
+	said, err := f.client.Hanging(t.Context(), connect.NewRequest(&v1.HangingRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if said.Msg.GetPartsUnderANode() != 6 {
+		t.Fatalf("an installation nobody has configured stands %d", said.Msg.GetPartsUnderANode())
+	}
+
+	three := int32(3)
+	if _, err := f.client.ChooseHanging(t.Context(), connect.NewRequest(&v1.ChooseHangingRequest{
+		HangPartsUnderANode: true,
+		PartsUnderANode:     &three,
+	})); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := f.client.ChooseHanging(t.Context(), connect.NewRequest(&v1.ChooseHangingRequest{
+		HangPartsUnderANode: false,
+	})); err != nil {
+		t.Fatal(err)
+	}
+
+	said, err = f.client.Hanging(t.Context(), connect.NewRequest(&v1.HangingRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if said.Msg.GetPartsUnderANode() != 3 {
+		t.Errorf("a node stands %d parts", said.Msg.GetPartsUnderANode())
+	}
+	if said.Msg.GetHangPartsUnderANode() {
+		t.Error("the setting was turned and the window still hangs the parts")
+	}
+}
+
+// A count the setting does not take is not written, and the settings are left
+// as they are.
+func TestACountOfPartsOutsideWhatItGoesToIsNotWritten(t *testing.T) {
+	f := opening(t, nil, nil, true)
+
+	twenty := int32(20)
+	if _, err := f.client.ChooseHanging(t.Context(), connect.NewRequest(&v1.ChooseHangingRequest{
+		HangPartsUnderANode: true,
+		PartsUnderANode:     &twenty,
+	})); err == nil {
+		t.Fatal("a count of twenty was written")
+	}
+
+	said, err := f.client.Hanging(t.Context(), connect.NewRequest(&v1.HangingRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if said.Msg.GetPartsUnderANode() != 6 {
+		t.Errorf("a node stands %d parts", said.Msg.GetPartsUnderANode())
+	}
+}
+
 // The setting a person turns is written where they will read it, and every
 // other byte of the file is left as they typed it.
 func TestTurningTheHangingLeavesTheRestOfTheFileAlone(t *testing.T) {

@@ -18,11 +18,15 @@ import { WORDS as words } from './words'
 const props = defineProps<{ held: Held }>()
 
 /**
- * How large the picture is drawn. A node's label is set in the window's type,
- * so the boxes and the clearances between them are handed in to hold it.
+ * How large the picture is drawn, and how many parts a node hangs at once. A
+ * node's label is set in the window's type, so the boxes and the clearances
+ * between them are handed in to hold it.
  */
 const type = useTypeSize()
-const options = computed(() => optionsForType(type.value))
+const options = computed(() => ({
+  ...optionsForType(type.value),
+  maxParts: props.held.mostParts(),
+}))
 
 /** What the menu offers: on a node, or off every node. */
 const items = computed(() => (props.held.menu.value?.node === null ? NONE : ITEMS))

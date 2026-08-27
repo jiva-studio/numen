@@ -1,16 +1,19 @@
 import { describe, expect, it } from 'vitest'
 
-import { HANGING, OFF, ON, hanging } from './hanging'
+import { HANGING, OFF, ON, PARTS, hanging } from './hanging'
 import { WORDS as words } from './words'
 
 /** The vault, answering what the settings hold and keeping what was written. */
-const vault = (held: boolean, refuses: string | null = null) => {
+const vault = (held: boolean, parts = 6, refuses: string | null = null) => {
   const wrote: boolean[] = []
+  const counted: (number | undefined)[] = []
   return {
     wrote,
-    hanging: async () => held,
-    choosesHanging: async (hangs: boolean) => {
+    counted,
+    hanging: async () => ({ hangs: held, parts }),
+    choosesHanging: async (hangs: boolean, count?: number) => {
       wrote.push(hangs)
+      counted.push(count)
       return refuses
     },
   }
@@ -44,6 +47,7 @@ describe('whether a node hangs the parts of its note', () => {
     await held.start()
 
     expect(held.hangs.value).toBe(true)
+    expect(held.parts.value).toBe(6)
   })
 
   it('says which of the two is the one in force, and nothing beside the other', async () => {
@@ -88,7 +92,7 @@ describe('whether a node hangs the parts of its note', () => {
   })
 
   it('goes back to what the settings hold where the setting could not be written', async () => {
-    const core = vault(true, 'unreadable')
+    const core = vault(true, 6, 'unreadable')
     const told = telling()
     const held = hanging(core, words, told.says)
     await held.start()
@@ -97,5 +101,77 @@ describe('whether a node hangs the parts of its note', () => {
 
     expect(held.hangs.value).toBe(true)
     expect(told.said.at(-1)).toContain(words.unturned)
+  })
+})
+
+describe('how many parts stand under a node', () => {
+  it('offers a ladder from one end of the setting to the other', async () => {
+    const held = hanging(vault(true, 4), words, telling().says)
+    await held.start()
+
+    const bands = held.counts()
+    expect(bands.map((band) => band.id)).toStrictEqual([PARTS])
+    const items = bands.flatMap((band) => band.items)
+    expect(items.map((one) => one.id)).toStrictEqual(
+      Array.from({ length: 12 }, (_, at) => `${at + 1}`),
+    )
+  })
+
+  it('marks the count in force, and says nothing beside the rest', async () => {
+    const held = hanging(vault(true, 4), words, telling().says)
+    await held.start()
+
+    const items = held.counts().flatMap((band) => band.items)
+    expect(items.filter((one) => one.inForce).map((one) => one.id)).toStrictEqual(['4'])
+    expect(items.find((one) => one.id === '4')?.detail).toBe(words.current)
+    expect(items.find((one) => one.id === '5')?.detail).toBeUndefined()
+  })
+
+  it('writes the count chosen beside the switch the window already knows', async () => {
+    const core = vault(false, 6)
+    const held = hanging(core, words, telling().says)
+    await held.start()
+
+    await held.choosesCount('3')
+
+    expect(core.wrote).toStrictEqual([false])
+    expect(core.counted).toStrictEqual([3])
+    expect(held.parts.value).toBe(3)
+  })
+
+  it('writes nothing for the count in force, or for one it does not offer', async () => {
+    const core = vault(true, 6)
+    const held = hanging(core, words, telling().says)
+    await held.start()
+
+    await held.choosesCount('6')
+    await held.choosesCount('13')
+    await held.choosesCount('on')
+
+    expect(core.counted).toStrictEqual([])
+    expect(held.parts.value).toBe(6)
+  })
+
+  it('goes back to what the settings hold where the count could not be written', async () => {
+    const core = vault(true, 6, 'unreadable')
+    const told = telling()
+    const held = hanging(core, words, told.says)
+    await held.start()
+
+    await held.choosesCount('3')
+
+    expect(held.parts.value).toBe(6)
+    expect(told.said.at(-1)).toContain(words.unturned)
+  })
+
+  it('leaves the count out of a switch being turned', async () => {
+    const core = vault(true, 4)
+    const held = hanging(core, words, telling().says)
+    await held.start()
+
+    await held.chooses(OFF)
+
+    expect(core.counted).toStrictEqual([undefined])
+    expect(held.parts.value).toBe(4)
   })
 })

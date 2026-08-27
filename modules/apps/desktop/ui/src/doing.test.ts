@@ -147,6 +147,7 @@ const window = (
     appearance: async (chosen) => void done.push(`appearance ${chosen}`),
     syncing: async (chosen) => void done.push(`syncing ${chosen}`),
     hanging: async (chosen) => void done.push(`hanging ${chosen}`),
+    parts: async (chosen) => void done.push(`parts ${chosen}`),
     says: (text) => void (text ? said.push(text) : undefined),
   }
   return { on, done, said }

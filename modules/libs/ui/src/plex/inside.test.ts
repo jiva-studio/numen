@@ -3,7 +3,14 @@
  * where each stands partway through the opening.
  */
 import { describe, expect, it } from 'vitest'
-import { MOST, furthest, hangParts, openedTo, type PlexPart, type Room } from './inside'
+import {
+  furthest,
+  hangParts,
+  openedTo,
+  woundBy,
+  type PlexPart,
+  type Room,
+} from './inside'
 import type { PlacedNode } from './model'
 
 const NODE: PlacedNode = {
@@ -18,7 +25,10 @@ const NODE: PlacedNode = {
   opacity: 1,
 }
 
-const SIZES = { partHeight: 20, partIndent: 10 }
+/** How many parts stand in the window at once, as the options ask for. */
+const MOST = 6
+
+const SIZES = { partHeight: 20, partIndent: 10, maxParts: MOST }
 
 /** A window with room to spare, and a measurer of ten pixels the letter. */
 const ROOM: Room = {
@@ -80,6 +90,12 @@ describe('more parts than the window holds', () => {
   it('stands as deep as the window, not as deep as it holds', () => {
     const settled = hung(parts(MOST + 4))!
     expect(settled.height).toBe(MOST * SIZES.partHeight + 2 * settled.pad)
+  })
+
+  it('stands as many as the options ask for', () => {
+    const settled = hangParts(NODE, parts(MOST + 4), { ...SIZES, maxParts: 3 }, ROOM)!
+    expect(settled.shown).toBe(3)
+    expect(furthest(settled)).toBe(MOST + 1)
   })
 })
 
@@ -297,5 +313,52 @@ describe('a node with little room under it', () => {
     const settled = hangParts(low(400), parts(3), SIZES, ROOM)!
     expect(settled.shown).toBe(3)
     expect(furthest(settled)).toBe(0)
+  })
+})
+
+describe('what a wheel winds', () => {
+  const settled = () => hung(parts(20))!
+  /** A wheel said in pixels, which is what a hand on a trackpad gives. */
+  const pixels = (delta: number) => ({ delta, mode: 0 })
+
+  it('is nothing at all until the pixels come to a whole part', () => {
+    const wheel = woundBy(settled(), pixels(SIZES.partHeight - 1), 0)
+    expect(wheel.by).toBe(0)
+    expect(wheel.left).toBe(SIZES.partHeight - 1)
+  })
+
+  it('carries what was left over into the next one', () => {
+    const first = woundBy(settled(), pixels(12), 0)
+    const next = woundBy(settled(), pixels(12), first.left)
+    expect(first.by).toBe(0)
+    expect(next.by).toBe(1)
+    expect(next.left).toBe(4)
+  })
+
+  it('is one part for a flick of a hand, not one for every event it sends', () => {
+    // A trackpad gives a few pixels at a time, dozens of times a flick.
+    let carried = 0
+    let wound = 0
+    for (let at = 0; at < 8; at++) {
+      const wheel = woundBy(settled(), pixels(3), carried)
+      carried = wheel.left
+      wound += wheel.by
+    }
+    expect(wound).toBe(1)
+  })
+
+  it('reads a wheel said in lines as one part the line', () => {
+    expect(woundBy(settled(), { delta: 2, mode: 1 }, 0).by).toBe(2)
+  })
+
+  it('reads a wheel said in windows as the whole window', () => {
+    const held = settled()
+    expect(woundBy(held, { delta: 1, mode: 2 }, 0).by).toBe(held.shown)
+  })
+
+  it('winds back the way it came, and carries the leftover the same way', () => {
+    const back = woundBy(settled(), pixels(-SIZES.partHeight - 6), 0)
+    expect(back.by).toBe(-1)
+    expect(back.left).toBe(-6)
   })
 })

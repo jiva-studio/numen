@@ -80,6 +80,11 @@ type Appearance struct {
 	// its note under the box. A file leaving it out hangs them, and a file
 	// naming false leaves the box alone.
 	HangPartsUnderANode *bool `json:"hang_parts_under_a_node"`
+
+	// PartsUnderANode is how many of those headings stand under a node at once,
+	// the rest being wound to. A number outside PartsUnderANodeBounds is
+	// refused, and a file naming none stands DefaultParts of them.
+	PartsUnderANode int `json:"parts_under_a_node"`
 }
 
 // Hangs is whether a node hangs the headings of its note under it. A section
@@ -98,18 +103,24 @@ const (
 // AsDesigned is the multiplier that draws everything the size it was drawn at.
 const AsDesigned = 1
 
+// DefaultParts is how many headings stand under a node where the file names no
+// number.
+const DefaultParts = 6
+
 // Bounds is how far a multiplier goes, at each end.
 type Bounds struct{ Least, Most float64 }
 
-// How far each of the two goes.
+// How far each of the two sizes goes, and how many headings a node may hang.
 //
 // The interface holds while the smallest control it draws is a target a
 // pointer finds, and while a window 1280 across still stands its panes side by
 // side. Text holds while the smallest of it is still read, and while a line of
-// typing still fits the row it is typed in.
+// typing still fits the row it is typed in. A node hangs at least one heading,
+// and twelve of them reach the foot of a window the plex is drawn in.
 var (
-	InterfaceScaleBounds = Bounds{Least: 0.8, Most: 2}
-	TextScaleBounds      = Bounds{Least: 0.8, Most: 1.75}
+	InterfaceScaleBounds  = Bounds{Least: 0.8, Most: 2}
+	TextScaleBounds       = Bounds{Least: 0.8, Most: 1.75}
+	PartsUnderANodeBounds = Bounds{Least: 1, Most: 12}
 )
 
 // Holds is whether a number is one the setting takes.
@@ -139,13 +150,16 @@ func (o *Outside) Error() string {
 	return fmt.Sprintf("%s is %v, and goes from %v to %v", o.At, o.Value, o.Least, o.Most)
 }
 
-// Check is what is wrong with the two sizes, and nothing where each is a
-// number its setting takes.
+// Check is what is wrong with the two sizes and the count, and nothing where
+// each is a number its setting takes.
 func (a Appearance) Check() error {
 	if err := InterfaceScaleBounds.Check("appearance.interface_scale", a.InterfaceScale); err != nil {
 		return err
 	}
-	return TextScaleBounds.Check("appearance.text_scale", a.TextScale)
+	if err := TextScaleBounds.Check("appearance.text_scale", a.TextScale); err != nil {
+		return err
+	}
+	return PartsUnderANodeBounds.Check("appearance.parts_under_a_node", float64(a.PartsUnderANode))
 }
 
 // DefaultTheme is this product's own palette, which is what an installation
@@ -186,6 +200,9 @@ func (c Config) Sync() bool { return c.Naming.Sync() }
 // Hangs is whether a node hangs the headings of its note under it.
 func (c Config) Hangs() bool { return c.Appearance.Hangs() }
 
+// Parts is how many of those headings stand under a node at once.
+func (c Config) Parts() int { return c.Appearance.PartsUnderANode }
+
 // on is a setting turned on.
 func on() *bool {
 	set := true
@@ -202,6 +219,7 @@ func Defaults() Config {
 			Mode:                ModeSystem,
 			Theme:               DefaultTheme,
 			HangPartsUnderANode: on(),
+			PartsUnderANode:     DefaultParts,
 		},
 		Indexing: Indexing{
 			Embedding:    embed.Defaults(),

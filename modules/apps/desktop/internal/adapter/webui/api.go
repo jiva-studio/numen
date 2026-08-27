@@ -110,12 +110,14 @@ type API struct {
 	Sync    note.Syncing
 	Chooses func(kept note.Sync) error
 
-	// Hangs reads whether a node hangs the headings of its note under it, and
-	// ChoosesHanging writes it. A build with no ChoosesHanging answers that it
-	// configures nothing; one with no Hangs reads what an installation nobody
-	// has configured does.
+	// Hangs reads whether a node hangs the headings of its note under it, Parts
+	// how many of them stand there at once, and ChoosesHanging and ChoosesParts
+	// write the two. A build with no writer answers that it configures nothing;
+	// one with no reader reads what an installation nobody has configured does.
 	Hangs          func() bool
 	ChoosesHanging func(hangs bool) error
+	Parts          func() int
+	ChoosesParts   func(parts int) error
 
 	// Finds is how the window searches the text the vault holds, by the words
 	// in it and by what it means. A build without one answers that it cannot be

@@ -13,7 +13,7 @@ import Plex from './Plex.vue'
 import { resolveOptions, rowsAndColumns, type Placement, type PlexOptionsInput } from './arrange'
 import { optionsForType, useTypeSize } from './sizing'
 import { DWELL } from './dwell'
-import { MOST, type PlexPart } from './inside'
+import { type PlexPart } from './inside'
 import { neighbourhoods } from './fixtures/neighbourhoods'
 import { neighbourhoodOf, walkStart } from './fixtures/walk'
 import { around, build, type Named } from './fixtures/build'
@@ -58,6 +58,7 @@ interface Knobs {
   squeeze: number
   maxPerLine: number
   maxLines: number
+  maxParts: number
   orientation: 'parents above' | 'parents below'
 
   curvature: number
@@ -107,6 +108,7 @@ const knobbed = (a: Knobs): PlexOptionsInput => ({
   spread: a.spread,
   maxPerLine: a.maxPerLine,
   maxLines: a.maxLines,
+  maxParts: a.maxParts,
   routing: { curvature: a.curvature, minReach: a.minReach, arrowRoom: a.arrowRoom },
   motion: { arriveAfter: a.arriveAfter, leaveBefore: a.leaveBefore },
   direction:
@@ -321,6 +323,7 @@ const meta = {
     squeeze: range(0.2, 1, 0.05),
     maxPerLine: range(1, 12),
     maxLines: range(1, 8),
+    maxParts: range(1, 12),
     orientation: {
       control: 'inline-radio',
       options: ['parents above', 'parents below'],
@@ -404,6 +407,7 @@ const meta = {
     squeeze: 0.35,
     maxPerLine: 5,
     maxLines: 4,
+    maxParts: 6,
     orientation: 'parents above',
 
     curvature: 0.55,
@@ -1289,11 +1293,14 @@ export const PartsInside: Story = {
     const focus = canvas.getByLabelText(/, focus$/)
     const partsOf = (node: Element) => [...node.querySelectorAll('.plex__part')]
 
+    /** How many stand in the window at once, which the knob says. */
+    const most = args.maxParts
+
     // Nothing hangs until the hand has been on it a while.
     await expect(partsOf(focus)).toHaveLength(0)
 
     await userEvent.hover(focus)
-    await waitFor(async () => await expect(partsOf(focus)).toHaveLength(MOST), { timeout: 3000 })
+    await waitFor(async () => await expect(partsOf(focus)).toHaveLength(most), { timeout: 3000 })
 
     // The nesting is drawn by setting a part in, and the deeper of them stands
     // further in than the one it sits under.
@@ -1309,24 +1316,25 @@ export const PartsInside: Story = {
 
     // Choosing one says which part it was, on the node it hangs from.
     await userEvent.hover(focus)
-    await waitFor(async () => await expect(partsOf(focus)).toHaveLength(MOST), { timeout: 3000 })
+    await waitFor(async () => await expect(partsOf(focus)).toHaveLength(most), { timeout: 3000 })
     await userEvent.click(partsOf(focus)[1]!)
     await expect(args.onEnter).toHaveBeenCalledWith('focus', '4')
 
-    // A note with more parts than are drawn says so in the last of them, and
-    // that one is nowhere to go.
+    // A note with more parts than stand at once is wound through them.
     const many = canvas.getByLabelText(/, jump$/)
     await userEvent.hover(many)
-    await waitFor(async () => await expect(partsOf(many)).toHaveLength(MOST), { timeout: 3000 })
+    await waitFor(async () => await expect(partsOf(many)).toHaveLength(most), { timeout: 3000 })
 
     // A window on more than it holds is marked at the edge it may be wound
     // towards, and winding it moves it by whole parts.
     const marks = () => [...many.querySelectorAll('.plex__more')]
     await expect(marks()).toHaveLength(1)
 
+    // Said in lines, which is one part the line. A hand on a trackpad speaks
+    // in pixels and winds when they come to a part's height.
     const wheel = (deltaY: number) =>
       many.querySelector('.plex__inside')!.dispatchEvent(
-        new WheelEvent('wheel', { deltaY, bubbles: true, cancelable: true }),
+        new WheelEvent('wheel', { deltaY, deltaMode: 1, bubbles: true, cancelable: true }),
       )
     wheel(1)
     await waitFor(async () =>

@@ -88,6 +88,11 @@ export interface Doing {
    */
   hanging(chosen: string): Promise<void>
   /**
+   * How many parts a node hangs at once, written into the settings. The
+   * identity is the window's own.
+   */
+  parts(chosen: string): Promise<void>
+  /**
    * What was done, or could not be, in words a person reads. One command's
    * word replaces the last, and nothing said clears it.
    */
@@ -145,6 +150,7 @@ const carried: Record<string, Carries> = {
   textScale: (deed, on) => on.appearance(deed.name),
   syncing: (deed, on) => on.syncing(deed.name),
   hanging: (deed, on) => on.hanging(deed.name),
+  parts: (deed, on) => on.parts(deed.name),
   first: (_, on, words) => travels(on.opening(), on, words),
   goto: (deed, on, words) => travels(deed.path, on, words),
   openVault: (deed, on, words) => shows(deed.vault.id, on, words),

@@ -14,7 +14,7 @@ import { computed, ref, watch } from 'vue'
 import PlexNodeHandle from './PlexNodeHandle.vue'
 import { isMenuKey, isPress, isShowKey } from './keys'
 import { DWELL, useDwell, type Widened } from '../dwell'
-import { furthest, openedTo, type HungParts } from '../inside'
+import { openedTo, woundBy, type HungParts, type Mark } from '../inside'
 import { lerp } from '../arrange'
 import { browserEnvironment, type Environment } from '../transition'
 import type { MenuOpening } from '../../menu/model'
@@ -235,55 +235,52 @@ const opened = computed(() =>
   props.hung ? openedTo(props.hung, open.value, wound.value) : null,
 )
 
-// The window opens at the top each time the attention settles afresh. It is
-// left where it stands while the attention leaves, which is what the parts
-// fade out from.
+/** What a wheel moved that came to no whole part, held for the next one. */
+let carried = 0
+
+// The window opens at the top each time the attention settles afresh, and is
+// left where it stands while the attention leaves.
 watch(under, (now) => {
-  if (now !== null) wound.value = 0
+  if (now === null) return
+  wound.value = 0
+  carried = 0
 })
 
 /**
- * Winding the window over the parts, one at a time, so none is ever drawn
- * half on the ground. A wheel that would go past either end is left alone.
+ * Winding the window over the parts. A wheel with nowhere to go is left to
+ * whatever else wants it, and what it moved that came to no whole part is
+ * carried into the next one.
  */
 const wind = (event: WheelEvent) => {
   const hung = props.hung
   const shown = opened.value
-  const step = Math.sign(event.deltaY)
-  if (!hung || !shown || step === 0) return
-  if (step < 0 ? !shown.above : !shown.below) return
+  if (!hung || !shown) return
 
+  const wheel = { delta: event.deltaY, mode: event.deltaMode }
+  const { by, left } = woundBy(hung, wheel, carried)
+  if (by === 0) {
+    carried = left
+    return
+  }
+  if (by < 0 ? !shown.above : !shown.below) {
+    carried = 0
+    return
+  }
+
+  carried = left
   event.preventDefault()
   event.stopPropagation()
-  wound.value = Math.min(Math.max(wound.value + step, 0), furthest(hung))
+  // Stepped from where the window really stands, which is the picture's own
+  // reckoning of it.
+  wound.value = shown.first + by
 }
 
-/** How large a mark at the edge of the ground is drawn. */
-const MARK = { wide: 4, deep: 2.5 }
+/** The line a mark at an edge is drawn along. */
+const markLine = (mark: Mark) =>
+  mark.points.map((at, index) => `${index === 0 ? 'M' : 'L'} ${at.x} ${at.y}`).join(' ')
 
-/** A mark at either edge, drawn where there is more to wind to. */
-const marks = computed(() => {
-  const hung = props.hung
-  const shown = opened.value
-  if (!hung || !shown) return []
-
-  const { wide, deep } = MARK
-  const middle = hung.offset
-  const chevron = (y: number, into: number) =>
-    `M ${middle - wide} ${y - into} L ${middle} ${y + into} L ${middle + wide} ${y - into}`
-
-  return [
-    ...(shown.above ? [{ at: 'above', d: chevron(hung.top + hung.pad / 2, -deep) }] : []),
-    ...(shown.below
-      ? [{ at: 'below', d: chevron(hung.top + shown.height - hung.pad / 2, deep) }]
-      : []),
-  ]
-})
-
-/** A part chosen. The one standing for those that did not fit names none. */
-const enter = (part: string) => {
-  if (part) emit('enter', part)
-}
+/** A part chosen. */
+const enter = (part: string) => emit('enter', part)
 
 // A box that has begun to open is already over its neighbours.
 watch(
@@ -391,10 +388,10 @@ const hue = computed(() => ({
 
       <!-- More of them than the window holds, the way they are wound to. -->
       <path
-        v-for="mark in marks"
+        v-for="mark in opened.marks"
         :key="mark.at"
         class="plex__more"
-        :d="mark.d"
+        :d="markLine(mark)"
         :opacity="opened.opacity"
       />
     </g>

@@ -9,7 +9,6 @@ import './tokens/theme.css'
 export { default as Plex } from './plex/Plex.vue'
 export { browserEnvironment } from './plex/transition'
 export { countOf, isStop, seatWord, showingOf, SEATS, SHOWINGS } from './plex/model'
-export { MOST as MOST_PARTS } from './plex/inside'
 
 export { default as Menu } from './menu/Menu.vue'
 export { banded, landsOn, placeMenu, stepTo, MENU_OPENINGS } from './menu/model'

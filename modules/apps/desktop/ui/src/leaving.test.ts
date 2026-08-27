@@ -102,7 +102,7 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
     move: async () => ({ moved: null, refusal: null }),
     makeFolder: async () => null,
     syncing: async () => true,
-    hanging: async () => true,
+    hanging: async () => ({ hangs: true, parts: 6 }),
     choosesSyncing: async () => null,
     choosesHanging: async () => null,
   }

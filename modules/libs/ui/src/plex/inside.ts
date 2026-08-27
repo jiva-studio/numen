@@ -10,10 +10,7 @@
  */
 import { clamp01, easeOut, lerp } from './arrange'
 import type { PlexOptions, Size } from './arrange'
-import type { PlacedNode } from './model'
-
-/** How many parts are drawn under a node. */
-export const MOST = 6
+import type { PlacedNode, Point } from './model'
 
 /**
  * How far behind the one above it each part sets off, as a fraction of the
@@ -26,6 +23,9 @@ const DEEPEST = 3
 
 /** How far below its place a part sets off, as a fraction of its own height. */
 const RISE = 0.7
+
+/** How wide a mark at an edge of the ground is drawn, and how deep. */
+const MARK = { wide: 4, deep: 2.5 }
 
 /** The ground kept clear around the parts, as a fraction of a part's height. */
 const PAD = 0.25
@@ -96,9 +96,20 @@ export interface OpenParts {
   readonly opacity: number
   /** The parts standing in the window, in the order they stand. */
   readonly parts: readonly DrawnPart[]
+  /** Which part the window stands on, counted from the first. */
+  readonly first: number
   /** Whether the window has parts above it, and parts below it. */
   readonly above: boolean
   readonly below: boolean
+  /** The marks at either edge, one per direction there is more to wind to. */
+  readonly marks: readonly Mark[]
+}
+
+/** A mark at an edge of the ground, saying which way there is more. */
+export interface Mark {
+  readonly at: 'above' | 'below'
+  /** The three corners it is drawn through, from the middle of the node. */
+  readonly points: readonly Point[]
 }
 
 /**
@@ -112,20 +123,20 @@ function indents(parts: readonly PlexPart[], step: number): Map<number, number> 
 }
 
 /**
- * What one node hangs: the parts it holds, in the order they were given, and a
- * last one for those past the ceiling.
+ * What one node hangs: every part it holds, in the order they were given, and
+ * how many of them stand in the window at once.
  *
  * Nothing for a node with no parts.
  */
 export function hangParts(
   node: PlacedNode,
   parts: readonly PlexPart[],
-  options: Pick<PlexOptions, 'partHeight' | 'partIndent'>,
+  options: Pick<PlexOptions, 'partHeight' | 'partIndent' | 'maxParts'>,
   room: Room,
 ): HungParts | null {
   if (parts.length === 0) return null
 
-  const { partHeight, partIndent } = options
+  const { partHeight, partIndent, maxParts } = options
   const pad = Math.round(PAD * partHeight)
   const top = node.height / 2
 
@@ -133,10 +144,10 @@ export function hangParts(
   // are drawn is how many the depth left under it holds. A node with room for
   // none hangs nothing.
   const depth = room.viewport.height / 2 - room.margin - (node.y + top)
-  const rows = Math.min(MOST + 1, Math.floor((depth - 2 * pad) / partHeight))
+  const rows = Math.min(maxParts + 1, Math.floor((depth - 2 * pad) / partHeight))
   if (rows < 1) return null
 
-  const shown = Math.min(MOST, rows, parts.length)
+  const shown = Math.min(maxParts, rows, parts.length)
   const setIn = indents(parts, partIndent)
 
   const hung: HungPart[] = parts.map((part, at) => ({
@@ -156,6 +167,35 @@ export function hangParts(
     height: shown * partHeight + 2 * pad,
   }
 }
+
+/**
+ * How far a wheel winds the window, in whole parts, and what is left over.
+ *
+ * A hand carries the leftover back into the next wheel, so a trackpad giving a
+ * few pixels at a time winds as far as those pixels come to. A wheel says how
+ * far it moved in lines or in windows as readily as in pixels, and only pixels
+ * can be measured against a part.
+ */
+export function woundBy(
+  hung: HungParts,
+  wheel: { readonly delta: number; readonly mode: number },
+  carried: number,
+): { by: number; left: number } {
+  const pixels = carried + wheel.delta * stride(hung, wheel.mode)
+  const by = Math.trunc(pixels / hung.partHeight)
+  return { by, left: pixels - by * hung.partHeight }
+}
+
+/** What one of a wheel's own units comes to in pixels: a line, or a window. */
+function stride(hung: HungParts, mode: number): number {
+  if (mode === LINES) return hung.partHeight
+  if (mode === WINDOWS) return hung.shown * hung.partHeight
+  return 1
+}
+
+/** The units a wheel says how far it moved in, as a browser numbers them. */
+const LINES = 1
+const WINDOWS = 2
 
 /** The furthest the window on the parts may be wound down, counted in parts. */
 export const furthest = (hung: HungParts): number =>
@@ -201,8 +241,7 @@ export function openedTo(hung: HungParts, open: number, wound = 0): OpenParts | 
   const opened = clamp01(open)
   if (opened <= 0) return null
 
-  // The window stands whole on the parts: it is wound by one at a time, so no
-  // part is ever drawn half on the ground.
+  // The window stands whole on the parts, wound by one at a time.
   const first = Math.min(Math.max(Math.round(wound), 0), furthest(hung))
   const standing = hung.parts.slice(first, first + hung.shown)
 
@@ -220,11 +259,35 @@ export function openedTo(hung: HungParts, open: number, wound = 0): OpenParts | 
     return { ...part, at: rests, y: lerp(from, rests, own), opacity: own }
   })
 
+  const above = first > 0
+  const below = first < furthest(hung)
   return {
     height: hung.height,
     opacity: easeOut(opened),
     parts,
-    above: first > 0,
-    below: first < furthest(hung),
+    first,
+    above,
+    below,
+    marks: [
+      ...(above ? [markAt(hung, hung.pad / 2, -1)] : []),
+      ...(below ? [markAt(hung, hung.height - hung.pad / 2, 1)] : []),
+    ],
+  }
+}
+
+/**
+ * A mark at one edge of the ground, pointing the way there is more to wind to.
+ * It is drawn about the middle of what is hung, which is where the eye is.
+ */
+function markAt(hung: HungParts, down: number, facing: 1 | -1): Mark {
+  const middle = hung.offset
+  const y = hung.top + down
+  return {
+    at: facing > 0 ? 'below' : 'above',
+    points: [
+      { x: middle - MARK.wide, y: y - facing * MARK.deep },
+      { x: middle, y: y + facing * MARK.deep },
+      { x: middle + MARK.wide, y: y - facing * MARK.deep },
+    ],
   }
 }

@@ -31,6 +31,7 @@ import type {
   Answered,
   Core,
   Entry,
+  Hanging,
   Known,
   Made,
   Moved,
@@ -141,9 +142,19 @@ export const core: Core & Asking & Commanding = {
   syncing: async () => (await vault.syncing({})).syncTitleAndFilename,
   choosesSyncing: async (kept) =>
     refusalIn(await vault.chooseSyncing({ syncTitleAndFilename: kept })),
-  hanging: async () => (await vault.hanging({})).hangPartsUnderANode,
-  choosesHanging: async (hangs) =>
-    refusalIn(await vault.chooseHanging({ hangPartsUnderANode: hangs })),
+  hanging: async () => {
+    const answer = await vault.hanging({})
+    return {
+      hangs: answer.hangPartsUnderANode,
+      parts: answer.partsUnderANode,
+    } satisfies Hanging
+  },
+  // The switch is always sent, and the count only where it is the count being
+  // turned.
+  choosesHanging: async (hangs, parts) =>
+    refusalIn(
+      await vault.chooseHanging({ hangPartsUnderANode: hangs, partsUnderANode: parts }),
+    ),
   makeFolder: async (path) => refusalIn(await vault.makeFolder({ path })),
   quitting: (signal) => vault.quitting({}, { signal }),
   flushed: async (token, owed) => {
