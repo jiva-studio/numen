@@ -6,6 +6,7 @@
  */
 import { spawn } from 'node:child_process'
 import { accessSync, constants } from 'node:fs'
+import { writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
@@ -20,6 +21,8 @@ const GIVEN = process.env['STORYBOOK_PORT']
 const PORT = GIVEN ? Number(GIVEN) : 6099
 /** How hard the pictures are pressed. The build presses them again. */
 const QUALITY = 90
+/** The fewest bytes a drawn window comes to. Under it, nothing was drawn. */
+const DRAWN = 20_000
 /** What the page shows, in the order the switcher offers them. */
 const SHOTS = ['filing', 'writing', 'map', 'searching', 'asking']
 /*
@@ -99,7 +102,9 @@ try {
       )
       await page.waitForTimeout(SETTLING)
       const name = `window-${shot}-${theme}.webp`
-      await sharp(await page.screenshot()).webp({ quality: QUALITY }).toFile(join(INTO, name))
+      const taken = await sharp(await page.screenshot()).webp({ quality: QUALITY }).toBuffer()
+      if (taken.length < DRAWN) throw new Error(`${name} is ${taken.length} bytes: the story had not drawn`)
+      await writeFile(join(INTO, name), taken)
       console.log(name)
     }
     await page.close()

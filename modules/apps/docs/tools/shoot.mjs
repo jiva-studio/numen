@@ -8,6 +8,7 @@
  */
 import { spawn } from 'node:child_process'
 import { accessSync, constants, readFileSync } from 'node:fs'
+import { writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
@@ -26,6 +27,8 @@ const PORT = GIVEN ? Number(GIVEN) : 6098
 const SCALE = 2
 /** How hard the pictures are pressed. Text stays clean at this. */
 const QUALITY = 82
+/** The fewest bytes a drawn window comes to. Under it, nothing was drawn. */
+const DRAWN = 15_000
 /** How long Storybook is given to answer before this gives up. */
 const PATIENCE = 120_000
 /** What a plex and an editor are given to settle once the page has loaded. */
@@ -130,7 +133,9 @@ if (process.argv[1] !== fileURLToPath(import.meta.url)) {
         // WebP, because these are checked in: the same picture is a third of
         // the bytes, and what the build would convert it to anyway.
         const name = `${shot.name}-${theme}.webp`
-        await sharp(await page.screenshot()).webp({ quality: QUALITY }).toFile(join(INTO, name))
+        const taken = await sharp(await page.screenshot()).webp({ quality: QUALITY }).toBuffer()
+        if (taken.length < DRAWN) throw new Error(`${name} is ${taken.length} bytes: the story had not drawn`)
+        await writeFile(join(INTO, name), taken)
         console.log(name)
         await page.close()
       }
