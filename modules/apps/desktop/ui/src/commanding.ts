@@ -217,6 +217,8 @@ export interface Words extends Silences {
   readonly textScale: string
   /** The command over whether a note's title and its filename are one name. */
   readonly syncing: string
+  /** The command over whether a node hangs the parts of its note under it. */
+  readonly hanging: string
   readonly find: string
   /** The keystroke the search answers to away from the palette. */
   readonly findKeys: PaletteKeys
@@ -392,6 +394,7 @@ export const commandsOf = (
   },
   { id: 'textScale', text: words.textScale, band: 'window', needs: 'choosing', where: always },
   { id: 'syncing', text: words.syncing, band: 'window', needs: 'choosing', where: always },
+  { id: 'hanging', text: words.hanging, band: 'window', needs: 'choosing', where: always },
   { id: 'first', text: words.first, band: 'vault', where: (at) => at.ready },
   {
     id: 'goto',

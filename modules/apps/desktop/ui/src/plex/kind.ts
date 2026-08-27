@@ -46,6 +46,12 @@ export interface Plexing {
   readonly makes: Making
   /** Whether the window has anything true to draw at all. */
   ready(): boolean
+  /**
+   * Whether a node hangs the parts of its note under the box. While it answers
+   * false the vault is asked nothing about what a note is divided into, and
+   * every node hangs nothing.
+   */
+  hangs(): boolean
   /** A note opened in a tab of its own, under the name the picture gives it. */
   opens(path: string, title: string, showing: PlexShowing): void
   /** An open note given the keyboard on one of its lines. */
@@ -241,7 +247,7 @@ export function plexing(view: Standing, deps: Plexing) {
   const reads = async () => {
     const paths = drawn.value
     const mine = ++asking
-    if (paths.length === 0) {
+    if (!deps.hangs() || paths.length === 0) {
       parts.value = new Map()
       return
     }
@@ -258,9 +264,9 @@ export function plexing(view: Standing, deps: Plexing) {
   // headings were edited is drawn in the same picture, and `again` asks.
   watch(drawn, () => void reads(), { immediate: true })
 
-  /** The parts of the note a ticket names. */
+  /** The parts of the note a ticket names, and none while the setting is off. */
   const partsOf = (node: string): readonly PlexPart[] =>
-    parts.value.get(tickets.note(node) ?? '') ?? []
+    deps.hangs() ? (parts.value.get(tickets.note(node) ?? '') ?? []) : []
 
   /** A node chosen: the plex travels there, and the picture is asked for again. */
   const activate = (node: string) => {

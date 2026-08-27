@@ -75,6 +75,17 @@ type Appearance struct {
 	// and its filename: `preset:dracula` ships here, `mine:dracula` is the
 	// person's file.
 	Theme string `json:"theme"`
+
+	// HangPartsUnderANode is whether a node in the plex hangs the headings of
+	// its note under the box. A file leaving it out hangs them, and a file
+	// naming false leaves the box alone.
+	HangPartsUnderANode *bool `json:"hang_parts_under_a_node"`
+}
+
+// Hangs is whether a node hangs the headings of its note under it. A section
+// naming nothing hangs them.
+func (a Appearance) Hangs() bool {
+	return a.HangPartsUnderANode == nil || *a.HangPartsUnderANode
 }
 
 // The modes a colour pair is read by.
@@ -172,6 +183,9 @@ func (n Naming) Sync() bool {
 // Sync is whether a note's title and its filename are kept as one name.
 func (c Config) Sync() bool { return c.Naming.Sync() }
 
+// Hangs is whether a node hangs the headings of its note under it.
+func (c Config) Hangs() bool { return c.Appearance.Hangs() }
+
 // on is a setting turned on.
 func on() *bool {
 	set := true
@@ -183,10 +197,11 @@ func Defaults() Config {
 	return Config{
 		V: 1,
 		Appearance: Appearance{
-			InterfaceScale: AsDesigned,
-			TextScale:      AsDesigned,
-			Mode:           ModeSystem,
-			Theme:          DefaultTheme,
+			InterfaceScale:      AsDesigned,
+			TextScale:           AsDesigned,
+			Mode:                ModeSystem,
+			Theme:               DefaultTheme,
+			HangPartsUnderANode: on(),
 		},
 		Indexing: Indexing{
 			Embedding:    embed.Defaults(),

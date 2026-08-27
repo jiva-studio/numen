@@ -141,6 +141,9 @@ export const core: Core & Asking & Commanding = {
   syncing: async () => (await vault.syncing({})).syncTitleAndFilename,
   choosesSyncing: async (kept) =>
     refusalIn(await vault.chooseSyncing({ syncTitleAndFilename: kept })),
+  hanging: async () => (await vault.hanging({})).hangPartsUnderANode,
+  choosesHanging: async (hangs) =>
+    refusalIn(await vault.chooseHanging({ hangPartsUnderANode: hangs })),
   makeFolder: async (path) => refusalIn(await vault.makeFolder({ path })),
   quitting: (signal) => vault.quitting({}, { signal }),
   flushed: async (token, owed) => {

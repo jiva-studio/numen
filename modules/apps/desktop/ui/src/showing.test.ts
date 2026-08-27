@@ -71,7 +71,9 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     move: async () => ({ moved: null, refusal: null }),
     makeFolder: async () => null,
     syncing: async () => true,
+    hanging: async () => true,
     choosesSyncing: async () => null,
+    choosesHanging: async () => null,
     // eslint-disable-next-line require-yield
     quitting: async function* () {},
     flushed: async () => {},
