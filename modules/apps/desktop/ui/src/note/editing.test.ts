@@ -71,7 +71,9 @@ function fake(over: Partial<Faked> = {}) {
     move: async () => ({ moved: null, refusal: null }),
     makeFolder: async () => null,
     syncing: async () => true,
+    hanging: async () => true,
     choosesSyncing: async () => null,
+    choosesHanging: async () => null,
     ...over,
   }
   return { core, files, wrote }

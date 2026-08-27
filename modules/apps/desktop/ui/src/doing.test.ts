@@ -146,6 +146,7 @@ const window = (
     searches: () => void done.push('searches'),
     appearance: async (chosen) => void done.push(`appearance ${chosen}`),
     syncing: async (chosen) => void done.push(`syncing ${chosen}`),
+    hanging: async (chosen) => void done.push(`hanging ${chosen}`),
     says: (text) => void (text ? said.push(text) : undefined),
   }
   return { on, done, said }

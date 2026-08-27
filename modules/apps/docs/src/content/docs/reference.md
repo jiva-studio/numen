@@ -33,6 +33,7 @@ How the window is drawn.
 | `text_scale` | a number | how large the text a person reads is set: a note, a book, an answer, the editor. |
 | `mode` | text | which half of a colour pair the window takes: `system`, `light` or `dark`. |
 | `theme` | text | the stylesheet the window wears, named by the shelf it came off and its filename: `preset:dracula` ships here, `mine:dracula` is the person's file. |
+| `hang_parts_under_a_node` | yes or no | whether a node in the plex hangs the headings of its note under the box. |
 
 ### `indexing.embedding`
 

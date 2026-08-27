@@ -80,6 +80,7 @@ export const WORDS = {
   interfaceScale: 'Interface size',
   textScale: 'Reading font size',
   syncing: 'Sync title and filename',
+  hanging: 'Hang the parts of a note under its node',
   findKeys: commandKeyChord(navigator.userAgent),
   /** The commands, under the second of the two keystrokes the window keeps for itself. */
   commands: 'Show the commands',
@@ -133,6 +134,8 @@ export const WORDS = {
   unworn: 'That theme could not be read, so it is not worn',
   /** The band the setting is drawn in, and the two it is. */
   syncingBand: 'Sync title and filename',
+  /** The band the setting is drawn in, and the two it is. */
+  hangingBand: 'Hang the parts of a note under its node',
   on: 'On',
   off: 'Off',
   unturned: 'That setting could not be written:',

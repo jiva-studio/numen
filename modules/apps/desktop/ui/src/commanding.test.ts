@@ -167,6 +167,7 @@ describe('the commands as they open', () => {
         'interfaceScale',
         'textScale',
         'syncing',
+        'hanging',
       ],
       vault: [
         'first',
@@ -253,6 +254,7 @@ describe('what is in front', () => {
         'interfaceScale',
         'textScale',
         'syncing',
+        'hanging',
       ],
       vault: ['openVault', 'newVault', 'renameVault', 'forgetVault', 'eraseVault'],
     })

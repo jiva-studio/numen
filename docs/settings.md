@@ -16,7 +16,8 @@ How the window is drawn: how large, which half of a colour pair, and which palet
     "interface_scale": 1,
     "text_scale": 1,
     "mode": "system",
-    "theme": "preset:numen"
+    "theme": "preset:numen",
+    "hang_parts_under_a_node": true
   }
 }
 ```
@@ -27,6 +28,7 @@ How the window is drawn: how large, which half of a colour pair, and which palet
 | `text_scale` | how large the text a person reads is set: a note, a book, an answer, the editor. 1 is as designed, and it goes from 0.8 to 1.75. |
 | `mode` | which half of a colour pair is read: `system`, `light` or `dark`. Any other word is read as `system`. |
 | `theme` | the stylesheet the window wears, named by the shelf it came off and its filename: `preset:dracula` ships inside the application, `mine:dracula` is the person's file. |
+| `hang_parts_under_a_node` | whether a node hangs the parts of the note it stands for under its box. On. |
 
 Each size is a multiplier. `interface_scale` is the root's font size, and every length in the window is a multiple of it: the height of a field and a button, the clearance inside a node, the radii, the spacing, and the type throughout. `text_scale` is a second multiplier over the text a person reads — the editor, and marked-up text with the scale above it, its headings, code, lists and quotations. A hairline, a border, a focus ring and the stroke of a handle are one physical line under either.
 
@@ -47,6 +49,10 @@ The tokens a theme sets, where the person's themes live, and how a file names it
 A theme pinning `color-scheme` is published in one half, and `mode` has nothing left to choose while it is worn. A name matching nothing wears `preset:numen`, and the name that was not found is said; this file is left as it is.
 
 Choosing a theme, light or dark, or either size writes the field it names back here — each is a command of its own in the palette, over the window. The file is read as an object, the named fields are set, and it is written back, so a key this build knows nothing about comes through the write unchanged. A file that does not parse is not written.
+
+On, a node in the plex hangs the parts of the note it stands for under its box — the note's headings, each at the line it stands on — and choosing one puts that note in front of the person with the keyboard on that line. Off, a node is its box alone, and nothing is asked of the vault about what a note is divided into.
+
+`Hang the parts of a note under its node` is a command of its own in the palette, over the window. Choosing `On` or `Off` writes this field back here, and every plex the window holds is drawn again from what was written.
 
 ## What a note is called
 

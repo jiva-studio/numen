@@ -81,6 +81,11 @@ const (
 	// VaultServiceChooseSyncingProcedure is the fully-qualified name of the VaultService's
 	// ChooseSyncing RPC.
 	VaultServiceChooseSyncingProcedure = "/numen.v1.VaultService/ChooseSyncing"
+	// VaultServiceHangingProcedure is the fully-qualified name of the VaultService's Hanging RPC.
+	VaultServiceHangingProcedure = "/numen.v1.VaultService/Hanging"
+	// VaultServiceChooseHangingProcedure is the fully-qualified name of the VaultService's
+	// ChooseHanging RPC.
+	VaultServiceChooseHangingProcedure = "/numen.v1.VaultService/ChooseHanging"
 	// VaultServiceRemoveProcedure is the fully-qualified name of the VaultService's Remove RPC.
 	VaultServiceRemoveProcedure = "/numen.v1.VaultService/Remove"
 	// VaultServiceMakeFolderProcedure is the fully-qualified name of the VaultService's MakeFolder RPC.
@@ -172,6 +177,13 @@ type VaultServiceClient interface {
 	// installation in. The file is patched as an object, so every key a person
 	// typed stays where it was, and the next rename reads what was written.
 	ChooseSyncing(context.Context, *connect.Request[v1.ChooseSyncingRequest]) (*connect.Response[v1.ChooseSyncingResponse], error)
+	// Hanging is whether a node in the plex hangs the headings of its note under
+	// the box.
+	Hanging(context.Context, *connect.Request[v1.HangingRequest]) (*connect.Response[v1.HangingResponse], error)
+	// ChooseHanging writes that setting into the file a person configures this
+	// installation in. The file is patched as an object, so every key a person
+	// typed stays where it was.
+	ChooseHanging(context.Context, *connect.Request[v1.ChooseHangingRequest]) (*connect.Response[v1.ChooseHangingResponse], error)
 	// Remove takes a file or a folder out of the vault, into the trash it can be
 	// brought back from. The links that pointed at it are left as they were
 	// written: a link is not wrong because the note it names is gone.
@@ -313,6 +325,18 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(vaultServiceMethods.ByName("ChooseSyncing")),
 			connect.WithClientOptions(opts...),
 		),
+		hanging: connect.NewClient[v1.HangingRequest, v1.HangingResponse](
+			httpClient,
+			baseURL+VaultServiceHangingProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Hanging")),
+			connect.WithClientOptions(opts...),
+		),
+		chooseHanging: connect.NewClient[v1.ChooseHangingRequest, v1.ChooseHangingResponse](
+			httpClient,
+			baseURL+VaultServiceChooseHangingProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("ChooseHanging")),
+			connect.WithClientOptions(opts...),
+		),
 		remove: connect.NewClient[v1.RemoveRequest, v1.RemoveResponse](
 			httpClient,
 			baseURL+VaultServiceRemoveProcedure,
@@ -361,6 +385,8 @@ type vaultServiceClient struct {
 	move          *connect.Client[v1.MoveRequest, v1.MoveResponse]
 	syncing       *connect.Client[v1.SyncingRequest, v1.SyncingResponse]
 	chooseSyncing *connect.Client[v1.ChooseSyncingRequest, v1.ChooseSyncingResponse]
+	hanging       *connect.Client[v1.HangingRequest, v1.HangingResponse]
+	chooseHanging *connect.Client[v1.ChooseHangingRequest, v1.ChooseHangingResponse]
 	remove        *connect.Client[v1.RemoveRequest, v1.RemoveResponse]
 	makeFolder    *connect.Client[v1.MakeFolderRequest, v1.MakeFolderResponse]
 	quitting      *connect.Client[v1.QuittingRequest, v1.QuittingResponse]
@@ -460,6 +486,16 @@ func (c *vaultServiceClient) Syncing(ctx context.Context, req *connect.Request[v
 // ChooseSyncing calls numen.v1.VaultService.ChooseSyncing.
 func (c *vaultServiceClient) ChooseSyncing(ctx context.Context, req *connect.Request[v1.ChooseSyncingRequest]) (*connect.Response[v1.ChooseSyncingResponse], error) {
 	return c.chooseSyncing.CallUnary(ctx, req)
+}
+
+// Hanging calls numen.v1.VaultService.Hanging.
+func (c *vaultServiceClient) Hanging(ctx context.Context, req *connect.Request[v1.HangingRequest]) (*connect.Response[v1.HangingResponse], error) {
+	return c.hanging.CallUnary(ctx, req)
+}
+
+// ChooseHanging calls numen.v1.VaultService.ChooseHanging.
+func (c *vaultServiceClient) ChooseHanging(ctx context.Context, req *connect.Request[v1.ChooseHangingRequest]) (*connect.Response[v1.ChooseHangingResponse], error) {
+	return c.chooseHanging.CallUnary(ctx, req)
 }
 
 // Remove calls numen.v1.VaultService.Remove.
@@ -563,6 +599,13 @@ type VaultServiceHandler interface {
 	// installation in. The file is patched as an object, so every key a person
 	// typed stays where it was, and the next rename reads what was written.
 	ChooseSyncing(context.Context, *connect.Request[v1.ChooseSyncingRequest]) (*connect.Response[v1.ChooseSyncingResponse], error)
+	// Hanging is whether a node in the plex hangs the headings of its note under
+	// the box.
+	Hanging(context.Context, *connect.Request[v1.HangingRequest]) (*connect.Response[v1.HangingResponse], error)
+	// ChooseHanging writes that setting into the file a person configures this
+	// installation in. The file is patched as an object, so every key a person
+	// typed stays where it was.
+	ChooseHanging(context.Context, *connect.Request[v1.ChooseHangingRequest]) (*connect.Response[v1.ChooseHangingResponse], error)
 	// Remove takes a file or a folder out of the vault, into the trash it can be
 	// brought back from. The links that pointed at it are left as they were
 	// written: a link is not wrong because the note it names is gone.
@@ -700,6 +743,18 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(vaultServiceMethods.ByName("ChooseSyncing")),
 		connect.WithHandlerOptions(opts...),
 	)
+	vaultServiceHangingHandler := connect.NewUnaryHandler(
+		VaultServiceHangingProcedure,
+		svc.Hanging,
+		connect.WithSchema(vaultServiceMethods.ByName("Hanging")),
+		connect.WithHandlerOptions(opts...),
+	)
+	vaultServiceChooseHangingHandler := connect.NewUnaryHandler(
+		VaultServiceChooseHangingProcedure,
+		svc.ChooseHanging,
+		connect.WithSchema(vaultServiceMethods.ByName("ChooseHanging")),
+		connect.WithHandlerOptions(opts...),
+	)
 	vaultServiceRemoveHandler := connect.NewUnaryHandler(
 		VaultServiceRemoveProcedure,
 		svc.Remove,
@@ -764,6 +819,10 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 			vaultServiceSyncingHandler.ServeHTTP(w, r)
 		case VaultServiceChooseSyncingProcedure:
 			vaultServiceChooseSyncingHandler.ServeHTTP(w, r)
+		case VaultServiceHangingProcedure:
+			vaultServiceHangingHandler.ServeHTTP(w, r)
+		case VaultServiceChooseHangingProcedure:
+			vaultServiceChooseHangingHandler.ServeHTTP(w, r)
 		case VaultServiceRemoveProcedure:
 			vaultServiceRemoveHandler.ServeHTTP(w, r)
 		case VaultServiceMakeFolderProcedure:
@@ -855,6 +914,14 @@ func (UnimplementedVaultServiceHandler) Syncing(context.Context, *connect.Reques
 
 func (UnimplementedVaultServiceHandler) ChooseSyncing(context.Context, *connect.Request[v1.ChooseSyncingRequest]) (*connect.Response[v1.ChooseSyncingResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.ChooseSyncing is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) Hanging(context.Context, *connect.Request[v1.HangingRequest]) (*connect.Response[v1.HangingResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Hanging is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) ChooseHanging(context.Context, *connect.Request[v1.ChooseHangingRequest]) (*connect.Response[v1.ChooseHangingResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.ChooseHanging is not implemented"))
 }
 
 func (UnimplementedVaultServiceHandler) Remove(context.Context, *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {

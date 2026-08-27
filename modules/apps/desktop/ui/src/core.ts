@@ -198,6 +198,16 @@ export interface Core {
    * nothing where it was: the rename after this reads what was written.
    */
   choosesSyncing(kept: boolean): Promise<Refused | null>
+  /**
+   * Whether a node in the plex hangs the parts of its note under the box, as
+   * the settings hold it.
+   */
+  hanging(): Promise<boolean>
+  /**
+   * That setting written into the settings file. What could not be written, and
+   * nothing where it was.
+   */
+  choosesHanging(hangs: boolean): Promise<Refused | null>
   /** An empty folder. The folders above it are made with it. */
   makeFolder(path: string): Promise<Refused | null>
   /**

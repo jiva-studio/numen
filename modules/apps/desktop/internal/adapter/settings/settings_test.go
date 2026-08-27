@@ -785,3 +785,60 @@ func TestAnUntouchedInstallationWritesTheNamingDown(t *testing.T) {
 		t.Errorf("the naming is not in the file it wrote:\n%s", raw)
 	}
 }
+
+// A node hangs the headings of its note where the file says nothing, read
+// through a pointer the way the naming is: leaving the section out, leaving the
+// field out and writing false are three different things a person can write,
+// and the last of them is the only one that turns it off.
+func TestANodeHangsThePartsOfItsNoteUntilTheFileSaysOtherwise(t *testing.T) {
+	for name, c := range map[string]struct {
+		file  string
+		hangs bool
+		wrote bool
+	}{
+		"a file nobody wrote":         {hangs: true},
+		"a file naming no appearance": {file: `{"naming":{}}`, hangs: true, wrote: true},
+		"a section naming no field": {
+			file: `{"appearance":{"text_scale":1.5}}`, hangs: true, wrote: true,
+		},
+		"a field hanging them": {
+			file: `{"appearance":{"hang_parts_under_a_node":true}}`, hangs: true, wrote: true,
+		},
+		"a field naming nothing": {
+			file: `{"appearance":{"hang_parts_under_a_node":null}}`, hangs: true, wrote: true,
+		},
+		"a field leaving the box alone": {
+			file: `{"appearance":{"hang_parts_under_a_node":false}}`, hangs: false, wrote: true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "numen.json")
+			if c.wrote {
+				path = write(t, c.file)
+			}
+			cfg, err := settings.At(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cfg.Hangs() != c.hangs {
+				t.Errorf("a node hangs the parts of its note: %v", cfg.Hangs())
+			}
+		})
+	}
+}
+
+// An installation nobody has configured is written down as what it is doing, so
+// the setting a person turns off is in front of them.
+func TestAnUntouchedInstallationWritesTheHangingDown(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "numen.json")
+	if _, err := settings.At(path); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(raw), `"hang_parts_under_a_node": true`) {
+		t.Errorf("the hanging is not in the file it wrote:\n%s", raw)
+	}
+}

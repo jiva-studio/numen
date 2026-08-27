@@ -116,6 +116,38 @@ func (c Config) Turns() func(kept note.Sync) error {
 	}
 }
 
+// Hanging reads, as the window asks, whether a node hangs the headings of its
+// note under it. A file that cannot be read hangs them, which is what an
+// installation nobody has configured does.
+func (c Config) Hanging() func() bool {
+	return func() bool {
+		path, err := c.settingsFile()
+		if err != nil {
+			return true
+		}
+		held, err := settings.At(path)
+		if err != nil {
+			return true
+		}
+		return held.Hangs()
+	}
+}
+
+// TurnsHanging writes into the settings whether a node hangs the headings of
+// its note under it. The file is patched as an object, so every key a person
+// typed stays where it was.
+func (c Config) TurnsHanging() func(hangs bool) error {
+	return func(hangs bool) error {
+		path, err := c.settingsFile()
+		if err != nil {
+			return err
+		}
+		return settings.Save(path, settings.Setting{
+			At: []string{"appearance", "hang_parts_under_a_node"}, Value: hangs,
+		})
+	}
+}
+
 // Settings are what a person has configured this installation to do. An
 // installation nobody has configured is written down as what it is doing.
 func (c Config) Settings() (settings.Config, error) {

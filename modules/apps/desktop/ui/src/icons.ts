@@ -26,6 +26,7 @@ import {
   FolderPlus,
   FolderRoot,
   FolderTree,
+  ListTree,
   Navigation,
   Palette,
   PenLine,
@@ -74,6 +75,7 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['interfaceScale', Ruler],
   ['textScale', ALargeSmall],
   ['syncing', RefreshCw],
+  ['hanging', ListTree],
   // Over the vault.
   ['first', Compass],
   ['goto', Navigation],

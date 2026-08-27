@@ -92,12 +92,20 @@ const tab = (at: string, related: readonly string[] = [], takes = true) => {
   const entered: [string, number][] = []
   /** What the vault says each note is divided into, which a test sets. */
   const divides = ref<ReadonlyMap<string, readonly Heading[]>>(new Map())
+  /** Whether a node hangs the parts of its note, which a test turns. */
+  const hangs = ref(true)
+  /** Every question the vault was asked about what the notes hold. */
+  const insides: (readonly string[])[] = []
   const deps: Plexing = {
     makes: vault.makes,
     ready: () => true,
+    hangs: () => hangs.value,
     opens: (path, title, showing) => opened.push([path, title, showing]),
     entersAt: (path, line) => entered.push([path, line]),
-    inside: async () => divides.value,
+    inside: async (paths) => {
+      insides.push(paths)
+      return divides.value
+    },
     asks: (text) => asked.push(text),
     runs: (id, path, title) => ran.push([id, path, title]),
     opening: () => 'Opening.md',
@@ -124,6 +132,8 @@ const tab = (at: string, related: readonly string[] = [], takes = true) => {
     opened,
     entered,
     divides,
+    hangs,
+    insides,
     asked,
     ran,
     said,
@@ -248,6 +258,7 @@ describe('a plex drawing nothing', () => {
     return plexing(view as unknown as Standing, {
       makes: making().makes,
       ready: () => true,
+      hangs: () => true,
       opens: () => {},
       entersAt: () => {},
       inside: async () => new Map(),
@@ -338,6 +349,7 @@ describe('the picture', () => {
     const held = plexing(plex.view, {
       makes: making().makes,
       ready: () => false,
+      hangs: () => true,
       opens: () => {},
       entersAt: () => {},
       inside: async () => new Map(),
@@ -512,6 +524,7 @@ describe('the parts a node hangs', () => {
     const plex = plexing(one.held.view, {
       makes: making().makes,
       ready: () => true,
+      hangs: () => true,
       opens: () => {},
       entersAt: () => {},
       inside: () => new Promise((done) => answers.push(done)),
@@ -535,6 +548,40 @@ describe('the parts a node hangs', () => {
     await settles()
 
     expect(plex.partsOf(node())).toStrictEqual([{ id: '2', text: 'Fresh', level: 1 }])
+  })
+
+  it('are none for every node while the setting is off', async () => {
+    const one = tab('Root.md', ['Child.md'])
+    one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])
+    await one.held.reads()
+    one.hangs.value = false
+
+    expect(one.held.partsOf(one.node('Child.md'))).toStrictEqual([])
+    expect(one.held.partsOf(one.node('Root.md'))).toStrictEqual([])
+  })
+
+  it('are not asked of the vault at all while the setting is off', async () => {
+    const one = tab('Root.md', ['Child.md'])
+    one.hangs.value = false
+    one.insides.length = 0
+
+    await one.held.reads()
+
+    expect(one.insides).toStrictEqual([])
+  })
+
+  it('are hung again once the setting is turned back on', async () => {
+    const one = tab('Root.md', ['Child.md'])
+    one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])
+    one.hangs.value = false
+    await one.held.reads()
+
+    one.hangs.value = true
+    await one.held.reads()
+
+    expect(one.held.partsOf(one.node('Child.md'))).toStrictEqual([
+      { id: '4', text: 'Heat', level: 1 },
+    ])
   })
 })
 
@@ -620,6 +667,7 @@ const inVault = async (focus: string, beside: readonly Beside[] = []) => {
   const held = plexing(view, {
     makes: vault.makes,
     ready: () => true,
+    hangs: () => true,
     opens: (path, title, showing) => opened.push([path, title, showing]),
     entersAt: () => {},
     inside: async () => new Map(),
@@ -937,6 +985,7 @@ const window = (opening = 'Opening.md') => {
   const plexes = plexKind(held.host, makes, {
     makes: making().makes,
     ready: () => true,
+    hangs: () => true,
     opens: () => {},
     entersAt: () => {},
     inside: async () => new Map(),

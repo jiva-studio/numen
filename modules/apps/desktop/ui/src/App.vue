@@ -39,6 +39,7 @@ import { iconFor, iconOfKind } from './icons'
 import { themes } from './theme'
 import { APPEARANCE, DRESSING, INTERFACE_SCALE, MODE, TEXT_SCALE, wearing } from './wearing'
 import { SYNCING, syncing } from './syncing'
+import { HANGING, hanging } from './hanging'
 import { does, type Doing } from './doing'
 import { finding } from './finding'
 import { lands, type Places } from './landing'
@@ -133,10 +134,14 @@ const noted = noting(core, notes, drawings, held.host)
  */
 const carried = ref<readonly string[]>([])
 
+/** Whether a node hangs the parts of its note under the box. */
+const hungParts = hanging(core, words, tell.under('hanging'))
+
 /** The plex tabs, and the one the person is looking at. */
 const plexes = plexKind(held.host, () => standing(core), {
   makes: making,
   ready: () => !failure.value && !indexing.value,
+  hangs: () => hungParts.hangs.value,
   opens: (path, title, showing) => noted.shows(path, title, showing),
   entersAt: (path, line) => noted.entersAt(path, line),
   inside: (paths) => core.headings(paths),
@@ -149,6 +154,10 @@ const plexes = plexKind(held.host, () => standing(core), {
   writes: async () => (await making.named('', []))?.path ?? '',
   creatable: CREATABLE,
 })
+
+// The setting turned: every plex asks the vault again, so a picture already
+// drawn hangs what the setting now says it hangs.
+watch(hungParts.hangs, () => void plexes.again())
 
 /** The agent tabs, and the one a question about a note is put in. */
 const agents = agentKind(held.host, () =>
@@ -271,6 +280,7 @@ const kept: Holds = {
     if (command === MODE) return dressed.modes()
     if (command === INTERFACE_SCALE || command === TEXT_SCALE) return dressed.sizes(command, typed)
     if (command === SYNCING) return oneName.offers()
+    if (command === HANGING) return hungParts.offers()
     return []
   },
   // A theme and a size are worn where the keyboard stands, so that a person
@@ -318,6 +328,7 @@ const doing: Doing = {
   },
   appearance: (chosen) => dressed.chooses(chosen),
   syncing: (chosen) => oneName.chooses(chosen),
+  hanging: (chosen) => hungParts.chooses(chosen),
   says: told,
 }
 
@@ -476,6 +487,7 @@ onMounted(async () => {
   void going.start()
   void dressed.start()
   void oneName.start()
+  void hungParts.start()
 })
 onUnmounted(() => {
   globalThis.removeEventListener('keydown', asked)
