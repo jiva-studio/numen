@@ -265,6 +265,9 @@ func (r *Repository) MoveSources(ctx context.Context, vaultID, from, to string) 
 	if err != nil {
 		return err
 	}
+	if err := displace(ctx, tx, vault, from, to); err != nil {
+		return err
+	}
 	if err := rename(ctx, tx, vault, from, to); err != nil {
 		return err
 	}
@@ -277,6 +280,52 @@ func (r *Repository) MoveSources(ctx context.Context, vaultID, from, to string) 
 	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("commit: %w", err)
+	}
+	return nil
+}
+
+// displace takes out what the vault holds where a move is about to land.
+//
+// A file is moved on disk and then moved here, and a scan reading the vault
+// between the two files it afresh under its new path. The row that travels
+// carries the chunks, the vectors and the links of the note, so it is the one
+// that keeps the path, and the row standing there comes out.
+//
+// The rows that are moving stand still: a folder moved inside itself holds
+// them, and they are the ones about to be filed.
+func displace(ctx context.Context, tx *sql.Tx, vault int64, from, to string) error {
+	first, past := under(to)
+	rows, err := tx.QueryContext(ctx, stmt.Get("sources_at"), vault, to, first, past)
+	if err != nil {
+		return fmt.Errorf("sources_at: %w", err)
+	}
+	defer rows.Close()
+
+	movingFirst, movingPast := under(from)
+	var standing []int64
+	for rows.Next() {
+		var source int64
+		var path string
+		if err := rows.Scan(&source, &path); err != nil {
+			return fmt.Errorf("sources_at: %w", err)
+		}
+		if path == from || (path >= movingFirst && path < movingPast) {
+			continue
+		}
+		standing = append(standing, source)
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("sources_at: %w", err)
+	}
+	rows.Close()
+
+	for _, source := range standing {
+		if err := Clear(ctx, tx, source); err != nil {
+			return err
+		}
+		if err := exec(ctx, tx, "delete_source", source); err != nil {
+			return err
+		}
 	}
 	return nil
 }

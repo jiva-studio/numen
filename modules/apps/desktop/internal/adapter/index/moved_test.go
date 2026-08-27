@@ -106,3 +106,49 @@ func TestAMovedFolderCarriesANameThatIsNotLatin(t *testing.T) {
 		t.Errorf("the folder now holds %v, want %v", got, want)
 	}
 }
+
+// A file is moved on disk and then filed here, and a scan reading the vault
+// between the two puts the file in afresh under its new path. The move lands,
+// and the row that carries the note's chunks is the one that keeps the path.
+func TestAMoveLandsWhereAScanHasAlreadyFiledTheFile(t *testing.T) {
+	db := opened(t)
+	noted(t, db, first, "Old.md", "Old", "Entropy is")
+	noted(t, db, first, "Entropy.md", "Old")
+	held := chunksOf(t, db, first, "Old.md")
+	if len(held) == 0 {
+		t.Fatal("the note was indexed with no chunks, and this test asks what happens to them")
+	}
+
+	if err := db.Sources().MoveSources(t.Context(), first.ID, "Old.md", "Entropy.md"); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := under(t, db, first, "Entropy.md"); !slices.Equal(got, []string{"Entropy.md"}) {
+		t.Errorf("the vault holds %v where the move landed", got)
+	}
+	if got := under(t, db, first, "Old.md"); len(got) != 0 {
+		t.Errorf("the path it left still holds %v", got)
+	}
+	if got := chunksOf(t, db, first, "Entropy.md"); !slices.Equal(got, held) {
+		t.Errorf("the note's chunks are %v, and were %v", got, held)
+	}
+}
+
+// A move that goes nowhere leaves the note where it is: the row standing at the
+// path is the row about to be filed there.
+func TestAMoveOntoItsOwnPathKeepsTheNote(t *testing.T) {
+	db := opened(t)
+	noted(t, db, first, "Entropy.md", "Entropy", "Entropy is")
+	held := chunksOf(t, db, first, "Entropy.md")
+
+	if err := db.Sources().MoveSources(t.Context(), first.ID, "Entropy.md", "Entropy.md"); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := under(t, db, first, "Entropy.md"); !slices.Equal(got, []string{"Entropy.md"}) {
+		t.Errorf("the vault holds %v at the path", got)
+	}
+	if got := chunksOf(t, db, first, "Entropy.md"); !slices.Equal(got, held) {
+		t.Errorf("the note's chunks are %v, and were %v", got, held)
+	}
+}
