@@ -40,6 +40,9 @@ const SETTLING = 2_000
  * A window is drawn narrower than the column it lands in, so the application's
  * own text is larger on the page than it is on screen and can be read at a
  * glance. What stands alone is drawn at about the size it stands at.
+ *
+ * `over` names what the pointer is left on: the picture is taken once whatever
+ * a hand resting there brings out is all the way out.
  */
 export const SHOTS = [
   { name: 'window', story: 'application-window--map', width: 1180, height: 740 },
@@ -48,6 +51,13 @@ export const SHOTS = [
   { name: 'searching', story: 'application-window--searching', width: 1180, height: 740 },
   { name: 'asking', story: 'application-window--asking', width: 1180, height: 740 },
   { name: 'plex', story: 'application-window--mapping', width: 1180, height: 740 },
+  {
+    name: 'parts',
+    story: 'application-window--hanging',
+    width: 1180,
+    height: 740,
+    over: '.plex__node--focus',
+  },
   { name: 'commands', story: 'application-window--commanding', width: 1180, height: 740 },
   { name: 'writing', story: 'application-window--writing', width: 1180, height: 740 },
   { name: 'table', story: 'application-window--tabling', width: 1180, height: 740 },
@@ -127,6 +137,8 @@ if (process.argv[1] !== fileURLToPath(import.meta.url)) {
           await page.addStyleTag({ content: readFileSync(join(PRESETS, `${shot.preset}.css`), 'utf8') })
           await page.waitForTimeout(200)
         }
+
+        if (shot.over) await page.hover(shot.over)
 
         await page.waitForTimeout(SETTLING)
 
