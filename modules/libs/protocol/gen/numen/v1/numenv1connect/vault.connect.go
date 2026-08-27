@@ -108,10 +108,11 @@ type VaultServiceClient interface {
 	// Search, and that answers with passages.
 	Names(context.Context, *connect.Request[v1.NamesRequest]) (*connect.Response[v1.NamesResponse], error)
 	// Headings is what each note asked about is divided into, in the order the
-	// headings stand in it. A path that names no note is absent from the answer.
+	// headings stand in it. A path that names no note, and a note carrying no
+	// headings, are both absent from the answer.
 	//
-	// It is asked about notes already being shown, so a client drawing a note
-	// has what is inside it without asking again for each.
+	// The answer carries one entry per note, and a path named twice is answered
+	// once. A path past the ceiling the vault sets is not answered at all.
 	Headings(context.Context, *connect.Request[v1.HeadingsRequest]) (*connect.Response[v1.HeadingsResponse], error)
 	// Search is the text a vault holds that answers what was typed, by the words
 	// in it or by what it means or by what a section is called. The caller says
@@ -498,10 +499,11 @@ type VaultServiceHandler interface {
 	// Search, and that answers with passages.
 	Names(context.Context, *connect.Request[v1.NamesRequest]) (*connect.Response[v1.NamesResponse], error)
 	// Headings is what each note asked about is divided into, in the order the
-	// headings stand in it. A path that names no note is absent from the answer.
+	// headings stand in it. A path that names no note, and a note carrying no
+	// headings, are both absent from the answer.
 	//
-	// It is asked about notes already being shown, so a client drawing a note
-	// has what is inside it without asking again for each.
+	// The answer carries one entry per note, and a path named twice is answered
+	// once. A path past the ceiling the vault sets is not answered at all.
 	Headings(context.Context, *connect.Request[v1.HeadingsRequest]) (*connect.Response[v1.HeadingsResponse], error)
 	// Search is the text a vault holds that answers what was typed, by the words
 	// in it or by what it means or by what a section is called. The caller says

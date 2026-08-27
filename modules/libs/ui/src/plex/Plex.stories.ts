@@ -1238,7 +1238,6 @@ export const Walk: Story = {
   render: walking,
 }
 
-/** Too small a window: the plex is clipped rather than shrunk. */
 /**
  * Everything hung parts have to survive, one node each: a nested set, far more
  * than fit, one alone, one that runs on past the box, parts not written in
@@ -1332,6 +1331,7 @@ export const PartsInside: Story = {
   },
 }
 
+/** Too small a window: the plex is clipped rather than shrunk. */
 export const SmallWindow: Story = {
   args: { neighbourhood: neighbourhoods.crowded },
   render: (args) => ({

@@ -45,11 +45,7 @@ func (q *Queries) Notes(ctx context.Context, vaultID string, paths []string) (ma
 	return out, nil
 }
 
-// Headings is what each of the notes asked about is divided into. A path that
-// names nothing, and a note with no headings in it, are left out.
-//
-// The byte a heading begins at is not in the index, so what comes back says
-// which line it stands on and nothing about where in the text that is.
+// Headings answers NoteQueries.Headings.
 func (q *Queries) Headings(ctx context.Context, vaultID string, paths []string) (map[string][]domain.Heading, error) {
 	out := map[string][]domain.Heading{}
 	if len(paths) == 0 {
@@ -63,7 +59,8 @@ func (q *Queries) Headings(ctx context.Context, vaultID string, paths []string) 
 		return nil, err
 	}
 
-	// One prepared statement, asked repeatedly, as the notes themselves are.
+	// One prepared statement, asked repeatedly: the query's text is the same
+	// whatever number of paths arrive.
 	statement, err := q.db.PrepareContext(ctx, stmt.Get("headings_of"))
 	if err != nil {
 		return nil, err

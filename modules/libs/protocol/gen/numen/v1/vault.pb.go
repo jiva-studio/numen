@@ -1809,7 +1809,9 @@ type Heading struct {
 	Text  string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
 	// The line it stands on, counted from the first line of the prose.
 	Line int32 `protobuf:"varint,2,opt,name=line,proto3" json:"line,omitempty"`
-	// How deep it sits, from one for the shallowest a note can carry.
+	// How deep it sits, from one for the shallowest a note can carry. Zero where
+	// the answer does not say: a name that matched carries the heading's words
+	// and where it stands, and nothing about its depth.
 	Level         int32 `protobuf:"varint,3,opt,name=level,proto3" json:"level,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1868,7 +1870,8 @@ func (x *Heading) GetLevel() int32 {
 
 type HeadingsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The notes to answer about, by the paths the vault files them under.
+	// The notes to answer about, by the paths the vault files them under. The
+	// vault sets a ceiling on how many it answers at once.
 	Paths         []string `protobuf:"bytes,1,rep,name=paths,proto3" json:"paths,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

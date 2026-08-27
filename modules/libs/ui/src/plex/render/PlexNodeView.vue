@@ -334,7 +334,6 @@ const hue = computed(() => ({
             }"
             @click.stop="enter(part.id)"
             @dblclick.stop
-            @contextmenu.stop
           >
             <span class="plex__part-text">{{ part.text }}</span>
           </div>
@@ -435,8 +434,6 @@ const hue = computed(() => ({
   white-space: nowrap;
 }
 
-/* Clipped to what is hung: a part still behind the box has not come out yet
-   and is not drawn. */
 /* The ground the parts stand on: enough of it to hold them together, and thin
    enough to read the picture through. */
 .plex__ground {
