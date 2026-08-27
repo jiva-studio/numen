@@ -30,6 +30,9 @@ const DEEPEST = 3
 /** How far below its place a part sets off, as a fraction of its own height. */
 const RISE = 0.7
 
+/** The ground kept clear around the parts, as a fraction of a part's height. */
+const PAD = 0.25
+
 /**
  * One part of a node, as the caller describes it. The identifier is opaque:
  * the plex has no way to ask what it addresses.
@@ -59,6 +62,8 @@ export interface HungParts {
   /** The edge they come out from, from the middle of the node. */
   readonly top: number
   readonly partHeight: number
+  /** Ground kept clear around them, so none stands flush against an edge. */
+  readonly pad: number
   /** As wide as the longest of them asks for, held inside the window. */
   readonly width: number
   /** How far their middle stands from where the node is placed. */
@@ -135,12 +140,14 @@ export function hangParts(
     hung.push({ id: '', text: REST, indent: 0, at: hung.length * partHeight })
   }
 
+  const pad = Math.round(PAD * partHeight)
   return {
     top: node.height / 2,
     partHeight,
-    ...across(node, hung, room),
+    pad,
+    ...across(node, hung, pad, room),
     parts: hung,
-    height: hung.length * partHeight,
+    height: hung.length * partHeight + 2 * pad,
   }
 }
 
@@ -153,6 +160,7 @@ export function hangParts(
 function across(
   node: PlacedNode,
   hung: readonly HungPart[],
+  pad: number,
   room: Room,
 ): { width: number; offset: number } {
   const measure = room.measure
@@ -160,7 +168,7 @@ function across(
     ? Math.max(...hung.map((part) => measure(part.text) + part.indent))
     : 0
   const width = Math.min(
-    Math.max(asked, node.width),
+    Math.max(asked + 2 * pad, node.width),
     room.viewport.width - 2 * room.margin,
   )
 
@@ -188,7 +196,7 @@ export function openedTo(hung: HungParts, open: number): OpenParts | null {
   const runs = Math.max(1 - LEAD * (hung.parts.length - 1), LEAD)
 
   /** The deepest a part may set off from and still stand on the ground. */
-  const floor = hung.height - hung.partHeight
+  const floor = hung.height - 2 * hung.pad - hung.partHeight
 
   const parts = hung.parts.map((part, at) => {
     const own = easeOut(clamp01((opened - at * LEAD) / runs))

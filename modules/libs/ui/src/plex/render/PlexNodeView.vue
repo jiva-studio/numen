@@ -318,12 +318,12 @@ const hue = computed(() => ({
         v-for="(part, at) in opened.parts"
         :key="part.id || `rest:${at}`"
         :opacity="part.opacity"
-        :transform="`translate(0 ${hung.top + part.y})`"
+        :transform="`translate(0 ${hung.top + hung.pad + part.y})`"
       >
         <foreignObject
-          :x="hung.offset - hung.width / 2"
+          :x="hung.offset - hung.width / 2 + hung.pad"
           y="0"
-          :width="hung.width"
+          :width="hung.width - 2 * hung.pad"
           :height="hung.partHeight"
         >
           <div
@@ -440,7 +440,7 @@ const hue = computed(() => ({
 /* The ground the parts stand on: enough of it to hold them together, and thin
    enough to read the picture through. */
 .plex__ground {
-  rx: var(--numen-plex-radius);
+  rx: 0.25rem;
   fill: color-mix(in oklab, var(--numen-node-bg), transparent 25%);
   stroke: color-mix(in oklab, var(--numen-node-border), transparent 55%);
   stroke-width: var(--numen-stroke);
@@ -462,7 +462,7 @@ const hue = computed(() => ({
   align-items: center;
   box-sizing: border-box;
   padding-inline-end: var(--numen-node-padding);
-  border-radius: var(--numen-plex-radius);
+  border-radius: 0.1875rem;
   cursor: pointer;
   transition: background var(--numen-motion-hover) var(--numen-easing);
 }

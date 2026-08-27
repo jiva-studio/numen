@@ -56,8 +56,10 @@ describe('what a node hangs', () => {
     expect(held.map((part) => part.at)).toStrictEqual([0, 20, 40])
   })
 
-  it('stands as deep as the parts it holds', () => {
-    expect(hung(parts(3))?.height).toBe(60)
+  it('stands as deep as the parts it holds, and the ground it keeps clear', () => {
+    const settled = hung(parts(3))!
+    expect(settled.height).toBe(3 * SIZES.partHeight + 2 * settled.pad)
+    expect(settled.pad).toBeGreaterThan(0)
   })
 })
 
@@ -143,7 +145,9 @@ describe('the opening', () => {
     for (const open of [0.05, 0.2, 0.4, 0.6, 0.8, 1]) {
       for (const part of openedTo(settled, open)!.parts) {
         expect(part.y).toBeGreaterThanOrEqual(0)
-        expect(part.y + settled.partHeight).toBeLessThanOrEqual(settled.height)
+        expect(part.y + settled.partHeight).toBeLessThanOrEqual(
+          settled.height - 2 * settled.pad,
+        )
       }
     }
   })
@@ -172,12 +176,14 @@ describe('the opening', () => {
 describe('how wide the parts are drawn', () => {
   const wide = (held: readonly PlexPart[], room = ROOM) => hung(held, room)!
 
-  it('is the room the longest of them asks for', () => {
+  it('is the room the longest of them asks for, and the ground beside it', () => {
+    const longest = 'A good deal longer than that'
     const held = [
       { id: '0', text: 'Short', level: 1 },
-      { id: '1', text: 'A good deal longer than that', level: 1 },
+      { id: '1', text: longest, level: 1 },
     ]
-    expect(wide(held).width).toBe(10 * 'A good deal longer than that'.length)
+    const settled = wide(held)
+    expect(settled.width).toBe(10 * longest.length + 2 * settled.pad)
   })
 
   it('is never narrower than the node’s own box', () => {
@@ -189,8 +195,7 @@ describe('how wide the parts are drawn', () => {
     const flat = [{ id: '0', text: words, level: 1 }]
     const nested = [...flat, { id: '1', text: words, level: 2 }]
 
-    expect(wide(flat).width).toBe(10 * words.length)
-    expect(wide(nested).width).toBe(10 * words.length + SIZES.partIndent)
+    expect(wide(nested).width - wide(flat).width).toBe(SIZES.partIndent)
   })
 
   it('is the node’s own box where there is nothing to measure text with', () => {
