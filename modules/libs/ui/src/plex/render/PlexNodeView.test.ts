@@ -9,6 +9,7 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import PlexNodeView from './PlexNodeView.vue'
 import { OPENING, type Widened } from '../dwell'
+import { MOST, REST, hangParts, type PlexPart } from '../inside'
 import { stubEnvironment } from '../fixtures/clock'
 import type { NodeStanding, PlacedNode, PlexSeat } from '../model'
 
@@ -458,5 +459,100 @@ describe('a box with nothing more to show', () => {
       wide: { width: 400, offset: 0 },
     })
     expect(Number(node.get('rect').attributes('width'))).toBe(144)
+  })
+})
+
+describe('the parts a node hangs', () => {
+  const WAIT = 500
+  const SIZES = { partHeight: 20, partIndent: 10 }
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  const parts = (count: number): PlexPart[] =>
+    Array.from({ length: count }, (_, at) => ({
+      id: `${at}`,
+      text: `Part ${at}`,
+      level: 1,
+    }))
+
+  const mountInside = (held: readonly PlexPart[], wide: Widened | null = null) => {
+    vi.useFakeTimers()
+    const world = stubEnvironment()
+    const node = mount(PlexNodeView, {
+      props: {
+        node: nodeAt(),
+        wide,
+        hung: hangParts(nodeAt(), held, SIZES, {
+          viewport: { width: 1000, height: 600 },
+          margin: 20,
+        }),
+        dwell: WAIT,
+        environment: world.environment,
+      },
+    })
+    return { node, world }
+  }
+
+  /** The hand arrives, stays, and the opening is drawn to its end. */
+  const rest = async (mounted: ReturnType<typeof mountInside>) => {
+    await mounted.node.trigger('pointerenter')
+    await vi.advanceTimersByTimeAsync(WAIT)
+    mounted.world.run()
+    await mounted.node.vm.$nextTick()
+    return mounted.node
+  }
+
+  it('hangs nothing for a node with none, however long the hand stays', async () => {
+    const node = await rest(mountInside([]))
+    expect(node.find('.plex__part').exists()).toBe(false)
+    expect(node.emitted('rest')).toBeUndefined()
+  })
+
+  it('opens for them although the title already fits its box', async () => {
+    const node = await rest(mountInside(parts(2)))
+    expect(node.findAll('.plex__part')).toHaveLength(2)
+    expect(node.emitted('rest')).toStrictEqual([[true]])
+  })
+
+  it('draws them in the order they were given', async () => {
+    const node = await rest(mountInside(parts(3)))
+    expect(node.findAll('.plex__part').map((part) => part.text())).toStrictEqual([
+      'Part 0',
+      'Part 1',
+      'Part 2',
+    ])
+  })
+
+  it('says which part was chosen, and not that the node itself was', async () => {
+    const node = await rest(mountInside(parts(3)))
+    await node.findAll('.plex__part')[1]!.trigger('click')
+    expect(node.emitted('enter')).toStrictEqual([['1']])
+    expect(node.emitted('activate')).toBeUndefined()
+  })
+
+  it('says nothing for the one standing in for those that did not fit', async () => {
+    const node = await rest(mountInside(parts(MOST + 1)))
+    const drawn = node.findAll('.plex__part')
+    expect(drawn.at(-1)!.text()).toBe(REST)
+
+    await drawn.at(-1)!.trigger('click')
+    expect(node.emitted('enter')).toBeUndefined()
+  })
+
+  it('is put away once the hand has left', async () => {
+    const mounted = mountInside(parts(3))
+    await rest(mounted)
+
+    await mounted.node.trigger('pointerleave')
+    mounted.world.run()
+    await mounted.node.vm.$nextTick()
+    expect(mounted.node.find('.plex__part').exists()).toBe(false)
+  })
+
+  it('is nothing a screen reader is told about, the palette being the way there', async () => {
+    const node = await rest(mountInside(parts(2)))
+    expect(node.get('.plex__inside').attributes('aria-hidden')).toBe('true')
   })
 })

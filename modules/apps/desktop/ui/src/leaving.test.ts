@@ -63,6 +63,7 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
 
   const core: Core & Going = {
     neighbourhood: async () => ({}) as never,
+    headings: async () => new Map(),
     opening: async () => null,
     state: async () => idle,
     // eslint-disable-next-line require-yield

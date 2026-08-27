@@ -45,6 +45,67 @@ func (q *Queries) Notes(ctx context.Context, vaultID string, paths []string) (ma
 	return out, nil
 }
 
+// Headings is what each of the notes asked about is divided into. A path that
+// names nothing, and a note with no headings in it, are left out.
+//
+// The byte a heading begins at is not in the index, so what comes back says
+// which line it stands on and nothing about where in the text that is.
+func (q *Queries) Headings(ctx context.Context, vaultID string, paths []string) (map[string][]domain.Heading, error) {
+	out := map[string][]domain.Heading{}
+	if len(paths) == 0 {
+		return out, nil
+	}
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return out, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	// One prepared statement, asked repeatedly, as the notes themselves are.
+	statement, err := q.db.PrepareContext(ctx, stmt.Get("headings_of"))
+	if err != nil {
+		return nil, err
+	}
+	defer statement.Close()
+
+	for _, path := range paths {
+		found, err := headingsAt(ctx, statement, vault, path)
+		if err != nil {
+			return nil, err
+		}
+		if len(found) > 0 {
+			out[path] = found
+		}
+	}
+	return out, nil
+}
+
+// headingsAt is one note's headings, read off a statement already prepared.
+func headingsAt(
+	ctx context.Context,
+	statement *sql.Stmt,
+	vault int64,
+	path string,
+) ([]domain.Heading, error) {
+	rows, err := statement.QueryContext(ctx, vault, path)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []domain.Heading
+	for rows.Next() {
+		var h domain.Heading
+		if err := rows.Scan(&h.Line, &h.Level, &h.Text); err != nil {
+			return nil, err
+		}
+		out = append(out, h)
+	}
+	return out, rows.Err()
+}
+
 // Opening is the note a vault is shown at when nothing else has been chosen.
 func (q *Queries) Opening(ctx context.Context, vaultID string) (domain.NoteRef, bool, error) {
 	var ref domain.NoteRef

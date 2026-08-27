@@ -52,6 +52,40 @@ func (a *API) Names(ctx context.Context, r *connect.Request[v1.NamesRequest]) (*
 	return connect.NewResponse(out), nil
 }
 
+// Headings hands the client what each of the notes asked about is divided
+// into. A window standing on nothing holds no note to divide.
+func (a *API) Headings(ctx context.Context, r *connect.Request[v1.HeadingsRequest]) (*connect.Response[v1.HeadingsResponse], error) {
+	showing := a.Showing()
+	if showing.ID == "" {
+		return connect.NewResponse(&v1.HeadingsResponse{}), nil
+	}
+	paths := r.Msg.GetPaths()
+	found, err := a.Notes.Headings(ctx, showing.ID, paths)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	// In the order they were asked about, so a client reading the answer down
+	// reads it in the order it drew the question.
+	out := &v1.HeadingsResponse{Found: make([]*v1.NoteHeadings, 0, len(found))}
+	for _, path := range paths {
+		headings, held := found[path]
+		if !held {
+			continue
+		}
+		one := &v1.NoteHeadings{Path: path, Headings: make([]*v1.Heading, 0, len(headings))}
+		for _, h := range headings {
+			one.Headings = append(one.Headings, &v1.Heading{
+				Text:  h.Text,
+				Line:  int32(h.Line),
+				Level: int32(h.Level),
+			})
+		}
+		out.Found = append(out.Found, one)
+	}
+	return connect.NewResponse(out), nil
+}
+
 // Search hands the client the text the vault holds that answers what was typed.
 //
 // Which way it is asked is the client's, so a client drawing what is written apart

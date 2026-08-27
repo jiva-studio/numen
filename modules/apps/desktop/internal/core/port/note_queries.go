@@ -21,6 +21,14 @@ type NoteQueries interface {
 	// PassageQueries and the use case above it.
 	Names(ctx context.Context, vaultID, query string, limit int) ([]domain.NameMatch, error)
 
+	// Headings is what each of the notes asked about is divided into, in the
+	// order they stand in it. A path that names nothing, and a note with no
+	// headings, are absent from the answer.
+	//
+	// The byte a heading begins at is not in the index, so what comes back says
+	// which line it stands on and nothing about where in the text that is.
+	Headings(ctx context.Context, vaultID string, paths []string) (map[string][]domain.Heading, error)
+
 	Summary(ctx context.Context, vaultID string) (domain.VaultSummary, error)
 
 	// Notes returns what is needed to show a note, for the paths asked about.

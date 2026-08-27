@@ -6,12 +6,13 @@
  * says nothing about drawing.
  */
 import { NeighbourhoodResponseSchema, Seat } from '@numen/protocol'
-import type { Neighbourhood } from '../core'
+import type { Heading, Neighbourhood } from '../core'
 import type {
   EdgeArrow,
   PlexEdge,
   PlexNeighbourhood,
   PlexNode,
+  PlexPart,
   PlexRelatedSeat,
 } from '@numen/ui'
 
@@ -96,6 +97,20 @@ export function asPlex(
   })
 
   return { nodes, edges }
+}
+
+/**
+ * The headings of a note as the parts its node hangs.
+ *
+ * A part is named by the line it stands on: that is what taking someone to it
+ * needs, and it tells two headings of one wording apart.
+ */
+export function asParts(headings: readonly Heading[]): PlexPart[] {
+  return headings.map((heading) => ({
+    id: `${heading.line}`,
+    text: heading.text,
+    level: heading.level,
+  }))
 }
 
 /**

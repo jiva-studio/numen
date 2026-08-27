@@ -8,13 +8,19 @@
  * A gesture names a node by its ticket. This is the edge where a ticket becomes
  * the path the vault is asked about, and past it every note is a path.
  */
-import { computed, ref } from 'vue'
-import type { MenuOpening, PlexNeighbourhood, PlexRelatedSeat, PlexShowing } from '@numen/ui'
+import { computed, ref, watch } from 'vue'
+import type {
+  MenuOpening,
+  PlexNeighbourhood,
+  PlexPart,
+  PlexRelatedSeat,
+  PlexShowing,
+} from '@numen/ui'
 import { NEW_NOTE, OFFERED } from './menu'
-import { asPlex } from './picture'
+import { asParts, asPlex } from './picture'
 import type { Standing } from './standing'
 import { ticketing } from './tickets'
-import type { Went } from '../core'
+import type { Heading, Went } from '../core'
 import type { Host, Kind } from '../windowing'
 import { PLEX, plexCalled } from '../workspace'
 import PlexTab from './PlexTab.vue'
@@ -42,6 +48,13 @@ export interface Plexing {
   ready(): boolean
   /** A note opened in a tab of its own, under the name the picture gives it. */
   opens(path: string, title: string, showing: PlexShowing): void
+  /** An open note given the keyboard on one of its lines. */
+  entersAt(path: string, line: number): void
+  /**
+   * What each of the notes asked about is divided into, by the path it was
+   * asked about. A note with nothing inside it is absent.
+   */
+  inside(paths: readonly string[]): Promise<ReadonlyMap<string, readonly Heading[]>>
   /** Something to ask, put in the agent the person was last in. */
   asks(text: string): void
   /**
@@ -148,10 +161,14 @@ export function plexKind(host: Host, makes: () => Standing, deps: Plexing) {
         // The next change asks again.
       }
     }
+    // The picture is asked for again, and with it what the notes on it are
+    // divided into: a note whose headings were edited is drawn in the picture
+    // it was already drawn in, and nothing else would ask.
     await Promise.all(
-      all().map(({ held }) => {
+      all().map(async ({ held }) => {
         const path = held.view.here.value || deps.opening()
-        return path ? held.view.go(path) : Promise.resolve()
+        if (path) await held.view.go(path)
+        await held.reads()
       }),
     )
   }
@@ -194,6 +211,47 @@ export function plexing(view: Standing, deps: Plexing) {
 
   /** The menu on a node, for as long as it stands. */
   const menu = ref<Asked | null>(null)
+
+  /** What each note this plex draws is divided into, by the path it stands at. */
+  const parts = ref<ReadonlyMap<string, readonly PlexPart[]>>(new Map())
+
+  /** Every note on the picture, the one in focus among them. */
+  const drawn = computed<readonly string[]>(() => {
+    const around = view.neighbourhood.value
+    if (!around) return []
+    const paths = [around.focus?.path ?? '']
+    for (const related of around.related) if (related.note) paths.push(related.note.path)
+    return paths.filter(Boolean)
+  })
+
+  /**
+   * What the notes on the picture are divided into, asked for all of them at
+   * once and kept until the next question.
+   *
+   * A vault that cannot answer leaves every node hanging nothing, which is
+   * what a node with nothing inside it hangs.
+   */
+  const reads = async () => {
+    const paths = drawn.value
+    if (paths.length === 0) {
+      parts.value = new Map()
+      return
+    }
+    try {
+      const found = await deps.inside(paths)
+      parts.value = new Map([...found].map(([path, held]) => [path, asParts(held)]))
+    } catch {
+      parts.value = new Map()
+    }
+  }
+
+  // The picture the plex travels to is a new set of notes. A note whose
+  // headings were edited is drawn in the same picture, and `again` asks.
+  watch(drawn, () => void reads(), { immediate: true })
+
+  /** The parts of the note a ticket names. */
+  const partsOf = (node: string): readonly PlexPart[] =>
+    parts.value.get(tickets.note(node) ?? '') ?? []
 
   /** A node chosen: the plex travels there, and the picture is asked for again. */
   const activate = (node: string) => {
@@ -255,6 +313,22 @@ export function plexing(view: Standing, deps: Plexing) {
   }
 
   /**
+   * A part of a node chosen: the note it stands in is put in front of the
+   * person, and the keyboard goes to the line the part stands on.
+   *
+   * The plex stays where it is standing. A part is somewhere in a note, and
+   * going to one is not travelling to the note as a thing.
+   */
+  const entered = (node: string, part: string) => {
+    const path = tickets.note(node)
+    // A part is named by the line it stands on, and anything else names the
+    // ones that did not fit.
+    if (!path || !/^\d+$/.test(part)) return
+    deps.opens(path, nameOf(path), 'here')
+    deps.entersAt(path, Number(part))
+  }
+
+  /**
    * A note made at the top of the vault, which the plex then stands on. It is
    * in the index by the time the answer arrives, so the picture drawn around it
    * is the one the vault holds.
@@ -313,6 +387,9 @@ export function plexing(view: Standing, deps: Plexing) {
     carried,
     menu,
     creatable: deps.creatable,
+    partsOf,
+    reads,
+    entered,
     activate,
     made,
     joined,

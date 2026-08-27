@@ -13,6 +13,7 @@ import Plex from './Plex.vue'
 import { resolveOptions, rowsAndColumns, type Placement, type PlexOptionsInput } from './arrange'
 import { optionsForType, useTypeSize } from './sizing'
 import { DWELL } from './dwell'
+import { MOST, type PlexPart } from './inside'
 import { neighbourhoods } from './fixtures/neighbourhoods'
 import { neighbourhoodOf, walkStart } from './fixtures/walk'
 import { around, build, type Named } from './fixtures/build'
@@ -42,6 +43,8 @@ interface Knobs {
   onBring: (carried: readonly string[], seat: PlexRelatedSeat) => void
   onMenu: (id: string, at: Point, from: SVGGElement, opening: MenuOpening) => void
   onDismiss: () => void
+  parts: (id: string) => readonly PlexPart[]
+  onEnter: (id: string, part: string) => void
 
   focusWidth: number
   focusHeight: number
@@ -239,6 +242,8 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
         :dwell="args.dwell"
         :carried="args.carried"
         :carried-name="args.carriedName"
+        :parts="args.parts"
+        @enter="(id, part) => args.onEnter(id, part)"
         @activate="chose($event); args.onActivate($event)"
         @show="(id, showing) => args.onShow(id, showing)"
         @create="(from, seat) => { create(from, seat); args.onCreate(from, seat) }"
@@ -365,6 +370,8 @@ const meta = {
     onBring: { table: { disable: true } },
     onMenu: { table: { disable: true } },
     onDismiss: { table: { disable: true } },
+    parts: { table: { disable: true } },
+    onEnter: { table: { disable: true } },
   },
 
   args: {
@@ -379,6 +386,8 @@ const meta = {
     onBring: fn(),
     onMenu: fn(),
     onDismiss: fn(),
+    parts: () => [],
+    onEnter: fn(),
     naming: nameNow,
     carried: [],
     carriedName: (seat: PlexRelatedSeat) => `as ${seat}`,
@@ -1230,6 +1239,99 @@ export const Walk: Story = {
 }
 
 /** Too small a window: the plex is clipped rather than shrunk. */
+/**
+ * Everything hung parts have to survive, one node each: a nested set, far more
+ * than fit, one alone, one that runs on past the box, parts not written in
+ * Latin, a part with no words at all, and nodes with none.
+ */
+const INSIDE: Record<string, readonly PlexPart[]> = {
+  focus: [
+    { id: '0', text: 'What it is', level: 1 },
+    { id: '4', text: 'Where it came from', level: 2 },
+    { id: '9', text: 'The first account', level: 3 },
+    { id: '14', text: 'The second', level: 3 },
+    { id: '20', text: 'What follows from it', level: 2 },
+    { id: '31', text: 'Notes', level: 1 },
+  ],
+  'focus/child-0': [{ id: '2', text: 'The only heading in it', level: 1 }],
+  'focus/child-1': [
+    {
+      id: '3',
+      text: 'A heading that runs on well past anything the box it hangs from could hold',
+      level: 1,
+    },
+  ],
+  'focus/child-2': [{ id: '5', text: '', level: 1 }],
+  'focus/parent-0': [
+    { id: '1', text: 'Что внутри', level: 1 },
+    { id: '6', text: '日本語の見出し', level: 2 },
+    { id: '11', text: 'مدخل بالعربية', level: 2 },
+  ],
+  // The one node there is exactly one of, so the play can find it by its seat.
+  'focus/jump-0': Array.from({ length: 30 }, (_, at) => ({
+    id: `${at}`,
+    text: `Section ${at + 1}`,
+    level: 1,
+  })),
+}
+
+export const PartsInside: Story = {
+  args: {
+    ...invented.args,
+    parents: 1,
+    children: 4,
+    jumps: 1,
+    siblings: 0,
+    parts: (id: string) => INSIDE[id] ?? [],
+  },
+  render: invented.render,
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    const focus = canvas.getByLabelText(/, focus$/)
+    const partsOf = (node: Element) => [...node.querySelectorAll('.plex__part')]
+
+    // Nothing hangs until the hand has been on it a while.
+    await expect(partsOf(focus)).toHaveLength(0)
+
+    await userEvent.hover(focus)
+    await waitFor(async () => await expect(partsOf(focus)).toHaveLength(MOST), { timeout: 3000 })
+
+    // The nesting is drawn by setting a part in, and the deeper of them stands
+    // further in than the one it sits under.
+    const setIn = (part: Element) =>
+      Number.parseFloat(getComputedStyle(part).paddingInlineStart)
+    const [first, second, third] = partsOf(focus)
+    await expect(setIn(second!)).toBeGreaterThan(setIn(first!))
+    await expect(setIn(third!)).toBeGreaterThan(setIn(second!))
+
+    // The hand leaves, and they go back under the box.
+    await userEvent.unhover(focus)
+    await waitFor(async () => await expect(partsOf(focus)).toHaveLength(0))
+
+    // Choosing one says which part it was, on the node it hangs from.
+    await userEvent.hover(focus)
+    await waitFor(async () => await expect(partsOf(focus)).toHaveLength(MOST), { timeout: 3000 })
+    await userEvent.click(partsOf(focus)[1]!)
+    await expect(args.onEnter).toHaveBeenCalledWith('focus', '4')
+
+    // A note with more parts than are drawn says so in the last of them, and
+    // that one is nowhere to go.
+    const many = canvas.getByLabelText(/, jump$/)
+    await userEvent.hover(many)
+    await waitFor(async () => await expect(partsOf(many)).toHaveLength(MOST + 1), { timeout: 3000 })
+    await expect(partsOf(many).at(-1)!.textContent?.trim()).toBe('…')
+
+    await userEvent.click(partsOf(many).at(-1)!)
+    await expect(args.onEnter).not.toHaveBeenCalledWith('focus/jump-0', expect.anything())
+
+    // Choosing a part is not choosing the node it hangs from: the plex stays
+    // where it is standing.
+    await userEvent.click(partsOf(many)[0]!)
+    await expect(args.onEnter).toHaveBeenCalledWith('focus/jump-0', '0')
+    await expect(args.onActivate).not.toHaveBeenCalled()
+  },
+}
+
 export const SmallWindow: Story = {
   args: { neighbourhood: neighbourhoods.crowded },
   render: (args) => ({

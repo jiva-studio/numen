@@ -16,6 +16,8 @@ export interface Measures {
   readonly node: Measure
   /** The words of a label, which stand on a line and carry no padding. */
   readonly label: (label: string) => number
+  /** The width a part's box needs for its words, padding included. */
+  readonly part: (text: string) => number
   /** How deep one line of a label stands, across the line it is set on. */
   readonly labelDepth: number
 }
@@ -176,6 +178,7 @@ function measuresFor(type: PlexType, icon: number): Measures | undefined {
   return {
     node: (node) => Math.ceil(title(node.title) + room),
     label: (words) => Math.ceil(label(words)),
+    part: (text) => Math.ceil(label(text) + 2 * type.padding),
     labelDepth: lineDepth(context, type.labelFont),
   }
 }

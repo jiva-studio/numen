@@ -50,6 +50,8 @@ const (
 	VaultServiceNeighbourhoodProcedure = "/numen.v1.VaultService/Neighbourhood"
 	// VaultServiceNamesProcedure is the fully-qualified name of the VaultService's Names RPC.
 	VaultServiceNamesProcedure = "/numen.v1.VaultService/Names"
+	// VaultServiceHeadingsProcedure is the fully-qualified name of the VaultService's Headings RPC.
+	VaultServiceHeadingsProcedure = "/numen.v1.VaultService/Headings"
 	// VaultServiceSearchProcedure is the fully-qualified name of the VaultService's Search RPC.
 	VaultServiceSearchProcedure = "/numen.v1.VaultService/Search"
 	// VaultServiceChangesProcedure is the fully-qualified name of the VaultService's Changes RPC.
@@ -105,6 +107,12 @@ type VaultServiceClient interface {
 	// It reads names and nothing else. Searching the text a vault holds is
 	// Search, and that answers with passages.
 	Names(context.Context, *connect.Request[v1.NamesRequest]) (*connect.Response[v1.NamesResponse], error)
+	// Headings is what each note asked about is divided into, in the order the
+	// headings stand in it. A path that names no note is absent from the answer.
+	//
+	// It is asked about notes already being shown, so a client drawing a note
+	// has what is inside it without asking again for each.
+	Headings(context.Context, *connect.Request[v1.HeadingsRequest]) (*connect.Response[v1.HeadingsResponse], error)
 	// Search is the text a vault holds that answers what was typed, by the words
 	// in it or by what it means or by what a section is called. The caller says
 	// which way it is asked, so a client drawing them apart asks once for each.
@@ -212,6 +220,12 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			httpClient,
 			baseURL+VaultServiceNamesProcedure,
 			connect.WithSchema(vaultServiceMethods.ByName("Names")),
+			connect.WithClientOptions(opts...),
+		),
+		headings: connect.NewClient[v1.HeadingsRequest, v1.HeadingsResponse](
+			httpClient,
+			baseURL+VaultServiceHeadingsProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Headings")),
 			connect.WithClientOptions(opts...),
 		),
 		search: connect.NewClient[v1.SearchRequest, v1.SearchResponse](
@@ -331,6 +345,7 @@ type vaultServiceClient struct {
 	opening       *connect.Client[v1.OpeningRequest, v1.OpeningResponse]
 	neighbourhood *connect.Client[v1.NeighbourhoodRequest, v1.NeighbourhoodResponse]
 	names         *connect.Client[v1.NamesRequest, v1.NamesResponse]
+	headings      *connect.Client[v1.HeadingsRequest, v1.HeadingsResponse]
 	search        *connect.Client[v1.SearchRequest, v1.SearchResponse]
 	changes       *connect.Client[v1.ChangesRequest, v1.ChangesResponse]
 	focus         *connect.Client[v1.FocusRequest, v1.FocusResponse]
@@ -369,6 +384,11 @@ func (c *vaultServiceClient) Neighbourhood(ctx context.Context, req *connect.Req
 // Names calls numen.v1.VaultService.Names.
 func (c *vaultServiceClient) Names(ctx context.Context, req *connect.Request[v1.NamesRequest]) (*connect.Response[v1.NamesResponse], error) {
 	return c.names.CallUnary(ctx, req)
+}
+
+// Headings calls numen.v1.VaultService.Headings.
+func (c *vaultServiceClient) Headings(ctx context.Context, req *connect.Request[v1.HeadingsRequest]) (*connect.Response[v1.HeadingsResponse], error) {
+	return c.headings.CallUnary(ctx, req)
 }
 
 // Search calls numen.v1.VaultService.Search.
@@ -477,6 +497,12 @@ type VaultServiceHandler interface {
 	// It reads names and nothing else. Searching the text a vault holds is
 	// Search, and that answers with passages.
 	Names(context.Context, *connect.Request[v1.NamesRequest]) (*connect.Response[v1.NamesResponse], error)
+	// Headings is what each note asked about is divided into, in the order the
+	// headings stand in it. A path that names no note is absent from the answer.
+	//
+	// It is asked about notes already being shown, so a client drawing a note
+	// has what is inside it without asking again for each.
+	Headings(context.Context, *connect.Request[v1.HeadingsRequest]) (*connect.Response[v1.HeadingsResponse], error)
 	// Search is the text a vault holds that answers what was typed, by the words
 	// in it or by what it means or by what a section is called. The caller says
 	// which way it is asked, so a client drawing them apart asks once for each.
@@ -580,6 +606,12 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 		VaultServiceNamesProcedure,
 		svc.Names,
 		connect.WithSchema(vaultServiceMethods.ByName("Names")),
+		connect.WithHandlerOptions(opts...),
+	)
+	vaultServiceHeadingsHandler := connect.NewUnaryHandler(
+		VaultServiceHeadingsProcedure,
+		svc.Headings,
+		connect.WithSchema(vaultServiceMethods.ByName("Headings")),
 		connect.WithHandlerOptions(opts...),
 	)
 	vaultServiceSearchHandler := connect.NewUnaryHandler(
@@ -700,6 +732,8 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 			vaultServiceNeighbourhoodHandler.ServeHTTP(w, r)
 		case VaultServiceNamesProcedure:
 			vaultServiceNamesHandler.ServeHTTP(w, r)
+		case VaultServiceHeadingsProcedure:
+			vaultServiceHeadingsHandler.ServeHTTP(w, r)
 		case VaultServiceSearchProcedure:
 			vaultServiceSearchHandler.ServeHTTP(w, r)
 		case VaultServiceChangesProcedure:
@@ -759,6 +793,10 @@ func (UnimplementedVaultServiceHandler) Neighbourhood(context.Context, *connect.
 
 func (UnimplementedVaultServiceHandler) Names(context.Context, *connect.Request[v1.NamesRequest]) (*connect.Response[v1.NamesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Names is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) Headings(context.Context, *connect.Request[v1.HeadingsRequest]) (*connect.Response[v1.HeadingsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Headings is not implemented"))
 }
 
 func (UnimplementedVaultServiceHandler) Search(context.Context, *connect.Request[v1.SearchRequest]) (*connect.Response[v1.SearchResponse], error) {

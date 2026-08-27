@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/vault.proto.
  */
 export const file_numen_v1_vault: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiNwoETm90ZRIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJEhIKCmlkZW50aWZpZXIYAyABKAkidAoGU2VhdGVkEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEhwKBHNlYXQYAiABKA4yDi5udW1lbi52MS5TZWF0Eg0KBWxhYmVsGAMgASgJEg8KB3Rocm91Z2gYBCABKAkSDgoGbXV0dWFsGAUgASgIIg4KDFN0YXRlUmVxdWVzdCL7AQoNU3RhdGVSZXNwb25zZRIMCgRuYW1lGAEgASgJEgwKBHBhdGgYAiABKAkSDQoFcmVhZHkYBCABKAgSDgoGZmFpbGVkGAUgASgJEhEKCXVud2F0Y2hlZBgGIAEoCRITCgt1bnJlYWNoYWJsZRgRIAEoCRIOCgZjaHVua3MYByABKAMSEAoIZW1iZWRkZWQYCCABKAMSEQoJZW1iZWRkaW5nGAogASgISgQIAxAESgQICRAKSgQICxARUgVib29rc1IKYm9va3NfcmVhZFIEYnVzeVIHaW5kZXhlZFIIbGVhcm5pbmdSBG1hZGVSBW93aW5nUgdyZWFkaW5nIg4KDFRhc2tzUmVxdWVzdCIuCg1UYXNrc1Jlc3BvbnNlEh0KBXRhc2tzGAEgAygLMg4ubnVtZW4udjEuVGFzayKSAQoEVGFzaxIKCgJpZBgBIAEoCRINCgVkb2luZxgCIAEoCRINCgVhYm91dBgDIAEoCRIMCgRkb25lGAQgASgDEg0KBXRvdGFsGAUgASgDEg4KBmZhaWxlZBgGIAEoCRINCgVhc2tlZBgHIAEoCBIkCghjb3VudGluZxgIIAEoDjISLm51bWVuLnYxLkNvdW50aW5nIhAKDk9wZW5pbmdSZXF1ZXN0Ij0KD09wZW5pbmdSZXNwb25zZRIhCgRub3RlGAEgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBQgcKBV9ub3RlIhAKDkNoYW5nZXNSZXF1ZXN0IlEKD0NoYW5nZXNSZXNwb25zZRINCgVwYXRocxgBIAMoCRIOCgZyZWxvYWQYAiABKAgSHwoHcmVuYW1lZBgDIAMoCzIOLm51bWVuLnYxLldlbnQiIAoEV2VudBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIg4KDEZvY3VzUmVxdWVzdCJdCg1Gb2N1c1Jlc3BvbnNlEgwKBHBhdGgYASABKAkSDQoFc3RhcnQYAiABKAUSDgoGbGVuZ3RoGAMgASgFEh8KBGFsc28YBCADKAsyES5udW1lbi52MS5TdHJldGNoIigKB1N0cmV0Y2gSDQoFc3RhcnQYASABKAUSDgoGbGVuZ3RoGAIgASgFIhAKDkVkaXRpbmdSZXF1ZXN0ImUKD0VkaXRpbmdSZXNwb25zZRIOCgZjaGFuZ2UYASABKAkSDAoEcGF0aBgCIAEoCRIMCgRmcm9tGAMgASgFEgoKAnRvGAQgASgFEgwKBHRleHQYBSABKAkSDAoEZG9uZRgGIAEoCCIkChROZWlnaGJvdXJob29kUmVxdWVzdBIMCgRwYXRoGAEgASgJIlkKFU5laWdoYm91cmhvb2RSZXNwb25zZRIdCgVmb2N1cxgBIAEoCzIOLm51bWVuLnYxLk5vdGUSIQoHcmVsYXRlZBgCIAMoCzIQLm51bWVuLnYxLlNlYXRlZCIsCgxOYW1lc1JlcXVlc3QSDQoFcXVlcnkYASABKAkSDQoFbGltaXQYAiABKAUiLwoNTmFtZXNSZXNwb25zZRIeCgVmb3VuZBgBIAMoCzIPLm51bWVuLnYxLk5hbWVkInYKBU5hbWVkEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEicKB2hlYWRpbmcYAiABKAsyES5udW1lbi52MS5IZWFkaW5nSACIAQESGgoCYXQYAyADKAsyDi5udW1lbi52MS5TcGFuQgoKCF9oZWFkaW5nIiUKB0hlYWRpbmcSDAoEdGV4dBgBIAEoCRIMCgRsaW5lGAIgASgFIiAKBFNwYW4SDAoEZnJvbRgBIAEoBRIKCgJ0bxgCIAEoBSJJCg1TZWFyY2hSZXF1ZXN0Eg0KBXF1ZXJ5GAEgASgJEg0KBWxpbWl0GAIgASgFEhoKA3dheRgDIAEoDjINLm51bWVuLnYxLldheSIyCg5TZWFyY2hSZXNwb25zZRIgCgVmb3VuZBgBIAMoCzIRLm51bWVuLnYxLlBhc3NhZ2UirAEKB1Bhc3NhZ2USDAoEcGF0aBgBIAEoCRIhCgRub3RlGAIgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBEgwKBHRleHQYAyABKAkSGgoCYXQYBCADKAsyDi5udW1lbi52MS5TcGFuEhAKCGxvY2F0aW9uGAUgASgJEg0KBXN0YXJ0GAYgASgFEg4KBmxlbmd0aBgHIAEoBRIMCgRsaW5lGAggASgFQgcKBV9ub3RlIh0KC0xpc3RSZXF1ZXN0Eg4KBmZvbGRlchgBIAEoCSIwCgxMaXN0UmVzcG9uc2USIAoHZW50cmllcxgBIAMoCzIPLm51bWVuLnYxLkVudHJ5ImMKBUVudHJ5EgwKBHBhdGgYASABKAkSDAoEbmFtZRgCIAEoCRIOCgZmb2xkZXIYAyABKAgSIgoEa2luZBgEIAEoDjIULm51bWVuLnYxLlNvdXJjZUtpbmRKBAgFEAZSBHNpemUiGwoLUmVhZFJlcXVlc3QSDAoEcGF0aBgBIAEoCSKAAQoMUmVhZFJlc3BvbnNlEgwKBGJvZHkYASABKAkSJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBARImCgJhdBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAGIAQFCCgoIX3JlZnVzYWxCBQoDX2F0IjgKC0ZpbmdlcnByaW50EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyI4CgRTZWVuEg0KBXByb3NlGAEgASgJEiEKAmF0GAIgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnQiVgoMV3JpdGVSZXF1ZXN0EgwKBHBhdGgYASABKAkSDAoEYm9keRgCIAEoCRIhCgRzZWVuGAMgASgLMg4ubnVtZW4udjEuU2VlbkgAiAEBQgcKBV9zZWVuIoQBCg1Xcml0ZVJlc3BvbnNlEicKB3JlZnVzYWwYASABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQESDwoHY2hhbmdlZBgCIAEoCBImCgJhdBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAGIAQFCCgoIX3JlZnVzYWxCBQoDX2F0IkIKB05ld0xpbmsSCgoCdG8YASABKAkSHAoEcm9sZRgCIAEoDjIOLm51bWVuLnYxLlJvbGUSDQoFbGFiZWwYAyABKAkiUAoNQ3JlYXRlUmVxdWVzdBINCgV0aXRsZRgBIAEoCRIOCgZmb2xkZXIYAiABKAkSIAoFbGlua3MYAyADKAsyES5udW1lbi52MS5OZXdMaW5rIlMKDkNyZWF0ZVJlc3BvbnNlEgwKBHBhdGgYASABKAkSJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBAUIKCghfcmVmdXNhbCI8CgtKb2luUmVxdWVzdBIMCgRwYXRoGAEgASgJEh8KBGxpbmsYAiABKAsyES5udW1lbi52MS5OZXdMaW5rIlQKDEpvaW5SZXNwb25zZRInCgdyZWZ1c2FsGAEgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBEg8KB2NoYW5nZWQYAiABKAhCCgoIX3JlZnVzYWwiLAoNUmVuYW1lUmVxdWVzdBIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJIsABCg5SZW5hbWVSZXNwb25zZRIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJEhwKAmJ5GAMgASgOMhAubnVtZW4udjEuTmFtaW5nEiMKBW1vdmVkGAQgASgLMg8ubnVtZW4udjEuTW92ZWRIAIgBARInCgdyZWZ1c2FsGAUgASgOMhEubnVtZW4udjEuUmVmdXNhbEgBiAEBEg8KB2NoYW5nZWQYBiABKAhCCAoGX21vdmVkQgoKCF9yZWZ1c2FsIkUKBU1vdmVkEgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkSEAoIcmVwYWlyZWQYAyADKAlKBAgEEAVSCnJldGFyZ2V0ZWQiEAoOU3luY2luZ1JlcXVlc3QiMgoPU3luY2luZ1Jlc3BvbnNlEh8KF3N5bmNfdGl0bGVfYW5kX2ZpbGVuYW1lGAEgASgIIjcKFENob29zZVN5bmNpbmdSZXF1ZXN0Eh8KF3N5bmNfdGl0bGVfYW5kX2ZpbGVuYW1lGAEgASgIIkwKFUNob29zZVN5bmNpbmdSZXNwb25zZRInCgdyZWZ1c2FsGAEgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsIicKC01vdmVSZXF1ZXN0EgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkicgoMTW92ZVJlc3BvbnNlEiMKBW1vdmVkGAEgASgLMg8ubnVtZW4udjEuTW92ZWRIAIgBARInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgBiAEBQggKBl9tb3ZlZEIKCghfcmVmdXNhbCIhChFNYWtlRm9sZGVyUmVxdWVzdBIMCgRwYXRoGAEgASgJIkkKEk1ha2VGb2xkZXJSZXNwb25zZRInCgdyZWZ1c2FsGAEgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsIi4KDVJlbW92ZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIPCgdkZXN0cm95GAIgASgIImgKDlJlbW92ZVJlc3BvbnNlEg8KB3RyYXNoZWQYASABKAkSEAoIZGFuZ2xpbmcYAiADKAkSJwoHcmVmdXNhbBgDIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBAUIKCghfcmVmdXNhbCIRCg9RdWl0dGluZ1JlcXVlc3QiMAoQUXVpdHRpbmdSZXNwb25zZRINCgV0b2tlbhgBIAEoCRINCgVmbHVzaBgCIAEoCCI9Cg5GbHVzaGVkUmVxdWVzdBINCgV0b2tlbhgBIAEoCRIcCgRvd2VkGAIgASgOMg4ubnVtZW4udjEuT3dlZCIRCg9GbHVzaGVkUmVzcG9uc2Uq3AEKB1JlZnVzYWwSFwoTUkVGVVNBTF9VTlNQRUNJRklFRBAAEhMKD1JFRlVTQUxfTUlTU0lORxABEhYKElJFRlVTQUxfTk9UX0FfTk9URRACEhQKEFJFRlVTQUxfTk9UX1RFWFQQAxIVChFSRUZVU0FMX1RPT19MQVJHRRAEEhgKFFJFRlVTQUxfQk9EWV9SRUZVU0VEEAUSFgoSUkVGVVNBTF9VTlJFQURBQkxFEAYSFAoQUkVGVVNBTF9PQ0NVUElFRBAHEhYKElJFRlVTQUxfVU5OQU1FQUJMRRAIKl4KBFNlYXQSFAoQU0VBVF9VTlNQRUNJRklFRBAAEg8KC1NFQVRfUEFSRU5UEAESDgoKU0VBVF9DSElMRBACEg0KCVNFQVRfSlVNUBADEhAKDFNFQVRfU0lCTElORxAEKk0KCENvdW50aW5nEhgKFENPVU5USU5HX1VOU1BFQ0lGSUVEEAASEwoPQ09VTlRJTkdfVEhJTkdTEAESEgoOQ09VTlRJTkdfQllURVMQAipJCgNXYXkSEwoPV0FZX1VOU1BFQ0lGSUVEEAASDQoJV0FZX1dPUkRTEAESDwoLV0FZX01FQU5JTkcQAhINCglXQVlfTkFNRVMQAypVCgpTb3VyY2VLaW5kEhsKF1NPVVJDRV9LSU5EX1VOU1BFQ0lGSUVEEAASFAoQU09VUkNFX0tJTkRfTk9URRABEhQKEFNPVVJDRV9LSU5EX0JPT0sQAipvCgRSb2xlEhQKEFJPTEVfVU5TUEVDSUZJRUQQABIPCgtST0xFX1BBUkVOVBABEg4KClJPTEVfQ0hJTEQQAhINCglST0xFX0pVTVAQAxIMCghST0xFX1JFRhAEEhMKD1JPTEVfQVRUQUNITUVOVBAFKmEKBk5hbWluZxIWChJOQU1JTkdfVU5TUEVDSUZJRUQQABIWChJOQU1JTkdfRlJPTlRNQVRURVIQARISCg5OQU1JTkdfSEVBRElORxACEhMKD05BTUlOR19GSUxFTkFNRRADKj8KBE93ZWQSFAoQT1dFRF9VTlNQRUNJRklFRBAAEhAKDE9XRURfV1JJVFRFThABEg8KC09XRURfQVNLSU5HEAIy+goKDFZhdWx0U2VydmljZRI4CgVTdGF0ZRIWLm51bWVuLnYxLlN0YXRlUmVxdWVzdBoXLm51bWVuLnYxLlN0YXRlUmVzcG9uc2USPgoHT3BlbmluZxIYLm51bWVuLnYxLk9wZW5pbmdSZXF1ZXN0GhkubnVtZW4udjEuT3BlbmluZ1Jlc3BvbnNlElAKDU5laWdoYm91cmhvb2QSHi5udW1lbi52MS5OZWlnaGJvdXJob29kUmVxdWVzdBofLm51bWVuLnYxLk5laWdoYm91cmhvb2RSZXNwb25zZRI4CgVOYW1lcxIWLm51bWVuLnYxLk5hbWVzUmVxdWVzdBoXLm51bWVuLnYxLk5hbWVzUmVzcG9uc2USOwoGU2VhcmNoEhcubnVtZW4udjEuU2VhcmNoUmVxdWVzdBoYLm51bWVuLnYxLlNlYXJjaFJlc3BvbnNlEkAKB0NoYW5nZXMSGC5udW1lbi52MS5DaGFuZ2VzUmVxdWVzdBoZLm51bWVuLnYxLkNoYW5nZXNSZXNwb25zZTABEjoKBUZvY3VzEhYubnVtZW4udjEuRm9jdXNSZXF1ZXN0GhcubnVtZW4udjEuRm9jdXNSZXNwb25zZTABEkAKB0VkaXRpbmcSGC5udW1lbi52MS5FZGl0aW5nUmVxdWVzdBoZLm51bWVuLnYxLkVkaXRpbmdSZXNwb25zZTABEjoKBVRhc2tzEhYubnVtZW4udjEuVGFza3NSZXF1ZXN0GhcubnVtZW4udjEuVGFza3NSZXNwb25zZTABEjUKBExpc3QSFS5udW1lbi52MS5MaXN0UmVxdWVzdBoWLm51bWVuLnYxLkxpc3RSZXNwb25zZRI1CgRSZWFkEhUubnVtZW4udjEuUmVhZFJlcXVlc3QaFi5udW1lbi52MS5SZWFkUmVzcG9uc2USOAoFV3JpdGUSFi5udW1lbi52MS5Xcml0ZVJlcXVlc3QaFy5udW1lbi52MS5Xcml0ZVJlc3BvbnNlEjsKBkNyZWF0ZRIXLm51bWVuLnYxLkNyZWF0ZVJlcXVlc3QaGC5udW1lbi52MS5DcmVhdGVSZXNwb25zZRI1CgRKb2luEhUubnVtZW4udjEuSm9pblJlcXVlc3QaFi5udW1lbi52MS5Kb2luUmVzcG9uc2USOwoGUmVuYW1lEhcubnVtZW4udjEuUmVuYW1lUmVxdWVzdBoYLm51bWVuLnYxLlJlbmFtZVJlc3BvbnNlEjUKBE1vdmUSFS5udW1lbi52MS5Nb3ZlUmVxdWVzdBoWLm51bWVuLnYxLk1vdmVSZXNwb25zZRI+CgdTeW5jaW5nEhgubnVtZW4udjEuU3luY2luZ1JlcXVlc3QaGS5udW1lbi52MS5TeW5jaW5nUmVzcG9uc2USUAoNQ2hvb3NlU3luY2luZxIeLm51bWVuLnYxLkNob29zZVN5bmNpbmdSZXF1ZXN0Gh8ubnVtZW4udjEuQ2hvb3NlU3luY2luZ1Jlc3BvbnNlEjsKBlJlbW92ZRIXLm51bWVuLnYxLlJlbW92ZVJlcXVlc3QaGC5udW1lbi52MS5SZW1vdmVSZXNwb25zZRJHCgpNYWtlRm9sZGVyEhsubnVtZW4udjEuTWFrZUZvbGRlclJlcXVlc3QaHC5udW1lbi52MS5NYWtlRm9sZGVyUmVzcG9uc2USQwoIUXVpdHRpbmcSGS5udW1lbi52MS5RdWl0dGluZ1JlcXVlc3QaGi5udW1lbi52MS5RdWl0dGluZ1Jlc3BvbnNlMAESPgoHRmx1c2hlZBIYLm51bWVuLnYxLkZsdXNoZWRSZXF1ZXN0GhkubnVtZW4udjEuRmx1c2hlZFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiNwoETm90ZRIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJEhIKCmlkZW50aWZpZXIYAyABKAkidAoGU2VhdGVkEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEhwKBHNlYXQYAiABKA4yDi5udW1lbi52MS5TZWF0Eg0KBWxhYmVsGAMgASgJEg8KB3Rocm91Z2gYBCABKAkSDgoGbXV0dWFsGAUgASgIIg4KDFN0YXRlUmVxdWVzdCL7AQoNU3RhdGVSZXNwb25zZRIMCgRuYW1lGAEgASgJEgwKBHBhdGgYAiABKAkSDQoFcmVhZHkYBCABKAgSDgoGZmFpbGVkGAUgASgJEhEKCXVud2F0Y2hlZBgGIAEoCRITCgt1bnJlYWNoYWJsZRgRIAEoCRIOCgZjaHVua3MYByABKAMSEAoIZW1iZWRkZWQYCCABKAMSEQoJZW1iZWRkaW5nGAogASgISgQIAxAESgQICRAKSgQICxARUgVib29rc1IKYm9va3NfcmVhZFIEYnVzeVIHaW5kZXhlZFIIbGVhcm5pbmdSBG1hZGVSBW93aW5nUgdyZWFkaW5nIg4KDFRhc2tzUmVxdWVzdCIuCg1UYXNrc1Jlc3BvbnNlEh0KBXRhc2tzGAEgAygLMg4ubnVtZW4udjEuVGFzayKSAQoEVGFzaxIKCgJpZBgBIAEoCRINCgVkb2luZxgCIAEoCRINCgVhYm91dBgDIAEoCRIMCgRkb25lGAQgASgDEg0KBXRvdGFsGAUgASgDEg4KBmZhaWxlZBgGIAEoCRINCgVhc2tlZBgHIAEoCBIkCghjb3VudGluZxgIIAEoDjISLm51bWVuLnYxLkNvdW50aW5nIhAKDk9wZW5pbmdSZXF1ZXN0Ij0KD09wZW5pbmdSZXNwb25zZRIhCgRub3RlGAEgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBQgcKBV9ub3RlIhAKDkNoYW5nZXNSZXF1ZXN0IlEKD0NoYW5nZXNSZXNwb25zZRINCgVwYXRocxgBIAMoCRIOCgZyZWxvYWQYAiABKAgSHwoHcmVuYW1lZBgDIAMoCzIOLm51bWVuLnYxLldlbnQiIAoEV2VudBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIg4KDEZvY3VzUmVxdWVzdCJdCg1Gb2N1c1Jlc3BvbnNlEgwKBHBhdGgYASABKAkSDQoFc3RhcnQYAiABKAUSDgoGbGVuZ3RoGAMgASgFEh8KBGFsc28YBCADKAsyES5udW1lbi52MS5TdHJldGNoIigKB1N0cmV0Y2gSDQoFc3RhcnQYASABKAUSDgoGbGVuZ3RoGAIgASgFIhAKDkVkaXRpbmdSZXF1ZXN0ImUKD0VkaXRpbmdSZXNwb25zZRIOCgZjaGFuZ2UYASABKAkSDAoEcGF0aBgCIAEoCRIMCgRmcm9tGAMgASgFEgoKAnRvGAQgASgFEgwKBHRleHQYBSABKAkSDAoEZG9uZRgGIAEoCCIkChROZWlnaGJvdXJob29kUmVxdWVzdBIMCgRwYXRoGAEgASgJIlkKFU5laWdoYm91cmhvb2RSZXNwb25zZRIdCgVmb2N1cxgBIAEoCzIOLm51bWVuLnYxLk5vdGUSIQoHcmVsYXRlZBgCIAMoCzIQLm51bWVuLnYxLlNlYXRlZCIsCgxOYW1lc1JlcXVlc3QSDQoFcXVlcnkYASABKAkSDQoFbGltaXQYAiABKAUiLwoNTmFtZXNSZXNwb25zZRIeCgVmb3VuZBgBIAMoCzIPLm51bWVuLnYxLk5hbWVkInYKBU5hbWVkEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEicKB2hlYWRpbmcYAiABKAsyES5udW1lbi52MS5IZWFkaW5nSACIAQESGgoCYXQYAyADKAsyDi5udW1lbi52MS5TcGFuQgoKCF9oZWFkaW5nIjQKB0hlYWRpbmcSDAoEdGV4dBgBIAEoCRIMCgRsaW5lGAIgASgFEg0KBWxldmVsGAMgASgFIiAKD0hlYWRpbmdzUmVxdWVzdBINCgVwYXRocxgBIAMoCSI5ChBIZWFkaW5nc1Jlc3BvbnNlEiUKBWZvdW5kGAEgAygLMhYubnVtZW4udjEuTm90ZUhlYWRpbmdzIkEKDE5vdGVIZWFkaW5ncxIMCgRwYXRoGAEgASgJEiMKCGhlYWRpbmdzGAIgAygLMhEubnVtZW4udjEuSGVhZGluZyIgCgRTcGFuEgwKBGZyb20YASABKAUSCgoCdG8YAiABKAUiSQoNU2VhcmNoUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIaCgN3YXkYAyABKA4yDS5udW1lbi52MS5XYXkiMgoOU2VhcmNoUmVzcG9uc2USIAoFZm91bmQYASADKAsyES5udW1lbi52MS5QYXNzYWdlIqwBCgdQYXNzYWdlEgwKBHBhdGgYASABKAkSIQoEbm90ZRgCIAEoCzIOLm51bWVuLnYxLk5vdGVIAIgBARIMCgR0ZXh0GAMgASgJEhoKAmF0GAQgAygLMg4ubnVtZW4udjEuU3BhbhIQCghsb2NhdGlvbhgFIAEoCRINCgVzdGFydBgGIAEoBRIOCgZsZW5ndGgYByABKAUSDAoEbGluZRgIIAEoBUIHCgVfbm90ZSIdCgtMaXN0UmVxdWVzdBIOCgZmb2xkZXIYASABKAkiMAoMTGlzdFJlc3BvbnNlEiAKB2VudHJpZXMYASADKAsyDy5udW1lbi52MS5FbnRyeSJjCgVFbnRyeRIMCgRwYXRoGAEgASgJEgwKBG5hbWUYAiABKAkSDgoGZm9sZGVyGAMgASgIEiIKBGtpbmQYBCABKA4yFC5udW1lbi52MS5Tb3VyY2VLaW5kSgQIBRAGUgRzaXplIhsKC1JlYWRSZXF1ZXN0EgwKBHBhdGgYASABKAkigAEKDFJlYWRSZXNwb25zZRIMCgRib2R5GAEgASgJEicKB3JlZnVzYWwYAiABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgBiAEBQgoKCF9yZWZ1c2FsQgUKA19hdCI4CgtGaW5nZXJwcmludBIMCgRwYXRoGAEgASgJEgwKBHNpemUYAiABKAMSDQoFbXRpbWUYAyABKAMiOAoEU2VlbhINCgVwcm9zZRgBIAEoCRIhCgJhdBgCIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50IlYKDFdyaXRlUmVxdWVzdBIMCgRwYXRoGAEgASgJEgwKBGJvZHkYAiABKAkSIQoEc2VlbhgDIAEoCzIOLm51bWVuLnYxLlNlZW5IAIgBAUIHCgVfc2VlbiKEAQoNV3JpdGVSZXNwb25zZRInCgdyZWZ1c2FsGAEgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBEg8KB2NoYW5nZWQYAiABKAgSJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgBiAEBQgoKCF9yZWZ1c2FsQgUKA19hdCJCCgdOZXdMaW5rEgoKAnRvGAEgASgJEhwKBHJvbGUYAiABKA4yDi5udW1lbi52MS5Sb2xlEg0KBWxhYmVsGAMgASgJIlAKDUNyZWF0ZVJlcXVlc3QSDQoFdGl0bGUYASABKAkSDgoGZm9sZGVyGAIgASgJEiAKBWxpbmtzGAMgAygLMhEubnVtZW4udjEuTmV3TGluayJTCg5DcmVhdGVSZXNwb25zZRIMCgRwYXRoGAEgASgJEicKB3JlZnVzYWwYAiABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQFCCgoIX3JlZnVzYWwiPAoLSm9pblJlcXVlc3QSDAoEcGF0aBgBIAEoCRIfCgRsaW5rGAIgASgLMhEubnVtZW4udjEuTmV3TGluayJUCgxKb2luUmVzcG9uc2USJwoHcmVmdXNhbBgBIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBARIPCgdjaGFuZ2VkGAIgASgIQgoKCF9yZWZ1c2FsIiwKDVJlbmFtZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCSLAAQoOUmVuYW1lUmVzcG9uc2USDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIcCgJieRgDIAEoDjIQLm51bWVuLnYxLk5hbWluZxIjCgVtb3ZlZBgEIAEoCzIPLm51bWVuLnYxLk1vdmVkSACIAQESJwoHcmVmdXNhbBgFIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAYgBARIPCgdjaGFuZ2VkGAYgASgIQggKBl9tb3ZlZEIKCghfcmVmdXNhbCJFCgVNb3ZlZBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJEhAKCHJlcGFpcmVkGAMgAygJSgQIBBAFUgpyZXRhcmdldGVkIhAKDlN5bmNpbmdSZXF1ZXN0IjIKD1N5bmNpbmdSZXNwb25zZRIfChdzeW5jX3RpdGxlX2FuZF9maWxlbmFtZRgBIAEoCCI3ChRDaG9vc2VTeW5jaW5nUmVxdWVzdBIfChdzeW5jX3RpdGxlX2FuZF9maWxlbmFtZRgBIAEoCCJMChVDaG9vc2VTeW5jaW5nUmVzcG9uc2USJwoHcmVmdXNhbBgBIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBAUIKCghfcmVmdXNhbCInCgtNb3ZlUmVxdWVzdBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJInIKDE1vdmVSZXNwb25zZRIjCgVtb3ZlZBgBIAEoCzIPLm51bWVuLnYxLk1vdmVkSACIAQESJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAYgBAUIICgZfbW92ZWRCCgoIX3JlZnVzYWwiIQoRTWFrZUZvbGRlclJlcXVlc3QSDAoEcGF0aBgBIAEoCSJJChJNYWtlRm9sZGVyUmVzcG9uc2USJwoHcmVmdXNhbBgBIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBAUIKCghfcmVmdXNhbCIuCg1SZW1vdmVSZXF1ZXN0EgwKBHBhdGgYASABKAkSDwoHZGVzdHJveRgCIAEoCCJoCg5SZW1vdmVSZXNwb25zZRIPCgd0cmFzaGVkGAEgASgJEhAKCGRhbmdsaW5nGAIgAygJEicKB3JlZnVzYWwYAyABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQFCCgoIX3JlZnVzYWwiEQoPUXVpdHRpbmdSZXF1ZXN0IjAKEFF1aXR0aW5nUmVzcG9uc2USDQoFdG9rZW4YASABKAkSDQoFZmx1c2gYAiABKAgiPQoORmx1c2hlZFJlcXVlc3QSDQoFdG9rZW4YASABKAkSHAoEb3dlZBgCIAEoDjIOLm51bWVuLnYxLk93ZWQiEQoPRmx1c2hlZFJlc3BvbnNlKtwBCgdSZWZ1c2FsEhcKE1JFRlVTQUxfVU5TUEVDSUZJRUQQABITCg9SRUZVU0FMX01JU1NJTkcQARIWChJSRUZVU0FMX05PVF9BX05PVEUQAhIUChBSRUZVU0FMX05PVF9URVhUEAMSFQoRUkVGVVNBTF9UT09fTEFSR0UQBBIYChRSRUZVU0FMX0JPRFlfUkVGVVNFRBAFEhYKElJFRlVTQUxfVU5SRUFEQUJMRRAGEhQKEFJFRlVTQUxfT0NDVVBJRUQQBxIWChJSRUZVU0FMX1VOTkFNRUFCTEUQCCpeCgRTZWF0EhQKEFNFQVRfVU5TUEVDSUZJRUQQABIPCgtTRUFUX1BBUkVOVBABEg4KClNFQVRfQ0hJTEQQAhINCglTRUFUX0pVTVAQAxIQCgxTRUFUX1NJQkxJTkcQBCpNCghDb3VudGluZxIYChRDT1VOVElOR19VTlNQRUNJRklFRBAAEhMKD0NPVU5USU5HX1RISU5HUxABEhIKDkNPVU5USU5HX0JZVEVTEAIqSQoDV2F5EhMKD1dBWV9VTlNQRUNJRklFRBAAEg0KCVdBWV9XT1JEUxABEg8KC1dBWV9NRUFOSU5HEAISDQoJV0FZX05BTUVTEAMqVQoKU291cmNlS2luZBIbChdTT1VSQ0VfS0lORF9VTlNQRUNJRklFRBAAEhQKEFNPVVJDRV9LSU5EX05PVEUQARIUChBTT1VSQ0VfS0lORF9CT09LEAIqbwoEUm9sZRIUChBST0xFX1VOU1BFQ0lGSUVEEAASDwoLUk9MRV9QQVJFTlQQARIOCgpST0xFX0NISUxEEAISDQoJUk9MRV9KVU1QEAMSDAoIUk9MRV9SRUYQBBITCg9ST0xFX0FUVEFDSE1FTlQQBSphCgZOYW1pbmcSFgoSTkFNSU5HX1VOU1BFQ0lGSUVEEAASFgoSTkFNSU5HX0ZST05UTUFUVEVSEAESEgoOTkFNSU5HX0hFQURJTkcQAhITCg9OQU1JTkdfRklMRU5BTUUQAyo/CgRPd2VkEhQKEE9XRURfVU5TUEVDSUZJRUQQABIQCgxPV0VEX1dSSVRURU4QARIPCgtPV0VEX0FTS0lORxACMr0LCgxWYXVsdFNlcnZpY2USOAoFU3RhdGUSFi5udW1lbi52MS5TdGF0ZVJlcXVlc3QaFy5udW1lbi52MS5TdGF0ZVJlc3BvbnNlEj4KB09wZW5pbmcSGC5udW1lbi52MS5PcGVuaW5nUmVxdWVzdBoZLm51bWVuLnYxLk9wZW5pbmdSZXNwb25zZRJQCg1OZWlnaGJvdXJob29kEh4ubnVtZW4udjEuTmVpZ2hib3VyaG9vZFJlcXVlc3QaHy5udW1lbi52MS5OZWlnaGJvdXJob29kUmVzcG9uc2USOAoFTmFtZXMSFi5udW1lbi52MS5OYW1lc1JlcXVlc3QaFy5udW1lbi52MS5OYW1lc1Jlc3BvbnNlEkEKCEhlYWRpbmdzEhkubnVtZW4udjEuSGVhZGluZ3NSZXF1ZXN0GhoubnVtZW4udjEuSGVhZGluZ3NSZXNwb25zZRI7CgZTZWFyY2gSFy5udW1lbi52MS5TZWFyY2hSZXF1ZXN0GhgubnVtZW4udjEuU2VhcmNoUmVzcG9uc2USQAoHQ2hhbmdlcxIYLm51bWVuLnYxLkNoYW5nZXNSZXF1ZXN0GhkubnVtZW4udjEuQ2hhbmdlc1Jlc3BvbnNlMAESOgoFRm9jdXMSFi5udW1lbi52MS5Gb2N1c1JlcXVlc3QaFy5udW1lbi52MS5Gb2N1c1Jlc3BvbnNlMAESQAoHRWRpdGluZxIYLm51bWVuLnYxLkVkaXRpbmdSZXF1ZXN0GhkubnVtZW4udjEuRWRpdGluZ1Jlc3BvbnNlMAESOgoFVGFza3MSFi5udW1lbi52MS5UYXNrc1JlcXVlc3QaFy5udW1lbi52MS5UYXNrc1Jlc3BvbnNlMAESNQoETGlzdBIVLm51bWVuLnYxLkxpc3RSZXF1ZXN0GhYubnVtZW4udjEuTGlzdFJlc3BvbnNlEjUKBFJlYWQSFS5udW1lbi52MS5SZWFkUmVxdWVzdBoWLm51bWVuLnYxLlJlYWRSZXNwb25zZRI4CgVXcml0ZRIWLm51bWVuLnYxLldyaXRlUmVxdWVzdBoXLm51bWVuLnYxLldyaXRlUmVzcG9uc2USOwoGQ3JlYXRlEhcubnVtZW4udjEuQ3JlYXRlUmVxdWVzdBoYLm51bWVuLnYxLkNyZWF0ZVJlc3BvbnNlEjUKBEpvaW4SFS5udW1lbi52MS5Kb2luUmVxdWVzdBoWLm51bWVuLnYxLkpvaW5SZXNwb25zZRI7CgZSZW5hbWUSFy5udW1lbi52MS5SZW5hbWVSZXF1ZXN0GhgubnVtZW4udjEuUmVuYW1lUmVzcG9uc2USNQoETW92ZRIVLm51bWVuLnYxLk1vdmVSZXF1ZXN0GhYubnVtZW4udjEuTW92ZVJlc3BvbnNlEj4KB1N5bmNpbmcSGC5udW1lbi52MS5TeW5jaW5nUmVxdWVzdBoZLm51bWVuLnYxLlN5bmNpbmdSZXNwb25zZRJQCg1DaG9vc2VTeW5jaW5nEh4ubnVtZW4udjEuQ2hvb3NlU3luY2luZ1JlcXVlc3QaHy5udW1lbi52MS5DaG9vc2VTeW5jaW5nUmVzcG9uc2USOwoGUmVtb3ZlEhcubnVtZW4udjEuUmVtb3ZlUmVxdWVzdBoYLm51bWVuLnYxLlJlbW92ZVJlc3BvbnNlEkcKCk1ha2VGb2xkZXISGy5udW1lbi52MS5NYWtlRm9sZGVyUmVxdWVzdBocLm51bWVuLnYxLk1ha2VGb2xkZXJSZXNwb25zZRJDCghRdWl0dGluZxIZLm51bWVuLnYxLlF1aXR0aW5nUmVxdWVzdBoaLm51bWVuLnYxLlF1aXR0aW5nUmVzcG9uc2UwARI+CgdGbHVzaGVkEhgubnVtZW4udjEuRmx1c2hlZFJlcXVlc3QaGS5udW1lbi52MS5GbHVzaGVkUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * Note is a note as something else refers to it.
@@ -700,6 +700,13 @@ export type Heading = Message<"numen.v1.Heading"> & {
    * @generated from field: int32 line = 2;
    */
   line: number;
+
+  /**
+   * How deep it sits, from one for the shallowest a note can carry.
+   *
+   * @generated from field: int32 level = 3;
+   */
+  level: number;
 };
 
 /**
@@ -708,6 +715,68 @@ export type Heading = Message<"numen.v1.Heading"> & {
  */
 export const HeadingSchema: GenMessage<Heading> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 22);
+
+/**
+ * @generated from message numen.v1.HeadingsRequest
+ */
+export type HeadingsRequest = Message<"numen.v1.HeadingsRequest"> & {
+  /**
+   * The notes to answer about, by the paths the vault files them under.
+   *
+   * @generated from field: repeated string paths = 1;
+   */
+  paths: string[];
+};
+
+/**
+ * Describes the message numen.v1.HeadingsRequest.
+ * Use `create(HeadingsRequestSchema)` to create a new message.
+ */
+export const HeadingsRequestSchema: GenMessage<HeadingsRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 23);
+
+/**
+ * @generated from message numen.v1.HeadingsResponse
+ */
+export type HeadingsResponse = Message<"numen.v1.HeadingsResponse"> & {
+  /**
+   * @generated from field: repeated numen.v1.NoteHeadings found = 1;
+   */
+  found: NoteHeadings[];
+};
+
+/**
+ * Describes the message numen.v1.HeadingsResponse.
+ * Use `create(HeadingsResponseSchema)` to create a new message.
+ */
+export const HeadingsResponseSchema: GenMessage<HeadingsResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 24);
+
+/**
+ * NoteHeadings is what one note is divided into.
+ *
+ * @generated from message numen.v1.NoteHeadings
+ */
+export type NoteHeadings = Message<"numen.v1.NoteHeadings"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * In the order they stand in the note.
+   *
+   * @generated from field: repeated numen.v1.Heading headings = 2;
+   */
+  headings: Heading[];
+};
+
+/**
+ * Describes the message numen.v1.NoteHeadings.
+ * Use `create(NoteHeadingsSchema)` to create a new message.
+ */
+export const NoteHeadingsSchema: GenMessage<NoteHeadings> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 25);
 
 /**
  * Span is a run of text, by where it begins and where it ends.
@@ -731,7 +800,7 @@ export type Span = Message<"numen.v1.Span"> & {
  * Use `create(SpanSchema)` to create a new message.
  */
 export const SpanSchema: GenMessage<Span> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 23);
+  messageDesc(file_numen_v1_vault, 26);
 
 /**
  * @generated from message numen.v1.SearchRequest
@@ -760,7 +829,7 @@ export type SearchRequest = Message<"numen.v1.SearchRequest"> & {
  * Use `create(SearchRequestSchema)` to create a new message.
  */
 export const SearchRequestSchema: GenMessage<SearchRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 24);
+  messageDesc(file_numen_v1_vault, 27);
 
 /**
  * @generated from message numen.v1.SearchResponse
@@ -779,7 +848,7 @@ export type SearchResponse = Message<"numen.v1.SearchResponse"> & {
  * Use `create(SearchResponseSchema)` to create a new message.
  */
 export const SearchResponseSchema: GenMessage<SearchResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 25);
+  messageDesc(file_numen_v1_vault, 28);
 
 /**
  * Passage is what a search returns: the text around a hit, and where it came
@@ -853,7 +922,7 @@ export type Passage = Message<"numen.v1.Passage"> & {
  * Use `create(PassageSchema)` to create a new message.
  */
 export const PassageSchema: GenMessage<Passage> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 26);
+  messageDesc(file_numen_v1_vault, 29);
 
 /**
  * @generated from message numen.v1.ListRequest
@@ -872,7 +941,7 @@ export type ListRequest = Message<"numen.v1.ListRequest"> & {
  * Use `create(ListRequestSchema)` to create a new message.
  */
 export const ListRequestSchema: GenMessage<ListRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 27);
+  messageDesc(file_numen_v1_vault, 30);
 
 /**
  * @generated from message numen.v1.ListResponse
@@ -892,7 +961,7 @@ export type ListResponse = Message<"numen.v1.ListResponse"> & {
  * Use `create(ListResponseSchema)` to create a new message.
  */
 export const ListResponseSchema: GenMessage<ListResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 28);
+  messageDesc(file_numen_v1_vault, 31);
 
 /**
  * Entry is one file or folder, as a listing of the folder it sits in reports
@@ -934,7 +1003,7 @@ export type Entry = Message<"numen.v1.Entry"> & {
  * Use `create(EntrySchema)` to create a new message.
  */
 export const EntrySchema: GenMessage<Entry> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 29);
+  messageDesc(file_numen_v1_vault, 32);
 
 /**
  * @generated from message numen.v1.ReadRequest
@@ -951,7 +1020,7 @@ export type ReadRequest = Message<"numen.v1.ReadRequest"> & {
  * Use `create(ReadRequestSchema)` to create a new message.
  */
 export const ReadRequestSchema: GenMessage<ReadRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 30);
+  messageDesc(file_numen_v1_vault, 33);
 
 /**
  * @generated from message numen.v1.ReadResponse
@@ -985,7 +1054,7 @@ export type ReadResponse = Message<"numen.v1.ReadResponse"> & {
  * Use `create(ReadResponseSchema)` to create a new message.
  */
 export const ReadResponseSchema: GenMessage<ReadResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 31);
+  messageDesc(file_numen_v1_vault, 34);
 
 /**
  * Fingerprint is which file this is: where it is filed, how big it is, and when
@@ -1017,7 +1086,7 @@ export type Fingerprint = Message<"numen.v1.Fingerprint"> & {
  * Use `create(FingerprintSchema)` to create a new message.
  */
 export const FingerprintSchema: GenMessage<Fingerprint> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 32);
+  messageDesc(file_numen_v1_vault, 35);
 
 /**
  * Seen is what a caller last saw of a note: the prose a read gave it, and the
@@ -1048,7 +1117,7 @@ export type Seen = Message<"numen.v1.Seen"> & {
  * Use `create(SeenSchema)` to create a new message.
  */
 export const SeenSchema: GenMessage<Seen> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 33);
+  messageDesc(file_numen_v1_vault, 36);
 
 /**
  * @generated from message numen.v1.WriteRequest
@@ -1080,7 +1149,7 @@ export type WriteRequest = Message<"numen.v1.WriteRequest"> & {
  * Use `create(WriteRequestSchema)` to create a new message.
  */
 export const WriteRequestSchema: GenMessage<WriteRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 34);
+  messageDesc(file_numen_v1_vault, 37);
 
 /**
  * @generated from message numen.v1.WriteResponse
@@ -1115,7 +1184,7 @@ export type WriteResponse = Message<"numen.v1.WriteResponse"> & {
  * Use `create(WriteResponseSchema)` to create a new message.
  */
 export const WriteResponseSchema: GenMessage<WriteResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 35);
+  messageDesc(file_numen_v1_vault, 38);
 
 /**
  * NewLink is one relationship as the note it is written in declares it: the
@@ -1148,7 +1217,7 @@ export type NewLink = Message<"numen.v1.NewLink"> & {
  * Use `create(NewLinkSchema)` to create a new message.
  */
 export const NewLinkSchema: GenMessage<NewLink> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 36);
+  messageDesc(file_numen_v1_vault, 39);
 
 /**
  * @generated from message numen.v1.CreateRequest
@@ -1181,7 +1250,7 @@ export type CreateRequest = Message<"numen.v1.CreateRequest"> & {
  * Use `create(CreateRequestSchema)` to create a new message.
  */
 export const CreateRequestSchema: GenMessage<CreateRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 37);
+  messageDesc(file_numen_v1_vault, 40);
 
 /**
  * @generated from message numen.v1.CreateResponse
@@ -1207,7 +1276,7 @@ export type CreateResponse = Message<"numen.v1.CreateResponse"> & {
  * Use `create(CreateResponseSchema)` to create a new message.
  */
 export const CreateResponseSchema: GenMessage<CreateResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 38);
+  messageDesc(file_numen_v1_vault, 41);
 
 /**
  * @generated from message numen.v1.JoinRequest
@@ -1231,7 +1300,7 @@ export type JoinRequest = Message<"numen.v1.JoinRequest"> & {
  * Use `create(JoinRequestSchema)` to create a new message.
  */
 export const JoinRequestSchema: GenMessage<JoinRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 39);
+  messageDesc(file_numen_v1_vault, 42);
 
 /**
  * @generated from message numen.v1.JoinResponse
@@ -1258,7 +1327,7 @@ export type JoinResponse = Message<"numen.v1.JoinResponse"> & {
  * Use `create(JoinResponseSchema)` to create a new message.
  */
 export const JoinResponseSchema: GenMessage<JoinResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 40);
+  messageDesc(file_numen_v1_vault, 43);
 
 /**
  * @generated from message numen.v1.RenameRequest
@@ -1284,7 +1353,7 @@ export type RenameRequest = Message<"numen.v1.RenameRequest"> & {
  * Use `create(RenameRequestSchema)` to create a new message.
  */
 export const RenameRequestSchema: GenMessage<RenameRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 41);
+  messageDesc(file_numen_v1_vault, 44);
 
 /**
  * @generated from message numen.v1.RenameResponse
@@ -1343,7 +1412,7 @@ export type RenameResponse = Message<"numen.v1.RenameResponse"> & {
  * Use `create(RenameResponseSchema)` to create a new message.
  */
 export const RenameResponseSchema: GenMessage<RenameResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 42);
+  messageDesc(file_numen_v1_vault, 45);
 
 /**
  * Moved is a file under a different name, and what that did to the links
@@ -1379,7 +1448,7 @@ export type Moved = Message<"numen.v1.Moved"> & {
  * Use `create(MovedSchema)` to create a new message.
  */
 export const MovedSchema: GenMessage<Moved> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 43);
+  messageDesc(file_numen_v1_vault, 46);
 
 /**
  * @generated from message numen.v1.SyncingRequest
@@ -1392,7 +1461,7 @@ export type SyncingRequest = Message<"numen.v1.SyncingRequest"> & {
  * Use `create(SyncingRequestSchema)` to create a new message.
  */
 export const SyncingRequestSchema: GenMessage<SyncingRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 44);
+  messageDesc(file_numen_v1_vault, 47);
 
 /**
  * @generated from message numen.v1.SyncingResponse
@@ -1413,7 +1482,7 @@ export type SyncingResponse = Message<"numen.v1.SyncingResponse"> & {
  * Use `create(SyncingResponseSchema)` to create a new message.
  */
 export const SyncingResponseSchema: GenMessage<SyncingResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 45);
+  messageDesc(file_numen_v1_vault, 48);
 
 /**
  * @generated from message numen.v1.ChooseSyncingRequest
@@ -1430,7 +1499,7 @@ export type ChooseSyncingRequest = Message<"numen.v1.ChooseSyncingRequest"> & {
  * Use `create(ChooseSyncingRequestSchema)` to create a new message.
  */
 export const ChooseSyncingRequestSchema: GenMessage<ChooseSyncingRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 46);
+  messageDesc(file_numen_v1_vault, 49);
 
 /**
  * @generated from message numen.v1.ChooseSyncingResponse
@@ -1449,7 +1518,7 @@ export type ChooseSyncingResponse = Message<"numen.v1.ChooseSyncingResponse"> & 
  * Use `create(ChooseSyncingResponseSchema)` to create a new message.
  */
 export const ChooseSyncingResponseSchema: GenMessage<ChooseSyncingResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 47);
+  messageDesc(file_numen_v1_vault, 50);
 
 /**
  * @generated from message numen.v1.MoveRequest
@@ -1475,7 +1544,7 @@ export type MoveRequest = Message<"numen.v1.MoveRequest"> & {
  * Use `create(MoveRequestSchema)` to create a new message.
  */
 export const MoveRequestSchema: GenMessage<MoveRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 48);
+  messageDesc(file_numen_v1_vault, 51);
 
 /**
  * @generated from message numen.v1.MoveResponse
@@ -1501,7 +1570,7 @@ export type MoveResponse = Message<"numen.v1.MoveResponse"> & {
  * Use `create(MoveResponseSchema)` to create a new message.
  */
 export const MoveResponseSchema: GenMessage<MoveResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 49);
+  messageDesc(file_numen_v1_vault, 52);
 
 /**
  * @generated from message numen.v1.MakeFolderRequest
@@ -1521,7 +1590,7 @@ export type MakeFolderRequest = Message<"numen.v1.MakeFolderRequest"> & {
  * Use `create(MakeFolderRequestSchema)` to create a new message.
  */
 export const MakeFolderRequestSchema: GenMessage<MakeFolderRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 50);
+  messageDesc(file_numen_v1_vault, 53);
 
 /**
  * @generated from message numen.v1.MakeFolderResponse
@@ -1540,7 +1609,7 @@ export type MakeFolderResponse = Message<"numen.v1.MakeFolderResponse"> & {
  * Use `create(MakeFolderResponseSchema)` to create a new message.
  */
 export const MakeFolderResponseSchema: GenMessage<MakeFolderResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 51);
+  messageDesc(file_numen_v1_vault, 54);
 
 /**
  * @generated from message numen.v1.RemoveRequest
@@ -1567,7 +1636,7 @@ export type RemoveRequest = Message<"numen.v1.RemoveRequest"> & {
  * Use `create(RemoveRequestSchema)` to create a new message.
  */
 export const RemoveRequestSchema: GenMessage<RemoveRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 52);
+  messageDesc(file_numen_v1_vault, 55);
 
 /**
  * @generated from message numen.v1.RemoveResponse
@@ -1601,7 +1670,7 @@ export type RemoveResponse = Message<"numen.v1.RemoveResponse"> & {
  * Use `create(RemoveResponseSchema)` to create a new message.
  */
 export const RemoveResponseSchema: GenMessage<RemoveResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 53);
+  messageDesc(file_numen_v1_vault, 56);
 
 /**
  * @generated from message numen.v1.QuittingRequest
@@ -1614,7 +1683,7 @@ export type QuittingRequest = Message<"numen.v1.QuittingRequest"> & {
  * Use `create(QuittingRequestSchema)` to create a new message.
  */
 export const QuittingRequestSchema: GenMessage<QuittingRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 54);
+  messageDesc(file_numen_v1_vault, 57);
 
 /**
  * @generated from message numen.v1.QuittingResponse
@@ -1641,7 +1710,7 @@ export type QuittingResponse = Message<"numen.v1.QuittingResponse"> & {
  * Use `create(QuittingResponseSchema)` to create a new message.
  */
 export const QuittingResponseSchema: GenMessage<QuittingResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 55);
+  messageDesc(file_numen_v1_vault, 58);
 
 /**
  * @generated from message numen.v1.FlushedRequest
@@ -1667,7 +1736,7 @@ export type FlushedRequest = Message<"numen.v1.FlushedRequest"> & {
  * Use `create(FlushedRequestSchema)` to create a new message.
  */
 export const FlushedRequestSchema: GenMessage<FlushedRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 56);
+  messageDesc(file_numen_v1_vault, 59);
 
 /**
  * @generated from message numen.v1.FlushedResponse
@@ -1680,7 +1749,7 @@ export type FlushedResponse = Message<"numen.v1.FlushedResponse"> & {
  * Use `create(FlushedResponseSchema)` to create a new message.
  */
 export const FlushedResponseSchema: GenMessage<FlushedResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 57);
+  messageDesc(file_numen_v1_vault, 60);
 
 /**
  * Refusal is why a note could not be read or written.
@@ -2074,6 +2143,20 @@ export const VaultService: GenService<{
     methodKind: "unary";
     input: typeof NamesRequestSchema;
     output: typeof NamesResponseSchema;
+  },
+  /**
+   * Headings is what each note asked about is divided into, in the order the
+   * headings stand in it. A path that names no note is absent from the answer.
+   *
+   * It is asked about notes already being shown, so a client drawing a note
+   * has what is inside it without asking again for each.
+   *
+   * @generated from rpc numen.v1.VaultService.Headings
+   */
+  headings: {
+    methodKind: "unary";
+    input: typeof HeadingsRequestSchema;
+    output: typeof HeadingsResponseSchema;
   },
   /**
    * Search is the text a vault holds that answers what was typed, by the words

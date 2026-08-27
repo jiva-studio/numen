@@ -20,6 +20,7 @@ import {
 import PlexView from './render/PlexView.vue'
 import { useTitleWidths } from './measure'
 import { DWELL, widenedFor } from './dwell'
+import { hangParts, type PlexPart } from './inside'
 import { usePlexTransition, browserEnvironment, type Environment } from './transition'
 import type { Placement, PlexOptionsInput } from './arrange'
 import {
@@ -60,6 +61,12 @@ const props = withDefaults(
      * its title. Milliseconds; nothing at all never widens.
      */
     dwell?: number
+    /**
+     * The parts of a node, asked for by the node's own identifier. They come
+     * out from under its box while the attention rests on it, and a node named
+     * none for hangs nothing.
+     */
+    parts?: (id: string) => readonly PlexPart[]
     /**
      * What to call a seat. The plex has to write one into the picture — the
      * outline a gesture draws says which seat it would take — and the words
@@ -122,6 +129,11 @@ const emit = defineEmits<{
   (event: 'menu', id: string, at: Point, from: SVGGElement, opening: MenuOpening): void
   /** A menu asked for on a node has nothing left to stand on. */
   (event: 'dismiss'): void
+  /**
+   * A part of a node was chosen. Both identifiers are the caller's, handed
+   * back as given.
+   */
+  (event: 'enter', id: string, part: string): void
 }>()
 
 /** What the window is taken to be until it has been measured. */
@@ -179,6 +191,19 @@ const widen = computed(() => {
   const { margin } = options.value
   const within = viewport.value
   return (node: PlacedNode) => widenedFor(node, measure(node), within, margin)
+})
+
+/**
+ * The parts each node hangs under its box. The sizes are the ones the whole
+ * picture is drawn to, so a plex set larger hangs them larger.
+ */
+const hung = computed(() => {
+  const held = props.parts
+  if (!held) return undefined
+
+  const { margin } = options.value
+  const room = { measure: measures.value?.part, viewport: viewport.value, margin }
+  return (node: PlacedNode) => hangParts(node, held(node.id), options.value, room)
 })
 
 const { frame, moving } = usePlexTransition(
@@ -276,6 +301,7 @@ defineExpose({ moving: toRef(moving) })
       :may-reach="mayReach"
       :seat-name="seatName"
       :widen="widen"
+      :hung="hung"
       :dwell="dwell"
       :environment="environment"
       :gesture-from="gesture.from.value"
@@ -289,6 +315,7 @@ defineExpose({ moving: toRef(moving) })
       @reach="gesture.begin"
       @ask="gesture.ask"
       @menu="(id, at, from, opening) => emit('menu', id, at, from, opening)"
+      @enter="(id, part) => emit('enter', id, part)"
     >
       <template v-if="$slots.icon" #icon="{ node }"><slot name="icon" :node="node" /></template>
     </PlexView>
