@@ -173,6 +173,74 @@ export type {
   TreeKey,
 } from './tree/model'
 
+export { default as Face } from './cards/Face.vue'
+export { default as Stencil } from './cards/Stencil.vue'
+export { default as Deck } from './cards/Deck.vue'
+export { default as Marks } from './cards/Marks.vue'
+/** The strip a tile is carried by, and a box whose name sits on its outline. */
+export { default as Bar } from './cards/Bar.vue'
+export { default as Notched } from './cards/Notched.vue'
+/** A rule with something standing in its middle. */
+export { default as Rule } from './cards/Rule.vue'
+
+/** For laying a stencil or a deck out without drawing it. */
+export {
+  aimedAt,
+  blanks,
+  faceBlocks,
+  fieldRows,
+  freeName,
+  grid,
+  laid,
+  objection,
+  ordered,
+  panes,
+  parts,
+  DECK_WORDS,
+  HALVES,
+  SHOWS,
+  STENCIL_WORDS,
+} from './cards/model'
+export type {
+  Aim,
+  Cut,
+  DeckWords,
+  Draft,
+  Drawn,
+  FaceBlock,
+  FieldRow,
+  Filled,
+  Grid,
+  Half,
+  Laid,
+  Landing as CardLanding,
+  Objection,
+  Pane,
+  Part,
+  Shown,
+  Shows,
+  StencilWords,
+  Stood,
+  Tile,
+} from './cards/model'
+
+/** The braces a face is written with, read and filled. */
+export {
+  braced,
+  fill,
+  insert,
+  previewed,
+  renamedIn,
+  sampled,
+  slotsIn,
+  strayIn,
+} from './cards/fill'
+export type { Inserted, Slot } from './cards/fill'
+
+/** What a card is written with, drawn, and measured against what a card may draw. */
+export { drawn } from './cards/render'
+export { safe } from './cards/safe'
+
 export type { Environment, PlexTransition } from './plex/transition'
 export type { HungPart, HungParts, PlexPart } from './plex/inside'
 export type {
