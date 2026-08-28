@@ -66,7 +66,7 @@ const wrongIn = (value: Stood): readonly string[] =>
     :aria-label="called"
     :aria-posinset="tile.at"
     :aria-setsize="tile.of"
-    :data-card="tile.mark"
+    :data-card="tile.id"
     :data-section="tile.section ?? undefined"
     :data-carried="tile.carried || undefined"
   >

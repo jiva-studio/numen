@@ -7,7 +7,24 @@
 // the format spends.
 package cards
 
-import "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+import (
+	"fmt"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+)
+
+// The three heading levels a deck spends. A value may hold a heading below
+// them and none of them, and every reader of a deck — this package and the
+// index that records what a deck holds — reads a level from here.
+const (
+	// SectionLevel opens a section, whose cards are its own until the next one.
+	SectionLevel = 1
+	// CardLevel opens a card, which runs to the next card, the next section or
+	// the end of the file.
+	CardLevel = 2
+	// FieldLevel opens one of a card's fields.
+	FieldLevel = 3
+)
 
 // Stencil is a note declaring what a card has and how it is shown.
 type Stencil struct {
@@ -101,12 +118,6 @@ func (s Stencil) First() string {
 	return s.Fields[0]
 }
 
-// Value is what a card holds for one of this stencil's fields, and whether it
-// holds it. Every field stands under a heading of its own, the first included.
-func (s Stencil) Value(c Card, field string) (string, bool) {
-	return c.Value(field)
-}
-
 // Value is what the card holds under one field's heading, and whether it holds
 // it. Two headings of one name are a problem against the deck, and the first
 // stands.
@@ -119,13 +130,24 @@ func (c Card) Value(field string) (string, bool) {
 	return "", false
 }
 
-// Card is the card of a mark, and whether the deck holds it. Two cards of one
-// mark are a problem against the deck, and the first stands.
-func (d Deck) Card(carried string) (Card, bool) {
+// Card is the card of a mark. A deck holding none of that mark is
+// ErrNoSuchCard, and a deck holding two is ErrTwoCards: both are read and both
+// are shown, and a machine choosing between them would be choosing which of
+// the two a person meant.
+func (d Deck) Card(carried string) (Card, error) {
+	found := Card{}
+	held := false
 	for _, c := range d.Cards {
-		if c.Mark == carried {
-			return c, true
+		if c.Mark != carried {
+			continue
 		}
+		if held {
+			return Card{}, fmt.Errorf("%w: %s", ErrTwoCards, carried)
+		}
+		found, held = c, true
 	}
-	return Card{}, false
+	if !held {
+		return Card{}, fmt.Errorf("%w: %s", ErrNoSuchCard, carried)
+	}
+	return found, nil
 }

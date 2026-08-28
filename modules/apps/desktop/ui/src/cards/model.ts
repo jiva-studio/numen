@@ -8,6 +8,7 @@
  * without a screen.
  */
 import {
+  CARD_HEAD,
   ordered,
   reordered,
   type Banded,
@@ -84,6 +85,9 @@ export const NO_SHEET: Sheet = { fields: [], preamble: '', faces: [], tail: '' }
  * and each of two carrying one mark between them — is known by an identity this
  * window mints for the reading, so that both of two are drawn and each is typed
  * into on its own. A section carries no mark, so every one of them is minted.
+ *
+ * A card standing under a section this reading does not hold stands before the
+ * first section, where it is drawn and where the next write puts it.
  */
 export const deckOf = (read: Decked, mint: Mint = minting): Deck => {
   const held = new Map<string, number>()
@@ -195,7 +199,7 @@ export const facesOf = (sheet: Sheet): readonly Faced[] =>
 export const drawnOf = (deck: Deck, offers: readonly Offer[]): readonly Drawn[] => {
   const titles = new Map(offers.map((offer) => [offer.path, offer.title]))
   return deck.cards.map((card) => ({
-    mark: card.id,
+    id: card.id,
     section: card.section,
     stencil: (titles.get(card.stencilAt) ?? card.stencil) || null,
     filled: card.values.map((value) => ({ field: value.field, text: value.text })),
@@ -227,6 +231,34 @@ export const sameDeck = (one: Deck, other: Deck): boolean =>
   one.tail === other.tail &&
   JSON.stringify(sectionsOf(one)) === JSON.stringify(sectionsOf(other)) &&
   JSON.stringify(cardsOf(one)) === JSON.stringify(cardsOf(other))
+
+/**
+ * A reading of a deck under the identities the window already drew it by. A
+ * card the file could not name was drawn under an identity this window minted,
+ * and the reading that names it is that same card: it keeps the identity it is
+ * being typed into under, and the tile it stands in is not drawn again.
+ */
+export const named = (held: Deck, read: Deck): Deck => {
+  if (held.cards.length !== read.cards.length) return read
+
+  /** Where a card's section stands among its deck's, each reading minting its own. */
+  const seat = (deck: Deck, section: string | null): number =>
+    section === null ? -1 : deck.sections.findIndex((each) => each.id === section)
+
+  const cards = read.cards.map((card, at) => {
+    const was = held.cards[at]
+    if (!was || was.mark !== '' || card.mark === '') return card
+    const same =
+      was.stencil === card.stencil &&
+      was.stencilAt === card.stencilAt &&
+      was.lead === card.lead &&
+      seat(held, was.section) === seat(read, card.section) &&
+      JSON.stringify(was.values) === JSON.stringify(card.values)
+    return same ? { ...card, id: was.id } : card
+  })
+
+  return cards.every((card, at) => card === read.cards[at]) ? read : { ...read, cards }
+}
 
 /** Whether two stencils read the same, the identities left out the same way. */
 export const sameSheet = (one: Sheet, other: Sheet): boolean =>
@@ -348,14 +380,17 @@ export const removed = (deck: Deck, id: string): Deck => ({
 
 /**
  * A card let go somewhere in the deck: before the card of that identity, at the
- * head of the section of that identity, or at the end. A card takes the section
- * of whatever it lands in front of, and one let go at the end stands under the
- * last section.
+ * head of the deck, at the head of the section of that identity, or at the end.
+ * A card takes the section of whatever it lands in front of, one let go at the
+ * head of the deck stands under no section, and one let go at the end stands
+ * under the last section.
  */
 export const carried = (deck: Deck, id: string, at: CardLanding): Deck => {
   const held = deck.cards.find((card) => card.id === id)
   if (!held) return deck
   const left = deck.cards.filter((card) => card.id !== id)
+
+  if (at === CARD_HEAD) return { ...deck, cards: [{ ...held, section: null }, ...left] }
 
   const before = at === null ? -1 : left.findIndex((card) => card.id === at)
   if (before !== -1) {
@@ -394,16 +429,32 @@ export const sectionNamed = (deck: Deck, id: string, name: string): Deck => ({
   ),
 })
 
+/** One piece of a deck's prose after another, with a line between the two. */
+const after = (above: string, below: string): string =>
+  above && below ? `${above.trimEnd()}\n\n${below}` : above || below
+
 /**
  * A section taken out of the deck. A section is a name, so taking it away takes
  * away its heading and nothing else: its cards stay where they stand, under
- * whatever heading is above them now.
+ * whatever heading is above them now, and the text it stood on stays too, after
+ * the text of the section above it or after the deck's own where none stands
+ * above.
  */
 export const sectionGone = (deck: Deck, id: string): Deck => {
-  const above = deck.sections[deck.sections.findIndex((section) => section.id === id) - 1]
+  const at = deck.sections.findIndex((section) => section.id === id)
+  if (at === -1) return deck
+  const going = deck.sections[at]
+  const above = deck.sections[at - 1]
   return {
     ...deck,
-    sections: deck.sections.filter((section) => section.id !== id),
+    preamble: above ? deck.preamble : after(deck.preamble, going?.lead ?? ''),
+    sections: deck.sections.flatMap((section) => {
+      if (section.id === id) return []
+      if (above && section.id === above.id) {
+        return [{ ...section, lead: after(section.lead, going?.lead ?? '') }]
+      }
+      return [section]
+    }),
     cards: deck.cards.map((card) =>
       card.section === id ? { ...card, section: above?.id ?? null } : card,
     ),

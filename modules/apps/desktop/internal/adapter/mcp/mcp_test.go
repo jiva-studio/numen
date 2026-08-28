@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
+	format "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/cards"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/check"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
@@ -88,7 +89,7 @@ func built(t *testing.T, notes map[string]string) (domain.Vault, mcp.Core) {
 		Cuts:        cutting.Write,
 		Cutting:     cutting.Create,
 		FieldRename: cutting.Rename,
-		DeckBody:    container.DeckBody,
+		DeckBody:    format.DeckBody,
 		StencilBody: container.StencilBody,
 
 		Showing: mcp.One(v, v.Path), Readers: readers, Notes: queries,

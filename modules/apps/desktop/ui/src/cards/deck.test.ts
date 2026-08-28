@@ -169,7 +169,7 @@ describe('a deck opened', () => {
     const { tab } = await open()
 
     expect(tab.deck().cards.map((card) => card.id)).toStrictEqual(['k7m2xq9fzp', '3n8vr4tqch'])
-    expect(tab.drawn().map((card) => card.mark)).toStrictEqual(['k7m2xq9fzp', '3n8vr4tqch'])
+    expect(tab.drawn().map((card) => card.id)).toStrictEqual(['k7m2xq9fzp', '3n8vr4tqch'])
   })
 
   it('draws the sections the vault read, each under an identity of its own', async () => {
@@ -549,6 +549,37 @@ describe('a deck read again under the window', () => {
     expect(one.tab.marks().at.get(second)).toStrictEqual(['a card under no stencil'])
   })
 
+  /* A card the file could not name was drawn under an identity the window
+     minted. The reading that names it is that same card, so the tile it is
+     being typed into stands, and the caret with it. */
+  it('keeps the identity of a card the file has named since it was drawn', async () => {
+    const one = await open()
+    one.tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }])
+    const made = one.tab.deck().cards.at(-1)?.id ?? ''
+    await one.decks.kept.settles(one.tab.id)
+
+    // The deck was made whole where it was written: the card carries the mark
+    // the core minted and the heading it read from the first field.
+    one.holds([
+      ...CARDS,
+      {
+        mark: 'w9s5jd2b1k',
+        section: null,
+        heading: 'Vicuña',
+        stencil: 'Animal',
+        stencilAt: 'Animal.md',
+        lead: '',
+        values: [{ field: 'Name', text: 'Vicuña' }],
+      },
+    ])
+    one.decks.changed(['Animals.md'])
+    await settles()
+
+    expect(one.tab.deck().cards.at(-1)?.id).toBe(made)
+    expect(one.tab.deck().cards.at(-1)?.mark).toBe('w9s5jd2b1k')
+    expect(one.tab.drawn().at(-1)?.id).toBe(made)
+  })
+
   it('draws the file again where it was written from somewhere else', async () => {
     const one = await open()
     const was = drawing(one.tab)
@@ -567,7 +598,7 @@ describe('a deck read again under the window', () => {
     one.decks.changed(['Animals.md'])
     await settles()
 
-    expect(one.tab.drawn().map((card) => card.mark)).toStrictEqual(['w9s5jd2b1k'])
+    expect(one.tab.drawn().map((card) => card.id)).toStrictEqual(['w9s5jd2b1k'])
     expect(one.tab.deck()).not.toBe(was.deck)
   })
 })

@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/cards"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/mark"
 )
 
 func renaming(t *testing.T, vs vaults) cards.RenameField {
@@ -206,6 +207,35 @@ func TestADeckTheRenameCouldNotReachKeepsTheOldHeading(t *testing.T) {
 	}
 	if !strings.Contains(read(t, vs.first, "decks/Mammals.md"), "### Shoulder height\n") {
 		t.Error("the deck after the refused one was not written")
+	}
+}
+
+// A rename is the application writing a deck, so the deck it leaves behind is
+// whole: a card carrying no mark is given one, and a heading standing out of
+// step with its first field is written again from it.
+func TestARenameMakesTheDeckItWritesWhole(t *testing.T) {
+	vs := indexed(t)
+	write(t, vs.first, "decks/Hand.md", "---\ntype: deck\n---\n"+
+		"\n## Something else\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 45\"\n")
+	if err := vs.index(t)(t.Context(), vs.first, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := renaming(t, vs).Execute(t.Context(), vs.first, cards.Field{
+		Stencil: "Animal.md", From: "Height", To: "Shoulder height",
+	}); err != nil {
+		t.Fatalf("rename: %v", err)
+	}
+
+	deck := held(t, vs, "decks/Hand.md")
+	if len(deck.Cards) != 1 {
+		t.Fatalf("cards = %+v", deck.Cards)
+	}
+	if !mark.Valid(deck.Cards[0].Mark) {
+		t.Errorf("mark = %q, want the card given one", deck.Cards[0].Mark)
+	}
+	if deck.Cards[0].Heading != "Llama" {
+		t.Errorf("heading = %q, want it written again from the first field", deck.Cards[0].Heading)
 	}
 }
 

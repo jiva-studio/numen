@@ -191,6 +191,8 @@ export { default as Rule } from './rule/Rule.vue'
 /** For putting a card or a field where a person let it go, without drawing it. */
 export { ordered, reordered } from './cards/order'
 export type { Half, Landing as CardLanding } from './cards/order'
+/** Where a card let go at the head of a deck lands, before its first section. */
+export { HEAD as CARD_HEAD } from './cards/deck'
 export type { Banded, Drawn, Filled } from './cards/deck'
 export type { Cut } from './cards/stencil'
 

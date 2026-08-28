@@ -7,7 +7,6 @@ import {
   landing,
   numbered,
   objection,
-  oneLine,
   ordered,
   reordered,
   stepped,
@@ -132,20 +131,6 @@ describe('wayOf', () => {
   it('reads every other key as no way at all', () => {
     expect(wayOf('ArrowLeft')).toBeNull()
     expect(wayOf('Enter')).toBeNull()
-  })
-})
-
-describe('oneLine', () => {
-  it('closes up the breaks in what was typed', () => {
-    expect(oneLine('a\nb')).toBe('a b')
-  })
-
-  it('closes up the breaks of every make', () => {
-    expect(oneLine('a\r\nb\rc')).toBe('a b c')
-  })
-
-  it('leaves a line that is already one alone', () => {
-    expect(oneLine('a b')).toBe('a b')
   })
 })
 

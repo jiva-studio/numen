@@ -8,7 +8,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Deck from './Deck.vue'
-import type { Banded, Drawn, Filled, Wrong } from './deck'
+import { HEAD, type Banded, type Drawn, type Filled, type Wrong } from './deck'
 import type { Landing } from './order'
 import type { Cut } from './stencil'
 
@@ -51,7 +51,7 @@ const many = (count: number): readonly Drawn[] =>
   Array.from({ length: count }, (_, at) =>
     at % 2 === 0
       ? {
-          mark: `beast00${at}`,
+          id: `beast00${at}`,
           section: null,
           stencil: 'Animal',
           filled: [
@@ -62,7 +62,7 @@ const many = (count: number): readonly Drawn[] =>
           ],
         }
       : {
-          mark: `asked00${at}`,
+          id: `asked00${at}`,
           section: null,
           stencil: 'Basic',
           filled: [{ field: 'Question', text: `Question ${at + 1}` }],
@@ -74,7 +74,7 @@ const CORPORA = {
     cuts: [ANIMAL, WORD],
     cards: [
       {
-        mark: 'k7m2xq9fzp',
+        id: 'k7m2xq9fzp',
         section: null,
         stencil: 'Animal',
         filled: [
@@ -84,7 +84,7 @@ const CORPORA = {
         ],
       },
       {
-        mark: '3n8vr4tqch',
+        id: '3n8vr4tqch',
         section: null,
         stencil: 'Animal',
         filled: [
@@ -95,7 +95,7 @@ const CORPORA = {
         ],
       },
       {
-        mark: 'w9s5jd2b1k',
+        id: 'w9s5jd2b1k',
         section: null,
         stencil: 'Word',
         filled: [
@@ -117,7 +117,7 @@ const CORPORA = {
     ],
     cards: [
       {
-        mark: 'p4h6c8vzn2',
+        id: 'p4h6c8vzn2',
         section: null,
         stencil: 'Basic',
         filled: [
@@ -126,7 +126,7 @@ const CORPORA = {
         ],
       },
       {
-        mark: 'r2t7y5k9wq',
+        id: 'r2t7y5k9wq',
         section: 'roots',
         stencil: 'Basic',
         filled: [
@@ -138,7 +138,7 @@ const CORPORA = {
         ],
       },
       {
-        mark: 'z3f1m6b4dt',
+        id: 'z3f1m6b4dt',
         section: 'roots',
         stencil: 'Animal',
         filled: [
@@ -155,7 +155,7 @@ const CORPORA = {
     cuts: [ASKED],
     cards: [
       {
-        mark: 'c5n8q2wxjb',
+        id: 'c5n8q2wxjb',
         section: null,
         stencil: 'Basic',
         filled: [
@@ -167,7 +167,7 @@ const CORPORA = {
         ],
       },
       {
-        mark: 'v7k3d9m1zr',
+        id: 'v7k3d9m1zr',
         section: null,
         stencil: 'Basic',
         filled: [{ field: 'Question', text: 'a short one' }],
@@ -180,7 +180,7 @@ const CORPORA = {
     cuts: [{ name: 'Слово', fields: ['Слово', 'Перевод', 'Пример'] }, { name: UNBROKEN, fields: [UNBROKEN, 'Long'] }],
     cards: [
       {
-        mark: 'j2b6t8n4vw',
+        id: 'j2b6t8n4vw',
         section: null,
         stencil: 'Слово',
         filled: [
@@ -190,7 +190,7 @@ const CORPORA = {
         ],
       },
       {
-        mark: 'h5r1w7z3qm',
+        id: 'h5r1w7z3qm',
         section: null,
         stencil: UNBROKEN,
         filled: [
@@ -204,22 +204,22 @@ const CORPORA = {
     ],
   },
   'nothing at all': { cuts: [ANIMAL, WORD], cards: [] },
-  /* Every fault a tile can carry, one card apiece: a card under no stencil, a
-     card naming a stencil that was not handed in, a card writing one field
-     twice, and a card from somebody else carrying marks that must never be
-     drawn as marks. */
+  /* Every fault a tile can carry: a card under no stencil, a card naming a
+     stencil that was not handed in, a card writing one field twice, a card from
+     somebody else carrying marks that must never be drawn as marks, and two
+     cards the file names alike, which are two cards and stand as two. */
   'what is wrong': {
     cuts: [ANIMAL, WORD, ASKED],
     cards: [
-      { mark: 'b8k4n2vqz6', section: null, stencil: null, filled: [] },
+      { id: 'b8k4n2vqz6', section: null, stencil: null, filled: [] },
       {
-        mark: 'm3t9w5rj1x',
+        id: 'm3t9w5rj1x',
         section: null,
         stencil: 'Gone',
         filled: [{ field: 'Whatever it had', text: 'still here, still readable' }],
       },
       {
-        mark: 'd6q2z8hn4v',
+        id: 'd6q2z8hn4v',
         section: null,
         stencil: 'Animal',
         filled: [
@@ -229,7 +229,7 @@ const CORPORA = {
         ],
       },
       {
-        mark: 'y1v5b9kt3n',
+        id: 'y1v5b9kt3n',
         section: null,
         stencil: 'Basic',
         filled: [
@@ -243,11 +243,34 @@ const CORPORA = {
           },
         ],
       },
+      /* A card copied by hand and the card it was copied from: the file names
+         the two alike, and the window draws each under an identity of its own
+         so both are read and both are typed into. */
+      {
+        id: 'copied-one',
+        section: null,
+        stencil: 'Basic',
+        filled: [
+          { field: 'Question', text: 'Compost, what is it made of' },
+          { field: 'Answer', text: 'Leaves and peelings' },
+        ],
+      },
+      {
+        id: 'copied-again',
+        section: null,
+        stencil: 'Basic',
+        filled: [
+          { field: 'Question', text: 'Compost, what is it made of' },
+          { field: 'Answer', text: 'Leaves and peelings, turned' },
+        ],
+      },
     ],
     wrong: {
       at: {
         b8k4n2vqz6: ['the first paragraph under this card is not a lone wikilink'],
         d6q2z8hn4v: ['this card writes one field twice'],
+        'copied-one': ['two cards of this deck carry the mark k7m2xq9fzp'],
+        'copied-again': ['two cards of this deck carry the mark k7m2xq9fzp'],
       },
       under: {
         d6q2z8hn4v: { Name: ['this card writes Name twice'] },
@@ -308,8 +331,8 @@ const meta: Meta<Knobs> = {
       )
 
       /** The cards, with one of them changed. */
-      const changed = (mark: string, into: (card: Drawn) => Drawn): readonly Drawn[] =>
-        cards.value.map((card) => (card.mark === mark ? into(card) : card))
+      const changed = (id: string, into: (card: Drawn) => Drawn): readonly Drawn[] =>
+        cards.value.map((card) => (card.id === id ? into(card) : card))
 
       /** The section the last of them is, which is where a new card is made. */
       const lastSection = (): string | null => sections.value.at(-1)?.id ?? null
@@ -321,17 +344,17 @@ const meta: Meta<Knobs> = {
         sections,
         wrong,
         onAdd: (stencil: string, filled: readonly Filled[]) => {
-          const mark = `made00000${cards.value.length}`
-          cards.value = [...cards.value, { mark, section: lastSection(), stencil, filled }]
+          const id = `made00000${cards.value.length}`
+          cards.value = [...cards.value, { id, section: lastSection(), stencil, filled }]
         },
-        onRemove: (mark: string) => {
-          cards.value = cards.value.filter((card) => card.mark !== mark)
+        onRemove: (id: string) => {
+          cards.value = cards.value.filter((card) => card.id !== id)
         },
-        onMove: (mark: string, at: Landing) => {
-          cards.value = moved(cards.value, sections.value, mark, at)
+        onMove: (id: string, at: Landing) => {
+          cards.value = moved(cards.value, sections.value, id, at)
         },
-        onWrite: (mark: string, field: string, nth: number, text: string) => {
-          cards.value = changed(mark, (card) => {
+        onWrite: (id: string, field: string, nth: number, text: string) => {
+          cards.value = changed(id, (card) => {
             // The one written is the one counted off under its own field.
             let under = 0
             const filled = card.filled.map((each) => {
@@ -384,20 +407,23 @@ const meta: Meta<Knobs> = {
 const sectionsOf = (corpus: Corpus): readonly Banded[] => corpus.sections ?? []
 
 /**
- * A card let go before another, at the head of a section, or at the end of the
- * deck. A card takes the section of whatever it lands in front of.
+ * A card let go before another, at the head of the deck, at the head of a
+ * section, or at the end of it. A card takes the section of whatever it lands
+ * in front of.
  */
 const moved = (
   cards: readonly Drawn[],
   sections: readonly Banded[],
-  mark: string,
+  id: string,
   at: Landing,
 ): readonly Drawn[] => {
-  const held = cards.find((card) => card.mark === mark)
+  const held = cards.find((card) => card.id === id)
   if (!held) return cards
-  const left = cards.filter((card) => card.mark !== mark)
+  const left = cards.filter((card) => card.id !== id)
 
-  const before = at === null ? -1 : left.findIndex((card) => card.mark === at)
+  if (at === HEAD) return [{ ...held, section: null }, ...left]
+
+  const before = at === null ? -1 : left.findIndex((card) => card.id === at)
   if (before !== -1) {
     const under = { ...held, section: left[before]?.section ?? null }
     return [...left.slice(0, before), under, ...left.slice(before)]
@@ -554,9 +580,9 @@ export const NothingAtAll: Story = {
 }
 
 /**
- * A deck the vault found four things wrong with, one card apiece. Every mark
- * stands on the card it was read against and on no other, and what a card is
- * drawn as is the card's own.
+ * A deck the vault found five things wrong with. Every mark stands on the card
+ * it was read against and on no other, and what a card is drawn as is the
+ * card's own.
  */
 export const WhatIsWrongWithACard: Story = {
   args: { corpus: 'what is wrong' },
@@ -571,7 +597,20 @@ export const WhatIsWrongWithACard: Story = {
 
     // The card nothing was said against carries no mark at all.
     expect(canvasElement.querySelector('[data-card="m3t9w5rj1x"] [data-wrong]')).toBeNull()
-    expect(canvasElement.querySelectorAll('[data-wrong]')).toHaveLength(2)
+    expect(canvasElement.querySelectorAll('[data-wrong]')).toHaveLength(4)
+
+    // Two cards of one mark stand as two tiles, each carrying what is wrong
+    // with it and each typed into on its own.
+    expect(said('copied-one', '[data-wrong]')).toContain('carry the mark')
+    expect(said('copied-again', '[data-wrong]')).toContain('carry the mark')
+
+    const box = (card: string): HTMLTextAreaElement =>
+      found(canvasElement, `[data-card="${card}"] [data-value="Answer"]`) as HTMLTextAreaElement
+
+    await userEvent.type(box('copied-one'), ' and left to rot down')
+
+    expect(box('copied-one').value).toBe('Leaves and peelings and left to rot down')
+    expect(box('copied-again').value).toBe('Leaves and peelings, turned')
   },
 }
 

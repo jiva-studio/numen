@@ -10,7 +10,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import Deck from './Deck.vue'
-import type { Banded, Drawn } from './deck'
+import { HEAD, type Banded, type Drawn } from './deck'
 import type { Cut } from './stencil'
 
 const CUTS: readonly Cut[] = [
@@ -19,10 +19,10 @@ const CUTS: readonly Cut[] = [
 ]
 
 /* Every field a stencil declares stands under its own heading, the first
-   included, and a card is addressed by the mark it carries. */
+   included, and a card is addressed by the identity the caller drew it under. */
 const CARDS: readonly Drawn[] = [
   {
-    mark: 'llama',
+    id: 'llama',
     section: null,
     stencil: 'Animal',
     filled: [
@@ -30,7 +30,7 @@ const CARDS: readonly Drawn[] = [
       { field: 'Height', text: 'about 45"' },
     ],
   },
-  { mark: 'yak', section: null, stencil: 'Animal', filled: [] },
+  { id: 'yak', section: null, stencil: 'Animal', filled: [] },
 ]
 
 const mountDeck = (props: Record<string, unknown> = {}) =>
@@ -38,35 +38,40 @@ const mountDeck = (props: Record<string, unknown> = {}) =>
 
 type Grid = ReturnType<typeof mountDeck>
 
-const tileFor = (held: Grid, mark: string) => held.get(`[data-card="${mark}"]`)
+const tileFor = (held: Grid, id: string) => held.get(`[data-card="${id}"]`)
 
 const drawnCards = (held: Grid) =>
   held.findAll('[data-card]').map((tile) => tile.attributes('data-card'))
 
 /** The fields a tile puts in boxes, in the order it draws them. */
-const fieldsOf = (held: Grid, mark: string): readonly (string | undefined)[] =>
-  tileFor(held, mark)
+const fieldsOf = (held: Grid, id: string): readonly (string | undefined)[] =>
+  tileFor(held, id)
     .findAll('textarea')
     .map((box) => box.attributes('data-value'))
 
-const boxFor = (held: Grid, mark: string, field: string) =>
-  tileFor(held, mark).get<HTMLTextAreaElement>(`[data-value="${field}"]`)
+const boxFor = (held: Grid, id: string, field: string) =>
+  tileFor(held, id).get<HTMLTextAreaElement>(`[data-value="${field}"]`)
 
 /** Every box standing under one field of one card, in the order they are drawn. */
-const boxesFor = (held: Grid, mark: string, field: string): readonly HTMLTextAreaElement[] =>
-  tileFor(held, mark)
+const boxesFor = (held: Grid, id: string, field: string): readonly HTMLTextAreaElement[] =>
+  tileFor(held, id)
     .findAll<HTMLTextAreaElement>(`[data-value="${field}"]`)
     .map((box) => box.element)
 
-/** A card picked up by its grip and let go over another card, a section, or the grid. */
-const dragTo = async (held: Grid, mark: string, onto: string | null): Promise<void> => {
-  await tileFor(held, mark).get('[data-grip]').trigger('dragstart')
+/**
+ * A card picked up by its grip and let go over another card, the head of the
+ * deck, a section, or the grid.
+ */
+const dragTo = async (held: Grid, id: string, onto: string | null): Promise<void> => {
+  await tileFor(held, id).get('[data-grip]').trigger('dragstart')
   const over =
     onto === null
       ? held.get('.deck')
-      : held.find(`[data-card="${onto}"]`).exists()
-        ? tileFor(held, onto)
-        : held.get(`[data-band="${onto}"]`)
+      : onto === HEAD
+        ? held.get('[data-head]')
+        : held.find(`[data-card="${onto}"]`).exists()
+          ? tileFor(held, onto)
+          : held.get(`[data-band="${onto}"]`)
   await over.trigger('dragover')
   await over.trigger('drop')
 }
@@ -86,8 +91,8 @@ const pressing = (on: Element, key: string): KeyboardEvent => {
 }
 
 /** A card picked up and the carry ended without it being let go anywhere. */
-const dragOff = async (held: Grid, mark: string, over: string | null): Promise<void> => {
-  const grip = tileFor(held, mark).get('[data-grip]')
+const dragOff = async (held: Grid, id: string, over: string | null): Promise<void> => {
+  const grip = tileFor(held, id).get('[data-grip]')
   await grip.trigger('dragstart')
   if (over !== null) await tileFor(held, over).trigger('dragover')
   await grip.trigger('dragend')
@@ -171,7 +176,7 @@ describe('Deck', () => {
   it('sets the ground behind each box to the box’s own text, which is what sizes it', () => {
     const cards: readonly Drawn[] = [
       {
-        mark: 'x',
+        id: 'x',
         section: null,
         stencil: 'Animal',
         filled: [{ field: 'Height', text: 'a\nb\nc' }],
@@ -190,8 +195,8 @@ describe('Deck', () => {
       { name: 'Vocabulary', fields: ['Word', 'Meaning'] },
     ]
     const mixed: readonly Drawn[] = [
-      { mark: 'llama', section: null, stencil: 'Beast', filled: [] },
-      { mark: 'llano', section: null, stencil: 'Vocabulary', filled: [] },
+      { id: 'llama', section: null, stencil: 'Beast', filled: [] },
+      { id: 'llano', section: null, stencil: 'Vocabulary', filled: [] },
     ]
     const held = mountDeck({ cards: mixed, cuts })
 
@@ -220,7 +225,7 @@ describe('Deck', () => {
   })
 
   describe('a press landing on something the strip holds', () => {
-    const stripOf = (held: Grid, mark: string) => tileFor(held, mark).get('[data-grip]')
+    const stripOf = (held: Grid, id: string) => tileFor(held, id).get('[data-grip]')
 
     it('lets that thing have the press, so the strip is not carried by it', async () => {
       const held = mountDeck()
@@ -276,7 +281,7 @@ describe('Deck', () => {
   })
 
   describe('carrying a tile by the keyboard', () => {
-    const stripOf = (held: Grid, mark: string) => tileFor(held, mark).get('[data-grip]')
+    const stripOf = (held: Grid, id: string) => tileFor(held, id).get('[data-grip]')
 
     it('names the strip a tile is carried by, and gives it a place in the order', () => {
       const strip = stripOf(mountDeck(), 'llama')
@@ -393,7 +398,7 @@ describe('Deck', () => {
 
   it('draws no value of a card whose stencil was not handed in, and says which it wants', () => {
     const orphan: readonly Drawn[] = [
-      { mark: 'gone', section: null, stencil: 'Missing', filled: [{ field: 'A', text: 'kept' }] },
+      { id: 'gone', section: null, stencil: 'Missing', filled: [{ field: 'A', text: 'kept' }] },
     ]
     const held = mountDeck({ cards: orphan })
     const tile = tileFor(held, 'gone')
@@ -412,7 +417,7 @@ describe('Deck', () => {
   it('draws every value a card writes under one field, and hides none of them', () => {
     const twice: readonly Drawn[] = [
       {
-        mark: 'llama',
+        id: 'llama',
         section: null,
         stencil: 'Animal',
         filled: [
@@ -431,7 +436,7 @@ describe('Deck', () => {
   it('tells the two boxes of a field written twice apart in what each emits', async () => {
     const twice: readonly Drawn[] = [
       {
-        mark: 'twice',
+        id: 'twice',
         section: null,
         stencil: 'Animal',
         filled: [
@@ -472,8 +477,8 @@ describe('Deck', () => {
       { id: 'leaves', name: 'Leaves' },
     ]
     const UNDER: readonly Drawn[] = [
-      { mark: 'loose', section: null, stencil: 'Animal', filled: [] },
-      { mark: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
+      { id: 'loose', section: null, stencil: 'Animal', filled: [] },
+      { id: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
     ]
 
     const mountSectioned = (props: Record<string, unknown> = {}) =>
@@ -533,6 +538,61 @@ describe('Deck', () => {
       const held = mountSectioned()
       await dragTo(held, 'llama', 'leaves')
       expect(held.emitted('move')).toEqual([['llama', 'leaves']])
+    })
+
+    describe('the cards before the first section', () => {
+      /* A deck whose every card stands in a section, so the place before the
+         first of them holds none. */
+      const INSIDE: readonly Drawn[] = [
+        { id: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
+        { id: 'yak', section: 'leaves', stencil: 'Animal', filled: [] },
+      ]
+
+      it('take a landing of their own where no card stands there', () => {
+        expect(mountSectioned({ cards: INSIDE }).find('[data-head]').exists()).toBe(true)
+      })
+
+      it('take none where a card already stands there to land in front of', () => {
+        expect(mountSectioned().find('[data-head]').exists()).toBe(false)
+      })
+
+      it('take none in a deck holding no section, the end of it being that place', () => {
+        expect(mountDeck().find('[data-head]').exists()).toBe(false)
+      })
+
+      it('emit a card let go before the first section', async () => {
+        const held = mountSectioned({ cards: INSIDE })
+        await dragTo(held, 'yak', HEAD)
+        expect(held.emitted('move')).toEqual([['yak', HEAD]])
+      })
+
+      it('emit the first card of the deck carried out of its section', () => {
+        const held = mountSectioned({ cards: INSIDE })
+        const press = pressing(tileFor(held, 'llama').get('[data-grip]').element, 'ArrowUp')
+        expect(press.defaultPrevented).toBe(true)
+        expect(held.emitted('move')).toEqual([['llama', HEAD]])
+      })
+
+      it('move nothing where the card carried up already stands there', () => {
+        const held = mountSectioned()
+        const press = pressing(tileFor(held, 'loose').get('[data-grip]').element, 'ArrowUp')
+        expect(press.defaultPrevented).toBe(false)
+        expect(held.emitted('move')).toBeUndefined()
+      })
+
+      it('hold a card standing under a section the deck was not handed', () => {
+        const lost: readonly Drawn[] = [
+          { id: 'lost', section: 'gone', stencil: 'Animal', filled: [] },
+          { id: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
+        ]
+        const held = mountSectioned({ cards: lost })
+
+        expect(drawnCards(held)).toEqual(['lost', 'llama'])
+        expect(tileFor(held, 'lost').attributes('data-section')).toBeUndefined()
+        // Every card is drawn, so what each tile is announced by counts them
+        // all and the plus.
+        expect(tileFor(held, 'lost').attributes('aria-setsize')).toBe('3')
+      })
     })
   })
 })

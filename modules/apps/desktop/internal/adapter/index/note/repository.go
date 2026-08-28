@@ -237,6 +237,9 @@ func parts(headings []domain.Heading) []cutting.Part {
 // The two levels a deck spends on what a person writes: a section, and a card
 // under it. Below them stand the stencil's field names, written out under every
 // card.
+//
+// TODO: which level a deck spends on what is the format's answer, and cards is
+// where the format is read. Take these from there once it names them.
 const (
 	sectionLevel = 1
 	cardLevel    = 2
@@ -245,8 +248,9 @@ const (
 // outline is the headings of a note as the index keeps them.
 //
 // A deck keeps its sections and its cards, and a card's heading is kept without
-// the mark it ends in. A stencil keeps none: its headings are its faces and
-// their two sides. Every other note keeps every heading it has.
+// the mark it ends in. A card whose first field is empty is named by nothing,
+// and a heading of no text is not kept. A stencil keeps none: its headings are
+// its faces and their two sides. Every other note keeps every heading it has.
 func outline(n domain.Note) []domain.Heading {
 	switch n.Type {
 	case domain.TypeStencil:
@@ -259,6 +263,9 @@ func outline(n domain.Note) []domain.Heading {
 				out = append(out, h)
 			case cardLevel:
 				h.Text, _ = cards.ReadHeading(h.Text)
+				if h.Text == "" {
+					continue
+				}
 				out = append(out, h)
 			}
 		}

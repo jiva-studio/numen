@@ -164,8 +164,7 @@ func addCardTools(server *sdk.Server, core Core) {
 			"written by hand without the wikilink under its heading is a card with no " +
 			"stencil, and nothing says so until somebody opens the deck. The card's " +
 			"heading is written from its first field, and the mark it is addressed by " +
-			"is minted where the deck is written, so `card_read` is what says which " +
-			"card this became.",
+			"comes back under `mark`.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path        string  `json:"path" jsonschema:"the deck to write into"`
 		Stencil     string  `json:"stencil" jsonschema:"the stencil it is cut by, by the name card_stencils gave under name"`
@@ -177,7 +176,10 @@ func addCardTools(server *sdk.Server, core Core) {
 			return nil, Written{}, fmt.Errorf(
 				"a card of %d bytes is more than this writes at once, which is %d", size, maxBytes)
 		}
-		written, err := changing(ctx, core, in.Path, in.Fingerprint,
+		// Where the card went, so that the mark minted for it is the one this
+		// answers with.
+		stands := 0
+		written, minted, err := changing(ctx, core, in.Path, in.Fingerprint,
 			func(read cards.Deck) (format.Deck, error) {
 				held := read.Deck
 				at, under, err := placed(held, in.Section)
@@ -188,9 +190,14 @@ func addCardTools(server *sdk.Server, core Core) {
 					Stencil: in.Stencil, Section: under, Values: values(in.Values),
 				}
 				held.Cards = slices.Insert(held.Cards, at, card)
+				stands = at
 				return held, nil
 			})
-		return nil, written, err
+		if err != nil {
+			return nil, Written{}, err
+		}
+		written.Mark = markOf(minted, stands)
+		return nil, written, nil
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
@@ -214,12 +221,12 @@ func addCardTools(server *sdk.Server, core Core) {
 			return nil, Written{}, fmt.Errorf(
 				"a card of %d bytes is more than this writes at once, which is %d", size, maxBytes)
 		}
-		written, err := changing(ctx, core, in.Path, in.Fingerprint,
+		written, _, err := changing(ctx, core, in.Path, in.Fingerprint,
 			func(read cards.Deck) (format.Deck, error) {
 				held := read.Deck
-				at := standing(held.Cards, in.Card)
-				if at < 0 {
-					return format.Deck{}, fmt.Errorf("%w: %s", format.ErrNoSuchCard, in.Card)
+				at, err := standing(held.Cards, in.Card)
+				if err != nil {
+					return format.Deck{}, err
 				}
 				if in.Stencil != "" {
 					held.Cards[at].Stencil = in.Stencil
@@ -243,12 +250,12 @@ func addCardTools(server *sdk.Server, core Core) {
 		Card        string `json:"card" jsonschema:"the card's mark, as card_read gives it"`
 		Fingerprint string `json:"fingerprint,omitempty" jsonschema:"what card_read said the deck was, to refuse a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, Written, error) {
-		written, err := changing(ctx, core, in.Path, in.Fingerprint,
+		written, _, err := changing(ctx, core, in.Path, in.Fingerprint,
 			func(read cards.Deck) (format.Deck, error) {
 				held := read.Deck
-				at := standing(held.Cards, in.Card)
-				if at < 0 {
-					return format.Deck{}, fmt.Errorf("%w: %s", format.ErrNoSuchCard, in.Card)
+				at, err := standing(held.Cards, in.Card)
+				if err != nil {
+					return format.Deck{}, err
 				}
 				held.Cards = slices.Delete(held.Cards, at, at+1)
 				return held, nil
@@ -268,7 +275,7 @@ func addCardTools(server *sdk.Server, core Core) {
 		Name        string `json:"name" jsonschema:"what the section is called"`
 		Fingerprint string `json:"fingerprint,omitempty" jsonschema:"what card_read said the deck was, to refuse a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, Written, error) {
-		written, err := changing(ctx, core, in.Path, in.Fingerprint,
+		written, _, err := changing(ctx, core, in.Path, in.Fingerprint,
 			func(read cards.Deck) (format.Deck, error) {
 				held := read.Deck
 				held.Sections = append(held.Sections, format.Section{Name: in.Name})
@@ -379,61 +386,85 @@ type Written struct {
 	Path        string `json:"path"`
 	Fingerprint string `json:"fingerprint" jsonschema:"hand this to the next write of this deck without reading it back"`
 	Cards       int    `json:"cards" jsonschema:"how many cards the deck now holds"`
+	Mark        string `json:"mark,omitempty" jsonschema:"the mark the card just written is addressed by, for as long as it exists"`
 }
 
-// changing reads a deck, hands it to change, and puts back what comes out. The
-// preamble, the tail, every section and every card change did not touch are
-// written as the bytes they arrived as.
+// changing reads a deck, hands it to change, and puts back what comes out, with
+// the mark every card that carried none was given. The preamble, the tail,
+// every section and every card change did not touch are written as the bytes
+// they arrived as.
 func changing(
 	ctx context.Context, core Core, path, fingerprint string,
 	change func(cards.Deck) (format.Deck, error),
-) (Written, error) {
+) (Written, []format.Minted, error) {
 	seen, err := parseFingerprint(fingerprint)
 	if err != nil {
-		return Written{}, err
+		return Written{}, nil, err
 	}
 	v := core.shown().Vault
 	read, err := core.Cards.Deck(ctx, v, path)
 	if err != nil {
-		return Written{}, err
+		return Written{}, nil, err
 	}
 	if why := whyNotADeck(read); why != "" {
-		return Written{}, fmt.Errorf("%s: %s", path, why)
+		return Written{}, nil, fmt.Errorf("%s: %s", path, why)
 	}
 
 	held, err := change(read)
 	if err != nil {
-		return Written{}, err
+		return Written{}, nil, err
 	}
 	body, err := core.DeckBody(held)
 	if err != nil {
-		return Written{}, err
+		return Written{}, nil, err
 	}
 	// The deck this read came out of is what the write lands on where the
 	// caller presented nothing of its own.
 	if seen == (domain.FileRef{}) {
 		seen = read.Ref
 	}
-	at, err := core.Cuts.Deck(ctx, v, path, body, seen)
+	wrote, err := core.Cuts.Deck(ctx, v, path, body, seen)
 	if err != nil {
-		return Written{}, err
+		return Written{}, nil, err
 	}
-	return Written{Path: path, Fingerprint: fingerprintOf(at), Cards: len(held.Cards)}, nil
+	return Written{
+		Path: path, Fingerprint: fingerprintOf(wrote.At), Cards: len(held.Cards),
+	}, wrote.Minted, nil
 }
 
-// standing is where the card of a mark stands, and -1 where the deck holds
-// none. A card typed in by hand carries no mark until the deck is written, and
-// no mark reaches it.
-func standing(held []format.Card, carried string) int {
-	if carried == "" {
-		return -1
-	}
-	for at, card := range held {
-		if card.Mark == carried {
-			return at
+// standing is where the card of a mark stands. A deck holding no card of it is
+// ErrNoSuchCard — a card typed in by hand carries none until the deck is
+// written, and no mark reaches it — and a deck holding two is ErrTwoCards:
+// both are read and both are shown, and choosing between them would be choosing
+// which of the two the person meant.
+func standing(held []format.Card, carried string) (int, error) {
+	at := -1
+	if carried != "" {
+		for i, card := range held {
+			if card.Mark != carried {
+				continue
+			}
+			if at >= 0 {
+				return 0, fmt.Errorf("%w: %s", format.ErrTwoCards, carried)
+			}
+			at = i
 		}
 	}
-	return -1
+	if at < 0 {
+		return 0, fmt.Errorf("%w: %s", format.ErrNoSuchCard, carried)
+	}
+	return at, nil
+}
+
+// markOf is the mark the card standing at one place was given, and nothing
+// where it carried one already.
+func markOf(minted []format.Minted, at int) string {
+	for _, one := range minted {
+		if one.Card == at {
+			return one.Mark
+		}
+	}
+	return ""
 }
 
 // placed is where a card being written goes in a deck, and which section it

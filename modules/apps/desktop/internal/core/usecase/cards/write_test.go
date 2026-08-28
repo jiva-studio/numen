@@ -195,7 +195,8 @@ func TestAMarkIsWrittenInTheFilesOwnLineEnding(t *testing.T) {
 func TestWritingADeckPutsAStaleHeadingBackInStep(t *testing.T) {
 	vs := indexed(t)
 	body := "\n## Something else ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
-		"\n## Also stale ^zpqrstvwxy\n\n[[Animal]]\n\n### Height\n\nno first field at all\n"
+		"\n## Also stale ^zpqrstvwxy\n\n[[Animal]]\n\n### Name\n" +
+		"\n### Height\n\nthe first field is a box to fill\n"
 	w := laid(t, vs, "decks/Stale.md", body)
 
 	if _, err := w.Deck(t.Context(), vs.first, "decks/Stale.md", body, domain.FileRef{}); err != nil {
@@ -213,6 +214,48 @@ func TestWritingADeckPutsAStaleHeadingBackInStep(t *testing.T) {
 	}
 	if got := read(t, vs.first, "decks/Stale.md"); !strings.Contains(got, "## ^zpqrstvwxy\n") {
 		t.Errorf("heading written wrong: %q", got)
+	}
+}
+
+// A card carrying no heading at all for the field that is first says nothing
+// about what its heading should be, so the heading is left exactly as it
+// stands. A rename that could not be written to a deck leaves every card in it
+// that way, and the next ordinary save must not read that as a heading of
+// nothing.
+func TestACardWritingNothingUnderTheFirstFieldKeepsItsHeading(t *testing.T) {
+	vs := indexed(t)
+	// The stencil declares Name first, and this card was written when the field
+	// standing first was called something else.
+	body := "\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Was called something else\n\nLlama\n"
+	w := laid(t, vs, "decks/Behind.md", body)
+
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Behind.md", body, domain.FileRef{}); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	deck := held(t, vs, "decks/Behind.md")
+	if deck.Cards[0].Heading != "Llama" {
+		t.Errorf("heading = %q, want it left as it stands", deck.Cards[0].Heading)
+	}
+}
+
+// The mark is minted where the deck is made whole, so the write is what knows
+// it, and a caller that has just added a card is told what to address it by.
+func TestAWriteSaysWhichMarksItMinted(t *testing.T) {
+	vs := indexed(t)
+	body := "\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
+		"\n## Alpaca\n\n[[Animal]]\n\n### Name\n\nAlpaca\n"
+	w := laid(t, vs, "decks/Minted.md", body)
+
+	wrote, err := w.Deck(t.Context(), vs.first, "decks/Minted.md", body, domain.FileRef{})
+	if err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if len(wrote.Minted) != 1 || wrote.Minted[0].Card != 1 {
+		t.Fatalf("minted = %+v, want the one card that carried none", wrote.Minted)
+	}
+	if got := held(t, vs, "decks/Minted.md").Cards[1].Mark; got != wrote.Minted[0].Mark {
+		t.Errorf("the mark reported is %q and the card carries %q", wrote.Minted[0].Mark, got)
 	}
 }
 

@@ -18,6 +18,8 @@ import {
   blanks,
   DECK_WORDS,
   grid,
+  HEAD,
+  lands,
   NOTHING_WRONG,
   sealed,
   type Banded,
@@ -57,17 +59,18 @@ const emit = defineEmits<{
    * field that stencil declares. It is made at the end of the deck.
    */
   (event: 'add', stencil: string, filled: readonly Filled[]): void
-  (event: 'remove', mark: string): void
+  (event: 'remove', card: string): void
   /**
-   * A card let go somewhere in the deck: before the card of that mark, at the
-   * head of the section of that identity, or at the end.
+   * A card let go somewhere in the deck: before the card of that identity, at
+   * the head of the deck, at the head of the section of that identity, or at
+   * the end.
    */
-  (event: 'move', mark: string, at: Landing): void
+  (event: 'move', card: string, at: Landing): void
   /**
    * One value of one card as it now reads. A card writing a field twice is
    * writing two values, of which `nth` says which was typed in.
    */
-  (event: 'write', mark: string, field: string, nth: number, text: string): void
+  (event: 'write', card: string, field: string, nth: number, text: string): void
   /** A section asked for, under a name nothing has taken. It is made at the end. */
   (event: 'add-section', name: string): void
   (event: 'rename-section', id: string, name: string): void
@@ -81,11 +84,14 @@ const asking = shallowRef(false)
 /**
  * The card under the pointer's hand, and where letting go would put it. A card
  * let go where it stands moves nothing, and nothing else among them is fixed.
+ *
+ * The head of the deck stands first in the order, so the card at the top of the
+ * first section is carried out of it by the keyboard as it is by the pointer.
  */
 const { carried, at, lift, over, release, drop, step } = useCarry<Landing>({
-  order: () => props.cards.map((card) => card.mark),
+  order: () => [HEAD, ...props.cards.map((card) => card.id)],
   nowhere: null,
-  lands: (held, at) => at !== held,
+  lands: (held: string, at: Landing): boolean => lands(shown.value.runs, held, at),
   moves: (held, at) => emit('move', held, at),
 })
 
@@ -112,7 +118,7 @@ const addSection = (): void => {
     @dragover="over(null, $event)"
     @drop="drop"
   >
-    <template v-for="run in shown.runs" :key="run.band?.id ?? ''">
+    <template v-for="run in shown.runs" :key="run.id">
       <!-- A card let go on a section's heading lands at the head of that
            section, which is the one place a section holding none takes one. -->
       <div
@@ -131,25 +137,36 @@ const addSection = (): void => {
         />
       </div>
 
+      <!-- The place before the first section, where a card is let go to stand
+           under no section at all. -->
+      <div
+        v-else-if="run.landing"
+        class="deck__head"
+        data-head
+        :data-before="run.id === at || undefined"
+        @dragover.stop="over(run.id, $event)"
+        @drop.stop="drop"
+      ></div>
+
       <div class="deck__grid">
         <div
           v-for="tile in run.tiles"
-          :key="tile.mark"
+          :key="tile.id"
           class="deck__tile"
-          :data-before="tile.mark === at || undefined"
-          @dragover.stop="over(tile.mark, $event)"
+          :data-before="tile.id === at || undefined"
+          @dragover.stop="over(tile.id, $event)"
           @drop.stop="drop"
         >
           <Card
             :tile="tile"
-            :wrong="wrong.at.get(tile.mark) ?? []"
-            :wrong-under="wrong.under.get(tile.mark) ?? NO_FIELDS"
+            :wrong="wrong.at.get(tile.id) ?? []"
+            :wrong-under="wrong.under.get(tile.id) ?? NO_FIELDS"
             :words="words"
-            @remove="emit('remove', tile.mark)"
-            @lift="lift(tile.mark, $event)"
+            @remove="emit('remove', tile.id)"
+            @lift="lift(tile.id, $event)"
             @release="release"
-            @step="(way, press) => step(tile.mark, way, press)"
-            @write="(field, nth, text) => emit('write', tile.mark, field, nth, text)"
+            @step="(way, press) => step(tile.id, way, press)"
+            @write="(field, nth, text) => emit('write', tile.id, field, nth, text)"
           />
         </div>
 
@@ -224,6 +241,14 @@ const addSection = (): void => {
   position: relative;
 }
 
+/* The place before the first section is a strip the width of the grid, standing
+   where a card let go there would go and taking the caret a heading takes. */
+.deck__head {
+  position: relative;
+  block-size: var(--gap);
+}
+
+.deck__head[data-before]::before,
 .deck__band[data-before]::before {
   content: '';
   position: absolute;

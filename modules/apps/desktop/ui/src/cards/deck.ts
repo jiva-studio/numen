@@ -28,6 +28,7 @@ import {
   drawnOf,
   filled,
   marksOf,
+  named,
   pathOfCut,
   removed,
   sameDeck,
@@ -166,10 +167,15 @@ export function decking(cards: Cards, host: Host, puts: Putting) {
     if (held && held.body === body) return held.deck
     // A file read again carries fresh identities for the same cards, so the
     // string it comes back as differs from the string that went out. A deck
-    // reading as the one on screen leaves that one standing, and the card a
+    // reading as the one on screen leaves that one standing, and a deck the
+    // file has named a card of since keeps that card's identity, so the card a
     // person is typing into is not drawn again.
     const read = deckIn(body)
-    const deck = held && sameDeck(held.deck, read) ? held.deck : read
+    const deck = held
+      ? sameDeck(held.deck, read)
+        ? held.deck
+        : named(held.deck, read)
+      : read
     parsed.set(id, { body, deck })
     return deck
   }

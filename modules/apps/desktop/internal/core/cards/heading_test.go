@@ -103,6 +103,20 @@ func TestProject(t *testing.T) {
 		"a lone star": {
 			upTo(cards.HeadingRunes-5) + " *very heavy and on", upTo(cards.HeadingRunes-5) + " *ver",
 		},
+
+		// A link inside a run of emphasis is the link's, and the run around it
+		// is one run.
+		"inside emphasis holding a link": {
+			upTo(100) + " *see [[a very long target]] now*", upTo(100),
+		},
+		"inside emphasis holding an embed": {
+			upTo(100) + " **the [[compost]] one made of leaves**", upTo(100),
+		},
+		// A link's brackets hold whatever a person wrote, brackets included, and
+		// the link closes at its own last one.
+		"inside a wikilink holding an embed": {
+			upTo(100) + " [[a ![[img.png]] b]] tail", upTo(100),
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			got := cards.Project(one.value)

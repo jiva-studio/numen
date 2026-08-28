@@ -54,30 +54,30 @@ const (
 	// A card's wikilink reaches a note that is not a stencil. The values are
 	// read.
 	Fault_FAULT_STENCIL_IS_NOT_ONE Fault = 6
-	// Two cards of one deck carry the same mark. Both are read and both are
-	// shown marked, and neither is given another.
-	Fault_FAULT_MARK_CARRIED_TWICE Fault = 8
 	// One card writes a field's heading twice. The first stands, and the second
 	// is kept in the file.
-	Fault_FAULT_FIELD_WRITTEN_TWICE Fault = 9
+	Fault_FAULT_FIELD_WRITTEN_TWICE Fault = 7
 	// A field renamed in a stencil did not reach this deck, so a card holds a
 	// heading the stencil no longer declares.
-	Fault_FAULT_FIELD_NOT_RENAMED Fault = 10
+	Fault_FAULT_FIELD_NOT_RENAMED Fault = 8
+	// Two cards of one deck carry the same mark. Both are read and both are
+	// shown marked, and neither is given another.
+	Fault_FAULT_MARK_CARRIED_TWICE Fault = 9
 )
 
 // Enum value maps for Fault.
 var (
 	Fault_name = map[int32]string{
-		0:  "FAULT_UNSPECIFIED",
-		1:  "FAULT_FIELD_DECLARED_TWICE",
-		2:  "FAULT_STENCIL_WITHOUT_FIELDS",
-		3:  "FAULT_FACE_MISSING_A_SIDE",
-		4:  "FAULT_PLACEHOLDER_UNDECLARED",
-		5:  "FAULT_CARD_WITHOUT_A_STENCIL",
-		6:  "FAULT_STENCIL_IS_NOT_ONE",
-		8:  "FAULT_MARK_CARRIED_TWICE",
-		9:  "FAULT_FIELD_WRITTEN_TWICE",
-		10: "FAULT_FIELD_NOT_RENAMED",
+		0: "FAULT_UNSPECIFIED",
+		1: "FAULT_FIELD_DECLARED_TWICE",
+		2: "FAULT_STENCIL_WITHOUT_FIELDS",
+		3: "FAULT_FACE_MISSING_A_SIDE",
+		4: "FAULT_PLACEHOLDER_UNDECLARED",
+		5: "FAULT_CARD_WITHOUT_A_STENCIL",
+		6: "FAULT_STENCIL_IS_NOT_ONE",
+		7: "FAULT_FIELD_WRITTEN_TWICE",
+		8: "FAULT_FIELD_NOT_RENAMED",
+		9: "FAULT_MARK_CARRIED_TWICE",
 	}
 	Fault_value = map[string]int32{
 		"FAULT_UNSPECIFIED":            0,
@@ -87,9 +87,9 @@ var (
 		"FAULT_PLACEHOLDER_UNDECLARED": 4,
 		"FAULT_CARD_WITHOUT_A_STENCIL": 5,
 		"FAULT_STENCIL_IS_NOT_ONE":     6,
-		"FAULT_MARK_CARRIED_TWICE":     8,
-		"FAULT_FIELD_WRITTEN_TWICE":    9,
-		"FAULT_FIELD_NOT_RENAMED":      10,
+		"FAULT_FIELD_WRITTEN_TWICE":    7,
+		"FAULT_FIELD_NOT_RENAMED":      8,
+		"FAULT_MARK_CARRIED_TWICE":     9,
 	}
 )
 
@@ -616,10 +616,10 @@ type Card struct {
 	// What the card is, for as long as it exists, and how it is addressed. It is
 	// the ten characters alone, without the caret a heading writes them behind,
 	// and it is empty for a card the application has not written yet.
-	Mark string `protobuf:"bytes,6,opt,name=mark,proto3" json:"mark,omitempty"`
+	Mark string `protobuf:"bytes,1,opt,name=mark,proto3" json:"mark,omitempty"`
 	// Where the section this card stands under stands in the deck's own, counted
 	// from the first. Absent for a card standing before the first section.
-	Section *int32 `protobuf:"varint,7,opt,name=section,proto3,oneof" json:"section,omitempty"`
+	Section *int32 `protobuf:"varint,6,opt,name=section,proto3,oneof" json:"section,omitempty"`
 	// The line the card's heading says, with the mark taken off. It is not what
 	// the card is called: it holds nothing of its own, and a write throws it away
 	// and reads it again from the first field.
@@ -629,7 +629,7 @@ type Card struct {
 	// is first. That heading is left exactly as it stands, so a write hands back
 	// what it was given. A write carrying nothing here leaves such a card headed
 	// by its mark alone.
-	Heading string `protobuf:"bytes,8,opt,name=heading,proto3" json:"heading,omitempty"`
+	Heading string `protobuf:"bytes,7,opt,name=heading,proto3" json:"heading,omitempty"`
 	// The stencil this card is cut by, as the wikilink beneath its heading names
 	// it, without the brackets. Empty for a card written under no wikilink.
 	Stencil string `protobuf:"bytes,2,opt,name=stencil,proto3" json:"stencil,omitempty"`
@@ -1921,18 +1921,18 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x05field\x18\x04 \x01(\tR\x05field\x12\x12\n" +
 	"\x04text\x18\x05 \x01(\tR\x04textB\a\n" +
 	"\x05_cardB\a\n" +
-	"\x05_face\"\xe1\x01\n" +
+	"\x05_face\"\xd5\x01\n" +
 	"\x04Card\x12\x12\n" +
-	"\x04mark\x18\x06 \x01(\tR\x04mark\x12\x1d\n" +
-	"\asection\x18\a \x01(\x05H\x00R\asection\x88\x01\x01\x12\x18\n" +
-	"\aheading\x18\b \x01(\tR\aheading\x12\x18\n" +
+	"\x04mark\x18\x01 \x01(\tR\x04mark\x12\x1d\n" +
+	"\asection\x18\x06 \x01(\x05H\x00R\asection\x88\x01\x01\x12\x18\n" +
+	"\aheading\x18\a \x01(\tR\aheading\x12\x18\n" +
 	"\astencil\x18\x02 \x01(\tR\astencil\x12\x12\n" +
 	"\x04lead\x18\x03 \x01(\tR\x04lead\x12'\n" +
 	"\x06values\x18\x04 \x03(\v2\x0f.numen.v1.ValueR\x06values\x12\x1d\n" +
 	"\n" +
 	"stencil_at\x18\x05 \x01(\tR\tstencilAtB\n" +
 	"\n" +
-	"\b_sectionJ\x04\b\x01\x10\x02R\x04name\"1\n" +
+	"\b_section\"1\n" +
 	"\x05Value\x12\x14\n" +
 	"\x05field\x18\x01 \x01(\tR\x05field\x12\x12\n" +
 	"\x04text\x18\x02 \x01(\tR\x04text\"'\n" +
@@ -2031,7 +2031,7 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x05bound\x18\x04 \x01(\x03R\x05boundB\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
-	"\x03_at*\x83\x03\n" +
+	"\x03_at*\xbb\x02\n" +
 	"\x05Fault\x12\x15\n" +
 	"\x11FAULT_UNSPECIFIED\x10\x00\x12\x1e\n" +
 	"\x1aFAULT_FIELD_DECLARED_TWICE\x10\x01\x12 \n" +
@@ -2039,11 +2039,10 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x19FAULT_FACE_MISSING_A_SIDE\x10\x03\x12 \n" +
 	"\x1cFAULT_PLACEHOLDER_UNDECLARED\x10\x04\x12 \n" +
 	"\x1cFAULT_CARD_WITHOUT_A_STENCIL\x10\x05\x12\x1c\n" +
-	"\x18FAULT_STENCIL_IS_NOT_ONE\x10\x06\x12\x1c\n" +
-	"\x18FAULT_MARK_CARRIED_TWICE\x10\b\x12\x1d\n" +
-	"\x19FAULT_FIELD_WRITTEN_TWICE\x10\t\x12\x1b\n" +
-	"\x17FAULT_FIELD_NOT_RENAMED\x10\n" +
-	"\"\x04\b\a\x10\a\"\x04\b\v\x10\v*\x19FAULT_CARD_WITHOUT_A_NAME*\x1fFAULT_FIRST_FIELD_WRITTEN_TWICE2\xd0\x04\n" +
+	"\x18FAULT_STENCIL_IS_NOT_ONE\x10\x06\x12\x1d\n" +
+	"\x19FAULT_FIELD_WRITTEN_TWICE\x10\a\x12\x1b\n" +
+	"\x17FAULT_FIELD_NOT_RENAMED\x10\b\x12\x1c\n" +
+	"\x18FAULT_MARK_CARRIED_TWICE\x10\t2\xd0\x04\n" +
 	"\fCardsService\x12A\n" +
 	"\bStencils\x12\x19.numen.v1.StencilsRequest\x1a\x1a.numen.v1.StencilsResponse\x12J\n" +
 	"\vMakeStencil\x12\x1c.numen.v1.MakeStencilRequest\x1a\x1d.numen.v1.MakeStencilResponse\x12J\n" +

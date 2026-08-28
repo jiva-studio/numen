@@ -234,7 +234,7 @@ func (a *API) WriteDeck(
 	if err != nil {
 		return nil, err
 	}
-	body, err := container.DeckBody(writtenDeck(r.Msg))
+	body, err := format.DeckBody(writtenDeck(r.Msg))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
@@ -243,12 +243,12 @@ func (a *API) WriteDeck(
 	}
 	defer a.Writing.done()
 
-	at, err := a.Cuts.Deck(ctx, showing, r.Msg.GetPath(), body, refOf(r.Msg.GetSeen()))
+	wrote, err := a.Cuts.Deck(ctx, showing, r.Msg.GetPath(), body, refOf(r.Msg.GetSeen()))
 	if err == nil {
 		if a.Wrote != nil {
 			a.Wrote()
 		}
-		return connect.NewResponse(&v1.WriteDeckResponse{At: fingerprintOf(at)}), nil
+		return connect.NewResponse(&v1.WriteDeckResponse{At: fingerprintOf(wrote.At)}), nil
 	}
 	if errors.Is(err, port.ErrChanged) {
 		return connect.NewResponse(&v1.WriteDeckResponse{Changed: true}), nil

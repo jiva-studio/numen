@@ -19,13 +19,13 @@ func Lay(s Stencil, face Face, card Card) (front, back string) {
 	if face.Front == "" || face.Back == "" {
 		return "", ""
 	}
-	return fill(s, face.Front, card), fill(s, face.Back, card)
+	return fill(face.Front, card), fill(face.Back, card)
 }
 
-func fill(s Stencil, face string, card Card) string {
+func fill(face string, card Card) string {
 	return placeholderRe.ReplaceAllStringFunc(face, func(match string) string {
 		name := placeholderRe.FindStringSubmatch(match)[1]
-		value, _ := s.Value(card, name)
+		value, _ := card.Value(name)
 		return value
 	})
 }

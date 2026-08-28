@@ -84,7 +84,7 @@ describe('grid', () => {
   ]
   const CARDS: readonly Drawn[] = [
     {
-      mark: 'llama',
+      id: 'llama',
       section: null,
       stencil: 'Animal',
       filled: [
@@ -92,7 +92,7 @@ describe('grid', () => {
         { field: 'Height', text: '45"' },
       ],
     },
-    { mark: 'yak', section: null, stencil: 'Animal', filled: [] },
+    { id: 'yak', section: null, stencil: 'Animal', filled: [] },
   ]
 
   /** Every tile of the grid, over all its runs, in the order they stand. */
@@ -138,7 +138,7 @@ describe('grid', () => {
   it('counts the values under a field from one, the first field among them', () => {
     const said: readonly Drawn[] = [
       {
-        mark: 'x',
+        id: 'x',
         section: null,
         stencil: 'Animal',
         filled: [
@@ -154,7 +154,7 @@ describe('grid', () => {
   it('marks the last box standing for each field, which is where a mark is said', () => {
     const said: readonly Drawn[] = [
       {
-        mark: 'x',
+        id: 'x',
         section: null,
         stencil: 'Animal',
         filled: [
@@ -178,7 +178,7 @@ describe('grid', () => {
   })
 
   it('draws a card cut by nothing as cut by nothing', () => {
-    const bare: readonly Drawn[] = [{ mark: 'x', section: null, stencil: null, filled: [] }]
+    const bare: readonly Drawn[] = [{ id: 'x', section: null, stencil: null, filled: [] }]
     const tile = tilesOf(grid(bare, [], CUTS, null))[0]
     expect(tile?.stencil).toBeNull()
     expect(tile?.known).toBe(false)
@@ -191,7 +191,7 @@ describe('grid', () => {
   it('numbers the values from one, so two of a name are still two values', () => {
     const said: readonly Drawn[] = [
       {
-        mark: 'x',
+        id: 'x',
         section: null,
         stencil: 'Animal',
         filled: [
@@ -206,7 +206,7 @@ describe('grid', () => {
 
   it('draws no value where the card’s stencil was not handed in', () => {
     const orphan: readonly Drawn[] = [
-      { mark: 'x', section: null, stencil: 'Gone', filled: [{ field: 'A', text: 'a' }] },
+      { id: 'x', section: null, stencil: 'Gone', filled: [{ field: 'A', text: 'a' }] },
     ]
     const tile = tilesOf(grid(orphan, [], CUTS, null))[0]
     expect(tile?.known).toBe(false)
@@ -219,7 +219,7 @@ describe('grid', () => {
   it('says nothing of what a card is cut by: the fields tell the stencils apart', () => {
     const mixed: readonly Drawn[] = [
       ...CARDS,
-      { mark: 'llano', section: null, stencil: 'Word', filled: [] },
+      { id: 'llano', section: null, stencil: 'Word', filled: [] },
     ]
     const shown = grid(mixed, [], CUTS, null)
     expect(tilesOf(shown).map((tile) => tile.stencil)).toEqual(['Animal', 'Animal', 'Word'])
@@ -239,15 +239,15 @@ describe('grid', () => {
       { id: 'leaves', name: 'Leaves' },
     ]
     const SECTIONED: readonly Drawn[] = [
-      { mark: 'loose', section: null, stencil: 'Animal', filled: [] },
-      { mark: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
-      { mark: 'yak', section: 'roots', stencil: 'Animal', filled: [] },
+      { id: 'loose', section: null, stencil: 'Animal', filled: [] },
+      { id: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
+      { id: 'yak', section: 'roots', stencil: 'Animal', filled: [] },
     ]
 
     it('stands the cards before the first section in a run under no section', () => {
       const runs = grid(SECTIONED, BANDS, CUTS, null).runs
       expect(runs[0]?.band).toBeNull()
-      expect(runs[0]?.tiles.map((tile) => tile.mark)).toEqual(['loose'])
+      expect(runs[0]?.tiles.map((tile) => tile.id)).toEqual(['loose'])
     })
 
     it('stands one run under each section, in the order the sections were handed in', () => {
@@ -264,7 +264,7 @@ describe('grid', () => {
 
     it('says of each tile which section it stands under', () => {
       const runs = grid(SECTIONED, BANDS, CUTS, null).runs
-      expect(runs[1]?.tiles.map((tile) => [tile.mark, tile.section])).toEqual([
+      expect(runs[1]?.tiles.map((tile) => [tile.id, tile.section])).toEqual([
         ['llama', 'roots'],
         ['yak', 'roots'],
       ])

@@ -36,36 +36,53 @@ type Write struct {
 	Now func() time.Time
 }
 
-// Deck puts body in the deck at path, and answers with the fingerprint the
-// write produced, which is what the caller presents at its next write.
+// Wrote is what a write of a deck left behind: what the file now stands at,
+// which is what the caller presents at its next write, and the mark every card
+// that carried none was given.
+type Wrote struct {
+	At     domain.FileRef
+	Minted []format.Minted
+}
+
+// Deck puts body in the deck at path.
 //
 // The deck is made whole on the way past: every card carrying no mark is given
 // one, and every stale heading is put back in step. Every caller therefore gets
 // the same file, and none of them has to know the rules.
 func (u Write) Deck(
 	ctx context.Context, v domain.Vault, path, body string, fingerprint domain.FileRef,
-) (domain.FileRef, error) {
+) (Wrote, error) {
 	if len(body) > MaxBytes {
-		return domain.FileRef{}, fmt.Errorf(
+		return Wrote{}, fmt.Errorf(
 			"%w: %d bytes, and %d is the most a deck is", note.ErrTooLarge, len(body), MaxBytes)
 	}
-	whole, err := u.whole(ctx, v, path, body)
+	whole, minted, err := u.whole(ctx, v, path, body)
 	if err != nil {
-		return domain.FileRef{}, err
+		return Wrote{}, err
 	}
-	return u.note().Execute(ctx, v, path, whole, fingerprint)
+	at, err := u.note().Execute(ctx, v, path, whole, fingerprint)
+	if err != nil {
+		return Wrote{}, err
+	}
+	return Wrote{At: at, Minted: minted}, nil
 }
 
-// whole is the body every card of which has been made whole. The stencils are
-// read against the body being written, so a card whose wikilink the caller has
-// just changed is cut by the stencil it now names.
-func (u Write) whole(ctx context.Context, v domain.Vault, path, body string) (string, error) {
+// whole is the body every card of which has been made whole, and the marks that
+// took. The stencils are read against the body being written, so a card whose
+// wikilink the caller has just changed is cut by the stencil it now names.
+func (u Write) whole(
+	ctx context.Context, v domain.Vault, path, body string,
+) (string, []format.Minted, error) {
 	read := Read{Readers: u.Readers, Links: u.Links}
 	by, err := read.Cutting(ctx, v, path, format.ReadDeck(domain.Note{Body: body}))
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
-	return format.Whole(body, by, mark.New)
+	whole, minted, err := format.Whole(body, by, mark.New)
+	if err != nil {
+		return "", nil, fmt.Errorf("make %s whole: %w", path, err)
+	}
+	return whole, minted, nil
 }
 
 // Stencil puts the faces and the fields into the stencil at path. A stencil is

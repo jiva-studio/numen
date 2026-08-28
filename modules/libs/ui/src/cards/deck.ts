@@ -5,7 +5,7 @@
  * clock.
  */
 
-import { declared, type Against, type Refusal } from './order'
+import { declared, type Against, type Landing } from './order'
 import type { Cut } from './stencil'
 
 /** One named slot and what stands in it. */
@@ -14,10 +14,21 @@ export interface Filled {
   readonly text: string
 }
 
+/**
+ * Where a card let go at the head of the deck lands: before the first section,
+ * among the cards standing under none. The deck keeps this identity for itself,
+ * and no card and no section may carry it.
+ */
+export const HEAD = 'the head of the deck'
+
 /** One card as the deck draws it. */
 export interface Drawn {
-  /** What the card is, and what it is addressed by, for as long as it exists. */
-  readonly mark: string
+  /**
+   * What tells this card from every other of the deck, for as long as it is
+   * drawn. It is the caller's own word for the card and travels back in every
+   * event about it, so no two cards may carry one.
+   */
+  readonly id: string
   /** The section it stands under, and nothing for a card before the first. */
   readonly section: string | null
   /** What the card is cut by, as a word to show, and nothing where nothing cuts it. */
@@ -59,8 +70,11 @@ export interface DeckWords extends CardWords {
   readonly addSection: string
   /** What a section is named from, before the place it stands among them. */
   readonly sectionStem: string
-  /** What is said of a section's name that cannot be used. */
-  readonly sectionObjection: (why: Refusal) => string
+  /**
+   * What is said of a section's name that cannot be used. Two sections may
+   * carry one name, so a name with nothing in it is the whole of it.
+   */
+  readonly sectionObjection: string
 }
 
 export const DECK_WORDS: DeckWords = {
@@ -73,7 +87,7 @@ export const DECK_WORDS: DeckWords = {
   sectionStem: 'Section',
   nothing: 'Nothing in it',
   unknown: (stencil) => (stencil === null ? 'Cut by no stencil' : `No stencil called ${stencil}`),
-  sectionObjection: (why) => (why === 'blank' ? 'A section needs a name' : 'That name is taken'),
+  sectionObjection: 'A section needs a name',
   wrong: 'What is wrong',
 }
 
@@ -159,8 +173,8 @@ export interface Stood extends Laid {
 
 /** One card as a tile of the grid. */
 export interface Tile {
-  /** What the card is, and what it is addressed by. */
-  readonly mark: string
+  /** What tells the card from every other of the deck, as the caller named it. */
+  readonly id: string
   /** The section it stands under, and nothing for a card before the first. */
   readonly section: string | null
   readonly stencil: string | null
@@ -184,9 +198,17 @@ export interface Band extends Banded {
 
 /** One run of a deck: a section, where the cards stand under one, and those cards. */
 export interface Run {
+  /** Where a card let go on the run itself lands, which is at the head of it. */
+  readonly id: string
   /** The section they stand under, and nothing for the cards before the first. */
   readonly band: Band | null
   readonly tiles: readonly Tile[]
+  /**
+   * It draws a landing of its own. A run under a section is landed on by that
+   * section's heading and a run holding cards by the first of them; the cards
+   * before the first section have neither where none of them stands.
+   */
+  readonly landing: boolean
 }
 
 /** The grid a deck draws: its runs of cards, and where the plus stands. */
@@ -203,7 +225,8 @@ export interface Grid {
  * The tiles of a deck, in the order the cards were handed in, each laid out
  * under the stencil it names and standing in the run of the section it is
  * under. A card naming a stencil that was not handed in keeps every value it
- * has.
+ * has, and a card naming a section that was not handed in stands before the
+ * first section, where every card handed in is drawn and counted.
  */
 export function grid(
   cards: readonly Drawn[],
@@ -212,6 +235,7 @@ export function grid(
   carried: string | null,
 ): Grid {
   const of = cards.length + 1
+  const banded = new Set(sections.map((section) => section.id))
   const tiles = cards.map((card, index) => {
     const cut = cuts.find((each) => each.name === card.stencil)
     const fields = declared(cut?.fields ?? [])
@@ -236,8 +260,8 @@ export function grid(
       })
 
     return {
-      mark: card.mark,
-      section: card.section,
+      id: card.id,
+      section: card.section !== null && banded.has(card.section) ? card.section : null,
       stencil: card.stencil,
       filled: counted.map((each) => ({
         ...each,
@@ -246,20 +270,31 @@ export function grid(
       at: index + 1,
       of,
       known: cut !== undefined,
-      carried: card.mark === carried,
+      carried: card.id === carried,
     }
   })
 
   const standing = (section: string | null): readonly Tile[] =>
     tiles.filter((tile) => tile.section === section)
 
+  const head = standing(null)
   const runs: readonly Run[] = [
-    { band: null, tiles: standing(null) },
+    { id: HEAD, band: null, tiles: head, landing: head.length === 0 && sections.length > 0 },
     ...sections.map((section, index) => ({
+      id: section.id,
       band: { id: section.id, name: section.name, at: index + 1 },
       tiles: standing(section.id),
+      landing: false,
     })),
   ]
 
   return { runs, plusAt: cards.length + 1, of }
 }
+
+/**
+ * Whether letting a carried card go there moves it. A card let go where it
+ * stands moves nothing, and the head of the deck is where the first card
+ * standing under no section already is.
+ */
+export const lands = (runs: readonly Run[], carried: string, at: Landing): boolean =>
+  at !== carried && (at !== HEAD || runs[0]?.tiles[0]?.id !== carried)

@@ -15,6 +15,11 @@ import (
 // is still that card.
 var ErrNoSuchCard = errors.New("this deck holds no card of that mark")
 
+// ErrTwoCards is what changing a card says when two cards of the deck carry
+// the mark it was addressed by. Both are read and both are shown, and which of
+// the two is meant is a thing only the person who wrote them knows.
+var ErrTwoCards = errors.New("two cards of this deck carry that mark")
+
 // ErrNoSuchSection is what changing a section says when the deck holds no
 // section standing there.
 var ErrNoSuchSection = errors.New("this deck holds no section standing there")
@@ -58,9 +63,23 @@ func (f *DeckFile) Deck(ref domain.FileRef) Deck {
 	return deck
 }
 
+// Whole makes every card of the file whole and reports the marks it minted,
+// which is what Whole does to a body. The file keeps its own line endings.
+func (f *DeckFile) Whole(stencils map[string]Stencil, mint func() (string, error)) ([]Minted, error) {
+	body, minted, err := Whole(markdown.Normalised(f.doc.Body()), stencils, mint)
+	if err != nil {
+		return nil, err
+	}
+	f.doc.SetBody(body)
+	return minted, nil
+}
+
 // SetValue writes what the card of a mark holds under one field. A field the
 // card does not carry yet is added at the end of it, which leaves the fields it
 // does carry in the order the person wrote them.
+//
+// A mark two cards of the deck carry addresses neither: choosing between them
+// is ErrTwoCards.
 //
 // Writing the first field is what rewrites the heading, and that is done where
 // the deck is made whole, not here.
@@ -68,16 +87,24 @@ func (f *DeckFile) SetValue(card, field, value string) error {
 	body := []byte(f.doc.Body())
 	_, spans := readDeck(domain.FileRef{}, body)
 
-	for _, span := range spans {
+	at := -1
+	for i, span := range spans {
 		if span.mark == "" || span.mark != card {
 			continue
 		}
+		if at >= 0 {
+			return fmt.Errorf("%w: %s", ErrTwoCards, card)
+		}
+		at = i
+	}
+	if at >= 0 {
+		span := spans[at]
 		for _, v := range span.values {
 			if v.field == field {
 				return f.doc.SpliceBody(v.from, v.to, under(value, v.to == len(body)))
 			}
 		}
-		block := headingLine(3, field)
+		block := headingLine(FieldLevel, oneLine(field))
 		if text := trimBlankLines(markdown.Normalised(value)); text != "" {
 			block += "\n\n" + text
 		}
@@ -113,18 +140,29 @@ func (f *DeckFile) RemoveSection(at int) error {
 	}
 	// The blank line under the heading went with it, so the block below closes
 	// up against what the heading stood beneath.
-	to := heads[at].from
+	head, to := heads[at].head, heads[at].from
 	for to < len(body) && (body[to] == '\n' || body[to] == '\r') {
 		to++
 	}
-	return f.doc.SpliceBody(heads[at].head, to, "")
+	// A section with nothing under it stood last, and what is above it now ends
+	// on the one break a file ends with.
+	// A section with nothing under it stood last, and what is above it now ends
+	// on the one break a file ends with.
+	written := ""
+	if to == len(body) {
+		head = trimmedEnd(body, 0, head)
+		if head > 0 {
+			written = "\n"
+		}
+	}
+	return f.doc.SpliceBody(head, to, written)
 }
 
 // AddSection writes a section at the end of the deck. What a person wrote under
 // its heading is written back under it, and nothing here reads it.
 func (f *DeckFile) AddSection(s Section) error {
 	body := []byte(f.doc.Body())
-	blocks := []string{headingLine(1, s.Name)}
+	blocks := []string{headingLine(SectionLevel, oneLine(s.Name))}
 	if lead := trimBlankLines(markdown.Normalised(s.Lead)); lead != "" {
 		blocks = append(blocks, lead)
 	}
@@ -135,7 +173,7 @@ func (f *DeckFile) AddSection(s Section) error {
 // AddCard writes a card at the end of the deck.
 func (f *DeckFile) AddCard(card Card) error {
 	body := []byte(f.doc.Body())
-	blocks := []string{headingLine(2, WriteHeading(card.Heading, card.Mark))}
+	blocks := []string{headingLine(CardLevel, WriteHeading(oneLine(card.Heading), card.Mark))}
 	if card.Stencil != "" {
 		blocks = append(blocks, "[["+card.Stencil+"]]")
 	}
@@ -143,13 +181,62 @@ func (f *DeckFile) AddCard(card Card) error {
 		blocks = append(blocks, lead)
 	}
 	for _, v := range card.Values {
-		blocks = append(blocks, headingLine(3, v.Field))
+		blocks = append(blocks, headingLine(FieldLevel, oneLine(v.Field)))
 		if text := trimBlankLines(markdown.Normalised(v.Text)); text != "" {
 			blocks = append(blocks, text)
 		}
 	}
 	at := len(body)
 	return f.doc.SpliceBody(at, at, insert(body, at, strings.Join(blocks, "\n\n")))
+}
+
+// DeckBody is the markdown a deck is written as: the preamble as it arrived,
+// each section and each card laid down in the order they stand, and the tail
+// verbatim below the last value.
+//
+// They are written into a deck of no cards, so a card nobody touched comes out
+// as the bytes it went in as. A card carries which section it stands under, so
+// a section no card reaches is written where it stands: in front of the cards
+// of the sections after it, or at the end where nothing stands under it. A card
+// standing under a section the deck does not hold is ErrNoSuchSection: writing
+// it somewhere else moves a card nobody asked to move.
+func DeckBody(d Deck) (string, error) {
+	scratch, err := OpenDeck(markdown.Create("", d.Preamble))
+	if err != nil {
+		return "", err
+	}
+	written := 0
+	open := func(to int) error {
+		for written < len(d.Sections) && written <= to {
+			if err := scratch.AddSection(d.Sections[written]); err != nil {
+				return err
+			}
+			written++
+		}
+		return nil
+	}
+	for _, card := range d.Cards {
+		if card.Section != NoSection && (card.Section < 0 || card.Section >= len(d.Sections)) {
+			return "", fmt.Errorf("%w: %d", ErrNoSuchSection, card.Section)
+		}
+		if err := open(card.Section); err != nil {
+			return "", err
+		}
+		if err := scratch.AddCard(card); err != nil {
+			return "", err
+		}
+	}
+	if err := open(len(d.Sections)); err != nil {
+		return "", err
+	}
+
+	body := scratch.doc.Body()
+	if len(d.Cards) == 0 && len(d.Sections) == 0 {
+		return body, nil
+	}
+	// The tail opens with the break that ends the last value, so the break the
+	// last card was written with goes.
+	return strings.TrimRight(body, "\n") + d.Tail, nil
 }
 
 // RenameField rewrites one field's heading in every card cut by the stencil
@@ -176,7 +263,7 @@ func (f *DeckFile) RenameField(cutting map[string]string, stencil, from, to stri
 
 	// Backwards, because a splice moves every byte after it.
 	for i := len(heads) - 1; i >= 0; i-- {
-		line := headingLine(3, to)
+		line := headingLine(FieldLevel, oneLine(to))
 		if heads[i].from < len(body) {
 			line += "\n"
 		}
@@ -327,6 +414,16 @@ func laid(face Face) string {
 		blocks = append(blocks, headingLine(3, side.heading), text)
 	}
 	return strings.Join(blocks, "\n\n")
+}
+
+// oneLine is what a name a caller composed a heading from stands as. A heading
+// is one line, so it holds what stands in front of the first break in it.
+func oneLine(name string) string {
+	line := markdown.Normalised(name)
+	if at := strings.IndexByte(line, '\n'); at >= 0 {
+		line = line[:at]
+	}
+	return strings.TrimSpace(line)
 }
 
 // headingLine is the line a card, a face, a field or a side stands under. A

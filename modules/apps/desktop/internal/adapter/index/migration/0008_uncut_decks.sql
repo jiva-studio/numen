@@ -5,6 +5,11 @@
 --
 -- An index built before this holds all three for those notes. They come out
 -- here, and the next scan reads the files again.
+--
+-- An index that has not yet learnt what a note is arrives here in the same open
+-- as 0007, with every type still the default that migration adds, so nothing
+-- below matches. 0007 empties the fingerprint of every note, and the scan that
+-- follows writes each file's type and its outline together.
 
 -- The full-text index, the names of the parts and the vector index are all
 -- addressed by the chunk's own number. They run before the chunks go, which is

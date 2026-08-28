@@ -74,42 +74,77 @@ func Project(value string) string {
 		return line
 	}
 	// The cut never falls inside one of these: it falls in front of the whole
-	// of whichever it lands in.
-	for _, span := range unbroken(line) {
-		if span[0] < cut && cut < span[1] {
-			cut = span[0]
+	// of whichever it lands in. One of them stands inside another, so the cut is
+	// moved until it stops moving.
+	spans := unbroken(line)
+	for moved := true; moved; {
+		moved = false
+		for _, span := range spans {
+			if span[0] < cut && cut < span[1] {
+				cut, moved = span[0], true
+			}
 		}
 	}
 	return strings.TrimRight(line[:cut], " \t")
 }
 
-// linkRe is a wikilink or an embed of one, and emphasisRe is a run of emphasis
-// closed by the delimiter it was opened with.
-var (
-	linkRe     = regexp.MustCompile(`!?\[\[[^\[\]]*\]\]`)
-	emphasisRe = regexp.MustCompile(`\*\*\*[^*]+\*\*\*|\*\*[^*]+\*\*|\*[^*]+\*|___[^_]+___|__[^_]+__|_[^_]+_`)
-)
+// emphasisRe is a run of emphasis closed by the delimiter it was opened with.
+var emphasisRe = regexp.MustCompile(
+	`\*\*\*[^*]+\*\*\*|\*\*[^*]+\*\*|\*[^*]+\*|___[^_]+___|__[^_]+__|_[^_]+_`)
 
-// unbroken is every run of the line a cut may not fall inside, in the order
-// they stand. A link's brackets hold whatever a person wrote, so what is inside
-// one is the link's and is looked at no further.
+// covered is what a link's bytes are read as while a run of emphasis is looked
+// for: one character that opens and closes nothing.
+const covered = 'x'
+
+// unbroken is every run of the line a cut may not fall inside: its links, and
+// its runs of emphasis. A link's brackets hold whatever a person wrote, so the
+// runs of emphasis are looked for over the line with every link covered over,
+// and a run holding a link is one run.
 func unbroken(line string) [][]int {
-	var out [][]int
-	at := 0
-	for _, span := range linkRe.FindAllStringIndex(line, -1) {
-		out = append(out, emphasis(line[at:span[0]], at)...)
-		out = append(out, span)
-		at = span[1]
+	found := links(line)
+	masked := []byte(line)
+	for _, span := range found {
+		for at := span[0]; at < span[1]; at++ {
+			masked[at] = covered
+		}
 	}
-	return append(out, emphasis(line[at:], at)...)
+	return append(found, emphasisRe.FindAllIndex(masked, -1)...)
 }
 
-// emphasis is every run of emphasis in one stretch of the line, counted from
-// the byte that stretch begins at.
-func emphasis(stretch string, from int) [][]int {
+// links is every wikilink and embed of the line. The brackets are counted, so a
+// link holding another closes on its own last pair, and a pair that is never
+// closed is no link and neither is anything after it.
+func links(line string) [][]int {
 	var out [][]int
-	for _, span := range emphasisRe.FindAllStringIndex(stretch, -1) {
-		out = append(out, []int{from + span[0], from + span[1]})
+	for at := 0; at+1 < len(line); {
+		if line[at] != '[' || line[at+1] != '[' {
+			at++
+			continue
+		}
+		head := at
+		if head > 0 && line[head-1] == '!' {
+			head--
+		}
+		depth, to := 0, at
+		for to+1 < len(line) {
+			switch {
+			case line[to] == '[' && line[to+1] == '[':
+				depth, to = depth+1, to+2
+			case line[to] == ']' && line[to+1] == ']':
+				depth, to = depth-1, to+2
+			default:
+				to++
+				continue
+			}
+			if depth == 0 {
+				break
+			}
+		}
+		if depth != 0 {
+			return out
+		}
+		out = append(out, []int{head, to})
+		at = to
 	}
 	return out
 }

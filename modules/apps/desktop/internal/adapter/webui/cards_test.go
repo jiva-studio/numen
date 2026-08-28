@@ -267,6 +267,70 @@ func TestADeckWrittenBackKeepsTheCardsItHeld(t *testing.T) {
 	}
 }
 
+// TestAHeadingOfTwoLinesWritesNoSecondCard. A heading is one line, so what a
+// client sends as one is cut where the lines under it begin. A second `##` in
+// there is a card the next read adopts and mints a mark for, and nobody wrote
+// it.
+func TestAHeadingOfTwoLinesWritesNoSecondCard(t *testing.T) {
+	f := dealing(t, map[string]string{"Animal.md": animal, "Animals.md": dividedDeck})
+
+	read := deck(t, f, "Animals.md")
+	cards := read.GetDeck().GetCards()
+	cards[0].Heading = "Question\n\n## Injected ^m9n8b7v6c5\n\n[[Animal]]\n\n### Name\n\nsmuggled"
+	sections := read.GetDeck().GetSections()
+	sections[1].Name = "Others\n\n## Also injected"
+
+	answer, err := f.client.WriteDeck(t.Context(), connect.NewRequest(&v1.WriteDeckRequest{
+		Path:     "Animals.md",
+		Preamble: read.GetDeck().GetPreamble(),
+		Sections: sections,
+		Cards:    cards,
+		Tail:     read.GetDeck().GetTail(),
+		Seen:     read.GetAt(),
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if answer.Msg.GetChanged() || answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+		t.Fatalf("writing the deck answered %+v", answer.Msg)
+	}
+
+	after := deck(t, f, "Animals.md")
+	if held := len(after.GetDeck().GetCards()); held != 2 {
+		t.Errorf("the deck now holds %d cards, and two were written", held)
+	}
+	if held := onDisk(t, f.root, "Animals.md"); strings.Contains(held, "Injected") {
+		t.Errorf("a card was smuggled into the file: %q", held)
+	}
+}
+
+// TestACardUnderASectionTheDeckDoesNotHoldIsRefused. Writing it under whichever
+// section stands last moves somebody's card and says nothing about it.
+func TestACardUnderASectionTheDeckDoesNotHoldIsRefused(t *testing.T) {
+	f := dealing(t, map[string]string{"Animal.md": animal, "Animals.md": dividedDeck})
+
+	read := deck(t, f, "Animals.md")
+	before := onDisk(t, f.root, "Animals.md")
+	cards := read.GetDeck().GetCards()
+	nowhere := int32(99)
+	cards[0].Section = &nowhere
+
+	_, err := f.client.WriteDeck(t.Context(), connect.NewRequest(&v1.WriteDeckRequest{
+		Path:     "Animals.md",
+		Preamble: read.GetDeck().GetPreamble(),
+		Sections: read.GetDeck().GetSections(),
+		Cards:    cards,
+		Tail:     read.GetDeck().GetTail(),
+		Seen:     read.GetAt(),
+	}))
+	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Errorf("the write answered %v", err)
+	}
+	if held := onDisk(t, f.root, "Animals.md"); held != before {
+		t.Errorf("the deck was written anyway: %q", held)
+	}
+}
+
 // TestACardWithNoStencilKeepsTheHeadingItStandsUnder. Nothing can say which of
 // that card's fields is first, so nothing can write its heading again: it is
 // left exactly as it stands, and a person who changed nothing sees the file

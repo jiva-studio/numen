@@ -139,9 +139,9 @@ about 46"
 	if len(deck.Problems) != 0 {
 		t.Errorf("problems = %+v, want two cards of one heading to be two cards", deck.Problems)
 	}
-	got, held := deck.Card("zpqrstvwxy")
-	if !held {
-		t.Fatal("the second card is not addressed by its mark")
+	got, err := deck.Card("zpqrstvwxy")
+	if err != nil {
+		t.Fatalf("the second card is not addressed by its mark: %v", err)
 	}
 	if held, _ := got.Value("Height"); held != `about 46"` {
 		t.Errorf("the mark reached the wrong card: %q", held)

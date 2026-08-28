@@ -34,13 +34,17 @@ type headSpan struct {
 // stand in the file.
 func sectionHeads(body []byte) []headSpan {
 	var out []headSpan
-	for _, s := range sections(body, 1, 3) {
-		if s.level == 1 {
+	for _, s := range sections(body, SectionLevel, FieldLevel) {
+		if s.level == SectionLevel {
 			out = append(out, headSpan{head: s.head, from: s.from})
 		}
 	}
 	return out
 }
+
+// opens reports whether a heading of this level begins something of the deck's
+// own, which is what a section's text and a card's values stop at.
+func opens(level int) bool { return level == SectionLevel || level == CardLevel }
 
 // cardSpan is where one card and each of its values stand in the body.
 type cardSpan struct {
@@ -65,13 +69,7 @@ type valueSpan struct {
 
 func readDeck(ref domain.FileRef, body []byte) (Deck, []cardSpan) {
 	d := Deck{Ref: ref}
-	// A section is a first-level heading, a card is a second and a field is a
-	// third, which is the three levels the format spends.
-	secs := sections(body, 1, 3)
-
-	// opens says whether a heading of this level begins something of the deck's
-	// own, which is what a section's text and a card's values stop at.
-	opens := func(level int) bool { return level == 1 || level == 2 }
+	secs := sections(body, SectionLevel, FieldLevel)
 
 	first := len(body)
 	for _, s := range secs {
@@ -98,7 +96,7 @@ func readDeck(ref domain.FileRef, body []byte) (Deck, []cardSpan) {
 			}
 		}
 
-		if s.level == 1 {
+		if s.level == SectionLevel {
 			// Everything down to the section's first card is the person's own
 			// writing about their deck, whatever it is made of.
 			lead, leadEnd := run(body, s.from, end)
@@ -134,7 +132,7 @@ func readDeck(ref domain.FileRef, body []byte) (Deck, []cardSpan) {
 
 		fields := map[string]bool{}
 		for _, f := range secs[i+1:] {
-			if f.level != 3 {
+			if f.level != FieldLevel {
 				break
 			}
 			value, valueEnd := run(body, f.from, f.to)

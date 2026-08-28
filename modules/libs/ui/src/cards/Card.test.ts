@@ -11,8 +11,8 @@ import type { Cut } from './stencil'
 const CUTS: readonly Cut[] = [{ name: 'Animal', fields: ['Name', 'Height'] }]
 
 const CARDS: readonly Drawn[] = [
-  { mark: 'llama', section: null, stencil: 'Animal', filled: [] },
-  { mark: 'yak', section: null, stencil: 'Animal', filled: [] },
+  { id: 'llama', section: null, stencil: 'Animal', filled: [] },
+  { id: 'yak', section: null, stencil: 'Animal', filled: [] },
 ]
 
 /** The words one card is drawn with, which say nothing of adding cards. */
@@ -27,14 +27,14 @@ const WORDS: CardWords = {
 }
 
 const tileOf = (
-  mark: string,
+  id: string,
   cards: readonly Drawn[] = CARDS,
   sections: readonly Banded[] = [],
 ): Tile => {
   const laid = grid(cards, sections, CUTS, null)
     .runs.flatMap((run) => run.tiles)
-    .find((tile) => tile.mark === mark)
-  if (!laid) throw new Error(`no tile for ${mark}`)
+    .find((tile) => tile.id === id)
+  if (!laid) throw new Error(`no tile for ${id}`)
   return laid
 }
 
@@ -65,7 +65,7 @@ describe('Card', () => {
 
   it('says which section it stands under, and nothing where it stands under none', () => {
     const under: readonly Drawn[] = [
-      { mark: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
+      { id: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
     ]
     const tile = tileOf('llama', under, [{ id: 'roots', name: 'Roots' }])
     expect(mountCard(tile).get('[data-card]').attributes('data-section')).toBe('roots')
@@ -86,7 +86,7 @@ describe('Card', () => {
   it('says what is wrong with a value once, under the last box standing for it', () => {
     const twice: readonly Drawn[] = [
       {
-        mark: 'twice',
+        id: 'twice',
         section: null,
         stencil: 'Animal',
         filled: [

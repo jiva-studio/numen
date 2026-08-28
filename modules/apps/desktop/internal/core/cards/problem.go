@@ -27,8 +27,8 @@ type Check string
 const (
 	// CheckTwoFields is one name declared twice by a stencil. The first stands.
 	CheckTwoFields Check = "two-fields"
-	// CheckNoFields is a stencil declaring no field at all. Its cards have no
-	// name to stand in a heading, and it cuts nothing.
+	// CheckNoFields is a stencil declaring no field at all. Its cards have
+	// nothing to be filled with, and it cuts nothing.
 	CheckNoFields Check = "no-fields"
 	// CheckFaceSide is a face with no Front or no Back. It lays out nothing.
 	CheckFaceSide Check = "face-side"

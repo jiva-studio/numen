@@ -304,9 +304,9 @@ func TestAddCard(t *testing.T) {
 		t.Errorf("card added wrong\n want %q\n  got %q", want, got)
 	}
 
-	card, held := f.Deck(domain.FileRef{}).Card("m9n8b7v6c5")
-	if !held {
-		t.Fatal("the card that was written cannot be read back")
+	card, err := f.Deck(domain.FileRef{}).Card("m9n8b7v6c5")
+	if err != nil {
+		t.Fatalf("the card that was written cannot be read back: %v", err)
 	}
 	if card.Heading != "Alpaca" || card.Stencil != "Animal" || card.Lead != "From the same trip." {
 		t.Errorf("card = %+v", card)
@@ -514,5 +514,177 @@ func TestACardIsCutByWhatItsLinkPointsAt(t *testing.T) {
 	}
 	if got := f.Deck(domain.FileRef{}).Cards[0]; got.Stencil != "Animal|the beast" {
 		t.Errorf("the link was rewritten: %q", got.Stencil)
+	}
+}
+
+// A machine must not choose between two cards of one mark: which of the two a
+// person meant is a thing only they know, and a write that guesses puts what
+// they typed into the other one.
+func TestSetValueRefusesADeckOfTwoCardsOfOneMark(t *testing.T) {
+	raw := "---\ntype: deck\n---\n" +
+		"\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Height\n\nabout 45\"\n" +
+		"\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Height\n\nabout 46\"\n"
+	f, err := cards.OpenDeck([]byte(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := f.SetValue("k7m2xq9fzp", "Height", "about 47\""); !errors.Is(err, cards.ErrTwoCards) {
+		t.Errorf("set = %v, want ErrTwoCards", err)
+	}
+	if string(f.Bytes()) != raw {
+		t.Error("a card was written anyway")
+	}
+	if _, err := f.Deck(domain.FileRef{}).Card("k7m2xq9fzp"); !errors.Is(err, cards.ErrTwoCards) {
+		t.Errorf("card = %v, want ErrTwoCards", err)
+	}
+}
+
+// A heading is one line. A heading composed with a break in it carries the
+// lines under it into the file, where the next read takes a second `##` for a
+// second card and mints it a mark.
+func TestAHeadingAndASectionsNameAreCutAtTheFirstBreak(t *testing.T) {
+	f, err := cards.OpenDeck([]byte("---\ntype: deck\n---\n"))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := f.AddCard(cards.Card{
+		Heading: "Question\n\n## Injected ^k7m2xq9fzp\n\n[[Term]]\n\n### Q\n\nsmuggled",
+		Stencil: "Animal",
+	}); err != nil {
+		t.Fatalf("add: %v", err)
+	}
+	if err := f.AddSection(cards.Section{Name: "Roots\n\n## Also injected"}); err != nil {
+		t.Fatalf("add: %v", err)
+	}
+
+	read := f.Deck(domain.FileRef{})
+	if len(read.Cards) != 1 {
+		t.Fatalf("cards = %+v, want the one card that was written", read.Cards)
+	}
+	if read.Cards[0].Heading != "Question" {
+		t.Errorf("heading = %q, want it cut at the first break", read.Cards[0].Heading)
+	}
+	if len(read.Sections) != 1 || read.Sections[0].Name != "Roots" {
+		t.Errorf("sections = %+v, want the one that was written", read.Sections)
+	}
+}
+
+// A field's name is a heading too, so a break in one is cut where a break in a
+// card's heading is.
+func TestAFieldsNameIsCutAtTheFirstBreak(t *testing.T) {
+	f, err := cards.OpenDeck([]byte("---\ntype: deck\n---\n"))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := f.AddCard(cards.Card{
+		Heading: "Question",
+		Stencil: "Animal",
+		Values: []cards.Value{{
+			Field: "Answer\n\n## Injected ^k7m2xq9fzp\n\n[[Term]]",
+			Text:  "smuggled",
+		}},
+	}); err != nil {
+		t.Fatalf("add: %v", err)
+	}
+
+	read := f.Deck(domain.FileRef{})
+	if len(read.Cards) != 1 {
+		t.Fatalf("cards = %+v, want the one card that was written", read.Cards)
+	}
+	if got := read.Cards[0].Values; len(got) != 1 || got[0].Field != "Answer" {
+		t.Errorf("values = %+v, want the one field, cut at the first break", got)
+	}
+}
+
+// Nothing follows the last section, so taking its heading away leaves the break
+// the file ends with and no blank line above it.
+func TestRemovingTheLastSectionLeavesNoBlankLine(t *testing.T) {
+	raw := "---\ntype: deck\n---\n\n# The ones with fur\n\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n" +
+		"\n# The ones without\n"
+	f, err := cards.OpenDeck([]byte(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := f.RemoveSection(1); err != nil {
+		t.Fatalf("remove: %v", err)
+	}
+	want := "---\ntype: deck\n---\n\n# The ones with fur\n\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n"
+	if got := string(f.Bytes()); got != want {
+		t.Errorf("section removed wrong\n want %q\n  got %q", want, got)
+	}
+}
+
+// The mark is minted where the deck is made whole, so that is what knows it and
+// what says which card was given which.
+func TestWholeSaysWhichCardsItMinted(t *testing.T) {
+	body := "\n## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
+		"\n## Alpaca ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nAlpaca\n" +
+		"\n## Vicuña\n\n[[Animal]]\n\n### Name\n\nVicuña\n"
+	minting := []string{"zpqrstvwxy", "m9n8b7v6c5"}
+	mint := func() (string, error) {
+		out := minting[0]
+		minting = minting[1:]
+		return out, nil
+	}
+
+	_, minted, err := cards.Whole(body, map[string]cards.Stencil{
+		"Animal": {Fields: []string{"Name"}},
+	}, mint)
+	if err != nil {
+		t.Fatalf("whole: %v", err)
+	}
+	want := []cards.Minted{{Card: 0, Mark: "m9n8b7v6c5"}, {Card: 2, Mark: "zpqrstvwxy"}}
+	if !slices.Equal(minted, want) {
+		t.Errorf("minted = %+v, want %+v", minted, want)
+	}
+}
+
+// A generator that cannot answer says which card was left without a mark, so
+// the write above can name the deck it happened in.
+func TestAMarkThatCouldNotBeMintedSaysWhichCard(t *testing.T) {
+	body := "\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
+		"\n## Alpaca\n\n[[Animal]]\n\n### Name\n\nAlpaca\n"
+	broken := func() (string, error) { return "", errors.New("no randomness") }
+
+	_, _, err := cards.Whole(body, nil, broken)
+	if err == nil {
+		t.Fatal("a deck was made whole with no mark to give")
+	}
+	if !strings.Contains(err.Error(), "1") || !strings.Contains(err.Error(), "no randomness") {
+		t.Errorf("err = %v, want it to say which card carried none", err)
+	}
+}
+
+// A deck's body is the preamble as it arrived, its sections and its cards in
+// the order they stand, and the tail below the last value. A section no card
+// stands under is written where it stands.
+func TestDeckBodyWritesTheSectionsNoCardStandsUnder(t *testing.T) {
+	body, err := cards.DeckBody(cards.Deck{
+		Preamble: "Cards I am learning.",
+		Sections: []cards.Section{{Name: "Empty"}, {Name: "The ones with fur"}, {Name: "Last"}},
+		Cards: []cards.Card{{
+			Heading: "Llama", Mark: "k7m2xq9fzp", Stencil: "Animal", Section: 1,
+			Values: []cards.Value{{Field: "Name", Text: "Llama"}},
+		}},
+	})
+	if err != nil {
+		t.Fatalf("body: %v", err)
+	}
+	want := "Cards I am learning.\n\n# Empty\n\n# The ones with fur\n\n## Llama ^k7m2xq9fzp\n\n" +
+		"[[Animal]]\n\n### Name\n\nLlama\n\n# Last"
+	if body != want {
+		t.Errorf("body\n want %q\n  got %q", want, body)
+	}
+}
+
+// A card standing under a section the deck does not hold is refused. Writing it
+// under whichever section stands last moves somebody's card without saying so.
+func TestDeckBodyRefusesACardUnderASectionTheDeckDoesNotHold(t *testing.T) {
+	_, err := cards.DeckBody(cards.Deck{
+		Sections: []cards.Section{{Name: "One"}, {Name: "Two"}},
+		Cards:    []cards.Card{{Heading: "Llama", Stencil: "Animal", Section: 99}},
+	})
+	if !errors.Is(err, cards.ErrNoSuchSection) {
+		t.Errorf("body = %v, want ErrNoSuchSection", err)
 	}
 }

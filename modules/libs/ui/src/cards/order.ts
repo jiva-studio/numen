@@ -102,12 +102,6 @@ export function heading(name: string, taken: readonly string[]): Refusal | null 
 }
 
 /**
- * One line of what was typed. The field a card is named by is written in a
- * heading, so the breaks in it close up.
- */
-export const oneLine = (text: string): string => text.replace(/\r\n|[\n\r]/g, ' ')
-
-/**
  * The first free name numbered from a stem: `Field 1`, `Field 2`, … The stem
  * alone is not one of them, so every name made this way carries a number.
  */

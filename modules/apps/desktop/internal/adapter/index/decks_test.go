@@ -216,6 +216,34 @@ func TestACardsHeadingIsStoredWithoutItsMark(t *testing.T) {
 	}
 }
 
+// A card whose first field is empty is named by nothing at all, and a name is
+// what a heading is kept for.
+func TestACardOfAnEmptyFirstFieldContributesNoHeading(t *testing.T) {
+	db := opened(t)
+	laid(t, db, first, "decks/mammals.md", domain.TypeDeck,
+		domain.Heading{Level: 1, Text: "Roots"},
+		domain.Heading{Level: 2, Text: "^k7m2xq9fzp"},
+		domain.Heading{Level: 3, Text: "Question"},
+		domain.Heading{Level: 2, Text: "Leaf mould, how long ^0123456789"},
+	)
+
+	got := headingTexts(t, db, first, "decks/mammals.md")
+	want := []string{"Roots", "Leaf mould, how long"}
+	if len(got) != len(want) {
+		t.Fatalf("the deck holds %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("heading %d is %q, want %q", i, got[i], want[i])
+		}
+	}
+	if n := counted(t, db,
+		`SELECT COUNT(*) FROM headings h JOIN sources s ON s.id = h.note_id
+		 WHERE s.path = 'decks/mammals.md' AND h.text = ''`); n != 0 {
+		t.Errorf("the deck holds %d headings of no name", n)
+	}
+}
+
 // Every level of an ordinary note is kept, and an ending that reads as a mark
 // in a deck is heading text in a note.
 func TestAnOrdinaryNoteKeepsEveryHeadingItHas(t *testing.T) {

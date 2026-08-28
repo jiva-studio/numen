@@ -3,6 +3,7 @@
  * screen, and where each problem the vault reports is drawn.
  */
 import { describe, expect, it } from 'vitest'
+import { CARD_HEAD } from '@numen/ui'
 import type { Decked, Problem, Stencilled } from '../core'
 import {
   added,
@@ -144,6 +145,18 @@ describe('a deck as the window holds it', () => {
     expect(held.cards.map((card) => card.section)).toStrictEqual([held.sections[0]?.id, null])
   })
 
+  /* A section the reading does not hold is no section: the card stands before
+     the first, drawn and counted, and is written back standing there. */
+  it('stands a card before the first section where the reading holds no section it names', () => {
+    const bare = read()
+    const held = deck({
+      sections: [{ name: 'Roots', lead: '' }],
+      cards: [{ ...bare.cards[0]!, section: 7 }, bare.cards[1]!],
+    })
+    expect(held.cards.map((card) => card.section)).toStrictEqual([null, null])
+    expect(cardsOf(held).map((card) => card.section)).toStrictEqual([null, null])
+  })
+
   it('keeps the preamble, the tail and each card’s lead as the file had them', () => {
     const held = deck()
     expect(held.preamble).toBe('about the animals\n')
@@ -212,9 +225,9 @@ describe('the cards as the grid draws them', () => {
       ],
     })
 
-  it('carries the mark, the section, what cuts it, and the values under it', () => {
+  it('carries the identity, the section, what cuts it, and the values under it', () => {
     expect(drawnOf(deck(), OFFERS)[0]).toStrictEqual({
-      mark: LLAMA,
+      id: LLAMA,
       section: null,
       stencil: 'Animal',
       filled: [
@@ -424,6 +437,15 @@ describe('a card carried among the sections', () => {
     const held = sectioned()
     expect(carried(held, LLAMA, 'nowhere')).toStrictEqual(held)
   })
+
+  it('stands first and under no section where it was let go at the head of the deck', () => {
+    const held = sectioned()
+    const moved = carried(held, ALPACA, CARD_HEAD)
+    expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
+      [ALPACA, null],
+      [LLAMA, null],
+    ])
+  })
 })
 
 describe('a section of a deck', () => {
@@ -465,6 +487,35 @@ describe('a section of a deck', () => {
       held.sections[0]?.id,
       held.sections[0]?.id,
     ])
+  })
+
+  /* A section is a name, so taking it away takes away a name: the text it stood
+     on stays in the deck, standing after the text above it. */
+  it('leaves the text it stood on with the section above it when it goes', () => {
+    const held = deck({
+      sections: [
+        { name: 'Roots', lead: 'about the roots\n' },
+        { name: 'Leaves', lead: 'about the leaves\n' },
+      ],
+    })
+    const gone = sectionGone(held, held.sections[1]?.id ?? '')
+    expect(gone.sections.map((section) => section.lead)).toStrictEqual([
+      'about the roots\n\nabout the leaves\n',
+    ])
+  })
+
+  it('leaves it with the deck’s own text where no section stands above it', () => {
+    const held = deck({ sections: [{ name: 'Roots', lead: 'about the roots\n' }] })
+    const gone = sectionGone(held, held.sections[0]?.id ?? '')
+    expect(gone.preamble).toBe('about the animals\n\nabout the roots\n')
+  })
+
+  it('leaves the text above it alone where it stood on none of its own', () => {
+    const held = deck({
+      sections: [{ name: 'Roots', lead: 'about the roots\n' }, { name: 'Leaves', lead: '' }],
+    })
+    const gone = sectionGone(held, held.sections[1]?.id ?? '')
+    expect(gone.sections.map((section) => section.lead)).toStrictEqual(['about the roots\n'])
   })
 
   it('leaves its cards under no section when the first of them goes', () => {

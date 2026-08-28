@@ -50,50 +50,6 @@ func (c Config) Cards(
 	}
 }
 
-// DeckBody is the markdown this deck is written as: the preamble as it arrived,
-// each section and each card laid down by the format itself in the order they
-// stand, and the tail verbatim below the last value.
-//
-// They are written into a file of no cards, so a card nobody touched comes out
-// as the bytes it went in as. A card carries which section it stands under, so
-// the sections a card does not reach are written where they stand: before it,
-// or at the end where nothing stands under them.
-func DeckBody(d format.Deck) (string, error) {
-	scratch, err := format.OpenDeck(markdown.Create("", d.Preamble))
-	if err != nil {
-		return "", err
-	}
-	written := 0
-	open := func(to int) error {
-		for written < len(d.Sections) && written <= to {
-			if err := scratch.AddSection(d.Sections[written]); err != nil {
-				return err
-			}
-			written++
-		}
-		return nil
-	}
-	for _, card := range d.Cards {
-		if err := open(card.Section); err != nil {
-			return "", err
-		}
-		if err := scratch.AddCard(card); err != nil {
-			return "", err
-		}
-	}
-	if err := open(len(d.Sections)); err != nil {
-		return "", err
-	}
-
-	body, err := below(scratch.Bytes())
-	if err != nil || (len(d.Cards) == 0 && len(d.Sections) == 0) {
-		return body, err
-	}
-	// The tail opens with the break that ends the last value, so the break the
-	// last card was written with goes.
-	return strings.TrimRight(body, "\n") + d.Tail, nil
-}
-
 // StencilBody is the markdown these faces are written as, in the order they are
 // to stand in the note: the preamble as it arrived, each face laid down by the
 // format itself, and the tail verbatim below the last side.

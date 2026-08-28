@@ -8,6 +8,7 @@ import (
 	format "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/cards"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/mark"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/ulid"
 )
 
@@ -122,7 +123,8 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Field) (Rena
 	// The name the cards write is the name the stencil is linked by.
 	named := domain.Basename(in.Stencil)
 	one := deck{
-		reader: reader, writer: writer, links: u.Links, vaultID: v.ID, stamp: u.stamped,
+		reader: reader, writer: writer, links: u.Links, vault: v,
+		read: Read{Readers: u.Readers, Links: u.Links}, stamp: u.stamped,
 	}
 	for _, path := range paths {
 		if err := ctx.Err(); err != nil {
@@ -197,11 +199,14 @@ func (u RenameField) decks(ctx context.Context, v domain.Vault) ([]string, error
 // deck is one deck's read and write, so that what could not be done to it is
 // one error and the decks after it are written all the same.
 type deck struct {
-	reader  port.VaultReader
-	writer  port.VaultWriter
-	links   port.LinkQueries
-	vaultID string
-	stamp   func(func(string) (bool, error)) error
+	reader port.VaultReader
+	writer port.VaultWriter
+	links  port.LinkQueries
+	vault  domain.Vault
+	// read is what opens the stencils this deck's cards are cut by, which is
+	// what says which of a card's fields is first.
+	read  Read
+	stamp func(func(string) (bool, error)) error
 }
 
 // rename rewrites the heading in every card of this deck the stencil cuts, and
@@ -209,6 +214,10 @@ type deck struct {
 //
 // A card is cut by the stencil its own wikilink lands on, which is what reading
 // the deck against its stencils holds to.
+//
+// This is the application writing the file, so the deck it leaves behind is
+// whole: it is stamped with an identifier where it carried none, and every card
+// of it is given its mark and its heading.
 func (d deck) rename(ctx context.Context, path string, in Field) (int, error) {
 	on, err := d.reader.Stat(ctx, path)
 	if err != nil {
@@ -226,7 +235,7 @@ func (d deck) rename(ctx context.Context, path string, in Field) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	at, err := cutting(ctx, d.links, d.vaultID, path, f.Deck(on))
+	at, err := cutting(ctx, d.links, d.vault.ID, path, f.Deck(on))
 	if err != nil {
 		return 0, err
 	}
@@ -236,6 +245,13 @@ func (d deck) rename(ctx context.Context, path string, in Field) (int, error) {
 	}
 	if cards == 0 {
 		return 0, nil
+	}
+	by, _, err := d.read.stencils(ctx, d.vault, at)
+	if err != nil {
+		return 0, err
+	}
+	if _, err := f.Whole(by, mark.New); err != nil {
+		return 0, err
 	}
 	if err := d.stamp(f.Stamped); err != nil {
 		return 0, err

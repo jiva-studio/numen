@@ -676,13 +676,16 @@ func TestWhatAnOlderIndexHeldForADeckAndAStencilIsCleared(t *testing.T) {
 		   (2, 1, 'term',    'Term',    'stencil'),
 		   (3, 1, 'entropy', 'Entropy', 'note')`,
 		// One chunk each, and one small chunk inside the deck's, which is what
-		// a vector hangs off.
+		// a vector hangs off. The deck's second small chunk carries the words
+		// the ordinary note carries, so the two stand on one vector.
 		`INSERT INTO chunks (id, source_id, vault_id, start, length, parent, hash) VALUES
-		   (1, 1, 1, 0, 120, NULL, 'aa'),
-		   (2, 1, 1, 0, 40,  1,    'bb'),
-		   (3, 2, 1, 0, 60,  NULL, 'cc'),
-		   (4, 3, 1, 0, 300, NULL, 'dd')`,
-		`INSERT INTO chunks_fts (rowid, text) VALUES (1, 'compost'), (2, 'compost'), (3, 'front'), (4, 'entropy')`,
+		   (1, 1, 1, 0,  120, NULL, 'aa'),
+		   (2, 1, 1, 0,  40,  1,    'bb'),
+		   (3, 2, 1, 0,  60,  NULL, 'cc'),
+		   (4, 3, 1, 0,  300, NULL, 'dd'),
+		   (5, 1, 1, 40, 80,  1,    'dd')`,
+		`INSERT INTO chunks_fts (rowid, text) VALUES
+		   (1, 'compost'), (2, 'compost'), (3, 'front'), (4, 'entropy'), (5, 'entropy')`,
 		`INSERT INTO parts_fts (rowid, text) VALUES (1, 'Roots'), (3, 'Question'), (4, 'What it is')`,
 		`INSERT INTO vectors (fingerprint, recipe, v) VALUES
 		   (unhex('bb'), 'r', x'01'),
@@ -700,7 +703,7 @@ func TestWhatAnOlderIndexHeldForADeckAndAStencilIsCleared(t *testing.T) {
 			t.Fatalf("%s: %v", statement, err)
 		}
 	}
-	for _, chunk := range []int{1, 2, 3, 4} {
+	for _, chunk := range []int{1, 2, 3, 4, 5} {
 		if _, err := db.ExecContext(ctx,
 			`INSERT INTO chunks_vec (chunk_id, vault_id, embedding) VALUES (?, 1, vec_bit(?))`,
 			chunk, make([]byte, 128)); err != nil {
@@ -731,9 +734,9 @@ func TestWhatAnOlderIndexHeldForADeckAndAStencilIsCleared(t *testing.T) {
 		statement string
 	}{
 		{"chunks", `SELECT count(*) FROM chunks WHERE source_id IN (1, 2)`},
-		{"full-text rows", `SELECT count(*) FROM chunks_fts WHERE rowid IN (1, 2, 3)`},
+		{"full-text rows", `SELECT count(*) FROM chunks_fts WHERE rowid IN (1, 2, 3, 5)`},
 		{"part names", `SELECT count(*) FROM parts_fts WHERE rowid IN (1, 3)`},
-		{"coarse vectors", `SELECT count(*) FROM chunks_vec WHERE chunk_id IN (1, 2, 3)`},
+		{"coarse vectors", `SELECT count(*) FROM chunks_vec WHERE chunk_id IN (1, 2, 3, 5)`},
 		{"vectors", `SELECT count(*) FROM vectors WHERE fingerprint IN (unhex('bb'), unhex('cc'))`},
 		{"headings", `SELECT count(*) FROM headings WHERE note_id IN (1, 2)`},
 		{"heading names", `SELECT count(*) FROM headings_fts WHERE rowid IN (1, 2, 3, 4)`},
@@ -743,7 +746,9 @@ func TestWhatAnOlderIndexHeldForADeckAndAStencilIsCleared(t *testing.T) {
 		}
 	}
 
-	// The note beside them is as it was, down to its vector.
+	// The note beside them is as it was, down to its vector. A vector is
+	// addressed by the text it was made from, never by the chunk that asked for
+	// it, so the one the deck shared with it is the note's to keep.
 	for _, kept := range []struct {
 		what      string
 		statement string

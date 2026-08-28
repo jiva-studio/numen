@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/webui"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
+	format "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/cards"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/check"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/markdown"
@@ -232,7 +233,7 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 		Cuts:        cutting.Write,
 		Cutting:     cutting.Create,
 		FieldRename: cutting.Rename,
-		DeckBody:    container.DeckBody,
+		DeckBody:    format.DeckBody,
 		StencilBody: container.StencilBody,
 
 		Create: note.Create{

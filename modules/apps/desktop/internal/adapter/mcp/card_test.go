@@ -209,6 +209,62 @@ func TestACardIsAddedWithTheWikilinkThatNamesItsStencil(t *testing.T) {
 	}
 }
 
+// TestACardAddedComesBackUnderTheMarkItIsAddressedBy. The mark is minted where
+// the deck is written, so the write is what knows it: without it in the answer,
+// an agent adding a card to a deck of many cannot reach what it just wrote.
+func TestACardAddedComesBackUnderTheMarkItIsAddressedBy(t *testing.T) {
+	session, _ := connected(t, vault())
+
+	made := call[struct {
+		Mark string `json:"mark"`
+	}](t, session, "card_add", map[string]any{
+		"path": "Animals.md", "stencil": "Animal",
+		"values": []map[string]string{{"field": "Name", "text": "Vicuña"}},
+	})
+	if made.Mark == "" {
+		t.Fatal("the card that was written came back with nothing to address it by")
+	}
+
+	// The mark reaches that card and no other.
+	call[map[string]any](t, session, "card_edit", map[string]any{
+		"path": "Animals.md", "card": made.Mark,
+		"values": []map[string]string{{"field": "Height", "text": "about 34\""}},
+	})
+	read := dealt(t, session, map[string]any{"path": "Animals.md"})
+	if read.Held != 3 || read.Cards[2].Mark != made.Mark {
+		t.Fatalf("the deck holds %+v", read.Cards)
+	}
+	if valued(read.Cards[2], "Height") != "about 34\"" {
+		t.Errorf("the edit reached %+v", read.Cards)
+	}
+}
+
+// TestACardOfAMarkTwoCardsCarryIsNotWrittenTo. Both are read and both are
+// shown, so a person can open the second and ask for it; which of the two they
+// meant is a thing only they know, and a machine choosing would put what they
+// typed in the other one — or delete it, with nothing to bring it back.
+func TestACardOfAMarkTwoCardsCarryIsNotWrittenTo(t *testing.T) {
+	copied := "---\ntype: deck\n---\n\n" +
+		"## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 45\"\n\n" +
+		"## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 46\"\n"
+	session, v := connected(t, map[string]string{"Animal.md": stencil, "Animals.md": copied})
+
+	if said := failing(t, session, "card_edit", map[string]any{
+		"path": "Animals.md", "card": llama,
+		"values": []map[string]string{{"field": "Height", "text": "about 47\""}},
+	}); !strings.Contains(said, "two cards") {
+		t.Errorf("editing one of two cards of a mark was answered %q", said)
+	}
+	if said := failing(t, session, "card_remove", map[string]any{
+		"path": "Animals.md", "card": llama,
+	}); !strings.Contains(said, "two cards") {
+		t.Errorf("removing one of two cards of a mark was answered %q", said)
+	}
+	if written := held(t, v, "Animals.md"); written != copied {
+		t.Errorf("the deck was written anyway: %q", written)
+	}
+}
+
 // TestACardIsAddedToTheSectionItWasAskedFor. A person divides a deck, so an
 // agent writing into it says which run of it a card belongs to.
 func TestACardIsAddedToTheSectionItWasAskedFor(t *testing.T) {

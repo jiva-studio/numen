@@ -29,7 +29,7 @@ const CORPORA = {
   'a card': {
     cut: ANIMAL,
     card: {
-      mark: 'k7m2xq9fzp',
+      id: 'k7m2xq9fzp',
       section: null,
       stencil: 'Animal',
       filled: [
@@ -44,7 +44,7 @@ const CORPORA = {
   'a value that wraps': {
     cut: { name: 'Basic', fields: ['Question', 'Answer'] },
     card: {
-      mark: 'c5n8q2wxjb',
+      id: 'c5n8q2wxjb',
       section: null,
       stencil: 'Basic',
       filled: [
@@ -61,7 +61,7 @@ const CORPORA = {
   'a first field of many lines': {
     cut: { name: 'Basic', fields: ['Question', 'Answer'] },
     card: {
-      mark: 'r2t7y5k9wq',
+      id: 'r2t7y5k9wq',
       section: null,
       stencil: 'Basic',
       filled: [
@@ -77,7 +77,7 @@ const CORPORA = {
   'awkward text': {
     cut: { name: 'Слово', fields: ['Слово', 'Перевод', UNBROKEN] },
     card: {
-      mark: 'j2b6t8n4vw',
+      id: 'j2b6t8n4vw',
       section: null,
       stencil: 'Слово',
       filled: [
@@ -90,14 +90,14 @@ const CORPORA = {
   /* A card whose every value is the empty string. */
   'no text at all': {
     cut: ANIMAL,
-    card: { mark: 'b8k4n2vqz6', section: null, stencil: 'Animal', filled: [] },
+    card: { id: 'b8k4n2vqz6', section: null, stencil: 'Animal', filled: [] },
   },
   /* A card naming a stencil the vault does not hold: nothing says what its
      boxes are, so it draws none and keeps what it holds in the file. */
   'no stencil': {
     cut: null,
     card: {
-      mark: 'm3t9w5rj1x',
+      id: 'm3t9w5rj1x',
       section: null,
       stencil: 'Gone',
       filled: [{ field: 'Whatever it had', text: 'still here, still readable' }],
@@ -108,7 +108,7 @@ const CORPORA = {
   'a field written twice': {
     cut: ANIMAL,
     card: {
-      mark: 'd6q2z8hn4v',
+      id: 'd6q2z8hn4v',
       section: null,
       stencil: 'Animal',
       filled: [
@@ -124,7 +124,7 @@ const CORPORA = {
   'tags that must not survive': {
     cut: { name: 'Basic', fields: ['Question', 'Answer'] },
     card: {
-      mark: 'y1v5b9kt3n',
+      id: 'y1v5b9kt3n',
       section: null,
       stencil: 'Basic',
       filled: [

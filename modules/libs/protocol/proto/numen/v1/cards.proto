@@ -204,10 +204,6 @@ message Problem {
 // a face by what is wrong with them, so a fault nobody decided on is drawn
 // nowhere.
 enum Fault {
-  // What these two named is nothing a person is asked to settle.
-  reserved 7, 11;
-  reserved "FAULT_CARD_WITHOUT_A_NAME", "FAULT_FIRST_FIELD_WRITTEN_TWICE";
-
   FAULT_UNSPECIFIED = 0;
 
   // `fields` declares a name twice. The first stands.
@@ -232,32 +228,32 @@ enum Fault {
   // read.
   FAULT_STENCIL_IS_NOT_ONE = 6;
 
-  // Two cards of one deck carry the same mark. Both are read and both are
-  // shown marked, and neither is given another.
-  FAULT_MARK_CARRIED_TWICE = 8;
-
   // One card writes a field's heading twice. The first stands, and the second
   // is kept in the file.
-  FAULT_FIELD_WRITTEN_TWICE = 9;
+  FAULT_FIELD_WRITTEN_TWICE = 7;
 
   // A field renamed in a stencil did not reach this deck, so a card holds a
   // heading the stencil no longer declares.
-  FAULT_FIELD_NOT_RENAMED = 10;
+  FAULT_FIELD_NOT_RENAMED = 8;
+
+  // Two cards of one deck carry the same mark. Both are read and both are
+  // shown marked, and neither is given another.
+  FAULT_MARK_CARRIED_TWICE = 9;
 }
 
 // Card is one filled-in set of a stencil's fields.
 message Card {
-  reserved 1;
-  reserved "name";
-
   // What the card is, for as long as it exists, and how it is addressed. It is
   // the ten characters alone, without the caret a heading writes them behind,
   // and it is empty for a card the application has not written yet.
-  string mark = 6;
+  string mark = 1;
 
   // Where the section this card stands under stands in the deck's own, counted
   // from the first. Absent for a card standing before the first section.
-  optional int32 section = 7;
+  //
+  // A write naming a section the deck does not hold is refused. Nothing is
+  // written, and the card is not quietly stood somewhere else.
+  optional int32 section = 6;
 
   // The line the card's heading says, with the mark taken off. It is not what
   // the card is called: it holds nothing of its own, and a write throws it away
@@ -268,7 +264,7 @@ message Card {
   // is first. That heading is left exactly as it stands, so a write hands back
   // what it was given. A write carrying nothing here leaves such a card headed
   // by its mark alone.
-  string heading = 8;
+  string heading = 7;
 
   // The stencil this card is cut by, as the wikilink beneath its heading names
   // it, without the brackets. Empty for a card written under no wikilink.

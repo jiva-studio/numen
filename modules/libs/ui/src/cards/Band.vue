@@ -50,12 +50,12 @@ const text = computed(() => naming.text(props.band.id))
 const objects = computed(() => naming.objection(props.band.id))
 
 /** What is said of a name that cannot be used, and nothing while it can. */
-const says = computed(() => {
-  const why = objects.value
-  return why === null ? null : props.words.sectionObjection(why)
-})
+const says = computed(() => (objects.value === null ? null : props.words.sectionObjection))
 
-/** What the section is announced by while it carries no name of its own yet. */
+/**
+ * What the section is announced by. A section's name is a person's own text and
+ * may be nothing at all, so what it is called here is the place it stands in.
+ */
 const stem = computed(() => `${props.words.sectionStem} ${props.band.at}`)
 </script>
 
@@ -75,7 +75,7 @@ const stem = computed(() => `${props.words.sectionStem} ${props.band.at}`)
         @keydown="naming.onKey($event, band.id)"
       />
 
-      <Deed :label="`${words.remove}: ${band.name}`" @press="emit('remove')" />
+      <Deed :label="`${words.remove}: ${stem}`" @press="emit('remove')" />
     </Rule>
 
     <Amiss v-if="says" :id="objectsId" class="band__objects" role="alert" :said="says" />
