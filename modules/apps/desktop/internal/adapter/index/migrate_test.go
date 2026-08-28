@@ -556,3 +556,78 @@ func TestASourceReadBeforeTheColumnMeantAProducerKeepsItsReading(t *testing.T) {
 		t.Errorf("text_from = %q, and a name composed from it names nothing", from)
 	}
 }
+
+// A file that already said what it was before the key was indexed is read
+// again.
+//
+// A scan skips a file whose size and modification time still match, so a note
+// filed as `type: deck` before the upgrade would keep the default the column
+// was added with until somebody edited the file. The fingerprint of every note
+// goes with the column, and the next scan reads them.
+func TestTheTypeOfAFileAlreadyIndexedIsReadAgain(t *testing.T) {
+	ctx := t.Context()
+	path := filepath.Join(t.TempDir(), "index.db")
+
+	db, err := sql.Open("sqlite", dsn(path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	available, err := loadMigrations()
+	if err != nil {
+		t.Fatal(err)
+	}
+	const typed = 7
+	for _, m := range available {
+		if m.version >= typed {
+			break
+		}
+		if err := apply(ctx, db, m); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := db.ExecContext(ctx,
+		`INSERT INTO vaults (id, identifier, name, path) VALUES (1, '01AAA', 'kept', '/notes')`); err != nil {
+		t.Fatal(err)
+	}
+	// The deck, and a document beside it whose text nothing in this migration
+	// is about.
+	if _, err := db.ExecContext(ctx,
+		`INSERT INTO sources (id, vault_id, path, kind, size, modified_at)
+		 VALUES (1, 1, 'decks/mammals.md', 'note', 120, 4), (2, 1, 'library/scan.pdf', 'book', 900, 5)`,
+	); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx,
+		`INSERT INTO notes (source_id, vault_id, basename, title) VALUES (1, 1, 'mammals', 'Mammals')`,
+	); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	upgraded, err := Open(ctx, path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer upgraded.Close()
+
+	known, err := upgraded.NoteQueries().Fingerprints(ctx, "01AAA")
+	if err != nil {
+		t.Fatal(err)
+	}
+	onDisk := domain.FileRef{Path: "decks/mammals.md", Kind: domain.KindNote, Size: 120, MTime: 4}
+	if known[onDisk.Path].Unchanged(onDisk) {
+		t.Errorf("the file is skipped by the next scan, so what it says it is is never read: %+v",
+			known[onDisk.Path])
+	}
+
+	var size, modified int64
+	if err := upgraded.write.QueryRowContext(ctx,
+		`SELECT size, modified_at FROM sources WHERE path = 'library/scan.pdf'`).Scan(&size, &modified); err != nil {
+		t.Fatal(err)
+	}
+	if size != 900 || modified != 5 {
+		t.Errorf("a document is read again for a key only a note carries: %d bytes, %d", size, modified)
+	}
+}

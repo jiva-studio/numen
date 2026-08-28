@@ -1,6 +1,7 @@
 package cards_test
 
 import (
+	"context"
 	"errors"
 	"os"
 	"path/filepath"
@@ -10,6 +11,8 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
 	format "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/cards"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/cards"
 )
 
@@ -237,5 +240,43 @@ func TestADeckOverTheBoundIsNotRenamed(t *testing.T) {
 	}
 	if !strings.Contains(got.NotWritten[0].Problem.Detail, "8388608") {
 		t.Errorf("the bound was not said: %q", got.NotWritten[0].Problem.Detail)
+	}
+}
+
+// byType is the index, watching for the questions a rename must not ask.
+type byType struct {
+	port.NoteQueries
+	t *testing.T
+}
+
+func (q byType) Fingerprints(ctx context.Context, vaultID string) (map[string]domain.FileRef, error) {
+	q.t.Error("a rename asked the index about every file of the vault")
+	return q.NoteQueries.Fingerprints(ctx, vaultID)
+}
+
+func (q byType) Types(
+	ctx context.Context, vaultID string, paths []string,
+) (map[string]domain.NoteType, error) {
+	q.t.Errorf("a rename asked what each of %d notes is", len(paths))
+	return q.NoteQueries.Types(ctx, vaultID, paths)
+}
+
+// A rename asks the index for the decks of the vault and for nothing else.
+//
+// The whole of it runs under the vault's write lock, so a question per note is
+// every other write in the application waiting behind a vault-sized loop.
+func TestARenameAsksTheIndexForTheDecksAndNotForEveryNote(t *testing.T) {
+	vs := indexed(t)
+	u := renaming(t, vs)
+	u.Notes = byType{NoteQueries: vs.db.NoteQueries(), t: t}
+
+	got, err := u.Execute(t.Context(), vs.first, cards.Field{
+		Stencil: "Animal.md", From: "Height", To: "Shoulder height",
+	})
+	if err != nil {
+		t.Fatalf("rename: %v", err)
+	}
+	if !slices.Equal(got.Decks, []string{"decks/Birds.md", "decks/Mammals.md"}) {
+		t.Errorf("decks = %v", got.Decks)
 	}
 }

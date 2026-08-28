@@ -52,6 +52,11 @@ type NoteQueries interface {
 	// naming a file the index holds no note at is absent from the answer, and a
 	// listing draws such an entry as the file it is.
 	Types(ctx context.Context, vaultID string, paths []string) (map[string]domain.NoteType, error)
+
+	// OfType is every note of one type the vault holds, by path. A caller after
+	// the decks or the stencils of a vault asks for them, and opens no file to
+	// find out what each note is.
+	OfType(ctx context.Context, vaultID string, of domain.NoteType) ([]string, error)
 }
 
 // Stencil is one stencil as a caller choosing between them sees it: where the

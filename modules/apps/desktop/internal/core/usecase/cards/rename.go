@@ -3,7 +3,6 @@ package cards
 import (
 	"context"
 	"fmt"
-	"slices"
 	"time"
 
 	format "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/cards"
@@ -197,30 +196,13 @@ func (u RenameField) stamped(into func(string) (bool, error)) error {
 	return err
 }
 
-// decks is every deck the vault holds, by path. The index answers what each
-// note is, so nothing here opens a file to find out.
+// decks is every deck the vault holds, by path. The index answers which notes
+// those are, in one question and without a file being opened.
+//
+// This runs under the vault's write lock, so a question per note in the vault
+// is every other write in the application waiting behind it.
 func (u RenameField) decks(ctx context.Context, v domain.Vault) ([]string, error) {
-	known, err := u.Notes.Fingerprints(ctx, v.ID)
-	if err != nil {
-		return nil, err
-	}
-	paths := make([]string, 0, len(known))
-	for path := range known {
-		paths = append(paths, path)
-	}
-	slices.Sort(paths)
-
-	types, err := u.Notes.Types(ctx, v.ID, paths)
-	if err != nil {
-		return nil, err
-	}
-	decks := paths[:0]
-	for _, path := range paths {
-		if types[path] == domain.TypeDeck {
-			decks = append(decks, path)
-		}
-	}
-	return decks, nil
+	return u.Notes.OfType(ctx, v.ID, domain.TypeDeck)
 }
 
 // deck is one deck's read and write, so that what could not be done to it is

@@ -3,6 +3,7 @@ package note
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
@@ -59,27 +60,54 @@ func (q *Queries) Types(ctx context.Context, vaultID string, paths []string) (ma
 	if err != nil {
 		return nil, err
 	}
-
-	// One prepared statement, asked repeatedly: the query's text is the same
-	// whatever number of paths arrive.
-	statement, err := q.db.PrepareContext(ctx, stmt.Get("type_at"))
+	// The paths travel as a JSON array, so the statement is one the database
+	// can keep whatever number of them arrive.
+	wanted, err := json.Marshal(paths)
 	if err != nil {
 		return nil, err
 	}
-	defer statement.Close()
 
-	for _, path := range paths {
-		var held string
-		err := statement.QueryRowContext(ctx, vault, path).Scan(&held)
-		if errors.Is(err, sql.ErrNoRows) {
-			continue
-		}
-		if err != nil {
+	rows, err := q.db.QueryContext(ctx, stmt.Get("types_at"), vault, string(wanted))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var path, held string
+		if err := rows.Scan(&path, &held); err != nil {
 			return nil, err
 		}
 		out[path] = domain.NoteType(held)
 	}
-	return out, nil
+	return out, rows.Err()
+}
+
+// OfType is every note of one type the vault holds, by path.
+func (q *Queries) OfType(ctx context.Context, vaultID string, of domain.NoteType) ([]string, error) {
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.db.QueryContext(ctx, stmt.Get("notes_of_type"), vault, string(of))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []string
+	for rows.Next() {
+		var path string
+		if err := rows.Scan(&path); err != nil {
+			return nil, err
+		}
+		out = append(out, path)
+	}
+	return out, rows.Err()
 }
 
 // Headings answers NoteQueries.Headings.
