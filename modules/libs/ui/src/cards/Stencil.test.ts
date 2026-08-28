@@ -167,8 +167,8 @@ describe('Stencil, the fields', () => {
     await type(held, 'Height', 'Weight')
     expect(rowFor(held, 'Height').get('.stencil__objects').text()).toBe('That name is taken')
 
-    // The line belongs to the row, so what is wrong is said by the row and not
-    // by the box standing inside it.
+    // The line belongs to the row, and the box says what is wrong with it to a
+    // reader.
     expect(rowFor(held, 'Height').get('.stencil__row').attributes('data-objects')).toBe('taken')
     expect(boxIn(held, 'Height').attributes('aria-invalid')).toBe('true')
   })

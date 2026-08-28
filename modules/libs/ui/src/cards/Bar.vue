@@ -23,7 +23,7 @@ const emit = defineEmits<{
   (event: 'step', way: Way, press: KeyboardEvent): void
 }>()
 
-/** What a press lands on that is worked rather than carried. */
+/** What a press lands on that is worked, and lets the press have it. */
 const WORKED = 'input, textarea, button, a, select, [contenteditable]'
 
 /** It is taken hold of. A press on something worked lets that thing have it. */
@@ -82,16 +82,6 @@ const carried = (event: KeyboardEvent): void => {
 
 .bar:active {
   cursor: grabbing;
-}
-
-/* What stands in the strip is worked, not carried. */
-.bar__held :deep(input),
-.bar__deeds :deep(button) {
-  cursor: auto;
-}
-
-.bar__deeds :deep(button) {
-  cursor: pointer;
 }
 
 /* What the strip is pressed for is not drawn until it is reached for, by the

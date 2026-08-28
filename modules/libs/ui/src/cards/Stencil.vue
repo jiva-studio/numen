@@ -482,20 +482,16 @@ const put = async (id: string, field: string): Promise<void> => {
             :data-blank="pane.blank || undefined"
             :data-aimed="aimed(block.id, pane) || undefined"
           >
-            <Grown v-if="pane.shows === 'written'" class="stencil__grown" :text="pane.text">
-              <textarea
-                class="stencil__written"
-                :data-face="block.id"
-                :data-half="pane.half"
-                :aria-label="pane.named"
-                rows="1"
-                :value="pane.text"
-                @focus="aim = { face: block.id, half: pane.half }"
-                @input="
-                  emit('write', block.id, pane.half, ($event.target as HTMLTextAreaElement).value)
-                "
-              ></textarea>
-            </Grown>
+            <Grown
+              v-if="pane.shows === 'written'"
+              class="stencil__grown"
+              :text="pane.text"
+              :data-face="block.id"
+              :data-half="pane.half"
+              :aria-label="pane.named"
+              @focus="aim = { face: block.id, half: pane.half }"
+              @write="(text: string) => emit('write', block.id, pane.half, text)"
+            />
 
             <div
               v-else
@@ -690,6 +686,25 @@ const put = async (id: string, field: string): Promise<void> => {
   gap: var(--numen-inset);
 }
 
+/* A name is typed in the row or the strip it stands in, and carries neither a
+   line nor a ground of its own. A press on it works it, and does not take hold
+   of what it stands in. */
+.stencil__box,
+.stencil__title {
+  min-inline-size: 0;
+  padding: 0.125rem 0.375rem;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: auto;
+}
+
+.stencil__box:focus-visible,
+.stencil__title:focus-visible {
+  outline: none;
+}
+
 /* The name is the heading of the block: the largest thing in the strip, and
    never squeezed by however many fields stand beside it. */
 .stencil__title {
@@ -768,11 +783,6 @@ const put = async (id: string, field: string): Promise<void> => {
   text-align: center;
   text-transform: uppercase;
   pointer-events: none;
-}
-
-.stencil__written {
-  inline-size: 100%;
-  min-inline-size: 0;
 }
 
 .stencil__preview {

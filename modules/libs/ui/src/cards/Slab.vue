@@ -2,10 +2,9 @@
 /**
  * One row, drawn as one thing.
  *
- * The line around it and the ground under it are the row's own, and whatever
- * stands inside carries neither: a handle, a box to type in and a way to remove
- * it read as one block and not as three. Where the keyboard lands inside, the
- * row is what says so.
+ * The line around it and the ground under it are the row's own, so a handle, a
+ * box to type in and a way to remove it read as one block. Where the keyboard
+ * lands inside, the row is what says so.
  */
 withDefaults(
   defineProps<{
@@ -46,19 +45,5 @@ withDefaults(
 .slab[data-tone='bar'] {
   border-block-end: var(--numen-stroke) solid var(--numen-node-border);
   background: var(--numen-code-bg);
-}
-
-/* What stands in a row carries neither a line nor a ground of its own. */
-.slab :deep(input) {
-  min-inline-size: 0;
-  padding: 0.125rem 0.375rem;
-  border: none;
-  background: none;
-  color: inherit;
-  font: inherit;
-}
-
-.slab :deep(input:focus-visible) {
-  outline: none;
 }
 </style>

@@ -56,10 +56,6 @@ const emit = defineEmits<{ (event: 'press'): void }>()
   outline-offset: 1px;
 }
 
-.deed :deep(svg) {
-  pointer-events: none;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .deed {
     transition: none;

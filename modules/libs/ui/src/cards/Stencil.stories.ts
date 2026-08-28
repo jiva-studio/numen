@@ -357,6 +357,17 @@ export const TheFaceIsOneWindow: Story = {
     expect(at('front-preview').left - at('front-written').right).toBeCloseTo(line, 0)
     expect(at('back-written').top - at('front-written').bottom).toBeCloseTo(line, 0)
 
+    // A part is a box to write in, not a line: the box fills the part it
+    // stands in, so every point of the part is a point to type at.
+    const part = paneOf(canvasElement, 'recognise', 'front-written')
+    const box = boxFor(canvasElement, 'recognise', 'front')
+    const deep = Number.parseFloat(getComputedStyle(box).lineHeight)
+    expect(box.getBoundingClientRect().height).toBeGreaterThan(deep * 4)
+    expect(box.getBoundingClientRect().height).toBeCloseTo(
+      part.getBoundingClientRect().height,
+      0,
+    )
+
     // The block is framed and the parts inside it are not.
     const block = found(canvasElement, '[data-face-block="recognise"]')
     expect(Number.parseFloat(getComputedStyle(block).borderTopWidth)).toBeGreaterThan(0)

@@ -205,7 +205,6 @@ export {
   FACE_WORDS,
   HALVES,
   NOTHING_WRONG,
-  SHOWS,
   STENCIL_WORDS,
 } from './cards/model'
 export type {

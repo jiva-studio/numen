@@ -9,7 +9,6 @@ defineProps<{ shows: Mark }>()
   <svg
     class="glyph"
     viewBox="0 0 12 12"
-    :data-shows="shows"
     :data-filled="MARKS[shows].filled || undefined"
     aria-hidden="true"
     focusable="false"
@@ -19,9 +18,11 @@ defineProps<{ shows: Mark }>()
 </template>
 
 <style scoped>
-/* A mark stands at about the height of the letter beside it, in its ink. */
+/* A mark stands at about the height of the letter beside it, in its ink. It is
+   drawn for the eye, so a press on it lands on whatever it stands in. */
 .glyph {
   flex: none;
+  pointer-events: none;
   inline-size: 0.875em;
   block-size: 0.875em;
   fill: none;

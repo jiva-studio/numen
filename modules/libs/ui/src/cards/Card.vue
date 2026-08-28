@@ -139,17 +139,13 @@ const write = (value: Stood, text: string): void => {
           </label>
         </Rule>
 
-        <Grown :text="value.text">
-          <textarea
-            :id="boxId(value)"
-            class="card__written"
-            :data-value="value.field"
-            rows="1"
-            :value="value.text"
-            @keydown.enter="breaking(value, $event)"
-            @input="write(value, ($event.target as HTMLTextAreaElement).value)"
-          ></textarea>
-        </Grown>
+        <Grown
+          :id="boxId(value)"
+          :text="value.text"
+          :data-value="value.field"
+          @keydown.enter="breaking(value, $event)"
+          @write="(text: string) => write(value, text)"
+        />
 
         <p v-if="value.twice" class="card__objects text-small text-alarm">{{ words.twice }}</p>
 
@@ -216,16 +212,6 @@ const write = (value: Stood, text: string): void => {
 .card__said {
   margin: 0;
   padding-inline: var(--box-pad-inline);
-}
-
-/*
- * The box and the ground behind it are set the same text, in the same type, at
- * the same measure, and share one cell. The ground is what the cell is sized by,
- * so the box is exactly as tall as what it holds and never scrolls.
- */
-.card__written {
-  inline-size: 100%;
-  min-inline-size: 0;
 }
 
 /* Everything the body holds stands over one edge: the card's own name, what is

@@ -14,7 +14,9 @@ withDefaults(defineProps<{ at?: 'middle' | 'start' }>(), { at: 'middle' })
 </script>
 
 <template>
-  <div class="rule" role="presentation" :data-at="at"><slot /></div>
+  <div class="rule" role="presentation" :data-at="at">
+    <span class="rule__held"><slot /></span>
+  </div>
 </template>
 
 <style scoped>
@@ -46,8 +48,11 @@ withDefaults(defineProps<{ at?: 'middle' | 'start' }>(), { at: 'middle' })
 
 /* What stands on the rule is drawn at its own width while there is room for
    it, and is what the width goes to first. */
-.rule > :deep(*) {
+.rule__held {
+  display: flex;
+  align-items: center;
   flex: 0 1 auto;
   min-inline-size: 0;
+  overflow: hidden;
 }
 </style>

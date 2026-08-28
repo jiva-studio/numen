@@ -56,7 +56,6 @@ const emit = defineEmits<{
   (event: 'remove', id: string): void
   /** A card let go somewhere in the order: before another, or at the end. */
   (event: 'move', id: string, at: Landing): void
-  /** One value of one card, as it now reads. The first of them names the card. */
   /**
    * One value of one card as it now reads. A card writing a field twice is
    * writing two values, and `nth` says which of them was typed in.
@@ -243,16 +242,13 @@ const add = (cut: Cut): void => {
   border: var(--numen-stroke) dashed var(--numen-node-border);
 }
 
+/* A mark is drawn at the height of the text around it, so the plus is as large
+   as the type the button is set in. */
 .deck__ask {
   block-size: auto;
   inline-size: auto;
   padding: var(--numen-inset);
-}
-
-.deck__ask :deep(.glyph) {
-  inline-size: var(--plus);
-  block-size: var(--plus);
-  stroke-width: 1;
+  font-size: var(--plus);
 }
 
 .deck__asking {

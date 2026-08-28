@@ -48,14 +48,19 @@ const pressed = (press: MouseEvent) => {
   -webkit-user-select: text;
 }
 
+</style>
+
+<!-- The marks below are made from a person's text, so they carry the scope of
+     nothing. They are named by the one class this component draws. -->
+<style>
 /* A table wider than the measure scrolls inside itself. */
-.marks :deep(table) {
+.marks table {
   display: block;
   overflow-x: auto;
 }
 
 /* A slot naming no field is read where it stands. */
-.marks :deep(mark) {
+.marks mark {
   border-radius: var(--numen-radius);
   padding-inline: 0.25em;
   background: var(--numen-alarm-bg);

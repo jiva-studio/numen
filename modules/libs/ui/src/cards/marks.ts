@@ -5,7 +5,7 @@
  */
 
 /** What a mark shows. */
-export type Mark = 'grip' | 'cross' | 'pencil' | 'plus' | 'bin'
+export type Mark = 'grip' | 'cross' | 'plus' | 'bin'
 
 /** One mark: what it is drawn from, and whether it is filled or stroked. */
 export interface Drawing {
@@ -22,7 +22,6 @@ export const MARKS: Readonly<Record<Mark, Drawing>> = {
     filled: true,
   },
   cross: { path: 'M3 3 9 9 M9 3 3 9', filled: false },
-  pencil: { path: 'M8.1 1.9 10.1 3.9 4.3 9.7 1.7 10.3 2.3 7.7Z M6.9 3.1 8.9 5.1', filled: false },
   plus: { path: 'M6 2.5V9.5 M2.5 6H9.5', filled: false },
   bin: {
     path:

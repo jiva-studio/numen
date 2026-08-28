@@ -527,9 +527,6 @@ export const HALVES: readonly Half[] = ['front', 'back']
 /** What one part of the window a face is edited in holds. */
 export type Shows = 'written' | 'preview'
 
-/** Both parts of a half, in the order they are drawn. */
-export const SHOWS: readonly Shows[] = ['written', 'preview']
-
 /** One part of the window a face is edited in. */
 export interface Pane {
   readonly half: Half
