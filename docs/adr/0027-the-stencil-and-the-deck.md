@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-08-27
 - **Applies to:** the vault format — every application that reads or writes one
-- **Related:** ADR-0001, ADR-0015, ADR-0017, ADR-0018, ADR-0026
+- **Related:** ADR-0001, ADR-0015, ADR-0017, ADR-0018, ADR-0026, ADR-0028
 
 ## Context
 
@@ -60,6 +60,8 @@ Each card is a second-level heading. The stencil it is cut by is a lone `[[wikil
 
 ### The first field is the card's name
 
+**Superseded by [ADR-0028](0028-a-card-is-named-by-what-it-holds.md).** A card's heading is the first line of its first field, read back and holding nothing of its own, and the card is addressed by a mark it carries. Every field is written under its own heading. What follows in this section is the decision as it stood.
+
 A stencil's **first field is written in the heading**, and nowhere else. The heading is that field's value, and it is what the card is called and what it is addressed by.
 
 A card therefore carries no name of its own. There is one place a person types the question, and it is the field called the question.
@@ -92,7 +94,7 @@ A value is markdown and holds what markdown holds: paragraphs, lists, a table, a
 
 A card's boundary is a heading and a field's name is a heading, so the structure of the file is the structure markdown already has. Headings are parts in the index, which makes a card searchable and addressable by `#` the day it is written, with nothing else built.
 
-The consequence to accept is that a value cannot itself hold a second-level or third-level heading. A value that wants one uses a deeper level.
+The consequence to accept is that a value cannot itself hold a second-level or third-level heading. A value that wants one uses a deeper level. **[ADR-0028](0028-a-card-is-named-by-what-it-holds.md) spends the first level too**, so a value's own heading is of the fourth level or below.
 
 ### A card may point at a note
 
@@ -117,6 +119,8 @@ A note is read up to a ceiling, and a deck is a file holding what would otherwis
 A deck over its bound is refused, and the refusal says which file and what the bound is. The size is taken from the file before it is opened, so nothing over the bound is read.
 
 ### A card is addressed by its deck and its heading
+
+**Superseded by [ADR-0028](0028-a-card-is-named-by-what-it-holds.md).** A card carries a mark of its own at the end of its heading, and that is what it is addressed by. What follows is the decision as it stood.
 
 A card has no identifier of its own. It is named by the note the deck is and the heading the card is, which is the value of its first field.
 

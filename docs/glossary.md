@@ -27,8 +27,10 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | stencil | A note declaring the fields a card has and the faces it is shown by — [Cards](cards.md). | note type, model, template |
 | field | One named slot of a stencil, and the heading a card writes its value under. | |
 | face | One way a stencil shows a card: a front and a back, written with `{{Field}}` where a value goes. A stencil has as many as the person writes. | template, side |
-| card | One filled-in set of a stencil's fields: a second-level heading in a deck, and the values under it. | |
-| deck | A note whose body is cards — [Cards](cards.md). | collection |
+| card | One filled-in set of a stencil's fields: a second-level heading in a deck, and the values under it. Its heading is the first line of its first field, read back, and it carries a mark of its own. | |
+| mark (of a card) | The ten characters after `^` at the end of a card's heading, which is what that card is wherever it goes — [Cards](cards.md). A page's mark and the marks an interface is drawn with are other things. | |
+| section (of a deck) | A first-level heading in a deck, and the cards standing under it until the next one. It is a name and nothing else. | |
+| deck | A note whose body is cards, in sections where a person made them — [Cards](cards.md). | collection |
 
 ## What the application keeps
 

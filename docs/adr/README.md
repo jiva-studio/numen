@@ -57,6 +57,8 @@ The numbers are identity, not order. This list is the order.
 ### Cards
 
 - [ADR-0027 — The stencil and the deck](0027-the-stencil-and-the-deck.md)
+- [ADR-0028 — A card is named by what it holds, and known by a mark](0028-a-card-is-named-by-what-it-holds.md)
+- [ADR-0029 — A deck and a stencil are not searched by their text](0029-a-deck-and-a-stencil-are-not-searched-by-their-text.md)
 
 ### Agents
 
