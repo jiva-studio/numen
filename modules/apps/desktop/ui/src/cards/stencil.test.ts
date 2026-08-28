@@ -12,13 +12,13 @@ import { stencilling, type Held } from './stencil'
 import { WORDS as words } from './words'
 
 /** The one place a file is opened from. Nothing here opens one. */
-const puts = () => putting({ types: async () => new Map() })
+const puts = () => putting({ standing: async () => new Map() })
 
 /** A moment for whatever the tab asked the vault for to come back. */
 const settles = () => new Promise((done) => setTimeout(done, 0))
 
 const FACES: readonly Faced[] = [
-  { name: 'Recognise', front: '{{title}}', back: '**Height:** {{Height}}' },
+  { name: 'Recognise', lead: '', front: '{{title}}', back: '**Height:** {{Height}}' },
 ]
 
 /** A vault holding one stencil, writing down every write it was asked for. */
@@ -64,7 +64,9 @@ const vault = (
           path,
           title: 'Animal',
           fields,
+          preamble: '',
           faces,
+          tail: '',
           problems: answers.problems ?? [],
         },
         refusal: null,
@@ -72,10 +74,12 @@ const vault = (
       }
     },
     writeStencil: async (path, wrote, drew) => {
-      written.push(`${path} ${wrote.join(', ') || '—'} | ${drew.map((one) => one.back).join(' ')}`)
+      written.push(
+        `${path} ${wrote.join(', ') || '—'} | ${drew.faces.map((one) => one.back).join(' ')}`,
+      )
       if (answers.changed) return { refusal: null, changed: true, at: '' }
       fields = wrote
-      faces = drew
+      faces = drew.faces
       return { refusal: null, changed: false, at: 'written' }
     },
   }
@@ -323,7 +327,7 @@ describe('a stencil read again under the window', () => {
     const one = await open()
     const was = one.tab.sheet()
 
-    one.holds([{ name: 'Recall', front: '{{Height}}', back: '{{title}}' }])
+    one.holds([{ name: 'Recall', lead: '', front: '{{Height}}', back: '{{title}}' }])
     one.stencils.changed(['Animal.md'])
     await settles()
 

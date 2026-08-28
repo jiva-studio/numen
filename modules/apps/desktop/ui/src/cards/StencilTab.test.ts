@@ -17,7 +17,7 @@ import { stencilling, type Held } from './stencil'
 import { WORDS as words } from './words'
 
 /** The one place a file is opened from. Nothing here opens one. */
-const puts = () => putting({ types: async () => new Map() })
+const puts = () => putting({ standing: async () => new Map() })
 
 /** A moment for whatever the tab asked the vault for to come back. */
 const settles = () => new Promise((done) => setTimeout(done, 0))
@@ -32,8 +32,8 @@ const drawn = async (problems: readonly Problem[] = []) => {
   const renamed: string[] = []
   let fields: readonly string[] = ['Height', 'Life span']
   let faces: readonly Faced[] = [
-    { name: 'Recognise', front: '{{title}}', back: '{{Height}}' },
-    { name: 'Name it', front: '{{Life span}}', back: '' },
+    { name: 'Recognise', lead: '', front: '{{title}}', back: '{{Height}}' },
+    { name: 'Name it', lead: '', front: '{{Life span}}', back: '' },
   ]
 
   const core: Cards = {
@@ -55,7 +55,7 @@ const drawn = async (problems: readonly Problem[] = []) => {
     readDeck: async () => ({ deck: null, refusal: 'missing', at: '', bound: 0 }),
     writeDeck: async () => ({ refusal: null, changed: false, at: '', bound: 0 }),
     readStencil: async (path) => ({
-      stencil: { path, title: 'Animal', fields, faces, problems },
+      stencil: { path, title: 'Animal', fields, preamble: '', faces, tail: '', problems },
       refusal: null,
       at: 'read',
     }),

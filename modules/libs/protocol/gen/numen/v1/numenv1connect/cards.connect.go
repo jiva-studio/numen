@@ -86,6 +86,10 @@ type CardsServiceClient interface {
 	// there is none. Every frontmatter key but `fields` stays as the person wrote
 	// it, and a stencil that no longer holds what the caller read is left alone
 	// and answered `changed`.
+	//
+	// The preamble, the tail and each face's lead are written back as they
+	// arrive, so the parts of the file a client did not touch come out as the
+	// bytes they went in as.
 	WriteStencil(context.Context, *connect.Request[v1.WriteStencilRequest]) (*connect.Response[v1.WriteStencilResponse], error)
 	// RenameField gives one of a stencil's fields a different name, everywhere it
 	// is written: where the stencil declares it, in the braces of every face that
@@ -252,6 +256,10 @@ type CardsServiceHandler interface {
 	// there is none. Every frontmatter key but `fields` stays as the person wrote
 	// it, and a stencil that no longer holds what the caller read is left alone
 	// and answered `changed`.
+	//
+	// The preamble, the tail and each face's lead are written back as they
+	// arrive, so the parts of the file a client did not touch come out as the
+	// bytes they went in as.
 	WriteStencil(context.Context, *connect.Request[v1.WriteStencilRequest]) (*connect.Response[v1.WriteStencilResponse], error)
 	// RenameField gives one of a stencil's fields a different name, everywhere it
 	// is written: where the stencil declares it, in the braces of every face that

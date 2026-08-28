@@ -77,10 +77,12 @@ const cut = (over: Partial<Stencilled> = {}): Stencilled => ({
   path: 'Animal.md',
   title: 'Animal',
   fields: ['Height', 'Life span'],
+  preamble: '',
   faces: [
-    { name: 'Recognise', front: '{{title}}', back: '**Height:** {{Height}}' },
-    { name: 'Name it', front: 'Which lives {{Life span}}?', back: '{{title}}' },
+    { name: 'Recognise', lead: '', front: '{{title}}', back: '**Height:** {{Height}}' },
+    { name: 'Name it', lead: '', front: 'Which lives {{Life span}}?', back: '{{title}}' },
   ],
+  tail: '',
   problems: [],
   ...over,
 })
@@ -334,12 +336,13 @@ describe('a stencil as the window holds it', () => {
   })
 
   it('is a stencil of no fields where nothing has been read', () => {
-    expect(sheetIn('')).toStrictEqual({ fields: [], faces: [] })
+    expect(sheetIn('')).toStrictEqual({ fields: [], preamble: '', faces: [], tail: '' })
   })
 
   it('hands the vault the faces without the identities it minted', () => {
     expect(facesOf(sheet())[0]).toStrictEqual({
       name: 'Recognise',
+      lead: '',
       front: '{{title}}',
       back: '**Height:** {{Height}}',
     })
@@ -372,7 +375,13 @@ describe('a field of a stencil', () => {
 describe('a face of a stencil', () => {
   it('is added at the end, with both its halves empty', () => {
     const held = faceAdded(sheet(), 'Spell it', () => 'c9')
-    expect(held.faces[2]).toStrictEqual({ id: 'c9', name: 'Spell it', front: '', back: '' })
+    expect(held.faces[2]).toStrictEqual({
+      id: 'c9',
+      name: 'Spell it',
+      lead: '',
+      front: '',
+      back: '',
+    })
   })
 
   it('takes the name it was given', () => {

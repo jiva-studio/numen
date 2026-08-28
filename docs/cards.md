@@ -85,6 +85,8 @@ A rename is the application changing what is in a file, so a deck it reaches car
 
 Each second-level heading is one face, and the heading is what the face is called. Under it, `### Front` and `### Back` hold what is shown before and after the answer. A face missing either is a problem, and it lays out nothing.
 
+A side runs to the next `### Front`, the next `### Back` or the next face, so a third-level heading of any other name stands inside the side it is written under, and a second `### Front` or `### Back` is text under the first.
+
 A stencil has as many faces as a person writes. One card is shown once through each.
 
 ### Placeholders

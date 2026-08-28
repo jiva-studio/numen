@@ -152,11 +152,18 @@ export const cards: Cards = {
       at: stamp(answer.at) ?? '',
     }
   },
-  writeStencil: async (path, fields, faces, seen) => {
+  writeStencil: async (path, fields, stencil, seen) => {
     const answer = await cutting.writeStencil({
       path,
       fields: [...fields],
-      faces: faces.map((face) => ({ name: face.name, front: face.front, back: face.back })),
+      preamble: stencil.preamble,
+      faces: stencil.faces.map((face) => ({
+        name: face.name,
+        lead: face.lead,
+        front: face.front,
+        back: face.back,
+      })),
+      tail: stencil.tail,
       ...(seen === null ? {} : { seen: fingerprint(seen) }),
     })
     return {
@@ -272,10 +279,12 @@ export const core: Core & Asking & Commanding = {
       ]),
     )
   },
-  /** Which of three the note at each of those paths is. */
-  types: async (paths) => {
-    const answer = await vault.types({ paths: [...paths] })
-    return new Map(answer.found.map((one) => [one.path, typed[one.type]]))
+  /** What the vault holds at each of those paths. */
+  standing: async (paths) => {
+    const answer = await vault.standing({ paths: [...paths] })
+    return new Map(
+      answer.found.map((one) => [one.path, { kind: holding[one.kind], type: typed[one.type] }]),
+    )
   },
   /** The names in the vault that match what is typed. */
   names: async (query, limit) => {
@@ -465,7 +474,16 @@ const stencilled = (one: StencilMessage): Stencilled => ({
   path: one.path,
   title: one.title,
   fields: one.fields,
-  faces: one.faces.map((face): Faced => ({ name: face.name, front: face.front, back: face.back })),
+  preamble: one.preamble,
+  faces: one.faces.map(
+    (face): Faced => ({
+      name: face.name,
+      lead: face.lead,
+      front: face.front,
+      back: face.back,
+    }),
+  ),
+  tail: one.tail,
   problems: one.problems.map(problem),
 })
 

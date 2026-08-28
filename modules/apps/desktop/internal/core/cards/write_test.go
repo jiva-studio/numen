@@ -353,43 +353,6 @@ const stencil = "---\n" +
 	"\n" +
 	"{{Name}}\n"
 
-func TestSetFaceWritesOneFace(t *testing.T) {
-	f, err := cards.OpenStencil([]byte(stencil))
-	if err != nil {
-		t.Fatalf("open: %v", err)
-	}
-	if err := f.SetFace("Recognise", "![[llama.jpg]]", "**{{Name}}**, {{Life span}}"); err != nil {
-		t.Fatalf("set: %v", err)
-	}
-
-	want := strings.Replace(stencil,
-		"## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n",
-		"## Recognise\n\n### Front\n\n![[llama.jpg]]\n\n### Back\n\n**{{Name}}**, {{Life span}}\n", 1)
-	if got := string(f.Bytes()); got != want {
-		t.Errorf("face written wrong\n want %q\n  got %q", want, got)
-	}
-}
-
-func TestSetFaceWritesAFaceTheStencilDoesNotCarry(t *testing.T) {
-	f, err := cards.OpenStencil([]byte(stencil))
-	if err != nil {
-		t.Fatalf("open: %v", err)
-	}
-	if err := f.SetFace("Spell it", "{{Height}}", "{{Name}}"); err != nil {
-		t.Fatalf("set: %v", err)
-	}
-
-	want := stencil + "\n## Spell it\n\n### Front\n\n{{Height}}\n\n### Back\n\n{{Name}}\n"
-	if got := string(f.Bytes()); got != want {
-		t.Errorf("face added wrong\n want %q\n  got %q", want, got)
-	}
-
-	n := markdown.Parse(domain.FileRef{Path: "Animal.md"}, f.Bytes())
-	if got := faceNames(f.Stencil(n)); !slices.Equal(got, []string{"Recognise", "Name it", "Spell it"}) {
-		t.Errorf("faces = %v", got)
-	}
-}
-
 // A field is added, renamed and taken away in the frontmatter, and the keys
 // around it come out of every one of those as the bytes they went in as.
 func TestWritingFieldsLeavesTheRestOfTheFrontmatterAlone(t *testing.T) {

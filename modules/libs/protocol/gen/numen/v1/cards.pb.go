@@ -145,7 +145,13 @@ type Stencil struct {
 	Faces []*Face `protobuf:"bytes,4,rep,name=faces,proto3" json:"faces,omitempty"`
 	// What was wrong with the note and was not guessed at, in the order it was
 	// found. The stencil is read either way.
-	Problems      []*Problem `protobuf:"bytes,5,rep,name=problems,proto3" json:"problems,omitempty"`
+	Problems []*Problem `protobuf:"bytes,5,rep,name=problems,proto3" json:"problems,omitempty"`
+	// The prose below the frontmatter and above the first face, with line endings
+	// as LF. A stencil carrying no face is all preamble.
+	Preamble string `protobuf:"bytes,6,opt,name=preamble,proto3" json:"preamble,omitempty"`
+	// What the file ends with once the last side has been read, with line endings
+	// as LF. It is no face's, and it is written back as it arrives.
+	Tail          string `protobuf:"bytes,7,opt,name=tail,proto3" json:"tail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -213,6 +219,20 @@ func (x *Stencil) GetProblems() []*Problem {
 		return x.Problems
 	}
 	return nil
+}
+
+func (x *Stencil) GetPreamble() string {
+	if x != nil {
+		return x.Preamble
+	}
+	return ""
+}
+
+func (x *Stencil) GetTail() string {
+	if x != nil {
+		return x.Tail
+	}
+	return ""
 }
 
 // Offered is one stencil as the list of them names it: where it is filed, what
@@ -285,8 +305,11 @@ type Face struct {
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// What is shown before the answer and after it, each markdown with `{{Field}}`
 	// standing where a value goes. `{{title}}` stands for the card's own name.
-	Front         string `protobuf:"bytes,2,opt,name=front,proto3" json:"front,omitempty"`
-	Back          string `protobuf:"bytes,3,opt,name=back,proto3" json:"back,omitempty"`
+	Front string `protobuf:"bytes,2,opt,name=front,proto3" json:"front,omitempty"`
+	Back  string `protobuf:"bytes,3,opt,name=back,proto3" json:"back,omitempty"`
+	// The prose between the face's heading and its first side, with line endings
+	// as LF. It is written back as it arrives.
+	Lead          string `protobuf:"bytes,4,opt,name=lead,proto3" json:"lead,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -338,6 +361,13 @@ func (x *Face) GetFront() string {
 func (x *Face) GetBack() string {
 	if x != nil {
 		return x.Back
+	}
+	return ""
+}
+
+func (x *Face) GetLead() string {
+	if x != nil {
+		return x.Lead
 	}
 	return ""
 }
@@ -1002,7 +1032,12 @@ type WriteStencilRequest struct {
 	Faces []*Face `protobuf:"bytes,3,rep,name=faces,proto3" json:"faces,omitempty"`
 	// The file this caller last read. Absent for a write that lands on whatever
 	// the stencil now holds.
-	Seen          *Fingerprint `protobuf:"bytes,4,opt,name=seen,proto3,oneof" json:"seen,omitempty"`
+	Seen *Fingerprint `protobuf:"bytes,4,opt,name=seen,proto3,oneof" json:"seen,omitempty"`
+	// The prose to stand below the frontmatter and above the first face, with
+	// line endings as LF.
+	Preamble string `protobuf:"bytes,5,opt,name=preamble,proto3" json:"preamble,omitempty"`
+	// What the file is to end with, below the last side, with line endings as LF.
+	Tail          string `protobuf:"bytes,6,opt,name=tail,proto3" json:"tail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1063,6 +1098,20 @@ func (x *WriteStencilRequest) GetSeen() *Fingerprint {
 		return x.Seen
 	}
 	return nil
+}
+
+func (x *WriteStencilRequest) GetPreamble() string {
+	if x != nil {
+		return x.Preamble
+	}
+	return ""
+}
+
+func (x *WriteStencilRequest) GetTail() string {
+	if x != nil {
+		return x.Tail
+	}
+	return ""
 }
 
 type WriteStencilResponse struct {
@@ -1740,21 +1789,24 @@ var File_numen_v1_cards_proto protoreflect.FileDescriptor
 
 const file_numen_v1_cards_proto_rawDesc = "" +
 	"\n" +
-	"\x14numen/v1/cards.proto\x12\bnumen.v1\x1a\x14numen/v1/vault.proto\"\xa0\x01\n" +
+	"\x14numen/v1/cards.proto\x12\bnumen.v1\x1a\x14numen/v1/vault.proto\"\xd0\x01\n" +
 	"\aStencil\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
 	"\x06fields\x18\x03 \x03(\tR\x06fields\x12$\n" +
 	"\x05faces\x18\x04 \x03(\v2\x0e.numen.v1.FaceR\x05faces\x12-\n" +
-	"\bproblems\x18\x05 \x03(\v2\x11.numen.v1.ProblemR\bproblems\"K\n" +
+	"\bproblems\x18\x05 \x03(\v2\x11.numen.v1.ProblemR\bproblems\x12\x1a\n" +
+	"\bpreamble\x18\x06 \x01(\tR\bpreamble\x12\x12\n" +
+	"\x04tail\x18\a \x01(\tR\x04tail\"K\n" +
 	"\aOffered\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
-	"\x06fields\x18\x03 \x03(\tR\x06fields\"D\n" +
+	"\x06fields\x18\x03 \x03(\tR\x06fields\"X\n" +
 	"\x04Face\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05front\x18\x02 \x01(\tR\x05front\x12\x12\n" +
-	"\x04back\x18\x03 \x01(\tR\x04back\"\xb5\x01\n" +
+	"\x04back\x18\x03 \x01(\tR\x04back\x12\x12\n" +
+	"\x04lead\x18\x04 \x01(\tR\x04lead\"\xb5\x01\n" +
 	"\x04Deck\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1a\n" +
@@ -1804,12 +1856,14 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\b_stencilB\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
-	"\x03_at\"\xa0\x01\n" +
+	"\x03_at\"\xd0\x01\n" +
 	"\x13WriteStencilRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x16\n" +
 	"\x06fields\x18\x02 \x03(\tR\x06fields\x12$\n" +
 	"\x05faces\x18\x03 \x03(\v2\x0e.numen.v1.FaceR\x05faces\x12.\n" +
-	"\x04seen\x18\x04 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01B\a\n" +
+	"\x04seen\x18\x04 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01\x12\x1a\n" +
+	"\bpreamble\x18\x05 \x01(\tR\bpreamble\x12\x12\n" +
+	"\x04tail\x18\x06 \x01(\tR\x04tailB\a\n" +
 	"\x05_seen\"\xa1\x01\n" +
 	"\x14WriteStencilResponse\x120\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12\x18\n" +

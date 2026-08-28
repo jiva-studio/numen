@@ -266,29 +266,14 @@ func (f *StencilFile) AddFace(face Face) error {
 	return f.doc.SpliceBody(at, at, insert(body, at, laid(face)))
 }
 
-// SetFace writes a face, front and back. A face the stencil does not carry yet
-// is written at the end of it.
-func (f *StencilFile) SetFace(name, front, back string) error {
-	body := []byte(f.doc.Body())
-	written := laid(Face{Name: name, Front: front, Back: back})
-
-	head, end, found := faceSpan(body, name)
-	if !found {
-		at := len(body)
-		return f.doc.SpliceBody(at, at, insert(body, at, written))
-	}
-	if end < len(body) {
-		written += "\n\n"
-	} else {
-		written += "\n"
-	}
-	return f.doc.SpliceBody(head, end, written)
-}
-
-// laid is the markdown one face is written as: its heading, and a side under
-// each of the two headings a face is made of.
+// laid is the markdown one face is written as: its heading, the lead beneath
+// it, and a side under each of the two headings a face is made of.
 func laid(face Face) string {
-	blocks := []string{"## " + face.Name, "### " + frontHeading}
+	blocks := []string{"## " + face.Name}
+	if lead := trimBlankLines(markdown.Normalised(face.Lead)); lead != "" {
+		blocks = append(blocks, lead)
+	}
+	blocks = append(blocks, "### "+frontHeading)
 	if text := trimBlankLines(markdown.Normalised(face.Front)); text != "" {
 		blocks = append(blocks, text)
 	}
@@ -297,26 +282,6 @@ func laid(face Face) string {
 		blocks = append(blocks, text)
 	}
 	return strings.Join(blocks, "\n\n")
-}
-
-// faceSpan is the run one face occupies: its heading line, and everything under
-// it until the next face.
-func faceSpan(body []byte, name string) (head, end int, found bool) {
-	secs := sections(body)
-	for i, s := range secs {
-		if s.level != 2 || s.name != name {
-			continue
-		}
-		end = len(body)
-		for _, later := range secs[i+1:] {
-			if later.level == 2 {
-				end = later.head
-				break
-			}
-		}
-		return s.head, end, true
-	}
-	return 0, 0, false
 }
 
 // under is what stands beneath a heading: a blank line, the text, and a blank

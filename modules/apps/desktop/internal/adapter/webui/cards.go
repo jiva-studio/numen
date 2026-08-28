@@ -280,7 +280,8 @@ func (a *API) WriteStencil(
 	if err != nil {
 		return nil, err
 	}
-	body, err := container.StencilBody(facesOf(r.Msg.GetFaces()))
+	body, err := container.StencilBody(
+		r.Msg.GetPreamble(), facesOf(r.Msg.GetFaces()), r.Msg.GetTail())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}

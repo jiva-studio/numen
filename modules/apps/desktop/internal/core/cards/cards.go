@@ -13,7 +13,12 @@ import "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 type Stencil struct {
 	Ref    domain.FileRef
 	Fields []string
-	Faces  []Face
+	// Preamble is whatever the person wrote above the first face, and Tail is
+	// what the file ends with once the last side has been read. Both are kept
+	// as they were written and neither is any face's.
+	Preamble string
+	Tail     string
+	Faces    []Face
 	// Problems are what was wrong with the file and could not be repaired.
 	// They are shown to the person, and never guessed at.
 	Problems []Problem
@@ -23,7 +28,9 @@ type Stencil struct {
 // stands after it, each with `{{Field}}` where a value goes. A face with only
 // one of the two lays out nothing.
 type Face struct {
-	Name  string
+	Name string
+	// Lead is what stands between the face's heading and its first side.
+	Lead  string
 	Front string
 	Back  string
 }

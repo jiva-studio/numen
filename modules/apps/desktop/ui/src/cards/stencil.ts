@@ -125,7 +125,7 @@ export function stencilling(
       const answer = await cards.writeStencil(
         path,
         sheet.fields,
-        facesOf(sheet),
+        { preamble: sheet.preamble, faces: facesOf(sheet), tail: sheet.tail },
         seen?.at ?? null,
       )
       const said = told.get(path) ?? NOTHING

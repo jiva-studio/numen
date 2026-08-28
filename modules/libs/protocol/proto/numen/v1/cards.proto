@@ -41,6 +41,10 @@ service CardsService {
   // there is none. Every frontmatter key but `fields` stays as the person wrote
   // it, and a stencil that no longer holds what the caller read is left alone
   // and answered `changed`.
+  //
+  // The preamble, the tail and each face's lead are written back as they
+  // arrive, so the parts of the file a client did not touch come out as the
+  // bytes they went in as.
   rpc WriteStencil(WriteStencilRequest) returns (WriteStencilResponse);
 
   // RenameField gives one of a stencil's fields a different name, everywhere it
@@ -93,6 +97,14 @@ message Stencil {
   // What was wrong with the note and was not guessed at, in the order it was
   // found. The stencil is read either way.
   repeated Problem problems = 5;
+
+  // The prose below the frontmatter and above the first face, with line endings
+  // as LF. A stencil carrying no face is all preamble.
+  string preamble = 6;
+
+  // What the file ends with once the last side has been read, with line endings
+  // as LF. It is no face's, and it is written back as it arrives.
+  string tail = 7;
 }
 
 // Offered is one stencil as the list of them names it: where it is filed, what
@@ -114,6 +126,10 @@ message Face {
   // standing where a value goes. `{{title}}` stands for the card's own name.
   string front = 2;
   string back = 3;
+
+  // The prose between the face's heading and its first side, with line endings
+  // as LF. It is written back as it arrives.
+  string lead = 4;
 }
 
 // Deck is a note whose body is cards.
@@ -307,6 +323,13 @@ message WriteStencilRequest {
   // The file this caller last read. Absent for a write that lands on whatever
   // the stencil now holds.
   optional Fingerprint seen = 4;
+
+  // The prose to stand below the frontmatter and above the first face, with
+  // line endings as LF.
+  string preamble = 5;
+
+  // What the file is to end with, below the last side, with line endings as LF.
+  string tail = 6;
 }
 
 message WriteStencilResponse {

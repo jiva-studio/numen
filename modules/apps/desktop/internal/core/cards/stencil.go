@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/markdown"
 )
 
 // The two headings a face is made of.
@@ -31,6 +32,17 @@ func ReadStencil(n domain.Note) Stencil {
 
 	body := []byte(n.Body)
 	secs := sections(body)
+
+	firstFace := len(body)
+	for _, sec := range secs {
+		if sec.level == 2 {
+			firstFace = sec.head
+			break
+		}
+	}
+	s.Preamble = text(body, 0, firstFace)
+
+	read := 0
 	for i, sec := range secs {
 		if sec.level != 2 {
 			continue
@@ -39,20 +51,58 @@ func ReadStencil(n domain.Note) Stencil {
 		at := len(s.Faces)
 		face := Face{Name: sec.name}
 
+		rest := secs[i+1:]
+		under := 0
+		for under < len(rest) && rest[under].level == 3 {
+			under++
+		}
+		sides := rest[:under]
+
+		end := sec.to
+		if under > 0 {
+			end = sides[under-1].to
+		}
+
+		// A side is opened by the first heading of its name, and it runs to the
+		// side after it. A heading of any other name stands under the side it is
+		// written beneath, and so does a second heading of a name.
 		has := map[string]bool{}
-		for _, side := range secs[i+1:] {
-			if side.level != 3 {
-				break
-			}
-			switch {
-			// The first heading of a name stands.
-			case has[side.name]:
-			case side.name == frontHeading:
-				face.Front = text(body, side.from, side.to)
-			case side.name == backHeading:
-				face.Back = text(body, side.from, side.to)
+		var opening []int
+		for k, side := range sides {
+			if (side.name != frontHeading && side.name != backHeading) || has[side.name] {
+				continue
 			}
 			has[side.name] = true
+			opening = append(opening, k)
+		}
+
+		leadTo := end
+		if len(opening) > 0 {
+			leadTo = sides[opening[0]].head
+		}
+		lead, leadEnd := run(body, sec.from, leadTo)
+		face.Lead = lead
+		read = trimmedEnd(body, sec.head, sec.from)
+		if lead != "" {
+			read = leadEnd
+		}
+
+		for k, opens := range opening {
+			side := sides[opens]
+			to := end
+			if k+1 < len(opening) {
+				to = sides[opening[k+1]].head
+			}
+			value, valueEnd := run(body, side.from, to)
+			read = trimmedEnd(body, side.head, side.from)
+			if value != "" {
+				read = valueEnd
+			}
+			if side.name == frontHeading {
+				face.Front = value
+			} else {
+				face.Back = value
+			}
 		}
 		s.Faces = append(s.Faces, face)
 
@@ -74,6 +124,10 @@ func ReadStencil(n domain.Note) Stencil {
 			problem.Field = name
 			s.Problems = append(s.Problems, problem)
 		}
+	}
+
+	if len(s.Faces) > 0 {
+		s.Tail = markdown.Normalised(string(body[read:]))
 	}
 	return s
 }

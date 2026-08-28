@@ -40,10 +40,12 @@ service VaultService {
   // once. A path past the ceiling the vault sets is not answered at all.
   rpc Headings(HeadingsRequest) returns (HeadingsResponse);
 
-  // Types is which of three the note at each of those paths is, so a client
-  // holding a path opens what stands there in the editor made for it. A path
-  // the index holds no note at is absent from the answer.
-  rpc Types(TypesRequest) returns (TypesResponse);
+  // Standing is what the vault holds at each of those paths, so a client
+  // holding a path opens what stands there in the editor made for it. The kind
+  // is read off the vault itself, so a path nothing has scanned is answered
+  // with what stands there. A path with nothing at it is absent from the
+  // answer.
+  rpc Standing(StandingRequest) returns (StandingResponse);
 
   // Search is the text a vault holds that answers what was typed, by the words
   // in it or by what it means or by what a section is called. The caller says
@@ -470,19 +472,25 @@ message NoteHeadings {
   repeated Heading headings = 2;
 }
 
-message TypesRequest {
-  // The notes to answer about, by the paths the vault files them under.
+message StandingRequest {
+  // The paths to answer about, as the vault files them.
   repeated string paths = 1;
 }
 
-message TypesResponse {
-  repeated Typed found = 1;
+message StandingResponse {
+  repeated Standing found = 1;
 }
 
-// Typed is which of three the note at one path is.
-message Typed {
+// Standing is what the vault holds at one path.
+message Standing {
   string path = 1;
-  NoteType type = 2;
+
+  // What the vault holds here. A file it holds no source for — a picture, an
+  // archive — is unspecified.
+  SourceKind kind = 2;
+
+  // Which of three the note is. It says nothing about a path holding no note.
+  NoteType type = 3;
 }
 
 // Span is a run of text, by where it begins and where it ends.

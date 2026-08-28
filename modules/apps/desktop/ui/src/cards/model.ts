@@ -7,7 +7,7 @@
  * cards and the fields a file is written from, is here, so a test can ask it
  * without a screen.
  */
-import { ordered, type CardLanding, type Cut, type Drawn, type Shown } from '@numen/ui'
+import { ordered, type CardLanding, type Cut, type Drawn } from '@numen/ui'
 import type { Carded, Decked, Faced, Offer, Problem, Stencilled, Value } from '../core'
 
 /** An identity a card or a face is drawn under, which no file carries. */
@@ -27,17 +27,24 @@ export interface Deck {
   readonly tail: string
 }
 
+/** One face as the window holds it: what the file says, under an identity of its own. */
+export interface Face extends Faced {
+  readonly id: string
+}
+
 /** A stencil as the window holds it: its fields, and its faces under identities. */
 export interface Sheet {
   readonly fields: readonly string[]
-  readonly faces: readonly Shown[]
+  readonly preamble: string
+  readonly faces: readonly Face[]
+  readonly tail: string
 }
 
 /** A deck of no cards, which is what a file nothing has been written to holds. */
 export const NO_DECK: Deck = { preamble: '', cards: [], tail: '' }
 
 /** A stencil that names nothing and shows nothing. */
-export const NO_SHEET: Sheet = { fields: [], faces: [] }
+export const NO_SHEET: Sheet = { fields: [], preamble: '', faces: [], tail: '' }
 
 /** A deck as the vault read it, each card under an identity this window mints. */
 export const deckOf = (read: Decked, mint: Mint = minting): Deck => ({
@@ -49,7 +56,9 @@ export const deckOf = (read: Decked, mint: Mint = minting): Deck => ({
 /** A stencil as the vault read it, each face under an identity this window mints. */
 export const sheetOf = (read: Stencilled, mint: Mint = minting): Sheet => ({
   fields: read.fields,
+  preamble: read.preamble,
   faces: read.faces.map((face) => ({ id: mint(), ...face })),
+  tail: read.tail,
 })
 
 /**
@@ -75,9 +84,12 @@ export const bodyOf = (deck: Deck): string =>
 export const sheetBodyOf = (sheet: Sheet): string =>
   JSON.stringify({
     fields: sheet.fields,
+    preamble: sheet.preamble,
+    tail: sheet.tail,
     faces: sheet.faces.map((face) => ({
       id: face.id,
       name: face.name,
+      lead: face.lead,
       front: face.front,
       back: face.back,
     })),
@@ -101,7 +113,7 @@ export const cardsOf = (deck: Deck): readonly Carded[] =>
 
 /** The faces of a stencil, in the shape the vault takes them. */
 export const facesOf = (sheet: Sheet): readonly Faced[] =>
-  sheet.faces.map(({ name, front, back }) => ({ name, front, back }))
+  sheet.faces.map(({ name, lead, front, back }) => ({ name, lead, front, back }))
 
 /**
  * The cards as the grid draws them, each under the stencil its wikilink
@@ -145,6 +157,8 @@ export const sameDeck = (one: Deck, other: Deck): boolean =>
 
 /** Whether two stencils read the same, the identities left out the same way. */
 export const sameSheet = (one: Sheet, other: Sheet): boolean =>
+  one.preamble === other.preamble &&
+  one.tail === other.tail &&
   JSON.stringify(one.fields) === JSON.stringify(other.fields) &&
   JSON.stringify(facesOf(one)) === JSON.stringify(facesOf(other))
 
@@ -329,7 +343,7 @@ export const faceCarried = (sheet: Sheet, id: string, at: CardLanding): Sheet =>
 /** A face added at the end, with both its halves empty. */
 export const faceAdded = (sheet: Sheet, name: string, mint: Mint = minting): Sheet => ({
   ...sheet,
-  faces: [...sheet.faces, { id: mint(), name, front: '', back: '' }],
+  faces: [...sheet.faces, { id: mint(), name, lead: '', front: '', back: '' }],
 })
 
 /** A face under another name. */

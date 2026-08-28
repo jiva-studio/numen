@@ -76,12 +76,13 @@ func DeckBody(preamble string, cs []format.Card, tail string) (string, error) {
 }
 
 // StencilBody is the markdown these faces are written as, in the order they are
-// to stand in the note.
+// to stand in the note: the preamble as it arrived, each face laid down by the
+// format itself, and the tail verbatim below the last side.
 //
 // The faces are written into a stencil of no faces, one after another, so every
 // face a caller gave stands in the file and two of one name are two faces.
-func StencilBody(fs []format.Face) (string, error) {
-	scratch, err := format.OpenStencil(markdown.Create("", ""))
+func StencilBody(preamble string, fs []format.Face, tail string) (string, error) {
+	scratch, err := format.OpenStencil(markdown.Create("", preamble))
 	if err != nil {
 		return "", err
 	}
@@ -90,7 +91,13 @@ func StencilBody(fs []format.Face) (string, error) {
 			return "", err
 		}
 	}
-	return below(scratch.Bytes())
+	body, err := below(scratch.Bytes())
+	if err != nil || len(fs) == 0 {
+		return body, err
+	}
+	// The tail opens with the break that ends the last side, so the break the
+	// last face was written with goes.
+	return strings.TrimRight(body, "\n") + tail, nil
 }
 
 // below is what stands under the frontmatter of a file just written.

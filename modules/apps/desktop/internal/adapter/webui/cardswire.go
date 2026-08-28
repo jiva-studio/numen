@@ -18,6 +18,8 @@ func stencilOf(path, title string, s format.Stencil) *v1.Stencil {
 		Path:     path,
 		Title:    title,
 		Fields:   s.Fields,
+		Preamble: s.Preamble,
+		Tail:     s.Tail,
 		Faces:    make([]*v1.Face, 0, len(s.Faces)),
 		Problems: problemsOf(s.Problems),
 	}
@@ -50,7 +52,7 @@ func renamedOf(r cards.Renamed) *v1.RenameFieldResponse {
 }
 
 func faceOf(f format.Face) *v1.Face {
-	return &v1.Face{Name: f.Name, Front: f.Front, Back: f.Back}
+	return &v1.Face{Name: f.Name, Lead: f.Lead, Front: f.Front, Back: f.Back}
 }
 
 // deckOf is one deck as the schema carries it. The cards go out in the order
@@ -180,7 +182,9 @@ func facesOf(fs []*v1.Face) []format.Face {
 	}
 	out := make([]format.Face, 0, len(fs))
 	for _, f := range fs {
-		out = append(out, format.Face{Name: f.GetName(), Front: f.GetFront(), Back: f.GetBack()})
+		out = append(out, format.Face{
+			Name: f.GetName(), Lead: f.GetLead(), Front: f.GetFront(), Back: f.GetBack(),
+		})
 	}
 	return out
 }

@@ -246,7 +246,7 @@ func addCardTools(server *sdk.Server, core Core) {
 		Faces  []Face   `json:"faces" jsonschema:"the ways a card cut by this stencil is shown"`
 		Folder string   `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
 	}) (*sdk.CallToolResult, cards.Made, error) {
-		body, err := core.StencilBody(faced(in.Faces))
+		body, err := core.StencilBody("", faced(in.Faces), "")
 		if err != nil {
 			return nil, cards.Made{}, err
 		}

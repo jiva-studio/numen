@@ -60,6 +60,12 @@ export type Source = 'note' | 'book' | 'other'
  */
 export type NoteType = 'note' | 'deck' | 'stencil'
 
+/** What stands at a path: which source it is, and which of three a note is. */
+export interface Standing {
+  readonly kind: Source
+  readonly type: NoteType
+}
+
 /** One file or folder, as a listing of the folder it sits in reports it. */
 export interface Entry {
   /** What the vault calls it, relative to the root, with forward slashes. */
@@ -115,10 +121,11 @@ export interface Core {
    */
   headings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly Heading[]>>
   /**
-   * Which of three the note at each of those paths is, by the path it was asked
-   * about. A path the vault holds no note at is absent.
+   * What stands at each of those paths, by the path it was asked about. The
+   * kind comes off the vault itself, so a path nothing has scanned is answered
+   * with what stands there; a path with nothing at it is absent.
    */
-  types(paths: readonly string[]): Promise<ReadonlyMap<string, NoteType>>
+  standing(paths: readonly string[]): Promise<ReadonlyMap<string, Standing>>
   opening(): Promise<{ path: string } | null>
   state(): Promise<{
     name: string
@@ -408,6 +415,8 @@ export interface Decked {
 /** One way a stencil shows a card. */
 export interface Faced {
   readonly name: string
+  /** The prose between the face's heading and its first side. */
+  readonly lead: string
   readonly front: string
   readonly back: string
 }
@@ -417,7 +426,11 @@ export interface Stencilled {
   readonly path: string
   readonly title: string
   readonly fields: readonly string[]
+  /** The prose below the frontmatter and above the first face. */
+  readonly preamble: string
   readonly faces: readonly Faced[]
+  /** What the file ends with once the last side has been read. */
+  readonly tail: string
   readonly problems: readonly Problem[]
 }
 
@@ -521,7 +534,7 @@ export interface Cards {
   writeStencil(
     path: string,
     fields: readonly string[],
-    faces: readonly Faced[],
+    stencil: { preamble: string; faces: readonly Faced[]; tail: string },
     seen: string | null,
   ): Promise<StencilWritten>
 }
