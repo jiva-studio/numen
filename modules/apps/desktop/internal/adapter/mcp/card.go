@@ -22,8 +22,12 @@ const (
 
 // Stencil is a stencil as the list of them names it.
 type Stencil struct {
-	Path   string   `json:"path" jsonschema:"the stencil's path relative to the vault folder"`
-	Title  string   `json:"title" jsonschema:"what the stencil is called, which is the name a card's wikilink writes"`
+	Path string `json:"path" jsonschema:"the stencil's path relative to the vault folder"`
+	// Name is what a card's wikilink writes. A link is resolved by path and by
+	// filename, so the name that reaches this stencil is its filename without
+	// the extension.
+	Name   string   `json:"name" jsonschema:"the name to write in a card's wikilink, which is the filename without its extension"`
+	Title  string   `json:"title" jsonschema:"what the stencil is called, which is what a person sees"`
 	Fields []string `json:"fields,omitempty" jsonschema:"what a card cut by this stencil is asked for, in order; absent for a stencil that could not be read"`
 }
 
@@ -50,13 +54,14 @@ func addCardTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "card_stencils",
 		Title: "List the stencils a vault holds",
-		Description: "Every stencil in the vault: where it is filed, what it is called, " +
-			"and what a card cut by it is asked for. Call this before writing a card, " +
-			"because a card names its stencil by title and asks for the fields that " +
-			"stencil declares. A stencil with no fields listed is one that could not be " +
-			"read.",
+		Description: "The stencils of the vault: where each is filed, the name a card's " +
+			"wikilink writes, what it is called, and what a card cut by it is asked for. " +
+			"Call this before writing a card, because a card names its stencil and asks " +
+			"for the fields that stencil declares. At most 50 come back, and `held` says " +
+			"how many the vault holds, so a list shorter than that was cut by the " +
+			"ceiling. A stencil with no fields listed is one that could not be read.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		Limit int `json:"limit,omitempty" jsonschema:"how many stencils to return, all of them by default"`
+		Limit int `json:"limit,omitempty" jsonschema:"how many stencils to return, at most 50, which is also the default"`
 	}) (*sdk.CallToolResult, struct {
 		Stencils []Stencil `json:"stencils"`
 		Held     int       `json:"held" jsonschema:"how many stencils the vault holds, which stands above the list when the ceiling was reached"`
@@ -78,7 +83,9 @@ func addCardTools(server *sdk.Server, core Core) {
 		}
 		res := out{Held: count}
 		for _, s := range held {
-			res.Stencils = append(res.Stencils, Stencil{Path: s.Path, Title: s.Title, Fields: s.Fields})
+			res.Stencils = append(res.Stencils, Stencil{
+				Path: s.Path, Name: domain.Basename(s.Path), Title: s.Title, Fields: s.Fields,
+			})
 		}
 		return nil, res, nil
 	})
@@ -141,16 +148,16 @@ func addCardTools(server *sdk.Server, core Core) {
 		Name:  "card_add",
 		Title: "Add a card to a deck",
 		Description: "Write one card at the end of a deck. Name the stencil it is cut " +
-			"by — `card_stencils` says which there are — and give a value for the fields " +
-			"that stencil declares. Do not write the markdown of a card yourself: a card " +
-			"written by hand without the wikilink under its heading is a card with no " +
-			"stencil, and nothing says so until somebody opens the deck. The name is the " +
-			"value of the stencil's first field and is written in the heading alone, so " +
-			"leave that field out of the values.",
+			"by, as `card_stencils` gives that name under `name`, and give a value for " +
+			"the fields that stencil declares. Do not write the markdown of a card " +
+			"yourself: a card written by hand without the wikilink under its heading is " +
+			"a card with no stencil, and nothing says so until somebody opens the deck. " +
+			"The name is the value of the stencil's first field and is written in the " +
+			"heading alone, so leave that field out of the values.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path        string  `json:"path" jsonschema:"the deck to write into"`
 		Name        string  `json:"name" jsonschema:"the value of the stencil's first field, which is what the card is called"`
-		Stencil     string  `json:"stencil" jsonschema:"the stencil it is cut by, by the name card_stencils gave"`
+		Stencil     string  `json:"stencil" jsonschema:"the stencil it is cut by, by the name card_stencils gave under name"`
 		Values      []Value `json:"values" jsonschema:"what the card holds, in the order to write it"`
 		Fingerprint string  `json:"fingerprint,omitempty" jsonschema:"what card_read said the deck was, to refuse a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, Written, error) {
@@ -159,7 +166,8 @@ func addCardTools(server *sdk.Server, core Core) {
 				"a card of %d bytes is more than this writes at once, which is %d", size, maxBytes)
 		}
 		written, err := changing(ctx, core, in.Path, in.Fingerprint,
-			func(held []format.Card) ([]format.Card, error) {
+			func(read cards.Deck) ([]format.Card, error) {
+				held := read.Deck.Cards
 				for _, card := range held {
 					if card.Name == in.Name {
 						return nil, fmt.Errorf("this deck already holds a card called %s", in.Name)
@@ -180,12 +188,13 @@ func addCardTools(server *sdk.Server, core Core) {
 			"left out of the call is left as it stands. The card is named by its " +
 			"heading; there is no renaming here, because a card under a different " +
 			"heading is a different card and what was attached to the old name is " +
-			"attached to nothing.",
+			"attached to nothing. The heading is the value of the stencil's first field, " +
+			"so leave that field out of the values.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path        string  `json:"path" jsonschema:"the deck the card is in"`
 		Card        string  `json:"card" jsonschema:"the card's name, as its heading spells it"`
 		Values      []Value `json:"values" jsonschema:"the fields to write, and what to put under each"`
-		Stencil     string  `json:"stencil,omitempty" jsonschema:"the stencil it is cut by from now on; left out, the card keeps the one it names"`
+		Stencil     string  `json:"stencil,omitempty" jsonschema:"the stencil it is cut by from now on, by the name card_stencils gave under name; left out, the card keeps the one it names"`
 		Fingerprint string  `json:"fingerprint,omitempty" jsonschema:"what card_read said the deck was, to refuse a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, Written, error) {
 		if size := carries(in.Values); size > maxBytes {
@@ -193,13 +202,25 @@ func addCardTools(server *sdk.Server, core Core) {
 				"a card of %d bytes is more than this writes at once, which is %d", size, maxBytes)
 		}
 		written, err := changing(ctx, core, in.Path, in.Fingerprint,
-			func(held []format.Card) ([]format.Card, error) {
+			func(read cards.Deck) ([]format.Card, error) {
+				held := read.Deck.Cards
 				at := standing(held, in.Card)
 				if at < 0 {
 					return nil, fmt.Errorf("%w: %s", format.ErrNoSuchCard, in.Card)
 				}
 				if in.Stencil != "" {
 					held[at].Stencil = in.Stencil
+				}
+				names, err := naming(ctx, core, read, held[at].Stencil)
+				if err != nil {
+					return nil, err
+				}
+				for _, v := range in.Values {
+					if names != "" && v.Field == names {
+						return nil, fmt.Errorf(
+							"%s is the field this card is named by, and its value is the heading %q: "+
+								"leave it out of the values", names, held[at].Name)
+					}
 				}
 				for _, v := range in.Values {
 					held[at] = filled(held[at], v)
@@ -221,7 +242,8 @@ func addCardTools(server *sdk.Server, core Core) {
 		Fingerprint string `json:"fingerprint,omitempty" jsonschema:"what card_read said the deck was, to refuse a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, Written, error) {
 		written, err := changing(ctx, core, in.Path, in.Fingerprint,
-			func(held []format.Card) ([]format.Card, error) {
+			func(read cards.Deck) ([]format.Card, error) {
+				held := read.Deck.Cards
 				at := standing(held, in.Card)
 				if at < 0 {
 					return nil, fmt.Errorf("%w: %s", format.ErrNoSuchCard, in.Card)
@@ -232,6 +254,24 @@ func addCardTools(server *sdk.Server, core Core) {
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
+		Name:  "card_deck_create",
+		Title: "Create a deck",
+		Description: "Make a deck of no cards, and fill it with `card_add`. A deck is a " +
+			"file of cards and says so from the moment it exists, so it is a deck to " +
+			"everything that reads the vault before a card is written into it. Make a " +
+			"deck here: a note made with `note_create` is an ordinary note, and " +
+			"`card_add` writes into a deck alone. The deck is named after its title.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
+		Title  string `json:"title" jsonschema:"what the deck is called"`
+		Folder string `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
+	}) (*sdk.CallToolResult, cards.Made, error) {
+		made, err := core.Cutting.Deck(ctx, core.shown().Vault, cards.New{
+			Title: in.Title, Folder: in.Folder,
+		})
+		return nil, made, err
+	})
+
+	sdk.AddTool(server, &sdk.Tool{
 		Name:  "card_stencil_create",
 		Title: "Create a stencil",
 		Description: "Make a stencil: the fields a card is asked for, in the order to ask " +
@@ -239,7 +279,8 @@ func addCardTools(server *sdk.Server, core Core) {
 			"`{{Field}}` standing where a value goes, and every name in braces must be " +
 			"one of the fields. The first field is what a card cut by this stencil is " +
 			"named by, so there is at least one and it holds a single line. The stencil " +
-			"is named after its title, which is the name a card's wikilink writes.",
+			"is filed under its title, and the name a card's wikilink writes is that " +
+			"filename, which `card_stencils` gives under `name`.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Title  string   `json:"title" jsonschema:"what the stencil is called"`
 		Fields []string `json:"fields" jsonschema:"the names of the fields, in the order a person is asked for them; the first names the card"`
@@ -319,7 +360,7 @@ type Written struct {
 // as the bytes they arrived as.
 func changing(
 	ctx context.Context, core Core, path, fingerprint string,
-	change func([]format.Card) ([]format.Card, error),
+	change func(cards.Deck) ([]format.Card, error),
 ) (Written, error) {
 	seen, err := parseFingerprint(fingerprint)
 	if err != nil {
@@ -334,7 +375,7 @@ func changing(
 		return Written{}, fmt.Errorf("%s: %s", path, why)
 	}
 
-	held, err := change(read.Deck.Cards)
+	held, err := change(read)
 	if err != nil {
 		return Written{}, err
 	}
@@ -352,6 +393,27 @@ func changing(
 		return Written{}, err
 	}
 	return Written{Path: path, Fingerprint: fingerprintOf(at), Cards: len(held)}, nil
+}
+
+// naming is the field a card cut by this stencil is named by, and nothing where
+// the wikilink reaches no stencil the vault can be read for.
+//
+// The value of that field is the card's heading and stands nowhere else, so a
+// card carrying it under a heading of its own carries its name twice, which is
+// a fault against the deck.
+func naming(ctx context.Context, core Core, read cards.Deck, written string) (string, error) {
+	path := read.Stencils[written]
+	if path == "" {
+		return "", nil
+	}
+	stencil, err := core.Cards.Stencil(ctx, core.shown().Vault, path)
+	if err != nil {
+		return "", err
+	}
+	if stencil.Outcome != note.Ok || stencil.Type != domain.TypeStencil {
+		return "", nil
+	}
+	return stencil.Stencil.First(), nil
 }
 
 // standing is where a card of that name stands, and -1 where the deck holds

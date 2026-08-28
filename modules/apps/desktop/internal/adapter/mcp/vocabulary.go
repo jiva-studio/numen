@@ -52,6 +52,7 @@ var doing = map[string]Words{
 	"card_add":            {Kind: port.StepEdit},
 	"card_edit":           {Kind: port.StepEdit},
 	"card_remove":         {Kind: port.StepRemove},
+	"card_deck_create":    {Kind: port.StepEdit},
 	"card_stencil_create": {Kind: port.StepEdit},
 	// A field's name stands in the stencil that declares it and in every card
 	// that stencil cuts, so renaming it is a write to as many files as hold one.

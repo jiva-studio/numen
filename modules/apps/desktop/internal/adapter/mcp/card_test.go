@@ -1,6 +1,7 @@
 package mcp_test
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,10 +12,10 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 )
 
-// An agent writing the markdown of a card by hand breaks the format in silence:
-// a card with no wikilink under its heading is a card with no stencil, and
-// nothing says so until somebody opens the deck. So it is given the operations
-// instead, and these are what those operations do.
+// The operations an agent works a deck through: the cards of a file are read as
+// cards, one is added, changed or taken out, and the file is written back with
+// the wikilink under each heading and every card nobody touched as the bytes it
+// was. These are what those operations do.
 
 const stencil = "---\ntype: stencil\nfields:\n  - Name\n  - Height\n  - Life span\n---\n\n" +
 	"## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n"
@@ -313,5 +314,127 @@ func TestRenamingAFieldReachesTheCardsCutByThatStencil(t *testing.T) {
 	// its business.
 	if !strings.Contains(written, "## Alpaca\n\nsomebody's prose\n\n### Height\n") {
 		t.Errorf("a card of no stencil was rewritten: %q", written)
+	}
+}
+
+// A deck is made through the tools an agent has, and filled through them.
+//
+// The window and the tools are served one set, so a deck a person can make is
+// a deck an agent can make.
+func TestADeckIsMadeThroughTheTools(t *testing.T) {
+	session, v := connected(t, vault())
+
+	made := call[struct {
+		Path string `json:"Path"`
+	}](t, session, "card_deck_create", map[string]any{
+		"title": "Terms", "folder": "decks",
+	})
+	if made.Path != "decks/Terms.md" {
+		t.Fatalf("the deck was filed at %q", made.Path)
+	}
+	if written := held(t, v, made.Path); !strings.Contains(written, "type: deck") {
+		t.Errorf("the file says it is %q", written)
+	}
+
+	call[map[string]any](t, session, "card_add", map[string]any{
+		"path": made.Path, "name": "Vicuña", "stencil": "Animal",
+		"values": []map[string]string{{"field": "Height", "text": "about 34\""}},
+	})
+	if read := dealt(t, session, map[string]any{"path": made.Path}); read.Held != 1 {
+		t.Errorf("the deck made through the tools holds %d cards", read.Held)
+	}
+}
+
+// titled is a stencil whose title is not what its file is called.
+const titled = "---\ntype: stencil\ntitle: Beast\nfields:\n  - Name\n  - Height\n---\n\n" +
+	"## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n"
+
+// The name a stencil is listed under is the name a card's wikilink resolves by.
+//
+// A link is resolved by path and by filename, so a name taken from anywhere
+// else lands on nothing and every card written under it is cut by no stencil.
+func TestAStencilIsListedByTheNameACardsWikilinkReaches(t *testing.T) {
+	session, _ := connected(t, map[string]string{
+		"Animal.md": titled,
+		"Deck.md":   "---\ntype: deck\n---\n",
+	})
+
+	listed := call[struct {
+		Stencils []struct {
+			Path string `json:"path"`
+			Name string `json:"name"`
+		} `json:"stencils"`
+	}](t, session, "card_stencils", map[string]any{})
+	if len(listed.Stencils) != 1 {
+		t.Fatalf("the vault holds one stencil and the answer is %+v", listed)
+	}
+	name := listed.Stencils[0].Name
+	if name != "Animal" {
+		t.Errorf("the stencil at %s is named %q", listed.Stencils[0].Path, name)
+	}
+
+	call[map[string]any](t, session, "card_add", map[string]any{
+		"path": "Deck.md", "name": "Llama", "stencil": name,
+		"values": []map[string]string{{"field": "Height", "text": "about 45\""}},
+	})
+	// A rename reaches the cards that stencil cuts, and a card whose wikilink
+	// lands nowhere is cut by none.
+	renamed := call[struct {
+		Cards int `json:"cards"`
+	}](t, session, "card_rename_field", map[string]any{
+		"path": "Animal.md", "from": "Height", "to": "Shoulder height",
+	})
+	if renamed.Cards != 1 {
+		t.Errorf("the card written under %q is cut by no stencil: the rename reached %d cards",
+			name, renamed.Cards)
+	}
+}
+
+// The list of stencils says what it answers with. A ceiling that is not said is
+// a short list read as the whole vault.
+func TestTheListOfStencilsSaysItsCeiling(t *testing.T) {
+	session, _ := connected(t, vault())
+
+	listed, err := session.ListTools(t.Context(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var said string
+	for _, tool := range listed.Tools {
+		if tool.Name != "card_stencils" {
+			continue
+		}
+		schema, err := json.Marshal(tool.InputSchema)
+		if err != nil {
+			t.Fatal(err)
+		}
+		said = tool.Description + string(schema)
+	}
+	if said == "" {
+		t.Fatal("card_stencils is not among the tools")
+	}
+	if strings.Contains(said, "all of them") || strings.Contains(said, "Every stencil in the vault") {
+		t.Errorf("the list answers with at most fifty and says it answers with every one:\n%s", said)
+	}
+	if !strings.Contains(said, "50") {
+		t.Errorf("the ceiling the list answers under is not said:\n%s", said)
+	}
+}
+
+// A card is named by its heading and by nothing else, so writing the naming
+// field into the card as well is a fault against the deck. These tools exist so
+// that an agent cannot write one.
+func TestTheFieldACardIsNamedByIsNotWrittenTwice(t *testing.T) {
+	session, v := connected(t, vault())
+
+	said := failing(t, session, "card_edit", map[string]any{
+		"path": "Animals.md", "card": "Llama",
+		"values": []map[string]string{{"field": "Name", "text": "Llama"}},
+	})
+	if !strings.Contains(said, "Name") {
+		t.Errorf("writing the naming field again was answered %q", said)
+	}
+	if written := held(t, v, "Animals.md"); strings.Contains(written, "### Name") {
+		t.Errorf("the card carries its name twice: %q", written)
 	}
 }
