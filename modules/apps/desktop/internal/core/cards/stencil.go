@@ -40,7 +40,7 @@ func ReadStencil(n domain.Note) Stencil {
 			break
 		}
 	}
-	s.Preamble = text(body, 0, firstFace)
+	s.Preamble = markdown.Normalised(string(body[:firstFace]))
 
 	read := 0
 	for i, sec := range secs {

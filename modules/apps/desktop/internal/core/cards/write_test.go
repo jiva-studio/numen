@@ -47,22 +47,34 @@ const deck = "---\n" +
 	"\n" +
 	"вера\n"
 
-// A deck opened and not changed comes back byte for byte. Anything less is a
-// diff the person did not ask for, on every save, forever.
+// A deck opened and not changed comes back byte for byte, and the cards it
+// holds are the ones in the file. Anything less is a diff the person did not
+// ask for, on every save, forever.
 func TestOpenAndWriteChangesNothing(t *testing.T) {
-	for name, raw := range map[string]string{
-		"the deck":          deck,
-		"crlf":              strings.ReplaceAll(deck, "\n", "\r\n"),
-		"no frontmatter":    "## Llama\n\n[[Animal]]\n\n### Height\n\nabout 45\"\n",
-		"no trailing break": "---\ntype: deck\n---\n\n## Llama\n\n[[Animal]]",
-		"empty deck":        "---\ntype: deck\n---\n",
-		"bom":               "\xef\xbb\xbf---\ntype: deck\n---\n\n## Llama\n\n[[Animal]]\n",
-		"comments and order": "---\n# a note to myself\nzebra: 1\n\ntype: deck\n---\n" +
-			"\n## Llama\n\n\n\n[[Animal]]\n\n\n### Height\n\n\nabout 45\"\n\n\n",
+	for name, one := range map[string]struct {
+		raw   string
+		cards []string
+	}{
+		"the deck":       {deck, []string{"Llama", "шраддха"}},
+		"crlf":           {strings.ReplaceAll(deck, "\n", "\r\n"), []string{"Llama", "шраддха"}},
+		"no frontmatter": {"## Llama\n\n[[Animal]]\n\n### Height\n\nabout 45\"\n", []string{"Llama"}},
+		"no trailing break": {
+			"---\ntype: deck\n---\n\n## Llama\n\n[[Animal]]", []string{"Llama"},
+		},
+		"no trailing break under a card's heading": {
+			"---\ntype: deck\n---\n\n## Llama", []string{"Llama"},
+		},
+		"no trailing break under a field's heading": {
+			"---\ntype: deck\n---\n\n## Llama\n\n[[Animal]]\n\n### Height", []string{"Llama"},
+		},
+		"empty deck": {"---\ntype: deck\n---\n", nil},
+		"bom":        {"\xef\xbb\xbf---\ntype: deck\n---\n\n## Llama\n\n[[Animal]]\n", []string{"Llama"}},
+		"comments and order": {"---\n# a note to myself\nzebra: 1\n\ntype: deck\n---\n" +
+			"\n## Llama\n\n\n\n[[Animal]]\n\n\n### Height\n\n\nabout 45\"\n\n\n", []string{"Llama"}},
 	} {
 		t.Run(name, func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "Animals.md")
-			if err := os.WriteFile(path, []byte(raw), 0o600); err != nil {
+			if err := os.WriteFile(path, []byte(one.raw), 0o600); err != nil {
 				t.Fatalf("write: %v", err)
 			}
 			before, err := os.ReadFile(path)
@@ -74,7 +86,9 @@ func TestOpenAndWriteChangesNothing(t *testing.T) {
 			if err != nil {
 				t.Fatalf("open: %v", err)
 			}
-			f.Deck(domain.FileRef{Path: "Animals.md"})
+			if got := names(f.Deck(domain.FileRef{Path: "Animals.md"})); !slices.Equal(got, one.cards) {
+				t.Errorf("cards = %v, want %v", got, one.cards)
+			}
 			if err := os.WriteFile(path, f.Bytes(), 0o600); err != nil {
 				t.Fatalf("write back: %v", err)
 			}
@@ -288,6 +302,21 @@ func TestAddCard(t *testing.T) {
 	}
 }
 
+// A card's name is its heading and nothing else, so a card with no name is
+// written as the hashes alone.
+func TestAddCardWithNoName(t *testing.T) {
+	f, err := cards.OpenDeck([]byte(deck))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := f.AddCard(cards.Card{Stencil: "Animal"}); err != nil {
+		t.Fatalf("add: %v", err)
+	}
+	if want := deck + "\n##\n\n[[Animal]]\n"; string(f.Bytes()) != want {
+		t.Errorf("card added wrong\n want %q\n  got %q", want, string(f.Bytes()))
+	}
+}
+
 // A field renamed in a stencil is renamed in the cards that stencil cuts, and
 // the value under the heading is left as it was.
 func TestRenameFieldReachesTheCardsOfThatStencilAlone(t *testing.T) {
@@ -404,6 +433,51 @@ func TestRenamingAFieldNobodyDeclares(t *testing.T) {
 	}
 	if got := string(f.Bytes()); got != stencil {
 		t.Errorf("the file was written: %q", got)
+	}
+}
+
+// A field's name is a name of its own, so a stencil already declaring the name
+// asked for is not written: the file would declare it twice, every face would
+// place the same field, and the values under the old heading would be shown by
+// nothing.
+func TestRenamingAFieldOntoAFieldTheStencilDeclares(t *testing.T) {
+	f, err := cards.OpenStencil([]byte(stencil))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := f.RenameField("Height", "Life span"); !errors.Is(err, cards.ErrFieldTaken) {
+		t.Fatalf("rename = %v, want it refused", err)
+	}
+	if got := string(f.Bytes()); got != stencil {
+		t.Errorf("the file was written: %q", got)
+	}
+}
+
+// A face is written with the sides it has. A face missing one is a face that
+// lays out nothing, and it is still that face once it has been written.
+func TestAFaceIsWrittenWithTheSidesItHas(t *testing.T) {
+	f, err := cards.OpenStencil([]byte(stencil))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := f.AddFace(cards.Face{Name: "Half a face", Front: "Where does {{Name}} live?"}); err != nil {
+		t.Fatalf("add: %v", err)
+	}
+
+	want := stencil + "\n## Half a face\n\n### Front\n\nWhere does {{Name}} live?\n"
+	if got := string(f.Bytes()); got != want {
+		t.Errorf("face written wrong\n want %q\n  got %q", want, got)
+	}
+
+	read := f.Stencil(markdown.Parse(domain.FileRef{Path: "Animal.md"}, f.Bytes()))
+	var missing int
+	for _, p := range read.Problems {
+		if p.Check == cards.CheckFaceSide {
+			missing++
+		}
+	}
+	if missing != 1 {
+		t.Errorf("problems = %+v, want the face that lays out nothing reported", read.Problems)
 	}
 }
 

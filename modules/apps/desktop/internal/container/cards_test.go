@@ -1,6 +1,8 @@
 package container_test
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -44,8 +46,10 @@ func TestReadingAStencilAndWritingItBackChangesNothing(t *testing.T) {
 		"no frontmatter": "Above them all.\n\n## Recognise\n\nAsked of me by Anna.\n\n" +
 			"### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n",
 		"no trailing break": "---\ntype: stencil\n---\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}",
-		"no faces":          "---\ntype: stencil\n---\n",
-		"bom":               "\xef\xbb\xbf---\ntype: stencil\n---\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n",
+		"no trailing break under a face's heading": "---\ntype: stencil\n---\n" +
+			"## Recognise",
+		"no faces": "---\ntype: stencil\n---\n",
+		"bom":      "\xef\xbb\xbf---\ntype: stencil\n---\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n",
 		"comments and order": "---\n# a note to myself\nzebra: 1\n\ntype: stencil\n---\n" +
 			"## Recognise\n\n### Front\n\none\n\n\ntwo\n\n### Back\n\n{{Height}}\n",
 		"a heading of another name": "---\ntype: stencil\n---\n" +
@@ -66,6 +70,52 @@ func TestReadingAStencilAndWritingItBackChangesNothing(t *testing.T) {
 			}
 			if want := markdown.Normalised(doc.Body()); body != want {
 				t.Errorf("the round trip changed the stencil\n want %q\n  got %q", want, body)
+			}
+		})
+	}
+}
+
+// vault is where the fixtures a person can open in the application stand.
+const vault = "../../../../../tests/vault/cards"
+
+// Every deck and stencil of the fixture vault, read and written straight back,
+// comes out as the body it went in as. These are the files a person is shown,
+// awkward on purpose, and a save that touched nothing is a save that changed
+// nothing.
+func TestReadingTheFixtureVaultAndWritingItBackChangesNothing(t *testing.T) {
+	entries, err := os.ReadDir(vault)
+	if err != nil {
+		t.Fatalf("read the vault: %v", err)
+	}
+	for _, entry := range entries {
+		t.Run(entry.Name(), func(t *testing.T) {
+			path := filepath.Join(vault, entry.Name())
+			raw, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatalf("read: %v", err)
+			}
+			doc, err := markdown.Open(raw)
+			if err != nil {
+				t.Fatalf("open: %v", err)
+			}
+			n := markdown.Parse(domain.FileRef{Path: path}, raw)
+
+			var body string
+			switch n.Type {
+			case domain.TypeDeck:
+				read := format.ReadDeck(n)
+				body, err = container.DeckBody(read.Preamble, read.Cards, read.Tail)
+			case domain.TypeStencil:
+				read := format.ReadStencil(n)
+				body, err = container.StencilBody(read.Preamble, read.Faces, read.Tail)
+			default:
+				t.Fatalf("type = %q, want a deck or a stencil", n.Type)
+			}
+			if err != nil {
+				t.Fatalf("body: %v", err)
+			}
+			if want := markdown.Normalised(doc.Body()); body != want {
+				t.Errorf("the round trip changed the file\n want %q\n  got %q", want, body)
 			}
 		})
 	}

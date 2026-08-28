@@ -13,9 +13,9 @@ import "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 type Stencil struct {
 	Ref    domain.FileRef
 	Fields []string
-	// Preamble is whatever the person wrote above the first face, and Tail is
-	// what the file ends with once the last side has been read. Both are kept
-	// as they were written and neither is any face's.
+	// Preamble is every byte above the first face, down to the one its heading
+	// opens on, and Tail is what the file ends with once the last side has been
+	// read. Both are kept as they were written and neither is any face's.
 	Preamble string
 	Tail     string
 	Faces    []Face
@@ -38,9 +38,9 @@ type Face struct {
 // Deck is a note whose body is cards.
 type Deck struct {
 	Ref domain.FileRef
-	// Preamble is whatever the person wrote above the first card, and Tail is
-	// what the file ends with once the last value has been read. Both are kept
-	// as they were written and neither is any card's.
+	// Preamble is every byte above the first card, down to the one its heading
+	// opens on, and Tail is what the file ends with once the last value has
+	// been read. Both are kept as they were written and neither is any card's.
 	Preamble string
 	Tail     string
 	Cards    []Card

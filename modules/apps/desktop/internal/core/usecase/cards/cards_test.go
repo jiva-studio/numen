@@ -138,7 +138,7 @@ func TestADeckReadAndWrittenBackIsTheFileItWas(t *testing.T) {
 	if got.Outcome != note.Ok || got.Type != domain.TypeDeck {
 		t.Fatalf("outcome = %q, type = %q", got.Outcome, got.Type)
 	}
-	if len(got.Deck.Cards) != 2 || got.Deck.Preamble != "Cards I am learning." {
+	if len(got.Deck.Cards) != 2 || got.Deck.Preamble != "\nCards I am learning.\n\n" {
 		t.Fatalf("deck = %+v", got.Deck)
 	}
 

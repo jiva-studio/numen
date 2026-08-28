@@ -3,9 +3,9 @@ package cards
 import "regexp"
 
 // placeholderRe is `{{Field}}`, and the name inside is a field's name written
-// exactly. Nothing escapes the braces: a card that wants to show them writes
-// them in a code span, and one that writes `{{` in prose lays out as a
-// placeholder of whatever follows.
+// exactly. Nothing escapes the braces: wherever the two characters stand on a
+// face, a code span included, what runs to the next `}}` is a placeholder, and
+// a face wanting those characters as text has no way to write them.
 var placeholderRe = regexp.MustCompile(`\{\{([^{}]*)\}\}`)
 
 // Lay fills a face of a stencil with one card: what stands before the answer

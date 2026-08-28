@@ -41,7 +41,11 @@ func sections(body []byte) []section {
 				if n := len(out); n > 0 {
 					out[n-1].to = at
 				}
-				out = append(out, section{level: level, name: name, head: at, from: next, to: len(body)})
+				// A heading the file ends on has nothing under it, so its run
+				// begins where the body ends.
+				out = append(out, section{
+					level: level, name: name, head: at, from: min(next, len(body)), to: len(body),
+				})
 			}
 		}
 		at = next
@@ -67,7 +71,13 @@ func heading(line string) (level int, name string, ok bool) {
 		return 0, "", false
 	}
 	name = strings.TrimSpace(rest)
-	name = strings.TrimSpace(strings.TrimRight(name, "#"))
+	// A run of hashes at the end closes the heading where whitespace stands in
+	// front of it, and a name ending in one keeps it.
+	if closed := strings.TrimRight(name, "#"); closed != name {
+		if trimmed := strings.TrimRight(closed, " \t"); closed == "" || trimmed != closed {
+			name = trimmed
+		}
+	}
 	return hashes, name, true
 }
 
@@ -76,16 +86,11 @@ func isFence(line string) bool {
 	return strings.HasPrefix(t, "```") || strings.HasPrefix(t, "~~~")
 }
 
-// text is a run of the body as a person reads it: one kind of line break, and
-// the blank lines at either end dropped.
-func text(body []byte, from, to int) string {
-	read, _ := run(body, from, to)
-	return read
-}
-
-// run is text, and the byte the reading of it stopped at. The blank lines it
-// stopped short of separate one part of a deck from the next and belong to
-// neither, which is what leaves a tail at the end of a file.
+// run is one part of the body as a person reads it — one kind of line break,
+// and the blank lines at either end dropped — and the byte the reading of it
+// stopped at. The blank lines it stopped short of separate one part of a deck
+// from the next and belong to neither, which is what leaves a tail at the end
+// of a file.
 func run(body []byte, from, to int) (string, int) {
 	begin, end := from, to
 	for begin < end {

@@ -174,6 +174,26 @@ func TestAFaceMissingASideLaysOutNothing(t *testing.T) {
 	}
 }
 
+// A file ending on a heading ends where the heading's line ends, and what
+// stands under it is nothing.
+func TestAStencilEndingOnAHeading(t *testing.T) {
+	for name, written := range map[string]string{
+		"a face":  "## Recognise",
+		"a side":  "## Recognise\n\n### Front\n\n{{Name}}\n\n### Back",
+		"a lead":  "## Recognise\n\nAsked of me by Anna.\n\n### Front",
+		"deeper":  "## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n#### Aside",
+		"nothing": "##",
+	} {
+		t.Run(name, func(t *testing.T) {
+			s := cards.ReadStencil(note(t, "---\ntype: stencil\nfields:\n  - Name\n---\n\n"+written))
+
+			if len(s.Faces) != 1 {
+				t.Fatalf("faces = %+v, want the one the file opens", s.Faces)
+			}
+		})
+	}
+}
+
 func TestAStencilWithNoFaces(t *testing.T) {
 	s := cards.ReadStencil(note(t, "---\ntype: stencil\nfields:\n  - Height\n---\n"))
 

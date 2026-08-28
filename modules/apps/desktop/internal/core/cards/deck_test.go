@@ -80,7 +80,7 @@ about 20 years
 вера, рождённая из слушания
 `))
 
-	if deck.Preamble != "Cards I am learning." {
+	if deck.Preamble != "\nCards I am learning.\n\n" {
 		t.Errorf("preamble = %q", deck.Preamble)
 	}
 	if got := names(deck); !slices.Equal(got, []string{"Llama", "шраддха"}) {
@@ -143,6 +143,46 @@ nonsense
 	}
 	if got, _ := deck.Card("Llama"); got.Values[0].Text != `about 45"` {
 		t.Errorf("the first card does not stand: %q", got.Values[0].Text)
+	}
+}
+
+// A heading is closed by a run of hashes only where whitespace stands in front
+// of them, so a name ending in one keeps it and is the whole of what the card
+// is called.
+func TestAHeadingEndingInAHash(t *testing.T) {
+	deck := cards.ReadDeck(note(t, `---
+type: deck
+---
+
+## C#
+
+[[Language]]
+
+### F#
+
+1999
+
+## C ###
+
+[[Language]]
+
+### Height
+
+1972
+`))
+
+	if got := names(deck); !slices.Equal(got, []string{"C#", "C"}) {
+		t.Fatalf("cards = %v", got)
+	}
+	if len(deck.Problems) != 0 {
+		t.Errorf("problems = %v, want two cards of two names", deck.Problems)
+	}
+	card, held := deck.Card("C#")
+	if !held {
+		t.Fatal("the card is not addressed by the heading as it is written")
+	}
+	if got := fieldsOf(card); !slices.Equal(got, []string{"F#"}) {
+		t.Errorf("fields = %v", got)
 	}
 }
 
@@ -314,18 +354,19 @@ func TestAnEmptyDeck(t *testing.T) {
 	if len(deck.Problems) != 0 {
 		t.Errorf("problems = %v", deck.Problems)
 	}
-	if deck.Preamble != "Nothing here yet." {
+	if deck.Preamble != "\nNothing here yet.\n" {
 		t.Errorf("preamble = %q", deck.Preamble)
 	}
 }
 
 // A value stops where its own text stops, so what a file ends with once the
-// last value has been read is the tail and is nobody's value.
+// last value has been read is the tail and is nobody's value. The preamble is
+// the bytes above the first card, down to the one its heading opens on.
 func TestThePreambleAndTheTail(t *testing.T) {
 	deck := cards.ReadDeck(note(t, "---\ntype: deck\n---\n\nCards I am learning.\n\n"+
 		"## Llama\n\n[[Animal]]\n\n### Height\n\nabout 45\"\n\n\n"))
 
-	if deck.Preamble != "Cards I am learning." {
+	if deck.Preamble != "\nCards I am learning.\n\n" {
 		t.Errorf("preamble = %q", deck.Preamble)
 	}
 	if got, _ := deck.Cards[0].Value("Height"); got != `about 45"` {
@@ -344,7 +385,7 @@ func TestADeckOfNoCardsIsAllPreamble(t *testing.T) {
 	if len(deck.Cards) != 0 {
 		t.Fatalf("cards = %v", deck.Cards)
 	}
-	if deck.Preamble != "# Animals\n\n### Not a card\n\nprose." {
+	if deck.Preamble != "\n# Animals\n\n### Not a card\n\nprose.\n" {
 		t.Errorf("preamble = %q", deck.Preamble)
 	}
 	if deck.Tail != "" {

@@ -54,7 +54,7 @@ func readDeck(ref domain.FileRef, body []byte) (Deck, []cardSpan) {
 			break
 		}
 	}
-	d.Preamble = text(body, 0, firstCard)
+	d.Preamble = markdown.Normalised(string(body[:firstCard]))
 
 	named := map[string]bool{}
 	read := 0

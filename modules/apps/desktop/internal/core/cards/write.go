@@ -19,6 +19,11 @@ var ErrNoSuchCard = errors.New("this deck holds no card of that name")
 // field of that name.
 var ErrNoSuchField = errors.New("this stencil declares no field of that name")
 
+// ErrFieldTaken is what renaming a field says when the stencil already declares
+// a field of the name asked for. Two fields of one name are one field to every
+// face and every card, and the values under the other are held by nothing.
+var ErrFieldTaken = errors.New("this stencil already declares a field of that name")
+
 // DeckFile is a deck held open so that one value can be changed and every other
 // byte of the file left as it arrived. A change is a splice: the run one value
 // occupies is replaced, and nothing else in the file is written.
@@ -65,7 +70,7 @@ func (f *DeckFile) SetValue(card, field, value string) error {
 				return f.doc.SpliceBody(v.from, v.to, under(value, v.to == len(body)))
 			}
 		}
-		block := "### " + field
+		block := headingLine(3, field)
 		if text := trimBlankLines(markdown.Normalised(value)); text != "" {
 			block += "\n\n" + text
 		}
@@ -85,7 +90,7 @@ func (f *DeckFile) SetName(card, name string) error {
 		if span.name != card {
 			continue
 		}
-		line := "## " + name
+		line := headingLine(2, name)
 		if span.from < len(body) {
 			line += "\n"
 		}
@@ -97,7 +102,7 @@ func (f *DeckFile) SetName(card, name string) error {
 // AddCard writes a card at the end of the deck.
 func (f *DeckFile) AddCard(card Card) error {
 	body := []byte(f.doc.Body())
-	blocks := []string{"## " + card.Name}
+	blocks := []string{headingLine(2, card.Name)}
 	if card.Stencil != "" {
 		blocks = append(blocks, "[["+card.Stencil+"]]")
 	}
@@ -105,7 +110,7 @@ func (f *DeckFile) AddCard(card Card) error {
 		blocks = append(blocks, lead)
 	}
 	for _, v := range card.Values {
-		blocks = append(blocks, "### "+v.Field)
+		blocks = append(blocks, headingLine(3, v.Field))
 		if text := trimBlankLines(markdown.Normalised(v.Text)); text != "" {
 			blocks = append(blocks, text)
 		}
@@ -138,7 +143,7 @@ func (f *DeckFile) RenameField(cutting map[string]string, stencil, from, to stri
 
 	// Backwards, because a splice moves every byte after it.
 	for i := len(heads) - 1; i >= 0; i-- {
-		line := "### " + to
+		line := headingLine(3, to)
 		if heads[i].from < len(body) {
 			line += "\n"
 		}
@@ -209,7 +214,8 @@ func (f *StencilFile) SetFields(names []string) error {
 }
 
 // RenameField gives one declared field a different name and leaves it where it
-// stands in the order. ErrNoSuchField when the stencil declares no such field.
+// stands in the order. ErrNoSuchField when the stencil declares no such field,
+// and ErrFieldTaken when it already declares one of the name asked for.
 //
 // A field's name is written twice in this file: where `fields` declares it, and
 // in the braces of every face that places it. Both are written here, so the
@@ -219,6 +225,9 @@ func (f *StencilFile) RenameField(from, to string) error {
 	at := slices.Index(names, from)
 	if at < 0 {
 		return fmt.Errorf("%w: %s", ErrNoSuchField, from)
+	}
+	if taken := slices.Index(names, to); taken >= 0 && taken != at {
+		return fmt.Errorf("%w: %s", ErrFieldTaken, to)
 	}
 	names[at] = to
 	if err := f.SetFields(names); err != nil {
@@ -267,21 +276,34 @@ func (f *StencilFile) AddFace(face Face) error {
 }
 
 // laid is the markdown one face is written as: its heading, the lead beneath
-// it, and a side under each of the two headings a face is made of.
+// it, and each side the face has under a heading of its name. A face missing a
+// side is written missing it, and it is the face that lays out nothing.
 func laid(face Face) string {
-	blocks := []string{"## " + face.Name}
+	blocks := []string{headingLine(2, face.Name)}
 	if lead := trimBlankLines(markdown.Normalised(face.Lead)); lead != "" {
 		blocks = append(blocks, lead)
 	}
-	blocks = append(blocks, "### "+frontHeading)
-	if text := trimBlankLines(markdown.Normalised(face.Front)); text != "" {
-		blocks = append(blocks, text)
-	}
-	blocks = append(blocks, "### "+backHeading)
-	if text := trimBlankLines(markdown.Normalised(face.Back)); text != "" {
-		blocks = append(blocks, text)
+	for _, side := range []struct{ heading, text string }{
+		{frontHeading, face.Front},
+		{backHeading, face.Back},
+	} {
+		text := trimBlankLines(markdown.Normalised(side.text))
+		if text == "" {
+			continue
+		}
+		blocks = append(blocks, headingLine(3, side.heading), text)
 	}
 	return strings.Join(blocks, "\n\n")
+}
+
+// headingLine is the line a card, a face, a field or a side stands under. A
+// heading carrying no text is the hashes and nothing after them.
+func headingLine(level int, name string) string {
+	hashes := strings.Repeat("#", level)
+	if name == "" {
+		return hashes
+	}
+	return hashes + " " + name
 }
 
 // under is what stands beneath a heading: a blank line, the text, and a blank
@@ -316,7 +338,9 @@ func insert(body []byte, at int, block string) string {
 func gap(body []byte, at int) string {
 	above := markdown.Normalised(string(body[:at]))
 	switch {
-	case above == "" || strings.HasSuffix(above, "\n\n"):
+	// Nothing but blank lines above is the top of the body, and a block written
+	// there stands where it is.
+	case strings.TrimSpace(above) == "" || strings.HasSuffix(above, "\n\n"):
 		return ""
 	case strings.HasSuffix(above, "\n"):
 		return "\n"
