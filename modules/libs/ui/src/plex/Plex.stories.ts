@@ -733,18 +733,18 @@ export const Overcrowded: Story = {
  */
 const titledLines: PlexNeighbourhood = {
   nodes: [
-    { id: 'focus', title: 'The assembly', seat: 'focus' },
-    { id: 'parent', title: 'Chapters', seat: 'parent' },
+    { id: 'focus', title: 'The meeting', seat: 'focus' },
+    { id: 'parent', title: 'Minutes', seat: 'parent' },
     { id: 'earlier', title: 'The morning', seat: 'jump' },
     { id: 'across', title: 'Elsewhere', seat: 'jump' },
     { id: 'later', title: 'The evening', seat: 'jump' },
-    { id: 'sibling', title: 'The garden', seat: 'sibling' },
+    { id: 'sibling', title: 'The hedge', seat: 'sibling' },
   ],
   edges: [
     { from: 'parent', to: 'focus', label: 'is a' },
     { from: 'parent', to: 'sibling', label: 'contains' },
     { from: 'earlier', to: 'focus', label: 'see also' },
-    { from: 'across', to: 'focus', label: 'the scene in the assembly' },
+    { from: 'across', to: 'focus', label: 'the minutes of the meeting' },
     { from: 'later', to: 'focus', label: 'and also' },
   ],
 }
@@ -799,11 +799,11 @@ export const TitledLines: Story = {
     }
 
     // Words longer than their curve are cut to it and end in an ellipsis.
-    await expect(title('the scene in the assembly')).toHaveLength(0)
+    await expect(title('the minutes of the meeting')).toHaveLength(0)
     const cut = titles.filter((text) => text.textContent!.endsWith('…'))
     await expect(cut).toHaveLength(2)
     await expect(
-      'the scene in the assembly'.startsWith(cut[0]!.textContent!.slice(0, -1)),
+      'the minutes of the meeting'.startsWith(cut[0]!.textContent!.slice(0, -1)),
     ).toBe(true)
 
     // A title is painted in two layers that land on one another.
@@ -960,8 +960,8 @@ export const TitlesFindRoom: Story = {
 }
 
 /**
- * The lines of one note of the demo vault, every one of them named, and more
- * children than a row holds.
+ * The lines of one note, every one of them named, and more children than a row
+ * holds.
  *
  * The lines to the far row cross the near one, so their titles are looking for
  * room in a band the near row's titles already stand in. A title with nowhere
@@ -974,23 +974,22 @@ export const TitlesAcrossRows: Story = {
 }
 
 /**
- * One note's lines as the demo vault has them: two the plex is asked to draw
- * an arrow on, one it is not, and a sibling's line hanging off the parent the
- * two of them share.
+ * One note's lines: two the plex is asked to draw an arrow on, one it is not,
+ * and a sibling's line hanging off the parent the two of them share.
  */
 const arrowedLines: PlexNeighbourhood = {
   nodes: [
-    { id: 'duryodhana', title: 'Duryodhana, The King', seat: 'focus' },
-    { id: 'mahabharata', title: 'Mahabharata', seat: 'parent' },
-    { id: 'bhishma', title: 'Bhishma', seat: 'jump' },
-    { id: 'ebanko', title: 'Ebanko', seat: 'jump' },
-    { id: 'draupadi', title: 'The question of Draupadi', seat: 'sibling' },
+    { id: 'alice', title: 'Alice Fenn, The Chair', seat: 'focus' },
+    { id: 'allotments', title: 'Marrowfield allotments', seat: 'parent' },
+    { id: 'bram', title: 'Bram Doyle', seat: 'jump' },
+    { id: 'cora', title: 'Cora Hale', seat: 'jump' },
+    { id: 'rota', title: 'The question of the rota', seat: 'sibling' },
   ],
   edges: [
-    { from: 'mahabharata', to: 'duryodhana', arrow: 'from' },
-    { from: 'bhishma', to: 'duryodhana', label: 'питамаха, дед рода', arrow: 'from' },
-    { from: 'ebanko', to: 'duryodhana', label: 'яд, поджог, засада' },
-    { from: 'mahabharata', to: 'draupadi', label: 'the scene in the assembly' },
+    { from: 'allotments', to: 'alice', arrow: 'from' },
+    { from: 'bram', to: 'alice', label: 'the oldest tenant', arrow: 'from' },
+    { from: 'cora', to: 'alice', label: 'keys, hoses, the gate' },
+    { from: 'allotments', to: 'rota', label: 'the minutes of the meeting' },
   ],
 }
 
@@ -1065,17 +1064,17 @@ export const ArrowedLines: Story = {
     }
 
     // Each of them at the far end of its own line, away from the focus.
-    await expect(headAt(endAt('Mahabharata, parent'))).toBe(true)
-    await expect(headAt(endAt('Bhishma, jump'))).toBe(true)
+    await expect(headAt(endAt('Marrowfield allotments, parent'))).toBe(true)
+    await expect(headAt(endAt('Bram Doyle, jump'))).toBe(true)
 
     // The lines given none carry none, the sibling's line among them.
-    await expect(headAt(endAt('Ebanko, jump'))).toBe(false)
-    await expect(headAt(endAt('The question of Draupadi, sibling'))).toBe(false)
+    await expect(headAt(endAt('Cora Hale, jump'))).toBe(false)
+    await expect(headAt(endAt('The question of the rota, sibling'))).toBe(false)
 
     // The head stands outside the box it points into: it is turned along the
     // line, and its tip is what touches the border.
-    const jump = lineAt('Bhishma, jump')
-    const box = canvas.getByLabelText('Bhishma, jump').getBoundingClientRect()
+    const jump = lineAt('Bram Doyle, jump')
+    const box = canvas.getByLabelText('Bram Doyle, jump').getBoundingClientRect()
     const head = heads().find((one) => holds(one.getBoundingClientRect(), jump.end))!
     const drawn = head.getBoundingClientRect()
     await expect(
@@ -1087,7 +1086,7 @@ export const ArrowedLines: Story = {
     const clear = Math.max(drawn.width, drawn.height)
     const title = [
       ...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label'),
-    ].find((text) => text.textContent!.startsWith('пит'))!
+    ].find((text) => text.textContent!.startsWith('the oldest'))!
     const letters = title.getNumberOfChars()
     const onScreen = svg.getScreenCTM()!
     for (const glyph of [
@@ -1266,7 +1265,7 @@ const INSIDE: Record<string, readonly PlexPart[]> = {
   ],
   'focus/child-2': [{ id: '5', text: '', level: 1 }],
   'focus/parent-0': [
-    { id: '1', text: 'Что внутри', level: 1 },
+    { id: '1', text: 'Что в сарае', level: 1 },
     { id: '6', text: '日本語の見出し', level: 2 },
     { id: '11', text: 'مدخل بالعربية', level: 2 },
   ],

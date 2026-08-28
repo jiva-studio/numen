@@ -11,7 +11,7 @@
   </docTitle>
   <navMap>
     <navPoint class="chapter" id="np-1" playOrder="1">
-      <navLabel><text>Начать</text></navLabel>
+      <navLabel><text>Start</text></navLabel>
       <content src="cover.xhtml"/>
     </navPoint>
     <navPoint class="chapter" id="np-2" playOrder="2">

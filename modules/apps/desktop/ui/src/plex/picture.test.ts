@@ -172,43 +172,49 @@ const arrows = (neighbourhood: ReturnType<typeof around>) => {
 
 describe('whose wording is on the line', () => {
   it('points the arrow out of the focus, down a line into a child', () => {
-    // Mahabharata seats Duryodhana below it and writes a word on the link;
-    // Duryodhana names the same relationship back.
+    // Marrowfield allotments seats Alice Fenn below it and writes a word on the
+    // link; Alice Fenn names the same relationship back.
     expect(
       arrows(
-        around('Mahabharata', [['Duryodhana, The King', Seat.CHILD, 'Жлоб', '', true]]),
+        around('Marrowfield allotments', [
+          ['Alice Fenn, The Chair', Seat.CHILD, 'the chair since May', '', true],
+        ]),
       ),
-    ).toEqual(['Mahabharata -> Duryodhana, The King: to'])
+    ).toEqual(['Marrowfield allotments -> Alice Fenn, The Chair: to'])
   })
 
   it('points it out of the focus down a line the relationship runs into', () => {
-    // The same link from the other end, where Duryodhana wrote nothing on it.
+    // The same link from the other end, where Alice Fenn wrote nothing on it.
     // An arrow says who chose the wording, whether or not there is any.
     expect(
-      arrows(around('Duryodhana, The King', [['Mahabharata', Seat.PARENT, '', '', true]])),
-    ).toEqual(['Mahabharata -> Duryodhana, The King: from'])
+      arrows(
+        around('Alice Fenn, The Chair', [
+          ['Marrowfield allotments', Seat.PARENT, '', '', true],
+        ]),
+      ),
+    ).toEqual(['Marrowfield allotments -> Alice Fenn, The Chair: from'])
   })
 
   it('points it out of the focus on a jump each note wrote its own word on', () => {
     expect(
       arrows(
-        around('Duryodhana, The King', [
-          ['Bhishma', Seat.JUMP, 'питамаха, дед рода', '', true],
+        around('Alice Fenn, The Chair', [
+          ['Bram Doyle', Seat.JUMP, 'the oldest tenant', '', true],
         ]),
       ),
-    ).toEqual(['Bhishma -> Duryodhana, The King: from'])
+    ).toEqual(['Bram Doyle -> Alice Fenn, The Chair: from'])
   })
 
   it('draws no arrow where only one note named the relationship', () => {
-    // Duryodhana jumps to Ebanko and Ebanko says nothing back: one wording,
-    // and nothing to choose between.
+    // Alice Fenn jumps to Cora Hale and Cora Hale says nothing back: one
+    // wording, and nothing to choose between.
     expect(
       arrows(
-        around('Duryodhana, The King', [
-          ['Ebanko', Seat.JUMP, 'яд, поджог, засада', '', false],
+        around('Alice Fenn, The Chair', [
+          ['Cora Hale', Seat.JUMP, 'keys, hoses, the gate', '', false],
         ]),
       ),
-    ).toEqual(['Ebanko -> Duryodhana, The King: no arrow'])
+    ).toEqual(['Cora Hale -> Alice Fenn, The Chair: no arrow'])
   })
 
   it('draws no arrow on a sibling, whose line is between two other notes', () => {
@@ -216,14 +222,14 @@ describe('whose wording is on the line', () => {
     // in focus and there is no end for an arrow to name.
     expect(
       arrows(
-        around('Duryodhana, The King', [
-          ['Mahabharata', Seat.PARENT, '', '', true],
-          ['The question of Draupadi', Seat.SIBLING, '', 'Mahabharata', true],
+        around('Alice Fenn, The Chair', [
+          ['Marrowfield allotments', Seat.PARENT, '', '', true],
+          ['The question of the rota', Seat.SIBLING, '', 'Marrowfield allotments', true],
         ]),
       ),
     ).toEqual([
-      'Mahabharata -> Duryodhana, The King: from',
-      'Mahabharata -> The question of Draupadi: no arrow',
+      'Marrowfield allotments -> Alice Fenn, The Chair: from',
+      'Marrowfield allotments -> The question of the rota: no arrow',
     ])
   })
 })

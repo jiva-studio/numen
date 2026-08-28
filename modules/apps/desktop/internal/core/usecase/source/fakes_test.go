@@ -29,7 +29,7 @@ var (
 
 // The vocabularies the two vaults are written in.
 var (
-	sanskrit = []string{"prema", "bhakti", "smarana", "kirtana", "sadhana", "guru", "lila", "rasa"}
+	sanskrit = []string{"udyana", "vrksa", "bija", "jala", "pathin", "grama", "nadi", "parvata"}
 	latin    = []string{"aqua", "terra", "ventus", "ignis", "silva", "mons", "flumen", "campus"}
 )
 

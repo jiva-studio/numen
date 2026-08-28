@@ -75,7 +75,7 @@ func TestAnAddressSaysItselfBackTheWayItIsWritten(t *testing.T) {
 // A name that cannot be written as an address is reached by its identifier or
 // not at all.
 func TestANameIsReachableOrItIsNot(t *testing.T) {
-	for _, name := range []string{"Entropy", "Lecture 3: entropy", "Śrī Caitanya", "Холм"} {
+	for _, name := range []string{"Entropy", "Lecture 3: entropy", "Zoë Brontë", "Холм"} {
 		if !domain.Nameable(name) {
 			t.Errorf("%q cannot be reached", name)
 		}

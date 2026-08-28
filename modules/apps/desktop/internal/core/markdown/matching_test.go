@@ -50,13 +50,13 @@ func TestPunctuationIsReadAsTheMarkItStandsFor(t *testing.T) {
 	for name, c := range map[string]struct{ text, wanted string }{
 		"angled double quotes": {"он сказал «да» сразу", "он сказал \"да\" сразу"},
 		"turned double quotes": {"he said “yes” at once", "he said \"yes\" at once"},
-		"turned single quote":  {"it is the slayer’s wrath", "it is the slayer's wrath"},
-		"an em dash":           {"the foe — armed — advances", "the foe - armed - advances"},
+		"turned single quote":  {"it is the chair’s key", "it is the chair's key"},
+		"an em dash":           {"the hedge — cut — grew back", "the hedge - cut - grew back"},
 		"an en dash":           {"chapters 3–12 of it", "chapters 3-12 of it"},
 		"a minus sign":         {"a value of −5 here", "a value of -5 here"},
-		"a non-breaking space": {"Santi Parva says", "Santi Parva says"},
-		"an en quad":           {"Santi Parva says", "Santi Parva says"},
-		"an ideographic space": {"Santi　Parva says", "Santi Parva says"},
+		"a non-breaking space": {"Seed shed opens", "Seed shed opens"},
+		"an en quad":           {"Seed shed opens", "Seed shed opens"},
+		"an ideographic space": {"Seed　shed opens", "Seed shed opens"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			at, plainly := Where(c.text, c.wanted)

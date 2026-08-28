@@ -349,12 +349,12 @@ func TestSaysWhenTheToolAnswered(t *testing.T) {
 // is reached for, and reported again as it is written.
 func TestReportsACallWhileItIsStillBeingWritten(t *testing.T) {
 	// Long enough to be reported more than once as it arrives.
-	body := strings.Repeat("Игра в кости есть корень несчастья. ", 30)
+	body := strings.Repeat("Ключ от сарая лежит под кирпичом у двери. ", 30)
 	lines := []string{
 		connected,
 		`{"type":"stream_event","event":{"type":"content_block_start",` +
 			`"content_block":{"type":"tool_use","name":"` + claudecode.Tool("note_create") + `"}}}`,
-		delta(`{"notes":[{"title":"Vidura's warning","body":"`),
+		delta(`{"notes":[{"title":"Bram Doyle's warning","body":"`),
 		delta(body),
 		delta(body),
 		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,
@@ -374,7 +374,7 @@ func TestReportsACallWhileItIsStillBeingWritten(t *testing.T) {
 		t.Errorf("first says %q", calls[0].Tool)
 	}
 	// The name is read out of arguments that have not finished arriving.
-	if calls[1].About != "Vidura's warning" {
+	if calls[1].About != "Bram Doyle's warning" {
 		t.Errorf("what it is writing is %q", calls[1].About)
 	}
 	if calls[len(calls)-1].Written <= calls[1].Written {
@@ -405,7 +405,7 @@ var wrote = `{"type":"assistant","message":{"content":[` +
 // says those reports are one call is the name the agent gave it.
 func TestEveryReportOfOneCallCarriesTheNameTheAgentGaveIt(t *testing.T) {
 	// Long enough to be reported while it is still being written.
-	body := strings.Repeat("Игра в кости есть корень несчастья. ", 20)
+	body := strings.Repeat("Ключ от сарая лежит под кирпичом у двери. ", 20)
 	lines := []string{
 		connected,
 		`{"type":"stream_event","event":{"type":"content_block_start","content_block":` +

@@ -69,13 +69,13 @@ export const AwkwardText: Story = {
 export const BeingWritten: Story = {
   args: {
     tool: 'Create a note',
-    about: "Vidura's warning",
+    about: "Bram Doyle's warning",
     aside: '12 015 characters',
     working: true,
   },
   play: async ({ canvasElement }) => {
     const line = canvasElement.querySelector('.tool')
-    await expect(line).toHaveTextContent("Vidura's warning")
+    await expect(line).toHaveTextContent("Bram Doyle's warning")
     await expect(line).toHaveTextContent('12 015 characters')
   },
 }

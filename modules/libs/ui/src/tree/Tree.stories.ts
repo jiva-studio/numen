@@ -95,15 +95,15 @@ const many = (count: number): readonly Row[] =>
 
 const CYRILLIC: readonly Row[] = [
   {
-    id: 'записи',
-    name: 'Записи',
+    id: 'грядки',
+    name: 'Грядки',
     holds: true,
     rows: [
-      { id: 'вторник', name: 'Вторник', holds: false },
-      { id: 'мысли', name: 'Мысли о прочитанном', holds: false },
+      { id: 'морковь', name: 'Морковь', holds: false },
+      { id: 'семена', name: 'Список семян на весну', holds: false },
     ],
   },
-  { id: 'черновики', name: 'Черновики', holds: true },
+  { id: 'сарай', name: 'Сарай', holds: true },
 ]
 
 const UNBROKEN: readonly Row[] = [
@@ -138,7 +138,7 @@ const CORPORA = {
     open: Array.from({ length: DEEP_LEVELS }, (_, at) => `level-${at + 1}`),
   },
   many: { rows: many(2000), open: [] },
-  'other scripts': { rows: CYRILLIC, open: ['записи'] },
+  'other scripts': { rows: CYRILLIC, open: ['грядки'] },
   unbroken: { rows: UNBROKEN, open: [] },
   nameless: { rows: NAMELESS, open: ['blank-holder'] },
   one: { rows: [{ id: 'only', name: 'Only', holds: false }], open: [] },
@@ -454,10 +454,10 @@ export const TakesAName: Story = {
     if (!field) throw new Error('no field')
 
     await userEvent.clear(field)
-    await userEvent.type(field, 'Читанное{Enter}')
+    await userEvent.type(field, 'Грядки{Enter}')
 
     await expect(canvasElement.querySelector('.tree__field')).toBeNull()
-    await expect(rowIn(canvasElement, 'notes').textContent).toContain('Читанное')
+    await expect(rowIn(canvasElement, 'notes').textContent).toContain('Грядки')
   },
 }
 

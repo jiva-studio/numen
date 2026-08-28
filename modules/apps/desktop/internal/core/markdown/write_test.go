@@ -450,11 +450,11 @@ func TestARenameReachesALinkHoweverItIsQuoted(t *testing.T) {
 		written string
 		target  string
 	}{
-		{"double quoted brackets", `"[[The aggressor]]"`, "[[The aggressor]]"},
-		{"single quoted brackets", `'[[The aggressor]]'`, "[[The aggressor]]"},
-		{"double quoted path", `"notes/The aggressor"`, "notes/The aggressor"},
-		{"single quoted path", `'notes/The aggressor'`, "notes/The aggressor"},
-		{"plainly written", `notes/The aggressor`, "notes/The aggressor"},
+		{"double quoted brackets", `"[[The far corner]]"`, "[[The far corner]]"},
+		{"single quoted brackets", `'[[The far corner]]'`, "[[The far corner]]"},
+		{"double quoted path", `"notes/The far corner"`, "notes/The far corner"},
+		{"single quoted path", `'notes/The far corner'`, "notes/The far corner"},
+		{"plainly written", `notes/The far corner`, "notes/The far corner"},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			raw := "---\n" +
@@ -468,7 +468,7 @@ func TestARenameReachesALinkHoweverItIsQuoted(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			moved, err := d.PointLinksAt(domain.ParseAddress(one.target), "Duryodhana")
+			moved, err := d.PointLinksAt(domain.ParseAddress(one.target), "Marrowfield")
 			if err != nil {
 				t.Fatalf("point links: %v", err)
 			}
@@ -485,15 +485,15 @@ func TestARenameReachesALinkHoweverItIsQuoted(t *testing.T) {
 			if err != nil {
 				t.Fatalf("links: %v", err)
 			}
-			if len(links) != 1 || links[0].Target.Value != "Duryodhana" {
-				t.Errorf("want the link at Duryodhana, got %+v\n%s", links, got)
+			if len(links) != 1 || links[0].Target.Value != "Marrowfield" {
+				t.Errorf("want the link at Marrowfield, got %+v\n%s", links, got)
 			}
 			for _, kept := range []string{"# where it sat", "role: child\n"} {
 				if !strings.Contains(got, kept) {
 					t.Errorf("lost %q from\n%s", kept, got)
 				}
 			}
-			if strings.Contains(got, "aggressor") {
+			if strings.Contains(got, "corner") {
 				t.Errorf("the old address is still written:\n%s", got)
 			}
 		})
@@ -508,9 +508,9 @@ func TestARenameReadsPastAQuoteInsideTheName(t *testing.T) {
 		written string
 		target  string
 	}{
-		{"a doubled quote", `'Bhishma''s vow'`, "Bhishma's vow"},
-		{"an escaped quote", `"Bhishma\"s vow"`, `Bhishma"s vow`},
-		{"a hash that is not a comment", `"Sabha #LXVI"`, "Sabha #LXVI"},
+		{"a doubled quote", `'Alice''s key'`, "Alice's key"},
+		{"an escaped quote", `"Alice\"s key"`, `Alice"s key`},
+		{"a hash that is not a comment", `"Shed #LXVI"`, "Shed #LXVI"},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			raw := "---\nlinks:\n  - to: " + one.written + "\n    role: child\n---\nbody\n"
@@ -518,7 +518,7 @@ func TestARenameReadsPastAQuoteInsideTheName(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			moved, err := d.PointLinksAt(domain.ParseAddress(one.target), "Duryodhana")
+			moved, err := d.PointLinksAt(domain.ParseAddress(one.target), "Marrowfield")
 			if err != nil {
 				t.Fatalf("point links: %v", err)
 			}
@@ -533,8 +533,8 @@ func TestARenameReadsPastAQuoteInsideTheName(t *testing.T) {
 			if err != nil {
 				t.Fatalf("links: %v", err)
 			}
-			if len(links) != 1 || links[0].Target.Value != "Duryodhana" {
-				t.Errorf("want the link at Duryodhana, got %+v\n%s", links, d.Bytes())
+			if len(links) != 1 || links[0].Target.Value != "Marrowfield" {
+				t.Errorf("want the link at Marrowfield, got %+v\n%s", links, d.Bytes())
 			}
 		})
 	}
@@ -543,12 +543,12 @@ func TestARenameReadsPastAQuoteInsideTheName(t *testing.T) {
 // A scalar written over lines of its own is not one token on one line. The link
 // stays as it was written, and the note is left readable.
 func TestARenameLeavesABlockScalarAlone(t *testing.T) {
-	raw := "---\nlinks:\n  - to: >-\n      The aggressor\n    role: child\n---\nbody\n"
+	raw := "---\nlinks:\n  - to: >-\n      The far corner\n    role: child\n---\nbody\n"
 	d, err := Open([]byte(raw))
 	if err != nil {
 		t.Fatal(err)
 	}
-	moved, err := d.PointLinksAt(domain.ParseAddress("The aggressor"), "Duryodhana")
+	moved, err := d.PointLinksAt(domain.ParseAddress("The far corner"), "Marrowfield")
 	if err != nil {
 		t.Fatalf("point links: %v", err)
 	}
@@ -568,12 +568,12 @@ func TestARenameKeepsTheNotationItFound(t *testing.T) {
 		written string
 		wants   string
 	}{
-		{"double stays double", `"[[The aggressor]]"`, `to: "[[Duryodhana]]"`},
-		{"single stays single", `'[[The aggressor]]'`, `to: '[[Duryodhana]]'`},
-		{"an alias is left standing", `"[[The aggressor|him]]"`, `to: "[[Duryodhana|him]]"`},
-		{"a place inside is left standing", `"[[The aggressor#vow]]"`, `to: "[[Duryodhana#vow]]"`},
-		{"a quoted path is repaired by name", `"notes/The aggressor"`, `to: "Duryodhana"`},
-		{"plainly written stays plain", `The aggressor`, `to: Duryodhana`},
+		{"double stays double", `"[[The far corner]]"`, `to: "[[Marrowfield]]"`},
+		{"single stays single", `'[[The far corner]]'`, `to: '[[Marrowfield]]'`},
+		{"an alias is left standing", `"[[The far corner|him]]"`, `to: "[[Marrowfield|him]]"`},
+		{"a place inside is left standing", `"[[The far corner#gate]]"`, `to: "[[Marrowfield#gate]]"`},
+		{"a quoted path is repaired by name", `"notes/The far corner"`, `to: "Marrowfield"`},
+		{"plainly written stays plain", `The far corner`, `to: Marrowfield`},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			raw := "---\nlinks:\n  - to: " + one.written + "\n    role: child\n---\nbody\n"
@@ -582,7 +582,7 @@ func TestARenameKeepsTheNotationItFound(t *testing.T) {
 				t.Fatal(err)
 			}
 			target := strings.Trim(one.written, `"'`)
-			if _, err := d.PointLinksAt(domain.ParseAddress(target), "Duryodhana"); err != nil {
+			if _, err := d.PointLinksAt(domain.ParseAddress(target), "Marrowfield"); err != nil {
 				t.Fatalf("point links: %v", err)
 			}
 
