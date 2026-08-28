@@ -67,6 +67,7 @@ interface Knobs {
   /** Given by the story, and nothing a reader turns. */
   front?: never
   back?: never
+  words?: never
 }
 
 const meta: Meta<Knobs> = {
@@ -84,6 +85,7 @@ const meta: Meta<Knobs> = {
     turning: { control: 'text' },
     front: { table: { disable: true } },
     back: { table: { disable: true } },
+    words: { table: { disable: true } },
   },
   args: {
     corpus: 'a card',
@@ -118,8 +120,7 @@ const meta: Meta<Knobs> = {
           :back="held[args.corpus].back"
           :turned="turned"
           :name="args.name"
-          :silence="args.silence"
-          :turning="args.turning"
+          :words="{ silence: args.silence, turning: args.turning }"
           @turn="onTurn"
         />
       </div>

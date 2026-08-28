@@ -59,6 +59,20 @@ const dragTo = async (held: Grid, id: string, onto: string | null): Promise<void
   await over.trigger('drop')
 }
 
+/** A box typed into, as a person types into it. */
+const typed = (box: HTMLTextAreaElement | undefined, text: string): void => {
+  if (!box) throw new Error('no box to type in')
+  box.value = text
+  box.dispatchEvent(new Event('input'))
+}
+
+/** A key pressed on something, as the event it was pressed with. */
+const pressing = (on: Element, key: string): KeyboardEvent => {
+  const press = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })
+  on.dispatchEvent(press)
+  return press
+}
+
 /** A card picked up and the carry ended without it being let go anywhere. */
 const dragOff = async (held: Grid, id: string, over: string | null): Promise<void> => {
   const grip = tileFor(held, id).get('[data-grip]')
@@ -134,6 +148,29 @@ describe('Deck', () => {
     expect(held.emitted('write')).toEqual([['llama', 'Name', 1, 'Alpaca']])
   })
 
+  it('holds one line in the box the card is named by', async () => {
+    const held = mountDeck()
+    const box = boxFor(held, 'llama', 'Name')
+
+    // The name is a heading, so a break in it is refused where it is typed.
+    expect(pressing(box.element, 'Enter').defaultPrevented).toBe(true)
+
+    // And a break arriving another way is closed up before it is emitted.
+    await box.setValue('Llama\n## Alpaca')
+    expect(held.emitted('write')).toEqual([['llama', 'Name', 1, 'Llama ## Alpaca']])
+  })
+
+  it('holds what was typed, breaks and all, in every other box', async () => {
+    const held = mountDeck()
+    const box = boxFor(held, 'llama', 'Height')
+    expect(pressing(box.element, 'Enter').defaultPrevented).toBe(false)
+
+    await box.setValue('about 45"\nat the shoulder')
+    expect(held.emitted('write')).toEqual([
+      ['llama', 'Height', 1, 'about 45"\nat the shoulder'],
+    ])
+  })
+
   it('emits one other value of one card as it now reads', async () => {
     const held = mountDeck()
     await boxFor(held, 'llama', 'Life span').setValue('about 20 years')
@@ -200,8 +237,63 @@ describe('Deck', () => {
 
   it('draws no way to open or shut a tile: every value is open to typing', () => {
     const held = mountDeck()
-    expect(held.find('[aria-expanded]').exists()).toBe(true)
     expect(tileFor(held, 'llama').find('[aria-expanded]').exists()).toBe(false)
+  })
+
+  it('says of nothing that it is open, the plus being gone once it has opened', async () => {
+    const held = mountDeck()
+    expect(held.find('[aria-expanded]').exists()).toBe(false)
+    await held.get('[data-plus] button').trigger('click')
+    expect(held.find('[aria-expanded]').exists()).toBe(false)
+  })
+
+  it('names the card a stencil names no field to hold to a reader as well', () => {
+    const orphan: readonly Drawn[] = [
+      { id: 'gone', name: 'Gone', stencil: 'Missing', filled: [{ field: 'A', text: 'kept' }] },
+    ]
+    const said = tileFor(mountDeck({ cards: orphan }), 'gone').get('.deck__said')
+
+    // A name is exposed by nothing standing on a paragraph, so the text takes
+    // a role that carries one.
+    expect(said.attributes('role')).toBe('group')
+    expect(said.attributes('aria-label')).toBe('Name')
+  })
+
+  describe('carrying a tile by the keyboard', () => {
+    const stripOf = (held: Grid, id: string) => tileFor(held, id).get('[data-grip]')
+
+    it('names the strip a tile is carried by, and gives it a place in the order', () => {
+      const strip = stripOf(mountDeck(), 'llama')
+      expect(strip.attributes('aria-label')).toBe('Reorder: Llama')
+      expect(strip.attributes('tabindex')).toBe('0')
+      expect(strip.attributes('role')).toBe('group')
+    })
+
+    it('emits a tile carried one place down the order', () => {
+      const held = mountDeck()
+      const press = pressing(stripOf(held, 'llama').element, 'ArrowDown')
+      expect(press.defaultPrevented).toBe(true)
+      expect(held.emitted('move')).toEqual([['llama', null]])
+    })
+
+    it('emits a tile carried one place up the order', () => {
+      const held = mountDeck()
+      pressing(stripOf(held, 'yak').element, 'ArrowUp')
+      expect(held.emitted('move')).toEqual([['yak', 'llama']])
+    })
+
+    it('moves nothing where there is no place that way', () => {
+      const held = mountDeck()
+      const press = pressing(stripOf(held, 'llama').element, 'ArrowUp')
+      expect(press.defaultPrevented).toBe(false)
+      expect(held.emitted('move')).toBeUndefined()
+    })
+
+    it('moves nothing on a key that is no way along the order', () => {
+      const held = mountDeck()
+      pressing(stripOf(held, 'llama').element, 'ArrowRight')
+      expect(held.emitted('move')).toBeUndefined()
+    })
   })
 
   it('emits the card asked to go', async () => {
@@ -373,6 +465,20 @@ describe('Deck', () => {
       const held = mountDeck({ cards: TWICE })
       expect(held.get('[data-twice]').attributes('data-stray')).toBeUndefined()
       expect(held.text()).not.toContain('Not a field of this stencil')
+    })
+
+    it('tells the two boxes apart in what each of them emits', async () => {
+      const held = mountDeck({ cards: TWICE })
+      const boxes = namedBoxes(held)
+      typed(boxes[0], 'Vicuña')
+      typed(boxes[1], 'Guanaco')
+
+      // Both stand under one field, so what tells them apart is where each
+      // stands under it.
+      expect(held.emitted('write')).toEqual([
+        ['twice', 'Name', 1, 'Vicuña'],
+        ['twice', 'Name', 2, 'Guanaco'],
+      ])
     })
 
     it('says nothing of the kind about a card leaving that field out', () => {

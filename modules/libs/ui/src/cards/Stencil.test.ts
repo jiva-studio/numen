@@ -54,6 +54,13 @@ const dragTo = async (held: Editor, field: string, onto: string | null): Promise
   await rowFor(held, onto).trigger('drop')
 }
 
+/** A key pressed on something, as the event it was pressed with. */
+const pressing = (on: Element, key: string): KeyboardEvent => {
+  const press = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })
+  on.dispatchEvent(press)
+  return press
+}
+
 /** A field picked up and the carry ended without it being let go anywhere. */
 const dragOff = async (held: Editor, field: string, over: string | null): Promise<void> => {
   const grip = rowFor(held, field).get('[data-grip]')
@@ -249,6 +256,71 @@ describe('Stencil, the fields', () => {
     await rowFor(held, 'Weight').get('[data-grip]').trigger('dragstart')
     expect(rowFor(held, 'Weight').attributes('data-carried')).toBe('true')
     expect(rowFor(held, 'Height').attributes('data-carried')).toBeUndefined()
+  })
+
+  it('draws one row for a name the stencil declares twice', () => {
+    const held = mountStencil({ fields: ['Name', 'Height', 'Height'] })
+    expect(drawnFields(held)).toEqual(['Name', 'Height'])
+    expect(held.findAll('.stencil__field input')).toHaveLength(2)
+  })
+
+  it('says what is wrong with a name to the box it is wrong about', async () => {
+    const held = mountStencil()
+    await type(held, 'Height', 'Weight')
+
+    const said = rowFor(held, 'Height').get('.stencil__objects')
+    expect(boxIn(held, 'Height').attributes('aria-describedby')).toBe(said.attributes('id'))
+    expect(said.attributes('id')).toBeTruthy()
+  })
+
+  it('describes a box by nothing while what is in it can be used', () => {
+    expect(boxIn(mountStencil(), 'Height').attributes('aria-describedby')).toBeUndefined()
+  })
+
+  describe('carrying a field by the keyboard', () => {
+    const gripFor = (held: Editor, field: string) => rowFor(held, field).get('[data-grip]')
+
+    it('names the handle, and gives it a place in the order', () => {
+      const held = mountStencil()
+      const grip = gripFor(held, 'Height')
+      expect(grip.attributes('aria-label')).toBe('Reorder: Height')
+      expect(grip.attributes('tabindex')).toBe('0')
+      expect(grip.attributes('role')).toBe('button')
+    })
+
+    it('names the first field’s handle by what it is, and takes it out of the order', () => {
+      const grip = gripFor(mountStencil(), 'Name')
+      expect(grip.attributes('aria-label')).toBe(
+        'The first field names every card, and stays first',
+      )
+      expect(grip.attributes('tabindex')).toBe('-1')
+      expect(grip.attributes('aria-disabled')).toBe('true')
+    })
+
+    it('emits a field carried one place down the order', () => {
+      const held = mountStencil()
+      const press = pressing(gripFor(held, 'Height').element, 'ArrowDown')
+      expect(press.defaultPrevented).toBe(true)
+      expect(held.emitted('move-field')).toEqual([['Height', null]])
+    })
+
+    it('emits a field carried one place up the order', () => {
+      const held = mountStencil()
+      pressing(gripFor(held, 'Weight').element, 'ArrowUp')
+      expect(held.emitted('move-field')).toEqual([['Weight', 'Height']])
+    })
+
+    it('carries nothing above the first field, which names every card', () => {
+      const held = mountStencil()
+      pressing(gripFor(held, 'Height').element, 'ArrowUp')
+      expect(held.emitted('move-field')).toBeUndefined()
+    })
+
+    it('carries the first field nowhere', () => {
+      const held = mountStencil()
+      pressing(gripFor(held, 'Name').element, 'ArrowDown')
+      expect(held.emitted('move-field')).toBeUndefined()
+    })
   })
 })
 
@@ -486,8 +558,127 @@ describe('Stencil, the faces', () => {
     const held = mountStencil()
     const box = held.get<HTMLInputElement>('[data-face-block="recognise"] header input')
     box.element.value = 'Name it'
+    await box.trigger('input')
     await box.trigger('change')
     expect(held.emitted('rename-face')).toEqual([['recognise', 'Name it']])
+  })
+
+  it('follows no link a preview draws: the window stays where it is', async () => {
+    const faces: readonly Shown[] = [
+      { id: 'one', name: 'One', front: '[there](https://example.org)', back: '' },
+    ]
+    const held = mountStencil({ faces })
+    const link = held.get('[data-preview="front"] a')
+
+    const press = new MouseEvent('click', { bubbles: true, cancelable: true })
+    link.element.dispatchEvent(press)
+    expect(press.defaultPrevented).toBe(true)
+  })
+
+  describe('the name of a face', () => {
+    const TWO: readonly Shown[] = [
+      { id: 'one', name: 'One', front: '', back: '' },
+      { id: 'two', name: 'Two', front: '', back: '' },
+    ]
+
+    const nameOf = (held: Editor, id: string) =>
+      held.get<HTMLInputElement>(`[data-face-block="${id}"] header input`)
+
+    /** A name typed into a face's box and not yet committed. */
+    const typeName = async (held: Editor, id: string, name: string): Promise<void> => {
+      const box = nameOf(held, id)
+      box.element.value = name
+      await box.trigger('input')
+    }
+
+    it('renames nothing where the name typed is another face’s', async () => {
+      const held = mountStencil({ faces: TWO })
+      await typeName(held, 'one', 'Two')
+      await nameOf(held, 'one').trigger('change')
+      expect(held.emitted('rename-face')).toBeUndefined()
+    })
+
+    it('renames nothing where the name typed has nothing in it', async () => {
+      const held = mountStencil({ faces: TWO })
+      await typeName(held, 'one', '   ')
+      await nameOf(held, 'one').trigger('change')
+      expect(held.emitted('rename-face')).toBeUndefined()
+    })
+
+    it('drops the space around a name it commits', async () => {
+      const held = mountStencil({ faces: TWO })
+      await typeName(held, 'one', '  Recall  ')
+      await nameOf(held, 'one').trigger('change')
+      expect(held.emitted('rename-face')).toEqual([['one', 'Recall']])
+    })
+
+    it('renames nothing where the name typed is the one it already carries', async () => {
+      const held = mountStencil({ faces: TWO })
+      await typeName(held, 'one', 'One')
+      await nameOf(held, 'one').trigger('change')
+      expect(held.emitted('rename-face')).toBeUndefined()
+    })
+
+    it('says why a name typed cannot be used, and says it to the box', async () => {
+      const held = mountStencil({ faces: TWO })
+      await typeName(held, 'one', 'Two')
+
+      const block = held.get('[data-face-block="one"]')
+      const said = block.get('header .stencil__objects')
+      expect(said.text()).toBe('That name is taken')
+      expect(nameOf(held, 'one').attributes('aria-invalid')).toBe('true')
+      expect(nameOf(held, 'one').attributes('aria-describedby')).toBe(said.attributes('id'))
+    })
+
+    it('says nothing about a name nothing is being typed over', () => {
+      const held = mountStencil({ faces: TWO })
+      expect(held.find('[data-face-block] header .stencil__objects').exists()).toBe(false)
+    })
+
+    it('renames nothing where a name is abandoned', async () => {
+      const held = mountStencil({ faces: TWO })
+      await typeName(held, 'one', 'Recall')
+      await nameOf(held, 'one').trigger('keydown', { key: 'Escape' })
+      await nameOf(held, 'one').trigger('change')
+      expect(held.emitted('rename-face')).toBeUndefined()
+      expect(nameOf(held, 'one').element.value).toBe('One')
+    })
+  })
+
+  describe('carrying a face by the keyboard', () => {
+    const THREE: readonly Shown[] = [
+      { id: 'one', name: 'One', front: '', back: '' },
+      { id: 'two', name: 'Two', front: '', back: '' },
+      { id: 'three', name: 'Three', front: '', back: '' },
+    ]
+
+    const stripOf = (held: Editor, id: string) => held.get(`[data-face-block="${id}"] .bar`)
+
+    it('names the strip a face is carried by, and gives it a place in the order', () => {
+      const strip = stripOf(mountStencil({ faces: THREE }), 'two')
+      expect(strip.attributes('aria-label')).toBe('Reorder: Two')
+      expect(strip.attributes('tabindex')).toBe('0')
+      expect(strip.attributes('role')).toBe('group')
+    })
+
+    it('emits a face carried one place down the order', () => {
+      const held = mountStencil({ faces: THREE })
+      const press = pressing(stripOf(held, 'one').element, 'ArrowDown')
+      expect(press.defaultPrevented).toBe(true)
+      expect(held.emitted('move-face')).toEqual([['one', 'three']])
+    })
+
+    it('emits a face carried one place up the order: nothing among them is fixed', () => {
+      const held = mountStencil({ faces: THREE })
+      pressing(stripOf(held, 'two').element, 'ArrowUp')
+      expect(held.emitted('move-face')).toEqual([['two', 'one']])
+    })
+
+    it('moves nothing where there is no place that way', () => {
+      const held = mountStencil({ faces: THREE })
+      pressing(stripOf(held, 'one').element, 'ArrowUp')
+      expect(held.emitted('move-face')).toBeUndefined()
+    })
   })
 
   describe('reordering the faces', () => {

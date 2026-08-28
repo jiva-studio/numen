@@ -9,7 +9,7 @@
 import { computed } from 'vue'
 import Marks from './Marks.vue'
 import { Button } from '../components/ui/button'
-import { parts } from './model'
+import { FACE_WORDS, parts, type FaceWords } from './model'
 
 const props = withDefaults(
   defineProps<{
@@ -21,12 +21,10 @@ const props = withDefaults(
     turned?: boolean
     /** What the card is announced as. */
     name?: string
-    /** What is said in place of a half with nothing in it. */
-    silence?: string
-    /** What the button turning the card says. */
-    turning?: string
+    /** The words it is drawn with. */
+    words?: FaceWords
   }>(),
-  { turned: false, name: 'Card', silence: 'Nothing here', turning: 'Turn' },
+  { turned: false, name: 'Card', words: () => FACE_WORDS },
 )
 
 const emit = defineEmits<{
@@ -51,7 +49,7 @@ const shown = computed(() => parts(props.front, props.back, props.turned))
       class="face__half"
       :data-half="part.half"
     >
-      <p v-if="part.blank" class="face__silence text-small text-hushed">{{ silence }}</p>
+      <p v-if="part.blank" class="face__silence text-small text-hushed">{{ words.silence }}</p>
       <Marks v-else :text="part.text" @follow="(href, press) => emit('follow', href, press)" />
     </section>
 
@@ -62,7 +60,7 @@ const shown = computed(() => parts(props.front, props.back, props.turned))
         size="small"
         :aria-pressed="turned"
         @click="emit('turn', !turned)"
-        >{{ turning }}</Button
+        >{{ words.turning }}</Button
       >
     </footer>
   </article>

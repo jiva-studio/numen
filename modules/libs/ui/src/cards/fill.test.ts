@@ -27,8 +27,8 @@ describe('slotsIn', () => {
     ])
   })
 
-  it('drops the space around a name', () => {
-    expect(slotsIn('{{  Life span  }}')[0]?.field).toBe('Life span')
+  it('reads the name between the braces as it is written, space and all', () => {
+    expect(slotsIn('{{  Life span  }}')[0]?.field).toBe('  Life span  ')
   })
 
   it('finds nothing in text with no braces', () => {
@@ -47,6 +47,10 @@ describe('fill', () => {
 
   it('stands the naming field like any other', () => {
     expect(fill('{{Name}} is tall', [{ field: 'Name', text: 'Llama' }])).toBe('Llama is tall')
+  })
+
+  it('fills no slot whose name is written with space around it', () => {
+    expect(fill('{{ Height }}', VALUES)).toBe('')
   })
 
   it('leaves a slot nothing was handed for empty', () => {
@@ -99,8 +103,12 @@ describe('previewed', () => {
     )
   })
 
-  it('leaves a slot with no name empty, and does not mark it', () => {
-    expect(previewed('[{{}}]', [], ['Height'])).toBe('[]')
+  it('marks a slot whose name is written with space around it', () => {
+    expect(previewed('{{ Height }}', VALUES, ['Height'])).toBe('<mark>{{ Height }}</mark>')
+  })
+
+  it('marks a slot with no name, which no field is called', () => {
+    expect(previewed('[{{}}]', [], ['Height'])).toBe('[<mark>{{}}</mark>]')
   })
 })
 
@@ -117,8 +125,12 @@ describe('strayIn', () => {
     expect(strayIn('{{Name}}', ['Name'])).toEqual([])
   })
 
-  it('says nothing of a slot with no name', () => {
-    expect(strayIn('{{}}', [])).toEqual([])
+  it('says a slot with no name, which no field is called', () => {
+    expect(strayIn('{{}}', [])).toEqual([''])
+  })
+
+  it('says a slot whose name is written with space around it', () => {
+    expect(strayIn('{{ Height }}', ['Height'])).toEqual([' Height '])
   })
 })
 
@@ -149,6 +161,10 @@ describe('renamedIn', () => {
 
   it('leaves the field’s name in the prose alone', () => {
     expect(renamedIn('A is {{A}}', 'A', 'C')).toBe('A is {{C}}')
+  })
+
+  it('rewrites no slot whose name is written with space around it', () => {
+    expect(renamedIn('{{ A }}', 'A', 'C')).toBe('{{ A }}')
   })
 })
 

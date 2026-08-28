@@ -78,6 +78,30 @@ export function landing(
   return carried !== at
 }
 
+/** Which way along the order something is carried by the keyboard. */
+export type Way = 'up' | 'down'
+
+/** The way along the order an arrow carries what is held, and nothing for any other key. */
+export const wayOf = (key: string): Way | null =>
+  key === 'ArrowUp' ? 'up' : key === 'ArrowDown' ? 'down' : null
+
+/**
+ * Where a carried entry lands one place along the order, and nothing where
+ * there is no place that way. Landing before the entry past the next one is
+ * what puts it one place further down, the entry being taken out first.
+ */
+export function stepped(
+  names: readonly string[],
+  carried: string,
+  way: Way,
+): Landing | undefined {
+  const at = names.indexOf(carried)
+  if (at === -1) return undefined
+  if (way === 'up') return at === 0 ? undefined : (names[at - 1] ?? undefined)
+  if (at === names.length - 1) return undefined
+  return names[at + 2] ?? null
+}
+
 /** The order a carried field lands in, with the first field left where it is. */
 export const reordered = (
   fields: readonly string[],
@@ -100,6 +124,12 @@ export function objection(name: string, taken: readonly string[]): Objection | n
   return null
 }
 
+/**
+ * One line of what was typed. The field a card is named by is written in a
+ * heading, so the breaks in it close up.
+ */
+export const oneLine = (text: string): string => text.replace(/\r\n|[\n\r]/g, ' ')
+
 /** The words a stencil is drawn with, declared once. */
 export interface StencilWords {
   readonly fields: string
@@ -120,8 +150,10 @@ export interface StencilWords {
   readonly pinned: string
   /** What is said of the slots a face names that the fields do not. */
   readonly stray: (fields: readonly string[]) => string
-  /** What is said of a name that cannot be used. */
+  /** What is said of a field's name that cannot be used. */
   readonly objection: (why: Objection) => string
+  /** What is said of a face's name that cannot be used. */
+  readonly faceObjection: (why: Objection) => string
 }
 
 export const STENCIL_WORDS: StencilWords = {
@@ -147,6 +179,25 @@ export const STENCIL_WORDS: StencilWords = {
       : why === 'taken'
         ? 'That name is taken'
         : 'A name cannot hold a brace',
+  faceObjection: (why) =>
+    why === 'blank'
+      ? 'A face needs a name'
+      : why === 'taken'
+        ? 'That name is taken'
+        : 'A name cannot hold a brace',
+}
+
+/** The words a card is drawn with, declared once. */
+export interface FaceWords {
+  /** What is said in place of a half with nothing in it. */
+  readonly silence: string
+  /** What the button turning the card says. */
+  readonly turning: string
+}
+
+export const FACE_WORDS: FaceWords = {
+  silence: 'Nothing here',
+  turning: 'Turn',
 }
 
 /** The words a deck is drawn with, declared once. */
@@ -211,23 +262,31 @@ export interface FieldRow {
 }
 
 /**
- * The rows a stencil's fields are drawn as. A name is measured against every
- * other field's, so a field keeping its own name objects to nothing.
+ * A name is compared as written and the first of two stands, so a name a
+ * stencil declares twice is one field.
+ */
+export const declared = (fields: readonly string[]): readonly string[] => [...new Set(fields)]
+
+/**
+ * The rows a stencil's fields are drawn as, one to a field. A name is measured
+ * against every other field's, so a field keeping its own name objects to
+ * nothing.
  */
 export function fieldRows(
   fields: readonly string[],
   draft: Draft | null,
   carried: string | null,
 ): readonly FieldRow[] {
-  return fields.map((field, index) => {
+  const stood = declared(fields)
+  return stood.map((field, index) => {
     const typed = draft?.over === field ? draft.text : null
     return {
       field,
       at: index + 1,
-      of: fields.length,
+      of: stood.length,
       text: typed ?? field,
       objection:
-        typed === null ? null : objection(typed, fields.filter((each) => each !== field)),
+        typed === null ? null : objection(typed, stood.filter((each) => each !== field)),
       names: index === 0,
       carried: field === carried,
     }
@@ -238,6 +297,10 @@ export function fieldRows(
 export interface FaceBlock {
   readonly id: string
   readonly name: string
+  /** What is in its name box: the name it carries, or what is being typed over it. */
+  readonly text: string
+  /** Why what is in its name box cannot be used, and nothing while it can. */
+  readonly objection: Objection | null
   /** Where it stands, counting from one, which is what it is announced as. */
   readonly at: number
   /** How many faces stand with it. */
@@ -255,25 +318,37 @@ export interface FaceBlock {
 
 /**
  * The blocks a stencil's faces are drawn as, each carrying what its preview
- * shows and what is wrong in each half of it.
+ * shows and what is wrong in each half of it. A name is measured against every
+ * other face's, so a face keeping its own name objects to nothing. What is
+ * typed over a name is drawn in its box, and the name it carries is what the
+ * face is announced by until the typing is committed.
  */
 export function faceBlocks(
   faces: readonly Shown[],
   fields: readonly string[],
   sample: readonly Filled[],
+  draft: Draft | null = null,
 ): readonly FaceBlock[] {
-  return faces.map((face, index) => ({
-    id: face.id,
-    name: face.name,
-    at: index + 1,
-    of: faces.length,
-    front: face.front,
-    back: face.back,
-    frontShown: previewed(face.front, sample, fields),
-    backShown: previewed(face.back, sample, fields),
-    frontStray: strayIn(face.front, fields),
-    backStray: strayIn(face.back, fields),
-  }))
+  return faces.map((face, index) => {
+    const typed = draft?.over === face.id ? draft.text : null
+    return {
+      id: face.id,
+      name: face.name,
+      text: typed ?? face.name,
+      objection:
+        typed === null
+          ? null
+          : objection(typed, faces.filter((each) => each.id !== face.id).map((each) => each.name)),
+      at: index + 1,
+      of: faces.length,
+      front: face.front,
+      back: face.back,
+      frontShown: previewed(face.front, sample, fields),
+      backShown: previewed(face.back, sample, fields),
+      frontStray: strayIn(face.front, fields),
+      backStray: strayIn(face.back, fields),
+    }
+  })
 }
 
 /** The box a face's fields are written into. */
@@ -297,12 +372,13 @@ export interface Laid extends Filled {
 
 /**
  * A card's values in the order the stencil asks for them, empty where the card
- * leaves a slot out. Every value the card holds stands, the ones the stencil
- * does not name after the rest, so nothing a person typed goes missing off the
- * screen. A slot the card writes twice stands twice.
+ * leaves a slot out, and a slot the card writes twice standing twice. A slot
+ * the stencil names twice is one slot and stands once. The values the stencil
+ * names nothing for come after the rest, marked as named by nothing, and what
+ * is drawn of them is the caller's.
  */
 export function laid(filled: readonly Filled[], fields: readonly string[]): readonly Laid[] {
-  const stood = fields.flatMap((field) => {
+  const stood = declared(fields).flatMap((field) => {
     const written = filled.filter((each) => each.field === field)
     if (!written.length) return [{ field, text: '', declared: true }]
     return written.map((each) => ({ field, text: each.text, declared: true }))
@@ -379,7 +455,7 @@ export function grid(
 ): Grid {
   const tiles = cards.map((card, index) => {
     const cut = cuts.find((each) => each.name === card.stencil)
-    const fields = cut?.fields ?? []
+    const fields = declared(cut?.fields ?? [])
     const first = fields[0]
 
     const rest = laid(card.filled, fields.slice(1)).map((each) => ({

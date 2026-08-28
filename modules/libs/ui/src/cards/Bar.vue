@@ -8,10 +8,19 @@
  */
 import { shallowRef } from 'vue'
 import Slab from './Slab.vue'
+import { wayOf, type Way } from './model'
 
 defineProps<{
   /** What is said of taking hold of it. */
   carry: string
+}>()
+
+const emit = defineEmits<{
+  /**
+   * It was asked to go one place along the order, with the press itself.
+   * Whether there is a place that way is the caller's.
+   */
+  (event: 'step', way: Way, press: KeyboardEvent): void
 }>()
 
 /** What a press lands on that is worked rather than carried. */
@@ -27,6 +36,17 @@ const press = (event: PointerEvent): void => {
 const release = (): void => {
   held.value = true
 }
+
+/**
+ * The strip is what a gesture takes hold of, so it is what the keyboard takes
+ * hold of too: an arrow along the order carries it one place. A key struck in
+ * something the strip holds belongs to that thing.
+ */
+const carried = (event: KeyboardEvent): void => {
+  if (event.target !== event.currentTarget) return
+  const way = wayOf(event.key)
+  if (way !== null) emit('step', way, event)
+}
 </script>
 
 <template>
@@ -35,11 +55,15 @@ const release = (): void => {
     tone="bar"
     class="bar"
     data-grip
+    role="group"
+    tabindex="0"
     :draggable="held"
+    :aria-label="carry"
     :title="carry"
     @pointerdown="press"
     @pointerup="release"
     @dragend="release"
+    @keydown="carried"
   >
     <span class="bar__held min-w-0 flex-1"><slot /></span>
     <span class="bar__deeds flex shrink-0 items-center"><slot name="deeds" /></span>

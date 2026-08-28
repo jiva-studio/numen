@@ -13,11 +13,14 @@ import {
   laid,
   landing,
   objection,
+  oneLine,
   ordered,
   panes,
   parts,
   reordered,
+  stepped,
   STENCIL_WORDS,
+  wayOf,
   type Cut,
   type Drawn,
   type Filled,
@@ -102,6 +105,60 @@ describe('reordered', () => {
 
   it('leaves the order alone where a field is let go above the first', () => {
     expect(reordered(FIELDS, 'Weight', 'Name')).toEqual(FIELDS)
+  })
+})
+
+describe('stepped', () => {
+  const NAMES = ['a', 'b', 'c']
+
+  it('lands what is carried up before the one above it', () => {
+    expect(stepped(NAMES, 'c', 'up')).toBe('b')
+    expect(ordered(NAMES, 'c', stepped(NAMES, 'c', 'up') ?? null)).toEqual(['a', 'c', 'b'])
+  })
+
+  it('lands what is carried down before the one below the one below it', () => {
+    expect(stepped(NAMES, 'a', 'down')).toBe('c')
+    expect(ordered(NAMES, 'a', stepped(NAMES, 'a', 'down') ?? null)).toEqual(['b', 'a', 'c'])
+  })
+
+  it('lands the last but one at the end', () => {
+    expect(stepped(NAMES, 'b', 'down')).toBeNull()
+    expect(ordered(NAMES, 'b', null)).toEqual(['a', 'c', 'b'])
+  })
+
+  it('lands nothing above the first, and nothing below the last', () => {
+    expect(stepped(NAMES, 'a', 'up')).toBeUndefined()
+    expect(stepped(NAMES, 'c', 'down')).toBeUndefined()
+  })
+
+  it('lands nothing that is not there', () => {
+    expect(stepped(NAMES, 'z', 'up')).toBeUndefined()
+  })
+})
+
+describe('wayOf', () => {
+  it('reads the two arrows along the order', () => {
+    expect(wayOf('ArrowUp')).toBe('up')
+    expect(wayOf('ArrowDown')).toBe('down')
+  })
+
+  it('reads every other key as no way at all', () => {
+    expect(wayOf('ArrowLeft')).toBeNull()
+    expect(wayOf('Enter')).toBeNull()
+  })
+})
+
+describe('oneLine', () => {
+  it('closes up the breaks in what was typed', () => {
+    expect(oneLine('a\nb')).toBe('a b')
+  })
+
+  it('closes up the breaks of every make', () => {
+    expect(oneLine('a\r\nb\rc')).toBe('a b c')
+  })
+
+  it('leaves a line that is already one alone', () => {
+    expect(oneLine('a b')).toBe('a b')
   })
 })
 
@@ -204,6 +261,14 @@ describe('laid', () => {
   it('lays out nothing for a stencil naming nothing and a card holding nothing', () => {
     expect(laid([], [])).toEqual([])
   })
+
+  it('lays a name the stencil declares twice out once, where it first stands', () => {
+    const filled = [{ field: 'Height', text: 'tall' }]
+    expect(laid(filled, ['Height', 'Weight', 'Height'])).toEqual([
+      { field: 'Height', text: 'tall', declared: true },
+      { field: 'Weight', text: '', declared: true },
+    ])
+  })
 })
 
 describe('blanks', () => {
@@ -261,6 +326,21 @@ describe('fieldRows', () => {
   it('marks nothing as naming where a stencil names no field', () => {
     expect(fieldRows([], null, null)).toEqual([])
   })
+
+  it('draws one row for a name declared twice, and counts it once', () => {
+    const rows = fieldRows(['Height', 'Weight', 'Height'], null, null)
+    expect(rows.map((row) => row.field)).toEqual(['Height', 'Weight'])
+    expect(rows.map((row) => [row.at, row.of])).toEqual([
+      [1, 2],
+      [2, 2],
+    ])
+  })
+
+  it('objects to nothing where the row typed over is the one that stands', () => {
+    const rows = fieldRows(['Height', 'Height'], { over: 'Height', text: 'Tallness' }, null)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]?.objection).toBeNull()
+  })
 })
 
 describe('faceBlocks', () => {
@@ -317,6 +397,33 @@ describe('faceBlocks', () => {
 
   it('draws no blocks for a stencil with no faces', () => {
     expect(faceBlocks([], FIELDS, SAMPLE)).toEqual([])
+  })
+
+  it('draws the name a face carries where nothing is being typed', () => {
+    const blocks = faceBlocks(FACES, FIELDS, SAMPLE)
+    expect(blocks.map((each) => each.text)).toEqual(['Recognise', 'Name it'])
+    expect(blocks.every((each) => each.objection === null)).toBe(true)
+  })
+
+  it('draws what is being typed over the name it is typed over', () => {
+    const blocks = faceBlocks(FACES, FIELDS, SAMPLE, { over: 'recognise', text: 'Recall' })
+    expect(blocks.map((each) => each.text)).toEqual(['Recall', 'Name it'])
+    expect(blocks[0]?.name).toBe('Recognise')
+  })
+
+  it('objects where what is typed is another face’s name', () => {
+    const blocks = faceBlocks(FACES, FIELDS, SAMPLE, { over: 'recognise', text: 'Name it' })
+    expect(blocks[0]?.objection).toBe('taken')
+  })
+
+  it('objects where what is typed has nothing in it', () => {
+    const blocks = faceBlocks(FACES, FIELDS, SAMPLE, { over: 'recognise', text: '  ' })
+    expect(blocks[0]?.objection).toBe('blank')
+  })
+
+  it('objects to nothing where a face is typed its own name again', () => {
+    const blocks = faceBlocks(FACES, FIELDS, SAMPLE, { over: 'recognise', text: 'Recognise' })
+    expect(blocks[0]?.objection).toBeNull()
   })
 })
 

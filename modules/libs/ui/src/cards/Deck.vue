@@ -15,8 +15,11 @@ import { Button } from '../components/ui/button'
 import {
   blanks,
   DECK_WORDS,
+  declared,
   freeName,
   grid,
+  oneLine,
+  stepped,
   type Cut,
   type DeckWords,
   type Drawn,
@@ -24,6 +27,7 @@ import {
   type Landing,
   type Stood,
   type Tile,
+  type Way,
 } from './model'
 
 const props = withDefaults(
@@ -98,13 +102,38 @@ const drop = (): void => {
   if (held !== null && landing !== held) emit('move', held, landing)
 }
 
+/** A card asked to go one place along the order, where there is a place that way. */
+const step = (id: string, way: Way, press: KeyboardEvent): void => {
+  const lands = stepped(props.cards.map((card) => card.id), id, way)
+  if (lands === undefined) return
+  press.preventDefault()
+  emit('move', id, lands)
+}
+
+/**
+ * A break struck in the box the card is named by. The name is written in a
+ * heading, so the box holds one line; a break struck while a word is being
+ * composed belongs to the composing.
+ */
+const breaking = (value: Stood, press: KeyboardEvent): void => {
+  if (value.names && !press.isComposing) press.preventDefault()
+}
+
+/**
+ * One value of one card as it now reads. The field the card is named by is
+ * written in a heading, so what is typed into its box comes to one line.
+ */
+const write = (tile: Tile, value: Stood, text: string): void => {
+  emit('write', tile.id, value.field, value.nth, value.names ? oneLine(text) : text)
+}
+
 const add = (cut: Cut): void => {
   asking.value = false
   emit(
     'add',
     freeName(props.cards.map((card) => card.name), props.words.cardStem),
     cut.name,
-    blanks(cut.fields.slice(1)),
+    blanks(declared(cut.fields).slice(1)),
   )
 }
 </script>
@@ -135,6 +164,7 @@ const add = (cut: Cut): void => {
           :carry="`${words.carry}: ${tile.name}`"
           @dragstart="lift(tile.id, $event)"
           @dragend="release"
+          @step="(way, press) => step(tile.id, way, press)"
         >
           <template #deeds>
             <Button
@@ -151,7 +181,9 @@ const add = (cut: Cut): void => {
         </Bar>
 
         <div class="deck__body flex flex-col">
-          <p v-if="!tile.named" class="deck__said truncate" :aria-label="words.name">
+          <!-- A name is exposed by nothing standing on a paragraph, so the
+               text takes a role that carries one. -->
+          <p v-if="!tile.named" class="deck__said truncate" role="group" :aria-label="words.name">
             {{ tile.name }}
           </p>
 
@@ -179,15 +211,8 @@ const add = (cut: Cut): void => {
                 :data-value="value.field"
                 rows="1"
                 :value="value.text"
-                @input="
-                  emit(
-                    'write',
-                    tile.id,
-                    value.field,
-                    value.nth,
-                    ($event.target as HTMLTextAreaElement).value,
-                  )
-                "
+                @keydown.enter="breaking(value, $event)"
+                @input="write(tile, value, ($event.target as HTMLTextAreaElement).value)"
               ></textarea>
             </Grown>
 
@@ -208,14 +233,14 @@ const add = (cut: Cut): void => {
         data-plus
       >
         <!-- The plus says what it is for by standing alone in the middle. What
-             it is called is read aloud and shown on hovering, and not beside it. -->
+             it is called is read aloud and shown on hovering, and not beside it.
+             What it opens takes its place, so it says nothing of being open. -->
         <Button
           v-if="!asking"
           variant="ghost"
           class="deck__ask"
           :aria-label="words.add"
           :title="words.add"
-          :aria-expanded="asking"
           @click="asking = true"
         >
           <Glyph shows="plus" />
@@ -275,7 +300,7 @@ const add = (cut: Cut): void => {
   overflow-wrap: anywhere;
 }
 
-/* The strip runs the whole width, so the body keeps the clearance instead. */
+/* The strip runs the whole width, and the body keeps the clearance. */
 .deck__body {
   gap: var(--numen-inset);
   padding: var(--pad);

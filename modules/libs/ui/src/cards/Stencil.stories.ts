@@ -82,6 +82,12 @@ const CORPORA = {
     fields: ['Blank'],
     faces: [{ id: 'blank', name: '', front: '', back: '' }],
   },
+  /* A file written by hand can declare one name twice. The first stands, so
+     the editor draws one row for it and there is no box going nowhere. */
+  'a name declared twice': {
+    fields: ['Name', 'Height', 'Height'],
+    faces: [{ id: 'twice', name: 'Twice', front: '{{Name}}', back: '{{Height}}' }],
+  },
   stray: {
     fields: ['Name', 'Height'],
     faces: [
@@ -237,7 +243,7 @@ export const FarTooMany: Story = {
     // Forty fields do not push the heading out of its own strip.
     expect(title.getBoundingClientRect().width).toBeGreaterThan(60)
 
-    // The row scrolls inside the strip instead of growing it.
+    // The row scrolls inside the strip, and the strip keeps its height.
     expect(slots.scrollWidth).toBeGreaterThan(slots.clientWidth)
     expect(bar.getBoundingClientRect().height).toBeLessThan(40)
     expect(slots.getBoundingClientRect().right).toBeLessThanOrEqual(
@@ -257,6 +263,25 @@ export const NothingAtAll: Story = { args: { corpus: 'nothing at all' } }
 
 /** A face whose name and both halves are the empty string. */
 export const NoTextAtAll: Story = { args: { corpus: 'no text at all' } }
+
+/** A stencil declaring one name twice, which the editor cannot make but a file can. */
+export const ANameDeclaredTwice: Story = {
+  args: { corpus: 'a name declared twice' },
+  play: async ({ canvasElement }) => {
+    expect(drawnFields(canvasElement)).toEqual(['Name', 'Height'])
+    expect(canvasElement.querySelectorAll('.stencil__field input')).toHaveLength(2)
+
+    // One chip, so the field is written into a face by one name.
+    const chips = [...canvasElement.querySelectorAll('[data-insert]')]
+    expect(chips.map((chip) => chip.getAttribute('data-insert'))).toEqual(['Name', 'Height'])
+
+    // Typing in the one row that stands renames the one field there is.
+    const box = found(canvasElement, '[data-field="Height"] input')
+    await userEvent.clear(box)
+    await userEvent.type(box, 'Tallness{Enter}')
+    expect(drawnFields(canvasElement)).toEqual(['Name', 'Tallness'])
+  },
+}
 
 /** A face naming a slot the fields do not, in each half. */
 export const Stray: Story = { args: { corpus: 'stray' } }
@@ -414,8 +439,8 @@ export const TheFirstFieldStaysFirst: Story = {
     const first = found(canvasElement, '[data-field="Name"]')
     expect(first.getAttribute('data-names')).toBe('true')
 
-    // The row keeps the shape every other row has; what it may not do is
-    // turned off rather than missing, so the boxes line up down the column.
+    // The row keeps the shape every other row has, with what it may not do
+    // turned off, so the boxes line up down the column.
     expect(first.querySelector('[data-grip]')?.getAttribute('draggable')).toBe('false')
     expect(first.querySelector('button')?.disabled).toBe(true)
 

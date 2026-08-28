@@ -177,9 +177,8 @@ export { default as Face } from './cards/Face.vue'
 export { default as Stencil } from './cards/Stencil.vue'
 export { default as Deck } from './cards/Deck.vue'
 export { default as Marks } from './cards/Marks.vue'
-/** The strip a tile is carried by, and a box whose name sits on its outline. */
+/** The strip a tile is carried by. */
 export { default as Bar } from './cards/Bar.vue'
-export { default as Notched } from './cards/Notched.vue'
 /** A rule with something standing in its middle. */
 export { default as Rule } from './cards/Rule.vue'
 
@@ -187,16 +186,21 @@ export { default as Rule } from './cards/Rule.vue'
 export {
   aimedAt,
   blanks,
+  declared,
   faceBlocks,
   fieldRows,
   freeName,
   grid,
   laid,
   objection,
+  oneLine,
   ordered,
   panes,
   parts,
+  stepped,
+  wayOf,
   DECK_WORDS,
+  FACE_WORDS,
   HALVES,
   SHOWS,
   STENCIL_WORDS,
@@ -208,6 +212,7 @@ export type {
   Draft,
   Drawn,
   FaceBlock,
+  FaceWords,
   FieldRow,
   Filled,
   Grid,
@@ -222,6 +227,7 @@ export type {
   StencilWords,
   Stood,
   Tile,
+  Way,
 } from './cards/model'
 
 /** The braces a face is written with, read and filled. */

@@ -13,7 +13,7 @@ const SLOT = /\{\{([^{}]*)\}\}/g
 
 /** One slot where it stands in a face. */
 export interface Slot {
-  /** The name between the braces, with the space around it dropped. */
+  /** The name between the braces, which is a field's name written exactly. */
   readonly field: string
   /** Where the braces begin and end, in UTF-16 code units. */
   readonly from: number
@@ -25,7 +25,7 @@ export function slotsIn(template: string): readonly Slot[] {
   const found: Slot[] = []
   for (const match of template.matchAll(SLOT)) {
     found.push({
-      field: (match[1] ?? '').trim(),
+      field: match[1] ?? '',
       from: match.index,
       to: match.index + match[0].length,
     })
@@ -37,14 +37,14 @@ export function slotsIn(template: string): readonly Slot[] {
 export const braced = (field: string): string => `{{${field}}}`
 
 /**
- * A face with every slot standing what fills it. A slot nothing was handed for
- * stands empty.
+ * A face with every slot standing what fills it. The name between the braces
+ * is a field's name written exactly, so a slot nothing was handed for — a name
+ * with space around it among them — stands empty.
  */
 export function fill(template: string, values: readonly Filled[]): string {
-  return template.replace(SLOT, (_, inside: string) => {
-    const field = inside.trim()
-    return values.find((each) => each.field === field)?.text ?? ''
-  })
+  return template.replace(SLOT, (_, inside: string) =>
+    values.find((each) => each.field === inside)?.text ?? '',
+  )
 }
 
 /** Text standing as text where the marks around it are read as marks. */
@@ -61,9 +61,8 @@ export function previewed(
   fields: readonly string[],
 ): string {
   return template.replace(SLOT, (whole: string, inside: string) => {
-    const field = inside.trim()
-    if (field !== '' && !fields.includes(field)) return `<mark>${escaped(whole)}</mark>`
-    return values.find((each) => each.field === field)?.text ?? ''
+    if (!fields.includes(inside)) return `<mark>${escaped(whole)}</mark>`
+    return values.find((each) => each.field === inside)?.text ?? ''
   })
 }
 
@@ -77,7 +76,6 @@ export function strayIn(
 ): readonly string[] {
   const said = new Set<string>()
   for (const slot of slotsIn(template)) {
-    if (slot.field === '') continue
     if (fields.includes(slot.field)) continue
     said.add(slot.field)
   }
@@ -106,7 +104,7 @@ export function insert(template: string, at: number, field: string): Inserted {
 /** A face whose every slot naming one field names another. */
 export function renamedIn(template: string, from: string, to: string): string {
   return template.replace(SLOT, (whole, inside: string) =>
-    inside.trim() === from ? braced(to) : whole,
+    inside === from ? braced(to) : whole,
   )
 }
 

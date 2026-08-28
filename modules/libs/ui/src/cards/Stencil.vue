@@ -7,7 +7,7 @@
  * its name and one row of the fields, and under that one window divided into
  * four parts. What the stencil stands for is the caller's.
  */
-import { computed, nextTick, shallowRef, useTemplateRef } from 'vue'
+import { computed, nextTick, shallowRef, useId, useTemplateRef } from 'vue'
 import Bar from './Bar.vue'
 import Marks from './Marks.vue'
 import Glyph from './Glyph.vue'
@@ -17,12 +17,15 @@ import Slab from './Slab.vue'
 import { Button } from '../components/ui/button'
 import {
   aimedAt,
+  declared,
   faceBlocks,
   fieldRows,
   freeName,
   landing,
   objection,
   panes,
+  stepped,
+  wayOf,
   STENCIL_WORDS,
   type Aim,
   type Draft,
@@ -33,6 +36,7 @@ import {
   type Pane,
   type Shown,
   type StencilWords,
+  type Way,
 } from './model'
 import { insert, sampled } from './fill'
 
@@ -76,8 +80,17 @@ const emit = defineEmits<{
 
 const box = useTemplateRef<HTMLElement>('box')
 
+/** What this editor's objections are named by, which is this editor's alone. */
+const uid = useId()
+
+/** What is wrong with a name, where what it is wrong about says so. */
+const objectsId = (over: string): string => `${uid}-${encodeURIComponent(over)}-objects`
+
 /** A name being typed over the one a field carries. */
 const draft = shallowRef<Draft | null>(null)
+
+/** A name being typed over the one a face carries, by the face's own identifier. */
+const faceDraft = shallowRef<Draft | null>(null)
 
 /**
  * The field under the pointer's hand, and where letting go would put it: before
@@ -93,11 +106,16 @@ const faceAt = shallowRef<Landing>(null)
 /** The box a field would be written into. */
 const aim = shallowRef<Aim | null>(null)
 
-const sample = computed(() => props.sample ?? sampled(props.fields))
+/** The fields a card is asked for, a name declared twice naming one field. */
+const asked = computed(() => declared(props.fields))
 
-const rows = computed(() => fieldRows(props.fields, draft.value, carried.value))
+const sample = computed(() => props.sample ?? sampled(asked.value))
 
-const blocks = computed(() => faceBlocks(props.faces, props.fields, sample.value))
+const rows = computed(() => fieldRows(asked.value, draft.value, carried.value))
+
+const blocks = computed(() =>
+  faceBlocks(props.faces, asked.value, sample.value, faceDraft.value),
+)
 
 /** The half of one face a field would be written into. */
 const aiming = (id: string): Half => aimedAt(aim.value, id)
@@ -121,8 +139,25 @@ const commit = (field: string): void => {
 
   const name = held.text.trim()
   if (name === field) return
-  if (objection(name, props.fields.filter((each) => each !== field))) return
+  if (objection(name, asked.value.filter((each) => each !== field))) return
   emit('rename-field', field, name)
+}
+
+const typingFace = (id: string, text: string): void => {
+  faceDraft.value = { over: id, text }
+}
+
+/** A typed name committed, and nothing where it objects or says what it said. */
+const commitFace = (id: string): void => {
+  const held = faceDraft.value
+  faceDraft.value = null
+  if (!held || held.over !== id) return
+
+  const name = held.text.trim()
+  const carries = props.faces.find((each) => each.id === id)?.name
+  if (name === carries) return
+  if (objection(name, props.faces.filter((each) => each.id !== id).map((each) => each.name))) return
+  emit('rename-face', id, name)
 }
 
 const onNameKey = (event: KeyboardEvent, field: string): void => {
@@ -138,8 +173,21 @@ const onNameKey = (event: KeyboardEvent, field: string): void => {
   }
 }
 
+const onFaceNameKey = (event: KeyboardEvent, id: string): void => {
+  if (event.key === 'Enter') {
+    event.preventDefault()
+    commitFace(id)
+    ;(event.currentTarget as HTMLInputElement).blur()
+    return
+  }
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    faceDraft.value = null
+  }
+}
+
 const addField = (): void => {
-  emit('add-field', freeName(props.fields, props.words.fieldStem))
+  emit('add-field', freeName(asked.value, props.words.fieldStem))
 }
 
 const addFace = (): void => {
@@ -169,7 +217,28 @@ const drop = (): void => {
   const lands = at.value
   release()
   if (held === null || lands === undefined) return
-  if (landing(props.fields, held, lands)) emit('move-field', held, lands)
+  if (landing(asked.value, held, lands)) emit('move-field', held, lands)
+}
+
+/**
+ * A field asked to go one place along the order by the keyboard. The first
+ * field names every card, so nothing lands above it and it goes nowhere.
+ */
+const onGripKey = (event: KeyboardEvent, field: string): void => {
+  const way = wayOf(event.key)
+  if (way === null) return
+  const lands = stepped(asked.value, field, way)
+  if (lands === undefined || !landing(asked.value, field, lands)) return
+  event.preventDefault()
+  emit('move-field', field, lands)
+}
+
+/** A face asked to go one place along the order, nothing among them being fixed. */
+const stepFace = (id: string, way: Way, press: KeyboardEvent): void => {
+  const lands = stepped(props.faces.map((each) => each.id), id, way)
+  if (lands === undefined) return
+  press.preventDefault()
+  emit('move-face', id, lands)
 }
 
 const liftFace = (id: string, event: DragEvent): void => {
@@ -248,15 +317,22 @@ const put = async (id: string, field: string): Promise<void> => {
         >
           <Slab class="stencil__row" :data-objects="row.objection ?? undefined">
             <!-- The first field names every card, so its handle is there and
-                 turned off, and the row keeps the shape every other row has. -->
+                 turned off, and the row keeps the shape every other row has.
+                 The handle is what a row is carried by, by the pointer and by
+                 the arrows along the order alike. -->
             <span
               class="stencil__grip flex shrink-0 items-center text-hushed"
               data-grip
+              role="button"
+              :tabindex="row.names ? -1 : 0"
               :draggable="!row.names"
               :data-disabled="row.names || undefined"
+              :aria-disabled="row.names || undefined"
+              :aria-label="row.names ? words.pinned : `${words.carry}: ${row.field}`"
               :title="row.names ? words.pinned : `${words.carry}: ${row.field}`"
               @dragstart="lift(row.field, $event)"
               @dragend="release"
+              @keydown="onGripKey($event, row.field)"
             >
               <Glyph shows="grip" />
             </span>
@@ -268,6 +344,7 @@ const put = async (id: string, field: string): Promise<void> => {
               :placeholder="`${words.fieldStem} ${row.at}`"
               :aria-label="`${words.fieldStem} ${row.at}`"
               :aria-invalid="row.objection !== null || undefined"
+              :aria-describedby="row.objection ? objectsId(row.field) : undefined"
               @input="typing(row.field, ($event.target as HTMLInputElement).value)"
               @change="commit(row.field)"
               @keydown="onNameKey($event, row.field)"
@@ -286,7 +363,12 @@ const put = async (id: string, field: string): Promise<void> => {
             </Button>
           </Slab>
 
-          <p v-if="row.objection" class="stencil__objects text-small text-alarm" role="alert">
+          <p
+            v-if="row.objection"
+            :id="objectsId(row.field)"
+            class="stencil__objects text-small text-alarm"
+            role="alert"
+          >
             {{ words.objection(row.objection) }}
           </p>
         </li>
@@ -328,38 +410,54 @@ const put = async (id: string, field: string): Promise<void> => {
           :carry="`${words.carry}: ${block.name}`"
           @dragstart="liftFace(block.id, $event)"
           @dragend="releaseFace"
+          @step="(way, press) => stepFace(block.id, way, press)"
         >
-          <div class="stencil__face-head flex items-center">
-            <input
-              class="stencil__title min-w-0 rounded-node"
-              type="text"
-              :value="block.name"
-              :placeholder="`${words.faceStem} ${block.at}`"
-              :aria-label="`${words.faceStem} ${block.at}`"
-              @change="emit('rename-face', block.id, ($event.target as HTMLInputElement).value)"
-            />
+          <div class="stencil__face-said flex flex-col">
+            <div class="stencil__face-head flex items-center">
+              <input
+                class="stencil__title min-w-0 rounded-node"
+                type="text"
+                :value="block.text"
+                :placeholder="`${words.faceStem} ${block.at}`"
+                :aria-label="`${words.faceStem} ${block.at}`"
+                :aria-invalid="block.objection !== null || undefined"
+                :aria-describedby="block.objection ? objectsId(block.id) : undefined"
+                @input="typingFace(block.id, ($event.target as HTMLInputElement).value)"
+                @change="commitFace(block.id)"
+                @keydown="onFaceNameKey($event, block.id)"
+              />
 
-            <!-- The fields are small quiet chips, as small quiet actions are
-                 drawn everywhere else here. What they are for is said to a
-                 reader by the group, and to everyone else by their look. -->
-            <div
-              class="stencil__slots flex"
-              role="group"
-              :aria-label="`${words.insert}: ${block.name}`"
-            >
-              <Button
-                v-for="slot in fields"
-                :key="slot"
-                variant="ghost"
-                size="small"
-                class="stencil__slot h-5 rounded-pill bg-bubble px-2 text-small"
-                draggable="false"
-                :data-insert="slot"
-                :aria-label="`${words.insert}: ${slot}`"
-                @click="put(block.id, slot)"
-                >{{ slot }}</Button
+              <!-- The fields are small quiet chips, as small quiet actions are
+                   drawn everywhere else here. What they are for is said to a
+                   reader by the group, and to everyone else by their look. -->
+              <div
+                class="stencil__slots flex"
+                role="group"
+                :aria-label="`${words.insert}: ${block.name}`"
               >
+                <Button
+                  v-for="row in rows"
+                  :key="row.field"
+                  variant="ghost"
+                  size="small"
+                  class="stencil__slot h-5 rounded-pill bg-bubble px-2 text-small"
+                  draggable="false"
+                  :data-insert="row.field"
+                  :aria-label="`${words.insert}: ${row.field}`"
+                  @click="put(block.id, row.field)"
+                  >{{ row.field }}</Button
+                >
+              </div>
             </div>
+
+            <p
+              v-if="block.objection"
+              :id="objectsId(block.id)"
+              class="stencil__objects text-small text-alarm"
+              role="alert"
+            >
+              {{ words.faceObjection(block.objection) }}
+            </p>
           </div>
 
           <template #deeds>
@@ -410,7 +508,9 @@ const put = async (id: string, field: string): Promise<void> => {
               :aria-label="pane.named"
               role="group"
             >
-              <Marks :text="pane.text" />
+              <!-- A preview is a face read, not a face followed: a link in it
+                   stays where it is pressed. -->
+              <Marks :text="pane.text" @follow="(_href, press) => press.preventDefault()" />
             </div>
 
             <!-- An empty part says what it is for, in the middle of itself. -->
@@ -582,7 +682,13 @@ const put = async (id: string, field: string): Promise<void> => {
   }
 }
 
-/* The strip is the face's own, so its name leads it and the fields follow. */
+/* The strip is the face's own, so its name leads it and the fields follow.
+   What is wrong with the name stands under the row it is wrong about. */
+.stencil__face-said {
+  inline-size: 100%;
+  gap: 0.125rem;
+}
+
 .stencil__face-head {
   inline-size: 100%;
   gap: var(--numen-inset);
@@ -597,7 +703,7 @@ const put = async (id: string, field: string): Promise<void> => {
 }
 
 /* The fields are a group under the heading, not its equal. A long row scrolls
-   inside the strip rather than pushing the name aside or growing the strip. */
+   inside the strip. */
 .stencil__slots {
   flex: 1 1 auto;
   min-inline-size: 0;

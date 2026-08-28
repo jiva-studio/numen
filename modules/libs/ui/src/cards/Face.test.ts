@@ -38,9 +38,23 @@ describe('Face', () => {
   })
 
   it('says the silence in place of a half with nothing in it', () => {
-    const held = mountFace({ front: '   \n ', silence: 'Nothing' })
-    expect(held.get('.face__silence').text()).toBe('Nothing')
+    const held = mountFace({ front: '   \n ' })
+    expect(held.get('.face__silence').text()).toBe('Nothing here')
     expect(held.find('[data-half="front"] .marks').exists()).toBe(false)
+  })
+
+  it('draws every word it is drawn with from the one record it takes', () => {
+    const held = mountFace({
+      front: '   ',
+      words: { silence: 'Пусто', turning: 'Перевернуть' },
+    })
+    expect(held.get('.face__silence').text()).toBe('Пусто')
+    expect(held.get('.face__turn').text()).toBe('Перевернуть')
+  })
+
+  it('draws the words it declares where it is handed none', () => {
+    const held = mountFace()
+    expect(held.get('.face__turn').text()).toBe('Turn')
   })
 
   it('turns the card by a button and not by a word drawn as one', () => {
