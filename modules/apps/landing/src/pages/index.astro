@@ -125,10 +125,12 @@ const framed = await Promise.all(
 /** One shot by the name it is filed under. */
 const shotOf = (id: string) => framed.find((shot) => shot.id === id)!
 
-const title = 'numen — stop keeping notes, start keeping a mind'
+const title = 'numen — your notes, joined the way you think'
+/* What a search result shows: shorter than the page's own opening, and cut to
+   what is searched for. */
 const description =
-  'Connected notes and an assistant that has read all of them, so what you know ' +
-  'comes back whole.'
+  'A local-first notebook: linked notes, spaced repetition, and a private AI agent ' +
+  'that reads them on your own machine. Your files never leave your disk.'
 ---
 
 <Page title={title} description={description}>
@@ -149,10 +151,11 @@ const description =
     </header>
 
     <section class="hero">
-      <h1 class="rise">Stop keeping notes. Start keeping <em>a mind</em>.</h1>
+      <h1 class="rise">Your notes, joined <em>the way you think</em>.</h1>
       <p class="lead rise" style="--wait: 90ms">
-        Connected notes and an assistant that has read all of them, so what you know
-        comes back whole.
+        Write it down, connect it to what you already know, and ask your notes anything
+        you like. What matters comes back to you before you forget it — and everything
+        you keep stays in your own hands.
       </p>
       <div class="actions rise" style="--wait: 170ms">
         <a class="button" href={DOWNLOAD}>Download</a>
