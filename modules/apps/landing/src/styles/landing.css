@@ -13,16 +13,16 @@
 :root {
   color-scheme: light dark;
 
-  --paper: light-dark(#fbfbfa, #17181a);
-  --raised: light-dark(#ffffff, #212429);
-  --ink: light-dark(#191b1e, #e4e7ea);
-  --muted: light-dark(#6a6f77, #969ca5);
-  --rule: light-dark(#e4e4e7, #2a2e34);
-  --ring: light-dark(#2f6fd0, #78a9ef);
+  --paper: light-dark(#faf4e8, #161311);
+  --raised: light-dark(#fffbf2, #1f1c18);
+  --ink: light-dark(#2e261e, #ece0cd);
+  --muted: light-dark(#867a6b, #a1968a);
+  --rule: light-dark(#e5dbc9, #2f2a24);
+  --ring: light-dark(#b45f16, #e9a23b);
 
-  --up: light-dark(#3f6ca8, #7aa7dd);
-  --down: light-dark(#3d7f5f, #6fbd93);
-  --across: light-dark(#9a6a2f, #d6a463);
+  --parent: light-dark(#2f6a94, #7ab4d8);
+  --child: light-dark(#5a7a2e, #a6c46b);
+  --jump: light-dark(#b5522f, #e8836b);
 
   --display: 'Newsreader Variable', 'Newsreader', Georgia, 'Times New Roman', serif;
   --sans: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
@@ -192,11 +192,10 @@ svg {
   font-size: 0.98rem;
   font-weight: 500;
   text-decoration: none;
-  transition: transform 140ms ease, opacity 140ms ease;
+  transition: opacity 140ms ease;
 }
 
 .button:hover {
-  transform: translateY(-1px);
   opacity: 0.88;
 }
 
@@ -230,17 +229,17 @@ svg {
   background:
     radial-gradient(
       58% 58% at 20% 28%,
-      color-mix(in oklab, var(--up) 26%, transparent),
+      color-mix(in oklab, var(--parent) 26%, transparent),
       transparent 72%
     ),
     radial-gradient(
       52% 52% at 80% 74%,
-      color-mix(in oklab, var(--down) 22%, transparent),
+      color-mix(in oklab, var(--child) 22%, transparent),
       transparent 72%
     ),
     radial-gradient(
       42% 46% at 62% 12%,
-      color-mix(in oklab, var(--across) 18%, transparent),
+      color-mix(in oklab, var(--jump) 18%, transparent),
       transparent 72%
     );
   filter: blur(64px);
@@ -275,6 +274,16 @@ svg {
   display: block;
   inline-size: 100%;
   height: auto;
+}
+
+/* Narrow: the window is cut back to its leading corner, where the tabs and the
+   map stand, so what is left is drawn large enough to read. */
+@media (max-width: 40rem) {
+  .shot img {
+    aspect-ratio: 1;
+    object-fit: cover;
+    object-position: left top;
+  }
 }
 
 /* The row that changes which shot is on screen: under the picture's trailing
@@ -402,6 +411,15 @@ svg {
   border-inline-start: 1px solid var(--rule);
 }
 
+/* The line runs out at the last band. The border keeps the width so nothing
+   moves, and the line itself is drawn as ink that fades. */
+.band:last-of-type .band__body {
+  border-inline-start-color: transparent;
+  background-image: linear-gradient(to bottom, var(--rule) 45%, transparent);
+  background-repeat: no-repeat;
+  background-size: 1px 100%;
+}
+
 /* The node the band hangs at, sitting on the line beside its heading. */
 .band__body::before {
   content: '';
@@ -437,6 +455,15 @@ svg {
 
 .features--four {
   grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
+}
+
+/* The window doing what the band has just described, under the reasons for it. */
+.band__shot {
+  margin-block-start: 3.5rem;
+}
+
+.band__shot {
+  box-shadow: 0 18px 44px light-dark(rgb(25 27 30 / 0.1), rgb(0 0 0 / 0.38));
 }
 
 .feature h3 {
@@ -492,16 +519,16 @@ svg {
   text-transform: uppercase;
 }
 
-.roles li[data-role='up'] b {
-  color: var(--up);
+.roles li[data-role='parent'] b {
+  color: var(--parent);
 }
 
-.roles li[data-role='down'] b {
-  color: var(--down);
+.roles li[data-role='child'] b {
+  color: var(--child);
 }
 
-.roles li[data-role='across'] b {
-  color: var(--across);
+.roles li[data-role='jump'] b {
+  color: var(--jump);
 }
 
 /* Three notes and what joins them, drawn the way the application draws them. */
@@ -535,16 +562,16 @@ svg {
   text-anchor: middle;
 }
 
-.drawing__node[data-seat='up'] rect {
-  stroke: var(--up);
+.drawing__node[data-seat='parent'] rect {
+  stroke: var(--parent);
 }
 
-.drawing__node[data-seat='down'] rect {
-  stroke: var(--down);
+.drawing__node[data-seat='child'] rect {
+  stroke: var(--child);
 }
 
-.drawing__node[data-seat='across'] rect {
-  stroke: var(--across);
+.drawing__node[data-seat='jump'] rect {
+  stroke: var(--jump);
 }
 
 .drawing__node[data-seat='focus'] rect {
@@ -565,18 +592,13 @@ svg {
 
 /* The end of the spine, and the one thing there is to do at it. */
 .close {
-  padding-block: clamp(5rem, 10vw, 8rem) clamp(3rem, 6vw, 5rem);
-  border-block-start: 1px solid var(--rule);
-  margin-block-start: calc(var(--step) * 1.6);
+  padding-block: calc(var(--step) * 1.6) clamp(3rem, 6vw, 5rem);
 }
 
 /* What there is to take: one row per machine, and what it can be taken as. */
 .shelf {
   margin-block-start: 2.5rem;
   max-inline-size: 46rem;
-  border: 1px solid var(--rule);
-  border-radius: 10px;
-  background: var(--raised);
 }
 
 .shelf__row {
@@ -584,44 +606,21 @@ svg {
   grid-template-columns: minmax(0, 11rem) minmax(0, 1fr);
   gap: 1rem 1.5rem;
   align-items: start;
-  padding: 1.35rem 1.6rem;
-}
-
-.shelf__row + .shelf__row {
-  border-block-start: 1px solid var(--rule);
+  padding-block: 1.35rem;
 }
 
 .shelf__what {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.5rem;
   padding-block-start: 0.35rem;
   font-size: 1.02rem;
   font-weight: 600;
 }
 
-/* Said only of the row that matches the machine reading the page. */
-.shelf__yours {
-  display: none;
-  padding: 0.1rem 0.45rem;
-  border: 1px solid var(--rule);
-  border-radius: 999px;
-  font-family: var(--mono);
-  font-size: 0.62rem;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.shelf__row[data-yours] .shelf__yours {
-  display: inline-block;
-}
-
+/* Each row is as wide as what it says, so what a hand rests on ends where the
+   words do. */
 .shelf__takes {
   display: flex;
   flex-direction: column;
+  align-items: start;
   gap: 0.15rem;
 }
 
@@ -691,13 +690,12 @@ svg {
   margin-block-start: 1.1rem;
 }
 
-/* Narrow: the machine stands over what it can be taken as, and the whole shelf
-   has the width of the page. */
+/* Narrow: the machine stands over what it can be taken as. */
 @media (max-width: 40rem) {
   .shelf__row {
     grid-template-columns: minmax(0, 1fr);
     gap: 0.6rem;
-    padding: 1.25rem 1.15rem;
+    padding-block: 1.25rem;
   }
 
   .shelf__what {

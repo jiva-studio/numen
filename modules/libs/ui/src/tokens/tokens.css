@@ -22,59 +22,61 @@
  * as well, it says so where it stands.
  */
 :where(:root) {
-  --numen-surface: light-dark(#fbfbfa, #17181a);
-  --numen-node-bg: light-dark(#ffffff, #23262a);
-  --numen-node-fg: light-dark(#1d1f22, #dfe2e6);
-  --numen-node-border: light-dark(#d8d9dd, #34383e);
+  --numen-surface: light-dark(#faf4e8, #161311);
+  --numen-node-bg: light-dark(#fffbf2, #1f1c18);
+  --numen-node-fg: light-dark(#3a322a, #ece0cd);
+  --numen-node-border: light-dark(#e0d6c4, #2f2a24);
 
-  --numen-focus-bg: light-dark(#1d1f22, #e8eaee);
-  --numen-focus-fg: light-dark(#fbfbfa, #17181a);
-  --numen-focus-border: light-dark(#1d1f22, #e8eaee);
+  /* The node in focus is filled with the accent, which is what the ring and
+     the selection are drawn in as well. */
+  --numen-focus-bg: light-dark(#b45f16, #e9a23b);
+  --numen-focus-fg: light-dark(#faf4e8, #2a1d0c);
+  --numen-focus-border: light-dark(#b45f16, #e9a23b);
 
   /* One hue per seat, carrying the meaning the position already carries: the
      arrangement is what a reader learns, the colour is what they use first. */
-  --numen-seat-parent: light-dark(#3f6ca8, #7aa7dd);
-  --numen-seat-child: light-dark(#3d7f5f, #6fbd93);
-  --numen-seat-jump: light-dark(#9a6a2f, #d6a463);
-  --numen-seat-sibling: light-dark(#7a5490, #b48fcb);
+  --numen-seat-parent: light-dark(#2f6a94, #7ab4d8);
+  --numen-seat-child: light-dark(#5a7a2e, #a6c46b);
+  --numen-seat-jump: light-dark(#b5522f, #e8836b);
+  --numen-seat-sibling: light-dark(#8a5a86, #c99bd4);
 
-  --numen-edge: light-dark(#c3c6cc, #3d424a);
-  --numen-edge-label: light-dark(#7b7f87, #8b9098);
-  --numen-ring: light-dark(#2f6fd0, #78a9ef);
+  --numen-edge: light-dark(#d8ccb8, #3a342c);
+  --numen-edge-label: light-dark(#8a7f70, #a1968a);
+  --numen-ring: light-dark(#b45f16, #e9a23b);
   /* The ground under selected text. The second is the same selection where the
      keyboard is somewhere else, the third every other place that text stands. */
-  --numen-selection: light-dark(#2f6fd038, #78a9ef42);
-  --numen-selection-away: light-dark(#2f6fd01f, #78a9ef24);
-  --numen-selection-match: light-dark(#2f6fd01a, #78a9ef1f);
-  --numen-alarm: light-dark(#a33a32, #e08b83);
+  --numen-selection: light-dark(#b45f1638, #e9a23b42);
+  --numen-selection-away: light-dark(#b45f161f, #e9a23b24);
+  --numen-selection-match: light-dark(#b45f161a, #e9a23b1f);
+  --numen-alarm: light-dark(#a8382c, #e5776a);
   /* The ground a card carrying an alarm stands on. */
-  --numen-alarm-bg: light-dark(#fdeceb, #3a201e);
+  --numen-alarm-bg: light-dark(#f9e6e0, #3a221c);
   /* The band something is said in that a person should read but need not act
      on at once. */
-  --numen-caution-bg: light-dark(#fff4e5, #3a2e1c);
-  --numen-caution-fg: light-dark(#7a4b00, #f0c890);
+  --numen-caution-bg: light-dark(#f7e9c8, #3a2c17);
+  --numen-caution-fg: light-dark(#8a5410, #eec26a);
   /* The ground under a stretch of text something is about to change. It sits
      under words that are still being read, so it is a tint and not a colour. */
-  --numen-highlight: light-dark(#d6a46333, #d6a4633d);
+  --numen-highlight: light-dark(#e9a23b33, #e9a23b3d);
 
   /* Text with marks in it: the marks themselves, the ground under code, and
      the ground under the head row of a table. */
-  --numen-syntax-mark: light-dark(#b3b6bc, #5f656d);
-  --numen-code-bg: light-dark(#f2f2f0, #1d2023);
-  --numen-table-head-bg: light-dark(#f2f2f0, #22252a);
+  --numen-syntax-mark: light-dark(#b0a496, #7d7266);
+  --numen-code-bg: light-dark(#f2e9d8, #1a1714);
+  --numen-table-head-bg: light-dark(#f2e9d8, #231f1b);
   /* One hue per kind of word in a highlighted language. */
-  --numen-syntax-keyword: light-dark(#8250bf, #c39cf0);
-  --numen-syntax-name: light-dark(#1f5aa6, #7fb0ea);
-  --numen-syntax-type: light-dark(#0a6b74, #63bcc6);
-  --numen-syntax-string: light-dark(#2f7a4a, #7fc79b);
-  --numen-syntax-number: light-dark(#a35a12, #e0a668);
-  --numen-syntax-comment: light-dark(#8a8e96, #7b8089);
-  --numen-syntax-punctuation: light-dark(#6c7079, #979da6);
+  --numen-syntax-keyword: light-dark(#a83b2a, #e8836b);
+  --numen-syntax-name: light-dark(#2f6a94, #7ab4d8);
+  --numen-syntax-type: light-dark(#8a5410, #eec26a);
+  --numen-syntax-string: light-dark(#5a7a2e, #a6c46b);
+  --numen-syntax-number: light-dark(#8a5a86, #c99bd4);
+  --numen-syntax-comment: light-dark(#8a7f70, #8a7f72);
+  --numen-syntax-punctuation: light-dark(#5a5148, #c4b8a8);
 
   /* What a panel is tinted with, and what shows through it. The blur goes with
      the alpha the tint carries: an opaque tint leaves nothing to blur, so a
      theme setting one sets the other. */
-  --numen-panel-bg: light-dark(#ffffffcc, #23262acc);
+  --numen-panel-bg: light-dark(#fffbf2cc, #1f1c18cc);
   --numen-panel-border: light-dark(#00000014, #ffffff1f);
   --numen-panel-blur: 24px;
   /* What a card is lifted off the window by, and what a panel is lifted by.
@@ -87,13 +89,13 @@
   /* The wash a panel lays over what it covers. */
   --numen-scrim: light-dark(#00000014, #0000005c);
 
-  --numen-field-bg: light-dark(#ffffff, #1d2023);
-  --numen-field-border: light-dark(#dcdde1, #383c43);
+  --numen-field-bg: light-dark(#fffbf2, #1a1714);
+  --numen-field-border: light-dark(#e0d6c4, #2f2a23);
 
   /* What was said is a bubble; what came back is text on the surface. */
-  --numen-bubble-bg: light-dark(#eceef2, #2b2f35);
-  --numen-bubble-fg: light-dark(#1d1f22, #dfe2e6);
-  --numen-answer-fg: light-dark(#1d1f22, #dfe2e6);
+  --numen-bubble-bg: light-dark(#f0e6d4, #26221d);
+  --numen-bubble-fg: light-dark(#3a322a, #ece0cd);
+  --numen-answer-fg: light-dark(#3a322a, #ece0cd);
 }
 
 /*

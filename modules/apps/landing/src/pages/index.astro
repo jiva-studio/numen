@@ -7,8 +7,8 @@
  */
 import { getImage } from 'astro:assets'
 import Page from '../layouts/Page.astro'
-import mapLight from '../assets/window-map-light.webp'
-import mapDark from '../assets/window-map-dark.webp'
+import mappingLight from '../assets/window-mapping-light.webp'
+import mappingDark from '../assets/window-mapping-dark.webp'
 import writingLight from '../assets/window-writing-light.webp'
 import writingDark from '../assets/window-writing-dark.webp'
 import filingLight from '../assets/window-filing-light.webp'
@@ -84,13 +84,13 @@ const SHOTS = [
     dark: writingDark,
   },
   {
-    id: 'map',
+    id: 'mapping',
     name: 'The map',
-    caption: 'Everything joined to the note you are on, drawn around it.',
-    alt: 'The numen window: a map of notes around one called Entropy, with the '
-      + 'assistant along the edge.',
-    light: mapLight,
-    dark: mapDark,
+    caption: 'The note you are on in the middle, and everything joined to it around it.',
+    alt: 'The numen window given over to the map: the note called Entropy in the '
+      + 'middle, with everything joined to it drawn around it.',
+    light: mappingLight,
+    dark: mappingDark,
   },
   {
     id: 'searching',
@@ -121,6 +121,9 @@ const framed = await Promise.all(
     unlit: await getImage({ src: shot.dark, ...shown }),
   })),
 )
+
+/** One shot by the name it is filed under. */
+const shotOf = (id: string) => framed.find((shot) => shot.id === id)!
 
 const title = 'numen — stop keeping notes, start keeping a mind'
 const description =
@@ -156,42 +159,17 @@ const description =
         <span class="beside">macOS · Windows · Linux</span>
       </div>
 
-      <style
-        is:inline
-        set:html={`${SHOTS.map(
-          ({ id }) => `.stage:has(input[value='${id}']:checked) [data-shot='${id}']`,
-        ).join(',')}{opacity:1;visibility:visible}`}
-      />
-
       <div class="stage rise" style="--wait: 260ms">
-        <div class="shots">
-          {
-            framed.map((shot, at) => (
-              <picture class="shot" data-shot={shot.id}>
-                <source srcset={shot.unlit.src} media="(prefers-color-scheme: dark)" />
-                <img
-                  src={shot.lit.src}
-                  width={shot.width}
-                  height={shot.height}
-                  alt={shot.alt}
-                  loading={at === 0 ? 'eager' : 'lazy'}
-                />
-              </picture>
-            ))
-          }
-        </div>
-
-        <div class="switch">
-          {
-            framed.map((shot, at) => (
-              <label class="switch__pick" title={shot.name}>
-                <input type="radio" name="shot" value={shot.id} checked={at === 0} />
-                <span class="switch__bar" />
-                <span class="switch__name">{shot.name}</span>
-              </label>
-            ))
-          }
-        </div>
+        <picture class="shot">
+          <source srcset={shotOf('filing').unlit.src} media="(prefers-color-scheme: dark)" />
+          <img
+            src={shotOf('filing').lit.src}
+            width={shotOf('filing').width}
+            height={shotOf('filing').height}
+            alt={shotOf('filing').alt}
+            loading="eager"
+          />
+        </picture>
       </div>
     </section>
 
@@ -232,15 +210,31 @@ const description =
               </p>
             </div>
           </div>
+
+          <picture class="shot band__shot">
+            <source srcset={shotOf('writing').unlit.src} media="(prefers-color-scheme: dark)" />
+            <img
+              src={shotOf('writing').lit.src}
+              width={shotOf('writing').width}
+              height={shotOf('writing').height}
+              alt={shotOf('writing').alt}
+              loading="lazy"
+            />
+          </picture>
         </div>
       </section>
 
       <section class="band">
-        <p class="eyebrow">Direction</p>
+        <p class="eyebrow">The map</p>
         <div class="band__body rise">
           <div class="split">
             <div>
-              <h2>A link that says which way it goes</h2>
+              <h2>A map that moves with you</h2>
+              <p class="band__lede">
+                You are always in the middle of one note, with everything joined to it
+                drawn around you. Click a neighbour and it becomes the middle. Nothing to
+                zoom, and nothing to lose yourself in.
+              </p>
               <p class="band__lede">
                 Every other tool gives you one kind of line, and a year later you have a
                 hairball. Here a link knows whether it goes up, down or across — so what
@@ -248,18 +242,18 @@ const description =
               </p>
 
               <ul class="roles">
-                <li data-role="up">
-                  <b>up</b>
+                <li data-role="parent">
+                  <b>parent</b>
                   <span>What this note belongs to. It can belong to more than one, the
                     way real subjects do.</span>
                 </li>
-                <li data-role="down">
-                  <b>down</b>
+                <li data-role="child">
+                  <b>child</b>
                   <span>What sits under it — the parts, the cases, the notes that make it
                     up.</span>
                 </li>
-                <li data-role="across">
-                  <b>across</b>
+                <li data-role="jump">
+                  <b>jump</b>
                   <span>The leap to something in another part of your thinking, without
                     tangling either.</span>
                 </li>
@@ -285,11 +279,11 @@ const description =
               </g>
               <text class="drawing__label" x="260" y="108">measures</text>
               <text class="drawing__label" x="260" y="206">states</text>
-              <g class="drawing__node" data-seat="up">
+              <g class="drawing__node" data-seat="parent">
                 <rect x="155" y="45" width="190" height="34" rx="6" />
                 <text x="250" y="67">Thermodynamics</text>
               </g>
-              <g class="drawing__node" data-seat="across">
+              <g class="drawing__node" data-seat="jump">
                 <rect x="1" y="133" width="149" height="34" rx="6" />
                 <text x="75" y="155">Maxwell's demon</text>
               </g>
@@ -297,24 +291,12 @@ const description =
                 <rect x="190" y="130" width="120" height="40" rx="7" />
                 <text x="250" y="155">Entropy</text>
               </g>
-              <g class="drawing__node" data-seat="down">
+              <g class="drawing__node" data-seat="child">
                 <rect x="170" y="233" width="160" height="34" rx="6" />
                 <text x="250" y="255">The second law</text>
               </g>
             </svg>
           </div>
-        </div>
-      </section>
-
-      <section class="band">
-        <p class="eyebrow">The map</p>
-        <div class="band__body rise">
-          <h2>A map that moves with you</h2>
-          <p class="band__lede">
-            You are always in the middle of one note, with everything joined to it drawn
-            around you. Click a neighbour and it becomes the middle. Nothing to zoom, and
-            nothing to lose yourself in.
-          </p>
 
           <div class="features">
             <div class="feature">
@@ -339,6 +321,17 @@ const description =
               </p>
             </div>
           </div>
+
+          <picture class="shot band__shot">
+            <source srcset={shotOf('mapping').unlit.src} media="(prefers-color-scheme: dark)" />
+            <img
+              src={shotOf('mapping').lit.src}
+              width={shotOf('mapping').width}
+              height={shotOf('mapping').height}
+              alt={shotOf('mapping').alt}
+              loading="lazy"
+            />
+          </picture>
         </div>
       </section>
 
@@ -374,6 +367,17 @@ const description =
               </p>
             </div>
           </div>
+
+          <picture class="shot band__shot">
+            <source srcset={shotOf('searching').unlit.src} media="(prefers-color-scheme: dark)" />
+            <img
+              src={shotOf('searching').lit.src}
+              width={shotOf('searching').width}
+              height={shotOf('searching').height}
+              alt={shotOf('searching').alt}
+              loading="lazy"
+            />
+          </picture>
         </div>
       </section>
 
@@ -410,6 +414,17 @@ const description =
               </p>
             </div>
           </div>
+
+          <picture class="shot band__shot">
+            <source srcset={shotOf('asking').unlit.src} media="(prefers-color-scheme: dark)" />
+            <img
+              src={shotOf('asking').lit.src}
+              width={shotOf('asking').width}
+              height={shotOf('asking').height}
+              alt={shotOf('asking').alt}
+              loading="lazy"
+            />
+          </picture>
         </div>
       </section>
     </main>
@@ -420,11 +435,8 @@ const description =
       <div class="shelf">
         {
           BUILDS.map((build) => (
-            <div class="shelf__row" data-for={build.id}>
-              <div class="shelf__what">
-                {build.name}
-                <span class="shelf__yours">this computer</span>
-              </div>
+            <div class="shelf__row">
+              <div class="shelf__what">{build.name}</div>
               <div class="shelf__takes">
                 {
                   build.takes.map((take) => (
@@ -458,20 +470,6 @@ const description =
       </nav>
     </footer>
   </div>
-
-  <script>
-    // Which row is for the machine reading the page. Said, not acted on: the
-    // shelf still shows everything, and nothing moves under the reader.
-    const platform = navigator.userAgent
-    const yours = /Mac/i.test(platform)
-      ? 'macos'
-      : /Win/i.test(platform)
-        ? 'windows'
-        : /Linux|X11|CrOS/i.test(platform)
-          ? 'linux'
-          : ''
-    if (yours) document.querySelector(`.shelf__row[data-for="${yours}"]`)?.setAttribute('data-yours', '')
-  </script>
 
   <script>
     // Which build the shelf is holding, asked of the shelf itself, so a release

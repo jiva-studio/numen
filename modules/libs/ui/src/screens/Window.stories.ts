@@ -6,7 +6,22 @@
  * product is taken from, so every piece is drawn in the state it settles in.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { Book, FileText, Folder, FolderOpen } from '@lucide/vue'
+import {
+  ArrowRightLeft,
+  Book,
+  BookOpen,
+  Bot,
+  Copy,
+  CornerDownRight,
+  CornerLeftUp,
+  FileText,
+  Folder,
+  FolderOpen,
+  FolderTree,
+  Trash2,
+  Type,
+  Waypoints,
+} from '@lucide/vue'
 import { ref } from 'vue'
 import Workspace from '@/workspace/Workspace.vue'
 import Plex from '@/plex/Plex.vue'
@@ -14,10 +29,18 @@ import Editor from '@/editor/Editor.vue'
 import Palette from '@/palette/Palette.vue'
 import Reader from '@/reader/Reader.vue'
 import Tree from '@/tree/Tree.vue'
+import Menu from '@/menu/Menu.vue'
+import type { MenuItem } from '@/menu/model'
 import Agent from './Agent.vue'
 import { branch, pane, type Tab, type Workspace as State } from '@/workspace/model'
 import { keyChord } from '@/palette/model'
-import type { PaletteBand, PaletteItem, PaletteKeys, PaletteSpan } from '@/palette/model'
+import type {
+  PaletteAction,
+  PaletteBand,
+  PaletteItem,
+  PaletteKeys,
+  PaletteSpan,
+} from '@/palette/model'
 import type { PlexPart } from '@/plex/inside'
 import { RELATED_SEATS } from '@/plex/model'
 import type { PlexEdge, PlexNeighbourhood, PlexNode, PlexRelatedSeat } from '@/plex/model'
@@ -29,14 +52,28 @@ const NOTE = 'note'
 const BOOK = 'book'
 const AGENT = 'agent'
 const FILES = 'files'
+const OTHER_NOTE = 'demon'
 
 const TABS: readonly Tab[] = [
   { id: PLEX, title: 'Plex' },
   { id: NOTE, title: 'Entropy' },
   { id: BOOK, title: 'Boltzmann 1877' },
+  { id: OTHER_NOTE, title: "Maxwell's demon" },
   { id: AGENT, title: 'Agent' },
   { id: FILES, title: 'Files' },
 ]
+
+/** What each tab is drawn as before its name, as the application draws it. */
+const TAB_ICONS: Readonly<Record<string, typeof Waypoints>> = {
+  [PLEX]: Waypoints,
+  [NOTE]: FileText,
+  [OTHER_NOTE]: FileText,
+  [BOOK]: BookOpen,
+  [AGENT]: Bot,
+  [FILES]: FolderTree,
+}
+
+const iconOfTab = (id: string) => TAB_ICONS[id]
 
 /** The folders of the vault the rest of this file is written about. */
 const ROWS: readonly Row[] = [
@@ -184,6 +221,20 @@ A demon that sorts fast molecules from slow ones appears to lower the entropy of
 Whether [[Free energy]] belongs under this note or beside it. The counting there assumes a temperature the surroundings hold fixed, and that assumption is nowhere above.
 `
 
+/** A second note, for a pane opened beside the first one. */
+const OTHER = `A thought experiment of 1867: a being small enough to see single molecules stands at a door between two halves of a box, and lets the fast ones through one way and the slow ones the other.
+
+## Why it looks free
+
+Nothing is pushed and nothing is heated. The gas ends sorted, hot on one side and cold on the other, and no work appears to have been done to sort it.
+
+## Where the bill arrives
+
+The being has to know which molecule is which, and it has to hold that knowledge somewhere. The memory fills, and clearing it costs what [[Landauer's principle]] says a bit costs.
+
+> The demon does not break the second law. It pays for the sorting in a currency nobody was counting.
+`
+
 /**
  * The document a search sends a person into, as the lines standing on each of
  * its pages. It is set here rather than fetched, so the picture of a book is
@@ -244,6 +295,14 @@ const BOOK_PAGES: readonly (readonly string[])[] = [
   ],
 ]
 
+/**
+ * The volume those pages were bound in, and where in it they stand. The reader
+ * counts the pages of the document it is given, so the number it says and the
+ * number printed on the page are the same number.
+ */
+const BOOK_LEAVES = 412
+const BOOK_FIRST = 372
+
 /** How a page of that document is drawn: letter paper, one line at a time. */
 const PAPER = { wide: 612, high: 792 }
 const MARGIN = 84
@@ -254,15 +313,16 @@ const escaped = (line: string) =>
   line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 const drawnPage = (page: number): string => {
-  const lines = BOOK_PAGES[page] ?? []
+  const leaf = page - BOOK_FIRST
+  const lines = BOOK_PAGES[leaf] ?? []
   const set = lines
     .map((line, at) => {
       const y = FIRST + at * LEADING
-      const weight = at === 0 && page === 0 ? ' font-weight="600" letter-spacing="1.2"' : ''
+      const weight = at === 0 && leaf === 0 ? ' font-weight="600" letter-spacing="1.2"' : ''
       return `<text x="${MARGIN}" y="${y}" font-family="Georgia, serif" font-size="16"${weight} fill="#1b1b1b">${escaped(line)}</text>`
     })
     .join('')
-  const number = `<text x="${PAPER.wide / 2}" y="${PAPER.high - 54}" text-anchor="middle" font-family="Georgia, serif" font-size="13" fill="#5a5a5a">${373 + page}</text>`
+  const number = `<text x="${PAPER.wide / 2}" y="${PAPER.high - 54}" text-anchor="middle" font-family="Georgia, serif" font-size="13" fill="#5a5a5a">${page + 1}</text>`
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${PAPER.wide}" height="${PAPER.high}"><rect width="100%" height="100%" fill="#fbfaf7"/>${set}${number}</svg>`
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
@@ -295,17 +355,25 @@ const back = (id: string, text: string): Turn => ({ id, voice: 'answered', text 
 const TURNS: readonly Turn[] = [
   said('1', 'What does this note leave out?'),
   did('2', 'note neighbourhood', 'Entropy', '4 links'),
-  did('3', 'source read', 'Boltzmann 1877 · p. 373', '2,140 characters'),
   back(
-    '4',
+    '3',
     'Two things. The note says the demon has to pay, but not where the payment ' +
       'lands — that is Landauer, and you have no note for him. And the passage on ' +
       'p. 373 counts arrangements of a **fixed** energy, which is the assumption ' +
-      'the free-energy note quietly drops.',
+      'the free-energy note quietly drops. Everywhere else you treat the two as ' +
+      'the same measure, so one of them is wrong and it is not the one you wrote ' +
+      'first.',
   ),
-  said('5', "Link it to Maxwell's demon and say why."),
-  did('6', 'link add', "Entropy → Maxwell's demon", 'jump'),
-  back('7', 'Written, as a jump, noted "what the sorting has to pay for".'),
+  said('4', 'Then make the Landauer note and put it under Entropy.'),
+  did('5', 'note create', "Landauer's principle", 'under Entropy'),
+  back(
+    '6',
+    'Made and filed under Entropy, written from p. 373 and the 1961 paper: what ' +
+      'clearing one bit costs, and why the sorting is what pays it. I linked it ' +
+      "across to Maxwell's demon, since that is where the debt is run up, and " +
+      'left the free-energy note alone — its assumption is still worth a note of ' +
+      'its own.',
+  ),
 ]
 
 /** Where a run of a title stands, every time it stands there. */
@@ -318,46 +386,130 @@ const marks = (title: string, word: string): PaletteSpan[] => {
   return spans
 }
 
-const found = (id: string, title: string, detail: string): PaletteItem => ({
+const TRAVEL = { id: 'travel', text: 'Show in plex' }
+const READ = { id: 'read', text: 'Open the note' }
+const READ_AT = { id: 'readAt', text: 'Open at this heading' }
+const READ_DOCUMENT = { id: 'readDocument', text: 'Open the document here' }
+
+/** A note whose name carries the words: the name, and nothing under it. */
+const named = (id: string, title: string): PaletteItem => ({
   id,
   title,
   at: marks(title, 'entrop'),
-  detail,
-  actions: [
-    { id: 'travel', text: 'Show in plex' },
-    { id: 'read', text: 'Open the note' },
-  ],
+  actions: [TRAVEL, READ],
 })
 
+/** A heading that carries them: the heading, and the note it stands in. */
+const heading = (id: string, title: string, note: string): PaletteItem => ({
+  id,
+  title,
+  at: marks(title, 'entrop'),
+  detail: note,
+  actions: [READ_AT, TRAVEL],
+})
+
+/** A passage: what it came out of, and the words around the hit under it. */
+const passage = (
+  id: string,
+  source: string,
+  text: string,
+  actions: readonly PaletteAction[],
+): PaletteItem => ({
+  id,
+  title: source,
+  detail: text,
+  detailAt: marks(text, 'entrop'),
+  actions,
+})
+
+/**
+ * What one search turns up, in the three bands the window draws: the names it
+ * matched, the text it was found in, and what means the same without saying it.
+ */
 const BANDS: readonly PaletteBand[] = [
   {
-    id: 'notes',
-    title: 'Notes',
+    id: 'names',
+    title: 'Names',
     items: [
-      found('n1', 'Entropy', 'physics/Entropy.md'),
-      found('n2', 'Entropy of mixing', 'physics/Entropy of mixing.md'),
-      found('n3', 'Shannon entropy', 'computation/Shannon entropy.md'),
+      named('n1', 'Entropy'),
+      named('n2', 'Entropy of mixing'),
+      heading('n3', 'Entropy as missing information', 'Shannon entropy'),
     ],
   },
   {
-    id: 'passages',
-    title: 'In the books',
+    id: 'text',
+    title: 'Text',
     items: [
-      {
-        id: 'p1',
-        title: 'the entropy of a state is the logarithm of the number of…',
-        detail: 'Boltzmann 1877 · p. 373',
-        actions: [{ id: 'read', text: 'Open the page' }],
-      },
-      {
-        id: 'p2',
-        title: '…the same measure appears where a channel is described',
-        detail: 'Shannon 1948 · § 6',
-        actions: [{ id: 'read', text: 'Open the page' }],
-      },
+      passage(
+        't1',
+        'Boltzmann 1877',
+        'the entropy of a state is the logarithm of the number of arrangements it '
+          + 'could have been made of',
+        [READ_DOCUMENT],
+      ),
+      passage(
+        't2',
+        'The second law',
+        'entropy never falls in a closed system, which is the whole of it stated '
+          + 'in one line',
+        [READ, TRAVEL],
+      ),
+    ],
+  },
+  {
+    id: 'meaning',
+    title: 'Meaning',
+    items: [
+      passage(
+        'm1',
+        "Landauer's principle",
+        'clearing one bit of memory costs at least kT ln 2 of heat, which is what '
+          + 'the sorting has to pay for',
+        [READ, TRAVEL],
+      ),
+      passage(
+        'm2',
+        "Maxwell's demon",
+        'a demon that sorts fast molecules from slow ones appears to lower the '
+          + 'disorder of a gas for nothing',
+        [READ, TRAVEL],
+      ),
     ],
   },
 ]
+
+/**
+ * What the menu on a node offers, in the bands the window draws it in: what
+ * opens the note, what is done to its file, what is made off it in the plex,
+ * what is asked of the agent, and what takes it out of the vault.
+ */
+const MENU: readonly MenuItem[] = [
+  { id: 'read', text: 'Open the note', band: 'open' },
+  { id: 'travel', text: 'Show in plex', band: 'open' },
+  { id: 'copy', text: 'Copy path', band: 'file' },
+  { id: 'reveal', text: 'Show this note in the files', band: 'file' },
+  { id: 'child', text: 'New child note', band: 'plex' },
+  { id: 'parent', text: 'New parent note', band: 'plex' },
+  { id: 'jump', text: 'New jump note', band: 'plex' },
+  { id: 'title', text: 'Change title', band: 'plex' },
+  { id: 'ask', text: 'Ask the agent about this note', band: 'agent' },
+  { id: 'remove', text: 'Remove note', band: 'remove' },
+]
+
+const MENU_ICONS: Readonly<Record<string, typeof Waypoints>> = {
+  read: FileText,
+  travel: Waypoints,
+  copy: Copy,
+  reveal: FolderOpen,
+  child: CornerDownRight,
+  parent: CornerLeftUp,
+  jump: ArrowRightLeft,
+  title: Type,
+  ask: Bot,
+  remove: Trash2,
+}
+
+const menuIcon = (id: string) => MENU_ICONS[id]
 
 /** A keyboard to draw the chords for: this file settles on one. */
 const KEYBOARD = 'Macintosh'
@@ -435,6 +587,8 @@ interface Screen {
    * handle on any node and nothing coming out from under one.
    */
   readonly creatable?: readonly PlexRelatedSeat[]
+  /** Where the menu on a node stands, and none where it stands nowhere. */
+  readonly menu?: { x: number; y: number } | null
 }
 
 /** One arrangement of the window, drawn from the pieces above. */
@@ -445,18 +599,21 @@ const screen = ({
   markdown = MARKDOWN,
   parts = () => [],
   creatable = [],
+  menu = null,
 }: Screen) => ({
-  components: { Workspace, Plex, Editor, Agent, Palette, Reader, Tree },
+  components: { Workspace, Plex, Editor, Agent, Palette, Reader, Tree, Menu },
   setup() {
     const held = ref<State>(workspace())
     const text = ref(markdown)
+    const other = ref(OTHER)
     const asking = ref('')
     const typed = ref(panel === 'search' ? 'entrop' : '')
-    const at = ref(0)
+    const at = ref(BOOK_FIRST)
 
     return {
       held,
       text,
+      other,
       asking,
       typed,
       at,
@@ -464,23 +621,28 @@ const screen = ({
       neighbourhood,
       parts,
       creatable,
+      menu,
+      MENU,
+      menuIcon,
       bands: panel === 'commands' ? COMMANDS : BANDS,
       placeholder: panel === 'commands' ? 'Type a command' : 'Search',
-      pages: BOOK_PAGES.length,
-      sheets: BOOK_PAGES.map(() => PAPER),
+      pages: BOOK_LEAVES,
+      sheets: Array.from({ length: BOOK_LEAVES }, () => PAPER),
       picture: (page: number) => drawnPage(page),
-      litOn: (page: number) => (page === 0 ? LIT : []),
+      litOn: (page: number) => (page === BOOK_FIRST ? LIT : []),
       go: (page: number) => {
-        at.value = Math.min(Math.max(page, 0), BOOK_PAGES.length - 1)
+        at.value = Math.min(Math.max(page, 0), BOOK_LEAVES - 1)
       },
       TURNS,
       TABS,
       ROWS,
       OPEN,
       iconFor,
+      iconOfTab,
       PLEX,
       NOTE,
       BOOK,
+      OTHER_NOTE,
       AGENT,
       FILES,
     }
@@ -488,6 +650,15 @@ const screen = ({
   template: `
     <div style="height: 100vh">
       <Workspace v-model="held" :tabs="TABS">
+        <!-- Lucide draws on a 24 grid, and the stroke is given in those units. -->
+        <template #icon="{ id }">
+          <component
+            :is="iconOfTab(id)"
+            v-if="iconOfTab(id)"
+            style="inline-size: 100%; block-size: 100%; stroke-width: 1.75; opacity: 0.75"
+          />
+        </template>
+
         <template #tab="{ id }">
           <Plex
             v-if="id === PLEX"
@@ -497,6 +668,7 @@ const screen = ({
             :parts="parts"
           />
           <Editor v-else-if="id === NOTE" v-model="text" />
+          <Editor v-else-if="id === OTHER_NOTE" v-model="other" />
           <Agent
             v-else-if="id === AGENT"
             v-model="asking"
@@ -532,6 +704,16 @@ const screen = ({
         open
         :placeholder="placeholder"
       />
+
+      <Menu v-if="menu" :items="MENU" :at="menu" open name="What can be done to this note">
+        <template #icon="{ id }">
+          <component
+            :is="menuIcon(id)"
+            v-if="menuIcon(id)"
+            style="inline-size: 100%; block-size: 100%; stroke-width: 1.75; opacity: 0.75"
+          />
+        </template>
+      </Menu>
     </div>
   `,
 })
@@ -567,6 +749,11 @@ export const Mapping: Story = {
         focus: 'main',
       }),
       neighbourhood: WIDE,
+      parts: (id: string) => PARTS[id] ?? [],
+      creatable: RELATED_SEATS,
+      // Asked for on a node off to the trailing side, where it stands clear of
+      // the map and of what a node is hanging.
+      menu: { x: 902, y: 396 },
     }),
 }
 
@@ -595,12 +782,22 @@ export const Writing: Story = {
       workspace: () => ({
         root: branch(
           'root',
-          [pane('main', [PLEX]), pane('middle', [NOTE, BOOK], NOTE)],
-          [0.34, 0.66],
+          [
+            pane('main', [PLEX]),
+            // A branch inside a horizontal one is drawn the other way, so the
+            // two notes stand one above the other.
+            branch(
+              'beside',
+              [pane('upper', [NOTE, BOOK], NOTE), pane('lower', [OTHER_NOTE], OTHER_NOTE)],
+              [0.5, 0.5],
+            ),
+          ],
+          [0.52, 0.48],
         ),
         axis: 'horizontal',
-        focus: 'middle',
+        focus: 'upper',
       }),
+      neighbourhood: WIDE,
     }),
 }
 
@@ -645,8 +842,12 @@ export const Asking: Story = {
       workspace: () => ({
         root: branch(
           'root',
-          [pane('middle', [NOTE, BOOK], NOTE), pane('aside', [AGENT])],
-          [0.52, 0.48],
+          [
+            pane('source', [BOOK], BOOK),
+            pane('middle', [NOTE], NOTE),
+            pane('aside', [AGENT]),
+          ],
+          [0.4, 0.3, 0.3],
         ),
         axis: 'horizontal',
         focus: 'aside',
