@@ -71,8 +71,10 @@ const carried = (event: KeyboardEvent): void => {
 </template>
 
 <style scoped>
-/* The strip is a row like any other, and reads as something to take hold of. */
+/* The strip is a row like any other, and reads as something to take hold of.
+   What it holds may stand against the strip's own width. */
 .bar {
+  position: relative;
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
@@ -92,9 +94,10 @@ const carried = (event: KeyboardEvent): void => {
   cursor: pointer;
 }
 
-/* What the strip is pressed for stands quietly until it is reached for. */
+/* What the strip is pressed for is not drawn until it is reached for, by the
+   pointer or by the keyboard. */
 .bar__deeds {
-  opacity: 0.55;
+  opacity: 0;
   transition: opacity var(--numen-motion-hover) var(--numen-easing);
 }
 

@@ -9,6 +9,7 @@
  */
 import { computed, nextTick, shallowRef, useId, useTemplateRef } from 'vue'
 import Bar from './Bar.vue'
+import Deed from './Deed.vue'
 import Marks from './Marks.vue'
 import Glyph from './Glyph.vue'
 import Grown from './Grown.vue'
@@ -461,16 +462,11 @@ const put = async (id: string, field: string): Promise<void> => {
           </div>
 
           <template #deeds>
-            <Button
-              variant="ghost"
-              size="icon-small"
-              class="size-6"
-              draggable="false"
-              :aria-label="`${words.remove}: ${block.name}`"
-              @click="emit('remove-face', block.id)"
-            >
-              <Glyph shows="bin" />
-            </Button>
+            <Deed
+              shows="bin"
+              :label="`${words.remove}: ${block.name}`"
+              @press="emit('remove-face', block.id)"
+            />
           </template>
         </Bar>
 

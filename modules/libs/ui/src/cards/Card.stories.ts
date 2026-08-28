@@ -269,9 +269,26 @@ export const ACard: Story = {
     expect(getComputedStyle(grown).borderTopWidth).toBe('0px')
     expect(getComputedStyle(tile).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
 
-    // The strip holds the one way to remove the card, and opens nothing.
+    // The strip says what cut the card, and holds the one way to remove it.
+    const bar = found(canvasElement, '.bar')
+    expect(found(canvasElement, '[data-cut-of]').textContent?.trim()).toBe('Animal')
     expect(tile.querySelector('[aria-expanded]')).toBeNull()
-    expect(found(canvasElement, '.bar').querySelectorAll('button')).toHaveLength(1)
+    expect(bar.querySelectorAll('button')).toHaveLength(1)
+
+    // It stands in the middle of the strip, and is said more quietly than what
+    // the card holds.
+    const cut = found(canvasElement, '[data-cut-of]')
+    const middle = (each: Element): number => {
+      const box = each.getBoundingClientRect()
+      return Math.round(box.left + box.width / 2)
+    }
+    expect(middle(cut)).toBe(middle(bar))
+
+    const said = Number.parseFloat(getComputedStyle(cut).fontSize)
+    const written = Number.parseFloat(
+      getComputedStyle(found(canvasElement, '[data-value="Height"]')).fontSize,
+    )
+    expect(said).toBeLessThan(written)
 
     const box = found(canvasElement, '[data-value="Height"]')
     await userEvent.click(box)

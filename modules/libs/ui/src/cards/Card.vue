@@ -9,10 +9,9 @@
  */
 import { useId } from 'vue'
 import Bar from './Bar.vue'
-import Glyph from './Glyph.vue'
+import Deed from './Deed.vue'
 import Grown from './Grown.vue'
 import Rule from '../rule/Rule.vue'
-import { Button } from '../components/ui/button'
 import { DECK_WORDS, oneLine, type DeckWords, type Stood, type Tile, type Way } from './model'
 
 const props = withDefaults(
@@ -89,17 +88,21 @@ const write = (value: Stood, text: string): void => {
       @dragend="emit('release')"
       @step="(way, press) => emit('step', way, press)"
     >
+      <!-- A deck holds cards cut by more than one stencil, so the strip says
+           which cut this one. A name is exposed by nothing standing on a
+           paragraph, so the text takes a role that carries one. -->
+      <p
+        v-if="tile.stencil"
+        class="card__cut truncate text-small text-hushed"
+        role="group"
+        :aria-label="words.cut"
+        data-cut-of
+      >
+        {{ tile.stencil }}
+      </p>
+
       <template #deeds>
-        <Button
-          variant="ghost"
-          size="icon-small"
-          class="size-6"
-          draggable="false"
-          :aria-label="`${words.remove}: ${tile.name}`"
-          @click="emit('remove')"
-        >
-          <Glyph shows="bin" />
-        </Button>
+        <Deed shows="bin" :label="`${words.remove}: ${tile.name}`" @press="emit('remove')" />
       </template>
     </Bar>
 
@@ -195,6 +198,18 @@ const write = (value: Stood, text: string): void => {
 
 .card[data-carried] {
   opacity: 0.5;
+}
+
+/* What cut the card stands in the middle of the strip itself, and keeps clear
+   of the deed at its end. */
+.card__cut {
+  position: absolute;
+  inset-inline: 2rem;
+  inset-block-start: 50%;
+  translate: 0 -50%;
+  margin: 0;
+  text-align: center;
+  pointer-events: none;
 }
 
 /* A card whose stencil names no field is named by what it was handed. */

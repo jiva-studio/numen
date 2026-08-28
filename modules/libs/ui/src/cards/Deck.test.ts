@@ -198,7 +198,7 @@ describe('Deck', () => {
     expect(mountDeck().find('.card__said').exists()).toBe(false)
   })
 
-  it('says what no card is cut by: the fields tell the stencils apart', () => {
+  it('says on each tile what cut the card it draws', () => {
     // Two stencils, named nothing that any field is named, so what is looked
     // for here can only be the stencil's own name.
     const cuts: readonly Cut[] = [
@@ -212,16 +212,16 @@ describe('Deck', () => {
     const held = mountDeck({ cards: mixed, cuts })
 
     expect(held.findAll('[data-card]')).toHaveLength(2)
-    expect(held.text()).not.toContain('Beast')
-    expect(held.text()).not.toContain('Vocabulary')
+    expect(tileFor(held, 'llama').get('[data-cut-of]').text()).toBe('Beast')
+    expect(tileFor(held, 'llano').get('[data-cut-of]').text()).toBe('Vocabulary')
   })
 
-  it('holds nothing in a tile’s head but the grip and the way to remove it', () => {
+  it('holds nothing in a tile’s head but what cut it, the grip and the way to remove it', () => {
     const head = tileFor(mountDeck(), 'llama').get('.bar')
     expect(head.findAll('button')).toHaveLength(1)
     expect(head.attributes('data-grip')).toBeDefined()
     expect(head.attributes('draggable')).toBe('true')
-    expect(head.text().trim()).toBe('')
+    expect(head.text().trim()).toBe('Animal')
   })
 
   it('carries a tile by the strip itself, and not by a handle inside it', () => {
