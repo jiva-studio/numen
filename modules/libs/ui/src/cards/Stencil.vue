@@ -157,11 +157,17 @@ const over = (lands: Landing | undefined, event: DragEvent): void => {
   at.value = lands
 }
 
+/** The carry is over, and nothing was let go. */
+const release = (): void => {
+  carried.value = null
+  at.value = undefined
+}
+
+/** A field let go on a place that takes it. */
 const drop = (): void => {
   const held = carried.value
   const lands = at.value
-  carried.value = null
-  at.value = undefined
+  release()
   if (held === null || lands === undefined) return
   if (landing(props.fields, held, lands)) emit('move-field', held, lands)
 }
@@ -177,11 +183,17 @@ const overFace = (lands: Landing, event: DragEvent): void => {
   faceAt.value = lands
 }
 
+/** The carry is over, and nothing was let go. */
+const releaseFace = (): void => {
+  face.value = null
+  faceAt.value = null
+}
+
+/** A face let go on a place that takes it. */
 const dropFace = (): void => {
   const held = face.value
   const lands = faceAt.value
-  face.value = null
-  faceAt.value = null
+  releaseFace()
   if (held !== null && lands !== held) emit('move-face', held, lands)
 }
 
@@ -191,13 +203,19 @@ const halfBox = (id: string, half: Half): HTMLTextAreaElement | null =>
     (each) => each.dataset['face'] === id && each.dataset['half'] === half,
   ) ?? null
 
-/** A field written into the half aimed at, where the caret stands, the caret following it. */
+/**
+ * A field written into the half aimed at, where the caret stands, the caret
+ * following it. A box nothing has been typed in holds no caret, so the field
+ * goes after what is written there.
+ */
 const put = async (id: string, field: string): Promise<void> => {
   const half = aiming(id)
   const target = halfBox(id, half)
   if (!target) return
 
-  const done = insert(target.value, target.selectionStart ?? target.value.length, field)
+  const typed = aim.value?.face === id
+  const caret = (typed ? target.selectionStart : null) ?? target.value.length
+  const done = insert(target.value, caret, field)
   emit('write', id, half, done.text)
   await nextTick()
   const again = halfBox(id, half)
@@ -238,7 +256,7 @@ const put = async (id: string, field: string): Promise<void> => {
               :data-disabled="row.names || undefined"
               :title="row.names ? words.pinned : `${words.carry}: ${row.field}`"
               @dragstart="lift(row.field, $event)"
-              @dragend="drop"
+              @dragend="release"
             >
               <Glyph shows="grip" />
             </span>
@@ -309,7 +327,7 @@ const put = async (id: string, field: string): Promise<void> => {
         <Bar
           :carry="`${words.carry}: ${block.name}`"
           @dragstart="liftFace(block.id, $event)"
-          @dragend="dropFace"
+          @dragend="releaseFace"
         >
           <div class="stencil__face-head flex items-center">
             <input

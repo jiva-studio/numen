@@ -57,7 +57,8 @@ const emit = defineEmits<{
 /** What this deck's boxes are named by, which is this deck's alone. */
 const uid = useId()
 
-const boxId = (tile: Tile, value: Stood): string => `${uid}-${tile.id}-${value.at}`
+const boxId = (tile: Tile, value: Stood): string =>
+  `${uid}-${tile.id}-${encodeURIComponent(value.key)}`
 
 /** The plus is showing which stencils a new card may be cut by. */
 const asking = shallowRef(false)
@@ -79,11 +80,17 @@ const over = (landing: Landing, event: DragEvent): void => {
   at.value = landing
 }
 
+/** The carry is over, and nothing was let go. */
+const release = (): void => {
+  carried.value = null
+  at.value = null
+}
+
+/** A card let go on a place that takes it. */
 const drop = (): void => {
   const held = carried.value
   const landing = at.value
-  carried.value = null
-  at.value = null
+  release()
   if (held !== null && landing !== held) emit('move', held, landing)
 }
 
@@ -123,7 +130,7 @@ const add = (cut: Cut): void => {
         <Bar
           :carry="`${words.carry}: ${tile.name}`"
           @dragstart="lift(tile.id, $event)"
-          @dragend="drop"
+          @dragend="release"
         >
           <template #deeds>
             <Button
@@ -145,15 +152,14 @@ const add = (cut: Cut): void => {
           </p>
 
           <p v-if="!tile.known" class="deck__objects text-small text-alarm" role="alert">
-            {{ words.unknown }}
+            {{ words.unknown(tile.stencil) }}
           </p>
 
           <div
             v-for="value in tile.filled"
-            :key="value.at"
+            :key="value.key"
             class="deck__value"
             :data-names="value.names || undefined"
-            :data-stray="(!value.declared && !value.twice) || undefined"
             :data-twice="value.twice || undefined"
           >
             <Rule at="start">
@@ -176,9 +182,6 @@ const add = (cut: Cut): void => {
             </Grown>
 
             <p v-if="value.twice" class="deck__objects text-small text-alarm">{{ words.twice }}</p>
-            <p v-else-if="!value.declared" class="deck__objects text-small text-alarm">
-              {{ words.stray }}
-            </p>
           </div>
 
           <p v-if="!tile.filled.length" class="deck__silence text-small text-hushed">

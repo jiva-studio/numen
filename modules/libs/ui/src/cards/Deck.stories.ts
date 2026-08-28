@@ -487,31 +487,30 @@ export const AsksWhichStencil: Story = {
 export const TheNameSitsOnTheLine: Story = {
   play: async ({ canvasElement }) => {
     const value = found(canvasElement, '[data-card="llama"] .deck__value')
-    const outline = value.querySelector('fieldset')
+    const rule = value.querySelector('.rule')
     const label = value.querySelector('label')
-    if (!outline || !label) throw new Error('no outline and no name on it')
+    if (!rule || !label) throw new Error('no rule and no name on it')
 
-    // One name, and it is the legend itself rather than a second element beside it.
+    // One name, and it stands on the rule rather than in a frame of its own.
     expect(value.querySelectorAll('label')).toHaveLength(1)
-    expect(label.closest('legend')).not.toBeNull()
+    expect(label.closest('.rule')).toBe(rule)
+    expect(value.querySelector('fieldset')).toBeNull()
 
-    // A legend straddles: the browser paints the line through its middle, half
-    // a name's height below the outline's own box top. Anything laid beside the
-    // legend instead of in it sits that half-height too high.
-    const box = outline.getBoundingClientRect()
+    // The name stands on the line, so the two share a middle.
+    const line = rule.getBoundingClientRect()
     const name = label.getBoundingClientRect()
-    const middle = (name.top + name.bottom) / 2
-    expect(Math.abs(middle - box.top - name.height / 2)).toBeLessThan(2)
+    expect(Math.abs((name.top + name.bottom) / 2 - (line.top + line.bottom) / 2)).toBeLessThan(2)
 
-    // The gap is real: the line does not run behind the name.
-    expect(name.width).toBeGreaterThan(0)
-    expect(name.left).toBeGreaterThan(box.left)
+    // The rule runs to both edges of the tile, past the room the values keep.
+    const tile = found(canvasElement, '[data-card="llama"]').getBoundingClientRect()
+    expect(line.left - tile.left).toBeLessThan(2)
+    expect(tile.right - line.right).toBeLessThan(2)
   },
 }
 
 /**
- * Every box keeps the name's line clear of its text, on every count of lines,
- * and a box holding nothing stands as tall as a box holding one.
+ * Every box stands under the rule that names it, and a box holding nothing
+ * stands as tall as a box holding one line.
  */
 export const TheTextClearsTheLine: Story = {
   args: { corpus: 'a deck' },
@@ -521,14 +520,13 @@ export const TheTextClearsTheLine: Story = {
     expect(boxes.length).toBeGreaterThan(2)
 
     for (const box of boxes) {
-      const outline = box.closest('.notched')?.querySelector('fieldset')
-      const label = box.closest('.notched')?.querySelector('label')
-      if (!outline || !label) throw new Error('a box with no outline')
+      const rule = box.closest('.deck__value')?.querySelector('.rule')
+      if (!rule) throw new Error('a box under no rule')
 
-      // Where the line is painted, and where the typing starts.
-      const line = outline.getBoundingClientRect().top + label.getBoundingClientRect().height / 2
-      const text = box.getBoundingClientRect().top + Number.parseFloat(getComputedStyle(box).paddingTop)
-      expect(text - line).toBeGreaterThan(4)
+      // The box takes the room from its own rule down, and nothing is drawn
+      // around it.
+      expect(box.getBoundingClientRect().top).toBeCloseTo(rule.getBoundingClientRect().bottom, 0)
+      expect(box.closest('.deck__value')?.querySelector('fieldset')).toBeNull()
     }
 
     // Empty and one-line boxes stand to one height.
@@ -563,17 +561,17 @@ export const OnePlusInTheMiddle: Story = {
   },
 }
 
-/** The box is filled, so it reads as something to type in. */
-export const TheBoxIsFilled: Story = {
+/** A value is the room between two rules, and nothing is drawn around it. */
+export const TheBoxIsBare: Story = {
   play: async ({ canvasElement }) => {
     const tile = found(canvasElement, '[data-card="llama"]')
-    const filled = found(canvasElement, '[data-card="llama"] .grown')
+    const box = found(canvasElement, '[data-card="llama"] .grown')
 
-    // The box has a ground of its own. Whether it reads darker or lighter than
-    // the tile is the theme's business; that it has one at all is not.
-    const ground = getComputedStyle(filled).backgroundColor
-    expect(ground).not.toBe('rgba(0, 0, 0, 0)')
-    expect(ground).not.toBe('transparent')
+    // The rules divide the tile, so the box between them needs no ground and
+    // no frame of its own. The tile keeps the one both stand on.
+    const ground = getComputedStyle(box).backgroundColor
+    expect(ground === 'rgba(0, 0, 0, 0)' || ground === 'transparent').toBe(true)
+    expect(getComputedStyle(box).borderTopWidth).toBe('0px')
     expect(getComputedStyle(tile).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
   },
 }

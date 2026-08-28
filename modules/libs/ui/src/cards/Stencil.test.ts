@@ -54,6 +54,14 @@ const dragTo = async (held: Editor, field: string, onto: string | null): Promise
   await rowFor(held, onto).trigger('drop')
 }
 
+/** A field picked up and the carry ended without it being let go anywhere. */
+const dragOff = async (held: Editor, field: string, over: string | null): Promise<void> => {
+  const grip = rowFor(held, field).get('[data-grip]')
+  await grip.trigger('dragstart')
+  if (over !== null) await rowFor(held, over).trigger('dragover')
+  await grip.trigger('dragend')
+}
+
 afterEach(() => {
   document.body.innerHTML = ''
 })
@@ -223,6 +231,19 @@ describe('Stencil, the fields', () => {
     expect(held.emitted('move-field')).toBeUndefined()
   })
 
+  it('moves nothing where a carry ends with the field let go nowhere', async () => {
+    const held = mountStencil()
+    await dragOff(held, 'Weight', null)
+    expect(held.emitted('move-field')).toBeUndefined()
+    expect(rowFor(held, 'Weight').attributes('data-carried')).toBeUndefined()
+  })
+
+  it('moves nothing where a carry over another field ends with it let go nowhere', async () => {
+    const held = mountStencil()
+    await dragOff(held, 'Weight', 'Height')
+    expect(held.emitted('move-field')).toBeUndefined()
+  })
+
   it('marks the field on its way, and no other', async () => {
     const held = mountStencil()
     await rowFor(held, 'Weight').get('[data-grip]').trigger('dragstart')
@@ -345,7 +366,28 @@ describe('Stencil, the faces', () => {
 
   it('writes a field into the front while no half has been typed in', async () => {
     const held = mountStencil()
+
+    await held.get('[data-insert="Weight"]').trigger('click')
+
+    expect(held.emitted('write')).toEqual([['recognise', 'front', '{{Name}}{{Weight}}']])
+  })
+
+  /* A box nothing has been typed in reads a caret of zero, which is not a
+     caret standing at the head of it. */
+  it('writes a field after what a box nothing has been typed in holds', async () => {
+    const held = mountStencil()
     const written = held.get('[data-face="recognise"][data-half="front"]')
+    ;(written.element as HTMLTextAreaElement).setSelectionRange(0, 0)
+
+    await held.get('[data-insert="Weight"]').trigger('click')
+
+    expect(held.emitted('write')).toEqual([['recognise', 'front', '{{Name}}{{Weight}}']])
+  })
+
+  it('writes a field where the caret stands in a box that has been typed in', async () => {
+    const held = mountStencil()
+    const written = held.get('[data-face="recognise"][data-half="front"]')
+    await written.trigger('focus')
     ;(written.element as HTMLTextAreaElement).setSelectionRange(0, 0)
 
     await held.get('[data-insert="Weight"]').trigger('click')
@@ -492,6 +534,27 @@ describe('Stencil, the faces', () => {
     it('moves nothing where a face is let go where it stands', async () => {
       const editor = mountStencil({ faces: THREE })
       await carry(editor, 'two', 'two')
+      expect(editor.emitted('move-face')).toBeUndefined()
+    })
+
+    /** A face picked up and the carry ended without it being let go anywhere. */
+    const carryOff = async (editor: Editor, id: string, onto: string | null): Promise<void> => {
+      const bar = blockFor(editor, id).get('.bar')
+      await bar.trigger('dragstart')
+      if (onto !== null) await blockFor(editor, onto).trigger('dragover')
+      await bar.trigger('dragend')
+    }
+
+    it('moves nothing where a carry ends with the face let go nowhere', async () => {
+      const editor = mountStencil({ faces: THREE })
+      await carryOff(editor, 'two', null)
+      expect(editor.emitted('move-face')).toBeUndefined()
+      expect(blockFor(editor, 'two').attributes('data-carried')).toBeUndefined()
+    })
+
+    it('moves nothing where a carry over another face ends with it let go nowhere', async () => {
+      const editor = mountStencil({ faces: THREE })
+      await carryOff(editor, 'two', 'one')
       expect(editor.emitted('move-face')).toBeUndefined()
     })
 

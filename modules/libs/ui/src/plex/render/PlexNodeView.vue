@@ -10,7 +10,7 @@
  * The title goes through a `foreignObject`: SVG text cannot ellipsise and does
  * not reorder a right-to-left run.
  */
-import { computed, ref, watch } from 'vue'
+import { Comment, computed, Fragment, ref, Text, useSlots, watch, type VNode } from 'vue'
 import PlexNodeHandle from './PlexNodeHandle.vue'
 import { isMenuKey, isPress, isShowKey } from './keys'
 import { DWELL, useDwell, type Widened } from '../dwell'
@@ -90,6 +90,24 @@ const emit = defineEmits<{
 
 const over = ref(false)
 const attended = ref(false)
+
+const slots = useSlots()
+
+/** Whether anything was drawn at all, which a placeholder and a blank are not. */
+const anything = (drawn: readonly VNode[] | undefined): boolean =>
+  !!drawn &&
+  drawn.some((one) => {
+    if (one.type === Comment) return false
+    if (one.type === Fragment) return anything(one.children as VNode[])
+    if (one.type === Text) return String(one.children).trim() !== ''
+    return true
+  })
+
+/**
+ * Whether this node is drawn something before its title. The caller answers
+ * per node, and a node it draws nothing for keeps no room beside its title.
+ */
+const icon = computed(() => anything(slots.icon?.({ node: props.node })))
 
 /** Not a node yet, so nothing may be done to it and nothing is told about it. */
 const ghost = computed(() => props.standing === 'ghost')
@@ -342,8 +360,8 @@ const hue = computed(() => ({
       <div class="plex__title">
         <!-- Whatever stands for the thing a node addresses. The plex has no
              way to know what that is, so it is handed one. -->
-        <span v-if="$slots.icon" class="plex__icon" aria-hidden="true">
-          <slot name="icon" />
+        <span v-if="icon" class="plex__icon" aria-hidden="true">
+          <slot name="icon" :node="node" />
         </span>
         <span class="plex__title-text">{{ node.title }}</span>
       </div>

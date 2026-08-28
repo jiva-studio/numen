@@ -59,6 +59,14 @@ const dragTo = async (held: Grid, id: string, onto: string | null): Promise<void
   await over.trigger('drop')
 }
 
+/** A card picked up and the carry ended without it being let go anywhere. */
+const dragOff = async (held: Grid, id: string, over: string | null): Promise<void> => {
+  const grip = tileFor(held, id).get('[data-grip]')
+  await grip.trigger('dragstart')
+  if (over !== null) await tileFor(held, over).trigger('dragover')
+  await grip.trigger('dragend')
+}
+
 afterEach(() => {
   document.body.innerHTML = ''
 })
@@ -270,19 +278,69 @@ describe('Deck', () => {
     expect(held.emitted('move')).toBeUndefined()
   })
 
-  it('keeps every value of a card whose stencil was not handed in, and says so', () => {
+  it('moves nothing where a carry ends with the card let go nowhere', async () => {
+    const held = mountDeck()
+    await dragOff(held, 'yak', null)
+    expect(held.emitted('move')).toBeUndefined()
+    expect(tileFor(held, 'yak').attributes('data-carried')).toBeUndefined()
+  })
+
+  it('moves nothing where a carry over another card ends with it let go nowhere', async () => {
+    const held = mountDeck()
+    await dragOff(held, 'yak', 'llama')
+    expect(held.emitted('move')).toBeUndefined()
+  })
+
+  it('draws no value of a card whose stencil was not handed in, and names it', () => {
     const orphan: readonly Drawn[] = [
       { id: 'gone', name: 'Gone', stencil: 'Missing', filled: [{ field: 'A', text: 'kept' }] },
     ]
     const held = mountDeck({ cards: orphan })
     const tile = tileFor(held, 'gone')
-    expect(tile.get('.deck__objects').text()).toBe('No such stencil')
-    expect(boxFor(held, 'gone', 'A').element.value).toBe('kept')
-    expect(tile.get('.deck__value').attributes('data-stray')).toBe('true')
+
+    // The stencil is named, so the person knows what the card is waiting for.
+    expect(tile.get('.deck__objects').text()).toBe('No stencil called Missing')
+    // Nothing names the values, so nothing draws them. They stay in the file.
+    expect(tile.findAll('.deck__value')).toHaveLength(0)
+    expect(tile.find('textarea').exists()).toBe(false)
   })
 
   it('says nothing about a card whose stencil was handed in', () => {
     expect(mountDeck().find('.deck__objects').exists()).toBe(false)
+  })
+
+  it('draws every value a card writes under one field, and hides none of them', () => {
+    const twice: readonly Drawn[] = [
+      {
+        id: 'llama',
+        name: 'Llama',
+        stencil: 'Animal',
+        filled: [
+          { field: 'Height', text: 'about 45"' },
+          { field: 'Height', text: 'about 6 feet' },
+        ],
+      },
+    ]
+    const held = mountDeck({ cards: twice })
+    const written = tileFor(held, 'llama')
+      .findAll<HTMLTextAreaElement>('[data-value="Height"]')
+      .map((box) => box.element.value)
+    expect(written).toEqual(['about 45"', 'about 6 feet'])
+  })
+
+  it('leaves the caret in no box but the one it was put in when a field goes', async () => {
+    const held = mountDeck()
+    const box = boxFor(held, 'llama', 'Height').element
+    box.focus()
+    expect(document.activeElement).toBe(box)
+
+    await held.setProps({ cuts: [{ name: 'Animal', fields: ['Name', 'Life span'] }] })
+
+    // The stencil no longer names the field, so its box goes and its value
+    // stays in the file. The caret goes with the box and lands in no other.
+    expect(fieldsOf(held, 'llama')).toEqual(['Name', 'Life span'])
+    expect(tileFor(held, 'llama').find('[data-value="Height"]').exists()).toBe(false)
+    expect(document.activeElement).not.toBe(boxFor(held, 'llama', 'Life span').element)
   })
 
   describe('a card carrying the field that names it as a value as well', () => {

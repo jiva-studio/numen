@@ -552,8 +552,7 @@ export const NothingStandsOverAFullBox: Story = {
       expect(box.value.trim()).not.toBe('')
 
       // The box begins where the part does: nothing is drawn above it.
-      expect(box.getBoundingClientRect().top - Number.parseFloat(getComputedStyle(box).paddingTop))
-        .toBeCloseTo(pane.getBoundingClientRect().top, 0)
+      expect(box.getBoundingClientRect().top).toBeCloseTo(pane.getBoundingClientRect().top, 0)
 
       // And the part draws no word of its own, in the middle or anywhere else.
       expect(pane.textContent?.trim()).toBe('')

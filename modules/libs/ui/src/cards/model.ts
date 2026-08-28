@@ -158,8 +158,8 @@ export interface DeckWords {
   readonly name: string
   /** What is said of a card holding no value at all. */
   readonly nothing: string
-  readonly unknown: string
-  readonly stray: string
+  /** What is said of a card whose stencil the vault does not hold. */
+  readonly unknown: (stencil: string) => string
   /** What is said of a value standing in the field the card is named by. */
   readonly twice: string
   readonly cardStem: string
@@ -172,8 +172,7 @@ export const DECK_WORDS: DeckWords = {
   cut: 'Stencil',
   name: 'Name',
   nothing: 'Nothing in it',
-  unknown: 'No such stencil',
-  stray: 'Not a field of this stencil',
+  unknown: (stencil) => (stencil ? `No stencil called ${stencil}` : 'Cut by no stencil'),
   twice: 'The card is named by this field',
   cardStem: 'Card',
 }
@@ -298,15 +297,16 @@ export interface Laid extends Filled {
 
 /**
  * A card's values in the order the stencil asks for them, empty where the card
- * leaves a slot out. A value the stencil does not name is kept, standing after
- * the rest, so nothing a person typed goes missing off the screen.
+ * leaves a slot out. Every value the card holds stands, the ones the stencil
+ * does not name after the rest, so nothing a person typed goes missing off the
+ * screen. A slot the card writes twice stands twice.
  */
 export function laid(filled: readonly Filled[], fields: readonly string[]): readonly Laid[] {
-  const stood = fields.map((field) => ({
-    field,
-    text: filled.find((each) => each.field === field)?.text ?? '',
-    declared: true,
-  }))
+  const stood = fields.flatMap((field) => {
+    const written = filled.filter((each) => each.field === field)
+    if (!written.length) return [{ field, text: '', declared: true }]
+    return written.map((each) => ({ field, text: each.text, declared: true }))
+  })
   const stray = filled
     .filter((each) => !fields.includes(each.field))
     .map((each) => ({ field: each.field, text: each.text, declared: false }))
@@ -321,6 +321,11 @@ export const blanks = (fields: readonly string[]): readonly Filled[] =>
 export interface Stood extends Laid {
   /** Where it stands among the values, counting from one. */
   readonly at: number
+  /**
+   * What tells it from every other value of its tile. Values standing under
+   * one field are told apart by their order under it.
+   */
+  readonly key: string
   /** It is the field the card is named by, which is the stencil's first. */
   readonly names: boolean
   /**
@@ -384,11 +389,28 @@ export function grid(
       { field: first, text: card.name, declared: true, names: true, twice: false },
     ]
 
+    const under = new Map<string, number>()
+    const told = (field: string): number => {
+      const nth = (under.get(field) ?? 0) + 1
+      under.set(field, nth)
+      return nth
+    }
+
     return {
       id: card.id,
       name: card.name,
       stencil: card.stencil,
-      filled: [...named, ...rest].map((each, place) => ({ ...each, at: place + 1 })),
+      // A value the stencil does not name is the person's and stays in the
+      // file, and nothing here draws it or says a word about it. A card whose
+      // stencil the vault does not hold draws no value at all, and says which
+      // stencil it is waiting for.
+      filled: [...named, ...rest]
+        .filter((each) => each.declared || each.twice)
+        .map((each, place) => ({
+          ...each,
+          at: place + 1,
+          key: `${each.field}#${told(each.field)}`,
+        })),
       at: index + 1,
       known: cut !== undefined,
       named: first !== undefined,

@@ -189,6 +189,18 @@ describe('laid', () => {
     })
   })
 
+  it('stands every value of a field the card writes more than once', () => {
+    const filled = [
+      { field: 'Height', text: 'tall' },
+      { field: 'Height', text: 'taller' },
+    ]
+    expect(laid(filled, FIELDS)).toEqual([
+      { field: 'Height', text: 'tall', declared: true },
+      { field: 'Height', text: 'taller', declared: true },
+      { field: 'Weight', text: '', declared: true },
+    ])
+  })
+
   it('lays out nothing for a stencil naming nothing and a card holding nothing', () => {
     expect(laid([], [])).toEqual([])
   })
@@ -437,6 +449,7 @@ describe('grid', () => {
       names: true,
       twice: false,
       at: 1,
+      key: 'Name#1',
     })
   })
 
@@ -452,16 +465,17 @@ describe('grid', () => {
     expect(filled.map((each) => each.at)).toEqual([1, 2, 3, 4])
   })
 
-  it('names no field where the card’s stencil was not handed in', () => {
+  it('draws no value where the card’s stencil was not handed in', () => {
     const orphan: readonly Drawn[] = [
       { id: 'x', name: 'X', stencil: 'Gone', filled: [{ field: 'A', text: 'a' }] },
     ]
     const tile = grid(orphan, CUTS, null).tiles[0]
     expect(tile?.known).toBe(false)
     expect(tile?.named).toBe(false)
-    expect(tile?.filled).toEqual([
-      { field: 'A', text: 'a', declared: false, names: false, twice: false, at: 1 },
-    ])
+    // Nothing names these values, so nothing lays them out. They stay in the
+    // file, and the tile says which stencil it is waiting for.
+    expect(tile?.filled).toEqual([])
+    expect(tile?.stencil).toBe('Gone')
   })
 
   it('names a card by its heading, and by no value it carries', () => {
