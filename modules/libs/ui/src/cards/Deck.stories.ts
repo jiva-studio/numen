@@ -22,16 +22,26 @@ const ASKED: Cut = { name: 'Basic', fields: ['Question', 'Answer'] }
 const UNBROKEN =
   'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
 
+/**
+ * Cards cut by two stencils of different sizes, which is where the tiles differ
+ * most: one stencil holds four fields and one holds two, and cards leave fields
+ * out.
+ */
 const many = (count: number): readonly Drawn[] =>
-  Array.from({ length: count }, (_, at) => ({
-    id: `card-${at}`,
-    name: `Word ${at + 1}`,
-    stencil: 'Word',
-    filled: [
-      { field: 'Meaning', text: `The ${at + 1}th of them.` },
-      { field: 'Example', text: 'A sentence it stands in.' },
-    ],
-  }))
+  Array.from({ length: count }, (_, at) =>
+    at % 2 === 0
+      ? {
+          id: `beast-${at}`,
+          name: `Beast ${at + 1}`,
+          stencil: 'Animal',
+          filled: [
+            { field: 'Height', text: 'about 45"' },
+            { field: 'Weight', text: '- bull: 350 kg\n- cow: 300 kg\n- calf: 40 kg' },
+            { field: 'Life span', text: 'about 20 years' },
+          ],
+        }
+      : { id: `asked-${at}`, name: `Question ${at + 1}`, stencil: 'Basic', filled: [] },
+  )
 
 const CORPORA = {
   'a deck': {
@@ -67,22 +77,7 @@ const CORPORA = {
       },
     ],
   },
-  one: {
-    cuts: [WORD],
-    cards: [
-      {
-        id: 'only',
-        name: 'Only',
-        stencil: 'Word',
-        filled: [
-          { field: 'Meaning', text: 'the one card there is' },
-        ],
-      },
-    ],
-  },
-  'far too many': { cuts: [WORD], cards: many(300) },
-  /* Where the tiles differ most: two stencils, one holding four fields and one
-     holding two, and cards leaving fields out. */
+  'far too many': { cuts: [ANIMAL, ASKED], cards: many(300) },
   /* A value with no newline in it that is far wider than the box, so what the
      box stands at can only be worked out from where the text wraps. */
   'a value that wraps': {
@@ -102,29 +97,10 @@ const CORPORA = {
       { id: 'short', name: 'a short one', stencil: 'Basic', filled: [] },
     ],
   },
-  'stencils of different sizes': {
-    cuts: [ANIMAL, ASKED],
-    cards: [
-      ...Array.from({ length: 12 }, (_, at) => ({
-        id: `beast-${at}`,
-        name: `Beast ${at + 1}`,
-        stencil: 'Animal',
-        filled: [
-          { field: 'Height', text: 'about 45"' },
-          { field: 'Weight', text: '- bull: 350 kg\n- cow: 300 kg\n- calf: 40 kg' },
-          { field: 'Life span', text: 'about 20 years' },
-        ],
-      })),
-      ...Array.from({ length: 12 }, (_, at) => ({
-        id: `asked-${at}`,
-        name: `Question ${at + 1}`,
-        stencil: 'Basic',
-        filled: [],
-      })),
-    ],
-  },
-  'other scripts': {
-    cuts: [{ name: 'Слово', fields: ['Слово', 'Перевод', 'Пример'] }],
+  /* Names and values that are not Latin, beside a name and a value with
+     nothing in them to break at. */
+  'awkward text': {
+    cuts: [{ name: 'Слово', fields: ['Слово', 'Перевод', 'Пример'] }, { name: UNBROKEN, fields: [UNBROKEN, 'Long'] }],
     cards: [
       {
         id: 'лама',
@@ -135,11 +111,6 @@ const CORPORA = {
           { field: 'Пример', text: 'धैर्यं सर्वत्र साधनम्' },
         ],
       },
-    ],
-  },
-  unbroken: {
-    cuts: [{ name: UNBROKEN, fields: [UNBROKEN, 'Long'] }],
-    cards: [
       {
         id: 'run-on',
         name: UNBROKEN,
@@ -154,26 +125,20 @@ const CORPORA = {
     ],
   },
   'nothing at all': { cuts: [ANIMAL, WORD], cards: [] },
-  'no text at all': {
-    cuts: [WORD],
-    cards: [{ id: 'blank', name: '', stencil: 'Word', filled: [] }],
-  },
-  'no stencil': {
-    cuts: [ANIMAL],
+  /* Every fault a tile can carry, one card apiece: a card with nothing in it,
+     a card naming a stencil that was not handed in, a card carrying the field
+     that names it as a value as well, and a card from somebody else carrying
+     marks that must never be drawn as marks. */
+  'what is wrong': {
+    cuts: [ANIMAL, WORD, ASKED],
     cards: [
+      { id: 'blank', name: '', stencil: 'Word', filled: [] },
       {
         id: 'orphan',
         name: 'Orphan',
         stencil: 'Gone',
         filled: [{ field: 'Whatever it had', text: 'still here, still readable' }],
       },
-    ],
-  },
-  /* A card carrying the field that names it as a value as well. The heading
-     names it, and the value is kept where a person can see and remove it. */
-  'named twice': {
-    cuts: [ANIMAL],
-    cards: [
       {
         id: 'twice',
         name: 'Llama',
@@ -183,11 +148,6 @@ const CORPORA = {
           { field: 'Height', text: 'about 45"' },
         ],
       },
-    ],
-  },
-  'tags that must not survive': {
-    cuts: [ASKED],
-    cards: [
       {
         id: 'theirs',
         name: 'A deck from somebody else',
@@ -308,25 +268,85 @@ const meta: Meta<Knobs> = {
 export default meta
 type Story = StoryObj<Knobs>
 
-/** Three cards, two stencils, and one card leaving a field out. */
-export const ADeck: Story = {}
+/**
+ * Three cards, two stencils, and one card leaving a field out.
+ *
+ * A value is the room under the rule that names it: the name stands on the
+ * line, the box begins where the line ends, and nothing is drawn around it.
+ * Every one of them is open to typing, and the strip over them opens nothing.
+ */
+export const ADeck: Story = {
+  play: async ({ canvasElement }) => {
+    const tile = found(canvasElement, '[data-card="llama"]')
+    const value = found(canvasElement, '[data-card="llama"] .deck__value')
+    const rule = value.querySelector('.rule')
+    const label = value.querySelector('label')
+    if (!rule || !label) throw new Error('no rule and no name on it')
 
-/** One card, and nothing to move it among. */
-export const One: Story = { args: { corpus: 'one' } }
+    // One name, and it stands on the rule, so the two share a middle.
+    expect(value.querySelectorAll('label')).toHaveLength(1)
+    expect(label.closest('.rule')).toBe(rule)
+    const line = rule.getBoundingClientRect()
+    const name = label.getBoundingClientRect()
+    expect(Math.abs((name.top + name.bottom) / 2 - (line.top + line.bottom) / 2)).toBeLessThan(2)
 
-/** Three hundred cards, all of one size, with the deck itself the only scroll. */
+    // The rule runs to both edges of the tile, past the room the values keep.
+    const edges = tile.getBoundingClientRect()
+    expect(line.left - edges.left).toBeLessThan(2)
+    expect(edges.right - line.right).toBeLessThan(2)
+
+    const boxes = [...tile.querySelectorAll<HTMLTextAreaElement>('textarea')]
+    expect(boxes).toHaveLength(4)
+    for (const box of boxes) {
+      const under = box.closest('.deck__value')?.querySelector('.rule')
+      if (!under) throw new Error('a box under no rule')
+      expect(box.getBoundingClientRect().top).toBeCloseTo(under.getBoundingClientRect().bottom, 0)
+      expect(box.closest('.deck__value')?.querySelector('fieldset')).toBeNull()
+    }
+
+    // Empty and one-line boxes stand to one height.
+    const heights = boxes.map((box) => Math.round(box.getBoundingClientRect().height))
+    expect(new Set(heights).size).toBe(1)
+
+    // The tile keeps the ground both the rules and the boxes stand on.
+    const grown = found(canvasElement, '[data-card="llama"] .grown')
+    const ground = getComputedStyle(grown).backgroundColor
+    expect(ground === 'rgba(0, 0, 0, 0)' || ground === 'transparent').toBe(true)
+    expect(getComputedStyle(grown).borderTopWidth).toBe('0px')
+    expect(getComputedStyle(tile).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
+
+    // The strip holds the one way to remove the card, and opens nothing.
+    expect(tile.querySelector('[aria-expanded]')).toBeNull()
+    expect(found(canvasElement, '[data-card="llama"] .bar').querySelectorAll('button'))
+      .toHaveLength(1)
+
+    const box = found(canvasElement, '[data-card="llama"] [data-value="Height"]')
+    await userEvent.click(box)
+    await userEvent.type(box, '!')
+    expect((box as HTMLTextAreaElement).value).toContain('!')
+  },
+}
+
+/**
+ * Three hundred cards cut by two stencils of different sizes, which is where
+ * the spread of tile heights is widest. Every tile is the size of the fullest
+ * of them, and the deck itself is the only thing that scrolls.
+ */
 export const FarTooMany: Story = {
   args: { corpus: 'far too many' },
   play: async ({ canvasElement }) => {
+    const grid = found(canvasElement, '.deck__grid')
+
+    // The window a story is drawn in is wide, so the tiles stand in more than
+    // two columns.
+    expect(getComputedStyle(grid).gridTemplateColumns.split(' ').length).toBeGreaterThan(2)
+
     measure(canvasElement)
   },
 }
 
-/** Names and values that are not Latin. */
-export const OtherScripts: Story = { args: { corpus: 'other scripts' } }
-
-/** A name and a value with nothing in them to break at. */
-export const Unbroken: Story = { args: { corpus: 'unbroken' } }
+/** Names and values that are not Latin, and a name with nothing to break at. */
+export const AwkwardText: Story = { args: { corpus: 'awkward text' } }
 
 /** No cards, and one plus standing alone in the middle of what it is asked from. */
 export const NothingAtAll: Story = {
@@ -356,15 +376,13 @@ export const NothingAtAll: Story = {
   },
 }
 
-/** A card whose name and every value is the empty string. */
-export const NoTextAtAll: Story = { args: { corpus: 'no text at all' } }
-
-/** A card naming a stencil that was not handed in. */
-export const NoStencil: Story = { args: { corpus: 'no stencil' } }
-
-/** A card carrying the field that names it as a value as well. */
-export const NamedTwice: Story = {
-  args: { corpus: 'named twice' },
+/**
+ * Every fault a tile can carry, one card apiece: a card with nothing in it, a
+ * card naming a stencil that was not handed in, and a card carrying the field
+ * that names it as a value as well.
+ */
+export const WhatIsWrongWithACard: Story = {
+  args: { corpus: 'what is wrong' },
   play: async ({ canvasElement }) => {
     // The heading names the card; the value is kept and said to be one too many.
     const boxes = [...canvasElement.querySelectorAll<HTMLTextAreaElement>('[data-value="Name"]')]
@@ -374,22 +392,27 @@ export const NamedTwice: Story = {
     expect(row?.textContent).toContain('The card is named by this field')
     expect(row?.getAttribute('data-stray')).toBeNull()
     expect(canvasElement.textContent).not.toContain('Not a field of this stencil')
-  },
-}
 
-/** A deck from somebody else. A value is a box, so no tag of one is ever drawn. */
-export const TagsThatMustNotSurvive: Story = {
-  args: { corpus: 'tags that must not survive' },
-  play: async ({ canvasElement }) => {
+    // The card whose stencil was not handed in says so, and keeps its values.
+    const orphan = found(canvasElement, '[data-card="orphan"]')
+    // Nothing says what its boxes are, so it draws none and says which stencil
+    // it asked for.
+    expect(orphan.textContent).toContain('Gone')
+    expect(orphan.querySelectorAll('textarea')).toHaveLength(0)
+
+    // The card with nothing in it stands as a tile like any other.
+    expect(canvasElement.querySelector('[data-card="blank"]')).not.toBeNull()
+
+    // A value is a box, so no tag written into one is ever drawn as a mark.
     expect(canvasElement.querySelector('script')).toBeNull()
     expect(canvasElement.querySelector('img')).toBeNull()
     expect(canvasElement.querySelector('[onerror]')).toBeNull()
     expect((window as unknown as Record<string, unknown>)['stolen']).toBeUndefined()
 
     // What the person wrote is theirs to read and change, standing as the text
-    // of a box and never as marks.
-    const box = canvasElement.querySelector<HTMLTextAreaElement>('[data-value="Answer"]')
-    expect(box?.value).toContain('<script>')
+    // of a box.
+    const theirs = canvasElement.querySelector<HTMLTextAreaElement>('[data-value="Answer"]')
+    expect(theirs?.value).toContain('<script>')
   },
 }
 
@@ -419,29 +442,20 @@ const measure = (canvasElement: HTMLElement, least = 3): void => {
   }
 }
 
-/** Two stencils of different sizes, where the spread of tile heights is widest. */
-export const StencilsOfDifferentSizes: Story = {
-  args: { corpus: 'stencils of different sizes' },
+/**
+ * A window too narrow for two columns: one column, and no sideways scrolling.
+ * A value with no newline in it wraps to several lines, and its box stands at
+ * what the wrapping comes to, which is worked out by the ground behind it.
+ */
+export const Narrow: Story = {
+  args: { corpus: 'a value that wraps', width: '22rem' },
   play: async ({ canvasElement }) => {
+    const deck = found(canvasElement, '.deck')
     const grid = found(canvasElement, '.deck__grid')
 
-    // The window a story is drawn in is wide, so the tiles stand in more than
-    // two columns.
-    const columns = getComputedStyle(grid).gridTemplateColumns.split(' ').length
-    expect(columns).toBeGreaterThan(2)
+    expect(getComputedStyle(grid).gridTemplateColumns.split(' ')).toHaveLength(1)
+    expect(deck.scrollWidth).toBeLessThanOrEqual(deck.clientWidth + 1)
 
-    measure(canvasElement)
-  },
-}
-
-/**
- * A value with no newline in it that wraps to several lines. Its box stands at
- * what the wrapping comes to, which is worked out by the ground behind it and
- * not by counting the lines the value is written on.
- */
-export const AValueThatWraps: Story = {
-  args: { corpus: 'a value that wraps', width: '24rem' },
-  play: async ({ canvasElement }) => {
     const box = found(canvasElement, '[data-card="faith"] [data-value="Answer"]')
 
     // It wrapped: the box stands taller than the one line it is written on.
@@ -450,18 +464,6 @@ export const AValueThatWraps: Story = {
 
     expect(box.scrollHeight).toBeLessThanOrEqual(box.clientHeight + 1)
     measure(canvasElement, 2)
-  },
-}
-
-/** A window too narrow for two columns: one column, and no sideways scrolling. */
-export const Narrow: Story = {
-  args: { width: '22rem' },
-  play: async ({ canvasElement }) => {
-    const deck = found(canvasElement, '.deck')
-    const grid = found(canvasElement, '.deck__grid')
-
-    expect(getComputedStyle(grid).gridTemplateColumns.split(' ')).toHaveLength(1)
-    expect(deck.scrollWidth).toBeLessThanOrEqual(deck.clientWidth + 1)
   },
 }
 
@@ -488,69 +490,5 @@ export const AsksWhichStencil: Story = {
     ])
     expect(boxes[0]?.value).toBe('Card 1')
     expect(boxes.slice(1).every((box) => box.value === '')).toBe(true)
-  },
-}
-
-/**
- * A value is the room under the rule that names it. The name stands on the
- * line, the box begins where the line ends, and nothing is drawn around it:
- * the rules divide the tile, so the box between them needs no frame and no
- * ground of its own.
- */
-export const AValueIsTheRoomUnderItsRule: Story = {
-  play: async ({ canvasElement }) => {
-    const tile = found(canvasElement, '[data-card="llama"]')
-    const value = found(canvasElement, '[data-card="llama"] .deck__value')
-    const rule = value.querySelector('.rule')
-    const label = value.querySelector('label')
-    if (!rule || !label) throw new Error('no rule and no name on it')
-
-    // One name, and it stands on the rule, so the two share a middle.
-    expect(value.querySelectorAll('label')).toHaveLength(1)
-    expect(label.closest('.rule')).toBe(rule)
-    const line = rule.getBoundingClientRect()
-    const name = label.getBoundingClientRect()
-    expect(Math.abs((name.top + name.bottom) / 2 - (line.top + line.bottom) / 2)).toBeLessThan(2)
-
-    // The rule runs to both edges of the tile, past the room the values keep.
-    const edges = tile.getBoundingClientRect()
-    expect(line.left - edges.left).toBeLessThan(2)
-    expect(edges.right - line.right).toBeLessThan(2)
-
-    const boxes = [...tile.querySelectorAll<HTMLTextAreaElement>('textarea')]
-    expect(boxes.length).toBeGreaterThan(2)
-    for (const box of boxes) {
-      const under = box.closest('.deck__value')?.querySelector('.rule')
-      if (!under) throw new Error('a box under no rule')
-      expect(box.getBoundingClientRect().top).toBeCloseTo(under.getBoundingClientRect().bottom, 0)
-      expect(box.closest('.deck__value')?.querySelector('fieldset')).toBeNull()
-    }
-
-    // Empty and one-line boxes stand to one height.
-    const heights = boxes.map((box) => Math.round(box.getBoundingClientRect().height))
-    expect(new Set(heights).size).toBe(1)
-
-    // The tile keeps the ground both the rules and the boxes stand on.
-    const grown = found(canvasElement, '[data-card="llama"] .grown')
-    const ground = getComputedStyle(grown).backgroundColor
-    expect(ground === 'rgba(0, 0, 0, 0)' || ground === 'transparent').toBe(true)
-    expect(getComputedStyle(grown).borderTopWidth).toBe('0px')
-    expect(getComputedStyle(tile).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
-  },
-}
-
-/** Every value is open to typing, and the head holds nothing that opens a tile. */
-export const EveryValueIsOpenToTyping: Story = {
-  play: async ({ canvasElement }) => {
-    const tile = found(canvasElement, '[data-card="llama"]')
-    expect(tile.querySelectorAll('textarea')).toHaveLength(4)
-    expect(tile.querySelector('[aria-expanded]')).toBeNull()
-    expect(found(canvasElement, '[data-card="llama"] .bar').querySelectorAll('button'))
-      .toHaveLength(1)
-
-    const box = found(canvasElement, '[data-card="llama"] [data-value="Height"]')
-    await userEvent.click(box)
-    await userEvent.type(box, '!')
-    expect((box as HTMLTextAreaElement).value).toContain('!')
   },
 }

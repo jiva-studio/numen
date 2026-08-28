@@ -29,25 +29,26 @@ const CORPORA = {
     front: '# Llama\n\nHow tall does it stand?',
     back: '**Height:** about 45" at the shoulder\n\n- a list\n- of two things',
   },
-  'one word': { front: 'Llama', back: '45"' },
   'far too much': { front: LONG, back: LONG },
-  'other scripts': {
+  /* Text that is not Latin, beside a run of letters with nothing in it to
+     break at. */
+  'awkward text': {
     front: '# Лама\n\nКакого она роста?',
-    back: '**Рост:** около 45″ в холке\n\nधैर्यं सर्वत्र साधनम्',
+    back: `**Рост:** около 45″ в холке\n\nधैर्यं सर्वत्र साधनम्\n\n${UNBROKEN} ${UNBROKEN}`,
   },
-  unbroken: { front: UNBROKEN, back: `${UNBROKEN} ${UNBROKEN}` },
   'nothing at all': { front: '', back: '   \n  ' },
-  'a table': {
-    front: 'What does it weigh?',
-    back: '| Animal | Weight | Height | Life span | Where |\n| --- | --- | --- | --- | --- |\n| Llama | 130 kg | 45" | 20 years | the Andes |\n| Yak | 350 kg | 63" | 22 years | the Himalaya |',
-  },
-  tags: {
-    front: 'What is a <u>llama</u>?',
-    back: '<p>A <b>camelid</b> of the Andes.</p>\n<ruby>駱駝<rt>rakuda</rt></ruby>\n\n<span style="color: teal">Coloured by the card itself.</span>',
-  },
-  'tags that must not survive': {
-    front: 'A deck from somebody else',
+  /* What a card is written with: a table wider than the card, the marks a
+     person wrote to be drawn as marks, and the ones a card may not be drawn
+     with at all. */
+  'what a card carries': {
+    front: 'What is a <u>llama</u>, and what does it weigh?',
     back:
+      '<p>A <b>camelid</b> of the Andes.</p>\n<ruby>駱駝<rt>rakuda</rt></ruby>\n\n' +
+      '<span style="color: teal">Coloured by the card itself.</span>\n\n' +
+      '| Animal | Weight | Height | Life span | Where it is kept | What it is kept for |\n' +
+      '| --- | --- | --- | --- | --- | --- |\n' +
+      '| Llama | 130 kg | 45" | 20 years | the Andes | carrying and wool |\n' +
+      '| Yak | 350 kg | 63" | 22 years | the Himalaya | milk, wool and ploughing |\n\n' +
       '<script>window.stolen = 1</script>\n' +
       '<img src="x" onerror="window.stolen = 2">\n' +
       '<a href="javascript:window.stolen = 3">a link</a>\n' +
@@ -134,26 +135,14 @@ type Story = StoryObj<Knobs>
 /** A heading, a question, and a back with a list in it. */
 export const ACard: Story = {}
 
-/** A word on each side, and nothing more. */
-export const OneWord: Story = { args: { corpus: 'one word' } }
-
 /** Far more prose than the card has room for. */
 export const FarTooMuch: Story = { args: { corpus: 'far too much', turned: true } }
 
-/** Text that is not Latin. */
-export const OtherScripts: Story = { args: { corpus: 'other scripts', turned: true } }
-
-/** A run of letters with nothing in it to break at. */
-export const Unbroken: Story = { args: { corpus: 'unbroken', turned: true } }
+/** Text that is not Latin, and a run of letters with nothing to break at. */
+export const AwkwardText: Story = { args: { corpus: 'awkward text', turned: true } }
 
 /** Both halves empty. */
 export const NothingAtAll: Story = { args: { corpus: 'nothing at all', turned: true } }
-
-/** A table wider than the card, which scrolls inside itself. */
-export const ATable: Story = { args: { corpus: 'a table', turned: true } }
-
-/** Tags a person wrote among the marks, drawn as tags. */
-export const Tags: Story = { args: { corpus: 'tags', turned: true } }
 
 /** The back arrives when the card is turned, and not before. */
 export const Turning: Story = {
@@ -171,13 +160,29 @@ export const Turning: Story = {
   },
 }
 
-/** A deck from somebody else, with what a card may not be drawn with taken out. */
-export const TagsThatMustNotSurvive: Story = {
-  args: { corpus: 'tags that must not survive', turned: true },
+/**
+ * What a card is written with: a table wider than the card, which scrolls
+ * inside itself; the marks a person wrote, drawn as marks; and the ones a card
+ * may not be drawn with, taken out.
+ */
+export const WhatACardCarries: Story = {
+  args: { corpus: 'what a card carries', turned: true },
   play: async ({ canvasElement }) => {
     const back = canvasElement.querySelector('[data-half="back"]')
     if (!back) throw new Error('no back to read')
 
+    // The marks a person wrote stand as marks.
+    expect(back.querySelector('b')).not.toBeNull()
+    expect(back.querySelector('ruby')).not.toBeNull()
+
+    // The table is read sideways inside itself, and the card does not widen.
+    const table = back.querySelector('table')
+    if (!table) throw new Error('no table on the back')
+    expect(getComputedStyle(table).overflowX).toBe('auto')
+    expect(table.scrollWidth).toBeGreaterThan(table.clientWidth)
+    expect(back.scrollWidth).toBeLessThanOrEqual(back.clientWidth + 1)
+
+    // And the ones a card may not be drawn with are nowhere.
     expect(back.querySelector('script')).toBeNull()
     expect(back.querySelector('iframe')).toBeNull()
     expect(back.querySelector('[onerror]')).toBeNull()

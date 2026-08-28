@@ -28,6 +28,11 @@ const preview: Preview = {
     layout: 'fullscreen',
     controls: { matchers: { color: /(background|colou?r)$/i } },
     backgrounds: { disable: true },
+    // A stencil cuts the cards a deck holds, and a face is one side of what
+    // the two of them come to, so the three read in that order.
+    options: {
+      storySort: { order: ['*', 'Flash Cards', ['Stencil', 'Deck', 'Face']] },
+    },
   },
   globalTypes: {
     theme: {
