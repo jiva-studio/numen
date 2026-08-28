@@ -17,10 +17,10 @@ import type {
   PlexShowing,
 } from '@numen/ui'
 import { NEW_NOTE, OFFERED } from './menu'
-import { asParts, asPlex } from './picture'
+import { asParts, asPlex, typesIn } from './picture'
 import type { Standing } from './standing'
 import { ticketing } from './tickets'
-import type { Heading, Went } from '../core'
+import type { Heading, NoteType, Went } from '../core'
 import type { Host, Kind } from '../windowing'
 import { PLEX, plexCalled } from '../workspace'
 import PlexTab from './PlexTab.vue'
@@ -54,10 +54,11 @@ export interface Plexing {
   hangs(): boolean
   /** How many of those parts stand under a node at once. The rest are wound to. */
   parts(): number
-  /** A note opened in a tab of its own, under the name the picture gives it. */
-  opens(path: string, title: string, showing: PlexShowing): void
-  /** An open note given the keyboard on one of its lines. */
-  entersAt(path: string, line: number): void
+  /**
+   * A note opened in a tab of its own, under the name the picture gives it, in
+   * the editor made for what it is. A line is a place inside it.
+   */
+  opens(path: string, title: string, showing: PlexShowing, line?: number): void
   /**
    * What each of the notes asked about is divided into, by the path it was
    * asked about. A note with nothing inside it is absent.
@@ -223,6 +224,15 @@ export function plexing(view: Standing, deps: Plexing) {
   /** What each note this plex draws is divided into, by the path it stands at. */
   const parts = ref<ReadonlyMap<string, readonly PlexPart[]>>(new Map())
 
+  /** Which of three each note on the picture is, by the path it stands at. */
+  const types = computed<ReadonlyMap<string, NoteType>>(() => {
+    const around = view.neighbourhood.value
+    return around ? typesIn(around) : new Map()
+  })
+
+  /** Which of three the note a ticket names is. */
+  const typeOf = (node: string): NoteType => types.value.get(tickets.note(node) ?? '') ?? 'note'
+
   /** Every note on the picture, the one in focus among them. */
   const drawn = computed<readonly string[]>(() => {
     const around = view.neighbourhood.value
@@ -247,7 +257,9 @@ export function plexing(view: Standing, deps: Plexing) {
   let asking = 0
 
   const reads = async () => {
-    const paths = drawn.value
+    // A deck divides into its cards and a stencil into its faces, and neither
+    // is a part of prose. Only an ordinary note is asked about.
+    const paths = drawn.value.filter((path) => (types.value.get(path) ?? 'note') === 'note')
     const mine = ++asking
     if (!deps.hangs() || paths.length === 0) {
       parts.value = new Map()
@@ -345,8 +357,7 @@ export function plexing(view: Standing, deps: Plexing) {
     // A part is named by the line it stands on, and anything else names the
     // ones that did not fit.
     if (!path || !/^\d+$/.test(part)) return
-    deps.opens(path, nameOf(path), 'here')
-    deps.entersAt(path, Number(part))
+    deps.opens(path, nameOf(path), 'here', Number(part))
   }
 
   /**
@@ -408,6 +419,7 @@ export function plexing(view: Standing, deps: Plexing) {
     carried,
     menu,
     creatable: deps.creatable,
+    typeOf,
     partsOf,
     mostParts: () => deps.parts(),
     reads,

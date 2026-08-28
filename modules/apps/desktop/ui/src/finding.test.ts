@@ -79,7 +79,6 @@ const named = (over: Partial<Named> = {}): Named => ({
   heading: '',
   line: -1,
   at: [{ from: 0, to: 3 }],
-  type: 'note',
   ...over,
 })
 
@@ -92,7 +91,6 @@ const passage = (over: Partial<Passage> = {}): Passage => ({
   length: 0,
   line: 0,
   at: [{ from: 3, to: 9 }],
-  type: 'note',
   ...over,
 })
 
@@ -285,7 +283,7 @@ describe('where a thing found takes the person', () => {
       title: 'Entropy',
     })
     expect(palette.chose(item.id, 'note')).toEqual({
-      at: 'note',
+      at: 'file',
       path: 'notes/entropy.md',
       title: 'Entropy',
     })
@@ -296,7 +294,7 @@ describe('where a thing found takes the person', () => {
     const item = bandOf(palette.bands.value, 'names')!.items[1]!
 
     expect(palette.chose(item.id, 'note')).toEqual({
-      at: 'note',
+      at: 'file',
       path: 'notes/carnot.md',
       title: 'The Carnot cycle',
       line: 12,
@@ -321,7 +319,7 @@ describe('where a thing found takes the person', () => {
     const item = bandOf(palette.bands.value, 'text')!.items[0]!
 
     expect(palette.chose(item.id, 'note')).toEqual({
-      at: 'note',
+      at: 'file',
       path: 'notes/heat.md',
       title: 'Heat engines',
       line: 12,

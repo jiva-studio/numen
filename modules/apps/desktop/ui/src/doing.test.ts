@@ -113,7 +113,9 @@ const window = (
       asking: () => answers.asking === true,
       settles: async (id) => void done.push(`settles ${id}`),
       shuts: (id) => void done.push(`shuts ${id}`),
-      shows: (path, title, showing) => void done.push(`shows ${path} ${title} ${showing}`),
+      opens: (path, title, showing) => void done.push(`opens ${path} ${title} ${showing}`),
+      made: (path, title, type, showing) =>
+        void done.push(`made ${type} ${path} ${title} ${showing}`),
     },
     vaults: {
       list: async () => ({ vaults: [known('physics', 'Physics')], showing: 'physics' }),
@@ -183,8 +185,8 @@ describe('a note put in front of the person', () => {
     await carry(deedOf('beside', front()), one.on)
 
     expect(one.done).toStrictEqual([
-      'shows physics/Ontology.md Ontology here',
-      'shows physics/Ontology.md Ontology beside',
+      'opens physics/Ontology.md Ontology here',
+      'opens physics/Ontology.md Ontology beside',
     ])
   })
 
@@ -198,15 +200,16 @@ describe('a note put in front of the person', () => {
 })
 
 describe('a deck or a stencil made', () => {
-  it('is written at the top of the vault, in the file the name is given to', async () => {
+  it('is made at the top of the vault, under the name as it was typed', async () => {
     const one = window()
 
     await carry(deedOf('deck', front(), 'Animals'), one.on)
 
-    expect(one.done).toStrictEqual(['cuts — Animals.md'])
+    // The vault names the file, so nothing here puts an ending on the name.
+    expect(one.done).toStrictEqual(['cuts — Animals'])
   })
 
-  it('keeps the ending where the name already carries one', async () => {
+  it('hands a name that carries an ending over unchanged', async () => {
     const one = window()
 
     await carry(deedOf('deck', front(), 'Animals.md'), one.on)
@@ -219,7 +222,7 @@ describe('a deck or a stencil made', () => {
 
     await carry(deedOf('stencil', front(), 'Animal'), one.on)
 
-    expect(one.done).toStrictEqual(['stencils — Animal.md'])
+    expect(one.done).toStrictEqual(['stencils — Animal'])
   })
 
   it('is nothing at all where nothing was typed', async () => {
@@ -261,7 +264,7 @@ describe('a note made', () => {
 
     await carry(deedOf('child', front({ kind: 'note' }), 'Entropy'), one.on)
 
-    expect(one.done.at(-1)).toBe('shows Entropy.md Entropy beside')
+    expect(one.done.at(-1)).toBe('made note Entropy.md Entropy beside')
   })
 
   it('takes the person nowhere where the vault would not make it', async () => {
@@ -855,7 +858,7 @@ describe('the open files a command reaches', () => {
   const over = () => {
     const done: string[] = []
     const stores = [store('note', 'Ontology.md', done), store('Animals.md', 'Animals.md', done)]
-    return { done, notes: reaching(stores, () => {}) }
+    return { done, notes: reaching(stores, { opens: () => {}, made: () => {} }) }
   }
 
   it('is the tab of whichever store stands at the file', () => {

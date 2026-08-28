@@ -62,16 +62,14 @@ export interface Filing {
 }
 
 /**
- * Where a row activated takes the person. A note is read in the editor its
- * `type` names, a book is opened at its first page, and anything else is
+ * Where a row activated takes the person. A note is read in the editor made
+ * for what it is, a book is opened at its first page, and anything else is
  * somewhere to go nowhere.
  */
 export const landingOf = (entry: Entry): Landing | null => {
   if (entry.folder) return null
   if (entry.kind === 'note') {
-    if (entry.type === 'deck') return { at: 'deck', path: entry.path, title: entry.name }
-    if (entry.type === 'stencil') return { at: 'stencil', path: entry.path, title: entry.name }
-    return { at: 'note', path: entry.path, title: entry.name }
+    return { at: 'file', path: entry.path, title: entry.name }
   }
   if (entry.kind === 'book') {
     return { at: 'document', path: entry.path, title: entry.name, start: 0, length: 0 }
@@ -297,17 +295,17 @@ export function filing(list: Listing, deps: Filing) {
   }
 
   /**
-   * A deck or a stencil made where the row stands, under a name nothing there
-   * carries, and its name put in a field for the person to type over.
+   * A deck or a stencil made where the row stands, and its name put in a field
+   * for the person to type over. The vault names the file and answers where it
+   * stands, so a name already taken there comes back as a refusal.
    */
   const cuts = async (path: string | null, stencil: boolean) => {
     const into = folderFor(path)
-    const word = stencil ? words.newStencil : words.newDeck
-    const name = list.freeIn(into, `${word}.md`)
+    const name = stencil ? words.newStencil : words.newDeck
     const made = stencil ? await deps.stencils(into, name) : await deps.cuts(into, name)
     if (!made) return
     await list.opens(into)
-    if (list.entryAt(made)) renaming.value = made
+    renaming.value = made
   }
 
   /** A menu asked for on a row or off every row, and one put away. */

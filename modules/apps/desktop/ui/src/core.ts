@@ -114,6 +114,11 @@ export interface Core {
    * asked about. A note with no headings in it is absent.
    */
   headings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly Heading[]>>
+  /**
+   * Which of three the note at each of those paths is, by the path it was asked
+   * about. A path the vault holds no note at is absent.
+   */
+  types(paths: readonly string[]): Promise<ReadonlyMap<string, NoteType>>
   opening(): Promise<{ path: string } | null>
   state(): Promise<{
     name: string
@@ -280,9 +285,9 @@ export interface NewLink {
   label?: string
 }
 
-/** What making a note came back with. */
+/** What making a note, a deck or a stencil came back with. */
 export interface Made {
-  /** Where the note is filed. Empty when nothing was made. */
+  /** Where the file is filed. Empty when nothing was made. */
   path: string
   refusal: Refused | null
 }
@@ -451,6 +456,27 @@ export interface StencilWritten {
   readonly at: string
 }
 
+/** One deck a rename did not reach, which keeps the heading it had. */
+export interface NotWritten {
+  readonly path: string
+  /** Why it was not reached, in the words to show. */
+  readonly text: string
+}
+
+/** What renaming a field came back with. */
+export interface Renaming {
+  /** The decks a heading was rewritten in, by path. */
+  readonly decks: readonly string[]
+  /** How many headings were rewritten, over all those decks. */
+  readonly cards: number
+  readonly notWritten: readonly NotWritten[]
+  /** Set where nothing was renamed at all. */
+  readonly refusal: Refused | null
+  /** The stencil is no longer the one this caller read, and nothing was renamed. */
+  readonly changed: boolean
+  readonly at: string
+}
+
 /**
  * The stencils and the decks of the vault this window is showing.
  *
@@ -460,6 +486,25 @@ export interface StencilWritten {
 export interface Cards {
   /** Every stencil in the vault, by what it is called and what it asks for. */
   stencils(limit?: number): Promise<{ stencils: readonly Offer[]; held: number }>
+  /** A deck of no cards, filed in that folder under a name made from the title. */
+  makeDeck(title: string, folder: string): Promise<Made>
+  /**
+   * A stencil declaring those fields and showing no face, the same way. The
+   * first field names the cards it cuts, so a stencil is made carrying one.
+   */
+  makeStencil(title: string, folder: string, fields: readonly string[]): Promise<Made>
+  /**
+   * A field of a stencil under another name, wherever that name is written: in
+   * the stencil's fields, in the placeholders of its faces, and as a heading in
+   * every card that stencil cuts. Seen is what a read gave this caller, and a
+   * stencil that moved past it comes back changed with nothing renamed.
+   */
+  renameField(
+    path: string,
+    from: string,
+    to: string,
+    seen: string | null,
+  ): Promise<Renaming>
   readDeck(path: string): Promise<DeckRead>
   /**
    * Cards into a deck, in the order they are given, making the file where

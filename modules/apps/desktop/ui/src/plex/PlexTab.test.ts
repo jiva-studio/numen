@@ -11,6 +11,8 @@ import { ref } from 'vue'
 import PlexTab from './PlexTab.vue'
 import type { Asked, Held } from './kind'
 import { WORDS as words } from './words'
+import type { NoteType } from '../core'
+import { iconFor } from '../icons'
 
 /** A tab standing on one note, with a child beside it and no menu open. */
 const held = () =>
@@ -28,6 +30,7 @@ const held = () =>
     menu: ref(null),
     creatable: ['child'],
     mostParts: () => 6,
+    typeOf: () => 'note',
     activate: () => {},
     made: async () => {},
     joined: async () => {},
@@ -136,5 +139,40 @@ describe('a menu asked for over a tab drawing no picture', () => {
     await view.get('.plex').trigger('contextmenu', { clientX: 12, clientY: 34 })
 
     expect(asked).toStrictEqual([])
+  })
+})
+
+describe('what a node is drawn before its title', () => {
+  /** A tab whose nodes are of the kinds a test names. */
+  const typed = (types: Record<string, NoteType>) =>
+    ({ ...held(), typeOf: (node: string) => types[node] ?? 'note' }) as unknown as Held
+
+  it('is the icon the tree draws a deck under', () => {
+    drawing(13)
+    const view = mount(PlexTab, { props: { held: typed({ 'Root.md': 'deck' }) } })
+
+    expect(view.findComponent(iconFor('deck')!).exists()).toBe(true)
+  })
+
+  it('is the icon the tree draws a stencil under', () => {
+    drawing(13)
+    const view = mount(PlexTab, { props: { held: typed({ 'Root.md': 'stencil' }) } })
+
+    expect(view.findComponent(iconFor('stencil')!).exists()).toBe(true)
+  })
+
+  it('is nothing at all for an ordinary note, which keeps no room for one', () => {
+    drawing(13)
+    const view = mount(PlexTab, { props: { held: typed({}) } })
+
+    expect(view.find('.plex__icon').exists()).toBe(false)
+  })
+
+  it('stands on the node it is about, and on no other', () => {
+    drawing(13)
+    const view = mount(PlexTab, { props: { held: typed({ 'Child.md': 'deck' }) } })
+
+    expect(view.get('[aria-label^="Child"]').find('.plex__icon').exists()).toBe(true)
+    expect(view.get('[aria-label^="Root"]').find('.plex__icon').exists()).toBe(false)
   })
 })

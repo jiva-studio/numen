@@ -100,7 +100,7 @@ describe('a row the tree reports', () => {
     window.findComponent(Tree).vm.$emit('activate', 'Entropy.md')
     await settles()
 
-    expect(done).toStrictEqual(['lands note Entropy.md'])
+    expect(done).toStrictEqual(['lands file Entropy.md'])
   })
 
   it('takes the person nowhere for a file the vault holds no source for', async () => {

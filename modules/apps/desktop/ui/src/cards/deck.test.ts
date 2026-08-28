@@ -4,10 +4,14 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { Cards, Carded, Problem, Refused } from '../core'
+import { putting } from '../putting'
 import { windowing } from '../windowing'
 import { DECK } from '../workspace'
 import { decking, type Held } from './deck'
 import { WORDS as words } from './words'
+
+/** The one place a file is opened from. Nothing here opens one. */
+const puts = () => putting({ types: async () => new Map() })
 
 /** A moment for whatever the tab asked the vault for to come back. */
 const settles = () => new Promise((done) => setTimeout(done, 0))
@@ -33,17 +37,34 @@ const vault = (
     bound?: number
     /** The write answers that the file moved past what the tab read. */
     changed?: boolean
+    /** The cards the file holds, where a test wants other ones. */
+    cards?: readonly Carded[]
   } = {},
 ) => {
   const written: string[] = []
   const seen: (string | null)[] = []
   let reads = 0
-  let cards: readonly Carded[] = CARDS
+  let cards: readonly Carded[] = answers.cards ?? CARDS
+
+  let listed = 0
 
   const core: Cards = {
-    stencils: async () => ({
-      stencils: [{ path: 'Animal.md', title: 'Animal', fields: ['Name', 'Height'] }],
-      held: 1,
+    stencils: async () => {
+      listed += 1
+      return {
+        stencils: [{ path: 'Animal.md', title: 'Animal', fields: ['Name', 'Height'] }],
+        held: 1,
+      }
+    },
+    makeDeck: async (title) => ({ path: `${title}.md`, refusal: null }),
+    makeStencil: async (title) => ({ path: `${title}.md`, refusal: null }),
+    renameField: async () => ({
+      decks: [],
+      cards: 0,
+      notWritten: [],
+      refusal: null,
+      changed: false,
+      at: '',
     }),
     readDeck: async (path) => {
       reads += 1
@@ -75,7 +96,17 @@ const vault = (
     writeStencil: async () => ({ refusal: null, changed: false, at: '' }),
   }
 
-  return { core, written, seen, reads: () => reads }
+  return {
+    core,
+    written,
+    seen,
+    reads: () => reads,
+    listed: () => listed,
+    /** The file written from somewhere else, which the next read answers with. */
+    holds: (next: readonly Carded[]) => {
+      cards = next
+    },
+  }
 }
 
 /** A window with one deck open on a file, and what that tab holds. */
@@ -85,7 +116,7 @@ const open = async (
 ) => {
   const one = vault(answers)
   const held = windowing()
-  const decks = decking(one.core, held.host)
+  const decks = decking(one.core, held.host, puts())
   held.declares([decks.kind])
   const id = await held.opens(DECK, path)
   await settles()
@@ -268,6 +299,122 @@ describe('what is wrong with a deck', () => {
 
     expect(tab.marks().at.size).toBe(0)
     expect(tab.marks().whole).toStrictEqual([])
+  })
+})
+
+describe('the field a card is named by, written over', () => {
+  // One stencil named three ways: by a path, by a name carrying an alias, and
+  // by the identifier of the note.
+  const WRITTEN = ['cards/Animal', 'Animal|зверь', 'note://01J3ZQ8W0T7K9V2M4N6P8R0S1T']
+
+  /** A deck of one card, under the wikilink it wrote for its stencil. */
+  const only = (stencil: string, stencilAt = 'Animal.md'): readonly Carded[] => [
+    { name: 'Llama', stencil, stencilAt, lead: '', values: [] },
+  ]
+
+  it('renames the card, whatever the card wrote in its brackets', async () => {
+    for (const one of WRITTEN) {
+      const { tab } = await open({ cards: only(one) })
+      const card = tab.deck().cards[0]?.id ?? ''
+
+      tab.writes(card, 'Name', 'Vicuña')
+
+      expect(tab.deck().cards[0]?.name).toBe('Vicuña')
+    }
+  })
+
+  it('stands under no heading of its own, so no card carries that field twice', async () => {
+    for (const one of WRITTEN) {
+      const { tab } = await open({ cards: only(one) })
+      const card = tab.deck().cards[0]?.id ?? ''
+
+      tab.writes(card, 'Name', 'Vicuña')
+
+      expect(tab.deck().cards[0]?.values).toStrictEqual([])
+    }
+  })
+
+  it('is a value where the field is another one the stencil declares', async () => {
+    const { tab } = await open({ cards: only('cards/Animal') })
+    const card = tab.deck().cards[0]?.id ?? ''
+
+    tab.writes(card, 'Height', 'about 45"')
+
+    expect(tab.deck().cards[0]?.name).toBe('Llama')
+    expect(tab.deck().cards[0]?.values).toStrictEqual([{ field: 'Height', text: 'about 45"' }])
+  })
+
+  it('is a value for a card whose link reached no stencil', async () => {
+    const { tab } = await open({ cards: only('Gone', '') })
+    const card = tab.deck().cards[0]?.id ?? ''
+
+    tab.writes(card, 'Name', 'Vicuña')
+
+    expect(tab.deck().cards[0]?.name).toBe('Llama')
+    expect(tab.deck().cards[0]?.values).toStrictEqual([{ field: 'Name', text: 'Vicuña' }])
+  })
+})
+
+describe('the vault changing under the window', () => {
+  it('asks for no stencil while the window holds no deck', async () => {
+    const one = vault()
+    const held = windowing()
+    const decks = decking(one.core, held.host, puts())
+    held.declares([decks.kind])
+
+    decks.changed(['Notes.md'])
+    await settles()
+
+    expect(one.listed()).toBe(0)
+  })
+
+  it('lists them again once a deck is open', async () => {
+    const { decks, listed } = await open()
+
+    decks.changed(['Notes.md'])
+    await settles()
+
+    expect(listed()).toBe(2)
+  })
+})
+
+describe('a deck read again under the window', () => {
+  /** Everything the tab hands the grid to draw. */
+  const drawing = (tab: Held) => ({
+    deck: tab.deck(),
+    drawn: tab.drawn(),
+    cuts: tab.cuts(),
+    marks: tab.marks(),
+  })
+
+  it('leaves what the grid is drawing standing, where the file reads the same', async () => {
+    const one = await open()
+    const was = drawing(one.tab)
+
+    one.decks.changed(['Animals.md'])
+    await settles()
+
+    // Each of them the same thing, and not merely a thing that reads the same:
+    // a card under the keyboard is redrawn by anything else.
+    expect(drawing(one.tab)).toStrictEqual(was)
+    expect(one.tab.deck()).toBe(was.deck)
+    expect(one.tab.drawn()).toBe(was.drawn)
+    expect(one.tab.cuts()).toBe(was.cuts)
+    expect(one.tab.marks()).toBe(was.marks)
+  })
+
+  it('draws the file again where it was written from somewhere else', async () => {
+    const one = await open()
+    const was = drawing(one.tab)
+
+    one.holds([
+      { name: 'Vicuña', stencil: 'Animal', stencilAt: 'Animal.md', lead: '', values: [] },
+    ])
+    one.decks.changed(['Animals.md'])
+    await settles()
+
+    expect(one.tab.drawn().map((card) => card.name)).toStrictEqual(['Vicuña'])
+    expect(one.tab.deck()).not.toBe(was.deck)
   })
 })
 

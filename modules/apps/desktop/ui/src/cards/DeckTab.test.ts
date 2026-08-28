@@ -8,11 +8,15 @@
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { Cards, Carded, Problem } from '../core'
+import { putting } from '../putting'
 import { windowing } from '../windowing'
 import { DECK } from '../workspace'
 import DeckTab from './DeckTab.vue'
 import { decking, type Held } from './deck'
 import { WORDS as words } from './words'
+
+/** The one place a file is opened from. Nothing here opens one. */
+const puts = () => putting({ types: async () => new Map() })
 
 /** A moment for whatever the tab asked the vault for to come back. */
 const settles = () => new Promise((done) => setTimeout(done, 0))
@@ -39,6 +43,16 @@ const drawn = async (problems: readonly Problem[] = []) => {
       stencils: [{ path: 'Animal.md', title: 'Animal', fields: ['Name', 'Height'] }],
       held: 1,
     }),
+    makeDeck: async (title) => ({ path: `${title}.md`, refusal: null }),
+    makeStencil: async (title) => ({ path: `${title}.md`, refusal: null }),
+    renameField: async () => ({
+      decks: [],
+      cards: 0,
+      notWritten: [],
+      refusal: null,
+      changed: false,
+      at: '',
+    }),
     readDeck: async (path) => ({
       deck: { path, title: 'Animals', preamble: '', cards: CARDS, tail: '', problems },
       refusal: null,
@@ -51,7 +65,7 @@ const drawn = async (problems: readonly Problem[] = []) => {
   }
 
   const held = windowing()
-  const decks = decking(core, held.host)
+  const decks = decking(core, held.host, puts())
   held.declares([decks.kind])
   const id = await held.opens(DECK, 'Animals.md')
   await settles()

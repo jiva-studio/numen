@@ -93,6 +93,33 @@ export const cards: Cards = {
     const answer = await cutting.stencils({ limit: limit ?? 0 })
     return { stencils: answer.stencils.map(offered), held: answer.held }
   },
+  makeDeck: async (title, folder) => {
+    const answer = await cutting.makeDeck({ title, folder })
+    return { path: answer.path, refusal: refusalIn(answer) }
+  },
+  makeStencil: async (title, folder, fields) => {
+    const answer = await cutting.makeStencil({ title, folder, fields: [...fields] })
+    return { path: answer.path, refusal: refusalIn(answer) }
+  },
+  renameField: async (path, from, to, seen) => {
+    const answer = await cutting.renameField({
+      path,
+      from,
+      to,
+      ...(seen === null ? {} : { seen: fingerprint(seen) }),
+    })
+    return {
+      decks: answer.decks,
+      cards: answer.cards,
+      notWritten: answer.notWritten.map((one) => ({
+        path: one.path,
+        text: one.problem?.text ?? '',
+      })),
+      refusal: refusalIn(answer),
+      changed: answer.changed,
+      at: stamp(answer.at) ?? '',
+    }
+  },
   readDeck: async (path) => {
     const answer = await cutting.readDeck({ path })
     return {
@@ -245,6 +272,11 @@ export const core: Core & Asking & Commanding = {
       ]),
     )
   },
+  /** Which of three the note at each of those paths is. */
+  types: async (paths) => {
+    const answer = await vault.types({ paths: [...paths] })
+    return new Map(answer.found.map((one) => [one.path, typed[one.type]]))
+  },
   /** The names in the vault that match what is typed. */
   names: async (query, limit) => {
     const answer = await vault.names({ query, limit })
@@ -255,7 +287,6 @@ export const core: Core & Asking & Commanding = {
       // A name with no heading stands on no line of the prose.
       line: one.heading?.line ?? -1,
       at: one.at.map(run),
-      type: typed[one.type],
     }))
   },
   /** The text the vault holds that answers what is typed, asked one way. */
@@ -272,7 +303,6 @@ export const core: Core & Asking & Commanding = {
       length: one.length,
       line: one.line,
       at: one.at.map(run),
-      type: typed[one.type],
     }))
   },
 }

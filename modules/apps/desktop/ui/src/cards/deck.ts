@@ -6,13 +6,14 @@
  * What travels between the store and the vault is the cards of the deck, and
  * the string the store is dirty against is those cards written out.
  */
-import { shallowRef } from 'vue'
-import type { Cut, Drawn } from '@numen/ui'
+import { computed, shallowRef } from 'vue'
+import type { Cut, Drawn, PlexShowing } from '@numen/ui'
 import type { Cards, Offer, Refused, Went } from '../core'
 import type { Store } from '../doing'
 import { editing, type Editing } from '../note/editing'
 import { markOf } from '../note/tab'
 import type { Host, Kind } from '../windowing'
+import type { Putting } from '../putting'
 import { DECK } from '../workspace'
 import DeckTab from './DeckTab.vue'
 import {
@@ -30,6 +31,9 @@ import {
   names,
   pathOfCut,
   removed,
+  sameDeck,
+  sameMarks,
+  sameOffers,
   type Deck,
   type Marks,
 } from './model'
@@ -91,7 +95,7 @@ export interface Held {
   shuts(id: string): void
 }
 
-export function decking(cards: Cards, host: Host) {
+export function decking(cards: Cards, host: Host, puts: Putting) {
   /** What the vault last said about each file, under the path it is filed at. */
   const told = new Map<string, Told>()
   /** What each file is called, as the vault last read it. */
@@ -99,15 +103,23 @@ export function decking(cards: Cards, host: Host) {
   /** The stencils of the vault, as they were last listed. */
   const offers = shallowRef<readonly Offer[]>([])
 
+  /**
+   * What is wrong with a file, as this reading has it. A reading saying what
+   * the last one said leaves what is drawn against the file standing.
+   */
+  const marking = (path: string, read: Marks): Marks => {
+    const held = told.get(path)?.marks
+    return held && sameMarks(held, read) ? held : read
+  }
+
   const store = editing({
     read: async (path) => {
       const answer = await cards.readDeck(path)
       const deck = answer.deck ? deckOf(answer.deck) : null
       told.set(path, {
-        marks: marksOf(
-          answer.deck?.problems ?? [],
-          deck?.cards.map((card) => card.id) ?? [],
-          [],
+        marks: marking(
+          path,
+          marksOf(answer.deck?.problems ?? [], deck?.cards.map((card) => card.id) ?? [], []),
         ),
         refusal: answer.refusal,
         bound: answer.bound,
@@ -145,10 +157,36 @@ export function decking(cards: Cards, host: Host) {
     const body = store.shown(id).body
     const held = parsed.get(id)
     if (held && held.body === body) return held.deck
-    const deck = deckIn(body)
+    // A file read again carries fresh identities for the same cards, so the
+    // string it comes back as differs from the string that went out. A deck
+    // reading as the one on screen leaves that one standing, and the card a
+    // person is typing into is not drawn again.
+    const read = deckIn(body)
+    const deck = held && sameDeck(held.deck, read) ? held.deck : read
     parsed.set(id, { body, deck })
     return deck
   }
+
+  /**
+   * What one tab was last drawn as, against the deck and the stencils it was
+   * drawn from. A deck that stands is drawn under the tiles it already has.
+   */
+  const grids = new Map<
+    string,
+    { deck: Deck; offers: readonly Offer[]; drawn: readonly Drawn[] }
+  >()
+
+  const drawnAt = (id: string): readonly Drawn[] => {
+    const deck = deckAt(id)
+    const held = grids.get(id)
+    if (held && held.deck === deck && held.offers === offers.value) return held.drawn
+    const drawn = drawnOf(deck, offers.value)
+    grids.set(id, { deck, offers: offers.value, drawn })
+    return drawn
+  }
+
+  /** The stencils a card may be cut by, made again where the list changed. */
+  const cuts = computed(() => cutsOf(offers.value))
 
   /** A deck as it now stands, written back into the store. */
   const turns = (id: string, deck: Deck): void => {
@@ -157,10 +195,15 @@ export function decking(cards: Cards, host: Host) {
     store.typed(id, body)
   }
 
-  /** The stencils of the vault, asked for again. */
+  /**
+   * The stencils of the vault, asked for again. A list naming the same
+   * stencils leaves the one held standing, so what is drawn under it stands
+   * with it.
+   */
   const lists = async (): Promise<void> => {
     try {
-      offers.value = (await cards.stencils()).stencils
+      const listed = (await cards.stencils()).stencils
+      if (!sameOffers(offers.value, listed)) offers.value = listed
     } catch {
       // The stencils the window last heard of stand, and a card is cut by one
       // of them until the vault answers again.
@@ -179,8 +222,8 @@ export function decking(cards: Cards, host: Host) {
     id,
     shown: () => store.shown(id),
     deck: () => deckAt(id),
-    drawn: () => drawnOf(deckAt(id), offers.value),
-    cuts: () => cutsOf(offers.value),
+    drawn: () => drawnAt(id),
+    cuts: () => cuts.value,
     marks: () => (told.get(store.where(id)) ?? NOTHING).marks,
     saying: () => sayingOf(store.where(id)),
     adds: (name, stencil, values) =>
@@ -189,8 +232,8 @@ export function decking(cards: Cards, host: Host) {
     moves: (card, at) => turns(id, carried(deckAt(id), card, at)),
     writes: (card, field, text) => {
       const deck = deckAt(id)
-      const cut = deck.cards.find((one) => one.id === card)?.stencil ?? ''
-      if (names(offers.value, cut, field)) return turns(id, named(deck, card, text))
+      const at = deck.cards.find((one) => one.id === card)?.stencilAt ?? ''
+      if (names(offers.value, at, field)) return turns(id, named(deck, card, text))
       turns(id, filled(deck, card, field, text))
     },
     keep: () => store.keep(id),
@@ -200,6 +243,7 @@ export function decking(cards: Cards, host: Host) {
       void store.shut(id).then((gone) => {
         if (!gone) return
         parsed.delete(id)
+        grids.delete(id)
         host.closes(tab)
       })
     },
@@ -250,21 +294,28 @@ export function decking(cards: Cards, host: Host) {
   }
 
   /** A deck put in front of the person, in a tab of its own. */
-  const shows = (path: string, title = ''): void => {
+  const shows = (path: string, title = '', showing: PlexShowing = 'here'): void => {
     if (title) titles.set(path, title)
-    void host.opens(DECK, path)
+    void (showing === 'beside' ? host.beside(DECK, path) : host.opens(DECK, path))
   }
 
-  /** The vault changed: every open deck hears it, and the stencils are listed again. */
+  // The editor of a deck, which is the grid of its cards. A card stands on no
+  // line of prose, so a deck asked for at a place inside it opens whole.
+  puts.holds('deck', shows)
+
+  /**
+   * The vault changed: every open deck hears it, and the stencils are listed
+   * again. The list is what a deck tab draws its cards under, so a window
+   * holding no deck asks for none.
+   */
   const changed = (paths: readonly string[], renamed: readonly Went[] = []): void => {
     store.changed(paths, renamed)
-    void lists()
+    if (store.all().length > 0) void lists()
   }
 
   return {
     kind,
     held,
-    shows,
     changed,
     lists,
     called,

@@ -43,6 +43,7 @@ import { HANGING, PARTS, hanging } from './hanging'
 import { does, reaching, type Doing, type Store } from './doing'
 import { finding } from './finding'
 import { lands, type Places } from './landing'
+import { putting } from './putting'
 import { leaving } from './leaving'
 import { raising } from './raising'
 import { windowing } from './windowing'
@@ -62,6 +63,7 @@ import { plexKind, plexing, type Held as PlexHeld } from './plex/kind'
 import { core as agent } from './agent/core'
 import { conversation } from './agent/conversation'
 import { WORDS as talk } from './agent/words'
+import { WORDS as cut } from './cards/words'
 import { WORDS as words } from './words'
 import { VERSION } from './version'
 import { AGENT, CONVERSATION, FILES, NOTE, PLEX, named, opening } from './workspace'
@@ -128,12 +130,19 @@ const notices = computed<readonly Notice[]>(() =>
 const held = windowing()
 const { layout } = held
 
+/**
+ * What a file of the vault is put in front of the person with. Every road to a
+ * file comes through here, and the editors hand over their own door as they are
+ * made: nothing else in the window holds one.
+ */
+const puts = putting(core)
+
 /** The notes the window has open: what each is called, and what each tab of one holds. */
-const noted = noting(core, notes, drawings, held.host)
+const noted = noting(core, notes, drawings, held.host, puts)
 
 /** The decks and the stencils the window has open, each saved the way a note is. */
-const decks = decking(cards, held.host)
-const stencils = stencilling(cards, held.host)
+const decks = decking(cards, held.host, puts)
+const stencils = stencilling(cards, held.host, puts, tell.under('stencil'))
 
 going.holds(decks.flush)
 going.holds(stencils.flush)
@@ -156,8 +165,7 @@ const plexes = plexKind(held.host, () => standing(core), {
   ready: () => !failure.value && !indexing.value,
   hangs: () => hungParts.hangs.value,
   parts: () => hungParts.parts.value,
-  opens: (path, title, showing) => noted.shows(path, title, showing),
-  entersAt: (path, line) => noted.entersAt(path, line),
+  opens: (path, title, showing, line) => void puts.opens(path, title, showing, line),
   inside: (paths) => core.headings(paths),
   asks: (text) => void agents.asks(text),
   runs: (id, path, title) => carries(id, { ...where(), path, title }),
@@ -185,35 +193,30 @@ const read = documentKind(held.host, (path) => documenting(reading(documents, pa
 const places: Places = {
   travel: (path) => plexes.travel(path),
   opensAt: (path, run) => read.opensAt(path, run),
-  shows: (path, title) => noted.shows(path, title),
-  deck: (path, title) => decks.shows(path, title),
-  stencil: (path, title) => stencils.shows(path, title),
-  entersAt: (path, line) => noted.entersAt(path, line),
+  opens: (path, title, line) => void puts.opens(path, title, 'here', line),
 }
 
 /**
- * A deck or a stencil made in a folder under the name it is given. The file
- * carries what it is from the moment it is written, so making one is a write of
- * no cards or of no fields.
+ * A deck or a stencil made in a folder under the name it is given. The vault
+ * names the file after it and answers where it stands, and a stencil is made
+ * carrying the field its cards are named by.
  */
 const makesCards = async (folder: string, name: string, stencil: boolean): Promise<string> => {
-  const path = folder ? `${folder}/${name}` : name
   const answer = stencil
-    ? await cards.writeStencil(path, [], [], null)
-    : await cards.writeDeck(path, { preamble: '', cards: [], tail: '' }, null)
+    ? await cards.makeStencil(name, folder, [cut.newField])
+    : await cards.makeDeck(name, folder)
   if (answer.refusal) {
     told(words.refused[answer.refusal], 'refusal')
     return ''
   }
-  return path
+  return answer.path
 }
 
 /** The same, put in front of the person in a tab of its own. */
 const opensCards = async (folder: string, name: string, stencil: boolean): Promise<string> => {
   const path = await makesCards(folder, name, stencil)
   if (!path) return ''
-  if (stencil) stencils.shows(path)
-  else decks.shows(path)
+  puts.made(path, '', stencil ? 'stencil' : 'deck')
   return path
 }
 
@@ -321,7 +324,7 @@ const stores: readonly Store[] = [
 ]
 
 /** The open files a command reaches, whichever of the stores holds each. */
-const reached = reaching(stores, (path, title, showing) => noted.shows(path, title, showing))
+const reached = reaching(stores, puts)
 
 /** What one thing the quit is waiting on is called. */
 const titled = (id: string): string => stores.find((one) => one.has(id))?.called(id) ?? ''

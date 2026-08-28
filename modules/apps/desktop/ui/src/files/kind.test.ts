@@ -65,17 +65,19 @@ const tab = (refuses = false) => {
       done.push(`writes ${made}`)
       return made
     },
+    // The vault takes a folder and a name and answers where it filed the file.
+    // The ending is its own, and it is not markdown here.
     cuts: async (folder, name) => {
-      const made = folder === ROOT ? name : `${folder}/${name}`
-      done.push(`cuts ${made}`)
+      done.push(`cuts ${folder === ROOT ? '/' : folder} ${name}`)
       if (refuses) return ''
+      const made = folder === ROOT ? `${name}.note` : `${folder}/${name}.note`
       vault[folder] = [...(vault[folder] ?? []), file(made, { type: 'deck' })]
       return made
     },
     stencils: async (folder, name) => {
-      const made = folder === ROOT ? name : `${folder}/${name}`
-      done.push(`stencils ${made}`)
+      done.push(`stencils ${folder === ROOT ? '/' : folder} ${name}`)
       if (refuses) return ''
+      const made = folder === ROOT ? `${name}.note` : `${folder}/${name}.note`
       vault[folder] = [...(vault[folder] ?? []), file(made, { type: 'stencil' })]
       return made
     },
@@ -87,30 +89,28 @@ const tab = (refuses = false) => {
 describe('where a row activated takes the person', () => {
   it('is the note it stands for, in a tab of its own', () => {
     expect(landingOf(file('Entropy.md'))).toStrictEqual({
-      at: 'note',
+      at: 'file',
       path: 'Entropy.md',
       title: 'Entropy.md',
     })
   })
 
-  it('is the deck it stands for, in the editor of its cards', () => {
+  // Which editor a note opens in is not the tree's to say: the row names the
+  // file, and the window opens it as what it is.
+  it('is the deck it stands for, named and no more', () => {
     expect(landingOf(file('Animals.md', { type: 'deck' }))).toStrictEqual({
-      at: 'deck',
+      at: 'file',
       path: 'Animals.md',
       title: 'Animals.md',
     })
   })
 
-  it('is the stencil it stands for, in the editor of its fields and faces', () => {
+  it('is the stencil it stands for, named and no more', () => {
     expect(landingOf(file('Animal.md', { type: 'stencil' }))).toStrictEqual({
-      at: 'stencil',
+      at: 'file',
       path: 'Animal.md',
       title: 'Animal.md',
     })
-  })
-
-  it('is the text of a file the vault holds no type for', () => {
-    expect(landingOf(file('Entropy.md'))?.at).toBe('note')
   })
 
   it('is the book it stands for, opened where it begins', () => {
@@ -215,7 +215,7 @@ describe('a row activated', () => {
 
     one.activate('Entropy.md')
 
-    expect(done).toStrictEqual(['lands note Entropy.md'])
+    expect(done).toStrictEqual(['lands file Entropy.md'])
   })
 
   it('takes the person to the book it stands for', async () => {
@@ -541,8 +541,18 @@ describe('an item chosen in the menu on a row', () => {
     one.chose(NEW_DECK)
     await settles()
 
-    expect(done).toStrictEqual([`cuts ${words.newDeck}.md`])
-    expect(one.renaming.value).toBe(`${words.newDeck}.md`)
+    expect(done).toStrictEqual([`cuts / ${words.newDeck}`])
+    // The name put in the field is where the vault filed it, ending and all.
+    expect(one.renaming.value).toBe(`${words.newDeck}.note`)
+  })
+
+  it('asks under the name alone, putting no ending on it', async () => {
+    const { done, one } = await asked()
+
+    one.chose(NEW_DECK)
+    await settles()
+
+    expect(done[0]).not.toContain('.md')
   })
 
   it('makes a stencil the same way, under a name of its own', async () => {
@@ -551,7 +561,7 @@ describe('an item chosen in the menu on a row', () => {
     one.chose(NEW_STENCIL)
     await settles()
 
-    expect(done).toStrictEqual([`stencils ${words.newStencil}.md`])
+    expect(done).toStrictEqual([`stencils / ${words.newStencil}`])
   })
 
   it('makes a deck inside the row where the row is a folder', async () => {
@@ -560,7 +570,7 @@ describe('an item chosen in the menu on a row', () => {
     one.chose(NEW_DECK)
     await settles()
 
-    expect(done).toStrictEqual([`cuts physics/${words.newDeck}.md`])
+    expect(done).toStrictEqual([`cuts physics ${words.newDeck}`])
   })
 
   it('names nothing where the vault made no deck', async () => {

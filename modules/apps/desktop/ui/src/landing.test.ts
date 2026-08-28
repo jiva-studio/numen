@@ -14,21 +14,17 @@ const window = () => {
   const travelled: string[] = []
   const opened: string[] = []
   const shown: string[] = []
-  const entered: string[] = []
-  const cut: string[] = []
   const places: Places = {
     travel: async (path) => void travelled.push(path),
     opensAt: async (path, run) => void opened.push(`${path} ${run.start} ${run.length}`),
-    shows: (path, title) => void shown.push(`${path} ${title}`),
-    deck: (path, title) => void cut.push(`deck ${path} ${title}`),
-    stencil: (path, title) => void cut.push(`stencil ${path} ${title}`),
-    entersAt: (path, line) => void entered.push(`${path} ${line}`),
+    opens: (path, title, line) =>
+      void shown.push(`${path} ${title}${line === undefined ? '' : ` ${line}`}`),
   }
-  return { places, travelled, opened, shown, entered, cut }
+  return { places, travelled, opened, shown }
 }
 
 const landing = (over: Partial<Landing>): Landing => ({
-  at: 'note',
+  at: 'file',
   path: 'Note.md',
   title: 'A note',
   ...over,
@@ -45,41 +41,13 @@ describe('a name chosen', () => {
   })
 })
 
-describe('a deck or a stencil chosen', () => {
-  it('opens in the editor made for it, and in no text editor', async () => {
-    const one = window()
-
-    await lands(landing({ at: 'deck', path: 'Animals.md', title: 'Animals' }), one.places)
-
-    expect(one.cut).toStrictEqual(['deck Animals.md Animals'])
-    expect(one.shown).toStrictEqual([])
-  })
-
-  it('opens the stencil in the editor of its fields and faces', async () => {
-    const one = window()
-
-    await lands(landing({ at: 'stencil', path: 'Animal.md', title: 'Animal' }), one.places)
-
-    expect(one.cut).toStrictEqual(['stencil Animal.md Animal'])
-  })
-
-  it('is called by the path it is filed at where it has no name', async () => {
-    const one = window()
-
-    await lands(landing({ at: 'deck', path: 'Animals.md', title: '' }), one.places)
-
-    expect(one.cut).toStrictEqual(['deck Animals.md Animals.md'])
-  })
-})
-
-describe('a note chosen', () => {
-  it('opens under the name it is called by', async () => {
+describe('a file chosen', () => {
+  it('opens under the name it is called by, naming no editor of its own', async () => {
     const one = window()
 
     await lands(landing({}), one.places)
 
     expect(one.shown).toStrictEqual(['Note.md A note'])
-    expect(one.entered).toStrictEqual([])
   })
 
   it('is called by the path it is filed at where it has no name', async () => {
@@ -90,21 +58,20 @@ describe('a note chosen', () => {
     expect(one.shown).toStrictEqual(['Note.md Note.md'])
   })
 
-  it('stands on the line the heading was found at', async () => {
+  it('carries the line the heading was found at', async () => {
     const one = window()
 
     await lands(landing({ line: 12 }), one.places)
 
-    expect(one.shown).toStrictEqual(['Note.md A note'])
-    expect(one.entered).toStrictEqual(['Note.md 12'])
+    expect(one.shown).toStrictEqual(['Note.md A note 12'])
   })
 
-  it('stands at the top of the note for the line it opens with', async () => {
+  it('carries the top of the file for the line it opens with', async () => {
     const one = window()
 
     await lands(landing({ line: 0 }), one.places)
 
-    expect(one.entered).toStrictEqual(['Note.md 0'])
+    expect(one.shown).toStrictEqual(['Note.md A note 0'])
   })
 })
 
@@ -136,6 +103,6 @@ describe('nothing chosen', () => {
 
     await lands(null, one.places)
 
-    expect([one.travelled, one.opened, one.shown, one.entered]).toStrictEqual([[], [], [], []])
+    expect([one.travelled, one.opened, one.shown]).toStrictEqual([[], [], []])
   })
 })

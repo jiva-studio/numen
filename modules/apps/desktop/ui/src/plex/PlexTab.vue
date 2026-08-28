@@ -10,6 +10,7 @@
 import { computed } from 'vue'
 import { Menu, optionsForType, Plex, useTypeSize } from '@numen/ui'
 import type { MenuOpening, PlexRelatedSeat, PlexShowing } from '@numen/ui'
+import type { LucideIcon } from '@lucide/vue'
 import { ITEMS, NONE } from './menu'
 import { iconFor } from '../icons'
 import type { Held } from './kind'
@@ -27,6 +28,15 @@ const options = computed(() => ({
   ...optionsForType(type.value),
   maxParts: props.held.mostParts(),
 }))
+
+/**
+ * What a node is drawn before its title, and nothing for an ordinary note. A
+ * deck and a stencil carry the icon the tree draws them under.
+ */
+const nodeIcon = (node: string): LucideIcon | null => {
+  const type = props.held.typeOf(node)
+  return type === 'note' ? null : iconFor(type)
+}
 
 /** What the menu offers: on a node, or off every node. */
 const items = computed(() => (props.held.menu.value?.node === null ? NONE : ITEMS))
@@ -83,7 +93,18 @@ const asks = (event: MouseEvent) => {
       @show="(node: string, how: PlexShowing) => props.held.opens(node, how)"
       @enter="(node: string, part: string) => props.held.entered(node, part)"
       @dismiss="props.held.dismiss()"
-    />
+    >
+      <!-- A deck and a stencil are drawn as the tree draws them. An ordinary
+           note is drawn its title and nothing before it. -->
+      <template #icon="{ node }: { node: { id: string } }">
+        <component
+          :is="nodeIcon(node.id)"
+          v-if="nodeIcon(node.id)"
+          class="plex__icon"
+          aria-hidden="true"
+        />
+      </template>
+    </Plex>
 
     <Menu
       v-if="props.held.menu.value"

@@ -8,12 +8,16 @@
 // @vitest-environment jsdom
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
-import type { Cards, Problem } from '../core'
+import type { Cards, Faced, Problem } from '../core'
+import { putting } from '../putting'
 import { windowing } from '../windowing'
 import { STENCIL } from '../workspace'
 import StencilTab from './StencilTab.vue'
 import { stencilling, type Held } from './stencil'
 import { WORDS as words } from './words'
+
+/** The one place a file is opened from. Nothing here opens one. */
+const puts = () => putting({ types: async () => new Map() })
 
 /** A moment for whatever the tab asked the vault for to come back. */
 const settles = () => new Promise((done) => setTimeout(done, 0))
@@ -24,21 +28,34 @@ enableAutoUnmount(afterEach)
 
 /** A window with one stencil open, drawn. */
 const drawn = async (problems: readonly Problem[] = []) => {
+  /** Each field rename the editor asked the vault for. */
+  const renamed: string[] = []
+  let fields: readonly string[] = ['Height', 'Life span']
+  let faces: readonly Faced[] = [
+    { name: 'Recognise', front: '{{title}}', back: '{{Height}}' },
+    { name: 'Name it', front: '{{Life span}}', back: '' },
+  ]
+
   const core: Cards = {
     stencils: async () => ({ stencils: [], held: 0 }),
+    makeDeck: async (title) => ({ path: `${title}.md`, refusal: null }),
+    makeStencil: async (title) => ({ path: `${title}.md`, refusal: null }),
+    // The vault writes the name in the fields and in the braces of every face.
+    renameField: async (path, from, to) => {
+      renamed.push(`${path} ${from} ${to}`)
+      fields = fields.map((one) => (one === from ? to : one))
+      const braces = (text: string) => text.split(`{{${from}}}`).join(`{{${to}}}`)
+      faces = faces.map((face) => ({
+        ...face,
+        front: braces(face.front),
+        back: braces(face.back),
+      }))
+      return { decks: [], cards: 0, notWritten: [], refusal: null, changed: false, at: 'renamed' }
+    },
     readDeck: async () => ({ deck: null, refusal: 'missing', at: '', bound: 0 }),
     writeDeck: async () => ({ refusal: null, changed: false, at: '', bound: 0 }),
     readStencil: async (path) => ({
-      stencil: {
-        path,
-        title: 'Animal',
-        fields: ['Height', 'Life span'],
-        faces: [
-          { name: 'Recognise', front: '{{title}}', back: '{{Height}}' },
-          { name: 'Name it', front: '{{Life span}}', back: '' },
-        ],
-        problems,
-      },
+      stencil: { path, title: 'Animal', fields, faces, problems },
       refusal: null,
       at: 'read',
     }),
@@ -46,7 +63,7 @@ const drawn = async (problems: readonly Problem[] = []) => {
   }
 
   const held = windowing()
-  const stencils = stencilling(core, held.host)
+  const stencils = stencilling(core, held.host, puts())
   held.declares([stencils.kind])
   const id = await held.opens(STENCIL, 'Animal.md')
   await settles()
@@ -55,7 +72,7 @@ const drawn = async (problems: readonly Problem[] = []) => {
   // has to stand in the document for those to be found.
   const window = mount(StencilTab, { props: { held: tab }, attachTo: document.body })
   await settles()
-  return { window, tab }
+  return { window, tab, renamed }
 }
 
 const missing: Problem = {
@@ -143,12 +160,25 @@ describe('a mark on a field', () => {
 })
 
 describe('a gesture in the editor', () => {
-  it('renames the field the box belongs to, and the braces that stand it', async () => {
+  it('asks the vault to rename the field the box belongs to', async () => {
+    const { window, renamed } = await drawn()
+    const box = window.find('[data-field="Height"]').find('input')
+
+    await box.setValue('Shoulder')
+    await box.trigger('change')
+    await settles()
+
+    expect(renamed).toStrictEqual(['Animal.md Height Shoulder'])
+  })
+
+  it('shows the field and the braces as the vault left them', async () => {
     const { window, tab } = await drawn()
     const box = window.find('[data-field="Height"]').find('input')
 
     await box.setValue('Shoulder')
     await box.trigger('change')
+    await settles()
+    await settles()
 
     expect(tab.sheet().fields).toStrictEqual(['Shoulder', 'Life span'])
     expect(tab.sheet().faces[0]?.back).toBe('{{Shoulder}}')
@@ -160,6 +190,8 @@ describe('a gesture in the editor', () => {
 
     await box.setValue('Shoulder')
     await box.trigger('change')
+    await settles()
+    await settles()
 
     expect(tab.sheet().faces[1]?.front).toBe('{{Life span}}')
   })

@@ -5,12 +5,15 @@
  * against is its fields and its faces written out. A field renamed here is
  * renamed in every card the vault knows it cuts, which is the write's doing.
  */
-import type { Half } from '@numen/ui'
+import type { Half, PlexShowing } from '@numen/ui'
 import type { Cards, Refused, Went } from '../core'
 import type { Store } from '../doing'
 import { editing, type Editing } from '../note/editing'
 import { markOf } from '../note/tab'
+import type { Says } from '../telling'
 import type { Host, Kind } from '../windowing'
+import { REFUSED } from '../words'
+import type { Putting } from '../putting'
 import { STENCIL } from '../workspace'
 import StencilTab from './StencilTab.vue'
 import {
@@ -23,8 +26,9 @@ import {
   fieldAdded,
   fieldCarried,
   fieldGone,
-  fieldNamed,
   marksOf,
+  sameMarks,
+  sameSheet,
   sheetBodyOf,
   sheetIn,
   sheetOf,
@@ -41,9 +45,15 @@ interface Told {
    */
   readonly marks: Marks
   readonly refusal: Refused | null
+  /** The file the stencil last came out of, for a rename to present. */
+  readonly at: string
 }
 
-const NOTHING: Told = { marks: { at: new Map(), fields: new Map(), whole: [] }, refusal: null }
+const NOTHING: Told = {
+  marks: { at: new Map(), fields: new Map(), whole: [] },
+  refusal: null,
+  at: '',
+}
 
 /** What one stencil tab holds. */
 export interface Held {
@@ -74,23 +84,37 @@ export interface Held {
   shuts(id: string): void
 }
 
-export function stencilling(cards: Cards, host: Host) {
+export function stencilling(
+  cards: Cards,
+  host: Host,
+  puts: Putting,
+  says: Says = () => {},
+) {
   /** What the vault last said about each file, under the path it is filed at. */
   const told = new Map<string, Told>()
   /** What each file is called, as the vault last read it. */
   const titles = new Map<string, string>()
+
+  /**
+   * What is wrong with a file, as this reading has it. A reading saying what
+   * the last one said leaves what is drawn against the file standing.
+   */
+  const marking = (path: string, read: Marks): Marks => {
+    const held = told.get(path)?.marks
+    return held && sameMarks(held, read) ? held : read
+  }
 
   const store = editing({
     read: async (path) => {
       const answer = await cards.readStencil(path)
       const sheet = answer.stencil ? sheetOf(answer.stencil) : null
       told.set(path, {
-        marks: marksOf(
-          answer.stencil?.problems ?? [],
-          [],
-          sheet?.faces.map((face) => face.id) ?? [],
+        marks: marking(
+          path,
+          marksOf(answer.stencil?.problems ?? [], [], sheet?.faces.map((face) => face.id) ?? []),
         ),
         refusal: answer.refusal,
+        at: answer.at,
       })
       if (answer.stencil) titles.set(path, answer.stencil.title)
       if (answer.refusal !== null) return { body: '', refusal: answer.refusal }
@@ -104,7 +128,14 @@ export function stencilling(cards: Cards, host: Host) {
         facesOf(sheet),
         seen?.at ?? null,
       )
-      told.set(path, { marks: (told.get(path) ?? NOTHING).marks, refusal: answer.refusal })
+      const said = told.get(path) ?? NOTHING
+      told.set(path, {
+        marks: said.marks,
+        refusal: answer.refusal,
+        // Nothing was written where the write was refused or overtaken, so the
+        // file the tab last stood on is the file it still stands on.
+        at: answer.changed || answer.refusal !== null ? said.at : answer.at,
+      })
       return { body: '', refusal: answer.refusal, at: answer.at, changed: answer.changed }
     },
   })
@@ -116,7 +147,12 @@ export function stencilling(cards: Cards, host: Host) {
     const body = store.shown(id).body
     const held = parsed.get(id)
     if (held && held.body === body) return held.sheet
-    const sheet = sheetIn(body)
+    // A file read again carries fresh identities for the same faces, so the
+    // string it comes back as differs from the string that went out. A stencil
+    // reading as the one on screen leaves that one standing, and the field a
+    // person is typing into is not drawn again.
+    const read = sheetIn(body)
+    const sheet = held && sameSheet(held.sheet, read) ? held.sheet : read
     parsed.set(id, { body, sheet })
     return sheet
   }
@@ -126,6 +162,26 @@ export function stencilling(cards: Cards, host: Host) {
     const body = sheetBodyOf(sheet)
     parsed.set(id, { body, sheet })
     store.typed(id, body)
+  }
+
+  /**
+   * A field under another name, which the vault writes wherever that name
+   * stands: in the fields of this stencil, in the placeholders of its faces,
+   * and as a heading in every card this stencil cuts. The tab then reads the
+   * file the way it reads any file the vault has changed under it.
+   */
+  const renames = async (id: string, field: string, name: string): Promise<void> => {
+    if (!name || name === field) return
+    const path = store.where(id)
+    const answer = await cards.renameField(path, field, name, (told.get(path) ?? NOTHING).at || null)
+    if (answer.refusal !== null) return says(REFUSED[answer.refusal], 'refusal')
+    if (answer.cards > 0) says(words.renamed(answer.cards, answer.decks.length))
+    // A deck the rename did not reach keeps the old heading, and nothing else
+    // would tell the person which.
+    if (answer.notWritten.length > 0) {
+      says(words.notWritten(answer.notWritten.map((one) => one.path)), 'refusal')
+    }
+    store.changed([path])
   }
 
   /** What one file was refused for, in words a person reads. */
@@ -142,7 +198,7 @@ export function stencilling(cards: Cards, host: Host) {
     marks: () => (told.get(store.where(id)) ?? NOTHING).marks,
     saying: () => sayingOf(store.where(id)),
     addsField: (name) => turns(id, fieldAdded(sheetAt(id), name)),
-    namesField: (field, name) => turns(id, fieldNamed(sheetAt(id), field, name)),
+    namesField: (field, name) => void renames(id, field, name),
     removesField: (field) => turns(id, fieldGone(sheetAt(id), field)),
     movesField: (field, at) => turns(id, fieldCarried(sheetAt(id), field, at)),
     addsFace: (name) => turns(id, faceAdded(sheetAt(id), name)),
@@ -200,10 +256,15 @@ export function stencilling(cards: Cards, host: Host) {
   }
 
   /** A stencil put in front of the person, in a tab of its own. */
-  const shows = (path: string, title = ''): void => {
+  const shows = (path: string, title = '', showing: PlexShowing = 'here'): void => {
     if (title) titles.set(path, title)
-    void host.opens(STENCIL, path)
+    void (showing === 'beside' ? host.beside(STENCIL, path) : host.opens(STENCIL, path))
   }
+
+  // The editor of a stencil, which is its fields and its faces. A face stands
+  // on no line of prose, so a stencil asked for at a place inside it opens
+  // whole.
+  puts.holds('stencil', shows)
 
   const changed = (paths: readonly string[], renamed: readonly Went[] = []): void => {
     store.changed(paths, renamed)
@@ -212,7 +273,6 @@ export function stencilling(cards: Cards, host: Host) {
   return {
     kind,
     held,
-    shows,
     changed,
     called,
     kept,

@@ -7,7 +7,7 @@
  * cards and the fields a file is written from, is here, so a test can ask it
  * without a screen.
  */
-import { ordered, renamedIn, type CardLanding, type Cut, type Drawn, type Shown } from '@numen/ui'
+import { ordered, type CardLanding, type Cut, type Drawn, type Shown } from '@numen/ui'
 import type { Carded, Decked, Faced, Offer, Problem, Stencilled, Value } from '../core'
 
 /** An identity a card or a face is drawn under, which no file carries. */
@@ -133,37 +133,117 @@ export const cutsOf = (offers: readonly Offer[]): readonly Cut[] => {
   return cuts
 }
 
+/**
+ * Whether two decks read the same. What a person can see is the prose and the
+ * cards; the identities this window mints are its own, and a file read again
+ * carries fresh ones for the same cards.
+ */
+export const sameDeck = (one: Deck, other: Deck): boolean =>
+  one.preamble === other.preamble &&
+  one.tail === other.tail &&
+  JSON.stringify(cardsOf(one)) === JSON.stringify(cardsOf(other))
+
+/** Whether two stencils read the same, the identities left out the same way. */
+export const sameSheet = (one: Sheet, other: Sheet): boolean =>
+  JSON.stringify(one.fields) === JSON.stringify(other.fields) &&
+  JSON.stringify(facesOf(one)) === JSON.stringify(facesOf(other))
+
+/** Whether two lists of words read the same, in the same order. */
+const sameWords = (one: readonly string[], other: readonly string[]): boolean =>
+  one.length === other.length && one.every((text, at) => text === other[at])
+
+/** Whether two of those maps stand against the same things, saying the same. */
+const sameAgainst = (
+  one: ReadonlyMap<string, readonly string[]>,
+  other: ReadonlyMap<string, readonly string[]>,
+): boolean => {
+  if (one.size !== other.size) return false
+  for (const [key, said] of one) {
+    const against = other.get(key)
+    if (!against || !sameWords(said, against)) return false
+  }
+  return true
+}
+
+/**
+ * Whether two readings of a file are wrong in the same way. What is drawn
+ * against a file it says nothing about is drawn again.
+ */
+export const sameMarks = (one: Marks, other: Marks): boolean =>
+  sameWords(one.whole, other.whole) &&
+  sameAgainst(one.at, other.at) &&
+  sameAgainst(one.fields, other.fields)
+
+/**
+ * Whether two listings name the same stencils, in the same order and with the
+ * same fields.
+ */
+export const sameOffers = (one: readonly Offer[], other: readonly Offer[]): boolean =>
+  one.length === other.length &&
+  one.every((offer, at) => {
+    const against = other[at]
+    return (
+      against !== undefined &&
+      offer.path === against.path &&
+      offer.title === against.title &&
+      offer.fields.length === against.fields.length &&
+      offer.fields.every((field, seat) => field === against.fields[seat])
+    )
+  })
+
 /** Where the stencil of that title is filed, and nowhere where none is. */
 export const pathOfCut = (offers: readonly Offer[], name: string): string =>
   offers.find((offer) => offer.title === name)?.path ?? ''
 
 /**
- * The field a stencil names its cards by, and nothing for a stencil declaring
- * none. What stands in that field is the card's heading, so it is written and
- * read as the name and never as a value.
+ * How a card names the stencil filed at a path: the file's name, without the
+ * folders above it and without the extension. A name is what a link resolves
+ * by, so the link stands where the stencil is moved.
  */
-export const namingField = (offers: readonly Offer[], stencil: string): string =>
-  offers.find((offer) => offer.title === stencil)?.fields[0] ?? ''
+export const linkTo = (path: string): string => {
+  const file = path.split('/').pop() ?? ''
+  const dot = file.lastIndexOf('.')
+  return dot > 0 ? file.slice(0, dot) : file
+}
+
+/**
+ * The field the stencil filed at a path names its cards by, and nothing for a
+ * stencil declaring none and for a card whose link reached no stencil. What
+ * stands in that field is the card's heading, so it is written and read as the
+ * name and never as a value.
+ */
+export const namingField = (offers: readonly Offer[], stencilAt: string): string =>
+  stencilAt === '' ? '' : (offers.find((offer) => offer.path === stencilAt)?.fields[0] ?? '')
 
 /** Whether that field is the one the card is named by. */
-export const names = (offers: readonly Offer[], stencil: string, field: string): boolean =>
-  field !== '' && namingField(offers, stencil) === field
+export const names = (offers: readonly Offer[], stencilAt: string, field: string): boolean =>
+  field !== '' && namingField(offers, stencilAt) === field
 
 /**
  * A card added at the end, cut by the stencil filed at a path, with a value
  * standing empty for each field. The wikilink the file carries names that
- * stencil by its title.
+ * stencil by its file's name, and by its title where the vault filed it nowhere.
  */
 export const added = (
   deck: Deck,
   name: string,
-  stencil: string,
+  title: string,
   stencilAt: string,
   values: readonly Value[],
   mint: Mint = minting,
 ): Deck => ({
   ...deck,
-  cards: [...deck.cards, { id: mint(), name, stencil, stencilAt, lead: '', values }],
+  cards: [
+    ...deck.cards,
+    {
+      id: mint(),
+      name,
+      stencil: stencilAt ? linkTo(stencilAt) : title,
+      stencilAt,
+      lead: '',
+      values,
+    },
+  ],
 })
 
 /** A card taken out of the deck. */
@@ -217,19 +297,6 @@ export const filled = (deck: Deck, id: string, field: string, text: string): Dec
 export const fieldAdded = (sheet: Sheet, name: string): Sheet => ({
   ...sheet,
   fields: [...sheet.fields, name],
-})
-
-/**
- * A field under another name. The name is written twice over — once here and
- * once in every face that stands it — so the faces are rewritten with it.
- */
-export const fieldNamed = (sheet: Sheet, field: string, name: string): Sheet => ({
-  fields: sheet.fields.map((one) => (one === field ? name : one)),
-  faces: sheet.faces.map((face) => ({
-    ...face,
-    front: renamedIn(face.front, field, name),
-    back: renamedIn(face.back, field, name),
-  })),
 })
 
 /** A field the stencil no longer names. What the faces stand in its braces stays. */

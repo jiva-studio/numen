@@ -5,8 +5,8 @@
  * seat and edges between them; it is not told what a note is, and the schema
  * says nothing about drawing.
  */
-import { NeighbourhoodResponseSchema, Seat } from '@numen/protocol'
-import type { Heading, Neighbourhood } from '../core'
+import { NeighbourhoodResponseSchema, NoteType as NoteTypes, Seat } from '@numen/protocol'
+import type { Heading, Neighbourhood, NoteType } from '../core'
 import type {
   EdgeArrow,
   PlexEdge,
@@ -22,6 +22,27 @@ import type {
  * with `create(NeighbourhoodSchema, …)`.
  */
 export const NeighbourhoodSchema = NeighbourhoodResponseSchema
+
+/** Which of three a note is, in the word this window uses for it. */
+const types: Record<NoteTypes, NoteType> = {
+  [NoteTypes.UNSPECIFIED]: 'note',
+  [NoteTypes.DECK]: 'deck',
+  [NoteTypes.STENCIL]: 'stencil',
+}
+
+/**
+ * Which of three each note on a neighbourhood is, by the path it stands at. A
+ * plex draws a deck and a stencil as what they are.
+ */
+export function typesIn(neighbourhood: Neighbourhood): ReadonlyMap<string, NoteType> {
+  const found = new Map<string, NoteType>()
+  const focus = neighbourhood.focus?.path
+  if (focus) found.set(focus, types[neighbourhood.focusType])
+  for (const related of neighbourhood.related) {
+    if (related.note) found.set(related.note.path, types[related.type])
+  }
+  return found
+}
 
 const seats: Record<Seat, PlexRelatedSeat | null> = {
   [Seat.UNSPECIFIED]: null,
@@ -125,6 +146,7 @@ export function alike(one: Neighbourhood | null, other: Neighbourhood | null): b
   if (one === null || other === null) return one === other
   if (one.focus?.path !== other.focus?.path) return false
   if (one.focus?.title !== other.focus?.title) return false
+  if (one.focusType !== other.focusType) return false
   if (one.related.length !== other.related.length) return false
 
   return one.related.every((related, at) => {
@@ -133,6 +155,7 @@ export function alike(one: Neighbourhood | null, other: Neighbourhood | null): b
       against !== undefined &&
       related.note?.path === against.note?.path &&
       related.note?.title === against.note?.title &&
+      related.type === against.type &&
       related.seat === against.seat &&
       related.label === against.label &&
       related.through === against.through &&

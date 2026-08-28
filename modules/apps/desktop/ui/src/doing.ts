@@ -7,7 +7,15 @@
  */
 import type { PlexRelatedSeat } from '@numen/ui'
 import type { Deed, Shown } from './commanding'
-import type { Movement, Refused, Removed, Renamed, VaultRefused, Vaults } from './core'
+import type {
+  Movement,
+  NoteType,
+  Refused,
+  Removed,
+  Renamed,
+  VaultRefused,
+  Vaults,
+} from './core'
 import type { Made } from './note/creating'
 import type { Says } from './telling'
 import { AGENT, FILES, NOTE, PLEX } from './workspace'
@@ -27,8 +35,13 @@ export interface Notes {
   settles(id: string): Promise<void>
   /** The tab holding a note lets go of it. */
   shuts(id: string): void
-  /** A note put in front of the person, in a tab of its own or one beside it. */
-  shows(path: string, title: string, showing: 'here' | 'beside'): void
+  /**
+   * A file put in front of the person, in the editor made for what it is, in a
+   * tab of its own or one beside it.
+   */
+  opens(path: string, title: string, showing: 'here' | 'beside'): void
+  /** A file just made here, put in front of the person as what it was made as. */
+  made(path: string, title: string, type: NoteType, showing: 'here' | 'beside'): void
 }
 
 /**
@@ -57,7 +70,10 @@ export interface Store {
  * An identity is answered by the store holding it, and one nobody holds by
  * nothing at all.
  */
-export const reaching = (stores: readonly Store[], shows: Notes['shows']): Notes => {
+export const reaching = (
+  stores: readonly Store[],
+  puts: Pick<Notes, 'opens' | 'made'>,
+): Notes => {
   const holder = (id: string): Store | undefined => stores.find((one) => one.has(id))
   return {
     holding: (path) => {
@@ -73,7 +89,8 @@ export const reaching = (stores: readonly Store[], shows: Notes['shows']): Notes
       await holder(id)?.settles(id)
     },
     shuts: (id) => holder(id)?.shuts(id),
-    shows,
+    opens: puts.opens,
+    made: puts.made,
   }
 }
 
@@ -180,18 +197,18 @@ type Carries = (deed: Deed, on: Doing, words: Words) => Promise<void> | void
 
 /** What each command comes to. A command with no entry here does nothing. */
 const carried: Record<string, Carries> = {
-  read: (deed, on) => on.notes.shows(deed.path, deed.title, 'here'),
-  beside: (deed, on) => on.notes.shows(deed.path, deed.title, 'beside'),
+  read: (deed, on) => on.notes.opens(deed.path, deed.title, 'here'),
+  beside: (deed, on) => on.notes.opens(deed.path, deed.title, 'beside'),
   travel: (deed, on) => on.travel(deed.path),
   child: (deed, on, words) => makes(deed, 'child', on, words),
   parent: (deed, on, words) => makes(deed, 'parent', on, words),
   jump: (deed, on, words) => makes(deed, 'jump', on, words),
   note: (deed, on, words) => makes(deed, null, on, words),
   deck: async (deed, on) => {
-    if (deed.name) await on.cuts('', named(deed.name))
+    if (deed.name) await on.cuts('', deed.name)
   },
   stencil: async (deed, on) => {
-    if (deed.name) await on.stencils('', named(deed.name))
+    if (deed.name) await on.stencils('', deed.name)
   },
   title: (deed, on, words) => renames(deed, on, words),
   remove: (deed, on, words) => removes(deed, false, on, words),
@@ -273,7 +290,7 @@ const makes = async (
   if (!deed.name) return
   const made = await on.makes(deed.name, seat ? deed.path : '', seat)
   if (!made) return
-  if (deed.kind === NOTE) return on.notes.shows(made.path, made.title, 'beside')
+  if (deed.kind === NOTE) return on.notes.made(made.path, made.title, 'note', 'beside')
   await travels(made.path, on, words)
 }
 
@@ -391,9 +408,6 @@ const forgets = async (deed: Deed, erase: boolean, on: Doing, words: Words): Pro
   const refusal = erase ? await on.vaults.erase(id) : await on.vaults.forget(id)
   if (refusal) on.says(words.unvaulted[refusal], 'refusal')
 }
-
-/** The file a name typed for a deck or a stencil is written in. */
-const named = (name: string): string => (name.endsWith('.md') ? name : `${name}.md`)
 
 /** A note travelled to, and a vault with none to travel to said. */
 const travels = async (path: string, on: Doing, words: Words): Promise<void> => {

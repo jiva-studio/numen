@@ -21,12 +21,14 @@ import {
   fieldAdded,
   fieldCarried,
   fieldGone,
-  fieldNamed,
   filled,
+  linkTo,
   marksOf,
   named,
   pathOfCut,
   removed,
+  sameDeck,
+  sameSheet,
   sheetBodyOf,
   sheetIn,
   sheetOf,
@@ -226,6 +228,36 @@ describe('a card added', () => {
     expect(held.preamble).toBe('about the animals\n')
     expect(held.tail).toBe('\n')
   })
+
+  it('names its stencil by the file, where the stencil is titled another way', () => {
+    const held = added(deck(), 'Vicuña', 'Animal', 'stencils/creature sheet.md', [], () => 'c9')
+    expect(held.cards[2]?.stencil).toBe('creature sheet')
+  })
+
+  it('names its stencil by no title, which a link resolves by nowhere', () => {
+    const held = added(deck(), 'Vicuña', 'Animal', 'stencils/creature sheet.md', [], () => 'c9')
+    expect(held.cards[2]?.stencil).not.toBe('Animal')
+  })
+
+  it('names it by the title where the vault filed the stencil nowhere', () => {
+    const held = added(deck(), 'Vicuña', 'Animal', '', [], () => 'c9')
+    expect(held.cards[2]?.stencil).toBe('Animal')
+  })
+})
+
+describe('how a card names the stencil it is cut by', () => {
+  it('is the file, without the folders above it and without the extension', () => {
+    expect(linkTo('stencils/cards/Animal.md')).toBe('Animal')
+  })
+
+  it('keeps a name a dot stands inside, and one carrying no extension at all', () => {
+    expect(linkTo('stencils/Animal v2.md')).toBe('Animal v2')
+    expect(linkTo('stencils/Animal')).toBe('Animal')
+  })
+
+  it('is nothing for a stencil filed nowhere', () => {
+    expect(linkTo('')).toBe('')
+  })
 })
 
 describe('a card taken out, renamed and carried', () => {
@@ -323,18 +355,6 @@ describe('a field of a stencil', () => {
     ])
   })
 
-  it('is renamed in the braces of every face that stands it', () => {
-    const held = fieldNamed(sheet(), 'Height', 'Shoulder')
-    expect(held.fields).toStrictEqual(['Shoulder', 'Life span'])
-    expect(held.faces[0]?.back).toBe('**Height:** {{Shoulder}}')
-  })
-
-  it('leaves the braces of every other field where they are', () => {
-    expect(fieldNamed(sheet(), 'Height', 'Shoulder').faces[1]?.front).toBe(
-      'Which lives {{Life span}}?',
-    )
-  })
-
   it('leaves the braces standing when the stencil no longer names it', () => {
     const held = fieldGone(sheet(), 'Height')
     expect(held.fields).toStrictEqual(['Life span'])
@@ -426,6 +446,37 @@ describe('where a problem is drawn', () => {
     expect(marksOf([problem({ card: 5 })], ['c1'], []).whole).toStrictEqual([
       'a card with no name',
     ])
+  })
+})
+
+describe('whether two readings of a file read the same', () => {
+  it('is so for one file read twice, whatever identities each reading minted', () => {
+    expect(sameDeck(deck(), deck())).toBe(true)
+    expect(sameSheet(sheet(), sheet())).toBe(true)
+  })
+
+  it('is not so for a card whose text was written elsewhere', () => {
+    const other = read()
+    const wrote = {
+      ...other,
+      cards: [{ ...other.cards[0]!, values: [{ field: 'Height', text: 'about 6ft' }] }],
+    }
+
+    expect(sameDeck(deck(), deckOf(wrote, minting()))).toBe(false)
+  })
+
+  it('is not so for prose around the cards written elsewhere', () => {
+    expect(sameDeck(deck(), deck({ preamble: 'about them\n' }))).toBe(false)
+    expect(sameDeck(deck(), deck({ tail: '\n\n' }))).toBe(false)
+  })
+
+  it('is not so for a card taken out, the ones left over reading the same', () => {
+    expect(sameDeck(deck(), deck({ cards: read().cards.slice(0, 1) }))).toBe(false)
+  })
+
+  it('is not so for a field or a face written elsewhere', () => {
+    expect(sameSheet(sheet(), sheet({ fields: ['Height'] }))).toBe(false)
+    expect(sameSheet(sheet(), sheet({ faces: cut().faces.slice(0, 1) }))).toBe(false)
   })
 })
 
