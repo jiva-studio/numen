@@ -12,7 +12,7 @@ import Bar from './Bar.vue'
 import Marks from './Marks.vue'
 import Glyph from './Glyph.vue'
 import Grown from './Grown.vue'
-import Rule from './Rule.vue'
+import Rule from '../rule/Rule.vue'
 import Slab from './Slab.vue'
 import { Button } from '../components/ui/button'
 import {

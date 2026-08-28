@@ -220,7 +220,7 @@ interface Knobs {
 }
 
 const meta: Meta<Knobs> = {
-  title: 'Cards/Deck',
+  title: 'Flash Cards/Deck',
   component: Deck,
   parameters: { layout: 'fullscreen' },
   argTypes: {
@@ -314,8 +314,13 @@ export const ADeck: Story = {}
 /** One card, and nothing to move it among. */
 export const One: Story = { args: { corpus: 'one' } }
 
-/** Three hundred cards, far more than the window has room for. */
-export const FarTooMany: Story = { args: { corpus: 'far too many' } }
+/** Three hundred cards, all of one size, with the deck itself the only scroll. */
+export const FarTooMany: Story = {
+  args: { corpus: 'far too many' },
+  play: async ({ canvasElement }) => {
+    measure(canvasElement)
+  },
+}
 
 /** Names and values that are not Latin. */
 export const OtherScripts: Story = { args: { corpus: 'other scripts' } }
@@ -323,7 +328,7 @@ export const OtherScripts: Story = { args: { corpus: 'other scripts' } }
 /** A name and a value with nothing in them to break at. */
 export const Unbroken: Story = { args: { corpus: 'unbroken' } }
 
-/** No cards, and only the plus, which is drawn as it is drawn anywhere else. */
+/** No cards, and one plus standing alone in the middle of what it is asked from. */
 export const NothingAtAll: Story = {
   args: { corpus: 'nothing at all' },
   play: async ({ canvasElement }) => {
@@ -331,13 +336,23 @@ export const NothingAtAll: Story = {
     const button = found(canvasElement, '[data-plus] button')
 
     expect(canvasElement.querySelectorAll('[data-card]')).toHaveLength(0)
-    expect(button.textContent?.trim()).toBe('')
 
-    const box = plus.getBoundingClientRect()
-    const at = button.getBoundingClientRect()
-    expect(Math.round(at.left + at.width / 2)).toBe(Math.round(box.left + box.width / 2))
-    expect(Math.round(at.top + at.height / 2)).toBe(Math.round(box.top + box.height / 2))
-    expect(box.height).toBeGreaterThan(64)
+    // It is named for a reader, and says nothing beside itself.
+    expect(button.getAttribute('aria-label')).toBe('Add a card')
+    expect(button.textContent?.trim()).toBe('')
+    expect(button.querySelector('svg')?.getBoundingClientRect().width).toBeGreaterThan(24)
+
+    const middle = (box: DOMRect): readonly number[] => [
+      Math.round(box.left + box.width / 2),
+      Math.round(box.top + box.height / 2),
+    ]
+    expect(middle(button.getBoundingClientRect())).toEqual(middle(plus.getBoundingClientRect()))
+    expect(plus.getBoundingClientRect().height).toBeGreaterThan(64)
+
+    // What it opens stands where it was pressed.
+    await userEvent.click(button)
+    const asking = found(canvasElement, '[data-plus] .deck__asking')
+    expect(middle(asking.getBoundingClientRect())).toEqual(middle(plus.getBoundingClientRect()))
   },
 }
 
@@ -438,14 +453,6 @@ export const AValueThatWraps: Story = {
   },
 }
 
-/** Three hundred cards, all of one size, with the deck itself the only scroll. */
-export const FarTooManyIsStillOneSize: Story = {
-  args: { corpus: 'far too many' },
-  play: async ({ canvasElement }) => {
-    measure(canvasElement)
-  },
-}
-
 /** A window too narrow for two columns: one column, and no sideways scrolling. */
 export const Narrow: Story = {
   args: { width: '22rem' },
@@ -485,98 +492,49 @@ export const AsksWhichStencil: Story = {
 }
 
 /**
- * The name of a box sits on the box's own outline, in the gap the line leaves
- * for it. It is the legend, so the browser puts it there and there is nothing
- * to line up by hand.
+ * A value is the room under the rule that names it. The name stands on the
+ * line, the box begins where the line ends, and nothing is drawn around it:
+ * the rules divide the tile, so the box between them needs no frame and no
+ * ground of its own.
  */
-export const TheNameSitsOnTheLine: Story = {
+export const AValueIsTheRoomUnderItsRule: Story = {
   play: async ({ canvasElement }) => {
+    const tile = found(canvasElement, '[data-card="llama"]')
     const value = found(canvasElement, '[data-card="llama"] .deck__value')
     const rule = value.querySelector('.rule')
     const label = value.querySelector('label')
     if (!rule || !label) throw new Error('no rule and no name on it')
 
-    // One name, and it stands on the rule rather than in a frame of its own.
+    // One name, and it stands on the rule, so the two share a middle.
     expect(value.querySelectorAll('label')).toHaveLength(1)
     expect(label.closest('.rule')).toBe(rule)
-    expect(value.querySelector('fieldset')).toBeNull()
-
-    // The name stands on the line, so the two share a middle.
     const line = rule.getBoundingClientRect()
     const name = label.getBoundingClientRect()
     expect(Math.abs((name.top + name.bottom) / 2 - (line.top + line.bottom) / 2)).toBeLessThan(2)
 
     // The rule runs to both edges of the tile, past the room the values keep.
-    const tile = found(canvasElement, '[data-card="llama"]').getBoundingClientRect()
-    expect(line.left - tile.left).toBeLessThan(2)
-    expect(tile.right - line.right).toBeLessThan(2)
-  },
-}
+    const edges = tile.getBoundingClientRect()
+    expect(line.left - edges.left).toBeLessThan(2)
+    expect(edges.right - line.right).toBeLessThan(2)
 
-/**
- * Every box stands under the rule that names it, and a box holding nothing
- * stands as tall as a box holding one line.
- */
-export const TheTextClearsTheLine: Story = {
-  args: { corpus: 'a deck' },
-  play: async ({ canvasElement }) => {
-    const tile = found(canvasElement, '[data-card="llama"]')
     const boxes = [...tile.querySelectorAll<HTMLTextAreaElement>('textarea')]
     expect(boxes.length).toBeGreaterThan(2)
-
     for (const box of boxes) {
-      const rule = box.closest('.deck__value')?.querySelector('.rule')
-      if (!rule) throw new Error('a box under no rule')
-
-      // The box takes the room from its own rule down, and nothing is drawn
-      // around it.
-      expect(box.getBoundingClientRect().top).toBeCloseTo(rule.getBoundingClientRect().bottom, 0)
+      const under = box.closest('.deck__value')?.querySelector('.rule')
+      if (!under) throw new Error('a box under no rule')
+      expect(box.getBoundingClientRect().top).toBeCloseTo(under.getBoundingClientRect().bottom, 0)
       expect(box.closest('.deck__value')?.querySelector('fieldset')).toBeNull()
     }
 
     // Empty and one-line boxes stand to one height.
     const heights = boxes.map((box) => Math.round(box.getBoundingClientRect().height))
     expect(new Set(heights).size).toBe(1)
-  },
-}
 
-/** The plus stands alone in the middle, and what it opens stands there too. */
-export const OnePlusInTheMiddle: Story = {
-  play: async ({ canvasElement }) => {
-    const plus = found(canvasElement, '[data-plus]')
-    const button = found(canvasElement, '[data-plus] button')
-
-    // It is named for a reader, and says nothing beside itself.
-    expect(button.getAttribute('aria-label')).toBe('Add a card')
-    expect(button.textContent?.trim()).toBe('')
-
-    const glyph = button.querySelector('svg')?.getBoundingClientRect()
-    expect(glyph?.width).toBeGreaterThan(24)
-
-    const middle = (box: DOMRect): readonly number[] => [
-      Math.round(box.left + box.width / 2),
-      Math.round(box.top + box.height / 2),
-    ]
-    expect(middle(button.getBoundingClientRect())).toEqual(middle(plus.getBoundingClientRect()))
-
-    // What it opens stands where it was pressed.
-    await userEvent.click(button)
-    const asking = found(canvasElement, '[data-plus] .deck__asking')
-    expect(middle(asking.getBoundingClientRect())).toEqual(middle(plus.getBoundingClientRect()))
-  },
-}
-
-/** A value is the room between two rules, and nothing is drawn around it. */
-export const TheBoxIsBare: Story = {
-  play: async ({ canvasElement }) => {
-    const tile = found(canvasElement, '[data-card="llama"]')
-    const box = found(canvasElement, '[data-card="llama"] .grown')
-
-    // The rules divide the tile, so the box between them needs no ground and
-    // no frame of its own. The tile keeps the one both stand on.
-    const ground = getComputedStyle(box).backgroundColor
+    // The tile keeps the ground both the rules and the boxes stand on.
+    const grown = found(canvasElement, '[data-card="llama"] .grown')
+    const ground = getComputedStyle(grown).backgroundColor
     expect(ground === 'rgba(0, 0, 0, 0)' || ground === 'transparent').toBe(true)
-    expect(getComputedStyle(box).borderTopWidth).toBe('0px')
+    expect(getComputedStyle(grown).borderTopWidth).toBe('0px')
     expect(getComputedStyle(tile).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
   },
 }

@@ -71,7 +71,7 @@ interface Knobs {
 }
 
 const meta: Meta<Knobs> = {
-  title: 'Cards/Face',
+  title: 'Flash Cards/Face',
   component: Face,
   argTypes: {
     corpus: {

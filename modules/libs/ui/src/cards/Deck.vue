@@ -10,7 +10,7 @@ import { computed, shallowRef, useId } from 'vue'
 import Bar from './Bar.vue'
 import Glyph from './Glyph.vue'
 import Grown from './Grown.vue'
-import Rule from './Rule.vue'
+import Rule from '../rule/Rule.vue'
 import { Button } from '../components/ui/button'
 import {
   blanks,

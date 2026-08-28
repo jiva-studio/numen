@@ -8,7 +8,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect } from 'storybook/test'
 import Rule from './Rule.vue'
-import Glyph from './Glyph.vue'
+import Glyph from '../cards/Glyph.vue'
 import { Button } from '../components/ui/button'
 
 const UNBROKEN =
@@ -22,7 +22,7 @@ interface Knobs {
 }
 
 const meta: Meta<Knobs> = {
-  title: 'Cards/Rule',
+  title: 'Generic/Rule',
   component: Rule,
   parameters: { layout: 'fullscreen' },
   argTypes: {

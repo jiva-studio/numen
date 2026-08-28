@@ -180,7 +180,7 @@ export { default as Marks } from './cards/Marks.vue'
 /** The strip a tile is carried by. */
 export { default as Bar } from './cards/Bar.vue'
 /** A rule with something standing in its middle. */
-export { default as Rule } from './cards/Rule.vue'
+export { default as Rule } from './rule/Rule.vue'
 
 /** For laying a stencil or a deck out without drawing it. */
 export {

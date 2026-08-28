@@ -127,7 +127,7 @@ interface Knobs {
 }
 
 const meta: Meta<Knobs> = {
-  title: 'Cards/Stencil',
+  title: 'Flash Cards/Stencil',
   component: Stencil,
   parameters: { layout: 'fullscreen' },
   argTypes: {
@@ -474,8 +474,10 @@ const PANES = ['front-written', 'front-preview', 'back-written', 'back-preview']
 /**
  * The window of a face is one window: two parts to a row, the writing beside
  * its preview and the front above the back, divided by the lines they share.
+ * The frame around all four is the block's, and the parts carry none of their
+ * own, so nothing is drawn twice where two of them meet.
  */
-export const TwoPartsToARow: Story = {
+export const TheFaceIsOneWindow: Story = {
   args: { width: '64rem' },
   play: async ({ canvasElement }) => {
     const body = found(canvasElement, '[data-face-block="recognise"] .stencil__face-body')
@@ -497,29 +499,22 @@ export const TwoPartsToARow: Story = {
     expect(line).toBeGreaterThan(0)
     expect(at('front-preview').left - at('front-written').right).toBeCloseTo(line, 0)
     expect(at('back-written').top - at('front-written').bottom).toBeCloseTo(line, 0)
-  },
-}
 
-/**
- * The parts carry no outline of their own: the frame around all four is the
- * block's, and nothing is drawn twice where two of them meet.
- */
-export const ThePartsCarryNoOutline: Story = {
-  args: { width: '64rem' },
-  play: async ({ canvasElement }) => {
+    // The block is framed and the parts inside it are not.
     const block = found(canvasElement, '[data-face-block="recognise"]')
     expect(Number.parseFloat(getComputedStyle(block).borderTopWidth)).toBeGreaterThan(0)
-
     for (const pane of PANES) {
       const drawn = getComputedStyle(paneOf(canvasElement, 'recognise', pane))
-      for (const side of ['borderTopWidth', 'borderInlineStartWidth', 'borderBottomWidth', 'borderInlineEndWidth'] as const) {
+      for (const side of [
+        'borderTopWidth',
+        'borderInlineStartWidth',
+        'borderBottomWidth',
+        'borderInlineEndWidth',
+      ] as const) {
         expect(Number.parseFloat(drawn[side])).toBe(0)
       }
       expect(drawn.outlineStyle).toBe('none')
     }
-
-    // The notch a name used to sit in is nowhere in the window.
-    const body = found(canvasElement, '[data-face-block="recognise"] .stencil__face-body')
     expect(body.querySelectorAll('fieldset, legend')).toHaveLength(0)
   },
 }
@@ -542,8 +537,12 @@ export const Narrow: Story = {
   },
 }
 
-/** An empty part says what it is for, in the middle of itself. */
-export const AnEmptyPartSaysWhatItIsFor: Story = {
+/**
+ * An empty part says what it is for, in the middle of itself. What is written
+ * into it takes that place, and a part holding something is the box alone:
+ * where a part stands in the window is what says which half it is of.
+ */
+export const APartSaysWhatItIsForWhileItIsEmpty: Story = {
   args: { corpus: 'no text at all', width: '64rem' },
   play: async ({ canvasElement }) => {
     const said: string[] = []
@@ -560,45 +559,22 @@ export const AnEmptyPartSaysWhatItIsFor: Story = {
       expect(at.top + at.height / 2).toBeCloseTo(box.top + box.height / 2, 0)
     }
     expect(said).toEqual(['Front', 'Preview', 'Back', 'Preview'])
-  },
-}
 
-/**
- * A part holding something is drawn as the box alone: what the part is called
- * is what an empty one says in its middle, and nowhere else. Where a part
- * stands in the window is what says which half it is of.
- */
-export const NothingStandsOverAFullBox: Story = {
-  args: { width: '64rem' },
-  play: async ({ canvasElement }) => {
-    for (const half of ['front', 'back'] as const) {
-      const pane = paneOf(canvasElement, 'recognise', `${half}-written`)
-      const box = boxFor(canvasElement, 'recognise', half)
-      expect(box.value.trim()).not.toBe('')
-
-      // The box begins where the part does: nothing is drawn above it.
-      expect(box.getBoundingClientRect().top).toBeCloseTo(pane.getBoundingClientRect().top, 0)
-
-      // And the part draws no word of its own, in the middle or anywhere else.
-      expect(pane.textContent?.trim()).toBe('')
-      expect(pane.querySelector('.stencil__ghost')).toBeNull()
-    }
-  },
-}
-
-/** What stands in a part takes the place of what the part says while it is empty. */
-export const WritingInAPartSilencesIt: Story = {
-  args: { corpus: 'no text at all', width: '64rem' },
-  play: async ({ canvasElement }) => {
-    const box = boxFor(canvasElement, 'blank', 'front')
-    await userEvent.type(box, 'a word')
+    const written = boxFor(canvasElement, 'blank', 'front')
+    await userEvent.type(written, 'a word')
 
     await waitFor(() => {
-      expect(paneOf(canvasElement, 'blank', 'front-written').querySelector('.stencil__ghost'))
-        .toBeNull()
-      expect(paneOf(canvasElement, 'blank', 'front-preview').querySelector('.stencil__ghost'))
-        .toBeNull()
+      expect(
+        paneOf(canvasElement, 'blank', 'front-written').querySelector('.stencil__ghost'),
+      ).toBeNull()
+      expect(
+        paneOf(canvasElement, 'blank', 'front-preview').querySelector('.stencil__ghost'),
+      ).toBeNull()
     })
+
+    // The box begins where the part does, and the part says no word of its own.
+    const pane = paneOf(canvasElement, 'blank', 'front-written')
+    expect(written.getBoundingClientRect().top).toBeCloseTo(pane.getBoundingClientRect().top, 0)
 
     // The half nothing was written in still says what it is for.
     expect(
