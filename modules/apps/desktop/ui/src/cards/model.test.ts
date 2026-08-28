@@ -168,6 +168,10 @@ describe('the cards as the grid draws them', () => {
   it('draws a card whose link reached nothing under what the file wrote', () => {
     expect(drawnOf(cutBy('Gone', ''), OFFERS)[0]?.stencil).toBe('Gone')
   })
+
+  it('draws a card that wrote no brackets at all as cut by nothing', () => {
+    expect(drawnOf(cutBy('', ''), OFFERS)[0]?.stencil).toBeNull()
+  })
 })
 
 describe('the stencils a card may be cut by', () => {
@@ -386,10 +390,14 @@ describe('a field of a stencil', () => {
   })
 
   it('lands before the field it was let go on', () => {
-    expect(fieldCarried(sheet(), 'Life span', 'Height').fields).toStrictEqual([
-      'Life span',
-      'Height',
-    ])
+    expect(fieldCarried(sheet({ fields: ['Name', 'Height', 'Life span'] }), 'Life span', 'Height')
+      .fields).toStrictEqual(['Name', 'Life span', 'Height'])
+  })
+
+  it('leaves the first field first, wherever the move came from', () => {
+    const held = sheet({ fields: ['Name', 'Height', 'Life span'] })
+    expect(fieldCarried(held, 'Height', 'Name').fields).toStrictEqual(held.fields)
+    expect(fieldCarried(held, 'Name', null).fields).toStrictEqual(held.fields)
   })
 })
 

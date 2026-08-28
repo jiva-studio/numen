@@ -2,8 +2,9 @@
 /**
  * A rule with something standing on it.
  *
- * What it holds stands in the middle, or at the start where the rule is given
- * `at="start"`.
+ * What it holds stands in the middle, or leads the rule where it is given
+ * `at="start"`, the line before it coming down to a stub the width of the air
+ * it keeps.
  *
  * The line is drawn either side of what it holds and never under it: it is the
  * rule's own decoration, so nothing is announced around what stands there, and
@@ -21,7 +22,8 @@ withDefaults(defineProps<{ at?: 'middle' | 'start' }>(), { at: 'middle' })
 
 <style scoped>
 .rule {
-  /* The air the line keeps from what stands in the middle. */
+  /* The air the line keeps from what stands on it, which is also the stub of
+     line a rule leading with what it holds keeps before it. */
   --rule-gap: 0.625rem;
 
   display: flex;

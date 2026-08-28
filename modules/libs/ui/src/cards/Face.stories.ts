@@ -5,7 +5,7 @@
  * The markdown here is assembled already, as it reaches the component.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent } from 'storybook/test'
+import { expect, userEvent, waitFor } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Face from './Face.vue'
 
@@ -37,6 +37,12 @@ const CORPORA = {
     back: `**Рост:** около 45″ в холке\n\nधैर्यं सर्वत्र साधनम्\n\n${UNBROKEN} ${UNBROKEN}`,
   },
   'nothing at all': { front: '', back: '   \n  ' },
+  /* A card with a link in each half, which is what the caller is handed to
+     decide the meaning of. */
+  'a card with links': {
+    front: 'Where does the [llama](https://example.org/llama) live?',
+    back: 'In the [Andes](https://example.org/andes).',
+  },
   /* What a card is written with: a table wider than the card, the marks a
      person wrote to be drawn as marks, and the ones a card may not be drawn
      with at all. */
@@ -105,12 +111,21 @@ const meta: Meta<Knobs> = {
           turned.value = next
         },
       )
+      /** Where the last link pressed pointed, which is all the caller does with it. */
+      const went = ref('')
       return {
         args,
         turned,
+        went,
         held: CORPORA,
         onTurn: (next: boolean) => {
           turned.value = next
+        },
+        /* What a link means is the caller's, and a card in a window of its own
+           is read where it stands: the press goes no further. */
+        onFollow: (href: string, press: MouseEvent) => {
+          press.preventDefault()
+          went.value = href
         },
       }
     },
@@ -123,7 +138,9 @@ const meta: Meta<Knobs> = {
           :name="args.name"
           :words="{ silence: args.silence, turning: args.turning }"
           @turn="onTurn"
+          @follow="onFollow"
         />
+        <p v-if="went" data-went>{{ went }}</p>
       </div>
     `,
   }),
@@ -157,6 +174,30 @@ export const Turning: Story = {
 
     expect(back()).not.toBeNull()
     expect(back()?.textContent).toContain('45"')
+  },
+}
+
+/**
+ * A link pressed in a card hands the caller where it points and the press
+ * itself, so a caller that wants the card to stay where it is can stop it.
+ */
+export const ALinkPressed: Story = {
+  args: { corpus: 'a card with links' },
+  play: async ({ canvasElement }) => {
+    const link = canvasElement.querySelector<HTMLAnchorElement>('[data-half="front"] a')
+    if (!link) throw new Error('no link on the front')
+    expect(link.getAttribute('href')).toBe('https://example.org/llama')
+
+    const press = new MouseEvent('click', { bubbles: true, cancelable: true })
+    link.dispatchEvent(press)
+
+    // The caller was handed the press, and stopped it: the window stays here.
+    expect(press.defaultPrevented).toBe(true)
+    await waitFor(() => {
+      expect(canvasElement.querySelector('[data-went]')?.textContent).toBe(
+        'https://example.org/llama',
+      )
+    })
   },
 }
 

@@ -260,10 +260,9 @@ const meta: Meta<Knobs> = {
         },
         /* A card is named by its first field, and that value stands in the
            heading and in none of the card's values. */
-        onWrite: (id: string, field: string, nth: number, text: string) => {
+        onWrite: (id: string, field: string, nth: number, names: boolean, text: string) => {
           cards.value = changed(id, (card) => {
-            const first = cuts.value.find((cut) => cut.name === card.stencil)?.fields[0]
-            if (field === first) return { ...card, name: text }
+            if (names) return { ...card, name: text }
 
             // The one written is the one counted off under its own field.
             let under = 0

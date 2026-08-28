@@ -19,6 +19,8 @@ import {
   parts,
   reordered,
   stepped,
+  DECK_WORDS,
+  NOTHING_WRONG,
   STENCIL_WORDS,
   wayOf,
   type Cut,
@@ -556,9 +558,61 @@ describe('grid', () => {
       names: true,
       twice: false,
       at: 1,
-      nth: 1,
-      key: 'Name#1',
+      nth: 0,
+      key: 'Name#0',
+      last: true,
     })
+  })
+
+  it('tells every tile how many stand in the grid, the plus among them', () => {
+    expect(grid(CARDS, CUTS, null).tiles.map((tile) => tile.of)).toEqual([3, 3])
+  })
+
+  it('counts the values under a field from one, the name standing among none of them', () => {
+    const said: readonly Drawn[] = [
+      {
+        id: 'x',
+        name: 'Llama',
+        stencil: 'Animal',
+        filled: [
+          { field: 'Name', text: 'Alpaca' },
+          { field: 'Name', text: 'Vicuña' },
+        ],
+      },
+    ]
+    const filled = grid(said, CUTS, null).tiles[0]?.filled ?? []
+    expect(
+      filled.filter((each) => each.field === 'Name').map((each) => [each.names, each.nth]),
+    ).toEqual([
+      [true, 0],
+      [false, 1],
+      [false, 2],
+    ])
+  })
+
+  it('marks the last box standing for each field, which is where a mark is said', () => {
+    const said: readonly Drawn[] = [
+      { id: 'x', name: 'Llama', stencil: 'Animal', filled: [{ field: 'Name', text: 'Alpaca' }] },
+    ]
+    const filled = grid(said, CUTS, null).tiles[0]?.filled ?? []
+    expect(filled.map((each) => [each.field, each.last])).toEqual([
+      ['Name', false],
+      ['Height', true],
+      ['Weight', true],
+      ['Name', true],
+    ])
+  })
+
+  it('marks the one box standing for a field the card writes once', () => {
+    const filled = grid(CARDS, CUTS, null).tiles[0]?.filled ?? []
+    expect(filled.every((each) => each.last)).toBe(true)
+  })
+
+  it('draws a card cut by nothing as cut by nothing', () => {
+    const bare: readonly Drawn[] = [{ id: 'x', name: 'X', stencil: null, filled: [] }]
+    const tile = grid(bare, CUTS, null).tiles[0]
+    expect(tile?.stencil).toBeNull()
+    expect(tile?.known).toBe(false)
   })
 
   it('stands the naming field empty where the card was handed no name', () => {
@@ -620,6 +674,33 @@ describe('grid', () => {
 
   it('marks the one tile on its way and no other', () => {
     expect(grid(CARDS, CUTS, 'llama').tiles.map((tile) => tile.carried)).toEqual([true, false])
+  })
+})
+
+describe('DECK_WORDS', () => {
+  it('names the stencil a card is waiting for', () => {
+    expect(DECK_WORDS.unknown('Gone')).toBe('No stencil called Gone')
+  })
+
+  it('says of a card cut by nothing that nothing cut it', () => {
+    expect(DECK_WORDS.unknown(null)).toBe('Cut by no stencil')
+  })
+})
+
+describe('NOTHING_WRONG', () => {
+  it('holds nothing against any card and nothing against any value', () => {
+    expect(NOTHING_WRONG.at.size).toBe(0)
+    expect(NOTHING_WRONG.under.size).toBe(0)
+  })
+
+  it('stands for every caller at once, so nothing can be put into it', () => {
+    const at = NOTHING_WRONG.at as Map<string, readonly string[]>
+    expect(() => at.set('llama', ['put here by one caller'])).toThrow()
+    expect(NOTHING_WRONG.at.size).toBe(0)
+
+    const under = NOTHING_WRONG.under as Map<string, ReadonlyMap<string, readonly string[]>>
+    expect(() => under.set('llama', new Map())).toThrow()
+    expect(NOTHING_WRONG.under.size).toBe(0)
   })
 })
 

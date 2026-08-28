@@ -181,7 +181,7 @@ export { default as Card } from './cards/Card.vue'
 export { default as Marks } from './cards/Marks.vue'
 /** The strip a tile is carried by. */
 export { default as Bar } from './cards/Bar.vue'
-/** A rule with something standing in its middle. */
+/** A rule with something standing on it, in its middle or at its start. */
 export { default as Rule } from './rule/Rule.vue'
 
 /** For laying a stencil or a deck out without drawing it. */
@@ -194,9 +194,11 @@ export {
   freeName,
   grid,
   laid,
+  heading,
   objection,
   oneLine,
   ordered,
+  reordered,
   panes,
   parts,
   stepped,
@@ -204,11 +206,13 @@ export {
   DECK_WORDS,
   FACE_WORDS,
   HALVES,
+  NOTHING_AMISS,
   NOTHING_WRONG,
   STENCIL_WORDS,
 } from './cards/model'
 export type {
   Aim,
+  CardWords,
   Cut,
   DeckWords,
   Draft,
@@ -221,6 +225,8 @@ export type {
   Half,
   Laid,
   Landing as CardLanding,
+  Against,
+  Amiss,
   Objection,
   Pane,
   Part,
@@ -230,6 +236,7 @@ export type {
   Stood,
   Tile,
   Way,
+  StencilWrong,
   Wrong,
 } from './cards/model'
 

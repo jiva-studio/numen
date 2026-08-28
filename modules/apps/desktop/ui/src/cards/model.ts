@@ -7,7 +7,7 @@
  * cards and the fields a file is written from, is here, so a test can ask it
  * without a screen.
  */
-import { ordered, type CardLanding, type Cut, type Drawn } from '@numen/ui'
+import { ordered, reordered, type CardLanding, type Cut, type Drawn } from '@numen/ui'
 import type { Carded, Decked, Faced, Offer, Problem, Stencilled, Value } from '../core'
 
 /** An identity a card or a face is drawn under, which no file carries. */
@@ -118,14 +118,15 @@ export const facesOf = (sheet: Sheet): readonly Faced[] =>
 /**
  * The cards as the grid draws them, each under the stencil its wikilink
  * resolves to. A card whose link reaches no stencil is drawn under what the
- * file wrote in the brackets.
+ * file wrote in the brackets, and a card that wrote nothing there is cut by
+ * nothing.
  */
 export const drawnOf = (deck: Deck, offers: readonly Offer[]): readonly Drawn[] => {
   const titles = new Map(offers.map((offer) => [offer.path, offer.title]))
   return deck.cards.map((card) => ({
     id: card.id,
     name: card.name,
-    stencil: titles.get(card.stencilAt) ?? card.stencil,
+    stencil: (titles.get(card.stencilAt) ?? card.stencil) || null,
     filled: card.values.map((value) => ({ field: value.field, text: value.text })),
   }))
 }
@@ -235,19 +236,6 @@ export const linkTo = (path: string): string => {
 }
 
 /**
- * The field the stencil filed at a path names its cards by, and nothing for a
- * stencil declaring none and for a card whose link reached no stencil. What
- * stands in that field is the card's heading, so it is written and read as the
- * name and never as a value.
- */
-export const namingField = (offers: readonly Offer[], stencilAt: string): string =>
-  stencilAt === '' ? '' : (offers.find((offer) => offer.path === stencilAt)?.fields[0] ?? '')
-
-/** Whether that field is the one the card is named by. */
-export const names = (offers: readonly Offer[], stencilAt: string, field: string): boolean =>
-  field !== '' && namingField(offers, stencilAt) === field
-
-/**
  * A card added at the end, cut by the stencil filed at a path, with a value
  * standing empty for each field. The wikilink the file carries names that
  * stencil by its file's name, and by its title where the vault filed it nowhere.
@@ -346,10 +334,13 @@ export const fieldGone = (sheet: Sheet, field: string): Sheet => ({
   fields: sheet.fields.filter((one) => one !== field),
 })
 
-/** A field let go somewhere in the order. */
+/**
+ * A field let go somewhere in the order. The first field names every card the
+ * stencil cuts, so it stays first and nothing lands above it.
+ */
 export const fieldCarried = (sheet: Sheet, field: string, at: CardLanding): Sheet => ({
   ...sheet,
-  fields: ordered(sheet.fields, field, at),
+  fields: reordered(sheet.fields, field, at),
 })
 
 /**

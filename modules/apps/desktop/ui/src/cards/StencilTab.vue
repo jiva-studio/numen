@@ -3,34 +3,20 @@
  * A stencil tab: the fields it names, the faces that show them, and the
  * questions the file puts.
  *
- * What is wrong with a face stands on that face, and what is wrong with a field
- * stands on that field's row.
+ * What is wrong with the faces and the fields is handed to the editor, which
+ * stands a face's mark under that face's name and a field's under that field's
+ * row. What stands against neither is said above the editor.
  */
 import { computed } from 'vue'
 import { Stencil as StencilView } from '@numen/ui'
 import type { CardLanding, Half } from '@numen/ui'
 import type { Held } from './stencil'
-import { standingIn } from './model'
 import { WORDS as words } from './words'
 
 const props = defineProps<{ held: Held }>()
 
 const sheet = computed(() => props.held.sheet())
 const marks = computed(() => props.held.marks())
-
-/** What is wrong with one face, and nothing where nothing is. */
-const wrongWith = (face: string): readonly string[] => marks.value.at.get(face) ?? []
-
-/** What is wrong with one field, and nothing where nothing is. */
-const wrongWithField = (field: string): readonly string[] => marks.value.fields.get(field) ?? []
-
-const markedFaces = computed(() =>
-  sheet.value.faces.filter((face) => wrongWith(face.id).length > 0),
-)
-
-const markedFields = computed(() =>
-  sheet.value.fields.filter((field) => wrongWithField(field).length > 0),
-)
 </script>
 
 <template>
@@ -61,6 +47,7 @@ const markedFields = computed(() =>
       class="stencil-tab__sheet"
       :fields="sheet.fields"
       :faces="sheet.faces"
+      :wrong="marks"
       :name="words.stencil"
       @add-field="(name: string) => props.held.addsField(name)"
       @rename-field="(field: string, name: string) => props.held.namesField(field, name)"
@@ -72,30 +59,6 @@ const markedFields = computed(() =>
       @move-face="(id: string, at: CardLanding) => props.held.movesFace(id, at)"
       @write="(id: string, half: Half, text: string) => props.held.writes(id, half, text)"
     />
-
-    <!-- A mark stands inside the face or the row it is about, which the editor
-         draws under the identity or the name that thing carries. -->
-    <Teleport
-      v-for="face in markedFaces"
-      :key="face.id"
-      defer
-      :to="standingIn('data-face-block', face.id)"
-    >
-      <ul class="wrong wrong--inside" :aria-label="words.wrong" data-wrong>
-        <li v-for="(text, at) in wrongWith(face.id)" :key="at">{{ text }}</li>
-      </ul>
-    </Teleport>
-
-    <Teleport
-      v-for="field in markedFields"
-      :key="field"
-      defer
-      :to="standingIn('data-field', field)"
-    >
-      <ul class="wrong wrong--inside" :aria-label="words.wrong" data-wrong>
-        <li v-for="(text, at) in wrongWithField(field)" :key="at">{{ text }}</li>
-      </ul>
-    </Teleport>
   </div>
 </template>
 
@@ -152,13 +115,5 @@ const markedFields = computed(() =>
   margin: 0;
   padding-inline-start: 1.1rem;
   list-style: disc;
-}
-
-/* The mark stands inside a face or a row, and takes the whole width of it. */
-.wrong--inside {
-  flex-basis: 100%;
-  color: var(--numen-alarm);
-  font-size: calc(var(--numen-font-size) * 12 / 13);
-  overflow-wrap: anywhere;
 }
 </style>

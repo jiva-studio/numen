@@ -177,10 +177,9 @@ const meta: Meta<Knobs> = {
         wrongUnder: () => new Map(Object.entries(held.value.wrongUnder ?? {})),
         /* A card is named by its first field, and that value stands in the
            heading and in none of the card's values. */
-        onWrite: (field: string, nth: number, text: string) => {
+        onWrite: (field: string, nth: number, names: boolean, text: string) => {
           const card = held.value.card
-          const first = held.value.cut?.fields[0]
-          if (field === first) {
+          if (names) {
             tile.value = tileOf({ ...held.value, card: { ...card, name: text } })
             held.value = { ...held.value, card: { ...card, name: text } }
             return

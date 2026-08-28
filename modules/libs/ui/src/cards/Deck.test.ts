@@ -8,6 +8,7 @@
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
+import { nextTick } from 'vue'
 import Deck from './Deck.vue'
 import type { Cut, Drawn } from './model'
 
@@ -145,7 +146,7 @@ describe('Deck', () => {
   it('emits the naming field written, which is what names the card', async () => {
     const held = mountDeck()
     await boxFor(held, 'llama', 'Name').setValue('Alpaca')
-    expect(held.emitted('write')).toEqual([['llama', 'Name', 1, 'Alpaca']])
+    expect(held.emitted('write')).toEqual([['llama', 'Name', 0, true, 'Alpaca']])
   })
 
   it('holds one line in the box the card is named by', async () => {
@@ -157,7 +158,7 @@ describe('Deck', () => {
 
     // And a break arriving another way is closed up before it is emitted.
     await box.setValue('Llama\n## Alpaca')
-    expect(held.emitted('write')).toEqual([['llama', 'Name', 1, 'Llama ## Alpaca']])
+    expect(held.emitted('write')).toEqual([['llama', 'Name', 0, true, 'Llama ## Alpaca']])
   })
 
   it('holds what was typed, breaks and all, in every other box', async () => {
@@ -167,14 +168,14 @@ describe('Deck', () => {
 
     await box.setValue('about 45"\nat the shoulder')
     expect(held.emitted('write')).toEqual([
-      ['llama', 'Height', 1, 'about 45"\nat the shoulder'],
+      ['llama', 'Height', 1, false, 'about 45"\nat the shoulder'],
     ])
   })
 
   it('emits one other value of one card as it now reads', async () => {
     const held = mountDeck()
     await boxFor(held, 'llama', 'Life span').setValue('about 20 years')
-    expect(held.emitted('write')).toEqual([['llama', 'Life span', 1, 'about 20 years']])
+    expect(held.emitted('write')).toEqual([['llama', 'Life span', 1, false, 'about 20 years']])
   })
 
   it('sets the ground behind each box to the box’s own text, which is what sizes it', () => {
@@ -233,6 +234,44 @@ describe('Deck', () => {
   it('leaves the way to remove a card out of what carries it', () => {
     const away = tileFor(mountDeck(), 'llama').get('.bar button')
     expect(away.attributes('draggable')).toBe('false')
+  })
+
+  describe('a press landing on something the strip holds', () => {
+    const stripOf = (held: Grid, id: string) => tileFor(held, id).get('[data-grip]')
+
+    it('lets that thing have the press, so the strip is not carried by it', async () => {
+      const held = mountDeck()
+      await stripOf(held, 'llama').get('button').trigger('pointerdown')
+      expect(stripOf(held, 'llama').attributes('draggable')).toBe('false')
+    })
+
+    it('takes the strip up again once the press is let go anywhere at all', async () => {
+      const held = mountDeck()
+      await stripOf(held, 'llama').get('button').trigger('pointerdown')
+
+      // The pointer may be let go far outside the strip, and the strip is
+      // carried again from there.
+      document.body.dispatchEvent(new Event('pointerup', { bubbles: true }))
+      await nextTick()
+
+      expect(stripOf(held, 'llama').attributes('draggable')).toBe('true')
+    })
+
+    it('takes the strip up again where the press is called off', async () => {
+      const held = mountDeck()
+      await stripOf(held, 'llama').get('button').trigger('pointerdown')
+
+      document.body.dispatchEvent(new Event('pointercancel', { bubbles: true }))
+      await nextTick()
+
+      expect(stripOf(held, 'llama').attributes('draggable')).toBe('true')
+    })
+
+    it('carries the strip from a press landing on the strip itself', async () => {
+      const held = mountDeck()
+      await stripOf(held, 'llama').trigger('pointerdown')
+      expect(stripOf(held, 'llama').attributes('draggable')).toBe('true')
+    })
   })
 
   it('draws no way to open or shut a tile: every value is open to typing', () => {
@@ -473,11 +512,11 @@ describe('Deck', () => {
       typed(boxes[0], 'Vicuña')
       typed(boxes[1], 'Guanaco')
 
-      // Both stand under one field, so what tells them apart is where each
-      // stands under it.
+      // The first is the heading, which is what names the card; the second is
+      // the first value the card writes under that field.
       expect(held.emitted('write')).toEqual([
-        ['twice', 'Name', 1, 'Vicuña'],
-        ['twice', 'Name', 2, 'Guanaco'],
+        ['twice', 'Name', 0, true, 'Vicuña'],
+        ['twice', 'Name', 1, false, 'Guanaco'],
       ])
     })
 

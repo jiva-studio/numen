@@ -232,6 +232,24 @@ describe('Stencil, the fields', () => {
     expect(held.emitted('move-field')).toEqual([['Height', null]])
   })
 
+  it('emits a field let go on the rule the list is added by', async () => {
+    const held = mountStencil()
+    await rowFor(held, 'Height').get('[data-grip]').trigger('dragstart')
+    const rule = held.findAll('section')[0]?.get('.rule')
+    await rule?.trigger('dragover')
+    await rule?.trigger('drop')
+    expect(held.emitted('move-field')).toEqual([['Height', null]])
+  })
+
+  it('emits a field let go anywhere else in the part the fields stand in', async () => {
+    const held = mountStencil()
+    await rowFor(held, 'Height').get('[data-grip]').trigger('dragstart')
+    const heading = held.get('.stencil__heading')
+    await heading.trigger('dragover')
+    await heading.trigger('drop')
+    expect(held.emitted('move-field')).toEqual([['Height', null]])
+  })
+
   it('moves nothing where a field is let go where it stands', async () => {
     const held = mountStencil()
     await dragTo(held, 'Height', 'Height')
@@ -321,6 +339,43 @@ describe('Stencil, the fields', () => {
       pressing(gripFor(held, 'Name').element, 'ArrowDown')
       expect(held.emitted('move-field')).toBeUndefined()
     })
+  })
+})
+
+describe('Stencil, what the caller found wrong', () => {
+  const WRONG = {
+    at: new Map([['recognise', ['this face has no back']]]),
+    fields: new Map([['Height', ['declared twice']]]),
+  }
+
+  it('says what is wrong with a field under that field’s row', () => {
+    const held = mountStencil({ wrong: WRONG })
+    const said = rowFor(held, 'Height').get('[data-wrong]')
+    expect(said.text()).toBe('declared twice')
+  })
+
+  it('says it on no other row', () => {
+    const held = mountStencil({ wrong: WRONG })
+    expect(rowFor(held, 'Weight').find('[data-wrong]').exists()).toBe(false)
+  })
+
+  it('says what is wrong with a face under that face’s name', () => {
+    const held = mountStencil({ wrong: WRONG })
+    const said = held.get('[data-face-block="recognise"] header [data-wrong]')
+    expect(said.text()).toBe('this face has no back')
+  })
+
+  it('says a line for each of them', () => {
+    const wrong = {
+      at: new Map(),
+      fields: new Map([['Height', ['declared twice', 'and nothing fills it']]]),
+    }
+    const held = mountStencil({ wrong })
+    expect(rowFor(held, 'Height').get('[data-wrong]').findAll('li')).toHaveLength(2)
+  })
+
+  it('says nothing where the caller found nothing wrong', () => {
+    expect(mountStencil().findAll('[data-wrong]')).toHaveLength(0)
   })
 })
 
@@ -760,6 +815,30 @@ describe('Stencil, the faces', () => {
       const editor = mountStencil({ faces: THREE })
       await carry(editor, 'three', 'one')
       expect(editor.emitted('move-field')).toBeUndefined()
+    })
+  })
+
+  describe('the name of a face holding a brace', () => {
+    const ONE: readonly Shown[] = [{ id: 'one', name: 'One', front: '', back: '' }]
+
+    const nameOf = (held: Editor) => held.get<HTMLInputElement>('[data-face-block="one"] header input')
+
+    it('is a name like any other, a face standing in no brace', async () => {
+      const held = mountStencil({ faces: ONE })
+      const box = nameOf(held)
+      box.element.value = 'What {{Name}} is'
+      await box.trigger('input')
+      await box.trigger('change')
+      expect(held.emitted('rename-face')).toEqual([['one', 'What {{Name}} is']])
+    })
+
+    it('is said nothing about while it is being typed', async () => {
+      const held = mountStencil({ faces: ONE })
+      const box = nameOf(held)
+      box.element.value = 'What {{Name}} is'
+      await box.trigger('input')
+      expect(held.find('[data-face-block="one"] header .stencil__objects').exists()).toBe(false)
+      expect(box.attributes('aria-invalid')).toBeUndefined()
     })
   })
 

@@ -8,12 +8,17 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Stencil from './Stencil.vue'
-import { ordered, reordered, type Half, type Landing, type Shown } from './model'
+import { ordered, reordered, type Filled, type Half, type Landing, type Shown } from './model'
 import { renamedIn } from './fill'
 
 interface Corpus {
   readonly fields: readonly string[]
   readonly faces: readonly Shown[]
+  /**
+   * What the previews stand in the slots. Each field under its own name where
+   * the corpus says nothing.
+   */
+  readonly sample?: readonly Filled[]
 }
 
 const UNBROKEN =
@@ -78,6 +83,24 @@ const CORPORA = {
     ],
   },
   'nothing at all': { fields: [], faces: [] },
+  /* The values a caller stands in the slots, in place of the field names the
+     previews fall back on. */
+  'previewed filled': {
+    fields: ['Name', 'Height', 'Life span'],
+    faces: [
+      {
+        id: 'recognise',
+        name: 'Recognise',
+        front: '{{Name}}',
+        back: '**Height:** {{Height}}\n\n**Life span:** {{Life span}}',
+      },
+    ],
+    sample: [
+      { field: 'Name', text: 'Llama' },
+      { field: 'Height', text: 'about 45" at the shoulder' },
+      { field: 'Life span', text: '20 years' },
+    ],
+  },
   /* Everything a file written by hand can hold that the editor did not make:
      one name declared twice, where the first stands and one row is drawn for
      it; a face naming slots the fields do not; marks a person wrote; and a
@@ -103,6 +126,9 @@ const CORPORA = {
 } satisfies Record<string, Corpus>
 
 type Corpora = keyof typeof CORPORA
+
+/** One corpus, read as the stencil is handed it. */
+const corpusOf = (key: Corpora): Corpus => CORPORA[key]
 
 interface Knobs {
   corpus: Corpora
@@ -137,14 +163,18 @@ const meta: Meta<Knobs> = {
   render: (args) => ({
     components: { Stencil },
     setup() {
-      const fields = ref<readonly string[]>(CORPORA[args.corpus].fields)
-      const faces = ref<readonly Shown[]>(CORPORA[args.corpus].faces)
+      const held = corpusOf(args.corpus)
+      const fields = ref<readonly string[]>(held.fields)
+      const faces = ref<readonly Shown[]>(held.faces)
+      const sample = ref<readonly Filled[] | undefined>(held.sample)
 
       watch(
         () => args.corpus,
         (next) => {
-          fields.value = CORPORA[next].fields
-          faces.value = CORPORA[next].faces
+          const held = corpusOf(next)
+          fields.value = held.fields
+          faces.value = held.faces
+          sample.value = held.sample
         },
       )
 
@@ -156,6 +186,7 @@ const meta: Meta<Knobs> = {
         args,
         fields,
         faces,
+        sample,
         onAddField: (name: string) => {
           fields.value = [...fields.value, name]
         },
@@ -197,6 +228,7 @@ const meta: Meta<Knobs> = {
         <Stencil
           :fields="fields"
           :faces="faces"
+          :sample="sample"
           :name="args.name"
           @add-field="onAddField"
           @rename-field="onRenameField"
@@ -502,6 +534,28 @@ export const AwkwardText: Story = { args: { corpus: 'awkward text' } }
 
 /** No fields and no faces. */
 export const NothingAtAll: Story = { args: { corpus: 'nothing at all' } }
+
+/**
+ * A preview standing the values a caller handed in, where every other story
+ * lets each field stand under its own name.
+ */
+export const PreviewedFilled: Story = {
+  args: { corpus: 'previewed filled', width: '64rem' },
+  play: async ({ canvasElement }) => {
+    const front = paneOf(canvasElement, 'recognise', 'front-preview')
+    const back = paneOf(canvasElement, 'recognise', 'back-preview')
+
+    expect(front.textContent).toContain('Llama')
+    expect(back.textContent).toContain('about 45" at the shoulder')
+    expect(back.textContent).toContain('20 years')
+
+    // The names of the fields are what the boxes hold, and no preview stands
+    // one in place of a value.
+    expect(boxFor(canvasElement, 'recognise', 'front').value).toBe('{{Name}}')
+    expect(front.textContent).not.toContain('{{')
+    expect(back.querySelector('strong')?.textContent).toBe('Height:')
+  },
+}
 
 /**
  * Everything a file can hold that the editor did not make: one name declared

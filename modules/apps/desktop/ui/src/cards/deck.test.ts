@@ -339,7 +339,7 @@ describe('the field a card is named by, written over', () => {
       const { tab } = await open({ cards: only(one) })
       const card = tab.deck().cards[0]?.id ?? ''
 
-      tab.writes(card, 'Name', 1, 'Vicuña')
+      tab.writes(card, 'Name', 0, true, 'Vicuña')
 
       expect(tab.deck().cards[0]?.name).toBe('Vicuña')
     }
@@ -350,7 +350,7 @@ describe('the field a card is named by, written over', () => {
       const { tab } = await open({ cards: only(one) })
       const card = tab.deck().cards[0]?.id ?? ''
 
-      tab.writes(card, 'Name', 1, 'Vicuña')
+      tab.writes(card, 'Name', 0, true, 'Vicuña')
 
       expect(tab.deck().cards[0]?.values).toStrictEqual([])
     }
@@ -360,7 +360,7 @@ describe('the field a card is named by, written over', () => {
     const { tab } = await open({ cards: only('cards/Animal') })
     const card = tab.deck().cards[0]?.id ?? ''
 
-    tab.writes(card, 'Height', 1, 'about 45"')
+    tab.writes(card, 'Height', 1, false, 'about 45"')
 
     expect(tab.deck().cards[0]?.name).toBe('Llama')
     expect(tab.deck().cards[0]?.values).toStrictEqual([{ field: 'Height', text: 'about 45"' }])
@@ -370,7 +370,7 @@ describe('the field a card is named by, written over', () => {
     const { tab } = await open({ cards: twice })
     const card = tab.deck().cards[0]?.id ?? ''
 
-    tab.writes(card, 'Name', 1, 'Vicuña')
+    tab.writes(card, 'Name', 0, true, 'Vicuña')
 
     expect(tab.deck().cards[0]?.name).toBe('Vicuña')
     expect(tab.deck().cards[0]?.values).toStrictEqual([{ field: 'Name', text: 'Alpaca' }])
@@ -380,7 +380,7 @@ describe('the field a card is named by, written over', () => {
     const { tab } = await open({ cards: twice })
     const card = tab.deck().cards[0]?.id ?? ''
 
-    tab.writes(card, 'Name', 2, 'Vicuña')
+    tab.writes(card, 'Name', 1, false, 'Vicuña')
 
     expect(tab.deck().cards[0]?.name).toBe('Llama')
     expect(tab.deck().cards[0]?.values).toStrictEqual([{ field: 'Name', text: 'Vicuña' }])
@@ -390,7 +390,7 @@ describe('the field a card is named by, written over', () => {
     const { tab } = await open({ cards: only('Gone', '') })
     const card = tab.deck().cards[0]?.id ?? ''
 
-    tab.writes(card, 'Name', 1, 'Vicuña')
+    tab.writes(card, 'Name', 1, false, 'Vicuña')
 
     expect(tab.deck().cards[0]?.name).toBe('Llama')
     expect(tab.deck().cards[0]?.values).toStrictEqual([{ field: 'Name', text: 'Vicuña' }])

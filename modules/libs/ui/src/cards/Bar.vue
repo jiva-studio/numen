@@ -6,7 +6,7 @@
  * window: what it holds stands at its start, what it is pressed for at its end,
  * and the strip itself is what a gesture takes hold of.
  */
-import { shallowRef } from 'vue'
+import { onScopeDispose, shallowRef } from 'vue'
 import Slab from './Slab.vue'
 import { wayOf, type Way } from './model'
 
@@ -29,13 +29,25 @@ const WORKED = 'input, textarea, button, a, select, [contenteditable]'
 /** It is taken hold of. A press on something worked lets that thing have it. */
 const held = shallowRef(true)
 
-const press = (event: PointerEvent): void => {
-  held.value = (event.target as HTMLElement | null)?.closest?.(WORKED) == null
-}
-
+/**
+ * The press is over, wherever it was let go. A press that began on something
+ * worked may travel outside the strip and end there, so the end of it is heard
+ * where every gesture ends.
+ */
 const release = (): void => {
   held.value = true
+  window.removeEventListener('pointerup', release)
+  window.removeEventListener('pointercancel', release)
 }
+
+const press = (event: PointerEvent): void => {
+  if ((event.target as HTMLElement | null)?.closest?.(WORKED) == null) return
+  held.value = false
+  window.addEventListener('pointerup', release)
+  window.addEventListener('pointercancel', release)
+}
+
+onScopeDispose(release)
 
 /**
  * The strip is what a gesture takes hold of, so it is what the keyboard takes
@@ -61,8 +73,6 @@ const carried = (event: KeyboardEvent): void => {
     :aria-label="carry"
     :title="carry"
     @pointerdown="press"
-    @pointerup="release"
-    @dragend="release"
     @keydown="carried"
   >
     <span class="bar__held min-w-0 flex-1"><slot /></span>

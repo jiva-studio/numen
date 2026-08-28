@@ -2,8 +2,9 @@
  * Every situation a rule has to survive. Also the test corpus: each story is
  * run in a browser by `@storybook/addon-vitest`.
  *
- * What stands in the middle here is the action a list is added to by, which is
- * what a rule is drawn for in this module.
+ * What the rule holds here is the action a list is added to by. It stands in
+ * the middle, or leads the rule where the rule is asked for that, which is how
+ * a card heads the box one of its values is typed in.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect } from 'storybook/test'
@@ -15,8 +16,10 @@ const UNBROKEN =
   'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
 
 interface Knobs {
-  /** What the action in the middle says. */
+  /** What the action the rule holds says. */
   said: string
+  /** Where on the rule it stands. */
+  at: 'middle' | 'start'
   /** How wide the window drawing the rule is. */
   width: string
 }
@@ -27,15 +30,16 @@ const meta: Meta<Knobs> = {
   parameters: { layout: 'fullscreen' },
   argTypes: {
     said: { control: 'text' },
+    at: { control: 'inline-radio', options: ['middle', 'start'] },
     width: { control: 'text' },
   },
-  args: { said: 'Add a field', width: '100%' },
+  args: { said: 'Add a field', at: 'middle', width: '100%' },
   render: (args) => ({
     components: { Rule, Button, Glyph },
     setup: () => ({ args }),
     template: `
       <div :style="{ padding: '2rem', width: args.width }">
-        <Rule>
+        <Rule :at="args.at">
           <Button variant="outline" size="small">
             <Glyph shows="plus" />
             {{ args.said }}
@@ -105,6 +109,31 @@ export const TheLineGivesWayToWhatItHolds: Story = {
     // The line and the word are laid side by side, so neither runs over the
     // other: the two sides and what they hold take the whole width between them.
     const gap = Number.parseFloat(getComputedStyle(rule).columnGap)
+    expect((before ?? 0) + (after ?? 0) + at.width + 2 * gap).toBeCloseTo(box.width, 0)
+  },
+}
+
+/**
+ * A rule leading with what it holds: a stub of line before it, the width of
+ * the air the rule keeps, and the rest of the line after it.
+ */
+export const LeadingWithWhatItHolds: Story = {
+  args: { at: 'start', width: '40rem' },
+  play: async ({ canvasElement }) => {
+    const rule = found(canvasElement, '.rule')
+    const button = found(canvasElement, 'button')
+    expect(rule.getAttribute('data-at')).toBe('start')
+
+    const [before, after] = sides(rule)
+    const gap = Number.parseFloat(getComputedStyle(rule).columnGap)
+    expect(before).toBeCloseTo(gap, 0)
+    expect(after).toBeGreaterThan(before ?? 0)
+
+    // What it holds stands at the start, and the two sides and it take the
+    // whole width between them.
+    const at = button.getBoundingClientRect()
+    const box = rule.getBoundingClientRect()
+    expect(at.left - box.left).toBeLessThan(box.width / 4)
     expect((before ?? 0) + (after ?? 0) + at.width + 2 * gap).toBeCloseTo(box.width, 0)
   },
 }

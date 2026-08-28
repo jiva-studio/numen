@@ -24,14 +24,26 @@ describe('Rule', () => {
   it('is announced as nothing, so nothing is said around what it holds', () => {
     const rule = held('Add a field')
     expect(rule.attributes('role')).toBe('presentation')
-    expect(rule.attributes('role')).not.toBe('separator')
     expect(rule.attributes('aria-orientation')).toBeUndefined()
   })
 
   it('draws its line as decoration, and never as an element', () => {
     const rule = held('Add a field')
+    expect(rule.element.tagName).toBe('DIV')
     expect(rule.findAll('hr')).toHaveLength(0)
-    expect(rule.findAll('[role="separator"]')).toHaveLength(0)
+  })
+
+  it('stands what it holds in its middle where it is asked for nothing else', () => {
+    expect(held('Add a field').attributes('data-at')).toBe('middle')
+  })
+
+  it('leads with what it holds where it is asked to', () => {
+    const rule = mount(Rule, {
+      props: { at: 'start' },
+      slots: { default: h('button', { type: 'button' }, 'Turn') },
+    })
+    expect(rule.attributes('data-at')).toBe('start')
+    expect(rule.get('button').text()).toBe('Turn')
   })
 
   it('leaves what it holds a button of its own, under its own name', () => {

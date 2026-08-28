@@ -17,6 +17,7 @@ import {
   freeName,
   grid,
   NOTHING_WRONG,
+  sealed,
   stepped,
   type Cut,
   type DeckWords,
@@ -28,7 +29,7 @@ import {
 } from './model'
 
 /** A card nothing is wrong with any value of. */
-const NO_FIELDS: ReadonlyMap<string, readonly string[]> = new Map()
+const NO_FIELDS: ReadonlyMap<string, readonly string[]> = sealed()
 
 const props = withDefaults(
   defineProps<{
@@ -57,10 +58,11 @@ const emit = defineEmits<{
   /** A card let go somewhere in the order: before another, or at the end. */
   (event: 'move', id: string, at: Landing): void
   /**
-   * One value of one card as it now reads. A card writing a field twice is
-   * writing two values, and `nth` says which of them was typed in.
+   * One value of one card as it now reads. `names` says the card's name was
+   * typed in, and a card writing a field twice is writing two values, of which
+   * `nth` says which was typed in.
    */
-  (event: 'write', id: string, field: string, nth: number, text: string): void
+  (event: 'write', id: string, field: string, nth: number, names: boolean, text: string): void
 }>()
 
 /** The plus is showing which stencils a new card may be cut by. */
@@ -135,7 +137,6 @@ const add = (cut: Cut): void => {
       >
         <Card
           :tile="tile"
-          :of="shown.of"
           :wrong="wrong.at.get(tile.id) ?? []"
           :wrong-under="wrong.under.get(tile.id) ?? NO_FIELDS"
           :words="words"
@@ -143,7 +144,7 @@ const add = (cut: Cut): void => {
           @lift="lift(tile.id, $event)"
           @release="release"
           @step="(way, press) => step(tile.id, way, press)"
-          @write="(field, nth, text) => emit('write', tile.id, field, nth, text)"
+          @write="(field, nth, names, text) => emit('write', tile.id, field, nth, names, text)"
         />
       </div>
 

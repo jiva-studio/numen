@@ -19,8 +19,8 @@ export interface Filled {
 export interface Drawn {
   readonly id: string
   readonly name: string
-  /** What the card is cut by, as a word to show. Empty where it is cut by nothing. */
-  readonly stencil: string
+  /** What the card is cut by, as a word to show, and nothing where nothing cuts it. */
+  readonly stencil: string | null
   readonly filled: readonly Filled[]
 }
 
@@ -118,8 +118,20 @@ export type Objection = 'blank' | 'taken' | 'braced'
  */
 export function objection(name: string, taken: readonly string[]): Objection | null {
   const said = name.trim()
-  if (said === '') return 'blank'
   if (said.includes('{') || said.includes('}')) return 'braced'
+  return heading(name, taken)
+}
+
+/** What is wrong with a name that is written as a heading and in no slot. */
+export type Amiss = 'blank' | 'taken'
+
+/**
+ * What is wrong with a name that stands as a heading. It is written nowhere a
+ * brace is read, so a brace in it is a character like any other.
+ */
+export function heading(name: string, taken: readonly string[]): Amiss | null {
+  const said = name.trim()
+  if (said === '') return 'blank'
   if (taken.some((each) => each.trim() === said)) return 'taken'
   return null
 }
@@ -153,7 +165,9 @@ export interface StencilWords {
   /** What is said of a field's name that cannot be used. */
   readonly objection: (why: Objection) => string
   /** What is said of a face's name that cannot be used. */
-  readonly faceObjection: (why: Objection) => string
+  readonly faceObjection: (why: Amiss) => string
+  /** What a list of things wrong is called to a reader. */
+  readonly wrong: string
 }
 
 export const STENCIL_WORDS: StencilWords = {
@@ -179,12 +193,8 @@ export const STENCIL_WORDS: StencilWords = {
       : why === 'taken'
         ? 'That name is taken'
         : 'A name cannot hold a brace',
-  faceObjection: (why) =>
-    why === 'blank'
-      ? 'A face needs a name'
-      : why === 'taken'
-        ? 'That name is taken'
-        : 'A name cannot hold a brace',
+  faceObjection: (why) => (why === 'blank' ? 'A face needs a name' : 'That name is taken'),
+  wrong: 'What is wrong',
 }
 
 /** The words a card is drawn with, declared once. */
@@ -200,9 +210,8 @@ export const FACE_WORDS: FaceWords = {
   turning: 'Turn',
 }
 
-/** The words a deck is drawn with, declared once. */
-export interface DeckWords {
-  readonly add: string
+/** The words one card is drawn with, declared once. */
+export interface CardWords {
   readonly remove: string
   readonly carry: string
   readonly cut: string
@@ -210,11 +219,16 @@ export interface DeckWords {
   /** What is said of a card holding no value at all. */
   readonly nothing: string
   /** What is said of a card whose stencil the vault does not hold. */
-  readonly unknown: (stencil: string) => string
+  readonly unknown: (stencil: string | null) => string
   /** What is said of a value standing in the field the card is named by. */
   readonly twice: string
   /** What a list of things wrong is called to a reader. */
   readonly wrong: string
+}
+
+/** The words a deck is drawn with: a card's, and the two the plus asks for. */
+export interface DeckWords extends CardWords {
+  readonly add: string
   readonly cardStem: string
 }
 
@@ -225,16 +239,51 @@ export interface DeckWords {
  */
 export interface Wrong {
   /** What is wrong with each card, under the identity it was drawn by. */
-  readonly at: ReadonlyMap<string, readonly string[]>
+  readonly at: Against
   /**
    * What is wrong with one value of a card, under that card's identity and then
    * the field the value stands in.
    */
-  readonly under: ReadonlyMap<string, ReadonlyMap<string, readonly string[]>>
+  readonly under: ReadonlyMap<string, Against>
+}
+
+/** What is wrong with each of a number of things, under what each is known by. */
+export type Against = ReadonlyMap<string, readonly string[]>
+
+/**
+ * What the caller found wrong with a stencil. A face's stands under its name and
+ * a field's stands under that field's row.
+ */
+export interface StencilWrong {
+  /** What is wrong with each face, under the identity it was drawn by. */
+  readonly at: Against
+  /** What is wrong with each field, under the name it is declared by. */
+  readonly fields: Against
+}
+
+/**
+ * A map of nothing that stays a map of nothing. An empty default stands for
+ * every caller at once, so putting anything into it is refused.
+ */
+export function sealed<K, V>(): ReadonlyMap<K, V> {
+  const empty = new Map<K, V>()
+  const refuses = (): never => {
+    throw new TypeError('an empty default holds nothing')
+  }
+  return Object.freeze(Object.assign(empty, { set: refuses, delete: refuses, clear: refuses }))
 }
 
 /** Nothing wrong with anything. */
-export const NOTHING_WRONG: Wrong = { at: new Map(), under: new Map() }
+export const NOTHING_WRONG: Wrong = Object.freeze({
+  at: sealed<string, readonly string[]>(),
+  under: sealed<string, Against>(),
+})
+
+/** Nothing wrong with any face and nothing wrong with any field. */
+export const NOTHING_AMISS: StencilWrong = Object.freeze({
+  at: sealed<string, readonly string[]>(),
+  fields: sealed<string, readonly string[]>(),
+})
 
 export const DECK_WORDS: DeckWords = {
   add: 'Add a card',
@@ -243,7 +292,7 @@ export const DECK_WORDS: DeckWords = {
   cut: 'Stencil',
   name: 'Name',
   nothing: 'Nothing in it',
-  unknown: (stencil) => (stencil ? `No stencil called ${stencil}` : 'Cut by no stencil'),
+  unknown: (stencil) => (stencil === null ? 'Cut by no stencil' : `No stencil called ${stencil}`),
   twice: 'The card is named by this field',
   wrong: 'What is wrong',
   cardStem: 'Card',
@@ -321,7 +370,7 @@ export interface FaceBlock {
   /** What is in its name box: the name it carries, or what is being typed over it. */
   readonly text: string
   /** Why what is in its name box cannot be used, and nothing while it can. */
-  readonly objection: Objection | null
+  readonly objection: Amiss | null
   /** Where it stands, counting from one, which is what it is announced as. */
   readonly at: number
   /** How many faces stand with it. */
@@ -359,7 +408,7 @@ export function faceBlocks(
       objection:
         typed === null
           ? null
-          : objection(typed, faces.filter((each) => each.id !== face.id).map((each) => each.name)),
+          : heading(typed, faces.filter((each) => each.id !== face.id).map((each) => each.name)),
       at: index + 1,
       of: faces.length,
       front: face.front,
@@ -423,7 +472,11 @@ export interface Stood extends Laid {
    * one field are told apart by their order under it.
    */
   readonly key: string
-  /** Where it stands among the values written under its own field, from one. */
+  /**
+   * Where it stands among the values the card writes under its own field, from
+   * one. The name a card carries is written in its heading and in no value of
+   * it, so the one that names the card stands among none of them.
+   */
   readonly nth: number
   /** It is the field the card is named by, which is the stencil's first. */
   readonly names: boolean
@@ -432,17 +485,24 @@ export interface Stood extends Laid {
    * the value is kept and shown, and no face lays it out.
    */
   readonly twice: boolean
+  /**
+   * It is the last box standing for its field, which is where what is wrong
+   * with that field is said, once.
+   */
+  readonly last: boolean
 }
 
 /** One card as a tile of the grid. */
 export interface Tile {
   readonly id: string
   readonly name: string
-  readonly stencil: string
+  readonly stencil: string | null
   /** Its values, the field naming the card first, laid out under its stencil. */
   readonly filled: readonly Stood[]
   /** Where it stands among the tiles, counting from one, which is what it is announced as. */
   readonly at: number
+  /** How many stand in the grid with it, the plus among them. */
+  readonly of: number
   /** The stencil it names is among the ones handed in. */
   readonly known: boolean
   /** A field of its stencil names it. Where none does, the tile says the name it was handed. */
@@ -474,6 +534,7 @@ export function grid(
   cuts: readonly Cut[],
   carried: string | null,
 ): Grid {
+  const of = cards.length + 1
   const tiles = cards.map((card, index) => {
     const cut = cuts.find((each) => each.name === card.stencil)
     const fields = declared(cut?.fields ?? [])
@@ -488,6 +549,7 @@ export function grid(
       { field: first, text: card.name, declared: true, names: true, twice: false },
     ]
 
+    /** How many values the card writes under each field, as they are counted off. */
     const under = new Map<string, number>()
     const told = (field: string): number => {
       const nth = (under.get(field) ?? 0) + 1
@@ -495,27 +557,33 @@ export function grid(
       return nth
     }
 
+    // A value the stencil does not name is the person's and stays in the file,
+    // and nothing here draws it or says a word about it. A card whose stencil
+    // the vault does not hold draws no value at all, and says which stencil it
+    // is waiting for.
+    const counted = [...named, ...rest]
+      .filter((each) => each.declared || each.twice)
+      .map((each, place) => {
+        const nth = each.names ? 0 : told(each.field)
+        return { ...each, at: place + 1, nth, key: `${each.field}#${nth}` }
+      })
+
     return {
       id: card.id,
       name: card.name,
       stencil: card.stencil,
-      // A value the stencil does not name is the person's and stays in the
-      // file, and nothing here draws it or says a word about it. A card whose
-      // stencil the vault does not hold draws no value at all, and says which
-      // stencil it is waiting for.
-      filled: [...named, ...rest]
-        .filter((each) => each.declared || each.twice)
-        .map((each, place) => {
-          const nth = told(each.field)
-          return { ...each, at: place + 1, nth, key: `${each.field}#${nth}` }
-        }),
+      filled: counted.map((each) => ({
+        ...each,
+        last: each.nth === (under.get(each.field) ?? 0),
+      })),
       at: index + 1,
+      of,
       known: cut !== undefined,
       named: first !== undefined,
       carried: card.id === carried,
     }
   })
-  return { tiles, plusAt: cards.length + 1, of: cards.length + 1 }
+  return { tiles, plusAt: cards.length + 1, of }
 }
 
 /** Which half of a face is drawn. */

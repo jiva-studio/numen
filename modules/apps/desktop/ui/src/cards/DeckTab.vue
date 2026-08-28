@@ -58,8 +58,8 @@ const wrong = computed(() => ({ at: marks.value.at, under: marks.value.under }))
       @remove="(id: string) => props.held.removes(id)"
       @move="(id: string, at: CardLanding) => props.held.moves(id, at)"
       @write="
-        (id: string, field: string, nth: number, text: string) =>
-          props.held.writes(id, field, nth, text)
+        (id: string, field: string, nth: number, names: boolean, text: string) =>
+          props.held.writes(id, field, nth, names, text)
       "
     />
 

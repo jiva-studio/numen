@@ -28,7 +28,6 @@ import {
   filled,
   marksOf,
   named,
-  names,
   pathOfCut,
   removed,
   sameDeck,
@@ -82,11 +81,11 @@ export interface Held {
   removes(card: string): void
   moves(card: string, at: string | null): void
   /**
-   * One value of one card as it now reads. The field a card is named by lands
-   * in the heading, which is the one place that field is written; a card
-   * writing a field twice is written where `nth` counts off under it.
+   * One value of one card as it now reads. The name a card carries lands in
+   * its heading, which is the one place it is written; a card writing a field
+   * twice is written where `nth` counts off under it.
    */
-  writes(card: string, field: string, nth: number, text: string): void
+  writes(card: string, field: string, nth: number, names: boolean, text: string): void
   /** The person keeps what they have written, over whatever the file holds. */
   keep(): void
   /** The person takes what the file holds. */
@@ -267,15 +266,10 @@ export function decking(cards: Cards, host: Host, puts: Putting) {
       turns(id, added(deckAt(id), name, stencil, pathOfCut(offers.value, stencil), values)),
     removes: (card) => turns(id, removed(deckAt(id), card)),
     moves: (card, at) => turns(id, carried(deckAt(id), card, at)),
-    writes: (card, field, nth, text) => {
+    writes: (card, field, nth, names, text) => {
       const deck = deckAt(id)
-      const at = deck.cards.find((one) => one.id === card)?.stencilAt ?? ''
-      if (!names(offers.value, at, field)) return turns(id, filled(deck, card, field, nth, text))
-      // The field a card is named by stands first among the boxes drawn under
-      // it, and that box is the heading. The ones after it are the values the
-      // card writes under a heading of its own, counted off from the first.
-      if (nth === 1) return turns(id, named(deck, card, text))
-      turns(id, filled(deck, card, field, nth - 1, text))
+      if (names) return turns(id, named(deck, card, text))
+      turns(id, filled(deck, card, field, nth, text))
     },
     keep: () => store.keep(id),
     take: () => store.take(id),

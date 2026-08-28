@@ -110,6 +110,15 @@ describe('a mark on a face', () => {
     )
   })
 
+  it('is drawn under the name of that face, where the editor draws it', async () => {
+    const { window, tab } = await drawn([missing])
+    const second = tab.sheet().faces[1]?.id ?? ''
+
+    expect(window.find(`[data-face-block="${second}"] header [data-wrong]`).text()).toBe(
+      'this face has no back',
+    )
+  })
+
   it('is drawn on no other face', async () => {
     const { window, tab } = await drawn([missing])
     const first = tab.sheet().faces[0]?.id ?? ''

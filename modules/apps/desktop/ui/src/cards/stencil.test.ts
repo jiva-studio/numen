@@ -259,6 +259,33 @@ describe('a field renamed in a stencil', () => {
   })
 })
 
+describe('a field carried in a stencil', () => {
+  it('lands where it was let go', async () => {
+    const { tab } = await open()
+
+    tab.movesField('Life span', null)
+
+    expect(tab.sheet().fields).toStrictEqual(['Height', 'Life span'])
+  })
+
+  it('leaves the first field first, wherever it was let go', async () => {
+    const { tab } = await open()
+
+    tab.movesField('Height', null)
+
+    expect(tab.sheet().fields).toStrictEqual(['Height', 'Life span'])
+  })
+
+  it('lands nothing above the first field', async () => {
+    const { tab } = await open()
+
+    tab.addsField('Weight')
+    tab.movesField('Weight', 'Height')
+
+    expect(tab.sheet().fields).toStrictEqual(['Height', 'Life span', 'Weight'])
+  })
+})
+
 describe('a stencil whose file moved past what was read', () => {
   it('is overtaken once the write comes back saying the file changed', async () => {
     const { stencils, tab } = await open({ changed: true })

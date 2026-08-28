@@ -12,22 +12,28 @@ import Bar from './Bar.vue'
 import Deed from './Deed.vue'
 import Grown from './Grown.vue'
 import Rule from '../rule/Rule.vue'
-import { DECK_WORDS, oneLine, type DeckWords, type Stood, type Tile, type Way } from './model'
+import {
+  DECK_WORDS,
+  oneLine,
+  sealed,
+  type CardWords,
+  type Stood,
+  type Tile,
+  type Way,
+} from './model'
 
 const props = withDefaults(
   defineProps<{
     /** The card, laid out against the stencil that cuts it. */
     tile: Tile
-    /** How many cards the deck holds, and this one's place among them. */
-    of?: number
     /** What is wrong with this card, said under its heading. */
     wrong?: readonly string[]
     /** What is wrong with each of its values, under the field the value is in. */
     wrongUnder?: ReadonlyMap<string, readonly string[]>
     /** The words it is drawn with. */
-    words?: DeckWords
+    words?: CardWords
   }>(),
-  { of: 1, wrong: () => [], wrongUnder: () => new Map(), words: () => DECK_WORDS },
+  { wrong: () => [], wrongUnder: () => sealed(), words: () => DECK_WORDS },
 )
 
 const emit = defineEmits<{
@@ -38,10 +44,11 @@ const emit = defineEmits<{
   /** The card asked to go one place along the order. */
   (event: 'step', way: Way, press: KeyboardEvent): void
   /**
-   * One value as it now reads. A card writing a field twice is writing two
-   * values, and `nth` says which of them was typed in.
+   * One value as it now reads. `names` says the card's name was typed in, and
+   * a card writing a field twice is writing two values, of which `nth` says
+   * which was typed in.
    */
-  (event: 'write', field: string, nth: number, text: string): void
+  (event: 'write', field: string, nth: number, names: boolean, text: string): void
 }>()
 
 /** What this card's boxes are named by, which is this card's alone. */
@@ -49,15 +56,9 @@ const uid = useId()
 
 const boxId = (value: Stood): string => `${uid}-${encodeURIComponent(value.key)}`
 
-/**
- * What is wrong with one value, said once, under the last of the boxes standing
- * for that field, which is the one a card writing it twice put there.
- */
-const wrongIn = (value: Stood): readonly string[] => {
-  const under = props.tile.filled.filter((each) => each.field === value.field)
-  if (under[under.length - 1] !== value) return []
-  return props.wrongUnder.get(value.field) ?? []
-}
+/** What is wrong with one value, said once, under the last box standing for its field. */
+const wrongIn = (value: Stood): readonly string[] =>
+  value.last ? (props.wrongUnder.get(value.field) ?? []) : []
 
 /**
  * A break struck in the box the card is named by. The name is written in a
@@ -69,7 +70,7 @@ const breaking = (value: Stood, press: KeyboardEvent): void => {
 }
 
 const write = (value: Stood, text: string): void => {
-  emit('write', value.field, value.nth, value.names ? oneLine(text) : text)
+  emit('write', value.field, value.nth, value.names, value.names ? oneLine(text) : text)
 }
 </script>
 
@@ -78,7 +79,7 @@ const write = (value: Stood, text: string): void => {
     class="card flex flex-col rounded-node bg-raised"
     :aria-label="tile.name"
     :aria-posinset="tile.at"
-    :aria-setsize="of"
+    :aria-setsize="tile.of"
     :data-card="tile.id"
     :data-carried="tile.carried || undefined"
   >
@@ -92,7 +93,7 @@ const write = (value: Stood, text: string): void => {
            which cut this one. A name is exposed by nothing standing on a
            paragraph, so the text takes a role that carries one. -->
       <p
-        v-if="tile.stencil"
+        v-if="tile.stencil !== null"
         class="card__cut truncate text-small text-hushed"
         role="group"
         :aria-label="words.cut"

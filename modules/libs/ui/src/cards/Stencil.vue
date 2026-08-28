@@ -5,7 +5,9 @@
  * The fields stand at the top and the faces under them, the first field naming
  * the cards this stencil cuts. Each face is a strip it is carried by, holding
  * its name and one row of the fields, and under that one window divided into
- * four parts. What the stencil stands for is the caller's.
+ * four parts. What the stencil stands for is the caller's, and so is what is
+ * wrong with it: a face's mark stands under that face's name, a field's under
+ * that field's row.
  */
 import { computed, nextTick, shallowRef, useId, useTemplateRef } from 'vue'
 import Bar from './Bar.vue'
@@ -22,11 +24,13 @@ import {
   faceBlocks,
   fieldRows,
   freeName,
+  heading,
   landing,
   objection,
   panes,
   stepped,
   wayOf,
+  NOTHING_AMISS,
   STENCIL_WORDS,
   type Aim,
   type Draft,
@@ -37,10 +41,16 @@ import {
   type Pane,
   type Shown,
   type StencilWords,
+  type StencilWrong,
   type Way,
 } from './model'
 import { insert, sampled } from './fill'
 
+/**
+ * What the caller found wrong with the stencil it handed in. A face's stands
+ * under that face's name and a field's under that field's row, so nothing is
+ * said in a place that leaves a person guessing what it is about.
+ */
 const props = withDefaults(
   defineProps<{
     /** The fields, in the order a person is asked for them. The first names the card. */
@@ -51,11 +61,14 @@ const props = withDefaults(
     name?: string
     /** What a preview stands in the slots. Each field under its own name by default. */
     sample?: readonly Filled[]
+    /** What the caller found wrong with the fields and the faces it handed in. */
+    wrong?: StencilWrong
     /** The words it is drawn with. */
     words?: StencilWords
   }>(),
   {
     name: 'Stencil',
+    wrong: () => NOTHING_AMISS,
     words: () => STENCIL_WORDS,
   },
 )
@@ -114,9 +127,16 @@ const sample = computed(() => props.sample ?? sampled(asked.value))
 
 const rows = computed(() => fieldRows(asked.value, draft.value, carried.value))
 
+/** The faces as they are drawn. */
 const blocks = computed(() =>
   faceBlocks(props.faces, asked.value, sample.value, faceDraft.value),
 )
+
+/** What is wrong with one field, and nothing where nothing is. */
+const wrongWith = (field: string): readonly string[] => props.wrong.fields.get(field) ?? []
+
+/** What is wrong with one face, and nothing where nothing is. */
+const wrongWithFace = (id: string): readonly string[] => props.wrong.at.get(id) ?? []
 
 /** The half of one face a field would be written into. */
 const aiming = (id: string): Half => aimedAt(aim.value, id)
@@ -157,7 +177,8 @@ const commitFace = (id: string): void => {
   const name = held.text.trim()
   const carries = props.faces.find((each) => each.id === id)?.name
   if (name === carries) return
-  if (objection(name, props.faces.filter((each) => each.id !== id).map((each) => each.name))) return
+  if (heading(name, props.faces.filter((each) => each.id !== id).map((each) => each.name)) !== null)
+    return
   emit('rename-face', id, name)
 }
 
@@ -301,10 +322,18 @@ const put = async (id: string, field: string): Promise<void> => {
     role="group"
     :aria-label="name"
   >
-    <section class="stencil__part" :aria-label="words.fields">
+    <!-- A field is let go anywhere in the part its list stands in, as a face
+         is, so the way the list is added by takes it and a stencil naming no
+         field still has somewhere to put one. -->
+    <section
+      class="stencil__part"
+      :aria-label="words.fields"
+      @dragover="over(null, $event)"
+      @drop="drop"
+    >
       <h2 class="stencil__heading text-small text-hushed">{{ words.fields }}</h2>
 
-      <ul v-if="rows.length" class="stencil__fields" @dragover="over(null, $event)" @drop="drop">
+      <ul v-if="rows.length" class="stencil__fields">
         <li
           v-for="row in rows"
           :key="row.field"
@@ -372,6 +401,15 @@ const put = async (id: string, field: string): Promise<void> => {
           >
             {{ words.objection(row.objection) }}
           </p>
+
+          <ul
+            v-if="wrongWith(row.field).length"
+            class="stencil__objects text-small text-alarm"
+            :aria-label="words.wrong"
+            data-wrong
+          >
+            <li v-for="(text, said) in wrongWith(row.field)" :key="said">{{ text }}</li>
+          </ul>
         </li>
       </ul>
 
@@ -459,6 +497,15 @@ const put = async (id: string, field: string): Promise<void> => {
             >
               {{ words.faceObjection(block.objection) }}
             </p>
+
+            <ul
+              v-if="wrongWithFace(block.id).length"
+              class="stencil__objects text-small text-alarm"
+              :aria-label="words.wrong"
+              data-wrong
+            >
+              <li v-for="(text, said) in wrongWithFace(block.id)" :key="said">{{ text }}</li>
+            </ul>
           </div>
 
           <template #deeds>
@@ -640,6 +687,13 @@ const put = async (id: string, field: string): Promise<void> => {
 .stencil__objects {
   flex-basis: 100%;
   margin: 0;
+}
+
+/* What the caller found wrong is a list, however many things it found. */
+ul.stencil__objects {
+  padding-inline-start: 1.1rem;
+  list-style: disc;
+  overflow-wrap: anywhere;
 }
 
 .stencil__silence {
