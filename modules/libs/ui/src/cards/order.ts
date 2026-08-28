@@ -87,14 +87,14 @@ export function objection(name: string, taken: readonly string[]): Objection | n
   return heading(name, taken)
 }
 
-/** What is wrong with a name that is written as a heading and in no slot. */
-export type Amiss = 'blank' | 'taken'
+/** Why a name written as a heading and in no slot is refused. */
+export type Refusal = 'blank' | 'taken'
 
 /**
  * What is wrong with a name that stands as a heading. It is written nowhere a
  * brace is read, so a brace in it is a character like any other.
  */
-export function heading(name: string, taken: readonly string[]): Amiss | null {
+export function heading(name: string, taken: readonly string[]): Refusal | null {
   const said = name.trim()
   if (said === '') return 'blank'
   if (taken.some((each) => each.trim() === said)) return 'taken'

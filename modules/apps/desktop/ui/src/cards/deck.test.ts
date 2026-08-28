@@ -26,7 +26,7 @@ const CARDS: readonly Carded[] = [
     lead: '',
     values: [{ field: 'Height', text: 'about 45"' }],
   },
-  { name: 'Alpaca', stencil: 'Animal|зверь', stencilAt: 'Animal.md', lead: '', values: [] },
+  { name: 'Alpaca', stencil: 'Animal|животное', stencilAt: 'Animal.md', lead: '', values: [] },
 ]
 
 /** A vault holding one deck, writing down every write it was asked for. */
@@ -315,7 +315,7 @@ describe('what is wrong with a deck', () => {
 describe('the field a card is named by, written over', () => {
   // One stencil named three ways: by a path, by a name carrying an alias, and
   // by the identifier of the note.
-  const WRITTEN = ['cards/Animal', 'Animal|зверь', 'note://01J3ZQ8W0T7K9V2M4N6P8R0S1T']
+  const WRITTEN = ['cards/Animal', 'Animal|животное', 'note://01J3ZQ8W0T7K9V2M4N6P8R0S1T']
 
   /** A deck of one card, under the wikilink it wrote for its stencil. */
   const only = (stencil: string, stencilAt = 'Animal.md'): readonly Carded[] => [

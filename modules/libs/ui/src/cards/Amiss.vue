@@ -23,7 +23,11 @@ defineProps<{
 </template>
 
 <style scoped>
+/* A line or two saying what is wrong, and never a list to read: no bullet, and
+   no room kept for one, so it stands over the edge the host draws it on. */
 .amiss {
   margin: 0;
+  padding-inline-start: 0;
+  list-style: none;
 }
 </style>

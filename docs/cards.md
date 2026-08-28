@@ -118,17 +118,17 @@ about 45" (shoulder)
 
 about 20 years
 
-## шраддха
+## Leaf mould
 
 [[Term]]
 
 ### Meaning
 
-вера, рождённая из слушания
+Compost made of fallen leaves alone, left two winters
 
 ### Source
 
-[[Бхагавад-гита 4.39]]
+[[The compost heap]]
 ```
 
 ### Cards

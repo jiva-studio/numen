@@ -75,10 +75,10 @@ describe('fill', () => {
 
   it('fills text that is not Latin', () => {
     const values = [
-      { field: 'Перевод', text: 'слово' },
-      { field: 'Слово', text: 'Карточка' },
+      { field: 'Перевод', text: 'compost' },
+      { field: 'Слово', text: 'Компост' },
     ]
-    expect(fill('{{Перевод}} — {{Слово}}', values)).toBe('слово — Карточка')
+    expect(fill('{{Перевод}} — {{Слово}}', values)).toBe('compost — Компост')
   })
 })
 

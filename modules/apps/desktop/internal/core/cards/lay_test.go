@@ -89,7 +89,7 @@ func TestAPlaceholderWithNothingBehindItLaysOutAsNothing(t *testing.T) {
 // of it, and so is every letter of every alphabet.
 func TestAPlaceholderIsANameWrittenExactly(t *testing.T) {
 	card := cards.Card{
-		Name: "лама",
+		Name: "яблоня",
 		Values: []cards.Value{
 			{Field: "Life span", Text: "20"},
 			{Field: "Жизнь", Text: "двадцать"},
@@ -101,7 +101,7 @@ func TestAPlaceholderIsANameWrittenExactly(t *testing.T) {
 	_, back := cards.Lay(s, cards.Face{
 		Front: "{{Слово}}", Back: "{{Life span}} {{Жизнь}} {{ Height }} {{Слово}}",
 	}, card)
-	if want := "20 двадцать  лама"; back != want {
+	if want := "20 двадцать  яблоня"; back != want {
 		t.Errorf("back = %q, want %q", back, want)
 	}
 }

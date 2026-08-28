@@ -29,7 +29,7 @@ const deck = "---\n" +
 	"\n" +
 	"[[Animal]]\n" +
 	"\n" +
-	"Asked of me by Anna.\n" +
+	"Written on the seed packet.\n" +
 	"\n" +
 	"### Life span\n" +
 	"\n" +
@@ -39,13 +39,13 @@ const deck = "---\n" +
 	"\n" +
 	"about 45\"\n" +
 	"\n" +
-	"## шраддха\n" +
+	"## компост\n" +
 	"\n" +
 	"[[Термин]]\n" +
 	"\n" +
 	"### Значение\n" +
 	"\n" +
-	"вера\n"
+	"перегной\n"
 
 // A deck opened and not changed comes back byte for byte, and the cards it
 // holds are the ones in the file. Anything less is a diff the person did not
@@ -55,8 +55,8 @@ func TestOpenAndWriteChangesNothing(t *testing.T) {
 		raw   string
 		cards []string
 	}{
-		"the deck":       {deck, []string{"Llama", "шраддха"}},
-		"crlf":           {strings.ReplaceAll(deck, "\n", "\r\n"), []string{"Llama", "шраддха"}},
+		"the deck":       {deck, []string{"Llama", "компост"}},
+		"crlf":           {strings.ReplaceAll(deck, "\n", "\r\n"), []string{"Llama", "компост"}},
 		"no frontmatter": {"## Llama\n\n[[Animal]]\n\n### Height\n\nabout 45\"\n", []string{"Llama"}},
 		"no trailing break": {
 			"---\ntype: deck\n---\n\n## Llama\n\n[[Animal]]", []string{"Llama"},
@@ -153,15 +153,15 @@ func TestSetValueKeepsTheOrderTheFieldsWereWrittenIn(t *testing.T) {
 func TestSetValueAddsAFieldAtTheEndOfTheCard(t *testing.T) {
 	got := setValue(t, deck, "Llama", "Weight", "about 130 kg")
 
-	want := strings.Replace(deck, "about 45\"\n\n## шраддха",
-		"about 45\"\n\n### Weight\n\nabout 130 kg\n\n## шраддха", 1)
+	want := strings.Replace(deck, "about 45\"\n\n## компост",
+		"about 45\"\n\n### Weight\n\nabout 130 kg\n\n## компост", 1)
 	if got != want {
 		t.Errorf("field added wrong\n want %q\n  got %q", want, got)
 	}
 
 	// And at the end of the file, where nothing follows it.
-	got = setValue(t, deck, "шраддха", "Источник", "[[Бхагавад-гита 4.39]]")
-	if want := deck + "\n### Источник\n\n[[Бхагавад-гита 4.39]]\n"; got != want {
+	got = setValue(t, deck, "компост", "Источник", "[[Компостная куча]]")
+	if want := deck + "\n### Источник\n\n[[Компостная куча]]\n"; got != want {
 		t.Errorf("field added wrong at the end\n want %q\n  got %q", want, got)
 	}
 }
@@ -174,8 +174,8 @@ func TestTheFilesOwnLineEndingIsWhatIsWritten(t *testing.T) {
 	if strings.Contains(strings.ReplaceAll(got, "\r\n", ""), "\n") {
 		t.Errorf("a bare break was written into a file of carriage returns: %q", got)
 	}
-	want := strings.Replace(raw, "about 45\"\r\n\r\n## шраддха",
-		"about 45\"\r\n\r\n### Weight\r\n\r\nabout 130 kg\r\n\r\n## шраддха", 1)
+	want := strings.Replace(raw, "about 45\"\r\n\r\n## компост",
+		"about 45\"\r\n\r\n### Weight\r\n\r\nabout 130 kg\r\n\r\n## компост", 1)
 	if got != want {
 		t.Errorf("crlf write\n want %q\n  got %q", want, got)
 	}
@@ -324,7 +324,7 @@ func TestRenameFieldReachesTheCardsOfThatStencilAlone(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	if err := f.SetValue("шраддха", "Height", "no such thing"); err != nil {
+	if err := f.SetValue("компост", "Height", "no such thing"); err != nil {
 		t.Fatalf("set: %v", err)
 	}
 
@@ -347,7 +347,7 @@ func TestRenameFieldReachesTheCardsOfThatStencilAlone(t *testing.T) {
 		t.Errorf("the value moved with the heading: %q", got)
 	}
 	// The card of another stencil keeps the field of that name.
-	other, _ := deck.Card("шраддха")
+	other, _ := deck.Card("компост")
 	if got, ok := other.Value("Height"); !ok || got != "no such thing" {
 		t.Errorf("a card of another stencil was renamed: %v", fieldsOf(other))
 	}

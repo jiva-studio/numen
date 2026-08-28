@@ -159,7 +159,7 @@ describe('the cards as the grid draws them', () => {
   })
 
   it('draws a card the stencil its link reached, whatever stood in the brackets', () => {
-    const written = ['cards/Animal', 'Animal|зверь', 'Animal#Recognise', 'stencils/Animal.md']
+    const written = ['cards/Animal', 'Animal|животное', 'Animal#Recognise', 'stencils/Animal.md']
     for (const one of written) {
       expect(drawnOf(cutBy(one, 'stencils/Animal.md'), OFFERS)[0]?.stencil).toBe('Animal')
     }

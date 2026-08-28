@@ -400,7 +400,7 @@ func TestACardNamesItsStencilTheWayALinkNamesANote(t *testing.T) {
 		"cards/Animal.md": animal,
 		"Animals.md": "---\ntype: deck\n---\n\n" +
 			"## Llama\n\n[[cards/Animal]]\n\n### Height\n\nabout 45\"\n\n" +
-			"## Alpaca\n\n[[Animal|зверь]]\n\n### Height\n\nabout 36\"\n\n" +
+			"## Alpaca\n\n[[Animal|животное]]\n\n### Height\n\nabout 36\"\n\n" +
 			"## Vicuña\n\n[[Nowhere]]\n\n### Height\n\nabout 34\"\n",
 	})
 

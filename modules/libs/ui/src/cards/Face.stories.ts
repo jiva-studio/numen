@@ -33,8 +33,8 @@ const CORPORA = {
   /* Text that is not Latin, beside a run of letters with nothing in it to
      break at. */
   'awkward text': {
-    front: '# Лама\n\nКакого она роста?',
-    back: `**Рост:** около 45″ в холке\n\nधैर्यं सर्वत्र साधनम्\n\n${UNBROKEN} ${UNBROKEN}`,
+    front: '# Компост\n\nЗа сколько он созревает?',
+    back: `**Срок:** около года под плёнкой\n\nबगीचे की खाद और हरी खाद\n\n${UNBROKEN} ${UNBROKEN}`,
   },
   'nothing at all': { front: '', back: '   \n  ' },
   /* A card with a link in each half, which is what the caller is handed to

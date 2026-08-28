@@ -71,19 +71,19 @@ about 45" (shoulder)
 
 about 20 years
 
-## шраддха
+## компост
 
 [[Термин]]
 
 ### Значение
 
-вера, рождённая из слушания
+перегной из листьев и травы
 `))
 
 	if deck.Preamble != "\nCards I am learning.\n\n" {
 		t.Errorf("preamble = %q", deck.Preamble)
 	}
-	if got := names(deck); !slices.Equal(got, []string{"Llama", "шраддха"}) {
+	if got := names(deck); !slices.Equal(got, []string{"Llama", "компост"}) {
 		t.Fatalf("cards = %v", got)
 	}
 	if len(deck.Problems) != 0 {
@@ -101,7 +101,7 @@ about 20 years
 		t.Errorf("Height = %q", got)
 	}
 	// A name that is not Latin is a name.
-	if got, _ := deck.Cards[1].Value("Значение"); got != "вера, рождённая из слушания" {
+	if got, _ := deck.Cards[1].Value("Значение"); got != "перегной из листьев и травы" {
 		t.Errorf("Значение = %q", got)
 	}
 	if deck.Cards[1].Stencil != "Термин" {
@@ -256,7 +256,7 @@ type: deck
 
 [[Animal]]
 
-Asked of me by Anna.
+Written on the seed packet.
 
 ### Height
 
@@ -267,7 +267,7 @@ about 45"
 	if card.Stencil != "Animal" {
 		t.Errorf("stencil = %q", card.Stencil)
 	}
-	if card.Lead != "Asked of me by Anna." {
+	if card.Lead != "Written on the seed packet." {
 		t.Errorf("lead = %q", card.Lead)
 	}
 }

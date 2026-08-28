@@ -430,10 +430,8 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
   margin: 0;
 }
 
-/* What the caller found wrong is a list, however many things it found. */
+/* A name with nothing in it to break at is broken where the line ends. */
 ul.stencil__objects {
-  padding-inline-start: 1.1rem;
-  list-style: disc;
   overflow-wrap: anywhere;
 }
 

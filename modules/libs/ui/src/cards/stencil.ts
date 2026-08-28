@@ -6,7 +6,7 @@
 
 import { sealed, type Filled } from './deck'
 import { previewed, strayIn } from './fill'
-import { declared, HALVES, type Against, type Amiss, type Half, type Objection } from './order'
+import { declared, HALVES, type Against, type Half, type Objection, type Refusal } from './order'
 
 /** One way a stencil shows a card. */
 export interface Shown {
@@ -46,7 +46,7 @@ export interface StencilWords {
   /** What is said of a field's name that cannot be used. */
   readonly objection: (why: Objection) => string
   /** What is said of a face's name that cannot be used. */
-  readonly faceObjection: (why: Amiss) => string
+  readonly faceObjection: (why: Refusal) => string
   /** What a list of things wrong is called to a reader. */
   readonly wrong: string
 }

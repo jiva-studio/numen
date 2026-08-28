@@ -102,13 +102,13 @@ const CORPORA = {
     cuts: [ASKED],
     cards: [
       {
-        id: 'faith',
-        name: 'śraddhā',
+        id: 'compost',
+        name: 'What is compost?',
         stencil: 'Basic',
         filled: [
           {
             field: 'Answer',
-            text: 'вера, рождённая из слушания, — та, что приходит не от рассуждения и не от опыта, а от услышанного слова, и держится на нём одном.',
+            text: 'Leaves, grass and kitchen peelings, turned twice and left under a sheet until the heap has gone dark and crumbly enough to spread on any bed of the plot.',
           },
         ],
       },
@@ -121,12 +121,12 @@ const CORPORA = {
     cuts: [{ name: 'Слово', fields: ['Слово', 'Перевод', 'Пример'] }, { name: UNBROKEN, fields: [UNBROKEN, 'Long'] }],
     cards: [
       {
-        id: 'лама',
-        name: 'Лама',
+        id: 'компост',
+        name: 'Компост',
         stencil: 'Слово',
         filled: [
-          { field: 'Перевод', text: 'llama, южноамериканское животное' },
-          { field: 'Пример', text: 'धैर्यं सर्वत्र साधनम्' },
+          { field: 'Перевод', text: 'compost, перепревшие листья и трава' },
+          { field: 'Пример', text: 'बगीचे की खाद और हरी खाद' },
         ],
       },
       {
@@ -425,7 +425,7 @@ export const Narrow: Story = {
     expect(getComputedStyle(grid).gridTemplateColumns.split(' ')).toHaveLength(1)
     expect(deck.scrollWidth).toBeLessThanOrEqual(deck.clientWidth + 1)
 
-    const box = found(canvasElement, '[data-card="faith"] [data-value="Answer"]')
+    const box = found(canvasElement, '[data-card="compost"] [data-value="Answer"]')
 
     // It wrapped: the box stands taller than the one line it is written on.
     const line = Number.parseFloat(getComputedStyle(box).lineHeight)

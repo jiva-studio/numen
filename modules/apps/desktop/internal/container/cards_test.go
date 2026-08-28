@@ -26,7 +26,7 @@ const stencil = "---\n" +
 	"\n" +
 	"## Recognise\n" +
 	"\n" +
-	"Asked of me by Anna.\n" +
+	"The one to start with.\n" +
 	"\n" +
 	"### Front\n" +
 	"\n" +
@@ -43,7 +43,7 @@ func TestReadingAStencilAndWritingItBackChangesNothing(t *testing.T) {
 	for name, raw := range map[string]string{
 		"the stencil": stencil,
 		"crlf":        strings.ReplaceAll(stencil, "\n", "\r\n"),
-		"no frontmatter": "Above them all.\n\n## Recognise\n\nAsked of me by Anna.\n\n" +
+		"no frontmatter": "Above them all.\n\n## Recognise\n\nThe one to start with.\n\n" +
 			"### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n",
 		"no trailing break": "---\ntype: stencil\n---\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}",
 		"no trailing break under a face's heading": "---\ntype: stencil\n---\n" +
@@ -53,7 +53,7 @@ func TestReadingAStencilAndWritingItBackChangesNothing(t *testing.T) {
 		"comments and order": "---\n# a note to myself\nzebra: 1\n\ntype: stencil\n---\n" +
 			"## Recognise\n\n### Front\n\none\n\n\ntwo\n\n### Back\n\n{{Height}}\n",
 		"a heading of another name": "---\ntype: stencil\n---\n" +
-			"## Recognise\n\n### Front\n\n{{Name}}\n\n### Notes\n\nAsked of me by Anna.\n\n" +
+			"## Recognise\n\n### Front\n\n{{Name}}\n\n### Notes\n\nThe one to start with.\n\n" +
 			"### Back\n\n{{Height}}\n\n### Afterwards\n\nAnd this.\n",
 		"a side written twice": "---\ntype: stencil\n---\n" +
 			"## Recognise\n\n### Front\n\n{{Name}}\n\n### Front\n\nthe second one\n\n### Back\n\n{{Height}}\n",
@@ -127,8 +127,8 @@ func TestReadingTheFixtureVaultAndWritingItBackChangesNothing(t *testing.T) {
 func TestWritingOneFaceLeavesTheRestOfTheStencilAlone(t *testing.T) {
 	raw := "---\ntype: stencil\n---\n" +
 		"How I show these.\n\n" +
-		"## Recognise\n\nAsked of me by Anna.\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n\n" +
-		"## Name it\n\nAnd this one by Ilya.\n\n### Front\n\n{{Height}}\n\n### Back\n\n{{Name}}\n"
+		"## Recognise\n\nThe one to start with.\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n\n" +
+		"## Name it\n\nAnd this one the other way round.\n\n### Front\n\n{{Height}}\n\n### Back\n\n{{Name}}\n"
 
 	read := format.ReadStencil(markdown.Parse(domain.FileRef{Path: "Animal.md"}, []byte(raw)))
 	held := append([]format.Face(nil), read.Faces...)

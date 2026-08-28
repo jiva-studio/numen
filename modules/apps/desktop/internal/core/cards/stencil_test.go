@@ -180,7 +180,7 @@ func TestAStencilEndingOnAHeading(t *testing.T) {
 	for name, written := range map[string]string{
 		"a face":  "## Recognise",
 		"a side":  "## Recognise\n\n### Front\n\n{{Name}}\n\n### Back",
-		"a lead":  "## Recognise\n\nAsked of me by Anna.\n\n### Front",
+		"a lead":  "## Recognise\n\nThe one to start with.\n\n### Front",
 		"deeper":  "## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n#### Aside",
 		"nothing": "##",
 	} {

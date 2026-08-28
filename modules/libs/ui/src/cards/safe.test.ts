@@ -180,7 +180,7 @@ describe('drawn', () => {
   })
 
   it('draws text that is not Latin as it was written', () => {
-    expect(drawn('धैर्यं सर्वत्र साधनम्')).toContain('धैर्यं सर्वत्र साधनम्')
+    expect(drawn('बगीचे की खाद और हरी खाद')).toContain('बगीचे की खाद और हरी खाद')
   })
 
   it('draws nothing for text with nothing in it', () => {

@@ -8,7 +8,7 @@
  */
 import { afterEach, describe, expect, it } from 'vitest'
 import { useNaming, type Naming } from './naming'
-import { heading, objection, type Amiss, type Objection } from './order'
+import { heading, objection, type Objection, type Refusal } from './order'
 
 /** A naming of the fields a stencil declares, with what it renamed. */
 const overFields = (declared: readonly string[]) => {
@@ -27,7 +27,7 @@ const overFields = (declared: readonly string[]) => {
 /** A naming of the faces a stencil shows, each under the name it carries. */
 const overFaces = (faces: ReadonlyMap<string, string>) => {
   const renamed: (readonly [string, string])[] = []
-  const naming = useNaming<Amiss>({
+  const naming = useNaming<Refusal>({
     carries: (id) => faces.get(id) ?? '',
     taken: (id) => [...faces].filter(([each]) => each !== id).map(([, name]) => name),
     amiss: heading,

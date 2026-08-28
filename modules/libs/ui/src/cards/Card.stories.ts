@@ -43,13 +43,13 @@ const CORPORA = {
   'a value that wraps': {
     cut: { name: 'Basic', fields: ['Question', 'Answer'] },
     card: {
-      id: 'faith',
-      name: 'śraddhā',
+      id: 'compost',
+      name: 'What is compost?',
       stencil: 'Basic',
       filled: [
         {
           field: 'Answer',
-          text: 'вера, рождённая из слушания, — та, что приходит не от рассуждения и не от опыта, а от услышанного слова, и держится на нём одном.',
+          text: 'Leaves, grass and kitchen peelings, turned twice and left under a sheet until the heap has gone dark and crumbly enough to spread on any bed of the plot.',
         },
       ],
     },
@@ -59,12 +59,12 @@ const CORPORA = {
   'awkward text': {
     cut: { name: 'Слово', fields: ['Слово', 'Перевод', UNBROKEN] },
     card: {
-      id: 'лама',
-      name: 'Лама',
+      id: 'компост',
+      name: 'Компост',
       stencil: 'Слово',
       filled: [
-        { field: 'Перевод', text: 'llama, южноамериканское животное' },
-        { field: UNBROKEN, text: 'धैर्यं सर्वत्र साधनम्' },
+        { field: 'Перевод', text: 'compost, перепревшие листья и трава' },
+        { field: UNBROKEN, text: 'बगीचे की खाद और हरी खाद' },
       ],
     },
   },

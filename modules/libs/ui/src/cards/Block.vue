@@ -15,7 +15,7 @@ import Grown from './Grown.vue'
 import Marks from './Marks.vue'
 import { useNaming } from './naming'
 import { Button } from '../components/ui/button'
-import { heading, type Half, type Way } from './order'
+import { heading, type Half, type Refusal, type Way } from './order'
 import {
   panes,
   STENCIL_WORDS,
@@ -59,7 +59,7 @@ const uid = useId()
 const objectsId = `${uid}-objects`
 
 /** A name typed over the one this face carries, until it is committed. */
-const naming = useNaming({
+const naming = useNaming<Refusal>({
   carries: () => props.block.name,
   taken: () => props.taken,
   amiss: heading,
@@ -360,10 +360,8 @@ const put = async (field: string): Promise<void> => {
   margin: 0;
 }
 
-/* What the caller found wrong is a list, however many things it found. */
+/* A name with nothing in it to break at is broken where the line ends. */
 ul.block__objects {
-  padding-inline-start: 1.1rem;
-  list-style: disc;
   overflow-wrap: anywhere;
 }
 

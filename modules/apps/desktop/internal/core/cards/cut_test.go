@@ -10,7 +10,7 @@ import (
 // writes its first field a second time.
 const twoStencils = "---\ntype: deck\n---\n\n" +
 	"## Llama\n\n[[Animal]]\n\n### Name\n\nLlama, a second time\n\n### Height\n\nabout 45\"\n\n" +
-	"## шраддха\n\n[[Term]]\n\n### Значение\n\nвера\n"
+	"## компост\n\n[[Term]]\n\n### Значение\n\nперегной\n"
 
 func cutting() map[string]cards.Stencil {
 	return map[string]cards.Stencil{
