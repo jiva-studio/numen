@@ -109,7 +109,7 @@ const window = (titles: Record<string, string> = {}, states: Record<string, Stat
   const store = notes(states)
   const drawing = drawings()
   const held = windowing()
-  const puts = putting({ types: async () => new Map() })
+  const puts = putting({ standing: async () => new Map() })
   const noted = noting(vault(titles), store.store, drawing.store, held.host, puts)
   held.declares([noted.kind])
   /** Every note tab the window holds now. */

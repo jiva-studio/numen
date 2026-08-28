@@ -88,7 +88,7 @@ const window = showing(
   },
   drawings.told,
   (path) => plexes.travel(path),
-  (path, runs) => void read.opensAt(path, ...runs),
+  (path, runs) => void puts.opensAt(path, runs),
   reloads,
 )
 /** What the window answers when the application says it is going. */
@@ -132,8 +132,8 @@ const { layout } = held
 
 /**
  * What a file of the vault is put in front of the person with. Every road to a
- * file comes through here, and the editors hand over their own door as they are
- * made: nothing else in the window holds one.
+ * file comes through here, and the editors and the reader hand over their own
+ * door as they are made: nothing else in the window holds one.
  */
 const puts = putting(core)
 
@@ -181,18 +181,18 @@ const plexes = plexKind(held.host, () => standing(core), {
 const agents = agentKind(held.host, () =>
   talking(conversation(agent, talk, named(CONVERSATION)), {
     looking: () => plexes.looking(),
-    opens: (path, ...runs) => void read.opensAt(path, ...runs),
+    opens: (path, ...runs) => void puts.opensAt(path, runs),
     unreachable: () => unreachable.value,
   }),
 )
 
 /** The document tabs, each reading the document it is filed at. */
-const read = documentKind(held.host, (path) => documenting(reading(documents, path)))
+const read = documentKind(held.host, (path) => documenting(reading(documents, path)), puts)
 
 /** Where the window is taken when something is chosen, wherever it was chosen. */
 const places: Places = {
   travel: (path) => plexes.travel(path),
-  opensAt: (path, run) => read.opensAt(path, run),
+  opensAt: (path, run) => puts.opensAt(path, [run]),
   opens: (path, title, line) => void puts.opens(path, title, 'here', line),
 }
 

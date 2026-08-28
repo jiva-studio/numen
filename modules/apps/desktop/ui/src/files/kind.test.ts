@@ -113,18 +113,20 @@ describe('where a row activated takes the person', () => {
     })
   })
 
-  it('is the book it stands for, opened where it begins', () => {
+  it('is the book it stands for, named and no more', () => {
     expect(landingOf(file('Heat.pdf', { kind: 'book' }))).toStrictEqual({
-      at: 'document',
+      at: 'file',
       path: 'Heat.pdf',
       title: 'Heat.pdf',
-      start: 0,
-      length: 0,
     })
   })
 
-  it('is nowhere for a file the vault holds no source for', () => {
-    expect(landingOf(file('Cover.png', { kind: 'other' }))).toBeNull()
+  it('is the file it stands for even where the vault holds no source there', () => {
+    expect(landingOf(file('Cover.png', { kind: 'other' }))).toStrictEqual({
+      at: 'file',
+      path: 'Cover.png',
+      title: 'Cover.png',
+    })
   })
 
   it('is nowhere for a folder, which opens where it stands', () => {
@@ -224,16 +226,18 @@ describe('a row activated', () => {
 
     one.activate('Heat.pdf')
 
-    expect(done).toStrictEqual(['lands document Heat.pdf'])
+    expect(done).toStrictEqual(['lands file Heat.pdf'])
   })
 
-  it('takes the person nowhere for a file the vault holds no source for', async () => {
+  // What stands at the path is the window's to say, so the row hands it over
+  // whatever the listing calls it.
+  it('takes the person to a file the vault holds no source for', async () => {
     const { done, list, one } = tab()
     await list.opens(ROOT)
 
     one.activate('Cover.png')
 
-    expect(done).toStrictEqual(['lands —'])
+    expect(done).toStrictEqual(['lands file Cover.png'])
   })
 
   it('leaves it the whole of what is chosen', async () => {

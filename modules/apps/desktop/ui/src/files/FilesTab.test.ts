@@ -103,13 +103,13 @@ describe('a row the tree reports', () => {
     expect(done).toStrictEqual(['lands file Entropy.md'])
   })
 
-  it('takes the person nowhere for a file the vault holds no source for', async () => {
+  it('takes the person to a file the vault holds no source for', async () => {
     const { done, window } = await drawn()
 
     window.findComponent(Tree).vm.$emit('activate', 'Cover.png')
     await settles()
 
-    expect(done).toStrictEqual(['lands —'])
+    expect(done).toStrictEqual(['lands file Cover.png'])
   })
 
   it('is filed where it was let go of', async () => {

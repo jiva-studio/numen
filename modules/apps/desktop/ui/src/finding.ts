@@ -39,8 +39,8 @@ export interface Passage {
   /** What the note is called. Empty for a source that is not a note. */
   title: string
   /**
-   * Whether the text was read out of a note. A book is neither a note nor a
-   * node, and what this window opens one as is the document it is.
+   * Whether the text was read out of a note. It says what the palette offers
+   * over the passage: a book is not a node, so there is nowhere to travel to.
    */
   isNote: boolean
   text: string
@@ -92,8 +92,9 @@ export interface Words extends Silences {
 }
 
 /**
- * Where an item chosen takes the person. A file names the file and nothing
- * about which editor it opens in.
+ * Where an item chosen takes the person. A file names the file and the place
+ * inside it, and nothing about which editor it opens in: a landing at a file
+ * carries a line, one at a document a stretch of the source's own text.
  */
 export interface Landing {
   at: 'plex' | 'file' | 'document'
@@ -303,8 +304,8 @@ export function finding(
       title: one.title || one.path,
       detail: one.text,
       detailAt: one.at,
-      // A book is not a note and is not a node, and what it opens as is the
-      // document it is, at the stretch of its text the words were found in.
+      // A book is not a node, so the one thing offered over it is the stretch
+      // of its text the words were found in.
       actions: one.isNote
         ? [
             { id: NOTE, text: words.read },
@@ -315,8 +316,8 @@ export function finding(
     stands: {
       path: one.path,
       title: one.title,
-      // A note opens on the line the words were found on. A book is opened at
-      // the stretch of its own text instead, and stands on no line of prose.
+      // A note is opened on the line the words were found on. A book has no
+      // prose to count lines from, and is opened at the stretch instead.
       line: one.isNote ? one.line : -1,
       start: one.start,
       length: one.length,

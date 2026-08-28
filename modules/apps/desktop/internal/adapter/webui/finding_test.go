@@ -168,43 +168,6 @@ func TestAnAnswerIsCutToWhatWasAskedFor(t *testing.T) {
 	}
 }
 
-// TestAPathIsAnsweredWithWhichOfThreeItsNoteIs. A client opens a deck and a
-// stencil in the editor made for it, and this is the one question that says
-// which is which, whatever road the path arrived by.
-func TestAPathIsAnsweredWithWhichOfThreeItsNoteIs(t *testing.T) {
-	client, _ := opened(t, map[string]string{
-		"Animals.md": "---\ntype: deck\ntitle: Animals\n---\n\n## Llama\n\n[[Animal]]\n",
-		"Animal.md": "---\ntype: stencil\ntitle: Animal\nfields:\n  - Height\n---\n\n" +
-			"## Recognise\n\n### Front\n\nan animal\n\n### Back\n\n{{Height}}\n",
-		"Ontology.md": "---\ntitle: Animal ontology\n---\n\nan animal is a note\n",
-	})
-
-	answer, err := client.Types(t.Context(), connect.NewRequest(&v1.TypesRequest{
-		Paths: []string{"Animals.md", "Animal.md", "Ontology.md", "Nowhere.md"},
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	types := map[string]v1.NoteType{}
-	for _, one := range answer.Msg.GetFound() {
-		types[one.GetPath()] = one.GetType()
-	}
-	want := map[string]v1.NoteType{
-		"Animals.md":  v1.NoteType_NOTE_TYPE_DECK,
-		"Animal.md":   v1.NoteType_NOTE_TYPE_STENCIL,
-		"Ontology.md": v1.NoteType_NOTE_TYPE_UNSPECIFIED,
-	}
-	for path, is := range want {
-		if got, held := types[path]; !held || got != is {
-			t.Errorf("the note %s came back as %v, want %v", path, got, is)
-		}
-	}
-	// A path the vault holds no note at is not answered about at all.
-	if _, held := types["Nowhere.md"]; held {
-		t.Error("a path with no note at it was typed anyway")
-	}
-}
-
 func TestNothingTypedIsAnsweredWithNothing(t *testing.T) {
 	client, _ := opened(t, map[string]string{"a.md": "# Entropy\n"})
 
@@ -250,45 +213,6 @@ func TestANoteSaysWhatItIsDividedInto(t *testing.T) {
 	if !(headings[0].GetLine() < headings[1].GetLine()) {
 		t.Errorf("lines are %d and %d, want them in the order they stand",
 			headings[0].GetLine(), headings[1].GetLine())
-	}
-}
-
-// Which of three the note at a path is.
-
-// TestAPathSaysWhichOfThreeStandsThere. A client holding a path and nothing
-// else opens what stands there in the editor made for it, and this is what it
-// asks to find out which that is.
-func TestAPathSaysWhichOfThreeStandsThere(t *testing.T) {
-	client, _ := opened(t, map[string]string{
-		"Animals.md": "---\ntype: deck\ntitle: Animals\n---\n\n## Llama\n\n[[Animal]]\n",
-		"Animal.md": "---\ntype: stencil\ntitle: Animal\nfields:\n  - Height\n---\n\n" +
-			"## Recognise\n\n### Front\n\nan animal\n\n### Back\n\n{{Height}}\n",
-		"Entropy.md": "---\ntitle: Entropy\n---\n\nA reversible engine.\n",
-	})
-
-	answer, err := client.Types(t.Context(), connect.NewRequest(&v1.TypesRequest{
-		Paths: []string{"Animals.md", "Animal.md", "Entropy.md", "Gone.md"},
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	types := map[string]v1.NoteType{}
-	for _, one := range answer.Msg.GetFound() {
-		types[one.GetPath()] = one.GetType()
-	}
-	want := map[string]v1.NoteType{
-		"Animals.md": v1.NoteType_NOTE_TYPE_DECK,
-		"Animal.md":  v1.NoteType_NOTE_TYPE_STENCIL,
-		"Entropy.md": v1.NoteType_NOTE_TYPE_UNSPECIFIED,
-	}
-	for path, is := range want {
-		if got, held := types[path]; !held || got != is {
-			t.Errorf("%s came back as %v, want %v", path, got, is)
-		}
-	}
-	if _, held := types["Gone.md"]; held {
-		t.Errorf("a path the vault holds no note at was answered with %v", types["Gone.md"])
 	}
 }
 

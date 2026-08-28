@@ -85,32 +85,6 @@ func (a *API) Headings(ctx context.Context, r *connect.Request[v1.HeadingsReques
 	return connect.NewResponse(out), nil
 }
 
-// Types hands the client which of three the note at each of those paths is, so
-// that a client holding a path opens what stands there in the editor made for
-// it. A window standing on nothing holds no note.
-func (a *API) Types(ctx context.Context, r *connect.Request[v1.TypesRequest]) (*connect.Response[v1.TypesResponse], error) {
-	showing := a.Showing()
-	if showing.ID == "" {
-		return connect.NewResponse(&v1.TypesResponse{}), nil
-	}
-	paths := eachOnce(r.Msg.GetPaths())
-	found, err := a.typesAt(ctx, showing, paths)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
-	}
-
-	// In the order they were asked about.
-	out := &v1.TypesResponse{Found: make([]*v1.Typed, 0, len(found))}
-	for _, path := range paths {
-		held, is := found[path]
-		if !is {
-			continue
-		}
-		out.Found = append(out.Found, &v1.Typed{Path: path, Type: typeOf(held)})
-	}
-	return connect.NewResponse(out), nil
-}
-
 // Search hands the client the text the vault holds that answers what was typed.
 //
 // Which way it is asked is the client's, so a client drawing what is written apart

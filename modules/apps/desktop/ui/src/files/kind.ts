@@ -62,20 +62,12 @@ export interface Filing {
 }
 
 /**
- * Where a row activated takes the person. A note is read in the editor made
- * for what it is, a book is opened at its first page, and anything else is
- * somewhere to go nowhere.
+ * Where a row activated takes the person: the file the row stands for, under
+ * the name it is filed as. A folder is somewhere to go nowhere, and what the
+ * file opens in is not decided here.
  */
-export const landingOf = (entry: Entry): Landing | null => {
-  if (entry.folder) return null
-  if (entry.kind === 'note') {
-    return { at: 'file', path: entry.path, title: entry.name }
-  }
-  if (entry.kind === 'book') {
-    return { at: 'document', path: entry.path, title: entry.name, start: 0, length: 0 }
-  }
-  return null
-}
+export const landingOf = (entry: Entry): Landing | null =>
+  entry.folder ? null : { at: 'file', path: entry.path, title: entry.name }
 
 /** What a file is filed as, which is the last segment of the path. */
 const fileOf = (path: string): string => path.split('/').pop() ?? path

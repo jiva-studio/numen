@@ -29,7 +29,7 @@ function fake(over: Partial<Faked> = {}) {
   const core: Faked = {
     neighbourhood: async () => ({}) as never,
     headings: async () => new Map(),
-    types: async () => new Map(),
+    standing: async () => new Map(),
     opening: async () => null,
     state: async () => idle,
     // eslint-disable-next-line require-yield

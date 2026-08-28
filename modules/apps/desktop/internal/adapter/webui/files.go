@@ -71,6 +71,54 @@ func (a *API) typesAt(ctx context.Context, showing domain.Vault, paths []string)
 	return a.Notes.Types(ctx, showing.ID, paths)
 }
 
+// Standing hands the client what the vault holds at each of those paths, so
+// that a client holding a path opens what stands there in the editor made for
+// it.
+//
+// The kind is read off the vault and the type off the index, so a path nothing
+// has scanned is answered with the source that stands there. A window standing
+// on nothing holds no source, and a path with nothing at it is left out.
+func (a *API) Standing(ctx context.Context, r *connect.Request[v1.StandingRequest]) (*connect.Response[v1.StandingResponse], error) {
+	showing := a.Showing()
+	if showing.ID == "" {
+		return connect.NewResponse(&v1.StandingResponse{}), nil
+	}
+	reader, err := a.Readers.Open(showing)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	// In the order they were asked about, and the notes among them kept to ask
+	// the index about in one question.
+	paths := eachOnce(r.Msg.GetPaths())
+	out := &v1.StandingResponse{Found: make([]*v1.Standing, 0, len(paths))}
+	notes := make([]string, 0, len(paths))
+	for _, path := range paths {
+		ref, err := reader.Stat(ctx, path)
+		if errors.Is(err, fs.ErrNotExist) || errors.Is(err, port.ErrOutside) {
+			continue
+		}
+		// A file the vault leaves alone stands there and is no source, which is
+		// the kind a zero reference carries.
+		if err != nil && !errors.Is(err, port.ErrNotANote) {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		out.Found = append(out.Found, &v1.Standing{Path: path, Kind: kindOf(ref.Kind)})
+		if ref.Kind == domain.KindNote {
+			notes = append(notes, path)
+		}
+	}
+
+	types, err := a.typesAt(ctx, showing, notes)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	for _, one := range out.GetFound() {
+		one.Type = typeOf(types[one.GetPath()])
+	}
+	return connect.NewResponse(out), nil
+}
+
 // Move puts a file or a folder somewhere else in the vault.
 func (a *API) Move(ctx context.Context, r *connect.Request[v1.MoveRequest]) (*connect.Response[v1.MoveResponse], error) {
 	if a.Moves == nil {

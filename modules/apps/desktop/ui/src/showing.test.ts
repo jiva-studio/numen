@@ -43,7 +43,7 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
       return answer(path)
     },
     headings: async () => new Map(),
-    types: async () => new Map(),
+    standing: async () => new Map(),
     opening: async () => ({ path: 'Opening.md' }),
     state: async () => settled,
     // eslint-disable-next-line require-yield

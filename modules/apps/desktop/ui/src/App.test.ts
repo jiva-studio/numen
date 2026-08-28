@@ -24,6 +24,7 @@ import {
   type WorkspaceLayout,
 } from '@numen/ui'
 import AgentTab from './agent/AgentTab.vue'
+import { linkOf } from './agent/places'
 import DeckTab from './cards/DeckTab.vue'
 import DocumentTab from './document/DocumentTab.vue'
 import FilesTab from './files/FilesTab.vue'
@@ -34,7 +35,41 @@ import { WORDS as plexWords } from './plex/words'
 import { REFUSED } from './words'
 import { plexCalled } from './workspace'
 
-const { said, held, asked, listed, folders, cuts } = vi.hoisted(() => ({
+const { said, held, asked, listed, folders, cuts, stands, outside } = vi.hoisted(() => ({
+  /**
+   * What the vault holds at a path. A book and a note are told apart by the
+   * name the file carries, the way the vault itself tells them apart, and which
+   * of three a note is is what a test said.
+   */
+  stands: (path: string) => {
+    if (/\.(epub|pdf)$/u.test(path)) return { kind: 'book' as const, type: 'note' as const }
+    if (!/\.(md|note)$/u.test(path)) return { kind: 'other' as const, type: 'note' as const }
+    return { kind: 'note' as const, type: said.types[path] ?? ('note' as const) }
+  },
+  /**
+   * The places something outside the window asks to be put in front of the
+   * person, and the stream the window hears them on.
+   */
+  outside: (() => {
+    const queue: { path: string; start: number; length: number }[] = []
+    let wake: (() => void) | null = null
+    return {
+      asks: (at: { path: string; start: number; length: number }) => {
+        queue.push(at)
+        wake?.()
+        wake = null
+      },
+      forget: () => queue.splice(0),
+      stream: async function* () {
+        for (;;) {
+          while (queue.length > 0) yield queue.shift()!
+          await new Promise<void>((woken) => {
+            wake = woken
+          })
+        }
+      },
+    }
+  })(),
   /**
    * The vault as it makes a deck or a stencil: the file is named after the
    * title, and the extension is the vault's own and no caller's. It is not
@@ -243,19 +278,13 @@ vi.mock('./vault', () => ({
     changes: held,
     editing: held,
     tasks: held,
-    focus: held,
+    focus: outside.stream,
     quitting: held,
     flushed: async () => {},
     names: async () => said.names,
     search: async () => said.passages,
-    types: async (paths: readonly string[]) => {
-      const found = new Map<string, 'note' | 'deck' | 'stencil'>()
-      for (const path of paths) {
-        const type = said.types[path]
-        if (type) found.set(path, type)
-      }
-      return found
-    },
+    standing: async (paths: readonly string[]) =>
+      new Map(paths.map((path) => [path, stands(path)])),
     headings: async () => new Map(),
   },
 }))
@@ -363,6 +392,7 @@ afterEach(() => {
     at: 'a2',
   }
   cuts.forget()
+  outside.forget()
   asked.made = []
   asked.cut = []
   asked.renamedField = []
@@ -1730,7 +1760,7 @@ describe('every road to a file', () => {
   /**
    * Each road, by what it is called, as a gesture on a window standing on one
    * file. They are listed here so that every one of them is asked the same
-   * three questions, and a road opening a file some other way is a road missing
+   * four questions, and a road opening a file some other way is a road missing
    * from this list.
    */
   const ROADS: Record<string, (window: VueWrapper, path: string) => Promise<void>> = {
@@ -1753,6 +1783,19 @@ describe('every road to a file', () => {
       await settles()
       window.findComponent(Palette).vm.$emit('choose', 'read', 'read')
     },
+    // The two roads that arrive naming a stretch of a source's own text: a link
+    // in an answer the agent wrote, and a place asked for from outside the
+    // window altogether.
+    'a link in an answer': async (window, path) => {
+      const turn = { id: 'a', voice: 'answered' as const, text: '' }
+      const link = linkOf({ path, start: 0, length: 4 })
+      window
+        .findComponent(Agent)
+        .vm.$emit('follow', turn, link, new MouseEvent('click', { cancelable: true }))
+    },
+    'a place asked for from outside': async (_, path) => {
+      outside.asks({ path, start: 0, length: 4 })
+    },
   }
 
   /** A keystroke the window answers, which the palette and the commands are. */
@@ -1769,13 +1812,14 @@ describe('every road to a file', () => {
     await new Promise((done) => setTimeout(done, HELD))
   }
 
-  /** The root of the vault holds one file of each of three. */
+  /** The root of the vault holds one file of each of four. */
   const root = folders['']
   beforeEach(() => {
     folders[''] = [
       { path: 'Animals.md', name: 'Animals.md', folder: false, kind: 'note', type: 'deck' },
       { path: 'Animal.md', name: 'Animal.md', folder: false, kind: 'note', type: 'stencil' },
       { path: 'Ants.md', name: 'Ants.md', folder: false, kind: 'note', type: 'note' },
+      { path: 'Ants.epub', name: 'Ants.epub', folder: false, kind: 'book', type: 'note' },
     ]
   })
   afterEach(() => {
@@ -1815,6 +1859,15 @@ describe('every road to a file', () => {
       expect(drew).toContain('note')
       expect(drew).not.toContain('deck')
       expect(drew).not.toContain('stencil')
+    })
+
+    // The vault is never asked about the book by anything but the window, and
+    // the palette is told it turned up a note: the path alone has to be enough.
+    it(`opens a book in the reader, reached by ${name}`, async () => {
+      const drew = await taken(road, 'Ants.epub', 'note')
+
+      expect(drew).toContain('document')
+      expect(drew).not.toContain('note')
     })
   }
 })

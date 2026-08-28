@@ -379,3 +379,83 @@ func TestAListingSaysWhichOfThreeEachNoteIs(t *testing.T) {
 		}
 	}
 }
+
+// stands is what the vault says it holds at each of those paths, by path.
+func stands(t *testing.T, f *going, paths ...string) map[string]*v1.Standing {
+	t.Helper()
+	answer, err := f.client.Standing(t.Context(),
+		connect.NewRequest(&v1.StandingRequest{Paths: paths}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := map[string]*v1.Standing{}
+	for _, one := range answer.Msg.GetFound() {
+		out[one.GetPath()] = one
+	}
+	return out
+}
+
+// TestAPathSaysWhatStandsThere. A window holding a path and nothing else opens
+// what stands there in the editor made for it, and this is the one question
+// that says which that is.
+func TestAPathSaysWhatStandsThere(t *testing.T) {
+	f := quitting(t, nil, map[string]string{
+		"Entropy.md":   "# Entropy\n",
+		"Animal.md":    "---\ntype: stencil\nfields:\n  - Height\n---\n\n## Recognise\n",
+		"Animals.md":   "---\ntype: deck\n---\n\n## Llama\n\n[[Animal]]\n",
+		"Physics.epub": "an epub\n",
+		"Notes.txt":    "a list\n",
+	})
+	if _, err := f.opened.API.Scan(t.Context(), f.opened.API.Showing()); err != nil {
+		t.Fatal(err)
+	}
+
+	held := stands(t, f,
+		"Animals.md", "Animal.md", "Entropy.md", "Physics.epub", "Notes.txt", "Gone.md")
+
+	want := map[string]struct {
+		kind v1.SourceKind
+		is   v1.NoteType
+	}{
+		"Animals.md":   {v1.SourceKind_SOURCE_KIND_NOTE, v1.NoteType_NOTE_TYPE_DECK},
+		"Animal.md":    {v1.SourceKind_SOURCE_KIND_NOTE, v1.NoteType_NOTE_TYPE_STENCIL},
+		"Entropy.md":   {v1.SourceKind_SOURCE_KIND_NOTE, v1.NoteType_NOTE_TYPE_UNSPECIFIED},
+		"Physics.epub": {v1.SourceKind_SOURCE_KIND_BOOK, v1.NoteType_NOTE_TYPE_UNSPECIFIED},
+		"Notes.txt":    {v1.SourceKind_SOURCE_KIND_UNSPECIFIED, v1.NoteType_NOTE_TYPE_UNSPECIFIED},
+	}
+	for path, one := range want {
+		stood, answered := held[path]
+		if !answered {
+			t.Errorf("%s was not answered about at all", path)
+			continue
+		}
+		if stood.GetKind() != one.kind || stood.GetType() != one.is {
+			t.Errorf("%s stands as %v %v, want %v %v",
+				path, stood.GetKind(), stood.GetType(), one.kind, one.is)
+		}
+	}
+
+	// A path with nothing at it is not a file the vault leaves alone, and the
+	// two are told apart by one being answered about and the other not.
+	if _, answered := held["Gone.md"]; answered {
+		t.Error("a path with nothing at it was answered about anyway")
+	}
+}
+
+// TestABookStandsThereBeforeAnythingHasReadIt. The index holds no note for a
+// book and never will, so an answer drawn from it alone leaves every book out
+// and a window reads that absence as an ordinary note.
+func TestABookStandsThereBeforeAnythingHasReadIt(t *testing.T) {
+	f := quitting(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
+
+	// Written after the vault was opened and asked about at once, so nothing
+	// has had the chance to read it.
+	if err := os.WriteFile(filepath.Join(f.root, "Physics.epub"), []byte("an epub\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	stood := stands(t, f, "Physics.epub")["Physics.epub"]
+	if stood.GetKind() != v1.SourceKind_SOURCE_KIND_BOOK {
+		t.Errorf("a book nothing has read stands as %v", stood.GetKind())
+	}
+}
