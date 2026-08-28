@@ -2,8 +2,8 @@
  * The one place a file of the vault is opened from, asked without a window.
  *
  * A road holds a path and no choice, so what is asked here is that the path
- * alone decides the editor. A road that had to know what a file is would be a
- * road that can be wrong about it, and two already were.
+ * alone decides the editor: the vault is asked what stands at it, and the kind
+ * it answers picks the tab the file opens in.
  */
 import { describe, expect, it } from 'vitest'
 import type { Standing } from './core'

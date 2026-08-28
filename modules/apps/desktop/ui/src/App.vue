@@ -199,17 +199,24 @@ const places: Places = {
 /**
  * A deck or a stencil made in a folder under the name it is given. The vault
  * names the file after it and answers where it stands, and a stencil is made
- * carrying the field its cards are named by.
+ * carrying the field its cards are named by. A vault that answers nothing at
+ * all is said here, because the roads that ask for one carry no word of their
+ * own.
  */
 const makesCards = async (folder: string, name: string, stencil: boolean): Promise<string> => {
-  const answer = stencil
-    ? await cards.makeStencil(name, folder, [cut.newField])
-    : await cards.makeDeck(name, folder)
-  if (answer.refusal) {
-    told(words.refused[answer.refusal], 'refusal')
+  try {
+    const answer = stencil
+      ? await cards.makeStencil(name, folder, [cut.newField])
+      : await cards.makeDeck(name, folder)
+    if (answer.refusal) {
+      told(words.refused[answer.refusal], 'refusal')
+      return ''
+    }
+    return answer.path
+  } catch (error) {
+    told(String(error), 'refusal')
     return ''
   }
-  return answer.path
 }
 
 /** The same, put in front of the person in a tab of its own. */

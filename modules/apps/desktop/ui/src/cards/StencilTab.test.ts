@@ -32,7 +32,7 @@ const drawn = async (problems: readonly Problem[] = []) => {
   const renamed: string[] = []
   let fields: readonly string[] = ['Height', 'Life span']
   let faces: readonly Faced[] = [
-    { name: 'Recognise', lead: '', front: '{{title}}', back: '{{Height}}' },
+    { name: 'Recognise', lead: '', front: '{{Life span}}', back: '{{Height}}' },
     { name: 'Name it', lead: '', front: '{{Life span}}', back: '' },
   ]
 

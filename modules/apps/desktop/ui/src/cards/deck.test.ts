@@ -39,6 +39,12 @@ const vault = (
     changed?: boolean
     /** The cards the file holds, where a test wants other ones. */
     cards?: readonly Carded[]
+    /** The vault is out of reach, and a read of the deck reaches nothing. */
+    unreachable?: boolean
+    /** What a write of the deck is refused for. */
+    wrote?: Refused
+    /** How many listings of the stencils go unanswered before one answers. */
+    unlisted?: number
   } = {},
 ) => {
   const written: string[] = []
@@ -51,6 +57,7 @@ const vault = (
   const core: Cards = {
     stencils: async () => {
       listed += 1
+      if (listed <= (answers.unlisted ?? 0)) throw new Error('out of reach')
       return {
         stencils: [{ path: 'Animal.md', title: 'Animal', fields: ['Name', 'Height'] }],
         held: 1,
@@ -68,6 +75,7 @@ const vault = (
     }),
     readDeck: async (path) => {
       reads += 1
+      if (answers.unreachable) throw new Error('out of reach')
       if (answers.refusal) {
         return { deck: null, refusal: answers.refusal, at: '', bound: answers.bound ?? 0 }
       }
@@ -88,6 +96,7 @@ const vault = (
     writeDeck: async (path, deck, presented) => {
       written.push(`${path} ${deck.cards.map((card) => card.name).join(', ') || '—'}`)
       seen.push(presented)
+      if (answers.wrote) return { refusal: answers.wrote, changed: false, at: '', bound: 0 }
       if (answers.changed) return { refusal: null, changed: true, at: '', bound: 0 }
       cards = deck.cards
       return { refusal: null, changed: false, at: 'written', bound: 0 }
@@ -116,12 +125,13 @@ const open = async (
 ) => {
   const one = vault(answers)
   const held = windowing()
-  const decks = decking(one.core, held.host, puts())
+  const road = puts()
+  const decks = decking(one.core, held.host, road)
   held.declares([decks.kind])
   const id = await held.opens(DECK, path)
   await settles()
   const tab = held.host.holds<Held>(DECK, id) as Held
-  return { ...one, held, decks, id, tab }
+  return { ...one, held, road, decks, id, tab }
 }
 
 describe('a deck opened', () => {
@@ -312,6 +322,18 @@ describe('the field a card is named by, written over', () => {
     { name: 'Llama', stencil, stencilAt, lead: '', values: [] },
   ]
 
+  // A card writing that field under a heading of its own as well. The grid
+  // draws it two boxes: the heading first, and the value under it second.
+  const twice: readonly Carded[] = [
+    {
+      name: 'Llama',
+      stencil: 'Animal',
+      stencilAt: 'Animal.md',
+      lead: '',
+      values: [{ field: 'Name', text: 'Alpaca' }],
+    },
+  ]
+
   it('renames the card, whatever the card wrote in its brackets', async () => {
     for (const one of WRITTEN) {
       const { tab } = await open({ cards: only(one) })
@@ -342,6 +364,26 @@ describe('the field a card is named by, written over', () => {
 
     expect(tab.deck().cards[0]?.name).toBe('Llama')
     expect(tab.deck().cards[0]?.values).toStrictEqual([{ field: 'Height', text: 'about 45"' }])
+  })
+
+  it('is the heading the first box writes, where the card writes that field twice', async () => {
+    const { tab } = await open({ cards: twice })
+    const card = tab.deck().cards[0]?.id ?? ''
+
+    tab.writes(card, 'Name', 1, 'Vicuña')
+
+    expect(tab.deck().cards[0]?.name).toBe('Vicuña')
+    expect(tab.deck().cards[0]?.values).toStrictEqual([{ field: 'Name', text: 'Alpaca' }])
+  })
+
+  it('is the value the second box writes, and the heading stands where it was', async () => {
+    const { tab } = await open({ cards: twice })
+    const card = tab.deck().cards[0]?.id ?? ''
+
+    tab.writes(card, 'Name', 2, 'Vicuña')
+
+    expect(tab.deck().cards[0]?.name).toBe('Llama')
+    expect(tab.deck().cards[0]?.values).toStrictEqual([{ field: 'Name', text: 'Vicuña' }])
   })
 
   it('is a value for a card whose link reached no stencil', async () => {
@@ -387,8 +429,18 @@ describe('a deck read again under the window', () => {
     marks: tab.marks(),
   })
 
+  // The file is read wrong in a way that stands against one card, so a mark
+  // that went is a mark this can see going.
+  const nameless: Problem = {
+    fault: 'cardWithoutAName',
+    card: 1,
+    face: null,
+    field: '',
+    text: 'a card with no name',
+  }
+
   it('leaves what the grid is drawing standing, where the file reads the same', async () => {
-    const one = await open()
+    const one = await open({ problems: [nameless] })
     const was = drawing(one.tab)
 
     one.decks.changed(['Animals.md'])
@@ -403,6 +455,17 @@ describe('a deck read again under the window', () => {
     expect(one.tab.marks()).toBe(was.marks)
   })
 
+  it('leaves each mark standing on the card the grid is drawing', async () => {
+    const one = await open({ problems: [nameless] })
+    // The card the grid is drawing, under the identity it was drawn with.
+    const second = one.tab.deck().cards[1]?.id ?? ''
+
+    one.decks.changed(['Animals.md'])
+    await settles()
+
+    expect(one.tab.marks().at.get(second)).toStrictEqual(['a card with no name'])
+  })
+
   it('draws the file again where it was written from somewhere else', async () => {
     const one = await open()
     const was = drawing(one.tab)
@@ -415,6 +478,86 @@ describe('a deck read again under the window', () => {
 
     expect(one.tab.drawn().map((card) => card.name)).toStrictEqual(['Vicuña'])
     expect(one.tab.deck()).not.toBe(was.deck)
+  })
+})
+
+describe('a deck renamed under the window', () => {
+  /** The file the deck was opened at, under the name it was given instead. */
+  const renamed = (one: Awaited<ReturnType<typeof open>>) =>
+    one.decks.changed(['Beasts.md'], [{ from: 'Animals.md', to: 'Beasts.md' }])
+
+  it('is the tab it has when it is asked for at the name it now carries', async () => {
+    const one = await open()
+
+    renamed(one)
+    await settles()
+    one.road.made('Beasts.md', '', 'deck')
+    await settles()
+
+    expect(one.decks.all()).toHaveLength(1)
+    expect(one.held.host.each(DECK)).toHaveLength(1)
+  })
+
+  it('keeps what the vault said about it, which stands at the name it went to', async () => {
+    const one = await open({
+      problems: [
+        { fault: 'cardWithoutAName', card: 1, face: null, field: '', text: 'a card with no name' },
+      ],
+    })
+
+    renamed(one)
+
+    // Before the read of the file under its new name has answered.
+    expect(one.tab.marks().at.size).toBe(1)
+  })
+
+  it('is called what the file was called, before the name it went to is read', async () => {
+    const one = await open()
+
+    renamed(one)
+
+    expect(one.decks.called('Beasts.md')).toBe('Animals')
+  })
+})
+
+describe('a deck whose tab has gone', () => {
+  it('is nothing the window still says a word about', async () => {
+    const one = await open()
+    expect(one.decks.called('Animals.md')).toBe('Animals')
+
+    one.held.shut(one.id)
+    await settles()
+
+    expect(one.decks.called('Animals.md')).toBe('Animals.md')
+  })
+})
+
+describe('a deck the vault could not be reached for', () => {
+  it('says the vault could not be reached, where the read reached nothing', async () => {
+    const { tab } = await open({ unreachable: true })
+
+    expect(tab.saying()).toBe(words.unreachable)
+  })
+
+  it('says the file could not be written, where that is what was refused', async () => {
+    const { decks, tab } = await open({ wrote: 'unreadable' })
+
+    tab.adds('Vicuña', 'Animal', [])
+    await decks.kept.settles(decks.all()[0] ?? '')
+
+    expect(tab.saying()).toBe(words.notSaved)
+  })
+})
+
+describe('the stencils a listing did not answer with', () => {
+  it('are asked for again when the deck comes back on screen', async () => {
+    const one = await open({ unlisted: 1 })
+    expect(one.tab.cuts()).toStrictEqual([])
+
+    one.decks.kind.shown?.(one.tab, one.id)
+    await settles()
+
+    expect(one.tab.cuts()).toStrictEqual([{ name: 'Animal', fields: ['Name', 'Height'] }])
   })
 })
 

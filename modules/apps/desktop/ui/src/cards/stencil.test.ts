@@ -18,7 +18,7 @@ const puts = () => putting({ standing: async () => new Map() })
 const settles = () => new Promise((done) => setTimeout(done, 0))
 
 const FACES: readonly Faced[] = [
-  { name: 'Recognise', lead: '', front: '{{title}}', back: '**Height:** {{Height}}' },
+  { name: 'Recognise', lead: '', front: '{{Height}}', back: '**Height:** {{Height}}' },
 ]
 
 /** A vault holding one stencil, writing down every write it was asked for. */
@@ -29,6 +29,10 @@ const vault = (
     changed?: boolean
     /** What renaming a field comes back with, where a test wants another answer. */
     renaming?: Renaming
+    /** The vault is out of reach, and a read of the stencil reaches nothing. */
+    unreachable?: boolean
+    /** What a write of the stencil is refused for. */
+    wrote?: Refused
   } = {},
 ) => {
   const written: string[] = []
@@ -58,6 +62,7 @@ const vault = (
     readDeck: async () => ({ deck: null, refusal: 'missing', at: '', bound: 0 }),
     writeDeck: async () => ({ refusal: null, changed: false, at: '', bound: 0 }),
     readStencil: async (path) => {
+      if (answers.unreachable) throw new Error('out of reach')
       if (answers.refusal) return { stencil: null, refusal: answers.refusal, at: '' }
       return {
         stencil: {
@@ -77,6 +82,7 @@ const vault = (
       written.push(
         `${path} ${wrote.join(', ') || '—'} | ${drew.faces.map((one) => one.back).join(' ')}`,
       )
+      if (answers.wrote) return { refusal: answers.wrote, changed: false, at: '' }
       if (answers.changed) return { refusal: null, changed: true, at: '' }
       fields = wrote
       faces = drew.faces
@@ -101,12 +107,13 @@ const open = async (answers: Parameters<typeof vault>[0] = {}, path = 'Animal.md
   const held = windowing()
   /** Everything the window was given to say about this stencil. */
   const said: string[] = []
-  const stencils = stencilling(one.core, held.host, puts(), (text) => void said.push(text))
+  const road = puts()
+  const stencils = stencilling(one.core, held.host, road, (text) => void said.push(text))
   held.declares([stencils.kind])
   const id = await held.opens(STENCIL, path)
   await settles()
   const tab = held.host.holds<Held>(STENCIL, id) as Held
-  return { ...one, held, stencils, id, tab, said }
+  return { ...one, held, road, stencils, id, tab, said }
 }
 
 describe('a stencil opened', () => {
@@ -225,6 +232,24 @@ describe('a field renamed in a stencil', () => {
     expect(said).toStrictEqual([REFUSED.notAStencil])
   })
 
+  it('says nothing was renamed where the file moved past the stencil that was read', async () => {
+    const { tab, said } = await open({
+      renaming: {
+        decks: ['Animals.md'],
+        cards: 3,
+        notWritten: [],
+        refusal: null,
+        changed: true,
+        at: '',
+      },
+    })
+
+    tab.namesField('Height', 'Shoulder')
+    await settles()
+
+    expect(said).toStrictEqual([words.notRenamed])
+  })
+
   it('writes nothing where nothing was touched', async () => {
     const { stencils, written } = await open()
 
@@ -269,6 +294,21 @@ describe('a stencil the vault refused', () => {
 
     expect(tab.saying()).toBe('')
   })
+
+  it('says the vault could not be reached, where the read reached nothing', async () => {
+    const { tab } = await open({ unreachable: true })
+
+    expect(tab.saying()).toBe(words.unreachable)
+  })
+
+  it('says the file could not be written, where that is what was refused', async () => {
+    const { stencils, tab } = await open({ wrote: 'unreadable' })
+
+    tab.addsField('Weight')
+    await stencils.kept.settles(stencils.all()[0] ?? '')
+
+    expect(tab.saying()).toBe(words.notSaved)
+  })
 })
 
 describe('what is wrong with a stencil', () => {
@@ -310,8 +350,18 @@ describe('what is wrong with a stencil', () => {
 })
 
 describe('a stencil read again under the window', () => {
+  // The file is read wrong in a way that stands against one face, so a mark
+  // that went is a mark this can see going.
+  const sideless: Problem = {
+    fault: 'faceMissingASide',
+    card: null,
+    face: 0,
+    field: '',
+    text: 'no back',
+  }
+
   it('leaves what the editor is drawing standing, where the file reads the same', async () => {
-    const one = await open()
+    const one = await open({ problems: [sideless] })
     const was = { sheet: one.tab.sheet(), marks: one.tab.marks() }
 
     one.stencils.changed(['Animal.md'])
@@ -323,15 +373,60 @@ describe('a stencil read again under the window', () => {
     expect(one.tab.marks()).toBe(was.marks)
   })
 
+  it('leaves each mark standing on the face the editor is drawing', async () => {
+    const one = await open({ problems: [sideless] })
+    // The face the editor is drawing, under the identity it was drawn with.
+    const face = one.tab.sheet().faces[0]?.id ?? ''
+
+    one.stencils.changed(['Animal.md'])
+    await settles()
+
+    expect(one.tab.marks().at.get(face)).toStrictEqual(['no back'])
+  })
+
   it('draws the file again where it was written from somewhere else', async () => {
     const one = await open()
     const was = one.tab.sheet()
 
-    one.holds([{ name: 'Recall', lead: '', front: '{{Height}}', back: '{{title}}' }])
+    one.holds([{ name: 'Recall', lead: '', front: '{{Height}}', back: '{{Life span}}' }])
     one.stencils.changed(['Animal.md'])
     await settles()
 
     expect(one.tab.sheet().faces.map((face) => face.name)).toStrictEqual(['Recall'])
     expect(one.tab.sheet()).not.toBe(was)
+  })
+})
+
+describe('a stencil renamed under the window', () => {
+  it('is the tab it has when it is asked for at the name it now carries', async () => {
+    const one = await open()
+
+    one.stencils.changed(['Beast.md'], [{ from: 'Animal.md', to: 'Beast.md' }])
+    await settles()
+    one.road.made('Beast.md', '', 'stencil')
+    await settles()
+
+    expect(one.stencils.all()).toHaveLength(1)
+    expect(one.held.host.each(STENCIL)).toHaveLength(1)
+  })
+
+  it('is called what the file was called, before the name it went to is read', async () => {
+    const one = await open()
+
+    one.stencils.changed(['Beast.md'], [{ from: 'Animal.md', to: 'Beast.md' }])
+
+    expect(one.stencils.called('Beast.md')).toBe('Animal')
+  })
+})
+
+describe('a stencil whose tab has gone', () => {
+  it('is nothing the window still says a word about', async () => {
+    const one = await open()
+    expect(one.stencils.called('Animal.md')).toBe('Animal')
+
+    one.held.shut(one.id)
+    await settles()
+
+    expect(one.stencils.called('Animal.md')).toBe('Animal.md')
   })
 })

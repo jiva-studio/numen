@@ -79,8 +79,8 @@ const cut = (over: Partial<Stencilled> = {}): Stencilled => ({
   fields: ['Height', 'Life span'],
   preamble: '',
   faces: [
-    { name: 'Recognise', lead: '', front: '{{title}}', back: '**Height:** {{Height}}' },
-    { name: 'Name it', lead: '', front: 'Which lives {{Life span}}?', back: '{{title}}' },
+    { name: 'Recognise', lead: '', front: '{{Height}}', back: '**Height:** {{Height}}' },
+    { name: 'Name it', lead: '', front: 'Which lives {{Life span}}?', back: '{{Height}}' },
   ],
   tail: '',
   problems: [],
@@ -364,7 +364,7 @@ describe('a stencil as the window holds it', () => {
     expect(facesOf(sheet())[0]).toStrictEqual({
       name: 'Recognise',
       lead: '',
-      front: '{{title}}',
+      front: '{{Height}}',
       back: '**Height:** {{Height}}',
     })
   })

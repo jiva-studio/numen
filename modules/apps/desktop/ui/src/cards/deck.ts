@@ -8,7 +8,7 @@
  */
 import { computed, shallowRef } from 'vue'
 import type { Cut, Drawn, PlexShowing } from '@numen/ui'
-import type { Cards, Offer, Refused, Went } from '../core'
+import type { Cards, Offer, Problem, Refused, Went } from '../core'
 import type { Store } from '../doing'
 import { editing, type Editing } from '../note/editing'
 import { markOf } from '../note/tab'
@@ -42,25 +42,24 @@ import { WORDS as words } from './words'
 /** What the vault said about one file the last time it was read or written. */
 interface Told {
   /**
-   * What is wrong, against the card it was read against. A problem stands on
-   * the card it came in on, so a card carried elsewhere in the order or a card
-   * removed beside it takes its mark with it.
+   * What is wrong with the file, in the order the cards were read in. Which
+   * card each stands on is decided against the deck the grid is drawing, so a
+   * card the window is holding through a re-read keeps its mark.
    */
-  readonly marks: Marks
-  readonly refusal: Refused | null
+  readonly problems: readonly Problem[]
+  /** What the last read of the file was refused for. */
+  readonly reading: Refused | null
+  /** What the last write of it was refused for. */
+  readonly writing: Refused | null
   /** The size a deck is read up to, where that is what refused it. */
   readonly bound: number
 }
 
-const NOTHING: Told = {
-  marks: { at: new Map(), fields: new Map(), whole: [] },
-  refusal: null,
-  bound: 0,
-}
+const NOTHING: Told = { problems: [], reading: null, writing: null, bound: 0 }
 
 /** What one deck tab holds. */
 export interface Held {
-  /** The file this tab opened on, which is the identity it keeps. */
+  /** The identity this deck opened under, which its tab keeps wherever it goes. */
   readonly id: string
   /** The deck as the window draws it: the state it is in, and what it stands at. */
   shown(): Editing
@@ -103,26 +102,17 @@ export function decking(cards: Cards, host: Host, puts: Putting) {
   const titles = new Map<string, string>()
   /** The stencils of the vault, as they were last listed. */
   const offers = shallowRef<readonly Offer[]>([])
-
-  /**
-   * What is wrong with a file, as this reading has it. A reading saying what
-   * the last one said leaves what is drawn against the file standing.
-   */
-  const marking = (path: string, read: Marks): Marks => {
-    const held = told.get(path)?.marks
-    return held && sameMarks(held, read) ? held : read
-  }
+  /** Whether the last listing of the stencils answered. */
+  let listedOk = true
 
   const store = editing({
     read: async (path) => {
       const answer = await cards.readDeck(path)
       const deck = answer.deck ? deckOf(answer.deck) : null
       told.set(path, {
-        marks: marking(
-          path,
-          marksOf(answer.deck?.problems ?? [], deck?.cards.map((card) => card.id) ?? [], []),
-        ),
-        refusal: answer.refusal,
+        problems: answer.deck?.problems ?? [],
+        reading: answer.refusal,
+        writing: null,
         bound: answer.bound,
       })
       if (answer.deck) titles.set(path, answer.deck.title)
@@ -136,9 +126,11 @@ export function decking(cards: Cards, host: Host, puts: Putting) {
         { preamble: deck.preamble, cards: cardsOf(deck), tail: deck.tail },
         seen?.at ?? null,
       )
+      const said = told.get(path) ?? NOTHING
       told.set(path, {
-        marks: (told.get(path) ?? NOTHING).marks,
-        refusal: answer.refusal,
+        problems: said.problems,
+        reading: said.reading,
+        writing: answer.refusal,
         bound: answer.bound,
       })
       return {
@@ -186,6 +178,32 @@ export function decking(cards: Cards, host: Host, puts: Putting) {
     return drawn
   }
 
+  /** The problems one tab was last marked from, and the marks that came of it. */
+  const marked = new Map<string, { problems: readonly Problem[]; marks: Marks }>()
+
+  /**
+   * What is wrong with a file, against the card the grid is drawing. A problem
+   * carries where it stood in the file it was read from, so it is put against
+   * a card once, when the reading it came in on is the newest one: a card
+   * carried elsewhere in the order or a card removed beside it takes its mark
+   * with it from there.
+   */
+  const marksAt = (id: string): Marks => {
+    const problems = (told.get(store.where(id)) ?? NOTHING).problems
+    const held = marked.get(id)
+    if (held && held.problems === problems) return held.marks
+    const read = marksOf(
+      problems,
+      deckAt(id).cards.map((card) => card.id),
+      [],
+    )
+    // Marks saying what the last ones said leave what is drawn against the
+    // file standing.
+    const marks = held && sameMarks(held.marks, read) ? held.marks : read
+    marked.set(id, { problems, marks })
+    return marks
+  }
+
   /** The stencils a card may be cut by, made again where the list changed. */
   const cuts = computed(() => cutsOf(offers.value))
 
@@ -204,19 +222,37 @@ export function decking(cards: Cards, host: Host, puts: Putting) {
   const lists = async (): Promise<void> => {
     try {
       const listed = (await cards.stencils()).stencils
+      listedOk = true
       if (!sameOffers(offers.value, listed)) offers.value = listed
     } catch {
       // The stencils the window last heard of stand, and a card is cut by one
       // of them until the vault answers again.
+      listedOk = false
     }
   }
 
-  /** What one file was refused for, in words a person reads. */
-  const sayingOf = (path: string): string => {
-    const said = told.get(path) ?? NOTHING
-    if (said.refusal === 'deckTooLarge') return words.tooLarge(said.bound)
-    if (said.refusal === 'notADeck') return words.notADeck
-    return said.refusal === null ? '' : words.refused
+  /** The stencils asked for again, where the last listing did not answer. */
+  const listsAgain = (): void => {
+    if (!listedOk) void lists()
+  }
+
+  /** The words one refusal is put in, and nothing for one this file has none for. */
+  const whyOf = (refusal: Refused | null, bound: number): string | null => {
+    if (refusal === 'deckTooLarge') return words.tooLarge(bound)
+    if (refusal === 'notADeck') return words.notADeck
+    return null
+  }
+
+  /**
+   * What one tab was refused for, in words a person reads. A vault that
+   * answered nothing at all left the tab refused and said no word of its own.
+   */
+  const sayingOf = (id: string): string => {
+    if (store.shown(id).refusal === null) return ''
+    const said = told.get(store.where(id)) ?? NOTHING
+    if (said.reading !== null) return whyOf(said.reading, said.bound) ?? words.refused
+    if (said.writing !== null) return whyOf(said.writing, said.bound) ?? words.notSaved
+    return words.unreachable
   }
 
   const held = (id: string): Held => ({
@@ -225,8 +261,8 @@ export function decking(cards: Cards, host: Host, puts: Putting) {
     deck: () => deckAt(id),
     drawn: () => drawnAt(id),
     cuts: () => cuts.value,
-    marks: () => (told.get(store.where(id)) ?? NOTHING).marks,
-    saying: () => sayingOf(store.where(id)),
+    marks: () => marksAt(id),
+    saying: () => sayingOf(id),
     adds: (name, stencil, values) =>
       turns(id, added(deckAt(id), name, stencil, pathOfCut(offers.value, stencil), values)),
     removes: (card) => turns(id, removed(deckAt(id), card)),
@@ -234,21 +270,38 @@ export function decking(cards: Cards, host: Host, puts: Putting) {
     writes: (card, field, nth, text) => {
       const deck = deckAt(id)
       const at = deck.cards.find((one) => one.id === card)?.stencilAt ?? ''
-      if (names(offers.value, at, field)) return turns(id, named(deck, card, text))
-      turns(id, filled(deck, card, field, nth, text))
+      if (!names(offers.value, at, field)) return turns(id, filled(deck, card, field, nth, text))
+      // The field a card is named by stands first among the boxes drawn under
+      // it, and that box is the heading. The ones after it are the values the
+      // card writes under a heading of its own, counted off from the first.
+      if (nth === 1) return turns(id, named(deck, card, text))
+      turns(id, filled(deck, card, field, nth - 1, text))
     },
     keep: () => store.keep(id),
     take: () => store.take(id),
     /** The tab stands until the deck says the write is done, and goes then. */
     shuts: (tab) => {
+      const path = store.where(id)
       void store.shut(id).then((gone) => {
         if (!gone) return
         parsed.delete(id)
         grids.delete(id)
+        marked.delete(id)
+        forgets(path)
         host.closes(tab)
       })
     },
   })
+
+  /**
+   * What the vault said about a file no tab of this window stands at any
+   * longer. A second tab standing there keeps it.
+   */
+  const forgets = (path: string): void => {
+    if (store.all().some((one) => store.where(one) === path)) return
+    told.delete(path)
+    titles.delete(path)
+  }
 
   /** What a deck tab is called: the title the file carries, or the file itself. */
   const called = (path: string): string => titles.get(path) || (path.split('/').pop() ?? path)
@@ -271,20 +324,53 @@ export function decking(cards: Cards, host: Host, puts: Putting) {
   }
 
   /**
+   * Every open deck under the file it stands at now, against the identity it
+   * opened under. A deck that moved is looked up here to reach the tab already
+   * holding it.
+   */
+  const tabbed = computed<ReadonlyMap<string, string>>(
+    () => new Map(store.all().map((one) => [store.where(one), one])),
+  )
+
+  /**
+   * The identity minted for a deck asked for by name, until its tab opens under
+   * it. A deck is asked for and shown in two steps, and both name the same tab.
+   */
+  const minting = new Map<string, string>()
+  const minted = new Map<string, string>()
+
+  /** The identity of the tab standing at a file, minted where none stands there. */
+  const mints = (path: string): string => {
+    const standing = tabbed.value.get(path) ?? minting.get(path)
+    if (standing) return standing
+    const one = crypto.randomUUID()
+    minting.set(path, one)
+    minted.set(one, path)
+    return one
+  }
+
+  /**
    * A deck tab as the window keeps it. A deck is its own tab, filed under the
-   * path it opened at, so the same deck asked for twice is the tab it has.
+   * identity it opened under, so the same file asked for twice is the tab it
+   * has wherever the file has been renamed to since.
    */
   const kind: Kind<Held> = {
     kind: DECK,
-    opens: (path) => {
-      store.open(path)
+    opens: (id) => {
+      const path = minted.get(id) ?? id
+      store.open(id, path)
+      minting.delete(path)
+      minted.delete(id)
       void lists()
-      return held(path)
+      return held(id)
     },
     called: (one) => called(store.where(one.id)),
     marked: (one) => markOf(store.shown(one.id).state),
     draws: DeckTab,
-    identity: (path) => path,
+    identity: (id) => id,
+    // A tab back on screen is a tab a person is about to draw cards in, so a
+    // listing that never answered is asked for again.
+    shown: () => listsAgain(),
     shuts: (one, id) => {
       one.shuts(id)
       return false
@@ -296,8 +382,9 @@ export function decking(cards: Cards, host: Host, puts: Putting) {
 
   /** A deck put in front of the person, in a tab of its own. */
   const shows = (path: string, title = '', showing: PlexShowing = 'here'): void => {
+    const id = mints(path)
     if (title) titles.set(path, title)
-    void (showing === 'beside' ? host.beside(DECK, path) : host.opens(DECK, path))
+    void (showing === 'beside' ? host.beside(DECK, id) : host.opens(DECK, id))
   }
 
   // The editor of a deck, which is the grid of its cards. A card stands on no
@@ -310,6 +397,16 @@ export function decking(cards: Cards, host: Host, puts: Putting) {
    * holding no deck asks for none.
    */
   const changed = (paths: readonly string[], renamed: readonly Went[] = []): void => {
+    // What the vault said about a file is filed under that file, so a file
+    // that moved takes it along.
+    for (const went of renamed) {
+      const said = told.get(went.from)
+      if (said) told.set(went.to, said)
+      told.delete(went.from)
+      const title = titles.get(went.from)
+      if (title !== undefined) titles.set(went.to, title)
+      titles.delete(went.from)
+    }
     store.changed(paths, renamed)
     if (store.all().length > 0) void lists()
   }

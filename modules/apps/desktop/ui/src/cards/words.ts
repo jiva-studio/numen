@@ -18,6 +18,10 @@ export const WORDS = {
   take: "Take the file's",
   /** What the whole file is refused for, said above what was read. */
   refused: 'This file could not be read.',
+  /** What a write of the whole file is refused for, said the same way. */
+  notSaved: 'This file could not be written.',
+  /** The vault answered nothing at all, and what is on screen is still here. */
+  unreachable: 'The vault could not be reached.',
   notADeck: 'That note is not a deck.',
   notAStencil: 'That note is not a stencil.',
   /** A deck past the size one is read at, with the bound it is past. */
@@ -30,6 +34,8 @@ export const WORDS = {
   renamed: (cards: number, decks: number) =>
     `The field was renamed in ${cards} ${cards === 1 ? 'card' : 'cards'},` +
     ` over ${decks} ${decks === 1 ? 'deck' : 'decks'}.`,
+  /** A rename asked against a stencil the file has since moved past. */
+  notRenamed: 'This file changed on disk, so the field was not renamed.',
   /** The decks the new name did not reach, each keeping the heading it had. */
   notWritten: (paths: readonly string[]) =>
     `These decks keep the old heading: ${paths.join(', ')}.`,

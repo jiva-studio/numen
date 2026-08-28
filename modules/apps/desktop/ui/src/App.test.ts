@@ -77,9 +77,19 @@ const { said, held, asked, listed, folders, cuts, stands, outside } = vi.hoisted
    */
   cuts: (() => {
     const filed = new Set<string>()
+    /** Whether the vault answers what it is asked at all. */
+    let reached = true
     return {
-      forget: () => filed.clear(),
+      forget: () => {
+        filed.clear()
+        reached = true
+      },
+      /** The vault is out of reach, so asking it for one reaches nothing. */
+      breaks: () => {
+        reached = false
+      },
       makes: (title: string, folder: string) => {
+        if (!reached) throw new Error('the vault could not be reached')
         const path = `${folder ? `${folder}/` : ''}${title}.note`
         if (filed.has(path)) return { path: '', refusal: 'occupied' as const }
         filed.add(path)
@@ -895,9 +905,9 @@ describe('a command reached by its own keystroke', () => {
     await press('Enter')
     await settles()
 
-    const deck = window.findComponent(DeckTab).props('held') as { id: string }
-    expect(deck.id).toBe('Animals.note')
-    expect(deck.id).not.toBe('Animals.md')
+    const deck = window.findComponent(DeckTab).props('held') as { shown(): { path: string } }
+    expect(deck.shown().path).toBe('Animals.note')
+    expect(deck.shown().path).not.toBe('Animals.md')
   })
 
   it('says the refusal and opens nothing where the name is taken already', async () => {
@@ -1289,6 +1299,33 @@ describe('a file the window has open in an editor of cards, removed from the tre
 
     // Making the deck is no write, so the only one is what the person added.
     expect(asked.wrote).toStrictEqual(['Vicuña'])
+  })
+})
+
+/** The tree makes one where the row stands, and the vault may answer nothing. */
+describe('a deck or a stencil the file tree asked the vault for', () => {
+  /** What a row of the tree asks for, on the row the menu was opened on. */
+  const asksFor = async (stencil: boolean) => {
+    const window = await drawn()
+    const tree = window.findComponent(FilesTab).props('held') as {
+      cuts(path: string | null, stencil: boolean): Promise<void>
+    }
+    cuts.breaks()
+    await tree.cuts(null, stencil)
+    await settles()
+    return window
+  }
+
+  it('says why no deck was made, where the vault could not be reached', async () => {
+    const window = await asksFor(false)
+
+    expect(cards(window).join(' ')).toContain('could not be reached')
+  })
+
+  it('says why no stencil was made, the same way', async () => {
+    const window = await asksFor(true)
+
+    expect(cards(window).join(' ')).toContain('could not be reached')
   })
 })
 
