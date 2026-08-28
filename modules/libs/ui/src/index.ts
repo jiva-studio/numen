@@ -176,6 +176,8 @@ export type {
 export { default as Face } from './cards/Face.vue'
 export { default as Stencil } from './cards/Stencil.vue'
 export { default as Deck } from './cards/Deck.vue'
+/** One card of a deck, which is what the deck lays out. */
+export { default as Card } from './cards/Card.vue'
 export { default as Marks } from './cards/Marks.vue'
 /** The strip a tile is carried by. */
 export { default as Bar } from './cards/Bar.vue'

@@ -31,7 +31,7 @@ const preview: Preview = {
     // A stencil cuts the cards a deck holds, and a face is one side of what
     // the two of them come to, so the three read in that order.
     options: {
-      storySort: { order: ['*', 'Flash Cards', ['Stencil', 'Deck', 'Face']] },
+      storySort: { order: ['*', 'Flash Cards', ['Stencil', 'Deck', 'Card', 'Face']] },
     },
   },
   globalTypes: {

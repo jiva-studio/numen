@@ -298,64 +298,10 @@ const meta: Meta<Knobs> = {
 export default meta
 type Story = StoryObj<Knobs>
 
-/**
- * Three cards, two stencils, and one card leaving a field out.
- *
- * A value is the room under the rule that names it: the name stands on the
- * line, the box begins where the line ends, and nothing is drawn around it.
- * Every one of them is open to typing, and the strip over them opens nothing.
- */
-export const ADeck: Story = {
-  play: async ({ canvasElement }) => {
-    const tile = found(canvasElement, '[data-card="llama"]')
-    const value = found(canvasElement, '[data-card="llama"] .deck__value')
-    const rule = value.querySelector('.rule')
-    const label = value.querySelector('label')
-    if (!rule || !label) throw new Error('no rule and no name on it')
 
-    // One name, and it stands on the rule, so the two share a middle.
-    expect(value.querySelectorAll('label')).toHaveLength(1)
-    expect(label.closest('.rule')).toBe(rule)
-    const line = rule.getBoundingClientRect()
-    const name = label.getBoundingClientRect()
-    expect(Math.abs((name.top + name.bottom) / 2 - (line.top + line.bottom) / 2)).toBeLessThan(2)
+/** Three cards, two stencils, and one card leaving a field out. */
+export const ADeck: Story = {}
 
-    // The rule runs to both edges of the tile, past the room the values keep.
-    const edges = tile.getBoundingClientRect()
-    expect(line.left - edges.left).toBeLessThan(2)
-    expect(edges.right - line.right).toBeLessThan(2)
-
-    const boxes = [...tile.querySelectorAll<HTMLTextAreaElement>('textarea')]
-    expect(boxes).toHaveLength(4)
-    for (const box of boxes) {
-      const under = box.closest('.deck__value')?.querySelector('.rule')
-      if (!under) throw new Error('a box under no rule')
-      expect(box.getBoundingClientRect().top).toBeCloseTo(under.getBoundingClientRect().bottom, 0)
-      expect(box.closest('.deck__value')?.querySelector('fieldset')).toBeNull()
-    }
-
-    // Empty and one-line boxes stand to one height.
-    const heights = boxes.map((box) => Math.round(box.getBoundingClientRect().height))
-    expect(new Set(heights).size).toBe(1)
-
-    // The tile keeps the ground both the rules and the boxes stand on.
-    const grown = found(canvasElement, '[data-card="llama"] .grown')
-    const ground = getComputedStyle(grown).backgroundColor
-    expect(ground === 'rgba(0, 0, 0, 0)' || ground === 'transparent').toBe(true)
-    expect(getComputedStyle(grown).borderTopWidth).toBe('0px')
-    expect(getComputedStyle(tile).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
-
-    // The strip holds the one way to remove the card, and opens nothing.
-    expect(tile.querySelector('[aria-expanded]')).toBeNull()
-    expect(found(canvasElement, '[data-card="llama"] .bar').querySelectorAll('button'))
-      .toHaveLength(1)
-
-    const box = found(canvasElement, '[data-card="llama"] [data-value="Height"]')
-    await userEvent.click(box)
-    await userEvent.type(box, '!')
-    expect((box as HTMLTextAreaElement).value).toContain('!')
-  },
-}
 
 /**
  * Three hundred cards cut by two stencils of different sizes, which is where
@@ -397,74 +343,44 @@ export const NothingAtAll: Story = {
       Math.round(box.top + box.height / 2),
     ]
     expect(middle(button.getBoundingClientRect())).toEqual(middle(plus.getBoundingClientRect()))
-    expect(plus.getBoundingClientRect().height).toBeGreaterThan(64)
 
-    // What it opens stands where it was pressed.
+    // It is a tile like the cards are: a dashed outline, drawn no smaller than
+    // a card, and as wide as the column it stands in.
+    const drawn = getComputedStyle(plus)
+    expect(drawn.borderTopStyle).toBe('dashed')
+    expect(Number.parseFloat(drawn.borderTopWidth)).toBeGreaterThan(0)
+
+    const at = plus.getBoundingClientRect()
+    expect(at.height).toBeGreaterThan(64)
+    expect(at.width).toBeGreaterThan(240)
+
+    // What it opens stands where it was pressed, inside that same outline.
     await userEvent.click(button)
     const asking = found(canvasElement, '[data-plus] .deck__asking')
     expect(middle(asking.getBoundingClientRect())).toEqual(middle(plus.getBoundingClientRect()))
+    expect(getComputedStyle(found(canvasElement, '[data-plus]')).borderTopStyle).toBe('dashed')
   },
 }
 
 /**
- * Every fault a tile can carry, one card apiece: a card with nothing in it, a
- * card naming a stencil that was not handed in, and a card carrying the field
- * that names it as a value as well.
+ * A deck the vault found four things wrong with, one card apiece. Every mark
+ * stands on the card it was read against and on no other, and what a card is
+ * drawn as is the card's own.
  */
 export const WhatIsWrongWithACard: Story = {
   args: { corpus: 'what is wrong' },
   play: async ({ canvasElement }) => {
-    // The heading names the card; the value is kept and said to be one too many.
-    const boxes = [...canvasElement.querySelectorAll<HTMLTextAreaElement>('[data-value="Name"]')]
-    expect(boxes.map((box) => box.value)).toEqual(['Llama', 'Alpaca'])
+    const said = (card: string, selector: string): string =>
+      found(canvasElement, `[data-card="${card}"] ${selector}`).textContent ?? ''
 
-    const row = canvasElement.querySelector('[data-twice]')
-    expect(row?.textContent).toContain('The card is named by this field')
-    expect(row?.getAttribute('data-stray')).toBeNull()
-    expect(canvasElement.textContent).not.toContain('Not a field of this stencil')
+    expect(said('blank', '[data-wrong]')).toContain('this card has no name')
+    expect(said('twice', '[data-wrong]')).toContain('another card is called Llama')
+    expect(said('twice', '[data-wrong-value="Name"]')).toContain('this card writes Name twice')
+    expect(said('theirs', '[data-wrong-value="Answer"]')).toContain('not in the stencil')
 
-    // The card whose stencil was not handed in says so, and keeps its values.
-    const orphan = found(canvasElement, '[data-card="orphan"]')
-    // Nothing says what its boxes are, so it draws none and says which stencil
-    // it asked for.
-    expect(orphan.textContent).toContain('Gone')
-    expect(orphan.querySelectorAll('textarea')).toHaveLength(0)
-
-    // The card with nothing in it stands as a tile like any other.
-    expect(canvasElement.querySelector('[data-card="blank"]')).not.toBeNull()
-
-    // What the vault found wrong with a card is said under its heading, above
-    // the first of its values; what it found wrong with one value is said
-    // under that value.
-    const said = found(canvasElement, '[data-card="blank"] [data-wrong]')
-    expect(said.textContent).toContain('this card has no name')
-    const first = found(canvasElement, '[data-card="blank"] .deck__value')
-    expect(said.getBoundingClientRect().bottom).toBeLessThanOrEqual(
-      first.getBoundingClientRect().top + 1,
-    )
-
-    // It is said once, under the second of the two boxes standing for Name.
-    const under = [
-      ...canvasElement.querySelectorAll('[data-card="twice"] [data-wrong-value="Name"]'),
-    ]
-    expect(under).toHaveLength(1)
-    const value = found(canvasElement, '[data-card="twice"] [data-wrong-value="Name"]')
-    expect(value.textContent).toContain('this card writes Name twice')
-    const box = found(canvasElement, '[data-card="twice"] [data-value="Name"]')
-    expect(value.getBoundingClientRect().top).toBeGreaterThanOrEqual(
-      box.getBoundingClientRect().bottom - 1,
-    )
-
-    // A value is a box, so no tag written into one is ever drawn as a mark.
-    expect(canvasElement.querySelector('script')).toBeNull()
-    expect(canvasElement.querySelector('img')).toBeNull()
-    expect(canvasElement.querySelector('[onerror]')).toBeNull()
-    expect((window as unknown as Record<string, unknown>)['stolen']).toBeUndefined()
-
-    // What the person wrote is theirs to read and change, standing as the text
-    // of a box.
-    const theirs = canvasElement.querySelector<HTMLTextAreaElement>('[data-value="Answer"]')
-    expect(theirs?.value).toContain('<script>')
+    // The card nothing was said against carries no mark at all.
+    expect(canvasElement.querySelector('[data-card="orphan"] [data-wrong]')).toBeNull()
+    expect(canvasElement.querySelectorAll('[data-wrong]')).toHaveLength(2)
   },
 }
 

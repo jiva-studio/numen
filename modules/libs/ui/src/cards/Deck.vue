@@ -1,16 +1,14 @@
 <script setup lang="ts">
 /**
- * A deck, edited: its cards as tiles, and a plus standing last.
+ * A deck, edited: its cards as tiles in a grid, and a plus standing last.
  *
- * A tile is a strip it is carried by and removed from, and under it the card's
- * values, each in a box that is always open to typing. The field naming the
- * card stands first among them. What a card stands for is the caller's.
+ * The grid lays the cards out, carries one from place to place, and asks which
+ * stencil a new one is cut by. What a card holds is the card's own. What a card
+ * stands for is the caller's.
  */
-import { computed, shallowRef, useId } from 'vue'
-import Bar from './Bar.vue'
+import { computed, shallowRef } from 'vue'
+import Card from './Card.vue'
 import Glyph from './Glyph.vue'
-import Grown from './Grown.vue'
-import Rule from '../rule/Rule.vue'
 import { Button } from '../components/ui/button'
 import {
   blanks,
@@ -19,18 +17,18 @@ import {
   freeName,
   grid,
   NOTHING_WRONG,
-  oneLine,
   stepped,
   type Cut,
   type DeckWords,
   type Drawn,
   type Filled,
   type Landing,
-  type Stood,
-  type Tile,
   type Way,
   type Wrong,
 } from './model'
+
+/** A card nothing is wrong with any value of. */
+const NO_FIELDS: ReadonlyMap<string, readonly string[]> = new Map()
 
 const props = withDefaults(
   defineProps<{
@@ -47,20 +45,6 @@ const props = withDefaults(
   }>(),
   { name: 'Deck', wrong: () => NOTHING_WRONG, words: () => DECK_WORDS },
 )
-
-/** What is wrong with one card, and nothing where nothing is. */
-const wrongWith = (card: string): readonly string[] => props.wrong.at.get(card) ?? []
-
-/**
- * What is wrong with one value of one card, and nothing where nothing is. It
- * is said once, under the last of the boxes standing for that field, which is
- * the one a card writing it twice put there.
- */
-const wrongUnder = (tile: Tile, value: Stood): readonly string[] => {
-  const under = tile.filled.filter((each) => each.field === value.field)
-  if (under[under.length - 1] !== value) return []
-  return props.wrong.under.get(tile.id)?.get(value.field) ?? []
-}
 
 const emit = defineEmits<{
   /**
@@ -79,12 +63,6 @@ const emit = defineEmits<{
    */
   (event: 'write', id: string, field: string, nth: number, text: string): void
 }>()
-
-/** What this deck's boxes are named by, which is this deck's alone. */
-const uid = useId()
-
-const boxId = (tile: Tile, value: Stood): string =>
-  `${uid}-${tile.id}-${encodeURIComponent(value.key)}`
 
 /** The plus is showing which stencils a new card may be cut by. */
 const asking = shallowRef(false)
@@ -128,23 +106,6 @@ const step = (id: string, way: Way, press: KeyboardEvent): void => {
   emit('move', id, lands)
 }
 
-/**
- * A break struck in the box the card is named by. The name is written in a
- * heading, so the box holds one line; a break struck while a word is being
- * composed belongs to the composing.
- */
-const breaking = (value: Stood, press: KeyboardEvent): void => {
-  if (value.names && !press.isComposing) press.preventDefault()
-}
-
-/**
- * One value of one card as it now reads. The field the card is named by is
- * written in a heading, so what is typed into its box comes to one line.
- */
-const write = (tile: Tile, value: Stood, text: string): void => {
-  emit('write', tile.id, value.field, value.nth, value.names ? oneLine(text) : text)
-}
-
 const add = (cut: Cut): void => {
   asking.value = false
   emit(
@@ -165,103 +126,27 @@ const add = (cut: Cut): void => {
     @drop="drop"
   >
     <div class="deck__grid">
-      <article
+      <div
         v-for="tile in shown.tiles"
         :key="tile.id"
-        class="deck__tile flex flex-col rounded-node bg-raised"
-        :aria-label="tile.name"
-        :aria-posinset="tile.at"
-        :aria-setsize="shown.of"
-        :data-card="tile.id"
-        :data-carried="tile.carried || undefined"
+        class="deck__tile"
         :data-before="tile.id === at || undefined"
         @dragover.stop="over(tile.id, $event)"
         @drop.stop="drop"
       >
-        <Bar
-          :carry="`${words.carry}: ${tile.name}`"
-          @dragstart="lift(tile.id, $event)"
-          @dragend="release"
+        <Card
+          :tile="tile"
+          :of="shown.of"
+          :wrong="wrong.at.get(tile.id) ?? []"
+          :wrong-under="wrong.under.get(tile.id) ?? NO_FIELDS"
+          :words="words"
+          @remove="emit('remove', tile.id)"
+          @lift="lift(tile.id, $event)"
+          @release="release"
           @step="(way, press) => step(tile.id, way, press)"
-        >
-          <template #deeds>
-            <Button
-              variant="ghost"
-              size="icon-small"
-              class="size-6"
-              draggable="false"
-              :aria-label="`${words.remove}: ${tile.name}`"
-              @click="emit('remove', tile.id)"
-            >
-              <Glyph shows="bin" />
-            </Button>
-          </template>
-        </Bar>
-
-        <div class="deck__body flex flex-col">
-          <!-- A name is exposed by nothing standing on a paragraph, so the
-               text takes a role that carries one. -->
-          <p v-if="!tile.named" class="deck__said truncate" role="group" :aria-label="words.name">
-            {{ tile.name }}
-          </p>
-
-          <p v-if="!tile.known" class="deck__objects text-small text-alarm" role="alert">
-            {{ words.unknown(tile.stencil) }}
-          </p>
-
-          <!-- What is wrong with the card is said under its heading. -->
-          <ul
-            v-if="wrongWith(tile.id).length"
-            class="deck__objects text-small text-alarm"
-            :aria-label="words.wrong"
-            data-wrong
-          >
-            <li v-for="(text, at) in wrongWith(tile.id)" :key="at">{{ text }}</li>
-          </ul>
-
-          <div
-            v-for="value in tile.filled"
-            :key="value.key"
-            class="deck__value"
-            :data-names="value.names || undefined"
-            :data-twice="value.twice || undefined"
-          >
-            <Rule at="start">
-              <label class="deck__field text-small text-hushed" :for="boxId(tile, value)">
-                {{ value.field }}
-              </label>
-            </Rule>
-
-            <Grown :text="value.text">
-              <textarea
-                :id="boxId(tile, value)"
-                class="deck__written"
-                :data-value="value.field"
-                rows="1"
-                :value="value.text"
-                @keydown.enter="breaking(value, $event)"
-                @input="write(tile, value, ($event.target as HTMLTextAreaElement).value)"
-              ></textarea>
-            </Grown>
-
-            <p v-if="value.twice" class="deck__objects text-small text-alarm">{{ words.twice }}</p>
-
-            <!-- What is wrong with this value is said under it. -->
-            <ul
-              v-if="wrongUnder(tile, value).length"
-              class="deck__objects text-small text-alarm"
-              :aria-label="words.wrong"
-              :data-wrong-value="value.field"
-            >
-              <li v-for="(text, at) in wrongUnder(tile, value)" :key="at">{{ text }}</li>
-            </ul>
-          </div>
-
-          <p v-if="!tile.filled.length" class="deck__silence text-small text-hushed">
-            {{ words.nothing }}
-          </p>
-        </div>
-      </article>
+          @write="(field, nth, text) => emit('write', tile.id, field, nth, text)"
+        />
+      </div>
 
       <article
         class="deck__tile deck__plus rounded-node"
@@ -330,36 +215,11 @@ const add = (cut: Cut): void => {
   gap: var(--gap);
 }
 
+/* A tile is the room one card is drawn in, and the card fills it. */
 .deck__tile {
   position: relative;
+  display: grid;
   min-inline-size: 0;
-  border: var(--numen-stroke) solid var(--numen-node-border);
-  overflow: hidden;
-  overflow-wrap: anywhere;
-}
-
-/* The strip runs the whole width, and the body keeps the clearance. */
-.deck__body {
-  gap: var(--numen-inset);
-  padding: var(--pad);
-}
-
-/*
- * A value is the room between its own rule and the next: the rule names it and
- * the box under it takes what is left, with nothing drawn around either.
- */
-.deck__field {
-  padding-inline: var(--box-pad-inline);
-}
-
-/* A rule divides the whole tile, so it runs to both edges of it. */
-.deck__value > .rule {
-  inline-size: auto;
-  margin-inline: calc(-1 * var(--pad));
-}
-
-.deck__tile[data-carried] {
-  opacity: 0.5;
 }
 
 .deck__tile[data-before]::before {
@@ -380,7 +240,7 @@ const add = (cut: Cut): void => {
   place-items: center;
   min-block-size: 6rem;
   padding: var(--pad);
-  border-style: dashed;
+  border: var(--numen-stroke) dashed var(--numen-node-border);
 }
 
 .deck__ask {
@@ -403,33 +263,8 @@ const add = (cut: Cut): void => {
   gap: var(--numen-inset);
 }
 
-/* A card whose stencil names no field is named by what it was handed. */
-.deck__said {
-  margin: 0;
-}
-
-/*
- * The box and the ground behind it are set the same text, in the same type, at
- * the same measure, and share one cell. The ground is what the cell is sized
- * by, so the box is exactly as tall as what it holds and never scrolls.
- */
-.deck__written {
-  inline-size: 100%;
-  min-inline-size: 0;
-}
-
-.deck__objects,
 .deck__silence {
   margin: 0;
-}
-
-/* What is wrong stands over the same edge as the name and the value it is
-   about. */
-.deck__objects {
-  padding-inline: var(--box-pad-inline);
-}
-
-.deck__silence {
   letter-spacing: var(--numen-caps-tracking);
   text-transform: uppercase;
 }

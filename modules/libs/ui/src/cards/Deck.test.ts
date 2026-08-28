@@ -108,7 +108,7 @@ describe('Deck', () => {
 
   it('draws the field naming the card as it draws every other', () => {
     const held = mountDeck()
-    const values = tileFor(held, 'llama').findAll('.deck__value')
+    const values = tileFor(held, 'llama').findAll('.card__value')
     expect(values.map((each) => each.get('label').text())).toEqual([
       'Name',
       'Height',
@@ -120,7 +120,7 @@ describe('Deck', () => {
 
   it('names each box by a label the box itself is named by', () => {
     const held = mountDeck()
-    for (const value of tileFor(held, 'llama').findAll('.deck__value')) {
+    for (const value of tileFor(held, 'llama').findAll('.card__value')) {
       const label = value.get('label')
       const box = value.get('textarea')
       expect(label.attributes('for')).toBe(box.attributes('id'))
@@ -129,7 +129,7 @@ describe('Deck', () => {
   })
 
   it('names a value on the rule that divides it from the one above, and nowhere else', () => {
-    const value = tileFor(mountDeck(), 'llama').findAll('.deck__value')[0]
+    const value = tileFor(mountDeck(), 'llama').findAll('.card__value')[0]
 
     // One name, and it stands on the rule. Nothing is drawn around the box
     // under it.
@@ -191,11 +191,11 @@ describe('Deck', () => {
       { id: 'gone', name: 'Gone', stencil: 'Missing', filled: [{ field: 'A', text: 'kept' }] },
     ]
     const held = mountDeck({ cards: orphan })
-    expect(tileFor(held, 'gone').get('.deck__said').text()).toBe('Gone')
+    expect(tileFor(held, 'gone').get('.card__said').text()).toBe('Gone')
   })
 
   it('says the name of no card whose stencil names a field to hold it', () => {
-    expect(mountDeck().find('.deck__said').exists()).toBe(false)
+    expect(mountDeck().find('.card__said').exists()).toBe(false)
   })
 
   it('says what no card is cut by: the fields tell the stencils apart', () => {
@@ -251,7 +251,7 @@ describe('Deck', () => {
     const orphan: readonly Drawn[] = [
       { id: 'gone', name: 'Gone', stencil: 'Missing', filled: [{ field: 'A', text: 'kept' }] },
     ]
-    const said = tileFor(mountDeck({ cards: orphan }), 'gone').get('.deck__said')
+    const said = tileFor(mountDeck({ cards: orphan }), 'gone').get('.card__said')
 
     // A name is exposed by nothing standing on a paragraph, so the text takes
     // a role that carries one.
@@ -391,14 +391,14 @@ describe('Deck', () => {
     const tile = tileFor(held, 'gone')
 
     // The stencil is named, so the person knows what the card is waiting for.
-    expect(tile.get('.deck__objects').text()).toBe('No stencil called Missing')
+    expect(tile.get('.card__objects').text()).toBe('No stencil called Missing')
     // Nothing names the values, so nothing draws them. They stay in the file.
-    expect(tile.findAll('.deck__value')).toHaveLength(0)
+    expect(tile.findAll('.card__value')).toHaveLength(0)
     expect(tile.find('textarea').exists()).toBe(false)
   })
 
   it('says nothing about a card whose stencil was handed in', () => {
-    expect(mountDeck().find('.deck__objects').exists()).toBe(false)
+    expect(mountDeck().find('.card__objects').exists()).toBe(false)
   })
 
   it('draws every value a card writes under one field, and hides none of them', () => {
@@ -457,7 +457,7 @@ describe('Deck', () => {
       const held = mountDeck({ cards: TWICE })
       const row = held.get('[data-twice]')
       expect(row.text()).toContain('Name')
-      expect(row.get('.deck__objects').text()).toBe('The card is named by this field')
+      expect(row.get('.card__objects').text()).toBe('The card is named by this field')
       expect(namedBoxes(held)[1]?.value).toBe('Alpaca')
     })
 
