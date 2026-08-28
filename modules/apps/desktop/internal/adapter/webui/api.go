@@ -98,11 +98,14 @@ type API struct {
 	Joins *note.Linking
 
 	// Cards reads a deck or a stencil, Offered lists the stencils the vault
-	// holds, and Cuts puts either back. A build without them answers that cards
-	// cannot be worked here.
-	Cards   *cards.Read
-	Offered *cards.List
-	Cuts    *cards.Write
+	// holds, and Cuts puts either back. MakesCards makes a deck or a stencil, and
+	// RenamesField gives one of a stencil's fields a different name everywhere it
+	// is written. A build without them answers that cards cannot be worked here.
+	Cards        *cards.Read
+	Offered      *cards.List
+	Cuts         *cards.Write
+	MakesCards   *cards.Create
+	RenamesField *cards.RenameField
 
 	// Renames gives a note a different name, Moves puts a file or a folder
 	// somewhere else in the vault, and Removes takes one out of it. A build
@@ -278,7 +281,21 @@ func (a *API) Neighbourhood(ctx context.Context, r *connect.Request[v1.Neighbour
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	out := &v1.NeighbourhoodResponse{Focus: noteOf(found.Focus)}
+	// Which of three each note on the picture is, asked once for the whole of
+	// it, so a client draws a deck and a stencil as what they are.
+	paths := []string{found.Focus.Path}
+	for _, related := range found.Related {
+		paths = append(paths, related.Path)
+	}
+	types, err := a.typesAt(ctx, showing, paths)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	out := &v1.NeighbourhoodResponse{
+		Focus:     noteOf(found.Focus),
+		FocusType: typeOf(types[found.Focus.Path]),
+	}
 	for _, related := range found.Related {
 		out.Related = append(out.Related, &v1.Seated{
 			Note:    noteOf(related.NoteRef),
@@ -286,6 +303,7 @@ func (a *API) Neighbourhood(ctx context.Context, r *connect.Request[v1.Neighbour
 			Label:   related.Label,
 			Through: related.Through,
 			Mutual:  related.Mutual,
+			Type:    typeOf(types[related.Path]),
 		})
 	}
 	return connect.NewResponse(out), nil

@@ -25,6 +25,15 @@ service CardsService {
   // A stencil that could not be read is absent from the answer.
   rpc Stencils(StencilsRequest) returns (StencilsResponse);
 
+  // MakeStencil puts a stencil in the vault, declaring the fields it is given
+  // and showing no face. The file says it is a stencil from the moment it
+  // exists, so it is one to everything that reads the vault before a card is
+  // cut by it.
+  //
+  // The first field is what a card cut by this stencil is named by, so a
+  // stencil is made with at least one.
+  rpc MakeStencil(MakeStencilRequest) returns (MakeStencilResponse);
+
   // ReadStencil is the fields and the faces of one stencil.
   rpc ReadStencil(ReadStencilRequest) returns (ReadStencilResponse);
 
@@ -33,6 +42,24 @@ service CardsService {
   // it, and a stencil that no longer holds what the caller read is left alone
   // and answered `changed`.
   rpc WriteStencil(WriteStencilRequest) returns (WriteStencilResponse);
+
+  // RenameField gives one of a stencil's fields a different name, everywhere it
+  // is written: where the stencil declares it, in the braces of every face that
+  // places it, and as a heading in every card of every deck that stencil cuts.
+  // What stands under each heading is left as it was.
+  //
+  // The first field is written in the stencil alone, so renaming it reaches no
+  // deck. A deck the rename could not be written to keeps the old heading and
+  // comes back under `not_written`.
+  //
+  // A stencil that no longer holds what the caller read is left alone and
+  // answered `changed`, and then no deck is written either.
+  rpc RenameField(RenameFieldRequest) returns (RenameFieldResponse);
+
+  // MakeDeck puts a deck of no cards in the vault. The file says it is a deck
+  // from the moment it exists, so it is one to everything that reads the vault
+  // before a card is written into it.
+  rpc MakeDeck(MakeDeckRequest) returns (MakeDeckResponse);
 
   // ReadDeck is the cards of one deck, in the order they stand in the file.
   rpc ReadDeck(ReadDeckRequest) returns (ReadDeckResponse);
@@ -231,6 +258,27 @@ message StencilsResponse {
   int32 held = 2;
 }
 
+message MakeStencilRequest {
+  // What the stencil is called. The file is named after it, and that name is
+  // what a card's wikilink writes.
+  string title = 1;
+
+  // Where in the vault it goes, relative to the root. Empty is the root.
+  string folder = 2;
+
+  // The names of the fields, in the order a person is asked for them. The first
+  // names the card, and a stencil is made with at least one.
+  repeated string fields = 3;
+}
+
+message MakeStencilResponse {
+  // Where the stencil is filed. Empty when nothing was made.
+  string path = 1;
+
+  // Set when nothing was made, and why.
+  optional Refusal refusal = 2;
+}
+
 message ReadStencilRequest {
   string path = 1;
 }
@@ -272,6 +320,68 @@ message WriteStencilResponse {
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.
   optional Fingerprint at = 3;
+}
+
+message RenameFieldRequest {
+  // The stencil that declares the field.
+  string path = 1;
+
+  // The field's name now, and what it is called from now on.
+  string from = 2;
+  string to = 3;
+
+  // The stencil this caller last read. Absent for a rename that lands on
+  // whatever the stencil now holds.
+  optional Fingerprint seen = 4;
+}
+
+message RenameFieldResponse {
+  // The decks a heading was rewritten in, by path.
+  repeated string decks = 1;
+
+  // How many headings were rewritten, over all those decks.
+  int32 cards = 2;
+
+  // One entry per deck the rename could not be written to. Each of them keeps
+  // the old heading.
+  repeated NotWritten not_written = 3;
+
+  // Set when the field was not renamed at all, and why. No deck is written
+  // where the stencil refused the rename.
+  optional Refusal refusal = 4;
+
+  // Set when the stencil is no longer the one this caller read. Nothing was
+  // renamed.
+  bool changed = 5;
+
+  // The stencil the rename produced, for the caller to present at its next
+  // write. Absent when nothing was renamed.
+  optional Fingerprint at = 6;
+}
+
+// NotWritten is one deck a rename did not reach.
+message NotWritten {
+  string path = 1;
+
+  // Why it was not reached, in the words to show. It stands against the deck
+  // and against no card of it.
+  Problem problem = 2;
+}
+
+message MakeDeckRequest {
+  // What the deck is called. The file is named after it.
+  string title = 1;
+
+  // Where in the vault it goes, relative to the root. Empty is the root.
+  string folder = 2;
+}
+
+message MakeDeckResponse {
+  // Where the deck is filed. Empty when nothing was made.
+  string path = 1;
+
+  // Set when nothing was made, and why.
+  optional Refusal refusal = 2;
 }
 
 message ReadDeckRequest {

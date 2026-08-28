@@ -222,6 +222,8 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	api.Cards = &cutting.Read
 	api.Offered = &cutting.List
 	api.Cuts = &cutting.Write
+	api.MakesCards = &cutting.Create
+	api.RenamesField = &cutting.Rename
 	// One note.Move settles every note that travelled, whether a rename sent it
 	// or a move did.
 	moving := note.Move{

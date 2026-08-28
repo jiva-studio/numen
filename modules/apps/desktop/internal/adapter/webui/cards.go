@@ -34,13 +34,12 @@ func (a *API) Stencils(
 	if err != nil {
 		return nil, err
 	}
-	held, err := a.Offered.Execute(ctx, showing)
+	held, count, err := a.Offered.Execute(ctx, showing, offering(r.Msg.GetLimit()))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	out := &v1.StencilsResponse{Held: int32(len(held))}
-	held = held[:min(len(held), offering(r.Msg.GetLimit()))]
+	out := &v1.StencilsResponse{Held: int32(count)}
 	out.Stencils = make([]*v1.Offered, 0, len(held))
 	for _, stencil := range held {
 		out.Stencils = append(out.Stencils, offeredOf(stencil))
@@ -55,6 +54,111 @@ func offering(limit int32) int {
 		return maxStencils
 	}
 	return int(limit)
+}
+
+// MakeStencil puts a stencil declaring these fields in the vault, showing no
+// face.
+func (a *API) MakeStencil(
+	ctx context.Context, r *connect.Request[v1.MakeStencilRequest],
+) (*connect.Response[v1.MakeStencilResponse], error) {
+	made, refusal, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.Made, error) {
+		in.Fields = r.Msg.GetFields()
+		return a.MakesCards.Stencil(ctx, showing, in)
+	}, r.Msg.GetTitle(), r.Msg.GetFolder())
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(&v1.MakeStencilResponse{Path: made.Path, Refusal: refusal}), nil
+}
+
+// MakeDeck puts a deck of no cards in the vault.
+func (a *API) MakeDeck(
+	ctx context.Context, r *connect.Request[v1.MakeDeckRequest],
+) (*connect.Response[v1.MakeDeckResponse], error) {
+	made, refusal, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.Made, error) {
+		return a.MakesCards.Deck(ctx, showing, in)
+	}, r.Msg.GetTitle(), r.Msg.GetFolder())
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(&v1.MakeDeckResponse{Path: made.Path, Refusal: refusal}), nil
+}
+
+// makes is what making a deck and making a stencil have in common: the vault
+// being shown, the window's hold on writing, and the refusals a file that could
+// not be made comes back as.
+func (a *API) makes(
+	ctx context.Context, cut func(domain.Vault, cards.New) (cards.Made, error), title, folder string,
+) (cards.Made, *v1.Refusal, error) {
+	if a.MakesCards == nil {
+		return cards.Made{}, nil, connect.NewError(connect.CodeUnimplemented, errNoCards)
+	}
+	showing, err := a.shown()
+	if err != nil {
+		return cards.Made{}, nil, err
+	}
+	if !a.Writing.begin() {
+		return cards.Made{}, nil, connect.NewError(connect.CodeUnavailable, errClosing)
+	}
+	defer a.Writing.done()
+
+	made, err := cut(showing, cards.New{Title: title, Folder: folder})
+	if err == nil {
+		if a.Wrote != nil {
+			a.Wrote()
+		}
+		return made, nil, nil
+	}
+	if errors.Is(err, cards.ErrNoFields) {
+		return cards.Made{}, nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+	refusal, refused := refusedBy(err)
+	if !refused {
+		return cards.Made{}, nil, connect.NewError(connect.CodeInternal, err)
+	}
+	return cards.Made{}, &refusal, nil
+}
+
+// RenameField gives one of a stencil's fields a different name, in the stencil
+// and in every card of every deck that stencil cuts. A stencil still holding
+// what the client read is written; one holding something else is left alone and
+// the client is told the stencil changed.
+func (a *API) RenameField(
+	ctx context.Context, r *connect.Request[v1.RenameFieldRequest],
+) (*connect.Response[v1.RenameFieldResponse], error) {
+	if a.RenamesField == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoCards)
+	}
+	showing, err := a.shown()
+	if err != nil {
+		return nil, err
+	}
+	if !a.Writing.begin() {
+		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
+	}
+	defer a.Writing.done()
+
+	renamed, err := a.RenamesField.Execute(ctx, showing, cards.Field{
+		Stencil: r.Msg.GetPath(), From: r.Msg.GetFrom(), To: r.Msg.GetTo(),
+		At: refOf(r.Msg.GetSeen()),
+	})
+	if err == nil {
+		if a.Wrote != nil {
+			a.Wrote()
+		}
+		return connect.NewResponse(renamedOf(renamed)), nil
+	}
+	if errors.Is(err, port.ErrChanged) {
+		return connect.NewResponse(&v1.RenameFieldResponse{Changed: true}), nil
+	}
+	if errors.Is(err, format.ErrNoSuchField) {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+	refusal, refused := refusedBy(err)
+	if !refused {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	return connect.NewResponse(&v1.RenameFieldResponse{Refusal: &refusal}), nil
 }
 
 // ReadStencil is the fields and the faces of one stencil.

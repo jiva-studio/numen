@@ -44,10 +44,11 @@ type Renamed struct {
 
 // RenameField gives one of a stencil's fields a different name.
 //
-// A field's name is written twice over: once where the stencil declares it, and
-// once as a heading in every card of every deck that stencil cuts. So the
-// rename reaches them. Every deck of the vault is read, the heading is
-// rewritten in the cards of that stencil, and what stands under it is
+// A field's name is written where the stencil declares it, in the braces of
+// every face that places it, and as a heading in every card of every deck that
+// stencil cuts. So the rename reaches them all. The stencil is written once,
+// both of its names in the one write; then every deck of the vault is read, the
+// heading is rewritten in the cards of that stencil, and what stands under it is
 // untouched.
 //
 // The first field is written in the stencil alone, so renaming it reaches no
@@ -56,7 +57,11 @@ type RenameField struct {
 	Readers port.VaultReaders
 	Writers port.VaultWriters
 	Notes   port.NoteQueries
-	Index   func(ctx context.Context, v domain.Vault, paths []string) error
+	// Links answers where the wikilink a card names its stencil by lands, which
+	// is what says the card is cut by this stencil. A build holding none reaches
+	// no card.
+	Links port.LinkQueries
+	Index func(ctx context.Context, v domain.Vault, paths []string) error
 	// Now is when this is happening. An identifier written here carries it.
 	Now func() time.Time
 }
@@ -124,12 +129,14 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Field) (Rena
 	}
 	// The name the cards write is the name the stencil is linked by.
 	named := domain.Basename(in.Stencil)
-	one := deck{reader: reader, writer: writer, stamp: u.stamped}
+	one := deck{
+		reader: reader, writer: writer, links: u.Links, vaultID: v.ID, stamp: u.stamped,
+	}
 	for _, path := range paths {
 		if err := ctx.Err(); err != nil {
 			return out, err
 		}
-		cards, err := one.rename(ctx, path, named, in)
+		cards, err := one.rename(ctx, path, in)
 		if err != nil {
 			out.NotWritten = append(out.NotWritten, NotWritten{Path: path, Problem: format.OnFile(
 				format.CheckNotWritten,
@@ -219,14 +226,19 @@ func (u RenameField) decks(ctx context.Context, v domain.Vault) ([]string, error
 // deck is one deck's read and write, so that what could not be done to it is
 // one error and the decks after it are written all the same.
 type deck struct {
-	reader port.VaultReader
-	writer port.VaultWriter
-	stamp  func(func(string) (bool, error)) error
+	reader  port.VaultReader
+	writer  port.VaultWriter
+	links   port.LinkQueries
+	vaultID string
+	stamp   func(func(string) (bool, error)) error
 }
 
 // rename rewrites the heading in every card of this deck the stencil cuts, and
 // reports how many it rewrote. A deck holding none of them is not written.
-func (d deck) rename(ctx context.Context, path, named string, in Field) (int, error) {
+//
+// A card is cut by the stencil its own wikilink lands on, which is what reading
+// the deck against its stencils holds to.
+func (d deck) rename(ctx context.Context, path string, in Field) (int, error) {
 	on, err := d.reader.Stat(ctx, path)
 	if err != nil {
 		return 0, err
@@ -243,7 +255,11 @@ func (d deck) rename(ctx context.Context, path, named string, in Field) (int, er
 	if err != nil {
 		return 0, err
 	}
-	cards, err := f.RenameField(named, in.From, in.To)
+	at, err := cutting(ctx, d.links, d.vaultID, path, f.Deck(on))
+	if err != nil {
+		return 0, err
+	}
+	cards, err := f.RenameField(at, in.Stencil, in.From, in.To)
 	if err != nil {
 		return 0, err
 	}

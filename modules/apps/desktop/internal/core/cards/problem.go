@@ -68,6 +68,11 @@ func OnFile(check Check, detail string) Problem {
 	return Problem{Check: check, Card: NoPosition, Face: NoPosition, Detail: detail}
 }
 
+// OnCard files a problem about one card, counted from the deck's first card.
+func OnCard(card int, check Check, detail string) Problem {
+	return against(card, check, detail)
+}
+
 // against files a problem about one card.
 func against(card int, check Check, detail string) Problem {
 	return Problem{Check: check, Card: card, Face: NoPosition, Detail: detail}

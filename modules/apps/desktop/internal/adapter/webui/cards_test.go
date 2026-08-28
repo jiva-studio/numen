@@ -193,6 +193,191 @@ func TestAListOfStencilsCutShortSaysHowManyTheVaultHolds(t *testing.T) {
 	}
 }
 
+// TestADeckMadeIsADeckToRead. A deck is made where there was no file, and it
+// says it is a deck from the moment it exists, so the read that follows is a
+// deck's read and not a note's.
+func TestADeckMadeIsADeckToRead(t *testing.T) {
+	f := dealing(t, map[string]string{"Animal.md": animal})
+
+	answer, err := f.client.MakeDeck(t.Context(), connect.NewRequest(&v1.MakeDeckRequest{
+		Title: "Camelids", Folder: "decks",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
+		t.Fatalf("making a deck answered %v", refusal)
+	}
+	if path := answer.Msg.GetPath(); path != "decks/Camelids.md" {
+		t.Fatalf("the deck was filed at %q", path)
+	}
+	if held := onDisk(t, f.root, "decks/Camelids.md"); !strings.Contains(held, "type: deck\n") {
+		t.Errorf("the file does not say what it is: %q", held)
+	}
+
+	read := deck(t, f, "decks/Camelids.md")
+	if refusal := read.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
+		t.Fatalf("the deck just made was refused with %v", refusal)
+	}
+	if cards := read.GetDeck().GetCards(); len(cards) != 0 {
+		t.Errorf("a deck of no cards came back with %+v", cards)
+	}
+}
+
+// TestAStencilMadeDeclaresTheFieldsItWasGiven. A stencil is made with the
+// fields a card cut by it is asked for, the first of which names the card.
+func TestAStencilMadeDeclaresTheFieldsItWasGiven(t *testing.T) {
+	f := dealing(t, nil)
+
+	answer, err := f.client.MakeStencil(t.Context(), connect.NewRequest(&v1.MakeStencilRequest{
+		Title: "Bird", Folder: "cards", Fields: []string{"Species", "Wingspan"},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
+		t.Fatalf("making a stencil answered %v", refusal)
+	}
+	if path := answer.Msg.GetPath(); path != "cards/Bird.md" {
+		t.Fatalf("the stencil was filed at %q", path)
+	}
+
+	read, err := f.client.ReadStencil(t.Context(), connect.NewRequest(&v1.ReadStencilRequest{
+		Path: "cards/Bird.md",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if refusal := read.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
+		t.Fatalf("the stencil just made was refused with %v", refusal)
+	}
+	if fields := read.Msg.GetStencil().GetFields(); len(fields) != 2 || fields[0] != "Species" {
+		t.Errorf("the stencil asks for %v", fields)
+	}
+}
+
+// TestRenamingAFieldReachesTheDecksThatStencilCuts. A field's name is written
+// where the stencil declares it and as a heading in every card that stencil
+// cuts, so the rename reaches them all and says which decks it wrote.
+func TestRenamingAFieldReachesTheDecksThatStencilCuts(t *testing.T) {
+	f := dealing(t, map[string]string{
+		"cards/Animal.md": animal,
+		"Animals.md": "---\ntype: deck\n---\n\n" +
+			"## Llama\n\n[[cards/Animal]]\n\n### Height\n\nabout 45\"\n",
+	})
+
+	answer, err := f.client.RenameField(t.Context(), connect.NewRequest(&v1.RenameFieldRequest{
+		Path: "cards/Animal.md", From: "Height", To: "Shoulder height",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
+		t.Fatalf("the rename answered %v", refusal)
+	}
+	if decks := answer.Msg.GetDecks(); len(decks) != 1 || decks[0] != "Animals.md" {
+		t.Fatalf("the rename says it wrote %v", decks)
+	}
+	if cards := answer.Msg.GetCards(); cards != 1 {
+		t.Errorf("cards = %d, want the one card that stencil cuts", cards)
+	}
+	if len(answer.Msg.GetNotWritten()) != 0 {
+		t.Errorf("not written = %+v", answer.Msg.GetNotWritten())
+	}
+	if held := onDisk(t, f.root, "cards/Animal.md"); !strings.Contains(held, "  - Shoulder height\n") {
+		t.Errorf("the stencil was not renamed: %q", held)
+	}
+	if held := onDisk(t, f.root, "Animals.md"); !strings.Contains(held, "### Shoulder height\n") {
+		t.Errorf("the card was not renamed: %q", held)
+	}
+}
+
+// TestRenamingAFieldWritesTheFacesOfThatStencil. A field's name stands in
+// `fields` and in the braces of every face that places it, and both are the one
+// file, so one write carries both and the stencil declares what its faces place.
+func TestRenamingAFieldWritesTheFacesOfThatStencil(t *testing.T) {
+	f := dealing(t, map[string]string{"cards/Animal.md": animal})
+
+	read, err := f.client.ReadStencil(t.Context(), connect.NewRequest(&v1.ReadStencilRequest{
+		Path: "cards/Animal.md",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	answer, err := f.client.RenameField(t.Context(), connect.NewRequest(&v1.RenameFieldRequest{
+		Path: "cards/Animal.md", From: "Height", To: "Shoulder height", Seen: read.Msg.GetAt(),
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if answer.Msg.GetChanged() || answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+		t.Fatalf("the rename answered %+v", answer.Msg)
+	}
+
+	after, err := f.client.ReadStencil(t.Context(), connect.NewRequest(&v1.ReadStencilRequest{
+		Path: "cards/Animal.md",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	faces := after.Msg.GetStencil().GetFaces()
+	if len(faces) != 1 || faces[0].GetBack() != "{{Shoulder height}}" {
+		t.Errorf("the face places %+v", faces)
+	}
+	if problems := after.Msg.GetStencil().GetProblems(); len(problems) != 0 {
+		t.Errorf("the stencil declares something its faces do not place: %+v", problems)
+	}
+	// One write, so the fingerprint that came back is the file on disk and the
+	// next write of it lands.
+	if answer.Msg.GetAt().GetSize() != int64(len(onDisk(t, f.root, "cards/Animal.md"))) {
+		t.Errorf("the fingerprint is not the file: %+v", answer.Msg.GetAt())
+	}
+}
+
+// TestRenamingAFieldLeavesAloneAStencilThatChangedSinceItWasRead. Somebody
+// editing their own stencil outranks a client that read it, thought about it
+// and arrived late.
+func TestRenamingAFieldLeavesAloneAStencilThatChangedSinceItWasRead(t *testing.T) {
+	f := dealing(t, map[string]string{
+		"cards/Animal.md": animal,
+		"Animals.md": "---\ntype: deck\n---\n\n" +
+			"## Llama\n\n[[cards/Animal]]\n\n### Height\n\nabout 45\"\n",
+	})
+
+	read, err := f.client.ReadStencil(t.Context(), connect.NewRequest(&v1.ReadStencilRequest{
+		Path: "cards/Animal.md",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The person writes their own stencil while the client is thinking about
+	// what it read.
+	theirs := animal + "\n## Name it\n\n### Front\n\n{{Height}}\n\n### Back\n\n{{Name}}\n"
+	if err := os.WriteFile(
+		filepath.Join(f.root, "cards", "Animal.md"), []byte(theirs), 0o644,
+	); err != nil {
+		t.Fatal(err)
+	}
+	deckBefore := onDisk(t, f.root, "Animals.md")
+
+	answer, err := f.client.RenameField(t.Context(), connect.NewRequest(&v1.RenameFieldRequest{
+		Path: "cards/Animal.md", From: "Height", To: "Shoulder height", Seen: read.Msg.GetAt(),
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !answer.Msg.GetChanged() {
+		t.Errorf("a rename over a stencil the person had edited answered %+v", answer.Msg)
+	}
+	if held := onDisk(t, f.root, "cards/Animal.md"); held != theirs {
+		t.Errorf("the stencil on disk is now %q", held)
+	}
+	// The stencil leads, so a rename it refused reaches no deck.
+	if held := onDisk(t, f.root, "Animals.md"); held != deckBefore {
+		t.Errorf("a deck was written\n was %q\n now %q", deckBefore, held)
+	}
+}
+
 // TestADeckIsRefusedWhereTheNoteIsAStencil. Two files must agree for a card to
 // be drawn, and a client handed the wrong one is told which it got.
 func TestADeckIsRefusedWhereTheNoteIsAStencil(t *testing.T) {

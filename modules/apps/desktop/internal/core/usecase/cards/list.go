@@ -25,11 +25,20 @@ type List struct {
 	Notes   port.NoteQueries
 }
 
-// Execute lists the stencils of one vault, by path.
-func (u List) Execute(ctx context.Context, v domain.Vault) ([]Listed, error) {
-	held, err := u.Notes.Stencils(ctx, v.ID)
+// Execute lists the stencils of one vault, by path, and says how many the vault
+// holds.
+//
+// Limit is how many of them are read, and zero or less is all of them. The
+// index says how many there are, so the count stands above the list without a
+// file being opened for the stencils left out.
+func (u List) Execute(ctx context.Context, v domain.Vault, limit int) ([]Listed, int, error) {
+	all, err := u.Notes.Stencils(ctx, v.ID)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+	held := all
+	if limit > 0 && limit < len(held) {
+		held = held[:limit]
 	}
 
 	read := Read{Readers: u.Readers}
@@ -38,12 +47,12 @@ func (u List) Execute(ctx context.Context, v domain.Vault) ([]Listed, error) {
 		listed := Listed{Path: s.Path, Title: s.Title}
 		stencil, err := read.Stencil(ctx, v, s.Path)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		if stencil.Outcome == note.Ok {
 			listed.Fields = stencil.Stencil.Fields
 		}
 		out = append(out, listed)
 	}
-	return out, nil
+	return out, len(all), nil
 }

@@ -299,7 +299,9 @@ func TestRenameFieldReachesTheCardsOfThatStencilAlone(t *testing.T) {
 		t.Fatalf("set: %v", err)
 	}
 
-	renamed, err := f.RenameField("Animal", "Height", "Shoulder height")
+	renamed, err := f.RenameField(
+		map[string]string{"Animal": "Animal.md", "Term": "Term.md"},
+		"Animal.md", "Height", "Shoulder height")
 	if err != nil {
 		t.Fatalf("rename: %v", err)
 	}
@@ -405,6 +407,7 @@ func TestWritingFieldsLeavesTheRestOfTheFrontmatterAlone(t *testing.T) {
 	want := strings.Replace(stencil,
 		"fields:\n  - Name\n  - Height\n  - Life span\n",
 		"fields:\n  - Name\n  - Shoulder height\n  - Life span\n  - Weight\n", 1)
+	want = strings.ReplaceAll(want, "{{Height}}", "{{Shoulder height}}")
 	if got := string(f.Bytes()); got != want {
 		t.Errorf("fields written wrong\n want %q\n  got %q", want, got)
 	}
@@ -412,21 +415,18 @@ func TestWritingFieldsLeavesTheRestOfTheFrontmatterAlone(t *testing.T) {
 		t.Errorf("fields = %v", got)
 	}
 
-	// What the stencil says is read from the file in front of the writer, so a
-	// face still placing the old name is a placeholder nobody declares.
+	// A field's name is written where the stencil declares it and in the braces
+	// of every face that places it, so the stencil that comes out declares what
+	// its faces place.
 	n := markdown.Parse(domain.FileRef{Path: "Animal.md"}, f.Bytes())
 	read := f.Stencil(n)
 	if !slices.Equal(read.Fields, []string{"Name", "Shoulder height", "Life span", "Weight"}) {
 		t.Errorf("read fields = %v", read.Fields)
 	}
-	placed := 0
 	for _, p := range read.Problems {
-		if p.Check == cards.CheckPlaceholder && p.Field == "Height" {
-			placed++
+		if p.Check == cards.CheckPlaceholder {
+			t.Errorf("a face places a name the stencil does not declare: %+v", p)
 		}
-	}
-	if placed != 2 {
-		t.Errorf("the faces still placing Height were not reported: %+v", read.Problems)
 	}
 }
 
@@ -444,15 +444,17 @@ func TestRenamingAFieldNobodyDeclares(t *testing.T) {
 	}
 }
 
-// The wikilink under a card's heading is an ordinary link, so an alias on it is
-// the person's and is no part of what it names.
+// The wikilink under a card's heading is an ordinary link, so a card is cut by
+// the note that link lands on, whatever the brackets spell.
 func TestACardIsCutByWhatItsLinkPointsAt(t *testing.T) {
 	written := "---\ntype: deck\n---\n\n## Llama\n\n[[Animal|the beast]]\n\n### Height\n\nabout 45\"\n"
 	f, err := cards.OpenDeck([]byte(written))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	renamed, err := f.RenameField("Animal", "Height", "Shoulder height")
+	renamed, err := f.RenameField(
+		map[string]string{"Animal|the beast": "cards/Animal.md"},
+		"cards/Animal.md", "Height", "Shoulder height")
 	if err != nil {
 		t.Fatalf("rename: %v", err)
 	}

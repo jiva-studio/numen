@@ -113,6 +113,18 @@ func read(t *testing.T, v domain.Vault, path string) string {
 	return string(raw)
 }
 
+// write puts a note in the vault, with the folders above it.
+func write(t *testing.T, v domain.Vault, path, raw string) {
+	t.Helper()
+	at := filepath.Join(v.Path, filepath.FromSlash(path))
+	if err := os.MkdirAll(filepath.Dir(at), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(at, []byte(raw), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
 // A deck opened and put back with the prose it came out of is the file it was.
 // Anything less is a diff nobody asked for, on every save, forever.
 func TestADeckReadAndWrittenBackIsTheFileItWas(t *testing.T) {
@@ -186,6 +198,45 @@ func TestACardWritingItsFirstFieldTwiceIsReported(t *testing.T) {
 	// The card of the other stencil writes no first field of its own.
 	if len(got.Deck.Cards) != 2 {
 		t.Errorf("cards = %+v", got.Deck.Cards)
+	}
+}
+
+// A card's wikilink may reach a note that is not a stencil, and then no face
+// lays the card out and nothing says what it is asked for. That is a problem
+// against the deck, on the card it stands against.
+func TestACardNamingANoteThatIsNotAStencilIsReported(t *testing.T) {
+	vs := indexed(t)
+	write(t, vs.first, "decks/Loose.md", "---\ntype: deck\n---\n"+
+		"\n## Llama\n\n[[Animal]]\n\n### Height\n\nabout 45\"\n"+
+		"\n## Rain\n\n[[Weather]]\n\n### Height\n\nno stencil says what this is\n")
+	if err := vs.index(t)(t.Context(), vs.first, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	u := cards.Read{Readers: filesystem.Readers{}, Links: vs.db.NoteQueries()}
+	got, err := u.Deck(t.Context(), vs.first, "decks/Loose.md")
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+
+	var filed []format.Problem
+	for _, p := range got.Deck.Problems {
+		if p.Check == format.CheckNotAStencil {
+			filed = append(filed, p)
+		}
+	}
+	if len(filed) != 1 {
+		t.Fatalf("problems = %+v, want the one card naming a note that is not a stencil", got.Deck.Problems)
+	}
+	if filed[0].Card != 1 {
+		t.Errorf("problem = %+v, want it against the second card", filed[0])
+	}
+	if !strings.Contains(filed[0].Detail, "Weather") {
+		t.Errorf("the note was not named: %q", filed[0].Detail)
+	}
+	// The values are read either way.
+	if held, ok := got.Deck.Cards[1].Value("Height"); !ok || held == "" {
+		t.Errorf("the card was not read: %+v", got.Deck.Cards[1])
 	}
 }
 
@@ -342,7 +393,7 @@ func TestTheStencilsOfOneVaultAreListed(t *testing.T) {
 	vs := indexed(t)
 	u := cards.List{Readers: filesystem.Readers{}, Notes: vs.db.NoteQueries()}
 
-	got, err := u.Execute(t.Context(), vs.first)
+	got, held, err := u.Execute(t.Context(), vs.first, 0)
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}
@@ -353,6 +404,9 @@ func TestTheStencilsOfOneVaultAreListed(t *testing.T) {
 	if !slices.Equal(paths, []string{"Animal.md", "Term.md"}) {
 		t.Fatalf("stencils = %v", paths)
 	}
+	if held != 2 {
+		t.Errorf("held = %d, want the two the vault holds", held)
+	}
 	if !slices.Equal(got[0].Fields, []string{"Name", "Height", "Life span"}) {
 		t.Errorf("fields = %v", got[0].Fields)
 	}
@@ -360,12 +414,34 @@ func TestTheStencilsOfOneVaultAreListed(t *testing.T) {
 		t.Errorf("title = %q", got[0].Title)
 	}
 
-	other, err := u.Execute(t.Context(), vs.second)
+	other, _, err := u.Execute(t.Context(), vs.second, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(other) != 1 || other[0].Path != "Mineral.md" {
 		t.Errorf("the other vault's stencils = %+v", other)
+	}
+}
+
+// A list that stops short opens no file for the stencils it leaves out, and the
+// count still says how many the vault holds.
+func TestAListReadsNoMoreThanItAnswersWith(t *testing.T) {
+	vs := indexed(t)
+	counted := &counting{VaultReaders: filesystem.Readers{}}
+
+	got, held, err := (cards.List{Readers: counted, Notes: vs.db.NoteQueries()}).
+		Execute(t.Context(), vs.first, 1)
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	if len(got) != 1 || got[0].Path != "Animal.md" {
+		t.Fatalf("stencils = %+v, want the one asked for", got)
+	}
+	if held != 2 {
+		t.Errorf("held = %d, want the two the vault holds", held)
+	}
+	if counted.reads != 1 {
+		t.Errorf("%d files were opened, want the one that was answered with", counted.reads)
 	}
 }
 

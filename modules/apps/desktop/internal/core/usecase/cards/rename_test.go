@@ -19,6 +19,7 @@ func renaming(t *testing.T, vs vaults) cards.RenameField {
 		Readers: filesystem.Readers{},
 		Writers: filesystem.Writers{},
 		Notes:   vs.db.NoteQueries(),
+		Links:   vs.db.NoteQueries(),
 		Index:   vs.index(t),
 	}
 }
@@ -65,6 +66,34 @@ func TestAFieldRenamedInAStencilIsRenamedInEveryCardItCuts(t *testing.T) {
 	}
 	if !strings.Contains(read(t, vs.first, "decks/Birds.md"), "### Shoulder height\n\nabout 4\"\n") {
 		t.Error("the deck nobody had open was not reached")
+	}
+}
+
+// A card names its stencil by an ordinary wikilink, and reading the deck cuts
+// that card by whatever the link lands on. The rename holds to the same answer,
+// so a card naming its stencil by anything but the file's own name is reached.
+func TestARenameReachesACardWhoseLinkNamesThePath(t *testing.T) {
+	vs := indexed(t)
+	write(t, vs.first, "cards/Bird.md",
+		"---\ntype: stencil\nfields:\n  - Species\n  - Height\n---\n\n"+
+			"## Recognise\n\n### Front\n\n{{Species}}\n\n### Back\n\n{{Height}}\n")
+	write(t, vs.first, "decks/Wrens.md",
+		"---\ntype: deck\n---\n\n## Wren\n\n[[cards/Bird]]\n\n### Height\n\nabout 4\"\n")
+	if err := vs.index(t)(t.Context(), vs.first, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := renaming(t, vs).Execute(t.Context(), vs.first, cards.Field{
+		Stencil: "cards/Bird.md", From: "Height", To: "Wingspan",
+	})
+	if err != nil {
+		t.Fatalf("rename: %v", err)
+	}
+	if !slices.Equal(got.Decks, []string{"decks/Wrens.md"}) || got.Cards != 1 {
+		t.Errorf("decks = %v, cards = %d, want the one card that link lands on", got.Decks, got.Cards)
+	}
+	if !strings.Contains(read(t, vs.first, "decks/Wrens.md"), "### Wingspan\n\nabout 4\"\n") {
+		t.Errorf("the card was not renamed: %q", read(t, vs.first, "decks/Wrens.md"))
 	}
 }
 

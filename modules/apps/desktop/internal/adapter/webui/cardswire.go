@@ -32,6 +32,23 @@ func offeredOf(s cards.Listed) *v1.Offered {
 	return &v1.Offered{Path: s.Path, Title: s.Title, Fields: s.Fields}
 }
 
+// renamedOf is what a rename reached and what it did not, as the schema carries
+// it. A deck it could not be written to keeps the old heading, and the problem
+// says which deck and why.
+func renamedOf(r cards.Renamed) *v1.RenameFieldResponse {
+	out := &v1.RenameFieldResponse{
+		Decks: r.Decks,
+		Cards: int32(r.Cards),
+		At:    fingerprintOf(r.Stencil),
+	}
+	for _, deck := range r.NotWritten {
+		out.NotWritten = append(out.NotWritten, &v1.NotWritten{
+			Path: deck.Path, Problem: problemOf(deck.Problem),
+		})
+	}
+	return out
+}
+
 func faceOf(f format.Face) *v1.Face {
 	return &v1.Face{Name: f.Name, Front: f.Front, Back: f.Back}
 }
@@ -75,19 +92,27 @@ func problemsOf(problems []format.Problem) []*v1.Problem {
 	}
 	out := make([]*v1.Problem, 0, len(problems))
 	for _, p := range problems {
-		fault, named := faultOf(p.Check)
-		if !named {
-			continue
+		if one := problemOf(p); one != nil {
+			out = append(out, one)
 		}
-		out = append(out, &v1.Problem{
-			Fault: fault,
-			Card:  position(p.Card),
-			Face:  position(p.Face),
-			Field: p.Field,
-			Text:  p.Detail,
-		})
 	}
 	return out
+}
+
+// problemOf is one problem as the schema carries it, and nothing for a check
+// the schema names no fault for.
+func problemOf(p format.Problem) *v1.Problem {
+	fault, named := faultOf(p.Check)
+	if !named {
+		return nil
+	}
+	return &v1.Problem{
+		Fault: fault,
+		Card:  position(p.Card),
+		Face:  position(p.Face),
+		Field: p.Field,
+		Text:  p.Detail,
+	}
 }
 
 // position is where a problem stands, as the schema carries it. A problem about

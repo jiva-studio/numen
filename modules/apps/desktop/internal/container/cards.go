@@ -45,7 +45,7 @@ func (c Config) Cards(
 			Writers: writers, Index: index, Extension: c.NoteExtension(), Now: time.Now,
 		},
 		Rename: cards.RenameField{
-			Readers: readers, Writers: writers, Notes: notes, Index: index,
+			Readers: readers, Writers: writers, Notes: notes, Links: links, Index: index,
 		},
 	}
 }
@@ -77,13 +77,16 @@ func DeckBody(preamble string, cs []format.Card, tail string) (string, error) {
 
 // StencilBody is the markdown these faces are written as, in the order they are
 // to stand in the note.
+//
+// The faces are written into a stencil of no faces, one after another, so every
+// face a caller gave stands in the file and two of one name are two faces.
 func StencilBody(fs []format.Face) (string, error) {
 	scratch, err := format.OpenStencil(markdown.Create("", ""))
 	if err != nil {
 		return "", err
 	}
 	for _, face := range fs {
-		if err := scratch.SetFace(face.Name, face.Front, face.Back); err != nil {
+		if err := scratch.AddFace(face); err != nil {
 			return "", err
 		}
 	}

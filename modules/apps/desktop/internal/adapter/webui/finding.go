@@ -38,19 +38,11 @@ func (a *API) Names(ctx context.Context, r *connect.Request[v1.NamesRequest]) (*
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	// Which of three each note is, so the client opens a deck and a stencil in
-	// the editor made for it.
-	types, err := a.typesAt(ctx, showing, namedIn(found))
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
-	}
-
 	out := &v1.NamesResponse{Found: make([]*v1.Named, 0, len(found))}
 	for _, m := range found {
 		titled := &v1.Named{
 			Note: &v1.Note{Path: m.Path, Title: m.Title},
 			At:   spansOf(m.At),
-			Type: typeOf(types[m.Path]),
 		}
 		if m.Heading != "" {
 			titled.Heading = &v1.Heading{Text: m.Heading, Line: int32(m.Line)}
@@ -93,6 +85,32 @@ func (a *API) Headings(ctx context.Context, r *connect.Request[v1.HeadingsReques
 	return connect.NewResponse(out), nil
 }
 
+// Types hands the client which of three the note at each of those paths is, so
+// that a client holding a path opens what stands there in the editor made for
+// it. A window standing on nothing holds no note.
+func (a *API) Types(ctx context.Context, r *connect.Request[v1.TypesRequest]) (*connect.Response[v1.TypesResponse], error) {
+	showing := a.Showing()
+	if showing.ID == "" {
+		return connect.NewResponse(&v1.TypesResponse{}), nil
+	}
+	paths := eachOnce(r.Msg.GetPaths())
+	found, err := a.typesAt(ctx, showing, paths)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	// In the order they were asked about.
+	out := &v1.TypesResponse{Found: make([]*v1.Typed, 0, len(found))}
+	for _, path := range paths {
+		held, is := found[path]
+		if !is {
+			continue
+		}
+		out.Found = append(out.Found, &v1.Typed{Path: path, Type: typeOf(held)})
+	}
+	return connect.NewResponse(out), nil
+}
+
 // Search hands the client the text the vault holds that answers what was typed.
 //
 // Which way it is asked is the client's, so a client drawing what is written apart
@@ -124,13 +142,6 @@ func (a *API) Search(ctx context.Context, r *connect.Request[v1.SearchRequest]) 
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	// Which of three each note is, so the client opens a deck and a stencil in
-	// the editor made for it.
-	types, err := a.typesAt(ctx, showing, sources)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
-	}
-
 	out := &v1.SearchResponse{Found: make([]*v1.Passage, 0, len(found))}
 	for _, p := range found {
 		// A passage is the whole window enclosing its hit, so what is drawn is the
@@ -146,7 +157,6 @@ func (a *API) Search(ctx context.Context, r *connect.Request[v1.SearchRequest]) 
 			Start:    int32(p.Start),
 			Length:   int32(p.Length),
 			Line:     int32(p.Line),
-			Type:     typeOf(types[p.Source]),
 		}
 		if note, held := titles[p.Source]; held {
 			passage.Note = noteOf(note)

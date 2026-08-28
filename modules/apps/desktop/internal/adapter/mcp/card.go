@@ -68,16 +68,16 @@ func addCardTools(server *sdk.Server, core Core) {
 		if in.Limit > maxStencils {
 			return nil, out{}, fmt.Errorf("ask for at most %d stencils at a time", maxStencils)
 		}
-		held, err := core.Stencils.Execute(ctx, core.shown().Vault)
-		if err != nil {
-			return nil, out{}, err
-		}
-		res := out{Held: len(held)}
 		limit := maxStencils
 		if in.Limit > 0 {
 			limit = in.Limit
 		}
-		for _, s := range held[:min(len(held), limit)] {
+		held, count, err := core.Stencils.Execute(ctx, core.shown().Vault, limit)
+		if err != nil {
+			return nil, out{}, err
+		}
+		res := out{Held: count}
+		for _, s := range held {
 			res.Stencils = append(res.Stencils, Stencil{Path: s.Path, Title: s.Title, Fields: s.Fields})
 		}
 		return nil, res, nil

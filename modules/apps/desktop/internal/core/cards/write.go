@@ -114,16 +114,19 @@ func (f *DeckFile) AddCard(card Card) error {
 	return f.doc.SpliceBody(at, at, insert(body, at, strings.Join(blocks, "\n\n")))
 }
 
-// RenameField rewrites one field's heading in every card cut by the given
-// stencil, and reports how many it rewrote. The value under each heading is
-// left as it was.
-func (f *DeckFile) RenameField(stencil, from, to string) (int, error) {
+// RenameField rewrites one field's heading in every card cut by the stencil
+// filed at stencil, and reports how many it rewrote. The value under each
+// heading is left as it was.
+//
+// Cutting is where each wikilink this deck writes lands, keyed by what stands
+// in the brackets.
+func (f *DeckFile) RenameField(cutting map[string]string, stencil, from, to string) (int, error) {
 	body := []byte(f.doc.Body())
 	deck, spans := readDeck(domain.FileRef{}, body)
 
 	var heads []valueSpan
 	for i, span := range spans {
-		if !cutBy(deck.Cards[i], stencil) {
+		if !cutBy(deck.Cards[i], cutting, stencil) {
 			continue
 		}
 		for _, v := range span.values {
@@ -146,14 +149,12 @@ func (f *DeckFile) RenameField(stencil, from, to string) (int, error) {
 	return len(heads), nil
 }
 
-// cutBy reports whether a card names this stencil. The name under the heading
-// is an ordinary wikilink, so an alias after `|` and a place after `#` are the
-// person's and are not part of what it points at.
-func cutBy(card Card, stencil string) bool {
-	if card.Stencil == "" {
-		return false
-	}
-	return domain.ParseAddress(card.Stencil) == domain.ParseAddress(stencil)
+// cutBy reports whether a card is cut by the stencil filed at stencil. The name
+// under the heading is an ordinary wikilink, so what cuts the card is the note
+// that name lands on.
+func cutBy(card Card, cutting map[string]string, stencil string) bool {
+	at, lands := cutting[card.Stencil]
+	return lands && at == stencil
 }
 
 // StencilFile is a stencil held open, and what holds for a deck holds here: a
@@ -209,6 +210,10 @@ func (f *StencilFile) SetFields(names []string) error {
 
 // RenameField gives one declared field a different name and leaves it where it
 // stands in the order. ErrNoSuchField when the stencil declares no such field.
+//
+// A field's name is written twice in this file: where `fields` declares it, and
+// in the braces of every face that places it. Both are written here, so the
+// stencil that comes out declares what its faces place.
 func (f *StencilFile) RenameField(from, to string) error {
 	names := f.Fields()
 	at := slices.Index(names, from)
@@ -216,7 +221,30 @@ func (f *StencilFile) RenameField(from, to string) error {
 		return fmt.Errorf("%w: %s", ErrNoSuchField, from)
 	}
 	names[at] = to
-	return f.SetFields(names)
+	if err := f.SetFields(names); err != nil {
+		return err
+	}
+	return f.places(from, to)
+}
+
+// places writes the new name into every `{{Field}}` that named the old one. The
+// markdown around the braces is the person's and is left as it was.
+func (f *StencilFile) places(from, to string) error {
+	body := f.doc.Body()
+	written := "{{" + to + "}}"
+
+	// Backwards, because a splice moves every byte after it.
+	found := placeholderRe.FindAllStringSubmatchIndex(body, -1)
+	for i := len(found) - 1; i >= 0; i-- {
+		at := found[i]
+		if body[at[2]:at[3]] != from {
+			continue
+		}
+		if err := f.doc.SpliceBody(at[0], at[1], written); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // declared is the list of names under `fields` in the shape reading a stencil
@@ -230,20 +258,19 @@ func declared(doc *markdown.Document) []any {
 	return out
 }
 
+// AddFace writes a face at the end of the stencil. A stencil shows a card once
+// through each face it carries, so two faces of one name are two faces.
+func (f *StencilFile) AddFace(face Face) error {
+	body := []byte(f.doc.Body())
+	at := len(body)
+	return f.doc.SpliceBody(at, at, insert(body, at, laid(face)))
+}
+
 // SetFace writes a face, front and back. A face the stencil does not carry yet
 // is written at the end of it.
 func (f *StencilFile) SetFace(name, front, back string) error {
 	body := []byte(f.doc.Body())
-
-	blocks := []string{"## " + name, "### " + frontHeading}
-	if text := trimBlankLines(markdown.Normalised(front)); text != "" {
-		blocks = append(blocks, text)
-	}
-	blocks = append(blocks, "### "+backHeading)
-	if text := trimBlankLines(markdown.Normalised(back)); text != "" {
-		blocks = append(blocks, text)
-	}
-	written := strings.Join(blocks, "\n\n")
+	written := laid(Face{Name: name, Front: front, Back: back})
 
 	head, end, found := faceSpan(body, name)
 	if !found {
@@ -256,6 +283,20 @@ func (f *StencilFile) SetFace(name, front, back string) error {
 		written += "\n"
 	}
 	return f.doc.SpliceBody(head, end, written)
+}
+
+// laid is the markdown one face is written as: its heading, and a side under
+// each of the two headings a face is made of.
+func laid(face Face) string {
+	blocks := []string{"## " + face.Name, "### " + frontHeading}
+	if text := trimBlankLines(markdown.Normalised(face.Front)); text != "" {
+		blocks = append(blocks, text)
+	}
+	blocks = append(blocks, "### "+backHeading)
+	if text := trimBlankLines(markdown.Normalised(face.Back)); text != "" {
+		blocks = append(blocks, text)
+	}
+	return strings.Join(blocks, "\n\n")
 }
 
 // faceSpan is the run one face occupies: its heading line, and everything under

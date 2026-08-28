@@ -75,17 +75,18 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (Deck, erro
 	switch outcome {
 	case note.Ok:
 		out.Deck = format.ReadDeck(n)
-		out.Stencils, err = u.cutting(ctx, v, path, out.Deck)
+		out.Stencils, err = cutting(ctx, u.Links, v.ID, path, out.Deck)
 		if err != nil {
 			return Deck{}, err
 		}
 		// A heading is the first field's value, and which field that is stands
 		// in the stencil, so the two files are read against each other here.
-		cutting, err := u.stencils(ctx, v, out.Stencils)
+		by, ordinary, err := u.stencils(ctx, v, out.Stencils)
 		if err != nil {
 			return Deck{}, err
 		}
-		out.Deck.Problems = append(out.Deck.Problems, format.Cut(out.Deck, cutting)...)
+		out.Deck.Problems = append(out.Deck.Problems, format.Cut(out.Deck, by)...)
+		out.Deck.Problems = append(out.Deck.Problems, notStencils(out.Deck, ordinary)...)
 	case note.TooLarge:
 		out.Deck = format.Deck{Ref: ref, Problems: []format.Problem{format.OnFile(
 			format.CheckTooLarge,
@@ -98,10 +99,10 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (Deck, erro
 // cutting is where each card's wikilink lands, keyed by what stands in the
 // brackets. The link is written in the deck, so it resolves against the deck's
 // own folder the way every name in that file does.
-func (u Read) cutting(
-	ctx context.Context, v domain.Vault, path string, d format.Deck,
+func cutting(
+	ctx context.Context, links port.LinkQueries, vaultID, path string, d format.Deck,
 ) (map[string]string, error) {
-	if u.Links == nil {
+	if links == nil {
 		return nil, nil
 	}
 	written := make([]string, 0, len(d.Cards))
@@ -113,35 +114,58 @@ func (u Read) cutting(
 	if len(written) == 0 {
 		return nil, nil
 	}
-	return u.Links.Resolve(ctx, v.ID, path, written)
+	return links.Resolve(ctx, vaultID, path, written)
 }
 
 // stencils is the stencil the cards of a deck are cut by, keyed by what stands
-// in the brackets. Each file is opened once however many cards name it, and a
-// name landing on a note that is not a stencil is left out.
+// in the brackets. Each file is opened once however many cards name it.
+//
+// A name landing on a note that is not a stencil is left out of the stencils
+// and stands in ordinary, so the cards written under it are marked.
 func (u Read) stencils(
 	ctx context.Context, v domain.Vault, at map[string]string,
-) (map[string]format.Stencil, error) {
+) (by map[string]format.Stencil, ordinary map[string]bool, err error) {
 	if len(at) == 0 {
-		return nil, nil
+		return nil, nil, nil
 	}
 	read := make(map[string]format.Stencil, len(at))
-	by := make(map[string]format.Stencil, len(at))
+	loose := make(map[string]bool, len(at))
+	by = make(map[string]format.Stencil, len(at))
+	ordinary = make(map[string]bool, len(at))
 	for written, path := range at {
 		held, seen := read[path]
 		if !seen {
 			found, err := u.Stencil(ctx, v, path)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			if found.Outcome == note.Ok && found.Type == domain.TypeStencil {
 				held = found.Stencil
 			}
 			read[path] = held
+			loose[path] = found.Outcome == note.Ok && found.Type != domain.TypeStencil
 		}
 		by[written] = held
+		ordinary[written] = loose[path]
 	}
-	return by, nil
+	return by, ordinary, nil
+}
+
+// notStencils is one problem per card whose wikilink reaches a note that is not
+// a stencil. The values are read, and no face lays the card out.
+func notStencils(d format.Deck, ordinary map[string]bool) []format.Problem {
+	if len(ordinary) == 0 {
+		return nil
+	}
+	var out []format.Problem
+	for at, card := range d.Cards {
+		if !ordinary[card.Stencil] {
+			continue
+		}
+		out = append(out, format.OnCard(at, format.CheckNotAStencil,
+			card.Stencil+" is a note and not a stencil, so this card is shown by no face"))
+	}
+	return out
 }
 
 // Stencil reads the stencil at path. A stencil is a note and is bounded as one.

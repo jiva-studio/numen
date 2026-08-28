@@ -168,9 +168,10 @@ func TestAnAnswerIsCutToWhatWasAskedFor(t *testing.T) {
 	}
 }
 
-// TestWhatIsFoundSaysWhichOfThreeTheNoteIs. A client opens a deck and a stencil
-// in the editor made for it, and what it was handed is what says which is which.
-func TestWhatIsFoundSaysWhichOfThreeTheNoteIs(t *testing.T) {
+// TestAPathIsAnsweredWithWhichOfThreeItsNoteIs. A client opens a deck and a
+// stencil in the editor made for it, and this is the one question that says
+// which is which, whatever road the path arrived by.
+func TestAPathIsAnsweredWithWhichOfThreeItsNoteIs(t *testing.T) {
 	client, _ := opened(t, map[string]string{
 		"Animals.md": "---\ntype: deck\ntitle: Animals\n---\n\n## Llama\n\n[[Animal]]\n",
 		"Animal.md": "---\ntype: stencil\ntitle: Animal\nfields:\n  - Height\n---\n\n" +
@@ -178,13 +179,15 @@ func TestWhatIsFoundSaysWhichOfThreeTheNoteIs(t *testing.T) {
 		"Ontology.md": "---\ntitle: Animal ontology\n---\n\nan animal is a note\n",
 	})
 
-	named, err := client.Names(t.Context(), connect.NewRequest(&v1.NamesRequest{Query: "animal"}))
+	answer, err := client.Types(t.Context(), connect.NewRequest(&v1.TypesRequest{
+		Paths: []string{"Animals.md", "Animal.md", "Ontology.md", "Nowhere.md"},
+	}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	types := map[string]v1.NoteType{}
-	for _, one := range named.Msg.GetFound() {
-		types[one.GetNote().GetPath()] = one.GetType()
+	for _, one := range answer.Msg.GetFound() {
+		types[one.GetPath()] = one.GetType()
 	}
 	want := map[string]v1.NoteType{
 		"Animals.md":  v1.NoteType_NOTE_TYPE_DECK,
@@ -193,25 +196,12 @@ func TestWhatIsFoundSaysWhichOfThreeTheNoteIs(t *testing.T) {
 	}
 	for path, is := range want {
 		if got, held := types[path]; !held || got != is {
-			t.Errorf("the name %s came back as %v, want %v", path, got, is)
+			t.Errorf("the note %s came back as %v, want %v", path, got, is)
 		}
 	}
-
-	found, err := client.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{
-		Query: "animal", Way: v1.Way_WAY_WORDS,
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	passages := map[string]v1.NoteType{}
-	for _, one := range found.Msg.GetFound() {
-		passages[one.GetPath()] = one.GetType()
-	}
-	if got := passages["Ontology.md"]; got != v1.NoteType_NOTE_TYPE_UNSPECIFIED {
-		t.Errorf("the passage out of the ordinary note came back as %v", got)
-	}
-	if got, held := passages["Animals.md"]; held && got != v1.NoteType_NOTE_TYPE_DECK {
-		t.Errorf("the passage out of the deck came back as %v", got)
+	// A path the vault holds no note at is not answered about at all.
+	if _, held := types["Nowhere.md"]; held {
+		t.Error("a path with no note at it was typed anyway")
 	}
 }
 
@@ -260,6 +250,90 @@ func TestANoteSaysWhatItIsDividedInto(t *testing.T) {
 	if !(headings[0].GetLine() < headings[1].GetLine()) {
 		t.Errorf("lines are %d and %d, want them in the order they stand",
 			headings[0].GetLine(), headings[1].GetLine())
+	}
+}
+
+// Which of three the note at a path is.
+
+// TestAPathSaysWhichOfThreeStandsThere. A client holding a path and nothing
+// else opens what stands there in the editor made for it, and this is what it
+// asks to find out which that is.
+func TestAPathSaysWhichOfThreeStandsThere(t *testing.T) {
+	client, _ := opened(t, map[string]string{
+		"Animals.md": "---\ntype: deck\ntitle: Animals\n---\n\n## Llama\n\n[[Animal]]\n",
+		"Animal.md": "---\ntype: stencil\ntitle: Animal\nfields:\n  - Height\n---\n\n" +
+			"## Recognise\n\n### Front\n\nan animal\n\n### Back\n\n{{Height}}\n",
+		"Entropy.md": "---\ntitle: Entropy\n---\n\nA reversible engine.\n",
+	})
+
+	answer, err := client.Types(t.Context(), connect.NewRequest(&v1.TypesRequest{
+		Paths: []string{"Animals.md", "Animal.md", "Entropy.md", "Gone.md"},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	types := map[string]v1.NoteType{}
+	for _, one := range answer.Msg.GetFound() {
+		types[one.GetPath()] = one.GetType()
+	}
+	want := map[string]v1.NoteType{
+		"Animals.md": v1.NoteType_NOTE_TYPE_DECK,
+		"Animal.md":  v1.NoteType_NOTE_TYPE_STENCIL,
+		"Entropy.md": v1.NoteType_NOTE_TYPE_UNSPECIFIED,
+	}
+	for path, is := range want {
+		if got, held := types[path]; !held || got != is {
+			t.Errorf("%s came back as %v, want %v", path, got, is)
+		}
+	}
+	if _, held := types["Gone.md"]; held {
+		t.Errorf("a path the vault holds no note at was answered with %v", types["Gone.md"])
+	}
+}
+
+// TestANeighbourhoodSaysWhichOfThreeEachNoteIs. A plex draws a deck and a
+// stencil as what they are, and the picture is where it is told which is which.
+func TestANeighbourhoodSaysWhichOfThreeEachNoteIs(t *testing.T) {
+	client, _ := opened(t, map[string]string{
+		"Ontology.md": "---\ntitle: Ontology\nlinks:\n  - to: Animals\n    role: child\n" +
+			"  - to: Animal\n    role: child\n---\n\nan animal is a note\n",
+		"Animals.md": "---\ntype: deck\ntitle: Animals\n---\n\n## Llama\n\n[[Animal]]\n",
+		"Animal.md": "---\ntype: stencil\ntitle: Animal\nfields:\n  - Height\n---\n\n" +
+			"## Recognise\n\n### Front\n\nan animal\n\n### Back\n\n{{Height}}\n",
+	})
+
+	around, err := client.Neighbourhood(t.Context(),
+		connect.NewRequest(&v1.NeighbourhoodRequest{Path: "Ontology.md"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if is := around.Msg.GetFocusType(); is != v1.NoteType_NOTE_TYPE_UNSPECIFIED {
+		t.Errorf("the note in focus is drawn as %v", is)
+	}
+	types := map[string]v1.NoteType{}
+	for _, one := range around.Msg.GetRelated() {
+		types[one.GetNote().GetPath()] = one.GetType()
+	}
+	want := map[string]v1.NoteType{
+		"Animals.md": v1.NoteType_NOTE_TYPE_DECK,
+		"Animal.md":  v1.NoteType_NOTE_TYPE_STENCIL,
+	}
+	for path, is := range want {
+		if got, held := types[path]; !held || got != is {
+			t.Errorf("the node %s is drawn as %v, want %v", path, got, is)
+		}
+	}
+
+	// And the note in focus is said the same way, a plex standing on a deck.
+	standing, err := client.Neighbourhood(t.Context(),
+		connect.NewRequest(&v1.NeighbourhoodRequest{Path: "Animals.md"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if is := standing.Msg.GetFocusType(); is != v1.NoteType_NOTE_TYPE_DECK {
+		t.Errorf("the deck in focus is drawn as %v", is)
 	}
 }
 

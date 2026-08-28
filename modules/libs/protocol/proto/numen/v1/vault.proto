@@ -40,6 +40,11 @@ service VaultService {
   // once. A path past the ceiling the vault sets is not answered at all.
   rpc Headings(HeadingsRequest) returns (HeadingsResponse);
 
+  // Types is which of three the note at each of those paths is, so a client
+  // holding a path opens what stands there in the editor made for it. A path
+  // the index holds no note at is absent from the answer.
+  rpc Types(TypesRequest) returns (TypesResponse);
+
   // Search is the text a vault holds that answers what was typed, by the words
   // in it or by what it means or by what a section is called. The caller says
   // which way it is asked, so a client drawing them apart asks once for each.
@@ -218,6 +223,10 @@ message Seated {
   // label is then the one the note in focus wrote, and the arrow drawn on the
   // line points at the note it was written about.
   bool mutual = 5;
+
+  // Which of three the note is, so a client draws a deck and a stencil as what
+  // they are.
+  NoteType type = 6;
 }
 
 message StateRequest {}
@@ -394,6 +403,10 @@ message NeighbourhoodRequest {
 message NeighbourhoodResponse {
   Note focus = 1;
   repeated Seated related = 2;
+
+  // Which of three the note in focus is, so a client draws a deck and a stencil
+  // as what they are.
+  NoteType focus_type = 3;
 }
 
 message NamesRequest {
@@ -424,10 +437,6 @@ message Named {
   // in UTF-16 code units.
   // A word reached by its prefix is marked whole.
   repeated Span at = 3;
-
-  // Which of three the note is, so a client opens a deck and a stencil in the
-  // editor made for it.
-  NoteType type = 4;
 }
 
 // Heading is one line of a note that names what stands below it.
@@ -459,6 +468,21 @@ message NoteHeadings {
 
   // In the order they stand in the note.
   repeated Heading headings = 2;
+}
+
+message TypesRequest {
+  // The notes to answer about, by the paths the vault files them under.
+  repeated string paths = 1;
+}
+
+message TypesResponse {
+  repeated Typed found = 1;
+}
+
+// Typed is which of three the note at one path is.
+message Typed {
+  string path = 1;
+  NoteType type = 2;
 }
 
 // Span is a run of text, by where it begins and where it ends.
@@ -529,10 +553,6 @@ message Passage {
   // Where the chunk that matched stands, counted from the first line of the
   // source's prose. It is the line a note opens on, and the caret stands there.
   int32 line = 8;
-
-  // Which of three the note is, so a client opens a deck and a stencil in the
-  // editor made for it. Unspecified for a source that is not a note.
-  NoteType type = 9;
 }
 
 message ListRequest {
