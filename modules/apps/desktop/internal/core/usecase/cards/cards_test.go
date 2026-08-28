@@ -38,10 +38,15 @@ var (
 			"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Height}}\n",
 		"decks/Mammals.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: deck\nmine: keep me verbatim\n---\n" +
 			"\nCards I am learning.\n" +
-			"\n## Llama\n\n[[Animal]]\n\n### Height\n\nabout 45\"\n\n### Life span\n\nabout 20 years\n" +
-			"\n## Gloss\n\n[[Term]]\n\n### Height\n\nnot a length at all\n",
+			"\n# The ones with fur\n" +
+			"\nThe section says something of its own.\n" +
+			"\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
+			"\n### Height\n\nabout 45\"\n" +
+			"\n### Life span\n\nabout 20 years\n" +
+			"\n## Gloss ^zpqrstvwxy\n\n[[Term]]\n\n### Height\n\nnot a length at all\n" +
+			"\n### Word\n\nGloss\n",
 		"decks/Birds.md": "---\ntype: deck\n---\n" +
-			"\n## Wren\n\n[[Animal]]\n\n### Height\n\nabout 4\"\n",
+			"\n## Wren ^3f4g5h6j7k\n\n[[Animal]]\n\n### Name\n\nWren\n\n### Height\n\nabout 4\"\n",
 		"Weather.md": "# Weather\n\nNo card in here.\n",
 	}
 	minerals = map[string]string{
@@ -50,8 +55,10 @@ var (
 		// A card of this vault's own stencil, and a card naming the other
 		// vault's by the name it is filed under there.
 		"decks/Quartz.md": "---\ntype: deck\n---\n" +
-			"\n## Quartz\n\n[[Mineral]]\n\n### Height\n\na crystal habit\n" +
-			"\n## Llama\n\n[[Animal]]\n\n### Height\n\nabout 45\"\n",
+			"\n## Quartz ^m9n8b7v6c5\n\n[[Mineral]]\n\n### Sample\n\nQuartz\n" +
+			"\n### Height\n\na crystal habit\n" +
+			"\n## Llama ^q1w2e3r4t5\n\n[[Animal]]\n\n### Height\n\nabout 45\"\n" +
+			"\n### Name\n\nLlama\n",
 	}
 )
 
@@ -151,15 +158,15 @@ func TestADeckReadAndWrittenBackIsTheFileItWas(t *testing.T) {
 	}
 }
 
-// A heading is the first field's value, and which field that is stands in the
-// stencil, so the two files are read against each other and a card writing that
-// field a second time is a problem against the deck.
-func TestACardWritingItsFirstFieldTwiceIsReported(t *testing.T) {
+// Every field stands under a heading of its own, the first included, so a card
+// writing the first field twice is the one fault a card writing any field twice
+// is, and it is reported once.
+func TestACardWritingItsFirstFieldTwiceIsOneFieldWrittenTwice(t *testing.T) {
 	vs := indexed(t)
 	written := read(t, vs.first, "decks/Mammals.md")
 	replaced := strings.Replace(written,
-		"## Llama\n\n[[Animal]]\n\n",
-		"## Llama\n\n[[Animal]]\n\n### Name\n\nLlama, a second time\n\n", 1)
+		"### Name\n\nLlama\n",
+		"### Name\n\nLlama\n\n### Name\n\nLlama, a second time\n", 1)
 	if replaced == written {
 		t.Fatal("the fixture is not what this test writes into")
 	}
@@ -177,7 +184,7 @@ func TestACardWritingItsFirstFieldTwiceIsReported(t *testing.T) {
 
 	var filed []format.Problem
 	for _, p := range got.Deck.Problems {
-		if p.Check == format.CheckFirstFieldTwice {
+		if p.Check == format.CheckTwoValues {
 			filed = append(filed, p)
 		}
 	}
@@ -188,14 +195,10 @@ func TestACardWritingItsFirstFieldTwiceIsReported(t *testing.T) {
 		t.Errorf("problem = %+v, want it against the first card and Name", filed[0])
 	}
 
-	// The heading stands, and what the card wrote is still in the file.
-	if got.Deck.Cards[0].Name != "Llama" {
-		t.Errorf("name = %q", got.Deck.Cards[0].Name)
+	// Both are kept, and the first stands.
+	if held, ok := got.Deck.Cards[0].Value("Name"); !ok || held != "Llama" {
+		t.Errorf("Name = %q, want the first", held)
 	}
-	if held, ok := got.Deck.Cards[0].Value("Name"); !ok || held != "Llama, a second time" {
-		t.Errorf("the second one was dropped: %q", held)
-	}
-	// The card of the other stencil writes no first field of its own.
 	if len(got.Deck.Cards) != 2 {
 		t.Errorf("cards = %+v", got.Deck.Cards)
 	}

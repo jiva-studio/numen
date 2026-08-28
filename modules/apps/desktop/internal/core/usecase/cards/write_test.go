@@ -6,9 +6,11 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
+	format "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/cards"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/cards"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/mark"
 )
 
 // counted is a writer that says how many times a file was replaced, so a test
@@ -97,5 +99,171 @@ func TestAStencilAlreadyDeclaringTheseFieldsKeepsWhatStandsAroundThem(t *testing
 	}
 	if !strings.Contains(held, "{{Height}}") {
 		t.Errorf("the faces are not the ones written: %q", held)
+	}
+}
+
+// laid puts a deck in the vault and brings the index up to date, so that the
+// wikilink under each card's heading reaches the stencil it names.
+func laid(t *testing.T, vs vaults, path, body string) cards.Write {
+	t.Helper()
+	write(t, vs.first, path, "---\ntype: deck\n---\n"+body)
+	if err := vs.index(t)(t.Context(), vs.first, nil); err != nil {
+		t.Fatal(err)
+	}
+	return cards.Write{
+		Readers: filesystem.Readers{}, Writers: filesystem.Writers{}, Links: vs.db.NoteQueries(),
+	}
+}
+
+// held is the deck as the vault now holds it.
+func held(t *testing.T, vs vaults, path string) format.Deck {
+	t.Helper()
+	got, err := cards.Read{Readers: filesystem.Readers{}, Links: vs.db.NoteQueries()}.
+		Deck(t.Context(), vs.first, path)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	return got.Deck
+}
+
+// A card typed into a deck by hand carries no mark until the application next
+// writes that file, which is when it is given one.
+func TestWritingADeckMintsAMarkForEveryCardCarryingNone(t *testing.T) {
+	vs := indexed(t)
+	body := "\n## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 45\"\n" +
+		"\n## Alpaca\n\n[[Animal]]\n\n### Name\n\nAlpaca\n"
+	w := laid(t, vs, "decks/Hand.md", body)
+
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Hand.md", body, domain.FileRef{}); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	deck := held(t, vs, "decks/Hand.md")
+	if len(deck.Cards) != 2 {
+		t.Fatalf("cards = %+v", deck.Cards)
+	}
+	for _, card := range deck.Cards {
+		if !mark.Valid(card.Mark) {
+			t.Errorf("%q carries %q, which is no mark", card.Heading, card.Mark)
+		}
+	}
+	if deck.Cards[0].Mark == deck.Cards[1].Mark {
+		t.Errorf("both cards carry %q", deck.Cards[0].Mark)
+	}
+
+	// A mark is what the card is for as long as it exists, so the next write
+	// leaves it where it stands.
+	after := read(t, vs.first, "decks/Hand.md")
+	if _, err := w.Deck(
+		t.Context(), vs.first, "decks/Hand.md", prose(t, after), domain.FileRef{},
+	); err != nil {
+		t.Fatalf("write again: %v", err)
+	}
+	if got := read(t, vs.first, "decks/Hand.md"); got != after {
+		t.Errorf("the second write moved a mark\n was %q\n now %q", after, got)
+	}
+}
+
+// A mark is written into a file of carriage returns without disturbing them.
+func TestAMarkIsWrittenInTheFilesOwnLineEnding(t *testing.T) {
+	vs := indexed(t)
+	body := "\n## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n"
+	write(t, vs.first, "decks/Crlf.md",
+		strings.ReplaceAll("---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: deck\n---\n"+body, "\n", "\r\n"))
+	if err := vs.index(t)(t.Context(), vs.first, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	w := cards.Write{
+		Readers: filesystem.Readers{}, Writers: filesystem.Writers{}, Links: vs.db.NoteQueries(),
+	}
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Crlf.md", body, domain.FileRef{}); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	got := read(t, vs.first, "decks/Crlf.md")
+	if strings.Contains(strings.ReplaceAll(got, "\r\n", ""), "\n") {
+		t.Errorf("a bare break was written into a file of carriage returns: %q", got)
+	}
+	if !mark.Valid(held(t, vs, "decks/Crlf.md").Cards[0].Mark) {
+		t.Errorf("no mark was written: %q", got)
+	}
+}
+
+// The field is what stands. A person may leave the heading disagreeing with it,
+// and the next write puts the heading back in step.
+func TestWritingADeckPutsAStaleHeadingBackInStep(t *testing.T) {
+	vs := indexed(t)
+	body := "\n## Something else ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
+		"\n## Also stale ^zpqrstvwxy\n\n[[Animal]]\n\n### Height\n\nno first field at all\n"
+	w := laid(t, vs, "decks/Stale.md", body)
+
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Stale.md", body, domain.FileRef{}); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	deck := held(t, vs, "decks/Stale.md")
+	if deck.Cards[0].Heading != "Llama" || deck.Cards[0].Mark != "k7m2xq9fzp" {
+		t.Errorf("card = %+v, want the heading written again from the field", deck.Cards[0])
+	}
+	// An empty first field gives a heading of nothing, and the card stands under
+	// its mark alone.
+	if deck.Cards[1].Heading != "" || deck.Cards[1].Mark != "zpqrstvwxy" {
+		t.Errorf("card = %+v, want a heading of nothing", deck.Cards[1])
+	}
+	if got := read(t, vs.first, "decks/Stale.md"); !strings.Contains(got, "## ^zpqrstvwxy\n") {
+		t.Errorf("heading written wrong: %q", got)
+	}
+}
+
+// Nothing can say which field is first where the stencil cannot be read, so the
+// heading is left exactly as it stands. The card is given its mark all the same.
+func TestACardWhoseStencilCannotBeReadIsNotReprojected(t *testing.T) {
+	vs := indexed(t)
+	body := "\n## Whatever a person typed\n\n[[Nowhere]]\n\n### Name\n\nLlama\n"
+	w := laid(t, vs, "decks/Loose.md", body)
+
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Loose.md", body, domain.FileRef{}); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	deck := held(t, vs, "decks/Loose.md")
+	if deck.Cards[0].Heading != "Whatever a person typed" {
+		t.Errorf("heading = %q, want it left as it stands", deck.Cards[0].Heading)
+	}
+	if !mark.Valid(deck.Cards[0].Mark) {
+		t.Errorf("mark = %q", deck.Cards[0].Mark)
+	}
+}
+
+// A deck whose cards are already whole comes back the file it was, under either
+// line ending. Anything less is a diff nobody asked for, on every save, forever.
+func TestWritingADeckNobodyTouchedChangesNothing(t *testing.T) {
+	body := "\nCards I am learning.\n" +
+		"\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 45\"\n" +
+		"\n## ^zpqrstvwxy\n\n[[Animal]]\n\n### Name\n\n"
+	for name, ending := range map[string]string{"lf": "\n", "crlf": "\r\n"} {
+		t.Run(name, func(t *testing.T) {
+			vs := indexed(t)
+			raw := strings.ReplaceAll(
+				"---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: deck\n---\n"+body, "\n", ending)
+			write(t, vs.first, "decks/Whole.md", raw)
+			if err := vs.index(t)(t.Context(), vs.first, nil); err != nil {
+				t.Fatal(err)
+			}
+
+			w := cards.Write{
+				Readers: filesystem.Readers{}, Writers: filesystem.Writers{},
+				Links: vs.db.NoteQueries(),
+			}
+			if _, err := w.Deck(
+				t.Context(), vs.first, "decks/Whole.md", body, domain.FileRef{},
+			); err != nil {
+				t.Fatalf("write: %v", err)
+			}
+			if got := read(t, vs.first, "decks/Whole.md"); got != raw {
+				t.Errorf("the file changed\n was %q\n now %q", raw, got)
+			}
+		})
 	}
 }

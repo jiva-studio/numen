@@ -24,11 +24,14 @@ import {
   filled,
   linkTo,
   marksOf,
-  named,
   pathOfCut,
   removed,
   sameDeck,
   sameSheet,
+  sectionAdded,
+  sectionGone,
+  sectionNamed,
+  sectionsOf,
   sheetBodyOf,
   sheetIn,
   sheetOf,
@@ -49,27 +52,37 @@ const read = (over: Partial<Decked> = {}): Decked => ({
   preamble: 'about the animals\n',
   cards: [
     {
-      name: 'Llama',
+      mark: 'k7m2xq9fzp',
+      section: null,
+      heading: 'Llama',
       stencil: 'Animal',
       stencilAt: 'stencils/Animal.md',
       lead: '',
       values: [
+        { field: 'Name', text: 'Llama' },
         { field: 'Height', text: 'about 45"' },
         { field: 'Life span', text: 'about 20 years' },
       ],
     },
     {
-      name: 'Alpaca',
+      mark: '3n8vr4tqch',
+      section: null,
+      heading: 'Alpaca',
       stencil: 'Animal',
       stencilAt: 'stencils/Animal.md',
       lead: 'a note in the middle\n',
       values: [],
     },
   ],
+  sections: [],
   tail: '\n',
   problems: [],
   ...over,
 })
+
+/** The two cards of the fixture, by the mark each carries. */
+const LLAMA = 'k7m2xq9fzp'
+const ALPACA = '3n8vr4tqch'
 
 const deck = (over: Partial<Decked> = {}): Deck => deckOf(read(over), minting())
 
@@ -90,17 +103,45 @@ const cut = (over: Partial<Stencilled> = {}): Stencilled => ({
 const sheet = (over: Partial<Stencilled> = {}): Sheet => sheetOf(cut(over), minting())
 
 const problem = (over: Partial<Problem> = {}): Problem => ({
-  fault: 'cardWithoutAName',
+  fault: 'cardWithoutAStencil',
   card: null,
   face: null,
   field: '',
-  text: 'a card with no name',
+  text: 'a card under no stencil',
   ...over,
 })
 
 describe('a deck as the window holds it', () => {
-  it('gives every card an identity of its own', () => {
-    expect(deck().cards.map((card) => card.id)).toStrictEqual(['c1', 'c2'])
+  it('knows every card by the mark the file carries for it', () => {
+    expect(deck().cards.map((card) => card.id)).toStrictEqual([LLAMA, ALPACA])
+  })
+
+  it('mints an identity for a card carrying no mark, which the file cannot name', () => {
+    const bare = read()
+    const held = deck({
+      cards: [{ ...bare.cards[0]!, mark: '' }, { ...bare.cards[1]!, mark: '' }],
+    })
+    expect(held.cards.map((card) => card.id)).toStrictEqual(['c1', 'c2'])
+  })
+
+  it('mints one for each of two cards carrying one mark, so both are drawn apart', () => {
+    const bare = read()
+    const held = deck({ cards: [bare.cards[0]!, { ...bare.cards[1]!, mark: LLAMA }] })
+    expect(held.cards.map((card) => card.id)).toStrictEqual(['c1', 'c2'])
+  })
+
+  it('gives every section an identity of its own, no file naming one', () => {
+    const held = deck({ sections: [{ name: 'Roots', lead: '' }] })
+    expect(held.sections.map((section) => section.id)).toStrictEqual(['c1'])
+  })
+
+  it('stands each card under the section the file put it under', () => {
+    const bare = read()
+    const held = deck({
+      sections: [{ name: 'Roots', lead: '' }],
+      cards: [{ ...bare.cards[0]!, section: 0 }, bare.cards[1]!],
+    })
+    expect(held.cards.map((card) => card.section)).toStrictEqual([held.sections[0]?.id, null])
   })
 
   it('keeps the preamble, the tail and each card’s lead as the file had them', () => {
@@ -116,20 +157,37 @@ describe('a deck as the window holds it', () => {
   })
 
   it('is a deck of no cards where nothing has been read', () => {
-    expect(deckIn('')).toStrictEqual({ preamble: '', cards: [], tail: '' })
+    expect(deckIn('')).toStrictEqual({ preamble: '', cards: [], sections: [], tail: '' })
   })
 
   it('hands the vault the cards without the identities it minted', () => {
     expect(cardsOf(deck())[0]).toStrictEqual({
-      name: 'Llama',
+      mark: LLAMA,
+      section: null,
+      heading: 'Llama',
       stencil: 'Animal',
       stencilAt: 'stencils/Animal.md',
       lead: '',
       values: [
+        { field: 'Name', text: 'Llama' },
         { field: 'Height', text: 'about 45"' },
         { field: 'Life span', text: 'about 20 years' },
       ],
     })
+  })
+
+  it('hands the vault each card under where its section stands among them', () => {
+    const bare = read()
+    const held = deck({
+      sections: [{ name: 'Roots', lead: '' }, { name: 'Leaves', lead: '' }],
+      cards: [{ ...bare.cards[0]!, section: 1 }, bare.cards[1]!],
+    })
+    expect(cardsOf(held).map((card) => card.section)).toStrictEqual([1, null])
+  })
+
+  it('hands the vault the sections without the identities it minted', () => {
+    const held = deck({ sections: [{ name: 'Roots', lead: 'about the roots\n' }] })
+    expect(sectionsOf(held)).toStrictEqual([{ name: 'Roots', lead: 'about the roots\n' }])
   })
 })
 
@@ -140,14 +198,27 @@ describe('the cards as the grid draws them', () => {
 
   /** One card, under the wikilink it wrote and the stencil that link reached. */
   const cutBy = (stencil: string, stencilAt: string): Deck =>
-    deck({ cards: [{ name: 'Llama', stencil, stencilAt, lead: '', values: [] }] })
+    deck({
+      cards: [
+        {
+          mark: LLAMA,
+          section: null,
+          heading: 'Llama',
+          stencil,
+          stencilAt,
+          lead: '',
+          values: [],
+        },
+      ],
+    })
 
-  it('carries the name, what cuts it, and the values under it', () => {
+  it('carries the mark, the section, what cuts it, and the values under it', () => {
     expect(drawnOf(deck(), OFFERS)[0]).toStrictEqual({
-      id: 'c1',
-      name: 'Llama',
+      mark: LLAMA,
+      section: null,
       stencil: 'Animal',
       filled: [
+        { field: 'Name', text: 'Llama' },
         { field: 'Height', text: 'about 45"' },
         { field: 'Life span', text: 'about 20 years' },
       ],
@@ -208,45 +279,57 @@ describe('the stencils a card may be cut by', () => {
 })
 
 describe('a card added', () => {
-  it('stands last, cut by the stencil it was asked for', () => {
+  it('stands last, cut by the stencil it was asked for and carrying no mark', () => {
     const held = added(
       deck(),
-      'Vicuña',
       'Animal',
       'stencils/Animal.md',
-      [{ field: 'Height', text: '' }],
+      [{ field: 'Name', text: '' }],
       () => 'c9',
     )
-    expect(held.cards.map((card) => card.name)).toStrictEqual(['Llama', 'Alpaca', 'Vicuña'])
-    // What the card is named by stands in the heading, and in no value.
+    expect(held.cards.map((card) => card.id)).toStrictEqual([LLAMA, ALPACA, 'c9'])
+    // A mark is written where the deck is made whole, on its way to the vault.
     expect(held.cards[2]).toStrictEqual({
       id: 'c9',
-      name: 'Vicuña',
+      mark: '',
+      section: null,
+      heading: '',
       stencil: 'Animal',
       stencilAt: 'stencils/Animal.md',
       lead: '',
-      values: [{ field: 'Height', text: '' }],
+      values: [{ field: 'Name', text: '' }],
     })
   })
 
+  it('stands under the last section of the deck, which is where the end of it is', () => {
+    const held = added(
+      deck({ sections: [{ name: 'Roots', lead: '' }, { name: 'Leaves', lead: '' }] }),
+      'Animal',
+      'stencils/Animal.md',
+      [],
+      () => 'c9',
+    )
+    expect(held.cards[2]?.section).toBe(held.sections[1]?.id)
+  })
+
   it('leaves the preamble and the tail where they were', () => {
-    const held = added(deck(), 'Vicuña', 'Animal', 'stencils/Animal.md', [], () => 'c9')
+    const held = added(deck(), 'Animal', 'stencils/Animal.md', [], () => 'c9')
     expect(held.preamble).toBe('about the animals\n')
     expect(held.tail).toBe('\n')
   })
 
   it('names its stencil by the file, where the stencil is titled another way', () => {
-    const held = added(deck(), 'Vicuña', 'Animal', 'stencils/creature sheet.md', [], () => 'c9')
+    const held = added(deck(), 'Animal', 'stencils/creature sheet.md', [], () => 'c9')
     expect(held.cards[2]?.stencil).toBe('creature sheet')
   })
 
   it('names its stencil by no title, which a link resolves by nowhere', () => {
-    const held = added(deck(), 'Vicuña', 'Animal', 'stencils/creature sheet.md', [], () => 'c9')
+    const held = added(deck(), 'Animal', 'stencils/creature sheet.md', [], () => 'c9')
     expect(held.cards[2]?.stencil).not.toBe('Animal')
   })
 
   it('names it by the title where the vault filed the stencil nowhere', () => {
-    const held = added(deck(), 'Vicuña', 'Animal', '', [], () => 'c9')
+    const held = added(deck(), 'Animal', '', [], () => 'c9')
     expect(held.cards[2]?.stencil).toBe('Animal')
   })
 })
@@ -266,39 +349,141 @@ describe('how a card names the stencil it is cut by', () => {
   })
 })
 
-describe('a card taken out, renamed and carried', () => {
+describe('a card taken out and carried', () => {
   it('goes, and the rest stay in the order they were in', () => {
-    expect(removed(deck(), 'c1').cards.map((card) => card.name)).toStrictEqual(['Alpaca'])
+    expect(removed(deck(), LLAMA).cards.map((card) => card.id)).toStrictEqual([ALPACA])
   })
 
   it('is nothing for an identity the deck does not hold', () => {
     expect(removed(deck(), 'c9').cards).toHaveLength(2)
   })
 
-  it('takes the name it was given, and no other card takes it', () => {
-    const held = named(deck(), 'c2', 'Vicuña')
-    expect(held.cards.map((card) => card.name)).toStrictEqual(['Llama', 'Vicuña'])
-  })
-
   it('lands before the card it was let go on', () => {
-    expect(carried(deck(), 'c2', 'c1').cards.map((card) => card.name)).toStrictEqual([
-      'Alpaca',
-      'Llama',
+    expect(carried(deck(), ALPACA, LLAMA).cards.map((card) => card.id)).toStrictEqual([
+      ALPACA,
+      LLAMA,
     ])
   })
 
   it('lands last where it was let go on nothing', () => {
-    expect(carried(deck(), 'c1', null).cards.map((card) => card.name)).toStrictEqual([
-      'Alpaca',
-      'Llama',
+    expect(carried(deck(), LLAMA, null).cards.map((card) => card.id)).toStrictEqual([
+      ALPACA,
+      LLAMA,
     ])
+  })
+})
+
+describe('a card carried among the sections', () => {
+  /** Two sections, the first card in the first of them and the second in neither. */
+  const sectioned = (): Deck => {
+    const bare = read()
+    return deck({
+      sections: [{ name: 'Roots', lead: '' }, { name: 'Leaves', lead: '' }],
+      cards: [bare.cards[0]!, { ...bare.cards[1]!, section: 0 }],
+    })
+  }
+
+  it('takes the section of the card it was let go before', () => {
+    const held = sectioned()
+    const moved = carried(held, LLAMA, ALPACA)
+    expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
+      [LLAMA, held.sections[0]?.id],
+      [ALPACA, held.sections[0]?.id],
+    ])
+  })
+
+  it('stands under the last section where it was let go on nothing', () => {
+    const held = sectioned()
+    expect(carried(held, LLAMA, null).cards.map((card) => card.section)).toStrictEqual([
+      held.sections[0]?.id,
+      held.sections[1]?.id,
+    ])
+  })
+
+  it('lands at the head of a section it was let go on', () => {
+    const held = sectioned()
+    const roots = held.sections[0]?.id ?? ''
+    const moved = carried(held, LLAMA, roots)
+    expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
+      [LLAMA, roots],
+      [ALPACA, roots],
+    ])
+  })
+
+  it('lands at the head of a section holding no card', () => {
+    const held = sectioned()
+    const leaves = held.sections[1]?.id ?? ''
+    const moved = carried(held, LLAMA, leaves)
+    expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
+      [ALPACA, held.sections[0]?.id],
+      [LLAMA, leaves],
+    ])
+  })
+
+  it('moves nothing where it was let go on nothing the deck holds', () => {
+    const held = sectioned()
+    expect(carried(held, LLAMA, 'nowhere')).toStrictEqual(held)
+  })
+})
+
+describe('a section of a deck', () => {
+  const sectioned = (): Deck =>
+    deck({ sections: [{ name: 'Roots', lead: '' }, { name: 'Leaves', lead: '' }] })
+
+  it('is made at the end of the deck, holding no card', () => {
+    const held = sectionAdded(sectioned(), 'Shoots', () => 'c9')
+    expect(held.sections[2]).toStrictEqual({ id: 'c9', name: 'Shoots', lead: '' })
+    expect(held.cards.map((card) => card.section)).toStrictEqual([null, null])
+  })
+
+  it('takes the name it was given, and no other section takes it', () => {
+    const held = sectioned()
+    const named = sectionNamed(held, held.sections[0]?.id ?? '', 'Roots and shoots')
+    expect(named.sections.map((section) => section.name)).toStrictEqual([
+      'Roots and shoots',
+      'Leaves',
+    ])
+  })
+
+  it('takes a name the section beside it carries, two being free to share one', () => {
+    const held = sectioned()
+    const named = sectionNamed(held, held.sections[0]?.id ?? '', 'Leaves')
+    expect(named.sections.map((section) => section.name)).toStrictEqual(['Leaves', 'Leaves'])
+  })
+
+  /* Taking a section away takes away its heading and nothing else: its cards
+     stay where they stand, under whatever heading is above them now. */
+  it('leaves its cards under the section above it when it goes', () => {
+    const bare = read()
+    const held = deck({
+      sections: [{ name: 'Roots', lead: '' }, { name: 'Leaves', lead: '' }],
+      cards: [{ ...bare.cards[0]!, section: 0 }, { ...bare.cards[1]!, section: 1 }],
+    })
+    const gone = sectionGone(held, held.sections[1]?.id ?? '')
+    expect(gone.sections.map((section) => section.name)).toStrictEqual(['Roots'])
+    expect(gone.cards.map((card) => card.section)).toStrictEqual([
+      held.sections[0]?.id,
+      held.sections[0]?.id,
+    ])
+  })
+
+  it('leaves its cards under no section when the first of them goes', () => {
+    const bare = read()
+    const held = deck({
+      sections: [{ name: 'Roots', lead: '' }],
+      cards: [{ ...bare.cards[0]!, section: 0 }, bare.cards[1]!],
+    })
+    const gone = sectionGone(held, held.sections[0]?.id ?? '')
+    expect(gone.sections).toStrictEqual([])
+    expect(gone.cards.map((card) => card.section)).toStrictEqual([null, null])
   })
 })
 
 describe('a value written into a card', () => {
   it('stands where the field already was', () => {
-    const held = filled(deck(), 'c1', 'Height', 1, 'about 46"')
+    const held = filled(deck(), LLAMA, 'Height', 1, 'about 46"')
     expect(held.cards[0]?.values).toStrictEqual([
+      { field: 'Name', text: 'Llama' },
       { field: 'Height', text: 'about 46"' },
       { field: 'Life span', text: 'about 20 years' },
     ])
@@ -313,12 +498,13 @@ describe('a value written into a card', () => {
         ...twice,
         cards: [{ ...card, values: [...card.values, { field: 'Height', text: 'about 46"' }] }],
       },
-      'c1',
+      LLAMA,
       'Height',
       2,
       'about 47"',
     )
     expect(held.cards[0]?.values).toStrictEqual([
+      { field: 'Name', text: 'Llama' },
       { field: 'Height', text: 'about 45"' },
       { field: 'Life span', text: 'about 20 years' },
       { field: 'Height', text: 'about 47"' },
@@ -326,8 +512,9 @@ describe('a value written into a card', () => {
   })
 
   it('is written after the rest where the card had no such field', () => {
-    const held = filled(deck(), 'c1', 'Weight', 1, '130 kg')
+    const held = filled(deck(), LLAMA, 'Weight', 1, '130 kg')
     expect(held.cards[0]?.values.map((value) => value.field)).toStrictEqual([
+      'Name',
       'Height',
       'Life span',
       'Weight',
@@ -335,16 +522,16 @@ describe('a value written into a card', () => {
   })
 
   it('keeps the heading of a field the card has, emptied', () => {
-    const held = filled(deck(), 'c1', 'Height', 1, '')
-    expect(held.cards[0]?.values[0]).toStrictEqual({ field: 'Height', text: '' })
+    const held = filled(deck(), LLAMA, 'Height', 1, '')
+    expect(held.cards[0]?.values[1]).toStrictEqual({ field: 'Height', text: '' })
   })
 
   it('writes no heading for a field the card does not have and nothing was typed into', () => {
-    expect(filled(deck(), 'c2', 'Height', 1, '').cards[1]?.values).toStrictEqual([])
+    expect(filled(deck(), ALPACA, 'Height', 1, '').cards[1]?.values).toStrictEqual([])
   })
 
   it('leaves every other card as it was', () => {
-    expect(filled(deck(), 'c1', 'Height', 1, 'taller').cards[1]).toStrictEqual(
+    expect(filled(deck(), LLAMA, 'Height', 1, 'taller').cards[1]).toStrictEqual(
       deck().cards[1],
     )
   })
@@ -431,15 +618,15 @@ describe('a face of a stencil', () => {
 describe('where a problem is drawn', () => {
   it('is the card it was read against, counted from the first', () => {
     const marks = marksOf([problem({ card: 1 })], ['c1', 'c2'], [])
-    expect(marks.at.get('c2')).toStrictEqual(['a card with no name'])
+    expect(marks.at.get('c2')).toStrictEqual(['a card under no stencil'])
     expect(marks.at.has('c1')).toBe(false)
   })
 
-  it('is the card and not the name, so two cards of one name are told apart', () => {
+  it('is the identity the card was drawn under, so two of one mark are told apart', () => {
     const marks = marksOf(
       [
-        problem({ fault: 'cardNamedTwice', card: 1, text: 'named twice' }),
-        problem({ fault: 'cardNamedTwice', card: 2, text: 'named twice' }),
+        problem({ fault: 'markCarriedTwice', card: 1, text: 'a mark carried twice' }),
+        problem({ fault: 'markCarriedTwice', card: 2, text: 'a mark carried twice' }),
       ],
       ['c1', 'c2', 'c3'],
       [],
@@ -492,7 +679,7 @@ describe('where a problem is drawn', () => {
 
   it('is the file where the card it names was not read', () => {
     expect(marksOf([problem({ card: 5 })], ['c1'], []).whole).toStrictEqual([
-      'a card with no name',
+      'a card under no stencil',
     ])
   })
 })

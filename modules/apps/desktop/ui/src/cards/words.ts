@@ -6,8 +6,8 @@ export const WORDS = {
   newDeck: 'New deck',
   newStencil: 'New stencil',
   /**
-   * The field a stencil is made carrying, which is the one its cards are named
-   * by. A stencil declaring no field is unsound by the format.
+   * The field a stencil is made carrying, which is the one every card's heading
+   * is read from. A stencil declaring no field is unsound by the format.
    */
   newField: 'Field 1',
   /** The two the file puts to the person, and the two ways out. */

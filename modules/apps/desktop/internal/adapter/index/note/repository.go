@@ -14,6 +14,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index/sqlfile"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/cards"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/cutting"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 )
@@ -115,13 +116,15 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes
 			return err
 		}
 	}
+	kept := outline(n)
+
 	// The note goes in as its own large chunk, so the words in it are findable
 	// as soon as it is indexed. A chunk whose text is what it was keeps its
 	// row, and the vector made from it.
-	if err := chunk.Replace(ctx, tx, row, vault, cut(n, sizes)); err != nil {
+	if err := chunk.Replace(ctx, tx, row, vault, cut(n, kept, sizes)); err != nil {
 		return err
 	}
-	for _, h := range n.Headings {
+	for _, h := range kept {
 		if err := exec(ctx, tx, "insert_heading", row, h.Line, h.Level, h.Text); err != nil {
 			return err
 		}
@@ -172,7 +175,15 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes
 //
 // Offsets are into the file. The body begins after the frontmatter, and every
 // chunk is moved out by as much.
-func cut(n domain.Note, sizes cutting.Sizes) []chunk.Chunk {
+//
+// A deck and a stencil are cut into nothing. A card is found by its heading,
+// which is its question, and a stencil by its title, which is its file name.
+// The vectors hang off the chunks, so neither is embedded either.
+func cut(n domain.Note, headings []domain.Heading, sizes cutting.Sizes) []chunk.Chunk {
+	if n.Type == domain.TypeDeck || n.Type == domain.TypeStencil {
+		return nil
+	}
+
 	at := int(n.Ref.Size) - len(n.Body)
 	if at < 0 {
 		at = 0
@@ -180,7 +191,7 @@ func cut(n domain.Note, sizes cutting.Sizes) []chunk.Chunk {
 	sizes.Large = cutting.Whole
 
 	out := make([]chunk.Chunk, 0, 1)
-	for _, large := range cutting.Cut(n.Body, parts(n), sizes) {
+	for _, large := range cutting.Cut(n.Body, parts(headings), sizes) {
 		// The title is searched together with the body: a note is looked for by
 		// the name it was given.
 		c := chunk.Chunk{
@@ -209,15 +220,52 @@ func cut(n domain.Note, sizes cutting.Sizes) []chunk.Chunk {
 // parts is where a note names the section that follows. A heading carries the
 // byte its line begins at in the body, which is the offset a chunk is cut
 // against, and the heading's own text is what the section is called.
-func parts(n domain.Note) []cutting.Part {
-	if len(n.Headings) == 0 {
+//
+// They are the headings the index keeps, so a passage is announced under a name
+// somebody wrote.
+func parts(headings []domain.Heading) []cutting.Part {
+	if len(headings) == 0 {
 		return nil
 	}
-	out := make([]cutting.Part, 0, len(n.Headings))
-	for _, h := range n.Headings {
+	out := make([]cutting.Part, 0, len(headings))
+	for _, h := range headings {
 		out = append(out, cutting.Part{Title: h.Text, Offset: h.Offset})
 	}
 	return out
+}
+
+// The two levels a deck spends on what a person writes: a section, and a card
+// under it. Below them stand the stencil's field names, written out under every
+// card.
+const (
+	sectionLevel = 1
+	cardLevel    = 2
+)
+
+// outline is the headings of a note as the index keeps them.
+//
+// A deck keeps its sections and its cards, and a card's heading is kept without
+// the mark it ends in. A stencil keeps none: its headings are its faces and
+// their two sides. Every other note keeps every heading it has.
+func outline(n domain.Note) []domain.Heading {
+	switch n.Type {
+	case domain.TypeStencil:
+		return nil
+	case domain.TypeDeck:
+		out := make([]domain.Heading, 0, len(n.Headings))
+		for _, h := range n.Headings {
+			switch h.Level {
+			case sectionLevel:
+				out = append(out, h)
+			case cardLevel:
+				h.Text, _ = cards.ReadHeading(h.Text)
+				out = append(out, h)
+			}
+		}
+		return out
+	default:
+		return n.Headings
+	}
 }
 
 func (r *Repository) Remove(ctx context.Context, vaultID string, paths []string) error {

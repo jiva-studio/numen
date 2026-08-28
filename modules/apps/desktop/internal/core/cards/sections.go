@@ -7,9 +7,9 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/markdown"
 )
 
-// section is one heading of the two levels the format spends, and the bytes
-// under it. Offsets are counted over the body as it stands, so a run of it can
-// be replaced without the rest of the file being rewritten.
+// section is one heading of the levels a file spends, and the bytes under it.
+// Offsets are counted over the body as it stands, so a run of it can be
+// replaced without the rest of the file being rewritten.
 type section struct {
 	level int
 	name  string
@@ -20,11 +20,15 @@ type section struct {
 	to   int
 }
 
-// sections walks the body a line at a time and returns its second and
-// third-level headings in document order. A heading inside a code fence is an
-// example of one, and a heading of any other level is text under the section it
-// falls in.
-func sections(body []byte) []section {
+// sections walks the body a line at a time and returns its headings of the
+// levels from first to last, in document order. A heading inside a code fence
+// is an example of one, and a heading of any other level is text under the
+// section it falls in.
+//
+// The levels are given because a deck and a stencil spend different ones: a
+// first-level heading opens a section of a deck, and the same line on a face is
+// text the face lays out.
+func sections(body []byte, first, last int) []section {
 	var out []section
 	fenced := false
 	for at := 0; at <= len(body); {
@@ -37,7 +41,7 @@ func sections(body []byte) []section {
 		case isFence(line):
 			fenced = !fenced
 		case !fenced:
-			if level, name, ok := heading(line); ok {
+			if level, name, ok := heading(line, first, last); ok {
 				if n := len(out); n > 0 {
 					out[n-1].to = at
 				}
@@ -56,14 +60,14 @@ func sections(body []byte) []section {
 	return out
 }
 
-// heading reads a second or third-level heading. The name may be empty: `##`
-// on its own opens a card, and a card with no name is reported as one.
-func heading(line string) (level int, name string, ok bool) {
+// heading reads a heading of one of the levels from first to last. The name may
+// be empty: `##` on its own opens a card whose first field holds nothing.
+func heading(line string, first, last int) (level int, name string, ok bool) {
 	hashes := 0
 	for hashes < len(line) && line[hashes] == '#' {
 		hashes++
 	}
-	if hashes < 2 || hashes > 3 {
+	if hashes < first || hashes > last {
 		return 0, "", false
 	}
 	rest := line[hashes:]

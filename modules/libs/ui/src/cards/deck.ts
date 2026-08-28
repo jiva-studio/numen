@@ -1,10 +1,11 @@
 /**
  * What a deck is, as plain values: cards standing what a person typed in the
- * slots a stencil names, laid out as a grid of tiles. What any of it means is
- * the caller's. No DOM, no measurement, no clock.
+ * slots a stencil names, laid out as a grid of tiles under the sections they
+ * stand in. What any of it means is the caller's. No DOM, no measurement, no
+ * clock.
  */
 
-import { declared, type Against } from './order'
+import { declared, type Against, type Refusal } from './order'
 import type { Cut } from './stencil'
 
 /** One named slot and what stands in it. */
@@ -15,11 +16,23 @@ export interface Filled {
 
 /** One card as the deck draws it. */
 export interface Drawn {
-  readonly id: string
-  readonly name: string
+  /** What the card is, and what it is addressed by, for as long as it exists. */
+  readonly mark: string
+  /** The section it stands under, and nothing for a card before the first. */
+  readonly section: string | null
   /** What the card is cut by, as a word to show, and nothing where nothing cuts it. */
   readonly stencil: string | null
   readonly filled: readonly Filled[]
+}
+
+/**
+ * One section of a deck: a name, under an identity the caller minted for it. A
+ * section carries no mark and its name need not be unique, so nothing the file
+ * holds tells one from another.
+ */
+export interface Banded {
+  readonly id: string
+  readonly name: string
 }
 
 /** The words one card is drawn with, declared once. */
@@ -27,34 +40,41 @@ export interface CardWords {
   readonly remove: string
   readonly carry: string
   readonly cut: string
-  readonly name: string
+  /** What a card is announced by, before the place it stands in the deck. */
+  readonly cardStem: string
   /** What is said of a card holding no value at all. */
   readonly nothing: string
   /** What is said of a card whose stencil the vault does not hold. */
   readonly unknown: (stencil: string | null) => string
-  /** What is said of a value standing in the field the card is named by. */
-  readonly twice: string
   /** What a list of things wrong is called to a reader. */
   readonly wrong: string
 }
 
-/** The words a deck is drawn with: a card's, and the two the plus asks for. */
+/**
+ * The words a deck is drawn with: a card's, and what the two things it is added
+ * to ask for.
+ */
 export interface DeckWords extends CardWords {
   readonly add: string
-  readonly cardStem: string
+  readonly addSection: string
+  /** What a section is named from, before the place it stands among them. */
+  readonly sectionStem: string
+  /** What is said of a section's name that cannot be used. */
+  readonly sectionObjection: (why: Refusal) => string
 }
 
 export const DECK_WORDS: DeckWords = {
   add: 'Add a card',
+  addSection: 'Add a section',
   remove: 'Remove',
   carry: 'Reorder',
   cut: 'Stencil',
-  name: 'Name',
+  cardStem: 'Card',
+  sectionStem: 'Section',
   nothing: 'Nothing in it',
   unknown: (stencil) => (stencil === null ? 'Cut by no stencil' : `No stencil called ${stencil}`),
-  twice: 'The card is named by this field',
+  sectionObjection: (why) => (why === 'blank' ? 'A section needs a name' : 'That name is taken'),
   wrong: 'What is wrong',
-  cardStem: 'Card',
 }
 
 /**
@@ -128,19 +148,8 @@ export interface Stood extends Laid {
    * one field are told apart by their order under it.
    */
   readonly key: string
-  /**
-   * Where it stands among the values the card writes under its own field, from
-   * one. The name a card carries is written in its heading and in no value of
-   * it, so the one that names the card stands among none of them.
-   */
+  /** Where it stands among the values the card writes under its own field, from one. */
   readonly nth: number
-  /** It is the field the card is named by, which is the stencil's first. */
-  readonly names: boolean
-  /**
-   * It names the card and stands as a value as well. A card is named once, so
-   * the value is kept and shown, and no face lays it out.
-   */
-  readonly twice: boolean
   /**
    * It is the last box standing for its field, which is where what is wrong
    * with that field is said, once.
@@ -150,10 +159,12 @@ export interface Stood extends Laid {
 
 /** One card as a tile of the grid. */
 export interface Tile {
-  readonly id: string
-  readonly name: string
+  /** What the card is, and what it is addressed by. */
+  readonly mark: string
+  /** The section it stands under, and nothing for a card before the first. */
+  readonly section: string | null
   readonly stencil: string | null
-  /** Its values, the field naming the card first, laid out under its stencil. */
+  /** Its values, in the order its stencil asks for them. */
   readonly filled: readonly Stood[]
   /** Where it stands among the tiles, counting from one, which is what it is announced as. */
   readonly at: number
@@ -161,15 +172,27 @@ export interface Tile {
   readonly of: number
   /** The stencil it names is among the ones handed in. */
   readonly known: boolean
-  /** A field of its stencil names it. Where none does, the tile says the name it was handed. */
-  readonly named: boolean
   /** It is on its way somewhere else in the order. */
   readonly carried: boolean
 }
 
-/** The grid a deck draws: the cards as tiles, and where the plus stands. */
-export interface Grid {
+/** One section as the grid draws it. */
+export interface Band extends Banded {
+  /** Where it stands among the sections, counting from one. */
+  readonly at: number
+}
+
+/** One run of a deck: a section, where the cards stand under one, and those cards. */
+export interface Run {
+  /** The section they stand under, and nothing for the cards before the first. */
+  readonly band: Band | null
   readonly tiles: readonly Tile[]
+}
+
+/** The grid a deck draws: its runs of cards, and where the plus stands. */
+export interface Grid {
+  /** The cards before the first section, and then one run for each section. */
+  readonly runs: readonly Run[]
   /** Where the plus stands, counting from one. It stands last. */
   readonly plusAt: number
   /** How many stand in the grid, the plus among them. */
@@ -178,15 +201,13 @@ export interface Grid {
 
 /**
  * The tiles of a deck, in the order the cards were handed in, each laid out
- * under the stencil it names. A card naming a stencil that was not handed in
- * keeps every value it has.
- *
- * A stencil's first field names the card. Its value stands in the name the card
- * was handed and in none of its values, and it is put back at the head of them
- * so the tile draws it as it draws every other field.
+ * under the stencil it names and standing in the run of the section it is
+ * under. A card naming a stencil that was not handed in keeps every value it
+ * has.
  */
 export function grid(
   cards: readonly Drawn[],
+  sections: readonly Banded[],
   cuts: readonly Cut[],
   carried: string | null,
 ): Grid {
@@ -194,16 +215,6 @@ export function grid(
   const tiles = cards.map((card, index) => {
     const cut = cuts.find((each) => each.name === card.stencil)
     const fields = declared(cut?.fields ?? [])
-    const first = fields[0]
-
-    const rest = laid(card.filled, fields.slice(1)).map((each) => ({
-      ...each,
-      names: false,
-      twice: first !== undefined && each.field === first,
-    }))
-    const named = first === undefined ? [] : [
-      { field: first, text: card.name, declared: true, names: true, twice: false },
-    ]
 
     /** How many values the card writes under each field, as they are counted off. */
     const under = new Map<string, number>()
@@ -217,16 +228,16 @@ export function grid(
     // and nothing here draws it or says a word about it. A card whose stencil
     // the vault does not hold draws no value at all, and says which stencil it
     // is waiting for.
-    const counted = [...named, ...rest]
-      .filter((each) => each.declared || each.twice)
+    const counted = laid(card.filled, fields)
+      .filter((each) => each.declared)
       .map((each, place) => {
-        const nth = each.names ? 0 : told(each.field)
+        const nth = told(each.field)
         return { ...each, at: place + 1, nth, key: `${each.field}#${nth}` }
       })
 
     return {
-      id: card.id,
-      name: card.name,
+      mark: card.mark,
+      section: card.section,
       stencil: card.stencil,
       filled: counted.map((each) => ({
         ...each,
@@ -235,9 +246,20 @@ export function grid(
       at: index + 1,
       of,
       known: cut !== undefined,
-      named: first !== undefined,
-      carried: card.id === carried,
+      carried: card.mark === carried,
     }
   })
-  return { tiles, plusAt: cards.length + 1, of }
+
+  const standing = (section: string | null): readonly Tile[] =>
+    tiles.filter((tile) => tile.section === section)
+
+  const runs: readonly Run[] = [
+    { band: null, tiles: standing(null) },
+    ...sections.map((section, index) => ({
+      band: { id: section.id, name: section.name, at: index + 1 },
+      tiles: standing(section.id),
+    })),
+  ]
+
+  return { runs, plusAt: cards.length + 1, of }
 }

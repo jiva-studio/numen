@@ -3,18 +3,18 @@
  * One card of a deck, as a tile: a strip it is carried by and removed from, and
  * under it the card's values, each in a box that is always open to typing.
  *
- * The field naming the card stands first among them and holds one line, because
- * the name is written in a heading. What is wrong with the card is said under
- * that heading, and what is wrong with one value is said under that value.
+ * Every field of the stencil stands under its own name and holds as many lines
+ * as a person writes. What is wrong with the card is said under its strip, and
+ * what is wrong with one value is said under that value.
  */
-import { useId } from 'vue'
+import { computed, useId } from 'vue'
 import Amiss from './Amiss.vue'
 import Bar from './Bar.vue'
 import Deed from './Deed.vue'
 import Grown from './Grown.vue'
 import Rule from '../rule/Rule.vue'
 import { DECK_WORDS, sealed, type CardWords, type Stood, type Tile } from './deck'
-import { oneLine, type Way } from './order'
+import type { Way } from './order'
 
 const props = withDefaults(
   defineProps<{
@@ -38,47 +38,40 @@ const emit = defineEmits<{
   /** The card asked to go one place along the order. */
   (event: 'step', way: Way, press: KeyboardEvent): void
   /**
-   * One value as it now reads. `names` says the card's name was typed in, and
-   * a card writing a field twice is writing two values, of which `nth` says
-   * which was typed in.
+   * One value as it now reads. A card writing a field twice is writing two
+   * values, of which `nth` says which was typed in.
    */
-  (event: 'write', field: string, nth: number, names: boolean, text: string): void
+  (event: 'write', field: string, nth: number, text: string): void
 }>()
 
 /** What this card's boxes are named by, which is this card's alone. */
 const uid = useId()
+
+/**
+ * What the card is announced as. A card holds no name of its own: what it is
+ * called is the line its first field comes to, and the file writes that.
+ */
+const called = computed(() => `${props.words.cardStem} ${props.tile.at}`)
 
 const boxId = (value: Stood): string => `${uid}-${encodeURIComponent(value.key)}`
 
 /** What is wrong with one value, said once, under the last box standing for its field. */
 const wrongIn = (value: Stood): readonly string[] =>
   value.last ? (props.wrongUnder.get(value.field) ?? []) : []
-
-/**
- * A break struck in the box the card is named by. The name is written in a
- * heading, so the box holds one line; a break struck while a word is being
- * composed belongs to the composing.
- */
-const breaking = (value: Stood, press: KeyboardEvent): void => {
-  if (value.names && !press.isComposing) press.preventDefault()
-}
-
-const write = (value: Stood, text: string): void => {
-  emit('write', value.field, value.nth, value.names, value.names ? oneLine(text) : text)
-}
 </script>
 
 <template>
   <article
     class="card flex flex-col rounded-node bg-raised"
-    :aria-label="tile.name"
+    :aria-label="called"
     :aria-posinset="tile.at"
     :aria-setsize="tile.of"
-    :data-card="tile.id"
+    :data-card="tile.mark"
+    :data-section="tile.section ?? undefined"
     :data-carried="tile.carried || undefined"
   >
     <Bar
-      :carry="`${words.carry}: ${tile.name}`"
+      :carry="`${words.carry}: ${called}`"
       @dragstart="emit('lift', $event)"
       @dragend="emit('release')"
       @step="(way, press) => emit('step', way, press)"
@@ -97,17 +90,11 @@ const write = (value: Stood, text: string): void => {
       </p>
 
       <template #deeds>
-        <Deed :label="`${words.remove}: ${tile.name}`" @press="emit('remove')" />
+        <Deed :label="`${words.remove}: ${called}`" @press="emit('remove')" />
       </template>
     </Bar>
 
     <div class="card__body flex flex-col">
-      <!-- A name is exposed by nothing standing on a paragraph, so the text
-           takes a role that carries one. -->
-      <p v-if="!tile.named" class="card__said truncate" role="group" :aria-label="words.name">
-        {{ tile.name }}
-      </p>
-
       <Amiss
         v-if="!tile.known"
         class="card__objects"
@@ -123,13 +110,7 @@ const write = (value: Stood, text: string): void => {
         :label="words.wrong"
       />
 
-      <div
-        v-for="value in tile.filled"
-        :key="value.key"
-        class="card__value"
-        :data-names="value.names || undefined"
-        :data-twice="value.twice || undefined"
-      >
+      <div v-for="value in tile.filled" :key="value.key" class="card__value">
         <Rule at="start">
           <label class="card__field text-small text-hushed" :for="boxId(value)">
             {{ value.field }}
@@ -140,11 +121,8 @@ const write = (value: Stood, text: string): void => {
           :id="boxId(value)"
           :text="value.text"
           :data-value="value.field"
-          @keydown.enter="breaking(value, $event)"
-          @write="(text: string) => write(value, text)"
+          @write="(text: string) => emit('write', value.field, value.nth, text)"
         />
-
-        <Amiss v-if="value.twice" class="card__objects" :said="words.twice" />
 
         <Amiss
           v-if="wrongIn(value).length"
@@ -203,14 +181,8 @@ const write = (value: Stood, text: string): void => {
   pointer-events: none;
 }
 
-/* A card whose stencil names no field is named by what it was handed. */
-.card__said {
-  margin: 0;
-  padding-inline: var(--box-pad-inline);
-}
-
-/* Everything the body holds stands over one edge: the card's own name, what is
-   wrong with it, what each value is called, and the box the value is typed in. */
+/* Everything the body holds stands over one edge: what is wrong with the card,
+   what each value is called, and the box the value is typed in. */
 .card__objects,
 .card__silence {
   margin: 0;

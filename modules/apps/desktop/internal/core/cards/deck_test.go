@@ -39,7 +39,7 @@ func filed(t *testing.T, problems []cards.Problem, check cards.Check) cards.Prob
 func names(deck cards.Deck) []string {
 	var out []string
 	for _, c := range deck.Cards {
-		out = append(out, c.Name)
+		out = append(out, c.Heading)
 	}
 	return out
 }
@@ -109,14 +109,14 @@ about 20 years
 	}
 }
 
-// The first of two cards of one name stands, and the second is read and shown
-// as a problem: nothing in the file is dropped.
-func TestTwoCardsOfOneName(t *testing.T) {
+// Two first fields that begin alike are two cards of one heading. Their marks
+// tell them apart, and nothing else needed them to differ.
+func TestTwoCardsOfOneHeading(t *testing.T) {
 	deck := cards.ReadDeck(note(t, `---
 type: deck
 ---
 
-## Llama
+## Llama ^k7m2xq9fzp
 
 [[Animal]]
 
@@ -124,25 +124,77 @@ type: deck
 
 about 45"
 
-## Llama
+## Llama ^zpqrstvwxy
 
 [[Animal]]
 
 ### Height
 
-nonsense
+about 46"
 `))
 
 	if got := names(deck); !slices.Equal(got, []string{"Llama", "Llama"}) {
 		t.Fatalf("cards = %v, both are read", got)
 	}
-	// The name reaches both, so the problem is filed against the second by
-	// where it stands.
-	if got := filed(t, deck.Problems, cards.CheckTwoCards).Card; got != 1 {
-		t.Errorf("card = %d, want the second of the two", got)
+	if len(deck.Problems) != 0 {
+		t.Errorf("problems = %+v, want two cards of one heading to be two cards", deck.Problems)
 	}
-	if got, _ := deck.Card("Llama"); got.Values[0].Text != `about 45"` {
-		t.Errorf("the first card does not stand: %q", got.Values[0].Text)
+	got, held := deck.Card("zpqrstvwxy")
+	if !held {
+		t.Fatal("the second card is not addressed by its mark")
+	}
+	if held, _ := got.Value("Height"); held != `about 46"` {
+		t.Errorf("the mark reached the wrong card: %q", held)
+	}
+}
+
+// A card copied by hand carries the mark it was copied from. Both are read and
+// both are shown marked: nothing a person wrote goes missing from the screen,
+// and which of the two is meant is a thing only they know.
+func TestTwoCardsOfOneMark(t *testing.T) {
+	deck := cards.ReadDeck(note(t, `---
+type: deck
+---
+
+## Llama ^k7m2xq9fzp
+
+[[Animal]]
+
+### Height
+
+about 45"
+
+## Alpaca ^k7m2xq9fzp
+
+[[Animal]]
+
+### Height
+
+about 35"
+
+## Vicuña ^zpqrstvwxy
+
+[[Animal]]
+
+### Height
+
+about 30"
+`))
+
+	var against []int
+	for _, p := range deck.Problems {
+		if p.Check == cards.CheckTwoMarks {
+			against = append(against, p.Card)
+		}
+	}
+	if !slices.Equal(against, []int{0, 1}) {
+		t.Errorf("problems = %+v, want one against each of the two", deck.Problems)
+	}
+	if got := names(deck); !slices.Equal(got, []string{"Llama", "Alpaca", "Vicuña"}) {
+		t.Errorf("cards = %v, want all of them read", got)
+	}
+	if got, _ := deck.Cards[1].Value("Height"); got != `about 35"` {
+		t.Errorf("the second of the two was not read whole: %q", got)
 	}
 }
 
@@ -177,11 +229,7 @@ type: deck
 	if len(deck.Problems) != 0 {
 		t.Errorf("problems = %v, want two cards of two names", deck.Problems)
 	}
-	card, held := deck.Card("C#")
-	if !held {
-		t.Fatal("the card is not addressed by the heading as it is written")
-	}
-	if got := fieldsOf(card); !slices.Equal(got, []string{"F#"}) {
+	if got := fieldsOf(deck.Cards[0]); !slices.Equal(got, []string{"F#"}) {
 		t.Errorf("fields = %v", got)
 	}
 }
@@ -272,22 +320,116 @@ about 45"
 	}
 }
 
-func TestACardWithNoName(t *testing.T) {
+// A first field that is empty gives a heading of nothing, and the card is a
+// card like any other.
+func TestACardWithNothingInItsHeading(t *testing.T) {
 	deck := cards.ReadDeck(note(t, "---\ntype: deck\n---\n\n## \n\n[[Animal]]\n\n### Height\n\nabout 45\"\n"))
 
 	if len(deck.Cards) != 1 {
-		t.Fatalf("cards = %v, an unnamed heading still opens a card", deck.Cards)
+		t.Fatalf("cards = %v, a heading of nothing still opens a card", deck.Cards)
 	}
-	if deck.Cards[0].Name != "" {
-		t.Errorf("name = %q", deck.Cards[0].Name)
+	if deck.Cards[0].Heading != "" {
+		t.Errorf("heading = %q", deck.Cards[0].Heading)
 	}
-	// A card with no name is addressed by where it stands, because its name
-	// addresses nothing.
-	if got := filed(t, deck.Problems, cards.CheckNoName).Card; got != 0 {
-		t.Errorf("card = %d", got)
+	if len(deck.Problems) != 0 {
+		t.Errorf("problems = %+v, want a heading of nothing to be no fault", deck.Problems)
 	}
 	if got, _ := deck.Cards[0].Value("Height"); got != `about 45"` {
 		t.Errorf("the value was not read: %q", got)
+	}
+}
+
+// A first-level heading opens a section. The cards under it are its own until
+// the next one, and the section is a name and the person's own text.
+func TestAFirstLevelHeadingOpensASection(t *testing.T) {
+	deck := cards.ReadDeck(note(t, `---
+type: deck
+---
+
+Cards I am learning.
+
+## Loose ^k7m2xq9fzp
+
+[[Animal]]
+
+### Height
+
+about 45"
+
+# Roots
+
+The ones I began with.
+
+## Compost ^zpqrstvwxy
+
+[[Term]]
+
+### Значение
+
+перегной
+
+# Roots
+
+## Bracken ^m9n8b7v6c5
+
+[[Term]]
+
+### Значение
+
+папоротник
+
+# Empty
+`))
+
+	if deck.Preamble != "\nCards I am learning.\n\n" {
+		t.Errorf("preamble = %q, want what stands above the first of them", deck.Preamble)
+	}
+	// Two sections may carry one name, and an empty section is kept.
+	var held []string
+	for _, s := range deck.Sections {
+		held = append(held, s.Name)
+	}
+	if !slices.Equal(held, []string{"Roots", "Roots", "Empty"}) {
+		t.Fatalf("sections = %v", held)
+	}
+	// Text between a section's heading and its first card is the section's.
+	if deck.Sections[0].Lead != "The ones I began with." {
+		t.Errorf("lead = %q", deck.Sections[0].Lead)
+	}
+	if deck.Sections[1].Lead != "" || deck.Sections[2].Lead != "" {
+		t.Errorf("sections = %+v, want no text under either", deck.Sections[1:])
+	}
+
+	// A card may stand before the first section, and stands under none.
+	var under []int
+	for _, c := range deck.Cards {
+		under = append(under, c.Section)
+	}
+	if !slices.Equal(under, []int{cards.NoSection, 0, 1}) {
+		t.Errorf("sections = %v, want the first card under none", under)
+	}
+	if len(deck.Problems) != 0 {
+		t.Errorf("problems = %+v", deck.Problems)
+	}
+}
+
+// A deck of sections and no cards is sections all the same, and what a person
+// wrote under each of them is kept.
+func TestADeckOfSectionsAndNoCards(t *testing.T) {
+	deck := cards.ReadDeck(note(t, "---\ntype: deck\n---\n\n# Animals\n\n### Not a card\n\nprose.\n"))
+
+	if len(deck.Cards) != 0 {
+		t.Fatalf("cards = %v", deck.Cards)
+	}
+	if deck.Preamble != "\n" {
+		t.Errorf("preamble = %q, want what stands above the first section", deck.Preamble)
+	}
+	if len(deck.Sections) != 1 || deck.Sections[0].Name != "Animals" {
+		t.Fatalf("sections = %+v", deck.Sections)
+	}
+	// A heading nothing reads is text under the section it falls in.
+	if deck.Sections[0].Lead != "### Not a card\n\nprose." {
+		t.Errorf("lead = %q", deck.Sections[0].Lead)
 	}
 }
 
@@ -380,12 +522,12 @@ func TestThePreambleAndTheTail(t *testing.T) {
 // A deck of no cards is all preamble, and there is nothing for a tail to
 // follow.
 func TestADeckOfNoCardsIsAllPreamble(t *testing.T) {
-	deck := cards.ReadDeck(note(t, "---\ntype: deck\n---\n\n# Animals\n\n### Not a card\n\nprose.\n"))
+	deck := cards.ReadDeck(note(t, "---\ntype: deck\n---\n\nAnimals\n\n### Not a card\n\nprose.\n"))
 
 	if len(deck.Cards) != 0 {
 		t.Fatalf("cards = %v", deck.Cards)
 	}
-	if deck.Preamble != "\n# Animals\n\n### Not a card\n\nprose.\n" {
+	if deck.Preamble != "\nAnimals\n\n### Not a card\n\nprose.\n" {
 		t.Errorf("preamble = %q", deck.Preamble)
 	}
 	if deck.Tail != "" {

@@ -355,11 +355,9 @@ export type Fault =
   | 'placeholderUndeclared'
   | 'cardWithoutAStencil'
   | 'stencilIsNotOne'
-  | 'cardWithoutAName'
-  | 'cardNamedTwice'
+  | 'markCarriedTwice'
   | 'fieldWrittenTwice'
   | 'fieldNotRenamed'
-  | 'firstFieldWrittenTwice'
   | 'unknown'
 
 /**
@@ -386,8 +384,23 @@ export interface Value {
 
 /** One card as the vault reads it. */
 export interface Carded {
-  /** The heading it stands under, which is what it is called. */
-  readonly name: string
+  /**
+   * What the card is, for as long as it exists, without the caret its heading
+   * writes it behind. Empty for a card the application has not written yet.
+   */
+  readonly mark: string
+  /**
+   * Where the section it stands under stands among the deck's, counting from
+   * the first. Nothing for a card standing before the first section.
+   */
+  readonly section: number | null
+  /**
+   * The line its heading says, with the mark taken off. It is not what the card
+   * is called: a write throws it away and reads it again from the first field,
+   * and it travels for the one card that cannot be read again — a card whose
+   * stencil is missing, where nothing can say which field is first.
+   */
+  readonly heading: string
   /** The stencil it is cut by, as the wikilink beneath its heading names it. */
   readonly stencil: string
   /**
@@ -400,13 +413,26 @@ export interface Carded {
   readonly values: readonly Value[]
 }
 
+/**
+ * One section of a deck as the vault reads it. It is a name and nothing else:
+ * no fields, no stencil, no schedule, no mark.
+ */
+export interface Sectioned {
+  /** What it is called, as its heading spells it. Two sections may carry one name. */
+  readonly name: string
+  /** The prose between its heading and its first card. */
+  readonly lead: string
+}
+
 /** A deck as the vault reads it. */
 export interface Decked {
   readonly path: string
   readonly title: string
-  /** The prose below the frontmatter and above the first card. */
+  /** The prose below the frontmatter and above the first section or card. */
   readonly preamble: string
   readonly cards: readonly Carded[]
+  /** The sections, in the order they stand in the note. */
+  readonly sections: readonly Sectioned[]
   /** What the file ends with once the last value has been read. */
   readonly tail: string
   readonly problems: readonly Problem[]
@@ -520,13 +546,18 @@ export interface Cards {
   ): Promise<Renaming>
   readDeck(path: string): Promise<DeckRead>
   /**
-   * Cards into a deck, in the order they are given, making the file where
-   * there is none. Seen is what a read gave this caller, and a file that moved
-   * past it comes back changed with nothing written.
+   * Sections and cards into a deck, in the order they are given, making the
+   * file where there is none. Seen is what a read gave this caller, and a file
+   * that moved past it comes back changed with nothing written.
    */
   writeDeck(
     path: string,
-    deck: { preamble: string; cards: readonly Carded[]; tail: string },
+    deck: {
+      preamble: string
+      cards: readonly Carded[]
+      sections: readonly Sectioned[]
+      tail: string
+    },
     seen: string | null,
   ): Promise<DeckWritten>
   readStencil(path: string): Promise<StencilRead>

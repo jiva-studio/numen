@@ -31,7 +31,9 @@ func ReadStencil(n domain.Note) Stencil {
 	}
 
 	body := []byte(n.Body)
-	secs := sections(body)
+	// A face is a second-level heading and its sides are third; a first-level
+	// heading on a face is text the face lays out.
+	secs := sections(body, 2, 3)
 
 	firstFace := len(body)
 	for _, sec := range secs {

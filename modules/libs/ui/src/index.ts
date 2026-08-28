@@ -181,6 +181,8 @@ export { default as Card } from './cards/Card.vue'
 /** One face of a stencil, which is what the stencil lays out. */
 export { default as Block } from './cards/Block.vue'
 export { default as Marks } from './cards/Marks.vue'
+/** The heading one section of a deck stands under. */
+export { default as Band } from './cards/Band.vue'
 /** The strip a tile is carried by. */
 export { default as Bar } from './cards/Bar.vue'
 /** A rule with something standing on it, in its middle or at its start. */
@@ -189,7 +191,7 @@ export { default as Rule } from './rule/Rule.vue'
 /** For putting a card or a field where a person let it go, without drawing it. */
 export { ordered, reordered } from './cards/order'
 export type { Half, Landing as CardLanding } from './cards/order'
-export type { Drawn, Filled } from './cards/deck'
+export type { Banded, Drawn, Filled } from './cards/deck'
 export type { Cut } from './cards/stencil'
 
 export type { Environment, PlexTransition } from './plex/transition'

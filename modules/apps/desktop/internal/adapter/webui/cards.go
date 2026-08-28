@@ -234,7 +234,7 @@ func (a *API) WriteDeck(
 	if err != nil {
 		return nil, err
 	}
-	body, err := container.DeckBody(r.Msg.GetPreamble(), cardsOf(r.Msg.GetCards()), r.Msg.GetTail())
+	body, err := container.DeckBody(writtenDeck(r.Msg))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}

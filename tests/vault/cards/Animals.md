@@ -6,15 +6,19 @@ tags:
 custom-key-nobody-owns: keep me verbatim
 ---
 
-A deck may say something before its first card. This paragraph is the preamble:
-it is kept as it was written, and it is no card.
+A deck may say something before its first section. This paragraph is the
+preamble: it is kept as it was written, and it is no card and no section.
 
-## Llama
+## Llama ^k7m2xq9fzp
 
 [[Animal]]
 
 A card may say something between its stencil and its first field. This is kept
 as well, and it is no field's value.
+
+### Name
+
+Llama
 
 ### Height
 
@@ -41,15 +45,24 @@ has more than one.
 
 130–200 kg, under a heading the stencil does not declare
 
-## Llama
+# The ones with two names
+
+A section may say something between its heading and its first card. That is
+the section's, and it is put back where it was.
+
+## Llama ^zpqrstvwxy
 
 [[Animal]]
 
+### Name
+
+Llama
+
 ### Height
 
-A second card of the name the first card has.
+A second card of the heading the first card has. Their marks tell them apart.
 
-## Alpaca
+## Alpaca ^m9n8b7v6c5
 
 Not a wikilink but an ordinary sentence, so this card is cut by no stencil.
 
@@ -67,7 +80,7 @@ about 35" (shoulder)
 
 Anything a llama has already spat on.
 
-## Vicuña
+## Vicuña ^3f4g5h6j7k
 
 [[Camelid]]
 
@@ -75,29 +88,37 @@ Anything a llama has already spat on.
 
 *Lama vicugna*. The stencil this card names is in no file of this vault.
 
-## Camel
+# Standing under nothing
+
+## ^q1w2e3r4t5
 
 [[Animal]]
 
 ### Name
 
-Camel, under a heading of the field the card's own heading already holds.
+### Height
+
+A card whose first field is empty, so its heading is its mark alone.
+
+## What somebody typed before they corrected the field ^7h8j9k0m1n
+
+[[Animal]]
+
+### Name
+
+Camel
 
 ### Height
 
 about 71" (shoulder)
 
-##
-
-[[Animal]]
-
-### Height
-
-A card whose heading carries no text.
-
-## компост
+## компост ^wxyz01234t
 
 [[Term]]
+
+### Слово
+
+компост
 
 ### Значение
 
@@ -113,3 +134,5 @@ A card whose heading carries no text.
 | --- | --- |
 | хинди | खाद |
 | русский | перегной |
+
+# Empty on purpose

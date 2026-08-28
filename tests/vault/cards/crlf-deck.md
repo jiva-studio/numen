@@ -6,9 +6,13 @@ title: CRLF deck
 A deck whose every line break is CRLF. Its bytes are the test, so this file is
 excluded from line-ending normalisation.
 
-## Guanaco
+## Guanaco ^k7m2xq9fzp
 
 [[Animal]]
+
+### Name
+
+Guanaco
 
 ### Height
 

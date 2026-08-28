@@ -85,7 +85,7 @@ type Core struct {
 	// DeckBody is the markdown a deck of cards is written as, and StencilBody
 	// the markdown a stencil's faces are. A tool changes cards and hands them
 	// back; what the file then reads as is the format's.
-	DeckBody    func(preamble string, held []format.Card, tail string) (string, error)
+	DeckBody    func(d format.Deck) (string, error)
 	StencilBody func(preamble string, faces []format.Face, tail string) (string, error)
 
 	Create  note.Create

@@ -52,15 +52,18 @@ A note carrying no `id` is indexed in full and simply cannot be a *target*: noth
 
 ## What the application may add
 
-The complete permitted set, from ADR-0008. Everything must survive a third-party markdown editor and stay readable to a human.
+The complete permitted set, from ADR-0018. Everything must survive a third-party markdown editor and stay readable to a human.
 
 | Addition | Where | Status |
 | --- | --- | --- |
-| YAML frontmatter | top of file | allowed; key set not yet fixed |
+| YAML frontmatter | top of file | allowed; the keys the application owns are the closed set above |
 | `[[wikilink]]` | body | a link with the role `ref`, resolved by name ([Links](links.md)) |
 | `{{Field}}` | the body of a stencil | where a card's value goes on a face ([Cards](cards.md)) |
+| `^` and a card's mark | the end of a card's heading in a deck | what that card is, wherever it goes ([Cards](cards.md)) |
 
-Nothing else is permitted: no custom fences, no HTML comments carrying data, no sidecar files, no private extension.
+The first two are every note's. The last two belong to a note of `type: stencil` or `type: deck`, and no other kind of note may carry them.
+
+Nothing else is permitted: no custom fences, no HTML comments carrying data, no sidecar files, no private extension. A kind of note that wants an addition of its own asks for it in a record, as a stencil and a deck did, and the table above is what is kept current.
 
 ## Handling of existing files
 

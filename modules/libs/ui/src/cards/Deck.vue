@@ -1,14 +1,17 @@
 <script setup lang="ts">
 /**
- * A deck, edited: its cards as tiles in a grid, and a plus standing last.
+ * A deck, edited: its cards as tiles in a grid, standing under the sections
+ * they are in, and a plus standing last.
  *
  * The grid lays the cards out, carries one from place to place, and asks which
  * stencil a new one is cut by. What a card holds is the card's own. What a card
  * stands for is the caller's.
  */
 import { computed, shallowRef } from 'vue'
+import Band from './Band.vue'
 import Card from './Card.vue'
 import Glyph from './Glyph.vue'
+import Rule from '../rule/Rule.vue'
 import { useCarry } from './carry'
 import { Button } from '../components/ui/button'
 import {
@@ -17,9 +20,11 @@ import {
   grid,
   NOTHING_WRONG,
   sealed,
+  type Banded,
   type DeckWords,
   type Drawn,
   type Filled,
+  type Run,
   type Wrong,
 } from './deck'
 import { declared, numbered, type Landing } from './order'
@@ -34,6 +39,8 @@ const props = withDefaults(
     cards: readonly Drawn[]
     /** The stencils a card may be cut by. */
     cuts: readonly Cut[]
+    /** The sections, in the order they stand in the deck. */
+    sections?: readonly Banded[]
     /** What the grid is announced as. */
     name?: string
     /** What the caller found wrong with the cards it handed in. */
@@ -41,25 +48,31 @@ const props = withDefaults(
     /** The words it is drawn with. */
     words?: DeckWords
   }>(),
-  { name: 'Deck', wrong: () => NOTHING_WRONG, words: () => DECK_WORDS },
+  { sections: () => [], name: 'Deck', wrong: () => NOTHING_WRONG, words: () => DECK_WORDS },
 )
 
 const emit = defineEmits<{
   /**
-   * A card asked for, cut by a stencil, named by something nothing has taken.
-   * The name is the first field's value and stands nowhere among the rest,
-   * which stand empty.
+   * A card asked for, cut by a stencil, with a value standing empty under every
+   * field that stencil declares. It is made at the end of the deck.
    */
-  (event: 'add', name: string, stencil: string, filled: readonly Filled[]): void
-  (event: 'remove', id: string): void
-  /** A card let go somewhere in the order: before another, or at the end. */
-  (event: 'move', id: string, at: Landing): void
+  (event: 'add', stencil: string, filled: readonly Filled[]): void
+  (event: 'remove', mark: string): void
   /**
-   * One value of one card as it now reads. `names` says the card's name was
-   * typed in, and a card writing a field twice is writing two values, of which
-   * `nth` says which was typed in.
+   * A card let go somewhere in the deck: before the card of that mark, at the
+   * head of the section of that identity, or at the end.
    */
-  (event: 'write', id: string, field: string, nth: number, names: boolean, text: string): void
+  (event: 'move', mark: string, at: Landing): void
+  /**
+   * One value of one card as it now reads. A card writing a field twice is
+   * writing two values, of which `nth` says which was typed in.
+   */
+  (event: 'write', mark: string, field: string, nth: number, text: string): void
+  /** A section asked for, under a name nothing has taken. It is made at the end. */
+  (event: 'add-section', name: string): void
+  (event: 'rename-section', id: string, name: string): void
+  /** A section asked to go. Its heading goes, and the cards under it stay. */
+  (event: 'remove-section', id: string): void
 }>()
 
 /** The plus is showing which stencils a new card may be cut by. */
@@ -70,22 +83,24 @@ const asking = shallowRef(false)
  * let go where it stands moves nothing, and nothing else among them is fixed.
  */
 const { carried, at, lift, over, release, drop, step } = useCarry<Landing>({
-  order: () => props.cards.map((card) => card.id),
+  order: () => props.cards.map((card) => card.mark),
   nowhere: null,
   lands: (held, at) => at !== held,
   moves: (held, at) => emit('move', held, at),
 })
 
-const shown = computed(() => grid(props.cards, props.cuts, carried.value))
+const shown = computed(() => grid(props.cards, props.sections, props.cuts, carried.value))
+
+/** The run the plus stands in, which is the last of them. */
+const last = computed<Run | undefined>(() => shown.value.runs.at(-1))
 
 const add = (cut: Cut): void => {
   asking.value = false
-  emit(
-    'add',
-    numbered(props.cards.map((card) => card.name), props.words.cardStem),
-    cut.name,
-    blanks(declared(cut.fields).slice(1)),
-  )
+  emit('add', cut.name, blanks(declared(cut.fields)))
+}
+
+const addSection = (): void => {
+  emit('add-section', numbered(props.sections.map((each) => each.name), props.words.sectionStem))
 }
 </script>
 
@@ -97,65 +112,95 @@ const add = (cut: Cut): void => {
     @dragover="over(null, $event)"
     @drop="drop"
   >
-    <div class="deck__grid">
+    <template v-for="run in shown.runs" :key="run.band?.id ?? ''">
+      <!-- A card let go on a section's heading lands at the head of that
+           section, which is the one place a section holding none takes one. -->
       <div
-        v-for="tile in shown.tiles"
-        :key="tile.id"
-        class="deck__tile"
-        :data-before="tile.id === at || undefined"
-        @dragover.stop="over(tile.id, $event)"
+        v-if="run.band"
+        class="deck__band"
+        :data-band="run.band.id"
+        :data-before="run.band.id === at || undefined"
+        @dragover.stop="over(run.band.id, $event)"
         @drop.stop="drop"
       >
-        <Card
-          :tile="tile"
-          :wrong="wrong.at.get(tile.id) ?? []"
-          :wrong-under="wrong.under.get(tile.id) ?? NO_FIELDS"
+        <Band
+          :band="run.band"
           :words="words"
-          @remove="emit('remove', tile.id)"
-          @lift="lift(tile.id, $event)"
-          @release="release"
-          @step="(way, press) => step(tile.id, way, press)"
-          @write="(field, nth, names, text) => emit('write', tile.id, field, nth, names, text)"
+          @rename="(name: string) => emit('rename-section', run.band?.id ?? '', name)"
+          @remove="emit('remove-section', run.band?.id ?? '')"
         />
       </div>
 
-      <article
-        class="deck__tile deck__plus rounded-node"
-        :aria-posinset="shown.plusAt"
-        :aria-setsize="shown.of"
-        :aria-label="words.add"
-        data-plus
-      >
-        <!-- The plus says what it is for by standing alone in the middle. What
-             it is called is read aloud and shown on hovering, and not beside it.
-             What it opens takes its place, so it says nothing of being open. -->
-        <Button
-          v-if="!asking"
-          variant="ghost"
-          class="deck__ask"
-          :aria-label="words.add"
-          :title="words.add"
-          @click="asking = true"
+      <div class="deck__grid">
+        <div
+          v-for="tile in run.tiles"
+          :key="tile.mark"
+          class="deck__tile"
+          :data-before="tile.mark === at || undefined"
+          @dragover.stop="over(tile.mark, $event)"
+          @drop.stop="drop"
         >
-          <Glyph shows="plus" />
-        </Button>
-
-        <div v-else class="deck__asking flex flex-col items-center">
-          <p class="deck__silence caps-numen text-small text-hushed">{{ words.cut }}</p>
-          <div class="deck__cuts flex flex-wrap justify-center">
-            <Button
-              v-for="cut in cuts"
-              :key="cut.name"
-              variant="outline"
-              size="small"
-              :data-cut="cut.name"
-              @click="add(cut)"
-              >{{ cut.name }}</Button
-            >
-          </div>
+          <Card
+            :tile="tile"
+            :wrong="wrong.at.get(tile.mark) ?? []"
+            :wrong-under="wrong.under.get(tile.mark) ?? NO_FIELDS"
+            :words="words"
+            @remove="emit('remove', tile.mark)"
+            @lift="lift(tile.mark, $event)"
+            @release="release"
+            @step="(way, press) => step(tile.mark, way, press)"
+            @write="(field, nth, text) => emit('write', tile.mark, field, nth, text)"
+          />
         </div>
-      </article>
-    </div>
+
+        <!-- A card is made at the end of the deck, so the plus stands in the
+             last run of it and nowhere else. -->
+        <article
+          v-if="run === last"
+          class="deck__tile deck__plus rounded-node"
+          :aria-posinset="shown.plusAt"
+          :aria-setsize="shown.of"
+          :aria-label="words.add"
+          data-plus
+        >
+          <!-- The plus says what it is for by standing alone in the middle. What
+               it is called is read aloud and shown on hovering, and not beside it.
+               What it opens takes its place, so it says nothing of being open. -->
+          <Button
+            v-if="!asking"
+            variant="ghost"
+            class="deck__ask"
+            :aria-label="words.add"
+            :title="words.add"
+            @click="asking = true"
+          >
+            <Glyph shows="plus" />
+          </Button>
+
+          <div v-else class="deck__asking flex flex-col items-center">
+            <p class="deck__silence caps-numen text-small text-hushed">{{ words.cut }}</p>
+            <div class="deck__cuts flex flex-wrap justify-center">
+              <Button
+                v-for="cut in cuts"
+                :key="cut.name"
+                variant="outline"
+                size="small"
+                :data-cut="cut.name"
+                @click="add(cut)"
+                >{{ cut.name }}</Button
+              >
+            </div>
+          </div>
+        </article>
+      </div>
+    </template>
+
+    <Rule>
+      <Button variant="ghost" size="small" data-add-section @click="addSection">
+        <Glyph shows="plus" />
+        {{ words.addSection }}
+      </Button>
+    </Rule>
   </div>
 </template>
 
@@ -166,8 +211,31 @@ const add = (cut: Cut): void => {
   --tile: 20rem;
   --gap: 0.75rem;
 
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
   padding: var(--numen-gutter);
   overflow: auto;
+}
+
+/* A section's heading runs the width of the grid under it, and takes the caret
+   that says a card would land at its head. */
+.deck__band {
+  position: relative;
+}
+
+.deck__band[data-before]::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: calc(-1 * var(--gap) / 2);
+  block-size: var(--numen-caret);
+  background: var(--numen-ring);
+}
+
+/* A section holding no card takes no room of its own between the headings. */
+.deck__grid:empty {
+  display: none;
 }
 
 /*

@@ -79,13 +79,12 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (Deck, erro
 		if err != nil {
 			return Deck{}, err
 		}
-		// A heading is the first field's value, and which field that is stands
-		// in the stencil, so the two files are read against each other here.
-		by, ordinary, err := u.stencils(ctx, v, out.Stencils)
+		// A card is laid out by the stencil its wikilink lands on, so a name
+		// reaching a note that is not one is a card no face shows.
+		_, ordinary, err := u.stencils(ctx, v, out.Stencils)
 		if err != nil {
 			return Deck{}, err
 		}
-		out.Deck.Problems = append(out.Deck.Problems, format.Cut(out.Deck, by)...)
 		out.Deck.Problems = append(out.Deck.Problems, notStencils(out.Deck, ordinary)...)
 	case note.TooLarge:
 		out.Deck = format.Deck{Ref: ref, Problems: []format.Problem{format.OnFile(
@@ -94,6 +93,23 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (Deck, erro
 		)}}
 	}
 	return out, nil
+}
+
+// Cutting is the stencil each card of a deck is cut by, keyed by what stands in
+// the card's brackets. A name that reaches no note, or reaches a note that is
+// not a stencil, carries a stencil of nothing.
+//
+// The two files are read against each other here, which is what says which of a
+// card's fields is first.
+func (u Read) Cutting(
+	ctx context.Context, v domain.Vault, path string, d format.Deck,
+) (map[string]format.Stencil, error) {
+	at, err := cutting(ctx, u.Links, v.ID, path, d)
+	if err != nil {
+		return nil, err
+	}
+	by, _, err := u.stencils(ctx, v, at)
+	return by, err
 }
 
 // cutting is where each card's wikilink lands, keyed by what stands in the

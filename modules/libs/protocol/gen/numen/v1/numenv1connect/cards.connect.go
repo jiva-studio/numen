@@ -77,8 +77,8 @@ type CardsServiceClient interface {
 	// exists, so it is one to everything that reads the vault before a card is
 	// cut by it.
 	//
-	// The first field is what a card cut by this stencil is named by, so a
-	// stencil is made with at least one.
+	// The first field is what a card's heading is read from, so a stencil is
+	// made with at least one.
 	MakeStencil(context.Context, *connect.Request[v1.MakeStencilRequest]) (*connect.Response[v1.MakeStencilResponse], error)
 	// ReadStencil is the fields and the faces of one stencil.
 	ReadStencil(context.Context, *connect.Request[v1.ReadStencilRequest]) (*connect.Response[v1.ReadStencilResponse], error)
@@ -97,9 +97,10 @@ type CardsServiceClient interface {
 	// places it, and as a heading in every card of every deck that stencil cuts.
 	// What stands under each heading is left as it was.
 	//
-	// The first field is written in the stencil alone, so renaming it reaches no
-	// deck. A deck the rename could not be written to keeps the old heading and
-	// comes back under `not_written`.
+	// Every field a stencil declares stands under its own heading in every card,
+	// the first included, so renaming any of them reaches every deck that
+	// stencil cuts. A deck the rename could not be written to keeps the old
+	// heading and comes back under `not_written`.
 	//
 	// A stencil that no longer holds what the caller read is left alone and
 	// answered `changed`, and then no deck is written either.
@@ -108,12 +109,17 @@ type CardsServiceClient interface {
 	// from the moment it exists, so it is one to everything that reads the vault
 	// before a card is written into it.
 	MakeDeck(context.Context, *connect.Request[v1.MakeDeckRequest]) (*connect.Response[v1.MakeDeckResponse], error)
-	// ReadDeck is the cards of one deck, in the order they stand in the file.
+	// ReadDeck is the sections and the cards of one deck, in the order they
+	// stand in the file. Each card says which section it stands under.
 	ReadDeck(context.Context, *connect.Request[v1.ReadDeckRequest]) (*connect.Response[v1.ReadDeckResponse], error)
-	// WriteDeck puts cards into a deck, in the order they are given. A path the
-	// vault holds no note at is refused `missing`; MakeDeck is what puts a deck
-	// in the vault. The frontmatter stays as the person wrote it, and a deck that
-	// no longer holds what the caller read is left alone and answered `changed`.
+	// WriteDeck puts sections and cards into a deck, in the order they are
+	// given. A path the vault holds no note at is refused `missing`; MakeDeck is
+	// what puts a deck in the vault. The frontmatter stays as the person wrote
+	// it, and a deck that no longer holds what the caller read is left alone and
+	// answered `changed`.
+	//
+	// A card carrying no section stands before the first one, and a section no
+	// card stands under is written where the cards around it put it.
 	//
 	// The preamble, the tail and each card's lead are written back as they
 	// arrive, so the parts of the file a client did not touch come out as the
@@ -248,8 +254,8 @@ type CardsServiceHandler interface {
 	// exists, so it is one to everything that reads the vault before a card is
 	// cut by it.
 	//
-	// The first field is what a card cut by this stencil is named by, so a
-	// stencil is made with at least one.
+	// The first field is what a card's heading is read from, so a stencil is
+	// made with at least one.
 	MakeStencil(context.Context, *connect.Request[v1.MakeStencilRequest]) (*connect.Response[v1.MakeStencilResponse], error)
 	// ReadStencil is the fields and the faces of one stencil.
 	ReadStencil(context.Context, *connect.Request[v1.ReadStencilRequest]) (*connect.Response[v1.ReadStencilResponse], error)
@@ -268,9 +274,10 @@ type CardsServiceHandler interface {
 	// places it, and as a heading in every card of every deck that stencil cuts.
 	// What stands under each heading is left as it was.
 	//
-	// The first field is written in the stencil alone, so renaming it reaches no
-	// deck. A deck the rename could not be written to keeps the old heading and
-	// comes back under `not_written`.
+	// Every field a stencil declares stands under its own heading in every card,
+	// the first included, so renaming any of them reaches every deck that
+	// stencil cuts. A deck the rename could not be written to keeps the old
+	// heading and comes back under `not_written`.
 	//
 	// A stencil that no longer holds what the caller read is left alone and
 	// answered `changed`, and then no deck is written either.
@@ -279,12 +286,17 @@ type CardsServiceHandler interface {
 	// from the moment it exists, so it is one to everything that reads the vault
 	// before a card is written into it.
 	MakeDeck(context.Context, *connect.Request[v1.MakeDeckRequest]) (*connect.Response[v1.MakeDeckResponse], error)
-	// ReadDeck is the cards of one deck, in the order they stand in the file.
+	// ReadDeck is the sections and the cards of one deck, in the order they
+	// stand in the file. Each card says which section it stands under.
 	ReadDeck(context.Context, *connect.Request[v1.ReadDeckRequest]) (*connect.Response[v1.ReadDeckResponse], error)
-	// WriteDeck puts cards into a deck, in the order they are given. A path the
-	// vault holds no note at is refused `missing`; MakeDeck is what puts a deck
-	// in the vault. The frontmatter stays as the person wrote it, and a deck that
-	// no longer holds what the caller read is left alone and answered `changed`.
+	// WriteDeck puts sections and cards into a deck, in the order they are
+	// given. A path the vault holds no note at is refused `missing`; MakeDeck is
+	// what puts a deck in the vault. The frontmatter stays as the person wrote
+	// it, and a deck that no longer holds what the caller read is left alone and
+	// answered `changed`.
+	//
+	// A card carrying no section stands before the first one, and a section no
+	// card stands under is written where the cards around it put it.
 	//
 	// The preamble, the tail and each card's lead are written back as they
 	// arrive, so the parts of the file a client did not touch come out as the

@@ -49,6 +49,10 @@ Leaves and peelings, turned and left to rot down
 
 A deck need not have sections, and cards may stand before the first one. Two sections may carry one name, and an empty section is kept. A section is not carried from place to place; moving one would mean moving its cards, and nothing has asked for that.
 
+**Text between a section's heading and its first card is the section's, and is kept exactly as it stands** — what a card already has between its stencil's wikilink and its first field, one level up. Nothing lays it out and nothing reads it; it is a person writing about their own deck, and a write puts it back where it was.
+
+**A section is made at the end of the deck, as a card is, and taking one away takes away its heading and nothing else.** Its cards stay where they stand, under whatever heading is above them now, and its own text stays too: a section is a name, so removing it removes a name. Carrying cards out with it would be a second act wearing one name.
+
 **The format now spends three heading levels.** A value may hold a heading of the fourth level and below, and no higher.
 
 ### Every field is written under its own heading
@@ -64,7 +68,7 @@ A card writing one field twice is a problem against the deck, as it was. There i
 A card's heading is the first line of its first field, cut to fit one line. It holds nothing of its own: throw it away and the application writes it again from the field.
 
 - The projection is taken over text whose line endings are normalised, and written back in the endings the file keeps.
-- It stops at the first line break, and at a length the application chooses.
+- It stops at the first line break, and at a hundred and twenty characters, counted as a person counts them and not as bytes.
 - It never cuts inside a `[[wikilink]]`, an embed or a run of emphasis: the cut falls before whichever of those it lands in.
 - A first field that is empty, or holds only spaces, projects to a heading of nothing, and the card is drawn by its first field's box like any other.
 
@@ -86,7 +90,7 @@ It is written when the card is made. A card typed into a deck by hand carries no
 
 **The mark does not know which deck it is in.** A card moved to another deck, or to another vault, is the same card: the same mark, the same history. Nothing recomputes and nothing is lost.
 
-**Two cards carrying one mark** — a card copied by hand — is a problem against the deck holding them. Across two decks it is a question for whatever keeps a history, and this record does not answer it.
+**Two cards carrying one mark** — a card copied by hand — is a problem against the deck holding them. **Both are read and both are shown, each marked**: nothing a person wrote goes missing from the screen, and which of the two is meant is a thing only they know. Neither is given a new mark, because a machine choosing would be choosing which card keeps the history. Across two decks it is a question for whatever keeps a history, and this record does not answer it.
 
 Ten characters is 1.1 × 10¹⁵ marks. A vault of a hundred thousand cards meets a collision about once in two hundred thousand vaults, which is why the check exists and why it is not a design constraint.
 

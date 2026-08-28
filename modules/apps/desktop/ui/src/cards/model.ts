@@ -7,16 +7,45 @@
  * cards and the fields a file is written from, is here, so a test can ask it
  * without a screen.
  */
-import { ordered, reordered, type CardLanding, type Cut, type Drawn } from '@numen/ui'
-import type { Carded, Decked, Faced, Offer, Problem, Stencilled, Value } from '../core'
+import {
+  ordered,
+  reordered,
+  type Banded,
+  type CardLanding,
+  type Cut,
+  type Drawn,
+} from '@numen/ui'
+import type {
+  Carded,
+  Decked,
+  Faced,
+  Offer,
+  Problem,
+  Sectioned,
+  Stencilled,
+  Value,
+} from '../core'
 
-/** An identity a card or a face is drawn under, which no file carries. */
+/** An identity something is drawn under, which no file carries. */
 export type Mint = () => string
 
 const minting: Mint = () => crypto.randomUUID()
 
-/** One card as the window holds it: what the file says, under an identity of its own. */
-export interface Card extends Carded {
+/**
+ * One card as the window holds it: what the file says, under the identity it is
+ * addressed by.
+ */
+export interface Card extends Omit<Carded, 'section'> {
+  readonly id: string
+  /**
+   * The section it stands under, by the identity this window knows that section
+   * at. Nothing for a card standing before the first.
+   */
+  readonly section: string | null
+}
+
+/** One section as the window holds it, under an identity of its own. */
+export interface Section extends Sectioned {
   readonly id: string
 }
 
@@ -24,6 +53,7 @@ export interface Card extends Carded {
 export interface Deck {
   readonly preamble: string
   readonly cards: readonly Card[]
+  readonly sections: readonly Section[]
   readonly tail: string
 }
 
@@ -41,17 +71,35 @@ export interface Sheet {
 }
 
 /** A deck of no cards, which is what a file nothing has been written to holds. */
-export const NO_DECK: Deck = { preamble: '', cards: [], tail: '' }
+export const NO_DECK: Deck = { preamble: '', cards: [], sections: [], tail: '' }
 
 /** A stencil that names nothing and shows nothing. */
 export const NO_SHEET: Sheet = { fields: [], preamble: '', faces: [], tail: '' }
 
-/** A deck as the vault read it, each card under an identity this window mints. */
-export const deckOf = (read: Decked, mint: Mint = minting): Deck => ({
-  preamble: read.preamble,
-  cards: read.cards.map((card) => ({ ...card, id: mint() })),
-  tail: read.tail,
-})
+/**
+ * A deck as the vault read it.
+ *
+ * A card is known by its mark, which the file carries and which follows the
+ * card wherever it goes. A card the file cannot name — one carrying no mark,
+ * and each of two carrying one mark between them — is known by an identity this
+ * window mints for the reading, so that both of two are drawn and each is typed
+ * into on its own. A section carries no mark, so every one of them is minted.
+ */
+export const deckOf = (read: Decked, mint: Mint = minting): Deck => {
+  const held = new Map<string, number>()
+  for (const card of read.cards) held.set(card.mark, (held.get(card.mark) ?? 0) + 1)
+  const sections = read.sections.map((section) => ({ ...section, id: mint() }))
+  return {
+    preamble: read.preamble,
+    cards: read.cards.map((card) => ({
+      ...card,
+      id: card.mark && held.get(card.mark) === 1 ? card.mark : mint(),
+      section: card.section === null ? null : (sections[card.section]?.id ?? null),
+    })),
+    sections,
+    tail: read.tail,
+  }
+}
 
 /** A stencil as the vault read it, each face under an identity this window mints. */
 export const sheetOf = (read: Stencilled, mint: Mint = minting): Sheet => ({
@@ -70,9 +118,16 @@ export const bodyOf = (deck: Deck): string =>
   JSON.stringify({
     preamble: deck.preamble,
     tail: deck.tail,
+    sections: deck.sections.map((section) => ({
+      id: section.id,
+      name: section.name,
+      lead: section.lead,
+    })),
     cards: deck.cards.map((card) => ({
       id: card.id,
-      name: card.name,
+      mark: card.mark,
+      section: card.section,
+      heading: card.heading,
       stencil: card.stencil,
       stencilAt: card.stencilAt,
       lead: card.lead,
@@ -101,15 +156,31 @@ export const deckIn = (body: string): Deck => (body ? (JSON.parse(body) as Deck)
 /** The stencil a string stands for, the same way. */
 export const sheetIn = (body: string): Sheet => (body ? (JSON.parse(body) as Sheet) : NO_SHEET)
 
-/** The cards of a deck, in the shape the vault takes them. */
-export const cardsOf = (deck: Deck): readonly Carded[] =>
-  deck.cards.map(({ name, stencil, stencilAt, lead, values }) => ({
-    name,
+/**
+ * The cards of a deck, in the shape the vault takes them. A card says where the
+ * section it stands under stands in the deck's own, which is what the file
+ * writes it under.
+ */
+export const cardsOf = (deck: Deck): readonly Carded[] => {
+  const at = new Map(deck.sections.map((section, index) => [section.id, index]))
+  return deck.cards.map(({ mark, section, heading, stencil, stencilAt, lead, values }) => ({
+    mark,
+    section: section === null ? null : (at.get(section) ?? null),
+    heading,
     stencil,
     stencilAt,
     lead,
     values,
   }))
+}
+
+/** The sections of a deck, in the shape the vault takes them. */
+export const sectionsOf = (deck: Deck): readonly Sectioned[] =>
+  deck.sections.map(({ name, lead }) => ({ name, lead }))
+
+/** The sections as the grid draws them, each under the identity it was read at. */
+export const bandedOf = (deck: Deck): readonly Banded[] =>
+  deck.sections.map(({ id, name }) => ({ id, name }))
 
 /** The faces of a stencil, in the shape the vault takes them. */
 export const facesOf = (sheet: Sheet): readonly Faced[] =>
@@ -124,8 +195,8 @@ export const facesOf = (sheet: Sheet): readonly Faced[] =>
 export const drawnOf = (deck: Deck, offers: readonly Offer[]): readonly Drawn[] => {
   const titles = new Map(offers.map((offer) => [offer.path, offer.title]))
   return deck.cards.map((card) => ({
-    id: card.id,
-    name: card.name,
+    mark: card.id,
+    section: card.section,
     stencil: (titles.get(card.stencilAt) ?? card.stencil) || null,
     filled: card.values.map((value) => ({ field: value.field, text: value.text })),
   }))
@@ -154,6 +225,7 @@ export const cutsOf = (offers: readonly Offer[]): readonly Cut[] => {
 export const sameDeck = (one: Deck, other: Deck): boolean =>
   one.preamble === other.preamble &&
   one.tail === other.tail &&
+  JSON.stringify(sectionsOf(one)) === JSON.stringify(sectionsOf(other)) &&
   JSON.stringify(cardsOf(one)) === JSON.stringify(cardsOf(other))
 
 /** Whether two stencils read the same, the identities left out the same way. */
@@ -236,13 +308,17 @@ export const linkTo = (path: string): string => {
 }
 
 /**
- * A card added at the end, cut by the stencil filed at a path, with a value
- * standing empty for each field. The wikilink the file carries names that
- * stencil by its file's name, and by its title where the vault filed it nowhere.
+ * A card made at the end of the deck, under the last section of it, cut by the
+ * stencil filed at a path, with a value standing empty for each field. The
+ * wikilink the file carries names that stencil by its file's name, and by its
+ * title where the vault filed it nowhere.
+ *
+ * It carries no mark: a mark is written where the deck is made whole, on its
+ * way to the vault, and the window minted an identity to draw it under until
+ * the file names it.
  */
 export const added = (
   deck: Deck,
-  name: string,
   title: string,
   stencilAt: string,
   values: readonly Value[],
@@ -253,7 +329,9 @@ export const added = (
     ...deck.cards,
     {
       id: mint(),
-      name,
+      mark: '',
+      section: deck.sections.at(-1)?.id ?? null,
+      heading: '',
       stencil: stencilAt ? linkTo(stencilAt) : title,
       stencilAt,
       lead: '',
@@ -268,27 +346,69 @@ export const removed = (deck: Deck, id: string): Deck => ({
   cards: deck.cards.filter((card) => card.id !== id),
 })
 
-/** A card let go somewhere in the order: before another, or at the end. */
+/**
+ * A card let go somewhere in the deck: before the card of that identity, at the
+ * head of the section of that identity, or at the end. A card takes the section
+ * of whatever it lands in front of, and one let go at the end stands under the
+ * last section.
+ */
 export const carried = (deck: Deck, id: string, at: CardLanding): Deck => {
-  const order = ordered(
-    deck.cards.map((card) => card.id),
-    id,
-    at,
-  )
-  const held = new Map(deck.cards.map((card) => [card.id, card]))
-  const cards: Card[] = []
-  for (const one of order) {
-    const card = held.get(one)
-    if (card) cards.push(card)
+  const held = deck.cards.find((card) => card.id === id)
+  if (!held) return deck
+  const left = deck.cards.filter((card) => card.id !== id)
+
+  const before = at === null ? -1 : left.findIndex((card) => card.id === at)
+  if (before !== -1) {
+    const under = { ...held, section: left[before]?.section ?? null }
+    return { ...deck, cards: [...left.slice(0, before), under, ...left.slice(before)] }
   }
-  return { ...deck, cards }
+
+  if (at === null) {
+    return { ...deck, cards: [...left, { ...held, section: deck.sections.at(-1)?.id ?? null }] }
+  }
+  if (!deck.sections.some((section) => section.id === at)) return deck
+
+  // The cards stand grouped in the order of the sections, so the head of one is
+  // where the first card standing that far down the deck stands.
+  const rank = (section: string | null): number =>
+    section === null ? 0 : deck.sections.findIndex((each) => each.id === section) + 1
+  const seat = left.findIndex((card) => rank(card.section) >= rank(at))
+  const where = seat === -1 ? left.length : seat
+  return {
+    ...deck,
+    cards: [...left.slice(0, where), { ...held, section: at }, ...left.slice(where)],
+  }
 }
 
-/** A card under another name. */
-export const named = (deck: Deck, id: string, name: string): Deck => ({
+/** A section made at the end of the deck, holding no card. */
+export const sectionAdded = (deck: Deck, name: string, mint: Mint = minting): Deck => ({
   ...deck,
-  cards: deck.cards.map((card) => (card.id === id ? { ...card, name } : card)),
+  sections: [...deck.sections, { id: mint(), name, lead: '' }],
 })
+
+/** A section under another name. */
+export const sectionNamed = (deck: Deck, id: string, name: string): Deck => ({
+  ...deck,
+  sections: deck.sections.map((section) =>
+    section.id === id ? { ...section, name } : section,
+  ),
+})
+
+/**
+ * A section taken out of the deck. A section is a name, so taking it away takes
+ * away its heading and nothing else: its cards stay where they stand, under
+ * whatever heading is above them now.
+ */
+export const sectionGone = (deck: Deck, id: string): Deck => {
+  const above = deck.sections[deck.sections.findIndex((section) => section.id === id) - 1]
+  return {
+    ...deck,
+    sections: deck.sections.filter((section) => section.id !== id),
+    cards: deck.cards.map((card) =>
+      card.section === id ? { ...card, section: above?.id ?? null } : card,
+    ),
+  }
+}
 
 /**
  * One value of one card as it now reads. A field the card has keeps the place
@@ -415,7 +535,7 @@ export interface Marks {
 
 /**
  * Each problem against the thing it stands on. A problem carries where it
- * stands, so a card with no name and two cards of one name each land on the
+ * stands, so a card under no stencil and two cards of one mark each land on the
  * tile they were read from, and a problem naming a field lands on that field of
  * that card. One standing past the end of what was read is against the file.
  */

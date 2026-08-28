@@ -3,6 +3,7 @@ package mcp
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -33,7 +34,8 @@ type Stencil struct {
 
 // Card is one card as a deck answers with it.
 type Card struct {
-	Name    string  `json:"name" jsonschema:"the heading the card stands under, which is what it is called and half of how it is addressed"`
+	Mark    string  `json:"mark" jsonschema:"what the card is for as long as it exists, and how every tool here addresses it; empty for a card typed in by hand, which is given one the next time the deck is written"`
+	Section int     `json:"section" jsonschema:"where the section this card stands under stands in the deck's sections, counted from the first; -1 for a card standing before the first section"`
 	Stencil string  `json:"stencil,omitempty" jsonschema:"the stencil this card is cut by, as the wikilink beneath its heading names it"`
 	Values  []Value `json:"values,omitempty" jsonschema:"what the card holds, in the order it stands in the file"`
 }
@@ -93,27 +95,32 @@ func addCardTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "card_read",
 		Title: "Read the cards of a deck",
-		Description: "The cards of one deck, in the order they stand in the file. A deck " +
-			"holds as many cards as a person writes, so this answers a run of them at a " +
-			"time: `held` says how many there are, and `from` takes the next run. What " +
-			"was wrong with the file comes back under `faults`, on the card it is " +
-			"against. The fingerprint is what the writing tools want: hand it back and a " +
-			"write is refused if the person changed the deck in the meantime.",
+		Description: "The cards of one deck, in the order they stand in the file, each " +
+			"under the mark every other tool here addresses it by. A deck holds as many " +
+			"cards as a person writes, so this answers a run of them at a time: `held` " +
+			"says how many there are, and `from` takes the next run. The sections are " +
+			"the runs a person divided the deck into, and every card says which of them " +
+			"it stands under. What was wrong with the file comes back under `faults`, " +
+			"on the card it is against. The fingerprint is what the writing tools want: " +
+			"hand it back and a write is refused if the person changed the deck in the " +
+			"meantime.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path  string `json:"path" jsonschema:"the deck to read"`
 		From  int    `json:"from,omitempty" jsonschema:"which card to start at, counted from zero"`
 		Limit int    `json:"limit,omitempty" jsonschema:"how many cards to return"`
 	}) (*sdk.CallToolResult, struct {
-		Cards       []Card  `json:"cards"`
-		Held        int     `json:"held" jsonschema:"how many cards the deck holds"`
-		Faults      []Fault `json:"faults,omitempty"`
-		Fingerprint string  `json:"fingerprint" jsonschema:"hand this to a writing tool to refuse a write over an edit you did not see"`
+		Cards       []Card   `json:"cards"`
+		Sections    []string `json:"sections,omitempty" jsonschema:"what the deck's sections are called, in the order they stand in the file"`
+		Held        int      `json:"held" jsonschema:"how many cards the deck holds"`
+		Faults      []Fault  `json:"faults,omitempty"`
+		Fingerprint string   `json:"fingerprint" jsonschema:"hand this to a writing tool to refuse a write over an edit you did not see"`
 	}, error) {
 		type out = struct {
-			Cards       []Card  `json:"cards"`
-			Held        int     `json:"held" jsonschema:"how many cards the deck holds"`
-			Faults      []Fault `json:"faults,omitempty"`
-			Fingerprint string  `json:"fingerprint" jsonschema:"hand this to a writing tool to refuse a write over an edit you did not see"`
+			Cards       []Card   `json:"cards"`
+			Sections    []string `json:"sections,omitempty" jsonschema:"what the deck's sections are called, in the order they stand in the file"`
+			Held        int      `json:"held" jsonschema:"how many cards the deck holds"`
+			Faults      []Fault  `json:"faults,omitempty"`
+			Fingerprint string   `json:"fingerprint" jsonschema:"hand this to a writing tool to refuse a write over an edit you did not see"`
 		}
 		if in.Limit > maxCards {
 			return nil, out{}, fmt.Errorf("read at most %d cards at a time", maxCards)
@@ -136,6 +143,9 @@ func addCardTools(server *sdk.Server, core Core) {
 			Faults:      faults(read.Deck.Problems),
 			Fingerprint: fingerprintOf(read.Ref),
 		}
+		for _, s := range read.Deck.Sections {
+			res.Sections = append(res.Sections, s.Name)
+		}
 		for _, card := range read.Deck.Cards[from:min(from+limit, len(read.Deck.Cards))] {
 			res.Cards = append(res.Cards, carded(card))
 		}
@@ -147,18 +157,20 @@ func addCardTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "card_add",
 		Title: "Add a card to a deck",
-		Description: "Write one card at the end of a deck. Name the stencil it is cut " +
-			"by, as `card_stencils` gives that name under `name`, and give a value for " +
-			"the fields that stencil declares. Do not write the markdown of a card " +
-			"yourself: a card written by hand without the wikilink under its heading is " +
-			"a card with no stencil, and nothing says so until somebody opens the deck. " +
-			"The name is the value of the stencil's first field and is written in the " +
-			"heading alone, so leave that field out of the values.",
+		Description: "Write one card at the end of a deck, or at the end of one of its " +
+			"sections. Name the stencil it is cut by, as `card_stencils` gives that " +
+			"name under `name`, and give a value for every field that stencil declares, " +
+			"the first included. Do not write the markdown of a card yourself: a card " +
+			"written by hand without the wikilink under its heading is a card with no " +
+			"stencil, and nothing says so until somebody opens the deck. The card's " +
+			"heading is written from its first field, and the mark it is addressed by " +
+			"is minted where the deck is written, so `card_read` is what says which " +
+			"card this became.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path        string  `json:"path" jsonschema:"the deck to write into"`
-		Name        string  `json:"name" jsonschema:"the value of the stencil's first field, which is what the card is called"`
 		Stencil     string  `json:"stencil" jsonschema:"the stencil it is cut by, by the name card_stencils gave under name"`
 		Values      []Value `json:"values" jsonschema:"what the card holds, in the order to write it"`
+		Section     *int    `json:"section,omitempty" jsonschema:"which of the deck's sections to write it at the end of, counted from the first; left out, the card goes at the end of the deck"`
 		Fingerprint string  `json:"fingerprint,omitempty" jsonschema:"what card_read said the deck was, to refuse a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, Written, error) {
 		if size := carries(in.Values); size > maxBytes {
@@ -166,16 +178,17 @@ func addCardTools(server *sdk.Server, core Core) {
 				"a card of %d bytes is more than this writes at once, which is %d", size, maxBytes)
 		}
 		written, err := changing(ctx, core, in.Path, in.Fingerprint,
-			func(read cards.Deck) ([]format.Card, error) {
-				held := read.Deck.Cards
-				for _, card := range held {
-					if card.Name == in.Name {
-						return nil, fmt.Errorf("this deck already holds a card called %s", in.Name)
-					}
+			func(read cards.Deck) (format.Deck, error) {
+				held := read.Deck
+				at, under, err := placed(held, in.Section)
+				if err != nil {
+					return format.Deck{}, err
 				}
-				return append(held, format.Card{
-					Name: in.Name, Stencil: in.Stencil, Values: values(in.Values),
-				}), nil
+				card := format.Card{
+					Stencil: in.Stencil, Section: under, Values: values(in.Values),
+				}
+				held.Cards = slices.Insert(held.Cards, at, card)
+				return held, nil
 			})
 		return nil, written, err
 	})
@@ -185,14 +198,14 @@ func addCardTools(server *sdk.Server, core Core) {
 		Title: "Change what a card holds",
 		Description: "Write values into one card of a deck. A field the card already " +
 			"carries is replaced, one it does not is added at the end of it, and a field " +
-			"left out of the call is left as it stands. The card is named by its " +
-			"heading; there is no renaming here, because a card under a different " +
-			"heading is a different card and what was attached to the old name is " +
-			"attached to nothing. The heading is the value of the stencil's first field, " +
-			"so leave that field out of the values.",
+			"left out of the call is left as it stands. The card is addressed by the " +
+			"mark `card_read` gives it, which is what the card is for as long as it " +
+			"exists: a card rewritten from end to end is still that card, and what is " +
+			"attached to it stays attached. The first field is written like every " +
+			"other, and the card's heading follows it.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path        string  `json:"path" jsonschema:"the deck the card is in"`
-		Card        string  `json:"card" jsonschema:"the card's name, as its heading spells it"`
+		Card        string  `json:"card" jsonschema:"the card's mark, as card_read gives it"`
 		Values      []Value `json:"values" jsonschema:"the fields to write, and what to put under each"`
 		Stencil     string  `json:"stencil,omitempty" jsonschema:"the stencil it is cut by from now on, by the name card_stencils gave under name; left out, the card keeps the one it names"`
 		Fingerprint string  `json:"fingerprint,omitempty" jsonschema:"what card_read said the deck was, to refuse a write over somebody else's edit"`
@@ -202,28 +215,17 @@ func addCardTools(server *sdk.Server, core Core) {
 				"a card of %d bytes is more than this writes at once, which is %d", size, maxBytes)
 		}
 		written, err := changing(ctx, core, in.Path, in.Fingerprint,
-			func(read cards.Deck) ([]format.Card, error) {
-				held := read.Deck.Cards
-				at := standing(held, in.Card)
+			func(read cards.Deck) (format.Deck, error) {
+				held := read.Deck
+				at := standing(held.Cards, in.Card)
 				if at < 0 {
-					return nil, fmt.Errorf("%w: %s", format.ErrNoSuchCard, in.Card)
+					return format.Deck{}, fmt.Errorf("%w: %s", format.ErrNoSuchCard, in.Card)
 				}
 				if in.Stencil != "" {
-					held[at].Stencil = in.Stencil
-				}
-				names, err := naming(ctx, core, read, held[at].Stencil)
-				if err != nil {
-					return nil, err
+					held.Cards[at].Stencil = in.Stencil
 				}
 				for _, v := range in.Values {
-					if names != "" && v.Field == names {
-						return nil, fmt.Errorf(
-							"%s is the field this card is named by, and its value is the heading %q: "+
-								"leave it out of the values", names, held[at].Name)
-					}
-				}
-				for _, v := range in.Values {
-					held[at] = filled(held[at], v)
+					held.Cards[at] = filled(held.Cards[at], v)
 				}
 				return held, nil
 			})
@@ -238,17 +240,39 @@ func addCardTools(server *sdk.Server, core Core) {
 			"Nothing brings it back, so read the deck before removing from it.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path        string `json:"path" jsonschema:"the deck the card is in"`
-		Card        string `json:"card" jsonschema:"the card's name, as its heading spells it"`
+		Card        string `json:"card" jsonschema:"the card's mark, as card_read gives it"`
 		Fingerprint string `json:"fingerprint,omitempty" jsonschema:"what card_read said the deck was, to refuse a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, Written, error) {
 		written, err := changing(ctx, core, in.Path, in.Fingerprint,
-			func(read cards.Deck) ([]format.Card, error) {
-				held := read.Deck.Cards
-				at := standing(held, in.Card)
+			func(read cards.Deck) (format.Deck, error) {
+				held := read.Deck
+				at := standing(held.Cards, in.Card)
 				if at < 0 {
-					return nil, fmt.Errorf("%w: %s", format.ErrNoSuchCard, in.Card)
+					return format.Deck{}, fmt.Errorf("%w: %s", format.ErrNoSuchCard, in.Card)
 				}
-				return append(held[:at], held[at+1:]...), nil
+				held.Cards = slices.Delete(held.Cards, at, at+1)
+				return held, nil
+			})
+		return nil, written, err
+	})
+
+	sdk.AddTool(server, &sdk.Tool{
+		Name:  "card_section_add",
+		Title: "Divide a deck with a section",
+		Description: "Write a section at the end of a deck. A section is a name a person " +
+			"gives one run of a deck, and it is a name and nothing else: it carries no " +
+			"field, no stencil and no schedule. `card_add` writes a card at the end of " +
+			"one, and `card_read` says which section each card stands under.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
+		Path        string `json:"path" jsonschema:"the deck to divide"`
+		Name        string `json:"name" jsonschema:"what the section is called"`
+		Fingerprint string `json:"fingerprint,omitempty" jsonschema:"what card_read said the deck was, to refuse a write over somebody else's edit"`
+	}) (*sdk.CallToolResult, Written, error) {
+		written, err := changing(ctx, core, in.Path, in.Fingerprint,
+			func(read cards.Deck) (format.Deck, error) {
+				held := read.Deck
+				held.Sections = append(held.Sections, format.Section{Name: in.Name})
+				return held, nil
 			})
 		return nil, written, err
 	})
@@ -277,13 +301,14 @@ func addCardTools(server *sdk.Server, core Core) {
 		Description: "Make a stencil: the fields a card is asked for, in the order to ask " +
 			"for them, and the faces one is shown through. A face is markdown with " +
 			"`{{Field}}` standing where a value goes, and every name in braces must be " +
-			"one of the fields. The first field is what a card cut by this stencil is " +
-			"named by, so there is at least one and it holds a single line. The stencil " +
-			"is filed under its title, and the name a card's wikilink writes is that " +
-			"filename, which `card_stencils` gives under `name`.",
+			"one of the fields. A card's heading is read from the first field, so there " +
+			"is at least one; it holds as many lines as a person writes, and the " +
+			"heading is its first line. The stencil is filed under its title, and the " +
+			"name a card's wikilink writes is that filename, which `card_stencils` " +
+			"gives under `name`.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Title  string   `json:"title" jsonschema:"what the stencil is called"`
-		Fields []string `json:"fields" jsonschema:"the names of the fields, in the order a person is asked for them; the first names the card"`
+		Fields []string `json:"fields" jsonschema:"the names of the fields, in the order a person is asked for them; a card's heading is read from the first"`
 		Faces  []Face   `json:"faces" jsonschema:"the ways a card cut by this stencil is shown"`
 		Folder string   `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
 	}) (*sdk.CallToolResult, cards.Made, error) {
@@ -308,8 +333,9 @@ func addCardTools(server *sdk.Server, core Core) {
 			"written. A field's name stands in the stencil that declares it and as a " +
 			"heading in every card of every deck that stencil cuts, so renaming it in " +
 			"one place alone leaves values under a heading nothing declares. This " +
-			"rewrites them all and leaves what stands under each heading as it was. The " +
-			"first field stands in the stencil alone, so renaming it reaches no deck. A " +
+			"rewrites them all and leaves what stands under each heading as it was. " +
+			"Every field a stencil declares stands under its own heading in every card, " +
+			"the first included, so renaming any of them reaches the decks. A " +
 			"deck it could not be written to comes back under `notWritten` and keeps the " +
 			"old heading.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
@@ -355,12 +381,12 @@ type Written struct {
 	Cards       int    `json:"cards" jsonschema:"how many cards the deck now holds"`
 }
 
-// changing reads a deck, hands its cards to change, and puts back what comes
-// out. The preamble, the tail and every card change did not touch are written
-// as the bytes they arrived as.
+// changing reads a deck, hands it to change, and puts back what comes out. The
+// preamble, the tail, every section and every card change did not touch are
+// written as the bytes they arrived as.
 func changing(
 	ctx context.Context, core Core, path, fingerprint string,
-	change func(cards.Deck) ([]format.Card, error),
+	change func(cards.Deck) (format.Deck, error),
 ) (Written, error) {
 	seen, err := parseFingerprint(fingerprint)
 	if err != nil {
@@ -379,7 +405,7 @@ func changing(
 	if err != nil {
 		return Written{}, err
 	}
-	body, err := core.DeckBody(read.Deck.Preamble, held, read.Deck.Tail)
+	body, err := core.DeckBody(held)
 	if err != nil {
 		return Written{}, err
 	}
@@ -392,40 +418,41 @@ func changing(
 	if err != nil {
 		return Written{}, err
 	}
-	return Written{Path: path, Fingerprint: fingerprintOf(at), Cards: len(held)}, nil
+	return Written{Path: path, Fingerprint: fingerprintOf(at), Cards: len(held.Cards)}, nil
 }
 
-// naming is the field a card cut by this stencil is named by, and nothing where
-// the wikilink reaches no stencil the vault can be read for.
-//
-// The value of that field is the card's heading and stands nowhere else, so a
-// card carrying it under a heading of its own carries its name twice, which is
-// a fault against the deck.
-func naming(ctx context.Context, core Core, read cards.Deck, written string) (string, error) {
-	path := read.Stencils[written]
-	if path == "" {
-		return "", nil
+// standing is where the card of a mark stands, and -1 where the deck holds
+// none. A card typed in by hand carries no mark until the deck is written, and
+// no mark reaches it.
+func standing(held []format.Card, carried string) int {
+	if carried == "" {
+		return -1
 	}
-	stencil, err := core.Cards.Stencil(ctx, core.shown().Vault, path)
-	if err != nil {
-		return "", err
-	}
-	if stencil.Outcome != note.Ok || stencil.Type != domain.TypeStencil {
-		return "", nil
-	}
-	return stencil.Stencil.First(), nil
-}
-
-// standing is where a card of that name stands, and -1 where the deck holds
-// none. A card is named by its heading, so a heading nobody wrote reaches
-// nothing.
-func standing(held []format.Card, name string) int {
 	for at, card := range held {
-		if card.Name == name {
+		if card.Mark == carried {
 			return at
 		}
 	}
 	return -1
+}
+
+// placed is where a card being written goes in a deck, and which section it
+// stands under. A call naming no section writes at the end of the deck, under
+// whatever section stands last.
+func placed(d format.Deck, section *int) (at, under int, err error) {
+	if section == nil {
+		return len(d.Cards), len(d.Sections) - 1, nil
+	}
+	if *section < 0 || *section >= len(d.Sections) {
+		return 0, 0, fmt.Errorf(
+			"this deck has %d sections, so there is none standing at %d", len(d.Sections), *section)
+	}
+	for i, card := range d.Cards {
+		if card.Section > *section {
+			return i, *section, nil
+		}
+	}
+	return len(d.Cards), *section, nil
 }
 
 // holding is the card with one value written into it. A field the card carries
@@ -466,7 +493,7 @@ func whyNotADeck(read cards.Deck) string {
 }
 
 func carded(card format.Card) Card {
-	out := Card{Name: card.Name, Stencil: card.Stencil}
+	out := Card{Mark: card.Mark, Section: card.Section, Stencil: card.Stencil}
 	for _, v := range card.Values {
 		out.Values = append(out.Values, Value{Field: v.Field, Text: v.Text})
 	}

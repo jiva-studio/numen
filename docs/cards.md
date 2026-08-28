@@ -1,6 +1,6 @@
 # Cards
 
-A card is a set of named values a person wrote, laid out by a stencil into a front and a back. This is a specification, not a decision record: every rule here traces to [ADR-0027](adr/0027-the-stencil-and-the-deck.md).
+A card is a set of named values a person wrote, laid out by a stencil into a front and a back. This is a specification, not a decision record: every rule here traces to an accepted ADR.
 
 Two files are involved and both are ordinary notes. A **stencil** says what fields a card has and how they are shown. A **deck** holds the cards.
 
@@ -57,21 +57,19 @@ Which animal is {{Height}} at the shoulder and lives {{Life span}}?
 
 A name is compared as written. Two fields of one name are a problem against the stencil, and the first stands.
 
-**The first field names the card.** Its value is written in the card's heading and nowhere else, so a card has no name apart from its fields. A stencil declaring `Question` first gives a deck whose headings are questions, and the question is typed once.
+**The first field is the one a card's heading is read from.** A stencil declaring `Question` first gives a deck whose headings are questions, and the question is typed once, under its own heading like every other field.
 
-A stencil declaring no field at all cuts nothing: its cards have no name to stand in a heading. It is a problem against the stencil.
+A stencil declaring no field at all cuts nothing: its cards have nothing to be filled with. It is a problem against the stencil.
 
-Because the first field is a heading, it holds one line. A field wanting a paragraph, a list or a picture is not the one to put first.
+Every field holds whatever a person writes under it, over as many lines as they like. The first is no exception: a field wanting a paragraph, a list or a picture may stand anywhere in the order, and what reaches the heading is one line of it.
 
 ### The first field stays first
 
-The editor does not move the first field, does not move another field above it, and does not remove it. The three are one act under three names: each of them hands the naming of every card to a different field, and every heading in every deck the stencil cuts then belongs to a field it was not written for.
+The editor does not move the first field, does not move another field above it, and does not remove it. The three are one act under three names: each of them hands the reading of every card's heading to a different field, and every heading in every deck the stencil cuts is rewritten from a field it was not written for.
 
 The fields below the first are reordered freely. Their order is the order a person is asked for them and nothing else, and moving them writes to no deck.
 
-**Renaming the first field is free.** It is written in `fields` and in the `{{ }}` of the faces, and in no deck at all, so the rename touches the stencil alone.
-
-A person who edits `fields` by hand and moves the first field is not stopped and cannot be: a heading is a line of text, and it reads as the value of whichever field now stands first. Nothing is lost from the file and every card is labelled by the wrong field.
+A person who edits `fields` by hand and moves the first field is not stopped and cannot be. Nothing is lost from the file: every value stands under its own heading, and from the next write of a deck on, its cards are headed by the field that now stands first.
 
 ### Renaming a field
 
@@ -91,7 +89,7 @@ A stencil has as many faces as a person writes. One card is shown once through e
 
 ### Placeholders
 
-`{{Field}}` stands where a value goes, and the name inside is a field's name written exactly. The first field is placed the same way, by its own name, and what it lays out is the card's heading.
+`{{Field}}` stands where a value goes, and the name inside is a field's name written exactly. The first field is placed the same way, by its own name, and what it lays out is the whole value under that field's heading, not the one line of it the card is headed by.
 
 A placeholder naming a field the stencil does not declare is a problem against the stencil. A placeholder whose card leaves that field empty lays out as nothing.
 
@@ -106,9 +104,15 @@ Everything around a placeholder is markdown and is drawn as markdown.
 type: deck
 ---
 
-## Llama
+# Animals
+
+## Llama ^k7m2xq9fzp
 
 [[Animal]]
+
+### Name
+
+Llama
 
 ### Height
 
@@ -118,9 +122,15 @@ about 45" (shoulder)
 
 about 20 years
 
-## Leaf mould
+# The garden
+
+## Leaf mould ^3n8vr4tqch
 
 [[Term]]
+
+### Term
+
+Leaf mould
 
 ### Meaning
 
@@ -131,21 +141,49 @@ Compost made of fallen leaves alone, left two winters
 [[The compost heap]]
 ```
 
+### Sections
+
+Each first-level heading opens a section, and the cards under it are its own until the next one. A section is a name and nothing else: no fields, no stencil, no schedule, no mark.
+
+A deck need not have sections, and cards may stand before the first one. Two sections may carry one name, and a section holding no card is kept.
+
+Text between a section's heading and its first card is the section's, and is kept exactly as it stands — what a card has between its stencil's wikilink and its first field, one level up. Nothing lays it out and nothing reads it.
+
+A section is made at the end of the deck, as a card is. Taking one away takes away its heading and nothing else: its cards stay where they stand, under whatever heading is above them now, and its own text stays with them.
+
 ### Cards
 
-Each second-level heading is one card, and the heading holds the value of the stencil's first field. That value is what the card is called. A card runs to the next second-level heading or to the end of the file.
+Each second-level heading is one card. A card runs to the next second-level heading, to the next first-level heading, or to the end of the file.
 
-A card writing its first field as a `###` heading of its own carries that field twice. The heading above stands, and the third-level one is kept in the file and shown by no face. It is a problem against the deck.
+A card's heading is the first line of its first field, cut to one line. It holds nothing of its own: throw it away and it is written again from the field. The cut stops at the first line break and at a hundred and twenty characters, counted as a person counts them, and it never falls inside a `[[wikilink]]`, an embed or a run of emphasis — where it would, it falls before whichever of those it lands in.
 
-A heading with no text leaves the first field empty, so the card has no name. It is a problem against the deck, and the card is read and shown marked.
+A first field that is empty, or holds only spaces, is headed by nothing. The card is read and shown like any other, and its first field is a box to fill.
 
-Two cards of one name are a problem against the deck. The first stands as that name; the rest are read and shown marked, so nothing a person wrote goes missing from the screen.
+Two cards may carry one heading, which is what two cards beginning alike come to. Their marks tell them apart and nothing else needs to.
+
+A person editing the file by hand may leave a heading and its first field disagreeing. The field is what stands; the next write of that deck puts the heading back in step, and nothing is reported, because there is nothing for a person to decide. A card whose stencil cannot be read is the exception: nothing can say which field is first, so the heading is left exactly as it stands.
+
+### The mark
+
+At the end of a card's heading stands `^` and ten characters of `0123456789abcdefghjkmnpqrstvwxyz`. That is what the card is for as long as it exists.
+
+```markdown
+## Compost, what is it made of ^k7m2xq9fzp
+```
+
+A mark is separated from the heading's text by one space and stands last on the line, and it is read as a mark only at that length and in that alphabet. Anything else at the end of a heading is heading text, and a malformed mark is not a mark: the card is given one.
+
+A mark is written when the card is made. A card typed into a deck by hand carries none until the application next writes that file, which is when it is given one.
+
+The mark does not know which deck it is in. A card moved to another deck, or to another vault, is the same card: the same mark, and the same history behind it. Nothing is recomputed and nothing is lost.
+
+Two cards of one mark in one deck are a problem against that deck.
 
 ### The preamble and the tail
 
-Text above the first card is the deck's preamble. It is kept verbatim and it is no card.
+Text above the first heading of the body is the deck's preamble. It is kept verbatim and it is no card.
 
-A value is read without the blank lines standing at either end of it, so the bytes that separate one field from the next belong to neither. What the file ends with once the last value has been read is the tail, and it is kept verbatim the same way. A deck with no second-level heading in it is a deck of no cards, and its whole body is preamble.
+A value is read without the blank lines standing at either end of it, so the bytes that separate one field from the next belong to neither. What the file ends with once the last value has been read is the tail, and it is kept verbatim the same way. A deck with no heading in its body is a deck of no cards, and its whole body is preamble.
 
 ### The stencil a card is cut by
 
@@ -159,9 +197,9 @@ One deck carries cards of as many stencils as a person likes.
 
 ### Values
 
-Each third-level heading is a field, and the value is everything under it until the next heading of either level.
+Each third-level heading is a field, and the value is everything under it until the next heading of the first, second or third level. Every field of the stencil is written this way, the first included.
 
-A value is markdown and holds what markdown holds: paragraphs, lists, a table, a quote, an image as `![[llama.jpg]]`. What it cannot hold is a heading at the second or third level, because those two are spent. A value wanting a heading uses a deeper one.
+A value is markdown and holds what markdown holds: paragraphs, lists, a table, a quote, an image as `![[llama.jpg]]`. What it cannot hold is a heading at the first, second or third level, because those three are spent. A value wanting a heading uses one of the fourth level or below.
 
 A card carrying a field its stencil does not declare keeps it in the file, and no face shows it. A field the stencil declares and the card omits is empty, and so is one whose heading is there with nothing under it.
 
@@ -187,30 +225,36 @@ A problem is something that could not be acted on and was not guessed at, filed 
 | --- | --- | --- |
 | a `type` outside the list | the note | `type` is not `note`, `deck` or `stencil`. The note is read as an ordinary note. |
 | two fields of one name | the stencil | `fields` declares a name twice. The first stands. |
-| a stencil declaring no field | the stencil | `fields` is absent or empty, so a card cut by it has nothing to be named by. |
-| the first field written twice | the deck | a card carries its first field as a `###` heading as well as in its own heading. The heading stands. |
+| a stencil declaring no field | the stencil | `fields` is absent or empty, so a card cut by it has nothing to be filled with. |
 | a face missing a side | the stencil | no `### Front` or no `### Back` under a second-level heading. The face lays out nothing. |
 | a placeholder nobody declared | the stencil | `{{Field}}` naming a field outside `fields`. The rest of the face is read as usual. |
 | a card with no stencil | the deck | the first paragraph under the card's heading is not a lone wikilink. The values are read. |
 | a stencil that is not one | the deck | the wikilink resolves to a note whose `type` is not `stencil`. The values are read. |
-| a card with no name | the deck | a second-level heading with no text. The card is shown marked. |
-| two cards of one name | the deck | the first stands; the rest are shown marked. |
+| two cards of one mark | the deck | two cards of one deck carry the same `^` and ten characters. Both are read and shown. |
 | two fields of one name | the deck | one card writes a heading twice. The first stands. |
 | a deck that could not be written | the deck | a field renamed in a stencil did not reach this deck, so a card holds a heading the stencil no longer declares. |
 | a deck over its bound | the deck | eight megabytes, and the file was not read. |
 
 The stencil a card names is an ordinary link, so a wikilink reaching nothing or reaching two notes is `dangling` and `ambiguous` as anywhere else ([Links](links.md)).
 
-A card carrying a field its stencil does not declare is not a problem. Neither is a value holding a heading of a level the format has spent: the card is split at that heading, and the file says what it says.
+A card carrying a field its stencil does not declare is not a problem. Neither is a value holding a heading of a level the format has spent: the file is split at that heading, and it says what it says. Neither is a card carrying no mark, which is given one, nor a heading standing out of step with its first field, which is written again from it.
 
 ## What is not in these files
 
 **No schedule.** When a card is due, how long its intervals have grown and how it has been answered are computed from the history of answers, so they are a cache and live in the index ([ADR-0015](adr/0015-a-books-text-is-a-cache-or-an-artifact.md)). A deck is not rewritten because a card was reviewed.
 
-**No identifiers.** A card is named by its deck and its heading. Renaming a heading makes a different card.
+## What is searched
+
+A deck and a stencil are not cut into chunks, and nothing in them is embedded. The full search does not reach inside a card and neither does the semantic one: a card is found by its heading, which is its question, and a stencil by its title, which is the name of its file.
+
+Of a deck's headings only the ones a person wrote are kept — its sections and its cards. The third level is the stencil's field names written out under every card, and it is not kept. A stencil keeps no heading at all. A card's heading is kept without its mark, which is written for the file and not for a person reading a list.
+
+In every other way a deck and a stencil are notes: a title, a type, an identifier, their links resolved and their backlinks answered, and a node in the plex with their headings hanging under it.
 
 ## Handling of existing files
 
 A stencil and a deck are notes, so everything in [Note format](note-format.md) holds for them: unknown frontmatter keys are preserved verbatim, line endings are preserved per file, a file that fails to parse is reported and not rewritten, and the application does not rewrite what it did not change.
 
-A deck edited in the editor keeps the order of the file: the cards, and the fields inside them, are written back where they were. Every part of the file the editor did not touch arrives on the other side as the bytes it went in as — the preamble, the tail, the text under a card's wikilink, and a field no stencil declares.
+A deck edited in the editor keeps the order of the file: the sections, the cards inside them, and the fields inside those are written back where they were. Every part of the file the editor did not touch arrives on the other side as the bytes it went in as — the preamble, the tail, the text under a card's wikilink, and a field no stencil declares.
+
+A deck is made whole where it is written, before its bytes reach the vault: a card carrying no mark is given one, and a heading standing out of step with its first field is written again from it. A window and the tools an agent uses therefore leave the same file behind.

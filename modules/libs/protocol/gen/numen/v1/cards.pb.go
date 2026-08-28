@@ -40,8 +40,8 @@ const (
 	Fault_FAULT_UNSPECIFIED Fault = 0
 	// `fields` declares a name twice. The first stands.
 	Fault_FAULT_FIELD_DECLARED_TWICE Fault = 1
-	// `fields` is absent or empty, so a card cut by this stencil has nothing to
-	// be named by.
+	// `fields` is absent or empty, so a card cut by this stencil has no field to
+	// fill in.
 	Fault_FAULT_STENCIL_WITHOUT_FIELDS Fault = 2
 	// A face carries no front or no back. It lays out nothing.
 	Fault_FAULT_FACE_MISSING_A_SIDE Fault = 3
@@ -54,21 +54,15 @@ const (
 	// A card's wikilink reaches a note that is not a stencil. The values are
 	// read.
 	Fault_FAULT_STENCIL_IS_NOT_ONE Fault = 6
-	// A second-level heading carries no text. The card is read and shown marked.
-	Fault_FAULT_CARD_WITHOUT_A_NAME Fault = 7
-	// Two cards are called one name. The first stands as that name, and the rest
-	// are read and shown marked.
-	Fault_FAULT_CARD_NAMED_TWICE Fault = 8
+	// Two cards of one deck carry the same mark. Both are read and both are
+	// shown marked, and neither is given another.
+	Fault_FAULT_MARK_CARRIED_TWICE Fault = 8
 	// One card writes a field's heading twice. The first stands, and the second
 	// is kept in the file.
 	Fault_FAULT_FIELD_WRITTEN_TWICE Fault = 9
 	// A field renamed in a stencil did not reach this deck, so a card holds a
 	// heading the stencil no longer declares.
 	Fault_FAULT_FIELD_NOT_RENAMED Fault = 10
-	// A card carries its stencil's first field as a heading of its own as well as
-	// in the heading above. The heading above stands, and the third-level one is
-	// kept in the file and shown by no face.
-	Fault_FAULT_FIRST_FIELD_WRITTEN_TWICE Fault = 11
 )
 
 // Enum value maps for Fault.
@@ -81,25 +75,21 @@ var (
 		4:  "FAULT_PLACEHOLDER_UNDECLARED",
 		5:  "FAULT_CARD_WITHOUT_A_STENCIL",
 		6:  "FAULT_STENCIL_IS_NOT_ONE",
-		7:  "FAULT_CARD_WITHOUT_A_NAME",
-		8:  "FAULT_CARD_NAMED_TWICE",
+		8:  "FAULT_MARK_CARRIED_TWICE",
 		9:  "FAULT_FIELD_WRITTEN_TWICE",
 		10: "FAULT_FIELD_NOT_RENAMED",
-		11: "FAULT_FIRST_FIELD_WRITTEN_TWICE",
 	}
 	Fault_value = map[string]int32{
-		"FAULT_UNSPECIFIED":               0,
-		"FAULT_FIELD_DECLARED_TWICE":      1,
-		"FAULT_STENCIL_WITHOUT_FIELDS":    2,
-		"FAULT_FACE_MISSING_A_SIDE":       3,
-		"FAULT_PLACEHOLDER_UNDECLARED":    4,
-		"FAULT_CARD_WITHOUT_A_STENCIL":    5,
-		"FAULT_STENCIL_IS_NOT_ONE":        6,
-		"FAULT_CARD_WITHOUT_A_NAME":       7,
-		"FAULT_CARD_NAMED_TWICE":          8,
-		"FAULT_FIELD_WRITTEN_TWICE":       9,
-		"FAULT_FIELD_NOT_RENAMED":         10,
-		"FAULT_FIRST_FIELD_WRITTEN_TWICE": 11,
+		"FAULT_UNSPECIFIED":            0,
+		"FAULT_FIELD_DECLARED_TWICE":   1,
+		"FAULT_STENCIL_WITHOUT_FIELDS": 2,
+		"FAULT_FACE_MISSING_A_SIDE":    3,
+		"FAULT_PLACEHOLDER_UNDECLARED": 4,
+		"FAULT_CARD_WITHOUT_A_STENCIL": 5,
+		"FAULT_STENCIL_IS_NOT_ONE":     6,
+		"FAULT_MARK_CARRIED_TWICE":     8,
+		"FAULT_FIELD_WRITTEN_TWICE":    9,
+		"FAULT_FIELD_NOT_RENAMED":      10,
 	}
 )
 
@@ -378,11 +368,14 @@ type Deck struct {
 	// Path is what the vault calls the note, and how it is asked for again.
 	Path  string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	// The prose below the frontmatter and above the first card, with line endings
-	// as LF. A deck carrying no card is all preamble.
+	// The prose below the frontmatter and above the first section or card, with
+	// line endings as LF. A deck carrying neither is all preamble.
 	Preamble string `protobuf:"bytes,3,opt,name=preamble,proto3" json:"preamble,omitempty"`
 	// The cards, in the order they stand in the note.
 	Cards []*Card `protobuf:"bytes,4,rep,name=cards,proto3" json:"cards,omitempty"`
+	// The sections, in the order they stand in the note. A card says which of
+	// them it stands under.
+	Sections []*Section `protobuf:"bytes,7,rep,name=sections,proto3" json:"sections,omitempty"`
 	// What was wrong with the note and was not guessed at, in the order it was
 	// found. The deck is read either way, and every card a person wrote is here.
 	Problems []*Problem `protobuf:"bytes,5,rep,name=problems,proto3" json:"problems,omitempty"`
@@ -451,6 +444,13 @@ func (x *Deck) GetCards() []*Card {
 	return nil
 }
 
+func (x *Deck) GetSections() []*Section {
+	if x != nil {
+		return x.Sections
+	}
+	return nil
+}
+
 func (x *Deck) GetProblems() []*Problem {
 	if x != nil {
 		return x.Problems
@@ -461,6 +461,64 @@ func (x *Deck) GetProblems() []*Problem {
 func (x *Deck) GetTail() string {
 	if x != nil {
 		return x.Tail
+	}
+	return ""
+}
+
+// Section is a run of a deck a person has given a name. It is a name and
+// nothing else: no fields, no stencil, no schedule, no mark.
+type Section struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// What the section is called, as its heading spells it. Two sections may
+	// carry one name.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// The prose between the section's heading and its first card, with line
+	// endings as LF. Nothing lays it out, and it is written back as it arrives.
+	Lead          string `protobuf:"bytes,2,opt,name=lead,proto3" json:"lead,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Section) Reset() {
+	*x = Section{}
+	mi := &file_numen_v1_cards_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Section) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Section) ProtoMessage() {}
+
+func (x *Section) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_cards_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Section.ProtoReflect.Descriptor instead.
+func (*Section) Descriptor() ([]byte, []int) {
+	return file_numen_v1_cards_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *Section) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Section) GetLead() string {
+	if x != nil {
+		return x.Lead
 	}
 	return ""
 }
@@ -489,7 +547,7 @@ type Problem struct {
 
 func (x *Problem) Reset() {
 	*x = Problem{}
-	mi := &file_numen_v1_cards_proto_msgTypes[4]
+	mi := &file_numen_v1_cards_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -501,7 +559,7 @@ func (x *Problem) String() string {
 func (*Problem) ProtoMessage() {}
 
 func (x *Problem) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_cards_proto_msgTypes[4]
+	mi := &file_numen_v1_cards_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -514,7 +572,7 @@ func (x *Problem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Problem.ProtoReflect.Descriptor instead.
 func (*Problem) Descriptor() ([]byte, []int) {
-	return file_numen_v1_cards_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_cards_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Problem) GetFault() Fault {
@@ -555,9 +613,23 @@ func (x *Problem) GetText() string {
 // Card is one filled-in set of a stencil's fields.
 type Card struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The heading the card stands under, which is what the card is called and
-	// half of how it is addressed.
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// What the card is, for as long as it exists, and how it is addressed. It is
+	// the ten characters alone, without the caret a heading writes them behind,
+	// and it is empty for a card the application has not written yet.
+	Mark string `protobuf:"bytes,6,opt,name=mark,proto3" json:"mark,omitempty"`
+	// Where the section this card stands under stands in the deck's own, counted
+	// from the first. Absent for a card standing before the first section.
+	Section *int32 `protobuf:"varint,7,opt,name=section,proto3,oneof" json:"section,omitempty"`
+	// The line the card's heading says, with the mark taken off. It is not what
+	// the card is called: it holds nothing of its own, and a write throws it away
+	// and reads it again from the first field.
+	//
+	// It travels for the one card that cannot be read again — a card whose
+	// stencil is missing or unreadable, where nothing can say which of its fields
+	// is first. That heading is left exactly as it stands, so a write hands back
+	// what it was given. A write carrying nothing here leaves such a card headed
+	// by its mark alone.
+	Heading string `protobuf:"bytes,8,opt,name=heading,proto3" json:"heading,omitempty"`
 	// The stencil this card is cut by, as the wikilink beneath its heading names
 	// it, without the brackets. Empty for a card written under no wikilink.
 	Stencil string `protobuf:"bytes,2,opt,name=stencil,proto3" json:"stencil,omitempty"`
@@ -577,7 +649,7 @@ type Card struct {
 
 func (x *Card) Reset() {
 	*x = Card{}
-	mi := &file_numen_v1_cards_proto_msgTypes[5]
+	mi := &file_numen_v1_cards_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -589,7 +661,7 @@ func (x *Card) String() string {
 func (*Card) ProtoMessage() {}
 
 func (x *Card) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_cards_proto_msgTypes[5]
+	mi := &file_numen_v1_cards_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -602,12 +674,26 @@ func (x *Card) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Card.ProtoReflect.Descriptor instead.
 func (*Card) Descriptor() ([]byte, []int) {
-	return file_numen_v1_cards_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_cards_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *Card) GetName() string {
+func (x *Card) GetMark() string {
 	if x != nil {
-		return x.Name
+		return x.Mark
+	}
+	return ""
+}
+
+func (x *Card) GetSection() int32 {
+	if x != nil && x.Section != nil {
+		return *x.Section
+	}
+	return 0
+}
+
+func (x *Card) GetHeading() string {
+	if x != nil {
+		return x.Heading
 	}
 	return ""
 }
@@ -653,7 +739,7 @@ type Value struct {
 
 func (x *Value) Reset() {
 	*x = Value{}
-	mi := &file_numen_v1_cards_proto_msgTypes[6]
+	mi := &file_numen_v1_cards_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -665,7 +751,7 @@ func (x *Value) String() string {
 func (*Value) ProtoMessage() {}
 
 func (x *Value) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_cards_proto_msgTypes[6]
+	mi := &file_numen_v1_cards_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -678,7 +764,7 @@ func (x *Value) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Value.ProtoReflect.Descriptor instead.
 func (*Value) Descriptor() ([]byte, []int) {
-	return file_numen_v1_cards_proto_rawDescGZIP(), []int{6}
+	return file_numen_v1_cards_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *Value) GetField() string {
@@ -706,7 +792,7 @@ type StencilsRequest struct {
 
 func (x *StencilsRequest) Reset() {
 	*x = StencilsRequest{}
-	mi := &file_numen_v1_cards_proto_msgTypes[7]
+	mi := &file_numen_v1_cards_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -718,7 +804,7 @@ func (x *StencilsRequest) String() string {
 func (*StencilsRequest) ProtoMessage() {}
 
 func (x *StencilsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_cards_proto_msgTypes[7]
+	mi := &file_numen_v1_cards_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -731,7 +817,7 @@ func (x *StencilsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StencilsRequest.ProtoReflect.Descriptor instead.
 func (*StencilsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_cards_proto_rawDescGZIP(), []int{7}
+	return file_numen_v1_cards_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *StencilsRequest) GetLimit() int32 {
@@ -754,7 +840,7 @@ type StencilsResponse struct {
 
 func (x *StencilsResponse) Reset() {
 	*x = StencilsResponse{}
-	mi := &file_numen_v1_cards_proto_msgTypes[8]
+	mi := &file_numen_v1_cards_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -766,7 +852,7 @@ func (x *StencilsResponse) String() string {
 func (*StencilsResponse) ProtoMessage() {}
 
 func (x *StencilsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_cards_proto_msgTypes[8]
+	mi := &file_numen_v1_cards_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -779,7 +865,7 @@ func (x *StencilsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StencilsResponse.ProtoReflect.Descriptor instead.
 func (*StencilsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_cards_proto_rawDescGZIP(), []int{8}
+	return file_numen_v1_cards_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *StencilsResponse) GetStencils() []*Offered {
@@ -803,8 +889,8 @@ type MakeStencilRequest struct {
 	Title string `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
 	// Where in the vault it goes, relative to the root. Empty is the root.
 	Folder string `protobuf:"bytes,2,opt,name=folder,proto3" json:"folder,omitempty"`
-	// The names of the fields, in the order a person is asked for them. The first
-	// names the card, and a stencil is made with at least one.
+	// The names of the fields, in the order a person is asked for them. A card's
+	// heading is read from the first, and a stencil is made with at least one.
 	Fields        []string `protobuf:"bytes,3,rep,name=fields,proto3" json:"fields,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -812,7 +898,7 @@ type MakeStencilRequest struct {
 
 func (x *MakeStencilRequest) Reset() {
 	*x = MakeStencilRequest{}
-	mi := &file_numen_v1_cards_proto_msgTypes[9]
+	mi := &file_numen_v1_cards_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -824,7 +910,7 @@ func (x *MakeStencilRequest) String() string {
 func (*MakeStencilRequest) ProtoMessage() {}
 
 func (x *MakeStencilRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_cards_proto_msgTypes[9]
+	mi := &file_numen_v1_cards_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -837,7 +923,7 @@ func (x *MakeStencilRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MakeStencilRequest.ProtoReflect.Descriptor instead.
 func (*MakeStencilRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_cards_proto_rawDescGZIP(), []int{9}
+	return file_numen_v1_cards_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *MakeStencilRequest) GetTitle() string {
@@ -873,7 +959,7 @@ type MakeStencilResponse struct {
 
 func (x *MakeStencilResponse) Reset() {
 	*x = MakeStencilResponse{}
-	mi := &file_numen_v1_cards_proto_msgTypes[10]
+	mi := &file_numen_v1_cards_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -885,7 +971,7 @@ func (x *MakeStencilResponse) String() string {
 func (*MakeStencilResponse) ProtoMessage() {}
 
 func (x *MakeStencilResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_cards_proto_msgTypes[10]
+	mi := &file_numen_v1_cards_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -898,7 +984,7 @@ func (x *MakeStencilResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MakeStencilResponse.ProtoReflect.Descriptor instead.
 func (*MakeStencilResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_cards_proto_rawDescGZIP(), []int{10}
+	return file_numen_v1_cards_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *MakeStencilResponse) GetPath() string {
@@ -924,7 +1010,7 @@ type ReadStencilRequest struct {
 
 func (x *ReadStencilRequest) Reset() {
 	*x = ReadStencilRequest{}
-	mi := &file_numen_v1_cards_proto_msgTypes[11]
+	mi := &file_numen_v1_cards_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -936,7 +1022,7 @@ func (x *ReadStencilRequest) String() string {
 func (*ReadStencilRequest) ProtoMessage() {}
 
 func (x *ReadStencilRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_cards_proto_msgTypes[11]
+	mi := &file_numen_v1_cards_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -949,7 +1035,7 @@ func (x *ReadStencilRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadStencilRequest.ProtoReflect.Descriptor instead.
 func (*ReadStencilRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_cards_proto_rawDescGZIP(), []int{11}
+	return file_numen_v1_cards_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ReadStencilRequest) GetPath() string {
@@ -974,7 +1060,7 @@ type ReadStencilResponse struct {
 
 func (x *ReadStencilResponse) Reset() {
 	*x = ReadStencilResponse{}
-	mi := &file_numen_v1_cards_proto_msgTypes[12]
+	mi := &file_numen_v1_cards_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -986,7 +1072,7 @@ func (x *ReadStencilResponse) String() string {
 func (*ReadStencilResponse) ProtoMessage() {}
 
 func (x *ReadStencilResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_cards_proto_msgTypes[12]
+	mi := &file_numen_v1_cards_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -999,7 +1085,7 @@ func (x *ReadStencilResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadStencilResponse.ProtoReflect.Descriptor instead.
 func (*ReadStencilResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_cards_proto_rawDescGZIP(), []int{12}
+	return file_numen_v1_cards_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ReadStencilResponse) GetStencil() *Stencil {
@@ -1044,7 +1130,7 @@ type WriteStencilRequest struct {
 
 func (x *WriteStencilRequest) Reset() {
 	*x = WriteStencilRequest{}
-	mi := &file_numen_v1_cards_proto_msgTypes[13]
+	mi := &file_numen_v1_cards_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1056,7 +1142,7 @@ func (x *WriteStencilRequest) String() string {
 func (*WriteStencilRequest) ProtoMessage() {}
 
 func (x *WriteStencilRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_cards_proto_msgTypes[13]
+	mi := &file_numen_v1_cards_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1069,7 +1155,7 @@ func (x *WriteStencilRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteStencilRequest.ProtoReflect.Descriptor instead.
 func (*WriteStencilRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_cards_proto_rawDescGZIP(), []int{13}
+	return file_numen_v1_cards_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *WriteStencilRequest) GetPath() string {
@@ -1130,7 +1216,7 @@ type WriteStencilResponse struct {
 
 func (x *WriteStencilResponse) Reset() {
 	*x = WriteStencilResponse{}
-	mi := &file_numen_v1_cards_proto_msgTypes[14]
+	mi := &file_numen_v1_cards_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1142,7 +1228,7 @@ func (x *WriteStencilResponse) String() string {
 func (*WriteStencilResponse) ProtoMessage() {}
 
 func (x *WriteStencilResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_cards_proto_msgTypes[14]
+	mi := &file_numen_v1_cards_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1155,7 +1241,7 @@ func (x *WriteStencilResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteStencilResponse.ProtoReflect.Descriptor instead.
 func (*WriteStencilResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_cards_proto_rawDescGZIP(), []int{14}
+	return file_numen_v1_cards_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *WriteStencilResponse) GetRefusal() Refusal {
@@ -1195,7 +1281,7 @@ type RenameFieldRequest struct {
 
 func (x *RenameFieldRequest) Reset() {
 	*x = RenameFieldRequest{}
-	mi := &file_numen_v1_cards_proto_msgTypes[15]
+	mi := &file_numen_v1_cards_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1207,7 +1293,7 @@ func (x *RenameFieldRequest) String() string {
 func (*RenameFieldRequest) ProtoMessage() {}
 
 func (x *RenameFieldRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_cards_proto_msgTypes[15]
+	mi := &file_numen_v1_cards_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1220,7 +1306,7 @@ func (x *RenameFieldRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RenameFieldRequest.ProtoReflect.Descriptor instead.
 func (*RenameFieldRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_cards_proto_rawDescGZIP(), []int{15}
+	return file_numen_v1_cards_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *RenameFieldRequest) GetPath() string {
@@ -1275,7 +1361,7 @@ type RenameFieldResponse struct {
 
 func (x *RenameFieldResponse) Reset() {
 	*x = RenameFieldResponse{}
-	mi := &file_numen_v1_cards_proto_msgTypes[16]
+	mi := &file_numen_v1_cards_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1287,7 +1373,7 @@ func (x *RenameFieldResponse) String() string {
 func (*RenameFieldResponse) ProtoMessage() {}
 
 func (x *RenameFieldResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_cards_proto_msgTypes[16]
+	mi := &file_numen_v1_cards_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1300,7 +1386,7 @@ func (x *RenameFieldResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RenameFieldResponse.ProtoReflect.Descriptor instead.
 func (*RenameFieldResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_cards_proto_rawDescGZIP(), []int{16}
+	return file_numen_v1_cards_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *RenameFieldResponse) GetDecks() []string {
@@ -1358,7 +1444,7 @@ type NotWritten struct {
 
 func (x *NotWritten) Reset() {
 	*x = NotWritten{}
-	mi := &file_numen_v1_cards_proto_msgTypes[17]
+	mi := &file_numen_v1_cards_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1370,7 +1456,7 @@ func (x *NotWritten) String() string {
 func (*NotWritten) ProtoMessage() {}
 
 func (x *NotWritten) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_cards_proto_msgTypes[17]
+	mi := &file_numen_v1_cards_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1383,7 +1469,7 @@ func (x *NotWritten) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NotWritten.ProtoReflect.Descriptor instead.
 func (*NotWritten) Descriptor() ([]byte, []int) {
-	return file_numen_v1_cards_proto_rawDescGZIP(), []int{17}
+	return file_numen_v1_cards_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *NotWritten) GetPath() string {
@@ -1412,7 +1498,7 @@ type MakeDeckRequest struct {
 
 func (x *MakeDeckRequest) Reset() {
 	*x = MakeDeckRequest{}
-	mi := &file_numen_v1_cards_proto_msgTypes[18]
+	mi := &file_numen_v1_cards_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1424,7 +1510,7 @@ func (x *MakeDeckRequest) String() string {
 func (*MakeDeckRequest) ProtoMessage() {}
 
 func (x *MakeDeckRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_cards_proto_msgTypes[18]
+	mi := &file_numen_v1_cards_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1437,7 +1523,7 @@ func (x *MakeDeckRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MakeDeckRequest.ProtoReflect.Descriptor instead.
 func (*MakeDeckRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_cards_proto_rawDescGZIP(), []int{18}
+	return file_numen_v1_cards_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *MakeDeckRequest) GetTitle() string {
@@ -1466,7 +1552,7 @@ type MakeDeckResponse struct {
 
 func (x *MakeDeckResponse) Reset() {
 	*x = MakeDeckResponse{}
-	mi := &file_numen_v1_cards_proto_msgTypes[19]
+	mi := &file_numen_v1_cards_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1478,7 +1564,7 @@ func (x *MakeDeckResponse) String() string {
 func (*MakeDeckResponse) ProtoMessage() {}
 
 func (x *MakeDeckResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_cards_proto_msgTypes[19]
+	mi := &file_numen_v1_cards_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1491,7 +1577,7 @@ func (x *MakeDeckResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MakeDeckResponse.ProtoReflect.Descriptor instead.
 func (*MakeDeckResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_cards_proto_rawDescGZIP(), []int{19}
+	return file_numen_v1_cards_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *MakeDeckResponse) GetPath() string {
@@ -1517,7 +1603,7 @@ type ReadDeckRequest struct {
 
 func (x *ReadDeckRequest) Reset() {
 	*x = ReadDeckRequest{}
-	mi := &file_numen_v1_cards_proto_msgTypes[20]
+	mi := &file_numen_v1_cards_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1529,7 +1615,7 @@ func (x *ReadDeckRequest) String() string {
 func (*ReadDeckRequest) ProtoMessage() {}
 
 func (x *ReadDeckRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_cards_proto_msgTypes[20]
+	mi := &file_numen_v1_cards_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1542,7 +1628,7 @@ func (x *ReadDeckRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadDeckRequest.ProtoReflect.Descriptor instead.
 func (*ReadDeckRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_cards_proto_rawDescGZIP(), []int{20}
+	return file_numen_v1_cards_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ReadDeckRequest) GetPath() string {
@@ -1570,7 +1656,7 @@ type ReadDeckResponse struct {
 
 func (x *ReadDeckResponse) Reset() {
 	*x = ReadDeckResponse{}
-	mi := &file_numen_v1_cards_proto_msgTypes[21]
+	mi := &file_numen_v1_cards_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1582,7 +1668,7 @@ func (x *ReadDeckResponse) String() string {
 func (*ReadDeckResponse) ProtoMessage() {}
 
 func (x *ReadDeckResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_cards_proto_msgTypes[21]
+	mi := &file_numen_v1_cards_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1595,7 +1681,7 @@ func (x *ReadDeckResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadDeckResponse.ProtoReflect.Descriptor instead.
 func (*ReadDeckResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_cards_proto_rawDescGZIP(), []int{21}
+	return file_numen_v1_cards_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *ReadDeckResponse) GetDeck() *Deck {
@@ -1629,11 +1715,14 @@ func (x *ReadDeckResponse) GetBound() int64 {
 type WriteDeckRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	// The prose to stand below the frontmatter and above the first card, with
-	// line endings as LF.
+	// The prose to stand below the frontmatter and above the first section or
+	// card, with line endings as LF.
 	Preamble string `protobuf:"bytes,2,opt,name=preamble,proto3" json:"preamble,omitempty"`
 	// The cards, in the order they are to stand in the note.
 	Cards []*Card `protobuf:"bytes,3,rep,name=cards,proto3" json:"cards,omitempty"`
+	// The sections, in the order they are to stand in the note. A card says
+	// which of them it stands under.
+	Sections []*Section `protobuf:"bytes,6,rep,name=sections,proto3" json:"sections,omitempty"`
 	// The file this caller last read. Absent for a write that lands on whatever
 	// the deck now holds.
 	Seen *Fingerprint `protobuf:"bytes,4,opt,name=seen,proto3,oneof" json:"seen,omitempty"`
@@ -1646,7 +1735,7 @@ type WriteDeckRequest struct {
 
 func (x *WriteDeckRequest) Reset() {
 	*x = WriteDeckRequest{}
-	mi := &file_numen_v1_cards_proto_msgTypes[22]
+	mi := &file_numen_v1_cards_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1658,7 +1747,7 @@ func (x *WriteDeckRequest) String() string {
 func (*WriteDeckRequest) ProtoMessage() {}
 
 func (x *WriteDeckRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_cards_proto_msgTypes[22]
+	mi := &file_numen_v1_cards_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1671,7 +1760,7 @@ func (x *WriteDeckRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteDeckRequest.ProtoReflect.Descriptor instead.
 func (*WriteDeckRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_cards_proto_rawDescGZIP(), []int{22}
+	return file_numen_v1_cards_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *WriteDeckRequest) GetPath() string {
@@ -1691,6 +1780,13 @@ func (x *WriteDeckRequest) GetPreamble() string {
 func (x *WriteDeckRequest) GetCards() []*Card {
 	if x != nil {
 		return x.Cards
+	}
+	return nil
+}
+
+func (x *WriteDeckRequest) GetSections() []*Section {
+	if x != nil {
+		return x.Sections
 	}
 	return nil
 }
@@ -1729,7 +1825,7 @@ type WriteDeckResponse struct {
 
 func (x *WriteDeckResponse) Reset() {
 	*x = WriteDeckResponse{}
-	mi := &file_numen_v1_cards_proto_msgTypes[23]
+	mi := &file_numen_v1_cards_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1741,7 +1837,7 @@ func (x *WriteDeckResponse) String() string {
 func (*WriteDeckResponse) ProtoMessage() {}
 
 func (x *WriteDeckResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_cards_proto_msgTypes[23]
+	mi := &file_numen_v1_cards_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1754,7 +1850,7 @@ func (x *WriteDeckResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteDeckResponse.ProtoReflect.Descriptor instead.
 func (*WriteDeckResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_cards_proto_rawDescGZIP(), []int{23}
+	return file_numen_v1_cards_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *WriteDeckResponse) GetRefusal() Refusal {
@@ -1806,14 +1902,18 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05front\x18\x02 \x01(\tR\x05front\x12\x12\n" +
 	"\x04back\x18\x03 \x01(\tR\x04back\x12\x12\n" +
-	"\x04lead\x18\x04 \x01(\tR\x04lead\"\xb5\x01\n" +
+	"\x04lead\x18\x04 \x01(\tR\x04lead\"\xe4\x01\n" +
 	"\x04Deck\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1a\n" +
 	"\bpreamble\x18\x03 \x01(\tR\bpreamble\x12$\n" +
 	"\x05cards\x18\x04 \x03(\v2\x0e.numen.v1.CardR\x05cards\x12-\n" +
+	"\bsections\x18\a \x03(\v2\x11.numen.v1.SectionR\bsections\x12-\n" +
 	"\bproblems\x18\x05 \x03(\v2\x11.numen.v1.ProblemR\bproblems\x12\x12\n" +
-	"\x04tail\x18\x06 \x01(\tR\x04tail\"\x9e\x01\n" +
+	"\x04tail\x18\x06 \x01(\tR\x04tail\"1\n" +
+	"\aSection\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
+	"\x04lead\x18\x02 \x01(\tR\x04lead\"\x9e\x01\n" +
 	"\aProblem\x12%\n" +
 	"\x05fault\x18\x01 \x01(\x0e2\x0f.numen.v1.FaultR\x05fault\x12\x17\n" +
 	"\x04card\x18\x02 \x01(\x05H\x00R\x04card\x88\x01\x01\x12\x17\n" +
@@ -1821,14 +1921,18 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x05field\x18\x04 \x01(\tR\x05field\x12\x12\n" +
 	"\x04text\x18\x05 \x01(\tR\x04textB\a\n" +
 	"\x05_cardB\a\n" +
-	"\x05_face\"\x90\x01\n" +
+	"\x05_face\"\xe1\x01\n" +
 	"\x04Card\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
+	"\x04mark\x18\x06 \x01(\tR\x04mark\x12\x1d\n" +
+	"\asection\x18\a \x01(\x05H\x00R\asection\x88\x01\x01\x12\x18\n" +
+	"\aheading\x18\b \x01(\tR\aheading\x12\x18\n" +
 	"\astencil\x18\x02 \x01(\tR\astencil\x12\x12\n" +
 	"\x04lead\x18\x03 \x01(\tR\x04lead\x12'\n" +
 	"\x06values\x18\x04 \x03(\v2\x0f.numen.v1.ValueR\x06values\x12\x1d\n" +
 	"\n" +
-	"stencil_at\x18\x05 \x01(\tR\tstencilAt\"1\n" +
+	"stencil_at\x18\x05 \x01(\tR\tstencilAtB\n" +
+	"\n" +
+	"\b_sectionJ\x04\b\x01\x10\x02R\x04name\"1\n" +
 	"\x05Value\x12\x14\n" +
 	"\x05field\x18\x01 \x01(\tR\x05field\x12\x12\n" +
 	"\x04text\x18\x02 \x01(\tR\x04text\"'\n" +
@@ -1911,11 +2015,12 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x05_deckB\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
-	"\x03_at\"\xb5\x01\n" +
+	"\x03_at\"\xe4\x01\n" +
 	"\x10WriteDeckRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1a\n" +
 	"\bpreamble\x18\x02 \x01(\tR\bpreamble\x12$\n" +
-	"\x05cards\x18\x03 \x03(\v2\x0e.numen.v1.CardR\x05cards\x12.\n" +
+	"\x05cards\x18\x03 \x03(\v2\x0e.numen.v1.CardR\x05cards\x12-\n" +
+	"\bsections\x18\x06 \x03(\v2\x11.numen.v1.SectionR\bsections\x12.\n" +
 	"\x04seen\x18\x04 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01\x12\x12\n" +
 	"\x04tail\x18\x05 \x01(\tR\x04tailB\a\n" +
 	"\x05_seen\"\xb4\x01\n" +
@@ -1926,7 +2031,7 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x05bound\x18\x04 \x01(\x03R\x05boundB\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
-	"\x03_at*\xfd\x02\n" +
+	"\x03_at*\x83\x03\n" +
 	"\x05Fault\x12\x15\n" +
 	"\x11FAULT_UNSPECIFIED\x10\x00\x12\x1e\n" +
 	"\x1aFAULT_FIELD_DECLARED_TWICE\x10\x01\x12 \n" +
@@ -1934,13 +2039,11 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x19FAULT_FACE_MISSING_A_SIDE\x10\x03\x12 \n" +
 	"\x1cFAULT_PLACEHOLDER_UNDECLARED\x10\x04\x12 \n" +
 	"\x1cFAULT_CARD_WITHOUT_A_STENCIL\x10\x05\x12\x1c\n" +
-	"\x18FAULT_STENCIL_IS_NOT_ONE\x10\x06\x12\x1d\n" +
-	"\x19FAULT_CARD_WITHOUT_A_NAME\x10\a\x12\x1a\n" +
-	"\x16FAULT_CARD_NAMED_TWICE\x10\b\x12\x1d\n" +
+	"\x18FAULT_STENCIL_IS_NOT_ONE\x10\x06\x12\x1c\n" +
+	"\x18FAULT_MARK_CARRIED_TWICE\x10\b\x12\x1d\n" +
 	"\x19FAULT_FIELD_WRITTEN_TWICE\x10\t\x12\x1b\n" +
 	"\x17FAULT_FIELD_NOT_RENAMED\x10\n" +
-	"\x12#\n" +
-	"\x1fFAULT_FIRST_FIELD_WRITTEN_TWICE\x10\v2\xd0\x04\n" +
+	"\"\x04\b\a\x10\a\"\x04\b\v\x10\v*\x19FAULT_CARD_WITHOUT_A_NAME*\x1fFAULT_FIRST_FIELD_WRITTEN_TWICE2\xd0\x04\n" +
 	"\fCardsService\x12A\n" +
 	"\bStencils\x12\x19.numen.v1.StencilsRequest\x1a\x1a.numen.v1.StencilsResponse\x12J\n" +
 	"\vMakeStencil\x12\x1c.numen.v1.MakeStencilRequest\x1a\x1d.numen.v1.MakeStencilResponse\x12J\n" +
@@ -1964,86 +2067,89 @@ func file_numen_v1_cards_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_cards_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_cards_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_numen_v1_cards_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_numen_v1_cards_proto_goTypes = []any{
 	(Fault)(0),                   // 0: numen.v1.Fault
 	(*Stencil)(nil),              // 1: numen.v1.Stencil
 	(*Offered)(nil),              // 2: numen.v1.Offered
 	(*Face)(nil),                 // 3: numen.v1.Face
 	(*Deck)(nil),                 // 4: numen.v1.Deck
-	(*Problem)(nil),              // 5: numen.v1.Problem
-	(*Card)(nil),                 // 6: numen.v1.Card
-	(*Value)(nil),                // 7: numen.v1.Value
-	(*StencilsRequest)(nil),      // 8: numen.v1.StencilsRequest
-	(*StencilsResponse)(nil),     // 9: numen.v1.StencilsResponse
-	(*MakeStencilRequest)(nil),   // 10: numen.v1.MakeStencilRequest
-	(*MakeStencilResponse)(nil),  // 11: numen.v1.MakeStencilResponse
-	(*ReadStencilRequest)(nil),   // 12: numen.v1.ReadStencilRequest
-	(*ReadStencilResponse)(nil),  // 13: numen.v1.ReadStencilResponse
-	(*WriteStencilRequest)(nil),  // 14: numen.v1.WriteStencilRequest
-	(*WriteStencilResponse)(nil), // 15: numen.v1.WriteStencilResponse
-	(*RenameFieldRequest)(nil),   // 16: numen.v1.RenameFieldRequest
-	(*RenameFieldResponse)(nil),  // 17: numen.v1.RenameFieldResponse
-	(*NotWritten)(nil),           // 18: numen.v1.NotWritten
-	(*MakeDeckRequest)(nil),      // 19: numen.v1.MakeDeckRequest
-	(*MakeDeckResponse)(nil),     // 20: numen.v1.MakeDeckResponse
-	(*ReadDeckRequest)(nil),      // 21: numen.v1.ReadDeckRequest
-	(*ReadDeckResponse)(nil),     // 22: numen.v1.ReadDeckResponse
-	(*WriteDeckRequest)(nil),     // 23: numen.v1.WriteDeckRequest
-	(*WriteDeckResponse)(nil),    // 24: numen.v1.WriteDeckResponse
-	(Refusal)(0),                 // 25: numen.v1.Refusal
-	(*Fingerprint)(nil),          // 26: numen.v1.Fingerprint
+	(*Section)(nil),              // 5: numen.v1.Section
+	(*Problem)(nil),              // 6: numen.v1.Problem
+	(*Card)(nil),                 // 7: numen.v1.Card
+	(*Value)(nil),                // 8: numen.v1.Value
+	(*StencilsRequest)(nil),      // 9: numen.v1.StencilsRequest
+	(*StencilsResponse)(nil),     // 10: numen.v1.StencilsResponse
+	(*MakeStencilRequest)(nil),   // 11: numen.v1.MakeStencilRequest
+	(*MakeStencilResponse)(nil),  // 12: numen.v1.MakeStencilResponse
+	(*ReadStencilRequest)(nil),   // 13: numen.v1.ReadStencilRequest
+	(*ReadStencilResponse)(nil),  // 14: numen.v1.ReadStencilResponse
+	(*WriteStencilRequest)(nil),  // 15: numen.v1.WriteStencilRequest
+	(*WriteStencilResponse)(nil), // 16: numen.v1.WriteStencilResponse
+	(*RenameFieldRequest)(nil),   // 17: numen.v1.RenameFieldRequest
+	(*RenameFieldResponse)(nil),  // 18: numen.v1.RenameFieldResponse
+	(*NotWritten)(nil),           // 19: numen.v1.NotWritten
+	(*MakeDeckRequest)(nil),      // 20: numen.v1.MakeDeckRequest
+	(*MakeDeckResponse)(nil),     // 21: numen.v1.MakeDeckResponse
+	(*ReadDeckRequest)(nil),      // 22: numen.v1.ReadDeckRequest
+	(*ReadDeckResponse)(nil),     // 23: numen.v1.ReadDeckResponse
+	(*WriteDeckRequest)(nil),     // 24: numen.v1.WriteDeckRequest
+	(*WriteDeckResponse)(nil),    // 25: numen.v1.WriteDeckResponse
+	(Refusal)(0),                 // 26: numen.v1.Refusal
+	(*Fingerprint)(nil),          // 27: numen.v1.Fingerprint
 }
 var file_numen_v1_cards_proto_depIdxs = []int32{
 	3,  // 0: numen.v1.Stencil.faces:type_name -> numen.v1.Face
-	5,  // 1: numen.v1.Stencil.problems:type_name -> numen.v1.Problem
-	6,  // 2: numen.v1.Deck.cards:type_name -> numen.v1.Card
-	5,  // 3: numen.v1.Deck.problems:type_name -> numen.v1.Problem
-	0,  // 4: numen.v1.Problem.fault:type_name -> numen.v1.Fault
-	7,  // 5: numen.v1.Card.values:type_name -> numen.v1.Value
-	2,  // 6: numen.v1.StencilsResponse.stencils:type_name -> numen.v1.Offered
-	25, // 7: numen.v1.MakeStencilResponse.refusal:type_name -> numen.v1.Refusal
-	1,  // 8: numen.v1.ReadStencilResponse.stencil:type_name -> numen.v1.Stencil
-	25, // 9: numen.v1.ReadStencilResponse.refusal:type_name -> numen.v1.Refusal
-	26, // 10: numen.v1.ReadStencilResponse.at:type_name -> numen.v1.Fingerprint
-	3,  // 11: numen.v1.WriteStencilRequest.faces:type_name -> numen.v1.Face
-	26, // 12: numen.v1.WriteStencilRequest.seen:type_name -> numen.v1.Fingerprint
-	25, // 13: numen.v1.WriteStencilResponse.refusal:type_name -> numen.v1.Refusal
-	26, // 14: numen.v1.WriteStencilResponse.at:type_name -> numen.v1.Fingerprint
-	26, // 15: numen.v1.RenameFieldRequest.seen:type_name -> numen.v1.Fingerprint
-	18, // 16: numen.v1.RenameFieldResponse.not_written:type_name -> numen.v1.NotWritten
-	25, // 17: numen.v1.RenameFieldResponse.refusal:type_name -> numen.v1.Refusal
-	26, // 18: numen.v1.RenameFieldResponse.at:type_name -> numen.v1.Fingerprint
-	5,  // 19: numen.v1.NotWritten.problem:type_name -> numen.v1.Problem
-	25, // 20: numen.v1.MakeDeckResponse.refusal:type_name -> numen.v1.Refusal
-	4,  // 21: numen.v1.ReadDeckResponse.deck:type_name -> numen.v1.Deck
-	25, // 22: numen.v1.ReadDeckResponse.refusal:type_name -> numen.v1.Refusal
-	26, // 23: numen.v1.ReadDeckResponse.at:type_name -> numen.v1.Fingerprint
-	6,  // 24: numen.v1.WriteDeckRequest.cards:type_name -> numen.v1.Card
-	26, // 25: numen.v1.WriteDeckRequest.seen:type_name -> numen.v1.Fingerprint
-	25, // 26: numen.v1.WriteDeckResponse.refusal:type_name -> numen.v1.Refusal
-	26, // 27: numen.v1.WriteDeckResponse.at:type_name -> numen.v1.Fingerprint
-	8,  // 28: numen.v1.CardsService.Stencils:input_type -> numen.v1.StencilsRequest
-	10, // 29: numen.v1.CardsService.MakeStencil:input_type -> numen.v1.MakeStencilRequest
-	12, // 30: numen.v1.CardsService.ReadStencil:input_type -> numen.v1.ReadStencilRequest
-	14, // 31: numen.v1.CardsService.WriteStencil:input_type -> numen.v1.WriteStencilRequest
-	16, // 32: numen.v1.CardsService.RenameField:input_type -> numen.v1.RenameFieldRequest
-	19, // 33: numen.v1.CardsService.MakeDeck:input_type -> numen.v1.MakeDeckRequest
-	21, // 34: numen.v1.CardsService.ReadDeck:input_type -> numen.v1.ReadDeckRequest
-	23, // 35: numen.v1.CardsService.WriteDeck:input_type -> numen.v1.WriteDeckRequest
-	9,  // 36: numen.v1.CardsService.Stencils:output_type -> numen.v1.StencilsResponse
-	11, // 37: numen.v1.CardsService.MakeStencil:output_type -> numen.v1.MakeStencilResponse
-	13, // 38: numen.v1.CardsService.ReadStencil:output_type -> numen.v1.ReadStencilResponse
-	15, // 39: numen.v1.CardsService.WriteStencil:output_type -> numen.v1.WriteStencilResponse
-	17, // 40: numen.v1.CardsService.RenameField:output_type -> numen.v1.RenameFieldResponse
-	20, // 41: numen.v1.CardsService.MakeDeck:output_type -> numen.v1.MakeDeckResponse
-	22, // 42: numen.v1.CardsService.ReadDeck:output_type -> numen.v1.ReadDeckResponse
-	24, // 43: numen.v1.CardsService.WriteDeck:output_type -> numen.v1.WriteDeckResponse
-	36, // [36:44] is the sub-list for method output_type
-	28, // [28:36] is the sub-list for method input_type
-	28, // [28:28] is the sub-list for extension type_name
-	28, // [28:28] is the sub-list for extension extendee
-	0,  // [0:28] is the sub-list for field type_name
+	6,  // 1: numen.v1.Stencil.problems:type_name -> numen.v1.Problem
+	7,  // 2: numen.v1.Deck.cards:type_name -> numen.v1.Card
+	5,  // 3: numen.v1.Deck.sections:type_name -> numen.v1.Section
+	6,  // 4: numen.v1.Deck.problems:type_name -> numen.v1.Problem
+	0,  // 5: numen.v1.Problem.fault:type_name -> numen.v1.Fault
+	8,  // 6: numen.v1.Card.values:type_name -> numen.v1.Value
+	2,  // 7: numen.v1.StencilsResponse.stencils:type_name -> numen.v1.Offered
+	26, // 8: numen.v1.MakeStencilResponse.refusal:type_name -> numen.v1.Refusal
+	1,  // 9: numen.v1.ReadStencilResponse.stencil:type_name -> numen.v1.Stencil
+	26, // 10: numen.v1.ReadStencilResponse.refusal:type_name -> numen.v1.Refusal
+	27, // 11: numen.v1.ReadStencilResponse.at:type_name -> numen.v1.Fingerprint
+	3,  // 12: numen.v1.WriteStencilRequest.faces:type_name -> numen.v1.Face
+	27, // 13: numen.v1.WriteStencilRequest.seen:type_name -> numen.v1.Fingerprint
+	26, // 14: numen.v1.WriteStencilResponse.refusal:type_name -> numen.v1.Refusal
+	27, // 15: numen.v1.WriteStencilResponse.at:type_name -> numen.v1.Fingerprint
+	27, // 16: numen.v1.RenameFieldRequest.seen:type_name -> numen.v1.Fingerprint
+	19, // 17: numen.v1.RenameFieldResponse.not_written:type_name -> numen.v1.NotWritten
+	26, // 18: numen.v1.RenameFieldResponse.refusal:type_name -> numen.v1.Refusal
+	27, // 19: numen.v1.RenameFieldResponse.at:type_name -> numen.v1.Fingerprint
+	6,  // 20: numen.v1.NotWritten.problem:type_name -> numen.v1.Problem
+	26, // 21: numen.v1.MakeDeckResponse.refusal:type_name -> numen.v1.Refusal
+	4,  // 22: numen.v1.ReadDeckResponse.deck:type_name -> numen.v1.Deck
+	26, // 23: numen.v1.ReadDeckResponse.refusal:type_name -> numen.v1.Refusal
+	27, // 24: numen.v1.ReadDeckResponse.at:type_name -> numen.v1.Fingerprint
+	7,  // 25: numen.v1.WriteDeckRequest.cards:type_name -> numen.v1.Card
+	5,  // 26: numen.v1.WriteDeckRequest.sections:type_name -> numen.v1.Section
+	27, // 27: numen.v1.WriteDeckRequest.seen:type_name -> numen.v1.Fingerprint
+	26, // 28: numen.v1.WriteDeckResponse.refusal:type_name -> numen.v1.Refusal
+	27, // 29: numen.v1.WriteDeckResponse.at:type_name -> numen.v1.Fingerprint
+	9,  // 30: numen.v1.CardsService.Stencils:input_type -> numen.v1.StencilsRequest
+	11, // 31: numen.v1.CardsService.MakeStencil:input_type -> numen.v1.MakeStencilRequest
+	13, // 32: numen.v1.CardsService.ReadStencil:input_type -> numen.v1.ReadStencilRequest
+	15, // 33: numen.v1.CardsService.WriteStencil:input_type -> numen.v1.WriteStencilRequest
+	17, // 34: numen.v1.CardsService.RenameField:input_type -> numen.v1.RenameFieldRequest
+	20, // 35: numen.v1.CardsService.MakeDeck:input_type -> numen.v1.MakeDeckRequest
+	22, // 36: numen.v1.CardsService.ReadDeck:input_type -> numen.v1.ReadDeckRequest
+	24, // 37: numen.v1.CardsService.WriteDeck:input_type -> numen.v1.WriteDeckRequest
+	10, // 38: numen.v1.CardsService.Stencils:output_type -> numen.v1.StencilsResponse
+	12, // 39: numen.v1.CardsService.MakeStencil:output_type -> numen.v1.MakeStencilResponse
+	14, // 40: numen.v1.CardsService.ReadStencil:output_type -> numen.v1.ReadStencilResponse
+	16, // 41: numen.v1.CardsService.WriteStencil:output_type -> numen.v1.WriteStencilResponse
+	18, // 42: numen.v1.CardsService.RenameField:output_type -> numen.v1.RenameFieldResponse
+	21, // 43: numen.v1.CardsService.MakeDeck:output_type -> numen.v1.MakeDeckResponse
+	23, // 44: numen.v1.CardsService.ReadDeck:output_type -> numen.v1.ReadDeckResponse
+	25, // 45: numen.v1.CardsService.WriteDeck:output_type -> numen.v1.WriteDeckResponse
+	38, // [38:46] is the sub-list for method output_type
+	30, // [30:38] is the sub-list for method input_type
+	30, // [30:30] is the sub-list for extension type_name
+	30, // [30:30] is the sub-list for extension extendee
+	0,  // [0:30] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_cards_proto_init() }
@@ -2052,24 +2158,25 @@ func file_numen_v1_cards_proto_init() {
 		return
 	}
 	file_numen_v1_vault_proto_init()
-	file_numen_v1_cards_proto_msgTypes[4].OneofWrappers = []any{}
-	file_numen_v1_cards_proto_msgTypes[10].OneofWrappers = []any{}
-	file_numen_v1_cards_proto_msgTypes[12].OneofWrappers = []any{}
+	file_numen_v1_cards_proto_msgTypes[5].OneofWrappers = []any{}
+	file_numen_v1_cards_proto_msgTypes[6].OneofWrappers = []any{}
+	file_numen_v1_cards_proto_msgTypes[11].OneofWrappers = []any{}
 	file_numen_v1_cards_proto_msgTypes[13].OneofWrappers = []any{}
 	file_numen_v1_cards_proto_msgTypes[14].OneofWrappers = []any{}
 	file_numen_v1_cards_proto_msgTypes[15].OneofWrappers = []any{}
 	file_numen_v1_cards_proto_msgTypes[16].OneofWrappers = []any{}
-	file_numen_v1_cards_proto_msgTypes[19].OneofWrappers = []any{}
-	file_numen_v1_cards_proto_msgTypes[21].OneofWrappers = []any{}
+	file_numen_v1_cards_proto_msgTypes[17].OneofWrappers = []any{}
+	file_numen_v1_cards_proto_msgTypes[20].OneofWrappers = []any{}
 	file_numen_v1_cards_proto_msgTypes[22].OneofWrappers = []any{}
 	file_numen_v1_cards_proto_msgTypes[23].OneofWrappers = []any{}
+	file_numen_v1_cards_proto_msgTypes[24].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_cards_proto_rawDesc), len(file_numen_v1_cards_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   24,
+			NumMessages:   25,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

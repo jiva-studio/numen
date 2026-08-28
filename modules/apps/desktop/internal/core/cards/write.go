@@ -11,9 +11,13 @@ import (
 )
 
 // ErrNoSuchCard is what changing a card says when the deck holds no card of
-// that name. A card is named by its heading, so a renamed heading is a
-// different card.
-var ErrNoSuchCard = errors.New("this deck holds no card of that name")
+// that mark. A card is known by its mark, so a card rewritten from end to end
+// is still that card.
+var ErrNoSuchCard = errors.New("this deck holds no card of that mark")
+
+// ErrNoSuchSection is what changing a section says when the deck holds no
+// section standing there.
+var ErrNoSuchSection = errors.New("this deck holds no section standing there")
 
 // ErrNoSuchField is what changing a field says when the stencil declares no
 // field of that name.
@@ -54,15 +58,18 @@ func (f *DeckFile) Deck(ref domain.FileRef) Deck {
 	return deck
 }
 
-// SetValue writes what a card holds under one field. A field the card does not
-// carry yet is added at the end of it, which leaves the fields it does carry in
-// the order the person wrote them.
+// SetValue writes what the card of a mark holds under one field. A field the
+// card does not carry yet is added at the end of it, which leaves the fields it
+// does carry in the order the person wrote them.
+//
+// Writing the first field is what rewrites the heading, and that is done where
+// the deck is made whole, not here.
 func (f *DeckFile) SetValue(card, field, value string) error {
 	body := []byte(f.doc.Body())
 	_, spans := readDeck(domain.FileRef{}, body)
 
 	for _, span := range spans {
-		if span.name != card {
+		if span.mark == "" || span.mark != card {
 			continue
 		}
 		for _, v := range span.values {
@@ -79,30 +86,56 @@ func (f *DeckFile) SetValue(card, field, value string) error {
 	return fmt.Errorf("%w: %s", ErrNoSuchCard, card)
 }
 
-// SetName writes what a card holds for its stencil's first field, which is the
-// heading line and no heading below it. The card is addressed by the name it
-// stands under now, and it is the card of the new name from here on.
-func (f *DeckFile) SetName(card, name string) error {
+// RenameSection gives the section standing at one place in the deck another
+// name. What stands under it is left where it was.
+func (f *DeckFile) RenameSection(at int, name string) error {
 	body := []byte(f.doc.Body())
-	_, spans := readDeck(domain.FileRef{}, body)
-
-	for _, span := range spans {
-		if span.name != card {
-			continue
-		}
-		line := headingLine(2, name)
-		if span.from < len(body) {
-			line += "\n"
-		}
-		return f.doc.SpliceBody(span.head, span.from, line)
+	heads := sectionHeads(body)
+	if at < 0 || at >= len(heads) {
+		return fmt.Errorf("%w: %d", ErrNoSuchSection, at)
 	}
-	return fmt.Errorf("%w: %s", ErrNoSuchCard, card)
+	line := headingLine(1, name)
+	if heads[at].from < len(body) {
+		line += "\n"
+	}
+	return f.doc.SpliceBody(heads[at].head, heads[at].from, line)
+}
+
+// RemoveSection takes away the heading of the section standing at one place in
+// the deck. A section is a name and nothing else, so the cards that stood under
+// it and what a person wrote beneath it stay where they are, under whatever now
+// stands above them.
+func (f *DeckFile) RemoveSection(at int) error {
+	body := []byte(f.doc.Body())
+	heads := sectionHeads(body)
+	if at < 0 || at >= len(heads) {
+		return fmt.Errorf("%w: %d", ErrNoSuchSection, at)
+	}
+	// The blank line under the heading went with it, so the block below closes
+	// up against what the heading stood beneath.
+	to := heads[at].from
+	for to < len(body) && (body[to] == '\n' || body[to] == '\r') {
+		to++
+	}
+	return f.doc.SpliceBody(heads[at].head, to, "")
+}
+
+// AddSection writes a section at the end of the deck. What a person wrote under
+// its heading is written back under it, and nothing here reads it.
+func (f *DeckFile) AddSection(s Section) error {
+	body := []byte(f.doc.Body())
+	blocks := []string{headingLine(1, s.Name)}
+	if lead := trimBlankLines(markdown.Normalised(s.Lead)); lead != "" {
+		blocks = append(blocks, lead)
+	}
+	at := len(body)
+	return f.doc.SpliceBody(at, at, insert(body, at, strings.Join(blocks, "\n\n")))
 }
 
 // AddCard writes a card at the end of the deck.
 func (f *DeckFile) AddCard(card Card) error {
 	body := []byte(f.doc.Body())
-	blocks := []string{headingLine(2, card.Name)}
+	blocks := []string{headingLine(2, WriteHeading(card.Heading, card.Mark))}
 	if card.Stencil != "" {
 		blocks = append(blocks, "[["+card.Stencil+"]]")
 	}

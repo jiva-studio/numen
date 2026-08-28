@@ -103,8 +103,7 @@ func TestReadingTheFixtureVaultAndWritingItBackChangesNothing(t *testing.T) {
 			var body string
 			switch n.Type {
 			case domain.TypeDeck:
-				read := format.ReadDeck(n)
-				body, err = container.DeckBody(read.Preamble, read.Cards, read.Tail)
+				body, err = container.DeckBody(format.ReadDeck(n))
 			case domain.TypeStencil:
 				read := format.ReadStencil(n)
 				body, err = container.StencilBody(read.Preamble, read.Faces, read.Tail)

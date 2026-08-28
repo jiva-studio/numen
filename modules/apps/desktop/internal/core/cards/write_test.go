@@ -25,7 +25,9 @@ const deck = "---\n" +
 	"\n" +
 	"Cards I am learning.\n" +
 	"\n" +
-	"## Llama\n" +
+	"# The ones with fur\n" +
+	"\n" +
+	"## Llama ^k7m2xq9fzp\n" +
 	"\n" +
 	"[[Animal]]\n" +
 	"\n" +
@@ -39,7 +41,7 @@ const deck = "---\n" +
 	"\n" +
 	"about 45\"\n" +
 	"\n" +
-	"## компост\n" +
+	"## компост ^zpqrstvwxy\n" +
 	"\n" +
 	"[[Термин]]\n" +
 	"\n" +
@@ -104,6 +106,12 @@ func TestOpenAndWriteChangesNothing(t *testing.T) {
 	}
 }
 
+// The marks the two cards of the deck above carry.
+const (
+	llama   = "k7m2xq9fzp"
+	compost = "zpqrstvwxy"
+)
+
 func setValue(t *testing.T, raw, card, field, value string) string {
 	t.Helper()
 	f, err := cards.OpenDeck([]byte(raw))
@@ -120,7 +128,7 @@ func setValue(t *testing.T, raw, card, field, value string) string {
 // preamble, the lead, the cards around it — is the person's, and comes out as
 // it went in.
 func TestSetValueChangesOneValueAndNothingElse(t *testing.T) {
-	got := setValue(t, deck, "Llama", "Height", "about 46\"")
+	got := setValue(t, deck, llama, "Height", "about 46\"")
 
 	if want := strings.Replace(deck, "about 45\"", "about 46\"", 1); got != want {
 		t.Errorf("the write reached further than the value\n want %q\n  got %q", want, got)
@@ -130,16 +138,13 @@ func TestSetValueChangesOneValueAndNothingElse(t *testing.T) {
 // A card carries its fields in the order the person wrote them, and a write
 // does not tidy them into the order the stencil declares.
 func TestSetValueKeepsTheOrderTheFieldsWereWrittenIn(t *testing.T) {
-	raw := setValue(t, deck, "Llama", "Life span", "about 25 years")
+	raw := setValue(t, deck, llama, "Life span", "about 25 years")
 
 	f, err := cards.OpenDeck([]byte(raw))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	card, ok := f.Deck(domain.FileRef{}).Card("Llama")
-	if !ok {
-		t.Fatal("the card is gone")
-	}
+	card := f.Deck(domain.FileRef{}).Cards[0]
 	if got := fieldsOf(card); !slices.Equal(got, []string{"Life span", "Height"}) {
 		t.Errorf("fields = %v, want the order they were written in", got)
 	}
@@ -151,7 +156,7 @@ func TestSetValueKeepsTheOrderTheFieldsWereWrittenIn(t *testing.T) {
 // A field the card does not carry yet is written at the end of that card, which
 // is the one place that moves nothing already in it.
 func TestSetValueAddsAFieldAtTheEndOfTheCard(t *testing.T) {
-	got := setValue(t, deck, "Llama", "Weight", "about 130 kg")
+	got := setValue(t, deck, llama, "Weight", "about 130 kg")
 
 	want := strings.Replace(deck, "about 45\"\n\n## компост",
 		"about 45\"\n\n### Weight\n\nabout 130 kg\n\n## компост", 1)
@@ -160,7 +165,7 @@ func TestSetValueAddsAFieldAtTheEndOfTheCard(t *testing.T) {
 	}
 
 	// And at the end of the file, where nothing follows it.
-	got = setValue(t, deck, "компост", "Источник", "[[Компостная куча]]")
+	got = setValue(t, deck, compost, "Источник", "[[Компостная куча]]")
 	if want := deck + "\n### Источник\n\n[[Компостная куча]]\n"; got != want {
 		t.Errorf("field added wrong at the end\n want %q\n  got %q", want, got)
 	}
@@ -169,7 +174,7 @@ func TestSetValueAddsAFieldAtTheEndOfTheCard(t *testing.T) {
 // A file written with carriage returns is written back with them.
 func TestTheFilesOwnLineEndingIsWhatIsWritten(t *testing.T) {
 	raw := strings.ReplaceAll(deck, "\n", "\r\n")
-	got := setValue(t, raw, "Llama", "Weight", "about 130 kg")
+	got := setValue(t, raw, llama, "Weight", "about 130 kg")
 
 	if strings.Contains(strings.ReplaceAll(got, "\r\n", ""), "\n") {
 		t.Errorf("a bare break was written into a file of carriage returns: %q", got)
@@ -186,7 +191,7 @@ func TestSetValueOfACardTheDeckDoesNotHold(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	if err := f.SetValue("Alpaca", "Height", "about 35\""); !errors.Is(err, cards.ErrNoSuchCard) {
+	if err := f.SetValue("wxyz01234t", "Height", "about 35\""); !errors.Is(err, cards.ErrNoSuchCard) {
 		t.Errorf("err = %v, want ErrNoSuchCard", err)
 	}
 	if string(f.Bytes()) != deck {
@@ -202,82 +207,90 @@ func TestADeckThatCannotBeReadIsNotOpened(t *testing.T) {
 	}
 }
 
-// The first field's value is the heading, so writing it rewrites the heading
-// line and no heading below it. Everything else in the file is the person's.
-func TestSetNameRewritesTheHeadingAndNothingElse(t *testing.T) {
+// A card is addressed by its mark, and two cards of one heading are told apart
+// by nothing else. Writing the second reaches the second.
+func TestSetValueReachesTheCardOfThatMarkAlone(t *testing.T) {
+	raw := "---\ntype: deck\n---\n" +
+		"\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Height\n\nabout 45\"\n" +
+		"\n## Llama ^zpqrstvwxy\n\n[[Animal]]\n\n### Height\n\nabout 46\"\n"
+	got := setValue(t, raw, "zpqrstvwxy", "Height", "about 47\"")
+
+	if want := strings.Replace(raw, "about 46\"", "about 47\"", 1); got != want {
+		t.Errorf("the write reached the wrong card\n want %q\n  got %q", want, got)
+	}
+}
+
+// A section is made at the end of the deck, given another name where it stands,
+// and taken away. Taking one away takes its heading and nothing else: the cards
+// that stood under it stay where they are.
+func TestTheSplicesASectionNeeds(t *testing.T) {
 	f, err := cards.OpenDeck([]byte(deck))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	if err := f.SetName("Llama", "Lama glama"); err != nil {
-		t.Fatalf("set: %v", err)
+	if err := f.AddSection(cards.Section{Name: "The ones without", Lead: "Added last."}); err != nil {
+		t.Fatalf("add: %v", err)
+	}
+	made := deck + "\n# The ones without\n\nAdded last.\n"
+	if got := string(f.Bytes()); got != made {
+		t.Errorf("section made wrong\n want %q\n  got %q", made, got)
 	}
 
-	got := string(f.Bytes())
-	if want := strings.Replace(deck, "## Llama\n", "## Lama glama\n", 1); got != want {
-		t.Errorf("the write reached further than the heading\n want %q\n  got %q", want, got)
+	if err := f.RenameSection(0, "The furred ones"); err != nil {
+		t.Fatalf("rename: %v", err)
 	}
-	// The heading is the whole of a card's identity, so the card answers to the
-	// name it now stands under.
+	renamed := strings.Replace(made, "# The ones with fur\n", "# The furred ones\n", 1)
+	if got := string(f.Bytes()); got != renamed {
+		t.Errorf("section renamed wrong\n want %q\n  got %q", renamed, got)
+	}
+
+	if err := f.RemoveSection(0); err != nil {
+		t.Fatalf("remove: %v", err)
+	}
+	removed := strings.Replace(renamed, "# The furred ones\n\n", "", 1)
+	if got := string(f.Bytes()); got != removed {
+		t.Errorf("section removed wrong\n want %q\n  got %q", removed, got)
+	}
 	read := f.Deck(domain.FileRef{})
-	if _, held := read.Card("Llama"); held {
-		t.Error("the deck still holds a card of the old name")
+	if len(read.Cards) != 2 {
+		t.Errorf("cards = %+v, want the cards left where they were", read.Cards)
 	}
-	card, held := read.Card("Lama glama")
-	if !held {
-		t.Fatal("the card is gone")
-	}
-	if got := fieldsOf(card); !slices.Equal(got, []string{"Life span", "Height"}) {
-		t.Errorf("fields = %v, want the headings under it left where they were", got)
+	if read.Cards[0].Section != cards.NoSection {
+		t.Errorf("the card stands under section %d", read.Cards[0].Section)
 	}
 }
 
-// A file written with carriage returns keeps them when a heading is rewritten,
-// and the deck is the file it was once the name is written back.
-func TestSetNameOnADeckOfCarriageReturns(t *testing.T) {
-	raw := strings.ReplaceAll(deck, "\n", "\r\n")
-	f, err := cards.OpenDeck([]byte(raw))
-	if err != nil {
-		t.Fatalf("open: %v", err)
-	}
-	if err := f.SetName("Llama", "Lama glama"); err != nil {
-		t.Fatalf("set: %v", err)
-	}
-	if want := strings.Replace(raw, "## Llama\r\n", "## Lama glama\r\n", 1); string(f.Bytes()) != want {
-		t.Errorf("crlf write\n want %q\n  got %q", want, string(f.Bytes()))
-	}
-
-	if err := f.SetName("Lama glama", "Llama"); err != nil {
-		t.Fatalf("set back: %v", err)
-	}
-	if got := string(f.Bytes()); got != raw {
-		t.Errorf("the name written back is not the file it was\n want %q\n  got %q", raw, got)
-	}
-}
-
-func TestSetNameOfACardTheDeckDoesNotHold(t *testing.T) {
+// A section the deck does not hold is not written to.
+func TestASectionTheDeckDoesNotHold(t *testing.T) {
 	f, err := cards.OpenDeck([]byte(deck))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	if err := f.SetName("Alpaca", "Vicuña"); !errors.Is(err, cards.ErrNoSuchCard) {
-		t.Errorf("err = %v, want ErrNoSuchCard", err)
+	if err := f.RenameSection(4, "Nowhere"); !errors.Is(err, cards.ErrNoSuchSection) {
+		t.Errorf("rename = %v, want ErrNoSuchSection", err)
+	}
+	if err := f.RemoveSection(4); !errors.Is(err, cards.ErrNoSuchSection) {
+		t.Errorf("remove = %v, want ErrNoSuchSection", err)
 	}
 	if string(f.Bytes()) != deck {
-		t.Error("a card that is not there was written anyway")
+		t.Error("a section that is not there was written anyway")
 	}
 }
 
+// Every field is written under a heading of its own, the first included, and
+// the heading line carries the card's mark.
 func TestAddCard(t *testing.T) {
 	f, err := cards.OpenDeck([]byte(deck))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
 	if err := f.AddCard(cards.Card{
-		Name:    "Alpaca",
+		Heading: "Alpaca",
+		Mark:    "m9n8b7v6c5",
 		Stencil: "Animal",
 		Lead:    "From the same trip.",
 		Values: []cards.Value{
+			{Field: "Name", Text: "Alpaca"},
 			{Field: "Height", Text: "about 35\""},
 			{Field: "Life span", Text: ""},
 		},
@@ -285,26 +298,27 @@ func TestAddCard(t *testing.T) {
 		t.Fatalf("add: %v", err)
 	}
 
-	want := deck + "\n## Alpaca\n\n[[Animal]]\n\nFrom the same trip.\n\n### Height\n\nabout 35\"\n\n### Life span\n"
+	want := deck + "\n## Alpaca ^m9n8b7v6c5\n\n[[Animal]]\n\nFrom the same trip.\n\n" +
+		"### Name\n\nAlpaca\n\n### Height\n\nabout 35\"\n\n### Life span\n"
 	if got := string(f.Bytes()); got != want {
 		t.Errorf("card added wrong\n want %q\n  got %q", want, got)
 	}
 
-	card, ok := f.Deck(domain.FileRef{}).Card("Alpaca")
-	if !ok {
+	card, held := f.Deck(domain.FileRef{}).Card("m9n8b7v6c5")
+	if !held {
 		t.Fatal("the card that was written cannot be read back")
 	}
-	if card.Stencil != "Animal" || card.Lead != "From the same trip." {
+	if card.Heading != "Alpaca" || card.Stencil != "Animal" || card.Lead != "From the same trip." {
 		t.Errorf("card = %+v", card)
 	}
-	if got := fieldsOf(card); !slices.Equal(got, []string{"Height", "Life span"}) {
+	if got := fieldsOf(card); !slices.Equal(got, []string{"Name", "Height", "Life span"}) {
 		t.Errorf("fields = %v", got)
 	}
 }
 
-// A card's name is its heading and nothing else, so a card with no name is
-// written as the hashes alone.
-func TestAddCardWithNoName(t *testing.T) {
+// A heading is a projection and a mark is minted where the deck is written, so
+// a card handed over with neither is written with neither.
+func TestAddCardWithNoHeadingAndNoMark(t *testing.T) {
 	f, err := cards.OpenDeck([]byte(deck))
 	if err != nil {
 		t.Fatalf("open: %v", err)
@@ -324,7 +338,7 @@ func TestRenameFieldReachesTheCardsOfThatStencilAlone(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	if err := f.SetValue("компост", "Height", "no such thing"); err != nil {
+	if err := f.SetValue(compost, "Height", "no such thing"); err != nil {
 		t.Fatalf("set: %v", err)
 	}
 
@@ -339,7 +353,7 @@ func TestRenameFieldReachesTheCardsOfThatStencilAlone(t *testing.T) {
 	}
 
 	deck := f.Deck(domain.FileRef{})
-	llama, _ := deck.Card("Llama")
+	llama := deck.Cards[0]
 	if got := fieldsOf(llama); !slices.Equal(got, []string{"Life span", "Shoulder height"}) {
 		t.Errorf("fields = %v", got)
 	}
@@ -347,7 +361,7 @@ func TestRenameFieldReachesTheCardsOfThatStencilAlone(t *testing.T) {
 		t.Errorf("the value moved with the heading: %q", got)
 	}
 	// The card of another stencil keeps the field of that name.
-	other, _ := deck.Card("компост")
+	other := deck.Cards[1]
 	if got, ok := other.Value("Height"); !ok || got != "no such thing" {
 		t.Errorf("a card of another stencil was renamed: %v", fieldsOf(other))
 	}
@@ -498,7 +512,7 @@ func TestACardIsCutByWhatItsLinkPointsAt(t *testing.T) {
 	if renamed != 1 {
 		t.Fatalf("renamed = %d, want the card the link points at", renamed)
 	}
-	if got, _ := f.Deck(domain.FileRef{}).Card("Llama"); got.Stencil != "Animal|the beast" {
+	if got := f.Deck(domain.FileRef{}).Cards[0]; got.Stencil != "Animal|the beast" {
 		t.Errorf("the link was rewritten: %q", got.Stencil)
 	}
 }

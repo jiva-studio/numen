@@ -63,8 +63,12 @@ func deckOf(path, title string, d format.Deck, cutting map[string]string) *v1.De
 		Title:    title,
 		Preamble: d.Preamble,
 		Tail:     d.Tail,
+		Sections: make([]*v1.Section, 0, len(d.Sections)),
 		Cards:    make([]*v1.Card, 0, len(d.Cards)),
 		Problems: problemsOf(d.Problems),
+	}
+	for _, s := range d.Sections {
+		out.Sections = append(out.Sections, &v1.Section{Name: s.Name, Lead: s.Lead})
 	}
 	for _, card := range d.Cards {
 		out.Cards = append(out.Cards, cardOf(card, cutting[card.Stencil]))
@@ -74,7 +78,9 @@ func deckOf(path, title string, d format.Deck, cutting map[string]string) *v1.De
 
 func cardOf(c format.Card, at string) *v1.Card {
 	out := &v1.Card{
-		Name:      c.Name,
+		Heading:   c.Heading,
+		Mark:      c.Mark,
+		Section:   section(c.Section),
 		Stencil:   c.Stencil,
 		StencilAt: at,
 		Lead:      c.Lead,
@@ -84,6 +90,26 @@ func cardOf(c format.Card, at string) *v1.Card {
 		out.Values = append(out.Values, &v1.Value{Field: v.Field, Text: v.Text})
 	}
 	return out
+}
+
+// section is where a card's section stands in the deck's own, as the schema
+// carries it. A card standing before the first section carries nothing.
+func section(at int) *int32 {
+	if at == format.NoSection {
+		return nil
+	}
+	under := int32(at)
+	return &under
+}
+
+// sectionOf is where a card the client is writing stands, in the words the core
+// holds it in. A card the client left without one stands before the first
+// section.
+func sectionOf(under *int32) int {
+	if under == nil {
+		return format.NoSection
+	}
+	return int(*under)
 }
 
 // problemsOf is what was wrong with a file, in the order it was found. A check
@@ -143,19 +169,29 @@ func faultOf(check format.Check) (v1.Fault, bool) {
 		return v1.Fault_FAULT_CARD_WITHOUT_A_STENCIL, true
 	case format.CheckNotAStencil:
 		return v1.Fault_FAULT_STENCIL_IS_NOT_ONE, true
-	case format.CheckNoName:
-		return v1.Fault_FAULT_CARD_WITHOUT_A_NAME, true
-	case format.CheckTwoCards:
-		return v1.Fault_FAULT_CARD_NAMED_TWICE, true
+	case format.CheckTwoMarks:
+		return v1.Fault_FAULT_MARK_CARRIED_TWICE, true
 	case format.CheckTwoValues:
 		return v1.Fault_FAULT_FIELD_WRITTEN_TWICE, true
-	case format.CheckFirstFieldTwice:
-		return v1.Fault_FAULT_FIRST_FIELD_WRITTEN_TWICE, true
 	case format.CheckNotWritten:
 		return v1.Fault_FAULT_FIELD_NOT_RENAMED, true
 	default:
 		return v1.Fault_FAULT_UNSPECIFIED, false
 	}
+}
+
+// writtenDeck is the deck a client is putting in the vault, in the words the
+// core holds one in.
+func writtenDeck(w *v1.WriteDeckRequest) format.Deck {
+	out := format.Deck{
+		Preamble: w.GetPreamble(),
+		Cards:    cardsOf(w.GetCards()),
+		Tail:     w.GetTail(),
+	}
+	for _, s := range w.GetSections() {
+		out.Sections = append(out.Sections, format.Section{Name: s.GetName(), Lead: s.GetLead()})
+	}
+	return out
 }
 
 // cardsOf is the cards a client is putting into a deck, in the words the core
@@ -166,7 +202,13 @@ func cardsOf(cs []*v1.Card) []format.Card {
 	}
 	out := make([]format.Card, 0, len(cs))
 	for _, c := range cs {
-		card := format.Card{Name: c.GetName(), Stencil: c.GetStencil(), Lead: c.GetLead()}
+		card := format.Card{
+			Heading: c.GetHeading(),
+			Mark:    c.GetMark(),
+			Section: sectionOf(c.Section),
+			Stencil: c.GetStencil(),
+			Lead:    c.GetLead(),
+		}
 		for _, v := range c.GetValues() {
 			card.Values = append(card.Values, format.Value{Field: v.GetField(), Text: v.GetText()})
 		}

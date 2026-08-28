@@ -50,8 +50,7 @@ type Renamed struct {
 // heading is rewritten in the cards of that stencil, and what stands under it is
 // untouched.
 //
-// The first field is written in the stencil alone, so renaming it reaches no
-// deck and no deck is read.
+// Every field a stencil declares is written this way, the first included.
 type RenameField struct {
 	Readers port.VaultReaders
 	Writers port.VaultWriters
@@ -111,15 +110,9 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Field) (Rena
 	}
 
 	var out Renamed
-	var first bool
-	out.Stencil, first, err = u.stencil(ctx, reader, writer, in)
+	out.Stencil, err = u.stencil(ctx, reader, writer, in)
 	if err != nil {
 		return Renamed{}, err
-	}
-	// The first field is written in `fields` and in the braces of the faces,
-	// and in no deck at all.
-	if first {
-		return out, nil
 	}
 
 	paths, err := u.decks(ctx, v)
@@ -151,38 +144,34 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Field) (Rena
 	return out, nil
 }
 
-// stencil writes the new name where the stencil declares the field, and says
-// whether the field renamed was the first one.
+// stencil writes the new name where the stencil declares the field.
 func (u RenameField) stencil(
 	ctx context.Context, reader port.VaultReader, writer port.VaultWriter, in Field,
-) (domain.FileRef, bool, error) {
+) (domain.FileRef, error) {
 	against := in.At
 	if against == (domain.FileRef{}) {
 		on, err := reader.Stat(ctx, in.Stencil)
 		if err != nil {
-			return domain.FileRef{}, false, fmt.Errorf("look at %s: %w", in.Stencil, err)
+			return domain.FileRef{}, fmt.Errorf("look at %s: %w", in.Stencil, err)
 		}
 		against = on
 	}
 
 	raw, err := reader.Read(ctx, in.Stencil)
 	if err != nil {
-		return domain.FileRef{}, false, fmt.Errorf("read %s: %w", in.Stencil, err)
+		return domain.FileRef{}, fmt.Errorf("read %s: %w", in.Stencil, err)
 	}
 	f, err := format.OpenStencil(raw)
 	if err != nil {
-		return domain.FileRef{}, false, fmt.Errorf("%s: %w", in.Stencil, err)
+		return domain.FileRef{}, fmt.Errorf("%s: %w", in.Stencil, err)
 	}
-	declared := f.Fields()
-	first := len(declared) > 0 && declared[0] == in.From
 	if err := f.RenameField(in.From, in.To); err != nil {
-		return domain.FileRef{}, false, fmt.Errorf("%s: %w", in.Stencil, err)
+		return domain.FileRef{}, fmt.Errorf("%s: %w", in.Stencil, err)
 	}
 	if err := u.stamped(f.Stamped); err != nil {
-		return domain.FileRef{}, false, fmt.Errorf("%s: %w", in.Stencil, err)
+		return domain.FileRef{}, fmt.Errorf("%s: %w", in.Stencil, err)
 	}
-	at, err := writer.Write(ctx, in.Stencil, f.Bytes(), against)
-	return at, first, err
+	return writer.Write(ctx, in.Stencil, f.Bytes(), against)
 }
 
 // stamped writes an identifier into a file that carries none, which is what

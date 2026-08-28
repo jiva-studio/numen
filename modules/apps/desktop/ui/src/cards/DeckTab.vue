@@ -1,10 +1,11 @@
 <script setup lang="ts">
 /**
- * A deck tab: the cards as a grid, and the questions the file puts.
+ * A deck tab: the cards as a grid under the sections they stand in, and the
+ * questions the file puts.
  *
  * The grid takes cards and hands identities back, and is handed what is wrong
- * with each of them under the same identities, so a card with no name and two
- * cards of one name are each marked where they were read from.
+ * with each of them under the same identities, so a card under no stencil and
+ * two cards of one mark are each marked where they were read from.
  */
 import { computed } from 'vue'
 import { Deck as DeckView } from '@numen/ui'
@@ -48,19 +49,22 @@ const wrong = computed(() => ({ at: marks.value.at, under: marks.value.under }))
     <DeckView
       class="deck-tab__grid"
       :cards="drawn"
+      :sections="props.held.bands()"
       :cuts="props.held.cuts()"
       :name="words.deck"
       :wrong="wrong"
       @add="
-        (name: string, stencil: string, filled: readonly Filled[]) =>
-          props.held.adds(name, stencil, filled)
+        (stencil: string, filled: readonly Filled[]) => props.held.adds(stencil, filled)
       "
       @remove="(id: string) => props.held.removes(id)"
       @move="(id: string, at: CardLanding) => props.held.moves(id, at)"
       @write="
-        (id: string, field: string, nth: number, names: boolean, text: string) =>
-          props.held.writes(id, field, nth, names, text)
+        (id: string, field: string, nth: number, text: string) =>
+          props.held.writes(id, field, nth, text)
       "
+      @add-section="(name: string) => props.held.addsSection(name)"
+      @rename-section="(id: string, name: string) => props.held.namesSection(id, name)"
+      @remove-section="(id: string) => props.held.removesSection(id)"
     />
 
   </div>

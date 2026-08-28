@@ -8,13 +8,15 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Deck from './Deck.vue'
-import type { Drawn, Filled, Wrong } from './deck'
-import { ordered, type Landing } from './order'
+import type { Banded, Drawn, Filled, Wrong } from './deck'
+import type { Landing } from './order'
 import type { Cut } from './stencil'
 
 interface Corpus {
   readonly cards: readonly Drawn[]
   readonly cuts: readonly Cut[]
+  /** The sections the cards stand under, in the order they stand in the deck. */
+  readonly sections?: readonly Banded[]
   /** What the vault reading this file found wrong with it, by card and field. */
   readonly wrong?: {
     readonly at?: Readonly<Record<string, readonly string[]>>
@@ -49,16 +51,22 @@ const many = (count: number): readonly Drawn[] =>
   Array.from({ length: count }, (_, at) =>
     at % 2 === 0
       ? {
-          id: `beast-${at}`,
-          name: `Beast ${at + 1}`,
+          mark: `beast00${at}`,
+          section: null,
           stencil: 'Animal',
           filled: [
+            { field: 'Name', text: `Beast ${at + 1}` },
             { field: 'Height', text: 'about 45"' },
             { field: 'Weight', text: '- bull: 350 kg\n- cow: 300 kg\n- calf: 40 kg' },
             { field: 'Life span', text: 'about 20 years' },
           ],
         }
-      : { id: `asked-${at}`, name: `Question ${at + 1}`, stencil: 'Basic', filled: [] },
+      : {
+          mark: `asked00${at}`,
+          section: null,
+          stencil: 'Basic',
+          filled: [{ field: 'Question', text: `Question ${at + 1}` }],
+        },
   )
 
 const CORPORA = {
@@ -66,31 +74,76 @@ const CORPORA = {
     cuts: [ANIMAL, WORD],
     cards: [
       {
-        id: 'llama',
-        name: 'Llama',
+        mark: 'k7m2xq9fzp',
+        section: null,
         stencil: 'Animal',
         filled: [
+          { field: 'Name', text: 'Llama' },
           { field: 'Height', text: 'about 45" *at the shoulder*' },
           { field: 'Life span', text: 'about **20 years**' },
         ],
       },
       {
-        id: 'yak',
-        name: 'Yak',
+        mark: '3n8vr4tqch',
+        section: null,
         stencil: 'Animal',
         filled: [
+          { field: 'Name', text: 'Yak' },
           { field: 'Height', text: 'about 63"' },
           { field: 'Weight', text: '- bull: 350 kg\n- cow: 300 kg' },
           { field: 'Life span', text: 'about 22 years' },
         ],
       },
       {
-        id: 'llano',
-        name: 'llano',
+        mark: 'w9s5jd2b1k',
+        section: null,
         stencil: 'Word',
         filled: [
+          { field: 'Word', text: 'llano' },
           { field: 'Meaning', text: 'a plain' },
           { field: 'Example', text: '' },
+        ],
+      },
+    ],
+  },
+  /* A deck grown past one list: cards standing before the first section, a
+     section holding several, and a section a person made and has yet to put a
+     card in. */
+  'a deck in sections': {
+    cuts: [ANIMAL, ASKED],
+    sections: [
+      { id: 'roots', name: 'Roots' },
+      { id: 'leaves', name: 'Leaves' },
+    ],
+    cards: [
+      {
+        mark: 'p4h6c8vzn2',
+        section: null,
+        stencil: 'Basic',
+        filled: [
+          { field: 'Question', text: 'What is a deck for?' },
+          { field: 'Answer', text: 'Cards, and the questions on them.' },
+        ],
+      },
+      {
+        mark: 'r2t7y5k9wq',
+        section: 'roots',
+        stencil: 'Basic',
+        filled: [
+          {
+            field: 'Question',
+            text: 'Compost, what is it made of\n\nAsked of a heap two winters old.',
+          },
+          { field: 'Answer', text: 'Leaves and peelings, turned and left to rot down' },
+        ],
+      },
+      {
+        mark: 'z3f1m6b4dt',
+        section: 'roots',
+        stencil: 'Animal',
+        filled: [
+          { field: 'Name', text: 'Earthworm' },
+          { field: 'Life span', text: 'about 2 years' },
         ],
       },
     ],
@@ -102,38 +155,46 @@ const CORPORA = {
     cuts: [ASKED],
     cards: [
       {
-        id: 'compost',
-        name: 'What is compost?',
+        mark: 'c5n8q2wxjb',
+        section: null,
         stencil: 'Basic',
         filled: [
+          { field: 'Question', text: 'What is compost?' },
           {
             field: 'Answer',
             text: 'Leaves, grass and kitchen peelings, turned twice and left under a sheet until the heap has gone dark and crumbly enough to spread on any bed of the plot.',
           },
         ],
       },
-      { id: 'short', name: 'a short one', stencil: 'Basic', filled: [] },
+      {
+        mark: 'v7k3d9m1zr',
+        section: null,
+        stencil: 'Basic',
+        filled: [{ field: 'Question', text: 'a short one' }],
+      },
     ],
   },
-  /* Names and values that are not Latin, beside a name and a value with
-     nothing in them to break at. */
+  /* Values that are not Latin, beside a field name and a value with nothing in
+     them to break at. */
   'awkward text': {
     cuts: [{ name: 'Слово', fields: ['Слово', 'Перевод', 'Пример'] }, { name: UNBROKEN, fields: [UNBROKEN, 'Long'] }],
     cards: [
       {
-        id: 'компост',
-        name: 'Компост',
+        mark: 'j2b6t8n4vw',
+        section: null,
         stencil: 'Слово',
         filled: [
+          { field: 'Слово', text: 'Компост' },
           { field: 'Перевод', text: 'compost, перепревшие листья и трава' },
           { field: 'Пример', text: 'बगीचे की खाद और हरी खाद' },
         ],
       },
       {
-        id: 'run-on',
-        name: UNBROKEN,
+        mark: 'h5r1w7z3qm',
+        section: null,
         stencil: UNBROKEN,
         filled: [
+          { field: UNBROKEN, text: UNBROKEN },
           {
             field: 'Long',
             text: 'A value that goes on and on, well past the width any tile drawing it is likely to have, and then a little further.',
@@ -143,34 +204,36 @@ const CORPORA = {
     ],
   },
   'nothing at all': { cuts: [ANIMAL, WORD], cards: [] },
-  /* Every fault a tile can carry, one card apiece: a card with nothing in it,
-     a card naming a stencil that was not handed in, a card carrying the field
-     that names it as a value as well, and a card from somebody else carrying
-     marks that must never be drawn as marks. */
+  /* Every fault a tile can carry, one card apiece: a card under no stencil, a
+     card naming a stencil that was not handed in, a card writing one field
+     twice, and a card from somebody else carrying marks that must never be
+     drawn as marks. */
   'what is wrong': {
     cuts: [ANIMAL, WORD, ASKED],
     cards: [
-      { id: 'blank', name: '', stencil: 'Word', filled: [] },
+      { mark: 'b8k4n2vqz6', section: null, stencil: null, filled: [] },
       {
-        id: 'orphan',
-        name: 'Orphan',
+        mark: 'm3t9w5rj1x',
+        section: null,
         stencil: 'Gone',
         filled: [{ field: 'Whatever it had', text: 'still here, still readable' }],
       },
       {
-        id: 'twice',
-        name: 'Llama',
+        mark: 'd6q2z8hn4v',
+        section: null,
         stencil: 'Animal',
         filled: [
+          { field: 'Name', text: 'Llama' },
           { field: 'Name', text: 'Alpaca' },
           { field: 'Height', text: 'about 45"' },
         ],
       },
       {
-        id: 'theirs',
-        name: 'A deck from somebody else',
+        mark: 'y1v5b9kt3n',
+        section: null,
         stencil: 'Basic',
         filled: [
+          { field: 'Question', text: 'A deck from somebody else' },
           {
             field: 'Answer',
             text:
@@ -183,12 +246,12 @@ const CORPORA = {
     ],
     wrong: {
       at: {
-        blank: ['this card has no name'],
-        twice: ['another card is called Llama'],
+        b8k4n2vqz6: ['the first paragraph under this card is not a lone wikilink'],
+        d6q2z8hn4v: ['this card writes one field twice'],
       },
       under: {
-        twice: { Name: ['this card writes Name twice'] },
-        theirs: { Answer: ['this value is not in the stencil this card is cut by'] },
+        d6q2z8hn4v: { Name: ['this card writes Name twice'] },
+        y1v5b9kt3n: { Answer: ['this value is not in the stencil this card is cut by'] },
       },
     },
   },
@@ -204,6 +267,7 @@ interface Knobs {
   /** Given by the story, and nothing a reader turns. */
   cards?: never
   cuts?: never
+  sections?: never
   words?: never
 }
 
@@ -221,6 +285,7 @@ const meta: Meta<Knobs> = {
     width: { control: 'text' },
     cards: { table: { disable: true } },
     cuts: { table: { disable: true } },
+    sections: { table: { disable: true } },
     words: { table: { disable: true } },
   },
   args: { corpus: 'a deck', name: 'Deck', width: '100%' },
@@ -229,6 +294,7 @@ const meta: Meta<Knobs> = {
     setup() {
       const cards = ref<readonly Drawn[]>(CORPORA[args.corpus].cards)
       const cuts = ref<readonly Cut[]>(CORPORA[args.corpus].cuts)
+      const sections = ref<readonly Banded[]>(sectionsOf(CORPORA[args.corpus]))
       const wrong = ref<Wrong>(wrongOf(CORPORA[args.corpus]))
 
       watch(
@@ -236,36 +302,36 @@ const meta: Meta<Knobs> = {
         (next) => {
           cards.value = CORPORA[next].cards
           cuts.value = CORPORA[next].cuts
+          sections.value = sectionsOf(CORPORA[next])
           wrong.value = wrongOf(CORPORA[next])
         },
       )
 
       /** The cards, with one of them changed. */
-      const changed = (id: string, into: (card: Drawn) => Drawn): readonly Drawn[] =>
-        cards.value.map((card) => (card.id === id ? into(card) : card))
+      const changed = (mark: string, into: (card: Drawn) => Drawn): readonly Drawn[] =>
+        cards.value.map((card) => (card.mark === mark ? into(card) : card))
+
+      /** The section the last of them is, which is where a new card is made. */
+      const lastSection = (): string | null => sections.value.at(-1)?.id ?? null
 
       return {
         args,
         cards,
         cuts,
+        sections,
         wrong,
-        onAdd: (name: string, stencil: string, filled: readonly Filled[]) => {
-          const id = `card-${cards.value.length}-${stencil}`
-          cards.value = [...cards.value, { id, name, stencil, filled }]
+        onAdd: (stencil: string, filled: readonly Filled[]) => {
+          const mark = `made00000${cards.value.length}`
+          cards.value = [...cards.value, { mark, section: lastSection(), stencil, filled }]
         },
-        onRemove: (id: string) => {
-          cards.value = cards.value.filter((card) => card.id !== id)
+        onRemove: (mark: string) => {
+          cards.value = cards.value.filter((card) => card.mark !== mark)
         },
-        onMove: (id: string, at: Landing) => {
-          const order = ordered(cards.value.map((card) => card.id), id, at)
-          cards.value = order.flatMap((each) => cards.value.filter((card) => card.id === each))
+        onMove: (mark: string, at: Landing) => {
+          cards.value = moved(cards.value, sections.value, mark, at)
         },
-        /* A card is named by its first field, and that value stands in the
-           heading and in none of the card's values. */
-        onWrite: (id: string, field: string, nth: number, names: boolean, text: string) => {
-          cards.value = changed(id, (card) => {
-            if (names) return { ...card, name: text }
-
+        onWrite: (mark: string, field: string, nth: number, text: string) => {
+          cards.value = changed(mark, (card) => {
             // The one written is the one counted off under its own field.
             let under = 0
             const filled = card.filled.map((each) => {
@@ -277,6 +343,21 @@ const meta: Meta<Knobs> = {
             return { ...card, filled }
           })
         },
+        onAddSection: (name: string) => {
+          sections.value = [...sections.value, { id: `made-${sections.value.length}`, name }]
+        },
+        onRenameSection: (id: string, name: string) => {
+          sections.value = sections.value.map((each) => (each.id === id ? { ...each, name } : each))
+        },
+        /* A section is a name, so taking one away takes away its heading and
+           nothing else: its cards stand under whatever heading is above them. */
+        onRemoveSection: (id: string) => {
+          const above = sections.value[sections.value.findIndex((each) => each.id === id) - 1]
+          sections.value = sections.value.filter((each) => each.id !== id)
+          cards.value = cards.value.map((card) =>
+            card.section === id ? { ...card, section: above?.id ?? null } : card,
+          )
+        },
       }
     },
     template: `
@@ -284,25 +365,134 @@ const meta: Meta<Knobs> = {
         <Deck
           :cards="cards"
           :cuts="cuts"
+          :sections="sections"
           :name="args.name"
           :wrong="wrong"
           @add="onAdd"
           @remove="onRemove"
           @move="onMove"
           @write="onWrite"
+          @add-section="onAddSection"
+          @rename-section="onRenameSection"
+          @remove-section="onRemoveSection"
         />
       </div>
     `,
   }),
 }
 
+const sectionsOf = (corpus: Corpus): readonly Banded[] => corpus.sections ?? []
+
+/**
+ * A card let go before another, at the head of a section, or at the end of the
+ * deck. A card takes the section of whatever it lands in front of.
+ */
+const moved = (
+  cards: readonly Drawn[],
+  sections: readonly Banded[],
+  mark: string,
+  at: Landing,
+): readonly Drawn[] => {
+  const held = cards.find((card) => card.mark === mark)
+  if (!held) return cards
+  const left = cards.filter((card) => card.mark !== mark)
+
+  const before = at === null ? -1 : left.findIndex((card) => card.mark === at)
+  if (before !== -1) {
+    const under = { ...held, section: left[before]?.section ?? null }
+    return [...left.slice(0, before), under, ...left.slice(before)]
+  }
+
+  const rank = (section: string | null): number =>
+    section === null ? 0 : sections.findIndex((each) => each.id === section) + 1
+
+  if (at === null) {
+    return [...left, { ...held, section: sections.at(-1)?.id ?? null }]
+  }
+  if (!sections.some((each) => each.id === at)) return cards
+
+  const seat = left.findIndex((card) => rank(card.section) >= rank(at))
+  const where = seat === -1 ? left.length : seat
+  return [...left.slice(0, where), { ...held, section: at }, ...left.slice(where)]
+}
+
 export default meta
 type Story = StoryObj<Knobs>
 
+/**
+ * Three cards, two stencils, and one card leaving a field out. The plus asks
+ * which stencil, and the card it makes stands on empty fields.
+ */
+export const ADeck: Story = {
+  play: async ({ canvasElement }) => {
+    expect(canvasElement.querySelectorAll('[data-cut]')).toHaveLength(0)
 
-/** Three cards, two stencils, and one card leaving a field out. */
-export const ADeck: Story = {}
+    await userEvent.click(found(canvasElement, '[data-plus] button'))
+    expect(canvasElement.querySelectorAll('[data-cut]')).toHaveLength(2)
 
+    await userEvent.click(found(canvasElement, '[data-cut="Word"]'))
+
+    const tiles = [...canvasElement.querySelectorAll('[data-card]')]
+    const made = tiles[tiles.length - 1]
+
+    // Every field the stencil declares stands under its own name, the first
+    // included, and all of them stand empty.
+    const boxes = [...(made?.querySelectorAll<HTMLTextAreaElement>('textarea') ?? [])]
+    expect(boxes.map((box) => box.getAttribute('data-value'))).toEqual([
+      'Word',
+      'Meaning',
+      'Example',
+    ])
+    expect(boxes.every((box) => box.value === '')).toBe(true)
+  },
+}
+
+/**
+ * A deck grown past one list: cards standing before the first section, a
+ * section holding several, and a section holding none. A card is let go at the
+ * head of a section, an empty one included, and a section taken away leaves its
+ * cards where they stand.
+ */
+export const InSections: Story = {
+  args: { corpus: 'a deck in sections' },
+  play: async ({ canvasElement }) => {
+    const bands = [...canvasElement.querySelectorAll('[data-band]')]
+    expect(bands.map((band) => band.getAttribute('data-band'))).toEqual(['roots', 'leaves'])
+
+    // A section holding no card keeps its heading, and stands as wide as the
+    // grid under it.
+    const leaves = found(canvasElement, '[data-band="leaves"]')
+    expect(canvasElement.querySelectorAll('[data-section="leaves"]')).toHaveLength(0)
+    expect(leaves.getBoundingClientRect().width).toBeGreaterThan(240)
+
+    // The heading is a rule with the name typed on it, and the way to be rid of
+    // it at the end.
+    expect(found(canvasElement, '[data-band="roots"] .rule')).toBeTruthy()
+    expect(found(canvasElement, '[data-band="roots"] input').getAttribute('value')).toBe('Roots')
+
+    // Each card stands under the section it is in, and the ones before the
+    // first stand under none.
+    expect(canvasElement.querySelectorAll('[data-section="roots"]')).toHaveLength(2)
+    expect(
+      found(canvasElement, '[data-card="p4h6c8vzn2"]').getAttribute('data-section'),
+    ).toBeNull()
+
+    // A section made at the end, under a name nothing has taken.
+    await userEvent.click(found(canvasElement, '[data-add-section]'))
+    const made = [...canvasElement.querySelectorAll('[data-band]')]
+    expect(made).toHaveLength(3)
+    expect(made[2]?.querySelector('input')?.value).toBe('Section 1')
+
+    // Taking a section away takes away its heading and nothing else: its cards
+    // stand under the heading above them now.
+    await userEvent.click(found(canvasElement, '[data-band="roots"] .deed'))
+    expect(canvasElement.querySelectorAll('[data-band="roots"]')).toHaveLength(0)
+    expect(canvasElement.querySelectorAll('[data-card]')).toHaveLength(3)
+    expect(
+      found(canvasElement, '[data-card="z3f1m6b4dt"]').getAttribute('data-section'),
+    ).toBeNull()
+  },
+}
 
 /**
  * Three hundred cards cut by two stencils of different sizes, which is where
@@ -322,7 +512,7 @@ export const FarTooMany: Story = {
   },
 }
 
-/** Names and values that are not Latin, and a name with nothing to break at. */
+/** Values that are not Latin, and a field name with nothing to break at. */
 export const AwkwardText: Story = { args: { corpus: 'awkward text' } }
 
 /** No cards, and one plus standing alone in the middle of what it is asked from. */
@@ -374,13 +564,13 @@ export const WhatIsWrongWithACard: Story = {
     const said = (card: string, selector: string): string =>
       found(canvasElement, `[data-card="${card}"] ${selector}`).textContent ?? ''
 
-    expect(said('blank', '[data-wrong]')).toContain('this card has no name')
-    expect(said('twice', '[data-wrong]')).toContain('another card is called Llama')
-    expect(said('twice', '[data-wrong-value="Name"]')).toContain('this card writes Name twice')
-    expect(said('theirs', '[data-wrong-value="Answer"]')).toContain('not in the stencil')
+    expect(said('b8k4n2vqz6', '[data-wrong]')).toContain('not a lone wikilink')
+    expect(said('d6q2z8hn4v', '[data-wrong]')).toContain('writes one field twice')
+    expect(said('d6q2z8hn4v', '[data-wrong-value="Name"]')).toContain('writes Name twice')
+    expect(said('y1v5b9kt3n', '[data-wrong-value="Answer"]')).toContain('not in the stencil')
 
     // The card nothing was said against carries no mark at all.
-    expect(canvasElement.querySelector('[data-card="orphan"] [data-wrong]')).toBeNull()
+    expect(canvasElement.querySelector('[data-card="m3t9w5rj1x"] [data-wrong]')).toBeNull()
     expect(canvasElement.querySelectorAll('[data-wrong]')).toHaveLength(2)
   },
 }
@@ -425,7 +615,7 @@ export const Narrow: Story = {
     expect(getComputedStyle(grid).gridTemplateColumns.split(' ')).toHaveLength(1)
     expect(deck.scrollWidth).toBeLessThanOrEqual(deck.clientWidth + 1)
 
-    const box = found(canvasElement, '[data-card="compost"] [data-value="Answer"]')
+    const box = found(canvasElement, '[data-card="c5n8q2wxjb"] [data-value="Answer"]')
 
     // It wrapped: the box stands taller than the one line it is written on.
     const line = Number.parseFloat(getComputedStyle(box).lineHeight)
@@ -433,31 +623,5 @@ export const Narrow: Story = {
 
     expect(box.scrollHeight).toBeLessThanOrEqual(box.clientHeight + 1)
     measure(canvasElement, 2)
-  },
-}
-
-/** The plus asks which stencil, and the card it makes stands on empty fields. */
-export const AsksWhichStencil: Story = {
-  play: async ({ canvasElement }) => {
-    expect(canvasElement.querySelectorAll('[data-cut]')).toHaveLength(0)
-
-    await userEvent.click(found(canvasElement, '[data-plus] button'))
-    expect(canvasElement.querySelectorAll('[data-cut]')).toHaveLength(2)
-
-    await userEvent.click(found(canvasElement, '[data-cut="Word"]'))
-
-    const tiles = [...canvasElement.querySelectorAll('[data-card]')]
-    const made = tiles[tiles.length - 1]
-
-    // The field naming the card stands first, under a name nothing had taken,
-    // and the rest stand empty after it.
-    const boxes = [...(made?.querySelectorAll<HTMLTextAreaElement>('textarea') ?? [])]
-    expect(boxes.map((box) => box.getAttribute('data-value'))).toEqual([
-      'Word',
-      'Meaning',
-      'Example',
-    ])
-    expect(boxes[0]?.value).toBe('Card 1')
-    expect(boxes.slice(1).every((box) => box.value === '')).toBe(true)
   },
 }

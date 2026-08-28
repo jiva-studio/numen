@@ -221,14 +221,25 @@ vi.mock('./vault', () => ({
       return said.renaming
     },
     readDeck: async (path: string) => ({
-      deck: { path, title: path, preamble: '', cards: [], tail: '', problems: [] },
+      deck: {
+        path,
+        title: path,
+        preamble: '',
+        cards: [],
+        sections: [],
+        tail: '',
+        problems: [],
+      },
       refusal: null,
       at: 'a1',
       bound: 0,
     }),
-    writeDeck: async (path: string, deck: { cards: readonly { name: string }[] }) => {
+    writeDeck: async (
+      path: string,
+      deck: { cards: readonly { values: readonly { text: string }[] }[] },
+    ) => {
       asked.cut.push(`deck ${path}`)
-      asked.wrote.push(deck.cards.map((card) => card.name).join(', '))
+      asked.wrote.push(deck.cards.map((card) => card.values[0]?.text ?? '').join(', '))
       return { refusal: null, changed: false, at: 'a2', bound: 0 }
     },
     readStencil: async (path: string) => ({
@@ -1291,10 +1302,10 @@ describe('a file the window has open in an editor of cards, removed from the tre
   it('writes the card nobody had saved before the file goes', async () => {
     const window = await holding('New deck', 'Animals')
     const held = window.findComponent(DeckTab).props('held') as {
-      adds(name: string, stencil: string, values: readonly { field: string; text: string }[]): void
+      adds(stencil: string, values: readonly { field: string; text: string }[]): void
     }
 
-    held.adds('Vicuña', 'Animal', [])
+    held.adds('Animal', [{ field: 'Name', text: 'Vicuña' }])
     await removes(window, 'Animals.note')
 
     // Making the deck is no write, so the only one is what the person added.

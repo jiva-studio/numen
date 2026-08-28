@@ -5,14 +5,14 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import Card from './Card.vue'
-import { grid, type CardWords, type Drawn, type Tile } from './deck'
+import { grid, type Banded, type CardWords, type Drawn, type Tile } from './deck'
 import type { Cut } from './stencil'
 
 const CUTS: readonly Cut[] = [{ name: 'Animal', fields: ['Name', 'Height'] }]
 
 const CARDS: readonly Drawn[] = [
-  { id: 'llama', name: 'Llama', stencil: 'Animal', filled: [] },
-  { id: 'yak', name: 'Yak', stencil: 'Animal', filled: [] },
+  { mark: 'llama', section: null, stencil: 'Animal', filled: [] },
+  { mark: 'yak', section: null, stencil: 'Animal', filled: [] },
 ]
 
 /** The words one card is drawn with, which say nothing of adding cards. */
@@ -20,16 +20,21 @@ const WORDS: CardWords = {
   remove: 'Remove',
   carry: 'Reorder',
   cut: 'Stencil',
-  name: 'Name',
+  cardStem: 'Card',
   nothing: 'Nothing in it',
   unknown: (stencil) => (stencil === null ? 'Cut by no stencil' : `No stencil called ${stencil}`),
-  twice: 'The card is named by this field',
   wrong: 'What is wrong',
 }
 
-const tileOf = (id: string, cards: readonly Drawn[] = CARDS): Tile => {
-  const laid = grid(cards, CUTS, null).tiles.find((tile) => tile.id === id)
-  if (!laid) throw new Error(`no tile for ${id}`)
+const tileOf = (
+  mark: string,
+  cards: readonly Drawn[] = CARDS,
+  sections: readonly Banded[] = [],
+): Tile => {
+  const laid = grid(cards, sections, CUTS, null)
+    .runs.flatMap((run) => run.tiles)
+    .find((tile) => tile.mark === mark)
+  if (!laid) throw new Error(`no tile for ${mark}`)
   return laid
 }
 
@@ -52,13 +57,42 @@ describe('Card', () => {
     expect(held.get('[data-cut-of]').attributes('aria-label')).toBe('Stencil')
   })
 
+  it('announces a card by the place it stands in the deck, and by no name of its own', () => {
+    const held = mountCard(tileOf('yak'), { words: WORDS })
+    expect(held.get('[data-card]').attributes('aria-label')).toBe('Card 2')
+    expect(held.get('[data-grip]').attributes('aria-label')).toBe('Reorder: Card 2')
+  })
+
+  it('says which section it stands under, and nothing where it stands under none', () => {
+    const under: readonly Drawn[] = [
+      { mark: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
+    ]
+    const tile = tileOf('llama', under, [{ id: 'roots', name: 'Roots' }])
+    expect(mountCard(tile).get('[data-card]').attributes('data-section')).toBe('roots')
+    expect(mountCard(tileOf('llama')).get('[data-card]').attributes('data-section')).toBeUndefined()
+  })
+
+  it('holds what was typed, breaks and all, in the box of the first field', async () => {
+    const held = mountCard(tileOf('llama'))
+    const box = held.get<HTMLTextAreaElement>('[data-value="Name"]')
+    const press = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
+    box.element.dispatchEvent(press)
+    expect(press.defaultPrevented).toBe(false)
+
+    await box.setValue('Llama\nand alpaca')
+    expect(held.emitted('write')).toEqual([['Name', 1, 'Llama\nand alpaca']])
+  })
+
   it('says what is wrong with a value once, under the last box standing for it', () => {
     const twice: readonly Drawn[] = [
       {
-        id: 'twice',
-        name: 'Llama',
+        mark: 'twice',
+        section: null,
         stencil: 'Animal',
-        filled: [{ field: 'Name', text: 'Alpaca' }],
+        filled: [
+          { field: 'Name', text: 'Alpaca' },
+          { field: 'Name', text: 'Vicuña' },
+        ],
       },
     ]
     const held = mountCard(tileOf('twice', twice), {

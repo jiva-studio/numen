@@ -9,10 +9,12 @@ import (
 	"strings"
 	"time"
 
+	format "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/cards"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/markdown"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/port"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/mark"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/ulid"
 )
 
@@ -25,13 +27,21 @@ import (
 type Write struct {
 	Readers port.VaultReaders
 	Writers port.VaultWriters
-	Index   func(ctx context.Context, v domain.Vault, paths []string) error
+	// Links answers where the wikilink a card names its stencil by lands, which
+	// is what says which of the card's fields is first. A build holding none
+	// reprojects no heading.
+	Links port.LinkQueries
+	Index func(ctx context.Context, v domain.Vault, paths []string) error
 	// Now is when this is happening. An identifier written here carries it.
 	Now func() time.Time
 }
 
 // Deck puts body in the deck at path, and answers with the fingerprint the
 // write produced, which is what the caller presents at its next write.
+//
+// The deck is made whole on the way past: every card carrying no mark is given
+// one, and every stale heading is put back in step. Every caller therefore gets
+// the same file, and none of them has to know the rules.
 func (u Write) Deck(
 	ctx context.Context, v domain.Vault, path, body string, fingerprint domain.FileRef,
 ) (domain.FileRef, error) {
@@ -39,7 +49,23 @@ func (u Write) Deck(
 		return domain.FileRef{}, fmt.Errorf(
 			"%w: %d bytes, and %d is the most a deck is", note.ErrTooLarge, len(body), MaxBytes)
 	}
-	return u.note().Execute(ctx, v, path, body, fingerprint)
+	whole, err := u.whole(ctx, v, path, body)
+	if err != nil {
+		return domain.FileRef{}, err
+	}
+	return u.note().Execute(ctx, v, path, whole, fingerprint)
+}
+
+// whole is the body every card of which has been made whole. The stencils are
+// read against the body being written, so a card whose wikilink the caller has
+// just changed is cut by the stencil it now names.
+func (u Write) whole(ctx context.Context, v domain.Vault, path, body string) (string, error) {
+	read := Read{Readers: u.Readers, Links: u.Links}
+	by, err := read.Cutting(ctx, v, path, format.ReadDeck(domain.Note{Body: body}))
+	if err != nil {
+		return "", err
+	}
+	return format.Whole(body, by, mark.New)
 }
 
 // Stencil puts the faces and the fields into the stencil at path. A stencil is

@@ -16,6 +16,24 @@ func faceNames(s cards.Stencil) []string {
 	return out
 }
 
+// A section is a deck's, and a stencil is not a deck: a first-level heading in
+// a face is text the face lays out.
+func TestAFirstLevelHeadingInAStencilIsText(t *testing.T) {
+	s := cards.ReadStencil(note(t, "---\ntype: stencil\nfields:\n  - Name\n---\n"+
+		"\n# Animal\n\nHow I show these.\n"+
+		"\n## Recognise\n\n### Front\n\n# {{Name}}\n\n### Back\n\n# Anything\n"))
+
+	if got := faceNames(s); !slices.Equal(got, []string{"Recognise"}) {
+		t.Fatalf("faces = %v", got)
+	}
+	if s.Preamble != "\n# Animal\n\nHow I show these.\n\n" {
+		t.Errorf("preamble = %q, want the heading kept as it stands", s.Preamble)
+	}
+	if s.Faces[0].Front != "# {{Name}}" || s.Faces[0].Back != "# Anything" {
+		t.Errorf("face = %+v, want both sides read whole", s.Faces[0])
+	}
+}
+
 func TestAStencilDeclaresFieldsAndFaces(t *testing.T) {
 	n := note(t, `---
 type: stencil
@@ -166,7 +184,7 @@ func TestAFaceMissingASideLaysOutNothing(t *testing.T) {
 			if got := filed(t, s.Problems, cards.CheckFaceSide).Face; got != 0 {
 				t.Errorf("face = %d, want the broken one", got)
 			}
-			front, back := cards.Lay(s, s.Faces[0], cards.Card{Name: "Llama"})
+			front, back := cards.Lay(s, s.Faces[0], cards.Card{Heading: "Llama"})
 			if front != "" || back != "" {
 				t.Errorf("the face laid out %q and %q, want nothing", front, back)
 			}

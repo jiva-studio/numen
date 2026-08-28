@@ -134,6 +134,7 @@ export const cards: Cards = {
       path,
       preamble: deck.preamble,
       cards: deck.cards.map(carding),
+      sections: deck.sections.map((section) => ({ name: section.name, lead: section.lead })),
       tail: deck.tail,
       ...(seen === null ? {} : { seen: fingerprint(seen) }),
     })
@@ -465,6 +466,7 @@ const decked = (one: DeckMessage): Decked => ({
   title: one.title,
   preamble: one.preamble,
   cards: one.cards.map(carded),
+  sections: one.sections.map((section) => ({ name: section.name, lead: section.lead })),
   tail: one.tail,
   problems: one.problems.map(problem),
 })
@@ -488,16 +490,24 @@ const stencilled = (one: StencilMessage): Stencilled => ({
 })
 
 const carded = (one: CardMessage): Carded => ({
-  name: one.name,
+  mark: one.mark,
+  section: one.section ?? null,
+  heading: one.heading,
   stencil: one.stencil,
   stencilAt: one.stencilAt,
   lead: one.lead,
   values: one.values.map((value) => ({ field: value.field, text: value.text })),
 })
 
-/** One card in the shape the schema carries it. */
+/**
+ * One card in the shape the schema carries it. The heading goes back as it
+ * came: a write reads it again from the first field, except for the one card
+ * whose stencil cannot be read, whose heading is left exactly as it stands.
+ */
 const carding = (one: Carded) => ({
-  name: one.name,
+  mark: one.mark,
+  ...(one.section === null ? {} : { section: one.section }),
+  heading: one.heading,
   stencil: one.stencil,
   lead: one.lead,
   values: one.values.map((value) => ({ field: value.field, text: value.text })),
@@ -521,11 +531,9 @@ const faulted: Record<Faults, Fault> = {
   [Faults.PLACEHOLDER_UNDECLARED]: 'placeholderUndeclared',
   [Faults.CARD_WITHOUT_A_STENCIL]: 'cardWithoutAStencil',
   [Faults.STENCIL_IS_NOT_ONE]: 'stencilIsNotOne',
-  [Faults.CARD_WITHOUT_A_NAME]: 'cardWithoutAName',
-  [Faults.CARD_NAMED_TWICE]: 'cardNamedTwice',
+  [Faults.MARK_CARRIED_TWICE]: 'markCarriedTwice',
   [Faults.FIELD_WRITTEN_TWICE]: 'fieldWrittenTwice',
   [Faults.FIELD_NOT_RENAMED]: 'fieldNotRenamed',
-  [Faults.FIRST_FIELD_WRITTEN_TWICE]: 'firstFieldWrittenTwice',
 }
 
 /** One vault of the list, kept as the plain value the window carries it as. */

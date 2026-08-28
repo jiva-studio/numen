@@ -7,7 +7,7 @@
  * the string the store is dirty against is those cards written out.
  */
 import { computed, shallowRef } from 'vue'
-import type { Cut, Drawn, PlexShowing } from '@numen/ui'
+import type { Banded, Cut, Drawn, PlexShowing } from '@numen/ui'
 import type { Cards, Offer, Problem, Refused, Went } from '../core'
 import type { Store } from '../doing'
 import { editing, type Editing } from '../note/editing'
@@ -18,6 +18,7 @@ import { DECK } from '../workspace'
 import DeckTab from './DeckTab.vue'
 import {
   added,
+  bandedOf,
   bodyOf,
   cardsOf,
   carried,
@@ -27,12 +28,15 @@ import {
   drawnOf,
   filled,
   marksOf,
-  named,
   pathOfCut,
   removed,
   sameDeck,
   sameMarks,
   sameOffers,
+  sectionAdded,
+  sectionGone,
+  sectionNamed,
+  sectionsOf,
   type Deck,
   type Marks,
 } from './model'
@@ -66,26 +70,32 @@ export interface Held {
   deck(): Deck
   /** The same, as the grid draws them, each under the stencil that cuts it. */
   drawn(): readonly Drawn[]
+  /** The sections, as the grid draws them. */
+  bands(): readonly Banded[]
   /** The stencils a card may be cut by. */
   cuts(): readonly Cut[]
   /** What is wrong with the file, against the card it stands on. */
   marks(): Marks
   /** What the whole file was refused for, in words a person reads. */
   saying(): string
-  /** A card cut by that stencil, named by what stands in its heading. */
-  adds(
-    name: string,
-    stencil: string,
-    values: readonly { field: string; text: string }[],
-  ): void
+  /** A card cut by that stencil, made at the end of the deck. */
+  adds(stencil: string, values: readonly { field: string; text: string }[]): void
   removes(card: string): void
+  /**
+   * A card let go before another card, at the head of a section, or at the end
+   * of the deck.
+   */
   moves(card: string, at: string | null): void
   /**
-   * One value of one card as it now reads. The name a card carries lands in
-   * its heading, which is the one place it is written; a card writing a field
-   * twice is written where `nth` counts off under it.
+   * One value of one card as it now reads. A card writing a field twice is
+   * written where `nth` counts off under it.
    */
-  writes(card: string, field: string, nth: number, names: boolean, text: string): void
+  writes(card: string, field: string, nth: number, text: string): void
+  /** A section made at the end of the deck, under that name. */
+  addsSection(name: string): void
+  namesSection(section: string, name: string): void
+  /** A section asked to go. Its heading goes, and the cards under it stay. */
+  removesSection(section: string): void
   /** The person keeps what they have written, over whatever the file holds. */
   keep(): void
   /** The person takes what the file holds. */
@@ -122,7 +132,12 @@ export function decking(cards: Cards, host: Host, puts: Putting) {
       const deck = deckIn(body)
       const answer = await cards.writeDeck(
         path,
-        { preamble: deck.preamble, cards: cardsOf(deck), tail: deck.tail },
+        {
+          preamble: deck.preamble,
+          cards: cardsOf(deck),
+          sections: sectionsOf(deck),
+          tail: deck.tail,
+        },
         seen?.at ?? null,
       )
       const said = told.get(path) ?? NOTHING
@@ -175,6 +190,18 @@ export function decking(cards: Cards, host: Host, puts: Putting) {
     const drawn = drawnOf(deck, offers.value)
     grids.set(id, { deck, offers: offers.value, drawn })
     return drawn
+  }
+
+  /** The sections one tab was last drawn under, against the deck they came from. */
+  const banded = new Map<string, { deck: Deck; bands: readonly Banded[] }>()
+
+  const bandsAt = (id: string): readonly Banded[] => {
+    const deck = deckAt(id)
+    const held = banded.get(id)
+    if (held && held.deck === deck) return held.bands
+    const bands = bandedOf(deck)
+    banded.set(id, { deck, bands })
+    return bands
   }
 
   /** The problems one tab was last marked from, and the marks that came of it. */
@@ -259,18 +286,18 @@ export function decking(cards: Cards, host: Host, puts: Putting) {
     shown: () => store.shown(id),
     deck: () => deckAt(id),
     drawn: () => drawnAt(id),
+    bands: () => bandsAt(id),
     cuts: () => cuts.value,
     marks: () => marksAt(id),
     saying: () => sayingOf(id),
-    adds: (name, stencil, values) =>
-      turns(id, added(deckAt(id), name, stencil, pathOfCut(offers.value, stencil), values)),
+    adds: (stencil, values) =>
+      turns(id, added(deckAt(id), stencil, pathOfCut(offers.value, stencil), values)),
     removes: (card) => turns(id, removed(deckAt(id), card)),
     moves: (card, at) => turns(id, carried(deckAt(id), card, at)),
-    writes: (card, field, nth, names, text) => {
-      const deck = deckAt(id)
-      if (names) return turns(id, named(deck, card, text))
-      turns(id, filled(deck, card, field, nth, text))
-    },
+    writes: (card, field, nth, text) => turns(id, filled(deckAt(id), card, field, nth, text)),
+    addsSection: (name) => turns(id, sectionAdded(deckAt(id), name)),
+    namesSection: (section, name) => turns(id, sectionNamed(deckAt(id), section, name)),
+    removesSection: (section) => turns(id, sectionGone(deckAt(id), section)),
     keep: () => store.keep(id),
     take: () => store.take(id),
     /** The tab stands until the deck says the write is done, and goes then. */
@@ -280,6 +307,7 @@ export function decking(cards: Cards, host: Host, puts: Putting) {
         if (!gone) return
         parsed.delete(id)
         grids.delete(id)
+        banded.delete(id)
         marked.delete(id)
         forgets(path)
         host.closes(tab)

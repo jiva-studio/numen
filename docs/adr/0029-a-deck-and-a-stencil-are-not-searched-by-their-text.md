@@ -28,7 +28,7 @@ A card is found by its heading, which is its question; a stencil is found by its
 
 ### Only what a person wrote is kept as a heading
 
-- **A deck** keeps its sections and its cards — the first and second levels. Its third level is the stencil's field names written out under every card, and it is not stored.
+- **A deck** keeps its sections and its cards — the first and second levels, and nothing below them. Its third level is the stencil's field names written out under every card; deeper than that is a heading standing inside a value, which is a person's own writing about one card and not a division of the deck.
 - **A stencil** keeps no heading at all.
 - **Every other note** is unchanged.
 
@@ -44,7 +44,7 @@ A deck and a stencil are still notes in every other way: a row of their own, a t
 - **A deck stops being the largest thing in the chunk table.** Under the deck's own bound of 8 MiB one file could hold more chunks than a shelf of books, all of them embedded.
 - **The name search stops being crowded by one deck.** The four strings a stencil declares no longer stand in it two hundred times each.
 - **A passage found in a note is announced under a heading somebody wrote**, because the headings a deck keeps are the ones a person made.
-- An index built before this holds chunks, vectors and headings for decks and stencils. They are cleared by the migration that brings this in, and the notes are read again by the next scan.
+- An index built before this holds chunks, vectors and headings for decks and stencils. They are cleared by the migration that brings this in, and the notes are read again by the next scan. **A vector is addressed by the text it was made from, not by the chunk that asked for it**, so one shared with an ordinary note stays: what is cleared is what nothing else is standing on.
 
 ## Alternatives considered
 

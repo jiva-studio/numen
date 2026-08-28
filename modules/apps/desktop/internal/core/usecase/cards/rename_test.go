@@ -61,7 +61,7 @@ func TestAFieldRenamedInAStencilIsRenamedInEveryCardItCuts(t *testing.T) {
 		t.Errorf("the card of that stencil was not renamed: %q", mammals)
 	}
 	// The card of another stencil keeps the heading of that name.
-	if !strings.Contains(mammals, "## Gloss\n\n[[Term]]\n\n### Height\n\nnot a length at all\n") {
+	if !strings.Contains(mammals, "## Gloss ^zpqrstvwxy\n\n[[Term]]\n\n### Height\n\nnot a length at all\n") {
 		t.Errorf("a card of another stencil was renamed: %q", mammals)
 	}
 	if !strings.Contains(mammals, "mine: keep me verbatim") {
@@ -100,40 +100,44 @@ func TestARenameReachesACardWhoseLinkNamesThePath(t *testing.T) {
 	}
 }
 
-// The first field is written where the stencil declares it and in the braces of
-// its faces, and in no deck at all, so renaming it opens no deck and writes to
-// none.
-func TestRenamingTheFirstFieldTouchesNoDeck(t *testing.T) {
+// The first field stands under a heading of its own in every card, so renaming
+// it is a write to every deck that stencil cuts, as renaming any other field
+// already was.
+func TestRenamingTheFirstFieldReachesEveryDeckThatStencilCuts(t *testing.T) {
 	vs := indexed(t)
-	mammals := read(t, vs.first, "decks/Mammals.md")
-	birds := read(t, vs.first, "decks/Birds.md")
 
-	u := renaming(t, vs)
-	counted := &counting{VaultReaders: filesystem.Readers{}}
-	u.Readers = counted
-
-	got, err := u.Execute(t.Context(), vs.first, cards.Field{
+	got, err := renaming(t, vs).Execute(t.Context(), vs.first, cards.Field{
 		Stencil: "Animal.md", From: "Name", To: "Species",
 	})
 	if err != nil {
 		t.Fatalf("rename: %v", err)
 	}
-	if len(got.Decks) != 0 || got.Cards != 0 || len(got.NotWritten) != 0 {
-		t.Errorf("the rename reached %+v", got)
+	if !slices.Equal(got.Decks, []string{"decks/Birds.md", "decks/Mammals.md"}) {
+		t.Errorf("decks = %v", got.Decks)
 	}
-	if counted.reads != 1 {
-		t.Errorf("%d files were opened, want the stencil alone", counted.reads)
+	if got.Cards != 2 {
+		t.Errorf("cards = %d, want the two cards that stencil cuts", got.Cards)
+	}
+	if len(got.NotWritten) != 0 {
+		t.Errorf("not written = %+v", got.NotWritten)
 	}
 
 	stencil := read(t, vs.first, "Animal.md")
 	if !strings.Contains(stencil, "fields:\n  - Species\n  - Height\n") {
 		t.Errorf("the stencil was not renamed: %q", stencil)
 	}
-	if after := read(t, vs.first, "decks/Mammals.md"); after != mammals {
-		t.Errorf("a deck was written\n was %q\n now %q", mammals, after)
+	// The heading is read from the field, and it stands where it stood: what a
+	// field is called is no part of what a card is called.
+	mammals := read(t, vs.first, "decks/Mammals.md")
+	if !strings.Contains(mammals, "## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Species\n\nLlama\n") {
+		t.Errorf("the card of that stencil was not renamed: %q", mammals)
 	}
-	if after := read(t, vs.first, "decks/Birds.md"); after != birds {
-		t.Errorf("a deck was written\n was %q\n now %q", birds, after)
+	// The card of another stencil keeps the heading of that name.
+	if !strings.Contains(mammals, "### Word\n\nGloss\n") {
+		t.Errorf("a card of another stencil was renamed: %q", mammals)
+	}
+	if !strings.Contains(read(t, vs.first, "decks/Birds.md"), "### Species\n\nWren\n") {
+		t.Error("the deck nobody had open was not reached")
 	}
 }
 

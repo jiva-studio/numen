@@ -60,11 +60,31 @@ const animal = "---\ntype: stencil\nfields:\n  - Name\n  - Height\n---\n\n" +
 
 // cardRun is the cards of a deck as somebody wrote them, the middle one under
 // no wikilink, so it names no stencil and the problem stands against that one.
-const cardRun = "## Llama\n\n[[Animal]]\n\n### Height\n\nabout 45\"\n\n" +
-	"## Alpaca\n\nsomebody's prose\n\n### Height\n\nabout 36\"\n\n" +
-	"## Vicuña\n\n[[Animal]]\n\n### Height\n\nabout 34\"\n"
+const cardRun = "## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 45\"\n\n" +
+	"## Alpaca ^3n8vr4tqch\n\nsomebody's prose\n\n### Name\n\nAlpaca\n\n### Height\n\nabout 36\"\n\n" +
+	"## Vicuña ^9wq2xr4t8h\n\n[[Animal]]\n\n### Name\n\nVicuña\n\n### Height\n\nabout 34\"\n"
 
 const threeCards = "---\ntype: deck\n---\n\n" + cardRun
+
+// dividedRun is a deck a person divided, every card of it whole: each stands
+// under the section it was written in, each carries a mark, and each names the
+// stencil its heading is read through.
+const dividedRun = "# Camelids\n\nwhat a person wrote about their own deck\n\n" +
+	"## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 45\"\n\n" +
+	"# Others\n\n## Vicuña ^9wq2xr4t8h\n\n[[Animal]]\n\n### Name\n\nVicuña\n\n### Height\n\nabout 34\"\n"
+
+const dividedDeck = "---\ntype: deck\n---\n\n" + dividedRun
+
+// valued is what a card holds under one field. A card has no name, so this is
+// how a test says which card it is looking at.
+func valued(card *v1.Card, field string) string {
+	for _, v := range card.GetValues() {
+		if v.GetField() == field {
+			return v.GetText()
+		}
+	}
+	return ""
+}
 
 func deck(t *testing.T, f *cutting, path string) *v1.ReadDeckResponse {
 	t.Helper()
@@ -100,8 +120,86 @@ func TestAProblemStandsAgainstTheCardItIsAbout(t *testing.T) {
 	if problems[0].Card == nil {
 		t.Fatal("a problem about a card came back standing against none")
 	}
-	if name := held[at].GetName(); name != "Alpaca" {
+	if name := valued(held[at], "Name"); name != "Alpaca" {
 		t.Errorf("the problem stands against card %d, which is %q", at, name)
+	}
+}
+
+// TestACardComesBackWithTheMarkItIsAddressedBy. A card has no name, so a client
+// that cannot read a card's mark cannot say which card it means.
+func TestACardComesBackWithTheMarkItIsAddressedBy(t *testing.T) {
+	f := dealing(t, map[string]string{
+		"Animal.md":  animal,
+		"Animals.md": threeCards,
+	})
+
+	held := deck(t, f, "Animals.md").GetDeck().GetCards()
+	if len(held) != 3 {
+		t.Fatalf("the deck came back with %d cards", len(held))
+	}
+	marks := []string{"k7m2xq9fzp", "3n8vr4tqch", "9wq2xr4t8h"}
+	for at, card := range held {
+		if card.GetMark() != marks[at] {
+			t.Errorf("card %d carries the mark %q, and the file writes %q",
+				at, card.GetMark(), marks[at])
+		}
+	}
+}
+
+// TestACardSaysWhichSectionItStandsUnder. A deck of two hundred cards is a list
+// a person divides, and which run a card falls in is the deck's and not the
+// card's own text.
+func TestACardSaysWhichSectionItStandsUnder(t *testing.T) {
+	f := dealing(t, map[string]string{
+		"Animal.md": animal,
+		"Animals.md": "---\ntype: deck\n---\n\n" +
+			"## Guanaco ^p4r7t2wxk9\n\n[[Animal]]\n\n### Name\n\nGuanaco\n\n" +
+			"# Camelids\n\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n" +
+			"# Others\n\nwhat a person wrote about this run of it\n",
+	})
+
+	read := deck(t, f, "Animals.md").GetDeck()
+	sections := read.GetSections()
+	if len(sections) != 2 || sections[0].GetName() != "Camelids" || sections[1].GetName() != "Others" {
+		t.Fatalf("the deck came back with the sections %+v", sections)
+	}
+	if lead := sections[1].GetLead(); lead != "what a person wrote about this run of it" {
+		t.Errorf("what a person wrote under the second section came back as %q", lead)
+	}
+	held := read.GetCards()
+	if len(held) != 2 {
+		t.Fatalf("the deck came back with %d cards", len(held))
+	}
+	if held[0].Section != nil {
+		t.Errorf("the card standing above the first section came back under section %d",
+			held[0].GetSection())
+	}
+	if held[1].Section == nil || held[1].GetSection() != 0 {
+		t.Errorf("the card under the first section came back as %+v", held[1].Section)
+	}
+}
+
+// TestTwoCardsOfOneMarkStandAgainstBoth. Which of the two a person meant is a
+// thing only they know, so both are shown and both are marked.
+func TestTwoCardsOfOneMarkStandAgainstBoth(t *testing.T) {
+	f := dealing(t, map[string]string{
+		"Animal.md": animal,
+		"Animals.md": "---\ntype: deck\n---\n\n" +
+			"## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n" +
+			"## Alpaca ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nAlpaca\n",
+	})
+
+	problems := deck(t, f, "Animals.md").GetDeck().GetProblems()
+	if len(problems) != 2 {
+		t.Fatalf("two cards of one mark came back as %d problems: %+v", len(problems), problems)
+	}
+	for at, problem := range problems {
+		if fault := problem.GetFault(); fault != v1.Fault_FAULT_MARK_CARRIED_TWICE {
+			t.Errorf("the problem against card %d is %v", at, fault)
+		}
+		if problem.Card == nil || problem.GetCard() != int32(at) {
+			t.Errorf("the problem for card %d stands against %+v", at, problem.Card)
+		}
 	}
 }
 
@@ -140,19 +238,53 @@ func TestWritingADeckLeavesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 	}
 }
 
-// TestADeckWrittenBackKeepsTheCardsItHeld. Every card the client did not touch
-// arrives on the other side as the bytes it went in as, the prose under a
-// card's wikilink among them.
+// TestADeckWrittenBackKeepsTheCardsItHeld. Every card and every section the
+// client did not touch arrives on the other side as the bytes it went in as,
+// the prose under a card's wikilink and under a section's heading among them.
 func TestADeckWrittenBackKeepsTheCardsItHeld(t *testing.T) {
 	f := dealing(t, map[string]string{
 		"Animal.md":  animal,
-		"Animals.md": threeCards,
+		"Animals.md": dividedDeck,
 	})
 
 	read := deck(t, f, "Animals.md")
 	answer, err := f.client.WriteDeck(t.Context(), connect.NewRequest(&v1.WriteDeckRequest{
 		Path:     "Animals.md",
 		Preamble: read.GetDeck().GetPreamble(),
+		Sections: read.GetDeck().GetSections(),
+		Cards:    read.GetDeck().GetCards(),
+		Tail:     read.GetDeck().GetTail(),
+		Seen:     read.GetAt(),
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if answer.Msg.GetChanged() || answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+		t.Fatalf("writing a deck straight back answered %+v", answer.Msg)
+	}
+	if held := onDisk(t, f.root, "Animals.md"); !strings.HasSuffix(held, dividedRun) {
+		t.Errorf("the deck came back as %q", held)
+	}
+}
+
+// TestACardWithNoStencilKeepsTheHeadingItStandsUnder. Nothing can say which of
+// that card's fields is first, so nothing can write its heading again: it is
+// left exactly as it stands, and a person who changed nothing sees the file
+// they wrote.
+func TestACardWithNoStencilKeepsTheHeadingItStandsUnder(t *testing.T) {
+	f := dealing(t, map[string]string{
+		"Animal.md":  animal,
+		"Animals.md": threeCards,
+	})
+
+	read := deck(t, f, "Animals.md")
+	if held := read.GetDeck().GetCards()[1].GetHeading(); held != "Alpaca" {
+		t.Fatalf("the card under no wikilink came back under the heading %q", held)
+	}
+	answer, err := f.client.WriteDeck(t.Context(), connect.NewRequest(&v1.WriteDeckRequest{
+		Path:     "Animals.md",
+		Preamble: read.GetDeck().GetPreamble(),
+		Sections: read.GetDeck().GetSections(),
 		Cards:    read.GetDeck().GetCards(),
 		Tail:     read.GetDeck().GetTail(),
 		Seen:     read.GetAt(),
@@ -399,9 +531,9 @@ func TestACardNamesItsStencilTheWayALinkNamesANote(t *testing.T) {
 	f := dealing(t, map[string]string{
 		"cards/Animal.md": animal,
 		"Animals.md": "---\ntype: deck\n---\n\n" +
-			"## Llama\n\n[[cards/Animal]]\n\n### Height\n\nabout 45\"\n\n" +
-			"## Alpaca\n\n[[Animal|животное]]\n\n### Height\n\nabout 36\"\n\n" +
-			"## Vicuña\n\n[[Nowhere]]\n\n### Height\n\nabout 34\"\n",
+			"## Llama\n\n[[cards/Animal]]\n\n### Name\n\nLlama\n\n" +
+			"## Alpaca\n\n[[Animal|животное]]\n\n### Name\n\nAlpaca\n\n" +
+			"## Vicuña\n\n[[Nowhere]]\n\n### Name\n\nVicuña\n",
 	})
 
 	held := deck(t, f, "Animals.md").GetDeck().GetCards()
@@ -410,9 +542,9 @@ func TestACardNamesItsStencilTheWayALinkNamesANote(t *testing.T) {
 	}
 	filed := map[string]string{"Llama": "cards/Animal.md", "Alpaca": "cards/Animal.md", "Vicuña": ""}
 	for _, card := range held {
-		if at := card.GetStencilAt(); at != filed[card.GetName()] {
-			t.Errorf("the stencil of %s is filed at %q, want %q",
-				card.GetName(), at, filed[card.GetName()])
+		name := valued(card, "Name")
+		if at := card.GetStencilAt(); at != filed[name] {
+			t.Errorf("the stencil of %s is filed at %q, want %q", name, at, filed[name])
 		}
 	}
 	if written := held[0].GetStencil(); written != "cards/Animal" {

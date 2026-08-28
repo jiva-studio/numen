@@ -29,10 +29,11 @@ const CORPORA = {
   'a card': {
     cut: ANIMAL,
     card: {
-      id: 'llama',
-      name: 'Llama',
+      mark: 'k7m2xq9fzp',
+      section: null,
       stencil: 'Animal',
       filled: [
+        { field: 'Name', text: 'Llama' },
         { field: 'Height', text: 'about 45" *at the shoulder*' },
         { field: 'Life span', text: 'about **20 years**' },
       ],
@@ -43,10 +44,11 @@ const CORPORA = {
   'a value that wraps': {
     cut: { name: 'Basic', fields: ['Question', 'Answer'] },
     card: {
-      id: 'compost',
-      name: 'What is compost?',
+      mark: 'c5n8q2wxjb',
+      section: null,
       stencil: 'Basic',
       filled: [
+        { field: 'Question', text: 'What is compost?' },
         {
           field: 'Answer',
           text: 'Leaves, grass and kitchen peelings, turned twice and left under a sheet until the heap has gone dark and crumbly enough to spread on any bed of the plot.',
@@ -54,60 +56,79 @@ const CORPORA = {
       ],
     },
   },
-  /* A name and a value that are not Latin, and a name with nothing in it to
-     break at. */
+  /* A first field of several lines, which is what a heading of one line is read
+     from and what no heading could hold. */
+  'a first field of many lines': {
+    cut: { name: 'Basic', fields: ['Question', 'Answer'] },
+    card: {
+      mark: 'r2t7y5k9wq',
+      section: null,
+      stencil: 'Basic',
+      filled: [
+        {
+          field: 'Question',
+          text: '> Двух станов не боец, а только гость случайный\n\nWho wrote it, and of whom?',
+        },
+        { field: 'Answer', text: 'Alexey Konstantinovich Tolstoy, of himself' },
+      ],
+    },
+  },
+  /* Values that are not Latin, and a field name with nothing in it to break at. */
   'awkward text': {
     cut: { name: 'Слово', fields: ['Слово', 'Перевод', UNBROKEN] },
     card: {
-      id: 'компост',
-      name: 'Компост',
+      mark: 'j2b6t8n4vw',
+      section: null,
       stencil: 'Слово',
       filled: [
+        { field: 'Слово', text: 'Компост' },
         { field: 'Перевод', text: 'compost, перепревшие листья и трава' },
         { field: UNBROKEN, text: 'बगीचे की खाद और हरी खाद' },
       ],
     },
   },
-  /* A card whose name and every value is the empty string. */
+  /* A card whose every value is the empty string. */
   'no text at all': {
     cut: ANIMAL,
-    card: { id: 'blank', name: '', stencil: 'Animal', filled: [] },
+    card: { mark: 'b8k4n2vqz6', section: null, stencil: 'Animal', filled: [] },
   },
   /* A card naming a stencil the vault does not hold: nothing says what its
      boxes are, so it draws none and keeps what it holds in the file. */
   'no stencil': {
     cut: null,
     card: {
-      id: 'orphan',
-      name: 'Orphan',
+      mark: 'm3t9w5rj1x',
+      section: null,
       stencil: 'Gone',
       filled: [{ field: 'Whatever it had', text: 'still here, still readable' }],
     },
   },
-  /* The heading names the card, and the value under that same field is kept
-     where a person can see it and take it out. */
-  'named twice': {
+  /* A card writing one field twice. Both values are kept where a person can see
+     them and take one out. */
+  'a field written twice': {
     cut: ANIMAL,
     card: {
-      id: 'twice',
-      name: 'Llama',
+      mark: 'd6q2z8hn4v',
+      section: null,
       stencil: 'Animal',
       filled: [
+        { field: 'Name', text: 'Llama' },
         { field: 'Name', text: 'Alpaca' },
         { field: 'Height', text: 'about 45"' },
       ],
     },
-    wrong: ['another card is called Llama'],
+    wrong: ['this card writes one field twice'],
     wrongUnder: { Name: ['this card writes Name twice'] },
   },
   /* A card from somebody else. A value is a box, so no tag of one is drawn. */
   'tags that must not survive': {
     cut: { name: 'Basic', fields: ['Question', 'Answer'] },
     card: {
-      id: 'theirs',
-      name: 'A card from somebody else',
+      mark: 'y1v5b9kt3n',
+      section: null,
       stencil: 'Basic',
       filled: [
+        { field: 'Question', text: 'A card from somebody else' },
         {
           field: 'Answer',
           text:
@@ -124,7 +145,7 @@ type Corpora = keyof typeof CORPORA
 
 /** The one card of a corpus, laid out against the stencil that cuts it. */
 const tileOf = (corpus: Corpus): Tile => {
-  const laid = grid([corpus.card], corpus.cut ? [corpus.cut] : [], null).tiles[0]
+  const laid = grid([corpus.card], [], corpus.cut ? [corpus.cut] : [], null).runs[0]?.tiles[0]
   if (!laid) throw new Error('a corpus holding no card')
   return laid
 }
@@ -176,15 +197,8 @@ const meta: Meta<Knobs> = {
         tile,
         wrong: () => held.value.wrong ?? [],
         wrongUnder: () => new Map(Object.entries(held.value.wrongUnder ?? {})),
-        /* A card is named by its first field, and that value stands in the
-           heading and in none of the card's values. */
-        onWrite: (field: string, nth: number, names: boolean, text: string) => {
+        onWrite: (field: string, nth: number, text: string) => {
           const card = held.value.card
-          if (names) {
-            tile.value = tileOf({ ...held.value, card: { ...card, name: text } })
-            held.value = { ...held.value, card: { ...card, name: text } }
-            return
-          }
 
           // The one written is the one counted off under its own field.
           let under = 0
@@ -231,7 +245,7 @@ const found = (canvas: HTMLElement, selector: string): HTMLElement => {
  */
 export const ACard: Story = {
   play: async ({ canvasElement }) => {
-    const tile = found(canvasElement, '[data-card="llama"]')
+    const tile = found(canvasElement, '[data-card="k7m2xq9fzp"]')
     const value = found(canvasElement, '.card__value')
     const rule = value.querySelector('.rule')
     const label = value.querySelector('label')
@@ -294,26 +308,27 @@ export const ACard: Story = {
     await userEvent.click(box)
     await userEvent.type(box, '!')
     expect((box as HTMLTextAreaElement).value).toContain('!')
+
+    // Every box keeps what was typed, breaks and all, the first field's among
+    // them: a field holds as many lines as a person writes.
+    const first = found(canvasElement, '[data-value="Name"]') as HTMLTextAreaElement
+    await userEvent.click(first)
+    await userEvent.type(first, '{Enter}b')
+    expect(first.value).toContain('\n')
   },
 }
 
 /**
- * The name is written in a heading, so its box holds one line: a break struck
- * in it is refused, and what the card hands back has none.
+ * A first field written over several lines, which is what no heading could
+ * hold. It stands in a box like any other field, and the box grows to it.
  */
-export const TheNameHoldsOneLine: Story = {
+export const AFirstFieldOfManyLines: Story = {
+  args: { corpus: 'a first field of many lines' },
   play: async ({ canvasElement }) => {
-    const name = found(canvasElement, '[data-value="Name"]') as HTMLTextAreaElement
-    await userEvent.click(name)
-    await userEvent.type(name, '{Enter}b')
-
-    expect(name.value).not.toContain('\n')
-
-    // Every other box keeps what was typed, breaks and all.
-    const height = found(canvasElement, '[data-value="Height"]') as HTMLTextAreaElement
-    await userEvent.click(height)
-    await userEvent.type(height, '{Enter}b')
-    expect(height.value).toContain('\n')
+    const box = found(canvasElement, '[data-value="Question"]')
+    const line = Number.parseFloat(getComputedStyle(box).lineHeight)
+    expect(box.clientHeight).toBeGreaterThan(line * 2)
+    expect(box.scrollHeight).toBeLessThanOrEqual(box.clientHeight + 1)
   },
 }
 
@@ -333,25 +348,25 @@ export const AValueThatWraps: Story = {
   },
 }
 
-/** A name and a value that are not Latin, and a name with nothing to break at. */
+/** Values that are not Latin, and a field name with nothing to break at. */
 export const AwkwardText: Story = { args: { corpus: 'awkward text' } }
 
-/** A card whose name and every value is the empty string. */
+/** A card whose every value is the empty string. */
 export const NoTextAtAll: Story = { args: { corpus: 'no text at all' } }
 
 /** A card naming a stencil the vault does not hold. */
 export const NoStencil: Story = {
   args: { corpus: 'no stencil' },
   play: async ({ canvasElement }) => {
-    const tile = found(canvasElement, '[data-card="orphan"]')
+    const tile = found(canvasElement, '[data-card="m3t9w5rj1x"]')
 
     // Nothing says what its boxes are, so it draws none and says what it asked
     // for.
     expect(tile.textContent).toContain('No stencil called Gone')
     expect(tile.querySelectorAll('textarea')).toHaveLength(0)
 
-    // Its name, what is wrong with it and what it says of holding nothing all
-    // stand over one edge.
+    // What is wrong with it and what it says of holding nothing stand over one
+    // edge.
     const edge = (selector: string): number => {
       const each = found(canvasElement, selector)
       return Math.round(
@@ -359,32 +374,26 @@ export const NoStencil: Story = {
           Number.parseFloat(getComputedStyle(each).paddingInlineStart),
       )
     }
-    expect(edge('.card__objects')).toBe(edge('.card__said'))
-    expect(edge('.card__silence')).toBe(edge('.card__said'))
+    expect(edge('.card__silence')).toBe(edge('.card__objects'))
   },
 }
 
 /**
- * A card carrying the field that names it as a value as well, with what the
- * vault found wrong with it.
+ * A card writing one field twice, with what the vault found wrong with it.
  *
- * What stands against the card is said under its heading, above the first
- * value; what stands against one value is said under that value, once, at the
- * last box standing for it.
+ * What stands against the card is said under its strip, above the first value;
+ * what stands against one value is said under that value, once, at the last box
+ * standing for it.
  */
 export const WhatIsWrongWithIt: Story = {
-  args: { corpus: 'named twice' },
+  args: { corpus: 'a field written twice' },
   play: async ({ canvasElement }) => {
-    // The heading names the card; the value is kept and said to be one too many.
+    // Both values are kept, each in a box of its own.
     const boxes = [...canvasElement.querySelectorAll<HTMLTextAreaElement>('[data-value="Name"]')]
     expect(boxes.map((box) => box.value)).toEqual(['Llama', 'Alpaca'])
 
-    const row = canvasElement.querySelector('[data-twice]')
-    expect(row?.textContent).toContain('The card is named by this field')
-    expect(row?.getAttribute('data-stray')).toBeNull()
-
     const said = found(canvasElement, '[data-wrong]')
-    expect(said.textContent).toContain('another card is called Llama')
+    expect(said.textContent).toContain('writes one field twice')
     const first = found(canvasElement, '.card__value')
     expect(said.getBoundingClientRect().bottom).toBeLessThanOrEqual(
       first.getBoundingClientRect().top + 1,

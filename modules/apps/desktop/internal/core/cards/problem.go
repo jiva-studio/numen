@@ -7,8 +7,8 @@ type Problem struct {
 	Check Check
 	// Card is where the card stands, counted from the first card of the deck,
 	// and Face is where the face stands in its stencil. A card is addressed by
-	// its position because the two problems that matter most are a card with no
-	// name and two cards of one name, and in both the name reaches nothing.
+	// its position because two cards of one mark is a problem, and there the
+	// mark reaches both.
 	Card int
 	Face int
 	// Field is a field's name, which is all a field ever is.
@@ -42,19 +42,12 @@ const (
 	// CheckNotAStencil is a card whose wikilink reaches a note that is not a
 	// stencil. Its values are read.
 	CheckNotAStencil Check = "not-a-stencil"
-	// CheckNoName is a second-level heading with no text. The card is shown
-	// marked.
-	CheckNoName Check = "no-name"
-	// CheckTwoCards is one name given to two cards. The first stands as that
-	// name, and the rest are shown marked.
-	CheckTwoCards Check = "two-cards"
+	// CheckTwoMarks is one mark carried by two cards of a deck. Both are read
+	// and both are shown marked, and neither is given another.
+	CheckTwoMarks Check = "two-marks"
 	// CheckTwoValues is one card writing a field's heading twice. The first
 	// stands.
 	CheckTwoValues Check = "two-values"
-	// CheckFirstFieldTwice is a card carrying its stencil's first field as a
-	// heading of its own as well as in the heading above. The heading above
-	// stands, and the third-level one is shown by no face.
-	CheckFirstFieldTwice Check = "first-field-twice"
 	// CheckNotWritten is a deck a rename did not reach, so a card holds a
 	// heading its stencil no longer declares.
 	CheckNotWritten Check = "not-written"

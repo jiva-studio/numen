@@ -30,8 +30,8 @@ service CardsService {
   // exists, so it is one to everything that reads the vault before a card is
   // cut by it.
   //
-  // The first field is what a card cut by this stencil is named by, so a
-  // stencil is made with at least one.
+  // The first field is what a card's heading is read from, so a stencil is
+  // made with at least one.
   rpc MakeStencil(MakeStencilRequest) returns (MakeStencilResponse);
 
   // ReadStencil is the fields and the faces of one stencil.
@@ -53,9 +53,10 @@ service CardsService {
   // places it, and as a heading in every card of every deck that stencil cuts.
   // What stands under each heading is left as it was.
   //
-  // The first field is written in the stencil alone, so renaming it reaches no
-  // deck. A deck the rename could not be written to keeps the old heading and
-  // comes back under `not_written`.
+  // Every field a stencil declares stands under its own heading in every card,
+  // the first included, so renaming any of them reaches every deck that
+  // stencil cuts. A deck the rename could not be written to keeps the old
+  // heading and comes back under `not_written`.
   //
   // A stencil that no longer holds what the caller read is left alone and
   // answered `changed`, and then no deck is written either.
@@ -66,13 +67,18 @@ service CardsService {
   // before a card is written into it.
   rpc MakeDeck(MakeDeckRequest) returns (MakeDeckResponse);
 
-  // ReadDeck is the cards of one deck, in the order they stand in the file.
+  // ReadDeck is the sections and the cards of one deck, in the order they
+  // stand in the file. Each card says which section it stands under.
   rpc ReadDeck(ReadDeckRequest) returns (ReadDeckResponse);
 
-  // WriteDeck puts cards into a deck, in the order they are given. A path the
-  // vault holds no note at is refused `missing`; MakeDeck is what puts a deck
-  // in the vault. The frontmatter stays as the person wrote it, and a deck that
-  // no longer holds what the caller read is left alone and answered `changed`.
+  // WriteDeck puts sections and cards into a deck, in the order they are
+  // given. A path the vault holds no note at is refused `missing`; MakeDeck is
+  // what puts a deck in the vault. The frontmatter stays as the person wrote
+  // it, and a deck that no longer holds what the caller read is left alone and
+  // answered `changed`.
+  //
+  // A card carrying no section stands before the first one, and a section no
+  // card stands under is written where the cards around it put it.
   //
   // The preamble, the tail and each card's lead are written back as they
   // arrive, so the parts of the file a client did not touch come out as the
@@ -139,12 +145,16 @@ message Deck {
   string path = 1;
   string title = 2;
 
-  // The prose below the frontmatter and above the first card, with line endings
-  // as LF. A deck carrying no card is all preamble.
+  // The prose below the frontmatter and above the first section or card, with
+  // line endings as LF. A deck carrying neither is all preamble.
   string preamble = 3;
 
   // The cards, in the order they stand in the note.
   repeated Card cards = 4;
+
+  // The sections, in the order they stand in the note. A card says which of
+  // them it stands under.
+  repeated Section sections = 7;
 
   // What was wrong with the note and was not guessed at, in the order it was
   // found. The deck is read either way, and every card a person wrote is here.
@@ -153,6 +163,18 @@ message Deck {
   // What the file ends with once the last value has been read, with line
   // endings as LF. It is no card's, and it is written back as it arrives.
   string tail = 6;
+}
+
+// Section is a run of a deck a person has given a name. It is a name and
+// nothing else: no fields, no stencil, no schedule, no mark.
+message Section {
+  // What the section is called, as its heading spells it. Two sections may
+  // carry one name.
+  string name = 1;
+
+  // The prose between the section's heading and its first card, with line
+  // endings as LF. Nothing lays it out, and it is written back as it arrives.
+  string lead = 2;
 }
 
 // Problem is something in a file that could not be acted on and was not guessed
@@ -182,13 +204,17 @@ message Problem {
 // a face by what is wrong with them, so a fault nobody decided on is drawn
 // nowhere.
 enum Fault {
+  // What these two named is nothing a person is asked to settle.
+  reserved 7, 11;
+  reserved "FAULT_CARD_WITHOUT_A_NAME", "FAULT_FIRST_FIELD_WRITTEN_TWICE";
+
   FAULT_UNSPECIFIED = 0;
 
   // `fields` declares a name twice. The first stands.
   FAULT_FIELD_DECLARED_TWICE = 1;
 
-  // `fields` is absent or empty, so a card cut by this stencil has nothing to
-  // be named by.
+  // `fields` is absent or empty, so a card cut by this stencil has no field to
+  // fill in.
   FAULT_STENCIL_WITHOUT_FIELDS = 2;
 
   // A face carries no front or no back. It lays out nothing.
@@ -206,12 +232,9 @@ enum Fault {
   // read.
   FAULT_STENCIL_IS_NOT_ONE = 6;
 
-  // A second-level heading carries no text. The card is read and shown marked.
-  FAULT_CARD_WITHOUT_A_NAME = 7;
-
-  // Two cards are called one name. The first stands as that name, and the rest
-  // are read and shown marked.
-  FAULT_CARD_NAMED_TWICE = 8;
+  // Two cards of one deck carry the same mark. Both are read and both are
+  // shown marked, and neither is given another.
+  FAULT_MARK_CARRIED_TWICE = 8;
 
   // One card writes a field's heading twice. The first stands, and the second
   // is kept in the file.
@@ -220,18 +243,32 @@ enum Fault {
   // A field renamed in a stencil did not reach this deck, so a card holds a
   // heading the stencil no longer declares.
   FAULT_FIELD_NOT_RENAMED = 10;
-
-  // A card carries its stencil's first field as a heading of its own as well as
-  // in the heading above. The heading above stands, and the third-level one is
-  // kept in the file and shown by no face.
-  FAULT_FIRST_FIELD_WRITTEN_TWICE = 11;
 }
 
 // Card is one filled-in set of a stencil's fields.
 message Card {
-  // The heading the card stands under, which is what the card is called and
-  // half of how it is addressed.
-  string name = 1;
+  reserved 1;
+  reserved "name";
+
+  // What the card is, for as long as it exists, and how it is addressed. It is
+  // the ten characters alone, without the caret a heading writes them behind,
+  // and it is empty for a card the application has not written yet.
+  string mark = 6;
+
+  // Where the section this card stands under stands in the deck's own, counted
+  // from the first. Absent for a card standing before the first section.
+  optional int32 section = 7;
+
+  // The line the card's heading says, with the mark taken off. It is not what
+  // the card is called: it holds nothing of its own, and a write throws it away
+  // and reads it again from the first field.
+  //
+  // It travels for the one card that cannot be read again — a card whose
+  // stencil is missing or unreadable, where nothing can say which of its fields
+  // is first. That heading is left exactly as it stands, so a write hands back
+  // what it was given. A write carrying nothing here leaves such a card headed
+  // by its mark alone.
+  string heading = 8;
 
   // The stencil this card is cut by, as the wikilink beneath its heading names
   // it, without the brackets. Empty for a card written under no wikilink.
@@ -283,8 +320,8 @@ message MakeStencilRequest {
   // Where in the vault it goes, relative to the root. Empty is the root.
   string folder = 2;
 
-  // The names of the fields, in the order a person is asked for them. The first
-  // names the card, and a stencil is made with at least one.
+  // The names of the fields, in the order a person is asked for them. A card's
+  // heading is read from the first, and a stencil is made with at least one.
   repeated string fields = 3;
 }
 
@@ -431,12 +468,16 @@ message ReadDeckResponse {
 message WriteDeckRequest {
   string path = 1;
 
-  // The prose to stand below the frontmatter and above the first card, with
-  // line endings as LF.
+  // The prose to stand below the frontmatter and above the first section or
+  // card, with line endings as LF.
   string preamble = 2;
 
   // The cards, in the order they are to stand in the note.
   repeated Card cards = 3;
+
+  // The sections, in the order they are to stand in the note. A card says
+  // which of them it stands under.
+  repeated Section sections = 6;
 
   // The file this caller last read. Absent for a write that lands on whatever
   // the deck now holds.

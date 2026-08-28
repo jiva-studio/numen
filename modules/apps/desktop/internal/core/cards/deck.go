@@ -23,9 +23,29 @@ func ReadDeck(n domain.Note) Deck {
 // card's heading that names the stencil the card is cut by.
 var loneLinkRe = regexp.MustCompile(`^\[\[([^\]\[]+)\]\]$`)
 
+// headSpan is where one heading line stands: the byte it begins at, and the
+// byte after it.
+type headSpan struct {
+	head int
+	from int
+}
+
+// sectionHeads is where each of a deck's sections opens, in the order they
+// stand in the file.
+func sectionHeads(body []byte) []headSpan {
+	var out []headSpan
+	for _, s := range sections(body, 1, 3) {
+		if s.level == 1 {
+			out = append(out, headSpan{head: s.head, from: s.from})
+		}
+	}
+	return out
+}
+
 // cardSpan is where one card and each of its values stand in the body.
 type cardSpan struct {
 	name string
+	mark string
 	// head is the byte the heading line begins at and from is the byte after
 	// it, which is the run the first field's value occupies. end is where the
 	// card stops: the next card, or the end of the file.
@@ -45,45 +65,56 @@ type valueSpan struct {
 
 func readDeck(ref domain.FileRef, body []byte) (Deck, []cardSpan) {
 	d := Deck{Ref: ref}
-	secs := sections(body)
+	// A section is a first-level heading, a card is a second and a field is a
+	// third, which is the three levels the format spends.
+	secs := sections(body, 1, 3)
 
-	firstCard := len(body)
+	// opens says whether a heading of this level begins something of the deck's
+	// own, which is what a section's text and a card's values stop at.
+	opens := func(level int) bool { return level == 1 || level == 2 }
+
+	first := len(body)
 	for _, s := range secs {
-		if s.level == 2 {
-			firstCard = s.head
+		if opens(s.level) {
+			first = s.head
 			break
 		}
 	}
-	d.Preamble = markdown.Normalised(string(body[:firstCard]))
+	d.Preamble = markdown.Normalised(string(body[:first]))
 
-	named := map[string]bool{}
 	read := 0
+	under := NoSection
 	var spans []cardSpan
 	for i, s := range secs {
-		if s.level != 2 {
+		if !opens(s.level) {
 			continue
 		}
-		at := len(d.Cards)
 
 		end := len(body)
 		for _, later := range secs[i+1:] {
-			if later.level == 2 {
+			if opens(later.level) {
 				end = later.head
 				break
 			}
 		}
 
-		card := Card{Name: s.name}
-		span := cardSpan{name: s.name, head: s.head, from: s.from, end: end}
-
-		switch {
-		case s.name == "":
-			d.Problems = append(d.Problems, against(at, CheckNoName, "this card has no name"))
-		case named[s.name]:
-			d.Problems = append(d.Problems, against(at, CheckTwoCards, "another card is called "+s.name))
-		default:
-			named[s.name] = true
+		if s.level == 1 {
+			// Everything down to the section's first card is the person's own
+			// writing about their deck, whatever it is made of.
+			lead, leadEnd := run(body, s.from, end)
+			d.Sections = append(d.Sections, Section{Name: s.name, Lead: lead})
+			under = len(d.Sections) - 1
+			read = trimmedEnd(body, s.head, s.from)
+			if lead != "" {
+				read = leadEnd
+			}
+			continue
 		}
+
+		at := len(d.Cards)
+		heading, carried := ReadHeading(s.name)
+		card := Card{Heading: heading, Mark: carried, Section: under}
+		span := cardSpan{name: s.name, mark: carried, head: s.head, from: s.from, end: end}
 
 		target, leadFrom := stencil(body, s.from, s.to)
 		card.Stencil = target
@@ -125,10 +156,33 @@ func readDeck(ref domain.FileRef, body []byte) (Deck, []cardSpan) {
 		spans = append(spans, span)
 	}
 
-	if len(d.Cards) > 0 {
+	d.Problems = append(d.Problems, twoMarks(d.Cards)...)
+	if len(d.Cards) > 0 || len(d.Sections) > 0 {
 		d.Tail = markdown.Normalised(string(body[read:]))
 	}
 	return d, spans
+}
+
+// twoMarks is one problem against each card of a mark another card in this deck
+// carries. Both are read and both are shown marked: nothing a person wrote goes
+// missing from the screen, and which of the two is meant is a thing only they
+// know. Neither is given another mark, because choosing would be choosing which
+// of the two keeps its history.
+func twoMarks(cs []Card) []Problem {
+	carried := map[string]int{}
+	for _, c := range cs {
+		if c.Mark != "" {
+			carried[c.Mark]++
+		}
+	}
+	var out []Problem
+	for at, c := range cs {
+		if c.Mark != "" && carried[c.Mark] > 1 {
+			out = append(out, against(at, CheckTwoMarks,
+				"another card in this deck carries the mark "+c.Mark))
+		}
+	}
+	return out
 }
 
 // stencil reads the lone wikilink paragraph directly beneath a card's heading.
