@@ -8,7 +8,9 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Deck from './Deck.vue'
-import { ordered, type Cut, type Drawn, type Filled, type Landing, type Wrong } from './model'
+import type { Drawn, Filled, Wrong } from './deck'
+import { ordered, type Landing } from './order'
+import type { Cut } from './stencil'
 
 interface Corpus {
   readonly cards: readonly Drawn[]

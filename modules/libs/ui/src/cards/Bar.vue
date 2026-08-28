@@ -8,7 +8,7 @@
  */
 import { onScopeDispose, shallowRef } from 'vue'
 import Slab from './Slab.vue'
-import { wayOf, type Way } from './model'
+import { wayOf, type Way } from './order'
 
 defineProps<{
   /** What is said of taking hold of it. */
@@ -16,6 +16,9 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
+  /** It was taken hold of by the pointer, and let go again. */
+  (event: 'dragstart', press: DragEvent): void
+  (event: 'dragend', press: DragEvent): void
   /**
    * It was asked to go one place along the order, with the press itself.
    * Whether there is a place that way is the caller's.
@@ -72,6 +75,8 @@ const carried = (event: KeyboardEvent): void => {
     :draggable="held"
     :aria-label="carry"
     :title="carry"
+    @dragstart="emit('dragstart', $event)"
+    @dragend="emit('dragend', $event)"
     @pointerdown="press"
     @keydown="carried"
   >

@@ -357,7 +357,7 @@ const hue = computed(() => ({
       :width="box.width"
       :height="node.height"
     >
-      <div class="plex__title">
+      <div class="plex__title" :class="{ 'caps-numen': ghost }">
         <!-- Whatever stands for the thing a node addresses. The plex has no
              way to know what that is, so it is handed one. -->
         <span v-if="icon" class="plex__icon" aria-hidden="true">
@@ -584,8 +584,6 @@ const hue = computed(() => ({
 .plex__node--ghost .plex__title {
   color: var(--numen-edge-label);
   font-size: var(--numen-edge-label-size);
-  text-transform: uppercase;
-  letter-spacing: var(--numen-caps-tracking);
 }
 
 .plex__node:focus-visible {

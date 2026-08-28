@@ -6,7 +6,7 @@
  * here is the same text on any machine on any day.
  */
 
-import type { Filled } from './model'
+import type { Filled } from './deck'
 
 /** The braces, and what a person may write between them. */
 const SLOT = /\{\{([^{}]*)\}\}/g

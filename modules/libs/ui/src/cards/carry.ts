@@ -6,7 +6,7 @@
  * what a landing comes to are the caller's, and each is stated once.
  */
 import { shallowRef, type ShallowRef } from 'vue'
-import { stepped, type Landing, type Way } from './model'
+import { stepped, type Landing, type Way } from './order'
 
 /**
  * What following a carry takes: the order it runs along, and the rules.

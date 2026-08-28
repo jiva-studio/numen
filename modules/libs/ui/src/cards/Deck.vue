@@ -14,18 +14,16 @@ import { Button } from '../components/ui/button'
 import {
   blanks,
   DECK_WORDS,
-  declared,
-  freeName,
   grid,
   NOTHING_WRONG,
   sealed,
-  type Cut,
   type DeckWords,
   type Drawn,
   type Filled,
-  type Landing,
   type Wrong,
-} from './model'
+} from './deck'
+import { declared, numbered, type Landing } from './order'
+import type { Cut } from './stencil'
 
 /** A card nothing is wrong with any value of. */
 const NO_FIELDS: ReadonlyMap<string, readonly string[]> = sealed()
@@ -84,7 +82,7 @@ const add = (cut: Cut): void => {
   asking.value = false
   emit(
     'add',
-    freeName(props.cards.map((card) => card.name), props.words.cardStem),
+    numbered(props.cards.map((card) => card.name), props.words.cardStem),
     cut.name,
     blanks(declared(cut.fields).slice(1)),
   )
@@ -143,7 +141,7 @@ const add = (cut: Cut): void => {
         </Button>
 
         <div v-else class="deck__asking flex flex-col items-center">
-          <p class="deck__silence text-small text-hushed">{{ words.cut }}</p>
+          <p class="deck__silence caps-numen text-small text-hushed">{{ words.cut }}</p>
           <div class="deck__cuts flex flex-wrap justify-center">
             <Button
               v-for="cut in cuts"
@@ -167,9 +165,6 @@ const add = (cut: Cut): void => {
 .deck {
   --tile: 20rem;
   --gap: 0.75rem;
-  --pad: 0.625rem;
-  /* The line a carried card lands on. */
-  --caret: 2px;
 
   padding: var(--numen-gutter);
   overflow: auto;
@@ -200,7 +195,7 @@ const add = (cut: Cut): void => {
   position: absolute;
   inset-block: 0;
   inset-inline-start: calc(-1 * var(--gap) / 2);
-  inline-size: var(--caret);
+  inline-size: var(--numen-caret);
   background: var(--numen-ring);
 }
 
@@ -212,7 +207,7 @@ const add = (cut: Cut): void => {
   display: grid;
   place-items: center;
   min-block-size: 6rem;
-  padding: var(--pad);
+  padding: var(--numen-box-air);
   border: var(--numen-stroke) dashed var(--numen-node-border);
 }
 
@@ -235,7 +230,5 @@ const add = (cut: Cut): void => {
 
 .deck__silence {
   margin: 0;
-  letter-spacing: var(--numen-caps-tracking);
-  text-transform: uppercase;
 }
 </style>

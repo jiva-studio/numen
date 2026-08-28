@@ -8,7 +8,7 @@
  */
 import { afterEach, describe, expect, it } from 'vitest'
 import { useNaming, type Naming } from './naming'
-import { heading, objection, type Amiss, type Objection } from './model'
+import { heading, objection, type Amiss, type Objection } from './order'
 
 /** A naming of the fields a stencil declares, with what it renamed. */
 const overFields = (declared: readonly string[]) => {

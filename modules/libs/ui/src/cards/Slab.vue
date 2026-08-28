@@ -9,7 +9,7 @@
 withDefaults(
   defineProps<{
     /** What the row is drawn as. */
-    as?: string
+    as?: 'div' | 'header'
     /** A row standing in a list, or the strip at the head of a block. */
     tone?: 'field' | 'bar'
   }>(),

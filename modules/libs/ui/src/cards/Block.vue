@@ -8,23 +8,21 @@
  * in. What the face stands for is the caller's, and so is what is wrong with it.
  */
 import { computed, nextTick, shallowRef, useId, type ComponentPublicInstance } from 'vue'
+import Amiss from './Amiss.vue'
 import Bar from './Bar.vue'
 import Deed from './Deed.vue'
 import Grown from './Grown.vue'
 import Marks from './Marks.vue'
 import { useNaming } from './naming'
 import { Button } from '../components/ui/button'
+import { heading, type Half, type Way } from './order'
 import {
-  heading,
   panes,
   STENCIL_WORDS,
-  type Amiss,
   type FaceBlock,
-  type Half,
   type Pane,
   type StencilWords,
-  type Way,
-} from './model'
+} from './stencil'
 import { insert } from './fill'
 
 const props = withDefaults(
@@ -61,7 +59,7 @@ const uid = useId()
 const objectsId = `${uid}-objects`
 
 /** A name typed over the one this face carries, until it is committed. */
-const naming = useNaming<Amiss>({
+const naming = useNaming({
   carries: () => props.block.name,
   taken: () => props.taken,
   amiss: heading,
@@ -172,22 +170,19 @@ const put = async (field: string): Promise<void> => {
           </div>
         </div>
 
-        <p v-if="says" :id="objectsId" class="block__objects text-small text-alarm" role="alert">
-          {{ says }}
-        </p>
+        <Amiss v-if="says" :id="objectsId" class="block__objects" role="alert" :said="says" />
 
-        <ul
+        <Amiss
           v-if="wrong.length"
-          class="block__objects text-small text-alarm"
-          :aria-label="words.wrong"
+          class="block__objects"
           data-wrong
-        >
-          <li v-for="(said, at) in wrong" :key="at">{{ said }}</li>
-        </ul>
+          :said="wrong"
+          :label="words.wrong"
+        />
       </div>
 
       <template #deeds>
-        <Deed shows="bin" :label="`${words.remove}: ${block.name}`" @press="emit('remove')" />
+        <Deed :label="`${words.remove}: ${block.name}`" @press="emit('remove')" />
       </template>
     </Bar>
 
@@ -227,13 +222,16 @@ const put = async (field: string): Promise<void> => {
         </div>
 
         <!-- An empty part says what it is for, in the middle of itself. -->
-        <p v-if="pane.blank" class="block__ghost text-small text-hushed" aria-hidden="true">
+        <p v-if="pane.blank" class="block__ghost caps-numen text-small text-hushed" aria-hidden="true">
           {{ pane.said }}
         </p>
 
-        <p v-if="pane.stray.length" class="block__objects text-small text-alarm" role="alert">
-          {{ words.stray(pane.stray) }}
-        </p>
+        <Amiss
+          v-if="pane.stray.length"
+          class="block__objects"
+          role="alert"
+          :said="words.stray(pane.stray)"
+        />
       </div>
     </div>
   </article>
@@ -245,7 +243,7 @@ const put = async (field: string): Promise<void> => {
   /* The air a box keeps inside a part of the window, which is what a box put
      there inherits. */
   --box-air: 0.5rem;
-  --box-pad-inline: 0.625rem;
+  --box-pad-inline: var(--numen-box-air);
 
   /* How tall a part of the window stands before what is in it makes it taller. */
   --pane-lines: 6;
@@ -386,9 +384,7 @@ ul.block__objects {
   place-self: center;
   margin: 0;
   padding-inline: var(--box-pad-inline);
-  letter-spacing: var(--numen-caps-tracking);
   text-align: center;
-  text-transform: uppercase;
   pointer-events: none;
 }
 

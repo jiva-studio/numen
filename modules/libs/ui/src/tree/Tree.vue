@@ -451,13 +451,11 @@ onBeforeUnmount(() => {
 <style scoped>
 .tree {
   /* How far one level is set in, how tall a row stands, the room at the edges
-     of a row, the room between a mark and the name beside it, and the line
-     standing where a dragged row would land. */
+     of a row, and the room between a mark and the name beside it. */
   --indent: 0.875rem;
   --row: 1.5rem;
   --pad: 0.25rem;
   --gap: 0.25rem;
-  --caret: 2px;
   /* What is carried: how far it stands clear of the pointer, how far it
      reaches before the name is cut, the room the name is given, and how
      plainly a row on its way is drawn. */
@@ -525,7 +523,7 @@ onBeforeUnmount(() => {
   position: absolute;
   inset-block-start: 0;
   inset-inline: calc(var(--pad) + var(--indent) * (var(--level) - 1)) 0;
-  block-size: var(--caret);
+  block-size: var(--numen-caret);
   background: var(--numen-ring);
 }
 

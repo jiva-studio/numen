@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /**
- * One deed a strip is pressed for: the glyph alone, named to a reader.
+ * What a strip is pressed to be rid of what it heads: the bin alone, named to
+ * a reader.
  *
  * It carries no ground and no shape of its own, because the strip does not draw
  * it until the strip is reached for. It is set as quietly as what a value is
@@ -8,11 +9,8 @@
  * press it.
  */
 import Glyph from './Glyph.vue'
-import type { Mark } from './marks'
 
 defineProps<{
-  /** The glyph it is drawn as. */
-  shows: Mark
   /** What it is called, read aloud and shown on hovering. */
   label: string
 }>()
@@ -29,7 +27,7 @@ const emit = defineEmits<{ (event: 'press'): void }>()
     :title="label"
     @click="emit('press')"
   >
-    <Glyph :shows="shows" />
+    <Glyph shows="bin" />
   </button>
 </template>
 

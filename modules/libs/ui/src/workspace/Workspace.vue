@@ -363,9 +363,6 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .workspace {
-  /* The line standing in the gap a dragged tab would take. */
-  --caret: 2px;
-
   block-size: 100%;
   overflow: hidden;
 }
@@ -389,8 +386,8 @@ onBeforeUnmount(() => {
 }
 
 .workspace__overlay[data-caret] {
-  inline-size: var(--caret);
-  margin-inline-start: calc(var(--caret) / -2);
+  inline-size: var(--numen-caret);
+  margin-inline-start: calc(var(--numen-caret) / -2);
   border: none;
   background: var(--numen-ring);
 }

@@ -78,7 +78,7 @@ defineExpose({
 .grown__box,
 .grown::after {
   grid-area: 1 / 1;
-  padding: var(--box-air, 0.5rem) var(--box-pad-inline, 0.625rem);
+  padding: var(--box-air, 0.5rem) var(--box-pad-inline, var(--numen-box-air));
   border: none;
   background: none;
   color: var(--numen-node-fg);

@@ -22,13 +22,10 @@ withDefaults(defineProps<{ at?: 'middle' | 'start' }>(), { at: 'middle' })
 
 <style scoped>
 .rule {
-  /* The air the line keeps from what stands on it, which is also the stub of
-     line a rule leading with what it holds keeps before it. */
-  --rule-gap: 0.625rem;
-
   display: flex;
   align-items: center;
-  gap: var(--rule-gap);
+  /* The air the line keeps from what stands on it. */
+  gap: var(--numen-box-air);
   inline-size: 100%;
   min-inline-size: 0;
 }
@@ -45,7 +42,7 @@ withDefaults(defineProps<{ at?: 'middle' | 'start' }>(), { at: 'middle' })
 
 /* A rule that leads with what it holds keeps only a stub of line before it. */
 .rule[data-at='start']::before {
-  flex: 0 0 var(--rule-gap);
+  flex: 0 0 var(--numen-box-air);
 }
 
 /* What stands on the rule is drawn at its own width while there is room for

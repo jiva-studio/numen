@@ -10,7 +10,8 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import Deck from './Deck.vue'
-import type { Cut, Drawn } from './model'
+import type { Drawn } from './deck'
+import type { Cut } from './stencil'
 
 const CUTS: readonly Cut[] = [
   { name: 'Animal', fields: ['Name', 'Height', 'Life span'] },

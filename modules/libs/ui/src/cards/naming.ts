@@ -6,7 +6,13 @@
  * and that one value is what the box says and what the commit consults.
  */
 import { shallowRef } from 'vue'
-import type { Draft } from './model'
+
+/** A name being typed over the one something carries. */
+interface Draft {
+  /** What it is being typed over: a field by its name, a face by its identifier. */
+  readonly over: string
+  readonly text: string
+}
 
 /**
  * What naming something takes. `Why` is what may be wrong with a name, which

@@ -186,76 +186,11 @@ export { default as Bar } from './cards/Bar.vue'
 /** A rule with something standing on it, in its middle or at its start. */
 export { default as Rule } from './rule/Rule.vue'
 
-/** For laying a stencil or a deck out without drawing it. */
-export {
-  blanks,
-  declared,
-  faceBlocks,
-  fieldRows,
-  freeName,
-  grid,
-  laid,
-  heading,
-  objection,
-  oneLine,
-  ordered,
-  reordered,
-  panes,
-  parts,
-  stepped,
-  wayOf,
-  DECK_WORDS,
-  FACE_WORDS,
-  HALVES,
-  NOTHING_AMISS,
-  NOTHING_WRONG,
-  STENCIL_WORDS,
-} from './cards/model'
-export type {
-  CardWords,
-  Cut,
-  DeckWords,
-  Draft,
-  Drawn,
-  FaceBlock,
-  FaceWords,
-  FieldRow,
-  Filled,
-  Grid,
-  Half,
-  Laid,
-  Landing as CardLanding,
-  Against,
-  Amiss,
-  Objection,
-  Pane,
-  Part,
-  Shown,
-  Shows,
-  StencilWords,
-  Stood,
-  Tile,
-  Way,
-  StencilWrong,
-  Wrong,
-} from './cards/model'
-
-/** The braces a face is written with, read and filled. */
-export {
-  braced,
-  fill,
-  insert,
-  previewed,
-  renamedIn,
-  sampled,
-  slotsIn,
-  strayIn,
-} from './cards/fill'
-export type { Inserted, Slot } from './cards/fill'
-
-/** What a card is written with, drawn, and measured against what a card may draw. */
-export { drawn } from './cards/render'
-export { safe } from './cards/safe'
+/** For putting a card or a field where a person let it go, without drawing it. */
+export { ordered, reordered } from './cards/order'
+export type { Half, Landing as CardLanding } from './cards/order'
+export type { Drawn, Filled } from './cards/deck'
+export type { Cut } from './cards/stencil'
 
 export type { Environment, PlexTransition } from './plex/transition'
 export type { HungPart, HungParts, PlexPart } from './plex/inside'

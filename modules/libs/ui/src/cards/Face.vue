@@ -9,7 +9,7 @@
 import { computed } from 'vue'
 import Marks from './Marks.vue'
 import { Button } from '../components/ui/button'
-import { FACE_WORDS, parts, type FaceWords } from './model'
+import { FACE_WORDS, parts, type FaceWords } from './face'
 
 const props = withDefaults(
   defineProps<{
@@ -49,7 +49,7 @@ const shown = computed(() => parts(props.front, props.back, props.turned))
       class="face__half"
       :data-half="part.half"
     >
-      <p v-if="part.blank" class="face__silence text-small text-hushed">{{ words.silence }}</p>
+      <p v-if="part.blank" class="face__silence caps-numen text-small text-hushed">{{ words.silence }}</p>
       <Marks v-else :text="part.text" @follow="(href, press) => emit('follow', href, press)" />
     </section>
 
@@ -89,8 +89,6 @@ const shown = computed(() => parts(props.front, props.back, props.turned))
 
 .face__silence {
   margin: 0;
-  letter-spacing: var(--numen-caps-tracking);
-  text-transform: uppercase;
 }
 
 /* The one thing a card is pressed for stands under both halves, clear of them. */

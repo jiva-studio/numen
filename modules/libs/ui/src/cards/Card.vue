@@ -8,19 +8,13 @@
  * that heading, and what is wrong with one value is said under that value.
  */
 import { useId } from 'vue'
+import Amiss from './Amiss.vue'
 import Bar from './Bar.vue'
 import Deed from './Deed.vue'
 import Grown from './Grown.vue'
 import Rule from '../rule/Rule.vue'
-import {
-  DECK_WORDS,
-  oneLine,
-  sealed,
-  type CardWords,
-  type Stood,
-  type Tile,
-  type Way,
-} from './model'
+import { DECK_WORDS, sealed, type CardWords, type Stood, type Tile } from './deck'
+import { oneLine, type Way } from './order'
 
 const props = withDefaults(
   defineProps<{
@@ -103,7 +97,7 @@ const write = (value: Stood, text: string): void => {
       </p>
 
       <template #deeds>
-        <Deed shows="bin" :label="`${words.remove}: ${tile.name}`" @press="emit('remove')" />
+        <Deed :label="`${words.remove}: ${tile.name}`" @press="emit('remove')" />
       </template>
     </Bar>
 
@@ -114,18 +108,20 @@ const write = (value: Stood, text: string): void => {
         {{ tile.name }}
       </p>
 
-      <p v-if="!tile.known" class="card__objects text-small text-alarm" role="alert">
-        {{ words.unknown(tile.stencil) }}
-      </p>
+      <Amiss
+        v-if="!tile.known"
+        class="card__objects"
+        role="alert"
+        :said="words.unknown(tile.stencil)"
+      />
 
-      <ul
+      <Amiss
         v-if="wrong.length"
-        class="card__objects text-small text-alarm"
-        :aria-label="words.wrong"
+        class="card__objects"
         data-wrong
-      >
-        <li v-for="(text, at) in wrong" :key="at">{{ text }}</li>
-      </ul>
+        :said="wrong"
+        :label="words.wrong"
+      />
 
       <div
         v-for="value in tile.filled"
@@ -148,19 +144,18 @@ const write = (value: Stood, text: string): void => {
           @write="(text: string) => write(value, text)"
         />
 
-        <p v-if="value.twice" class="card__objects text-small text-alarm">{{ words.twice }}</p>
+        <Amiss v-if="value.twice" class="card__objects" :said="words.twice" />
 
-        <ul
+        <Amiss
           v-if="wrongIn(value).length"
-          class="card__objects text-small text-alarm"
-          :aria-label="words.wrong"
+          class="card__objects"
           :data-wrong-value="value.field"
-        >
-          <li v-for="(text, at) in wrongIn(value)" :key="at">{{ text }}</li>
-        </ul>
+          :said="wrongIn(value)"
+          :label="words.wrong"
+        />
       </div>
 
-      <p v-if="!tile.filled.length" class="card__silence text-small text-hushed">
+      <p v-if="!tile.filled.length" class="card__silence caps-numen text-small text-hushed">
         {{ words.nothing }}
       </p>
     </div>
@@ -169,10 +164,9 @@ const write = (value: Stood, text: string): void => {
 
 <style scoped>
 .card {
-  --pad: 0.625rem;
   /* The name of a value, the box it is typed in and what is said to be wrong
      with it all stand over one edge. */
-  --box-pad-inline: 0.625rem;
+  --box-pad-inline: var(--numen-box-air);
 
   position: relative;
   min-inline-size: 0;
@@ -184,13 +178,13 @@ const write = (value: Stood, text: string): void => {
 /* The strip runs the whole width, and the body keeps the clearance. */
 .card__body {
   gap: var(--numen-inset);
-  padding: var(--pad);
+  padding: var(--numen-box-air);
 }
 
 /* A rule divides the whole tile, so it runs to both edges of it. */
 .card__value > .rule {
   inline-size: auto;
-  margin-inline: calc(-1 * var(--pad));
+  margin-inline: calc(-1 * var(--numen-box-air));
 }
 
 .card[data-carried] {
@@ -221,10 +215,5 @@ const write = (value: Stood, text: string): void => {
 .card__silence {
   margin: 0;
   padding-inline: var(--box-pad-inline);
-}
-
-.card__silence {
-  letter-spacing: var(--numen-caps-tracking);
-  text-transform: uppercase;
 }
 </style>

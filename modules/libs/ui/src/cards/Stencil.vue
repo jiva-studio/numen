@@ -10,6 +10,7 @@
  * that field's row.
  */
 import { computed, useId } from 'vue'
+import Amiss from './Amiss.vue'
 import Block from './Block.vue'
 import Glyph from './Glyph.vue'
 import Rule from '../rule/Rule.vue'
@@ -19,21 +20,23 @@ import { useNaming } from './naming'
 import { Button } from '../components/ui/button'
 import {
   declared,
-  faceBlocks,
-  fieldRows,
-  freeName,
   landing,
+  numbered,
   objection,
   wayOf,
-  NOTHING_AMISS,
-  STENCIL_WORDS,
   type Half,
   type Landing,
   type Objection,
+} from './order'
+import {
+  faceBlocks,
+  fieldRows,
+  NOTHING_AMISS,
+  STENCIL_WORDS,
   type Shown,
   type StencilWords,
   type StencilWrong,
-} from './model'
+} from './stencil'
 import { sampled } from './fill'
 
 /**
@@ -163,11 +166,11 @@ const takenFrom = (id: string): readonly string[] =>
   props.faces.filter((each) => each.id !== id).map((each) => each.name)
 
 const addField = (): void => {
-  emit('add-field', freeName(asked.value, props.words.fieldStem))
+  emit('add-field', numbered(asked.value, props.words.fieldStem))
 }
 
 const addFace = (): void => {
-  emit('add-face', freeName(props.faces.map((each) => each.name), props.words.faceStem))
+  emit('add-face', numbered(props.faces.map((each) => each.name), props.words.faceStem))
 }
 
 /** A field asked by the keyboard to go one place along the order. */
@@ -193,7 +196,7 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
       @dragover="over(null, $event)"
       @drop="drop"
     >
-      <h2 class="stencil__heading text-small text-hushed">{{ words.fields }}</h2>
+      <h2 class="stencil__heading caps-numen text-small text-hushed">{{ words.fields }}</h2>
 
       <ul v-if="rows.length" class="stencil__fields">
         <li
@@ -255,27 +258,25 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
             </Button>
           </Slab>
 
-          <p
+          <Amiss
             v-if="fieldSays(row.field)"
             :id="objectsId(row.field)"
-            class="stencil__objects text-small text-alarm"
+            class="stencil__objects"
             role="alert"
-          >
-            {{ fieldSays(row.field) }}
-          </p>
+            :said="fieldSays(row.field) ?? ''"
+          />
 
-          <ul
+          <Amiss
             v-if="wrongWith(row.field).length"
-            class="stencil__objects text-small text-alarm"
-            :aria-label="words.wrong"
+            class="stencil__objects"
             data-wrong
-          >
-            <li v-for="(text, said) in wrongWith(row.field)" :key="said">{{ text }}</li>
-          </ul>
+            :said="wrongWith(row.field)"
+            :label="words.wrong"
+          />
         </li>
       </ul>
 
-      <p v-else class="stencil__silence text-small text-hushed">{{ words.noFields }}</p>
+      <p v-else class="stencil__silence caps-numen text-small text-hushed">{{ words.noFields }}</p>
 
       <Rule>
         <Button variant="ghost" size="small" @click="addField">
@@ -291,9 +292,9 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
       @dragover="overFace(null, $event)"
       @drop="dropFace"
     >
-      <h2 class="stencil__heading text-small text-hushed">{{ words.faces }}</h2>
+      <h2 class="stencil__heading caps-numen text-small text-hushed">{{ words.faces }}</h2>
 
-      <p v-if="!blocks.length" class="stencil__silence text-small text-hushed">
+      <p v-if="!blocks.length" class="stencil__silence caps-numen text-small text-hushed">
         {{ words.noFaces }}
       </p>
 
@@ -330,11 +331,9 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
 
 <style scoped>
 .stencil {
-  /* The room between one block and the next, and between the rows of a block.
-     The line a carried field would land on. */
+  /* The room between one block and the next, and between the rows of a block. */
   --part-gap: 1.5rem;
   --row-gap: 0.5rem;
-  --caret: 2px;
 
   display: flex;
   flex-direction: column;
@@ -350,11 +349,8 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
   gap: var(--row-gap);
 }
 
-/* A heading over what it names is small print, as it is everywhere else. */
 .stencil__heading {
   margin: 0;
-  letter-spacing: var(--numen-caps-tracking);
-  text-transform: uppercase;
 }
 
 .stencil__fields {
@@ -386,7 +382,7 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
   position: absolute;
   inset-block-start: calc(-1 * var(--row-gap) / 2);
   inset-inline: 0;
-  block-size: var(--caret);
+  block-size: var(--numen-caret);
   background: var(--numen-ring);
 }
 
@@ -443,8 +439,6 @@ ul.stencil__objects {
 
 .stencil__silence {
   margin: 0;
-  letter-spacing: var(--numen-caps-tracking);
-  text-transform: uppercase;
 }
 
 /* A name is typed in the row it stands in, and carries neither a line nor a

@@ -10,7 +10,9 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import Block from './Block.vue'
-import { declared, faceBlocks, type FaceBlock, type Filled, type Shown } from './model'
+import type { Filled } from './deck'
+import { declared } from './order'
+import { faceBlocks, type FaceBlock, type Shown } from './stencil'
 import { sampled } from './fill'
 
 const FIELDS = ['Name', 'Height', 'Weight']

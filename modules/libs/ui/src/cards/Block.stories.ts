@@ -8,7 +8,9 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
 import { computed, ref, watch } from 'vue'
 import Block from './Block.vue'
-import { declared, faceBlocks, type FaceBlock, type Filled, type Half, type Shown } from './model'
+import type { Filled } from './deck'
+import { declared, type Half } from './order'
+import { faceBlocks, type FaceBlock, type Shown } from './stencil'
 import { sampled } from './fill'
 
 interface Corpus {
