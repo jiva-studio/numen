@@ -457,6 +457,16 @@ describe('where a problem is drawn', () => {
     expect(marks.at.get('f1')).toStrictEqual(['no back'])
   })
 
+  it('is the field of the card where it names both, so it is said under that value', () => {
+    const marks = marksOf(
+      [problem({ fault: 'fieldWrittenTwice', card: 1, field: 'Name', text: 'twice' })],
+      ['c1', 'c2'],
+      [],
+    )
+    expect(marks.under.get('c2')?.get('Name')).toStrictEqual(['twice'])
+    expect(marks.at.has('c2')).toBe(false)
+  })
+
   it('is the field where it stands against no card and no face', () => {
     const marks = marksOf(
       [problem({ fault: 'fieldDeclaredTwice', field: 'Height', text: 'declared twice' })],

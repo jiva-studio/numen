@@ -186,7 +186,21 @@ const sameAgainst = (
 export const sameMarks = (one: Marks, other: Marks): boolean =>
   sameWords(one.whole, other.whole) &&
   sameAgainst(one.at, other.at) &&
+  sameUnder(one.under, other.under) &&
   sameAgainst(one.fields, other.fields)
+
+/** Whether two of those hold the same fields of the same cards, saying the same. */
+const sameUnder = (
+  one: ReadonlyMap<string, ReadonlyMap<string, readonly string[]>>,
+  other: ReadonlyMap<string, ReadonlyMap<string, readonly string[]>>,
+): boolean => {
+  if (one.size !== other.size) return false
+  for (const [key, said] of one) {
+    const against = other.get(key)
+    if (!against || !sameAgainst(said, against)) return false
+  }
+  return true
+}
 
 /**
  * Whether two listings name the same stencils, in the same order and with the
@@ -397,6 +411,11 @@ export interface Marks {
    * gave it.
    */
   readonly at: ReadonlyMap<string, readonly string[]>
+  /**
+   * What is wrong with one field of one card, under that card's identity and
+   * then the name the file spells the field.
+   */
+  readonly under: ReadonlyMap<string, ReadonlyMap<string, readonly string[]>>
   /** What is wrong with each field, under the name the file spells it. */
   readonly fields: ReadonlyMap<string, readonly string[]>
   /** What is wrong that stands against no card, no face and no field. */
@@ -405,9 +424,9 @@ export interface Marks {
 
 /**
  * Each problem against the thing it stands on. A problem carries where it
- * stands rather than what it is called, so a card with no name and two cards of
- * one name each land on the tile they were read from. One standing past the end
- * of what was read is against the file.
+ * stands, so a card with no name and two cards of one name each land on the
+ * tile they were read from, and a problem naming a field lands on that field of
+ * that card. One standing past the end of what was read is against the file.
  */
 export const marksOf = (
   problems: readonly Problem[],
@@ -415,6 +434,7 @@ export const marksOf = (
   faces: readonly string[],
 ): Marks => {
   const at = new Map<string, string[]>()
+  const under = new Map<string, Map<string, string[]>>()
   const fields = new Map<string, string[]>()
   const whole: string[] = []
 
@@ -427,7 +447,16 @@ export const marksOf = (
   for (const problem of problems) {
     const card = problem.card === null ? undefined : cards[problem.card]
     if (card !== undefined) {
-      against(at, card, problem.text)
+      if (problem.field === '') {
+        against(at, card, problem.text)
+        continue
+      }
+      let held = under.get(card)
+      if (!held) {
+        held = new Map<string, string[]>()
+        under.set(card, held)
+      }
+      against(held, problem.field, problem.text)
       continue
     }
     const face = problem.face === null ? undefined : faces[problem.face]
@@ -442,5 +471,5 @@ export const marksOf = (
     whole.push(problem.text)
   }
 
-  return { at, fields, whole }
+  return { at, under, fields, whole }
 }

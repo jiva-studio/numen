@@ -18,6 +18,7 @@ import {
   declared,
   freeName,
   grid,
+  NOTHING_WRONG,
   oneLine,
   stepped,
   type Cut,
@@ -28,6 +29,7 @@ import {
   type Stood,
   type Tile,
   type Way,
+  type Wrong,
 } from './model'
 
 const props = withDefaults(
@@ -38,11 +40,27 @@ const props = withDefaults(
     cuts: readonly Cut[]
     /** What the grid is announced as. */
     name?: string
+    /** What the caller found wrong with the cards it handed in. */
+    wrong?: Wrong
     /** The words it is drawn with. */
     words?: DeckWords
   }>(),
-  { name: 'Deck', words: () => DECK_WORDS },
+  { name: 'Deck', wrong: () => NOTHING_WRONG, words: () => DECK_WORDS },
 )
+
+/** What is wrong with one card, and nothing where nothing is. */
+const wrongWith = (card: string): readonly string[] => props.wrong.at.get(card) ?? []
+
+/**
+ * What is wrong with one value of one card, and nothing where nothing is. It
+ * is said once, under the last of the boxes standing for that field, which is
+ * the one a card writing it twice put there.
+ */
+const wrongUnder = (tile: Tile, value: Stood): readonly string[] => {
+  const under = tile.filled.filter((each) => each.field === value.field)
+  if (under[under.length - 1] !== value) return []
+  return props.wrong.under.get(tile.id)?.get(value.field) ?? []
+}
 
 const emit = defineEmits<{
   /**
@@ -191,6 +209,16 @@ const add = (cut: Cut): void => {
             {{ words.unknown(tile.stencil) }}
           </p>
 
+          <!-- What is wrong with the card is said under its heading. -->
+          <ul
+            v-if="wrongWith(tile.id).length"
+            class="deck__objects text-small text-alarm"
+            :aria-label="words.wrong"
+            data-wrong
+          >
+            <li v-for="(text, at) in wrongWith(tile.id)" :key="at">{{ text }}</li>
+          </ul>
+
           <div
             v-for="value in tile.filled"
             :key="value.key"
@@ -217,6 +245,16 @@ const add = (cut: Cut): void => {
             </Grown>
 
             <p v-if="value.twice" class="deck__objects text-small text-alarm">{{ words.twice }}</p>
+
+            <!-- What is wrong with this value is said under it. -->
+            <ul
+              v-if="wrongUnder(tile, value).length"
+              class="deck__objects text-small text-alarm"
+              :aria-label="words.wrong"
+              :data-wrong-value="value.field"
+            >
+              <li v-for="(text, at) in wrongUnder(tile, value)" :key="at">{{ text }}</li>
+            </ul>
           </div>
 
           <p v-if="!tile.filled.length" class="deck__silence text-small text-hushed">
@@ -383,6 +421,12 @@ const add = (cut: Cut): void => {
 .deck__objects,
 .deck__silence {
   margin: 0;
+}
+
+/* What is wrong stands over the same edge as the name and the value it is
+   about. */
+.deck__objects {
+  padding-inline: var(--box-pad-inline);
 }
 
 .deck__silence {

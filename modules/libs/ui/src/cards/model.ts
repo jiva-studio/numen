@@ -213,8 +213,28 @@ export interface DeckWords {
   readonly unknown: (stencil: string) => string
   /** What is said of a value standing in the field the card is named by. */
   readonly twice: string
+  /** What a list of things wrong is called to a reader. */
+  readonly wrong: string
   readonly cardStem: string
 }
+
+/**
+ * What the caller found wrong with what it handed in. A card's stands under its
+ * heading and a value's stands under that value, so nothing is said in a place
+ * that leaves a person guessing what it is about.
+ */
+export interface Wrong {
+  /** What is wrong with each card, under the identity it was drawn by. */
+  readonly at: ReadonlyMap<string, readonly string[]>
+  /**
+   * What is wrong with one value of a card, under that card's identity and then
+   * the field the value stands in.
+   */
+  readonly under: ReadonlyMap<string, ReadonlyMap<string, readonly string[]>>
+}
+
+/** Nothing wrong with anything. */
+export const NOTHING_WRONG: Wrong = { at: new Map(), under: new Map() }
 
 export const DECK_WORDS: DeckWords = {
   add: 'Add a card',
@@ -225,6 +245,7 @@ export const DECK_WORDS: DeckWords = {
   nothing: 'Nothing in it',
   unknown: (stencil) => (stencil ? `No stencil called ${stencil}` : 'Cut by no stencil'),
   twice: 'The card is named by this field',
+  wrong: 'What is wrong',
   cardStem: 'Card',
 }
 

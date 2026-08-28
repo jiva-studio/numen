@@ -202,6 +202,7 @@ export {
   DECK_WORDS,
   FACE_WORDS,
   HALVES,
+  NOTHING_WRONG,
   SHOWS,
   STENCIL_WORDS,
 } from './cards/model'
@@ -228,6 +229,7 @@ export type {
   Stood,
   Tile,
   Way,
+  Wrong,
 } from './cards/model'
 
 /** The braces a face is written with, read and filled. */

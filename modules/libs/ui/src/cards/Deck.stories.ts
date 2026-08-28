@@ -8,12 +8,28 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Deck from './Deck.vue'
-import { ordered, type Cut, type Drawn, type Filled, type Landing } from './model'
+import { ordered, type Cut, type Drawn, type Filled, type Landing, type Wrong } from './model'
 
 interface Corpus {
   readonly cards: readonly Drawn[]
   readonly cuts: readonly Cut[]
+  /** What the vault reading this file found wrong with it, by card and field. */
+  readonly wrong?: {
+    readonly at?: Readonly<Record<string, readonly string[]>>
+    readonly under?: Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>
+  }
 }
+
+/** What a corpus says is wrong, as the grid takes it. */
+const wrongOf = (corpus: Corpus): Wrong => ({
+  at: new Map(Object.entries(corpus.wrong?.at ?? {})),
+  under: new Map(
+    Object.entries(corpus.wrong?.under ?? {}).map(([card, fields]) => [
+      card,
+      new Map(Object.entries(fields)),
+    ]),
+  ),
+})
 
 const ANIMAL: Cut = { name: 'Animal', fields: ['Name', 'Height', 'Weight', 'Life span'] }
 const WORD: Cut = { name: 'Word', fields: ['Word', 'Meaning', 'Example'] }
@@ -163,6 +179,16 @@ const CORPORA = {
         ],
       },
     ],
+    wrong: {
+      at: {
+        blank: ['this card has no name'],
+        twice: ['another card is called Llama'],
+      },
+      under: {
+        twice: { Name: ['this card writes Name twice'] },
+        theirs: { Answer: ['this value is not in the stencil this card is cut by'] },
+      },
+    },
   },
 } satisfies Record<string, Corpus>
 
@@ -201,12 +227,14 @@ const meta: Meta<Knobs> = {
     setup() {
       const cards = ref<readonly Drawn[]>(CORPORA[args.corpus].cards)
       const cuts = ref<readonly Cut[]>(CORPORA[args.corpus].cuts)
+      const wrong = ref<Wrong>(wrongOf(CORPORA[args.corpus]))
 
       watch(
         () => args.corpus,
         (next) => {
           cards.value = CORPORA[next].cards
           cuts.value = CORPORA[next].cuts
+          wrong.value = wrongOf(CORPORA[next])
         },
       )
 
@@ -218,6 +246,7 @@ const meta: Meta<Knobs> = {
         args,
         cards,
         cuts,
+        wrong,
         onAdd: (name: string, stencil: string, filled: readonly Filled[]) => {
           const id = `card-${cards.value.length}-${stencil}`
           cards.value = [...cards.value, { id, name, stencil, filled }]
@@ -255,6 +284,7 @@ const meta: Meta<Knobs> = {
           :cards="cards"
           :cuts="cuts"
           :name="args.name"
+          :wrong="wrong"
           @add="onAdd"
           @remove="onRemove"
           @move="onMove"
@@ -402,6 +432,28 @@ export const WhatIsWrongWithACard: Story = {
 
     // The card with nothing in it stands as a tile like any other.
     expect(canvasElement.querySelector('[data-card="blank"]')).not.toBeNull()
+
+    // What the vault found wrong with a card is said under its heading, above
+    // the first of its values; what it found wrong with one value is said
+    // under that value.
+    const said = found(canvasElement, '[data-card="blank"] [data-wrong]')
+    expect(said.textContent).toContain('this card has no name')
+    const first = found(canvasElement, '[data-card="blank"] .deck__value')
+    expect(said.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+      first.getBoundingClientRect().top + 1,
+    )
+
+    // It is said once, under the second of the two boxes standing for Name.
+    const under = [
+      ...canvasElement.querySelectorAll('[data-card="twice"] [data-wrong-value="Name"]'),
+    ]
+    expect(under).toHaveLength(1)
+    const value = found(canvasElement, '[data-card="twice"] [data-wrong-value="Name"]')
+    expect(value.textContent).toContain('this card writes Name twice')
+    const box = found(canvasElement, '[data-card="twice"] [data-value="Name"]')
+    expect(value.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+      box.getBoundingClientRect().bottom - 1,
+    )
 
     // A value is a box, so no tag written into one is ever drawn as a mark.
     expect(canvasElement.querySelector('script')).toBeNull()

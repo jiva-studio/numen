@@ -2,15 +2,14 @@
 /**
  * A deck tab: the cards as a grid, and the questions the file puts.
  *
- * The grid takes cards and hands identities back. What is wrong with a card
- * stands on the tile that card is drawn as, so a card with no name and two
+ * The grid takes cards and hands identities back, and is handed what is wrong
+ * with each of them under the same identities, so a card with no name and two
  * cards of one name are each marked where they were read from.
  */
 import { computed } from 'vue'
 import { Deck as DeckView } from '@numen/ui'
 import type { CardLanding, Filled } from '@numen/ui'
 import type { Held } from './deck'
-import { standingIn } from './model'
 import { WORDS as words } from './words'
 
 const props = defineProps<{ held: Held }>()
@@ -18,11 +17,8 @@ const props = defineProps<{ held: Held }>()
 const drawn = computed(() => props.held.drawn())
 const marks = computed(() => props.held.marks())
 
-/** What is wrong with one card, and nothing where nothing is. */
-const wrongWith = (card: string): readonly string[] => marks.value.at.get(card) ?? []
-
-/** The cards a mark stands on, so a tile with nothing wrong is drawn nothing. */
-const marked = computed(() => drawn.value.filter((card) => wrongWith(card.id).length > 0))
+/** What the grid draws against the cards it was handed. */
+const wrong = computed(() => ({ at: marks.value.at, under: marks.value.under }))
 </script>
 
 <template>
@@ -54,6 +50,7 @@ const marked = computed(() => drawn.value.filter((card) => wrongWith(card.id).le
       :cards="drawn"
       :cuts="props.held.cuts()"
       :name="words.deck"
+      :wrong="wrong"
       @add="
         (name: string, stencil: string, filled: readonly Filled[]) =>
           props.held.adds(name, stencil, filled)
@@ -66,13 +63,6 @@ const marked = computed(() => drawn.value.filter((card) => wrongWith(card.id).le
       "
     />
 
-    <!-- A mark stands inside the tile it is about, which the grid draws under
-         the identity the card carries. -->
-    <Teleport v-for="card in marked" :key="card.id" defer :to="standingIn('data-card', card.id)">
-      <ul class="wrong wrong--tile" :aria-label="words.wrong" data-wrong>
-        <li v-for="(text, at) in wrongWith(card.id)" :key="at">{{ text }}</li>
-      </ul>
-    </Teleport>
   </div>
 </template>
 
