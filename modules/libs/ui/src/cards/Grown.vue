@@ -10,7 +10,7 @@
  * the box is called, what it is identified by, and every key it is listened to
  * for. A class and a style stand on the cell, which is what a caller lays out.
  */
-import { computed, useAttrs } from 'vue'
+import { computed, useAttrs, useTemplateRef } from 'vue'
 
 defineOptions({ inheritAttrs: false })
 
@@ -22,7 +22,7 @@ defineProps<{
 const attrs = useAttrs()
 
 /** What the caller handed the box itself. */
-const box = computed(() => {
+const handed = computed(() => {
   const held = { ...attrs }
   delete held['class']
   delete held['style']
@@ -33,15 +33,23 @@ const emit = defineEmits<{
   /** The text as it now reads, after something was typed into the box. */
   (event: 'write', text: string): void
 }>()
+
+const box = useTemplateRef<HTMLTextAreaElement>('box')
+
+defineExpose({
+  /** The box itself, for a caller that puts the caret somewhere in what it holds. */
+  box,
+})
 </script>
 
 <template>
   <div class="grown" :class="attrs.class" :style="attrs.style" :data-grown="text">
     <textarea
+      ref="box"
       class="grown__box"
       rows="1"
       :value="text"
-      v-bind="box"
+      v-bind="handed"
       @input="emit('write', ($event.target as HTMLTextAreaElement).value)"
     ></textarea>
   </div>

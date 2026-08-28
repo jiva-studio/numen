@@ -8,17 +8,12 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Stencil from './Stencil.vue'
-import { ordered, reordered, type Filled, type Half, type Landing, type Shown } from './model'
+import { ordered, reordered, type Half, type Landing, type Shown } from './model'
 import { renamedIn } from './fill'
 
 interface Corpus {
   readonly fields: readonly string[]
   readonly faces: readonly Shown[]
-  /**
-   * What the previews stand in the slots. Each field under its own name where
-   * the corpus says nothing.
-   */
-  readonly sample?: readonly Filled[]
 }
 
 const UNBROKEN =
@@ -83,24 +78,6 @@ const CORPORA = {
     ],
   },
   'nothing at all': { fields: [], faces: [] },
-  /* The values a caller stands in the slots, in place of the field names the
-     previews fall back on. */
-  'previewed filled': {
-    fields: ['Name', 'Height', 'Life span'],
-    faces: [
-      {
-        id: 'recognise',
-        name: 'Recognise',
-        front: '{{Name}}',
-        back: '**Height:** {{Height}}\n\n**Life span:** {{Life span}}',
-      },
-    ],
-    sample: [
-      { field: 'Name', text: 'Llama' },
-      { field: 'Height', text: 'about 45" at the shoulder' },
-      { field: 'Life span', text: '20 years' },
-    ],
-  },
   /* Everything a file written by hand can hold that the editor did not make:
      one name declared twice, where the first stands and one row is drawn for
      it; a face naming slots the fields do not; marks a person wrote; and a
@@ -138,7 +115,6 @@ interface Knobs {
   /** Given by the story, and nothing a reader turns. */
   fields?: never
   faces?: never
-  sample?: never
   words?: never
 }
 
@@ -156,7 +132,6 @@ const meta: Meta<Knobs> = {
     width: { control: 'text' },
     fields: { table: { disable: true } },
     faces: { table: { disable: true } },
-    sample: { table: { disable: true } },
     words: { table: { disable: true } },
   },
   args: { corpus: 'a stencil', name: 'Stencil', width: '100%' },
@@ -166,7 +141,6 @@ const meta: Meta<Knobs> = {
       const held = corpusOf(args.corpus)
       const fields = ref<readonly string[]>(held.fields)
       const faces = ref<readonly Shown[]>(held.faces)
-      const sample = ref<readonly Filled[] | undefined>(held.sample)
 
       watch(
         () => args.corpus,
@@ -174,7 +148,6 @@ const meta: Meta<Knobs> = {
           const held = corpusOf(next)
           fields.value = held.fields
           faces.value = held.faces
-          sample.value = held.sample
         },
       )
 
@@ -186,7 +159,6 @@ const meta: Meta<Knobs> = {
         args,
         fields,
         faces,
-        sample,
         onAddField: (name: string) => {
           fields.value = [...fields.value, name]
         },
@@ -228,7 +200,6 @@ const meta: Meta<Knobs> = {
         <Stencil
           :fields="fields"
           :faces="faces"
-          :sample="sample"
           :name="args.name"
           @add-field="onAddField"
           @rename-field="onRenameField"
@@ -250,7 +221,7 @@ type Story = StoryObj<Knobs>
 
 const boxFor = (canvas: HTMLElement, id: string, half: Half) => {
   const box = canvas.querySelector<HTMLTextAreaElement>(
-    `[data-face="${id}"][data-half="${half}"]`,
+    `[data-face-block="${id}"] [data-half="${half}"]`,
   )
   if (!box) throw new Error(`no ${half} of ${id}`)
   return box
@@ -272,12 +243,6 @@ const buttonSaying = (canvas: HTMLElement, said: string) => {
 
 const drawnFields = (canvas: HTMLElement): readonly (string | null)[] =>
   [...canvas.querySelectorAll('[data-field]')].map((row) => row.getAttribute('data-field'))
-
-const paneOf = (canvas: HTMLElement, id: string, pane: string): HTMLElement =>
-  found(canvas, `[data-face-block="${id}"] [data-pane="${pane}"]`)
-
-/** The four parts of a face, in the order they are drawn. */
-const PANES = ['front-written', 'front-preview', 'back-written', 'back-preview'] as const
 
 /**
  * Four fields and two faces, one of them asking the other way round.
@@ -313,15 +278,6 @@ export const AStencil: Story = {
       expect(at.left).toBeGreaterThanOrEqual(bounds.left - 1)
       expect(at.right).toBeLessThanOrEqual(bounds.right + 1)
     }
-
-    // A field to write into a face is a small quiet chip with a ground of its
-    // own at rest, markedly smaller than the heading whose strip it stands in.
-    const chip = found(canvasElement, '[data-face-block="recognise"] [data-insert="Height"]')
-    const title = found(canvasElement, '[data-face-block="recognise"] .stencil__title')
-    expect(getComputedStyle(chip).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
-    expect(Number.parseFloat(getComputedStyle(chip).fontSize)).toBeLessThan(
-      Number.parseFloat(getComputedStyle(title).fontSize),
-    )
 
     // The first field stays first, and its row lines up with every other.
     const first = found(canvasElement, '[data-field="Name"]')
@@ -361,122 +317,23 @@ export const AStencil: Story = {
 }
 
 /**
- * The window of a face is one window: two parts to a row, the writing beside
- * its preview and the front above the back, divided by the lines they share.
- * The frame around all four is the block's, the parts carry none of their own,
- * and the keyboard landing in one changes nothing that is drawn.
- */
-export const TheFaceIsOneWindow: Story = {
-  args: { width: '64rem' },
-  play: async ({ canvasElement }) => {
-    const body = found(canvasElement, '[data-face-block="recognise"] .stencil__face-body')
-    expect(getComputedStyle(body).gridTemplateColumns.split(' ')).toHaveLength(2)
-
-    const at = (pane: string): DOMRect =>
-      paneOf(canvasElement, 'recognise', pane).getBoundingClientRect()
-
-    // The writing stands beside its preview, on one line.
-    expect(Math.round(at('front-written').top)).toBe(Math.round(at('front-preview').top))
-    expect(at('front-written').right).toBeLessThanOrEqual(at('front-preview').left)
-
-    // The front stands above the back, and both halves are cut the same way.
-    expect(at('front-written').bottom).toBeLessThanOrEqual(at('back-written').top)
-    expect(Math.round(at('back-written').top)).toBe(Math.round(at('back-preview').top))
-
-    // What divides them is one line, shared by the two it divides.
-    const line = Number.parseFloat(getComputedStyle(body).columnGap)
-    expect(line).toBeGreaterThan(0)
-    expect(at('front-preview').left - at('front-written').right).toBeCloseTo(line, 0)
-    expect(at('back-written').top - at('front-written').bottom).toBeCloseTo(line, 0)
-
-    // A part is a box to write in, not a line: the box fills the part it
-    // stands in, so every point of the part is a point to type at.
-    const part = paneOf(canvasElement, 'recognise', 'front-written')
-    const box = boxFor(canvasElement, 'recognise', 'front')
-    const deep = Number.parseFloat(getComputedStyle(box).lineHeight)
-    expect(box.getBoundingClientRect().height).toBeGreaterThan(deep * 4)
-    expect(box.getBoundingClientRect().height).toBeCloseTo(
-      part.getBoundingClientRect().height,
-      0,
-    )
-
-    // The block is framed and the parts inside it are not.
-    const block = found(canvasElement, '[data-face-block="recognise"]')
-    expect(Number.parseFloat(getComputedStyle(block).borderTopWidth)).toBeGreaterThan(0)
-    for (const pane of PANES) {
-      const drawn = getComputedStyle(paneOf(canvasElement, 'recognise', pane))
-      for (const side of [
-        'borderTopWidth',
-        'borderInlineStartWidth',
-        'borderBottomWidth',
-        'borderInlineEndWidth',
-      ] as const) {
-        expect(Number.parseFloat(drawn[side])).toBe(0)
-      }
-      expect(drawn.outlineStyle).toBe('none')
-    }
-    expect(body.querySelectorAll('fieldset, legend')).toHaveLength(0)
-
-    // The keyboard landing in a box changes the block, the strip and the parts
-    // in nothing.
-    const watched = [
-      block,
-      found(canvasElement, '[data-face-block="recognise"] .bar'),
-      ...PANES.map((pane) => paneOf(canvasElement, 'recognise', pane)),
-    ]
-    const look = (): readonly string[] =>
-      watched.map((each) => {
-        const drawn = getComputedStyle(each)
-        return [
-          drawn.backgroundColor,
-          drawn.borderColor,
-          drawn.borderWidth,
-          drawn.boxShadow,
-          drawn.outlineStyle,
-          drawn.outlineWidth,
-        ].join('|')
-      })
-
-    const before = look()
-    const written = boxFor(canvasElement, 'recognise', 'back')
-    written.focus()
-    expect(document.activeElement).toBe(written)
-    expect(look()).toEqual(before)
-  },
-}
-
-/**
- * What a person does to a stencil: a field written into the half last typed
- * in, a field asked for, and a face carried to another place. The order of the
+ * What a person does to a stencil: a field written into one face and no other,
+ * a field asked for, and a face carried to another place. The order of the
  * faces is the order a card's repetitions are taken from it, so nothing among
  * them is fixed.
  */
 export const WhatAPersonDoesToIt: Story = {
   play: async ({ canvasElement }) => {
-    // Nothing has been typed in, so the front is what the row is aimed at.
+    // A field pressed in one face's strip is written into that face alone.
     const front = boxFor(canvasElement, 'recognise', 'front')
     front.focus()
     front.setSelectionRange(front.value.length, front.value.length)
-
-    const rows = canvasElement.querySelectorAll('[data-face-block="recognise"] .stencil__slots')
-    expect(rows).toHaveLength(1)
 
     await userEvent.click(
       found(canvasElement, '[data-face-block="recognise"] [data-insert="Weight"]'),
     )
     expect(boxFor(canvasElement, 'recognise', 'front').value).toBe('{{Name}}{{Weight}}')
-
-    // Typing in the back aims the same row at it.
-    const back = boxFor(canvasElement, 'recognise', 'back')
-    back.focus()
-    back.setSelectionRange(0, 0)
-
-    await userEvent.click(found(canvasElement, '[data-face-block="recognise"] [data-insert="Name"]'))
-    expect(boxFor(canvasElement, 'recognise', 'back').value.startsWith('{{Name}}')).toBe(true)
-
-    const preview = canvasElement.querySelector('[data-preview="front"]')
-    expect(preview?.textContent).toContain('Weight')
-    expect(preview?.textContent).not.toContain('{{')
+    expect(boxFor(canvasElement, 'name-it', 'back').value).toBe('{{Name}}')
 
     // A field asked for stands under a name nothing had taken, below the last.
     await userEvent.click(buttonSaying(canvasElement, 'Add a field'))
@@ -500,6 +357,14 @@ export const WhatAPersonDoesToIt: Story = {
     bar.dispatchEvent(new DragEvent('dragstart', { bubbles: true }))
     const onto = found(canvasElement, '[data-face-block="recognise"]')
     onto.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true }))
+
+    // The one on its way is quiet, and the line it would land on is drawn.
+    const carried = found(canvasElement, '[data-face-block="name-it"]')
+    await waitFor(() => {
+      expect(Number.parseFloat(getComputedStyle(carried).opacity)).toBeLessThan(1)
+      expect(Number.parseFloat(getComputedStyle(onto, '::before').blockSize)).toBeGreaterThan(0)
+    })
+
     onto.dispatchEvent(new DragEvent('drop', { bubbles: true }))
 
     await waitFor(() => expect(drawn()).toEqual(['name-it', 'recognise']))
@@ -507,25 +372,17 @@ export const WhatAPersonDoesToIt: Story = {
 }
 
 /**
- * Forty fields and twelve faces, far more than the window has room for. The
- * row of fields scrolls inside the strip, which keeps its height and its
- * heading.
+ * Forty fields and twelve faces, far more than the window has room for. Every
+ * row and every block is drawn, and none of it is drawn sideways.
  */
 export const FarTooMany: Story = {
   args: { corpus: 'far too many' },
   play: async ({ canvasElement }) => {
-    const bar = found(canvasElement, '[data-face-block="face-0"] .bar')
-    const title = found(canvasElement, '[data-face-block="face-0"] .stencil__title')
-    const slots = found(canvasElement, '[data-face-block="face-0"] .stencil__slots')
+    expect(drawnFields(canvasElement)).toHaveLength(40)
+    expect(canvasElement.querySelectorAll('[data-face-block]')).toHaveLength(12)
 
-    // Forty fields do not push the heading out of its own strip.
-    expect(title.getBoundingClientRect().width).toBeGreaterThan(60)
-
-    expect(slots.scrollWidth).toBeGreaterThan(slots.clientWidth)
-    expect(bar.getBoundingClientRect().height).toBeLessThan(40)
-    expect(slots.getBoundingClientRect().right).toBeLessThanOrEqual(
-      bar.getBoundingClientRect().right + 1,
-    )
+    const editor = found(canvasElement, '.stencil')
+    expect(editor.scrollWidth).toBeLessThanOrEqual(editor.clientWidth + 1)
   },
 }
 
@@ -534,28 +391,6 @@ export const AwkwardText: Story = { args: { corpus: 'awkward text' } }
 
 /** No fields and no faces. */
 export const NothingAtAll: Story = { args: { corpus: 'nothing at all' } }
-
-/**
- * A preview standing the values a caller handed in, where every other story
- * lets each field stand under its own name.
- */
-export const PreviewedFilled: Story = {
-  args: { corpus: 'previewed filled', width: '64rem' },
-  play: async ({ canvasElement }) => {
-    const front = paneOf(canvasElement, 'recognise', 'front-preview')
-    const back = paneOf(canvasElement, 'recognise', 'back-preview')
-
-    expect(front.textContent).toContain('Llama')
-    expect(back.textContent).toContain('about 45" at the shoulder')
-    expect(back.textContent).toContain('20 years')
-
-    // The names of the fields are what the boxes hold, and no preview stands
-    // one in place of a value.
-    expect(boxFor(canvasElement, 'recognise', 'front').value).toBe('{{Name}}')
-    expect(front.textContent).not.toContain('{{')
-    expect(back.querySelector('strong')?.textContent).toBe('Height:')
-  },
-}
 
 /**
  * Everything a file can hold that the editor did not make: one name declared
@@ -572,75 +407,26 @@ export const WhatIsWrong: Story = {
     const chips = [...canvasElement.querySelectorAll('[data-face-block="stray"] [data-insert]')]
     expect(chips.map((chip) => chip.getAttribute('data-insert'))).toEqual(['Name', 'Height'])
 
-    // What is wrong is said where the slot itself stands, and under that half
-    // alone.
-    const block = found(canvasElement, '[data-face-block="stray"]')
-    expect(block.querySelector('[data-preview="front"] mark')?.textContent).toBe('{{Colour}}')
-    expect(block.querySelector('[data-preview="back"] mark')?.textContent).toBe('{{Weight}}')
+    // What the caller found wrong with one face stands under that face's name,
+    // and under no other's.
     expect(
-      block.querySelector('[data-pane="front-written"] .stencil__objects')?.textContent?.trim(),
-    ).toBe('Not a field: Colour')
+      found(canvasElement, '[data-face-block="stray"] [data-pane="front-written"]')
+        .textContent?.trim(),
+    ).toContain('Not a field: Colour')
     expect(
-      block.querySelector('[data-pane="back-written"] .stencil__objects')?.textContent?.trim(),
-    ).toBe('Not a field: Weight')
-    expect(block.querySelector('header .stencil__objects')).toBeNull()
-
-    // A mark a person wrote stands as text, and no tag of one is ever drawn.
-    expect(canvasElement.querySelector('script')).toBeNull()
-    expect((window as unknown as Record<string, unknown>)['stolen']).toBeUndefined()
-    expect(boxFor(canvasElement, 'tagged', 'back').value).toContain('<script>')
-
-    // An empty part says what it is for, in the middle of itself.
-    const said: string[] = []
-    for (const pane of PANES) {
-      const held = paneOf(canvasElement, 'blank', pane)
-      const ghost = held.querySelector<HTMLElement>('.stencil__ghost')
-      if (!ghost) throw new Error(`nothing said in ${pane}`)
-      said.push(ghost.textContent?.trim() ?? '')
-
-      const box = held.getBoundingClientRect()
-      const middle = ghost.getBoundingClientRect()
-      expect(middle.left + middle.width / 2).toBeCloseTo(box.left + box.width / 2, 0)
-      expect(middle.top + middle.height / 2).toBeCloseTo(box.top + box.height / 2, 0)
-    }
-    expect(said).toEqual(['Front', 'Preview', 'Back', 'Preview'])
-
-    // What is written into a part takes that place, and the part then draws
-    // the box alone.
-    const written = boxFor(canvasElement, 'blank', 'front')
-    await userEvent.type(written, 'a word')
-    await waitFor(() => {
-      expect(
-        paneOf(canvasElement, 'blank', 'front-written').querySelector('.stencil__ghost'),
-      ).toBeNull()
-      expect(
-        paneOf(canvasElement, 'blank', 'front-preview').querySelector('.stencil__ghost'),
-      ).toBeNull()
-    })
-    const pane = paneOf(canvasElement, 'blank', 'front-written')
-    expect(written.getBoundingClientRect().top).toBeCloseTo(pane.getBoundingClientRect().top, 0)
-
-    // The half nothing was written in still says what it is for.
-    expect(
-      paneOf(canvasElement, 'blank', 'back-written').querySelector('.stencil__ghost')?.textContent,
-    ).toBe('Back')
+      canvasElement.querySelector('[data-face-block="tagged"] [data-pane] [role="alert"]'),
+    ).toBeNull()
   },
 }
 
-/** A window too narrow for two parts to a row: one column, each under its half. */
+/**
+ * A window too narrow for two parts to a row. The editor is what scrolls, and
+ * it never scrolls sideways.
+ */
 export const Narrow: Story = {
   args: { width: '22rem' },
   play: async ({ canvasElement }) => {
     const editor = found(canvasElement, '.stencil')
-    const body = found(canvasElement, '[data-face-block="recognise"] .stencil__face-body')
-    expect(getComputedStyle(body).gridTemplateColumns.split(' ')).toHaveLength(1)
-
-    const tops = PANES.map((pane) =>
-      Math.round(paneOf(canvasElement, 'recognise', pane).getBoundingClientRect().top),
-    )
-    expect([...tops].sort((first, second) => first - second)).toEqual(tops)
-    expect(new Set(tops).size).toBe(4)
-
     expect(editor.scrollWidth).toBeLessThanOrEqual(editor.clientWidth + 1)
   },
 }

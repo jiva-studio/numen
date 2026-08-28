@@ -178,6 +178,8 @@ export { default as Stencil } from './cards/Stencil.vue'
 export { default as Deck } from './cards/Deck.vue'
 /** One card of a deck, which is what the deck lays out. */
 export { default as Card } from './cards/Card.vue'
+/** One face of a stencil, which is what the stencil lays out. */
+export { default as Block } from './cards/Block.vue'
 export { default as Marks } from './cards/Marks.vue'
 /** The strip a tile is carried by. */
 export { default as Bar } from './cards/Bar.vue'
@@ -186,7 +188,6 @@ export { default as Rule } from './rule/Rule.vue'
 
 /** For laying a stencil or a deck out without drawing it. */
 export {
-  aimedAt,
   blanks,
   declared,
   faceBlocks,
@@ -211,7 +212,6 @@ export {
   STENCIL_WORDS,
 } from './cards/model'
 export type {
-  Aim,
   CardWords,
   Cut,
   DeckWords,

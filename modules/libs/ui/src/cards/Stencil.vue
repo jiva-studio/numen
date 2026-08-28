@@ -9,42 +9,32 @@
  * wrong with it: a face's mark stands under that face's name, a field's under
  * that field's row.
  */
-import { computed, nextTick, shallowRef, useId, useTemplateRef } from 'vue'
-import Bar from './Bar.vue'
-import Deed from './Deed.vue'
-import Marks from './Marks.vue'
+import { computed, useId } from 'vue'
+import Block from './Block.vue'
 import Glyph from './Glyph.vue'
-import Grown from './Grown.vue'
 import Rule from '../rule/Rule.vue'
 import Slab from './Slab.vue'
+import { useCarry } from './carry'
+import { useNaming } from './naming'
 import { Button } from '../components/ui/button'
 import {
-  aimedAt,
   declared,
   faceBlocks,
   fieldRows,
   freeName,
-  heading,
   landing,
   objection,
-  panes,
-  stepped,
   wayOf,
   NOTHING_AMISS,
   STENCIL_WORDS,
-  type Aim,
-  type Draft,
-  type FaceBlock,
-  type Filled,
   type Half,
   type Landing,
-  type Pane,
+  type Objection,
   type Shown,
   type StencilWords,
   type StencilWrong,
-  type Way,
 } from './model'
-import { insert, sampled } from './fill'
+import { sampled } from './fill'
 
 /**
  * What the caller found wrong with the stencil it handed in. A face's stands
@@ -59,8 +49,6 @@ const props = withDefaults(
     faces: readonly Shown[]
     /** What the editor is announced as. */
     name?: string
-    /** What a preview stands in the slots. Each field under its own name by default. */
-    sample?: readonly Filled[]
     /** What the caller found wrong with the fields and the faces it handed in. */
     wrong?: StencilWrong
     /** The words it is drawn with. */
@@ -92,45 +80,77 @@ const emit = defineEmits<{
   (event: 'write', id: string, half: Half, text: string): void
 }>()
 
-const box = useTemplateRef<HTMLElement>('box')
-
 /** What this editor's objections are named by, which is this editor's alone. */
 const uid = useId()
 
 /** What is wrong with a name, where what it is wrong about says so. */
 const objectsId = (over: string): string => `${uid}-${encodeURIComponent(over)}-objects`
 
-/** A name being typed over the one a field carries. */
-const draft = shallowRef<Draft | null>(null)
-
-/** A name being typed over the one a face carries, by the face's own identifier. */
-const faceDraft = shallowRef<Draft | null>(null)
-
-/**
- * The field under the pointer's hand, and where letting go would put it: before
- * a field, at the end, or nowhere.
- */
-const carried = shallowRef<string | null>(null)
-const at = shallowRef<Landing | undefined>(undefined)
-
-/** The face under the pointer's hand, and where letting go would put it. */
-const face = shallowRef<string | null>(null)
-const faceAt = shallowRef<Landing>(null)
-
-/** The box a field would be written into. */
-const aim = shallowRef<Aim | null>(null)
-
 /** The fields a card is asked for, a name declared twice naming one field. */
 const asked = computed(() => declared(props.fields))
 
-const sample = computed(() => props.sample ?? sampled(asked.value))
+/**
+ * A name typed over the one a field carries. A field is named by its own name,
+ * and what it is measured against is every other field's.
+ */
+const {
+  text: fieldText,
+  objection: fieldObjects,
+  typing,
+  commit,
+  onKey: onNameKey,
+} = useNaming<Objection>({
+  carries: (field) => field,
+  taken: (field) => asked.value.filter((each) => each !== field),
+  amiss: objection,
+  renamed: (field, name) => emit('rename-field', field, name),
+})
 
-const rows = computed(() => fieldRows(asked.value, draft.value, carried.value))
+/**
+ * The field under the pointer's hand, and where letting go would put it: before
+ * a field, at the end, or nowhere. The first field names every card, so nothing
+ * lands above it and it goes nowhere itself.
+ */
+const { carried, at, lift, over, release, drop, step: stepField } = useCarry<Landing | undefined>({
+  order: () => asked.value,
+  nowhere: undefined,
+  lands: (held, lands) => landing(asked.value, held, lands),
+  moves: (held, lands) => emit('move-field', held, lands),
+})
+
+/**
+ * The face under the pointer's hand, and where letting go would put it. The
+ * order of the faces is the order a card's repetitions are taken from it, so
+ * nothing among them is fixed and a face lands anywhere but where it stands.
+ */
+const {
+  carried: face,
+  at: faceAt,
+  lift: liftFace,
+  over: overFace,
+  release: releaseFace,
+  drop: dropFace,
+  step: stepFace,
+} = useCarry<Landing>({
+  order: () => props.faces.map((each) => each.id),
+  nowhere: null,
+  lands: (held, lands) => lands !== held,
+  moves: (held, lands) => emit('move-face', held, lands),
+})
+
+/** What a preview stands in the slots, which is each field under its own name. */
+const sample = computed(() => sampled(asked.value))
+
+const rows = computed(() => fieldRows(asked.value, carried.value))
 
 /** The faces as they are drawn. */
-const blocks = computed(() =>
-  faceBlocks(props.faces, asked.value, sample.value, faceDraft.value),
-)
+const blocks = computed(() => faceBlocks(props.faces, asked.value, sample.value))
+
+/** What is said of a field's name that cannot be used, and nothing while it can. */
+const fieldSays = (field: string): string | null => {
+  const why = fieldObjects(field)
+  return why === null ? null : props.words.objection(why)
+}
 
 /** What is wrong with one field, and nothing where nothing is. */
 const wrongWith = (field: string): readonly string[] => props.wrong.fields.get(field) ?? []
@@ -138,75 +158,9 @@ const wrongWith = (field: string): readonly string[] => props.wrong.fields.get(f
 /** What is wrong with one face, and nothing where nothing is. */
 const wrongWithFace = (id: string): readonly string[] => props.wrong.at.get(id) ?? []
 
-/** The half of one face a field would be written into. */
-const aiming = (id: string): Half => aimedAt(aim.value, id)
-
-/** The four parts one face's window is divided into. */
-const divided = (block: FaceBlock): readonly Pane[] => panes(block, props.words)
-
-/** The part a field would be written into. */
-const aimed = (id: string, pane: Pane): boolean =>
-  pane.shows === 'written' && aiming(id) === pane.half
-
-const typing = (field: string, text: string): void => {
-  draft.value = { over: field, text }
-}
-
-/** A typed name committed, and nothing where it objects or says what it said. */
-const commit = (field: string): void => {
-  const held = draft.value
-  draft.value = null
-  if (!held || held.over !== field) return
-
-  const name = held.text.trim()
-  if (name === field) return
-  if (objection(name, asked.value.filter((each) => each !== field))) return
-  emit('rename-field', field, name)
-}
-
-const typingFace = (id: string, text: string): void => {
-  faceDraft.value = { over: id, text }
-}
-
-/** A typed name committed, and nothing where it objects or says what it said. */
-const commitFace = (id: string): void => {
-  const held = faceDraft.value
-  faceDraft.value = null
-  if (!held || held.over !== id) return
-
-  const name = held.text.trim()
-  const carries = props.faces.find((each) => each.id === id)?.name
-  if (name === carries) return
-  if (heading(name, props.faces.filter((each) => each.id !== id).map((each) => each.name)) !== null)
-    return
-  emit('rename-face', id, name)
-}
-
-const onNameKey = (event: KeyboardEvent, field: string): void => {
-  if (event.key === 'Enter') {
-    event.preventDefault()
-    commit(field)
-    ;(event.currentTarget as HTMLInputElement).blur()
-    return
-  }
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    draft.value = null
-  }
-}
-
-const onFaceNameKey = (event: KeyboardEvent, id: string): void => {
-  if (event.key === 'Enter') {
-    event.preventDefault()
-    commitFace(id)
-    ;(event.currentTarget as HTMLInputElement).blur()
-    return
-  }
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    faceDraft.value = null
-  }
-}
+/** The names the faces other than this one carry. */
+const takenFrom = (id: string): readonly string[] =>
+  props.faces.filter((each) => each.id !== id).map((each) => each.name)
 
 const addField = (): void => {
   emit('add-field', freeName(asked.value, props.words.fieldStem))
@@ -216,108 +170,16 @@ const addFace = (): void => {
   emit('add-face', freeName(props.faces.map((each) => each.name), props.words.faceStem))
 }
 
-const lift = (field: string, event: DragEvent): void => {
-  carried.value = field
-  event.dataTransfer?.setData('text/plain', field)
-}
-
-const over = (lands: Landing | undefined, event: DragEvent): void => {
-  if (carried.value === null) return
-  event.preventDefault()
-  at.value = lands
-}
-
-/** The carry is over, and nothing was let go. */
-const release = (): void => {
-  carried.value = null
-  at.value = undefined
-}
-
-/** A field let go on a place that takes it. */
-const drop = (): void => {
-  const held = carried.value
-  const lands = at.value
-  release()
-  if (held === null || lands === undefined) return
-  if (landing(asked.value, held, lands)) emit('move-field', held, lands)
-}
-
-/**
- * A field asked to go one place along the order by the keyboard. The first
- * field names every card, so nothing lands above it and it goes nowhere.
- */
+/** A field asked by the keyboard to go one place along the order. */
 const onGripKey = (event: KeyboardEvent, field: string): void => {
   const way = wayOf(event.key)
-  if (way === null) return
-  const lands = stepped(asked.value, field, way)
-  if (lands === undefined || !landing(asked.value, field, lands)) return
-  event.preventDefault()
-  emit('move-field', field, lands)
+  if (way !== null) stepField(field, way, event)
 }
 
-/** A face asked to go one place along the order, nothing among them being fixed. */
-const stepFace = (id: string, way: Way, press: KeyboardEvent): void => {
-  const lands = stepped(props.faces.map((each) => each.id), id, way)
-  if (lands === undefined) return
-  press.preventDefault()
-  emit('move-face', id, lands)
-}
-
-const liftFace = (id: string, event: DragEvent): void => {
-  face.value = id
-  event.dataTransfer?.setData('text/plain', id)
-}
-
-const overFace = (lands: Landing, event: DragEvent): void => {
-  if (face.value === null) return
-  event.preventDefault()
-  faceAt.value = lands
-}
-
-/** The carry is over, and nothing was let go. */
-const releaseFace = (): void => {
-  face.value = null
-  faceAt.value = null
-}
-
-/** A face let go on a place that takes it. */
-const dropFace = (): void => {
-  const held = face.value
-  const lands = faceAt.value
-  releaseFace()
-  if (held !== null && lands !== held) emit('move-face', held, lands)
-}
-
-/** The box one half of one face is written in. */
-const halfBox = (id: string, half: Half): HTMLTextAreaElement | null =>
-  [...(box.value?.querySelectorAll<HTMLTextAreaElement>('[data-face][data-half]') ?? [])].find(
-    (each) => each.dataset['face'] === id && each.dataset['half'] === half,
-  ) ?? null
-
-/**
- * A field written into the half aimed at, where the caret stands, the caret
- * following it. A box nothing has been typed in holds no caret, so the field
- * goes after what is written there.
- */
-const put = async (id: string, field: string): Promise<void> => {
-  const half = aiming(id)
-  const target = halfBox(id, half)
-  if (!target) return
-
-  const typed = aim.value?.face === id
-  const caret = (typed ? target.selectionStart : null) ?? target.value.length
-  const done = insert(target.value, caret, field)
-  emit('write', id, half, done.text)
-  await nextTick()
-  const again = halfBox(id, half)
-  again?.focus()
-  again?.setSelectionRange(done.caret, done.caret)
-}
 </script>
 
 <template>
   <div
-    ref="box"
     class="stencil numen bg-surface font-sans text-base text-ink"
     role="group"
     :aria-label="name"
@@ -345,7 +207,7 @@ const put = async (id: string, field: string): Promise<void> => {
           @dragover.stop="over(row.names ? undefined : row.field, $event)"
           @drop.stop="drop"
         >
-          <Slab class="stencil__row" :data-objects="row.objection ?? undefined">
+          <Slab class="stencil__row" :data-objects="fieldObjects(row.field) ?? undefined">
             <!-- The first field names every card, so its handle is there and
                  turned off, and the row keeps the shape every other row has.
                  The handle is what a row is carried by, by the pointer and by
@@ -370,11 +232,11 @@ const put = async (id: string, field: string): Promise<void> => {
             <input
               class="stencil__box min-w-0 flex-1"
               type="text"
-              :value="row.text"
+              :value="fieldText(row.field)"
               :placeholder="`${words.fieldStem} ${row.at}`"
               :aria-label="`${words.fieldStem} ${row.at}`"
-              :aria-invalid="row.objection !== null || undefined"
-              :aria-describedby="row.objection ? objectsId(row.field) : undefined"
+              :aria-invalid="fieldObjects(row.field) !== null || undefined"
+              :aria-describedby="fieldObjects(row.field) ? objectsId(row.field) : undefined"
               @input="typing(row.field, ($event.target as HTMLInputElement).value)"
               @change="commit(row.field)"
               @keydown="onNameKey($event, row.field)"
@@ -394,12 +256,12 @@ const put = async (id: string, field: string): Promise<void> => {
           </Slab>
 
           <p
-            v-if="row.objection"
+            v-if="fieldSays(row.field)"
             :id="objectsId(row.field)"
             class="stencil__objects text-small text-alarm"
             role="alert"
           >
-            {{ words.objection(row.objection) }}
+            {{ fieldSays(row.field) }}
           </p>
 
           <ul
@@ -435,134 +297,26 @@ const put = async (id: string, field: string): Promise<void> => {
         {{ words.noFaces }}
       </p>
 
-      <article
+      <Block
         v-for="block in blocks"
         :key="block.id"
-        class="stencil__face flex flex-col rounded-node bg-raised"
-        :data-face-block="block.id"
+        class="stencil__face"
+        :block="block"
+        :fields="asked"
+        :taken="takenFrom(block.id)"
+        :wrong="wrongWithFace(block.id)"
+        :words="words"
         :data-carried="block.id === face || undefined"
         :data-before="block.id === faceAt || undefined"
         @dragover.stop="overFace(block.id, $event)"
         @drop.stop="dropFace"
-      >
-        <Bar
-          :carry="`${words.carry}: ${block.name}`"
-          @dragstart="liftFace(block.id, $event)"
-          @dragend="releaseFace"
-          @step="(way, press) => stepFace(block.id, way, press)"
-        >
-          <div class="stencil__face-said flex flex-col">
-            <div class="stencil__face-head flex items-center">
-              <input
-                class="stencil__title min-w-0 rounded-node"
-                type="text"
-                :value="block.text"
-                :placeholder="`${words.faceStem} ${block.at}`"
-                :aria-label="`${words.faceStem} ${block.at}`"
-                :aria-invalid="block.objection !== null || undefined"
-                :aria-describedby="block.objection ? objectsId(block.id) : undefined"
-                @input="typingFace(block.id, ($event.target as HTMLInputElement).value)"
-                @change="commitFace(block.id)"
-                @keydown="onFaceNameKey($event, block.id)"
-              />
-
-              <!-- The fields are small quiet chips, as small quiet actions are
-                   drawn everywhere else here. What they are for is said to a
-                   reader by the group, and to everyone else by their look. -->
-              <div
-                class="stencil__slots flex"
-                role="group"
-                :aria-label="`${words.insert}: ${block.name}`"
-              >
-                <Button
-                  v-for="row in rows"
-                  :key="row.field"
-                  variant="ghost"
-                  size="small"
-                  class="stencil__slot h-5 rounded-pill bg-bubble px-2 text-small"
-                  draggable="false"
-                  :data-insert="row.field"
-                  :aria-label="`${words.insert}: ${row.field}`"
-                  @click="put(block.id, row.field)"
-                  >{{ row.field }}</Button
-                >
-              </div>
-            </div>
-
-            <p
-              v-if="block.objection"
-              :id="objectsId(block.id)"
-              class="stencil__objects text-small text-alarm"
-              role="alert"
-            >
-              {{ words.faceObjection(block.objection) }}
-            </p>
-
-            <ul
-              v-if="wrongWithFace(block.id).length"
-              class="stencil__objects text-small text-alarm"
-              :aria-label="words.wrong"
-              data-wrong
-            >
-              <li v-for="(text, said) in wrongWithFace(block.id)" :key="said">{{ text }}</li>
-            </ul>
-          </div>
-
-          <template #deeds>
-            <Deed
-              shows="bin"
-              :label="`${words.remove}: ${block.name}`"
-              @press="emit('remove-face', block.id)"
-            />
-          </template>
-        </Bar>
-
-        <!-- One window divided into four: the parts share the lines between
-             them, and the frame around them is the block's own. -->
-        <div class="stencil__face-body">
-          <div
-            v-for="pane in divided(block)"
-            :key="`${pane.half}-${pane.shows}`"
-            class="stencil__pane"
-            :data-pane="`${pane.half}-${pane.shows}`"
-            :data-shows="pane.shows"
-            :data-blank="pane.blank || undefined"
-            :data-aimed="aimed(block.id, pane) || undefined"
-          >
-            <Grown
-              v-if="pane.shows === 'written'"
-              class="stencil__grown"
-              :text="pane.text"
-              :data-face="block.id"
-              :data-half="pane.half"
-              :aria-label="pane.named"
-              @focus="aim = { face: block.id, half: pane.half }"
-              @write="(text: string) => emit('write', block.id, pane.half, text)"
-            />
-
-            <div
-              v-else
-              class="stencil__preview"
-              :data-preview="pane.half"
-              :aria-label="pane.named"
-              role="group"
-            >
-              <!-- A preview is a face read, not a face followed: a link in it
-                   stays where it is pressed. -->
-              <Marks :text="pane.text" @follow="(_href, press) => press.preventDefault()" />
-            </div>
-
-            <!-- An empty part says what it is for, in the middle of itself. -->
-            <p v-if="pane.blank" class="stencil__ghost text-small text-hushed" aria-hidden="true">
-              {{ pane.said }}
-            </p>
-
-            <p v-if="pane.stray.length" class="stencil__objects text-small text-alarm" role="alert">
-              {{ words.stray(pane.stray) }}
-            </p>
-          </div>
-        </div>
-      </article>
+        @rename="(name: string) => emit('rename-face', block.id, name)"
+        @remove="emit('remove-face', block.id)"
+        @lift="liftFace(block.id, $event)"
+        @release="releaseFace"
+        @step="(way, press) => stepFace(block.id, way, press)"
+        @write="(half, text) => emit('write', block.id, half, text)"
+      />
 
       <Rule>
         <Button variant="ghost" size="small" @click="addFace">
@@ -581,15 +335,6 @@ const put = async (id: string, field: string): Promise<void> => {
   --part-gap: 1.5rem;
   --row-gap: 0.5rem;
   --caret: 2px;
-
-  /* The air a box keeps inside a part of a face's window, which is what a box
-     put there inherits. */
-  --box-air: 0.5rem;
-  --box-pad-inline: 0.625rem;
-
-  /* How tall a part of that window stands before what is in it makes it taller. */
-  --pane-lines: 6;
-  --pane-min: calc(var(--pane-lines) * var(--numen-line-height) * 1em + 2 * var(--box-air));
 
   display: flex;
   flex-direction: column;
@@ -702,49 +447,10 @@ ul.stencil__objects {
   text-transform: uppercase;
 }
 
-/* The width of the block is what the window inside it is divided by. */
-.stencil__face {
-  position: relative;
-  container-type: inline-size;
-  inline-size: 100%;
-  border: var(--numen-stroke) solid var(--numen-node-border);
-  overflow: hidden;
-}
-
-/* The body is one window: the parts are divided by the lines they share, and
-   the frame around them is the block's own. */
-.stencil__face-body {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--numen-stroke);
-  background: var(--numen-node-border);
-}
-
-/* Two parts to a row from the width at which a part still holds a line of a
-   face: the writing beside its preview, the front above the back. */
-@container (min-width: 36rem) {
-  .stencil__face-body {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-/* The strip is the face's own, so its name leads it and the fields follow.
-   What is wrong with the name stands under the row it is wrong about. */
-.stencil__face-said {
-  inline-size: 100%;
-  gap: 0.125rem;
-}
-
-.stencil__face-head {
-  inline-size: 100%;
-  gap: var(--numen-inset);
-}
-
-/* A name is typed in the row or the strip it stands in, and carries neither a
-   line nor a ground of its own. A press on it works it, and does not take hold
-   of what it stands in. */
-.stencil__box,
-.stencil__title {
+/* A name is typed in the row it stands in, and carries neither a line nor a
+   ground of its own. A press on it works it, and does not take hold of the row
+   it stands in. */
+.stencil__box {
   min-inline-size: 0;
   padding: 0.125rem 0.375rem;
   border: none;
@@ -754,94 +460,7 @@ ul.stencil__objects {
   cursor: auto;
 }
 
-.stencil__box:focus-visible,
-.stencil__title:focus-visible {
+.stencil__box:focus-visible {
   outline: none;
-}
-
-/* The name is the heading of the block: the largest thing in the strip, and
-   never squeezed by however many fields stand beside it. */
-.stencil__title {
-  flex: 0 1 12rem;
-  min-inline-size: 5rem;
-  font-weight: 500;
-}
-
-/* The fields are a group under the heading, not its equal. A long row scrolls
-   inside the strip. */
-.stencil__slots {
-  flex: 1 1 auto;
-  min-inline-size: 0;
-  gap: 0.25rem;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.stencil__slots::-webkit-scrollbar {
-  display: none;
-}
-
-.stencil__slot:hover {
-  background: color-mix(in oklab, var(--numen-bubble-bg), var(--numen-node-fg) 10%);
-}
-
-/* The ring is drawn inside the chip, so the row it scrolls in cannot clip it. */
-.stencil__slot:focus-visible {
-  box-shadow: none;
-  outline: var(--numen-ring-width) solid var(--numen-ring);
-  outline-offset: calc(-1 * var(--numen-ring-width));
-}
-
-/* A part is a pane of the window: it carries a ground and no line of its own.
-   What it holds and what it says while it holds nothing share its one cell. */
-.stencil__pane {
-  display: grid;
-  grid-template-columns: 1fr;
-  /* What the part holds takes the room; what is wrong takes a line under it. */
-  grid-template-rows: 1fr;
-  min-inline-size: 0;
-  min-block-size: var(--pane-min);
-  background: var(--numen-field-bg);
-}
-
-/* What is written stands on the ground a box stands on; what it comes to
-   stands on the ground the block is read on. */
-.stencil__pane[data-shows='preview'] {
-  background: var(--numen-node-bg);
-}
-
-.stencil__grown,
-.stencil__preview,
-.stencil__ghost {
-  grid-area: 1 / 1;
-}
-
-.stencil__pane > .stencil__objects {
-  grid-area: 2 / 1;
-  padding: 0 var(--box-pad-inline) var(--box-air);
-}
-
-/* A face's box stands open at a few lines and grows with what is written in
-   it, as every other box does. */
-.stencil__grown {
-  --grown-lines: var(--pane-lines);
-}
-
-/* What an empty part is called stands in the middle of it, and is passed
-   through to whatever is underneath. */
-.stencil__ghost {
-  place-self: center;
-  margin: 0;
-  padding-inline: var(--box-pad-inline);
-  letter-spacing: var(--numen-caps-tracking);
-  text-align: center;
-  text-transform: uppercase;
-  pointer-events: none;
-}
-
-.stencil__preview {
-  min-inline-size: 0;
-  padding: var(--box-air) var(--box-pad-inline);
-  overflow-wrap: anywhere;
 }
 </style>

@@ -307,9 +307,9 @@ export function freeName(taken: readonly string[], stem: string): string {
   }
 }
 
-/** A name being typed over the one a field carries. */
+/** A name being typed over the one something carries. */
 export interface Draft {
-  /** The field it is being typed over. */
+  /** What it is being typed over: a field by its name, a face by its identifier. */
   readonly over: string
   readonly text: string
 }
@@ -321,10 +321,6 @@ export interface FieldRow {
   readonly at: number
   /** How many fields stand with it. */
   readonly of: number
-  /** What is in its box: the name it carries, or what is being typed over it. */
-  readonly text: string
-  /** Why what is in its box cannot be used, and nothing while it can. */
-  readonly objection: Objection | null
   /** It stands first, so it is what a card cut by this stencil is named by. */
   readonly names: boolean
   /** It is on its way somewhere else in the order. */
@@ -337,40 +333,25 @@ export interface FieldRow {
  */
 export const declared = (fields: readonly string[]): readonly string[] => [...new Set(fields)]
 
-/**
- * The rows a stencil's fields are drawn as, one to a field. A name is measured
- * against every other field's, so a field keeping its own name objects to
- * nothing.
- */
+/** The rows a stencil's fields are drawn as, one to a field. */
 export function fieldRows(
   fields: readonly string[],
-  draft: Draft | null,
   carried: string | null,
 ): readonly FieldRow[] {
   const stood = declared(fields)
-  return stood.map((field, index) => {
-    const typed = draft?.over === field ? draft.text : null
-    return {
-      field,
-      at: index + 1,
-      of: stood.length,
-      text: typed ?? field,
-      objection:
-        typed === null ? null : objection(typed, stood.filter((each) => each !== field)),
-      names: index === 0,
-      carried: field === carried,
-    }
-  })
+  return stood.map((field, index) => ({
+    field,
+    at: index + 1,
+    of: stood.length,
+    names: index === 0,
+    carried: field === carried,
+  }))
 }
 
 /** One face of a stencil, as its block is drawn. */
 export interface FaceBlock {
   readonly id: string
   readonly name: string
-  /** What is in its name box: the name it carries, or what is being typed over it. */
-  readonly text: string
-  /** Why what is in its name box cannot be used, and nothing while it can. */
-  readonly objection: Amiss | null
   /** Where it stands, counting from one, which is what it is announced as. */
   readonly at: number
   /** How many faces stand with it. */
@@ -388,27 +369,17 @@ export interface FaceBlock {
 
 /**
  * The blocks a stencil's faces are drawn as, each carrying what its preview
- * shows and what is wrong in each half of it. A name is measured against every
- * other face's, so a face keeping its own name objects to nothing. What is
- * typed over a name is drawn in its box, and the name it carries is what the
- * face is announced by until the typing is committed.
+ * shows and what is wrong in each half of it.
  */
 export function faceBlocks(
   faces: readonly Shown[],
   fields: readonly string[],
   sample: readonly Filled[],
-  draft: Draft | null = null,
 ): readonly FaceBlock[] {
   return faces.map((face, index) => {
-    const typed = draft?.over === face.id ? draft.text : null
     return {
       id: face.id,
       name: face.name,
-      text: typed ?? face.name,
-      objection:
-        typed === null
-          ? null
-          : heading(typed, faces.filter((each) => each.id !== face.id).map((each) => each.name)),
       at: index + 1,
       of: faces.length,
       front: face.front,
@@ -420,19 +391,6 @@ export function faceBlocks(
     }
   })
 }
-
-/** The box a face's fields are written into. */
-export interface Aim {
-  readonly face: string
-  readonly half: Half
-}
-
-/**
- * The half of a face a field is written into: the one last typed in, and the
- * front while nothing has been.
- */
-export const aimedAt = (aim: Aim | null, face: string): Half =>
-  aim?.face === face ? aim.half : 'front'
 
 /** One value of a card, laid out under the stencil that cuts it. */
 export interface Laid extends Filled {

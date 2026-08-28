@@ -9,6 +9,7 @@
 import { computed, shallowRef } from 'vue'
 import Card from './Card.vue'
 import Glyph from './Glyph.vue'
+import { useCarry } from './carry'
 import { Button } from '../components/ui/button'
 import {
   blanks,
@@ -18,13 +19,11 @@ import {
   grid,
   NOTHING_WRONG,
   sealed,
-  stepped,
   type Cut,
   type DeckWords,
   type Drawn,
   type Filled,
   type Landing,
-  type Way,
   type Wrong,
 } from './model'
 
@@ -68,44 +67,18 @@ const emit = defineEmits<{
 /** The plus is showing which stencils a new card may be cut by. */
 const asking = shallowRef(false)
 
-/** The card under the pointer's hand, and where letting go would put it. */
-const carried = shallowRef<string | null>(null)
-const at = shallowRef<Landing>(null)
+/**
+ * The card under the pointer's hand, and where letting go would put it. A card
+ * let go where it stands moves nothing, and nothing else among them is fixed.
+ */
+const { carried, at, lift, over, release, drop, step } = useCarry<Landing>({
+  order: () => props.cards.map((card) => card.id),
+  nowhere: null,
+  lands: (held, at) => at !== held,
+  moves: (held, at) => emit('move', held, at),
+})
 
 const shown = computed(() => grid(props.cards, props.cuts, carried.value))
-
-const lift = (id: string, event: DragEvent): void => {
-  carried.value = id
-  event.dataTransfer?.setData('text/plain', id)
-}
-
-const over = (landing: Landing, event: DragEvent): void => {
-  if (carried.value === null) return
-  event.preventDefault()
-  at.value = landing
-}
-
-/** The carry is over, and nothing was let go. */
-const release = (): void => {
-  carried.value = null
-  at.value = null
-}
-
-/** A card let go on a place that takes it. */
-const drop = (): void => {
-  const held = carried.value
-  const landing = at.value
-  release()
-  if (held !== null && landing !== held) emit('move', held, landing)
-}
-
-/** A card asked to go one place along the order, where there is a place that way. */
-const step = (id: string, way: Way, press: KeyboardEvent): void => {
-  const lands = stepped(props.cards.map((card) => card.id), id, way)
-  if (lands === undefined) return
-  press.preventDefault()
-  emit('move', id, lands)
-}
 
 const add = (cut: Cut): void => {
   asking.value = false

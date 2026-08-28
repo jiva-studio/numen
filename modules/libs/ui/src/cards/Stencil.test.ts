@@ -2,11 +2,12 @@
  * What the stencil editor draws from the fields and faces it was handed, and
  * what it emits.
  *
+ * What one face draws is that face's own, and is in `Block.test.ts`. Here are
+ * the two orders, the two carries, and what each face is handed.
+ *
  * The negatives are here: the first field has no handle and no way to go, a
- * name that objects renames nothing, a name abandoned renames nothing, a field
- * let go where it was moves nothing, one row of fields serves both halves, a
- * preview draws no braces, a part of a face's window carries no outline of its
- * own, and a part something stands in says nothing about being empty.
+ * name that objects renames nothing, a name abandoned renames nothing, and a
+ * field let go where it was moves nothing.
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -380,15 +381,13 @@ describe('Stencil, what the caller found wrong', () => {
 })
 
 describe('Stencil, the faces', () => {
-  it('draws a block per face, its window divided into four parts', () => {
-    const held = mountStencil()
-    expect(held.findAll('[data-face-block]')).toHaveLength(1)
-    expect(held.findAll('[data-pane]').map((pane) => pane.attributes('data-pane'))).toEqual([
-      'front-written',
-      'front-preview',
-      'back-written',
-      'back-preview',
-    ])
+  const TWO: readonly Shown[] = [
+    { id: 'one', name: 'One', front: '', back: '' },
+    { id: 'two', name: 'Two', front: '', back: '' },
+  ]
+
+  it('draws a block per face', () => {
+    expect(mountStencil().findAll('[data-face-block]')).toHaveLength(1)
   })
 
   it('draws the silence, and no blocks, for a stencil showing nothing', () => {
@@ -397,180 +396,30 @@ describe('Stencil, the faces', () => {
     expect(held.text()).toContain('No faces yet')
   })
 
-  it('draws the parts with nothing cut into an outline of their own', () => {
-    const block = mountStencil().get('[data-face-block="recognise"]')
-    expect(block.findAll('h3')).toHaveLength(0)
-    expect(block.findAll('.stencil__face-body fieldset')).toHaveLength(0)
-    expect(block.findAll('.stencil__face-body legend')).toHaveLength(0)
-    expect(block.findAll('.stencil__face-body label')).toHaveLength(0)
-  })
-
-  it('names each box it is written in, and names it to a reader alone', () => {
-    const block = mountStencil().get('[data-face-block="recognise"]')
-    for (const half of ['front', 'back']) {
-      const said = half === 'front' ? 'Front' : 'Back'
-      const written = block.get(`[data-face="recognise"][data-half="${half}"]`)
-      expect(written.attributes('aria-label')).toBe(said)
+  it('hands every face the fields the stencil declares', () => {
+    const held = mountStencil({ faces: TWO })
+    for (const id of ['one', 'two']) {
+      const said = held
+        .findAll(`[data-face-block="${id}"] [data-insert]`)
+        .map((each) => each.attributes('data-insert'))
+      expect(said).toEqual(FIELDS)
     }
   })
 
-  it('names the preview by the face and the half it is of, taking no box’s name', () => {
-    const held = mountStencil()
-    const preview = held.get('[data-preview="front"]')
-    expect(preview.attributes('aria-label')).toBe('Preview: Recognise Front')
-    // The preview is no control, so what names it names no box.
-    expect(preview.attributes('role')).toBe('group')
-    expect(preview.attributes('for')).toBeUndefined()
-  })
-
-  it('stands what an empty part is called in the part, and says it to nobody twice', () => {
-    const held = mountStencil({ faces: [{ id: 'one', name: 'One', front: '', back: '' }] })
-    const ghosts = held.findAll('.stencil__ghost')
-    expect(ghosts.map((each) => each.text())).toEqual(['Front', 'Preview', 'Back', 'Preview'])
-    for (const ghost of ghosts) expect(ghost.attributes('aria-hidden')).toBe('true')
-    expect(held.findAll('[data-pane][data-blank]')).toHaveLength(4)
-  })
-
-  it('says nothing in a part something stands in', () => {
-    const held = mountStencil()
-    expect(held.find('[data-pane="front-written"] .stencil__ghost').exists()).toBe(false)
-    expect(held.find('[data-pane="front-preview"] .stencil__ghost').exists()).toBe(false)
-    expect(held.get('[data-pane="front-written"]').attributes('data-blank')).toBeUndefined()
-  })
-
-  it('says a part is empty where what is written in it fills out to nothing', () => {
-    const faces: readonly Shown[] = [
-      { id: 'one', name: 'One', front: '{{Height}}', back: 'said' },
-    ]
-    const held = mountStencil({ faces, sample: [{ field: 'Height', text: '' }] })
-
-    expect(held.get('[data-pane="front-written"]').attributes('data-blank')).toBeUndefined()
-    expect(held.get('[data-pane="front-preview"]').attributes('data-blank')).toBe('true')
-    expect(held.get('[data-pane="front-preview"] .stencil__ghost').text()).toBe('Preview')
-  })
-
-  it('aims the row of fields at the part last typed in, and at one part only', async () => {
-    const held = mountStencil()
-    expect(held.findAll('[data-aimed]').map((each) => each.attributes('data-pane'))).toEqual([
-      'front-written',
-    ])
-
-    await held.get('[data-face="recognise"][data-half="back"]').trigger('focus')
-    expect(held.findAll('[data-aimed]').map((each) => each.attributes('data-pane'))).toEqual([
-      'back-written',
-    ])
-  })
-
-  it('shows the braces in the box a face is written in', () => {
-    const held = mountStencil()
-    const written = held.get<HTMLTextAreaElement>('[data-face="recognise"][data-half="back"]')
-    expect(written.element.value).toContain('{{Height}}')
-  })
-
-  it('draws no braces in the preview, and no markup either', () => {
-    const held = mountStencil({ sample: [{ field: 'Height', text: 'about 45"' }] })
-    const preview = held.get('[data-preview="back"]')
-    expect(preview.text()).toContain('about 45"')
-    expect(preview.text()).not.toContain('{{')
-    expect(preview.text()).not.toContain('**')
-    expect(preview.get('strong').text()).toBe('Height:')
-  })
-
-  it('offers one row of fields for the whole face, and not one to each half', () => {
-    const held = mountStencil()
-    const block = held.get('[data-face-block="recognise"]')
-    expect(block.findAll('.stencil__slots')).toHaveLength(1)
-    expect(block.findAll('[data-pane] .stencil__slots')).toHaveLength(0)
-  })
-
-  it('offers a button per field, and none for a name of its own', () => {
-    const held = mountStencil()
-    const said = held
-      .findAll('.stencil__slots button')
-      .map((each) => each.text())
-    expect(said).toEqual(['Name', 'Height', 'Weight'])
-  })
-
-  it('writes a field into the front while no half has been typed in', async () => {
-    const held = mountStencil()
-
-    await held.get('[data-insert="Weight"]').trigger('click')
-
-    expect(held.emitted('write')).toEqual([['recognise', 'front', '{{Name}}{{Weight}}']])
-  })
-
-  /* A box nothing has been typed in reads a caret of zero, which is not a
-     caret standing at the head of it. */
-  it('writes a field after what a box nothing has been typed in holds', async () => {
-    const held = mountStencil()
-    const written = held.get('[data-face="recognise"][data-half="front"]')
-    ;(written.element as HTMLTextAreaElement).setSelectionRange(0, 0)
-
-    await held.get('[data-insert="Weight"]').trigger('click')
-
-    expect(held.emitted('write')).toEqual([['recognise', 'front', '{{Name}}{{Weight}}']])
-  })
-
-  it('writes a field where the caret stands in a box that has been typed in', async () => {
-    const held = mountStencil()
-    const written = held.get('[data-face="recognise"][data-half="front"]')
-    await written.trigger('focus')
-    ;(written.element as HTMLTextAreaElement).setSelectionRange(0, 0)
-
-    await held.get('[data-insert="Weight"]').trigger('click')
-
-    expect(held.emitted('write')).toEqual([['recognise', 'front', '{{Weight}}{{Name}}']])
-  })
-
-  it('writes a field into the half last typed in', async () => {
-    const held = mountStencil()
-    const back = held.get('[data-face="recognise"][data-half="back"]')
-    await back.trigger('focus')
-    ;(back.element as HTMLTextAreaElement).setSelectionRange(0, 0)
-
-    await held.get('[data-insert="Weight"]').trigger('click')
-
-    expect(held.emitted('write')).toEqual([
-      ['recognise', 'back', '{{Weight}}**Height:** {{Height}}'],
-    ])
-  })
-
-  it('emits a half as it now reads when it is typed into', async () => {
-    const held = mountStencil()
-    const written = held.get('[data-face="recognise"][data-half="back"]')
-    await written.setValue('nothing but words')
-    expect(held.emitted('write')).toEqual([['recognise', 'back', 'nothing but words']])
-  })
-
-  it('says a stray slot under the markup naming it, and nowhere else', () => {
-    const faces: readonly Shown[] = [
-      { id: 'one', name: 'One', front: '{{Name}}', back: '{{Colour}}' },
-    ]
-    const held = mountStencil({ faces })
-    const block = held.get('[data-face-block="one"]')
-
-    expect(block.get('[data-pane="back-written"] .stencil__objects').text()).toBe(
-      'Not a field: Colour',
+  it('hands a face the names the other faces carry', async () => {
+    const held = mountStencil({ faces: TWO })
+    const box = held.get<HTMLInputElement>('[data-face-block="one"] header input')
+    box.element.value = 'Two'
+    await box.trigger('input')
+    expect(held.get('[data-face-block="one"] header [role="alert"]').text()).toBe(
+      'That name is taken',
     )
-    expect(block.find('[data-pane="back-preview"] .stencil__objects').exists()).toBe(false)
-    expect(block.find('[data-pane="front-written"] .stencil__objects').exists()).toBe(false)
-    expect(block.find('header .stencil__objects').exists()).toBe(false)
   })
 
-  it('marks a stray slot in the preview where the slot itself stands', () => {
-    const faces: readonly Shown[] = [
-      { id: 'one', name: 'One', front: 'before {{Colour}} after', back: '' },
-    ]
-    const held = mountStencil({ faces })
-    const preview = held.get('[data-preview="front"]')
-    expect(preview.get('mark').text()).toBe('{{Colour}}')
-    expect(preview.text()).toContain('before')
-    expect(preview.text()).toContain('after')
-  })
-
-  it('says nothing stray of a face naming only fields that are declared', () => {
+  it('emits the face and the half a box was typed into', async () => {
     const held = mountStencil()
-    expect(held.find('[data-face-block] .stencil__objects').exists()).toBe(false)
+    await held.get('[data-face-block="recognise"] [data-half="back"]').setValue('nothing but words')
+    expect(held.emitted('write')).toEqual([['recognise', 'back', 'nothing but words']])
   })
 
   it('stands the way to add a face on a rule of the same make', () => {
@@ -595,20 +444,6 @@ describe('Stencil, the faces', () => {
     expect(held.emitted('remove-face')).toEqual([['recognise']])
   })
 
-  it('carries a face by its strip, which holds its name and the fields it is written with', () => {
-    const bar = mountStencil().get('[data-face-block="recognise"] .bar')
-    expect(bar.attributes('data-grip')).toBeDefined()
-    expect(bar.attributes('draggable')).toBe('true')
-    expect(bar.find('input').exists()).toBe(true)
-    expect(bar.findAll('[data-insert]')).toHaveLength(FIELDS.length)
-  })
-
-  it('stands the name and the fields on one strip, and no row of their own', () => {
-    const block = mountStencil().get('[data-face-block="recognise"]')
-    expect(block.findAll('.stencil__slots')).toHaveLength(1)
-    expect(block.get('.bar').findAll('.stencil__slots')).toHaveLength(1)
-  })
-
   it('emits a face renamed', async () => {
     const held = mountStencil()
     const box = held.get<HTMLInputElement>('[data-face-block="recognise"] header input')
@@ -616,88 +451,6 @@ describe('Stencil, the faces', () => {
     await box.trigger('input')
     await box.trigger('change')
     expect(held.emitted('rename-face')).toEqual([['recognise', 'Name it']])
-  })
-
-  it('follows no link a preview draws: the window stays where it is', async () => {
-    const faces: readonly Shown[] = [
-      { id: 'one', name: 'One', front: '[there](https://example.org)', back: '' },
-    ]
-    const held = mountStencil({ faces })
-    const link = held.get('[data-preview="front"] a')
-
-    const press = new MouseEvent('click', { bubbles: true, cancelable: true })
-    link.element.dispatchEvent(press)
-    expect(press.defaultPrevented).toBe(true)
-  })
-
-  describe('the name of a face', () => {
-    const TWO: readonly Shown[] = [
-      { id: 'one', name: 'One', front: '', back: '' },
-      { id: 'two', name: 'Two', front: '', back: '' },
-    ]
-
-    const nameOf = (held: Editor, id: string) =>
-      held.get<HTMLInputElement>(`[data-face-block="${id}"] header input`)
-
-    /** A name typed into a face's box and not yet committed. */
-    const typeName = async (held: Editor, id: string, name: string): Promise<void> => {
-      const box = nameOf(held, id)
-      box.element.value = name
-      await box.trigger('input')
-    }
-
-    it('renames nothing where the name typed is another face’s', async () => {
-      const held = mountStencil({ faces: TWO })
-      await typeName(held, 'one', 'Two')
-      await nameOf(held, 'one').trigger('change')
-      expect(held.emitted('rename-face')).toBeUndefined()
-    })
-
-    it('renames nothing where the name typed has nothing in it', async () => {
-      const held = mountStencil({ faces: TWO })
-      await typeName(held, 'one', '   ')
-      await nameOf(held, 'one').trigger('change')
-      expect(held.emitted('rename-face')).toBeUndefined()
-    })
-
-    it('drops the space around a name it commits', async () => {
-      const held = mountStencil({ faces: TWO })
-      await typeName(held, 'one', '  Recall  ')
-      await nameOf(held, 'one').trigger('change')
-      expect(held.emitted('rename-face')).toEqual([['one', 'Recall']])
-    })
-
-    it('renames nothing where the name typed is the one it already carries', async () => {
-      const held = mountStencil({ faces: TWO })
-      await typeName(held, 'one', 'One')
-      await nameOf(held, 'one').trigger('change')
-      expect(held.emitted('rename-face')).toBeUndefined()
-    })
-
-    it('says why a name typed cannot be used, and says it to the box', async () => {
-      const held = mountStencil({ faces: TWO })
-      await typeName(held, 'one', 'Two')
-
-      const block = held.get('[data-face-block="one"]')
-      const said = block.get('header .stencil__objects')
-      expect(said.text()).toBe('That name is taken')
-      expect(nameOf(held, 'one').attributes('aria-invalid')).toBe('true')
-      expect(nameOf(held, 'one').attributes('aria-describedby')).toBe(said.attributes('id'))
-    })
-
-    it('says nothing about a name nothing is being typed over', () => {
-      const held = mountStencil({ faces: TWO })
-      expect(held.find('[data-face-block] header .stencil__objects').exists()).toBe(false)
-    })
-
-    it('renames nothing where a name is abandoned', async () => {
-      const held = mountStencil({ faces: TWO })
-      await typeName(held, 'one', 'Recall')
-      await nameOf(held, 'one').trigger('keydown', { key: 'Escape' })
-      await nameOf(held, 'one').trigger('change')
-      expect(held.emitted('rename-face')).toBeUndefined()
-      expect(nameOf(held, 'one').element.value).toBe('One')
-    })
   })
 
   describe('carrying a face by the keyboard', () => {
@@ -818,38 +571,4 @@ describe('Stencil, the faces', () => {
     })
   })
 
-  describe('the name of a face holding a brace', () => {
-    const ONE: readonly Shown[] = [{ id: 'one', name: 'One', front: '', back: '' }]
-
-    const nameOf = (held: Editor) => held.get<HTMLInputElement>('[data-face-block="one"] header input')
-
-    it('is a name like any other, a face standing in no brace', async () => {
-      const held = mountStencil({ faces: ONE })
-      const box = nameOf(held)
-      box.element.value = 'What {{Name}} is'
-      await box.trigger('input')
-      await box.trigger('change')
-      expect(held.emitted('rename-face')).toEqual([['one', 'What {{Name}} is']])
-    })
-
-    it('is said nothing about while it is being typed', async () => {
-      const held = mountStencil({ faces: ONE })
-      const box = nameOf(held)
-      box.element.value = 'What {{Name}} is'
-      await box.trigger('input')
-      expect(held.find('[data-face-block="one"] header .stencil__objects').exists()).toBe(false)
-      expect(box.attributes('aria-invalid')).toBeUndefined()
-    })
-  })
-
-  it('draws no script a face was written with', () => {
-    const faces: readonly Shown[] = [
-      { id: 'one', name: 'One', front: '<script>alert(1)</script>after', back: '' },
-    ]
-    const held = mountStencil({ faces })
-    const preview = held.get('[data-preview="front"]')
-    expect(preview.find('script').exists()).toBe(false)
-    expect(preview.html()).not.toContain('alert(1)')
-    expect(preview.text()).toContain('after')
-  })
 })

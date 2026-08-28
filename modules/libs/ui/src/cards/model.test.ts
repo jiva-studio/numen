@@ -4,7 +4,6 @@
  */
 import { describe, expect, it } from 'vitest'
 import {
-  aimedAt,
   blanks,
   faceBlocks,
   fieldRows,
@@ -164,20 +163,6 @@ describe('oneLine', () => {
   })
 })
 
-describe('aimedAt', () => {
-  it('aims at the front while nothing has been typed in', () => {
-    expect(aimedAt(null, 'recognise')).toBe('front')
-  })
-
-  it('aims at the half last typed in', () => {
-    expect(aimedAt({ face: 'recognise', half: 'back' }, 'recognise')).toBe('back')
-  })
-
-  it('aims at the front of a face other than the one last typed in', () => {
-    expect(aimedAt({ face: 'recognise', half: 'back' }, 'name-it')).toBe('front')
-  })
-})
-
 describe('objection', () => {
   it('objects to a name with nothing in it', () => {
     expect(objection('   ', [])).toBe('blank')
@@ -285,63 +270,37 @@ describe('blanks', () => {
 describe('fieldRows', () => {
   const FIELDS = ['Height', 'Weight']
 
+  it('draws a row per field, in the order they were handed in', () => {
+    expect(fieldRows(FIELDS, null).map((row) => row.field)).toEqual(FIELDS)
+  })
+
   it('numbers the rows from one, each knowing how many stand with it', () => {
-    expect(fieldRows(FIELDS, null, null).map((row) => [row.at, row.of])).toEqual([
+    expect(fieldRows(FIELDS, null).map((row) => [row.at, row.of])).toEqual([
       [1, 2],
       [2, 2],
     ])
   })
 
-  it('draws the name a field carries where nothing is being typed', () => {
-    expect(fieldRows(FIELDS, null, null)[0]?.text).toBe('Height')
-  })
-
-  it('draws what is being typed over the name it is typed over', () => {
-    const rows = fieldRows(FIELDS, { over: 'Height', text: 'Tall' }, null)
-    expect(rows[0]?.text).toBe('Tall')
-    expect(rows[1]?.text).toBe('Weight')
-  })
-
-  it('objects to nothing where nothing is being typed', () => {
-    expect(fieldRows(FIELDS, null, null).every((row) => row.objection === null)).toBe(true)
-  })
-
-  it('objects where what is typed is another field’s name', () => {
-    const rows = fieldRows(FIELDS, { over: 'Height', text: 'Weight' }, null)
-    expect(rows[0]?.objection).toBe('taken')
-  })
-
-  it('objects to nothing where a field is typed its own name again', () => {
-    const rows = fieldRows(FIELDS, { over: 'Height', text: 'Height' }, null)
-    expect(rows[0]?.objection).toBeNull()
-  })
-
   it('marks the one row on its way and no other', () => {
-    const rows = fieldRows(FIELDS, null, 'Weight')
+    const rows = fieldRows(FIELDS, 'Weight')
     expect(rows.map((row) => row.carried)).toEqual([false, true])
   })
 
   it('marks the first row as the one naming the cards, and no other', () => {
-    expect(fieldRows(FIELDS, null, null).map((row) => row.names)).toEqual([true, false])
+    expect(fieldRows(FIELDS, null).map((row) => row.names)).toEqual([true, false])
   })
 
   it('marks nothing as naming where a stencil names no field', () => {
-    expect(fieldRows([], null, null)).toEqual([])
+    expect(fieldRows([], null)).toEqual([])
   })
 
   it('draws one row for a name declared twice, and counts it once', () => {
-    const rows = fieldRows(['Height', 'Weight', 'Height'], null, null)
+    const rows = fieldRows(['Height', 'Weight', 'Height'], null)
     expect(rows.map((row) => row.field)).toEqual(['Height', 'Weight'])
     expect(rows.map((row) => [row.at, row.of])).toEqual([
       [1, 2],
       [2, 2],
     ])
-  })
-
-  it('objects to nothing where the row typed over is the one that stands', () => {
-    const rows = fieldRows(['Height', 'Height'], { over: 'Height', text: 'Tallness' }, null)
-    expect(rows).toHaveLength(1)
-    expect(rows[0]?.objection).toBeNull()
   })
 })
 
@@ -401,31 +360,10 @@ describe('faceBlocks', () => {
     expect(faceBlocks([], FIELDS, SAMPLE)).toEqual([])
   })
 
-  it('draws the name a face carries where nothing is being typed', () => {
+  it('carries the identity and the name each face was handed in under', () => {
     const blocks = faceBlocks(FACES, FIELDS, SAMPLE)
-    expect(blocks.map((each) => each.text)).toEqual(['Recognise', 'Name it'])
-    expect(blocks.every((each) => each.objection === null)).toBe(true)
-  })
-
-  it('draws what is being typed over the name it is typed over', () => {
-    const blocks = faceBlocks(FACES, FIELDS, SAMPLE, { over: 'recognise', text: 'Recall' })
-    expect(blocks.map((each) => each.text)).toEqual(['Recall', 'Name it'])
-    expect(blocks[0]?.name).toBe('Recognise')
-  })
-
-  it('objects where what is typed is another face’s name', () => {
-    const blocks = faceBlocks(FACES, FIELDS, SAMPLE, { over: 'recognise', text: 'Name it' })
-    expect(blocks[0]?.objection).toBe('taken')
-  })
-
-  it('objects where what is typed has nothing in it', () => {
-    const blocks = faceBlocks(FACES, FIELDS, SAMPLE, { over: 'recognise', text: '  ' })
-    expect(blocks[0]?.objection).toBe('blank')
-  })
-
-  it('objects to nothing where a face is typed its own name again', () => {
-    const blocks = faceBlocks(FACES, FIELDS, SAMPLE, { over: 'recognise', text: 'Recognise' })
-    expect(blocks[0]?.objection).toBeNull()
+    expect(blocks.map((each) => each.id)).toEqual(['recognise', 'name-it'])
+    expect(blocks.map((each) => each.name)).toEqual(['Recognise', 'Name it'])
   })
 })
 
