@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"syscall"
 
 	"connectrpc.com/connect"
 
@@ -273,11 +274,23 @@ func refusedBy(err error) (v1.Refusal, bool) {
 		return v1.Refusal_REFUSAL_BODY_REFUSED, true
 	case errors.Is(err, port.ErrNotANote):
 		return v1.Refusal_REFUSAL_NOT_A_NOTE, true
-	case errors.Is(err, port.ErrOccupied):
+	// A file standing where a folder of the path must be is a file in the way,
+	// the same as a file standing where the note itself would go.
+	case errors.Is(err, port.ErrOccupied), errors.Is(err, syscall.ENOTDIR):
 		return v1.Refusal_REFUSAL_OCCUPIED, true
 	default:
 		return v1.Refusal_REFUSAL_UNSPECIFIED, false
 	}
+}
+
+// coded is the code an error that is no refusal answers with. A path that does
+// not stay in the vault is the client's to correct; anything else is the vault
+// being out of reach.
+func coded(err error) connect.Code {
+	if errors.Is(err, port.ErrOutside) {
+		return connect.CodeInvalidArgument
+	}
+	return connect.CodeInternal
 }
 
 // refusalOf says which refusal an outcome is, and whether it is one at all.

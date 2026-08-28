@@ -110,8 +110,7 @@ func (a *API) Search(ctx context.Context, r *connect.Request[v1.SearchRequest]) 
 	// The note each passage was read out of, asked once for the whole answer. A
 	// source that is not a note is absent, and a window offering to open notes
 	// offers nothing for it.
-	sources := sourcesOf(found)
-	titles, err := a.Notes.Notes(ctx, showing.ID, sources)
+	titles, err := a.Notes.Notes(ctx, showing.ID, sourcesOf(found))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -178,21 +177,6 @@ func eachOnce(paths []string) []string {
 		}
 		seen[path] = true
 		out = append(out, path)
-	}
-	return out
-}
-
-// namedIn is every note the names matched in, each named once. A note's own
-// title and a heading inside it are two matches on one file.
-func namedIn(found []domain.NameMatch) []string {
-	seen := make(map[string]bool, len(found))
-	out := make([]string, 0, len(found))
-	for _, m := range found {
-		if seen[m.Path] {
-			continue
-		}
-		seen[m.Path] = true
-		out = append(out, m.Path)
 	}
 	return out
 }

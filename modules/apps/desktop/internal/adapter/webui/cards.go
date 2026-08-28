@@ -3,7 +3,6 @@ package webui
 import (
 	"context"
 	"errors"
-	"slices"
 
 	"connectrpc.com/connect"
 
@@ -114,7 +113,7 @@ func (a *API) makes(
 	}
 	refusal, refused := refusedBy(err)
 	if !refused {
-		return cards.Made{}, nil, connect.NewError(connect.CodeInternal, err)
+		return cards.Made{}, nil, connect.NewError(coded(err), err)
 	}
 	return cards.Made{}, &refusal, nil
 }
@@ -151,12 +150,14 @@ func (a *API) RenameField(
 	if errors.Is(err, port.ErrChanged) {
 		return connect.NewResponse(&v1.RenameFieldResponse{Changed: true}), nil
 	}
-	if errors.Is(err, format.ErrNoSuchField) {
+	// The name a rename is given is the client's: one the stencil does not
+	// declare, and one it already declares, are both a name to correct.
+	if errors.Is(err, format.ErrNoSuchField) || errors.Is(err, format.ErrFieldTaken) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	refusal, refused := refusedBy(err)
 	if !refused {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, connect.NewError(coded(err), err)
 	}
 	return connect.NewResponse(&v1.RenameFieldResponse{Refusal: &refusal}), nil
 }
@@ -174,7 +175,7 @@ func (a *API) ReadStencil(
 	}
 	found, err := a.Cards.Stencil(ctx, showing, r.Msg.GetPath())
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, connect.NewError(coded(err), err)
 	}
 
 	out := &v1.ReadStencilResponse{}
@@ -202,7 +203,7 @@ func (a *API) ReadDeck(
 	}
 	found, err := a.Cards.Deck(ctx, showing, r.Msg.GetPath())
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, connect.NewError(coded(err), err)
 	}
 
 	out := &v1.ReadDeckResponse{}
@@ -260,16 +261,14 @@ func (a *API) WriteDeck(
 	}
 	refusal, refused := refusedBy(err)
 	if !refused {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, connect.NewError(coded(err), err)
 	}
 	return connect.NewResponse(&v1.WriteDeckResponse{Refusal: &refusal}), nil
 }
 
-// WriteStencil puts fields and faces into a stencil.
-//
-// The faces are the body and the fields are one key of the frontmatter, so the
-// two are written one after the other, the second standing on the fingerprint
-// the first produced.
+// WriteStencil puts fields and faces into a stencil. A stencil still holding
+// what the client read is written over; one holding something else is left
+// alone and the client is told the stencil changed.
 func (a *API) WriteStencil(
 	ctx context.Context, r *connect.Request[v1.WriteStencilRequest],
 ) (*connect.Response[v1.WriteStencilResponse], error) {
@@ -290,10 +289,8 @@ func (a *API) WriteStencil(
 	}
 	defer a.Writing.done()
 
-	at, err := a.Cuts.Stencil(ctx, showing, r.Msg.GetPath(), body, refOf(r.Msg.GetSeen()))
-	if err == nil {
-		at, err = a.declares(ctx, showing, r.Msg.GetPath(), r.Msg.GetFields(), at)
-	}
+	at, err := a.Cuts.Stencil(
+		ctx, showing, r.Msg.GetPath(), body, r.Msg.GetFields(), refOf(r.Msg.GetSeen()))
 	if err == nil {
 		if a.Wrote != nil {
 			a.Wrote()
@@ -305,47 +302,9 @@ func (a *API) WriteStencil(
 	}
 	refusal, refused := refusedBy(err)
 	if !refused {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, connect.NewError(coded(err), err)
 	}
 	return connect.NewResponse(&v1.WriteStencilResponse{Refusal: &refusal}), nil
-}
-
-// declares writes the fields a stencil asks a person for. A stencil already
-// declaring them is not written, so a caller that changed nothing but the faces
-// leaves one file behind and not two.
-func (a *API) declares(
-	ctx context.Context, showing domain.Vault, path string, fields []string, at domain.FileRef,
-) (domain.FileRef, error) {
-	reader, err := a.Readers.Open(showing)
-	if err != nil {
-		return domain.FileRef{}, err
-	}
-	raw, err := reader.Read(ctx, path)
-	if err != nil {
-		return domain.FileRef{}, err
-	}
-	f, err := format.OpenStencil(raw)
-	if err != nil {
-		return domain.FileRef{}, err
-	}
-	if slices.Equal(f.Fields(), fields) {
-		return at, nil
-	}
-	if err := f.SetFields(fields); err != nil {
-		return domain.FileRef{}, err
-	}
-	writer, err := a.Writers.Open(showing)
-	if err != nil {
-		return domain.FileRef{}, err
-	}
-	written, err := writer.Write(ctx, path, f.Bytes(), at)
-	if err != nil {
-		return domain.FileRef{}, err
-	}
-	if a.Cuts.Index == nil {
-		return written, nil
-	}
-	return written, a.Cuts.Index(ctx, showing, []string{path})
 }
 
 // titled is what the vault calls the note at a path. A build with no index, and

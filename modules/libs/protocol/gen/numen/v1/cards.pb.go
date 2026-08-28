@@ -304,7 +304,7 @@ type Face struct {
 	// What the face is called.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// What is shown before the answer and after it, each markdown with `{{Field}}`
-	// standing where a value goes. `{{title}}` stands for the card's own name.
+	// standing where a value goes.
 	Front string `protobuf:"bytes,2,opt,name=front,proto3" json:"front,omitempty"`
 	Back  string `protobuf:"bytes,3,opt,name=back,proto3" json:"back,omitempty"`
 	// The prose between the face's heading and its first side, with line endings

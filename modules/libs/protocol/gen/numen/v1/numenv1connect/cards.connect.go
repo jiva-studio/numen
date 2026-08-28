@@ -82,10 +82,11 @@ type CardsServiceClient interface {
 	MakeStencil(context.Context, *connect.Request[v1.MakeStencilRequest]) (*connect.Response[v1.MakeStencilResponse], error)
 	// ReadStencil is the fields and the faces of one stencil.
 	ReadStencil(context.Context, *connect.Request[v1.ReadStencilRequest]) (*connect.Response[v1.ReadStencilResponse], error)
-	// WriteStencil puts fields and faces into a stencil, creating the file where
-	// there is none. Every frontmatter key but `fields` stays as the person wrote
-	// it, and a stencil that no longer holds what the caller read is left alone
-	// and answered `changed`.
+	// WriteStencil puts fields and faces into a stencil. A path the vault holds
+	// no note at is refused `missing`; MakeStencil is what puts a stencil in the
+	// vault. Every frontmatter key but `fields` stays as the person wrote it, and
+	// a stencil that no longer holds what the caller read is left alone and
+	// answered `changed`.
 	//
 	// The preamble, the tail and each face's lead are written back as they
 	// arrive, so the parts of the file a client did not touch come out as the
@@ -109,10 +110,10 @@ type CardsServiceClient interface {
 	MakeDeck(context.Context, *connect.Request[v1.MakeDeckRequest]) (*connect.Response[v1.MakeDeckResponse], error)
 	// ReadDeck is the cards of one deck, in the order they stand in the file.
 	ReadDeck(context.Context, *connect.Request[v1.ReadDeckRequest]) (*connect.Response[v1.ReadDeckResponse], error)
-	// WriteDeck puts cards into a deck, in the order they are given, creating the
-	// file where there is none. The frontmatter stays as the person wrote it, and
-	// a deck that no longer holds what the caller read is left alone and answered
-	// `changed`.
+	// WriteDeck puts cards into a deck, in the order they are given. A path the
+	// vault holds no note at is refused `missing`; MakeDeck is what puts a deck
+	// in the vault. The frontmatter stays as the person wrote it, and a deck that
+	// no longer holds what the caller read is left alone and answered `changed`.
 	//
 	// The preamble, the tail and each card's lead are written back as they
 	// arrive, so the parts of the file a client did not touch come out as the
@@ -252,10 +253,11 @@ type CardsServiceHandler interface {
 	MakeStencil(context.Context, *connect.Request[v1.MakeStencilRequest]) (*connect.Response[v1.MakeStencilResponse], error)
 	// ReadStencil is the fields and the faces of one stencil.
 	ReadStencil(context.Context, *connect.Request[v1.ReadStencilRequest]) (*connect.Response[v1.ReadStencilResponse], error)
-	// WriteStencil puts fields and faces into a stencil, creating the file where
-	// there is none. Every frontmatter key but `fields` stays as the person wrote
-	// it, and a stencil that no longer holds what the caller read is left alone
-	// and answered `changed`.
+	// WriteStencil puts fields and faces into a stencil. A path the vault holds
+	// no note at is refused `missing`; MakeStencil is what puts a stencil in the
+	// vault. Every frontmatter key but `fields` stays as the person wrote it, and
+	// a stencil that no longer holds what the caller read is left alone and
+	// answered `changed`.
 	//
 	// The preamble, the tail and each face's lead are written back as they
 	// arrive, so the parts of the file a client did not touch come out as the
@@ -279,10 +281,10 @@ type CardsServiceHandler interface {
 	MakeDeck(context.Context, *connect.Request[v1.MakeDeckRequest]) (*connect.Response[v1.MakeDeckResponse], error)
 	// ReadDeck is the cards of one deck, in the order they stand in the file.
 	ReadDeck(context.Context, *connect.Request[v1.ReadDeckRequest]) (*connect.Response[v1.ReadDeckResponse], error)
-	// WriteDeck puts cards into a deck, in the order they are given, creating the
-	// file where there is none. The frontmatter stays as the person wrote it, and
-	// a deck that no longer holds what the caller read is left alone and answered
-	// `changed`.
+	// WriteDeck puts cards into a deck, in the order they are given. A path the
+	// vault holds no note at is refused `missing`; MakeDeck is what puts a deck
+	// in the vault. The frontmatter stays as the person wrote it, and a deck that
+	// no longer holds what the caller read is left alone and answered `changed`.
 	//
 	// The preamble, the tail and each card's lead are written back as they
 	// arrive, so the parts of the file a client did not touch come out as the
