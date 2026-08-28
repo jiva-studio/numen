@@ -326,6 +326,8 @@ export interface Stood extends Laid {
    * one field are told apart by their order under it.
    */
   readonly key: string
+  /** Where it stands among the values written under its own field, from one. */
+  readonly nth: number
   /** It is the field the card is named by, which is the stencil's first. */
   readonly names: boolean
   /**
@@ -406,11 +408,10 @@ export function grid(
       // stencil it is waiting for.
       filled: [...named, ...rest]
         .filter((each) => each.declared || each.twice)
-        .map((each, place) => ({
-          ...each,
-          at: place + 1,
-          key: `${each.field}#${told(each.field)}`,
-        })),
+        .map((each, place) => {
+          const nth = told(each.field)
+          return { ...each, at: place + 1, nth, key: `${each.field}#${nth}` }
+        }),
       at: index + 1,
       known: cut !== undefined,
       named: first !== undefined,

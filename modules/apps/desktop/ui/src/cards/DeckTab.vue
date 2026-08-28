@@ -60,7 +60,10 @@ const marked = computed(() => drawn.value.filter((card) => wrongWith(card.id).le
       "
       @remove="(id: string) => props.held.removes(id)"
       @move="(id: string, at: CardLanding) => props.held.moves(id, at)"
-      @write="(id: string, field: string, text: string) => props.held.writes(id, field, text)"
+      @write="
+        (id: string, field: string, nth: number, text: string) =>
+          props.held.writes(id, field, nth, text)
+      "
     />
 
     <!-- A mark stands inside the tile it is about, which the grid draws under

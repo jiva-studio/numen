@@ -293,16 +293,29 @@ export const named = (deck: Deck, id: string, name: string): Deck => ({
  * it stands in the file; one it does not have is written after the rest, and
  * nothing at all is written for a value with nothing in it.
  */
-export const filled = (deck: Deck, id: string, field: string, text: string): Deck => ({
+export const filled = (
+  deck: Deck,
+  id: string,
+  field: string,
+  nth: number,
+  text: string,
+): Deck => ({
   ...deck,
   cards: deck.cards.map((card) => {
     if (card.id !== id) return card
-    if (card.values.some((value) => value.field === field)) {
-      return {
-        ...card,
-        values: card.values.map((value) => (value.field === field ? { field, text } : value)),
-      }
-    }
+
+    // A card writing one field twice holds two values, and the one typed in is
+    // the one counted off under that field.
+    let under = 0
+    let found = false
+    const values = card.values.map((value) => {
+      if (value.field !== field) return value
+      under += 1
+      if (under !== nth) return value
+      found = true
+      return { field, text }
+    })
+    if (found) return { ...card, values }
     return text === '' ? card : { ...card, values: [...card.values, { field, text }] }
   }),
 })

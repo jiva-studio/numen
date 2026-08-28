@@ -293,15 +293,36 @@ describe('a card taken out, renamed and carried', () => {
 
 describe('a value written into a card', () => {
   it('stands where the field already was', () => {
-    const held = filled(deck(), 'c1', 'Height', 'about 46"')
+    const held = filled(deck(), 'c1', 'Height', 1, 'about 46"')
     expect(held.cards[0]?.values).toStrictEqual([
       { field: 'Height', text: 'about 46"' },
       { field: 'Life span', text: 'about 20 years' },
     ])
   })
 
+  it('is the one of two under a field that was typed in, and the other stands', () => {
+    const twice = deck()
+    const card = twice.cards[0]
+    if (!card) throw new Error('the fixture holds no card')
+    const held = filled(
+      {
+        ...twice,
+        cards: [{ ...card, values: [...card.values, { field: 'Height', text: 'about 46"' }] }],
+      },
+      'c1',
+      'Height',
+      2,
+      'about 47"',
+    )
+    expect(held.cards[0]?.values).toStrictEqual([
+      { field: 'Height', text: 'about 45"' },
+      { field: 'Life span', text: 'about 20 years' },
+      { field: 'Height', text: 'about 47"' },
+    ])
+  })
+
   it('is written after the rest where the card had no such field', () => {
-    const held = filled(deck(), 'c1', 'Weight', '130 kg')
+    const held = filled(deck(), 'c1', 'Weight', 1, '130 kg')
     expect(held.cards[0]?.values.map((value) => value.field)).toStrictEqual([
       'Height',
       'Life span',
@@ -310,16 +331,16 @@ describe('a value written into a card', () => {
   })
 
   it('keeps the heading of a field the card has, emptied', () => {
-    const held = filled(deck(), 'c1', 'Height', '')
+    const held = filled(deck(), 'c1', 'Height', 1, '')
     expect(held.cards[0]?.values[0]).toStrictEqual({ field: 'Height', text: '' })
   })
 
   it('writes no heading for a field the card does not have and nothing was typed into', () => {
-    expect(filled(deck(), 'c2', 'Height', '').cards[1]?.values).toStrictEqual([])
+    expect(filled(deck(), 'c2', 'Height', 1, '').cards[1]?.values).toStrictEqual([])
   })
 
   it('leaves every other card as it was', () => {
-    expect(filled(deck(), 'c1', 'Height', 'taller').cards[1]).toStrictEqual(
+    expect(filled(deck(), 'c1', 'Height', 1, 'taller').cards[1]).toStrictEqual(
       deck().cards[1],
     )
   })

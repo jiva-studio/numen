@@ -131,13 +131,13 @@ describe('Deck', () => {
   it('emits the naming field written, which is what names the card', async () => {
     const held = mountDeck()
     await boxFor(held, 'llama', 'Name').setValue('Alpaca')
-    expect(held.emitted('write')).toEqual([['llama', 'Name', 'Alpaca']])
+    expect(held.emitted('write')).toEqual([['llama', 'Name', 1, 'Alpaca']])
   })
 
   it('emits one other value of one card as it now reads', async () => {
     const held = mountDeck()
     await boxFor(held, 'llama', 'Life span').setValue('about 20 years')
-    expect(held.emitted('write')).toEqual([['llama', 'Life span', 'about 20 years']])
+    expect(held.emitted('write')).toEqual([['llama', 'Life span', 1, 'about 20 years']])
   })
 
   it('sets the ground behind each box to the box’s own text, which is what sizes it', () => {

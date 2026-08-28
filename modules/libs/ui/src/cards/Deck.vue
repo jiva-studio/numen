@@ -51,7 +51,11 @@ const emit = defineEmits<{
   /** A card let go somewhere in the order: before another, or at the end. */
   (event: 'move', id: string, at: Landing): void
   /** One value of one card, as it now reads. The first of them names the card. */
-  (event: 'write', id: string, field: string, text: string): void
+  /**
+   * One value of one card as it now reads. A card writing a field twice is
+   * writing two values, and `nth` says which of them was typed in.
+   */
+  (event: 'write', id: string, field: string, nth: number, text: string): void
 }>()
 
 /** What this deck's boxes are named by, which is this deck's alone. */
@@ -176,7 +180,13 @@ const add = (cut: Cut): void => {
                 rows="1"
                 :value="value.text"
                 @input="
-                  emit('write', tile.id, value.field, ($event.target as HTMLTextAreaElement).value)
+                  emit(
+                    'write',
+                    tile.id,
+                    value.field,
+                    value.nth,
+                    ($event.target as HTMLTextAreaElement).value,
+                  )
                 "
               ></textarea>
             </Grown>

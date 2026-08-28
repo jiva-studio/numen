@@ -84,9 +84,10 @@ export interface Held {
   moves(card: string, at: string | null): void
   /**
    * One value of one card as it now reads. The field a card is named by lands
-   * in the heading, which is the one place that field is written.
+   * in the heading, which is the one place that field is written; a card
+   * writing a field twice is written where `nth` counts off under it.
    */
-  writes(card: string, field: string, text: string): void
+  writes(card: string, field: string, nth: number, text: string): void
   /** The person keeps what they have written, over whatever the file holds. */
   keep(): void
   /** The person takes what the file holds. */
@@ -230,11 +231,11 @@ export function decking(cards: Cards, host: Host, puts: Putting) {
       turns(id, added(deckAt(id), name, stencil, pathOfCut(offers.value, stencil), values)),
     removes: (card) => turns(id, removed(deckAt(id), card)),
     moves: (card, at) => turns(id, carried(deckAt(id), card, at)),
-    writes: (card, field, text) => {
+    writes: (card, field, nth, text) => {
       const deck = deckAt(id)
       const at = deck.cards.find((one) => one.id === card)?.stencilAt ?? ''
       if (names(offers.value, at, field)) return turns(id, named(deck, card, text))
-      turns(id, filled(deck, card, field, text))
+      turns(id, filled(deck, card, field, nth, text))
     },
     keep: () => store.keep(id),
     take: () => store.take(id),

@@ -449,6 +449,7 @@ describe('grid', () => {
       names: true,
       twice: false,
       at: 1,
+      nth: 1,
       key: 'Name#1',
     })
   })
