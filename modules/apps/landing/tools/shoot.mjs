@@ -23,8 +23,19 @@ const PORT = GIVEN ? Number(GIVEN) : 6099
 const QUALITY = 90
 /** The fewest bytes a drawn window comes to. Under it, nothing was drawn. */
 const DRAWN = 20_000
-/** What the page shows, in the order the switcher offers them. */
-const SHOTS = ['filing', 'writing', 'map', 'searching', 'asking']
+/**
+ * What the page shows, one to a band and one over them all.
+ *
+ * `over` names what the pointer is left on: the picture is taken once whatever
+ * a hand resting there brings out is all the way out.
+ */
+const SHOTS = [
+  { name: 'filing' },
+  { name: 'writing' },
+  { name: 'mapping', over: '[aria-label="The second law, child"]' },
+  { name: 'searching' },
+  { name: 'asking' },
+]
 /*
  * A window narrower than the column it is drawn in, so the application's own
  * text lands on the page larger than it stands on screen and can be read at a
@@ -95,13 +106,14 @@ try {
       colorScheme: theme,
     })
     for (const shot of SHOTS) {
-      const story = `application-window--${shot}`
+      const story = `application-window--${shot.name}`
       await page.goto(
         `${base}/iframe.html?id=${story}&viewMode=story&globals=theme:${theme}`,
         { waitUntil: 'networkidle' },
       )
+      if (shot.over) await page.hover(shot.over)
       await page.waitForTimeout(SETTLING)
-      const name = `window-${shot}-${theme}.webp`
+      const name = `window-${shot.name}-${theme}.webp`
       const taken = await sharp(await page.screenshot()).webp({ quality: QUALITY }).toBuffer()
       if (taken.length < DRAWN) throw new Error(`${name} is ${taken.length} bytes: the story had not drawn`)
       await writeFile(join(INTO, name), taken)
