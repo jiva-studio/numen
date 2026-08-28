@@ -9,6 +9,11 @@ on:
       - ".github/workflows/interface.yml"
   push:
     branches: [main]
+    paths:
+      - "modules/libs/ui/**"
+      - "modules/apps/desktop/ui/**"
+      - "modules/libs/protocol/**"
+      - ".github/workflows/interface.yml"
 
 jobs:
   # The shared components, and the window that arranges them. Both are typed

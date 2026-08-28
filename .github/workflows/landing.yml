@@ -1,5 +1,8 @@
 name: landing
 
+# A run answers for the page and for nothing else, so what starts it is a change
+# to the page, on a branch and on main alike. The two lists are written out
+# twice: a workflow file takes no anchor.
 on:
   pull_request:
     paths:
@@ -7,6 +10,9 @@ on:
       - ".github/workflows/landing.yml"
   push:
     branches: [main]
+    paths:
+      - "modules/apps/landing/**"
+      - ".github/workflows/landing.yml"
 
 # One run at a time per branch, and the newest is the one that matters. Two
 # deploys share one storage zone, and the second takes down what the first has

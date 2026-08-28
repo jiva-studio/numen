@@ -18,6 +18,20 @@ on:
       - ".github/workflows/docs.yml"
   push:
     branches: [main]
+    paths:
+      - "modules/apps/docs/**"
+      # What the manual writes itself from.
+      - "modules/apps/desktop/ui/src/keying.ts"
+      - "modules/apps/desktop/ui/src/words.ts"
+      - "modules/apps/desktop/ui/src/commanding.ts"
+      - "modules/apps/desktop/cmd/numen/main.go"
+      - "modules/apps/desktop/internal/adapter/cli/cli.go"
+      - "modules/apps/desktop/internal/adapter/settings/settings.go"
+      - "modules/apps/desktop/internal/adapter/embed/config.go"
+      - "modules/apps/desktop/internal/adapter/recognition/config.go"
+      - "modules/apps/desktop/internal/adapter/proofreading/config.go"
+      - "modules/apps/desktop/internal/adapter/agent/config.go"
+      - ".github/workflows/docs.yml"
 
 jobs:
   # The manual is markdown and carries no framework, so what there is to check

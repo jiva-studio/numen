@@ -9,6 +9,11 @@ on:
       - ".github/workflows/go.yml"
   push:
     branches: [main]
+    paths:
+      - "modules/apps/desktop/**"
+      - "modules/libs/protocol/**"
+      - "tests/**"
+      - ".github/workflows/go.yml"
 
 defaults:
   run:

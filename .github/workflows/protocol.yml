@@ -7,6 +7,9 @@ on:
       - ".github/workflows/protocol.yml"
   push:
     branches: [main]
+    paths:
+      - "modules/libs/protocol/**"
+      - ".github/workflows/protocol.yml"
 
 defaults:
   run:
