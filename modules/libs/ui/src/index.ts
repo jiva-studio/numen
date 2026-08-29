@@ -193,8 +193,6 @@ export { default as Marks } from './cards/Marks.vue'
 export { default as Band } from './cards/Band.vue'
 /** The strip a tile is carried by. */
 export { default as Bar } from './cards/Bar.vue'
-/** What a strip is pressed to be rid of what it heads. */
-export { default as Deed } from './cards/Deed.vue'
 /** A rule with something standing on it, in its middle or at its start. */
 export { default as Rule } from './rule/Rule.vue'
 

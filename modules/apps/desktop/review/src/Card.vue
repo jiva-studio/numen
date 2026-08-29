@@ -7,59 +7,48 @@
  * window serves itself under a policy that allows no script it did not serve
  * and no handler written in an attribute.
  */
-import Strip from './Strip.vue'
-
 withDefaults(
   defineProps<{
     front: string
     back: string
     /** Whether the answer is being shown. */
     shown: boolean
-    /** What it is cut by, said on its strip. */
-    stencil?: string
     /** Nobody has answered this card, which is what a person means by a new one. */
     fresh?: boolean
   }>(),
-  { stencil: '', fresh: false },
+  { fresh: false },
 )
 
 defineEmits<{ (event: 'show'): void }>()
 </script>
 
 <template>
-  <article class="card">
-    <Strip :stencil="stencil" :fresh="fresh"><slot name="deeds" /></Strip>
-
-    <div class="card__sides" @click="!shown && $emit('show')">
-      <!-- eslint-disable-next-line vue/no-v-html -->
-      <div class="card__side" v-html="front" />
-      <div v-if="shown" class="card__rule" />
-      <!-- eslint-disable-next-line vue/no-v-html -->
-      <div v-if="shown" class="card__side" v-html="back" />
-    </div>
+  <article class="card" @click="!shown && $emit('show')">
+    <!-- What is true of this card and not of the one before it, in its own
+         corner: a card nobody has answered. -->
+    <span v-if="fresh" class="card__new">new</span>
+    <!-- eslint-disable-next-line vue/no-v-html -->
+    <div class="card__side" v-html="front" />
+    <div v-if="shown" class="card__rule" />
+    <!-- eslint-disable-next-line vue/no-v-html -->
+    <div v-if="shown" class="card__side" v-html="back" />
   </article>
 </template>
 
 <style scoped>
 .card {
+  position: relative;
   display: flex;
+  flex: 1;
   flex-direction: column;
   min-block-size: 0;
   padding: var(--numen-inset-wide);
+  overflow-y: auto;
   border: 1px solid var(--numen-node-border);
   border-radius: var(--numen-radius);
   background: var(--numen-node-bg);
   /* A card is read, not scanned, so it is set at the size reading is set at. */
   font-size: var(--numen-reading-size);
-  gap: var(--numen-inset);
-}
-
-.card__sides {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-block-size: 0;
-  overflow-y: auto;
   gap: var(--numen-inset-wide);
 }
 
@@ -68,6 +57,17 @@ defineEmits<{ (event: 'show'): void }>()
 .card__side {
   user-select: text;
   -webkit-user-select: text;
+}
+
+.card__new {
+  position: absolute;
+  inset-block-start: var(--numen-inset);
+  inset-inline-end: var(--numen-inset);
+  padding: 0.0625rem 0.375rem;
+  border-radius: var(--numen-radius-pill);
+  background: var(--numen-caution-bg);
+  color: var(--numen-caution-fg);
+  font-size: var(--numen-edge-label-size);
 }
 
 .card__rule {

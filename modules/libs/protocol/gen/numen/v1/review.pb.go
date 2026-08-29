@@ -814,136 +814,6 @@ func (*TakeBackResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_review_proto_rawDescGZIP(), []int{10}
 }
 
-type RemoveCardRequest struct {
-	state   protoimpl.MessageState `protogen:"open.v1"`
-	VaultId string                 `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
-	Deck    string                 `protobuf:"bytes,2,opt,name=deck,proto3" json:"deck,omitempty"`
-	Card    string                 `protobuf:"bytes,3,opt,name=card,proto3" json:"card,omitempty"`
-	// What a read of this deck gave the caller.
-	At            *Fingerprint `protobuf:"bytes,4,opt,name=at,proto3" json:"at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RemoveCardRequest) Reset() {
-	*x = RemoveCardRequest{}
-	mi := &file_numen_v1_review_proto_msgTypes[11]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RemoveCardRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RemoveCardRequest) ProtoMessage() {}
-
-func (x *RemoveCardRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[11]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RemoveCardRequest.ProtoReflect.Descriptor instead.
-func (*RemoveCardRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *RemoveCardRequest) GetVaultId() string {
-	if x != nil {
-		return x.VaultId
-	}
-	return ""
-}
-
-func (x *RemoveCardRequest) GetDeck() string {
-	if x != nil {
-		return x.Deck
-	}
-	return ""
-}
-
-func (x *RemoveCardRequest) GetCard() string {
-	if x != nil {
-		return x.Card
-	}
-	return ""
-}
-
-func (x *RemoveCardRequest) GetAt() *Fingerprint {
-	if x != nil {
-		return x.At
-	}
-	return nil
-}
-
-type RemoveCardResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	At    *Fingerprint           `protobuf:"bytes,1,opt,name=at,proto3" json:"at,omitempty"`
-	// The deck moved past what the caller read, and nothing was written.
-	Changed       bool   `protobuf:"varint,2,opt,name=changed,proto3" json:"changed,omitempty"`
-	Refused       string `protobuf:"bytes,3,opt,name=refused,proto3" json:"refused,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RemoveCardResponse) Reset() {
-	*x = RemoveCardResponse{}
-	mi := &file_numen_v1_review_proto_msgTypes[12]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RemoveCardResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RemoveCardResponse) ProtoMessage() {}
-
-func (x *RemoveCardResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[12]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RemoveCardResponse.ProtoReflect.Descriptor instead.
-func (*RemoveCardResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{12}
-}
-
-func (x *RemoveCardResponse) GetAt() *Fingerprint {
-	if x != nil {
-		return x.At
-	}
-	return nil
-}
-
-func (x *RemoveCardResponse) GetChanged() bool {
-	if x != nil {
-		return x.Changed
-	}
-	return false
-}
-
-func (x *RemoveCardResponse) GetRefused() string {
-	if x != nil {
-		return x.Refused
-	}
-	return ""
-}
-
 type EditRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	VaultId       string                 `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
@@ -955,7 +825,7 @@ type EditRequest struct {
 
 func (x *EditRequest) Reset() {
 	*x = EditRequest{}
-	mi := &file_numen_v1_review_proto_msgTypes[13]
+	mi := &file_numen_v1_review_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -967,7 +837,7 @@ func (x *EditRequest) String() string {
 func (*EditRequest) ProtoMessage() {}
 
 func (x *EditRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[13]
+	mi := &file_numen_v1_review_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -980,7 +850,7 @@ func (x *EditRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EditRequest.ProtoReflect.Descriptor instead.
 func (*EditRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{13}
+	return file_numen_v1_review_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *EditRequest) GetVaultId() string {
@@ -1015,7 +885,7 @@ type CardValue struct {
 
 func (x *CardValue) Reset() {
 	*x = CardValue{}
-	mi := &file_numen_v1_review_proto_msgTypes[14]
+	mi := &file_numen_v1_review_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1027,7 +897,7 @@ func (x *CardValue) String() string {
 func (*CardValue) ProtoMessage() {}
 
 func (x *CardValue) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[14]
+	mi := &file_numen_v1_review_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1040,7 +910,7 @@ func (x *CardValue) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CardValue.ProtoReflect.Descriptor instead.
 func (*CardValue) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{14}
+	return file_numen_v1_review_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *CardValue) GetField() string {
@@ -1068,7 +938,7 @@ type ReadCardRequest struct {
 
 func (x *ReadCardRequest) Reset() {
 	*x = ReadCardRequest{}
-	mi := &file_numen_v1_review_proto_msgTypes[15]
+	mi := &file_numen_v1_review_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1080,7 +950,7 @@ func (x *ReadCardRequest) String() string {
 func (*ReadCardRequest) ProtoMessage() {}
 
 func (x *ReadCardRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[15]
+	mi := &file_numen_v1_review_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1093,7 +963,7 @@ func (x *ReadCardRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadCardRequest.ProtoReflect.Descriptor instead.
 func (*ReadCardRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{15}
+	return file_numen_v1_review_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ReadCardRequest) GetVaultId() string {
@@ -1135,7 +1005,7 @@ type ReadCardResponse struct {
 
 func (x *ReadCardResponse) Reset() {
 	*x = ReadCardResponse{}
-	mi := &file_numen_v1_review_proto_msgTypes[16]
+	mi := &file_numen_v1_review_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1147,7 +1017,7 @@ func (x *ReadCardResponse) String() string {
 func (*ReadCardResponse) ProtoMessage() {}
 
 func (x *ReadCardResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[16]
+	mi := &file_numen_v1_review_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1160,7 +1030,7 @@ func (x *ReadCardResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadCardResponse.ProtoReflect.Descriptor instead.
 func (*ReadCardResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{16}
+	return file_numen_v1_review_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ReadCardResponse) GetValues() []*CardValue {
@@ -1208,7 +1078,7 @@ type WriteCardRequest struct {
 
 func (x *WriteCardRequest) Reset() {
 	*x = WriteCardRequest{}
-	mi := &file_numen_v1_review_proto_msgTypes[17]
+	mi := &file_numen_v1_review_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1220,7 +1090,7 @@ func (x *WriteCardRequest) String() string {
 func (*WriteCardRequest) ProtoMessage() {}
 
 func (x *WriteCardRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[17]
+	mi := &file_numen_v1_review_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1233,7 +1103,7 @@ func (x *WriteCardRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteCardRequest.ProtoReflect.Descriptor instead.
 func (*WriteCardRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{17}
+	return file_numen_v1_review_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *WriteCardRequest) GetVaultId() string {
@@ -1295,7 +1165,7 @@ type WriteCardResponse struct {
 
 func (x *WriteCardResponse) Reset() {
 	*x = WriteCardResponse{}
-	mi := &file_numen_v1_review_proto_msgTypes[18]
+	mi := &file_numen_v1_review_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1307,7 +1177,7 @@ func (x *WriteCardResponse) String() string {
 func (*WriteCardResponse) ProtoMessage() {}
 
 func (x *WriteCardResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[18]
+	mi := &file_numen_v1_review_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1320,7 +1190,7 @@ func (x *WriteCardResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteCardResponse.ProtoReflect.Descriptor instead.
 func (*WriteCardResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{18}
+	return file_numen_v1_review_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *WriteCardResponse) GetAt() *Fingerprint {
@@ -1376,7 +1246,7 @@ type EditResponse struct {
 
 func (x *EditResponse) Reset() {
 	*x = EditResponse{}
-	mi := &file_numen_v1_review_proto_msgTypes[19]
+	mi := &file_numen_v1_review_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1388,7 +1258,7 @@ func (x *EditResponse) String() string {
 func (*EditResponse) ProtoMessage() {}
 
 func (x *EditResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[19]
+	mi := &file_numen_v1_review_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1401,7 +1271,7 @@ func (x *EditResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EditResponse.ProtoReflect.Descriptor instead.
 func (*EditResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{19}
+	return file_numen_v1_review_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *EditResponse) GetRefused() string {
@@ -1464,16 +1334,7 @@ const file_numen_v1_review_proto_rawDesc = "" +
 	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x10\n" +
 	"\x03run\x18\x02 \x01(\tR\x03run\x12\x16\n" +
 	"\x06answer\x18\x03 \x01(\tR\x06answer\"\x12\n" +
-	"\x10TakeBackResponse\"}\n" +
-	"\x11RemoveCardRequest\x12\x19\n" +
-	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
-	"\x04deck\x18\x02 \x01(\tR\x04deck\x12\x12\n" +
-	"\x04card\x18\x03 \x01(\tR\x04card\x12%\n" +
-	"\x02at\x18\x04 \x01(\v2\x15.numen.v1.FingerprintR\x02at\"o\n" +
-	"\x12RemoveCardResponse\x12%\n" +
-	"\x02at\x18\x01 \x01(\v2\x15.numen.v1.FingerprintR\x02at\x12\x18\n" +
-	"\achanged\x18\x02 \x01(\bR\achanged\x12\x18\n" +
-	"\arefused\x18\x03 \x01(\tR\arefused\"P\n" +
+	"\x10TakeBackResponse\"P\n" +
 	"\vEditRequest\x12\x19\n" +
 	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
 	"\x04deck\x18\x02 \x01(\tR\x04deck\x12\x12\n" +
@@ -1511,16 +1372,14 @@ const file_numen_v1_review_proto_rawDesc = "" +
 	"\fRATING_AGAIN\x10\x01\x12\x0f\n" +
 	"\vRATING_HARD\x10\x02\x12\x0f\n" +
 	"\vRATING_GOOD\x10\x03\x12\x0f\n" +
-	"\vRATING_EASY\x10\x042\xd5\x03\n" +
+	"\vRATING_EASY\x10\x042\x8c\x03\n" +
 	"\rReviewService\x128\n" +
 	"\x05Owing\x12\x16.numen.v1.OwingRequest\x1a\x17.numen.v1.OwingResponse\x128\n" +
 	"\x05Start\x12\x16.numen.v1.StartRequest\x1a\x17.numen.v1.StartResponse\x12;\n" +
 	"\x06Answer\x12\x17.numen.v1.AnswerRequest\x1a\x18.numen.v1.AnswerResponse\x12A\n" +
 	"\bTakeBack\x12\x19.numen.v1.TakeBackRequest\x1a\x1a.numen.v1.TakeBackResponse\x12A\n" +
 	"\bReadCard\x12\x19.numen.v1.ReadCardRequest\x1a\x1a.numen.v1.ReadCardResponse\x12D\n" +
-	"\tWriteCard\x12\x1a.numen.v1.WriteCardRequest\x1a\x1b.numen.v1.WriteCardResponse\x12G\n" +
-	"\n" +
-	"RemoveCard\x12\x1b.numen.v1.RemoveCardRequest\x1a\x1c.numen.v1.RemoveCardResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\tWriteCard\x12\x1a.numen.v1.WriteCardRequest\x1a\x1b.numen.v1.WriteCardResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_review_proto_rawDescOnce sync.Once
@@ -1535,62 +1394,56 @@ func file_numen_v1_review_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_review_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_review_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_numen_v1_review_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_numen_v1_review_proto_goTypes = []any{
-	(Rating)(0),                // 0: numen.v1.Rating
-	(*VaultOwing)(nil),         // 1: numen.v1.VaultOwing
-	(*DeckOwing)(nil),          // 2: numen.v1.DeckOwing
-	(*Asked)(nil),              // 3: numen.v1.Asked
-	(*OwingRequest)(nil),       // 4: numen.v1.OwingRequest
-	(*OwingResponse)(nil),      // 5: numen.v1.OwingResponse
-	(*StartRequest)(nil),       // 6: numen.v1.StartRequest
-	(*StartResponse)(nil),      // 7: numen.v1.StartResponse
-	(*AnswerRequest)(nil),      // 8: numen.v1.AnswerRequest
-	(*AnswerResponse)(nil),     // 9: numen.v1.AnswerResponse
-	(*TakeBackRequest)(nil),    // 10: numen.v1.TakeBackRequest
-	(*TakeBackResponse)(nil),   // 11: numen.v1.TakeBackResponse
-	(*RemoveCardRequest)(nil),  // 12: numen.v1.RemoveCardRequest
-	(*RemoveCardResponse)(nil), // 13: numen.v1.RemoveCardResponse
-	(*EditRequest)(nil),        // 14: numen.v1.EditRequest
-	(*CardValue)(nil),          // 15: numen.v1.CardValue
-	(*ReadCardRequest)(nil),    // 16: numen.v1.ReadCardRequest
-	(*ReadCardResponse)(nil),   // 17: numen.v1.ReadCardResponse
-	(*WriteCardRequest)(nil),   // 18: numen.v1.WriteCardRequest
-	(*WriteCardResponse)(nil),  // 19: numen.v1.WriteCardResponse
-	(*EditResponse)(nil),       // 20: numen.v1.EditResponse
-	(*Fingerprint)(nil),        // 21: numen.v1.Fingerprint
+	(Rating)(0),               // 0: numen.v1.Rating
+	(*VaultOwing)(nil),        // 1: numen.v1.VaultOwing
+	(*DeckOwing)(nil),         // 2: numen.v1.DeckOwing
+	(*Asked)(nil),             // 3: numen.v1.Asked
+	(*OwingRequest)(nil),      // 4: numen.v1.OwingRequest
+	(*OwingResponse)(nil),     // 5: numen.v1.OwingResponse
+	(*StartRequest)(nil),      // 6: numen.v1.StartRequest
+	(*StartResponse)(nil),     // 7: numen.v1.StartResponse
+	(*AnswerRequest)(nil),     // 8: numen.v1.AnswerRequest
+	(*AnswerResponse)(nil),    // 9: numen.v1.AnswerResponse
+	(*TakeBackRequest)(nil),   // 10: numen.v1.TakeBackRequest
+	(*TakeBackResponse)(nil),  // 11: numen.v1.TakeBackResponse
+	(*EditRequest)(nil),       // 12: numen.v1.EditRequest
+	(*CardValue)(nil),         // 13: numen.v1.CardValue
+	(*ReadCardRequest)(nil),   // 14: numen.v1.ReadCardRequest
+	(*ReadCardResponse)(nil),  // 15: numen.v1.ReadCardResponse
+	(*WriteCardRequest)(nil),  // 16: numen.v1.WriteCardRequest
+	(*WriteCardResponse)(nil), // 17: numen.v1.WriteCardResponse
+	(*EditResponse)(nil),      // 18: numen.v1.EditResponse
+	(*Fingerprint)(nil),       // 19: numen.v1.Fingerprint
 }
 var file_numen_v1_review_proto_depIdxs = []int32{
 	2,  // 0: numen.v1.VaultOwing.decks:type_name -> numen.v1.DeckOwing
 	1,  // 1: numen.v1.OwingResponse.vaults:type_name -> numen.v1.VaultOwing
 	3,  // 2: numen.v1.StartResponse.asked:type_name -> numen.v1.Asked
 	0,  // 3: numen.v1.AnswerRequest.rating:type_name -> numen.v1.Rating
-	21, // 4: numen.v1.RemoveCardRequest.at:type_name -> numen.v1.Fingerprint
-	21, // 5: numen.v1.RemoveCardResponse.at:type_name -> numen.v1.Fingerprint
-	15, // 6: numen.v1.ReadCardResponse.values:type_name -> numen.v1.CardValue
-	21, // 7: numen.v1.ReadCardResponse.at:type_name -> numen.v1.Fingerprint
-	15, // 8: numen.v1.WriteCardRequest.values:type_name -> numen.v1.CardValue
-	21, // 9: numen.v1.WriteCardRequest.at:type_name -> numen.v1.Fingerprint
-	21, // 10: numen.v1.WriteCardResponse.at:type_name -> numen.v1.Fingerprint
-	4,  // 11: numen.v1.ReviewService.Owing:input_type -> numen.v1.OwingRequest
-	6,  // 12: numen.v1.ReviewService.Start:input_type -> numen.v1.StartRequest
-	8,  // 13: numen.v1.ReviewService.Answer:input_type -> numen.v1.AnswerRequest
-	10, // 14: numen.v1.ReviewService.TakeBack:input_type -> numen.v1.TakeBackRequest
-	16, // 15: numen.v1.ReviewService.ReadCard:input_type -> numen.v1.ReadCardRequest
-	18, // 16: numen.v1.ReviewService.WriteCard:input_type -> numen.v1.WriteCardRequest
-	12, // 17: numen.v1.ReviewService.RemoveCard:input_type -> numen.v1.RemoveCardRequest
-	5,  // 18: numen.v1.ReviewService.Owing:output_type -> numen.v1.OwingResponse
-	7,  // 19: numen.v1.ReviewService.Start:output_type -> numen.v1.StartResponse
-	9,  // 20: numen.v1.ReviewService.Answer:output_type -> numen.v1.AnswerResponse
-	11, // 21: numen.v1.ReviewService.TakeBack:output_type -> numen.v1.TakeBackResponse
-	17, // 22: numen.v1.ReviewService.ReadCard:output_type -> numen.v1.ReadCardResponse
-	19, // 23: numen.v1.ReviewService.WriteCard:output_type -> numen.v1.WriteCardResponse
-	13, // 24: numen.v1.ReviewService.RemoveCard:output_type -> numen.v1.RemoveCardResponse
-	18, // [18:25] is the sub-list for method output_type
-	11, // [11:18] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	13, // 4: numen.v1.ReadCardResponse.values:type_name -> numen.v1.CardValue
+	19, // 5: numen.v1.ReadCardResponse.at:type_name -> numen.v1.Fingerprint
+	13, // 6: numen.v1.WriteCardRequest.values:type_name -> numen.v1.CardValue
+	19, // 7: numen.v1.WriteCardRequest.at:type_name -> numen.v1.Fingerprint
+	19, // 8: numen.v1.WriteCardResponse.at:type_name -> numen.v1.Fingerprint
+	4,  // 9: numen.v1.ReviewService.Owing:input_type -> numen.v1.OwingRequest
+	6,  // 10: numen.v1.ReviewService.Start:input_type -> numen.v1.StartRequest
+	8,  // 11: numen.v1.ReviewService.Answer:input_type -> numen.v1.AnswerRequest
+	10, // 12: numen.v1.ReviewService.TakeBack:input_type -> numen.v1.TakeBackRequest
+	14, // 13: numen.v1.ReviewService.ReadCard:input_type -> numen.v1.ReadCardRequest
+	16, // 14: numen.v1.ReviewService.WriteCard:input_type -> numen.v1.WriteCardRequest
+	5,  // 15: numen.v1.ReviewService.Owing:output_type -> numen.v1.OwingResponse
+	7,  // 16: numen.v1.ReviewService.Start:output_type -> numen.v1.StartResponse
+	9,  // 17: numen.v1.ReviewService.Answer:output_type -> numen.v1.AnswerResponse
+	11, // 18: numen.v1.ReviewService.TakeBack:output_type -> numen.v1.TakeBackResponse
+	15, // 19: numen.v1.ReviewService.ReadCard:output_type -> numen.v1.ReadCardResponse
+	17, // 20: numen.v1.ReviewService.WriteCard:output_type -> numen.v1.WriteCardResponse
+	15, // [15:21] is the sub-list for method output_type
+	9,  // [9:15] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_review_proto_init() }
@@ -1605,7 +1458,7 @@ func file_numen_v1_review_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_review_proto_rawDesc), len(file_numen_v1_review_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   20,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
