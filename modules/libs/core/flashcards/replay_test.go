@@ -98,6 +98,42 @@ func TestReplayingOneHistoryTwiceGivesOneSchedule(t *testing.T) {
 	}
 }
 
+// One identifier is one answer. A synchroniser that met a conflict leaves a
+// second copy of a run beside the first, and every line in it is a line already
+// counted: a card that came through this twice would be sent away for longer
+// than it was earned.
+func TestALineThatStandsTwiceIsCountedOnce(t *testing.T) {
+	shown := flashcards.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	one := answered("01A", shown.Card, shown.Face, "2026-08-20T09:00:00Z", flashcards.Good)
+	two := answered("01B", shown.Card, shown.Face, "2026-08-21T09:00:00Z", flashcards.Good)
+
+	by := flashcards.NewFSRS()
+	once := flashcards.Replay(by, []flashcards.Answer{one, two})
+	// The whole run again, as a conflicted copy of the file lands beside it.
+	twice := flashcards.Replay(by, []flashcards.Answer{one, two, one, two})
+
+	if once[shown] != twice[shown] {
+		t.Errorf("the same run twice left the card at %+v, once leaves it at %+v",
+			twice[shown], once[shown])
+	}
+	if twice[shown].Reps != 2 {
+		t.Errorf("the card was answered twice and has been through %d", twice[shown].Reps)
+	}
+}
+
+// An answer taken back stays taken back however many copies of the line that
+// took it back arrive.
+func TestALineTakingAnAnswerBackTwiceTakesItBackOnce(t *testing.T) {
+	shown := flashcards.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	given := answered("01A", shown.Card, shown.Face, "2026-08-20T09:00:00Z", flashcards.Good)
+	back := flashcards.Answer{ID: "01B", At: at("2026-08-20T09:01:00Z"), Undoes: given.ID}
+
+	left := flashcards.Replay(flashcards.NewFSRS(), []flashcards.Answer{given, back, given, back})
+	if _, held := left[shown]; held {
+		t.Errorf("the answer was taken back and the card stands at %+v", left[shown])
+	}
+}
+
 // A card face nobody has answered has no schedule, and that is what a person
 // means by a new card.
 func TestACardFaceNobodyAnsweredHasNoSchedule(t *testing.T) {
