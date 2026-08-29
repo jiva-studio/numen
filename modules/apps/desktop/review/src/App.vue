@@ -6,17 +6,16 @@
  * editor exists.
  */
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { SquarePen, Undo2, X } from '@lucide/vue'
-import { Button, KeyCap, Notices } from '@numen/ui'
+import { Notices } from '@numen/ui'
 import type { Notice } from '@numen/ui'
 import '@numen/ui/styles.css'
 import type { Fingerprint } from '@numen/protocol'
 import Vaults from './Vaults.vue'
 import Decks from './Decks.vue'
-import Card from './Card.vue'
-import Editing from './Editing.vue'
+import Session from './Session.vue'
+import Over from './Over.vue'
 import { VERSION } from './version'
-import { called, deckName, rated, review, said } from './core'
+import { rated, review, said } from './core'
 import type { Asked, Held, Owing as OwedVault, Said } from './core'
 
 /** Which of the three the window is on. */
@@ -163,6 +162,8 @@ const takeBack = async () => {
 
 /** The card open to be put right, and what a read of its deck gave us. */
 const editing = ref(false)
+/** Which way the two change over: the one asked for comes from the top. */
+const opening = ref(true)
 const values = ref<readonly Held[]>([])
 const writing = ref(false)
 let stood: Fingerprint | undefined
@@ -182,10 +183,17 @@ const edit = async () => {
     }
     values.value = answer.values.map((held) => ({ field: held.field, text: held.text }))
     stood = answer.at
+    opening.value = true
     editing.value = true
   } catch (why) {
     failed(why)
   }
+}
+
+/** The card put away again, whether it was written or let alone. */
+const close = () => {
+  opening.value = false
+  editing.value = false
 }
 
 const wrote = (field: string, text: string) => {
@@ -221,7 +229,7 @@ const save = async () => {
         : was,
     )
     stood = answer.at
-    editing.value = false
+    close()
   } catch (why) {
     failed(why)
   } finally {
@@ -253,7 +261,7 @@ const keyed = (press: KeyboardEvent) => {
   // A card open to be put right is a card being typed into, and a number typed
   // into a box is not an answer. Escape closes it.
   if (editing.value) {
-    if (press.key === 'Escape') editing.value = false
+    if (press.key === 'Escape') close()
     return
   }
 
@@ -286,7 +294,6 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
 
 <template>
   <main class="review">
-
     <Vaults
       v-if="on === 'vaults'"
       :vaults="vaults"
@@ -302,81 +309,27 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
       @back="vaultsAgain"
     />
 
-    <section v-else-if="over" class="review__over">
-      <h1 class="review__over-said">Nothing left today.</h1>
-      <p class="review__over-count">{{ done }} answered.</p>
-      <button class="review__back" type="button" @click="leave">Back to the decks</button>
-    </section>
+    <Over v-else-if="over" :done="done" @back="leave" />
 
-    <section v-else-if="card" class="review__session">
-      <header class="review__where">
-        <span class="review__deck">{{ deckName(card.deck) }}</span>
-        <span v-if="card.section" class="review__section">{{ card.section }}</span>
-        <span class="review__face">{{ card.face }}</span>
-        <span class="review__left">{{ asked.length - at }} left</span>
-
-        <!-- What a person does beside answering, each one mark. They stand at
-             the end of the line that says where the card is from. -->
-        <Button variant="ghost" size="icon-small" title="Edit this card" @click="edit">
-          <SquarePen />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon-small"
-          title="Take the last answer back"
-          :disabled="!answers.length"
-          @click="takeBack"
-        >
-          <Undo2 />
-        </Button>
-        <Button variant="ghost" size="icon-small" title="Leave" @click="leave">
-          <X />
-        </Button>
-      </header>
-
-      <Editing
-        v-if="editing"
-        :card="card.card"
-        :section="card.section"
-        :values="values"
-        :writing="writing"
-        @write="wrote"
-        @save="save"
-        @close="editing = false"
-      />
-      <Card
-        v-else
-        :front="card.front"
-        :back="card.back"
-        :shown="shown"
-        :fresh="!card.seen"
-        @show="show"
-      />
-
-      <footer class="review__answers">
-        <!-- The key first and the word after it: a person answering with the
-             keyboard reads down the row of keys, and one answering with the
-             mouse reads the words either way. -->
-        <template v-if="shown">
-          <Button
-            v-for="(how, i) in said"
-            :key="how"
-            variant="outline"
-            class="review__answer"
-            :class="`review__answer--${how}`"
-            @click="answer(how)"
-          >
-            <KeyCap :keys="{ marks: [], letter: String(i + 1) }" />
-            {{ called[how] }}
-          </Button>
-        </template>
-        <Button v-else variant="outline" class="review__answer" @click="show">
-          <KeyCap :keys="{ marks: [], letter: 'space' }" />
-          Show the answer
-        </Button>
-      </footer>
-
-    </section>
+    <Session
+      v-else-if="card"
+      :card="card"
+      :left="asked.length - at"
+      :shown="shown"
+      :answered="answers.length > 0"
+      :editing="editing"
+      :opening="opening"
+      :values="values"
+      :writing="writing"
+      @show="show"
+      @answer="answer"
+      @edit="edit"
+      @take-back="takeBack"
+      @leave="leave"
+      @write="wrote"
+      @save="save"
+      @close="close"
+    />
   </main>
 
   <!-- What the window has to say, in the corner every window says it in. -->
@@ -390,84 +343,5 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
   block-size: 100%;
   padding: var(--numen-inset-wide);
   gap: var(--numen-inset);
-}
-
-.review__session {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-block-size: 0;
-  gap: var(--numen-inset);
-}
-
-/* Where the card stands, said once and quietly: a person answering is reading
-   the card, not the line above it. */
-.review__where {
-  display: flex;
-  align-items: baseline;
-  gap: var(--numen-inset);
-  color: var(--numen-edge-label);
-  font-size: var(--numen-font-size);
-}
-
-.review__deck {
-  color: var(--numen-node-fg);
-  font-weight: 600;
-}
-
-.review__left {
-  margin-inline-start: auto;
-}
-
-.review__answers {
-  display: flex;
-  flex: none;
-  gap: var(--numen-inset);
-}
-
-/* An answer is a target a person hits without looking, so it takes the whole
-   width it can and stands taller than a button in a row of controls. */
-.review__answer {
-  flex: 1;
-  block-size: auto;
-  padding-block: var(--numen-inset-wide);
-}
-
-/* The answer that says a card was lost is the one worth telling apart at a
-   glance, because it is the one a person reaches for without reading. */
-.review__answer--again {
-  border-color: var(--numen-alarm);
-  color: var(--numen-alarm);
-}
-
-
-.review__over {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--numen-inset);
-}
-
-.review__over-said {
-  margin: 0;
-  font-size: var(--numen-display-size);
-  font-weight: 600;
-}
-
-.review__over-count {
-  margin: 0;
-  color: var(--numen-edge-label);
-}
-
-.review__back {
-  padding: var(--numen-inset) var(--numen-inset-wide);
-  border: 1px solid var(--numen-node-border);
-  border-radius: var(--numen-radius);
-  background: var(--numen-node-bg);
-  color: var(--numen-node-fg);
-  font: inherit;
-  cursor: pointer;
 }
 </style>
