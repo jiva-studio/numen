@@ -5,6 +5,7 @@ on:
     paths:
       - "modules/libs/core/**"
       - "modules/apps/desktop/**"
+      - "modules/apps/mobile/**"
       - "modules/libs/protocol/**"
       - "tests/**"
       - ".github/workflows/go.yml"
@@ -13,13 +14,15 @@ on:
     paths:
       - "modules/libs/core/**"
       - "modules/apps/desktop/**"
+      - "modules/apps/mobile/**"
       - "modules/libs/protocol/**"
       - "tests/**"
       - ".github/workflows/go.yml"
 
 jobs:
-  # Two Go modules, checked the same way. The desktop module holds its Go under
-  # cmd and internal; the core module is Go throughout.
+  # Three Go modules, checked the same way. The desktop module holds its Go
+  # under cmd and internal, the phone's under bind; the core module is Go
+  # throughout.
   go:
     runs-on: ubuntu-latest
     strategy:
@@ -30,6 +33,8 @@ jobs:
             sources: "."
           - module: modules/apps/desktop
             sources: "./cmd ./internal"
+          - module: modules/apps/mobile
+            sources: "./bind"
     defaults:
       run:
         working-directory: ${{ matrix.module }}

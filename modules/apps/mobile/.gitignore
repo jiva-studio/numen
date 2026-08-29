@@ -1,0 +1,15 @@
+node_modules/
+dist/
+
+# The core, bound. `make core` writes it.
+android/app/libs/numen.aar
+android/app/libs/numen-sources.jar
+
+android/.gradle/
+android/build/
+android/app/build/
+android/capacitor-cordova-android-plugins/
+android/local.properties
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
