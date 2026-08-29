@@ -29,7 +29,9 @@ Every write to it rewrites it whole and nothing locks it between processes, so a
 
 The index answers one question for this application: **which files in a vault are decks**. It cannot answer another, because a card's heading reaches it without the mark the card is known by (ADR-0029) — the cards themselves are read from the deck files, whatever else is open.
 
-Nothing is written, so the single write lock ADR-0002 keeps over all vaults is untouched, and ADR-0008's guarantee that writes queue inside one process is never asked to hold across two. A vault the index does not carry is a vault this application says has not been read yet, and it says which application reads it.
+The database is opened for reading alone: one pool, no schema put in place, and no pragma that writes the header. Nothing is written, so the single write lock ADR-0002 keeps over all vaults is untouched, and ADR-0008's guarantee that writes queue inside one process is never asked to hold across two. An index that is not on the machine yet is not made here either — it is built by the application that scans, and until it has, every vault reads as one nothing has read.
+
+A vault the index does not carry is a vault this application says has not been read yet, and it says which application reads it. That is not the same answer as a vault holding no cards, and the two are never shown as one.
 
 ### It writes marks into decks, and works from what it reads back
 

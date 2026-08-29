@@ -2,6 +2,7 @@ package review_test
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -201,7 +202,7 @@ func TestACardWithNoMarkStandsForNothing(t *testing.T) {
 func TestSittingDownToAVaultMarksItsCards(t *testing.T) {
 	s := opened(t, handwritten)
 
-	if err := s.marking.Execute(t.Context(), s.vault); err != nil {
+	if _, err := s.marking.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
 	stood, err := s.standings.Execute(t.Context(), s.vault)
@@ -393,10 +394,11 @@ func TestASessionAsksWhatIsOwedBeforeWhatIsNew(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	asked, err := s.session(today).Execute(t.Context(), s.vault, "")
+	sitting, err := s.session(today).Execute(t.Context(), s.vault, "")
 	if err != nil {
 		t.Fatal(err)
 	}
+	asked := sitting.Asked
 	if len(asked) < 2 {
 		t.Fatalf("asked %d", len(asked))
 	}
@@ -421,10 +423,11 @@ func TestASessionAsksWhatIsOwedBeforeWhatIsNew(t *testing.T) {
 func TestASessionOverOneDeckAsksThatDeckAlone(t *testing.T) {
 	s := opened(t, vault)
 
-	asked, err := s.session(today).Execute(t.Context(), s.vault, "decks/Words.md")
+	sitting, err := s.session(today).Execute(t.Context(), s.vault, "decks/Words.md")
 	if err != nil {
 		t.Fatal(err)
 	}
+	asked := sitting.Asked
 	if len(asked) != 1 || asked[0].Deck != "decks/Words.md" {
 		t.Errorf("asked %+v, want the one card of that deck", asked)
 	}
@@ -527,22 +530,85 @@ func TestAnAnswerTakenBackInTheSameRunIsNotCounted(t *testing.T) {
 func TestACacheFilledByAnotherSchedulerIsThrownAway(t *testing.T) {
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	invented := history.CardFace{Card: "nobodyhasit", Face: "Recognise"}
 
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.kept.Execute(t.Context(), s.vault); err != nil {
-		t.Fatal(err)
-	}
 
+	// A cache another scheduler left, current in every other way and saying
+	// what no reading of the answers could: the card answered seven times, and
+	// a card face the vault has never held.
 	other := s.kept
 	other.By = named{Scheduler: history.NewFSRS(), name: "another-one"}
-	got, err := other.Execute(t.Context(), s.vault)
+	if _, err := other.Execute(t.Context(), s.vault); err != nil {
+		t.Fatal(err)
+	}
+	rewrite(t, s, func(was *plantedCache) {
+		was.Faces = append(was.Faces, plantedFace{
+			Card: invented.Card, Face: invented.Face,
+			Due: stamped(time.Now()), Last: stamped(time.Now()), Reps: 1,
+		})
+		for at := range was.Faces {
+			was.Faces[at].Reps = 7
+		}
+	})
+
+	got, err := s.kept.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if got[on].Reps != 1 {
 		t.Errorf("the answers were not read again: %+v", got[on])
+	}
+	if _, held := got[invented]; held {
+		t.Error("a card face only the other scheduler's cache names came back")
+	}
+}
+
+// plantedCache is the cache file as a test writes one, which is the shape the
+// scheduler reads and no more of it than a test needs.
+type plantedCache struct {
+	V     int           `json:"v"`
+	By    string        `json:"by"`
+	Files []plantedFile `json:"files"`
+	Faces []plantedFace `json:"faces"`
+}
+
+type plantedFile struct {
+	Name string `json:"name"`
+	Size int    `json:"size"`
+}
+
+type plantedFace struct {
+	Card string `json:"card"`
+	Face string `json:"face"`
+	Due  string `json:"due"`
+	Last string `json:"last"`
+	Reps int    `json:"reps"`
+}
+
+func stamped(at time.Time) string { return at.UTC().Format(history.Stamp) }
+
+// rewrite changes the cache a vault holds, so that a test can say what a cache
+// claims and see whether it was believed.
+func rewrite(t *testing.T, s vaulted, change func(*plantedCache)) {
+	t.Helper()
+	raw, err := s.kept.Kept.Read(t.Context(), s.vault.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var was plantedCache
+	if err := json.Unmarshal(raw, &was); err != nil {
+		t.Fatal(err)
+	}
+	change(&was)
+	now, err := json.Marshal(was)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.kept.Kept.Write(t.Context(), s.vault.ID, now); err != nil {
+		t.Fatal(err)
 	}
 }
 

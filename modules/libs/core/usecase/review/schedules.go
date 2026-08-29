@@ -62,23 +62,40 @@ type Schedules struct {
 func (u Schedules) Execute(
 	ctx context.Context, v domain.Vault,
 ) (map[history.CardFace]history.Schedule, error) {
-	held, err := Log{Stores: u.Logs}.Read(ctx, v)
+	log := Log{Stores: u.Logs}
+
+	// The listing comes first, and the files are read only when the cache does
+	// not answer: reading the folder is what a launch does anyway, and reading
+	// every answer in it is what the cache is for.
+	files, err := log.Files(ctx, v)
 	if err != nil {
 		return nil, err
 	}
-	if out, ok := u.remembered(ctx, v, held.Files); ok {
+	if out, ok := u.remembered(ctx, v, files); ok {
 		return out, nil
 	}
 
+	held, err := log.Read(ctx, v)
+	if err != nil {
+		return nil, err
+	}
+	return u.From(ctx, v, held), nil
+}
+
+// From is where a log that has already been read leaves every card face. A
+// caller holding the answers does not read them again to be told this.
+func (u Schedules) From(
+	ctx context.Context, v domain.Vault, held Held,
+) map[history.CardFace]history.Schedule {
 	out := history.Replay(u.By, held.Answers)
 	u.remember(ctx, v, held.Files, out)
-	return out, nil
+	return out
 }
 
 // remembered is what was worked out last time, when it was worked out from the
 // runs the vault now holds and by the scheduler now asking.
 func (u Schedules) remembered(
-	ctx context.Context, v domain.Vault, files []Counted,
+	ctx context.Context, v domain.Vault, files []port.Stored,
 ) (map[history.CardFace]history.Schedule, bool) {
 	if u.Kept == nil {
 		return nil, false
@@ -115,7 +132,7 @@ func (u Schedules) remembered(
 
 // read reports whether a cache was worked out from exactly the log that now
 // stands: the same files, each the length it was read at.
-func read(was []keptFile, files []Counted) bool {
+func read(was []keptFile, files []port.Stored) bool {
 	if len(was) != len(files) {
 		return false
 	}
@@ -131,7 +148,7 @@ func read(was []keptFile, files []Counted) bool {
 // that could not be written is a launch that works it out again, so nothing
 // here is reported.
 func (u Schedules) remember(
-	ctx context.Context, v domain.Vault, files []Counted, out map[history.CardFace]history.Schedule,
+	ctx context.Context, v domain.Vault, files []port.Stored, out map[history.CardFace]history.Schedule,
 ) {
 	if u.Kept == nil {
 		return

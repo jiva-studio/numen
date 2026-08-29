@@ -2,6 +2,7 @@ package review
 
 import (
 	"context"
+	"errors"
 
 	format "github.com/jiva-studio/numen/modules/libs/core/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -35,7 +36,7 @@ type Standing struct {
 }
 
 // Lay is the face filled with this card's values: what stands before the answer
-// and what stands after it, as markdown.
+// and what stands after it, as HTML.
 func (s Standing) Lay() (front, back string) { return format.Lay(s.stencil, s.face, s.card) }
 
 // Standings is every card face a vault holds, read out of its files.
@@ -49,13 +50,29 @@ type Standings struct {
 	Links   port.LinkQueries
 }
 
+// ErrUnread is what a vault the index does not carry gets. Nothing has read it
+// yet, and the application that reads a vault is the editor.
+var ErrUnread = errors.New("this vault has not been read yet: open it in the editor once")
+
 // Execute reads every deck the vault holds and says what stands in it.
+//
+// A vault the index does not carry gets ErrUnread. Its files are on the disk
+// and this application does not walk them: the list of decks is the index's
+// answer, and a vault absent from it is not a vault holding no cards.
 //
 // A deck that cannot be read contributes no card face and is not an error: one
 // unreadable file is not a reason to refuse a person the rest of their cards.
 // What was wrong with it is the deck's own problem, and the editor is where it
 // is settled.
 func (u Standings) Execute(ctx context.Context, v domain.Vault) ([]Standing, error) {
+	held, err := u.Notes.Holds(ctx, v.ID)
+	if err != nil {
+		return nil, err
+	}
+	if !held {
+		return nil, ErrUnread
+	}
+
 	paths, err := u.Notes.OfType(ctx, v.ID, domain.TypeDeck)
 	if err != nil {
 		return nil, err
@@ -66,17 +83,10 @@ func (u Standings) Execute(ctx context.Context, v domain.Vault) ([]Standing, err
 	var out []Standing
 	for _, path := range paths {
 		deck, err := read.Deck(ctx, v, path)
-		if err != nil {
-			return nil, err
-		}
-		if deck.Outcome != note.Ok {
+		if err != nil || deck.Outcome != note.Ok {
 			continue
 		}
-		standing, err := u.standing(ctx, v, read, deck, stencils)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, standing...)
+		out = append(out, u.standing(ctx, v, read, deck, stencils)...)
 	}
 	return out, nil
 }
@@ -86,7 +96,7 @@ func (u Standings) Execute(ctx context.Context, v domain.Vault) ([]Standing, err
 func (u Standings) standing(
 	ctx context.Context, v domain.Vault, read cards.Read,
 	deck cards.Deck, stencils map[string]format.Stencil,
-) ([]Standing, error) {
+) []Standing {
 	var out []Standing
 	for _, card := range deck.Deck.Cards {
 		if card.Mark == "" {
@@ -99,10 +109,7 @@ func (u Standings) standing(
 		stencil, held := stencils[path]
 		if !held {
 			one, err := read.Stencil(ctx, v, path)
-			if err != nil {
-				return nil, err
-			}
-			if one.Outcome != note.Ok || one.Type != domain.TypeStencil {
+			if err != nil || one.Outcome != note.Ok || one.Type != domain.TypeStencil {
 				// A card whose stencil is not one is a card no face shows. It
 				// is a problem against the deck, and it is settled in a window.
 				stencils[path] = format.Stencil{}
@@ -129,7 +136,7 @@ func (u Standings) standing(
 			})
 		}
 	}
-	return out, nil
+	return out
 }
 
 // section is the name of the section a card stands under, and is empty for a

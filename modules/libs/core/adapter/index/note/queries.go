@@ -83,6 +83,18 @@ func (q *Queries) Search(ctx context.Context, vaultID, query string, limit int) 
 	return out, rows.Err()
 }
 
+// Holds reports whether the index carries this vault at all.
+func (q *Queries) Holds(ctx context.Context, vaultID string) (bool, error) {
+	_, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 func (q *Queries) Summary(ctx context.Context, vaultID string) (domain.VaultSummary, error) {
 	var s domain.VaultSummary
 	vault, err := vaultRow(ctx, q.db, vaultID)

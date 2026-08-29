@@ -196,6 +196,11 @@ export { default as Bar } from './cards/Bar.vue'
 /** A rule with something standing on it, in its middle or at its start. */
 export { default as Rule } from './rule/Rule.vue'
 
+/**
+ * A card's HTML, measured against what a card may be drawn with. A deck may
+ * come from another person, so anything drawing one goes through this.
+ */
+export { safe } from './cards/safe'
 /** For putting a card or a field where a person let it go, without drawing it. */
 export { ordered, reordered } from './cards/order'
 export type { Half, Landing as CardLanding } from './cards/order'

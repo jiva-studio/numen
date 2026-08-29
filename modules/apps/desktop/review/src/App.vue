@@ -8,7 +8,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { Undo2, X } from '@lucide/vue'
 import { Button, KeyCap, Notices } from '@numen/ui'
-import type { Notice } from '@numen/ui'
+import type { Notice, Tone } from '@numen/ui'
 import '@numen/ui/styles.css'
 import Vaults from './Vaults.vue'
 import Decks from './Decks.vue'
@@ -29,13 +29,18 @@ const counting = ref(true)
  */
 const notices = ref<readonly Notice[]>([])
 
-const failed = (why: unknown) => {
+/** How many notices the window has raised, which is what names the next one. */
+let raised = 0
+
+/** Something the window has to say, in the tone it says it in. */
+const says = (said: string, tone: Tone) => {
+  raised += 1
   notices.value = [
     ...notices.value,
     {
-      id: String(notices.value.length),
-      says: String(why),
-      tone: 'alarm',
+      id: String(raised),
+      says: said,
+      tone,
       stay: 'kept',
       // A person pressed something and is waiting to hear. A card that waits
       // for the work to be worth drawing is a card they read ten seconds late.
@@ -43,6 +48,8 @@ const failed = (why: unknown) => {
     },
   ]
 }
+
+const failed = (why: unknown) => says(String(why), 'alarm')
 
 const putAway = (id: string) => {
   notices.value = notices.value.filter((one) => one.id !== id)
@@ -55,7 +62,16 @@ const asked = ref<readonly Asked[]>([])
 const at = ref(0)
 const shown = ref(false)
 const answers = ref<string[]>([])
-const done = ref(0)
+
+/**
+ * Whether an answer is on its way to the vault. A card is answered once: the
+ * line is written before the next card is put up, and a second press while that
+ * is happening would write the same card twice and skip the one after it.
+ */
+const writing = ref(false)
+
+/** How many answers this sitting has written, which is what stands at the end. */
+const done = computed(() => answers.value.length)
 
 /** When the card now in front of the person was put there. */
 let put = Date.now()
@@ -99,6 +115,24 @@ const choose = (id: string) => {
   on.value = 'decks'
 }
 
+/**
+ * What the sitting could not act on, said once as it opens: a deck whose cards
+ * could not be given marks holds cards this sitting does not ask, and a line of
+ * the vault's answers that could not be read is a card standing where the rest
+ * of its history left it.
+ */
+const reported = (unwritten: readonly string[], skipped: number) => {
+  if (unwritten.length) {
+    says(
+      `Not asked from ${unwritten.map(deckName).join(', ')}: the deck could not be written.`,
+      'caution',
+    )
+  }
+  if (skipped > 0) {
+    says(`${skipped} answers in this vault could not be read.`, 'caution')
+  }
+}
+
 const start = async (deck: string) => {
   try {
     const answer = await review.start({ vaultId: vault.value, deck })
@@ -117,9 +151,9 @@ const start = async (deck: string) => {
     at.value = 0
     shown.value = false
     answers.value = []
-    done.value = 0
     put = Date.now()
     on.value = 'session'
+    reported(answer.unwritten, answer.skipped)
   } catch (why) {
     failed(why)
   }
@@ -131,8 +165,9 @@ const show = () => {
 
 const answer = async (how: Said) => {
   const one = card.value
-  if (!one || !shown.value) return
+  if (!one || !shown.value || writing.value) return
   const took = Date.now() - put
+  writing.value = true
   try {
     const given = await review.answer({
       vaultId: vault.value,
@@ -146,8 +181,9 @@ const answer = async (how: Said) => {
   } catch (why) {
     failed(why)
     return
+  } finally {
+    writing.value = false
   }
-  done.value += 1
   at.value += 1
   shown.value = false
   put = Date.now()
@@ -155,28 +191,45 @@ const answer = async (how: Said) => {
 
 const takeBack = async () => {
   const last = answers.value[answers.value.length - 1]
-  if (last === undefined) return
+  if (last === undefined || writing.value) return
+  writing.value = true
   try {
     await review.takeBack({ vaultId: vault.value, run: run.value, answer: last })
   } catch (why) {
     failed(why)
     return
+  } finally {
+    writing.value = false
   }
   answers.value.pop()
-  done.value = Math.max(0, done.value - 1)
   at.value = Math.max(0, at.value - 1)
   shown.value = true
   put = Date.now()
 }
 
+/**
+ * The sitting let go of. What was answered is in the vault, and the next
+ * sitting is opened whole: a card kept here is one a screen could fall back to
+ * showing with nothing able to answer it.
+ */
+const forget = () => {
+  asked.value = []
+  at.value = 0
+  shown.value = false
+  answers.value = []
+  run.value = ''
+}
+
 /** Out of a sitting and back to the decks, with the counts as they now stand. */
 const leave = async () => {
+  forget()
   on.value = 'decks'
   await count()
 }
 
 /** Back to the vaults, which is where a person picks another collection. */
 const vaultsAgain = async () => {
+  forget()
   on.value = 'vaults'
   vault.value = ''
   await count()
@@ -185,21 +238,27 @@ const vaultsAgain = async () => {
 /**
  * The keys the whole of a sitting is done with: the space bar turns a card
  * over, the four numbers say how it went, `u` takes the last answer back and
- * escape goes back to the vaults.
+ * escape goes back to the decks.
  */
 const keyed = (press: KeyboardEvent) => {
   if (on.value !== 'session') return
+  // A key held down repeats, and a card is answered once. A key pressed with a
+  // modifier is the machine's own shortcut and is not an answer.
+  if (press.repeat || press.altKey || press.ctrlKey || press.metaKey) return
   if (press.key === 'Escape') {
     void leave()
     return
   }
-  if (press.key === 'u') {
+  if (press.key === 'u' || press.key === 'U') {
     void takeBack()
     return
   }
-  if (press.key === ' ' || press.key === 'Enter') {
+  // The space bar turns the card over. Once it is over, the keys that mean
+  // something are the four, and space and enter are left to whatever the person
+  // has moved focus to.
+  if (press.key === ' ' && !shown.value) {
     press.preventDefault()
-    if (!shown.value) show()
+    show()
     return
   }
   const which = Number(press.key)
@@ -237,14 +296,14 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
     <section v-else-if="over" class="review__over">
       <h1 class="review__over-said">Nothing left today.</h1>
       <p class="review__over-count">{{ done }} answered.</p>
-      <button class="review__back" type="button" @click="leave">Back to the decks</button>
+      <Button variant="outline" @click="leave">Back to the decks</Button>
     </section>
 
     <section v-else-if="card" class="review__session">
       <header class="review__where">
         <span class="review__deck">{{ deckName(card.deck) }}</span>
-        <span v-if="card.section" class="review__section">{{ card.section }}</span>
-        <span class="review__face">{{ card.face }}</span>
+        <span v-if="card.section">{{ card.section }}</span>
+        <span>{{ card.face }}</span>
         <span v-if="!card.seen" class="review__new">new</span>
         <span class="review__left">{{ asked.length - at }} left</span>
 
@@ -254,17 +313,22 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
           variant="ghost"
           size="icon-small"
           title="Take the last answer back"
+          aria-label="Take the last answer back"
           :disabled="!answers.length"
           @click="takeBack"
         >
           <Undo2 />
         </Button>
-        <Button variant="ghost" size="icon-small" title="Leave" @click="leave">
+        <Button variant="ghost" size="icon-small" title="Leave" aria-label="Leave" @click="leave">
           <X />
         </Button>
       </header>
 
-      <Card :front="card.front" :back="card.back" :shown="shown" @show="show" />
+      <!-- The card is what changes under a person as they work, so a reader
+           that is not looking at the screen is told when the answer appears. -->
+      <div class="review__card" aria-live="polite">
+        <Card :front="card.front" :back="card.back" :shown="shown" @show="show" />
+      </div>
 
       <footer class="review__answers">
         <!-- The key first and the word after it: a person answering with the
@@ -282,8 +346,11 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
             {{ called[how] }}
             <!-- What the answer does to the card, said where the answer is
                  chosen: a person picking between the four is picking between
-                 these. -->
-            <span v-if="card.ahead" class="review__ahead">{{ ahead(card.ahead[how]) }}</span>
+                 these. It is read off the screen and not out of the button's
+                 own name, which is the word a person means to press. -->
+            <span v-if="card.ahead" class="review__ahead" aria-hidden="true">{{
+              ahead(card.ahead[how])
+            }}</span>
           </Button>
         </template>
         <Button v-else variant="outline" class="review__answer" @click="show">
@@ -316,6 +383,14 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
   gap: var(--numen-inset);
 }
 
+/* The card takes what the row of answers leaves, and it is the card itself that
+   scrolls. */
+.review__card {
+  display: flex;
+  flex: 1;
+  min-block-size: 0;
+}
+
 /* Where the card stands, said once and quietly: a person answering is reading
    the card, not the line above it. Text and marks are centred against each
    other, because a button has no baseline to put a word on. */
@@ -332,8 +407,10 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
   font-weight: 600;
 }
 
+/* A pill in the same row as the one that counts what is waiting, so it is the
+   same shape as that one. */
 .review__new {
-  padding: 0.0625rem 0.375rem;
+  padding: 0.0625rem 0.4rem;
   border-radius: var(--numen-radius-pill);
   background: var(--numen-caution-bg);
   color: var(--numen-caution-fg);
@@ -365,7 +442,6 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
   padding-block: var(--numen-inset-wide);
 }
 
-
 .review__over {
   display: flex;
   flex: 1;
@@ -386,13 +462,4 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
   color: var(--numen-edge-label);
 }
 
-.review__back {
-  padding: var(--numen-inset) var(--numen-inset-wide);
-  border: 1px solid var(--numen-node-border);
-  border-radius: var(--numen-radius);
-  background: var(--numen-node-bg);
-  color: var(--numen-node-fg);
-  font: inherit;
-  cursor: pointer;
-}
 </style>

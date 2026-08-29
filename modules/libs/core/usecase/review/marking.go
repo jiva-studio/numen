@@ -31,27 +31,33 @@ type Marking struct {
 	Now   func() time.Time
 }
 
+// Marked is what the marking came to: the decks it could not write.
+type Marked struct {
+	// Unwritten are the paths of the decks holding a card with no mark that
+	// could not be given one. Their cards are left out of this sitting.
+	Unwritten []string
+}
+
 // Execute writes every deck of the vault that holds a card with no mark.
 //
 // A deck that could not be written is left as it is and is not an error: the
 // editor may be saving it, and the vault's write lock lives in one process. Its
-// cards are left out of this sitting and marked at the next.
-func (u Marking) Execute(ctx context.Context, v domain.Vault) error {
+// cards are left out of this sitting and marked at the next, and it is named in
+// what comes back so that a person is told which deck that was.
+func (u Marking) Execute(ctx context.Context, v domain.Vault) (Marked, error) {
 	paths, err := u.Notes.OfType(ctx, v.ID, domain.TypeDeck)
 	if err != nil {
-		return err
+		return Marked{}, err
 	}
 
 	read := cards.Read{Readers: u.Readers, Links: u.Links}
 	write := cards.Write{
 		Readers: u.Readers, Writers: u.Writers, Links: u.Links, Index: u.Index, Now: u.Now,
 	}
+	var out Marked
 	for _, path := range paths {
 		deck, err := read.Deck(ctx, v, path)
-		if err != nil {
-			return err
-		}
-		if deck.Outcome != note.Ok || !unmarked(deck.Deck) {
+		if err != nil || deck.Outcome != note.Ok || !unmarked(deck.Deck) {
 			continue
 		}
 
@@ -60,11 +66,14 @@ func (u Marking) Execute(ctx context.Context, v domain.Vault) error {
 		// minted.
 		body, err := format.DeckBody(deck.Deck)
 		if err != nil {
+			out.Unwritten = append(out.Unwritten, path)
 			continue
 		}
-		_, _ = write.Deck(ctx, v, path, body, deck.Ref)
+		if _, err := write.Deck(ctx, v, path, body, deck.Ref); err != nil {
+			out.Unwritten = append(out.Unwritten, path)
+		}
 	}
-	return nil
+	return out, nil
 }
 
 // unmarked reports whether any card of a deck carries no mark.

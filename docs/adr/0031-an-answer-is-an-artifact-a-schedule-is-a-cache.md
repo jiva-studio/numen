@@ -66,7 +66,7 @@ The service folder inside a vault holds what the application made and cannot mak
 
 So it lives where the installation's own state lives, keyed by the vault's identity, and it is deleted at any time at no cost but a replay.
 
-It holds what a launch would otherwise read every file to learn: the schedule of each card face, the marks each deck held when it was last read together with the size and time that read saw, the names of the run files already folded in, and the name and version of the scheduler that computed it.
+It holds what a launch would otherwise read every answer to learn: the schedule of each card face, the run files it was worked out from with the length each of them had, and the name and version of the scheduler that computed it. Listing the folder is what a launch does anyway; the cache is what saves it opening the files.
 
 ### A run the cache does not name is the history read again
 

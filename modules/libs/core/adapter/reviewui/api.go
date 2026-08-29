@@ -2,8 +2,8 @@
 //
 // It is a second adapter beside webui and not a part of it: what it answers is
 // a different service over a different page, and what it holds is a slice of
-// the installation — the registry, an index it only reads, and the vault
-// readers. No scan runs behind it, nothing is embedded, and no agent is reached.
+// the installation — the registry and the four scenarios a review is made of.
+// No scan runs behind it, nothing is embedded, and no agent is reached.
 package reviewui
 
 import (
@@ -48,7 +48,13 @@ type API struct {
 	Now func() time.Time
 
 	mu   sync.Mutex
-	runs map[string]*review.Run
+	runs map[string]sitting
+}
+
+// sitting is one run open in this window, and the vault it was opened on.
+type sitting struct {
+	vault string
+	run   *review.Run
 }
 
 // Vault is the vault of an identity, as the registry holds it.
@@ -74,21 +80,26 @@ func (a *API) opened(ctx context.Context, v domain.Vault) (*review.Run, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	if a.runs == nil {
-		a.runs = make(map[string]*review.Run)
+		a.runs = make(map[string]sitting)
 	}
-	a.runs[run.Name()] = run
+	a.runs[run.Name()] = sitting{vault: v.ID, run: run}
 	return run, nil
 }
 
-// running is the run of a name, which this window opened.
-func (a *API) running(name string) (*review.Run, error) {
+// running is the run of a name, opened by this window on this vault.
+//
+// The vault is part of what is asked for, because an answer is written to the
+// vault its run was opened on: a run named against another vault would put a
+// person's answer in a history it does not belong to, and an answer written is
+// not written again.
+func (a *API) running(vault, name string) (*review.Run, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	run, held := a.runs[name]
-	if !held {
+	held, is := a.runs[name]
+	if !is || held.vault != vault {
 		return nil, fmt.Errorf("%w: %s", ErrNoRun, name)
 	}
-	return run, nil
+	return held.run, nil
 }
 
 func (a *API) now() time.Time {

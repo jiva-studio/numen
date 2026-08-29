@@ -10,6 +10,7 @@ import (
 	"context"
 	"database/sql"
 	"net/url"
+	"os"
 	"strings"
 
 	_ "modernc.org/sqlite"
@@ -75,6 +76,69 @@ func Open(ctx context.Context, path string) (*DB, error) {
 	return &DB{write: write, read: read}, nil
 }
 
+// Reading is the cache opened by a process that only asks it questions.
+//
+// It holds the read pool alone: there is nothing here to write with, so a
+// binary that takes the index as it finds it cannot be the one that changes it.
+type Reading struct {
+	read *sql.DB
+}
+
+// readPragmas are what a connection that only reads opens with. The journal
+// mode is not among them: it is persisted in the database header, and setting
+// it is a write.
+var readPragmas = []string{
+	"query_only(1)",
+	"busy_timeout(5000)",
+	"cache_size(-65536)",
+}
+
+// OpenToRead opens the cache for asking, and never for building.
+//
+// A database that is not there is not made: the index is built by the
+// application that scans, and a machine where that has never run has an index
+// with nothing in it to read. Saying so is the answer; an empty database made
+// here would say the vaults are empty instead.
+func OpenToRead(ctx context.Context, path string) (*Reading, error) {
+	if _, err := os.Stat(path); err != nil {
+		return nil, err
+	}
+	read, err := sql.Open("sqlite", dsnOf(path, readPragmas))
+	if err != nil {
+		return nil, err
+	}
+	if err := read.PingContext(ctx); err != nil {
+		read.Close()
+		return nil, err
+	}
+	return &Reading{read: read}, nil
+}
+
+// OpenNothing is an index holding nothing, for a machine where nothing has
+// scanned yet.
+//
+// It is made in memory and goes with the process. One connection serves it,
+// because a second would open a database of its own and an empty index would
+// then differ from itself between two questions.
+func OpenNothing(ctx context.Context) (*Reading, error) {
+	db, err := sql.Open("sqlite", dsn(":memory:"))
+	if err != nil {
+		return nil, err
+	}
+	db.SetMaxOpenConns(1)
+	if err := migrate(ctx, db); err != nil {
+		db.Close()
+		return nil, err
+	}
+	return &Reading{read: db}, nil
+}
+
+func (r *Reading) Close() error { return r.read.Close() }
+
+// NoteQueries is what the notes are asked through, and the whole of what this
+// opening offers.
+func (r *Reading) NoteQueries() *note.Queries { return note.NewQueries(r.read) }
+
 func (d *DB) Close() error {
 	readErr := d.read.Close()
 	if err := d.write.Close(); err != nil {
@@ -100,7 +164,9 @@ func (d *DB) ChunkQueries() *chunk.Queries { return chunk.NewQueries(d.read) }
 // reads both, through the pool each half belongs to.
 func (d *DB) Sources() sources { return sources{write: d.Chunks(), read: d.ChunkQueries()} }
 
-func dsn(path string) string {
+func dsn(path string) string { return dsnOf(path, pragmas) }
+
+func dsnOf(path string, pragmas []string) string {
 	q := url.Values{}
 	for _, p := range pragmas {
 		q.Add("_pragma", p)

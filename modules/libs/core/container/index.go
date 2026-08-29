@@ -2,6 +2,8 @@ package container
 
 import (
 	"context"
+	"errors"
+	"io/fs"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -30,6 +32,37 @@ func (c Config) OpenIndex(ctx context.Context) (*Index, error) {
 }
 
 func (i *Index) Close() error { return i.db.Close() }
+
+// ReadIndex is the cache seen by a process that only asks it questions. It
+// offers no repository, so nothing reached through it can write.
+type ReadIndex struct {
+	db *index.Reading
+}
+
+// OpenIndexToRead opens the cache for asking alone.
+//
+// An index that is not there is not made on disk: it is built by the
+// application that scans, and until that has run once every vault reads as one
+// nothing has read yet.
+func (c Config) OpenIndexToRead(ctx context.Context) (*ReadIndex, error) {
+	path, err := c.indexPath()
+	if err != nil {
+		return nil, err
+	}
+	db, err := index.OpenToRead(ctx, path)
+	if errors.Is(err, fs.ErrNotExist) {
+		db, err = index.OpenNothing(ctx)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &ReadIndex{db: db}, nil
+}
+
+func (i *ReadIndex) Close() error { return i.db.Close() }
+
+func (i *ReadIndex) Queries() port.NoteQueries { return i.db.NoteQueries() }
+func (i *ReadIndex) Links() port.LinkQueries   { return i.db.NoteQueries() }
 
 // FitVectors makes the vector index hold vectors of the width given, filled
 // from what the recipe has already bought.

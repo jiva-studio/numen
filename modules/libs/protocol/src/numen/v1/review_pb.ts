@@ -4,14 +4,14 @@
 
 // What a client running a person's cards may ask.
 //
-// Review is an application of its own, beside the editor and over the same core
-// (ADR-0030), so this service stands beside the editor's and shares nothing with
-// it. It reaches every vault the installation knows, because what a person owes
+// Review is an application of its own, beside the editor and over the same
+// core, so this service stands beside the editor's and shares nothing with it.
+// It reaches every vault the installation knows, because what a person owes
 // today is owed across all of them.
 //
 // A card is laid out here, unlike the cards service, which hands a face over as
-// the markdown it was written as: what a person is shown is the face filled with
-// one card's values, and nothing above this has the two halves to fill it with.
+// it was written: what a person is shown is the face filled with one card's
+// values, and nothing above this has the two halves to fill it with.
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
@@ -21,7 +21,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/review.proto.
  */
 export const file_numen_v1_review: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9yZXZpZXcucHJvdG8SCG51bWVuLnYxIpcBCgpWYXVsdE93aW5nEhAKCHZhdWx0X2lkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEcGF0aBgDIAEoCRINCgVmYWNlcxgEIAEoBRILCgNkdWUYBSABKAUSCwoDbmV3GAYgASgFEiIKBWRlY2tzGAcgAygLMhMubnVtZW4udjEuRGVja093aW5nEg4KBnVucmVhZBgIIAEoCSJCCglEZWNrT3dpbmcSDAoEZGVjaxgBIAEoCRINCgVmYWNlcxgCIAEoBRILCgNkdWUYAyABKAUSCwoDbmV3GAQgASgFIkAKBUFoZWFkEg0KBWFnYWluGAEgASgDEgwKBGhhcmQYAiABKAMSDAoEZ29vZBgDIAEoAxIMCgRlYXN5GAQgASgDIqsBCgVBc2tlZBIMCgRkZWNrGAEgASgJEg8KB3NlY3Rpb24YAiABKAkSDAoEY2FyZBgDIAEoCRIMCgRmYWNlGAQgASgJEg8KB2hlYWRpbmcYBSABKAkSDQoFZnJvbnQYBiABKAkSDAoEYmFjaxgHIAEoCRIMCgRzZWVuGAggASgIEgsKA2R1ZRgJIAEoCRIeCgVhaGVhZBgKIAEoCzIPLm51bWVuLnYxLkFoZWFkIg4KDE93aW5nUmVxdWVzdCI1Cg1Pd2luZ1Jlc3BvbnNlEiQKBnZhdWx0cxgBIAMoCzIULm51bWVuLnYxLlZhdWx0T3dpbmciLgoMU3RhcnRSZXF1ZXN0EhAKCHZhdWx0X2lkGAEgASgJEgwKBGRlY2sYAiABKAkiPAoNU3RhcnRSZXNwb25zZRILCgNydW4YASABKAkSHgoFYXNrZWQYAiADKAsyDy5udW1lbi52MS5Bc2tlZCJ9Cg1BbnN3ZXJSZXF1ZXN0EhAKCHZhdWx0X2lkGAEgASgJEgsKA3J1bhgCIAEoCRIMCgRjYXJkGAMgASgJEgwKBGZhY2UYBCABKAkSIAoGcmF0aW5nGAUgASgOMhAubnVtZW4udjEuUmF0aW5nEg8KB3Rvb2tfbXMYBiABKAMiLQoOQW5zd2VyUmVzcG9uc2USDgoGYW5zd2VyGAEgASgJEgsKA2R1ZRgCIAEoCSJACg9UYWtlQmFja1JlcXVlc3QSEAoIdmF1bHRfaWQYASABKAkSCwoDcnVuGAIgASgJEg4KBmFuc3dlchgDIAEoCSISChBUYWtlQmFja1Jlc3BvbnNlKmUKBlJhdGluZxIWChJSQVRJTkdfVU5TUEVDSUZJRUQQABIQCgxSQVRJTkdfQUdBSU4QARIPCgtSQVRJTkdfSEFSRBACEg8KC1JBVElOR19HT09EEAMSDwoLUkFUSU5HX0VBU1kQBDKDAgoNUmV2aWV3U2VydmljZRI4CgVPd2luZxIWLm51bWVuLnYxLk93aW5nUmVxdWVzdBoXLm51bWVuLnYxLk93aW5nUmVzcG9uc2USOAoFU3RhcnQSFi5udW1lbi52MS5TdGFydFJlcXVlc3QaFy5udW1lbi52MS5TdGFydFJlc3BvbnNlEjsKBkFuc3dlchIXLm51bWVuLnYxLkFuc3dlclJlcXVlc3QaGC5udW1lbi52MS5BbnN3ZXJSZXNwb25zZRJBCghUYWtlQmFjaxIZLm51bWVuLnYxLlRha2VCYWNrUmVxdWVzdBoaLm51bWVuLnYxLlRha2VCYWNrUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChVudW1lbi92MS9yZXZpZXcucHJvdG8SCG51bWVuLnYxIpcBCgpWYXVsdE93aW5nEhAKCHZhdWx0X2lkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEcGF0aBgDIAEoCRINCgVmYWNlcxgEIAEoBRILCgNkdWUYBSABKAUSCwoDbmV3GAYgASgFEiIKBWRlY2tzGAcgAygLMhMubnVtZW4udjEuRGVja093aW5nEg4KBnVucmVhZBgIIAEoCSJCCglEZWNrT3dpbmcSDAoEZGVjaxgBIAEoCRINCgVmYWNlcxgCIAEoBRILCgNkdWUYAyABKAUSCwoDbmV3GAQgASgFIkAKBUFoZWFkEg0KBWFnYWluGAEgASgDEgwKBGhhcmQYAiABKAMSDAoEZ29vZBgDIAEoAxIMCgRlYXN5GAQgASgDIqsBCgVBc2tlZBIMCgRkZWNrGAEgASgJEg8KB3NlY3Rpb24YAiABKAkSDAoEY2FyZBgDIAEoCRIMCgRmYWNlGAQgASgJEg8KB2hlYWRpbmcYBSABKAkSDQoFZnJvbnQYBiABKAkSDAoEYmFjaxgHIAEoCRIMCgRzZWVuGAggASgIEgsKA2R1ZRgJIAEoCRIeCgVhaGVhZBgKIAEoCzIPLm51bWVuLnYxLkFoZWFkIg4KDE93aW5nUmVxdWVzdCI1Cg1Pd2luZ1Jlc3BvbnNlEiQKBnZhdWx0cxgBIAMoCzIULm51bWVuLnYxLlZhdWx0T3dpbmciLgoMU3RhcnRSZXF1ZXN0EhAKCHZhdWx0X2lkGAEgASgJEgwKBGRlY2sYAiABKAkiYAoNU3RhcnRSZXNwb25zZRILCgNydW4YASABKAkSHgoFYXNrZWQYAiADKAsyDy5udW1lbi52MS5Bc2tlZBIRCgl1bndyaXR0ZW4YAyADKAkSDwoHc2tpcHBlZBgEIAEoBSJ9Cg1BbnN3ZXJSZXF1ZXN0EhAKCHZhdWx0X2lkGAEgASgJEgsKA3J1bhgCIAEoCRIMCgRjYXJkGAMgASgJEgwKBGZhY2UYBCABKAkSIAoGcmF0aW5nGAUgASgOMhAubnVtZW4udjEuUmF0aW5nEg8KB3Rvb2tfbXMYBiABKAMiIAoOQW5zd2VyUmVzcG9uc2USDgoGYW5zd2VyGAEgASgJIkAKD1Rha2VCYWNrUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRILCgNydW4YAiABKAkSDgoGYW5zd2VyGAMgASgJIhIKEFRha2VCYWNrUmVzcG9uc2UqZQoGUmF0aW5nEhYKElJBVElOR19VTlNQRUNJRklFRBAAEhAKDFJBVElOR19BR0FJThABEg8KC1JBVElOR19IQVJEEAISDwoLUkFUSU5HX0dPT0QQAxIPCgtSQVRJTkdfRUFTWRAEMoMCCg1SZXZpZXdTZXJ2aWNlEjgKBU93aW5nEhYubnVtZW4udjEuT3dpbmdSZXF1ZXN0GhcubnVtZW4udjEuT3dpbmdSZXNwb25zZRI4CgVTdGFydBIWLm51bWVuLnYxLlN0YXJ0UmVxdWVzdBoXLm51bWVuLnYxLlN0YXJ0UmVzcG9uc2USOwoGQW5zd2VyEhcubnVtZW4udjEuQW5zd2VyUmVxdWVzdBoYLm51bWVuLnYxLkFuc3dlclJlc3BvbnNlEkEKCFRha2VCYWNrEhkubnVtZW4udjEuVGFrZUJhY2tSZXF1ZXN0GhoubnVtZW4udjEuVGFrZUJhY2tSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * VaultOwing is one vault, and what its cards come to today.
@@ -197,7 +197,7 @@ export type Asked = Message<"numen.v1.Asked"> & {
   heading: string;
 
   /**
-   * Front and back are the face laid out with this card's values, as markdown.
+   * Front and back are the face laid out with this card's values, as HTML.
    *
    * @generated from field: string front = 6;
    */
@@ -307,6 +307,22 @@ export type StartResponse = Message<"numen.v1.StartResponse"> & {
    * @generated from field: repeated numen.v1.Asked asked = 2;
    */
   asked: Asked[];
+
+  /**
+   * Unwritten are the decks holding a card with no mark that could not be given
+   * one. Their cards are not in this sitting and are asked for at the next.
+   *
+   * @generated from field: repeated string unwritten = 3;
+   */
+  unwritten: string[];
+
+  /**
+   * Skipped is how many lines of the vault's answers could not be read: a run
+   * that stopped partway, or a line of a version this build does not know.
+   *
+   * @generated from field: int32 skipped = 4;
+   */
+  skipped: number;
 };
 
 /**
@@ -372,13 +388,6 @@ export type AnswerResponse = Message<"numen.v1.AnswerResponse"> & {
    * @generated from field: string answer = 1;
    */
   answer: string;
-
-  /**
-   * Due is when the card comes round again, as the answers now stand.
-   *
-   * @generated from field: string due = 2;
-   */
-  due: string;
 };
 
 /**

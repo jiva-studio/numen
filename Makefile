@@ -83,6 +83,7 @@ test: ## run every test
 	cd $(UI) && npm test
 	cd $(UI) && npm run build
 	cd $(DESKTOP)/ui && npm test
+	cd $(DESKTOP)/review && npm test
 
 .PHONY: lint
 lint: generate-check ## the checks CI runs, less the one needing a base branch
@@ -91,4 +92,5 @@ lint: generate-check ## the checks CI runs, less the one needing a base branch
 	cd $(PROTOCOL) && buf lint
 	cd $(UI) && npm run typecheck
 	cd $(DESKTOP)/ui && npm run typecheck
+	cd $(DESKTOP)/review && npm run typecheck
 	cd $(LANDING) && npm run typecheck

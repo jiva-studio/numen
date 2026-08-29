@@ -43,7 +43,12 @@ type DerivedStore interface {
 	// a run of review writing one file and never touching it again — has no
 	// other way to find what is there. A name with nothing under it lists
 	// nothing, which is what an empty store answers.
-	List(ctx context.Context, name string) ([]string, error)
+	//
+	// The length comes with the name because a file appended to keeps its name
+	// and grows: what tells a reader that a file it has already read has
+	// changed is how long it now is, and asking that of a listing costs the
+	// listing and not the reading.
+	List(ctx context.Context, name string) ([]Stored, error)
 
 	// Remove takes a name out of the store. A name already gone is the outcome
 	// that was asked for.
@@ -53,6 +58,13 @@ type DerivedStore interface {
 	// name already claimed is refused with ErrClaimed, so work whose whole
 	// output is one file is done once.
 	Claim(ctx context.Context, name string) (release func() error, err error)
+}
+
+// Stored is one thing a store holds: its name in that store, and how many
+// bytes are under it.
+type Stored struct {
+	Name string
+	Size int
 }
 
 // DerivedStores opens one vault's store. Which vault a use case works on is

@@ -307,8 +307,35 @@ func TestTheStoreSaysWhatNamesItHolds(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(got, []string{"ocr/first.txt", "ocr/second.txt"}) {
-		t.Errorf("listed %v, want the two files it holds, sorted", got)
+	want := []port.Stored{
+		{Name: "ocr/first.txt", Size: len("in it")},
+		{Name: "ocr/second.txt", Size: len("in it")},
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("listed %v, want the two files it holds with their lengths, sorted", got)
+	}
+}
+
+// What a listing says about a file is how long it now is, so a reader that has
+// read it once is told when it has grown.
+func TestAListingSaysHowLongEachFileIs(t *testing.T) {
+	derived, _ := store(t)
+	ctx := t.Context()
+
+	if err := derived.Write(ctx, "ocr/one.txt", []byte("first")); err != nil {
+		t.Fatal(err)
+	}
+	if err := derived.Append(ctx, "ocr/one.txt", []byte(" and more")); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := derived.List(ctx, filesystem.OCRDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []port.Stored{{Name: "ocr/one.txt", Size: len("first and more")}}
+	if !slices.Equal(got, want) {
+		t.Errorf("listed %v, want %v", got, want)
 	}
 }
 

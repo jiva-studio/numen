@@ -10,4 +10,9 @@ export default defineConfig({
     emptyOutDir: true,
     assetsDir: 'built',
   },
+  // A test runs in a document, because the client this page is built on reads
+  // the address the window was served from.
+  test: {
+    environment: 'jsdom',
+  },
 })

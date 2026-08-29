@@ -155,7 +155,7 @@ func (d *Derived) Claim(_ context.Context, name string) (func() error, error) {
 // List reports the files directly under a name, as names of this store, sorted.
 // A folder among them is not one: what is kept here is files, and a caller
 // after them would have to be told which entries it may read.
-func (d *Derived) List(_ context.Context, name string) ([]string, error) {
+func (d *Derived) List(_ context.Context, name string) ([]port.Stored, error) {
 	target, err := d.at(name)
 	if err != nil {
 		return nil, err
@@ -171,14 +171,21 @@ func (d *Derived) List(_ context.Context, name string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	out := make([]string, 0, len(entries))
+	out := make([]port.Stored, 0, len(entries))
 	for _, e := range entries {
 		if e.IsDir() {
 			continue
 		}
-		out = append(out, clean+"/"+e.Name())
+		// A file that went between the listing and the asking is one another
+		// machine's synchroniser took away, and it is left out here rather than
+		// listed at a length nothing has.
+		info, err := e.Info()
+		if err != nil {
+			continue
+		}
+		out = append(out, port.Stored{Name: clean + "/" + e.Name(), Size: int(info.Size())})
 	}
-	slices.Sort(out)
+	slices.SortFunc(out, func(a, b port.Stored) int { return strings.Compare(a.Name, b.Name) })
 	return out, nil
 }
 

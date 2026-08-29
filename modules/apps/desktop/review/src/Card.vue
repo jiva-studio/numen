@@ -3,26 +3,45 @@
  * One card, as it stands in front of a person: the front, and the back once
  * they have said they are ready for it.
  *
- * A face is markup, and it is drawn as the markup it is. It cannot run: the
- * window serves itself under a policy that allows no script it did not serve
- * and no handler written in an attribute.
+ * A face is HTML and is drawn as the HTML it is, measured first against what a
+ * card may be drawn with: a deck may have come from another person, and what
+ * they wrote is not this window's to run, style or navigate with.
  */
-defineProps<{
+import { computed } from 'vue'
+import { safe } from '@numen/ui'
+
+const props = defineProps<{
   front: string
   back: string
   /** Whether the answer is being shown. */
   shown: boolean
 }>()
 
-defineEmits<{ (event: 'show'): void }>()
+const emit = defineEmits<{ (event: 'show'): void }>()
+
+const front = computed(() => safe(props.front))
+const back = computed(() => safe(props.back))
+
+/**
+ * The card is turned over by pressing it. A link inside one is not followed:
+ * this window has one page and no way back to it, and where a card points is
+ * read in the editor.
+ */
+const pressed = (press: MouseEvent) => {
+  if ((press.target as HTMLElement | null)?.closest?.('a')) {
+    press.preventDefault()
+    return
+  }
+  if (!props.shown) emit('show')
+}
 </script>
 
 <template>
-  <article class="card" @click="!shown && $emit('show')">
-    <!-- eslint-disable-next-line vue/no-v-html -->
+  <article class="card" @click="pressed">
+    <!-- eslint-disable-next-line vue/no-v-html -- measured against what a card may be drawn with -->
     <div class="card__side" v-html="front" />
     <div v-if="shown" class="card__rule" />
-    <!-- eslint-disable-next-line vue/no-v-html -->
+    <!-- eslint-disable-next-line vue/no-v-html -- measured against what a card may be drawn with -->
     <div v-if="shown" class="card__side" v-html="back" />
   </article>
 </template>

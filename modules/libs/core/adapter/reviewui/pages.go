@@ -18,14 +18,19 @@ var pages embed.FS
 const opensAt = "index.html"
 
 // policy is what this window may load: what this handler serves, and nothing
-// else. A card is markdown a person wrote and is drawn as text, so nothing here
-// reaches off the machine.
+// else.
+//
+// A card is HTML, and a deck may have come from another person, so the page
+// draws it through the allowlist the library keeps and this line stands behind
+// that: no script runs, no form is submitted anywhere, and nothing a card
+// carries reaches off the machine. A picture written into a card is a `data:`
+// URI, which is the card's own bytes and no request at all.
 //
 // Inline style is allowed because the page positions what it draws through the
 // style attribute.
-const policy = "default-src 'self'; img-src 'self'; style-src 'self' 'unsafe-inline'; " +
+const policy = "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; " +
 	"font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; " +
-	"frame-ancestors 'none'"
+	"form-action 'none'; frame-ancestors 'none'"
 
 // Pages is the interface itself, built by `make interface` and carried inside
 // the binary. A binary built without it says so.
