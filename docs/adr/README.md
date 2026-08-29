@@ -59,6 +59,8 @@ The numbers are identity, not order. This list is the order.
 - [ADR-0027 — The stencil and the deck](0027-the-stencil-and-the-deck.md)
 - [ADR-0028 — A card is named by what it holds, and known by a mark](0028-a-card-is-named-by-what-it-holds.md)
 - [ADR-0029 — A deck and a stencil are not searched by their text](0029-a-deck-and-a-stencil-are-not-searched-by-their-text.md)
+- [ADR-0030 — Review is an application of its own](0030-review-is-an-application-of-its-own.md)
+- [ADR-0031 — An answer is an artifact, a schedule is a cache](0031-an-answer-is-an-artifact-a-schedule-is-a-cache.md)
 
 ### Agents
 
@@ -78,6 +80,7 @@ What the product does, and what its words mean.
 - [note-format.md](../note-format.md) — the note file, key by key
 - [links.md](../links.md) — the link record, and how a name resolves
 - [cards.md](../cards.md) — the stencil and the deck, field by field
+- [review.md](../review.md) — running the cards: what is due, and what an answer is
 - [editing.md](../editing.md) — a note in a tab: saving, renaming, removing
 - [vaults.md](../vaults.md) — several vaults, one window
 - [reading.md](../reading.md) — how a book is read, and proofread
