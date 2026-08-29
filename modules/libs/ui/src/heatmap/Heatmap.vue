@@ -8,18 +8,27 @@
  * how many fit the room there is: a wide window shows more of the year rather
  * than the same weeks drawn larger, and a narrow one shows fewer rather than a
  * grid marooned in the middle of empty room.
+ *
+ * How the grid is laid out is `heatmap`, how a month is said is `naming`, and
+ * what one day comes to is `Told`. This puts the three on the screen.
  */
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 
-import { days, fits, ROWS } from './heatmap'
-import type { Day } from './heatmap'
+import Told from './Told.vue'
+import { days, fits, marks, ROWS } from './heatmap'
+import type { Day, Tally } from './heatmap'
+import { measuring } from './measuring'
+import { naming } from './naming'
+import type { Words } from './told'
 
 const props = withDefaults(
   defineProps<{
-    /** How much was done on each day, by the day it was done on. */
-    did: ReadonlyMap<string, number>
+    /** What was answered on each day, by the day it was answered on. */
+    did: ReadonlyMap<string, Tally>
     /** How much falls on each day still to come, by the day it falls on. */
     due?: ReadonlyMap<string, number>
+    /** What a day's account is called, in the person's own language. */
+    words: Words
     /** When it is. */
     now?: Date
     /** How large one cell is drawn, at most, in pixels. */
@@ -30,50 +39,28 @@ const props = withDefaults(
   { due: () => new Map(), now: () => new Date(), cell: 11, gap: 3 },
 )
 
-const emit = defineEmits<{ (event: 'reaches', day: Day): void }>()
-
-/** The room there is, measured, so the grid is laid out to what it has. */
 const held = ref<HTMLElement | null>(null)
-const room = ref(0)
-
-let watching: ResizeObserver | null = null
-
-onMounted(() => {
-  if (!held.value) return
-  room.value = held.value.clientWidth
-  if (typeof ResizeObserver === 'undefined') return
-  watching = new ResizeObserver(([one]) => {
-    room.value = one?.contentRect.width ?? 0
-  })
-  watching.observe(held.value)
-})
-
-onBeforeUnmount(() => {
-  watching?.disconnect()
-  watching = null
-})
+const room = measuring(held)
 
 const laid = computed(() => fits({ width: room.value, cell: props.cell, gap: props.gap }))
 const shown = computed(() => days(laid.value.columns, props.now, props.did, props.due))
+const said = computed(() => naming(marks(shown.value)))
 
 const step = computed(() => laid.value.cell + laid.value.gap)
-const height = computed(() => ROWS * step.value - laid.value.gap)
+/** The room the line of months takes over the grid. */
+const over = computed(() => Math.round(props.cell * 1.4))
+const height = computed(() => over.value + ROWS * step.value - laid.value.gap)
 
 const xOf = (at: number) => Math.floor(at / ROWS) * step.value
-const yOf = (at: number) => (at % ROWS) * step.value
+const yOf = (at: number) => over.value + (at % ROWS) * step.value
 
-/** What a day says when a person rests on it. */
-const told = (day: Day) => {
-  if (day.ahead) {
-    return day.did > 0 ? `${day.day}: ${day.did} to come` : `${day.day}: nothing due`
-  }
-  return day.did > 0 ? `${day.day}: ${day.did} answered` : `${day.day}: nothing answered`
+/** The day a person is pointing at, and where on the page they are pointing. */
+const pointed = ref<{ day: Day; at: { x: number; y: number } } | null>(null)
+
+const reaches = (day: Day, press: MouseEvent) => {
+  const cell = (press.target as SVGRectElement).getBoundingClientRect()
+  pointed.value = { day, at: { x: cell.right + 8, y: cell.top } }
 }
-
-watch(shown, (now) => {
-  const today = now.find((one) => one.today)
-  if (today) emit('reaches', today)
-})
 </script>
 
 <template>
@@ -87,6 +74,18 @@ watch(shown, (now) => {
       role="img"
       aria-label="What was answered on each day"
     >
+      <!-- Where a person is in the year, said over the column each month opens.
+           A grid of squares says nothing about when without it. -->
+      <text
+        v-for="one in said"
+        :key="one.column"
+        class="heatmap__mark"
+        :x="one.column * step"
+        :y="over * 0.7"
+      >
+        {{ one.says }}
+      </text>
+
       <rect
         v-for="(day, at) in shown"
         :key="day.day"
@@ -100,10 +99,12 @@ watch(shown, (now) => {
         :data-weight="day.weight"
         :data-ahead="day.ahead ? 'yes' : undefined"
         :data-today="day.today ? 'yes' : undefined"
-      >
-        <title>{{ told(day) }}</title>
-      </rect>
+        @mouseenter="reaches(day, $event)"
+        @mouseleave="pointed = null"
+      />
     </svg>
+
+    <Told v-if="pointed" :day="pointed.day" :at="pointed.at" :words="words" />
   </div>
 </template>
 
@@ -162,6 +163,13 @@ watch(shown, (now) => {
 .heatmap__day[data-ahead][data-weight='3'],
 .heatmap__day[data-ahead][data-weight='4'] {
   stroke-width: 1.5;
+}
+
+/* Where a person is in the year, said quietly over the grid. */
+.heatmap__mark {
+  fill: var(--numen-hushed);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-1);
 }
 
 /* Today is where a person's eye goes first, so it is ringed whatever it holds. */

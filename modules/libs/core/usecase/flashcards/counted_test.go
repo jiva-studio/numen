@@ -35,11 +35,11 @@ func TestWhatWasAnsweredIsCountedByDay(t *testing.T) {
 	if got.Answered != 3 {
 		t.Errorf("the vault holds %d answers, want 3", got.Answered)
 	}
-	if got.Days[today.Names(yesterday)] != 2 {
-		t.Errorf("yesterday came to %d, want 2: %v", got.Days[today.Names(yesterday)], got.Days)
+	if got.Days[today.Names(yesterday)].Answered != 2 {
+		t.Errorf("yesterday came to %d, want 2: %v", got.Days[today.Names(yesterday)].Answered, got.Days)
 	}
-	if got.Days[today.Names(time.Now())] != 1 {
-		t.Errorf("today came to %d, want 1: %v", got.Days[today.Names(time.Now())], got.Days)
+	if got.Days[today.Names(time.Now())].Answered != 1 {
+		t.Errorf("today came to %d, want 1: %v", got.Days[today.Names(time.Now())].Answered, got.Days)
 	}
 	if got.Streak != 2 {
 		t.Errorf("the streak is %d, want the two days answered", got.Streak)

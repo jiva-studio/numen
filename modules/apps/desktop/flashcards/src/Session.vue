@@ -123,7 +123,7 @@ defineEmits<{
   display: flex;
   align-items: center;
   gap: var(--numen-inset);
-  color: var(--numen-edge-label);
+  color: var(--numen-hushed);
   font-size: var(--numen-font-size);
 }
 
@@ -154,8 +154,8 @@ defineEmits<{
 /* What the answer does, said quietly beside it: it is read once, when a person
    is learning what the four mean, and glanced at after that. */
 .session__ahead {
-  color: var(--numen-edge-label);
-  font-size: var(--numen-edge-label-size);
+  color: var(--numen-hushed);
+  font-size: var(--numen-text-1);
   font-variant-numeric: tabular-nums;
 }
 

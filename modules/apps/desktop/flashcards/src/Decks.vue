@@ -7,6 +7,7 @@
  */
 import { computed } from 'vue'
 import { Button, Owed } from '@numen/ui'
+import type { HeatmapTally } from '@numen/ui'
 import Done from './Done.vue'
 import { deckName } from './core'
 import type { Owing } from './core'
@@ -14,11 +15,9 @@ import type { Owing } from './core'
 const props = defineProps<{
   vault: Owing
   /** How many cards were answered on each day, by the day it was. */
-  days: ReadonlyMap<string, number>
+  days: ReadonlyMap<string, HeatmapTally>
   /** How many cards fall on each day still to come, by the day they fall on. */
   due: ReadonlyMap<string, number>
-  /** How many days up to now were reviewed without a gap. */
-  streak: number
 }>()
 
 defineEmits<{
@@ -34,7 +33,7 @@ const owed = computed(() => props.vault.due + props.vault.new)
   <section class="decks">
     <h1 class="decks__title">{{ vault.name }}</h1>
 
-    <Done :days="days" :due="due" :streak="streak" />
+    <Done :days="days" :due="due" />
 
     <p v-if="!vault.decks.length" class="decks__saying">This vault holds no deck.</p>
 
@@ -98,7 +97,7 @@ const owed = computed(() => props.vault.due + props.vault.new)
 
 .decks__saying {
   margin: 0;
-  color: var(--numen-edge-label);
+  color: var(--numen-hushed);
 }
 
 .decks__list {

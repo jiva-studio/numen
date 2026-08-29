@@ -21,6 +21,49 @@ import (
 // would double what a card has been through and send it away for longer than it
 // was earned.
 func Replay(by Scheduler, answers []Answer) map[CardFace]Schedule {
+	return replayed(by, answers, nil)
+}
+
+// Retention is how much of what a person had learned came back to them, over
+// one day: the answers given to cards they had learned, and how many of those
+// came back at all.
+//
+// A card still being learned is not in it. What is asked of one is whether it
+// comes back after ten minutes, which says nothing about how well anything is
+// remembered.
+type Retention struct {
+	// Asked is the answers given to cards already learned, and Recalled the
+	// ones among them that were not Again.
+	Asked    int
+	Recalled int
+}
+
+// Retained is what came back on each day, by the name of the day.
+//
+// It is worked out with the replay and not beside it, because whether a card
+// was one the person had learned is a thing only the answers before it can say.
+func Retained(by Scheduler, d Day, answers []Answer) map[string]Retention {
+	out := make(map[string]Retention)
+	replayed(by, answers, func(before Schedule, a Answer) {
+		if !by.Learned(before) {
+			return
+		}
+		day := d.Names(a.At)
+		one := out[day]
+		one.Asked++
+		if a.Rating != Again {
+			one.Recalled++
+		}
+		out[day] = one
+	})
+	return out
+}
+
+// replayed walks the answers in the order they were given, telling each one to
+// the caller with the schedule the card face stood at before it.
+func replayed(
+	by Scheduler, answers []Answer, each func(before Schedule, a Answer),
+) map[CardFace]Schedule {
 	taken := make(map[string]bool)
 	for _, a := range answers {
 		if a.TakesBack() {
@@ -41,7 +84,11 @@ func Replay(by Scheduler, answers []Answer) map[CardFace]Schedule {
 
 	out := make(map[CardFace]Schedule)
 	for _, a := range given {
-		out[a.CardFace] = by.Next(out[a.CardFace], a.At, a.Rating)
+		before := out[a.CardFace]
+		if each != nil {
+			each(before, a)
+		}
+		out[a.CardFace] = by.Next(before, a.At, a.Rating)
 	}
 	return out
 }

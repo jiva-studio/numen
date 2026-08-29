@@ -9,8 +9,35 @@
 /** How many days stand in one column. A column is a week. */
 export const ROWS = 7
 
+/** What one day behind came to. */
+export interface Tally {
+  readonly answered: number
+  /** How each of the four was said. */
+  readonly again: number
+  readonly hard: number
+  readonly good: number
+  readonly easy: number
+  /**
+   * The answers given to cards the person had already learned, and how many of
+   * those came back. A card still being learned is in neither.
+   */
+  readonly asked: number
+  readonly recalled: number
+}
+
+/** A day nobody answered on, which is what an empty cell holds. */
+export const NOTHING: Tally = {
+  answered: 0,
+  again: 0,
+  hard: 0,
+  good: 0,
+  easy: 0,
+  asked: 0,
+  recalled: 0,
+}
+
 /** One day of the grid. */
-export interface Day {
+export interface Day extends Tally {
   /** The day it is, as the year, the month and the day it began on. */
   readonly day: string
   /** How much was done on it, or how much falls on it where it is still ahead. */
@@ -73,7 +100,7 @@ export function fits(room: Room): { columns: number; cell: number; gap: number }
 export function days(
   columns: number,
   now: Date,
-  did: ReadonlyMap<string, number>,
+  did: ReadonlyMap<string, Tally>,
   due: ReadonlyMap<string, number> = new Map(),
   named: (at: Date) => string = names,
 ): Day[] {
@@ -81,24 +108,71 @@ export function days(
   if (columns < 1) return out
 
   const today = named(now)
-  // The last day drawn: the Sunday ending the last week kept for what is
-  // still to come, or the week today stands in where there is no room for more.
+
+  // The last day the grid would draw if it ran back from now: the Sunday ending
+  // the last week kept for what is still to come.
   const weeks = Math.min(AHEAD, Math.max(0, columns - 1))
   const last = new Date(now)
   last.setHours(12, 0, 0, 0)
   last.setDate(last.getDate() + ((7 - weekday(last)) % 7) + weeks * ROWS)
 
-  const first = new Date(last)
-  first.setDate(first.getDate() - (columns * ROWS - 1))
+  const behind = new Date(last)
+  behind.setDate(behind.getDate() - (columns * ROWS - 1))
+
+  // A person with less history than the grid holds begins at the left, and the
+  // room they have not filled yet stretches out to the right. Running back from
+  // today instead would put their first week at the far edge behind a year of
+  // empty weeks, which says they missed a year they were never here for. As the
+  // history grows today drifts rightward, and once it fills the grid the weeks
+  // run back from what is still to come.
+  const opens = monday(began(did, due, now))
+  const first = opens > behind ? opens : behind
 
   for (let at = 0; at < columns * ROWS; at += 1) {
     const on = new Date(first)
     on.setDate(on.getDate() + at)
     const day = named(on)
     const ahead = day > today
-    const count = (ahead ? due.get(day) : did.get(day)) ?? 0
-    out.push({ day, did: count, weight: weighs(count), today: day === today, ahead })
+    const tally = did.get(day) ?? NOTHING
+    const count = ahead ? (due.get(day) ?? 0) : tally.answered
+    out.push({
+      ...(ahead ? NOTHING : tally),
+      day,
+      did: count,
+      weight: weighs(count),
+      today: day === today,
+      ahead,
+    })
   }
+  return out
+}
+
+/**
+ * The day a person's history begins, or today where they have none. A day still
+ * to come counts: a vault whose cards are all ahead has a beginning too.
+ */
+function began(
+  did: ReadonlyMap<string, unknown>,
+  due: ReadonlyMap<string, unknown>,
+  now: Date,
+): Date {
+  let first = ''
+  for (const day of [...did.keys(), ...due.keys()]) {
+    if (first === '' || day < first) first = day
+  }
+  if (first === '') return now
+  const [year, month, day] = first.split('-').map(Number)
+  const at = new Date(now)
+  at.setFullYear(year ?? now.getFullYear(), (month ?? 1) - 1, day ?? 1)
+  at.setHours(12, 0, 0, 0)
+  return at > now ? now : at
+}
+
+/** The Monday of the week a day stands in, which is the column it opens. */
+function monday(at: Date): Date {
+  const out = new Date(at)
+  out.setHours(12, 0, 0, 0)
+  out.setDate(out.getDate() - (weekday(out) - 1))
   return out
 }
 
@@ -119,6 +193,47 @@ export function weighs(did: number): Day['weight'] {
   if (did < 20) return 2
   if (did < 50) return 3
   return 4
+}
+
+/**
+ * One label over the grid: the day the column opens, and whether the year
+ * changed with the month. What it is called is the drawing's, because a month
+ * is called something different to everyone reading it.
+ */
+export interface Mark {
+  /** The first day of the column, as the year, the month and the day. */
+  readonly day: string
+  readonly column: number
+  /** Whether this column opens a year as well as a month. */
+  readonly year: boolean
+}
+
+/**
+ * Where the months change: the column each one opens, said once.
+ *
+ * A column too close to the one before it is left unsaid, because two labels
+ * over neighbouring columns run into one another.
+ */
+export function marks(shown: readonly Day[], apart = 3): Mark[] {
+  const out: Mark[] = []
+  let was = ''
+  let held = ''
+  let at = -apart
+
+  for (let column = 0; column * ROWS < shown.length; column += 1) {
+    const day = shown[column * ROWS]
+    if (!day) break
+    const [year, month] = day.day.split('-')
+    if (!year || !month) continue
+    if (month === was) continue
+    was = month
+    if (column - at < apart) continue
+    at = column
+    const turned = year !== held
+    held = year
+    out.push({ day: day.day, column, year: turned })
+  }
+  return out
 }
 
 /** A day as it is written down: the year, the month and the day. */

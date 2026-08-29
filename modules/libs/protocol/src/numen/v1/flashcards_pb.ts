@@ -21,7 +21,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/flashcards.proto.
  */
 export const file_numen_v1_flashcards: GenFile = /*@__PURE__*/
-  fileDesc("ChludW1lbi92MS9mbGFzaGNhcmRzLnByb3RvEghudW1lbi52MSKXAQoKVmF1bHRPd2luZxIQCgh2YXVsdF9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFZmFjZXMYBCABKAUSCwoDZHVlGAUgASgFEgsKA25ldxgGIAEoBRIiCgVkZWNrcxgHIAMoCzITLm51bWVuLnYxLkRlY2tPd2luZxIOCgZ1bnJlYWQYCCABKAkiQgoJRGVja093aW5nEgwKBGRlY2sYASABKAkSDQoFZmFjZXMYAiABKAUSCwoDZHVlGAMgASgFEgsKA25ldxgEIAEoBSJACgVBaGVhZBINCgVhZ2FpbhgBIAEoAxIMCgRoYXJkGAIgASgDEgwKBGdvb2QYAyABKAMSDAoEZWFzeRgEIAEoAyKrAQoFQXNrZWQSDAoEZGVjaxgBIAEoCRIPCgdzZWN0aW9uGAIgASgJEgwKBGNhcmQYAyABKAkSDAoEZmFjZRgEIAEoCRIPCgdoZWFkaW5nGAUgASgJEg0KBWZyb250GAYgASgJEgwKBGJhY2sYByABKAkSDAoEc2VlbhgIIAEoCBILCgNkdWUYCSABKAkSHgoFYWhlYWQYCiABKAsyDy5udW1lbi52MS5BaGVhZCIOCgxPd2luZ1JlcXVlc3QiNQoNT3dpbmdSZXNwb25zZRIkCgZ2YXVsdHMYASADKAsyFC5udW1lbi52MS5WYXVsdE93aW5nIi4KDFN0YXJ0UmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRIMCgRkZWNrGAIgASgJImAKDVN0YXJ0UmVzcG9uc2USCwoDcnVuGAEgASgJEh4KBWFza2VkGAIgAygLMg8ubnVtZW4udjEuQXNrZWQSEQoJdW53cml0dGVuGAMgAygJEg8KB3NraXBwZWQYBCABKAUifQoNQW5zd2VyUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRILCgNydW4YAiABKAkSDAoEY2FyZBgDIAEoCRIMCgRmYWNlGAQgASgJEiAKBnJhdGluZxgFIAEoDjIQLm51bWVuLnYxLlJhdGluZxIPCgd0b29rX21zGAYgASgDIiAKDkFuc3dlclJlc3BvbnNlEg4KBmFuc3dlchgBIAEoCSJACg9UYWtlQmFja1JlcXVlc3QSEAoIdmF1bHRfaWQYASABKAkSCwoDcnVuGAIgASgJEg4KBmFuc3dlchgDIAEoCSISChBUYWtlQmFja1Jlc3BvbnNlIiMKD1Jldmlld2VkUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCSJ5ChBSZXZpZXdlZFJlc3BvbnNlEiEKBGRheXMYASADKAsyEy5udW1lbi52MS5SZXZpZXdpbmcSIAoDZHVlGAQgAygLMhMubnVtZW4udjEuUmV2aWV3aW5nEg4KBnN0cmVhaxgCIAEoBRIQCghhbnN3ZXJlZBgDIAEoBSIqCglSZXZpZXdpbmcSCwoDZGF5GAEgASgJEhAKCGFuc3dlcmVkGAIgASgFIg8KDU1vdmluZ1JlcXVlc3QiIAoOTW92aW5nUmVzcG9uc2USDgoGcmVsb2FkGAEgASgIKmUKBlJhdGluZxIWChJSQVRJTkdfVU5TUEVDSUZJRUQQABIQCgxSQVRJTkdfQUdBSU4QARIPCgtSQVRJTkdfSEFSRBACEg8KC1JBVElOR19HT09EEAMSDwoLUkFUSU5HX0VBU1kQBDKJAwoRRmxhc2hjYXJkc1NlcnZpY2USOAoFT3dpbmcSFi5udW1lbi52MS5Pd2luZ1JlcXVlc3QaFy5udW1lbi52MS5Pd2luZ1Jlc3BvbnNlEjgKBVN0YXJ0EhYubnVtZW4udjEuU3RhcnRSZXF1ZXN0GhcubnVtZW4udjEuU3RhcnRSZXNwb25zZRI7CgZBbnN3ZXISFy5udW1lbi52MS5BbnN3ZXJSZXF1ZXN0GhgubnVtZW4udjEuQW5zd2VyUmVzcG9uc2USQQoIVGFrZUJhY2sSGS5udW1lbi52MS5UYWtlQmFja1JlcXVlc3QaGi5udW1lbi52MS5UYWtlQmFja1Jlc3BvbnNlEj0KBk1vdmluZxIXLm51bWVuLnYxLk1vdmluZ1JlcXVlc3QaGC5udW1lbi52MS5Nb3ZpbmdSZXNwb25zZTABEkEKCFJldmlld2VkEhkubnVtZW4udjEuUmV2aWV3ZWRSZXF1ZXN0GhoubnVtZW4udjEuUmV2aWV3ZWRSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChludW1lbi92MS9mbGFzaGNhcmRzLnByb3RvEghudW1lbi52MSKXAQoKVmF1bHRPd2luZxIQCgh2YXVsdF9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFZmFjZXMYBCABKAUSCwoDZHVlGAUgASgFEgsKA25ldxgGIAEoBRIiCgVkZWNrcxgHIAMoCzITLm51bWVuLnYxLkRlY2tPd2luZxIOCgZ1bnJlYWQYCCABKAkiQgoJRGVja093aW5nEgwKBGRlY2sYASABKAkSDQoFZmFjZXMYAiABKAUSCwoDZHVlGAMgASgFEgsKA25ldxgEIAEoBSJACgVBaGVhZBINCgVhZ2FpbhgBIAEoAxIMCgRoYXJkGAIgASgDEgwKBGdvb2QYAyABKAMSDAoEZWFzeRgEIAEoAyKrAQoFQXNrZWQSDAoEZGVjaxgBIAEoCRIPCgdzZWN0aW9uGAIgASgJEgwKBGNhcmQYAyABKAkSDAoEZmFjZRgEIAEoCRIPCgdoZWFkaW5nGAUgASgJEg0KBWZyb250GAYgASgJEgwKBGJhY2sYByABKAkSDAoEc2VlbhgIIAEoCBILCgNkdWUYCSABKAkSHgoFYWhlYWQYCiABKAsyDy5udW1lbi52MS5BaGVhZCIOCgxPd2luZ1JlcXVlc3QiNQoNT3dpbmdSZXNwb25zZRIkCgZ2YXVsdHMYASADKAsyFC5udW1lbi52MS5WYXVsdE93aW5nIi4KDFN0YXJ0UmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRIMCgRkZWNrGAIgASgJImAKDVN0YXJ0UmVzcG9uc2USCwoDcnVuGAEgASgJEh4KBWFza2VkGAIgAygLMg8ubnVtZW4udjEuQXNrZWQSEQoJdW53cml0dGVuGAMgAygJEg8KB3NraXBwZWQYBCABKAUifQoNQW5zd2VyUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRILCgNydW4YAiABKAkSDAoEY2FyZBgDIAEoCRIMCgRmYWNlGAQgASgJEiAKBnJhdGluZxgFIAEoDjIQLm51bWVuLnYxLlJhdGluZxIPCgd0b29rX21zGAYgASgDIiAKDkFuc3dlclJlc3BvbnNlEg4KBmFuc3dlchgBIAEoCSJACg9UYWtlQmFja1JlcXVlc3QSEAoIdmF1bHRfaWQYASABKAkSCwoDcnVuGAIgASgJEg4KBmFuc3dlchgDIAEoCSISChBUYWtlQmFja1Jlc3BvbnNlIiMKD1Jldmlld2VkUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCSJ5ChBSZXZpZXdlZFJlc3BvbnNlEiEKBGRheXMYASADKAsyEy5udW1lbi52MS5SZXZpZXdpbmcSIAoDZHVlGAQgAygLMhMubnVtZW4udjEuUmV2aWV3aW5nEg4KBnN0cmVhaxgCIAEoBRIQCghhbnN3ZXJlZBgDIAEoBSKEAQoJUmV2aWV3aW5nEgsKA2RheRgBIAEoCRIQCghhbnN3ZXJlZBgCIAEoBRINCgVhZ2FpbhgDIAEoBRIMCgRoYXJkGAQgASgFEgwKBGdvb2QYBSABKAUSDAoEZWFzeRgGIAEoBRINCgVhc2tlZBgHIAEoBRIQCghyZWNhbGxlZBgIIAEoBSIPCg1Nb3ZpbmdSZXF1ZXN0IiAKDk1vdmluZ1Jlc3BvbnNlEg4KBnJlbG9hZBgBIAEoCCplCgZSYXRpbmcSFgoSUkFUSU5HX1VOU1BFQ0lGSUVEEAASEAoMUkFUSU5HX0FHQUlOEAESDwoLUkFUSU5HX0hBUkQQAhIPCgtSQVRJTkdfR09PRBADEg8KC1JBVElOR19FQVNZEAQyiQMKEUZsYXNoY2FyZHNTZXJ2aWNlEjgKBU93aW5nEhYubnVtZW4udjEuT3dpbmdSZXF1ZXN0GhcubnVtZW4udjEuT3dpbmdSZXNwb25zZRI4CgVTdGFydBIWLm51bWVuLnYxLlN0YXJ0UmVxdWVzdBoXLm51bWVuLnYxLlN0YXJ0UmVzcG9uc2USOwoGQW5zd2VyEhcubnVtZW4udjEuQW5zd2VyUmVxdWVzdBoYLm51bWVuLnYxLkFuc3dlclJlc3BvbnNlEkEKCFRha2VCYWNrEhkubnVtZW4udjEuVGFrZUJhY2tSZXF1ZXN0GhoubnVtZW4udjEuVGFrZUJhY2tSZXNwb25zZRI9CgZNb3ZpbmcSFy5udW1lbi52MS5Nb3ZpbmdSZXF1ZXN0GhgubnVtZW4udjEuTW92aW5nUmVzcG9uc2UwARJBCghSZXZpZXdlZBIZLm51bWVuLnYxLlJldmlld2VkUmVxdWVzdBoaLm51bWVuLnYxLlJldmlld2VkUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * VaultOwing is one vault, and what its cards come to today.
@@ -501,7 +501,7 @@ export const ReviewedResponseSchema: GenMessage<ReviewedResponse> = /*@__PURE__*
   messageDesc(file_numen_v1_flashcards, 13);
 
 /**
- * Reviewing is one day, and how many cards were answered on it.
+ * Reviewing is one day, and what was answered on it.
  *
  * @generated from message numen.v1.Reviewing
  */
@@ -518,6 +518,46 @@ export type Reviewing = Message<"numen.v1.Reviewing"> & {
    * @generated from field: int32 answered = 2;
    */
   answered: number;
+
+  /**
+   * How each of the four was said, for a day that is behind. A day of fifty
+   * cards a person could not recall is a different day from fifty they could,
+   * and the two are the same number without these.
+   *
+   * @generated from field: int32 again = 3;
+   */
+  again: number;
+
+  /**
+   * @generated from field: int32 hard = 4;
+   */
+  hard: number;
+
+  /**
+   * @generated from field: int32 good = 5;
+   */
+  good: number;
+
+  /**
+   * @generated from field: int32 easy = 6;
+   */
+  easy: number;
+
+  /**
+   * How much of what the person had already learned came back to them:
+   * `asked` is the answers given to learned cards, `recalled` the ones among
+   * them that were not Again. A card still being learned is in neither — what
+   * is asked of one is whether it comes back after ten minutes, which says
+   * nothing about how well anything is remembered.
+   *
+   * @generated from field: int32 asked = 7;
+   */
+  asked: number;
+
+  /**
+   * @generated from field: int32 recalled = 8;
+   */
+  recalled: number;
 };
 
 /**

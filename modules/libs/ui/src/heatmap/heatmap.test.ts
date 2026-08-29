@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { days, fits, names, ROWS, weighs } from './heatmap'
+import { days, fits, names, NOTHING, ROWS, weighs } from './heatmap'
+import type { Tally } from './heatmap'
 
 describe('how much of a year fits', () => {
   // A wide window shows more of the year rather than the same weeks drawn
@@ -33,8 +34,17 @@ describe('how much of a year fits', () => {
   })
 })
 
+/** answeredOn is days a person answered on, as many cards as each says. */
+const answeredOn = (days: [string, number][]) =>
+  new Map(
+    days.map(([day, answered]) => [
+      day,
+      { ...NOTHING, answered, good: answered, asked: answered, recalled: answered },
+    ]),
+  )
+
 describe('the days a grid draws', () => {
-  const did = new Map<string, number>()
+  const did = new Map<string, Tally>()
 
   it('is a whole week to a column', () => {
     expect(days(8, new Date('2026-08-29T12:00:00'), did)).toHaveLength(8 * ROWS)
@@ -62,6 +72,44 @@ describe('the days a grid draws', () => {
     }
   })
 
+  // A person two days in has not missed a year: their history begins at the
+  // left, and the room they have not filled stretches out to the right.
+  it('begins on the week a person began, where that is less than it holds', () => {
+    const now = new Date('2026-08-29T12:00:00')
+    const started = answeredOn([['2026-08-28', 3]])
+    const shown = days(30, now, started)
+
+    // The week that day stands in is the first column: the Monday before it.
+    expect(shown[0]!.day).toBe('2026-08-24')
+    expect(shown.some((one) => one.today)).toBe(true)
+    // And everything past today is still to come.
+    expect(shown[shown.length - 1]!.ahead).toBe(true)
+  })
+
+  // Once there is more history than the grid holds, it runs back from what is
+  // still to come, and the oldest weeks fall off the left.
+  it('runs back from what is coming, where the history is longer than it holds', () => {
+    const now = new Date('2026-08-29T12:00:00')
+    const long = answeredOn([
+      ['2024-01-01', 5],
+      ['2026-08-28', 3],
+    ])
+    const shown = days(12, now, long)
+
+    expect(shown[0]!.day > '2024-01-01').toBe(true)
+    expect(shown.some((one) => one.today)).toBe(true)
+    expect(shown).toHaveLength(12 * ROWS)
+  })
+
+  // A vault whose cards are all still ahead has a beginning too, and it is not
+  // drawn as a year of missed days.
+  it('begins at the left for a vault with nothing behind it', () => {
+    const now = new Date('2026-08-29T12:00:00')
+    const shown = days(30, now, new Map(), new Map([['2026-09-03', 8]]))
+
+    expect(shown[0]!.day).toBe('2026-08-24')
+  })
+
   it('gives the room to what is behind where there is little of it', () => {
     const shown = days(1, new Date('2026-08-29T12:00:00'), did)
     expect(shown).toHaveLength(ROWS)
@@ -73,7 +121,7 @@ describe('the days a grid draws', () => {
   // is adding to.
   it('reads what is coming for the days still to come', () => {
     const now = new Date('2026-08-29T12:00:00')
-    const done = new Map([
+    const done = answeredOn([
       ['2026-08-29', 4],
       ['2026-09-02', 99],
     ])
@@ -91,7 +139,7 @@ describe('the days a grid draws', () => {
 
   it('reads what was done on each day it draws', () => {
     const on = new Date('2026-08-29T12:00:00')
-    const counted = new Map([
+    const counted = answeredOn([
       [names(on), 12],
       ['2026-08-28', 60],
     ])

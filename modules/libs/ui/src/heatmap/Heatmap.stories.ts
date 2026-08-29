@@ -10,6 +10,8 @@ import { expect } from 'storybook/test'
 
 import Heatmap from './Heatmap.vue'
 import { names, ROWS } from './heatmap'
+import type { Tally } from './heatmap'
+import type { Words } from './told'
 
 const meta = {
   title: 'Generic/Heatmap',
@@ -22,15 +24,38 @@ type Story = StoryObj<typeof meta>
 /** A day this many days before the one the stories stand on. */
 const now = new Date(2026, 7, 29, 12)
 
+/** The words a window puts on a day's account. */
+const words: Words = {
+  names: (day) => day,
+  answered: 'answered',
+  nothing: 'Nothing answered',
+  toCome: 'to come',
+  again: 'Again',
+  hard: 'Hard',
+  good: 'Good',
+  easy: 'Easy',
+  recalled: 'recalled',
+}
+
 /** worked is a year of days, most of them answered on. */
-function worked(): Map<string, number> {
-  const out = new Map<string, number>()
+function worked(): Map<string, Tally> {
+  const out = new Map<string, Tally>()
   for (let back = 0; back < 300; back += 1) {
     const on = new Date(now)
     on.setDate(on.getDate() - back)
     // Sundays off, and the rest a hand of cards.
     if (on.getDay() === 0) continue
-    out.set(names(on), ((back * 7) % 60) + 1)
+    const answered = ((back * 7) % 60) + 1
+    const again = back % 5 === 0 ? 2 : 0
+    out.set(names(on), {
+      answered,
+      again,
+      hard: 1,
+      good: Math.max(0, answered - again - 2),
+      easy: 1,
+      asked: Math.max(0, answered - 1),
+      recalled: Math.max(0, answered - 1 - again),
+    })
   }
   return out
 }
@@ -39,7 +64,7 @@ const cells = (canvas: HTMLElement) => canvas.querySelectorAll('.heatmap__day')
 
 /** A year of answers, in the room a window gives it. */
 export const AYear: Story = {
-  args: { did: worked(), now },
+  args: { did: worked(), now, words },
   render: (args) => ({
     components: { Heatmap },
     setup: () => ({ args }),
@@ -60,7 +85,7 @@ export const AYear: Story = {
  * were.
  */
 export const Narrow: Story = {
-  args: { did: worked(), now },
+  args: { did: worked(), now, words },
   render: (args) => ({
     components: { Heatmap },
     setup: () => ({ args }),
@@ -81,7 +106,7 @@ export const Narrow: Story = {
 
 /** A vault nobody has answered: every day drawn, none of them filled. */
 export const Nothing: Story = {
-  args: { did: new Map<string, number>(), now },
+  args: { did: new Map<string, Tally>(), now, words },
   render: (args) => ({
     components: { Heatmap },
     setup: () => ({ args }),

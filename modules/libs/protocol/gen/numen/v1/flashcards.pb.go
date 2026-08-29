@@ -1025,13 +1025,27 @@ func (x *ReviewedResponse) GetAnswered() int32 {
 	return 0
 }
 
-// Reviewing is one day, and how many cards were answered on it.
+// Reviewing is one day, and what was answered on it.
 type Reviewing struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Day is the day it began on, as the year, the month and the day: an answer
 	// given in the small hours belongs to the day before, and is named for it.
-	Day           string `protobuf:"bytes,1,opt,name=day,proto3" json:"day,omitempty"`
-	Answered      int32  `protobuf:"varint,2,opt,name=answered,proto3" json:"answered,omitempty"`
+	Day      string `protobuf:"bytes,1,opt,name=day,proto3" json:"day,omitempty"`
+	Answered int32  `protobuf:"varint,2,opt,name=answered,proto3" json:"answered,omitempty"`
+	// How each of the four was said, for a day that is behind. A day of fifty
+	// cards a person could not recall is a different day from fifty they could,
+	// and the two are the same number without these.
+	Again int32 `protobuf:"varint,3,opt,name=again,proto3" json:"again,omitempty"`
+	Hard  int32 `protobuf:"varint,4,opt,name=hard,proto3" json:"hard,omitempty"`
+	Good  int32 `protobuf:"varint,5,opt,name=good,proto3" json:"good,omitempty"`
+	Easy  int32 `protobuf:"varint,6,opt,name=easy,proto3" json:"easy,omitempty"`
+	// How much of what the person had already learned came back to them:
+	// `asked` is the answers given to learned cards, `recalled` the ones among
+	// them that were not Again. A card still being learned is in neither — what
+	// is asked of one is whether it comes back after ten minutes, which says
+	// nothing about how well anything is remembered.
+	Asked         int32 `protobuf:"varint,7,opt,name=asked,proto3" json:"asked,omitempty"`
+	Recalled      int32 `protobuf:"varint,8,opt,name=recalled,proto3" json:"recalled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1076,6 +1090,48 @@ func (x *Reviewing) GetDay() string {
 func (x *Reviewing) GetAnswered() int32 {
 	if x != nil {
 		return x.Answered
+	}
+	return 0
+}
+
+func (x *Reviewing) GetAgain() int32 {
+	if x != nil {
+		return x.Again
+	}
+	return 0
+}
+
+func (x *Reviewing) GetHard() int32 {
+	if x != nil {
+		return x.Hard
+	}
+	return 0
+}
+
+func (x *Reviewing) GetGood() int32 {
+	if x != nil {
+		return x.Good
+	}
+	return 0
+}
+
+func (x *Reviewing) GetEasy() int32 {
+	if x != nil {
+		return x.Easy
+	}
+	return 0
+}
+
+func (x *Reviewing) GetAsked() int32 {
+	if x != nil {
+		return x.Asked
+	}
+	return 0
+}
+
+func (x *Reviewing) GetRecalled() int32 {
+	if x != nil {
+		return x.Recalled
 	}
 	return 0
 }
@@ -1230,10 +1286,16 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x04days\x18\x01 \x03(\v2\x13.numen.v1.ReviewingR\x04days\x12%\n" +
 	"\x03due\x18\x04 \x03(\v2\x13.numen.v1.ReviewingR\x03due\x12\x16\n" +
 	"\x06streak\x18\x02 \x01(\x05R\x06streak\x12\x1a\n" +
-	"\banswered\x18\x03 \x01(\x05R\banswered\"9\n" +
+	"\banswered\x18\x03 \x01(\x05R\banswered\"\xbd\x01\n" +
 	"\tReviewing\x12\x10\n" +
 	"\x03day\x18\x01 \x01(\tR\x03day\x12\x1a\n" +
-	"\banswered\x18\x02 \x01(\x05R\banswered\"\x0f\n" +
+	"\banswered\x18\x02 \x01(\x05R\banswered\x12\x14\n" +
+	"\x05again\x18\x03 \x01(\x05R\x05again\x12\x12\n" +
+	"\x04hard\x18\x04 \x01(\x05R\x04hard\x12\x12\n" +
+	"\x04good\x18\x05 \x01(\x05R\x04good\x12\x12\n" +
+	"\x04easy\x18\x06 \x01(\x05R\x04easy\x12\x14\n" +
+	"\x05asked\x18\a \x01(\x05R\x05asked\x12\x1a\n" +
+	"\brecalled\x18\b \x01(\x05R\brecalled\"\x0f\n" +
 	"\rMovingRequest\"(\n" +
 	"\x0eMovingResponse\x12\x16\n" +
 	"\x06reload\x18\x01 \x01(\bR\x06reload*e\n" +

@@ -30,7 +30,7 @@
   --color-surface: var(--numen-surface);
   --color-raised: var(--numen-node-bg);
   --color-ink: var(--numen-node-fg);
-  --color-hushed: var(--numen-edge-label);
+  --color-hushed: var(--numen-hushed);
   --color-rule: var(--numen-node-border);
   --color-ring: var(--numen-ring);
   --color-alarm: var(--numen-alarm);

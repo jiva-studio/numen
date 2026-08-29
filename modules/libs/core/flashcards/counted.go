@@ -17,12 +17,26 @@ func (d Day) Names(at time.Time) string {
 	return d.Ends(at).AddDate(0, 0, -1).Format(Named)
 }
 
-// Counted is how many answers were given on each day, by the name of the day.
+// Tally is one day's answers: how many were given, and how each of the four was
+// said.
+//
+// The four are kept apart because a day of fifty cards a person could not
+// recall is a different day from fifty they could, and the two are the same
+// number.
+type Tally struct {
+	Answered int
+	Again    int
+	Hard     int
+	Good     int
+	Easy     int
+}
+
+// Counted is what was answered on each day, by the name of the day.
 //
 // It is a sum and not an order: an answer arriving from another machine after
 // later ones have been counted adds to the day it belongs to and disturbs
 // nothing, which is what lets these be worked out one file at a time and kept.
-func Counted(d Day, answers []Answer) map[string]int {
+func Counted(d Day, answers []Answer) map[string]Tally {
 	taken := make(map[string]bool)
 	for _, a := range answers {
 		if a.TakesBack() {
@@ -31,13 +45,27 @@ func Counted(d Day, answers []Answer) map[string]int {
 	}
 
 	seen := make(map[string]bool, len(answers))
-	out := make(map[string]int)
+	out := make(map[string]Tally)
 	for _, a := range answers {
 		if a.TakesBack() || taken[a.ID] || seen[a.ID] {
 			continue
 		}
 		seen[a.ID] = true
-		out[d.Names(a.At)]++
+
+		day := d.Names(a.At)
+		one := out[day]
+		one.Answered++
+		switch a.Rating {
+		case Again:
+			one.Again++
+		case Hard:
+			one.Hard++
+		case Good:
+			one.Good++
+		case Easy:
+			one.Easy++
+		}
+		out[day] = one
 	}
 	return out
 }
@@ -48,20 +76,20 @@ func Counted(d Day, answers []Answer) map[string]int {
 // on yet does not end a streak: a person who has not sat down this morning has
 // not broken anything, and their streak is what they had last night. A day they
 // did answer on counts from itself.
-func Streak(d Day, days map[string]int, now time.Time) int {
+func Streak(d Day, days map[string]Tally, now time.Time) int {
 	in := d.In
 	if in == nil {
 		in = time.Local
 	}
 
 	at := now.In(in)
-	if days[d.Names(at)] == 0 {
+	if days[d.Names(at)].Answered == 0 {
 		// Today is not answered yet, so the count is of the days behind it.
 		at = at.AddDate(0, 0, -1)
 	}
 
 	out := 0
-	for days[d.Names(at)] > 0 {
+	for days[d.Names(at)].Answered > 0 {
 		out++
 		at = at.AddDate(0, 0, -1)
 	}
