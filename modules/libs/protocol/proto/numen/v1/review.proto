@@ -54,6 +54,11 @@ service ReviewService {
   // `changed`: what a person typed here is theirs, and nothing writes over what
   // somebody else did to the file.
   rpc WriteCard(WriteCardRequest) returns (WriteCardResponse);
+
+  // RemoveCard takes the card out of its deck. What was answered about it stays
+  // in the log: a card taken out is a card nothing asks about, and its history
+  // is its own if it ever comes back.
+  rpc RemoveCard(RemoveCardRequest) returns (RemoveCardResponse);
 }
 
 // Rating is how well a card came back. A person says which of the four, and
@@ -173,6 +178,21 @@ message TakeBackRequest {
 }
 
 message TakeBackResponse {}
+
+message RemoveCardRequest {
+  string vault_id = 1;
+  string deck = 2;
+  string card = 3;
+  // What a read of this deck gave the caller.
+  Fingerprint at = 4;
+}
+
+message RemoveCardResponse {
+  Fingerprint at = 1;
+  // The deck moved past what the caller read, and nothing was written.
+  bool changed = 2;
+  string refused = 3;
+}
 
 message EditRequest {
   string vault_id = 1;

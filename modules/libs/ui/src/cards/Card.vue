@@ -10,7 +10,6 @@
 import { computed, useId } from 'vue'
 import Amiss from './Amiss.vue'
 import Bar from './Bar.vue'
-import Deed from './Deed.vue'
 import Grown from './Grown.vue'
 import Rule from '../rule/Rule.vue'
 import { DECK_WORDS, sealed, type CardWords, type Stood, type Tile } from './deck'
@@ -89,13 +88,11 @@ const wrongIn = (value: Stood): readonly string[] =>
         {{ tile.stencil }}
       </p>
 
+      <!-- What can be done to this card from its strip. It belongs to whoever
+           is drawing the card: a deck takes one out of itself, and a window
+           that cannot take one out offers nothing. -->
       <template #deeds>
-        <!-- What can be done to this card from its strip. Taking it out of the
-             deck is what a deck offers; a window that cannot take one out
-             hands in its own, or nothing. -->
-        <slot name="deeds">
-          <Deed :label="`${words.remove}: ${called}`" @press="emit('remove')" />
-        </slot>
+        <slot name="deeds" :called="called" />
       </template>
     </Bar>
 
