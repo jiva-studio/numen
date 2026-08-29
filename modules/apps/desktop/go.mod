@@ -3,23 +3,23 @@ module github.com/jiva-studio/numen/modules/apps/desktop
 go 1.26.5
 
 require (
-	connectrpc.com/connect v1.20.0
-	github.com/ebitengine/purego v0.9.0
-	github.com/getcharzp/go-ocr v0.0.0-20260818071741-a892e438f08d
-	github.com/getcharzp/onnxruntime_purego v1.24.0
-	github.com/gomlx/compute v0.1.3
-	github.com/gomlx/go-huggingface v0.4.1
-	github.com/gomlx/gomlx v0.28.4
-	github.com/gomlx/onnx-gomlx v0.5.2
-	github.com/klippa-app/go-pdfium v1.19.8
-	github.com/modelcontextprotocol/go-sdk v1.7.0
-	github.com/rjeczalik/notify v0.9.3
-	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
+	connectrpc.com/connect v1.20.0 // indirect
+	github.com/ebitengine/purego v0.9.0 // indirect
+	github.com/getcharzp/go-ocr v0.0.0-20260818071741-a892e438f08d // indirect
+	github.com/getcharzp/onnxruntime_purego v1.24.0 // indirect
+	github.com/gomlx/compute v0.1.3 // indirect
+	github.com/gomlx/go-huggingface v0.4.1 // indirect
+	github.com/gomlx/gomlx v0.28.4 // indirect
+	github.com/gomlx/onnx-gomlx v0.5.2 // indirect
+	github.com/klippa-app/go-pdfium v1.19.8 // indirect
+	github.com/modelcontextprotocol/go-sdk v1.7.0 // indirect
+	github.com/rjeczalik/notify v0.9.3 // indirect
+	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06 // indirect
 	github.com/wailsapp/wails/v3 v3.0.0-beta.8
-	golang.org/x/image v0.45.0
-	golang.org/x/net v0.58.0
-	gopkg.in/yaml.v3 v3.0.1
-	modernc.org/sqlite v1.56.0
+	golang.org/x/image v0.45.0 // indirect
+	golang.org/x/net v0.58.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
+	modernc.org/sqlite v1.56.0 // indirect
 )
 
 require (
@@ -28,9 +28,7 @@ require (
 	github.com/gomlx/exceptions v0.0.3 // indirect
 	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/jolestar/go-commons-pool/v2 v2.1.2 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/rogpeppe/go-internal v1.16.0 // indirect
 	github.com/segmentio/asm v1.1.3 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect
 	github.com/tetratelabs/wazero v1.12.0 // indirect
@@ -52,16 +50,20 @@ require (
 	github.com/godbus/dbus/v5 v5.2.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/jchv/go-winloader v0.0.0-20250406163304-c1995be93bd1 // indirect
-	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0
+	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f // indirect
-	golang.org/x/sys v0.47.0
+	golang.org/x/sys v0.47.0 // indirect
 	modernc.org/libc v1.74.4 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 )
 
 replace github.com/jiva-studio/numen/modules/libs/protocol => ../../libs/protocol
+
+require github.com/jiva-studio/numen/modules/libs/core v0.0.0
+
+replace github.com/jiva-studio/numen/modules/libs/core => ../../libs/core

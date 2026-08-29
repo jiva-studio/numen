@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
+	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
 
 // What stopped the application is said where a person is: in a window, with

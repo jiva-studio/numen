@@ -128,7 +128,10 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.26"
-          cache-dependency-path: modules/apps/desktop/go.sum
+          # The window is built from both modules.
+          cache-dependency-path: |
+            modules/apps/desktop/go.sum
+            modules/libs/core/go.sum
 
       - uses: actions/setup-node@v4
         with:
@@ -218,7 +221,10 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.26"
-          cache-dependency-path: modules/apps/desktop/go.sum
+          # The window is built from both modules.
+          cache-dependency-path: |
+            modules/apps/desktop/go.sum
+            modules/libs/core/go.sum
 
       - uses: actions/setup-node@v4
         with:
@@ -287,7 +293,10 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.26"
-          cache-dependency-path: modules/apps/desktop/go.sum
+          # The window is built from both modules.
+          cache-dependency-path: |
+            modules/apps/desktop/go.sum
+            modules/libs/core/go.sum
 
       - uses: actions/setup-node@v4
         with:

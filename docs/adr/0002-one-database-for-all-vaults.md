@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
-- **Applies to:** `modules/apps/desktop` — `internal/adapter/index`
+- **Applies to:** `modules/libs/core` — `adapter/index`
 - **Related:** ADR-0001, ADR-0003, ADR-0004, ADR-0006, ADR-0007, ADR-0013, ADR-0025
 
 ## Context

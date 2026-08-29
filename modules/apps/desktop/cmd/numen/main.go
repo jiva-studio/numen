@@ -20,10 +20,10 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/webui"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
+	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 func main() {

@@ -24,6 +24,7 @@ docs/adr/                    architecture decision records
 modules/apps/desktop/        desktop client
 modules/apps/mobile/         mobile client
 modules/apps/landing/        the page the product is read about on
+modules/libs/core/           the core every client is built on
 modules/libs/protocol/       wire/vault protocol
 modules/libs/ui/             shared interface components
 modules/tools/git-hooks/     repo-level tooling

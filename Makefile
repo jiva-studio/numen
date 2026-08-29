@@ -4,6 +4,7 @@
 # npm. What is here is the list of things worth doing and where they are done,
 # so that neither has to be remembered.
 
+CORE     := modules/libs/core
 DESKTOP  := modules/apps/desktop
 LANDING  := modules/apps/landing
 ICON     := modules/tools/icon
@@ -43,6 +44,7 @@ generate-check: generate ## fail if what is committed is out of date
 
 .PHONY: build
 build: interface ## build everything
+	cd $(CORE) && go build ./...
 	cd $(DESKTOP) && go build ./...
 
 .PHONY: interface
@@ -70,6 +72,7 @@ icons: ## cut every platform's icon from the one drawing
 # built before they run.
 .PHONY: test
 test: ## run every test
+	cd $(CORE) && go test ./... -race
 	cd $(DESKTOP) && go test ./... -race
 	cd $(UI) && npm test
 	cd $(UI) && npm run build
@@ -77,6 +80,7 @@ test: ## run every test
 
 .PHONY: lint
 lint: generate-check ## the checks CI runs, less the one needing a base branch
+	cd $(CORE) && gofmt -l . && go vet ./...
 	cd $(DESKTOP) && gofmt -l ./cmd ./internal && go vet ./...
 	cd $(PROTOCOL) && buf lint
 	cd $(UI) && npm run typecheck

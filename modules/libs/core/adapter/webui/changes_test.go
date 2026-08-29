@@ -1,0 +1,159 @@
+package webui_test
+
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"slices"
+	"testing"
+	"time"
+
+	"connectrpc.com/connect"
+
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
+	"github.com/jiva-studio/numen/modules/libs/core/container"
+	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+)
+
+// opened is a vault with a window's worth of machinery behind it — the index,
+// the first scan, the watcher — and a client talking to it the way the window
+// does.
+//
+// What is asked here is the wire: that a change reaches a client over the
+// stream, in the shape the schema describes. What a change means is asked of
+// the use case, where no server is needed to ask it.
+func opened(t *testing.T, notes map[string]string) (numenv1connect.VaultServiceClient, string) {
+	t.Helper()
+	root := t.TempDir()
+	for name, body := range notes {
+		path := filepath.Join(root, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+
+	settings := container.Config{
+		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
+		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
+	}
+	registry, err := settings.Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := (usecase.Add{
+		Registry: registry,
+		Identity: settings.VaultIdentity(),
+		Now:      time.Now,
+	}).Execute(root, "watched"); err != nil {
+		t.Fatal(err)
+	}
+
+	opened, err := webui.Open(t.Context(), settings, "", os.Stderr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { opened.Close() })
+
+	route, handler := numenv1connect.NewVaultServiceHandler(opened.API)
+	mux := http.NewServeMux()
+	mux.Handle(route, handler)
+	server := httptest.NewUnstartedServer(mux)
+	server.EnableHTTP2 = true
+	server.StartTLS()
+	t.Cleanup(server.CloseClientConnections)
+	t.Cleanup(server.Close)
+
+	client := numenv1connect.NewVaultServiceClient(server.Client(), server.URL)
+
+	// The window opens on what the first scan stored; the watcher reports only
+	// what happens after it.
+	for range 200 {
+		state, err := client.State(t.Context(), connect.NewRequest(&v1.StateRequest{}))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if state.Msg.GetReady() {
+			return client, root
+		}
+		if reason := state.Msg.GetFailed(); reason != "" {
+			t.Fatalf("the first scan failed: %s", reason)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatal("the first scan did not finish")
+	return nil, ""
+}
+
+// TestAnEditReachesAListener is the whole path: a file on disk, the watcher,
+// the index, and the stream a window listens to.
+func TestAnEditReachesAListener(t *testing.T) {
+	client, root := opened(t, map[string]string{
+		"Note.md":  "---\ntitle: Note\n---\n\n# Note\n",
+		"Other.md": "---\ntitle: Other\n---\n\n# Other\n",
+	})
+
+	// Its own context, closed before the server is: a stream is an open request,
+	// and a test server waits for those.
+	listening, hangUp := context.WithCancel(t.Context())
+	defer hangUp()
+
+	changes, err := client.Changes(listening, connect.NewRequest(&v1.ChangesRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer changes.Close()
+
+	// The first message says the stream is open and nothing has changed yet.
+	if !changes.Receive() {
+		t.Fatalf("the stream never opened: %v", changes.Err())
+	}
+	if paths := changes.Msg().GetPaths(); len(paths) != 0 {
+		t.Fatalf("the stream opened by reporting %v", paths)
+	}
+
+	reported := make(chan []string, 1)
+	go func() {
+		for changes.Receive() {
+			if paths := changes.Msg().GetPaths(); len(paths) > 0 {
+				reported <- paths
+				return
+			}
+		}
+	}()
+
+	if err := os.WriteFile(filepath.Join(root, "Note.md"),
+		[]byte("---\ntitle: Renamed\n---\n\n# Renamed\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	select {
+	case paths := <-reported:
+		if !slices.Equal(paths, []string{"Note.md"}) {
+			t.Errorf("reported %v", paths)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("the edit never reached the listener")
+	}
+
+	// And the index is level with the disk by the time it is announced.
+	shown, err := client.Neighbourhood(t.Context(),
+		connect.NewRequest(&v1.NeighbourhoodRequest{Path: "Note.md"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if title := shown.Msg.GetFocus().GetTitle(); title != "Renamed" {
+		t.Errorf("the index still says %q", title)
+	}
+}

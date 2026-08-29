@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
-- **Applies to:** `modules/apps/desktop`
+- **Applies to:** `modules/libs/core`
 - **Related:** ADR-0001, ADR-0002, ADR-0007, ADR-0008, ADR-0011, ADR-0012, ADR-0014, ADR-0017
 - **Amended by:** ADR-0029 — a deck and a stencil contribute no chunk, no vector, and only the headings a person wrote
 

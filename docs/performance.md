@@ -7,11 +7,11 @@ The load test reports and does not assert. It runs on whatever laptop is at hand
 ## Running it
 
 ```
-cd modules/apps/desktop
-go test ./internal/core/usecase/vault/ -run XXX -bench ColdScan -benchtime 1x
-go test ./internal/core/usecase/vault/ -run XXX -bench 'WarmScan|Incremental|Search'
-go test ./internal/core/usecase/vault/ -run XXX -bench 'Links|Backlinks' -benchtime 300x
-NUMEN_LOAD=1 go test ./internal/core/usecase/vault/ -run TestLoad -v -timeout 40m
+cd modules/libs/core
+go test ./usecase/vault/ -run XXX -bench ColdScan -benchtime 1x
+go test ./usecase/vault/ -run XXX -bench 'WarmScan|Incremental|Search'
+go test ./usecase/vault/ -run XXX -bench 'Links|Backlinks' -benchtime 300x
+NUMEN_LOAD=1 go test ./usecase/vault/ -run TestLoad -v -timeout 40m
 ```
 
 The vault is generated, not downloaded: `testsupport.GenerateVault` writes notes of varying length across fifty folders, each naming a parent and pointing at a few others, from a fixed seed.
@@ -78,7 +78,7 @@ A warm scan of ten thousand notes is 50 ms: 13 ms asking the index what it knows
 
 ## Looking a vault over
 
-`BenchmarkRun` in `internal/core/check`, on a vault where every name answers for many notes and every link is written by one — the worst case the ambiguity check has, because every link in it is a candidate.
+`BenchmarkRun` in `check`, on a vault where every name answers for many notes and every link is written by one — the worst case the ambiguity check has, because every link in it is a candidate.
 
 | | Measured |
 | --- | --- |
@@ -398,7 +398,7 @@ Two more shapes in the same corpus would have cost whole books. Three books decl
 ## Editing a note in a tab
 
 ```
-go test ./internal/core/usecase/note/ -run XXX -bench 'Read|Save' -benchtime 50x
+go test ./usecase/note/ -run XXX -bench 'Read|Save' -benchtime 50x
 ```
 
 Taken 2026-08-17, AMD Ryzen 7 6800U, NVMe, `-benchtime 50x`.
@@ -417,7 +417,7 @@ Taken 2026-08-17, AMD Ryzen 7 6800U, NVMe, `-benchtime 50x`.
 ### A save, and how long until the window knows
 
 ```
-NUMEN_LOAD=1 go test ./internal/adapter/webui/ -run TestEditLoad -v -timeout 30m
+NUMEN_LOAD=1 go test ./adapter/webui/ -run TestEditLoad -v -timeout 30m
 ```
 
 Taken 2026-08-17, same machine. This is the path the application owns: the write, the watcher noticing it, the refresh, and the change reaching a client.
@@ -446,7 +446,7 @@ The instrument that would answer it is `performance.measureUserAgentSpecificMemo
 ### What an edit costs to embed
 
 ```
-go test ./internal/adapter/index/ -count=1
+go test ./adapter/index/ -count=1
 ```
 
 These are assertions rather than timings: the count of vectors a save asks the model for. Chunks are tiled at fifty words with ten of overlap, and a chunk is identified by the hash of its text, so one whose text did not change keeps its row and the vector on it.

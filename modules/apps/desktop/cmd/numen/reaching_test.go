@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/webui"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
-	usecase "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/vault"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
+	"github.com/jiva-studio/numen/modules/libs/core/container"
+	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // serving says whether the tools are in front of the agents.

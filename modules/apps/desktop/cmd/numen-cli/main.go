@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/cli"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/settings"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/cli"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 )
 
 func main() {

@@ -13,7 +13,7 @@
 import { readFile, writeFile } from 'node:fs/promises'
 
 const UI = new URL('../../desktop/ui/src/', import.meta.url)
-const GO = new URL('../../desktop/internal/adapter/', import.meta.url)
+const GO = new URL('../../../libs/core/', import.meta.url)
 const CMD = new URL('../../desktop/cmd/numen/', import.meta.url)
 const PAGES = new URL('../src/content/docs/', import.meta.url)
 
@@ -233,11 +233,11 @@ const meaning = (doc, name, keys) => {
  * a section nobody listed here is still a section a key can hide in.
  */
 const FILES = {
-  settings: 'settings/settings.go',
-  embed: 'embed/config.go',
-  recognition: 'recognition/config.go',
-  proofreading: 'proofreading/config.go',
-  agent: 'agent/config.go',
+  settings: 'adapter/settings/settings.go',
+  embed: 'internal/adapter/embed/config.go',
+  recognition: 'internal/adapter/recognition/config.go',
+  proofreading: 'internal/adapter/proofreading/config.go',
+  agent: 'adapter/agent/config.go',
 }
 
 /** Every Go name in one file, against the key it is written under. */
@@ -358,7 +358,7 @@ const flags = async () => {
 
 /* ------------------------------------------------------------ the command line */
 
-const CLI = new URL('../../desktop/internal/adapter/cli/', import.meta.url)
+const CLI = new URL('../../../libs/core/adapter/cli/', import.meta.url)
 
 /**
  * What the command line says it takes, out of the one string it prints when

@@ -8,7 +8,7 @@ export default defineConfig({
   // `assets` is where the vault's own files are asked for, so the window's
   // built pieces are filed apart from them.
   build: {
-    outDir: '../internal/adapter/webui/pages/app',
+    outDir: '../../../libs/core/adapter/webui/pages/app',
     emptyOutDir: true,
     assetsDir: 'built',
   },

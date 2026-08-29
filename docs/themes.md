@@ -174,7 +174,7 @@ The two multipliers are what a theme does not reach. `--numen-interface-scale` a
 
 Each is its publisher's palette from that publisher's own source; what a palette does not name is derived from what it does, and the file says which. Each names the colours its publisher names and leaves the rest — marked-up text among them — as `tokens.css` has it.
 
-The files are in `modules/apps/desktop/internal/adapter/theme/presets/`. A first theme is one of them copied into the themes folder under a name of its own: `mine:dracula` stands in the list beside `preset:dracula`.
+The files are in `modules/libs/core/internal/adapter/theme/presets/`. A first theme is one of them copied into the themes folder under a name of its own: `mine:dracula` stands in the list beside `preset:dracula`.
 
 ## What is written down
 
