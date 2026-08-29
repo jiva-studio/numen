@@ -158,8 +158,13 @@ func known(cfg container.Config, root string) (string, error) {
 	return added.Path, nil
 }
 
-// seed writes a handful of notes into a vault that holds none, so that a
-// listing has something to draw.
+// Seeded is the note a vault this package filled opens on. It stands in every
+// seat at once: a parent above it, two children below, a sibling beside and a
+// jump across.
+const Seeded = "Physics.md"
+
+// seed writes a small graph into a vault that holds none, so that a picture has
+// something to draw.
 func seed(root string) error {
 	held, err := os.ReadDir(root)
 	if err != nil {
@@ -171,9 +176,20 @@ func seed(root string) error {
 		}
 	}
 	written := map[string]string{
-		"entropy.md": "# Entropy\n\nWhat a measure counts is the ways a thing can be arranged.\n",
-		"tides.md":   "# Tides\n\nTwo bulges, one turning planet, and a day with four of them in it.\n",
-		"vellum.md":  "# Vellum\n\nA skin scraped thin enough to write on and thick enough to fold.\n",
+		"Sciences.md": "---\ntitle: Sciences\nlinks:\n" +
+			"  - to: \"[[Physics]]\"\n    role: child\n" +
+			"  - to: \"[[Optics]]\"\n    role: child\n---\n\n" +
+			"# Sciences\n\nWhat is asked of the world, sorted by the asking.\n",
+		"Physics.md": "---\ntitle: Physics\nlinks:\n" +
+			"  - to: \"[[Sciences]]\"\n    role: parent\n" +
+			"  - to: \"[[Entropy]]\"\n    role: child\n" +
+			"  - to: \"[[Tides]]\"\n    role: child\n    type: measures\n" +
+			"  - to: \"[[Vellum]]\"\n    role: jump\n---\n\n" +
+			"# Physics\n\nMatter, and what it does when nobody is looking.\n",
+		"Optics.md":  "# Optics\n\nLight, bent and counted.\n",
+		"Entropy.md": "# Entropy\n\nWhat a measure counts is the ways a thing can be arranged.\n",
+		"Tides.md":   "# Tides\n\nTwo bulges, one turning planet, and a day with four of them in it.\n",
+		"Vellum.md":  "# Vellum\n\nA skin scraped thin enough to write on and thick enough to fold.\n",
 	}
 	for name, text := range written {
 		if err := os.WriteFile(filepath.Join(root, name), []byte(text), 0o644); err != nil {

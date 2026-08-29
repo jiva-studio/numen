@@ -1,0 +1,97 @@
+/**
+ * How a node is asked for on its own.
+ *
+ * A hand asks with a second click, which the browser reports as one event. A
+ * finger gets no such report where the picture has taken the touch for itself,
+ * so the two taps are counted here.
+ *
+ * Which of the two a plex offers is the caller's, so neither is written into
+ * the node. Where the node is then drawn is `PlexShowing`, and is the same
+ * either way.
+ */
+import { onScopeDispose, ref } from 'vue'
+
+/** How long the second tap has to arrive in, in milliseconds. */
+export const TAP = 300
+
+/** How far it may land from the first, in pixels. */
+export const APART = 24
+
+/** The node a strategy is watching, in the only two terms it needs. */
+export interface ShowingSite {
+  /** Whether this node answers being asked for at all. */
+  readonly ready: () => boolean
+  /** It was asked for. The modifier says where it is to be drawn. */
+  readonly show: (modified: boolean) => void
+}
+
+export interface Showing {
+  /** Whether the node answers the browser's own second click. */
+  readonly doubleClick: boolean
+  /** What the node listens for besides. Called once, inside the node's scope. */
+  readonly listeners: (site: ShowingSite) => Record<string, (event: PointerEvent) => void>
+}
+
+/** The second click, as the browser counts it. */
+export const byDoubleClick: Showing = {
+  doubleClick: true,
+  listeners: () => ({}),
+}
+
+/** Two taps, counted here. Milliseconds, if the wait is to be another. */
+export const byDoubleTap = (within: number = TAP): Showing => ({
+  doubleClick: false,
+  listeners: (site) => {
+    const first = ref<{ timer: number; x: number; y: number } | null>(null)
+
+    const forget = () => {
+      if (!first.value) return
+      window.clearTimeout(first.value.timer)
+      first.value = null
+    }
+
+    onScopeDispose(forget)
+
+    return {
+      pointerup: (event: PointerEvent) => {
+        if (event.pointerType === 'mouse' || !site.ready()) return
+        const standing = first.value
+        if (
+          standing &&
+          Math.hypot(event.clientX - standing.x, event.clientY - standing.y) <= APART
+        ) {
+          forget()
+          site.show(false)
+          return
+        }
+        forget()
+        first.value = {
+          x: event.clientX,
+          y: event.clientY,
+          timer: window.setTimeout(forget, within),
+        }
+      },
+    }
+  },
+})
+
+/**
+ * Two sets of listeners on one element. A key both name is called for both, in
+ * the order they were given.
+ */
+export function joined(
+  ...held: Record<string, (event: PointerEvent) => void>[]
+): Record<string, (event: PointerEvent) => void> {
+  const all: Record<string, ((event: PointerEvent) => void)[]> = {}
+  for (const one of held) {
+    for (const [name, listener] of Object.entries(one)) {
+      ;(all[name] ??= []).push(listener)
+    }
+  }
+  return Object.fromEntries(
+    Object.entries(all).map(([name, listeners]) => [
+      name,
+      (event: PointerEvent) => listeners.forEach((listener) => listener(event)),
+    ]),
+  )
+}

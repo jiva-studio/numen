@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/mobile/bind"
 )
@@ -58,8 +59,30 @@ func TestStartAnswers(t *testing.T) {
 		return held
 	}
 
-	if got := len(names()); got != 3 {
-		t.Fatalf("the vault it seeded lists %d entries, want 3: %v", got, names())
+	if got := len(names()); got == 0 {
+		t.Fatal("the vault it seeded lists nothing")
+	}
+
+	// The note it opens on stands in every seat at once, which is what makes a
+	// picture worth drawing. The vault is read behind the caller, so the seats
+	// arrive rather than being there.
+	wanted := []string{"SEAT_PARENT", "SEAT_CHILD", "SEAT_JUMP", "SEAT_SIBLING"}
+	seats := map[string]int{}
+	for until := time.Now().Add(10 * time.Second); time.Now().Before(until); {
+		seats = map[string]int{}
+		around, _ := ask("Neighbourhood", map[string]any{"path": bind.Seeded})["related"].([]any)
+		for _, one := range around {
+			seats[one.(map[string]any)["seat"].(string)]++
+		}
+		if len(seats) == len(wanted) {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	for _, seat := range wanted {
+		if seats[seat] == 0 {
+			t.Errorf("%s has no %s: %v", bind.Seeded, seat, seats)
+		}
 	}
 
 	made := ask("Create", map[string]any{"title": "Anemone", "folder": ""})
