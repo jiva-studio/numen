@@ -42,6 +42,7 @@ type vaulted struct {
 	standings flashcards.Standings
 	marking   flashcards.Marking
 	kept      flashcards.Schedules
+	counted   flashcards.Counted
 	logs      filesystem.DerivedStores
 }
 
@@ -83,6 +84,12 @@ func opened(t *testing.T, notes map[string]string) vaulted {
 			Logs: logs,
 			Kept: appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards")),
 			By:   history.NewFSRS(),
+		},
+		counted: flashcards.Counted{
+			Logs: logs,
+			Kept: appstate.SchedulesAt(filepath.Join(t.TempDir(), "days")),
+			Day:  today,
+			Now:  time.Now,
 		},
 		logs: logs,
 	}

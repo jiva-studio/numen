@@ -63,23 +63,45 @@ func (u Log) Read(ctx context.Context, v domain.Vault) (Held, error) {
 
 	var out Held
 	for _, file := range files {
-		raw, err := store.Read(ctx, file.Name)
-		if errors.Is(err, fs.ErrNotExist) {
-			// A file listed and then gone is a file another machine's
-			// synchroniser took away while this was reading.
-			continue
-		}
+		ran, err := u.Run(ctx, store, file)
 		if err != nil {
 			return Held{}, err
 		}
-		answers, skipped := history.Read(raw)
-		out.Answers = append(out.Answers, answers...)
-		// The length read is the one recorded, whatever the listing said: a run
-		// this machine is writing grows between the two.
-		out.Files = append(out.Files, port.Stored{Name: file.Name, Size: len(raw)})
-		out.Skipped += skipped
+		if ran.Gone {
+			continue
+		}
+		out.Answers = append(out.Answers, ran.Answers...)
+		out.Files = append(out.Files, port.Stored{Name: file.Name, Size: ran.Size})
+		out.Skipped += ran.Skipped
 	}
 	return out, nil
+}
+
+// Ran is one file of the log as it was read.
+type Ran struct {
+	Answers []history.Answer
+	// Size is the length read, which is what says whether the file has changed.
+	// It is the length read and not the length listed: a run this machine is
+	// writing grows between the two.
+	Size int
+	// Skipped is how many of its lines could not be acted on.
+	Skipped int
+	// Gone is a file listed and then taken away by another machine's
+	// synchroniser before it could be read.
+	Gone bool
+}
+
+// Run is one file of a vault's log, read.
+func (u Log) Run(ctx context.Context, store port.DerivedStore, file port.Stored) (Ran, error) {
+	raw, err := store.Read(ctx, file.Name)
+	if errors.Is(err, fs.ErrNotExist) {
+		return Ran{Gone: true}, nil
+	}
+	if err != nil {
+		return Ran{}, err
+	}
+	answers, skipped := history.Read(raw)
+	return Ran{Answers: answers, Size: len(raw), Skipped: skipped}, nil
 }
 
 // runs is the files of the log, sorted by name.
