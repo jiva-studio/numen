@@ -5,7 +5,7 @@
  * The whole vault is the ordinary way to sit down to this, so it stands at the
  * top as one button. A deck below it is for the person who came for that deck.
  */
-import { Owed } from '@numen/ui'
+import { Button, Owed } from '@numen/ui'
 import { deckName } from './core'
 import type { Owing } from './core'
 
@@ -21,20 +21,7 @@ const owed = () => props.vault.due + props.vault.new
 
 <template>
   <section class="decks">
-    <header class="decks__head">
-      <button class="decks__back" type="button" @click="$emit('back')">Vaults</button>
-      <h1 class="decks__title">{{ vault.name }}</h1>
-    </header>
-
-    <button
-      class="decks__all"
-      type="button"
-      :disabled="owed() === 0"
-      @click="$emit('start', '')"
-    >
-      <span class="decks__all-said">Review everything</span>
-      <Owed :waiting="owed()" over />
-    </button>
+    <h1 class="decks__title">{{ vault.name }}</h1>
 
     <p v-if="!vault.decks.length" class="decks__saying">This vault holds no deck.</p>
 
@@ -51,6 +38,16 @@ const owed = () => props.vault.due + props.vault.new
         </button>
       </li>
     </ul>
+
+    <!-- What a person came here to do stands where the hand is, under the list
+         they read: sit down to the whole vault, or go and pick another. -->
+    <footer class="decks__deeds">
+      <Button variant="ghost" @click="$emit('back')">Another vault</Button>
+      <Button class="decks__all" :disabled="owed() === 0" @click="$emit('start', '')">
+        Review everything
+        <Owed :waiting="owed()" over />
+      </Button>
+    </footer>
   </section>
 </template>
 
@@ -60,64 +57,31 @@ const owed = () => props.vault.due + props.vault.new
   flex: 1;
   flex-direction: column;
   min-block-size: 0;
-  overflow-y: auto;
   gap: var(--numen-inset-wide);
 }
 
-.decks__head {
-  display: flex;
-  align-items: baseline;
-  gap: var(--numen-inset);
-}
-
-.decks__back {
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--numen-edge-label);
-  font: inherit;
-  cursor: pointer;
-}
-
-.decks__back:hover {
-  color: var(--numen-node-fg);
-}
-
-.decks__back::after {
-  content: ' /';
-}
-
 .decks__title {
+  flex: none;
   margin: 0;
   font-size: var(--numen-title-size);
   font-weight: 600;
 }
 
+/* The list is what scrolls; what is done stands under it and keeps its place. */
+.decks__deeds {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--numen-inset);
+}
+
 /* The whole vault is the daily act, so it is the one button drawn as one. */
 .decks__all {
-  display: flex;
-  align-items: center;
-  padding: var(--numen-inset-wide);
-  border: 1px solid var(--numen-focus-border);
-  border-radius: var(--numen-radius);
-  background: var(--numen-focus-bg);
-  color: var(--numen-focus-fg);
-  font: inherit;
-  gap: var(--numen-inset);
-  cursor: pointer;
-}
-
-.decks__all:disabled {
-  border-color: var(--numen-node-border);
-  background: var(--numen-node-bg);
-  color: var(--numen-edge-label);
-  cursor: default;
-}
-
-.decks__all-said {
-  flex: 1;
+  block-size: auto;
+  padding-block: var(--numen-inset-wide);
+  padding-inline: var(--numen-inset-wide);
   font-weight: 600;
-  text-align: start;
 }
 
 .decks__saying {
@@ -127,9 +91,12 @@ const owed = () => props.vault.due + props.vault.new
 
 .decks__list {
   display: flex;
+  flex: 1;
   margin: 0;
   padding: 0;
   flex-direction: column;
+  min-block-size: 0;
+  overflow-y: auto;
   gap: var(--numen-inset);
   list-style: none;
 }
