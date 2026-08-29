@@ -76,11 +76,9 @@ const owed = () => props.vault.due + props.vault.new
   gap: var(--numen-inset);
 }
 
-/* The whole vault is the daily act, so it is the one button drawn as one. */
+/* The whole vault is the daily act, so it is the one button filled in. It
+   stands as tall as the one beside it: two things done from one line. */
 .decks__all {
-  block-size: auto;
-  padding-block: var(--numen-inset-wide);
-  padding-inline: var(--numen-inset-wide);
   font-weight: 600;
 }
 
