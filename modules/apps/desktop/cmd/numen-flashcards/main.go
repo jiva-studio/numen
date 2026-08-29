@@ -74,6 +74,7 @@ func run(cfg container.Config) error {
 		Session:   running.Session,
 		Schedules: running.Schedules,
 		Log:       running.Log,
+		Counted:   running.Counted,
 		Now:       time.Now,
 	}
 

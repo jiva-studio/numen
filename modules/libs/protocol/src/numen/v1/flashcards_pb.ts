@@ -21,7 +21,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/flashcards.proto.
  */
 export const file_numen_v1_flashcards: GenFile = /*@__PURE__*/
-  fileDesc("ChludW1lbi92MS9mbGFzaGNhcmRzLnByb3RvEghudW1lbi52MSKXAQoKVmF1bHRPd2luZxIQCgh2YXVsdF9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFZmFjZXMYBCABKAUSCwoDZHVlGAUgASgFEgsKA25ldxgGIAEoBRIiCgVkZWNrcxgHIAMoCzITLm51bWVuLnYxLkRlY2tPd2luZxIOCgZ1bnJlYWQYCCABKAkiQgoJRGVja093aW5nEgwKBGRlY2sYASABKAkSDQoFZmFjZXMYAiABKAUSCwoDZHVlGAMgASgFEgsKA25ldxgEIAEoBSJACgVBaGVhZBINCgVhZ2FpbhgBIAEoAxIMCgRoYXJkGAIgASgDEgwKBGdvb2QYAyABKAMSDAoEZWFzeRgEIAEoAyKrAQoFQXNrZWQSDAoEZGVjaxgBIAEoCRIPCgdzZWN0aW9uGAIgASgJEgwKBGNhcmQYAyABKAkSDAoEZmFjZRgEIAEoCRIPCgdoZWFkaW5nGAUgASgJEg0KBWZyb250GAYgASgJEgwKBGJhY2sYByABKAkSDAoEc2VlbhgIIAEoCBILCgNkdWUYCSABKAkSHgoFYWhlYWQYCiABKAsyDy5udW1lbi52MS5BaGVhZCIOCgxPd2luZ1JlcXVlc3QiNQoNT3dpbmdSZXNwb25zZRIkCgZ2YXVsdHMYASADKAsyFC5udW1lbi52MS5WYXVsdE93aW5nIi4KDFN0YXJ0UmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRIMCgRkZWNrGAIgASgJImAKDVN0YXJ0UmVzcG9uc2USCwoDcnVuGAEgASgJEh4KBWFza2VkGAIgAygLMg8ubnVtZW4udjEuQXNrZWQSEQoJdW53cml0dGVuGAMgAygJEg8KB3NraXBwZWQYBCABKAUifQoNQW5zd2VyUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRILCgNydW4YAiABKAkSDAoEY2FyZBgDIAEoCRIMCgRmYWNlGAQgASgJEiAKBnJhdGluZxgFIAEoDjIQLm51bWVuLnYxLlJhdGluZxIPCgd0b29rX21zGAYgASgDIiAKDkFuc3dlclJlc3BvbnNlEg4KBmFuc3dlchgBIAEoCSJACg9UYWtlQmFja1JlcXVlc3QSEAoIdmF1bHRfaWQYASABKAkSCwoDcnVuGAIgASgJEg4KBmFuc3dlchgDIAEoCSISChBUYWtlQmFja1Jlc3BvbnNlIg8KDU1vdmluZ1JlcXVlc3QiIAoOTW92aW5nUmVzcG9uc2USDgoGcmVsb2FkGAEgASgIKmUKBlJhdGluZxIWChJSQVRJTkdfVU5TUEVDSUZJRUQQABIQCgxSQVRJTkdfQUdBSU4QARIPCgtSQVRJTkdfSEFSRBACEg8KC1JBVElOR19HT09EEAMSDwoLUkFUSU5HX0VBU1kQBDLGAgoRRmxhc2hjYXJkc1NlcnZpY2USOAoFT3dpbmcSFi5udW1lbi52MS5Pd2luZ1JlcXVlc3QaFy5udW1lbi52MS5Pd2luZ1Jlc3BvbnNlEjgKBVN0YXJ0EhYubnVtZW4udjEuU3RhcnRSZXF1ZXN0GhcubnVtZW4udjEuU3RhcnRSZXNwb25zZRI7CgZBbnN3ZXISFy5udW1lbi52MS5BbnN3ZXJSZXF1ZXN0GhgubnVtZW4udjEuQW5zd2VyUmVzcG9uc2USQQoIVGFrZUJhY2sSGS5udW1lbi52MS5UYWtlQmFja1JlcXVlc3QaGi5udW1lbi52MS5UYWtlQmFja1Jlc3BvbnNlEj0KBk1vdmluZxIXLm51bWVuLnYxLk1vdmluZ1JlcXVlc3QaGC5udW1lbi52MS5Nb3ZpbmdSZXNwb25zZTABQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChludW1lbi92MS9mbGFzaGNhcmRzLnByb3RvEghudW1lbi52MSKXAQoKVmF1bHRPd2luZxIQCgh2YXVsdF9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFZmFjZXMYBCABKAUSCwoDZHVlGAUgASgFEgsKA25ldxgGIAEoBRIiCgVkZWNrcxgHIAMoCzITLm51bWVuLnYxLkRlY2tPd2luZxIOCgZ1bnJlYWQYCCABKAkiQgoJRGVja093aW5nEgwKBGRlY2sYASABKAkSDQoFZmFjZXMYAiABKAUSCwoDZHVlGAMgASgFEgsKA25ldxgEIAEoBSJACgVBaGVhZBINCgVhZ2FpbhgBIAEoAxIMCgRoYXJkGAIgASgDEgwKBGdvb2QYAyABKAMSDAoEZWFzeRgEIAEoAyKrAQoFQXNrZWQSDAoEZGVjaxgBIAEoCRIPCgdzZWN0aW9uGAIgASgJEgwKBGNhcmQYAyABKAkSDAoEZmFjZRgEIAEoCRIPCgdoZWFkaW5nGAUgASgJEg0KBWZyb250GAYgASgJEgwKBGJhY2sYByABKAkSDAoEc2VlbhgIIAEoCBILCgNkdWUYCSABKAkSHgoFYWhlYWQYCiABKAsyDy5udW1lbi52MS5BaGVhZCIOCgxPd2luZ1JlcXVlc3QiNQoNT3dpbmdSZXNwb25zZRIkCgZ2YXVsdHMYASADKAsyFC5udW1lbi52MS5WYXVsdE93aW5nIi4KDFN0YXJ0UmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRIMCgRkZWNrGAIgASgJImAKDVN0YXJ0UmVzcG9uc2USCwoDcnVuGAEgASgJEh4KBWFza2VkGAIgAygLMg8ubnVtZW4udjEuQXNrZWQSEQoJdW53cml0dGVuGAMgAygJEg8KB3NraXBwZWQYBCABKAUifQoNQW5zd2VyUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRILCgNydW4YAiABKAkSDAoEY2FyZBgDIAEoCRIMCgRmYWNlGAQgASgJEiAKBnJhdGluZxgFIAEoDjIQLm51bWVuLnYxLlJhdGluZxIPCgd0b29rX21zGAYgASgDIiAKDkFuc3dlclJlc3BvbnNlEg4KBmFuc3dlchgBIAEoCSJACg9UYWtlQmFja1JlcXVlc3QSEAoIdmF1bHRfaWQYASABKAkSCwoDcnVuGAIgASgJEg4KBmFuc3dlchgDIAEoCSISChBUYWtlQmFja1Jlc3BvbnNlIiMKD1Jldmlld2VkUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCSJXChBSZXZpZXdlZFJlc3BvbnNlEiEKBGRheXMYASADKAsyEy5udW1lbi52MS5SZXZpZXdpbmcSDgoGc3RyZWFrGAIgASgFEhAKCGFuc3dlcmVkGAMgASgFIioKCVJldmlld2luZxILCgNkYXkYASABKAkSEAoIYW5zd2VyZWQYAiABKAUiDwoNTW92aW5nUmVxdWVzdCIgCg5Nb3ZpbmdSZXNwb25zZRIOCgZyZWxvYWQYASABKAgqZQoGUmF0aW5nEhYKElJBVElOR19VTlNQRUNJRklFRBAAEhAKDFJBVElOR19BR0FJThABEg8KC1JBVElOR19IQVJEEAISDwoLUkFUSU5HX0dPT0QQAxIPCgtSQVRJTkdfRUFTWRAEMokDChFGbGFzaGNhcmRzU2VydmljZRI4CgVPd2luZxIWLm51bWVuLnYxLk93aW5nUmVxdWVzdBoXLm51bWVuLnYxLk93aW5nUmVzcG9uc2USOAoFU3RhcnQSFi5udW1lbi52MS5TdGFydFJlcXVlc3QaFy5udW1lbi52MS5TdGFydFJlc3BvbnNlEjsKBkFuc3dlchIXLm51bWVuLnYxLkFuc3dlclJlcXVlc3QaGC5udW1lbi52MS5BbnN3ZXJSZXNwb25zZRJBCghUYWtlQmFjaxIZLm51bWVuLnYxLlRha2VCYWNrUmVxdWVzdBoaLm51bWVuLnYxLlRha2VCYWNrUmVzcG9uc2USPQoGTW92aW5nEhcubnVtZW4udjEuTW92aW5nUmVxdWVzdBoYLm51bWVuLnYxLk1vdmluZ1Jlc3BvbnNlMAESQQoIUmV2aWV3ZWQSGS5udW1lbi52MS5SZXZpZXdlZFJlcXVlc3QaGi5udW1lbi52MS5SZXZpZXdlZFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * VaultOwing is one vault, and what its cards come to today.
@@ -440,6 +440,85 @@ export const TakeBackResponseSchema: GenMessage<TakeBackResponse> = /*@__PURE__*
   messageDesc(file_numen_v1_flashcards, 11);
 
 /**
+ * @generated from message numen.v1.ReviewedRequest
+ */
+export type ReviewedRequest = Message<"numen.v1.ReviewedRequest"> & {
+  /**
+   * @generated from field: string vault_id = 1;
+   */
+  vaultId: string;
+};
+
+/**
+ * Describes the message numen.v1.ReviewedRequest.
+ * Use `create(ReviewedRequestSchema)` to create a new message.
+ */
+export const ReviewedRequestSchema: GenMessage<ReviewedRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_flashcards, 12);
+
+/**
+ * @generated from message numen.v1.ReviewedResponse
+ */
+export type ReviewedResponse = Message<"numen.v1.ReviewedResponse"> & {
+  /**
+   * Days is what each day a person answered on came to. A day nobody answered
+   * on is not in it.
+   *
+   * @generated from field: repeated numen.v1.Reviewing days = 1;
+   */
+  days: Reviewing[];
+
+  /**
+   * Streak is how many days up to now were reviewed without a gap. A day
+   * nobody has answered on yet does not end one.
+   *
+   * @generated from field: int32 streak = 2;
+   */
+  streak: number;
+
+  /**
+   * Answered is how many answers the vault holds altogether.
+   *
+   * @generated from field: int32 answered = 3;
+   */
+  answered: number;
+};
+
+/**
+ * Describes the message numen.v1.ReviewedResponse.
+ * Use `create(ReviewedResponseSchema)` to create a new message.
+ */
+export const ReviewedResponseSchema: GenMessage<ReviewedResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_flashcards, 13);
+
+/**
+ * Reviewing is one day, and how many cards were answered on it.
+ *
+ * @generated from message numen.v1.Reviewing
+ */
+export type Reviewing = Message<"numen.v1.Reviewing"> & {
+  /**
+   * Day is the day it began on, as the year, the month and the day: an answer
+   * given in the small hours belongs to the day before, and is named for it.
+   *
+   * @generated from field: string day = 1;
+   */
+  day: string;
+
+  /**
+   * @generated from field: int32 answered = 2;
+   */
+  answered: number;
+};
+
+/**
+ * Describes the message numen.v1.Reviewing.
+ * Use `create(ReviewingSchema)` to create a new message.
+ */
+export const ReviewingSchema: GenMessage<Reviewing> = /*@__PURE__*/
+  messageDesc(file_numen_v1_flashcards, 14);
+
+/**
  * @generated from message numen.v1.MovingRequest
  */
 export type MovingRequest = Message<"numen.v1.MovingRequest"> & {
@@ -450,7 +529,7 @@ export type MovingRequest = Message<"numen.v1.MovingRequest"> & {
  * Use `create(MovingRequestSchema)` to create a new message.
  */
 export const MovingRequestSchema: GenMessage<MovingRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 12);
+  messageDesc(file_numen_v1_flashcards, 15);
 
 /**
  * @generated from message numen.v1.MovingResponse
@@ -470,7 +549,7 @@ export type MovingResponse = Message<"numen.v1.MovingResponse"> & {
  * Use `create(MovingResponseSchema)` to create a new message.
  */
 export const MovingResponseSchema: GenMessage<MovingResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 13);
+  messageDesc(file_numen_v1_flashcards, 16);
 
 /**
  * Rating is how well a card came back. A person says which of the four, and
@@ -588,6 +667,17 @@ export const FlashcardsService: GenService<{
     methodKind: "server_streaming";
     input: typeof MovingRequestSchema;
     output: typeof MovingResponseSchema;
+  },
+  /**
+   * Reviewed is how much of a vault was answered on each day it was reviewed,
+   * and how many days up to now were reviewed without a gap.
+   *
+   * @generated from rpc numen.v1.FlashcardsService.Reviewed
+   */
+  reviewed: {
+    methodKind: "unary";
+    input: typeof ReviewedRequestSchema;
+    output: typeof ReviewedResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_flashcards, 0);

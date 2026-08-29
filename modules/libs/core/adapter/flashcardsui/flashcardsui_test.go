@@ -91,6 +91,7 @@ func windowed(t *testing.T, vaults ...map[string]string) (*API, []domain.Vault) 
 		Session:   running.Session,
 		Schedules: running.Schedules,
 		Log:       running.Log,
+		Counted:   running.Counted,
 		Now:       time.Now,
 	}, held
 }
