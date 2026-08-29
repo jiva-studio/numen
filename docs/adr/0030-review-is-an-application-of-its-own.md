@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-29
-- **Applies to:** `modules/apps/desktop` — the binaries; `modules/libs/core` — `usecase/review`
+- **Applies to:** `modules/apps/desktop` — the binaries; `modules/libs/core` — `usecase/flashcards`
 - **Related:** ADR-0002, ADR-0003, ADR-0004, ADR-0008, ADR-0020, ADR-0027, ADR-0028, ADR-0029, ADR-0031
 
 ## Context
@@ -17,7 +17,7 @@ Where that second activity lives decides what a person has to start in order to 
 
 It is called **Flashcards**. That is the thing a person has and wants to run; review is what is done to it, and every application reviews something.
 
-`numen-flashcards` stands beside `numen` and `numen-cli`, over the one core. The three ship together, one version, one installer: a review with no editor has nothing to review, so there is no sense in shipping them apart, and ADR-0007's refusal of an index at a version a build does not carry costs nothing between binaries that are always the same build.
+`numen-flashcards` stands beside `numen` and `numen-cli`, over the one core. The three ship together, one version, one installer: flashcards with no editor has nothing to run, so there is no sense in shipping them apart, and ADR-0007's refusal of an index at a version a build does not carry costs nothing between binaries that are always the same build.
 
 It opens on **the vaults and what is due in each**. That is the whole of its front door: what a person owes today, and the place to come back to between decks.
 
@@ -25,7 +25,7 @@ It opens on **the vaults and what is due in each**. That is the whole of its fro
 
 Which vaults exist, where they are and which was opened last is what the registry answers, and it answers before any database is opened (ADR-0003).
 
-Every write to it rewrites it whole and nothing locks it between processes, so a review recording that it had been started could erase what the editor had just written. It is read here and never written.
+Every write to it rewrites it whole and nothing locks it between processes, so flashcards recording that it had been started could erase what the editor had just written. It is read here and never written.
 
 ### It reads the index and never writes it
 

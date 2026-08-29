@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-29
-- **Applies to:** the vault format, and `modules/libs/core` — `review`, `usecase/review`
+- **Applies to:** the vault format, and `modules/libs/core` — `flashcards`, `usecase/flashcards`
 - **Amends:** ADR-0027 (the stencil and the deck)
 - **Related:** ADR-0001, ADR-0003, ADR-0015, ADR-0020, ADR-0028, ADR-0030
 
@@ -68,7 +68,7 @@ The service folder inside a vault holds what the application made and cannot mak
 
 So it lives where the installation's own state lives, keyed by the vault's identity, and it is deleted at any time at no cost but a replay.
 
-It holds what a launch would otherwise read every answer to learn: the schedule of each card face, the run files it was worked out from with the length each of them had, and the name and version of the scheduler that computed it. Listing the folder is what a launch does anyway; the cache is what saves it opening the files.
+It holds what a launch would otherwise read every answer to learn: the schedule of each card face, the run files it was worked out from with the length each of them had, and the name of the scheduler that computed it, parameters and all. Listing the folder is what a launch does anyway; the cache is what saves it opening the files.
 
 ### A run the cache does not name is the history read again
 
@@ -78,13 +78,11 @@ Synchronisation delivers exactly that: last night's run from the phone lands aft
 
 **The length is what says a run has changed.** A sitting appends to one file all evening under one name, so a cache going by names alone would call itself current from the first answer of that sitting and never count the rest of it.
 
-Reading the folder is what a launch does anyway; the cache is what saves it reading the files.
-
 ### The scheduler is a port, and the cache says which one filled it
 
 Review is graded, not remembered-or-not: **again, hard, good, easy**. How well a thing was recalled is what a scheduler has to be told to space anything sensibly.
 
-Behind the port stands FSRS. The cache records the scheduler's name and version, and a cache filled by another is thrown away whole and computed again from the log — which is what the log is for.
+Behind the port stands FSRS. The cache records the scheduler's name and the parameters it was running on, because the weights are what the numbers mean: stability and difficulty read under other weights are a wrong day given confidently. A cache filled by another name is thrown away whole and computed again from the log — which is what the log is for.
 
 ### An answer whose card is gone is kept
 
