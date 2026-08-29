@@ -162,8 +162,6 @@ const takeBack = async () => {
 
 /** The card open to be put right, and what a read of its deck gave us. */
 const editing = ref(false)
-/** Which way the two change over: the one asked for comes from the top. */
-const opening = ref(true)
 const values = ref<readonly Held[]>([])
 const writing = ref(false)
 let stood: Fingerprint | undefined
@@ -183,7 +181,6 @@ const edit = async () => {
     }
     values.value = answer.values.map((held) => ({ field: held.field, text: held.text }))
     stood = answer.at
-    opening.value = true
     editing.value = true
   } catch (why) {
     failed(why)
@@ -192,7 +189,6 @@ const edit = async () => {
 
 /** The card put away again, whether it was written or let alone. */
 const close = () => {
-  opening.value = false
   editing.value = false
 }
 
@@ -318,7 +314,6 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
       :shown="shown"
       :answered="answers.length > 0"
       :editing="editing"
-      :opening="opening"
       :values="values"
       :writing="writing"
       @show="show"

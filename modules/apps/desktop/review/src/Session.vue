@@ -23,8 +23,6 @@ defineProps<{
   answered: boolean
   /** The card is open to be put right, and what it holds while it is. */
   editing: boolean
-  /** Which way the two change over: the one asked for comes from the top. */
-  opening: boolean
   values: readonly Held[]
   writing: boolean
 }>()
@@ -68,10 +66,14 @@ defineEmits<{
       </Button>
     </header>
 
+    <!-- The boxes a card is put right in stand above it, out of the frame.
+         Opening them lets the column down by their own height, so they come
+         into view and the card is pushed under them. -->
     <div class="session__stage">
-      <Transition :name="opening ? 'down' : 'up'">
+      <div class="session__column" :class="{ 'session__column--down': editing }">
         <Editing
-          v-if="editing"
+          class="session__slot"
+          :inert="!editing"
           :card="card.card"
           :section="card.section"
           :values="values"
@@ -81,14 +83,15 @@ defineEmits<{
           @close="$emit('close')"
         />
         <Card
-          v-else
+          class="session__slot"
+          :inert="editing"
           :front="card.front"
           :back="card.back"
           :shown="shown"
           :fresh="!card.seen"
           @show="$emit('show')"
         />
-      </Transition>
+      </div>
     </div>
 
     <Answers :shown="shown" @show="$emit('show')" @answer="(how) => $emit('answer', how)" />
@@ -124,40 +127,29 @@ defineEmits<{
   margin-inline-start: auto;
 }
 
-/* The card and the boxes stand in one place, so while they change over both are
-   on the screen at once and neither takes room from the other. */
+/* One frame, and a column of two standing in it that is twice as tall. Which of
+   them is in the frame is where the column stands, so the two never overlap and
+   the one going out is the one the other pushed. */
 .session__stage {
-  position: relative;
   flex: 1;
   min-block-size: 0;
   overflow: hidden;
 }
 
-.session__stage > * {
-  position: absolute;
-  inset: 0;
+.session__column {
+  display: flex;
+  flex-direction: column;
+  block-size: 200%;
+  transform: translateY(-50%);
+  transition: transform var(--numen-motion) var(--numen-easing);
 }
 
-.down-enter-active,
-.down-leave-active,
-.up-enter-active,
-.up-leave-active {
-  transition:
-    transform var(--numen-motion) var(--numen-easing),
-    opacity var(--numen-motion) var(--numen-easing);
+.session__column--down {
+  transform: translateY(0);
 }
 
-/* What is asked for comes from the top, and what it takes the place of goes
-   down under it. Going back, the two swap ends. */
-.down-enter-from,
-.up-leave-to {
-  opacity: 0;
-  transform: translateY(-100%);
-}
-
-.down-leave-to,
-.up-enter-from {
-  opacity: 0;
-  transform: translateY(100%);
+.session__slot {
+  flex: none;
+  block-size: 50%;
 }
 </style>
