@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"slices"
-	"time"
+	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -90,11 +90,11 @@ func (u Schedules) remembered(
 
 	out := make(map[history.Seat]history.Schedule, len(was.Seats))
 	for _, s := range was.Seats {
-		due, err := time.Parse(history.Stamp, s.Due)
+		due, err := history.Moment(s.Due)
 		if err != nil {
 			return nil, false
 		}
-		last, err := time.Parse(history.Stamp, s.Last)
+		last, err := history.Moment(s.Last)
 		if err != nil {
 			return nil, false
 		}
@@ -127,9 +127,9 @@ func (u Schedules) remember(
 	}
 	slices.SortFunc(now.Seats, func(a, b keptSchedule) int {
 		if a.Card != b.Card {
-			return slices.Compare([]byte(a.Card), []byte(b.Card))
+			return strings.Compare(a.Card, b.Card)
 		}
-		return slices.Compare([]byte(a.Face), []byte(b.Face))
+		return strings.Compare(a.Face, b.Face)
 	})
 
 	raw, err := json.Marshal(now)

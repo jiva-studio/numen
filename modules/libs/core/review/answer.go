@@ -61,8 +61,9 @@ type Answer struct {
 	// Rating is how well the card came back. It is zero on an answer that takes
 	// another back.
 	Rating Rating
-	// Took is how long the card stood on the screen. Nothing schedules by it
-	// today; it is the one thing about an answer that cannot be measured later.
+	// Took is how long the card stood on the screen, recorded to the
+	// millisecond. Nothing schedules by it today; it is the one thing about an
+	// answer that cannot be measured later.
 	Took time.Duration
 	// Undoes is the identifier of the answer this one takes back, and is empty
 	// on an answer of a card.

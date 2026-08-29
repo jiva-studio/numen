@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io/fs"
+	"strings"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -48,7 +49,7 @@ func (u Log) Read(ctx context.Context, v domain.Vault) (Held, error) {
 
 	var out Held
 	for _, name := range names {
-		if len(name) < len(Suffix) || name[len(name)-len(Suffix):] != Suffix {
+		if !strings.HasSuffix(name, Suffix) {
 			continue
 		}
 		raw, err := store.Read(ctx, name)

@@ -3,6 +3,7 @@ package review
 import (
 	"context"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -75,7 +76,7 @@ func (u Owed) Execute(ctx context.Context, v domain.Vault) (Owing, error) {
 		out.Decks = append(out.Decks, *deck)
 	}
 	slices.SortFunc(out.Decks, func(a, b DeckOwing) int {
-		return slices.Compare([]byte(a.Deck), []byte(b.Deck))
+		return strings.Compare(a.Deck, b.Deck)
 	})
 	return out, nil
 }
