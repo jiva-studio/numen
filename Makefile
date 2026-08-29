@@ -31,6 +31,7 @@ install: ## fetch every module's dependencies
 	cd $(PROTOCOL) && npm install
 	cd $(UI) && npm install
 	cd $(DESKTOP)/ui && npm install
+	cd $(DESKTOP)/review && npm install
 	cd $(LANDING) && npm install
 
 .PHONY: generate
@@ -48,13 +49,18 @@ build: interface ## build everything
 	cd $(DESKTOP) && go build ./...
 
 .PHONY: interface
-interface: ## build the window's page into the binary's assets
+interface: ## build each window's page into the binary's assets
 	cd $(UI) && npm run build
 	cd $(DESKTOP)/ui && npm run build
+	cd $(DESKTOP)/review && npm run build
 
 .PHONY: desktop
 desktop: interface ## build the window
 	cd $(DESKTOP) && CGO_ENABLED=1 go build -o ../../../numen ./cmd/numen
+
+.PHONY: review
+review: interface ## build the window a person runs their cards in
+	cd $(DESKTOP) && CGO_ENABLED=1 go build -o ../../../numen-review ./cmd/numen-review
 
 .PHONY: landing
 landing: ## build the page the product is read about on

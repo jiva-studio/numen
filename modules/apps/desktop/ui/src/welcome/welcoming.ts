@@ -4,7 +4,7 @@
  * The screen draws these rows and decides nothing, so a test can ask what a
  * window standing on a vault, or on none, puts in front of the person.
  */
-import type { PaletteKeys } from '@numen/ui'
+import type { Held, PaletteKeys, Way } from '@numen/ui'
 import type { Listed } from '../core'
 import { keysOf } from '../keying'
 import { WORDS as own } from './words'
@@ -37,23 +37,6 @@ export interface Words {
 
 /** The row that puts the commands up, which is no command of its own. */
 export const COMMANDS = 'commands'
-
-/** One way into the vault: what it asks for, what it is called, its keystroke. */
-export interface Way {
-  readonly id: string
-  readonly text: string
-  readonly keys?: PaletteKeys
-}
-
-/** One vault of the list, as the screen draws it. */
-export interface Held {
-  readonly id: string
-  readonly name: string
-  /** The folder it stands for, absolute on this machine. */
-  readonly path: string
-  /** What is true of this row and not of the ones beside it. */
-  readonly detail?: string
-}
 
 /**
  * The ways into the vault the window is showing, in the order they are drawn.

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Numen Review
+Comment=Run the cards a vault holds
+Exec=numen-review
+Icon=numen
+Terminal=false
+Categories=Office;Education;
+Keywords=flashcards;spaced repetition;review;
+StartupWMClass=numen-review
