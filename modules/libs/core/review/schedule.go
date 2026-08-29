@@ -1,0 +1,45 @@
+package review
+
+import "time"
+
+// Schedule is where the answers so far have left one seat.
+//
+// Nothing in it is written into a vault. It is worked out from the answers
+// every time it is wanted, and thrown away at no cost but the working out.
+type Schedule struct {
+	// Due is when the seat comes round again.
+	Due time.Time
+	// Last is when it was answered, and is the zero time until it has been.
+	Last time.Time
+	// Reps is how many answers it has had, Lapses how many of them were Again.
+	Reps   int
+	Lapses int
+	// Stability and Difficulty are what the scheduler carries between answers:
+	// how long the card is expected to stay recalled, and how hard it is.
+	Stability  float64
+	Difficulty float64
+	// Phase is the scheduler's own and means nothing outside it. It is kept so
+	// that a schedule can be put back where it was without the answers being
+	// read again, and it is read by the scheduler that wrote it.
+	Phase uint8
+}
+
+// Seen reports whether the seat has ever been answered. A seat that has not is
+// what a person means by a new card.
+func (s Schedule) Seen() bool { return !s.Last.IsZero() }
+
+// Scheduler works out where an answer leaves a seat.
+//
+// It is a port and not a function so that the one thing this application must
+// be able to change — how cards are spaced — is changed by putting another
+// implementation behind it and reading the answers again.
+type Scheduler interface {
+	// Name says which scheduler this is, and which version of it. A schedule
+	// worked out by one name is not read by another: the numbers a scheduler
+	// carries between answers are its own, and one of them read as another's is
+	// a wrong answer given confidently.
+	Name() string
+
+	// Next is where an answer leaves a schedule.
+	Next(s Schedule, at time.Time, r Rating) Schedule
+}
