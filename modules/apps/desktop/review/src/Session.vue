@@ -6,7 +6,7 @@
  * so a person putting a card right does not lose sight of where they were.
  */
 import { Button } from '@numen/ui'
-import { SquarePen, Undo2, X } from '@lucide/vue'
+import { Check, SquarePen, Undo2, X } from '@lucide/vue'
 import Answers from './Answers.vue'
 import Card from './Card.vue'
 import Editing from './Editing.vue'
@@ -48,39 +48,53 @@ defineEmits<{
       <span class="session__left">{{ left }} left</span>
 
       <!-- What a person does beside answering, each one mark. They stand at the
-           end of the line that says where the card is from. -->
-      <Button variant="ghost" size="icon-small" title="Edit this card" @click="$emit('edit')">
-        <SquarePen />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon-small"
-        title="Take the last answer back"
-        :disabled="!answered"
-        @click="$emit('take-back')"
-      >
-        <Undo2 />
-      </Button>
-      <Button variant="ghost" size="icon-small" title="Leave" @click="$emit('leave')">
-        <X />
-      </Button>
+           end of the line that says where the card is from, and they are what
+           can be done now: a card open to be put right is kept or let go. -->
+      <template v-if="editing">
+        <Button
+          variant="ghost"
+          size="icon-small"
+          title="Save this card"
+          :disabled="writing"
+          @click="$emit('save')"
+        >
+          <Check />
+        </Button>
+        <Button variant="ghost" size="icon-small" title="Leave it as it was" @click="$emit('close')">
+          <X />
+        </Button>
+      </template>
+      <template v-else>
+        <Button variant="ghost" size="icon-small" title="Edit this card" @click="$emit('edit')">
+          <SquarePen />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-small"
+          title="Take the last answer back"
+          :disabled="!answered"
+          @click="$emit('take-back')"
+        >
+          <Undo2 />
+        </Button>
+        <Button variant="ghost" size="icon-small" title="Leave" @click="$emit('leave')">
+          <X />
+        </Button>
+      </template>
     </header>
 
     <!-- The boxes a card is put right in take their own room at the top, and
          the card is pushed down and stays where a person can read it. -->
     <div class="session__stage" :class="{ 'session__stage--editing': editing }">
-      <div class="session__slot" :inert="!editing">
+      <div class="session__slot session__slot--boxes" :inert="!editing">
         <Editing
           :card="card.card"
           :section="card.section"
           :values="values"
-          :writing="writing"
           @write="(field, text) => $emit('write', field, text)"
-          @save="$emit('save')"
-          @close="$emit('close')"
         />
       </div>
-      <div class="session__slot">
+      <div class="session__slot session__slot--card">
         <Card
           :front="card.front"
           :back="card.back"
@@ -124,33 +138,46 @@ defineEmits<{
   margin-inline-start: auto;
 }
 
-/* Two rows sharing what the frame has. The first is closed until the boxes are
-   asked for, and opening it takes its room from the second: the boxes come down
-   and the card goes under them by exactly as much, and stays read. */
+/* The boxes are closed until they are asked for. Opening them takes the room
+   they need and no more, and the card goes under them by exactly as much and
+   stays where a person can read it. */
 .session__stage {
-  display: grid;
+  display: flex;
   flex: 1;
+  flex-direction: column;
   min-block-size: 0;
-  grid-template-rows: 0fr 1fr;
   gap: 0;
-  transition:
-    grid-template-rows var(--numen-motion) var(--numen-easing),
-    gap var(--numen-motion) var(--numen-easing);
+  transition: gap var(--numen-motion) var(--numen-easing);
 }
 
 .session__stage--editing {
-  grid-template-rows: 1fr 1fr;
   gap: var(--numen-inset);
 }
 
 .session__slot {
   display: flex;
   min-block-size: 0;
-  overflow: hidden;
 }
 
 .session__slot > * {
   flex: 1;
   min-block-size: 0;
+}
+
+/* Half the frame is as far as the boxes go; a card of many fields scrolls
+   inside that. */
+.session__slot--boxes {
+  flex: none;
+  max-block-size: 0;
+  overflow: hidden;
+  transition: max-block-size var(--numen-motion) var(--numen-easing);
+}
+
+.session__stage--editing .session__slot--boxes {
+  max-block-size: 50%;
+}
+
+.session__slot--card {
+  flex: 1;
 }
 </style>

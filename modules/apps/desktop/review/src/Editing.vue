@@ -7,7 +7,7 @@
  * the editor's deck is written in.
  */
 import { computed } from 'vue'
-import { Button, Card } from '@numen/ui'
+import { Card } from '@numen/ui'
 import type { Stood, Tile } from '@numen/ui'
 import type { Held } from './core'
 
@@ -17,15 +17,9 @@ const props = defineProps<{
   section: string
   /** Its values, in the order its stencil asks for them. */
   values: readonly Held[]
-  /** Whether a write is in the air. */
-  writing: boolean
 }>()
 
-const emit = defineEmits<{
-  (event: 'write', field: string, text: string): void
-  (event: 'save'): void
-  (event: 'close'): void
-}>()
+const emit = defineEmits<{ (event: 'write', field: string, text: string): void }>()
 
 /** The values as the boxes take them. */
 const filled = computed<readonly Stood[]>(() =>
@@ -56,28 +50,16 @@ const tile = computed<Tile>(() => ({
 <template>
   <section class="editing">
     <Card :tile="tile" @write="(field, _nth, text) => emit('write', field, text)" />
-
-    <footer class="editing__deeds">
-      <Button variant="ghost" size="small" @click="emit('close')">Cancel</Button>
-      <Button size="small" :disabled="writing" @click="emit('save')">Save</Button>
-    </footer>
   </section>
 </template>
 
 <style scoped>
+/* The boxes are as tall as the fields they hold, and no taller. A card of many
+   fields scrolls inside what the frame gave it. */
 .editing {
   display: flex;
-  flex: 1;
   flex-direction: column;
-  min-block-size: 0;
+  max-block-size: 100%;
   overflow-y: auto;
-  gap: var(--numen-inset);
-}
-
-.editing__deeds {
-  display: flex;
-  flex: none;
-  justify-content: flex-end;
-  gap: var(--numen-inset);
 }
 </style>
