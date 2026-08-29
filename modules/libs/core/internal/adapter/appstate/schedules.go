@@ -24,6 +24,16 @@ func OpenSchedules() (*Schedules, error) {
 	return SchedulesAt(filepath.Join(dir, "numen", "flashcards")), nil
 }
 
+// OpenCounting is where what each day of review came to is kept, beside the
+// schedules and under a folder of its own.
+func OpenCounting() (*Schedules, error) {
+	dir, err := os.UserCacheDir()
+	if err != nil {
+		return nil, err
+	}
+	return SchedulesAt(filepath.Join(dir, "numen", "flashcards", "days")), nil
+}
+
 // SchedulesAt is OpenSchedules with an explicit folder, so that a test does not
 // touch the machine's own.
 func SchedulesAt(dir string) *Schedules { return &Schedules{dir: dir} }

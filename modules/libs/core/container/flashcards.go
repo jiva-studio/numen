@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
@@ -23,6 +24,8 @@ type Flashcards struct {
 	Owed      flashcards.Owed
 	Session   flashcards.Session
 	Log       flashcards.Log
+	// Counted is how much of a vault was answered on each day it was reviewed.
+	Counted flashcards.Counted
 	// Day is where one day of review gives way to the next.
 	Day history.Day
 }
@@ -41,6 +44,17 @@ func (c Config) Kept() (port.Schedules, error) {
 		return appstate.SchedulesAt(c.SchedulesPath), nil
 	}
 	return appstate.OpenSchedules()
+}
+
+// Counting is where what each day came to is remembered. It stands beside the
+// schedules and not in them, because the two go out of date by different rules:
+// a schedule is the whole history read again, and a day is a sum one file at a
+// time.
+func (c Config) Counting() (port.Schedules, error) {
+	if c.SchedulesPath != "" {
+		return appstate.SchedulesAt(filepath.Join(c.SchedulesPath, "days")), nil
+	}
+	return appstate.OpenCounting()
 }
 
 // Flashcards builds the scenarios against this installation.
@@ -69,6 +83,12 @@ func (c Config) Flashcards(
 	}
 	schedules := flashcards.Schedules{Logs: logs, Kept: kept, By: history.NewFSRS()}
 	day := history.Day{Starts: history.DayStarts}
+
+	counting, err := c.Counting()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "numen: the days are counted again at every launch:", err)
+	}
+
 	return Flashcards{
 		Standings: standing,
 		Marking:   marking,
@@ -77,7 +97,8 @@ func (c Config) Flashcards(
 		Session: flashcards.Session{
 			Marking: marking, Standings: standing, Schedules: schedules, Day: day, Now: time.Now,
 		},
-		Log: flashcards.Log{Stores: logs},
-		Day: day,
+		Log:     flashcards.Log{Stores: logs},
+		Counted: flashcards.Counted{Logs: logs, Kept: counting, Day: day, Now: time.Now},
+		Day:     day,
 	}
 }
