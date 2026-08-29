@@ -200,9 +200,6 @@ message ReadCardResponse {
   Fingerprint at = 2;
   // Set where nothing could be read, in the person's own words.
   string refused = 3;
-  // The stencil the card is cut by, as the wikilink under its heading names it.
-  // A card naming none carries nothing here.
-  string stencil = 4;
 }
 
 message WriteCardRequest {

@@ -163,7 +163,6 @@ const takeBack = async () => {
 /** The card open to be put right, and what a read of its deck gave us. */
 const editing = ref(false)
 const values = ref<readonly Held[]>([])
-const stencil = ref('')
 const writing = ref(false)
 let stood: Fingerprint | undefined
 
@@ -181,7 +180,6 @@ const edit = async () => {
       return
     }
     values.value = answer.values.map((held) => ({ field: held.field, text: held.text }))
-    stencil.value = answer.stencil
     stood = answer.at
     editing.value = true
   } catch (why) {
@@ -316,7 +314,6 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
       :shown="shown"
       :answered="answers.length > 0"
       :editing="editing"
-      :stencil="stencil"
       :values="values"
       :writing="writing"
       @show="show"
