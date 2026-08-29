@@ -91,6 +91,20 @@ func askedOf(one review.Asked) *v1.Asked {
 		Back:    back,
 		Seen:    one.Schedule.Seen(),
 		Due:     stamp(one.Schedule.Due),
+		Ahead:   ahead(one.Ahead),
+	}
+}
+
+// ahead is where each of the four would leave the card, in seconds.
+func ahead(said map[history.Rating]time.Duration) *v1.Ahead {
+	if said == nil {
+		return nil
+	}
+	return &v1.Ahead{
+		Again: int64(said[history.Again].Seconds()),
+		Hard:  int64(said[history.Hard].Seconds()),
+		Good:  int64(said[history.Good].Seconds()),
+		Easy:  int64(said[history.Easy].Seconds()),
 	}
 }
 

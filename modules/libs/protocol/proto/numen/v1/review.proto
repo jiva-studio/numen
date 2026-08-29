@@ -89,6 +89,16 @@ message DeckOwing {
   int32 new = 4;
 }
 
+// Ahead is how long each of the four answers would leave this card, in seconds
+// from the moment it was asked. A person choosing between them is choosing
+// between these.
+message Ahead {
+  int64 again = 1;
+  int64 hard = 2;
+  int64 good = 3;
+  int64 easy = 4;
+}
+
 // Asked is one card face as it is put to a person.
 message Asked {
   // Deck is the path of the file the card stands in, and section the name of
@@ -115,6 +125,9 @@ message Asked {
   // been answered.
   bool seen = 8;
   string due = 9;
+
+  // Where each of the four would leave it.
+  Ahead ahead = 10;
 }
 
 message OwingRequest {}
