@@ -53,7 +53,7 @@ Which animal is {{Height}} at the shoulder and lives {{Life span}}?
 
 ### Fields
 
-`fields` is a list of names, in the order a person is asked for them. A name is text; there are no field types, and a value is markdown.
+`fields` is a list of names, in the order a person is asked for them. A name is text; there are no field types, and a value is HTML.
 
 A name is compared as written. Two fields of one name are a problem against the stencil, and the first stands.
 
@@ -93,7 +93,7 @@ A stencil has as many faces as a person writes. One card is shown once through e
 
 A placeholder naming a field the stencil does not declare is a problem against the stencil. A placeholder whose card leaves that field empty lays out as nothing.
 
-Everything around a placeholder is markdown and is drawn as markdown.
+Everything around a placeholder is HTML and is drawn as the markup it is.
 
 `{{` is not escaped. Wherever the two characters stand in a face, what runs to the next `}}` is read as a placeholder, and a face that wants those characters as text has no way to write them. This is a known limit of the format.
 
@@ -201,7 +201,9 @@ One deck carries cards of as many stencils as a person likes.
 
 Each third-level heading is a field, and the value is everything under it until the next heading of the first, second or third level. Every field of the stencil is written this way, the first included.
 
-A value is markdown and holds what markdown holds: paragraphs, lists, a table, a quote, an image as `![[llama.jpg]]`. What it cannot hold is a heading at the first, second or third level, because those three are spent. A value wanting a heading uses one of the fourth level or below.
+A value is HTML and holds what HTML holds: paragraphs, lists, a table, a picture, a rule. What it cannot hold is a heading at the first, second or third level written as a markdown heading, because those three levels are what the file is cut at. A value wanting a heading writes one as `<h4>` or below.
+
+A card is not markdown. What stands under a field's heading is drawn as the markup it is, and a line of prose with no tag around it is a line of prose. It cannot run: the window serves itself under a policy that allows no script it did not serve, and no handler written in an attribute.
 
 A card carrying a field its stencil does not declare keeps it in the file, and no face shows it. A field the stencil declares and the card omits is empty, and so is one whose heading is there with nothing under it.
 

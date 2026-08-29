@@ -23,9 +23,9 @@ One key rather than one per kind is what makes the three exclusive: a file is on
 
 A stencil is a note of `type: stencil`. Its fields are declared in the frontmatter key `fields`, in the order a person is asked for them.
 
-The faces are the body. Each is a second-level heading, and under it a front and a back at the third level. A face is markdown with `{{Field}}` standing where a value goes.
+The faces are the body. Each is a second-level heading, and under it a front and a back at the third level. A face is HTML with `{{Field}}` standing where a value goes.
 
-A field is a name and nothing else. A value is markdown, so a picture is `![[llama.jpg]]` and a list is a list, exactly as they are written anywhere else in a vault.
+A field is a name and nothing else. **A value is HTML**, and so is the face it is laid into: what a person writes there is drawn as the markup it is. A card is the one thing in a vault that is not markdown — the file around it still is, and the headings that cut it into cards and fields are markdown's.
 
 ```markdown
 ---
@@ -88,7 +88,7 @@ The stencil above declares `Name`, so `Llama` is the value of `Name`, `{{Name}}`
 
 The first field is a heading, so it holds one line. A field wanting more than that is not the one to put first.
 
-A value is markdown and holds what markdown holds: paragraphs, lists, a table, an image. One deck carries cards of as many stencils as the person likes, and a card whose stencil declares a field the card leaves out is a card with that field empty.
+A value is HTML and holds what HTML holds: paragraphs, lists, a table, a picture. It cannot run — the window serves itself under a policy that allows no script it did not serve, and no handler written in an attribute. One deck carries cards of as many stencils as the person likes, and a card whose stencil declares a field the card leaves out is a card with that field empty.
 
 ### The heading carries the structure
 
