@@ -293,13 +293,11 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
             :class="`review__answer--${how}`"
             @click="answer(how)"
           >
-            <span class="review__answer-said">
-              <KeyCap :keys="{ marks: [], letter: String(i + 1) }" />
-              {{ called[how] }}
-            </span>
-            <!-- What the answer does to the card, under the answer itself: a
-                 person picking between the four is picking between these, and
-                 they are read down the row and not along it. -->
+            <KeyCap :keys="{ marks: [], letter: String(i + 1) }" />
+            {{ called[how] }}
+            <!-- What the answer does to the card, said where the answer is
+                 chosen: a person picking between the four is picking between
+                 these. -->
             <span v-if="card.ahead" class="review__ahead">{{ ahead(card.ahead[how]) }}</span>
           </Button>
         </template>
@@ -378,17 +376,8 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
    width it can and stands taller than a button in a row of controls. */
 .review__answer {
   flex: 1;
-  flex-direction: column;
   block-size: auto;
   padding-block: var(--numen-inset-wide);
-  gap: 0.125rem;
-}
-
-/* The key and the word it reaches, on the line a person reads first. */
-.review__answer-said {
-  display: flex;
-  align-items: center;
-  gap: var(--numen-inset);
 }
 
 /* The answer that says a card was lost is the one worth telling apart at a
