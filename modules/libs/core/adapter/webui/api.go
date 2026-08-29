@@ -49,6 +49,12 @@ type API struct {
 	// is showing among them. A build without one answers that it holds no list.
 	Vaults port.VaultRegistry
 
+	// Asked is the note this window was started on, by the path it is filed
+	// under. It is what the window opens at in place of the vault's own
+	// opening, and it is spent the first time it is asked for: a person who
+	// goes elsewhere and reloads is where they went.
+	Asked atomic.Pointer[string]
+
 	// Choosing puts this machine's own folder picker in front of the person.
 	// Only an application with a window has one, and a build without it answers
 	// that a folder cannot be picked here.
@@ -259,6 +265,19 @@ func (a *API) Opening(ctx context.Context, _ *connect.Request[v1.OpeningRequest]
 		// A window standing on nothing opens on no note.
 		return connect.NewResponse(&v1.OpeningResponse{}), nil
 	}
+
+	// A note this window was started on stands in place of the vault's own
+	// opening, once. A path naming nothing leaves the vault to answer.
+	if asked := a.Asked.Swap(nil); asked != nil && *asked != "" {
+		found, err := a.Notes.Notes(ctx, showing.ID, []string{*asked})
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		if ref, held := found[*asked]; held {
+			return connect.NewResponse(&v1.OpeningResponse{Note: noteOf(ref)}), nil
+		}
+	}
+
 	ref, found, err := a.Notes.Opening(ctx, showing.ID)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
