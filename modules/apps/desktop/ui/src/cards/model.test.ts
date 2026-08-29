@@ -3,7 +3,7 @@
  * screen, and where each problem the vault reports is drawn.
  */
 import { describe, expect, it } from 'vitest'
-import { CARD_HEAD } from '@numen/ui'
+import { CARD_HEAD, cardEndOf as endOfCards } from '@numen/ui'
 import type { Decked, Problem, Stencilled } from '../core'
 import {
   added,
@@ -298,6 +298,7 @@ describe('a card added', () => {
       'Animal',
       'stencils/Animal.md',
       [{ field: 'Name', text: '' }],
+      null,
       () => 'c9',
     )
     expect(held.cards.map((card) => card.id)).toStrictEqual([LLAMA, ALPACA, 'c9'])
@@ -314,35 +315,36 @@ describe('a card added', () => {
     })
   })
 
-  it('stands under the last section of the deck, which is where the end of it is', () => {
-    const held = added(
-      deck({ sections: [{ name: 'Roots', lead: '' }, { name: 'Leaves', lead: '' }] }),
-      'Animal',
-      'stencils/Animal.md',
-      [],
-      () => 'c9',
-    )
-    expect(held.cards[2]?.section).toBe(held.sections[1]?.id)
+  it('stands under the section it was asked for, at the end of it', () => {
+    const start = deck({ sections: [{ name: 'Roots', lead: '' }, { name: 'Leaves', lead: '' }] })
+    const held = added(start, 'Animal', 'stencils/Animal.md', [], start.sections[1]!.id, () => 'c9')
+    expect(held.cards[2]?.section).toBe(start.sections[1]?.id)
+  })
+
+  it('stands before the first section where it was asked for none', () => {
+    const start = deck({ sections: [{ name: 'Roots', lead: '' }, { name: 'Leaves', lead: '' }] })
+    const held = added(start, 'Animal', 'stencils/Animal.md', [], null, () => 'c9')
+    expect(held.cards.find((card) => card.id === 'c9')?.section).toBe(null)
   })
 
   it('leaves the preamble and the tail where they were', () => {
-    const held = added(deck(), 'Animal', 'stencils/Animal.md', [], () => 'c9')
+    const held = added(deck(), 'Animal', 'stencils/Animal.md', [], null, () => 'c9')
     expect(held.preamble).toBe('about the animals\n')
     expect(held.tail).toBe('\n')
   })
 
   it('names its stencil by the file, where the stencil is titled another way', () => {
-    const held = added(deck(), 'Animal', 'stencils/creature sheet.md', [], () => 'c9')
+    const held = added(deck(), 'Animal', 'stencils/creature sheet.md', [], null, () => 'c9')
     expect(held.cards[2]?.stencil).toBe('creature sheet')
   })
 
   it('names its stencil by no title, which a link resolves by nowhere', () => {
-    const held = added(deck(), 'Animal', 'stencils/creature sheet.md', [], () => 'c9')
+    const held = added(deck(), 'Animal', 'stencils/creature sheet.md', [], null, () => 'c9')
     expect(held.cards[2]?.stencil).not.toBe('Animal')
   })
 
   it('names it by the title where the vault filed the stencil nowhere', () => {
-    const held = added(deck(), 'Animal', '', [], () => 'c9')
+    const held = added(deck(), 'Animal', '', [], null, () => 'c9')
     expect(held.cards[2]?.stencil).toBe('Animal')
   })
 })
@@ -436,6 +438,48 @@ describe('a card carried among the sections', () => {
   it('moves nothing where it was let go on nothing the deck holds', () => {
     const held = sectioned()
     expect(carried(held, LLAMA, 'nowhere')).toStrictEqual(held)
+  })
+
+  it('stands last under the section it was let go past the end of', () => {
+    const held = sectioned()
+    const roots = held.sections[0]?.id ?? ''
+    const moved = carried(held, LLAMA, endOfCards(roots))
+    expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
+      [ALPACA, roots],
+      [LLAMA, roots],
+    ])
+  })
+
+  it('stands last under no section where it was let go past those before the first', () => {
+    const held = sectioned()
+    const moved = carried(held, ALPACA, endOfCards(CARD_HEAD))
+    expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
+      [LLAMA, null],
+      [ALPACA, null],
+    ])
+  })
+
+  // A card naming a section the deck does not hold is drawn before the first
+  // heading, so that is where it counts from when another lands past it.
+  it('stands past a card whose section the deck has lost, which stands under none', () => {
+    const held = sectioned()
+    const lost = {
+      ...held.cards[0]!,
+      section: 'gone',
+    }
+    const deckLost = { ...held, cards: [lost, held.cards[1]!] }
+
+    const moved = carried(deckLost, ALPACA, endOfCards(CARD_HEAD))
+
+    expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
+      [LLAMA, 'gone'],
+      [ALPACA, null],
+    ])
+  })
+
+  it('leaves the deck as it was where the card already stands last under that heading', () => {
+    const held = sectioned()
+    expect(carried(held, ALPACA, endOfCards(held.sections[0]?.id ?? ''))).toStrictEqual(held)
   })
 
   it('stands first and under no section where it was let go at the head of the deck', () => {
@@ -749,6 +793,20 @@ describe('whether two readings of a file read the same', () => {
     }
 
     expect(sameDeck(deck(), deckOf(wrote, minting()))).toBe(false)
+  })
+
+  // The heading is read back from the first field wherever the deck is written,
+  // so a save carrying a value the window typed comes back under a heading the
+  // window never held. That is the vault keeping its own word, not somebody
+  // writing this deck elsewhere, and what a person is typing into stands.
+  it('is so where only the heading a write read back is different', () => {
+    const other = read()
+    const wrote = {
+      ...other,
+      cards: [{ ...other.cards[0]!, heading: 'about 45"' }, ...other.cards.slice(1)],
+    }
+
+    expect(sameDeck(deck(), deckOf(wrote, minting()))).toBe(true)
   })
 
   it('is not so for prose around the cards written elsewhere', () => {

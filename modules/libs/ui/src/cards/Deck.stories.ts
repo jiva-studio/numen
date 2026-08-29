@@ -496,6 +496,26 @@ export const InSections: Story = {
     expect(found(canvasElement, '[data-band="roots"] .rule')).toBeTruthy()
     expect(found(canvasElement, '[data-band="roots"] input').getAttribute('value')).toBe('Roots')
 
+    // What a person reaches for is the name and the way to be rid of it. It is
+    // as wide as the two of them, and the line either side is the rule's.
+    const held = found(canvasElement, '[data-band="roots"] .band__held')
+    expect(held.getBoundingClientRect().width).toBeLessThan(
+      leaves.getBoundingClientRect().width / 3,
+    )
+
+    // The bin takes no room until the name is reached for, so the line runs
+    // unbroken up to it. Once it is drawn it stands inside the rule, which
+    // keeps nothing that hangs past it.
+    const deeds = found(canvasElement, '[data-band="roots"] .band__deeds')
+    expect(deeds.getBoundingClientRect().width).toBe(0)
+
+    found(canvasElement, '[data-band="roots"] input').focus()
+    const drawn = found(canvasElement, '[data-band="roots"] .deed').getBoundingClientRect()
+    const rule = found(canvasElement, '[data-band="roots"] .rule__held').getBoundingClientRect()
+    expect(deeds.getBoundingClientRect().width).toBeGreaterThan(0)
+    expect(drawn.right).toBeLessThanOrEqual(Math.ceil(rule.right))
+    expect(drawn.left).toBeGreaterThanOrEqual(Math.floor(rule.left))
+
     // Each card stands under the section it is in, and the ones before the
     // first stand under none.
     expect(canvasElement.querySelectorAll('[data-section="roots"]')).toHaveLength(2)

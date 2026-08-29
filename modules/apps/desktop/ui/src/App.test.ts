@@ -1302,10 +1302,14 @@ describe('a file the window has open in an editor of cards, removed from the tre
   it('writes the card nobody had saved before the file goes', async () => {
     const window = await holding('New deck', 'Animals')
     const held = window.findComponent(DeckTab).props('held') as {
-      adds(stencil: string, values: readonly { field: string; text: string }[]): void
+      adds(
+        stencil: string,
+        values: readonly { field: string; text: string }[],
+        section: string | null,
+      ): void
     }
 
-    held.adds('Animal', [{ field: 'Name', text: 'Vicuña' }])
+    held.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await removes(window, 'Animals.note')
 
     // Making the deck is no write, so the only one is what the person added.

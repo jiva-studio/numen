@@ -54,7 +54,8 @@ const wrong = computed(() => ({ at: marks.value.at, under: marks.value.under }))
       :name="words.deck"
       :wrong="wrong"
       @add="
-        (stencil: string, filled: readonly Filled[]) => props.held.adds(stencil, filled)
+        (stencil: string, filled: readonly Filled[], section: string | null) =>
+          props.held.adds(stencil, filled, section)
       "
       @remove="(id: string) => props.held.removes(id)"
       @move="(id: string, at: CardLanding) => props.held.moves(id, at)"

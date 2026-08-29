@@ -27,6 +27,7 @@ import {
   deckOf,
   drawnOf,
   filled,
+  headed,
   marksOf,
   named,
   pathOfCut,
@@ -79,8 +80,15 @@ export interface Held {
   marks(): Marks
   /** What the whole file was refused for, in words a person reads. */
   saying(): string
-  /** A card cut by that stencil, made at the end of the deck. */
-  adds(stencil: string, values: readonly { field: string; text: string }[]): void
+  /**
+   * A card cut by that stencil, made at the end of the section named, and at
+   * the end of the cards before the first section where none is.
+   */
+  adds(
+    stencil: string,
+    values: readonly { field: string; text: string }[],
+    section: string | null,
+  ): void
   removes(card: string): void
   /**
    * A card let go before another card, at the head of a section, or at the end
@@ -173,7 +181,7 @@ export function decking(cards: Cards, host: Host, puts: Putting) {
     const read = deckIn(body)
     const deck = held
       ? sameDeck(held.deck, read)
-        ? held.deck
+        ? headed(held.deck, read)
         : named(held.deck, read)
       : read
     parsed.set(id, { body, deck })
@@ -296,8 +304,8 @@ export function decking(cards: Cards, host: Host, puts: Putting) {
     cuts: () => cuts.value,
     marks: () => marksAt(id),
     saying: () => sayingOf(id),
-    adds: (stencil, values) =>
-      turns(id, added(deckAt(id), stencil, pathOfCut(offers.value, stencil), values)),
+    adds: (stencil, values, section) =>
+      turns(id, added(deckAt(id), stencil, pathOfCut(offers.value, stencil), values, section)),
     removes: (card) => turns(id, removed(deckAt(id), card)),
     moves: (card, at) => turns(id, carried(deckAt(id), card, at)),
     writes: (card, field, nth, text) => turns(id, filled(deckAt(id), card, field, nth, text)),

@@ -17,6 +17,7 @@ import { Button } from '../components/ui/button'
 import {
   blanks,
   DECK_WORDS,
+  endOf,
   grid,
   HEAD,
   lands,
@@ -56,14 +57,15 @@ const props = withDefaults(
 const emit = defineEmits<{
   /**
    * A card asked for, cut by a stencil, with a value standing empty under every
-   * field that stencil declares. It is made at the end of the deck.
+   * field that stencil declares. It is made at the end of the section its plus
+   * stands in, and nothing names the cards before the first section.
    */
-  (event: 'add', stencil: string, filled: readonly Filled[]): void
+  (event: 'add', stencil: string, filled: readonly Filled[], section: string | null): void
   (event: 'remove', card: string): void
   /**
    * A card let go somewhere in the deck: before the card of that identity, at
-   * the head of the deck, at the head of the section of that identity, or at
-   * the end.
+   * the head of the deck, at the head of the section of that identity, past
+   * the last card standing under a heading, or at the end.
    */
   (event: 'move', card: string, at: Landing): void
   /**
@@ -78,8 +80,11 @@ const emit = defineEmits<{
   (event: 'remove-section', id: string): void
 }>()
 
-/** The plus is showing which stencils a new card may be cut by. */
-const asking = shallowRef(false)
+/**
+ * The run whose plus is showing which stencils a new card may be cut by, and
+ * nothing while none of them is. One plus asks at a time.
+ */
+const asking = shallowRef<string | null>(null)
 
 /**
  * The card under the pointer's hand, and where letting go would put it. A card
@@ -88,21 +93,21 @@ const asking = shallowRef(false)
  * The head of the deck stands first in the order, so the card at the top of the
  * first section is carried out of it by the keyboard as it is by the pointer.
  */
-const { carried, at, lift, over, release, drop, step } = useCarry<Landing>({
+const { carried, at, lift, over, release, drop, step } = useCarry<Landing | undefined>({
   order: () => [HEAD, ...props.cards.map((card) => card.id)],
-  nowhere: null,
+  nowhere: undefined,
   lands: (held: string, at: Landing): boolean => lands(shown.value.runs, held, at),
   moves: (held, at) => emit('move', held, at),
 })
 
 const shown = computed(() => grid(props.cards, props.sections, props.cuts, carried.value))
 
-/** The run the plus stands in, which is the last of them. */
-const last = computed<Run | undefined>(() => shown.value.runs.at(-1))
+/** Where the plus of a run stands in the order: past everything under it. */
+const after = (run: Run): Landing => endOf(run.id)
 
-const add = (cut: Cut): void => {
-  asking.value = false
-  emit('add', cut.name, blanks(declared(cut.fields)))
+const add = (cut: Cut, run: Run): void => {
+  asking.value = null
+  emit('add', cut.name, blanks(declared(cut.fields)), run.band?.id ?? null)
 }
 
 const addSection = (): void => {
@@ -115,7 +120,7 @@ const addSection = (): void => {
     class="deck numen bg-surface font-sans text-base text-ink"
     role="group"
     :aria-label="name"
-    @dragover="over(null, $event)"
+    @dragover="over(undefined, $event)"
     @drop="drop"
   >
     <template v-for="run in shown.runs" :key="run.id">
@@ -170,26 +175,32 @@ const addSection = (): void => {
           />
         </div>
 
-        <!-- A card is made at the end of the deck, so the plus stands in the
-             last run of it and nowhere else. -->
+        <!-- A card is made at the end of a section, so every section carries a
+             plus of its own. What stands before the first section carries one
+             wherever a card stands there, and a deck nobody has divided is one
+             such run. -->
         <article
-          v-if="run === last"
+          v-if="run.plusAt !== null"
           class="deck__tile deck__plus rounded-node"
-          :aria-posinset="shown.plusAt"
+          :aria-posinset="run.plusAt"
           :aria-setsize="shown.of"
           :aria-label="words.add"
           data-plus
+          :data-plus-of="run.band?.id"
+          :data-before="after(run) === at || undefined"
+          @dragover.stop="over(after(run), $event)"
+          @drop.stop="drop"
         >
           <!-- The plus says what it is for by standing alone in the middle. What
                it is called is read aloud and shown on hovering, and not beside it.
                What it opens takes its place, so it says nothing of being open. -->
           <Button
-            v-if="!asking"
+            v-if="asking !== run.id"
             variant="ghost"
             class="deck__ask"
             :aria-label="words.add"
             :title="words.add"
-            @click="asking = true"
+            @click="asking = run.id"
           >
             <Glyph shows="plus" />
           </Button>
@@ -203,7 +214,7 @@ const addSection = (): void => {
                 variant="outline"
                 size="small"
                 :data-cut="cut.name"
-                @click="add(cut)"
+                @click="add(cut, run)"
                 >{{ cut.name }}</Button
               >
             </div>
@@ -223,7 +234,9 @@ const addSection = (): void => {
 
 <style scoped>
 /* The deck is what scrolls. The grid inside it is as tall as its rows, which is
-   what lets every row take the height of the tallest tile of the whole deck. */
+   what lets every row take the height of the tallest tile of the whole deck.
+   The room the bar takes is kept whether it is drawn or not: how many columns
+   fit is read off this width. */
 .deck {
   --tile: 20rem;
   --gap: 0.75rem;
@@ -233,6 +246,7 @@ const addSection = (): void => {
   gap: var(--gap);
   padding: var(--numen-gutter);
   overflow: auto;
+  scrollbar-gutter: stable;
 }
 
 /* A section's heading runs the width of the grid under it, and takes the caret
@@ -248,17 +262,21 @@ const addSection = (): void => {
   block-size: var(--gap);
 }
 
+/* The caret stands where the card is going: a card let go on a heading lands
+   at the head of what stands under it, so the caret stands under the heading
+   and never reads as a place before it. */
 .deck__head[data-before]::before,
 .deck__band[data-before]::before {
   content: '';
   position: absolute;
   inset-inline: 0;
-  inset-block-start: calc(-1 * var(--gap) / 2);
+  inset-block-end: calc(-1 * var(--gap) / 2);
   block-size: var(--numen-caret);
   background: var(--numen-ring);
 }
 
-/* A section holding no card takes no room of its own between the headings. */
+/* A run drawing neither a card nor a plus takes no room of its own, which is
+   the place before the first section of a deck holding nothing there. */
 .deck__grid:empty {
   display: none;
 }
@@ -299,7 +317,7 @@ const addSection = (): void => {
 
   display: grid;
   place-items: center;
-  min-block-size: 6rem;
+  min-block-size: 12rem;
   padding: var(--numen-box-air);
   border: var(--numen-stroke) dashed var(--numen-node-border);
 }

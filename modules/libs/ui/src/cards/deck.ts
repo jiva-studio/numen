@@ -21,6 +21,20 @@ export interface Filled {
  */
 export const HEAD = 'the head of the deck'
 
+/** What the end of a run is named by, which no card and no section may carry. */
+const END = 'the end of '
+
+/**
+ * Where a card let go past the last of a run lands: after everything standing
+ * under that heading, and under the heading itself. The run before the first
+ * section is named by the head of the deck.
+ */
+export const endOf = (run: string): Landing => `${END}${run}`
+
+/** Which run's end a landing is, and nothing for a landing that is not one. */
+export const ended = (at: Landing): string | null =>
+  typeof at === 'string' && at.startsWith(END) ? at.slice(END.length) : null
+
 /** One card as the deck draws it. */
 export interface Drawn {
   /**
@@ -209,15 +223,20 @@ export interface Run {
    * before the first section have neither where none of them stands.
    */
   readonly landing: boolean
+  /**
+   * Where this run's plus stands in the grid, counting from one, and nothing
+   * where the run draws none. A card is made at the end of a run, so a run
+   * cards may be put in has one: every section, and the cards before the first
+   * section wherever any of them stands there.
+   */
+  readonly plusAt: number | null
 }
 
-/** The grid a deck draws: its runs of cards, and where the plus stands. */
+/** The grid a deck draws: its runs of cards, and how many stand in it. */
 export interface Grid {
   /** The cards before the first section, and then one run for each section. */
   readonly runs: readonly Run[]
-  /** Where the plus stands, counting from one. It stands last. */
-  readonly plusAt: number
-  /** How many stand in the grid, the plus among them. */
+  /** How many stand in the grid, every plus among them. */
   readonly of: number
 }
 
@@ -234,9 +253,8 @@ export function grid(
   cuts: readonly Cut[],
   carried: string | null,
 ): Grid {
-  const of = cards.length + 1
   const banded = new Set(sections.map((section) => section.id))
-  const tiles = cards.map((card, index) => {
+  const tiles = cards.map((card) => {
     const cut = cuts.find((each) => each.name === card.stencil)
     const fields = declared(cut?.fields ?? [])
 
@@ -267,8 +285,8 @@ export function grid(
         ...each,
         last: each.nth === (under.get(each.field) ?? 0),
       })),
-      at: index + 1,
-      of,
+      at: 0,
+      of: 0,
       known: cut !== undefined,
       carried: card.id === carried,
     }
@@ -278,7 +296,7 @@ export function grid(
     tiles.filter((tile) => tile.section === section)
 
   const head = standing(null)
-  const runs: readonly Run[] = [
+  const drawn = [
     { id: HEAD, band: null, tiles: head, landing: head.length === 0 && sections.length > 0 },
     ...sections.map((section, index) => ({
       id: section.id,
@@ -288,13 +306,33 @@ export function grid(
     })),
   ]
 
-  return { runs, plusAt: cards.length + 1, of }
+  // Everything the grid draws is counted off in the order it is drawn in, the
+  // tiles of each run and then the plus that ends it, so a reader is told
+  // where each of them stands among them all.
+  let seat = 0
+  const runs: readonly Run[] = drawn.map((run) => {
+    const laid = run.tiles.map((tile) => ({ ...tile, at: ++seat }))
+    const plus = run.band !== null || laid.length > 0 || drawn.length === 1
+    return { ...run, tiles: laid, plusAt: plus ? ++seat : null }
+  })
+  const of = seat
+
+  return {
+    runs: runs.map((run) => ({ ...run, tiles: run.tiles.map((tile) => ({ ...tile, of })) })),
+    of,
+  }
 }
 
 /**
  * Whether letting a carried card go there moves it. A card let go where it
- * stands moves nothing, and the head of the deck is where the first card
- * standing under no section already is.
+ * stands moves nothing: the head of the deck is where the first card standing
+ * under no section already is, and the end of a run is where its last card is.
  */
-export const lands = (runs: readonly Run[], carried: string, at: Landing): boolean =>
-  at !== carried && (at !== HEAD || runs[0]?.tiles[0]?.id !== carried)
+export const lands = (runs: readonly Run[], carried: string, at: Landing): boolean => {
+  if (at === carried) return false
+  if (at === HEAD) return runs[0]?.tiles[0]?.id !== carried
+
+  const run = ended(at)
+  if (run !== null) return runs.find((each) => each.id === run)?.tiles.at(-1)?.id !== carried
+  return true
+}

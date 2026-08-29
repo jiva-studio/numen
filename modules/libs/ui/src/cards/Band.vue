@@ -61,21 +61,32 @@ const stem = computed(() => `${props.words.sectionStem} ${props.band.at}`)
 
 <template>
   <div class="band" :data-band-of="band.id">
-    <Rule at="start">
-      <input
-        class="band__title min-w-0 rounded-node"
-        type="text"
-        :value="text"
-        :placeholder="stem"
-        :aria-label="stem"
-        :aria-invalid="objects !== null || undefined"
-        :aria-describedby="says ? objectsId : undefined"
-        @input="naming.typing(band.id, ($event.target as HTMLInputElement).value)"
-        @change="naming.commit(band.id)"
-        @keydown="naming.onKey($event, band.id)"
-      />
+    <Rule>
+      <!-- What a person reaches for is the name and the way to be rid of it,
+           and nothing of the line either side. -->
+      <span class="band__held">
+        <span class="band__name" :data-typed="text || stem">
+          <!-- A box asked for one character is as wide as the cell behind it
+               comes to, and the cell is set to the text. -->
+          <input
+            class="band__title min-w-0 rounded-node"
+            type="text"
+            size="1"
+            :value="text"
+            :placeholder="stem"
+            :aria-label="stem"
+            :aria-invalid="objects !== null || undefined"
+            :aria-describedby="says ? objectsId : undefined"
+            @input="naming.typing(band.id, ($event.target as HTMLInputElement).value)"
+            @change="naming.commit(band.id)"
+            @keydown="naming.onKey($event, band.id)"
+          />
+        </span>
 
-      <Deed :label="`${words.remove}: ${stem}`" @press="emit('remove')" />
+        <span class="band__deeds">
+          <Deed :label="`${words.remove}: ${stem}`" @press="emit('remove')" />
+        </span>
+      </span>
     </Rule>
 
     <Amiss v-if="says" :id="objectsId" class="band__objects" role="alert" :said="says" />
@@ -91,22 +102,80 @@ const stem = computed(() => `${props.words.sectionStem} ${props.band.at}`)
   min-inline-size: 0;
 }
 
+/* What a person reaches for is the name and what stands at its end, and it is
+   as wide as the two of them come to. */
+.band__held {
+  display: flex;
+  align-items: center;
+  min-inline-size: 0;
+}
+
+/* The box is as wide as what is typed in it: the same text is set behind the
+   input, unseen, and the box takes the width it comes to. Past twenty
+   characters' room the text scrolls inside. */
+.band__name {
+  display: inline-grid;
+  flex: 0 1 auto;
+  min-inline-size: 0;
+  max-inline-size: 20rem;
+}
+
+.band__name::after,
+.band__title {
+  grid-area: 1 / 1;
+  padding: 0.125rem 0.375rem;
+  font: inherit;
+  font-weight: 500;
+}
+
+.band__name::after {
+  content: attr(data-typed);
+  visibility: hidden;
+  white-space: pre;
+}
+
 /* The name is typed on the rule and carries neither a line nor a ground of its
    own. It is the heading of everything below it, and reads as one. */
 .band__title {
-  flex: 0 1 20rem;
-  min-inline-size: 5rem;
-  padding: 0.125rem 0.375rem;
+  min-inline-size: 0;
   border: none;
   background: none;
   color: inherit;
-  font: inherit;
-  font-weight: 500;
+  text-align: center;
   cursor: auto;
 }
 
 .band__title:focus-visible {
   outline: none;
+}
+
+/* What the section is pressed to be rid of is not drawn until its name is
+   reached for, by the pointer or by the keyboard. Until then it takes no room
+   at all, so the line runs unbroken up to the name and there is nothing
+   standing on it to press: the line either side is not the section, and
+   crossing it reaches for nothing. */
+.band__deeds {
+  display: flex;
+  flex: none;
+  align-items: center;
+  inline-size: 0;
+  overflow: hidden;
+  opacity: 0;
+  will-change: opacity;
+  transition: opacity var(--numen-motion-hover) var(--numen-easing);
+}
+
+.band__held:hover .band__deeds,
+.band__held:focus-within .band__deeds {
+  inline-size: auto;
+  padding-inline-start: var(--numen-inset);
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .band__deeds {
+    transition: none;
+  }
 }
 
 /* What is wrong stands under the rule it is wrong about. */

@@ -149,7 +149,9 @@ A deck need not have sections, and cards may stand before the first one. Two sec
 
 Text between a section's heading and its first card is the section's, and is kept exactly as it stands — what a card has between its stencil's wikilink and its first field, one level up. Nothing lays it out and nothing reads it.
 
-A section is made at the end of the deck, as a card is. Taking one away takes away its heading and nothing else: its cards stay where they stand, under whatever heading is above them now, and its own text stays with them.
+A section is made at the end of the deck. Taking one away takes away its heading and nothing else: its cards stay where they stand, under whatever heading is above them now, and its own text stays with them.
+
+A card is made at the end of the section it was asked for, and at the end of the cards standing before the first section where it was asked for none. A deck holding no section is a deck of one such run, so a card made in it stands last.
 
 ### Cards
 

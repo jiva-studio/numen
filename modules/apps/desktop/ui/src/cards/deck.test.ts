@@ -216,7 +216,7 @@ describe('a card written in a deck', () => {
   it('stands in the deck the tab draws', async () => {
     const { tab } = await open()
 
-    tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }])
+    tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
 
     expect(tab.deck().cards.map(calling)).toStrictEqual(['Llama', 'Alpaca', 'Vicuña'])
   })
@@ -224,7 +224,7 @@ describe('a card written in a deck', () => {
   it('stands under where the vault files the stencil it was cut by', async () => {
     const { tab } = await open()
 
-    tab.adds('Animal', [])
+    tab.adds('Animal', [], null)
 
     expect(tab.deck().cards.at(-1)?.stencilAt).toBe('Animal.md')
   })
@@ -232,7 +232,7 @@ describe('a card written in a deck', () => {
   it('carries no mark, which is written where the deck is made whole', async () => {
     const { tab } = await open()
 
-    tab.adds('Animal', [])
+    tab.adds('Animal', [], null)
 
     expect(tab.deck().cards.at(-1)?.mark).toBe('')
   })
@@ -240,7 +240,7 @@ describe('a card written in a deck', () => {
   it('leaves the tab unsaved, and marks it', async () => {
     const { decks, tab } = await open()
 
-    tab.adds('Animal', [])
+    tab.adds('Animal', [], null)
 
     expect(tab.shown().state).toBe('unsaved')
     expect(decks.kind.marked?.(tab)).toBe('unsaved')
@@ -249,7 +249,7 @@ describe('a card written in a deck', () => {
   it('reaches the vault as the cards of that file, with the file it was read from', async () => {
     const { decks, tab, written, seen } = await open()
 
-    tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }])
+    tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.flush()
 
     expect(written).toStrictEqual(['Animals.md Llama, Alpaca, Vicuña'])
@@ -279,7 +279,7 @@ describe('a deck whose file moved past what was read', () => {
   it('is overtaken once the write comes back saying the file changed', async () => {
     const { decks, tab } = await open({ changed: true })
 
-    tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }])
+    tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.flush()
 
     expect(tab.shown().state).toBe('overtaken')
@@ -288,7 +288,7 @@ describe('a deck whose file moved past what was read', () => {
   it('keeps what the person wrote when they say so, over whatever the file holds', async () => {
     const { decks, tab, written, seen } = await open({ changed: true })
 
-    tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }])
+    tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.flush()
     tab.keep()
     await settles()
@@ -300,7 +300,7 @@ describe('a deck whose file moved past what was read', () => {
   it('reads the file again when the person takes what it holds', async () => {
     const { decks, tab, reads } = await open({ changed: true })
 
-    tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }])
+    tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.flush()
     tab.take()
     await settles()
@@ -554,7 +554,7 @@ describe('a deck read again under the window', () => {
      being typed into stands, and the caret with it. */
   it('keeps the identity of a card the file has named since it was drawn', async () => {
     const one = await open()
-    one.tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }])
+    one.tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     const made = one.tab.deck().cards.at(-1)?.id ?? ''
     await one.decks.kept.settles(one.tab.id)
 
@@ -578,6 +578,105 @@ describe('a deck read again under the window', () => {
     expect(one.tab.deck().cards.at(-1)?.id).toBe(made)
     expect(one.tab.deck().cards.at(-1)?.mark).toBe('w9s5jd2b1k')
     expect(one.tab.drawn().at(-1)?.id).toBe(made)
+  })
+
+  /* A section carries no mark, so every reading mints one. The grid draws a run
+     under the identity its section stands at, so a reading that mints fresh
+     ones takes down every run and every card standing in it. */
+  it('keeps the identity of a section the file still holds', async () => {
+    const one = await open({ sections: [{ name: 'Roots', lead: '' }] })
+    const stood = one.tab.deck().sections[0]?.id ?? ''
+    one.tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
+    await one.decks.kept.settles(one.tab.id)
+
+    one.holds([
+      ...CARDS,
+      {
+        mark: 'w9s5jd2b1k',
+        section: null,
+        heading: 'Vicuña',
+        stencil: 'Animal',
+        stencilAt: 'Animal.md',
+        lead: '',
+        values: [{ field: 'Name', text: 'Vicuña' }],
+      },
+    ])
+    one.decks.changed(['Animals.md'])
+    await settles()
+
+    expect(one.tab.deck().sections[0]?.id).toBe(stood)
+  })
+
+  /* A heading is read back off a card's first field wherever the deck is
+     written, so a deck reading as the one on screen leaves it standing. What
+     the file says the heading is, though, is what the deck carries: nothing
+     draws it and nothing is typed into it, so taking it moves nothing under
+     the hand and the next write does not put the old one back. */
+  it('takes a heading the file carries while the deck on screen stands', async () => {
+    const one = await open()
+    const stood = one.tab.deck().cards[0]?.id ?? ''
+
+    one.holds(CARDS.map((card, at) => (at === 0 ? { ...card, heading: 'Llama and yak' } : card)))
+    one.decks.changed(['Animals.md'])
+    await settles()
+
+    expect(one.tab.deck().cards[0]?.heading).toBe('Llama and yak')
+    expect(one.tab.deck().cards[0]?.id).toBe(stood)
+  })
+
+  /* A section stands whatever the cards do. A card written into the file from
+     somewhere else is a reading of a different length, and the sections of it
+     are the sections that were already drawn. */
+  it('keeps it where the file gained a card the window did not write', async () => {
+    const one = await open({ sections: [{ name: 'Roots', lead: '' }] })
+    const stood = one.tab.deck().sections[0]?.id ?? ''
+
+    one.holds([
+      ...CARDS,
+      {
+        mark: 'w9s5jd2b1k',
+        section: null,
+        heading: 'Vicuña',
+        stencil: 'Animal',
+        stencilAt: 'Animal.md',
+        lead: '',
+        values: [{ field: 'Name', text: 'Vicuña' }],
+      },
+    ])
+    one.decks.changed(['Animals.md'])
+    await settles()
+
+    expect(one.tab.deck().cards).toHaveLength(CARDS.length + 1)
+    expect(one.tab.deck().sections[0]?.id).toBe(stood)
+  })
+
+  /* A write takes a moment, and a person typing does not stop for it. The card
+     that comes back named carries what it held when it was sent, and what is
+     being typed into is the same card. */
+  it('keeps it where the typing went on while the write was away', async () => {
+    const one = await open()
+    one.tab.adds('Animal', [{ field: 'Name', text: 'Vic' }], null)
+    const made = one.tab.deck().cards.at(-1)?.id ?? ''
+    await one.decks.kept.settles(one.tab.id)
+
+    one.tab.writes(made, 'Name', 1, 'Vicuña')
+
+    one.holds([
+      ...CARDS,
+      {
+        mark: 'w9s5jd2b1k',
+        section: null,
+        heading: 'Vic',
+        stencil: 'Animal',
+        stencilAt: 'Animal.md',
+        lead: '',
+        values: [{ field: 'Name', text: 'Vic' }],
+      },
+    ])
+    one.decks.changed(['Animals.md'])
+    await settles()
+
+    expect(one.tab.deck().cards.at(-1)?.id).toBe(made)
   })
 
   it('draws the file again where it was written from somewhere else', async () => {
@@ -670,7 +769,7 @@ describe('a deck the vault could not be reached for', () => {
   it('says the file could not be written, where that is what was refused', async () => {
     const { decks, tab } = await open({ wrote: 'unreadable' })
 
-    tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }])
+    tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.kept.settles(decks.all()[0] ?? '')
 
     expect(tab.saying()).toBe(words.notSaved)

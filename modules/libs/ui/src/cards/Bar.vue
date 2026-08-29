@@ -100,9 +100,12 @@ const carried = (event: KeyboardEvent): void => {
 }
 
 /* What the strip is pressed for is not drawn until it is reached for, by the
-   pointer or by the keyboard. */
+   pointer or by the keyboard. It is drawn on a plane of its own, kept for as
+   long as the card stands, so reaching for the card repaints nothing but the
+   strip. */
 .bar__deeds {
   opacity: 0;
+  will-change: opacity;
   transition: opacity var(--numen-motion-hover) var(--numen-easing);
 }
 

@@ -132,9 +132,11 @@ describe('a deck drawn', () => {
   it('writes a card cut by the stencil that was chosen', async () => {
     const { window, tab } = await drawn()
 
-    await window.find('[data-plus]').find('button').trigger('click')
+    // The plus of the last section, so the card it makes stands last of all.
+    await window.findAll('[data-plus]').at(-1)!.find('button').trigger('click')
     await window.find('[data-cut="Animal"]').trigger('click')
 
+    expect(tab.deck().cards.length).toBe(3)
     expect(tab.deck().cards.at(-1)?.stencil).toBe('Animal')
     expect(tab.deck().cards.at(-1)?.values).toStrictEqual([
       { field: 'Name', text: '' },

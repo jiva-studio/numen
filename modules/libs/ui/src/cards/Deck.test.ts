@@ -10,7 +10,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import Deck from './Deck.vue'
-import { HEAD, type Banded, type Drawn } from './deck'
+import { endOf, HEAD, type Banded, type Drawn } from './deck'
 import type { Cut } from './stencil'
 
 const CUTS: readonly Cut[] = [
@@ -66,7 +66,7 @@ const dragTo = async (held: Grid, id: string, onto: string | null): Promise<void
   await tileFor(held, id).get('[data-grip]').trigger('dragstart')
   const over =
     onto === null
-      ? held.get('.deck')
+      ? held.findAll('[data-plus]').at(-1)!
       : onto === HEAD
         ? held.get('[data-head]')
         : held.find(`[data-card="${onto}"]`).exists()
@@ -354,6 +354,7 @@ describe('Deck', () => {
           { field: 'Height', text: '' },
           { field: 'Life span', text: '' },
         ],
+        null,
       ],
     ])
   })
@@ -371,10 +372,35 @@ describe('Deck', () => {
     expect(held.emitted('move')).toEqual([['yak', 'llama']])
   })
 
-  it('emits a card let go past the last of them', async () => {
+  it('emits a card let go past the last of them, which is where the plus stands', async () => {
     const held = mountDeck()
     await dragTo(held, 'llama', null)
-    expect(held.emitted('move')).toEqual([['llama', null]])
+    expect(held.emitted('move')).toEqual([['llama', endOf(HEAD)]])
+  })
+
+  it('moves nothing where the card let go past the last of them is the last of them', async () => {
+    const held = mountDeck()
+    await dragTo(held, 'yak', null)
+    expect(held.emitted('move')).toBeUndefined()
+  })
+
+  // A card is put somewhere, and the caret says where. Let go where the caret
+  // says nothing — the ground between the tiles — it stays where it was.
+  it('moves nothing where a card is let go on no place at all', async () => {
+    const held = mountDeck()
+    await tileFor(held, 'llama').get('[data-grip]').trigger('dragstart')
+    await held.get('.deck').trigger('dragover')
+    await held.get('.deck').trigger('drop')
+    expect(held.emitted('move')).toBeUndefined()
+  })
+
+  it('forgets where a card would land once it is carried off every place', async () => {
+    const held = mountDeck()
+    await tileFor(held, 'llama').get('[data-grip]').trigger('dragstart')
+    await tileFor(held, 'yak').trigger('dragover')
+    await held.get('.deck').trigger('dragover')
+    await held.get('.deck').trigger('drop')
+    expect(held.emitted('move')).toBeUndefined()
   })
 
   it('moves nothing where a card is let go where it stands', async () => {
@@ -528,6 +554,65 @@ describe('Deck', () => {
       expect(held.emitted('remove-section')).toEqual([['roots']])
     })
 
+    it('asks for a card under the section whose plus was pressed', async () => {
+      const held = mountSectioned()
+      await held.get('[data-plus-of="roots"] button').trigger('click')
+      await held.get('[data-plus-of="roots"] [data-cut="Animal"]').trigger('click')
+      expect(held.emitted('add')?.map((call) => call[2])).toEqual(['roots'])
+    })
+
+    it('asks from one plus at a time, the others standing shut', async () => {
+      const held = mountSectioned()
+      await held.get('[data-plus-of="roots"] button').trigger('click')
+      expect(held.findAll('[data-cut]').length).toBeGreaterThan(0)
+      expect(held.find('[data-plus-of="leaves"] [data-cut]').exists()).toBe(false)
+
+      await held.get('[data-plus-of="leaves"] button').trigger('click')
+      expect(held.find('[data-plus-of="roots"] [data-cut]').exists()).toBe(false)
+      expect(held.find('[data-plus-of="leaves"] [data-cut]').exists()).toBe(true)
+    })
+
+    it('moves nothing where the card let go past a section is the last under it', async () => {
+      const held = mountSectioned()
+      const plus = held.get('[data-plus-of="roots"]')
+      await tileFor(held, 'llama').get('[data-grip]').trigger('dragstart')
+      await plus.trigger('dragover')
+      await plus.trigger('drop')
+      expect(held.emitted('move')).toBeUndefined()
+    })
+
+    it('stands a plus in every section, and one where the loose cards stand', () => {
+      const held = mountSectioned()
+      expect(
+        held.findAll('[data-plus]').map((plus) => plus.attributes('data-plus-of') ?? ''),
+      ).toEqual(['', 'roots', 'leaves'])
+    })
+
+    it('stands none before the first section where no card stands there', () => {
+      const held = mountSectioned({ cards: [UNDER[1]] })
+      expect(
+        held.findAll('[data-plus]').map((plus) => plus.attributes('data-plus-of') ?? ''),
+      ).toEqual(['roots', 'leaves'])
+    })
+
+    it('emits a card let go past the last card of a section', async () => {
+      const held = mountSectioned()
+      const plus = held.get('[data-plus-of="roots"]')
+      await tileFor(held, 'loose').get('[data-grip]').trigger('dragstart')
+      await plus.trigger('dragover')
+      await plus.trigger('drop')
+      expect(held.emitted('move')).toEqual([['loose', endOf('roots')]])
+    })
+
+    it('emits a card let go past the last of those standing under no section', async () => {
+      const held = mountSectioned()
+      const plus = held.get('[data-plus]')
+      await tileFor(held, 'llama').get('[data-grip]').trigger('dragstart')
+      await plus.trigger('dragover')
+      await plus.trigger('drop')
+      expect(held.emitted('move')).toEqual([['llama', endOf(HEAD)]])
+    })
+
     it('emits a card let go at the head of a section', async () => {
       const held = mountSectioned()
       await dragTo(held, 'loose', 'roots')
@@ -590,8 +675,8 @@ describe('Deck', () => {
         expect(drawnCards(held)).toEqual(['lost', 'llama'])
         expect(tileFor(held, 'lost').attributes('data-section')).toBeUndefined()
         // Every card is drawn, so what each tile is announced by counts them
-        // all and the plus.
-        expect(tileFor(held, 'lost').attributes('aria-setsize')).toBe('3')
+        // all and the plus each run carries.
+        expect(tileFor(held, 'lost').attributes('aria-setsize')).toBe('5')
       })
     })
   })

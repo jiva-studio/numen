@@ -51,7 +51,9 @@ A deck need not have sections, and cards may stand before the first one. Two sec
 
 **Text between a section's heading and its first card is the section's, and is kept exactly as it stands** — what a card already has between its stencil's wikilink and its first field, one level up. Nothing lays it out and nothing reads it; it is a person writing about their own deck, and a write puts it back where it was.
 
-**A section is made at the end of the deck, as a card is, and taking one away takes away its heading and nothing else.** Its cards stay where they stand, under whatever heading is above them now, and its own text stays too: a section is a name, so removing it removes a name. Carrying cards out with it would be a second act wearing one name.
+**A section is made at the end of the deck, and taking one away takes away its heading and nothing else.** Its cards stay where they stand, under whatever heading is above them now, and its own text stays too: a section is a name, so removing it removes a name. Carrying cards out with it would be a second act wearing one name.
+
+**A card is made at the end of the section it was asked for**, and at the end of the cards standing before the first section where it was asked for none. A person asks by pressing the plus that stands in the run they are looking at, so a card lands where they were looking.
 
 **The format now spends three heading levels.** A value may hold a heading of the fourth level and below, and no higher.
 

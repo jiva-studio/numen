@@ -101,14 +101,14 @@ describe('grid', () => {
   it('stands the plus last, and counts it among the tiles', () => {
     const shown = grid(CARDS, [], CUTS, null)
     expect(tilesOf(shown).map((tile) => tile.at)).toEqual([1, 2])
-    expect(shown.plusAt).toBe(3)
+    expect(shown.runs[0]?.plusAt).toBe(3)
     expect(shown.of).toBe(3)
   })
 
   it('is one tile, the plus, where there are no cards', () => {
     const shown = grid([], [], CUTS, null)
     expect(tilesOf(shown)).toEqual([])
-    expect(shown.plusAt).toBe(1)
+    expect(shown.runs[0]?.plusAt).toBe(1)
     expect(shown.of).toBe(1)
   })
 
@@ -272,7 +272,21 @@ describe('grid', () => {
 
     it('counts a tile’s place over the whole deck, and not over its run', () => {
       const runs = grid(SECTIONED, BANDS, CUTS, null).runs
-      expect(runs.flatMap((run) => run.tiles).map((tile) => tile.at)).toEqual([1, 2, 3])
+      expect(runs.flatMap((run) => run.tiles).map((tile) => tile.at)).toEqual([1, 3, 4])
+    })
+
+    // A card is made at the end of a run, so every run cards may be put in
+    // carries a plus, and each stands where it is drawn among them all.
+    it('counts each plus where it stands, and every tile against them all', () => {
+      const shown = grid(SECTIONED, BANDS, CUTS, null)
+      expect(shown.runs.map((run) => run.plusAt)).toEqual([2, 5, 6])
+      expect(shown.of).toBe(6)
+      expect(shown.runs.flatMap((run) => run.tiles).map((tile) => tile.of)).toEqual([6, 6, 6])
+    })
+
+    it('stands no plus before the first section where no card stands there', () => {
+      const under = SECTIONED.filter((card) => card.section !== null)
+      expect(grid(under, BANDS, CUTS, null).runs.map((run) => run.plusAt)).toEqual([null, 3, 4])
     })
 
     it('stands one run, holding every card, where the deck has no section', () => {

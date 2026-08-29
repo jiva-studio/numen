@@ -9,6 +9,7 @@
  */
 import {
   CARD_HEAD,
+  cardEnded,
   ordered,
   reordered,
   type Banded,
@@ -225,12 +226,33 @@ export const cutsOf = (offers: readonly Offer[]): readonly Cut[] => {
  * Whether two decks read the same. What a person can see is the prose and the
  * cards; the identities this window mints are its own, and a file read again
  * carries fresh ones for the same cards.
+ *
+ * A heading is read back from its card's first field wherever the deck is
+ * written, so a save carrying a value somebody typed comes back under a heading
+ * this window never held. Two readings that differ in that alone are one
+ * reading, and the card being typed into stands.
  */
 export const sameDeck = (one: Deck, other: Deck): boolean =>
   one.preamble === other.preamble &&
   one.tail === other.tail &&
   JSON.stringify(sectionsOf(one)) === JSON.stringify(sectionsOf(other)) &&
-  JSON.stringify(cardsOf(one)) === JSON.stringify(cardsOf(other))
+  JSON.stringify(written(one)) === JSON.stringify(written(other))
+
+/** The cards as somebody wrote them, without the heading a write reads back. */
+const written = (deck: Deck): readonly Omit<Carded, 'heading'>[] =>
+  cardsOf(deck).map(({ heading: _heading, ...card }) => card)
+
+/**
+ * The deck on screen under the headings the file now carries. Nothing draws a
+ * heading and nothing is typed into one, so a deck that reads the same but for
+ * its headings takes them and stands: what the next write puts in the file is
+ * what the file says, and not what it said when the deck was drawn.
+ */
+export const headed = (held: Deck, read: Deck): Deck => {
+  const carried = (at: number): string => read.cards[at]?.heading ?? ''
+  if (held.cards.every((card, at) => card.heading === carried(at))) return held
+  return { ...held, cards: held.cards.map((card, at) => ({ ...card, heading: carried(at) })) }
+}
 
 /**
  * A reading of a deck under the identities the window already drew it by. A
@@ -239,25 +261,45 @@ export const sameDeck = (one: Deck, other: Deck): boolean =>
  * being typed into under, and the tile it stands in is not drawn again.
  */
 export const named = (held: Deck, read: Deck): Deck => {
-  if (held.cards.length !== read.cards.length) return read
-
   /** Where a card's section stands among its deck's, each reading minting its own. */
   const seat = (deck: Deck, section: string | null): number =>
     section === null ? -1 : deck.sections.findIndex((each) => each.id === section)
 
+  // A section carries no mark, so every reading mints one for it. The grid
+  // draws a run under the identity its section stands at, so a section still
+  // standing where it stood keeps the identity it is drawn under.
+  const sections =
+    held.sections.length === read.sections.length
+      ? read.sections.map((section, at) => {
+          const was = held.sections[at]
+          return was && was.name === section.name && was.lead === section.lead
+            ? { ...section, id: was.id }
+            : section
+        })
+      : read.sections
+
+  /** The section a card of the reading now stands under, by the identity kept. */
+  const under = (section: string | null): string | null =>
+    section === null ? null : (sections[seat(read, section)]?.id ?? null)
+
+  // A card is the card it was where the reading holds as many as the window
+  // does; a reading of a different length names no card the window drew.
+  const alongside = held.cards.length === read.cards.length
+
   const cards = read.cards.map((card, at) => {
+    const stands = { ...card, section: under(card.section) }
     const was = held.cards[at]
-    if (!was || was.mark !== '' || card.mark === '') return card
+    if (!alongside || !was || was.mark !== '' || card.mark === '') return stands
     const same =
       was.stencil === card.stencil &&
       was.stencilAt === card.stencilAt &&
       was.lead === card.lead &&
       seat(held, was.section) === seat(read, card.section) &&
       JSON.stringify(was.values) === JSON.stringify(card.values)
-    return same ? { ...card, id: was.id } : card
+    return same ? { ...stands, id: was.id } : stands
   })
 
-  return cards.every((card, at) => card === read.cards[at]) ? read : { ...read, cards }
+  return { ...read, sections, cards }
 }
 
 /** Whether two stencils read the same, the identities left out the same way. */
@@ -340,10 +382,11 @@ export const linkTo = (path: string): string => {
 }
 
 /**
- * A card made at the end of the deck, under the last section of it, cut by the
- * stencil filed at a path, with a value standing empty for each field. The
- * wikilink the file carries names that stencil by its file's name, and by its
- * title where the vault filed it nowhere.
+ * A card made at the end of a section, cut by the stencil filed at a path, with
+ * a value standing empty for each field. Under no section it is made at the end
+ * of the cards standing before the first of them. The wikilink the file carries
+ * names that stencil by its file's name, and by its title where the vault filed
+ * it nowhere.
  *
  * It carries no mark: a mark is written where the deck is made whole, on its
  * way to the vault, and the window minted an identity to draw it under until
@@ -354,23 +397,38 @@ export const added = (
   title: string,
   stencilAt: string,
   values: readonly Value[],
+  section: string | null = null,
   mint: Mint = minting,
-): Deck => ({
-  ...deck,
-  cards: [
-    ...deck.cards,
-    {
-      id: mint(),
-      mark: '',
-      section: deck.sections.at(-1)?.id ?? null,
-      heading: '',
-      stencil: stencilAt ? linkTo(stencilAt) : title,
-      stencilAt,
-      lead: '',
-      values,
-    },
-  ],
-})
+): Deck => {
+  // A card is filed where its section stands, so it goes after every card of
+  // that section and of the ones before it.
+  const ranks = new Map(deck.sections.map((each, index) => [each.id, index]))
+  const rank = (id: string | null): number => (id === null ? -1 : (ranks.get(id) ?? -1))
+  const mine = rank(section)
+
+  let at = 0
+  deck.cards.forEach((card, index) => {
+    if (rank(card.section) <= mine) at = index + 1
+  })
+
+  return {
+    ...deck,
+    cards: [
+      ...deck.cards.slice(0, at),
+      {
+        id: mint(),
+        mark: '',
+        section: section !== null && ranks.has(section) ? section : null,
+        heading: '',
+        stencil: stencilAt ? linkTo(stencilAt) : title,
+        stencilAt,
+        lead: '',
+        values,
+      },
+      ...deck.cards.slice(at),
+    ],
+  }
+}
 
 /** A card taken out of the deck. */
 export const removed = (deck: Deck, id: string): Deck => ({
@@ -380,10 +438,11 @@ export const removed = (deck: Deck, id: string): Deck => ({
 
 /**
  * A card let go somewhere in the deck: before the card of that identity, at the
- * head of the deck, at the head of the section of that identity, or at the end.
- * A card takes the section of whatever it lands in front of, one let go at the
- * head of the deck stands under no section, and one let go at the end stands
- * under the last section.
+ * head of the deck, at the head of the section of that identity, past the last
+ * card standing under a heading, or at the end. A card takes the section of
+ * whatever it lands in front of, one let go at the head of the deck stands
+ * under no section, one let go past the last card under a heading stands under
+ * that heading, and one let go at the end stands under the last section.
  */
 export const carried = (deck: Deck, id: string, at: CardLanding): Deck => {
   const held = deck.cards.find((card) => card.id === id)
@@ -401,18 +460,44 @@ export const carried = (deck: Deck, id: string, at: CardLanding): Deck => {
   if (at === null) {
     return { ...deck, cards: [...left, { ...held, section: deck.sections.at(-1)?.id ?? null }] }
   }
-  if (!deck.sections.some((section) => section.id === at)) return deck
 
   // The cards stand grouped in the order of the sections, so the head of one is
-  // where the first card standing that far down the deck stands.
+  // where the first card standing that far down the deck stands, and the end of
+  // one is past the last card standing under it.
   const rank = (section: string | null): number =>
     section === null ? 0 : deck.sections.findIndex((each) => each.id === section) + 1
-  const seat = left.findIndex((card) => rank(card.section) >= rank(at))
-  const where = seat === -1 ? left.length : seat
-  return {
-    ...deck,
-    cards: [...left.slice(0, where), { ...held, section: at }, ...left.slice(where)],
+  const head = (section: string | null): number => {
+    const seat = left.findIndex((card) => rank(card.section) >= rank(section))
+    return seat === -1 ? left.length : seat
   }
+  const put = (section: string | null, where: number): Deck => ({
+    ...deck,
+    cards: [...left.slice(0, where), { ...held, section }, ...left.slice(where)],
+  })
+
+  // A card naming a section the deck does not hold stands before the first
+  // heading, which is where it is counted from.
+  const under = (card: Card): string | null =>
+    deck.sections.some((each) => each.id === card.section) ? card.section : null
+
+  const last = (section: string | null): number => {
+    let seat = -1
+    left.forEach((card, index) => {
+      if (under(card) === section) seat = index
+    })
+    return seat
+  }
+
+  const run = cardEnded(at)
+  if (run !== null) {
+    const section = run === CARD_HEAD ? null : run
+    if (section !== null && !deck.sections.some((each) => each.id === section)) return deck
+    const seat = last(section)
+    return put(section, seat === -1 ? head(section) : seat + 1)
+  }
+
+  if (!deck.sections.some((section) => section.id === at)) return deck
+  return put(at, head(at))
 }
 
 /** A section made at the end of the deck, holding no card. */
