@@ -1,0 +1,71 @@
+/*
+ * One Dark, from the hues Atom publishes in one-dark-syntax and the grounds
+ * One Dark Pro sets in its own theme file.
+ *
+ * `color-scheme` is pinned: the palette is published dark, and there is no
+ * light half for the setting to choose.
+ *
+ * The syntax colours are Atom's own links: purple keywords, red variables,
+ * yellow classes and types, green strings, orange numbers, and brackets in the
+ * text colour.
+ *
+ * The accent is the syntax accent, which the caret is drawn in. It is a blue,
+ * so a parent takes the palette's cyan and the four seats stand apart from it.
+ *
+ * Mixed here, because the palette does not name them: the selection where the
+ * keyboard is away and at every other match, which are the selection at two
+ * lower alphas, and the caution band, which is the warning colour laid on the
+ * ground it covers.
+ */
+:root {
+  color-scheme: dark;
+
+  --numen-surface: #21252b;
+  --numen-node-bg: #282c34;
+  --numen-node-fg: #abb2bf;
+  --numen-node-border: #181a1f;
+
+  --numen-focus-bg: #528bff;
+  --numen-focus-fg: #282c34;
+  --numen-focus-border: #528bff;
+
+  --numen-seat-parent: #56b6c2;
+  --numen-seat-child: #98c379;
+  --numen-seat-jump: #d19a66;
+  --numen-seat-sibling: #c678dd;
+
+  --numen-edge: #3e4452;
+  --numen-edge-label: #5c6370;
+  --numen-ring: #528bff;
+  --numen-selection: #67769660;
+  --numen-selection-away: #67769633;
+  --numen-selection-match: #67769626;
+  --numen-alarm: #c24038;
+  --numen-caution-bg: #413d3c;
+  --numen-caution-fg: #d19a66;
+  /* The ground a word is picked out on, which the theme sets in yellow. */
+  --numen-highlight: #ffd33d44;
+
+  /* Code takes the ground the window is drawn on, and a table's head row the
+     band a line is picked out with. */
+  --numen-syntax-mark: #5c6370;
+  --numen-code-bg: #21252b;
+  --numen-table-head-bg: #2c313c;
+  --numen-syntax-keyword: #c678dd;
+  --numen-syntax-name: #e06c75;
+  --numen-syntax-type: #e5c07b;
+  --numen-syntax-string: #98c379;
+  --numen-syntax-number: #d19a66;
+  --numen-syntax-comment: #7f848e;
+  --numen-syntax-punctuation: #abb2bf;
+
+  --numen-panel-bg: #282c34cc;
+  --numen-panel-border: #ffffff1f;
+
+  --numen-field-bg: #1d1f23;
+  --numen-field-border: #3e4452;
+
+  --numen-bubble-bg: #323842;
+  --numen-bubble-fg: #abb2bf;
+  --numen-answer-fg: #abb2bf;
+}

@@ -1,0 +1,172 @@
+name: docs
+
+on:
+  pull_request:
+    paths:
+      - "modules/apps/docs/**"
+      # What the manual writes itself from.
+      - "modules/apps/desktop/ui/src/keying.ts"
+      - "modules/apps/desktop/ui/src/words.ts"
+      - "modules/apps/desktop/ui/src/commanding.ts"
+      - "modules/apps/desktop/cmd/numen/main.go"
+      - "modules/libs/core/adapter/cli/cli.go"
+      - "modules/libs/core/adapter/settings/settings.go"
+      - "modules/libs/core/internal/adapter/embed/config.go"
+      - "modules/libs/core/internal/adapter/recognition/config.go"
+      - "modules/libs/core/internal/adapter/proofreading/config.go"
+      - "modules/libs/core/adapter/agent/config.go"
+      - ".github/workflows/docs.yml"
+  push:
+    branches: [main]
+    paths:
+      - "modules/apps/docs/**"
+      # What the manual writes itself from.
+      - "modules/apps/desktop/ui/src/keying.ts"
+      - "modules/apps/desktop/ui/src/words.ts"
+      - "modules/apps/desktop/ui/src/commanding.ts"
+      - "modules/apps/desktop/cmd/numen/main.go"
+      - "modules/libs/core/adapter/cli/cli.go"
+      - "modules/libs/core/adapter/settings/settings.go"
+      - "modules/libs/core/internal/adapter/embed/config.go"
+      - "modules/libs/core/internal/adapter/recognition/config.go"
+      - "modules/libs/core/internal/adapter/proofreading/config.go"
+      - "modules/libs/core/adapter/agent/config.go"
+      - ".github/workflows/docs.yml"
+
+jobs:
+  # The manual is markdown and carries no framework, so what there is to check
+  # is that the site builds and that the keyboard page still says what the
+  # window does.
+  manual:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install
+        run: npm ci --prefix modules/apps/docs
+
+      - name: The manual says what the application does
+        run: npm run manual:check --prefix modules/apps/docs
+
+      - name: Typecheck
+        run: npm run typecheck --prefix modules/apps/docs
+
+      - name: Build
+        run: npm run build --prefix modules/apps/docs
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: docs
+          path: modules/apps/docs/dist
+          if-no-files-found: error
+
+  # What is on the default branch is what is on the web. Storage is never
+  # readable without its password: the pull zone in front of it is what serves
+  # the manual, and the manual has a storage zone of its own.
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: manual
+    runs-on: ubuntu-latest
+    steps:
+      - name: What this needs
+        env:
+          ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
+          ZONE: ${{ vars.BUNNY_DOCS_STORAGE_ZONE }}
+          PULL_ZONE: ${{ vars.BUNNY_DOCS_PULL_ZONE_ID }}
+          SERVED_FROM: ${{ vars.BUNNY_DOCS_SERVED_FROM }}
+          KEY: ${{ secrets.BUNNY_DOCS_STORAGE_KEY }}
+          API_KEY: ${{ secrets.BUNNY_API_KEY }}
+        run: |
+          missing=
+          for name in ENDPOINT ZONE PULL_ZONE SERVED_FROM KEY API_KEY; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::nothing is set up to deploy to:$missing"
+            exit 1
+          fi
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: docs
+          path: dist
+
+      - name: Up
+        env:
+          ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
+          ZONE: ${{ vars.BUNNY_DOCS_STORAGE_ZONE }}
+          KEY: ${{ secrets.BUNNY_DOCS_STORAGE_KEY }}
+        run: |
+          set -euo pipefail
+          cd dist
+          find . -type f | sed 's|^\./||' | while read -r path; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' \
+              -X PUT "https://$ENDPOINT/$ZONE/$path" \
+              -H "AccessKey: $KEY" \
+              -H 'Content-Type: application/octet-stream' \
+              --data-binary "@$path")
+            echo "$code  $path"
+            case "$code" in 20*) ;; *) echo "::error::$path was refused with $code"; exit 1 ;; esac
+          done
+
+      # A page removed from the manual is still on the disk it was put on. What
+      # this build did not write is taken down, so what is served is what was
+      # built and nothing else.
+      - name: Down with what is no longer there
+        env:
+          ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
+          ZONE: ${{ vars.BUNNY_DOCS_STORAGE_ZONE }}
+          KEY: ${{ secrets.BUNNY_DOCS_STORAGE_KEY }}
+        run: |
+          set -euo pipefail
+          built=$(cd dist && find . -type f | sed 's|^\./||' | sort)
+
+          # Storage lists one folder at a time, so the walk is done here.
+          walk() {
+            local under="$1"
+            curl -fsS "https://$ENDPOINT/$ZONE/$under" -H "AccessKey: $KEY" \
+              | jq -r '.[] | [.IsDirectory, .ObjectName] | @tsv' \
+              | while IFS=$'\t' read -r directory name; do
+                  if [ "$directory" = true ]; then
+                    walk "$under$name/"
+                  else
+                    echo "$under$name"
+                  fi
+                done
+          }
+
+          walk "" | sort > /tmp/there
+          comm -23 /tmp/there <(printf '%s\n' "$built") | while read -r stale; do
+            [ -n "$stale" ] || continue
+            code=$(curl -sS -o /dev/null -w '%{http_code}' \
+              -X DELETE "https://$ENDPOINT/$ZONE/$stale" -H "AccessKey: $KEY")
+            echo "removed $code  $stale"
+          done
+
+      - name: Forget the old copies
+        env:
+          PULL_ZONE: ${{ vars.BUNNY_DOCS_PULL_ZONE_ID }}
+          API_KEY: ${{ secrets.BUNNY_API_KEY }}
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -X POST "https://api.bunny.net/pullzone/$PULL_ZONE/purgeCache" \
+            -H "AccessKey: $API_KEY" -H 'Content-Length: 0')
+          echo "purge $code"
+          case "$code" in 20*) ;; *) echo "::error::the cache was not purged: $code"; exit 1 ;; esac
+
+      - name: Fetch it as a stranger would
+        env:
+          SERVED_FROM: ${{ vars.BUNNY_DOCS_SERVED_FROM }}
+        run: |
+          set -euo pipefail
+          # A purge is answered before it has reached every edge.
+          code=$(curl -sS -o /dev/null -L -f \
+            --retry 6 --retry-delay 5 --retry-all-errors \
+            -w '%{http_code}' "$SERVED_FROM/" || true)
+          echo "${code:-—}  $SERVED_FROM/"
+          [ "$code" = 200 ] || { echo "::error::the manual did not come back"; exit 1; }

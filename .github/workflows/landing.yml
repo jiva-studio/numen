@@ -1,0 +1,161 @@
+name: landing
+
+# A run answers for the page and for nothing else, so what starts it is a change
+# to the page, on a branch and on main alike. The two lists are written out
+# twice: a workflow file takes no anchor.
+on:
+  pull_request:
+    paths:
+      - "modules/apps/landing/**"
+      - ".github/workflows/landing.yml"
+  push:
+    branches: [main]
+    paths:
+      - "modules/apps/landing/**"
+      - ".github/workflows/landing.yml"
+
+# One run at a time per branch, and the newest is the one that matters. Two
+# deploys share one storage zone, and the second takes down what the first has
+# not finished putting up. A deploy that is overtaken is stopped: every deploy
+# writes the whole site and then removes what it did not write, so the one that
+# follows leaves the zone whole.
+concurrency:
+  group: landing-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # The page is static and carries no framework, so what there is to check is
+  # that its markup typechecks and that the site builds — pictures included,
+  # which is where a missing asset turns up.
+  page:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install
+        run: npm ci --prefix modules/apps/landing
+
+      - name: Typecheck
+        run: npm run typecheck --prefix modules/apps/landing
+
+      - name: Build
+        env:
+          PUBLIC_NUMEN_DOWNLOADS_BASE: ${{ vars.PUBLIC_NUMEN_DOWNLOADS_BASE }}
+        run: npm run build --prefix modules/apps/landing
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: landing
+          path: modules/apps/landing/dist
+          if-no-files-found: error
+
+  # What is on the default branch is what is on the web. Storage is never
+  # readable without its password: the pull zone in front of it is what serves
+  # the page, and the page has a storage zone of its own.
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: page
+    runs-on: ubuntu-latest
+    steps:
+      - name: What this needs
+        env:
+          ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
+          ZONE: ${{ vars.BUNNY_SITE_STORAGE_ZONE }}
+          PULL_ZONE: ${{ vars.BUNNY_SITE_PULL_ZONE_ID }}
+          SERVED_FROM: ${{ vars.BUNNY_SITE_SERVED_FROM }}
+          KEY: ${{ secrets.BUNNY_SITE_STORAGE_KEY }}
+          API_KEY: ${{ secrets.BUNNY_API_KEY }}
+        run: |
+          missing=
+          for name in ENDPOINT ZONE PULL_ZONE SERVED_FROM KEY API_KEY; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::nothing is set up to deploy to:$missing"
+            exit 1
+          fi
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: landing
+          path: dist
+
+      - name: Up
+        env:
+          ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
+          ZONE: ${{ vars.BUNNY_SITE_STORAGE_ZONE }}
+          KEY: ${{ secrets.BUNNY_SITE_STORAGE_KEY }}
+        run: |
+          set -euo pipefail
+          cd dist
+          find . -type f | sed 's|^\./||' | while read -r path; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' \
+              -X PUT "https://$ENDPOINT/$ZONE/$path" \
+              -H "AccessKey: $KEY" \
+              -H 'Content-Type: application/octet-stream' \
+              --data-binary "@$path")
+            echo "$code  $path"
+            case "$code" in 20*) ;; *) echo "::error::$path was refused with $code"; exit 1 ;; esac
+          done
+
+      # A page removed from the site is still on the disk it was put on. What
+      # this build did not write is taken down, so what is served is what was
+      # built and nothing else.
+      - name: Down with what is no longer there
+        env:
+          ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
+          ZONE: ${{ vars.BUNNY_SITE_STORAGE_ZONE }}
+          KEY: ${{ secrets.BUNNY_SITE_STORAGE_KEY }}
+        run: |
+          set -euo pipefail
+          built=$(cd dist && find . -type f | sed 's|^\./||' | sort)
+
+          # Storage lists one folder at a time, so the walk is done here.
+          walk() {
+            local under="$1"
+            curl -fsS "https://$ENDPOINT/$ZONE/$under" -H "AccessKey: $KEY" \
+              | jq -r '.[] | [.IsDirectory, .ObjectName] | @tsv' \
+              | while IFS=$'\t' read -r directory name; do
+                  if [ "$directory" = true ]; then
+                    walk "$under$name/"
+                  else
+                    echo "$under$name"
+                  fi
+                done
+          }
+
+          walk "" | sort > /tmp/there
+          comm -23 /tmp/there <(printf '%s\n' "$built") | while read -r stale; do
+            [ -n "$stale" ] || continue
+            code=$(curl -sS -o /dev/null -w '%{http_code}' \
+              -X DELETE "https://$ENDPOINT/$ZONE/$stale" -H "AccessKey: $KEY")
+            echo "removed $code  $stale"
+          done
+
+      - name: Forget the old copies
+        env:
+          PULL_ZONE: ${{ vars.BUNNY_SITE_PULL_ZONE_ID }}
+          API_KEY: ${{ secrets.BUNNY_API_KEY }}
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -X POST "https://api.bunny.net/pullzone/$PULL_ZONE/purgeCache" \
+            -H "AccessKey: $API_KEY" -H 'Content-Length: 0')
+          echo "purge $code"
+          case "$code" in 20*) ;; *) echo "::error::the cache was not purged: $code"; exit 1 ;; esac
+
+      - name: Fetch it as a stranger would
+        env:
+          SERVED_FROM: ${{ vars.BUNNY_SITE_SERVED_FROM }}
+        run: |
+          set -euo pipefail
+          # A purge is answered before it has reached every edge.
+          code=$(curl -sS -o /dev/null -L -f \
+            --retry 6 --retry-delay 5 --retry-all-errors \
+            -w '%{http_code}' "$SERVED_FROM/" || true)
+          echo "${code:-—}  $SERVED_FROM/"
+          [ "$code" = 200 ] || { echo "::error::the page did not come back"; exit 1; }

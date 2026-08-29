@@ -1,0 +1,65 @@
+/*
+ * Dracula, from the palette published at spec.draculatheme.com.
+ *
+ * `color-scheme` is pinned: the palette is published dark, and there is no
+ * light half for the setting to choose.
+ *
+ * The syntax colours are the spec's own assignments: pink keywords, green
+ * function names, cyan types, yellow strings, purple constants, the comment
+ * tone for comments, and brackets in the foreground colour.
+ *
+ * Mixed here, because the palette does not name them: the caution band, the
+ * ground under code, the marks in marked-up text, and the alpha the selection
+ * and the highlight are laid on at.
+ */
+:root {
+  color-scheme: dark;
+
+  --numen-surface: #21222c;
+  --numen-node-bg: #282a36;
+  --numen-node-fg: #f8f8f2;
+  --numen-node-border: #44475a;
+
+  --numen-focus-bg: #bd93f9;
+  --numen-focus-fg: #282a36;
+  --numen-focus-border: #bd93f9;
+
+  --numen-seat-parent: #8be9fd;
+  --numen-seat-child: #50fa7b;
+  --numen-seat-jump: #ffb86c;
+  --numen-seat-sibling: #ff79c6;
+
+  --numen-edge: #44475a;
+  --numen-edge-label: #6272a4;
+  --numen-ring: #bd93f9;
+  --numen-selection: #bd93f950;
+  --numen-selection-away: #bd93f92b;
+  --numen-selection-match: #bd93f925;
+  --numen-alarm: #ff5555;
+  --numen-caution-bg: #3d3a26;
+  --numen-caution-fg: #f1fa8c;
+  --numen-highlight: #ffb86c33;
+
+  /* The marks in marked-up text take the comment tone, and code and a table's
+     head row take the darker of the two grounds. */
+  --numen-syntax-mark: #6272a4;
+  --numen-code-bg: #21222c;
+  --numen-table-head-bg: #21222c;
+  --numen-syntax-keyword: #ff79c6;
+  --numen-syntax-name: #50fa7b;
+  --numen-syntax-type: #8be9fd;
+  --numen-syntax-string: #f1fa8c;
+  --numen-syntax-number: #bd93f9;
+  --numen-syntax-comment: #6272a4;
+  --numen-syntax-punctuation: #f8f8f2;
+
+  --numen-panel-bg: #282a36cc;
+  --numen-panel-border: #ffffff1f;
+
+  --numen-field-bg: #21222c;
+  --numen-field-border: #44475a;
+
+  --numen-bubble-bg: #343746;
+  --numen-bubble-fg: #f8f8f2;
+  --numen-answer-fg: #f8f8f2;
+}

@@ -1,0 +1,591 @@
+---
+/**
+ * The one page: what numen is, and where to get it.
+ *
+ * The picture of the window is the story `tools/shoot.mjs` takes, in the theme
+ * the reader is already in.
+ */
+import { getImage } from 'astro:assets'
+import Page from '../layouts/Page.astro'
+import mappingLight from '../assets/window-mapping-light.webp'
+import mappingDark from '../assets/window-mapping-dark.webp'
+import writingLight from '../assets/window-writing-light.webp'
+import writingDark from '../assets/window-writing-dark.webp'
+import filingLight from '../assets/window-filing-light.webp'
+import filingDark from '../assets/window-filing-dark.webp'
+import searchingLight from '../assets/window-searching-light.webp'
+import searchingDark from '../assets/window-searching-dark.webp'
+import askingLight from '../assets/window-asking-light.webp'
+import askingDark from '../assets/window-asking-dark.webp'
+
+/**
+ * Where the builds are served from. A store of their own, in front of which
+ * stands a zone of its own, so what the page is on and what the files are on
+ * are two separate things. Each name holds the newest build and does not
+ * change, so a link written here goes on working after every release.
+ */
+const SHELF = `${import.meta.env.PUBLIC_NUMEN_DOWNLOADS_BASE ?? 'https://numen-dl.b-cdn.net'}/latest`
+
+/**
+ * What there is to take, by the machine it runs on. The first of a platform's
+ * builds is the one most people want; the rest are for somebody who knows they
+ * want them.
+ */
+const BUILDS = [
+  {
+    id: 'macos',
+    name: 'macOS',
+    takes: [{ name: 'Universal', note: 'Apple silicon and Intel', file: 'numen-macos.dmg' }],
+  },
+  {
+    id: 'windows',
+    name: 'Windows',
+    takes: [
+      { name: 'Installer', note: 'x64', file: 'numen-windows-setup.exe' },
+      { name: 'Portable', note: 'x64 · zip', file: 'numen-windows-amd64.zip' },
+    ],
+  },
+  {
+    id: 'linux',
+    name: 'Linux',
+    takes: [
+      { name: 'Debian, Ubuntu', note: 'x64 · deb', file: 'numen-linux-amd64.deb' },
+      { name: 'Fedora, RHEL', note: 'x64 · rpm', file: 'numen-linux-amd64.rpm' },
+      { name: 'Anything else', note: 'x64 · tar.gz', file: 'numen-linux-amd64.tar.gz' },
+    ],
+  },
+]
+
+const DOWNLOAD = '#get'
+
+/** The manual and the forum, each a site of its own. */
+const DOCS = 'https://docs.numen.md'
+const FORUM = 'https://forum.numen.md'
+
+const STUDIO = 'https://jiva.studio'
+
+/** What the window is shown doing, in the order the switch offers it. */
+const SHOTS = [
+  {
+    id: 'filing',
+    name: 'Files',
+    caption: 'Your folders as they are on disk — move a note and its links follow.',
+    alt: 'The numen window: the folders of the vault, the map over the note it '
+      + 'is about, and the assistant along the edge.',
+    light: filingLight,
+    dark: filingDark,
+  },
+  {
+    id: 'writing',
+    name: 'Writing',
+    caption: 'The note as you wrote it, with the map it stands in beside it.',
+    alt: 'The numen window: a note being written in markdown, the map beside it.',
+    light: writingLight,
+    dark: writingDark,
+  },
+  {
+    id: 'mapping',
+    name: 'The map',
+    caption: 'The note you are on in the middle, and everything joined to it around it.',
+    alt: 'The numen window given over to the map: the note called Entropy in the '
+      + 'middle, with everything joined to it drawn around it.',
+    light: mappingLight,
+    dark: mappingDark,
+  },
+  {
+    id: 'searching',
+    name: 'Search',
+    caption: 'One field over the window: the notes, and the lines inside them.',
+    alt: 'The numen window with the search field open over it, showing matching '
+      + 'notes and the lines inside them.',
+    light: searchingLight,
+    dark: searchingDark,
+  },
+  {
+    id: 'asking',
+    name: 'The assistant',
+    caption: 'It reads, links and writes — and says what it touched as it goes.',
+    alt: 'The numen window: a conversation with the assistant beside the map.',
+    light: askingLight,
+    dark: askingDark,
+  },
+]
+
+const shown = { format: 'webp' as const, quality: 82 }
+const framed = await Promise.all(
+  SHOTS.map(async (shot) => ({
+    ...shot,
+    width: shot.light.width / 2,
+    height: shot.light.height / 2,
+    lit: await getImage({ src: shot.light, ...shown }),
+    unlit: await getImage({ src: shot.dark, ...shown }),
+  })),
+)
+
+/** One shot by the name it is filed under. */
+const shotOf = (id: string) => framed.find((shot) => shot.id === id)!
+
+const title = 'numen — your notes, joined the way you think'
+/* What a search result shows: shorter than the page's own opening, and cut to
+   what is searched for. */
+const description =
+  'A local-first notebook: linked notes, spaced repetition, and a private AI agent ' +
+  'that reads them on your own machine. Your files never leave your disk.'
+---
+
+<Page title={title} description={description}>
+  <div class="frame">
+    <header class="masthead">
+      <div class="masthead__name">
+        <a class="wordmark" href="/">
+          <img src="/favicon.svg" width="26" height="26" alt="" />
+          numen
+        </a>
+        <span class="mark">alpha</span>
+      </div>
+      <nav class="masthead__links">
+        <a href={DOCS}>Docs</a>
+        <a href={FORUM}>Forum</a>
+        <a href={DOWNLOAD}>Download</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <h1 class="rise">Your notes, joined <em>the way you think</em>.</h1>
+      <p class="lead rise" style="--wait: 90ms">
+        Write it down, connect it to what you already know, and ask your notes anything
+        you like. What matters comes back to you before you forget it — and everything
+        you keep stays in your own hands.
+      </p>
+      <div class="actions rise" style="--wait: 170ms">
+        <a class="button" href={DOWNLOAD}>Download</a>
+        <span class="beside">macOS · Windows · Linux</span>
+      </div>
+
+      <div class="stage rise" style="--wait: 260ms">
+        <picture class="shot">
+          <source srcset={shotOf('filing').unlit.src} media="(prefers-color-scheme: dark)" />
+          <img
+            src={shotOf('filing').lit.src}
+            width={shotOf('filing').width}
+            height={shotOf('filing').height}
+            alt={shotOf('filing').alt}
+            loading="eager"
+          />
+        </picture>
+      </div>
+    </section>
+
+    <main>
+      <section class="band">
+        <p class="eyebrow">Yours</p>
+        <div class="band__body rise">
+          <h2>Your notes stay yours</h2>
+          <p class="band__lede">
+            One folder, on your own disk, in files you can read without numen. No
+            account, no cloud, nothing to escape from later.
+          </p>
+
+          <div class="features features--four">
+            <div class="feature">
+              <h3>Plain files</h3>
+              <p>Markdown, in folders you named. Any editor opens them.</p>
+            </div>
+            <div class="feature">
+              <h3>Nothing to import</h3>
+              <p>
+                Point numen at the notes you already keep. They are your library from the
+                first second.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>Sync it your way</h3>
+              <p>
+                Dropbox, iCloud, a drive, a repository. It is a folder, so it goes where
+                your folders go.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>Nothing leaves</h3>
+              <p>
+                Writing, searching and linking happen on your machine. Nothing is
+                uploaded unless you ask for it.
+              </p>
+            </div>
+          </div>
+
+          <picture class="shot band__shot">
+            <source srcset={shotOf('writing').unlit.src} media="(prefers-color-scheme: dark)" />
+            <img
+              src={shotOf('writing').lit.src}
+              width={shotOf('writing').width}
+              height={shotOf('writing').height}
+              alt={shotOf('writing').alt}
+              loading="lazy"
+            />
+          </picture>
+        </div>
+      </section>
+
+      <section class="band">
+        <p class="eyebrow">The map</p>
+        <div class="band__body rise">
+          <div class="split">
+            <div>
+              <h2>A map that moves with you</h2>
+              <p class="band__lede">
+                You are always in the middle of one note, with everything joined to it
+                drawn around you. Click a neighbour and it becomes the middle. Nothing to
+                zoom, and nothing to lose yourself in.
+              </p>
+              <p class="band__lede">
+                Every other tool gives you one kind of line, and a year later you have a
+                hairball. Here a link knows whether it goes up, down or across — so what
+                you built keeps its shape as it grows.
+              </p>
+
+              <ul class="roles">
+                <li data-role="parent">
+                  <b>parent</b>
+                  <span>What this note belongs to. It can belong to more than one, the
+                    way real subjects do.</span>
+                </li>
+                <li data-role="child">
+                  <b>child</b>
+                  <span>What sits under it — the parts, the cases, the notes that make it
+                    up.</span>
+                </li>
+                <li data-role="jump">
+                  <b>jump</b>
+                  <span>The leap to something in another part of your thinking, without
+                    tangling either.</span>
+                </li>
+              </ul>
+
+              <p class="footnote">
+                Write a couple of words on a line and they are drawn along it, so you can
+                see why the two notes are joined.
+              </p>
+            </div>
+
+            <svg
+              class="drawing"
+              viewBox="0 0 420 300"
+              role="img"
+              aria-label="A note in the middle, with what it belongs to above it, what
+                sits under it below, and a leap across to one side."
+            >
+              <g class="drawing__edges">
+                <path d="M250 79 V130" />
+                <path d="M250 170 V233" />
+                <path d="M150 150 H190" />
+              </g>
+              <text class="drawing__label" x="260" y="108">measures</text>
+              <text class="drawing__label" x="260" y="206">states</text>
+              <g class="drawing__node" data-seat="parent">
+                <rect x="155" y="45" width="190" height="34" rx="6" />
+                <text x="250" y="67">Thermodynamics</text>
+              </g>
+              <g class="drawing__node" data-seat="jump">
+                <rect x="1" y="133" width="149" height="34" rx="6" />
+                <text x="75" y="155">Maxwell's demon</text>
+              </g>
+              <g class="drawing__node" data-seat="focus">
+                <rect x="190" y="130" width="120" height="40" rx="7" />
+                <text x="250" y="155">Entropy</text>
+              </g>
+              <g class="drawing__node" data-seat="child">
+                <rect x="170" y="233" width="160" height="34" rx="6" />
+                <text x="250" y="255">The second law</text>
+              </g>
+            </svg>
+          </div>
+
+          <div class="features">
+            <div class="feature">
+              <h3>Never the whole hairball</h3>
+              <p>
+                Only what touches where you are. A folder of ten thousand notes looks the
+                same as a folder of ten: one note, and its own.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>Drag to connect</h3>
+              <p>
+                Pull a line out of a note onto another and they are joined. Pull it into
+                empty space and the note you needed is made there.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>Side by side</h3>
+              <p>
+                Keep the map, the note you are writing and the assistant open beside each
+                other, arranged the way you like to work.
+              </p>
+            </div>
+          </div>
+
+          <picture class="shot band__shot">
+            <source srcset={shotOf('mapping').unlit.src} media="(prefers-color-scheme: dark)" />
+            <img
+              src={shotOf('mapping').lit.src}
+              width={shotOf('mapping').width}
+              height={shotOf('mapping').height}
+              alt={shotOf('mapping').alt}
+              loading="lazy"
+            />
+          </picture>
+        </div>
+      </section>
+
+      <section class="band">
+        <p class="eyebrow">Finding</p>
+        <div class="band__body rise">
+          <h2>Find it by what you meant</h2>
+          <p class="band__lede">
+            Type the word, or describe the idea in your own words. Either way you get the
+            passage that answers you, out of everything you have ever written down.
+          </p>
+
+          <div class="features">
+            <div class="feature">
+              <h3>The word you typed</h3>
+              <p>
+                Wherever it stands, in anything in the folder — a note from years ago, a
+                chapter, a file you forgot you had.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>Or the thought behind it</h3>
+              <p>
+                Ask the way you would ask a person. The passage that means what you asked
+                comes back even when none of your words are in it.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>Taken to the place</h3>
+              <p>
+                A result opens the note it came from at the line it stands on, with
+                everything that note is joined to already around it.
+              </p>
+            </div>
+          </div>
+
+          <picture class="shot band__shot">
+            <source srcset={shotOf('searching').unlit.src} media="(prefers-color-scheme: dark)" />
+            <img
+              src={shotOf('searching').lit.src}
+              width={shotOf('searching').width}
+              height={shotOf('searching').height}
+              alt={shotOf('searching').alt}
+              loading="lazy"
+            />
+          </picture>
+        </div>
+      </section>
+
+      <section class="band">
+        <p class="eyebrow">The assistant</p>
+        <div class="band__body rise">
+          <h2>Ask it about your own notes</h2>
+          <p class="band__lede">
+            An assistant sits beside what you are writing and works inside your folder —
+            not on the internet's idea of the subject, but on what you have actually
+            collected.
+          </p>
+
+          <div class="features">
+            <div class="feature">
+              <h3>It knows what you wrote</h3>
+              <p>
+                Ask what a note leaves out, where you contradicted yourself, or what you
+                were reading when you wrote it.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>It can do the tidying</h3>
+              <p>
+                Have it draft the note you keep meaning to write, join two ideas that
+                belong together, or rename the mess of a title.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>You see every move</h3>
+              <p>
+                Each thing it touches is written out as it happens, and it can only reach
+                what is in your folder.
+              </p>
+            </div>
+          </div>
+
+          <picture class="shot band__shot">
+            <source srcset={shotOf('asking').unlit.src} media="(prefers-color-scheme: dark)" />
+            <img
+              src={shotOf('asking').lit.src}
+              width={shotOf('asking').width}
+              height={shotOf('asking').height}
+              alt={shotOf('asking').alt}
+              loading="lazy"
+            />
+          </picture>
+        </div>
+      </section>
+    </main>
+
+    <section class="close rise" id="get">
+      <h2>Give your notes a mind.</h2>
+
+      <div class="shelf">
+        {
+          BUILDS.map((build) => (
+            <div class="shelf__row">
+              <div class="shelf__what">{build.name}</div>
+              <div class="shelf__takes">
+                {
+                  build.takes.map((take) => (
+                    <a class="take" href={`${SHELF}/${take.file}`} data-file={take.file} download>
+                      <svg viewBox="0 0 20 20" aria-hidden="true">
+                        <circle cx="10" cy="10" r="8.5" />
+                        <path d="M10 6v7m0 0 3-3m-3 3-3-3" />
+                      </svg>
+                      <b>{take.name}</b>
+                      <span>{take.note}</span>
+                      <em class="take__weight" />
+                    </a>
+                  ))
+                }
+              </div>
+            </div>
+          ))
+        }
+      </div>
+
+      <p class="said" hidden />
+
+    </section>
+
+    <footer class="footer">
+      <span>numen — <a href={STUDIO}>jiva studio</a></span>
+      <nav class="footer__links">
+        <a href={DOCS}>Docs</a>
+        <a href={FORUM}>Forum</a>
+        <a href={DOWNLOAD}>Download</a>
+      </nav>
+    </footer>
+  </div>
+
+  <script>
+    // Which build the shelf is holding, asked of the shelf itself, so a release
+    // needs no new page. The links written into the page reach the newest build
+    // under a name that carries no version; each is moved to the copy that
+    // keeps this one, and a person taking it gets a file that says which it is.
+    //
+    // The shelf answering with nothing leaves the page as it was written, and
+    // every link on it still reaches the newest build.
+    /** What the manifest says, of everything it holds, that this page asks for. */
+    interface Shelf {
+      version?: string
+      build?: number
+      commit?: string
+      released?: string
+      files?: readonly { name: string; url: string; size: number }[]
+    }
+
+    const takes = [...document.querySelectorAll<HTMLAnchorElement>('.take[data-file]')]
+    const first = takes[0]
+
+    if (first) {
+      try {
+        const answer = await fetch(new URL('latest.json', first.href), { cache: 'no-cache' })
+        if (!answer.ok) throw new Error(String(answer.status))
+        const shelf: Shelf = await answer.json()
+
+        for (const take of takes) {
+          const file = shelf.files?.find((one) => one.name === take.dataset['file'])
+          if (!file?.url) continue
+          take.href = file.url
+          const weight = take.querySelector('.take__weight')
+          if (weight && file.size) weight.textContent = `${Math.round(file.size / 1e6)} MB`
+        }
+
+        const said = document.querySelector('.said')
+        if (said && shelf.version) {
+          const day = new Date(shelf.released ?? '')
+          const when = Number.isNaN(day.valueOf())
+            ? ''
+            : ` · ${day.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`
+          // Two builds of one version are told apart by the build number and
+          // the commit, and both stand in the file names the links now reach.
+          const which = shelf.build ? ` (build ${shelf.build}${shelf.commit ? ` · ${shelf.commit}` : ''})` : ''
+          said.textContent = `Version ${shelf.version}${which}${when}`
+          said.removeAttribute('hidden')
+        }
+      } catch {
+        // The page stands as it was written.
+      }
+    }
+  </script>
+
+  <script>
+    // The shots go round on their own until somebody takes hold of them, and
+    // only while they are on screen and the reader has not asked for stillness.
+    const stage = document.querySelector<HTMLElement>('.stage')
+    const picks = [...document.querySelectorAll<HTMLInputElement>('input[name="shot"]')]
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    if (stage && picks.length > 1 && !still) {
+      /** How long one shot is held, said once in the stylesheet. */
+      const written = getComputedStyle(stage).getPropertyValue('--hold').trim()
+      const HOLD = written.endsWith('ms') ? parseFloat(written) : parseFloat(written) * 1000
+
+      let turning: ReturnType<typeof setInterval> | undefined
+      let taken = false
+
+      const halt = () => {
+        clearInterval(turning)
+        turning = undefined
+        stage.removeAttribute('data-turning')
+      }
+
+      const turn = () => {
+        const at = picks.findIndex((pick) => pick.checked)
+        const next = picks[(at + 1) % picks.length]
+        if (next) next.checked = true
+      }
+
+      const run = () => {
+        clearInterval(turning)
+        if (taken) return
+        turning = setInterval(turn, HOLD)
+        stage.setAttribute('data-turning', '')
+      }
+
+      /** A hand on it stops it for good: from here the reader is choosing. */
+      const take = () => {
+        taken = true
+        halt()
+        stage.removeAttribute('data-held')
+      }
+
+      stage.addEventListener('pointerdown', take)
+      stage.addEventListener('keydown', take)
+
+      // A pointer over it holds the shot where it is, dot and all.
+      stage.addEventListener('pointerenter', () => {
+        clearInterval(turning)
+        turning = undefined
+        if (!taken) stage.setAttribute('data-held', '')
+      })
+
+      stage.addEventListener('pointerleave', () => {
+        stage.removeAttribute('data-held')
+        run()
+      })
+
+      new IntersectionObserver(([seen]) => {
+        if (seen?.isIntersecting) run()
+        else halt()
+      }).observe(stage)
+    }
+  </script>
+</Page>

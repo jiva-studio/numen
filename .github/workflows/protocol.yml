@@ -1,0 +1,70 @@
+name: protocol
+
+on:
+  pull_request:
+    paths:
+      - "modules/libs/protocol/**"
+      - ".github/workflows/protocol.yml"
+  push:
+    branches: [main]
+    paths:
+      - "modules/libs/protocol/**"
+      - ".github/workflows/protocol.yml"
+
+defaults:
+  run:
+    working-directory: modules/libs/protocol
+
+jobs:
+  schema:
+    runs-on: ubuntu-latest
+    steps:
+      # The breaking-change check reads the schema as it stands on the base
+      # branch, so that commit has to be in the clone.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache-dependency-path: modules/libs/protocol/go.sum
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: modules/libs/protocol/package-lock.json
+
+      - uses: bufbuild/buf-action@v1
+        with:
+          setup_only: true
+
+      - name: Plugins
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11
+          go install connectrpc.com/connect/cmd/protoc-gen-connect-go@v1.20.0
+          npm ci
+
+      - name: Lint
+        run: buf lint
+
+      # A field renamed, renumbered or taken away breaks a client already built
+      # against the schema. The comparison is with the commit this pull request
+      # would be merged into, which a push to main does not have.
+      - name: Breaking changes
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: buf breaking --against "../../../.git#ref=$BASE,subdir=modules/libs/protocol"
+
+      # The generated code is committed so that an ordinary build needs none of
+      # the tools above. This is what proves it is still what the schema says.
+      - name: Codegen
+        run: |
+          buf generate
+          git add -AN -- .
+          git diff --exit-code -- . || {
+            echo "::error::the schema changed and the generated code was not regenerated — run: make generate"
+            exit 1
+          }

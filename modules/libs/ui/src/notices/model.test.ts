@@ -1,0 +1,258 @@
+/**
+ * What the notices in the corner decide, as plain values.
+ */
+import { describe, expect, it } from 'vitest'
+import {
+  PER_WORD,
+  SETTLE,
+  arrivals,
+  dwellOf,
+  finished,
+  folded,
+  measured,
+  remembered,
+  showing,
+  standing,
+  tallyOf,
+  type Movement,
+  type Notice,
+} from './model'
+
+const one = (over: Partial<Notice> = {}): Notice => ({
+  id: 'embedding',
+  says: 'Preparing search by meaning',
+  ...over,
+})
+
+describe('which notices stand in the corner', () => {
+  it('draws the notices that have something to say, in the order given', () => {
+    const first = one({ id: 'one' })
+    const second = one({ id: 'two', says: 'Reading the vault' })
+    expect(standing([first, second]).map((each) => each.id)).toEqual(['one', 'two'])
+  })
+
+  it('leaves out a notice nobody could read', () => {
+    expect(standing([one({ id: 'silent', says: '' }), one()]).map((each) => each.id)).toEqual([
+      'embedding',
+    ])
+  })
+
+  it('draws nothing where nothing is running', () => {
+    expect(standing([])).toEqual([])
+  })
+})
+
+describe('what a notice counts against', () => {
+  it('counts where both halves of the count are known', () => {
+    expect(tallyOf(one({ done: 3, total: 8 }))).toEqual({ done: 3, total: 8 })
+  })
+
+  it('counts nothing where either half is missing', () => {
+    // A pass that has not said what it found has no total to draw against, and
+    // a bar drawn against a total nobody gave means nothing.
+    expect(tallyOf(one({ done: 3 }))).toBeUndefined()
+    expect(tallyOf(one({ total: 8 }))).toBeUndefined()
+    expect(tallyOf(one())).toBeUndefined()
+  })
+
+  it('counts a total of nothing, and leaves the share to whoever draws it', () => {
+    expect(tallyOf(one({ done: 0, total: 0 }))).toEqual({ done: 0, total: 0 })
+  })
+})
+
+describe('a notice put away', () => {
+  it('is not drawn, and the rest are', () => {
+    const notices = [one({ id: 'reading' }), one({ id: 'embedding' })]
+    const arrived = arrivals(new Map(), notices, 0)
+    expect(
+      showing(notices, arrived, new Set(['reading']), 20_000).map((each) => each.id),
+    ).toEqual(['embedding'])
+  })
+
+  it('stays away while the work it was about is still running', () => {
+    const notices = [one({ id: 'embedding' })]
+    expect([...remembered(new Set(['embedding']), notices)]).toEqual(['embedding'])
+  })
+
+  it('is forgotten once that work has ended, so the next one is news', () => {
+    expect([...remembered(new Set(['embedding']), [])]).toEqual([])
+  })
+})
+
+describe('how long work runs before it is worth a card', () => {
+  const embedding = [one({ id: 'embedding' })]
+
+  it('keeps the moment a notice arrived, and forgets one that has gone', () => {
+    const first = arrivals(new Map(), embedding, 1000)
+    expect([...first]).toEqual([['embedding', 1000]])
+
+    const later = arrivals(first, embedding, 9000)
+    expect(later.get('embedding')).toBe(1000)
+
+    expect([...arrivals(later, [], 9000)]).toEqual([])
+  })
+
+  it('draws nothing while the work is younger than the wait', () => {
+    const arrived = arrivals(new Map(), embedding, 1000)
+    expect(showing(embedding, arrived, new Set(), 10_999, 10_000)).toEqual([])
+  })
+
+  it('draws it once the work has lasted', () => {
+    const arrived = arrivals(new Map(), embedding, 1000)
+    expect(showing(embedding, arrived, new Set(), 11_000, 10_000).map((each) => each.id)).toEqual([
+      'embedding',
+    ])
+  })
+
+  it('draws nothing it was never told the arrival of', () => {
+    expect(showing(embedding, new Map(), new Set(), 99_000, 10_000)).toEqual([])
+  })
+})
+
+describe('a notice somebody asked for', () => {
+  const asked: Notice = { id: 'reading', says: 'Reading a scan', asked: true }
+  const behind: Notice = { id: 'indexing', says: 'Indexing' }
+
+  it('is drawn the moment it arrives', () => {
+    // The wait is for work nobody asked for. Somebody who asked is waiting to
+    // be told it began, and ten seconds of nothing is an application that did
+    // not hear them.
+    const arrived = arrivals(new Map(), [asked, behind], 0)
+
+    expect(showing([asked, behind], arrived, new Set(), 0).map((one) => one.id)).toEqual(['reading'])
+  })
+
+  it('is put away like any other', () => {
+    const arrived = arrivals(new Map(), [asked], 0)
+
+    expect(showing([asked], arrived, new Set(['reading']), 0)).toEqual([])
+  })
+})
+
+describe('how long something said stands to be read', () => {
+  it('gives more time to more words', () => {
+    expect(dwellOf('Renamed')).toBe(SETTLE + PER_WORD)
+    expect(dwellOf('Renamed', 'One.md')).toBe(SETTLE + 2 * PER_WORD)
+  })
+
+  it('never runs out for a notice too long to be read in passing', () => {
+    const list = Array.from({ length: 21 }, (_, at) => `Note${at}.md`).join(' ')
+
+    expect(dwellOf('Links repaired in', list)).toBe(Infinity)
+  })
+
+  it('is drawn the moment it arrives and goes once it has been read', () => {
+    const said: Notice = { id: 'renamed', says: 'Renamed', stay: 'read' }
+    const arrived = arrivals(new Map(), [said], 1000)
+
+    expect(showing([said], arrived, new Set(), 1000).map((each) => each.id)).toEqual(['renamed'])
+    expect(showing([said], arrived, new Set(), 1000 + SETTLE + PER_WORD - 1)).toHaveLength(1)
+    expect(showing([said], arrived, new Set(), 1000 + SETTLE + PER_WORD)).toEqual([])
+  })
+
+  it('stands until it is put away where it was not asked to be read in passing', () => {
+    const kept: Notice = { id: 'occupied', says: 'A note of that name is filed there', stay: 'kept' }
+    const arrived = arrivals(new Map(), [kept], 0)
+
+    expect(showing([kept], arrived, new Set(), 10_000_000).map((each) => each.id)).toEqual([
+      'occupied',
+    ])
+  })
+
+  it('keeps a notice too long to be read in passing standing, and never finishes it', () => {
+    const list = Array.from({ length: 21 }, (_, at) => `Note${at}.md`).join(' ')
+    const long: Notice = { id: 'repaired', says: 'Links repaired in', about: list, stay: 'read' }
+    const arrived = arrivals(new Map(), [long], 0)
+
+    expect(showing([long], arrived, new Set(), 10_000_000).map((each) => each.id)).toEqual([
+      'repaired',
+    ])
+    expect(finished([long], arrived, 10_000_000)).toEqual([])
+  })
+
+  it('names the ones whose caller may forget them, and only those', () => {
+    const said: Notice = { id: 'renamed', says: 'Renamed', stay: 'read' }
+    const kept: Notice = { id: 'occupied', says: 'Filed there already', stay: 'kept' }
+    const work: Notice = { id: 'embedding', says: 'Indexing', working: true }
+    const all = [said, kept, work]
+    const arrived = arrivals(new Map(), all, 0)
+
+    expect(finished(all, arrived, 0)).toEqual([])
+    expect(finished(all, arrived, 1_000_000)).toEqual(['renamed'])
+  })
+})
+
+describe('how many cards stand at once', () => {
+  const work = (id: string): Notice => ({ id, says: 'Indexing', working: true })
+  const word = (id: string): Notice => ({ id, says: 'Renamed', stay: 'read' })
+
+  it('folds nothing while there is room', () => {
+    expect(folded([work('a'), word('b')], 4)).toEqual({ shown: [work('a'), word('b')], over: 0 })
+  })
+
+  it('folds the oldest of what has been said, and counts them', () => {
+    const drawn = [word('a'), word('b'), work('c'), word('d')]
+
+    expect(folded(drawn, 2)).toEqual({ shown: [work('c'), word('d')], over: 2 })
+  })
+
+  it('folds no work and nothing that is so, however many there are', () => {
+    const drawn = [work('a'), work('b'), work('c'), work('d'), work('e')]
+
+    expect(folded(drawn, 2)).toEqual({ shown: drawn, over: 0 })
+  })
+
+  it('keeps the order of what it did not fold', () => {
+    const drawn = [word('a'), word('b'), word('c')]
+
+    expect(folded(drawn, 2).shown.map((each) => each.id)).toEqual(['b', 'c'])
+  })
+
+  it('folds nothing that stopped badly, wherever it stands', () => {
+    // Trouble is what a person has to see, and it arrives before the reports
+    // that pile up behind it.
+    const trouble: Notice = { id: 'failed', says: 'Reading', tone: 'alarm', stay: 'kept' }
+    const drawn = [trouble, word('a'), word('b'), word('c')]
+
+    const { shown, over } = folded(drawn, 2)
+
+    expect(shown.map((each) => each.id)).toEqual(['failed', 'c'])
+    expect(over).toBe(2)
+  })
+})
+
+describe('measured', () => {
+  const fetching = (done: number): Notice => ({
+    id: 'model',
+    says: 'Preparing the model',
+    done,
+    total: 470_268_510,
+    counting: 'bytes',
+    working: true,
+  })
+
+  it('reads a count once before it has a rate', () => {
+    const moving = measured(new Map(), [fetching(0)], 1000)
+
+    expect(moving.get('model')).toEqual({ done: 0, rate: 0, at: 1000 })
+  })
+
+  it('measures how fast the count is moving between two readings', () => {
+    const first = measured(new Map(), [fetching(0)], 1000)
+    const second = measured(first, [fetching(4_000_000)], 3000)
+
+    expect(second.get('model')?.rate).toBe(2_000_000)
+  })
+
+  it('forgets work that is no longer standing', () => {
+    const was: ReadonlyMap<string, Movement> = new Map([['gone', { done: 5, rate: 1, at: 0 }]])
+
+    expect(measured(was, [fetching(0)], 1000).has('gone')).toBe(false)
+  })
+
+  it('measures nothing for work with no total to count against', () => {
+    const nothing: Notice = { id: 'scan', says: 'Reading a scan', working: true }
+
+    expect(measured(new Map(), [nothing], 1000).size).toBe(0)
+  })
+})

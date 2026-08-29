@@ -1,0 +1,312 @@
+/**
+ * What the menu does, not where it puts things. The negatives matter most:
+ * a menu that will not go away, and one the keyboard can walk out of, both
+ * look right in a picture.
+ *
+ * It is drawn at the end of the document, so everything here is read off the
+ * document rather than off the wrapper.
+ */
+import { mount } from '@vue/test-utils'
+import { afterEach, describe, expect, it } from 'vitest'
+import { nextTick } from 'vue'
+import Menu from './Menu.vue'
+import type { MenuItem } from './model'
+
+const ITEMS: MenuItem[] = [
+  { id: 'open', text: 'Open' },
+  { id: 'child', text: 'New child note' },
+  { id: 'copy', text: 'Copy path' },
+]
+
+type MenuProps = InstanceType<typeof Menu>['$props']
+
+let mounted: { unmount: () => void } | null = null
+
+const mountMenu = (props: Partial<MenuProps> = {}) => {
+  const menu = mount(Menu, {
+    props: { items: ITEMS, at: { x: 40, y: 40 }, open: true, ...props },
+    attachTo: document.body,
+  })
+  mounted = menu
+  return menu
+}
+
+/** Twice: the menu measures and takes the keyboard a tick after it is opened. */
+const settle = async () => {
+  await nextTick()
+  await nextTick()
+}
+
+const drawn = () => document.body.querySelector<HTMLElement>('.menu')
+const choices = () => Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item'))
+
+afterEach(() => {
+  mounted?.unmount()
+  mounted = null
+})
+
+describe('being open and being closed', () => {
+  it('draws nothing at all until it is opened', async () => {
+    const menu = mountMenu({ open: false })
+    expect(drawn()).toBeNull()
+
+    await menu.setProps({ open: true })
+    await settle()
+    expect(drawn()).not.toBeNull()
+  })
+
+  it('draws itself outside whatever asked for it', async () => {
+    mountMenu()
+    await settle()
+    expect(drawn()?.parentElement).toBe(document.body)
+  })
+
+  it('goes when the caller says so, and takes its listeners with it', async () => {
+    const menu = mountMenu()
+    await settle()
+
+    await menu.setProps({ open: false })
+    expect(drawn()).toBeNull()
+
+    // Nothing left behind answering for a menu nobody has open.
+    window.dispatchEvent(new Event('resize'))
+    expect(menu.emitted('dismiss')).toBeUndefined()
+  })
+})
+
+describe('choosing an item', () => {
+  it('hands back the identifier it was given, and asks to be put away', async () => {
+    const menu = mountMenu()
+    await settle()
+
+    choices()[1]?.click()
+    expect(menu.emitted('choose')).toStrictEqual([['child']])
+    expect(menu.emitted('dismiss')).toHaveLength(1)
+  })
+
+  it('says nothing for an item that cannot be chosen', async () => {
+    const menu = mountMenu({
+      items: [{ id: 'open', text: 'Open', disabled: true }],
+    })
+    await settle()
+
+    choices()[0]?.click()
+    expect(menu.emitted('choose')).toBeUndefined()
+    expect(menu.emitted('dismiss')).toBeUndefined()
+  })
+})
+
+describe('being put away', () => {
+  it('asks to go on Escape', async () => {
+    const menu = mountMenu()
+    await settle()
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    expect(menu.emitted('dismiss')).toHaveLength(1)
+  })
+
+  it('asks to go under a pointer outside it, and stays under one inside', async () => {
+    const menu = mountMenu()
+    await settle()
+
+    drawn()!.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+    expect(menu.emitted('dismiss')).toBeUndefined()
+
+    document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+    expect(menu.emitted('dismiss')).toHaveLength(1)
+  })
+
+  it('asks to go when the area it stands over is resized', async () => {
+    const menu = mountMenu()
+    await settle()
+
+    window.dispatchEvent(new Event('resize'))
+    expect(menu.emitted('dismiss')).toHaveLength(1)
+  })
+
+  it('asks to go when the page under it scrolls, and stays when its own list does', async () => {
+    const menu = mountMenu()
+    await settle()
+
+    drawn()!.dispatchEvent(new Event('scroll'))
+    expect(menu.emitted('dismiss')).toBeUndefined()
+
+    document.dispatchEvent(new Event('scroll'))
+    expect(menu.emitted('dismiss')).toHaveLength(1)
+  })
+
+  it('is left alone by any other key', async () => {
+    const menu = mountMenu()
+    await settle()
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }))
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }))
+    expect(menu.emitted('dismiss')).toBeUndefined()
+  })
+})
+
+describe('where the keyboard is while it is open', () => {
+  /** Opened from the keyboard, which is the opening that lands on an item. */
+  const opened = (props: Partial<MenuProps> = {}) =>
+    mountMenu({ opening: 'keyboard', ...props })
+
+  it('is on the first item that can be chosen', async () => {
+    opened({ items: [{ id: 'open', text: 'Open', disabled: true }, ...ITEMS] })
+    await settle()
+    expect(document.activeElement).toBe(choices()[1])
+  })
+
+  it('is on the menu itself when there is nothing to be on', async () => {
+    opened({ items: [] })
+    await settle()
+    expect(document.activeElement).toBe(drawn())
+  })
+
+  it('walks the items with the arrows, and wraps', async () => {
+    opened()
+    await settle()
+    const menu = drawn()!
+
+    menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
+    expect(document.activeElement).toBe(choices()[1])
+
+    menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }))
+    expect(document.activeElement).toBe(choices()[0])
+
+    menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }))
+    expect(document.activeElement).toBe(choices()[2])
+  })
+
+  it('goes to the ends on Home and End', async () => {
+    opened()
+    await settle()
+    const menu = drawn()!
+
+    menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }))
+    expect(document.activeElement).toBe(choices()[2])
+
+    menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }))
+    expect(document.activeElement).toBe(choices()[0])
+  })
+
+  it('is kept inside: tab moves within the items rather than out of them', async () => {
+    opened()
+    await settle()
+    const menu = drawn()!
+
+    const tab = () => {
+      const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })
+      menu.dispatchEvent(event)
+      return event
+    }
+
+    expect(tab().defaultPrevented).toBe(true)
+    expect(document.activeElement).toBe(choices()[1])
+    tab()
+    tab()
+    expect(document.activeElement).toBe(choices()[0])
+  })
+})
+
+describe('where the keyboard is in a menu opened by hand', () => {
+  const step = (key: string) =>
+    drawn()?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
+
+  it('is on no item at all, and on the menu itself', async () => {
+    mountMenu()
+    await settle()
+    expect(choices().some((item) => item === document.activeElement)).toBe(false)
+    expect(document.activeElement).toBe(drawn())
+  })
+
+  it('goes to the first item on the first step down', async () => {
+    mountMenu()
+    await settle()
+
+    step('ArrowDown')
+    expect(document.activeElement).toBe(choices()[0])
+  })
+
+  it('goes to the last on the first step up', async () => {
+    mountMenu()
+    await settle()
+
+    step('ArrowUp')
+    expect(document.activeElement).toBe(choices()[2])
+  })
+})
+
+describe('where the keyboard goes when it closes', () => {
+  const opener = () => {
+    const button = document.createElement('button')
+    document.body.append(button)
+    button.focus()
+    return button
+  }
+
+  it('goes back to what the menu was opened from', async () => {
+    const from = opener()
+    const menu = mountMenu({ from })
+    await settle()
+    expect(document.activeElement).not.toBe(from)
+
+    await menu.setProps({ open: false })
+    expect(document.activeElement).toBe(from)
+    from.remove()
+  })
+
+  it('goes back when the menu is taken away while it is still open', async () => {
+    const from = opener()
+    const menu = mountMenu({ from })
+    await settle()
+
+    menu.unmount()
+    mounted = null
+    expect(document.activeElement).toBe(from)
+    from.remove()
+  })
+
+  it('is left where it is when what it was opened from has gone', async () => {
+    const from = opener()
+    const menu = mountMenu({ from })
+    await settle()
+    from.remove()
+
+    await menu.setProps({ open: false })
+    expect(document.activeElement).not.toBe(from)
+  })
+})
+
+describe('where it is drawn', () => {
+  it('is placed against the area it is drawn into, not against its caller', async () => {
+    mountMenu({ at: { x: 30, y: 20 }, viewport: { width: 900, height: 700 } })
+    await settle()
+    expect(drawn()?.style.left).toBe('30px')
+    expect(drawn()?.style.top).toBe('20px')
+  })
+
+  it('is brought in off an edge it was asked for right against', async () => {
+    mountMenu({ at: { x: 0, y: 0 }, viewport: { width: 900, height: 700 }, margin: 12 })
+    await settle()
+    expect(drawn()?.style.left).toBe('12px')
+    expect(drawn()?.style.top).toBe('12px')
+  })
+})
+
+describe('when there is nothing to choose', () => {
+  it('says so rather than drawing an empty box', async () => {
+    mountMenu({ items: [] })
+    await settle()
+    expect(drawn()?.querySelector('.menu__silence')?.textContent?.trim()).toBe('Nothing to do')
+  })
+
+  it('says it in the words it was given', async () => {
+    mounted = mount(Menu, {
+      props: { items: [], at: { x: 0, y: 0 }, open: true },
+      slots: { silence: 'ничего' },
+      attachTo: document.body,
+    })
+    await settle()
+    expect(drawn()?.querySelector('.menu__silence')?.textContent?.trim()).toBe('ничего')
+  })
+})

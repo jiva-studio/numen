@@ -16,8 +16,11 @@ export default {
       [
         'desktop',   // modules/apps/desktop
         'mobile',    // modules/apps/mobile
+        'landing',   // modules/apps/landing
+        'core',      // modules/libs/core
         'domain',    // modules/libs/domain
         'protocol',  // modules/libs/protocol
+        'ui',        // modules/libs/ui
         'adr',       // docs/adr
         'docs',      // everything else under docs/
         'vault',     // vault format spec and parser-facing changes

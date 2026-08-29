@@ -1,0 +1,7 @@
+/*
+ * numen's own palette, which is what `tokens.css` declares.
+ *
+ * A token a theme does not name keeps the value that file holds, and this
+ * theme names none of them. Nothing here pins which half of a pair is read,
+ * so the mode setting chooses.
+ */

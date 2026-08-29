@@ -1,0 +1,56 @@
+name: interface
+
+on:
+  pull_request:
+    paths:
+      - "modules/libs/ui/**"
+      - "modules/apps/desktop/ui/**"
+      - "modules/libs/protocol/**"
+      - ".github/workflows/interface.yml"
+  push:
+    branches: [main]
+    paths:
+      - "modules/libs/ui/**"
+      - "modules/apps/desktop/ui/**"
+      - "modules/libs/protocol/**"
+      - ".github/workflows/interface.yml"
+
+jobs:
+  # The shared components, and the window that arranges them. Both are typed
+  # against the schema, so a change to it fails here rather than on screen.
+  components:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # The window is typed against the schema and against the components, so
+      # both have to be there before anything is checked: the schema's own
+      # dependencies, and the components built into the shape a consumer sees.
+      - name: Install
+        run: |
+          npm install --prefix modules/libs/protocol
+          npm ci --prefix modules/libs/ui
+          npm install --prefix modules/apps/desktop/ui
+
+      # A story runs in a real browser, and several of them are the only test of
+      # a thing a browser decides: what is clipped by an overflow, where a
+      # scroll lands, whether a key reaches an SVG group. The window is WebKit
+      # on a mac and on Linux and Chromium on Windows, so both are fetched.
+      - name: The browsers the stories run in
+        run: npx --prefix modules/libs/ui playwright install chromium webkit --with-deps
+
+      - name: Build the components
+        run: npm run build --prefix modules/libs/ui
+
+      - name: Typecheck
+        run: npm run typecheck --prefix modules/apps/desktop/ui
+
+      - name: Test
+        run: |
+          npm run test:unit --prefix modules/libs/ui
+          npm run test:stories --prefix modules/libs/ui
+          npm test --prefix modules/apps/desktop/ui

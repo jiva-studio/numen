@@ -1,0 +1,47 @@
+package domain
+
+// Passage is what a search returns: the text around a hit, and where it came
+// from. It is a read model — a chunk is not reconstructed from it.
+//
+// `Start` and `Length` address the large chunk enclosing the hit, in the bytes
+// of the file `Source` names, and `Text` is what stands there once the file has
+// been read.
+type Passage struct {
+	// Chunk is the row a ranking named. Two rankings are merged on it.
+	Chunk int64
+
+	// Source is the path of the file the text is read from, relative to the
+	// vault folder.
+	Source string
+
+	Start  int
+	Length int
+
+	// Location is what the source's own numbering calls the place, and is empty
+	// when the format offered none.
+	Location string
+
+	// TextFrom names the producer of the text the words are read from. Empty
+	// where the source's own bytes are the text.
+	TextFrom string
+
+	// Hash addresses the content of the source, and is what the files of a
+	// reading of it are kept under. Reading a passage back composes the name
+	// from this and TextFrom.
+	Hash string
+
+	// HitAt is where the chunk that matched begins inside Text, in bytes. A
+	// passage whose hit is the chunk itself begins at its own beginning.
+	HitAt int
+
+	// Line is where the chunk that matched stands, counted from the first line
+	// of the source's prose. A note's frontmatter is not prose and is not
+	// counted.
+	Line int
+
+	// Fingerprint is the text this chunk holds, as the index recorded it. It is
+	// what a vector made from that text is found by.
+	Fingerprint string
+
+	Text string
+}

@@ -1,0 +1,65 @@
+/*
+ * GitHub, from Primer's own colour primitives and the theme GitHub publishes
+ * from them. Light is Light Default, dark is Dark Default.
+ *
+ * The syntax colours are that theme's own assignments: red keywords, orange
+ * variables, green tags and class components, deep blue strings, blue
+ * constants, grey comments, and operators in the text colour.
+ *
+ * Blue is the accent a focused node is painted in, so a parent takes the
+ * palette's cyan and the four seats stand apart from it.
+ *
+ * Mixed here, because the palette does not name them: the three grounds under
+ * selected text, which are the accent at three alphas, and the dark half's
+ * caution band, which is the attention tone laid on the ground it covers.
+ */
+:root {
+  --numen-surface: light-dark(#f6f8fa, #010409);
+  --numen-node-bg: light-dark(#ffffff, #0d1117);
+  --numen-node-fg: light-dark(#1f2328, #e6edf3);
+  --numen-node-border: light-dark(#d0d7de, #30363d);
+
+  --numen-focus-bg: light-dark(#0969da, #1f6feb);
+  --numen-focus-fg: light-dark(#ffffff, #ffffff);
+  --numen-focus-border: light-dark(#0969da, #1f6feb);
+
+  --numen-seat-parent: light-dark(#1b7c83, #39c5cf);
+  --numen-seat-child: light-dark(#1a7f37, #3fb950);
+  --numen-seat-jump: light-dark(#9a6700, #d29922);
+  --numen-seat-sibling: light-dark(#8250df, #a371f7);
+
+  --numen-edge: light-dark(#d0d7de, #30363d);
+  --numen-edge-label: light-dark(#656d76, #7d8590);
+  --numen-ring: light-dark(#0969da, #2f81f7);
+  --numen-selection: light-dark(#0969da30, #2f81f738);
+  --numen-selection-away: light-dark(#0969da1a, #2f81f71f);
+  --numen-selection-match: light-dark(#0969da16, #2f81f71a);
+  --numen-alarm: light-dark(#d1242f, #f85149);
+  --numen-caution-bg: light-dark(#fff8c5, #272215);
+  --numen-caution-fg: light-dark(#9a6700, #d29922);
+  /* The ground a match is found on, at the alpha the theme lays it on at. */
+  --numen-highlight: light-dark(#fae17d80, #f2cc6080);
+
+  /* Code and a table's head row take the subtle canvas, a step off the card
+     either half is drawn on. */
+  --numen-syntax-mark: light-dark(#656d76, #7d8590);
+  --numen-code-bg: light-dark(#f6f8fa, #161b22);
+  --numen-table-head-bg: light-dark(#f6f8fa, #161b22);
+  --numen-syntax-keyword: light-dark(#cf222e, #ff7b72);
+  --numen-syntax-name: light-dark(#953800, #ffa657);
+  --numen-syntax-type: light-dark(#116329, #7ee787);
+  --numen-syntax-string: light-dark(#0a3069, #a5d6ff);
+  --numen-syntax-number: light-dark(#0550ae, #79c0ff);
+  --numen-syntax-comment: light-dark(#6e7781, #8b949e);
+  --numen-syntax-punctuation: light-dark(#1f2328, #e6edf3);
+
+  --numen-panel-bg: light-dark(#ffffffcc, #161b22cc);
+  --numen-panel-border: light-dark(#00000014, #ffffff1f);
+
+  --numen-field-bg: light-dark(#ffffff, #0d1117);
+  --numen-field-border: light-dark(#d0d7de, #30363d);
+
+  --numen-bubble-bg: light-dark(#f6f8fa, #161b22);
+  --numen-bubble-fg: light-dark(#1f2328, #e6edf3);
+  --numen-answer-fg: light-dark(#1f2328, #e6edf3);
+}

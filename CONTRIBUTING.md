@@ -4,10 +4,11 @@
 
 ```
 docs/adr/                    architecture decision records
-modules/apps/desktop/        desktop client
+modules/apps/desktop/        the desktop client alone
 modules/apps/mobile/         mobile client
-modules/libs/domain/         domain model
+modules/libs/core/           the core: domain, ports, use cases and the adapters that serve them
 modules/libs/protocol/       wire/vault protocol
+modules/libs/ui/             shared interface components
 modules/tools/git-hooks/     repo-level tooling (commit validation)
 ```
 
@@ -35,8 +36,8 @@ Two dimensions, and nothing else. A label answers *what this is* or *what part o
 the repo it touches* — never *when it should be done*.
 
 - **Type**, exactly one: `adr`, `task`, `bug`, `epic`.
-- **Area**, zero or more: `desktop`, `mobile`, `domain`, `protocol`, `vault`,
-  `repo`. These are the same words as the commit scopes, on purpose — one
+- **Area**, zero or more: `desktop`, `mobile`, `domain`, `protocol`, `ui`,
+  `vault`, `repo`. These are the same words as the commit scopes, on purpose — one
   vocabulary for commits, issues and pull requests.
 - **`needs-decision`** — the only exception: the issue is blocked on a decision,
   not on work.
@@ -67,8 +68,8 @@ still produces a sloppy history.
 - **subject** — imperative, no trailing dot, header capped at 72 characters.
 - **types** — `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`,
   `chore`, `revert`.
-- **scopes** — follow the module layout: `desktop`, `mobile`, `domain`,
-  `protocol`, `adr`, `docs`, `vault`, `ci`, `deps`, `repo`. An unlisted scope is
+- **scopes** — follow the module layout: `desktop`, `mobile`, `core`, `domain`,
+  `protocol`, `ui`, `adr`, `docs`, `vault`, `ci`, `deps`, `repo`. An unlisted scope is
   a **warning**, not an error: adding a module should never be blocked by a
   forgotten line in `modules/tools/git-hooks/commitlint.config.mjs` — but a typo
   still shows up.
@@ -89,9 +90,6 @@ cd modules/tools/git-hooks && npx commitlint --last --verbose
 
 ## Architecture decisions
 
-Accepted decisions live in `docs/adr/` as `NNNN-kebab-slug.md`. They are not
-reopened casually — a change to one is a new ADR that supersedes it, with the old
-file kept and marked `Superseded by ADR-NNNN`.
-
-The initial set and its status is tracked in
+Decisions live in [`docs/adr/`](docs/adr/README.md) — the index has the reading
+order and the rules for adding one. Progress is tracked in
 [issue #13](https://github.com/jiva-studio/numen/issues/13).

@@ -1,0 +1,122 @@
+/**
+ * A hand left on a box.
+ *
+ * A title longer than its box is cut short in it. A hand that stays on the box
+ * opens it where it stands, until the whole title is there. Every other box
+ * keeps its place, so the picture is the one the reader was already looking at.
+ *
+ * The opening is drawn frame by frame, off the same clock the plex moves on:
+ * the width is a geometry a browser is free to leave alone, and this one is
+ * followed exactly.
+ */
+import { onScopeDispose, ref, watch, type Ref } from 'vue'
+import { easeOut, lerp, type Size } from './arrange'
+import { browserEnvironment, type Environment } from './transition'
+import type { PlacedNode } from './model'
+
+/** How long a hand stays on a box before it opens, in milliseconds. */
+export const DWELL = 500
+
+/**
+ * How long the opening itself takes, in milliseconds. It carries the places
+ * inside the node out from under the box as well as the width, and they leave
+ * one behind the next.
+ */
+export const OPENING = 280
+
+/** A box drawn wider than it was placed. */
+export interface Widened {
+  readonly width: number
+  /** How far its middle stands from where the node is placed. */
+  readonly offset: number
+}
+
+/**
+ * The box a node opens to: the room its whole title asks for, held inside the
+ * window. It grows about its own middle, and slides back inside the window
+ * where the middle leaves it no room to grow.
+ *
+ * Nothing where the box already holds the title, and nothing where the window
+ * is no wider than the box.
+ */
+export function widenedFor(
+  node: PlacedNode,
+  wanted: number,
+  viewport: Size,
+  margin: number,
+): Widened | null {
+  const width = Math.min(wanted, viewport.width - 2 * margin)
+  if (width <= node.width) return null
+
+  const furthest = viewport.width / 2 - margin - width / 2
+  const middle = Math.min(Math.max(node.x, -furthest), furthest)
+  return { width, offset: middle - node.x }
+}
+
+/**
+ * How far open a box stands, from nothing at all to the whole way: shut until
+ * the attention has been on it for the wait, then open, and shut again the
+ * moment the attention leaves.
+ *
+ * `on` names what the attention is on, and nothing when it is on none. A thing
+ * that moves is another thing: the box shuts and the wait for it begins again.
+ * A wait of nothing at all never opens.
+ */
+export function useDwell(
+  on: () => string | null,
+  delay: () => number,
+  environment: Environment = browserEnvironment,
+): Ref<number> {
+  const open = ref(0)
+  let waiting: ReturnType<typeof setTimeout> | undefined
+  let frame: number | null = null
+
+  const stopWaiting = () => {
+    clearTimeout(waiting)
+    waiting = undefined
+  }
+
+  const stopMoving = () => {
+    if (frame !== null) environment.cancel(frame)
+    frame = null
+  }
+
+  /** The rest of the way, from wherever it has got to, at the speed it opens. */
+  const move = (to: number) => {
+    stopMoving()
+    const from = open.value
+    if (from === to) return
+
+    const span = OPENING * Math.abs(to - from)
+    let started: number | null = null
+
+    // Elapsed time comes from the callback, as it does for a move of the whole
+    // picture.
+    const step = (now: number) => {
+      started ??= now
+      const t = span <= 0 ? 1 : Math.min(1, (now - started) / span)
+      open.value = lerp(from, to, easeOut(t))
+      frame = t < 1 ? environment.schedule(step) : null
+    }
+
+    frame = environment.schedule(step)
+  }
+
+  watch(
+    [on, delay],
+    ([what, ms]) => {
+      stopWaiting()
+      move(0)
+      if (what === null || ms <= 0) return
+      waiting = setTimeout(() => move(1), ms)
+    },
+    { immediate: true },
+  )
+
+  onScopeDispose(() => {
+    stopWaiting()
+    stopMoving()
+  })
+
+  return open
+}

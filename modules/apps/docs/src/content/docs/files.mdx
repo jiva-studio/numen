@@ -1,0 +1,69 @@
+---
+title: Files
+description: The vault as it sits on disk, in a tab — moving, renaming, making, and carrying notes onto the map.
+---
+
+import Shot from '../../components/Shot.astro'
+
+The plex is the shape of your links. The files tab is the shape of your folders: the vault
+exactly as it is on disk, with everything in it — notes, books, pictures, whatever else you keep
+there.
+
+<Shot
+  name="files"
+  alt="The window with four panes: the folders of the vault, the map, the note under it, and the agent along the edge."
+  caption="The folders on the left, the map over the note it is about, the agent along the edge."
+/>
+
+Open one from a new tab, or with **Show the files of the vault** in the
+[commands](/commands/). **Show this note in the files** finds the note you are reading in the
+tree.
+
+## Moving things
+
+Drag a row into a folder. Several at once if several are chosen, and the pointer says how many
+it is carrying. A folder goes whole, with everything filed inside it.
+
+Two things are refused, quietly and safely:
+
+- **A name already taken** in the folder you dropped on. That row stays where it was, the others
+  go, and numen names the ones it left behind.
+- **A folder dropped into itself**, or into anything under it.
+
+Moving a note is a proper move: links that pointed at it are looked at, and the ones that would
+otherwise reach nothing are [put right](/links/#after-a-rename-or-a-move).
+
+## Renaming
+
+**Rename** on a row puts the name into a field where it stands. For a note, the title follows
+the filename — the new name is written into the note — unless you have
+[told the two apart](/writing/#renaming) in the settings.
+
+## Making things
+
+**New note** and **New folder** make them in the folder you asked on, and the new folder opens
+with its name in a field, waiting to be called something.
+
+## What a row offers
+
+Over a note, the menu is everything [the commands](/commands/) offer over one, in bands: open it
+or show it in the plex; rename, copy its path, make a note beside it; make it a
+[child, a parent or a jump](/links/); change its title; ask the agent about it; remove it.
+
+Over anything else — a PDF, a picture, a file numen does not read — the menu is what can be
+done to a file: rename it, copy its path, make something beside it, remove it.
+
+Choose several rows and the menu offers what means something for all of them, which is removing
+them.
+
+**Remove** puts a file in `.trash/` inside the vault, the same as anywhere else in numen.
+Nothing is destroyed.
+
+## Carrying notes onto the map
+
+Rows lift out of the tree: pick notes up and carry them over the rest of the window. Drop them
+into a seat in the [plex](/plex/) — above, below, or to the side of a node — and they are
+**linked** to that note, as parents, children or jumps.
+
+Only notes are carried this way. A picture or a PDF among the chosen rows stays where it is,
+because a link in the vault runs between notes.

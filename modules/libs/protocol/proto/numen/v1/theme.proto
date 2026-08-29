@@ -1,0 +1,146 @@
+syntax = "proto3";
+
+// What a client may ask about how the window is drawn: the themes it can wear,
+// and how large it and the text in it are.
+//
+// A theme is one stylesheet that redeclares the tokens the interface draws
+// with. Nothing here reads inside one: what travels is its name, the text of
+// its file, and which of them is chosen.
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// ThemeService answers how the window is drawn, and is told what a person
+// chose.
+service ThemeService {
+  // Themes is every theme there is — the ones this application ships and the
+  // ones in the person's themes folder — which of them is applied, and the two
+  // sizes the window is drawn at.
+  rpc Themes(ThemesRequest) returns (ThemesResponse);
+
+  // Theme is the text of one theme's file, as the file stands when it is
+  // asked for. It is asked once for each theme that is tried on, and again
+  // when that theme's file changes.
+  rpc Theme(ThemeRequest) returns (ThemeResponse);
+
+  // Choose writes the theme, the mode and the two sizes into the settings. The
+  // file is patched as an object, so every key a person typed stays where it
+  // was. A size outside its bounds is refused and the settings are left as
+  // they are.
+  rpc Choose(ChooseRequest) returns (ChooseResponse);
+
+  // Changed reports the person's themes folder having changed, for as long as
+  // the caller listens. It says which themes, and nothing about them: the
+  // caller knows what it is showing and asks for what it needs.
+  rpc Changed(ChangedRequest) returns (stream ChangedResponse);
+}
+
+// Shelf is where a theme came off: this application, or the person's themes
+// folder. A theme carries its shelf in its name, and two themes on different
+// shelves can share a filename.
+enum Shelf {
+  SHELF_UNSPECIFIED = 0;
+
+  // Ships inside the application.
+  SHELF_PRESET = 1;
+
+  // A `.css` file in the person's themes folder.
+  SHELF_MINE = 2;
+}
+
+// Mode is what chooses between the two halves of a `light-dark()` pair.
+enum Mode {
+  MODE_UNSPECIFIED = 0;
+
+  // What the operating system says.
+  MODE_SYSTEM = 1;
+
+  MODE_LIGHT = 2;
+  MODE_DARK = 3;
+}
+
+// Theme is one theme as the list refers to it. Its text is asked for by the
+// name here.
+message Theme {
+  // Name is the shelf and the filename, `preset:dracula` or `mine:dracula`,
+  // and it is how the theme is asked for again.
+  string name = 1;
+
+  // Title is what the file is called, without the shelf.
+  string title = 2;
+
+  Shelf shelf = 3;
+
+  // Set for a theme that declares `color-scheme` itself. Light and dark are
+  // the theme's own, and the mode has nothing left to choose.
+  bool pinned = 4;
+}
+
+// Bounds is how far a size goes, at each end. A number outside them is
+// refused.
+message Bounds {
+  double least = 1;
+  double most = 2;
+}
+
+message ThemesRequest {}
+
+message ThemesResponse {
+  // Every theme, the shipped ones first and each shelf by name.
+  repeated Theme themes = 1;
+
+  // The theme that is applied, by its name.
+  string applied = 2;
+
+  // Which half of a pair the tokens resolve to.
+  Mode mode = 3;
+
+  // How large the interface is drawn, and how large the text a person reads is
+  // set. Each is a multiplier, one being as designed.
+  double interface_scale = 4;
+  double text_scale = 5;
+
+  // How far each of the two goes. A client asking a person for a number says
+  // these.
+  Bounds interface_scale_bounds = 6;
+  Bounds text_scale_bounds = 7;
+}
+
+message ThemeRequest {
+  // The theme, by its name.
+  string name = 1;
+}
+
+message ThemeResponse {
+  // The stylesheet, whole and as it is written. Empty for a name that matches
+  // no theme.
+  string css = 1;
+}
+
+message ChooseRequest {
+  // The theme to apply, by its name. A name matching no theme is refused and
+  // the settings are left as they are.
+  string name = 1;
+
+  // Which half of a pair the tokens resolve to from now on.
+  Mode mode = 2;
+
+  // How large the interface is drawn, and how large the text a person reads is
+  // set. Each is a multiplier, one being as designed, and a size left unset
+  // stands as it is.
+  optional double interface_scale = 3;
+  optional double text_scale = 4;
+}
+
+message ChooseResponse {
+  // Why the settings were not written, when they were not.
+  string failed = 1;
+}
+
+message ChangedRequest {}
+
+message ChangedResponse {
+  // The themes that changed, by their name. A theme whose file is gone is
+  // named here too: what changed about it is that it is gone.
+  repeated string names = 1;
+}

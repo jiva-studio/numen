@@ -1,0 +1,142 @@
+<script setup lang="ts">
+/**
+ * Markdown, written and read in the same place.
+ *
+ * The text in the editor is the text of the file, mark for mark; nothing here
+ * rewrites what was typed. What changes is how a construct is drawn: away
+ * from the caret it is drawn as it reads, and where the caret stands the
+ * marks come back.
+ */
+import { onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
+import { EditorState } from '@codemirror/state'
+import { EditorView } from '@codemirror/view'
+import type { EditorChange } from './change'
+import { drawing, editable, editing, preview, setup, showing, shown } from './setup'
+import { opening, resolving, saving } from './outside'
+import { replacing } from './replacing'
+
+const props = withDefaults(
+  defineProps<{
+    /** Marks are drawn as what they mean. Off, the text is shown as written. */
+    live?: boolean
+    readonly?: boolean
+    placeholder?: string
+    /** A change being made to this text by something other than the reader. */
+    change?: EditorChange | null
+    /** What an address in the text becomes before the window loads it. */
+    resolve?: (address: string) => string
+  }>(),
+  { live: true, readonly: false, placeholder: 'Write', change: null },
+)
+
+const emit = defineEmits<{
+  /** A drawn link was followed. */
+  (event: 'open', address: string): void
+  /** The person asked, with `Ctrl+S`, for the text to be kept now. */
+  (event: 'save'): void
+}>()
+
+const text = defineModel<string>({ default: '' })
+
+const host = useTemplateRef<HTMLElement>('host')
+let view: EditorView | null = null
+
+onMounted(() => {
+  if (!host.value) return
+  view = new EditorView({
+    parent: host.value,
+    state: EditorState.create({
+      doc: text.value,
+      extensions: [
+        setup({
+          live: props.live,
+          readonly: props.readonly,
+          placeholder: props.placeholder,
+          change: props.change,
+        }),
+        resolving.of((address) => props.resolve?.(address) ?? address),
+        opening.of((address) => emit('open', address)),
+        saving.of(() => emit('save')),
+        EditorView.updateListener.of((update) => {
+          if (update.docChanged) text.value = update.state.doc.toString()
+        }),
+      ],
+    }),
+  })
+})
+
+onBeforeUnmount(() => {
+  view?.destroy()
+  view = null
+})
+
+// Text put in from outside replaces what is there; text that came from here
+// is already in. The caret, the selection and the scroll offset stay where
+// they were, and the replacement is no step to undo.
+watch(text, (fresh) => {
+  if (!view || view.state.doc.toString() === fresh) return
+  view.dispatch(replacing(view.state, fresh))
+})
+
+watch(
+  () => props.live,
+  (on) => view?.dispatch({ effects: drawing.reconfigure(preview(on)) }),
+)
+
+watch(
+  () => props.readonly,
+  (off) => view?.dispatch({ effects: editing.reconfigure(editable(!off)) }),
+)
+
+watch(
+  () => props.change,
+  (change) => view?.dispatch({ effects: showing.reconfigure(shown(change)) }),
+)
+
+defineExpose({
+  /** Take the keyboard. False while there is no editor yet to take it. */
+  focus: () => {
+    if (!view) return false
+    view.focus()
+    return true
+  },
+  /**
+   * Take the editor's measurements again. An editor drawn while it is hidden
+   * has none to take. The caller says when it is on screen.
+   */
+  measure: () => view?.requestMeasure(),
+  /**
+   * Put the caret on one line of the prose and bring it into sight. Lines are
+   * counted from the first line of the prose, and one past the end lands on the
+   * last line there is.
+   *
+   * An editor holding no text holds no lines, and says so. The prose of a note
+   * arrives after the tab it is drawn in, and a caret asked for a line stands
+   * on that line and not at the top.
+   */
+  reveal: (line: number) => {
+    if (!view || view.state.doc.length === 0) return false
+    const at = Math.min(Math.max(Math.trunc(line), 0) + 1, view.state.doc.lines)
+    const { from } = view.state.doc.line(at)
+    view.dispatch({
+      selection: { anchor: from },
+      effects: EditorView.scrollIntoView(from, { y: 'start' }),
+    })
+    view.focus()
+    return true
+  },
+})
+</script>
+
+<template>
+  <div ref="host" class="editor numen h-full min-h-0 overflow-auto font-sans text-base text-ink" />
+</template>
+
+<style scoped>
+/* The prose a person is writing takes a selection, and the caret and the
+   clipboard work over it. */
+.editor {
+  user-select: text;
+  -webkit-user-select: text;
+}
+</style>

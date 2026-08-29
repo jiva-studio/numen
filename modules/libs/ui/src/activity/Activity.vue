@@ -1,0 +1,114 @@
+<script setup lang="ts">
+/**
+ * A line of work at the foot of the window.
+ *
+ * Quiet by design: it says what is running and roughly how far, and it is the
+ * only thing on screen that moves while nobody is asking for anything.
+ *
+ * It is a line, and whoever draws it announces it.
+ */
+import { computed } from 'vue'
+import Waiting from '../waiting/Waiting.vue'
+import { activity, percentWord, type Tally, type Tone } from './model'
+
+const props = withDefaults(
+  defineProps<{
+    /** What is happening, in the words it is to be shown by. */
+    says?: string
+    /** What it is happening to, when that is worth saying. */
+    about?: string
+    /**
+     * Where the work has got to, when that is countable.
+     *
+     * Absent and undefined mean the same thing here, and both are spelled,
+     * because whoever renders this derives the tally from a count that may not
+     * exist yet.
+     */
+    tally?: Tally | undefined
+    /** Whether the work named is happening now. */
+    working?: boolean
+    /** How much longer, in words, from whoever is timing the count. */
+    left?: string
+    /** How the line reads. An alarm is a line that stopped badly. */
+    tone?: Tone
+  }>(),
+  { says: '', about: '', working: false, left: '', tone: 'plain' },
+)
+
+const shown = computed(() =>
+  activity({
+    says: props.says,
+    ...(props.tone === 'alarm' ? { trouble: true } : {}),
+    ...(props.working ? { working: true } : {}),
+    ...(props.tally ? { tally: props.tally } : {}),
+  }),
+)
+
+const words = computed(() => props.says)
+
+/**
+ * How far the work has got, said once.
+ *
+ * A share is drawn as a percentage and as nothing else.
+ */
+const percent = computed(() =>
+  shown.value.share === undefined ? '' : percentWord(shown.value.share),
+)
+
+/** Read off the count, so it is shown only where there is one. */
+const left = computed(() => (shown.value.counts ? props.left : ''))
+
+/**
+ * How the words give way.
+ *
+ * A count needs the room beside it and keeps the line to one. A line carrying
+ * only words is carrying a path or a reason, and those are read to the end.
+ */
+const gives = computed(() => (shown.value.counts ? 'truncate' : 'line-clamp-3'))
+
+/**
+ * A line about work is hushed. A line with a tone is drawn in it, and takes the
+ * colour of whatever ground that tone put it on.
+ */
+const strength = computed(() => (props.tone === 'plain' ? 'text-hushed' : ''))
+</script>
+
+<template>
+  <p
+    v-if="shown.state !== 'quiet'"
+    class="activity numen flex items-center gap-2 font-sans text-small"
+    :class="strength"
+    :data-state="shown.state"
+    :data-tone="tone"
+  >
+    <span class="activity__says min-w-0" :class="gives">{{ words }}</span>
+    <span v-if="about" class="activity__about min-w-0 flex-1" :class="gives">{{ about }}</span>
+    <span v-else class="activity__gap flex-1" />
+    <span v-if="percent" class="activity__percent tabular-nums opacity-70">{{ percent }}</span>
+    <span v-if="left" class="activity__left opacity-70">{{ left }}</span>
+    <Waiting
+      v-if="shown.share === undefined && shown.state === 'working'"
+      class="activity__waiting"
+    />
+  </p>
+</template>
+
+<style scoped>
+/* A path and a reason carry no spaces to break at, so they break anywhere. */
+.activity__says,
+.activity__about {
+  overflow-wrap: anywhere;
+}
+
+/* Every state of the line stands the same height. */
+.activity {
+  min-block-size: calc(var(--numen-line-height) * 1em);
+}
+
+/* How far and how long are short, and the words beside them are what gives
+   way. */
+.activity__percent,
+.activity__left {
+  flex: none;
+}
+</style>

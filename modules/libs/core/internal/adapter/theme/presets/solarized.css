@@ -1,0 +1,62 @@
+/*
+ * Solarized, from the eight base tones and eight accents published by Ethan
+ * Schoonover. Light is base3 down to base01; dark is base03 up to base1.
+ *
+ * The syntax colours are Schoonover's own: green keywords, blue identifiers,
+ * yellow types, cyan constants, and comments a tone below the text. Strings
+ * and numbers are both constants there, so they share cyan.
+ *
+ * Mixed from those: the borders and edges, which the palette does not name,
+ * and the ground a field sits in.
+ */
+:root {
+  --numen-surface: light-dark(#fdf6e3, #002b36);
+  --numen-node-bg: light-dark(#eee8d5, #073642);
+  --numen-node-fg: light-dark(#586e75, #93a1a1);
+  --numen-node-border: light-dark(#ded8c5, #0f4653);
+
+  --numen-focus-bg: light-dark(#268bd2, #268bd2);
+  --numen-focus-fg: light-dark(#fdf6e3, #002b36);
+  --numen-focus-border: light-dark(#268bd2, #268bd2);
+
+  /* Blue is what the node in hand is painted, so a parent takes cyan and the
+     four seats stand apart from it. */
+  --numen-seat-parent: light-dark(#2aa198, #2aa198);
+  --numen-seat-child: light-dark(#859900, #859900);
+  --numen-seat-jump: light-dark(#cb4b16, #cb4b16);
+  --numen-seat-sibling: light-dark(#6c71c4, #6c71c4);
+
+  --numen-edge: light-dark(#d3cbb7, #0f4653);
+  --numen-edge-label: light-dark(#93a1a1, #586e75);
+  --numen-ring: light-dark(#268bd2, #268bd2);
+  --numen-selection: light-dark(#268bd238, #268bd245);
+  --numen-selection-away: light-dark(#268bd21f, #268bd224);
+  --numen-selection-match: light-dark(#268bd21a, #268bd21f);
+  --numen-alarm: light-dark(#dc322f, #dc322f);
+  --numen-caution-bg: light-dark(#f7eeca, #0d3b3f);
+  --numen-caution-fg: light-dark(#b58900, #b58900);
+  --numen-highlight: light-dark(#b5890033, #b589003d);
+
+  /* Three base tones in a row, the marks between the brackets and the
+     comments. Code and a table's head row take the tone a node is raised off. */
+  --numen-syntax-mark: light-dark(#839496, #657b83);
+  --numen-code-bg: light-dark(#fdf6e3, #002b36);
+  --numen-table-head-bg: light-dark(#fdf6e3, #002b36);
+  --numen-syntax-keyword: light-dark(#859900, #859900);
+  --numen-syntax-name: light-dark(#268bd2, #268bd2);
+  --numen-syntax-type: light-dark(#b58900, #b58900);
+  --numen-syntax-string: light-dark(#2aa198, #2aa198);
+  --numen-syntax-number: light-dark(#2aa198, #2aa198);
+  --numen-syntax-comment: light-dark(#93a1a1, #586e75);
+  --numen-syntax-punctuation: light-dark(#657b83, #839496);
+
+  --numen-panel-bg: light-dark(#fdf6e3cc, #073642cc);
+  --numen-panel-border: light-dark(#00000014, #ffffff1f);
+
+  --numen-field-bg: light-dark(#fdf6e3, #00252e);
+  --numen-field-border: light-dark(#ded8c5, #0f4653);
+
+  --numen-bubble-bg: light-dark(#eee8d5, #073642);
+  --numen-bubble-fg: light-dark(#586e75, #93a1a1);
+  --numen-answer-fg: light-dark(#586e75, #93a1a1);
+}
