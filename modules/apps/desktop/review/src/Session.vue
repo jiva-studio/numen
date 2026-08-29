@@ -6,7 +6,7 @@
  * so a person putting a card right does not lose sight of where they were.
  */
 import { Button } from '@numen/ui'
-import { Check, SquarePen, Undo2, X } from '@lucide/vue'
+import { Check, SquarePen, Trash2, Undo2, X } from '@lucide/vue'
 import Answers from './Answers.vue'
 import Card from './Card.vue'
 import Editing from './Editing.vue'
@@ -38,6 +38,7 @@ defineEmits<{
   (event: 'write', field: string, text: string): void
   (event: 'save'): void
   (event: 'close'): void
+  (event: 'remove'): void
 }>()
 </script>
 
@@ -49,40 +50,20 @@ defineEmits<{
       <span>{{ card.face }}</span>
       <span class="session__left">{{ left }} left</span>
 
-      <!-- What a person does beside answering, each one mark. They stand at the
-           end of the line that says where the card is from, and they are what
-           can be done now: a card open to be put right is kept or let go. -->
-      <template v-if="editing">
-        <Button
-          variant="ghost"
-          size="icon-small"
-          title="Save this card"
-          :disabled="writing"
-          @click="$emit('save')"
-        >
-          <Check />
-        </Button>
-        <Button variant="ghost" size="icon-small" title="Leave it as it was" @click="$emit('close')">
-          <X />
-        </Button>
-      </template>
-      <template v-else>
-        <Button variant="ghost" size="icon-small" title="Edit this card" @click="$emit('edit')">
-          <SquarePen />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon-small"
-          title="Take the last answer back"
-          :disabled="!answered"
-          @click="$emit('take-back')"
-        >
-          <Undo2 />
-        </Button>
-        <Button variant="ghost" size="icon-small" title="Leave" @click="$emit('leave')">
-          <X />
-        </Button>
-      </template>
+      <!-- This line is the sitting's, so what stands at the end of it is what
+           is done to the sitting. What is done to a card stands on the card. -->
+      <Button
+        variant="ghost"
+        size="icon-small"
+        title="Take the last answer back"
+        :disabled="!answered"
+        @click="$emit('take-back')"
+      >
+        <Undo2 />
+      </Button>
+      <Button variant="ghost" size="icon-small" title="Leave" @click="$emit('leave')">
+        <X />
+      </Button>
     </header>
 
     <!-- The boxes a card is put right in take their own room at the top, and
@@ -95,16 +76,57 @@ defineEmits<{
           :stencil="stencil"
           :values="values"
           @write="(field, text) => $emit('write', field, text)"
-        />
+        >
+          <template #deeds>
+            <Button
+              variant="ghost"
+              size="icon-small"
+              title="Save this card"
+              :disabled="writing"
+              @click="$emit('save')"
+            >
+              <Check />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-small"
+              title="Leave it as it was"
+              @click="$emit('close')"
+            >
+              <X />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-small"
+              title="Take this card out of its deck"
+              :disabled="writing"
+              @click="$emit('remove')"
+            >
+              <Trash2 />
+            </Button>
+          </template>
+        </Editing>
       </div>
       <div class="session__slot session__slot--card">
         <Card
           :front="card.front"
           :back="card.back"
           :shown="shown"
+          :stencil="stencil"
           :fresh="!card.seen"
           @show="$emit('show')"
-        />
+        >
+          <template #deeds>
+            <Button
+              variant="ghost"
+              size="icon-small"
+              title="Edit this card"
+              @click="$emit('edit')"
+            >
+              <SquarePen />
+            </Button>
+          </template>
+        </Card>
       </div>
     </div>
 

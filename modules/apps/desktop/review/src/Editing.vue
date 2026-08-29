@@ -8,6 +8,7 @@
  */
 import { computed } from 'vue'
 import { Card } from '@numen/ui'
+import Strip from './Strip.vue'
 import type { Stood, Tile } from '@numen/ui'
 import type { Held } from './core'
 
@@ -51,15 +52,14 @@ const tile = computed<Tile>(() => ({
 
 <template>
   <section class="editing">
-    <Card :tile="tile" @write="(field, _nth, text) => emit('write', field, text)">
-      <!-- A card is not taken out of its deck from here: this window puts one
-           right and never removes it. -->
-      <template #deeds />
-    </Card>
+    <Strip :stencil="stencil"><slot name="deeds" /></Strip>
+    <Card :tile="tile" @write="(field, _nth, text) => emit('write', field, text)" />
   </section>
 </template>
 
 <style scoped>
+/* The boxes are as tall as the fields they hold, and no taller. A card of many
+   fields scrolls inside what the frame gave it. */
 /* The boxes are as tall as the fields they hold, and no taller. A card of many
    fields scrolls inside what the frame gave it. */
 .editing {
@@ -67,5 +67,6 @@ const tile = computed<Tile>(() => ({
   flex-direction: column;
   max-block-size: 100%;
   overflow-y: auto;
+  gap: var(--numen-inset);
 }
 </style>

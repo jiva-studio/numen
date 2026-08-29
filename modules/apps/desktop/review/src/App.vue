@@ -235,6 +235,43 @@ const save = async () => {
   }
 }
 
+/**
+ * The card taken out of its deck. What was answered about it stays in the log:
+ * a card taken out is a card nothing asks about, and if it is put back it is
+ * put back under its own mark.
+ */
+const remove = async () => {
+  const one = card.value
+  if (!one) return
+  writing.value = true
+  try {
+    const answer = await review.removeCard({
+      vaultId: vault.value,
+      deck: one.deck,
+      card: one.card,
+      ...(stood ? { at: stood } : {}),
+    })
+    if (answer.changed) {
+      failed('the deck moved since it was read, and nothing was written')
+      return
+    }
+    if (answer.refused) {
+      failed(answer.refused)
+      return
+    }
+    // The card is gone, and so is every face of it still to be asked.
+    asked.value = asked.value.filter((was) => was.card !== one.card)
+    at.value = Math.min(at.value, asked.value.length)
+    shown.value = false
+    put = Date.now()
+    close()
+  } catch (why) {
+    failed(why)
+  } finally {
+    writing.value = false
+  }
+}
+
 /** Out of a sitting and back to the decks, with the counts as they now stand. */
 const leave = async () => {
   on.value = 'decks'
@@ -327,6 +364,7 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
       @write="wrote"
       @save="save"
       @close="close"
+      @remove="remove"
     />
   </main>
 

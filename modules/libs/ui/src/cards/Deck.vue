@@ -10,6 +10,7 @@
 import { computed, shallowRef } from 'vue'
 import Band from './Band.vue'
 import Card from './Card.vue'
+import Deed from './Deed.vue'
 import Glyph from './Glyph.vue'
 import Rule from '../rule/Rule.vue'
 import { useCarry } from './carry'
@@ -167,12 +168,17 @@ const addSection = (): void => {
             :wrong="wrong.at.get(tile.id) ?? []"
             :wrong-under="wrong.under.get(tile.id) ?? NO_FIELDS"
             :words="words"
-            @remove="emit('remove', tile.id)"
             @lift="lift(tile.id, $event)"
             @release="release"
             @step="(way, press) => step(tile.id, way, press)"
             @write="(field, nth, text) => emit('write', tile.id, field, nth, text)"
-          />
+          >
+            <!-- A card is taken out of the deck it stands in, so the deck is
+                 what offers it. -->
+            <template #deeds="{ called }">
+              <Deed :label="`${words.remove}: ${called}`" @press="emit('remove', tile.id)" />
+            </template>
+          </Card>
         </div>
 
         <!-- A card is made at the end of a section, so every section carries a

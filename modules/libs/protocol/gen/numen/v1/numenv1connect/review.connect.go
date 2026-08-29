@@ -55,6 +55,9 @@ const (
 	ReviewServiceReadCardProcedure = "/numen.v1.ReviewService/ReadCard"
 	// ReviewServiceWriteCardProcedure is the fully-qualified name of the ReviewService's WriteCard RPC.
 	ReviewServiceWriteCardProcedure = "/numen.v1.ReviewService/WriteCard"
+	// ReviewServiceRemoveCardProcedure is the fully-qualified name of the ReviewService's RemoveCard
+	// RPC.
+	ReviewServiceRemoveCardProcedure = "/numen.v1.ReviewService/RemoveCard"
 )
 
 // ReviewServiceClient is a client for the numen.v1.ReviewService service.
@@ -90,6 +93,10 @@ type ReviewServiceClient interface {
 	// `changed`: what a person typed here is theirs, and nothing writes over what
 	// somebody else did to the file.
 	WriteCard(context.Context, *connect.Request[v1.WriteCardRequest]) (*connect.Response[v1.WriteCardResponse], error)
+	// RemoveCard takes the card out of its deck. What was answered about it stays
+	// in the log: a card taken out is a card nothing asks about, and its history
+	// is its own if it ever comes back.
+	RemoveCard(context.Context, *connect.Request[v1.RemoveCardRequest]) (*connect.Response[v1.RemoveCardResponse], error)
 }
 
 // NewReviewServiceClient constructs a client for the numen.v1.ReviewService service. By default, it
@@ -139,17 +146,24 @@ func NewReviewServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(reviewServiceMethods.ByName("WriteCard")),
 			connect.WithClientOptions(opts...),
 		),
+		removeCard: connect.NewClient[v1.RemoveCardRequest, v1.RemoveCardResponse](
+			httpClient,
+			baseURL+ReviewServiceRemoveCardProcedure,
+			connect.WithSchema(reviewServiceMethods.ByName("RemoveCard")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // reviewServiceClient implements ReviewServiceClient.
 type reviewServiceClient struct {
-	owing     *connect.Client[v1.OwingRequest, v1.OwingResponse]
-	start     *connect.Client[v1.StartRequest, v1.StartResponse]
-	answer    *connect.Client[v1.AnswerRequest, v1.AnswerResponse]
-	takeBack  *connect.Client[v1.TakeBackRequest, v1.TakeBackResponse]
-	readCard  *connect.Client[v1.ReadCardRequest, v1.ReadCardResponse]
-	writeCard *connect.Client[v1.WriteCardRequest, v1.WriteCardResponse]
+	owing      *connect.Client[v1.OwingRequest, v1.OwingResponse]
+	start      *connect.Client[v1.StartRequest, v1.StartResponse]
+	answer     *connect.Client[v1.AnswerRequest, v1.AnswerResponse]
+	takeBack   *connect.Client[v1.TakeBackRequest, v1.TakeBackResponse]
+	readCard   *connect.Client[v1.ReadCardRequest, v1.ReadCardResponse]
+	writeCard  *connect.Client[v1.WriteCardRequest, v1.WriteCardResponse]
+	removeCard *connect.Client[v1.RemoveCardRequest, v1.RemoveCardResponse]
 }
 
 // Owing calls numen.v1.ReviewService.Owing.
@@ -180,6 +194,11 @@ func (c *reviewServiceClient) ReadCard(ctx context.Context, req *connect.Request
 // WriteCard calls numen.v1.ReviewService.WriteCard.
 func (c *reviewServiceClient) WriteCard(ctx context.Context, req *connect.Request[v1.WriteCardRequest]) (*connect.Response[v1.WriteCardResponse], error) {
 	return c.writeCard.CallUnary(ctx, req)
+}
+
+// RemoveCard calls numen.v1.ReviewService.RemoveCard.
+func (c *reviewServiceClient) RemoveCard(ctx context.Context, req *connect.Request[v1.RemoveCardRequest]) (*connect.Response[v1.RemoveCardResponse], error) {
+	return c.removeCard.CallUnary(ctx, req)
 }
 
 // ReviewServiceHandler is an implementation of the numen.v1.ReviewService service.
@@ -215,6 +234,10 @@ type ReviewServiceHandler interface {
 	// `changed`: what a person typed here is theirs, and nothing writes over what
 	// somebody else did to the file.
 	WriteCard(context.Context, *connect.Request[v1.WriteCardRequest]) (*connect.Response[v1.WriteCardResponse], error)
+	// RemoveCard takes the card out of its deck. What was answered about it stays
+	// in the log: a card taken out is a card nothing asks about, and its history
+	// is its own if it ever comes back.
+	RemoveCard(context.Context, *connect.Request[v1.RemoveCardRequest]) (*connect.Response[v1.RemoveCardResponse], error)
 }
 
 // NewReviewServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -260,6 +283,12 @@ func NewReviewServiceHandler(svc ReviewServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(reviewServiceMethods.ByName("WriteCard")),
 		connect.WithHandlerOptions(opts...),
 	)
+	reviewServiceRemoveCardHandler := connect.NewUnaryHandler(
+		ReviewServiceRemoveCardProcedure,
+		svc.RemoveCard,
+		connect.WithSchema(reviewServiceMethods.ByName("RemoveCard")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.ReviewService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ReviewServiceOwingProcedure:
@@ -274,6 +303,8 @@ func NewReviewServiceHandler(svc ReviewServiceHandler, opts ...connect.HandlerOp
 			reviewServiceReadCardHandler.ServeHTTP(w, r)
 		case ReviewServiceWriteCardProcedure:
 			reviewServiceWriteCardHandler.ServeHTTP(w, r)
+		case ReviewServiceRemoveCardProcedure:
+			reviewServiceRemoveCardHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -305,4 +336,8 @@ func (UnimplementedReviewServiceHandler) ReadCard(context.Context, *connect.Requ
 
 func (UnimplementedReviewServiceHandler) WriteCard(context.Context, *connect.Request[v1.WriteCardRequest]) (*connect.Response[v1.WriteCardResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ReviewService.WriteCard is not implemented"))
+}
+
+func (UnimplementedReviewServiceHandler) RemoveCard(context.Context, *connect.Request[v1.RemoveCardRequest]) (*connect.Response[v1.RemoveCardResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ReviewService.RemoveCard is not implemented"))
 }
