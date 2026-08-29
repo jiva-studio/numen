@@ -178,6 +178,82 @@ func TestADeckAnswersARunOfItsCardsAndSaysHowManyItHolds(t *testing.T) {
 	}
 }
 
+// TestADeckAnswersWithTheOneCardAMarkAddresses. A deck holds as many cards as a
+// person writes, and an agent that knows which one it wants reads that one.
+func TestADeckAnswersWithTheOneCardAMarkAddresses(t *testing.T) {
+	session, _ := connected(t, vault())
+
+	read := dealt(t, session, map[string]any{"path": "Animals.md", "card": alpaca})
+	if len(read.Cards) != 1 {
+		t.Fatalf("a call naming one card came back with %d", len(read.Cards))
+	}
+	if read.Cards[0].Mark != alpaca {
+		t.Errorf("the card that came back is %+v", read.Cards[0])
+	}
+	if got := valued(read.Cards[0], "Name"); got != "Alpaca" {
+		t.Errorf("the card holds %q under Name", got)
+	}
+	if read.Held != 2 {
+		t.Errorf("the deck holds two cards and the answer says %d", read.Held)
+	}
+	if read.Fingerprint == "" {
+		t.Error("a card was read with nothing to present at the next write of its deck")
+	}
+
+	// A card is one card wherever it stands and however many were asked for, so
+	// what says where a run of them starts and how long it runs says nothing.
+	past := dealt(t, session, map[string]any{
+		"path": "Animals.md", "card": alpaca, "from": 5, "limit": 500,
+	})
+	if len(past.Cards) != 1 || past.Cards[0].Mark != alpaca {
+		t.Errorf("a card asked for past the end of the deck came back as %+v", past.Cards)
+	}
+}
+
+// TestADeckAnswersWithTheFieldsItWasAskedFor. A card holds as much as a person
+// wrote under it, and a call that wants one field pays for one field.
+func TestADeckAnswersWithTheFieldsItWasAskedFor(t *testing.T) {
+	session, _ := connected(t, vault())
+
+	read := dealt(t, session, map[string]any{
+		"path": "Animals.md", "fields": []string{"Name"},
+	})
+	if len(read.Cards) != 2 {
+		t.Fatalf("the deck came back with %d cards", len(read.Cards))
+	}
+	for at, one := range read.Cards {
+		if len(one.Values) != 1 || one.Values[0].Field != "Name" {
+			t.Errorf("card %d came back holding %+v", at, one.Values)
+		}
+	}
+	if got := valued(read.Cards[0], "Name"); got != "Llama" {
+		t.Errorf("the first card holds %q under Name", got)
+	}
+
+	// A card carrying none of them is a card, and comes back as one.
+	none := dealt(t, session, map[string]any{
+		"path": "Animals.md", "card": llama, "fields": []string{"Life span"},
+	})
+	if len(none.Cards) != 1 || none.Cards[0].Mark != llama {
+		t.Fatalf("the card came back as %+v", none.Cards)
+	}
+	if len(none.Cards[0].Values) != 0 {
+		t.Errorf("a card carrying none of the fields came back holding %+v", none.Cards[0].Values)
+	}
+}
+
+// TestReadingACardOfAMarkTheDeckHasNotGotIsRefused. A mark that reaches nothing
+// is answered the way the writing tools answer it.
+func TestReadingACardOfAMarkTheDeckHasNotGotIsRefused(t *testing.T) {
+	session, _ := connected(t, vault())
+
+	if said := failing(t, session, "card_read", map[string]any{
+		"path": "Animals.md", "card": "zzzzzzzzzz",
+	}); !strings.Contains(said, "no card") {
+		t.Errorf("reading a card the deck has not got was answered %q", said)
+	}
+}
+
 // TestACardIsAddedWithTheWikilinkThatNamesItsStencil. A card is cut by the
 // stencil that link names, and one written under no link is cut by none.
 func TestACardIsAddedWithTheWikilinkThatNamesItsStencil(t *testing.T) {

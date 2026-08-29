@@ -105,9 +105,11 @@ func addCardTools(server *sdk.Server, core Core) {
 			"hand it back and a write is refused if the person changed the deck in the " +
 			"meantime.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		Path  string `json:"path" jsonschema:"the deck to read"`
-		From  int    `json:"from,omitempty" jsonschema:"which card to start at, counted from zero"`
-		Limit int    `json:"limit,omitempty" jsonschema:"how many cards to return"`
+		Path   string   `json:"path" jsonschema:"the deck to read"`
+		From   int      `json:"from,omitempty" jsonschema:"which card to start at, counted from zero"`
+		Limit  int      `json:"limit,omitempty" jsonschema:"how many cards to return"`
+		Card   string   `json:"card,omitempty" jsonschema:"one card's mark, to read that card alone; from and limit say nothing about a call naming it"`
+		Fields []string `json:"fields,omitempty" jsonschema:"the fields to answer with, spelled as the card writes them, which is what card_read gives; every other value is left out, and a card writing none of them comes back holding nothing"`
 	}) (*sdk.CallToolResult, struct {
 		Cards       []Card   `json:"cards"`
 		Sections    []string `json:"sections,omitempty" jsonschema:"what the deck's sections are called, in the order they stand in the file"`
@@ -122,7 +124,9 @@ func addCardTools(server *sdk.Server, core Core) {
 			Faults      []Fault  `json:"faults,omitempty"`
 			Fingerprint string   `json:"fingerprint" jsonschema:"hand this to a writing tool to refuse a write over an edit you did not see"`
 		}
-		if in.Limit > maxCards {
+		// One card is one card however many were asked for, so the ceiling is
+		// put on the call that reads a run of them.
+		if in.Card == "" && in.Limit > maxCards {
 			return nil, out{}, fmt.Errorf("read at most %d cards at a time", maxCards)
 		}
 		read, err := core.Cards.Deck(ctx, core.shown().Vault, in.Path)
@@ -146,8 +150,16 @@ func addCardTools(server *sdk.Server, core Core) {
 		for _, s := range read.Deck.Sections {
 			res.Sections = append(res.Sections, s.Name)
 		}
+		if in.Card != "" {
+			at, err := standing(read.Deck.Cards, in.Card)
+			if err != nil {
+				return nil, out{}, err
+			}
+			res.Cards = append(res.Cards, only(carded(read.Deck.Cards[at]), in.Fields))
+			return nil, res, nil
+		}
 		for _, card := range read.Deck.Cards[from:min(from+limit, len(read.Deck.Cards))] {
-			res.Cards = append(res.Cards, carded(card))
+			res.Cards = append(res.Cards, only(carded(card), in.Fields))
 		}
 		return nil, res, nil
 	})
@@ -205,7 +217,8 @@ func addCardTools(server *sdk.Server, core Core) {
 		Title: "Change what a card holds",
 		Description: "Write values into one card of a deck. A field the card already " +
 			"carries is replaced, one it does not is added at the end of it, and a field " +
-			"left out of the call is left as it stands. The card is addressed by the " +
+			"left out of the call is left as it stands. Send the fields you are changing " +
+			"and no others. The card is addressed by the " +
 			"mark `card_read` gives it, which is what the card is for as long as it " +
 			"exists: a card rewritten from end to end is still that card, and what is " +
 			"attached to it stays attached. The first field is written like every " +
@@ -529,6 +542,24 @@ func carded(card format.Card) Card {
 		out.Values = append(out.Values, Value{Field: v.Field, Text: v.Text})
 	}
 	return out
+}
+
+// only is the card holding the named fields alone, matched by the name the card
+// writes over the value, which is not always the name its stencil declares: a
+// deck a rename did not reach writes the old one. A call naming no field asks
+// for the whole card.
+func only(card Card, fields []string) Card {
+	if len(fields) == 0 {
+		return card
+	}
+	kept := card
+	kept.Values = nil
+	for _, v := range card.Values {
+		if slices.Contains(fields, v.Field) {
+			kept.Values = append(kept.Values, v)
+		}
+	}
+	return kept
 }
 
 func values(vs []Value) []format.Value {
