@@ -20,6 +20,7 @@ import {
 import PlexView from './render/PlexView.vue'
 import { useTitleWidths } from './measure'
 import { DWELL, widenedFor } from './dwell'
+import { byHandle, type Reaching } from './reaching'
 import { hangParts, type PlexPart } from './inside'
 import { usePlexTransition, browserEnvironment, type Environment } from './transition'
 import type { Placement, PlexOptionsInput } from './arrange'
@@ -61,6 +62,8 @@ const props = withDefaults(
      * its title. Milliseconds; nothing at all never widens.
      */
     dwell?: number
+    /** How a node offers to be reached out of. The handle by default. */
+    reaching?: Reaching
     /**
      * The parts of a node, asked for by the node's own identifier. They come
      * out from under its box while the attention rests on it, and a node named
@@ -93,6 +96,7 @@ const props = withDefaults(
     creatable: () => ['parent', 'child', 'jump'],
     dragThreshold: 8,
     dwell: DWELL,
+    reaching: () => byHandle,
     seatName: seatWord,
     carried: () => [],
     carriedName: seatWord,
@@ -303,6 +307,7 @@ defineExpose({ moving: toRef(moving) })
       :widen="widen"
       :hung="hung"
       :dwell="dwell"
+      :reaching="reaching"
       :environment="environment"
       :gesture-from="gesture.from.value"
       :gesture-at="gesture.at.value"

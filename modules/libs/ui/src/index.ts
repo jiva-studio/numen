@@ -200,6 +200,10 @@ export type { Banded, Drawn, Filled } from './cards/deck'
 export type { Cut } from './cards/stencil'
 
 export type { Environment, PlexTransition } from './plex/transition'
+export { byHandle, byHolding } from './plex/reaching'
+export type { Reaching, ReachingSite } from './plex/reaching'
+export { HOLD, STRAY, useHold } from './plex/holding'
+export type { Holding } from './plex/holding'
 export type { HungPart, HungParts, PlexPart } from './plex/inside'
 export type {
   EdgeArrow,

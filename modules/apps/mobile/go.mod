@@ -2,7 +2,10 @@ module github.com/jiva-studio/numen/modules/apps/mobile
 
 go 1.26.5
 
-require github.com/jiva-studio/numen/modules/libs/core v0.0.0
+require (
+	github.com/jiva-studio/numen/modules/libs/core v0.0.0
+	golang.org/x/mobile v0.0.0-20260821190718-4776eadac327
+)
 
 require (
 	connectrpc.com/connect v1.20.0 // indirect
@@ -31,7 +34,9 @@ require (
 	github.com/up-zero/gotool v0.0.0-20260120011100-d685b2532b5a // indirect
 	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f // indirect
 	golang.org/x/image v0.45.0 // indirect
+	golang.org/x/mod v0.39.0 // indirect
 	golang.org/x/net v0.58.0 // indirect
+	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
 	golang.org/x/tools v0.49.0 // indirect

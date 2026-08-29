@@ -14,6 +14,7 @@ import { Comment, computed, Fragment, ref, Text, useSlots, watch, type VNode } f
 import PlexNodeHandle from './PlexNodeHandle.vue'
 import { isMenuKey, isPress, isShowKey } from './keys'
 import { DWELL, useDwell, type Widened } from '../dwell'
+import { byHandle, type Reaching } from '../reaching'
 import { openedTo, woundBy, type HungParts, type Mark } from '../inside'
 import { lerp } from '../arrange'
 import { browserEnvironment, type Environment } from '../transition'
@@ -49,6 +50,8 @@ const props = withDefaults(
     hung?: HungParts | null
     /** How long the attention rests before it widens. Milliseconds. */
     dwell?: number
+    /** How this node offers to be reached out of. The handle by default. */
+    reaching?: Reaching
     /** The clock the opening is drawn on. Browser by default. */
     environment?: Environment
   }>(),
@@ -57,6 +60,7 @@ const props = withDefaults(
     wide: null,
     hung: null,
     dwell: DWELL,
+    reaching: () => byHandle,
     environment: () => browserEnvironment,
   },
 )
@@ -135,6 +139,16 @@ const show = (modified: boolean) => {
   if (stop.value) emit('show', showingOf(modified))
 }
 
+/**
+ * What this node listens for beyond the handle, and whether it draws one.
+ * Which of the two a reader gets is the plex's to choose.
+ */
+const reaching = computed(() => props.reaching)
+const listening = reaching.value.listeners({
+  ready: () => !ghost.value && props.standing === 'open',
+  reach: (event: PointerEvent) => emit('reach', event),
+})
+
 /** The middle of the node, for a press, which carries no point of its own. */
 const middleOf = (element: SVGGElement): Point => {
   const box = element.getBoundingClientRect()
@@ -206,6 +220,7 @@ const attend = (event: FocusEvent) => {
  */
 const offering = computed(
   () =>
+    props.reaching.handle &&
     props.node.opacity >= 1 &&
     (props.standing === 'source' ||
       (props.standing === 'open' && (over.value || attended.value))),
@@ -339,6 +354,7 @@ const hue = computed(() => ({
     @dblclick="show($event.altKey)"
     @contextmenu="onContextMenu"
     @keydown="onKey"
+    v-on="listening"
     @pointerenter="over = true"
     @pointerleave="over = false"
     @focusin="attend"

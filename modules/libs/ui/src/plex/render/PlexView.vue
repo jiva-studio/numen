@@ -22,6 +22,7 @@ import {
   type Point,
 } from '../model'
 import { DWELL, type Widened } from '../dwell'
+import { byHandle, type Reaching } from '../reaching'
 import type { HungParts } from '../inside'
 import { browserEnvironment, type Environment } from '../transition'
 import type { Drop } from '../arrange'
@@ -58,6 +59,8 @@ const props = withDefaults(
     hung?: ((node: PlacedNode) => HungParts | null) | undefined
     /** How long the attention rests on a box before it widens. Milliseconds. */
     dwell?: number
+    /** How a node offers to be reached out of. The handle by default. */
+    reaching?: Reaching
     /** The clock a box opens on. Browser by default; a test hands in its own. */
     environment?: Environment
     /** A gesture in progress: where it started, where it is, what it means. */
@@ -83,6 +86,7 @@ const props = withDefaults(
     mayReach: true,
     seatName: seatWord,
     dwell: DWELL,
+    reaching: () => byHandle,
     environment: () => browserEnvironment,
     gestureFrom: null,
     gestureAt: null,
@@ -366,6 +370,7 @@ const ghost = computed<PlacedNode | null>(() => {
       :wide="widen?.(node) ?? null"
       :hung="hung?.(node) ?? null"
       :dwell="dwell"
+      :reaching="reaching"
       :environment="environment"
       @activate="emit('activate', node.id)"
       @show="emit('show', node.id, $event)"
@@ -430,6 +435,11 @@ const ghost = computed<PlacedNode | null>(() => {
   font-family: var(--numen-font-sans);
   user-select: none;
   -webkit-user-select: none;
+  /* Every touch on the picture belongs to the picture. Left to the browser, a
+     finger that travels is a scroll, and the gesture it was making is
+     cancelled halfway. */
+  touch-action: none;
+  -webkit-touch-callout: none;
 }
 
 .plex__edge {

@@ -16,6 +16,7 @@ API ?= 24
 
 ## core binds the Go core as an Android library.
 core:
+	mkdir -p android/app/libs
 	ANDROID_NDK_HOME=$(ANDROID_NDK_HOME) $(GOMOBILE) bind \
 		-target=$(TARGETS) -androidapi $(API) -ldflags="-s -w" \
 		-o android/app/libs/numen.aar ./bind
