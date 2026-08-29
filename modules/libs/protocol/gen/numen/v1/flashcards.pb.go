@@ -954,6 +954,10 @@ type ReviewedResponse struct {
 	// Days is what each day a person answered on came to. A day nobody answered
 	// on is not in it.
 	Days []*Reviewing `protobuf:"bytes,1,rep,name=days,proto3" json:"days,omitempty"`
+	// Due is how many card faces fall on each day still to come. A card owed
+	// today, or owed and late, is not in it: what a person owes now is what the
+	// front door counts, and this is what is after it.
+	Due []*Reviewing `protobuf:"bytes,4,rep,name=due,proto3" json:"due,omitempty"`
 	// Streak is how many days up to now were reviewed without a gap. A day
 	// nobody has answered on yet does not end one.
 	Streak int32 `protobuf:"varint,2,opt,name=streak,proto3" json:"streak,omitempty"`
@@ -996,6 +1000,13 @@ func (*ReviewedResponse) Descriptor() ([]byte, []int) {
 func (x *ReviewedResponse) GetDays() []*Reviewing {
 	if x != nil {
 		return x.Days
+	}
+	return nil
+}
+
+func (x *ReviewedResponse) GetDue() []*Reviewing {
+	if x != nil {
+		return x.Due
 	}
 	return nil
 }
@@ -1214,9 +1225,10 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x06answer\x18\x03 \x01(\tR\x06answer\"\x12\n" +
 	"\x10TakeBackResponse\",\n" +
 	"\x0fReviewedRequest\x12\x19\n" +
-	"\bvault_id\x18\x01 \x01(\tR\avaultId\"o\n" +
+	"\bvault_id\x18\x01 \x01(\tR\avaultId\"\x96\x01\n" +
 	"\x10ReviewedResponse\x12'\n" +
-	"\x04days\x18\x01 \x03(\v2\x13.numen.v1.ReviewingR\x04days\x12\x16\n" +
+	"\x04days\x18\x01 \x03(\v2\x13.numen.v1.ReviewingR\x04days\x12%\n" +
+	"\x03due\x18\x04 \x03(\v2\x13.numen.v1.ReviewingR\x03due\x12\x16\n" +
 	"\x06streak\x18\x02 \x01(\x05R\x06streak\x12\x1a\n" +
 	"\banswered\x18\x03 \x01(\x05R\banswered\"9\n" +
 	"\tReviewing\x12\x10\n" +
@@ -1280,23 +1292,24 @@ var file_numen_v1_flashcards_proto_depIdxs = []int32{
 	4,  // 3: numen.v1.StartResponse.asked:type_name -> numen.v1.Asked
 	0,  // 4: numen.v1.AnswerRequest.rating:type_name -> numen.v1.Rating
 	15, // 5: numen.v1.ReviewedResponse.days:type_name -> numen.v1.Reviewing
-	5,  // 6: numen.v1.FlashcardsService.Owing:input_type -> numen.v1.OwingRequest
-	7,  // 7: numen.v1.FlashcardsService.Start:input_type -> numen.v1.StartRequest
-	9,  // 8: numen.v1.FlashcardsService.Answer:input_type -> numen.v1.AnswerRequest
-	11, // 9: numen.v1.FlashcardsService.TakeBack:input_type -> numen.v1.TakeBackRequest
-	16, // 10: numen.v1.FlashcardsService.Moving:input_type -> numen.v1.MovingRequest
-	13, // 11: numen.v1.FlashcardsService.Reviewed:input_type -> numen.v1.ReviewedRequest
-	6,  // 12: numen.v1.FlashcardsService.Owing:output_type -> numen.v1.OwingResponse
-	8,  // 13: numen.v1.FlashcardsService.Start:output_type -> numen.v1.StartResponse
-	10, // 14: numen.v1.FlashcardsService.Answer:output_type -> numen.v1.AnswerResponse
-	12, // 15: numen.v1.FlashcardsService.TakeBack:output_type -> numen.v1.TakeBackResponse
-	17, // 16: numen.v1.FlashcardsService.Moving:output_type -> numen.v1.MovingResponse
-	14, // 17: numen.v1.FlashcardsService.Reviewed:output_type -> numen.v1.ReviewedResponse
-	12, // [12:18] is the sub-list for method output_type
-	6,  // [6:12] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	15, // 6: numen.v1.ReviewedResponse.due:type_name -> numen.v1.Reviewing
+	5,  // 7: numen.v1.FlashcardsService.Owing:input_type -> numen.v1.OwingRequest
+	7,  // 8: numen.v1.FlashcardsService.Start:input_type -> numen.v1.StartRequest
+	9,  // 9: numen.v1.FlashcardsService.Answer:input_type -> numen.v1.AnswerRequest
+	11, // 10: numen.v1.FlashcardsService.TakeBack:input_type -> numen.v1.TakeBackRequest
+	16, // 11: numen.v1.FlashcardsService.Moving:input_type -> numen.v1.MovingRequest
+	13, // 12: numen.v1.FlashcardsService.Reviewed:input_type -> numen.v1.ReviewedRequest
+	6,  // 13: numen.v1.FlashcardsService.Owing:output_type -> numen.v1.OwingResponse
+	8,  // 14: numen.v1.FlashcardsService.Start:output_type -> numen.v1.StartResponse
+	10, // 15: numen.v1.FlashcardsService.Answer:output_type -> numen.v1.AnswerResponse
+	12, // 16: numen.v1.FlashcardsService.TakeBack:output_type -> numen.v1.TakeBackResponse
+	17, // 17: numen.v1.FlashcardsService.Moving:output_type -> numen.v1.MovingResponse
+	14, // 18: numen.v1.FlashcardsService.Reviewed:output_type -> numen.v1.ReviewedResponse
+	13, // [13:19] is the sub-list for method output_type
+	7,  // [7:13] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_flashcards_proto_init() }

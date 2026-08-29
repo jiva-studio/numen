@@ -153,3 +153,65 @@ func spaces(n int) []byte {
 	}
 	return out
 }
+
+// What is still to come is counted by the day it falls on, so a person can see
+// the week ahead of them as well as the year behind.
+func TestWhatIsStillToComeIsCountedByDay(t *testing.T) {
+	s := opened(t, vault)
+	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+
+	// Answered easily, so it is days away rather than minutes.
+	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Easy, 0); err != nil {
+		t.Fatal(err)
+	}
+
+	schedules, err := s.kept.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	due := schedules[on].Due
+
+	got, err := s.counted.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Due[today.Names(due)] != 1 {
+		t.Errorf("the day it falls on comes to %d, want the card: %v", got.Due[today.Names(due)], got.Due)
+	}
+	if len(got.Due) != 1 {
+		t.Errorf("what is still to come is %v, want the one card", got.Due)
+	}
+}
+
+// A card nobody has answered is not still to come: what a person owes now is
+// what the front door counts, and this says what is after it.
+func TestACardNobodyAnsweredIsNotStillToCome(t *testing.T) {
+	s := opened(t, vault)
+
+	got, err := s.counted.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Due) != 0 {
+		t.Errorf("a vault nobody answered has %v still to come", got.Due)
+	}
+}
+
+// A card owed today is not still to come either, however it was answered.
+func TestACardOwedTodayIsNotStillToCome(t *testing.T) {
+	s := opened(t, vault)
+	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+
+	// Answered again, so it comes back in minutes and is owed today.
+	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Again, 0); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := s.counted.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Due) != 0 {
+		t.Errorf("a card owed today is counted as still to come: %v", got.Due)
+	}
+}

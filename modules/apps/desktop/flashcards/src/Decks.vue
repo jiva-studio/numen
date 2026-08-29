@@ -15,6 +15,8 @@ const props = defineProps<{
   vault: Owing
   /** How many cards were answered on each day, by the day it was. */
   days: ReadonlyMap<string, number>
+  /** How many cards fall on each day still to come, by the day they fall on. */
+  due: ReadonlyMap<string, number>
   /** How many days up to now were reviewed without a gap. */
   streak: number
 }>()
@@ -32,7 +34,7 @@ const owed = computed(() => props.vault.due + props.vault.new)
   <section class="decks">
     <h1 class="decks__title">{{ vault.name }}</h1>
 
-    <Done :days="days" :streak="streak" />
+    <Done :days="days" :due="due" :streak="streak" />
 
     <p v-if="!vault.decks.length" class="decks__saying">This vault holds no deck.</p>
 

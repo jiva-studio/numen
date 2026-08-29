@@ -196,6 +196,11 @@ message ReviewedResponse {
   // on is not in it.
   repeated Reviewing days = 1;
 
+  // Due is how many card faces fall on each day still to come. A card owed
+  // today, or owed and late, is not in it: what a person owes now is what the
+  // front door counts, and this is what is after it.
+  repeated Reviewing due = 4;
+
   // Streak is how many days up to now were reviewed without a gap. A day
   // nobody has answered on yet does not end one.
   int32 streak = 2;

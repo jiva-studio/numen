@@ -13,6 +13,7 @@ export interface Asks {
 
 export interface Said {
   days: readonly { day: string; answered: number }[]
+  due: readonly { day: string; answered: number }[]
   streak: number
   answered: number
 }
@@ -25,6 +26,8 @@ export interface Reviewing {
 export function reviewed(deps: Reviewing) {
   /** How much was answered on each day, by the day it was answered on. */
   const days = ref<ReadonlyMap<string, number>>(new Map())
+  /** How much falls on each day still to come, by the day it falls on. */
+  const due = ref<ReadonlyMap<string, number>>(new Map())
   const streak = ref(0)
   const answered = ref(0)
 
@@ -33,6 +36,7 @@ export function reviewed(deps: Reviewing) {
 
   const forget = () => {
     days.value = new Map()
+    due.value = new Map()
     streak.value = 0
     answered.value = 0
     of.value = ''
@@ -50,6 +54,7 @@ export function reviewed(deps: Reviewing) {
       // looking at that one, and these days are not its days.
       if (of.value !== vaultId) return
       days.value = new Map(said.days.map((one) => [one.day, one.answered]))
+      due.value = new Map(said.due.map((one) => [one.day, one.answered]))
       streak.value = said.streak
       answered.value = said.answered
     } catch (why) {
@@ -59,5 +64,5 @@ export function reviewed(deps: Reviewing) {
     }
   }
 
-  return { days, streak, answered, of, read, forget }
+  return { days, due, streak, answered, of, read, forget }
 }

@@ -13,13 +13,18 @@ export const ROWS = 7
 export interface Day {
   /** The day it is, as the year, the month and the day it began on. */
   readonly day: string
-  /** How much was done on it. */
+  /** How much was done on it, or how much falls on it where it is still ahead. */
   readonly did: number
   /** How dark it is drawn: nothing at 0, most at 4. */
   readonly weight: 0 | 1 | 2 | 3 | 4
   /** Whether it is the day holding now. */
   readonly today: boolean
+  /** Whether it is still to come, and what it holds is what is coming. */
+  readonly ahead: boolean
 }
+
+/** How many weeks of what is still to come the grid keeps room for. */
+export const AHEAD = 4
 
 /** What a grid is laid out to. */
 export interface Room {
@@ -55,28 +60,33 @@ export function fits(room: Room): { columns: number; cell: number; gap: number }
 }
 
 /**
- * The days a grid of this many columns draws, oldest first, ending on the day
- * holding now.
+ * The days a grid of this many columns draws, oldest first.
  *
- * The last column is the week today stands in, so today is in the last column
- * and the grid runs back from it. Every column is a whole week, and the days
- * after today in that week are drawn as days nobody has answered on, because
- * they are.
+ * The weeks behind a person run up to the one they are in, and a few weeks of
+ * what is still to come stand after it, so the grid says what is coming as well
+ * as what was done. Every column is a whole week.
+ *
+ * A day still to come holds what falls on it; a day behind holds what was
+ * answered on it. Today holds what was answered, because that is the number a
+ * person is adding to.
  */
 export function days(
   columns: number,
   now: Date,
   did: ReadonlyMap<string, number>,
+  due: ReadonlyMap<string, number> = new Map(),
   named: (at: Date) => string = names,
 ): Day[] {
   const out: Day[] = []
   if (columns < 1) return out
 
   const today = named(now)
-  // The last day of the last column: the Sunday of the week today stands in.
+  // The last day drawn: the Sunday ending the last week kept for what is
+  // still to come, or the week today stands in where there is no room for more.
+  const weeks = Math.min(AHEAD, Math.max(0, columns - 1))
   const last = new Date(now)
   last.setHours(12, 0, 0, 0)
-  last.setDate(last.getDate() + ((7 - weekday(last)) % 7))
+  last.setDate(last.getDate() + ((7 - weekday(last)) % 7) + weeks * ROWS)
 
   const first = new Date(last)
   first.setDate(first.getDate() - (columns * ROWS - 1))
@@ -85,8 +95,9 @@ export function days(
     const on = new Date(first)
     on.setDate(on.getDate() + at)
     const day = named(on)
-    const count = did.get(day) ?? 0
-    out.push({ day, did: count, weight: weighs(count), today: day === today })
+    const ahead = day > today
+    const count = (ahead ? due.get(day) : did.get(day)) ?? 0
+    out.push({ day, did: count, weight: weighs(count), today: day === today, ahead })
   }
   return out
 }

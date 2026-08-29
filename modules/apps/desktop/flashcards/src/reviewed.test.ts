@@ -3,8 +3,9 @@ import { describe, expect, it } from 'vitest'
 import { reviewed } from './reviewed'
 import type { Asks, Said } from './reviewed'
 
-const said = (days: [string, number][], streak = 0): Said => ({
+const said = (days: [string, number][], streak = 0, due: [string, number][] = []): Said => ({
   days: days.map(([day, answered]) => ({ day, answered })),
+  due: due.map(([day, answered]) => ({ day, answered })),
   streak,
   answered: days.reduce((sum, [, answered]) => sum + answered, 0),
 })
@@ -56,6 +57,24 @@ describe('what a vault was answered on', () => {
     expect(one.days.value.has('2020-01-01')).toBe(false)
     expect(one.streak.value).toBe(1)
     expect(one.of.value).toBe('01OTHER')
+  })
+
+  it('holds what is still to come apart from what was done', async () => {
+    const cards: Asks = {
+      async reviewed() {
+        return said([['2026-08-29', 3]], 1, [
+          ['2026-08-31', 12],
+          ['2026-09-05', 4],
+        ])
+      },
+    }
+    const one = reviewed({ cards, failed: () => {} })
+
+    await one.read('01VAULT')
+
+    expect(one.due.value.get('2026-08-31')).toBe(12)
+    expect(one.days.value.has('2026-08-31')).toBe(false)
+    expect(one.due.value.has('2026-08-29')).toBe(false)
   })
 
   it('is nothing for no vault at all', async () => {

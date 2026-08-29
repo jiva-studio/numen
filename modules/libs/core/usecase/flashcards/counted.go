@@ -33,6 +33,10 @@ type Reviewed struct {
 	// Days is how many answers were given on each day, by the name of the day:
 	// the year, the month and the day it began on.
 	Days map[string]int
+	// Due is how many card faces fall on each day still to come, by the same
+	// names. A card owed today or owed and late is not in it: what is behind is
+	// what the front door counts, and this is what is ahead.
+	Due map[string]int
 	// Streak is how many days up to now were reviewed without a gap.
 	Streak int
 	// Answered is how many answers the vault holds altogether.
@@ -55,8 +59,11 @@ type Counted struct {
 	// Kept is where the counting is remembered. A build holding none counts the
 	// whole log at every launch.
 	Kept port.Schedules
-	Day  history.Day
-	Now  func() time.Time
+	// Schedules is where the answers have left every card face, which is what
+	// says how much falls on each day still to come.
+	Schedules Schedules
+	Day       history.Day
+	Now       func() time.Time
 }
 
 // Execute counts one vault.
@@ -97,6 +104,39 @@ func (u Counted) Execute(ctx context.Context, v domain.Vault) (Reviewed, error) 
 
 	u.remember(ctx, v, now)
 	out.Streak = history.Streak(u.Day, out.Days, u.now())
+
+	due, err := u.ahead(ctx, v)
+	if err != nil {
+		return Reviewed{}, err
+	}
+	out.Due = due
+	return out, nil
+}
+
+// ahead is how much falls on each day still to come.
+//
+// A card owed today, or owed and late, is not in it: what a person owes now is
+// what the front door counts, and this says what is coming after it. Where a
+// card falls is worked out from the answers like everything else, so the day it
+// shows is the day it would be asked on.
+func (u Counted) ahead(ctx context.Context, v domain.Vault) (map[string]int, error) {
+	out := make(map[string]int)
+	if u.Schedules.By == nil {
+		return out, nil
+	}
+	schedules, err := u.Schedules.Execute(ctx, v)
+	if err != nil {
+		return nil, err
+	}
+
+	now := u.now()
+	ends := u.Day.Ends(now)
+	for _, s := range schedules {
+		if !s.Seen() || s.Due.Before(ends) {
+			continue
+		}
+		out[u.Day.Names(s.Due)]++
+	}
 	return out, nil
 }
 

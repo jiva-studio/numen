@@ -157,6 +157,7 @@ onUnmounted(() => {
       v-else-if="on === 'decks' && chosen"
       :vault="chosen"
       :days="done.days.value"
+      :due="done.due.value"
       :streak="done.streak.value"
       @start="start"
       @back="vaultsAgain"
