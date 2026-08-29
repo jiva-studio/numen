@@ -37,6 +37,8 @@ A card typed by hand carries no mark until the application next writes its file 
 
 A deck holding a card with no mark is therefore written once, which mints a mark for every card in it, and **the deck is read again afterwards and the session works from that read**.
 
+**It is done when a person sits down to a vault, and never for the counting.** The front door counts every vault the installation holds, and a count that wrote would write into all of them at every launch — including the ones nobody opened. A card with no mark is counted as nothing until the vault it is in is sat down to.
+
 The vault's write lock lives in the process (ADR-0020), and two processes on one vault hold a lock each. A mark minted here while the editor is saving the same deck is a write one of the two loses, and the editor's own save mints marks of its own for whatever is missing them. Reading the deck back is what makes that harmless: a card is reviewed under the mark the file holds, so a stamp that did not land is a card left out of this session and stamped again at the next, and no answer is ever recorded against a mark that is not in the file.
 
 ### It hands one thing to the editor

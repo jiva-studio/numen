@@ -2,6 +2,7 @@ package review_test
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -37,6 +38,7 @@ var vault = map[string]string{
 type vaulted struct {
 	vault     domain.Vault
 	standings review.Standings
+	marking   review.Marking
 	kept      review.Schedules
 	logs      filesystem.DerivedStores
 }
@@ -68,6 +70,9 @@ func opened(t *testing.T, notes map[string]string) vaulted {
 	return vaulted{
 		vault: v,
 		standings: review.Standings{
+			Readers: filesystem.Readers{}, Notes: db.NoteQueries(), Links: db.NoteQueries(),
+		},
+		marking: review.Marking{
 			Readers: filesystem.Readers{}, Writers: filesystem.Writers{},
 			Notes: db.NoteQueries(), Links: db.NoteQueries(),
 			Index: scanned, Now: time.Now,
@@ -79,6 +84,15 @@ func opened(t *testing.T, notes map[string]string) vaulted {
 		},
 		logs: logs,
 	}
+}
+
+func read(t *testing.T, v domain.Vault, path string) string {
+	t.Helper()
+	raw, err := os.ReadFile(filepath.Join(v.Path, filepath.FromSlash(path)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(raw)
 }
 
 func (s vaulted) run(t *testing.T, at time.Time) review.Record {
@@ -95,7 +109,9 @@ func (s vaulted) owed(day history.Day) review.Owed {
 }
 
 func (s vaulted) session(day history.Day) review.Session {
-	return review.Session{Standings: s.standings, Schedules: s.kept, Day: day, Now: time.Now}
+	return review.Session{
+		Marking: s.marking, Standings: s.standings, Schedules: s.kept, Day: day, Now: time.Now,
+	}
 }
 
 // today is the day a session is counted in, on this machine.
@@ -154,16 +170,40 @@ func TestAFaceIsLaidOutWithTheCardsOwnValues(t *testing.T) {
 	t.Error("the card was not among what stands in the vault")
 }
 
-// A deck typed by hand carries no marks. It is written once, which mints one for
-// every card in it, and what stands comes from reading it again.
-func TestADeckOfCardsWithNoMarksIsGivenThem(t *testing.T) {
-	notes := map[string]string{
-		"Term.md": vault["Term.md"],
-		"decks/Own.md": "---\ntype: deck\n---\n" +
-			"\n## Leaf mould\n\n[[Term]]\n\n### Word\n\nLeaf mould\n\n### Meaning\n\nLeaves\n",
-	}
-	s := opened(t, notes)
+// handwritten is a deck of one card that carries no mark, which is what a deck
+// typed by hand is until the application writes it.
+var handwritten = map[string]string{
+	"Term.md": vault["Term.md"],
+	"decks/Own.md": "---\ntype: deck\n---\n" +
+		"\n## Leaf mould\n\n[[Term]]\n\n### Word\n\nLeaf mould\n\n### Meaning\n\nLeaves\n",
+}
 
+// A card with no mark has nothing an answer could be recorded against, so
+// nothing stands for it. Reading what a vault holds writes nothing.
+func TestACardWithNoMarkStandsForNothing(t *testing.T) {
+	s := opened(t, handwritten)
+	before := read(t, s.vault, "decks/Own.md")
+
+	stood, err := s.standings.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(stood) != 0 {
+		t.Errorf("stands = %+v, want nothing", stood)
+	}
+	if after := read(t, s.vault, "decks/Own.md"); after != before {
+		t.Errorf("the deck was written\n was %q\n now %q", before, after)
+	}
+}
+
+// A person sitting down to a vault has its cards given marks, and what stands
+// then is what they are asked.
+func TestSittingDownToAVaultMarksItsCards(t *testing.T) {
+	s := opened(t, handwritten)
+
+	if err := s.marking.Execute(t.Context(), s.vault); err != nil {
+		t.Fatal(err)
+	}
 	stood, err := s.standings.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -173,6 +213,20 @@ func TestADeckOfCardsWithNoMarksIsGivenThem(t *testing.T) {
 	}
 	if stood[0].CardFace.Card == "" {
 		t.Error("the card came back with no mark to record an answer against")
+	}
+}
+
+// Counting what a vault owes writes nothing to it: a person opening the window
+// is shown every vault they hold, and none of them is written to for that.
+func TestCountingAVaultWritesNothingToIt(t *testing.T) {
+	s := opened(t, handwritten)
+	before := read(t, s.vault, "decks/Own.md")
+
+	if _, err := s.owed(today).Execute(t.Context(), s.vault); err != nil {
+		t.Fatal(err)
+	}
+	if after := read(t, s.vault, "decks/Own.md"); after != before {
+		t.Errorf("the deck was written\n was %q\n now %q", before, after)
 	}
 }
 

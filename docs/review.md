@@ -61,7 +61,9 @@ The answers are the vault's and travel with it. What is worked out from them —
 
 ## Marks
 
-A card typed by hand carries no mark until the application writes its file ([cards](cards.md)). A deck holding such a card is written once, which mints a mark for every card in it, and it is read again before anything is asked.
+A card typed by hand carries no mark until the application writes its file ([cards](cards.md)), and a card with no mark has nothing an answer could be recorded against.
+
+**A vault is marked when a person sits down to it**, and never for the counting. Its decks holding such a card are written once, which mints a mark for every card in them, and they are read again before anything is asked. What a person owes is counted from what is already marked, so opening the window writes to nothing: the vault they choose is the vault that is written to.
 
 So a person who never opens the editor can still run their cards, and one write to a deck is the whole of what review changes in a vault. Nothing else about a deck is touched: not its text, not its order, and never a schedule.
 
