@@ -5,7 +5,10 @@ import { DEFAULT_OPTIONS } from './options'
 import { routeEdges, routingFor } from './routing'
 import { neighbourhoods } from '../fixtures/neighbourhoods'
 import {
+  ARROW_LENGTH,
+  arrowOf,
   lengthOf,
+  rulerOf,
   type EdgeArrow,
   type PlacedNode,
   type PlexNeighbourhood,
@@ -289,6 +292,55 @@ describe('the arrowhead a line carries', () => {
 
   it('is drawn on no line that was given no arrow', () => {
     expect(routed().arrowhead).toBeUndefined()
+  })
+
+  // A head has a body, and over its length a curve turns, so a head aimed
+  // along the piece of curve it covers has the line running into its base.
+  it('is aimed along the piece of curve it covers', () => {
+    const aside = arrangePlex({
+      nodes: [
+        { id: 'focus', title: 'Here', seat: 'focus' },
+        { id: 'wide', title: 'Wide', seat: 'child' },
+        { id: 'other', title: 'Other', seat: 'child' },
+        { id: 'third', title: 'Third', seat: 'child' },
+      ],
+      edges: [
+        { from: 'focus', to: 'wide', arrow: 'to' },
+        { from: 'focus', to: 'other' },
+        { from: 'focus', to: 'third' },
+      ],
+    }).edges.find((edge) => edge.to === 'wide')!
+
+    const covered = ARROW_LENGTH / lengthOf(aside)
+    const behind = rulerOf(aside)(1 - covered)
+    const chord =
+      (Math.atan2(aside.toPoint.y - behind.y, aside.toPoint.x - behind.x) * 180) / Math.PI
+
+    // The line bends over the head's length, so the two readings differ.
+    expect(Math.abs(chord - 90)).toBeGreaterThan(3)
+    expect(aside.arrowhead!.angle).toBeCloseTo(chord, 1)
+
+    // The end a line leaves from is read the same way, backwards.
+    const leaving = arrowOf(aside, 'from')
+    const along = rulerOf(aside)(ARROW_LENGTH / lengthOf(aside))
+    const back =
+      (Math.atan2(aside.fromPoint.y - along.y, aside.fromPoint.x - along.x) * 180) / Math.PI
+    expect(leaving.angle).toBeCloseTo(back, 1)
+  })
+
+  // A curve shorter than the head it carries has no piece of itself to read, so
+  // the tangent where the head points is what aims it.
+  it('is aimed at the tangent where the line is shorter than the head', () => {
+    const gate = { x: 0, y: 0 }
+    const short = {
+      fromPoint: gate,
+      control1: { x: 0, y: 2 },
+      control2: { x: 0, y: 4 },
+      toPoint: { x: 0, y: 6 },
+    }
+    expect(lengthOf(short)).toBeLessThan(ARROW_LENGTH)
+    expect(arrowOf(short, 'to').angle).toBeCloseTo(90)
+    expect(arrowOf(short, 'from').angle).toBeCloseTo(-90)
   })
 
   it('leaves the title of its line short of the head', () => {

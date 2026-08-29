@@ -4,7 +4,14 @@ import { arrangePlex } from './arrange'
 import { interpolatePlex } from './interpolate'
 import { easeOut } from './math'
 import { MIDDLE } from './routing'
-import { headingOf, type PlexFrame, type PlexNeighbourhood } from '../model'
+import {
+  ARROW_LENGTH,
+  headingOf,
+  lengthOf,
+  rulerOf,
+  type PlexFrame,
+  type PlexNeighbourhood,
+} from '../model'
 
 /** Focus on `focus`, with two children and one parent. */
 const before: PlexNeighbourhood = {
@@ -309,10 +316,13 @@ describe('the arrow a line carries while the picture moves', () => {
     }
   })
 
-  it('aims it out of the box it arrives at, which it meets square on', () => {
+  it('keeps it aimed along the piece of curve it covers, wherever the line has got to', () => {
     for (let t = 0.05; t < 1; t += 0.05) {
       const edge = interpolatePlex(start, end, t).edges.find((e) => e.to === 'a')!
-      expect(edge.arrowhead!.angle, `at ${t.toFixed(2)}`).toBeCloseTo(90)
+      const behind = rulerOf(edge)(1 - ARROW_LENGTH / lengthOf(edge))
+      const chord =
+        (Math.atan2(edge.toPoint.y - behind.y, edge.toPoint.x - behind.x) * 180) / Math.PI
+      expect(edge.arrowhead!.angle, `at ${t.toFixed(2)}`).toBeCloseTo(chord, 1)
     }
   })
 })

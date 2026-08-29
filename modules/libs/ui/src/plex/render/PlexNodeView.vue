@@ -604,4 +604,11 @@ const hue = computed(() => ({
 .plex__node--focus .plex__title {
   color: var(--numen-focus-fg);
 }
+
+/* The focused node is painted from its own pair, and its seat's hue is the
+   ground it stands on. What it is drawn before its title takes the ink the
+   title is set in. */
+.plex__node--focus .plex__icon {
+  color: inherit;
+}
 </style>

@@ -136,12 +136,14 @@ const asks = (event: MouseEvent) => {
   min-block-size: 0;
 }
 
-/* Lucide draws on a 24 grid, and the stroke is given in those units. */
+/* Lucide draws on a 24 grid, and the stroke is given in those units.
+   A node's title stands in a `foreignObject`, and nothing drawn in one is given
+   an opacity of its own: WebKit paints what it makes a layer of at the corner
+   of the picture. Anything quieter is asked for in the colour. */
 .plex__icon {
   inline-size: 0.875rem;
   block-size: 0.875rem;
   stroke-width: 1.875;
-  opacity: 0.75;
 }
 
 /* A warning carries a filesystem path, and a long one breaks where it stands. */

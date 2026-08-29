@@ -176,14 +176,31 @@ export const headingOf = (edge: EdgeCurve, at: number): EdgeHeading => {
   return way.y < 0 ? 'against' : 'along'
 }
 
+/** How far back from its point an arrowhead reaches, in the units it is drawn in. */
+export const ARROW_LENGTH = 15
+
 /**
  * The arrowhead at one end of a curve. It sits on the end itself and is aimed
- * out of the line: at the end the curve leaves from, that is the tangent there
- * taken backwards.
+ * out of the line.
+ *
+ * A head is a body and not a point, and a curve turns over the length of one.
+ * It is therefore aimed along the piece of curve it covers, so that the line
+ * runs into its base; the tangent at the very end is what a curve shorter than
+ * the head is read by.
  */
 export const arrowOf = (edge: EdgeCurve, end: EdgeArrow): PlacedArrow => {
   const t = end === 'to' ? 1 : 0
+  const at = pointAt(edge, t)
+
+  const along = measureAlong(edge)
+  const total = along[LENGTH_SAMPLES]!
+  const covered = total > ARROW_LENGTH ? ARROW_LENGTH / total : 0
+  const behind = pointAt(edge, parameterAt(along, end === 'to' ? 1 - covered : covered))
+
+  const spanned = { x: at.x - behind.x, y: at.y - behind.y }
   const way = tangentAt(edge, t)
-  const out = end === 'to' ? way : { x: -way.x, y: -way.y }
-  return { at: pointAt(edge, t), angle: (Math.atan2(out.y, out.x) * 180) / Math.PI }
+  const tangent = end === 'to' ? way : { x: -way.x, y: -way.y }
+  const out = covered > 0 && (spanned.x !== 0 || spanned.y !== 0) ? spanned : tangent
+
+  return { at, angle: (Math.atan2(out.y, out.x) * 180) / Math.PI }
 }

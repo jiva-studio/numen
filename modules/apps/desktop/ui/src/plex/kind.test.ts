@@ -1308,3 +1308,16 @@ describe('every plex asked for its picture again', () => {
     expect(first.held.view.here.value).toBe('One.md')
   })
 })
+
+describe('which of three a node stands for', () => {
+  it('is what the vault says of the note the node draws', () => {
+    const one = tab('Root.md', ['Deck.md', 'Stencil.md'], true, {
+      'Deck.md': NoteTypes.DECK,
+      'Stencil.md': NoteTypes.STENCIL,
+    })
+
+    expect(one.held.typeOf(one.node('Deck.md'))).toBe('deck')
+    expect(one.held.typeOf(one.node('Stencil.md'))).toBe('stencil')
+    expect(one.held.typeOf(one.node('Root.md'))).toBe('note')
+  })
+})
