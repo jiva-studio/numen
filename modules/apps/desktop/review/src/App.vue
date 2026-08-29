@@ -290,7 +290,6 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
             :key="how"
             variant="outline"
             class="review__answer"
-            :class="`review__answer--${how}`"
             @click="answer(how)"
           >
             <KeyCap :keys="{ marks: [], letter: String(i + 1) }" />
@@ -378,13 +377,6 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
   flex: 1;
   block-size: auto;
   padding-block: var(--numen-inset-wide);
-}
-
-/* The answer that says a card was lost is the one worth telling apart at a
-   glance, because it is the one a person reaches for without reading. */
-.review__answer--again {
-  border-color: var(--numen-alarm);
-  color: var(--numen-alarm);
 }
 
 
