@@ -41,16 +41,52 @@ describe('the days a grid draws', () => {
     expect(days(1, new Date('2026-08-29T12:00:00'), did)).toHaveLength(ROWS)
   })
 
-  // Today stands in the last column, and the grid runs back from it, so a
-  // person reads the year left to right and ends where they are.
-  it('ends on the week today stands in', () => {
+  // The weeks behind run up to the one a person is in, and a few weeks of what
+  // is coming stand after it, so the grid says what is ahead as well.
+  it('keeps room after today for what is still to come', () => {
     // Saturday.
-    const shown = days(4, new Date('2026-08-29T12:00:00'), did)
+    const now = new Date('2026-08-29T12:00:00')
+    const shown = days(20, now, did)
     const today = shown.filter((one) => one.today)
 
     expect(today).toHaveLength(1)
-    expect(shown.indexOf(today[0]!)).toBeGreaterThan(shown.length - ROWS - 1)
     expect(shown[0]!.day < today[0]!.day).toBe(true)
+
+    const after = shown.slice(shown.indexOf(today[0]!) + 1)
+    expect(after.length).toBeGreaterThan(ROWS * 3)
+    for (const one of after) {
+      expect(one.ahead).toBe(true)
+    }
+    for (const one of shown.slice(0, shown.indexOf(today[0]!) + 1)) {
+      expect(one.ahead).toBe(false)
+    }
+  })
+
+  it('gives the room to what is behind where there is little of it', () => {
+    const shown = days(1, new Date('2026-08-29T12:00:00'), did)
+    expect(shown).toHaveLength(ROWS)
+    expect(shown.some((one) => one.today)).toBe(true)
+  })
+
+  // A day still to come holds what falls on it, and a day behind holds what was
+  // answered on it. Today holds what was answered: that is the number a person
+  // is adding to.
+  it('reads what is coming for the days still to come', () => {
+    const now = new Date('2026-08-29T12:00:00')
+    const done = new Map([
+      ['2026-08-29', 4],
+      ['2026-09-02', 99],
+    ])
+    const coming = new Map([
+      ['2026-08-29', 99],
+      ['2026-09-02', 7],
+    ])
+    const shown = days(12, now, done, coming)
+
+    expect(shown.find((one) => one.today)?.did).toBe(4)
+    const later = shown.find((one) => one.day === '2026-09-02')
+    expect(later?.did).toBe(7)
+    expect(later?.ahead).toBe(true)
   })
 
   it('reads what was done on each day it draws', () => {

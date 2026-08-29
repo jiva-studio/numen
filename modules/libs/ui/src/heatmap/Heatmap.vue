@@ -1,11 +1,13 @@
 <script setup lang="ts">
 /**
- * What a person did on each day, as a grid of weeks.
+ * What a person did on each day and what is still coming to them, as a grid of
+ * weeks.
  *
- * A column is a week and today stands in the last of them. How many weeks are
- * drawn is how many fit the room there is: a wide window shows more of the year
- * rather than the same weeks drawn larger, and a narrow one shows fewer rather
- * than a grid marooned in the middle of empty room.
+ * A column is a week. The weeks behind run up to the one they are in, and a few
+ * weeks of what is still to come stand after it. How many weeks are drawn is
+ * how many fit the room there is: a wide window shows more of the year rather
+ * than the same weeks drawn larger, and a narrow one shows fewer rather than a
+ * grid marooned in the middle of empty room.
  */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
@@ -16,6 +18,8 @@ const props = withDefaults(
   defineProps<{
     /** How much was done on each day, by the day it was done on. */
     did: ReadonlyMap<string, number>
+    /** How much falls on each day still to come, by the day it falls on. */
+    due?: ReadonlyMap<string, number>
     /** When it is. */
     now?: Date
     /** How large one cell is drawn, at most, in pixels. */
@@ -23,7 +27,7 @@ const props = withDefaults(
     /** How much room stands between two cells, at least. */
     gap?: number
   }>(),
-  { now: () => new Date(), cell: 11, gap: 3 },
+  { due: () => new Map(), now: () => new Date(), cell: 11, gap: 3 },
 )
 
 const emit = defineEmits<{ (event: 'reaches', day: Day): void }>()
@@ -50,7 +54,7 @@ onBeforeUnmount(() => {
 })
 
 const laid = computed(() => fits({ width: room.value, cell: props.cell, gap: props.gap }))
-const shown = computed(() => days(laid.value.columns, props.now, props.did))
+const shown = computed(() => days(laid.value.columns, props.now, props.did, props.due))
 
 const step = computed(() => laid.value.cell + laid.value.gap)
 const height = computed(() => ROWS * step.value - laid.value.gap)
@@ -59,8 +63,12 @@ const xOf = (at: number) => Math.floor(at / ROWS) * step.value
 const yOf = (at: number) => (at % ROWS) * step.value
 
 /** What a day says when a person rests on it. */
-const told = (day: Day) =>
-  day.did > 0 ? `${day.day}: ${day.did} answered` : `${day.day}: nothing answered`
+const told = (day: Day) => {
+  if (day.ahead) {
+    return day.did > 0 ? `${day.day}: ${day.did} to come` : `${day.day}: nothing due`
+  }
+  return day.did > 0 ? `${day.day}: ${day.did} answered` : `${day.day}: nothing answered`
+}
 
 watch(shown, (now) => {
   const today = now.find((one) => one.today)
@@ -90,6 +98,7 @@ watch(shown, (now) => {
         :ry="2"
         class="heatmap__day"
         :data-weight="day.weight"
+        :data-ahead="day.ahead ? 'yes' : undefined"
         :data-today="day.today ? 'yes' : undefined"
       >
         <title>{{ told(day) }}</title>
@@ -136,6 +145,23 @@ watch(shown, (now) => {
 .heatmap__day[data-weight='4'] {
   fill: var(--numen-focus-bg);
   stroke: none;
+}
+
+/* A day still to come is drawn in outline: what is done is filled in, and what
+   is coming is not done. It is the same weight, so a heavy week ahead reads as
+   a heavy week. */
+.heatmap__day[data-ahead][data-weight='1'],
+.heatmap__day[data-ahead][data-weight='2'],
+.heatmap__day[data-ahead][data-weight='3'],
+.heatmap__day[data-ahead][data-weight='4'] {
+  fill: color-mix(in oklab, var(--numen-focus-bg) 12%, var(--numen-node-bg));
+  stroke: var(--numen-focus-bg);
+  stroke-width: 1;
+}
+
+.heatmap__day[data-ahead][data-weight='3'],
+.heatmap__day[data-ahead][data-weight='4'] {
+  stroke-width: 1.5;
 }
 
 /* Today is where a person's eye goes first, so it is ringed whatever it holds. */

@@ -11,6 +11,8 @@ import { Heatmap } from '@numen/ui'
 const props = defineProps<{
   /** How many cards were answered on each day, by the day it was. */
   days: ReadonlyMap<string, number>
+  /** How many cards fall on each day still to come, by the day they fall on. */
+  due: ReadonlyMap<string, number>
   /** How many days up to now were reviewed without a gap. */
   streak: number
 }>()
@@ -24,7 +26,7 @@ const kept = computed(() => {
 
 <template>
   <section class="done">
-    <Heatmap :did="days" />
+    <Heatmap :did="days" :due="due" />
     <p v-if="kept" class="done__streak">{{ kept }}</p>
   </section>
 </template>

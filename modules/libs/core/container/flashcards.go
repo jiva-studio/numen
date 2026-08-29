@@ -97,8 +97,10 @@ func (c Config) Flashcards(
 		Session: flashcards.Session{
 			Marking: marking, Standings: standing, Schedules: schedules, Day: day, Now: time.Now,
 		},
-		Log:     flashcards.Log{Stores: logs},
-		Counted: flashcards.Counted{Logs: logs, Kept: counting, Day: day, Now: time.Now},
-		Day:     day,
+		Log: flashcards.Log{Stores: logs},
+		Counted: flashcards.Counted{
+			Logs: logs, Kept: counting, Schedules: schedules, Day: day, Now: time.Now,
+		},
+		Day: day,
 	}
 }

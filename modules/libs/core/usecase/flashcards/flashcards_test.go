@@ -88,8 +88,13 @@ func opened(t *testing.T, notes map[string]string) vaulted {
 		counted: flashcards.Counted{
 			Logs: logs,
 			Kept: appstate.SchedulesAt(filepath.Join(t.TempDir(), "days")),
-			Day:  today,
-			Now:  time.Now,
+			Schedules: flashcards.Schedules{
+				Logs: logs,
+				Kept: appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards")),
+				By:   history.NewFSRS(),
+			},
+			Day: today,
+			Now: time.Now,
 		},
 		logs: logs,
 	}
