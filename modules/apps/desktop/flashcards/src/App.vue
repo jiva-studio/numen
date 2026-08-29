@@ -23,6 +23,7 @@ import { cards, deckName } from './core'
 import { counting } from './counting'
 import { asks, swallows } from './keying'
 import { saying } from './saying'
+import { reviewed } from './reviewed'
 import { sitting } from './sitting'
 import type { Report } from './sitting'
 
@@ -35,12 +36,14 @@ const vault = ref('')
 const { notices, says, failed, putAway } = saying()
 const { vaults, counting: busy, count } = counting({ cards, failed })
 const sat = sitting({ cards, failed })
+const done = reviewed({ cards, failed })
 
 const chosen = computed(() => vaults.value.find((one) => one.vaultId === vault.value) ?? null)
 
 const choose = (id: string) => {
   vault.value = id
   on.value = 'decks'
+  void done.read(id)
 }
 
 /**
@@ -68,16 +71,21 @@ const start = async (deck: string) => {
   reported(said)
 }
 
-/** Out of a sitting and back to the decks, with the counts as they now stand. */
+/**
+ * Out of a sitting and back to the decks, with the counts as they now stand and
+ * the days too: what a person just answered is part of what they have done.
+ */
 const leave = async () => {
   sat.forget()
   on.value = 'decks'
+  void done.read(vault.value)
   await count()
 }
 
 /** Back to the vaults, which is where a person picks another collection. */
 const vaultsAgain = async () => {
   sat.forget()
+  done.forget()
   on.value = 'vaults'
   vault.value = ''
   await count()
@@ -122,7 +130,11 @@ onMounted(() => {
   // when it opened, and what a deck says now is read at the next one.
   void follows(
     () => cards.moving({}),
-    () => (on.value === 'session' ? undefined : count()),
+    async () => {
+      if (on.value === 'session') return
+      await count()
+      if (vault.value) await done.read(vault.value)
+    },
   )
 })
 onUnmounted(() => {
@@ -144,6 +156,8 @@ onUnmounted(() => {
     <Decks
       v-else-if="on === 'decks' && chosen"
       :vault="chosen"
+      :days="done.days.value"
+      :streak="done.streak.value"
       @start="start"
       @back="vaultsAgain"
     />
