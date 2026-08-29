@@ -44,9 +44,6 @@ type API struct {
 	// Themes are the stylesheets the window may be dressed in, and the sizes it
 	// is drawn and set at. They belong to the installation and not to a vault.
 	Themes numenv1connect.ThemeServiceHandler
-	// Opens brings the editor forward on one card. A build holding none says so
-	// and goes on.
-	Opens func(ctx context.Context, v domain.Vault, deck, card string) error
 	// Now is when this is happening.
 	Now func() time.Time
 

@@ -41,9 +41,9 @@ A deck holding a card with no mark is therefore written once, which mints a mark
 
 The vault's write lock lives in the process (ADR-0020), and two processes on one vault hold a lock each. A mark minted here while the editor is saving the same deck is a write one of the two loses, and the editor's own save mints marks of its own for whatever is missing them. Reading the deck back is what makes that harmless: a card is reviewed under the mark the file holds, so a stamp that did not land is a card left out of this session and stamped again at the next, and no answer is ever recorded against a mark that is not in the file.
 
-### It hands one thing to the editor
+### It only reviews
 
-A card written badly is the one thing this application does not fix. It hands the deck's path and the card's mark to the editor, which comes forward with that deck open at that card. Between two processes that is an invocation and not a call.
+A card is read here and answered here, and nothing else is done to it. A card written badly is fixed in the editor, opened the way a person opens it for any other reason. Nothing is handed between the two processes.
 
 ## Consequences
 

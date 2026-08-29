@@ -174,23 +174,3 @@ func (a *API) TakeBack(
 	}
 	return connect.NewResponse(&v1.TakeBackResponse{}), nil
 }
-
-// Edit brings the editor forward with the deck open at one card.
-func (a *API) Edit(
-	ctx context.Context, r *connect.Request[v1.EditRequest],
-) (*connect.Response[v1.EditResponse], error) {
-	v, err := a.Vault(r.Msg.GetVaultId())
-	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, err)
-	}
-	if a.Opens == nil {
-		return connect.NewResponse(&v1.EditResponse{
-			Refused: "this build cannot start the editor",
-		}), nil
-	}
-	out := &v1.EditResponse{}
-	if err := a.Opens(ctx, v, r.Msg.GetDeck(), r.Msg.GetCard()); err != nil {
-		out.Refused = err.Error()
-	}
-	return connect.NewResponse(out), nil
-}

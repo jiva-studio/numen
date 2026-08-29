@@ -51,8 +51,6 @@ const (
 	ReviewServiceAnswerProcedure = "/numen.v1.ReviewService/Answer"
 	// ReviewServiceTakeBackProcedure is the fully-qualified name of the ReviewService's TakeBack RPC.
 	ReviewServiceTakeBackProcedure = "/numen.v1.ReviewService/TakeBack"
-	// ReviewServiceEditProcedure is the fully-qualified name of the ReviewService's Edit RPC.
-	ReviewServiceEditProcedure = "/numen.v1.ReviewService/Edit"
 )
 
 // ReviewServiceClient is a client for the numen.v1.ReviewService service.
@@ -77,10 +75,6 @@ type ReviewServiceClient interface {
 	// TakeBack writes down that an answer was taken back. Both lines stay in the
 	// file: nothing in a log is ever rewritten or removed.
 	TakeBack(context.Context, *connect.Request[v1.TakeBackRequest]) (*connect.Response[v1.TakeBackResponse], error)
-	// Edit brings the editor forward with a deck open at one card. It is the one
-	// thing this application hands over, and between two processes it is an
-	// invocation and not a call.
-	Edit(context.Context, *connect.Request[v1.EditRequest]) (*connect.Response[v1.EditResponse], error)
 }
 
 // NewReviewServiceClient constructs a client for the numen.v1.ReviewService service. By default, it
@@ -118,12 +112,6 @@ func NewReviewServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(reviewServiceMethods.ByName("TakeBack")),
 			connect.WithClientOptions(opts...),
 		),
-		edit: connect.NewClient[v1.EditRequest, v1.EditResponse](
-			httpClient,
-			baseURL+ReviewServiceEditProcedure,
-			connect.WithSchema(reviewServiceMethods.ByName("Edit")),
-			connect.WithClientOptions(opts...),
-		),
 	}
 }
 
@@ -133,7 +121,6 @@ type reviewServiceClient struct {
 	start    *connect.Client[v1.StartRequest, v1.StartResponse]
 	answer   *connect.Client[v1.AnswerRequest, v1.AnswerResponse]
 	takeBack *connect.Client[v1.TakeBackRequest, v1.TakeBackResponse]
-	edit     *connect.Client[v1.EditRequest, v1.EditResponse]
 }
 
 // Owing calls numen.v1.ReviewService.Owing.
@@ -154,11 +141,6 @@ func (c *reviewServiceClient) Answer(ctx context.Context, req *connect.Request[v
 // TakeBack calls numen.v1.ReviewService.TakeBack.
 func (c *reviewServiceClient) TakeBack(ctx context.Context, req *connect.Request[v1.TakeBackRequest]) (*connect.Response[v1.TakeBackResponse], error) {
 	return c.takeBack.CallUnary(ctx, req)
-}
-
-// Edit calls numen.v1.ReviewService.Edit.
-func (c *reviewServiceClient) Edit(ctx context.Context, req *connect.Request[v1.EditRequest]) (*connect.Response[v1.EditResponse], error) {
-	return c.edit.CallUnary(ctx, req)
 }
 
 // ReviewServiceHandler is an implementation of the numen.v1.ReviewService service.
@@ -183,10 +165,6 @@ type ReviewServiceHandler interface {
 	// TakeBack writes down that an answer was taken back. Both lines stay in the
 	// file: nothing in a log is ever rewritten or removed.
 	TakeBack(context.Context, *connect.Request[v1.TakeBackRequest]) (*connect.Response[v1.TakeBackResponse], error)
-	// Edit brings the editor forward with a deck open at one card. It is the one
-	// thing this application hands over, and between two processes it is an
-	// invocation and not a call.
-	Edit(context.Context, *connect.Request[v1.EditRequest]) (*connect.Response[v1.EditResponse], error)
 }
 
 // NewReviewServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -220,12 +198,6 @@ func NewReviewServiceHandler(svc ReviewServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(reviewServiceMethods.ByName("TakeBack")),
 		connect.WithHandlerOptions(opts...),
 	)
-	reviewServiceEditHandler := connect.NewUnaryHandler(
-		ReviewServiceEditProcedure,
-		svc.Edit,
-		connect.WithSchema(reviewServiceMethods.ByName("Edit")),
-		connect.WithHandlerOptions(opts...),
-	)
 	return "/numen.v1.ReviewService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ReviewServiceOwingProcedure:
@@ -236,8 +208,6 @@ func NewReviewServiceHandler(svc ReviewServiceHandler, opts ...connect.HandlerOp
 			reviewServiceAnswerHandler.ServeHTTP(w, r)
 		case ReviewServiceTakeBackProcedure:
 			reviewServiceTakeBackHandler.ServeHTTP(w, r)
-		case ReviewServiceEditProcedure:
-			reviewServiceEditHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -261,8 +231,4 @@ func (UnimplementedReviewServiceHandler) Answer(context.Context, *connect.Reques
 
 func (UnimplementedReviewServiceHandler) TakeBack(context.Context, *connect.Request[v1.TakeBackRequest]) (*connect.Response[v1.TakeBackResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ReviewService.TakeBack is not implemented"))
-}
-
-func (UnimplementedReviewServiceHandler) Edit(context.Context, *connect.Request[v1.EditRequest]) (*connect.Response[v1.EditResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ReviewService.Edit is not implemented"))
 }

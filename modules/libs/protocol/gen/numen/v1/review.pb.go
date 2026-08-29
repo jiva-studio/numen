@@ -894,112 +894,6 @@ func (*TakeBackResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_review_proto_rawDescGZIP(), []int{11}
 }
 
-type EditRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	VaultId       string                 `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
-	Deck          string                 `protobuf:"bytes,2,opt,name=deck,proto3" json:"deck,omitempty"`
-	Card          string                 `protobuf:"bytes,3,opt,name=card,proto3" json:"card,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *EditRequest) Reset() {
-	*x = EditRequest{}
-	mi := &file_numen_v1_review_proto_msgTypes[12]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *EditRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EditRequest) ProtoMessage() {}
-
-func (x *EditRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[12]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use EditRequest.ProtoReflect.Descriptor instead.
-func (*EditRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{12}
-}
-
-func (x *EditRequest) GetVaultId() string {
-	if x != nil {
-		return x.VaultId
-	}
-	return ""
-}
-
-func (x *EditRequest) GetDeck() string {
-	if x != nil {
-		return x.Deck
-	}
-	return ""
-}
-
-func (x *EditRequest) GetCard() string {
-	if x != nil {
-		return x.Card
-	}
-	return ""
-}
-
-type EditResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Set when the editor could not be started, in the person's own words. The
-	// review goes on either way.
-	Refused       string `protobuf:"bytes,1,opt,name=refused,proto3" json:"refused,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *EditResponse) Reset() {
-	*x = EditResponse{}
-	mi := &file_numen_v1_review_proto_msgTypes[13]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *EditResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EditResponse) ProtoMessage() {}
-
-func (x *EditResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[13]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use EditResponse.ProtoReflect.Descriptor instead.
-func (*EditResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{13}
-}
-
-func (x *EditResponse) GetRefused() string {
-	if x != nil {
-		return x.Refused
-	}
-	return ""
-}
-
 var File_numen_v1_review_proto protoreflect.FileDescriptor
 
 const file_numen_v1_review_proto_rawDesc = "" +
@@ -1060,25 +954,18 @@ const file_numen_v1_review_proto_rawDesc = "" +
 	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x10\n" +
 	"\x03run\x18\x02 \x01(\tR\x03run\x12\x16\n" +
 	"\x06answer\x18\x03 \x01(\tR\x06answer\"\x12\n" +
-	"\x10TakeBackResponse\"P\n" +
-	"\vEditRequest\x12\x19\n" +
-	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
-	"\x04deck\x18\x02 \x01(\tR\x04deck\x12\x12\n" +
-	"\x04card\x18\x03 \x01(\tR\x04card\"(\n" +
-	"\fEditResponse\x12\x18\n" +
-	"\arefused\x18\x01 \x01(\tR\arefused*e\n" +
+	"\x10TakeBackResponse*e\n" +
 	"\x06Rating\x12\x16\n" +
 	"\x12RATING_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fRATING_AGAIN\x10\x01\x12\x0f\n" +
 	"\vRATING_HARD\x10\x02\x12\x0f\n" +
 	"\vRATING_GOOD\x10\x03\x12\x0f\n" +
-	"\vRATING_EASY\x10\x042\xba\x02\n" +
+	"\vRATING_EASY\x10\x042\x83\x02\n" +
 	"\rReviewService\x128\n" +
 	"\x05Owing\x12\x16.numen.v1.OwingRequest\x1a\x17.numen.v1.OwingResponse\x128\n" +
 	"\x05Start\x12\x16.numen.v1.StartRequest\x1a\x17.numen.v1.StartResponse\x12;\n" +
 	"\x06Answer\x12\x17.numen.v1.AnswerRequest\x1a\x18.numen.v1.AnswerResponse\x12A\n" +
-	"\bTakeBack\x12\x19.numen.v1.TakeBackRequest\x1a\x1a.numen.v1.TakeBackResponse\x125\n" +
-	"\x04Edit\x12\x15.numen.v1.EditRequest\x1a\x16.numen.v1.EditResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\bTakeBack\x12\x19.numen.v1.TakeBackRequest\x1a\x1a.numen.v1.TakeBackResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_review_proto_rawDescOnce sync.Once
@@ -1093,7 +980,7 @@ func file_numen_v1_review_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_review_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_review_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_numen_v1_review_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_numen_v1_review_proto_goTypes = []any{
 	(Rating)(0),              // 0: numen.v1.Rating
 	(*VaultOwing)(nil),       // 1: numen.v1.VaultOwing
@@ -1108,8 +995,6 @@ var file_numen_v1_review_proto_goTypes = []any{
 	(*AnswerResponse)(nil),   // 10: numen.v1.AnswerResponse
 	(*TakeBackRequest)(nil),  // 11: numen.v1.TakeBackRequest
 	(*TakeBackResponse)(nil), // 12: numen.v1.TakeBackResponse
-	(*EditRequest)(nil),      // 13: numen.v1.EditRequest
-	(*EditResponse)(nil),     // 14: numen.v1.EditResponse
 }
 var file_numen_v1_review_proto_depIdxs = []int32{
 	2,  // 0: numen.v1.VaultOwing.decks:type_name -> numen.v1.DeckOwing
@@ -1121,14 +1006,12 @@ var file_numen_v1_review_proto_depIdxs = []int32{
 	7,  // 6: numen.v1.ReviewService.Start:input_type -> numen.v1.StartRequest
 	9,  // 7: numen.v1.ReviewService.Answer:input_type -> numen.v1.AnswerRequest
 	11, // 8: numen.v1.ReviewService.TakeBack:input_type -> numen.v1.TakeBackRequest
-	13, // 9: numen.v1.ReviewService.Edit:input_type -> numen.v1.EditRequest
-	6,  // 10: numen.v1.ReviewService.Owing:output_type -> numen.v1.OwingResponse
-	8,  // 11: numen.v1.ReviewService.Start:output_type -> numen.v1.StartResponse
-	10, // 12: numen.v1.ReviewService.Answer:output_type -> numen.v1.AnswerResponse
-	12, // 13: numen.v1.ReviewService.TakeBack:output_type -> numen.v1.TakeBackResponse
-	14, // 14: numen.v1.ReviewService.Edit:output_type -> numen.v1.EditResponse
-	10, // [10:15] is the sub-list for method output_type
-	5,  // [5:10] is the sub-list for method input_type
+	6,  // 9: numen.v1.ReviewService.Owing:output_type -> numen.v1.OwingResponse
+	8,  // 10: numen.v1.ReviewService.Start:output_type -> numen.v1.StartResponse
+	10, // 11: numen.v1.ReviewService.Answer:output_type -> numen.v1.AnswerResponse
+	12, // 12: numen.v1.ReviewService.TakeBack:output_type -> numen.v1.TakeBackResponse
+	9,  // [9:13] is the sub-list for method output_type
+	5,  // [5:9] is the sub-list for method input_type
 	5,  // [5:5] is the sub-list for extension type_name
 	5,  // [5:5] is the sub-list for extension extendee
 	0,  // [0:5] is the sub-list for field type_name
@@ -1145,7 +1028,7 @@ func file_numen_v1_review_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_review_proto_rawDesc), len(file_numen_v1_review_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   14,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

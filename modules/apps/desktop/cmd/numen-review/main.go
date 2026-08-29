@@ -14,15 +14,12 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/reviewui"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 func main() {
@@ -75,7 +72,6 @@ func run(cfg container.Config) error {
 		Session:   running.Session,
 		Schedules: running.Schedules,
 		Log:       running.Log,
-		Opens:     opens,
 		Now:       time.Now,
 	}
 
@@ -105,52 +101,4 @@ func run(cfg container.Config) error {
 		URL:    "/",
 	})
 	return app.Run()
-}
-
-// opens brings the editor forward with the deck open.
-//
-// Between two processes that is an invocation and not a call: the editor is
-// started on the vault and the deck, and it is the editor that decides what to
-// do with a window it may already have open on that vault.
-//
-// Which card is not passed. The editor opens a deck whole, and standing at one
-// card of it is a place in a tab that nothing can be told to yet.
-func opens(_ context.Context, v domain.Vault, deck, _ string) error {
-	at, err := editor()
-	if err != nil {
-		return err
-	}
-	run := exec.Command(at, "-vault", v.ID, "-open", deck)
-	run.Stdout, run.Stderr = os.Stdout, os.Stderr
-	if err := run.Start(); err != nil {
-		return err
-	}
-	// The editor outlives this call and is not waited for: what it does with
-	// the deck is its own, and this window goes on asking cards.
-	go func() { _ = run.Wait() }()
-	return nil
-}
-
-// editorName is what the editor's binary is called on this platform.
-var editorName = "numen" + exeSuffix
-
-// editor is where the editor stands.
-//
-// Beside this binary first, which is how the two are installed: one package
-// puts them in one folder. Then wherever the machine says, so that a build run
-// out of a working copy reaches an editor the person has on their path.
-func editor() (string, error) {
-	self, err := os.Executable()
-	if err == nil {
-		at := filepath.Join(filepath.Dir(self), editorName)
-		if _, err := os.Stat(at); err == nil {
-			return at, nil
-		}
-	}
-	at, err := exec.LookPath(editorName)
-	if err != nil {
-		return "", fmt.Errorf(
-			"%s is neither beside this application nor on the path", editorName)
-	}
-	return at, nil
 }
