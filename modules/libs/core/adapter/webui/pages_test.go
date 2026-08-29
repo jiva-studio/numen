@@ -87,7 +87,7 @@ func handed(handler http.Handler, path string) *httptest.ResponseRecorder {
 func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
 	const held = "default-src 'self'; img-src 'self'; style-src 'self' 'unsafe-inline'; " +
 		"font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; " +
-		"frame-ancestors 'none'"
+		"form-action 'none'; frame-ancestors 'none'"
 	if policy != held {
 		t.Errorf("the policy reads %q", policy)
 	}
@@ -186,7 +186,7 @@ func TestAFileNamingTheZoomOpensTheWindowDrawnAtIt(t *testing.T) {
 // The built stylesheet declares `color-scheme` at zero weight alone, so the
 // element the page carries stands unopposed whatever a theme says.
 func TestTheBuiltStylesheetDoesNotPinTheColourScheme(t *testing.T) {
-	built, err := interfaceIn()
+	built, err := appearance.Built(pages)
 	if err != nil {
 		t.Skipf("no interface in this binary: %v", err)
 	}

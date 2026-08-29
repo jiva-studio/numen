@@ -5,6 +5,7 @@
  * the arithmetic are how a plex is built, not how it is used.
  */
 import './tokens/theme.css'
+import './window.css'
 
 export { default as Plex } from './plex/Plex.vue'
 export { browserEnvironment } from './plex/transition'

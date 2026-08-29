@@ -29,15 +29,15 @@ const owed = computed(() => props.vault.due + props.vault.new)
 
     <ul v-else class="decks__list">
       <li v-for="deck in vault.decks" :key="deck.deck">
-        <button
+        <Button
+          variant="outline"
           class="decks__deck"
-          type="button"
           :disabled="deck.due + deck.new === 0"
           @click="$emit('start', deck.deck)"
         >
           <span class="decks__name">{{ deckName(deck.deck) }}</span>
           <Owed :waiting="deck.due + deck.new" />
-        </button>
+        </Button>
       </li>
     </ul>
 
@@ -102,28 +102,16 @@ const owed = computed(() => props.vault.due + props.vault.new)
   list-style: none;
 }
 
+/* A row of the list is a button the width of the list, taller than one in a row
+   of controls and reading from its start. What it is painted, how it answers a
+   hover and what it looks like with the keyboard on it are the button's own. */
 .decks__deck {
-  display: flex;
   inline-size: 100%;
-  align-items: baseline;
+  block-size: auto;
+  justify-content: start;
   padding: var(--numen-inset);
-  border: 1px solid var(--numen-node-border);
-  border-radius: var(--numen-radius);
-  background: var(--numen-node-bg);
-  color: var(--numen-node-fg);
-  font: inherit;
   gap: var(--numen-inset);
   text-align: start;
-  cursor: pointer;
-}
-
-.decks__deck:hover:not(:disabled) {
-  background: var(--numen-highlight);
-}
-
-.decks__deck:disabled {
-  opacity: 0.55;
-  cursor: default;
 }
 
 .decks__name {
