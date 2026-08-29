@@ -108,7 +108,8 @@ func TestACardStandsOnceForEachFaceOfItsStencil(t *testing.T) {
 	faces := map[string]int{}
 	for _, seat := range seats {
 		faces[seat.Seat.Face]++
-		if seat.Seat.Card == "" || seat.Front == "" || seat.Back == "" {
+		front, back := seat.Lay()
+		if seat.Seat.Card == "" || front == "" || back == "" {
 			t.Errorf("a seat with nothing laid out: %+v", seat)
 		}
 	}
@@ -132,8 +133,9 @@ func TestASeatIsLaidOutWithTheCardsOwnValues(t *testing.T) {
 		if seat.Seat.Card != "k7m2xq9fzp" || seat.Seat.Face != "Name it" {
 			continue
 		}
-		if seat.Front != "What is about 45\" at the shoulder?" || seat.Back != "Llama" {
-			t.Errorf("laid out front %q, back %q", seat.Front, seat.Back)
+		front, back := seat.Lay()
+		if front != "What is about 45\" at the shoulder?" || back != "Llama" {
+			t.Errorf("laid out front %q, back %q", front, back)
 		}
 		if seat.Heading != "Llama" || seat.Section != "The ones with fur" {
 			t.Errorf("heading %q under %q", seat.Heading, seat.Section)
@@ -183,6 +185,50 @@ func TestACardWithNoStencilIsLeftOut(t *testing.T) {
 	}
 	if len(seats) != 1 || seats[0].Seat.Card != "3f4g5h6j7k" {
 		t.Errorf("seats = %+v, want the one card whose stencil is one", seats)
+	}
+}
+
+// A face missing a front or a back lays out nothing, so it is no seat. The
+// stencil's other faces are asked as usual.
+func TestAFaceMissingASideIsNoSeat(t *testing.T) {
+	notes := map[string]string{
+		"Half.md": "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
+			"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n" +
+			"\n## Half a face\n\n### Front\n\n{{Meaning}}\n",
+		"decks/Half.md": "---\ntype: deck\n---\n" +
+			"\n## Leaf mould ^3f4g5h6j7k\n\n[[Half]]\n\n### Word\n\nLeaf mould\n" +
+			"\n### Meaning\n\nLeaves\n",
+	}
+	s := opened(t, notes)
+
+	seats, err := s.seats.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(seats) != 1 || seats[0].Seat.Face != "Say it" {
+		t.Errorf("seats = %+v, want the one face with both its sides", seats)
+	}
+}
+
+// A card that leaves a field empty is asked like any other: the placeholder
+// lays out as nothing, and the card is still somebody's card.
+func TestACardLeavingAFieldEmptyIsStillAsked(t *testing.T) {
+	notes := map[string]string{
+		"Term.md": vault["Term.md"],
+		"decks/Empty.md": "---\ntype: deck\n---\n" +
+			"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n\n### Meaning\n\n",
+	}
+	s := opened(t, notes)
+
+	seats, err := s.seats.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(seats) != 1 {
+		t.Fatalf("seats = %+v, want the one card", seats)
+	}
+	if front, back := seats[0].Lay(); front != "Leaf mould" || back != "" {
+		t.Errorf("laid out front %q, back %q", front, back)
 	}
 }
 

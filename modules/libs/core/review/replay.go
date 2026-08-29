@@ -1,6 +1,9 @@
 package review
 
-import "slices"
+import (
+	"slices"
+	"strings"
+)
 
 // Replay works out where a history leaves every seat it names.
 //
@@ -41,5 +44,5 @@ func byWhen(a, b Answer) int {
 	if !a.At.Equal(b.At) {
 		return a.At.Compare(b.At)
 	}
-	return slices.Compare([]byte(a.ID), []byte(b.ID))
+	return strings.Compare(a.ID, b.ID)
 }

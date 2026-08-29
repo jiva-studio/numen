@@ -110,6 +110,21 @@ func TestALineNobodyCanActOnIsCounted(t *testing.T) {
 	}
 }
 
+// The file is text in a person's own folder and travels between machines, so an
+// instant carrying an offset is read as the instant it is.
+func TestAnInstantIsReadWithWhateverOffsetItCarries(t *testing.T) {
+	line := `{"v":1,"id":"01K","card":"k7m2xq9fzp","face":"F",` +
+		`"at":"2026-08-29T11:12:33.412+02:00","rating":3}`
+
+	back, skipped := review.Read([]byte(line + "\n"))
+	if len(back) != 1 || skipped != 0 {
+		t.Fatalf("read %d answers and skipped %d", len(back), skipped)
+	}
+	if want := at("2026-08-29T09:12:33.412Z"); !back[0].At.Equal(want) {
+		t.Errorf("read %v, want the same instant as %v", back[0].At, want)
+	}
+}
+
 // A file with nothing in it is a run that answered nothing, and blank lines are
 // no line at all.
 func TestAnEmptyLogReadsAsNothing(t *testing.T) {

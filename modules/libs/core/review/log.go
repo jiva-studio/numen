@@ -11,9 +11,15 @@ import (
 // would be worse than one it left out and said so.
 const Version = 1
 
-// Stamp is how an instant is written. It is UTC to the millisecond, so the
-// lines of one run sort as text in the order they were written.
+// Stamp is how an instant is written: UTC to the millisecond, so that the lines
+// of one run sort as text in the order they were written. It carries no offset,
+// so what is formatted with it is a time already in UTC.
 const Stamp = "2006-01-02T15:04:05.000Z"
+
+// Moment reads an instant as a line carries it, offset and all. The file is
+// text in a person's own folder and travels between machines, so what is read
+// back is not held to the one shape this build writes.
+func Moment(s string) (time.Time, error) { return time.Parse(time.RFC3339, s) }
 
 // line is one line of a log, as it stands in the file.
 type line struct {
@@ -93,7 +99,7 @@ func answer(raw []byte) (Answer, bool) {
 	if l.V != Version || l.ID == "" {
 		return Answer{}, false
 	}
-	at, err := time.Parse(Stamp, l.At)
+	at, err := Moment(l.At)
 	if err != nil {
 		return Answer{}, false
 	}

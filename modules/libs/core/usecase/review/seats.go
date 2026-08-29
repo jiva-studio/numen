@@ -25,11 +25,18 @@ type Standing struct {
 	// Heading is what the card's heading shows, which is the first line of its
 	// first field.
 	Heading string
-	// Front and Back are the face laid out with this card's values, as
-	// markdown.
-	Front string
-	Back  string
+
+	// What the seat is laid out from. It is read once with the deck and kept,
+	// so laying out is the last thing done and only for a card about to be
+	// shown: counting what a vault owes fills in no template at all.
+	stencil format.Stencil
+	face    format.Face
+	card    format.Card
 }
+
+// Lay is the face filled with this card's values: what stands before the answer
+// and what stands after it, as markdown.
+func (s Standing) Lay() (front, back string) { return format.Lay(s.stencil, s.face, s.card) }
 
 // Seats is every seat a vault holds, read out of its files.
 //
@@ -100,13 +107,12 @@ func (u Seats) deck(
 	if err != nil {
 		return deck, nil
 	}
-	if _, err := write.Deck(ctx, v, path, body, deck.Ref); err != nil {
-		// The editor may be saving the same deck: the vault's write lock lives
-		// in one process and does not reach across two. A stamp that did not
-		// land leaves the cards it was for out of this reading, and the next
-		// one mints them again.
-		return read.Deck(ctx, v, path)
-	}
+	// A write that did not land is not reported: the editor may be saving the
+	// same deck, and the vault's write lock lives in one process and does not
+	// reach across two. What the deck is read as afterwards is what the file
+	// holds, so a stamp that did not land leaves those cards out of this
+	// reading and the next one mints them again.
+	_, _ = write.Deck(ctx, v, path, body, deck.Ref)
 	return read.Deck(ctx, v, path)
 }
 
@@ -153,8 +159,9 @@ func (u Seats) standing(
 		}
 
 		for _, face := range stencil.Faces {
-			front, back := format.Lay(stencil, face, card)
-			if front == "" && back == "" {
+			// A face missing a side lays out nothing, which is a problem
+			// against the stencil and no seat here.
+			if face.Front == "" || face.Back == "" {
 				continue
 			}
 			out = append(out, Standing{
@@ -162,8 +169,9 @@ func (u Seats) standing(
 				Section: section(deck.Deck, card),
 				Seat:    history.Seat{Card: card.Mark, Face: face.Name},
 				Heading: card.Heading,
-				Front:   front,
-				Back:    back,
+				stencil: stencil,
+				face:    face,
+				card:    card,
 			})
 		}
 	}
