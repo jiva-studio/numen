@@ -1,6 +1,7 @@
 package flashcards_test
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -66,7 +67,14 @@ func TestAnAnsweredCardIsSeen(t *testing.T) {
 // A schedule says which scheduler filled it, because the numbers one carries
 // between answers are its own.
 func TestASchedulerSaysWhichItIs(t *testing.T) {
-	if got := flashcards.NewFSRS().Name(); got != flashcards.FSRSName {
-		t.Errorf("named itself %q, want %q", got, flashcards.FSRSName)
+	got := flashcards.NewFSRS().Name()
+	if !strings.HasPrefix(got, flashcards.FSRSName+".") {
+		t.Errorf("named itself %q, want the algorithm and what it is running on", got)
+	}
+	if got == flashcards.FSRSName+"." {
+		t.Error("named itself the algorithm and nothing about its parameters")
+	}
+	if again := flashcards.NewFSRS().Name(); again != got {
+		t.Errorf("named itself %q and then %q", got, again)
 	}
 }

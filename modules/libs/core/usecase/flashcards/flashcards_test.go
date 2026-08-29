@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -197,6 +198,87 @@ func TestACardWithNoMarkStandsForNothing(t *testing.T) {
 	}
 }
 
+// mixed is a deck a person wrote and edited: prose of their own, a section, one
+// card that already carries a mark and one that does not.
+var mixed = map[string]string{
+	"Term.md": vault["Term.md"],
+	"decks/Mine.md": "---\ntype: deck\n---\n" +
+		"\nWhat I keep meaning to learn, and never do.\n" +
+		"\n# The ones from the garden\n" +
+		"\n## Leaf mould ^k7m2xq9fzp\n\n[[Term]]\n" +
+		"\n### Слово\n\nLeaf mould\n\n### Значение\n\nCompost made of fallen leaves\n" +
+		"\n## Loam\n\n[[Term]]\n" +
+		"\n### Слово\n\nLoam\n\n### Значение\n\nSand, silt and clay in the right measure\n",
+}
+
+// Marking changes the marks and nothing else. The deck is the person's own
+// writing, and a mark minted over one a card already carries would orphan every
+// answer that card has ever been given.
+func TestMarkingChangesTheMarksAndNothingElse(t *testing.T) {
+	s := opened(t, mixed)
+	before := read(t, s.vault, "decks/Mine.md")
+
+	if _, err := s.marking.Execute(t.Context(), s.vault); err != nil {
+		t.Fatal(err)
+	}
+	after := read(t, s.vault, "decks/Mine.md")
+
+	if !strings.Contains(after, "## Leaf mould ^k7m2xq9fzp") {
+		t.Error("the mark the card already carried is not the mark it carries now")
+	}
+	for _, kept := range []string{
+		"What I keep meaning to learn, and never do.",
+		"# The ones from the garden",
+		"Sand, silt and clay in the right measure",
+		"### Слово",
+	} {
+		if !strings.Contains(after, kept) {
+			t.Errorf("%q is not in the deck any more", kept)
+		}
+	}
+
+	stood, err := s.standings.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(stood) != 2 {
+		t.Fatalf("two cards of a one-faced stencil stand twice, got %d", len(stood))
+	}
+
+	if after == before {
+		t.Error("the deck held a card with no mark and was not written")
+	}
+
+	// And a deck whose cards all carry marks is not written again. The bytes of
+	// a faithful rewrite are the same bytes, so what says it was left alone is
+	// the file's own time: a write nobody needed wakes every watcher on the
+	// vault and sends the deck through the index again.
+	was := touched(t, s.vault, "decks/Mine.md")
+	again, err := s.marking.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(again.Unwritten) != 0 {
+		t.Errorf("could not write %v", again.Unwritten)
+	}
+	if now := touched(t, s.vault, "decks/Mine.md"); !now.Equal(was) {
+		t.Errorf("a deck with nothing to mark was written at %v, having stood at %v", now, was)
+	}
+	if now := read(t, s.vault, "decks/Mine.md"); now != after {
+		t.Errorf("a deck with nothing to mark was changed\n was %q\n now %q", after, now)
+	}
+}
+
+// touched is when a file of the vault was last written.
+func touched(t *testing.T, v domain.Vault, path string) time.Time {
+	t.Helper()
+	at, err := os.Stat(filepath.Join(v.Path, filepath.FromSlash(path)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return at.ModTime()
+}
+
 // A person sitting down to a vault has its cards given marks, and what stands
 // then is what they are asked.
 func TestSittingDownToAVaultMarksItsCards(t *testing.T) {
@@ -310,6 +392,80 @@ func TestAVaultNobodyAnsweredOwesEverythingAsNew(t *testing.T) {
 	}
 	if len(owing.Decks) != 2 {
 		t.Errorf("counted %d decks, want 2", len(owing.Decks))
+	}
+}
+
+// A card put days away is neither owed nor asked until those days are up. What
+// is owed is the day the schedule falls on, and a card answered easily is not
+// that day's.
+func TestACardPutDaysAwayIsNotOwedToday(t *testing.T) {
+	s := opened(t, vault)
+	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Easy, 0); err != nil {
+		t.Fatal(err)
+	}
+
+	owing, err := s.owed(today).Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if owing.Faces != 5 || owing.New != 4 || owing.Due != 0 {
+		t.Errorf("owing = %+v, want the answered face counted as neither new nor due", owing)
+	}
+	for _, deck := range owing.Decks {
+		if deck.Deck == "decks/Mammals.md" && (deck.New != 3 || deck.Due != 0) {
+			t.Errorf("the deck it stands in comes to %+v", deck)
+		}
+	}
+
+	sitting, err := s.session(today).Execute(t.Context(), s.vault, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range sitting.Asked {
+		if one.CardFace == on {
+			t.Error("the card is days away and was asked today")
+		}
+	}
+}
+
+// The day the schedule falls on is the day it is owed, whatever hour it falls
+// at: a card put days away comes back when those days are up.
+func TestACardComesBackOnTheDayItsScheduleFallsOn(t *testing.T) {
+	s := opened(t, vault)
+	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
+		t.Fatal(err)
+	}
+
+	schedules, err := s.kept.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	due := schedules[on].Due
+	if due.IsZero() {
+		t.Fatal("the answer left no schedule")
+	}
+
+	// The window is opened on the day the card falls on, and it is owed.
+	owed := s.owed(today)
+	owed.Now = func() time.Time { return due }
+	owing, err := owed.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if owing.Due != 1 {
+		t.Errorf("owing = %+v on the day it falls on, want the card owed", owing)
+	}
+
+	// And the day before it, it is not.
+	owed.Now = func() time.Time { return due.AddDate(0, 0, -1) }
+	before, err := owed.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if before.Due != 0 {
+		t.Errorf("owing = %+v the day before it falls on, want nothing owed", before)
 	}
 }
 
@@ -430,6 +586,79 @@ func TestASessionOverOneDeckAsksThatDeckAlone(t *testing.T) {
 	asked := sitting.Asked
 	if len(asked) != 1 || asked[0].Deck != "decks/Words.md" {
 		t.Errorf("asked %+v, want the one card of that deck", asked)
+	}
+}
+
+// A cache read back says what a replay says, to the last number it carries. It
+// stands in for reading the answers, so a cache that answered differently would
+// be a card sent away on a day nobody worked out.
+func TestACacheReadBackSaysWhatTheAnswersSay(t *testing.T) {
+	s := opened(t, vault)
+	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	when := time.Now().Add(-72 * time.Hour)
+
+	record := s.run(t, when)
+	for _, r := range []history.Rating{history.Good, history.Again, history.Hard, history.Easy} {
+		if _, err := record.Answer(t.Context(), on, r, time.Second); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// The first working out fills the cache; the second is answered from it.
+	if _, err := s.kept.Execute(t.Context(), s.vault); err != nil {
+		t.Fatal(err)
+	}
+	cached, err := s.kept.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	held, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	replayed := history.Replay(history.NewFSRS(), held.Answers)
+
+	if len(cached) != len(replayed) {
+		t.Fatalf("the cache holds %d card faces and the answers say %d", len(cached), len(replayed))
+	}
+	for face, want := range replayed {
+		if got := cached[face]; got != want {
+			t.Errorf("the cache says %+v for %+v, the answers say %+v", got, face, want)
+		}
+	}
+}
+
+// A cache of a shape this build does not know is thrown away, because what it
+// means is what the build that wrote it meant.
+func TestACacheOfAShapeThisBuildDoesNotKnowIsThrownAway(t *testing.T) {
+	s := opened(t, vault)
+	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	invented := history.CardFace{Card: "nobodyhasit", Face: "Recognise"}
+
+	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.kept.Execute(t.Context(), s.vault); err != nil {
+		t.Fatal(err)
+	}
+	rewrite(t, s, func(was *plantedCache) {
+		was.V += 1
+		was.Faces = append(was.Faces, plantedFace{
+			Card: invented.Card, Face: invented.Face,
+			Due: stamped(time.Now()), Last: stamped(time.Now()), Reps: 7,
+		})
+	})
+
+	got, err := s.kept.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, held := got[invented]; held {
+		t.Error("a cache of another shape was read")
+	}
+	if got[on].Reps != 1 {
+		t.Errorf("the answers were not read again: %+v", got[on])
 	}
 }
 

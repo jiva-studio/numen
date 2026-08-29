@@ -32,6 +32,17 @@ var deck = map[string]string{
 		"\n### Meaning\n\nCompost made of fallen leaves alone\n",
 }
 
+// other is a second vault sharing nothing with the first: another stencil,
+// another face, another mark, another word. A claim about one vault not
+// reaching another is worth nothing when both hold the same cards.
+var other = map[string]string{
+	"Bird.md": "---\ntype: stencil\nfields:\n  - Call\n  - Who\n---\n" +
+		"\n## Whose call\n\n### Front\n\n{{Call}}\n\n### Back\n\n{{Who}}\n",
+	"decks/Calls.md": "---\ntype: deck\n---\n" +
+		"\n## Yaffle ^zpqrstvwxy\n\n[[Bird]]\n\n### Call\n\nA laugh across the field\n" +
+		"\n### Who\n\nGreen woodpecker\n",
+}
+
 // registry is the vaults an installation holds, as the API asks for them.
 type registry struct{ held []domain.Vault }
 
@@ -67,7 +78,12 @@ func windowed(t *testing.T, vaults ...map[string]string) (*API, []domain.Vault) 
 		held = append(held, v)
 	}
 
-	cfg := container.Config{RegistryPath: filepath.Join(t.TempDir(), "vaults.json")}
+	// Every location is the test's own: the schedules are a cache, and a test
+	// that let it fall to the platform's would fill the machine's.
+	cfg := container.Config{
+		RegistryPath:  filepath.Join(t.TempDir(), "vaults.json"),
+		SchedulesPath: filepath.Join(t.TempDir(), "flashcards"),
+	}
 	running := cfg.Flashcards(db.NoteQueries(), db.NoteQueries(), nil)
 	return &API{
 		Registry:  registry{held: held},
@@ -92,7 +108,7 @@ func started(t *testing.T, api *API, v domain.Vault) *v1.StartResponse {
 // A run belongs to the vault it was opened on. An answer naming another vault's
 // run is refused rather than written into a history it has no part in.
 func TestARunIsAnsweredOnlyOnTheVaultItWasOpenedOn(t *testing.T) {
-	api, held := windowed(t, deck, deck)
+	api, held := windowed(t, deck, other)
 	one, two := held[0], held[1]
 
 	sitting := started(t, api, one)
@@ -136,6 +152,87 @@ func runs(t *testing.T, v domain.Vault) []string {
 		out = append(out, e.Name())
 	}
 	return out
+}
+
+// A sitting that is over is over: the run it wrote is never appended to again,
+// so a page holding its name from an hour ago writes nothing.
+func TestARunIsClosedByTheNextSittingOnItsVault(t *testing.T) {
+	api, held := windowed(t, deck)
+	v := held[0]
+
+	was := started(t, api, v)
+	now := started(t, api, v)
+	if was.GetRun() == now.GetRun() {
+		t.Fatal("a second sitting wrote to the file the first opened")
+	}
+
+	card := now.GetAsked()[0]
+	_, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
+		VaultId: v.ID,
+		Run:     was.GetRun(),
+		Card:    card.GetCard(),
+		Face:    card.GetFace(),
+		Rating:  v1.Rating_RATING_GOOD,
+	}))
+	if connect.CodeOf(err) != connect.CodeNotFound {
+		t.Fatalf("the sitting was over and the answer was refused with %v", connect.CodeOf(err))
+	}
+	if !errors.Is(err, ErrNoRun) {
+		t.Errorf("refused with %v", err)
+	}
+}
+
+// A vault is answered on its own. What a person did in one is not what another
+// owes, and the two vaults here share no mark, no face and no word, so nothing
+// could pass between them by looking alike.
+func TestAnAnswerInOneVaultLeavesTheOtherOwingWhatItDid(t *testing.T) {
+	api, held := windowed(t, deck, other)
+	one, two := held[0], held[1]
+
+	before, err := api.Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	was := counted(t, before.Msg, two.ID)
+
+	sitting := started(t, api, one)
+	for _, card := range sitting.GetAsked() {
+		if _, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
+			VaultId: one.ID, Run: sitting.GetRun(),
+			Card: card.GetCard(), Face: card.GetFace(),
+			Rating: v1.Rating_RATING_EASY,
+		})); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	after, err := api.Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if now := counted(t, after.Msg, two.ID); now.GetNew() != was.GetNew() ||
+		now.GetDue() != was.GetDue() || now.GetFaces() != was.GetFaces() {
+		t.Errorf("the other vault came to %+v, having come to %+v", now, was)
+	}
+	if now := counted(t, after.Msg, one.ID); now.GetNew() != 0 || now.GetDue() != 0 {
+		t.Errorf("the answered vault still owes %+v", now)
+	}
+	// Nothing was written into the other vault's folder either.
+	if names := runs(t, two); len(names) != 0 {
+		t.Errorf("the other vault holds %v", names)
+	}
+}
+
+// counted is one vault out of what the front door answered.
+func counted(t *testing.T, said *v1.OwingResponse, id string) *v1.VaultOwing {
+	t.Helper()
+	for _, one := range said.GetVaults() {
+		if one.GetVaultId() == id {
+			return one
+		}
+	}
+	t.Fatalf("the front door did not count %s", id)
+	return nil
 }
 
 // An answer is written to the run's own file, and the identifier it comes back
@@ -338,7 +435,7 @@ func TestASittingSaysWhichDecksItCouldNotMark(t *testing.T) {
 // Flashcards works on any vault the installation holds without one being opened
 // first, because a person owes what they owe across all of them.
 func TestEveryVaultIsCountedOnTheFrontDoor(t *testing.T) {
-	api, held := windowed(t, deck, deck)
+	api, held := windowed(t, deck, other)
 
 	out, err := api.Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
 	if err != nil {

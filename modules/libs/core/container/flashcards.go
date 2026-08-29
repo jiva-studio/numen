@@ -2,6 +2,8 @@ package container
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
@@ -32,6 +34,15 @@ func (c Config) Answers() port.DerivedStores {
 	return filesystem.DerivedStores{Options: c.VaultOptions(), Area: filesystem.FlashcardsDir}
 }
 
+// Kept is where the working out is remembered between launches: the folder the
+// configuration names, or the platform's cache location.
+func (c Config) Kept() (port.Schedules, error) {
+	if c.SchedulesPath != "" {
+		return appstate.SchedulesAt(c.SchedulesPath), nil
+	}
+	return appstate.OpenSchedules()
+}
+
 // Flashcards builds the scenarios against this installation.
 //
 // Kept is where the working out is remembered between launches. It is a cache
@@ -43,9 +54,12 @@ func (c Config) Flashcards(
 	index func(ctx context.Context, v domain.Vault, paths []string) error,
 ) Flashcards {
 	logs := c.Answers()
-	var kept port.Schedules
-	if at, err := appstate.OpenSchedules(); err == nil {
-		kept = at
+	kept, err := c.Kept()
+	if err != nil {
+		// A machine that cannot say where its caches go works the schedules out
+		// at every launch. That is slower and no less correct, and it is said
+		// once here so the slowness is not a mystery.
+		fmt.Fprintln(os.Stderr, "numen: the schedules are worked out at every launch:", err)
 	}
 
 	standing := flashcards.Standings{Readers: c.VaultReaders(), Notes: notes, Links: links}

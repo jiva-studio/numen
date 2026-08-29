@@ -32,6 +32,10 @@ type Config struct {
 	SettingsPath string
 	// ThemesPath is the folder the person's own themes are read from.
 	ThemesPath string
+	// SchedulesPath is the folder the schedules worked out from a vault's
+	// answers are cached in. It is a cache and belongs to the installation, so
+	// a test names one of its own rather than filling the machine's.
+	SchedulesPath string
 
 	// InterfaceScale is how large the window is drawn and TextScale how large the
 	// text a person reads is set, said for this launch alone. Each stands over

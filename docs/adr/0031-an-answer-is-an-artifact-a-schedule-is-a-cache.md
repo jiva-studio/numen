@@ -46,6 +46,8 @@ and one line takes an answer back:
 
 An answer carries an identifier of its own so that taking it back names it exactly. Replay skips an answer some line takes back, and the two lines both stay in the file: **nothing here is ever rewritten or removed.**
 
+**One identifier is one answer**, however many lines carry it. A synchroniser that met a conflict leaves a second copy of a run beside the first, and a person restoring a backup puts one there by hand; counting those lines twice would double what a card has been through and send it away for longer than it was earned.
+
 A line that does not parse is skipped and counted, and so is a line whose `v` is a version this build does not know. A run that ended when the machine did leaves a torn last line, which is one of those: an append is not atomic, and the file has to be readable anyway.
 
 ### A schedule belongs to a card and one of its faces
