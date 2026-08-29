@@ -23,8 +23,6 @@ defineProps<{
   answered: boolean
   /** The card is open to be put right, and what it holds while it is. */
   editing: boolean
-  /** The stencil that cuts it, as the read of the card gave it. */
-  stencil: string
   values: readonly Held[]
   writing: boolean
 }>()
@@ -92,7 +90,6 @@ defineEmits<{
         <Editing
           :card="card.card"
           :section="card.section"
-          :stencil="stencil"
           :values="values"
           @write="(field, text) => $emit('write', field, text)"
         />
