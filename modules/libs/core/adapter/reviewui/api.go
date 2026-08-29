@@ -13,10 +13,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	history "github.com/jiva-studio/numen/modules/libs/core/review"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/review"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
@@ -36,7 +36,15 @@ var ErrNoRun = errors.New("no run of that name is open")
 // closes: what was written stands, and the next sitting opens a file of its own.
 type API struct {
 	Registry port.VaultRegistry
-	Review   container.Review
+	// What this window does, one scenario to a field: what a vault owes, what
+	// to ask next, where the answers leave a card, the run they are appended
+	// to, and the deck a card is put right in.
+	Owed      review.Owed
+	Session   review.Session
+	Schedules review.Schedules
+	Log       review.Log
+	Read      cards.Read
+	Write     cards.Write
 	// Themes are the stylesheets the window may be dressed in, and the sizes it
 	// is drawn and set at. They belong to the installation and not to a vault.
 	Themes numenv1connect.ThemeServiceHandler
@@ -66,7 +74,7 @@ func (a *API) Vault(id string) (domain.Vault, error) {
 
 // opened starts a run and remembers it under its own name.
 func (a *API) opened(ctx context.Context, v domain.Vault) (*review.Run, error) {
-	run, err := a.Review.Log.Open(ctx, v, a.now())
+	run, err := a.Log.Open(ctx, v, a.now())
 	if err != nil {
 		return nil, err
 	}

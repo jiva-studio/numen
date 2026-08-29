@@ -204,7 +204,7 @@ export type { Half, Landing as CardLanding } from './cards/order'
  * and where one let go past the last card standing under a heading lands.
  */
 export { ended as cardEnded, endOf as cardEndOf, HEAD as CARD_HEAD } from './cards/deck'
-export type { Banded, Drawn, Filled } from './cards/deck'
+export type { Banded, CardWords, Drawn, Filled, Stood, Tile } from './cards/deck'
 export type { Cut } from './cards/stencil'
 
 export type { Environment, PlexTransition } from './plex/transition'

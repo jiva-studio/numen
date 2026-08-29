@@ -36,7 +36,7 @@ func (a *API) Owing(
 
 func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultOwing {
 	one := &v1.VaultOwing{VaultId: v.ID, Name: v.Name, Path: v.Path}
-	owing, err := a.Review.Owed.Execute(ctx, v)
+	owing, err := a.Owed.Execute(ctx, v)
 	if err != nil {
 		one.Unread = err.Error()
 		return one
@@ -63,7 +63,7 @@ func (a *API) Start(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
-	asked, err := a.Review.Session.Execute(ctx, v, r.Msg.GetDeck())
+	asked, err := a.Session.Execute(ctx, v, r.Msg.GetDeck())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -121,7 +121,7 @@ func (a *API) Answer(
 	// What the answer left behind is worked out from the log the answer is now
 	// part of, so the page draws the same day the next launch will.
 	out := &v1.AnswerResponse{Answer: given.ID}
-	if schedules, err := a.Review.Schedules.Execute(ctx, v); err == nil {
+	if schedules, err := a.Schedules.Execute(ctx, v); err == nil {
 		out.Due = stamp(schedules[on].Due)
 	}
 	return connect.NewResponse(out), nil

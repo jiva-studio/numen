@@ -51,8 +51,10 @@ const (
 	ReviewServiceAnswerProcedure = "/numen.v1.ReviewService/Answer"
 	// ReviewServiceTakeBackProcedure is the fully-qualified name of the ReviewService's TakeBack RPC.
 	ReviewServiceTakeBackProcedure = "/numen.v1.ReviewService/TakeBack"
-	// ReviewServiceEditProcedure is the fully-qualified name of the ReviewService's Edit RPC.
-	ReviewServiceEditProcedure = "/numen.v1.ReviewService/Edit"
+	// ReviewServiceReadCardProcedure is the fully-qualified name of the ReviewService's ReadCard RPC.
+	ReviewServiceReadCardProcedure = "/numen.v1.ReviewService/ReadCard"
+	// ReviewServiceWriteCardProcedure is the fully-qualified name of the ReviewService's WriteCard RPC.
+	ReviewServiceWriteCardProcedure = "/numen.v1.ReviewService/WriteCard"
 )
 
 // ReviewServiceClient is a client for the numen.v1.ReviewService service.
@@ -77,10 +79,17 @@ type ReviewServiceClient interface {
 	// TakeBack writes down that an answer was taken back. Both lines stay in the
 	// file: nothing in a log is ever rewritten or removed.
 	TakeBack(context.Context, *connect.Request[v1.TakeBackRequest]) (*connect.Response[v1.TakeBackResponse], error)
-	// Edit brings the editor forward with a deck open at one card. It is the one
-	// thing this application hands over, and between two processes it is an
-	// invocation and not a call.
-	Edit(context.Context, *connect.Request[v1.EditRequest]) (*connect.Response[v1.EditResponse], error)
+	// ReadCard is one card's values, in the order its stencil asks for them. A
+	// card written badly is put right where it was met, and this is what a person
+	// is shown to put it right in.
+	ReadCard(context.Context, *connect.Request[v1.ReadCardRequest]) (*connect.Response[v1.ReadCardResponse], error)
+	// WriteCard puts those values back into the deck, and hands the card back as
+	// it now lays out, so the person sees what they wrote where they wrote it.
+	//
+	// A deck that has moved since it was read is left alone and answered
+	// `changed`: what a person typed here is theirs, and nothing writes over what
+	// somebody else did to the file.
+	WriteCard(context.Context, *connect.Request[v1.WriteCardRequest]) (*connect.Response[v1.WriteCardResponse], error)
 }
 
 // NewReviewServiceClient constructs a client for the numen.v1.ReviewService service. By default, it
@@ -118,10 +127,16 @@ func NewReviewServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(reviewServiceMethods.ByName("TakeBack")),
 			connect.WithClientOptions(opts...),
 		),
-		edit: connect.NewClient[v1.EditRequest, v1.EditResponse](
+		readCard: connect.NewClient[v1.ReadCardRequest, v1.ReadCardResponse](
 			httpClient,
-			baseURL+ReviewServiceEditProcedure,
-			connect.WithSchema(reviewServiceMethods.ByName("Edit")),
+			baseURL+ReviewServiceReadCardProcedure,
+			connect.WithSchema(reviewServiceMethods.ByName("ReadCard")),
+			connect.WithClientOptions(opts...),
+		),
+		writeCard: connect.NewClient[v1.WriteCardRequest, v1.WriteCardResponse](
+			httpClient,
+			baseURL+ReviewServiceWriteCardProcedure,
+			connect.WithSchema(reviewServiceMethods.ByName("WriteCard")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -129,11 +144,12 @@ func NewReviewServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 
 // reviewServiceClient implements ReviewServiceClient.
 type reviewServiceClient struct {
-	owing    *connect.Client[v1.OwingRequest, v1.OwingResponse]
-	start    *connect.Client[v1.StartRequest, v1.StartResponse]
-	answer   *connect.Client[v1.AnswerRequest, v1.AnswerResponse]
-	takeBack *connect.Client[v1.TakeBackRequest, v1.TakeBackResponse]
-	edit     *connect.Client[v1.EditRequest, v1.EditResponse]
+	owing     *connect.Client[v1.OwingRequest, v1.OwingResponse]
+	start     *connect.Client[v1.StartRequest, v1.StartResponse]
+	answer    *connect.Client[v1.AnswerRequest, v1.AnswerResponse]
+	takeBack  *connect.Client[v1.TakeBackRequest, v1.TakeBackResponse]
+	readCard  *connect.Client[v1.ReadCardRequest, v1.ReadCardResponse]
+	writeCard *connect.Client[v1.WriteCardRequest, v1.WriteCardResponse]
 }
 
 // Owing calls numen.v1.ReviewService.Owing.
@@ -156,9 +172,14 @@ func (c *reviewServiceClient) TakeBack(ctx context.Context, req *connect.Request
 	return c.takeBack.CallUnary(ctx, req)
 }
 
-// Edit calls numen.v1.ReviewService.Edit.
-func (c *reviewServiceClient) Edit(ctx context.Context, req *connect.Request[v1.EditRequest]) (*connect.Response[v1.EditResponse], error) {
-	return c.edit.CallUnary(ctx, req)
+// ReadCard calls numen.v1.ReviewService.ReadCard.
+func (c *reviewServiceClient) ReadCard(ctx context.Context, req *connect.Request[v1.ReadCardRequest]) (*connect.Response[v1.ReadCardResponse], error) {
+	return c.readCard.CallUnary(ctx, req)
+}
+
+// WriteCard calls numen.v1.ReviewService.WriteCard.
+func (c *reviewServiceClient) WriteCard(ctx context.Context, req *connect.Request[v1.WriteCardRequest]) (*connect.Response[v1.WriteCardResponse], error) {
+	return c.writeCard.CallUnary(ctx, req)
 }
 
 // ReviewServiceHandler is an implementation of the numen.v1.ReviewService service.
@@ -183,10 +204,17 @@ type ReviewServiceHandler interface {
 	// TakeBack writes down that an answer was taken back. Both lines stay in the
 	// file: nothing in a log is ever rewritten or removed.
 	TakeBack(context.Context, *connect.Request[v1.TakeBackRequest]) (*connect.Response[v1.TakeBackResponse], error)
-	// Edit brings the editor forward with a deck open at one card. It is the one
-	// thing this application hands over, and between two processes it is an
-	// invocation and not a call.
-	Edit(context.Context, *connect.Request[v1.EditRequest]) (*connect.Response[v1.EditResponse], error)
+	// ReadCard is one card's values, in the order its stencil asks for them. A
+	// card written badly is put right where it was met, and this is what a person
+	// is shown to put it right in.
+	ReadCard(context.Context, *connect.Request[v1.ReadCardRequest]) (*connect.Response[v1.ReadCardResponse], error)
+	// WriteCard puts those values back into the deck, and hands the card back as
+	// it now lays out, so the person sees what they wrote where they wrote it.
+	//
+	// A deck that has moved since it was read is left alone and answered
+	// `changed`: what a person typed here is theirs, and nothing writes over what
+	// somebody else did to the file.
+	WriteCard(context.Context, *connect.Request[v1.WriteCardRequest]) (*connect.Response[v1.WriteCardResponse], error)
 }
 
 // NewReviewServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -220,10 +248,16 @@ func NewReviewServiceHandler(svc ReviewServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(reviewServiceMethods.ByName("TakeBack")),
 		connect.WithHandlerOptions(opts...),
 	)
-	reviewServiceEditHandler := connect.NewUnaryHandler(
-		ReviewServiceEditProcedure,
-		svc.Edit,
-		connect.WithSchema(reviewServiceMethods.ByName("Edit")),
+	reviewServiceReadCardHandler := connect.NewUnaryHandler(
+		ReviewServiceReadCardProcedure,
+		svc.ReadCard,
+		connect.WithSchema(reviewServiceMethods.ByName("ReadCard")),
+		connect.WithHandlerOptions(opts...),
+	)
+	reviewServiceWriteCardHandler := connect.NewUnaryHandler(
+		ReviewServiceWriteCardProcedure,
+		svc.WriteCard,
+		connect.WithSchema(reviewServiceMethods.ByName("WriteCard")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/numen.v1.ReviewService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -236,8 +270,10 @@ func NewReviewServiceHandler(svc ReviewServiceHandler, opts ...connect.HandlerOp
 			reviewServiceAnswerHandler.ServeHTTP(w, r)
 		case ReviewServiceTakeBackProcedure:
 			reviewServiceTakeBackHandler.ServeHTTP(w, r)
-		case ReviewServiceEditProcedure:
-			reviewServiceEditHandler.ServeHTTP(w, r)
+		case ReviewServiceReadCardProcedure:
+			reviewServiceReadCardHandler.ServeHTTP(w, r)
+		case ReviewServiceWriteCardProcedure:
+			reviewServiceWriteCardHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -263,6 +299,10 @@ func (UnimplementedReviewServiceHandler) TakeBack(context.Context, *connect.Requ
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ReviewService.TakeBack is not implemented"))
 }
 
-func (UnimplementedReviewServiceHandler) Edit(context.Context, *connect.Request[v1.EditRequest]) (*connect.Response[v1.EditResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ReviewService.Edit is not implemented"))
+func (UnimplementedReviewServiceHandler) ReadCard(context.Context, *connect.Request[v1.ReadCardRequest]) (*connect.Response[v1.ReadCardResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ReviewService.ReadCard is not implemented"))
+}
+
+func (UnimplementedReviewServiceHandler) WriteCard(context.Context, *connect.Request[v1.WriteCardRequest]) (*connect.Response[v1.WriteCardResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ReviewService.WriteCard is not implemented"))
 }
