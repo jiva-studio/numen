@@ -3,11 +3,10 @@
  * One card, as it stands in front of a person: the front, and the back once
  * they have said they are ready for it.
  *
- * A card is markdown the person wrote, so it is drawn as markdown — a picture
- * in a card is a picture, and a list is a list.
+ * A face is markup, and it is drawn as the markup it is. It cannot run: the
+ * window serves itself under a policy that allows no script it did not serve
+ * and no handler written in an attribute.
  */
-import { Prose } from '@numen/ui'
-
 defineProps<{
   front: string
   back: string
@@ -20,13 +19,11 @@ defineEmits<{ (event: 'show'): void }>()
 
 <template>
   <article class="card" @click="!shown && $emit('show')">
-    <div class="card__side card__side--front">
-      <Prose :text="front" />
-    </div>
+    <!-- eslint-disable-next-line vue/no-v-html -->
+    <div class="card__side card__side--front" v-html="front" />
     <div v-if="shown" class="card__rule" />
-    <div v-if="shown" class="card__side card__side--back">
-      <Prose :text="back" />
-    </div>
+    <!-- eslint-disable-next-line vue/no-v-html -->
+    <div v-if="shown" class="card__side card__side--back" v-html="back" />
   </article>
 </template>
 
