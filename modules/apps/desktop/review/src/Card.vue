@@ -36,7 +36,7 @@ defineEmits<{ (event: 'show'): void }>()
   padding: var(--numen-inset-wide);
   overflow-y: auto;
   border: 1px solid var(--numen-node-border);
-  border-radius: var(--numen-radius-panel);
+  border-radius: var(--numen-radius);
   background: var(--numen-node-bg);
   /* A card is read, not scanned, so it is set at the size reading is set at. */
   font-size: var(--numen-reading-size);
