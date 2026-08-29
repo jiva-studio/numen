@@ -20,10 +20,10 @@ defineEmits<{ (event: 'show'): void }>()
 <template>
   <article class="card" @click="!shown && $emit('show')">
     <!-- eslint-disable-next-line vue/no-v-html -->
-    <div class="card__side card__side--front" v-html="front" />
+    <div class="card__side" v-html="front" />
     <div v-if="shown" class="card__rule" />
     <!-- eslint-disable-next-line vue/no-v-html -->
-    <div v-if="shown" class="card__side card__side--back" v-html="back" />
+    <div v-if="shown" class="card__side" v-html="back" />
   </article>
 </template>
 
@@ -48,10 +48,6 @@ defineEmits<{ (event: 'show'): void }>()
 .card__side {
   user-select: text;
   -webkit-user-select: text;
-}
-
-.card__side--front {
-  font-size: var(--numen-reading-title-size);
 }
 
 .card__rule {
