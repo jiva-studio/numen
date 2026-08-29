@@ -39,11 +39,6 @@ service ReviewService {
   // TakeBack writes down that an answer was taken back. Both lines stay in the
   // file: nothing in a log is ever rewritten or removed.
   rpc TakeBack(TakeBackRequest) returns (TakeBackResponse);
-
-  // Edit brings the editor forward with a deck open at one card. It is the one
-  // thing this application hands over, and between two processes it is an
-  // invocation and not a call.
-  rpc Edit(EditRequest) returns (EditResponse);
 }
 
 // Rating is how well a card came back. A person says which of the four, and
@@ -176,15 +171,3 @@ message TakeBackRequest {
 }
 
 message TakeBackResponse {}
-
-message EditRequest {
-  string vault_id = 1;
-  string deck = 2;
-  string card = 3;
-}
-
-message EditResponse {
-  // Set when the editor could not be started, in the person's own words. The
-  // review goes on either way.
-  string refused = 1;
-}

@@ -6,7 +6,7 @@
  * editor exists.
  */
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { SquarePen, Undo2, X } from '@lucide/vue'
+import { Undo2, X } from '@lucide/vue'
 import { Button, KeyCap, Notices } from '@numen/ui'
 import type { Notice } from '@numen/ui'
 import '@numen/ui/styles.css'
@@ -169,17 +169,6 @@ const takeBack = async () => {
   put = Date.now()
 }
 
-const edit = async () => {
-  const one = card.value
-  if (!one) return
-  const answer = await review.edit({
-    vaultId: vault.value,
-    deck: one.deck,
-    card: one.card,
-  })
-  if (answer.refused) failed(answer.refused)
-}
-
 /** Out of a sitting and back to the decks, with the counts as they now stand. */
 const leave = async () => {
   on.value = 'decks'
@@ -261,9 +250,6 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
 
         <!-- What a person does beside answering, each one mark. They stand at
              the end of the line that says where the card is from. -->
-        <Button variant="ghost" size="icon-small" title="Open in the editor" @click="edit">
-          <SquarePen />
-        </Button>
         <Button
           variant="ghost"
           size="icon-small"

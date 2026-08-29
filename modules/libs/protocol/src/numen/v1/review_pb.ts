@@ -21,7 +21,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/review.proto.
  */
 export const file_numen_v1_review: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9yZXZpZXcucHJvdG8SCG51bWVuLnYxIpcBCgpWYXVsdE93aW5nEhAKCHZhdWx0X2lkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEcGF0aBgDIAEoCRINCgVmYWNlcxgEIAEoBRILCgNkdWUYBSABKAUSCwoDbmV3GAYgASgFEiIKBWRlY2tzGAcgAygLMhMubnVtZW4udjEuRGVja093aW5nEg4KBnVucmVhZBgIIAEoCSJCCglEZWNrT3dpbmcSDAoEZGVjaxgBIAEoCRINCgVmYWNlcxgCIAEoBRILCgNkdWUYAyABKAUSCwoDbmV3GAQgASgFIkAKBUFoZWFkEg0KBWFnYWluGAEgASgDEgwKBGhhcmQYAiABKAMSDAoEZ29vZBgDIAEoAxIMCgRlYXN5GAQgASgDIqsBCgVBc2tlZBIMCgRkZWNrGAEgASgJEg8KB3NlY3Rpb24YAiABKAkSDAoEY2FyZBgDIAEoCRIMCgRmYWNlGAQgASgJEg8KB2hlYWRpbmcYBSABKAkSDQoFZnJvbnQYBiABKAkSDAoEYmFjaxgHIAEoCRIMCgRzZWVuGAggASgIEgsKA2R1ZRgJIAEoCRIeCgVhaGVhZBgKIAEoCzIPLm51bWVuLnYxLkFoZWFkIg4KDE93aW5nUmVxdWVzdCI1Cg1Pd2luZ1Jlc3BvbnNlEiQKBnZhdWx0cxgBIAMoCzIULm51bWVuLnYxLlZhdWx0T3dpbmciLgoMU3RhcnRSZXF1ZXN0EhAKCHZhdWx0X2lkGAEgASgJEgwKBGRlY2sYAiABKAkiPAoNU3RhcnRSZXNwb25zZRILCgNydW4YASABKAkSHgoFYXNrZWQYAiADKAsyDy5udW1lbi52MS5Bc2tlZCJ9Cg1BbnN3ZXJSZXF1ZXN0EhAKCHZhdWx0X2lkGAEgASgJEgsKA3J1bhgCIAEoCRIMCgRjYXJkGAMgASgJEgwKBGZhY2UYBCABKAkSIAoGcmF0aW5nGAUgASgOMhAubnVtZW4udjEuUmF0aW5nEg8KB3Rvb2tfbXMYBiABKAMiLQoOQW5zd2VyUmVzcG9uc2USDgoGYW5zd2VyGAEgASgJEgsKA2R1ZRgCIAEoCSJACg9UYWtlQmFja1JlcXVlc3QSEAoIdmF1bHRfaWQYASABKAkSCwoDcnVuGAIgASgJEg4KBmFuc3dlchgDIAEoCSISChBUYWtlQmFja1Jlc3BvbnNlIjsKC0VkaXRSZXF1ZXN0EhAKCHZhdWx0X2lkGAEgASgJEgwKBGRlY2sYAiABKAkSDAoEY2FyZBgDIAEoCSIfCgxFZGl0UmVzcG9uc2USDwoHcmVmdXNlZBgBIAEoCSplCgZSYXRpbmcSFgoSUkFUSU5HX1VOU1BFQ0lGSUVEEAASEAoMUkFUSU5HX0FHQUlOEAESDwoLUkFUSU5HX0hBUkQQAhIPCgtSQVRJTkdfR09PRBADEg8KC1JBVElOR19FQVNZEAQyugIKDVJldmlld1NlcnZpY2USOAoFT3dpbmcSFi5udW1lbi52MS5Pd2luZ1JlcXVlc3QaFy5udW1lbi52MS5Pd2luZ1Jlc3BvbnNlEjgKBVN0YXJ0EhYubnVtZW4udjEuU3RhcnRSZXF1ZXN0GhcubnVtZW4udjEuU3RhcnRSZXNwb25zZRI7CgZBbnN3ZXISFy5udW1lbi52MS5BbnN3ZXJSZXF1ZXN0GhgubnVtZW4udjEuQW5zd2VyUmVzcG9uc2USQQoIVGFrZUJhY2sSGS5udW1lbi52MS5UYWtlQmFja1JlcXVlc3QaGi5udW1lbi52MS5UYWtlQmFja1Jlc3BvbnNlEjUKBEVkaXQSFS5udW1lbi52MS5FZGl0UmVxdWVzdBoWLm51bWVuLnYxLkVkaXRSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChVudW1lbi92MS9yZXZpZXcucHJvdG8SCG51bWVuLnYxIpcBCgpWYXVsdE93aW5nEhAKCHZhdWx0X2lkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEcGF0aBgDIAEoCRINCgVmYWNlcxgEIAEoBRILCgNkdWUYBSABKAUSCwoDbmV3GAYgASgFEiIKBWRlY2tzGAcgAygLMhMubnVtZW4udjEuRGVja093aW5nEg4KBnVucmVhZBgIIAEoCSJCCglEZWNrT3dpbmcSDAoEZGVjaxgBIAEoCRINCgVmYWNlcxgCIAEoBRILCgNkdWUYAyABKAUSCwoDbmV3GAQgASgFIkAKBUFoZWFkEg0KBWFnYWluGAEgASgDEgwKBGhhcmQYAiABKAMSDAoEZ29vZBgDIAEoAxIMCgRlYXN5GAQgASgDIqsBCgVBc2tlZBIMCgRkZWNrGAEgASgJEg8KB3NlY3Rpb24YAiABKAkSDAoEY2FyZBgDIAEoCRIMCgRmYWNlGAQgASgJEg8KB2hlYWRpbmcYBSABKAkSDQoFZnJvbnQYBiABKAkSDAoEYmFjaxgHIAEoCRIMCgRzZWVuGAggASgIEgsKA2R1ZRgJIAEoCRIeCgVhaGVhZBgKIAEoCzIPLm51bWVuLnYxLkFoZWFkIg4KDE93aW5nUmVxdWVzdCI1Cg1Pd2luZ1Jlc3BvbnNlEiQKBnZhdWx0cxgBIAMoCzIULm51bWVuLnYxLlZhdWx0T3dpbmciLgoMU3RhcnRSZXF1ZXN0EhAKCHZhdWx0X2lkGAEgASgJEgwKBGRlY2sYAiABKAkiPAoNU3RhcnRSZXNwb25zZRILCgNydW4YASABKAkSHgoFYXNrZWQYAiADKAsyDy5udW1lbi52MS5Bc2tlZCJ9Cg1BbnN3ZXJSZXF1ZXN0EhAKCHZhdWx0X2lkGAEgASgJEgsKA3J1bhgCIAEoCRIMCgRjYXJkGAMgASgJEgwKBGZhY2UYBCABKAkSIAoGcmF0aW5nGAUgASgOMhAubnVtZW4udjEuUmF0aW5nEg8KB3Rvb2tfbXMYBiABKAMiLQoOQW5zd2VyUmVzcG9uc2USDgoGYW5zd2VyGAEgASgJEgsKA2R1ZRgCIAEoCSJACg9UYWtlQmFja1JlcXVlc3QSEAoIdmF1bHRfaWQYASABKAkSCwoDcnVuGAIgASgJEg4KBmFuc3dlchgDIAEoCSISChBUYWtlQmFja1Jlc3BvbnNlKmUKBlJhdGluZxIWChJSQVRJTkdfVU5TUEVDSUZJRUQQABIQCgxSQVRJTkdfQUdBSU4QARIPCgtSQVRJTkdfSEFSRBACEg8KC1JBVElOR19HT09EEAMSDwoLUkFUSU5HX0VBU1kQBDKDAgoNUmV2aWV3U2VydmljZRI4CgVPd2luZxIWLm51bWVuLnYxLk93aW5nUmVxdWVzdBoXLm51bWVuLnYxLk93aW5nUmVzcG9uc2USOAoFU3RhcnQSFi5udW1lbi52MS5TdGFydFJlcXVlc3QaFy5udW1lbi52MS5TdGFydFJlc3BvbnNlEjsKBkFuc3dlchIXLm51bWVuLnYxLkFuc3dlclJlcXVlc3QaGC5udW1lbi52MS5BbnN3ZXJSZXNwb25zZRJBCghUYWtlQmFjaxIZLm51bWVuLnYxLlRha2VCYWNrUmVxdWVzdBoaLm51bWVuLnYxLlRha2VCYWNrUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * VaultOwing is one vault, and what its cards come to today.
@@ -431,53 +431,6 @@ export const TakeBackResponseSchema: GenMessage<TakeBackResponse> = /*@__PURE__*
   messageDesc(file_numen_v1_review, 11);
 
 /**
- * @generated from message numen.v1.EditRequest
- */
-export type EditRequest = Message<"numen.v1.EditRequest"> & {
-  /**
-   * @generated from field: string vault_id = 1;
-   */
-  vaultId: string;
-
-  /**
-   * @generated from field: string deck = 2;
-   */
-  deck: string;
-
-  /**
-   * @generated from field: string card = 3;
-   */
-  card: string;
-};
-
-/**
- * Describes the message numen.v1.EditRequest.
- * Use `create(EditRequestSchema)` to create a new message.
- */
-export const EditRequestSchema: GenMessage<EditRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_review, 12);
-
-/**
- * @generated from message numen.v1.EditResponse
- */
-export type EditResponse = Message<"numen.v1.EditResponse"> & {
-  /**
-   * Set when the editor could not be started, in the person's own words. The
-   * review goes on either way.
-   *
-   * @generated from field: string refused = 1;
-   */
-  refused: string;
-};
-
-/**
- * Describes the message numen.v1.EditResponse.
- * Use `create(EditResponseSchema)` to create a new message.
- */
-export const EditResponseSchema: GenMessage<EditResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_review, 13);
-
-/**
  * Rating is how well a card came back. A person says which of the four, and
  * nothing decides it for them.
  *
@@ -581,18 +534,6 @@ export const ReviewService: GenService<{
     methodKind: "unary";
     input: typeof TakeBackRequestSchema;
     output: typeof TakeBackResponseSchema;
-  },
-  /**
-   * Edit brings the editor forward with a deck open at one card. It is the one
-   * thing this application hands over, and between two processes it is an
-   * invocation and not a call.
-   *
-   * @generated from rpc numen.v1.ReviewService.Edit
-   */
-  edit: {
-    methodKind: "unary";
-    input: typeof EditRequestSchema;
-    output: typeof EditResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_review, 0);

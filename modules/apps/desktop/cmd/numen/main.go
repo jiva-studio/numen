@@ -31,14 +31,11 @@ func main() {
 	var agents agentOptions
 	var said sizes
 	var vault string
-	var opening string
 	var telling bool
 	flag.StringVar(&cfg.IndexPath, "index", "", "path to the index database")
 	flag.StringVar(&cfg.RegistryPath, "registry", "", "path to the vault list")
 	flag.StringVar(&vault, "vault", "",
 		"the vault to open: a name, a path or an identity; the one opened last by default")
-	flag.StringVar(&opening, "open", "",
-		"the note to open, by the path it is filed under in that vault")
 	flag.StringVar(&agents.addr, "mcp-addr", defaultAgentAddr,
 		"where agents reach this vault; anything but a loopback address opens it to the network")
 	flag.BoolVar(&agents.off, "no-mcp", false, "do not let agents reach this vault")
@@ -56,7 +53,7 @@ func main() {
 		return
 	}
 
-	if err := run(cfg, agents, vault, opening, said); err != nil {
+	if err := run(cfg, agents, vault, said); err != nil {
 		fmt.Fprintln(os.Stderr, "numen:", err)
 		refuse(cfg, err)
 		os.Exit(1)
@@ -81,7 +78,7 @@ func (s sizes) check() error {
 	return nil
 }
 
-func run(cfg container.Config, agents agentOptions, vault, opening string, said sizes) error {
+func run(cfg container.Config, agents agentOptions, vault string, said sizes) error {
 	if err := said.check(); err != nil {
 		return err
 	}
@@ -117,12 +114,6 @@ func run(cfg container.Config, agents agentOptions, vault, opening string, said 
 	// What reading the settings had to tell a person goes where they are: a
 	// window opened from a desktop entry has no terminal to write to.
 	opened.Says(chosen.Said)
-
-	// A note named on the command line is what the window opens at, in place of
-	// the vault's own opening. It is spent the first time the page asks.
-	if opening != "" {
-		opened.API.Asked.Store(&opening)
-	}
 
 	// The agents' endpoint on the vault in the window, let in once the window is
 	// built.
