@@ -1,30 +1,43 @@
 <script setup lang="ts">
 /**
- * What the window draws while it holds nothing open.
+ * The screen a window opens on: the mark and the name, the ways in under the
+ * keystrokes that reach them, the vaults this installation holds, and what
+ * build this is in the corner.
  *
- * The mark and the name, the ways into the vault under the keystrokes that
- * reach them, the vaults this installation holds, and what build this is in the
- * corner.
+ * Both windows open on it. What each of them offers is its own; the screen
+ * draws the rows it is given and decides nothing.
  */
-import { KeyCap } from '@numen/ui'
 import { FolderRoot } from '@lucide/vue'
-import { iconFor } from '../icons'
+import KeyCap from '../palette/KeyCap.vue'
 import Mark from './Mark.vue'
-import type { Held, Way, Words } from './welcoming'
+import type { Held, Offer, Way } from './welcome'
 
-defineProps<{
-  ways: readonly Way[]
-  vaults: readonly Held[]
-  words: Words
-  version: string
-}>()
+withDefaults(
+  defineProps<{
+    /**
+     * What stands under the mark. Both windows wear the same glyph, and this is
+     * what tells a person which of them they opened.
+     */
+    name?: string
+    /** The ways in, above the list. A window offering none draws none. */
+    ways?: readonly Way[]
+    vaults: readonly Held[]
+    /** What the list is called. */
+    heading: string
+    /** The row below the list, where a window offers one. */
+    offer?: Offer | null
+    version?: string
+  }>(),
+  { name: 'numen', ways: () => [], offer: null, version: '' },
+)
+
 defineEmits<{
-  /** A way chosen. `COMMANDS` means put the commands up; anything else is a command asked for. */
+  /** A way chosen, by the identifier the caller gave it. */
   (event: 'runs', id: string): void
-  /** A vault on the list chosen, which the window opens. */
+  /** A vault on the list chosen. */
   (event: 'opens', id: string): void
-  /** Another vault asked for. */
-  (event: 'adds'): void
+  /** The row below the list pressed. */
+  (event: 'offers'): void
 }>()
 </script>
 
@@ -33,13 +46,13 @@ defineEmits<{
     <div class="welcome__column">
       <div class="welcome__head">
         <Mark class="welcome__mark" />
-        <h1 class="welcome__name">numen</h1>
+        <h1 class="welcome__name">{{ name }}</h1>
       </div>
 
       <ul v-if="ways.length" class="welcome__ways">
         <li v-for="one in ways" :key="one.id">
           <button type="button" class="welcome__row" @click="$emit('runs', one.id)">
-            <component :is="iconFor(one.id)" v-if="iconFor(one.id)" class="welcome__icon" />
+            <component :is="one.icon" v-if="one.icon" class="welcome__icon" />
             <span class="welcome__what">{{ one.text }}</span>
             <KeyCap v-if="one.keys" :keys="one.keys" />
           </button>
@@ -47,7 +60,7 @@ defineEmits<{
       </ul>
 
       <section class="welcome__vaults">
-        <h2 class="welcome__heading">{{ words.vaults }}</h2>
+        <h2 class="welcome__heading">{{ heading }}</h2>
         <ul class="welcome__list">
           <li v-for="one in vaults" :key="one.id">
             <button
@@ -61,15 +74,18 @@ defineEmits<{
                 <!-- The whole path is on the element, for one too long to be drawn. -->
                 <span class="welcome__aside" :title="one.path">{{ one.path }}</span>
               </span>
+              <!-- What the window has to say about this one, drawn at the far
+                   end of its row. What that is belongs to the window. -->
+              <slot name="vault" :vault="one" />
               <span v-if="one.detail" class="welcome__state">{{ one.detail }}</span>
             </button>
           </li>
         </ul>
-        <button type="button" class="welcome__row" @click="$emit('adds')">
-          <component :is="iconFor('newVault')" class="welcome__icon" />
+        <button v-if="offer" type="button" class="welcome__row" @click="$emit('offers')">
+          <component :is="offer.icon" v-if="offer.icon" class="welcome__icon" />
           <span class="welcome__named">
-            <span class="welcome__what">{{ words.newVault }}</span>
-            <span class="welcome__aside">{{ words.newVaultDetail }}</span>
+            <span class="welcome__what">{{ offer.text }}</span>
+            <span v-if="offer.detail" class="welcome__aside">{{ offer.detail }}</span>
           </span>
         </button>
       </section>

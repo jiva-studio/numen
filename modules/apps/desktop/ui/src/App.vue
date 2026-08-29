@@ -49,7 +49,7 @@ import { raising } from './raising'
 import { windowing } from './windowing'
 import Leaving from './Leaving.vue'
 import Failure from './Failure.vue'
-import Welcome from './welcome/Welcome.vue'
+import { Welcome } from '@numen/ui'
 import { COMMANDS, vaultsOn, waysIn } from './welcome/welcoming'
 import { telling } from './telling'
 import { agentKind, talking } from './agent/kind'
@@ -425,8 +425,25 @@ const carries = (id: string, at: Where) => {
 }
 
 /** The ways in the welcome screen offers, and the vaults it draws. */
+// What the welcome screen offers below the list of vaults.
+const adding = computed(() => {
+  const icon = iconFor('newVault')
+  return {
+    text: words.newVault,
+    detail: words.newVaultDetail,
+    ...(icon ? { icon } : {}),
+  }
+})
+
+// The screen draws what it is given, so what stands in front of each way is
+// chosen here, where the window's own icons are.
 const ways = computed(() =>
-  waysIn({ vault: shown.value.id, ready: where().ready }, words, navigator.userAgent),
+  waysIn({ vault: shown.value.id, ready: where().ready }, words, navigator.userAgent).map(
+    (one) => {
+      const icon = iconFor(one.id)
+      return { ...one, ...(icon ? { icon } : {}) }
+    },
+  ),
 )
 const onList = computed(() => vaultsOn(listed.value, words))
 
@@ -608,11 +625,12 @@ onUnmounted(() => {
         <Welcome
           :ways="ways"
           :vaults="onList"
-          :words="words"
+          :heading="words.vaults"
+          :offer="adding"
           :version="VERSION"
           @runs="runs"
           @opens="opens"
-          @adds="carries('newVault', where())"
+          @offers="carries('newVault', where())"
         />
       </template>
     </Workspace>

@@ -1,0 +1,20 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  block-size: 100%;
+  margin: 0;
+}
+
+/* The interface is not a document. What a person reads off a card is text they
+   may want to carry out, and the card takes the selection back. */
+body {
+  background: var(--numen-surface);
+  color: var(--numen-node-fg);
+  font-family: var(--numen-font-sans, system-ui, sans-serif);
+  user-select: none;
+  -webkit-user-select: none;
+}

@@ -20,6 +20,11 @@ export type {
   MenuPlacing,
 } from './menu/model'
 
+export { default as Owed } from './cards/Owed.vue'
+export { default as Welcome } from './welcome/Welcome.vue'
+export { default as Mark } from './welcome/Mark.vue'
+export type { Held, Offer, Way } from './welcome/welcome'
+
 export { default as Palette } from './palette/Palette.vue'
 export { default as KeyCap } from './palette/KeyCap.vue'
 export { commandKeyChord, keyChord, overlayMark } from './palette/model'
