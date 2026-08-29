@@ -107,21 +107,20 @@ func run(cfg container.Config) error {
 	return app.Run()
 }
 
-// opens brings the editor forward on the vault the card stands in.
+// opens brings the editor forward with the deck open.
 //
 // Between two processes that is an invocation and not a call: the editor is
-// started, and it is the editor that decides what to do with a window it may
-// already have open on that vault.
+// started on the vault and the deck, and it is the editor that decides what to
+// do with a window it may already have open on that vault.
 //
-// Which deck and which card are not passed. The editor takes no flag for
-// either, and a flag it does not know is a process that stops on its command
-// line instead of opening a window.
-func opens(_ context.Context, v domain.Vault, _, _ string) error {
+// Which card is not passed. The editor opens a deck whole, and standing at one
+// card of it is a place in a tab that nothing can be told to yet.
+func opens(_ context.Context, v domain.Vault, deck, _ string) error {
 	at, err := editor()
 	if err != nil {
 		return err
 	}
-	run := exec.Command(at, "-vault", v.ID)
+	run := exec.Command(at, "-vault", v.ID, "-open", deck)
 	run.Stdout, run.Stderr = os.Stdout, os.Stderr
 	if err := run.Start(); err != nil {
 		return err
