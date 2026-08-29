@@ -27,12 +27,12 @@ type Record struct {
 // Answer writes down one card answered once, and hands back the line as it was
 // written: it carries the identifier that taking this answer back would name.
 func (u Record) Answer(
-	ctx context.Context, seat history.Seat, r history.Rating, took time.Duration,
+	ctx context.Context, on history.CardFace, r history.Rating, took time.Duration,
 ) (history.Answer, error) {
 	if !r.Valid() {
 		return history.Answer{}, fmt.Errorf("%w: %d", ErrNoRating, r)
 	}
-	if seat.Card == "" || seat.Face == "" {
+	if on.Card == "" || on.Face == "" {
 		return history.Answer{}, errors.New("an answer says which card, and through which face")
 	}
 
@@ -41,7 +41,7 @@ func (u Record) Answer(
 	if err != nil {
 		return history.Answer{}, err
 	}
-	a := history.Answer{ID: id, Seat: seat, At: at, Rating: r, Took: took}
+	a := history.Answer{ID: id, CardFace: on, At: at, Rating: r, Took: took}
 	if err := u.Run.Append(ctx, a); err != nil {
 		return history.Answer{}, err
 	}

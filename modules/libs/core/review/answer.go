@@ -36,14 +36,15 @@ func (r Rating) String() string {
 	return "unknown"
 }
 
-// Seat is what a schedule belongs to: the card, by the mark it is known by, and
-// the face it is shown through, by the name that face carries in its stencil.
+// CardFace is what a schedule belongs to: one card, and one face of the stencil
+// that cuts it. The card is the mark it is known by, and the face is the name it
+// carries in its stencil.
 //
 // A card is shown once through each of its stencil's faces, and each of them
 // asks a different thing, so each has a path of its own. The mark travels with
 // the card between decks and between vaults; the face's name does not travel at
 // all, and renaming a face starts its schedule again.
-type Seat struct {
+type CardFace struct {
 	Card string
 	Face string
 }
@@ -54,10 +55,10 @@ type Seat struct {
 // and so that two answers given in the same millisecond stay two.
 type Answer struct {
 	ID string
-	// Seat is which card was shown, through which face. It is empty on an
+	// CardFace is which card was shown, through which face. It is empty on an
 	// answer that takes another back.
-	Seat Seat
-	At   time.Time
+	CardFace CardFace
+	At       time.Time
 	// Rating is how well the card came back. It is zero on an answer that takes
 	// another back.
 	Rating Rating

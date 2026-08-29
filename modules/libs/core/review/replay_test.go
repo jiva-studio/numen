@@ -9,10 +9,10 @@ import (
 
 func answered(id, card, face, when string, r review.Rating) review.Answer {
 	return review.Answer{
-		ID:     id,
-		Seat:   review.Seat{Card: card, Face: face},
-		At:     at(when),
-		Rating: r,
+		ID:       id,
+		CardFace: review.CardFace{Card: card, Face: face},
+		At:       at(when),
+		Rating:   r,
 	}
 }
 
@@ -28,9 +28,9 @@ func TestAnswersAreCountedInTheOrderTheyWereGiven(t *testing.T) {
 	want := review.Replay(by, []review.Answer{first, second, third})
 	got := review.Replay(by, []review.Answer{third, first, second})
 
-	seat := review.Seat{Card: "k7m2xq9fzp", Face: "Recognise"}
-	if got[seat] != want[seat] {
-		t.Errorf("read out of order gave %+v, want %+v", got[seat], want[seat])
+	shown := review.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	if got[shown] != want[shown] {
+		t.Errorf("read out of order gave %+v, want %+v", got[shown], want[shown])
 	}
 }
 
@@ -41,9 +41,9 @@ func TestTwoAnswersOfOneInstantKeepTheirOrder(t *testing.T) {
 	late := answered("01B", "k7m2xq9fzp", "Recognise", "2026-08-20T09:00:00Z", review.Easy)
 
 	by := review.NewFSRS()
-	seat := review.Seat{Card: "k7m2xq9fzp", Face: "Recognise"}
-	one := review.Replay(by, []review.Answer{early, late})[seat]
-	other := review.Replay(by, []review.Answer{late, early})[seat]
+	shown := review.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	one := review.Replay(by, []review.Answer{early, late})[shown]
+	other := review.Replay(by, []review.Answer{late, early})[shown]
 	if one != other {
 		t.Errorf("one history read two ways gave %+v and %+v", one, other)
 	}
@@ -57,7 +57,7 @@ func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
 
 	left := review.Replay(review.NewFSRS(), []review.Answer{given, back})
 	if len(left) != 0 {
-		t.Errorf("a seat whose only answer was taken back has no schedule, got %+v", left)
+		t.Errorf("a card face whose only answer was taken back has no schedule, got %+v", left)
 	}
 }
 
@@ -70,8 +70,8 @@ func TestEachFaceOfACardIsScheduledOnItsOwn(t *testing.T) {
 	if len(left) != 2 {
 		t.Fatalf("two faces answered left %d schedules", len(left))
 	}
-	easy := left[review.Seat{Card: "k7m2xq9fzp", Face: "Recognise"}]
-	again := left[review.Seat{Card: "k7m2xq9fzp", Face: "Name it"}]
+	easy := left[review.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}]
+	again := left[review.CardFace{Card: "k7m2xq9fzp", Face: "Name it"}]
 	if !easy.Due.After(again.Due) {
 		t.Errorf("the face that came back easily is due %v, the one that did not %v", easy.Due, again.Due)
 	}
@@ -84,23 +84,23 @@ func TestReplayingOneHistoryTwiceGivesOneSchedule(t *testing.T) {
 	when := at("2026-01-01T09:00:00Z")
 	for i, r := range []review.Rating{review.Good, review.Again, review.Hard, review.Good, review.Easy} {
 		history = append(history, review.Answer{
-			ID:     string(rune('A'+i)) + "01",
-			Seat:   review.Seat{Card: "k7m2xq9fzp", Face: "Recognise"},
-			At:     when.Add(time.Duration(i) * 24 * time.Hour),
-			Rating: r,
+			ID:       string(rune('A'+i)) + "01",
+			CardFace: review.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"},
+			At:       when.Add(time.Duration(i) * 24 * time.Hour),
+			Rating:   r,
 		})
 	}
 
 	by := review.NewFSRS()
-	seat := review.Seat{Card: "k7m2xq9fzp", Face: "Recognise"}
-	if one, other := review.Replay(by, history)[seat], review.Replay(by, history)[seat]; one != other {
+	shown := review.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	if one, other := review.Replay(by, history)[shown], review.Replay(by, history)[shown]; one != other {
 		t.Errorf("one history gave %+v and then %+v", one, other)
 	}
 }
 
-// A seat nobody has answered has no schedule, and that is what a person means
-// by a new card.
-func TestASeatNobodyAnsweredHasNoSchedule(t *testing.T) {
+// A card face nobody has answered has no schedule, and that is what a person
+// means by a new card.
+func TestACardFaceNobodyAnsweredHasNoSchedule(t *testing.T) {
 	left := review.Replay(review.NewFSRS(), nil)
 	if len(left) != 0 {
 		t.Errorf("no answers left %d schedules", len(left))

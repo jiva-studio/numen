@@ -19,11 +19,11 @@ func at(s string) time.Time {
 // An answer written down and read back is the answer that was given.
 func TestAnAnswerComesBackAsItWasWritten(t *testing.T) {
 	given := review.Answer{
-		ID:     "01K3ZQ7X2M9QRSTVWXYZ012345",
-		Seat:   review.Seat{Card: "k7m2xq9fzp", Face: "Recognise"},
-		At:     at("2026-08-29T09:12:33.412Z"),
-		Rating: review.Good,
-		Took:   4210 * time.Millisecond,
+		ID:       "01K3ZQ7X2M9QRSTVWXYZ012345",
+		CardFace: review.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"},
+		At:       at("2026-08-29T09:12:33.412Z"),
+		Rating:   review.Good,
+		Took:     4210 * time.Millisecond,
 	}
 
 	raw, err := review.Write(given)
@@ -67,10 +67,10 @@ func TestAnAnswerTakenBackNamesTheOneItTakesBack(t *testing.T) {
 // follows the last newline is left out, and everything before it is read.
 func TestALineThatDidNotLandWholeIsLeftOut(t *testing.T) {
 	whole, err := review.Write(review.Answer{
-		ID:     "01K3ZQ7X2M9QRSTVWXYZ012345",
-		Seat:   review.Seat{Card: "k7m2xq9fzp", Face: "Recognise"},
-		At:     at("2026-08-29T09:12:33.412Z"),
-		Rating: review.Good,
+		ID:       "01K3ZQ7X2M9QRSTVWXYZ012345",
+		CardFace: review.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"},
+		At:       at("2026-08-29T09:12:33.412Z"),
+		Rating:   review.Good,
 	})
 	if err != nil {
 		t.Fatal(err)

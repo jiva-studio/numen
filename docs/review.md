@@ -6,7 +6,7 @@ Review is an application of its own, beside the editor and over the same core ([
 
 ## What is asked
 
-A card is shown once through each face its stencil declares ([cards](cards.md)), and each face asks a different thing. **What is scheduled is therefore a card and a face together**, not a card. A stencil of two faces gives each of its cards two paths, and one of them may be due while the other is a week away.
+A card is shown once through each face its stencil declares ([cards](cards.md)), and each face asks a different thing. **What is scheduled is a card face** — one card, and one face of the stencil that cuts it — and not a card. A stencil of two faces gives each of its cards two paths, and one may be due while the other is a week away.
 
 A card is asked under the mark it carries, so it is the same card after it is moved to another section, another deck or another vault. A face is asked under its name, which is its heading in the stencil, and renaming a face starts that face's schedule again.
 
