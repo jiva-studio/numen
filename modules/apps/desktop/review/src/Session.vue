@@ -66,14 +66,11 @@ defineEmits<{
       </Button>
     </header>
 
-    <!-- The boxes a card is put right in stand above it, out of the frame.
-         Opening them lets the column down by their own height, so they come
-         into view and the card is pushed under them. -->
-    <div class="session__stage">
-      <div class="session__column" :class="{ 'session__column--down': editing }">
+    <!-- The boxes a card is put right in take their own room at the top, and
+         the card is pushed down and stays where a person can read it. -->
+    <div class="session__stage" :class="{ 'session__stage--editing': editing }">
+      <div class="session__slot" :inert="!editing">
         <Editing
-          class="session__slot"
-          :inert="!editing"
           :card="card.card"
           :section="card.section"
           :values="values"
@@ -82,9 +79,9 @@ defineEmits<{
           @save="$emit('save')"
           @close="$emit('close')"
         />
+      </div>
+      <div class="session__slot">
         <Card
-          class="session__slot"
-          :inert="editing"
           :front="card.front"
           :back="card.back"
           :shown="shown"
@@ -127,29 +124,33 @@ defineEmits<{
   margin-inline-start: auto;
 }
 
-/* One frame, and a column of two standing in it that is twice as tall. Which of
-   them is in the frame is where the column stands, so the two never overlap and
-   the one going out is the one the other pushed. */
+/* Two rows sharing what the frame has. The first is closed until the boxes are
+   asked for, and opening it takes its room from the second: the boxes come down
+   and the card goes under them by exactly as much, and stays read. */
 .session__stage {
+  display: grid;
   flex: 1;
+  min-block-size: 0;
+  grid-template-rows: 0fr 1fr;
+  gap: 0;
+  transition:
+    grid-template-rows var(--numen-motion) var(--numen-easing),
+    gap var(--numen-motion) var(--numen-easing);
+}
+
+.session__stage--editing {
+  grid-template-rows: 1fr 1fr;
+  gap: var(--numen-inset);
+}
+
+.session__slot {
+  display: flex;
   min-block-size: 0;
   overflow: hidden;
 }
 
-.session__column {
-  display: flex;
-  flex-direction: column;
-  block-size: 200%;
-  transform: translateY(-50%);
-  transition: transform var(--numen-motion) var(--numen-easing);
-}
-
-.session__column--down {
-  transform: translateY(0);
-}
-
-.session__slot {
-  flex: none;
-  block-size: 50%;
+.session__slot > * {
+  flex: 1;
+  min-block-size: 0;
 }
 </style>
