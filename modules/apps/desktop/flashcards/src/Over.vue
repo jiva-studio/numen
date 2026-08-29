@@ -38,6 +38,6 @@ defineEmits<{ (event: 'leave'): void }>()
 
 .over__count {
   margin: 0;
-  color: var(--numen-edge-label);
+  color: var(--numen-hushed);
 }
 </style>

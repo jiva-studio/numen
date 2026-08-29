@@ -209,12 +209,28 @@ message ReviewedResponse {
   int32 answered = 3;
 }
 
-// Reviewing is one day, and how many cards were answered on it.
+// Reviewing is one day, and what was answered on it.
 message Reviewing {
   // Day is the day it began on, as the year, the month and the day: an answer
   // given in the small hours belongs to the day before, and is named for it.
   string day = 1;
   int32 answered = 2;
+
+  // How each of the four was said, for a day that is behind. A day of fifty
+  // cards a person could not recall is a different day from fifty they could,
+  // and the two are the same number without these.
+  int32 again = 3;
+  int32 hard = 4;
+  int32 good = 5;
+  int32 easy = 6;
+
+  // How much of what the person had already learned came back to them:
+  // `asked` is the answers given to learned cards, `recalled` the ones among
+  // them that were not Again. A card still being learned is in neither — what
+  // is asked of one is whether it comes back after ten minutes, which says
+  // nothing about how well anything is remembered.
+  int32 asked = 7;
+  int32 recalled = 8;
 }
 
 message MovingRequest {}

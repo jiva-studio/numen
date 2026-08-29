@@ -23,20 +23,23 @@ type counted struct {
 }
 
 type countedRun struct {
-	Name string         `json:"name"`
-	Size int            `json:"size"`
-	Days map[string]int `json:"days"`
+	Name string                   `json:"name"`
+	Size int                      `json:"size"`
+	Days map[string]history.Tally `json:"days"`
 }
 
 // Reviewed is how much of a vault was answered, and when.
 type Reviewed struct {
 	// Days is how many answers were given on each day, by the name of the day:
 	// the year, the month and the day it began on.
-	Days map[string]int
+	Days map[string]history.Tally
 	// Due is how many card faces fall on each day still to come, by the same
 	// names. A card owed today or owed and late is not in it: what is behind is
 	// what the front door counts, and this is what is ahead.
 	Due map[string]int
+	// Retained is how much of what a person had learned came back to them on
+	// each day. A card still being learned is not in it.
+	Retained map[string]history.Retention
 	// Streak is how many days up to now were reviewed without a gap.
 	Streak int
 	// Answered is how many answers the vault holds altogether.
@@ -76,7 +79,7 @@ func (u Counted) Execute(ctx context.Context, v domain.Vault) (Reviewed, error) 
 
 	was := u.remembered(ctx, v)
 	now := counted{V: countedVersion}
-	out := Reviewed{Days: make(map[string]int)}
+	out := Reviewed{Days: make(map[string]history.Tally)}
 
 	store, err := u.Logs.Open(v)
 	if err != nil {
@@ -97,37 +100,57 @@ func (u Counted) Execute(ctx context.Context, v domain.Vault) (Reviewed, error) 
 		}
 		now.Runs = append(now.Runs, one)
 		for day, count := range one.Days {
-			out.Days[day] += count
-			out.Answered += count
+			out.Days[day] = added(out.Days[day], count)
+			out.Answered += count.Answered
 		}
 	}
 
 	u.remember(ctx, v, now)
 	out.Streak = history.Streak(u.Day, out.Days, u.now())
 
-	due, err := u.ahead(ctx, v)
+	// What is still to come, and how much came back, are both worked out from
+	// the answers in the order they were given, so they are asked for together.
+	due, retained, err := u.ahead(ctx, v)
 	if err != nil {
 		return Reviewed{}, err
 	}
 	out.Due = due
+	out.Retained = retained
 	return out, nil
 }
 
-// ahead is how much falls on each day still to come.
+// added is two days' answers put together, which is how the runs of one day are
+// added up: a person may have answered in two sittings, and it is one day.
+func added(one, other history.Tally) history.Tally {
+	return history.Tally{
+		Answered: one.Answered + other.Answered,
+		Again:    one.Again + other.Again,
+		Hard:     one.Hard + other.Hard,
+		Good:     one.Good + other.Good,
+		Easy:     one.Easy + other.Easy,
+	}
+}
+
+// ahead is how much falls on each day still to come, and how much of what a
+// person had learned came back to them on each day behind.
 //
-// A card owed today, or owed and late, is not in it: what a person owes now is
-// what the front door counts, and this says what is coming after it. Where a
-// card falls is worked out from the answers like everything else, so the day it
-// shows is the day it would be asked on.
-func (u Counted) ahead(ctx context.Context, v domain.Vault) (map[string]int, error) {
-	out := make(map[string]int)
+// A card owed today, or owed and late, is not in what is to come: what a person
+// owes now is what the front door counts, and this says what is coming after
+// it. Where a card falls is worked out from the answers like everything else,
+// so the day it shows is the day it would be asked on.
+func (u Counted) ahead(
+	ctx context.Context, v domain.Vault,
+) (map[string]int, map[string]history.Retention, error) {
+	falls := make(map[string]int)
 	if u.Schedules.By == nil {
-		return out, nil
+		return falls, nil, nil
 	}
-	schedules, err := u.Schedules.Execute(ctx, v)
+
+	held, err := Log{Stores: u.Schedules.Logs}.Read(ctx, v)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+	schedules := u.Schedules.From(ctx, v, held)
 
 	now := u.now()
 	ends := u.Day.Ends(now)
@@ -135,9 +158,9 @@ func (u Counted) ahead(ctx context.Context, v domain.Vault) (map[string]int, err
 		if !s.Seen() || s.Due.Before(ends) {
 			continue
 		}
-		out[u.Day.Names(s.Due)]++
+		falls[u.Day.Names(s.Due)]++
 	}
-	return out, nil
+	return falls, history.Retained(u.Schedules.By, u.Day, held.Answers), nil
 }
 
 // remembered is what was counted last time, by the name of the run it was

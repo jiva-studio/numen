@@ -99,10 +99,16 @@ func themeable(t *testing.T) map[string]takes {
 	}
 	for _, block := range blocks(stripped(string(css))) {
 		sets := map[string]takes{}
+		held := map[string]string{}
 		for _, one := range declared(block) {
 			if strings.HasPrefix(one.property, "--") {
-				sets[one.property] = shapeOf(one.value)
+				held[one.property] = one.value
 			}
+		}
+		for property, value := range held {
+			// A token given as another token takes the shape that one takes:
+			// two names for one value are one value.
+			sets[property] = shapeOf(resolved(value, held))
 		}
 		if len(sets) > 0 {
 			return sets
@@ -110,6 +116,27 @@ func themeable(t *testing.T) map[string]takes {
 	}
 	t.Fatalf("%s names no token", contract)
 	return nil
+}
+
+// pointing is a value that is nothing but another token: `var(--numen-hushed)`.
+var pointing = regexp.MustCompile(`^var\(\s*(--[\w-]+)\s*\)$`)
+
+// resolved follows a token given as another token, to the value at the end of
+// it. A ring of them resolves to itself and is read as the shape it is written
+// as, which is no shape at all.
+func resolved(value string, held map[string]string) string {
+	for range len(held) {
+		found := pointing.FindStringSubmatch(value)
+		if found == nil {
+			return value
+		}
+		next, is := held[found[1]]
+		if !is {
+			return value
+		}
+		value = next
+	}
+	return value
 }
 
 // shapeOf reads a value as the shape it is. A colour and a length say what they

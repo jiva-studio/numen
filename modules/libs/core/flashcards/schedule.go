@@ -42,4 +42,13 @@ type Scheduler interface {
 
 	// Next is where an answer leaves a schedule.
 	Next(s Schedule, at time.Time, r Rating) Schedule
+
+	// Learned reports whether a card face standing at this schedule is one the
+	// person has learned, rather than one still being put into their memory.
+	//
+	// What is asked of a learned card is whether it comes back after days away;
+	// what is asked of one being learned is whether it comes back after ten
+	// minutes. Only the first says anything about how well a person is
+	// remembering, so only the first is counted when that is measured.
+	Learned(s Schedule) bool
 }

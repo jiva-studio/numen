@@ -25,24 +25,39 @@ func (a *API) Reviewed(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
+	days := make([]*v1.Reviewing, 0, len(said.Days))
+	for day, one := range said.Days {
+		came := said.Retained[day]
+		days = append(days, &v1.Reviewing{
+			Day:      day,
+			Answered: int32(one.Answered),
+			Again:    int32(one.Again),
+			Hard:     int32(one.Hard),
+			Good:     int32(one.Good),
+			Easy:     int32(one.Easy),
+			Asked:    int32(came.Asked),
+			Recalled: int32(came.Recalled),
+		})
+	}
+	due := make([]*v1.Reviewing, 0, len(said.Due))
+	for day, falls := range said.Due {
+		due = append(due, &v1.Reviewing{Day: day, Answered: int32(falls)})
+	}
+
 	return connect.NewResponse(&v1.ReviewedResponse{
-		Days:     inOrder(said.Days),
-		Due:      inOrder(said.Due),
+		Days:     inOrder(days),
+		Due:      inOrder(due),
 		Streak:   int32(said.Streak),
 		Answered: int32(said.Answered),
 	}), nil
 }
 
-// inOrder is what each day came to, oldest first.
-func inOrder(days map[string]int) []*v1.Reviewing {
-	out := make([]*v1.Reviewing, 0, len(days))
-	for day, answered := range days {
-		out = append(out, &v1.Reviewing{Day: day, Answered: int32(answered)})
-	}
-	slices.SortFunc(out, func(one, other *v1.Reviewing) int {
+// inOrder puts the days oldest first.
+func inOrder(days []*v1.Reviewing) []*v1.Reviewing {
+	slices.SortFunc(days, func(one, other *v1.Reviewing) int {
 		return cmpDay(one.GetDay(), other.GetDay())
 	})
-	return out
+	return days
 }
 
 // cmpDay orders two days. A day is written as the year, the month and the day,

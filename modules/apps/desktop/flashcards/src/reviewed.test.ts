@@ -4,7 +4,16 @@ import { reviewed } from './reviewed'
 import type { Asks, Said } from './reviewed'
 
 const said = (days: [string, number][], streak = 0, due: [string, number][] = []): Said => ({
-  days: days.map(([day, answered]) => ({ day, answered })),
+  days: days.map(([day, answered]) => ({
+    day,
+    answered,
+    again: 0,
+    hard: 0,
+    good: answered,
+    easy: 0,
+    asked: answered,
+    recalled: answered,
+  })),
   due: due.map(([day, answered]) => ({ day, answered })),
   streak,
   answered: days.reduce((sum, [, answered]) => sum + answered, 0),
@@ -27,7 +36,7 @@ describe('what a vault was answered on', () => {
 
     await one.read('01VAULT')
 
-    expect(one.days.value.get('2026-08-28')).toBe(12)
+    expect(one.days.value.get('2026-08-28')?.answered).toBe(12)
     expect(one.streak.value).toBe(2)
     expect(one.answered.value).toBe(15)
     expect(one.of.value).toBe('01VAULT')
