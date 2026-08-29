@@ -9,6 +9,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import Plex from './Plex.vue'
 import { byHandle, byHolding } from './reaching'
+import { APART, byDoubleClick, byDoubleTap, TAP } from './showing'
 import { HOLD } from './holding'
 import { build } from './fixtures/build'
 
@@ -88,5 +89,58 @@ describe('resting on a node', () => {
     await plex.vm.$nextTick()
 
     expect(plex.emitted('create')).toBeUndefined()
+  })
+})
+
+describe('asking for a node on its own', () => {
+  it('answers the second click where the hand is the reader', async () => {
+    const { plex } = mountPlex({ showing: byDoubleClick })
+    await plex.get('[aria-label^="A node"]').trigger('dblclick')
+    expect(plex.emitted('show')).toStrictEqual([['focus', 'here']])
+  })
+
+  it('answers two taps where the finger is', async () => {
+    vi.useFakeTimers()
+    const { plex } = mountPlex({ showing: byDoubleTap() })
+    const node = plex.get('[aria-label^="A node"]')
+
+    node.element.dispatchEvent(pointer('pointerup', 600, 400, { pointerType: 'touch' }))
+    node.element.dispatchEvent(pointer('pointerup', 600, 400, { pointerType: 'touch' }))
+    await plex.vm.$nextTick()
+
+    expect(plex.emitted('show')).toStrictEqual([['focus', 'here']])
+  })
+
+  it('leaves two taps too far apart in time alone', async () => {
+    vi.useFakeTimers()
+    const { plex } = mountPlex({ showing: byDoubleTap() })
+    const node = plex.get('[aria-label^="A node"]')
+
+    node.element.dispatchEvent(pointer('pointerup', 600, 400, { pointerType: 'touch' }))
+    vi.advanceTimersByTime(TAP + 1)
+    node.element.dispatchEvent(pointer('pointerup', 600, 400, { pointerType: 'touch' }))
+    await plex.vm.$nextTick()
+
+    expect(plex.emitted('show')).toBeUndefined()
+  })
+
+  it('leaves two taps too far apart on the screen alone', async () => {
+    vi.useFakeTimers()
+    const { plex } = mountPlex({ showing: byDoubleTap() })
+    const node = plex.get('[aria-label^="A node"]')
+
+    node.element.dispatchEvent(pointer('pointerup', 600, 400, { pointerType: 'touch' }))
+    node.element.dispatchEvent(
+      pointer('pointerup', 600 + APART + 1, 400, { pointerType: 'touch' }),
+    )
+    await plex.vm.$nextTick()
+
+    expect(plex.emitted('show')).toBeUndefined()
+  })
+
+  it('takes no second click while the finger is the reader', async () => {
+    const { plex } = mountPlex({ showing: byDoubleTap() })
+    await plex.get('[aria-label^="A node"]').trigger('dblclick')
+    expect(plex.emitted('show')).toBeUndefined()
   })
 })

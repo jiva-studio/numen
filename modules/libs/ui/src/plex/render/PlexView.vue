@@ -23,6 +23,7 @@ import {
 } from '../model'
 import { DWELL, type Widened } from '../dwell'
 import { byHandle, type Reaching } from '../reaching'
+import { byDoubleClick, type Showing } from '../showing'
 import type { HungParts } from '../inside'
 import { browserEnvironment, type Environment } from '../transition'
 import type { Drop } from '../arrange'
@@ -61,6 +62,8 @@ const props = withDefaults(
     dwell?: number
     /** How a node offers to be reached out of. The handle by default. */
     reaching?: Reaching
+    /** How a node is asked for on its own. The second click by default. */
+    showing?: Showing
     /** The clock a box opens on. Browser by default; a test hands in its own. */
     environment?: Environment
     /** A gesture in progress: where it started, where it is, what it means. */
@@ -87,6 +90,7 @@ const props = withDefaults(
     seatName: seatWord,
     dwell: DWELL,
     reaching: () => byHandle,
+    showing: () => byDoubleClick,
     environment: () => browserEnvironment,
     gestureFrom: null,
     gestureAt: null,
@@ -371,6 +375,7 @@ const ghost = computed<PlacedNode | null>(() => {
       :hung="hung?.(node) ?? null"
       :dwell="dwell"
       :reaching="reaching"
+      :showing="showing"
       :environment="environment"
       @activate="emit('activate', node.id)"
       @show="emit('show', node.id, $event)"

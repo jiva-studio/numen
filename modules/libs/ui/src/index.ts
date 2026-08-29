@@ -201,6 +201,8 @@ export type { Cut } from './cards/stencil'
 
 export type { Environment, PlexTransition } from './plex/transition'
 export { byHandle, byHolding } from './plex/reaching'
+export { APART, byDoubleClick, byDoubleTap, TAP } from './plex/showing'
+export type { Showing, ShowingSite } from './plex/showing'
 export type { Reaching, ReachingSite } from './plex/reaching'
 export { HOLD, STRAY, useHold } from './plex/holding'
 export type { Holding } from './plex/holding'

@@ -29,6 +29,13 @@ const measured = { measureLabel, labelDepth }
 const VIEWPORT = { width: 1200, height: 800 }
 
 /**
+ * A window narrow enough that a row runs its titles short of room. What a
+ * title does when the line it is set on cannot hold it is only visible where
+ * some of them cannot.
+ */
+const CROWDED = { width: 900, height: 800 }
+
+/**
  * How far along its line a title has moved when all it did was step clear of
  * the boxes its own line joins: a nudge, and not the slide of a title that had
  * to go looking for room.
@@ -250,7 +257,7 @@ describe('a title finds room on its line', () => {
 
   it('cuts a title to the room its line has left, or writes none of it', () => {
     const frame = arrangePlex(neighbourhoods.labelledRows, {
-      options: { viewport: VIEWPORT },
+      options: { viewport: CROWDED },
       ...measured,
     })
     const named = neighbourhoods.labelledRows.edges.filter((edge) => edge.label)
@@ -270,7 +277,7 @@ describe('a title finds room on its line', () => {
     // Two lines crossing one band: the tight one takes the middle it needs,
     // and the roomy one goes round it.
     const crossing = arrangePlex(neighbourhoods.labelledRows, {
-      options: { viewport: VIEWPORT },
+      options: { viewport: CROWDED },
       ...measured,
     })
     // Its line is barely longer than its words, and it keeps the middle of it.

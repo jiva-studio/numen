@@ -52,16 +52,35 @@ export function limitsFor(
       options.focusSize.width / 2,
       (perLine * width + (perLine - 1) * options.gap) / 2,
     )
-  const columnsBeside = (perLine: number) =>
+  /** How many lines of a column stand beyond something of this half-width. */
+  const columnsBeyond = (clear: number) =>
     clamp(
-      along(halfWidth - rowHalf(perLine) - options.focusGap, width, options.lineGap),
+      along(halfWidth - clear - options.focusGap, width, options.lineGap),
       0,
       options.maxLines,
     )
 
+  const columnsBeside = (perLine: number) => columnsBeyond(rowHalf(perLine))
+
+  const perColumn = Math.max(1, along(2 * halfHeight, height, options.gap))
+
+  // How far a column reaches from the axis, against where the nearest row
+  // begins. A column is centred on the focus, so a short one stands level with
+  // the focus and nothing else, and the rows above and below have the width of
+  // the window to themselves.
+  const columnReach =
+    ((Math.min(longestColumn, perColumn) - 1) / 2) * (height + options.gap) + height / 2
+  const rowsBegin = options.focusSize.height / 2 + options.focusGap
+  const columnsMeetRows = hasColumns && columnReach > rowsBegin
+
+  // What a column has to clear: the row where the two meet, the focus alone
+  // where they do not.
+  const columnClears = (perLine: number) =>
+    columnsMeetRows ? rowHalf(perLine) : options.focusSize.width / 2
+
   // Whether the window has any row width at all that seats a column beside it.
   // A narrower row leaves more room, so the narrowest is the one that answers.
-  const seatsColumn = hasColumns && columnsBeside(1) >= 1
+  const seatsColumn = columnsMeetRows && columnsBeside(1) >= 1
 
   // The widest row that still leaves the window able to hold it — and, where a
   // column can be seated, room for one beyond it. It is measured from what the
@@ -70,8 +89,6 @@ export function limitsFor(
     if (rowHalf(perLine) > halfWidth) return false
     return !seatsColumn || columnsBeside(perLine) >= 1
   })
-
-  const perColumn = Math.max(1, along(2 * halfHeight, height, options.gap))
 
   return everySeat(
     options,
@@ -93,7 +110,7 @@ export function limitsFor(
       // drawn is reported as overflow, which is what the reader can act on;
       // drawing it off the edge of the window is not.
       lines: hasColumns
-        ? Math.min(columnsBeside(row), Math.ceil(longestColumn / perColumn))
+        ? Math.min(columnsBeyond(columnClears(row)), Math.ceil(longestColumn / perColumn))
         : 1,
     }),
   )

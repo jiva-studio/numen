@@ -8,7 +8,14 @@
  */
 import { onMounted, ref } from 'vue'
 import { IonContent, IonPage, IonProgressBar, IonToast } from '@ionic/vue'
-import { byHolding, Plex, type PlexNeighbourhood, type PlexRelatedSeat } from '@numen/ui'
+import {
+  byDoubleTap,
+  byHolding,
+  Plex,
+  type PlexNeighbourhood,
+  type PlexRelatedSeat,
+} from '@numen/ui'
+import NoteSheet from '../note/NoteSheet.vue'
 import { reach, type Reached } from '../core'
 import { follow } from './following'
 import { asPlex } from './picture'
@@ -21,6 +28,12 @@ const trouble = ref('')
 
 /** A finger has no hover, so a node is reached out of by resting on it. */
 const reaching = byHolding()
+
+/** And asked for on its own by tapping it twice. */
+const showing = byDoubleTap()
+
+/** The note being written, and nothing while none is. */
+const writing = ref<string | null>(null)
 
 async function draw(path: string) {
   if (!core.value) return
@@ -74,7 +87,9 @@ onMounted(async () => {
         :neighbourhood="picture"
         :creatable="CREATABLE"
         :reaching="reaching"
+        :showing="showing"
         @activate="(node: string) => void draw(node)"
+        @show="(node: string) => (writing = node)"
         @create="(from: string, seat: PlexRelatedSeat) => void made(from, seat)"
         @link="(from: string, to: string, seat: PlexRelatedSeat) => void joined(from, to, seat)"
       />
@@ -88,6 +103,17 @@ onMounted(async () => {
       />
     </IonContent>
   </IonPage>
+  <!-- The note is put under the body: an editor keeps whichever root it was
+       built in, and every wrapper of the framework has one of its own. -->
+  <Teleport to="body">
+    <NoteSheet
+      v-if="core && writing"
+      :core="core"
+      :path="writing"
+      @close="writing = null; void draw(at)"
+      @trouble="(said: string) => (trouble = said)"
+    />
+  </Teleport>
 </template>
 
 <style scoped>

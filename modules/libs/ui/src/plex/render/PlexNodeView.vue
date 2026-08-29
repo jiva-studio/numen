@@ -15,6 +15,7 @@ import PlexNodeHandle from './PlexNodeHandle.vue'
 import { isMenuKey, isPress, isShowKey } from './keys'
 import { DWELL, useDwell, type Widened } from '../dwell'
 import { byHandle, type Reaching } from '../reaching'
+import { byDoubleClick, joined, type Showing } from '../showing'
 import { openedTo, woundBy, type HungParts, type Mark } from '../inside'
 import { lerp } from '../arrange'
 import { browserEnvironment, type Environment } from '../transition'
@@ -52,6 +53,8 @@ const props = withDefaults(
     dwell?: number
     /** How this node offers to be reached out of. The handle by default. */
     reaching?: Reaching
+    /** How this node is asked for on its own. The second click by default. */
+    showing?: Showing
     /** The clock the opening is drawn on. Browser by default. */
     environment?: Environment
   }>(),
@@ -61,6 +64,7 @@ const props = withDefaults(
     hung: null,
     dwell: DWELL,
     reaching: () => byHandle,
+    showing: () => byDoubleClick,
     environment: () => browserEnvironment,
   },
 )
@@ -143,11 +147,16 @@ const show = (modified: boolean) => {
  * What this node listens for beyond the handle, and whether it draws one.
  * Which of the two a reader gets is the plex's to choose.
  */
-const reaching = computed(() => props.reaching)
-const listening = reaching.value.listeners({
-  ready: () => !ghost.value && props.standing === 'open',
-  reach: (event: PointerEvent) => emit('reach', event),
-})
+const listening = joined(
+  props.reaching.listeners({
+    ready: () => !ghost.value && props.standing === 'open',
+    reach: (event: PointerEvent) => emit('reach', event),
+  }),
+  props.showing.listeners({
+    ready: () => stop.value,
+    show: (modified: boolean) => show(modified),
+  }),
+)
 
 /** The middle of the node, for a press, which carries no point of its own. */
 const middleOf = (element: SVGGElement): Point => {
@@ -351,7 +360,7 @@ const hue = computed(() => ({
     :class="[`plex__node--${node.seat}`, `plex__node--${standing}`]"
     :aria-label="ghost ? undefined : nameOf(node)"
     @click="activate"
-    @dblclick="show($event.altKey)"
+    @dblclick="showing.doubleClick && show($event.altKey)"
     @contextmenu="onContextMenu"
     @keydown="onKey"
     v-on="listening"

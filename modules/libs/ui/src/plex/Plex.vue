@@ -21,6 +21,7 @@ import PlexView from './render/PlexView.vue'
 import { useTitleWidths } from './measure'
 import { DWELL, widenedFor } from './dwell'
 import { byHandle, type Reaching } from './reaching'
+import { byDoubleClick, type Showing } from './showing'
 import { hangParts, type PlexPart } from './inside'
 import { usePlexTransition, browserEnvironment, type Environment } from './transition'
 import type { Placement, PlexOptionsInput } from './arrange'
@@ -64,6 +65,8 @@ const props = withDefaults(
     dwell?: number
     /** How a node offers to be reached out of. The handle by default. */
     reaching?: Reaching
+    /** How a node is asked for on its own. The second click by default. */
+    showing?: Showing
     /**
      * The parts of a node, asked for by the node's own identifier. They come
      * out from under its box while the attention rests on it, and a node named
@@ -97,6 +100,7 @@ const props = withDefaults(
     dragThreshold: 8,
     dwell: DWELL,
     reaching: () => byHandle,
+    showing: () => byDoubleClick,
     seatName: seatWord,
     carried: () => [],
     carriedName: seatWord,
@@ -308,6 +312,7 @@ defineExpose({ moving: toRef(moving) })
       :hung="hung"
       :dwell="dwell"
       :reaching="reaching"
+      :showing="showing"
       :environment="environment"
       :gesture-from="gesture.from.value"
       :gesture-at="gesture.at.value"
