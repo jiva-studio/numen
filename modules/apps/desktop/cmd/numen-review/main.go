@@ -69,17 +69,12 @@ func run(cfg container.Config) error {
 	}
 	defer db.Close()
 
-	running := cfg.Review(db.Queries(), db.Links(), nil)
+	queries := db.Queries()
 	api := &reviewui.API{
-		Registry:  registry,
-		Owed:      running.Owed,
-		Session:   running.Session,
-		Schedules: running.Schedules,
-		Log:       running.Log,
-		Read:      running.Read,
-		Write:     running.Write,
-		Opens:     opens,
-		Now:       time.Now,
+		Registry: registry,
+		Review:   cfg.Review(queries, db.Links(), nil),
+		Opens:    opens,
+		Now:      time.Now,
 	}
 
 	// The themes are the installation's, and a folder that could not be made

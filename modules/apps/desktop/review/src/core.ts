@@ -68,12 +68,6 @@ export interface Asked {
   readonly due: string
 }
 
-/** What a person wrote under one of a card's fields. */
-export interface Held {
-  readonly field: string
-  readonly text: string
-}
-
 /** The name of a deck, as it is shown: the file's, without folders or suffix. */
 export const deckName = (path: string): string => {
   const last = path.split('/').pop() ?? path

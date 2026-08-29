@@ -874,357 +874,6 @@ func (x *EditRequest) GetCard() string {
 	return ""
 }
 
-// CardValue is what a person wrote under one of a card's fields.
-type CardValue struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Field         string                 `protobuf:"bytes,1,opt,name=field,proto3" json:"field,omitempty"`
-	Text          string                 `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CardValue) Reset() {
-	*x = CardValue{}
-	mi := &file_numen_v1_review_proto_msgTypes[12]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CardValue) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CardValue) ProtoMessage() {}
-
-func (x *CardValue) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[12]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CardValue.ProtoReflect.Descriptor instead.
-func (*CardValue) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{12}
-}
-
-func (x *CardValue) GetField() string {
-	if x != nil {
-		return x.Field
-	}
-	return ""
-}
-
-func (x *CardValue) GetText() string {
-	if x != nil {
-		return x.Text
-	}
-	return ""
-}
-
-type ReadCardRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	VaultId       string                 `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
-	Deck          string                 `protobuf:"bytes,2,opt,name=deck,proto3" json:"deck,omitempty"`
-	Card          string                 `protobuf:"bytes,3,opt,name=card,proto3" json:"card,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ReadCardRequest) Reset() {
-	*x = ReadCardRequest{}
-	mi := &file_numen_v1_review_proto_msgTypes[13]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ReadCardRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ReadCardRequest) ProtoMessage() {}
-
-func (x *ReadCardRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[13]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ReadCardRequest.ProtoReflect.Descriptor instead.
-func (*ReadCardRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{13}
-}
-
-func (x *ReadCardRequest) GetVaultId() string {
-	if x != nil {
-		return x.VaultId
-	}
-	return ""
-}
-
-func (x *ReadCardRequest) GetDeck() string {
-	if x != nil {
-		return x.Deck
-	}
-	return ""
-}
-
-func (x *ReadCardRequest) GetCard() string {
-	if x != nil {
-		return x.Card
-	}
-	return ""
-}
-
-type ReadCardResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Values, in the order the stencil asks for them. A field the card leaves out
-	// stands here empty, so a person is shown every field there is to fill.
-	Values []*CardValue `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty"`
-	// What the file stands at, to present at the next write.
-	At *Fingerprint `protobuf:"bytes,2,opt,name=at,proto3" json:"at,omitempty"`
-	// Set where nothing could be read, in the person's own words.
-	Refused       string `protobuf:"bytes,3,opt,name=refused,proto3" json:"refused,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ReadCardResponse) Reset() {
-	*x = ReadCardResponse{}
-	mi := &file_numen_v1_review_proto_msgTypes[14]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ReadCardResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ReadCardResponse) ProtoMessage() {}
-
-func (x *ReadCardResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[14]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ReadCardResponse.ProtoReflect.Descriptor instead.
-func (*ReadCardResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{14}
-}
-
-func (x *ReadCardResponse) GetValues() []*CardValue {
-	if x != nil {
-		return x.Values
-	}
-	return nil
-}
-
-func (x *ReadCardResponse) GetAt() *Fingerprint {
-	if x != nil {
-		return x.At
-	}
-	return nil
-}
-
-func (x *ReadCardResponse) GetRefused() string {
-	if x != nil {
-		return x.Refused
-	}
-	return ""
-}
-
-type WriteCardRequest struct {
-	state   protoimpl.MessageState `protogen:"open.v1"`
-	VaultId string                 `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
-	Deck    string                 `protobuf:"bytes,2,opt,name=deck,proto3" json:"deck,omitempty"`
-	Card    string                 `protobuf:"bytes,3,opt,name=card,proto3" json:"card,omitempty"`
-	Values  []*CardValue           `protobuf:"bytes,4,rep,name=values,proto3" json:"values,omitempty"`
-	// What a read of this deck gave the caller.
-	At *Fingerprint `protobuf:"bytes,5,opt,name=at,proto3" json:"at,omitempty"`
-	// The face the card is being shown through, so what comes back is laid out
-	// the way the person is looking at it.
-	Face          string `protobuf:"bytes,6,opt,name=face,proto3" json:"face,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *WriteCardRequest) Reset() {
-	*x = WriteCardRequest{}
-	mi := &file_numen_v1_review_proto_msgTypes[15]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *WriteCardRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*WriteCardRequest) ProtoMessage() {}
-
-func (x *WriteCardRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[15]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use WriteCardRequest.ProtoReflect.Descriptor instead.
-func (*WriteCardRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{15}
-}
-
-func (x *WriteCardRequest) GetVaultId() string {
-	if x != nil {
-		return x.VaultId
-	}
-	return ""
-}
-
-func (x *WriteCardRequest) GetDeck() string {
-	if x != nil {
-		return x.Deck
-	}
-	return ""
-}
-
-func (x *WriteCardRequest) GetCard() string {
-	if x != nil {
-		return x.Card
-	}
-	return ""
-}
-
-func (x *WriteCardRequest) GetValues() []*CardValue {
-	if x != nil {
-		return x.Values
-	}
-	return nil
-}
-
-func (x *WriteCardRequest) GetAt() *Fingerprint {
-	if x != nil {
-		return x.At
-	}
-	return nil
-}
-
-func (x *WriteCardRequest) GetFace() string {
-	if x != nil {
-		return x.Face
-	}
-	return ""
-}
-
-type WriteCardResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	At    *Fingerprint           `protobuf:"bytes,1,opt,name=at,proto3" json:"at,omitempty"`
-	// The deck moved past what the caller read, and nothing was written.
-	Changed bool   `protobuf:"varint,2,opt,name=changed,proto3" json:"changed,omitempty"`
-	Refused string `protobuf:"bytes,3,opt,name=refused,proto3" json:"refused,omitempty"`
-	// The card as it now lays out through the face it was being shown through.
-	Front string `protobuf:"bytes,4,opt,name=front,proto3" json:"front,omitempty"`
-	Back  string `protobuf:"bytes,5,opt,name=back,proto3" json:"back,omitempty"`
-	// What the card's heading now shows, which is read from its first field.
-	Heading       string `protobuf:"bytes,6,opt,name=heading,proto3" json:"heading,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *WriteCardResponse) Reset() {
-	*x = WriteCardResponse{}
-	mi := &file_numen_v1_review_proto_msgTypes[16]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *WriteCardResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*WriteCardResponse) ProtoMessage() {}
-
-func (x *WriteCardResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[16]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use WriteCardResponse.ProtoReflect.Descriptor instead.
-func (*WriteCardResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{16}
-}
-
-func (x *WriteCardResponse) GetAt() *Fingerprint {
-	if x != nil {
-		return x.At
-	}
-	return nil
-}
-
-func (x *WriteCardResponse) GetChanged() bool {
-	if x != nil {
-		return x.Changed
-	}
-	return false
-}
-
-func (x *WriteCardResponse) GetRefused() string {
-	if x != nil {
-		return x.Refused
-	}
-	return ""
-}
-
-func (x *WriteCardResponse) GetFront() string {
-	if x != nil {
-		return x.Front
-	}
-	return ""
-}
-
-func (x *WriteCardResponse) GetBack() string {
-	if x != nil {
-		return x.Back
-	}
-	return ""
-}
-
-func (x *WriteCardResponse) GetHeading() string {
-	if x != nil {
-		return x.Heading
-	}
-	return ""
-}
-
 type EditResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Set when the editor could not be started, in the person's own words. The
@@ -1236,7 +885,7 @@ type EditResponse struct {
 
 func (x *EditResponse) Reset() {
 	*x = EditResponse{}
-	mi := &file_numen_v1_review_proto_msgTypes[17]
+	mi := &file_numen_v1_review_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1248,7 +897,7 @@ func (x *EditResponse) String() string {
 func (*EditResponse) ProtoMessage() {}
 
 func (x *EditResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[17]
+	mi := &file_numen_v1_review_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1261,7 +910,7 @@ func (x *EditResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EditResponse.ProtoReflect.Descriptor instead.
 func (*EditResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{17}
+	return file_numen_v1_review_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *EditResponse) GetRefused() string {
@@ -1275,7 +924,7 @@ var File_numen_v1_review_proto protoreflect.FileDescriptor
 
 const file_numen_v1_review_proto_rawDesc = "" +
 	"\n" +
-	"\x15numen/v1/review.proto\x12\bnumen.v1\x1a\x14numen/v1/vault.proto\"\xcc\x01\n" +
+	"\x15numen/v1/review.proto\x12\bnumen.v1\"\xcc\x01\n" +
 	"\n" +
 	"VaultOwing\x12\x19\n" +
 	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
@@ -1328,32 +977,7 @@ const file_numen_v1_review_proto_rawDesc = "" +
 	"\vEditRequest\x12\x19\n" +
 	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
 	"\x04deck\x18\x02 \x01(\tR\x04deck\x12\x12\n" +
-	"\x04card\x18\x03 \x01(\tR\x04card\"5\n" +
-	"\tCardValue\x12\x14\n" +
-	"\x05field\x18\x01 \x01(\tR\x05field\x12\x12\n" +
-	"\x04text\x18\x02 \x01(\tR\x04text\"T\n" +
-	"\x0fReadCardRequest\x12\x19\n" +
-	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
-	"\x04deck\x18\x02 \x01(\tR\x04deck\x12\x12\n" +
-	"\x04card\x18\x03 \x01(\tR\x04card\"\x80\x01\n" +
-	"\x10ReadCardResponse\x12+\n" +
-	"\x06values\x18\x01 \x03(\v2\x13.numen.v1.CardValueR\x06values\x12%\n" +
-	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintR\x02at\x12\x18\n" +
-	"\arefused\x18\x03 \x01(\tR\arefused\"\xbd\x01\n" +
-	"\x10WriteCardRequest\x12\x19\n" +
-	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
-	"\x04deck\x18\x02 \x01(\tR\x04deck\x12\x12\n" +
-	"\x04card\x18\x03 \x01(\tR\x04card\x12+\n" +
-	"\x06values\x18\x04 \x03(\v2\x13.numen.v1.CardValueR\x06values\x12%\n" +
-	"\x02at\x18\x05 \x01(\v2\x15.numen.v1.FingerprintR\x02at\x12\x12\n" +
-	"\x04face\x18\x06 \x01(\tR\x04face\"\xb2\x01\n" +
-	"\x11WriteCardResponse\x12%\n" +
-	"\x02at\x18\x01 \x01(\v2\x15.numen.v1.FingerprintR\x02at\x12\x18\n" +
-	"\achanged\x18\x02 \x01(\bR\achanged\x12\x18\n" +
-	"\arefused\x18\x03 \x01(\tR\arefused\x12\x14\n" +
-	"\x05front\x18\x04 \x01(\tR\x05front\x12\x12\n" +
-	"\x04back\x18\x05 \x01(\tR\x04back\x12\x18\n" +
-	"\aheading\x18\x06 \x01(\tR\aheading\"(\n" +
+	"\x04card\x18\x03 \x01(\tR\x04card\"(\n" +
 	"\fEditResponse\x12\x18\n" +
 	"\arefused\x18\x01 \x01(\tR\arefused*e\n" +
 	"\x06Rating\x12\x16\n" +
@@ -1361,14 +985,13 @@ const file_numen_v1_review_proto_rawDesc = "" +
 	"\fRATING_AGAIN\x10\x01\x12\x0f\n" +
 	"\vRATING_HARD\x10\x02\x12\x0f\n" +
 	"\vRATING_GOOD\x10\x03\x12\x0f\n" +
-	"\vRATING_EASY\x10\x042\x8c\x03\n" +
+	"\vRATING_EASY\x10\x042\xba\x02\n" +
 	"\rReviewService\x128\n" +
 	"\x05Owing\x12\x16.numen.v1.OwingRequest\x1a\x17.numen.v1.OwingResponse\x128\n" +
 	"\x05Start\x12\x16.numen.v1.StartRequest\x1a\x17.numen.v1.StartResponse\x12;\n" +
 	"\x06Answer\x12\x17.numen.v1.AnswerRequest\x1a\x18.numen.v1.AnswerResponse\x12A\n" +
-	"\bTakeBack\x12\x19.numen.v1.TakeBackRequest\x1a\x1a.numen.v1.TakeBackResponse\x12A\n" +
-	"\bReadCard\x12\x19.numen.v1.ReadCardRequest\x1a\x1a.numen.v1.ReadCardResponse\x12D\n" +
-	"\tWriteCard\x12\x1a.numen.v1.WriteCardRequest\x1a\x1b.numen.v1.WriteCardResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\bTakeBack\x12\x19.numen.v1.TakeBackRequest\x1a\x1a.numen.v1.TakeBackResponse\x125\n" +
+	"\x04Edit\x12\x15.numen.v1.EditRequest\x1a\x16.numen.v1.EditResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_review_proto_rawDescOnce sync.Once
@@ -1383,56 +1006,43 @@ func file_numen_v1_review_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_review_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_review_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_numen_v1_review_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_numen_v1_review_proto_goTypes = []any{
-	(Rating)(0),               // 0: numen.v1.Rating
-	(*VaultOwing)(nil),        // 1: numen.v1.VaultOwing
-	(*DeckOwing)(nil),         // 2: numen.v1.DeckOwing
-	(*Asked)(nil),             // 3: numen.v1.Asked
-	(*OwingRequest)(nil),      // 4: numen.v1.OwingRequest
-	(*OwingResponse)(nil),     // 5: numen.v1.OwingResponse
-	(*StartRequest)(nil),      // 6: numen.v1.StartRequest
-	(*StartResponse)(nil),     // 7: numen.v1.StartResponse
-	(*AnswerRequest)(nil),     // 8: numen.v1.AnswerRequest
-	(*AnswerResponse)(nil),    // 9: numen.v1.AnswerResponse
-	(*TakeBackRequest)(nil),   // 10: numen.v1.TakeBackRequest
-	(*TakeBackResponse)(nil),  // 11: numen.v1.TakeBackResponse
-	(*EditRequest)(nil),       // 12: numen.v1.EditRequest
-	(*CardValue)(nil),         // 13: numen.v1.CardValue
-	(*ReadCardRequest)(nil),   // 14: numen.v1.ReadCardRequest
-	(*ReadCardResponse)(nil),  // 15: numen.v1.ReadCardResponse
-	(*WriteCardRequest)(nil),  // 16: numen.v1.WriteCardRequest
-	(*WriteCardResponse)(nil), // 17: numen.v1.WriteCardResponse
-	(*EditResponse)(nil),      // 18: numen.v1.EditResponse
-	(*Fingerprint)(nil),       // 19: numen.v1.Fingerprint
+	(Rating)(0),              // 0: numen.v1.Rating
+	(*VaultOwing)(nil),       // 1: numen.v1.VaultOwing
+	(*DeckOwing)(nil),        // 2: numen.v1.DeckOwing
+	(*Asked)(nil),            // 3: numen.v1.Asked
+	(*OwingRequest)(nil),     // 4: numen.v1.OwingRequest
+	(*OwingResponse)(nil),    // 5: numen.v1.OwingResponse
+	(*StartRequest)(nil),     // 6: numen.v1.StartRequest
+	(*StartResponse)(nil),    // 7: numen.v1.StartResponse
+	(*AnswerRequest)(nil),    // 8: numen.v1.AnswerRequest
+	(*AnswerResponse)(nil),   // 9: numen.v1.AnswerResponse
+	(*TakeBackRequest)(nil),  // 10: numen.v1.TakeBackRequest
+	(*TakeBackResponse)(nil), // 11: numen.v1.TakeBackResponse
+	(*EditRequest)(nil),      // 12: numen.v1.EditRequest
+	(*EditResponse)(nil),     // 13: numen.v1.EditResponse
 }
 var file_numen_v1_review_proto_depIdxs = []int32{
 	2,  // 0: numen.v1.VaultOwing.decks:type_name -> numen.v1.DeckOwing
 	1,  // 1: numen.v1.OwingResponse.vaults:type_name -> numen.v1.VaultOwing
 	3,  // 2: numen.v1.StartResponse.asked:type_name -> numen.v1.Asked
 	0,  // 3: numen.v1.AnswerRequest.rating:type_name -> numen.v1.Rating
-	13, // 4: numen.v1.ReadCardResponse.values:type_name -> numen.v1.CardValue
-	19, // 5: numen.v1.ReadCardResponse.at:type_name -> numen.v1.Fingerprint
-	13, // 6: numen.v1.WriteCardRequest.values:type_name -> numen.v1.CardValue
-	19, // 7: numen.v1.WriteCardRequest.at:type_name -> numen.v1.Fingerprint
-	19, // 8: numen.v1.WriteCardResponse.at:type_name -> numen.v1.Fingerprint
-	4,  // 9: numen.v1.ReviewService.Owing:input_type -> numen.v1.OwingRequest
-	6,  // 10: numen.v1.ReviewService.Start:input_type -> numen.v1.StartRequest
-	8,  // 11: numen.v1.ReviewService.Answer:input_type -> numen.v1.AnswerRequest
-	10, // 12: numen.v1.ReviewService.TakeBack:input_type -> numen.v1.TakeBackRequest
-	14, // 13: numen.v1.ReviewService.ReadCard:input_type -> numen.v1.ReadCardRequest
-	16, // 14: numen.v1.ReviewService.WriteCard:input_type -> numen.v1.WriteCardRequest
-	5,  // 15: numen.v1.ReviewService.Owing:output_type -> numen.v1.OwingResponse
-	7,  // 16: numen.v1.ReviewService.Start:output_type -> numen.v1.StartResponse
-	9,  // 17: numen.v1.ReviewService.Answer:output_type -> numen.v1.AnswerResponse
-	11, // 18: numen.v1.ReviewService.TakeBack:output_type -> numen.v1.TakeBackResponse
-	15, // 19: numen.v1.ReviewService.ReadCard:output_type -> numen.v1.ReadCardResponse
-	17, // 20: numen.v1.ReviewService.WriteCard:output_type -> numen.v1.WriteCardResponse
-	15, // [15:21] is the sub-list for method output_type
-	9,  // [9:15] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	4,  // 4: numen.v1.ReviewService.Owing:input_type -> numen.v1.OwingRequest
+	6,  // 5: numen.v1.ReviewService.Start:input_type -> numen.v1.StartRequest
+	8,  // 6: numen.v1.ReviewService.Answer:input_type -> numen.v1.AnswerRequest
+	10, // 7: numen.v1.ReviewService.TakeBack:input_type -> numen.v1.TakeBackRequest
+	12, // 8: numen.v1.ReviewService.Edit:input_type -> numen.v1.EditRequest
+	5,  // 9: numen.v1.ReviewService.Owing:output_type -> numen.v1.OwingResponse
+	7,  // 10: numen.v1.ReviewService.Start:output_type -> numen.v1.StartResponse
+	9,  // 11: numen.v1.ReviewService.Answer:output_type -> numen.v1.AnswerResponse
+	11, // 12: numen.v1.ReviewService.TakeBack:output_type -> numen.v1.TakeBackResponse
+	13, // 13: numen.v1.ReviewService.Edit:output_type -> numen.v1.EditResponse
+	9,  // [9:14] is the sub-list for method output_type
+	4,  // [4:9] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_review_proto_init() }
@@ -1440,14 +1050,13 @@ func file_numen_v1_review_proto_init() {
 	if File_numen_v1_review_proto != nil {
 		return
 	}
-	file_numen_v1_vault_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_review_proto_rawDesc), len(file_numen_v1_review_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   18,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
