@@ -12,8 +12,6 @@ syntax = "proto3";
 // one card's values, and nothing above this has the two halves to fill it with.
 package numen.v1;
 
-import "numen/v1/vault.proto";
-
 option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
 
 // ReviewService is the front door, a session, and the answers given in it.
@@ -42,18 +40,10 @@ service ReviewService {
   // file: nothing in a log is ever rewritten or removed.
   rpc TakeBack(TakeBackRequest) returns (TakeBackResponse);
 
-  // ReadCard is one card's values, in the order its stencil asks for them. A
-  // card written badly is put right where it was met, and this is what a person
-  // is shown to put it right in.
-  rpc ReadCard(ReadCardRequest) returns (ReadCardResponse);
-
-  // WriteCard puts those values back into the deck, and hands the card back as
-  // it now lays out, so the person sees what they wrote where they wrote it.
-  //
-  // A deck that has moved since it was read is left alone and answered
-  // `changed`: what a person typed here is theirs, and nothing writes over what
-  // somebody else did to the file.
-  rpc WriteCard(WriteCardRequest) returns (WriteCardResponse);
+  // Edit brings the editor forward with a deck open at one card. It is the one
+  // thing this application hands over, and between two processes it is an
+  // invocation and not a call.
+  rpc Edit(EditRequest) returns (EditResponse);
 }
 
 // Rating is how well a card came back. A person says which of the four, and
@@ -178,52 +168,6 @@ message EditRequest {
   string vault_id = 1;
   string deck = 2;
   string card = 3;
-}
-
-// CardValue is what a person wrote under one of a card's fields.
-message CardValue {
-  string field = 1;
-  string text = 2;
-}
-
-message ReadCardRequest {
-  string vault_id = 1;
-  string deck = 2;
-  string card = 3;
-}
-
-message ReadCardResponse {
-  // Values, in the order the stencil asks for them. A field the card leaves out
-  // stands here empty, so a person is shown every field there is to fill.
-  repeated CardValue values = 1;
-  // What the file stands at, to present at the next write.
-  Fingerprint at = 2;
-  // Set where nothing could be read, in the person's own words.
-  string refused = 3;
-}
-
-message WriteCardRequest {
-  string vault_id = 1;
-  string deck = 2;
-  string card = 3;
-  repeated CardValue values = 4;
-  // What a read of this deck gave the caller.
-  Fingerprint at = 5;
-  // The face the card is being shown through, so what comes back is laid out
-  // the way the person is looking at it.
-  string face = 6;
-}
-
-message WriteCardResponse {
-  Fingerprint at = 1;
-  // The deck moved past what the caller read, and nothing was written.
-  bool changed = 2;
-  string refused = 3;
-  // The card as it now lays out through the face it was being shown through.
-  string front = 4;
-  string back = 5;
-  // What the card's heading now shows, which is read from its first field.
-  string heading = 6;
 }
 
 message EditResponse {
