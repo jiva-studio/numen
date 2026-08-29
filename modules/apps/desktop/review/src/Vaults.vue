@@ -29,9 +29,16 @@ const listed = computed<readonly Held[]>(() =>
   })),
 )
 
-/** How many cards a vault has waiting, by the identity of the vault. */
+/**
+ * How many cards a vault has waiting, by the identity of the vault. A vault
+ * that could not be counted is absent: what stands in its row is why, and not a
+ * number.
+ */
 const waiting = computed(
-  () => new Map(props.vaults.map((one) => [one.vaultId, one.unread ? null : one.due + one.new])),
+  () =>
+    new Map(
+      props.vaults.filter((one) => !one.unread).map((one) => [one.vaultId, one.due + one.new]),
+    ),
 )
 </script>
 
@@ -45,7 +52,7 @@ const waiting = computed(
   >
     <!-- The list is where the room is shortest, so the number stands alone. -->
     <template #vault="{ vault }">
-      <Owed v-if="waiting.get(vault.id) !== null" :waiting="waiting.get(vault.id) ?? 0" bare />
+      <Owed v-if="waiting.has(vault.id)" :waiting="waiting.get(vault.id)!" bare />
     </template>
   </Welcome>
 </template>

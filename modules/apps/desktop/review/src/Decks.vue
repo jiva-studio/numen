@@ -5,6 +5,7 @@
  * The whole vault is the ordinary way to sit down to this, so it stands at the
  * top as one button. A deck below it is for the person who came for that deck.
  */
+import { computed } from 'vue'
 import { Button, Owed } from '@numen/ui'
 import { deckName } from './core'
 import type { Owing } from './core'
@@ -16,7 +17,8 @@ defineEmits<{
   (event: 'back'): void
 }>()
 
-const owed = () => props.vault.due + props.vault.new
+/** What the whole vault owes: what is due today and what has never been asked. */
+const owed = computed(() => props.vault.due + props.vault.new)
 </script>
 
 <template>
@@ -43,9 +45,9 @@ const owed = () => props.vault.due + props.vault.new
          they read: sit down to the whole vault, or go and pick another. -->
     <footer class="decks__deeds">
       <Button variant="ghost" @click="$emit('back')">Another vault</Button>
-      <Button class="decks__all" :disabled="owed() === 0" @click="$emit('start', '')">
+      <Button class="decks__all" :disabled="owed === 0" @click="$emit('start', '')">
         Review everything
-        <Owed :waiting="owed()" over />
+        <Owed :waiting="owed" over />
       </Button>
     </footer>
   </section>

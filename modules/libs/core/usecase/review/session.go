@@ -20,6 +20,19 @@ type Asked struct {
 	Ahead map[history.Rating]time.Duration
 }
 
+// Sitting is what a person sits down to: the cards to ask, and what could not
+// be acted on in getting them.
+type Sitting struct {
+	Asked []Asked
+	// Unwritten are the decks holding a card with no mark that could not be
+	// given one. Their cards are not in Asked and are asked for at the next
+	// sitting.
+	Unwritten []string
+	// Skipped is how many lines of the vault's answers could not be read: a run
+	// that stopped partway, or a line of a version this build does not know.
+	Skipped int
+}
+
 // Session is what a person is asked, in the order they are asked it.
 //
 // A card owed and answered before comes first, the one waiting longest at the
@@ -42,19 +55,26 @@ type Session struct {
 // Deck is the path of one deck, or empty for every deck the vault holds. The
 // whole vault is the ordinary way to sit down to this: a person owes what they
 // owe, and which file a card is written in is not something they think about.
-func (u Session) Execute(ctx context.Context, v domain.Vault, deck string) ([]Asked, error) {
-	if err := u.Marking.Execute(ctx, v); err != nil {
-		return nil, err
+func (u Session) Execute(ctx context.Context, v domain.Vault, deck string) (Sitting, error) {
+	marked, err := u.Marking.Execute(ctx, v)
+	if err != nil {
+		return Sitting{}, err
 	}
 	standing, err := u.Standings.Execute(ctx, v)
 	if err != nil {
-		return nil, err
-	}
-	schedules, err := u.Schedules.Execute(ctx, v)
-	if err != nil {
-		return nil, err
+		return Sitting{}, err
 	}
 
+	// The log is read once here and the schedules worked out from it, so that
+	// what a person is told about lines that could not be read is the reading
+	// their own cards were laid out from.
+	held, err := Log{Stores: u.Schedules.Logs}.Read(ctx, v)
+	if err != nil {
+		return Sitting{}, err
+	}
+	schedules := u.Schedules.From(ctx, v, held)
+
+	out := Sitting{Unwritten: marked.Unwritten, Skipped: held.Skipped}
 	now := u.now()
 	var seen, fresh []Asked
 	for _, one := range standing {
@@ -73,7 +93,8 @@ func (u Session) Execute(ctx context.Context, v domain.Vault, deck string) ([]As
 	slices.SortStableFunc(seen, func(a, b Asked) int {
 		return a.Schedule.Due.Compare(b.Schedule.Due)
 	})
-	return append(seen, fresh...), nil
+	out.Asked = append(seen, fresh...)
+	return out, nil
 }
 
 // ahead is how long each of the four would leave a card standing where this

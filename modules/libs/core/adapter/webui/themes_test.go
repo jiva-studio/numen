@@ -17,9 +17,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
 
-// dressing is a window's themes as a client reaches them: through the handler
+// themed is a window's themes as a client reaches them: through the handler
 // that answers everything else the window asks.
-func dressing(t *testing.T, cfg container.Config) numenv1connect.ThemeServiceClient {
+func themed(t *testing.T, cfg container.Config) numenv1connect.ThemeServiceClient {
 	t.Helper()
 
 	themes, err := cfg.Themes(nil)
@@ -40,7 +40,7 @@ func installed(t *testing.T) container.Config {
 }
 
 func TestTheWindowAsksTheSameHandlerAboutItsThemes(t *testing.T) {
-	client := dressing(t, installed(t))
+	client := themed(t, installed(t))
 
 	answer, err := client.Themes(t.Context(), connect.NewRequest(&v1.ThemesRequest{}))
 	if err != nil {
@@ -73,7 +73,7 @@ func TestAThemeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	client := dressing(t, cfg)
+	client := themed(t, cfg)
 	chosen, err := client.Choose(t.Context(),
 		connect.NewRequest(&v1.ChooseRequest{Name: "preset:nord", Mode: v1.Mode_MODE_DARK}))
 	if err != nil {
@@ -107,7 +107,7 @@ func TestAThemeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 func TestASizeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 	cfg := installed(t)
 	file := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
-	client := dressing(t, cfg)
+	client := themed(t, cfg)
 
 	drawn := 1.5
 	chosen, err := client.Choose(t.Context(), connect.NewRequest(&v1.ChooseRequest{
@@ -148,7 +148,7 @@ func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsWritten(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	client := dressing(t, cfg)
+	client := themed(t, cfg)
 	set := 4.0
 	chosen, err := client.Choose(t.Context(), connect.NewRequest(&v1.ChooseRequest{
 		Name:      settings.DefaultTheme,
@@ -176,7 +176,7 @@ func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsWritten(t *testing.T) {
 func TestASizeSaidForOneLaunchStandsUntilAPersonChoosesOne(t *testing.T) {
 	cfg := installed(t)
 	cfg.InterfaceScale = 1.25
-	client := dressing(t, cfg)
+	client := themed(t, cfg)
 
 	answer, err := client.Themes(t.Context(), connect.NewRequest(&v1.ThemesRequest{}))
 	if err != nil {

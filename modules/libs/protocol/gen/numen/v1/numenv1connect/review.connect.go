@@ -4,14 +4,14 @@
 
 // What a client running a person's cards may ask.
 //
-// Review is an application of its own, beside the editor and over the same core
-// (ADR-0030), so this service stands beside the editor's and shares nothing with
-// it. It reaches every vault the installation knows, because what a person owes
+// Review is an application of its own, beside the editor and over the same
+// core, so this service stands beside the editor's and shares nothing with it.
+// It reaches every vault the installation knows, because what a person owes
 // today is owed across all of them.
 //
 // A card is laid out here, unlike the cards service, which hands a face over as
-// the markdown it was written as: what a person is shown is the face filled with
-// one card's values, and nothing above this has the two halves to fill it with.
+// it was written: what a person is shown is the face filled with one card's
+// values, and nothing above this has the two halves to fill it with.
 package numenv1connect
 
 import (

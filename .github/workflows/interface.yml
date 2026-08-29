@@ -5,6 +5,7 @@ on:
     paths:
       - "modules/libs/ui/**"
       - "modules/apps/desktop/ui/**"
+      - "modules/apps/desktop/review/**"
       - "modules/apps/mobile/src/**"
       - "modules/apps/mobile/package.json"
       - "modules/libs/protocol/**"
@@ -14,13 +15,14 @@ on:
     paths:
       - "modules/libs/ui/**"
       - "modules/apps/desktop/ui/**"
+      - "modules/apps/desktop/review/**"
       - "modules/apps/mobile/src/**"
       - "modules/apps/mobile/package.json"
       - "modules/libs/protocol/**"
       - ".github/workflows/interface.yml"
 
 jobs:
-  # The shared components, and the window that arranges them. Both are typed
+  # The shared components, and the screens that arrange them. All are typed
   # against the schema, so a change to it fails here rather than on screen.
   components:
     runs-on: ubuntu-latest
@@ -31,7 +33,7 @@ jobs:
         with:
           node-version: "22"
 
-      # The window is typed against the schema and against the components, so
+      # A window is typed against the schema and against the components, so
       # both have to be there before anything is checked: the schema's own
       # dependencies, and the components built into the shape a consumer sees.
       - name: Install
@@ -39,6 +41,7 @@ jobs:
           npm install --prefix modules/libs/protocol
           npm ci --prefix modules/libs/ui
           npm install --prefix modules/apps/desktop/ui
+          npm install --prefix modules/apps/desktop/review
           npm install --prefix modules/apps/mobile
 
       # A story runs in a real browser, and several of them are the only test of
@@ -54,6 +57,7 @@ jobs:
       - name: Typecheck
         run: |
           npm run typecheck --prefix modules/apps/desktop/ui
+          npm run typecheck --prefix modules/apps/desktop/review
           npm run typecheck --prefix modules/apps/mobile
 
       - name: Test
@@ -61,3 +65,4 @@ jobs:
           npm run test:unit --prefix modules/libs/ui
           npm run test:stories --prefix modules/libs/ui
           npm test --prefix modules/apps/desktop/ui
+          npm test --prefix modules/apps/desktop/review

@@ -61,11 +61,9 @@ export interface Asked {
   readonly section: string
   readonly card: string
   readonly face: string
-  readonly heading: string
   readonly front: string
   readonly back: string
   readonly seen: boolean
-  readonly due: string
   /** Where each of the four would leave it. */
   readonly ahead: Ahead | null
 }

@@ -44,7 +44,33 @@ func (s *Schedules) Write(_ context.Context, vaultID string, content []byte) err
 	if err := os.MkdirAll(filepath.Dir(at), 0o755); err != nil {
 		return err
 	}
-	return os.WriteFile(at, content, 0o644)
+
+	// The file is written whole beside itself and moved into place, so a second
+	// window writing the same vault leaves one of the two and never half of
+	// both. A move that fails leaves the temporary file, which the next write
+	// replaces.
+	tmp, err := os.CreateTemp(filepath.Dir(at), filepath.Base(at)+".*")
+	if err != nil {
+		return err
+	}
+	if _, err := tmp.Write(content); err != nil {
+		tmp.Close()
+		os.Remove(tmp.Name())
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		os.Remove(tmp.Name())
+		return err
+	}
+	if err := os.Chmod(tmp.Name(), 0o644); err != nil {
+		os.Remove(tmp.Name())
+		return err
+	}
+	if err := os.Rename(tmp.Name(), at); err != nil {
+		os.Remove(tmp.Name())
+		return err
+	}
+	return nil
 }
 
 // at is the file one vault's schedules stand in.

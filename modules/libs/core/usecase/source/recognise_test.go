@@ -55,16 +55,16 @@ func (s *shelf) Append(_ context.Context, name string, content []byte) error {
 	return nil
 }
 
-func (s *shelf) List(_ context.Context, name string) ([]string, error) {
+func (s *shelf) List(_ context.Context, name string) ([]port.Stored, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	var out []string
-	for held := range s.files {
+	var out []port.Stored
+	for held, content := range s.files {
 		if strings.HasPrefix(held, name+"/") && !strings.Contains(held[len(name)+1:], "/") {
-			out = append(out, held)
+			out = append(out, port.Stored{Name: held, Size: len(content)})
 		}
 	}
-	slices.Sort(out)
+	slices.SortFunc(out, func(a, b port.Stored) int { return strings.Compare(a.Name, b.Name) })
 	return out, nil
 }
 

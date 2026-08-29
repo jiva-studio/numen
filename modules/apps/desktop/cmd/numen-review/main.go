@@ -1,12 +1,12 @@
 // Command numen-review is the window a person runs their cards in.
 //
-// It stands beside the editor and over the same core (ADR-0030): writing cards
-// is occasional and running them is daily, and the daily act is not reached
+// It stands beside the editor and over the same core: writing cards is
+// occasional and running them is daily, and the daily act is not reached
 // through the application built for the other one.
 //
-// It reads the vault registry and the index and writes neither. The one thing
-// it writes into a vault is a mark for a card typed by hand, and the answers,
-// which go to the vault's own folder.
+// It reads the vault registry and the index and writes neither. What it writes
+// into a vault is a mark for a card typed by hand, and the answers, which go to
+// the vault's own folder.
 package main
 
 import (
@@ -58,8 +58,10 @@ func run(cfg container.Config) error {
 
 	// The index is opened to be read and never written: what it answers here is
 	// which files of a vault are decks, and nothing else. A second writer over
-	// the one database every vault shares is what that avoids.
-	db, err := cfg.OpenIndex(ctx)
+	// the one database every vault shares is what that avoids, and an index
+	// that is not there is not made — the vaults then read as unread, which is
+	// what they are.
+	db, err := cfg.OpenIndexToRead(ctx)
 	if err != nil {
 		return err
 	}

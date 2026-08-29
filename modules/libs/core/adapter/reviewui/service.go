@@ -63,8 +63,11 @@ func (a *API) Start(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
-	asked, err := a.Session.Execute(ctx, v, r.Msg.GetDeck())
+	sitting, err := a.Session.Execute(ctx, v, r.Msg.GetDeck())
 	if err != nil {
+		if errors.Is(err, review.ErrUnread) {
+			return nil, connect.NewError(connect.CodeFailedPrecondition, err)
+		}
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	run, err := a.opened(ctx, v)
@@ -72,8 +75,13 @@ func (a *API) Start(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	out := &v1.StartResponse{Run: run.Name(), Asked: make([]*v1.Asked, 0, len(asked))}
-	for _, one := range asked {
+	out := &v1.StartResponse{
+		Run:       run.Name(),
+		Asked:     make([]*v1.Asked, 0, len(sitting.Asked)),
+		Unwritten: sitting.Unwritten,
+		Skipped:   int32(sitting.Skipped),
+	}
+	for _, one := range sitting.Asked {
 		out.Asked = append(out.Asked, askedOf(one))
 	}
 	return connect.NewResponse(out), nil
@@ -116,7 +124,7 @@ func (a *API) Answer(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
-	run, err := a.running(r.Msg.GetRun())
+	run, err := a.running(v.ID, r.Msg.GetRun())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
@@ -132,13 +140,7 @@ func (a *API) Answer(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	// What the answer left behind is worked out from the log the answer is now
-	// part of, so the page draws the same day the next launch will.
-	out := &v1.AnswerResponse{Answer: given.ID}
-	if schedules, err := a.Schedules.Execute(ctx, v); err == nil {
-		out.Due = stamp(schedules[on].Due)
-	}
-	return connect.NewResponse(out), nil
+	return connect.NewResponse(&v1.AnswerResponse{Answer: given.ID}), nil
 }
 
 // rating is the four a person may say. Anything else is refused by the use case,
@@ -161,16 +163,22 @@ func rating(r v1.Rating) history.Rating {
 func (a *API) TakeBack(
 	ctx context.Context, r *connect.Request[v1.TakeBackRequest],
 ) (*connect.Response[v1.TakeBackResponse], error) {
-	if _, err := a.Vault(r.Msg.GetVaultId()); err != nil {
+	v, err := a.Vault(r.Msg.GetVaultId())
+	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
-	run, err := a.running(r.Msg.GetRun())
+	run, err := a.running(v.ID, r.Msg.GetRun())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
 	record := review.Record{Run: run, Now: a.Now}
 	if _, err := record.TakeBack(ctx, r.Msg.GetAnswer()); err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		// An answer with no identifier is the caller's mistake; a line that
+		// could not be written is not.
+		if r.Msg.GetAnswer() == "" {
+			return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		}
+		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&v1.TakeBackResponse{}), nil
 }

@@ -424,7 +424,6 @@ const carries = (id: string, at: Where) => {
   told(commands.refused(id, at), 'refusal')
 }
 
-/** The ways in the welcome screen offers, and the vaults it draws. */
 // What the welcome screen offers below the list of vaults.
 const adding = computed(() => {
   const icon = iconFor('newVault')

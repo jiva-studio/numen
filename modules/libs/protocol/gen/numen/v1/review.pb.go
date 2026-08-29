@@ -6,14 +6,14 @@
 
 // What a client running a person's cards may ask.
 //
-// Review is an application of its own, beside the editor and over the same core
-// (ADR-0030), so this service stands beside the editor's and shares nothing with
-// it. It reaches every vault the installation knows, because what a person owes
+// Review is an application of its own, beside the editor and over the same
+// core, so this service stands beside the editor's and shares nothing with it.
+// It reaches every vault the installation knows, because what a person owes
 // today is owed across all of them.
 //
 // A card is laid out here, unlike the cards service, which hands a face over as
-// the markdown it was written as: what a person is shown is the face filled with
-// one card's values, and nothing above this has the two halves to fill it with.
+// it was written: what a person is shown is the face filled with one card's
+// values, and nothing above this has the two halves to fill it with.
 
 package numenv1
 
@@ -355,7 +355,7 @@ type Asked struct {
 	// Heading is what the card's heading shows, which is the first line of its
 	// first field.
 	Heading string `protobuf:"bytes,5,opt,name=heading,proto3" json:"heading,omitempty"`
-	// Front and back are the face laid out with this card's values, as markdown.
+	// Front and back are the face laid out with this card's values, as HTML.
 	Front string `protobuf:"bytes,6,opt,name=front,proto3" json:"front,omitempty"`
 	Back  string `protobuf:"bytes,7,opt,name=back,proto3" json:"back,omitempty"`
 	// Seen is false for a card nobody has answered, which is what a person means
@@ -606,8 +606,14 @@ type StartResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Run is what an answer given in this sitting is written to, and it is what
 	// an Answer names.
-	Run           string   `protobuf:"bytes,1,opt,name=run,proto3" json:"run,omitempty"`
-	Asked         []*Asked `protobuf:"bytes,2,rep,name=asked,proto3" json:"asked,omitempty"`
+	Run   string   `protobuf:"bytes,1,opt,name=run,proto3" json:"run,omitempty"`
+	Asked []*Asked `protobuf:"bytes,2,rep,name=asked,proto3" json:"asked,omitempty"`
+	// Unwritten are the decks holding a card with no mark that could not be given
+	// one. Their cards are not in this sitting and are asked for at the next.
+	Unwritten []string `protobuf:"bytes,3,rep,name=unwritten,proto3" json:"unwritten,omitempty"`
+	// Skipped is how many lines of the vault's answers could not be read: a run
+	// that stopped partway, or a line of a version this build does not know.
+	Skipped       int32 `protobuf:"varint,4,opt,name=skipped,proto3" json:"skipped,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -654,6 +660,20 @@ func (x *StartResponse) GetAsked() []*Asked {
 		return x.Asked
 	}
 	return nil
+}
+
+func (x *StartResponse) GetUnwritten() []string {
+	if x != nil {
+		return x.Unwritten
+	}
+	return nil
+}
+
+func (x *StartResponse) GetSkipped() int32 {
+	if x != nil {
+		return x.Skipped
+	}
+	return 0
 }
 
 type AnswerRequest struct {
@@ -746,9 +766,7 @@ type AnswerResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Answer is the identifier of the line written, which is what taking it back
 	// names.
-	Answer string `protobuf:"bytes,1,opt,name=answer,proto3" json:"answer,omitempty"`
-	// Due is when the card comes round again, as the answers now stand.
-	Due           string `protobuf:"bytes,2,opt,name=due,proto3" json:"due,omitempty"`
+	Answer        string `protobuf:"bytes,1,opt,name=answer,proto3" json:"answer,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -786,13 +804,6 @@ func (*AnswerResponse) Descriptor() ([]byte, []int) {
 func (x *AnswerResponse) GetAnswer() string {
 	if x != nil {
 		return x.Answer
-	}
-	return ""
-}
-
-func (x *AnswerResponse) GetDue() string {
-	if x != nil {
-		return x.Due
 	}
 	return ""
 }
@@ -936,20 +947,21 @@ const file_numen_v1_review_proto_rawDesc = "" +
 	"\x06vaults\x18\x01 \x03(\v2\x14.numen.v1.VaultOwingR\x06vaults\"=\n" +
 	"\fStartRequest\x12\x19\n" +
 	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
-	"\x04deck\x18\x02 \x01(\tR\x04deck\"H\n" +
+	"\x04deck\x18\x02 \x01(\tR\x04deck\"\x80\x01\n" +
 	"\rStartResponse\x12\x10\n" +
 	"\x03run\x18\x01 \x01(\tR\x03run\x12%\n" +
-	"\x05asked\x18\x02 \x03(\v2\x0f.numen.v1.AskedR\x05asked\"\xa7\x01\n" +
+	"\x05asked\x18\x02 \x03(\v2\x0f.numen.v1.AskedR\x05asked\x12\x1c\n" +
+	"\tunwritten\x18\x03 \x03(\tR\tunwritten\x12\x18\n" +
+	"\askipped\x18\x04 \x01(\x05R\askipped\"\xa7\x01\n" +
 	"\rAnswerRequest\x12\x19\n" +
 	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x10\n" +
 	"\x03run\x18\x02 \x01(\tR\x03run\x12\x12\n" +
 	"\x04card\x18\x03 \x01(\tR\x04card\x12\x12\n" +
 	"\x04face\x18\x04 \x01(\tR\x04face\x12(\n" +
 	"\x06rating\x18\x05 \x01(\x0e2\x10.numen.v1.RatingR\x06rating\x12\x17\n" +
-	"\atook_ms\x18\x06 \x01(\x03R\x06tookMs\":\n" +
+	"\atook_ms\x18\x06 \x01(\x03R\x06tookMs\"(\n" +
 	"\x0eAnswerResponse\x12\x16\n" +
-	"\x06answer\x18\x01 \x01(\tR\x06answer\x12\x10\n" +
-	"\x03due\x18\x02 \x01(\tR\x03due\"V\n" +
+	"\x06answer\x18\x01 \x01(\tR\x06answer\"V\n" +
 	"\x0fTakeBackRequest\x12\x19\n" +
 	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x10\n" +
 	"\x03run\x18\x02 \x01(\tR\x03run\x12\x16\n" +

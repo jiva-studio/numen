@@ -15,6 +15,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/modules/libs/core/appearance"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
 
@@ -145,7 +146,7 @@ func TestTheStyleElementsAreTheLastThingInTheHead(t *testing.T) {
 		TextScale:      size(1.5),
 	})
 
-	head, _, found := strings.Cut(handed(handler, "/").Body.String(), headEnd)
+	head, _, found := strings.Cut(handed(handler, "/").Body.String(), appearance.HeadEnd)
 	if !found {
 		t.Fatal("the page has no head")
 	}
@@ -254,7 +255,7 @@ func TestAThemeCannotEndTheElementItIsIn(t *testing.T) {
 	choose(t, themes, "mine:loud", v1.Mode_MODE_SYSTEM)
 
 	body := handed(handler, "/").Body.String()
-	head, rest, found := strings.Cut(body, headEnd)
+	head, rest, found := strings.Cut(body, appearance.HeadEnd)
 	if !found {
 		t.Fatal("the page has no head")
 	}

@@ -57,6 +57,12 @@ type NoteQueries interface {
 	// the decks or the stencils of a vault asks for them, and opens no file to
 	// find out what each note is.
 	OfType(ctx context.Context, vaultID string, of domain.NoteType) ([]string, error)
+
+	// Holds reports whether the index carries this vault at all. A vault it
+	// does not carry is one nothing has scanned yet, and a caller that only
+	// reads the index tells a person so rather than showing them a vault that
+	// looks empty.
+	Holds(ctx context.Context, vaultID string) (bool, error)
 }
 
 // Stencil is one stencil as a caller choosing between them sees it: where the

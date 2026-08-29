@@ -2,14 +2,14 @@ syntax = "proto3";
 
 // What a client running a person's cards may ask.
 //
-// Review is an application of its own, beside the editor and over the same core
-// (ADR-0030), so this service stands beside the editor's and shares nothing with
-// it. It reaches every vault the installation knows, because what a person owes
+// Review is an application of its own, beside the editor and over the same
+// core, so this service stands beside the editor's and shares nothing with it.
+// It reaches every vault the installation knows, because what a person owes
 // today is owed across all of them.
 //
 // A card is laid out here, unlike the cards service, which hands a face over as
-// the markdown it was written as: what a person is shown is the face filled with
-// one card's values, and nothing above this has the two halves to fill it with.
+// it was written: what a person is shown is the face filled with one card's
+// values, and nothing above this has the two halves to fill it with.
 package numen.v1;
 
 option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
@@ -111,7 +111,7 @@ message Asked {
   // first field.
   string heading = 5;
 
-  // Front and back are the face laid out with this card's values, as markdown.
+  // Front and back are the face laid out with this card's values, as HTML.
   string front = 6;
   string back = 7;
 
@@ -142,6 +142,14 @@ message StartResponse {
   // an Answer names.
   string run = 1;
   repeated Asked asked = 2;
+
+  // Unwritten are the decks holding a card with no mark that could not be given
+  // one. Their cards are not in this sitting and are asked for at the next.
+  repeated string unwritten = 3;
+
+  // Skipped is how many lines of the vault's answers could not be read: a run
+  // that stopped partway, or a line of a version this build does not know.
+  int32 skipped = 4;
 }
 
 message AnswerRequest {
@@ -159,8 +167,6 @@ message AnswerResponse {
   // Answer is the identifier of the line written, which is what taking it back
   // names.
   string answer = 1;
-  // Due is when the card comes round again, as the answers now stand.
-  string due = 2;
 }
 
 message TakeBackRequest {
