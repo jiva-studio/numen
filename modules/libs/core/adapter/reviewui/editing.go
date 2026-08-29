@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"slices"
 
 	"connectrpc.com/connect"
 
@@ -118,47 +117,6 @@ func (a *API) WriteCard(
 		}
 	}
 	return connect.NewResponse(out), nil
-}
-
-// RemoveCard takes the card out of its deck.
-//
-// The answers given to it stay in the log. A card taken out is a card nothing
-// asks about, and if it is ever put back it is put back under its own mark and
-// its history is its own.
-func (a *API) RemoveCard(
-	ctx context.Context, r *connect.Request[v1.RemoveCardRequest],
-) (*connect.Response[v1.RemoveCardResponse], error) {
-	v, err := a.Vault(r.Msg.GetVaultId())
-	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, err)
-	}
-	deck, err := a.Read.Deck(ctx, v, r.Msg.GetDeck())
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
-	}
-
-	at, held := held(deck.Deck, r.Msg.GetCard())
-	if !held {
-		return connect.NewResponse(&v1.RemoveCardResponse{
-			Refused: fmt.Sprintf("%v: %s", ErrNoSuchCard, r.Msg.GetCard()),
-		}), nil
-	}
-
-	whole := deck.Deck
-	whole.Cards = slices.Delete(append([]format.Card(nil), deck.Deck.Cards...), at, at+1)
-	body, err := format.DeckBody(whole)
-	if err != nil {
-		return connect.NewResponse(&v1.RemoveCardResponse{Refused: err.Error()}), nil
-	}
-
-	written, err := a.Write.Deck(ctx, v, r.Msg.GetDeck(), body, refOf(r.Msg.GetAt()))
-	if errors.Is(err, port.ErrChanged) {
-		return connect.NewResponse(&v1.RemoveCardResponse{Changed: true}), nil
-	}
-	if err != nil {
-		return connect.NewResponse(&v1.RemoveCardResponse{Refused: err.Error()}), nil
-	}
-	return connect.NewResponse(&v1.RemoveCardResponse{At: fingerprintOf(written.At)}), nil
 }
 
 // card is one card of a deck, and the stencil that cuts it.

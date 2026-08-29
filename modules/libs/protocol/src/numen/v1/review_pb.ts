@@ -23,7 +23,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/review.proto.
  */
 export const file_numen_v1_review: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9yZXZpZXcucHJvdG8SCG51bWVuLnYxIpcBCgpWYXVsdE93aW5nEhAKCHZhdWx0X2lkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEcGF0aBgDIAEoCRINCgVmYWNlcxgEIAEoBRILCgNkdWUYBSABKAUSCwoDbmV3GAYgASgFEiIKBWRlY2tzGAcgAygLMhMubnVtZW4udjEuRGVja093aW5nEg4KBnVucmVhZBgIIAEoCSJCCglEZWNrT3dpbmcSDAoEZGVjaxgBIAEoCRINCgVmYWNlcxgCIAEoBRILCgNkdWUYAyABKAUSCwoDbmV3GAQgASgFIosBCgVBc2tlZBIMCgRkZWNrGAEgASgJEg8KB3NlY3Rpb24YAiABKAkSDAoEY2FyZBgDIAEoCRIMCgRmYWNlGAQgASgJEg8KB2hlYWRpbmcYBSABKAkSDQoFZnJvbnQYBiABKAkSDAoEYmFjaxgHIAEoCRIMCgRzZWVuGAggASgIEgsKA2R1ZRgJIAEoCSIOCgxPd2luZ1JlcXVlc3QiNQoNT3dpbmdSZXNwb25zZRIkCgZ2YXVsdHMYASADKAsyFC5udW1lbi52MS5WYXVsdE93aW5nIi4KDFN0YXJ0UmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRIMCgRkZWNrGAIgASgJIjwKDVN0YXJ0UmVzcG9uc2USCwoDcnVuGAEgASgJEh4KBWFza2VkGAIgAygLMg8ubnVtZW4udjEuQXNrZWQifQoNQW5zd2VyUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRILCgNydW4YAiABKAkSDAoEY2FyZBgDIAEoCRIMCgRmYWNlGAQgASgJEiAKBnJhdGluZxgFIAEoDjIQLm51bWVuLnYxLlJhdGluZxIPCgd0b29rX21zGAYgASgDIi0KDkFuc3dlclJlc3BvbnNlEg4KBmFuc3dlchgBIAEoCRILCgNkdWUYAiABKAkiQAoPVGFrZUJhY2tSZXF1ZXN0EhAKCHZhdWx0X2lkGAEgASgJEgsKA3J1bhgCIAEoCRIOCgZhbnN3ZXIYAyABKAkiEgoQVGFrZUJhY2tSZXNwb25zZSJkChFSZW1vdmVDYXJkUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRIMCgRkZWNrGAIgASgJEgwKBGNhcmQYAyABKAkSIQoCYXQYBCABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludCJZChJSZW1vdmVDYXJkUmVzcG9uc2USIQoCYXQYASABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludBIPCgdjaGFuZ2VkGAIgASgIEg8KB3JlZnVzZWQYAyABKAkiOwoLRWRpdFJlcXVlc3QSEAoIdmF1bHRfaWQYASABKAkSDAoEZGVjaxgCIAEoCRIMCgRjYXJkGAMgASgJIigKCUNhcmRWYWx1ZRINCgVmaWVsZBgBIAEoCRIMCgR0ZXh0GAIgASgJIj8KD1JlYWRDYXJkUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRIMCgRkZWNrGAIgASgJEgwKBGNhcmQYAyABKAkifAoQUmVhZENhcmRSZXNwb25zZRIjCgZ2YWx1ZXMYASADKAsyEy5udW1lbi52MS5DYXJkVmFsdWUSIQoCYXQYAiABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludBIPCgdyZWZ1c2VkGAMgASgJEg8KB3N0ZW5jaWwYBCABKAkilgEKEFdyaXRlQ2FyZFJlcXVlc3QSEAoIdmF1bHRfaWQYASABKAkSDAoEZGVjaxgCIAEoCRIMCgRjYXJkGAMgASgJEiMKBnZhbHVlcxgEIAMoCzITLm51bWVuLnYxLkNhcmRWYWx1ZRIhCgJhdBgFIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50EgwKBGZhY2UYBiABKAkihgEKEVdyaXRlQ2FyZFJlc3BvbnNlEiEKAmF0GAEgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnQSDwoHY2hhbmdlZBgCIAEoCBIPCgdyZWZ1c2VkGAMgASgJEg0KBWZyb250GAQgASgJEgwKBGJhY2sYBSABKAkSDwoHaGVhZGluZxgGIAEoCSIfCgxFZGl0UmVzcG9uc2USDwoHcmVmdXNlZBgBIAEoCSplCgZSYXRpbmcSFgoSUkFUSU5HX1VOU1BFQ0lGSUVEEAASEAoMUkFUSU5HX0FHQUlOEAESDwoLUkFUSU5HX0hBUkQQAhIPCgtSQVRJTkdfR09PRBADEg8KC1JBVElOR19FQVNZEAQy1QMKDVJldmlld1NlcnZpY2USOAoFT3dpbmcSFi5udW1lbi52MS5Pd2luZ1JlcXVlc3QaFy5udW1lbi52MS5Pd2luZ1Jlc3BvbnNlEjgKBVN0YXJ0EhYubnVtZW4udjEuU3RhcnRSZXF1ZXN0GhcubnVtZW4udjEuU3RhcnRSZXNwb25zZRI7CgZBbnN3ZXISFy5udW1lbi52MS5BbnN3ZXJSZXF1ZXN0GhgubnVtZW4udjEuQW5zd2VyUmVzcG9uc2USQQoIVGFrZUJhY2sSGS5udW1lbi52MS5UYWtlQmFja1JlcXVlc3QaGi5udW1lbi52MS5UYWtlQmFja1Jlc3BvbnNlEkEKCFJlYWRDYXJkEhkubnVtZW4udjEuUmVhZENhcmRSZXF1ZXN0GhoubnVtZW4udjEuUmVhZENhcmRSZXNwb25zZRJECglXcml0ZUNhcmQSGi5udW1lbi52MS5Xcml0ZUNhcmRSZXF1ZXN0GhsubnVtZW4udjEuV3JpdGVDYXJkUmVzcG9uc2USRwoKUmVtb3ZlQ2FyZBIbLm51bWVuLnYxLlJlbW92ZUNhcmRSZXF1ZXN0GhwubnVtZW4udjEuUmVtb3ZlQ2FyZFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_vault]);
+  fileDesc("ChVudW1lbi92MS9yZXZpZXcucHJvdG8SCG51bWVuLnYxIpcBCgpWYXVsdE93aW5nEhAKCHZhdWx0X2lkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEcGF0aBgDIAEoCRINCgVmYWNlcxgEIAEoBRILCgNkdWUYBSABKAUSCwoDbmV3GAYgASgFEiIKBWRlY2tzGAcgAygLMhMubnVtZW4udjEuRGVja093aW5nEg4KBnVucmVhZBgIIAEoCSJCCglEZWNrT3dpbmcSDAoEZGVjaxgBIAEoCRINCgVmYWNlcxgCIAEoBRILCgNkdWUYAyABKAUSCwoDbmV3GAQgASgFIosBCgVBc2tlZBIMCgRkZWNrGAEgASgJEg8KB3NlY3Rpb24YAiABKAkSDAoEY2FyZBgDIAEoCRIMCgRmYWNlGAQgASgJEg8KB2hlYWRpbmcYBSABKAkSDQoFZnJvbnQYBiABKAkSDAoEYmFjaxgHIAEoCRIMCgRzZWVuGAggASgIEgsKA2R1ZRgJIAEoCSIOCgxPd2luZ1JlcXVlc3QiNQoNT3dpbmdSZXNwb25zZRIkCgZ2YXVsdHMYASADKAsyFC5udW1lbi52MS5WYXVsdE93aW5nIi4KDFN0YXJ0UmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRIMCgRkZWNrGAIgASgJIjwKDVN0YXJ0UmVzcG9uc2USCwoDcnVuGAEgASgJEh4KBWFza2VkGAIgAygLMg8ubnVtZW4udjEuQXNrZWQifQoNQW5zd2VyUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRILCgNydW4YAiABKAkSDAoEY2FyZBgDIAEoCRIMCgRmYWNlGAQgASgJEiAKBnJhdGluZxgFIAEoDjIQLm51bWVuLnYxLlJhdGluZxIPCgd0b29rX21zGAYgASgDIi0KDkFuc3dlclJlc3BvbnNlEg4KBmFuc3dlchgBIAEoCRILCgNkdWUYAiABKAkiQAoPVGFrZUJhY2tSZXF1ZXN0EhAKCHZhdWx0X2lkGAEgASgJEgsKA3J1bhgCIAEoCRIOCgZhbnN3ZXIYAyABKAkiEgoQVGFrZUJhY2tSZXNwb25zZSI7CgtFZGl0UmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRIMCgRkZWNrGAIgASgJEgwKBGNhcmQYAyABKAkiKAoJQ2FyZFZhbHVlEg0KBWZpZWxkGAEgASgJEgwKBHRleHQYAiABKAkiPwoPUmVhZENhcmRSZXF1ZXN0EhAKCHZhdWx0X2lkGAEgASgJEgwKBGRlY2sYAiABKAkSDAoEY2FyZBgDIAEoCSJ8ChBSZWFkQ2FyZFJlc3BvbnNlEiMKBnZhbHVlcxgBIAMoCzITLm51bWVuLnYxLkNhcmRWYWx1ZRIhCgJhdBgCIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50Eg8KB3JlZnVzZWQYAyABKAkSDwoHc3RlbmNpbBgEIAEoCSKWAQoQV3JpdGVDYXJkUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRIMCgRkZWNrGAIgASgJEgwKBGNhcmQYAyABKAkSIwoGdmFsdWVzGAQgAygLMhMubnVtZW4udjEuQ2FyZFZhbHVlEiEKAmF0GAUgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnQSDAoEZmFjZRgGIAEoCSKGAQoRV3JpdGVDYXJkUmVzcG9uc2USIQoCYXQYASABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludBIPCgdjaGFuZ2VkGAIgASgIEg8KB3JlZnVzZWQYAyABKAkSDQoFZnJvbnQYBCABKAkSDAoEYmFjaxgFIAEoCRIPCgdoZWFkaW5nGAYgASgJIh8KDEVkaXRSZXNwb25zZRIPCgdyZWZ1c2VkGAEgASgJKmUKBlJhdGluZxIWChJSQVRJTkdfVU5TUEVDSUZJRUQQABIQCgxSQVRJTkdfQUdBSU4QARIPCgtSQVRJTkdfSEFSRBACEg8KC1JBVElOR19HT09EEAMSDwoLUkFUSU5HX0VBU1kQBDKMAwoNUmV2aWV3U2VydmljZRI4CgVPd2luZxIWLm51bWVuLnYxLk93aW5nUmVxdWVzdBoXLm51bWVuLnYxLk93aW5nUmVzcG9uc2USOAoFU3RhcnQSFi5udW1lbi52MS5TdGFydFJlcXVlc3QaFy5udW1lbi52MS5TdGFydFJlc3BvbnNlEjsKBkFuc3dlchIXLm51bWVuLnYxLkFuc3dlclJlcXVlc3QaGC5udW1lbi52MS5BbnN3ZXJSZXNwb25zZRJBCghUYWtlQmFjaxIZLm51bWVuLnYxLlRha2VCYWNrUmVxdWVzdBoaLm51bWVuLnYxLlRha2VCYWNrUmVzcG9uc2USQQoIUmVhZENhcmQSGS5udW1lbi52MS5SZWFkQ2FyZFJlcXVlc3QaGi5udW1lbi52MS5SZWFkQ2FyZFJlc3BvbnNlEkQKCVdyaXRlQ2FyZBIaLm51bWVuLnYxLldyaXRlQ2FyZFJlcXVlc3QaGy5udW1lbi52MS5Xcml0ZUNhcmRSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_vault]);
 
 /**
  * VaultOwing is one vault, and what its cards come to today.
@@ -390,69 +390,6 @@ export const TakeBackResponseSchema: GenMessage<TakeBackResponse> = /*@__PURE__*
   messageDesc(file_numen_v1_review, 10);
 
 /**
- * @generated from message numen.v1.RemoveCardRequest
- */
-export type RemoveCardRequest = Message<"numen.v1.RemoveCardRequest"> & {
-  /**
-   * @generated from field: string vault_id = 1;
-   */
-  vaultId: string;
-
-  /**
-   * @generated from field: string deck = 2;
-   */
-  deck: string;
-
-  /**
-   * @generated from field: string card = 3;
-   */
-  card: string;
-
-  /**
-   * What a read of this deck gave the caller.
-   *
-   * @generated from field: numen.v1.Fingerprint at = 4;
-   */
-  at?: Fingerprint | undefined;
-};
-
-/**
- * Describes the message numen.v1.RemoveCardRequest.
- * Use `create(RemoveCardRequestSchema)` to create a new message.
- */
-export const RemoveCardRequestSchema: GenMessage<RemoveCardRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_review, 11);
-
-/**
- * @generated from message numen.v1.RemoveCardResponse
- */
-export type RemoveCardResponse = Message<"numen.v1.RemoveCardResponse"> & {
-  /**
-   * @generated from field: numen.v1.Fingerprint at = 1;
-   */
-  at?: Fingerprint | undefined;
-
-  /**
-   * The deck moved past what the caller read, and nothing was written.
-   *
-   * @generated from field: bool changed = 2;
-   */
-  changed: boolean;
-
-  /**
-   * @generated from field: string refused = 3;
-   */
-  refused: string;
-};
-
-/**
- * Describes the message numen.v1.RemoveCardResponse.
- * Use `create(RemoveCardResponseSchema)` to create a new message.
- */
-export const RemoveCardResponseSchema: GenMessage<RemoveCardResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_review, 12);
-
-/**
  * @generated from message numen.v1.EditRequest
  */
 export type EditRequest = Message<"numen.v1.EditRequest"> & {
@@ -477,7 +414,7 @@ export type EditRequest = Message<"numen.v1.EditRequest"> & {
  * Use `create(EditRequestSchema)` to create a new message.
  */
 export const EditRequestSchema: GenMessage<EditRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_review, 13);
+  messageDesc(file_numen_v1_review, 11);
 
 /**
  * CardValue is what a person wrote under one of a card's fields.
@@ -501,7 +438,7 @@ export type CardValue = Message<"numen.v1.CardValue"> & {
  * Use `create(CardValueSchema)` to create a new message.
  */
 export const CardValueSchema: GenMessage<CardValue> = /*@__PURE__*/
-  messageDesc(file_numen_v1_review, 14);
+  messageDesc(file_numen_v1_review, 12);
 
 /**
  * @generated from message numen.v1.ReadCardRequest
@@ -528,7 +465,7 @@ export type ReadCardRequest = Message<"numen.v1.ReadCardRequest"> & {
  * Use `create(ReadCardRequestSchema)` to create a new message.
  */
 export const ReadCardRequestSchema: GenMessage<ReadCardRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_review, 15);
+  messageDesc(file_numen_v1_review, 13);
 
 /**
  * @generated from message numen.v1.ReadCardResponse
@@ -570,7 +507,7 @@ export type ReadCardResponse = Message<"numen.v1.ReadCardResponse"> & {
  * Use `create(ReadCardResponseSchema)` to create a new message.
  */
 export const ReadCardResponseSchema: GenMessage<ReadCardResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_review, 16);
+  messageDesc(file_numen_v1_review, 14);
 
 /**
  * @generated from message numen.v1.WriteCardRequest
@@ -617,7 +554,7 @@ export type WriteCardRequest = Message<"numen.v1.WriteCardRequest"> & {
  * Use `create(WriteCardRequestSchema)` to create a new message.
  */
 export const WriteCardRequestSchema: GenMessage<WriteCardRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_review, 17);
+  messageDesc(file_numen_v1_review, 15);
 
 /**
  * @generated from message numen.v1.WriteCardResponse
@@ -665,7 +602,7 @@ export type WriteCardResponse = Message<"numen.v1.WriteCardResponse"> & {
  * Use `create(WriteCardResponseSchema)` to create a new message.
  */
 export const WriteCardResponseSchema: GenMessage<WriteCardResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_review, 18);
+  messageDesc(file_numen_v1_review, 16);
 
 /**
  * @generated from message numen.v1.EditResponse
@@ -685,7 +622,7 @@ export type EditResponse = Message<"numen.v1.EditResponse"> & {
  * Use `create(EditResponseSchema)` to create a new message.
  */
 export const EditResponseSchema: GenMessage<EditResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_review, 19);
+  messageDesc(file_numen_v1_review, 17);
 
 /**
  * Rating is how well a card came back. A person says which of the four, and
@@ -818,18 +755,6 @@ export const ReviewService: GenService<{
     methodKind: "unary";
     input: typeof WriteCardRequestSchema;
     output: typeof WriteCardResponseSchema;
-  },
-  /**
-   * RemoveCard takes the card out of its deck. What was answered about it stays
-   * in the log: a card taken out is a card nothing asks about, and its history
-   * is its own if it ever comes back.
-   *
-   * @generated from rpc numen.v1.ReviewService.RemoveCard
-   */
-  removeCard: {
-    methodKind: "unary";
-    input: typeof RemoveCardRequestSchema;
-    output: typeof RemoveCardResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_review, 0);
