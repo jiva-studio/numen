@@ -325,7 +325,7 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
   align-items: center;
   gap: var(--numen-inset);
   color: var(--numen-edge-label);
-  font-size: var(--numen-edge-label-size);
+  font-size: var(--numen-font-size);
 }
 
 .review__deck {
