@@ -77,6 +77,34 @@ func run(cfg container.Config) error {
 		Now:       time.Now,
 	}
 
+	// What the window draws from is followed while it is open, so a card
+	// changed or a deck written is counted again without a person asking.
+	//
+	// The vaults, for the cards themselves, which are read from their files.
+	held, err := registry.All()
+	if err != nil {
+		return err
+	}
+	watcher := cfg.VaultWatcher()
+	for _, v := range held {
+		changes, lost, err := watcher.Watch(ctx, v)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "numen-review: %s is not being followed: %v\n", v.Name, err)
+			continue
+		}
+		api.Follows(ctx, drop(changes))
+		api.Follows(ctx, lost)
+	}
+
+	// And the index, for which files are decks. That answer is the index's, and
+	// it changes when the application that scans writes one.
+	moves, err := cfg.Moves(ctx)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "numen-review: the index is not being followed:", err)
+	} else {
+		api.Follows(ctx, moves)
+	}
+
 	// The themes are the installation's, and a folder that could not be made
 	// leaves the ones this binary ships.
 	themes, why := cfg.Themes(func(said string) { fmt.Fprintln(os.Stderr, "themes:", said) })
@@ -103,4 +131,20 @@ func run(cfg container.Config) error {
 		URL:    "/",
 	})
 	return app.Run()
+}
+
+// drop is a channel of paths as a channel of nothing: what moved is not carried
+// past here, because the page asks what the vaults come to whatever it was.
+func drop(paths <-chan []string) <-chan struct{} {
+	out := make(chan struct{}, 1)
+	go func() {
+		defer close(out)
+		for range paths {
+			select {
+			case out <- struct{}{}:
+			default:
+			}
+		}
+	}()
+	return out
 }

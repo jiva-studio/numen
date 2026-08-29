@@ -7,7 +7,7 @@
  */
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { Undo2, X } from '@lucide/vue'
-import { Button, KeyCap, Notices } from '@numen/ui'
+import { Button, KeyCap, Notices, following } from '@numen/ui'
 import type { Notice, Tone } from '@numen/ui'
 import '@numen/ui/styles.css'
 import Vaults from './Vaults.vue'
@@ -84,7 +84,20 @@ const chosen = computed<OwedVault | null>(
   () => vaults.value.find((one) => one.vaultId === vault.value) ?? null,
 )
 
+/** Whether a count is on its way, so two never run at once. */
+let counted: Promise<void> | null = null
+
 const count = async () => {
+  if (counted) return counted
+  counted = counting_()
+  try {
+    await counted
+  } finally {
+    counted = null
+  }
+}
+
+const counting_ = async () => {
   counting.value = true
   try {
     const answer = await review.owing({})
@@ -268,11 +281,30 @@ const keyed = (press: KeyboardEvent) => {
   }
 }
 
+/** Whether the window is still open, which is how long anything is followed. */
+let open = true
+
+const follows = following({
+  open: () => open,
+  lost: failed,
+  wait: (ms) => new Promise((then) => setTimeout(then, ms)),
+})
+
 onMounted(() => {
   window.addEventListener('keydown', keyed)
   void count()
+  // A deck written or a card changed underneath the window is counted again
+  // without a person asking. A sitting is left alone: its cards were laid out
+  // when it opened, and what a deck says now is read at the next one.
+  void follows(
+    () => review.changes({}),
+    () => (on.value === 'session' ? undefined : count()),
+  )
 })
-onUnmounted(() => window.removeEventListener('keydown', keyed))
+onUnmounted(() => {
+  open = false
+  window.removeEventListener('keydown', keyed)
+})
 </script>
 
 <template>

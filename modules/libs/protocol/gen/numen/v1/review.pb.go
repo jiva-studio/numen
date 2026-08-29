@@ -909,7 +909,7 @@ var File_numen_v1_review_proto protoreflect.FileDescriptor
 
 const file_numen_v1_review_proto_rawDesc = "" +
 	"\n" +
-	"\x15numen/v1/review.proto\x12\bnumen.v1\"\xcc\x01\n" +
+	"\x15numen/v1/review.proto\x12\bnumen.v1\x1a\x14numen/v1/vault.proto\"\xcc\x01\n" +
 	"\n" +
 	"VaultOwing\x12\x19\n" +
 	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
@@ -972,12 +972,13 @@ const file_numen_v1_review_proto_rawDesc = "" +
 	"\fRATING_AGAIN\x10\x01\x12\x0f\n" +
 	"\vRATING_HARD\x10\x02\x12\x0f\n" +
 	"\vRATING_GOOD\x10\x03\x12\x0f\n" +
-	"\vRATING_EASY\x10\x042\x83\x02\n" +
+	"\vRATING_EASY\x10\x042\xc5\x02\n" +
 	"\rReviewService\x128\n" +
 	"\x05Owing\x12\x16.numen.v1.OwingRequest\x1a\x17.numen.v1.OwingResponse\x128\n" +
 	"\x05Start\x12\x16.numen.v1.StartRequest\x1a\x17.numen.v1.StartResponse\x12;\n" +
 	"\x06Answer\x12\x17.numen.v1.AnswerRequest\x1a\x18.numen.v1.AnswerResponse\x12A\n" +
-	"\bTakeBack\x12\x19.numen.v1.TakeBackRequest\x1a\x1a.numen.v1.TakeBackResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\bTakeBack\x12\x19.numen.v1.TakeBackRequest\x1a\x1a.numen.v1.TakeBackResponse\x12@\n" +
+	"\aChanges\x12\x18.numen.v1.ChangesRequest\x1a\x19.numen.v1.ChangesResponse0\x01BIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_review_proto_rawDescOnce sync.Once
@@ -1007,6 +1008,8 @@ var file_numen_v1_review_proto_goTypes = []any{
 	(*AnswerResponse)(nil),   // 10: numen.v1.AnswerResponse
 	(*TakeBackRequest)(nil),  // 11: numen.v1.TakeBackRequest
 	(*TakeBackResponse)(nil), // 12: numen.v1.TakeBackResponse
+	(*ChangesRequest)(nil),   // 13: numen.v1.ChangesRequest
+	(*ChangesResponse)(nil),  // 14: numen.v1.ChangesResponse
 }
 var file_numen_v1_review_proto_depIdxs = []int32{
 	2,  // 0: numen.v1.VaultOwing.decks:type_name -> numen.v1.DeckOwing
@@ -1018,12 +1021,14 @@ var file_numen_v1_review_proto_depIdxs = []int32{
 	7,  // 6: numen.v1.ReviewService.Start:input_type -> numen.v1.StartRequest
 	9,  // 7: numen.v1.ReviewService.Answer:input_type -> numen.v1.AnswerRequest
 	11, // 8: numen.v1.ReviewService.TakeBack:input_type -> numen.v1.TakeBackRequest
-	6,  // 9: numen.v1.ReviewService.Owing:output_type -> numen.v1.OwingResponse
-	8,  // 10: numen.v1.ReviewService.Start:output_type -> numen.v1.StartResponse
-	10, // 11: numen.v1.ReviewService.Answer:output_type -> numen.v1.AnswerResponse
-	12, // 12: numen.v1.ReviewService.TakeBack:output_type -> numen.v1.TakeBackResponse
-	9,  // [9:13] is the sub-list for method output_type
-	5,  // [5:9] is the sub-list for method input_type
+	13, // 9: numen.v1.ReviewService.Changes:input_type -> numen.v1.ChangesRequest
+	6,  // 10: numen.v1.ReviewService.Owing:output_type -> numen.v1.OwingResponse
+	8,  // 11: numen.v1.ReviewService.Start:output_type -> numen.v1.StartResponse
+	10, // 12: numen.v1.ReviewService.Answer:output_type -> numen.v1.AnswerResponse
+	12, // 13: numen.v1.ReviewService.TakeBack:output_type -> numen.v1.TakeBackResponse
+	14, // 14: numen.v1.ReviewService.Changes:output_type -> numen.v1.ChangesResponse
+	10, // [10:15] is the sub-list for method output_type
+	5,  // [5:10] is the sub-list for method input_type
 	5,  // [5:5] is the sub-list for extension type_name
 	5,  // [5:5] is the sub-list for extension extendee
 	0,  // [0:5] is the sub-list for field type_name
@@ -1034,6 +1039,7 @@ func file_numen_v1_review_proto_init() {
 	if File_numen_v1_review_proto != nil {
 		return
 	}
+	file_numen_v1_vault_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

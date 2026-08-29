@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io/fs"
 
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -60,6 +61,17 @@ func (c Config) OpenIndexToRead(ctx context.Context) (*ReadIndex, error) {
 }
 
 func (i *ReadIndex) Close() error { return i.db.Close() }
+
+// Moves reports each time the index changes underneath a process that only
+// reads it. What a vault holds is the index's answer, and the answer changes
+// when the application that scans writes one.
+func (c Config) Moves(ctx context.Context) (<-chan struct{}, error) {
+	path, err := c.indexPath()
+	if err != nil {
+		return nil, err
+	}
+	return filesystem.Watcher{Options: c.VaultOptions()}.File(ctx, path)
+}
 
 func (i *ReadIndex) Queries() port.NoteQueries { return i.db.NoteQueries() }
 func (i *ReadIndex) Links() port.LinkQueries   { return i.db.NoteQueries() }

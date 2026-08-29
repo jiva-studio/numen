@@ -14,7 +14,7 @@
  */
 import { computed, ref, shallowRef, watch } from 'vue'
 import type { Offered, Offering } from './commanding'
-import { following } from './following'
+import { following } from '@numen/ui'
 import type { Says } from './telling'
 import type { Both, Bounds, Catalogue, Mode, Ranges, Sizes, Themes, Wearable } from './theme'
 

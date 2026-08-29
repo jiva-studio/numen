@@ -79,6 +79,10 @@ export { default as Composer } from './composer/Composer.vue'
 export { COMPOSER_STATES, composerState, keyIntent } from './composer/model'
 export type { ComposerState, KeyIntent } from './composer/model'
 
+/** A stream taken up again for as long as a window is open. */
+export { following } from './following/following'
+export type { Follows } from './following/following'
+
 export { default as Dots } from './dots/Dots.vue'
 export { default as Waiting } from './waiting/Waiting.vue'
 

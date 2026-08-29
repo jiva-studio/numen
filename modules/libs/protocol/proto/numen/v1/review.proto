@@ -12,6 +12,10 @@ syntax = "proto3";
 // values, and nothing above this has the two halves to fill it with.
 package numen.v1;
 
+// A vault moving underneath a window is one thing however the window shows it,
+// so what the editor is told about it is what this service says as well.
+import "numen/v1/vault.proto";
+
 option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
 
 // ReviewService is the front door, a session, and the answers given in it.
@@ -39,6 +43,11 @@ service ReviewService {
   // TakeBack writes down that an answer was taken back. Both lines stay in the
   // file: nothing in a log is ever rewritten or removed.
   rpc TakeBack(TakeBackRequest) returns (TakeBackResponse);
+
+  // Changes says a vault moved underneath the window, for as long as the caller
+  // listens. Which files moved is not carried: what this application shows is
+  // counts, and they are asked for again whatever changed.
+  rpc Changes(ChangesRequest) returns (stream ChangesResponse);
 }
 
 // Rating is how well a card came back. A person says which of the four, and

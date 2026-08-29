@@ -51,6 +51,8 @@ const (
 	ReviewServiceAnswerProcedure = "/numen.v1.ReviewService/Answer"
 	// ReviewServiceTakeBackProcedure is the fully-qualified name of the ReviewService's TakeBack RPC.
 	ReviewServiceTakeBackProcedure = "/numen.v1.ReviewService/TakeBack"
+	// ReviewServiceChangesProcedure is the fully-qualified name of the ReviewService's Changes RPC.
+	ReviewServiceChangesProcedure = "/numen.v1.ReviewService/Changes"
 )
 
 // ReviewServiceClient is a client for the numen.v1.ReviewService service.
@@ -75,6 +77,10 @@ type ReviewServiceClient interface {
 	// TakeBack writes down that an answer was taken back. Both lines stay in the
 	// file: nothing in a log is ever rewritten or removed.
 	TakeBack(context.Context, *connect.Request[v1.TakeBackRequest]) (*connect.Response[v1.TakeBackResponse], error)
+	// Changes says a vault moved underneath the window, for as long as the caller
+	// listens. Which files moved is not carried: what this application shows is
+	// counts, and they are asked for again whatever changed.
+	Changes(context.Context, *connect.Request[v1.ChangesRequest]) (*connect.ServerStreamForClient[v1.ChangesResponse], error)
 }
 
 // NewReviewServiceClient constructs a client for the numen.v1.ReviewService service. By default, it
@@ -112,6 +118,12 @@ func NewReviewServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(reviewServiceMethods.ByName("TakeBack")),
 			connect.WithClientOptions(opts...),
 		),
+		changes: connect.NewClient[v1.ChangesRequest, v1.ChangesResponse](
+			httpClient,
+			baseURL+ReviewServiceChangesProcedure,
+			connect.WithSchema(reviewServiceMethods.ByName("Changes")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -121,6 +133,7 @@ type reviewServiceClient struct {
 	start    *connect.Client[v1.StartRequest, v1.StartResponse]
 	answer   *connect.Client[v1.AnswerRequest, v1.AnswerResponse]
 	takeBack *connect.Client[v1.TakeBackRequest, v1.TakeBackResponse]
+	changes  *connect.Client[v1.ChangesRequest, v1.ChangesResponse]
 }
 
 // Owing calls numen.v1.ReviewService.Owing.
@@ -141,6 +154,11 @@ func (c *reviewServiceClient) Answer(ctx context.Context, req *connect.Request[v
 // TakeBack calls numen.v1.ReviewService.TakeBack.
 func (c *reviewServiceClient) TakeBack(ctx context.Context, req *connect.Request[v1.TakeBackRequest]) (*connect.Response[v1.TakeBackResponse], error) {
 	return c.takeBack.CallUnary(ctx, req)
+}
+
+// Changes calls numen.v1.ReviewService.Changes.
+func (c *reviewServiceClient) Changes(ctx context.Context, req *connect.Request[v1.ChangesRequest]) (*connect.ServerStreamForClient[v1.ChangesResponse], error) {
+	return c.changes.CallServerStream(ctx, req)
 }
 
 // ReviewServiceHandler is an implementation of the numen.v1.ReviewService service.
@@ -165,6 +183,10 @@ type ReviewServiceHandler interface {
 	// TakeBack writes down that an answer was taken back. Both lines stay in the
 	// file: nothing in a log is ever rewritten or removed.
 	TakeBack(context.Context, *connect.Request[v1.TakeBackRequest]) (*connect.Response[v1.TakeBackResponse], error)
+	// Changes says a vault moved underneath the window, for as long as the caller
+	// listens. Which files moved is not carried: what this application shows is
+	// counts, and they are asked for again whatever changed.
+	Changes(context.Context, *connect.Request[v1.ChangesRequest], *connect.ServerStream[v1.ChangesResponse]) error
 }
 
 // NewReviewServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -198,6 +220,12 @@ func NewReviewServiceHandler(svc ReviewServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(reviewServiceMethods.ByName("TakeBack")),
 		connect.WithHandlerOptions(opts...),
 	)
+	reviewServiceChangesHandler := connect.NewServerStreamHandler(
+		ReviewServiceChangesProcedure,
+		svc.Changes,
+		connect.WithSchema(reviewServiceMethods.ByName("Changes")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.ReviewService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ReviewServiceOwingProcedure:
@@ -208,6 +236,8 @@ func NewReviewServiceHandler(svc ReviewServiceHandler, opts ...connect.HandlerOp
 			reviewServiceAnswerHandler.ServeHTTP(w, r)
 		case ReviewServiceTakeBackProcedure:
 			reviewServiceTakeBackHandler.ServeHTTP(w, r)
+		case ReviewServiceChangesProcedure:
+			reviewServiceChangesHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -231,4 +261,8 @@ func (UnimplementedReviewServiceHandler) Answer(context.Context, *connect.Reques
 
 func (UnimplementedReviewServiceHandler) TakeBack(context.Context, *connect.Request[v1.TakeBackRequest]) (*connect.Response[v1.TakeBackResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ReviewService.TakeBack is not implemented"))
+}
+
+func (UnimplementedReviewServiceHandler) Changes(context.Context, *connect.Request[v1.ChangesRequest], *connect.ServerStream[v1.ChangesResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ReviewService.Changes is not implemented"))
 }
