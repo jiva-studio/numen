@@ -462,6 +462,66 @@ func TestARunTheCacheHasNotSeenIsCountedIn(t *testing.T) {
 	}
 }
 
+// A sitting appends to one file all evening, so what was worked out before an
+// answer was written is out of date the moment it is. A cache that went by the
+// names alone would call itself current and never count the rest of the file.
+func TestAnAnswerAppendedToARunAlreadyCountedIsCountedIn(t *testing.T) {
+	s := opened(t, vault)
+	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	record := s.run(t, time.Now())
+
+	if _, err := record.Answer(t.Context(), on, history.Good, 0); err != nil {
+		t.Fatal(err)
+	}
+	first, err := s.kept.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first[on].Reps != 1 {
+		t.Fatalf("one answer left %d behind it", first[on].Reps)
+	}
+
+	// The same sitting, the same file: a second answer appended under the name
+	// the cache already knows.
+	if _, err := record.Answer(t.Context(), on, history.Good, 0); err != nil {
+		t.Fatal(err)
+	}
+	second, err := s.kept.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if second[on].Reps != 2 {
+		t.Errorf("two answers left %d behind them", second[on].Reps)
+	}
+}
+
+// An answer taken back in the sitting it was given in is not counted, for the
+// same reason: the line is appended to a file already read.
+func TestAnAnswerTakenBackInTheSameRunIsNotCounted(t *testing.T) {
+	s := opened(t, vault)
+	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	record := s.run(t, time.Now())
+
+	given, err := record.Answer(t.Context(), on, history.Good, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.kept.Execute(t.Context(), s.vault); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := record.TakeBack(t.Context(), given.ID); err != nil {
+		t.Fatal(err)
+	}
+	after, err := s.kept.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, held := after[on]; held {
+		t.Errorf("the answer was taken back and the schedule stands: %+v", after[on])
+	}
+}
+
 // A cache filled by another scheduler is thrown away and the answers are read
 // again, because the numbers one scheduler carries are its own.
 func TestACacheFilledByAnotherSchedulerIsThrownAway(t *testing.T) {

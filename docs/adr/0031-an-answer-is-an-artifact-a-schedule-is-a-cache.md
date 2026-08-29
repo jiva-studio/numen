@@ -72,7 +72,9 @@ It holds what a launch would otherwise read every file to learn: the schedule of
 
 A schedule depends on the order of the answers, so an answer arriving after later ones have already been counted cannot be added to what they produced.
 
-Synchronisation delivers exactly that: last night's run from the phone lands after this morning's run on the desktop has been counted. **So nothing is ever added to a schedule after the fact.** The cache names the runs it was worked out from, and a folder holding any run it does not name is a history read from the beginning — which is also what a cache filled by another scheduler, or by another shape of this file, comes to.
+Synchronisation delivers exactly that: last night's run from the phone lands after this morning's run on the desktop has been counted. **So nothing is ever added to a schedule after the fact.** The cache records the runs it was worked out from, each with the length it had, and a folder differing from that in any way is a history read from the beginning — which is also what a cache filled by another scheduler, or by another shape of this file, comes to.
+
+**The length is what says a run has changed.** A sitting appends to one file all evening under one name, so a cache going by names alone would call itself current from the first answer of that sitting and never count the rest of it.
 
 Reading the folder is what a launch does anyway; the cache is what saves it reading the files.
 

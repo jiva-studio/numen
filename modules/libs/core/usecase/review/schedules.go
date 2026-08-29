@@ -18,9 +18,16 @@ const keptVersion = 1
 type kept struct {
 	V  int    `json:"v"`
 	By string `json:"by"`
-	// Files are the names of the log files this was worked out from.
-	Files []string       `json:"files"`
+	// Files are the log files this was worked out from, each with the length it
+	// had. A run is appended to under one name, so a name alone would call a
+	// cache current while the answers written after it were never counted.
+	Files []keptFile     `json:"files"`
 	Faces []keptSchedule `json:"faces"`
+}
+
+type keptFile struct {
+	Name string `json:"name"`
+	Size int    `json:"size"`
 }
 
 type keptSchedule struct {
@@ -71,7 +78,7 @@ func (u Schedules) Execute(
 // remembered is what was worked out last time, when it was worked out from the
 // runs the vault now holds and by the scheduler now asking.
 func (u Schedules) remembered(
-	ctx context.Context, v domain.Vault, files []string,
+	ctx context.Context, v domain.Vault, files []Counted,
 ) (map[history.CardFace]history.Schedule, bool) {
 	if u.Kept == nil {
 		return nil, false
@@ -84,7 +91,7 @@ func (u Schedules) remembered(
 	if err := json.Unmarshal(raw, &was); err != nil {
 		return nil, false
 	}
-	if was.V != keptVersion || was.By != u.By.Name() || !slices.Equal(was.Files, files) {
+	if was.V != keptVersion || was.By != u.By.Name() || !read(was.Files, files) {
 		return nil, false
 	}
 
@@ -106,16 +113,33 @@ func (u Schedules) remembered(
 	return out, true
 }
 
+// read reports whether a cache was worked out from exactly the log that now
+// stands: the same files, each the length it was read at.
+func read(was []keptFile, files []Counted) bool {
+	if len(was) != len(files) {
+		return false
+	}
+	for at, one := range was {
+		if one.Name != files[at].Name || one.Size != files[at].Size {
+			return false
+		}
+	}
+	return true
+}
+
 // remember puts the working out where the next launch will find it. A cache
 // that could not be written is a launch that works it out again, so nothing
 // here is reported.
 func (u Schedules) remember(
-	ctx context.Context, v domain.Vault, files []string, out map[history.CardFace]history.Schedule,
+	ctx context.Context, v domain.Vault, files []Counted, out map[history.CardFace]history.Schedule,
 ) {
 	if u.Kept == nil {
 		return
 	}
-	now := kept{V: keptVersion, By: u.By.Name(), Files: files}
+	now := kept{V: keptVersion, By: u.By.Name()}
+	for _, one := range files {
+		now.Files = append(now.Files, keptFile{Name: one.Name, Size: one.Size})
+	}
 	for on, s := range out {
 		now.Faces = append(now.Faces, keptSchedule{
 			Card: on.Card, Face: on.Face,

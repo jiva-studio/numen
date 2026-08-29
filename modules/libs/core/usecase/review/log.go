@@ -22,12 +22,23 @@ const Suffix = ".jsonl"
 // Log is one vault's answers: every run that was ever written there.
 type Log struct{ Stores port.DerivedStores }
 
+// Counted is one file of the log as it was read: its name, and how many bytes
+// it held.
+//
+// A run is appended to and never rewritten, so its length is what says whether
+// it has changed. A name alone says nothing: the file a sitting is writing to
+// keeps its name and grows all evening.
+type Counted struct {
+	Name string
+	Size int
+}
+
 // Held is what a vault's log came to.
 type Held struct {
 	Answers []history.Answer
-	// Files are the names the answers were read from, sorted. What tells a
-	// cache it is out of date is a name in this list it has not seen.
-	Files []string
+	// Files are what the answers were read from, sorted by name. What tells a
+	// cache it is out of date is any difference in this list.
+	Files []Counted
 	// Skipped is how many lines could not be acted on: a run that stopped
 	// partway, or a line of a version this build does not know.
 	Skipped int
@@ -63,7 +74,7 @@ func (u Log) Read(ctx context.Context, v domain.Vault) (Held, error) {
 		}
 		answers, skipped := history.Read(raw)
 		out.Answers = append(out.Answers, answers...)
-		out.Files = append(out.Files, name)
+		out.Files = append(out.Files, Counted{Name: name, Size: len(raw)})
 		out.Skipped += skipped
 	}
 	return out, nil
