@@ -1,0 +1,26 @@
+/*
+ * What a window stands on, before anything is drawn in it.
+ *
+ * Every window of the installation opens on this: the page fills the frame, the
+ * ground is the surface the tokens name, and the interface is not a document.
+ * A selection is for text a person reads and carries out of the vault, and the
+ * components holding that take one back.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  block-size: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--numen-surface);
+  color: var(--numen-node-fg);
+  user-select: none;
+  -webkit-user-select: none;
+}
