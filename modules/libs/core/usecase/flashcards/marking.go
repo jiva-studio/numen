@@ -17,7 +17,7 @@ import (
 // and a card with no mark has nothing an answer can be recorded against. A deck
 // holding one is written, which mints a mark for every card in it.
 //
-// This is the one thing review writes into a vault, and it is done when a
+// This is the one thing flashcards writes into a vault, and it is done when a
 // person sits down to that vault — not to every vault the installation holds,
 // and not for the counting of what is owed.
 type Marking struct {

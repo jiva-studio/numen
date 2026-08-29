@@ -1,7 +1,7 @@
 /**
  * What the screen a window opens on is drawn over.
  *
- * Both windows open on it: the editor while it holds no tab, and the review
+ * Both windows open on it: the editor while it holds no tab, and flashcards
  * while it has not been sent into a vault. The rows differ and the screen does
  * not.
  */

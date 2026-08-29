@@ -81,9 +81,10 @@ const strength = computed(() => (props.tone === 'plain' ? 'text-hushed' : ''))
     :data-state="shown.state"
     :data-tone="tone"
   >
-    <span class="activity__says min-w-0" :class="gives">{{ words }}</span>
-    <span v-if="about" class="activity__about min-w-0 flex-1" :class="gives">{{ about }}</span>
-    <span v-else class="activity__gap flex-1" />
+    <span class="activity__words min-w-0 flex-1" :class="gives">
+      <span class="activity__says">{{ words }}</span>
+      <span v-if="about" class="activity__about">{{ about }}</span>
+    </span>
     <span v-if="percent" class="activity__percent tabular-nums opacity-70">{{ percent }}</span>
     <span v-if="left" class="activity__left opacity-70">{{ left }}</span>
     <Waiting
@@ -94,10 +95,22 @@ const strength = computed(() => (props.tone === 'plain' ? 'text-hushed' : ''))
 </template>
 
 <style scoped>
-/* A path and a reason carry no spaces to break at, so they break anywhere. */
-.activity__says,
-.activity__about {
+/* What is happening and what it is happening to are one sentence, so a long
+   reason runs on under the words it belongs to instead of standing in a column
+   of its own. A path and a reason carry no spaces to break at, so they break
+   anywhere. */
+.activity__words {
   overflow-wrap: anywhere;
+}
+
+/* What it is happening to is said more quietly than what is happening, and the
+   dash is what holds the two apart. */
+.activity__about {
+  opacity: 0.75;
+}
+
+.activity__about::before {
+  content: ' — ';
 }
 
 /* Every state of the line stands the same height. */

@@ -335,7 +335,7 @@ func TestASittingSaysWhichDecksItCouldNotMark(t *testing.T) {
 	}
 }
 
-// A review works on any vault the installation holds without one being opened
+// Flashcards works on any vault the installation holds without one being opened
 // first, because a person owes what they owe across all of them.
 func TestEveryVaultIsCountedOnTheFrontDoor(t *testing.T) {
 	api, held := windowed(t, deck, deck)

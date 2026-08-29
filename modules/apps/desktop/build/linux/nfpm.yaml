@@ -17,8 +17,8 @@ contents:
     dst: /usr/bin/numen
   - src: ./numen.desktop
     dst: /usr/share/applications/numen.desktop
-  # The two windows ship together, one version, one package: a review with no
-  # editor has nothing to review. They wear one icon, because they are one
+  # The two windows ship together, one version, one package: flashcards with no
+  # editor has nothing to run. They wear one icon, because they are one
   # application to the person using them.
   - src: ./numen-flashcards
     dst: /usr/bin/numen-flashcards
