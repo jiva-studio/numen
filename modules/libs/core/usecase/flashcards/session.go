@@ -41,7 +41,7 @@ type Sitting struct {
 // a person wrote them in an order, and it is as good an order as any.
 type Session struct {
 	// Marking gives a mark to the cards of this vault that carry none, so that
-	// what is asked can be answered. It is the one write review makes, and it
+	// what is asked can be answered. It is the one write flashcards makes, and it
 	// is made when a person sits down to a vault.
 	Marking   Marking
 	Standings Standings

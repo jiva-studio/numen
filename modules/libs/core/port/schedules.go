@@ -2,8 +2,8 @@ package port
 
 import "context"
 
-// Schedules is where what a review worked out about one vault is kept between
-// launches.
+// Schedules is where what a replay of the answers worked out about one vault is
+// kept between launches.
 //
 // It is a cache and belongs to the installation, never to the vault: what is in
 // it is computed from the answers, and the answers are the vault's. It is also

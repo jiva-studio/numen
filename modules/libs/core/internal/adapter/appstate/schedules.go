@@ -8,8 +8,8 @@ import (
 	"strings"
 )
 
-// Schedules keeps what a review worked out, one file to a vault, in the
-// platform's cache location.
+// Schedules keeps what a replay of the answers worked out, one file to a vault,
+// in the platform's cache location.
 //
 // It is a cache in the place the platform keeps caches, so a person clearing it
 // costs themselves a replay of the answers and nothing else.

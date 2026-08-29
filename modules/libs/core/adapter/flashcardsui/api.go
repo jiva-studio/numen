@@ -2,7 +2,7 @@
 //
 // It is a second adapter beside webui and not a part of it: what it answers is
 // a different service over a different page, and what it holds is a slice of
-// the installation — the registry and the four scenarios a review is made of.
+// the installation — the registry and the four scenarios flashcards is made of.
 // No scan runs behind it, nothing is embedded, and no agent is reached.
 package flashcardsui
 
