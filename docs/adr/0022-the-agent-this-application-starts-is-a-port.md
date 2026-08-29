@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
-- **Applies to:** `modules/apps/desktop` — `internal/core/port`, `internal/adapter/agent`
+- **Applies to:** `modules/libs/core` — `port`, `adapter/agent`; `modules/apps/desktop` — `internal/adapter/claudecode`
 - **Related:** ADR-0004, ADR-0020, ADR-0021
 
 ## Context

@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/agent"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
+	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
 
 // TestAnInstallationNamingNoAgentOpensNoPort. A person who asked for no agent

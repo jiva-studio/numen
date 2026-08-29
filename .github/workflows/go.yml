@@ -3,6 +3,7 @@ name: go
 on:
   pull_request:
     paths:
+      - "modules/libs/core/**"
       - "modules/apps/desktop/**"
       - "modules/libs/protocol/**"
       - "tests/**"
@@ -10,25 +11,35 @@ on:
   push:
     branches: [main]
     paths:
+      - "modules/libs/core/**"
       - "modules/apps/desktop/**"
       - "modules/libs/protocol/**"
       - "tests/**"
       - ".github/workflows/go.yml"
 
-defaults:
-  run:
-    working-directory: modules/apps/desktop
-
 jobs:
-  desktop:
+  # Two Go modules, checked the same way. The desktop module holds its Go under
+  # cmd and internal; the core module is Go throughout.
+  go:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - module: modules/libs/core
+            sources: "."
+          - module: modules/apps/desktop
+            sources: "./cmd ./internal"
+    defaults:
+      run:
+        working-directory: ${{ matrix.module }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v5
         with:
           go-version: "1.26"
-          cache-dependency-path: modules/apps/desktop/go.sum
+          cache-dependency-path: ${{ matrix.module }}/go.sum
 
       # The window links against the system's own browser, so the machine that
       # compiles it needs that browser's headers. The command line tool needs
@@ -38,7 +49,7 @@ jobs:
 
       - name: Formatting
         run: |
-          unformatted=$(gofmt -l ./cmd ./internal)
+          unformatted=$(gofmt -l ${{ matrix.sources }})
           if [ -n "$unformatted" ]; then
             echo "not gofmt-ed:"; echo "$unformatted"; exit 1
           fi
@@ -53,12 +64,17 @@ jobs:
   # a machine it is not being built on.
   portable:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: modules/apps/desktop
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: "1.26"
-          cache-dependency-path: modules/apps/desktop/go.sum
+          cache-dependency-path: |
+            modules/apps/desktop/go.sum
+            modules/libs/core/go.sum
       - name: Cross-compile
         run: |
           for target in darwin/arm64 windows/amd64 linux/arm64; do

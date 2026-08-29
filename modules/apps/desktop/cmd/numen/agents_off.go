@@ -6,8 +6,8 @@ import (
 	"context"
 	"io"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/webui"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
+	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
 
 // Built with `nomcp`: no agent reaches this vault, and none of the code that

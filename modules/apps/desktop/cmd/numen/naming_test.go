@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/webui"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 // indexed waits until the vault holds the note at this path, which is what says

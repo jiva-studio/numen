@@ -10,8 +10,8 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/index"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
+	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
 
 // refuse draws what stopped the application, in a window.

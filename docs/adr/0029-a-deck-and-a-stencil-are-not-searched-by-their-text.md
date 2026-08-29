@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-28
-- **Applies to:** `modules/apps/desktop` — the index
+- **Applies to:** `modules/libs/core` — the index
 - **Amends:** ADR-0006 (what the index stores)
 - **Related:** ADR-0011, ADR-0013, ADR-0027, ADR-0028
 

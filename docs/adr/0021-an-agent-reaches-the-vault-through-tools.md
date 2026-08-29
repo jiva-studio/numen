@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
-- **Applies to:** `modules/apps/desktop` — `internal/adapter/mcp`
+- **Applies to:** `modules/libs/core` — `adapter/mcp`
 - **Related:** ADR-0004, ADR-0005, ADR-0009, ADR-0017, ADR-0020, ADR-0022, ADR-0026
 
 ## Context
@@ -19,7 +19,7 @@ Neither is a client. A client is generated from the protocol and draws what it i
 
 ### The tool endpoint is a driving adapter inside the window
 
-`internal/adapter/mcp` is compiled into the window binary and listens on a port. It knows nothing of the window, of the webview toolkit, or of the schema. It consumes the ports the core declares, as the command line does.
+`adapter/mcp` is compiled into the window binary and listens on a port. It knows nothing of the window, of the webview toolkit, or of the schema. It consumes the ports the core declares, as the command line does.
 
 ```mermaid
 graph TD

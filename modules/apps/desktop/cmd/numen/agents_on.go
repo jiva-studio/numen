@@ -9,16 +9,16 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/agent"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/agent/claudecode"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/mcp"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/webui"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/container"
-	format "github.com/jiva-studio/numen/modules/apps/desktop/internal/core/cards"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/check"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/domain"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/markdown"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/claudecode"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
+	format "github.com/jiva-studio/numen/modules/libs/core/cards"
+	"github.com/jiva-studio/numen/modules/libs/core/check"
+	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/markdown"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 // This file is the only one that knows an agent can reach the vault. Built with

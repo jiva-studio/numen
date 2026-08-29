@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
-- **Applies to:** `modules/apps/desktop` — `internal/core/usecase/note`, `internal/adapter/filesystem`
+- **Applies to:** `modules/libs/core` — `usecase/note`, `adapter/filesystem`
 - **Related:** ADR-0001, ADR-0006, ADR-0008, ADR-0018, ADR-0019, ADR-0020, ADR-0021
 
 ## Context

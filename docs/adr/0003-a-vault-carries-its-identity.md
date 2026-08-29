@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
-- **Applies to:** `modules/apps/desktop` — `internal/core/usecase/vault`, `internal/adapter/appstate`, `internal/adapter/settings`
+- **Applies to:** `modules/libs/core` — `usecase/vault`, `internal/adapter/appstate`, `adapter/settings`
 - **Related:** ADR-0001, ADR-0002, ADR-0004, ADR-0015
 
 ## Context

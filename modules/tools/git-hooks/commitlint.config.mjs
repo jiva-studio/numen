@@ -17,6 +17,7 @@ export default {
         'desktop',   // modules/apps/desktop
         'mobile',    // modules/apps/mobile
         'landing',   // modules/apps/landing
+        'core',      // modules/libs/core
         'domain',    // modules/libs/domain
         'protocol',  // modules/libs/protocol
         'ui',        // modules/libs/ui
