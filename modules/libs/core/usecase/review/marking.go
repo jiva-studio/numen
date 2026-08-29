@@ -1,0 +1,78 @@
+package review
+
+import (
+	"context"
+	"time"
+
+	format "github.com/jiva-studio/numen/modules/libs/core/cards"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+)
+
+// Marking gives a mark to every card of a vault that carries none.
+//
+// A card typed by hand carries no mark until the application writes its file,
+// and a card with no mark has nothing an answer can be recorded against. A deck
+// holding one is written, which mints a mark for every card in it.
+//
+// This is the one thing review writes into a vault, and it is done when a
+// person sits down to that vault — not to every vault the installation holds,
+// and not for the counting of what is owed.
+type Marking struct {
+	Readers port.VaultReaders
+	Writers port.VaultWriters
+	Notes   port.NoteQueries
+	Links   port.LinkQueries
+	// Index brings what a write touched up to date. A build holding none leaves
+	// the index to the next scan.
+	Index func(ctx context.Context, v domain.Vault, paths []string) error
+	Now   func() time.Time
+}
+
+// Execute writes every deck of the vault that holds a card with no mark.
+//
+// A deck that could not be written is left as it is and is not an error: the
+// editor may be saving it, and the vault's write lock lives in one process. Its
+// cards are left out of this sitting and marked at the next.
+func (u Marking) Execute(ctx context.Context, v domain.Vault) error {
+	paths, err := u.Notes.OfType(ctx, v.ID, domain.TypeDeck)
+	if err != nil {
+		return err
+	}
+
+	read := cards.Read{Readers: u.Readers, Links: u.Links}
+	write := cards.Write{
+		Readers: u.Readers, Writers: u.Writers, Links: u.Links, Index: u.Index, Now: u.Now,
+	}
+	for _, path := range paths {
+		deck, err := read.Deck(ctx, v, path)
+		if err != nil {
+			return err
+		}
+		if deck.Outcome != note.Ok || !unmarked(deck.Deck) {
+			continue
+		}
+
+		// The body goes back exactly as it was read. What the write is for is
+		// the deck being made whole on the way past, which is where a mark is
+		// minted.
+		body, err := format.DeckBody(deck.Deck)
+		if err != nil {
+			continue
+		}
+		_, _ = write.Deck(ctx, v, path, body, deck.Ref)
+	}
+	return nil
+}
+
+// unmarked reports whether any card of a deck carries no mark.
+func unmarked(d format.Deck) bool {
+	for _, c := range d.Cards {
+		if c.Mark == "" {
+			return true
+		}
+	}
+	return false
+}

@@ -2,7 +2,6 @@ package review
 
 import (
 	"context"
-	"time"
 
 	format "github.com/jiva-studio/numen/modules/libs/core/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -41,18 +40,13 @@ func (s Standing) Lay() (front, back string) { return format.Lay(s.stencil, s.fa
 
 // Standings is every card face a vault holds, read out of its files.
 //
-// A deck holding a card that carries no mark is written, which mints one for
-// every card in it, and read again. What comes back comes from that second read, so a
-// card is only ever answered under a mark the file holds.
+// Nothing here writes. A card carrying no mark cannot be answered and is left
+// out; giving it one is Marking, which a person's own vault has done to it
+// before they are asked anything.
 type Standings struct {
 	Readers port.VaultReaders
-	Writers port.VaultWriters
 	Notes   port.NoteQueries
 	Links   port.LinkQueries
-	// Index brings what a write touched up to date before the deck is read
-	// again. A build holding none writes the file and reads it back off disk.
-	Index func(ctx context.Context, v domain.Vault, paths []string) error
-	Now   func() time.Time
 }
 
 // Execute reads every deck the vault holds and says what stands in it.
@@ -71,7 +65,7 @@ func (u Standings) Execute(ctx context.Context, v domain.Vault) ([]Standing, err
 	stencils := make(map[string]format.Stencil)
 	var out []Standing
 	for _, path := range paths {
-		deck, err := u.deck(ctx, v, read, path)
+		deck, err := read.Deck(ctx, v, path)
 		if err != nil {
 			return nil, err
 		}
@@ -85,47 +79,6 @@ func (u Standings) Execute(ctx context.Context, v domain.Vault) ([]Standing, err
 		out = append(out, standing...)
 	}
 	return out, nil
-}
-
-// deck reads one deck, and writes it first where a card in it carries no mark.
-func (u Standings) deck(
-	ctx context.Context, v domain.Vault, read cards.Read, path string,
-) (cards.Deck, error) {
-	deck, err := read.Deck(ctx, v, path)
-	if err != nil {
-		return cards.Deck{}, err
-	}
-	if deck.Outcome != note.Ok || !unmarked(deck.Deck) {
-		return deck, nil
-	}
-
-	// The body goes back exactly as it was read. What the write is for is the
-	// deck being made whole on the way past, which is where a mark is minted.
-	write := cards.Write{
-		Readers: u.Readers, Writers: u.Writers, Links: u.Links, Index: u.Index, Now: u.Now,
-	}
-	body, err := format.DeckBody(deck.Deck)
-	if err != nil {
-		return deck, nil
-	}
-	// A write that did not land is not reported: the editor may be saving the
-	// same deck, and the vault's write lock lives in one process and does not
-	// reach across two. What the deck is read as afterwards is what the file
-	// holds, so a stamp that did not land leaves those cards out of this
-	// reading and the next one mints them again.
-	_, _ = write.Deck(ctx, v, path, body, deck.Ref)
-	return read.Deck(ctx, v, path)
-}
-
-// unmarked reports whether any card of a deck carries no mark. A card typed by
-// hand carries none until the application writes the file.
-func unmarked(d format.Deck) bool {
-	for _, c := range d.Cards {
-		if c.Mark == "" {
-			return true
-		}
-	}
-	return false
 }
 
 // standing is the card faces one deck holds: every card of a mark, through every

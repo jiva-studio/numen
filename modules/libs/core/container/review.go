@@ -16,6 +16,7 @@ import (
 // owes, what to ask next, and what an answer is written to.
 type Review struct {
 	Standings review.Standings
+	Marking   review.Marking
 	Schedules review.Schedules
 	Owed      review.Owed
 	Session   review.Session
@@ -47,7 +48,8 @@ func (c Config) Review(
 		kept = at
 	}
 
-	standing := review.Standings{
+	standing := review.Standings{Readers: c.VaultReaders(), Notes: notes, Links: links}
+	marking := review.Marking{
 		Readers: c.VaultReaders(), Writers: c.VaultWriters(),
 		Notes: notes, Links: links, Index: index, Now: time.Now,
 	}
@@ -55,10 +57,13 @@ func (c Config) Review(
 	day := history.Day{Starts: history.DayStarts}
 	return Review{
 		Standings: standing,
+		Marking:   marking,
 		Schedules: schedules,
 		Owed:      review.Owed{Standings: standing, Schedules: schedules, Day: day, Now: time.Now},
-		Session:   review.Session{Standings: standing, Schedules: schedules, Day: day, Now: time.Now},
-		Log:       review.Log{Stores: logs},
-		Day:       day,
+		Session: review.Session{
+			Marking: marking, Standings: standing, Schedules: schedules, Day: day, Now: time.Now,
+		},
+		Log: review.Log{Stores: logs},
+		Day: day,
 	}
 }

@@ -23,6 +23,10 @@ type Asked struct {
 // nobody has answered come after them, in the order they stand in their decks:
 // a person wrote them in an order, and it is as good an order as any.
 type Session struct {
+	// Marking gives a mark to the cards of this vault that carry none, so that
+	// what is asked can be answered. It is the one write review makes, and it
+	// is made when a person sits down to a vault.
+	Marking   Marking
 	Standings Standings
 	Schedules Schedules
 	Day       history.Day
@@ -35,6 +39,9 @@ type Session struct {
 // whole vault is the ordinary way to sit down to this: a person owes what they
 // owe, and which file a card is written in is not something they think about.
 func (u Session) Execute(ctx context.Context, v domain.Vault, deck string) ([]Asked, error) {
+	if err := u.Marking.Execute(ctx, v); err != nil {
+		return nil, err
+	}
 	standing, err := u.Standings.Execute(ctx, v)
 	if err != nil {
 		return nil, err
