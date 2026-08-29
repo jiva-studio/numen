@@ -38,6 +38,13 @@ type DerivedStore interface {
 	// growing file back in order to rewrite it costs the square of its pages.
 	Append(ctx context.Context, name string, content []byte) error
 
+	// List reports the names the store holds under one of its own, sorted.
+	// Work whose whole record is a folder of files nobody names in advance —
+	// a run of review writing one file and never touching it again — has no
+	// other way to find what is there. A name with nothing under it lists
+	// nothing, which is what an empty store answers.
+	List(ctx context.Context, name string) ([]string, error)
+
 	// Remove takes a name out of the store. A name already gone is the outcome
 	// that was asked for.
 	Remove(ctx context.Context, name string) error

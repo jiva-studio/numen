@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
@@ -281,4 +282,40 @@ func TestHoldingAClaimForAnotherProcess(t *testing.T) {
 
 	fmt.Println(claimHeld)
 	io.ReadAll(os.Stdin)
+}
+
+// A store says what names it holds, because work whose whole record is a folder
+// of files nobody names in advance has no other way to find them.
+func TestTheStoreSaysWhatNamesItHolds(t *testing.T) {
+	derived, _ := store(t)
+	ctx := t.Context()
+
+	if got, err := derived.List(ctx, filesystem.OCRDir); err != nil || len(got) != 0 {
+		t.Fatalf("an empty store lists %v, %v", got, err)
+	}
+
+	for _, name := range []string{"ocr/second.txt", "ocr/first.txt"} {
+		if err := derived.Write(ctx, name, []byte("in it")); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := derived.Write(ctx, "ocr/under/deeper.txt", []byte("below")); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := derived.List(ctx, filesystem.OCRDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(got, []string{"ocr/first.txt", "ocr/second.txt"}) {
+		t.Errorf("listed %v, want the two files it holds, sorted", got)
+	}
+}
+
+// A name that leaves the store is refused here as it is everywhere else.
+func TestTheStoreListsNothingOutsideItself(t *testing.T) {
+	derived, _ := store(t)
+	if _, err := derived.List(t.Context(), "ocr/../.."); err == nil {
+		t.Error("the store listed a folder outside itself")
+	}
 }

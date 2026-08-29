@@ -30,6 +30,7 @@ require (
 	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/jolestar/go-commons-pool/v2 v2.1.2 // indirect
 	github.com/kr/text v0.2.0 // indirect
+	github.com/open-spaced-repetition/go-fsrs/v3 v3.3.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rogpeppe/go-internal v1.16.0 // indirect
 	github.com/segmentio/asm v1.1.3 // indirect

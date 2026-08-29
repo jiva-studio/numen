@@ -7,6 +7,7 @@ import (
 	"image"
 	"io/fs"
 	"os"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -52,6 +53,19 @@ func (s *shelf) Append(_ context.Context, name string, content []byte) error {
 	defer s.mu.Unlock()
 	s.files[name] = append(s.files[name], content...)
 	return nil
+}
+
+func (s *shelf) List(_ context.Context, name string) ([]string, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var out []string
+	for held := range s.files {
+		if strings.HasPrefix(held, name+"/") && !strings.Contains(held[len(name)+1:], "/") {
+			out = append(out, held)
+		}
+	}
+	slices.Sort(out)
+	return out, nil
 }
 
 func (s *shelf) Remove(_ context.Context, name string) error {

@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -20,6 +21,11 @@ import (
 // is called all belong to the thing that wrote them, and another producer's
 // would not be the same.
 const OCRDir = "ocr"
+
+// ReviewDir is where the answers a person gave their cards are kept. They are
+// the one thing here nobody can produce a second time: the notes are the
+// person's own writing, and a year of answers to them is not.
+const ReviewDir = "review"
 
 // Derived is the application's own shelf inside one vault: where a file it
 // made, and cannot make again, is kept.
@@ -144,6 +150,36 @@ func (d *Derived) Claim(_ context.Context, name string) (func() error, error) {
 		return nil, err
 	}
 	return claim(target)
+}
+
+// List reports the files directly under a name, as names of this store, sorted.
+// A folder among them is not one: what is kept here is files, and a caller
+// after them would have to be told which entries it may read.
+func (d *Derived) List(_ context.Context, name string) ([]string, error) {
+	target, err := d.at(name)
+	if err != nil {
+		return nil, err
+	}
+	entries, err := os.ReadDir(target)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	clean, err := cleaned(name)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]string, 0, len(entries))
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		out = append(out, clean+"/"+e.Name())
+	}
+	slices.Sort(out)
+	return out, nil
 }
 
 func (d *Derived) Remove(_ context.Context, name string) error {

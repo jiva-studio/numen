@@ -34,8 +34,6 @@ require (
 	github.com/tetratelabs/wazero v1.12.0 // indirect
 	github.com/up-zero/gotool v0.0.0-20260120011100-d685b2532b5a // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
-	golang.org/x/mobile v0.0.0-20260821190718-4776eadac327 // indirect
-	golang.org/x/mod v0.39.0 // indirect
 	golang.org/x/oauth2 v0.35.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
