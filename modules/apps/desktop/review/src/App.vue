@@ -14,7 +14,7 @@ import Vaults from './Vaults.vue'
 import Decks from './Decks.vue'
 import Card from './Card.vue'
 import { VERSION } from './version'
-import { called, deckName, rated, review, said } from './core'
+import { ahead, called, deckName, rated, review, said } from './core'
 import type { Asked, Owing as OwedVault, Said } from './core'
 
 /** Which of the three the window is on. */
@@ -103,7 +103,17 @@ const start = async (deck: string) => {
   try {
     const answer = await review.start({ vaultId: vault.value, deck })
     run.value = answer.run
-    asked.value = answer.asked.map((one) => ({ ...one }) as Asked)
+    asked.value = answer.asked.map((one) => ({
+      ...one,
+      ahead: one.ahead
+        ? {
+            again: Number(one.ahead.again),
+            hard: Number(one.ahead.hard),
+            good: Number(one.ahead.good),
+            easy: Number(one.ahead.easy),
+          }
+        : null,
+    }))
     at.value = 0
     shown.value = false
     answers.value = []
@@ -285,6 +295,10 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
           >
             <KeyCap :keys="{ marks: [], letter: String(i + 1) }" />
             {{ called[how] }}
+            <!-- What the answer does to the card, said where the answer is
+                 chosen: a person picking between the four is picking between
+                 these. -->
+            <span v-if="card.ahead" class="review__ahead">{{ ahead(card.ahead[how]) }}</span>
           </Button>
         </template>
         <Button v-else variant="outline" class="review__answer" @click="show">
@@ -348,6 +362,14 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
   display: flex;
   flex: none;
   gap: var(--numen-inset);
+}
+
+/* What the answer does, said quietly beside it: it is read once, when a person
+   is learning what the four mean, and glanced at after that. */
+.review__ahead {
+  color: var(--numen-edge-label);
+  font-size: var(--numen-edge-label-size);
+  font-variant-numeric: tabular-nums;
 }
 
 /* An answer is a target a person hits without looking, so it takes the whole

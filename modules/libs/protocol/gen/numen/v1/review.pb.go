@@ -269,6 +269,77 @@ func (x *DeckOwing) GetNew() int32 {
 	return 0
 }
 
+// Ahead is how long each of the four answers would leave this card, in seconds
+// from the moment it was asked. A person choosing between them is choosing
+// between these.
+type Ahead struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Again         int64                  `protobuf:"varint,1,opt,name=again,proto3" json:"again,omitempty"`
+	Hard          int64                  `protobuf:"varint,2,opt,name=hard,proto3" json:"hard,omitempty"`
+	Good          int64                  `protobuf:"varint,3,opt,name=good,proto3" json:"good,omitempty"`
+	Easy          int64                  `protobuf:"varint,4,opt,name=easy,proto3" json:"easy,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Ahead) Reset() {
+	*x = Ahead{}
+	mi := &file_numen_v1_review_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Ahead) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Ahead) ProtoMessage() {}
+
+func (x *Ahead) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_review_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Ahead.ProtoReflect.Descriptor instead.
+func (*Ahead) Descriptor() ([]byte, []int) {
+	return file_numen_v1_review_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Ahead) GetAgain() int64 {
+	if x != nil {
+		return x.Again
+	}
+	return 0
+}
+
+func (x *Ahead) GetHard() int64 {
+	if x != nil {
+		return x.Hard
+	}
+	return 0
+}
+
+func (x *Ahead) GetGood() int64 {
+	if x != nil {
+		return x.Good
+	}
+	return 0
+}
+
+func (x *Ahead) GetEasy() int64 {
+	if x != nil {
+		return x.Easy
+	}
+	return 0
+}
+
 // Asked is one card face as it is put to a person.
 type Asked struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -290,15 +361,17 @@ type Asked struct {
 	// Seen is false for a card nobody has answered, which is what a person means
 	// by a new card. Due is when it comes round, and stands only where it has
 	// been answered.
-	Seen          bool   `protobuf:"varint,8,opt,name=seen,proto3" json:"seen,omitempty"`
-	Due           string `protobuf:"bytes,9,opt,name=due,proto3" json:"due,omitempty"`
+	Seen bool   `protobuf:"varint,8,opt,name=seen,proto3" json:"seen,omitempty"`
+	Due  string `protobuf:"bytes,9,opt,name=due,proto3" json:"due,omitempty"`
+	// Where each of the four would leave it.
+	Ahead         *Ahead `protobuf:"bytes,10,opt,name=ahead,proto3" json:"ahead,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Asked) Reset() {
 	*x = Asked{}
-	mi := &file_numen_v1_review_proto_msgTypes[2]
+	mi := &file_numen_v1_review_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -310,7 +383,7 @@ func (x *Asked) String() string {
 func (*Asked) ProtoMessage() {}
 
 func (x *Asked) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[2]
+	mi := &file_numen_v1_review_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -323,7 +396,7 @@ func (x *Asked) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Asked.ProtoReflect.Descriptor instead.
 func (*Asked) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{2}
+	return file_numen_v1_review_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Asked) GetDeck() string {
@@ -389,6 +462,13 @@ func (x *Asked) GetDue() string {
 	return ""
 }
 
+func (x *Asked) GetAhead() *Ahead {
+	if x != nil {
+		return x.Ahead
+	}
+	return nil
+}
+
 type OwingRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -397,7 +477,7 @@ type OwingRequest struct {
 
 func (x *OwingRequest) Reset() {
 	*x = OwingRequest{}
-	mi := &file_numen_v1_review_proto_msgTypes[3]
+	mi := &file_numen_v1_review_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -409,7 +489,7 @@ func (x *OwingRequest) String() string {
 func (*OwingRequest) ProtoMessage() {}
 
 func (x *OwingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[3]
+	mi := &file_numen_v1_review_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -422,7 +502,7 @@ func (x *OwingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OwingRequest.ProtoReflect.Descriptor instead.
 func (*OwingRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{3}
+	return file_numen_v1_review_proto_rawDescGZIP(), []int{4}
 }
 
 type OwingResponse struct {
@@ -434,7 +514,7 @@ type OwingResponse struct {
 
 func (x *OwingResponse) Reset() {
 	*x = OwingResponse{}
-	mi := &file_numen_v1_review_proto_msgTypes[4]
+	mi := &file_numen_v1_review_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -446,7 +526,7 @@ func (x *OwingResponse) String() string {
 func (*OwingResponse) ProtoMessage() {}
 
 func (x *OwingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[4]
+	mi := &file_numen_v1_review_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -459,7 +539,7 @@ func (x *OwingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OwingResponse.ProtoReflect.Descriptor instead.
 func (*OwingResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_review_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *OwingResponse) GetVaults() []*VaultOwing {
@@ -480,7 +560,7 @@ type StartRequest struct {
 
 func (x *StartRequest) Reset() {
 	*x = StartRequest{}
-	mi := &file_numen_v1_review_proto_msgTypes[5]
+	mi := &file_numen_v1_review_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -492,7 +572,7 @@ func (x *StartRequest) String() string {
 func (*StartRequest) ProtoMessage() {}
 
 func (x *StartRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[5]
+	mi := &file_numen_v1_review_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -505,7 +585,7 @@ func (x *StartRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartRequest.ProtoReflect.Descriptor instead.
 func (*StartRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_review_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *StartRequest) GetVaultId() string {
@@ -534,7 +614,7 @@ type StartResponse struct {
 
 func (x *StartResponse) Reset() {
 	*x = StartResponse{}
-	mi := &file_numen_v1_review_proto_msgTypes[6]
+	mi := &file_numen_v1_review_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -546,7 +626,7 @@ func (x *StartResponse) String() string {
 func (*StartResponse) ProtoMessage() {}
 
 func (x *StartResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[6]
+	mi := &file_numen_v1_review_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -559,7 +639,7 @@ func (x *StartResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartResponse.ProtoReflect.Descriptor instead.
 func (*StartResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{6}
+	return file_numen_v1_review_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *StartResponse) GetRun() string {
@@ -592,7 +672,7 @@ type AnswerRequest struct {
 
 func (x *AnswerRequest) Reset() {
 	*x = AnswerRequest{}
-	mi := &file_numen_v1_review_proto_msgTypes[7]
+	mi := &file_numen_v1_review_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -604,7 +684,7 @@ func (x *AnswerRequest) String() string {
 func (*AnswerRequest) ProtoMessage() {}
 
 func (x *AnswerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[7]
+	mi := &file_numen_v1_review_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -617,7 +697,7 @@ func (x *AnswerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AnswerRequest.ProtoReflect.Descriptor instead.
 func (*AnswerRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{7}
+	return file_numen_v1_review_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *AnswerRequest) GetVaultId() string {
@@ -675,7 +755,7 @@ type AnswerResponse struct {
 
 func (x *AnswerResponse) Reset() {
 	*x = AnswerResponse{}
-	mi := &file_numen_v1_review_proto_msgTypes[8]
+	mi := &file_numen_v1_review_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -687,7 +767,7 @@ func (x *AnswerResponse) String() string {
 func (*AnswerResponse) ProtoMessage() {}
 
 func (x *AnswerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[8]
+	mi := &file_numen_v1_review_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -700,7 +780,7 @@ func (x *AnswerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AnswerResponse.ProtoReflect.Descriptor instead.
 func (*AnswerResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{8}
+	return file_numen_v1_review_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *AnswerResponse) GetAnswer() string {
@@ -729,7 +809,7 @@ type TakeBackRequest struct {
 
 func (x *TakeBackRequest) Reset() {
 	*x = TakeBackRequest{}
-	mi := &file_numen_v1_review_proto_msgTypes[9]
+	mi := &file_numen_v1_review_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -741,7 +821,7 @@ func (x *TakeBackRequest) String() string {
 func (*TakeBackRequest) ProtoMessage() {}
 
 func (x *TakeBackRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[9]
+	mi := &file_numen_v1_review_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -754,7 +834,7 @@ func (x *TakeBackRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TakeBackRequest.ProtoReflect.Descriptor instead.
 func (*TakeBackRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{9}
+	return file_numen_v1_review_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *TakeBackRequest) GetVaultId() string {
@@ -786,7 +866,7 @@ type TakeBackResponse struct {
 
 func (x *TakeBackResponse) Reset() {
 	*x = TakeBackResponse{}
-	mi := &file_numen_v1_review_proto_msgTypes[10]
+	mi := &file_numen_v1_review_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -798,7 +878,7 @@ func (x *TakeBackResponse) String() string {
 func (*TakeBackResponse) ProtoMessage() {}
 
 func (x *TakeBackResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[10]
+	mi := &file_numen_v1_review_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -811,7 +891,7 @@ func (x *TakeBackResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TakeBackResponse.ProtoReflect.Descriptor instead.
 func (*TakeBackResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{10}
+	return file_numen_v1_review_proto_rawDescGZIP(), []int{11}
 }
 
 type EditRequest struct {
@@ -825,7 +905,7 @@ type EditRequest struct {
 
 func (x *EditRequest) Reset() {
 	*x = EditRequest{}
-	mi := &file_numen_v1_review_proto_msgTypes[11]
+	mi := &file_numen_v1_review_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -837,7 +917,7 @@ func (x *EditRequest) String() string {
 func (*EditRequest) ProtoMessage() {}
 
 func (x *EditRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[11]
+	mi := &file_numen_v1_review_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -850,7 +930,7 @@ func (x *EditRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EditRequest.ProtoReflect.Descriptor instead.
 func (*EditRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{11}
+	return file_numen_v1_review_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *EditRequest) GetVaultId() string {
@@ -885,7 +965,7 @@ type EditResponse struct {
 
 func (x *EditResponse) Reset() {
 	*x = EditResponse{}
-	mi := &file_numen_v1_review_proto_msgTypes[12]
+	mi := &file_numen_v1_review_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -897,7 +977,7 @@ func (x *EditResponse) String() string {
 func (*EditResponse) ProtoMessage() {}
 
 func (x *EditResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_review_proto_msgTypes[12]
+	mi := &file_numen_v1_review_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -910,7 +990,7 @@ func (x *EditResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EditResponse.ProtoReflect.Descriptor instead.
 func (*EditResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_review_proto_rawDescGZIP(), []int{12}
+	return file_numen_v1_review_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *EditResponse) GetRefused() string {
@@ -939,7 +1019,12 @@ const file_numen_v1_review_proto_rawDesc = "" +
 	"\x04deck\x18\x01 \x01(\tR\x04deck\x12\x14\n" +
 	"\x05faces\x18\x02 \x01(\x05R\x05faces\x12\x10\n" +
 	"\x03due\x18\x03 \x01(\x05R\x03due\x12\x10\n" +
-	"\x03new\x18\x04 \x01(\x05R\x03new\"\xc7\x01\n" +
+	"\x03new\x18\x04 \x01(\x05R\x03new\"Y\n" +
+	"\x05Ahead\x12\x14\n" +
+	"\x05again\x18\x01 \x01(\x03R\x05again\x12\x12\n" +
+	"\x04hard\x18\x02 \x01(\x03R\x04hard\x12\x12\n" +
+	"\x04good\x18\x03 \x01(\x03R\x04good\x12\x12\n" +
+	"\x04easy\x18\x04 \x01(\x03R\x04easy\"\xee\x01\n" +
 	"\x05Asked\x12\x12\n" +
 	"\x04deck\x18\x01 \x01(\tR\x04deck\x12\x18\n" +
 	"\asection\x18\x02 \x01(\tR\asection\x12\x12\n" +
@@ -949,7 +1034,9 @@ const file_numen_v1_review_proto_rawDesc = "" +
 	"\x05front\x18\x06 \x01(\tR\x05front\x12\x12\n" +
 	"\x04back\x18\a \x01(\tR\x04back\x12\x12\n" +
 	"\x04seen\x18\b \x01(\bR\x04seen\x12\x10\n" +
-	"\x03due\x18\t \x01(\tR\x03due\"\x0e\n" +
+	"\x03due\x18\t \x01(\tR\x03due\x12%\n" +
+	"\x05ahead\x18\n" +
+	" \x01(\v2\x0f.numen.v1.AheadR\x05ahead\"\x0e\n" +
 	"\fOwingRequest\"=\n" +
 	"\rOwingResponse\x12,\n" +
 	"\x06vaults\x18\x01 \x03(\v2\x14.numen.v1.VaultOwingR\x06vaults\"=\n" +
@@ -1006,43 +1093,45 @@ func file_numen_v1_review_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_review_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_review_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_numen_v1_review_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_numen_v1_review_proto_goTypes = []any{
 	(Rating)(0),              // 0: numen.v1.Rating
 	(*VaultOwing)(nil),       // 1: numen.v1.VaultOwing
 	(*DeckOwing)(nil),        // 2: numen.v1.DeckOwing
-	(*Asked)(nil),            // 3: numen.v1.Asked
-	(*OwingRequest)(nil),     // 4: numen.v1.OwingRequest
-	(*OwingResponse)(nil),    // 5: numen.v1.OwingResponse
-	(*StartRequest)(nil),     // 6: numen.v1.StartRequest
-	(*StartResponse)(nil),    // 7: numen.v1.StartResponse
-	(*AnswerRequest)(nil),    // 8: numen.v1.AnswerRequest
-	(*AnswerResponse)(nil),   // 9: numen.v1.AnswerResponse
-	(*TakeBackRequest)(nil),  // 10: numen.v1.TakeBackRequest
-	(*TakeBackResponse)(nil), // 11: numen.v1.TakeBackResponse
-	(*EditRequest)(nil),      // 12: numen.v1.EditRequest
-	(*EditResponse)(nil),     // 13: numen.v1.EditResponse
+	(*Ahead)(nil),            // 3: numen.v1.Ahead
+	(*Asked)(nil),            // 4: numen.v1.Asked
+	(*OwingRequest)(nil),     // 5: numen.v1.OwingRequest
+	(*OwingResponse)(nil),    // 6: numen.v1.OwingResponse
+	(*StartRequest)(nil),     // 7: numen.v1.StartRequest
+	(*StartResponse)(nil),    // 8: numen.v1.StartResponse
+	(*AnswerRequest)(nil),    // 9: numen.v1.AnswerRequest
+	(*AnswerResponse)(nil),   // 10: numen.v1.AnswerResponse
+	(*TakeBackRequest)(nil),  // 11: numen.v1.TakeBackRequest
+	(*TakeBackResponse)(nil), // 12: numen.v1.TakeBackResponse
+	(*EditRequest)(nil),      // 13: numen.v1.EditRequest
+	(*EditResponse)(nil),     // 14: numen.v1.EditResponse
 }
 var file_numen_v1_review_proto_depIdxs = []int32{
 	2,  // 0: numen.v1.VaultOwing.decks:type_name -> numen.v1.DeckOwing
-	1,  // 1: numen.v1.OwingResponse.vaults:type_name -> numen.v1.VaultOwing
-	3,  // 2: numen.v1.StartResponse.asked:type_name -> numen.v1.Asked
-	0,  // 3: numen.v1.AnswerRequest.rating:type_name -> numen.v1.Rating
-	4,  // 4: numen.v1.ReviewService.Owing:input_type -> numen.v1.OwingRequest
-	6,  // 5: numen.v1.ReviewService.Start:input_type -> numen.v1.StartRequest
-	8,  // 6: numen.v1.ReviewService.Answer:input_type -> numen.v1.AnswerRequest
-	10, // 7: numen.v1.ReviewService.TakeBack:input_type -> numen.v1.TakeBackRequest
-	12, // 8: numen.v1.ReviewService.Edit:input_type -> numen.v1.EditRequest
-	5,  // 9: numen.v1.ReviewService.Owing:output_type -> numen.v1.OwingResponse
-	7,  // 10: numen.v1.ReviewService.Start:output_type -> numen.v1.StartResponse
-	9,  // 11: numen.v1.ReviewService.Answer:output_type -> numen.v1.AnswerResponse
-	11, // 12: numen.v1.ReviewService.TakeBack:output_type -> numen.v1.TakeBackResponse
-	13, // 13: numen.v1.ReviewService.Edit:output_type -> numen.v1.EditResponse
-	9,  // [9:14] is the sub-list for method output_type
-	4,  // [4:9] is the sub-list for method input_type
-	4,  // [4:4] is the sub-list for extension type_name
-	4,  // [4:4] is the sub-list for extension extendee
-	0,  // [0:4] is the sub-list for field type_name
+	3,  // 1: numen.v1.Asked.ahead:type_name -> numen.v1.Ahead
+	1,  // 2: numen.v1.OwingResponse.vaults:type_name -> numen.v1.VaultOwing
+	4,  // 3: numen.v1.StartResponse.asked:type_name -> numen.v1.Asked
+	0,  // 4: numen.v1.AnswerRequest.rating:type_name -> numen.v1.Rating
+	5,  // 5: numen.v1.ReviewService.Owing:input_type -> numen.v1.OwingRequest
+	7,  // 6: numen.v1.ReviewService.Start:input_type -> numen.v1.StartRequest
+	9,  // 7: numen.v1.ReviewService.Answer:input_type -> numen.v1.AnswerRequest
+	11, // 8: numen.v1.ReviewService.TakeBack:input_type -> numen.v1.TakeBackRequest
+	13, // 9: numen.v1.ReviewService.Edit:input_type -> numen.v1.EditRequest
+	6,  // 10: numen.v1.ReviewService.Owing:output_type -> numen.v1.OwingResponse
+	8,  // 11: numen.v1.ReviewService.Start:output_type -> numen.v1.StartResponse
+	10, // 12: numen.v1.ReviewService.Answer:output_type -> numen.v1.AnswerResponse
+	12, // 13: numen.v1.ReviewService.TakeBack:output_type -> numen.v1.TakeBackResponse
+	14, // 14: numen.v1.ReviewService.Edit:output_type -> numen.v1.EditResponse
+	10, // [10:15] is the sub-list for method output_type
+	5,  // [5:10] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_review_proto_init() }
@@ -1056,7 +1145,7 @@ func file_numen_v1_review_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_review_proto_rawDesc), len(file_numen_v1_review_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   13,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

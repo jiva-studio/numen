@@ -21,7 +21,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/review.proto.
  */
 export const file_numen_v1_review: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9yZXZpZXcucHJvdG8SCG51bWVuLnYxIpcBCgpWYXVsdE93aW5nEhAKCHZhdWx0X2lkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEcGF0aBgDIAEoCRINCgVmYWNlcxgEIAEoBRILCgNkdWUYBSABKAUSCwoDbmV3GAYgASgFEiIKBWRlY2tzGAcgAygLMhMubnVtZW4udjEuRGVja093aW5nEg4KBnVucmVhZBgIIAEoCSJCCglEZWNrT3dpbmcSDAoEZGVjaxgBIAEoCRINCgVmYWNlcxgCIAEoBRILCgNkdWUYAyABKAUSCwoDbmV3GAQgASgFIosBCgVBc2tlZBIMCgRkZWNrGAEgASgJEg8KB3NlY3Rpb24YAiABKAkSDAoEY2FyZBgDIAEoCRIMCgRmYWNlGAQgASgJEg8KB2hlYWRpbmcYBSABKAkSDQoFZnJvbnQYBiABKAkSDAoEYmFjaxgHIAEoCRIMCgRzZWVuGAggASgIEgsKA2R1ZRgJIAEoCSIOCgxPd2luZ1JlcXVlc3QiNQoNT3dpbmdSZXNwb25zZRIkCgZ2YXVsdHMYASADKAsyFC5udW1lbi52MS5WYXVsdE93aW5nIi4KDFN0YXJ0UmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRIMCgRkZWNrGAIgASgJIjwKDVN0YXJ0UmVzcG9uc2USCwoDcnVuGAEgASgJEh4KBWFza2VkGAIgAygLMg8ubnVtZW4udjEuQXNrZWQifQoNQW5zd2VyUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRILCgNydW4YAiABKAkSDAoEY2FyZBgDIAEoCRIMCgRmYWNlGAQgASgJEiAKBnJhdGluZxgFIAEoDjIQLm51bWVuLnYxLlJhdGluZxIPCgd0b29rX21zGAYgASgDIi0KDkFuc3dlclJlc3BvbnNlEg4KBmFuc3dlchgBIAEoCRILCgNkdWUYAiABKAkiQAoPVGFrZUJhY2tSZXF1ZXN0EhAKCHZhdWx0X2lkGAEgASgJEgsKA3J1bhgCIAEoCRIOCgZhbnN3ZXIYAyABKAkiEgoQVGFrZUJhY2tSZXNwb25zZSI7CgtFZGl0UmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRIMCgRkZWNrGAIgASgJEgwKBGNhcmQYAyABKAkiHwoMRWRpdFJlc3BvbnNlEg8KB3JlZnVzZWQYASABKAkqZQoGUmF0aW5nEhYKElJBVElOR19VTlNQRUNJRklFRBAAEhAKDFJBVElOR19BR0FJThABEg8KC1JBVElOR19IQVJEEAISDwoLUkFUSU5HX0dPT0QQAxIPCgtSQVRJTkdfRUFTWRAEMroCCg1SZXZpZXdTZXJ2aWNlEjgKBU93aW5nEhYubnVtZW4udjEuT3dpbmdSZXF1ZXN0GhcubnVtZW4udjEuT3dpbmdSZXNwb25zZRI4CgVTdGFydBIWLm51bWVuLnYxLlN0YXJ0UmVxdWVzdBoXLm51bWVuLnYxLlN0YXJ0UmVzcG9uc2USOwoGQW5zd2VyEhcubnVtZW4udjEuQW5zd2VyUmVxdWVzdBoYLm51bWVuLnYxLkFuc3dlclJlc3BvbnNlEkEKCFRha2VCYWNrEhkubnVtZW4udjEuVGFrZUJhY2tSZXF1ZXN0GhoubnVtZW4udjEuVGFrZUJhY2tSZXNwb25zZRI1CgRFZGl0EhUubnVtZW4udjEuRWRpdFJlcXVlc3QaFi5udW1lbi52MS5FZGl0UmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChVudW1lbi92MS9yZXZpZXcucHJvdG8SCG51bWVuLnYxIpcBCgpWYXVsdE93aW5nEhAKCHZhdWx0X2lkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEcGF0aBgDIAEoCRINCgVmYWNlcxgEIAEoBRILCgNkdWUYBSABKAUSCwoDbmV3GAYgASgFEiIKBWRlY2tzGAcgAygLMhMubnVtZW4udjEuRGVja093aW5nEg4KBnVucmVhZBgIIAEoCSJCCglEZWNrT3dpbmcSDAoEZGVjaxgBIAEoCRINCgVmYWNlcxgCIAEoBRILCgNkdWUYAyABKAUSCwoDbmV3GAQgASgFIkAKBUFoZWFkEg0KBWFnYWluGAEgASgDEgwKBGhhcmQYAiABKAMSDAoEZ29vZBgDIAEoAxIMCgRlYXN5GAQgASgDIqsBCgVBc2tlZBIMCgRkZWNrGAEgASgJEg8KB3NlY3Rpb24YAiABKAkSDAoEY2FyZBgDIAEoCRIMCgRmYWNlGAQgASgJEg8KB2hlYWRpbmcYBSABKAkSDQoFZnJvbnQYBiABKAkSDAoEYmFjaxgHIAEoCRIMCgRzZWVuGAggASgIEgsKA2R1ZRgJIAEoCRIeCgVhaGVhZBgKIAEoCzIPLm51bWVuLnYxLkFoZWFkIg4KDE93aW5nUmVxdWVzdCI1Cg1Pd2luZ1Jlc3BvbnNlEiQKBnZhdWx0cxgBIAMoCzIULm51bWVuLnYxLlZhdWx0T3dpbmciLgoMU3RhcnRSZXF1ZXN0EhAKCHZhdWx0X2lkGAEgASgJEgwKBGRlY2sYAiABKAkiPAoNU3RhcnRSZXNwb25zZRILCgNydW4YASABKAkSHgoFYXNrZWQYAiADKAsyDy5udW1lbi52MS5Bc2tlZCJ9Cg1BbnN3ZXJSZXF1ZXN0EhAKCHZhdWx0X2lkGAEgASgJEgsKA3J1bhgCIAEoCRIMCgRjYXJkGAMgASgJEgwKBGZhY2UYBCABKAkSIAoGcmF0aW5nGAUgASgOMhAubnVtZW4udjEuUmF0aW5nEg8KB3Rvb2tfbXMYBiABKAMiLQoOQW5zd2VyUmVzcG9uc2USDgoGYW5zd2VyGAEgASgJEgsKA2R1ZRgCIAEoCSJACg9UYWtlQmFja1JlcXVlc3QSEAoIdmF1bHRfaWQYASABKAkSCwoDcnVuGAIgASgJEg4KBmFuc3dlchgDIAEoCSISChBUYWtlQmFja1Jlc3BvbnNlIjsKC0VkaXRSZXF1ZXN0EhAKCHZhdWx0X2lkGAEgASgJEgwKBGRlY2sYAiABKAkSDAoEY2FyZBgDIAEoCSIfCgxFZGl0UmVzcG9uc2USDwoHcmVmdXNlZBgBIAEoCSplCgZSYXRpbmcSFgoSUkFUSU5HX1VOU1BFQ0lGSUVEEAASEAoMUkFUSU5HX0FHQUlOEAESDwoLUkFUSU5HX0hBUkQQAhIPCgtSQVRJTkdfR09PRBADEg8KC1JBVElOR19FQVNZEAQyugIKDVJldmlld1NlcnZpY2USOAoFT3dpbmcSFi5udW1lbi52MS5Pd2luZ1JlcXVlc3QaFy5udW1lbi52MS5Pd2luZ1Jlc3BvbnNlEjgKBVN0YXJ0EhYubnVtZW4udjEuU3RhcnRSZXF1ZXN0GhcubnVtZW4udjEuU3RhcnRSZXNwb25zZRI7CgZBbnN3ZXISFy5udW1lbi52MS5BbnN3ZXJSZXF1ZXN0GhgubnVtZW4udjEuQW5zd2VyUmVzcG9uc2USQQoIVGFrZUJhY2sSGS5udW1lbi52MS5UYWtlQmFja1JlcXVlc3QaGi5udW1lbi52MS5UYWtlQmFja1Jlc3BvbnNlEjUKBEVkaXQSFS5udW1lbi52MS5FZGl0UmVxdWVzdBoWLm51bWVuLnYxLkVkaXRSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * VaultOwing is one vault, and what its cards come to today.
@@ -120,6 +120,42 @@ export const DeckOwingSchema: GenMessage<DeckOwing> = /*@__PURE__*/
   messageDesc(file_numen_v1_review, 1);
 
 /**
+ * Ahead is how long each of the four answers would leave this card, in seconds
+ * from the moment it was asked. A person choosing between them is choosing
+ * between these.
+ *
+ * @generated from message numen.v1.Ahead
+ */
+export type Ahead = Message<"numen.v1.Ahead"> & {
+  /**
+   * @generated from field: int64 again = 1;
+   */
+  again: bigint;
+
+  /**
+   * @generated from field: int64 hard = 2;
+   */
+  hard: bigint;
+
+  /**
+   * @generated from field: int64 good = 3;
+   */
+  good: bigint;
+
+  /**
+   * @generated from field: int64 easy = 4;
+   */
+  easy: bigint;
+};
+
+/**
+ * Describes the message numen.v1.Ahead.
+ * Use `create(AheadSchema)` to create a new message.
+ */
+export const AheadSchema: GenMessage<Ahead> = /*@__PURE__*/
+  messageDesc(file_numen_v1_review, 2);
+
+/**
  * Asked is one card face as it is put to a person.
  *
  * @generated from message numen.v1.Asked
@@ -185,6 +221,13 @@ export type Asked = Message<"numen.v1.Asked"> & {
    * @generated from field: string due = 9;
    */
   due: string;
+
+  /**
+   * Where each of the four would leave it.
+   *
+   * @generated from field: numen.v1.Ahead ahead = 10;
+   */
+  ahead?: Ahead | undefined;
 };
 
 /**
@@ -192,7 +235,7 @@ export type Asked = Message<"numen.v1.Asked"> & {
  * Use `create(AskedSchema)` to create a new message.
  */
 export const AskedSchema: GenMessage<Asked> = /*@__PURE__*/
-  messageDesc(file_numen_v1_review, 2);
+  messageDesc(file_numen_v1_review, 3);
 
 /**
  * @generated from message numen.v1.OwingRequest
@@ -205,7 +248,7 @@ export type OwingRequest = Message<"numen.v1.OwingRequest"> & {
  * Use `create(OwingRequestSchema)` to create a new message.
  */
 export const OwingRequestSchema: GenMessage<OwingRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_review, 3);
+  messageDesc(file_numen_v1_review, 4);
 
 /**
  * @generated from message numen.v1.OwingResponse
@@ -222,7 +265,7 @@ export type OwingResponse = Message<"numen.v1.OwingResponse"> & {
  * Use `create(OwingResponseSchema)` to create a new message.
  */
 export const OwingResponseSchema: GenMessage<OwingResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_review, 4);
+  messageDesc(file_numen_v1_review, 5);
 
 /**
  * @generated from message numen.v1.StartRequest
@@ -246,7 +289,7 @@ export type StartRequest = Message<"numen.v1.StartRequest"> & {
  * Use `create(StartRequestSchema)` to create a new message.
  */
 export const StartRequestSchema: GenMessage<StartRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_review, 5);
+  messageDesc(file_numen_v1_review, 6);
 
 /**
  * @generated from message numen.v1.StartResponse
@@ -271,7 +314,7 @@ export type StartResponse = Message<"numen.v1.StartResponse"> & {
  * Use `create(StartResponseSchema)` to create a new message.
  */
 export const StartResponseSchema: GenMessage<StartResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_review, 6);
+  messageDesc(file_numen_v1_review, 7);
 
 /**
  * @generated from message numen.v1.AnswerRequest
@@ -316,7 +359,7 @@ export type AnswerRequest = Message<"numen.v1.AnswerRequest"> & {
  * Use `create(AnswerRequestSchema)` to create a new message.
  */
 export const AnswerRequestSchema: GenMessage<AnswerRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_review, 7);
+  messageDesc(file_numen_v1_review, 8);
 
 /**
  * @generated from message numen.v1.AnswerResponse
@@ -343,7 +386,7 @@ export type AnswerResponse = Message<"numen.v1.AnswerResponse"> & {
  * Use `create(AnswerResponseSchema)` to create a new message.
  */
 export const AnswerResponseSchema: GenMessage<AnswerResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_review, 8);
+  messageDesc(file_numen_v1_review, 9);
 
 /**
  * @generated from message numen.v1.TakeBackRequest
@@ -372,7 +415,7 @@ export type TakeBackRequest = Message<"numen.v1.TakeBackRequest"> & {
  * Use `create(TakeBackRequestSchema)` to create a new message.
  */
 export const TakeBackRequestSchema: GenMessage<TakeBackRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_review, 9);
+  messageDesc(file_numen_v1_review, 10);
 
 /**
  * @generated from message numen.v1.TakeBackResponse
@@ -385,7 +428,7 @@ export type TakeBackResponse = Message<"numen.v1.TakeBackResponse"> & {
  * Use `create(TakeBackResponseSchema)` to create a new message.
  */
 export const TakeBackResponseSchema: GenMessage<TakeBackResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_review, 10);
+  messageDesc(file_numen_v1_review, 11);
 
 /**
  * @generated from message numen.v1.EditRequest
@@ -412,7 +455,7 @@ export type EditRequest = Message<"numen.v1.EditRequest"> & {
  * Use `create(EditRequestSchema)` to create a new message.
  */
 export const EditRequestSchema: GenMessage<EditRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_review, 11);
+  messageDesc(file_numen_v1_review, 12);
 
 /**
  * @generated from message numen.v1.EditResponse
@@ -432,7 +475,7 @@ export type EditResponse = Message<"numen.v1.EditResponse"> & {
  * Use `create(EditResponseSchema)` to create a new message.
  */
 export const EditResponseSchema: GenMessage<EditResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_review, 12);
+  messageDesc(file_numen_v1_review, 13);
 
 /**
  * Rating is how well a card came back. A person says which of the four, and

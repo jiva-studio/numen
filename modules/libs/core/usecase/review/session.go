@@ -14,6 +14,10 @@ import (
 type Asked struct {
 	Standing
 	Schedule history.Schedule
+	// Ahead is how long each of the four answers would leave this card, from
+	// the moment it is asked. A person choosing between them is choosing
+	// between these, so they are worked out with the card and not after it.
+	Ahead map[history.Rating]time.Duration
 }
 
 // Session is what a person is asked, in the order they are asked it.
@@ -60,9 +64,9 @@ func (u Session) Execute(ctx context.Context, v domain.Vault, deck string) ([]As
 		s, answered := schedules[one.CardFace]
 		switch {
 		case !answered:
-			fresh = append(fresh, Asked{Standing: one})
+			fresh = append(fresh, Asked{Standing: one, Ahead: u.ahead(history.Schedule{}, now)})
 		case u.Day.Owed(s, now):
-			seen = append(seen, Asked{Standing: one, Schedule: s})
+			seen = append(seen, Asked{Standing: one, Schedule: s, Ahead: u.ahead(s, now)})
 		}
 	}
 
@@ -70,6 +74,21 @@ func (u Session) Execute(ctx context.Context, v domain.Vault, deck string) ([]As
 		return a.Schedule.Due.Compare(b.Schedule.Due)
 	})
 	return append(seen, fresh...), nil
+}
+
+// ahead is how long each of the four would leave a card standing where this
+// schedule leaves it. It is what the scheduler answers and nothing else: the
+// four are asked of it, and the card is left where it was.
+func (u Session) ahead(s history.Schedule, now time.Time) map[history.Rating]time.Duration {
+	by := u.Schedules.By
+	if by == nil {
+		return nil
+	}
+	out := make(map[history.Rating]time.Duration, 4)
+	for _, r := range []history.Rating{history.Again, history.Hard, history.Good, history.Easy} {
+		out[r] = by.Next(s, now, r).Due.Sub(now)
+	}
+	return out
 }
 
 func (u Session) now() time.Time {
