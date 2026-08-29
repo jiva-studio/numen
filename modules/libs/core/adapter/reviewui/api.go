@@ -46,9 +46,15 @@ type API struct {
 	Themes numenv1connect.ThemeServiceHandler
 	// Now is when this is happening.
 	Now func() time.Time
+	// Settling is how long a vault that moved is given to be indexed before it
+	// is counted a second time. Zero is Settling.
+	Settling time.Duration
 
 	mu   sync.Mutex
 	runs map[string]sitting
+
+	// following is everyone waiting to hear that a vault moved.
+	following following
 }
 
 // sitting is one run open in this window, and the vault it was opened on.

@@ -46,8 +46,8 @@ const owed = computed(() => props.vault.due + props.vault.new)
     <footer class="decks__deeds">
       <Button variant="ghost" @click="$emit('back')">Another vault</Button>
       <Button class="decks__all" :disabled="owed === 0" @click="$emit('start', '')">
-        Review everything
-        <Owed :waiting="owed" over />
+        Review
+        <Owed :waiting="owed" bare over />
       </Button>
     </footer>
   </section>
@@ -69,10 +69,11 @@ const owed = computed(() => props.vault.due + props.vault.new)
   font-weight: 600;
 }
 
-/* The list is what scrolls; what is done stands under it and keeps its place. */
+/* What is done stands at the foot of the screen, whatever is above it. */
 .decks__deeds {
   display: flex;
   flex: none;
+  margin-block-start: auto;
   align-items: center;
   justify-content: space-between;
   gap: var(--numen-inset);

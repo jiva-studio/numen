@@ -147,6 +147,9 @@ defineEmits<{
    Nothing else in the window is, so the family is this screen's own. */
 .welcome__name {
   margin: 0;
+  /* The glyph above is an italic and leans right, so the name sits a little
+     left of the middle to read as under it. */
+  margin-inline-end: 0.22em;
   font-family: ui-serif, Georgia, 'Times New Roman', serif;
   font-size: var(--numen-display-size);
   font-weight: 400;

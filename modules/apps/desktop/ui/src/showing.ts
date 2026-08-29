@@ -7,7 +7,7 @@
  */
 import { ref } from 'vue'
 import type { Core, Run, Said, Task, Went } from './core'
-import { following } from './following'
+import { following } from '@numen/ui'
 
 /**
  * The vault as the whole window reads it, and what it says when the vault

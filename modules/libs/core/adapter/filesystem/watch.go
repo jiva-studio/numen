@@ -61,6 +61,52 @@ func (w Watcher) Watch(
 	return folded, gone, nil
 }
 
+// File follows one file and reports each time it changes.
+//
+// The watch is on the folder and not on the file: a file is replaced by being
+// written beside itself and renamed over, so a watch placed on the file itself
+// stops existing at the first write. Everything under that name is one file
+// here — a database and the journals beside it are written together and are one
+// change.
+func (w Watcher) File(ctx context.Context, path string) (<-chan struct{}, error) {
+	at, err := filepath.Abs(path)
+	if err != nil {
+		return nil, err
+	}
+	name := filepath.Base(at)
+
+	raw := make(chan notify.EventInfo, Backlog)
+	if err := notify.Watch(filepath.Dir(at), raw, notify.All); err != nil {
+		return nil, fmt.Errorf("watch %s: %w", path, err)
+	}
+
+	moved := make(chan struct{}, 1)
+	go func() {
+		defer notify.Stop(raw)
+		defer close(moved)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case event, open := <-raw:
+				if !open {
+					return
+				}
+				if !strings.HasPrefix(filepath.Base(event.Path()), name) {
+					continue
+				}
+				// One waiting message is as much as this says: a listener that
+				// has not read the last one is a listener about to ask anyway.
+				select {
+				case moved <- struct{}{}:
+				default:
+				}
+			}
+		}
+	}()
+	return moved, nil
+}
+
 // fold collects events for a hold and reports each path once.
 //
 // Reading the events and delivering them are kept apart. Whoever listens takes

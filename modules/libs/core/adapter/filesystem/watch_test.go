@@ -264,3 +264,61 @@ func TestWhatTheVaultIgnoresIsNotReported(t *testing.T) {
 		t.Errorf("reported %v, want only the note the vault admits to", got)
 	}
 }
+
+// A file is followed by its folder, so it is still followed after it is
+// replaced: a database written beside itself and renamed over is the same file
+// to whoever reads it.
+func TestAFileIsFollowedThroughBeingReplaced(t *testing.T) {
+	dir := t.TempDir()
+	at := filepath.Join(dir, "index.db")
+	if err := os.WriteFile(at, []byte("first"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	moved, err := filesystem.Watcher{}.File(t.Context(), at)
+	if err != nil {
+		t.Fatal(err)
+	}
+	waits := func(why string) {
+		t.Helper()
+		select {
+		case <-moved:
+		case <-time.After(5 * time.Second):
+			t.Fatal(why)
+		}
+	}
+
+	// The journal beside it is the same file changing.
+	if err := os.WriteFile(at+"-wal", []byte("written"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	waits("the journal was written and nothing was reported")
+
+	beside := filepath.Join(dir, "index.db.new")
+	if err := os.WriteFile(beside, []byte("second"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(beside, at); err != nil {
+		t.Fatal(err)
+	}
+	waits("the file was replaced and nothing was reported")
+
+	// A file of another name in the same folder is not this file. What the
+	// replacing left waiting is taken first: one message stands for whatever
+	// happened before it was read.
+	for standing := true; standing; {
+		select {
+		case <-moved:
+		case <-time.After(200 * time.Millisecond):
+			standing = false
+		}
+	}
+	if err := os.WriteFile(filepath.Join(dir, "other"), []byte("no"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-moved:
+		t.Error("another file in the folder was reported as this one")
+	case <-time.After(200 * time.Millisecond):
+	}
+}
