@@ -11,7 +11,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -133,16 +132,26 @@ func opens(_ context.Context, v domain.Vault, _, _ string) error {
 	return nil
 }
 
-// editor is where the editor stands: beside this binary, which is how the two
-// are installed.
+// editorName is what the editor's binary is called on this platform.
+var editorName = "numen" + exeSuffix
+
+// editor is where the editor stands.
+//
+// Beside this binary first, which is how the two are installed: one package
+// puts them in one folder. Then wherever the machine says, so that a build run
+// out of a working copy reaches an editor the person has on their path.
 func editor() (string, error) {
 	self, err := os.Executable()
-	if err != nil {
-		return "", err
+	if err == nil {
+		at := filepath.Join(filepath.Dir(self), editorName)
+		if _, err := os.Stat(at); err == nil {
+			return at, nil
+		}
 	}
-	at := filepath.Join(filepath.Dir(self), "numen")
-	if _, err := os.Stat(at); err != nil {
-		return "", errors.New("the editor is not installed beside this application")
+	at, err := exec.LookPath(editorName)
+	if err != nil {
+		return "", fmt.Errorf(
+			"%s is neither beside this application nor on the path", editorName)
 	}
 	return at, nil
 }
