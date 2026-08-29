@@ -111,7 +111,7 @@ defineEmits<{
   padding: var(--numen-gutter);
   color: var(--numen-node-fg);
   font-family: var(--numen-font-sans);
-  font-size: calc(var(--numen-font-size) * 13.6 / 13);
+  font-size: var(--numen-font-size);
 }
 
 /* What build this is, in the far corner, where the column never reaches. */
@@ -148,7 +148,7 @@ defineEmits<{
 .welcome__name {
   margin: 0;
   font-family: ui-serif, Georgia, 'Times New Roman', serif;
-  font-size: calc(var(--numen-font-size) * 21 / 13);
+  font-size: var(--numen-display-size);
   font-weight: 400;
   letter-spacing: 0.06em;
 }

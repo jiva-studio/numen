@@ -41,6 +41,8 @@ defineEmits<{ (event: 'show'): void }>()
   border: 1px solid var(--numen-node-border);
   border-radius: var(--numen-radius-panel);
   background: var(--numen-node-bg);
+  /* A card is read, not scanned, so it is set at the size reading is set at. */
+  font-size: var(--numen-reading-size);
   gap: var(--numen-inset-wide);
 }
 
@@ -52,7 +54,7 @@ defineEmits<{ (event: 'show'): void }>()
 }
 
 .card__side--front {
-  font-size: 1.0625rem;
+  font-size: var(--numen-reading-title-size);
 }
 
 .card__rule {

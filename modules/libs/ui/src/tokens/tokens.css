@@ -120,6 +120,10 @@
     ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans',
     'Noto Sans Devanagari', 'Noto Sans Arabic', sans-serif;
   --numen-font-size: 0.8125rem;
+  /* Set above the interface's own text: the name of a screen or a list, and
+     the one line a screen is built around. Two steps, and nothing between. */
+  --numen-title-size: 1.125rem;
+  --numen-display-size: 1.375rem;
   --numen-line-height: 1.35;
   /* Set wider than a sentence, for the few words that are set in capitals. */
   --numen-caps-tracking: 0.08em;
@@ -205,6 +209,9 @@
 /* A page carrying no multiplier sets it as it is designed. */
 :where(:root) {
   --numen-reading-size: calc(0.8125rem * var(--numen-text-scale, 1));
+  /* What is read a step above the rest of it: the question on a card, which is
+     read across the room from the answer under it. */
+  --numen-reading-title-size: calc(1.0625rem * var(--numen-text-scale, 1));
 }
 
 /*
