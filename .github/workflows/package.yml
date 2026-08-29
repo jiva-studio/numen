@@ -166,7 +166,7 @@ jobs:
           # version, one package.
           CGO_ENABLED=1 go build -trimpath \
             -ldflags "-X main.version=$VERSION -X main.build=$BUILD -X main.commit=$COMMIT" \
-            -o "$RUNNER_TEMP/numen-review" ./cmd/numen-review
+            -o "$RUNNER_TEMP/numen-flashcards" ./cmd/numen-flashcards
 
           # A name the linker does not find is one it passes over in silence.
           # What the binary answers with is what says the three went in.
@@ -182,7 +182,7 @@ jobs:
           VERSION: ${{ needs.naming.outputs.version }}
         run: |
           tar czf "$RUNNER_TEMP/numen_${VERSION}_linux_amd64.tar.gz" \
-            -C "$RUNNER_TEMP" numen numen-review
+            -C "$RUNNER_TEMP" numen numen-flashcards
 
       # One description, both package managers. What goes into a package is
       # gathered beside it first, because the paths in it are read from
@@ -197,9 +197,9 @@ jobs:
           staged="$RUNNER_TEMP/staged"
           mkdir -p "$staged"
           cp "$RUNNER_TEMP/numen" "$staged/numen"
-          cp "$RUNNER_TEMP/numen-review" "$staged/numen-review"
+          cp "$RUNNER_TEMP/numen-flashcards" "$staged/numen-flashcards"
           cp modules/apps/desktop/build/linux/numen.desktop "$staged/"
-          cp modules/apps/desktop/build/linux/numen-review.desktop "$staged/"
+          cp modules/apps/desktop/build/linux/numen-flashcards.desktop "$staged/"
           cp modules/apps/desktop/build/linux/nfpm.yaml "$staged/"
           cp modules/apps/desktop/build/linux/numen.svg "$staged/"
           cp -r modules/apps/desktop/build/linux/icons "$staged/"

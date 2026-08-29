@@ -5,7 +5,7 @@ on:
     paths:
       - "modules/libs/ui/**"
       - "modules/apps/desktop/ui/**"
-      - "modules/apps/desktop/review/**"
+      - "modules/apps/desktop/flashcards/**"
       - "modules/apps/mobile/src/**"
       - "modules/apps/mobile/package.json"
       - "modules/libs/protocol/**"
@@ -15,7 +15,7 @@ on:
     paths:
       - "modules/libs/ui/**"
       - "modules/apps/desktop/ui/**"
-      - "modules/apps/desktop/review/**"
+      - "modules/apps/desktop/flashcards/**"
       - "modules/apps/mobile/src/**"
       - "modules/apps/mobile/package.json"
       - "modules/libs/protocol/**"
@@ -41,7 +41,7 @@ jobs:
           npm install --prefix modules/libs/protocol
           npm ci --prefix modules/libs/ui
           npm install --prefix modules/apps/desktop/ui
-          npm install --prefix modules/apps/desktop/review
+          npm install --prefix modules/apps/desktop/flashcards
           npm install --prefix modules/apps/mobile
 
       # A story runs in a real browser, and several of them are the only test of
@@ -57,7 +57,7 @@ jobs:
       - name: Typecheck
         run: |
           npm run typecheck --prefix modules/apps/desktop/ui
-          npm run typecheck --prefix modules/apps/desktop/review
+          npm run typecheck --prefix modules/apps/desktop/flashcards
           npm run typecheck --prefix modules/apps/mobile
 
       - name: Test
@@ -65,4 +65,4 @@ jobs:
           npm run test:unit --prefix modules/libs/ui
           npm run test:stories --prefix modules/libs/ui
           npm test --prefix modules/apps/desktop/ui
-          npm test --prefix modules/apps/desktop/review
+          npm test --prefix modules/apps/desktop/flashcards

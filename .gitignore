@@ -13,7 +13,7 @@ node_modules/
 
 # what a build leaves at the root
 /numen
-/numen-review
+/numen-flashcards
 /numen-desktop
 
 # A spike-only workspace pointing outside the tree.

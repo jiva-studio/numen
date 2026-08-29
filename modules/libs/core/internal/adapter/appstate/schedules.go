@@ -21,7 +21,7 @@ func OpenSchedules() (*Schedules, error) {
 	if err != nil {
 		return nil, err
 	}
-	return SchedulesAt(filepath.Join(dir, "numen", "review")), nil
+	return SchedulesAt(filepath.Join(dir, "numen", "flashcards")), nil
 }
 
 // SchedulesAt is OpenSchedules with an explicit folder, so that a test does not

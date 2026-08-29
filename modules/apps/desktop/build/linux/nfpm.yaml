@@ -20,10 +20,10 @@ contents:
   # The two windows ship together, one version, one package: a review with no
   # editor has nothing to review. They wear one icon, because they are one
   # application to the person using them.
-  - src: ./numen-review
-    dst: /usr/bin/numen-review
-  - src: ./numen-review.desktop
-    dst: /usr/share/applications/numen-review.desktop
+  - src: ./numen-flashcards
+    dst: /usr/bin/numen-flashcards
+  - src: ./numen-flashcards.desktop
+    dst: /usr/share/applications/numen-flashcards.desktop
   # The drawing itself, which a desktop scales to whatever it needs, and the
   # rasters for the ones that will not scale it.
   - src: ./numen.svg
