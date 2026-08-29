@@ -76,7 +76,6 @@ const owed = () => props.vault.due + props.vault.new
   background: none;
   color: var(--numen-edge-label);
   font: inherit;
-  font-size: 0.8125rem;
   cursor: pointer;
 }
 
@@ -90,7 +89,7 @@ const owed = () => props.vault.due + props.vault.new
 
 .decks__title {
   margin: 0;
-  font-size: 1.125rem;
+  font-size: var(--numen-title-size);
   font-weight: 600;
 }
 

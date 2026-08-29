@@ -20,6 +20,9 @@ export type {
   MenuPlacing,
 } from './menu/model'
 
+export { Button, buttonVariants } from './components/ui/button'
+export type { ButtonVariants } from './components/ui/button'
+
 export { default as Owed } from './cards/Owed.vue'
 export { default as Welcome } from './welcome/Welcome.vue'
 export { default as Mark } from './welcome/Mark.vue'

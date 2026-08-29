@@ -6,7 +6,8 @@
  * editor exists.
  */
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { Notices } from '@numen/ui'
+import { SquarePen, Undo2, X } from '@lucide/vue'
+import { Button, KeyCap, Notices } from '@numen/ui'
 import type { Notice } from '@numen/ui'
 import '@numen/ui/styles.css'
 import Vaults from './Vaults.vue'
@@ -252,31 +253,46 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
       <Card :front="card.front" :back="card.back" :shown="shown" @show="show" />
 
       <footer class="review__answers">
+        <!-- The key first and the word after it: a person answering with the
+             keyboard reads down the row of keys, and one answering with the
+             mouse reads the words either way. -->
         <template v-if="shown">
-          <button
+          <Button
             v-for="(how, i) in said"
             :key="how"
+            variant="outline"
             class="review__answer"
             :class="`review__answer--${how}`"
-            type="button"
             @click="answer(how)"
           >
-            <span class="review__answer-said">{{ called[how] }}</span>
-            <span class="review__answer-key">{{ i + 1 }}</span>
-          </button>
+            <KeyCap :keys="{ marks: [], letter: String(i + 1) }" />
+            {{ called[how] }}
+          </Button>
         </template>
-        <button v-else class="review__show" type="button" @click="show">
-          <span>Show the answer</span>
-          <span class="review__answer-key">space</span>
-        </button>
+        <Button v-else variant="outline" class="review__answer" @click="show">
+          <KeyCap :keys="{ marks: [], letter: 'space' }" />
+          Show the answer
+        </Button>
       </footer>
 
+      <!-- What a person does beside answering. Each is one mark, because the
+           row under the answers is not where words belong. -->
       <nav class="review__aside">
-        <button type="button" @click="leave">Leave</button>
-        <button type="button" :disabled="!answers.length" @click="takeBack">
-          Take the last answer back
-        </button>
-        <button type="button" @click="edit">Open in the editor</button>
+        <Button variant="ghost" size="icon-small" title="Leave" @click="leave">
+          <X />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-small"
+          title="Take the last answer back"
+          :disabled="!answers.length"
+          @click="takeBack"
+        >
+          <Undo2 />
+        </Button>
+        <Button variant="ghost" size="icon-small" title="Open in the editor" @click="edit">
+          <SquarePen />
+        </Button>
       </nav>
     </section>
   </main>
@@ -309,7 +325,7 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
   align-items: baseline;
   gap: var(--numen-inset);
   color: var(--numen-edge-label);
-  font-size: 0.75rem;
+  font-size: var(--numen-font-size);
 }
 
 .review__deck {
@@ -334,26 +350,12 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
   gap: var(--numen-inset);
 }
 
-.review__answer,
-.review__show {
-  display: flex;
+/* An answer is a target a person hits without looking, so it takes the whole
+   width it can and stands taller than a button in a row of controls. */
+.review__answer {
   flex: 1;
-  align-items: center;
-  justify-content: center;
+  block-size: auto;
   padding-block: var(--numen-inset-wide);
-  border: 1px solid var(--numen-node-border);
-  border-radius: var(--numen-radius);
-  background: var(--numen-node-bg);
-  color: var(--numen-node-fg);
-  font: inherit;
-  gap: var(--numen-inset);
-  cursor: pointer;
-  transition: background var(--numen-motion-hover) var(--numen-easing);
-}
-
-.review__answer:hover,
-.review__show:hover {
-  background: var(--numen-highlight);
 }
 
 /* The answer that says a card was lost is the one worth telling apart at a
@@ -363,38 +365,10 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
   color: var(--numen-alarm);
 }
 
-.review__answer-key {
-  padding: 0 0.375rem;
-  border-radius: var(--numen-radius);
-  background: var(--numen-code-bg);
-  color: var(--numen-edge-label);
-  font-size: 0.75rem;
-}
-
 .review__aside {
   display: flex;
   flex: none;
   gap: var(--numen-inset);
-}
-
-.review__aside button {
-  padding: 0.25rem var(--numen-inset);
-  border: none;
-  border-radius: var(--numen-radius);
-  background: none;
-  color: var(--numen-edge-label);
-  font: inherit;
-  font-size: 0.75rem;
-  cursor: pointer;
-}
-
-.review__aside button:hover:not(:disabled) {
-  color: var(--numen-node-fg);
-}
-
-.review__aside button:disabled {
-  opacity: 0.4;
-  cursor: default;
 }
 
 .review__over {
@@ -408,7 +382,7 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
 
 .review__over-said {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--numen-display-size);
   font-weight: 600;
 }
 
