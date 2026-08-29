@@ -10,12 +10,14 @@ import { SquarePen, Undo2, X } from '@lucide/vue'
 import { Button, KeyCap, Notices } from '@numen/ui'
 import type { Notice } from '@numen/ui'
 import '@numen/ui/styles.css'
+import type { Fingerprint } from '@numen/protocol'
 import Vaults from './Vaults.vue'
 import Decks from './Decks.vue'
 import Card from './Card.vue'
+import Editing from './Editing.vue'
 import { VERSION } from './version'
 import { called, deckName, rated, review, said } from './core'
-import type { Asked, Owing as OwedVault, Said } from './core'
+import type { Asked, Held, Owing as OwedVault, Said } from './core'
 
 /** Which of the three the window is on. */
 const on = ref<'vaults' | 'decks' | 'session'>('vaults')
@@ -159,15 +161,72 @@ const takeBack = async () => {
   put = Date.now()
 }
 
+/** The card open to be put right, and what a read of its deck gave us. */
+const editing = ref(false)
+const values = ref<readonly Held[]>([])
+const writing = ref(false)
+let stood: Fingerprint | undefined
+
 const edit = async () => {
   const one = card.value
   if (!one) return
-  const answer = await review.edit({
-    vaultId: vault.value,
-    deck: one.deck,
-    card: one.card,
-  })
-  if (answer.refused) failed(answer.refused)
+  try {
+    const answer = await review.readCard({
+      vaultId: vault.value,
+      deck: one.deck,
+      card: one.card,
+    })
+    if (answer.refused) {
+      failed(answer.refused)
+      return
+    }
+    values.value = answer.values.map((held) => ({ field: held.field, text: held.text }))
+    stood = answer.at
+    editing.value = true
+  } catch (why) {
+    failed(why)
+  }
+}
+
+const wrote = (field: string, text: string) => {
+  values.value = values.value.map((one) => (one.field === field ? { field, text } : one))
+}
+
+const save = async () => {
+  const one = card.value
+  if (!one) return
+  writing.value = true
+  try {
+    const answer = await review.writeCard({
+      vaultId: vault.value,
+      deck: one.deck,
+      card: one.card,
+      face: one.face,
+      values: values.value.map((held) => ({ field: held.field, text: held.text })),
+      ...(stood ? { at: stood } : {}),
+    })
+    if (answer.changed) {
+      failed('the deck moved since it was read, and nothing was written')
+      return
+    }
+    if (answer.refused) {
+      failed(answer.refused)
+      return
+    }
+    // What the card now lays out comes from the file, so the person is shown
+    // what stands there.
+    asked.value = asked.value.map((was, i) =>
+      i === at.value
+        ? { ...was, front: answer.front, back: answer.back, heading: answer.heading }
+        : was,
+    )
+    stood = answer.at
+    editing.value = false
+  } catch (why) {
+    failed(why)
+  } finally {
+    writing.value = false
+  }
 }
 
 /** Out of a sitting and back to the decks, with the counts as they now stand. */
@@ -190,6 +249,14 @@ const vaultsAgain = async () => {
  */
 const keyed = (press: KeyboardEvent) => {
   if (on.value !== 'session') return
+
+  // A card open to be put right is a card being typed into, and a number typed
+  // into a box is not an answer. Escape closes it.
+  if (editing.value) {
+    if (press.key === 'Escape') editing.value = false
+    return
+  }
+
   if (press.key === 'Escape') {
     void leave()
     return
@@ -246,11 +313,45 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
         <span class="review__deck">{{ deckName(card.deck) }}</span>
         <span v-if="card.section" class="review__section">{{ card.section }}</span>
         <span class="review__face">{{ card.face }}</span>
-        <span v-if="!card.seen" class="review__new">new</span>
         <span class="review__left">{{ asked.length - at }} left</span>
+
+        <!-- What a person does beside answering, each one mark. They stand at
+             the end of the line that says where the card is from. -->
+        <Button variant="ghost" size="icon-small" title="Edit this card" @click="edit">
+          <SquarePen />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-small"
+          title="Take the last answer back"
+          :disabled="!answers.length"
+          @click="takeBack"
+        >
+          <Undo2 />
+        </Button>
+        <Button variant="ghost" size="icon-small" title="Leave" @click="leave">
+          <X />
+        </Button>
       </header>
 
-      <Card :front="card.front" :back="card.back" :shown="shown" @show="show" />
+      <Editing
+        v-if="editing"
+        :card="card.card"
+        :section="card.section"
+        :values="values"
+        :writing="writing"
+        @write="wrote"
+        @save="save"
+        @close="editing = false"
+      />
+      <Card
+        v-else
+        :front="card.front"
+        :back="card.back"
+        :shown="shown"
+        :fresh="!card.seen"
+        @show="show"
+      />
 
       <footer class="review__answers">
         <!-- The key first and the word after it: a person answering with the
@@ -275,25 +376,6 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
         </Button>
       </footer>
 
-      <!-- What a person does beside answering. Each is one mark, because the
-           row under the answers is not where words belong. -->
-      <nav class="review__aside">
-        <Button variant="ghost" size="icon-small" title="Leave" @click="leave">
-          <X />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon-small"
-          title="Take the last answer back"
-          :disabled="!answers.length"
-          @click="takeBack"
-        >
-          <Undo2 />
-        </Button>
-        <Button variant="ghost" size="icon-small" title="Open in the editor" @click="edit">
-          <SquarePen />
-        </Button>
-      </nav>
     </section>
   </main>
 
@@ -333,13 +415,6 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
   font-weight: 600;
 }
 
-.review__new {
-  padding: 0.0625rem 0.375rem;
-  border-radius: var(--numen-radius-pill);
-  background: var(--numen-caution-bg);
-  color: var(--numen-caution-fg);
-}
-
 .review__left {
   margin-inline-start: auto;
 }
@@ -365,11 +440,6 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
   color: var(--numen-alarm);
 }
 
-.review__aside {
-  display: flex;
-  flex: none;
-  gap: var(--numen-inset);
-}
 
 .review__over {
   display: flex;

@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	history "github.com/jiva-studio/numen/modules/libs/core/review"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/review"
 )
 
@@ -20,6 +21,10 @@ type Review struct {
 	Owed      review.Owed
 	Session   review.Session
 	Log       review.Log
+	// Read and Write are the deck a card stands in. A card written badly is put
+	// right where it was met, so this window opens the file that holds it.
+	Read  cards.Read
+	Write cards.Write
 	// Day is where one day of review gives way to the next.
 	Day history.Day
 }
@@ -59,6 +64,11 @@ func (c Config) Review(
 		Owed:      review.Owed{Standings: standing, Schedules: schedules, Day: day, Now: time.Now},
 		Session:   review.Session{Standings: standing, Schedules: schedules, Day: day, Now: time.Now},
 		Log:       review.Log{Stores: logs},
-		Day:       day,
+		Read:      cards.Read{Readers: c.VaultReaders(), Links: links},
+		Write: cards.Write{
+			Readers: c.VaultReaders(), Writers: c.VaultWriters(),
+			Links: links, Index: index, Now: time.Now,
+		},
+		Day: day,
 	}
 }
