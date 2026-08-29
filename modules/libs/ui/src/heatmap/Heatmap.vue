@@ -15,7 +15,7 @@
 import { computed, ref } from 'vue'
 
 import Told from './Told.vue'
-import { days, fits, marks, ROWS } from './heatmap'
+import { days, fits, marks, needs, ROWS } from './heatmap'
 import type { Day, Tally } from './heatmap'
 import { measuring } from './measuring'
 import { naming } from './naming'
@@ -42,11 +42,28 @@ const props = withDefaults(
 const held = ref<HTMLElement | null>(null)
 const room = measuring(held)
 
-const laid = computed(() => fits({ width: room.value, cell: props.cell, gap: props.gap }))
+const laid = computed(() =>
+  fits({
+    width: room.value,
+    cell: props.cell,
+    gap: props.gap,
+    most: needs(props.now, props.did, props.due),
+  }),
+)
 const shown = computed(() => days(laid.value.columns, props.now, props.did, props.due))
-const said = computed(() => naming(marks(shown.value)))
 
 const step = computed(() => laid.value.cell + laid.value.gap)
+
+/**
+ * The months, spaced so that two of them do not run into one another. A label
+ * is about as wide as three characters of the text it is set in, and one
+ * carrying a year is about twice that.
+ */
+const said = computed(() =>
+  naming(
+    marks(shown.value, Math.ceil(30 / step.value), Math.ceil(62 / step.value)),
+  ),
+)
 /** The room the line of months takes over the grid. */
 const over = computed(() => Math.round(props.cell * 1.4))
 const height = computed(() => over.value + ROWS * step.value - laid.value.gap)
