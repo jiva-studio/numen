@@ -333,6 +333,9 @@ export type Card = Message<"numen.v1.Card"> & {
    * Where the section this card stands under stands in the deck's own, counted
    * from the first. Absent for a card standing before the first section.
    *
+   * A write naming a section the deck does not hold is refused. Nothing is
+   * written, and the card is not quietly stood somewhere else.
+   *
    * @generated from field: optional int32 section = 6;
    */
   section?: number | undefined;

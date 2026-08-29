@@ -619,6 +619,9 @@ type Card struct {
 	Mark string `protobuf:"bytes,1,opt,name=mark,proto3" json:"mark,omitempty"`
 	// Where the section this card stands under stands in the deck's own, counted
 	// from the first. Absent for a card standing before the first section.
+	//
+	// A write naming a section the deck does not hold is refused. Nothing is
+	// written, and the card is not quietly stood somewhere else.
 	Section *int32 `protobuf:"varint,6,opt,name=section,proto3,oneof" json:"section,omitempty"`
 	// The line the card's heading says, with the mark taken off. It is not what
 	// the card is called: it holds nothing of its own, and a write throws it away
