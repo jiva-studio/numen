@@ -35,8 +35,9 @@ func (a *API) ReadCard(
 		return connect.NewResponse(&v1.ReadCardResponse{Refused: err.Error()}), nil
 	}
 	return connect.NewResponse(&v1.ReadCardResponse{
-		Values: filled(stencil, card),
-		At:     fingerprintOf(deck.Ref),
+		Values:  filled(stencil, card),
+		At:      fingerprintOf(deck.Ref),
+		Stencil: card.Stencil,
 	}), nil
 }
 

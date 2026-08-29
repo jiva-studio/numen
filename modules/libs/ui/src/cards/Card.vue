@@ -90,7 +90,12 @@ const wrongIn = (value: Stood): readonly string[] =>
       </p>
 
       <template #deeds>
-        <Deed :label="`${words.remove}: ${called}`" @press="emit('remove')" />
+        <!-- What can be done to this card from its strip. Taking it out of the
+             deck is what a deck offers; a window that cannot take one out
+             hands in its own, or nothing. -->
+        <slot name="deeds">
+          <Deed :label="`${words.remove}: ${called}`" @press="emit('remove')" />
+        </slot>
       </template>
     </Bar>
 
