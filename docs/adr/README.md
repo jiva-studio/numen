@@ -80,7 +80,7 @@ What the product does, and what its words mean.
 - [note-format.md](../note-format.md) — the note file, key by key
 - [links.md](../links.md) — the link record, and how a name resolves
 - [cards.md](../cards.md) — the stencil and the deck, field by field
-- [review.md](../review.md) — running the cards: what is due, and what an answer is
+- [flashcards.md](../flashcards.md) — running the cards: what is due, and what an answer is
 - [editing.md](../editing.md) — a note in a tab: saving, renaming, removing
 - [vaults.md](../vaults.md) — several vaults, one window
 - [reading.md](../reading.md) — how a book is read, and proofread

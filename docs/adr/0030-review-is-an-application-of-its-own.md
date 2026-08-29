@@ -15,7 +15,9 @@ Where that second activity lives decides what a person has to start in order to 
 
 ### Review is a binary of its own, beside the editor
 
-`numen-review` stands beside `numen` and `numen-cli`, over the one core. The three ship together, one version, one installer: a review with no editor has nothing to review, so there is no sense in shipping them apart, and ADR-0007's refusal of an index at a version a build does not carry costs nothing between binaries that are always the same build.
+It is called **Flashcards**. That is the thing a person has and wants to run; review is what is done to it, and every application reviews something.
+
+`numen-flashcards` stands beside `numen` and `numen-cli`, over the one core. The three ship together, one version, one installer: a review with no editor has nothing to review, so there is no sense in shipping them apart, and ADR-0007's refusal of an index at a version a build does not carry costs nothing between binaries that are always the same build.
 
 It opens on **the vaults and what is due in each**. That is the whole of its front door: what a person owes today, and the place to come back to between decks.
 

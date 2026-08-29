@@ -25,7 +25,7 @@ An answer says which card, which face, when, how well it went, and how long the 
 ### The log lives in the vault, one file to a run
 
 ```
-<vault>/.numen/review/<ulid>.jsonl
+<vault>/.numen/flashcards/<ulid>.jsonl
 ```
 
 A run of review opens one file, appends to it while it lasts, and never touches it again. The name is a ULID, so the files sort in the order they were made.
@@ -59,7 +59,7 @@ The face half is the face's name, which is its heading in the stencil, and a fac
 ### The cache lives with the application
 
 ```
-<cache dir>/numen/review/<vault id>.json
+<cache dir>/numen/flashcards/<vault id>.json
 ```
 
 The service folder inside a vault holds what the application made and cannot make again (ADR-0003). A schedule is made again by definition — that is what makes the answers an artifact and the schedule not one. It is also the one file here that is rewritten whole, and a file rewritten whole inside a synchronised folder is a file that conflicts.
