@@ -15,7 +15,7 @@ import (
 // Review is everything that runs a vault's cards: what stands in it, what it
 // owes, what to ask next, and what an answer is written to.
 type Review struct {
-	Seats     review.Seats
+	Standings review.Standings
 	Schedules review.Schedules
 	Owed      review.Owed
 	Session   review.Session
@@ -47,17 +47,17 @@ func (c Config) Review(
 		kept = at
 	}
 
-	seats := review.Seats{
+	standing := review.Standings{
 		Readers: c.VaultReaders(), Writers: c.VaultWriters(),
 		Notes: notes, Links: links, Index: index, Now: time.Now,
 	}
 	schedules := review.Schedules{Logs: logs, Kept: kept, By: history.NewFSRS()}
 	day := history.Day{Starts: history.DayStarts}
 	return Review{
-		Seats:     seats,
+		Standings: standing,
 		Schedules: schedules,
-		Owed:      review.Owed{Seats: seats, Schedules: schedules, Day: day, Now: time.Now},
-		Session:   review.Session{Seats: seats, Schedules: schedules, Day: day, Now: time.Now},
+		Owed:      review.Owed{Standings: standing, Schedules: schedules, Day: day, Now: time.Now},
+		Session:   review.Session{Standings: standing, Schedules: schedules, Day: day, Now: time.Now},
 		Log:       review.Log{Stores: logs},
 		Day:       day,
 	}

@@ -39,8 +39,9 @@ func (d Day) Ends(at time.Time) time.Time {
 	return time.Date(y, m, day+1, h, min, 0, 0, in)
 }
 
-// Owed reports whether a seat is to be answered in the day holding now. A seat
-// that has never been answered is owed the first time it is asked about.
+// Owed reports whether a card is to be answered on this face in the day holding
+// now. A card face that has never been answered is owed the first time it is
+// asked about.
 func (d Day) Owed(s Schedule, now time.Time) bool {
 	return !s.Seen() || s.Due.Before(d.Ends(now))
 }

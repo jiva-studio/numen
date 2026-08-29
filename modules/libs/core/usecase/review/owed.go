@@ -13,11 +13,11 @@ import (
 // Owing is what one vault's cards come to today: what it holds, what is owed,
 // and what has never been asked.
 type Owing struct {
-	// Seats is every card the vault holds, counted once for each face it is
+	// Faces is every card the vault holds, counted once for each face it is
 	// shown through.
-	Seats int
-	// Due is the seats answered before and owed in the day holding now. New is
-	// the seats nobody has answered.
+	Faces int
+	// Due is the card faces answered before and owed in the day holding now.
+	// New is the ones nobody has answered.
 	Due   int
 	New   int
 	Decks []DeckOwing
@@ -26,14 +26,14 @@ type Owing struct {
 // DeckOwing is one deck's share of it, by the path of its file.
 type DeckOwing struct {
 	Deck  string
-	Seats int
+	Faces int
 	Due   int
 	New   int
 }
 
 // Owed is what a vault owes, which is what its front door shows.
 type Owed struct {
-	Seats     Seats
+	Standings Standings
 	Schedules Schedules
 	Day       history.Day
 	Now       func() time.Time
@@ -41,7 +41,7 @@ type Owed struct {
 
 // Execute counts one vault.
 func (u Owed) Execute(ctx context.Context, v domain.Vault) (Owing, error) {
-	standing, err := u.Seats.Execute(ctx, v)
+	standing, err := u.Standings.Execute(ctx, v)
 	if err != nil {
 		return Owing{}, err
 	}
@@ -51,17 +51,17 @@ func (u Owed) Execute(ctx context.Context, v domain.Vault) (Owing, error) {
 	}
 
 	now := u.now()
-	out := Owing{Seats: len(standing)}
+	out := Owing{Faces: len(standing)}
 	decks := make(map[string]*DeckOwing)
-	for _, seat := range standing {
-		deck, held := decks[seat.Deck]
+	for _, one := range standing {
+		deck, held := decks[one.Deck]
 		if !held {
-			deck = &DeckOwing{Deck: seat.Deck}
-			decks[seat.Deck] = deck
+			deck = &DeckOwing{Deck: one.Deck}
+			decks[one.Deck] = deck
 		}
-		deck.Seats++
+		deck.Faces++
 
-		s, answered := schedules[seat.Seat]
+		s, answered := schedules[one.CardFace]
 		switch {
 		case !answered:
 			out.New++

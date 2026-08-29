@@ -2,12 +2,12 @@ package review
 
 import "time"
 
-// Schedule is where the answers so far have left one seat.
+// Schedule is where the answers so far have left one card face.
 //
 // Nothing in it is written into a vault. It is worked out from the answers
 // every time it is wanted, and thrown away at no cost but the working out.
 type Schedule struct {
-	// Due is when the seat comes round again.
+	// Due is when the card face comes round again.
 	Due time.Time
 	// Last is when it was answered, and is the zero time until it has been.
 	Last time.Time
@@ -24,11 +24,11 @@ type Schedule struct {
 	Phase uint8
 }
 
-// Seen reports whether the seat has ever been answered. A seat that has not is
-// what a person means by a new card.
+// Seen reports whether this card face has ever been answered. One that has not
+// is what a person means by a new card.
 func (s Schedule) Seen() bool { return !s.Last.IsZero() }
 
-// Scheduler works out where an answer leaves a seat.
+// Scheduler works out where an answer leaves a card face.
 //
 // It is a port and not a function so that the one thing this application must
 // be able to change — how cards are spaced — is changed by putting another

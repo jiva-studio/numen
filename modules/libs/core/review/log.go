@@ -42,7 +42,7 @@ func Write(a Answer) ([]byte, error) {
 	if a.TakesBack() {
 		l.Undo = a.Undoes
 	} else {
-		l.Card, l.Face = a.Seat.Card, a.Seat.Face
+		l.Card, l.Face = a.CardFace.Card, a.CardFace.Face
 		l.Rating = uint8(a.Rating)
 		l.Ms = a.Took.Milliseconds()
 	}
@@ -110,10 +110,10 @@ func answer(raw []byte) (Answer, bool) {
 		return Answer{}, false
 	}
 	return Answer{
-		ID:     l.ID,
-		Seat:   Seat{Card: l.Card, Face: l.Face},
-		At:     at,
-		Rating: Rating(l.Rating),
-		Took:   time.Duration(l.Ms) * time.Millisecond,
+		ID:       l.ID,
+		CardFace: CardFace{Card: l.Card, Face: l.Face},
+		At:       at,
+		Rating:   Rating(l.Rating),
+		Took:     time.Duration(l.Ms) * time.Millisecond,
 	}, true
 }

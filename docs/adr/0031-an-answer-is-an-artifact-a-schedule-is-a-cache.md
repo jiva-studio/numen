@@ -48,9 +48,9 @@ An answer carries an identifier of its own so that taking it back names it exact
 
 A line that does not parse is skipped and counted, and so is a line whose `v` is a version this build does not know. A run that ended when the machine did leaves a torn last line, which is one of those: an append is not atomic, and the file has to be readable anyway.
 
-### A schedule belongs to a card's mark and a face's name
+### A schedule belongs to a card and one of its faces
 
-The unit is the pair. A card is shown once through each face its stencil declares (ADR-0027), and each face asks a different thing of the person, so each face has a path of its own.
+**A card face is what carries a schedule**: one card, and one face of the stencil that cuts it. A card is shown once through each face its stencil declares (ADR-0027), and each face asks a different thing of the person, so each face has a path of its own.
 
 The card half is the mark it is known by (ADR-0028), which travels with it: a card moved to another deck or another vault keeps its schedule and its history, and nothing is recomputed.
 
@@ -66,7 +66,7 @@ The service folder inside a vault holds what the application made and cannot mak
 
 So it lives where the installation's own state lives, keyed by the vault's identity, and it is deleted at any time at no cost but a replay.
 
-It holds what a launch would otherwise read every file to learn: the schedule of each pair, the marks each deck held when it was last read together with the size and time that read saw, the names of the run files already folded in, and the name and version of the scheduler that computed it.
+It holds what a launch would otherwise read every file to learn: the schedule of each card face, the marks each deck held when it was last read together with the size and time that read saw, the names of the run files already folded in, and the name and version of the scheduler that computed it.
 
 ### A run the cache does not name is the history read again
 

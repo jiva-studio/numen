@@ -20,7 +20,7 @@ type kept struct {
 	By string `json:"by"`
 	// Files are the names of the log files this was worked out from.
 	Files []string       `json:"files"`
-	Seats []keptSchedule `json:"seats"`
+	Faces []keptSchedule `json:"faces"`
 }
 
 type keptSchedule struct {
@@ -35,7 +35,7 @@ type keptSchedule struct {
 	Phase      uint8   `json:"phase"`
 }
 
-// Schedules is where the answers have left every seat of one vault.
+// Schedules is where the answers have left every card face of one vault.
 //
 // What is kept between launches is a cache: a file listing the runs it was
 // worked out from. A cache filled from every run the vault now holds, by this
@@ -51,10 +51,10 @@ type Schedules struct {
 	By   history.Scheduler
 }
 
-// Execute is every seat the vault's answers name, and where they leave it.
+// Execute is every card face the vault's answers name, and where they leave it.
 func (u Schedules) Execute(
 	ctx context.Context, v domain.Vault,
-) (map[history.Seat]history.Schedule, error) {
+) (map[history.CardFace]history.Schedule, error) {
 	held, err := Log{Stores: u.Logs}.Read(ctx, v)
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func (u Schedules) Execute(
 // runs the vault now holds and by the scheduler now asking.
 func (u Schedules) remembered(
 	ctx context.Context, v domain.Vault, files []string,
-) (map[history.Seat]history.Schedule, bool) {
+) (map[history.CardFace]history.Schedule, bool) {
 	if u.Kept == nil {
 		return nil, false
 	}
@@ -88,8 +88,8 @@ func (u Schedules) remembered(
 		return nil, false
 	}
 
-	out := make(map[history.Seat]history.Schedule, len(was.Seats))
-	for _, s := range was.Seats {
+	out := make(map[history.CardFace]history.Schedule, len(was.Faces))
+	for _, s := range was.Faces {
 		due, err := history.Moment(s.Due)
 		if err != nil {
 			return nil, false
@@ -98,7 +98,7 @@ func (u Schedules) remembered(
 		if err != nil {
 			return nil, false
 		}
-		out[history.Seat{Card: s.Card, Face: s.Face}] = history.Schedule{
+		out[history.CardFace{Card: s.Card, Face: s.Face}] = history.Schedule{
 			Due: due, Last: last, Reps: s.Reps, Lapses: s.Lapses,
 			Stability: s.Stability, Difficulty: s.Difficulty, Phase: s.Phase,
 		}
@@ -110,22 +110,22 @@ func (u Schedules) remembered(
 // that could not be written is a launch that works it out again, so nothing
 // here is reported.
 func (u Schedules) remember(
-	ctx context.Context, v domain.Vault, files []string, out map[history.Seat]history.Schedule,
+	ctx context.Context, v domain.Vault, files []string, out map[history.CardFace]history.Schedule,
 ) {
 	if u.Kept == nil {
 		return
 	}
 	now := kept{V: keptVersion, By: u.By.Name(), Files: files}
-	for seat, s := range out {
-		now.Seats = append(now.Seats, keptSchedule{
-			Card: seat.Card, Face: seat.Face,
+	for on, s := range out {
+		now.Faces = append(now.Faces, keptSchedule{
+			Card: on.Card, Face: on.Face,
 			Due:  s.Due.UTC().Format(history.Stamp),
 			Last: s.Last.UTC().Format(history.Stamp),
 			Reps: s.Reps, Lapses: s.Lapses,
 			Stability: s.Stability, Difficulty: s.Difficulty, Phase: s.Phase,
 		})
 	}
-	slices.SortFunc(now.Seats, func(a, b keptSchedule) int {
+	slices.SortFunc(now.Faces, func(a, b keptSchedule) int {
 		if a.Card != b.Card {
 			return strings.Compare(a.Card, b.Card)
 		}

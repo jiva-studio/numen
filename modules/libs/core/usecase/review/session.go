@@ -9,21 +9,21 @@ import (
 	history "github.com/jiva-studio/numen/modules/libs/core/review"
 )
 
-// Asked is one seat as it is put to a person: where it stands, how it is laid
+// Asked is one card face as it is put to a person: where it stands, how it is laid
 // out, and where the answers so far have left it.
 type Asked struct {
 	Standing
 	Schedule history.Schedule
 }
 
-// Session is the seats a person is asked, in the order they are asked.
+// Session is what a person is asked, in the order they are asked it.
 //
 // A card owed and answered before comes first, the one waiting longest at the
 // front, because a card left late is the one closest to being forgotten. Cards
 // nobody has answered come after them, in the order they stand in their decks:
 // a person wrote them in an order, and it is as good an order as any.
 type Session struct {
-	Seats     Seats
+	Standings Standings
 	Schedules Schedules
 	Day       history.Day
 	Now       func() time.Time
@@ -35,7 +35,7 @@ type Session struct {
 // whole vault is the ordinary way to sit down to this: a person owes what they
 // owe, and which file a card is written in is not something they think about.
 func (u Session) Execute(ctx context.Context, v domain.Vault, deck string) ([]Asked, error) {
-	standing, err := u.Seats.Execute(ctx, v)
+	standing, err := u.Standings.Execute(ctx, v)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (u Session) Execute(ctx context.Context, v domain.Vault, deck string) ([]As
 		if deck != "" && one.Deck != deck {
 			continue
 		}
-		s, answered := schedules[one.Seat]
+		s, answered := schedules[one.CardFace]
 		switch {
 		case !answered:
 			fresh = append(fresh, Asked{Standing: one})

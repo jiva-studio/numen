@@ -5,16 +5,16 @@ import (
 	"strings"
 )
 
-// Replay works out where a history leaves every seat it names.
+// Replay works out where a history leaves every card face it names.
 //
 // The answers arrive in whatever order the files were read, and the files
 // arrive in whatever order they were synchronised, so they are put in the order
 // they were given first. A schedule depends on that order: an answer counted
-// after a later one leaves a seat somewhere neither of them would have.
+// after a later one leaves a card face somewhere neither of them would have.
 //
 // An answer some line takes back is left out. Both lines stay in the file —
 // nothing here is ever rewritten — and what a person took back is not counted.
-func Replay(by Scheduler, answers []Answer) map[Seat]Schedule {
+func Replay(by Scheduler, answers []Answer) map[CardFace]Schedule {
 	taken := make(map[string]bool)
 	for _, a := range answers {
 		if a.TakesBack() {
@@ -30,9 +30,9 @@ func Replay(by Scheduler, answers []Answer) map[Seat]Schedule {
 	}
 	slices.SortStableFunc(given, byWhen)
 
-	out := make(map[Seat]Schedule)
+	out := make(map[CardFace]Schedule)
 	for _, a := range given {
-		out[a.Seat] = by.Next(out[a.Seat], a.At, a.Rating)
+		out[a.CardFace] = by.Next(out[a.CardFace], a.At, a.Rating)
 	}
 	return out
 }
