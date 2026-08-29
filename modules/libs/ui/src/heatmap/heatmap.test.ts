@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { days, fits, names, NOTHING, ROWS, weighs } from './heatmap'
+import { days, fits, marks, names, needs, NOTHING, ROWS, weighs } from './heatmap'
 import type { Tally } from './heatmap'
 
 describe('how much of a year fits', () => {
@@ -31,6 +31,41 @@ describe('how much of a year fits', () => {
   it('holds one column where there is room for none', () => {
     expect(fits({ width: 0, cell: 10, gap: 2 }).columns).toBe(1)
     expect(fits({ width: 4, cell: 10, gap: 2 }).columns).toBe(1)
+  })
+
+  // Filling the width with years nobody has lived yet is a wall of empty
+  // squares that says a person is behind on nothing.
+  it('draws no more weeks than there are to draw', () => {
+    const room = fits({ width: 600, cell: 10, gap: 2, most: 12 })
+    expect(room.columns).toBe(12)
+    // And the cells stay where they are rather than being spread over the room
+    // they were not given.
+    expect(room.gap).toBe(2)
+  })
+
+  it('still meets both edges once there is a year to draw', () => {
+    const room = fits({ width: 600, cell: 10, gap: 2, most: 500 })
+    expect(room.columns).toBe(50)
+    expect(room.gap).toBeGreaterThanOrEqual(2)
+  })
+})
+
+describe('how many weeks there are to draw', () => {
+  const now = new Date('2026-08-29T12:00:00')
+
+  it('is the weeks kept for what is coming, for a vault nobody answered', () => {
+    // This week and the four kept after it.
+    expect(needs(now, new Map())).toBe(5)
+  })
+
+  it('is the weeks from the one a person began in', () => {
+    const started = answeredOn([['2026-08-01', 3]])
+    // From the week of the 1st to four weeks past this one.
+    expect(needs(now, started)).toBe(9)
+  })
+
+  it('counts a day still to come as a week to draw', () => {
+    expect(needs(now, new Map(), new Map([['2026-09-30', 4]]))).toBe(5)
   })
 })
 
@@ -152,6 +187,35 @@ describe('the days a grid draws', () => {
 
   it('draws no days where there is room for no column', () => {
     expect(days(0, new Date('2026-08-29T12:00:00'), did)).toHaveLength(0)
+  })
+})
+
+describe('the months over the grid', () => {
+  // Two labels over neighbouring columns run into one another and read as one
+  // word, and the one carrying a year is the wider of the two.
+  it('leaves room between them, and more after one carrying a year', () => {
+    const shown = days(80, new Date('2026-08-29T12:00:00'), new Map())
+    const said = marks(shown, 3, 6)
+
+    for (let at = 1; at < said.length; at += 1) {
+      const before = said[at - 1]!
+      const room = before.year ? 6 : 3
+      expect(said[at]!.column - before.column).toBeGreaterThanOrEqual(room)
+    }
+  })
+
+  it('says the year where the year turns', () => {
+    const shown = days(80, new Date('2026-08-29T12:00:00'), new Map())
+    const said = marks(shown)
+
+    expect(said.filter((one) => one.year).length).toBeGreaterThan(0)
+    for (const one of said) {
+      expect(one.day.endsWith('-01') || one.day > '2020-01-01').toBe(true)
+    }
+  })
+
+  it('says nothing over a grid of nothing', () => {
+    expect(marks([])).toHaveLength(0)
   })
 })
 

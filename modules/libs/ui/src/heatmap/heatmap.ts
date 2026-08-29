@@ -61,6 +61,8 @@ export interface Room {
   cell: number
   /** How much room is left between two cells. */
   gap: number
+  /** The most columns worth drawing, where there are fewer than would fit. */
+  most?: number
 }
 
 /**
@@ -78,12 +80,32 @@ export function fits(room: Room): { columns: number; cell: number; gap: number }
   const step = cell + gap
   if (room.width <= 0) return { columns: 1, cell, gap }
 
-  const columns = Math.max(1, Math.floor((room.width + gap) / step))
-  if (columns < 2) return { columns, cell, gap }
+  const held = Math.max(1, Math.floor((room.width + gap) / step))
+  // A grid never draws more weeks than there are to draw. Filling the width
+  // with years nobody has lived yet is a wall of empty squares that says a
+  // person is behind on nothing.
+  const columns = Math.max(1, Math.min(held, room.most ?? held))
+  if (columns < 2 || columns < held) return { columns, cell, gap }
 
   // The room the cells do not take is the room between them.
   const between = Math.max(gap, (room.width - columns * cell) / (columns - 1))
   return { columns, cell, gap: between }
+}
+
+/**
+ * How many columns there are to draw: the weeks from the one a person began in
+ * to the last one kept for what is still to come.
+ */
+export function needs(
+  now: Date,
+  did: ReadonlyMap<string, unknown>,
+  due: ReadonlyMap<string, unknown> = new Map(),
+): number {
+  const from = monday(began(did, due, now))
+  const last = new Date(now)
+  last.setHours(12, 0, 0, 0)
+  last.setDate(last.getDate() + ((7 - weekday(last)) % 7) + AHEAD * ROWS)
+  return Math.max(1, Math.round((last.getTime() - from.getTime()) / 86_400_000 / ROWS))
 }
 
 /**
@@ -214,11 +236,13 @@ export interface Mark {
  * A column too close to the one before it is left unsaid, because two labels
  * over neighbouring columns run into one another.
  */
-export function marks(shown: readonly Day[], apart = 3): Mark[] {
+export function marks(shown: readonly Day[], apart = 3, wider = apart * 2): Mark[] {
   const out: Mark[] = []
   let was = ''
   let held = ''
-  let at = -apart
+  // The first column a label may stand at without running into the last one.
+  // A label carrying a year is the wider of the two and asks for more room.
+  let free = 0
 
   for (let column = 0; column * ROWS < shown.length; column += 1) {
     const day = shown[column * ROWS]
@@ -227,10 +251,11 @@ export function marks(shown: readonly Day[], apart = 3): Mark[] {
     if (!year || !month) continue
     if (month === was) continue
     was = month
-    if (column - at < apart) continue
-    at = column
+    if (column < free) continue
+
     const turned = year !== held
     held = year
+    free = column + (turned ? wider : apart)
     out.push({ day: day.day, column, year: turned })
   }
   return out
