@@ -995,7 +995,10 @@ type ReadCardResponse struct {
 	// What the file stands at, to present at the next write.
 	At *Fingerprint `protobuf:"bytes,2,opt,name=at,proto3" json:"at,omitempty"`
 	// Set where nothing could be read, in the person's own words.
-	Refused       string `protobuf:"bytes,3,opt,name=refused,proto3" json:"refused,omitempty"`
+	Refused string `protobuf:"bytes,3,opt,name=refused,proto3" json:"refused,omitempty"`
+	// The stencil the card is cut by, as the wikilink under its heading names it.
+	// A card naming none carries nothing here.
+	Stencil       string `protobuf:"bytes,4,opt,name=stencil,proto3" json:"stencil,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1047,6 +1050,13 @@ func (x *ReadCardResponse) GetAt() *Fingerprint {
 func (x *ReadCardResponse) GetRefused() string {
 	if x != nil {
 		return x.Refused
+	}
+	return ""
+}
+
+func (x *ReadCardResponse) GetStencil() string {
+	if x != nil {
+		return x.Stencil
 	}
 	return ""
 }
@@ -1335,11 +1345,12 @@ const file_numen_v1_review_proto_rawDesc = "" +
 	"\x0fReadCardRequest\x12\x19\n" +
 	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
 	"\x04deck\x18\x02 \x01(\tR\x04deck\x12\x12\n" +
-	"\x04card\x18\x03 \x01(\tR\x04card\"\x80\x01\n" +
+	"\x04card\x18\x03 \x01(\tR\x04card\"\x9a\x01\n" +
 	"\x10ReadCardResponse\x12+\n" +
 	"\x06values\x18\x01 \x03(\v2\x13.numen.v1.CardValueR\x06values\x12%\n" +
 	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintR\x02at\x12\x18\n" +
-	"\arefused\x18\x03 \x01(\tR\arefused\"\xbd\x01\n" +
+	"\arefused\x18\x03 \x01(\tR\arefused\x12\x18\n" +
+	"\astencil\x18\x04 \x01(\tR\astencil\"\xbd\x01\n" +
 	"\x10WriteCardRequest\x12\x19\n" +
 	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
 	"\x04deck\x18\x02 \x01(\tR\x04deck\x12\x12\n" +

@@ -15,6 +15,8 @@ const props = defineProps<{
   /** What the card is known by, and where it stands. */
   card: string
   section: string
+  /** The stencil that cuts it, which its strip says. */
+  stencil: string
   /** Its values, in the order its stencil asks for them. */
   values: readonly Held[]
 }>()
@@ -38,7 +40,7 @@ const filled = computed<readonly Stood[]>(() =>
 const tile = computed<Tile>(() => ({
   id: props.card,
   section: props.section || null,
-  stencil: null,
+  stencil: props.stencil || null,
   filled: filled.value,
   at: 1,
   of: 1,
@@ -49,7 +51,11 @@ const tile = computed<Tile>(() => ({
 
 <template>
   <section class="editing">
-    <Card :tile="tile" @write="(field, _nth, text) => emit('write', field, text)" />
+    <Card :tile="tile" @write="(field, _nth, text) => emit('write', field, text)">
+      <!-- A card is not taken out of its deck from here: this window puts one
+           right and never removes it. -->
+      <template #deeds />
+    </Card>
   </section>
 </template>
 
