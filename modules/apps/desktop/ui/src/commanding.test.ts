@@ -157,6 +157,8 @@ describe('the commands as they open', () => {
       ],
       window: [
         'note',
+        'deck',
+        'stencil',
         'plex',
         'files',
         'agent',

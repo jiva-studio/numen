@@ -173,6 +173,32 @@ export type {
   TreeKey,
 } from './tree/model'
 
+export { default as Face } from './cards/Face.vue'
+export { default as Stencil } from './cards/Stencil.vue'
+export { default as Deck } from './cards/Deck.vue'
+/** One card of a deck, which is what the deck lays out. */
+export { default as Card } from './cards/Card.vue'
+/** One face of a stencil, which is what the stencil lays out. */
+export { default as Block } from './cards/Block.vue'
+export { default as Marks } from './cards/Marks.vue'
+/** The heading one section of a deck stands under. */
+export { default as Band } from './cards/Band.vue'
+/** The strip a tile is carried by. */
+export { default as Bar } from './cards/Bar.vue'
+/** A rule with something standing on it, in its middle or at its start. */
+export { default as Rule } from './rule/Rule.vue'
+
+/** For putting a card or a field where a person let it go, without drawing it. */
+export { ordered, reordered } from './cards/order'
+export type { Half, Landing as CardLanding } from './cards/order'
+/**
+ * Where a card let go at the head of a deck lands, before its first section,
+ * and where one let go past the last card standing under a heading lands.
+ */
+export { ended as cardEnded, endOf as cardEndOf, HEAD as CARD_HEAD } from './cards/deck'
+export type { Banded, Drawn, Filled } from './cards/deck'
+export type { Cut } from './cards/stencil'
+
 export type { Environment, PlexTransition } from './plex/transition'
 export type { HungPart, HungParts, PlexPart } from './plex/inside'
 export type {

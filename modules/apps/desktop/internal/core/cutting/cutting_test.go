@@ -10,7 +10,7 @@ import (
 // line builds n words on one line, so that a test about words is not a test
 // about lines.
 func line(n int) string {
-	rotation := []string{"dharma", "artha", "kama", "moksha", "satya"}
+	rotation := []string{"hedge", "gate", "shed", "compost", "marrow"}
 	out := make([]string, n)
 	for i := range out {
 		out[i] = rotation[i%len(rotation)]
@@ -19,9 +19,9 @@ func line(n int) string {
 }
 
 const (
-	latin    = "The mind is restless, turbulent, obstinate and very strong."
-	cyrillic = "Ум беспокоен, упрям, необуздан и очень силён, о Кришна."
-	sanskrit = "cañcalaṁ hi manaḥ kṛṣṇa pramāthi balavad dṛḍham"
+	latin    = "The hedge is thick, tangled, overgrown and very old."
+	cyrillic = "Забор старый, кривой, дырявый и очень длинный, но крепкий."
+	sanskrit = "udyāna pathaḥ dvāram bījāni śākhāḥ jalaṁ kṣetram"
 	noise    = "ει; ·, .· ;, ·. ;· ., ·· ;, .· ει ;· ., ·, .· ;,"
 )
 

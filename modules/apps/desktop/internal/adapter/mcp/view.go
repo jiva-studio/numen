@@ -25,8 +25,10 @@ func addViewTools(server *sdk.Server, core Core) {
 		Name:  "note_focus",
 		Title: "Put a note in front of the person",
 		Description: "Make a note the one the person is looking at, so that the " +
-			"neighbourhood they see is drawn around it. Use it while talking about " +
-			"a note, or after changing one. It reads nothing back: `note_read` does that.",
+			"neighbourhood they see is drawn around it. Use it only where the person " +
+			"asked to be taken to a note. Talking about one is not asking, and neither " +
+			"is changing one: the person may be working somewhere else, and this moves " +
+			"them. It reads nothing back: `note_read` does that.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path string `json:"path" jsonschema:"the note to put in focus, by its path relative to the vault folder"`
 	}) (*sdk.CallToolResult, struct {
@@ -61,9 +63,9 @@ func addViewTools(server *sdk.Server, core Core) {
 			"`note_search` gives the range of every passage it answers with, and this " +
 			"takes that range as it stands. Where a question is answered in several " +
 			"places of one document, name the rest under `also`: the person is taken " +
-			"to the first and the others are lit where they fall. Use it when somebody " +
-			"asks to be shown something in a book, or to put what you are talking " +
-			"about in front of them.",
+			"to the first and the others are lit where they fall. Use it only where the " +
+			"person asked to be shown something in a book. Talking about a passage is " +
+			"not asking: the person may be working somewhere else, and this moves them.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path   string `json:"path" jsonschema:"the document to open, by its path relative to the vault folder"`
 		Start  int    `json:"start" jsonschema:"where the passage begins in the document's text, in bytes, as a search gives it"`

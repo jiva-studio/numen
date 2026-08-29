@@ -10,8 +10,17 @@
 import { computed, onMounted, onUnmounted } from 'vue'
 import { Menu, Tree } from '@numen/ui'
 import type { Point, Row as TreeRow } from '@numen/ui'
-import { Book, File, FileText, Folder, FolderOpen, type LucideIcon } from '@lucide/vue'
-import type { Source } from '../core'
+import {
+  Book,
+  File,
+  FileText,
+  Folder,
+  FolderOpen,
+  Layers,
+  LayoutTemplate,
+  type LucideIcon,
+} from '@lucide/vue'
+import type { NoteType, Source } from '../core'
 import { iconFor } from '../icons'
 import type { Dropped, Held } from './kind'
 import type { Row } from './listing'
@@ -39,11 +48,12 @@ const renaming = computed({
   },
 })
 
-/** What the vault holds at a row. */
-const kindOf = (id: string): Source | 'folder' => {
+/** What the vault holds at a row: a folder, a note of one of three kinds, or a file. */
+const kindOf = (id: string): Source | NoteType | 'folder' => {
   const entry = props.held.list.entryAt(id)
   if (!entry) return 'other'
-  return entry.folder ? 'folder' : entry.kind
+  if (entry.folder) return 'folder'
+  return entry.kind === 'note' ? entry.type : entry.kind
 }
 
 /**
@@ -54,6 +64,8 @@ const entryIcon = (id: string, open: boolean): LucideIcon => {
   const kind = kindOf(id)
   if (kind === 'folder') return open ? FolderOpen : Folder
   if (kind === 'book') return Book
+  if (kind === 'deck') return Layers
+  if (kind === 'stencil') return LayoutTemplate
   return kind === 'note' ? FileText : File
 }
 

@@ -216,6 +216,51 @@ func TestANoteSaysWhatItIsDividedInto(t *testing.T) {
 	}
 }
 
+// TestANeighbourhoodSaysWhichOfThreeEachNoteIs. A plex draws a deck and a
+// stencil as what they are, and the picture is where it is told which is which.
+func TestANeighbourhoodSaysWhichOfThreeEachNoteIs(t *testing.T) {
+	client, _ := opened(t, map[string]string{
+		"Ontology.md": "---\ntitle: Ontology\nlinks:\n  - to: Animals\n    role: child\n" +
+			"  - to: Animal\n    role: child\n---\n\nan animal is a note\n",
+		"Animals.md": "---\ntype: deck\ntitle: Animals\n---\n\n## Llama\n\n[[Animal]]\n",
+		"Animal.md": "---\ntype: stencil\ntitle: Animal\nfields:\n  - Height\n---\n\n" +
+			"## Recognise\n\n### Front\n\nan animal\n\n### Back\n\n{{Height}}\n",
+	})
+
+	around, err := client.Neighbourhood(t.Context(),
+		connect.NewRequest(&v1.NeighbourhoodRequest{Path: "Ontology.md"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if is := around.Msg.GetFocusType(); is != v1.NoteType_NOTE_TYPE_UNSPECIFIED {
+		t.Errorf("the note in focus is drawn as %v", is)
+	}
+	types := map[string]v1.NoteType{}
+	for _, one := range around.Msg.GetRelated() {
+		types[one.GetNote().GetPath()] = one.GetType()
+	}
+	want := map[string]v1.NoteType{
+		"Animals.md": v1.NoteType_NOTE_TYPE_DECK,
+		"Animal.md":  v1.NoteType_NOTE_TYPE_STENCIL,
+	}
+	for path, is := range want {
+		if got, held := types[path]; !held || got != is {
+			t.Errorf("the node %s is drawn as %v, want %v", path, got, is)
+		}
+	}
+
+	// And the note in focus is said the same way, a plex standing on a deck.
+	standing, err := client.Neighbourhood(t.Context(),
+		connect.NewRequest(&v1.NeighbourhoodRequest{Path: "Animals.md"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if is := standing.Msg.GetFocusType(); is != v1.NoteType_NOTE_TYPE_DECK {
+		t.Errorf("the deck in focus is drawn as %v", is)
+	}
+}
+
 func TestAPathAskedTwiceIsAnsweredOnce(t *testing.T) {
 	client, _ := opened(t, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",

@@ -5,8 +5,8 @@
  * out of sight, where there is none. What is drawn says so when it appears, and
  * measures again then.
  */
-import type { Run } from '../core'
 import type { Reading } from './reading'
+import type { Putting } from '../putting'
 import type { Host, Kind } from '../windowing'
 import { DOCUMENT } from '../workspace'
 import DocumentTab from './DocumentTab.vue'
@@ -23,7 +23,7 @@ export type Held = ReturnType<typeof documenting>
  * The document tabs of a window. A document is its own tab, so the same one
  * opened again is the tab it is already read in.
  */
-export function documentKind(host: Host, opens: (path: string) => Held) {
+export function documentKind(host: Host, opens: (path: string) => Held, puts: Putting) {
   const kind: Kind<Held> = {
     kind: DOCUMENT,
     opens,
@@ -37,18 +37,15 @@ export function documentKind(host: Host, opens: (path: string) => Held) {
     },
   }
 
-  /**
-   * A document put in front of the person, opened at a stretch of its own
-   * text. What stands there is lit, and the tab turns to the first page of it.
-   * The places named after it are lit where they fall, each of them somewhere
-   * else to look.
-   */
-  const opensAt = async (path: string, ...runs: readonly Run[]) => {
+  // The reader of documents. What stands at the stretches asked for is lit, and
+  // the tab turns to the first page of them; the rest are lit where they fall,
+  // each of them somewhere else to look.
+  puts.reads(async (path, runs) => {
     const id = await host.opens(DOCUMENT, path)
     void host.holds<Held>(DOCUMENT, id)?.reach(...runs)
-  }
+  })
 
-  return { kind, opensAt }
+  return { kind }
 }
 
 export function documenting(read: Reading) {

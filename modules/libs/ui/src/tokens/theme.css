@@ -61,6 +61,13 @@
   --ease-numen: var(--numen-easing);
 }
 
+/* The way a few words are set in capitals: tracked wider than a sentence, so
+   they read as a label over what they name. */
+@utility caps-numen {
+  letter-spacing: var(--numen-caps-tracking);
+  text-transform: uppercase;
+}
+
 /* What the typography plugin paints with, in this product's colours. Applied
    beside `prose`. */
 @utility prose-numen {

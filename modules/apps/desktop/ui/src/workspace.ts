@@ -14,6 +14,10 @@ export const NOTE = 'note'
 export const DOCUMENT = 'document'
 /** The folders and files of the vault, one tab of them to a window. */
 export const FILES = 'files'
+/** A deck edited in the window, under the path the vault files it at. */
+export const DECK = 'deck'
+/** A stencil edited in the window, under the path the vault files it at. */
+export const STENCIL = 'stencil'
 
 /** One thread of talk, under the name the agent hears it by. */
 export const CONVERSATION = 'conversation'

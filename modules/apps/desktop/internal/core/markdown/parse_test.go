@@ -161,8 +161,8 @@ func TestCarriageReturnsDoNotLeakIntoParsedValues(t *testing.T) {
 }
 
 func TestNonLatinTextSurvivesParsing(t *testing.T) {
-	// The product's own content is largely not Latin, so the fixture vault
-	// keeps one note in another script deliberately.
+	// The fixture vault keeps one note in another script deliberately, since a
+	// vault is allowed to hold text that is not Latin.
 	n := parseFile(t, "edge/unicode.md")
 	for _, want := range []string{"энтропия", "熱力学"} {
 		if !strings.Contains(n.Body, want) {

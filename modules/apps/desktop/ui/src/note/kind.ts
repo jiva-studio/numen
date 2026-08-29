@@ -18,6 +18,7 @@ import { entering, ITSELF } from './entering'
 import { naming, type Called } from './naming'
 import NoteTab from './NoteTab.vue'
 import { markOf } from './tab'
+import type { Putting } from '../putting'
 
 /** The notes of the whole window, read and written by one store. */
 type Notes = ReturnType<typeof editing>
@@ -49,7 +50,13 @@ export interface Held {
   shuts(id: string): void
 }
 
-export function noting(vault: Called, notes: Notes, drawings: Drawings, host: Host) {
+export function noting(
+  vault: Called,
+  notes: Notes,
+  drawings: Drawings,
+  host: Host,
+  puts: Putting,
+) {
   const names = naming(vault, notes)
   const keyboard = entering()
 
@@ -109,6 +116,14 @@ export function noting(vault: Called, notes: Notes, drawings: Drawings, host: Ho
   /** A note given the keyboard on a line, in whichever tab holds it. */
   const entersAt = (path: string, line?: number) => keyboard.owes(opened(path), line)
 
+  // The editor of an ordinary note, which is where its prose is read and
+  // written. A line is one of the lines of that prose, and the keyboard stands
+  // on it.
+  puts.holds('note', (path, title, showing, line) => {
+    shows(path, title, showing)
+    if (line !== undefined) entersAt(path, line)
+  })
+
   /** The tab holding a note lets go of it, wherever the window draws it. */
   const shuts = (id: string) => {
     const tab = host.each<Held>(NOTE).find((one) => one.held.id === id)
@@ -167,7 +182,6 @@ export function noting(vault: Called, notes: Notes, drawings: Drawings, host: Ho
     kind,
     held,
     opens,
-    shows,
     titles: names.titles,
     /** Every open note's editor takes its measurements again. */
     measures: keyboard.measures,

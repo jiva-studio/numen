@@ -136,7 +136,7 @@ func TestAddScanSearch(t *testing.T) {
 	}
 
 	scanned := s.mustRun("scan", "demo")
-	if !strings.Contains(scanned, "8 notes: 8 indexed") {
+	if !strings.Contains(scanned, "14 notes: 14 indexed") {
 		t.Errorf("scan said:\n%s", scanned)
 	}
 
@@ -152,7 +152,7 @@ func TestSecondScanChangesNothing(t *testing.T) {
 	s.mustRun("scan", "demo")
 
 	again := s.mustRun("scan", "demo")
-	if !strings.Contains(again, "0 indexed") || !strings.Contains(again, "8 unchanged") {
+	if !strings.Contains(again, "0 indexed") || !strings.Contains(again, "14 unchanged") {
 		t.Errorf("rescanning an untouched vault reindexed something:\n%s", again)
 	}
 }

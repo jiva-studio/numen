@@ -192,13 +192,13 @@ func TestAPassageIsCutToWhatCanBeReadAtAGlance(t *testing.T) {
 
 func TestAPassageOpensOnTheHitWhenNoWordMatched(t *testing.T) {
 	long := strings.Repeat("a", 500)
-	text := long + " Bhishma was there " + long
+	text := long + " Alice Fenn was there " + long
 
 	// Nothing matched a word — this is what a hit by meaning looks like — and
 	// the chunk that did match begins where the sentence does.
 	cut, kept := around(text, nil, 501)
 
-	if !strings.Contains(cut, "Bhishma") {
+	if !strings.Contains(cut, "Alice Fenn") {
 		t.Errorf("cut %q, want it to hold the words the hit stands on", cut[:40])
 	}
 	if len(kept) != 0 {

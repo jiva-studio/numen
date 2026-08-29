@@ -508,7 +508,7 @@ export const NotLatin: Story = {
         title: 'Названия',
         items: [
           named('ru', RUSSIAN, 'заметки'),
-          named('sa', DEVANAGARI, 'वेद'),
+          named('sa', DEVANAGARI, 'बगीचा'),
           named('ar', ARABIC, 'السطر'),
         ],
       },

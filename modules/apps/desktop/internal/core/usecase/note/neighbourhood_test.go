@@ -94,30 +94,30 @@ func TestALabelWrittenAtEitherEndIsDrawn(t *testing.T) {
 		{
 			name:     "the far end alone names it",
 			area:     "  - to: \"[[Idea]]\"\n    role: parent\n",
-			idea:     "  - to: \"[[Area]]\"\n    role: child\n    label: Жлоб\n",
-			fromArea: "parent Жлоб mutual",
-			fromIdea: "child Жлоб mutual",
+			idea:     "  - to: \"[[Area]]\"\n    role: child\n    label: the top plot\n",
+			fromArea: "parent the top plot mutual",
+			fromIdea: "child the top plot mutual",
 		},
 		{
 			name:     "each end has its own word for it",
-			area:     "  - to: \"[[Idea]]\"\n    role: jump\n    label: внучатый племянник\n",
-			idea:     "  - to: \"[[Area]]\"\n    role: jump\n    label: питамаха, дед рода\n",
-			fromArea: "jump внучатый племянник mutual",
-			fromIdea: "jump питамаха, дед рода mutual",
+			area:     "  - to: \"[[Idea]]\"\n    role: jump\n    label: the newest tenant\n",
+			idea:     "  - to: \"[[Area]]\"\n    role: jump\n    label: the oldest tenant\n",
+			fromArea: "jump the newest tenant mutual",
+			fromIdea: "jump the oldest tenant mutual",
 		},
 		{
 			name:     "the near end alone names it",
-			area:     "  - to: \"[[Idea]]\"\n    role: parent\n    label: дом\n",
+			area:     "  - to: \"[[Idea]]\"\n    role: parent\n    label: the site\n",
 			idea:     "  - to: \"[[Area]]\"\n    role: child\n",
-			fromArea: "parent дом mutual",
-			fromIdea: "child дом mutual",
+			fromArea: "parent the site mutual",
+			fromIdea: "child the site mutual",
 		},
 		{
 			name:     "written at one end only",
-			area:     "  - to: \"[[Idea]]\"\n    role: parent\n    label: дом\n",
+			area:     "  - to: \"[[Idea]]\"\n    role: parent\n    label: the site\n",
 			idea:     "",
-			fromArea: "parent дом",
-			fromIdea: "child дом",
+			fromArea: "parent the site",
+			fromIdea: "child the site",
 		},
 		{
 			name:     "mutual and named by neither",
@@ -146,26 +146,26 @@ func TestALabelWrittenAtEitherEndIsDrawn(t *testing.T) {
 // two relationships, and the one drawn is the one whose seat wins.
 func TestEndsThatDisagreeAnswerNothing(t *testing.T) {
 	mutualParents := map[string]string{
-		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: parent\n    label: несушка\n---\n\n# Chicken\n",
-		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: parent\n    label: из яйца\n---\n\n# Egg\n",
+		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: parent\n    label: lays them\n---\n\n# Chicken\n",
+		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: parent\n    label: came out of one\n---\n\n# Egg\n",
 	}
-	if got := drawnOn(t, mutualParents, "Chicken.md", "Egg.md"); got != "parent несушка" {
+	if got := drawnOn(t, mutualParents, "Chicken.md", "Egg.md"); got != "parent lays them" {
 		t.Errorf("got %q, want the parent seat and the word written here", got)
 	}
-	if got := drawnOn(t, mutualParents, "Egg.md", "Chicken.md"); got != "parent из яйца" {
+	if got := drawnOn(t, mutualParents, "Egg.md", "Chicken.md"); got != "parent came out of one" {
 		t.Errorf("got %q, want the parent seat and the word written here", got)
 	}
 
 	// Each calls the other its child, so the parent seat is earned from the far
 	// end and carries the word written there.
 	mutualChildren := map[string]string{
-		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: child\n    label: снесённое\n---\n\n# Chicken\n",
-		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: child\n    label: вылупившийся\n---\n\n# Egg\n",
+		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: child\n    label: was laid\n---\n\n# Chicken\n",
+		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: child\n    label: hatched\n---\n\n# Egg\n",
 	}
-	if got := drawnOn(t, mutualChildren, "Chicken.md", "Egg.md"); got != "parent вылупившийся" {
+	if got := drawnOn(t, mutualChildren, "Chicken.md", "Egg.md"); got != "parent hatched" {
 		t.Errorf("got %q, want the parent seat and the word written at the end it came from", got)
 	}
-	if got := drawnOn(t, mutualChildren, "Egg.md", "Chicken.md"); got != "parent снесённое" {
+	if got := drawnOn(t, mutualChildren, "Egg.md", "Chicken.md"); got != "parent was laid" {
 		t.Errorf("got %q, want the parent seat and the word written at the end it came from", got)
 	}
 }

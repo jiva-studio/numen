@@ -34,6 +34,9 @@ var expectedPlans = []struct {
 	{note.Statements(), "addressing", []any{1, "p"}, []string{"(vault_id=? AND path=?)"}},
 	{note.Statements(), "fingerprints", []any{1, "note"}, []string{"sources_by_fingerprint"}},
 	{note.Statements(), "search", []any{`"entropy"`, 1, 20}, []string{"chunks_fts"}},
+	{note.Statements(), "stencils", []any{1, "stencil"}, []string{"notes_by_type"}},
+	{note.Statements(), "notes_of_type", []any{1, "deck"}, []string{"notes_by_type"}},
+	{note.Statements(), "types_at", []any{1, `["p"]`}, []string{"(vault_id=? AND path=?)"}},
 
 	{chunk.Statements(), "identify", []any{1, "book", "p"}, []string{"(vault_id=? AND path=?)"}},
 	{chunk.Statements(), "fingerprints", []any{1, "book"}, []string{"sources_by_fingerprint"}},
@@ -160,9 +163,15 @@ func populated(t *testing.T) *DB {
 			source := insert(
 				`INSERT INTO sources (vault_id, path, kind, size, modified_at)
 				 VALUES (?, ?, 'note', 1, 1) RETURNING id`, vault, "folder/"+name+".md")
-			exec(`INSERT INTO notes (source_id, vault_id, basename, title, identifier)
-			      VALUES (?, ?, ?, ?, ?)`,
-				source, vault, name, name, fmt.Sprintf("01M%d%022d", vault, i))
+			// A few of them are stencils, so that a question about the stencils
+			// of a vault is answered against a table where both answers occur.
+			held := "note"
+			if i%250 == 0 {
+				held = "stencil"
+			}
+			exec(`INSERT INTO notes (source_id, vault_id, basename, title, type, identifier)
+			      VALUES (?, ?, ?, ?, ?, ?)`,
+				source, vault, name, name, held, fmt.Sprintf("01M%d%022d", vault, i))
 			for j := range 3 {
 				target := fmt.Sprintf("%s-%05d", prefix, (i+j+1)%notes)
 				exec(`INSERT INTO links (note_id, position, scheme, value, value_base, role)

@@ -1183,10 +1183,10 @@ func sectioned(t *testing.T, db *DB, vault domain.Vault, path string) {
 			Small: []chunk.Chunk{{Start: 100, Length: 100, Text: "Madhavendra Puri four times over."}},
 		},
 		{
-			Start: 200, Length: 100, Location: "Nityananda Prabhu",
-			Opens: []string{"Nityananda Prabhu"},
-			Text:  "Nityananda Prabhu met him at a holy place.",
-			Small: []chunk.Chunk{{Start: 200, Length: 100, Text: "Nityananda Prabhu met him."}},
+			Start: 200, Length: 100, Location: "Alice Fenn",
+			Opens: []string{"Alice Fenn"},
+			Text:  "Alice Fenn met him at the far end of the site.",
+			Small: []chunk.Chunk{{Start: 200, Length: 100, Text: "Alice Fenn met him."}},
 		},
 	}
 	if err := chunks.SaveChunks(ctx, vault.ID, "book", path, cut); err != nil {

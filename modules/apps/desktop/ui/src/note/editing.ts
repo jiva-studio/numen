@@ -333,6 +333,11 @@ export function editing(
  * A write never answers `missing`, because a save creates the file it does not
  * find, and a read answers it as its own kind. `occupied` is a note being made
  * and `unnameable` a note being named, neither of which is something a tab does.
+ * A deck is refused by what it is and by the size it is read up to, and the tab
+ * that holds one says which in its own words.
  */
-const refusalOf = (from: Refused): Refusal =>
-  from === 'missing' || from === 'occupied' || from === 'unnameable' ? 'unreadable' : from
+const refusalOf = (from: Refused): Refusal => {
+  if (from === 'deckTooLarge') return 'tooLarge'
+  if (from === 'notAStencil' || from === 'notADeck') return 'notANote'
+  return from === 'missing' || from === 'occupied' || from === 'unnameable' ? 'unreadable' : from
+}

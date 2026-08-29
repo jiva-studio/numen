@@ -44,7 +44,7 @@ func TestNoTexts(t *testing.T) {
 
 // The budget is characters, and Devanagari takes several bytes a character.
 func TestANonLatinScriptIsBudgetedByCharacters(t *testing.T) {
-	verse := strings.Repeat("धर्मक्षेत्रे कुरुक्षेत्रे समवेता युयुत्सवः ", 20)
+	verse := strings.Repeat("बगीचे की बाड़ के पास एक पुराना शेड है ", 20)
 	chars := len([]rune(verse))
 	if chars >= len(verse) {
 		t.Fatalf("expected multi-byte characters, got %d characters in %d bytes", chars, len(verse))
@@ -63,7 +63,7 @@ func TestANonLatinScriptIsBudgetedByCharacters(t *testing.T) {
 func TestATransliteratedTextIsBudgetedTheSame(t *testing.T) {
 	// The characters are Latin; only the token cost is higher, which is what
 	// the budget is set low enough to absorb.
-	verse := strings.Repeat("dharmakṣetre kurukṣetre samavetā yuyutsavaḥ ", 20)
+	verse := strings.Repeat("udyāne pathaḥ dvāraṁ bījāni śākhāḥ jalaṁ ", 20)
 	chars := len([]rune(verse))
 	texts := []string{verse, verse, verse}
 	if got := embedding.Batches(texts, chars*2); !slices.Equal(sizes(got), []int{2, 1}) {

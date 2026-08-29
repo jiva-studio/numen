@@ -25,9 +25,9 @@ func (unreachable) Named(context.Context, string, string) ([]string, error) {
 }
 
 func TestALinkIsWrittenByNameWhereTheNameMeansOneNote(t *testing.T) {
-	held := named{"Untitled note": {"mahabharata/Untitled note.md"}}
+	held := named{"Untitled note": {"allotments/Untitled note.md"}}
 
-	to, err := note.Addressed(context.Background(), held, "v", "mahabharata/Untitled note.md")
+	to, err := note.Addressed(context.Background(), held, "v", "allotments/Untitled note.md")
 	if err != nil {
 		t.Fatalf("Addressed: %v", err)
 	}
@@ -42,14 +42,14 @@ func TestALinkIsWrittenByNameWhereTheNameMeansOneNote(t *testing.T) {
 // neighbour, so the note beside the one the link is written in is reached only
 // by writing where it is filed.
 func TestALinkIsWrittenByPathWhereTheNameMeansAnotherNote(t *testing.T) {
-	held := named{"Untitled note": {"Untitled note.md", "mahabharata/Untitled note.md"}}
+	held := named{"Untitled note": {"Untitled note.md", "allotments/Untitled note.md"}}
 
-	to, err := note.Addressed(context.Background(), held, "v", "mahabharata/Untitled note.md")
+	to, err := note.Addressed(context.Background(), held, "v", "allotments/Untitled note.md")
 	if err != nil {
 		t.Fatalf("Addressed: %v", err)
 	}
 
-	if to.Value != "mahabharata/Untitled note" {
+	if to.Value != "allotments/Untitled note" {
 		t.Errorf("wrote %q, want the path — the name alone lands on the note at the root", to.Value)
 	}
 	if to.Scheme != domain.SchemeName {
@@ -58,7 +58,7 @@ func TestALinkIsWrittenByPathWhereTheNameMeansAnotherNote(t *testing.T) {
 }
 
 func TestALinkToANoteTheIndexDoesNotHoldYetIsWrittenByName(t *testing.T) {
-	to, err := note.Addressed(context.Background(), named{}, "v", "mahabharata/Untitled note.md")
+	to, err := note.Addressed(context.Background(), named{}, "v", "allotments/Untitled note.md")
 	if err != nil {
 		t.Fatalf("Addressed: %v", err)
 	}

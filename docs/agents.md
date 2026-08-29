@@ -46,16 +46,19 @@ Where the person has a note in front of them, its path is named, and a task sayi
 
 ## The tools
 
-Four families, served over the vault's own endpoint.
+Five families, served over the vault's own endpoint.
 
 | Family | What it is for |
 | --- | --- |
 | `note_*` | search the vault, look notes up, read and write their prose, edit a stretch, rename, move, remove, and put one in front of the person |
 | `link_*` | add, change, remove and list the links a note carries |
+| `card_*` | list the stencils a vault holds, read a deck and the cards in it, and make, change and remove one card at a time |
 | `source_*` | list the documents a vault holds, read a run of one's text, ask for a scanned one to be read, and show the person a passage |
 | `vault_*` | show the vault and what a scan could not act on, find notes by name, and list, add, rename, forget and open vaults |
 
 A call that carries names takes as many as are wanted — at most fifty for a lookup, at most ten for reading prose. A call that carries the text of a document takes one: creating a note, writing one and editing one are each a call of their own, and each is filed as it is finished.
+
+A deck is as long as somebody made it, so `card_read` answers with at most fifty cards at a time and is told where to start. An agent that knows which card it wants names its mark and is answered with that one, and one that wants a field names it and is answered that field alone. A card is named by a mark and never by the place it stands in, so a deck reordered under an agent leaves what it holds addressable.
 
 A tool that writes returns only once the index is level again. An agent that creates a note and searches for it in the next breath finds it.
 

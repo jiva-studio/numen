@@ -10,6 +10,7 @@
 import { computed } from 'vue'
 import { Menu, optionsForType, Plex, useTypeSize } from '@numen/ui'
 import type { MenuOpening, PlexRelatedSeat, PlexShowing } from '@numen/ui'
+import type { LucideIcon } from '@lucide/vue'
 import { ITEMS, NONE } from './menu'
 import { iconFor } from '../icons'
 import type { Held } from './kind'
@@ -27,6 +28,15 @@ const options = computed(() => ({
   ...optionsForType(type.value),
   maxParts: props.held.mostParts(),
 }))
+
+/**
+ * What a node is drawn before its title, and nothing for an ordinary note. A
+ * deck and a stencil carry the icon the tree draws them under.
+ */
+const nodeIcon = (node: string): LucideIcon | null => {
+  const type = props.held.typeOf(node)
+  return type === 'note' ? null : iconFor(type)
+}
 
 /** What the menu offers: on a node, or off every node. */
 const items = computed(() => (props.held.menu.value?.node === null ? NONE : ITEMS))
@@ -83,7 +93,18 @@ const asks = (event: MouseEvent) => {
       @show="(node: string, how: PlexShowing) => props.held.opens(node, how)"
       @enter="(node: string, part: string) => props.held.entered(node, part)"
       @dismiss="props.held.dismiss()"
-    />
+    >
+      <!-- A deck and a stencil are drawn as the tree draws them. An ordinary
+           note is drawn its title and nothing before it. -->
+      <template #icon="{ node }: { node: { id: string } }">
+        <component
+          :is="nodeIcon(node.id)"
+          v-if="nodeIcon(node.id)"
+          class="plex__icon"
+          aria-hidden="true"
+        />
+      </template>
+    </Plex>
 
     <Menu
       v-if="props.held.menu.value"
@@ -115,12 +136,14 @@ const asks = (event: MouseEvent) => {
   min-block-size: 0;
 }
 
-/* Lucide draws on a 24 grid, and the stroke is given in those units. */
+/* Lucide draws on a 24 grid, and the stroke is given in those units.
+   A node's title stands in a `foreignObject`, and nothing drawn in one is given
+   an opacity of its own: WebKit paints what it makes a layer of at the corner
+   of the picture. Anything quieter is asked for in the colour. */
 .plex__icon {
   inline-size: 0.875rem;
   block-size: 0.875rem;
   stroke-width: 1.875;
-  opacity: 0.75;
 }
 
 /* A warning carries a filesystem path, and a long one breaks where it stands. */

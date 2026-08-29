@@ -41,6 +41,8 @@ The frontmatter is shared, not owned:
 | `title` | The name a note is shown by. Written when a note that already has a non-empty one is renamed, and when a title no filename can carry whole is given to one that has none. | ADR-0008 |
 | `id` | The identity of the note, a ULID. Written when the application creates a note or changes what is in it, never backfilled and never written by a person typing in it. A note that was moved carries the identifier it carried before. | ADR-0008, ADR-0007 |
 | `links` | Links that carry a role, and optionally a type, a label and a note. | [Links](links.md) |
+| `type` | Which of three this note is: `note`, `deck` or `stencil`. A note carrying none is a `note`. | ADR-0027 |
+| `fields` | The fields a card cut by this stencil has, in the order they are asked for. Read on a stencil and nowhere else. | ADR-0027 |
 
 A note with no `title` is named by its filename. A heading in the prose names nothing: what a person writes in the body is the body, and typing one does not rename the note.
 
@@ -50,14 +52,18 @@ A note carrying no `id` is indexed in full and simply cannot be a *target*: noth
 
 ## What the application may add
 
-The complete permitted set, from ADR-0008. Everything must survive a third-party markdown editor and stay readable to a human.
+The complete permitted set, from ADR-0018. Everything must survive a third-party markdown editor and stay readable to a human.
 
 | Addition | Where | Status |
 | --- | --- | --- |
-| YAML frontmatter | top of file | allowed; key set not yet fixed |
+| YAML frontmatter | top of file | allowed; the keys the application owns are the closed set above |
 | `[[wikilink]]` | body | a link with the role `ref`, resolved by name ([Links](links.md)) |
+| `{{Field}}` | the body of a stencil | where a card's value goes on a face ([Cards](cards.md)) |
+| `^` and a card's mark | the end of a card's heading in a deck | what that card is, wherever it goes ([Cards](cards.md)) |
 
-Nothing else is permitted: no custom fences, no HTML comments carrying data, no sidecar files, no private extension.
+The first two are every note's. The last two belong to a note of `type: stencil` or `type: deck`, and no other kind of note may carry them.
+
+Nothing else is permitted: no custom fences, no HTML comments carrying data, no sidecar files, no private extension. A kind of note that wants an addition of its own asks for it in a record, as a stencil and a deck did, and the table above is what is kept current.
 
 ## Handling of existing files
 

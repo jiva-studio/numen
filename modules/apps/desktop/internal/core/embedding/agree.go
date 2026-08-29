@@ -7,7 +7,7 @@ const Agreement = 0.99
 
 // Asked is the text two embedders are compared over. It carries several
 // scripts, so two models that differ only outside one alphabet differ here.
-const Asked = "Śrī Caitanya Mahāprabhu — Кришна — the holy name"
+const Asked = "Zoë Brontë — Марроуфилд — the allotment gate"
 
 // Agreed says whether two vectors of one text came from one model.
 //

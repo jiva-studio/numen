@@ -104,10 +104,10 @@ export const overcrowded: PlexNeighbourhood = neighbourhood('Everything, again',
 
 /** Not Latin, far too long, nothing to break at, and nothing at all. */
 export const awkwardLabels: PlexNeighbourhood = neighbourhood(
-  'Заметка с довольно длинным названием, которое не помещается',
+  'Заметка про сарай с довольно длинным названием, которое не влезает',
   [
-    { id: 'parent-0', title: 'भगवद्गीता', seat: 'parent' },
-    { id: 'parent-1', title: 'الفهرس', seat: 'parent' },
+    { id: 'parent-0', title: 'बगीचा', seat: 'parent' },
+    { id: 'parent-1', title: 'الحديقة', seat: 'parent' },
     { id: 'child-0', title: 'a', seat: 'child' },
     {
       id: 'child-1',
@@ -127,26 +127,26 @@ export const awkwardLabels: PlexNeighbourhood = neighbourhood(
  */
 export const labelledRows: PlexNeighbourhood = {
   nodes: [
-    { id: 'focus', title: 'Mahabharata', seat: 'focus' },
+    { id: 'focus', title: 'Marrowfield allotments', seat: 'focus' },
     { id: 'parent-0', title: 'Untitled note 3', seat: 'parent' },
-    { id: 'child-0', title: 'Bhishma', seat: 'child' },
-    { id: 'child-1', title: 'The question of Draupadi', seat: 'child' },
-    { id: 'child-2', title: 'Dharma is subtle', seat: 'child' },
-    { id: 'child-3', title: 'A king who does not protect', seat: 'child' },
-    { id: 'child-4', title: 'Duryodhana, The King', seat: 'child' },
-    { id: 'child-5', title: 'Кого дозволено бить', seat: 'child' },
+    { id: 'child-0', title: 'Compost', seat: 'child' },
+    { id: 'child-1', title: 'The question of the rota', seat: 'child' },
+    { id: 'child-2', title: 'The gate is open', seat: 'child' },
+    { id: 'child-3', title: 'A hedge that nobody has cut', seat: 'child' },
+    { id: 'child-4', title: 'Alice Fenn, The Chair', seat: 'child' },
+    { id: 'child-5', title: 'Who waters in August', seat: 'child' },
     { id: 'jump-0', title: 'xxxx', seat: 'jump' },
     { id: 'sibling-0', title: 'Untitled note 4', seat: 'sibling' },
     { id: 'sibling-1', title: 'Untitled note 5', seat: 'sibling' },
   ],
   edges: [
     { from: 'parent-0', to: 'focus' },
-    { from: 'focus', to: 'child-0', label: 'the grandsire' },
-    { from: 'focus', to: 'child-1', label: 'the scene in the assembly' },
-    { from: 'focus', to: 'child-2', label: 'the doctrine invoked there' },
-    { from: 'focus', to: 'child-3', label: 'when a ruler may be killed' },
-    { from: 'focus', to: 'child-4', label: 'царь, начавший с яда' },
-    { from: 'focus', to: 'child-5', label: 'часть свода' },
+    { from: 'focus', to: 'child-0', label: 'the seed shed' },
+    { from: 'focus', to: 'child-1', label: 'the minutes of the meeting' },
+    { from: 'focus', to: 'child-2', label: 'the rule they quoted there' },
+    { from: 'focus', to: 'child-3', label: 'when a plot is taken back' },
+    { from: 'focus', to: 'child-4', label: 'the chair since May' },
+    { from: 'focus', to: 'child-5', label: 'in the rules' },
     { from: 'jump-0', to: 'focus' },
     { from: 'parent-0', to: 'sibling-0' },
     { from: 'parent-0', to: 'sibling-1' },

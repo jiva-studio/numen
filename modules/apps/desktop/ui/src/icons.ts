@@ -26,6 +26,8 @@ import {
   FolderPlus,
   FolderRoot,
   FolderTree,
+  Layers,
+  LayoutTemplate,
   ListTree,
   Navigation,
   Palette,
@@ -42,7 +44,7 @@ import {
   X,
   type LucideIcon,
 } from '@lucide/vue'
-import { AGENT, DOCUMENT, FILES, NOTE, PLEX } from './workspace'
+import { AGENT, DECK, DOCUMENT, FILES, NOTE, PLEX, STENCIL } from './workspace'
 
 /** What each command is drawn as. A map, so an identity answers for itself. */
 const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
@@ -61,10 +63,14 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['destroy', Trash2],
   // What a tab of the tree does itself.
   ['newNote', FilePlus],
+  ['newDeck', Layers],
+  ['newStencil', LayoutTemplate],
   ['newFolder', FolderPlus],
   ['rename', PenLine],
   // Over the window.
   ['note', FilePlus],
+  ['deck', Layers],
+  ['stencil', LayoutTemplate],
   ['plex', Waypoints],
   ['agent', Bot],
   ['files', FolderTree],
@@ -98,6 +104,8 @@ const KINDS: ReadonlyMap<string, LucideIcon> = new Map([
   [FILES, FolderTree],
   [NOTE, FileText],
   [DOCUMENT, BookOpen],
+  [DECK, Layers],
+  [STENCIL, LayoutTemplate],
 ])
 
 /** The icon for a kind of tab, and nothing for a kind that has none. */

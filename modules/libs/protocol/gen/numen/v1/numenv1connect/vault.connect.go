@@ -52,6 +52,8 @@ const (
 	VaultServiceNamesProcedure = "/numen.v1.VaultService/Names"
 	// VaultServiceHeadingsProcedure is the fully-qualified name of the VaultService's Headings RPC.
 	VaultServiceHeadingsProcedure = "/numen.v1.VaultService/Headings"
+	// VaultServiceStandingProcedure is the fully-qualified name of the VaultService's Standing RPC.
+	VaultServiceStandingProcedure = "/numen.v1.VaultService/Standing"
 	// VaultServiceSearchProcedure is the fully-qualified name of the VaultService's Search RPC.
 	VaultServiceSearchProcedure = "/numen.v1.VaultService/Search"
 	// VaultServiceChangesProcedure is the fully-qualified name of the VaultService's Changes RPC.
@@ -119,6 +121,12 @@ type VaultServiceClient interface {
 	// The answer carries one entry per note, and a path named twice is answered
 	// once. A path past the ceiling the vault sets is not answered at all.
 	Headings(context.Context, *connect.Request[v1.HeadingsRequest]) (*connect.Response[v1.HeadingsResponse], error)
+	// Standing is what the vault holds at each of those paths, so a client
+	// holding a path opens what stands there in the editor made for it. The kind
+	// is read off the vault itself, so a path nothing has scanned is answered
+	// with what stands there. A path with nothing at it is absent from the
+	// answer.
+	Standing(context.Context, *connect.Request[v1.StandingRequest]) (*connect.Response[v1.StandingResponse], error)
 	// Search is the text a vault holds that answers what was typed, by the words
 	// in it or by what it means or by what a section is called. The caller says
 	// which way it is asked, so a client drawing them apart asks once for each.
@@ -239,6 +247,12 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			httpClient,
 			baseURL+VaultServiceHeadingsProcedure,
 			connect.WithSchema(vaultServiceMethods.ByName("Headings")),
+			connect.WithClientOptions(opts...),
+		),
+		standing: connect.NewClient[v1.StandingRequest, v1.StandingResponse](
+			httpClient,
+			baseURL+VaultServiceStandingProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Standing")),
 			connect.WithClientOptions(opts...),
 		),
 		search: connect.NewClient[v1.SearchRequest, v1.SearchResponse](
@@ -371,6 +385,7 @@ type vaultServiceClient struct {
 	neighbourhood *connect.Client[v1.NeighbourhoodRequest, v1.NeighbourhoodResponse]
 	names         *connect.Client[v1.NamesRequest, v1.NamesResponse]
 	headings      *connect.Client[v1.HeadingsRequest, v1.HeadingsResponse]
+	standing      *connect.Client[v1.StandingRequest, v1.StandingResponse]
 	search        *connect.Client[v1.SearchRequest, v1.SearchResponse]
 	changes       *connect.Client[v1.ChangesRequest, v1.ChangesResponse]
 	focus         *connect.Client[v1.FocusRequest, v1.FocusResponse]
@@ -416,6 +431,11 @@ func (c *vaultServiceClient) Names(ctx context.Context, req *connect.Request[v1.
 // Headings calls numen.v1.VaultService.Headings.
 func (c *vaultServiceClient) Headings(ctx context.Context, req *connect.Request[v1.HeadingsRequest]) (*connect.Response[v1.HeadingsResponse], error) {
 	return c.headings.CallUnary(ctx, req)
+}
+
+// Standing calls numen.v1.VaultService.Standing.
+func (c *vaultServiceClient) Standing(ctx context.Context, req *connect.Request[v1.StandingRequest]) (*connect.Response[v1.StandingResponse], error) {
+	return c.standing.CallUnary(ctx, req)
 }
 
 // Search calls numen.v1.VaultService.Search.
@@ -541,6 +561,12 @@ type VaultServiceHandler interface {
 	// The answer carries one entry per note, and a path named twice is answered
 	// once. A path past the ceiling the vault sets is not answered at all.
 	Headings(context.Context, *connect.Request[v1.HeadingsRequest]) (*connect.Response[v1.HeadingsResponse], error)
+	// Standing is what the vault holds at each of those paths, so a client
+	// holding a path opens what stands there in the editor made for it. The kind
+	// is read off the vault itself, so a path nothing has scanned is answered
+	// with what stands there. A path with nothing at it is absent from the
+	// answer.
+	Standing(context.Context, *connect.Request[v1.StandingRequest]) (*connect.Response[v1.StandingResponse], error)
 	// Search is the text a vault holds that answers what was typed, by the words
 	// in it or by what it means or by what a section is called. The caller says
 	// which way it is asked, so a client drawing them apart asks once for each.
@@ -657,6 +683,12 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 		VaultServiceHeadingsProcedure,
 		svc.Headings,
 		connect.WithSchema(vaultServiceMethods.ByName("Headings")),
+		connect.WithHandlerOptions(opts...),
+	)
+	vaultServiceStandingHandler := connect.NewUnaryHandler(
+		VaultServiceStandingProcedure,
+		svc.Standing,
+		connect.WithSchema(vaultServiceMethods.ByName("Standing")),
 		connect.WithHandlerOptions(opts...),
 	)
 	vaultServiceSearchHandler := connect.NewUnaryHandler(
@@ -791,6 +823,8 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 			vaultServiceNamesHandler.ServeHTTP(w, r)
 		case VaultServiceHeadingsProcedure:
 			vaultServiceHeadingsHandler.ServeHTTP(w, r)
+		case VaultServiceStandingProcedure:
+			vaultServiceStandingHandler.ServeHTTP(w, r)
 		case VaultServiceSearchProcedure:
 			vaultServiceSearchHandler.ServeHTTP(w, r)
 		case VaultServiceChangesProcedure:
@@ -858,6 +892,10 @@ func (UnimplementedVaultServiceHandler) Names(context.Context, *connect.Request[
 
 func (UnimplementedVaultServiceHandler) Headings(context.Context, *connect.Request[v1.HeadingsRequest]) (*connect.Response[v1.HeadingsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Headings is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) Standing(context.Context, *connect.Request[v1.StandingRequest]) (*connect.Response[v1.StandingResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Standing is not implemented"))
 }
 
 func (UnimplementedVaultServiceHandler) Search(context.Context, *connect.Request[v1.SearchRequest]) (*connect.Response[v1.SearchResponse], error) {

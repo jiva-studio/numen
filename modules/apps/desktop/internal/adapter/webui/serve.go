@@ -218,6 +218,12 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Writers: cfg.VaultWriters(),
 		Index:   opened.level,
 	}
+	cutting := cfg.Cards(db.Queries(), db.Links(), opened.level)
+	api.Cards = &cutting.Read
+	api.Offered = &cutting.List
+	api.Cuts = &cutting.Write
+	api.MakesCards = &cutting.Create
+	api.RenamesField = &cutting.Rename
 	// One note.Move settles every note that travelled, whether a rename sent it
 	// or a move did.
 	moving := note.Move{

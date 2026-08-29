@@ -275,7 +275,7 @@ describe('a title finds room on its line', () => {
     })
     // Its line is barely longer than its words, and it keeps the middle of it.
     const tightest = crossing.edges.find((edge) => edge.to === 'child-1')!
-    expect(tightest.words!.startsWith('the scene in the asse')).toBe(true)
+    expect(tightest.words!.startsWith('the minutes of the me')).toBe(true)
     expect(Math.abs(tightest.wordsAt - MIDDLE)).toBeLessThan(A_NUDGE)
 
     // The line to the row beyond has room to spare, and gives way.

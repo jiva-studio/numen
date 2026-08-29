@@ -9,6 +9,7 @@
 import { computed, ref, useId, useTemplateRef, watch } from 'vue'
 import PlexNodeView from './PlexNodeView.vue'
 import {
+  ARROW_LENGTH,
   edgeKey,
   handleIn,
   seatWord,
@@ -145,7 +146,7 @@ const uid = useId()
  * The head itself, drawn about its own tip. It stands in the markup, where
  * every renderer reads geometry.
  */
-const ARROWHEAD = 'M 0 0 L -15 5.5 L -15 -5.5 Z'
+const ARROWHEAD = `M 0 0 L ${-ARROW_LENGTH} 5.5 L ${-ARROW_LENGTH} -5.5 Z`
 
 /** An arrowhead, put on its end of the line and turned along it. */
 const arrowhead = (edge: PlacedEdge) =>

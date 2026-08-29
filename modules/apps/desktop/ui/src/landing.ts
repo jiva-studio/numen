@@ -2,8 +2,9 @@
  * Where the window is taken when something is chosen in the palette.
  *
  * A name is a thing and travels in the plex the person is looking at; a
- * heading and a passage are places in a note, and open it where they stand. A
- * passage from a source that is not a note opens that source where it stands.
+ * heading and a passage are places in a source, and open it where they stand.
+ * Which editor the source opens in is not decided here: a landing names the
+ * file and the place in it, and `putting.ts` opens it.
  */
 import type { Landing } from './finding'
 
@@ -11,12 +12,16 @@ import type { Landing } from './finding'
 export interface Places {
   /** A note put in front of the person, in the plex they are looking at. */
   travel(path: string): Promise<void>
-  /** A source opened at a stretch of its own text. */
+  /**
+   * A source put in front of the person at a stretch of its own text, in the
+   * editor made for what it is.
+   */
   opensAt(path: string, run: { start: number; length: number }): Promise<void>
-  /** A note opened in a tab of its own, under the name it is called by. */
-  shows(path: string, title: string): void
-  /** The line an open note is to stand on. */
-  entersAt(path: string, line: number): void
+  /**
+   * A file put in front of the person, in the editor made for what it is, at
+   * the line it was chosen at.
+   */
+  opens(path: string, title: string, line?: number): void
 }
 
 /** Somewhere chosen, taken. Nothing chosen takes the person nowhere. */
@@ -30,6 +35,5 @@ export async function lands(landing: Landing | null, places: Places): Promise<vo
     })
     return
   }
-  places.shows(landing.path, landing.title || landing.path)
-  if (landing.line !== undefined) places.entersAt(landing.path, landing.line)
+  places.opens(landing.path, landing.title || landing.path, landing.line)
 }

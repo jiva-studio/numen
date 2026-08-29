@@ -414,6 +414,75 @@ func TestAnIndexOfItsOwnIsNotBuiltAgain(t *testing.T) {
 	}
 }
 
+// A note indexed before the index held what a note is stays readable, and is a
+// note.
+//
+// The key did not exist when it was read, so nothing about the row says the
+// column is missing and no scan would notice.
+func TestANoteIndexedBeforeTheIndexHeldWhatANoteIsIsANote(t *testing.T) {
+	ctx := t.Context()
+	path := filepath.Join(t.TempDir(), "index.db")
+
+	db, err := sql.Open("sqlite", dsn(path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	available, err := loadMigrations()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var through []migration
+	for _, one := range available {
+		if one.version >= 7 {
+			break
+		}
+		through = append(through, one)
+	}
+	if len(through) == len(available) {
+		t.Skip("the index does not hold what a note is yet")
+	}
+	for _, one := range through {
+		if err := apply(ctx, db, one); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := db.ExecContext(ctx,
+		`INSERT INTO vaults (id, identifier, name, path) VALUES (1, '01AAA', 'kept', '/notes')`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx,
+		`INSERT INTO sources (id, vault_id, path, kind, size, modified_at)
+		 VALUES (1, 1, 'notes/entropy.md', 'note', 100, 1)`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx,
+		`INSERT INTO notes (source_id, vault_id, basename, title)
+		 VALUES (1, 1, 'entropy', 'Entropy')`); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	upgraded, err := Open(ctx, path)
+	if err != nil {
+		t.Fatalf("migrating an index written before the column: %v", err)
+	}
+	defer upgraded.Close()
+
+	var title, held string
+	if err := upgraded.write.QueryRowContext(ctx,
+		`SELECT title, type FROM notes WHERE source_id = 1`).Scan(&title, &held); err != nil {
+		t.Fatalf("the note did not survive the migration: %v", err)
+	}
+	if title != "Entropy" {
+		t.Errorf("title = %q", title)
+	}
+	if held != string(domain.TypeNote) {
+		t.Errorf("type = %q, want %q", held, domain.TypeNote)
+	}
+}
+
 // newest is the version the migrations this binary holds reach.
 func newest(t *testing.T) int {
 	t.Helper()
@@ -485,5 +554,234 @@ func TestASourceReadBeforeTheColumnMeantAProducerKeepsItsReading(t *testing.T) {
 	}
 	if from != "ocr" {
 		t.Errorf("text_from = %q, and a name composed from it names nothing", from)
+	}
+}
+
+// A file that already said what it was before the key was indexed is read
+// again.
+//
+// A scan skips a file whose size and modification time still match, so a note
+// filed as `type: deck` before the upgrade would keep the default the column
+// was added with until somebody edited the file. The fingerprint of every note
+// goes with the column, and the next scan reads them.
+func TestTheTypeOfAFileAlreadyIndexedIsReadAgain(t *testing.T) {
+	ctx := t.Context()
+	path := filepath.Join(t.TempDir(), "index.db")
+
+	db, err := sql.Open("sqlite", dsn(path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	available, err := loadMigrations()
+	if err != nil {
+		t.Fatal(err)
+	}
+	const typed = 7
+	for _, m := range available {
+		if m.version >= typed {
+			break
+		}
+		if err := apply(ctx, db, m); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := db.ExecContext(ctx,
+		`INSERT INTO vaults (id, identifier, name, path) VALUES (1, '01AAA', 'kept', '/notes')`); err != nil {
+		t.Fatal(err)
+	}
+	// The deck, and a document beside it whose text nothing in this migration
+	// is about.
+	if _, err := db.ExecContext(ctx,
+		`INSERT INTO sources (id, vault_id, path, kind, size, modified_at)
+		 VALUES (1, 1, 'decks/mammals.md', 'note', 120, 4), (2, 1, 'library/scan.pdf', 'book', 900, 5)`,
+	); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx,
+		`INSERT INTO notes (source_id, vault_id, basename, title) VALUES (1, 1, 'mammals', 'Mammals')`,
+	); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	upgraded, err := Open(ctx, path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer upgraded.Close()
+
+	known, err := upgraded.NoteQueries().Fingerprints(ctx, "01AAA")
+	if err != nil {
+		t.Fatal(err)
+	}
+	onDisk := domain.FileRef{Path: "decks/mammals.md", Kind: domain.KindNote, Size: 120, MTime: 4}
+	if known[onDisk.Path].Unchanged(onDisk) {
+		t.Errorf("the file is skipped by the next scan, so what it says it is is never read: %+v",
+			known[onDisk.Path])
+	}
+
+	var size, modified int64
+	if err := upgraded.write.QueryRowContext(ctx,
+		`SELECT size, modified_at FROM sources WHERE path = 'library/scan.pdf'`).Scan(&size, &modified); err != nil {
+		t.Fatal(err)
+	}
+	if size != 900 || modified != 5 {
+		t.Errorf("a document is read again for a key only a note carries: %d bytes, %d", size, modified)
+	}
+}
+
+// What an index built before a deck stopped being cut holds for one is cleared.
+//
+// A deck and a stencil contribute no chunk, no vector and no field name, and an
+// older index holds all three. They come out here, the fingerprints of those
+// files go with them, and what stands beside them is untouched.
+func TestWhatAnOlderIndexHeldForADeckAndAStencilIsCleared(t *testing.T) {
+	ctx := t.Context()
+	path := filepath.Join(t.TempDir(), "index.db")
+
+	db, err := sql.Open("sqlite", dsn(path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	available, err := loadMigrations()
+	if err != nil {
+		t.Fatal(err)
+	}
+	const uncut = 8
+	var through []migration
+	for _, m := range available {
+		if m.version >= uncut {
+			break
+		}
+		through = append(through, m)
+	}
+	if len(through) == len(available) {
+		t.Skip("a deck is still cut")
+	}
+	for _, m := range through {
+		if err := apply(ctx, db, m); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, statement := range []string{
+		`INSERT INTO vaults (id, identifier, name, path) VALUES (1, '01AAA', 'kept', '/notes')`,
+		`INSERT INTO sources (id, vault_id, path, kind, size, modified_at) VALUES
+		   (1, 1, 'decks/mammals.md',   'note', 120, 4),
+		   (2, 1, 'stencils/term.md',   'note', 60,  5),
+		   (3, 1, 'notes/entropy.md',   'note', 300, 6)`,
+		`INSERT INTO notes (source_id, vault_id, basename, title, type) VALUES
+		   (1, 1, 'mammals', 'Mammals', 'deck'),
+		   (2, 1, 'term',    'Term',    'stencil'),
+		   (3, 1, 'entropy', 'Entropy', 'note')`,
+		// One chunk each, and one small chunk inside the deck's, which is what
+		// a vector hangs off. The deck's second small chunk carries the words
+		// the ordinary note carries, so the two stand on one vector.
+		`INSERT INTO chunks (id, source_id, vault_id, start, length, parent, hash) VALUES
+		   (1, 1, 1, 0,  120, NULL, 'aa'),
+		   (2, 1, 1, 0,  40,  1,    'bb'),
+		   (3, 2, 1, 0,  60,  NULL, 'cc'),
+		   (4, 3, 1, 0,  300, NULL, 'dd'),
+		   (5, 1, 1, 40, 80,  1,    'dd')`,
+		`INSERT INTO chunks_fts (rowid, text) VALUES
+		   (1, 'compost'), (2, 'compost'), (3, 'front'), (4, 'entropy'), (5, 'entropy')`,
+		`INSERT INTO parts_fts (rowid, text) VALUES (1, 'Roots'), (3, 'Question'), (4, 'What it is')`,
+		`INSERT INTO vectors (fingerprint, recipe, v) VALUES
+		   (unhex('bb'), 'r', x'01'),
+		   (unhex('cc'), 'r', x'02'),
+		   (unhex('dd'), 'r', x'03')`,
+		`INSERT INTO headings (id, note_id, line, level, text) VALUES
+		   (1, 1, 0, 1, 'Roots'),
+		   (2, 1, 1, 2, 'Compost ^k7m2xq9fzp'),
+		   (3, 1, 2, 3, 'Answer'),
+		   (4, 2, 0, 1, 'Question'),
+		   (5, 3, 0, 1, 'What it is')`,
+		`INSERT INTO headings_fts (rowid, text) SELECT id, text FROM headings`,
+	} {
+		if _, err := db.ExecContext(ctx, statement); err != nil {
+			t.Fatalf("%s: %v", statement, err)
+		}
+	}
+	for _, chunk := range []int{1, 2, 3, 4, 5} {
+		if _, err := db.ExecContext(ctx,
+			`INSERT INTO chunks_vec (chunk_id, vault_id, embedding) VALUES (?, 1, vec_bit(?))`,
+			chunk, make([]byte, 128)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	upgraded, err := Open(ctx, path)
+	if err != nil {
+		t.Fatalf("migrating an index that cut decks: %v", err)
+	}
+	defer upgraded.Close()
+
+	held := func(statement string, args ...any) int {
+		t.Helper()
+		var n int
+		if err := upgraded.write.QueryRowContext(ctx, statement, args...).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+
+	for _, gone := range []struct {
+		what      string
+		statement string
+	}{
+		{"chunks", `SELECT count(*) FROM chunks WHERE source_id IN (1, 2)`},
+		{"full-text rows", `SELECT count(*) FROM chunks_fts WHERE rowid IN (1, 2, 3, 5)`},
+		{"part names", `SELECT count(*) FROM parts_fts WHERE rowid IN (1, 3)`},
+		{"coarse vectors", `SELECT count(*) FROM chunks_vec WHERE chunk_id IN (1, 2, 3, 5)`},
+		{"vectors", `SELECT count(*) FROM vectors WHERE fingerprint IN (unhex('bb'), unhex('cc'))`},
+		{"headings", `SELECT count(*) FROM headings WHERE note_id IN (1, 2)`},
+		{"heading names", `SELECT count(*) FROM headings_fts WHERE rowid IN (1, 2, 3, 4)`},
+	} {
+		if n := held(gone.statement); n != 0 {
+			t.Errorf("a deck and a stencil kept %d %s", n, gone.what)
+		}
+	}
+
+	// The note beside them is as it was, down to its vector. A vector is
+	// addressed by the text it was made from, never by the chunk that asked for
+	// it, so the one the deck shared with it is the note's to keep.
+	for _, kept := range []struct {
+		what      string
+		statement string
+	}{
+		{"chunk", `SELECT count(*) FROM chunks WHERE id = 4`},
+		{"full-text row", `SELECT count(*) FROM chunks_fts WHERE rowid = 4`},
+		{"part name", `SELECT count(*) FROM parts_fts WHERE rowid = 4`},
+		{"coarse vector", `SELECT count(*) FROM chunks_vec WHERE chunk_id = 4`},
+		{"vector", `SELECT count(*) FROM vectors WHERE fingerprint = unhex('dd')`},
+		{"heading", `SELECT count(*) FROM headings WHERE note_id = 3`},
+		{"heading name", `SELECT count(*) FROM headings_fts WHERE rowid = 5`},
+	} {
+		if n := held(kept.statement); n != 1 {
+			t.Errorf("an ordinary note holds %d of its %s, want 1", n, kept.what)
+		}
+	}
+
+	// The two files are read again, and the note beside them is not.
+	known, err := upgraded.NoteQueries().Fingerprints(ctx, "01AAA")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, again := range []domain.FileRef{
+		{Path: "decks/mammals.md", Kind: domain.KindNote, Size: 120, MTime: 4},
+		{Path: "stencils/term.md", Kind: domain.KindNote, Size: 60, MTime: 5},
+	} {
+		if known[again.Path].Unchanged(again) {
+			t.Errorf("%s is skipped by the next scan, so what it holds is never rewritten", again.Path)
+		}
+	}
+	standing := domain.FileRef{Path: "notes/entropy.md", Kind: domain.KindNote, Size: 300, MTime: 6}
+	if !known[standing.Path].Unchanged(standing) {
+		t.Errorf("an ordinary note is read again for a change that is not about it: %+v",
+			known[standing.Path])
 	}
 }

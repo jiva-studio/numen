@@ -9,16 +9,16 @@ import (
 // page is a page as it was read, misreadings and all.
 func page() proofread.Page {
 	return proofread.Page{At: 7, Lines: []proofread.Line{
-		{At: 10, Text: "the Gundicā teinple. "},
-		{At: 11, Text: "Śrila Jagadiśa Pandita's Sripat "},
-		{At: 12, Text: "VAISNAVA MANJUSA "},
-		{At: 13, Text: "Supreme Lord Krsna will very soon bestow His "},
+		{At: 10, Text: "the Sodërby gardin hcdge. "},
+		{At: 11, Text: "Sodërby Tradgard's Handbok "},
+		{At: 12, Text: "TRADGARD HANDBOK "},
+		{At: 13, Text: "The hedge will very soon need cutting back "},
 		{At: 20, Text: "blessings."},
 	}}
 }
 
 func TestAMarkOfOursComingBackRefusesThePage(t *testing.T) {
-	reply := "10|the " + proofread.Opens + "12" + proofread.Closes + "Guṇḍicā temple."
+	reply := "10|the " + proofread.Opens + "12" + proofread.Closes + "Södërby garden hedge."
 
 	fixed, answered := proofread.Fixed(page(), reply, proofread.LettersApart)
 	if answered {
@@ -30,7 +30,7 @@ func TestAMarkOfOursComingBackRefusesThePage(t *testing.T) {
 }
 
 func TestALineThePageDidNotNameRefusesThePage(t *testing.T) {
-	reply := "10|the Guṇḍicā temple.\n999|a line this page never printed"
+	reply := "10|the Södërby garden hedge.\n999|a line this page never printed"
 
 	fixed, answered := proofread.Fixed(page(), reply, proofread.LettersApart)
 	if answered {
@@ -42,7 +42,7 @@ func TestALineThePageDidNotNameRefusesThePage(t *testing.T) {
 }
 
 func TestAReplyLineWithoutANumberAndABarRefusesThePage(t *testing.T) {
-	reply := "Here are the lines I would put right:\n10|the Guṇḍicā temple."
+	reply := "Here are the lines I would put right:\n10|the Södërby garden hedge."
 
 	if fixed, answered := proofread.Fixed(page(), reply, proofread.LettersApart); answered {
 		t.Errorf("a reply that talks was taken as an answer, giving %v", fixed)
@@ -50,7 +50,7 @@ func TestAReplyLineWithoutANumberAndABarRefusesThePage(t *testing.T) {
 }
 
 func TestAFencedReplyIsUnwrapped(t *testing.T) {
-	reply := "```text\n10|the Guṇḍicā temple.\n20|blessings!\n```"
+	reply := "```text\n10|the Södërby garden hedge.\n20|blessings!\n```"
 
 	fixed, answered := proofread.Fixed(page(), reply, proofread.LettersApart)
 	if !answered {
@@ -59,7 +59,7 @@ func TestAFencedReplyIsUnwrapped(t *testing.T) {
 	if len(fixed) != 2 {
 		t.Fatalf("%d lines out of a fenced reply, want two: %v", len(fixed), fixed)
 	}
-	if fixed[0].At != 10 || fixed[0].Text != "the Guṇḍicā temple." {
+	if fixed[0].At != 10 || fixed[0].Text != "the Södërby garden hedge." {
 		t.Errorf("line %d says %q", fixed[0].At, fixed[0].Text)
 	}
 }
@@ -71,13 +71,13 @@ func TestTheLettersOfACorrectionMayOnlyMoveSoFar(t *testing.T) {
 		kept        bool
 	}{
 		// A misread word, and diacritics the page prints.
-		{"the Gundicā teinple.", "the Guṇḍicā temple.", 0.05, 0.15, true},
+		{"the Sodërby gardin hcdge.", "the Södërby garden hedge.", 0.05, 0.15, true},
 		// Diacritics alone: folded, the two say the same letters.
-		{"Śrila Jagadiśa Pandita's Sripat", "Śrīla Jagadīśa Paṇḍita's Śrīpat", 0, 0, true},
+		{"Sodërby Tradgard's Handbok", "Södërby Trädgård's Handbök", 0, 0, true},
 		// A heading answered with the paragraph under it.
-		{"VAISNAVA MANJUSA", "VAIṢṆAVA MAÑJŪṢĀ At the request of Śrila Bhaktivinoda", 0.60, 0.75, false},
+		{"TRADGARD HANDBOK", "TRÄDGÅRD HANDBÖK At the request of the Sodërby committee", 0.60, 0.75, false},
 		// A line answered with one word of it.
-		{"Supreme Lord Krsna will very soon bestow His", "Kṛṣṇa", 0.80, 0.95, false},
+		{"The hedge will very soon need cutting back", "hedge", 0.80, 0.95, false},
 	} {
 		apart := proofread.Apart(one.was, one.put)
 		if apart < one.least || apart > one.most {
@@ -90,10 +90,10 @@ func TestTheLettersOfACorrectionMayOnlyMoveSoFar(t *testing.T) {
 }
 
 func TestACorrectionThatMovedTooFarIsDroppedAndThePageKept(t *testing.T) {
-	reply := "10|the Guṇḍicā temple.\n" +
-		"11|Śrīla Jagadīśa Paṇḍita's Śrīpat\n" +
-		"12|VAIṢṆAVA MAÑJŪṢĀ At the request of Śrila Bhaktivinoda\n" +
-		"13|Kṛṣṇa"
+	reply := "10|the Södërby garden hedge.\n" +
+		"11|Södërby Trädgård's Handbök\n" +
+		"12|TRÄDGÅRD HANDBÖK At the request of the Sodërby committee\n" +
+		"13|hedge"
 
 	fixed, answered := proofread.Fixed(page(), reply, proofread.LettersApart)
 	if !answered {
@@ -109,7 +109,7 @@ func TestACorrectionThatMovedTooFarIsDroppedAndThePageKept(t *testing.T) {
 }
 
 func TestACorrectionSayingWhatTheLineSaysIsNotACorrection(t *testing.T) {
-	reply := "20|blessings.\n10|the Guṇḍicā temple."
+	reply := "20|blessings.\n10|the Södërby garden hedge."
 
 	fixed, answered := proofread.Fixed(page(), reply, proofread.LettersApart)
 	if !answered {
@@ -138,23 +138,23 @@ func TestTwoLinesOfNoLettersStandNowhereApart(t *testing.T) {
 
 func TestTheNumberIsTakenFromTheLineHoweverItIsSeparated(t *testing.T) {
 	for _, reply := range []string{
-		"10|the Guṇḍicā temple.",
-		"10 the Guṇḍicā temple.",
-		"10 | the Guṇḍicā temple.",
+		"10|the Södërby garden hedge.",
+		"10 the Södërby garden hedge.",
+		"10 | the Södërby garden hedge.",
 	} {
 		fixed, answered := proofread.Fixed(page(), reply, proofread.LettersApart)
 		if !answered {
 			t.Errorf("%q was refused", reply)
 			continue
 		}
-		if len(fixed) != 1 || fixed[0].At != 10 || fixed[0].Text != "the Guṇḍicā temple." {
+		if len(fixed) != 1 || fixed[0].At != 10 || fixed[0].Text != "the Södërby garden hedge." {
 			t.Errorf("%q gave back %v", reply, fixed)
 		}
 	}
 }
 
 func TestANumberRunningIntoTheLineRefusesThePage(t *testing.T) {
-	reply := "10the Guṇḍicā temple."
+	reply := "10the Södërby garden hedge."
 
 	if fixed, answered := proofread.Fixed(page(), reply, proofread.LettersApart); answered {
 		t.Errorf("a row whose number is part of a word was taken as an answer, giving %v", fixed)
@@ -165,10 +165,10 @@ func TestANumberRunningIntoTheLineRefusesThePage(t *testing.T) {
 // either side of it are the same, so the third gate cannot see it.
 func TestAWordlessThingPutInFrontOfALineIsNoCorrection(t *testing.T) {
 	for _, put := range []string{
-		"10 - the Gundicā teinple.",
-		"10 — the Gundicā teinple.",
-		"10 → the Gundicā teinple.",
-		"10 : the Gundicā teinple.",
+		"10 - the Sodërby gardin hcdge.",
+		"10 — the Sodërby gardin hcdge.",
+		"10 → the Sodërby gardin hcdge.",
+		"10 : the Sodërby gardin hcdge.",
 	} {
 		fixed, answered := proofread.Fixed(page(), put, proofread.LettersApart)
 		if !answered {
@@ -184,7 +184,7 @@ func TestAWordlessThingPutInFrontOfALineIsNoCorrection(t *testing.T) {
 // The same line, corrected as well as fronted, is a correction: what stands in
 // front of it is not all that changed.
 func TestALineThatChangedIsACorrectionHoweverItOpens(t *testing.T) {
-	fixed, answered := proofread.Fixed(page(), "10|— the Guṇḍicā temple.", proofread.LettersApart)
+	fixed, answered := proofread.Fixed(page(), "10|— the Södërby garden hedge.", proofread.LettersApart)
 	if !answered || len(fixed) != 1 {
 		t.Fatalf("answered=%v gave %v", answered, fixed)
 	}

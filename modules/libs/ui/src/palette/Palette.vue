@@ -472,7 +472,7 @@ onBeforeUnmount(() => {
           >
             <p
               :id="`${uid}-band-${one.band.id}`"
-              class="palette__title flex items-center gap-1.5 text-small text-hushed"
+              class="palette__title caps-numen flex items-center gap-1.5 text-small text-hushed"
             >
               <span>{{ one.band.title }}</span>
               <!-- More of this band is on its way. -->
@@ -697,8 +697,6 @@ onBeforeUnmount(() => {
 .palette__title {
   margin: 0;
   padding: 0.15rem 0.5rem;
-  letter-spacing: var(--numen-caps-tracking);
-  text-transform: uppercase;
 }
 
 .palette__item {

@@ -12,7 +12,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { closeTab, Notices, Palette, Workspace } from '@numen/ui'
 import type { Notice } from '@numen/ui'
 import '@numen/ui/styles.css'
-import { core, documents, vaults } from './vault'
+import { cards, core, documents, vaults } from './vault'
 import type { Listed } from './core'
 import { showing } from './showing'
 import { standing } from './plex/standing'
@@ -40,9 +40,10 @@ import { themes } from './theme'
 import { APPEARANCE, DRESSING, INTERFACE_SCALE, MODE, TEXT_SCALE, wearing } from './wearing'
 import { SYNCING, syncing } from './syncing'
 import { HANGING, PARTS, hanging } from './hanging'
-import { does, type Doing } from './doing'
+import { does, reaching, type Doing, type Store } from './doing'
 import { finding } from './finding'
 import { lands, type Places } from './landing'
+import { putting } from './putting'
 import { leaving } from './leaving'
 import { raising } from './raising'
 import { windowing } from './windowing'
@@ -52,6 +53,8 @@ import Welcome from './welcome/Welcome.vue'
 import { COMMANDS, vaultsOn, waysIn } from './welcome/welcoming'
 import { telling } from './telling'
 import { agentKind, talking } from './agent/kind'
+import { decking } from './cards/deck'
+import { stencilling } from './cards/stencil'
 import { documentKind, documenting } from './document/kind'
 import { filesKind } from './files/kind'
 import { listing as folders } from './files/listing'
@@ -60,6 +63,7 @@ import { plexKind, plexing, type Held as PlexHeld } from './plex/kind'
 import { core as agent } from './agent/core'
 import { conversation } from './agent/conversation'
 import { WORDS as talk } from './agent/words'
+import { WORDS as cut } from './cards/words'
 import { WORDS as words } from './words'
 import { VERSION } from './version'
 import { AGENT, CONVERSATION, FILES, NOTE, PLEX, named, opening } from './workspace'
@@ -76,13 +80,15 @@ const window = showing(
   undefined,
   async (paths, renamed) => {
     notes.changed(paths, renamed)
+    decks.changed(paths, renamed)
+    stencils.changed(paths, renamed)
     commands.follows(renamed)
     await files.changed(paths, renamed)
     await plexes.again(renamed)
   },
   drawings.told,
   (path) => plexes.travel(path),
-  (path, runs) => void read.opensAt(path, ...runs),
+  (path, runs) => void puts.opensAt(path, runs),
   reloads,
 )
 /** What the window answers when the application says it is going. */
@@ -124,8 +130,24 @@ const notices = computed<readonly Notice[]>(() =>
 const held = windowing()
 const { layout } = held
 
+/**
+ * What a file of the vault is put in front of the person with. Every road to a
+ * file comes through here, and the editors and the reader hand over their own
+ * door as they are made: nothing else in the window holds one.
+ */
+const puts = putting(core)
+
 /** The notes the window has open: what each is called, and what each tab of one holds. */
-const noted = noting(core, notes, drawings, held.host)
+const noted = noting(core, notes, drawings, held.host, puts)
+
+/** The decks and the stencils the window has open, each saved the way a note is. */
+const decks = decking(cards, held.host, puts)
+const stencils = stencilling(cards, held.host, puts, tell.under('stencil'))
+
+going.holds(decks.flush)
+going.holds(stencils.flush)
+raising(decks, going)
+raising(stencils, going)
 
 /**
  * The notes being carried from one pane of the window to another: the tree
@@ -143,8 +165,7 @@ const plexes = plexKind(held.host, () => standing(core), {
   ready: () => !failure.value && !indexing.value,
   hangs: () => hungParts.hangs.value,
   parts: () => hungParts.parts.value,
-  opens: (path, title, showing) => noted.shows(path, title, showing),
-  entersAt: (path, line) => noted.entersAt(path, line),
+  opens: (path, title, showing, line) => void puts.opens(path, title, showing, line),
   inside: (paths) => core.headings(paths),
   asks: (text) => void agents.asks(text),
   runs: (id, path, title) => carries(id, { ...where(), path, title }),
@@ -160,20 +181,50 @@ const plexes = plexKind(held.host, () => standing(core), {
 const agents = agentKind(held.host, () =>
   talking(conversation(agent, talk, named(CONVERSATION)), {
     looking: () => plexes.looking(),
-    opens: (path, ...runs) => void read.opensAt(path, ...runs),
+    opens: (path, ...runs) => void puts.opensAt(path, runs),
     unreachable: () => unreachable.value,
   }),
 )
 
 /** The document tabs, each reading the document it is filed at. */
-const read = documentKind(held.host, (path) => documenting(reading(documents, path)))
+const read = documentKind(held.host, (path) => documenting(reading(documents, path)), puts)
 
 /** Where the window is taken when something is chosen, wherever it was chosen. */
 const places: Places = {
   travel: (path) => plexes.travel(path),
-  opensAt: (path, run) => read.opensAt(path, run),
-  shows: (path, title) => noted.shows(path, title),
-  entersAt: (path, line) => noted.entersAt(path, line),
+  opensAt: (path, run) => puts.opensAt(path, [run]),
+  opens: (path, title, line) => void puts.opens(path, title, 'here', line),
+}
+
+/**
+ * A deck or a stencil made in a folder under the name it is given. The vault
+ * names the file after it and answers where it stands, and a stencil is made
+ * carrying the field its cards are named by. A vault that answers nothing at
+ * all is said here, because the roads that ask for one carry no word of their
+ * own.
+ */
+const makesCards = async (folder: string, name: string, stencil: boolean): Promise<string> => {
+  try {
+    const answer = stencil
+      ? await cards.makeStencil(name, folder, [cut.newField])
+      : await cards.makeDeck(name, folder)
+    if (answer.refusal) {
+      told(words.refused[answer.refusal], 'refusal')
+      return ''
+    }
+    return answer.path
+  } catch (error) {
+    told(String(error), 'refusal')
+    return ''
+  }
+}
+
+/** The same, put in front of the person in a tab of its own. */
+const opensCards = async (folder: string, name: string, stencil: boolean): Promise<string> => {
+  const path = await makesCards(folder, name, stencil)
+  if (!path) return ''
+  puts.made(path, '', stencil ? 'stencil' : 'deck')
+  return path
 }
 
 /** The tree of the vault, and what a gesture on a row of it comes to. */
@@ -187,11 +238,21 @@ const files = filesKind(held.host, () => folders(core), {
   },
   makes: (path) => does(deedOf('makeFolder', where(), path), doing, words),
   writes: async (folder) => (await making.named(folder, []))?.path ?? '',
+  cuts: (folder, name) => makesCards(folder, name, false),
+  stencils: (folder, name) => makesCards(folder, name, true),
   says: (text) => told(text, 'refusal'),
 })
 
 /** The kinds this window draws. */
-held.declares([noted.kind, plexes.kind, agents.kind, read.kind, files.kind])
+held.declares([
+  noted.kind,
+  plexes.kind,
+  agents.kind,
+  read.kind,
+  files.kind,
+  decks.kind,
+  stencils.kind,
+])
 
 /** The palette: one keystroke, and everything the words typed turn up. */
 const palette = finding(core, words, undefined, meaning)
@@ -250,13 +311,38 @@ const where = (): Where => {
 /** What kind of tab this is drawn as, before the name it carries. */
 const tabIcon = (id: string) => iconOfKind(held.heldIn(id)?.kind.kind ?? '')
 
-/** The identity of the note tab standing at a file, and nothing where none does. */
-const holding = (path: string): string | null => noted.holding(path)
+/**
+ * Every store the window keeps open files in. A command reaches a file through
+ * whichever of them holds it, so a deck and a stencil answer a removal the way
+ * a note does.
+ */
+const stores: readonly Store[] = [
+  {
+    has: (id) => notes.has(id),
+    where: (id) => notes.where(id),
+    called: (id) => noted.titled(id),
+    asking: (id) => notes.overtaken(id) !== null,
+    settles: (id) => notes.settles(id),
+    shuts: (id) => noted.shuts(id),
+    holding: (path) => noted.holding(path),
+  },
+  decks.kept,
+  stencils.kept,
+]
+
+/** The open files a command reaches, whichever of the stores holds each. */
+const reached = reaching(stores, puts)
+
+/** What one thing the quit is waiting on is called. */
+const titled = (id: string): string => stores.find((one) => one.has(id))?.called(id) ?? ''
 
 /** What the window knows about a note by the name it is filed under. */
 const knows: Knows = {
-  called: (path) => (holding(path) ? noted.called(path) : plexes.names(path)),
-  holding,
+  called: (path) => {
+    const held = reached.holding(path)
+    return held === null ? plexes.names(path) : titled(held)
+  },
+  holding: (path) => reached.holding(path),
 }
 
 /** How the window is drawn: the theme it wears, its half of a pair, its sizes. */
@@ -298,15 +384,10 @@ const doing: Doing = {
   removes: (path, destroy) => core.remove(path, destroy),
   moves: (from, to) => core.move(from, to),
   makesFolder: (path) => core.makeFolder(path),
+  cuts: (folder, name) => opensCards(folder, name, false),
+  stencils: (folder, name) => opensCards(folder, name, true),
   reveals: (path) => void files.reveals(path),
-  notes: {
-    holding,
-    where: (id) => notes.where(id),
-    asking: (id) => notes.overtaken(id) !== null,
-    settles: (id) => notes.settles(id),
-    shuts: (id) => noted.shuts(id),
-    shows: (path, title, showing) => noted.shows(path, title, showing),
-  },
+  notes: reached,
   vaults,
   calls: (vault) => (shown.value = vault),
   reloads,
@@ -544,7 +625,7 @@ onUnmounted(() => {
       @gone="tell.forget"
     />
 
-    <Leaving :questions="going.questions.value" :called="noted.titled" />
+    <Leaving :questions="going.questions.value" :called="titled" />
 
     <Palette
       :model-value="field.typed"

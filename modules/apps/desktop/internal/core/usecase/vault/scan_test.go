@@ -59,10 +59,10 @@ func TestScanIndexesEveryNoteOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Seen != 8 {
-		t.Errorf("saw %d markdown files, want 8 — check what the walk skipped", res.Seen)
+	if res.Seen != 14 {
+		t.Errorf("saw %d markdown files, want 14 — check what the walk skipped", res.Seen)
 	}
-	if res.Indexed != 8 || res.Unchanged != 0 || res.Removed != 0 {
+	if res.Indexed != 14 || res.Unchanged != 0 || res.Removed != 0 {
 		t.Errorf("first scan: %+v", res)
 	}
 
@@ -70,8 +70,8 @@ func TestScanIndexesEveryNoteOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if summary.Notes != 8 {
-		t.Errorf("index holds %d notes, want 8", summary.Notes)
+	if summary.Notes != 14 {
+		t.Errorf("index holds %d notes, want 14", summary.Notes)
 	}
 }
 
@@ -89,14 +89,14 @@ func TestAScanSeesBooksBesideNotes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Seen != 8 {
-		t.Errorf("saw %d notes, want the 8 the fixture holds", res.Seen)
+	if res.Seen != 14 {
+		t.Errorf("saw %d notes, want the 14 the fixture holds", res.Seen)
 	}
 	// The fixture carries a PDF of its own beside the EPUB written here.
 	if res.Assets != 2 {
 		t.Errorf("saw %d sources of another kind, want the book and the document", res.Assets)
 	}
-	if res.Indexed != 8 || res.Removed != 0 {
+	if res.Indexed != 14 || res.Removed != 0 {
 		t.Errorf("scan of a vault with a book in it: %+v", res)
 	}
 
@@ -104,8 +104,8 @@ func TestAScanSeesBooksBesideNotes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if summary.Notes != 8 {
-		t.Errorf("index holds %d notes, want 8 — the book was parsed as one", summary.Notes)
+	if summary.Notes != 14 {
+		t.Errorf("index holds %d notes, want 14 — the book was parsed as one", summary.Notes)
 	}
 }
 
@@ -129,8 +129,8 @@ func TestAFormatNothingExtractsIsNotSeenAtAll(t *testing.T) {
 	if res.Assets != 1 {
 		t.Errorf("counted %d sources of another kind, want the document alone", res.Assets)
 	}
-	if res.Seen != 8 {
-		t.Errorf("saw %d notes, want 8", res.Seen)
+	if res.Seen != 14 {
+		t.Errorf("saw %d notes, want 14", res.Seen)
 	}
 }
 

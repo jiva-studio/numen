@@ -24,21 +24,109 @@ import {
   type WorkspaceLayout,
 } from '@numen/ui'
 import AgentTab from './agent/AgentTab.vue'
+import { linkOf } from './agent/places'
+import DeckTab from './cards/DeckTab.vue'
 import DocumentTab from './document/DocumentTab.vue'
 import FilesTab from './files/FilesTab.vue'
 import NoteTab from './note/NoteTab.vue'
 import PlexTab from './plex/PlexTab.vue'
 import Welcome from './welcome/Welcome.vue'
 import { WORDS as plexWords } from './plex/words'
+import { REFUSED } from './words'
 import { plexCalled } from './workspace'
 
-const { said, held, asked, listed, folders } = vi.hoisted(() => ({
+const { said, held, asked, listed, folders, cuts, stands, outside } = vi.hoisted(() => ({
+  /**
+   * What the vault holds at a path. A book and a note are told apart by the
+   * name the file carries, the way the vault itself tells them apart, and which
+   * of three a note is is what a test said.
+   */
+  stands: (path: string) => {
+    if (/\.(epub|pdf)$/u.test(path)) return { kind: 'book' as const, type: 'note' as const }
+    if (!/\.(md|note)$/u.test(path)) return { kind: 'other' as const, type: 'note' as const }
+    return { kind: 'note' as const, type: said.types[path] ?? ('note' as const) }
+  },
+  /**
+   * The places something outside the window asks to be put in front of the
+   * person, and the stream the window hears them on.
+   */
+  outside: (() => {
+    const queue: { path: string; start: number; length: number }[] = []
+    let wake: (() => void) | null = null
+    return {
+      asks: (at: { path: string; start: number; length: number }) => {
+        queue.push(at)
+        wake?.()
+        wake = null
+      },
+      forget: () => queue.splice(0),
+      stream: async function* () {
+        for (;;) {
+          while (queue.length > 0) yield queue.shift()!
+          await new Promise<void>((woken) => {
+            wake = woken
+          })
+        }
+      },
+    }
+  })(),
+  /**
+   * The vault as it makes a deck or a stencil: the file is named after the
+   * title, and the extension is the vault's own and no caller's. It is not
+   * markdown here, so a window building the path for itself reaches nothing.
+   */
+  cuts: (() => {
+    const filed = new Set<string>()
+    /** Whether the vault answers what it is asked at all. */
+    let reached = true
+    return {
+      forget: () => {
+        filed.clear()
+        reached = true
+      },
+      /** The vault is out of reach, so asking it for one reaches nothing. */
+      breaks: () => {
+        reached = false
+      },
+      makes: (title: string, folder: string) => {
+        if (!reached) throw new Error('the vault could not be reached')
+        const path = `${folder ? `${folder}/` : ''}${title}.note`
+        if (filed.has(path)) return { path: '', refusal: 'occupied' as const }
+        filed.add(path)
+        return { path, refusal: null }
+      },
+    }
+  })(),
   /** What the mocked vault answers about itself, set before the window draws. */
   said: {
     ready: true,
     failed: '',
     opening: 'Root.md' as string | null,
-    names: [] as { path: string; title: string; heading: string; line: number; at: [] }[],
+    names: [] as {
+      path: string
+      title: string
+      heading: string
+      line: number
+      at: []
+      type: 'note' | 'deck' | 'stencil'
+    }[],
+    /** The passages the search answers with. */
+    passages: [] as {
+      path: string
+      title: string
+      isNote: boolean
+      text: string
+      start: number
+      length: number
+      line: number
+      at: []
+      type: 'note' | 'deck' | 'stencil'
+    }[],
+    /**
+     * Which of three the note at each path is, as the vault answers it. A path
+     * it says nothing about is the ordinary note the window reads it as.
+     */
+    types: {} as Record<string, 'note' | 'deck' | 'stencil'>,
     /** Whether the list of vaults answers at all. */
     listable: true,
     /** What the settings refuse a choice, which is a size outside its bounds. */
@@ -47,6 +135,15 @@ const { said, held, asked, listed, folders } = vi.hoisted(() => ({
     applied: 'preset:numen',
     mode: 'system' as 'system' | 'light' | 'dark',
     sizes: { interfaceScale: 1, textScale: 1 },
+    /** What renaming a field of a stencil comes back with. */
+    renaming: {
+      decks: [] as string[],
+      cards: 0,
+      notWritten: [] as { path: string; text: string }[],
+      refusal: null as null | string,
+      changed: false,
+      at: 'a2',
+    },
   },
   /** A stream that stays open, so nothing the window follows ever ends. */
   async *held(): AsyncGenerator<never> {
@@ -59,6 +156,12 @@ const { said, held, asked, listed, folders } = vi.hoisted(() => ({
     removed: [] as string[],
     moved: [] as string[],
     folders: [] as string[],
+    /** The decks and the stencils the window asked for, in the order it asked. */
+    cut: [] as string[],
+    /** Each field rename the window asked the vault for. */
+    renamedField: [] as string[],
+    /** The cards each of those deck writes carried, by name. */
+    wrote: [] as string[],
     worn: [] as string[],
     /** How often an open editor was told to take its measurements again. */
     measured: 0,
@@ -97,6 +200,57 @@ vi.mock('./vault', () => ({
     shape: async () => ({ pages: 1, sheets: [{ wide: 100, high: 100 }] }),
     page: () => '',
     places: async () => [],
+  },
+  cards: {
+    // A card is named by the first field of the stencil it is cut by, so the
+    // window is told of one.
+    stencils: async () => ({
+      stencils: [{ path: 'Animal.md', title: 'Animal', fields: ['Name'] }],
+      held: 1,
+    }),
+    makeDeck: async (title: string, folder: string) => {
+      asked.cut.push(`deck ${folder || '/'} ${title}`)
+      return cuts.makes(title, folder)
+    },
+    makeStencil: async (title: string, folder: string, fields: readonly string[]) => {
+      asked.cut.push(`stencil ${folder || '/'} ${title} [${fields.join(', ')}]`)
+      return cuts.makes(title, folder)
+    },
+    renameField: async (path: string, from: string, to: string) => {
+      asked.renamedField.push(`${path} ${from} ${to}`)
+      return said.renaming
+    },
+    readDeck: async (path: string) => ({
+      deck: {
+        path,
+        title: path,
+        preamble: '',
+        cards: [],
+        sections: [],
+        tail: '',
+        problems: [],
+      },
+      refusal: null,
+      at: 'a1',
+      bound: 0,
+    }),
+    writeDeck: async (
+      path: string,
+      deck: { cards: readonly { values: readonly { text: string }[] }[] },
+    ) => {
+      asked.cut.push(`deck ${path}`)
+      asked.wrote.push(deck.cards.map((card) => card.values[0]?.text ?? '').join(', '))
+      return { refusal: null, changed: false, at: 'a2', bound: 0 }
+    },
+    readStencil: async (path: string) => ({
+      stencil: { path, title: path, fields: [], faces: [], problems: [] },
+      refusal: null,
+      at: 'a1',
+    }),
+    writeStencil: async (path: string) => {
+      asked.cut.push(`stencil ${path}`)
+      return { refusal: null, changed: false, at: 'a2' }
+    },
   },
   core: {
     vaults: async () => {
@@ -145,11 +299,14 @@ vi.mock('./vault', () => ({
     changes: held,
     editing: held,
     tasks: held,
-    focus: held,
+    focus: outside.stream,
     quitting: held,
     flushed: async () => {},
     names: async () => said.names,
-    search: async () => [],
+    search: async () => said.passages,
+    standing: async (paths: readonly string[]) =>
+      new Map(paths.map((path) => [path, stands(path)])),
+    headings: async () => new Map(),
   },
 }))
 
@@ -188,6 +345,29 @@ const settles = () => new Promise((done) => setTimeout(done, 0))
 /** Longer than the palette holds a keystroke before it asks the vault. */
 const HELD = 200
 
+/** One name the vault answers a search with, of a note of one of three kinds. */
+const nameSaid = (path: string, title: string, type: 'note' | 'deck' | 'stencil' = 'note') => ({
+  path,
+  title,
+  heading: '',
+  line: -1,
+  at: [] as [],
+  type,
+})
+
+/** One passage the search answers with, read out of a note of one of three kinds. */
+const passageSaid = (path: string, title: string, type: 'note' | 'deck' | 'stencil' = 'note') => ({
+  path,
+  title,
+  isNote: true,
+  text: 'what it says',
+  start: 0,
+  length: 4,
+  line: 3,
+  at: [] as [],
+  type,
+})
+
 /** Something drawn in a pane that answers what the window asks of it. */
 const answers = (name: string, drawn: Record<string, unknown>) =>
   defineComponent({
@@ -217,12 +397,27 @@ afterEach(() => {
   said.ready = true
   said.opening = 'Root.md'
   said.names = []
+  said.passages = []
+  said.types = {}
   said.listable = true
   said.refused = ''
   said.applied = 'preset:numen'
   said.mode = 'system'
   said.sizes = { interfaceScale: 1, textScale: 1 }
+  said.renaming = {
+    decks: [],
+    cards: 0,
+    notWritten: [],
+    refusal: null,
+    changed: false,
+    at: 'a2',
+  }
+  cuts.forget()
+  outside.forget()
   asked.made = []
+  asked.cut = []
+  asked.renamedField = []
+  asked.wrote = []
   asked.renamed = []
   asked.removed = []
   asked.moved = []
@@ -523,6 +718,49 @@ describe('the palette', () => {
     expect(bandsOf(window)).toStrictEqual([])
   })
 
+  /** A name the search turned up, chosen to be read. */
+  const reads = async (window: Awaited<ReturnType<typeof drawn>>, path: string) => {
+    pressed('k')
+    await settles()
+    window.findComponent(Palette).vm.$emit('update:modelValue', 'ani')
+    await new Promise((done) => setTimeout(done, HELD))
+    window.findComponent(Palette).vm.$emit('choose', path, 'note')
+    await settles()
+    await settles()
+  }
+
+  it('opens a deck it turned up in the editor of its cards', async () => {
+    said.names = [nameSaid('Animals.md', 'Animals', 'deck')]
+    said.types = { 'Animals.md': 'deck' }
+    const window = await drawn()
+
+    await reads(window, 'Animals.md')
+
+    expect(paneKinds(window).flat()).toContain('deck')
+    expect(window.findComponent(NoteTab).exists()).toBe(false)
+  })
+
+  it('opens a stencil it turned up in the editor of its fields and faces', async () => {
+    said.names = [nameSaid('Animal.md', 'Animal', 'stencil')]
+    said.types = { 'Animal.md': 'stencil' }
+    const window = await drawn()
+
+    await reads(window, 'Animal.md')
+
+    expect(paneKinds(window).flat()).toContain('stencil')
+    expect(window.findComponent(NoteTab).exists()).toBe(false)
+  })
+
+  it('opens an ordinary note the same search turned up in a note tab', async () => {
+    said.names = [nameSaid('Animals.md', 'Animals')]
+    const window = await drawn()
+
+    await reads(window, 'Animals.md')
+
+    expect(paneKinds(window).flat()).not.toContain('deck')
+    expect(window.findComponent(NoteTab).exists()).toBe(true)
+  })
+
   it('turns from the search to the commands on the character that means them', async () => {
     const window = await drawn()
     pressed('k')
@@ -548,7 +786,7 @@ describe('the palette', () => {
       ?.id ?? ''
 
   it('is over the plex in the tab in front, not the plex last put in front', async () => {
-    said.names = [{ path: 'physics/Entropy.md', title: 'Entropy', heading: '', line: -1, at: [] }]
+    said.names = [nameSaid('physics/Entropy.md', 'Entropy')]
     const window = await drawn()
 
     // A second plex, standing on a note of its own, put in front last.
@@ -652,8 +890,87 @@ describe('a command reached by its own keystroke', () => {
     expect(asked.made).toStrictEqual(['Entropy'])
   })
 
+  it('makes a deck under the name typed, and opens it in the editor of its cards', async () => {
+    const window = await drawnWithPalette()
+
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
+    await settles()
+    await type('New deck')
+    await press('Enter')
+    await type('Animals')
+    await press('Enter')
+    await settles()
+
+    expect(asked.cut).toStrictEqual(['deck / Animals'])
+    expect(paneKinds(window).flat()).toContain('deck')
+  })
+
+  it('opens the deck where the vault filed it, and at no path of its own making', async () => {
+    const window = await drawnWithPalette()
+
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
+    await settles()
+    await type('New deck')
+    await press('Enter')
+    await type('Animals')
+    await press('Enter')
+    await settles()
+
+    const deck = window.findComponent(DeckTab).props('held') as { shown(): { path: string } }
+    expect(deck.shown().path).toBe('Animals.note')
+    expect(deck.shown().path).not.toBe('Animals.md')
+  })
+
+  it('says the refusal and opens nothing where the name is taken already', async () => {
+    const window = await drawnWithPalette()
+
+    const makes = async () => {
+      globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
+      await settles()
+      await type('New deck')
+      await press('Enter')
+      await type('Animals')
+      await press('Enter')
+      await settles()
+    }
+    await makes()
+    await makes()
+
+    expect(paneKinds(window).flat().filter((kind) => kind === 'deck')).toHaveLength(1)
+    expect(window.text()).toContain(REFUSED.occupied)
+  })
+
+  it('makes a stencil the same way, and opens no deck', async () => {
+    const window = await drawnWithPalette()
+
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
+    await settles()
+    await type('New stencil')
+    await press('Enter')
+    await type('Animal')
+    await press('Enter')
+    await settles()
+
+    expect(asked.cut).toStrictEqual(['stencil / Animal [Field 1]'])
+    expect(paneKinds(window).flat()).not.toContain('deck')
+  })
+
+  it('makes the stencil carrying the field its cards are named by, and not none', async () => {
+    await drawnWithPalette()
+
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
+    await settles()
+    await type('New stencil')
+    await press('Enter')
+    await type('Animal')
+    await press('Enter')
+    await settles()
+
+    expect(asked.cut).not.toStrictEqual(['stencil / Animal []'])
+  })
+
   it('opens the step that picks a note, on the keystroke going to one draws', async () => {
-    said.names = [{ path: 'physics/Entropy.md', title: 'Entropy', heading: '', line: -1, at: [] }]
+    said.names = [nameSaid('physics/Entropy.md', 'Entropy')]
     const window = await drawnWithPalette()
 
     const event = pressed('g')
@@ -664,7 +981,7 @@ describe('a command reached by its own keystroke', () => {
   })
 
   it('travels to the note picked on that step', async () => {
-    said.names = [{ path: 'physics/Entropy.md', title: 'Entropy', heading: '', line: -1, at: [] }]
+    said.names = [nameSaid('physics/Entropy.md', 'Entropy')]
     const window = await drawnWithPalette()
 
     pressed('g')
@@ -922,6 +1239,108 @@ describe('the keyboard on the command that removes a note', () => {
 
     expect(document.body.textContent).not.toContain('Keep the note')
     expect(window.findComponent(Palette).props('open')).toBe(false)
+  })
+})
+
+/** A deck and a stencil answer a removal the way a note does. */
+describe('a file the window has open in an editor of cards, removed from the tree', () => {
+  const field = () => document.body.querySelector<HTMLInputElement>('.palette__field')
+
+  const press = async (key: string) => {
+    field()?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }))
+    await settles()
+  }
+
+  const type = async (text: string) => {
+    const into = field()
+    if (!into) return
+    into.value = text
+    into.dispatchEvent(new Event('input'))
+    await settles()
+  }
+
+  /** The window with one deck or one stencil made and put in front. */
+  const holding = async (command: string, name: string) => {
+    const window = await drawnWithPalette()
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
+    await settles()
+    await type(command)
+    await press('Enter')
+    await type(name)
+    await press('Enter')
+    await settles()
+    return window
+  }
+
+  /** A row taken out of the vault, as the tree asks for it. */
+  const removes = async (window: VueWrapper, path: string) => {
+    window.findComponent(Tree).vm.$emit('remove', [path])
+    await settles()
+    await settles()
+  }
+
+  it('lets go of the tab holding a deck', async () => {
+    const window = await holding('New deck', 'Animals')
+    expect(paneKinds(window).flat()).toContain('deck')
+
+    await removes(window, 'Animals.note')
+
+    expect(asked.removed).toStrictEqual(['Animals.note false'])
+    expect(paneKinds(window).flat()).not.toContain('deck')
+  })
+
+  it('lets go of the tab holding a stencil', async () => {
+    const window = await holding('New stencil', 'Animal')
+    expect(paneKinds(window).flat()).toContain('stencil')
+
+    await removes(window, 'Animal.note')
+
+    expect(asked.removed).toStrictEqual(['Animal.note false'])
+    expect(paneKinds(window).flat()).not.toContain('stencil')
+  })
+
+  it('writes the card nobody had saved before the file goes', async () => {
+    const window = await holding('New deck', 'Animals')
+    const held = window.findComponent(DeckTab).props('held') as {
+      adds(
+        stencil: string,
+        values: readonly { field: string; text: string }[],
+        section: string | null,
+      ): void
+    }
+
+    held.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
+    await removes(window, 'Animals.note')
+
+    // Making the deck is no write, so the only one is what the person added.
+    expect(asked.wrote).toStrictEqual(['Vicuña'])
+  })
+})
+
+/** The tree makes one where the row stands, and the vault may answer nothing. */
+describe('a deck or a stencil the file tree asked the vault for', () => {
+  /** What a row of the tree asks for, on the row the menu was opened on. */
+  const asksFor = async (stencil: boolean) => {
+    const window = await drawn()
+    const tree = window.findComponent(FilesTab).props('held') as {
+      cuts(path: string | null, stencil: boolean): Promise<void>
+    }
+    cuts.breaks()
+    await tree.cuts(null, stencil)
+    await settles()
+    return window
+  }
+
+  it('says why no deck was made, where the vault could not be reached', async () => {
+    const window = await asksFor(false)
+
+    expect(cards(window).join(' ')).toContain('could not be reached')
+  })
+
+  it('says why no stencil was made, the same way', async () => {
+    const window = await asksFor(true)
+
+    expect(cards(window).join(' ')).toContain('could not be reached')
   })
 })
 
@@ -1387,4 +1806,120 @@ describe('the window with no note to show', () => {
 
     expect(cards(window)).toStrictEqual([])
   })
+})
+
+describe('every road to a file', () => {
+  /**
+   * Each road, by what it is called, as a gesture on a window standing on one
+   * file. They are listed here so that every one of them is asked the same
+   * four questions, and a road opening a file some other way is a road missing
+   * from this list.
+   */
+  const ROADS: Record<string, (window: VueWrapper, path: string) => Promise<void>> = {
+    'the plex': async (window) => {
+      window.findComponent(Plex).vm.$emit('show', nodeInPlex(window), 'here')
+    },
+    'the tree': async (window, path) => {
+      window.findComponent(Tree).vm.$emit('activate', path)
+    },
+    'the palette': async (window, path) => {
+      await typedIn(window, 'ani')
+      window.findComponent(Palette).vm.$emit('choose', path, 'note')
+    },
+    'the search': async (window, path) => {
+      await typedIn(window, 'ani')
+      window.findComponent(Palette).vm.$emit('choose', `text:${path}:0`, 'note')
+    },
+    'a command': async (window) => {
+      pressing('p')
+      await settles()
+      window.findComponent(Palette).vm.$emit('choose', 'read', 'read')
+    },
+    // The two roads that arrive naming a stretch of a source's own text: a link
+    // in an answer the agent wrote, and a place asked for from outside the
+    // window altogether.
+    'a link in an answer': async (window, path) => {
+      const turn = { id: 'a', voice: 'answered' as const, text: '' }
+      const link = linkOf({ path, start: 0, length: 4 })
+      window
+        .findComponent(Agent)
+        .vm.$emit('follow', turn, link, new MouseEvent('click', { cancelable: true }))
+    },
+    'a place asked for from outside': async (_, path) => {
+      outside.asks({ path, start: 0, length: 4 })
+    },
+  }
+
+  /** A keystroke the window answers, which the palette and the commands are. */
+  const pressing = (key: string) =>
+    globalThis.dispatchEvent(
+      new KeyboardEvent('keydown', { key, ctrlKey: true, cancelable: true }),
+    )
+
+  /** The search open, with words typed into it and the answers back. */
+  const typedIn = async (window: VueWrapper, typed: string) => {
+    pressing('k')
+    await settles()
+    window.findComponent(Palette).vm.$emit('update:modelValue', typed)
+    await new Promise((done) => setTimeout(done, HELD))
+  }
+
+  /** The root of the vault holds one file of each of four. */
+  const root = folders['']
+  beforeEach(() => {
+    folders[''] = [
+      { path: 'Animals.md', name: 'Animals.md', folder: false, kind: 'note', type: 'deck' },
+      { path: 'Animal.md', name: 'Animal.md', folder: false, kind: 'note', type: 'stencil' },
+      { path: 'Ants.md', name: 'Ants.md', folder: false, kind: 'note', type: 'note' },
+      { path: 'Ants.epub', name: 'Ants.epub', folder: false, kind: 'book', type: 'note' },
+    ]
+  })
+  afterEach(() => {
+    folders[''] = root ?? []
+  })
+
+  /** What the window drew, having been taken to one file by one road. */
+  const taken = async (
+    road: (window: VueWrapper, path: string) => Promise<void>,
+    path: string,
+    type: 'note' | 'deck' | 'stencil',
+  ): Promise<readonly string[]> => {
+    said.types = { [path]: type }
+    said.opening = path
+    said.names = [nameSaid(path, path, type)]
+    said.passages = [passageSaid(path, path, type)]
+
+    const window = await drawn()
+    await road(window, path)
+    await settles()
+    await settles()
+    return paneKinds(window).flat()
+  }
+
+  for (const [name, road] of Object.entries(ROADS)) {
+    it(`opens a deck in the editor of its cards, reached by ${name}`, async () => {
+      expect(await taken(road, 'Animals.md', 'deck')).toContain('deck')
+    })
+
+    it(`opens a stencil in the editor of its fields and faces, reached by ${name}`, async () => {
+      expect(await taken(road, 'Animal.md', 'stencil')).toContain('stencil')
+    })
+
+    it(`opens an ordinary note in the editor of its prose, reached by ${name}`, async () => {
+      const drew = await taken(road, 'Ants.md', 'note')
+
+      expect(drew).toContain('note')
+      expect(drew).not.toContain('deck')
+      expect(drew).not.toContain('stencil')
+    })
+
+    // The vault is never asked about the book by anything but the window, and
+    // the palette is told it turned up a note: the path alone has to be enough.
+    it(`opens a book in the reader, reached by ${name}`, async () => {
+      const drew = await taken(road, 'Ants.epub', 'note')
+
+      expect(drew).toContain('document')
+      expect(drew).not.toContain('note')
+    })
+  }
 })

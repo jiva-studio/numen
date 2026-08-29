@@ -11,8 +11,8 @@ import (
 func TestATitleThatIsAlreadyAFilenameIsFiledUnderItself(t *testing.T) {
 	for _, title := range []string{
 		"Entropy",
-		"Śrī Caitanya Mahāprabhu",
-		"Холм Говардхана",
+		"Zoë Brontë Mårtensson",
+		"Холм у реки",
 		"Lecture 3 — entropy, and what it is not",
 	} {
 		name, exact := domain.Filename(title)

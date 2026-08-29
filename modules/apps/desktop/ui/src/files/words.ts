@@ -8,6 +8,8 @@ export const WORDS = {
   /** What the menu on a row offers besides the commands over a note. */
   rename: 'Rename',
   newNote: 'New note',
+  newDeck: 'New deck',
+  newStencil: 'New stencil',
   newFolder: 'New folder',
   remove: 'Remove',
   /** The name a folder is made under, which renaming it is what changes. */

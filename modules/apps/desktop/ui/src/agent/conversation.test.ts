@@ -171,7 +171,7 @@ describe('a wait that explains itself', () => {
       release = go
     })
     const talk = conversation(
-      doing([used('Create a note', "Vidura's warning", 12015)], held),
+      doing([used('Create a note', "Bram Doyle's warning", 12015)], held),
       words,
       called,
       now,
@@ -183,7 +183,7 @@ describe('a wait that explains itself', () => {
     expect(line?.text).toBe('Create a note')
     // Which note, before the note exists: the name is read out of a call that
     // has not finished being written.
-    expect(line?.about).toBe("Vidura's warning")
+    expect(line?.about).toBe("Bram Doyle's warning")
     // The only thing that moves while twelve thousand characters are typed.
     expect(line?.aside).toBe('12 015 characters')
 
@@ -197,7 +197,7 @@ describe('a wait that explains itself', () => {
       release = go
     })
     const talk = conversation(
-      doing([used('Create a note', "Vidura's warning", 4000), answered()], held),
+      doing([used('Create a note', "Bram Doyle's warning", 4000), answered()], held),
       words,
       called,
       now,
@@ -221,7 +221,7 @@ describe('a wait that explains itself', () => {
       release = go
     })
     const talk = conversation(
-      doing([used('Create a note', "Vidura's warning", 4000), answered(), thinking()], held),
+      doing([used('Create a note', "Bram Doyle's warning", 4000), answered(), thinking()], held),
       words,
       called,
       now,
@@ -250,7 +250,7 @@ describe('a wait that explains itself', () => {
       release = go
     })
     const talk = conversation(
-      doing([used('Create a note', "Vidura's warning", 4000), answered()], held),
+      doing([used('Create a note', "Bram Doyle's warning", 4000), answered()], held),
       words,
       called,
       now,
@@ -288,7 +288,7 @@ describe('a wait that explains itself', () => {
 
 
 describe('a call that was working on a place', () => {
-  const place: Place = { path: 'library/mahabharata.epub', start: 40_512, length: 31 }
+  const place: Place = { path: 'library/gardening.epub', start: 40_512, length: 31 }
 
   it('makes the line about it one a person can press, and says where it goes', async () => {
     let release = () => {}
@@ -296,12 +296,12 @@ describe('a call that was working on a place', () => {
       release = go
     })
     const talk = conversation(
-      doing([used('Read a document', 'mahabharata.epub', 0, place)], held),
+      doing([used('Read a document', 'gardening.epub', 0, place)], held),
       words,
       called,
       now,
     )
-    const asking = talk.ask('what does it say of war?', '')
+    const asking = talk.ask('what does it say of frost?', '')
     await nap()
 
     const line = talk.turns.value.find((turn) => turn.voice === 'doing')
@@ -324,7 +324,7 @@ describe('a call that was working on a place', () => {
       called,
       now,
     )
-    const asking = talk.ask('what does it say of war?', '')
+    const asking = talk.ask('what does it say of frost?', '')
     await nap()
 
     const line = talk.turns.value.find((turn) => turn.voice === 'doing')
@@ -340,8 +340,8 @@ describe('a call that was working on a place', () => {
     const held = new Promise<void>((go) => {
       release = go
     })
-    const talk = conversation(doing([used('Search notes', 'war')], held), words, called, now)
-    const asking = talk.ask('what does it say of war?', '')
+    const talk = conversation(doing([used('Search notes', 'frost')], held), words, called, now)
+    const asking = talk.ask('what does it say of frost?', '')
     await nap()
 
     const line = talk.turns.value.find((turn) => turn.voice === 'doing')
@@ -364,7 +364,7 @@ describe('where the line about work stands', () => {
       release = go
     })
     const talk = conversation(
-      doing([used('Read a note'), said('Duryodhana '), answered(), said('was a king.')], held),
+      doing([used('Read a note'), said('Bram Doyle '), answered(), said('was the chair.')], held),
       words,
       called,
       now,
@@ -376,7 +376,7 @@ describe('where the line about work stands', () => {
     // a line put back here stands under the answer for the rest of the talk.
     expect(drawn(talk)).toEqual([
       'asked: tell me about him',
-      'answered: Duryodhana was a king.',
+      'answered: Bram Doyle was the chair.',
     ])
 
     release()
@@ -562,7 +562,7 @@ describe('two tools in hand at once', () => {
       release = go
     })
     const talk = conversation(
-      doing([used('Search notes', 'entropy'), used('Read a note', 'Vidura'), answered()], held),
+      doing([used('Search notes', 'entropy'), used('Read a note', 'Bram Doyle'), answered()], held),
       words,
       called,
       now,

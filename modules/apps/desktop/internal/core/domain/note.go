@@ -7,6 +7,10 @@ type Note struct {
 	Ref   FileRef
 	Title string
 
+	// Type is which of three the note is. A note carrying no `type` is a note,
+	// which is nearly every file in a vault.
+	Type NoteType
+
 	// ID is what the note carries in its frontmatter, if it carries one. A note
 	// written outside the application has none: it is indexed in full and simply
 	// cannot be a stable target.
@@ -27,6 +31,25 @@ type Note struct {
 	// and the file is never repaired in place, because that means guessing at
 	// what the user wrote.
 	FrontmatterErr string
+}
+
+// NoteType is which of three a note is. The list is closed: a value outside it
+// is shown as a problem and the file is read as an ordinary note.
+type NoteType string
+
+const (
+	TypeNote    NoteType = "note"
+	TypeDeck    NoteType = "deck"
+	TypeStencil NoteType = "stencil"
+)
+
+// KnownNoteType reports whether a type is one of the three.
+func KnownNoteType(t NoteType) bool {
+	switch t {
+	case TypeNote, TypeDeck, TypeStencil:
+		return true
+	}
+	return false
 }
 
 // Heading is one ATX heading of a note, in document order.

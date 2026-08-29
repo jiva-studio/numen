@@ -19,6 +19,7 @@ const file = (path: string, over: Partial<Entry> = {}): Entry => ({
   name: path.split('/').pop() ?? path,
   folder: false,
   kind: 'note',
+  type: 'note',
   ...over,
 })
 
@@ -43,6 +44,8 @@ const drawn = async (open: readonly string[] = []) => {
     carries: (paths) => void done.push(`carries ${paths.join(' ') || '—'}`),
     makes: async (path) => void done.push(`makes ${path}`),
     writes: async (folder) => `${folder}Untitled note.md`,
+    cuts: async (folder, name) => `${folder}${name}`,
+    stencils: async (folder, name) => `${folder}${name}`,
     says: (text) => void done.push(`says ${text}`),
   })
   await list.opens(ROOT)
@@ -97,16 +100,16 @@ describe('a row the tree reports', () => {
     window.findComponent(Tree).vm.$emit('activate', 'Entropy.md')
     await settles()
 
-    expect(done).toStrictEqual(['lands note Entropy.md'])
+    expect(done).toStrictEqual(['lands file Entropy.md'])
   })
 
-  it('takes the person nowhere for a file the vault holds no source for', async () => {
+  it('takes the person to a file the vault holds no source for', async () => {
     const { done, window } = await drawn()
 
     window.findComponent(Tree).vm.$emit('activate', 'Cover.png')
     await settles()
 
-    expect(done).toStrictEqual(['lands —'])
+    expect(done).toStrictEqual(['lands file Cover.png'])
   })
 
   it('is filed where it was let go of', async () => {
@@ -194,6 +197,8 @@ describe('the menu on a row', () => {
       'read',
       'travel',
       'newNote',
+      'newDeck',
+      'newStencil',
       'newFolder',
       'rename',
       'copy',
@@ -214,6 +219,8 @@ describe('the menu on a row', () => {
       'file',
       'file',
       'file',
+      'file',
+      'file',
       'plex',
       'plex',
       'plex',
@@ -226,6 +233,8 @@ describe('the menu on a row', () => {
   it('offers no command over a note on a file the vault holds no source for', async () => {
     expect(await itemsOn('Cover.png')).toStrictEqual([
       'newNote',
+      'newDeck',
+      'newStencil',
       'newFolder',
       'rename',
       'copy',
@@ -238,7 +247,7 @@ describe('the menu on a row', () => {
   })
 
   it('offers what can be made at the root, asked off every row', async () => {
-    expect(await itemsOn(null)).toStrictEqual(['newNote', 'newFolder'])
+    expect(await itemsOn(null)).toStrictEqual(['newNote', 'newDeck', 'newStencil', 'newFolder'])
   })
 
   it('offers removal alone over a selection of several', async () => {
@@ -260,6 +269,8 @@ describe('a folder that could not be read', () => {
       carries: () => {},
       makes: async () => {},
       writes: async () => '',
+      cuts: async () => '',
+      stencils: async () => '',
       says: () => {},
     })
     await list.opens(ROOT)

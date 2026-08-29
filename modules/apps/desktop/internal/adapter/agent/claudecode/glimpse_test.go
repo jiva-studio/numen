@@ -10,14 +10,14 @@ import (
 // even whole characters. Every cut through a Cyrillic body is a cut through the
 // middle of a rune.
 func TestGlimpsedSurvivesEveryCut(t *testing.T) {
-	whole := `{"title":"Видура и \"кости\"","body":"Игра в кости есть корень несчастья."}`
+	whole := `{"title":"Сарай и \"ключ\"","body":"Ключ от сарая лежит под кирпичом у двери."}`
 	for at := 0; at <= len(whole); at++ {
 		got := glimpsed(whole[:at], "title")
-		if got != "" && !hasPrefix(`Видура и "кости"`, got) {
+		if got != "" && !hasPrefix(`Сарай и "ключ"`, got) {
 			t.Fatalf("cut at %d read %q", at, got)
 		}
 	}
-	if got := glimpsed(whole, "title"); got != `Видура и "кости"` {
+	if got := glimpsed(whole, "title"); got != `Сарай и "ключ"` {
 		t.Errorf("whole reads %q", got)
 	}
 }

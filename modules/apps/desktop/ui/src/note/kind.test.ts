@@ -7,7 +7,9 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
+import type { PlexShowing } from '@numen/ui'
 import { noting, type Called } from './kind'
+import { putting } from '../putting'
 import type { Drawn } from './entering'
 import type { drawn } from './drawn'
 import type { editing } from './editing'
@@ -107,11 +109,18 @@ const window = (titles: Record<string, string> = {}, states: Record<string, Stat
   const store = notes(states)
   const drawing = drawings()
   const held = windowing()
-  const noted = noting(vault(titles), store.store, drawing.store, held.host)
+  const puts = putting({ standing: async () => new Map() })
+  const noted = noting(vault(titles), store.store, drawing.store, held.host, puts)
   held.declares([noted.kind])
   /** Every note tab the window holds now. */
   const open = () => held.tabs.value.map((tab) => tab.id)
-  return { noted, held, open, ...store, drawings: drawing }
+  /**
+   * A note put in front of the person. It reaches the tab the only way anything
+   * does, which is through the one place a file is opened from.
+   */
+  const shows = (path: string, title = '', showing: PlexShowing = 'here') =>
+    puts.made(path, title, 'note', showing)
+  return { noted, held, open, shows, ...store, drawings: drawing }
 }
 
 describe('a note opened', () => {
@@ -196,13 +205,13 @@ describe('a note opened', () => {
 describe('a note that was renamed', () => {
   it('is shown in the tab already holding it, and no second tab is opened on it', async () => {
     const one = window()
-    one.noted.shows('Note.md', 'A note')
+    one.shows('Note.md', 'A note')
     await nextTick()
     const [tab] = one.open()
     one.moves('Note.md', 'Renamed.md')
     await nextTick()
 
-    one.noted.shows('Renamed.md')
+    one.shows('Renamed.md')
     await nextTick()
 
     expect(one.open()).toEqual([tab])
@@ -210,7 +219,7 @@ describe('a note that was renamed', () => {
 
   it('is called what the window calls it under the name it now has', async () => {
     const one = window()
-    one.noted.shows('Note.md', 'A note')
+    one.shows('Note.md', 'A note')
     await nextTick()
     one.moves('Note.md', 'Renamed.md')
     await nextTick()
@@ -223,14 +232,14 @@ describe('a note that was renamed', () => {
 
   it('leaves the name it had free, so a note made under it opens a tab of its own', async () => {
     const one = window()
-    one.noted.shows('Foo.md', 'The first')
+    one.shows('Foo.md', 'The first')
     await nextTick()
     const first = one.open()[0]
     one.moves('Foo.md', 'Bar.md')
     await nextTick()
 
     one.noted.calls('Foo.md', 'The second')
-    one.noted.shows('Foo.md')
+    one.shows('Foo.md')
     await nextTick()
 
     const open = one.open()
@@ -243,7 +252,7 @@ describe('a note that was renamed', () => {
 
   it('answers to the store under the identity it opened with, at the name it now has', async () => {
     const one = window()
-    one.noted.shows('Note.md')
+    one.shows('Note.md')
     await nextTick()
     const id = one.noted.holding('Note.md')
     one.moves('Note.md', 'Renamed.md')
@@ -256,7 +265,7 @@ describe('a note that was renamed', () => {
 
   it('is called by the file it now stands at while nothing has named it', async () => {
     const one = window()
-    one.noted.shows('Note.md')
+    one.shows('Note.md')
     await nextTick()
     one.moves('Note.md', 'Renamed.md')
     await nextTick()
@@ -293,7 +302,7 @@ describe('what a note is called', () => {
   it('is the name it had when the vault cannot answer', async () => {
     const one = window()
     one.noted.calls('Note.md', 'Untitled note')
-    one.noted.shows('Note.md')
+    one.shows('Note.md')
 
     await nextTick()
     await nextTick()
@@ -305,7 +314,7 @@ describe('what a note is called', () => {
     const one = window()
     one.noted.calls('Made.md', 'A new note')
 
-    one.noted.shows('Made.md')
+    one.shows('Made.md')
     await nextTick()
 
     expect(one.noted.called('Made.md')).toBe('A new note')
@@ -341,7 +350,7 @@ describe('the window going', () => {
 describe('a note tab closing', () => {
   it('writes what it owes, and goes when the note says it is done', async () => {
     const one = window()
-    one.noted.shows('Note.md', 'A note')
+    one.shows('Note.md', 'A note')
     await nextTick()
     const [id] = one.open()
 
@@ -356,7 +365,7 @@ describe('a note tab closing', () => {
 
   it('stays open while the note is not done with it', async () => {
     const one = window()
-    one.noted.shows('Note.md', 'A note')
+    one.shows('Note.md', 'A note')
     await nextTick()
     const [id] = one.open()
     one.holds()
@@ -373,7 +382,7 @@ describe('a note tab closing', () => {
 describe('a note the window is told to let go of', () => {
   it('is let go of by the tab holding it, under the identity it opened under', async () => {
     const one = window()
-    one.noted.shows('Note.md', 'A note')
+    one.shows('Note.md', 'A note')
     await nextTick()
 
     one.noted.shuts(one.idOf('Note.md'))
@@ -385,7 +394,7 @@ describe('a note the window is told to let go of', () => {
 
   it('is let go of at the name it now has, wherever its file went', async () => {
     const one = window()
-    one.noted.shows('Note.md', 'A note')
+    one.shows('Note.md', 'A note')
     await nextTick()
     const id = one.idOf('Note.md')
     one.moves('Note.md', 'Moved.md')
@@ -399,7 +408,7 @@ describe('a note the window is told to let go of', () => {
 
   it('is nothing to a window holding no tab of it', async () => {
     const one = window()
-    one.noted.shows('Note.md', 'A note')
+    one.shows('Note.md', 'A note')
     await nextTick()
 
     one.noted.shuts('never opened')
@@ -413,7 +422,7 @@ describe('a note the window is told to let go of', () => {
 describe('what a note is called under the identity it opened under', () => {
   it('is what the window calls it, wherever its file went', async () => {
     const one = window()
-    one.noted.shows('Note.md', 'A note')
+    one.shows('Note.md', 'A note')
     await nextTick()
     const id = one.idOf('Note.md')
     one.moves('Note.md', 'Moved.md')
@@ -424,7 +433,7 @@ describe('what a note is called under the identity it opened under', () => {
 
   it('is the file it stands at while nothing has named it', async () => {
     const one = window()
-    one.noted.shows('Note.md')
+    one.shows('Note.md')
     await nextTick()
 
     expect(one.noted.titled(one.idOf('Note.md'))).toBe('Note.md')

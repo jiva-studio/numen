@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { create } from '@bufbuild/protobuf'
 import { paneById, panesOf } from '@numen/ui'
-import { Seat, type NeighbourhoodResponse } from '@numen/protocol'
+import { NoteType as NoteTypes, Seat, type NeighbourhoodResponse } from '@numen/protocol'
 import { plexKind, plexing, type Held, type Making, type Plexing } from './kind'
 import { ITEMS, NEW_NOTE } from './menu'
 import { NeighbourhoodSchema } from './picture'
@@ -22,29 +22,38 @@ import { PLEX } from '../workspace'
 /** A moment for whatever a gesture asked the vault for to come back. */
 const settles = () => new Promise((done) => setTimeout(done, 0))
 
+/** Which of three each note of a neighbourhood is, by the path it stands at. */
+type Types = Record<string, NoteTypes>
+
 /** A neighbourhood as the vault answers one: a focus, and what is around it. */
-const around = (focus: string, related: readonly string[] = []): NeighbourhoodResponse =>
+const around = (
+  focus: string,
+  related: readonly string[] = [],
+  types: Types = {},
+): NeighbourhoodResponse =>
   ({
     focus: { path: focus, title: focus.replace(/\.md$/, '') },
+    focusType: types[focus] ?? NoteTypes.UNSPECIFIED,
     related: related.map((path) => ({
       seat: 2,
       through: '',
       label: '',
       note: { path, title: path.replace(/\.md$/, '') },
+      type: types[path] ?? NoteTypes.UNSPECIFIED,
     })),
   }) as unknown as NeighbourhoodResponse
 
 /** A plex standing on a note, which records every note it was sent to. */
-const standing = (at: string, related: readonly string[] = []) => {
+const standing = (at: string, related: readonly string[] = [], types: Types = {}) => {
   const went: string[] = []
   const view = {
-    neighbourhood: ref(around(at, related)),
+    neighbourhood: ref(around(at, related, types)),
     here: ref(at),
     trouble: ref(''),
     go: async (path: string) => {
       went.push(path)
       view.here.value = path
-      view.neighbourhood.value = around(path)
+      view.neighbourhood.value = around(path, [], types)
     },
     follows: (renamed: readonly { from: string; to: string }[]) => {
       const one = renamed.find((went) => went.from === view.here.value)
@@ -75,8 +84,8 @@ const making = (takes = true) => {
 }
 
 /** A plex tab with the window it is drawn in written down. */
-const tab = (at: string, related: readonly string[] = [], takes = true) => {
-  const plex = standing(at, related)
+const tab = (at: string, related: readonly string[] = [], takes = true, types: Types = {}) => {
+  const plex = standing(at, related, types)
   const vault = making(takes)
   const opened: [string, string, string][] = []
   const asked: string[] = []
@@ -101,11 +110,14 @@ const tab = (at: string, related: readonly string[] = [], takes = true) => {
     ready: () => true,
     hangs: () => hangs.value,
     parts: () => 6,
-    opens: (path, title, showing) => opened.push([path, title, showing]),
-    entersAt: (path, line) => entered.push([path, line]),
+    opens: (path, title, showing, line) => {
+      opened.push([path, title, showing])
+      if (line !== undefined) entered.push([path, line])
+    },
+    // The vault answers about the notes it was asked about and no others.
     inside: async (paths) => {
       insides.push(paths)
-      return divides.value
+      return new Map([...divides.value].filter(([path]) => paths.includes(path)))
     },
     asks: (text) => asked.push(text),
     runs: (id, path, title) => ran.push([id, path, title]),
@@ -262,7 +274,6 @@ describe('a plex drawing nothing', () => {
       hangs: () => true,
       parts: () => 6,
       opens: () => {},
-      entersAt: () => {},
       inside: async () => new Map(),
       asks: () => {},
       runs: () => {},
@@ -354,7 +365,6 @@ describe('the picture', () => {
       hangs: () => true,
       parts: () => 6,
       opens: () => {},
-      entersAt: () => {},
       inside: async () => new Map(),
       asks: () => {},
       runs: () => {},
@@ -530,7 +540,6 @@ describe('the parts a node hangs', () => {
       hangs: () => true,
       parts: () => 6,
       opens: () => {},
-      entersAt: () => {},
       inside: () => new Promise((done) => answers.push(done)),
       asks: () => {},
       runs: () => {},
@@ -571,6 +580,52 @@ describe('the parts a node hangs', () => {
 
     await one.held.reads()
 
+    expect(one.insides).toStrictEqual([])
+  })
+
+  it('are none for a deck, whose cards stand on no line of prose', async () => {
+    const one = tab('Root.md', ['Animals.md'], true, { 'Animals.md': NoteTypes.DECK })
+    one.divides.value = new Map([['Animals.md', [heading('Vicuña', 4)]]])
+    one.insides.length = 0
+
+    await one.held.reads()
+
+    expect(one.held.partsOf(one.node('Animals.md'))).toStrictEqual([])
+    expect(one.insides).toStrictEqual([['Root.md']])
+  })
+
+  it('are none for a stencil, whose faces stand on no line of prose', async () => {
+    const one = tab('Root.md', ['Animal.md'], true, { 'Animal.md': NoteTypes.STENCIL })
+    one.divides.value = new Map([['Animal.md', [heading('Front', 4)]]])
+    one.insides.length = 0
+
+    await one.held.reads()
+
+    expect(one.held.partsOf(one.node('Animal.md'))).toStrictEqual([])
+    expect(one.insides).toStrictEqual([['Root.md']])
+  })
+
+  it('are the headings of an ordinary note beside them', async () => {
+    const one = tab('Root.md', ['Animals.md', 'Child.md'], true, {
+      'Animals.md': NoteTypes.DECK,
+    })
+    one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])
+
+    await one.held.reads()
+
+    expect(one.held.partsOf(one.node('Child.md'))).toStrictEqual([
+      { id: '4', text: 'Heat', level: 1 },
+    ])
+  })
+
+  it('are none for a deck in focus, which is where the plex is standing', async () => {
+    const one = tab('Animals.md', [], true, { 'Animals.md': NoteTypes.DECK })
+    one.divides.value = new Map([['Animals.md', [heading('Vicuña', 4)]]])
+    one.insides.length = 0
+
+    await one.held.reads()
+
+    expect(one.held.partsOf(one.node('Animals.md'))).toStrictEqual([])
     expect(one.insides).toStrictEqual([])
   })
 
@@ -677,7 +732,6 @@ const inVault = async (focus: string, beside: readonly Beside[] = []) => {
     hangs: () => true,
     parts: () => 6,
     opens: (path, title, showing) => opened.push([path, title, showing]),
-    entersAt: () => {},
     inside: async () => new Map(),
     asks: () => {},
     runs: (id, path, title) => ran.push([id, path, title]),
@@ -996,7 +1050,6 @@ const window = (opening = 'Opening.md') => {
     hangs: () => true,
     parts: () => 6,
     opens: () => {},
-    entersAt: () => {},
     inside: async () => new Map(),
     asks: () => {},
     runs: () => {},
@@ -1253,5 +1306,18 @@ describe('every plex asked for its picture again', () => {
     expect(one.views[0]?.went).toContain('One.md')
     expect(one.views[1]?.went.filter((where) => where === 'Two.md')).toHaveLength(1)
     expect(first.held.view.here.value).toBe('One.md')
+  })
+})
+
+describe('which of three a node stands for', () => {
+  it('is what the vault says of the note the node draws', () => {
+    const one = tab('Root.md', ['Deck.md', 'Stencil.md'], true, {
+      'Deck.md': NoteTypes.DECK,
+      'Stencil.md': NoteTypes.STENCIL,
+    })
+
+    expect(one.held.typeOf(one.node('Deck.md'))).toBe('deck')
+    expect(one.held.typeOf(one.node('Stencil.md'))).toBe('stencil')
+    expect(one.held.typeOf(one.node('Root.md'))).toBe('note')
   })
 })

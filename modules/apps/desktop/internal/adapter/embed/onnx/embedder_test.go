@@ -89,8 +89,8 @@ func TestTheModelEmbedsAndReportsItself(t *testing.T) {
 	}
 
 	texts := []string{
-		"The soul is not born, nor does it ever die.",
-		"na jāyate mriyate vā kadācit",
+		"The gate is locked every evening at dusk.",
+		"Ворота запирают каждый вечер на закате.",
 		"Sourdough needs a starter and a warm kitchen.",
 	}
 	vectors, err := e.Embed(context.Background(), texts)
@@ -108,7 +108,7 @@ func TestTheModelEmbedsAndReportsItself(t *testing.T) {
 			t.Errorf("vector %d is not unit length: %v", i, length)
 		}
 	}
-	// The two statements about the soul are the same sentence in two
+	// The two statements about the gate are the same sentence in two
 	// languages, and the bread is not.
 	if dot(vectors[0], vectors[1]) <= dot(vectors[0], vectors[2]) {
 		t.Errorf("the translation is not the nearer text: %v vs %v",
@@ -118,14 +118,14 @@ func TestTheModelEmbedsAndReportsItself(t *testing.T) {
 
 func TestTheSameTextGivesTheSameVector(t *testing.T) {
 	e := open(t, modelDir(t))
-	first, err := e.Embed(context.Background(), []string{"dharmakṣetre kurukṣetre samavetā yuyutsavaḥ"})
+	first, err := e.Embed(context.Background(), []string{"udyāne pathaḥ dvāraṁ bījāni śākhāḥ jalaṁ"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	// In another batch, beside a text of another length, so that the padding
 	// differs.
 	second, err := e.Embed(context.Background(), []string{
-		"dharmakṣetre kurukṣetre samavetā yuyutsavaḥ",
+		"udyāne pathaḥ dvāraṁ bījāni śākhāḥ jalaṁ",
 		"a much shorter line",
 	})
 	if err != nil {
@@ -142,7 +142,7 @@ func TestALongTextIsTruncatedAndEmbedded(t *testing.T) {
 	e := open(t, modelDir(t))
 	long := ""
 	for range 4000 {
-		long += "śrī kṛṣṇa caitanya prabhu nityānanda "
+		long += "udyāne pathaḥ dvāraṁ bījāni śākhāḥ "
 	}
 	if _, err := e.Embed(context.Background(), []string{long}); err != nil {
 		t.Fatal(err)
@@ -158,7 +158,7 @@ func TestThroughput(t *testing.T) {
 	texts := make([]string, 16)
 	for i := range texts {
 		for range 40 {
-			texts[i] += "śrī caitanya mahāprabhu spoke of the holy name in Navadvīpa. "
+			texts[i] += "the gate of the walled garden opened onto a long path. "
 		}
 	}
 	// One pass to compile the shape, which is paid once per process.

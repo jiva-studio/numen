@@ -186,6 +186,24 @@ export const EverySeat: Story = {
     ],
     { width: 560, height: 240 },
   ),
+  args: { icon: true },
+  play: async ({ canvasElement }) => {
+    const ink = (name: string) => {
+      const node = canvasElement.querySelector(`[aria-label^="${name}"]`)
+      if (!node) throw new Error(`no node ${name}`)
+      const icon = node.querySelector('.plex__icon')
+      const title = node.querySelector('.plex__title')
+      if (!icon || !title) throw new Error(`nothing drawn before ${name}`)
+      return [getComputedStyle(icon).color, getComputedStyle(title).color]
+    }
+
+    // A node carries its seat's hue before its title. The focused one is
+    // painted from that hue, so there the icon takes the title's own ink.
+    const [child, childTitle] = ink('Below it')
+    expect(child).not.toBe(childTitle)
+    const [focus, focusTitle] = ink('Where you are')
+    expect(focus).toBe(focusTitle)
+  },
 }
 
 /**

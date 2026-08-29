@@ -40,6 +40,13 @@ service VaultService {
   // once. A path past the ceiling the vault sets is not answered at all.
   rpc Headings(HeadingsRequest) returns (HeadingsResponse);
 
+  // Standing is what the vault holds at each of those paths, so a client
+  // holding a path opens what stands there in the editor made for it. The kind
+  // is read off the vault itself, so a path nothing has scanned is answered
+  // with what stands there. A path with nothing at it is absent from the
+  // answer.
+  rpc Standing(StandingRequest) returns (StandingResponse);
+
   // Search is the text a vault holds that answers what was typed, by the words
   // in it or by what it means or by what a section is called. The caller says
   // which way it is asked, so a client drawing them apart asks once for each.
@@ -172,6 +179,16 @@ enum Refusal {
   // after, it is more than one line, or a heading would read it back as
   // something else. Nothing is written.
   REFUSAL_UNNAMEABLE = 8;
+
+  // The note at the path is not a stencil, and a stencil was asked for.
+  REFUSAL_NOT_A_STENCIL = 9;
+
+  // The note at the path is not a deck, and a deck was asked for.
+  REFUSAL_NOT_A_DECK = 10;
+
+  // The file is past the size a deck is read at, which stands above the size a
+  // note is read at.
+  REFUSAL_DECK_TOO_LARGE = 11;
 }
 
 // Note is a note as something else refers to it.
@@ -208,6 +225,10 @@ message Seated {
   // label is then the one the note in focus wrote, and the arrow drawn on the
   // line points at the note it was written about.
   bool mutual = 5;
+
+  // Which of three the note is, so a client draws a deck and a stencil as what
+  // they are.
+  NoteType type = 6;
 }
 
 message StateRequest {}
@@ -384,6 +405,10 @@ message NeighbourhoodRequest {
 message NeighbourhoodResponse {
   Note focus = 1;
   repeated Seated related = 2;
+
+  // Which of three the note in focus is, so a client draws a deck and a stencil
+  // as what they are.
+  NoteType focus_type = 3;
 }
 
 message NamesRequest {
@@ -445,6 +470,27 @@ message NoteHeadings {
 
   // In the order they stand in the note.
   repeated Heading headings = 2;
+}
+
+message StandingRequest {
+  // The paths to answer about, as the vault files them.
+  repeated string paths = 1;
+}
+
+message StandingResponse {
+  repeated Standing found = 1;
+}
+
+// Standing is what the vault holds at one path.
+message Standing {
+  string path = 1;
+
+  // What the vault holds here. A file it holds no source for — a picture, an
+  // archive — is unspecified.
+  SourceKind kind = 2;
+
+  // Which of three the note is. It says nothing about a path holding no note.
+  NoteType type = 3;
 }
 
 // Span is a run of text, by where it begins and where it ends.
@@ -545,6 +591,10 @@ message Entry {
 
   reserved 5;
   reserved "size";
+
+  // Which of three the note is. It says nothing about an entry that is not a
+  // note.
+  NoteType type = 6;
 }
 
 // SourceKind is what the vault holds at a path. A file the index holds no text
@@ -553,6 +603,21 @@ enum SourceKind {
   SOURCE_KIND_UNSPECIFIED = 0;
   SOURCE_KIND_NOTE = 1;
   SOURCE_KIND_BOOK = 2;
+}
+
+// NoteType is which of three a note is: the `type` key of its frontmatter. It
+// says what the note is; whether the application reads text out of the file is
+// SourceKind.
+enum NoteType {
+  // An ordinary note, which is a note carrying no `type` at all and so nearly
+  // every note in a vault.
+  NOTE_TYPE_UNSPECIFIED = 0;
+
+  // A note whose body is cards.
+  NOTE_TYPE_DECK = 1;
+
+  // A note declaring the fields a card has and the faces it is shown by.
+  NOTE_TYPE_STENCIL = 2;
 }
 
 message ReadRequest {
