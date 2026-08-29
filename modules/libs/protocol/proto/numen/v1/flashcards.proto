@@ -44,6 +44,10 @@ service FlashcardsService {
   // listens. Which files moved is not carried: what this application shows is
   // counts, and they are asked for again whatever changed.
   rpc Moving(MovingRequest) returns (stream MovingResponse);
+
+  // Reviewed is how much of a vault was answered on each day it was reviewed,
+  // and how many days up to now were reviewed without a gap.
+  rpc Reviewed(ReviewedRequest) returns (ReviewedResponse);
 }
 
 // Rating is how well a card came back. A person says which of the four, and
@@ -182,6 +186,31 @@ message TakeBackRequest {
 }
 
 message TakeBackResponse {}
+
+message ReviewedRequest {
+  string vault_id = 1;
+}
+
+message ReviewedResponse {
+  // Days is what each day a person answered on came to. A day nobody answered
+  // on is not in it.
+  repeated Reviewing days = 1;
+
+  // Streak is how many days up to now were reviewed without a gap. A day
+  // nobody has answered on yet does not end one.
+  int32 streak = 2;
+
+  // Answered is how many answers the vault holds altogether.
+  int32 answered = 3;
+}
+
+// Reviewing is one day, and how many cards were answered on it.
+message Reviewing {
+  // Day is the day it began on, as the year, the month and the day: an answer
+  // given in the small hours belongs to the day before, and is named for it.
+  string day = 1;
+  int32 answered = 2;
+}
 
 message MovingRequest {}
 

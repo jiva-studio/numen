@@ -56,6 +56,9 @@ const (
 	// FlashcardsServiceMovingProcedure is the fully-qualified name of the FlashcardsService's Moving
 	// RPC.
 	FlashcardsServiceMovingProcedure = "/numen.v1.FlashcardsService/Moving"
+	// FlashcardsServiceReviewedProcedure is the fully-qualified name of the FlashcardsService's
+	// Reviewed RPC.
+	FlashcardsServiceReviewedProcedure = "/numen.v1.FlashcardsService/Reviewed"
 )
 
 // FlashcardsServiceClient is a client for the numen.v1.FlashcardsService service.
@@ -84,6 +87,9 @@ type FlashcardsServiceClient interface {
 	// listens. Which files moved is not carried: what this application shows is
 	// counts, and they are asked for again whatever changed.
 	Moving(context.Context, *connect.Request[v1.MovingRequest]) (*connect.ServerStreamForClient[v1.MovingResponse], error)
+	// Reviewed is how much of a vault was answered on each day it was reviewed,
+	// and how many days up to now were reviewed without a gap.
+	Reviewed(context.Context, *connect.Request[v1.ReviewedRequest]) (*connect.Response[v1.ReviewedResponse], error)
 }
 
 // NewFlashcardsServiceClient constructs a client for the numen.v1.FlashcardsService service. By
@@ -127,6 +133,12 @@ func NewFlashcardsServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(flashcardsServiceMethods.ByName("Moving")),
 			connect.WithClientOptions(opts...),
 		),
+		reviewed: connect.NewClient[v1.ReviewedRequest, v1.ReviewedResponse](
+			httpClient,
+			baseURL+FlashcardsServiceReviewedProcedure,
+			connect.WithSchema(flashcardsServiceMethods.ByName("Reviewed")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -137,6 +149,7 @@ type flashcardsServiceClient struct {
 	answer   *connect.Client[v1.AnswerRequest, v1.AnswerResponse]
 	takeBack *connect.Client[v1.TakeBackRequest, v1.TakeBackResponse]
 	moving   *connect.Client[v1.MovingRequest, v1.MovingResponse]
+	reviewed *connect.Client[v1.ReviewedRequest, v1.ReviewedResponse]
 }
 
 // Owing calls numen.v1.FlashcardsService.Owing.
@@ -162,6 +175,11 @@ func (c *flashcardsServiceClient) TakeBack(ctx context.Context, req *connect.Req
 // Moving calls numen.v1.FlashcardsService.Moving.
 func (c *flashcardsServiceClient) Moving(ctx context.Context, req *connect.Request[v1.MovingRequest]) (*connect.ServerStreamForClient[v1.MovingResponse], error) {
 	return c.moving.CallServerStream(ctx, req)
+}
+
+// Reviewed calls numen.v1.FlashcardsService.Reviewed.
+func (c *flashcardsServiceClient) Reviewed(ctx context.Context, req *connect.Request[v1.ReviewedRequest]) (*connect.Response[v1.ReviewedResponse], error) {
+	return c.reviewed.CallUnary(ctx, req)
 }
 
 // FlashcardsServiceHandler is an implementation of the numen.v1.FlashcardsService service.
@@ -190,6 +208,9 @@ type FlashcardsServiceHandler interface {
 	// listens. Which files moved is not carried: what this application shows is
 	// counts, and they are asked for again whatever changed.
 	Moving(context.Context, *connect.Request[v1.MovingRequest], *connect.ServerStream[v1.MovingResponse]) error
+	// Reviewed is how much of a vault was answered on each day it was reviewed,
+	// and how many days up to now were reviewed without a gap.
+	Reviewed(context.Context, *connect.Request[v1.ReviewedRequest]) (*connect.Response[v1.ReviewedResponse], error)
 }
 
 // NewFlashcardsServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -229,6 +250,12 @@ func NewFlashcardsServiceHandler(svc FlashcardsServiceHandler, opts ...connect.H
 		connect.WithSchema(flashcardsServiceMethods.ByName("Moving")),
 		connect.WithHandlerOptions(opts...),
 	)
+	flashcardsServiceReviewedHandler := connect.NewUnaryHandler(
+		FlashcardsServiceReviewedProcedure,
+		svc.Reviewed,
+		connect.WithSchema(flashcardsServiceMethods.ByName("Reviewed")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.FlashcardsService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case FlashcardsServiceOwingProcedure:
@@ -241,6 +268,8 @@ func NewFlashcardsServiceHandler(svc FlashcardsServiceHandler, opts ...connect.H
 			flashcardsServiceTakeBackHandler.ServeHTTP(w, r)
 		case FlashcardsServiceMovingProcedure:
 			flashcardsServiceMovingHandler.ServeHTTP(w, r)
+		case FlashcardsServiceReviewedProcedure:
+			flashcardsServiceReviewedHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -268,4 +297,8 @@ func (UnimplementedFlashcardsServiceHandler) TakeBack(context.Context, *connect.
 
 func (UnimplementedFlashcardsServiceHandler) Moving(context.Context, *connect.Request[v1.MovingRequest], *connect.ServerStream[v1.MovingResponse]) error {
 	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.Moving is not implemented"))
+}
+
+func (UnimplementedFlashcardsServiceHandler) Reviewed(context.Context, *connect.Request[v1.ReviewedRequest]) (*connect.Response[v1.ReviewedResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.Reviewed is not implemented"))
 }
