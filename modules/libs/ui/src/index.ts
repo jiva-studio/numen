@@ -25,6 +25,10 @@ export { Button, buttonVariants } from './components/ui/button'
 export type { ButtonVariants } from './components/ui/button'
 
 export { default as Owed } from './cards/Owed.vue'
+/** What a person did on each day, as a grid of weeks. */
+export { default as Heatmap } from './heatmap/Heatmap.vue'
+export { days as heatmapDays, fits as heatmapFits, weighs as heatmapWeighs } from './heatmap/heatmap'
+export type { Day as HeatmapDay, Room as HeatmapRoom } from './heatmap/heatmap'
 export { default as Welcome } from './welcome/Welcome.vue'
 export { default as Mark } from './welcome/Mark.vue'
 export type { Held, Offer, Way } from './welcome/welcome'

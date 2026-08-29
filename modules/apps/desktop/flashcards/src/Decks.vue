@@ -7,10 +7,17 @@
  */
 import { computed } from 'vue'
 import { Button, Owed } from '@numen/ui'
+import Done from './Done.vue'
 import { deckName } from './core'
 import type { Owing } from './core'
 
-const props = defineProps<{ vault: Owing }>()
+const props = defineProps<{
+  vault: Owing
+  /** How many cards were answered on each day, by the day it was. */
+  days: ReadonlyMap<string, number>
+  /** How many days up to now were reviewed without a gap. */
+  streak: number
+}>()
 
 defineEmits<{
   (event: 'start', deck: string): void
@@ -24,6 +31,8 @@ const owed = computed(() => props.vault.due + props.vault.new)
 <template>
   <section class="decks">
     <h1 class="decks__title">{{ vault.name }}</h1>
+
+    <Done :days="days" :streak="streak" />
 
     <p v-if="!vault.decks.length" class="decks__saying">This vault holds no deck.</p>
 
