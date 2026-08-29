@@ -104,7 +104,7 @@ A card takes ordinary links, in the frontmatter of no file — the wikilink unde
 
 When a card is next due, how far apart its intervals have grown, and how it has been answered are not written into the deck.
 
-A schedule is computed from the history of answers, on this machine, deterministically and for free. That makes it a cache (ADR-0015), and a cache lives outside the vault. The deck holds what a person wrote and nothing a machine worked out.
+A schedule is computed from the history of answers, deterministically and for free. That makes it a cache (ADR-0015), and it is kept with the application. The answers themselves are the vault's, in its service folder ([ADR-0031](0031-an-answer-is-an-artifact-a-schedule-is-a-cache.md)). The deck holds what a person wrote and nothing a machine worked out.
 
 ### A field renamed in a stencil is renamed in every card it cuts
 
@@ -138,7 +138,7 @@ A card has no identifier of its own. It is named by the note the deck is and the
 - Two cards whose first field holds the same value are two cards of one name.
 - Renaming a card's heading makes it a different card. Whatever was attached to the old name is attached to nothing, and that includes its schedule. A durable identity for a card is a decision the review makes when it has a reason to; until then a rename costs a card's history.
 - Two files must agree for a card to be drawn, and a deck whose stencil was deleted holds cards that cannot be laid out. The values are still there and still readable.
-- Writing the schedule outside the vault means it does not travel when a person copies a deck to another machine, and a vault moved without its index is a vault whose cards are all new again.
+- A deck copied to another machine arrives with the answers given to its cards, because those are kept beside it in the vault's service folder. What the machine works out from them it works out again ([ADR-0031](0031-an-answer-is-an-artifact-a-schedule-is-a-cache.md)).
 
 ## Alternatives considered
 
