@@ -248,6 +248,24 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
         <span class="review__face">{{ card.face }}</span>
         <span v-if="!card.seen" class="review__new">new</span>
         <span class="review__left">{{ asked.length - at }} left</span>
+
+        <!-- What a person does beside answering, each one mark. They stand at
+             the end of the line that says where the card is from. -->
+        <Button variant="ghost" size="icon-small" title="Open in the editor" @click="edit">
+          <SquarePen />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-small"
+          title="Take the last answer back"
+          :disabled="!answers.length"
+          @click="takeBack"
+        >
+          <Undo2 />
+        </Button>
+        <Button variant="ghost" size="icon-small" title="Leave" @click="leave">
+          <X />
+        </Button>
       </header>
 
       <Card :front="card.front" :back="card.back" :shown="shown" @show="show" />
@@ -275,25 +293,6 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
         </Button>
       </footer>
 
-      <!-- What a person does beside answering. Each is one mark, because the
-           row under the answers is not where words belong. -->
-      <nav class="review__aside">
-        <Button variant="ghost" size="icon-small" title="Leave" @click="leave">
-          <X />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon-small"
-          title="Take the last answer back"
-          :disabled="!answers.length"
-          @click="takeBack"
-        >
-          <Undo2 />
-        </Button>
-        <Button variant="ghost" size="icon-small" title="Open in the editor" @click="edit">
-          <SquarePen />
-        </Button>
-      </nav>
     </section>
   </main>
 
@@ -319,13 +318,14 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
 }
 
 /* Where the card stands, said once and quietly: a person answering is reading
-   the card, not the line above it. */
+   the card, not the line above it. Text and marks are centred against each
+   other, because a button has no baseline to put a word on. */
 .review__where {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--numen-inset);
   color: var(--numen-edge-label);
-  font-size: var(--numen-font-size);
+  font-size: var(--numen-edge-label-size);
 }
 
 .review__deck {
@@ -365,11 +365,6 @@ onUnmounted(() => window.removeEventListener('keydown', keyed))
   color: var(--numen-alarm);
 }
 
-.review__aside {
-  display: flex;
-  flex: none;
-  gap: var(--numen-inset);
-}
 
 .review__over {
   display: flex;
