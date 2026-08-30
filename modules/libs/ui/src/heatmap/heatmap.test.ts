@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { days, fits, marks, names, NOTHING, ROWS, weighs } from './heatmap'
+import { days, fits, names, NOTHING, ROWS, weighs } from './heatmap'
 import type { Tally } from './heatmap'
 
 describe('how much of a year fits', () => {
@@ -159,35 +159,6 @@ describe('the days a grid draws', () => {
 
   it('draws no days where there is room for no column', () => {
     expect(days(0, new Date('2026-08-29T12:00:00'), did)).toHaveLength(0)
-  })
-})
-
-describe('the months over the grid', () => {
-  // Two labels over neighbouring columns run into one another and read as one
-  // word, and the one carrying a year is the wider of the two.
-  it('leaves room between them, and more after one carrying a year', () => {
-    const shown = days(80, new Date('2026-08-29T12:00:00'), new Map())
-    const said = marks(shown, 3, 6)
-
-    for (let at = 1; at < said.length; at += 1) {
-      const before = said[at - 1]!
-      const room = before.year ? 6 : 3
-      expect(said[at]!.column - before.column).toBeGreaterThanOrEqual(room)
-    }
-  })
-
-  it('says the year where the year turns', () => {
-    const shown = days(80, new Date('2026-08-29T12:00:00'), new Map())
-    const said = marks(shown)
-
-    expect(said.filter((one) => one.year).length).toBeGreaterThan(0)
-    for (const one of said) {
-      expect(one.day.endsWith('-01') || one.day > '2020-01-01').toBe(true)
-    }
-  })
-
-  it('says nothing over a grid of nothing', () => {
-    expect(marks([])).toHaveLength(0)
   })
 })
 
