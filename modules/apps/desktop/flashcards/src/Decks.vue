@@ -6,10 +6,11 @@
  * top as one button. A deck below it is for the person who came for that deck.
  */
 import { computed } from 'vue'
-import { Button, Owed } from '@numen/ui'
+import { Button, KeyCap, Owed } from '@numen/ui'
 import type { HeatmapTally } from '@numen/ui'
 import Progress from './Progress.vue'
 import { deckName } from './core'
+import { letterOf } from './keying'
 import type { Owing } from './core'
 
 const props = defineProps<{
@@ -38,13 +39,20 @@ const owed = computed(() => props.vault.due + props.vault.new)
     <p v-if="!vault.decks.length" class="decks__saying">This vault holds no deck.</p>
 
     <ul v-else class="decks__list">
-      <li v-for="deck in vault.decks" :key="deck.deck">
+      <li v-for="(deck, at) in vault.decks" :key="deck.deck">
         <Button
           variant="outline"
           class="decks__deck"
           :disabled="deck.due + deck.new === 0"
           @click="$emit('start', deck.deck)"
         >
+          <!-- The letter it is picked by, where the alphabet reaches it: a
+               person reads down the list and presses what they see. -->
+          <KeyCap
+            v-if="letterOf(at)"
+            class="decks__key"
+            :keys="{ marks: [], letter: letterOf(at) }"
+          />
           <span class="decks__name">{{ deckName(deck.deck) }}</span>
           <Owed :waiting="deck.due + deck.new" />
         </Button>
@@ -56,6 +64,7 @@ const owed = computed(() => props.vault.due + props.vault.new)
     <footer class="decks__deeds">
       <Button variant="ghost" @click="$emit('back')">Another vault</Button>
       <Button class="decks__all" :disabled="owed === 0" @click="$emit('start', '')">
+        <KeyCap :keys="{ marks: [], letter: 'enter' }" />
         Review
         <Owed :waiting="owed" bare over />
       </Button>
