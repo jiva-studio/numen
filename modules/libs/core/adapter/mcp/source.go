@@ -28,6 +28,11 @@ type Document struct {
 // An agent asked to read a document finds out first which have been read
 // already, so the listing is what makes the reading usable.
 func addSourceTools(server *sdk.Server, core Core) {
+	addSourceReadingTools(server, core)
+	addSourceWritingTools(server, core)
+}
+
+func addSourceReadingTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "source_list",
 		Title: "List the documents a vault holds",
@@ -124,7 +129,9 @@ func addSourceTools(server *sdk.Server, core Core) {
 			Whole:    res.Whole,
 		}, nil
 	})
+}
 
+func addSourceWritingTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "source_recognise",
 		Title: "Read a scanned document",

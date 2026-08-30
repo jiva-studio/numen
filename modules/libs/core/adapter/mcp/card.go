@@ -53,6 +53,11 @@ type Fault struct {
 }
 
 func addCardTools(server *sdk.Server, core Core) {
+	addCardReadingTools(server, core)
+	addCardWritingTools(server, core)
+}
+
+func addCardReadingTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "card_stencils",
 		Title: "List the stencils a vault holds",
@@ -163,7 +168,9 @@ func addCardTools(server *sdk.Server, core Core) {
 		}
 		return nil, res, nil
 	})
+}
 
+func addCardWritingTools(server *sdk.Server, core Core) {
 	// One card per call. A call is written out in full before it is made and
 	// this one carries what a person wrote, so each is filed as it is finished.
 	sdk.AddTool(server, &sdk.Tool{

@@ -82,7 +82,16 @@ var doing = map[string]Words{
 //
 // What the window says about a call is what an agent was told about it.
 func Vocabulary(ctx context.Context, core Core) (map[string]Words, error) {
-	server := New(core)
+	return vocabulary(ctx, New(core))
+}
+
+// ReadingVocabulary is the same, for a window served the tools that read. A
+// window is told about the tools it serves and no others.
+func ReadingVocabulary(ctx context.Context, core Core) (map[string]Words, error) {
+	return vocabulary(ctx, NewReading(core))
+}
+
+func vocabulary(ctx context.Context, server *sdk.Server) (map[string]Words, error) {
 	here, there := sdk.NewInMemoryTransports()
 	if _, err := server.Connect(ctx, here, nil); err != nil {
 		return nil, err

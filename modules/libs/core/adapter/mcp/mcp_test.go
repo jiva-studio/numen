@@ -35,7 +35,12 @@ func connected(t *testing.T, notes map[string]string) (*sdk.ClientSession, domai
 // connectedTo is the same session over tools a test has adjusted.
 func connectedTo(t *testing.T, core mcp.Core) *sdk.ClientSession {
 	t.Helper()
-	server := mcp.New(core)
+	return sessionOf(t, mcp.New(core))
+}
+
+// sessionOf is a session over one server, through the protocol.
+func sessionOf(t *testing.T, server *sdk.Server) *sdk.ClientSession {
+	t.Helper()
 	here, there := sdk.NewInMemoryTransports()
 	if _, err := server.Connect(t.Context(), here, nil); err != nil {
 		t.Fatal(err)
@@ -175,26 +180,51 @@ func TestHowABookIsAskedIsInTheInstructions(t *testing.T) {
 
 func TestTheToolsAreNamedForWhatTheyWorkOn(t *testing.T) {
 	session, _ := connected(t, nil)
+	exactly(t, serves(t, session), []string{
+		"note_search", "note_get", "note_read", "note_neighbourhood",
+		"note_create", "note_write", "note_edit", "note_rename", "note_move", "note_remove",
+		"link_add", "link_update", "link_remove", "link_list",
+		"card_stencils", "card_read", "card_add", "card_edit", "card_remove",
+		"card_section_add", "card_deck_create", "card_stencil_create", "card_rename_field",
+		"vault_get", "vault_problems", "vault_named",
+		"source_list", "source_read", "source_recognise",
+	})
+}
+
+// serves is every tool a session is offered, and each of them says what it is
+// for.
+func serves(t *testing.T, session *sdk.ClientSession) []string {
+	t.Helper()
 	tools, err := session.ListTools(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	named := map[string]bool{}
+	named := make([]string, 0, len(tools.Tools))
 	for _, tool := range tools.Tools {
-		named[tool.Name] = true
+		named = append(named, tool.Name)
 		if tool.Description == "" {
 			t.Errorf("%s has nothing to tell a model about when to use it", tool.Name)
 		}
 	}
-	for _, want := range []string{
-		"note_search", "note_get", "note_read", "note_neighbourhood",
-		"note_create", "note_write", "note_rename", "note_move", "note_remove",
-		"link_add", "link_update", "link_remove", "link_list",
-		"vault_get", "vault_problems", "vault_named",
-	} {
-		if !named[want] {
-			t.Errorf("%s is missing", want)
+	return named
+}
+
+// exactly holds a server to the tools it is for, naming what is missing and
+// what is served beside them.
+func exactly(t *testing.T, served, want []string) {
+	t.Helper()
+	beside := make(map[string]bool, len(served))
+	for _, name := range served {
+		beside[name] = true
+	}
+	for _, name := range want {
+		if !beside[name] {
+			t.Errorf("%s is missing", name)
 		}
+		delete(beside, name)
+	}
+	for name := range beside {
+		t.Errorf("%s is served and is none of the tools this server is for", name)
 	}
 }
 

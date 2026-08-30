@@ -31,7 +31,15 @@ type Known struct {
 // Each tool is added where what it works through is there. A build that holds
 // no list, or that cannot change one, serves what is left.
 func addVaultsTools(server *sdk.Server, core Core) {
+	addVaultsReadingTools(server, core)
+	addVaultsWritingTools(server, core)
+}
+
+func addVaultsReadingTools(server *sdk.Server, core Core) {
 	addVaultList(server, core)
+}
+
+func addVaultsWritingTools(server *sdk.Server, core Core) {
 	addVaultAdd(server, core)
 	addVaultRename(server, core)
 	addVaultForget(server, core)

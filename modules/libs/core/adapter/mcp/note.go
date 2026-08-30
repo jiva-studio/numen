@@ -58,6 +58,11 @@ type Passage struct {
 }
 
 func addNoteTools(server *sdk.Server, core Core) {
+	addNoteReadingTools(server, core)
+	addNoteWritingTools(server, core)
+}
+
+func addNoteReadingTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "note_search",
 		Title: "Search the vault",
@@ -227,7 +232,9 @@ func addNoteTools(server *sdk.Server, core Core) {
 		}
 		return nil, res, nil
 	})
+}
 
+func addNoteWritingTools(server *sdk.Server, core Core) {
 	// One note per call.
 	//
 	// A call is written out in full before it is made, and this one carries the
