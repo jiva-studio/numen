@@ -8,9 +8,10 @@
 import { Button, KeyCap } from '@numen/ui'
 
 import Beside from './Beside.vue'
+import type { Where } from './Beside.vue'
 import Card from './Card.vue'
 import { ahead, called, deckName, said } from './core'
-import { ASKS } from './keying'
+import { ASKS, READS } from './keying'
 import type { Asked, Said } from './core'
 
 defineProps<{
@@ -21,8 +22,8 @@ defineProps<{
   left: number
   /** Whether there is an answer to take back. */
   takenBack: boolean
-  /** Whether the panel the card is asked about in is up. */
-  asking: boolean
+  /** Which of the card and the panels either side of it is in the window. */
+  at: Where
 }>()
 
 defineEmits<{
@@ -31,7 +32,9 @@ defineEmits<{
   (event: 'takeBack'): void
   (event: 'leave'): void
   (event: 'ask'): void
+  (event: 'read', named: string): void
   (event: 'shut'): void
+  (event: 'update:at', at: Where): void
 }>()
 </script>
 
@@ -51,6 +54,12 @@ defineEmits<{
         <KeyCap :keys="{ marks: [], letter: 'u' }" />
         Undo
       </Button>
+      <!-- The two panels stand in the order they stand in the strip: what is
+           read is to the left of the card, and what is asked to the right. -->
+      <Button variant="ghost" size="small" @click="$emit('read', '')">
+        <KeyCap :keys="{ marks: [], letter: READS }" />
+        Read
+      </Button>
       <Button variant="ghost" size="small" @click="$emit('ask')">
         <KeyCap :keys="{ marks: [], letter: ASKS }" />
         Ask
@@ -63,12 +72,16 @@ defineEmits<{
 
     <!-- The card is what changes under a person as they work, so a reader that
          is not looking at the screen is told when the answer appears. -->
-    <Beside
-      :open="asking"
-      @update:open="(open: boolean) => (open ? $emit('ask') : $emit('shut'))"
-    >
+    <Beside :at="at" @update:at="(where: Where) => $emit('update:at', where)">
+      <template #before><slot name="reading" /></template>
       <div class="session__card" aria-live="polite">
-        <Card :front="card.front" :back="card.back" :shown="shown" @show="$emit('show')" />
+        <Card
+          :front="card.front"
+          :back="card.back"
+          :shown="shown"
+          @show="$emit('show')"
+          @read="(named: string) => $emit('read', named)"
+        />
       </div>
       <template #other><slot name="panel" /></template>
     </Beside>

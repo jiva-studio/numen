@@ -40,12 +40,14 @@ type API struct {
 	Registry port.VaultRegistry
 	// What this window does, one scenario to a field: what a vault owes, what to
 	// ask next, where the answers leave a card, the run they are appended to,
-	// and what each day of them came to.
+	// what each day of them came to, and what the deck being sat to is joined
+	// to.
 	Owed      flashcards.Owed
 	Session   flashcards.Session
 	Schedules flashcards.Schedules
 	Log       flashcards.Log
 	Counted   flashcards.Counted
+	Joined    flashcards.Around
 	// Themes are the stylesheets the window may be dressed in, and the sizes it
 	// is drawn and set at. They belong to the installation and not to a vault.
 	Themes numenv1connect.ThemeServiceHandler

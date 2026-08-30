@@ -25,6 +25,13 @@ export interface Talking {
   readonly card: () => Asked | null
   /** Why nothing can be asked here, empty while something can. */
   readonly unreachable: () => string
+  /** Whether the panel is what the window is showing. */
+  readonly open: () => boolean
+  /**
+   * The panel asked for, or put away. The window can only be showing one thing,
+   * so it is the window that holds which, and every panel moves that one thing.
+   */
+  readonly shows: (open: boolean) => void
   /** Where the window says what a person has to know. */
   readonly says: (said: string) => void
   /** When the words that have arrived are put on the screen. */
@@ -32,8 +39,8 @@ export interface Talking {
 }
 
 export function asking(deps: Talking) {
-  /** Whether the panel is what the window is showing. */
-  const open = ref(false)
+  /** Whether the panel is what the window is showing, which the window holds. */
+  const open = computed(() => deps.open())
 
   const written = ref('')
 
@@ -70,12 +77,12 @@ export function asking(deps: Talking) {
       return
     }
     talking(card)
-    open.value = true
+    deps.shows(true)
   }
 
   /** The panel put away, with what was said in it kept. */
   const shuts = () => {
-    open.value = false
+    deps.shows(false)
   }
 
   const writing = (text: string) => {
@@ -104,7 +111,7 @@ export function asking(deps: Talking) {
     talk.value = null
     about.value = null
     written.value = ''
-    open.value = false
+    deps.shows(false)
   }
 
   return {

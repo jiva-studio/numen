@@ -1,0 +1,139 @@
+import { describe, expect, it } from 'vitest'
+import { ref } from 'vue'
+
+import { reading } from './reading'
+import type { Around, Joined } from './reading/core'
+
+/** One note as the window hands it over. */
+const joined = (more: Partial<Joined> = {}): Joined => ({
+  written: 'Leaf mould',
+  path: 'notes/Leaf mould.md',
+  title: 'Leaf mould',
+  body: 'Compost made of fallen leaves alone.',
+  label: '',
+  points: true,
+  ambiguous: false,
+  refusal: '',
+  ...more,
+})
+
+/** The panel, with the sitting around it standing in for the window. */
+const panel = (more: { deck?: string; refuses?: boolean } = {}) => {
+  const asked: { vault: string; deck: string }[] = []
+  const open = ref(false)
+  const deck = ref(more.deck === undefined ? 'decks/Words.md' : more.deck)
+  const said: string[] = []
+  const held = reading({
+    open: () => open.value,
+    shows: (up) => {
+      open.value = up
+    },
+    vault: () => 'one',
+    deck: () => deck.value,
+    around: async (vault, of) => {
+      asked.push({ vault, deck: of })
+      if (more.refuses) throw new Error('out of reach')
+      return { notes: [joined({ written: of })], unread: 2 } satisfies Around
+    },
+    says: (one) => said.push(one),
+  })
+  return { held, asked, said, open, deck }
+}
+
+describe('the panel the deck is read in', () => {
+  it('does not come in between cards', async () => {
+    const { held, asked, open } = panel({ deck: '' })
+    await held.opens()
+    expect(open.value).toBe(false)
+    expect(asked).toEqual([])
+  })
+
+  it('comes in on the deck the card stands in, turned or not', async () => {
+    const { held, open } = panel()
+    await held.opens()
+    expect(open.value).toBe(true)
+    expect(held.notes.value).toHaveLength(1)
+    expect(held.unread.value).toBe(2)
+  })
+
+  // A gesture that does nothing is a gesture a person repeats.
+  it('says why it could not be read, and holds nothing', async () => {
+    const { held, said, open } = panel({ refuses: true })
+    await held.opens()
+    expect(held.notes.value).toEqual([])
+    expect(said).toHaveLength(1)
+    expect(open.value).toBe(true)
+  })
+
+  it('is put away and keeps what was read', async () => {
+    const { held, asked, open } = panel()
+    await held.opens()
+    held.shuts()
+    await held.opens()
+    expect(open.value).toBe(true)
+    expect(asked).toHaveLength(1)
+  })
+})
+
+describe('what is read belongs to the deck', () => {
+  // The links are the file's, and the file is the deck, so the cards of one
+  // deck are all read against the same notes.
+  it('asks once for a deck, however many of its cards go by', async () => {
+    const { held, asked } = panel()
+    await held.opens()
+    held.shuts()
+    await held.opens()
+    expect(asked).toEqual([{ vault: 'one', deck: 'decks/Words.md' }])
+  })
+
+  it('asks again when the card comes from another deck', async () => {
+    const { held, asked, deck } = panel()
+    await held.opens()
+    deck.value = 'decks/Trees.md'
+    await held.opens()
+    expect(asked.map((one) => one.deck)).toEqual(['decks/Words.md', 'decks/Trees.md'])
+    expect(held.notes.value[0]?.written).toBe('decks/Trees.md')
+  })
+
+  it('holds nothing once the sitting is over', async () => {
+    const { held, open } = panel()
+    await held.opens()
+    held.ends()
+    expect(held.notes.value).toEqual([])
+    expect(held.unread.value).toBe(0)
+    expect(open.value).toBe(false)
+  })
+
+  it('asks again for a deck the sitting has been away from', async () => {
+    const { held, asked } = panel()
+    await held.opens()
+    held.ends()
+    await held.opens()
+    expect(asked).toHaveLength(2)
+  })
+})
+
+describe('a link pressed in the card', () => {
+  it('opens the reading on the note it names', async () => {
+    const { held } = panel()
+    await held.opens('notes/Leaf mould.md')
+    expect(held.at.value).toBe('notes/Leaf mould.md')
+  })
+
+  // What was sought has been scrolled to, and the next card is not scrolled to
+  // the same note again.
+  it('is not sought a second time once it has been read to', async () => {
+    const { held } = panel()
+    await held.opens('notes/Leaf mould.md')
+    held.read()
+    expect(held.at.value).toBe('')
+  })
+
+  it('opens on nothing in particular when the way in is the key', async () => {
+    const { held } = panel()
+    await held.opens('notes/Leaf mould.md')
+    held.shuts()
+    await held.opens()
+    expect(held.at.value).toBe('')
+  })
+})

@@ -18,8 +18,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
 // deck is one vault of one stencil and one deck, whose single card stands
@@ -92,7 +95,12 @@ func windowed(t *testing.T, vaults ...map[string]string) (*API, []domain.Vault) 
 		Schedules: running.Schedules,
 		Log:       running.Log,
 		Counted:   running.Counted,
-		Now:       time.Now,
+		Joined: flashcards.Around{
+			Linked: note.ShowLinks{Links: db.NoteQueries()},
+			Notes:  db.NoteQueries(),
+			Reads:  note.Read{Readers: filesystem.Readers{}},
+		},
+		Now: time.Now,
 	}, held
 }
 
@@ -383,6 +391,21 @@ func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
 		handler.ServeHTTP(out, r)
 		if said := out.Header().Get("Content-Security-Policy"); said != held {
 			t.Errorf("%q is held to %q", path, said)
+		}
+	}
+
+	// The service's own routes are the service's, and reading around a deck is
+	// one of them: a procedure that fell through to the files would answer a
+	// page where the window expects an answer.
+	for _, procedure := range []string{
+		numenv1connect.FlashcardsServiceAroundProcedure,
+		numenv1connect.FlashcardsServiceOwingProcedure,
+	} {
+		r := httptest.NewRequest(http.MethodGet, procedure, nil)
+		out := httptest.NewRecorder()
+		handler.ServeHTTP(out, r)
+		if out.Code == http.StatusNotFound {
+			t.Errorf("%q is not served", procedure)
 		}
 	}
 }
