@@ -7,10 +7,9 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
-	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/claudecode"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
 	format "github.com/jiva-studio/numen/modules/libs/core/cards"
@@ -26,12 +25,6 @@ import (
 // what serves them — is linked in at all.
 
 const defaultAgentAddr = mcp.DefaultAddr
-
-// agentBound is how long the agents' transport has to be cut off. A session an
-// agent left open holds its connection until it is closed under it, and this is
-// how long that costs. The calls already running are waited for afterwards,
-// without a bound.
-const agentBound = 2 * time.Second
 
 // unnamed is what the panel is told where the settings name no agent.
 const unnamed = "no agent is named in the settings"
@@ -54,49 +47,41 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 		return nil, err
 	}
 
-	secret, err := token(cfg)
-	if err != nil {
-		return nil, err
-	}
-	core := agentCore(cfg, opened, root, out)
-	endpoint, err := mcp.ServeHTTP(ctx, opts.addr, secret, core,
-		func(err error) { fmt.Fprintln(out, "agents:", err) })
-	if err != nil {
-		return nil, err
-	}
-	forget, err := announce(cfg, endpoint.URL, secret)
-	if err != nil {
-		endpoint.Close(context.Background())
-		return nil, err
+	// An address cleared on the command line is where an agent looks by
+	// default: this is the window an agent is configured against.
+	addr := opts.addr
+	if addr == "" {
+		addr = mcp.DefaultAddr
 	}
 
-	fmt.Fprintf(out, "agents: %s\n", endpoint.URL)
-	if !mcp.Local(opts.addr) {
-		fmt.Fprintf(out, "agents: %s is reachable from the network, not only from this machine\n", opts.addr)
+	served, err := agents.Serve(ctx, agents.Options{
+		Config:     cfg,
+		Core:       agentCore(cfg, opened, root, out),
+		Addr:       addr,
+		Announcing: true,
+		Root:       root,
+		Drafting:   drafting(cfg, opened),
+		Out:        out,
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	// The panel answers with the agent the settings name. An installation
 	// naming none is served the tools alone, and the panel says so.
-	if cfg.Agent.Use != agent.UseClaude {
+	if served.Agent == nil {
 		opened.API.Unreachable.Store(unnamed)
-		return func() error {
-			forget()
-			shutdown, cancel := context.WithTimeout(context.Background(), agentBound)
-			defer cancel()
-			return endpoint.Close(shutdown)
-		}, nil
+	} else {
+		opened.API.Answers(served.Agent)
 	}
+	return served.Close, nil
+}
 
-	// What the window says about a call is what the tool declared about
-	// itself, asked for over the protocol an agent is answered by.
-	words, err := mcp.Vocabulary(ctx, core)
-	if err != nil {
-		fmt.Fprintln(out, "agents:", err)
-	}
-	// What the agent is about to change reaches the window before the change
-	// does, and where a stretch stands is the vault's to say.
+// drafting is how a change the agent is making reaches the window before it
+// lands. Where a stretch stands is the vault's to say.
+func drafting(cfg container.Config, opened *webui.Opened) claudecode.Drafting {
 	reading := note.Read{Readers: cfg.VaultReaders()}
-	drafting := claudecode.Drafting{
+	return claudecode.Drafting{
 		Tell: func(ctx context.Context, said domain.Editing) {
 			_ = opened.API.Viewing().Editing(ctx, said)
 		},
@@ -112,60 +97,6 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 			return markdown.Counted(contents.Body, at[0].From),
 				markdown.Counted(contents.Body, at[0].To), true
 		},
-	}
-
-	started := claude(cfg, root, endpoint.URL, secret, words, drafting, out)
-	opened.API.Answers(started)
-
-	return func() error {
-		forget()
-		// The agents this window started go first: each is in a process group
-		// of its own, so nothing else reaches them, and one still answering
-		// would go on writing to the vault after the window is gone.
-		stopped := started.Close()
-		shutdown, cancel := context.WithTimeout(context.Background(), agentBound)
-		defer cancel()
-		if err := endpoint.Close(shutdown); err != nil {
-			return err
-		}
-		return stopped
-	}, nil
-}
-
-// claude is what the window asks on the person's behalf.
-//
-// It reaches the same tools over the same port as an agent somebody configured
-// themselves, and is given all of them: what it changes appears in the window
-// as it happens.
-func claude(
-	cfg container.Config,
-	root, url, secret string,
-	served map[string]mcp.Words,
-	drafting claudecode.Drafting,
-	out io.Writer,
-) *claudecode.Agent {
-	words := make(map[string]claudecode.Words, len(served))
-	for name, said := range served {
-		words[claudecode.Tool(name)] = claudecode.Words{
-			Title:   said.Title,
-			About:   said.About,
-			Inside:  said.Inside,
-			Kind:    said.Kind,
-			Stood:   said.Stood,
-			Becomes: said.Becomes,
-		}
-	}
-	return &claudecode.Agent{
-		Command:             cfg.Agent.Claude.Command,
-		Root:                root,
-		Tools:               claudecode.Endpoint{URL: url, Token: secret},
-		Allowed:             []string{claudecode.Tool("*")},
-		Words:               words,
-		Drafting:            drafting,
-		Model:               cfg.Agent.Claude.Model,
-		Turns:               cfg.Agent.Claude.MaxSteps,
-		ReadsHooksAndSkills: cfg.Agent.Claude.ReadsHooksAndSkills,
-		Trouble:             func(err error) { fmt.Fprintln(out, "agent:", err) },
 	}
 }
 

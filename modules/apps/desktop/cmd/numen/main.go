@@ -13,13 +13,13 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io"
 	"os"
 	"sync"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/version"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
@@ -29,7 +29,7 @@ import (
 
 func main() {
 	var cfg container.Config
-	var agents agentOptions
+	var letting agentOptions
 	var said sizes
 	var vault string
 	var telling bool
@@ -37,9 +37,9 @@ func main() {
 	flag.StringVar(&cfg.RegistryPath, "registry", "", "path to the vault list")
 	flag.StringVar(&vault, "vault", "",
 		"the vault to open: a name, a path or an identity; the one opened last by default")
-	flag.StringVar(&agents.addr, "mcp-addr", defaultAgentAddr,
+	flag.StringVar(&letting.addr, "mcp-addr", defaultAgentAddr,
 		"where agents reach this vault; anything but a loopback address opens it to the network")
-	flag.BoolVar(&agents.off, "no-mcp", false, "do not let agents reach this vault")
+	flag.BoolVar(&letting.off, "no-mcp", false, "do not let agents reach this vault")
 	flag.Float64Var(&said.drawn, "interface-scale", 0,
 		"how large the interface is drawn, 1 being as designed; this launch alone")
 	flag.Float64Var(&said.set, "text-scale", 0,
@@ -54,7 +54,7 @@ func main() {
 		return
 	}
 
-	if err := run(cfg, agents, vault, said); err != nil {
+	if err := run(cfg, letting, vault, said); err != nil {
 		fmt.Fprintln(os.Stderr, "numen:", err)
 		refuse(cfg, err)
 		os.Exit(1)
@@ -79,7 +79,7 @@ func (s sizes) check() error {
 	return nil
 }
 
-func run(cfg container.Config, agents agentOptions, vault string, said sizes) error {
+func run(cfg container.Config, letting agentOptions, vault string, said sizes) error {
 	if err := said.check(); err != nil {
 		return err
 	}
@@ -118,8 +118,16 @@ func run(cfg container.Config, agents agentOptions, vault string, said sizes) er
 
 	// The agents' endpoint on the vault in the window, let in once the window is
 	// built.
-	reachable := &reaching{ctx: ctx, cfg: cfg, opened: opened, opts: agents, out: os.Stdout}
-	defer reachable.off()
+	reachable := &agents.Swapping{
+		Serve: func() (func() error, error) {
+			return serveAgents(ctx, cfg, opened, letting, os.Stdout)
+		},
+		Standing:    opened.Showing,
+		Answers:     opened.API.Answers,
+		Unreachable: func(said string) { opened.API.Unreachable.Store(said) },
+		Trouble:     func(err error) { fmt.Fprintln(os.Stderr, "numen:", err) },
+	}
+	defer reachable.Off()
 
 	pages, err := webui.Pages()
 	if err != nil {
@@ -161,7 +169,7 @@ func run(cfg container.Config, agents agentOptions, vault string, said sizes) er
 	// vault they are working when their session opens, so the endpoint they
 	// reach it through is stopped and started again around the swap.
 	opened.API.Opens = func(ctx context.Context, v domain.Vault) error {
-		err := reachable.around(func() error { return opened.Show(ctx, v) })
+		err := reachable.Around(func() error { return opened.Show(ctx, v) })
 		window.SetTitle(titled(opened.Showing()))
 		return err
 	}
@@ -172,7 +180,7 @@ func run(cfg container.Config, agents agentOptions, vault string, said sizes) er
 	// An agent nobody can reach is a panel that says so, not a window that does
 	// not open. Everything else the window does is the vault, and the vault is
 	// here.
-	reachable.on()
+	reachable.On()
 
 	// A hook runs before the window is destroyed and on a thread of its own, so
 	// the page is still drawn and still answered while what it owes is written.
@@ -194,74 +202,6 @@ func titled(v domain.Vault) string {
 		return "numen"
 	}
 	return "numen — " + v.Name
-}
-
-// reaching is the agents' endpoint on the vault the window is showing.
-//
-// What an agent is told about the vault it is working is said once, when its
-// session opens, so a window that changes vault stops the endpoint and starts
-// it again.
-type reaching struct {
-	ctx    context.Context
-	cfg    container.Config
-	opened *webui.Opened
-	opts   agentOptions
-	out    io.Writer
-
-	// turn is one swap. It is held from the endpoint stopping to the endpoint
-	// being served again, so a second swap waits for the first.
-	turn sync.Mutex
-
-	mu   sync.Mutex
-	shut func() error
-}
-
-// around runs one swap with the tools taken away, and serves them again on the
-// vault the window then has.
-//
-// One swap holds this at a time, so the endpoint is started again by the swap
-// that stopped it and on the vault that swap ended on.
-func (r *reaching) around(swap func() error) error {
-	r.turn.Lock()
-	defer r.turn.Unlock()
-
-	r.off()
-	defer r.on()
-	return swap()
-}
-
-// on serves the tools against the vault in the window. A window standing on no
-// vault serves none.
-func (r *reaching) on() {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if r.shut != nil || r.opened.Showing().ID == "" {
-		return
-	}
-	r.opened.API.Unreachable.Store("")
-	shut, err := serveAgents(r.ctx, r.cfg, r.opened, r.opts, r.out)
-	if err != nil {
-		r.opened.API.Unreachable.Store(err.Error())
-		fmt.Fprintln(os.Stderr, "numen: no agent:", err)
-		return
-	}
-	r.shut = shut
-}
-
-// off stops the endpoint and the agents this window started.
-func (r *reaching) off() {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if r.shut == nil {
-		return
-	}
-	if err := r.shut(); err != nil {
-		fmt.Fprintln(os.Stderr, "numen: agents:", err)
-	}
-	r.shut = nil
-	r.opened.API.Answers(nil)
 }
 
 // closing is the window being asked to go, and answers with whether it may.

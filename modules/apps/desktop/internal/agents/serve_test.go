@@ -1,0 +1,202 @@
+//go:build !nomcp
+
+package agents
+
+import (
+	"io"
+	"net"
+	"net/url"
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
+	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
+
+// installed is an installation whose own state is this test's alone.
+func installed(t *testing.T) container.Config {
+	t.Helper()
+	return container.Config{
+		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
+	}
+}
+
+// vault is a Core answering about one vault and holding nothing.
+func vault(t *testing.T) mcp.Core {
+	t.Helper()
+	return mcp.Core{Showing: mcp.One(domain.Vault{ID: "one", Name: "one"}, t.TempDir())}
+}
+
+// authority is the host and port an endpoint is reached at.
+func authority(t *testing.T, endpoint string) string {
+	t.Helper()
+
+	said, err := url.Parse(endpoint)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return said.Host
+}
+
+// listens is whether anything takes a connection at this address.
+func listens(addr string) bool {
+	conn, err := net.DialTimeout("tcp", addr, time.Second)
+	if err != nil {
+		return false
+	}
+	conn.Close()
+	return true
+}
+
+// TestTheTokenIsMintedOnceAndKept. The line an agent is configured with is
+// written down, so it still names this installation the next time it is asked
+// for.
+func TestTheTokenIsMintedOnceAndKept(t *testing.T) {
+	cfg := installed(t)
+
+	minted, err := Token(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if minted == "" {
+		t.Fatal("nothing was minted")
+	}
+	again, err := Token(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if again != minted {
+		t.Errorf("the token was %q and is now %q", minted, again)
+	}
+}
+
+// TestATokenMintedForAWindowIsKeptNowhere. A window nobody configures an agent
+// against is reached for as long as it is open, and writes down nothing another
+// window would read.
+func TestATokenMintedForAWindowIsKeptNowhere(t *testing.T) {
+	cfg := installed(t)
+
+	minted, err := Mint()
+	if err != nil {
+		t.Fatal(err)
+	}
+	again, err := Mint()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if minted == "" || again == minted {
+		t.Errorf("the token was minted as %q and again as %q", minted, again)
+	}
+
+	left, err := os.ReadDir(filepath.Dir(cfg.RegistryPath))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range left {
+		t.Errorf("%s was written where the application keeps its own state", entry.Name())
+	}
+}
+
+// TestAnEphemeralPortIsNamedByWhatItBoundTo. A window served on a port the
+// machine picks hands back the port it was given, which is what an agent is
+// told to reach.
+func TestAnEphemeralPortIsNamedByWhatItBoundTo(t *testing.T) {
+	cfg := installed(t)
+	cfg.Agent = agent.Config{ServeTools: true}
+
+	served, err := Serve(t.Context(), Options{
+		Config: cfg, Core: vault(t), Token: "secret", Out: io.Discard,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = served.Close() })
+
+	at := authority(t, served.URL)
+	if _, port, _ := net.SplitHostPort(at); port == "0" || port == "" {
+		t.Fatalf("the endpoint is announced at %q", served.URL)
+	}
+	if !listens(at) {
+		t.Errorf("nothing answers at %q", served.URL)
+	}
+}
+
+// TestAWindowThatDoesNotAnnounceWritesNothing. The announcement names one
+// window's vault, and a second window rewriting it points a person's own agent
+// at whichever started last.
+func TestAWindowThatDoesNotAnnounceWritesNothing(t *testing.T) {
+	cfg := installed(t)
+	cfg.Agent = agent.Config{ServeTools: true}
+	state := filepath.Dir(cfg.RegistryPath)
+
+	served, err := Serve(t.Context(), Options{
+		Config: cfg, Core: vault(t), Token: "secret", Out: io.Discard,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = served.Close() })
+
+	left, err := os.ReadDir(state)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range left {
+		t.Errorf("%s was written where the application keeps its own state", entry.Name())
+	}
+}
+
+// TestTheAgentsGoBeforeTheEndpoint. An agent still answering goes on writing to
+// the vault, so it is stopped while the tools it writes through are still
+// there.
+func TestTheAgentsGoBeforeTheEndpoint(t *testing.T) {
+	cfg := installed(t)
+	cfg.Agent = agent.Defaults()
+	cfg.Agent.Claude.Command = []string{"/bin/sh", "-c", "exit 0"}
+
+	served, err := Serve(t.Context(), Options{
+		Config: cfg, Core: vault(t), Token: "secret", Root: t.TempDir(), Out: io.Discard,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if served.Agent == nil {
+		t.Fatal("the settings name an agent and none was started")
+	}
+
+	// A request left half-written holds the endpoint open, so the close is
+	// still in front of it while the agent is asked for work.
+	held, err := net.Dial("tcp", authority(t, served.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := held.Write([]byte("GET /mcp HTTP/1.1\r\nHost: numen\r\n")); err != nil {
+		t.Fatal(err)
+	}
+
+	shut := make(chan error, 1)
+	go func() { shut <- served.Close() }()
+
+	// The endpoint stops taking connections as it begins closing, which is
+	// where the agents are already gone.
+	waiting := time.Now()
+	for listens(authority(t, served.URL)) {
+		if time.Since(waiting) > 5*time.Second {
+			t.Fatal("the endpoint never began closing")
+		}
+		time.Sleep(time.Millisecond)
+	}
+	if _, err := served.Agent.Take(t.Context(), port.Task{Asked: "anything"}); err == nil {
+		t.Error("the agent took work while the endpoint was closing")
+	}
+
+	held.Close()
+	if err := <-shut; err != nil {
+		t.Fatal(err)
+	}
+}
