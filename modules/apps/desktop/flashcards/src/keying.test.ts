@@ -6,6 +6,11 @@ import { asks, letterOf, picks, swallows } from './keying'
 const pressed = (key: string, more: Partial<KeyboardEvent> = {}) =>
   ({ key, repeat: false, altKey: false, ctrlKey: false, metaKey: false, ...more }) as KeyboardEvent
 
+/** into is a keystroke that landed in something being written in. */
+const into = (tag: string, written = false): Partial<KeyboardEvent> => ({
+  target: { tagName: tag, isContentEditable: written } as unknown as EventTarget,
+})
+
 describe('the keys a sitting is done with', () => {
   it('turns the card over with the space bar, and only while it is face up', () => {
     expect(asks(pressed(' '), { shown: false })).toEqual({ does: 'show' })
@@ -34,6 +39,18 @@ describe('the keys a sitting is done with', () => {
     expect(asks(pressed('Escape'), { shown: true })).toEqual({ does: 'leave' })
   })
 
+  it('brings the panel in, and only once the answer is showing', () => {
+    expect(asks(pressed('a'), { shown: true })).toEqual({ does: 'ask' })
+    expect(asks(pressed('A'), { shown: true })).toEqual({ does: 'ask' })
+    expect(asks(pressed('a'), { shown: false })).toBeNull()
+  })
+
+  // With the panel up, escape sends it away and the sitting stays where it is.
+  it('sends the panel away on escape before it leaves the sitting', () => {
+    expect(asks(pressed('Escape'), { shown: true, asking: true })).toEqual({ does: 'shut' })
+    expect(asks(pressed('Escape'), { shown: true, asking: false })).toEqual({ does: 'leave' })
+  })
+
   // A key held down repeats, and a card is answered once.
   it('is not answered again by a key held down', () => {
     expect(asks(pressed('3', { repeat: true }), { shown: true })).toBeNull()
@@ -53,6 +70,21 @@ describe('the keys a sitting is done with', () => {
   it('leaves enter alone', () => {
     expect(asks(pressed('Enter'), { shown: false })).toBeNull()
     expect(asks(pressed('Enter'), { shown: true })).toBeNull()
+  })
+
+  // A question is written in the panel with the same letters a card is
+  // answered by, and there they are the question.
+  it('asks for nothing while a question is being written', () => {
+    for (const tag of ['INPUT', 'TEXTAREA']) {
+      for (const key of ['1', '2', '3', '4', 'u', 'a', ' ']) {
+        expect(asks(pressed(key, into(tag)), { shown: true })).toBeNull()
+      }
+    }
+    expect(asks(pressed('1', into('DIV', true)), { shown: true })).toBeNull()
+  })
+
+  it('sends the panel away on escape from inside the field', () => {
+    expect(asks(pressed('Escape', into('TEXTAREA')), { shown: true })).toEqual({ does: 'shut' })
   })
 
   it('swallows only the key it turns the card over with', () => {

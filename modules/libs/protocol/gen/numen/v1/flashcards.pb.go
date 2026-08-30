@@ -1136,6 +1136,98 @@ func (x *Reviewing) GetRecalled() int32 {
 	return 0
 }
 
+type AskingRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AskingRequest) Reset() {
+	*x = AskingRequest{}
+	mi := &file_numen_v1_flashcards_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AskingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AskingRequest) ProtoMessage() {}
+
+func (x *AskingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_flashcards_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AskingRequest.ProtoReflect.Descriptor instead.
+func (*AskingRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{15}
+}
+
+type AskingResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Set when no agent can be reached, and then nothing can be asked here. It
+	// says why, in the person's own words.
+	Unreachable string `protobuf:"bytes,1,opt,name=unreachable,proto3" json:"unreachable,omitempty"`
+	// EveryCard offers the way in on every card whose answer is showing. False
+	// offers it on a card the person could not recall.
+	EveryCard     bool `protobuf:"varint,2,opt,name=every_card,json=everyCard,proto3" json:"every_card,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AskingResponse) Reset() {
+	*x = AskingResponse{}
+	mi := &file_numen_v1_flashcards_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AskingResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AskingResponse) ProtoMessage() {}
+
+func (x *AskingResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_flashcards_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AskingResponse.ProtoReflect.Descriptor instead.
+func (*AskingResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *AskingResponse) GetUnreachable() string {
+	if x != nil {
+		return x.Unreachable
+	}
+	return ""
+}
+
+func (x *AskingResponse) GetEveryCard() bool {
+	if x != nil {
+		return x.EveryCard
+	}
+	return false
+}
+
 type MovingRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -1144,7 +1236,7 @@ type MovingRequest struct {
 
 func (x *MovingRequest) Reset() {
 	*x = MovingRequest{}
-	mi := &file_numen_v1_flashcards_proto_msgTypes[15]
+	mi := &file_numen_v1_flashcards_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1156,7 +1248,7 @@ func (x *MovingRequest) String() string {
 func (*MovingRequest) ProtoMessage() {}
 
 func (x *MovingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_flashcards_proto_msgTypes[15]
+	mi := &file_numen_v1_flashcards_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1169,7 +1261,7 @@ func (x *MovingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MovingRequest.ProtoReflect.Descriptor instead.
 func (*MovingRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{15}
+	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{17}
 }
 
 type MovingResponse struct {
@@ -1183,7 +1275,7 @@ type MovingResponse struct {
 
 func (x *MovingResponse) Reset() {
 	*x = MovingResponse{}
-	mi := &file_numen_v1_flashcards_proto_msgTypes[16]
+	mi := &file_numen_v1_flashcards_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1195,7 +1287,7 @@ func (x *MovingResponse) String() string {
 func (*MovingResponse) ProtoMessage() {}
 
 func (x *MovingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_flashcards_proto_msgTypes[16]
+	mi := &file_numen_v1_flashcards_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1208,7 +1300,7 @@ func (x *MovingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MovingResponse.ProtoReflect.Descriptor instead.
 func (*MovingResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{16}
+	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *MovingResponse) GetReload() bool {
@@ -1296,6 +1388,11 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x04easy\x18\x06 \x01(\x05R\x04easy\x12\x14\n" +
 	"\x05asked\x18\a \x01(\x05R\x05asked\x12\x1a\n" +
 	"\brecalled\x18\b \x01(\x05R\brecalled\"\x0f\n" +
+	"\rAskingRequest\"Q\n" +
+	"\x0eAskingResponse\x12 \n" +
+	"\vunreachable\x18\x01 \x01(\tR\vunreachable\x12\x1d\n" +
+	"\n" +
+	"every_card\x18\x02 \x01(\bR\teveryCard\"\x0f\n" +
 	"\rMovingRequest\"(\n" +
 	"\x0eMovingResponse\x12\x16\n" +
 	"\x06reload\x18\x01 \x01(\bR\x06reload*e\n" +
@@ -1304,14 +1401,15 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\fRATING_AGAIN\x10\x01\x12\x0f\n" +
 	"\vRATING_HARD\x10\x02\x12\x0f\n" +
 	"\vRATING_GOOD\x10\x03\x12\x0f\n" +
-	"\vRATING_EASY\x10\x042\x89\x03\n" +
+	"\vRATING_EASY\x10\x042\xc6\x03\n" +
 	"\x11FlashcardsService\x128\n" +
 	"\x05Owing\x12\x16.numen.v1.OwingRequest\x1a\x17.numen.v1.OwingResponse\x128\n" +
 	"\x05Start\x12\x16.numen.v1.StartRequest\x1a\x17.numen.v1.StartResponse\x12;\n" +
 	"\x06Answer\x12\x17.numen.v1.AnswerRequest\x1a\x18.numen.v1.AnswerResponse\x12A\n" +
 	"\bTakeBack\x12\x19.numen.v1.TakeBackRequest\x1a\x1a.numen.v1.TakeBackResponse\x12=\n" +
 	"\x06Moving\x12\x17.numen.v1.MovingRequest\x1a\x18.numen.v1.MovingResponse0\x01\x12A\n" +
-	"\bReviewed\x12\x19.numen.v1.ReviewedRequest\x1a\x1a.numen.v1.ReviewedResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\bReviewed\x12\x19.numen.v1.ReviewedRequest\x1a\x1a.numen.v1.ReviewedResponse\x12;\n" +
+	"\x06Asking\x12\x17.numen.v1.AskingRequest\x1a\x18.numen.v1.AskingResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_flashcards_proto_rawDescOnce sync.Once
@@ -1326,7 +1424,7 @@ func file_numen_v1_flashcards_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_flashcards_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_flashcards_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_numen_v1_flashcards_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_numen_v1_flashcards_proto_goTypes = []any{
 	(Rating)(0),              // 0: numen.v1.Rating
 	(*VaultOwing)(nil),       // 1: numen.v1.VaultOwing
@@ -1344,8 +1442,10 @@ var file_numen_v1_flashcards_proto_goTypes = []any{
 	(*ReviewedRequest)(nil),  // 13: numen.v1.ReviewedRequest
 	(*ReviewedResponse)(nil), // 14: numen.v1.ReviewedResponse
 	(*Reviewing)(nil),        // 15: numen.v1.Reviewing
-	(*MovingRequest)(nil),    // 16: numen.v1.MovingRequest
-	(*MovingResponse)(nil),   // 17: numen.v1.MovingResponse
+	(*AskingRequest)(nil),    // 16: numen.v1.AskingRequest
+	(*AskingResponse)(nil),   // 17: numen.v1.AskingResponse
+	(*MovingRequest)(nil),    // 18: numen.v1.MovingRequest
+	(*MovingResponse)(nil),   // 19: numen.v1.MovingResponse
 }
 var file_numen_v1_flashcards_proto_depIdxs = []int32{
 	2,  // 0: numen.v1.VaultOwing.decks:type_name -> numen.v1.DeckOwing
@@ -1359,16 +1459,18 @@ var file_numen_v1_flashcards_proto_depIdxs = []int32{
 	7,  // 8: numen.v1.FlashcardsService.Start:input_type -> numen.v1.StartRequest
 	9,  // 9: numen.v1.FlashcardsService.Answer:input_type -> numen.v1.AnswerRequest
 	11, // 10: numen.v1.FlashcardsService.TakeBack:input_type -> numen.v1.TakeBackRequest
-	16, // 11: numen.v1.FlashcardsService.Moving:input_type -> numen.v1.MovingRequest
+	18, // 11: numen.v1.FlashcardsService.Moving:input_type -> numen.v1.MovingRequest
 	13, // 12: numen.v1.FlashcardsService.Reviewed:input_type -> numen.v1.ReviewedRequest
-	6,  // 13: numen.v1.FlashcardsService.Owing:output_type -> numen.v1.OwingResponse
-	8,  // 14: numen.v1.FlashcardsService.Start:output_type -> numen.v1.StartResponse
-	10, // 15: numen.v1.FlashcardsService.Answer:output_type -> numen.v1.AnswerResponse
-	12, // 16: numen.v1.FlashcardsService.TakeBack:output_type -> numen.v1.TakeBackResponse
-	17, // 17: numen.v1.FlashcardsService.Moving:output_type -> numen.v1.MovingResponse
-	14, // 18: numen.v1.FlashcardsService.Reviewed:output_type -> numen.v1.ReviewedResponse
-	13, // [13:19] is the sub-list for method output_type
-	7,  // [7:13] is the sub-list for method input_type
+	16, // 13: numen.v1.FlashcardsService.Asking:input_type -> numen.v1.AskingRequest
+	6,  // 14: numen.v1.FlashcardsService.Owing:output_type -> numen.v1.OwingResponse
+	8,  // 15: numen.v1.FlashcardsService.Start:output_type -> numen.v1.StartResponse
+	10, // 16: numen.v1.FlashcardsService.Answer:output_type -> numen.v1.AnswerResponse
+	12, // 17: numen.v1.FlashcardsService.TakeBack:output_type -> numen.v1.TakeBackResponse
+	19, // 18: numen.v1.FlashcardsService.Moving:output_type -> numen.v1.MovingResponse
+	14, // 19: numen.v1.FlashcardsService.Reviewed:output_type -> numen.v1.ReviewedResponse
+	17, // 20: numen.v1.FlashcardsService.Asking:output_type -> numen.v1.AskingResponse
+	14, // [14:21] is the sub-list for method output_type
+	7,  // [7:14] is the sub-list for method input_type
 	7,  // [7:7] is the sub-list for extension type_name
 	7,  // [7:7] is the sub-list for extension extendee
 	0,  // [0:7] is the sub-list for field type_name
@@ -1385,7 +1487,7 @@ func file_numen_v1_flashcards_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_flashcards_proto_rawDesc), len(file_numen_v1_flashcards_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   17,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

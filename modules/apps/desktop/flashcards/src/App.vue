@@ -18,6 +18,7 @@ import Vaults from './Vaults.vue'
 import Decks from './Decks.vue'
 import Session from './Session.vue'
 import Finished from './Finished.vue'
+import Asking from './Asking.vue'
 import { VERSION } from './version'
 import { cards, deckName } from './core'
 import { counting } from './counting'
@@ -25,7 +26,9 @@ import { asks, picks, swallows } from './keying'
 import { raising } from './notices'
 import { reviewed } from './reviewed'
 import { session } from './session'
-import type { Owing } from './core'
+import { asking } from './asking'
+import { core as agent, asking as offering } from './agent/core'
+import type { Owing, Said } from './core'
 import type { Report } from './session'
 
 /** Which of the three screens the window is on. */
@@ -39,7 +42,22 @@ const { vaults, counting: busy, count } = counting({ cards, failed })
 const sat = session({ cards, failed })
 const done = reviewed({ cards, failed })
 
+/** Whether a card can be asked about here, and on which cards the way in stands. */
+const offered = ref({ unreachable: '', everyCard: false })
+
+const panel = asking({
+  agent,
+  unreachable: () => offered.value.unreachable,
+  everyCard: () => offered.value.everyCard,
+})
+
 const chosen = computed(() => vaults.value.find((one) => one.vaultId === vault.value) ?? null)
+
+/**
+ * The card in front of the person. While the panel is up it is the card the
+ * panel is about, so an answer and the card it explains are never two cards.
+ */
+const showing = computed(() => panel.about.value ?? sat.card.value)
 
 const choose = (id: string) => {
   vault.value = id
@@ -77,6 +95,7 @@ const start = async (deck: string) => {
  * the days too: what a person just answered is part of what they have done.
  */
 const leave = async () => {
+  panel.ends()
   sat.forget()
   on.value = 'decks'
   void done.read(vault.value)
@@ -85,6 +104,7 @@ const leave = async () => {
 
 /** Back to the vaults, which is where a person picks another collection. */
 const vaultsAgain = async () => {
+  panel.ends()
   sat.forget()
   done.forget()
   on.value = 'vaults'
@@ -92,11 +112,38 @@ const vaultsAgain = async () => {
   await count()
 }
 
+/**
+ * The card answered, and the panel offered on one the person could not recall:
+ * feedback after a failed recall is where the correction lands.
+ *
+ * The conversation the panel was holding is over with the card it was about.
+ */
+const answered = async (how: Said) => {
+  // A panel standing on a card the sitting has moved past is standing on a card
+  // that has had its answer, so the four send it away and record nothing.
+  if (panel.up.value && panel.about.value !== sat.card.value) {
+    panel.ends()
+    return
+  }
+  const one = sat.card.value
+  panel.ends()
+  await sat.answer(how)
+  if (one && how === 'again' && !offered.value.everyCard && !offered.value.unreachable) {
+    panel.opens(one, true)
+  }
+}
+
+/** The panel asked for on the card in front of the person. */
+const ask = () => {
+  const one = showing.value
+  if (one && !offered.value.unreachable) panel.opens(one, sat.shown.value || panel.up.value)
+}
+
 const keyed = (press: KeyboardEvent) => {
   if (on.value === 'decks') return chosen.value ? choosing(press, chosen.value) : undefined
   if (on.value !== 'session') return
 
-  const asked = asks(press, { shown: sat.shown.value })
+  const asked = asks(press, { shown: sat.shown.value, asking: panel.up.value })
   if (!asked) return
   if (swallows(asked)) press.preventDefault()
 
@@ -105,13 +152,19 @@ const keyed = (press: KeyboardEvent) => {
       sat.show()
       break
     case 'answer':
-      void sat.answer(asked.how)
+      void answered(asked.how)
       break
     case 'takeBack':
       void sat.takeBack()
       break
     case 'leave':
       void leave()
+      break
+    case 'ask':
+      ask()
+      break
+    case 'shut':
+      panel.shuts()
       break
   }
 }
@@ -149,6 +202,16 @@ const follows = following({
 onMounted(() => {
   window.addEventListener('keydown', keyed)
   void count()
+  // Whether a card can be asked about is the window's to know before a person
+  // reaches for it, so it is asked once and the way in is drawn from it.
+  void offering
+    .asking({})
+    .then((said) => {
+      offered.value = { unreachable: said.unreachable, everyCard: said.everyCard }
+    })
+    .catch(() => {
+      offered.value = { unreachable: 'The agent could not be reached.', everyCard: false }
+    })
   // A deck written or a card changed underneath the window is counted again
   // without a person asking. A sitting is left alone: its cards were laid out
   // when it opened, and what a deck says now is read at the next one.
@@ -186,19 +249,29 @@ onUnmounted(() => {
       @back="vaultsAgain"
     />
 
-    <Finished v-else-if="sat.over.value" :done="sat.done.value" @leave="leave" />
+    <!-- The panel stands on the card it was opened about, and the last card of
+         a sitting is a card like any other. -->
+    <Finished v-else-if="sat.over.value && !panel.up.value" :done="sat.done.value" @leave="leave" />
 
     <Session
-      v-else-if="sat.card.value"
-      :card="sat.card.value"
-      :shown="sat.shown.value"
+      v-else-if="showing"
+      :card="showing"
+      :shown="sat.shown.value || panel.up.value"
       :left="sat.left.value"
       :taken-back="sat.answers.value.length > 0"
+      :asking="panel.up.value"
+      :offered="panel.offered(sat.shown.value, '') && !offered.unreachable"
       @show="sat.show"
-      @answer="sat.answer"
+      @answer="answered"
       @take-back="sat.takeBack"
       @leave="leave"
-    />
+      @ask="ask"
+      @shut="panel.shuts()"
+    >
+      <template #panel>
+        <Asking :held="panel" :heading="showing.heading || deckName(showing.deck)" />
+      </template>
+    </Session>
   </main>
 
   <!-- What the window has to say, in the corner every window says it in. -->
