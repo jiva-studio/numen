@@ -37,9 +37,9 @@ export interface Around {
 
 /** The notes one deck is joined to, in the order they are read. */
 export const around = async (vaultId: string, deck: string): Promise<Around> => {
-  const said = await cards.around({ vaultId, deck })
+  const answer = await cards.around({ vaultId, deck })
   return {
-    notes: said.notes.map((one) => ({
+    notes: answer.notes.map((one) => ({
       written: one.written,
       path: one.path,
       title: one.title,
@@ -47,11 +47,15 @@ export const around = async (vaultId: string, deck: string): Promise<Around> => 
       label: one.label,
       points: one.points,
       ambiguous: one.ambiguous,
-      refusal: one.refusal === undefined ? '' : REFUSED[refused[one.refusal]],
+      refusal: said(one.refusal),
     })),
-    unread: said.unread,
+    unread: answer.unread,
   }
 }
+
+/** Why a note has no text, in words a person reads, and nothing where it has. */
+export const said = (refusal: Refusal | undefined): string =>
+  refusal === undefined ? '' : REFUSED[refused[refusal]]
 
 /** What the schema calls each refusal this panel can be given. */
 const refused: Record<Refusal, Refused> = {
