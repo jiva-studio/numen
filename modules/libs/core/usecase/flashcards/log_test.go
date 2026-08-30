@@ -1,9 +1,12 @@
 package flashcards_test
 
 import (
+	"context"
+	"errors"
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
@@ -67,6 +70,101 @@ func TestWhatAVaultHoldsIsEveryRunItWasReadFrom(t *testing.T) {
 	}
 	if held.Skipped != 0 {
 		t.Errorf("%d lines could not be acted on, want none", held.Skipped)
+	}
+}
+
+// phantom is a vault's store that lists one run that is not there. It is a
+// synchroniser taking a file away between the listing and the reading, which is
+// the one moment nothing else can arrange.
+type phantom struct {
+	port.DerivedStores
+	name string
+}
+
+func (p phantom) Open(v domain.Vault) (port.DerivedStore, error) {
+	store, err := p.DerivedStores.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return listing{DerivedStore: store, name: p.name}, nil
+}
+
+type listing struct {
+	port.DerivedStore
+	name string
+}
+
+func (l listing) List(ctx context.Context, name string) ([]port.Stored, error) {
+	held, err := l.DerivedStore.List(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	return append(held, port.Stored{Name: l.name, Size: 120}), nil
+}
+
+// A run taken away between the listing and the reading is left out, and the
+// runs that are still there are read. A vault's history is not refused because
+// another machine tidied up while this one was reading.
+func TestARunTakenAwayIsLeftOutAndTheRestAreRead(t *testing.T) {
+	s := opened(t, vault)
+	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
+		t.Fatal(err)
+	}
+
+	gone := phantom{DerivedStores: s.logs, name: "flashcards/01ARZ3NDEKTSV4RRFFQ69G5FAV.jsonl"}
+	held, err := flashcards.Log{Stores: gone}.Read(t.Context(), s.vault)
+	if err != nil {
+		t.Fatalf("a run taken away refused the whole history: %v", err)
+	}
+	if len(held.Answers) != 1 {
+		t.Errorf("the vault holds %d answers, want the one written", len(held.Answers))
+	}
+	if len(held.Files) != 1 {
+		t.Errorf("read from %d runs, want the one that is there", len(held.Files))
+	}
+}
+
+// refusing is a vault's store that cannot be read at all: a disk that has gone
+// away, a folder somebody's permissions closed.
+type refusing struct {
+	port.DerivedStores
+}
+
+func (r refusing) Open(v domain.Vault) (port.DerivedStore, error) {
+	store, err := r.DerivedStores.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return closed{DerivedStore: store}, nil
+}
+
+type closed struct{ port.DerivedStore }
+
+var errClosed = errors.New("the folder cannot be read")
+
+func (closed) Read(context.Context, string) ([]byte, error) { return nil, errClosed }
+
+// A vault whose answers cannot be read is not a vault of no answers. The
+// difference is a person's whole history, so it is refused and said rather than
+// counted as nothing.
+func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
+	s := opened(t, vault)
+	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := (flashcards.Log{Stores: refusing{DerivedStores: s.logs}}).Read(
+		t.Context(), s.vault,
+	); !errors.Is(err, errClosed) {
+		t.Errorf("a folder that cannot be read came back with %v", err)
+	}
+
+	counting := s.counted
+	counting.Logs = refusing{DerivedStores: s.logs}
+	if _, err := counting.Execute(t.Context(), s.vault); !errors.Is(err, errClosed) {
+		t.Errorf("the counting came back with %v", err)
 	}
 }
 
