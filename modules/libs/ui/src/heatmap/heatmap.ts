@@ -57,12 +57,10 @@ export const AHEAD = 4
 export interface Room {
   /** How wide the grid may be, in pixels. */
   width: number
-  /** How large one cell is drawn where there are weeks enough to fill the room. */
+  /** How large one cell is drawn. */
   cell: number
   /** How much room is left between two cells. */
   gap: number
-  /** How large a cell may be drawn at most, however few weeks there are. */
-  largest?: number
   /** The most columns worth drawing, where there are fewer than would fit. */
   most?: number
 }
@@ -70,35 +68,31 @@ export interface Room {
 /**
  * How many columns fit the room there is, and how large a cell is drawn in it.
  *
- * The grid takes the width it is given, whatever it holds. A person with a year
- * behind them gets a week to a column at the size the cells are designed at; one
- * two days in gets the weeks they have, drawn larger, rather than a hand of
- * small squares in the corner of an empty box or a wall of years nobody has
- * lived yet.
- *
- * A cell has a size it will not grow past, so a vault of one week is not one
- * enormous square. What the cells do not take is spread between them, which
- * keeps the grid flush to both edges either way.
+ * The cell has a size of its own and the grid takes as many columns as fit, so
+ * a wide window shows more weeks rather than the same weeks drawn larger, and a
+ * narrow one shows fewer rather than the grid standing in the middle of empty
+ * room. What is left over is spread between the cells, which keeps the grid
+ * flush to both edges.
  */
 export function fits(room: Room): { columns: number; cell: number; gap: number } {
   const cell = Math.max(1, room.cell)
   const gap = Math.max(0, room.gap)
-  const largest = Math.max(cell, room.largest ?? cell * 2)
+  const step = cell + gap
   if (room.width <= 0) return { columns: 1, cell, gap }
 
-  const held = Math.max(1, Math.floor((room.width + gap) / (cell + gap)))
+  const held = Math.max(1, Math.floor((room.width + gap) / step))
+  // A grid never draws more weeks than there are to draw. Filling the width
+  // with years nobody has lived yet is a wall of empty squares that says a
+  // person is behind on nothing.
   const columns = Math.max(1, Math.min(held, room.most ?? held))
-  if (columns < 2) return { columns, cell: Math.min(largest, room.width), gap }
+  // Where there are fewer weeks than the room holds, the grid ends where they
+  // end: the cells stay the size they are designed at, and the room they were
+  // not given is left alone.
+  if (columns < 2 || columns < held) return { columns, cell, gap }
 
-  // Where there are fewer weeks than the room holds, the cells grow into it
-  // rather than the grid standing in a corner of it. Where the weeks fill the
-  // room already, a cell is the size it is designed at.
-  const grown =
-    columns < held
-      ? Math.max(cell, Math.min(largest, (room.width - gap * (columns - 1)) / columns))
-      : cell
-  const between = Math.max(gap, (room.width - columns * grown) / (columns - 1))
-  return { columns, cell: grown, gap: between }
+  // The room the cells do not take is the room between them.
+  const between = Math.max(gap, (room.width - columns * cell) / (columns - 1))
+  return { columns, cell, gap: between }
 }
 
 /**

@@ -15,15 +15,15 @@ describe('how much of a year fits', () => {
     expect(fits({ width: 600, cell, gap }).columns).toBe(50)
   })
 
-  it('draws a cell at the size it is asked for, where the weeks fill the room', () => {
-    for (const width of [200, 1000, 4000]) {
+  it('draws a cell no larger than it is asked to, whatever the room', () => {
+    for (const width of [40, 200, 1000, 4000]) {
       expect(fits({ width, cell: 11, gap: 3 }).cell).toBe(11)
     }
   })
 
   it('spreads what is left over between the cells, so the grid meets both edges', () => {
     const room = fits({ width: 200, cell: 10, gap: 2 })
-    const drawn = room.columns * room.cell + (room.columns - 1) * room.gap
+    const drawn = room.columns * 10 + (room.columns - 1) * room.gap
     expect(drawn).toBeCloseTo(200, 5)
     expect(room.gap).toBeGreaterThanOrEqual(2)
   })
@@ -36,30 +36,18 @@ describe('how much of a year fits', () => {
   // Filling the width with years nobody has lived yet is a wall of empty
   // squares that says a person is behind on nothing.
   it('draws no more weeks than there are to draw', () => {
-    expect(fits({ width: 600, cell: 10, gap: 2, most: 12 }).columns).toBe(12)
-  })
-
-  // A person two days in gets the weeks they have, drawn larger — not a hand of
-  // small squares in the corner of an empty box.
-  it('grows the cells into the room the weeks do not fill', () => {
-    const room = fits({ width: 600, cell: 10, gap: 2, largest: 24, most: 12 })
-
-    expect(room.cell).toBeGreaterThan(10)
-    expect(room.cell).toBeLessThanOrEqual(24)
-    const drawn = room.columns * room.cell + (room.columns - 1) * room.gap
-    expect(drawn).toBeCloseTo(600, 5)
-  })
-
-  // A vault of one week is not one enormous square.
-  it('grows a cell no further than it may be drawn', () => {
-    const room = fits({ width: 2000, cell: 10, gap: 2, largest: 22, most: 5 })
-    expect(room.cell).toBe(22)
+    const room = fits({ width: 600, cell: 10, gap: 2, most: 12 })
+    expect(room.columns).toBe(12)
+    // And the cells stay where they are rather than being spread over the room
+    // they were not given: a grid of five weeks with the room of fifty is five
+    // weeks, not five squares scattered across a screen.
+    expect(room.gap).toBe(2)
+    expect(room.cell).toBe(10)
   })
 
   it('still meets both edges once there is a year to draw', () => {
     const room = fits({ width: 600, cell: 10, gap: 2, most: 500 })
     expect(room.columns).toBe(50)
-    expect(room.cell).toBe(10)
     expect(room.gap).toBeGreaterThanOrEqual(2)
   })
 })
