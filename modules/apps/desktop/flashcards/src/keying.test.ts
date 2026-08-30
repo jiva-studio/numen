@@ -39,10 +39,10 @@ describe('the keys a sitting is done with', () => {
     expect(asks(pressed('Escape'), { shown: true })).toEqual({ does: 'leave' })
   })
 
-  it('brings the panel in, and only once the answer is showing', () => {
+  it('brings the panel in on either side of the card', () => {
     expect(asks(pressed('a'), { shown: true })).toEqual({ does: 'ask' })
     expect(asks(pressed('A'), { shown: true })).toEqual({ does: 'ask' })
-    expect(asks(pressed('a'), { shown: false })).toBeNull()
+    expect(asks(pressed('a'), { shown: false })).toEqual({ does: 'ask' })
   })
 
   // With the panel up, escape sends it away and the sitting stays where it is.

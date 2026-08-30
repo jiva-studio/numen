@@ -17,7 +17,7 @@ const element = useTemplateRef<HTMLTextAreaElement>('element')
 defineExpose({
   /** The element itself, for a caller that has to reach past these props. */
   element,
-  focus: () => element.value?.focus(),
+  focus: (how?: FocusOptions) => element.value?.focus(how),
 })
 </script>
 

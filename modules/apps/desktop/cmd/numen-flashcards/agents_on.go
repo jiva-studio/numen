@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/flashcardsui"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
+	format "github.com/jiva-studio/numen/modules/libs/core/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -84,6 +85,11 @@ func serveAgents(
 		return func() error { return nil }
 	}
 
+	// The page asks whether a card can be asked about as it opens, and the agent
+	// is started when a person sits down to a vault. What is said here is that
+	// this window can reach one.
+	api.Unreachable.Store("")
+
 	held := &reaching{}
 	held.swapping = &agents.Swapping{
 		Serve: func() (func() error, error) {
@@ -93,12 +99,12 @@ func serveAgents(
 				return nil, err
 			}
 			served, err := agents.Serve(ctx, agents.Options{
-				Config: cfg,
-				Core:   reading(cfg, db, v, root, out),
-				Reads:  true,
-				Token:  secret,
-				Root:   root,
-				Out:    out,
+				Config:  cfg,
+				Core:    reviewing(cfg, db, v, root, out),
+				Reviews: true,
+				Token:   secret,
+				Root:    root,
+				Out:     out,
 			})
 			if err != nil {
 				return nil, err
@@ -119,11 +125,17 @@ func serveAgents(
 	}
 }
 
-// reading is the tools this window serves, every one of which reads.
+// reviewing is the tools this window serves: everything that reads, and the
+// cards of a deck a person is sitting to.
 //
-// The index behind it is open for asking alone, and nothing embeds here, so a
-// search answers by the words the vault holds.
-func reading(
+// A card is written here because that is what a person is doing. A deck and a
+// stencil are not made here: they are what a vault is arranged into, and
+// arranging one is done in the editor.
+//
+// Nothing embeds behind this window, so a search answers by the words the vault
+// holds, and nothing scans: a deck the agent writes is read again by the
+// watcher this window already follows.
+func reviewing(
 	cfg container.Config,
 	db *container.ReadIndex,
 	v domain.Vault,
@@ -132,7 +144,13 @@ func reading(
 ) mcp.Core {
 	queries := db.Queries()
 	links := db.Links()
-	cutting := cfg.Cards(queries, links, nil)
+
+	// What the index is told about a deck the agent wrote. This window runs no
+	// scan and writes no index: the file is what changed, and the watcher reads
+	// it again.
+	index := func(context.Context, domain.Vault, []string) error { return nil }
+
+	cutting := cfg.Cards(queries, links, index)
 
 	return mcp.Core{
 		Showing:       mcp.One(v, root),
@@ -145,7 +163,10 @@ func reading(
 		Links:         note.ShowLinks{Links: links},
 		Search: cfg.SearchingOver(db.Passages(), nil,
 			func(err error) { fmt.Fprintln(out, "agents: answering by words alone:", err) }),
+
 		Cards:    cutting.Read,
 		Stencils: cutting.List,
+		Cuts:     cutting.Write,
+		DeckBody: format.DeckBody,
 	}
 }

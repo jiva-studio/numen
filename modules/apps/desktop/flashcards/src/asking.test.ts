@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { ref } from 'vue'
 import type { AgentPort, AgentStep } from '@numen/ui'
 
 import { asking } from './asking'
@@ -34,71 +35,51 @@ const answers = (says: AgentStep[] = [{ kind: 'said', text: 'Because of the leav
   return { agent, asked, over }
 }
 
-/** The panel, with what it asks of the window standing in for the window. */
-const panel = (more: Partial<Parameters<typeof asking>[0]> = {}) => {
+/** The panel, with the sitting around it standing in for the window. */
+const panel = (more: { card?: Asked | null; unreachable?: string } = {}) => {
   const { agent, asked, over } = answers()
+  const on = ref<Asked | null>(more.card === undefined ? card() : more.card)
+  const said: string[] = []
   const held = asking({
     agent,
-    unreachable: () => '',
-    everyCard: () => false,
+    card: () => on.value,
+    unreachable: () => more.unreachable ?? '',
+    says: (one) => said.push(one),
     // The words are put up as they arrive, so a test reads them without waiting
     // for a frame.
     paint: (draw) => draw(),
-    ...more,
   })
-  return { held, asked, over }
+  return { held, asked, over, said, on }
 }
 
-describe('where the way in stands', () => {
-  // A card that can be asked about before it is turned is a way not to recall
-  // it.
-  it('never stands on a card whose answer is not showing', () => {
-    const { held } = panel()
-    expect(held.offered(false, 'again')).toBe(false)
-    expect(held.offered(false, '')).toBe(false)
+describe('the panel coming in', () => {
+  it('does not come in between cards', () => {
+    const { held } = panel({ card: null })
+    held.opens()
+    expect(held.open.value).toBe(false)
   })
 
-  it('stands on a card the person could not recall', () => {
+  it('comes in on the card the sitting is on, turned or not', () => {
     const { held } = panel()
-    expect(held.offered(true, 'again')).toBe(true)
-  })
-
-  // An explanation of a card that came back is a second spent.
-  it('does not stand on a card that came back, while the setting is off', () => {
-    const { held } = panel()
-    expect(held.offered(true, 'good')).toBe(false)
-    expect(held.offered(true, 'easy')).toBe(false)
-    expect(held.offered(true, 'hard')).toBe(false)
-  })
-
-  it('stands on every card once the setting says so', () => {
-    const { held } = panel({ everyCard: () => true })
-    expect(held.offered(true, 'good')).toBe(true)
-    expect(held.offered(true, '')).toBe(true)
-  })
-})
-
-describe('the panel', () => {
-  it('does not come in on a card whose answer is not showing', () => {
-    const { held } = panel()
-    held.opens(card(), false)
-    expect(held.up.value).toBe(false)
-    expect(held.about.value).toBeNull()
-  })
-
-  it('comes in on a card whose answer is showing', () => {
-    const { held } = panel()
-    held.opens(card(), true)
-    expect(held.up.value).toBe(true)
+    held.opens()
+    expect(held.open.value).toBe(true)
     expect(held.about.value?.card).toBe('3f4g5h6j7k')
   })
 
-  it('is sent away and keeps what was said', async () => {
+  // A gesture that does nothing is a gesture a person repeats.
+  it('says why it cannot come in, and does not', () => {
+    const { held, said } = panel({ unreachable: 'The agent could not be reached.' })
+    held.opens()
+    expect(held.open.value).toBe(false)
+    expect(said).toEqual(['The agent could not be reached.'])
+  })
+
+  it('is put away and keeps what was said', async () => {
     const { held } = panel()
-    held.opens(card(), true)
+    held.opens()
     await held.send('why')
     held.shuts()
-    expect(held.up.value).toBe(false)
+    expect(held.open.value).toBe(false)
     expect(held.turns.value.length).toBeGreaterThan(0)
   })
 })
@@ -106,7 +87,7 @@ describe('the panel', () => {
 describe('one conversation to a card', () => {
   it('carries the card into the first question and not into the rest', async () => {
     const { held, asked } = panel()
-    held.opens(card(), true)
+    held.opens()
 
     await held.send('why is it called that')
     await held.send('and where does it grow')
@@ -119,14 +100,14 @@ describe('one conversation to a card', () => {
 
   it('asks about the deck the card stands in', async () => {
     const { held, asked } = panel()
-    held.opens(card(), true)
+    held.opens()
     await held.send('why')
     expect(asked[0]?.focus).toBe('decks/Words.md')
   })
 
   it('answers every question of one card in one conversation', async () => {
     const { held, asked } = panel()
-    held.opens(card(), true)
+    held.opens()
     await held.send('one')
     await held.send('two')
     expect(asked[0]?.conversation).toBe(asked[1]?.conversation)
@@ -135,24 +116,25 @@ describe('one conversation to a card', () => {
   // The card in front of a person is never answered out of the one behind it.
   it('ends the conversation when the card is answered, and tells the agent', async () => {
     const { held, over } = panel()
-    held.opens(card(), true)
+    held.opens()
     await held.send('why')
 
     held.ends()
-    expect(held.up.value).toBe(false)
+    expect(held.open.value).toBe(false)
     expect(held.about.value).toBeNull()
     expect(held.turns.value).toEqual([])
     expect(over.length).toBe(1)
   })
 
   it('opens a conversation of its own for the next card', async () => {
-    const { held, asked } = panel()
-    held.opens(card(), true)
+    const { held, asked, on } = panel()
+    held.opens()
     await held.send('one')
     const first = asked[0]?.conversation
 
     held.ends()
-    held.opens(card({ card: 'zpqrstvwxy' }), true)
+    on.value = card({ card: 'zpqrstvwxy' })
+    held.opens()
     await held.send('two')
 
     expect(asked[1]?.conversation).not.toBe(first)
@@ -161,9 +143,10 @@ describe('one conversation to a card', () => {
 
   // A name stands for one conversation and is never given to a second.
   it('never gives one name to two conversations', async () => {
-    const { held, asked } = panel()
+    const { held, asked, on } = panel()
     for (const mark of ['a', 'b', 'c']) {
-      held.opens(card({ card: mark }), true)
+      on.value = card({ card: mark })
+      held.opens()
       await held.send('why')
       held.ends()
     }
@@ -179,7 +162,7 @@ describe('one conversation to a card', () => {
 
   it('sends nothing when nothing was written', async () => {
     const { held, asked } = panel()
-    held.opens(card(), true)
+    held.opens()
     await held.send('')
     expect(asked).toEqual([])
   })

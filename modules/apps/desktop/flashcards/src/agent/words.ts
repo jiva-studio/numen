@@ -9,6 +9,5 @@ export const WORDS = {
   unsent: 'Did not send',
   stopped: 'The agent stopped here',
   nothingSaid: 'Nothing asked yet',
-  panel: 'Ask',
   shut: 'Close',
 }

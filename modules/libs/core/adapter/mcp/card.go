@@ -171,6 +171,13 @@ func addCardReadingTools(server *sdk.Server, core Core) {
 }
 
 func addCardWritingTools(server *sdk.Server, core Core) {
+	addCardEditingTools(server, core)
+	addCardMakingTools(server, core)
+}
+
+// addCardEditingTools are what changes the cards of a deck that is already
+// there. Nothing here makes a deck or a stencil.
+func addCardEditingTools(server *sdk.Server, core Core) {
 	// One card per call. A call is written out in full before it is made and
 	// this one carries what a person wrote, so each is filed as it is finished.
 	sdk.AddTool(server, &sdk.Tool{
@@ -304,6 +311,11 @@ func addCardWritingTools(server *sdk.Server, core Core) {
 		return nil, written, err
 	})
 
+}
+
+// addCardMakingTools are what a vault is arranged into: a deck, a stencil, and
+// the name a stencil gives a field wherever it is written.
+func addCardMakingTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "card_deck_create",
 		Title: "Create a deck",

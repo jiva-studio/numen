@@ -5,25 +5,15 @@
  */
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
-import { AgentService, FlashcardsService } from '@numen/protocol'
+import { AgentService } from '@numen/protocol'
 import type { AgentPort } from '@numen/ui'
 
 import type { Asked } from '../core'
 
-const transport = createConnectTransport({ baseUrl: window.location.origin })
-
-const agent = createClient(AgentService, transport)
-
-/** What the window may ask about asking: whether it can, and on which cards. */
-export const asking = createClient(FlashcardsService, transport)
-
-/** Whether a card can be asked about here, and where the way in stands. */
-export interface Offered {
-  /** Why no agent can be reached, empty while one can. */
-  readonly unreachable: string
-  /** The way in stands on every card whose answer is showing. */
-  readonly everyCard: boolean
-}
+const agent = createClient(
+  AgentService,
+  createConnectTransport({ baseUrl: window.location.origin }),
+)
 
 export const core: AgentPort = {
   async *ask(asked, focus, conversation, signal) {

@@ -21,15 +21,14 @@ const card: Asked = {
 }
 
 /** The sitting on the screen, with something of its own standing in the panel. */
-const sitting = (more: { asking?: boolean; offered?: boolean } = {}) =>
+const sitting = (more: { asking?: boolean; shown?: boolean } = {}) =>
   mount(Session, {
     props: {
       card,
-      shown: true,
+      shown: more.shown ?? true,
       left: 3,
       takenBack: false,
       asking: more.asking ?? false,
-      offered: more.offered ?? false,
     },
     slots: { panel: '<p>the panel</p>' },
   })
@@ -38,16 +37,14 @@ const sitting = (more: { asking?: boolean; offered?: boolean } = {}) =>
 const wayIn = (one: VueWrapper) => one.findAll('button').filter((it) => it.text().includes('Ask'))
 
 describe('the way into the panel', () => {
-  it('is not drawn on a card that is not offered one', () => {
-    expect(wayIn(sitting({ offered: false }))).toHaveLength(0)
-  })
-
-  it('is drawn on a card that is offered one', () => {
-    expect(wayIn(sitting({ offered: true }))).toHaveLength(1)
+  // A person asks about the card they are on, turned or not.
+  it('is to be pressed on either side of the card', () => {
+    expect(wayIn(sitting({ shown: false }))[0]?.attributes('disabled')).toBeUndefined()
+    expect(wayIn(sitting({ shown: true }))[0]?.attributes('disabled')).toBeUndefined()
   })
 
   it('asks about the card when it is pressed', async () => {
-    const one = sitting({ offered: true })
+    const one = sitting({ shown: true })
     await wayIn(one)[0]?.trigger('click')
     expect(one.emitted('ask')).toHaveLength(1)
   })
@@ -55,7 +52,7 @@ describe('the way into the panel', () => {
   // The panel is sent away by the panel and by the keys, and by nothing the
   // sitting draws.
   it('is the only thing the sitting sends the panel away by', async () => {
-    const one = sitting({ asking: true, offered: true })
+    const one = sitting({ asking: true })
     for (const control of one.findAll('button')) await control.trigger('click')
     expect(one.emitted('shut')).toBeUndefined()
   })
@@ -76,9 +73,15 @@ describe('a sitting with the panel up', () => {
     expect(sitting({ asking: true }).text()).toContain('the panel')
   })
 
-  it('draws nothing of it while the panel is down', () => {
-    const one = sitting({ asking: false })
-    expect(one.find('.session__panel').exists()).toBe(false)
-    expect(one.text()).not.toContain('the panel')
+  // Which of the two is in the window is the strip's own; the sitting only says
+  // which it wants.
+  it('tells what stands the two beside each other which of them is wanted', () => {
+    const up = sitting({ asking: true })
+    expect(up.find('.beside__other').attributes('inert')).toBeUndefined()
+    expect(up.find('.beside__one').attributes('inert')).toBeDefined()
+
+    const down = sitting({ asking: false })
+    expect(down.find('.beside__other').attributes('inert')).toBeDefined()
+    expect(down.find('.beside__one').attributes('inert')).toBeUndefined()
   })
 })

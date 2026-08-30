@@ -16,17 +16,15 @@ var ErrNoAgent = errors.New("no agent is set up for this window")
 
 // Asking is whether a card can be asked about here, and on which cards the way
 // in is offered.
+//
+// It answers what this window can reach and not what it has reached: the page
+// asks as it opens, and the agent is started when a person sits down to a
+// vault.
 func (a *API) Asking(
 	_ context.Context, _ *connect.Request[v1.AskingRequest],
 ) (*connect.Response[v1.AskingResponse], error) {
 	why, _ := a.Unreachable.Load().(string)
-	if a.Answering() == nil && why == "" {
-		why = ErrNoAgent.Error()
-	}
-	return connect.NewResponse(&v1.AskingResponse{
-		Unreachable: why,
-		EveryCard:   a.EveryCard,
-	}), nil
+	return connect.NewResponse(&v1.AskingResponse{Unreachable: why}), nil
 }
 
 // Ask hands the person's question to the agent and reports what it does for as

@@ -34,6 +34,9 @@ type Options struct {
 	// Reads serves the surface every tool of which reads. An agent answering
 	// from it changes nothing.
 	Reads bool
+	// Reviews serves the surface the window a person runs their cards in has:
+	// everything that reads, and the cards of a deck.
+	Reviews bool
 	// Addr is where the tools are served. Empty takes a loopback port this
 	// machine picks.
 	Addr string
@@ -89,8 +92,11 @@ func Serve(ctx context.Context, opts Options) (*Served, error) {
 
 	trouble := func(err error) { fmt.Fprintln(opts.Out, "agents:", err) }
 	serving := mcp.ServeHTTP
-	if opts.Reads {
+	switch {
+	case opts.Reads:
 		serving = mcp.ServeReadingHTTP
+	case opts.Reviews:
+		serving = mcp.ServeReviewingHTTP
 	}
 	endpoint, err := serving(ctx, addr, secret, opts.Core, trouble)
 	if err != nil {
@@ -116,8 +122,11 @@ func Serve(ctx context.Context, opts Options) (*Served, error) {
 		// What the window says about a call is what the tool declared about
 		// itself, asked for over the protocol an agent is answered by.
 		vocabulary := mcp.Vocabulary
-		if opts.Reads {
+		switch {
+		case opts.Reads:
 			vocabulary = mcp.ReadingVocabulary
+		case opts.Reviews:
+			vocabulary = mcp.ReviewingVocabulary
 		}
 		words, err := vocabulary(ctx, opts.Core)
 		if err != nil {

@@ -162,6 +162,31 @@ func NewReading(core Core) *sdk.Server {
 	return server
 }
 
+// NewReviewing builds the server the window a person runs their cards in
+// serves: everything that reads, and the cards of a deck.
+//
+// A deck and a stencil are what a vault is arranged into, and nothing here
+// makes one. Nothing here writes a note, a link or a document either.
+func NewReviewing(core Core) *sdk.Server {
+	server := sdk.NewServer(
+		&sdk.Implementation{
+			Name:        "numen",
+			Title:       "numen",
+			Description: "Notes with typed links and spaced repetition.",
+			Version:     Version,
+		},
+		&sdk.ServerOptions{Instructions: reviewingInstructions(core)},
+	)
+
+	addNoteReadingTools(server, core)
+	addCardReadingTools(server, core)
+	addCardEditingTools(server, core)
+	addLinkReadingTools(server, core)
+	addSourceReadingTools(server, core)
+	addVaultGet(server, core)
+	return server
+}
+
 // namingOrder is how a note comes by the name it is shown under. The
 // instructions and the tool that changes it say it in these words.
 const namingOrder = "A note is shown by its title, else by its filename."
@@ -229,6 +254,38 @@ func readingInstructions(core Core) string {
 
 	b.WriteString("Everything you can do here reads. Nothing you can call writes a note, a ")
 	b.WriteString("card or a document, and nothing you call moves the person's window.\n\n")
+
+	b.WriteString("Say where each part of an answer came from, in words the person can find ")
+	b.WriteString("it by: the note's path and the heading it stands under, the book's name ")
+	b.WriteString("and its chapter or page. Write it where you say the thing, not in a list ")
+	b.WriteString("at the end. There is nothing here to open a `numen:` link with, so a link ")
+	b.WriteString("is not a place a person can go.\n\n")
+
+	b.WriteString("Asking a book is not like asking a note:\n")
+	b.WriteString("- Search with the person's own words before searching with your own. A ")
+	b.WriteString("book's sections are searched by name, and a section named what was asked ")
+	b.WriteString("for is what the search answers with.\n")
+	b.WriteString("- A passage is a window cut to a size and it ends where it was cut, which ")
+	b.WriteString("is mid-sentence as often as not. Read on with `source_read` before saying ")
+	b.WriteString("a book does not say something.\n")
+	return b.String()
+}
+
+// reviewingInstructions is what the window a person runs their cards in tells
+// its agent.
+func reviewingInstructions(core Core) string {
+	var b strings.Builder
+	opening(&b, core)
+
+	b.WriteString("The person is running their cards. Everything else you can do here ")
+	b.WriteString("reads: you write the cards of a deck, and nothing you can call writes a ")
+	b.WriteString("note, a link or a document, makes a deck or a stencil, or moves the ")
+	b.WriteString("person's window.\n\n")
+
+	b.WriteString("A card is written into a deck that is already there, cut by a stencil ")
+	b.WriteString("that already exists. Read the deck with `card_read` before changing it, ")
+	b.WriteString("and hand its fingerprint back so a write over an edit you did not see is ")
+	b.WriteString("refused.\n\n")
 
 	b.WriteString("Say where each part of an answer came from, in words the person can find ")
 	b.WriteString("it by: the note's path and the heading it stands under, the book's name ")
