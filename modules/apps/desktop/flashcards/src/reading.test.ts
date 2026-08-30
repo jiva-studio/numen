@@ -126,6 +126,38 @@ describe('what is read belongs to the deck', () => {
     expect(held.notes.value[0]?.path).toBe('decks/Trees.md')
   })
 
+  // A person must never read one deck's notes under another deck's card.
+  it('holds nothing of the deck behind it while the next is being asked for', async () => {
+    const waiting: (() => void)[] = []
+    const open = ref(false)
+    const deck = ref('decks/Words.md')
+    const held = reading({
+      open: () => open.value,
+      shows: (up) => {
+        open.value = up
+      },
+      vault: () => 'one',
+      deck: () => deck.value,
+      around: async (_vault, of) =>
+        new Promise((then) =>
+          waiting.push(() => then({ notes: [joined({ path: of })], unread: 0 })),
+        ),
+      says: () => {},
+    })
+
+    const first = held.opens()
+    waiting[0]?.()
+    await first
+
+    deck.value = 'decks/Trees.md'
+    const second = held.opens()
+    expect(held.notes.value).toEqual([])
+
+    waiting[1]?.()
+    await second
+    expect(held.notes.value[0]?.path).toBe('decks/Trees.md')
+  })
+
   it('holds nothing once the sitting is over', async () => {
     const { held, open } = panel()
     await held.opens()

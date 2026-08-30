@@ -65,7 +65,7 @@ const INLINE_IMAGE = /^data:image\/(png|jpeg|jpg|gif|webp|avif);base64,/i
 const bare = (url: string): string => url.replace(/[\u0000-\u0020]/g, '')
 
 /** The scheme a URL names, and nothing where it names none. */
-const scheme = (url: string): string | null =>
+export const scheme = (url: string): string | null =>
   /^[a-zA-Z][a-zA-Z0-9+.-]*:/.exec(bare(url))?.[0]?.toLowerCase() ?? null
 
 const points = (url: string): boolean => {

@@ -190,6 +190,36 @@ func TestADanglingLinkKeepsTheNameItWasWrittenBy(t *testing.T) {
 	}
 }
 
+func TestOneNameThatCameLooseIsNamedOnce(t *testing.T) {
+	j := around(t, map[string]string{
+		"decks/Birds.md": "---\ntype: deck\n---\n" +
+			"\n## Swift ^k7m2xq9fzp\n\n### Word\n\nSee [[Nowhere At All]].\n" +
+			"\n## Swallow ^3dkmf936tb\n\n### Word\n\nSee [[Nowhere At All]] again.\n",
+	}, "decks/Birds.md")
+
+	if got := written(j); len(got) != 1 || got[0] != "Nowhere At All" {
+		t.Fatalf("joined to %v", got)
+	}
+}
+
+// A name several notes answer to resolves to the nearest, and a person reading
+// the wrong note has no other way to find out.
+func TestANameSeveralNotesAnswerToIsSaidToBeAmbiguous(t *testing.T) {
+	j := around(t, map[string]string{
+		"decks/Birds.md":     "---\ntype: deck\n---\n\nCut from [[Migration]].\n",
+		"north/Migration.md": "# Migration\n\nOne of the two.\n",
+		"south/Migration.md": "# Migration\n\nThe other, answering to the same name.\n",
+	}, "decks/Birds.md")
+
+	if len(j.Notes) != 1 {
+		t.Fatalf("joined to %v", paths(j))
+	}
+	if !j.Notes[0].Ambiguous {
+		t.Errorf("%q answers to a name two notes answer to and is not said to be ambiguous",
+			j.Notes[0].Path)
+	}
+}
+
 func TestAnAttachmentIsNotSomethingToRead(t *testing.T) {
 	j := around(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n" +

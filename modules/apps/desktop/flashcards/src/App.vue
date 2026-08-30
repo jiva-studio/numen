@@ -61,8 +61,14 @@ const at = computed<Where>(() =>
   showing.value === 'reading' ? 'before' : showing.value === 'asking' ? 'after' : 'here',
 )
 
+/**
+ * The strip taken somewhere by a hand. A panel reached this way is opened, not
+ * merely shown: what is in it is fetched and started when it is asked for.
+ */
 const moved = (where: Where) => {
-  showing.value = where === 'before' ? 'reading' : where === 'after' ? 'asking' : 'here'
+  if (where === 'before') void read.opens()
+  else if (where === 'after') panel.opens()
+  else showing.value = 'here'
 }
 
 const panel = asking({
@@ -70,8 +76,12 @@ const panel = asking({
   card: () => sat.card.value,
   unreachable: () => unreachable.value,
   open: () => showing.value === 'asking',
+  // A panel put away takes the window back to the card only when the window is
+  // on it: a card answered with the reading up ends the conversation, and the
+  // reading stays where it is.
   shows: (open) => {
-    showing.value = open ? 'asking' : 'here'
+    if (open) showing.value = 'asking'
+    else if (showing.value === 'asking') showing.value = 'here'
   },
   says: (said) => says(said, 'caution'),
 })
@@ -79,7 +89,8 @@ const panel = asking({
 const read = reading({
   open: () => showing.value === 'reading',
   shows: (open) => {
-    showing.value = open ? 'reading' : 'here'
+    if (open) showing.value = 'reading'
+    else if (showing.value === 'reading') showing.value = 'here'
   },
   vault: () => vault.value,
   deck: () => sat.card.value?.deck ?? '',
@@ -310,7 +321,6 @@ onUnmounted(() => {
       @leave="leave"
       @ask="talks"
       @read="reads"
-      @shut="panel.shuts()"
     >
       <template #reading>
         <Reading ref="page" :held="read" />

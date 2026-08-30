@@ -54,6 +54,9 @@ export function reading(deps: Beside) {
   /** What the deck is joined to, asked for once and kept until the deck changes. */
   const fetches = async (vault: string, deck: string) => {
     if (held.value === deck) return
+    // What is in hand belongs to the deck behind this one, and a person must
+    // never read one deck's notes under another deck's card.
+    forgets()
     asked = deck
     working.value = true
     try {

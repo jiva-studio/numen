@@ -36,7 +36,6 @@ defineEmits<{
   (event: 'leave'): void
   (event: 'ask'): void
   (event: 'read', named: string): void
-  (event: 'shut'): void
   (event: 'update:at', at: Where): void
 }>()
 </script>

@@ -42,6 +42,9 @@ let sending = 0
 /** The strip has stopped somewhere of its own, and is waiting to be settled. */
 let settling = 0
 
+/** Where a move in flight is going, and nothing while none is. */
+let aim: Where | null = null
+
 /**
  * Where the strip stands when each of the three is in the window. They are read
  * off the layout rather than worked out, so the space the three stand apart by
@@ -69,7 +72,9 @@ const goes = (where: Where) => {
   window.clearTimeout(sending)
   sending = window.setTimeout(() => {
     sending = 0
+    aim = null
   }, TAKES)
+  aim = where
   const at = window_.value
   if (at) at.scrollLeft = stops()[where]
 }
@@ -85,6 +90,7 @@ const puts = (where: Where) => {
   window.clearTimeout(settling)
   window.clearTimeout(sending)
   sending = 0
+  aim = null
   at.style.scrollBehavior = 'auto'
   at.scrollLeft = stops()[where]
   at.style.scrollBehavior = ''
@@ -105,15 +111,26 @@ watch(
  */
 const scrolled = () => {
   const at = window_.value
-  if (!at || sending) return
+  if (!at) return
+  // A move in flight is over when it arrives, whatever time it took.
+  if (aim && Math.abs(at.scrollLeft - stops()[aim]) <= 1) {
+    aim = null
+    window.clearTimeout(sending)
+    sending = 0
+  }
   const where = nearest(at.scrollLeft)
-  if (where !== props.at) emit('update:at', where)
+  if (!aim && where !== props.at) emit('update:at', where)
 
   // A wheel or a trackpad leaves the strip wherever it ran out, and it is taken
   // the rest of the way once it has stopped. A hand still on it is not done.
+  //
+  // It is armed while a move is in flight too, and aims where that move was
+  // going: a wheel turned during one would otherwise leave the strip standing
+  // between two of the three, with nothing left to pull it to either.
   if (taking.value) return
   window.clearTimeout(settling)
-  settling = window.setTimeout(() => goes(where), SETTLES)
+  const going = aim
+  settling = window.setTimeout(() => goes(going ?? where), SETTLES)
 }
 
 /** Where the hand went down, and where the strip was under it. */

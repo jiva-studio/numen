@@ -216,7 +216,7 @@ export { default as Rule } from './rule/Rule.vue'
  * A card's HTML, measured against what a card may be drawn with. A deck may
  * come from another person, so anything drawing one goes through this.
  */
-export { safe } from './cards/safe'
+export { safe, scheme } from './cards/safe'
 /** For putting a card or a field where a person let it go, without drawing it. */
 export { ordered, reordered } from './cards/order'
 export type { Half, Landing as CardLanding } from './cards/order'

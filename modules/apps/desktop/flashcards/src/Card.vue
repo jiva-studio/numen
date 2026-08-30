@@ -8,7 +8,7 @@
  * they wrote is not this window's to run, style or navigate with.
  */
 import { computed, ref } from 'vue'
-import { safe } from '@numen/ui'
+import { safe, scheme } from '@numen/ui'
 
 const props = defineProps<{
   front: string
@@ -35,9 +35,6 @@ const took = (press: PointerEvent) => {
   from.value = press.clientX
 }
 
-/** Whether a name carries a scheme, which is what makes it point out of the vault. */
-const away = /^[a-z][a-z0-9+.-]*:/i
-
 /**
  * A name written into an href is escaped, and a card comes from whoever wrote
  * it: one escaped wrongly is taken as the characters it already is.
@@ -60,7 +57,9 @@ const pressed = (press: MouseEvent) => {
   if (link) {
     press.preventDefault()
     const named = link.getAttribute('href') ?? ''
-    if (named && !away.test(named)) emit('read', plain(named))
+    // A name carrying no scheme points inside the vault, which is where the
+    // reading beside the card is.
+    if (named && scheme(named) === null) emit('read', plain(named))
     return
   }
   // A hand that took the card across was moving the panel into view, and a
