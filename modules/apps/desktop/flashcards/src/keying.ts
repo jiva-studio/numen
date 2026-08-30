@@ -59,6 +59,14 @@ export const typing = (press: KeyboardEvent): boolean => {
  * it is.
  */
 export function asks(press: KeyboardEvent, showing: Showing): Asks | null {
+  // The panels are held with the overlay key, because the letters on their own
+  // are what a card is answered by.
+  if (chorded(press)) {
+    const letter = press.key.toLowerCase()
+    if (letter === ASKS) return { does: 'ask' }
+    if (letter === READS) return { does: 'read' }
+    return null
+  }
   if (spoken(press)) return null
   if (typing(press)) return press.key === 'Escape' ? { does: 'shut' } : null
   if (press.key === 'Escape') {
@@ -69,8 +77,6 @@ export function asks(press: KeyboardEvent, showing: Showing): Asks | null {
   // answer is still shown by the control standing under both panes.
   if (press.key === ' ' && showing.reading) return { does: 'scroll', back: press.shiftKey }
   if (press.key === ' ' && !showing.shown) return { does: 'show' }
-  if (press.key === ASKS || press.key === ASKS.toUpperCase()) return { does: 'ask' }
-  if (press.key === READS || press.key === READS.toUpperCase()) return { does: 'read' }
 
   const which = Number(press.key)
   if (Number.isInteger(which) && which >= 1 && which <= said.length) {
@@ -132,3 +138,7 @@ export function picks(press: KeyboardEvent, decks: number): Picks | null {
  */
 const spoken = (press: KeyboardEvent): boolean =>
   press.repeat || press.altKey || press.ctrlKey || press.metaKey
+
+/** Whether the overlay key is held, which is control here and command on a Mac. */
+const chorded = (press: KeyboardEvent): boolean =>
+  !press.repeat && !press.altKey && (press.ctrlKey || press.metaKey)

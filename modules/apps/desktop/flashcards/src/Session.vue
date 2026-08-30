@@ -5,7 +5,7 @@
  * It holds nothing. Which card is up, whether the answer is showing and what
  * has been written are the sitting's, and this draws them.
  */
-import { Button, KeyCap } from '@numen/ui'
+import { Button, KeyCap, keyChord } from '@numen/ui'
 
 import Beside from './Beside.vue'
 import type { Where } from './Beside.vue'
@@ -25,6 +25,9 @@ defineProps<{
   /** Which of the card and the panels either side of it is in the window. */
   at: Where
 }>()
+
+/** The panels are held with the overlay key, drawn as this machine's own. */
+const chord = (letter: string) => keyChord(letter, navigator.userAgent)
 
 defineEmits<{
   (event: 'show'): void
@@ -57,11 +60,11 @@ defineEmits<{
       <!-- The two panels stand in the order they stand in the strip: what is
            read is to the left of the card, and what is asked to the right. -->
       <Button variant="ghost" size="small" @click="$emit('read', '')">
-        <KeyCap :keys="{ marks: [], letter: READS }" />
+        <KeyCap :keys="chord(READS)" />
         Read
       </Button>
       <Button variant="ghost" size="small" @click="$emit('ask')">
-        <KeyCap :keys="{ marks: [], letter: ASKS }" />
+        <KeyCap :keys="chord(ASKS)" />
         Ask
       </Button>
       <Button variant="ghost" size="small" @click="$emit('leave')">
