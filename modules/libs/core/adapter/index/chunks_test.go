@@ -63,7 +63,13 @@ func precise(v []float32) []byte {
 
 func opened(t *testing.T) *DB {
 	t.Helper()
-	db, err := Open(t.Context(), filepath.Join(t.TempDir(), "index.db"))
+	return openedAt(t, filepath.Join(t.TempDir(), "index.db"))
+}
+
+// openedAt is an index at the path given, holding both vaults and nothing else.
+func openedAt(t *testing.T, path string) *DB {
+	t.Helper()
+	db, err := Open(t.Context(), path)
 	if err != nil {
 		t.Fatal(err)
 	}

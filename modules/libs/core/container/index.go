@@ -76,6 +76,13 @@ func (c Config) Moves(ctx context.Context) (<-chan struct{}, error) {
 func (i *ReadIndex) Queries() port.NoteQueries { return i.db.NoteQueries() }
 func (i *ReadIndex) Links() port.LinkQueries   { return i.db.NoteQueries() }
 
+// Passages is the two indexes a search runs over.
+func (i *ReadIndex) Passages() port.PassageQueries { return i.db.ChunkQueries() }
+
+// SourcesKnown is what the index holds about sources: what each file was, and
+// what its text came from.
+func (i *ReadIndex) SourcesKnown() port.SourceQueries { return i.db.SourcesKnown() }
+
 // FitVectors makes the vector index hold vectors of the width given, filled
 // from what the recipe has already bought.
 func (i *Index) FitVectors(ctx context.Context, dims int, recipe string) error {

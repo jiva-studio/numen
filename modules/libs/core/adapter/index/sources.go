@@ -16,8 +16,15 @@ import (
 // and a passage is read back as a row and handed over as a place in a file.
 
 type sources struct {
+	known
 	write *chunk.Repository
-	read  *chunk.Queries
+}
+
+// known is the half of that which is asked: what the index holds about sources,
+// and which chunks owe a vector. It is queries alone, so a caller handed one has
+// nothing to write with.
+type known struct {
+	read *chunk.Queries
 }
 
 // SaveSource records what a file is now, with no recipe: a source saved this way
@@ -45,19 +52,19 @@ func (s sources) MoveSources(ctx context.Context, vaultID, from, to string) erro
 }
 
 // Under is every source the vault holds at a path and beneath it.
-func (s sources) Under(ctx context.Context, vaultID, path string) ([]domain.FileRef, error) {
+func (s known) Under(ctx context.Context, vaultID, path string) ([]domain.FileRef, error) {
 	return s.read.Under(ctx, vaultID, path)
 }
 
-func (s sources) Fingerprints(ctx context.Context, vaultID string, kind domain.SourceKind) (map[string]domain.FileRef, error) {
+func (s known) Fingerprints(ctx context.Context, vaultID string, kind domain.SourceKind) (map[string]domain.FileRef, error) {
 	return s.read.Fingerprints(ctx, vaultID, string(kind))
 }
 
-func (s sources) Unchunked(ctx context.Context, vaultID string, kind domain.SourceKind, limit int) ([]string, error) {
+func (s known) Unchunked(ctx context.Context, vaultID string, kind domain.SourceKind, limit int) ([]string, error) {
 	return s.read.Unchunked(ctx, vaultID, string(kind), limit)
 }
 
-func (s sources) ByOtherRecipe(ctx context.Context, vaultID string, kind domain.SourceKind, recipes []string, limit int) ([]string, error) {
+func (s known) ByOtherRecipe(ctx context.Context, vaultID string, kind domain.SourceKind, recipes []string, limit int) ([]string, error) {
 	return s.read.ByOtherRecipe(ctx, vaultID, string(kind), recipes, limit)
 }
 
@@ -77,7 +84,7 @@ func (s sources) SaveVectors(ctx context.Context, vectors []port.Vector) error {
 	return s.write.SaveVectors(ctx, out)
 }
 
-func (s sources) Unembedded(ctx context.Context, vaultID string, model port.EmbeddingModel, after int64, limit int) ([]domain.Passage, error) {
+func (s known) Unembedded(ctx context.Context, vaultID string, model port.EmbeddingModel, after int64, limit int) ([]domain.Passage, error) {
 	found, err := s.read.Unembedded(ctx, vaultID, model.Recipe(), after, limit)
 	if err != nil {
 		return nil, err
@@ -132,7 +139,7 @@ func (s sources) Kept(ctx context.Context, recipe string, of [][]byte) (map[stri
 
 // Reading is what one source's text came from, and false where the index holds
 // no source at that path.
-func (s sources) Reading(ctx context.Context, vaultID, path string) (port.Recognised, bool, error) {
+func (s known) Reading(ctx context.Context, vaultID, path string) (port.Recognised, bool, error) {
 	found, held, err := s.read.Reading(ctx, vaultID, path)
 	if err != nil || !held {
 		return port.Recognised{}, false, err
@@ -144,7 +151,7 @@ func (s sources) Reading(ctx context.Context, vaultID, path string) (port.Recogn
 }
 
 // Recognised is the sources of one kind whose text a producer made.
-func (s sources) Recognised(ctx context.Context, vaultID string, kind domain.SourceKind) ([]port.Recognised, error) {
+func (s known) Recognised(ctx context.Context, vaultID string, kind domain.SourceKind) ([]port.Recognised, error) {
 	found, err := s.read.Recognised(ctx, vaultID, string(kind))
 	if err != nil {
 		return nil, err
