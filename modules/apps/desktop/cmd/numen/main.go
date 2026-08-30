@@ -20,6 +20,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/version"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
@@ -49,7 +50,7 @@ func main() {
 	flag.Parse()
 
 	if telling {
-		fmt.Println(built())
+		fmt.Println(version.Built("numen"))
 		return
 	}
 

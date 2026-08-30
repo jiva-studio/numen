@@ -18,6 +18,7 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/version"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/flashcardsui"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
@@ -31,7 +32,7 @@ func main() {
 	flag.Parse()
 
 	if telling {
-		fmt.Println(built())
+		fmt.Println(version.Built("numen-flashcards"))
 		return
 	}
 
