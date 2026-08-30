@@ -1,12 +1,14 @@
 package flashcards_test
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
 	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
 // What a person answered on a day is counted from the vault's own answers, and
@@ -194,6 +196,139 @@ func TestACardNobodyAnsweredIsNotStillToCome(t *testing.T) {
 	}
 	if len(got.Due) != 0 {
 		t.Errorf("a vault nobody answered has %v still to come", got.Due)
+	}
+}
+
+// countedCache is the day counts as a test writes them: enough of the shape to
+// say what the cache claims, and to say it under a version of its own.
+type countedCache struct {
+	V    int                `json:"v"`
+	Runs []countedCachedRun `json:"runs"`
+}
+
+type countedCachedRun struct {
+	Name string                   `json:"name"`
+	Size int                      `json:"size"`
+	Days map[string]history.Tally `json:"days"`
+}
+
+// claiming puts a cache of its own over the vault's counting: the runs are the
+// ones a counting just wrote, so the cache names this vault's files at the
+// length they stand at, and what each day came to is the test's to say.
+func claiming(t *testing.T, s vaulted, version int, days map[string]history.Tally) {
+	t.Helper()
+	if _, err := s.counted.Execute(t.Context(), s.vault); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := s.counted.Kept.Read(t.Context(), s.vault.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var was countedCache
+	if err := json.Unmarshal(raw, &was); err != nil {
+		t.Fatal(err)
+	}
+	if len(was.Runs) != 1 {
+		t.Fatalf("the counting was kept from %d runs, want the one", len(was.Runs))
+	}
+	was.V, was.Runs[0].Days = version, days
+
+	now, err := json.Marshal(was)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.counted.Kept.Write(t.Context(), s.vault.ID, now); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// A cache written by a build that kept the counting in another shape is not
+// read: what it holds is not what this build would have written, and the
+// answers are there to be counted again.
+func TestACacheOfAnotherShapeIsCountedAfresh(t *testing.T) {
+	s := opened(t, vault)
+	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
+		t.Fatal(err)
+	}
+
+	claiming(t, s, 0, map[string]history.Tally{"1999-01-01": {Answered: 99, Good: 99}})
+
+	got, err := s.counted.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, held := got.Days["1999-01-01"]; held {
+		t.Errorf("a cache of another shape was believed: %v", got.Days)
+	}
+	if got.Answered != 1 {
+		t.Errorf("the vault holds %d answers, want the one written", got.Answered)
+	}
+}
+
+// The same cache under the shape this build writes is believed, which is what
+// says the shape is what the reading turns on and not the file's name.
+func TestACacheOfThisShapeIsBelieved(t *testing.T) {
+	s := opened(t, vault)
+	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
+		t.Fatal(err)
+	}
+
+	claiming(t, s, 1, map[string]history.Tally{"1999-01-01": {Answered: 99, Good: 99}})
+
+	got, err := s.counted.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Days["1999-01-01"].Answered != 99 {
+		t.Errorf("the cache was not read: %v", got.Days)
+	}
+}
+
+// A build that keeps nothing counts the whole log at every launch, and says the
+// same as one that keeps it.
+func TestAVaultIsCountedWithNothingKept(t *testing.T) {
+	s := opened(t, vault)
+	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
+		t.Fatal(err)
+	}
+
+	kept := s.counted
+	kept.Kept = nil
+
+	got, err := kept.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Answered != 1 || got.Days[today.Names(time.Now())].Answered != 1 {
+		t.Errorf("counted %+v", got)
+	}
+}
+
+// What is still to come is worked out from the schedules. A counting with no
+// scheduler behind it says what was answered and nothing about what is coming,
+// rather than refusing to count at all.
+func TestWithNoSchedulerNothingIsStillToCome(t *testing.T) {
+	s := opened(t, vault)
+	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Easy, 0); err != nil {
+		t.Fatal(err)
+	}
+
+	blind := s.counted
+	blind.Schedules = flashcards.Schedules{Logs: s.logs}
+
+	got, err := blind.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Due) != 0 {
+		t.Errorf("what is still to come is %v, want nothing", got.Due)
+	}
+	if got.Answered != 1 {
+		t.Errorf("the vault holds %d answers, want the one written", got.Answered)
 	}
 }
 
