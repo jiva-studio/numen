@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { conversation, type Wording } from './conversation'
-import type { Agent, Place, Step } from './core'
+import type { AgentPort, AgentStep, Place } from './agent'
 
 const words: Wording = {
   thinking: 'Thinking',
@@ -16,7 +16,7 @@ const words: Wording = {
 }
 
 /** An agent that does what it is told to, a step at a time. */
-const doing = (steps: readonly Step[], hold?: Promise<void>): Agent => ({
+const doing = (steps: readonly AgentStep[], hold?: Promise<void>): AgentPort => ({
   async *ask(_asked, _focus, _conversation, signal) {
     for (const step of steps) {
       if (signal.aborted) return
@@ -35,17 +35,17 @@ const nap = () => new Promise((wake) => setTimeout(wake, 0))
 /** Words are put on the screen as they arrive, with no frame to wait for. */
 const now = (draw: () => void) => draw()
 
-const said = (text: string): Step => ({ kind: 'said', text })
-const used = (tool: string, about = '', written = 0, place?: Place): Step => ({
+const said = (text: string): AgentStep => ({ kind: 'said', text })
+const used = (tool: string, about = '', written = 0, place?: Place): AgentStep => ({
   kind: 'doing',
   tool,
   about,
   written,
   ...(place ? { place } : {}),
 })
-const answered = (): Step => ({ kind: 'answered' })
-const thinking = (): Step => ({ kind: 'thinking' })
-const stopped = (failed = ''): Step => ({ kind: 'stopped', failed })
+const answered = (): AgentStep => ({ kind: 'answered' })
+const thinking = (): AgentStep => ({ kind: 'thinking' })
+const stopped = (failed = ''): AgentStep => ({ kind: 'stopped', failed })
 
 describe('an answer', () => {
   it('grows as its pieces arrive and settles when they stop', async () => {
@@ -428,7 +428,7 @@ describe('where the line about work stands', () => {
 describe('a conversation', () => {
   it('carries its own name, so what is asked in one is remembered in one', async () => {
     const carried: string[] = []
-    const agent: Agent = {
+    const agent: AgentPort = {
       async *ask(_asked, _focus, named) {
         carried.push(named)
         yield stopped()
