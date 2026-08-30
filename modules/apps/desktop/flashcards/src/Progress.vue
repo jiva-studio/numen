@@ -5,7 +5,7 @@
  *
  * It is read at a glance and stands above what they came here to do.
  */
-import { Heatmap, heatmapSaid } from '@numen/ui'
+import { Heatmap, heatmapDayName } from '@numen/ui'
 import type { HeatmapTally, HeatmapWords } from '@numen/ui'
 
 import { called } from './core'
@@ -19,7 +19,7 @@ defineProps<{
 
 /** What the grid says about a day, in this window's words. */
 const words: HeatmapWords = {
-  names: heatmapSaid,
+  names: heatmapDayName,
   answered: 'answered',
   nothing: 'Nothing answered',
   toCome: 'to come',
@@ -32,14 +32,14 @@ const words: HeatmapWords = {
 </script>
 
 <template>
-  <section class="done">
+  <section class="progress">
     <Heatmap :did="days" :due="due" :words="words" />
   </section>
 </template>
 
 <style scoped>
 /* The grid keeps its own height, whatever the list below it does. */
-.done {
+.progress {
   display: flex;
   flex: none;
   flex-direction: column;

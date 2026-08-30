@@ -27,8 +27,10 @@ export type { ButtonVariants } from './components/ui/button'
 export { default as Owed } from './cards/Owed.vue'
 /** What a person did on each day, as a grid of weeks. */
 export { default as Heatmap } from './heatmap/Heatmap.vue'
-export { said as heatmapSaid } from './heatmap/naming'
-export type { Words as HeatmapWords } from './heatmap/told'
+export { dayName as heatmapDayName } from './heatmap/dates'
+export type { Words as HeatmapWords } from './heatmap/words'
+/** What a thing is, said beside it while a person points at it. */
+export { default as Tooltip } from './tooltip/Tooltip.vue'
 export { days as heatmapDays, fits as heatmapFits, weighs as heatmapWeighs } from './heatmap/heatmap'
 export type { Day as HeatmapDay, Room as HeatmapRoom, Tally as HeatmapTally } from './heatmap/heatmap'
 export { default as Welcome } from './welcome/Welcome.vue'

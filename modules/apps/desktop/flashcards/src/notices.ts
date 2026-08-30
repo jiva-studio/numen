@@ -9,7 +9,7 @@ import { ref } from 'vue'
 
 import type { Notice, Tone } from '@numen/ui'
 
-export function saying() {
+export function raising() {
   const notices = ref<readonly Notice[]>([])
 
   /** How many have been raised, which is what names the next one. */

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { sitting } from './sitting'
-import type { Asking, Opened } from './sitting'
+import { session } from './session'
+import type { Asking, Opened } from './session'
 
 /** One card as the application hands it over. */
 const asked = (card: string) => ({
@@ -50,7 +50,7 @@ function held(said?: { answering?: Promise<{ answer: string }>; refuses?: unknow
     },
   }
   const trouble: unknown[] = []
-  const one = sitting({ cards, failed: (why) => trouble.push(why), now: () => 1000 })
+  const one = session({ cards, failed: (why) => trouble.push(why), now: () => 1000 })
   return { one, asks, trouble }
 }
 
@@ -183,7 +183,7 @@ describe('a sitting', () => {
       takeBack: () => Promise.reject(new Error('no')),
     }
     const trouble: unknown[] = []
-    const one = sitting({ cards, failed: (why) => trouble.push(why) })
+    const one = session({ cards, failed: (why) => trouble.push(why) })
 
     expect(await one.start('01VAULT', '')).toBeNull()
     expect(trouble).toHaveLength(1)
@@ -205,7 +205,7 @@ describe('a sitting', () => {
         return {}
       },
     }
-    const one = sitting({ cards, failed: () => {}, now: () => clock })
+    const one = session({ cards, failed: () => {}, now: () => clock })
 
     await one.start('01VAULT', '')
     clock += 4200

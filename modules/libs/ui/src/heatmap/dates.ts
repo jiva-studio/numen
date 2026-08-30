@@ -7,7 +7,7 @@
 import type { Mark } from './heatmap'
 
 /** One label over the grid, in words. */
-export interface Said {
+export interface Named {
   readonly says: string
   readonly column: number
 }
@@ -17,10 +17,10 @@ const withYear = new Intl.DateTimeFormat(undefined, { month: 'short', year: 'num
 const full = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' })
 
 /** A day as a person reads one. */
-export const said = (day: string): string => full.format(dated(day))
+export const dayName = (day: string): string => full.format(dated(day))
 
 /** The months over the grid, each said where it opens. */
-export const naming = (marks: readonly Mark[]): Said[] =>
+export const monthNames = (marks: readonly Mark[]): Named[] =>
   marks.map((one) => ({
     column: one.column,
     says: (one.year ? withYear : month).format(dated(one.day)),
