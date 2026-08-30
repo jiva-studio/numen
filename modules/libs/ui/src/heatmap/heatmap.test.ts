@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { days, fits, marks, names, needs, NOTHING, ROWS, weighs } from './heatmap'
+import { days, fits, marks, names, NOTHING, ROWS, weighs } from './heatmap'
 import type { Tally } from './heatmap'
 
 describe('how much of a year fits', () => {
@@ -33,42 +33,6 @@ describe('how much of a year fits', () => {
     expect(fits({ width: 4, cell: 10, gap: 2 }).columns).toBe(1)
   })
 
-  // Filling the width with years nobody has lived yet is a wall of empty
-  // squares that says a person is behind on nothing.
-  it('draws no more weeks than there are to draw', () => {
-    const room = fits({ width: 600, cell: 10, gap: 2, most: 12 })
-    expect(room.columns).toBe(12)
-    // And the cells stay where they are rather than being spread over the room
-    // they were not given: a grid of five weeks with the room of fifty is five
-    // weeks, not five squares scattered across a screen.
-    expect(room.gap).toBe(2)
-    expect(room.cell).toBe(10)
-  })
-
-  it('still meets both edges once there is a year to draw', () => {
-    const room = fits({ width: 600, cell: 10, gap: 2, most: 500 })
-    expect(room.columns).toBe(50)
-    expect(room.gap).toBeGreaterThanOrEqual(2)
-  })
-})
-
-describe('how many weeks there are to draw', () => {
-  const now = new Date('2026-08-29T12:00:00')
-
-  it('is the weeks kept for what is coming, for a vault nobody answered', () => {
-    // This week and the four kept after it.
-    expect(needs(now, new Map())).toBe(5)
-  })
-
-  it('is the weeks from the one a person began in', () => {
-    const started = answeredOn([['2026-08-01', 3]])
-    // From the week of the 1st to four weeks past this one.
-    expect(needs(now, started)).toBe(9)
-  })
-
-  it('counts a day still to come as a week to draw', () => {
-    expect(needs(now, new Map(), new Map([['2026-09-30', 4]]))).toBe(5)
-  })
 })
 
 /** answeredOn is days a person answered on, as many cards as each says. */
@@ -109,42 +73,15 @@ describe('the days a grid draws', () => {
     }
   })
 
-  // A person two days in has not missed a year: their history begins at the
-  // left, and the room they have not filled stretches out to the right.
-  it('begins on the week a person began, where that is less than it holds', () => {
+  // The grid is as wide as the room it was given, so it runs back from the
+  // last week it draws for as many weeks as it has columns.
+  it('draws a week for every column it was given', () => {
     const now = new Date('2026-08-29T12:00:00')
-    const started = answeredOn([['2026-08-28', 3]])
-    const shown = days(30, now, started)
+    const shown = days(30, now, answeredOn([['2026-08-28', 3]]))
 
-    // The week that day stands in is the first column: the Monday before it.
-    expect(shown[0]!.day).toBe('2026-08-24')
+    expect(shown).toHaveLength(30 * ROWS)
     expect(shown.some((one) => one.today)).toBe(true)
-    // And everything past today is still to come.
     expect(shown[shown.length - 1]!.ahead).toBe(true)
-  })
-
-  // Once there is more history than the grid holds, it runs back from what is
-  // still to come, and the oldest weeks fall off the left.
-  it('runs back from what is coming, where the history is longer than it holds', () => {
-    const now = new Date('2026-08-29T12:00:00')
-    const long = answeredOn([
-      ['2024-01-01', 5],
-      ['2026-08-28', 3],
-    ])
-    const shown = days(12, now, long)
-
-    expect(shown[0]!.day > '2024-01-01').toBe(true)
-    expect(shown.some((one) => one.today)).toBe(true)
-    expect(shown).toHaveLength(12 * ROWS)
-  })
-
-  // A vault whose cards are all still ahead has a beginning too, and it is not
-  // drawn as a year of missed days.
-  it('begins at the left for a vault with nothing behind it', () => {
-    const now = new Date('2026-08-29T12:00:00')
-    const shown = days(30, now, new Map(), new Map([['2026-09-03', 8]]))
-
-    expect(shown[0]!.day).toBe('2026-08-24')
   })
 
   it('gives the room to what is behind where there is little of it', () => {

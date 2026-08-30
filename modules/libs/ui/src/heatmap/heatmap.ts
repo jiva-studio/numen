@@ -61,8 +61,6 @@ export interface Room {
   cell: number
   /** How much room is left between two cells. */
   gap: number
-  /** The most columns worth drawing, where there are fewer than would fit. */
-  most?: number
 }
 
 /**
@@ -80,35 +78,12 @@ export function fits(room: Room): { columns: number; cell: number; gap: number }
   const step = cell + gap
   if (room.width <= 0) return { columns: 1, cell, gap }
 
-  const held = Math.max(1, Math.floor((room.width + gap) / step))
-  // A grid never draws more weeks than there are to draw. Filling the width
-  // with years nobody has lived yet is a wall of empty squares that says a
-  // person is behind on nothing.
-  const columns = Math.max(1, Math.min(held, room.most ?? held))
-  // Where there are fewer weeks than the room holds, the grid ends where they
-  // end: the cells stay the size they are designed at, and the room they were
-  // not given is left alone.
-  if (columns < 2 || columns < held) return { columns, cell, gap }
+  const columns = Math.max(1, Math.floor((room.width + gap) / step))
+  if (columns < 2) return { columns, cell, gap }
 
   // The room the cells do not take is the room between them.
   const between = Math.max(gap, (room.width - columns * cell) / (columns - 1))
   return { columns, cell, gap: between }
-}
-
-/**
- * How many columns there are to draw: the weeks from the one a person began in
- * to the last one kept for what is still to come.
- */
-export function needs(
-  now: Date,
-  did: ReadonlyMap<string, unknown>,
-  due: ReadonlyMap<string, unknown> = new Map(),
-): number {
-  const from = monday(began(did, due, now))
-  const last = new Date(now)
-  last.setHours(12, 0, 0, 0)
-  last.setDate(last.getDate() + ((7 - weekday(last)) % 7) + AHEAD * ROWS)
-  return Math.max(1, Math.round((last.getTime() - from.getTime()) / 86_400_000 / ROWS))
 }
 
 /**
@@ -141,17 +116,11 @@ export function days(
   last.setHours(12, 0, 0, 0)
   last.setDate(last.getDate() + ((7 - weekday(last)) % 7) + weeks * ROWS)
 
-  const behind = new Date(last)
-  behind.setDate(behind.getDate() - (columns * ROWS - 1))
-
-  // A person with less history than the grid holds begins at the left, and the
-  // room they have not filled yet stretches out to the right. Running back from
-  // today instead would put their first week at the far edge behind a year of
-  // empty weeks, which says they missed a year they were never here for. As the
-  // history grows today drifts rightward, and once it fills the grid the weeks
-  // run back from what is still to come.
-  const opens = monday(began(did, due, now))
-  const first = opens > behind ? opens : behind
+  // The grid runs back from there for as many weeks as it was given room for,
+  // so the width a window has is the width of the grid and the weeks a person
+  // has not been here for are drawn as the empty days they were.
+  const first = new Date(last)
+  first.setDate(first.getDate() - (columns * ROWS - 1))
 
   for (let at = 0; at < columns * ROWS; at += 1) {
     const on = new Date(first)
@@ -169,35 +138,6 @@ export function days(
       ahead,
     })
   }
-  return out
-}
-
-/**
- * The day a person's history begins, or today where they have none. A day still
- * to come counts: a vault whose cards are all ahead has a beginning too.
- */
-function began(
-  did: ReadonlyMap<string, unknown>,
-  due: ReadonlyMap<string, unknown>,
-  now: Date,
-): Date {
-  let first = ''
-  for (const day of [...did.keys(), ...due.keys()]) {
-    if (first === '' || day < first) first = day
-  }
-  if (first === '') return now
-  const [year, month, day] = first.split('-').map(Number)
-  const at = new Date(now)
-  at.setFullYear(year ?? now.getFullYear(), (month ?? 1) - 1, day ?? 1)
-  at.setHours(12, 0, 0, 0)
-  return at > now ? now : at
-}
-
-/** The Monday of the week a day stands in, which is the column it opens. */
-function monday(at: Date): Date {
-  const out = new Date(at)
-  out.setHours(12, 0, 0, 0)
-  out.setDate(out.getDate() - (weekday(out) - 1))
   return out
 }
 
