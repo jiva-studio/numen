@@ -14,7 +14,7 @@
  */
 import { ref, type Ref } from 'vue'
 import { charsWord, type Turn } from './model'
-import type { Agent, Place } from './agent'
+import type { AgentPort, Place } from './agent'
 
 /** The words the panel puts up itself. */
 export interface Wording {
@@ -63,7 +63,7 @@ const onNextFrame: Paint = (draw) => {
 const spoken = (tool: string) => tool.replaceAll('_', ' ')
 
 export function conversation(
-  agent: Agent,
+  agent: AgentPort,
   words: Wording,
   /** What this thread of talk is called, for as long as it is open. */
   conversation: string,
@@ -112,8 +112,8 @@ export function conversation(
     const wait = `${next++}`
 
     // What the agent has in hand, as far as anything has said. A call carrying
-    // the text of a source is reported again every time more of it is written, so
-    // the count is what moves while it is being written.
+    // the text of a source is reported again every time more of it is
+    // written, so the count is what moves while it is being written.
     let says = words.thinking
     let about = ''
 

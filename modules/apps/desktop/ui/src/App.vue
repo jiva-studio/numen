@@ -9,7 +9,7 @@
  * one kind asks of another.
  */
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { closeTab, Notices, Palette, Workspace } from '@numen/ui'
+import { closeTab, conversation, Notices, Palette, Workspace } from '@numen/ui'
 import type { Notice } from '@numen/ui'
 import '@numen/ui/styles.css'
 import { cards, core, documents, vaults } from './vault'
@@ -61,7 +61,6 @@ import { listing as folders } from './files/listing'
 import { noting, type Held as NoteHeld } from './note/kind'
 import { plexKind, plexing, type Held as PlexHeld } from './plex/kind'
 import { core as agent } from './agent/core'
-import { conversation } from './agent/conversation'
 import { WORDS as talk } from './agent/words'
 import { WORDS as cut } from './cards/words'
 import { WORDS as words } from './words'
