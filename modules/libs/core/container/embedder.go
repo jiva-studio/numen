@@ -82,7 +82,13 @@ func (c Config) Asking(ctx context.Context) (port.Embedder, func() error, error)
 // trouble is where a half that could not run is said. A search short of the
 // half that asks by meaning is a search the words answer.
 func (c Config) Searching(db *Index, asking port.Embedder, trouble func(error)) search.Search {
-	return search.New(db.Passages(), c.VaultReaders(), c.DerivedStores(), c.Documents(),
+	return c.SearchingOver(db.Passages(), asking, trouble)
+}
+
+// SearchingOver is that search over the passages given, for a run that holds
+// the index open for asking alone.
+func (c Config) SearchingOver(passages port.PassageQueries, asking port.Embedder, trouble func(error)) search.Search {
+	return search.New(passages, c.VaultReaders(), c.DerivedStores(), c.Documents(),
 		asking, c.Embedding.Floor, trouble)
 }
 

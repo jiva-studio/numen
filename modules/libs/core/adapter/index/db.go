@@ -135,9 +135,15 @@ func OpenNothing(ctx context.Context) (*Reading, error) {
 
 func (r *Reading) Close() error { return r.read.Close() }
 
-// NoteQueries is what the notes are asked through, and the whole of what this
-// opening offers.
+// NoteQueries is what the notes are asked through.
 func (r *Reading) NoteQueries() *note.Queries { return note.NewQueries(r.read) }
+
+// ChunkQueries is what the passages are asked through.
+func (r *Reading) ChunkQueries() *chunk.Queries { return chunk.NewQueries(r.read) }
+
+// SourcesKnown is what the index holds about sources, and which chunks owe a
+// vector. It is queries alone, so this opening hands out no repository.
+func (r *Reading) SourcesKnown() known { return known{read: r.ChunkQueries()} }
 
 func (d *DB) Close() error {
 	readErr := d.read.Close()
@@ -162,7 +168,9 @@ func (d *DB) ChunkQueries() *chunk.Queries { return chunk.NewQueries(d.read) }
 
 // Sources is the source and vector ports over the chunk tables. It writes and
 // reads both, through the pool each half belongs to.
-func (d *DB) Sources() sources { return sources{write: d.Chunks(), read: d.ChunkQueries()} }
+func (d *DB) Sources() sources {
+	return sources{known: known{read: d.ChunkQueries()}, write: d.Chunks()}
+}
 
 func dsn(path string) string { return dsnOf(path, pragmas) }
 
