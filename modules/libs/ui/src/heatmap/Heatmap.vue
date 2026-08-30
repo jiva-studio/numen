@@ -16,7 +16,7 @@ import { computed, ref } from 'vue'
 
 import Tooltip from '../tooltip/Tooltip.vue'
 import Summary from './Summary.vue'
-import { days, fits, marks, needs, ROWS } from './heatmap'
+import { days, fits, marks, ROWS } from './heatmap'
 import type { Day, Tally } from './heatmap'
 import { useWidth } from './width'
 import { monthNames } from './dates'
@@ -44,12 +44,7 @@ const held = ref<HTMLElement | null>(null)
 const room = useWidth(held)
 
 const laid = computed(() =>
-  fits({
-    width: room.value,
-    cell: props.cell,
-    gap: props.gap,
-    most: needs(props.now, props.did, props.due),
-  }),
+  fits({ width: room.value, cell: props.cell, gap: props.gap }),
 )
 const shown = computed(() => days(laid.value.columns, props.now, props.did, props.due))
 
