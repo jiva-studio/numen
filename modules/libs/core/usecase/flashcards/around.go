@@ -156,9 +156,14 @@ func (u Around) Execute(ctx context.Context, v domain.Vault, deck string) (Joine
 		}
 		contents, err := u.Reads.Execute(ctx, v, out.Notes[i].Path)
 		if err != nil {
+			// A caller that went away is not a vault with something wrong in it.
+			if ctx.Err() != nil {
+				return Joined{}, err
+			}
 			// One file that could not be opened is one entry with no text, not
-			// a panel a person cannot read the rest of.
-			out.Notes[i].Outcome = note.Unreadable
+			// a panel a person cannot read the rest of. Nothing is said about
+			// why: what went wrong is the file's and not the note's, and every
+			// outcome there is names something about the note.
 			continue
 		}
 		out.Notes[i].Outcome = contents.Outcome

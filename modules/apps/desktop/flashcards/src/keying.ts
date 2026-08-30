@@ -59,6 +59,9 @@ export const typing = (press: KeyboardEvent): boolean => {
  * it is.
  */
 export function asks(press: KeyboardEvent, showing: Showing): Asks | null {
+  // A field takes the overlay key too: control and A is how a person selects
+  // what they have written.
+  if (typing(press)) return press.key === 'Escape' ? { does: 'shut' } : null
   // The panels are held with the overlay key, because the letters on their own
   // are what a card is answered by.
   if (chorded(press)) {
@@ -68,7 +71,6 @@ export function asks(press: KeyboardEvent, showing: Showing): Asks | null {
     return null
   }
   if (spoken(press)) return null
-  if (typing(press)) return press.key === 'Escape' ? { does: 'shut' } : null
   if (press.key === 'Escape') {
     return showing.asking || showing.reading ? { does: 'shut' } : { does: 'leave' }
   }

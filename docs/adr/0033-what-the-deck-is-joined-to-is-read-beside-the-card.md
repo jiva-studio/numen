@@ -21,7 +21,7 @@ Nothing pulls `[[wikilinks]]` out of a card's values, and no deck is read again 
 
 ### They belong to the deck, not to the card
 
-A link is written in a file, and the file is the deck. There are no links to a card, so the panel shows the same notes on every card of one deck, its stencil among them.
+A link is written in a file, and the file is the deck. There are no links to a card, so the panel shows the same notes on every card of one deck.
 
 The alternative is to keep only the links whose text falls inside the card in front of the person. That is a second resolution of what the index already resolved, to narrow a list a person is reading by choice.
 
@@ -31,7 +31,9 @@ What the deck points at, and what points at the deck. A note with nothing pointi
 
 ### Notes, and only notes
 
-An address may name an attachment or a book, and this window has one page and nothing to open either with. Such a link is left out rather than drawn as a note that will not open. What is left out is decided by the index: a path it does not hold as a note is absent from its answer.
+An address may name an attachment or a book, and this window has one page and nothing to open either with. Such a link is left out rather than drawn as a note that will not open, and what decides is the address itself: only a name and an identifier can name a note, so only those two are kept. An address of any other kind is not a note that has gone missing, and drawing it as one says a vault has a question in it where it has none.
+
+**A stencil is left out too.** Every card names the stencil it is cut by, so a deck points at all of its stencils. A stencil is how a card is laid out, not what it was written from, and it would otherwise stand at the head of the reading of every deck.
 
 A link into another vault is left out for the same reason — this window has one vault open, and there is nothing here to read the other with.
 
@@ -51,7 +53,9 @@ Which of the three is in the window is one thing in one place. Two panels each h
 
 ### The way in stands on either side of the card
 
-The swipe, `r` and the control are offered whether the answer is showing or not, as the way into the conversation already is. What a person looks at before answering is theirs to decide.
+The swipe, the key and the control are offered whether the answer is showing or not, as the way into the conversation already is. What a person looks at before answering is theirs to decide.
+
+Both panels are held with the overlay key — control, or command on a Mac — because the letters on their own are what a card is answered by. The key that brings a panel in takes it away again, and so does the control beside it.
 
 ### Space means something else while the reading is in the window
 
@@ -61,7 +65,7 @@ It scrolls the reading rather than turning the card. It is the one key in this w
 
 - The review window reads notes, not only decks. It still writes nothing but a mark and an answer.
 - The list is the same on every card of a deck, and long decks have long lists.
-- A stencil stands in the reading of every deck it cuts, because that is what the deck points at.
+- A person who wants to see the stencil a card is cut by opens it in the editor, as they would to change it.
 - `refusalOf` leaves the editor's adapter for `libs/core/refusal`, which both adapters can see: two adapters answering the same question needed one vocabulary, not two. It cannot live under `adapter/`, where an adapter may not reach another adapter.
 - A person can read what a card came from without leaving the sitting, and without the editor being open.
 

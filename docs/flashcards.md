@@ -51,13 +51,13 @@ A person hits the wrong key. Taking an answer back is a line of its own, naming 
 
 ## Asking about a card
 
-A person is on a card and wants to know more about it. Taking the card to the left brings in a panel where that card can be asked about; `a` does the same, and escape sends the panel away. The panel is there on either side of the card, before the answer is showing and after. The agent answers from this vault — the card, the stencil that cuts it, and the notes and sources the card points at — and names where each part of its answer came from. It reads everything and writes cards alone, so an answer that turns out to be wrong is corrected where a person found it.
+A person is on a card and wants to know more about it. Taking the card to the left brings in a panel where that card can be asked about; control and `a` do the same, and press them again — or escape — to send the panel away. The panel is there on either side of the card, before the answer is showing and after. The agent answers from this vault — the card, the stencil that cuts it, and the notes and sources the card points at — and names where each part of its answer came from. It reads everything and writes cards alone, so an answer that turns out to be wrong is corrected where a person found it.
 
 A conversation belongs to one card and ends with it. What the panel can reach, and what it cannot, is in [Agents](agents.md).
 
 ## Reading what the cards were written from
 
-Taking the card the other way brings in what the deck is joined to; `r` does the same, and escape sends it away. It stands on either side of the card, as the conversation does.
+Taking the card the other way brings in what the deck is joined to; control and `r` do the same, and take it away again. It stands on either side of the card, as the conversation does. The letters carry the overlay key because on their own they are what a card is answered by.
 
 What is in it is the vault's own graph: the notes the deck points at — which is every note its cards name, and the stencil that cuts them — and the notes that point at the deck. They are read one under another, each under its title, and space scrolls them. A link written in a card opens the reading on the note it names.
 

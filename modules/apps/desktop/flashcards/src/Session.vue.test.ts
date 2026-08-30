@@ -62,12 +62,12 @@ describe('the way into the panel', () => {
     expect(one.emitted('ask')).toHaveLength(1)
   })
 
-  // The panel is sent away by the panel and by the keys, and by nothing the
-  // sitting draws.
-  it('is the only thing the sitting sends the panel away by', async () => {
+  // The control is the way in and the way out both: what it asks for is the
+  // same whichever of the three the window is on, and the window decides.
+  it('asks for the panel in the same words while the panel is up', async () => {
     const one = sitting({ at: 'after' })
-    for (const control of one.findAll('button')) await control.trigger('click')
-    expect(one.emitted('shut')).toBeUndefined()
+    await wayIn(one)[0]?.trigger('click')
+    expect(one.emitted('ask')).toHaveLength(1)
   })
 })
 

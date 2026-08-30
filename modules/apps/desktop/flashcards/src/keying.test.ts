@@ -63,6 +63,15 @@ describe('the keys a sitting is done with', () => {
     expect(asks(pressed('r'), { shown: true })).toBeNull()
   })
 
+  // Control and A is how a person selects what they have written, and the field
+  // is the one place in this window anything is written.
+  it('leaves the overlay key to the field a question is written in', () => {
+    for (const tag of ['INPUT', 'TEXTAREA']) {
+      expect(asks(pressed('a', { ...into(tag), ctrlKey: true }), { shown: true })).toBeNull()
+      expect(asks(pressed('r', { ...into(tag), metaKey: true }), { shown: true })).toBeNull()
+    }
+  })
+
   // With a panel up, escape sends it away and the sitting stays where it is.
   it('sends the panel away on escape before it leaves the sitting', () => {
     expect(asks(pressed('Escape'), { shown: true, asking: true })).toEqual({ does: 'shut' })
