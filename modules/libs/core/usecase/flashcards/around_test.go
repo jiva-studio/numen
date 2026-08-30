@@ -220,6 +220,23 @@ func TestANameSeveralNotesAnswerToIsSaidToBeAmbiguous(t *testing.T) {
 	}
 }
 
+// A panel of titles with nothing under any of them says nothing about why, so
+// the vault being out of reach is an error and not thirty silent entries.
+func TestAVaultOutOfReachIsAnError(t *testing.T) {
+	u, add := reading(t)
+	v := add(map[string]string{
+		"decks/Birds.md": "---\ntype: deck\n---\n\nCut from [[Migration]].\n",
+		"Migration.md":   "# Migration\n\nBirds go south.\n",
+	})
+	if err := os.RemoveAll(v.Path); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := u.Execute(t.Context(), v, "decks/Birds.md"); err == nil {
+		t.Error("a vault that is not there was read around without complaint")
+	}
+}
+
 func TestAnAttachmentIsNotSomethingToRead(t *testing.T) {
 	j := around(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n" +

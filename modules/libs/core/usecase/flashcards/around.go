@@ -58,8 +58,8 @@ type Around struct {
 // Execute gathers what the deck is joined to: what it points at first, then
 // what points at it.
 //
-// An error is the index being out of reach. Whatever went wrong with one note —
-// gone, too long, a file nothing can open — is an outcome on that note's own
+// An error is the vault or the index being out of reach. What is wrong with one
+// note — gone, too long, not a note at all — is an outcome on that note's own
 // entry, and the rest of them are still read.
 func (u Around) Execute(ctx context.Context, v domain.Vault, deck string) (Joined, error) {
 	linked, err := u.Linked.Execute(ctx, v, deck)
@@ -156,15 +156,10 @@ func (u Around) Execute(ctx context.Context, v domain.Vault, deck string) (Joine
 		}
 		contents, err := u.Reads.Execute(ctx, v, out.Notes[i].Path)
 		if err != nil {
-			// A caller that went away is not a vault with something wrong in it.
-			if ctx.Err() != nil {
-				return Joined{}, err
-			}
-			// One file that could not be opened is one entry with no text, not
-			// a panel a person cannot read the rest of. Nothing is said about
-			// why: what went wrong is the file's and not the note's, and every
-			// outcome there is names something about the note.
-			continue
+			// A read fails when the vault itself is out of reach, and a panel
+			// of titles with no prose under any of them would say nothing about
+			// why. What is wrong with one note is an outcome, not an error.
+			return Joined{}, err
 		}
 		out.Notes[i].Outcome = contents.Outcome
 		out.Notes[i].Body = contents.Body

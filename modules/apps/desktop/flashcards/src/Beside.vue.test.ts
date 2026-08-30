@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 
 import Beside from './Beside.vue'
@@ -153,10 +153,28 @@ describe('a hand on the strip', () => {
 
     window_.dispatchEvent(hand('pointerup', 380))
     await nextTick()
+    // The window took the hand's word for it, as a window that opened the panel
+    // does.
+    await one.setProps({ at: 'after' })
     await nextTick()
 
     expect(window_.scrollLeft).toBe(440)
     expect(one.emitted('update:at')).toEqual([['after']])
+  })
+
+  // A panel the window refused to open is one the strip must not be left
+  // standing on: what is in the window is the window's answer, not the strip's.
+  it('goes back off a panel the window did not open', async () => {
+    const { one, window_ } = strip()
+
+    window_.dispatchEvent(hand('pointerdown', 500))
+    window_.dispatchEvent(hand('pointermove', 380))
+    window_.dispatchEvent(hand('pointerup', 380))
+    await nextTick()
+    await nextTick()
+
+    expect(one.emitted('update:at')).toEqual([['after']])
+    expect(window_.scrollLeft).toBe(220)
   })
 
   it('settles back on where it started when it is let go short of the next', async () => {
@@ -170,5 +188,55 @@ describe('a hand on the strip', () => {
 
     expect(window_.scrollLeft).toBe(220)
     expect(one.emitted('update:at')).toBeUndefined()
+  })
+})
+
+// A wheel and a trackpad leave the strip wherever they ran out, and nothing
+// comes off them to say the gesture is over. What settles it is a wait.
+describe('a wheel on the strip', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  const waits = async (ms: number) => {
+    vi.advanceTimersByTime(ms)
+    await nextTick()
+    await nextTick()
+  }
+
+  it('is taken the rest of the way once it has stopped', async () => {
+    vi.useFakeTimers()
+    const { one, window_ } = strip()
+
+    await ran(window_, 380)
+    expect(one.emitted('update:at')).toEqual([['after']])
+    await one.setProps({ at: 'after' })
+
+    await waits(200)
+    expect(window_.scrollLeft).toBe(440)
+  })
+
+  it('is settled even where it stopped short of the next', async () => {
+    vi.useFakeTimers()
+    const { one, window_ } = strip()
+
+    await ran(window_, 260)
+    expect(one.emitted('update:at')).toBeUndefined()
+
+    await waits(200)
+    expect(window_.scrollLeft).toBe(220)
+  })
+
+  // A hand that turns the wheel during a move would otherwise leave the strip
+  // standing between two of the three, with nothing left to pull it to either.
+  it('is settled when it is turned while the strip is being taken somewhere', async () => {
+    vi.useFakeTimers()
+    const { one, window_ } = strip()
+
+    await one.setProps({ at: 'after' })
+    await ran(window_, 300)
+
+    await waits(200)
+    expect(window_.scrollLeft).toBe(440)
   })
 })
