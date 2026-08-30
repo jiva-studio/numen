@@ -49,7 +49,7 @@ import { raising } from './raising'
 import { windowing } from './windowing'
 import Leaving from './Leaving.vue'
 import Failure from './Failure.vue'
-import { Welcome } from '@numen/ui'
+import { Welcome, opensVault } from '@numen/ui'
 import { COMMANDS, vaultsOn, waysIn } from './welcome/welcoming'
 import { telling } from './telling'
 import { agentKind, talking } from './agent/kind'
@@ -455,6 +455,11 @@ const runs = (id: string) => {
   commands.shows(true)
 }
 
+/** Whether the welcome screen is what the person is looking at and typing into. */
+const welcoming = computed(
+  () => held.tabs.value.length === 0 && !palette.open.value && !commands.open.value,
+)
+
 /** A vault chosen on the welcome screen, shown in this window in place of none. */
 const opens = (id: string) => {
   const one = listed.value.vaults.find((vault) => vault.id === id)
@@ -471,6 +476,17 @@ const opens = (id: string) => {
 const asked = (event: KeyboardEvent) => {
   // A pane that has answered this keystroke keeps it.
   if (event.defaultPrevented) return
+  // On the welcome screen a letter alone opens the vault standing at it, which
+  // is the letter drawn on that row.
+  if (welcoming.value) {
+    const at = opensVault(event, onList.value.length)
+    const one = at === null ? undefined : onList.value[at]
+    if (one) {
+      event.preventDefault()
+      opens(one.id)
+      return
+    }
+  }
   if (!chorded(event)) return
   const key = event.key.toLowerCase()
   // The two the window puts up are that letter alone. The same letter with

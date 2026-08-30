@@ -10,6 +10,7 @@
 import { FolderRoot } from '@lucide/vue'
 import KeyCap from '../palette/KeyCap.vue'
 import Mark from './Mark.vue'
+import { vaultLetter } from './picking'
 import type { Held, Offer, Way } from './welcome'
 
 withDefaults(
@@ -62,13 +63,21 @@ defineEmits<{
       <section class="welcome__vaults">
         <h2 class="welcome__heading">{{ heading }}</h2>
         <ul class="welcome__list">
-          <li v-for="one in vaults" :key="one.id">
+          <li v-for="(one, at) in vaults" :key="one.id">
             <button
               type="button"
               class="welcome__row welcome__row--vault"
               @click="$emit('opens', one.id)"
             >
-              <FolderRoot class="welcome__icon" />
+              <!-- The letter it is opened by, where the alphabet reaches it: a
+                   person reads down the list and presses what they see. Past
+                   the alphabet the mark stands where the cap would. -->
+              <KeyCap
+                v-if="vaultLetter(at)"
+                class="welcome__cap"
+                :keys="{ marks: [], letter: vaultLetter(at) }"
+              />
+              <FolderRoot v-else class="welcome__icon" />
               <span class="welcome__named">
                 <span class="welcome__what">{{ one.name }}</span>
                 <!-- The whole path is on the element, for one too long to be drawn. -->
@@ -188,6 +197,15 @@ defineEmits<{
   block-size: 1rem;
   stroke-width: 1.75;
   opacity: 0.75;
+}
+
+/* The cap is held to the width of a mark, so a name on the list begins on the
+   same line as a name above it. */
+.welcome__cap {
+  flex: none;
+  inline-size: 1rem;
+  min-inline-size: 1rem;
+  padding-inline: 0;
 }
 
 /* A row is its name over what is said about it, beside the one icon. */
