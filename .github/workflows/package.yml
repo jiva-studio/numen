@@ -158,14 +158,17 @@ jobs:
           BUILD: ${{ needs.naming.outputs.build }}
           COMMIT: ${{ needs.naming.outputs.commit }}
         run: |
-          CGO_ENABLED=1 go build -trimpath \
-            -ldflags "-X main.version=$VERSION -X main.build=$BUILD -X main.commit=$COMMIT" \
+          # Both binaries say what they are out of the one package the linker
+          # writes the numbers into.
+          into=github.com/jiva-studio/numen/modules/apps/desktop/internal/version
+          stamp="-X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
+
+          CGO_ENABLED=1 go build -trimpath -ldflags "$stamp" \
             -o "$RUNNER_TEMP/numen" ./cmd/numen
 
           # The two windows are always the same build: they ship together, one
           # version, one package.
-          CGO_ENABLED=1 go build -trimpath \
-            -ldflags "-X main.version=$VERSION -X main.build=$BUILD -X main.commit=$COMMIT" \
+          CGO_ENABLED=1 go build -trimpath -ldflags "$stamp" \
             -o "$RUNNER_TEMP/numen-flashcards" ./cmd/numen-flashcards
 
           # A name the linker does not find is one it passes over in silence.
@@ -255,8 +258,9 @@ jobs:
           BUILD: ${{ needs.naming.outputs.build }}
           COMMIT: ${{ needs.naming.outputs.commit }}
         run: |
+          into=github.com/jiva-studio/numen/modules/apps/desktop/internal/version
           GOOS=windows GOARCH=amd64 go build -trimpath \
-            -ldflags "-X main.version=$VERSION -X main.build=$BUILD -X main.commit=$COMMIT" \
+            -ldflags "-X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT" \
             -o "$RUNNER_TEMP/numen.exe" ./cmd/numen
 
       - name: Archive
@@ -330,7 +334,8 @@ jobs:
           BUILD: ${{ needs.naming.outputs.build }}
           COMMIT: ${{ needs.naming.outputs.commit }}
         run: |
-          stamp="-X main.version=$VERSION -X main.build=$BUILD -X main.commit=$COMMIT"
+          into=github.com/jiva-studio/numen/modules/apps/desktop/internal/version
+          stamp="-X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
           CGO_ENABLED=1 GOARCH=arm64 go build -trimpath -ldflags "$stamp" -o "$RUNNER_TEMP/numen-arm64" ./cmd/numen
           CGO_ENABLED=1 GOARCH=amd64 CC="clang -arch x86_64" go build -trimpath -ldflags "$stamp" -o "$RUNNER_TEMP/numen-amd64" ./cmd/numen
           lipo -create "$RUNNER_TEMP/numen-arm64" "$RUNNER_TEMP/numen-amd64" -output "$RUNNER_TEMP/numen"
