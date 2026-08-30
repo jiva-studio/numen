@@ -141,25 +141,35 @@ func New(core Core) *sdk.Server {
 	return server
 }
 
+// NewReading builds a server whose every tool reads. Nothing it serves
+// reaches a writer, so an agent answering from it changes nothing.
+func NewReading(core Core) *sdk.Server {
+	server := sdk.NewServer(
+		&sdk.Implementation{
+			Name:        "numen",
+			Title:       "numen",
+			Description: "Notes with typed links and spaced repetition.",
+			Version:     Version,
+		},
+		&sdk.ServerOptions{Instructions: readingInstructions(core)},
+	)
+
+	addNoteReadingTools(server, core)
+	addCardReadingTools(server, core)
+	addLinkReadingTools(server, core)
+	addSourceReadingTools(server, core)
+	addVaultGet(server, core)
+	return server
+}
+
 // namingOrder is how a note comes by the name it is shown under. The
 // instructions and the tool that changes it say it in these words.
 const namingOrder = "A note is shown by its title, else by its filename."
 
 // instructions is what an agent is told once, before it calls anything.
-//
-// The vault's location is said once, here. A note has one address, and an
-// agent that joins it to the root pays for the root once.
 func instructions(core Core) string {
 	var b strings.Builder
-	b.WriteString("These tools work on one numen vault: markdown notes in an ordinary folder, ")
-	b.WriteString("joined by typed links into a graph.\n\n")
-
-	shown := core.shown()
-	fmt.Fprintf(&b, "The vault %q is at %s on this machine.\n", shown.Vault.Name, shown.Root)
-	b.WriteString("Every note is addressed by its path relative to that folder, with forward ")
-	b.WriteString("slashes — `notes/entropy.md`. That path is what every tool takes and returns. ")
-	b.WriteString("To open a note as a file, join it to the folder above; if you cannot read ")
-	b.WriteString("files, `note_read` gives you the same text.\n\n")
+	opening(&b, core)
 
 	b.WriteString("What is worth knowing before changing anything:\n")
 	b.WriteString("- " + namingOrder + " `note_rename` brings whichever of the three names it ")
@@ -193,5 +203,45 @@ func instructions(core Core) string {
 
 	b.WriteString("Changes appear immediately in the window the person has open, so work in ")
 	b.WriteString("small steps they can follow.\n")
+	return b.String()
+}
+
+// opening is what every agent is told first: what a vault is, where this one
+// is, and how a note is addressed. A note has one address, and an agent that
+// joins it to the root pays for the root once.
+func opening(b *strings.Builder, core Core) {
+	b.WriteString("These tools work on one numen vault: markdown notes in an ordinary folder, ")
+	b.WriteString("joined by typed links into a graph.\n\n")
+
+	shown := core.shown()
+	fmt.Fprintf(b, "The vault %q is at %s on this machine.\n", shown.Vault.Name, shown.Root)
+	b.WriteString("Every note is addressed by its path relative to that folder, with forward ")
+	b.WriteString("slashes — `notes/entropy.md`. That path is what every tool takes and returns. ")
+	b.WriteString("To open a note as a file, join it to the folder above; if you cannot read ")
+	b.WriteString("files, `note_read` gives you the same text.\n\n")
+}
+
+// readingInstructions is what an agent served the reading tools is told once,
+// before it calls anything.
+func readingInstructions(core Core) string {
+	var b strings.Builder
+	opening(&b, core)
+
+	b.WriteString("Everything you can do here reads. Nothing you can call writes a note, a ")
+	b.WriteString("card or a document, and nothing you call moves the person's window.\n\n")
+
+	b.WriteString("Say where each part of an answer came from, in words the person can find ")
+	b.WriteString("it by: the note's path and the heading it stands under, the book's name ")
+	b.WriteString("and its chapter or page. Write it where you say the thing, not in a list ")
+	b.WriteString("at the end. There is nothing here to open a `numen:` link with, so a link ")
+	b.WriteString("is not a place a person can go.\n\n")
+
+	b.WriteString("Asking a book is not like asking a note:\n")
+	b.WriteString("- Search with the person's own words before searching with your own. A ")
+	b.WriteString("book's sections are searched by name, and a section named what was asked ")
+	b.WriteString("for is what the search answers with.\n")
+	b.WriteString("- A passage is a window cut to a size and it ends where it was cut, which ")
+	b.WriteString("is mid-sentence as often as not. Read on with `source_read` before saying ")
+	b.WriteString("a book does not say something.\n")
 	return b.String()
 }

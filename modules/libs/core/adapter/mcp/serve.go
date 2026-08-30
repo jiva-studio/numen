@@ -115,6 +115,16 @@ func (w *working) reckon() {
 // Trouble, if it is given, is called with whatever stops the server later. It
 // is how the person hears that it stopped.
 func ServeHTTP(ctx context.Context, addr, token string, core Core, trouble func(error)) (*Endpoint, error) {
+	return serve(ctx, addr, token, New(core), trouble)
+}
+
+// ServeReadingHTTP starts a server whose every tool reads. An agent answering
+// through it changes nothing.
+func ServeReadingHTTP(ctx context.Context, addr, token string, core Core, trouble func(error)) (*Endpoint, error) {
+	return serve(ctx, addr, token, NewReading(core), trouble)
+}
+
+func serve(ctx context.Context, addr, token string, server *sdk.Server, trouble func(error)) (*Endpoint, error) {
 	if addr == "" {
 		addr = DefaultAddr
 	}
@@ -123,7 +133,6 @@ func ServeHTTP(ctx context.Context, addr, token string, core Core, trouble func(
 	}
 
 	endpoint := &Endpoint{}
-	server := New(core)
 	server.AddReceivingMiddleware(endpoint.counting)
 	handler := sdk.NewStreamableHTTPHandler(
 		func(*http.Request) *sdk.Server { return server },

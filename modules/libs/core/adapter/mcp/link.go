@@ -11,6 +11,35 @@ import (
 )
 
 func addLinkTools(server *sdk.Server, core Core) {
+	addLinkReadingTools(server, core)
+	addLinkWritingTools(server, core)
+}
+
+func addLinkReadingTools(server *sdk.Server, core Core) {
+	sdk.AddTool(server, &sdk.Tool{
+		Name:  "link_list",
+		Title: "List links",
+		Description: "What one note points at and what points at it. A link is a " +
+			"backlink because it resolves here, whichever end wrote it.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
+		Path string `json:"path" jsonschema:"the note to ask about"`
+	}) (*sdk.CallToolResult, struct {
+		Links     []Link `json:"links"`
+		Backlinks []Link `json:"backlinks"`
+	}, error) {
+		type out = struct {
+			Links     []Link `json:"links"`
+			Backlinks []Link `json:"backlinks"`
+		}
+		found, err := core.Links.Execute(ctx, core.shown().Vault, in.Path)
+		if err != nil {
+			return nil, out{}, err
+		}
+		return nil, out{Links: linksOf(found.Links), Backlinks: linksOf(found.Backlinks)}, nil
+	})
+}
+
+func addLinkWritingTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "link_add",
 		Title: "Add links",
@@ -116,28 +145,6 @@ func addLinkTools(server *sdk.Server, core Core) {
 		err := core.Linking.Remove(ctx, core.shown().Vault, in.From,
 			domain.ParseAddress(in.To), domain.LinkRole(in.Role))
 		return nil, Done{Path: in.From}, err
-	})
-
-	sdk.AddTool(server, &sdk.Tool{
-		Name:  "link_list",
-		Title: "List links",
-		Description: "What one note points at and what points at it. A link is a " +
-			"backlink because it resolves here, whichever end wrote it.",
-	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		Path string `json:"path" jsonschema:"the note to ask about"`
-	}) (*sdk.CallToolResult, struct {
-		Links     []Link `json:"links"`
-		Backlinks []Link `json:"backlinks"`
-	}, error) {
-		type out = struct {
-			Links     []Link `json:"links"`
-			Backlinks []Link `json:"backlinks"`
-		}
-		found, err := core.Links.Execute(ctx, core.shown().Vault, in.Path)
-		if err != nil {
-			return nil, out{}, err
-		}
-		return nil, out{Links: linksOf(found.Links), Backlinks: linksOf(found.Backlinks)}, nil
 	})
 }
 

@@ -8,7 +8,16 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
+// addVaultTools gives an agent the vault it is working: where it is, what it
+// holds under one name, and what in it could not be read. Every one of them
+// reads.
 func addVaultTools(server *sdk.Server, core Core) {
+	addVaultGet(server, core)
+	addVaultProblems(server, core)
+	addVaultNamed(server, core)
+}
+
+func addVaultGet(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "vault_get",
 		Title: "Show the vault",
@@ -41,7 +50,9 @@ func addVaultTools(server *sdk.Server, core Core) {
 			Headings: summary.Headings,
 		}, nil
 	})
+}
 
+func addVaultProblems(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "vault_problems",
 		Title: "List what a scan could not act on",
@@ -90,7 +101,9 @@ func addVaultTools(server *sdk.Server, core Core) {
 		}
 		return nil, res, nil
 	})
+}
 
+func addVaultNamed(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "vault_named",
 		Title: "Find notes by name",
