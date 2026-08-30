@@ -13,7 +13,7 @@
 import { ref, shallowRef } from 'vue'
 
 import { WORDS as words } from './reading/words'
-import type { Around, Joined } from './reading/core'
+import type { Around, Neighbour } from './reading/core'
 
 /** What the panel asks of the window it is drawn in. */
 export interface Beside {
@@ -35,7 +35,7 @@ export interface Beside {
 }
 
 export function reading(deps: Beside) {
-  const notes = shallowRef<readonly Joined[]>([])
+  const notes = shallowRef<readonly Neighbour[]>([])
 
   /** How many at the end came named and not read. */
   const unread = ref(0)
@@ -48,20 +48,28 @@ export function reading(deps: Beside) {
   /** The note the panel is to be opened on, where a link named one. */
   const at = ref('')
 
+  /** The deck the answer being waited for was asked about. */
+  let asked = ''
+
   /** What the deck is joined to, asked for once and kept until the deck changes. */
   const fetches = async (vault: string, deck: string) => {
     if (held.value === deck) return
+    asked = deck
     working.value = true
     try {
       const around = await deps.around(vault, deck)
+      // A card answered while this was in flight moves the sitting to another
+      // deck, and what came back is then about the deck behind it.
+      if (asked !== deck) return
       notes.value = around.notes
       unread.value = around.unread
       held.value = deck
     } catch {
+      if (asked !== deck) return
       forgets()
       deps.says(words.unreached)
     } finally {
-      working.value = false
+      if (asked === deck) working.value = false
     }
   }
 
@@ -91,6 +99,7 @@ export function reading(deps: Beside) {
     notes.value = []
     unread.value = 0
     held.value = ''
+    asked = ''
   }
 
   /** The sitting is over: the panel holds nothing and is put away. */

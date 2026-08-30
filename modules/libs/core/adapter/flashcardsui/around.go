@@ -26,11 +26,11 @@ func (a *API) Around(
 	}
 
 	out := &v1.AroundResponse{
-		Notes:  make([]*v1.Joined, 0, len(joined.Notes)),
+		Notes:  make([]*v1.Neighbour, 0, len(joined.Notes)),
 		Unread: int32(joined.Unread),
 	}
 	for _, one := range joined.Notes {
-		next := &v1.Joined{
+		next := &v1.Neighbour{
 			Written:   one.Written,
 			Path:      one.Path,
 			Title:     one.Title,

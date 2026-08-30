@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-30
-- **Applies to:** `modules/libs/core` — `usecase/flashcards`, `adapter/flashcardsui`, `adapter/refusal`; `modules/apps/desktop` — `cmd/numen-flashcards`, `flashcards`
+- **Applies to:** `modules/libs/core` — `usecase/flashcards`, `adapter/flashcardsui`, `refusal`; `modules/apps/desktop` — `cmd/numen-flashcards`, `flashcards`
 - **Related:** ADR-0018, ADR-0025, ADR-0027, ADR-0030, ADR-0032
 
 ## Context
@@ -62,7 +62,7 @@ It scrolls the reading rather than turning the card. It is the one key in this w
 - The review window reads notes, not only decks. It still writes nothing but a mark and an answer.
 - The list is the same on every card of a deck, and long decks have long lists.
 - A stencil stands in the reading of every deck it cuts, because that is what the deck points at.
-- `refusalOf` leaves the editor's adapter for a package both adapters can see: two adapters answering the same question needed one vocabulary, not two.
+- `refusalOf` leaves the editor's adapter for `libs/core/refusal`, which both adapters can see: two adapters answering the same question needed one vocabulary, not two. It cannot live under `adapter/`, where an adapter may not reach another adapter.
 - A person can read what a card came from without leaving the sitting, and without the editor being open.
 
 ## Alternatives considered

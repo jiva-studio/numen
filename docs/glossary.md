@@ -98,6 +98,7 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | --- | --- | --- |
 | plex | The focused neighbourhood the product is named for. | |
 | neighbourhood | One note and everything joined to it, seen from that note. | |
+| neighbour | One of the notes a neighbourhood holds: a note joined to the one it is seen from, either way round. | |
 | focus | A neighbourhood's: the note it is seen from. A workspace's: the pane a tab opens into. | the keyboard's position |
 | node | What is drawn in place of a note. | |
 | ticket | What the picture calls a note. The application mints one the first time a note is drawn, and the note holds it while its file moves. Every gesture the plex reports names a node by its ticket, and the application translates it back to a path. | identifier, id, key |

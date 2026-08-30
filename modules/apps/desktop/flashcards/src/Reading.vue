@@ -9,7 +9,7 @@ import { nextTick, ref, useTemplateRef, watch } from 'vue'
 import { Prose } from '@numen/ui'
 
 import { WORDS as words } from './reading/words'
-import type { Joined } from './reading/core'
+import type { Neighbour } from './reading/core'
 import type { Read } from './reading'
 
 const props = defineProps<{ held: Read }>()
@@ -32,17 +32,19 @@ const scrolls = (back = false) => {
 defineExpose({ scrolls })
 
 /** A note is named by its title, and by how it was written where it has none. */
-const named = (one: Joined) => one.title || one.written
+const named = (one: Neighbour) => one.title || one.written
 
 // A link pressed in the card opens the panel on the note it names, so the
-// reading starts where the person was looking.
+// reading starts where the person was looking. The notes are waited for: the
+// panel comes in while they are still being asked for, and a note cannot be
+// scrolled to before it is drawn.
 watch(
-  () => [props.held.open(), props.held.at.value] as const,
-  ([open, at]) => {
-    if (!open || !at) return
+  () => [props.held.open(), props.held.at.value, props.held.notes.value] as const,
+  ([open, at, notes]) => {
+    if (!open || !at || !notes.length) return
     void nextTick(() => {
-      const i = props.held.notes.value.findIndex((one) => one.written === at || one.path === at)
-      if (i >= 0) drawn.value[i]?.scrollIntoView({ block: 'start', behavior: 'auto' })
+      const i = notes.findIndex((one) => one.written === at || one.path === at)
+      drawn.value[i]?.scrollIntoView({ block: 'start', behavior: 'auto' })
       props.held.read()
     })
   },
