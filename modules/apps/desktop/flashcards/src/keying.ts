@@ -13,11 +13,28 @@ export type Asks =
   | { does: 'takeBack' }
   | { does: 'leave' }
   | { does: 'answer'; how: Said }
+  | { does: 'ask' }
+  | { does: 'shut' }
 
 /** What the window is showing when the key is pressed. */
 export interface Showing {
   /** Whether the answer is already showing. */
   shown: boolean
+  /** Whether the panel a card is asked about in is up. */
+  asking?: boolean
+}
+
+/** The letter the panel a card is asked about in is brought in with. */
+export const ASKS = 'a'
+
+/**
+ * Whether the key was pressed into something being written in. A letter is
+ * text there, and a sitting reads none of its own keys out of a field.
+ */
+export const typing = (press: KeyboardEvent): boolean => {
+  const at = press.target as HTMLElement | null
+  if (!at) return false
+  return at.tagName === 'INPUT' || at.tagName === 'TEXTAREA' || at.isContentEditable === true
 }
 
 /**
@@ -29,12 +46,22 @@ export interface Showing {
  * modifier is the machine's own shortcut and is not an answer. Once the card is
  * over, space and enter are left to whatever the person has moved focus to, so
  * a button reached with the keyboard is pressed with the keyboard.
+ *
+ * While a question is being written none of these are pressed: the letters are
+ * the question. Escape there sends the panel away and leaves the sitting where
+ * it is.
  */
 export function asks(press: KeyboardEvent, showing: Showing): Asks | null {
   if (spoken(press)) return null
-  if (press.key === 'Escape') return { does: 'leave' }
+  if (typing(press)) return press.key === 'Escape' ? { does: 'shut' } : null
+  if (press.key === 'Escape') return showing.asking ? { does: 'shut' } : { does: 'leave' }
   if (press.key === 'u' || press.key === 'U') return { does: 'takeBack' }
   if (press.key === ' ' && !showing.shown) return { does: 'show' }
+  // A card is asked about once its answer is showing: one that can be asked
+  // about before it is turned is a way not to recall it.
+  if ((press.key === ASKS || press.key === ASKS.toUpperCase()) && showing.shown) {
+    return { does: 'ask' }
+  }
 
   const which = Number(press.key)
   if (Number.isInteger(which) && which >= 1 && which <= said.length) {

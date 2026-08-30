@@ -9,6 +9,7 @@ const asked = (card: string) => ({
   section: '',
   card,
   face: 'Say it',
+  heading: card,
   front: `<p>${card}</p>`,
   back: '<p>and back</p>',
   seen: false,

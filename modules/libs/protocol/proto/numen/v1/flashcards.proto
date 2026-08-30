@@ -48,6 +48,10 @@ service FlashcardsService {
   // Reviewed is how much of a vault was answered on each day it was reviewed,
   // and how many days up to now were reviewed without a gap.
   rpc Reviewed(ReviewedRequest) returns (ReviewedResponse);
+
+  // Asking is whether a card can be asked about here, and on which cards the
+  // way in is offered.
+  rpc Asking(AskingRequest) returns (AskingResponse);
 }
 
 // Rating is how well a card came back. A person says which of the four, and
@@ -231,6 +235,18 @@ message Reviewing {
   // nothing about how well anything is remembered.
   int32 asked = 7;
   int32 recalled = 8;
+}
+
+message AskingRequest {}
+
+message AskingResponse {
+  // Set when no agent can be reached, and then nothing can be asked here. It
+  // says why, in the person's own words.
+  string unreachable = 1;
+
+  // EveryCard offers the way in on every card whose answer is showing. False
+  // offers it on a card the person could not recall.
+  bool every_card = 2;
 }
 
 message MovingRequest {}

@@ -34,6 +34,7 @@ export interface Opened {
     section: string
     card: string
     face: string
+    heading: string
     front: string
     back: string
     seen: boolean
@@ -204,6 +205,7 @@ const asking = (one: Opened['asked'][number]): Asked => ({
   section: one.section,
   card: one.card,
   face: one.face,
+  heading: one.heading,
   front: one.front,
   back: one.back,
   seen: one.seen,

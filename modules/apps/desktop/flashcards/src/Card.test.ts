@@ -1,13 +1,33 @@
 // @vitest-environment jsdom
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
+import { nextTick } from 'vue'
 
 import Card from './Card.vue'
+import { FAR, STILL } from './swiping'
 
-const shows = (front: string, said: { back?: string; shown?: boolean } = {}) =>
+const shows = (front: string, said: { back?: string; shown?: boolean; asking?: boolean } = {}) =>
   mount(Card, {
-    props: { front, back: said.back ?? '<p>the back</p>', shown: said.shown ?? false },
+    props: {
+      front,
+      back: said.back ?? '<p>the back</p>',
+      shown: said.shown ?? false,
+      asking: said.asking ?? false,
+    },
   })
+
+/**
+ * A hand going down on the card, across by so much, and up again. A card takes
+ * the pointer while a hand is on it, and jsdom has no capture to give it.
+ */
+const taken = async (face: ReturnType<typeof shows>, across: number) => {
+  const card = face.find('.card').element as HTMLElement
+  card.setPointerCapture = () => {}
+  card.dispatchEvent(new MouseEvent('pointerdown', { clientX: 100 }))
+  card.dispatchEvent(new MouseEvent('pointermove', { clientX: 100 + across }))
+  card.dispatchEvent(new MouseEvent('pointerup', { clientX: 100 + across }))
+  await nextTick()
+}
 
 describe('a card', () => {
   it('draws the front, and the back once the answer is showing', () => {
@@ -56,6 +76,43 @@ describe('a card', () => {
     const over = shows('<p>Leaf mould</p>', { shown: true })
     await over.find('.card').trigger('click')
     expect(over.emitted('show')).toBeUndefined()
+  })
+
+  // A card that can be asked about before it is turned is a way not to recall
+  // it.
+  it('is not dragged while the answer is hidden, however far it is taken', async () => {
+    const face = shows('<p>Leaf mould</p>')
+    await taken(face, -FAR * 4)
+    expect(face.emitted('ask')).toBeUndefined()
+    expect(face.emitted('dragging')).toBeUndefined()
+  })
+
+  it('brings the panel in when it is taken far to the left', async () => {
+    const face = shows('<p>Leaf mould</p>', { shown: true })
+    await taken(face, -FAR)
+    expect(face.emitted('ask')).toHaveLength(1)
+    expect(face.emitted('shut')).toBeUndefined()
+  })
+
+  it('sends the panel away when it is taken far back to the right', async () => {
+    const face = shows('<p>Leaf mould</p>', { shown: true, asking: true })
+    await taken(face, FAR)
+    expect(face.emitted('shut')).toHaveLength(1)
+    expect(face.emitted('ask')).toBeUndefined()
+  })
+
+  it('asks for nothing when it is barely taken anywhere', async () => {
+    const face = shows('<p>Leaf mould</p>', { shown: true })
+    await taken(face, -STILL)
+    expect(face.emitted('ask')).toBeUndefined()
+    expect(face.emitted('shut')).toBeUndefined()
+  })
+
+  it('asks for nothing when it is taken less far than the panel wants', async () => {
+    const face = shows('<p>Leaf mould</p>', { shown: true })
+    await taken(face, -(FAR - 1))
+    expect(face.emitted('ask')).toBeUndefined()
+    expect(face.emitted('shut')).toBeUndefined()
   })
 
   // This window has one page and no way back to it.

@@ -3,7 +3,8 @@
 // It is a second adapter beside webui and not a part of it: what it answers is
 // a different service over a different page, and what it holds is a slice of
 // the installation — the registry and the four scenarios flashcards is made of.
-// No scan runs behind it, nothing is embedded, and no agent is reached.
+// No scan runs behind it and nothing is embedded. An agent is reached, and
+// every tool it may call reads.
 package flashcardsui
 
 import (
@@ -11,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -50,12 +52,46 @@ type API struct {
 	// Now is when this is happening.
 	Now func() time.Time
 
+	// Sat is called with the vault a sitting has just opened on. What answers
+	// about a card works one vault, and it is told which when the sitting is.
+	Sat func(context.Context, domain.Vault)
+
+	// EveryCard offers the way into the panel on every card whose answer is
+	// showing. Off, it is offered on a card the person could not recall.
+	EveryCard bool
+
+	// Unreachable is why an agent cannot be reached, when one cannot.
+	Unreachable atomic.Value
+
+	// taking is the agent a question about a card goes to. A window without one
+	// answers that it has none, and the rest of it works as it did.
+	taking atomic.Pointer[port.Agent]
+
 	mu sync.Mutex
 	// runs is the sitting open on each vault, by the vault's identity.
 	runs map[string]*flashcards.Run
 
 	// following is everyone waiting to hear that a vault moved.
 	following following
+}
+
+// Answering is the agent a question about a card goes to, and nothing where
+// this window has none.
+func (a *API) Answering() port.Agent {
+	if taking := a.taking.Load(); taking != nil {
+		return *taking
+	}
+	return nil
+}
+
+// Answers is who takes those questions from now on. Nothing leaves the window
+// with no agent.
+func (a *API) Answers(taking port.Agent) {
+	if taking == nil {
+		a.taking.Store(nil)
+		return
+	}
+	a.taking.Store(&taking)
 }
 
 // Vault is the vault of an identity, as the registry holds it.
@@ -78,6 +114,16 @@ func (a *API) opened(ctx context.Context, v domain.Vault) (*flashcards.Run, erro
 	if err != nil {
 		return nil, err
 	}
+	a.remember(v, run)
+	// The agent works the vault the person is sitting to, and it is told which
+	// once, when the sitting opens.
+	if a.Sat != nil {
+		a.Sat(ctx, v)
+	}
+	return run, nil
+}
+
+func (a *API) remember(v domain.Vault, run *flashcards.Run) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	if a.runs == nil {
@@ -86,7 +132,6 @@ func (a *API) opened(ctx context.Context, v domain.Vault) (*flashcards.Run, erro
 	// One sitting to a vault: opening another lets go of the one before it, and
 	// the file that one wrote is never appended to again.
 	a.runs[v.ID] = run
-	return run, nil
 }
 
 // running is the run this window has open on a vault, and only under the name

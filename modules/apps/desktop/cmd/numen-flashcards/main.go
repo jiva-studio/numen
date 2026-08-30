@@ -25,9 +25,10 @@ import (
 
 func main() {
 	var cfg container.Config
-	var telling bool
+	var telling, noAgent bool
 	flag.StringVar(&cfg.IndexPath, "index", "", "path to the index database")
 	flag.StringVar(&cfg.RegistryPath, "registry", "", "path to the vault list")
+	flag.BoolVar(&noAgent, "no-agent", false, "do not let a card be asked about")
 	flag.BoolVar(&telling, "version", false, "say what this build is and stop")
 	flag.Parse()
 
@@ -36,13 +37,13 @@ func main() {
 		return
 	}
 
-	if err := run(cfg); err != nil {
+	if err := run(cfg, noAgent); err != nil {
 		fmt.Fprintln(os.Stderr, "numen-flashcards:", err)
 		os.Exit(1)
 	}
 }
 
-func run(cfg container.Config) error {
+func run(cfg container.Config, noAgent bool) error {
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
 
@@ -77,7 +78,18 @@ func run(cfg container.Config) error {
 		Log:       running.Log,
 		Counted:   running.Counted,
 		Now:       time.Now,
+		EveryCard: chosen.Flashcards.ExplainEveryCard,
 	}
+
+	// A card is asked about through tools that only read, on a port this window
+	// opens for itself. The agent works the vault the person sat down to, so it
+	// is started and stopped around a sitting.
+	away := serveAgents(ctx, cfg, db, api, noAgent, os.Stderr)
+	defer func() {
+		if err := away(); err != nil {
+			fmt.Fprintln(os.Stderr, "numen-flashcards: agents:", err)
+		}
+	}()
 
 	// What the window draws from is followed while it is open, so a card
 	// changed or a deck written is counted again without a person asking.

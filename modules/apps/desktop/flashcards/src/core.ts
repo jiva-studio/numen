@@ -61,6 +61,8 @@ export interface Asked {
   readonly section: string
   readonly card: string
   readonly face: string
+  /** What the card's heading shows, which is the first line of its first field. */
+  readonly heading: string
   readonly front: string
   readonly back: string
   readonly seen: boolean
