@@ -73,15 +73,48 @@ describe('the days a grid draws', () => {
     }
   })
 
-  // The grid is as wide as the room it was given, so it runs back from the
-  // last week it draws for as many weeks as it has columns.
+  // The grid is as wide as the room it was given: a week to every column.
   it('draws a week for every column it was given', () => {
     const now = new Date('2026-08-29T12:00:00')
     const shown = days(30, now, answeredOn([['2026-08-28', 3]]))
 
     expect(shown).toHaveLength(30 * ROWS)
     expect(shown.some((one) => one.today)).toBe(true)
+  })
+
+  // Nobody wants years of empty squares from before they ever sat down. The
+  // grid opens on the week they began in, and the room past what they have yet
+  // done stretches out to the right.
+  it('opens on the week a person began in', () => {
+    const now = new Date('2026-08-29T12:00:00')
+    const shown = days(30, now, answeredOn([['2026-08-28', 3]]))
+
+    // The Monday of that week.
+    expect(shown[0]!.day).toBe('2026-08-24')
     expect(shown[shown.length - 1]!.ahead).toBe(true)
+  })
+
+  // Once they have been here longer than the width holds, the oldest weeks
+  // fall off the left and the grid ends on what is still to come.
+  it('lets the oldest weeks go once there are more than it holds', () => {
+    const now = new Date('2026-08-29T12:00:00')
+    const long = answeredOn([
+      ['2024-01-01', 5],
+      ['2026-08-28', 3],
+    ])
+    const shown = days(12, now, long)
+
+    expect(shown[0]!.day > '2024-01-01').toBe(true)
+    expect(shown.some((one) => one.today)).toBe(true)
+    expect(shown[shown.length - 1]!.ahead).toBe(true)
+  })
+
+  // A vault whose cards are all still ahead has a beginning too.
+  it('opens on this week for a vault with nothing behind it', () => {
+    const now = new Date('2026-08-29T12:00:00')
+    const shown = days(30, now, new Map(), new Map([['2026-09-03', 8]]))
+
+    expect(shown[0]!.day).toBe('2026-08-24')
   })
 
   it('gives the room to what is behind where there is little of it', () => {
