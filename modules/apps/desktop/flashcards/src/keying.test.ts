@@ -47,16 +47,20 @@ describe('the keys a sitting is done with', () => {
     expect(asks(pressed('Escape'), { shown: true })).toEqual({ does: 'leave' })
   })
 
-  it('brings the panel in on either side of the card', () => {
-    expect(asks(pressed('a'), { shown: true })).toEqual({ does: 'ask' })
-    expect(asks(pressed('A'), { shown: true })).toEqual({ does: 'ask' })
-    expect(asks(pressed('a'), { shown: false })).toEqual({ does: 'ask' })
+  // The letters on their own are what a card is answered by, so the panels are
+  // held with the overlay key: control here, command on a Mac.
+  it('brings the panels in on either side of the card, held with the overlay key', () => {
+    for (const held of ['ctrlKey', 'metaKey'] as const) {
+      expect(asks(pressed('a', { [held]: true }), { shown: true })).toEqual({ does: 'ask' })
+      expect(asks(pressed('A', { [held]: true }), { shown: false })).toEqual({ does: 'ask' })
+      expect(asks(pressed('r', { [held]: true }), { shown: true })).toEqual({ does: 'read' })
+      expect(asks(pressed('R', { [held]: true }), { shown: false })).toEqual({ does: 'read' })
+    }
   })
 
-  it('brings the reading in on either side of the card', () => {
-    expect(asks(pressed('r'), { shown: true })).toEqual({ does: 'read' })
-    expect(asks(pressed('R'), { shown: true })).toEqual({ does: 'read' })
-    expect(asks(pressed('r'), { shown: false })).toEqual({ does: 'read' })
+  it('is not asked for by the letters on their own', () => {
+    expect(asks(pressed('a'), { shown: true })).toBeNull()
+    expect(asks(pressed('r'), { shown: true })).toBeNull()
   })
 
   // With a panel up, escape sends it away and the sitting stays where it is.

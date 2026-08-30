@@ -87,6 +87,23 @@ const read = reading({
   says: (said) => says(said, 'caution'),
 })
 
+/**
+ * The two ways in, each of them also the way out: a person who brought a panel
+ * in with a key or a control takes it away with the same one.
+ *
+ * A link pressed in the card names the note to open on, and asks for the
+ * reading rather than toggling it: the press was about that note.
+ */
+const reads = (named = '') => {
+  if (named === '' && showing.value === 'reading') read.shuts()
+  else void read.opens(named)
+}
+
+const talks = () => {
+  if (showing.value === 'asking') panel.shuts()
+  else panel.opens()
+}
+
 /** What is read, so the keys can scroll it: the caret is nowhere in it. */
 const page = useTemplateRef<InstanceType<typeof Reading>>('page')
 
@@ -182,10 +199,10 @@ const keyed = (press: KeyboardEvent) => {
       void leave()
       break
     case 'ask':
-      panel.opens()
+      talks()
       break
     case 'read':
-      void read.opens()
+      reads()
       break
     case 'scroll':
       page.value?.scrolls(asked.back)
@@ -291,8 +308,8 @@ onUnmounted(() => {
       @answer="answered"
       @take-back="sat.takeBack"
       @leave="leave"
-      @ask="panel.opens()"
-      @read="(named: string) => read.opens(named)"
+      @ask="talks"
+      @read="reads"
       @shut="panel.shuts()"
     >
       <template #reading>
