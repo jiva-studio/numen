@@ -12,6 +12,46 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
+// A listener that has not read what it was told already is passed over rather
+// than waited for: every message says the same thing, so what is said to a
+// full listener is what the one it holds already says.
+func TestAListenerIsPassedOverRatherThanWaitedFor(t *testing.T) {
+	var f following
+	line, done := f.listen()
+	t.Cleanup(done)
+
+	f.say()
+	f.say()
+
+	if _, is := <-line; !is {
+		t.Fatal("the listener was told nothing")
+	}
+	select {
+	case <-line:
+		t.Error("the listener holds two of one message")
+	default:
+	}
+}
+
+// A listener that has stopped listening is not spoken to, and does not hold up
+// the ones that still are.
+func TestAListenerThatStoppedIsNotSpokenTo(t *testing.T) {
+	var f following
+	going, still := f.listen()
+	standing, done := f.listen()
+	t.Cleanup(done)
+
+	still()
+	if _, is := <-going; is {
+		t.Error("a listener that stopped was still told something")
+	}
+
+	f.say()
+	if _, is := <-standing; !is {
+		t.Error("the listener that stayed was told nothing")
+	}
+}
+
 // Something moving underneath the window reaches the page, so a deck written
 // while a person is looking at the list is a deck they are shown.
 func TestSomethingMovingReachesThePage(t *testing.T) {
