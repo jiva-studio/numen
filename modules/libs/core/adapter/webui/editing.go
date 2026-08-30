@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/refusal"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
@@ -32,8 +33,8 @@ func (a *API) Read(ctx context.Context, r *connect.Request[v1.ReadRequest]) (*co
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	out := &v1.ReadResponse{Body: found.Body}
-	if refusal, refused := refusalOf(found.Outcome); refused {
-		out.Refusal = &refusal
+	if reason, refused := refusal.Of(found.Outcome); refused {
+		out.Refusal = &reason
 	} else {
 		// What the file was when this prose came out of it, for the client to
 		// present when it puts prose back.
@@ -291,22 +292,4 @@ func coded(err error) connect.Code {
 		return connect.CodeInvalidArgument
 	}
 	return connect.CodeInternal
-}
-
-// refusalOf says which refusal an outcome is, and whether it is one at all.
-func refusalOf(o note.Outcome) (v1.Refusal, bool) {
-	switch o {
-	case note.Missing:
-		return v1.Refusal_REFUSAL_MISSING, true
-	case note.NotANote:
-		return v1.Refusal_REFUSAL_NOT_A_NOTE, true
-	case note.NotText:
-		return v1.Refusal_REFUSAL_NOT_TEXT, true
-	case note.TooLarge:
-		return v1.Refusal_REFUSAL_TOO_LARGE, true
-	case note.Unreadable:
-		return v1.Refusal_REFUSAL_UNREADABLE, true
-	default:
-		return v1.Refusal_REFUSAL_UNSPECIFIED, false
-	}
 }

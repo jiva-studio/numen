@@ -17,7 +17,10 @@ const props = defineProps<{
   shown: boolean
 }>()
 
-const emit = defineEmits<{ (event: 'show'): void }>()
+const emit = defineEmits<{
+  (event: 'show'): void
+  (event: 'read', named: string): void
+}>()
 
 const front = computed(() => safe(props.front))
 const back = computed(() => safe(props.back))
@@ -32,14 +35,20 @@ const took = (press: PointerEvent) => {
   from.value = press.clientX
 }
 
+/** Whether a name carries a scheme, which is what makes it point out of the vault. */
+const away = /^[a-z][a-z0-9+.-]*:/i
+
 /**
- * The card is turned over by pressing it. A link inside one is not followed:
- * this window has one page and no way back to it, and where a card points is
- * read in the editor.
+ * The card is turned over by pressing it. A link inside one is never followed —
+ * this window has one page — but a link into the vault opens the reading beside
+ * the card on the note it names.
  */
 const pressed = (press: MouseEvent) => {
-  if ((press.target as HTMLElement | null)?.closest?.('a')) {
+  const link = (press.target as HTMLElement | null)?.closest?.('a')
+  if (link) {
     press.preventDefault()
+    const named = link.getAttribute('href') ?? ''
+    if (named && !away.test(named)) emit('read', decodeURIComponent(named))
     return
   }
   // A hand that took the card across was moving the panel into view, and a

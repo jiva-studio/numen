@@ -55,6 +55,16 @@ A person is on a card and wants to know more about it. Taking the card to the le
 
 A conversation belongs to one card and ends with it. What the panel can reach, and what it cannot, is in [Agents](agents.md).
 
+## Reading what the cards were written from
+
+Taking the card the other way brings in what the deck is joined to; `r` does the same, and escape sends it away. It stands on either side of the card, as the conversation does.
+
+What is in it is the vault's own graph: the notes the deck points at — which is every note its cards name, and the stencil that cuts them — and the notes that point at the deck. They are read one under another, each under its title, and space scrolls them. A link written in a card opens the reading on the note it names.
+
+The links belong to the deck and not to one card, so the same notes stand behind every card of a deck. A name that resolves to nothing is shown as it is written and says so; a name several notes answer to is read as the nearest and says that too. An attachment, a book and a note in another vault are left out: there is nothing here to open them with.
+
+A deck joined to a great many notes has the text of the first thirty read and the rest named, with a line saying how many.
+
 ## Where the answers are kept
 
 ```

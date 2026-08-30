@@ -21,6 +21,8 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/version"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/flashcardsui"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 func main() {
@@ -78,7 +80,12 @@ func run(cfg container.Config, noAgent bool) error {
 		Schedules: running.Schedules,
 		Log:       running.Log,
 		Counted:   running.Counted,
-		Now:       time.Now,
+		Joined: flashcards.Around{
+			Linked: note.ShowLinks{Links: db.Links()},
+			Notes:  db.Queries(),
+			Reads:  note.Read{Readers: cfg.VaultReaders()},
+		},
+		Now: time.Now,
 	}
 
 	// A card is asked about through tools that only read, on a port this window

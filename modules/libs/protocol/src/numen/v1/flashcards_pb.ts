@@ -15,13 +15,15 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { Refusal } from "./vault_pb.js";
+import { file_numen_v1_vault } from "./vault_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/flashcards.proto.
  */
 export const file_numen_v1_flashcards: GenFile = /*@__PURE__*/
-  fileDesc("ChludW1lbi92MS9mbGFzaGNhcmRzLnByb3RvEghudW1lbi52MSKXAQoKVmF1bHRPd2luZxIQCgh2YXVsdF9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFZmFjZXMYBCABKAUSCwoDZHVlGAUgASgFEgsKA25ldxgGIAEoBRIiCgVkZWNrcxgHIAMoCzITLm51bWVuLnYxLkRlY2tPd2luZxIOCgZ1bnJlYWQYCCABKAkiQgoJRGVja093aW5nEgwKBGRlY2sYASABKAkSDQoFZmFjZXMYAiABKAUSCwoDZHVlGAMgASgFEgsKA25ldxgEIAEoBSJACgVBaGVhZBINCgVhZ2FpbhgBIAEoAxIMCgRoYXJkGAIgASgDEgwKBGdvb2QYAyABKAMSDAoEZWFzeRgEIAEoAyKrAQoFQXNrZWQSDAoEZGVjaxgBIAEoCRIPCgdzZWN0aW9uGAIgASgJEgwKBGNhcmQYAyABKAkSDAoEZmFjZRgEIAEoCRIPCgdoZWFkaW5nGAUgASgJEg0KBWZyb250GAYgASgJEgwKBGJhY2sYByABKAkSDAoEc2VlbhgIIAEoCBILCgNkdWUYCSABKAkSHgoFYWhlYWQYCiABKAsyDy5udW1lbi52MS5BaGVhZCIOCgxPd2luZ1JlcXVlc3QiNQoNT3dpbmdSZXNwb25zZRIkCgZ2YXVsdHMYASADKAsyFC5udW1lbi52MS5WYXVsdE93aW5nIi4KDFN0YXJ0UmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRIMCgRkZWNrGAIgASgJImAKDVN0YXJ0UmVzcG9uc2USCwoDcnVuGAEgASgJEh4KBWFza2VkGAIgAygLMg8ubnVtZW4udjEuQXNrZWQSEQoJdW53cml0dGVuGAMgAygJEg8KB3NraXBwZWQYBCABKAUifQoNQW5zd2VyUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRILCgNydW4YAiABKAkSDAoEY2FyZBgDIAEoCRIMCgRmYWNlGAQgASgJEiAKBnJhdGluZxgFIAEoDjIQLm51bWVuLnYxLlJhdGluZxIPCgd0b29rX21zGAYgASgDIiAKDkFuc3dlclJlc3BvbnNlEg4KBmFuc3dlchgBIAEoCSJACg9UYWtlQmFja1JlcXVlc3QSEAoIdmF1bHRfaWQYASABKAkSCwoDcnVuGAIgASgJEg4KBmFuc3dlchgDIAEoCSISChBUYWtlQmFja1Jlc3BvbnNlIiMKD1Jldmlld2VkUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCSJ5ChBSZXZpZXdlZFJlc3BvbnNlEiEKBGRheXMYASADKAsyEy5udW1lbi52MS5SZXZpZXdpbmcSIAoDZHVlGAQgAygLMhMubnVtZW4udjEuUmV2aWV3aW5nEg4KBnN0cmVhaxgCIAEoBRIQCghhbnN3ZXJlZBgDIAEoBSKEAQoJUmV2aWV3aW5nEgsKA2RheRgBIAEoCRIQCghhbnN3ZXJlZBgCIAEoBRINCgVhZ2FpbhgDIAEoBRIMCgRoYXJkGAQgASgFEgwKBGdvb2QYBSABKAUSDAoEZWFzeRgGIAEoBRINCgVhc2tlZBgHIAEoBRIQCghyZWNhbGxlZBgIIAEoBSIPCg1Bc2tpbmdSZXF1ZXN0IiUKDkFza2luZ1Jlc3BvbnNlEhMKC3VucmVhY2hhYmxlGAEgASgJIg8KDU1vdmluZ1JlcXVlc3QiIAoOTW92aW5nUmVzcG9uc2USDgoGcmVsb2FkGAEgASgIKmUKBlJhdGluZxIWChJSQVRJTkdfVU5TUEVDSUZJRUQQABIQCgxSQVRJTkdfQUdBSU4QARIPCgtSQVRJTkdfSEFSRBACEg8KC1JBVElOR19HT09EEAMSDwoLUkFUSU5HX0VBU1kQBDLGAwoRRmxhc2hjYXJkc1NlcnZpY2USOAoFT3dpbmcSFi5udW1lbi52MS5Pd2luZ1JlcXVlc3QaFy5udW1lbi52MS5Pd2luZ1Jlc3BvbnNlEjgKBVN0YXJ0EhYubnVtZW4udjEuU3RhcnRSZXF1ZXN0GhcubnVtZW4udjEuU3RhcnRSZXNwb25zZRI7CgZBbnN3ZXISFy5udW1lbi52MS5BbnN3ZXJSZXF1ZXN0GhgubnVtZW4udjEuQW5zd2VyUmVzcG9uc2USQQoIVGFrZUJhY2sSGS5udW1lbi52MS5UYWtlQmFja1JlcXVlc3QaGi5udW1lbi52MS5UYWtlQmFja1Jlc3BvbnNlEj0KBk1vdmluZxIXLm51bWVuLnYxLk1vdmluZ1JlcXVlc3QaGC5udW1lbi52MS5Nb3ZpbmdSZXNwb25zZTABEkEKCFJldmlld2VkEhkubnVtZW4udjEuUmV2aWV3ZWRSZXF1ZXN0GhoubnVtZW4udjEuUmV2aWV3ZWRSZXNwb25zZRI7CgZBc2tpbmcSFy5udW1lbi52MS5Bc2tpbmdSZXF1ZXN0GhgubnVtZW4udjEuQXNraW5nUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChludW1lbi92MS9mbGFzaGNhcmRzLnByb3RvEghudW1lbi52MSKXAQoKVmF1bHRPd2luZxIQCgh2YXVsdF9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFZmFjZXMYBCABKAUSCwoDZHVlGAUgASgFEgsKA25ldxgGIAEoBRIiCgVkZWNrcxgHIAMoCzITLm51bWVuLnYxLkRlY2tPd2luZxIOCgZ1bnJlYWQYCCABKAkiQgoJRGVja093aW5nEgwKBGRlY2sYASABKAkSDQoFZmFjZXMYAiABKAUSCwoDZHVlGAMgASgFEgsKA25ldxgEIAEoBSJACgVBaGVhZBINCgVhZ2FpbhgBIAEoAxIMCgRoYXJkGAIgASgDEgwKBGdvb2QYAyABKAMSDAoEZWFzeRgEIAEoAyKrAQoFQXNrZWQSDAoEZGVjaxgBIAEoCRIPCgdzZWN0aW9uGAIgASgJEgwKBGNhcmQYAyABKAkSDAoEZmFjZRgEIAEoCRIPCgdoZWFkaW5nGAUgASgJEg0KBWZyb250GAYgASgJEgwKBGJhY2sYByABKAkSDAoEc2VlbhgIIAEoCBILCgNkdWUYCSABKAkSHgoFYWhlYWQYCiABKAsyDy5udW1lbi52MS5BaGVhZCIOCgxPd2luZ1JlcXVlc3QiNQoNT3dpbmdSZXNwb25zZRIkCgZ2YXVsdHMYASADKAsyFC5udW1lbi52MS5WYXVsdE93aW5nIi4KDFN0YXJ0UmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRIMCgRkZWNrGAIgASgJImAKDVN0YXJ0UmVzcG9uc2USCwoDcnVuGAEgASgJEh4KBWFza2VkGAIgAygLMg8ubnVtZW4udjEuQXNrZWQSEQoJdW53cml0dGVuGAMgAygJEg8KB3NraXBwZWQYBCABKAUifQoNQW5zd2VyUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRILCgNydW4YAiABKAkSDAoEY2FyZBgDIAEoCRIMCgRmYWNlGAQgASgJEiAKBnJhdGluZxgFIAEoDjIQLm51bWVuLnYxLlJhdGluZxIPCgd0b29rX21zGAYgASgDIiAKDkFuc3dlclJlc3BvbnNlEg4KBmFuc3dlchgBIAEoCSJACg9UYWtlQmFja1JlcXVlc3QSEAoIdmF1bHRfaWQYASABKAkSCwoDcnVuGAIgASgJEg4KBmFuc3dlchgDIAEoCSISChBUYWtlQmFja1Jlc3BvbnNlIiMKD1Jldmlld2VkUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCSJ5ChBSZXZpZXdlZFJlc3BvbnNlEiEKBGRheXMYASADKAsyEy5udW1lbi52MS5SZXZpZXdpbmcSIAoDZHVlGAQgAygLMhMubnVtZW4udjEuUmV2aWV3aW5nEg4KBnN0cmVhaxgCIAEoBRIQCghhbnN3ZXJlZBgDIAEoBSKEAQoJUmV2aWV3aW5nEgsKA2RheRgBIAEoCRIQCghhbnN3ZXJlZBgCIAEoBRINCgVhZ2FpbhgDIAEoBRIMCgRoYXJkGAQgASgFEgwKBGdvb2QYBSABKAUSDAoEZWFzeRgGIAEoBRINCgVhc2tlZBgHIAEoBRIQCghyZWNhbGxlZBgIIAEoBSIPCg1Bc2tpbmdSZXF1ZXN0IiUKDkFza2luZ1Jlc3BvbnNlEhMKC3VucmVhY2hhYmxlGAEgASgJIi8KDUFyb3VuZFJlcXVlc3QSEAoIdmF1bHRfaWQYASABKAkSDAoEZGVjaxgCIAEoCSJBCg5Bcm91bmRSZXNwb25zZRIfCgVub3RlcxgBIAMoCzIQLm51bWVuLnYxLkpvaW5lZBIOCgZ1bnJlYWQYAiABKAUiqwEKBkpvaW5lZBIPCgd3cml0dGVuGAEgASgJEgwKBHBhdGgYAiABKAkSDQoFdGl0bGUYAyABKAkSDAoEYm9keRgEIAEoCRINCgVsYWJlbBgFIAEoCRIOCgZwb2ludHMYBiABKAgSEQoJYW1iaWd1b3VzGAcgASgIEicKB3JlZnVzYWwYCCABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQFCCgoIX3JlZnVzYWwiDwoNTW92aW5nUmVxdWVzdCIgCg5Nb3ZpbmdSZXNwb25zZRIOCgZyZWxvYWQYASABKAgqZQoGUmF0aW5nEhYKElJBVElOR19VTlNQRUNJRklFRBAAEhAKDFJBVElOR19BR0FJThABEg8KC1JBVElOR19IQVJEEAISDwoLUkFUSU5HX0dPT0QQAxIPCgtSQVRJTkdfRUFTWRAEMoMEChFGbGFzaGNhcmRzU2VydmljZRI4CgVPd2luZxIWLm51bWVuLnYxLk93aW5nUmVxdWVzdBoXLm51bWVuLnYxLk93aW5nUmVzcG9uc2USOAoFU3RhcnQSFi5udW1lbi52MS5TdGFydFJlcXVlc3QaFy5udW1lbi52MS5TdGFydFJlc3BvbnNlEjsKBkFuc3dlchIXLm51bWVuLnYxLkFuc3dlclJlcXVlc3QaGC5udW1lbi52MS5BbnN3ZXJSZXNwb25zZRJBCghUYWtlQmFjaxIZLm51bWVuLnYxLlRha2VCYWNrUmVxdWVzdBoaLm51bWVuLnYxLlRha2VCYWNrUmVzcG9uc2USPQoGTW92aW5nEhcubnVtZW4udjEuTW92aW5nUmVxdWVzdBoYLm51bWVuLnYxLk1vdmluZ1Jlc3BvbnNlMAESQQoIUmV2aWV3ZWQSGS5udW1lbi52MS5SZXZpZXdlZFJlcXVlc3QaGi5udW1lbi52MS5SZXZpZXdlZFJlc3BvbnNlEjsKBkFza2luZxIXLm51bWVuLnYxLkFza2luZ1JlcXVlc3QaGC5udW1lbi52MS5Bc2tpbmdSZXNwb25zZRI7CgZBcm91bmQSFy5udW1lbi52MS5Bcm91bmRSZXF1ZXN0GhgubnVtZW4udjEuQXJvdW5kUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_vault]);
 
 /**
  * VaultOwing is one vault, and what its cards come to today.
@@ -601,6 +603,132 @@ export const AskingResponseSchema: GenMessage<AskingResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_flashcards, 16);
 
 /**
+ * @generated from message numen.v1.AroundRequest
+ */
+export type AroundRequest = Message<"numen.v1.AroundRequest"> & {
+  /**
+   * @generated from field: string vault_id = 1;
+   */
+  vaultId: string;
+
+  /**
+   * Deck is the path of the deck being sat to. One deck is asked about at a
+   * time, because what a person is reading around is the deck in front of them.
+   *
+   * @generated from field: string deck = 2;
+   */
+  deck: string;
+};
+
+/**
+ * Describes the message numen.v1.AroundRequest.
+ * Use `create(AroundRequestSchema)` to create a new message.
+ */
+export const AroundRequestSchema: GenMessage<AroundRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_flashcards, 17);
+
+/**
+ * @generated from message numen.v1.AroundResponse
+ */
+export type AroundResponse = Message<"numen.v1.AroundResponse"> & {
+  /**
+   * @generated from field: repeated numen.v1.Joined notes = 1;
+   */
+  notes: Joined[];
+
+  /**
+   * Unread is how many at the end of the list came without their text. Reading
+   * stops once a sitting's worth has been gathered, so a deck at the centre of
+   * a vault is still answered promptly and says how much it left.
+   *
+   * @generated from field: int32 unread = 2;
+   */
+  unread: number;
+};
+
+/**
+ * Describes the message numen.v1.AroundResponse.
+ * Use `create(AroundResponseSchema)` to create a new message.
+ */
+export const AroundResponseSchema: GenMessage<AroundResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_flashcards, 18);
+
+/**
+ * Joined is one note the deck stands next to.
+ *
+ * @generated from message numen.v1.Joined
+ */
+export type Joined = Message<"numen.v1.Joined"> & {
+  /**
+   * Written is the address as the deck wrote it, and all a link resolving to
+   * nothing ever has. It is empty for a note that points at the deck, which
+   * wrote the deck's name and not its own. Path is where the link landed, and
+   * is empty where it landed nowhere.
+   *
+   * @generated from field: string written = 1;
+   */
+  written: string;
+
+  /**
+   * @generated from field: string path = 2;
+   */
+  path: string;
+
+  /**
+   * Title is what the note is called and body its prose, as it was written.
+   * Both are empty for a link that reached no note, and for one whose note
+   * could not be read.
+   *
+   * @generated from field: string title = 3;
+   */
+  title: string;
+
+  /**
+   * @generated from field: string body = 4;
+   */
+  body: string;
+
+  /**
+   * Label is what the link was shown as, where the person gave it words of
+   * their own instead of the note's name.
+   *
+   * @generated from field: string label = 5;
+   */
+  label: string;
+
+  /**
+   * Points says the deck points at this note; otherwise this note points at the
+   * deck. A person reads the two differently: one is what the deck was made
+   * from, the other is what has since been hung off it.
+   *
+   * @generated from field: bool points = 6;
+   */
+  points: boolean;
+
+  /**
+   * Ambiguous says more than one note answers to the name written, and the one
+   * here is only the first of them.
+   *
+   * @generated from field: bool ambiguous = 7;
+   */
+  ambiguous: boolean;
+
+  /**
+   * Set when the note is there and its text could not be had, and says why.
+   *
+   * @generated from field: optional numen.v1.Refusal refusal = 8;
+   */
+  refusal?: Refusal | undefined;
+};
+
+/**
+ * Describes the message numen.v1.Joined.
+ * Use `create(JoinedSchema)` to create a new message.
+ */
+export const JoinedSchema: GenMessage<Joined> = /*@__PURE__*/
+  messageDesc(file_numen_v1_flashcards, 19);
+
+/**
  * @generated from message numen.v1.MovingRequest
  */
 export type MovingRequest = Message<"numen.v1.MovingRequest"> & {
@@ -611,7 +739,7 @@ export type MovingRequest = Message<"numen.v1.MovingRequest"> & {
  * Use `create(MovingRequestSchema)` to create a new message.
  */
 export const MovingRequestSchema: GenMessage<MovingRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 17);
+  messageDesc(file_numen_v1_flashcards, 20);
 
 /**
  * @generated from message numen.v1.MovingResponse
@@ -631,7 +759,7 @@ export type MovingResponse = Message<"numen.v1.MovingResponse"> & {
  * Use `create(MovingResponseSchema)` to create a new message.
  */
 export const MovingResponseSchema: GenMessage<MovingResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 18);
+  messageDesc(file_numen_v1_flashcards, 21);
 
 /**
  * Rating is how well a card came back. A person says which of the four, and
@@ -762,8 +890,8 @@ export const FlashcardsService: GenService<{
     output: typeof ReviewedResponseSchema;
   },
   /**
-   * Asking is whether a card can be asked about here, and on which cards the
-   * way in is offered.
+   * Asking is whether a card can be asked about here at all. The way in stands
+   * on every card, so nothing else has to be said about which.
    *
    * @generated from rpc numen.v1.FlashcardsService.Asking
    */
@@ -771,6 +899,19 @@ export const FlashcardsService: GenService<{
     methodKind: "unary";
     input: typeof AskingRequestSchema;
     output: typeof AskingResponseSchema;
+  },
+  /**
+   * Around is what the deck a person is sitting to is joined to: the notes it
+   * points at and the notes that point at it, with the text of each. A card is
+   * a line out of something longer, and what it was cut from is what a person
+   * reaches for when it will not come back to them.
+   *
+   * @generated from rpc numen.v1.FlashcardsService.Around
+   */
+  around: {
+    methodKind: "unary";
+    input: typeof AroundRequestSchema;
+    output: typeof AroundResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_flashcards, 0);

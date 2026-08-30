@@ -4,7 +4,15 @@ import { asks, letterOf, picks, swallows } from './keying'
 
 /** pressed is one keystroke, as the window meets it. */
 const pressed = (key: string, more: Partial<KeyboardEvent> = {}) =>
-  ({ key, repeat: false, altKey: false, ctrlKey: false, metaKey: false, ...more }) as KeyboardEvent
+  ({
+    key,
+    repeat: false,
+    altKey: false,
+    ctrlKey: false,
+    metaKey: false,
+    shiftKey: false,
+    ...more,
+  }) as KeyboardEvent
 
 /** into is a keystroke that landed in something being written in. */
 const into = (tag: string, written = false): Partial<KeyboardEvent> => ({
@@ -45,10 +53,30 @@ describe('the keys a sitting is done with', () => {
     expect(asks(pressed('a'), { shown: false })).toEqual({ does: 'ask' })
   })
 
-  // With the panel up, escape sends it away and the sitting stays where it is.
+  it('brings the reading in on either side of the card', () => {
+    expect(asks(pressed('r'), { shown: true })).toEqual({ does: 'read' })
+    expect(asks(pressed('R'), { shown: true })).toEqual({ does: 'read' })
+    expect(asks(pressed('r'), { shown: false })).toEqual({ does: 'read' })
+  })
+
+  // With a panel up, escape sends it away and the sitting stays where it is.
   it('sends the panel away on escape before it leaves the sitting', () => {
     expect(asks(pressed('Escape'), { shown: true, asking: true })).toEqual({ does: 'shut' })
+    expect(asks(pressed('Escape'), { shown: true, reading: true })).toEqual({ does: 'shut' })
     expect(asks(pressed('Escape'), { shown: true, asking: false })).toEqual({ does: 'leave' })
+  })
+
+  // The reading is read down, and space is the key the hand is already on. The
+  // answer is still shown by the control standing under both panes.
+  it('scrolls the reading with the space bar instead of turning the card', () => {
+    expect(asks(pressed(' '), { shown: false, reading: true })).toEqual({
+      does: 'scroll',
+      back: false,
+    })
+    expect(asks(pressed(' ', { shiftKey: true }), { shown: true, reading: true })).toEqual({
+      does: 'scroll',
+      back: true,
+    })
   })
 
   // A key held down repeats, and a card is answered once.
@@ -87,8 +115,10 @@ describe('the keys a sitting is done with', () => {
     expect(asks(pressed('Escape', into('TEXTAREA')), { shown: true })).toEqual({ does: 'shut' })
   })
 
-  it('swallows only the key it turns the card over with', () => {
+  it('swallows only the keys the page would act on itself', () => {
     expect(swallows(asks(pressed(' '), { shown: false }))).toBe(true)
+    // The page scrolls itself on space, and the reading is what is scrolled.
+    expect(swallows(asks(pressed(' '), { shown: true, reading: true }))).toBe(true)
     expect(swallows(asks(pressed('3'), { shown: true }))).toBe(false)
     expect(swallows(null)).toBe(false)
   })

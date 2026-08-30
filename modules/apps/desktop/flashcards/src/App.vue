@@ -10,7 +10,7 @@
  * beside it: what a sitting is, what a keystroke asks for, what the vaults come
  * to, and what the window has to say.
  */
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
 import { Notices, following } from '@numen/ui'
 import '@numen/ui/styles.css'
 
@@ -19,6 +19,8 @@ import Decks from './Decks.vue'
 import Session from './Session.vue'
 import Finished from './Finished.vue'
 import Asking from './Asking.vue'
+import Reading from './Reading.vue'
+import type { Where } from './Beside.vue'
 import { VERSION } from './version'
 import { cards, deckName } from './core'
 import { counting } from './counting'
@@ -27,6 +29,8 @@ import { raising } from './notices'
 import { reviewed } from './reviewed'
 import { session } from './session'
 import { asking } from './asking'
+import { reading } from './reading'
+import { around } from './reading/core'
 import { core as agent } from './agent/core'
 import type { Owing, Said } from './core'
 import type { Report } from './session'
@@ -45,12 +49,46 @@ const done = reviewed({ cards, failed })
 /** Why nothing can be asked here, empty while something can. */
 const unreachable = ref('')
 
+/**
+ * Which of the card and the two panels beside it the window is showing. One
+ * thing is in the window at a time, so one thing says which, and a panel coming
+ * in is the other one going out.
+ */
+const showing = ref<'reading' | 'here' | 'asking'>('here')
+
+/** The same thing in the words the strip stands the three in. */
+const at = computed<Where>(() =>
+  showing.value === 'reading' ? 'before' : showing.value === 'asking' ? 'after' : 'here',
+)
+
+const moved = (where: Where) => {
+  showing.value = where === 'before' ? 'reading' : where === 'after' ? 'asking' : 'here'
+}
+
 const panel = asking({
   agent,
   card: () => sat.card.value,
   unreachable: () => unreachable.value,
+  open: () => showing.value === 'asking',
+  shows: (open) => {
+    showing.value = open ? 'asking' : 'here'
+  },
   says: (said) => says(said, 'caution'),
 })
+
+const read = reading({
+  open: () => showing.value === 'reading',
+  shows: (open) => {
+    showing.value = open ? 'reading' : 'here'
+  },
+  vault: () => vault.value,
+  deck: () => sat.card.value?.deck ?? '',
+  around,
+  says: (said) => says(said, 'caution'),
+})
+
+/** What is read, so the keys can scroll it: the caret is nowhere in it. */
+const page = useTemplateRef<InstanceType<typeof Reading>>('page')
 
 const chosen = computed(() => vaults.value.find((one) => one.vaultId === vault.value) ?? null)
 
@@ -91,6 +129,7 @@ const start = async (deck: string) => {
  */
 const leave = async () => {
   panel.ends()
+  read.ends()
   sat.forget()
   on.value = 'decks'
   void done.read(vault.value)
@@ -100,6 +139,7 @@ const leave = async () => {
 /** Back to the vaults, which is where a person picks another collection. */
 const vaultsAgain = async () => {
   panel.ends()
+  read.ends()
   sat.forget()
   done.forget()
   on.value = 'vaults'
@@ -120,7 +160,11 @@ const keyed = (press: KeyboardEvent) => {
   if (on.value === 'decks') return chosen.value ? choosing(press, chosen.value) : undefined
   if (on.value !== 'session') return
 
-  const asked = asks(press, { shown: sat.shown.value, asking: panel.open.value })
+  const asked = asks(press, {
+    shown: sat.shown.value,
+    asking: showing.value === 'asking',
+    reading: showing.value === 'reading',
+  })
   if (!asked) return
   if (swallows(asked)) press.preventDefault()
 
@@ -140,8 +184,15 @@ const keyed = (press: KeyboardEvent) => {
     case 'ask':
       panel.opens()
       break
+    case 'read':
+      void read.opens()
+      break
+    case 'scroll':
+      page.value?.scrolls(asked.back)
+      break
     case 'shut':
-      panel.shuts()
+      if (showing.value === 'asking') panel.shuts()
+      else read.shuts()
       break
   }
 }
@@ -234,14 +285,19 @@ onUnmounted(() => {
       :shown="sat.shown.value"
       :left="sat.left.value"
       :taken-back="sat.answers.value.length > 0"
-      :asking="panel.open.value"
+      :at="at"
+      @update:at="moved"
       @show="sat.show"
       @answer="answered"
       @take-back="sat.takeBack"
       @leave="leave"
       @ask="panel.opens()"
+      @read="(named: string) => read.opens(named)"
       @shut="panel.shuts()"
     >
+      <template #reading>
+        <Reading ref="page" :held="read" />
+      </template>
       <template #panel>
         <Asking :held="panel" />
       </template>

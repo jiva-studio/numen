@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import { nextTick } from 'vue'
+import { nextTick, ref } from 'vue'
 import type { AgentPort } from '@numen/ui'
 
 import Asking from './Asking.vue'
@@ -32,16 +32,23 @@ const agent: AgentPort = {
 }
 
 /** The panel over one card, with the sitting around it standing in for it. */
-const holding = (unreachable = ''): Held =>
-  asking({
+const holding = (unreachable = ''): Held => {
+  // What the window is showing is the window's, and the test holds it for it.
+  const open = ref(false)
+  return asking({
     agent,
     card: () => card,
     unreachable: () => unreachable,
+    open: () => open.value,
+    shows: (it) => {
+      open.value = it
+    },
     says: () => {},
     // The words are put up as they arrive, so a test reads them without waiting
     // for a frame.
     paint: (draw) => draw(),
   })
+}
 
 /** A panel holding the card, with a reason nothing can be asked where there is one. */
 const held = (unreachable = ''): Held => {

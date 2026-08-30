@@ -14,6 +14,8 @@ export type Asks =
   | { does: 'leave' }
   | { does: 'answer'; how: Said }
   | { does: 'ask' }
+  | { does: 'read' }
+  | { does: 'scroll'; back: boolean }
   | { does: 'shut' }
 
 /** What the window is showing when the key is pressed. */
@@ -22,10 +24,15 @@ export interface Showing {
   shown: boolean
   /** Whether the panel a card is asked about in is up. */
   asking?: boolean
+  /** Whether the panel the deck's notes are read in is up. */
+  reading?: boolean
 }
 
 /** The letter the panel a card is asked about in is brought in with. */
 export const ASKS = 'a'
+
+/** The letter the panel the deck's notes are read in is brought in with. */
+export const READS = 'r'
 
 /**
  * Whether the key was pressed into something being written in. A letter is
@@ -54,10 +61,16 @@ export const typing = (press: KeyboardEvent): boolean => {
 export function asks(press: KeyboardEvent, showing: Showing): Asks | null {
   if (spoken(press)) return null
   if (typing(press)) return press.key === 'Escape' ? { does: 'shut' } : null
-  if (press.key === 'Escape') return showing.asking ? { does: 'shut' } : { does: 'leave' }
+  if (press.key === 'Escape') {
+    return showing.asking || showing.reading ? { does: 'shut' } : { does: 'leave' }
+  }
   if (press.key === 'u' || press.key === 'U') return { does: 'takeBack' }
+  // The reading is read down, and space is the key the hand is already on. The
+  // answer is still shown by the control standing under both panes.
+  if (press.key === ' ' && showing.reading) return { does: 'scroll', back: press.shiftKey }
   if (press.key === ' ' && !showing.shown) return { does: 'show' }
   if (press.key === ASKS || press.key === ASKS.toUpperCase()) return { does: 'ask' }
+  if (press.key === READS || press.key === READS.toUpperCase()) return { does: 'read' }
 
   const which = Number(press.key)
   if (Number.isInteger(which) && which >= 1 && which <= said.length) {
@@ -70,10 +83,14 @@ export function asks(press: KeyboardEvent, showing: Showing): Asks | null {
 /**
  * Whether the window swallows the key, rather than leaving it to the page. The
  * letter that brings the panel in is one of them: the field it opens takes the
- * keyboard, and the letter would be the first thing typed into it.
+ * keyboard, and the letter would be the first thing typed into it. So is space
+ * over the reading, which the page would otherwise scroll instead.
  */
 export const swallows = (asked: Asks | null): boolean =>
-  asked?.does === 'show' || asked?.does === 'ask'
+  asked?.does === 'show' ||
+  asked?.does === 'ask' ||
+  asked?.does === 'read' ||
+  asked?.does === 'scroll'
 
 /** What a keystroke asks for while a person is choosing what to sit down to. */
 export type Picks =

@@ -62,6 +62,9 @@ const (
 	// FlashcardsServiceAskingProcedure is the fully-qualified name of the FlashcardsService's Asking
 	// RPC.
 	FlashcardsServiceAskingProcedure = "/numen.v1.FlashcardsService/Asking"
+	// FlashcardsServiceAroundProcedure is the fully-qualified name of the FlashcardsService's Around
+	// RPC.
+	FlashcardsServiceAroundProcedure = "/numen.v1.FlashcardsService/Around"
 )
 
 // FlashcardsServiceClient is a client for the numen.v1.FlashcardsService service.
@@ -93,9 +96,14 @@ type FlashcardsServiceClient interface {
 	// Reviewed is how much of a vault was answered on each day it was reviewed,
 	// and how many days up to now were reviewed without a gap.
 	Reviewed(context.Context, *connect.Request[v1.ReviewedRequest]) (*connect.Response[v1.ReviewedResponse], error)
-	// Asking is whether a card can be asked about here, and on which cards the
-	// way in is offered.
+	// Asking is whether a card can be asked about here at all. The way in stands
+	// on every card, so nothing else has to be said about which.
 	Asking(context.Context, *connect.Request[v1.AskingRequest]) (*connect.Response[v1.AskingResponse], error)
+	// Around is what the deck a person is sitting to is joined to: the notes it
+	// points at and the notes that point at it, with the text of each. A card is
+	// a line out of something longer, and what it was cut from is what a person
+	// reaches for when it will not come back to them.
+	Around(context.Context, *connect.Request[v1.AroundRequest]) (*connect.Response[v1.AroundResponse], error)
 }
 
 // NewFlashcardsServiceClient constructs a client for the numen.v1.FlashcardsService service. By
@@ -151,6 +159,12 @@ func NewFlashcardsServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(flashcardsServiceMethods.ByName("Asking")),
 			connect.WithClientOptions(opts...),
 		),
+		around: connect.NewClient[v1.AroundRequest, v1.AroundResponse](
+			httpClient,
+			baseURL+FlashcardsServiceAroundProcedure,
+			connect.WithSchema(flashcardsServiceMethods.ByName("Around")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -163,6 +177,7 @@ type flashcardsServiceClient struct {
 	moving   *connect.Client[v1.MovingRequest, v1.MovingResponse]
 	reviewed *connect.Client[v1.ReviewedRequest, v1.ReviewedResponse]
 	asking   *connect.Client[v1.AskingRequest, v1.AskingResponse]
+	around   *connect.Client[v1.AroundRequest, v1.AroundResponse]
 }
 
 // Owing calls numen.v1.FlashcardsService.Owing.
@@ -200,6 +215,11 @@ func (c *flashcardsServiceClient) Asking(ctx context.Context, req *connect.Reque
 	return c.asking.CallUnary(ctx, req)
 }
 
+// Around calls numen.v1.FlashcardsService.Around.
+func (c *flashcardsServiceClient) Around(ctx context.Context, req *connect.Request[v1.AroundRequest]) (*connect.Response[v1.AroundResponse], error) {
+	return c.around.CallUnary(ctx, req)
+}
+
 // FlashcardsServiceHandler is an implementation of the numen.v1.FlashcardsService service.
 type FlashcardsServiceHandler interface {
 	// Owing is what every vault the installation knows comes to today: how much
@@ -229,9 +249,14 @@ type FlashcardsServiceHandler interface {
 	// Reviewed is how much of a vault was answered on each day it was reviewed,
 	// and how many days up to now were reviewed without a gap.
 	Reviewed(context.Context, *connect.Request[v1.ReviewedRequest]) (*connect.Response[v1.ReviewedResponse], error)
-	// Asking is whether a card can be asked about here, and on which cards the
-	// way in is offered.
+	// Asking is whether a card can be asked about here at all. The way in stands
+	// on every card, so nothing else has to be said about which.
 	Asking(context.Context, *connect.Request[v1.AskingRequest]) (*connect.Response[v1.AskingResponse], error)
+	// Around is what the deck a person is sitting to is joined to: the notes it
+	// points at and the notes that point at it, with the text of each. A card is
+	// a line out of something longer, and what it was cut from is what a person
+	// reaches for when it will not come back to them.
+	Around(context.Context, *connect.Request[v1.AroundRequest]) (*connect.Response[v1.AroundResponse], error)
 }
 
 // NewFlashcardsServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -283,6 +308,12 @@ func NewFlashcardsServiceHandler(svc FlashcardsServiceHandler, opts ...connect.H
 		connect.WithSchema(flashcardsServiceMethods.ByName("Asking")),
 		connect.WithHandlerOptions(opts...),
 	)
+	flashcardsServiceAroundHandler := connect.NewUnaryHandler(
+		FlashcardsServiceAroundProcedure,
+		svc.Around,
+		connect.WithSchema(flashcardsServiceMethods.ByName("Around")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.FlashcardsService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case FlashcardsServiceOwingProcedure:
@@ -299,6 +330,8 @@ func NewFlashcardsServiceHandler(svc FlashcardsServiceHandler, opts ...connect.H
 			flashcardsServiceReviewedHandler.ServeHTTP(w, r)
 		case FlashcardsServiceAskingProcedure:
 			flashcardsServiceAskingHandler.ServeHTTP(w, r)
+		case FlashcardsServiceAroundProcedure:
+			flashcardsServiceAroundHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -334,4 +367,8 @@ func (UnimplementedFlashcardsServiceHandler) Reviewed(context.Context, *connect.
 
 func (UnimplementedFlashcardsServiceHandler) Asking(context.Context, *connect.Request[v1.AskingRequest]) (*connect.Response[v1.AskingResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.Asking is not implemented"))
+}
+
+func (UnimplementedFlashcardsServiceHandler) Around(context.Context, *connect.Request[v1.AroundRequest]) (*connect.Response[v1.AroundResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.Around is not implemented"))
 }

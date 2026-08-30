@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/refusal"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
@@ -329,7 +330,7 @@ func refusedDeck(o note.Outcome, is domain.NoteType) (v1.Refusal, bool) {
 	if o == note.Ok && is != domain.TypeDeck {
 		return v1.Refusal_REFUSAL_NOT_A_DECK, true
 	}
-	return refusalOf(o)
+	return refusal.Of(o)
 }
 
 // refusedStencil is why a stencil was not read.
@@ -337,5 +338,5 @@ func refusedStencil(o note.Outcome, is domain.NoteType) (v1.Refusal, bool) {
 	if o == note.Ok && is != domain.TypeStencil {
 		return v1.Refusal_REFUSAL_NOT_A_STENCIL, true
 	}
-	return refusalOf(o)
+	return refusal.Of(o)
 }

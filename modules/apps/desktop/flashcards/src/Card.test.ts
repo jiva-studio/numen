@@ -89,5 +89,16 @@ describe('a card', () => {
 
     await link.trigger('click')
     expect(face.emitted('show')).toBeUndefined()
+    expect(face.emitted('read')).toBeUndefined()
+  })
+
+  // A name carrying no scheme points inside the vault, and that is what stands
+  // in the reading beside the card.
+  it('opens the reading on a note a link inside it names', async () => {
+    const face = shows('<p><a href="notes/Leaf%20mould.md">leaf mould</a></p>')
+
+    await face.find('a').trigger('click')
+    expect(face.emitted('show')).toBeUndefined()
+    expect(face.emitted('read')).toEqual([['notes/Leaf mould.md']])
   })
 })

@@ -35,21 +35,32 @@ const answers = (says: AgentStep[] = [{ kind: 'said', text: 'Because of the leav
   return { agent, asked, over }
 }
 
-/** The panel, with the sitting around it standing in for the window. */
-const panel = (more: { card?: Asked | null; unreachable?: string } = {}) => {
+/**
+ * The panel, with the sitting around it standing in for the window. What the
+ * window is showing is the window's, one thing for all of the panels, so the
+ * test holds it the way the window does.
+ */
+const panel = (
+  more: { card?: Asked | null; unreachable?: string; showing?: 'reading' | 'here' | 'asking' } = {},
+) => {
   const { agent, asked, over } = answers()
   const on = ref<Asked | null>(more.card === undefined ? card() : more.card)
+  const showing = ref<'reading' | 'here' | 'asking'>(more.showing ?? 'here')
   const said: string[] = []
   const held = asking({
     agent,
     card: () => on.value,
     unreachable: () => more.unreachable ?? '',
+    open: () => showing.value === 'asking',
+    shows: (open) => {
+      showing.value = open ? 'asking' : 'here'
+    },
     says: (one) => said.push(one),
     // The words are put up as they arrive, so a test reads them without waiting
     // for a frame.
     paint: (draw) => draw(),
   })
-  return { held, asked, over, said, on }
+  return { held, asked, over, said, on, showing }
 }
 
 describe('the panel coming in', () => {
@@ -81,6 +92,14 @@ describe('the panel coming in', () => {
     held.shuts()
     expect(held.open.value).toBe(false)
     expect(held.turns.value.length).toBeGreaterThan(0)
+  })
+
+  // The window shows one thing at a time, and the strip can only stand on one
+  // stop. A panel coming in is the other one going out.
+  it('takes the window off the other panel when it comes in', () => {
+    const { held, showing } = panel({ showing: 'reading' })
+    held.opens()
+    expect(showing.value).toBe('asking')
   })
 })
 
