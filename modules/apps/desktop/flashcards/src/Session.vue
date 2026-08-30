@@ -5,7 +5,6 @@
  * It holds nothing. Which card is up, whether the answer is showing and what
  * has been written are the sitting's, and this draws them.
  */
-import { Undo2, X } from '@lucide/vue'
 import { Button, KeyCap } from '@numen/ui'
 
 import Card from './Card.vue'
@@ -39,26 +38,16 @@ defineEmits<{
       <span v-if="!card.seen" class="session__new">new</span>
       <span class="session__left">{{ left }} left</span>
 
-      <!-- What a person does beside answering, each one mark. They stand at the
-           end of the line that says where the card is from. -->
-      <Button
-        variant="ghost"
-        size="icon-small"
-        title="Take the last answer back"
-        aria-label="Take the last answer back"
-        :disabled="!takenBack"
-        @click="$emit('takeBack')"
-      >
-        <Undo2 />
+      <!-- What a person does beside answering, each one carrying the key it is
+           done with. They stand at the end of the line that says where the card
+           is from. -->
+      <Button variant="ghost" size="small" :disabled="!takenBack" @click="$emit('takeBack')">
+        <KeyCap :keys="{ marks: [], letter: 'u' }" />
+        Undo
       </Button>
-      <Button
-        variant="ghost"
-        size="icon-small"
-        title="Leave"
-        aria-label="Leave"
-        @click="$emit('leave')"
-      >
-        <X />
+      <Button variant="ghost" size="small" @click="$emit('leave')">
+        <KeyCap :keys="{ marks: [], letter: 'esc' }" />
+        Leave
       </Button>
     </header>
 
