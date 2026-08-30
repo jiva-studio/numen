@@ -91,6 +91,11 @@ func ReadingVocabulary(ctx context.Context, core Core) (map[string]Words, error)
 	return vocabulary(ctx, NewReading(core))
 }
 
+// ReviewingVocabulary is the same, for the window a person runs their cards in.
+func ReviewingVocabulary(ctx context.Context, core Core) (map[string]Words, error) {
+	return vocabulary(ctx, NewReviewing(core))
+}
+
 func vocabulary(ctx context.Context, server *sdk.Server) (map[string]Words, error) {
 	here, there := sdk.NewInMemoryTransports()
 	if _, err := server.Connect(ctx, here, nil); err != nil {

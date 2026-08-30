@@ -57,11 +57,7 @@ export function asks(press: KeyboardEvent, showing: Showing): Asks | null {
   if (press.key === 'Escape') return showing.asking ? { does: 'shut' } : { does: 'leave' }
   if (press.key === 'u' || press.key === 'U') return { does: 'takeBack' }
   if (press.key === ' ' && !showing.shown) return { does: 'show' }
-  // A card is asked about once its answer is showing: one that can be asked
-  // about before it is turned is a way not to recall it.
-  if ((press.key === ASKS || press.key === ASKS.toUpperCase()) && showing.shown) {
-    return { does: 'ask' }
-  }
+  if (press.key === ASKS || press.key === ASKS.toUpperCase()) return { does: 'ask' }
 
   const which = Number(press.key)
   if (Number.isInteger(which) && which >= 1 && which <= said.length) {
@@ -71,8 +67,13 @@ export function asks(press: KeyboardEvent, showing: Showing): Asks | null {
   return null
 }
 
-/** Whether the window swallows the key, rather than leaving it to the page. */
-export const swallows = (asked: Asks | null): boolean => asked?.does === 'show'
+/**
+ * Whether the window swallows the key, rather than leaving it to the page. The
+ * letter that brings the panel in is one of them: the field it opens takes the
+ * keyboard, and the letter would be the first thing typed into it.
+ */
+export const swallows = (asked: Asks | null): boolean =>
+  asked?.does === 'show' || asked?.does === 'ask'
 
 /** What a keystroke asks for while a person is choosing what to sit down to. */
 export type Picks =

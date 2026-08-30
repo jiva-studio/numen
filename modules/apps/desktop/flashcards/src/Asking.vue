@@ -6,27 +6,33 @@
  * Why the agent cannot be reached is the window's to know, and it stands where
  * the answers do.
  */
-import { Agent, Button, KeyCap } from '@numen/ui'
+import { nextTick, useTemplateRef, watch } from 'vue'
+import { Agent } from '@numen/ui'
 
 import { WORDS as words } from './agent/words'
 import type { Held } from './asking'
 
-const props = defineProps<{ held: Held; heading: string }>()
+const props = defineProps<{ held: Held }>()
+
+const talk = useTemplateRef<InstanceType<typeof Agent>>('talk')
+
+// A panel opened is a panel opened to write in, so the field takes the keyboard
+// as it arrives. Taking it scrolls nothing: the panel is arriving, and a
+// browser bringing the field into view would drag what is moving.
+watch(
+  () => props.held.open.value,
+  (up) => {
+    if (up) void nextTick(() => talk.value?.focus({ preventScroll: true }))
+  },
+)
 </script>
 
 <template>
   <section class="asking" aria-label="Ask about this card">
-    <header class="asking__where">
-      <span class="asking__card">{{ props.heading }}</span>
-      <Button variant="ghost" size="small" @click="props.held.shuts()">
-        <KeyCap :keys="{ marks: [], letter: 'esc' }" />
-        {{ words.shut }}
-      </Button>
-    </header>
-
     <!-- The field sends by a control of its own: enter in a panel inside a
          sitting would otherwise be read as an answer to the card. -->
     <Agent
+      ref="talk"
       class="asking__talk"
       :model-value="props.held.written.value"
       :turns="props.held.turns.value"
@@ -47,32 +53,18 @@ const props = defineProps<{ held: Held; heading: string }>()
 </template>
 
 <style scoped>
+/* The panel stands where the card stood and is the same thing to look at, so it
+   takes the card's ground. */
 .asking {
   display: flex;
   flex: 1;
   flex-direction: column;
   min-inline-size: 0;
   min-block-size: 0;
-  gap: var(--numen-inset);
-}
-
-/* Which card is being asked about, said once and quietly: a person reading an
-   answer is reading the answer. */
-.asking__where {
-  display: flex;
-  align-items: center;
-  gap: var(--numen-inset);
-  color: var(--numen-hushed);
-  font-size: var(--numen-font-size);
-}
-
-.asking__card {
-  overflow: hidden;
-  margin-inline-end: auto;
-  color: var(--numen-node-fg);
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  padding: var(--numen-inset-wide);
+  border: 1px solid var(--numen-node-border);
+  border-radius: var(--numen-radius);
+  background: var(--numen-node-bg);
 }
 
 .asking__talk {

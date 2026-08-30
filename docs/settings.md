@@ -78,24 +78,6 @@ A note carrying no `title` is named by its file, and nothing else in it can carr
 
 Renaming a file into another folder is not renaming a note, and neither is renaming a folder. Neither changes what a note is called.
 
-## Running the cards
-
-`flashcards` is how a person's cards are put to them.
-
-```json
-{
-  "flashcards": {
-    "explain_every_card": false
-  }
-}
-```
-
-| | |
-| --- | --- |
-| `explain_every_card` | whether the way into the panel a card is asked about in stands on every card whose answer is showing. Off. |
-
-Off, the panel is offered on a card the person could not recall: feedback after a failed recall is where the correction lands, and an explanation of a card that came back is a second spent. On, the way in stands on the back of every card, and a card is never asked about before it is turned. What that panel can reach is in [Agents](agents.md).
-
 Typing a new `# Heading` into a note does not rename its file. A save puts down the text a person typed and adds nothing to it.
 
 `Sync title and filename` is a command of its own in the palette, over the window. Choosing `On` or `Off` writes this field back here, and the next rename reads what was written.

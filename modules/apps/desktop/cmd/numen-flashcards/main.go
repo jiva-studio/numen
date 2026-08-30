@@ -52,6 +52,7 @@ func run(cfg container.Config, noAgent bool) error {
 		return err
 	}
 	cfg = cfg.Indexing(chosen.Indexing)
+	cfg.Agent = chosen.Agent
 
 	registry, err := cfg.Registry()
 	if err != nil {
@@ -78,7 +79,6 @@ func run(cfg container.Config, noAgent bool) error {
 		Log:       running.Log,
 		Counted:   running.Counted,
 		Now:       time.Now,
-		EveryCard: chosen.Flashcards.ExplainEveryCard,
 	}
 
 	// A card is asked about through tools that only read, on a port this window

@@ -61,7 +61,7 @@ The numbers are identity, not order. This list is the order.
 - [ADR-0029 — A deck and a stencil are not searched by their text](0029-a-deck-and-a-stencil-are-not-searched-by-their-text.md)
 - [ADR-0030 — Review is an application of its own](0030-review-is-an-application-of-its-own.md)
 - [ADR-0031 — An answer is an artifact, a schedule is a cache](0031-an-answer-is-an-artifact-a-schedule-is-a-cache.md)
-- [ADR-0032 — The reviewer's agent only reads](0032-the-reviewers-agent-only-reads.md)
+- [ADR-0032 — The reviewer's agent writes only cards](0032-the-reviewers-agent-writes-only-cards.md)
 
 ### Agents
 

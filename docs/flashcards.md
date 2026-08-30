@@ -51,11 +51,7 @@ A person hits the wrong key. Taking an answer back is a line of its own, naming 
 
 ## Asking about a card
 
-A person answers a card, sees the back, and wants to know why. Taking the card to the left brings in a panel where that card can be asked about; `a` does the same, and escape sends the panel away. The agent answers from this vault — the card, the stencil that cuts it, and the notes and sources the card points at — and names where each part of its answer came from. Everything it may call reads, so nothing said in the panel changes a card.
-
-Nothing opens the panel on a card that has not been turned: a card that can be asked about before it is turned is a way not to recall it.
-
-Once the answer is showing, the swipe and the key are there. The control that says so is what the setting governs: it stands after a card the person could not recall, and `flashcards.explain_every_card` stands it on every card. Answering `Again` brings the panel in on the card just answered, which is where a correction lands.
+A person is on a card and wants to know more about it. Taking the card to the left brings in a panel where that card can be asked about; `a` does the same, and escape sends the panel away. The panel is there on either side of the card, before the answer is showing and after. The agent answers from this vault — the card, the stencil that cuts it, and the notes and sources the card points at — and names where each part of its answer came from. It reads everything and writes cards alone, so an answer that turns out to be wrong is corrected where a person found it.
 
 A conversation belongs to one card and ends with it. What the panel can reach, and what it cannot, is in [Agents](agents.md).
 

@@ -47,9 +47,6 @@ type Config struct {
 	// Naming is how a note's title and the name of its file are held together.
 	Naming Naming `json:"naming"`
 
-	// Flashcards is how a person's cards are put to them.
-	Flashcards Flashcards `json:"flashcards"`
-
 	// Said is what reading the file leaves a person something to do about: a
 	// number written where a setting does not go that far. Each is one line of
 	// a band, which gives a line about sixty characters, and whoever read the
@@ -189,16 +186,6 @@ type Naming struct {
 	// other into line. A file leaving it out keeps them one name, and a file
 	// naming false is what tells them apart.
 	SyncTitleAndFilename *bool `json:"sync_title_and_filename"`
-}
-
-// Flashcards is how a person's cards are put to them.
-type Flashcards struct {
-	// ExplainEveryCard offers the way into the panel on every card whose answer
-	// is showing. Off, it is offered on a card the person could not recall.
-	//
-	// An explanation of a card that came back is a second spent, and on a card a
-	// person has known for months it is one they knew already.
-	ExplainEveryCard bool `json:"explain_every_card"`
 }
 
 // Sync is whether a note's title and its filename are kept as one name. A

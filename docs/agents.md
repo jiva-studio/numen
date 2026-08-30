@@ -62,9 +62,11 @@ A deck is as long as somebody made it, so `card_read` answers with at most fifty
 
 A tool that writes returns only once the index is level again. An agent that creates a note and searches for it in the next breath finds it.
 
-## The reading surface
+## The reviewer's surface
 
-The reviewer serves a surface of its own, and every tool on it reads: `note_search`, `note_get`, `note_read`, `note_neighbourhood`, `link_list`, `source_list`, `source_read`, `card_stencils`, `card_read` and `vault_get`. Nothing else is on it, and the agent answering from it changes nothing in the vault. The decisions behind it are [ADR-0032](adr/0032-the-reviewers-agent-only-reads.md).
+The window a person runs their cards in serves a surface of its own. It reads the whole vault — `note_search`, `note_get`, `note_read`, `note_neighbourhood`, `link_list`, `source_list`, `source_read`, `card_stencils`, `card_read` and `vault_get` — and writes cards alone: `card_add`, `card_edit`, `card_remove` and `card_section_add`. Nothing else is on it. A deck and a stencil are what a vault is arranged into, and nothing there makes one; no note, link or document is written there either. The decisions behind it are [ADR-0032](adr/0032-the-reviewers-agent-writes-only-cards.md).
+
+The reading half of it is a surface in its own right, with no writer on it at all.
 
 The tools themselves are the same tools: each family registers its reading half and its writing half separately, and the full surface is both halves.
 

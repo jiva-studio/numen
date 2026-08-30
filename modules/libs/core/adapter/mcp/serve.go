@@ -124,6 +124,12 @@ func ServeReadingHTTP(ctx context.Context, addr, token string, core Core, troubl
 	return serve(ctx, addr, token, NewReading(core), trouble)
 }
 
+// ServeReviewingHTTP starts the server the window a person runs their cards in
+// serves: everything that reads, and the cards of a deck.
+func ServeReviewingHTTP(ctx context.Context, addr, token string, core Core, trouble func(error)) (*Endpoint, error) {
+	return serve(ctx, addr, token, NewReviewing(core), trouble)
+}
+
 func serve(ctx context.Context, addr, token string, server *sdk.Server, trouble func(error)) (*Endpoint, error) {
 	if addr == "" {
 		addr = DefaultAddr

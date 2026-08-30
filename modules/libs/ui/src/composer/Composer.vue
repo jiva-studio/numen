@@ -67,7 +67,7 @@ const onKeydown = (event: KeyboardEvent) => {
   if (descriptor.value.shows === 'send') act()
 }
 
-defineExpose({ focus: () => field.value?.focus() })
+defineExpose({ focus: (how?: FocusOptions) => field.value?.focus(how) })
 </script>
 
 <template>

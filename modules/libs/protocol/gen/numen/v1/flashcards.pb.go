@@ -1176,10 +1176,7 @@ type AskingResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Set when no agent can be reached, and then nothing can be asked here. It
 	// says why, in the person's own words.
-	Unreachable string `protobuf:"bytes,1,opt,name=unreachable,proto3" json:"unreachable,omitempty"`
-	// EveryCard offers the way in on every card whose answer is showing. False
-	// offers it on a card the person could not recall.
-	EveryCard     bool `protobuf:"varint,2,opt,name=every_card,json=everyCard,proto3" json:"every_card,omitempty"`
+	Unreachable   string `protobuf:"bytes,1,opt,name=unreachable,proto3" json:"unreachable,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1219,13 +1216,6 @@ func (x *AskingResponse) GetUnreachable() string {
 		return x.Unreachable
 	}
 	return ""
-}
-
-func (x *AskingResponse) GetEveryCard() bool {
-	if x != nil {
-		return x.EveryCard
-	}
-	return false
 }
 
 type MovingRequest struct {
@@ -1388,11 +1378,9 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x04easy\x18\x06 \x01(\x05R\x04easy\x12\x14\n" +
 	"\x05asked\x18\a \x01(\x05R\x05asked\x12\x1a\n" +
 	"\brecalled\x18\b \x01(\x05R\brecalled\"\x0f\n" +
-	"\rAskingRequest\"Q\n" +
+	"\rAskingRequest\"2\n" +
 	"\x0eAskingResponse\x12 \n" +
-	"\vunreachable\x18\x01 \x01(\tR\vunreachable\x12\x1d\n" +
-	"\n" +
-	"every_card\x18\x02 \x01(\bR\teveryCard\"\x0f\n" +
+	"\vunreachable\x18\x01 \x01(\tR\vunreachable\"\x0f\n" +
 	"\rMovingRequest\"(\n" +
 	"\x0eMovingResponse\x12\x16\n" +
 	"\x06reload\x18\x01 \x01(\bR\x06reload*e\n" +

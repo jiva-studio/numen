@@ -56,10 +56,6 @@ type API struct {
 	// about a card works one vault, and it is told which when the sitting is.
 	Sat func(context.Context, domain.Vault)
 
-	// EveryCard offers the way into the panel on every card whose answer is
-	// showing. Off, it is offered on a card the person could not recall.
-	EveryCard bool
-
 	// Unreachable is why an agent cannot be reached, when one cannot.
 	Unreachable atomic.Value
 

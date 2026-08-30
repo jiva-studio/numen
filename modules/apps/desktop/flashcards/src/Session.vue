@@ -7,8 +7,10 @@
  */
 import { Button, KeyCap } from '@numen/ui'
 
+import Beside from './Beside.vue'
 import Card from './Card.vue'
 import { ahead, called, deckName, said } from './core'
+import { ASKS } from './keying'
 import type { Asked, Said } from './core'
 
 defineProps<{
@@ -21,8 +23,6 @@ defineProps<{
   takenBack: boolean
   /** Whether the panel the card is asked about in is up. */
   asking: boolean
-  /** Whether the way into that panel stands on this card. */
-  offered: boolean
 }>()
 
 defineEmits<{
@@ -32,7 +32,6 @@ defineEmits<{
   (event: 'leave'): void
   (event: 'ask'): void
   (event: 'shut'): void
-  (event: 'dragging', moved: number): void
 }>()
 </script>
 
@@ -52,8 +51,8 @@ defineEmits<{
         <KeyCap :keys="{ marks: [], letter: 'u' }" />
         Undo
       </Button>
-      <Button v-if="offered" variant="ghost" size="small" @click="$emit('ask')">
-        <KeyCap :keys="{ marks: [], letter: 'a' }" />
+      <Button variant="ghost" size="small" @click="$emit('ask')">
+        <KeyCap :keys="{ marks: [], letter: ASKS }" />
         Ask
       </Button>
       <Button variant="ghost" size="small" @click="$emit('leave')">
@@ -64,23 +63,15 @@ defineEmits<{
 
     <!-- The card is what changes under a person as they work, so a reader that
          is not looking at the screen is told when the answer appears. -->
-    <div class="session__work" :class="{ 'session__work--asking': asking }">
+    <Beside
+      :open="asking"
+      @update:open="(open: boolean) => (open ? $emit('ask') : $emit('shut'))"
+    >
       <div class="session__card" aria-live="polite">
-        <Card
-          :front="card.front"
-          :back="card.back"
-          :shown="shown"
-          :asking="asking"
-          @show="$emit('show')"
-          @ask="$emit('ask')"
-          @shut="$emit('shut')"
-          @dragging="(moved: number) => $emit('dragging', moved)"
-        />
+        <Card :front="card.front" :back="card.back" :shown="shown" @show="$emit('show')" />
       </div>
-      <div v-if="asking" class="session__panel">
-        <slot name="panel" />
-      </div>
-    </div>
+      <template #other><slot name="panel" /></template>
+    </Beside>
 
     <footer class="session__answers">
       <!-- The key first and the word after it: a person answering with the
@@ -122,48 +113,12 @@ defineEmits<{
   gap: var(--numen-inset);
 }
 
-/* What the row of answers leaves: the card, and the panel beside it where there
-   is room for both. */
-.session__work {
-  display: flex;
-  flex: 1;
-  min-block-size: 0;
-  gap: var(--numen-inset);
-}
-
-/* The card takes what the row of answers leaves, and it is the card itself that
-   scrolls. */
+/* It is the card itself that scrolls. */
 .session__card {
   display: flex;
   flex: 1;
   min-inline-size: 0;
   min-block-size: 0;
-}
-
-.session__panel {
-  display: flex;
-  flex: 1;
-  min-inline-size: 0;
-  min-block-size: 0;
-}
-
-/* The panel takes the row and the card gives way. A card is set at the size
-   reading is set at, and half of a window this wide is not a width it reads at. */
-.session__work--asking .session__card {
-  display: none;
-}
-
-/* Wide enough for both to be read: the card stands beside the panel and keeps
-   the wider half, because it is the thing being asked about. */
-@media (min-width: 68rem) {
-  .session__work--asking .session__card {
-    display: flex;
-    flex: 3;
-  }
-
-  .session__work--asking .session__panel {
-    flex: 2;
-  }
 }
 
 /* Where the card stands, said once and quietly: a person answering is reading

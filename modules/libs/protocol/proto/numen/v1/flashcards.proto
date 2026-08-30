@@ -243,10 +243,6 @@ message AskingResponse {
   // Set when no agent can be reached, and then nothing can be asked here. It
   // says why, in the person's own words.
   string unreachable = 1;
-
-  // EveryCard offers the way in on every card whose answer is showing. False
-  // offers it on a card the person could not recall.
-  bool every_card = 2;
 }
 
 message MovingRequest {}

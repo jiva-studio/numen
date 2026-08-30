@@ -46,6 +46,8 @@ const emit = defineEmits<{
 const text = defineModel<string>({ default: '' })
 
 const composer = useTemplateRef<InstanceType<typeof Composer>>('composer')
+
+defineExpose({ focus: (how?: FocusOptions) => composer.value?.focus(how) })
 const room = ref('0px')
 
 let watching: ResizeObserver | undefined

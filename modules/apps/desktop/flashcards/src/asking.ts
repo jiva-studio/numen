@@ -1,6 +1,10 @@
 /**
- * The panel a card is asked about in: whether it is up, what has been said in
- * it, and what is being written.
+ * The panel a card is asked about in: whether it is showing, what has been said
+ * in it, and what is being written.
+ *
+ * Everything the panel is, is here. What draws it reads this and decides
+ * nothing: a card that may not be asked about is refused here, and the reason
+ * is said here.
  *
  * A conversation belongs to one card. Answering the card ends it, so the card
  * in front of a person is never answered out of the one behind it.
@@ -17,16 +21,20 @@ import type { Asked } from './core'
 export interface Talking {
   /** What answers a question about a card. */
   readonly agent: AgentPort
+  /** The card in front of the person, and nothing between cards. */
+  readonly card: () => Asked | null
   /** Why nothing can be asked here, empty while something can. */
   readonly unreachable: () => string
-  /** The way in stands on every card whose answer is showing. */
-  readonly everyCard: () => boolean
+  /** Where the window says what a person has to know. */
+  readonly says: (said: string) => void
   /** When the words that have arrived are put on the screen. */
   readonly paint?: (draw: () => void) => void
 }
 
 export function asking(deps: Talking) {
-  const up = ref(false)
+  /** Whether the panel is what the window is showing. */
+  const open = ref(false)
+
   const written = ref('')
 
   /** The card the open conversation is about, and nothing while none is. */
@@ -41,36 +49,33 @@ export function asking(deps: Talking) {
   const turns = computed<Turn[]>(() => talk.value?.turns.value ?? [])
   const working = computed(() => talk.value?.working.value ?? false)
 
-  /**
-   * Whether the way into the panel stands on this card. It stands on the back
-   * alone, and on a card the person could not recall unless the setting offers
-   * it everywhere.
-   */
-  const offered = (shown: boolean, said: string): boolean => {
-    if (!shown) return false
-    return deps.everyCard() || said === 'again'
-  }
-
   /** The talk about one card, made once and let go of with the card. */
-  const talking = (card: Asked): Conversation => {
-    if (talk.value && about.value?.card === card.card && about.value?.face === card.face) {
-      return talk.value
-    }
+  const talking = (card: Asked) => {
+    if (talk.value && about.value?.card === card.card && about.value?.face === card.face) return
     ends()
     about.value = card
     talk.value = conversation(deps.agent, words, `card-${opened++}`, deps.paint)
-    return talk.value
   }
 
-  /** The panel comes in on a card whose answer is showing, and on no other. */
-  const opens = (card: Asked, shown: boolean) => {
-    if (!shown) return
+  /**
+   * The panel asked for, on whichever card is up. A window that can reach no
+   * agent says so: a gesture that does nothing is a gesture a person repeats.
+   */
+  const opens = () => {
+    const card = deps.card()
+    if (!card) return
+    const why = deps.unreachable()
+    if (why) {
+      deps.says(why)
+      return
+    }
     talking(card)
-    up.value = true
+    open.value = true
   }
 
+  /** The panel put away, with what was said in it kept. */
   const shuts = () => {
-    up.value = false
+    open.value = false
   }
 
   const writing = (text: string) => {
@@ -99,16 +104,15 @@ export function asking(deps: Talking) {
     talk.value = null
     about.value = null
     written.value = ''
-    up.value = false
+    open.value = false
   }
 
   return {
-    up,
+    open,
     written,
     about,
     turns,
     working,
-    offered,
     opens,
     shuts,
     writing,

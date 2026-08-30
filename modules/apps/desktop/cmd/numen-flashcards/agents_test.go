@@ -28,9 +28,9 @@ var deck = map[string]string{
 		"\n### Meaning\n\nCompost made of fallen leaves alone\n",
 }
 
-// reviewing is this window as the binary builds it: an installation of its own,
-// an index opened for asking alone, and two vaults to sit down to.
-func reviewing(t *testing.T) (container.Config, *container.ReadIndex, *flashcardsui.API, []domain.Vault) {
+// window is this window as the binary builds it: an installation of its own, an
+// index opened for asking alone, and two vaults to sit down to.
+func window(t *testing.T) (container.Config, *container.ReadIndex, *flashcardsui.API, []domain.Vault) {
 	t.Helper()
 
 	state := t.TempDir()
@@ -92,7 +92,7 @@ func kept(t *testing.T, cfg container.Config) (token bool, announcement bool) {
 
 // An installation that names no agent lets nothing be asked, and says so.
 func TestAnInstallationNamingNoAgentAsksNothingAboutACard(t *testing.T) {
-	cfg, db, api, _ := reviewing(t)
+	cfg, db, api, _ := window(t)
 	cfg.Agent = agent.Config{}
 
 	away := serveAgents(t.Context(), cfg, db, api, false, io.Discard)
@@ -108,7 +108,7 @@ func TestAnInstallationNamingNoAgentAsksNothingAboutACard(t *testing.T) {
 
 // The flag shuts it for one launch, whatever the settings name.
 func TestTheFlagShutsTheAgentForOneLaunch(t *testing.T) {
-	cfg, db, api, _ := reviewing(t)
+	cfg, db, api, _ := window(t)
 	cfg.Agent = agent.Defaults()
 
 	away := serveAgents(t.Context(), cfg, db, api, true, io.Discard)
@@ -123,7 +123,7 @@ func TestTheFlagShutsTheAgentForOneLaunch(t *testing.T) {
 // window's vault. This window writes neither it nor a token: a second writer
 // would point that agent at whichever window started last.
 func TestTheReviewerWritesDownNoAddressAndNoToken(t *testing.T) {
-	cfg, db, api, vaults := reviewing(t)
+	cfg, db, api, vaults := window(t)
 	cfg.Agent = agent.Defaults()
 
 	away := serveAgents(t.Context(), cfg, db, api, false, io.Discard)
@@ -143,7 +143,7 @@ func TestTheReviewerWritesDownNoAddressAndNoToken(t *testing.T) {
 // The agent works the vault the person sat down to. Sitting to another vault
 // starts it again there; sitting to the same one leaves it where it is.
 func TestTheAgentFollowsTheVaultTheSittingIsOn(t *testing.T) {
-	cfg, db, api, vaults := reviewing(t)
+	cfg, db, api, vaults := window(t)
 	cfg.Agent = agent.Defaults()
 
 	away := serveAgents(t.Context(), cfg, db, api, false, io.Discard)

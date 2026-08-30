@@ -183,9 +183,10 @@ func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
 	}
 }
 
-// Whether a card can be asked about, and on which cards the way in stands.
+// Whether a card can be asked about at all.
 func TestWhetherACardCanBeAskedAboutIsSaid(t *testing.T) {
 	nothing := &API{}
+	nothing.Unreachable.Store("no agent is named in the settings")
 	said, err := nothing.Asking(t.Context(), connect.NewRequest(&v1.AskingRequest{}))
 	if err != nil {
 		t.Fatal(err)
@@ -193,12 +194,9 @@ func TestWhetherACardCanBeAskedAboutIsSaid(t *testing.T) {
 	if said.Msg.GetUnreachable() == "" {
 		t.Error("a window with no agent says it can be asked")
 	}
-	if said.Msg.GetEveryCard() {
-		t.Error("an installation that configured nothing offers the way in everywhere")
-	}
 
-	reachable := &API{EveryCard: true}
-	reachable.Answers(&asking{})
+	reachable := &API{}
+	reachable.Unreachable.Store("")
 	said, err = reachable.Asking(t.Context(), connect.NewRequest(&v1.AskingRequest{}))
 	if err != nil {
 		t.Fatal(err)
@@ -206,8 +204,21 @@ func TestWhetherACardCanBeAskedAboutIsSaid(t *testing.T) {
 	if why := said.Msg.GetUnreachable(); why != "" {
 		t.Errorf("a window with an agent says %q", why)
 	}
-	if !said.Msg.GetEveryCard() {
-		t.Error("the setting did not reach the page")
+}
+
+// The page asks once, as it opens, and no sitting is open then. An agent that
+// is started when a person sits down to a vault has not started yet, and the
+// page is not told this window can ask nothing.
+func TestAWindowAskedBeforeASittingIsNotSaidToHaveNoAgent(t *testing.T) {
+	api := &API{}
+	api.Unreachable.Store("")
+
+	said, err := api.Asking(t.Context(), connect.NewRequest(&v1.AskingRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if why := said.Msg.GetUnreachable(); why != "" {
+		t.Errorf("before anybody sat down the page was told %q", why)
 	}
 }
 
