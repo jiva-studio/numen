@@ -116,11 +116,15 @@ export function days(
   last.setHours(12, 0, 0, 0)
   last.setDate(last.getDate() + ((7 - weekday(last)) % 7) + weeks * ROWS)
 
-  // The grid runs back from there for as many weeks as it was given room for,
-  // so the width a window has is the width of the grid and the weeks a person
-  // has not been here for are drawn as the empty days they were.
-  const first = new Date(last)
-  first.setDate(first.getDate() - (columns * ROWS - 1))
+  // The grid takes the width it is given, and it opens on the week a person
+  // began in: their days are read from the left, and the room past what they
+  // have yet done stretches out to the right. Once they have been here longer
+  // than the width holds, the oldest weeks fall off the left instead.
+  const behind = new Date(last)
+  behind.setDate(behind.getDate() - (columns * ROWS - 1))
+
+  const opens = monday(began(did, due, now))
+  const first = opens > behind ? opens : behind
 
   for (let at = 0; at < columns * ROWS; at += 1) {
     const on = new Date(first)
@@ -138,6 +142,35 @@ export function days(
       ahead,
     })
   }
+  return out
+}
+
+/**
+ * The day a person's history begins, or today where they have none. A day still
+ * to come counts: a vault whose cards are all ahead has a beginning too.
+ */
+function began(
+  did: ReadonlyMap<string, unknown>,
+  due: ReadonlyMap<string, unknown>,
+  now: Date,
+): Date {
+  let first = ''
+  for (const day of [...did.keys(), ...due.keys()]) {
+    if (first === '' || day < first) first = day
+  }
+  if (first === '') return now
+  const [year, month, day] = first.split('-').map(Number)
+  const at = new Date(now)
+  at.setFullYear(year ?? now.getFullYear(), (month ?? 1) - 1, day ?? 1)
+  at.setHours(12, 0, 0, 0)
+  return at > now ? now : at
+}
+
+/** The Monday of the week a day stands in, which is the column it opens. */
+function monday(at: Date): Date {
+  const out = new Date(at)
+  out.setHours(12, 0, 0, 0)
+  out.setDate(out.getDate() - (weekday(out) - 1))
   return out
 }
 
