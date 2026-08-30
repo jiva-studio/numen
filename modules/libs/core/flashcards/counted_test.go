@@ -79,9 +79,10 @@ func TestADaySaysHowEachOfTheFourWasAnswered(t *testing.T) {
 		said("01B", flashcards.Good),
 		said("01C", flashcards.Good),
 		said("01D", flashcards.Easy),
+		said("01E", flashcards.Hard),
 	})
 
-	want := flashcards.Tally{Answered: 4, Again: 1, Good: 2, Easy: 1}
+	want := flashcards.Tally{Answered: 5, Again: 1, Hard: 1, Good: 2, Easy: 1}
 	if got["2026-08-29"] != want {
 		t.Errorf("the day came to %+v, want %+v", got["2026-08-29"], want)
 	}
@@ -130,6 +131,21 @@ func TestAStreakInTheSmallHoursIsTheEveningsStill(t *testing.T) {
 	days := answeredOn(map[string]int{"2026-08-28": 3, "2026-08-29": 5})
 	if got := flashcards.Streak(counting, days, moment(t, "2026-08-30T02:00:00")); got != 2 {
 		t.Errorf("the streak is %d at two in the morning, want 2", got)
+	}
+}
+
+// A day counted in no zone in particular is counted in the machine's own,
+// which is where a person's evening is.
+func TestADayWithNoZoneIsTheMachinesOwn(t *testing.T) {
+	here := flashcards.Day{Starts: flashcards.DayStarts}
+	now := time.Now()
+	days := answeredOn(map[string]int{
+		here.Names(now):                   1,
+		here.Names(now.AddDate(0, 0, -1)): 1,
+	})
+
+	if got := flashcards.Streak(here, days, now); got != 2 {
+		t.Errorf("the streak is %d, want the two days answered", got)
 	}
 }
 
