@@ -63,7 +63,7 @@ func TestANoteThatCannotBeReadIsRefusedAsTheEditorRefusesIt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var found *v1.Joined
+	var found *v1.Neighbour
 	for _, one := range out.Msg.GetNotes() {
 		if one.GetPath() == "Mould.md" {
 			found = one

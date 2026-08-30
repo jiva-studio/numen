@@ -1,16 +1,16 @@
 // @vitest-environment jsdom
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
-import { ref } from 'vue'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { nextTick, ref } from 'vue'
 
 import Reading from './Reading.vue'
 import { reading } from './reading'
 import { WORDS as words } from './reading/words'
-import type { Around, Joined } from './reading/core'
+import type { Around, Neighbour } from './reading/core'
 import type { Read } from './reading'
 
 /** One note as the window hands it over. */
-const joined = (more: Partial<Joined> = {}): Joined => ({
+const joined = (more: Partial<Neighbour> = {}): Neighbour => ({
   written: 'Leaf mould',
   path: 'notes/Leaf mould.md',
   title: 'Leaf mould',
@@ -99,5 +99,33 @@ describe('the panel the deck is read in', () => {
   it('says quietly that a deck is joined to nothing', async () => {
     const one = await shown({ notes: [], unread: 0 })
     expect(one.text()).toContain(words.nothing)
+  })
+})
+
+describe('a reading opened on one note', () => {
+  // jsdom does no scrolling of its own, so this is what is watched for.
+  const scrolled = vi.fn()
+  beforeEach(() => {
+    scrolled.mockClear()
+    Element.prototype.scrollIntoView = scrolled
+  })
+
+  // The panel comes in while the notes are still being asked for, so what was
+  // named is waited for rather than looked for once and given up on.
+  it('scrolls to it once the notes have arrived', async () => {
+    const panel = held({
+      notes: [joined(), joined({ title: 'Humus', path: 'notes/Humus.md' })],
+      unread: 0,
+    })
+    const one = mount(Reading, { props: { held: panel } })
+
+    await panel.opens('notes/Humus.md')
+    await nextTick()
+    await nextTick()
+
+    expect(scrolled).toHaveBeenCalledTimes(1)
+    expect(one.findAll('.reading__note')[1]?.element).toBe(scrolled.mock.instances[0])
+    // What was sought has been scrolled to, and the next card does not seek it.
+    expect(panel.at.value).toBe('')
   })
 })

@@ -11,7 +11,7 @@ import { REFUSED } from './words'
 import type { Refused } from './words'
 
 /** One note the deck is joined to. */
-export interface Joined {
+export interface Neighbour {
   /** The link as it is written, which is all a name answering to nothing has. */
   readonly written: string
   /** Empty where the name answers to no note. */
@@ -30,7 +30,7 @@ export interface Joined {
 
 /** What one deck stands among. */
 export interface Around {
-  readonly notes: readonly Joined[]
+  readonly notes: readonly Neighbour[]
   /** How many at the end came named and not read. */
   readonly unread: number
 }

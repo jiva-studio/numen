@@ -261,7 +261,7 @@ message AroundRequest {
 }
 
 message AroundResponse {
-  repeated Joined notes = 1;
+  repeated Neighbour notes = 1;
 
   // Unread is how many at the end of the list came without their text. Reading
   // stops once a sitting's worth has been gathered, so a deck at the centre of
@@ -269,8 +269,8 @@ message AroundResponse {
   int32 unread = 2;
 }
 
-// Joined is one note the deck stands next to.
-message Joined {
+// Neighbour is one note the deck stands next to.
+message Neighbour {
   // Written is the address as the deck wrote it, and all a link resolving to
   // nothing ever has. It is empty for a note that points at the deck, which
   // wrote the deck's name and not its own. Path is where the link landed, and

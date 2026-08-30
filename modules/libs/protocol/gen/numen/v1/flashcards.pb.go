@@ -1274,7 +1274,7 @@ func (x *AroundRequest) GetDeck() string {
 
 type AroundResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Notes []*Joined              `protobuf:"bytes,1,rep,name=notes,proto3" json:"notes,omitempty"`
+	Notes []*Neighbour           `protobuf:"bytes,1,rep,name=notes,proto3" json:"notes,omitempty"`
 	// Unread is how many at the end of the list came without their text. Reading
 	// stops once a sitting's worth has been gathered, so a deck at the centre of
 	// a vault is still answered promptly and says how much it left.
@@ -1313,7 +1313,7 @@ func (*AroundResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{18}
 }
 
-func (x *AroundResponse) GetNotes() []*Joined {
+func (x *AroundResponse) GetNotes() []*Neighbour {
 	if x != nil {
 		return x.Notes
 	}
@@ -1327,8 +1327,8 @@ func (x *AroundResponse) GetUnread() int32 {
 	return 0
 }
 
-// Joined is one note the deck stands next to.
-type Joined struct {
+// Neighbour is one note the deck stands next to.
+type Neighbour struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Written is the address as the deck wrote it, and all a link resolving to
 	// nothing ever has. It is empty for a note that points at the deck, which
@@ -1357,20 +1357,20 @@ type Joined struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Joined) Reset() {
-	*x = Joined{}
+func (x *Neighbour) Reset() {
+	*x = Neighbour{}
 	mi := &file_numen_v1_flashcards_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Joined) String() string {
+func (x *Neighbour) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Joined) ProtoMessage() {}
+func (*Neighbour) ProtoMessage() {}
 
-func (x *Joined) ProtoReflect() protoreflect.Message {
+func (x *Neighbour) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_flashcards_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1382,61 +1382,61 @@ func (x *Joined) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Joined.ProtoReflect.Descriptor instead.
-func (*Joined) Descriptor() ([]byte, []int) {
+// Deprecated: Use Neighbour.ProtoReflect.Descriptor instead.
+func (*Neighbour) Descriptor() ([]byte, []int) {
 	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{19}
 }
 
-func (x *Joined) GetWritten() string {
+func (x *Neighbour) GetWritten() string {
 	if x != nil {
 		return x.Written
 	}
 	return ""
 }
 
-func (x *Joined) GetPath() string {
+func (x *Neighbour) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *Joined) GetTitle() string {
+func (x *Neighbour) GetTitle() string {
 	if x != nil {
 		return x.Title
 	}
 	return ""
 }
 
-func (x *Joined) GetBody() string {
+func (x *Neighbour) GetBody() string {
 	if x != nil {
 		return x.Body
 	}
 	return ""
 }
 
-func (x *Joined) GetLabel() string {
+func (x *Neighbour) GetLabel() string {
 	if x != nil {
 		return x.Label
 	}
 	return ""
 }
 
-func (x *Joined) GetPoints() bool {
+func (x *Neighbour) GetPoints() bool {
 	if x != nil {
 		return x.Points
 	}
 	return false
 }
 
-func (x *Joined) GetAmbiguous() bool {
+func (x *Neighbour) GetAmbiguous() bool {
 	if x != nil {
 		return x.Ambiguous
 	}
 	return false
 }
 
-func (x *Joined) GetRefusal() Refusal {
+func (x *Neighbour) GetRefusal() Refusal {
 	if x != nil && x.Refusal != nil {
 		return *x.Refusal
 	}
@@ -1608,11 +1608,11 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\vunreachable\x18\x01 \x01(\tR\vunreachable\">\n" +
 	"\rAroundRequest\x12\x19\n" +
 	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
-	"\x04deck\x18\x02 \x01(\tR\x04deck\"P\n" +
-	"\x0eAroundResponse\x12&\n" +
-	"\x05notes\x18\x01 \x03(\v2\x10.numen.v1.JoinedR\x05notes\x12\x16\n" +
-	"\x06unread\x18\x02 \x01(\x05R\x06unread\"\xea\x01\n" +
-	"\x06Joined\x12\x18\n" +
+	"\x04deck\x18\x02 \x01(\tR\x04deck\"S\n" +
+	"\x0eAroundResponse\x12)\n" +
+	"\x05notes\x18\x01 \x03(\v2\x13.numen.v1.NeighbourR\x05notes\x12\x16\n" +
+	"\x06unread\x18\x02 \x01(\x05R\x06unread\"\xed\x01\n" +
+	"\tNeighbour\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12\x12\n" +
@@ -1677,7 +1677,7 @@ var file_numen_v1_flashcards_proto_goTypes = []any{
 	(*AskingResponse)(nil),   // 17: numen.v1.AskingResponse
 	(*AroundRequest)(nil),    // 18: numen.v1.AroundRequest
 	(*AroundResponse)(nil),   // 19: numen.v1.AroundResponse
-	(*Joined)(nil),           // 20: numen.v1.Joined
+	(*Neighbour)(nil),        // 20: numen.v1.Neighbour
 	(*MovingRequest)(nil),    // 21: numen.v1.MovingRequest
 	(*MovingResponse)(nil),   // 22: numen.v1.MovingResponse
 	(Refusal)(0),             // 23: numen.v1.Refusal
@@ -1690,8 +1690,8 @@ var file_numen_v1_flashcards_proto_depIdxs = []int32{
 	0,  // 4: numen.v1.AnswerRequest.rating:type_name -> numen.v1.Rating
 	15, // 5: numen.v1.ReviewedResponse.days:type_name -> numen.v1.Reviewing
 	15, // 6: numen.v1.ReviewedResponse.due:type_name -> numen.v1.Reviewing
-	20, // 7: numen.v1.AroundResponse.notes:type_name -> numen.v1.Joined
-	23, // 8: numen.v1.Joined.refusal:type_name -> numen.v1.Refusal
+	20, // 7: numen.v1.AroundResponse.notes:type_name -> numen.v1.Neighbour
+	23, // 8: numen.v1.Neighbour.refusal:type_name -> numen.v1.Refusal
 	5,  // 9: numen.v1.FlashcardsService.Owing:input_type -> numen.v1.OwingRequest
 	7,  // 10: numen.v1.FlashcardsService.Start:input_type -> numen.v1.StartRequest
 	9,  // 11: numen.v1.FlashcardsService.Answer:input_type -> numen.v1.AnswerRequest

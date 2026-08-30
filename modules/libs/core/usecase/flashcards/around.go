@@ -17,13 +17,13 @@ const MostRead = 30
 
 // Joined is what a deck is joined to.
 type Joined struct {
-	Notes []Note
+	Notes []Neighbour
 	// Unread is how many at the end came without their text.
 	Unread int
 }
 
-// Note is one note the deck is joined to.
-type Note struct {
+// Neighbour is one note the deck is joined to.
+type Neighbour struct {
 	// Written is the address as the deck wrote it, and all a dangling link
 	// has. Empty for a note that points at the deck: what it wrote there names
 	// the deck, not itself.
@@ -58,8 +58,9 @@ type Around struct {
 // Execute gathers what the deck is joined to: what it points at first, then
 // what points at it.
 //
-// An error is the vault being out of reach. A note that could not be read is
-// an outcome on its own entry and leaves the rest of them standing.
+// An error is the index being out of reach. Whatever went wrong with one note —
+// gone, too long, a file nothing can open — is an outcome on that note's own
+// entry, and the rest of them are still read.
 func (u Around) Execute(ctx context.Context, v domain.Vault, deck string) (Joined, error) {
 	linked, err := u.Linked.Execute(ctx, v, deck)
 	if err != nil {
@@ -70,14 +71,16 @@ func (u Around) Execute(ctx context.Context, v domain.Vault, deck string) (Joine
 	// somewhere else to read.
 	seen := map[string]bool{deck: true}
 
-	var found []Note
+	var found []Neighbour
 	for _, l := range linked.Links {
-		if l.Target.Scheme == domain.SchemeAsset {
-			// An attachment is not a note, and showing one as a broken link is
-			// a lie about the vault.
+		// Only an address that names a note can name one that is missing. An
+		// attachment and a web address are neither read here nor gone, and
+		// drawing them as notes whose name has come loose says a vault has a
+		// question in it where it has none.
+		if l.Target.Scheme != domain.SchemeName && l.Target.Scheme != domain.SchemeNote {
 			continue
 		}
-		one := Note{
+		one := Neighbour{
 			Written:   l.Target.Written(),
 			Path:      l.To,
 			Label:     l.Label,
@@ -101,7 +104,9 @@ func (u Around) Execute(ctx context.Context, v domain.Vault, deck string) (Joine
 			continue
 		}
 		seen[l.From] = true
-		found = append(found, Note{Path: l.From, Label: l.Label, Ambiguous: l.Ambiguous})
+		// Nothing is ambiguous on this side: the note shown is the one that
+		// wrote the link, whatever its own name resolved through.
+		found = append(found, Neighbour{Path: l.From, Label: l.Label})
 	}
 
 	paths := make([]string, 0, len(found))
@@ -124,7 +129,8 @@ func (u Around) Execute(ctx context.Context, v domain.Vault, deck string) (Joine
 		if one.Path != "" {
 			ref, isNote := notes[one.Path]
 			if !isNote {
-				// A file the vault does not hold as a note.
+				// The index answered where the link landed and then no longer
+				// held a note there: it is written while this reads it.
 				continue
 			}
 			if kinds[one.Path] == domain.TypeStencil {
@@ -150,7 +156,10 @@ func (u Around) Execute(ctx context.Context, v domain.Vault, deck string) (Joine
 		}
 		contents, err := u.Reads.Execute(ctx, v, out.Notes[i].Path)
 		if err != nil {
-			return Joined{}, err
+			// One file that could not be opened is one entry with no text, not
+			// a panel a person cannot read the rest of.
+			out.Notes[i].Outcome = note.Unreadable
+			continue
 		}
 		out.Notes[i].Outcome = contents.Outcome
 		out.Notes[i].Body = contents.Body

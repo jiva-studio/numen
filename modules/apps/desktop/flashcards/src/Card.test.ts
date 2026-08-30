@@ -101,4 +101,13 @@ describe('a card', () => {
     expect(face.emitted('show')).toBeUndefined()
     expect(face.emitted('read')).toEqual([['notes/Leaf mould.md']])
   })
+
+  // A card comes from whoever wrote it, and a name escaped wrongly is still a
+  // press this window has to survive.
+  it('takes a badly escaped name as the characters it already is', async () => {
+    const face = shows('<p><a href="notes/50%.md">fifty</a></p>')
+
+    await face.find('a').trigger('click')
+    expect(face.emitted('read')).toEqual([['notes/50%.md']])
+  })
 })

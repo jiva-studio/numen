@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 
 import { reading } from './reading'
-import type { Around, Joined } from './reading/core'
+import type { Around, Neighbour } from './reading/core'
 
 /** One note as the window hands it over. */
-const joined = (more: Partial<Joined> = {}): Joined => ({
+const joined = (more: Partial<Neighbour> = {}): Neighbour => ({
   written: 'Leaf mould',
   path: 'notes/Leaf mould.md',
   title: 'Leaf mould',
@@ -93,6 +93,37 @@ describe('what is read belongs to the deck', () => {
     await held.opens()
     expect(asked.map((one) => one.deck)).toEqual(['decks/Words.md', 'decks/Trees.md'])
     expect(held.notes.value[0]?.written).toBe('decks/Trees.md')
+  })
+
+  // A card answered while the asking is in flight moves the sitting to another
+  // deck, and what comes back is then about the deck behind it.
+  it('does not take an answer about the deck the sitting has left', async () => {
+    const waiting: (() => void)[] = []
+    const open = ref(false)
+    const deck = ref('decks/Words.md')
+    const held = reading({
+      open: () => open.value,
+      shows: (up) => {
+        open.value = up
+      },
+      vault: () => 'one',
+      deck: () => deck.value,
+      around: async (_vault, of) =>
+        new Promise((then) => waiting.push(() => then({ notes: [joined({ path: of })], unread: 0 }))),
+      says: () => {},
+    })
+
+    const first = held.opens()
+    deck.value = 'decks/Trees.md'
+    const second = held.opens()
+
+    // The second deck is answered, and the first only afterwards.
+    waiting[1]?.()
+    await second
+    waiting[0]?.()
+    await first
+
+    expect(held.notes.value[0]?.path).toBe('decks/Trees.md')
   })
 
   it('holds nothing once the sitting is over', async () => {

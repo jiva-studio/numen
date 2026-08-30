@@ -39,6 +39,18 @@ const took = (press: PointerEvent) => {
 const away = /^[a-z][a-z0-9+.-]*:/i
 
 /**
+ * A name written into an href is escaped, and a card comes from whoever wrote
+ * it: one escaped wrongly is taken as the characters it already is.
+ */
+const plain = (named: string) => {
+  try {
+    return decodeURIComponent(named)
+  } catch {
+    return named
+  }
+}
+
+/**
  * The card is turned over by pressing it. A link inside one is never followed —
  * this window has one page — but a link into the vault opens the reading beside
  * the card on the note it names.
@@ -48,7 +60,7 @@ const pressed = (press: MouseEvent) => {
   if (link) {
     press.preventDefault()
     const named = link.getAttribute('href') ?? ''
-    if (named && !away.test(named)) emit('read', decodeURIComponent(named))
+    if (named && !away.test(named)) emit('read', plain(named))
     return
   }
   // A hand that took the card across was moving the panel into view, and a

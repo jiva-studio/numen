@@ -64,6 +64,16 @@ func joined(t *testing.T, u flashcards.Around, v domain.Vault, deck string) flas
 	return out
 }
 
+// written is how each entry was addressed, which is all a link that reached no
+// note ever has.
+func written(j flashcards.Joined) []string {
+	out := make([]string, 0, len(j.Notes))
+	for _, one := range j.Notes {
+		out = append(out, one.Written)
+	}
+	return out
+}
+
 func paths(j flashcards.Joined) []string {
 	out := make([]string, 0, len(j.Notes))
 	for _, one := range j.Notes {
@@ -193,6 +203,28 @@ func TestAnAttachmentIsNotSomethingToRead(t *testing.T) {
 	}
 }
 
+// A name that came loose is the whole reason a link resolving to nothing is
+// kept. An address that never named a note is not a name that came loose, and
+// drawing one as a note that is missing says the vault has a question in it
+// where it has none.
+func TestAnAddressThatNamesNoNoteIsNotADanglingNote(t *testing.T) {
+	j := around(t, map[string]string{
+		"decks/Birds.md": "---\ntype: deck\nlinks:\n" +
+			"  - to: \"https://example.org/birds\"\n    role: ref\n---\n" +
+			"\n![[asset://diagram.png]]\n\nSee [[Migration]].\n",
+		"Migration.md": "# Migration\n\nBirds go south.\n",
+	}, "decks/Birds.md")
+
+	for _, one := range j.Notes {
+		if one.Path == "" && one.Written != "Migration" {
+			t.Errorf("%q is drawn as a note whose name came loose", one.Written)
+		}
+	}
+	if len(j.Notes) != 1 {
+		t.Fatalf("joined to %v", written(j))
+	}
+}
+
 func TestALinkIntoAnotherVaultIsNotSomethingToRead(t *testing.T) {
 	// An identifier finds its note wherever it is, and where it is may be a
 	// vault this reading has no reader for. Both vaults file a note at the same
@@ -230,7 +262,7 @@ func TestANoteDeletedAfterTheScanDoesNotSinkTheOthers(t *testing.T) {
 	if len(j.Notes) != 2 {
 		t.Fatalf("joined to %v", paths(j))
 	}
-	byPath := map[string]flashcards.Note{}
+	byPath := map[string]flashcards.Neighbour{}
 	for _, one := range j.Notes {
 		byPath[one.Path] = one
 	}
