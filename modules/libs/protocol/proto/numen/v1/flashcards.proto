@@ -12,6 +12,7 @@ syntax = "proto3";
 // values, and nothing above this has the two halves to fill it with.
 package numen.v1;
 
+import "numen/v1/presets.proto";
 import "numen/v1/vault.proto";
 
 option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
@@ -60,6 +61,17 @@ service FlashcardsService {
   // a line out of something longer, and what it was cut from is what a person
   // reaches for when it will not come back to them.
   rpc Around(AroundRequest) returns (AroundResponse);
+
+  // Scheduling is the preset a deck of the named vault is scheduled by. A deck
+  // naming none is answered with the defaults under no path, and a deck whose
+  // link reaches something that is not a preset is answered with the defaults
+  // and told so.
+  rpc Scheduling(FlashcardsServiceSchedulingRequest) returns (FlashcardsServiceSchedulingResponse);
+
+  // Curve is what the settings come to over the whole range of the goal they
+  // name. Nothing is written: a curve is asked for the value a person is
+  // moving and has not settled.
+  rpc Curve(FlashcardsServiceCurveRequest) returns (FlashcardsServiceCurveResponse);
 }
 
 // Rating is how well a card came back. A person says which of the four, and
@@ -92,6 +104,10 @@ message VaultOwing {
   // Decks is the same three numbers for each deck, by the path of its file.
   repeated DeckOwing decks = 7;
 
+  // Presets is what the day comes to under each preset the vault's decks are
+  // scheduled by.
+  repeated PresetOwing presets = 9;
+
   // Set when the vault could not be counted: it has never been read by the
   // editor, or its files could not be reached. The three numbers are then zero
   // and this says why, in the person's own words.
@@ -103,6 +119,37 @@ message DeckOwing {
   int32 faces = 2;
   int32 due = 3;
   int32 new = 4;
+}
+
+// PresetOwing is one preset of a vault, and what the day comes to under it.
+message PresetOwing {
+  // The note the settings were read from, and empty for the decks naming no
+  // preset.
+  string preset = 1;
+
+  // What the preset is called. Empty where nothing names the note.
+  string title = 7;
+
+  // How many decks point at it. Nothing points at a preset of no decks, and
+  // the day stands at nothing under it.
+  int32 decks = 8;
+
+  // How many card faces stand in those decks. A deck holding none points at
+  // its preset all the same, so a preset of decks and no cards is its own
+  // state.
+  int32 cards = 9;
+
+  // How many of its cards were answered since the day opened, and how long
+  // those answers took.
+  int32 answered = 2;
+  int64 took_ms = 3;
+
+  // What the day holds under it, the day of the week having had its say: how
+  // many cards of each kind, and how long the day runs. A light day carries
+  // less of the load, and its neighbours carry what it sheds.
+  int32 new = 4;
+  int32 reviews = 5;
+  double minutes = 6;
 }
 
 // Ahead is how long each of the four answers would leave this card, in seconds
@@ -307,4 +354,39 @@ message MovingResponse {
   // Reload says the vaults are to be counted again. It is false in the first
   // message, which says the window is listening and nothing has moved yet.
   bool reload = 1;
+}
+
+// The presets a window over many vaults asks about. Each request names the
+// vault it is about, the same way an answer names the vault it is written to.
+// The settings themselves, the curve and the refusals are presets.proto, which
+// the editor asks over the one vault its window shows.
+
+message FlashcardsServiceSchedulingRequest {
+  string vault_id = 1;
+
+  // The deck whose preset this is, by the path it is filed under.
+  string deck = 2;
+}
+
+message FlashcardsServiceSchedulingResponse {
+  // Absent when the preset was refused.
+  optional Preset preset = 1;
+
+  // Set when the preset was not read, and why.
+  optional Refusal refusal = 2;
+}
+
+message FlashcardsServiceCurveRequest {
+  string vault_id = 1;
+
+  // The note the preset stands in, which names the decks it schedules. Empty
+  // is the preset that schedules the decks naming none.
+  string path = 2;
+
+  // The settings a curve is wanted for. They need not be what the file holds.
+  Settings settings = 3;
+}
+
+message FlashcardsServiceCurveResponse {
+  Curve curve = 1;
 }

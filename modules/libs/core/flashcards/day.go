@@ -1,6 +1,10 @@
 package flashcards
 
-import "time"
+import (
+	"errors"
+	"fmt"
+	"time"
+)
 
 // DayStarts is how long past midnight a day of review begins by default.
 //
@@ -8,6 +12,14 @@ import "time"
 // not starting the next one, and a boundary at midnight splits one sitting in
 // two and calls half of it late.
 const DayStarts = 4 * time.Hour
+
+// ErrNotAnHour is an hour a day of review cannot be made to begin at.
+var ErrNotAnHour = errors.New("a day of review begins at an hour of the day")
+
+// Clock writes a length of time past midnight as an hour of the day.
+func Clock(starts time.Duration) string {
+	return fmt.Sprintf("%02d:%02d", int(starts.Hours()), int(starts.Minutes())%60)
+}
 
 // Day is where one day of review gives way to the next.
 //
@@ -36,6 +48,19 @@ func (d Day) Ends(at time.Time) time.Time {
 	if local.Before(opened) {
 		return opened
 	}
+	return time.Date(y, m, day+1, h, min, 0, 0, in)
+}
+
+// Ending is the instant the day of this date gives way to the next. The date
+// is read as it is written, and the boundary falls in the zone the days are
+// counted in.
+func (d Day) Ending(named time.Time) time.Time {
+	in := d.In
+	if in == nil {
+		in = time.Local
+	}
+	y, m, day := named.Date()
+	h, min := int(d.Starts/time.Hour), int(d.Starts%time.Hour/time.Minute)
 	return time.Date(y, m, day+1, h, min, 0, 0, in)
 }
 

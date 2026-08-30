@@ -24,6 +24,25 @@ func Replay(by Scheduler, answers []Answer) map[CardFace]Schedule {
 	return replayed(by, answers, nil)
 }
 
+// Under is the scheduler one card face is worked out by. A card face is
+// scheduled by the preset its deck points at, and two presets asking for
+// different shares of the cards send the same card away for different lengths
+// of time.
+type Under func(CardFace) Scheduler
+
+// By is one scheduler for every card face.
+func By(s Scheduler) Under { return func(CardFace) Scheduler { return s } }
+
+// ReplayUnder works out where a history leaves every card face, each under the
+// scheduler its own preset asks for.
+func ReplayUnder(by Under, answers []Answer) map[CardFace]Schedule {
+	out := make(map[CardFace]Schedule)
+	for _, a := range given(answers) {
+		out[a.CardFace] = by(a.CardFace).Next(out[a.CardFace], a.At, a.Rating)
+	}
+	return out
+}
+
 // Retention is how much of what a person had learned came back to them, over
 // one day: the answers given to cards they had learned, and how many of those
 // came back at all.
@@ -64,6 +83,24 @@ func Retained(by Scheduler, d Day, answers []Answer) map[string]Retention {
 func replayed(
 	by Scheduler, answers []Answer, each func(before Schedule, a Answer),
 ) map[CardFace]Schedule {
+	out := make(map[CardFace]Schedule)
+	for _, a := range given(answers) {
+		before := out[a.CardFace]
+		if each != nil {
+			each(before, a)
+		}
+		out[a.CardFace] = by.Next(before, a.At, a.Rating)
+	}
+	return out
+}
+
+// given is the answers that count, in the order they were given.
+//
+// An answer some line takes back is left out, and one identifier is one answer
+// however many lines carry it. The files arrive in whatever order they were
+// synchronised, and what a card face has been through is the order of the
+// answers themselves.
+func given(answers []Answer) []Answer {
 	taken := make(map[string]bool)
 	for _, a := range answers {
 		if a.TakesBack() {
@@ -72,24 +109,15 @@ func replayed(
 	}
 
 	seen := make(map[string]bool, len(answers))
-	given := make([]Answer, 0, len(answers))
+	out := make([]Answer, 0, len(answers))
 	for _, a := range answers {
 		if a.TakesBack() || taken[a.ID] || seen[a.ID] {
 			continue
 		}
 		seen[a.ID] = true
-		given = append(given, a)
+		out = append(out, a)
 	}
-	slices.SortStableFunc(given, byWhen)
-
-	out := make(map[CardFace]Schedule)
-	for _, a := range given {
-		before := out[a.CardFace]
-		if each != nil {
-			each(before, a)
-		}
-		out[a.CardFace] = by.Next(before, a.At, a.Rating)
-	}
+	slices.SortStableFunc(out, byWhen)
 	return out
 }
 

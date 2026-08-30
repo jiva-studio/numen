@@ -28,7 +28,8 @@ minutes_a_day: 20
 new_a_day: 8
 reviews_a_day: 45
 retention: 0.87
-light_days: [sat]
+light_days:
+  - sat
 even_load: true
 ---
 
@@ -53,7 +54,7 @@ A value edited by hand stands as it was typed and stops following the goal. The 
 
 ### What a preset settles, and what it does not
 
-Everything about how a deck is scheduled is the preset's: how many new cards and how many reviews a day, how long a day runs, the retention target, light days of the week, an even load, the order cards arrive in, what is done about a card that will not stick and about two faces of one card.
+Everything about how a deck is scheduled is the preset's. This record settles seven of them: how many new cards and how many reviews a day, whether a budget is spent on a card or on a showing, how long a day runs, the retention target, light days of the week, an even load, and the goal that steers them. The order cards arrive in, what is done about a card that will not stick and what is done about two faces of one card belong here too, and each arrives with the code that reads it.
 
 `numen.json` keeps the hour a day begins at and how a streak is counted. Both are facts about a person's clock and habit rather than about a subject.
 
@@ -63,7 +64,15 @@ A preset's budget is spent on the cards of the decks pointing at it, and a sitti
 
 **Inside one preset, whichever budget runs out first closes it for the day.** Each preset turns its own minutes into a count from its own answer times; from there everything is counts.
 
-**How loaded each day is, is shared.** One table built from everything scheduled across every preset; a preset placing a card reads that table and applies its own light days and its own willingness to move a card.
+**How loaded each day is, is one table.** A day is one day whatever presets fall on it, so spreading a card reads what every preset has already put there and applies its own light days and its own willingness to move a card. The projection behind the control does this over the cards of one preset; the table across every preset arrives with the scheduling that reads it.
+
+### A budget counts cards, and may be told to count showings
+
+`counts: cards` is the default: a card face counts against the day's budget the first time it is answered that day, and every further showing of it that day is free. A hundred a day is a hundred cards, whatever it takes to settle each of them.
+
+`counts: shows` spends a slot on every showing. A subject where a card either comes back or does not is studied differently from one whose cards take four steps to settle, and the preset is where that is said.
+
+The time budget is unaffected: minutes are spent as they are spent, on every answer.
 
 ### A budget of zero is a pause
 
@@ -77,8 +86,8 @@ A goal of a date is a budget that ends the same way: past the date, the preset s
 - **There is no vault-wide scheduling scope.** The scopes are the installation, a preset, and the deck that points at one.
 - **A number is enforced where it was typed.** Decks are files and nothing contains anything, so no limit is displaced onto a parent.
 - **The application writes to a note it did not create.** Settings written into the vault are ADR-0017's write path, and a preset is the first note the application edits key by key rather than whole.
-- **A preset may carry its own FSRS parameters.** The schedule cache keeps one scheduler name for a whole vault, so it carries a fingerprint of the parameters and is discarded whole when that fingerprint changes.
-- **`docs/settings.md` covers two files.** What is in `numen.json` and what is in a preset, each said where it stands.
+- **A card is scheduled at its own preset's target.** The answers are replayed under the scheduler of the preset the card's deck points at, and the schedule cache carries a mark of which cards stood under which target. A mark that does not match is a cache thrown away whole.
+- **The settings a person can change stand in two files.** `numen.json` is the installation's and is written down in [Settings](../settings.md); a preset is the vault's and is written down in [Cards](../cards.md), beside the deck it schedules.
 
 ## Alternatives considered
 

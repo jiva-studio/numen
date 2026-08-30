@@ -23,11 +23,12 @@ import type {
  */
 export const NeighbourhoodSchema = NeighbourhoodResponseSchema
 
-/** Which of three a note is, in the word this window uses for it. */
+/** Which of four a note is, in the word this window uses for it. */
 const types: Record<NoteTypes, NoteType> = {
   [NoteTypes.UNSPECIFIED]: 'note',
   [NoteTypes.DECK]: 'deck',
   [NoteTypes.STENCIL]: 'stencil',
+  [NoteTypes.PRESET]: 'preset',
 }
 
 /**

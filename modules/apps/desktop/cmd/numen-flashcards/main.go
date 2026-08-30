@@ -4,9 +4,10 @@
 // occasional and running them is daily, and the daily act is not reached
 // through the application built for the other one.
 //
-// It reads the vault registry and the index and writes neither. What it writes
-// into a vault is a mark for a card typed by hand, and the answers, which go to
-// the vault's own folder.
+// It writes into the vault it is sitting to — a mark for a card typed by hand,
+// a preset, the link that points a deck at one — and the answers, which go to
+// the vault's own folder. Each write is levelled in the index before it
+// returns, so what the window draws next is what it just wrote.
 package main
 
 import (
@@ -61,18 +62,17 @@ func run(cfg container.Config, noAgent bool) error {
 		return err
 	}
 
-	// The index is opened to be read and never written: what it answers here is
-	// which files of a vault are decks, and nothing else. A second writer over
-	// the one database every vault shares is what that avoids, and an index
-	// that is not there is not made — the vaults then read as unread, which is
-	// what they are.
-	db, err := cfg.OpenIndexToRead(ctx)
+	// The index is opened to be written as well as read: a note this window
+	// writes is levelled here, and the editor's window may be open over the same
+	// file at the same time.
+	db, err := cfg.OpenIndex(ctx)
 	if err != nil {
 		return err
 	}
 	defer db.Close()
+	level := cfg.Level(db)
 
-	running := cfg.Flashcards(db.Queries(), db.Links(), nil)
+	running := cfg.Flashcards(db.Queries(), db.Links(), level)
 	api := &flashcardsui.API{
 		Registry:  registry,
 		Owed:      running.Owed,
@@ -85,12 +85,15 @@ func run(cfg container.Config, noAgent bool) error {
 			Notes:  db.Queries(),
 			Reads:  note.Read{Readers: cfg.VaultReaders()},
 		},
-		Now: time.Now,
+		Presets: running.Presets,
+		Curves:  running.Curves,
+		Notes:   db.Queries(),
+		Now:     time.Now,
 	}
 
-	// A card is asked about through tools that only read, on a port this window
-	// opens for itself. The agent works the vault the person sat down to, so it
-	// is started and stopped around a sitting.
+	// A card is asked about through tools on a port this window opens for
+	// itself. The agent works the vault the person sat down to, so it is
+	// started and stopped around a sitting.
 	away := serveAgents(ctx, cfg, db, api, noAgent, os.Stderr)
 	defer func() {
 		if err := away(); err != nil {
@@ -118,7 +121,7 @@ func run(cfg container.Config, noAgent bool) error {
 	}
 
 	// And the index, for which files are decks. That answer is the index's, and
-	// it changes when the application that scans writes one.
+	// another window writing it changes it.
 	moves, err := cfg.Moves(ctx)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "numen-flashcards: the index is not being followed:", err)

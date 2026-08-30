@@ -338,6 +338,6 @@ export function editing(
  */
 const refusalOf = (from: Refused): Refusal => {
   if (from === 'deckTooLarge') return 'tooLarge'
-  if (from === 'notAStencil' || from === 'notADeck') return 'notANote'
+  if (from === 'notAStencil' || from === 'notADeck' || from === 'notAPreset') return 'notANote'
   return from === 'missing' || from === 'occupied' || from === 'unnameable' ? 'unreadable' : from
 }

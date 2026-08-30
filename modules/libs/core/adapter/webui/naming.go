@@ -9,6 +9,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
@@ -41,7 +42,7 @@ func (a *API) Rename(ctx context.Context, r *connect.Request[v1.RenameRequest]) 
 		return connect.NewResponse(out), nil
 	}
 	if err != nil {
-		refusal, refused := refusedBy(err)
+		refusal, refused := wire.RefusedBy(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
@@ -68,7 +69,7 @@ func (a *API) ChooseSyncing(
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
 	if err := a.Chooses(note.Sync(r.Msg.GetSyncTitleAndFilename())); err != nil {
-		refusal, refused := refusedBy(err)
+		refusal, refused := wire.RefusedBy(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
@@ -97,7 +98,7 @@ func (a *API) Remove(ctx context.Context, r *connect.Request[v1.RemoveRequest]) 
 
 	removed, err := a.removal(ctx, showing, r.Msg.GetPath(), r.Msg.GetDestroy())
 	if err != nil {
-		refusal, refused := refusedBy(err)
+		refusal, refused := wire.RefusedBy(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}

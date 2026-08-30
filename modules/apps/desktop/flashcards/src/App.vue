@@ -27,6 +27,7 @@ import { counting } from './counting'
 import { asks, picks, swallows } from './keying'
 import { raising } from './notices'
 import { reviewed } from './reviewed'
+import { scheduling, named } from './scheduling'
 import { session } from './session'
 import { asking } from './asking'
 import { reading } from './reading'
@@ -45,6 +46,10 @@ const { notices, says, failed, putAway } = raising()
 const { vaults, counting: busy, count } = counting({ cards, failed })
 const sat = session({ cards, failed })
 const done = reviewed({ cards, failed })
+const schedules = scheduling({ presets: cards })
+
+/** The day the screen is being read on, which is what a goal is weighed against. */
+const today = ref(named(new Date()))
 
 /** Why nothing can be asked here, empty while something can. */
 const unreachable = ref('')
@@ -123,7 +128,9 @@ const chosen = computed(() => vaults.value.find((one) => one.vaultId === vault.v
 const choose = (id: string) => {
   vault.value = id
   on.value = 'decks'
+  today.value = named(new Date())
   void done.read(id)
+  void schedules.read(chosen.value, today.value)
 }
 
 /**
@@ -160,8 +167,10 @@ const leave = async () => {
   read.ends()
   sat.forget()
   on.value = 'decks'
+  today.value = named(new Date())
   void done.read(vault.value)
   await count()
+  void schedules.read(chosen.value, today.value)
 }
 
 /** Back to the vaults, which is where a person picks another collection. */
@@ -170,6 +179,7 @@ const vaultsAgain = async () => {
   read.ends()
   sat.forget()
   done.forget()
+  schedules.forget()
   on.value = 'vaults'
   vault.value = ''
   await count()
@@ -252,7 +262,9 @@ const choosing = (press: KeyboardEvent, vault: Owing) => {
       break
     case 'deck': {
       const deck = vault.decks[asked.at]
-      if (deck) void start(deck.deck)
+      // A deck whose preset schedules nothing is not studied today, by the key
+      // as by the button.
+      if (deck && !schedules.byDeck.value.get(deck.deck)?.paused) void start(deck.deck)
       break
     }
     case 'back':
@@ -291,7 +303,9 @@ onMounted(() => {
     async () => {
       if (on.value === 'session') return
       await count()
-      if (vault.value) await done.read(vault.value)
+      if (!vault.value) return
+      await done.read(vault.value)
+      await schedules.read(chosen.value, today.value)
     },
   )
 })
@@ -316,6 +330,9 @@ onUnmounted(() => {
       :vault="chosen"
       :days="done.days.value"
       :due="done.due.value"
+      :presets="schedules.presets.value"
+      :by-deck="schedules.byDeck.value"
+      :today="today"
       @start="start"
       @back="vaultsAgain"
     />

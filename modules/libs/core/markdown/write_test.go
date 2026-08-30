@@ -375,28 +375,53 @@ func TestOnlyTheAddressKeyIsRewritten(t *testing.T) {
 // One line holding several keys means the span of any of them is the span of
 // all of them, so a write meant for one would take the rest with it.
 func TestFrontmatterOnOneLineIsRefusedRatherThanMangled(t *testing.T) {
-	for name, raw := range map[string]string{
-		"a flow mapping":  "---\n{title: T, id: b}\n---\nbody\n",
-		"a flow sequence": "---\nlinks: [{to: A, role: jump}]\n---\nbody\n",
-	} {
-		t.Run(name, func(t *testing.T) {
-			// Reading it is fine; only changing it is refused.
-			d, err := Open([]byte(raw))
-			if err != nil {
-				t.Fatalf("open: %v", err)
-			}
-			if err := d.SetIdentifier("01J8"); !errors.Is(err, ErrInline) {
-				t.Errorf("want ErrInline, got %v", err)
-			}
-			if err := d.AddLink(domain.Link{
-				Target: domain.ParseAddress("B"), Role: domain.RoleJump,
-			}); !errors.Is(err, ErrInline) {
-				t.Errorf("want ErrInline from AddLink, got %v", err)
-			}
-			if got := string(d.Bytes()); got != raw {
-				t.Errorf("a refused write changed the note\n want %q\n  got %q", raw, got)
-			}
-		})
+	raw := "---\n{title: T, id: b}\n---\nbody\n"
+
+	// Reading it is fine; only changing it is refused.
+	d, err := Open([]byte(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := d.SetIdentifier("01J8"); !errors.Is(err, ErrInline) {
+		t.Errorf("want ErrInline, got %v", err)
+	}
+	if err := d.AddLink(domain.Link{
+		Target: domain.ParseAddress("B"), Role: domain.RoleJump,
+	}); !errors.Is(err, ErrInline) {
+		t.Errorf("want ErrInline from AddLink, got %v", err)
+	}
+	if got := string(d.Bytes()); got != raw {
+		t.Errorf("a refused write changed the note\n want %q\n  got %q", raw, got)
+	}
+}
+
+// A value written on one line occupies its key's own lines, so a key beside it
+// is written as usual. An entry of that value is what cannot be replaced on its
+// own.
+func TestAValueOnOneLineLeavesTheKeysAroundItWritable(t *testing.T) {
+	raw := "---\nlinks: [{to: A, role: jump}]\nlight_days: [sat]\n---\nbody\n"
+
+	d, err := Open([]byte(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := d.SetIdentifier("01J8"); err != nil {
+		t.Errorf("write: %v", err)
+	}
+	if err := d.AddLink(domain.Link{
+		Target: domain.ParseAddress("B"), Role: domain.RoleJump,
+	}); !errors.Is(err, ErrInline) {
+		t.Errorf("want ErrInline from AddLink, got %v", err)
+	}
+
+	got := string(d.Bytes())
+	for _, kept := range []string{"links: [{to: A, role: jump}]", "light_days: [sat]", "id: 01J8"} {
+		if !strings.Contains(got, kept) {
+			t.Errorf("%q is not in the note:\n%s", kept, got)
+		}
+	}
+	if _, err := Open([]byte(got)); err != nil {
+		t.Errorf("the note stopped being readable: %v", err)
 	}
 }
 

@@ -150,7 +150,10 @@ func (u Counted) ahead(
 	if err != nil {
 		return nil, nil, err
 	}
-	schedules := u.Schedules.From(ctx, v, held)
+	schedules, err := u.Schedules.From(ctx, v, held)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	now := u.now()
 	ends := u.Day.Ends(now)

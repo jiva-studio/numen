@@ -2,7 +2,10 @@ package flashcards
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"slices"
 	"strings"
 
@@ -13,10 +16,13 @@ import (
 
 // keptVersion is the shape of the cache file. A cache of another shape is
 // thrown away and worked out again, which costs a replay and nothing else.
-const keptVersion = 1
+const keptVersion = 2
 
 type kept struct {
-	V  int    `json:"v"`
+	V int `json:"v"`
+	// By is the assignment this was worked out under: which card face stood
+	// under which target. A schedule worked out under one assignment is not read
+	// back under another.
 	By string `json:"by"`
 	// Files are the log files this was worked out from, each with the length it
 	// had. A run is appended to under one name, so a name alone would call a
@@ -56,6 +62,110 @@ type Schedules struct {
 	// it out at every launch.
 	Kept port.Schedules
 	By   history.Scheduler
+	// Standings and Presets say which preset schedules each card face, so a
+	// card is worked out at the share of the cards its own preset asks for. A
+	// build holding neither works every card out by By.
+	Standings Standings
+	Presets   Presets
+	// At is the scheduler asking for a share of the cards to come back. A build
+	// holding none reads FSRS.
+	At func(retention float64) history.Scheduler
+}
+
+// scheduling is which scheduler each card face is worked out by, and what that
+// assignment comes to.
+//
+// The mark is what says a cache is out of date. A target moving, a deck
+// repointed and a card moved between decks all move it, and the whole cache is
+// thrown away: a schedule depends on every answer before it, so nothing worked
+// out under the old assignment can be kept.
+type scheduling struct {
+	under history.Under
+	mark  string
+}
+
+// asking is the scheduler each card face is worked out by, over a reading of
+// this vault's presets of its own.
+//
+// A card face whose deck names no preset is worked out at the defaults, and so
+// is every card of a vault nothing has read yet.
+func (u Schedules) asking(ctx context.Context, v domain.Vault) (scheduling, error) {
+	if u.Presets.Links == nil || u.Standings.Notes == nil {
+		return scheduling{under: history.By(u.By), mark: u.By.Name()}, nil
+	}
+	standing, err := u.Standings.Execute(ctx, v)
+	if errors.Is(err, ErrUnread) {
+		return scheduling{under: history.By(u.By), mark: u.By.Name()}, nil
+	}
+	if err != nil {
+		return scheduling{}, err
+	}
+	return u.under(ctx, v, u.Presets.Reading(), standing)
+}
+
+// under is the same, from the cards and the reading of the presets a caller
+// already holds.
+func (u Schedules) under(
+	ctx context.Context, v domain.Vault, reading *Reading, standing []Standing,
+) (scheduling, error) {
+	out := scheduling{under: history.By(u.By), mark: u.By.Name()}
+	if reading == nil || reading.Links == nil {
+		return out, nil
+	}
+
+	by := make(map[string]history.Scheduler)
+	under := make(map[history.CardFace]history.Scheduler, len(standing))
+	asked := make(map[string]string, len(standing))
+	for _, one := range standing {
+		path, known := asked[one.Deck]
+		if !known {
+			p, err := reading.Of(ctx, v, one.Deck)
+			if err != nil {
+				return scheduling{}, err
+			}
+			path = p.Path
+			asked[one.Deck] = path
+			if _, held := by[path]; !held {
+				by[path] = u.at(p.Preset.Retention)
+			}
+		}
+		under[one.CardFace] = by[path]
+	}
+
+	marks := make([]string, 0, len(under)+1)
+	marks = append(marks, u.By.Name())
+	for face, one := range under {
+		marks = append(marks, face.Card+"\t"+face.Face+"\t"+one.Name())
+	}
+	out.mark = marked(marks)
+	out.under = func(face history.CardFace) history.Scheduler {
+		if one, held := under[face]; held {
+			return one
+		}
+		return u.By
+	}
+	return out, nil
+}
+
+// marked is one name for an assignment, whatever order it was walked in. It is
+// a digest because a vault of many cards names many card faces, and what a mark
+// is asked is whether it is the one that stands.
+func marked(lines []string) string {
+	slices.Sort(lines)
+	sum := sha256.New()
+	for _, one := range lines {
+		sum.Write([]byte(one))
+		sum.Write([]byte{'\n'})
+	}
+	return hex.EncodeToString(sum.Sum(nil))
+}
+
+// at is the scheduler asking for a share of the cards to come back.
+func (u Schedules) at(retention float64) history.Scheduler {
+	if u.At != nil {
+		return u.At(retention)
+	}
+	return history.NewFSRSAt(retention)
 }
 
 // Execute is every card face the vault's answers name, and where they leave it.
@@ -71,7 +181,11 @@ func (u Schedules) Execute(
 	if err != nil {
 		return nil, err
 	}
-	if out, ok := u.remembered(ctx, v, files); ok {
+	asks, err := u.asking(ctx, v)
+	if err != nil {
+		return nil, err
+	}
+	if out, ok := u.remembered(ctx, v, files, asks.mark); ok {
 		return out, nil
 	}
 
@@ -79,23 +193,40 @@ func (u Schedules) Execute(
 	if err != nil {
 		return nil, err
 	}
-	return u.From(ctx, v, held), nil
+	return u.replayed(ctx, v, held, asks), nil
 }
 
 // From is where a log that has already been read leaves every card face. A
 // caller holding the answers does not read them again to be told this.
 func (u Schedules) From(
 	ctx context.Context, v domain.Vault, held Held,
+) (map[history.CardFace]history.Schedule, error) {
+	asks, err := u.asking(ctx, v)
+	if err != nil {
+		return nil, err
+	}
+	return u.replayed(ctx, v, held, asks), nil
+}
+
+// replayed works the answers out and remembers what they came to.
+func (u Schedules) replayed(
+	ctx context.Context, v domain.Vault, held Held, asks scheduling,
 ) map[history.CardFace]history.Schedule {
-	out := history.Replay(u.By, held.Answers)
-	u.remember(ctx, v, held.Files, out)
+	out := projected(held, asks)
+	u.remember(ctx, v, held.Files, asks.mark, out)
 	return out
 }
 
+// projected is where the answers leave every card face, and is what a caller
+// that only reads them asks for.
+func projected(held Held, asks scheduling) map[history.CardFace]history.Schedule {
+	return history.ReplayUnder(asks.under, held.Answers)
+}
+
 // remembered is what was worked out last time, when it was worked out from the
-// runs the vault now holds and by the scheduler now asking.
+// runs the vault now holds and under the targets now in force.
 func (u Schedules) remembered(
-	ctx context.Context, v domain.Vault, files []port.Stored,
+	ctx context.Context, v domain.Vault, files []port.Stored, mark string,
 ) (map[history.CardFace]history.Schedule, bool) {
 	if u.Kept == nil {
 		return nil, false
@@ -108,7 +239,7 @@ func (u Schedules) remembered(
 	if err := json.Unmarshal(raw, &was); err != nil {
 		return nil, false
 	}
-	if was.V != keptVersion || was.By != u.By.Name() || !read(was.Files, files) {
+	if was.V != keptVersion || was.By != mark || !read(was.Files, files) {
 		return nil, false
 	}
 
@@ -148,12 +279,13 @@ func read(was []keptFile, files []port.Stored) bool {
 // that could not be written is a launch that works it out again, so nothing
 // here is reported.
 func (u Schedules) remember(
-	ctx context.Context, v domain.Vault, files []port.Stored, out map[history.CardFace]history.Schedule,
+	ctx context.Context, v domain.Vault, files []port.Stored, mark string,
+	out map[history.CardFace]history.Schedule,
 ) {
 	if u.Kept == nil {
 		return
 	}
-	now := kept{V: keptVersion, By: u.By.Name()}
+	now := kept{V: keptVersion, By: mark}
 	for _, one := range files {
 		now.Files = append(now.Files, keptFile{Name: one.Name, Size: one.Size})
 	}

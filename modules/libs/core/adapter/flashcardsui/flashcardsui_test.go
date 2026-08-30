@@ -13,7 +13,6 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
@@ -62,15 +61,23 @@ func windowed(t *testing.T, vaults ...map[string]string) (*API, []domain.Vault) 
 	t.Helper()
 	ctx := t.Context()
 
-	db, err := index.Open(ctx, filepath.Join(t.TempDir(), "index.db"))
+	// Every location is the test's own: the schedules are a cache, and a test
+	// that let it fall to the platform's would fill the machine's.
+	cfg := container.Config{
+		IndexPath:     filepath.Join(t.TempDir(), "index.db"),
+		RegistryPath:  filepath.Join(t.TempDir(), "vaults.json"),
+		SchedulesPath: filepath.Join(t.TempDir(), "flashcards"),
+	}
+	db, err := cfg.OpenIndex(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
 
 	scan := usecase.Scan{
-		Readers: filesystem.Readers{}, Vaults: db.Vaults(), Notes: db.Notes(),
-		Known: db.NoteQueries(), Maintenance: db.Statistics(),
+		Readers: filesystem.Readers{}, Vaults: db.Vaults(),
+		Notes: db.NotesCutAt(cfg.Cutting()),
+		Known: db.Queries(), Maintenance: db.Maintenance(),
 	}
 	held := make([]domain.Vault, 0, len(vaults))
 	for _, notes := range vaults {
@@ -81,13 +88,9 @@ func windowed(t *testing.T, vaults ...map[string]string) (*API, []domain.Vault) 
 		held = append(held, v)
 	}
 
-	// Every location is the test's own: the schedules are a cache, and a test
-	// that let it fall to the platform's would fill the machine's.
-	cfg := container.Config{
-		RegistryPath:  filepath.Join(t.TempDir(), "vaults.json"),
-		SchedulesPath: filepath.Join(t.TempDir(), "flashcards"),
-	}
-	running := cfg.Flashcards(db.NoteQueries(), db.NoteQueries(), nil)
+	// The window levels the index itself, so what it writes is what the next
+	// question is answered from.
+	running := cfg.Flashcards(db.Queries(), db.Links(), cfg.Level(db))
 	return &API{
 		Registry:  registry{held: held},
 		Owed:      running.Owed,
@@ -96,11 +99,14 @@ func windowed(t *testing.T, vaults ...map[string]string) (*API, []domain.Vault) 
 		Log:       running.Log,
 		Counted:   running.Counted,
 		Joined: flashcards.Around{
-			Linked: note.ShowLinks{Links: db.NoteQueries()},
-			Notes:  db.NoteQueries(),
+			Linked: note.ShowLinks{Links: db.Links()},
+			Notes:  db.Queries(),
 			Reads:  note.Read{Readers: filesystem.Readers{}},
 		},
-		Now: time.Now,
+		Presets: running.Presets,
+		Curves:  running.Curves,
+		Notes:   db.Queries(),
+		Now:     time.Now,
 	}, held
 }
 
@@ -499,5 +505,74 @@ func TestCountingTheFrontDoorWritesIntoNoVault(t *testing.T) {
 	}
 	if string(before) != string(after) {
 		t.Errorf("the deck was written\n was %q\n now %q", before, after)
+	}
+}
+
+// pointed is the one deck of a vault scheduled by a preset of its own.
+var pointed = map[string]string{
+	"Term.md": deck["Term.md"],
+	"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
+		"new_a_day: 8\nreviews_a_day: 45\n---\n\n# Sanskrit\n",
+	"decks/Words.md": "---\ntype: deck\nlinks:\n" +
+		"  - to: Sanskrit\n    role: ref\n    type: preset\n---\n" +
+		"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n" +
+		"\n### Meaning\n\nCompost made of fallen leaves alone\n",
+}
+
+// The front door says what today came to under each preset the vault's decks
+// name: what was answered under it, how long that took, and what the day holds.
+func TestTheFrontDoorSaysWhatTodayCameToUnderEachPreset(t *testing.T) {
+	api, held := windowed(t, pointed)
+	v := held[0]
+
+	sitting := started(t, api, v)
+	if len(sitting.GetAsked()) == 0 {
+		t.Fatal("the vault owes nothing to answer")
+	}
+	card := sitting.GetAsked()[0]
+	if _, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
+		VaultId: v.ID, Run: sitting.GetRun(),
+		Card: card.GetCard(), Face: card.GetFace(),
+		Rating: v1.Rating_RATING_GOOD, TookMs: 6000,
+	})); err != nil {
+		t.Fatal(err)
+	}
+
+	out, err := api.Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	presets := out.Msg.GetVaults()[0].GetPresets()
+	if len(presets) != 1 {
+		t.Fatalf("the vault came to %+v, want the one preset", presets)
+	}
+	one := presets[0]
+	if one.GetPreset() != "Sanskrit.md" || one.GetAnswered() != 1 || one.GetTookMs() != 6000 {
+		t.Errorf("the day came to %+v", one)
+	}
+	if one.GetNew() != 8 || one.GetReviews() != 45 || one.GetMinutes() != 20 {
+		t.Errorf("the day holds %+v", one)
+	}
+}
+
+// A deck naming no preset comes under the defaults, which is what a vault
+// holding no preset at all comes to.
+func TestADeckNamingNoPresetComesUnderTheDefaults(t *testing.T) {
+	api, _ := windowed(t, deck)
+
+	out, err := api.Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	presets := out.Msg.GetVaults()[0].GetPresets()
+	if len(presets) != 1 {
+		t.Fatalf("the vault came to %+v, want the defaults alone", presets)
+	}
+	one, defaults := presets[0], history.Defaults()
+	if one.GetPreset() != "" || one.GetAnswered() != 0 {
+		t.Errorf("the day came to %+v", one)
+	}
+	if one.GetNew() != int32(defaults.NewADay) || one.GetReviews() != int32(defaults.ReviewsADay) {
+		t.Errorf("the day holds %+v", one)
 	}
 }

@@ -26,6 +26,8 @@ A day begins four hours past midnight, and that is `review.day_starts` in [Setti
 
 A card nobody has answered is owed the first time it is asked about.
 
+How much of what is owed a day holds — how many new cards, how many returning ones, and how long the day runs — is the preset the card's deck points at, and a deck pointing at none is held to the defaults — [Cards](cards.md).
+
 ## The order
 
 A session runs over **the whole vault** by default, and a deck is a filter inside it. What a person owes is what they owe, and which file a card was written in is not something they think about while answering.

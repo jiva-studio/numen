@@ -88,6 +88,11 @@ const (
 	// VaultServiceChooseHangingProcedure is the fully-qualified name of the VaultService's
 	// ChooseHanging RPC.
 	VaultServiceChooseHangingProcedure = "/numen.v1.VaultService/ChooseHanging"
+	// VaultServiceReviewingProcedure is the fully-qualified name of the VaultService's Reviewing RPC.
+	VaultServiceReviewingProcedure = "/numen.v1.VaultService/Reviewing"
+	// VaultServiceChooseReviewingProcedure is the fully-qualified name of the VaultService's
+	// ChooseReviewing RPC.
+	VaultServiceChooseReviewingProcedure = "/numen.v1.VaultService/ChooseReviewing"
 	// VaultServiceRemoveProcedure is the fully-qualified name of the VaultService's Remove RPC.
 	VaultServiceRemoveProcedure = "/numen.v1.VaultService/Remove"
 	// VaultServiceMakeFolderProcedure is the fully-qualified name of the VaultService's MakeFolder RPC.
@@ -192,6 +197,12 @@ type VaultServiceClient interface {
 	// installation in. The file is patched as an object, so every key a person
 	// typed stays where it was.
 	ChooseHanging(context.Context, *connect.Request[v1.ChooseHangingRequest]) (*connect.Response[v1.ChooseHangingResponse], error)
+	// Reviewing is the hour a day of review begins at, on the clock on the wall.
+	Reviewing(context.Context, *connect.Request[v1.ReviewingRequest]) (*connect.Response[v1.ReviewingResponse], error)
+	// ChooseReviewing writes that hour into the file a person configures this
+	// installation in. The file is patched as an object, so every key a person
+	// typed stays where it was.
+	ChooseReviewing(context.Context, *connect.Request[v1.ChooseReviewingRequest]) (*connect.Response[v1.ChooseReviewingResponse], error)
 	// Remove takes a file or a folder out of the vault, into the trash it can be
 	// brought back from. The links that pointed at it are left as they were
 	// written: a link is not wrong because the note it names is gone.
@@ -351,6 +362,18 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(vaultServiceMethods.ByName("ChooseHanging")),
 			connect.WithClientOptions(opts...),
 		),
+		reviewing: connect.NewClient[v1.ReviewingRequest, v1.ReviewingResponse](
+			httpClient,
+			baseURL+VaultServiceReviewingProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Reviewing")),
+			connect.WithClientOptions(opts...),
+		),
+		chooseReviewing: connect.NewClient[v1.ChooseReviewingRequest, v1.ChooseReviewingResponse](
+			httpClient,
+			baseURL+VaultServiceChooseReviewingProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("ChooseReviewing")),
+			connect.WithClientOptions(opts...),
+		),
 		remove: connect.NewClient[v1.RemoveRequest, v1.RemoveResponse](
 			httpClient,
 			baseURL+VaultServiceRemoveProcedure,
@@ -380,32 +403,34 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 
 // vaultServiceClient implements VaultServiceClient.
 type vaultServiceClient struct {
-	state         *connect.Client[v1.StateRequest, v1.StateResponse]
-	opening       *connect.Client[v1.OpeningRequest, v1.OpeningResponse]
-	neighbourhood *connect.Client[v1.NeighbourhoodRequest, v1.NeighbourhoodResponse]
-	names         *connect.Client[v1.NamesRequest, v1.NamesResponse]
-	headings      *connect.Client[v1.HeadingsRequest, v1.HeadingsResponse]
-	standing      *connect.Client[v1.StandingRequest, v1.StandingResponse]
-	search        *connect.Client[v1.SearchRequest, v1.SearchResponse]
-	changes       *connect.Client[v1.ChangesRequest, v1.ChangesResponse]
-	focus         *connect.Client[v1.FocusRequest, v1.FocusResponse]
-	editing       *connect.Client[v1.EditingRequest, v1.EditingResponse]
-	tasks         *connect.Client[v1.TasksRequest, v1.TasksResponse]
-	list          *connect.Client[v1.ListRequest, v1.ListResponse]
-	read          *connect.Client[v1.ReadRequest, v1.ReadResponse]
-	write         *connect.Client[v1.WriteRequest, v1.WriteResponse]
-	create        *connect.Client[v1.CreateRequest, v1.CreateResponse]
-	join          *connect.Client[v1.JoinRequest, v1.JoinResponse]
-	rename        *connect.Client[v1.RenameRequest, v1.RenameResponse]
-	move          *connect.Client[v1.MoveRequest, v1.MoveResponse]
-	syncing       *connect.Client[v1.SyncingRequest, v1.SyncingResponse]
-	chooseSyncing *connect.Client[v1.ChooseSyncingRequest, v1.ChooseSyncingResponse]
-	hanging       *connect.Client[v1.HangingRequest, v1.HangingResponse]
-	chooseHanging *connect.Client[v1.ChooseHangingRequest, v1.ChooseHangingResponse]
-	remove        *connect.Client[v1.RemoveRequest, v1.RemoveResponse]
-	makeFolder    *connect.Client[v1.MakeFolderRequest, v1.MakeFolderResponse]
-	quitting      *connect.Client[v1.QuittingRequest, v1.QuittingResponse]
-	flushed       *connect.Client[v1.FlushedRequest, v1.FlushedResponse]
+	state           *connect.Client[v1.StateRequest, v1.StateResponse]
+	opening         *connect.Client[v1.OpeningRequest, v1.OpeningResponse]
+	neighbourhood   *connect.Client[v1.NeighbourhoodRequest, v1.NeighbourhoodResponse]
+	names           *connect.Client[v1.NamesRequest, v1.NamesResponse]
+	headings        *connect.Client[v1.HeadingsRequest, v1.HeadingsResponse]
+	standing        *connect.Client[v1.StandingRequest, v1.StandingResponse]
+	search          *connect.Client[v1.SearchRequest, v1.SearchResponse]
+	changes         *connect.Client[v1.ChangesRequest, v1.ChangesResponse]
+	focus           *connect.Client[v1.FocusRequest, v1.FocusResponse]
+	editing         *connect.Client[v1.EditingRequest, v1.EditingResponse]
+	tasks           *connect.Client[v1.TasksRequest, v1.TasksResponse]
+	list            *connect.Client[v1.ListRequest, v1.ListResponse]
+	read            *connect.Client[v1.ReadRequest, v1.ReadResponse]
+	write           *connect.Client[v1.WriteRequest, v1.WriteResponse]
+	create          *connect.Client[v1.CreateRequest, v1.CreateResponse]
+	join            *connect.Client[v1.JoinRequest, v1.JoinResponse]
+	rename          *connect.Client[v1.RenameRequest, v1.RenameResponse]
+	move            *connect.Client[v1.MoveRequest, v1.MoveResponse]
+	syncing         *connect.Client[v1.SyncingRequest, v1.SyncingResponse]
+	chooseSyncing   *connect.Client[v1.ChooseSyncingRequest, v1.ChooseSyncingResponse]
+	hanging         *connect.Client[v1.HangingRequest, v1.HangingResponse]
+	chooseHanging   *connect.Client[v1.ChooseHangingRequest, v1.ChooseHangingResponse]
+	reviewing       *connect.Client[v1.ReviewingRequest, v1.ReviewingResponse]
+	chooseReviewing *connect.Client[v1.ChooseReviewingRequest, v1.ChooseReviewingResponse]
+	remove          *connect.Client[v1.RemoveRequest, v1.RemoveResponse]
+	makeFolder      *connect.Client[v1.MakeFolderRequest, v1.MakeFolderResponse]
+	quitting        *connect.Client[v1.QuittingRequest, v1.QuittingResponse]
+	flushed         *connect.Client[v1.FlushedRequest, v1.FlushedResponse]
 }
 
 // State calls numen.v1.VaultService.State.
@@ -516,6 +541,16 @@ func (c *vaultServiceClient) Hanging(ctx context.Context, req *connect.Request[v
 // ChooseHanging calls numen.v1.VaultService.ChooseHanging.
 func (c *vaultServiceClient) ChooseHanging(ctx context.Context, req *connect.Request[v1.ChooseHangingRequest]) (*connect.Response[v1.ChooseHangingResponse], error) {
 	return c.chooseHanging.CallUnary(ctx, req)
+}
+
+// Reviewing calls numen.v1.VaultService.Reviewing.
+func (c *vaultServiceClient) Reviewing(ctx context.Context, req *connect.Request[v1.ReviewingRequest]) (*connect.Response[v1.ReviewingResponse], error) {
+	return c.reviewing.CallUnary(ctx, req)
+}
+
+// ChooseReviewing calls numen.v1.VaultService.ChooseReviewing.
+func (c *vaultServiceClient) ChooseReviewing(ctx context.Context, req *connect.Request[v1.ChooseReviewingRequest]) (*connect.Response[v1.ChooseReviewingResponse], error) {
+	return c.chooseReviewing.CallUnary(ctx, req)
 }
 
 // Remove calls numen.v1.VaultService.Remove.
@@ -632,6 +667,12 @@ type VaultServiceHandler interface {
 	// installation in. The file is patched as an object, so every key a person
 	// typed stays where it was.
 	ChooseHanging(context.Context, *connect.Request[v1.ChooseHangingRequest]) (*connect.Response[v1.ChooseHangingResponse], error)
+	// Reviewing is the hour a day of review begins at, on the clock on the wall.
+	Reviewing(context.Context, *connect.Request[v1.ReviewingRequest]) (*connect.Response[v1.ReviewingResponse], error)
+	// ChooseReviewing writes that hour into the file a person configures this
+	// installation in. The file is patched as an object, so every key a person
+	// typed stays where it was.
+	ChooseReviewing(context.Context, *connect.Request[v1.ChooseReviewingRequest]) (*connect.Response[v1.ChooseReviewingResponse], error)
 	// Remove takes a file or a folder out of the vault, into the trash it can be
 	// brought back from. The links that pointed at it are left as they were
 	// written: a link is not wrong because the note it names is gone.
@@ -787,6 +828,18 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(vaultServiceMethods.ByName("ChooseHanging")),
 		connect.WithHandlerOptions(opts...),
 	)
+	vaultServiceReviewingHandler := connect.NewUnaryHandler(
+		VaultServiceReviewingProcedure,
+		svc.Reviewing,
+		connect.WithSchema(vaultServiceMethods.ByName("Reviewing")),
+		connect.WithHandlerOptions(opts...),
+	)
+	vaultServiceChooseReviewingHandler := connect.NewUnaryHandler(
+		VaultServiceChooseReviewingProcedure,
+		svc.ChooseReviewing,
+		connect.WithSchema(vaultServiceMethods.ByName("ChooseReviewing")),
+		connect.WithHandlerOptions(opts...),
+	)
 	vaultServiceRemoveHandler := connect.NewUnaryHandler(
 		VaultServiceRemoveProcedure,
 		svc.Remove,
@@ -857,6 +910,10 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 			vaultServiceHangingHandler.ServeHTTP(w, r)
 		case VaultServiceChooseHangingProcedure:
 			vaultServiceChooseHangingHandler.ServeHTTP(w, r)
+		case VaultServiceReviewingProcedure:
+			vaultServiceReviewingHandler.ServeHTTP(w, r)
+		case VaultServiceChooseReviewingProcedure:
+			vaultServiceChooseReviewingHandler.ServeHTTP(w, r)
 		case VaultServiceRemoveProcedure:
 			vaultServiceRemoveHandler.ServeHTTP(w, r)
 		case VaultServiceMakeFolderProcedure:
@@ -960,6 +1017,14 @@ func (UnimplementedVaultServiceHandler) Hanging(context.Context, *connect.Reques
 
 func (UnimplementedVaultServiceHandler) ChooseHanging(context.Context, *connect.Request[v1.ChooseHangingRequest]) (*connect.Response[v1.ChooseHangingResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.ChooseHanging is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) Reviewing(context.Context, *connect.Request[v1.ReviewingRequest]) (*connect.Response[v1.ReviewingResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Reviewing is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) ChooseReviewing(context.Context, *connect.Request[v1.ChooseReviewingRequest]) (*connect.Response[v1.ChooseReviewingResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.ChooseReviewing is not implemented"))
 }
 
 func (UnimplementedVaultServiceHandler) Remove(context.Context, *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {

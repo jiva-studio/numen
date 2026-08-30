@@ -1,11 +1,16 @@
 package flashcards_test
 
 import (
+	"errors"
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 // A vault where one deck names a preset, one names an ordinary note, and one
@@ -56,6 +61,110 @@ func TestADeckNamingNoPreset(t *testing.T) {
 	}
 }
 
+// An entry of the `links:` block written with no role is not read, so a preset
+// named in one schedules nothing. The deck is told why it is on the defaults.
+func TestADeckWhosePresetLinkHasNoRole(t *testing.T) {
+	notes := map[string]string{
+		"Sanskrit.md": pointing["Sanskrit.md"],
+		"decks/Roots.md": "---\ntype: deck\nlinks:\n" +
+			"  - to: Sanskrit\n    type: preset\n---\n\n## Root ^k7m2xq9fzp\n",
+	}
+	s := opened(t, notes)
+
+	held, err := s.presets.Of(t.Context(), s.vault, "decks/Roots.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if held.Path != "" {
+		t.Errorf("read from %q", held.Path)
+	}
+	if !reflect.DeepEqual(held.Preset, history.Defaults()) {
+		t.Errorf("preset = %+v", held.Preset)
+	}
+	if len(held.Problems) != 1 || !strings.Contains(held.Problems[0], "no role") {
+		t.Fatalf("problems = %v", held.Problems)
+	}
+	if !strings.Contains(held.Problems[0], "Sanskrit") {
+		t.Errorf("the problem does not name the link: %q", held.Problems[0])
+	}
+}
+
+// A levelling that failed is not a write that failed. The fingerprint of the
+// file the write produced comes back with it, and the caller's next save lands
+// on that file.
+func TestAPresetWrittenWithNoLevellingHandsBackItsFingerprint(t *testing.T) {
+	s := opened(t, pointing)
+	presets := s.presets
+	presets.Index = busy
+
+	held, err := presets.Read(t.Context(), s.vault, "Sanskrit.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	settings := held.Preset
+	settings.MinutesADay = 35
+
+	at, err := presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, held.Ref)
+	if !errors.Is(err, note.ErrUnlevelled) {
+		t.Fatalf("a levelling that failed came back as %v", err)
+	}
+	if at == (domain.FileRef{}) {
+		t.Fatal("the write handed back no fingerprint")
+	}
+
+	settings.MinutesADay = 40
+	if _, err := presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, at); err != nil &&
+		!errors.Is(err, note.ErrUnlevelled) {
+		t.Fatalf("the next save was refused: %v", err)
+	}
+	if raw := read(t, s.vault, "Sanskrit.md"); !strings.Contains(raw, "minutes_a_day: 40") {
+		t.Errorf("the preset on disk is now %q", raw)
+	}
+}
+
+// A write that never reached the vault is not one of those: the note is left as
+// it stands and nothing was levelled.
+func TestAPresetLeftAloneIsNotAnUnlevelledWrite(t *testing.T) {
+	s := opened(t, pointing)
+	was := read(t, s.vault, "Sanskrit.md")
+
+	held, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A fingerprint no file answers to, which is the note having moved on since
+	// the caller read it.
+	stale := held.Ref
+	stale.Size += 100
+	settings := held.Preset
+	settings.MinutesADay = 35
+
+	_, err = s.presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, stale)
+	if errors.Is(err, note.ErrUnlevelled) {
+		t.Errorf("a write that did not land came back as a levelling: %v", err)
+	}
+	if err == nil {
+		t.Fatal("a stale fingerprint was written over")
+	}
+	if now := read(t, s.vault, "Sanskrit.md"); now != was {
+		t.Errorf("the preset on disk is now %q", now)
+	}
+}
+
+// A deck naming no preset and carrying no such entry has nothing said against
+// it: standing on the defaults is not a problem.
+func TestADeckNamingNoPresetHasNothingSaidAgainstIt(t *testing.T) {
+	s := opened(t, pointing)
+
+	held, err := s.presets.Of(t.Context(), s.vault, "decks/Terms.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(held.Problems) != 0 {
+		t.Errorf("problems = %v", held.Problems)
+	}
+}
+
 // A link reaching a note that is not a preset leaves the deck on the defaults
 // and says so against it.
 func TestADeckNamingANoteThatIsNotAPreset(t *testing.T) {
@@ -64,6 +173,10 @@ func TestADeckNamingANoteThatIsNotAPreset(t *testing.T) {
 	held, err := s.presets.Of(t.Context(), s.vault, "decks/Mantras.md")
 	if err != nil {
 		t.Fatal(err)
+	}
+	// The note schedules nothing, so the deck stands with the decks naming none.
+	if held.Path != "" {
+		t.Errorf("read from %q", held.Path)
 	}
 	if !reflect.DeepEqual(held.Preset, history.Defaults()) {
 		t.Errorf("preset = %+v", held.Preset)
@@ -93,5 +206,120 @@ func TestADeckNamingTwoPresets(t *testing.T) {
 	}
 	if len(held.Problems) != 1 || !strings.Contains(held.Problems[0], "more than one preset") {
 		t.Errorf("problems = %v", held.Problems)
+	}
+}
+
+// A vault whose preset carries keys the application does not own.
+var settled = map[string]string{
+	"Sanskrit.md": "---\ncolour: green\ntype: preset\ngoal: minutes_a_day\n" +
+		"minutes_a_day: 20\ntags:\n  - study\n---\n\n# Sanskrit\n\nGrammar and vocabulary.\n",
+	"Grammar.md": "---\ntype: note\n---\n\n# Grammar\n",
+}
+
+// minutes is a preset steered by how long a day runs.
+func minutes() history.Preset {
+	p := history.Defaults()
+	p.MinutesADay, p.NewADay, p.ReviewsADay, p.Retention = 35, 8, 45, 0.87
+	return p
+}
+
+// A write puts the settings in and leaves every other key, and the body, as
+// they were.
+func TestAWriteLeavesWhatItDoesNotOwn(t *testing.T) {
+	s := opened(t, settled)
+
+	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.FileRef{}); err != nil {
+		t.Fatal(err)
+	}
+
+	held := read(t, s.vault, "Sanskrit.md")
+	for _, kept := range []string{
+		"colour: green", "tags:\n  - study", "# Sanskrit\n\nGrammar and vocabulary.\n",
+	} {
+		if !strings.Contains(held, kept) {
+			t.Errorf("%q is gone from\n%s", kept, held)
+		}
+	}
+	for _, written := range []string{
+		"minutes_a_day: 35", "new_a_day: 8", "reviews_a_day: 45", "retention: 0.87",
+		"even_load: true",
+	} {
+		if !strings.Contains(held, written) {
+			t.Errorf("%q was not written to\n%s", written, held)
+		}
+	}
+}
+
+// A setting outside its bounds is refused and the note is left alone.
+func TestASettingOutsideItsBoundsWritesNothing(t *testing.T) {
+	s := opened(t, settled)
+	was := read(t, s.vault, "Sanskrit.md")
+
+	p := minutes()
+	p.Retention = 1.5
+	_, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileRef{})
+	if !errors.Is(err, flashcards.ErrOutOfBounds) {
+		t.Fatalf("saving a retention of 1.5 said %v", err)
+	}
+	if held := read(t, s.vault, "Sanskrit.md"); held != was {
+		t.Errorf("the note was written:\n%s", held)
+	}
+}
+
+// A note that is not a preset is refused.
+func TestANoteThatIsNotAPresetIsNotWritten(t *testing.T) {
+	s := opened(t, settled)
+	was := read(t, s.vault, "Grammar.md")
+
+	_, err := s.presets.Save(t.Context(), s.vault, "Grammar.md", minutes(), domain.FileRef{})
+	if !errors.Is(err, flashcards.ErrNotAPreset) {
+		t.Fatalf("saving into an ordinary note said %v", err)
+	}
+	if held := read(t, s.vault, "Grammar.md"); held != was {
+		t.Errorf("the note was written:\n%s", held)
+	}
+}
+
+// Light days go in and come back out as the days they were.
+func TestLightDaysComeBackAsTheyWentIn(t *testing.T) {
+	s := opened(t, settled)
+
+	p := minutes()
+	p.LightDays = []time.Weekday{time.Saturday, time.Sunday}
+	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileRef{}); err != nil {
+		t.Fatal(err)
+	}
+
+	held, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(held.Problems) != 0 {
+		t.Errorf("problems = %v", held.Problems)
+	}
+	if !reflect.DeepEqual(held.Preset.LightDays, p.LightDays) {
+		t.Errorf("light days = %v", held.Preset.LightDays)
+	}
+}
+
+// A goal of a day writes the day, and it is read back as the day it was.
+func TestAGoalOfADateWritesTheDay(t *testing.T) {
+	s := opened(t, settled)
+
+	p := minutes()
+	p.Goal, p.By = history.GoalDate, time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC)
+	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileRef{}); err != nil {
+		t.Fatal(err)
+	}
+
+	if held := read(t, s.vault, "Sanskrit.md"); !strings.Contains(held, "by_date: 2026-12-01") {
+		t.Errorf("the day was not written to\n%s", held)
+	}
+	held, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if held.Preset.Goal != history.GoalDate || !held.Preset.By.Equal(p.By) {
+		t.Errorf("preset = %+v", held.Preset)
 	}
 }

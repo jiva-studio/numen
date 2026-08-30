@@ -9,9 +9,11 @@ import { computed } from 'vue'
 import { Button, KeyCap, Owed } from '@numen/ui'
 import type { HeatmapTally } from '@numen/ui'
 import Progress from './Progress.vue'
+import Presets from './Presets.vue'
 import { deckName } from './core'
 import { letterOf } from './keying'
-import type { Owing } from './core'
+import type { DeckOwing, Owing } from './core'
+import type { Preset } from './scheduling'
 
 const props = defineProps<{
   vault: Owing
@@ -19,6 +21,12 @@ const props = defineProps<{
   days: ReadonlyMap<string, HeatmapTally>
   /** How many cards fall on each day still to come, by the day they fall on. */
   due: ReadonlyMap<string, number>
+  /** The presets this vault's decks are scheduled by. */
+  presets: readonly Preset[]
+  /** The preset each deck is scheduled by, by the path the deck is filed under. */
+  byDeck: ReadonlyMap<string, Preset>
+  /** The day this is being read on, as the year, the month and the day. */
+  today: string
 }>()
 
 defineEmits<{
@@ -28,6 +36,12 @@ defineEmits<{
 
 /** What the whole vault owes: what is due today and what has never been asked. */
 const owed = computed(() => props.vault.due + props.vault.new)
+
+/** Why a deck is not studied today, and empty while its preset schedules it. */
+const stopped = (deck: string): string => props.byDeck.get(deck)?.paused ?? ''
+
+/** Whether a deck's day is done: it holds cards, and none of them is left. */
+const met = (deck: DeckOwing): boolean => deck.faces > 0 && deck.due + deck.new === 0
 </script>
 
 <template>
@@ -36,6 +50,8 @@ const owed = computed(() => props.vault.due + props.vault.new)
 
     <Progress :days="days" :due="due" />
 
+    <Presets :presets="presets" :today="today" />
+
     <p v-if="!vault.decks.length" class="decks__saying">This vault holds no deck.</p>
 
     <ul v-else class="decks__list">
@@ -43,7 +59,7 @@ const owed = computed(() => props.vault.due + props.vault.new)
         <Button
           variant="outline"
           class="decks__deck"
-          :disabled="deck.due + deck.new === 0"
+          :disabled="deck.due + deck.new === 0 || stopped(deck.deck) !== ''"
           @click="$emit('start', deck.deck)"
         >
           <!-- The letter it is picked by, where the alphabet reaches it: a
@@ -53,8 +69,18 @@ const owed = computed(() => props.vault.due + props.vault.new)
             class="decks__key"
             :keys="{ marks: [], letter: letterOf(at) }"
           />
-          <span class="decks__name">{{ deckName(deck.deck) }}</span>
-          <Owed :waiting="deck.due + deck.new" />
+          <span class="decks__name">
+            {{ deckName(deck.deck) }}
+            <!-- Which preset schedules it. -->
+            <span v-if="byDeck.get(deck.deck)" class="decks__by">{{
+              byDeck.get(deck.deck)?.name
+            }}</span>
+          </span>
+          <!-- A deck holding nothing more today has met its goal, and a deck
+               holding no cards at all says nothing. -->
+          <span v-if="stopped(deck.deck)" class="decks__stopped">{{ stopped(deck.deck) }}</span>
+          <span v-else-if="met(deck)" class="decks__met">Done today</span>
+          <Owed v-else-if="deck.due + deck.new > 0" :waiting="deck.due + deck.new" />
         </Button>
       </li>
     </ul>
@@ -137,7 +163,22 @@ const owed = computed(() => props.vault.due + props.vault.new)
 }
 
 .decks__name {
+  display: flex;
   flex: 1;
+  align-items: baseline;
+  gap: var(--numen-inset);
 }
 
+.decks__by {
+  color: var(--numen-hushed);
+  font-size: var(--numen-edge-label-size);
+}
+
+.decks__stopped,
+.decks__met {
+  flex: none;
+  color: var(--numen-hushed);
+  font-size: var(--numen-edge-label-size);
+  white-space: nowrap;
+}
 </style>

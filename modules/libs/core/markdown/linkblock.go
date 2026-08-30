@@ -69,8 +69,14 @@ func (d *Document) block() (block, error) {
 			break
 		}
 	}
-	if items == nil || items.Kind != yaml.SequenceNode {
+	// An entry is replaced on its own, which is a line at a time all the way
+	// down. Anything under `links:` but a block sequence, or a key holding
+	// nothing, is refused and the note is left as it stands.
+	switch {
+	case items == nil || empty(items):
 		return b, nil
+	case items.Kind != yaml.SequenceNode || flowing(items):
+		return block{}, ErrInline
 	}
 
 	lines := lineOffsets(d.front)

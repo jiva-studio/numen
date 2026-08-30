@@ -2,17 +2,18 @@
 
 A card is a set of named values a person wrote, laid out by a stencil into a front and a back. This is a specification, not a decision record: every rule here traces to an accepted ADR.
 
-Two files are involved and both are ordinary notes. A **stencil** says what fields a card has and how they are shown. A **deck** holds the cards.
+Three files are involved and all are ordinary notes. A **stencil** says what fields a card has and how they are shown. A **deck** holds the cards. A **preset** says how the decks pointing at it are scheduled.
 
 ## What a note is
 
-The frontmatter key `type` says which of three a note is.
+The frontmatter key `type` says which of four a note is.
 
 | `type` | What the file is |
 | --- | --- |
 | `note` | An ordinary note. This is the default, and nearly every note in a vault carries no `type` at all. |
 | `stencil` | Fields and faces. |
 | `deck` | Cards. |
+| `preset` | How the decks pointing at it are scheduled. |
 
 The list is closed. A value outside it is a problem against the note, and the note is read as an ordinary note.
 
@@ -214,6 +215,59 @@ Two fields of one name in one card are a problem against the deck. The first sta
 On the screen a card's fields are in the stencil's order, whatever order the file wrote them in.
 
 In the file they stay where they are. A card the editor did not touch arrives on the other side in the order it went in, and a field is moved only by a person moving it.
+
+## The preset
+
+A preset is a note of `type: preset`, and it says how the decks pointing at it are scheduled. Its settings are frontmatter keys; its body is the person's, written for themselves.
+
+```markdown
+---
+type: preset
+goal: minutes_a_day
+minutes_a_day: 20
+new_a_day: 8
+reviews_a_day: 45
+retention: 0.87
+light_days:
+  - sat
+even_load: true
+---
+
+# Sanskrit
+
+Grammar and vocabulary. Three decks point here.
+```
+
+A deck names its preset with an entry of its `links:` block carrying `type: preset` — [Links](links.md).
+
+```markdown
+---
+type: deck
+links:
+  - to: Sanskrit
+    role: ref
+    type: preset
+---
+```
+
+| | |
+| --- | --- |
+| `goal` | which value the one control steers: `minutes_a_day`, `retention` or `by_date`. The value stands under the key it names. |
+| `by_date` | the day the material is to be in the head, written `2026-09-30`. |
+| `minutes_a_day` | how long a day of review runs, spent against the time each answer took. Zero keeps no budget in time. |
+| `new_a_day` | how many unseen cards a day holds. 10. |
+| `reviews_a_day` | how many returning cards a day holds. 200. |
+| `retention` | the share of cards recalled when they come round again. 0.90, and it goes from 0.70 to 0.99. |
+| `light_days` | the days of the week the load is cut on, written `mon` to `sun`. |
+| `even_load` | whether days are made to resemble each other. On. |
+
+Several decks pointing at one preset is what sharing it looks like, and scheduling a deck differently is repointing one link. **A deck naming no preset is scheduled by the defaults**, and one naming a note that is not a preset is scheduled by the defaults with a problem against it.
+
+Each preset's budget is spent on the cards of the decks pointing at it, and a sitting over the whole vault is the union of them. Inside one preset, whichever budget runs out first closes it for the day.
+
+**No cards a day is a pause**: the preset schedules nothing, and every deck pointing at it stops. Pausing one deck is a preset of its own. A goal of a day ends the same way — past that day the preset schedules nothing until the day is moved or the deck is pointed elsewhere.
+
+The hour a day of review begins at, and how a streak is counted, are not here: they are facts about a person's clock and habit, and they are in [Settings](settings.md).
 
 ## Size
 

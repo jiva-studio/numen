@@ -2,7 +2,6 @@ package flashcards
 
 import (
 	"context"
-	"slices"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -39,6 +38,9 @@ type Sitting struct {
 // front, because a card left late is the one closest to being forgotten. Cards
 // nobody has answered come after them, in the order they stand in their decks:
 // a person wrote them in an order, and it is as good an order as any.
+//
+// Each deck is held to the budget its preset keeps today, and what was already
+// answered today is off that budget.
 type Session struct {
 	// Marking gives a mark to the cards of this vault that carry none, so that
 	// what is asked can be answered. It is the one write flashcards makes, and it
@@ -46,8 +48,11 @@ type Session struct {
 	Marking   Marking
 	Standings Standings
 	Schedules Schedules
-	Day       history.Day
-	Now       func() time.Time
+	// Presets says which preset each deck is scheduled by. A build holding no
+	// links schedules every deck by the defaults.
+	Presets Presets
+	Day     history.Day
+	Now     func() time.Time
 }
 
 // Execute is what to ask, in order.
@@ -72,28 +77,31 @@ func (u Session) Execute(ctx context.Context, v domain.Vault, deck string) (Sitt
 	if err != nil {
 		return Sitting{}, err
 	}
-	schedules := u.Schedules.From(ctx, v, held)
+	// One reading of this vault's presets answers both the schedulers the cards
+	// are worked out by and the budgets they are held to.
+	reading := u.Presets.Reading()
+	asks, err := u.Schedules.under(ctx, v, reading, standing)
+	if err != nil {
+		return Sitting{}, err
+	}
+	schedules := u.Schedules.replayed(ctx, v, held, asks)
+
+	now := u.now()
+	day, err := budgeted(ctx, v, reading, u.Day, standing, held, u.Schedules.By, now)
+	if err != nil {
+		return Sitting{}, err
+	}
+	holds := day.asks(standing, schedules, u.Day, now, deck)
 
 	out := Sitting{Unwritten: marked.Unwritten, Skipped: held.Skipped}
-	now := u.now()
-	var seen, fresh []Asked
-	for _, one := range standing {
-		if deck != "" && one.Deck != deck {
-			continue
-		}
-		s, answered := schedules[one.CardFace]
-		switch {
-		case !answered:
-			fresh = append(fresh, Asked{Standing: one, Ahead: u.ahead(history.Schedule{}, now)})
-		case u.Day.Owed(s, now):
-			seen = append(seen, Asked{Standing: one, Schedule: s, Ahead: u.ahead(s, now)})
-		}
+	out.Asked = make([]Asked, 0, len(holds.seen)+len(holds.fresh))
+	for _, one := range holds.seen {
+		s := schedules[one.CardFace]
+		out.Asked = append(out.Asked, Asked{Standing: one, Schedule: s, Ahead: u.ahead(s, now)})
 	}
-
-	slices.SortStableFunc(seen, func(a, b Asked) int {
-		return a.Schedule.Due.Compare(b.Schedule.Due)
-	})
-	out.Asked = append(seen, fresh...)
+	for _, one := range holds.fresh {
+		out.Asked = append(out.Asked, Asked{Standing: one, Ahead: u.ahead(history.Schedule{}, now)})
+	}
 	return out, nil
 }
 

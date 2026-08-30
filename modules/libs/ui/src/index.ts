@@ -24,6 +24,22 @@ export type {
 export { Button, buttonVariants } from './components/ui/button'
 export type { ButtonVariants } from './components/ui/button'
 
+/** One line of digits, typed by hand and held inside its bounds. */
+export { NumberField } from './components/ui/number-field'
+export { clamped, numberOf, stepped, DEFAULT_BOUNDS } from './components/ui/number-field'
+export type { Bounds } from './components/ui/number-field'
+
+export { Switch } from './components/ui/switch'
+
+/** Two to four choices side by side, one of them chosen. */
+export { Segmented } from './components/ui/segmented'
+export type { SegmentedChoice } from './components/ui/segmented'
+
+/** The days of the week, each on or off on its own. */
+export { Days } from './components/ui/days'
+export { weekFrom, WEEK } from './components/ui/days'
+export type { Day } from './components/ui/days'
+
 export { default as Owed } from './cards/Owed.vue'
 /** What a person did on each day, as a grid of weeks. */
 export { default as Heatmap } from './heatmap/Heatmap.vue'

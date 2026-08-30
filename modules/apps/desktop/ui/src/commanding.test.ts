@@ -154,6 +154,7 @@ describe('the commands as they open', () => {
         'ask',
         'copy',
         'reveal',
+        'preset',
       ],
       window: [
         'note',
@@ -171,6 +172,7 @@ describe('the commands as they open', () => {
         'syncing',
         'hanging',
         'parts',
+        'settings',
       ],
       vault: [
         'first',
@@ -259,6 +261,7 @@ describe('what is in front', () => {
         'syncing',
         'hanging',
         'parts',
+        'settings',
       ],
       vault: ['openVault', 'newVault', 'renameVault', 'forgetVault', 'eraseVault'],
     })

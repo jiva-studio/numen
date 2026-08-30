@@ -11,6 +11,19 @@ const vault = (id: string, said: Partial<Counted['vaults'][number]> = {}) => ({
   due: 1,
   new: 2,
   decks: [{ deck: 'decks/Words.md', faces: 3, due: 1, new: 2 }],
+  presets: [
+    {
+      preset: 'Sanskrit.md',
+      title: 'Sanskrit',
+      decks: 1,
+      cards: 3,
+      answered: 4,
+      tookMs: 90000n,
+      new: 8,
+      reviews: 45,
+      minutes: 20,
+    },
+  ],
   unread: '',
   ...said,
 })
@@ -24,6 +37,18 @@ describe('counting what every vault owes', () => {
 
     expect(one.vaults.value).toHaveLength(2)
     expect(one.vaults.value[0]).toMatchObject({ vaultId: '01A', due: 1, new: 2 })
+    // What a day took arrives in milliseconds and is held in minutes.
+    expect(one.vaults.value[0]?.presets[0]).toEqual({
+      preset: 'Sanskrit.md',
+      title: 'Sanskrit',
+      decks: 1,
+      cards: 3,
+      answered: 4,
+      took: 1.5,
+      new: 8,
+      reviews: 45,
+      minutes: 20,
+    })
     expect(one.counting.value).toBe(false)
   })
 

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"slices"
+	"strings"
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -42,8 +44,15 @@ type Preset struct {
 // what a vault holding no preset at all gets.
 type Presets struct {
 	Readers port.VaultReaders
+	Writers port.VaultWriters
 	// Links answers where a deck's link to its preset lands.
 	Links port.LinkQueries
+	// Problems is what parsing each file of the vault turned up. A build holding
+	// none says nothing against a deck whose link the parser could not read.
+	Problems port.ProblemQueries
+	// Index brings what a write touched up to date. A build holding none leaves
+	// the index to the next scan.
+	Index func(ctx context.Context, v domain.Vault, paths []string) error
 }
 
 // Default is a deck scheduled by no preset.
@@ -53,15 +62,38 @@ func Default() Preset {
 
 // Of is the preset the deck at path is scheduled by.
 //
-// A link reaching nothing, and a link reaching a note that is not a preset,
-// leave the deck on the defaults and say so against it. A deck naming two
-// presets is scheduled by the first and carries a problem: two presets are two
-// answers to one question.
+// A link reaching nothing, a link reaching a note that is not a preset, and a
+// `links:` entry written with no role all leave the deck on the defaults and say
+// so against it. A deck naming two presets is scheduled by the first and carries
+// a problem: two presets are two answers to one question.
 func (u Presets) Of(ctx context.Context, v domain.Vault, deck string) (Preset, error) {
-	if u.Links == nil {
+	return u.Reading().Of(ctx, v, deck)
+}
+
+// Reading is a run of reads over one vault, holding each preset note it opens
+// for as long as the run lasts.
+//
+// It is one call's, and a caller keeps it no longer: a preset read from it is
+// the file as it stood when the run began.
+type Reading struct {
+	Presets
+	held map[string]Preset
+	// said is what parsing turned up against each file, read once for the run
+	// and only where a deck names no preset.
+	said map[string][]string
+}
+
+// Reading opens a run of reads sharing the notes they open.
+func (u Presets) Reading() *Reading {
+	return &Reading{Presets: u, held: make(map[string]Preset)}
+}
+
+// Of is the preset the deck at path is scheduled by.
+func (r *Reading) Of(ctx context.Context, v domain.Vault, deck string) (Preset, error) {
+	if r.Links == nil {
 		return Default(), nil
 	}
-	links, err := u.Links.Links(ctx, v.ID, deck)
+	links, err := r.Links.Links(ctx, v.ID, deck)
 	if err != nil {
 		return Preset{}, fmt.Errorf("the links of %s: %w", deck, err)
 	}
@@ -73,16 +105,67 @@ func (u Presets) Of(ctx context.Context, v domain.Vault, deck string) (Preset, e
 		}
 	}
 	if len(at) == 0 {
-		return Default(), nil
+		out := Default()
+		if out.Problems, err = r.roleless(ctx, v, deck); err != nil {
+			return Preset{}, err
+		}
+		return out, nil
 	}
 
-	out, err := u.Read(ctx, v, at[0])
+	out, err := r.read(ctx, v, at[0])
 	if err != nil {
 		return Preset{}, err
 	}
-	if len(at) > 1 {
-		out.Problems = append(out.Problems, "this deck names more than one preset, and is scheduled by "+at[0])
+	// A note that is not a preset schedules nothing, so the deck stands with
+	// the decks naming none and the problem is shown against it.
+	if out.Type != domain.TypePreset {
+		out.Path = ""
 	}
+	if len(at) > 1 {
+		out.Problems = append(slices.Clone(out.Problems),
+			"this deck names more than one preset, and is scheduled by "+at[0])
+	}
+	return out, nil
+}
+
+// roleless is what is shown against a deck that names no preset: every entry of
+// its `links:` block the parser could not read for want of a role.
+//
+// Such an entry is not a link, so a preset written in one schedules nothing.
+func (r *Reading) roleless(ctx context.Context, v domain.Vault, deck string) ([]string, error) {
+	if r.Problems == nil {
+		return nil, nil
+	}
+	if r.said == nil {
+		noted, err := r.Problems.Noted(ctx, v.ID)
+		if err != nil {
+			return nil, fmt.Errorf("what was noted in %s: %w", v.ID, err)
+		}
+		r.said = make(map[string][]string, len(noted))
+		for _, one := range noted {
+			r.said[one.Path] = append(r.said[one.Path], one.Detail)
+		}
+	}
+
+	var out []string
+	for _, detail := range r.said[deck] {
+		if strings.HasSuffix(detail, markdown.NoRole) {
+			out = append(out, detail+", so it names no preset")
+		}
+	}
+	return out, nil
+}
+
+// read is the preset at path, opened once however many decks name it.
+func (r *Reading) read(ctx context.Context, v domain.Vault, path string) (Preset, error) {
+	if held, standing := r.held[path]; standing {
+		return held, nil
+	}
+	out, err := r.Presets.Read(ctx, v, path)
+	if err != nil {
+		return Preset{}, err
+	}
+	r.held[path] = out
 	return out, nil
 }
 

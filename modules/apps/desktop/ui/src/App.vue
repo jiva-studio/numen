@@ -38,7 +38,7 @@ import { chorded, commandFor, keysOf } from './keying'
 import { iconFor, iconOfKind } from './icons'
 import { themes } from './theme'
 import { APPEARANCE, DRESSING, INTERFACE_SCALE, MODE, TEXT_SCALE, wearing } from './wearing'
-import { SYNCING, syncing } from './syncing'
+import { OFF, ON, SYNCING, syncing } from './syncing'
 import { HANGING, PARTS, hanging } from './hanging'
 import { does, reaching, type Doing, type Store } from './doing'
 import { finding } from './finding'
@@ -55,6 +55,9 @@ import { telling } from './telling'
 import { agentKind, talking } from './agent/kind'
 import { decking } from './cards/deck'
 import { stencilling } from './cards/stencil'
+import { presets } from './preset/core'
+import { presetting } from './preset/kind'
+import { settling } from './settings/kind'
 import { documentKind, documenting } from './document/kind'
 import { filesKind } from './files/kind'
 import { listing as folders } from './files/listing'
@@ -65,7 +68,7 @@ import { WORDS as talk } from './agent/words'
 import { WORDS as cut } from './cards/words'
 import { WORDS as words } from './words'
 import { VERSION } from './version'
-import { AGENT, CONVERSATION, FILES, NOTE, PLEX, named, opening } from './workspace'
+import { AGENT, CONVERSATION, FILES, NOTE, PLEX, SETTINGS, named, opening } from './workspace'
 
 const drawings = drawn()
 const notes = editing(core, undefined, drawings.arrived)
@@ -81,6 +84,7 @@ const window = showing(
     notes.changed(paths, renamed)
     decks.changed(paths, renamed)
     stencils.changed(paths, renamed)
+    schedules.changed(paths, renamed)
     commands.follows(renamed)
     await files.changed(paths, renamed)
     await plexes.again(renamed)
@@ -142,6 +146,9 @@ const noted = noting(core, notes, drawings, held.host, puts)
 /** The decks and the stencils the window has open, each saved the way a note is. */
 const decks = decking(cards, held.host, puts)
 const stencils = stencilling(cards, held.host, puts, tell.under('stencil'))
+
+/** The presets the window has open, each written as one group of settings. */
+const schedules = presetting(presets, held.host, puts, tell.under('preset'))
 
 going.holds(decks.flush)
 going.holds(stencils.flush)
@@ -251,6 +258,7 @@ held.declares([
   files.kind,
   decks.kind,
   stencils.kind,
+  schedules.kind,
 ])
 
 /** The palette: one keystroke, and everything the words typed turn up. */
@@ -350,6 +358,28 @@ const dressed = wearing(themes, words, tell.under('worn'))
 /** Whether a note's title and the name of its file are kept as one name. */
 const oneName = syncing(core, words, tell.under('named'))
 
+/**
+ * Everything this installation is configured as, in a tab of its own. It holds
+ * nothing: each row reaches the same value the command of that name reaches.
+ */
+const configured = settling(held.host, {
+  themes: () => dressed.list.value,
+  applied: () => dressed.applied.value,
+  mode: () => dressed.mode.value,
+  pinned: () => dressed.pinned.value,
+  sizes: () => dressed.sized.value,
+  bounds: () => dressed.bounds.value,
+  chooses: (item) => void dressed.chooses(item),
+  syncing: () => oneName.kept.value,
+  choosesSyncing: (on) => void oneName.chooses(on ? ON : OFF),
+  hangs: () => hungParts.hangs.value,
+  parts: () => hungParts.parts.value,
+  choosesHanging: (on) => void hungParts.chooses(on ? ON : OFF),
+  choosesParts: (count) => void hungParts.choosesCount(`${count}`),
+})
+
+held.declares([configured.kind])
+
 // A size is drawn, and every open editor takes its measurements again. An
 // editor watches its own box, and a size changes the type inside that box
 // while the box itself stands.
@@ -373,6 +403,19 @@ const kept: Holds = {
   },
 }
 
+/**
+ * The preset of a note, put in front of the person. A deck is scheduled by the
+ * preset its links name, and every other note is asked about as a preset itself.
+ */
+const opensPreset = async (path: string): Promise<void> => {
+  const stands = (await core.standing([path])).get(path)
+  if (stands?.type !== 'deck') return schedules.shows(path)
+  const answer = await presets.scheduling(path)
+  if (answer.refusal) return told(words.refused[answer.refusal], 'refusal')
+  if (!answer.preset?.path) return told(words.noPreset, 'caution')
+  schedules.shows(answer.preset.path, answer.preset.title)
+}
+
 /** The commands, over whatever is in front. */
 const commands = commanding(core, words, where, knows, kept)
 
@@ -394,6 +437,7 @@ const doing: Doing = {
   leaves: (from, to) => plexes.leaves(from, to),
   opening: () => window.opening.value,
   opens: (kind) => void held.opens(kind),
+  preset: (path) => opensPreset(path),
   // A kind with something to finish keeps its tab and closes it itself.
   closes: (tab) => {
     if (held.shut(tab)) layout.value = closeTab(layout.value, tab)

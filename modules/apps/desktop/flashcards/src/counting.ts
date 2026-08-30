@@ -24,9 +24,23 @@ export interface Counted {
     due: number
     new: number
     decks: readonly { deck: string; faces: number; due: number; new: number }[]
+    presets: readonly {
+      preset: string
+      title: string
+      decks: number
+      cards: number
+      answered: number
+      tookMs: bigint
+      new: number
+      reviews: number
+      minutes: number
+    }[]
     unread: string
   }[]
 }
+
+/** A length of time as the application holds one, which is in minutes. */
+const minutes = (ms: bigint): number => Number(ms) / 60000
 
 export interface Counting {
   cards: Counts
@@ -65,6 +79,17 @@ export function counting(deps: Counting) {
           faces: deck.faces,
           due: deck.due,
           new: deck.new,
+        })),
+        presets: one.presets.map((preset) => ({
+          preset: preset.preset,
+          title: preset.title,
+          decks: preset.decks,
+          cards: preset.cards,
+          answered: preset.answered,
+          took: minutes(preset.tookMs),
+          new: preset.new,
+          reviews: preset.reviews,
+          minutes: preset.minutes,
         })),
         unread: one.unread,
       }))

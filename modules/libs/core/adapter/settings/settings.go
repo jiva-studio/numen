@@ -237,9 +237,17 @@ func (r Review) Starts() (time.Duration, bool) {
 // answer given before it finishes the evening it belongs to.
 func DefaultStarts() time.Duration { return flashcards.DayStarts }
 
-// Clock writes a length of time past midnight as an hour of the day.
-func Clock(starts time.Duration) string {
-	return fmt.Sprintf("%02d:%02d", int(starts.Hours()), int(starts.Minutes())%60)
+// Starting is the hour a day of review is to begin at, as it goes into the
+// file. An hour past LatestDayStarts, anything that is not an hour of the
+// clock, and no hour at all, are flashcards.ErrNotAnHour. The file is left as
+// it is.
+func Starting(written string) (string, error) {
+	starts, hour := Review{DayStarts: written}.Starts()
+	if !hour || strings.TrimSpace(written) == "" {
+		return "", fmt.Errorf("%w, 00:00 to %s: %q",
+			flashcards.ErrNotAnHour, flashcards.Clock(LatestDayStarts), written)
+	}
+	return flashcards.Clock(starts), nil
 }
 
 // Sync is whether a note's title and its filename are kept as one name.
@@ -282,7 +290,7 @@ func Defaults() Config {
 		},
 		Agent:  agent.Defaults(),
 		Naming: Naming{SyncTitleAndFilename: on()},
-		Review: Review{DayStarts: Clock(DefaultStarts())},
+		Review: Review{DayStarts: flashcards.Clock(DefaultStarts())},
 	}
 }
 
@@ -331,7 +339,7 @@ func At(path string) (Config, error) {
 	}
 	if _, hour := cfg.Review.Starts(); !hour {
 		cfg.say("review.day_starts is an hour of the day, 00:00 to %s, and %s stands",
-			Clock(LatestDayStarts), Clock(DefaultStarts()))
+			flashcards.Clock(LatestDayStarts), flashcards.Clock(DefaultStarts()))
 	}
 	return cfg, nil
 }

@@ -52,6 +52,24 @@ even_load: true
 	}
 }
 
+// What a day's budget is spent on is read from the file, and a preset saying
+// nothing spends it on cards.
+func TestWhatABudgetIsSpentOn(t *testing.T) {
+	for written, want := range map[string]flashcards.Counts{
+		"":                flashcards.CountsCards,
+		"counts: cards\n": flashcards.CountsCards,
+		"counts: shows\n": flashcards.CountsShows,
+	} {
+		p, problems := flashcards.ReadPreset(front(t, written))
+		if len(problems) != 0 {
+			t.Fatalf("%q: problems = %v", written, problems)
+		}
+		if p.Counts != want {
+			t.Errorf("%q: counts = %q, want %q", written, p.Counts, want)
+		}
+	}
+}
+
 // A key the file does not carry stands at the default.
 func TestWhatAPresetLeavesUnsaid(t *testing.T) {
 	p, problems := flashcards.ReadPreset(front(t, "goal: retention\nretention: 0.95\n"))
@@ -81,6 +99,7 @@ func TestAKeyThatCannotBeRead(t *testing.T) {
 		"light_days: [caturday]\n": "day of the week",
 		"goal: by_date\n":          "which day",
 		"by_date: 30 September\n":  "by_date",
+		"counts: minutes\n":        "counts",
 	} {
 		p, problems := flashcards.ReadPreset(front(t, written))
 		if len(problems) != 1 || !strings.Contains(problems[0], says) {
@@ -102,24 +121,38 @@ func TestTheDayItAimsAt(t *testing.T) {
 		if len(problems) != 0 {
 			t.Fatalf("%q: problems = %v", written, problems)
 		}
-		if p.By.Format(flashcards.DayFormat) != "2026-09-30" {
+		if p.By.Format(flashcards.Named) != "2026-09-30" {
 			t.Errorf("%q: by = %v", written, p.By)
 		}
 	}
 }
 
 // A date is a budget: past the day it names, the preset schedules nothing.
+//
+// The day it names is a whole review day, so the preset schedules through every
+// hour of it and stops when the next one opens.
 func TestADateIsABudget(t *testing.T) {
 	p, _ := flashcards.ReadPreset(front(t, "goal: by_date\nby_date: 2026-09-30\n"))
+	day := flashcards.Day{Starts: flashcards.DayStarts, In: time.UTC}
 
-	before := time.Date(2026, 9, 29, 0, 0, 0, 0, time.UTC)
-	after := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)
-
-	if p.Spent(before) || p.Paused(before) {
-		t.Error("the day it aims at is still ahead")
-	}
-	if !p.Spent(after) || !p.Paused(after) {
-		t.Error("the day it aims at has passed")
+	for _, one := range []struct {
+		hour time.Time
+		past bool
+	}{
+		{time.Date(2026, 9, 29, 10, 0, 0, 0, time.UTC), false},
+		// The small hours of the 30th are still the day before it.
+		{time.Date(2026, 9, 30, 2, 0, 0, 0, time.UTC), false},
+		{time.Date(2026, 9, 30, 10, 0, 0, 0, time.UTC), false},
+		// And the small hours of the 1st are still the day it names.
+		{time.Date(2026, 10, 1, 2, 0, 0, 0, time.UTC), false},
+		{time.Date(2026, 10, 1, 10, 0, 0, 0, time.UTC), true},
+	} {
+		if got := p.Past(day, one.hour); got != one.past {
+			t.Errorf("at %v the day it aims at is past = %v, want %v", one.hour, got, one.past)
+		}
+		if got := p.Paused(day, one.hour); got != one.past {
+			t.Errorf("at %v the preset is paused = %v, want %v", one.hour, got, one.past)
+		}
 	}
 }
 
@@ -130,7 +163,7 @@ func TestZeroIsAPause(t *testing.T) {
 	if len(problems) != 0 {
 		t.Fatalf("problems = %v", problems)
 	}
-	if !p.Paused(time.Now()) {
+	if !p.Paused(flashcards.Day{Starts: flashcards.DayStarts}, time.Now()) {
 		t.Error("a preset holding no cards a day schedules nothing")
 	}
 }

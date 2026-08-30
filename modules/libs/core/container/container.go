@@ -13,6 +13,7 @@ import (
 	adapteragent "github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
@@ -184,6 +185,31 @@ func (c Config) TurnsParts() func(parts int) error {
 		}
 		return settings.Save(path, settings.Setting{
 			At: []string{"appearance", "parts_under_a_node"}, Value: parts,
+		})
+	}
+}
+
+// Reviewing reads, as the window asks, the hour a day of review begins at. A
+// file that cannot be read begins the day where an installation nobody has
+// configured begins it.
+func (c Config) Reviewing() func() string {
+	return func() string { return flashcards.Clock(c.DayStarts()) }
+}
+
+// TurnsReviewing writes into the settings the hour a day of review begins at.
+// An hour the setting does not take is refused and the file is left as it is.
+func (c Config) TurnsReviewing() func(starts string) error {
+	return func(starts string) error {
+		written, err := settings.Starting(starts)
+		if err != nil {
+			return err
+		}
+		path, err := c.settingsFile()
+		if err != nil {
+			return err
+		}
+		return settings.Save(path, settings.Setting{
+			At: []string{"review", "day_starts"}, Value: written,
 		})
 	}
 }

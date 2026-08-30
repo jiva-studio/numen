@@ -68,7 +68,7 @@ func (r *reaching) standing() domain.Vault {
 func serveAgents(
 	ctx context.Context,
 	cfg container.Config,
-	db *container.ReadIndex,
+	db *container.Index,
 	api *flashcardsui.API,
 	off bool,
 	out io.Writer,
@@ -133,11 +133,11 @@ func serveAgents(
 // arranging one is done in the editor.
 //
 // Nothing embeds behind this window, so a search answers by the words the vault
-// holds, and nothing scans: a deck the agent writes is read again by the
-// watcher this window already follows.
+// holds. Nothing scans either: a card the agent writes is levelled in the index
+// by the paths it touched.
 func reviewing(
 	cfg container.Config,
-	db *container.ReadIndex,
+	db *container.Index,
 	v domain.Vault,
 	root string,
 	out io.Writer,
@@ -145,12 +145,7 @@ func reviewing(
 	queries := db.Queries()
 	links := db.Links()
 
-	// What the index is told about a deck the agent wrote. This window runs no
-	// scan and writes no index: the file is what changed, and the watcher reads
-	// it again.
-	index := func(context.Context, domain.Vault, []string) error { return nil }
-
-	cutting := cfg.Cards(queries, links, index)
+	cutting := cfg.Cards(queries, links, cfg.Level(db))
 
 	return mcp.Core{
 		Showing:       mcp.One(v, root),

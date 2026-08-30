@@ -128,6 +128,14 @@ service VaultService {
   // typed stays where it was.
   rpc ChooseHanging(ChooseHangingRequest) returns (ChooseHangingResponse);
 
+  // Reviewing is the hour a day of review begins at, on the clock on the wall.
+  rpc Reviewing(ReviewingRequest) returns (ReviewingResponse);
+
+  // ChooseReviewing writes that hour into the file a person configures this
+  // installation in. The file is patched as an object, so every key a person
+  // typed stays where it was.
+  rpc ChooseReviewing(ChooseReviewingRequest) returns (ChooseReviewingResponse);
+
   // Remove takes a file or a folder out of the vault, into the trash it can be
   // brought back from. The links that pointed at it are left as they were
   // written: a link is not wrong because the note it names is gone.
@@ -189,6 +197,9 @@ enum Refusal {
   // The file is past the size a deck is read at, which stands above the size a
   // note is read at.
   REFUSAL_DECK_TOO_LARGE = 11;
+
+  // The note at the path is not a preset, and a preset was asked for.
+  REFUSAL_NOT_A_PRESET = 12;
 }
 
 // Note is a note as something else refers to it.
@@ -605,7 +616,7 @@ enum SourceKind {
   SOURCE_KIND_BOOK = 2;
 }
 
-// NoteType is which of three a note is: the `type` key of its frontmatter. It
+// NoteType is which of four a note is: the `type` key of its frontmatter. It
 // says what the note is; whether the application reads text out of the file is
 // SourceKind.
 enum NoteType {
@@ -618,6 +629,9 @@ enum NoteType {
 
   // A note declaring the fields a card has and the faces it is shown by.
   NOTE_TYPE_STENCIL = 2;
+
+  // A note saying how the decks pointing at it are scheduled.
+  NOTE_TYPE_PRESET = 3;
 }
 
 message ReadRequest {
@@ -843,6 +857,26 @@ message ChooseHangingRequest {
 }
 
 message ChooseHangingResponse {
+  // Set when nothing was written, and why. What the settings hold is unchanged.
+  optional Refusal refusal = 1;
+}
+
+message ReviewingRequest {}
+
+message ReviewingResponse {
+  // The hour a day of review begins at, written as `04:00`. It is the
+  // `review.day_starts` of the settings file, and an installation nobody has
+  // configured begins the day at four.
+  string day_starts = 1;
+}
+
+message ChooseReviewingRequest {
+  // The hour to begin the day at, written as `04:00`. An hour outside 00:00 to
+  // 12:00 is refused, and the file is left as it was.
+  string day_starts = 1;
+}
+
+message ChooseReviewingResponse {
   // Set when nothing was written, and why. What the settings hold is unchanged.
   optional Refusal refusal = 1;
 }

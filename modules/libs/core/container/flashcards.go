@@ -27,6 +27,12 @@ type Flashcards struct {
 	Log       flashcards.Log
 	// Counted is how much of a vault was answered on each day it was reviewed.
 	Counted flashcards.Counted
+	// Presets is which preset each deck is scheduled by, and how one is read,
+	// written and made.
+	Presets flashcards.Presets
+	// Curves is what the one control of a preset comes to over the whole range
+	// of its goal.
+	Curves flashcards.Curves
 	// Day is where one day of review gives way to the next.
 	Day history.Day
 }
@@ -97,7 +103,6 @@ func (c Config) Flashcards(
 		Readers: c.VaultReaders(), Writers: c.VaultWriters(),
 		Notes: notes, Links: links, Index: index, Now: time.Now,
 	}
-	schedules := flashcards.Schedules{Logs: logs, Kept: kept, By: history.NewFSRS()}
 	day := history.Day{Starts: c.DayStarts()}
 
 	counting, err := c.Counting()
@@ -105,17 +110,41 @@ func (c Config) Flashcards(
 		fmt.Fprintln(os.Stderr, "numen: the days are counted again at every launch:", err)
 	}
 
+	presets := flashcards.Presets{
+		Readers: c.VaultReaders(), Writers: c.VaultWriters(),
+		Links: links, Index: index,
+	}
+	// A link the index does not carry is accounted for in what parsing turned
+	// up, which is the same reader answering both.
+	if said, holds := notes.(port.ProblemQueries); holds {
+		presets.Problems = said
+	}
+
+	// Each card is worked out at the share of the cards its own preset asks
+	// for, which is what says which preset a card face stands under.
+	schedules := flashcards.Schedules{
+		Logs: logs, Kept: kept, By: history.NewFSRS(),
+		Standings: standing, Presets: presets,
+	}
+
 	return Flashcards{
 		Standings: standing,
 		Marking:   marking,
 		Schedules: schedules,
-		Owed:      flashcards.Owed{Standings: standing, Schedules: schedules, Day: day, Now: time.Now},
+		Owed: flashcards.Owed{
+			Standings: standing, Schedules: schedules, Presets: presets, Day: day, Now: time.Now,
+		},
 		Session: flashcards.Session{
-			Marking: marking, Standings: standing, Schedules: schedules, Day: day, Now: time.Now,
+			Marking: marking, Standings: standing, Schedules: schedules,
+			Presets: presets, Day: day, Now: time.Now,
 		},
 		Log: flashcards.Log{Stores: logs},
 		Counted: flashcards.Counted{
 			Logs: logs, Kept: counting, Schedules: schedules, Day: day, Now: time.Now,
+		},
+		Presets: presets,
+		Curves: flashcards.Curves{
+			Standings: standing, Schedules: schedules, Presets: presets, Day: day, Now: time.Now,
 		},
 		Day: day,
 	}

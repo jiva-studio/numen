@@ -25,6 +25,7 @@ export const REFUSED: Record<Refused, string> = {
   notAStencil: 'that note is not a stencil',
   notADeck: 'that note is not a deck',
   deckTooLarge: 'that deck is longer than this reads',
+  notAPreset: 'that note is not a preset',
 }
 
 /** What the list of vaults refused a command, in words a person reads. */
@@ -74,6 +75,10 @@ export const WORDS = {
   ask: 'Ask the agent about this note',
   copy: 'Copy path',
   reveal: 'Show this note in the files',
+  /** The preset this note is: the note itself, or the one a deck is scheduled by. */
+  preset: 'Open the preset',
+  /** The deck in front names no preset, so the defaults schedule it. */
+  noPreset: 'This deck names no preset, so it is scheduled by the defaults.',
   newNote: note.newNote,
   newDeck: cards.newDeck,
   newStencil: cards.newStencil,
@@ -88,6 +93,7 @@ export const WORDS = {
   syncing: 'Sync title and filename',
   hanging: 'Hang the parts of a note under its node',
   parts: 'How many parts a node hangs',
+  settings: 'Settings',
   findKeys: commandKeyChord(navigator.userAgent),
   /** The commands, under the second of the two keystrokes the window keeps for itself. */
   commands: 'Show the commands',

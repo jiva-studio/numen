@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -246,6 +247,36 @@ func (d *Document) SetScalar(key, value string) error {
 	return d.set(key, []byte(key+": "+strings.ReplaceAll(written, "\n", d.eol)+d.eol))
 }
 
+// SetValue writes what one top-level frontmatter key holds from now on, in the
+// spelling its own type is written in: a number stands as a number, and true
+// and false stand as themselves.
+func (d *Document) SetValue(key string, value any) error {
+	var held yaml.Node
+	if err := held.Encode(value); err != nil {
+		return err
+	}
+	rendered, err := render(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{
+		{Kind: yaml.ScalarNode, Value: key}, &held,
+	}})
+	if err != nil {
+		return err
+	}
+	return d.set(key, []byte(strings.ReplaceAll(rendered, "\n", d.eol)))
+}
+
+// SetDay writes the day one top-level frontmatter key stands for from now on,
+// as a day with no hour on it.
+func (d *Document) SetDay(key string, day time.Time) error {
+	rendered, err := render(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{
+		{Kind: yaml.ScalarNode, Value: key},
+		{Kind: yaml.ScalarNode, Tag: "!!timestamp", Value: day.Format("2006-01-02")},
+	}})
+	if err != nil {
+		return err
+	}
+	return d.set(key, []byte(strings.ReplaceAll(rendered, "\n", d.eol)))
+}
+
 // spelling is how each name of one key's list is quoted, so that a name coming
 // through a write untouched comes through spelled as it was.
 func (d *Document) spelling(key string) map[string]yaml.Style {
@@ -385,20 +416,20 @@ func (d *Document) writable() (*yaml.Node, error) {
 	if err != nil || node == nil {
 		return node, err
 	}
-	if err := inline(node); err != nil {
-		return nil, err
+	if flow(node) {
+		return nil, ErrInline
 	}
 	return node, nil
 }
 
-// ErrInline is what a frontmatter block written on one line gets. Nothing is
+// ErrInline is what a block whose keys share their lines gets. Nothing is
 // changed in it.
 //
-// Everything here works by replacing the lines a key occupies, and that is only
-// a key's own span while one line holds one key. `{title: T, id: b}` puts them
-// all on one, so the span of any of them is the span of all of them, and a
-// write meant for one would take the rest with it. Refusing is the only honest
-// answer: the alternative is to reformat somebody's file to suit the writer.
+// Everything here works by replacing the lines a key occupies, and that is a
+// key's own span while one line holds one key. `{title: T, id: b}` puts them
+// all on one, so the span of any of them is the span of all of them. A value
+// written on one line — `light_days: [sat]` — still occupies its key's own
+// lines and is replaced as it stands.
 var ErrInline = errors.New("this frontmatter is written on one line, and cannot be changed a key at a time")
 
 // ErrUnterminated is a note that opens a frontmatter block and never closes it.
@@ -406,19 +437,36 @@ var ErrInline = errors.New("this frontmatter is written on one line, and cannot 
 // for them.
 var ErrUnterminated = errors.New("this note opens a frontmatter block that is never closed")
 
-// inline refuses a block whose layout the splice cannot reason about. It looks
-// through the whole tree, because a flow sequence for `links:` breaks the same
-// arithmetic one level down.
-func inline(node *yaml.Node) error {
-	if node.Style&yaml.FlowStyle != 0 && (node.Kind == yaml.MappingNode || node.Kind == yaml.SequenceNode) {
-		return ErrInline
+// flow reports whether a collection is written on one line, which is what puts
+// two keys in one span.
+func flow(node *yaml.Node) bool {
+	if node == nil {
+		return false
+	}
+	return node.Style&yaml.FlowStyle != 0 &&
+		(node.Kind == yaml.MappingNode || node.Kind == yaml.SequenceNode)
+}
+
+// empty reports whether a key holds nothing at all, which is a key a first
+// entry is written under. A null somebody wrote out stands on the line and is
+// not one.
+func empty(node *yaml.Node) bool {
+	return node.Kind == yaml.ScalarNode && node.Tag == "!!null" && node.Value == ""
+}
+
+// flowing reports whether anything in a subtree is written on one line. An
+// entry of the `links:` block is replaced on its own, and that is a line at a
+// time all the way down.
+func flowing(node *yaml.Node) bool {
+	if flow(node) {
+		return true
 	}
 	for _, child := range node.Content {
-		if err := inline(child); err != nil {
-			return err
+		if flowing(child) {
+			return true
 		}
 	}
-	return nil
+	return false
 }
 
 // lineOffsets is where each line of a block begins, with the end of the block

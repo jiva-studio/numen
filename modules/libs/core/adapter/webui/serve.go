@@ -224,6 +224,11 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	api.Cuts = &cutting.Write
 	api.MakesCards = &cutting.Create
 	api.RenamesField = &cutting.Rename
+	// A preset is a note the editor writes key by key, and the curve beside its
+	// one control is the same simulator the flashcards window runs on.
+	running := cfg.Flashcards(db.Queries(), db.Links(), opened.level)
+	api.Presets = &running.Presets
+	api.Curves = &running.Curves
 	// One note.Move settles every note that travelled, whether a rename sent it
 	// or a move did.
 	moving := note.Move{
@@ -243,6 +248,8 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	api.ChoosesHanging = cfg.TurnsHanging()
 	api.Parts = cfg.Parts()
 	api.ChoosesParts = cfg.TurnsParts()
+	api.Reviews = cfg.Reviewing()
+	api.ChoosesReviewing = cfg.TurnsReviewing()
 	api.Renames = &note.Rename{Move: moving}
 	api.Moves = &usecase.Move{
 		Writers: cfg.VaultWriters(),

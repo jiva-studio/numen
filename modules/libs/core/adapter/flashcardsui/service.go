@@ -52,6 +52,19 @@ func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultOwing {
 			New:   int32(deck.New),
 		})
 	}
+	for _, preset := range owing.Presets {
+		one.Presets = append(one.Presets, &v1.PresetOwing{
+			Preset:   preset.Preset,
+			Title:    a.titled(ctx, v, preset.Preset),
+			Decks:    int32(preset.Decks),
+			Cards:    int32(preset.Cards),
+			Answered: int32(preset.Answered),
+			TookMs:   preset.Took.Milliseconds(),
+			New:      int32(preset.Budget.New),
+			Reviews:  int32(preset.Budget.Reviews),
+			Minutes:  preset.Budget.Minutes,
+		})
+	}
 	return one
 }
 

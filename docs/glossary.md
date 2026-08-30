@@ -18,7 +18,7 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | link | One relationship, as written in a file — [Links](links.md). | connection |
 | role | What kind of relationship a link is, from a closed list of five — [Links](links.md). | seat |
 | type | What a link is for, as a feature reads it. Open vocabulary — [Links](links.md). | |
-| type (of a note) | Which of three a note is: `note`, `deck` or `stencil`. Closed list, and absent means `note` — [Cards](cards.md). The word is spent twice: a link's `type` is what that link is for, and a note's `type` is what the file is. | |
+| type (of a note) | Which of four a note is: `note`, `deck`, `stencil` or `preset`. Closed list, and absent means `note` — [Cards](cards.md). The word is spent twice: a link's `type` is what that link is for, and a note's `type` is what the file is. | |
 | label | The few words a person writes for what a relationship is called — [Links](links.md). | title |
 | note (on a link) | Why the link exists, in the person's words. The word is spent twice on purpose: a note is a file, and a link's `note` is why the link is there. | |
 | address | Scheme and value; the only thing that says where a link goes — [Links](links.md). | |
@@ -31,6 +31,9 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | mark (of a card) | The ten characters after `^` at the end of a card's heading, which is what that card is wherever it goes — [Cards](cards.md). A page's mark and the marks an interface is drawn with are other things. | |
 | section (of a deck) | A first-level heading in a deck, and the cards standing under it until the next one. It is a name and nothing else. | |
 | deck | A note whose body is cards, in sections where a person made them — [Cards](cards.md). | collection |
+| preset | A note saying how the decks pointing at it are scheduled — [Cards](cards.md). A deck points at one with a link carrying `type: preset`, and a deck pointing at none is scheduled by the defaults. The word is spent twice: a theme that ships inside the application is named `preset:numen`. | profile, options |
+| goal | Which of three a preset's one control steers: minutes a day, a retention target, or a day the material is to be in the head by. | target |
+| light day | A day of the week a preset cuts its load on, moving those cards to the days around it. | rest day |
 
 ## What the application keeps
 

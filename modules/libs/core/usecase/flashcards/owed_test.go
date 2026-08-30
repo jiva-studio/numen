@@ -1,0 +1,219 @@
+package flashcards_test
+
+import (
+	"testing"
+	"time"
+
+	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
+)
+
+// A vault of three decks: two scheduled by a preset that keeps Saturday light,
+// and one naming no preset at all.
+var scheduled = map[string]string{
+	"Term.md": "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
+		"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
+	"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
+		"new_a_day: 8\nreviews_a_day: 45\nlight_days: [sat]\n---\n\n# Sanskrit\n",
+	"decks/Roots.md": "---\ntype: deck\nlinks:\n" +
+		"  - to: Sanskrit\n    role: ref\n    type: preset\n---\n" +
+		"\n## Root ^k7m2xq9fzp\n\n[[Term]]\n\n### Word\n\nbhu\n\n### Meaning\n\nto be\n",
+	"decks/Mantras.md": "---\ntype: deck\nlinks:\n" +
+		"  - to: Sanskrit\n    role: ref\n    type: preset\n---\n" +
+		"\n## Gayatri ^zpqrstvwxy\n\n[[Term]]\n\n### Word\n\ngayatri\n\n### Meaning\n\na metre\n",
+	"decks/Terms.md": "---\ntype: deck\n---\n" +
+		"\n## Term ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nsutra\n\n### Meaning\n\na thread\n",
+}
+
+// saturday is a day the Sanskrit preset keeps light, at an hour well inside it.
+var saturday = time.Date(2026, 9, 5, 10, 0, 0, 0, time.Local)
+
+// What a day came to is counted under the preset each deck names, over as many
+// sittings as the day held. A deck naming no preset comes under the defaults.
+func TestWhatADayCameToUnderEachPresetOfAVault(t *testing.T) {
+	s := opened(t, scheduled)
+
+	// Two sittings of the one day, each writing a file of its own.
+	morning := s.run(t, saturday)
+	answer(t, morning, "k7m2xq9fzp", 6*time.Second)
+	evening := s.run(t, saturday.Add(9*time.Hour))
+	answer(t, evening, "zpqrstvwxy", 9*time.Second)
+	answer(t, evening, "3f4g5h6j7k", 4*time.Second)
+
+	owing, err := s.owedAt(today, func() time.Time { return saturday.Add(10 * time.Hour) }).
+		Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []flashcards.PresetOwing{
+		{
+			Preset: "", Decks: 1, Cards: 1, Answered: 1, Took: 4 * time.Second,
+			Budget: history.Budget{New: 10, Reviews: 200, Minutes: 20},
+		},
+		{
+			Preset: "Sanskrit.md", Decks: 2, Cards: 2, Answered: 2, Took: 15 * time.Second,
+			Budget: history.Budget{New: 4, Reviews: 23, Minutes: 10},
+		},
+	}
+	if len(owing.Presets) != len(want) {
+		t.Fatalf("the day came to %+v, want %+v", owing.Presets, want)
+	}
+	for at, one := range want {
+		if owing.Presets[at] != one {
+			t.Errorf("%q came to %+v, want %+v", one.Preset, owing.Presets[at], one)
+		}
+	}
+}
+
+// Every preset the vault holds stands in the count. A person who wrote one and
+// pointed nothing at it can still see it, and it says nothing of a day.
+func TestAPresetNoDeckPointsAtStandsInTheCount(t *testing.T) {
+	files := make(map[string]string, len(scheduled)+1)
+	for path, raw := range scheduled {
+		files[path] = raw
+	}
+	files["Empty.md"] = "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 137\n---\n\n# Empty\n"
+	s := opened(t, files)
+
+	owing, err := s.owedAt(today, func() time.Time { return saturday }).
+		Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var held *flashcards.PresetOwing
+	for at, one := range owing.Presets {
+		if one.Preset == "Empty.md" {
+			held = &owing.Presets[at]
+		}
+	}
+	if held == nil {
+		t.Fatalf("the preset nothing points at is not in the count: %+v", owing.Presets)
+	}
+	if *held != (flashcards.PresetOwing{Preset: "Empty.md"}) {
+		t.Errorf("it came to %+v, want a preset nothing stands under", *held)
+	}
+}
+
+// What was answered on another day is not what today came to, and neither is an
+// answer taken back.
+func TestADayHoldsWhatWasAnsweredInIt(t *testing.T) {
+	s := opened(t, scheduled)
+
+	before := s.run(t, saturday.AddDate(0, 0, -1))
+	answer(t, before, "k7m2xq9fzp", 6*time.Second)
+
+	sitting := s.run(t, saturday)
+	given := answer(t, sitting, "zpqrstvwxy", 9*time.Second)
+	if _, err := sitting.TakeBack(t.Context(), given); err != nil {
+		t.Fatal(err)
+	}
+
+	owing, err := s.owedAt(today, func() time.Time { return saturday.Add(time.Hour) }).
+		Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range owing.Presets {
+		if one.Answered != 0 || one.Took != 0 {
+			t.Errorf("%q came to %+v, want a day nothing stands on", one.Preset, one)
+		}
+	}
+}
+
+// The front door reads the answers and writes nothing back. It is asked for
+// every vault a person holds, and again for each of them whenever a file moves.
+func TestCountingAVaultWritesNoScheduleCache(t *testing.T) {
+	s := opened(t, scheduled)
+	answer(t, s.run(t, saturday), "k7m2xq9fzp", 6*time.Second)
+
+	if _, err := s.owedAt(today, func() time.Time { return saturday.Add(time.Hour) }).
+		Execute(t.Context(), s.vault); err != nil {
+		t.Fatal(err)
+	}
+	if raw, err := s.kept.Kept.Read(t.Context(), s.vault.ID); err == nil {
+		t.Errorf("counting wrote a cache of %d bytes", len(raw))
+	}
+}
+
+// answer writes down one card answered well, and hands back the line it stands
+// as. Every card of this vault is shown through the one face.
+func answer(t *testing.T, record flashcards.Record, card string, took time.Duration) string {
+	t.Helper()
+	return said(t, record, card, history.Good, took)
+}
+
+// again writes down one card the person could not recall, which comes round
+// again in the same sitting.
+func again(t *testing.T, record flashcards.Record, card string, took time.Duration) string {
+	t.Helper()
+	return said(t, record, card, history.Again, took)
+}
+
+func said(
+	t *testing.T, record flashcards.Record, card string,
+	rating history.Rating, took time.Duration,
+) string {
+	t.Helper()
+	given, err := record.Answer(
+		t.Context(), history.CardFace{Card: card, Face: "Say it"}, rating, took)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return given.ID
+}
+
+// A preset a deck names is pointed at whatever the deck holds, and how many
+// cards stand under it is counted beside that.
+func TestAnEmptyDeckStillPointsAtItsPreset(t *testing.T) {
+	s := opened(t, map[string]string{
+		"Term.md":        term,
+		"Empty.md":       preset("new_a_day: 4\nreviews_a_day: 20\n"),
+		"Unnamed.md":     preset("new_a_day: 4\nreviews_a_day: 20\n"),
+		"decks/Empty.md": deckOf("Empty", 0, 0),
+		"decks/Full.md":  deckOf("Empty", 3, 0),
+	})
+
+	owing, err := s.owedAt(today, func() time.Time { return saturday }).Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := make(map[string][2]int, len(owing.Presets))
+	for _, one := range owing.Presets {
+		got[one.Preset] = [2]int{one.Decks, one.Cards}
+	}
+	want := map[string][2]int{"Empty.md": {2, 3}, "Unnamed.md": {0, 0}}
+	for path, one := range want {
+		if got[path] != one {
+			t.Errorf("%s is named by %d decks holding %d cards, want %d and %d",
+				path, got[path][0], got[path][1], one[0], one[1])
+		}
+	}
+}
+
+// A preset nothing but an empty deck names is still named by that deck.
+func TestAPresetOnlyAnEmptyDeckNamesIsPointedAt(t *testing.T) {
+	s := opened(t, map[string]string{
+		"Term.md":        term,
+		"Empty.md":       preset("new_a_day: 4\nreviews_a_day: 20\n"),
+		"decks/Empty.md": deckOf("Empty", 0, 0),
+	})
+
+	owing, err := s.owedAt(today, func() time.Time { return saturday }).Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range owing.Presets {
+		if one.Preset != "Empty.md" {
+			continue
+		}
+		if one.Decks != 1 || one.Cards != 0 {
+			t.Errorf("the preset is named by %d decks holding %d cards, want 1 and 0",
+				one.Decks, one.Cards)
+		}
+		return
+	}
+	t.Error("the preset was not among what the vault holds")
+}

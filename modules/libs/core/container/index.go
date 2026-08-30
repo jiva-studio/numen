@@ -2,12 +2,12 @@ package container
 
 import (
 	"context"
-	"errors"
-	"io/fs"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // Index is the cache, seen as the ports the core asks for. The concrete adapter
@@ -34,37 +34,19 @@ func (c Config) OpenIndex(ctx context.Context) (*Index, error) {
 
 func (i *Index) Close() error { return i.db.Close() }
 
-// ReadIndex is the cache seen by a process that only asks it questions. It
-// offers no repository, so nothing reached through it can write.
-type ReadIndex struct {
-	db *index.Reading
+// Level brings the notes at the paths given up to date in the index. Whatever
+// writes a note calls it with the paths it touched, so what it wrote is
+// findable by the time the write returns.
+func (c Config) Level(db *Index) func(ctx context.Context, v domain.Vault, paths []string) error {
+	refresh := vault.Refresh{Readers: c.VaultReaders(), Notes: db.NotesCutAt(c.Cutting())}
+	return func(ctx context.Context, v domain.Vault, paths []string) error {
+		_, err := refresh.Execute(ctx, v, paths)
+		return err
+	}
 }
 
-// OpenIndexToRead opens the cache for asking alone.
-//
-// An index that is not there is not made on disk: it is built by the
-// application that scans, and until that has run once every vault reads as one
-// nothing has read yet.
-func (c Config) OpenIndexToRead(ctx context.Context) (*ReadIndex, error) {
-	path, err := c.indexPath()
-	if err != nil {
-		return nil, err
-	}
-	db, err := index.OpenToRead(ctx, path)
-	if errors.Is(err, fs.ErrNotExist) {
-		db, err = index.OpenNothing(ctx)
-	}
-	if err != nil {
-		return nil, err
-	}
-	return &ReadIndex{db: db}, nil
-}
-
-func (i *ReadIndex) Close() error { return i.db.Close() }
-
-// Moves reports each time the index changes underneath a process that only
-// reads it. What a vault holds is the index's answer, and the answer changes
-// when the application that scans writes one.
+// Moves reports each time the index file changes. What a vault holds is the
+// index's answer, and another window writing the index changes it.
 func (c Config) Moves(ctx context.Context) (<-chan struct{}, error) {
 	path, err := c.indexPath()
 	if err != nil {
@@ -72,16 +54,6 @@ func (c Config) Moves(ctx context.Context) (<-chan struct{}, error) {
 	}
 	return filesystem.Watcher{Options: c.VaultOptions()}.File(ctx, path)
 }
-
-func (i *ReadIndex) Queries() port.NoteQueries { return i.db.NoteQueries() }
-func (i *ReadIndex) Links() port.LinkQueries   { return i.db.NoteQueries() }
-
-// Passages is the two indexes a search runs over.
-func (i *ReadIndex) Passages() port.PassageQueries { return i.db.ChunkQueries() }
-
-// SourcesKnown is what the index holds about sources: what each file was, and
-// what its text came from.
-func (i *ReadIndex) SourcesKnown() port.SourceQueries { return i.db.SourcesKnown() }
 
 // FitVectors makes the vector index hold vectors of the width given, filled
 // from what the recipe has already bought.

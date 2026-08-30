@@ -17,10 +17,14 @@ type Owing struct {
 	// shown through.
 	Faces int
 	// Due is the card faces answered before and owed in the day holding now.
-	// New is the ones nobody has answered.
+	// New is the ones nobody has answered. Both are held to what the budgets of
+	// the day leave, so they are what a sitting will ask.
 	Due   int
 	New   int
 	Decks []DeckOwing
+	// Presets is what the day comes to under every preset the vault holds,
+	// whether a deck points at it or not.
+	Presets []PresetOwing
 }
 
 // DeckOwing is one deck's share of it, by the path of its file.
@@ -31,45 +35,86 @@ type DeckOwing struct {
 	New   int
 }
 
+// PresetOwing is one preset's day, by the path of the note it stands in. A
+// preset standing in no note schedules the decks naming none.
+type PresetOwing struct {
+	Preset string
+	// Decks is how many decks name it, whatever they hold, and Cards is how
+	// many card faces stand in those decks. A deck holding no cards points at
+	// its preset all the same.
+	Decks int
+	Cards int
+	// Answered is how many of its cards were answered in the day holding now,
+	// and Took is how long those answers took.
+	Answered int
+	Took     time.Duration
+	// Budget is what the day holds under it, the day of the week having had its
+	// say.
+	Budget history.Budget
+}
+
 // Owed is what a vault owes, which is what its front door shows.
 type Owed struct {
 	Standings Standings
 	Schedules Schedules
-	Day       history.Day
-	Now       func() time.Time
+	// Presets says which preset each deck is scheduled by. A build holding no
+	// links schedules every deck by the defaults.
+	Presets Presets
+	Day     history.Day
+	Now     func() time.Time
 }
 
 // Execute counts one vault.
+//
+// The log is read once here and the schedules worked out from it, so the count
+// and the sitting it stands for are the one reading. Counting writes nothing:
+// the person is shown every vault they hold, and none of them is written for
+// that.
 func (u Owed) Execute(ctx context.Context, v domain.Vault) (Owing, error) {
 	standing, err := u.Standings.Execute(ctx, v)
 	if err != nil {
 		return Owing{}, err
 	}
-	schedules, err := u.Schedules.Execute(ctx, v)
+	log, err := Log{Stores: u.Schedules.Logs}.Read(ctx, v)
 	if err != nil {
 		return Owing{}, err
 	}
+	// One reading of this vault's presets answers the schedulers, the budgets
+	// and how many decks name each preset.
+	reading := u.Presets.Reading()
+	asks, err := u.Schedules.under(ctx, v, reading, standing)
+	if err != nil {
+		return Owing{}, err
+	}
+	schedules := projected(log, asks)
 
 	now := u.now()
+	day, err := budgeted(ctx, v, reading, u.Day, standing, log, u.Schedules.By, now)
+	if err != nil {
+		return Owing{}, err
+	}
+	holds := day.asks(standing, schedules, u.Day, now, "")
+
 	out := Owing{Faces: len(standing)}
 	decks := make(map[string]*DeckOwing)
-	for _, one := range standing {
-		deck, held := decks[one.Deck]
+	at := func(deck string) *DeckOwing {
+		one, held := decks[deck]
 		if !held {
-			deck = &DeckOwing{Deck: one.Deck}
-			decks[one.Deck] = deck
+			one = &DeckOwing{Deck: deck}
+			decks[deck] = one
 		}
-		deck.Faces++
-
-		s, answered := schedules[one.CardFace]
-		switch {
-		case !answered:
-			out.New++
-			deck.New++
-		case u.Day.Owed(s, now):
-			out.Due++
-			deck.Due++
-		}
+		return one
+	}
+	for _, one := range standing {
+		at(one.Deck).Faces++
+	}
+	for _, one := range holds.seen {
+		out.Due++
+		at(one.Deck).Due++
+	}
+	for _, one := range holds.fresh {
+		out.New++
+		at(one.Deck).New++
 	}
 
 	for _, deck := range decks {
@@ -78,7 +123,73 @@ func (u Owed) Execute(ctx context.Context, v domain.Vault) (Owing, error) {
 	slices.SortFunc(out.Decks, func(a, b DeckOwing) int {
 		return strings.Compare(a.Deck, b.Deck)
 	})
+	out.Presets, err = u.presets(ctx, v, reading, day)
+	if err != nil {
+		return Owing{}, err
+	}
 	return out, nil
+}
+
+// presets is every preset the vault holds: the ones its decks point at, and
+// then the ones nothing points at.
+//
+// How many decks name a preset is counted over every deck the vault holds, so a
+// deck of no cards points at its preset like any other. A preset no deck names
+// stands at nothing.
+func (u Owed) presets(
+	ctx context.Context, v domain.Vault, reading *Reading, day *budgets,
+) ([]PresetOwing, error) {
+	out := day.owing()
+	if u.Standings.Notes == nil {
+		return out, nil
+	}
+
+	decks, err := u.Standings.Notes.OfType(ctx, v.ID, domain.TypeDeck)
+	if err != nil {
+		return nil, err
+	}
+	naming := make(map[string]int, len(decks))
+	for _, deck := range decks {
+		p, err := reading.Of(ctx, v, deck)
+		if err != nil {
+			return nil, err
+		}
+		naming[p.Path]++
+	}
+
+	pointed := make(map[string]bool, len(out))
+	for at := range out {
+		out[at].Decks = naming[out[at].Preset]
+		pointed[out[at].Preset] = true
+	}
+
+	paths, err := u.Standings.Notes.OfType(ctx, v.ID, domain.TypePreset)
+	if err != nil {
+		return nil, err
+	}
+	for _, path := range paths {
+		if !pointed[path] {
+			out = append(out, PresetOwing{Preset: path, Decks: naming[path]})
+		}
+	}
+	slices.SortFunc(out, func(a, b PresetOwing) int {
+		return strings.Compare(a.Preset, b.Preset)
+	})
+	return out, nil
+}
+
+// owing is what the day comes to under each preset the vault's decks name: the
+// budget the day of the week leaves it, and what has been answered under it
+// since the day opened.
+func (b *budgets) owing() []PresetOwing {
+	out := make([]PresetOwing, 0, len(b.left))
+	for path, one := range b.left {
+		out = append(out, PresetOwing{
+			Preset: path, Cards: b.cards[path], Answered: one.spent.Answered,
+			Took: one.spent.Took, Budget: one.budget,
+		})
+	}
+	return out
 }
 
 func (u Owed) now() time.Time {

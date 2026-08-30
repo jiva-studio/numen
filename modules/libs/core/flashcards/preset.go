@@ -28,6 +28,10 @@ type Preset struct {
 	// Retention is the share of cards recalled when they come round again.
 	Retention float64
 
+	// Counts is what a day's budget is spent on: the cards a day holds, or the
+	// times they are put to a person.
+	Counts Counts
+
 	// LightDays are the days of the week the load is cut on, and the cards
 	// moved to their neighbours.
 	LightDays []time.Weekday
@@ -53,8 +57,26 @@ func KnownGoal(g Goal) bool {
 	return false
 }
 
-// DayFormat is how the day a goal names is written.
-const DayFormat = "2006-01-02"
+// Counts is what a day's budget is spent on.
+//
+// Under CountsCards a card face is charged the first time it is answered in a
+// review day and comes round again in it for nothing. Under CountsShows every
+// showing is charged.
+type Counts string
+
+const (
+	CountsCards Counts = "cards"
+	CountsShows Counts = "shows"
+)
+
+// KnownCounts reports whether a value is one of the two.
+func KnownCounts(c Counts) bool {
+	switch c {
+	case CountsCards, CountsShows:
+		return true
+	}
+	return false
+}
 
 // Bounds is how far a setting goes, at each end.
 type Bounds struct{ Least, Most float64 }
@@ -81,23 +103,24 @@ func Defaults() Preset {
 		NewADay:     10,
 		ReviewsADay: 200,
 		Retention:   0.9,
+		Counts:      CountsCards,
 		EvenLoad:    true,
 	}
 }
 
 // Paused reports whether the preset schedules nothing: no cards a day, or a day
 // that has passed.
-func (p Preset) Paused(today time.Time) bool {
-	return (p.NewADay == 0 && p.ReviewsADay == 0) || p.Spent(today)
+func (p Preset) Paused(d Day, now time.Time) bool {
+	return (p.NewADay == 0 && p.ReviewsADay == 0) || p.Past(d, now)
 }
 
-// Spent reports whether the day the goal names is behind us. A preset aiming at
-// no day is never spent.
-func (p Preset) Spent(today time.Time) bool {
+// Past reports whether the review day the goal names is behind us. The day it
+// names is a whole day of review, and a preset aiming at no day is never past.
+func (p Preset) Past(d Day, now time.Time) bool {
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return false
 	}
-	return today.After(p.By)
+	return !now.Before(d.Ending(p.By))
 }
 
 // ReadPreset is what a preset note's frontmatter says, and what could not be
@@ -122,14 +145,26 @@ func ReadPreset(front map[string]any) (Preset, []string) {
 		}
 	}
 
+	if raw, present := front["counts"]; present && raw != nil {
+		name, isText := raw.(string)
+		switch {
+		case !isText:
+			problems = append(problems, "counts is not text")
+		case KnownCounts(Counts(name)):
+			p.Counts = Counts(name)
+		default:
+			problems = append(problems, "counts "+name+" is not cards or shows")
+		}
+	}
+
 	if raw, present := front["by_date"]; present && raw != nil {
 		switch value := raw.(type) {
 		case time.Time:
 			p.By = value
 		case string:
-			day, err := time.Parse(DayFormat, strings.TrimSpace(value))
+			day, err := time.Parse(Named, strings.TrimSpace(value))
 			if err != nil {
-				problems = append(problems, "by_date "+value+" is not a day, written as "+DayFormat)
+				problems = append(problems, "by_date "+value+" is not a day, written as "+Named)
 				break
 			}
 			p.By = day

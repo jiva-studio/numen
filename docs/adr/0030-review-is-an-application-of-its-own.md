@@ -29,6 +29,8 @@ Every write to it rewrites it whole and nothing locks it between processes, so f
 
 ### It reads the index and never writes it
 
+**Superseded by [ADR-0035](0035-the-review-window-writes-the-index.md).** The window opens the index for writing and brings the paths it touches up to date. What follows in this section is the decision as it stood.
+
 The index answers one question for this application: **which files in a vault are decks**. It cannot answer another, because a card's heading reaches it without the mark the card is known by (ADR-0029) — the cards themselves are read from the deck files, whatever else is open.
 
 The database is opened for reading alone: one pool, no schema put in place, and no pragma that writes the header. Nothing is written, so the single write lock ADR-0002 keeps over all vaults is untouched, and ADR-0008's guarantee that writes queue inside one process is never asked to hold across two. An index that is not on the machine yet is not made here either — it is built by the application that scans, and until it has, every vault reads as one nothing has read.

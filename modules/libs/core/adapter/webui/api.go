@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
@@ -107,6 +108,13 @@ type API struct {
 	MakesCards   *cards.Create
 	RenamesField *cards.RenameField
 
+	// Presets is the preset a deck is scheduled by, and how one is read,
+	// written and made. Curves is what the one control of a preset comes to
+	// over the whole range of its goal. A build without them answers that
+	// presets cannot be worked here.
+	Presets *flashcards.Presets
+	Curves  *flashcards.Curves
+
 	// Renames gives a note a different name, Moves puts a file or a folder
 	// somewhere else in the vault, and Removes takes one out of it. A build
 	// without them answers that nothing can be renamed, moved or removed here.
@@ -129,6 +137,12 @@ type API struct {
 	ChoosesHanging func(hangs bool) error
 	Parts          func() int
 	ChoosesParts   func(parts int) error
+
+	// Reviews reads the hour a day of review begins at, and ChoosesReviewing
+	// writes it. A build with no writer answers that it configures nothing; one
+	// with no reader reads what an installation nobody has configured does.
+	Reviews          func() string
+	ChoosesReviewing func(starts string) error
 
 	// Finds is how the window searches the text the vault holds, by the words
 	// in it and by what it means. A build without one answers that it cannot be

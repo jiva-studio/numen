@@ -45,6 +45,8 @@ type vaulted struct {
 	kept      flashcards.Schedules
 	counted   flashcards.Counted
 	logs      filesystem.DerivedStores
+	// scan brings the index level with what the vault now holds.
+	scan func(ctx context.Context, v domain.Vault, paths []string) error
 }
 
 func opened(t *testing.T, notes map[string]string) vaulted {
@@ -71,36 +73,55 @@ func opened(t *testing.T, notes map[string]string) vaulted {
 	}
 
 	logs := filesystem.DerivedStores{Area: filesystem.FlashcardsDir}
+	standings := flashcards.Standings{
+		Readers: filesystem.Readers{}, Notes: db.NoteQueries(), Links: db.NoteQueries(),
+	}
+	presets := flashcards.Presets{
+		Readers: filesystem.Readers{}, Writers: filesystem.Writers{},
+		Links: db.NoteQueries(), Problems: db.NoteQueries(), Index: scanned,
+	}
+	// Each card is worked out at the share of the cards its own preset asks
+	// for, which is how the application builds this.
+	schedules := flashcards.Schedules{
+		Logs:      logs,
+		Kept:      appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards")),
+		By:        history.NewFSRS(),
+		Standings: standings,
+		Presets:   presets,
+	}
+
 	return vaulted{
-		vault: v,
-		standings: flashcards.Standings{
-			Readers: filesystem.Readers{}, Notes: db.NoteQueries(), Links: db.NoteQueries(),
-		},
-		presets: flashcards.Presets{
-			Readers: filesystem.Readers{}, Links: db.NoteQueries(),
-		},
+		vault:     v,
+		standings: standings,
+		presets:   presets,
 		marking: flashcards.Marking{
 			Readers: filesystem.Readers{}, Writers: filesystem.Writers{},
 			Notes: db.NoteQueries(), Links: db.NoteQueries(),
 			Index: scanned, Now: time.Now,
 		},
-		kept: flashcards.Schedules{
-			Logs: logs,
-			Kept: appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards")),
-			By:   history.NewFSRS(),
-		},
+		kept: schedules,
 		counted: flashcards.Counted{
-			Logs: logs,
-			Kept: appstate.SchedulesAt(filepath.Join(t.TempDir(), "days")),
-			Schedules: flashcards.Schedules{
-				Logs: logs,
-				Kept: appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards")),
-				By:   history.NewFSRS(),
-			},
-			Day: today,
-			Now: time.Now,
+			Logs:      logs,
+			Kept:      appstate.SchedulesAt(filepath.Join(t.TempDir(), "days")),
+			Schedules: schedules,
+			Day:       today,
+			Now:       time.Now,
 		},
 		logs: logs,
+		scan: scanned,
+	}
+}
+
+// write puts a file into the vault and brings the index level with it, which is
+// what a person editing their own note in another window leaves behind.
+func write(t *testing.T, s vaulted, path, body string) {
+	t.Helper()
+	at := filepath.Join(s.vault.Path, filepath.FromSlash(path))
+	if err := os.WriteFile(at, []byte(body), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.scan(t.Context(), s.vault, []string{path}); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -123,7 +144,13 @@ func (s vaulted) run(t *testing.T, at time.Time) flashcards.Record {
 }
 
 func (s vaulted) owed(day history.Day) flashcards.Owed {
-	return flashcards.Owed{Standings: s.standings, Schedules: s.kept, Day: day, Now: time.Now}
+	return s.owedAt(day, time.Now)
+}
+
+func (s vaulted) owedAt(day history.Day, now func() time.Time) flashcards.Owed {
+	return flashcards.Owed{
+		Standings: s.standings, Schedules: s.kept, Presets: s.presets, Day: day, Now: now,
+	}
 }
 
 func (s vaulted) session(day history.Day) flashcards.Session {

@@ -43,6 +43,7 @@ const noted = (id: string, band: string): readonly MenuItem[] => {
 export const ITEMS: readonly MenuItem[] = [
   ...noted('read', BAND.open),
   ...noted('travel', BAND.open),
+  ...noted('preset', BAND.open),
   ...noted('copy', BAND.file),
   ...noted('reveal', BAND.file),
   ...noted('child', BAND.plex),

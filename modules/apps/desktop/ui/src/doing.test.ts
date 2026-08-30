@@ -150,6 +150,7 @@ const window = (
     leaves: async (from, to) => void done.push(`leaves ${from} ${to}`),
     opening: () => 'Root.md',
     opens: (kind) => void done.push(`opens ${kind}`),
+    preset: async (path) => void done.push(`preset ${path}`),
     closes: (tab) => void done.push(`closes ${tab}`),
     asks: (text) => void done.push(`asks ${text}`),
     copies: (path) => void done.push(`copies ${path}`),
