@@ -65,14 +65,9 @@ watch(
         :ref="(el) => (drawn[i] = el as HTMLElement)"
         class="reading__note"
       >
-        <!-- The name stands at the head of what it names, and the two are read
-             one under another, so it carries the line that separates them. -->
         <header class="reading__head">
           <h2 class="reading__name">{{ named(one) }}</h2>
-          <!-- Which way the link runs, and what the person called it: a note
-               that points here is not the same thing as one this deck points
-               at. Its path stands with them, because two notes can be called
-               the same thing. -->
+          <!-- The path is here because two notes can be called the same thing. -->
           <p class="reading__quiet">
             <span v-if="one.path">{{ one.path }}</span>
             <span v-if="!one.points">{{ words.pointsHere }}</span>
@@ -107,31 +102,30 @@ watch(
   padding: var(--numen-inset-wide);
   border: 1px solid var(--numen-node-border);
   border-radius: var(--numen-radius);
-  /* A note is written by whoever wrote it, and nothing in one reaches past the
-     panel it is read in. */
   overflow: hidden;
   background: var(--numen-node-bg);
 }
 
-/* It is read down, and the strip it stands in is taken across, so this scrolls
-   one way and the strip the other. */
+/* Read down, while the strip it stands in is taken across. */
 .reading__column {
   flex: 1;
   min-inline-size: 0;
   min-block-size: 0;
   overflow-y: auto;
+  scrollbar-width: none;
   scroll-behavior: smooth;
   overscroll-behavior-y: contain;
 }
 
-/* One note under another, with room between them: what tells them apart is the
-   name at the head of each, and the gap that gives the name a head to be at. */
+.reading__column::-webkit-scrollbar {
+  display: none;
+}
+
 .reading__note + .reading__note {
   margin-block-start: calc(var(--numen-inset-wide) * 2);
 }
 
-/* The name and what is known about the note, standing over the prose and ruled
-   off from it. */
+/* The name, ruled off from the prose under it. */
 .reading__head {
   margin-block-end: var(--numen-inset);
   padding-block-end: var(--numen-inset);
