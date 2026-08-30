@@ -62,6 +62,16 @@ A deck is as long as somebody made it, so `card_read` answers with at most fifty
 
 A tool that writes returns only once the index is level again. An agent that creates a note and searches for it in the next breath finds it.
 
+## The reading surface
+
+The reviewer serves a surface of its own, and every tool on it reads: `note_search`, `note_get`, `note_read`, `note_neighbourhood`, `link_list`, `source_list`, `source_read`, `card_stencils`, `card_read` and `vault_get`. Nothing else is on it, and the agent answering from it changes nothing in the vault. The decisions behind it are [ADR-0032](adr/0032-the-reviewers-agent-only-reads.md).
+
+The tools themselves are the same tools: each family registers its reading half and its writing half separately, and the full surface is both halves.
+
+That window opens the index for reading alone, and nothing embeds behind it, so a search there answers by the words in the vault and not by what they mean. It serves its port on a loopback address the machine picks, with a token that lives in memory, and writes no `agents.json`: the address file names one window's vault, and a second window rewriting it would point a person's own agent at whichever started last.
+
+The agent is told which vault it works when it is started, so it is started when a sitting opens and stopped when a sitting opens on another vault or the window closes.
+
 ## An agent a person runs themselves
 
 The tools are served on a port, and the panel's agent is one caller of it. An agent somebody has configured in their own terminal is another, and `agent.serve_tools` is what serves them to it: on, the endpoint answers whether or not the panel has an agent, and where to reach it and what to present are written to `agents.json` beside this installation's own state, at mode `0600`. The file is removed when the window goes, so a live-looking token never outlives the port it was for.
