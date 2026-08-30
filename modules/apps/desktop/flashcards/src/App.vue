@@ -11,7 +11,7 @@
  * to, and what the window has to say.
  */
 import { computed, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
-import { Notices, following } from '@numen/ui'
+import { Notices, following, opensVault } from '@numen/ui'
 import '@numen/ui/styles.css'
 
 import Vaults from './Vaults.vue'
@@ -185,6 +185,7 @@ const answered = async (how: Said) => {
 }
 
 const keyed = (press: KeyboardEvent) => {
+  if (on.value === 'vaults') return picking(press)
   if (on.value === 'decks') return chosen.value ? choosing(press, chosen.value) : undefined
   if (on.value !== 'session') return
 
@@ -223,6 +224,20 @@ const keyed = (press: KeyboardEvent) => {
       else read.shuts()
       break
   }
+}
+
+/**
+ * The keys a person picks a vault with: a letter opens the vault standing at
+ * it, which is the letter drawn on that row. While the vaults are being counted
+ * the list is empty and no letter stands anywhere.
+ */
+const picking = (press: KeyboardEvent) => {
+  if (busy.value) return
+  const at = opensVault(press, vaults.value.length)
+  const one = at === null ? undefined : vaults.value[at]
+  if (!one) return
+  press.preventDefault()
+  choose(one.vaultId)
 }
 
 /** The keys a person picks what to sit down to with. */

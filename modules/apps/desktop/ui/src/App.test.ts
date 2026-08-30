@@ -165,6 +165,8 @@ const { said, held, asked, listed, folders, cuts, stands, outside } = vi.hoisted
     worn: [] as string[],
     /** How often an open editor was told to take its measurements again. */
     measured: 0,
+    /** The vaults the window asked to be shown, in the order it asked. */
+    opened: [] as string[],
   },
   /** The vaults this installation holds, and the one the window is showing. */
   listed: {
@@ -194,7 +196,10 @@ vi.mock('./vault', () => ({
     rename: async () => ({ vault: null, refusal: null }),
     forget: async () => null,
     erase: async () => null,
-    open: async () => null,
+    open: async (id: string) => {
+      asked.opened.push(id)
+      return null
+    },
   },
   documents: {
     shape: async () => ({ pages: 1, sheets: [{ wide: 100, high: 100 }] }),
@@ -424,6 +429,7 @@ afterEach(() => {
   asked.folders = []
   asked.worn = []
   asked.measured = 0
+  asked.opened = []
   listed.vaults = [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', missing: false }]
   listed.showing = 'physics'
 })
@@ -562,6 +568,65 @@ describe('the window holding no tab', () => {
 
     expect(cards(window).join(' ')).toContain('The vaults could not be listed')
     expect(window.findComponent(Welcome).props('vaults')).toStrictEqual([])
+  })
+})
+
+describe('a letter pressed on the welcome screen', () => {
+  /** The screen with two vaults on it, and no tab over them. */
+  const two = async () => {
+    listed.vaults = [
+      { id: 'physics', name: 'Physics', path: '/vaults/Physics', missing: false },
+      { id: 'heat', name: 'Heat', path: '/vaults/Heat', missing: false },
+    ]
+    listed.showing = ''
+    return drawn()
+  }
+
+  const press = async (key: string, more: KeyboardEventInit = {}) => {
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key, cancelable: true, ...more }))
+    await settles()
+    await settles()
+  }
+
+  it('shows the vault standing at it', async () => {
+    await two()
+
+    await press('b')
+
+    expect(asked.opened).toStrictEqual(['heat'])
+  })
+
+  it('shows the first of them for the first letter of the alphabet', async () => {
+    await two()
+
+    await press('a')
+
+    expect(asked.opened).toStrictEqual(['physics'])
+  })
+
+  it('shows nothing where no vault stands at the letter', async () => {
+    await two()
+
+    await press('c')
+
+    expect(asked.opened).toStrictEqual([])
+  })
+
+  it('shows nothing while the palette is up, where the letter is being typed', async () => {
+    await two()
+
+    await press('k', { ctrlKey: true })
+    await press('a')
+
+    expect(asked.opened).toStrictEqual([])
+  })
+
+  it('shows nothing while the window holds a tab, where the screen is not up', async () => {
+    await drawn()
+
+    await press('a')
+
+    expect(asked.opened).toStrictEqual([])
   })
 })
 
