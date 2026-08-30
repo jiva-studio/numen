@@ -1,10 +1,14 @@
 package flashcardsui
 
 import (
+	"errors"
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
@@ -24,6 +28,39 @@ func answered(t *testing.T, api *API, vault string, sitting *v1.StartResponse) s
 		t.Fatal(err)
 	}
 	return out.Msg.GetAnswer()
+}
+
+// A card that has been answered before comes back carrying where it stands: it
+// has been seen, and it is due at an instant the page can read. A card nobody
+// has answered carries neither.
+func TestACardAlreadyAnsweredComesBackWithWhereItStands(t *testing.T) {
+	api, held := windowed(t, deck)
+	v := held[0]
+
+	first := started(t, api, v)
+	for _, card := range first.GetAsked() {
+		if card.GetSeen() {
+			t.Errorf("a card nobody answered says it was seen: %+v", card)
+		}
+		if card.GetDue() != "" {
+			t.Errorf("a card nobody answered is due at %q", card.GetDue())
+		}
+	}
+	answered(t, api, v.ID, first)
+
+	// Answered well, so the card is minutes away and asked again in this
+	// sitting: what it carries is where the answer left it.
+	next := started(t, api, v)
+	if len(next.GetAsked()) == 0 {
+		t.Fatal("the card answered a moment ago is not asked again")
+	}
+	card := next.GetAsked()[0]
+	if !card.GetSeen() {
+		t.Error("a card already answered says it was not seen")
+	}
+	if _, err := time.Parse(history.Stamp, card.GetDue()); err != nil {
+		t.Errorf("the card is due at %q, which the page cannot read: %v", card.GetDue(), err)
+	}
 }
 
 // A person hits the wrong key and takes it back, and what they took back is
@@ -80,6 +117,39 @@ func TestTakingBackOnARunNobodyOpenedIsRefused(t *testing.T) {
 		VaultId: v.ID, Run: "nothing", Answer: given,
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
+		t.Errorf("refused with %v", connect.CodeOf(err))
+	}
+}
+
+// An answer names the vault it belongs to. One the installation does not hold
+// is refused before a line is written into anybody's history.
+func TestAnsweringAVaultNobodyHoldsIsRefused(t *testing.T) {
+	api, _ := windowed(t, deck)
+
+	_, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
+		VaultId: "nothing", Run: "nothing",
+		Card: "k7m2xq9fzp", Face: "Recognise", Rating: v1.Rating_RATING_GOOD,
+	}))
+	if connect.CodeOf(err) != connect.CodeNotFound {
+		t.Errorf("refused with %v", connect.CodeOf(err))
+	}
+}
+
+// unreadable is an installation whose list of vaults cannot be read.
+type unreadable struct{ registry }
+
+func (unreadable) All() ([]domain.Vault, error) {
+	return nil, errors.New("the list of vaults cannot be read")
+}
+
+// A window that cannot read the installation's vaults says so. An empty list
+// would read as an installation holding none, which is a person told their
+// vaults are gone.
+func TestAWindowThatCannotReadTheVaultsSaysSo(t *testing.T) {
+	api := &API{Registry: unreadable{}, Now: time.Now}
+
+	_, err := api.Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
+	if connect.CodeOf(err) != connect.CodeInternal {
 		t.Errorf("refused with %v", connect.CodeOf(err))
 	}
 }
