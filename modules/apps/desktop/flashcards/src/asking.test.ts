@@ -53,7 +53,8 @@ const panel = (
     unreachable: () => more.unreachable ?? '',
     open: () => showing.value === 'asking',
     shows: (open) => {
-      showing.value = open ? 'asking' : 'here'
+      if (open) showing.value = 'asking'
+      else if (showing.value === 'asking') showing.value = 'here'
     },
     says: (one) => said.push(one),
     // The words are put up as they arrive, so a test reads them without waiting
@@ -142,6 +143,19 @@ describe('one conversation to a card', () => {
     expect(held.open.value).toBe(false)
     expect(held.about.value).toBeNull()
     expect(held.turns.value).toEqual([])
+    expect(over.length).toBe(1)
+  })
+
+  // A card is answered with whichever panel is up, and answering it ends the
+  // conversation wherever the window happens to be standing.
+  it('leaves the window where it is when the card is answered from the reading', async () => {
+    const { held, over, showing } = panel({ showing: 'reading' })
+    held.opens()
+    await held.send('why')
+    showing.value = 'reading'
+
+    held.ends()
+    expect(showing.value).toBe('reading')
     expect(over.length).toBe(1)
   })
 

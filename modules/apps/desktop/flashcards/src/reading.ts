@@ -69,7 +69,9 @@ export function reading(deps: Beside) {
       held.value = deck
     } catch {
       if (asked !== deck) return
-      forgets()
+      notes.value = []
+      unread.value = 0
+      held.value = ''
       deps.says(words.unreached)
     } finally {
       if (asked === deck) working.value = false

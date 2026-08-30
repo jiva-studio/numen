@@ -69,14 +69,19 @@ const nearest = (left: number): Where => {
 
 const goes = (where: Where) => {
   window.clearTimeout(settling)
+  const at = window_.value
+  if (!at) return
+  // A strip already standing where it is being sent moves nothing, and a move
+  // that moves nothing never arrives: it would hold the strip deaf to the next
+  // hand for as long as a move takes.
+  if (Math.abs(at.scrollLeft - stops()[where]) <= 1) return
   window.clearTimeout(sending)
   sending = window.setTimeout(() => {
     sending = 0
     aim = null
   }, TAKES)
   aim = where
-  const at = window_.value
-  if (at) at.scrollLeft = stops()[where]
+  at.scrollLeft = stops()[where]
 }
 
 /**
@@ -127,10 +132,13 @@ const scrolled = () => {
   // It is armed while a move is in flight too, and aims where that move was
   // going: a wheel turned during one would otherwise leave the strip standing
   // between two of the three, with nothing left to pull it to either.
+  //
+  // Where it settles is the window's answer and not the strip's: a panel the
+  // window refused to open is a panel the strip must not be left standing on.
   if (taking.value) return
   window.clearTimeout(settling)
   const going = aim
-  settling = window.setTimeout(() => goes(going ?? where), SETTLES)
+  settling = window.setTimeout(() => goes(going ?? props.at), SETTLES)
 }
 
 /** Where the hand went down, and where the strip was under it. */
@@ -161,7 +169,10 @@ const letGo = async () => {
   // the way with it on, so the letting go is waited for.
   await nextTick()
   if (where !== props.at) emit('update:at', where)
-  goes(where)
+  // Where the hand asked for and where the window went are two things: a panel
+  // the window refused to open is one the strip goes back off.
+  await nextTick()
+  goes(props.at)
 }
 
 onMounted(() => {
