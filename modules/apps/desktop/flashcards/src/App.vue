@@ -21,10 +21,11 @@ import Finished from './Finished.vue'
 import { VERSION } from './version'
 import { cards, deckName } from './core'
 import { counting } from './counting'
-import { asks, swallows } from './keying'
+import { asks, picks, swallows } from './keying'
 import { raising } from './notices'
 import { reviewed } from './reviewed'
 import { session } from './session'
+import type { Owing } from './core'
 import type { Report } from './session'
 
 /** Which of the three screens the window is on. */
@@ -92,7 +93,9 @@ const vaultsAgain = async () => {
 }
 
 const keyed = (press: KeyboardEvent) => {
+  if (on.value === 'decks') return chosen.value ? choosing(press, chosen.value) : undefined
   if (on.value !== 'session') return
+
   const asked = asks(press, { shown: sat.shown.value })
   if (!asked) return
   if (swallows(asked)) press.preventDefault()
@@ -109,6 +112,27 @@ const keyed = (press: KeyboardEvent) => {
       break
     case 'leave':
       void leave()
+      break
+  }
+}
+
+/** The keys a person picks what to sit down to with. */
+const choosing = (press: KeyboardEvent, vault: Owing) => {
+  const asked = picks(press, vault.decks.length)
+  if (!asked) return
+  press.preventDefault()
+
+  switch (asked.does) {
+    case 'all':
+      void start('')
+      break
+    case 'deck': {
+      const deck = vault.decks[asked.at]
+      if (deck) void start(deck.deck)
+      break
+    }
+    case 'back':
+      void vaultsAgain()
       break
   }
 }

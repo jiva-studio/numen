@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { asks, swallows } from './keying'
+import { asks, letterOf, picks, swallows } from './keying'
 
 /** pressed is one keystroke, as the window meets it. */
 const pressed = (key: string, more: Partial<KeyboardEvent> = {}) =>
@@ -59,5 +59,47 @@ describe('the keys a sitting is done with', () => {
     expect(swallows(asks(pressed(' '), { shown: false }))).toBe(true)
     expect(swallows(asks(pressed('3'), { shown: true }))).toBe(false)
     expect(swallows(null)).toBe(false)
+  })
+})
+
+describe('the keys a deck is chosen with', () => {
+  // The whole vault is the daily act, so it is the key under the hand.
+  it('sits down to the whole vault on enter', () => {
+    expect(picks(pressed('Enter'), 5)).toEqual({ does: 'all' })
+    expect(picks(pressed(' '), 5)).toEqual({ does: 'all' })
+  })
+
+  // A person reads down the list and presses what they see.
+  it('sits down to the deck a letter stands at', () => {
+    expect(picks(pressed('a'), 5)).toEqual({ does: 'deck', at: 0 })
+    expect(picks(pressed('c'), 5)).toEqual({ does: 'deck', at: 2 })
+    expect(picks(pressed('e'), 5)).toEqual({ does: 'deck', at: 4 })
+  })
+
+  it('reads a letter typed in either case', () => {
+    expect(picks(pressed('B'), 5)).toEqual({ does: 'deck', at: 1 })
+  })
+
+  it('picks no deck where the list holds none at that letter', () => {
+    expect(picks(pressed('f'), 5)).toBeNull()
+    expect(picks(pressed('z'), 5)).toBeNull()
+    expect(picks(pressed('a'), 0)).toBeNull()
+  })
+
+  it('goes back to the vaults on escape', () => {
+    expect(picks(pressed('Escape'), 5)).toEqual({ does: 'back' })
+  })
+
+  it('is not a choice from a key held down or pressed with a modifier', () => {
+    expect(picks(pressed('a', { repeat: true }), 5)).toBeNull()
+    expect(picks(pressed('a', { ctrlKey: true }), 5)).toBeNull()
+    expect(picks(pressed('Enter', { metaKey: true }), 5)).toBeNull()
+  })
+
+  it('names each deck by the letter it is picked with', () => {
+    expect(letterOf(0)).toBe('a')
+    expect(letterOf(25)).toBe('z')
+    // Past the alphabet a deck is picked with the hand.
+    expect(letterOf(26)).toBe('')
   })
 })

@@ -1,5 +1,5 @@
 /**
- * What a keystroke asks for while a person is answering cards.
+ * What a keystroke asks for, on each screen it may be pressed at.
  *
  * Apart from the template because what a key means is a rule, and a rule inside
  * a component can only be exercised by pressing a key at a screen.
@@ -7,8 +7,12 @@
 import { said } from './core'
 import type { Said } from './core'
 
-/** What a keystroke asks for, and nothing when it asks for nothing. */
-export type Asks = { does: 'show' } | { does: 'takeBack' } | { does: 'leave' } | { does: 'answer'; how: Said }
+/** What a keystroke asks for in a sitting, and nothing when it asks nothing. */
+export type Asks =
+  | { does: 'show' }
+  | { does: 'takeBack' }
+  | { does: 'leave' }
+  | { does: 'answer'; how: Said }
 
 /** What the window is showing when the key is pressed. */
 export interface Showing {
@@ -27,7 +31,7 @@ export interface Showing {
  * a button reached with the keyboard is pressed with the keyboard.
  */
 export function asks(press: KeyboardEvent, showing: Showing): Asks | null {
-  if (press.repeat || press.altKey || press.ctrlKey || press.metaKey) return null
+  if (spoken(press)) return null
   if (press.key === 'Escape') return { does: 'leave' }
   if (press.key === 'u' || press.key === 'U') return { does: 'takeBack' }
   if (press.key === ' ' && !showing.shown) return { does: 'show' }
@@ -42,3 +46,44 @@ export function asks(press: KeyboardEvent, showing: Showing): Asks | null {
 
 /** Whether the window swallows the key, rather than leaving it to the page. */
 export const swallows = (asked: Asks | null): boolean => asked?.does === 'show'
+
+/** What a keystroke asks for while a person is choosing what to sit down to. */
+export type Picks =
+  | { does: 'all' }
+  | { does: 'deck'; at: number }
+  | { does: 'back' }
+
+/** The letters the decks are picked by, in the order they are listed. */
+export const LETTERS = 'abcdefghijklmnopqrstuvwxyz'
+
+/**
+ * The letter one deck of a list is picked by, and nothing past the alphabet: a
+ * vault of thirty decks is a vault where the last four are picked with the
+ * hand.
+ */
+export const letterOf = (at: number): string => LETTERS[at] ?? ''
+
+/**
+ * The keys the decks are chosen with: enter sits down to the whole vault, a
+ * letter to the deck standing at it, and escape goes back to the vaults.
+ *
+ * The whole vault is the daily act, so it is the key under the hand. A deck is
+ * a letter because a person reads down the list and presses what they see.
+ */
+export function picks(press: KeyboardEvent, decks: number): Picks | null {
+  if (spoken(press)) return null
+  if (press.key === 'Escape') return { does: 'back' }
+  if (press.key === 'Enter' || press.key === ' ') return { does: 'all' }
+
+  if (press.key.length !== 1) return null
+  const at = LETTERS.indexOf(press.key.toLowerCase())
+  if (at >= 0 && at < decks) return { does: 'deck', at }
+  return null
+}
+
+/**
+ * A key held down repeats, and a key pressed with a modifier is the machine's
+ * own shortcut. Neither is a person asking for anything here.
+ */
+const spoken = (press: KeyboardEvent): boolean =>
+  press.repeat || press.altKey || press.ctrlKey || press.metaKey
