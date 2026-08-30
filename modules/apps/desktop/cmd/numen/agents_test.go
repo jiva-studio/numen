@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
@@ -153,21 +154,21 @@ func listens(addr string) bool {
 
 // announced is what an agent would be configured from, and whether the file is
 // there at all.
-func announced(t *testing.T, cfg container.Config) (announcement, bool) {
+func announced(t *testing.T, cfg container.Config) (agents.Announcement, bool) {
 	t.Helper()
 
-	path, err := announcementPath(cfg)
+	path, err := agents.AnnouncementPath(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 	raw, err := os.ReadFile(path)
 	if errors.Is(err, fs.ErrNotExist) {
-		return announcement{}, false
+		return agents.Announcement{}, false
 	}
 	if err != nil {
 		t.Fatal(err)
 	}
-	var said announcement
+	var said agents.Announcement
 	if err := json.Unmarshal(raw, &said); err != nil {
 		t.Fatal(err)
 	}
@@ -178,7 +179,7 @@ func announced(t *testing.T, cfg container.Config) (announcement, bool) {
 func minted(t *testing.T, cfg container.Config) bool {
 	t.Helper()
 
-	path, err := tokenPath(cfg)
+	path, err := agents.TokenPath(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
