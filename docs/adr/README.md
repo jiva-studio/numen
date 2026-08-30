@@ -63,6 +63,7 @@ The numbers are identity, not order. This list is the order.
 - [ADR-0031 — An answer is an artifact, a schedule is a cache](0031-an-answer-is-an-artifact-a-schedule-is-a-cache.md)
 - [ADR-0032 — The reviewer's agent writes only cards](0032-the-reviewers-agent-writes-only-cards.md)
 - [ADR-0033 — What the deck is joined to is read beside the card](0033-what-the-deck-is-joined-to-is-read-beside-the-card.md)
+- [ADR-0034 — A preset says how a deck is scheduled](0034-the-preset.md)
 
 ### Agents
 

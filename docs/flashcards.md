@@ -22,7 +22,7 @@ A card whose first field is empty is asked like any other. Its heading is empty,
 
 A card is owed when the day holding now reaches the day its schedule falls on. **A card owed today is owed for the whole of it**, whatever hour it falls at, because a person sits down when they sit down.
 
-A day begins four hours past midnight, and that is a setting. A person answering cards at one in the morning is finishing the day before, not starting the next, and a boundary at midnight would split one sitting in two. The hour is an hour on the clock on the wall, so the day an hour is put into or taken out of begins and ends where a person reads it.
+A day begins four hours past midnight, and that is `review.day_starts` in [Settings](settings.md). A person answering cards at one in the morning is finishing the day before, not starting the next, and a boundary at midnight would split one sitting in two. The hour is an hour on the clock on the wall, so the day an hour is put into or taken out of begins and ends where a person reads it.
 
 A card nobody has answered is owed the first time it is asked about.
 

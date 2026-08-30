@@ -40,6 +40,7 @@ var vault = map[string]string{
 type vaulted struct {
 	vault     domain.Vault
 	standings flashcards.Standings
+	presets   flashcards.Presets
 	marking   flashcards.Marking
 	kept      flashcards.Schedules
 	counted   flashcards.Counted
@@ -74,6 +75,9 @@ func opened(t *testing.T, notes map[string]string) vaulted {
 		vault: v,
 		standings: flashcards.Standings{
 			Readers: filesystem.Readers{}, Notes: db.NoteQueries(), Links: db.NoteQueries(),
+		},
+		presets: flashcards.Presets{
+			Readers: filesystem.Readers{}, Links: db.NoteQueries(),
 		},
 		marking: flashcards.Marking{
 			Readers: filesystem.Readers{}, Writers: filesystem.Writers{},

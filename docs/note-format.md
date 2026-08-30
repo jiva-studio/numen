@@ -41,8 +41,9 @@ The frontmatter is shared, not owned:
 | `title` | The name a note is shown by. Written when a note that already has a non-empty one is renamed, and when a title no filename can carry whole is given to one that has none. | ADR-0008 |
 | `id` | The identity of the note, a ULID. Written when the application creates a note or changes what is in it, never backfilled and never written by a person typing in it. A note that was moved carries the identifier it carried before. | ADR-0008, ADR-0007 |
 | `links` | Links that carry a role, and optionally a type, a label and a note. | [Links](links.md) |
-| `type` | Which of three this note is: `note`, `deck` or `stencil`. A note carrying none is a `note`. | ADR-0027 |
+| `type` | Which of four this note is: `note`, `deck`, `stencil` or `preset`. A note carrying none is a `note`. | ADR-0027, ADR-0034 |
 | `fields` | The fields a card cut by this stencil has, in the order they are asked for. Read on a stencil and nowhere else. | ADR-0027 |
+| `goal`, `by_date`, `minutes_a_day`, `new_a_day`, `reviews_a_day`, `retention`, `light_days`, `even_load` | How the decks pointing at this preset are scheduled. Read on a preset and nowhere else. | ADR-0034 |
 
 A note with no `title` is named by its filename. A heading in the prose names nothing: what a person writes in the body is the body, and typing one does not rename the note.
 

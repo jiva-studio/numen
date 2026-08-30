@@ -56,6 +56,26 @@ On, a node in the plex hangs the parts of the note it stands for under its box �
 
 `Hang the parts of a note under its node` is a command of its own in the palette, over the window. Choosing `On` or `Off` writes this field back here, and every plex the window holds is drawn again from what was written.
 
+## A day of review
+
+`review` is what a day of review is, on this person's clock. How a deck is scheduled is not here: it is in the vault, in the preset the deck points at — [Cards](cards.md).
+
+```json
+{
+  "review": {
+    "day_starts": "04:00"
+  }
+}
+```
+
+| | |
+| --- | --- |
+| `day_starts` | the hour a day of review begins at, on the clock on the wall. `04:00`, and it goes from `00:00` to `12:00`. |
+
+An answer given before that hour is written into the day before: a person answering at one in the morning is finishing the evening they sat down in, and a boundary at midnight would cut one sitting in two. The hour is an hour on the wall, so a day is read where a person reads it — [Flashcards](flashcards.md).
+
+Anything that is not an hour of the day is said, and `04:00` stands. The file is left as the person wrote it.
+
 ## What a note is called
 
 `naming` is how a note's title and the name of its file are held together.

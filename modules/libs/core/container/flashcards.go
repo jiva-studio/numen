@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
@@ -35,6 +36,21 @@ type Flashcards struct {
 // own.
 func (c Config) Answers() port.DerivedStores {
 	return filesystem.DerivedStores{Options: c.VaultOptions(), Area: filesystem.FlashcardsDir}
+}
+
+// DayStarts is how long past midnight a day of review begins, as the settings
+// hold it. A file that cannot be read begins the day where an installation
+// nobody has configured begins it.
+func (c Config) DayStarts() time.Duration {
+	path, err := c.settingsFile()
+	if err != nil {
+		return settings.DefaultStarts()
+	}
+	held, err := settings.At(path)
+	if err != nil {
+		return settings.DefaultStarts()
+	}
+	return held.DayStarts()
 }
 
 // Kept is where the working out is remembered between launches: the folder the
@@ -82,7 +98,7 @@ func (c Config) Flashcards(
 		Notes: notes, Links: links, Index: index, Now: time.Now,
 	}
 	schedules := flashcards.Schedules{Logs: logs, Kept: kept, By: history.NewFSRS()}
-	day := history.Day{Starts: history.DayStarts}
+	day := history.Day{Starts: c.DayStarts()}
 
 	counting, err := c.Counting()
 	if err != nil {
