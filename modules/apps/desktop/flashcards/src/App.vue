@@ -17,15 +17,15 @@ import '@numen/ui/styles.css'
 import Vaults from './Vaults.vue'
 import Decks from './Decks.vue'
 import Session from './Session.vue'
-import Over from './Over.vue'
+import Finished from './Finished.vue'
 import { VERSION } from './version'
 import { cards, deckName } from './core'
 import { counting } from './counting'
 import { asks, swallows } from './keying'
-import { saying } from './saying'
+import { raising } from './notices'
 import { reviewed } from './reviewed'
-import { sitting } from './sitting'
-import type { Report } from './sitting'
+import { session } from './session'
+import type { Report } from './session'
 
 /** Which of the three screens the window is on. */
 const on = ref<'vaults' | 'decks' | 'session'>('vaults')
@@ -33,9 +33,9 @@ const on = ref<'vaults' | 'decks' | 'session'>('vaults')
 /** The vault whose decks are open, and whose cards are being asked. */
 const vault = ref('')
 
-const { notices, says, failed, putAway } = saying()
+const { notices, says, failed, putAway } = raising()
 const { vaults, counting: busy, count } = counting({ cards, failed })
-const sat = sitting({ cards, failed })
+const sat = session({ cards, failed })
 const done = reviewed({ cards, failed })
 
 const chosen = computed(() => vaults.value.find((one) => one.vaultId === vault.value) ?? null)
@@ -162,7 +162,7 @@ onUnmounted(() => {
       @back="vaultsAgain"
     />
 
-    <Over v-else-if="sat.over.value" :done="sat.done.value" @leave="leave" />
+    <Finished v-else-if="sat.over.value" :done="sat.done.value" @leave="leave" />
 
     <Session
       v-else-if="sat.card.value"

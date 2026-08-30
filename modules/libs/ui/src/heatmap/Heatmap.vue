@@ -9,17 +9,18 @@
  * than the same weeks drawn larger, and a narrow one shows fewer rather than a
  * grid marooned in the middle of empty room.
  *
- * How the grid is laid out is `heatmap`, how a month is said is `naming`, and
- * what one day comes to is `Told`. This puts the three on the screen.
+ * How the grid is laid out is `heatmap`, how a day is said is `dates`, and
+ * what one day comes to is `Summary`. This puts the three on the screen.
  */
 import { computed, ref } from 'vue'
 
-import Told from './Told.vue'
+import Tooltip from '../tooltip/Tooltip.vue'
+import Summary from './Summary.vue'
 import { days, fits, marks, needs, ROWS } from './heatmap'
 import type { Day, Tally } from './heatmap'
-import { measuring } from './measuring'
-import { naming } from './naming'
-import type { Words } from './told'
+import { useWidth } from './width'
+import { monthNames } from './dates'
+import type { Words } from './words'
 
 const props = withDefaults(
   defineProps<{
@@ -40,7 +41,7 @@ const props = withDefaults(
 )
 
 const held = ref<HTMLElement | null>(null)
-const room = measuring(held)
+const room = useWidth(held)
 
 const laid = computed(() =>
   fits({
@@ -60,7 +61,7 @@ const step = computed(() => laid.value.cell + laid.value.gap)
  * carrying a year is about twice that.
  */
 const said = computed(() =>
-  naming(
+  monthNames(
     marks(shown.value, Math.ceil(30 / step.value), Math.ceil(62 / step.value)),
   ),
 )
@@ -121,7 +122,9 @@ const reaches = (day: Day, press: MouseEvent) => {
       />
     </svg>
 
-    <Told v-if="pointed" :day="pointed.day" :at="pointed.at" :words="words" />
+    <Tooltip v-if="pointed" :at="pointed.at">
+      <Summary :day="pointed.day" :words="words" />
+    </Tooltip>
   </div>
 </template>
 

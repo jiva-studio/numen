@@ -1,19 +1,17 @@
 <script setup lang="ts">
 /**
- * What one day of the grid came to, told where a person is pointing at it.
+ * What one day of the grid came to.
  *
  * It holds nothing and decides nothing: the day is handed to it, and where it
- * stands is where the grid says.
+ * stands is the tooltip's business.
  */
 import { computed } from 'vue'
 
 import type { Day } from './heatmap'
-import type { Words } from './told'
+import type { Words } from './words'
 
 const props = defineProps<{
   day: Day
-  /** Where on the page it stands, in pixels from the top left of the window. */
-  at: { x: number; y: number }
   /** What each line of it is called, in the person's own language. */
   words: Words
 }>()
@@ -40,54 +38,43 @@ const came = computed(() => {
 </script>
 
 <template>
-  <aside class="told" :style="{ insetInlineStart: `${at.x}px`, insetBlockStart: `${at.y}px` }">
-    <p class="told__day">{{ words.names(day.day) }}</p>
+  <div class="summary">
+    <p class="summary__day">{{ words.names(day.day) }}</p>
 
-    <p v-if="day.ahead" class="told__count">
+    <p v-if="day.ahead" class="summary__count">
       {{ day.did > 0 ? `${day.did} ${words.toCome}` : words.nothing }}
     </p>
     <template v-else>
-      <p class="told__count">
+      <p class="summary__count">
         {{ day.did > 0 ? `${day.did} ${words.answered}` : words.nothing }}
       </p>
-      <ul v-if="four.length" class="told__four">
+      <ul v-if="four.length" class="summary__four">
         <li v-for="one in four" :key="one.tone" :data-tone="one.tone">
-          <span class="told__said">{{ one.says }}</span>
-          <span class="told__how-many">{{ one.count }}</span>
+          <span class="summary__said">{{ one.says }}</span>
+          <span class="summary__how-many">{{ one.count }}</span>
         </li>
       </ul>
-      <p v-if="came" class="told__came">{{ came }} {{ words.recalled }}</p>
+      <p v-if="came" class="summary__came">{{ came }} {{ words.recalled }}</p>
     </template>
-  </aside>
+  </div>
 </template>
 
 <style scoped>
-/* It stands over whatever it is pointing at, out of the way of the pointer. */
-.told {
-  position: fixed;
-  z-index: 1;
+.summary {
   min-inline-size: 8rem;
-  padding: var(--numen-inset);
-  border: 1px solid var(--numen-node-border);
-  border-radius: var(--numen-radius);
-  background: var(--numen-node-bg);
-  color: var(--numen-node-fg);
-  box-shadow: var(--numen-shadow-raised, 0 2px 8px rgb(0 0 0 / 25%));
-  font-size: var(--numen-text-1);
-  pointer-events: none;
 }
 
-.told__day {
+.summary__day {
   margin: 0;
   font-weight: 600;
 }
 
-.told__count {
+.summary__count {
   margin: 0;
   color: var(--numen-hushed);
 }
 
-.told__four {
+.summary__four {
   display: flex;
   margin: var(--numen-inset) 0 0;
   padding: 0;
@@ -96,7 +83,7 @@ const came = computed(() => {
   list-style: none;
 }
 
-.told__four li {
+.summary__four li {
   display: flex;
   justify-content: space-between;
   gap: var(--numen-inset);
@@ -104,19 +91,19 @@ const came = computed(() => {
 
 /* The word for each answer is drawn in what that answer means: a card that did
    not come back is not the same news as one that came back easily. */
-.told__four li[data-tone='again'] .told__said {
+.summary__four li[data-tone='again'] .summary__said {
   color: var(--numen-alarm-fg);
 }
 
-.told__four li[data-tone='hard'] .told__said {
+.summary__four li[data-tone='hard'] .summary__said {
   color: var(--numen-caution-fg);
 }
 
-.told__how-many {
+.summary__how-many {
   font-variant-numeric: tabular-nums;
 }
 
-.told__came {
+.summary__came {
   margin: var(--numen-inset) 0 0;
   color: var(--numen-hushed);
 }

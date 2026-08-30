@@ -1,5 +1,5 @@
 /**
- * How much room something has, measured and kept measured.
+ * How wide something is, measured and kept measured.
  *
  * Apart from the drawing because a grid laid out to the room it has needs the
  * room as a number, and where that number comes from is not the grid's concern.
@@ -11,7 +11,7 @@ import type { Ref } from 'vue'
  * The width of what the ref holds, measured when it is drawn and again whenever
  * it changes. A machine with no way to watch for that measures once.
  */
-export function measuring(held: Ref<HTMLElement | null>): Ref<number> {
+export function useWidth(held: Ref<HTMLElement | null>): Ref<number> {
   const room = ref(0)
   let watching: ResizeObserver | null = null
 

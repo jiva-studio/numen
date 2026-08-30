@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { saying } from './saying'
+import { raising } from './notices'
 
 describe('what the window has to say', () => {
   it('names each thing once, so putting one away leaves the rest', () => {
-    const one = saying()
+    const one = raising()
     one.says('the first', 'caution')
     one.says('the second', 'caution')
 
@@ -18,7 +18,7 @@ describe('what the window has to say', () => {
   })
 
   it('says trouble in the person’s own words, and stands until they put it away', () => {
-    const one = saying()
+    const one = raising()
     one.failed(new Error('the vault could not be read'))
 
     const said = one.notices.value[0]!
@@ -28,7 +28,7 @@ describe('what the window has to say', () => {
   })
 
   it('puts away nothing when the name is not one it holds', () => {
-    const one = saying()
+    const one = raising()
     one.says('the first', 'caution')
     one.putAway('nothing')
 

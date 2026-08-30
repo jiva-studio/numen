@@ -8,7 +8,7 @@
 import { computed } from 'vue'
 import { Button, Owed } from '@numen/ui'
 import type { HeatmapTally } from '@numen/ui'
-import Done from './Done.vue'
+import Progress from './Progress.vue'
 import { deckName } from './core'
 import type { Owing } from './core'
 
@@ -33,7 +33,7 @@ const owed = computed(() => props.vault.due + props.vault.new)
   <section class="decks">
     <h1 class="decks__title">{{ vault.name }}</h1>
 
-    <Done :days="days" :due="due" />
+    <Progress :days="days" :due="due" />
 
     <p v-if="!vault.decks.length" class="decks__saying">This vault holds no deck.</p>
 

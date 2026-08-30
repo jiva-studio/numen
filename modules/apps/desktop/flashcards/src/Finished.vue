@@ -13,15 +13,15 @@ defineEmits<{ (event: 'leave'): void }>()
 </script>
 
 <template>
-  <section class="over">
-    <h1 class="over__said">Nothing left today.</h1>
-    <p class="over__count">{{ done }} answered.</p>
+  <section class="finished">
+    <h1 class="finished__said">Nothing left today.</h1>
+    <p class="finished__count">{{ done }} answered.</p>
     <Button variant="outline" @click="$emit('leave')">Back to the decks</Button>
   </section>
 </template>
 
 <style scoped>
-.over {
+.finished {
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -30,13 +30,13 @@ defineEmits<{ (event: 'leave'): void }>()
   gap: var(--numen-inset);
 }
 
-.over__said {
+.finished__said {
   margin: 0;
   font-size: var(--numen-display-size);
   font-weight: 600;
 }
 
-.over__count {
+.finished__count {
   margin: 0;
   color: var(--numen-hushed);
 }

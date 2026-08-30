@@ -11,7 +11,7 @@ import { expect } from 'storybook/test'
 import Heatmap from './Heatmap.vue'
 import { names, ROWS } from './heatmap'
 import type { Tally } from './heatmap'
-import type { Words } from './told'
+import type { Words } from './words'
 
 const meta = {
   title: 'Generic/Heatmap',

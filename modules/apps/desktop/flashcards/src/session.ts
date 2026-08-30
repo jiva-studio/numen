@@ -59,7 +59,7 @@ export interface Sits {
   now?(): number
 }
 
-export function sitting(deps: Sits) {
+export function session(deps: Sits) {
   const now = deps.now ?? (() => Date.now())
 
   const vault = ref('')
