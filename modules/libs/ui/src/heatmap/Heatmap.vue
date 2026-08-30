@@ -9,17 +9,16 @@
  * than the same weeks drawn larger, and a narrow one shows fewer rather than a
  * grid marooned in the middle of empty room.
  *
- * How the grid is laid out is `heatmap`, how a day is said is `dates`, and
- * what one day comes to is `Summary`. This puts the three on the screen.
+ * How the grid is laid out is `heatmap` and what one day comes to is `Summary`.
+ * This puts the two on the screen.
  */
 import { computed, ref } from 'vue'
 
 import Tooltip from '../tooltip/Tooltip.vue'
 import Summary from './Summary.vue'
-import { days, fits, marks, ROWS } from './heatmap'
+import { days, fits, ROWS } from './heatmap'
 import type { Day, Tally } from './heatmap'
 import { useWidth } from './width'
-import { monthNames } from './dates'
 import type { Words } from './words'
 
 const props = withDefaults(
@@ -50,22 +49,10 @@ const shown = computed(() => days(laid.value.columns, props.now, props.did, prop
 
 const step = computed(() => laid.value.cell + laid.value.gap)
 
-/**
- * The months, spaced so that two of them do not run into one another. A label
- * is about as wide as three characters of the text it is set in, and one
- * carrying a year is about twice that.
- */
-const said = computed(() =>
-  monthNames(
-    marks(shown.value, Math.ceil(30 / step.value), Math.ceil(62 / step.value)),
-  ),
-)
-/** The room the line of months takes over the grid. */
-const over = computed(() => Math.round(props.cell * 1.4))
-const height = computed(() => over.value + ROWS * step.value - laid.value.gap)
+const height = computed(() => ROWS * step.value - laid.value.gap)
 
 const xOf = (at: number) => Math.floor(at / ROWS) * step.value
-const yOf = (at: number) => over.value + (at % ROWS) * step.value
+const yOf = (at: number) => (at % ROWS) * step.value
 
 /** The day a person is pointing at, and where on the page they are pointing. */
 const pointed = ref<{ day: Day; at: { x: number; y: number } } | null>(null)
@@ -87,18 +74,6 @@ const reaches = (day: Day, press: MouseEvent) => {
       role="img"
       aria-label="What was answered on each day"
     >
-      <!-- Where a person is in the year, said over the column each month opens.
-           A grid of squares says nothing about when without it. -->
-      <text
-        v-for="one in said"
-        :key="one.column"
-        class="heatmap__mark"
-        :x="one.column * step"
-        :y="over * 0.7"
-      >
-        {{ one.says }}
-      </text>
-
       <rect
         v-for="(day, at) in shown"
         :key="day.day"
@@ -178,13 +153,6 @@ const reaches = (day: Day, press: MouseEvent) => {
 .heatmap__day[data-ahead][data-weight='3'],
 .heatmap__day[data-ahead][data-weight='4'] {
   stroke-width: 1.5;
-}
-
-/* Where a person is in the year, said quietly over the grid. */
-.heatmap__mark {
-  fill: var(--numen-hushed);
-  font-family: var(--numen-font-sans);
-  font-size: var(--numen-text-1);
 }
 
 /* Today is where a person's eye goes first, so it is ringed whatever it holds. */

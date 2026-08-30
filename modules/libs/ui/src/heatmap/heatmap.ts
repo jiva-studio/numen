@@ -193,50 +193,6 @@ export function weighs(did: number): Day['weight'] {
   return 4
 }
 
-/**
- * One label over the grid: the day the column opens, and whether the year
- * changed with the month. What it is called is the drawing's, because a month
- * is called something different to everyone reading it.
- */
-export interface Mark {
-  /** The first day of the column, as the year, the month and the day. */
-  readonly day: string
-  readonly column: number
-  /** Whether this column opens a year as well as a month. */
-  readonly year: boolean
-}
-
-/**
- * Where the months change: the column each one opens, said once.
- *
- * A column too close to the one before it is left unsaid, because two labels
- * over neighbouring columns run into one another.
- */
-export function marks(shown: readonly Day[], apart = 3, wider = apart * 2): Mark[] {
-  const out: Mark[] = []
-  let was = ''
-  let held = ''
-  // The first column a label may stand at without running into the last one.
-  // A label carrying a year is the wider of the two and asks for more room.
-  let free = 0
-
-  for (let column = 0; column * ROWS < shown.length; column += 1) {
-    const day = shown[column * ROWS]
-    if (!day) break
-    const [year, month] = day.day.split('-')
-    if (!year || !month) continue
-    if (month === was) continue
-    was = month
-    if (column < free) continue
-
-    const turned = year !== held
-    held = year
-    free = column + (turned ? wider : apart)
-    out.push({ day: day.day, column, year: turned })
-  }
-  return out
-}
-
 /** A day as it is written down: the year, the month and the day. */
 export function names(at: Date): string {
   const month = String(at.getMonth() + 1).padStart(2, '0')
