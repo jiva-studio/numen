@@ -16,7 +16,7 @@ const card: Asked = {
   face: 'Say it',
   heading: 'Leaf mould',
   front: '<p>Leaf mould</p>',
-  back: '<p>Compost made of fallen leaves alone</p>',
+  back: '<p>Compost made of fallen leaves alone. <a href="notes/Leaf mould.md">more</a></p>',
   seen: true,
   ahead: null,
 }
@@ -31,7 +31,7 @@ const sitting = (more: { at?: Where; shown?: boolean } = {}) =>
       takenBack: false,
       at: more.at ?? 'here',
     },
-    slots: { panel: '<p>the panel</p>' },
+    slots: { panel: '<p>the panel</p>', reading: '<p>the reading</p>' },
   })
 
 /** The way into the panel, wherever it stands. */
@@ -54,6 +54,21 @@ describe('the way into the panel', () => {
 
     await wayBack(one)[0]?.trigger('click')
     expect(one.emitted('read')).toEqual([['']])
+  })
+
+  // The reading is on one side of the card and the conversation on the other,
+  // and the strip is scrolled from one to the next in that order.
+  it('stands the reading before the card and the conversation after it', () => {
+    const one = sitting()
+    expect(one.find('.beside__before').text()).toContain('the reading')
+    expect(one.find('.beside__other').text()).toContain('the panel')
+  })
+
+  // A link inside a card is the other way in, and what it names goes with it.
+  it('carries a link pressed in the card out to the window', async () => {
+    const one = sitting({ shown: true })
+    await one.find('.card a').trigger('click')
+    expect(one.emitted('read')).toEqual([['notes/Leaf mould.md']])
   })
 
   it('asks about the card when it is pressed', async () => {

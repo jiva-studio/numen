@@ -227,6 +227,34 @@ describe('a wheel on the strip', () => {
     expect(window_.scrollLeft).toBe(220)
   })
 
+  // A panel the window refused to open is one the strip must not be left
+  // standing on, and a wheel is settled the same way a hand is.
+  it('is taken back off a stop the window did not take', async () => {
+    vi.useFakeTimers()
+    const { one, window_ } = strip()
+
+    await ran(window_, 380)
+    expect(one.emitted('update:at')).toEqual([['after']])
+
+    await waits(200)
+    expect(window_.scrollLeft).toBe(220)
+  })
+
+  // A press that moved nothing sends the strip nowhere. A move that moves
+  // nothing never arrives, and would leave the strip deaf until its time was up.
+  it('is heard after a press that moved the strip nowhere', async () => {
+    vi.useFakeTimers()
+    const { one, window_ } = strip()
+
+    window_.dispatchEvent(hand('pointerdown', 500))
+    window_.dispatchEvent(hand('pointerup', 500))
+    await nextTick()
+    await nextTick()
+
+    await ran(window_, 380)
+    expect(one.emitted('update:at')).toEqual([['after']])
+  })
+
   // A hand that turns the wheel during a move would otherwise leave the strip
   // standing between two of the three, with nothing left to pull it to either.
   it('is settled when it is turned while the strip is being taken somewhere', async () => {
