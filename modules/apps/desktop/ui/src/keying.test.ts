@@ -48,10 +48,11 @@ describe('the command a letter asks for', () => {
     expect(commandFor('c', true)).toBe('child')
     expect(commandFor('a', true)).toBe('agent')
     expect(commandFor('w', true)).toBe('close')
+    expect(commandFor('n', true)).toBe('newVault')
   })
 
   it('is nothing when a letter is held with the wrong half of the chord', () => {
-    expect(commandFor('n', true)).toBe('')
+    expect(commandFor('g', true)).toBe('')
     expect(commandFor('c', false)).toBe('')
     expect(commandFor('w', false)).toBe('')
   })

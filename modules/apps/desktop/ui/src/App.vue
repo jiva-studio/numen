@@ -34,7 +34,7 @@ import {
   type Shown,
   type Where,
 } from './commanding'
-import { chorded, commandFor } from './keying'
+import { chorded, commandFor, keysOf } from './keying'
 import { iconFor, iconOfKind } from './icons'
 import { themes } from './theme'
 import { APPEARANCE, DRESSING, INTERFACE_SCALE, MODE, TEXT_SCALE, wearing } from './wearing'
@@ -430,6 +430,7 @@ const adding = computed(() => {
     text: words.newVault,
     detail: words.newVaultDetail,
     ...(icon ? { icon } : {}),
+    ...keysOf('newVault', navigator.userAgent),
   }
 })
 

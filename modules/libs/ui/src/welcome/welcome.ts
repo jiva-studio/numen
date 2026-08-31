@@ -32,4 +32,6 @@ export interface Offer {
   readonly text: string
   readonly detail?: string
   readonly icon?: Component
+  /** The keystroke that reaches it, where one does. */
+  readonly keys?: PaletteKeys
 }

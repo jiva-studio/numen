@@ -32,6 +32,7 @@ export interface Chord {
  */
 export const CHORDS: readonly Chord[] = [
   { command: 'note', letter: 'n', shift: false },
+  { command: 'newVault', letter: 'n', shift: true },
   { command: 'goto', letter: 'g', shift: false },
   { command: 'travel', letter: 'p', shift: true },
   { command: 'plex', letter: 'x', shift: true },
