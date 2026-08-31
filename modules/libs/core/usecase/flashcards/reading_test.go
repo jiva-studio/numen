@@ -60,6 +60,55 @@ func (s talliedStore) Read(ctx context.Context, name string) ([]byte, error) {
 	return s.DerivedStore.Read(ctx, name)
 }
 
+// lookups is a vault's links with a tally of the notes whose links were looked
+// up, by path.
+type lookups struct {
+	port.LinkQueries
+	looks map[string]int
+}
+
+func (a lookups) Links(ctx context.Context, vaultID, from string) ([]domain.ResolvedLink, error) {
+	a.looks[from]++
+	return a.LinkQueries.Links(ctx, vaultID, from)
+}
+
+// Counting a vault reads it once: every deck is opened once and asked once
+// which preset schedules it.
+func TestCountingAVaultReadsItsDecksOnce(t *testing.T) {
+	s := opened(t, map[string]string{
+		"Term.md":        term,
+		"Sanskrit.md":    preset("new_a_day: 8\nreviews_a_day: 45\n"),
+		"decks/One.md":   deckOf("Sanskrit", 2, 0),
+		"decks/Two.md":   deckOf("Sanskrit", 2, 100),
+		"decks/Three.md": deckOf("", 2, 200),
+	})
+
+	reads := map[string]int{}
+	standings := s.standings
+	standings.Readers = counting{VaultReaders: standings.Readers, reads: reads}
+
+	looks := map[string]int{}
+	presets := s.presets
+	presets.Links = lookups{LinkQueries: presets.Links, looks: looks}
+
+	owed := s.owedAt(today, func() time.Time { return saturday })
+	owed.Standings = standings
+	owed.Presets = presets
+
+	if _, err := owed.Execute(t.Context(), s.vault); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, path := range []string{"decks/One.md", "decks/Two.md", "decks/Three.md"} {
+		if reads[path] != 1 {
+			t.Errorf("%s was read %d times", path, reads[path])
+		}
+		if looks[path] != 1 {
+			t.Errorf("%s was asked for its preset %d times", path, looks[path])
+		}
+	}
+}
+
 // A preset note is opened once however many decks name it.
 func TestAPresetIsOpenedOncePerCall(t *testing.T) {
 	s := opened(t, map[string]string{

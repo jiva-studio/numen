@@ -87,6 +87,7 @@ func CurveOf(c flashcards.Curve) *v1.Curve {
 		Now:       markOf(c.Now),
 		Suggested: markOf(c.Suggested),
 		Decks:     int32(c.Decks),
+		Cards:     int32(c.Cards),
 	}
 	for _, one := range c.At {
 		out.At = append(out.At, &v1.Point{

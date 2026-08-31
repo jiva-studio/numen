@@ -225,13 +225,16 @@ const reading = (group: string) => elsewhere.filter((one) => one.group === group
 }
 
 .settings__where {
-  margin: 0 0 var(--settings-apart);
+  max-inline-size: var(--settings-measure);
+  margin: 0 auto var(--settings-apart);
   color: var(--numen-hushed);
 }
 
+/* The groups are read in one column, centred in whatever room the pane has. */
 .settings__group {
   max-inline-size: var(--settings-measure);
   margin-block-end: var(--settings-apart);
+  margin-inline: auto;
 }
 
 /* A label over the rows it names, set as this window sets its labels. */

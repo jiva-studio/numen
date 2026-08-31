@@ -60,6 +60,32 @@ describe('a vault on the list', () => {
   })
 })
 
+describe('the room the list will fill', () => {
+  const drawEmpty = (vaults: readonly Held[]) =>
+    mount(Welcome, {
+      props: { vaults, heading: 'Vaults' },
+      slots: { waiting: '<p class="counting">Counting</p>' },
+    })
+
+  it('holds what the window says while it has no rows to give', () => {
+    const screen = drawEmpty([])
+
+    expect(screen.find('.welcome__waiting').text()).toBe('Counting')
+    expect(screen.find('.welcome__list').exists()).toBe(false)
+  })
+
+  it('holds the rows once the window has them', () => {
+    const screen = drawEmpty([vault('physics')])
+
+    expect(screen.find('.welcome__waiting').exists()).toBe(false)
+    expect(screen.findAll('.welcome__row--vault')).toHaveLength(1)
+  })
+
+  it('stands empty where the window says nothing about it', () => {
+    expect(draw([]).find('.welcome__waiting').exists()).toBe(false)
+  })
+})
+
 describe('what the screen offers below the list', () => {
   const drawWith = (one: Offer) =>
     mount(Welcome, { props: { vaults: [vault('physics')], heading: 'Vaults', offer: one } })

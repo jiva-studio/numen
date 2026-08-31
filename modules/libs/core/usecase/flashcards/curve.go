@@ -40,6 +40,9 @@ type Curve struct {
 	// Decks is how many decks are scheduled by this preset. Zero is a preset no
 	// deck points at, and every place of the curve stands at zero with it.
 	Decks int
+	// Cards is how many card faces stand in those decks. Zero is a preset with
+	// nothing to schedule, and every place of the curve stands at zero with it.
+	Cards int
 }
 
 // Point is what a preset comes to at one place of the grid.
@@ -148,13 +151,11 @@ func (u Curves) Execute(
 		at[one.CardFace] = s
 	}
 
-	// How many decks this preset schedules, which is what says whether it
-	// schedules anybody at all.
-	mine := 0
-	for _, points := range decks {
-		if points {
-			mine++
-		}
+	// How many decks this preset schedules, counted over every deck the vault
+	// holds: a deck of no cards points at its preset like any other.
+	mine, err := u.pointing(ctx, v, reading, path, decks)
+	if err != nil {
+		return Curve{}, err
 	}
 
 	cost, costed := history.CostedUnder(u.Schedules.By, held.Answers, under)[path]
@@ -178,6 +179,43 @@ func (u Curves) Execute(
 		return Curve{}, err
 	}
 	out.Decks = mine
+	out.Cards = len(under)
+	return out, nil
+}
+
+// pointing is how many of the vault's decks name the preset at path. Asked is
+// what has already been worked out from the cards standing.
+func (u Curves) pointing(
+	ctx context.Context, v domain.Vault, reading *Reading, path string, asked map[string]bool,
+) (int, error) {
+	if u.Standings.Notes == nil {
+		out := 0
+		for _, points := range asked {
+			if points {
+				out++
+			}
+		}
+		return out, nil
+	}
+
+	decks, err := u.Standings.Notes.OfType(ctx, v.ID, domain.TypeDeck)
+	if err != nil {
+		return 0, err
+	}
+	out := 0
+	for _, deck := range decks {
+		points, held := asked[deck]
+		if !held {
+			p, err := reading.Of(ctx, v, deck)
+			if err != nil {
+				return 0, err
+			}
+			points = p.Path == path
+		}
+		if points {
+			out++
+		}
+	}
 	return out, nil
 }
 

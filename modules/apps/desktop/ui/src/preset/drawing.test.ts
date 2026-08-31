@@ -35,14 +35,16 @@ const point = (over: Partial<Point> = {}): Point => ({
   ...over,
 })
 
-const curve = (retained: readonly number[], enough: readonly boolean[] = []): Curve => ({
+/** A curve of a goal of minutes, which is read in the cards a day answers. */
+const curve = (cards: readonly number[], enough: readonly boolean[] = []): Curve => ({
   goal: 'minutes',
-  grid: retained.map((_, at) => at * 10),
+  grid: cards.map((_, at) => at * 10),
   days: [],
-  at: retained.map((one, at) => point({ retained: one, enough: enough[at] ?? true })),
+  at: cards.map((one, at) => point({ reviews: one, enough: enough[at] ?? true })),
   now: NOWHERE,
   suggested: NOWHERE,
   decks: 1,
+  cards: 400,
   honest: true,
 })
 

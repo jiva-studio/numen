@@ -71,13 +71,16 @@ func (u Presets) Of(ctx context.Context, v domain.Vault, deck string) (Preset, e
 }
 
 // Reading is a run of reads over one vault, holding each preset note it opens
-// for as long as the run lasts.
+// and each deck it answers for as long as the run lasts.
 //
 // It is one call's, and a caller keeps it no longer: a preset read from it is
 // the file as it stood when the run began.
 type Reading struct {
 	Presets
 	held map[string]Preset
+	// scheduling is the preset each deck asked about is scheduled by, so a deck
+	// is asked once however many times the run comes round to it.
+	scheduling map[string]Preset
 	// said is what parsing turned up against each file, read once for the run
 	// and only where a deck names no preset.
 	said map[string][]string
@@ -85,11 +88,28 @@ type Reading struct {
 
 // Reading opens a run of reads sharing the notes they open.
 func (u Presets) Reading() *Reading {
-	return &Reading{Presets: u, held: make(map[string]Preset)}
+	return &Reading{
+		Presets:    u,
+		held:       make(map[string]Preset),
+		scheduling: make(map[string]Preset),
+	}
 }
 
 // Of is the preset the deck at path is scheduled by.
 func (r *Reading) Of(ctx context.Context, v domain.Vault, deck string) (Preset, error) {
+	if held, standing := r.scheduling[deck]; standing {
+		return held, nil
+	}
+	out, err := r.scheduled(ctx, v, deck)
+	if err != nil {
+		return Preset{}, err
+	}
+	r.scheduling[deck] = out
+	return out, nil
+}
+
+// scheduled works out which preset schedules the deck at path.
+func (r *Reading) scheduled(ctx context.Context, v domain.Vault, deck string) (Preset, error) {
 	if r.Links == nil {
 		return Default(), nil
 	}

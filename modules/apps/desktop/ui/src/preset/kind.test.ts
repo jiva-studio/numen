@@ -36,6 +36,7 @@ const curve: Curve = {
   now: { at: 2, value: 20, day: '' },
   suggested: { at: 3, value: 30, day: '' },
   decks: 1,
+  cards: 400,
   honest: true,
 }
 
@@ -49,12 +50,18 @@ const dated: Curve = {
 }
 
 /** A vault answering with one preset and that curve, and what was written into it. */
+/**
+ * A file whose values are the ones its goal produces where it stands. It is
+ * the file of a preset following its goal, so nothing in it is marked.
+ */
+const AGREEING: Settings = { ...DEFAULTS, minutesADay: 20, reviewsADay: 80, retention: 0.88 }
+
 const opened = async (settings: Partial<Settings> = {}, answers: Curve = curve) => {
   const written: Settings[] = []
   const asked: Goal[] = []
   const core: Presets = {
     read: async (path) => ({
-      preset: { path, title: 'Steady', settings: { ...DEFAULTS, ...settings }, problems: [] },
+      preset: { path, title: 'Steady', settings: { ...AGREEING, ...settings }, problems: [] },
       refusal: null,
       at: 'one',
     }),
@@ -178,5 +185,44 @@ describe('a field the goal fills in itself', () => {
     held.follows('reviewsADay')
     expect(held.byHand().has('reviewsADay')).toBe(false)
     expect(held.settings().reviewsADay).toBe(80)
+  })
+})
+
+// Nothing is remembered: the file carries the goal and the values, and a field
+// is off the goal exactly while the two disagree.
+describe('which fields are off the goal', () => {
+  it('is none of them, for a file whose values are the ones its goal produces', async () => {
+    const { held } = await opened()
+    expect([...held.byHand()]).toStrictEqual([])
+  })
+
+  it('is the rows a file disagrees with its goal on, and no others', async () => {
+    const { held } = await opened({ reviewsADay: 12 })
+    expect([...held.byHand()]).toStrictEqual(['reviewsADay'])
+  })
+
+  it('is a field the goal does not fill in itself under no circumstance', async () => {
+    const { held } = await opened({ newADay: 4, evenLoad: false })
+    expect([...held.byHand()]).toStrictEqual([])
+  })
+
+  it('is what it was after a write, and after the file is read again', async () => {
+    const { held, changed } = await opened({ reviewsADay: 12 })
+    held.settles()
+    await Promise.resolve()
+    expect([...held.byHand()]).toStrictEqual(['reviewsADay'])
+    changed(['Steady.md'])
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+    expect([...held.byHand()]).toStrictEqual(['reviewsADay'])
+  })
+
+  it('loses the row handed back, and the goal’s own value is written for it', async () => {
+    const { held, written } = await opened({ reviewsADay: 12 })
+    held.follows('reviewsADay')
+    await Promise.resolve()
+    expect([...held.byHand()]).toStrictEqual([])
+    expect(written.at(-1)?.reviewsADay).toBe(80)
   })
 })

@@ -354,7 +354,10 @@ type Curve struct {
 	Suggested *Mark `protobuf:"bytes,6,opt,name=suggested,proto3" json:"suggested,omitempty"`
 	// How many decks are scheduled by this preset. Zero is a preset no deck
 	// points at, and every place of the curve stands at zero with it.
-	Decks         int32 `protobuf:"varint,7,opt,name=decks,proto3" json:"decks,omitempty"`
+	Decks int32 `protobuf:"varint,7,opt,name=decks,proto3" json:"decks,omitempty"`
+	// How many card faces stand in those decks. Zero is a preset with nothing to
+	// schedule, and every place of the curve stands at zero with it.
+	Cards         int32 `protobuf:"varint,8,opt,name=cards,proto3" json:"cards,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -434,6 +437,13 @@ func (x *Curve) GetSuggested() *Mark {
 func (x *Curve) GetDecks() int32 {
 	if x != nil {
 		return x.Decks
+	}
+	return 0
+}
+
+func (x *Curve) GetCards() int32 {
+	if x != nil {
+		return x.Cards
 	}
 	return 0
 }
@@ -1072,7 +1082,7 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12.\n" +
 	"\bsettings\x18\x03 \x01(\v2\x12.numen.v1.SettingsR\bsettings\x12\x1a\n" +
-	"\bproblems\x18\x04 \x03(\tR\bproblems\"\xda\x01\n" +
+	"\bproblems\x18\x04 \x03(\tR\bproblems\"\xf0\x01\n" +
 	"\x05Curve\x12\"\n" +
 	"\x04goal\x18\x01 \x01(\x0e2\x0e.numen.v1.GoalR\x04goal\x12\x12\n" +
 	"\x04grid\x18\x02 \x03(\x01R\x04grid\x12\x12\n" +
@@ -1080,7 +1090,8 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x02at\x18\x04 \x03(\v2\x0f.numen.v1.PointR\x02at\x12 \n" +
 	"\x03now\x18\x05 \x01(\v2\x0e.numen.v1.MarkR\x03now\x12,\n" +
 	"\tsuggested\x18\x06 \x01(\v2\x0e.numen.v1.MarkR\tsuggested\x12\x14\n" +
-	"\x05decks\x18\a \x01(\x05R\x05decks\"\xaf\x01\n" +
+	"\x05decks\x18\a \x01(\x05R\x05decks\x12\x14\n" +
+	"\x05cards\x18\b \x01(\x05R\x05cards\"\xaf\x01\n" +
 	"\x05Point\x12\x18\n" +
 	"\areviews\x18\x01 \x01(\x01R\areviews\x12\x18\n" +
 	"\aminutes\x18\x02 \x01(\x01R\aminutes\x12\x1a\n" +

@@ -62,7 +62,12 @@ defineEmits<{
 
       <section class="welcome__vaults">
         <h2 class="welcome__heading">{{ heading }}</h2>
-        <ul class="welcome__list">
+        <!-- The room the list will fill, while the window has no rows to give
+             it and something to say about that. -->
+        <div v-if="!vaults.length && $slots.waiting" class="welcome__waiting">
+          <slot name="waiting" />
+        </div>
+        <ul v-else class="welcome__list">
           <li v-for="(one, at) in vaults" :key="one.id">
             <button
               type="button"
@@ -244,6 +249,15 @@ defineEmits<{
   flex: none;
   color: var(--numen-edge-label);
   font-size: var(--numen-edge-label-size);
+}
+
+/* Where the rows will stand, so what is said while they are on their way is
+   said in the middle of the room they will take. */
+.welcome__waiting {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 4rem;
 }
 
 .welcome__heading {

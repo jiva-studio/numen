@@ -7,7 +7,7 @@
  * there from here.
  */
 import { computed } from 'vue'
-import { Owed, Welcome } from '@numen/ui'
+import { Owed, Waiting, Welcome } from '@numen/ui'
 import type { Held } from '@numen/ui'
 import type { Owing } from './core'
 
@@ -46,7 +46,7 @@ const waiting = computed(
   <Welcome
     name="flashcards"
     :vaults="counting ? [] : listed"
-    :heading="counting ? 'Counting…' : 'Vaults'"
+    heading="Vaults"
     :version="version"
     @opens="$emit('choose', $event)"
   >
@@ -54,5 +54,27 @@ const waiting = computed(
     <template #vault="{ vault }">
       <Owed v-if="waiting.has(vault.id)" :waiting="waiting.get(vault.id)!" bare />
     </template>
+
+    <!-- The cards of every vault are being counted, which is the one thing
+         the screen has to say until they are. -->
+    <template v-if="counting" #waiting>
+      <p class="vaults__counting" role="status">
+        <Waiting />
+        Counting the vaults
+      </p>
+    </template>
   </Welcome>
 </template>
+
+<style scoped>
+/* The screen's own quiet voice, which is what everything it says beside a row
+   is set in. */
+.vaults__counting {
+  display: flex;
+  margin: 0;
+  align-items: center;
+  gap: var(--numen-inset);
+  color: var(--numen-edge-label);
+  font-size: var(--numen-edge-label-size);
+}
+</style>

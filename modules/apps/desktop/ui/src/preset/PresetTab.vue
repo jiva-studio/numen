@@ -13,7 +13,7 @@ import Control from './Control.vue'
 import type { Held } from './kind'
 import { BOUNDS, COUNTS, GOALS } from './core'
 import type { Counts, Goal } from './core'
-import { daysUntil, fieldsUnder, idle, paused, producedBy, spent, type Field } from './curve'
+import { closed, fieldsUnder, idle, paused, producedBy, spent, type Field } from './curve'
 import { WORDS as words } from './words'
 
 const props = defineProps<{ held: Held }>()
@@ -107,15 +107,16 @@ const stopped = computed(() => {
 const sums = computed<readonly string[]>(() => {
   const one = point.value
   if (curve.value.goal !== 'date' || !one) return []
-  const days = daysUntil(new Date(), day.value)
   const lines = [
-    words.daysLeft(days, day.value),
     words.owing(one.owed),
     words.needing(one.minutes, settings.value.minutesADay),
     words.through(one.through, settings.value.minutesADay),
   ]
   return one.met ? lines : [...lines, words.unmet]
 })
+
+/** Whether a longer day buys nothing, which the card limits close it against. */
+const shut = computed(() => closed(curve.value))
 </script>
 
 <template>
@@ -169,6 +170,10 @@ const sums = computed<readonly string[]>(() => {
                 </span>
                 {{ costing }}
               </span>
+            </p>
+
+            <p v-if="shut" class="preset__shut">
+              {{ words.closed(settings.newADay, settings.reviewsADay) }}
             </p>
 
             <ul v-if="sums.length" class="preset__sums">
@@ -257,6 +262,8 @@ const sums = computed<readonly string[]>(() => {
   --preset-name: 11rem;
   --preset-value: 6rem;
   --preset-row-air: 0.5rem;
+  /* The clearance typing keeps from the ends of its box. */
+  --preset-field-inset: 0.75rem;
   display: flex;
   flex-direction: column;
   block-size: 100%;
@@ -273,13 +280,14 @@ const sums = computed<readonly string[]>(() => {
   padding: var(--numen-gutter);
 }
 
-/* The column the tab is read in, at the measure the other tabs are read at. */
+/* The column the tab is read in, centred in whatever room the pane has. */
 .preset__column {
   display: flex;
   flex-direction: column;
   gap: var(--preset-apart);
   inline-size: 100%;
   max-inline-size: var(--preset-measure);
+  margin-inline: auto;
 }
 
 .preset__goal {
@@ -334,9 +342,18 @@ const sums = computed<readonly string[]>(() => {
   text-transform: lowercase;
 }
 
+/* The arithmetic of a goal of a date, aligned with the column it stands in. */
 .preset__sums {
   margin: var(--numen-dot-gap) 0 0;
-  padding-inline-start: var(--numen-gutter);
+  padding: 0;
+  color: var(--numen-hushed);
+  line-height: var(--numen-line-height);
+  list-style: none;
+}
+
+/* A day the card limits close before its minutes run out. */
+.preset__shut {
+  margin: 0;
   color: var(--numen-hushed);
   line-height: var(--numen-line-height);
 }
@@ -383,11 +400,12 @@ const sums = computed<readonly string[]>(() => {
   inline-size: var(--preset-value);
 }
 
+/* The same box the numbers of the receipt are typed into. */
 .preset__day {
-  min-block-size: var(--numen-field-min);
-  padding: 0 var(--numen-field-padding);
+  block-size: var(--numen-action-size);
+  padding-inline: var(--preset-field-inset);
   border: var(--numen-stroke) solid var(--numen-field-border);
-  border-radius: var(--numen-radius-field);
+  border-radius: var(--numen-radius);
   background: var(--numen-field-bg);
   color: inherit;
   font: inherit;

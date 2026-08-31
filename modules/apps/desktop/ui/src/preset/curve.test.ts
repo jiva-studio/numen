@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULTS, NOWHERE, type Curve, type Point, type Settings } from './core'
 import {
   approximate,
+  closed,
   costOf,
   dayAfter,
   daysUntil,
@@ -154,6 +155,7 @@ describe('what one place of the curve produces', () => {
     now: { at: 2, value: 20, day: '' },
     suggested: NOWHERE,
     decks: 1,
+    cards: 400,
     honest: true,
   }
 
@@ -208,6 +210,33 @@ describe('what one place of the curve produces', () => {
   })
 })
 
+describe('a day a longer one buys nothing on', () => {
+  const over = (cards: readonly number[]): Curve => ({
+    goal: 'minutes',
+    grid: cards.map((_, at) => at * 10),
+    days: [],
+    at: cards.map((one) => point({ reviews: one })),
+    now: NOWHERE,
+    suggested: NOWHERE,
+    decks: 1,
+    cards: 400,
+    honest: true,
+  })
+
+  it('is a curve holding the same cards at every place, which the counts close', () => {
+    expect(closed(over([13, 13, 13]))).toBe(true)
+  })
+
+  it('is not a curve a longer day answers more cards on', () => {
+    expect(closed(over([13, 40, 90]))).toBe(false)
+  })
+
+  it('is not said of a goal read in minutes, nor of a line the window guessed', () => {
+    expect(closed({ ...over([13, 13, 13]), goal: 'retention' })).toBe(false)
+    expect(closed({ ...over([13, 13, 13]), honest: false })).toBe(false)
+  })
+})
+
 describe('a goal with nothing to work on', () => {
   const nothing: Curve = {
     goal: 'minutes',
@@ -217,6 +246,7 @@ describe('a goal with nothing to work on', () => {
     now: NOWHERE,
     suggested: NOWHERE,
     decks: 0,
+    cards: 0,
     honest: true,
   }
 
@@ -224,21 +254,22 @@ describe('a goal with nothing to work on', () => {
     expect(idle(nothing)).toBe('unpointed')
   })
 
-  it('is decks that hold no cards, where the curve carries one', () => {
+  it('is decks holding nothing between them, where they do point here', () => {
     expect(idle({ ...nothing, decks: 1 })).toBe('noCards')
-    expect(idle({ ...nothing, decks: 3 })).toBe('noCards')
+    expect(idle({ ...nothing, decks: 4 })).toBe('noCards')
+  })
+
+  // A curve of zeros is a day behind us, a range of nothing, or a question the
+  // application would not answer. None of those is an empty preset: the count
+  // of cards says that and nothing else does.
+  it('is not a preset holding cards, whatever its curve comes to', () => {
+    expect(idle({ ...nothing, decks: 4, cards: 900 })).toBe('')
+    expect(idle({ ...nothing, decks: 4, cards: 900, goal: 'date', grid: [1, 2, 3] })).toBe('')
   })
 
   it('is not the line the window guessed, which is nobody’s answer', () => {
     expect(idle({ ...nothing, honest: false })).toBe('')
-  })
-
-  it('is not a preset whose cards cost something anywhere', () => {
-    expect(idle({ ...nothing, at: [point(), point({ reviews: 40 }), point()] })).toBe('')
-  })
-
-  it('is not a preset standing on a backlog', () => {
-    expect(idle({ ...nothing, at: nothing.at.map((one) => ({ ...one, owed: 5 })) })).toBe('')
+    expect(idle({ ...nothing, decks: 4, honest: false })).toBe('')
   })
 })
 

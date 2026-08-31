@@ -138,6 +138,8 @@ export interface Curve {
   readonly suggested: Mark
   /** How many decks are scheduled by this preset. */
   readonly decks: number
+  /** How many card faces stand in those decks. */
+  readonly cards: number
   /**
    * Whether this is the application's answer. A curve the window worked out
    * for itself stands until that answer lands.
@@ -251,6 +253,7 @@ const curved = (said: CurveMessage | undefined): Curve => ({
   now: marked(said?.now),
   suggested: marked(said?.suggested),
   decks: said?.decks ?? 0,
+  cards: said?.cards ?? 0,
   honest: true,
 })
 

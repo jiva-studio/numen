@@ -140,6 +140,10 @@ message Curve {
   // How many decks are scheduled by this preset. Zero is a preset no deck
   // points at, and every place of the curve stands at zero with it.
   int32 decks = 7;
+
+  // How many card faces stand in those decks. Zero is a preset with nothing to
+  // schedule, and every place of the curve stands at zero with it.
+  int32 cards = 8;
 }
 
 // Point is what a preset comes to at one place of the grid.

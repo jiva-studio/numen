@@ -40,6 +40,7 @@ const curve = (over: Partial<Curve> = {}): Curve => ({
   now: { at: 2, value: 20, day: '' },
   suggested: { at: 3, value: 30, day: '' },
   decks: 1,
+  cards: 400,
   honest: true,
   ...over,
 })
@@ -175,8 +176,29 @@ describe('what the control stands at', () => {
     )
     expect(dated.tab.text()).toContain(words.owing(80))
     expect(dated.tab.text()).toContain(words.unmet)
+    // Four lines at most, and none of them the figure or the sentence again.
+    expect(dated.tab.findAll('.preset__sums li').length).toBeLessThanOrEqual(4)
+    expect(dated.tab.findAll('.preset__sums li').map((one) => one.text())).not.toContain(
+      words.value('date', 30, '2026-09-29'),
+    )
     // Nothing is refused: the control is there to be moved.
     expect(dated.tab.get('[role="slider"]').attributes('aria-disabled')).toBeUndefined()
+  })
+
+  // A flat line is the truth where the counts close the day, and a flat line
+  // nobody can read is not an answer.
+  it('says what closes a day a longer one buys nothing on', () => {
+    const shut = drawn(
+      { at: [point({ reviews: 13 }), point({ reviews: 13 }), point({ reviews: 13 })], grid: [0, 10, 20] },
+      { newADay: 8, reviewsADay: 5 },
+    )
+    expect(shut.tab.text()).toContain(words.closed(8, 5))
+    expect(drawn().tab.text()).not.toContain(words.closed(10, 200))
+  })
+
+  it('names what the height of the picture is read in', () => {
+    expect(drawn().tab.text()).toContain(words.height('minutes'))
+    expect(drawn({ goal: 'retention' }).tab.text()).toContain(words.height('retention'))
   })
 
   it('says a preset past the day it aimed at has spent its budget', () => {
@@ -191,6 +213,7 @@ describe('a goal with nothing to work on', () => {
     now: NOWHERE,
     suggested: NOWHERE,
     decks: 0,
+    cards: 0,
   }
 
   it('says no deck points here, and draws no curve and no figures of nothing', () => {
@@ -202,8 +225,29 @@ describe('a goal with nothing to work on', () => {
 
   it('says the decks pointing here hold no cards, where they do point here', () => {
     expect(drawn({ ...nothing, decks: 1 }).tab.text()).toContain(words.noCards(1))
-    expect(drawn({ ...nothing, decks: 3 }).tab.text()).toContain(words.noCards(3))
+    expect(drawn({ ...nothing, decks: 4 }).tab.text()).toContain(words.noCards(4))
     expect(drawn({ ...nothing, decks: 1 }).tab.text()).not.toContain(words.unpointed)
+  })
+
+  // A preset holding cards is never told it holds none, so a curve of zeros
+  // keeps its control and says nothing about the vault.
+  it('draws the control for a preset holding cards, whatever its curve comes to', () => {
+    const { tab } = drawn({ ...nothing, decks: 4, cards: 900 })
+    expect(tab.findAll('[role="slider"]')).toHaveLength(1)
+    expect(tab.text()).not.toContain(words.unpointed)
+    expect(tab.text()).not.toContain(words.noCards(4))
+  })
+
+  it('draws it under a goal of a date, where a curve of zeros is likeliest', () => {
+    const { tab } = drawn({
+      ...nothing,
+      decks: 4,
+      cards: 900,
+      goal: 'date',
+      grid: [1, 2, 3, 4],
+      days: ['2026-09-01', '2026-09-02', '2026-09-03', '2026-09-04'],
+    })
+    expect(tab.findAll('[role="slider"]')).toHaveLength(1)
   })
 
   it('leaves its settings there to be set up before a deck points here', () => {

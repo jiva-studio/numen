@@ -52,6 +52,12 @@ export const WORDS = {
   goalName: (goal: Goal) => GOALS[goal],
   countsName: (counts: Counts) => COUNTS[counts],
   ends: (goal: Goal) => ENDS[goal],
+  /** What the height of the picture is read in, said over it. */
+  height: (goal: Goal) => (goal === 'minutes' ? 'Cards a day' : 'Minutes a day'),
+  /** A day the card limits close before its minutes run out. */
+  closed: (newADay: number, reviewsADay: number) =>
+    `A longer day buys nothing here: ${count(newADay)} new and ${count(reviewsADay)} reviews a day ` +
+    'close the day before its minutes run out.',
   fieldName: (field: Field) => FIELDS[field][0],
   fieldDetail: (field: Field) => FIELDS[field][1],
   settings: 'What the goal produced',
@@ -78,7 +84,6 @@ export const WORDS = {
     return `A day of ${count(value)} minutes holds ${count(reviews)} cards, and ${share(retained)} of it comes back.`
   },
   /** The arithmetic under a goal of a date, with the sum already done. */
-  daysLeft: (days: number, day: string) => `${count(days)} days to ${day}.`,
   owing: (cards: number) => `${count(cards)} cards would still be owed on that day.`,
   needing: (needed: number, standing: number) =>
     `Getting through it by then is ${count(needed)} minutes a day, and this preset keeps ${count(standing)}.`,

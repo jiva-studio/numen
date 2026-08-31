@@ -160,6 +160,8 @@ const released = (event: KeyboardEvent) => {
 
 <template>
   <div class="control">
+    <p class="control__height">{{ words.height(props.curve.goal) }}</p>
+
     <div class="control__over">
       <svg
         ref="picture"
@@ -243,6 +245,14 @@ const released = (event: KeyboardEvent) => {
   gap: var(--numen-dot-gap);
 }
 
+/* What the height of the picture is read in. */
+.control__height {
+  margin: 0;
+  color: var(--numen-hushed);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-1);
+}
+
 /* The picture, and what is named over it. */
 .control__over {
   position: relative;
@@ -290,7 +300,7 @@ const released = (event: KeyboardEvent) => {
 }
 
 .control__drop {
-  stroke: var(--numen-hushed);
+  stroke: var(--numen-focus-bg);
   stroke-width: 1;
 }
 
@@ -298,20 +308,22 @@ const released = (event: KeyboardEvent) => {
   stroke-dasharray: 4 4;
 }
 
+/* Where the preset stands: the accent, hollow. */
 .control__now {
   fill: none;
-  stroke: var(--numen-hushed);
+  stroke: var(--numen-focus-bg);
   stroke-width: 1.5;
 }
 
+/* What is suggested: the accent again, filled and lighter. */
 .control__suggested {
-  fill: var(--numen-hushed);
+  fill: var(--numen-focus-bg);
 }
 
-/* The name of a mark, set over the picture and taking the page's type. */
+/* The name of a mark, set over the picture in the colour of the mark it names. */
 .control__label {
   position: absolute;
-  color: var(--numen-hushed);
+  color: var(--numen-focus-bg);
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-1);
   line-height: 1;

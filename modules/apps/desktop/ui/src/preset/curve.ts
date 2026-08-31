@@ -93,9 +93,23 @@ export const shapeOf = (settings: Settings): string => {
   return [settings.goal, ...rest].join(' ')
 }
 
-/** What the curve of a goal is read in: the share brought back, or minutes. */
+/**
+ * What the curve of a goal is read in. A goal of minutes is read in the cards
+ * a day answers, which is what a longer day buys; the other two are read in
+ * the minutes they cost.
+ */
 export const costOf = (goal: Goal, point: Point): number =>
-  goal === 'minutes' ? point.retained : point.minutes
+  goal === 'minutes' ? point.reviews : point.minutes
+
+/**
+ * Whether a longer day buys nothing over the whole range, which is a day the
+ * card limits close before its minutes run out.
+ */
+export const closed = (curve: Curve): boolean => {
+  if (!curve.honest || curve.goal !== 'minutes' || curve.at.length < 2) return false
+  const cards = curve.at.map((point) => costOf(curve.goal, point))
+  return Math.max(...cards) - Math.min(...cards) < 1
+}
 
 /** A number held inside the bounds of the setting it is. */
 export const held = (value: number, of: keyof typeof BOUNDS): number =>
@@ -140,18 +154,57 @@ export const daysUntil = (today: Date, day: string): number => {
 export type Idle = 'unpointed' | 'noCards' | ''
 
 /**
- * Whether the goal has nothing to work on, and why. A curve over no cards costs
- * nothing and owes nothing at every place of its range, and a guess is nobody's
- * answer.
+ * Whether the goal has nothing to work on, and why. The two counts the curve
+ * carries say it: no deck points here, or the decks that do hold nothing
+ * between them. What the curve comes to says nothing about it, so a preset
+ * holding cards is never told it holds none.
  */
 export const idle = (curve: Curve): Idle => {
-  if (!curve.honest || curve.at.length === 0) return ''
-  const nothing = curve.at.every(
-    (point) =>
-      point.reviews === 0 && point.minutes === 0 && point.retained === 0 && point.owed === 0,
-  )
-  if (!nothing) return ''
-  return curve.decks === 0 ? 'unpointed' : 'noCards'
+  if (!curve.honest) return ''
+  if (curve.decks === 0) return 'unpointed'
+  return curve.cards === 0 ? 'noCards' : ''
+}
+
+/**
+ * The fields that no longer follow the goal: those the goal fills in itself
+ * where what stands in the file differs from what the goal produces for its
+ * own stored value. Nothing is remembered between reads — the file carries the
+ * goal and the values, and the two either agree or they do not.
+ */
+export const offGoal = (settings: Settings, curve: Curve, today: Date): ReadonlySet<Field> => {
+  const off = new Set<Field>()
+  if (!curve.honest || curve.grid.length === 0) return off
+  const place = nearest(curve.grid, standing(settings, today))
+  const produced = producing(settings, place, curve, today)
+  for (const field of producedBy(settings.goal)) {
+    if (!agree(settings, produced, field)) off.add(field)
+  }
+  return off
+}
+
+/** Whether one field reads the same in two settings. */
+const agree = (one: Settings, two: Settings, field: Field): boolean => {
+  if (field === 'retention') return Math.abs(one.retention - two.retention) < 0.005
+  if (field === 'minutesADay') return one.minutesADay === two.minutesADay
+  if (field === 'reviewsADay') return one.reviewsADay === two.reviewsADay
+  if (field === 'newADay') return one.newADay === two.newADay
+  return true
+}
+
+/** One field of the settings put back to what the goal produces for it. */
+export const following = (
+  settings: Settings,
+  field: Field,
+  curve: Curve,
+  today: Date,
+): Settings => {
+  if (curve.grid.length === 0) return settings
+  const place = nearest(curve.grid, standing(settings, today))
+  const produced = producing(settings, place, curve, today)
+  if (field === 'retention') return { ...settings, retention: produced.retention }
+  if (field === 'minutesADay') return { ...settings, minutesADay: produced.minutesADay }
+  if (field === 'reviewsADay') return { ...settings, reviewsADay: produced.reviewsADay }
+  return settings
 }
 
 /** Whether the day the goal names is behind us, which spends the budget. */
@@ -181,6 +234,7 @@ export const approximate = (settings: Settings, today: Date): Curve => {
     now,
     suggested: NOWHERE,
     decks: 0,
+    cards: 0,
     honest: false,
   }
 }

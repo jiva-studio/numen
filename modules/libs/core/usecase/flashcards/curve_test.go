@@ -263,6 +263,35 @@ func TestACurveIsOverTheDecksPointingAtThePreset(t *testing.T) {
 	}
 }
 
+// A curve carries how many card faces stand under the preset, so a preset whose
+// decks hold nothing is told apart from one nothing points at.
+func TestACurveCarriesTheCardFacesUnderThePreset(t *testing.T) {
+	p := history.Preset{Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
+
+	s := opened(t, studied(30))
+	full, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if full.Decks != 1 || full.Cards != 30 {
+		t.Errorf("a deck of thirty cards of a one-faced stencil came to %d decks and %d cards",
+			full.Decks, full.Cards)
+	}
+
+	empty := opened(t, map[string]string{
+		"Term.md":        term,
+		"Sanskrit.md":    preset("new_a_day: 8\nreviews_a_day: 45\n"),
+		"decks/Roots.md": deckOf("Sanskrit", 0, 0),
+	})
+	bare, err := empty.curves(noon).Execute(t.Context(), empty.vault, "Sanskrit.md", p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bare.Decks != 1 || bare.Cards != 0 {
+		t.Errorf("a deck holding no cards came to %d decks and %d cards", bare.Decks, bare.Cards)
+	}
+}
+
 // Nothing about a curve is written to the vault: it is shown beside a control,
 // and what the control settles is written by the person moving it.
 func TestWorkingOutACurveWritesNothingToTheVault(t *testing.T) {

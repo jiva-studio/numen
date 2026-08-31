@@ -19,10 +19,12 @@ import {
   approximate,
   dayAfter,
   daysUntil,
+  following,
   held,
   isDay,
   kept,
   nearest,
+  offGoal,
   producing,
   shapeOf,
   standing,
@@ -87,7 +89,6 @@ export function presetting(
     readonly settings: Ref<Settings>
     readonly curve: Ref<Curve>
     readonly place: Ref<number>
-    readonly byHand: Ref<ReadonlySet<Field>>
     readonly problems: Ref<readonly string[]>
     readonly changed: Ref<boolean>
     readonly saying: Ref<string>
@@ -106,7 +107,6 @@ export function presetting(
     settings: shallowRef<Settings>(DEFAULTS),
     curve: shallowRef<Curve>(approximate(DEFAULTS, today())),
     place: ref(0),
-    byHand: shallowRef<ReadonlySet<Field>>(new Set()),
     problems: shallowRef<readonly string[]>([]),
     changed: ref(false),
     saying: ref(''),
@@ -134,7 +134,6 @@ export function presetting(
     }
     one.saying.value = whyOf(answer.refusal)
     one.changed.value = false
-    one.byHand.value = new Set()
     one.at = answer.at
     if (!answer.preset) return
     if (answer.preset.title) titles.set(one.path.value, answer.preset.title)
@@ -201,8 +200,9 @@ export function presetting(
 
   /** The settings the place the knob stands at produces, with what was typed kept. */
   const turns = (one: Kept, place: number): void => {
+    const off = offGoal(one.settings.value, one.curve.value, today())
     const produced = producing(one.settings.value, place, one.curve.value, today())
-    one.settings.value = kept(produced, one.settings.value, one.byHand.value)
+    one.settings.value = kept(produced, one.settings.value, off)
     one.place.value = place
   }
 
@@ -248,7 +248,7 @@ export function presetting(
       settings: () => one.settings.value,
       curve: () => one.curve.value,
       place: () => one.place.value,
-      byHand: () => one.byHand.value,
+      byHand: () => offGoal(one.settings.value, one.curve.value, today()),
       problems: () => one.problems.value,
       saying: () => one.saying.value,
       changed: () => one.changed.value,
@@ -270,7 +270,6 @@ export function presetting(
           void writes(one)
           return
         }
-        one.byHand.value = new Set([...one.byHand.value, field])
         one.settings.value = typed(one.settings.value, field, value)
         // A field the knob does not ride gives the curve its shape, so the
         // curve is asked for again where one of those is typed.
@@ -278,10 +277,7 @@ export function presetting(
         void writes(one)
       },
       follows: (field) => {
-        const rest = new Set(one.byHand.value)
-        rest.delete(field)
-        one.byHand.value = rest
-        turns(one, one.place.value)
+        one.settings.value = following(one.settings.value, field, one.curve.value, today())
         void writes(one)
       },
       shuts: (tab) => {
