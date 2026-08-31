@@ -72,6 +72,8 @@ func settings() *v1.Settings {
 		NewADay:     8,
 		ReviewsADay: 45,
 		Retention:   0.87,
+		Learned:     v1.Rule_RULE_INTERVAL,
+		Interval:    21,
 		Load:        map[string]int32{"sat": 50, "sun": 0},
 		EvenLoad:    true,
 	}

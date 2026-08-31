@@ -42,7 +42,8 @@ type allowance struct {
 func budgeted(
 	ctx context.Context, v domain.Vault, reading *Reading, day history.Day,
 	standing []Standing, schedules map[history.CardFace]history.Schedule,
-	log Held, by history.Scheduler, now time.Time,
+	log Held, by history.Scheduler, at func(retention float64) history.Scheduler,
+	now time.Time,
 ) (*budgets, error) {
 	out := &budgets{
 		under: make(map[history.CardFace]string, len(standing)),
@@ -106,8 +107,15 @@ func budgeted(
 		if !held {
 			cost = history.DefaultCost
 		}
+		// A date paces the day against how long a card face begun today takes to
+		// be learned, worked out under the scheduler this preset's cards are
+		// spaced by. No other goal reads it, and it is asked for under no other.
+		left := history.Left{New: unseen[path]}
+		if p.Goal == history.GoalDate {
+			left.Ripens = history.Ripens(at(p.Retention), day, p, now)
+		}
 		out.left[path] = &allowance{
-			admits: p.Admits(day, now, spent[path], unseen[path]),
+			admits: p.Admits(day, now, spent[path], left),
 			cost:   cost,
 			counts: p.Counts,
 			spent:  spent[path],

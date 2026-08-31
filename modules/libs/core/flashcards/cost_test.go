@@ -236,7 +236,7 @@ func keeps(p history.Preset, day time.Weekday) history.Budget {
 	for at.Weekday() != day {
 		at = at.AddDate(0, 0, 1)
 	}
-	return p.Admits(history.Day{Starts: history.DayStarts}, at, history.Spent{}, 0).Keeps
+	return p.Admits(history.Day{Starts: history.DayStarts}, at, history.Spent{}, history.Left{}).Keeps
 }
 
 // The budget a preset keeps on one day is that day of the week's share of it,
@@ -271,10 +271,10 @@ func TestADayAtNoneOfTheLoadIsAPause(t *testing.T) {
 	if at.Weekday() != time.Sunday {
 		t.Fatalf("%v is a %v", at, at.Weekday())
 	}
-	if !p.Admits(ahead, at, history.Spent{}, 0).Paused {
+	if !p.Admits(ahead, at, history.Spent{}, history.Left{}).Paused {
 		t.Error("a day at none of the load is not a pause")
 	}
-	if p.Admits(ahead, at.AddDate(0, 0, 1), history.Spent{}, 0).Paused {
+	if p.Admits(ahead, at.AddDate(0, 0, 1), history.Spent{}, history.Left{}).Paused {
 		t.Error("the day after it is a pause")
 	}
 }
@@ -568,5 +568,208 @@ func TestAPausedDayNeverDropsTheOverduePile(t *testing.T) {
 					what, day, got.Load[day])
 			}
 		}
+	}
+}
+
+// sent is one card face last answered this many days before an instant and
+// sent away for this many days from that answer.
+func sent(
+	name string, at time.Time, since, away int, stability float64,
+) (history.CardFace, history.Schedule) {
+	last := at.AddDate(0, 0, -since)
+	return history.CardFace{Card: name, Face: "Recognise"}, history.Schedule{
+		Due: last.AddDate(0, 0, away), Last: last, Reps: 3,
+		Stability: stability, Difficulty: 5, Phase: 2,
+	}
+}
+
+// What stands learned today is counted under the rule the preset names, and
+// each rule reads its own value: an interval of 21 days learns the card sent
+// away for 40 and passes over the one sent away for 5, and a chance of recall
+// of nine in ten learns the card answered yesterday and passes over the one
+// answered two hundred days ago.
+func TestWhatStandsLearnedToday(t *testing.T) {
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	run := history.Simulation{
+		By: history.NewFSRS(), Day: ahead, Cost: history.DefaultCost, Days: 1,
+	}
+
+	at := make(map[history.CardFace]history.Schedule)
+	for _, one := range []struct {
+		name        string
+		since, away int
+		stability   float64
+	}{
+		{"long", 30, 40, 60},
+		{"faded", 200, 30, 10},
+		{"short", 2, 5, 5},
+		{"brief", 1, 3, 3},
+	} {
+		face, schedule := sent(one.name, now, one.since, one.away, one.stability)
+		at[face] = schedule
+	}
+
+	for _, one := range []struct {
+		rule    history.Rule
+		learned int
+	}{
+		// Sent away for 21 days or longer: the long one and the faded one.
+		{history.RuleInterval, 2},
+		// Recalled today with a chance of nine in ten: everything but the faded
+		// one, whose answer is two hundred days behind a stability of ten.
+		{history.RuleRetention, 3},
+	} {
+		p := history.Defaults()
+		p.Goal, p.ReviewsADay, p.NewADay = history.GoalRetention, 9999, 0
+		p.Rule, p.Interval, p.Retention = one.rule, 21, 0.9
+
+		if got := ran(t, run, now, p, at, 0).Learned; got != one.learned {
+			t.Errorf("under %s, %d card faces stand learned, want %d",
+				one.rule, got, one.learned)
+		}
+	}
+}
+
+// The day every card face is learned is a day of the projection, and a horizon
+// that ends with one of them still to learn names no day at all.
+func TestTheDayEveryCardIsLearned(t *testing.T) {
+	by := history.NewFSRS()
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	at := learned(by, now, 40)
+	run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost, Days: 365}
+	p := history.Defaults()
+	p.Goal, p.ReviewsADay, p.NewADay = history.GoalRetention, 9999, 50
+	p.Rule, p.Interval = history.RuleInterval, 21
+
+	// Forty card faces answered a few times each, and a year to carry them all
+	// past an interval of 21 days.
+	got := ran(t, run, now, p, at, 0)
+	if got.Learns == history.NeverLearns || got.Learns > got.Days {
+		t.Errorf("a year of review learns the whole material in %d days", got.Learns)
+	}
+	if got.Learned == got.Faces {
+		t.Fatalf("the vault opens with all %d card faces learned", got.Faces)
+	}
+	if got.Learns == 0 {
+		t.Error("a vault with something still to learn was learned in no days")
+	}
+
+	// The same cards, and five thousand nobody has begun at fifty a day: the
+	// material outruns a horizon of sixty days, and no day is named.
+	shorter := run
+	shorter.Days = 60
+	crowded := ran(t, shorter, now, p, at, 5000)
+	if crowded.Learns != history.NeverLearns {
+		t.Errorf("a material of %d card faces was learned in %d days",
+			crowded.Faces, crowded.Learns)
+	}
+}
+
+// A projection over a material already learned is learned in no days.
+func TestAMaterialAlreadyLearnedIsLearnedInNoDays(t *testing.T) {
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	run := history.Simulation{
+		By: history.NewFSRS(), Day: ahead, Cost: history.DefaultCost, Days: 30,
+	}
+	face, schedule := sent("long", now, 30, 40, 60)
+	p := history.Defaults()
+	p.Rule, p.Interval = history.RuleInterval, 21
+
+	got := ran(t, run, now, p, map[history.CardFace]history.Schedule{face: schedule}, 0)
+	if got.Learned != 1 || got.Learns != 0 {
+		t.Errorf("a material of one learned card face stands %d learned, learned in %d days",
+			got.Learned, got.Learns)
+	}
+}
+
+// A date is paced by the rule the preset counts by.
+//
+// A card face that has to be sent away for three weeks is begun three weeks
+// before the day it is wanted for; one that has only to be recalled on that day
+// is begun on it. The same material and the same date are two paces.
+func TestADateIsPacedByTheRuleItCountsBy(t *testing.T) {
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	run := history.Simulation{
+		By: history.NewFSRS(), Day: ahead, Cost: history.DefaultCost, Days: 40,
+	}
+
+	// A hundred card faces nobody has begun, and a month to learn them in.
+	p := history.Defaults()
+	p.Goal, p.By = history.GoalDate, now.AddDate(0, 0, 30)
+	p.Rule, p.Interval = history.RuleInterval, 21
+	loose := p
+	loose.Rule = history.RuleRetention
+
+	tight := ran(t, run, now, p, nil, 100)
+	soft := ran(t, run, now, loose, nil, 100)
+	if tight.Load[0] <= soft.Load[0] {
+		t.Errorf("an interval of 21 days begins %d card faces today and a chance of recall %d",
+			tight.Load[0], soft.Load[0])
+	}
+	// Both reach the day: what separates them is when the material is begun.
+	if tight.Short != 0 || soft.Short != 0 {
+		t.Errorf("a month leaves %d card faces short under an interval and %d under a chance",
+			tight.Short, soft.Short)
+	}
+}
+
+// How many card faces cannot be learned by the day the preset aims at, whatever
+// the pace, is counted and said.
+//
+// A card face begun today needs a fortnight to be sent away for three weeks, so
+// ten days leaves every unbegun one of them short. Nothing is moved to hide it:
+// the day stands, the rule stands, and the pace gets there every card face that
+// can.
+func TestWhatNoPaceCanReachIsCounted(t *testing.T) {
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	run := history.Simulation{
+		By: history.NewFSRS(), Day: ahead, Cost: history.DefaultCost, Days: 30,
+	}
+	// One card face already sent away for forty days, and five nobody has begun.
+	face, schedule := sent("long", now, 30, 40, 60)
+	at := map[history.CardFace]history.Schedule{face: schedule}
+
+	p := history.Defaults()
+	p.Goal, p.By = history.GoalDate, now.AddDate(0, 0, 10)
+	p.Rule, p.Interval = history.RuleInterval, 21
+
+	got := ran(t, run, now, p, at, 5)
+	if got.Short != 5 {
+		t.Errorf("ten days leave %d of the six card faces short, want the five unbegun",
+			got.Short)
+	}
+	// The pace is the one that gets every card face that can there, which is
+	// all of them at once.
+	if got.Load[0] < 5 {
+		t.Errorf("the day began %d of the five it cannot learn in time", got.Load[0])
+	}
+
+	// The same vault under a rule ten days can meet.
+	loose := p
+	loose.Rule = history.RuleRetention
+	if short := ran(t, run, now, loose, at, 5).Short; short != 0 {
+		t.Errorf("a card face is learned the day it is answered, and %d stand short", short)
+	}
+
+	// And under the same rule with a year to do it in. What can be reached is
+	// worked out over the days to the day named and not over the horizon.
+	far := p
+	far.By = now.AddDate(0, 0, 365)
+	if short := ran(t, run, now, far, at, 5).Short; short != 0 {
+		t.Errorf("a year leaves %d card faces short of a three-week interval", short)
+	}
+}
+
+// A preset aiming at no day has nothing it cannot reach.
+func TestAPresetAimingAtNoDayIsNeverShort(t *testing.T) {
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	run := history.Simulation{
+		By: history.NewFSRS(), Day: ahead, Cost: history.DefaultCost, Days: 7,
+	}
+	p := history.Defaults()
+	p.Rule, p.Interval = history.RuleInterval, 21
+
+	if short := ran(t, run, now, p, nil, 20).Short; short != 0 {
+		t.Errorf("a preset steered by its minutes left %d card faces short", short)
 	}
 }

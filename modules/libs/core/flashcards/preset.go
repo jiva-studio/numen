@@ -30,6 +30,14 @@ type Preset struct {
 	// Retention is the share of cards recalled when they come round again.
 	Retention float64
 
+	// Rule is what counts as a card face the person has learned, written under
+	// `learned`. The value it reads stands in the field the rule names:
+	// Interval under RuleInterval, Retention under RuleRetention.
+	Rule Rule
+	// Interval is how long a card face is sent away for before it is learned, in
+	// days, and is read under RuleInterval.
+	Interval int
+
 	// Counts is what a day's budget is spent on: the cards a day holds, or the
 	// times they are put to a person.
 	Counts Counts
@@ -96,6 +104,45 @@ func KnownGoal(g Goal) bool {
 	return false
 }
 
+// Rule is what a preset counts as learned. The value it reads stands under the
+// key it names, and the other rule keeps its value and takes no part.
+type Rule string
+
+const (
+	// RuleInterval learns a card face once it is sent away for the preset's
+	// interval or longer.
+	RuleInterval Rule = "interval"
+	// RuleRetention learns a card face once the chance of recalling it today is
+	// at or above the preset's retention.
+	RuleRetention Rule = "retention"
+)
+
+// KnownRule reports whether a rule is one of the two.
+func KnownRule(r Rule) bool {
+	switch r {
+	case RuleInterval, RuleRetention:
+		return true
+	}
+	return false
+}
+
+// Learned reports whether a card face standing at this schedule is one the
+// person has learned at this instant, under the rule this preset names.
+//
+// A card face nobody has answered is learned by neither rule.
+//
+// It is the one place the rule is read, so a projection and everything drawn
+// beside it answer the same question.
+func (p Preset) Learned(s Schedule, at time.Time) bool {
+	if !s.Seen() {
+		return false
+	}
+	if p.Rule == RuleRetention {
+		return Recall(at.Sub(s.Last), s.Stability) >= p.Retention
+	}
+	return s.Due.Sub(s.Last) >= time.Duration(p.Interval)*24*time.Hour
+}
+
 // Counts is what a day's budget is spent on.
 //
 // Under CountsCards a card face is charged the first time it is answered in a
@@ -128,13 +175,15 @@ type Bounds struct{ Least, Most float64 }
 func (b Bounds) Holds(value float64) bool { return value >= b.Least && value <= b.Most }
 
 // What each setting of a preset may be. A day holds no more minutes than it
-// has, and a retention target outside these is a scheduler asking for what
-// memory does not do.
+// has, a retention target outside these is a scheduler asking for what memory
+// does not do, and an interval a card is learned at is a day at the least and a
+// year at the most.
 var (
 	MinutesADayBounds = Bounds{Least: 0, Most: 24 * 60}
 	NewADayBounds     = Bounds{Least: 0, Most: 9999}
 	ReviewsADayBounds = Bounds{Least: 0, Most: 9999}
 	RetentionBounds   = Bounds{Least: 0.7, Most: 0.99}
+	IntervalBounds    = Bounds{Least: 1, Most: 365}
 	BacklogBounds     = Bounds{Least: 0, Most: 100}
 	LoadBounds        = Bounds{Least: 0, Most: FullLoad}
 )
@@ -148,6 +197,8 @@ func Defaults() Preset {
 		NewADay:     10,
 		ReviewsADay: 200,
 		Retention:   0.9,
+		Rule:        RuleInterval,
+		Interval:    21,
 		Counts:      CountsCards,
 		Backlog:     AllBacklog,
 		EvenLoad:    true,
@@ -195,12 +246,19 @@ type Allowance struct {
 	Paused bool
 }
 
+// Left is what a preset has still to get through: the card faces nobody has
+// begun, and how many days of review one begun now needs before the preset
+// counts it learned, which is Ripens and which a date paces the day against.
+type Left struct {
+	New    int
+	Ripens int
+}
+
 // Admits is what this preset's day admits.
 //
 // Now is any instant of the review day, spent is what that day has already gone
-// through under the preset, and left is how much of the material the preset has
-// still to begin.
-func (p Preset) Admits(d Day, now time.Time, spent Spent, left int) Allowance {
+// through under the preset, and left is the material it has still to begin.
+func (p Preset) Admits(d Day, now time.Time, spent Spent, left Left) Allowance {
 	opened := d.Ends(now).AddDate(0, 0, -1)
 	out := Allowance{
 		Keeps:  p.on(opened.Weekday()),
@@ -277,14 +335,23 @@ func (p Preset) Paused(d Day, now time.Time) bool {
 }
 
 // paces is how much of the material a day holds when a date sets the pace: what
-// is left to begin, over the days left to begin it in. A day past the one it
-// aims at holds none of it.
-func (p Preset) paces(d Day, now time.Time, left int) int {
+// is left to begin, over the days on which beginning a card still leaves it time
+// to be learned by the day the preset aims at. A day past the one it aims at
+// holds none of it.
+//
+// Where no day leaves that much time, the pace is everything left. It is the
+// pace that gets there every card face that can, and how many cannot is
+// Projection.Short.
+func (p Preset) paces(d Day, now time.Time, left Left) int {
 	days := p.days(d, now)
 	if days <= 0 {
 		return 0
 	}
-	return (left + days - 1) / days
+	in := days - left.Ripens
+	if left.Ripens == NeverRipens || in <= 0 {
+		return left.New
+	}
+	return (left.New + in - 1) / in
 }
 
 // days is how many days of review there are from the day holding now through to
@@ -338,6 +405,18 @@ func ReadPreset(front map[string]any) (Preset, []string) {
 		}
 	}
 
+	if raw, present := front["learned"]; present && raw != nil {
+		name, isText := raw.(string)
+		switch {
+		case !isText:
+			problems = append(problems, "learned is not text")
+		case KnownRule(Rule(name)):
+			p.Rule = Rule(name)
+		default:
+			problems = append(problems, "learned "+name+" is not interval or retention")
+		}
+	}
+
 	if raw, present := front["counts"]; present && raw != nil {
 		name, isText := raw.(string)
 		switch {
@@ -373,6 +452,7 @@ func ReadPreset(front map[string]any) (Preset, []string) {
 	p.NewADay = counted(front, "new_a_day", NewADayBounds, p.NewADay, &problems)
 	p.ReviewsADay = counted(front, "reviews_a_day", ReviewsADayBounds, p.ReviewsADay, &problems)
 	p.Backlog = counted(front, "backlog", BacklogBounds, p.Backlog, &problems)
+	p.Interval = counted(front, "interval", IntervalBounds, p.Interval, &problems)
 
 	if raw, present := front["retention"]; present && raw != nil {
 		value, ok := number(raw)

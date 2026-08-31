@@ -91,12 +91,15 @@ type Point struct {
 	// place names under a goal of a date. It is the backlog left at the end and
 	// not the debt a day carries.
 	Owed int
-	// Through is the share of the material got through by this day, and Enough
-	// is whether the budget the preset keeps gets through all of it. Met is
-	// whether any budget does.
+	// Through is the share of the material learned by this day, and Enough is
+	// whether the budget the preset keeps learns every card face that can be
+	// learned by it. Met is whether the pace this place sets does.
 	Through float64
 	Enough  bool
 	Met     bool
+	// Short is how many card faces cannot be learned by this day whatever the
+	// pace, which is the rule wanting more days than the day leaves them.
+	Short int
 	// Closed is the budget that closed the day here, in the words the preset
 	// writes it in, and is empty where the material itself ran out.
 	Closed history.Closed
@@ -104,6 +107,11 @@ type Point struct {
 	// is overdue. A curve standing over nothing overdue clears in none, and a
 	// place whose pace never gets there is history.NeverClears.
 	Clears int
+	// Learned is how many card faces stand learned today at this place, and
+	// Learns how many days of review it takes before all of them do. A place
+	// whose horizon ends with one still to learn is history.NeverLearns.
+	Learned int
+	Learns  int
 	// Backlog is how many card faces stand overdue at the end of each day
 	// projected at this place, one entry a day over the whole horizon. It runs
 	// over days and not over the goal's range, so it is drawn beside the curve
@@ -412,10 +420,13 @@ func (u Curves) date(
 			Minutes: costing(ran.Spent[:day+1]),
 			Owed:    ran.Owed,
 			Through: standing.Through[day],
-			Enough:  standing.Through[day] >= 1,
-			Met:     ran.Through[day] >= 1,
+			Enough:  reached(standing, day, ran.Short),
+			Met:     reached(ran, day, ran.Short),
+			Short:   ran.Short,
 			Closed:  ran.Closed[0],
 			Clears:  ran.Clears,
+			Learned: ran.Learned,
+			Learns:  ran.Learns,
 			Backlog: ran.Backlog,
 		})
 	}
@@ -455,6 +466,15 @@ func (u Curves) date(
 	return out, nil
 }
 
+// reached reports whether every card face that can be learned by this day of a
+// run stands learned on it. Short is how many cannot be, whatever the pace.
+func reached(p history.Projection, day, short int) bool {
+	if p.Faces == 0 {
+		return true
+	}
+	return p.Through[day] >= float64(p.Faces-short)/float64(p.Faces)
+}
+
 // point is a projection as one place of a curve, at the load it carries over
 // the days the preset admits.
 func point(p history.Projection) Point {
@@ -465,7 +485,10 @@ func point(p history.Projection) Point {
 		Owed:     p.Owed,
 		Through:  p.Through[len(p.Through)-1],
 		Closed:   closing(p),
+		Short:    p.Short,
 		Clears:   p.Clears,
+		Learned:  p.Learned,
+		Learns:   p.Learns,
 		Backlog:  p.Backlog,
 	}
 }

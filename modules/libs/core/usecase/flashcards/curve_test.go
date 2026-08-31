@@ -215,6 +215,9 @@ func TestADateIsMetAtWhateverItCosts(t *testing.T) {
 	p := history.Preset{
 		Goal: history.GoalDate, By: noon.AddDate(0, 0, 2).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 1, ReviewsADay: 45,
+		// Two days are two days: what they can hold is a material learned the
+		// day it is answered.
+		Rule: history.RuleRetention, Retention: 0.9,
 	}
 
 	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
@@ -227,9 +230,13 @@ func TestADateIsMetAtWhateverItCosts(t *testing.T) {
 				got.Days[i], one)
 		}
 	}
-	last := got.At[len(got.At)-1]
-	if last.Through < 1 || !last.Enough {
-		t.Errorf("the day it aims at gets through %v of the material", last.Through)
+	if got.Now.At < 0 {
+		t.Fatalf("the preset stands nowhere on its own curve: %+v", got.Now)
+	}
+	stands := got.At[got.Now.At]
+	if stands.Through < 1 || !stands.Enough || stands.Short != 0 {
+		t.Errorf("the day it aims at gets through %v of the material, and %d of it stands short",
+			stands.Through, stands.Short)
 	}
 	if got.Suggested == flashcards.Nowhere {
 		t.Error("no day is suggested, and the day it aims at is through the material")
@@ -491,5 +498,47 @@ func TestADayAtNoneOfTheLoadAwayFromTodayLeavesTheCurve(t *testing.T) {
 				got.Grid[i], got.At[i].Reviews, got.At[i].Minutes,
 				was.At[i].Reviews, was.At[i].Minutes)
 		}
+	}
+}
+
+// A date the rule cannot be met by says so on the picture.
+//
+// The number of card faces no pace reaches stands at each place of the range,
+// and falls away as the day moves off. Nothing is hidden by it: the pace beside
+// it is the one that reaches every card face that can be reached, and where
+// none can be, that is what the number says.
+func TestACurveOfADateSaysWhatNoPaceReaches(t *testing.T) {
+	s := opened(t, studied(30))
+	p := history.Preset{
+		Goal: history.GoalDate, By: noon.AddDate(0, 0, 3).Truncate(24 * time.Hour),
+		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+		Rule: history.RuleInterval, Interval: 21,
+	}
+
+	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Cards == 0 {
+		t.Fatal("the preset schedules nothing, and there is nothing to fall short")
+	}
+	if first := got.At[0]; first.Short != got.Cards {
+		t.Errorf("%s leaves %d of the %d card faces short, and a day is no time to learn any",
+			got.Days[0], first.Short, got.Cards)
+	}
+	if last := got.At[len(got.At)-1]; last.Short != 0 {
+		t.Errorf("%s leaves %d card faces short, and it is %v days off",
+			got.Days[len(got.Days)-1], last.Short, got.Grid[len(got.Grid)-1])
+	}
+	for i := 1; i < len(got.At); i++ {
+		if got.At[i].Short > got.At[i-1].Short {
+			t.Errorf("%s leaves %d short and %s, a day earlier, leaves %d",
+				got.Days[i], got.At[i].Short, got.Days[i-1], got.At[i-1].Short)
+		}
+	}
+	// A day nothing can be learned by is met by the pace all the same: every
+	// card face that can be learned by it is, and there are none.
+	if !got.At[0].Enough {
+		t.Error("a day no card face can be learned by is not met by the pace that reaches every one that can")
 	}
 }

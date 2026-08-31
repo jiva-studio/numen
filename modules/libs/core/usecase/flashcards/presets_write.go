@@ -22,6 +22,8 @@ const (
 	newADayKey     = "new_a_day"
 	reviewsADayKey = "reviews_a_day"
 	retentionKey   = "retention"
+	learnedKey     = "learned"
+	intervalKey    = "interval"
 	countsKey      = "counts"
 	backlogKey     = "backlog"
 	loadKey        = "load"
@@ -120,6 +122,9 @@ func settle(doc *markdown.Document, p history.Preset) error {
 	if err := doc.SetScalar(countsKey, string(p.Counts)); err != nil {
 		return err
 	}
+	if err := doc.SetScalar(learnedKey, string(p.Rule)); err != nil {
+		return err
+	}
 	if p.By.IsZero() {
 		if err := doc.SetScalar(byDateKey, ""); err != nil {
 			return err
@@ -136,6 +141,7 @@ func settle(doc *markdown.Document, p history.Preset) error {
 		{reviewsADayKey, p.ReviewsADay},
 		{backlogKey, p.Backlog},
 		{retentionKey, p.Retention},
+		{intervalKey, p.Interval},
 		{evenLoadKey, p.EvenLoad},
 	} {
 		if err := doc.SetValue(one.key, one.value); err != nil {
@@ -167,6 +173,10 @@ func bounded(p history.Preset) error {
 	if p.Goal == history.GoalDate && p.By.IsZero() {
 		return fmt.Errorf("%w: a preset aiming at a day says which day", ErrOutOfBounds)
 	}
+	if !history.KnownRule(p.Rule) {
+		return fmt.Errorf("%w: learned %s is not %s or %s",
+			ErrOutOfBounds, p.Rule, history.RuleInterval, history.RuleRetention)
+	}
 	if !history.KnownCounts(p.Counts) {
 		return fmt.Errorf("%w: counts %s is not %s or %s",
 			ErrOutOfBounds, p.Counts, history.CountsCards, history.CountsShows)
@@ -180,6 +190,7 @@ func bounded(p history.Preset) error {
 		{newADayKey, float64(p.NewADay), history.NewADayBounds},
 		{reviewsADayKey, float64(p.ReviewsADay), history.ReviewsADayBounds},
 		{retentionKey, p.Retention, history.RetentionBounds},
+		{intervalKey, float64(p.Interval), history.IntervalBounds},
 		{backlogKey, float64(p.Backlog), history.BacklogBounds},
 	} {
 		if !one.bounds.Holds(one.value) {

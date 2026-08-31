@@ -24,7 +24,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/presets.proto.
  */
 export const file_numen_v1_presets: GenFile = /*@__PURE__*/
-  fileDesc("ChZudW1lbi92MS9wcmVzZXRzLnByb3RvEghudW1lbi52MSK+AgoIU2V0dGluZ3MSHAoEZ29hbBgBIAEoDjIOLm51bWVuLnYxLkdvYWwSDwoHYnlfZGF0ZRgCIAEoCRIVCg1taW51dGVzX2FfZGF5GAMgASgFEhEKCW5ld19hX2RheRgEIAEoBRIVCg1yZXZpZXdzX2FfZGF5GAUgASgFEhEKCXJldGVudGlvbhgGIAEoARIRCglldmVuX2xvYWQYCCABKAgSIAoGY291bnRzGAkgASgOMhAubnVtZW4udjEuQ291bnRzEg8KB2JhY2tsb2cYCiABKAUSKgoEbG9hZBgLIAMoCzIcLm51bWVuLnYxLlNldHRpbmdzLkxvYWRFbnRyeRorCglMb2FkRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgFOgI4AUoECAcQCFIKbGlnaHRfZGF5cyJdCgZQcmVzZXQSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIkCghzZXR0aW5ncxgDIAEoCzISLm51bWVuLnYxLlNldHRpbmdzEhAKCHByb2JsZW1zGAQgAygJIt4BCgVDdXJ2ZRIcCgRnb2FsGAEgASgOMg4ubnVtZW4udjEuR29hbBIMCgRncmlkGAIgAygBEgwKBGRheXMYAyADKAkSGwoCYXQYBCADKAsyDy5udW1lbi52MS5Qb2ludBIbCgNub3cYBSABKAsyDi5udW1lbi52MS5NYXJrEiEKCXN1Z2dlc3RlZBgGIAEoCzIOLm51bWVuLnYxLk1hcmsSDQoFZGVja3MYByABKAUSDQoFY2FyZHMYCCABKAUSDwoHb3ZlcmR1ZRgJIAEoBRIPCgd1bmJlZ3VuGAogASgFIqgBCgVQb2ludBIPCgdyZXZpZXdzGAEgASgBEg8KB21pbnV0ZXMYAiABKAESEAoIcmV0YWluZWQYAyABKAESDAoEb3dlZBgEIAEoBRIPCgd0aHJvdWdoGAUgASgBEg4KBmVub3VnaBgGIAEoCBILCgNtZXQYByABKAgSDgoGY2xvc2VkGAggASgJEg4KBmNsZWFycxgJIAEoBRIPCgdiYWNrbG9nGAogAygFIi4KBE1hcmsSCgoCYXQYASABKAUSDQoFdmFsdWUYAiABKAESCwoDZGF5GAMgASgJIiEKEVNjaGVkdWxpbmdSZXF1ZXN0EgwKBGRlY2sYASABKAkiqgEKElNjaGVkdWxpbmdSZXNwb25zZRIlCgZwcmVzZXQYASABKAsyEC5udW1lbi52MS5QcmVzZXRIAIgBARInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgBiAEBEiYKAmF0GAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAogBAUIJCgdfcHJlc2V0QgoKCF9yZWZ1c2FsQgUKA19hdCIhChFSZWFkUHJlc2V0UmVxdWVzdBIMCgRwYXRoGAEgASgJIqoBChJSZWFkUHJlc2V0UmVzcG9uc2USJQoGcHJlc2V0GAEgASgLMhAubnVtZW4udjEuUHJlc2V0SACIAQESJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAYgBARImCgJhdBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAKIAQFCCQoHX3ByZXNldEIKCghfcmVmdXNhbEIFCgNfYXQiewoSV3JpdGVQcmVzZXRSZXF1ZXN0EgwKBHBhdGgYASABKAkSJAoIc2V0dGluZ3MYAiABKAsyEi5udW1lbi52MS5TZXR0aW5ncxIoCgRzZWVuGAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAIgBAUIHCgVfc2VlbiKKAQoTV3JpdGVQcmVzZXRSZXNwb25zZRInCgdyZWZ1c2FsGAEgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBEg8KB2NoYW5nZWQYAiABKAgSJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgBiAEBQgoKCF9yZWZ1c2FsQgUKA19hdCJCCgxDdXJ2ZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIkCghzZXR0aW5ncxgCIAEoCzISLm51bWVuLnYxLlNldHRpbmdzIi8KDUN1cnZlUmVzcG9uc2USHgoFY3VydmUYASABKAsyDy5udW1lbi52MS5DdXJ2ZSpaCgRHb2FsEhQKEEdPQUxfVU5TUEVDSUZJRUQQABIWChJHT0FMX01JTlVURVNfQV9EQVkQARISCg5HT0FMX1JFVEVOVElPThACEhAKDEdPQUxfQllfREFURRADKkQKBkNvdW50cxIWChJDT1VOVFNfVU5TUEVDSUZJRUQQABIQCgxDT1VOVFNfQ0FSRFMQARIQCgxDT1VOVFNfU0hPV1MQAjKoAgoOUHJlc2V0c1NlcnZpY2USRwoKU2NoZWR1bGluZxIbLm51bWVuLnYxLlNjaGVkdWxpbmdSZXF1ZXN0GhwubnVtZW4udjEuU2NoZWR1bGluZ1Jlc3BvbnNlEkcKClJlYWRQcmVzZXQSGy5udW1lbi52MS5SZWFkUHJlc2V0UmVxdWVzdBocLm51bWVuLnYxLlJlYWRQcmVzZXRSZXNwb25zZRJKCgtXcml0ZVByZXNldBIcLm51bWVuLnYxLldyaXRlUHJlc2V0UmVxdWVzdBodLm51bWVuLnYxLldyaXRlUHJlc2V0UmVzcG9uc2USOAoFQ3VydmUSFi5udW1lbi52MS5DdXJ2ZVJlcXVlc3QaFy5udW1lbi52MS5DdXJ2ZVJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_vault]);
+  fileDesc("ChZudW1lbi92MS9wcmVzZXRzLnByb3RvEghudW1lbi52MSLxAgoIU2V0dGluZ3MSHAoEZ29hbBgBIAEoDjIOLm51bWVuLnYxLkdvYWwSDwoHYnlfZGF0ZRgCIAEoCRIVCg1taW51dGVzX2FfZGF5GAMgASgFEhEKCW5ld19hX2RheRgEIAEoBRIVCg1yZXZpZXdzX2FfZGF5GAUgASgFEhEKCXJldGVudGlvbhgGIAEoARIRCglldmVuX2xvYWQYCCABKAgSIAoGY291bnRzGAkgASgOMhAubnVtZW4udjEuQ291bnRzEg8KB2JhY2tsb2cYCiABKAUSKgoEbG9hZBgLIAMoCzIcLm51bWVuLnYxLlNldHRpbmdzLkxvYWRFbnRyeRIfCgdsZWFybmVkGAwgASgOMg4ubnVtZW4udjEuUnVsZRIQCghpbnRlcnZhbBgNIAEoBRorCglMb2FkRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgFOgI4AUoECAcQCFIKbGlnaHRfZGF5cyJdCgZQcmVzZXQSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIkCghzZXR0aW5ncxgDIAEoCzISLm51bWVuLnYxLlNldHRpbmdzEhAKCHByb2JsZW1zGAQgAygJIt4BCgVDdXJ2ZRIcCgRnb2FsGAEgASgOMg4ubnVtZW4udjEuR29hbBIMCgRncmlkGAIgAygBEgwKBGRheXMYAyADKAkSGwoCYXQYBCADKAsyDy5udW1lbi52MS5Qb2ludBIbCgNub3cYBSABKAsyDi5udW1lbi52MS5NYXJrEiEKCXN1Z2dlc3RlZBgGIAEoCzIOLm51bWVuLnYxLk1hcmsSDQoFZGVja3MYByABKAUSDQoFY2FyZHMYCCABKAUSDwoHb3ZlcmR1ZRgJIAEoBRIPCgd1bmJlZ3VuGAogASgFItgBCgVQb2ludBIPCgdyZXZpZXdzGAEgASgBEg8KB21pbnV0ZXMYAiABKAESEAoIcmV0YWluZWQYAyABKAESDAoEb3dlZBgEIAEoBRIPCgd0aHJvdWdoGAUgASgBEg4KBmVub3VnaBgGIAEoCBILCgNtZXQYByABKAgSDgoGY2xvc2VkGAggASgJEg4KBmNsZWFycxgJIAEoBRIPCgdiYWNrbG9nGAogAygFEg8KB2xlYXJuZWQYCyABKAUSDgoGbGVhcm5zGAwgASgFEg0KBXNob3J0GA0gASgFIi4KBE1hcmsSCgoCYXQYASABKAUSDQoFdmFsdWUYAiABKAESCwoDZGF5GAMgASgJIiEKEVNjaGVkdWxpbmdSZXF1ZXN0EgwKBGRlY2sYASABKAkiqgEKElNjaGVkdWxpbmdSZXNwb25zZRIlCgZwcmVzZXQYASABKAsyEC5udW1lbi52MS5QcmVzZXRIAIgBARInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgBiAEBEiYKAmF0GAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAogBAUIJCgdfcHJlc2V0QgoKCF9yZWZ1c2FsQgUKA19hdCIhChFSZWFkUHJlc2V0UmVxdWVzdBIMCgRwYXRoGAEgASgJIqoBChJSZWFkUHJlc2V0UmVzcG9uc2USJQoGcHJlc2V0GAEgASgLMhAubnVtZW4udjEuUHJlc2V0SACIAQESJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAYgBARImCgJhdBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAKIAQFCCQoHX3ByZXNldEIKCghfcmVmdXNhbEIFCgNfYXQiewoSV3JpdGVQcmVzZXRSZXF1ZXN0EgwKBHBhdGgYASABKAkSJAoIc2V0dGluZ3MYAiABKAsyEi5udW1lbi52MS5TZXR0aW5ncxIoCgRzZWVuGAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAIgBAUIHCgVfc2VlbiKKAQoTV3JpdGVQcmVzZXRSZXNwb25zZRInCgdyZWZ1c2FsGAEgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBEg8KB2NoYW5nZWQYAiABKAgSJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgBiAEBQgoKCF9yZWZ1c2FsQgUKA19hdCJCCgxDdXJ2ZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIkCghzZXR0aW5ncxgCIAEoCzISLm51bWVuLnYxLlNldHRpbmdzIi8KDUN1cnZlUmVzcG9uc2USHgoFY3VydmUYASABKAsyDy5udW1lbi52MS5DdXJ2ZSpaCgRHb2FsEhQKEEdPQUxfVU5TUEVDSUZJRUQQABIWChJHT0FMX01JTlVURVNfQV9EQVkQARISCg5HT0FMX1JFVEVOVElPThACEhAKDEdPQUxfQllfREFURRADKkMKBFJ1bGUSFAoQUlVMRV9VTlNQRUNJRklFRBAAEhEKDVJVTEVfSU5URVJWQUwQARISCg5SVUxFX1JFVEVOVElPThACKkQKBkNvdW50cxIWChJDT1VOVFNfVU5TUEVDSUZJRUQQABIQCgxDT1VOVFNfQ0FSRFMQARIQCgxDT1VOVFNfU0hPV1MQAjKoAgoOUHJlc2V0c1NlcnZpY2USRwoKU2NoZWR1bGluZxIbLm51bWVuLnYxLlNjaGVkdWxpbmdSZXF1ZXN0GhwubnVtZW4udjEuU2NoZWR1bGluZ1Jlc3BvbnNlEkcKClJlYWRQcmVzZXQSGy5udW1lbi52MS5SZWFkUHJlc2V0UmVxdWVzdBocLm51bWVuLnYxLlJlYWRQcmVzZXRSZXNwb25zZRJKCgtXcml0ZVByZXNldBIcLm51bWVuLnYxLldyaXRlUHJlc2V0UmVxdWVzdBodLm51bWVuLnYxLldyaXRlUHJlc2V0UmVzcG9uc2USOAoFQ3VydmUSFi5udW1lbi52MS5DdXJ2ZVJlcXVlc3QaFy5udW1lbi52MS5DdXJ2ZVJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_vault]);
 
 /**
  * Settings are how the decks pointing at one preset are scheduled. A preset
@@ -109,6 +109,22 @@ export type Settings = Message<"numen.v1.Settings"> & {
    * @generated from field: map<string, int32> load = 11;
    */
   load: { [key: string]: number };
+
+  /**
+   * What counts as a card face the person has learned. The value the rule reads
+   * stands in the field it names: `interval` for RULE_INTERVAL, `retention` for
+   * RULE_RETENTION.
+   *
+   * @generated from field: numen.v1.Rule learned = 12;
+   */
+  learned: Rule;
+
+  /**
+   * How long a card face is sent away for before it is learned, in days.
+   *
+   * @generated from field: int32 interval = 13;
+   */
+  interval: number;
 };
 
 /**
@@ -289,8 +305,9 @@ export type Point = Message<"numen.v1.Point"> & {
   owed: number;
 
   /**
-   * The share of the material got through by this day, whether the budget the
-   * preset keeps gets through all of it, and whether any budget does.
+   * The share of the material learned by this day under the rule the settings
+   * name, whether the budget the preset keeps learns every card face that can
+   * be learned by it, and whether the pace this place sets does.
    *
    * @generated from field: double through = 5;
    */
@@ -333,6 +350,33 @@ export type Point = Message<"numen.v1.Point"> & {
    * @generated from field: repeated int32 backlog = 10;
    */
   backlog: number[];
+
+  /**
+   * How many card faces stand learned today under the rule the settings name.
+   *
+   * @generated from field: int32 learned = 11;
+   */
+  learned: number;
+
+  /**
+   * How many days of review at this place it takes before every card face the
+   * preset schedules is learned. Zero is a place standing over a material
+   * already learned, and -1 is a horizon that ends with one of them still to
+   * learn, which a person reads as further off than this projection saw.
+   *
+   * @generated from field: int32 learns = 12;
+   */
+  learns: number;
+
+  /**
+   * How many card faces cannot be learned by this day whatever the pace: the
+   * rule wants more days than the day leaves them, so no pace reaches them and
+   * the pace beside this is the one that reaches every other. Say the number;
+   * the day is not moved and the rule is not bent to hide it.
+   *
+   * @generated from field: int32 short = 13;
+   */
+  short: number;
 };
 
 /**
@@ -637,6 +681,41 @@ export const GoalSchema: GenEnum<Goal> = /*@__PURE__*/
   enumDesc(file_numen_v1_presets, 0);
 
 /**
+ * Rule is what a preset counts as learned, and stands under `learned`. The
+ * value it reads stands under the key it names, and the other rule keeps its
+ * value and takes no part.
+ *
+ * @generated from enum numen.v1.Rule
+ */
+export enum Rule {
+  /**
+   * @generated from enum value: RULE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * A card face is learned once it is sent away for `interval` days or longer.
+   *
+   * @generated from enum value: RULE_INTERVAL = 1;
+   */
+  INTERVAL = 1,
+
+  /**
+   * A card face is learned once the chance of recalling it today is at or above
+   * `retention`.
+   *
+   * @generated from enum value: RULE_RETENTION = 2;
+   */
+  RETENTION = 2,
+}
+
+/**
+ * Describes the enum numen.v1.Rule.
+ */
+export const RuleSchema: GenEnum<Rule> = /*@__PURE__*/
+  enumDesc(file_numen_v1_presets, 1);
+
+/**
  * Counts is what a day's budget is spent on, and stands under `counts`.
  *
  * @generated from enum numen.v1.Counts
@@ -667,7 +746,7 @@ export enum Counts {
  * Describes the enum numen.v1.Counts.
  */
 export const CountsSchema: GenEnum<Counts> = /*@__PURE__*/
-  enumDesc(file_numen_v1_presets, 1);
+  enumDesc(file_numen_v1_presets, 2);
 
 /**
  * PresetsService answers about the presets of the one vault a client is looking

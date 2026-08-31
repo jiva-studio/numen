@@ -37,8 +37,8 @@ type Reviewed struct {
 	// names. A card owed today or owed and late is not in it: what is behind is
 	// what the front door counts, and this is what is ahead.
 	Due map[string]int
-	// Retained is how much of what a person had learned came back to them on
-	// each day. A card still being learned is not in it.
+	// Retained is how much of what came round in days came back on each day. A
+	// card face the scheduler is still putting into memory is not in it.
 	Retained map[string]history.Retention
 	// Streak is how many days up to now were reviewed without a gap.
 	Streak int
@@ -131,8 +131,8 @@ func added(one, other history.Tally) history.Tally {
 	}
 }
 
-// ahead is how much falls on each day still to come, and how much of what a
-// person had learned came back to them on each day behind.
+// ahead is how much falls on each day still to come, and how much of what came
+// round in days came back on each day behind.
 //
 // A card owed today, or owed and late, is not in what is to come: what a person
 // owes now is what the front door counts, and this says what is coming after

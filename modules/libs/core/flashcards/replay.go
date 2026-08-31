@@ -60,16 +60,16 @@ func ReplayUnder(d Day, by Under, answers []Answer) map[CardFace]Schedule {
 	return out
 }
 
-// Retention is how much of what a person had learned came back to them, over
-// one day: the answers given to cards they had learned, and how many of those
-// came back at all.
+// Retention is how much of what came round in days came back, over one day:
+// the answers given to spaced card faces, and how many of those came back at
+// all.
 //
-// A card still being learned is not in it. What is asked of one is whether it
-// comes back after ten minutes, which says nothing about how well anything is
-// remembered.
+// A card face the scheduler is still putting into memory is in neither. What is
+// asked of one is whether it comes back after ten minutes, which says nothing
+// about memory.
 type Retention struct {
-	// Asked is the answers given to cards already learned, and Recalled the
-	// ones among them that were not Again.
+	// Asked is the answers given to spaced card faces, and Recalled the ones
+	// among them that were not Again.
 	Asked    int
 	Recalled int
 }
@@ -77,11 +77,11 @@ type Retention struct {
 // Retained is what came back on each day, by the name of the day.
 //
 // It is worked out with the replay and not beside it, because whether a card
-// was one the person had learned is a thing only the answers before it can say.
+// face was spaced is a thing only the answers before it can say.
 func Retained(by Scheduler, d Day, answers []Answer) map[string]Retention {
 	out := make(map[string]Retention)
 	replayed(by, answers, func(before Schedule, a Answer) {
-		if !by.Learned(before) {
+		if !by.Spaced(before) {
 			return
 		}
 		day := d.Names(a.At)

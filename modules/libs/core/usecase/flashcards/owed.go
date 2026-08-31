@@ -102,7 +102,10 @@ func (u Owed) Execute(ctx context.Context, v domain.Vault) (Owing, error) {
 	schedules := u.Schedules.counted(ctx, v, log, asks)
 
 	now := u.now()
-	day, err := budgeted(ctx, v, reading, u.Day, standing, schedules, log, u.Schedules.By, now)
+	day, err := budgeted(
+		ctx, v, reading, u.Day, standing, schedules, log,
+		u.Schedules.By, u.Schedules.at, now,
+	)
 	if err != nil {
 		return Owing{}, err
 	}

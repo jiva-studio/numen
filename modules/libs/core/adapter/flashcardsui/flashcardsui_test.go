@@ -687,6 +687,11 @@ func TestTheDeckScreenAndThePresetTabAgreeUnderEveryGoal(t *testing.T) {
 		by     time.Time
 		closed history.Closed
 		never  []history.Closed
+		// learned is the rule the goal is worked out against, where the goal
+		// reads one. Six days are too few to carry a card past an interval of
+		// three weeks, and a date paces the day for the cards that can get
+		// there.
+		learned history.Rule
 		// sameDay is whether the control moves today, so that what the tab
 		// draws where it stands is the day the deck screen offers.
 		sameDay bool
@@ -704,7 +709,7 @@ func TestTheDeckScreenAndThePresetTabAgreeUnderEveryGoal(t *testing.T) {
 			never:  []history.Closed{history.ClosedMinutes, history.ClosedDate},
 		},
 		{
-			what: "a date", goal: history.GoalDate,
+			what: "a date", goal: history.GoalDate, learned: history.RuleRetention,
 			by: time.Now().AddDate(0, 0, 6), closed: history.ClosedDate, sameDay: true,
 			never: []history.Closed{
 				history.ClosedNew, history.ClosedReviews, history.ClosedMinutes,
@@ -717,6 +722,9 @@ func TestTheDeckScreenAndThePresetTabAgreeUnderEveryGoal(t *testing.T) {
 
 			p := asWritten(t, api, v, "Steady.md")
 			p.Goal, p.By = one.goal, one.by
+			if one.learned != "" {
+				p.Rule = one.learned
+			}
 			writtenBack(t, api, v, "Steady.md", p)
 
 			offers := 0

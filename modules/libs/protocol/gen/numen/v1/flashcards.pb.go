@@ -1264,11 +1264,11 @@ type Reviewing struct {
 	Hard  int32 `protobuf:"varint,4,opt,name=hard,proto3" json:"hard,omitempty"`
 	Good  int32 `protobuf:"varint,5,opt,name=good,proto3" json:"good,omitempty"`
 	Easy  int32 `protobuf:"varint,6,opt,name=easy,proto3" json:"easy,omitempty"`
-	// How much of what the person had already learned came back to them:
-	// `asked` is the answers given to learned cards, `recalled` the ones among
-	// them that were not Again. A card still being learned is in neither — what
-	// is asked of one is whether it comes back after ten minutes, which says
-	// nothing about how well anything is remembered.
+	// How much of what came round in days came back: `asked` is the answers
+	// given to card faces the scheduler sends days away, `recalled` the ones
+	// among them that were not Again. A card face still coming round in minutes
+	// is in neither — what is asked of one is whether it comes back after ten
+	// minutes, which says nothing about memory.
 	Asked         int32 `protobuf:"varint,7,opt,name=asked,proto3" json:"asked,omitempty"`
 	Recalled      int32 `protobuf:"varint,8,opt,name=recalled,proto3" json:"recalled,omitempty"`
 	unknownFields protoimpl.UnknownFields

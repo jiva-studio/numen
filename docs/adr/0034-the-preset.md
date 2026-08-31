@@ -51,15 +51,35 @@ Several decks pointing at one preset is what sharing it looks like. Scheduling a
 
 `goal` names which of three a preset is steered by — `minutes_a_day`, `retention` or `by_date` — and the value stands under the key it names.
 
-That budget is the only one that closes the day. Under `minutes_a_day` the day is spent against the time each answer took. Under `retention` the target sets the intervals and the two card counts close the day. Under `by_date` the day holds what has to be got through to be through the material by that day, and neither the minutes nor the counts cut it short.
+That budget is the only one that closes the day. Under `minutes_a_day` the day is spent against the time each answer took. Under `retention` the target sets the intervals and the two card counts close the day. Under `by_date` the day holds what has to be got through to have the material learned by that day, and neither the minutes nor the counts cut it short.
 
 A setting the goal does not name keeps its value, takes no part while another goal is in force, and is in force again the moment its own goal is chosen. It is neither zeroed nor removed: a person who set a card limit last month finds it where they left it.
 
 ### What a preset settles, and what it does not
 
-Everything about how a deck is scheduled is the preset's. This record settles seven of them: how many new cards and how many reviews a day, whether a budget is spent on a card or on a showing, how long a day runs, the retention target, the share of the load each day of the week carries, an even load, and the goal that steers them. The order cards arrive in, what is done about a card that will not stick and what is done about two faces of one card belong here too, and each arrives with the code that reads it.
+Everything about how a deck is scheduled is the preset's. This record settles eight of them: how many new cards and how many reviews a day, whether a budget is spent on a card or on a showing, how long a day runs, the retention target, what counts as learned, the share of the load each day of the week carries, an even load, and the goal that steers them. The order cards arrive in, what is done about a card that will not stick and what is done about two faces of one card belong here too, and each arrives with the code that reads it.
 
 `numen.json` keeps the hour a day begins at and how a streak is counted. Both are facts about a person's clock and habit rather than about a subject.
+
+### A preset says what counts as learned
+
+`learned` names the rule a preset counts by — `interval` or `retention` — and the value stands under the key it names, as `goal` does.
+
+Under `learned: interval` a card is learned once the interval it is sent away for reaches `interval` days: it is learned when it is being asked for at long range. Under `learned: retention` it is learned once the chance of recalling it today stands at or above `retention`: it is learned while it is still in the head. The rule the preset does not name keeps its value and takes no part, exactly as a budget the goal does not name does.
+
+**The rule is the person's.** A hundred words of vocabulary and a hundred ślokas are not learned at the same interval, and a person carrying a subject to an examination means something else by the word than one keeping a language alive. It is a fact about a subject and the person studying it, so it stands in the preset beside everything else about how a deck is scheduled.
+
+**One question, one function.** How much of a preset's material stands learned, and how long until all of it does, are read from the same rule in the same place, so the number on a screen and the number in a projection are one number.
+
+The scheduler's own reckoning is another thing and carries another word: a card it has stopped sending minutes away and begun sending days away is **spaced**, and retention is measured over the answers to spaced cards. No setting reaches that.
+
+### A date aims at that rule, tested on the day it names
+
+A person who names a day means they will know the material by it. `by_date` is that day, and what knowing means is the `learned` rule of the same preset, asked of every card face on the day itself.
+
+**The pace follows from the rule.** A card face has to be begun early enough to be learned by then, so the material is spread over the days on which beginning one still leaves it time: under `learned: interval` a card that must be sent away for three weeks is begun weeks before the day, and under `learned: retention` one that has only to be recalled on the day may be begun on it. The same material and the same date are two paces, and each is worked out from the same rule the deck screen counts by.
+
+**What no pace can reach is counted and said.** A card face added a fortnight before a day it must stand three weeks away from cannot get there, whatever a person does: the arithmetic forbids it, and no pace is a remedy. The projection carries how many card faces the day leaves short, and the picture says the number. The day is not moved, the rule is not bent, and the pace beside that number is the one that gets there every card face that can.
 
 ### Budgets add up
 

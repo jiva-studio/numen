@@ -43,12 +43,12 @@ type Scheduler interface {
 	// Next is where an answer leaves a schedule.
 	Next(s Schedule, at time.Time, r Rating) Schedule
 
-	// Learned reports whether a card face standing at this schedule is one the
-	// person has learned, rather than one still being put into their memory.
+	// Spaced reports whether a card face standing at this schedule comes round
+	// in days. One the scheduler is still putting into memory comes round in
+	// minutes.
 	//
-	// What is asked of a learned card is whether it comes back after days away;
-	// what is asked of one being learned is whether it comes back after ten
-	// minutes. Only the first says anything about how well a person is
-	// remembering, so only the first is counted when that is measured.
-	Learned(s Schedule) bool
+	// Retention is measured over the answers given to spaced card faces and no
+	// others: what a card comes back as after ten minutes says nothing about
+	// memory.
+	Spaced(s Schedule) bool
 }

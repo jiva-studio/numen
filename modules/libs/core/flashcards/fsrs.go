@@ -44,9 +44,9 @@ func weighed(p fsrs.Parameters) string {
 	return hex.EncodeToString(sum[:4])
 }
 
-// Learned is a card face this scheduler has put into review: it has been
-// answered well enough to be sent days away, rather than minutes.
-func (FSRS) Learned(s Schedule) bool {
+// Spaced is a card face this scheduler has put into review: it has been
+// answered well enough to come round in days.
+func (FSRS) Spaced(s Schedule) bool {
 	return s.Seen() && fsrs.State(s.Phase) == fsrs.Review
 }
 

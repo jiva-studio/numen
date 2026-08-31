@@ -90,6 +90,61 @@ func (Goal) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{0}
 }
 
+// Rule is what a preset counts as learned, and stands under `learned`. The
+// value it reads stands under the key it names, and the other rule keeps its
+// value and takes no part.
+type Rule int32
+
+const (
+	Rule_RULE_UNSPECIFIED Rule = 0
+	// A card face is learned once it is sent away for `interval` days or longer.
+	Rule_RULE_INTERVAL Rule = 1
+	// A card face is learned once the chance of recalling it today is at or above
+	// `retention`.
+	Rule_RULE_RETENTION Rule = 2
+)
+
+// Enum value maps for Rule.
+var (
+	Rule_name = map[int32]string{
+		0: "RULE_UNSPECIFIED",
+		1: "RULE_INTERVAL",
+		2: "RULE_RETENTION",
+	}
+	Rule_value = map[string]int32{
+		"RULE_UNSPECIFIED": 0,
+		"RULE_INTERVAL":    1,
+		"RULE_RETENTION":   2,
+	}
+)
+
+func (x Rule) Enum() *Rule {
+	p := new(Rule)
+	*p = x
+	return p
+}
+
+func (x Rule) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Rule) Descriptor() protoreflect.EnumDescriptor {
+	return file_numen_v1_presets_proto_enumTypes[1].Descriptor()
+}
+
+func (Rule) Type() protoreflect.EnumType {
+	return &file_numen_v1_presets_proto_enumTypes[1]
+}
+
+func (x Rule) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Rule.Descriptor instead.
+func (Rule) EnumDescriptor() ([]byte, []int) {
+	return file_numen_v1_presets_proto_rawDescGZIP(), []int{1}
+}
+
 // Counts is what a day's budget is spent on, and stands under `counts`.
 type Counts int32
 
@@ -127,11 +182,11 @@ func (x Counts) String() string {
 }
 
 func (Counts) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_presets_proto_enumTypes[1].Descriptor()
+	return file_numen_v1_presets_proto_enumTypes[2].Descriptor()
 }
 
 func (Counts) Type() protoreflect.EnumType {
-	return &file_numen_v1_presets_proto_enumTypes[1]
+	return &file_numen_v1_presets_proto_enumTypes[2]
 }
 
 func (x Counts) Number() protoreflect.EnumNumber {
@@ -140,7 +195,7 @@ func (x Counts) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Counts.Descriptor instead.
 func (Counts) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_presets_proto_rawDescGZIP(), []int{1}
+	return file_numen_v1_presets_proto_rawDescGZIP(), []int{2}
 }
 
 // Settings are how the decks pointing at one preset are scheduled. A preset
@@ -175,7 +230,13 @@ type Settings struct {
 	// How much of a day's load each day of the week carries, in per cent, under
 	// the first three letters of the day's name in lower case. A day not named
 	// carries the whole of it, and a day at nothing schedules nothing.
-	Load          map[string]int32 `protobuf:"bytes,11,rep,name=load,proto3" json:"load,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	Load map[string]int32 `protobuf:"bytes,11,rep,name=load,proto3" json:"load,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	// What counts as a card face the person has learned. The value the rule reads
+	// stands in the field it names: `interval` for RULE_INTERVAL, `retention` for
+	// RULE_RETENTION.
+	Learned Rule `protobuf:"varint,12,opt,name=learned,proto3,enum=numen.v1.Rule" json:"learned,omitempty"`
+	// How long a card face is sent away for before it is learned, in days.
+	Interval      int32 `protobuf:"varint,13,opt,name=interval,proto3" json:"interval,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -278,6 +339,20 @@ func (x *Settings) GetLoad() map[string]int32 {
 		return x.Load
 	}
 	return nil
+}
+
+func (x *Settings) GetLearned() Rule {
+	if x != nil {
+		return x.Learned
+	}
+	return Rule_RULE_UNSPECIFIED
+}
+
+func (x *Settings) GetInterval() int32 {
+	if x != nil {
+		return x.Interval
+	}
+	return 0
 }
 
 // Preset is one preset as a read hands it over.
@@ -506,8 +581,9 @@ type Point struct {
 	// the backlog left at the end and not the debt a day carries. Read `clears`
 	// for how long the backlog standing now takes to go.
 	Owed int32 `protobuf:"varint,4,opt,name=owed,proto3" json:"owed,omitempty"`
-	// The share of the material got through by this day, whether the budget the
-	// preset keeps gets through all of it, and whether any budget does.
+	// The share of the material learned by this day under the rule the settings
+	// name, whether the budget the preset keeps learns every card face that can
+	// be learned by it, and whether the pace this place sets does.
 	Through float64 `protobuf:"fixed64,5,opt,name=through,proto3" json:"through,omitempty"`
 	Enough  bool    `protobuf:"varint,6,opt,name=enough,proto3" json:"enough,omitempty"`
 	Met     bool    `protobuf:"varint,7,opt,name=met,proto3" json:"met,omitempty"`
@@ -523,7 +599,19 @@ type Point struct {
 	// How many card faces stand overdue at the end of each day projected at this
 	// place, one entry a day over the whole horizon. It runs over days, which is
 	// a different axis from the grid, so it is drawn as a plot of its own.
-	Backlog       []int32 `protobuf:"varint,10,rep,packed,name=backlog,proto3" json:"backlog,omitempty"`
+	Backlog []int32 `protobuf:"varint,10,rep,packed,name=backlog,proto3" json:"backlog,omitempty"`
+	// How many card faces stand learned today under the rule the settings name.
+	Learned int32 `protobuf:"varint,11,opt,name=learned,proto3" json:"learned,omitempty"`
+	// How many days of review at this place it takes before every card face the
+	// preset schedules is learned. Zero is a place standing over a material
+	// already learned, and -1 is a horizon that ends with one of them still to
+	// learn, which a person reads as further off than this projection saw.
+	Learns int32 `protobuf:"varint,12,opt,name=learns,proto3" json:"learns,omitempty"`
+	// How many card faces cannot be learned by this day whatever the pace: the
+	// rule wants more days than the day leaves them, so no pace reaches them and
+	// the pace beside this is the one that reaches every other. Say the number;
+	// the day is not moved and the rule is not bent to hide it.
+	Short         int32 `protobuf:"varint,13,opt,name=short,proto3" json:"short,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -626,6 +714,27 @@ func (x *Point) GetBacklog() []int32 {
 		return x.Backlog
 	}
 	return nil
+}
+
+func (x *Point) GetLearned() int32 {
+	if x != nil {
+		return x.Learned
+	}
+	return 0
+}
+
+func (x *Point) GetLearns() int32 {
+	if x != nil {
+		return x.Learns
+	}
+	return 0
+}
+
+func (x *Point) GetShort() int32 {
+	if x != nil {
+		return x.Short
+	}
+	return 0
 }
 
 // Mark is one place on the curve worth pointing at.
@@ -1144,7 +1253,7 @@ var File_numen_v1_presets_proto protoreflect.FileDescriptor
 
 const file_numen_v1_presets_proto_rawDesc = "" +
 	"\n" +
-	"\x16numen/v1/presets.proto\x12\bnumen.v1\x1a\x14numen/v1/vault.proto\"\xa7\x03\n" +
+	"\x16numen/v1/presets.proto\x12\bnumen.v1\x1a\x14numen/v1/vault.proto\"\xed\x03\n" +
 	"\bSettings\x12\"\n" +
 	"\x04goal\x18\x01 \x01(\x0e2\x0e.numen.v1.GoalR\x04goal\x12\x17\n" +
 	"\aby_date\x18\x02 \x01(\tR\x06byDate\x12\"\n" +
@@ -1156,7 +1265,9 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x06counts\x18\t \x01(\x0e2\x10.numen.v1.CountsR\x06counts\x12\x18\n" +
 	"\abacklog\x18\n" +
 	" \x01(\x05R\abacklog\x120\n" +
-	"\x04load\x18\v \x03(\v2\x1c.numen.v1.Settings.LoadEntryR\x04load\x1a7\n" +
+	"\x04load\x18\v \x03(\v2\x1c.numen.v1.Settings.LoadEntryR\x04load\x12(\n" +
+	"\alearned\x18\f \x01(\x0e2\x0e.numen.v1.RuleR\alearned\x12\x1a\n" +
+	"\binterval\x18\r \x01(\x05R\binterval\x1a7\n" +
 	"\tLoadEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01J\x04\b\a\x10\bR\n" +
@@ -1177,7 +1288,7 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x05cards\x18\b \x01(\x05R\x05cards\x12\x18\n" +
 	"\aoverdue\x18\t \x01(\x05R\aoverdue\x12\x18\n" +
 	"\aunbegun\x18\n" +
-	" \x01(\x05R\aunbegun\"\xf9\x01\n" +
+	" \x01(\x05R\aunbegun\"\xc1\x02\n" +
 	"\x05Point\x12\x18\n" +
 	"\areviews\x18\x01 \x01(\x01R\areviews\x12\x18\n" +
 	"\aminutes\x18\x02 \x01(\x01R\aminutes\x12\x1a\n" +
@@ -1189,7 +1300,10 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x06closed\x18\b \x01(\tR\x06closed\x12\x16\n" +
 	"\x06clears\x18\t \x01(\x05R\x06clears\x12\x18\n" +
 	"\abacklog\x18\n" +
-	" \x03(\x05R\abacklog\">\n" +
+	" \x03(\x05R\abacklog\x12\x18\n" +
+	"\alearned\x18\v \x01(\x05R\alearned\x12\x16\n" +
+	"\x06learns\x18\f \x01(\x05R\x06learns\x12\x14\n" +
+	"\x05short\x18\r \x01(\x05R\x05short\">\n" +
 	"\x04Mark\x12\x0e\n" +
 	"\x02at\x18\x01 \x01(\x05R\x02at\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x01R\x05value\x12\x10\n" +
@@ -1235,7 +1349,11 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x10GOAL_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12GOAL_MINUTES_A_DAY\x10\x01\x12\x12\n" +
 	"\x0eGOAL_RETENTION\x10\x02\x12\x10\n" +
-	"\fGOAL_BY_DATE\x10\x03*D\n" +
+	"\fGOAL_BY_DATE\x10\x03*C\n" +
+	"\x04Rule\x12\x14\n" +
+	"\x10RULE_UNSPECIFIED\x10\x00\x12\x11\n" +
+	"\rRULE_INTERVAL\x10\x01\x12\x12\n" +
+	"\x0eRULE_RETENTION\x10\x02*D\n" +
 	"\x06Counts\x12\x16\n" +
 	"\x12COUNTS_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fCOUNTS_CARDS\x10\x01\x12\x10\n" +
@@ -1260,62 +1378,64 @@ func file_numen_v1_presets_proto_rawDescGZIP() []byte {
 	return file_numen_v1_presets_proto_rawDescData
 }
 
-var file_numen_v1_presets_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_numen_v1_presets_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_numen_v1_presets_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_numen_v1_presets_proto_goTypes = []any{
 	(Goal)(0),                   // 0: numen.v1.Goal
-	(Counts)(0),                 // 1: numen.v1.Counts
-	(*Settings)(nil),            // 2: numen.v1.Settings
-	(*Preset)(nil),              // 3: numen.v1.Preset
-	(*Curve)(nil),               // 4: numen.v1.Curve
-	(*Point)(nil),               // 5: numen.v1.Point
-	(*Mark)(nil),                // 6: numen.v1.Mark
-	(*SchedulingRequest)(nil),   // 7: numen.v1.SchedulingRequest
-	(*SchedulingResponse)(nil),  // 8: numen.v1.SchedulingResponse
-	(*ReadPresetRequest)(nil),   // 9: numen.v1.ReadPresetRequest
-	(*ReadPresetResponse)(nil),  // 10: numen.v1.ReadPresetResponse
-	(*WritePresetRequest)(nil),  // 11: numen.v1.WritePresetRequest
-	(*WritePresetResponse)(nil), // 12: numen.v1.WritePresetResponse
-	(*CurveRequest)(nil),        // 13: numen.v1.CurveRequest
-	(*CurveResponse)(nil),       // 14: numen.v1.CurveResponse
-	nil,                         // 15: numen.v1.Settings.LoadEntry
-	(Refusal)(0),                // 16: numen.v1.Refusal
-	(*Fingerprint)(nil),         // 17: numen.v1.Fingerprint
+	(Rule)(0),                   // 1: numen.v1.Rule
+	(Counts)(0),                 // 2: numen.v1.Counts
+	(*Settings)(nil),            // 3: numen.v1.Settings
+	(*Preset)(nil),              // 4: numen.v1.Preset
+	(*Curve)(nil),               // 5: numen.v1.Curve
+	(*Point)(nil),               // 6: numen.v1.Point
+	(*Mark)(nil),                // 7: numen.v1.Mark
+	(*SchedulingRequest)(nil),   // 8: numen.v1.SchedulingRequest
+	(*SchedulingResponse)(nil),  // 9: numen.v1.SchedulingResponse
+	(*ReadPresetRequest)(nil),   // 10: numen.v1.ReadPresetRequest
+	(*ReadPresetResponse)(nil),  // 11: numen.v1.ReadPresetResponse
+	(*WritePresetRequest)(nil),  // 12: numen.v1.WritePresetRequest
+	(*WritePresetResponse)(nil), // 13: numen.v1.WritePresetResponse
+	(*CurveRequest)(nil),        // 14: numen.v1.CurveRequest
+	(*CurveResponse)(nil),       // 15: numen.v1.CurveResponse
+	nil,                         // 16: numen.v1.Settings.LoadEntry
+	(Refusal)(0),                // 17: numen.v1.Refusal
+	(*Fingerprint)(nil),         // 18: numen.v1.Fingerprint
 }
 var file_numen_v1_presets_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.Settings.goal:type_name -> numen.v1.Goal
-	1,  // 1: numen.v1.Settings.counts:type_name -> numen.v1.Counts
-	15, // 2: numen.v1.Settings.load:type_name -> numen.v1.Settings.LoadEntry
-	2,  // 3: numen.v1.Preset.settings:type_name -> numen.v1.Settings
-	0,  // 4: numen.v1.Curve.goal:type_name -> numen.v1.Goal
-	5,  // 5: numen.v1.Curve.at:type_name -> numen.v1.Point
-	6,  // 6: numen.v1.Curve.now:type_name -> numen.v1.Mark
-	6,  // 7: numen.v1.Curve.suggested:type_name -> numen.v1.Mark
-	3,  // 8: numen.v1.SchedulingResponse.preset:type_name -> numen.v1.Preset
-	16, // 9: numen.v1.SchedulingResponse.refusal:type_name -> numen.v1.Refusal
-	17, // 10: numen.v1.SchedulingResponse.at:type_name -> numen.v1.Fingerprint
-	3,  // 11: numen.v1.ReadPresetResponse.preset:type_name -> numen.v1.Preset
-	16, // 12: numen.v1.ReadPresetResponse.refusal:type_name -> numen.v1.Refusal
-	17, // 13: numen.v1.ReadPresetResponse.at:type_name -> numen.v1.Fingerprint
-	2,  // 14: numen.v1.WritePresetRequest.settings:type_name -> numen.v1.Settings
-	17, // 15: numen.v1.WritePresetRequest.seen:type_name -> numen.v1.Fingerprint
-	16, // 16: numen.v1.WritePresetResponse.refusal:type_name -> numen.v1.Refusal
-	17, // 17: numen.v1.WritePresetResponse.at:type_name -> numen.v1.Fingerprint
-	2,  // 18: numen.v1.CurveRequest.settings:type_name -> numen.v1.Settings
-	4,  // 19: numen.v1.CurveResponse.curve:type_name -> numen.v1.Curve
-	7,  // 20: numen.v1.PresetsService.Scheduling:input_type -> numen.v1.SchedulingRequest
-	9,  // 21: numen.v1.PresetsService.ReadPreset:input_type -> numen.v1.ReadPresetRequest
-	11, // 22: numen.v1.PresetsService.WritePreset:input_type -> numen.v1.WritePresetRequest
-	13, // 23: numen.v1.PresetsService.Curve:input_type -> numen.v1.CurveRequest
-	8,  // 24: numen.v1.PresetsService.Scheduling:output_type -> numen.v1.SchedulingResponse
-	10, // 25: numen.v1.PresetsService.ReadPreset:output_type -> numen.v1.ReadPresetResponse
-	12, // 26: numen.v1.PresetsService.WritePreset:output_type -> numen.v1.WritePresetResponse
-	14, // 27: numen.v1.PresetsService.Curve:output_type -> numen.v1.CurveResponse
-	24, // [24:28] is the sub-list for method output_type
-	20, // [20:24] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	2,  // 1: numen.v1.Settings.counts:type_name -> numen.v1.Counts
+	16, // 2: numen.v1.Settings.load:type_name -> numen.v1.Settings.LoadEntry
+	1,  // 3: numen.v1.Settings.learned:type_name -> numen.v1.Rule
+	3,  // 4: numen.v1.Preset.settings:type_name -> numen.v1.Settings
+	0,  // 5: numen.v1.Curve.goal:type_name -> numen.v1.Goal
+	6,  // 6: numen.v1.Curve.at:type_name -> numen.v1.Point
+	7,  // 7: numen.v1.Curve.now:type_name -> numen.v1.Mark
+	7,  // 8: numen.v1.Curve.suggested:type_name -> numen.v1.Mark
+	4,  // 9: numen.v1.SchedulingResponse.preset:type_name -> numen.v1.Preset
+	17, // 10: numen.v1.SchedulingResponse.refusal:type_name -> numen.v1.Refusal
+	18, // 11: numen.v1.SchedulingResponse.at:type_name -> numen.v1.Fingerprint
+	4,  // 12: numen.v1.ReadPresetResponse.preset:type_name -> numen.v1.Preset
+	17, // 13: numen.v1.ReadPresetResponse.refusal:type_name -> numen.v1.Refusal
+	18, // 14: numen.v1.ReadPresetResponse.at:type_name -> numen.v1.Fingerprint
+	3,  // 15: numen.v1.WritePresetRequest.settings:type_name -> numen.v1.Settings
+	18, // 16: numen.v1.WritePresetRequest.seen:type_name -> numen.v1.Fingerprint
+	17, // 17: numen.v1.WritePresetResponse.refusal:type_name -> numen.v1.Refusal
+	18, // 18: numen.v1.WritePresetResponse.at:type_name -> numen.v1.Fingerprint
+	3,  // 19: numen.v1.CurveRequest.settings:type_name -> numen.v1.Settings
+	5,  // 20: numen.v1.CurveResponse.curve:type_name -> numen.v1.Curve
+	8,  // 21: numen.v1.PresetsService.Scheduling:input_type -> numen.v1.SchedulingRequest
+	10, // 22: numen.v1.PresetsService.ReadPreset:input_type -> numen.v1.ReadPresetRequest
+	12, // 23: numen.v1.PresetsService.WritePreset:input_type -> numen.v1.WritePresetRequest
+	14, // 24: numen.v1.PresetsService.Curve:input_type -> numen.v1.CurveRequest
+	9,  // 25: numen.v1.PresetsService.Scheduling:output_type -> numen.v1.SchedulingResponse
+	11, // 26: numen.v1.PresetsService.ReadPreset:output_type -> numen.v1.ReadPresetResponse
+	13, // 27: numen.v1.PresetsService.WritePreset:output_type -> numen.v1.WritePresetResponse
+	15, // 28: numen.v1.PresetsService.Curve:output_type -> numen.v1.CurveResponse
+	25, // [25:29] is the sub-list for method output_type
+	21, // [21:25] is the sub-list for method input_type
+	21, // [21:21] is the sub-list for extension type_name
+	21, // [21:21] is the sub-list for extension extendee
+	0,  // [0:21] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_presets_proto_init() }
@@ -1333,7 +1453,7 @@ func file_numen_v1_presets_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_presets_proto_rawDesc), len(file_numen_v1_presets_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      3,
 			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,

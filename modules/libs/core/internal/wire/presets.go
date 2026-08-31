@@ -37,6 +37,8 @@ func SettingsOf(p history.Preset) *v1.Settings {
 		NewADay:     int32(p.NewADay),
 		ReviewsADay: int32(p.ReviewsADay),
 		Retention:   p.Retention,
+		Learned:     RuleOf(p.Rule),
+		Interval:    int32(p.Interval),
 		Backlog:     int32(p.Backlog),
 		EvenLoad:    p.EvenLoad,
 		Load:        make(map[string]int32, len(p.Load)),
@@ -61,6 +63,8 @@ func SettingsIn(s *v1.Settings) (history.Preset, error) {
 		NewADay:     int(s.GetNewADay()),
 		ReviewsADay: int(s.GetReviewsADay()),
 		Retention:   s.GetRetention(),
+		Rule:        RuleIn(s.GetLearned()),
+		Interval:    int(s.GetInterval()),
 		Backlog:     int(s.GetBacklog()),
 		EvenLoad:    s.GetEvenLoad(),
 	}
@@ -108,7 +112,10 @@ func CurveOf(c flashcards.Curve) *v1.Curve {
 			Enough:   one.Enough,
 			Met:      one.Met,
 			Closed:   string(one.Closed),
+			Short:    int32(one.Short),
 			Clears:   int32(one.Clears),
+			Learned:  int32(one.Learned),
+			Learns:   int32(one.Learns),
 			Backlog:  backlog(one.Backlog),
 		})
 	}
@@ -143,6 +150,31 @@ func GoalIn(g v1.Goal) history.Goal {
 		return history.GoalRetention
 	case v1.Goal_GOAL_BY_DATE:
 		return history.GoalDate
+	default:
+		return ""
+	}
+}
+
+// RuleOf is what counts as learned, as the schema names it.
+func RuleOf(r history.Rule) v1.Rule {
+	switch r {
+	case history.RuleInterval:
+		return v1.Rule_RULE_INTERVAL
+	case history.RuleRetention:
+		return v1.Rule_RULE_RETENTION
+	default:
+		return v1.Rule_RULE_UNSPECIFIED
+	}
+}
+
+// RuleIn is the rule a client named, in the words the core holds it in. A rule
+// the schema does not name is refused where the settings are weighed.
+func RuleIn(r v1.Rule) history.Rule {
+	switch r {
+	case v1.Rule_RULE_INTERVAL:
+		return history.RuleInterval
+	case v1.Rule_RULE_RETENTION:
+		return history.RuleRetention
 	default:
 		return ""
 	}

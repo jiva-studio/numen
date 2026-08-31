@@ -371,3 +371,34 @@ func TestAGoalOfADateWritesTheDay(t *testing.T) {
 		t.Errorf("preset = %+v", held.Preset)
 	}
 }
+
+// The rule a preset does not name keeps its value through a write, so a person
+// who set an interval finds it where they left it after a spell under the other
+// rule.
+func TestTheRuleNotNamedKeepsItsValue(t *testing.T) {
+	s := opened(t, settled)
+
+	p := minutes()
+	p.Rule, p.Interval, p.Retention = history.RuleRetention, 45, 0.87
+	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileRef{}); err != nil {
+		t.Fatal(err)
+	}
+
+	held := read(t, s.vault, "Sanskrit.md")
+	for _, written := range []string{"learned: retention", "interval: 45", "retention: 0.87"} {
+		if !strings.Contains(held, written) {
+			t.Errorf("%q was not written to\n%s", written, held)
+		}
+	}
+
+	back, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(back.Problems) != 0 {
+		t.Errorf("problems = %v", back.Problems)
+	}
+	if back.Preset.Rule != history.RuleRetention || back.Preset.Interval != 45 {
+		t.Errorf("preset = %+v", back.Preset)
+	}
+}

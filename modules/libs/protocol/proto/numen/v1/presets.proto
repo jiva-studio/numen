@@ -60,6 +60,20 @@ enum Goal {
   GOAL_BY_DATE = 3;
 }
 
+// Rule is what a preset counts as learned, and stands under `learned`. The
+// value it reads stands under the key it names, and the other rule keeps its
+// value and takes no part.
+enum Rule {
+  RULE_UNSPECIFIED = 0;
+
+  // A card face is learned once it is sent away for `interval` days or longer.
+  RULE_INTERVAL = 1;
+
+  // A card face is learned once the chance of recalling it today is at or above
+  // `retention`.
+  RULE_RETENTION = 2;
+}
+
 // Counts is what a day's budget is spent on, and stands under `counts`.
 enum Counts {
   COUNTS_UNSPECIFIED = 0;
@@ -115,6 +129,14 @@ message Settings {
   // the first three letters of the day's name in lower case. A day not named
   // carries the whole of it, and a day at nothing schedules nothing.
   map<string, int32> load = 11;
+
+  // What counts as a card face the person has learned. The value the rule reads
+  // stands in the field it names: `interval` for RULE_INTERVAL, `retention` for
+  // RULE_RETENTION.
+  Rule learned = 12;
+
+  // How long a card face is sent away for before it is learned, in days.
+  int32 interval = 13;
 }
 
 // Preset is one preset as a read hands it over.
@@ -191,8 +213,9 @@ message Point {
   // for how long the backlog standing now takes to go.
   int32 owed = 4;
 
-  // The share of the material got through by this day, whether the budget the
-  // preset keeps gets through all of it, and whether any budget does.
+  // The share of the material learned by this day under the rule the settings
+  // name, whether the budget the preset keeps learns every card face that can
+  // be learned by it, and whether the pace this place sets does.
   double through = 5;
   bool enough = 6;
   bool met = 7;
@@ -212,6 +235,21 @@ message Point {
   // place, one entry a day over the whole horizon. It runs over days, which is
   // a different axis from the grid, so it is drawn as a plot of its own.
   repeated int32 backlog = 10;
+
+  // How many card faces stand learned today under the rule the settings name.
+  int32 learned = 11;
+
+  // How many days of review at this place it takes before every card face the
+  // preset schedules is learned. Zero is a place standing over a material
+  // already learned, and -1 is a horizon that ends with one of them still to
+  // learn, which a person reads as further off than this projection saw.
+  int32 learns = 12;
+
+  // How many card faces cannot be learned by this day whatever the pace: the
+  // rule wants more days than the day leaves them, so no pace reaches them and
+  // the pace beside this is the one that reaches every other. Say the number;
+  // the day is not moved and the rule is not bent to hide it.
+  int32 short = 13;
 }
 
 // Mark is one place on the curve worth pointing at.

@@ -103,6 +103,8 @@ func TestAKeyThatCannotBeRead(t *testing.T) {
 		"goal: by_date\n":         "which day",
 		"by_date: 30 September\n": "by_date",
 		"counts: minutes\n":       "counts",
+		"learned: sideways\n":     "learned",
+		"interval: 400\n":         "outside",
 	} {
 		p, problems := flashcards.ReadPreset(front(t, written))
 		if len(problems) != 1 || !strings.Contains(problems[0], says) {
@@ -222,7 +224,7 @@ func TestWhichSettingsAGoalReads(t *testing.T) {
 	} {
 		p := flashcards.Defaults()
 		p.Goal, p.By, p.Backlog = one.goal, time.Now().AddDate(0, 0, 30), 40
-		admits := p.Admits(day, time.Now(), flashcards.Spent{}, 0)
+		admits := p.Admits(day, time.Now(), flashcards.Spent{}, flashcards.Left{})
 
 		if got := admits.Closes.Backlog != ""; got != one.reads {
 			t.Errorf("under %s the share is read %v, want %v", one.goal, got, one.reads)
@@ -235,5 +237,73 @@ func TestWhichSettingsAGoalReads(t *testing.T) {
 			t.Errorf("under %s the day gives the debt %d, want %d",
 				one.goal, admits.Backlog, want)
 		}
+	}
+}
+
+// What counts as learned is read from the file, and a preset saying nothing
+// learns a card face by the interval it is sent away for.
+func TestWhatCountsAsLearnedIsReadFromTheFile(t *testing.T) {
+	for written, want := range map[string]flashcards.Rule{
+		"":                     flashcards.RuleInterval,
+		"learned: interval\n":  flashcards.RuleInterval,
+		"learned: retention\n": flashcards.RuleRetention,
+	} {
+		p, problems := flashcards.ReadPreset(front(t, written))
+		if len(problems) != 0 {
+			t.Fatalf("%q: problems = %v", written, problems)
+		}
+		if p.Rule != want {
+			t.Errorf("%q: learned = %q, want %q", written, p.Rule, want)
+		}
+	}
+
+	p, problems := flashcards.ReadPreset(front(t, "interval: 45\n"))
+	if len(problems) != 0 {
+		t.Fatalf("problems = %v", problems)
+	}
+	if p.Interval != 45 {
+		t.Errorf("interval = %d, want 45", p.Interval)
+	}
+}
+
+// A card face is learned on one side of its rule's threshold and not on the
+// other, and the rule the preset does not name takes no part.
+func TestEachRuleOnEitherSideOfItsThreshold(t *testing.T) {
+	now := time.Date(2026, 3, 2, 9, 41, 0, 0, time.UTC)
+	standing := func(since, away int, stability float64) flashcards.Schedule {
+		last := now.AddDate(0, 0, -since)
+		return flashcards.Schedule{
+			Due: last.AddDate(0, 0, away), Last: last, Reps: 3, Stability: stability,
+		}
+	}
+
+	p := flashcards.Defaults()
+	p.Rule, p.Interval, p.Retention = flashcards.RuleInterval, 21, 0.9
+
+	// An interval of 21 days learns the card sent away for 21 and not the one
+	// sent away for 20, whatever the chance of recalling either today.
+	if !p.Learned(standing(200, 21, 10), now) {
+		t.Error("a card sent away for 21 days is not learned at an interval of 21")
+	}
+	if p.Learned(standing(0, 20, 90), now) {
+		t.Error("a card sent away for 20 days is learned at an interval of 21")
+	}
+	// Nobody has answered it, so neither rule has anything to read.
+	if p.Learned(flashcards.Schedule{}, now) {
+		t.Error("a card face nobody has answered is learned")
+	}
+
+	p.Rule = flashcards.RuleRetention
+
+	// The same two card faces, under the other rule: what is asked now is the
+	// chance of recalling them today, and the intervals take no part.
+	if p.Learned(standing(200, 21, 10), now) {
+		t.Error("a card 200 days past an answer at a stability of 10 is recalled nine times in ten")
+	}
+	if !p.Learned(standing(0, 20, 90), now) {
+		t.Error("a card answered today is not recalled nine times in ten")
+	}
+	if p.Learned(flashcards.Schedule{}, now) {
+		t.Error("a card face nobody has answered is learned")
 	}
 }

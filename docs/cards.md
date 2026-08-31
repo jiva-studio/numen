@@ -254,11 +254,13 @@ links:
 | | |
 | --- | --- |
 | `goal` | which value the one control steers: `minutes_a_day`, `retention` or `by_date`. The value stands under the key it names. |
-| `by_date` | the day the material is to be in the head, written `2026-09-30`. |
+| `by_date` | the day the material is to be learned by, written `2026-09-30`. What learned means is this preset's own `learned` rule, asked of every card on that day. |
 | `minutes_a_day` | how long a day of review runs, spent against the time each answer took. Zero keeps no budget in time. |
 | `new_a_day` | how many unseen cards a day holds. 10. |
 | `reviews_a_day` | how many returning cards a day holds. 200. |
 | `retention` | the share of cards recalled when they come round again. 0.90, and it goes from 0.70 to 0.99. |
+| `learned` | what counts as a card learned: `interval`, or `retention`. The value stands under the key it names. `interval`. |
+| `interval` | how long a card is sent away for before it is learned, in days. 21, and it goes from 1 to 365. |
 | `counts` | what a day's budget is spent on: `cards`, where a card face counts once however often it comes round that day, or `shows`, where every showing spends a slot. `cards`. |
 | `backlog` | how much of a day goes to what is overdue before anything new is offered, in per cent. 100 is the overdue pile first and new cards only once it is empty; 0 is new cards first; 50 splits the day between them. 100. |
 | `load` | how much of a day's load each day of the week carries, in per cent, under `mon` to `sun`. A day not named carries 100, and a day at 0 schedules nothing. |
@@ -266,7 +268,11 @@ links:
 
 Several decks pointing at one preset is what sharing it looks like, and scheduling a deck differently is repointing one link. **A deck naming no preset is scheduled by the defaults**, and one naming a note that is not a preset is scheduled by the defaults with a problem against it.
 
-Each preset's budget is spent on the cards of the decks pointing at it, and a sitting over the whole vault is the union of them. Inside one preset, the budget its `goal` names is what closes the day: the minutes under `minutes_a_day`, the two card counts under `retention`, and under `by_date` what has to be got through to be through the material by that day. A setting the goal does not name keeps its value and takes no part until its own goal is chosen again.
+Each preset's budget is spent on the cards of the decks pointing at it, and a sitting over the whole vault is the union of them. Inside one preset, the budget its `goal` names is what closes the day: the minutes under `minutes_a_day`, the two card counts under `retention`, and under `by_date` what has to be got through to have the material learned by that day. A setting the goal does not name keeps its value and takes no part until its own goal is chosen again.
+
+`learned` is what the preset counts as a card learned, and the value it reads stands under the key it names. Under `interval` a card is learned once the interval it is sent away for reaches `interval` days; under `retention` it is learned once the chance of recalling it today is at or above `retention`. The rule not named keeps its value and takes no part until it is chosen again. How many cards stand learned today, and how long until all of them are, are both answered by the rule in force.
+
+A goal of `by_date` aims at that same rule on the day it names, so the pace begins a card early enough to learn it by then: three weeks before the day under an interval of three weeks, and on the day itself under a chance of recall. Where a card cannot get there whatever the pace — a card added a fortnight before a day it must stand three weeks away from — the picture says how many card faces fall short. The day is not moved and the rule is not bent; the pace shown beside that number gets there every card that can.
 
 `load` gives a day of the week its share of the load, and that share scales every budget the day keeps: a Saturday at 50 holds half the minutes and half of each card count. It is read whether or not the days are evened out, and **a day at 0 schedules nothing** — a pause of that one day.
 

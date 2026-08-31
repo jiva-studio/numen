@@ -386,8 +386,9 @@ func TestTheBudgetTheGoalDoesNotNameMovesNothing(t *testing.T) {
 			"minutes_a_day: 0\n",
 			"minutes_a_day: 1440\n",
 		}, 4},
-		// Forty cards over the ten days to the day it aims at.
-		{"a date", "goal: by_date\nby_date: 2026-09-14\n", []string{
+		// Forty cards over the ten days to the day it aims at, under a rule the
+		// ten days can meet.
+		{"a date", "goal: by_date\nby_date: 2026-09-14\nlearned: retention\n", []string{
 			"new_a_day: 0\nreviews_a_day: 0\nminutes_a_day: 0\n",
 			"new_a_day: 9999\nreviews_a_day: 9999\nminutes_a_day: 1440\n",
 		}, 4},
@@ -447,8 +448,10 @@ func TestAPresetSteeredByItsMinutesKeepsAskingOnNoReviews(t *testing.T) {
 func TestAGoalOfADatePacesTheDayOverTheDaysLeft(t *testing.T) {
 	s := opened(t, map[string]string{
 		"Term.md": term,
-		// Ten days from the Saturday to the day it aims at, counting both.
-		"By.md": preset("goal: by_date\nby_date: 2026-09-14\n" +
+		// Ten days from the Saturday to the day it aims at, counting both, and
+		// a card is learned the day it is answered, so every one of them is a
+		// day a card can be begun on.
+		"By.md": preset("goal: by_date\nby_date: 2026-09-14\nlearned: retention\n" +
 			"new_a_day: 1\nreviews_a_day: 0\nminutes_a_day: 1\n"),
 		"decks/By.md": deckOf("By", 40, 0),
 	})
@@ -720,7 +723,7 @@ func TestAPresetPausedInTheMiddleOfADayStopsTheCardsItBegan(t *testing.T) {
 func TestADayMovedBehindUsStopsThePresetAtOnce(t *testing.T) {
 	s := opened(t, map[string]string{
 		"Term.md": term,
-		"On.md": preset("goal: by_date\nby_date: 2026-09-30\n" +
+		"On.md": preset("goal: by_date\nby_date: 2026-09-30\nlearned: retention\n" +
 			"new_a_day: 4\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/On.md": deckOf("On", 20, 0),
 	})
@@ -729,7 +732,7 @@ func TestADayMovedBehindUsStopsThePresetAtOnce(t *testing.T) {
 		t.Fatalf("a preset aiming ahead was asked %d new cards, want 1", got)
 	}
 
-	write(t, s, "On.md", preset("goal: by_date\nby_date: 2026-09-01\n"+
+	write(t, s, "On.md", preset("goal: by_date\nby_date: 2026-09-01\nlearned: retention\n"+
 		"new_a_day: 4\nreviews_a_day: 0\nminutes_a_day: 0\n"))
 	if got := unseen(s.sittingAt(t, today, saturday)); got != 0 {
 		t.Errorf("a preset past the day it aims at was asked %d new cards", got)
@@ -892,7 +895,12 @@ func TestTheSittingAndTheProjectionAgreeOnTheDay(t *testing.T) {
 			"new_a_day: 12\nreviews_a_day: 0\n"},
 		{"retention", "goal: retention\nretention: 0.9\n" +
 			"new_a_day: 5\nreviews_a_day: 7\nminutes_a_day: 0\n"},
+		// A date the rule cannot be met by, so the pace is the whole material at
+		// once, and one it can, so the pace is a share of it a day.
 		{"a date", "goal: by_date\nby_date: 2026-09-14\n" +
+			"new_a_day: 1\nreviews_a_day: 0\nminutes_a_day: 1\n"},
+		{"a date it can meet", "goal: by_date\nby_date: 2026-11-30\n" +
+			"learned: interval\ninterval: 5\n" +
 			"new_a_day: 1\nreviews_a_day: 0\nminutes_a_day: 1\n"},
 	} {
 		s := opened(t, map[string]string{
@@ -1056,7 +1064,7 @@ func TestASideThatRunsShortLeavesTheDayToTheOther(t *testing.T) {
 // share takes no part and the value stands in the file untouched.
 func TestAGoalOfADateReadsNoBacklogShare(t *testing.T) {
 	for _, share := range []string{"backlog: 0\n", "backlog: 100\n"} {
-		s := backlogged(t, "goal: by_date\nby_date: 2026-09-14\n"+share+
+		s := backlogged(t, "goal: by_date\nby_date: 2026-09-14\nlearned: retention\n"+share+
 			"new_a_day: 1\nreviews_a_day: 1\nminutes_a_day: 0\n")
 
 		sat := s.sittingAt(t, today, saturday)

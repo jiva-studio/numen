@@ -26,8 +26,8 @@ const (
 	EvenTo   = Ahead
 )
 
-// Cost is how long an answer takes: one of a card being learned, and one of a
-// card already learned.
+// Cost is how long an answer takes: one of a card the scheduler is still
+// putting into memory, and one of a card that comes round in days.
 type Cost struct{ New, Review time.Duration }
 
 // DefaultCost is what a vault holding no answer times is projected at.
@@ -37,28 +37,28 @@ var DefaultCost = Cost{New: 20 * time.Second, Review: 8 * time.Second}
 // answers themselves carry. A kind of answer nobody has given yet stands at the
 // default.
 func Costed(by Scheduler, answers []Answer) Cost {
-	var learning, learned time.Duration
-	var learningCount, learnedCount int
+	var begun, spaced time.Duration
+	var begunCount, spacedCount int
 	replayed(by, answers, func(before Schedule, a Answer) {
 		took := min(a.Took, LongestAnswer)
 		if took <= 0 {
 			return
 		}
-		if by.Learned(before) {
-			learned += took
-			learnedCount++
+		if by.Spaced(before) {
+			spaced += took
+			spacedCount++
 			return
 		}
-		learning += took
-		learningCount++
+		begun += took
+		begunCount++
 	})
 
 	out := DefaultCost
-	if learningCount > 0 {
-		out.New = learning / time.Duration(learningCount)
+	if begunCount > 0 {
+		out.New = begun / time.Duration(begunCount)
 	}
-	if learnedCount > 0 {
-		out.Review = learned / time.Duration(learnedCount)
+	if spacedCount > 0 {
+		out.Review = spaced / time.Duration(spacedCount)
 	}
 	return out
 }
@@ -72,8 +72,8 @@ func Costed(by Scheduler, answers []Answer) Cost {
 // none of stands at the default.
 func CostedUnder(by Scheduler, answers []Answer, under map[CardFace]string) map[string]Cost {
 	type taken struct {
-		learning, learned           time.Duration
-		learningCount, learnedCount int
+		begun, spaced           time.Duration
+		begunCount, spacedCount int
 	}
 	held := make(map[string]*taken)
 	replayed(by, answers, func(before Schedule, a Answer) {
@@ -90,23 +90,23 @@ func CostedUnder(by Scheduler, answers []Answer, under map[CardFace]string) map[
 			one = &taken{}
 			held[path] = one
 		}
-		if by.Learned(before) {
-			one.learned += took
-			one.learnedCount++
+		if by.Spaced(before) {
+			one.spaced += took
+			one.spacedCount++
 			return
 		}
-		one.learning += took
-		one.learningCount++
+		one.begun += took
+		one.begunCount++
 	})
 
 	out := make(map[string]Cost, len(held))
 	for path, one := range held {
 		cost := DefaultCost
-		if one.learningCount > 0 {
-			cost.New = one.learning / time.Duration(one.learningCount)
+		if one.begunCount > 0 {
+			cost.New = one.begun / time.Duration(one.begunCount)
 		}
-		if one.learnedCount > 0 {
-			cost.Review = one.learned / time.Duration(one.learnedCount)
+		if one.spacedCount > 0 {
+			cost.Review = one.spaced / time.Duration(one.spacedCount)
 		}
 		out[path] = cost
 	}
@@ -167,6 +167,18 @@ type Projection struct {
 	// nothing overdue clears in none, and a pace that never gets there is
 	// NeverClears.
 	Clears int
+	// Learned is how many card faces the preset counts as learned as the run
+	// opens, under the rule the preset names.
+	Learned int
+	// Learns is how many days of review it takes before every card face the
+	// preset schedules is learned. A run opening with all of them learned learns
+	// in none, and a horizon ending with one of them still to learn is
+	// NeverLearns.
+	Learns int
+	// Short is how many card faces cannot be learned by the day the preset aims
+	// at, whatever the pace: the rule wants more days than the date leaves them.
+	// A preset aiming at no day has none.
+	Short int
 	// Load is how many answers each day projected carried, and Spent is how
 	// long those answers took.
 	Load  []int
@@ -180,13 +192,19 @@ type Projection struct {
 	// projected: their day had passed and that day did not get to them. It is
 	// the pile a person watches shrink, and it begins where Overdue stands now.
 	Backlog []int
-	// Through is the share of the material answered at least once by the end of
-	// each day projected.
+	// Through is the share of the material learned by the end of each day
+	// projected, under the rule the preset names. Getting through the material
+	// is learning it, and there is no second reckoning of it.
 	Through []float64
 }
 
 // NeverClears is a pace that leaves something overdue on every day projected.
 const NeverClears = -1
+
+// NeverLearns is a horizon that ends with a card face still to learn. The day
+// the last of them is learned is further off than the projection ran, and it is
+// not worked out from what the run saw.
+const NeverLearns = -1
 
 // Admits is how many of the days projected the preset admitted.
 func (p Projection) Admits() int {
@@ -294,7 +312,8 @@ func (s Simulation) Run(
 	slices.SortFunc(cards, older)
 
 	out := Projection{
-		Days: days, Faces: len(at) + unseen, Seen: len(at), Clears: NeverClears,
+		Days: days, Faces: len(at) + unseen, Seen: len(at),
+		Clears: NeverClears, Learns: NeverLearns,
 	}
 	// A day that begins with nothing overdue has nothing to clear.
 	if Overdue(s.Day, at, now) == 0 {
@@ -316,6 +335,19 @@ func (s Simulation) Run(
 	for _, c := range cards {
 		on.Holds(c.Due)
 	}
+	out.Learned = learned(p, cards, open)
+	// A run opening with the whole material learned has nothing left to learn.
+	if out.Learned == out.Faces {
+		out.Learns = 0
+	}
+	// What no pace reaches, and how long a card face begun today takes to be
+	// learned. No goal but a date reads either, and neither is asked for under
+	// another.
+	out.Short = s.short(p, cards, unseen, open)
+	ripens := 0
+	if p.Goal == GoalDate {
+		ripens = Ripens(s.By, s.Day, p, now)
+	}
 	for today := range days {
 		if err := ctx.Err(); err != nil {
 			return Projection{}, err
@@ -325,7 +357,7 @@ func (s Simulation) Run(
 
 		// What the day admits is the one answer, and it is the answer the
 		// sitting of that day will be held to.
-		admits := p.Admits(s.Day, open, Spent{}, left)
+		admits := p.Admits(s.Day, open, Spent{}, Left{New: left, Ripens: ripens})
 
 		var due []int
 		for i, c := range cards {
@@ -403,7 +435,14 @@ func (s Simulation) Run(
 		out.Spent = append(out.Spent, used)
 		out.Admitted = append(out.Admitted, !admits.Paused)
 		out.Closed = append(out.Closed, closed)
-		out.Through = append(out.Through, through(out.Seen, out.Faces))
+
+		// How much of the material stands learned at the close of the day, which
+		// is how far through it the day leaves a person.
+		stands := learned(p, cards, ends)
+		out.Through = append(out.Through, through(stands, out.Faces))
+		if out.Learns == NeverLearns && stands == out.Faces {
+			out.Learns = len(out.Load)
+		}
 
 		// What the day left standing, and the day the backlog is gone.
 		standing := behind(cards, answeredOn, ends, today)
@@ -440,6 +479,112 @@ func behind(cards []Schedule, answeredOn []int, at time.Time, today int) int {
 	out := 0
 	for i, c := range cards {
 		if c.Due.Before(at) && answeredOn[i] != today {
+			out++
+		}
+	}
+	return out
+}
+
+// NeverRipens is a rule a card face begun now does not reach in the years
+// Ripens looks over.
+const NeverRipens = -1
+
+// LongestRipening is how far ahead Ripens looks for the day a card face begun
+// now is learned.
+const LongestRipening = 10 * 365
+
+// mostShowings is how many times one day of review puts one card face to a
+// person before a walk of that card face gives the day up.
+const mostShowings = 200
+
+// mostAnswers is how many answers a walk of one card face gives it before
+// giving it up.
+const mostAnswers = 1000
+
+// Ripens is how many days of review a card face begun now needs before this
+// preset counts it learned, when every showing it falls due for is answered.
+//
+// It is one number for the whole material nobody has begun: those card faces
+// all stand at the same nothing. A rule no such card face reaches is
+// NeverRipens.
+func Ripens(by Scheduler, d Day, p Preset, now time.Time) int {
+	s := Simulation{By: by, Day: d}
+	open := d.Ends(now).AddDate(0, 0, -1)
+	var c Schedule
+	for day := range LongestRipening {
+		ends := d.Ends(open)
+		c = s.answers(c, open, ends, p)
+		if p.Learned(c, ends) {
+			return day
+		}
+		open = ends
+	}
+	return NeverRipens
+}
+
+// answers is where one day of review leaves a card face when every showing it
+// falls due for in that day is answered.
+func (s Simulation) answers(c Schedule, open, ends time.Time, p Preset) Schedule {
+	for range mostShowings {
+		if c.Seen() && !c.Due.Before(ends) {
+			return c
+		}
+		at := open
+		if c.Seen() && c.Due.After(open) {
+			at = c.Due
+		}
+		c = s.step(c, at, p, nil)
+	}
+	return c
+}
+
+// reaches reports whether a card face standing here is learned on the day the
+// preset aims at, when every day of review from now to that day answers every
+// showing it falls due for.
+//
+// Nothing paces it: a card face this does not get there is one no pace gets
+// there, because no pace can give it more days than there are.
+func (s Simulation) reaches(p Preset, c Schedule, open, by time.Time) bool {
+	for range mostAnswers {
+		if c.Seen() && !c.Due.Before(by) {
+			break
+		}
+		if c.Seen() && !c.Due.Before(s.Day.Ends(open)) {
+			// Nothing is asked of it until the day its schedule falls in.
+			open = s.Day.Ends(c.Due).AddDate(0, 0, -1)
+		}
+		ends := s.Day.Ends(open)
+		c = s.answers(c, open, ends, p)
+		open = ends
+	}
+	return p.Learned(c, by)
+}
+
+// short is how many of these card faces cannot be learned by the day the preset
+// aims at, whatever the pace, and how many of a material nobody has begun.
+func (s Simulation) short(p Preset, cards []Schedule, unseen int, open time.Time) int {
+	if p.Goal != GoalDate || p.By.IsZero() {
+		return 0
+	}
+	by := s.Day.Ending(p.By)
+	out := 0
+	for _, c := range cards {
+		if !s.reaches(p, c, open, by) {
+			out++
+		}
+	}
+	if unseen > 0 && !s.reaches(p, Schedule{}, open, by) {
+		out += unseen
+	}
+	return out
+}
+
+// learned is how many of these card faces the preset counts as learned at this
+// instant. A card face nobody has answered is in none of them.
+func learned(p Preset, cards []Schedule, at time.Time) int {
+	out := 0
+	for _, c := range cards {
+		if p.Learned(c, at) {
 			out++
 		}
 	}
@@ -618,11 +763,11 @@ func older(a, b Schedule) int {
 	return cmp.Compare(a.Difficulty, b.Difficulty)
 }
 
-// through is the share of the material answered at least once. A preset
-// scheduling nothing is through all of it.
-func through(seen, faces int) float64 {
+// through is the share of the material learned. A preset scheduling nothing is
+// through all of it.
+func through(learned, faces int) float64 {
 	if faces == 0 {
 		return 1
 	}
-	return float64(seen) / float64(faces)
+	return float64(learned) / float64(faces)
 }
