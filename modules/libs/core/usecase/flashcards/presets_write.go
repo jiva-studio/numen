@@ -79,14 +79,19 @@ func (u Presets) save(
 	if err != nil {
 		return domain.FileRef{}, err
 	}
+	on, err := reader.Stat(ctx, path)
+	if err != nil {
+		return domain.FileRef{}, fmt.Errorf("look at %s: %w", path, missing(err))
+	}
+	// The bound a note is written under is the bound it is read under.
+	if on.Size > note.MaxBytes {
+		return domain.FileRef{}, fmt.Errorf("%w: %s is %d bytes, and %d is the most",
+			note.ErrTooLarge, path, on.Size, note.MaxBytes)
+	}
 	// A caller that said what it believed the note was is held to that; one that
 	// said nothing is held to what stands there now.
 	against := fingerprint
 	if against == (domain.FileRef{}) {
-		on, err := reader.Stat(ctx, path)
-		if err != nil {
-			return domain.FileRef{}, fmt.Errorf("look at %s: %w", path, missing(err))
-		}
 		against = on
 	}
 	raw, err := reader.Read(ctx, path)

@@ -623,3 +623,22 @@ func TestAPresetWrittenBeforeTheRuleCountsByTheDefault(t *testing.T) {
 		t.Errorf("the day leaves the material %v learned, and one of the two is not", ran.Through[0])
 	}
 }
+
+// A note over the bound a read refuses is a note a save refuses too, and
+// nothing is written.
+func TestASaveRefusesANoteOverTheBound(t *testing.T) {
+	body := "# Sanskrit\n\n" + strings.Repeat("Grammar and vocabulary. ", note.MaxBytes/20)
+	s := opened(t, map[string]string{
+		"Sanskrit.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: preset\n" +
+			"goal: minutes_a_day\nminutes_a_day: 20\n---\n\n" + body,
+	})
+	was := read(t, s.vault, "Sanskrit.md")
+
+	_, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.FileRef{})
+	if !errors.Is(err, note.ErrTooLarge) {
+		t.Fatalf("saving into a note of %d bytes said %v", len(was), err)
+	}
+	if held := read(t, s.vault, "Sanskrit.md"); held != was {
+		t.Error("the note was written")
+	}
+}
