@@ -316,7 +316,7 @@ export function presetting(
 
   /** A goal of a date opens on a day, so one is named where the file names none. */
   const aiming = (settings: Settings, goal: Goal): Settings =>
-    goal === 'date' && (settings.byDate === '' || daysUntil(today(), settings.byDate) <= 0)
+    goal === 'date' && settings.byDate === ''
       ? { ...settings, goal, byDate: dayAfter(today(), AHEAD) }
       : { ...settings, goal }
 

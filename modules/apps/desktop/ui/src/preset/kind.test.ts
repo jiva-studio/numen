@@ -295,6 +295,24 @@ describe('the goal chosen', () => {
     await after()
     expect(written.at(-1)?.goal).toBe('retention')
   })
+
+  it('names a day where the file names none, since a date is aimed at one', async () => {
+    const { held, written } = await opened({ byDate: '' }, dated)
+    held.chooses('date')
+    await after()
+    expect(held.settings().byDate).toBe('2026-09-29')
+    expect(written.at(-1)?.byDate).toBe('2026-09-29')
+  })
+
+  it('keeps the day the file names, whether it is ahead of today or behind', async () => {
+    for (const day of ['2026-12-25', '2026-08-30', '2026-01-06']) {
+      const { held, written } = await opened({ byDate: day }, dated)
+      held.chooses('date')
+      await after()
+      expect(held.settings().byDate).toBe(day)
+      expect(written.at(-1)?.byDate).toBe(day)
+    }
+  })
 })
 
 describe('a file read again', () => {
