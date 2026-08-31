@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -102,7 +103,7 @@ func (u Presets) save(
 	if n.Type != domain.TypePreset {
 		return domain.FileRef{}, fmt.Errorf("%w: %s is a %s", ErrNotAPreset, path, n.Type)
 	}
-	// What the note said before this write, so that a share the read could not
+	// What the note said before this write, so that a setting the read could not
 	// make out is one this write leaves standing.
 	was, _ := history.ReadPreset(n.Frontmatter)
 
@@ -110,7 +111,7 @@ func (u Presets) save(
 	if err != nil {
 		return domain.FileRef{}, fmt.Errorf("%s: %w", path, err)
 	}
-	if err := settle(doc, settings, was.Load); err != nil {
+	if err := settle(doc, settings, was); err != nil {
 		return domain.FileRef{}, fmt.Errorf("%s: %w", path, err)
 	}
 
@@ -125,47 +126,52 @@ func (u Presets) save(
 // goal does not name and a week of days all carrying the whole load are keys
 // the note stops carrying.
 //
-// Read is the shares the note was read at, which is every `load` entry the read
-// could make out.
-func settle(doc *markdown.Document, p history.Preset, read map[time.Weekday]int) error {
-	if err := doc.SetScalar(goalKey, string(p.Goal)); err != nil {
-		return err
-	}
-	if err := doc.SetScalar(countsKey, string(p.Counts)); err != nil {
-		return err
-	}
-	if err := doc.SetScalar(learnedKey, string(p.Rule)); err != nil {
-		return err
-	}
-	if p.By.IsZero() {
-		if err := doc.SetScalar(byDateKey, ""); err != nil {
+// Was is the preset the note was read as. A key is written only where the
+// setting differs from it, so a key the read could not make out keeps the words
+// the person wrote and a save changing one control leaves the rest of the file
+// byte for byte. A key the read could not make out and the person has since
+// moved is a setting that differs, and is written.
+func settle(doc *markdown.Document, p, was history.Preset) error {
+	if !p.By.Equal(was.By) {
+		if p.By.IsZero() {
+			if err := doc.SetScalar(byDateKey, ""); err != nil {
+				return err
+			}
+		} else if err := doc.SetDay(byDateKey, p.By); err != nil {
 			return err
 		}
-	} else if err := doc.SetDay(byDateKey, p.By); err != nil {
-		return err
 	}
 	for _, one := range []struct {
-		key   string
-		value any
+		key        string
+		value, was any
 	}{
-		{minutesADayKey, p.MinutesADay},
-		{newADayKey, p.NewADay},
-		{reviewsADayKey, p.ReviewsADay},
-		{backlogKey, p.Backlog},
-		{retentionKey, p.Retention},
-		{intervalKey, p.Interval},
-		{evenLoadKey, p.EvenLoad},
+		{goalKey, string(p.Goal), string(was.Goal)},
+		{countsKey, string(p.Counts), string(was.Counts)},
+		{learnedKey, string(p.Rule), string(was.Rule)},
+		{minutesADayKey, p.MinutesADay, was.MinutesADay},
+		{newADayKey, p.NewADay, was.NewADay},
+		{reviewsADayKey, p.ReviewsADay, was.ReviewsADay},
+		{backlogKey, p.Backlog, was.Backlog},
+		{retentionKey, p.Retention, was.Retention},
+		{intervalKey, p.Interval, was.Interval},
+		{evenLoadKey, p.EvenLoad, was.EvenLoad},
 	} {
+		if one.value == one.was {
+			continue
+		}
 		if err := doc.SetValue(one.key, one.value); err != nil {
 			return err
 		}
+	}
+	if maps.Equal(p.Load, was.Load) {
+		return nil
 	}
 	entries, mapping := doc.EntryNames(loadKey)
 	// A `load` written as anything but a week of days is the person's, whole.
 	if !mapping {
 		return nil
 	}
-	return doc.SetMapping(loadKey, shares(entries, p.Load, read))
+	return doc.SetMapping(loadKey, shares(entries, p.Load, was.Load))
 }
 
 // shares is the `load` block a save puts down: a day the read made out carries

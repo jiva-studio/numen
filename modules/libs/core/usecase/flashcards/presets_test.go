@@ -307,10 +307,11 @@ func TestAWriteLeavesWhatItDoesNotOwn(t *testing.T) {
 		"colour": "green",
 		"tags":   []any{"study"},
 		"type":   "preset",
-		// Owned, and every one of them written.
+		// Owned, and written where the setting differs from what the note was
+		// read as. The goal it already said is not rewritten, and a setting
+		// standing at the default the note never named stays unnamed.
 		"goal": "minutes_a_day", "minutes_a_day": 35, "new_a_day": 8,
-		"reviews_a_day": 45, "retention": 0.87, "learned": "interval",
-		"interval": 21, "counts": "cards", "backlog": 100, "even_load": true,
+		"reviews_a_day": 45, "retention": 0.87,
 	}
 	if got := frontmatter(t, s, "Sanskrit.md"); !reflect.DeepEqual(got, want) {
 		t.Errorf("frontmatter = %v,\n           want %v", got, want)
@@ -346,8 +347,7 @@ func TestAWriteIntoAnIndentedBlock(t *testing.T) {
 	want := map[string]any{
 		"id": "01J8F3K2M9QRSTVWXYZ012", "colour": "green", "type": "preset",
 		"goal": "minutes_a_day", "minutes_a_day": 35, "new_a_day": 8,
-		"reviews_a_day": 45, "retention": 0.87, "learned": "interval",
-		"interval": 21, "counts": "cards", "backlog": 100, "even_load": true,
+		"reviews_a_day": 45, "retention": 0.87,
 	}
 	if got := frontmatter(t, s, "Sanskrit.md"); !reflect.DeepEqual(got, want) {
 		t.Errorf("frontmatter = %v,\n           want %v", got, want)
@@ -640,5 +640,97 @@ func TestASaveRefusesANoteOverTheBound(t *testing.T) {
 	}
 	if held := read(t, s.vault, "Sanskrit.md"); held != was {
 		t.Error("the note was written")
+	}
+}
+
+// A setting the read could not make out stands in the file exactly as it was
+// written. The read names it as a problem and the default takes its place while
+// the file is read; the file itself is never repaired, and a save that put the
+// default down would write a value the person never chose.
+func TestASaveLeavesTheSettingsItCouldNotRead(t *testing.T) {
+	for _, wrong := range []string{
+		"even_load: no",
+		"retention: ninety per cent",
+		"retention: 90",
+		"new_a_day: 12.5",
+		"new_a_day: -5",
+		"interval: 0",
+		"interval: \"21\"",
+		"backlog: 50%",
+		"goal: Minutes a day",
+		"learned: by days",
+		"counts: every showing",
+		"by_date: sometime",
+		"reviews_a_day: many",
+	} {
+		t.Run(wrong, func(t *testing.T) {
+			s := opened(t, map[string]string{
+				"Sanskrit.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: preset\n" +
+					"minutes_a_day: 20\n" + wrong + "\n---\n\n# Sanskrit\n",
+			})
+
+			// The person moved the minutes control and nothing else.
+			held, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
+			if err != nil {
+				t.Fatal(err)
+			}
+			settings := held.Preset
+			settings.MinutesADay = 35
+			if _, err := s.presets.Save(
+				t.Context(), s.vault, "Sanskrit.md", settings, domain.FileRef{}); err != nil {
+				t.Fatal(err)
+			}
+
+			got := read(t, s.vault, "Sanskrit.md")
+			if !strings.Contains(got, wrong+"\n") {
+				t.Errorf("%q was written over in\n%s", wrong, got)
+			}
+			if !strings.Contains(got, "minutes_a_day: 35\n") {
+				t.Errorf("the minutes the person moved were not written to\n%s", got)
+			}
+		})
+	}
+}
+
+// A setting the read could not make out and the person has since moved is
+// written: that is them settling it.
+func TestASaveWritesTheSettingThePersonMoved(t *testing.T) {
+	s := opened(t, map[string]string{
+		"Sanskrit.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: preset\n" +
+			"even_load: no\n---\n\n# Sanskrit\n",
+	})
+
+	held, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	settings := held.Preset
+	settings.EvenLoad = false
+	if _, err := s.presets.Save(
+		t.Context(), s.vault, "Sanskrit.md", settings, domain.FileRef{}); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := read(t, s.vault, "Sanskrit.md"); !strings.Contains(got, "even_load: false\n") {
+		t.Errorf("the setting the person moved was not written to\n%s", got)
+	}
+}
+
+// A save that changes nothing leaves the file as it stands, comments and all.
+func TestASaveOfWhatTheNoteAlreadySaysWritesNothing(t *testing.T) {
+	s := opened(t, settled)
+	was := read(t, s.vault, "Sanskrit.md")
+
+	held, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.presets.Save(
+		t.Context(), s.vault, "Sanskrit.md", held.Preset, domain.FileRef{}); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := read(t, s.vault, "Sanskrit.md"); got != was {
+		t.Errorf("the note was rewritten\n was %q\n got %q", was, got)
 	}
 }
