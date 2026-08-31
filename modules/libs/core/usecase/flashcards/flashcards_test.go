@@ -49,7 +49,7 @@ type vaulted struct {
 	scan func(ctx context.Context, v domain.Vault, paths []string) error
 }
 
-func opened(t *testing.T, notes map[string]string) vaulted {
+func opened(t testing.TB, notes map[string]string) vaulted {
 	t.Helper()
 	ctx := t.Context()
 

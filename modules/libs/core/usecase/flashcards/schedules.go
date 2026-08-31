@@ -216,7 +216,7 @@ func (u Schedules) Execute(
 	if err != nil {
 		return nil, err
 	}
-	return u.replayed(ctx, v, held, asks), nil
+	return u.filled(ctx, v, held, asks), nil
 }
 
 // From is where a log that has already been read leaves every card face. A
@@ -235,7 +235,7 @@ func (u Schedules) From(
 //
 // The cache answers where it was worked out from the log the caller is holding,
 // so the answers are replayed at most once. Nothing is written: a caller whose
-// work is worth keeping asks for counted.
+// work is worth keeping asks for replayed.
 func (u Schedules) worked(
 	ctx context.Context, v domain.Vault, held Held, asks scheduling,
 ) map[history.CardFace]history.Schedule {
@@ -245,18 +245,23 @@ func (u Schedules) worked(
 	return projected(u.Day, held, asks)
 }
 
-// counted is the same, with what a replay came to kept for the next launch.
-func (u Schedules) counted(
+// replayed is the same, with what a replay came to kept for the next launch.
+//
+// Every path through this asks the cache first. A sitting and the front door
+// stand on the same log and the same assignment, so the second of them to run
+// is told what the first worked out.
+func (u Schedules) replayed(
 	ctx context.Context, v domain.Vault, held Held, asks scheduling,
 ) map[history.CardFace]history.Schedule {
 	if out, ok := u.remembered(ctx, v, held.Files, asks.mark); ok {
 		return out
 	}
-	return u.replayed(ctx, v, held, asks)
+	return u.filled(ctx, v, held, asks)
 }
 
-// replayed works the answers out and remembers what they came to.
-func (u Schedules) replayed(
+// filled works the answers out and remembers what they came to. It is what a
+// caller that has already found the cache out of date asks for.
+func (u Schedules) filled(
 	ctx context.Context, v domain.Vault, held Held, asks scheduling,
 ) map[history.CardFace]history.Schedule {
 	out := projected(u.Day, held, asks)

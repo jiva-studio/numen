@@ -99,7 +99,7 @@ func (u Owed) Execute(ctx context.Context, v domain.Vault) (Owing, error) {
 	if err != nil {
 		return Owing{}, err
 	}
-	schedules := u.Schedules.counted(ctx, v, log, asks)
+	schedules := u.Schedules.replayed(ctx, v, log, asks)
 
 	now := u.now()
 	day, err := budgeted(
