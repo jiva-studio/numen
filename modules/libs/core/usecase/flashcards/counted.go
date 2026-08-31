@@ -92,36 +92,48 @@ func (u Counted) Execute(ctx context.Context, v domain.Vault) (Reviewed, error) 
 	// One identifier is one answer over the whole log, so a line another run
 	// was counted for is not counted again.
 	seen := make(map[string]bool)
+	// What is still to come is worked out from the whole history, so every run
+	// is read here and the reading is handed on.
+	coming := u.Schedules.By != nil
+	var held Held
 	for _, file := range files {
-		var answers []history.Answer
-		one, held := was[file.Name]
-		if !held || one.Size != file.Size {
-			read, err := log.Run(ctx, store, file)
+		var ran Ran
+		var opened bool
+		one, kept := was[file.Name]
+		stale := !kept || one.Size != file.Size
+		if stale || coming {
+			ran, err = log.Run(ctx, store, file)
 			if err != nil {
 				return Reviewed{}, err
 			}
-			answers = read.Answers
+			opened = true
+		}
+		if stale {
 			one = countedRun{
 				Name: file.Name,
-				Size: read.Size,
-				Days: history.Counted(u.Day, read.Answers),
-				IDs:  identifiers(read.Answers),
+				Size: ran.Size,
+				Days: history.Counted(u.Day, ran.Answers),
+				IDs:  identifiers(ran.Answers),
 			}
 		}
 		now.Runs = append(now.Runs, one)
+		held.Skipped += ran.Skipped
+		if opened && !ran.Gone && !ran.Shut {
+			held.Answers = append(held.Answers, ran.Answers...)
+			held.Files = append(held.Files, port.Stored{Name: file.Name, Size: ran.Size})
+		}
 
 		// What a run came to on its own is what is kept, and what the run adds
 		// to the counting is what no other run has been counted for.
 		days := one.Days
 		if repeats(one.IDs, seen) {
-			if answers == nil {
-				read, err := log.Run(ctx, store, file)
+			if !opened {
+				ran, err = log.Run(ctx, store, file)
 				if err != nil {
 					return Reviewed{}, err
 				}
-				answers = read.Answers
 			}
-			days = history.Counted(u.Day, given(answers, seen))
+			days = history.Counted(u.Day, given(ran.Answers, seen))
 		}
 		for _, id := range one.IDs {
 			seen[id] = true
@@ -137,7 +149,7 @@ func (u Counted) Execute(ctx context.Context, v domain.Vault) (Reviewed, error) 
 
 	// What is still to come, and how much came back, are both worked out from
 	// the answers in the order they were given, so they are asked for together.
-	due, retained, err := u.ahead(ctx, v)
+	due, retained, err := u.ahead(ctx, v, held)
 	if err != nil {
 		return Reviewed{}, err
 	}
@@ -192,22 +204,21 @@ func given(answers []history.Answer, seen map[string]bool) []history.Answer {
 // ahead is how much falls on each day still to come, and how much of what came
 // round in days came back on each day behind.
 //
+// The answers are the reading the days were counted from, so the whole log is
+// opened once for the screen.
+//
 // A card owed today, or owed and late, is not in what is to come: what a person
 // owes now is what the front door counts, and this says what is coming after
 // it. Where a card falls is worked out from the answers like everything else,
 // so the day it shows is the day it would be asked on.
 func (u Counted) ahead(
-	ctx context.Context, v domain.Vault,
+	ctx context.Context, v domain.Vault, held Held,
 ) (map[string]int, map[string]history.Retention, error) {
 	falls := make(map[string]int)
 	if u.Schedules.By == nil {
 		return falls, nil, nil
 	}
 
-	held, err := Log{Stores: u.Schedules.Logs}.Read(ctx, v)
-	if err != nil {
-		return nil, nil, err
-	}
 	schedules, err := u.Schedules.From(ctx, v, held)
 	if err != nil {
 		return nil, nil, err
