@@ -426,10 +426,13 @@ const stopped = computed(() => {
 
 /* The rule stands on a line of its own, drawn as the boxes a value is typed
    into are, with the mark that says it opens. */
+/* A line of text stands shorter than a field a number is typed into, so this
+   one is held to the height every control on a row shares. */
 .preset__choice {
   display: inline-flex;
   align-items: center;
   gap: var(--numen-node-gap);
+  min-block-size: var(--numen-action-size);
   padding: var(--preset-field-inset);
   border: var(--numen-stroke) solid var(--numen-field-border);
   border-radius: var(--numen-radius-tight);
