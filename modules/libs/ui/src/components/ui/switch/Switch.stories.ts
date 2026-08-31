@@ -29,7 +29,7 @@ const meta: Meta<Knobs> = {
     disabled: { control: 'boolean' },
     said: { control: 'text' },
   },
-  args: { on: true, disabled: false, said: 'Spread the load evenly' },
+  args: { on: true, disabled: false, said: 'Show the grid' },
   render: (args) => ({
     components: { Switch },
     setup: () => {
@@ -64,11 +64,11 @@ export const Off: Story = { args: { on: false } }
 export const Disabled: Story = { args: { disabled: true } }
 
 /** A name in another script. */
-export const OtherScripts: Story = { args: { said: 'Равномерная нагрузка' } }
+export const OtherScripts: Story = { args: { said: 'Показывать сетку' } }
 
 /** A name far longer than anything a setting is called. */
 export const FarTooLong: Story = {
-  args: { said: 'Spread the load evenly over the days a person has left themselves '.repeat(3) },
+  args: { said: 'Show the grid behind everything drawn on the canvas below it '.repeat(3) },
 }
 
 /** A name with nothing in it to break at. */

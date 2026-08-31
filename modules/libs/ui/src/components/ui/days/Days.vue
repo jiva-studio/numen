@@ -1,8 +1,7 @@
 <script setup lang="ts">
 /**
- * The days of the week as seven chips, each carrying the share of a day's load
- * it takes. Pressing a day offers the shares, and the day carries what was
- * chosen.
+ * The days of the week as seven chips, each carrying a share of a whole day.
+ * Pressing a day offers the shares, and the day carries what was chosen.
  *
  * A chip is a button that offers a menu: it says the day, the share it carries
  * and whether its shares are open. It holds nothing down.

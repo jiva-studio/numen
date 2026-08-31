@@ -363,8 +363,8 @@ export const AskedForAtTheEdge: Story = {
     // words, whatever the page is drawn at.
     at: { x: -200, y: 200 },
     items: [
-      { id: 'apart', text: 'When reviews are far enough apart' },
-      { id: 'remember', text: 'When you would remember it today' },
+      { id: 'wide', text: 'As wide as the longest of its words' },
+      { id: 'near', text: 'Beside the edge it was asked for at' },
     ],
   },
   play: async ({ canvasElement }) => {

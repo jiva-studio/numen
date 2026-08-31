@@ -32,8 +32,8 @@ const meta: Meta<Knobs> = {
     width: { control: 'text' },
   },
   args: {
-    words: 'Minutes a day\nRetention\nBy a date',
-    chosen: 'minutes-a-day',
+    words: 'Small\nMedium\nLarge',
+    chosen: 'small',
     disabled: false,
     width: 'auto',
   },
@@ -56,7 +56,7 @@ const meta: Meta<Knobs> = {
       <div :style="{ padding: '2rem', inlineSize: args.width }">
         <Segmented
           v-model="chosen"
-          aria-label="What the goal steers"
+          aria-label="How large it is drawn"
           :choices="choices"
           :disabled="args.disabled"
         />
@@ -84,7 +84,7 @@ const press = async (key: string, until: () => void) => {
   await userEvent.keyboard(`{/${key}}`)
 }
 
-/** The three goals one control steers. */
+/** Three choices, the middle one of which is the widest word. */
 export const ASegmentedControl: Story = {}
 
 /** Two choices, which is the fewest a segmented control is drawn for. */
@@ -97,18 +97,19 @@ export const Four: Story = {
   args: { words: 'Day\nWeek\nMonth\nYear', chosen: 'week' },
 }
 
-/** Words far longer than anything a goal is called. */
+/** Words far longer than a segment is drawn for. */
 export const FarTooLong: Story = {
   args: {
-    words: 'How many minutes a day are given to it\nHow much is remembered\nA date it is wanted by',
-    chosen: 'how-much-is-remembered',
+    words:
+      'As small as it will go\nSomewhere between the two of them\nAs large as the room allows',
+    chosen: 'somewhere-between-the-two-of-them',
     width: '24rem',
   },
 }
 
 /** Words in another script. */
 export const OtherScripts: Story = {
-  args: { words: 'Минут в день\nПрочность\nК дате', chosen: 'прочность' },
+  args: { words: 'Маленький\nСредний\nБольшой', chosen: 'средний' },
 }
 
 /** A word with nothing in it to break at. */
@@ -172,7 +173,7 @@ export const AValueNotAmongThem: Story = {
 
     await userEvent.tab()
     expect(document.activeElement).toBe(segments(canvasElement)[0])
-    await press('ArrowRight', () => expect(chosenOf(canvasElement)).toBe('Retention'))
+    await press('ArrowRight', () => expect(chosenOf(canvasElement)).toBe('Medium'))
   },
 }
 
@@ -190,7 +191,7 @@ export const AnnouncedAsChoices: Story = {
     const group = canvasElement.querySelector('[role="radiogroup"]')
     expect(group).not.toBeNull()
     expect(segments(canvasElement)).toHaveLength(3)
-    expect(chosenOf(canvasElement)).toBe('Minutes a day')
+    expect(chosenOf(canvasElement)).toBe('Small')
   },
 }
 
@@ -200,11 +201,11 @@ export const ArrowKeysMoveBetweenThem: Story = {
     await userEvent.tab()
     expect(document.activeElement).toBe(segments(canvasElement)[0])
 
-    await press('ArrowRight', () => expect(chosenOf(canvasElement)).toBe('Retention'))
-    await press('ArrowRight', () => expect(chosenOf(canvasElement)).toBe('By a date'))
+    await press('ArrowRight', () => expect(chosenOf(canvasElement)).toBe('Medium'))
+    await press('ArrowRight', () => expect(chosenOf(canvasElement)).toBe('Large'))
     // The last segment leads back round to the first.
-    await press('ArrowRight', () => expect(chosenOf(canvasElement)).toBe('Minutes a day'))
-    await press('ArrowLeft', () => expect(chosenOf(canvasElement)).toBe('By a date'))
+    await press('ArrowRight', () => expect(chosenOf(canvasElement)).toBe('Small'))
+    await press('ArrowLeft', () => expect(chosenOf(canvasElement)).toBe('Large'))
   },
 }
 
@@ -214,13 +215,13 @@ export const ArrowKeysMoveBetweenThem: Story = {
  * force.
  */
 export const OneStopForTheWholeControl: Story = {
-  args: { chosen: 'by-a-date' },
+  args: { chosen: 'large' },
   play: async ({ canvasElement }) => {
     const control = canvasElement.querySelector<HTMLElement>('[data-slot="segmented"]')
     expect(control?.tabIndex).toBe(0)
     expect(segments(canvasElement).map((one) => one.tabIndex)).toEqual([-1, -1, -1])
 
     await userEvent.tab()
-    expect((document.activeElement as HTMLElement | null)?.textContent?.trim()).toBe('By a date')
+    expect((document.activeElement as HTMLElement | null)?.textContent?.trim()).toBe('Large')
   },
 }

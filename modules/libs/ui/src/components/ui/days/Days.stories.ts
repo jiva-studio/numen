@@ -25,7 +25,7 @@ const RUSSIAN: readonly Day[] = [
 
 interface Knobs {
   /** What each day carries, by its identifier. A day not named carries it all. */
-  load: Shares
+  carried: Shares
   /** Which day the week is turned to start on. */
   startsOn: string
   /** Which names the days are drawn under. */
@@ -40,25 +40,30 @@ const meta: Meta<Knobs> = {
   component: Days,
   parameters: { layout: 'centered' },
   argTypes: {
-    load: { control: 'object' },
+    carried: { control: 'object' },
     startsOn: { control: 'inline-radio', options: ['mon', 'sun'] },
     names: { control: 'inline-radio', options: ['English', 'Russian'] },
     disabled: { control: 'boolean' },
     days: { table: { disable: true } },
   },
-  args: { load: { sat: 50 }, startsOn: 'mon', names: 'English', disabled: false },
+  args: { carried: { sat: 50 }, startsOn: 'mon', names: 'English', disabled: false },
   render: (args) => ({
     components: { Days },
     setup: () => {
       const days = computed(
         () => args.days ?? weekFrom(args.startsOn, args.names === 'Russian' ? RUSSIAN : WEEK),
       )
-      const load = ref<Shares>(args.load)
-      return { args, days, load }
+      const carried = ref<Shares>(args.carried)
+      return { args, days, carried }
     },
     template: `
       <div style="padding: 2rem">
-        <Days v-model="load" aria-label="Load by day" :days="days" :disabled="args.disabled" />
+        <Days
+          v-model="carried"
+          aria-label="The share each day carries"
+          :days="days"
+          :disabled="args.disabled"
+        />
       </div>
     `,
   }),
@@ -78,18 +83,18 @@ const offered = (): readonly string[] =>
     (one) => one.textContent?.trim() ?? '',
   )
 
-/** One day of the week at half a day's load. */
+/** One day of the week at half a day. */
 export const TheDaysOfTheWeek: Story = {}
 
 /** Every day carries the whole of it, which is a week nothing was said about. */
-export const NoneAtAll: Story = { args: { load: {} } }
+export const NoneAtAll: Story = { args: { carried: {} } }
 
 /** A day at nothing, which schedules nothing that day. */
-export const ADayAtNothing: Story = { args: { load: { sun: 0 } } }
+export const ADayAtNothing: Story = { args: { carried: { sun: 0 } } }
 
 /** Every day cut, each by a different share. */
 export const AllOfThem: Story = {
-  args: { load: { mon: 90, tue: 75, wed: 50, thu: 25, fri: 10, sat: 0, sun: 90 } },
+  args: { carried: { mon: 90, tue: 75, wed: 50, thu: 25, fri: 10, sat: 0, sun: 90 } },
 }
 
 /** A week starting on Sunday. */
@@ -101,7 +106,7 @@ export const StartingOnSunday: Story = { args: { startsOn: 'sun' } }
  * hold the one the day carries.
  */
 export const AShareNotOnOffer: Story = {
-  args: { load: { sat: 37, sun: 400 } },
+  args: { carried: { sat: 37, sun: 400 } },
   play: async ({ canvasElement }) => {
     expect(said(canvasElement)[5]).toBe('Saturday, 37%')
     expect(said(canvasElement)[6]).toBe('Sunday, 100%')
@@ -114,7 +119,7 @@ export const AShareNotOnOffer: Story = {
 }
 
 /** Names that are not Latin, in chips the same size. */
-export const OtherScripts: Story = { args: { names: 'Russian', load: { sat: 50, sun: 0 } } }
+export const OtherScripts: Story = { args: { names: 'Russian', carried: { sat: 50, sun: 0 } } }
 
 /** No days at all: a row holding nothing, which the keyboard passes over. */
 export const NoDaysAtAll: Story = {
@@ -129,7 +134,7 @@ export const NoDaysAtAll: Story = {
 
 /** One day, which the arrows leave where it is. */
 export const OneDay: Story = {
-  args: { days: [{ id: 'wed', short: 'W', long: 'Wednesday' }], load: { wed: 25 } },
+  args: { days: [{ id: 'wed', short: 'W', long: 'Wednesday' }], carried: { wed: 25 } },
   play: async ({ canvasElement }) => {
     expect(said(canvasElement)).toEqual(['Wednesday, 25%'])
 
@@ -174,7 +179,7 @@ export const AwkwardNames: Story = {
       { id: 'wed', short: 'W', long: 'Wednesday' },
       { id: 'thu', short: 'Четв', long: 'Четверг' },
     ],
-    load: { tue: 25 },
+    carried: { tue: 25 },
   },
   play: async ({ canvasElement }) => {
     const all = chips(canvasElement)
@@ -223,7 +228,7 @@ export const EachChipSaysWhatItCarries: Story = {
 
 /** Pressing a day offers the shares, and the day carries the one chosen. */
 export const PressingADayOffersTheShares: Story = {
-  args: { load: {} },
+  args: { carried: {} },
   play: async ({ canvasElement }) => {
     await userEvent.click(chips(canvasElement)[5] as HTMLElement)
     await waitFor(() => expect(offered()).toEqual(['0%', '10%', '25%', '50%', '75%', '90%', '100%']))
@@ -286,7 +291,7 @@ export const TheKeyboardComesBack: Story = {
 
 /** The arrows walk the row, and the space bar offers the shares of the day on. */
 export const TheKeyboardWalksAndOffers: Story = {
-  args: { load: {} },
+  args: { carried: {} },
   play: async ({ canvasElement }) => {
     await userEvent.tab()
     expect(document.activeElement).toBe(chips(canvasElement)[0])

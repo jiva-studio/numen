@@ -40,7 +40,7 @@ export type { SegmentedChoice } from './components/ui/segmented'
 
 /** The days of the week, each carrying the share of a day it takes. */
 export { Days } from './components/ui/days'
-export { shared, shareOn, weekFrom, SHARES, WEEK, WHOLE } from './components/ui/days'
+export { weekFrom, WEEK } from './components/ui/days'
 export type { Day, Shares } from './components/ui/days'
 
 export { default as Owed } from './cards/Owed.vue'
