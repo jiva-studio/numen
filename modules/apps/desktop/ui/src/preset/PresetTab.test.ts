@@ -518,8 +518,10 @@ describe('what the control stands at', () => {
     const foot = tab.findAll('.control__foot')[0]
     expect(foot?.get('.control__number--knob').text()).toBe(words.widthAt('minutes', 20))
     expect(foot?.get('.control__name--x').text()).toBe(words.axisX('minutes'))
-    // Nothing under the picture but the figure the page is headed by.
-    expect(tab.findAll('.preset__reading')[0]?.text()).toBe(words.value('minutes', 20, ''))
+    // Nothing under the picture but the axis: what a place buys is said in the
+    // bubble over the knob, and nowhere else.
+    expect(tab.findAll('.preset__reading')).toHaveLength(0)
+    expect(foot?.text()).not.toContain(words.value('minutes', 20, ''))
   })
 
   // A point read as zero draws a screen of zeroes, which reads as a broken one.
@@ -561,9 +563,15 @@ describe('what the control stands at', () => {
     expect(tab.findAll('.control__bought').map((one) => one.text())).toContain('80 cards a sitting')
   })
 
-  it('carries the word for a figure the window guessed, until the answer lands', () => {
-    expect(drawn({ honest: false }).tab.text()).toContain(words.about)
-    expect(drawn().tab.text()).not.toContain(words.about)
+  // The window's own arithmetic never reaches the eye as a figure now: until
+  // the answer lands the picture says it is reading the vault, and no tile, no
+  // axis number and no readout is drawn.
+  it('draws no figure at all until the answer lands', () => {
+    const { tab } = drawn({ honest: false })
+    expect(tab.get('.control__waiting').text()).toContain(words.waiting)
+    expect(tab.findAll('.control__tile')).toHaveLength(0)
+    expect(tab.findAll('.control__number')).toHaveLength(0)
+    expect(tab.get('.control__ends').text()).toBe('')
   })
 
   // A line drawn before the answer has to move when it lands, and a picture
@@ -902,11 +910,12 @@ describe('the settings under the control', () => {
     const mine = tab.findAll('.preset__row--mine')
     expect(mine).toHaveLength(1)
     expect(mine[0]?.get('.preset__name').text()).toBe(words.fieldName('reviewsADay'))
-    expect(mine[0]?.get('.preset__mine').text()).toBe(words.byHand)
 
-    const back = mine[0]?.get('.preset__follows')
-    expect(back?.attributes('aria-label')).toBe(words.follows)
-    expect(back?.attributes('title')).toBe(words.follows)
+    // The words on it are its name to a screen reader and its title on a
+    // hover, so what it does is said once and in one place.
+    const back = mine[0]?.get('.preset__restore')
+    expect(back?.text()).toBe(words.restores)
+    expect(back?.attributes('title')).toBe(words.restores)
     await back?.trigger('click')
     expect(done).toStrictEqual(['follows reviewsADay'])
   })
@@ -914,6 +923,6 @@ describe('the settings under the control', () => {
   it('leaves a row that follows the goal unmarked, with nothing offered back', () => {
     const { tab } = drawn({ goal: 'retention' }, { goal: 'retention' })
     expect(tab.findAll('.preset__row--mine')).toHaveLength(0)
-    expect(tab.findAll('.preset__follows')).toHaveLength(0)
+    expect(tab.findAll('.preset__restore')).toHaveLength(0)
   })
 })

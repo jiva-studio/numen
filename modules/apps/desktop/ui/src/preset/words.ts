@@ -152,9 +152,6 @@ export const WORDS = {
     if (goal === 'retention') return 'most kept'
     return goal === 'date' ? 'first day it fits' : 'time enough'
   },
-  /** The figure is the window's own arithmetic, and the answer is on its way. */
-  about: 'about',
-  aboutMeaning: 'a figure the window guessed while the application works out the honest one',
   /** The value the control stands at, in the units of its goal. */
   value: (goal: Goal, value: number, day: string) => {
     if (goal === 'retention') return `${share(value)} remembered`
@@ -174,9 +171,8 @@ export const WORDS = {
   /** The preset schedules nothing, for either of the two reasons. */
   spent: 'This preset is past the day it aimed at. Its budget is spent, and it schedules nothing.',
   paused: 'No cards a day: this preset schedules nothing, and every deck pointing at it stops.',
-  /** A row standing at a value of a person's own, and the way back under the goal. */
-  byHand: 'typed by hand',
-  follows: 'Follow the goal again',
+  /** The way back under the goal, said on the control that does it. */
+  restores: 'Restore to the goal',
   /** What is wrong with the file, said above the control. */
   problems: 'What is wrong with this preset',
   /** The file moved under the window, and the two answers to that. */

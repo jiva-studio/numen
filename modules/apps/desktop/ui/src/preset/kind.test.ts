@@ -356,6 +356,43 @@ describe('a row put back under the goal', () => {
     expect(written.at(-1)?.retention).toBe(0.88)
   })
 
+  /**
+   * The curve is asked under the very row being put back, so the answer moves
+   * when the row does: a day the count closes gets through less than a day it
+   * does not. The press has to land on what the answer that comes back says,
+   * not on what the answer before it said.
+   */
+  const moving = (asked: Settings): Curve => ({
+    ...target,
+    at: (asked.reviewsADay > 200 ? [20, 45, 144, 160] : [20, 45, 130, 160]).map((reviews) =>
+      point({ reviews: Math.min(reviews, asked.reviewsADay) }),
+    ),
+    now: { at: 2, value: asked.retention, day: '' },
+  })
+
+  it('lands on the goal’s value in one press, and the row is no longer marked', async () => {
+    const { held, written } = await opened(
+      { goal: 'retention', retention: 0.88, reviewsADay: 500 },
+      moving,
+    )
+    expect([...held.byHand()]).toStrictEqual(['reviewsADay'])
+
+    held.follows('reviewsADay')
+    for (let i = 0; i < 12; i += 1) await Promise.resolve()
+
+    // The value the curve standing now produces, which the answer before it
+    // did not say.
+    expect(held.settings().reviewsADay).toBe(130)
+    expect(held.byHand().size).toBe(0)
+    expect(written.at(-1)?.reviewsADay).toBe(130)
+    // Pressing again is asking for what already holds, and moves nothing.
+    const again = written.length
+    held.follows('reviewsADay')
+    for (let i = 0; i < 12; i += 1) await Promise.resolve()
+    expect(held.settings().reviewsADay).toBe(130)
+    expect(written.length).toBeLessThanOrEqual(again + 1)
+  })
+
   it('is offered on no row under a goal that produces none', async () => {
     const { held } = await opened({ reviewsADay: 12, backlog: 5 })
     expect(held.byHand().size).toBe(0)

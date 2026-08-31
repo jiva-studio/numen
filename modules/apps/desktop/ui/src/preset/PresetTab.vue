@@ -154,15 +154,6 @@ const stopped = computed(() => {
               @moves="(at: number) => props.held.moves(at)"
               @settles="props.held.settles()"
             />
-
-            <!-- The one line the tab is built around. What a place of the
-                 curve buys is said in the bubble over the knob. -->
-            <p class="preset__reading">
-              <span v-if="!curve.honest" class="preset__about" :title="words.aboutMeaning">
-                {{ words.about }}
-              </span>
-              <span class="preset__figure">{{ reading }}</span>
-            </p>
           </template>
 
           <p v-if="stopped" class="preset__stopped">{{ stopped }}</p>
@@ -177,21 +168,21 @@ const stopped = computed(() => {
           >
             <span class="preset__said">
               <span class="preset__name" :id="`preset-${field}`">{{ words.fieldName(field) }}</span>
-              <span class="preset__detail">
-                {{ words.fieldDetail(field) }}
-                <template v-if="byHand.has(field)">
-                  <span class="preset__mine">{{ words.byHand }}</span>
-                  <button
-                    type="button"
-                    class="preset__follows"
-                    :aria-label="words.follows"
-                    :title="words.follows"
-                    @click="props.held.follows(field)"
-                  >
-                    <RotateCcw class="preset__icon" aria-hidden="true" />
-                  </button>
-                </template>
-              </span>
+              <span class="preset__detail">{{ words.fieldDetail(field) }}</span>
+
+              <!-- A row standing at a value of a person's own carries the way
+                   back under the goal, as one thing saying what pressing it
+                   does. -->
+              <button
+                v-if="byHand.has(field)"
+                type="button"
+                class="preset__restore"
+                :title="words.restores"
+                @click="props.held.follows(field)"
+              >
+                <RotateCcw class="preset__icon" aria-hidden="true" />
+                {{ words.restores }}
+              </button>
             </span>
 
             <span class="preset__value">
@@ -332,38 +323,12 @@ const stopped = computed(() => {
   text-transform: uppercase;
 }
 
-/* The reading stands clear of the picture it is read off. */
-.preset__reading {
-  display: flex;
-  align-items: baseline;
-  gap: var(--numen-node-gap);
-  margin: 0;
-  padding-inline: var(--preset-ink);
-}
-
-/* The one line the tab is built around, in figures of one width. */
-.preset__figure {
-  font-size: var(--numen-text-4);
-  font-variant-numeric: tabular-nums;
-  line-height: 1.15;
-}
-
 /* No deck points here, said where the curve would stand. */
 .preset__unpointed {
   margin: 0;
   padding-inline: var(--preset-ink);
   color: var(--numen-hushed);
   line-height: var(--numen-line-height);
-}
-
-/* The window's own arithmetic, standing until the application answers. */
-.preset__about {
-  padding-inline: var(--numen-node-gap);
-  border: var(--numen-stroke) solid var(--numen-node-border);
-  border-radius: var(--numen-radius-pill);
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
-  text-transform: lowercase;
 }
 
 .preset__stopped {
@@ -461,23 +426,23 @@ const stopped = computed(() => {
   color: var(--numen-hushed);
 }
 
-/* Said against the row whose number is the person's own. */
-.preset__mine {
-  color: var(--numen-focus-bg);
-}
-
-/* The way back under the goal, drawn as the mark it is. */
-.preset__follows {
+/* The way back under the goal: the mark and the words are one control, so
+   what it does is read off the thing that does it. */
+.preset__restore {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--numen-dot-gap);
+  align-self: start;
   padding: 0;
   border: 0;
   background: none;
   color: var(--numen-focus-bg);
-  line-height: 0;
-  vertical-align: text-bottom;
+  font: inherit;
+  font-size: var(--numen-text-1);
   cursor: pointer;
 }
 
-.preset__follows:focus-visible {
+.preset__restore:focus-visible {
   outline: var(--numen-stroke) solid currentColor;
   outline-offset: var(--numen-caret);
 }

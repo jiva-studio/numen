@@ -51,10 +51,10 @@ const chose = (value: unknown) => {
       :class="
         cn(
           'inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-tight',
-          // A line box is taller than the letters standing in it, so the text
-          // is nearer the top and foot than the box padding says. The sides
-          // are set wider by that difference, and the four gaps read alike.
-          'px-2.5 py-2',
+          // The letters sit in a box of their own ascent and descent, taller
+          // than the line they are set on, so the block padding is the shorter
+          // of the two and the four gaps around a filled segment read alike.
+          'px-2 py-1.5',
           'font-sans text-base font-medium leading-none text-ink',
           'cursor-pointer transition-[background-color,color] duration-100 ease-numen',
           'hover:bg-[color-mix(in_oklab,var(--numen-node-bg),var(--numen-node-fg)_8%)]',
