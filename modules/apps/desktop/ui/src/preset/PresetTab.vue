@@ -313,11 +313,12 @@ const stopped = computed(() => {
   gap: var(--numen-half-step);
 }
 
-/* The switch hangs out by its own border and the hairline inside it, so what
-   stands on its segments begins on the line. */
+/* The switch spans the column and hangs out at both ends by its own border and
+   the hairline inside it, so what stands on its first segment begins on the
+   line every line of this tab begins on and its far end reads level with the
+   blocks under it. */
 .preset__goals {
-  align-self: start;
-  margin-inline-start: calc(-2 * var(--numen-stroke));
+  margin-inline: calc(-2 * var(--numen-stroke));
 }
 
 /* What the three segments are, said over them. */
@@ -417,11 +418,10 @@ const stopped = computed(() => {
 }
 
 /* Controls of every width end at the one edge. */
-/* Controls of every width begin at the one edge. */
 .preset__value {
   display: flex;
   align-items: center;
-  justify-content: start;
+  justify-content: end;
   gap: var(--numen-node-gap);
 }
 
