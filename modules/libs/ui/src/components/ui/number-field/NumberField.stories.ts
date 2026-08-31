@@ -159,6 +159,78 @@ export const ArrowKeysStep: Story = {
   },
 }
 
+/** The page keys move ten steps, and home and end take the number to the ends. */
+export const TheEndsAreOneKeyAway: Story = {
+  args: { value: 100, step: 5, min: 0, max: 240 },
+  play: async ({ canvasElement }) => {
+    const input = field(canvasElement)
+
+    await userEvent.click(input)
+    await userEvent.keyboard('{PageUp}')
+    expect(input.value).toBe('150')
+
+    await userEvent.keyboard('{PageDown}{PageDown}')
+    expect(input.value).toBe('50')
+
+    await userEvent.keyboard('{End}')
+    expect(input.value).toBe('240')
+
+    await userEvent.keyboard('{Home}')
+    expect(input.value).toBe('0')
+  },
+}
+
+/**
+ * A line that is no number is read out as it stands, so what is refused is said
+ * and not only marked.
+ */
+export const ARefusedLineIsReadOut: Story = {
+  args: { value: null },
+  play: async ({ canvasElement }) => {
+    const input = field(canvasElement)
+
+    await userEvent.click(input)
+    await userEvent.keyboard('twenty')
+
+    expect(input.getAttribute('aria-invalid')).toBe('true')
+    expect(input.getAttribute('aria-valuenow')).toBeNull()
+    expect(input.getAttribute('aria-valuetext')).toBe('twenty')
+  },
+}
+
+/** The number taken away from outside, with a line standing in the field that is none. */
+export const TakenAwayUnderARefusedLine: Story = {
+  render: (args) => ({
+    components: { NumberField },
+    setup: () => {
+      const value = ref<number | null>(args.value)
+      return { args, value }
+    },
+    template: `
+      <div style="display: flex; gap: 0.625rem; padding: 2rem; inline-size: 16rem">
+        <NumberField v-model="value" aria-label="Minutes a day" :min="args.min" :max="args.max" />
+        <!-- The field keeps the keyboard, so what empties it is not its leaving. -->
+        <button type="button" data-slot="empties" @mousedown.prevent @click="value = null">
+          Empty it
+        </button>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const input = field(canvasElement)
+
+    await userEvent.click(input)
+    await userEvent.keyboard('twenty')
+    expect(input.getAttribute('aria-invalid')).toBe('true')
+
+    const empties = canvasElement.querySelector<HTMLElement>('[data-slot="empties"]')
+    await userEvent.click(empties as HTMLElement)
+
+    expect(input.value).toBe('')
+    expect(input.getAttribute('aria-invalid')).toBeNull()
+  },
+}
+
 /** The keyboard reaches it, and what it wears while it is there is the ring. */
 export const TheKeyboardReachesIt: Story = {
   play: async ({ canvasElement }) => {

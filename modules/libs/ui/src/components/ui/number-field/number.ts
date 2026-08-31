@@ -1,5 +1,6 @@
 /**
- * What a line of typing comes to as a number, and where the bounds leave it.
+ * What a line of typing comes to as a number, where the bounds leave it, and
+ * where a key leaves it.
  *
  * Pure: the same text gives the same answer wherever it is read, so what the
  * field hands on can be named without drawing it.
@@ -70,5 +71,23 @@ export const allowed = (typed: string, bounds: Bounds): boolean => {
 export const stepped = (value: number | null, by: number, bounds: Bounds): number =>
   settled((value ?? bounds.min) + by * bounds.step, bounds)
 
+/** How many steps a page key covers at once. */
+const PACES = 10
+
+/** Where a key leaves the number, and nothing for a key the field does not answer. */
+export const walked = (key: string, value: number | null, bounds: Bounds): number | null => {
+  if (key === 'Home') return settled(bounds.min, bounds)
+  if (key === 'End') return settled(bounds.max, bounds)
+  if (key === 'ArrowUp') return stepped(value, 1, bounds)
+  if (key === 'ArrowDown') return stepped(value, -1, bounds)
+  if (key === 'PageUp') return stepped(value, PACES, bounds)
+  if (key === 'PageDown') return stepped(value, -PACES, bounds)
+  return null
+}
+
 /** How a number is written into the field. */
 export const written = (value: number | null): string => (value === null ? '' : String(value))
+
+/** Whether what is typed stands for the number in force. An empty field holds none. */
+export const standsFor = (typed: string, value: number | null): boolean =>
+  value === null ? typed.trim() === '' : numberOf(typed) === value

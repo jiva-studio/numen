@@ -11,7 +11,9 @@ import {
   numberOf,
   onItsWay,
   settled,
+  standsFor,
   stepped,
+  walked,
   written,
   type Bounds,
 } from './number'
@@ -128,5 +130,52 @@ describe('how a number is written back', () => {
     expect(written(20)).toBe('20')
     expect(written(0)).toBe('0')
     expect(written(null)).toBe('')
+  })
+})
+
+describe('the keys a spin button answers', () => {
+  it('moves a step under the arrows and ten under the page keys', () => {
+    expect(walked('ArrowUp', 20, BOUNDS)).toBe(25)
+    expect(walked('ArrowDown', 20, BOUNDS)).toBe(15)
+    expect(walked('PageUp', 20, BOUNDS)).toBe(70)
+    expect(walked('PageDown', 100, BOUNDS)).toBe(50)
+  })
+
+  it('takes the number to the ends under home and end', () => {
+    expect(walked('Home', 20, BOUNDS)).toBe(0)
+    expect(walked('End', 20, BOUNDS)).toBe(240)
+    expect(walked('End', 0.8, FINE)).toBe(0.99)
+  })
+
+  it('holds them all inside the bounds', () => {
+    expect(walked('PageDown', 20, BOUNDS)).toBe(0)
+    expect(walked('PageUp', 200, BOUNDS)).toBe(240)
+  })
+
+  it('opens at the floor where no number stands there', () => {
+    expect(walked('ArrowUp', null, BOUNDS)).toBe(5)
+  })
+
+  it('leaves a key it does not answer with nothing to say', () => {
+    expect(walked('a', 20, BOUNDS)).toBeNull()
+    expect(walked('Enter', 20, BOUNDS)).toBeNull()
+    expect(walked('Backspace', 20, BOUNDS)).toBeNull()
+  })
+})
+
+describe('whether what is typed stands for the number in force', () => {
+  it('is the number the digits come to, however they are written', () => {
+    expect(standsFor('20', 20)).toBe(true)
+    expect(standsFor('20.0', 20)).toBe(true)
+    expect(standsFor('21', 20)).toBe(false)
+  })
+
+  // A line that is no number stands for no number, and not for the absence of
+  // one either.
+  it('is an empty field alone that stands for no number at all', () => {
+    expect(standsFor('', null)).toBe(true)
+    expect(standsFor('  ', null)).toBe(true)
+    expect(standsFor('twenty', null)).toBe(false)
+    expect(standsFor('twenty', 20)).toBe(false)
   })
 })

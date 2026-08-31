@@ -179,6 +179,48 @@ describe('the arrow keys', () => {
   })
 })
 
+// A spin button answers six keys, and a field answering two of them is a
+// control the keyboard cannot reach the ends of.
+describe('the other keys a spin button answers', () => {
+  it('takes the number to the ends under home and end', async () => {
+    const field = mountField()
+    await field.get('input').trigger('keydown', { key: 'End' })
+    expect(field.get('input').element.value).toBe('240')
+
+    await field.get('input').trigger('keydown', { key: 'Home' })
+    expect(field.get('input').element.value).toBe('0')
+    expect(handed(field)).toEqual([240, 0])
+  })
+
+  it('moves ten steps under the page keys, and stops at the bounds', async () => {
+    const field = mountField({ modelValue: 100 })
+    await field.get('input').trigger('keydown', { key: 'PageDown' })
+    expect(field.get('input').element.value).toBe('50')
+
+    await field.get('input').trigger('keydown', { key: 'PageUp' })
+    expect(field.get('input').element.value).toBe('100')
+
+    await field.get('input').trigger('keydown', { key: 'PageDown' })
+    await field.get('input').trigger('keydown', { key: 'PageDown' })
+    await field.get('input').trigger('keydown', { key: 'PageDown' })
+    expect(field.get('input').element.value).toBe('0')
+  })
+
+  it('leaves a field nobody may type into where it stands', async () => {
+    const field = mountField({ disabled: true })
+    await field.get('input').trigger('keydown', { key: 'End' })
+    await field.get('input').trigger('keydown', { key: 'PageUp' })
+    expect(handed(field)).toEqual([])
+  })
+
+  it('leaves a key it does not answer to the field it is typed into', async () => {
+    const field = mountField()
+    await field.get('input').trigger('keydown', { key: 'a' })
+    expect(handed(field)).toEqual([])
+    expect(field.get('input').element.value).toBe('20')
+  })
+})
+
 // A caller writes what it holds when the field settles, so a field left alone
 // is a field that has settled nowhere.
 describe('leaving the field', () => {
@@ -235,6 +277,31 @@ describe('what a screen reader is told', () => {
     expect(input.attributes('aria-valuenow')).toBeUndefined()
     expect(input.element.value).toBe('')
   })
+
+  it('says nothing of its own where the number in force is what stands there', () => {
+    expect(mountField().get('input').attributes('aria-valuetext')).toBeUndefined()
+  })
+
+  // A line refused with no number to announce is refused in silence, and the
+  // eye can see what the ear is not told.
+  it('reads out a line that is no number, where no number stands with it', async () => {
+    const field = mountField({ modelValue: null })
+    await field.get('input').setValue('twenty')
+    const input = field.get('input')
+
+    expect(input.attributes('aria-invalid')).toBe('true')
+    expect(input.attributes('aria-valuenow')).toBeUndefined()
+    expect(input.attributes('aria-valuetext')).toBe('twenty')
+  })
+
+  it('reads out a number past the bounds, which are said beside it', async () => {
+    const field = mountField()
+    await field.get('input').setValue('900')
+    const input = field.get('input')
+
+    expect(input.attributes('aria-valuetext')).toBe('900')
+    expect(input.attributes('aria-valuemax')).toBe('240')
+  })
 })
 
 describe('a number set from outside', () => {
@@ -249,5 +316,17 @@ describe('a number set from outside', () => {
     await field.get('input').setValue('60.0')
     await field.setProps({ modelValue: 60 })
     expect(field.get('input').element.value).toBe('60.0')
+  })
+
+  // A line refused stands for no number, so a field emptied from outside is
+  // emptied whatever is standing in it.
+  it('empties the field where the number is taken away under refused text', async () => {
+    const field = mountField()
+    await field.get('input').setValue('twenty')
+    await field.setProps({ modelValue: null })
+
+    expect(field.get('input').element.value).toBe('')
+    expect(field.get('input').attributes('aria-invalid')).toBeUndefined()
+    expect(field.get('input').attributes('aria-valuetext')).toBeUndefined()
   })
 })

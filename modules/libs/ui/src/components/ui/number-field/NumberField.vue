@@ -3,8 +3,11 @@
  * One line of digits, typed by hand and held inside its bounds.
  *
  * What was typed stands as it was typed: a line that is not a number in the
- * bounds is marked and hands nothing on, and the number in force is written
- * back only once the field is left.
+ * bounds is marked, is read out as it stands, and hands nothing on, and the
+ * number in force is written back only once the field is left.
+ *
+ * It is a spin button: the arrows move the number a step, the page keys ten,
+ * and home and end take it to the ends.
  *
  * The number in force is one the bounds hold, so bounds that move under it
  * bring it in and it is written out where it now stands.
@@ -21,7 +24,8 @@ import {
   numberOf,
   onItsWay,
   settled,
-  stepped,
+  standsFor,
+  walked,
   written,
   DEFAULT_BOUNDS,
 } from './number'
@@ -77,6 +81,9 @@ const refused = computed(() => {
   return value !== null && value !== clamped(value, bounds.value)
 })
 
+/** What a refused line is said as, so it is read out and not only marked. */
+const saying = computed(() => (refused.value ? typed.value.trim() : undefined))
+
 /** The number in force, which is a number the bounds hold. */
 const standing = computed(() =>
   model.value === null ? null : clamped(model.value, bounds.value),
@@ -98,7 +105,7 @@ const element = useTemplateRef<HTMLInputElement>('element')
 
 /** A number set from outside is written out; typing that means it is left alone. */
 watch(model, (now) => {
-  if (numberOf(typed.value) === now) return
+  if (standsFor(typed.value, now)) return
   typed.value = written(now)
   rested = now
 })
@@ -123,10 +130,21 @@ const settle = () => {
   raises('settles', now)
 }
 
-const move = (by: number) => {
+/**
+ * A key the spin button answers: the arrows a step, the page keys ten, and home
+ * and end the ends. Enter settles the field where it stands.
+ */
+const pressed = (event: KeyboardEvent) => {
+  if (event.key === 'Enter') {
+    settle()
+    return
+  }
+  const said = walked(event.key, numberOf(typed.value) ?? model.value, bounds.value)
+  if (said === null) return
+  event.preventDefault()
   if (props.disabled) return
-  model.value = stepped(numberOf(typed.value) ?? model.value, by, bounds.value)
-  typed.value = written(model.value)
+  model.value = said
+  typed.value = written(said)
 }
 
 defineExpose({
@@ -150,6 +168,7 @@ defineExpose({
     :aria-valuemin="min"
     :aria-valuemax="max"
     :aria-valuenow="model ?? undefined"
+    :aria-valuetext="saying"
     :aria-invalid="refused || undefined"
     :class="
       cn(
@@ -167,8 +186,6 @@ defineExpose({
     "
     @input="took"
     @blur="settle"
-    @keydown.up.prevent="move(1)"
-    @keydown.down.prevent="move(-1)"
-    @keydown.enter="settle"
+    @keydown="pressed"
   />
 </template>

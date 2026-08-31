@@ -5,7 +5,9 @@ export {
   numberOf,
   onItsWay,
   settled,
+  standsFor,
   stepped,
+  walked,
   written,
   DEFAULT_BOUNDS,
 } from './number'
