@@ -1,6 +1,7 @@
 package flashcards_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -62,5 +63,75 @@ func TestTheWindowsUnderTheFourAreTheCardsOwnSchedulers(t *testing.T) {
 	}
 	if seen[0.99] == seen[0.9] {
 		t.Fatal("the two presets leave the card in the same place, and this test says nothing")
+	}
+}
+
+// The window under a button is the day the card comes back on.
+//
+// A card's day is chosen in one function: the scheduler works out an interval
+// and the preset chooses a day inside the tolerance around it. The button goes
+// through the same one, so a preset evening its load names the day it moved the
+// card to.
+func TestTheWindowsUnderTheFourNameTheDayTheCardComesBackOn(t *testing.T) {
+	for _, one := range []struct {
+		what string
+		even bool
+	}{{"an even load", true}, {"no even load", false}} {
+		s := opened(t, map[string]string{
+			"Term.md": term,
+			"On.md": preset(fmt.Sprintf("goal: minutes_a_day\nminutes_a_day: 1440\n"+
+				"new_a_day: 0\nreviews_a_day: 9999\neven_load: %t\n", one.even)),
+			"decks/On.md": deckOf("On", 60, 0),
+		})
+		// Every card face put into review long ago, so each comes back in days
+		// and the placement has a window to move it in.
+		for _, days := range []int{40, 25} {
+			run := s.run(t, saturday.AddDate(0, 0, -days))
+			for i := range 60 {
+				answer(t, run, mark(i), 4*time.Second)
+			}
+		}
+
+		// One card answered at a time, each a second after the last, so the day
+		// stays the one day and nothing but the placement can move a card off
+		// the day the scheduler named. What a button names is a day, so the day
+		// is what is compared.
+		asked, differ, worst := 0, 0, time.Duration(0)
+		for step := range 60 {
+			at := saturday.Add(time.Duration(step) * time.Second)
+			sat := s.sittingAt(t, today, at)
+			if len(sat.Asked) == 0 {
+				break
+			}
+			card := sat.Asked[0]
+			said, named := card.Ahead[history.Good]
+			if !named {
+				t.Fatalf("under %s a card was asked with no window under its buttons", one.what)
+			}
+			if _, err := s.run(t, at).Answer(
+				t.Context(), card.CardFace, history.Good, 0,
+			); err != nil {
+				t.Fatal(err)
+			}
+			schedules, err := s.kept.Execute(t.Context(), s.vault)
+			if err != nil {
+				t.Fatal(err)
+			}
+			asked++
+			came, names := schedules[card.CardFace].Due, at.Add(said)
+			if today.Names(came) != today.Names(names) {
+				differ++
+				if off := came.Sub(names); off > worst || -off > worst {
+					worst = max(off, -off)
+				}
+			}
+		}
+		if asked == 0 {
+			t.Fatalf("under %s no card was asked, and this test says nothing", one.what)
+		}
+		if differ != 0 {
+			t.Errorf("under %s %d of %d cards came back somewhere else than their button said, "+
+				"the worst by %v", one.what, differ, asked, worst)
+		}
 	}
 }

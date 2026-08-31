@@ -792,12 +792,28 @@ func weekday(number int) time.Weekday {
 // It is the one place a day is chosen. A sitting and a projection of it both
 // come here.
 func (p Preset) Places(s *Spread, at, due time.Time) time.Time {
+	out := p.lands(s, at, due)
+	s.Holds(out)
+	return out
+}
+
+// Lands is the day a card answered at this instant would come back on, counting
+// it against no day.
+//
+// The four windows put to a person are four askings of one card, and one of
+// them is answered. The day each of them names is chosen by Places' own
+// arithmetic, so the button names the day the card lands on.
+func (p Preset) Lands(s *Spread, at, due time.Time) time.Time {
+	return p.lands(s, at, due)
+}
+
+// lands is where the day is chosen.
+func (p Preset) lands(s *Spread, at, due time.Time) time.Time {
 	if s == nil {
 		return due
 	}
 	first, last, opens := window(due.Sub(at))
 	if !p.Evens() || !opens {
-		s.Holds(due)
 		return due
 	}
 
@@ -813,9 +829,7 @@ func (p Preset) Places(s *Spread, at, due time.Time) time.Time {
 		}
 	}
 
-	out := due.AddDate(0, 0, on-stands)
-	s.Holds(out)
-	return out
+	return due.AddDate(0, 0, on-stands)
 }
 
 // weighs is how much a numbered day of review wants another card: the share of

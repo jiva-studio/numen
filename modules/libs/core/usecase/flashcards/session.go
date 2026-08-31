@@ -133,41 +133,52 @@ func (u Session) Execute(ctx context.Context, v domain.Vault, over Over) (Sittin
 		return Sitting{}, day.refuses(over.Preset)
 	}
 
+	// How loaded each day of review already is, which is what a card put on one
+	// of them is weighed against.
+	on := history.Spreading(u.Day)
+	for _, s := range schedules {
+		on.Holds(s.Due)
+	}
+
 	out := Sitting{Unwritten: marked.Unwritten, Skipped: held.Skipped}
 	out.Asked = make([]Asked, 0, len(holds.seen)+len(holds.fresh))
 	for _, one := range holds.seen {
 		s := schedules[one.CardFace]
 		out.Asked = append(out.Asked, Asked{
-			Standing: one, Schedule: s, Ahead: ahead(asks.under, one.CardFace, s, now),
+			Standing: one, Schedule: s, Ahead: ahead(asks.under, on, one.CardFace, s, now),
 		})
 	}
 	for _, one := range holds.fresh {
 		out.Asked = append(out.Asked, Asked{
-			Standing: one, Ahead: ahead(asks.under, one.CardFace, history.Schedule{}, now),
+			Standing: one,
+			Ahead:    ahead(asks.under, on, one.CardFace, history.Schedule{}, now),
 		})
 	}
 	return out, nil
 }
 
 // ahead is how long each of the four would leave a card standing where this
-// schedule leaves it. It is what the scheduler answers and nothing else: the
-// four are asked of it, and the card is left where it was.
+// schedule leaves it. The card is left where it was, and so is the table of how
+// loaded each day is: only the answer a person gives lands anywhere.
 //
-// The scheduler is the one this card face is scheduled by, so the window under
-// each button is the moment the card will come back.
+// The scheduler is the one this card face is scheduled by and the placement is
+// its own preset's, so the window under each button is the day the card will
+// come back on.
 func ahead(
-	under history.Under, on history.CardFace, s history.Schedule, now time.Time,
+	under history.Under, on *history.Spread, face history.CardFace,
+	s history.Schedule, now time.Time,
 ) map[history.Rating]time.Duration {
 	if under == nil {
 		return nil
 	}
-	by := under(on).By
-	if by == nil {
+	one := under(face)
+	if one.By == nil {
 		return nil
 	}
 	out := make(map[history.Rating]time.Duration, 4)
 	for _, r := range []history.Rating{history.Again, history.Hard, history.Good, history.Easy} {
-		out[r] = by.Next(s, now, r).Due.Sub(now)
+		due := one.By.Next(s, now, r).Due
+		out[r] = one.Preset.Lands(on, now, due).Sub(now)
 	}
 	return out
 }
