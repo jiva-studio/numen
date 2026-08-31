@@ -3,7 +3,7 @@
  * carries. Neither answer touches a chip.
  */
 import { describe, expect, it } from 'vitest'
-import { shared, shareOn, weekFrom, SHARES, WEEK, WHOLE } from './week'
+import { carriedOn, offering, shared, shareOn, weekFrom, SHARES, WEEK, WHOLE } from './week'
 
 const ids = (days: readonly { id: string }[]): readonly string[] => days.map((day) => day.id)
 
@@ -47,6 +47,33 @@ describe('what a day carries', () => {
     expect(shared({ sat: 50, sun: 0 }, 'mon', 25)).toEqual({ sat: 50, sun: 0, mon: 25 })
   })
 
+  it('is drawn as it stands where it stands inside nothing and the whole', () => {
+    expect(carriedOn({ sat: 37 }, 'sat')).toBe(37)
+    expect(carriedOn({}, 'mon')).toBe(WHOLE)
+  })
+
+  // The figure said and the colour drawn are one number, so a share the row
+  // cannot draw is not a share it announces either.
+  it('is brought inside nothing and the whole where it stands outside them', () => {
+    expect(carriedOn({ sat: 400 }, 'sat')).toBe(WHOLE)
+    expect(carriedOn({ sat: -20 }, 'sat')).toBe(0)
+  })
+})
+
+describe('what a day is offered', () => {
+  it('is the shares as they were given, where its own is among them', () => {
+    expect(offering(SHARES, 50)).toEqual(SHARES)
+    expect(offering(SHARES, null)).toEqual(SHARES)
+  })
+
+  it('holds the share it carries, in its place among them', () => {
+    expect(offering([0, 25, 50, 100], 37)).toEqual([0, 25, 37, 50, 100])
+    expect(offering([0, 25, 50], 90)).toEqual([0, 25, 50, 90])
+    expect(offering([25, 50], 0)).toEqual([0, 25, 50])
+  })
+})
+
+describe('what a day carries', () => {
   it('offers the shares from nothing to the whole of a day', () => {
     expect(SHARES[0]).toBe(0)
     expect(SHARES.at(-1)).toBe(WHOLE)

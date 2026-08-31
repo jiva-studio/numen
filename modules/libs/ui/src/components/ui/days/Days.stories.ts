@@ -92,6 +92,24 @@ export const AllOfThem: Story = {
 /** A week starting on Sunday. */
 export const StartingOnSunday: Story = { args: { startsOn: 'sun' } }
 
+/**
+ * Shares the offer does not name, one of them past anything a chip can be
+ * filled with. A chip says the share it is drawn at, and the shares it offers
+ * hold the one the day carries.
+ */
+export const AShareNotOnOffer: Story = {
+  args: { load: { sat: 37, sun: 400 } },
+  play: async ({ canvasElement }) => {
+    expect(said(canvasElement)[5]).toBe('Saturday, 37%')
+    expect(said(canvasElement)[6]).toBe('Sunday, 100%')
+
+    await userEvent.click(chips(canvasElement)[5] as HTMLElement)
+    await waitFor(() =>
+      expect(offered()).toEqual(['0%', '10%', '25%', '37%', '50%', '75%', '90%', '100%']),
+    )
+  },
+}
+
 /** Names that are not Latin, in chips the same size. */
 export const OtherScripts: Story = { args: { names: 'Russian', load: { sat: 50, sun: 0 } } }
 

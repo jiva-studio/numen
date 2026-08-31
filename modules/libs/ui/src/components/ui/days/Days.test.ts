@@ -87,6 +87,28 @@ describe('what is drawn', () => {
   })
 })
 
+describe('a day carrying a share the offer does not name', () => {
+  it('says the share it is drawn at, and is drawn at the share it says', async () => {
+    const row = mountDays({ modelValue: { sat: 37, sun: 400 } })
+    const chips = row.findAll('button')
+    expect(chips[5]?.attributes('aria-label')).toBe('Saturday, 37%')
+    expect(chips[5]?.attributes('style')).toContain('var(--numen-focus-bg) 37%')
+    expect(chips[6]?.attributes('aria-label')).toBe('Sunday, 100%')
+    expect(chips[6]?.attributes('style')).toContain('var(--numen-focus-bg) 100%')
+  })
+
+  it('offers that share too, in its place among them and as the one in force', async () => {
+    const row = mountDays({ modelValue: { sat: 37 } })
+    await row.findAll('button')[5]?.trigger('click')
+    expect(offered()).toEqual(['0%', '10%', '25%', '37%', '50%', '75%', '90%', '100%'])
+
+    const marked = [...document.body.querySelectorAll('.menu__item')]
+      .filter((one) => one.getAttribute('aria-checked') === 'true')
+      .map((one) => one.textContent?.trim())
+    expect(marked).toEqual(['37%'])
+  })
+})
+
 describe('the keyboard while the shares are offered', () => {
   /** The chip pressed, focused as the keyboard would leave it. */
   const asked = async (row: ReturnType<typeof mountDays>, at: number) => {

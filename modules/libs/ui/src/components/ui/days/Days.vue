@@ -17,7 +17,15 @@ import { RovingFocusGroup, RovingFocusItem } from 'reka-ui'
 import { cn } from '@/lib/utils'
 import Menu from '@/menu/Menu.vue'
 import type { Point } from '@/plex/model'
-import { shared, shareOn, SHARES, WEEK, WHOLE, type Day, type Shares } from './week'
+import {
+  carriedOn,
+  offering,
+  shared,
+  SHARES,
+  WEEK,
+  type Day,
+  type Shares,
+} from './week'
 
 // The row and the shares it offers are two things drawn, so what a caller
 // names the row by is put on the row itself.
@@ -41,14 +49,20 @@ const model = defineModel<Shares>({ default: () => ({}) })
 /** Which day is being given a share, where its chip stands, and which chip. */
 const asking = ref<{ day: string; at: Point; from: HTMLElement } | null>(null)
 
-const offered = computed(() =>
-  props.shares.map((share) => ({ id: `${share}`, text: `${share}%` })),
-)
-
 /** The share the day being asked about carries, which the menu opens on. */
 const carrying = computed(() =>
-  asking.value ? `${shareOn(model.value, asking.value.day)}` : null,
+  asking.value ? carriedOn(model.value, asking.value.day) : null,
 )
+
+const offered = computed(() =>
+  offering(props.shares, carrying.value).map((share) => ({
+    id: `${share}`,
+    text: `${share}%`,
+  })),
+)
+
+/** Which of the shares on offer is the one in force, as the menu names it. */
+const current = computed(() => (carrying.value === null ? null : `${carrying.value}`))
 
 const asks = (day: string, event: Event) => {
   if (props.disabled) return
@@ -71,7 +85,7 @@ const chose = (said: string) => {
  * read as the work standing on it.
  */
 const filling = (day: string) => {
-  const weight = Math.min(Math.max(shareOn(model.value, day), 0), WHOLE)
+  const weight = carriedOn(model.value, day)
   return {
     background: `color-mix(in oklab, var(--numen-node-bg), var(--numen-focus-bg) ${weight}%)`,
     color: weight > 50 ? 'var(--numen-focus-fg)' : 'var(--numen-node-fg)',
@@ -92,7 +106,7 @@ const filling = (day: string) => {
       <button
         type="button"
         :disabled="disabled"
-        :aria-label="`${day.long}, ${shareOn(model, day.id)}%`"
+        :aria-label="`${day.long}, ${carriedOn(model, day.id)}%`"
         aria-haspopup="menu"
         :aria-expanded="asking?.day === day.id"
         :style="filling(day.id)"
@@ -117,7 +131,7 @@ const filling = (day: string) => {
     :items="offered"
     :at="asking.at"
     :from="asking.from"
-    :current="carrying"
+    :current="current"
     open
     opening="keyboard"
     @choose="chose"

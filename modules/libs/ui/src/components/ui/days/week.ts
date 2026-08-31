@@ -46,6 +46,30 @@ export const SHARES: readonly number[] = [0, 10, 25, 50, 75, 90, WHOLE]
 export const shareOn = (shares: Shares, day: string): number => shares[day] ?? WHOLE
 
 /**
+ * What a day is drawn as carrying: its share brought inside nothing and the
+ * whole of a day. A number outside that is not a share a chip can show, and
+ * the figure said and the colour drawn are this one number.
+ */
+export const carriedOn = (shares: Shares, day: string, whole: number = WHOLE): number =>
+  Math.min(Math.max(shareOn(shares, day), 0), whole)
+
+/**
+ * The shares on offer, holding the one a day carries. A share the offer does
+ * not name is added where it stands among them, so a day is never asked to
+ * choose without its own share among the choices. Nothing carried leaves the
+ * offer as it is.
+ */
+export const offering = (
+  shares: readonly number[],
+  carrying: number | null,
+): readonly number[] => {
+  if (carrying === null || shares.includes(carrying)) return shares
+  const at = shares.findIndex((one) => one > carrying)
+  if (at < 0) return [...shares, carrying]
+  return [...shares.slice(0, at), carrying, ...shares.slice(at)]
+}
+
+/**
  * The shares with one day put at a share, and a day back at the whole dropped:
  * what carries the whole of a day is what nothing was said about.
  */
