@@ -610,23 +610,63 @@ func TestWhatStandsLearnedToday(t *testing.T) {
 	}
 
 	for _, one := range []struct {
-		rule    history.Rule
-		learned int
+		rule      history.Rule
+		interval  int
+		retention float64
+		learned   int
 	}{
 		// Sent away for 21 days or longer: the long one and the faded one.
-		{history.RuleInterval, 2},
+		{history.RuleInterval, 21, 0.9, 2},
+		// And for 45 or longer: the long one alone, which is what says the
+		// threshold is read rather than assumed.
+		{history.RuleInterval, 45, 0.9, 0},
+		{history.RuleInterval, 40, 0.9, 1},
 		// Recalled today with a chance of nine in ten: everything but the faded
 		// one, whose answer is two hundred days behind a stability of ten.
-		{history.RuleRetention, 3},
+		{history.RuleRetention, 21, 0.9, 3},
+		// A harder target turns away the one sent furthest away, and a harder
+		// one still turns away every one of them.
+		{history.RuleRetention, 21, 0.95, 2},
+		{history.RuleRetention, 21, 0.99, 0},
 	} {
 		p := history.Defaults()
 		p.Goal, p.ReviewsADay, p.NewADay = history.GoalRetention, 9999, 0
-		p.Rule, p.Interval, p.Retention = one.rule, 21, 0.9
+		p.Rule, p.Interval, p.Retention = one.rule, one.interval, one.retention
 
 		if got := ran(t, run, now, p, at, 0).Learned; got != one.learned {
-			t.Errorf("under %s, %d card faces stand learned, want %d",
-				one.rule, got, one.learned)
+			t.Errorf("under %s at %d days and %v, %d card faces stand learned, want %d",
+				one.rule, one.interval, one.retention, got, one.learned)
 		}
+	}
+}
+
+// A card face whose chance of recall stands exactly at the target is learned.
+func TestACardAtTheTargetExactlyIsLearned(t *testing.T) {
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	p := history.Defaults()
+	p.Rule, p.Retention = history.RuleRetention, 0.9
+	// A stability at which the chance of recall a day on is the target itself.
+	away := 24 * time.Hour
+	stability := 1.0
+	for range 200 {
+		if history.Recall(away, stability) >= p.Retention {
+			break
+		}
+		stability *= 1.1
+	}
+	c := history.Schedule{
+		Last: now.Add(-away), Due: now, Reps: 3, Stability: stability, Difficulty: 5, Phase: 2,
+	}
+	if !p.Learned(c, now) {
+		t.Errorf("a card face recalled with a chance of %v stands short of a target of %v",
+			history.Recall(away, stability), p.Retention)
+	}
+	// And a target above where it stands does not learn it.
+	tighter := p
+	tighter.Retention = 0.99
+	if tighter.Learned(c, now) {
+		t.Errorf("a card face recalled with a chance of %v is learned at a target of %v",
+			history.Recall(away, stability), tighter.Retention)
 	}
 }
 

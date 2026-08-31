@@ -393,3 +393,25 @@ func TestThePlacingCarriesEverythingThatMovesACard(t *testing.T) {
 		}
 	}
 }
+
+// What the day has already gone through is off what it still admits, so a
+// second sitting takes up where the first left off.
+func TestADaysSpendIsOffWhatItStillAdmits(t *testing.T) {
+	day := flashcards.Day{Starts: flashcards.DayStarts}
+	p := flashcards.Defaults()
+	p.Goal, p.MinutesADay = flashcards.GoalMinutes, 1
+	p.NewADay, p.ReviewsADay = 20, 20
+
+	fresh := p.Admits(day, time.Now(), flashcards.Spent{}, flashcards.Left{})
+	after := p.Admits(day, time.Now(), flashcards.Spent{
+		Answered: 3, New: 3, Reviews: 3, Took: 18 * time.Second,
+	}, flashcards.Left{})
+
+	if after.Minutes != fresh.Minutes-18*time.Second {
+		t.Errorf("a day of %v with 18s gone still admits %v", fresh.Minutes, after.Minutes)
+	}
+	if after.New != fresh.New-3 || after.Reviews != fresh.Reviews-3 {
+		t.Errorf("a day that has begun 3 and reviewed 3 still admits %d new and %d reviews",
+			after.New, after.Reviews)
+	}
+}
