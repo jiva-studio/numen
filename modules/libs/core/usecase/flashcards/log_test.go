@@ -5,9 +5,11 @@ import (
 	"errors"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -269,6 +271,53 @@ func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
 	if len(held.Answers) != 1 || held.Skipped != 0 {
 		t.Errorf("the vault holds %d answers and %d lines it could not act on, want the one that landed",
 			len(held.Answers), held.Skipped)
+	}
+}
+
+// A run file that cannot be read is one run, not the whole window. The reader
+// already skips a torn line and counts it, and a file nobody may open is the
+// same kind of event: everything else the person answered is returned.
+func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root opens a file whatever its permissions say")
+	}
+	s := opened(t, vault)
+	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+
+	shut := s.run(t, time.Now().AddDate(0, 0, -1))
+	if _, err := shut.Answer(t.Context(), on, history.Good, 0); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
+		t.Fatal(err)
+	}
+	closed := filepath.Join(s.vault.Path, filesystem.DefaultServiceDir,
+		filepath.FromSlash(shut.Run.Name()))
+	if err := os.Chmod(closed, 0); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.Chmod(closed, 0o644) })
+
+	held, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)
+	if err != nil {
+		t.Fatalf("one file nobody may open refused the whole history: %v", err)
+	}
+	if len(held.Answers) != 1 {
+		t.Errorf("the vault holds %d answers, want the one that could be read", len(held.Answers))
+	}
+	if len(held.Files) != 1 {
+		t.Errorf("read from %d runs, want the one that could be read", len(held.Files))
+	}
+	if held.Skipped != 1 {
+		t.Errorf("%d could not be acted on, want the one file that could not be opened",
+			held.Skipped)
+	}
+
+	if _, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Over{}); err != nil {
+		t.Errorf("starting a sitting came back with %v", err)
+	}
+	if _, err := s.counted.Execute(t.Context(), s.vault); err != nil {
+		t.Errorf("the counting came back with %v", err)
 	}
 }
 

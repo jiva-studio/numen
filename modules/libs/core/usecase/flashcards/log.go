@@ -68,12 +68,12 @@ func (u Log) Read(ctx context.Context, v domain.Vault) (Held, error) {
 		if err != nil {
 			return Held{}, err
 		}
-		if ran.Gone {
+		out.Skipped += ran.Skipped
+		if ran.Gone || ran.Shut {
 			continue
 		}
 		out.Answers = append(out.Answers, ran.Answers...)
 		out.Files = append(out.Files, port.Stored{Name: file.Name, Size: ran.Size})
-		out.Skipped += ran.Skipped
 	}
 	return out, nil
 }
@@ -90,6 +90,10 @@ type Ran struct {
 	// Gone is a file listed and then taken away by another machine's
 	// synchroniser before it could be read.
 	Gone bool
+	// Shut is a file the permissions on it keep closed. It is counted among
+	// the lines that could not be acted on and left out of the files the
+	// history was read from, so a schedule worked out without it says so.
+	Shut bool
 }
 
 // Run is one file of a vault's log, read.
@@ -97,6 +101,9 @@ func (u Log) Run(ctx context.Context, store port.DerivedStore, file port.Stored)
 	raw, err := store.Read(ctx, file.Name)
 	if errors.Is(err, fs.ErrNotExist) {
 		return Ran{Gone: true}, nil
+	}
+	if errors.Is(err, fs.ErrPermission) {
+		return Ran{Shut: true, Skipped: 1}, nil
 	}
 	if err != nil {
 		return Ran{}, err
