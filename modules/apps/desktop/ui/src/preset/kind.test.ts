@@ -9,7 +9,15 @@ import { describe, expect, it } from 'vitest'
 
 import { presetting, type Said } from './kind'
 import { fieldsUnder, nearest, standing, steers, type Field } from './curve'
-import { DEFAULTS, type Curve, type Goal, type Point, type Presets, type Settings } from './core'
+import {
+  DEFAULTS,
+  type Curve,
+  type Goal,
+  type Point,
+  type Presets,
+  type Read,
+  type Settings,
+} from './core'
 import type { Host } from '../windowing'
 import type { Putting } from '../putting'
 
@@ -67,14 +75,17 @@ const STEADY: Settings = { ...DEFAULTS, minutesADay: 20, reviewsADay: 80, retent
 const opened = async (
   settings: Partial<Settings> = {},
   answers: Curve | ((asked: Settings) => Curve) = curve,
+  reading: (time: number) => Partial<Read> = () => ({}),
 ) => {
   const written: Settings[] = []
   const asked: Goal[] = []
+  let times = 0
   const core: Presets = {
     read: async (path) => ({
       preset: { path, title: 'Steady', settings: { ...STEADY, ...settings }, problems: [] },
       refusal: null,
       at: 'one',
+      ...reading(times++),
     }),
     scheduling: async () => ({ preset: null, refusal: null, at: '' }),
     write: async (_path, put) => {
@@ -96,6 +107,11 @@ const opened = async (
   await Promise.resolve()
   await Promise.resolve()
   return { held, written, asked, changed: kind.changed }
+}
+
+/** A moment for the read and the curve behind it to land. */
+const after = async () => {
+  for (let i = 0; i < 4; i += 1) await Promise.resolve()
 }
 
 describe('the value the goal steers', () => {
@@ -219,15 +235,91 @@ describe('the curve behind the knob', () => {
     expect(asked).toStrictEqual(['minutes', 'retention', 'date'])
   })
 
-  it('is left as it stands where the file comes back saying what it already says', async () => {
-    const { held, asked, changed } = await opened()
+  it('leaves the knob where it stands where the file says what it already said', async () => {
+    const { held, changed } = await opened()
     held.moves(3)
     changed(['Steady.md'])
-    await Promise.resolve()
-    await Promise.resolve()
-    await Promise.resolve()
-    expect(asked).toStrictEqual(['minutes'])
+    await after()
     expect(held.place()).toBe(3)
+  })
+
+  // The counts behind a curve are the vault's, not the preset's, so a file read
+  // again is a curve to ask for again however little the settings moved.
+  it('is asked afresh on a re-read, so a deck pointed here since is seen', async () => {
+    let decks = 0
+    const { held, changed } = await opened({}, () => ({ ...curve, decks: decks++ }))
+    expect(held.curve().decks).toBe(0)
+
+    changed(['Steady.md'])
+    await after()
+    expect(held.curve().decks).toBe(1)
+  })
+
+  // The range the line is drawn over runs to the value the knob rides, so a
+  // value typed past the end of it is a curve nobody has been answered.
+  it('is asked for again where a value past the end of the range is typed', async () => {
+    const reaching = (asked: Settings): Curve => ({
+      ...curve,
+      grid: [0, asked.minutesADay / 2, asked.minutesADay],
+      at: [point(), point(), point()],
+      now: { at: 2, value: asked.minutesADay, day: '' },
+    })
+    const { held, asked } = await opened({}, reaching)
+    expect(held.curve().grid.at(-1)).toBe(20)
+
+    held.types('minutesADay', 120)
+    await after()
+    expect(asked).toStrictEqual(['minutes', 'minutes'])
+    expect(held.curve().grid.at(-1)).toBe(120)
+  })
+
+  // The figures over the picture are read as the answer to what stands on
+  // screen, so the run of a settled question is nobody's answer to a new one.
+  it('is nobody’s answer while the answer to the settings now standing is out', async () => {
+    const { held } = await opened()
+    expect(held.curve().honest).toBe(true)
+
+    held.types('newADay', 4)
+    expect(held.curve().honest).toBe(false)
+    await after()
+    expect(held.curve().honest).toBe(true)
+  })
+})
+
+describe('a file read again', () => {
+  it('leaves a setting moved since the read where the person left it', async () => {
+    const { held, changed } = await opened()
+    held.types('newADay', 4)
+    changed(['Steady.md'])
+    await after()
+    expect(held.settings().newADay).toBe(4)
+  })
+
+  it('takes the file up where nothing stands unwritten', async () => {
+    const { held, changed } = await opened()
+    changed(['Steady.md'])
+    await after()
+    expect(held.settings().newADay).toBe(STEADY.newADay)
+  })
+
+  it('drops the problems of the file it read before, where it is refused', async () => {
+    const { held, changed } = await opened({}, curve, (time) =>
+      time === 0
+        ? {
+            preset: {
+              path: 'Steady.md',
+              title: 'Steady',
+              settings: STEADY,
+              problems: ['a line nobody could read'],
+            },
+          }
+        : { preset: null, refusal: 'notAPreset' },
+    )
+    expect(held.problems()).toHaveLength(1)
+
+    changed(['Steady.md'])
+    await after()
+    expect(held.problems()).toStrictEqual([])
   })
 })
 

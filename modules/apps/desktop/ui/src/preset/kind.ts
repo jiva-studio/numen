@@ -102,6 +102,10 @@ export function presetting(
     asked: number
     /** The settings the curve in hand was asked under, as `shapeOf` reads them. */
     shape: string
+    /** Whether the curve on screen is an answer, though a newer one may be out. */
+    real: boolean
+    /** A setting stands here that the file has not been told of. */
+    edited: boolean
     /** Every curve this tab has been answered, under the settings it was asked for. */
     readonly answers: Map<string, Curve>
   }
@@ -121,6 +125,8 @@ export function presetting(
     wanted: false,
     asked: 0,
     shape: '',
+    real: false,
+    edited: false,
     answers: new Map<string, Curve>(),
   })
 
@@ -144,11 +150,19 @@ export function presetting(
     one.saying.value = whyOf(answer.refusal)
     one.changed.value = false
     one.at = answer.at
-    if (!answer.preset) return
+    // Every curve in hand was worked out over a vault this read has just been
+    // through, so each of them is an answer about a vault as it was.
+    one.answers.clear()
+    if (!answer.preset) {
+      one.problems.value = []
+      return
+    }
     if (answer.preset.title) titles.set(one.path.value, answer.preset.title)
     one.problems.value = answer.preset.problems
-    one.settings.value = answer.preset.settings
-    if (shapeOf(one.settings.value) !== one.shape) await curves(one)
+    // A setting a person has moved and not yet written is theirs, and the file
+    // is taken up where nothing of the kind stands.
+    if (!one.edited) one.settings.value = answer.preset.settings
+    await curves(one)
   }
 
   /**
@@ -169,12 +183,18 @@ export function presetting(
     const answered = one.answers.get(shape)
     if (answered) {
       one.curve.value = answered
+      one.real = true
       one.place.value = standsAt(answered, one.settings.value)
       return
     }
 
-    const standsAlready = one.curve.value.honest && one.curve.value.goal === one.settings.value.goal
-    if (!standsAlready) {
+    const standsAlready = one.real && one.curve.value.goal === one.settings.value.goal
+    if (standsAlready) {
+      // The numbers on screen were worked out for settings that no longer
+      // stand, so they are drawn as the waiting they are: the range and the
+      // knob stay where they are and nothing jumps.
+      one.curve.value = { ...one.curve.value, honest: false }
+    } else {
       // What stands until the answer lands carries the goal and its range, so
       // the readout has units to speak in. It is nobody's answer, so the
       // picture draws no line: the honest one appears once and nothing jumps.
@@ -182,6 +202,7 @@ export function presetting(
       one.curve.value = meanwhile
       one.place.value = Math.max(meanwhile.now.at, 0)
     }
+    one.real = false
     let answer: Curve
     try {
       answer = await core.curve(one.path.value, one.settings.value)
@@ -192,6 +213,7 @@ export function presetting(
     if (mine !== one.asked) return
     one.answers.set(shape, answer)
     one.curve.value = answer
+    one.real = true
     if (standsAlready && alike(riding, answer.grid)) return
     one.place.value = standsAt(answer, one.settings.value)
   }
@@ -228,6 +250,7 @@ export function presetting(
     }
     one.saying.value = ''
     one.at = answer.at
+    one.edited = false
   }
 
   /**
@@ -254,6 +277,7 @@ export function presetting(
   const turns = (one: Kept, place: number): void => {
     one.settings.value = producing(one.settings.value, place, one.curve.value, today())
     one.place.value = place
+    one.edited = true
   }
 
   /** One field of the settings, as a person typed it. */
@@ -310,6 +334,7 @@ export function presetting(
       chooses: (goal) => {
         if (goal === one.settings.value.goal) return
         one.settings.value = aiming(one.settings.value, goal)
+        one.edited = true
         void curves(one).then(() => writes(one))
       },
       moves: (place) => turns(one, place),
@@ -320,11 +345,16 @@ export function presetting(
         // person now stands on the grid.
         if (field === steers(one.settings.value.goal)) {
           one.settings.value = typed(one.settings.value, field, value)
+          one.edited = true
           const place = falling(one, value)
           if (place >= 0) one.place.value = place
+          // The range the curve is drawn over runs to the value the knob
+          // rides, so a value typed past the end of it is a curve to ask for.
+          if (shapeOf(one.settings.value) !== one.shape) void curves(one)
           return
         }
         one.settings.value = typed(one.settings.value, field, value)
+        one.edited = true
         // A field the knob does not ride gives the curve its shape, so the
         // curve is asked for again where one of those is typed.
         if (shapeOf(one.settings.value) !== one.shape) void curves(one)
