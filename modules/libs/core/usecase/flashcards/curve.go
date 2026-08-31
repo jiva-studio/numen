@@ -338,7 +338,13 @@ func (u Curves) date(
 		return Curve{}, err
 	}
 	top := ceiling(carrying.MinutesADay, float64(p.MinutesADay))
+	// A day no budget on the range gets through the material by needs more than
+	// the range explores, so it stands at the top of it. The walk below only
+	// ever lowers a day, and the minutes a day needed fall as the days grow.
 	needs := make([]float64, days)
+	for day := range needs {
+		needs[day] = top
+	}
 	met := make([]bool, days)
 	for i := Points; i >= 1; i-- {
 		one := p

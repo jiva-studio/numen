@@ -99,6 +99,41 @@ const naming = computed(() => {
   }
 })
 
+/** Where a number against one of the picture's own lines is set. */
+const against = (y: number) => ({
+  insetInlineStart: `${(LEFT / WIDE) * 100}%`,
+  insetBlockStart: `${(y / HIGH) * 100}%`,
+})
+
+/** The two ends of the band, against the lines they are the height of. */
+const ceiling = computed(() => ({ ...against(TOP), translate: '0 -100%' }))
+const floor = computed(() => ({ ...against(FOOT), translate: '0 0' }))
+
+/** What the two ends of the band come to, in the units the goal is read in. */
+const highest = computed(() => words.heightAt(props.curve.goal, band.value.most))
+const lowest = computed(() => words.heightAt(props.curve.goal, band.value.least))
+
+/** Where the knob's own value is set, which follows it along the foot. */
+const reading = computed(() => {
+  const spot = knob.value
+  if (!spot) return {}
+  const back = spot.x < LEFT + LABEL ? '0' : spot.x > RIGHT - LABEL ? '-100%' : '-50%'
+  return {
+    insetInlineStart: `${(spot.x / WIDE) * 100}%`,
+    insetBlockStart: `${(FOOT / HIGH) * 100}%`,
+    translate: `${back} 0`,
+  }
+})
+
+/** The value at the knob, and at either end of the range, in the goal's units. */
+const atKnob = computed(() =>
+  words.widthAt(props.curve.goal, props.curve.grid[props.place] ?? 0),
+)
+const atLeast = computed(() => words.widthAt(props.curve.goal, props.curve.grid[0] ?? 0))
+const atMost = computed(() =>
+  words.widthAt(props.curve.goal, props.curve.grid[places.value - 1] ?? 0),
+)
+
 const least = computed(() => props.curve.grid[0] ?? 0)
 const most = computed(() => props.curve.grid[places.value - 1] ?? 0)
 const value = computed(() => props.curve.grid[props.place] ?? 0)
@@ -229,11 +264,17 @@ const released = (event: KeyboardEvent) => {
       <span v-if="honest && suggested" class="control__label" :style="naming">
         {{ words.suggested }}
       </span>
+
+      <template v-if="honest">
+        <span class="control__number" :style="ceiling">{{ highest }}</span>
+        <span class="control__number" :style="floor">{{ lowest }}</span>
+        <span class="control__number control__number--knob" :style="reading">{{ atKnob }}</span>
+      </template>
     </div>
 
     <p v-if="honest" class="control__ends">
-      <span>{{ words.ends(props.curve.goal)[0] }}</span>
-      <span>{{ words.ends(props.curve.goal)[1] }}</span>
+      <span>{{ words.ends(props.curve.goal)[0] }} · {{ atLeast }}</span>
+      <span>{{ words.ends(props.curve.goal)[1] }} · {{ atMost }}</span>
     </p>
   </div>
 </template>
@@ -318,6 +359,32 @@ const released = (event: KeyboardEvent) => {
 /* What is suggested: the accent again, filled and lighter. */
 .control__suggested {
   fill: var(--numen-focus-bg);
+}
+
+/*
+ * A number read off the picture: the two ends of the band against the lines
+ * they are the height of, and the value the knob stands at under it. The halo
+ * keeps it legible where the line runs behind it.
+ */
+.control__number {
+  position: absolute;
+  padding-inline: var(--numen-edge-label-halo);
+  color: var(--numen-hushed);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-1);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-shadow:
+    0 0 var(--numen-edge-label-halo) var(--numen-surface),
+    0 0 var(--numen-edge-label-halo) var(--numen-surface);
+  pointer-events: none;
+}
+
+/* The knob's own value, which reads out where the knob is dragged to. */
+.control__number--knob {
+  color: var(--numen-focus-bg);
+  font-variant-numeric: tabular-nums;
 }
 
 /* The name of a mark, set over the picture in the colour of the mark it names. */

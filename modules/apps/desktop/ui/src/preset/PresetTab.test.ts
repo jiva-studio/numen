@@ -201,6 +201,38 @@ describe('what the control stands at', () => {
     expect(drawn({ goal: 'retention' }).tab.text()).toContain(words.height('retention'))
   })
 
+  // The words say which way is better and the numbers say how much, so a
+  // height can be read off the picture and a place along it can be told.
+  it('carries the two ends of the band, against the lines they are the height of', () => {
+    const numbers = drawn().tab.findAll('.control__number').map((one) => one.text())
+    // The band of the fixture runs from no cards a day to a hundred and twenty.
+    expect(numbers).toContain(words.heightAt('minutes', 120))
+    expect(numbers).toContain(words.heightAt('minutes', 0))
+  })
+
+  it('carries the value at either end of the range, beside the words there', () => {
+    const ends = drawn().tab.get('.control__ends').text()
+    expect(ends).toContain(words.ends('minutes')[0])
+    expect(ends).toContain(words.widthAt('minutes', 0))
+    expect(ends).toContain(words.ends('minutes')[1])
+    expect(ends).toContain(words.widthAt('minutes', 30))
+  })
+
+  it('carries the value at the knob, and it follows the knob', async () => {
+    const { tab } = drawn()
+    const at = () => tab.get('.control__number--knob')
+    expect(at().text()).toBe(words.widthAt('minutes', 20))
+    await tab.get('[role="slider"]').trigger('keydown', { key: 'End' })
+    expect(at().text()).toBe(words.widthAt('minutes', 30))
+  })
+
+  it('reads the numbers of each goal in that goal’s own units', () => {
+    expect(words.widthAt('retention', 0.8)).toBe('0.80')
+    expect(words.widthAt('date', 12)).toBe('12 d')
+    expect(words.heightAt('date', 45)).toBe('45 min')
+    expect(words.heightAt('minutes', 80)).toBe('80 cards')
+  })
+
   it('says a preset past the day it aimed at has spent its budget', () => {
     const gone = drawn({}, { goal: 'date', byDate: '2000-01-01' })
     expect(gone.tab.text()).toContain(words.spent)

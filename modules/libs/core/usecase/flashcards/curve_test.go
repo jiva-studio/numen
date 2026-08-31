@@ -152,7 +152,7 @@ func TestTheCurveOfADateRunsToTheDayNamed(t *testing.T) {
 
 	for i := 1; i < len(got.At); i++ {
 		was, now := got.At[i-1], got.At[i]
-		if was.Met && now.Minutes > was.Minutes {
+		if now.Minutes > was.Minutes {
 			t.Errorf("%s wants %v minutes a day and %s, a day earlier, wants %v",
 				got.Days[i], now.Minutes, got.Days[i-1], was.Minutes)
 		}
@@ -162,6 +162,46 @@ func TestTheCurveOfADateRunsToTheDayNamed(t *testing.T) {
 		}
 	}
 	inRange(t, got)
+}
+
+// More days to do the same material in is never more minutes a day. The early
+// days no budget gets through the material by are the dearest of the range and
+// not the cheapest: they want more than the range explores, not nothing.
+func TestTheMinutesOfADateFallAsTheDaysGrow(t *testing.T) {
+	s := opened(t, studied(30))
+	p := history.Preset{
+		Goal: history.GoalDate, By: noon.AddDate(0, 0, 20).Truncate(24 * time.Hour),
+		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+	}
+
+	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	unmet := 0
+	for i, one := range got.At {
+		if !one.Met {
+			unmet++
+		}
+		if one.Minutes <= 0 {
+			t.Errorf("%s wants %v minutes a day, and no day is got through for nothing",
+				got.Days[i], one.Minutes)
+		}
+		if i > 0 && one.Minutes > got.At[i-1].Minutes {
+			t.Errorf("%s wants %v minutes a day and %s, a day earlier, wants %v",
+				got.Days[i], one.Minutes, got.Days[i-1], got.At[i-1].Minutes)
+		}
+	}
+	// Eight new cards a day is thirty cards in four, so the first days of the
+	// range are days no budget is through the material by.
+	if unmet == 0 {
+		t.Fatal("no day of the range is out of reach, and the fall is not under test")
+	}
+	if got.At[0].Minutes <= got.At[len(got.At)-1].Minutes {
+		t.Errorf("the first day wants %v minutes a day and the last wants %v",
+			got.At[0].Minutes, got.At[len(got.At)-1].Minutes)
+	}
 }
 
 // A day nothing gets the material through by is said so, and the budget that

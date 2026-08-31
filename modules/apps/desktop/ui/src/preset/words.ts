@@ -54,6 +54,14 @@ export const WORDS = {
   ends: (goal: Goal) => ENDS[goal],
   /** What the height of the picture is read in, said over it. */
   height: (goal: Goal) => (goal === 'minutes' ? 'Cards a day' : 'Minutes a day'),
+  /** One height of the picture, against the line it is the height of. */
+  heightAt: (goal: Goal, value: number) =>
+    goal === 'minutes' ? `${count(value)} cards` : `${count(value)} min`,
+  /** One place along the picture, in the units of the goal's grid. */
+  widthAt: (goal: Goal, value: number) => {
+    if (goal === 'retention') return share(value)
+    return goal === 'date' ? `${count(value)} d` : `${count(value)} min`
+  },
   /** A day the card limits close before its minutes run out. */
   closed: (newADay: number, reviewsADay: number) =>
     `A longer day buys nothing here: ${count(newADay)} new and ${count(reviewsADay)} reviews a day ` +
