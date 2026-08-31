@@ -151,8 +151,9 @@ type Projection struct {
 	// admitted.
 	ReviewsADay float64
 	MinutesADay float64
-	// Retained is the share of the material that comes back on the last day.
-	Retained float64
+	// Retained is the share of the material that comes back at the end of each
+	// day projected.
+	Retained []float64
 	// Answered is how many answers were given over the days projected.
 	Answered int
 	// Faces is the material: every card face the preset schedules. Seen is how
@@ -470,6 +471,7 @@ func (s Simulation) Run(
 		if out.Clears == NeverClears && standing == 0 {
 			out.Clears = len(out.Load)
 		}
+		out.Retained = append(out.Retained, retained(cards, ends, out.Faces))
 		open = ends
 	}
 
@@ -481,12 +483,21 @@ func (s Simulation) Run(
 		if c.Due.Before(open) {
 			out.Owed++
 		}
-		out.Retained += Recall(open.Sub(c.Last), c.Stability)
-	}
-	if out.Faces > 0 {
-		out.Retained /= float64(out.Faces)
 	}
 	return out, nil
+}
+
+// retained is the share of the material that comes back at this instant. A card
+// face nobody has begun comes back to nobody, and counts in the material.
+func retained(cards []Schedule, at time.Time, faces int) float64 {
+	if faces == 0 {
+		return 0
+	}
+	out := 0.0
+	for _, c := range cards {
+		out += Recall(at.Sub(c.Last), c.Stability)
+	}
+	return out / float64(faces)
 }
 
 // behind is how many card faces this day left standing: their day has passed

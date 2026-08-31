@@ -728,3 +728,37 @@ func TestTheMarkOfADateStandsOnTheDayTheFileNames(t *testing.T) {
 		}
 	}
 }
+
+// Each place of a date's range is read on the day it names.
+//
+// Past that day the preset schedules nothing, so a debt read off the end of the
+// horizon is a debt nobody was asked to pay and a share left in the head is a
+// material nobody was asked about.
+func TestAPlaceOfADateIsReadOnTheDayItNames(t *testing.T) {
+	s := opened(t, studied(30))
+	p := history.Preset{
+		Goal: history.GoalDate, By: noon.AddDate(0, 0, 30).Truncate(24 * time.Hour),
+		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+		Rule: history.RuleRetention, Retention: 0.9,
+	}
+
+	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Now.At < 0 {
+		t.Fatal("the preset stands nowhere on its own curve")
+	}
+	stands := got.At[got.Now.At]
+	if stands.Through < 1 {
+		t.Fatalf("the day it aims at gets through %v of the material", stands.Through)
+	}
+	if stands.Owed != 0 {
+		t.Errorf("the day it aims at is through the material and leaves %d card faces owed",
+			stands.Owed)
+	}
+	if stands.Retained < 0.5 {
+		t.Errorf("the day it aims at gets through the material and leaves %v of it in the head",
+			stands.Retained)
+	}
+}

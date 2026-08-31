@@ -426,9 +426,13 @@ func (u Curves) date(
 			Reviews: float64(ran.Load[0]),
 			// What it costs is what the days up to that one spend, and the days
 			// past it are no part of getting through by it.
-			Minutes: costing(ran.Spent[:day+1]),
-			Owed:    ran.Owed,
-			Through: standing.Through[day],
+			Minutes: costing(ran.Spent[:day+1], ran.Admitted[:day+1]),
+			// A place of this range is read on the day it names. Past that day
+			// the preset schedules nothing, so a debt read off the end of the
+			// horizon is a debt nobody was asked to pay.
+			Owed:     ran.Backlog[day],
+			Retained: ran.Retained[day],
+			Through:  standing.Through[day],
 			Enough:  reached(standing, day, ran.Short),
 			Met:     reached(ran, day, ran.Short),
 			Short:   ran.Short,
@@ -490,7 +494,7 @@ func point(p history.Projection) Point {
 	return Point{
 		Reviews:  p.ReviewsADay,
 		Minutes:  p.MinutesADay,
-		Retained: p.Retained,
+		Retained: p.Retained[len(p.Retained)-1],
 		Owed:     p.Owed,
 		Through:  p.Through[len(p.Through)-1],
 		Closed:   closing(p),
@@ -623,13 +627,21 @@ func (u Curves) now() time.Time {
 }
 
 // costing is how long a day of review runs over these days, in minutes.
-func costing(spent []time.Duration) float64 {
-	if len(spent) == 0 {
+//
+// A day the preset does not admit is no sitting at all and takes no part: a
+// week of five days runs its minutes over five days.
+func costing(spent []time.Duration, admitted []bool) float64 {
+	var all time.Duration
+	days := 0
+	for i, one := range spent {
+		if i < len(admitted) && !admitted[i] {
+			continue
+		}
+		all += one
+		days++
+	}
+	if days == 0 {
 		return 0
 	}
-	var all time.Duration
-	for _, one := range spent {
-		all += one
-	}
-	return all.Minutes() / float64(len(spent))
+	return all.Minutes() / float64(days)
 }
