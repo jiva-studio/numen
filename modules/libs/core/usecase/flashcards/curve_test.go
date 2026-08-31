@@ -137,9 +137,9 @@ func TestTheCurveOfADateRunsPastTheDayNamed(t *testing.T) {
 	p := history.Preset{
 		Goal: history.GoalDate, By: noon.AddDate(0, 0, 20).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
-		// A card learned the day it is answered, so what a day of the range
-		// costs is the material it begins and nothing else.
-		Rule: history.RuleRetention, Retention: 0.9,
+		// A card face sent away for three weeks, so the days near the left of
+		// the range cannot learn one and the days to the right can.
+		Rule: history.RuleInterval, Interval: 21, Retention: 0.9,
 	}
 
 	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
@@ -169,14 +169,12 @@ func TestTheCurveOfADateRunsPastTheDayNamed(t *testing.T) {
 
 	for i := 1; i < len(got.At); i++ {
 		was, now := got.At[i-1], got.At[i]
-		if now.Minutes > was.Minutes {
+		// Where a day is out of reach the pace is the whole material at once,
+		// which is the same pace at every such day, and what separates their
+		// costs is how many days of review each is averaged over.
+		if now.Short == 0 && was.Short == 0 && now.Minutes > was.Minutes {
 			t.Errorf("%s wants %v minutes a day and %s, a day earlier, wants %v",
 				got.Days[i], now.Minutes, got.Days[i-1], was.Minutes)
-		}
-		// Up to the day the file names. Past it the preset schedules nothing,
-		// and a material nobody is answering falls back out of the head.
-		if got.Grid[i] > got.Now.Value {
-			continue
 		}
 		if now.Through < was.Through-1e-9 {
 			t.Errorf("%s gets through %v and %s, a day earlier, gets through %v",
@@ -188,14 +186,17 @@ func TestTheCurveOfADateRunsPastTheDayNamed(t *testing.T) {
 
 // More days to do the same material in is never more minutes a day: the date
 // paces the material, so a nearer day is a dearer one.
+//
+// It is the pace that thins, so it is said of the days a pace can reach. A day
+// out of reach is handed the whole material at once whatever day it is.
 func TestTheMinutesOfADateFallAsTheDaysGrow(t *testing.T) {
 	s := opened(t, studied(30))
 	p := history.Preset{
 		Goal: history.GoalDate, By: noon.AddDate(0, 0, 20).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
-		// A card learned the day it is answered, so what a day of the range
-		// costs is the material it begins and nothing else.
-		Rule: history.RuleRetention, Retention: 0.9,
+		// A card face sent away for three weeks, so a day of the range pays for
+		// the reviews that get it there and not for the one that begins it.
+		Rule: history.RuleInterval, Interval: 21, Retention: 0.9,
 	}
 
 	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
@@ -208,10 +209,17 @@ func TestTheMinutesOfADateFallAsTheDaysGrow(t *testing.T) {
 			t.Errorf("%s wants %v minutes a day, and no day is got through for nothing",
 				got.Days[i], one.Minutes)
 		}
-		if i > 0 && one.Minutes > got.At[i-1].Minutes {
+		if i > 0 && one.Short == 0 && got.At[i-1].Short == 0 &&
+			one.Minutes > got.At[i-1].Minutes {
 			t.Errorf("%s wants %v minutes a day and %s, a day earlier, wants %v",
 				got.Days[i], one.Minutes, got.Days[i-1], got.At[i-1].Minutes)
 		}
+	}
+	// And the range holds both regimes, so the fall is said of a pace that
+	// thins and not of one that never changed.
+	if got.At[0].Short == 0 || got.At[len(got.At)-1].Short != 0 {
+		t.Errorf("the range leaves %d card faces short at one end and %d at the other",
+			got.At[0].Short, got.At[len(got.At)-1].Short)
 	}
 	if got.At[0].Minutes <= got.At[len(got.At)-1].Minutes {
 		t.Errorf("the first day wants %v minutes a day and the last wants %v",
@@ -225,11 +233,11 @@ func TestTheMinutesOfADateFallAsTheDaysGrow(t *testing.T) {
 func TestADateIsMetAtWhateverItCosts(t *testing.T) {
 	s := opened(t, studied(30))
 	p := history.Preset{
-		Goal: history.GoalDate, By: noon.AddDate(0, 0, 2).Truncate(24 * time.Hour),
+		Goal: history.GoalDate, By: noon.AddDate(0, 0, 25).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 1, ReviewsADay: 45,
-		// Two days are two days: what they can hold is a material learned the
-		// day it is answered.
-		Rule: history.RuleRetention, Retention: 0.9,
+		// A card face sent away for three weeks, which twenty-five days leave
+		// room for and the days near the left of the range do not.
+		Rule: history.RuleInterval, Interval: 21, Retention: 0.9,
 	}
 
 	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
@@ -760,5 +768,60 @@ func TestAPlaceOfADateIsReadOnTheDayItNames(t *testing.T) {
 	if stands.Retained < 0.5 {
 		t.Errorf("the day it aims at gets through the material and leaves %v of it in the head",
 			stands.Retained)
+	}
+}
+
+// A place of a date's range is one run, and everything read off it agrees.
+//
+// The height of the curve and the mark on it answered out of two runs: the
+// height came from the preset's own date, which schedules nothing past the day
+// it names, so every place to the right of that day drew a material falling out
+// of the head while the mark beside it said the day was met.
+func TestAPlaceOfADateIsOneRun(t *testing.T) {
+	s := opened(t, studied(30))
+	p := history.Preset{
+		Goal: history.GoalDate, By: noon.AddDate(0, 0, 5).Truncate(24 * time.Hour),
+		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+		Rule: history.RuleRetention, Retention: 0.9,
+	}
+
+	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, one := range got.At {
+		if one.Enough != one.Met {
+			t.Errorf("%s is got through by the budget %t and by the pace %t",
+				got.Days[i], one.Enough, one.Met)
+		}
+		if i > 0 && got.At[i-1].Enough && !one.Enough {
+			t.Errorf("%s is got through and %s, a day later, is not",
+				got.Days[i-1], got.Days[i])
+		}
+	}
+}
+
+// A day at none of the load is no sitting under a date either, so the curve
+// draws the day after it.
+func TestACurveOfADateOnADayAtNoneOfTheLoadDrawsTheNextSitting(t *testing.T) {
+	s := opened(t, studied(30))
+	if noon.Weekday() != time.Monday {
+		t.Fatalf("the day these curves are drawn on is a %v", noon.Weekday())
+	}
+	p := history.Preset{
+		Goal: history.GoalDate, By: noon.AddDate(0, 0, 20).Truncate(24 * time.Hour),
+		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+		Rule: history.RuleRetention, Retention: 0.9,
+		Load: map[time.Weekday]int{time.Monday: 0},
+	}
+
+	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, one := range got.At {
+		if one.Reviews == 0 {
+			t.Fatalf("%s draws nothing for the day of review it names", got.Days[i])
+		}
 	}
 }

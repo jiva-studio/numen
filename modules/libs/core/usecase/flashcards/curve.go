@@ -91,9 +91,10 @@ type Point struct {
 	// place names under a goal of a date. It is the backlog left at the end and
 	// not the debt a day carries.
 	Owed int
-	// Through is the share of the material learned by this day, and Enough is
-	// whether the budget the preset keeps learns every card face that can be
-	// learned by it. Met is whether the pace this place sets does.
+	// Through is the share of the material learned by this day, and Enough and
+	// Met are whether the pace this place sets learns every card face that can
+	// be learned by it. Under a date the pace is the budget, so the two are one
+	// question and are read off the one run the place is drawn from.
 	Through float64
 	Enough  bool
 	Met     bool
@@ -399,14 +400,10 @@ func (u Curves) date(
 	last := min(MostAhead, max(2*named, unseen, first))
 	run.Days = last + 1
 
-	// What the day the preset aims at comes to, over the whole range.
-	standing, err := run.Run(ctx, now, p, at, unseen)
-	if err != nil {
-		return Curve{}, err
-	}
-
-	// Each day of the range is run at its own pace, which is the material spread
-	// over the days up to it, and what that day of review costs is read off it.
+	// Each place of the range is one day named, run at the pace that day sets:
+	// the material spread over the days up to it. Everything read off a place
+	// comes from that one run, so the height of the curve and the mark on it are
+	// one answer.
 	//
 	// Every place runs the same horizon, however near its own day is, so what it
 	// says about a backlog is the same question answered on every goal and not
@@ -420,10 +417,12 @@ func (u Curves) date(
 		if err != nil {
 			return Curve{}, err
 		}
+		// A day at none of the load is no sitting at all, so what a day of
+		// review holds is read off the first day this run admits.
+		opening, sitting := ran.Sitting()
 		out.Grid = append(out.Grid, float64(day))
 		out.Days = append(out.Days, u.Day.Names(aiming.By))
-		out.At = append(out.At, Point{
-			Reviews: float64(ran.Load[0]),
+		one := Point{
 			// What it costs is what the days up to that one spend, and the days
 			// past it are no part of getting through by it.
 			Minutes: costing(ran.Spent[:day+1], ran.Admitted[:day+1]),
@@ -432,16 +431,20 @@ func (u Curves) date(
 			// horizon is a debt nobody was asked to pay.
 			Owed:     ran.Backlog[day],
 			Retained: ran.Retained[day],
-			Through:  standing.Through[day],
-			Enough:   reached(standing, day, ran.Short),
+			Through:  ran.Through[day],
+			Enough:   reached(ran, day, ran.Short),
 			Met:      reached(ran, day, ran.Short),
 			Short:    ran.Short,
-			Closed:   ran.Closed[0],
+			Closed:   history.ClosedPaused,
 			Clears:   ran.Clears,
 			Learned:  ran.Learned,
 			Learns:   ran.Learns,
 			Backlog:  ran.Backlog,
-		})
+		}
+		if sitting {
+			one.Reviews, one.Closed = float64(ran.Load[opening]), ran.Closed[opening]
+		}
+		out.At = append(out.At, one)
 	}
 
 	// The day the file names is a place of the grid, so what stands under the
