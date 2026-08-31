@@ -112,6 +112,12 @@ export interface Point {
   readonly through: number
   readonly enough: boolean
   readonly met: boolean
+  /**
+   * How many days of review at this place before nothing is overdue. Zero is a
+   * preset standing over nothing overdue, and -1 is a pace that never gets
+   * there.
+   */
+  readonly clears: number
 }
 
 /** One place on the curve worth pointing at. */
@@ -140,6 +146,11 @@ export interface Curve {
   readonly decks: number
   /** How many card faces stand in those decks. */
   readonly cards: number
+  /**
+   * How many of those card faces have had their day and were not answered on
+   * it. It is the backlog alone: what falls due today is not part of it.
+   */
+  readonly overdue: number
   /**
    * Whether this is the application's answer. A curve the window worked out
    * for itself stands until that answer lands.
@@ -249,11 +260,13 @@ const curved = (said: CurveMessage | undefined): Curve => ({
     through: one.through,
     enough: one.enough,
     met: one.met,
+    clears: one.clears,
   })),
   now: marked(said?.now),
   suggested: marked(said?.suggested),
   decks: said?.decks ?? 0,
   cards: said?.cards ?? 0,
+  overdue: said?.overdue ?? 0,
   honest: true,
 })
 

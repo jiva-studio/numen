@@ -47,13 +47,22 @@ type PresetOwing struct {
 	// its preset all the same.
 	Decks int
 	Cards int
+	// Due and New are what the day leaves under it: the card faces owed and the
+	// ones nobody has answered, held to its budget. They are what a sitting over
+	// this preset asks, because a preset is the whole scope of its own budget.
+	Due int
+	New int
 	// Answered is how many of its cards were answered in the day holding now,
 	// and Took is how long those answers took.
 	Answered int
 	Took     time.Duration
-	// Budget is what the day holds under it, the day of the week having had its
-	// say.
+	// Budget is what the preset keeps for this day of the week. A budget its
+	// goal does not name stands here as the person left it and closes nothing,
+	// so Due and New are held to Closes and not to all three of these.
 	Budget history.Budget
+	// Closes is which of the three closes the day, and what each is called when
+	// it does.
+	Closes history.Closes
 }
 
 // Owed is what a vault owes, which is what its front door shows.
@@ -115,13 +124,18 @@ func (u Owed) Execute(ctx context.Context, v domain.Vault) (Owing, error) {
 	for deck, one := range day.sat {
 		at(deck).Answered = one.Answered
 	}
+	// What each preset leaves is counted from the same pass the deck rows are,
+	// so the tile over a preset and the sitting it opens are one number.
+	due, fresh := make(map[string]int), make(map[string]int)
 	for _, one := range holds.seen {
 		out.Due++
 		at(one.Deck).Due++
+		due[day.under[one.CardFace]]++
 	}
 	for _, one := range holds.fresh {
 		out.New++
 		at(one.Deck).New++
+		fresh[day.under[one.CardFace]]++
 	}
 
 	for _, deck := range decks {
@@ -130,7 +144,7 @@ func (u Owed) Execute(ctx context.Context, v domain.Vault) (Owing, error) {
 	slices.SortFunc(out.Decks, func(a, b DeckOwing) int {
 		return strings.Compare(a.Deck, b.Deck)
 	})
-	out.Presets, err = u.presets(ctx, v, reading, day)
+	out.Presets, err = u.presets(ctx, v, reading, day, due, fresh)
 	if err != nil {
 		return Owing{}, err
 	}
@@ -145,8 +159,9 @@ func (u Owed) Execute(ctx context.Context, v domain.Vault) (Owing, error) {
 // stands at nothing.
 func (u Owed) presets(
 	ctx context.Context, v domain.Vault, reading *Reading, day *budgets,
+	due, fresh map[string]int,
 ) ([]PresetOwing, error) {
-	out := day.owing()
+	out := day.owing(due, fresh)
 	if u.Standings.Notes == nil {
 		return out, nil
 	}
@@ -188,12 +203,15 @@ func (u Owed) presets(
 // owing is what the day comes to under each preset the vault's decks name: the
 // budget the day of the week leaves it, and what has been answered under it
 // since the day opened.
-func (b *budgets) owing() []PresetOwing {
+func (b *budgets) owing(due, fresh map[string]int) []PresetOwing {
 	out := make([]PresetOwing, 0, len(b.left))
 	for path, one := range b.left {
 		out = append(out, PresetOwing{
-			Preset: path, Cards: b.cards[path], Answered: one.spent.Answered,
-			Took: one.spent.Took, Budget: one.admits.Keeps,
+			Preset: path, Cards: b.cards[path],
+			Due: due[path], New: fresh[path],
+			Answered: one.spent.Answered,
+			Took:     one.spent.Took,
+			Budget:   one.admits.Keeps, Closes: one.admits.Closes,
 		})
 	}
 	return out

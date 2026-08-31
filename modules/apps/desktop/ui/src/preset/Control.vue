@@ -8,14 +8,19 @@
  * read off the curve and never off the pointer. The whole picture is one stop
  * on the way round the screen, and the arrow keys walk the grid a place at a
  * time.
+ *
+ * Every word on the picture is HTML set over it, so the type is the page's and
+ * not the picture's. Where two of them would touch, the one further down this
+ * file's order gives way: a name is dropped rather than overprinted.
  */
 import { computed, shallowRef, watch, useTemplateRef } from 'vue'
 import { Waiting } from '@numen/ui'
 import type { Curve } from './core'
 import {
-  areaOf,
+  AXIS_HIGH,
   BANDS,
   bandOf,
+  clearAt,
   FOOT,
   HIGH,
   LABEL,
@@ -31,6 +36,7 @@ import {
   WIDE,
   yOfBand,
   type Band,
+  type Spot,
 } from './drawing'
 import { WORDS as words } from './words'
 
@@ -69,13 +75,11 @@ const band = computed<Band>(() => scale.value?.band ?? bandOf(props.curve))
 
 const spots = computed(() => spotsOf(props.curve, band.value))
 const line = computed(() => lineOf(spots.value))
-const area = computed(() => areaOf(spots.value))
 /** The stretch the budget does not get through, which is drawn quieter. */
 const short = computed(() => shortOf(props.curve, spots.value))
 
 const places = computed(() => props.curve.grid.length)
 const knob = computed(() => spots.value[props.place] ?? null)
-const now = computed(() => spots.value[props.curve.now.at] ?? null)
 const suggested = computed(() => spots.value[props.curve.suggested.at] ?? null)
 
 /** A goal of a date stands the mark of the day it names full height, and dashed. */
@@ -85,20 +89,50 @@ const dated = computed(() => props.curve.goal === 'date')
 const honest = computed(() => props.curve.honest)
 
 /**
- * Where the name of the suggested mark is set. It is set over the picture and
- * not in it, so it takes the page's type; the picture's own units place it, as
- * shares of the room the picture was given. It is pulled back inside at either
- * end so that the whole word stands over the picture.
+ * The two marks the picture carries, each with the name it is known by: where
+ * the person stands, and what is suggested.
  */
-const naming = computed(() => {
-  const spot = suggested.value
-  if (!spot) return {}
+const marks = computed(() => {
+  if (!honest.value) return []
+  const out: { key: string; spot: Spot; text: string }[] = []
+  if (knob.value) out.push({ key: 'knob', spot: knob.value, text: words.now })
+  if (suggested.value) {
+    out.push({ key: 'suggested', spot: suggested.value, text: words.markName(props.curve.goal) })
+  }
+  return out
+})
+
+/**
+ * Where a name over a mark is set: above it, pulled back inside the picture at
+ * either end so the whole word stands over it.
+ */
+const naming = (spot: Spot) => {
   const back = spot.x < LEFT + LABEL ? '0' : spot.x > RIGHT - LABEL ? '-100%' : '-50%'
   return {
     insetInlineStart: `${(spot.x / WIDE) * 100}%`,
     insetBlockStart: `${(Math.max(spot.y - LIFT, TOP) / HIGH) * 100}%`,
     translate: `${back} -100%`,
   }
+}
+
+/**
+ * The names that fit. They are taken in the order the marks stand in, and one
+ * that would touch a name already placed is left off.
+ */
+const named = computed(() => {
+  const placed: Spot[] = []
+  const out: { key: string; text: string; at: Record<string, string> }[] = []
+  for (const mark of marks.value) {
+    const clear = placed.every(
+      (one) =>
+        Math.abs(one.x - mark.spot.x) > LABEL * 2 ||
+        Math.abs(one.y - mark.spot.y) > AXIS_HIGH * 2,
+    )
+    if (!clear) continue
+    placed.push(mark.spot)
+    out.push({ key: mark.key, text: mark.text, at: naming(mark.spot) })
+  }
+  return out
 })
 
 /** Where a number against one of the picture's own lines is set. */
@@ -109,18 +143,21 @@ const against = (y: number, lift: string) => ({
 })
 
 /**
- * What the height of the picture comes to, against the lines it is read off.
- * A band of no width is one number and is said once, in the middle, where a
- * curve that never moves is drawn.
+ * What the height of the picture comes to, against the lines it is read off. A
+ * band of no width is one number and is said once, in the middle, where a curve
+ * that never moves is drawn. A number the line or a mark stands on is dropped:
+ * the axis gives way, and the drawing keeps what it has to say.
  */
 const heights = computed(() => {
   const { least, most } = band.value
   const said = (value: number) => words.heightAt(props.curve.goal, value)
-  if (most === least) return [{ at: against(MIDDLE, '-50%'), text: said(most) }]
-  return [
-    { at: against(TOP, '-100%'), text: said(most) },
-    { at: against(FOOT, '0'), text: said(least) },
-  ]
+  const standing = marks.value.map((one) => one.spot)
+  const fits = (y: number, lift: string, value: number) =>
+    clearAt(y, spots.value, standing) ? [{ at: against(y, lift), text: said(value) }] : []
+  // A band of no width has one number and nothing else to read, so it is set
+  // over the line it names rather than given way to it.
+  if (most === least) return [{ at: against(MIDDLE, '-100%'), text: said(most) }]
+  return [...fits(TOP, '-100%', most), ...fits(FOOT, '0', least)]
 })
 
 /**
@@ -135,12 +172,15 @@ const reading = computed(() => {
 })
 
 /** The value at the knob, and at either end of the range, in the goal's units. */
-const atKnob = computed(() =>
-  words.widthAt(props.curve.goal, props.curve.grid[props.place] ?? 0),
+const atKnob = computed(() => words.widthAt(props.curve.goal, props.curve.grid[props.place] ?? 0))
+/** An end the knob is standing on is left to the knob, which says it already. */
+const atLeast = computed(() =>
+  props.place === 0 ? '' : words.widthAt(props.curve.goal, props.curve.grid[0] ?? 0),
 )
-const atLeast = computed(() => words.widthAt(props.curve.goal, props.curve.grid[0] ?? 0))
 const atMost = computed(() =>
-  words.widthAt(props.curve.goal, props.curve.grid[places.value - 1] ?? 0),
+  props.place === places.value - 1
+    ? ''
+    : words.widthAt(props.curve.goal, props.curve.grid[places.value - 1] ?? 0),
 )
 
 const least = computed(() => props.curve.grid[0] ?? 0)
@@ -204,133 +244,177 @@ const released = (event: KeyboardEvent) => {
 
 <template>
   <div class="control">
-    <p class="control__height">{{ words.height(props.curve.goal) }}</p>
-
-    <div class="control__over">
-      <div
-        v-if="!honest"
-        class="control__waiting"
-        role="status"
-        :style="{ aspectRatio: `${WIDE} / ${HIGH}` }"
-      >
-        <Waiting class="control__ring" />
-        <span>{{ words.waiting }}</span>
+    <div class="control__frame">
+      <!-- The y's name runs along the axis it names, outside the plot. -->
+      <div class="control__axis">
+        <p class="control__name control__name--y">{{ words.axisY(props.curve.goal) }}</p>
       </div>
 
-      <svg
-        v-else
-        ref="picture"
-        class="control__picture"
-        role="slider"
-        tabindex="0"
-        :viewBox="`0 0 ${WIDE} ${HIGH}`"
-        :style="{ aspectRatio: `${WIDE} / ${HIGH}` }"
-        :aria-label="words.knob"
-        :aria-valuemin="least"
-        :aria-valuemax="most"
-        :aria-valuenow="value"
-        :aria-valuetext="props.valueText"
-        @pointerdown="took"
-        @pointermove="dragged"
-        @pointerup="letGo"
-        @pointercancel="letGo"
-        @keydown="pressed"
-        @keyup="released"
-      >
-        <defs>
-          <linearGradient id="preset-fade" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="var(--numen-focus-bg)" stop-opacity="0.22" />
-            <stop offset="1" stop-color="var(--numen-focus-bg)" stop-opacity="0" />
-          </linearGradient>
-        </defs>
+      <div class="control__over">
+        <div
+          v-if="!honest"
+          class="control__waiting"
+          role="status"
+          :style="{ aspectRatio: `${WIDE} / ${HIGH}` }"
+        >
+          <Waiting class="control__ring" />
+          <span>{{ words.waiting }}</span>
+        </div>
 
-        <line
-          v-for="share in honest ? BANDS : []"
-          :key="share"
-          class="control__band"
-          :x1="LEFT"
-          :x2="RIGHT"
-          :y1="yOfBand(share)"
-          :y2="yOfBand(share)"
-        />
-
-        <path class="control__area" :d="area" />
-        <path class="control__line" :d="line" />
-        <path v-if="honest && short" class="control__short" :d="short" />
-
-        <g v-if="honest && now">
+        <svg
+          v-else
+          ref="picture"
+          class="control__picture"
+          role="slider"
+          tabindex="0"
+          :viewBox="`0 0 ${WIDE} ${HIGH}`"
+          :style="{ aspectRatio: `${WIDE} / ${HIGH}` }"
+          :aria-label="words.knob"
+          :aria-valuemin="least"
+          :aria-valuemax="most"
+          :aria-valuenow="value"
+          :aria-valuetext="props.valueText"
+          @pointerdown="took"
+          @pointermove="dragged"
+          @pointerup="letGo"
+          @pointercancel="letGo"
+          @keydown="pressed"
+          @keyup="released"
+        >
           <line
+            v-for="share in honest ? BANDS : []"
+            :key="share"
+            class="control__band"
+            :x1="LEFT"
+            :x2="RIGHT"
+            :y1="yOfBand(share)"
+            :y2="yOfBand(share)"
+          />
+
+          <path class="control__line" :d="line" />
+          <path v-if="honest && short" class="control__short" :d="short" />
+
+          <line
+            v-if="honest && knob"
             class="control__drop"
             :class="{ 'control__drop--dated': dated }"
-            :x1="now.x"
-            :x2="now.x"
-            :y1="dated ? TOP : now.y"
+            :x1="knob.x"
+            :x2="knob.x"
+            :y1="dated ? TOP : knob.y"
             :y2="FOOT"
           />
-          <circle class="control__now" :cx="now.x" :cy="now.y" r="5" />
-        </g>
 
-        <circle
-          v-if="honest && suggested"
-          class="control__suggested"
-          :cx="suggested.x"
-          :cy="suggested.y"
-          r="3.5"
-        />
+          <circle
+            v-if="honest && suggested"
+            class="control__suggested"
+            :cx="suggested.x"
+            :cy="suggested.y"
+            r="3.5"
+          />
 
-        <circle v-if="knob" class="control__knob" :cx="knob.x" :cy="knob.y" r="7" />
-      </svg>
+          <circle v-if="knob" class="control__knob" :cx="knob.x" :cy="knob.y" r="7" />
+        </svg>
 
-      <span v-if="honest && suggested" class="control__label" :style="naming">
-        {{ words.suggested }}
-      </span>
+        <span v-for="one in named" :key="one.key" class="control__label" :style="one.at">
+          {{ one.text }}
+        </span>
 
-      <span
-        v-for="one in honest ? heights : []"
-        :key="one.text"
-        class="control__number"
-        :style="one.at"
-        >{{ one.text }}</span
-      >
+        <span
+          v-for="one in honest ? heights : []"
+          :key="one.text"
+          class="control__number"
+          :style="one.at"
+          >{{ one.text }}</span
+        >
+      </div>
     </div>
 
-    <!-- Both rows keep their room while the answer is on its way, so the
-         picture is the only thing that changes when it lands. -->
-    <p class="control__under">
-      <span v-if="honest" class="control__number control__number--knob" :style="reading">
-        {{ atKnob }}
-      </span>
-    </p>
+    <!-- Every row keeps its room while the answer is on its way, so the picture
+         is the only thing that changes when it lands. -->
+    <div class="control__foot">
+      <p class="control__under">
+        <span v-if="honest" class="control__number control__number--knob" :style="reading">
+          {{ atKnob }}
+        </span>
+      </p>
 
-    <p class="control__ends">
-      <template v-if="honest">
-        <span>{{ words.ends(props.curve.goal)[0] }} · {{ atLeast }}</span>
-        <span>{{ words.ends(props.curve.goal)[1] }} · {{ atMost }}</span>
-      </template>
-    </p>
+      <p class="control__ends">
+        <span>{{ honest ? atLeast : '' }}</span>
+        <span>{{ honest ? atMost : '' }}</span>
+      </p>
+
+      <p class="control__name control__name--x">{{ words.axisX(props.curve.goal) }}</p>
+
+      <p v-if="honest" class="control__why">{{ words.markRule(props.curve.goal) }}</p>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .control {
-  /* One line of the small print the picture is annotated in. */
+  /* One line of the small print the picture is annotated in, and the track the
+     y's name runs along beside the plot. */
   --control-line: calc(var(--numen-text-1) * 1.4);
+  --control-axis: calc(var(--numen-text-1) * 1.6);
   display: flex;
   flex-direction: column;
   gap: var(--numen-dot-gap);
 }
 
-/* What the height of the picture is read in. */
-.control__height {
+/* The y's name beside the plot, and the plot. */
+.control__frame {
+  display: flex;
+  align-items: stretch;
+  gap: var(--numen-node-gap);
+}
+
+/*
+ * The room the y's name runs in. It is a box of its own width and no height of
+ * its own, so however long the name is the plot keeps its height.
+ */
+.control__axis {
+  position: relative;
+  flex: none;
+  inline-size: var(--control-axis);
+}
+
+.control__name {
   margin: 0;
   color: var(--numen-hushed);
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-1);
+  line-height: 1;
+}
+
+/* Read up the picture, the way an axis is named on a chart. */
+.control__name--y {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  writing-mode: vertical-rl;
+  rotate: 180deg;
+  overflow: hidden;
+}
+
+.control__name--x {
+  text-align: center;
+}
+
+/* Everything read off the picture keeps the picture's own width. */
+.control__foot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--numen-dot-gap);
+  padding-inline-start: calc(var(--control-axis) + var(--numen-node-gap));
 }
 
 /* The picture, and what is named over it. */
 .control__over {
   position: relative;
+  flex: 1;
+  min-inline-size: 0;
 }
 
 /*
@@ -379,11 +463,6 @@ const released = (event: KeyboardEvent) => {
   stroke-dasharray: 2 5;
 }
 
-/* The accent under the line, thinning to nothing at the foot. */
-.control__area {
-  fill: url('#preset-fade');
-}
-
 .control__line {
   fill: none;
   stroke: var(--numen-focus-bg);
@@ -409,22 +488,15 @@ const released = (event: KeyboardEvent) => {
   stroke-dasharray: 4 4;
 }
 
-/* Where the preset stands: the accent, hollow. */
-.control__now {
-  fill: none;
-  stroke: var(--numen-focus-bg);
-  stroke-width: 1.5;
-}
-
 /* What is suggested: the accent again, filled and lighter. */
 .control__suggested {
   fill: var(--numen-focus-bg);
 }
 
 /*
- * A number read off the picture: the two ends of the band against the lines
- * they are the height of, and the value the knob stands at under it. The halo
- * keeps it legible where the line runs behind it.
+ * A number read off the picture: the ends of the band against the lines they
+ * are the height of, and the value the knob stands at under it. The halo keeps
+ * it legible where the line runs behind it.
  */
 .control__number {
   position: absolute;
@@ -444,7 +516,6 @@ const released = (event: KeyboardEvent) => {
 /* The knob's own value, which reads out where the knob is dragged to. */
 .control__number--knob {
   color: var(--numen-focus-bg);
-  font-variant-numeric: tabular-nums;
 }
 
 /* The name of a mark, set over the picture in the colour of the mark it names. */
@@ -455,6 +526,9 @@ const released = (event: KeyboardEvent) => {
   font-size: var(--numen-text-1);
   line-height: 1;
   white-space: nowrap;
+  text-shadow:
+    0 0 var(--numen-edge-label-halo) var(--numen-surface),
+    0 0 var(--numen-edge-label-halo) var(--numen-surface);
   pointer-events: none;
 }
 
@@ -464,6 +538,7 @@ const released = (event: KeyboardEvent) => {
   stroke-width: 2;
 }
 
+/* The two ends of the range, at the ends of the bottom edge. */
 .control__ends {
   display: flex;
   justify-content: space-between;
@@ -473,5 +548,15 @@ const released = (event: KeyboardEvent) => {
   color: var(--numen-hushed);
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-1);
+  font-variant-numeric: tabular-nums;
+}
+
+/* What the suggested mark is chosen by, said under the picture and not on it. */
+.control__why {
+  margin: 0;
+  color: var(--numen-hushed);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-1);
+  line-height: var(--numen-line-height);
 }
 </style>

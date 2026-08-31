@@ -305,16 +305,32 @@ type PresetOwing struct {
 	// its preset all the same, so a preset of decks and no cards is its own
 	// state.
 	Cards int32 `protobuf:"varint,9,opt,name=cards,proto3" json:"cards,omitempty"`
+	// What the day leaves under it: the card faces owed and the ones nobody has
+	// answered, held to its budget. Their sum is what a sitting over this preset
+	// asks, because a preset is the whole scope of its own budget, so it is the
+	// figure to print against it rather than one worked out from the budget.
+	OwedDue int32 `protobuf:"varint,10,opt,name=owed_due,json=owedDue,proto3" json:"owed_due,omitempty"`
+	OwedNew int32 `protobuf:"varint,11,opt,name=owed_new,json=owedNew,proto3" json:"owed_new,omitempty"`
 	// How many of its cards were answered since the day opened, and how long
 	// those answers took.
 	Answered int32 `protobuf:"varint,2,opt,name=answered,proto3" json:"answered,omitempty"`
 	TookMs   int64 `protobuf:"varint,3,opt,name=took_ms,json=tookMs,proto3" json:"took_ms,omitempty"`
-	// What the day holds under it, the day of the week having had its say: how
-	// many cards of each kind, and how long the day runs. A light day carries
-	// less of the load, and its neighbours carry what it sheds.
-	New           int32   `protobuf:"varint,4,opt,name=new,proto3" json:"new,omitempty"`
-	Reviews       int32   `protobuf:"varint,5,opt,name=reviews,proto3" json:"reviews,omitempty"`
-	Minutes       float64 `protobuf:"fixed64,6,opt,name=minutes,proto3" json:"minutes,omitempty"`
+	// What the preset keeps for this day of the week: how many cards of each
+	// kind, and how long the day runs. A light day carries less of the load, and
+	// its neighbours carry what it sheds.
+	//
+	// A budget the preset's goal does not name stands here as the person left it
+	// and closes nothing. `owed_due` and `owed_new` are already held to the ones
+	// that do, so holding them to these again is capping a number twice.
+	New     int32   `protobuf:"varint,4,opt,name=new,proto3" json:"new,omitempty"`
+	Reviews int32   `protobuf:"varint,5,opt,name=reviews,proto3" json:"reviews,omitempty"`
+	Minutes float64 `protobuf:"fixed64,6,opt,name=minutes,proto3" json:"minutes,omitempty"`
+	// Which of the three closes the day, each written as the preset writes the
+	// key — minutes_a_day, new_a_day, reviews_a_day, by_date — and empty where
+	// that budget takes no part.
+	ClosesNew     string `protobuf:"bytes,12,opt,name=closes_new,json=closesNew,proto3" json:"closes_new,omitempty"`
+	ClosesReviews string `protobuf:"bytes,13,opt,name=closes_reviews,json=closesReviews,proto3" json:"closes_reviews,omitempty"`
+	ClosesMinutes string `protobuf:"bytes,14,opt,name=closes_minutes,json=closesMinutes,proto3" json:"closes_minutes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -377,6 +393,20 @@ func (x *PresetOwing) GetCards() int32 {
 	return 0
 }
 
+func (x *PresetOwing) GetOwedDue() int32 {
+	if x != nil {
+		return x.OwedDue
+	}
+	return 0
+}
+
+func (x *PresetOwing) GetOwedNew() int32 {
+	if x != nil {
+		return x.OwedNew
+	}
+	return 0
+}
+
 func (x *PresetOwing) GetAnswered() int32 {
 	if x != nil {
 		return x.Answered
@@ -410,6 +440,27 @@ func (x *PresetOwing) GetMinutes() float64 {
 		return x.Minutes
 	}
 	return 0
+}
+
+func (x *PresetOwing) GetClosesNew() string {
+	if x != nil {
+		return x.ClosesNew
+	}
+	return ""
+}
+
+func (x *PresetOwing) GetClosesReviews() string {
+	if x != nil {
+		return x.ClosesReviews
+	}
+	return ""
+}
+
+func (x *PresetOwing) GetClosesMinutes() string {
+	if x != nil {
+		return x.ClosesMinutes
+	}
+	return ""
 }
 
 // Ahead is how long each of the four answers would leave this card, in seconds
@@ -1926,17 +1977,24 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x05faces\x18\x02 \x01(\x05R\x05faces\x12\x10\n" +
 	"\x03due\x18\x03 \x01(\x05R\x03due\x12\x10\n" +
 	"\x03new\x18\x04 \x01(\x05R\x03new\x12\x1a\n" +
-	"\banswered\x18\x05 \x01(\x05R\banswered\"\xe2\x01\n" +
+	"\banswered\x18\x05 \x01(\x05R\banswered\"\x85\x03\n" +
 	"\vPresetOwing\x12\x16\n" +
 	"\x06preset\x18\x01 \x01(\tR\x06preset\x12\x14\n" +
 	"\x05title\x18\a \x01(\tR\x05title\x12\x14\n" +
 	"\x05decks\x18\b \x01(\x05R\x05decks\x12\x14\n" +
-	"\x05cards\x18\t \x01(\x05R\x05cards\x12\x1a\n" +
+	"\x05cards\x18\t \x01(\x05R\x05cards\x12\x19\n" +
+	"\bowed_due\x18\n" +
+	" \x01(\x05R\aowedDue\x12\x19\n" +
+	"\bowed_new\x18\v \x01(\x05R\aowedNew\x12\x1a\n" +
 	"\banswered\x18\x02 \x01(\x05R\banswered\x12\x17\n" +
 	"\atook_ms\x18\x03 \x01(\x03R\x06tookMs\x12\x10\n" +
 	"\x03new\x18\x04 \x01(\x05R\x03new\x12\x18\n" +
 	"\areviews\x18\x05 \x01(\x05R\areviews\x12\x18\n" +
-	"\aminutes\x18\x06 \x01(\x01R\aminutes\"Y\n" +
+	"\aminutes\x18\x06 \x01(\x01R\aminutes\x12\x1d\n" +
+	"\n" +
+	"closes_new\x18\f \x01(\tR\tclosesNew\x12%\n" +
+	"\x0ecloses_reviews\x18\r \x01(\tR\rclosesReviews\x12%\n" +
+	"\x0ecloses_minutes\x18\x0e \x01(\tR\rclosesMinutes\"Y\n" +
 	"\x05Ahead\x12\x14\n" +
 	"\x05again\x18\x01 \x01(\x03R\x05again\x12\x12\n" +
 	"\x04hard\x18\x02 \x01(\x03R\x04hard\x12\x12\n" +

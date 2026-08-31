@@ -21,6 +21,7 @@ const point = (over: Partial<Point> = {}): Point => ({
   through: 0,
   enough: true,
   met: true,
+  clears: 0,
   ...over,
 })
 
@@ -38,6 +39,7 @@ const curve: Curve = {
   suggested: { at: 3, value: 30, day: '' },
   decks: 1,
   cards: 400,
+  overdue: 0,
   honest: true,
 }
 

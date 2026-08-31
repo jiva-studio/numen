@@ -149,17 +149,35 @@ message PresetOwing {
   // state.
   int32 cards = 9;
 
+  // What the day leaves under it: the card faces owed and the ones nobody has
+  // answered, held to its budget. Their sum is what a sitting over this preset
+  // asks, because a preset is the whole scope of its own budget, so it is the
+  // figure to print against it rather than one worked out from the budget.
+  int32 owed_due = 10;
+  int32 owed_new = 11;
+
   // How many of its cards were answered since the day opened, and how long
   // those answers took.
   int32 answered = 2;
   int64 took_ms = 3;
 
-  // What the day holds under it, the day of the week having had its say: how
-  // many cards of each kind, and how long the day runs. A light day carries
-  // less of the load, and its neighbours carry what it sheds.
+  // What the preset keeps for this day of the week: how many cards of each
+  // kind, and how long the day runs. A light day carries less of the load, and
+  // its neighbours carry what it sheds.
+  //
+  // A budget the preset's goal does not name stands here as the person left it
+  // and closes nothing. `owed_due` and `owed_new` are already held to the ones
+  // that do, so holding them to these again is capping a number twice.
   int32 new = 4;
   int32 reviews = 5;
   double minutes = 6;
+
+  // Which of the three closes the day, each written as the preset writes the
+  // key — minutes_a_day, new_a_day, reviews_a_day, by_date — and empty where
+  // that budget takes no part.
+  string closes_new = 12;
+  string closes_reviews = 13;
+  string closes_minutes = 14;
 }
 
 // Ahead is how long each of the four answers would leave this card, in seconds

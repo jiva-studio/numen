@@ -208,6 +208,7 @@ export const approximate = (settings: Settings, today: Date): Curve => {
     suggested: NOWHERE,
     decks: 0,
     cards: 0,
+    overdue: 0,
     honest: false,
   }
 }
@@ -241,7 +242,7 @@ const ladder = (least: number, most: number, rounds: (one: number) => number): r
  * more of it back costs more of the day.
  */
 const guessed = (settings: Settings, value: number, grid: readonly number[]): Point => {
-  const flat = { retained: 0, owed: 0, through: 0, enough: true, met: true }
+  const flat = { retained: 0, owed: 0, through: 0, enough: true, met: true, clears: 0 }
   if (settings.goal === 'retention') {
     const minutes = (settings.minutesADay || DEFAULTS.minutesADay) * ((1 - MIDDLE) / (1 - value))
     return { ...flat, minutes, reviews: (minutes * 60) / ANSWER, retained: value }

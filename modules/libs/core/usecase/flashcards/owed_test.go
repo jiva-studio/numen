@@ -48,12 +48,14 @@ func TestWhatADayCameToUnderEachPresetOfAVault(t *testing.T) {
 
 	want := []flashcards.PresetOwing{
 		{
-			Preset: "", Decks: 1, Cards: 1, Answered: 1, Took: 4 * time.Second,
+			Preset: "", Decks: 1, Cards: 1, Due: 1, Answered: 1, Took: 4 * time.Second,
 			Budget: history.Budget{New: 10, Reviews: 200, Minutes: 20},
+			Closes: history.Closes{Minutes: history.ClosedMinutes},
 		},
 		{
-			Preset: "Sanskrit.md", Decks: 2, Cards: 2, Answered: 2, Took: 15 * time.Second,
+			Preset: "Sanskrit.md", Decks: 2, Cards: 2, Due: 2, Answered: 2, Took: 15 * time.Second,
 			Budget: history.Budget{New: 4, Reviews: 23, Minutes: 10},
+			Closes: history.Closes{Minutes: history.ClosedMinutes},
 		},
 	}
 	if len(owing.Presets) != len(want) {
@@ -81,8 +83,9 @@ func TestAVaultHoldingNoPresetStandsOnTheDefaults(t *testing.T) {
 	}
 
 	want := flashcards.PresetOwing{
-		Preset: "", Decks: 2, Cards: 40,
+		Preset: "", Decks: 2, Cards: 40, New: 40,
 		Budget: history.Defaults().Admits(today, saturday, history.Spent{}, 0).Keeps,
+		Closes: history.Defaults().Admits(today, saturday, history.Spent{}, 0).Closes,
 	}
 	if len(owing.Presets) != 1 {
 		t.Fatalf("the vault came to %+v, want the defaults alone", owing.Presets)

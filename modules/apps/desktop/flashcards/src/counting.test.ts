@@ -17,11 +17,16 @@ const vault = (id: string, said: Partial<Counted['vaults'][number]> = {}) => ({
       title: 'Sanskrit',
       decks: 1,
       cards: 3,
+      owedDue: 2,
+      owedNew: 1,
       answered: 4,
       tookMs: 90000n,
       new: 8,
       reviews: 45,
       minutes: 20,
+      closesNew: '',
+      closesReviews: '',
+      closesMinutes: 'minutes_a_day',
     },
   ],
   unread: '',
@@ -43,11 +48,14 @@ describe('counting what every vault owes', () => {
       title: 'Sanskrit',
       decks: 1,
       cards: 3,
+      // What the day leaves is the two the count sends, added up once here.
+      owed: 3,
       answered: 4,
       took: 1.5,
       new: 8,
       reviews: 45,
       minutes: 20,
+      closes: { new: '', reviews: '', minutes: 'minutes_a_day' },
     })
     expect(one.counting.value).toBe(false)
   })

@@ -37,6 +37,7 @@ const point = (over: Partial<Point> = {}): Point => ({
   through: 0,
   enough: true,
   met: true,
+  clears: 0,
   ...over,
 })
 
@@ -155,6 +156,7 @@ describe('what one place of the curve produces', () => {
     suggested: NOWHERE,
     decks: 1,
     cards: 400,
+    overdue: 0,
     honest: true,
   }
 
@@ -212,6 +214,7 @@ describe('a day a longer one buys nothing on', () => {
     suggested: NOWHERE,
     decks: 1,
     cards: 400,
+    overdue: 0,
     honest: true,
   })
 
@@ -239,6 +242,7 @@ describe('a goal with nothing to work on', () => {
     suggested: NOWHERE,
     decks: 0,
     cards: 0,
+    overdue: 0,
     honest: true,
   }
 

@@ -10,7 +10,12 @@ import { computed, ref } from 'vue'
 import { Goal } from '@numen/protocol'
 
 import { deckName } from './core'
-import type { Owing } from './core'
+import type { Closes, Owing } from './core'
+
+export type { Closes }
+
+/** A budget taking no part in the day, which nothing is weighed against. */
+export const CLOSES_NOTHING: Closes = { new: '', reviews: '', minutes: '' }
 
 /** How the decks pointing at one preset are scheduled. */
 export interface Settings {
@@ -60,10 +65,15 @@ export interface Preset {
   readonly named: number
   /** How many card faces stand in those decks. */
   readonly faces: number
-  /** Cards of those decks the day holds, inside the budgets it keeps. */
+  /**
+   * What sitting down to it would ask, as the count gives it: the cards its
+   * decks owe today, already held to the budgets that close the day.
+   */
   readonly cards: number
   /** What the day holds under it, which is what today is weighed against. */
   readonly budget: Budget
+  /** Which key each of those budgets closes on, and empty where it closes none. */
+  readonly closes: Closes
   /** Cards answered under it since the day opened, and the minutes they took. */
   readonly answered: number
   readonly took: number
@@ -194,8 +204,11 @@ const gather = (
       decks: one.decks,
       named: day?.decks ?? one.decks.length,
       faces: day?.cards ?? 0,
-      cards: why ? 0 : load(budget, one.due, one.fresh),
+      // What a sitting over it asks is the count's own figure, and a build that
+      // answered none falls back to what its decks owe between them.
+      cards: day?.owed ?? one.due + one.fresh,
       budget: { new: budget.new, reviews: budget.reviews, minutes: budget.minutes },
+      closes: day?.closes ?? CLOSES_NOTHING,
       answered: day?.answered ?? 0,
       took: day?.took ?? 0,
       paused: why,
@@ -215,6 +228,7 @@ const gather = (
       faces: one.cards,
       cards: 0,
       budget: { new: 0, reviews: 0, minutes: 0 },
+      closes: CLOSES_NOTHING,
       answered: 0,
       took: 0,
       paused: '',
@@ -222,10 +236,6 @@ const gather = (
   }
   return out
 }
-
-/** How many cards the day holds of what stands owed, inside its budget. */
-export const load = (budget: Budget, due: number, fresh: number): number =>
-  Math.min(due, budget.reviews) + Math.min(fresh, budget.new)
 
 /** How many cards the day holds at most. */
 export const holds = (budget: Budget): number => budget.new + budget.reviews
@@ -239,8 +249,12 @@ export const holds = (budget: Budget): number => budget.new + budget.reviews
  * over its budget and not a day that is done.
  */
 export const through = (one: Preset): number => {
-  const ofCards = holds(one.budget)
-  const ofMinutes = one.budget.minutes
+  // Only a budget that closes the day is weighed against. A preset steered by
+  // its minutes keeps its card counts as the person left them, and a share
+  // worked out from those would be a share of a number that binds nothing.
+  const ofCards =
+    (one.closes.new ? one.budget.new : 0) + (one.closes.reviews ? one.budget.reviews : 0)
+  const ofMinutes = one.closes.minutes ? one.budget.minutes : 0
   return Math.max(
     0,
     ofCards > 0 ? one.answered / ofCards : 0,
@@ -255,16 +269,14 @@ export const through = (one: Preset): number => {
 export const spent = (one: Preset): boolean => through(one) >= 1
 
 /**
- * How many cards sitting down to this preset would put in front of a person:
- * what its decks still owe today, inside the budget it keeps.
+ * How many cards sitting down to this preset would put in front of a person,
+ * which is what its decks still owe today.
  *
- * A preset keeping a budget in time is held to it at what an answer has been
- * costing, so what a day of it comes to is near rather than exact.
+ * It is the count the sitting itself will ask, so it is printed as it stands.
  */
 export const leftWords = (one: Preset): string => {
   if (one.cards <= 0) return ''
-  const cards = `${one.cards} ${one.cards === 1 ? 'card' : 'cards'}`
-  return one.budget.minutes > 0 ? `about ${cards}` : cards
+  return `${one.cards} ${one.cards === 1 ? 'card' : 'cards'}`
 }
 
 /** Why a preset schedules nothing, and empty while it schedules something. */

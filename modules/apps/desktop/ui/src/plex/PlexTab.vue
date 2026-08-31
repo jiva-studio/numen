@@ -12,7 +12,7 @@ import { Menu, optionsForType, Plex, useTypeSize } from '@numen/ui'
 import type { MenuOpening, PlexRelatedSeat, PlexShowing } from '@numen/ui'
 import type { LucideIcon } from '@lucide/vue'
 import { ITEMS, NONE } from './menu'
-import { iconFor } from '../icons'
+import { iconFor, iconOfNote } from '../icons'
 import type { Held } from './kind'
 import { WORDS as words } from './words'
 
@@ -31,11 +31,11 @@ const options = computed(() => ({
 
 /**
  * What a node is drawn before its title, and nothing for an ordinary note. A
- * deck and a stencil carry the icon the tree draws them under.
+ * deck, a stencil and a preset carry the icon the tree draws them under.
  */
 const nodeIcon = (node: string): LucideIcon | null => {
   const type = props.held.typeOf(node)
-  return type === 'note' ? null : iconFor(type)
+  return type === 'note' ? null : iconOfNote(type)
 }
 
 /** What the menu offers: on a node, or off every node. */
@@ -94,8 +94,8 @@ const asks = (event: MouseEvent) => {
       @enter="(node: string, part: string) => props.held.entered(node, part)"
       @dismiss="props.held.dismiss()"
     >
-      <!-- A deck and a stencil are drawn as the tree draws them. An ordinary
-           note is drawn its title and nothing before it. -->
+      <!-- A deck, a stencil and a preset are drawn as the tree draws them. An
+           ordinary note is drawn its title and nothing before it. -->
       <template #icon="{ node }: { node: { id: string } }">
         <component
           :is="nodeIcon(node.id)"

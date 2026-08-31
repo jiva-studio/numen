@@ -31,11 +31,16 @@ export interface Counted {
       title: string
       decks: number
       cards: number
+      owedDue: number
+      owedNew: number
       answered: number
       tookMs: bigint
       new: number
       reviews: number
       minutes: number
+      closesNew: string
+      closesReviews: string
+      closesMinutes: string
     }[]
     unread: string
   }[]
@@ -95,11 +100,17 @@ export function counting(deps: Counting) {
           title: preset.title,
           decks: preset.decks,
           cards: preset.cards,
+          owed: preset.owedDue + preset.owedNew,
           answered: preset.answered,
           took: minutes(preset.tookMs),
           new: preset.new,
           reviews: preset.reviews,
           minutes: preset.minutes,
+          closes: {
+            new: preset.closesNew,
+            reviews: preset.closesReviews,
+            minutes: preset.closesMinutes,
+          },
         })),
         unread: one.unread,
       }))

@@ -6,7 +6,7 @@ import { Goal } from '@numen/protocol'
 import Decks from './Decks.vue'
 import Presets from './Presets.vue'
 import type { Owing } from './core'
-import type { Preset, Settings } from './scheduling'
+import type { Closes, Preset, Settings } from './scheduling'
 
 const settings = (said: Partial<Settings> = {}): Settings => ({
   goal: Goal.MINUTES_A_DAY,
@@ -20,6 +20,13 @@ const settings = (said: Partial<Settings> = {}): Settings => ({
   ...said,
 })
 
+/** Every budget closing the day, so each of them is weighed against. */
+const closes: Closes = {
+  new: 'new_a_day',
+  reviews: 'reviews_a_day',
+  minutes: 'minutes_a_day',
+}
+
 const preset = (said: Partial<Preset> = {}): Preset => ({
   path: 'Sanskrit.md',
   name: 'Sanskrit',
@@ -29,6 +36,7 @@ const preset = (said: Partial<Preset> = {}): Preset => ({
   faces: 20,
   cards: 16,
   budget: { new: 10, reviews: 45, minutes: 20 },
+  closes,
   answered: 0,
   took: 0,
   paused: '',
@@ -52,11 +60,13 @@ const vault: Owing = {
       title: 'Sanskrit',
       decks: 1,
       cards: 20,
+      owed: 16,
       answered: 0,
       took: 0,
       new: 10,
       reviews: 45,
       minutes: 20,
+      closes,
     },
   ],
   unread: '',

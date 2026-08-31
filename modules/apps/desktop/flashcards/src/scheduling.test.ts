@@ -1,8 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import { Goal } from '@numen/protocol'
 
-import { goalWords, holds, leftWords, load, named, paused, scheduling } from './scheduling'
-import type { Asks, Budget, Preset, Settings } from './scheduling'
+import {
+  CLOSES_NOTHING,
+  goalWords,
+  holds,
+  leftWords,
+  named,
+  paused,
+  scheduling,
+  spent,
+  through,
+} from './scheduling'
+import type { Asks, Budget, Closes, Preset, Settings } from './scheduling'
 import type { Owing, PresetOwing } from './core'
 
 const settings = (said: Partial<Settings> = {}): Settings => ({
@@ -24,6 +34,12 @@ const budget = (said: Partial<Budget> = {}): Budget => ({
   ...said,
 })
 
+/** A preset steered by how long its day runs, which is the ordinary one. */
+const byMinutes: Closes = { new: '', reviews: '', minutes: 'minutes_a_day' }
+
+/** One steered by what it asks of memory, where the counts are what close it. */
+const byCounts: Closes = { new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' }
+
 const preset = (said: Partial<Preset> = {}): Preset => ({
   path: 'Sanskrit.md',
   name: 'Sanskrit',
@@ -33,9 +49,26 @@ const preset = (said: Partial<Preset> = {}): Preset => ({
   faces: 30,
   cards: 30,
   budget: budget(),
+  closes: byMinutes,
   answered: 0,
   took: 0,
   paused: '',
+  ...said,
+})
+
+/** One preset of a vault as the count hands it over. */
+const owing = (said: Partial<PresetOwing> = {}): PresetOwing => ({
+  preset: 'Sanskrit.md',
+  title: 'Sanskrit',
+  decks: 1,
+  cards: 30,
+  owed: 0,
+  answered: 0,
+  took: 0,
+  new: 10,
+  reviews: 200,
+  minutes: 20,
+  closes: byMinutes,
   ...said,
 })
 
@@ -67,10 +100,7 @@ const answering = (
 
 describe('what a day of a preset holds', () => {
   it('holds each kind of card up to what the day holds of it', () => {
-    const day = budget({ new: 10, reviews: 45 })
-    expect(load(day, 200, 30)).toBe(55)
-    expect(load(day, 12, 4)).toBe(16)
-    expect(holds(day)).toBe(55)
+    expect(holds(budget({ new: 10, reviews: 45 }))).toBe(55)
   })
 
   it('is nothing where the preset schedules nothing', () => {
@@ -107,18 +137,58 @@ describe('what a goal comes to in words', () => {
   })
 })
 
-describe('what sitting down to a preset would ask', () => {
-  // A budget in time is spent at what an answer has been costing, so what the
-  // day comes to under it is near and says so.
-  it('is near where the preset keeps a budget in time', () => {
-    expect(leftWords(preset({ cards: 34 }))).toBe('about 34 cards')
-    expect(leftWords(preset({ cards: 1 }))).toBe('about 1 card')
+// A budget the goal does not name stands as the person left it and binds
+// nothing. Weighing the day against one of those is measuring against a wall
+// that is not there.
+describe('how far through its day a preset stands', () => {
+  // The user's defaults keep ten new cards a day while being steered by twenty
+  // minutes, which is nearer sixty cards. Ten was never a wall.
+  it('is weighed against the minutes alone where the minutes close the day', () => {
+    const one = preset({
+      budget: budget({ new: 10, reviews: 0, minutes: 20 }),
+      closes: byMinutes,
+      answered: 30,
+      took: 5,
+    })
+
+    expect(through(one)).toBeCloseTo(0.25)
+    expect(spent(one)).toBe(false)
   })
 
-  it('is exact where it is held to its counts alone', () => {
-    const held = budget({ minutes: 0 })
-    expect(leftWords(preset({ cards: 34, budget: held }))).toBe('34 cards')
-    expect(leftWords(preset({ cards: 1, budget: held }))).toBe('1 card')
+  it('is weighed against the counts where the counts are what close it', () => {
+    const one = preset({
+      budget: budget({ new: 10, reviews: 45, minutes: 20 }),
+      closes: byCounts,
+      answered: 11,
+      took: 40,
+    })
+
+    expect(through(one)).toBeCloseTo(0.2)
+  })
+
+  it('keeps the fuller of them where both close the day', () => {
+    const one = preset({
+      budget: budget({ new: 10, reviews: 45, minutes: 20 }),
+      closes: { new: 'new_a_day', reviews: 'reviews_a_day', minutes: 'minutes_a_day' },
+      answered: 11,
+      took: 15,
+    })
+
+    expect(through(one)).toBeCloseTo(0.75)
+  })
+
+  it('stands at nothing where no budget closes the day at all', () => {
+    expect(through(preset({ closes: CLOSES_NOTHING, answered: 30, took: 40 }))).toBe(0)
+  })
+})
+
+describe('what sitting down to a preset would ask', () => {
+  // The count is what the sitting will put in front of a person, so it is
+  // printed as it stands, under every goal.
+  it('is the count itself, whatever budget the preset keeps', () => {
+    expect(leftWords(preset({ cards: 34 }))).toBe('34 cards')
+    expect(leftWords(preset({ cards: 34, budget: budget({ minutes: 0 }) }))).toBe('34 cards')
+    expect(leftWords(preset({ cards: 1 }))).toBe('1 card')
   })
 
   it('is nothing at all where it would ask nothing', () => {
@@ -167,28 +237,49 @@ describe('which preset schedules each deck', () => {
       vault(
         [{ deck: 'decks/Words.md', due: 40, new: 9 }],
         [
-          {
-            preset: 'Sanskrit.md',
-            title: 'Sanskrit',
-            decks: 1,
+          owing({
             cards: 49,
+            owed: 49,
             answered: 6,
             took: 2.5,
             new: 5,
             reviews: 23,
             minutes: 10,
-          },
+          }),
         ],
       ),
       '2026-09-05',
     )
 
+    // What the day leaves is the count's own figure, printed as it stands and
+    // never worked out again from the budget.
     expect(one.presets.value[0]).toMatchObject({
-      cards: 28,
+      cards: 49,
       budget: { new: 5, reviews: 23, minutes: 10 },
       answered: 6,
       took: 2.5,
     })
+  })
+
+  // The tile prints what pressing it will ask, so the count it is given is the
+  // count it shows.
+  it('asks for exactly what its decks owe, over all of them', async () => {
+    const one = scheduling({
+      presets: answering({
+        'decks/Words.md': { path: 'Sanskrit.md', title: 'Sanskrit', settings: settings() },
+        'decks/Roots.md': { path: 'Sanskrit.md', title: 'Sanskrit', settings: settings() },
+      }),
+    })
+
+    await one.read(
+      vault([
+        { deck: 'decks/Words.md', due: 30, new: 7 },
+        { deck: 'decks/Roots.md', due: 8, new: 2 },
+      ]),
+      '2026-09-05',
+    )
+
+    expect(one.presets.value[0]?.cards).toBe(47)
   })
 
   it('calls a deck naming no preset scheduled by the defaults', async () => {
@@ -214,7 +305,9 @@ describe('which preset schedules each deck', () => {
       }),
     })
 
-    await one.read(vault([{ deck: 'decks/Words.md', due: 9, new: 3 }]), '2026-09-05')
+    // A preset that schedules nothing is asked for nothing, so the count owes
+    // no card of its decks and the row says why instead.
+    await one.read(vault([{ deck: 'decks/Words.md', due: 0, new: 0 }]), '2026-09-05')
 
     expect(one.presets.value[0]).toMatchObject({
       paused: 'no cards a day',
@@ -250,28 +343,17 @@ describe('which preset schedules each deck', () => {
       vault(
         [{ deck: 'decks/Words.md', due: 3, new: 1 }],
         [
-          {
-            preset: 'Sanskrit.md',
-            title: 'Sanskrit',
-            decks: 1,
-            cards: 4,
-            answered: 0,
-            took: 0,
-            new: 10,
-            reviews: 200,
-            minutes: 20,
-          },
-          {
+          owing({ cards: 4, owed: 4 }),
+          owing({
             preset: 'Empty.md',
             title: 'Empty',
             decks: 0,
             cards: 0,
-            answered: 0,
-            took: 0,
             new: 0,
             reviews: 0,
             minutes: 0,
-          },
+            closes: CLOSES_NOTHING,
+          }),
         ],
       ),
       '2026-09-05',
@@ -301,17 +383,15 @@ describe('which preset schedules each deck', () => {
       vault(
         [],
         [
-          {
+          owing({
             preset: 'Empty.md',
             title: 'Empty',
-            decks: 1,
             cards: 0,
-            answered: 0,
-            took: 0,
             new: 0,
             reviews: 0,
             minutes: 0,
-          },
+            closes: CLOSES_NOTHING,
+          }),
         ],
       ),
       '2026-09-05',
@@ -328,17 +408,16 @@ describe('which preset schedules each deck', () => {
       vault(
         [],
         [
-          {
+          owing({
             preset: 'goals/Empty.md',
             title: '',
             decks: 0,
             cards: 0,
-            answered: 0,
-            took: 0,
             new: 0,
             reviews: 0,
             minutes: 0,
-          },
+            closes: CLOSES_NOTHING,
+          }),
         ],
       ),
       '2026-09-05',

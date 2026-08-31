@@ -160,6 +160,11 @@ type Projection struct {
 	// Owed is the card faces answered before and standing owed on the last day,
 	// which is the backlog the budget did not carry.
 	Owed int
+	// Clears is how many days of review it takes before nothing is overdue: no
+	// card face is left whose day has come and gone. A day that begins with
+	// nothing overdue clears in none, and a pace that never gets there is
+	// NeverClears.
+	Clears int
 	// Load is how many answers each day projected carried, and Spent is how
 	// long those answers took. The first of each is the day a sitting now would
 	// ask, which is the day a caller shows against a control.
@@ -170,6 +175,26 @@ type Projection struct {
 	// Through is the share of the material answered at least once by the end of
 	// each day projected.
 	Through []float64
+}
+
+// NeverClears is a pace that leaves something overdue on every day projected.
+const NeverClears = -1
+
+// Overdue is how many card faces standing at these schedules have had their day
+// and were not answered on it.
+//
+// A card falling due later in the day holding at is not overdue: its day is
+// this one. A card face nobody has answered is not overdue either, because it
+// has had no day.
+func Overdue(d Day, at map[CardFace]Schedule, now time.Time) int {
+	opened := d.Ends(now).AddDate(0, 0, -1)
+	out := 0
+	for _, s := range at {
+		if s.Seen() && s.Due.Before(opened) {
+			out++
+		}
+	}
+	return out
 }
 
 // Closed is what stopped a day of review asking for more.
@@ -228,7 +253,13 @@ func (s Simulation) Run(
 	}
 	slices.SortFunc(cards, older)
 
-	out := Projection{Days: days, Faces: len(at) + unseen, Seen: len(at)}
+	out := Projection{
+		Days: days, Faces: len(at) + unseen, Seen: len(at), Clears: NeverClears,
+	}
+	// A day that begins with nothing overdue has nothing to clear.
+	if Overdue(s.Day, at, now) == 0 {
+		out.Clears = 0
+	}
 	left := unseen
 	var spent time.Duration
 
@@ -309,6 +340,12 @@ func (s Simulation) Run(
 		out.Spent = append(out.Spent, used)
 		out.Closed = append(out.Closed, closed)
 		out.Through = append(out.Through, through(out.Seen, out.Faces))
+
+		// The day the backlog is gone is the first whose end leaves no card
+		// face standing whose day has passed.
+		if out.Clears == NeverClears && behind(cards, ends) == 0 {
+			out.Clears = len(out.Load)
+		}
 		open = ends
 	}
 
@@ -324,6 +361,17 @@ func (s Simulation) Run(
 		out.Retained /= float64(out.Faces)
 	}
 	return out, nil
+}
+
+// behind is how many of these card faces stood past this instant unanswered.
+func behind(cards []Schedule, at time.Time) int {
+	out := 0
+	for _, c := range cards {
+		if c.Due.Before(at) {
+			out++
+		}
+	}
+	return out
 }
 
 // step is where one projected answer leaves a card face.

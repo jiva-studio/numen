@@ -8,7 +8,6 @@ import { describe, expect, it } from 'vitest'
 
 import { NOWHERE, type Curve, type Point } from './core'
 import {
-  areaOf,
   bandOf,
   FOOT,
   LEFT,
@@ -32,6 +31,7 @@ const point = (over: Partial<Point> = {}): Point => ({
   through: 0,
   enough: true,
   met: true,
+  clears: 0,
   ...over,
 })
 
@@ -45,6 +45,7 @@ const curve = (cards: readonly number[], enough: readonly boolean[] = []): Curve
   suggested: NOWHERE,
   decks: 1,
   cards: 400,
+  overdue: 0,
   honest: true,
 })
 
@@ -93,16 +94,14 @@ describe('the curve as it is drawn', () => {
     )
   })
 
-  it('is one line through every place, closed down to the foot where it is filled', () => {
+  it('is one line through every place', () => {
     const spots = spotsOf(curve([0, 0.5, 1]), { least: 0, most: 1 })
     expect(lineOf(spots).startsWith('M')).toBe(true)
     expect(lineOf(spots).split('L')).toHaveLength(3)
-    expect(areaOf(spots).endsWith('Z')).toBe(true)
   })
 
   it('is nothing at all where the curve holds no place', () => {
     expect(lineOf([])).toBe('')
-    expect(areaOf([])).toBe('')
   })
 })
 

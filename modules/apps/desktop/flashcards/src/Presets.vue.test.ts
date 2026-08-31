@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { Goal } from '@numen/protocol'
 
 import Presets from './Presets.vue'
-import type { Preset, Settings } from './scheduling'
+import type { Closes, Preset, Settings } from './scheduling'
 
 const settings = (said: Partial<Settings> = {}): Settings => ({
   goal: Goal.MINUTES_A_DAY,
@@ -18,6 +18,13 @@ const settings = (said: Partial<Settings> = {}): Settings => ({
   ...said,
 })
 
+/** Every budget closing the day, so each of them is weighed against. */
+const closes: Closes = {
+  new: 'new_a_day',
+  reviews: 'reviews_a_day',
+  minutes: 'minutes_a_day',
+}
+
 const preset = (said: Partial<Preset> = {}): Preset => ({
   path: 'Sanskrit.md',
   name: 'Sanskrit',
@@ -27,6 +34,7 @@ const preset = (said: Partial<Preset> = {}): Preset => ({
   faces: 40,
   cards: 22,
   budget: { new: 10, reviews: 45, minutes: 20 },
+  closes,
   answered: 11,
   took: 4,
   paused: '',
@@ -54,7 +62,7 @@ describe('what the goals come to today', () => {
 
     expect(one.findAll('.presets__track')).toHaveLength(0)
     expect(one.findAll('.presets__through')).toHaveLength(0)
-    expect(one.find('.presets__preset').text()).toBe('Sanskrit20 minutes a day20%about 22 cards')
+    expect(one.find('.presets__preset').text()).toBe('Sanskrit20 minutes a day20%22 cards')
   })
 
   // The tile reads across: the name with the goal under it, and what the day
@@ -131,6 +139,41 @@ describe('what the goals come to today', () => {
     const one = shown([preset({ answered: 0, took: 31 })])
 
     expect(one.find('.presets__done').text()).toBe('over budget')
+  })
+
+  // The user's defaults keep ten new cards a day while being steered by twenty
+  // minutes, which is nearer sixty cards. Weighed against the ten that bind
+  // nothing, thirty answers reads as a day run over; weighed against the
+  // minutes that do close it, the day is a quarter done.
+  it('weighs the day against the budget that closes it, never one left inert', () => {
+    const one = shown([
+      preset({
+        budget: { new: 10, reviews: 0, minutes: 20 },
+        closes: { new: '', reviews: '', minutes: 'minutes_a_day' },
+        answered: 30,
+        took: 5,
+      }),
+    ])
+    const said = one.find('.presets__done')
+
+    expect(said.text()).toBe('25%')
+    expect(said.attributes('data-over')).toBeUndefined()
+  })
+
+  // The same the other way about: a preset steered by what it asks of memory
+  // keeps its minutes as the person left them.
+  it('weighs it against the counts where the counts are what close the day', () => {
+    const one = shown([
+      preset({
+        settings: settings({ goal: Goal.RETENTION }),
+        budget: { new: 10, reviews: 45, minutes: 5 },
+        closes: { new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' },
+        answered: 11,
+        took: 40,
+      }),
+    ])
+
+    expect(one.find('.presets__done').text()).toBe('20%')
   })
 
   // The block says the goal and how far through it the day is, and nothing
@@ -211,14 +254,15 @@ describe('what the goals come to today', () => {
 // The figure says how far through the day a person is; the count says what is
 // left to do, which is what they are deciding on.
 describe('what pressing a preset would ask', () => {
-  it('counts it under the figure, and says it is near where minutes govern', () => {
+  // The tile prints what pressing it will put in front of a person, so the
+  // number is exact and carries no hedge under any goal.
+  it('counts it under the figure, exactly and without a hedge', () => {
     const one = shown([preset({ cards: 22 })])
 
-    expect(one.find('.presets__left').text()).toBe('about 22 cards')
+    expect(one.find('.presets__left').text()).toBe('22 cards')
   })
 
-  // Nothing is estimated where the day is held to counts alone.
-  it('counts it exactly where the preset keeps no budget in time', () => {
+  it('counts it the same where the preset keeps no budget in time', () => {
     const one = shown([
       preset({ cards: 22, budget: { new: 10, reviews: 45, minutes: 0 }, took: 0 }),
     ])
@@ -227,7 +271,7 @@ describe('what pressing a preset would ask', () => {
   })
 
   it('says one card as one', () => {
-    expect(shown([preset({ cards: 1 })]).find('.presets__left').text()).toBe('about 1 card')
+    expect(shown([preset({ cards: 1 })]).find('.presets__left').text()).toBe('1 card')
   })
 
   it('says nothing of a count where there is nothing to ask', () => {

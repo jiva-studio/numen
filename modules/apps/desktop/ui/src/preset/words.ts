@@ -15,18 +15,11 @@ const COUNTS: Record<Counts, string> = {
   shows: 'Showings',
 }
 
-/** What each end of a goal's range is called, at the two bottom corners. */
-const ENDS: Record<Goal, readonly [string, string]> = {
-  minutes: ['a short day', 'an hour a day'],
-  retention: ['easier to keep up', 'more of it back'],
-  date: ['sooner', 'further off'],
-}
-
 /** What each setting is called, and the one line that says what it is. */
 const FIELDS: Record<Field, readonly [string, string]> = {
   newADay: ['New a day', 'How many unseen cards a day holds.'],
   reviewsADay: ['Reviews a day', 'How many returning cards a day holds.'],
-  retention: ['Retention', 'The share of cards recalled when they come round again.'],
+  retention: ['Retention', 'How much of what you are asked you would remember.'],
   minutesADay: [
     'Minutes a day',
     'How long a day of review runs, spent against the time each answer took.',
@@ -37,11 +30,15 @@ const FIELDS: Record<Field, readonly [string, string]> = {
   evenLoad: ['Even load', 'Whether days are made to resemble each other.'],
 }
 
-/** A share of cards as a person reads one. */
-const share = (value: number): string => value.toFixed(2)
+/** A share as a person reads one, which is a percentage and not a fraction. */
+const share = (value: number): string => `${Math.round(value * 100)}%`
 
 /** A count as a person reads one. */
 const count = (value: number): string => `${Math.round(value)}`
+
+/** A count and the thing it counts, in the singular where there is one of it. */
+const many = (value: number, one: string, more = `${one}s`): string =>
+  `${count(value)} ${Math.round(value) === 1 ? one : more}`
 
 export const WORDS = {
   preset: 'Preset',
@@ -51,21 +48,38 @@ export const WORDS = {
   goal: 'Goal',
   goalName: (goal: Goal) => GOALS[goal],
   countsName: (counts: Counts) => COUNTS[counts],
-  ends: (goal: Goal) => ENDS[goal],
-  /** What the height of the picture is read in, said over it. */
-  height: (goal: Goal) => (goal === 'minutes' ? 'Cards in a sitting' : 'Minutes a day'),
+  /** What each axis measures, said along the axis it names. */
+  axisY: (goal: Goal) => (goal === 'minutes' ? 'Cards in a sitting' : 'Minutes a day'),
+  axisX: (goal: Goal) => {
+    if (goal === 'retention') return 'Retention'
+    return goal === 'date' ? 'Days from today' : 'Minutes a day'
+  },
   /** One height of the picture, against the line it is the height of. */
   heightAt: (goal: Goal, value: number) =>
-    goal === 'minutes' ? `${count(value)} cards` : `${count(value)} min`,
+    goal === 'minutes' ? many(value, 'card') : `${count(value)} min`,
   /** One place along the picture, in the units of the goal's grid. */
   widthAt: (goal: Goal, value: number) => {
     if (goal === 'retention') return share(value)
     return goal === 'date' ? `${count(value)} d` : `${count(value)} min`
   },
+  /**
+   * How far behind the preset stands. Overdue is the backlog alone — a card
+   * whose day came and went — and never what a sitting puts in front of a
+   * person, which is that backlog and today's cards together.
+   */
+  behind: (overdue: number, cards: number) =>
+    overdue === 1
+      ? `1 of ${many(cards, 'card face')} is overdue.`
+      : `${count(overdue)} of ${many(cards, 'card face')} are overdue.`,
+  /** How long that backlog takes to clear at the place the knob stands at. */
+  clearing: (days: number) =>
+    days < 0
+      ? 'At this pace the backlog never clears.'
+      : `At this pace nothing is overdue after ${many(days, 'day')}.`,
   /** A day the card limits close before its minutes run out. */
   closed: (newADay: number, reviewsADay: number) =>
-    `A longer day buys nothing here: ${count(newADay)} new and ${count(reviewsADay)} reviews a day ` +
-    'close the day before its minutes run out.',
+    `A longer day buys nothing here: ${count(newADay)} new and ` +
+    `${many(reviewsADay, 'review')} a day close the day before its minutes run out.`,
   fieldName: (field: Field) => FIELDS[field][0],
   fieldDetail: (field: Field) => FIELDS[field][1],
   settings: 'What the goal produced',
@@ -73,35 +87,59 @@ export const WORDS = {
   knob: 'The goal of this preset',
   /** Said in the picture's place while the application works the curve out. */
   waiting: 'Reading the vault…',
-  /** The two marks on the curve. */
-  now: 'where this preset stands',
-  suggested: 'suggested',
+  /** The three marks on the curve, each named where it stands. */
+  now: 'you are here',
+  /**
+   * The other mark, named for what it is under each goal. Under minutes it is
+   * where the clock stops being the limit, which is not a recommendation.
+   */
+  markName: (goal: Goal) => {
+    if (goal === 'retention') return 'most kept'
+    return goal === 'date' ? 'first day it fits' : 'time enough'
+  },
+  /** The rule that mark is found by, said under the picture and not on it. */
+  markRule: (goal: Goal) => {
+    if (goal === 'retention') {
+      return 'Most kept: the target that leaves most of the material in the head.'
+    }
+    if (goal === 'date') {
+      return 'First day it fits: the first day the budget this preset keeps gets through the material.'
+    }
+    return (
+      'Time enough: the shortest day the clock no longer cuts short. ' +
+      'Below it the day ends before the material does; above it a longer day adds nothing.'
+    )
+  },
   /** The figure is the window's own arithmetic, and the answer is on its way. */
   about: 'about',
   aboutMeaning: 'a figure the window guessed while the application works out the honest one',
   /** The value the control stands at, in the units of its goal. */
   value: (goal: Goal, value: number, day: string) => {
-    if (goal === 'retention') return `${share(value)} retention`
-    if (goal === 'date') return `${count(value)} days to ${day}`
-    return `${count(value)} minutes a day`
+    if (goal === 'retention') return `${share(value)} remembered`
+    if (goal === 'date') return `${many(value, 'day')} to ${day}`
+    return `${many(value, 'minute')} a day`
   },
   /** What standing there costs, in one sentence, in the words of the goal chosen. */
   costs: (goal: Goal, value: number, reviews: number, minutes: number, retained: number) => {
     if (goal === 'retention') {
-      return `${share(value)} of it coming back is ${count(minutes)} minutes a day and ${count(reviews)} cards.`
+      return (
+        `Remembering ${share(value)} of what you are asked is ` +
+        `${many(minutes, 'minute')} a day and ${many(reviews, 'card')}.`
+      )
     }
-    if (goal === 'date') return `Being through it by then is ${count(minutes)} minutes a day.`
+    if (goal === 'date') return `Being through it by then is ${many(minutes, 'minute')} a day.`
     return (
-      `A sitting of ${count(value)} minutes puts ${count(reviews)} cards in front of you, ` +
-      `and ${share(retained)} of the material comes back.`
+      `A sitting of ${many(value, 'minute')} puts ${many(reviews, 'card')} in front of you, ` +
+      `and you would remember ${share(retained)} of what you are asked.`
     )
   },
   /** The arithmetic under a goal of a date, with the sum already done. */
-  owing: (cards: number) => `${count(cards)} cards would still be owed on that day.`,
+  owing: (cards: number) => `${many(cards, 'card')} would still be owed on that day.`,
   needing: (needed: number, standing: number) =>
-    `Getting through it by then is ${count(needed)} minutes a day, and this preset keeps ${count(standing)}.`,
+    `This preset keeps ${many(standing, 'minute')} a day, ` +
+    `and getting through it by then takes ${many(needed, 'minute')}.`,
   through: (part: number, standing: number) =>
-    `At ${count(standing)} minutes a day, ${count(part * 100)}% of it is through by then.`,
+    `At ${many(standing, 'minute')} a day, ${count(part * 100)}% of it is through by then.`,
   /** No budget at all gets through the material by the day named. */
   unmet: 'No day of review gets through the material by that day.',
   /** No deck points here, so the goal has nothing to work on. */

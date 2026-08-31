@@ -55,16 +55,34 @@ export interface PresetOwing {
   readonly decks: number
   /** How many card faces stand in those decks. A deck holding none still points here. */
   readonly cards: number
+  /**
+   * What the day leaves under it, already held to the budgets that close it.
+   * It is what a sitting over this preset asks, and is printed as it stands.
+   */
+  readonly owed: number
   /** Cards answered under it since the day opened, and the minutes they took. */
   readonly answered: number
   readonly took: number
   /**
    * What the day holds under it, the day of the week having had its say: cards
-   * of each kind, and how long the day runs.
+   * of each kind, and how long the day runs. A budget the goal does not name
+   * stands as the person left it and closes nothing.
    */
   readonly new: number
   readonly reviews: number
   readonly minutes: number
+  /** Which key each budget closes the day on, and empty where it closes none. */
+  readonly closes: Closes
+}
+
+/**
+ * The key each of the three budgets closes the day on, as the preset writes it.
+ * An empty one is a budget taking no part, and nothing is weighed against it.
+ */
+export interface Closes {
+  readonly new: string
+  readonly reviews: string
+  readonly minutes: string
 }
 
 /** One vault, and what its cards come to today. */

@@ -758,3 +758,260 @@ func TestALongEnoughDayIsClosedByNothing(t *testing.T) {
 		t.Errorf("the longest day on the range is closed by %q", got)
 	}
 }
+
+// The day suggested under a goal of minutes means what it says: the shortest
+// day that asks everything the day holds, on a vault carrying a backlog.
+//
+// A shorter day leaves cards standing, so no place before it asks as much, and
+// the shortest day on the range is never the answer to a vault behind on its
+// reviews.
+func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
+	api, held := windowed(t, lived)
+	v := held[0]
+	lives(t, api, v, 14)
+	standing(api, firstMorning.AddDate(0, 0, 14))
+
+	p := asWritten(t, api, v, "Sanskrit.md")
+	p.Goal = history.GoalMinutes
+	writtenBack(t, api, v, "Sanskrit.md", p)
+
+	drawn := pictured(t, api, v, "Sanskrit.md", p)
+	at := int(drawn.GetSuggested().GetAt())
+	if at < 0 {
+		t.Fatalf("nothing is suggested: %+v", drawn.GetSuggested())
+	}
+	if at == 0 {
+		t.Error("the shortest day on the range is suggested, and this vault is behind")
+	}
+
+	whole := drawn.GetAt()[len(drawn.GetAt())-1].GetReviews()
+	if got := drawn.GetAt()[at].GetReviews(); got != whole {
+		t.Errorf("the suggested day asks %v cards, and a day of any length asks %v", got, whole)
+	}
+	if got := drawn.GetAt()[at].GetClosed(); got != "" {
+		t.Errorf("the suggested day closed on %q, and a day that asks everything closes on nothing",
+			got)
+	}
+	for i := range at {
+		if drawn.GetAt()[i].GetReviews() >= whole {
+			t.Errorf("%v minutes a day already asks %v cards, and %v is suggested",
+				drawn.GetGrid()[i], drawn.GetAt()[i].GetReviews(), drawn.GetGrid()[at])
+		}
+	}
+}
+
+// What is overdue is a fact about the vault, and how long it takes to clear is
+// a fact about the setting being chosen.
+//
+// The overdue count stands over the whole curve and does not move when the goal
+// does. What the deck screen owes today is that backlog and the cards falling
+// due today besides, so it is never the smaller of the two.
+func TestWhatIsOverdueStandsOverTheWholeCurve(t *testing.T) {
+	api, held := windowed(t, lived)
+	v := held[0]
+	lives(t, api, v, 14)
+	standing(api, firstMorning.AddDate(0, 0, 14))
+
+	owes := 0
+	for _, one := range owing(t, api, v).GetDecks() {
+		for _, deck := range underSanskrit {
+			if one.GetDeck() == deck {
+				owes += int(one.GetDue())
+			}
+		}
+	}
+
+	p := asWritten(t, api, v, "Sanskrit.md")
+	p.Goal = history.GoalMinutes
+	writtenBack(t, api, v, "Sanskrit.md", p)
+	byMinutes := pictured(t, api, v, "Sanskrit.md", p)
+
+	overdue := int(byMinutes.GetOverdue())
+	if overdue == 0 {
+		t.Fatal("nothing stands overdue, and this vault was left alone for days")
+	}
+	if overdue > owes {
+		t.Errorf("%d card faces stand overdue and the deck screen owes %d today",
+			overdue, owes)
+	}
+
+	// The same vault under another goal is the same backlog.
+	p.Goal = history.GoalRetention
+	if got := int(pictured(t, api, v, "Sanskrit.md", p).GetOverdue()); got != overdue {
+		t.Errorf("steered by its retention the same vault stands %d overdue, and by its "+
+			"minutes %d", got, overdue)
+	}
+
+	// A shorter day is longer about clearing it, or never gets there at all.
+	short, long := byMinutes.GetAt()[0], byMinutes.GetAt()[len(byMinutes.GetAt())-1]
+	if long.GetClears() <= 0 {
+		t.Fatalf("the longest day on the range clears the backlog in %d days",
+			long.GetClears())
+	}
+	if short.GetClears() != -1 && short.GetClears() <= long.GetClears() {
+		t.Errorf("%v minutes a day clears in %d and %v minutes a day in %d",
+			byMinutes.GetGrid()[0], short.GetClears(),
+			byMinutes.GetGrid()[len(byMinutes.GetGrid())-1], long.GetClears())
+	}
+}
+
+// A vault nobody has answered has nothing overdue, and no place of its curve
+// has a backlog to clear.
+func TestAVaultNobodyHasAnsweredHasNothingOverdue(t *testing.T) {
+	api, held := windowed(t, backlogged)
+	v := held[0]
+
+	drawn := pictured(t, api, v, "Steady.md", asWritten(t, api, v, "Steady.md"))
+	if got := drawn.GetOverdue(); got != 0 {
+		t.Errorf("%d card faces stand overdue in a vault nobody has answered", got)
+	}
+	for i, one := range drawn.GetAt() {
+		if one.GetClears() != 0 {
+			t.Errorf("%v minutes a day clears nothing in %d days",
+				drawn.GetGrid()[i], one.GetClears())
+		}
+	}
+}
+
+// spread is a lived-in vault of three scopes: a preset closing its day on the
+// minutes, one closing it on the counts, and the defaults over two decks, so a
+// budget shared between decks is one of the three.
+var spread = map[string]string{
+	"Both.md": bothWays,
+	"One.md":  oneWay,
+	// Its counts stand at what an earlier goal left them, and its minutes are
+	// what it is steered by now.
+	"Timed.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 6\n" +
+		"new_a_day: 2\nreviews_a_day: 1\nretention: 0.9\ncounts: cards\n---\n\n# Timed\n",
+	"Counted.md": "---\ntype: preset\ngoal: retention\nretention: 0.9\n" +
+		"new_a_day: 8\nreviews_a_day: 30\nminutes_a_day: 15\ncounts: cards\n---\n\n# Counted\n",
+	"decks/Verbs.md": written("Both", "Timed", 100, 0),
+	"decks/Nouns.md": written("One", "Timed", 80, 1000),
+	"decks/Roots.md": written("One", "Counted", 100, 2000),
+	"decks/Loose.md": written("One", "", 60, 3000),
+	"decks/Odds.md":  written("One", "", 60, 4000),
+}
+
+// The tile over a preset and the sitting it opens are one number.
+//
+// A preset is the whole scope of its own budget, so what the count leaves under
+// it is what a sitting over it asks. The count carries that figure, because a
+// window working one out of the budget would be reading limits the goal may not
+// even name.
+func TestThePresetTileAndTheSittingItOpensAreOneNumber(t *testing.T) {
+	api, held := windowed(t, spread)
+	v := held[0]
+	lives(t, api, v, 14)
+	standing(api, firstMorning.AddDate(0, 0, 14))
+
+	said := owing(t, api, v)
+	// Which decks each preset schedules, so what a sitting asks can be checked
+	// against the rows it was gathered from.
+	under := make(map[string][]string)
+	rows := make(map[string]*v1.DeckOwing, len(said.GetDecks()))
+	for _, one := range said.GetDecks() {
+		rows[one.GetDeck()] = one
+		p, err := api.Presets.Of(t.Context(), v, one.GetDeck())
+		if err != nil {
+			t.Fatal(err)
+		}
+		under[p.Path] = append(under[p.Path], one.GetDeck())
+	}
+
+	scopes, clamped := 0, 0
+	for _, one := range said.GetPresets() {
+		if one.GetCards() == 0 {
+			continue
+		}
+		scopes++
+		want := int(one.GetOwedDue() + one.GetOwedNew())
+		if want == 0 {
+			t.Errorf("the tile over %q offers nothing to compare", one.GetPreset())
+		}
+
+		sat, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{
+			VaultId: v.ID, Preset: naming(one.GetPreset()),
+		}))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := len(sat.Msg.GetAsked()); got != want {
+			t.Errorf("the tile over %q says %d and the sitting it opens asks %d",
+				one.GetPreset(), want, got)
+		}
+
+		// What the count leaves under a preset is what its decks were left,
+		// gathered by the one pass.
+		due, fresh := 0, 0
+		for _, deck := range under[one.GetPreset()] {
+			due += int(rows[deck].GetDue())
+			fresh += int(rows[deck].GetNew())
+		}
+		if due != int(one.GetOwedDue()) || fresh != int(one.GetOwedNew()) {
+			t.Errorf("the decks under %q come to %d owed and %d new, the preset to %d and %d",
+				one.GetPreset(), due, fresh, one.GetOwedDue(), one.GetOwedNew())
+		}
+
+		// A figure worked out from the budget instead would be held to counts
+		// the goal need not name, and this vault is where that shows.
+		if min(due, int(one.GetReviews()))+min(fresh, int(one.GetNew())) < want {
+			clamped++
+		}
+	}
+	if scopes != 3 {
+		t.Errorf("the vault holds %d scopes with cards under them, want three", scopes)
+	}
+	if clamped == 0 {
+		t.Error("no preset here is held short by its counts, and the tile's arithmetic is not under test")
+	}
+}
+
+// The count never allocates past the budget it is spending.
+//
+// A budget the goal does not name is not the one being spent: it stands in the
+// file as the person left it, and a day may hand out far more than it says. A
+// budget the goal does name is a wall, and nothing goes over it.
+func TestTheCountNeverAllocatesPastTheBudgetItSpends(t *testing.T) {
+	for _, one := range []struct {
+		what  string
+		notes map[string]string
+	}{{"lived", lived}, {"spread", spread}} {
+		t.Run(one.what, func(t *testing.T) {
+			api, held := windowed(t, one.notes)
+			v := held[0]
+			lives(t, api, v, 14)
+			now := firstMorning.AddDate(0, 0, 14)
+			standing(api, now)
+
+			past := 0
+			for _, said := range owing(t, api, v).GetPresets() {
+				if said.GetCards() == 0 {
+					continue
+				}
+				due, fresh := int(said.GetOwedDue()), int(said.GetOwedNew())
+				kept, keptNew := int(said.GetReviews()), int(said.GetNew())
+
+				if said.GetClosesReviews() != "" && due > kept {
+					t.Errorf("%q allocated %d owed against the %d reviews it keeps",
+						said.GetPreset(), due, kept)
+				}
+				if said.GetClosesNew() != "" && fresh > keptNew {
+					t.Errorf("%q allocated %d new against the %d it keeps",
+						said.GetPreset(), fresh, keptNew)
+				}
+				// A count standing in the file that the goal does not name is
+				// no wall, and this is the vault where that shows.
+				if said.GetClosesReviews() == "" && due > kept {
+					past++
+				}
+				if said.GetClosesNew() == "" && fresh > keptNew {
+					past++
+				}
+			}
+			if past == 0 {
+				t.Error("no preset here hands out past a budget its goal leaves idle, " +
+					"and the distinction is not under test")
+			}
+		})
+	}
+}

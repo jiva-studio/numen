@@ -144,6 +144,12 @@ message Curve {
   // How many card faces stand in those decks. Zero is a preset with nothing to
   // schedule, and every place of the curve stands at zero with it.
   int32 cards = 8;
+
+  // How many of those card faces have had their day and were not answered on
+  // it. One number over the whole curve: it is a fact about the vault as it
+  // stands, and not about the setting being chosen. A card falling due later
+  // today is not one of these, and neither is a card nobody has begun.
+  int32 overdue = 9;
 }
 
 // Point is what a preset comes to at one place of the grid.
@@ -161,7 +167,9 @@ message Point {
   // The share of the material that comes back.
   double retained = 3;
 
-  // The backlog the budget did not carry.
+  // The card faces standing owed on the last day the projection ran, which is
+  // the backlog left at the end and not the debt a day carries. Read `clears`
+  // for how long the backlog standing now takes to go.
   int32 owed = 4;
 
   // The share of the material got through by this day, whether the budget the
@@ -175,6 +183,11 @@ message Point {
   // asked for every card there was, so the material itself ran out. A budget
   // the goal does not name is never here.
   string closed = 8;
+
+  // How many days of review at this place it takes before nothing is overdue.
+  // Zero is a curve standing over nothing overdue, and -1 is a pace that never
+  // gets there, which a person reads as not at this one.
+  int32 clears = 9;
 }
 
 // Mark is one place on the curve worth pointing at.

@@ -78,12 +78,24 @@ const held = (y: number): number => Math.min(Math.max(y, TOP), FOOT)
 export const lineOf = (spots: readonly Spot[]): string =>
   spots.map((spot, at) => `${at === 0 ? 'M' : 'L'}${round(spot.x)} ${round(spot.y)}`).join(' ')
 
-/** The same, closed down to the foot, which is what is filled under it. */
-export const areaOf = (spots: readonly Spot[]): string => {
-  const first = spots[0]
-  const last = spots[spots.length - 1]
-  if (!first || !last) return ''
-  return `${lineOf(spots)} L${round(last.x)} ${FOOT} L${round(first.x)} ${FOOT} Z`
+/** The room a number set against a line takes, in the picture's own units. */
+export const AXIS_WIDE = 64
+export const AXIS_HIGH = 15
+
+/**
+ * Whether a number set against this height stands clear of everything drawn
+ * near the edge it is set at. A number that would print over the line or over
+ * a mark is not drawn: the axis loses the label and the drawing keeps its own.
+ */
+export const clearAt = (
+  y: number,
+  spots: readonly Spot[],
+  marks: readonly (Spot | null)[],
+): boolean => {
+  const near = (spot: Spot): boolean =>
+    spot.x <= LEFT + AXIS_WIDE && Math.abs(spot.y - y) <= AXIS_HIGH
+  if (marks.some((spot) => spot !== null && near(spot))) return false
+  return !spots.some(near)
 }
 
 /**

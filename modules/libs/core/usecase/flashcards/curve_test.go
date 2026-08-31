@@ -123,10 +123,11 @@ func TestTheCurveOfRetentionCoversTheWholeRange(t *testing.T) {
 	}
 }
 
-// A goal of a date is a finite range: every day from today to the day named,
-// each carrying what a day of review has to run to be through by then. A later
-// day never costs more than an earlier one.
-func TestTheCurveOfADateRunsToTheDayNamed(t *testing.T) {
+// A goal of a date runs from tomorrow to a day further off than the one the
+// file names, so the day a person is on stands inside the range and they can
+// always give themselves longer. A later day never costs more than an earlier
+// one.
+func TestTheCurveOfADateRunsPastTheDayNamed(t *testing.T) {
 	s := opened(t, studied(30))
 	p := history.Preset{
 		Goal: history.GoalDate, By: noon.AddDate(0, 0, 20).Truncate(24 * time.Hour),
@@ -143,11 +144,19 @@ func TestTheCurveOfADateRunsToTheDayNamed(t *testing.T) {
 	if len(got.Grid) < 2 {
 		t.Fatalf("the curve has %d places", len(got.Grid))
 	}
-	if last := got.Days[len(got.Days)-1]; last != p.By.Format(history.Named) {
-		t.Errorf("the curve runs to %q, and the day named is %q", last, p.By.Format(history.Named))
+	// Tomorrow, because a date of today is no period at all.
+	if got.Grid[0] != 1 {
+		t.Errorf("the curve begins %v days off", got.Grid[0])
 	}
-	if got.Now.At != len(got.Grid)-1 {
-		t.Errorf("the preset stands at place %d of %d", got.Now.At, len(got.Grid))
+	if last := got.Grid[len(got.Grid)-1]; last <= 20 {
+		t.Errorf("the curve runs to %v days off, and the day named is 20 off", last)
+	}
+	if got.Now.Value != 20 || got.Now.Day != p.By.Format(history.Named) {
+		t.Errorf("the preset stands at %+v, and the day it names is 20 days off", got.Now)
+	}
+	if got.Now.At <= 0 || got.Now.At >= len(got.Grid)-1 {
+		t.Errorf("the day named stands at place %d of %d, and is not inside the range",
+			got.Now.At, len(got.Grid))
 	}
 
 	for i := 1; i < len(got.At); i++ {
@@ -364,5 +373,34 @@ func inRange(t *testing.T, c flashcards.Curve) {
 		if c.Goal == history.GoalDate && !strings.Contains(mark.Day, "-") {
 			t.Errorf("the %s mark names no day: %q", name, mark.Day)
 		}
+	}
+}
+
+// The range a date is chosen from stands on the vault and not on the date, so a
+// day the file names close at hand is a range a person can still drag out.
+func TestANearDateStillLeavesRoomToGiveYourselfLonger(t *testing.T) {
+	s := opened(t, studied(30))
+	// The day after tomorrow, which is the shortest range a person could have
+	// left themselves with.
+	p := history.Preset{
+		Goal: history.GoalDate, By: noon.AddDate(0, 0, 2).Truncate(24 * time.Hour),
+		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+	}
+
+	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Thirty card faces nobody has answered is thirty days at one a day, which
+	// is the slowest a day of review goes.
+	if last := got.Grid[len(got.Grid)-1]; last < 30 {
+		t.Errorf("a date two days off is a range of %v days, and the material is 30 cards", last)
+	}
+	if got.Now.At < 0 {
+		t.Errorf("the day named stands nowhere on the range: %+v", got.Now)
+	}
+	if got.At[got.Now.At].Minutes <= got.At[len(got.At)-1].Minutes {
+		t.Errorf("the day named costs %v minutes a day and the furthest day %v",
+			got.At[got.Now.At].Minutes, got.At[len(got.At)-1].Minutes)
 	}
 }

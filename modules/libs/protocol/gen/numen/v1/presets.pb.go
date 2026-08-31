@@ -357,7 +357,12 @@ type Curve struct {
 	Decks int32 `protobuf:"varint,7,opt,name=decks,proto3" json:"decks,omitempty"`
 	// How many card faces stand in those decks. Zero is a preset with nothing to
 	// schedule, and every place of the curve stands at zero with it.
-	Cards         int32 `protobuf:"varint,8,opt,name=cards,proto3" json:"cards,omitempty"`
+	Cards int32 `protobuf:"varint,8,opt,name=cards,proto3" json:"cards,omitempty"`
+	// How many of those card faces have had their day and were not answered on
+	// it. One number over the whole curve: it is a fact about the vault as it
+	// stands, and not about the setting being chosen. A card falling due later
+	// today is not one of these, and neither is a card nobody has begun.
+	Overdue       int32 `protobuf:"varint,9,opt,name=overdue,proto3" json:"overdue,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -448,6 +453,13 @@ func (x *Curve) GetCards() int32 {
 	return 0
 }
 
+func (x *Curve) GetOverdue() int32 {
+	if x != nil {
+		return x.Overdue
+	}
+	return 0
+}
+
 // Point is what a preset comes to at one place of the grid.
 //
 // A goal of a date fills `minutes` with what getting through the material by
@@ -462,7 +474,9 @@ type Point struct {
 	Minutes float64 `protobuf:"fixed64,2,opt,name=minutes,proto3" json:"minutes,omitempty"`
 	// The share of the material that comes back.
 	Retained float64 `protobuf:"fixed64,3,opt,name=retained,proto3" json:"retained,omitempty"`
-	// The backlog the budget did not carry.
+	// The card faces standing owed on the last day the projection ran, which is
+	// the backlog left at the end and not the debt a day carries. Read `clears`
+	// for how long the backlog standing now takes to go.
 	Owed int32 `protobuf:"varint,4,opt,name=owed,proto3" json:"owed,omitempty"`
 	// The share of the material got through by this day, whether the budget the
 	// preset keeps gets through all of it, and whether any budget does.
@@ -473,7 +487,11 @@ type Point struct {
 	// minutes_a_day, new_a_day, reviews_a_day, or paused. Empty is a day that
 	// asked for every card there was, so the material itself ran out. A budget
 	// the goal does not name is never here.
-	Closed        string `protobuf:"bytes,8,opt,name=closed,proto3" json:"closed,omitempty"`
+	Closed string `protobuf:"bytes,8,opt,name=closed,proto3" json:"closed,omitempty"`
+	// How many days of review at this place it takes before nothing is overdue.
+	// Zero is a curve standing over nothing overdue, and -1 is a pace that never
+	// gets there, which a person reads as not at this one.
+	Clears        int32 `protobuf:"varint,9,opt,name=clears,proto3" json:"clears,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -562,6 +580,13 @@ func (x *Point) GetClosed() string {
 		return x.Closed
 	}
 	return ""
+}
+
+func (x *Point) GetClears() int32 {
+	if x != nil {
+		return x.Clears
+	}
+	return 0
 }
 
 // Mark is one place on the curve worth pointing at.
@@ -1096,7 +1121,7 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12.\n" +
 	"\bsettings\x18\x03 \x01(\v2\x12.numen.v1.SettingsR\bsettings\x12\x1a\n" +
-	"\bproblems\x18\x04 \x03(\tR\bproblems\"\xf0\x01\n" +
+	"\bproblems\x18\x04 \x03(\tR\bproblems\"\x8a\x02\n" +
 	"\x05Curve\x12\"\n" +
 	"\x04goal\x18\x01 \x01(\x0e2\x0e.numen.v1.GoalR\x04goal\x12\x12\n" +
 	"\x04grid\x18\x02 \x03(\x01R\x04grid\x12\x12\n" +
@@ -1105,7 +1130,8 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x03now\x18\x05 \x01(\v2\x0e.numen.v1.MarkR\x03now\x12,\n" +
 	"\tsuggested\x18\x06 \x01(\v2\x0e.numen.v1.MarkR\tsuggested\x12\x14\n" +
 	"\x05decks\x18\a \x01(\x05R\x05decks\x12\x14\n" +
-	"\x05cards\x18\b \x01(\x05R\x05cards\"\xc7\x01\n" +
+	"\x05cards\x18\b \x01(\x05R\x05cards\x12\x18\n" +
+	"\aoverdue\x18\t \x01(\x05R\aoverdue\"\xdf\x01\n" +
 	"\x05Point\x12\x18\n" +
 	"\areviews\x18\x01 \x01(\x01R\areviews\x12\x18\n" +
 	"\aminutes\x18\x02 \x01(\x01R\aminutes\x12\x1a\n" +
@@ -1114,7 +1140,8 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\athrough\x18\x05 \x01(\x01R\athrough\x12\x16\n" +
 	"\x06enough\x18\x06 \x01(\bR\x06enough\x12\x10\n" +
 	"\x03met\x18\a \x01(\bR\x03met\x12\x16\n" +
-	"\x06closed\x18\b \x01(\tR\x06closed\">\n" +
+	"\x06closed\x18\b \x01(\tR\x06closed\x12\x16\n" +
+	"\x06clears\x18\t \x01(\x05R\x06clears\">\n" +
 	"\x04Mark\x12\x0e\n" +
 	"\x02at\x18\x01 \x01(\x05R\x02at\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x01R\x05value\x12\x10\n" +

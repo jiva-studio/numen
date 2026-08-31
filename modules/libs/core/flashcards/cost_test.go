@@ -402,3 +402,62 @@ func TestAVaultHoldingNoAnswerTimesIsProjectedAtTheDefault(t *testing.T) {
 		t.Errorf("cost = %+v, want the default %+v", got, history.DefaultCost)
 	}
 }
+
+// A backlog is cleared the sooner the longer the day, and a pace that never
+// gets through it says so rather than naming a day.
+func TestHowLongABacklogTakesToClear(t *testing.T) {
+	by := history.NewFSRS()
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	// Two hundred card faces last answered sixty days ago, which is a vault a
+	// person has been away from.
+	at := learned(by, now, 200)
+	run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost}
+
+	if got := history.Overdue(ahead, at, now); got == 0 {
+		t.Fatal("nothing stands overdue, and there is no backlog to clear")
+	}
+
+	// A day of one review is a day that never gets through two hundred of them.
+	starved := ran(t, run, now, history.Preset{
+		Goal: history.GoalRetention, NewADay: 0, ReviewsADay: 1,
+	}, at, 0)
+	if starved.Clears != history.NeverClears {
+		t.Errorf("one review a day clears the backlog in %d days", starved.Clears)
+	}
+
+	// A day that carries the whole load clears it at once.
+	freely := ran(t, run, now, history.Preset{
+		Goal: history.GoalRetention, NewADay: 0, ReviewsADay: 9999,
+	}, at, 0)
+	if freely.Clears != 1 {
+		t.Errorf("a day carrying the whole load clears the backlog in %d days", freely.Clears)
+	}
+
+	// And a day between the two takes longer than the one above it.
+	slower := ran(t, run, now, history.Preset{
+		Goal: history.GoalRetention, NewADay: 0, ReviewsADay: 20,
+	}, at, 0)
+	if slower.Clears <= freely.Clears || slower.Clears == history.NeverClears {
+		t.Errorf("twenty reviews a day clears in %d days and the whole load in %d",
+			slower.Clears, freely.Clears)
+	}
+}
+
+// A vault with nothing overdue has nothing to clear, whatever the day runs to.
+func TestNothingOverdueClearsInNoDays(t *testing.T) {
+	by := history.NewFSRS()
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost}
+
+	// A vault of cards nobody has answered: none of them has had a day.
+	at := map[history.CardFace]history.Schedule{}
+	if got := history.Overdue(ahead, at, now); got != 0 {
+		t.Errorf("%d card faces stand overdue in a vault nobody has answered", got)
+	}
+	got := ran(t, run, now, history.Preset{
+		Goal: history.GoalRetention, NewADay: 1, ReviewsADay: 1,
+	}, at, 40)
+	if got.Clears != 0 {
+		t.Errorf("a vault with nothing overdue clears in %d days", got.Clears)
+	}
+}

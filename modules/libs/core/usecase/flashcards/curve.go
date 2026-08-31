@@ -43,6 +43,10 @@ type Curve struct {
 	// Cards is how many card faces stand in those decks. Zero is a preset with
 	// nothing to schedule, and every place of the curve stands at zero with it.
 	Cards int
+	// Overdue is how many of those card faces have had their day and were not
+	// answered on it. It is one number over the whole curve: a fact about the
+	// vault as it stands, and not about the setting being chosen.
+	Overdue int
 }
 
 // Point is what a preset comes to at one place of the grid.
@@ -56,14 +60,18 @@ type Curve struct {
 // much further on, and the deck screen offers what is left of it.
 //
 // A goal of a date fills Minutes with what getting through the material by that
-// day costs, and Through and Enough with what the budget the preset keeps gets
-// through by it. The other two fill Minutes with what that sitting takes.
+// day costs and Owed with the backlog that pace leaves standing on it, and
+// Through and Enough with what the budget the preset keeps gets through by it.
+// The other two fill Minutes with what that sitting takes.
 type Point struct {
 	Reviews float64
 	Minutes float64
 	// Retained is the share of the material that comes back.
 	Retained float64
-	// Owed is the backlog the budget did not carry.
+	// Owed is the card faces standing owed on the last day the projection ran:
+	// Ahead days off under a goal of minutes or of retention, and the day the
+	// place names under a goal of a date. It is the backlog left at the end and
+	// not the debt a day carries.
 	Owed int
 	// Through is the share of the material got through by this day, and Enough
 	// is whether the budget the preset keeps gets through all of it. Met is
@@ -74,6 +82,10 @@ type Point struct {
 	// Closed is the budget that closed the day here, in the words the preset
 	// writes it in, and is empty where the material itself ran out.
 	Closed history.Closed
+	// Clears is how many days of review at this place it takes before nothing
+	// is overdue. A curve standing over nothing overdue clears in none, and a
+	// place whose pace never gets there is history.NeverClears.
+	Clears int
 }
 
 // Mark is one place on the curve worth pointing at.
@@ -190,6 +202,7 @@ func (u Curves) Execute(
 	}
 	out.Decks = mine
 	out.Cards = len(under)
+	out.Overdue = history.Overdue(u.Day, at, now)
 	return out, nil
 }
 
@@ -261,11 +274,12 @@ func (u Curves) minutes(
 	}
 
 	out.Now = Mark{At: nearest(out.Grid, float64(p.MinutesADay)), Value: float64(p.MinutesADay)}
-	// What is suggested is the shortest day that pays the whole debt. A load
+	// What is suggested is the shortest day that asks everything the day holds:
+	// the minutes stop closing it, and the material is what runs out. A load
 	// nothing on the grid carries is suggested at the longest day on it.
 	out.Suggested = Mark{At: len(out.Grid) - 1, Value: out.Grid[len(out.Grid)-1]}
 	for i, one := range out.At {
-		if one.Owed == 0 {
+		if one.Closed == history.ClosedNothing {
 			out.Suggested = Mark{At: i, Value: out.Grid[i]}
 			break
 		}
@@ -315,6 +329,12 @@ func (u Curves) retention(
 //
 // Each day of it carries what a day of review has to run to be through by then,
 // and what the budget the preset keeps gets through by then.
+//
+// The range stands on the vault and not on the day the file names, so a person
+// can always give themselves longer than they have. It begins tomorrow, because
+// a date of today is no period at all, and reaches whichever is further off:
+// twice as far as the day named, or the day the material would be through at
+// one card a day, which is the slowest a day of review goes.
 func (u Curves) date(
 	ctx context.Context, run history.Simulation, now time.Time, p history.Preset,
 	at map[history.CardFace]history.Schedule, unseen int,
@@ -325,14 +345,19 @@ func (u Curves) date(
 	if p.By.IsZero() || by < u.Day.Names(open) {
 		return out, nil
 	}
-	days := 1
+	// How far off the day the file names is, counting the day holding now as
+	// none.
+	named := 0
 	for day := open; u.Day.Names(day) < by; day = day.AddDate(0, 0, 1) {
-		days++
-		if days > MostAhead {
+		named++
+		if named > MostAhead {
 			return out, nil
 		}
 	}
-	run.Days = days
+
+	first := 1
+	last := min(MostAhead, max(2*named, unseen, first))
+	run.Days = last + 1
 
 	// What the day the preset aims at comes to, over the whole range.
 	standing, err := run.Run(ctx, now, p, at, unseen)
@@ -342,7 +367,8 @@ func (u Curves) date(
 
 	// Each day of the range is run at its own pace, which is the material spread
 	// over the days up to it, and what that day of review costs is read off it.
-	for _, day := range spread(days, Points) {
+	for _, step := range spread(last-first+1, Points) {
+		day := first + step
 		aiming, asks := p, run
 		aiming.By = open.AddDate(0, 0, day)
 		asks.Days = day + 1
@@ -355,18 +381,35 @@ func (u Curves) date(
 		out.At = append(out.At, Point{
 			Reviews: float64(ran.Load[0]),
 			Minutes: ran.MinutesADay,
+			Owed:    ran.Owed,
 			Through: standing.Through[day],
 			Enough:  standing.Through[day] >= 1,
 			Met:     ran.Through[len(ran.Through)-1] >= 1,
 			Closed:  ran.Closed[0],
+			Clears:  ran.Clears,
 		})
 	}
 
-	last := len(out.Grid) - 1
-	out.Now = Mark{At: last, Value: out.Grid[last], Day: out.Days[last]}
-	// What is suggested is the first day the budget the preset keeps gets
-	// through the material by. A budget that never does is suggested the first
-	// day any budget does.
+	// The day the file names stands as a mark inside the range, at the value it
+	// holds and not at the place nearest it.
+	out.Now = Mark{
+		At:    nearest(out.Grid, float64(named)),
+		Value: float64(named),
+		Day:   u.Day.Names(open.AddDate(0, 0, named)),
+	}
+	// What is suggested is the soonest day whose cost fits the minutes the
+	// preset keeps, which is being through it without changing the day a person
+	// sits to.
+	if p.MinutesADay > 0 {
+		for i, one := range out.At {
+			if one.Minutes <= float64(p.MinutesADay) {
+				out.Suggested = Mark{At: i, Value: out.Grid[i], Day: out.Days[i]}
+				return out, nil
+			}
+		}
+	}
+	// A preset keeping no minutes, and a range no day of which fits them, are
+	// suggested the first day the material is through.
 	for i, one := range out.At {
 		if one.Enough {
 			out.Suggested = Mark{At: i, Value: out.Grid[i], Day: out.Days[i]}
@@ -392,6 +435,7 @@ func point(p history.Projection) Point {
 		Owed:     p.Owed,
 		Through:  p.Through[len(p.Through)-1],
 		Closed:   p.Closed[0],
+		Clears:   p.Clears,
 	}
 }
 

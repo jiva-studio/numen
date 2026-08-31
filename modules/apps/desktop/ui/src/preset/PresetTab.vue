@@ -104,7 +104,8 @@ const sums = computed<readonly string[]>(() => {
   const one = point.value
   if (curve.value.goal !== 'date' || !one) return []
   const lines = [
-    words.owing(one.owed),
+    // Nothing owed on that day is nothing to say about it.
+    ...(one.owed > 0 ? [words.owing(one.owed)] : []),
     words.needing(one.minutes, settings.value.minutesADay),
     words.through(one.through, settings.value.minutesADay),
   ]
@@ -113,6 +114,17 @@ const sums = computed<readonly string[]>(() => {
 
 /** Whether a longer day buys nothing, which the card limits close it against. */
 const shut = computed(() => closed(curve.value))
+
+/**
+ * How far behind the preset stands and what the place the knob is at does
+ * about it. A preset with nothing overdue has nothing to clear, and says so by
+ * saying nothing.
+ */
+const behind = computed<readonly string[]>(() => {
+  const one = point.value
+  if (!curve.value.honest || curve.value.overdue <= 0 || !one) return []
+  return [words.behind(curve.value.overdue, curve.value.cards), words.clearing(one.clears)]
+})
 </script>
 
 <template>
@@ -167,6 +179,10 @@ const shut = computed(() => closed(curve.value))
                 {{ costing }}
               </span>
             </p>
+
+            <!-- How far behind, what this pace does about it, and what a
+                 longer day would not buy. -->
+            <p v-for="(text, at) in behind" :key="at" class="preset__shut">{{ text }}</p>
 
             <p v-if="shut" class="preset__shut">
               {{ words.closed(settings.newADay, settings.reviewsADay) }}

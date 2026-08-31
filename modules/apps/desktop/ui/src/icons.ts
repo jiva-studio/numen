@@ -46,6 +46,7 @@ import {
   X,
   type LucideIcon,
 } from '@lucide/vue'
+import type { NoteType } from './core'
 import { AGENT, DECK, DOCUMENT, FILES, NOTE, PLEX, PRESET, SETTINGS, STENCIL } from './workspace'
 
 /** What each command is drawn as. A map, so an identity answers for itself. */
@@ -116,3 +117,18 @@ const KINDS: ReadonlyMap<string, LucideIcon> = new Map([
 
 /** The icon for a kind of tab, and nothing for a kind that has none. */
 export const iconOfKind = (kind: string): LucideIcon | null => KINDS.get(kind) ?? null
+
+/**
+ * What each kind of note is drawn as, wherever a note's kind is drawn: the
+ * files list, the plex, and the tab it opens in. One mark to a kind, so a
+ * preset is the same thing in the tree that it is in the tab.
+ */
+const NOTES: ReadonlyMap<NoteType, LucideIcon> = new Map([
+  ['note', FileText],
+  ['deck', Layers],
+  ['stencil', LayoutTemplate],
+  ['preset', Gauge],
+])
+
+/** The icon for a kind of note. Every kind has one. */
+export const iconOfNote = (type: NoteType): LucideIcon => NOTES.get(type) ?? FileText
