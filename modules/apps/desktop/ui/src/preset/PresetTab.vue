@@ -7,9 +7,10 @@
  * that; every other setting is the person's own and stands as they left it,
  * whatever the picture says it comes to.
  */
-import { computed } from 'vue'
-import { Days, NumberField, Segmented, Slider, Switch } from '@numen/ui'
-import { RotateCcw } from '@lucide/vue'
+import { computed, ref } from 'vue'
+import { Days, Menu, NumberField, Segmented, Slider, Switch } from '@numen/ui'
+import type { Point } from '@numen/ui'
+import { ChevronDown } from '@lucide/vue'
 import Control from './Control.vue'
 import type { Held, Said } from './kind'
 import { BOUNDS, COUNTS, GOALS, RULES } from './core'
@@ -22,9 +23,6 @@ const props = defineProps<{ held: Held }>()
 const settings = computed(() => props.held.settings())
 const curve = computed(() => props.held.curve())
 const place = computed(() => props.held.place())
-
-/** The rows standing at a value of a person's own instead of the goal's. */
-const byHand = computed(() => props.held.byHand())
 
 /** Why the goal has nothing to work on, and empty where it has. */
 const nothing = computed(() => idle(curve.value))
@@ -46,6 +44,21 @@ const counts = COUNTS.map((one) => ({ id: one, text: words.countsName(one) }))
 
 /** The two rules for what is learned, as the row offers them. */
 const rules = RULES.map((one) => ({ id: one, text: words.ruleName(one) }))
+
+/** Where the rules were asked for, and nothing while they are not. */
+const asking = ref<Point | null>(null)
+
+/** The line the row stands on opens the rules under itself. */
+const asks = (event: Event) => {
+  const line = event.currentTarget
+  if (!(line instanceof HTMLElement)) return
+  const box = line.getBoundingClientRect()
+  asking.value = { x: box.left, y: box.bottom }
+}
+
+const ruled = (said: string) => {
+  if (said === 'interval' || said === 'retention') chose('learned', said)
+}
 
 /** The day the knob stands at, under the goal that steers one. */
 const day = computed(() => curve.value.days[place.value] ?? settings.value.byDate)
@@ -165,29 +178,10 @@ const stopped = computed(() => {
         </section>
 
         <section class="preset__settings" :aria-label="words.settings">
-          <div
-            v-for="field in fields"
-            :key="field"
-            class="preset__row"
-            :class="{ 'preset__row--mine': byHand.has(field) }"
-          >
+          <div v-for="field in fields" :key="field" class="preset__row">
             <span class="preset__said">
               <span class="preset__name" :id="`preset-${field}`">{{ words.fieldName(field) }}</span>
               <span class="preset__detail">{{ words.fieldDetail(field) }}</span>
-
-              <!-- A row standing at a value of a person's own carries the way
-                   back under the goal, as one thing saying what pressing it
-                   does. -->
-              <button
-                v-if="byHand.has(field)"
-                type="button"
-                class="preset__restore"
-                :title="words.restores"
-                @click="props.held.follows(field)"
-              >
-                <RotateCcw class="preset__icon" aria-hidden="true" />
-                {{ words.restores }}
-              </button>
             </span>
 
             <span class="preset__value">
@@ -199,13 +193,19 @@ const stopped = computed(() => {
                 :aria-labelledby="`preset-${field}`"
                 @change="dated"
               />
-              <Segmented
+              <!-- One line saying what the rule is, and the rules under it
+                   when it is asked. -->
+              <button
                 v-else-if="field === 'learned'"
-                :model-value="settings.learned"
-                :choices="rules"
+                type="button"
+                class="preset__choice"
+                aria-haspopup="menu"
                 :aria-labelledby="`preset-${field}`"
-                @update:model-value="(one: string) => chose(field, one as Rule)"
-              />
+                @click="asks"
+              >
+                {{ words.ruleName(settings.learned) }}
+                <ChevronDown class="preset__icon" aria-hidden="true" />
+              </button>
               <Segmented
                 v-else-if="field === 'counts'"
                 :model-value="settings.counts"
@@ -256,6 +256,17 @@ const stopped = computed(() => {
         </section>
       </div>
     </div>
+
+    <Menu
+      v-if="asking"
+      :items="rules"
+      :at="asking"
+      open
+      opening="keyboard"
+      :name="words.fieldName('learned')"
+      @choose="ruled"
+      @dismiss="asking = null"
+    />
   </div>
 </template>
 
@@ -276,7 +287,7 @@ const stopped = computed(() => {
   /* The clearance typing keeps from the edges of its box. A field keeps a line
      box taller than the digits in it, so the block clearance is set under the
      inline one by that difference and the four gaps read alike. */
-  --preset-field-inset: var(--numen-field-padding) var(--numen-box-air);
+  --preset-field-inset: var(--numen-field-padding) var(--numen-inset);
   /* The mark a row carries beside its small print. */
   --preset-icon: 0.875rem;
   /* The track a share is moved along, and the room the figure beside it takes. */
@@ -374,11 +385,6 @@ const stopped = computed(() => {
   border-block-end: var(--numen-stroke) solid var(--numen-node-border);
 }
 
-/* A row standing at a value of a person's own, which no longer follows the goal. */
-.preset__row--mine {
-  border-inline-start-color: var(--numen-focus-bg);
-}
-
 /* What the row is called, and under it what it means. */
 .preset__said {
   display: flex;
@@ -418,6 +424,27 @@ const stopped = computed(() => {
   text-align: end;
 }
 
+/* The rule stands on a line of its own, drawn as the boxes a value is typed
+   into are, with the mark that says it opens. */
+.preset__choice {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--numen-node-gap);
+  padding: var(--preset-field-inset);
+  border: var(--numen-stroke) solid var(--numen-field-border);
+  border-radius: var(--numen-radius-tight);
+  background: var(--numen-field-bg);
+  color: inherit;
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.preset__choice:focus-visible {
+  outline: var(--numen-ring-width) solid var(--numen-ring);
+  outline-offset: var(--numen-stroke);
+}
+
 /* The same box the numbers of the receipt are typed into. */
 .preset__day {
   padding: var(--preset-field-inset);
@@ -436,27 +463,6 @@ const stopped = computed(() => {
 
 .preset__detail {
   color: var(--numen-hushed);
-}
-
-/* The way back under the goal: the mark and the words are one control, so
-   what it does is read off the thing that does it. */
-.preset__restore {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--numen-dot-gap);
-  align-self: start;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--numen-focus-bg);
-  font: inherit;
-  font-size: var(--numen-text-1);
-  cursor: pointer;
-}
-
-.preset__restore:focus-visible {
-  outline: var(--numen-stroke) solid currentColor;
-  outline-offset: var(--numen-caret);
 }
 
 /* Lucide draws on a 24 grid, and the stroke is given in those units. */

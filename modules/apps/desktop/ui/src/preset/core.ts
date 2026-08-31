@@ -173,8 +173,12 @@ export interface Point {
    * How many days of review before every card face is learned. Zero is a place
    * standing over a material already learned, and -1 is a horizon that ends
    * with one of them still to learn.
+   *
+   * There is no such day under every rule: a target is a level a card drifts
+   * in and out of, and a date is the day itself. Where there is none, none is
+   * carried and nothing is said in its place.
    */
-  readonly learns: number
+  readonly learns?: number
   /**
    * How many card faces cannot be learned by the day named whatever the pace:
    * the rule wants more days than the day leaves them. It is a count and not a
@@ -343,7 +347,8 @@ const curved = (said: CurveMessage | undefined): Curve => ({
     closed: one.closed,
     clears: one.clears,
     learned: one.learned,
-    learns: one.learns,
+    // A day the whole of it stands learned on, where the rule has one.
+    ...(one.learns === undefined ? {} : { learns: one.learns }),
     short: one.short,
     backlog: one.backlog,
   })),

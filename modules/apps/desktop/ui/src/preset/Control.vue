@@ -163,8 +163,8 @@ const perched = computed(() => {
     value: held.value,
     reviews: point.reviews,
     minutes: point.minutes,
-    horizon: point.backlog.length,
-    clears: clearing(point.backlog),
+    horizon: backlog.value.length,
+    clears: clearing(backlog.value),
     short: point.short,
     cards: props.curve.cards,
   })
@@ -254,17 +254,36 @@ const heights = computed(() => {
 })
 
 /**
+ * The days one place of the curve is drawn over. A goal of a date schedules
+ * nothing past the day it names, so what the run says after that day is the
+ * arithmetic of doing nothing and is no part of the choice being made.
+ */
+const daysAt = (place: number): number =>
+  props.curve.goal === 'date' ? Math.max(Math.round(props.curve.grid[place] ?? 0), 0) : -1
+
+/** The run at one place, cut at that place's own day. */
+const runAt = (place: number): readonly number[] => {
+  const run = props.curve.at[place]?.backlog ?? []
+  const days = daysAt(place)
+  return days < 0 ? run : run.slice(0, days)
+}
+
+/**
  * The backlog at the place the knob stands, one figure a day. Its axis is days
  * and not the goal's range, so it is a plot of its own under the picture and
  * shares nothing with it but the width.
  */
-const backlog = computed<readonly number[]>(() => props.curve.at[props.place]?.backlog ?? [])
+const backlog = computed<readonly number[]>(() => runAt(props.place))
 
 /**
- * The band it is drawn against, which is this one place's own run. A day too
- * short to carry what falls due climbs, and the climb is what there is to read.
+ * The band it is drawn against, which is the most any place of the curve ever
+ * stands at. One band for every place keeps the picture still while the knob
+ * moves, and a place whose run is cut shorter than another's is drawn against
+ * the same height as the rest.
  */
-const backlogBand = computed<Band>(() => bandOfBacklog(backlog.value))
+const backlogBand = computed<Band>(() =>
+  bandOfBacklog(props.curve.at.flatMap((_, place) => [...runAt(place)])),
+)
 
 const backlogSpots = computed(() => backlogSpotsOf(backlog.value, backlogBand.value))
 const backlogLine = computed(() => lineOf(backlogSpots.value))
@@ -633,6 +652,7 @@ const released = (event: KeyboardEvent) => {
 .control__tile {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: var(--numen-dot-gap);
   min-inline-size: 0;
   /* The lines inside stand on their own leading, which is taller than the
@@ -656,7 +676,7 @@ const released = (event: KeyboardEvent) => {
   color: var(--numen-hushed);
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-1);
-  line-height: 1.2;
+  line-height: 1;
   overflow-wrap: break-word;
 }
 

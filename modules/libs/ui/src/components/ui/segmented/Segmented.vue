@@ -51,10 +51,10 @@ const chose = (value: unknown) => {
       :class="
         cn(
           'inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-tight',
-          // The letters sit in a box of their own ascent and descent, taller
-          // than the line they are set on, so the block padding is the shorter
-          // of the two and the four gaps around a filled segment read alike.
-          'px-2 py-1.5',
+          // The gaps are measured to the ink the screen paints, and the ink
+          // stands clear of the box its line is set in. The two paddings are
+          // the same and what is left over is the font's own bearings.
+          'p-1.5',
           'font-sans text-base font-medium leading-none text-ink',
           'cursor-pointer transition-[background-color,color] duration-100 ease-numen',
           'hover:bg-[color-mix(in_oklab,var(--numen-node-bg),var(--numen-node-fg)_8%)]',

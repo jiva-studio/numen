@@ -17,10 +17,8 @@ import PresetTab from './PresetTab.vue'
 import { DEFAULTS, type Curve, type Goal, type Load, type Presets, type Settings } from './core'
 import {
   approximate,
-  byHand,
   dayAfter,
   daysUntil,
-  following,
   held,
   isDay,
   nearest,
@@ -34,13 +32,6 @@ import { WORDS as words } from './words'
 
 /** How far off the day a goal of a date opens on, where the file names none. */
 const AHEAD = 30
-
-/**
- * How many times a row put back under the goal is taken from the answer. The
- * curve is asked under the row being put back, so the answer moves with it and
- * the two agree after a turn or two.
- */
-const TURNS = 4
 
 /** What a person can put into one row of the receipt. */
 export type Said = number | string | boolean | Load
@@ -59,8 +50,6 @@ export interface Held {
   curve(): Curve
   /** Where the knob stands on that curve. */
   place(): number
-  /** The rows standing at a value of a person's own instead of the goal's. */
-  byHand(): ReadonlySet<Field>
   /** What is wrong with the file, in the words to show. */
   problems(): readonly string[]
   /** What the file was refused for, in words a person reads, or nothing. */
@@ -81,8 +70,6 @@ export interface Held {
    * typing into it moves the knob.
    */
   types(field: Field, value: Said): void
-  /** That row put back to the value the goal produces for it. */
-  follows(field: Field): void
   /** The tab is closing. */
   shuts(id: string): void
 }
@@ -263,23 +250,6 @@ export function presetting(
     await writes(one)
   }
 
-/**
-   * One row put back under the goal, and written once it is there.
-   *
-   * What the goal produces is read off the curve, and the curve is asked under
-   * this very row, so the answer moves when the row does. The row takes what
-   * the answer that came back produces, and again until the two agree, so one
-   * press lands on the value the curve standing then produces.
-   */
-  const restores = async (one: Kept, field: Field): Promise<void> => {
-    for (let turn = 0; turn < TURNS; turn += 1) {
-      if (!byHand(one.settings.value, one.curve.value, one.place.value).has(field)) break
-      one.settings.value = following(one.settings.value, field, one.curve.value, one.place.value)
-      if (shapeOf(one.settings.value) !== one.shape) await curves(one)
-    }
-    await writes(one)
-  }
-
   /** The settings the place the knob stands at produces, which is its own value. */
   const turns = (one: Kept, place: number): void => {
     one.settings.value = producing(one.settings.value, place, one.curve.value, today())
@@ -333,7 +303,6 @@ export function presetting(
       settings: () => one.settings.value,
       curve: () => one.curve.value,
       place: () => one.place.value,
-      byHand: () => byHand(one.settings.value, one.curve.value, one.place.value),
       problems: () => one.problems.value,
       saying: () => one.saying.value,
       changed: () => one.changed.value,
@@ -359,7 +328,6 @@ export function presetting(
         // curve is asked for again where one of those is typed.
         if (shapeOf(one.settings.value) !== one.shape) void curves(one)
       },
-      follows: (field) => void restores(one, field),
       shuts: (tab) => {
         open.delete(id)
         host.closes(tab)

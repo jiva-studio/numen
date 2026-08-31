@@ -11,8 +11,8 @@ const GOALS: Record<Goal, string> = {
 
 /** What each of the two rules for the learned is offered as. */
 const RULES: Record<Rule, string> = {
-  interval: 'How long it is put off',
-  retention: 'How well it is held',
+  interval: 'When reviews are far enough apart',
+  retention: 'When you would remember it today',
 }
 
 /** What each of the two things a budget is spent on is offered as. */
@@ -33,13 +33,13 @@ const FIELDS: Record<Field, readonly [string, string]> = {
   byDate: ['The day', 'The day the material is to be in the head.'],
   counts: ['Counts', "What a day's budget is spent on."],
   learned: [
-    'Learned when',
-    'What counts as a card you have learned: how far ahead it is put off, or how well ' +
-      'you would hold it today. The rule not chosen keeps its value and takes no part.',
+    'Counts as learned',
+    'What makes a card one you have learned: reviews far enough apart, or a good chance of ' +
+      'remembering it today.',
   ],
   interval: [
-    'Put off by',
-    'How far ahead a card is put off before it counts as learned, in days.',
+    'Days between reviews',
+    'How far apart reviews stand before a card counts as learned.',
   ],
   backlog: [
     'Overdue share',
@@ -156,18 +156,22 @@ export const WORDS = {
     return said
   },
   /**
-   * When the material is learned, and how much of it stands learned now. Both
-   * are read off the run the picture is drawn from. A pace that does not get
-   * there inside the days projected says so in words: there is no day to name.
+   * When the material is learned, and how much of it stands learned now, read
+   * off the run the picture is drawn from. Where there is no day the whole of
+   * it stands learned on, nothing is said in its place: what is left is what
+   * stands learned today. A pace whose days run out with one still to learn
+   * has a day to speak of and says it has not come.
    */
-  learning: (learns: number, learned: number, cards: number) => {
+  learning: (learns: number | undefined, learned: number, cards: number) => {
+    const now = { figure: `${count(learned)} of ${count(cards)}`, name: 'learned today' }
+    if (learns === undefined) return [now]
     const when =
       learns < 0
         ? { figure: 'not yet', name: 'in the days ahead' }
         : learns === 0
           ? { figure: 'today', name: 'all of it learned' }
           : { figure: count(learns), name: learns === 1 ? 'day to learn it' : 'days to learn it' }
-    return [when, { figure: `${count(learned)} of ${count(cards)}`, name: 'learned today' }]
+    return [when, now]
   },
   fieldName: (field: Field) => FIELDS[field][0],
   fieldDetail: (field: Field) => FIELDS[field][1],
@@ -207,8 +211,6 @@ export const WORDS = {
   /** The preset schedules nothing, for either of the two reasons. */
   spent: 'This preset is past the day it aimed at. Its budget is spent, and it schedules nothing.',
   paused: 'No cards a day: this preset schedules nothing, and every deck pointing at it stops.',
-  /** The way back under the goal, said on the control that does it. */
-  restores: 'Restore to the goal',
   /** What is wrong with the file, said above the control. */
   problems: 'What is wrong with this preset',
   /** The file moved under the window, and the two answers to that. */
