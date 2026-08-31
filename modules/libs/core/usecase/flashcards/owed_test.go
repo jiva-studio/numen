@@ -176,19 +176,47 @@ func TestWhatEachDeckWasAnsweredIsCountedOnTheDeck(t *testing.T) {
 	}
 }
 
-// The front door reads the answers and writes nothing back. It is asked for
-// every vault a person holds, and again for each of them whenever a file moves.
-func TestCountingAVaultWritesNoScheduleCache(t *testing.T) {
+// The front door counts out of the cache it filled.
+//
+// It is asked for every vault a person holds, and again whenever the window
+// opens, a sitting ends or a vault moves, so a count over answers nothing has
+// changed replays nothing.
+func TestASecondCountReadsTheSchedulesOutOfTheCache(t *testing.T) {
 	s := opened(t, scheduled)
 	answer(t, s.run(t, saturday), "k7m2xq9fzp", 6*time.Second)
 
-	if _, err := s.owedAt(today, func() time.Time { return saturday.Add(time.Hour) }).
-		Execute(t.Context(), s.vault); err != nil {
+	replayed := 0
+	s.kept.At = func(retention float64) history.Scheduler {
+		return replaying{Scheduler: history.NewFSRSAt(retention), answers: &replayed}
+	}
+	owed := s.owedAt(today, func() time.Time { return saturday.Add(time.Hour) })
+
+	if _, err := owed.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
-	if raw, err := s.kept.Kept.Read(t.Context(), s.vault.ID); err == nil {
-		t.Errorf("counting wrote a cache of %d bytes", len(raw))
+	first := replayed
+	if first == 0 {
+		t.Fatal("the first count replayed nothing, and there is no cache to have filled")
 	}
+	if _, err := owed.Execute(t.Context(), s.vault); err != nil {
+		t.Fatal(err)
+	}
+	if replayed != first {
+		t.Errorf("the second count replayed %d answers, want none", replayed-first)
+	}
+}
+
+// replaying is a scheduler saying how many answers were worked out through it.
+type replaying struct {
+	history.Scheduler
+	answers *int
+}
+
+func (r replaying) Next(
+	s history.Schedule, at time.Time, rating history.Rating,
+) history.Schedule {
+	*r.answers++
+	return r.Scheduler.Next(s, at, rating)
 }
 
 // answer writes down one card answered well, and hands back the line it stands

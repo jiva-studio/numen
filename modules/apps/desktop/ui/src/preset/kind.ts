@@ -91,6 +91,8 @@ export function presetting(
     asked: number
     /** The settings the curve in hand was asked under, as `shapeOf` reads them. */
     shape: string
+    /** Every curve this tab has been answered, under the settings it was asked for. */
+    readonly answers: Map<string, Curve>
   }
 
   const open = new Map<string, Kept>()
@@ -106,6 +108,7 @@ export function presetting(
     at: '',
     asked: 0,
     shape: '',
+    answers: new Map<string, Curve>(),
   })
 
   /** What one refusal is put in, and the window's own word for the rest. */
@@ -136,36 +139,51 @@ export function presetting(
   }
 
   /**
-   * The curve of the goal these settings name. The line the window works out
-   * for itself stands in its place until the application answers. Where a
-   * curve of this goal already stands, the knob stays where it is and only the
-   * line is drawn again.
+   * The curve of the goal these settings name. A curve already answered under
+   * them is drawn again as it was, so moving between the three goals asks
+   * nothing and waits for nothing. Where a curve of this goal already stands,
+   * the knob stays where it is and only the line is drawn again.
    */
   const curves = async (one: Kept): Promise<void> => {
     const mine = ++one.asked
-    one.shape = shapeOf(one.settings.value)
+    const shape = shapeOf(one.settings.value)
+    one.shape = shape
+
+    const answered = one.answers.get(shape)
+    if (answered) {
+      one.curve.value = answered
+      one.place.value = standsAt(answered, one.settings.value)
+      return
+    }
+
     const standsAlready = one.curve.value.honest && one.curve.value.goal === one.settings.value.goal
     if (!standsAlready) {
-      const guess = approximate(one.settings.value, today())
-      one.curve.value = guess
-      one.place.value = Math.max(guess.now.at, 0)
+      // What stands until the answer lands carries the goal and its range, so
+      // the readout has units to speak in. It is nobody's answer, so the
+      // picture draws no line: the honest one appears once and nothing jumps.
+      const meanwhile = approximate(one.settings.value, today())
+      one.curve.value = meanwhile
+      one.place.value = Math.max(meanwhile.now.at, 0)
     }
     let answer: Curve
     try {
       answer = await core.curve(one.path.value, one.settings.value)
     } catch (error) {
-      // The line the window guessed stands, and it says that it is a guess.
       console.error(error)
       return
     }
     if (mine !== one.asked) return
+    one.answers.set(shape, answer)
     one.curve.value = answer
     if (standsAlready) return
-    one.place.value =
-      answer.now.at >= 0
-        ? answer.now.at
-        : Math.max(nearest(answer.grid, standing(one.settings.value, today())), 0)
+    one.place.value = standsAt(answer, one.settings.value)
   }
+
+  /** Where the knob stands on a curve: the preset's own place, or the nearest. */
+  const standsAt = (curve: Curve, settings: Settings): number =>
+    curve.now.at >= 0
+      ? curve.now.at
+      : Math.max(nearest(curve.grid, standing(settings, today())), 0)
 
   /** The settings as they now stand, written into the file the read came out of. */
   const writes = async (one: Kept): Promise<void> => {

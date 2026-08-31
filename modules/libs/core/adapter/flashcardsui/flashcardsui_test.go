@@ -2,6 +2,7 @@ package flashcardsui
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -640,5 +641,120 @@ func TestTheFrontDoorSaysWhatEachPresetOfAVaultHolds(t *testing.T) {
 	}
 	if len(got) != len(want) {
 		t.Errorf("the vault came to %v, want %v", got, want)
+	}
+}
+
+// carded is a deck of as many cards, pointing at the preset named.
+// Each deck is written from a mark of its own, because a mark is what names a
+// card and two decks writing one mark are writing one card.
+func carded(at string, cards, from int) string {
+	out := "---\ntype: deck\n"
+	if at != "" {
+		out += "links:\n  - to: " + at + "\n    role: ref\n    type: preset\n"
+	}
+	out += "---\n"
+	for i := from; i < from+cards; i++ {
+		out += fmt.Sprintf(
+			"\n## Card %d ^card%06d\n\n[[Term]]\n\n### Word\n\nw%d\n\n### Meaning\n\nm%d\n",
+			i, i, i, i)
+	}
+	return out
+}
+
+// backlogged is a vault of more material than a day of its preset carries, and
+// a deck beside it on the defaults.
+var backlogged = map[string]string{
+	"Term.md": deck["Term.md"],
+	"Steady.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 10\n" +
+		"new_a_day: 12\nreviews_a_day: 1\nretention: 0.9\ncounts: cards\n---\n\n# Steady\n",
+	"decks/Steady.md": carded("Steady", 60, 0),
+	"decks/Loose.md":  carded("", 20, 1000),
+}
+
+// The deck screen and the preset tab are one arithmetic, under every goal.
+//
+// The window asks Owing for what its decks offer today and Curve for the
+// picture over a preset's range, and both are asked here as the window asks
+// them: the settings the curve is drawn for are the ones the vault holds. Where
+// the preset stands on that picture is the day the deck screen offers, and the
+// reason a day closed names the budget its own goal steers and no other.
+func TestTheDeckScreenAndThePresetTabAgreeUnderEveryGoal(t *testing.T) {
+	for _, one := range []struct {
+		what   string
+		goal   history.Goal
+		by     time.Time
+		closed history.Closed
+		never  []history.Closed
+	}{
+		{
+			what: "minutes", goal: history.GoalMinutes,
+			closed: history.ClosedMinutes,
+			never: []history.Closed{
+				history.ClosedNew, history.ClosedReviews, history.ClosedDate,
+			},
+		},
+		{
+			what: "retention", goal: history.GoalRetention,
+			closed: history.ClosedNew,
+			never:  []history.Closed{history.ClosedMinutes, history.ClosedDate},
+		},
+		{
+			what: "a date", goal: history.GoalDate,
+			by: time.Now().AddDate(0, 0, 6), closed: history.ClosedDate,
+			never: []history.Closed{
+				history.ClosedNew, history.ClosedReviews, history.ClosedMinutes,
+			},
+		},
+	} {
+		t.Run(one.what, func(t *testing.T) {
+			api, held := windowed(t, backlogged)
+			v := held[0]
+
+			p := asWritten(t, api, v, "Steady.md")
+			p.Goal, p.By = one.goal, one.by
+			writtenBack(t, api, v, "Steady.md", p)
+
+			offers := 0
+			for _, deck := range owing(t, api, v).GetDecks() {
+				if deck.GetDeck() == "decks/Steady.md" {
+					offers = int(deck.GetDue() + deck.GetNew())
+				}
+			}
+			if offers == 0 {
+				t.Fatal("the deck screen offers nothing to compare")
+			}
+
+			drawn := pictured(t, api, v, "Steady.md", p)
+			at := drawn.GetNow().GetAt()
+			if at < 0 {
+				t.Fatalf("the preset stands nowhere on its own curve: %+v", drawn.GetNow())
+			}
+			if got := int(drawn.GetAt()[at].GetReviews()); got != offers {
+				t.Errorf("the deck screen offers %d cards and the tab draws %d", offers, got)
+			}
+			if got := drawn.GetAt()[at].GetClosed(); got != string(one.closed) {
+				t.Errorf("the day closed on %q, want %q", got, one.closed)
+			}
+			for i, point := range drawn.GetAt() {
+				for _, never := range one.never {
+					if point.GetClosed() == string(never) {
+						t.Errorf("at %v the day closed on %q, which its goal does not name",
+							drawn.GetGrid()[i], never)
+					}
+				}
+			}
+		})
+	}
+}
+
+// Under a goal of minutes a day long enough for the whole of the material is
+// closed by nothing: the material itself ran out, and no card limit is named.
+func TestALongEnoughDayIsClosedByNothing(t *testing.T) {
+	api, held := windowed(t, backlogged)
+	v := held[0]
+
+	drawn := pictured(t, api, v, "Steady.md", asWritten(t, api, v, "Steady.md"))
+	if got := drawn.GetAt()[len(drawn.GetAt())-1].GetClosed(); got != "" {
+		t.Errorf("the longest day on the range is closed by %q", got)
 	}
 }

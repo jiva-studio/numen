@@ -254,6 +254,19 @@ export const through = (one: Preset): number => {
  */
 export const spent = (one: Preset): boolean => through(one) >= 1
 
+/**
+ * How many cards sitting down to this preset would put in front of a person:
+ * what its decks still owe today, inside the budget it keeps.
+ *
+ * A preset keeping a budget in time is held to it at what an answer has been
+ * costing, so what a day of it comes to is near rather than exact.
+ */
+export const leftWords = (one: Preset): string => {
+  if (one.cards <= 0) return ''
+  const cards = `${one.cards} ${one.cards === 1 ? 'card' : 'cards'}`
+  return one.budget.minutes > 0 ? `about ${cards}` : cards
+}
+
 /** Why a preset schedules nothing, and empty while it schedules something. */
 export const paused = (settings: Settings, today: string): string => {
   if (settings.newADay === 0 && settings.reviewsADay === 0) return 'no cards a day'

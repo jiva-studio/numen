@@ -208,6 +208,30 @@ func (u Schedules) From(
 	return u.replayed(ctx, v, held, asks), nil
 }
 
+// worked is where a log a caller has already read leaves every card face.
+//
+// The cache answers where it was worked out from the log the caller is holding,
+// so the answers are replayed at most once. Nothing is written: a caller whose
+// work is worth keeping asks for counted.
+func (u Schedules) worked(
+	ctx context.Context, v domain.Vault, held Held, asks scheduling,
+) map[history.CardFace]history.Schedule {
+	if out, ok := u.remembered(ctx, v, held.Files, asks.mark); ok {
+		return out
+	}
+	return projected(held, asks)
+}
+
+// counted is the same, with what a replay came to kept for the next launch.
+func (u Schedules) counted(
+	ctx context.Context, v domain.Vault, held Held, asks scheduling,
+) map[history.CardFace]history.Schedule {
+	if out, ok := u.remembered(ctx, v, held.Files, asks.mark); ok {
+		return out
+	}
+	return u.replayed(ctx, v, held, asks)
+}
+
 // replayed works the answers out and remembers what they came to.
 func (u Schedules) replayed(
 	ctx context.Context, v domain.Vault, held Held, asks scheduling,

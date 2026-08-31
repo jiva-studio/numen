@@ -85,8 +85,13 @@ type FlashcardsServiceClient interface {
 	// Start opens a run and hands over what to ask, in order. A run writes one
 	// file of its own in the vault and nothing else ever appends to it.
 	//
-	// Naming a deck asks that deck alone. Naming none asks the whole vault, which
-	// is the ordinary way to sit down to this.
+	// Naming a deck asks that deck alone. Naming a preset asks the cards of every
+	// deck pointing at it, held to that preset's own budget. Naming neither asks
+	// the whole vault, which is the ordinary way to sit down to this.
+	//
+	// Naming both is refused. A preset with nothing to ask today is refused with
+	// the reason, so a person pressing it is told why and not shown an empty
+	// sitting.
 	Start(context.Context, *connect.Request[v1.StartRequest]) (*connect.Response[v1.StartResponse], error)
 	// Answer writes down how a card came back. What comes back is the identifier
 	// of the line, which is what taking that answer back names.
@@ -271,8 +276,13 @@ type FlashcardsServiceHandler interface {
 	// Start opens a run and hands over what to ask, in order. A run writes one
 	// file of its own in the vault and nothing else ever appends to it.
 	//
-	// Naming a deck asks that deck alone. Naming none asks the whole vault, which
-	// is the ordinary way to sit down to this.
+	// Naming a deck asks that deck alone. Naming a preset asks the cards of every
+	// deck pointing at it, held to that preset's own budget. Naming neither asks
+	// the whole vault, which is the ordinary way to sit down to this.
+	//
+	// Naming both is refused. A preset with nothing to ask today is refused with
+	// the reason, so a person pressing it is told why and not shown an empty
+	// sitting.
 	Start(context.Context, *connect.Request[v1.StartRequest]) (*connect.Response[v1.StartResponse], error)
 	// Answer writes down how a card came back. What comes back is the identifier
 	// of the line, which is what taking that answer back names.

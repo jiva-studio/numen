@@ -61,7 +61,7 @@ func (s vaulted) sittingAt(t *testing.T, day history.Day, now time.Time) flashca
 	sat, err := flashcards.Session{
 		Marking: s.marking, Standings: s.standings, Schedules: s.kept,
 		Presets: s.presets, Day: day, Now: func() time.Time { return now },
-	}.Execute(t.Context(), s.vault, "")
+	}.Execute(t.Context(), s.vault, flashcards.Over{})
 	if err != nil {
 		t.Fatal(err)
 	}

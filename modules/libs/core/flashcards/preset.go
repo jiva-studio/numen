@@ -108,15 +108,16 @@ func Defaults() Preset {
 	}
 }
 
-// Closes is which of a preset's budgets closes its day.
+// Closes is, for each of a preset's three budgets, what to call it when it
+// closes the day, and empty where it takes no part.
 //
 // The goal names the budget that closes the day, and every other budget takes
 // no part. A budget taking no part stands in the file where the person left it
 // and is in force again the moment its goal is chosen.
 type Closes struct {
-	New     bool
-	Reviews bool
-	Minutes bool
+	New     Closed
+	Reviews Closed
+	Minutes Closed
 }
 
 // Allowance is what one day of a preset admits: how many cards of each kind it
@@ -163,15 +164,16 @@ func (p Preset) Admits(d Day, now time.Time, spent Spent, left int) Allowance {
 // closing is which budget closes this preset's day.
 //
 // A goal of a date closes the day on a count of new cards, which is the share
-// of the material a day has to begin to be through it by then.
+// of the material a day has to begin to be through it by then. The date is what
+// paced that count, so the date is what closed the day.
 func (p Preset) closing() Closes {
 	switch p.Goal {
 	case GoalRetention:
-		return Closes{New: true, Reviews: true}
+		return Closes{New: ClosedNew, Reviews: ClosedReviews}
 	case GoalDate:
-		return Closes{New: true}
+		return Closes{New: ClosedDate}
 	default:
-		return Closes{Minutes: true}
+		return Closes{Minutes: ClosedMinutes}
 	}
 }
 

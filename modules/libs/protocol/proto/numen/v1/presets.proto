@@ -152,7 +152,9 @@ message Curve {
 // that day costs, and `through` and `enough` with what the budget the preset
 // keeps gets through by it. The rest stands at zero there.
 message Point {
-  // The daily load.
+  // Under a goal of minutes, the sitting a person would sit down to now, which
+  // is the day the deck screen offers. Under the other two, the load over the
+  // days projected.
   double reviews = 1;
   double minutes = 2;
 
@@ -167,6 +169,12 @@ message Point {
   double through = 5;
   bool enough = 6;
   bool met = 7;
+
+  // The budget that closed the day here, written as the preset writes the key:
+  // minutes_a_day, new_a_day, reviews_a_day, or paused. Empty is a day that
+  // asked for every card there was, so the material itself ran out. A budget
+  // the goal does not name is never here.
+  string closed = 8;
 }
 
 // Mark is one place on the curve worth pointing at.

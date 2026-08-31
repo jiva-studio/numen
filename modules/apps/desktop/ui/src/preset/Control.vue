@@ -10,6 +10,7 @@
  * time.
  */
 import { computed, shallowRef, watch, useTemplateRef } from 'vue'
+import { Waiting } from '@numen/ui'
 import type { Curve } from './core'
 import {
   areaOf,
@@ -206,7 +207,18 @@ const released = (event: KeyboardEvent) => {
     <p class="control__height">{{ words.height(props.curve.goal) }}</p>
 
     <div class="control__over">
+      <div
+        v-if="!honest"
+        class="control__waiting"
+        role="status"
+        :style="{ aspectRatio: `${WIDE} / ${HIGH}` }"
+      >
+        <Waiting class="control__ring" />
+        <span>{{ words.waiting }}</span>
+      </div>
+
       <svg
+        v-else
         ref="picture"
         class="control__picture"
         role="slider"
@@ -282,13 +294,19 @@ const released = (event: KeyboardEvent) => {
       >
     </div>
 
-    <p v-if="honest" class="control__under">
-      <span class="control__number control__number--knob" :style="reading">{{ atKnob }}</span>
+    <!-- Both rows keep their room while the answer is on its way, so the
+         picture is the only thing that changes when it lands. -->
+    <p class="control__under">
+      <span v-if="honest" class="control__number control__number--knob" :style="reading">
+        {{ atKnob }}
+      </span>
     </p>
 
-    <p v-if="honest" class="control__ends">
-      <span>{{ words.ends(props.curve.goal)[0] }} · {{ atLeast }}</span>
-      <span>{{ words.ends(props.curve.goal)[1] }} · {{ atMost }}</span>
+    <p class="control__ends">
+      <template v-if="honest">
+        <span>{{ words.ends(props.curve.goal)[0] }} · {{ atLeast }}</span>
+        <span>{{ words.ends(props.curve.goal)[1] }} · {{ atMost }}</span>
+      </template>
     </p>
   </div>
 </template>
@@ -313,6 +331,25 @@ const released = (event: KeyboardEvent) => {
 /* The picture, and what is named over it. */
 .control__over {
   position: relative;
+}
+
+/*
+ * The picture's room while the application works the curve out. It is the room
+ * the picture takes, so nothing under it moves when the answer lands.
+ */
+.control__waiting {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--numen-node-gap);
+  inline-size: 100%;
+  color: var(--numen-hushed);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-1);
+}
+
+.control__ring {
+  --waiting-size: 1em;
 }
 
 /* The line the knob's own value rides, clear of every number on the picture. */
@@ -430,6 +467,7 @@ const released = (event: KeyboardEvent) => {
 .control__ends {
   display: flex;
   justify-content: space-between;
+  min-block-size: var(--control-line);
   margin: 0;
   padding-inline: var(--numen-inset);
   color: var(--numen-hushed);

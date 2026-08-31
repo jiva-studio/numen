@@ -707,7 +707,12 @@ type StartRequest struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	VaultId string                 `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
 	// Deck is the path of one deck, or empty for every deck the vault holds.
-	Deck          string `protobuf:"bytes,2,opt,name=deck,proto3" json:"deck,omitempty"`
+	Deck string `protobuf:"bytes,2,opt,name=deck,proto3" json:"deck,omitempty"`
+	// Preset is the note one preset stands in, and the empty path is the preset
+	// that schedules the decks naming none. Set it to sit to the cards of every
+	// deck pointing at that preset, held to its budget. Naming a deck and a
+	// preset at once is refused.
+	Preset        *string `protobuf:"bytes,3,opt,name=preset,proto3,oneof" json:"preset,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -752,6 +757,13 @@ func (x *StartRequest) GetVaultId() string {
 func (x *StartRequest) GetDeck() string {
 	if x != nil {
 		return x.Deck
+	}
+	return ""
+}
+
+func (x *StartRequest) GetPreset() string {
+	if x != nil && x.Preset != nil {
+		return *x.Preset
 	}
 	return ""
 }
@@ -1945,10 +1957,12 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\fOwingRequest\"O\n" +
 	"\rOwingResponse\x12,\n" +
 	"\x06vaults\x18\x01 \x03(\v2\x14.numen.v1.VaultOwingR\x06vaults\x12\x10\n" +
-	"\x03day\x18\x02 \x01(\tR\x03day\"=\n" +
+	"\x03day\x18\x02 \x01(\tR\x03day\"e\n" +
 	"\fStartRequest\x12\x19\n" +
 	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
-	"\x04deck\x18\x02 \x01(\tR\x04deck\"\x80\x01\n" +
+	"\x04deck\x18\x02 \x01(\tR\x04deck\x12\x1b\n" +
+	"\x06preset\x18\x03 \x01(\tH\x00R\x06preset\x88\x01\x01B\t\n" +
+	"\a_preset\"\x80\x01\n" +
 	"\rStartResponse\x12\x10\n" +
 	"\x03run\x18\x01 \x01(\tR\x03run\x12%\n" +
 	"\x05asked\x18\x02 \x03(\v2\x0f.numen.v1.AskedR\x05asked\x12\x1c\n" +
@@ -2138,6 +2152,7 @@ func file_numen_v1_flashcards_proto_init() {
 	}
 	file_numen_v1_presets_proto_init()
 	file_numen_v1_vault_proto_init()
+	file_numen_v1_flashcards_proto_msgTypes[7].OneofWrappers = []any{}
 	file_numen_v1_flashcards_proto_msgTypes[20].OneofWrappers = []any{}
 	file_numen_v1_flashcards_proto_msgTypes[24].OneofWrappers = []any{}
 	type x struct{}

@@ -486,7 +486,7 @@ func TestACardPutDaysAwayIsNotOwedToday(t *testing.T) {
 		}
 	}
 
-	sitting, err := s.session(today).Execute(t.Context(), s.vault, "")
+	sitting, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Over{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -618,7 +618,7 @@ func TestASessionAsksWhatIsOwedBeforeWhatIsNew(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	sitting, err := s.session(today).Execute(t.Context(), s.vault, "")
+	sitting, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Over{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -647,7 +647,7 @@ func TestASessionAsksWhatIsOwedBeforeWhatIsNew(t *testing.T) {
 func TestASessionOverOneDeckAsksThatDeckAlone(t *testing.T) {
 	s := opened(t, vault)
 
-	sitting, err := s.session(today).Execute(t.Context(), s.vault, "decks/Words.md")
+	sitting, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Deck("decks/Words.md"))
 	if err != nil {
 		t.Fatal(err)
 	}

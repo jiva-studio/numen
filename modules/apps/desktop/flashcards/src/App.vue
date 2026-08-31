@@ -154,6 +154,14 @@ const start = async (deck: string) => {
   reported(said)
 }
 
+/** Sit down to every deck one preset schedules, held to the budget it keeps. */
+const startPreset = async (preset: string) => {
+  const said = await sat.start(vault.value, '', preset)
+  if (!said) return
+  on.value = 'session'
+  reported(said)
+}
+
 /**
  * Out of a sitting and back to the decks, with the counts as they now stand and
  * the days too: what a person just answered is part of what they have done.
@@ -329,6 +337,7 @@ onUnmounted(() => {
       :by-deck="schedules.byDeck.value"
       :today="today"
       @start="start"
+      @start-preset="startPreset"
       @back="vaultsAgain"
     />
 

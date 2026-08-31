@@ -157,6 +157,34 @@ describe('what the control stands at', () => {
     expect(drawn().tab.text()).not.toContain(words.about)
   })
 
+  // A line drawn before the answer has to move when it lands, and a picture
+  // that moves reads as a glitch. Nothing is drawn until there is an answer.
+  it('draws no line and no control while the curve is being worked out', () => {
+    const { tab } = drawn({ honest: false })
+    expect(tab.findAll('.control__waiting')).toHaveLength(1)
+    expect(tab.text()).toContain(words.waiting)
+    expect(tab.findAll('svg')).toHaveLength(0)
+    expect(tab.findAll('[role="slider"]')).toHaveLength(0)
+    expect(tab.findAll('.control__number')).toHaveLength(0)
+    expect(tab.get('.control__ends').text()).toBe('')
+  })
+
+  it('draws the picture and nothing waiting once the answer has landed', () => {
+    const { tab } = drawn()
+    expect(tab.findAll('.control__waiting')).toHaveLength(0)
+    expect(tab.text()).not.toContain(words.waiting)
+    expect(tab.findAll('[role="slider"]')).toHaveLength(1)
+  })
+
+  // The rows under the picture keep their room, so the answer landing moves
+  // nothing below the plot.
+  it('keeps the rows under the picture whether or not the answer has landed', () => {
+    for (const one of [drawn({ honest: false }), drawn()]) {
+      expect(one.tab.findAll('.control__under')).toHaveLength(1)
+      expect(one.tab.findAll('.control__ends')).toHaveLength(1)
+    }
+  })
+
   it('shows the arithmetic of a goal of a date with the sum already done', () => {
     const dated = drawn(
       {

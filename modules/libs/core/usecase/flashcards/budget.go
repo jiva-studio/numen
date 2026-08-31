@@ -2,6 +2,7 @@ package flashcards
 
 import (
 	"context"
+	"fmt"
 	"slices"
 	"time"
 
@@ -134,10 +135,10 @@ func (b *budgets) takes(face history.CardFace, fresh bool) bool {
 	if fresh {
 		cost, left, closes = one.cost.New, &one.admits.New, one.admits.Closes.New
 	}
-	if closes && *left <= 0 {
+	if closes != history.ClosedNothing && *left <= 0 {
 		return false
 	}
-	if one.admits.Closes.Minutes && one.admits.Minutes < cost {
+	if one.admits.Closes.Minutes != history.ClosedNothing && one.admits.Minutes < cost {
 		return false
 	}
 	*left--
@@ -152,18 +153,46 @@ type asking struct {
 	fresh []Standing
 }
 
+// holds reports whether a card standing here is one of the cards the sitting is
+// opened over.
+//
+// A sitting over a preset takes the cards of every deck pointing at it, so the
+// one budget spent is that preset's.
+func (b *budgets) holds(one Standing, over Over) bool {
+	if over.ByPreset {
+		return b.under[one.CardFace] == over.Preset
+	}
+	return over.Deck == "" || one.Deck == over.Deck
+}
+
+// refuses says why a preset has nothing to ask in the day being sat, in the
+// person's own words.
+func (b *budgets) refuses(preset string) error {
+	one, scheduling := b.left[preset]
+	switch {
+	case !scheduling:
+		return fmt.Errorf("%w: no deck of this vault is scheduled by it", ErrSchedulesNothing)
+	case one.admits.Paused:
+		return fmt.Errorf("%w: it is paused", ErrSchedulesNothing)
+	case one.spent.Answered > 0:
+		return fmt.Errorf("%w: its day is spent", ErrSchedulesNothing)
+	default:
+		return fmt.Errorf("%w: nothing under it is owed yet", ErrSchedulesNothing)
+	}
+}
+
 // asks is what the budgets leave of the cards standing, in the order they are
 // put to a person.
 //
 // The debt is paid before anything new is taken on, so a day too short for both
-// is a day of cards already begun. Deck is one deck, or empty for every deck.
+// is a day of cards already begun.
 func (b *budgets) asks(
 	standing []Standing, schedules map[history.CardFace]history.Schedule,
-	day history.Day, now time.Time, deck string,
+	day history.Day, now time.Time, over Over,
 ) asking {
 	var owed []Standing
 	for _, one := range standing {
-		if deck != "" && one.Deck != deck {
+		if !b.holds(one, over) {
 			continue
 		}
 		if s, answered := schedules[one.CardFace]; answered && day.Owed(s, now) {
@@ -181,7 +210,7 @@ func (b *budgets) asks(
 		}
 	}
 	for _, one := range standing {
-		if deck != "" && one.Deck != deck {
+		if !b.holds(one, over) {
 			continue
 		}
 		if _, answered := schedules[one.CardFace]; answered {

@@ -98,6 +98,7 @@ func CurveOf(c flashcards.Curve) *v1.Curve {
 			Through:  one.Through,
 			Enough:   one.Enough,
 			Met:      one.Met,
+			Closed:   string(one.Closed),
 		})
 	}
 	return out

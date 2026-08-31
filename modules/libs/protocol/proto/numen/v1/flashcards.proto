@@ -31,8 +31,13 @@ service FlashcardsService {
   // Start opens a run and hands over what to ask, in order. A run writes one
   // file of its own in the vault and nothing else ever appends to it.
   //
-  // Naming a deck asks that deck alone. Naming none asks the whole vault, which
-  // is the ordinary way to sit down to this.
+  // Naming a deck asks that deck alone. Naming a preset asks the cards of every
+  // deck pointing at it, held to that preset's own budget. Naming neither asks
+  // the whole vault, which is the ordinary way to sit down to this.
+  //
+  // Naming both is refused. A preset with nothing to ask today is refused with
+  // the reason, so a person pressing it is told why and not shown an empty
+  // sitting.
   rpc Start(StartRequest) returns (StartResponse);
 
   // Answer writes down how a card came back. What comes back is the identifier
@@ -213,6 +218,12 @@ message StartRequest {
   string vault_id = 1;
   // Deck is the path of one deck, or empty for every deck the vault holds.
   string deck = 2;
+
+  // Preset is the note one preset stands in, and the empty path is the preset
+  // that schedules the decks naming none. Set it to sit to the cards of every
+  // deck pointing at that preset, held to its budget. Naming a deck and a
+  // preset at once is refused.
+  optional string preset = 3;
 }
 
 message StartResponse {

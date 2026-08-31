@@ -70,9 +70,10 @@ type Owed struct {
 // Execute counts one vault.
 //
 // The log is read once here and the schedules worked out from it, so the count
-// and the sitting it stands for are the one reading. Counting writes nothing:
-// the person is shown every vault they hold, and none of them is written for
-// that.
+// and the sitting it stands for are the one reading. Nothing is written into
+// the vault: the person is shown every vault they hold, and none of them is
+// written for that. What a replay came to is kept, because this is the path
+// every launch waits on.
 func (u Owed) Execute(ctx context.Context, v domain.Vault) (Owing, error) {
 	standing, err := u.Standings.Execute(ctx, v)
 	if err != nil {
@@ -89,14 +90,14 @@ func (u Owed) Execute(ctx context.Context, v domain.Vault) (Owing, error) {
 	if err != nil {
 		return Owing{}, err
 	}
-	schedules := projected(log, asks)
+	schedules := u.Schedules.counted(ctx, v, log, asks)
 
 	now := u.now()
 	day, err := budgeted(ctx, v, reading, u.Day, standing, schedules, log, u.Schedules.By, now)
 	if err != nil {
 		return Owing{}, err
 	}
-	holds := day.asks(standing, schedules, u.Day, now, "")
+	holds := day.asks(standing, schedules, u.Day, now, Over{})
 
 	out := Owing{Faces: len(standing)}
 	decks := make(map[string]*DeckOwing)

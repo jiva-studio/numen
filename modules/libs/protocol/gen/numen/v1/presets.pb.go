@@ -455,7 +455,9 @@ func (x *Curve) GetCards() int32 {
 // keeps gets through by it. The rest stands at zero there.
 type Point struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The daily load.
+	// Under a goal of minutes, the sitting a person would sit down to now, which
+	// is the day the deck screen offers. Under the other two, the load over the
+	// days projected.
 	Reviews float64 `protobuf:"fixed64,1,opt,name=reviews,proto3" json:"reviews,omitempty"`
 	Minutes float64 `protobuf:"fixed64,2,opt,name=minutes,proto3" json:"minutes,omitempty"`
 	// The share of the material that comes back.
@@ -464,9 +466,14 @@ type Point struct {
 	Owed int32 `protobuf:"varint,4,opt,name=owed,proto3" json:"owed,omitempty"`
 	// The share of the material got through by this day, whether the budget the
 	// preset keeps gets through all of it, and whether any budget does.
-	Through       float64 `protobuf:"fixed64,5,opt,name=through,proto3" json:"through,omitempty"`
-	Enough        bool    `protobuf:"varint,6,opt,name=enough,proto3" json:"enough,omitempty"`
-	Met           bool    `protobuf:"varint,7,opt,name=met,proto3" json:"met,omitempty"`
+	Through float64 `protobuf:"fixed64,5,opt,name=through,proto3" json:"through,omitempty"`
+	Enough  bool    `protobuf:"varint,6,opt,name=enough,proto3" json:"enough,omitempty"`
+	Met     bool    `protobuf:"varint,7,opt,name=met,proto3" json:"met,omitempty"`
+	// The budget that closed the day here, written as the preset writes the key:
+	// minutes_a_day, new_a_day, reviews_a_day, or paused. Empty is a day that
+	// asked for every card there was, so the material itself ran out. A budget
+	// the goal does not name is never here.
+	Closed        string `protobuf:"bytes,8,opt,name=closed,proto3" json:"closed,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -548,6 +555,13 @@ func (x *Point) GetMet() bool {
 		return x.Met
 	}
 	return false
+}
+
+func (x *Point) GetClosed() string {
+	if x != nil {
+		return x.Closed
+	}
+	return ""
 }
 
 // Mark is one place on the curve worth pointing at.
@@ -1091,7 +1105,7 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x03now\x18\x05 \x01(\v2\x0e.numen.v1.MarkR\x03now\x12,\n" +
 	"\tsuggested\x18\x06 \x01(\v2\x0e.numen.v1.MarkR\tsuggested\x12\x14\n" +
 	"\x05decks\x18\a \x01(\x05R\x05decks\x12\x14\n" +
-	"\x05cards\x18\b \x01(\x05R\x05cards\"\xaf\x01\n" +
+	"\x05cards\x18\b \x01(\x05R\x05cards\"\xc7\x01\n" +
 	"\x05Point\x12\x18\n" +
 	"\areviews\x18\x01 \x01(\x01R\areviews\x12\x18\n" +
 	"\aminutes\x18\x02 \x01(\x01R\aminutes\x12\x1a\n" +
@@ -1099,7 +1113,8 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x04owed\x18\x04 \x01(\x05R\x04owed\x12\x18\n" +
 	"\athrough\x18\x05 \x01(\x01R\athrough\x12\x16\n" +
 	"\x06enough\x18\x06 \x01(\bR\x06enough\x12\x10\n" +
-	"\x03met\x18\a \x01(\bR\x03met\">\n" +
+	"\x03met\x18\a \x01(\bR\x03met\x12\x16\n" +
+	"\x06closed\x18\b \x01(\tR\x06closed\">\n" +
 	"\x04Mark\x12\x0e\n" +
 	"\x02at\x18\x01 \x01(\x05R\x02at\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x01R\x05value\x12\x10\n" +

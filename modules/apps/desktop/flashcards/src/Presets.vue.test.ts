@@ -54,7 +54,7 @@ describe('what the goals come to today', () => {
 
     expect(one.findAll('.presets__track')).toHaveLength(0)
     expect(one.findAll('.presets__through')).toHaveLength(0)
-    expect(one.find('.presets__preset').text()).toBe('Sanskrit20 minutes a day20%')
+    expect(one.find('.presets__preset').text()).toBe('Sanskrit20 minutes a day20%about 22 cards')
   })
 
   // The tile reads across: the name with the goal under it, and what the day
@@ -141,7 +141,7 @@ describe('what the goals come to today', () => {
       preset({ path: 'B.md', name: 'Pali' }),
     ]).text()
 
-    expect(said).not.toContain('cards')
+    expect(said).not.toContain('of 55')
     expect(said).not.toContain('close the day')
     expect(said).not.toContain('Today:')
     expect(said).not.toContain('light in')
@@ -205,5 +205,82 @@ describe('what the goals come to today', () => {
 
   it('stands aside where the vault has no preset to show', () => {
     expect(shown([]).find('.presets').exists()).toBe(false)
+  })
+})
+
+// The figure says how far through the day a person is; the count says what is
+// left to do, which is what they are deciding on.
+describe('what pressing a preset would ask', () => {
+  it('counts it under the figure, and says it is near where minutes govern', () => {
+    const one = shown([preset({ cards: 22 })])
+
+    expect(one.find('.presets__left').text()).toBe('about 22 cards')
+  })
+
+  // Nothing is estimated where the day is held to counts alone.
+  it('counts it exactly where the preset keeps no budget in time', () => {
+    const one = shown([
+      preset({ cards: 22, budget: { new: 10, reviews: 45, minutes: 0 }, took: 0 }),
+    ])
+
+    expect(one.find('.presets__left').text()).toBe('22 cards')
+  })
+
+  it('says one card as one', () => {
+    expect(shown([preset({ cards: 1 })]).find('.presets__left').text()).toBe('about 1 card')
+  })
+
+  it('says nothing of a count where there is nothing to ask', () => {
+    expect(shown([preset({ cards: 0 })]).findAll('.presets__left')).toHaveLength(0)
+  })
+
+  it('says nothing of a count where the preset schedules nothing today', () => {
+    const one = shown([preset({ cards: 0, paused: 'no cards a day' })])
+
+    expect(one.findAll('.presets__left')).toHaveLength(0)
+  })
+})
+
+describe('sitting down to a preset', () => {
+  /** Which tiles can be pressed, in the order they stand. */
+  const pressable = (one: ReturnType<typeof shown>): readonly boolean[] =>
+    one.findAll('.presets__preset').map((tile) => tile.attributes('disabled') === undefined)
+
+  it('is offered by a preset with cards to ask, and names the preset pressed', async () => {
+    const one = shown([preset({ path: 'Sanskrit.md' }), preset({ path: 'Pali.md', name: 'Pali' })])
+    const tiles = one.findAll('.presets__preset')
+
+    expect(pressable(one)).toStrictEqual([true, true])
+
+    await tiles[1]?.trigger('click')
+
+    expect(one.emitted('start')).toStrictEqual([['Pali.md']])
+  })
+
+  // The decks naming no preset are sat down to the way the rest are, and the
+  // note they stand under is no note at all.
+  it('names the defaults by the nothing they stand in', async () => {
+    const one = shown([preset({ path: '', name: 'The defaults' })])
+
+    await one.find('.presets__preset').trigger('click')
+
+    expect(one.emitted('start')).toStrictEqual([['']])
+  })
+
+  // A preset with nothing to offer has said above why, and is not pressed.
+  it('offers no sitting where the day under it is already done', async () => {
+    const one = shown([preset({ cards: 0 })])
+
+    expect(pressable(one)).toStrictEqual([false])
+
+    await one.find('.presets__preset').trigger('click')
+
+    expect(one.emitted('start')).toBeUndefined()
+  })
+
+  it('offers no sitting where the preset schedules nothing today', () => {
+    expect(pressable(shown([preset({ cards: 0, paused: 'no cards a day' })]))).toStrictEqual([
+      false,
+    ])
   })
 })

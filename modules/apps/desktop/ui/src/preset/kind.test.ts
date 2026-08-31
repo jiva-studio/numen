@@ -147,6 +147,29 @@ describe('the curve behind the knob', () => {
     expect(asked).toStrictEqual(['minutes', 'minutes'])
   })
 
+  // A goal already worked out is drawn again as it was, so moving between the
+  // three is instant and never puts the picture back into its waiting state.
+  it('is asked for once for each goal, however often they are moved between', async () => {
+    const { held, asked } = await opened()
+    const settle = async () => {
+      for (let i = 0; i < 4; i += 1) await Promise.resolve()
+    }
+
+    held.chooses('retention')
+    await settle()
+    held.chooses('date')
+    await settle()
+    expect(asked).toStrictEqual(['minutes', 'retention', 'date'])
+
+    held.chooses('minutes')
+    await settle()
+    expect(held.curve().honest).toBe(true)
+    held.chooses('retention')
+    await settle()
+    expect(held.curve().honest).toBe(true)
+    expect(asked).toStrictEqual(['minutes', 'retention', 'date'])
+  })
+
   it('is left as it stands where the file comes back saying what it already says', async () => {
     const { held, asked, changed } = await opened()
     held.moves(3)

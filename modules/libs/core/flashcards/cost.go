@@ -160,12 +160,35 @@ type Projection struct {
 	// Owed is the card faces answered before and standing owed on the last day,
 	// which is the backlog the budget did not carry.
 	Owed int
-	// Load is how many answers each day projected carried.
-	Load []int
+	// Load is how many answers each day projected carried, and Spent is how
+	// long those answers took. The first of each is the day a sitting now would
+	// ask, which is the day a caller shows against a control.
+	Load  []int
+	Spent []time.Duration
+	// Closed is what stopped each day projected asking for more.
+	Closed []Closed
 	// Through is the share of the material answered at least once by the end of
 	// each day projected.
 	Through []float64
 }
+
+// Closed is what stopped a day of review asking for more.
+//
+// A day that asked for everything there was is closed by nothing: the material
+// ran out. The three others name the budget in the words the preset writes it
+// in, and a budget the goal does not name can never be one of them.
+type Closed string
+
+const (
+	ClosedNothing Closed = ""
+	ClosedMinutes Closed = "minutes_a_day"
+	ClosedNew     Closed = "new_a_day"
+	ClosedReviews Closed = "reviews_a_day"
+	// ClosedDate is a day paced by the day the preset aims at.
+	ClosedDate Closed = "by_date"
+	// ClosedPaused is a preset scheduling nothing at all.
+	ClosedPaused Closed = "paused"
+)
 
 // Simulation projects a preset forward over the days ahead: its card faces
 // answered day after day, inside the budgets it keeps.
@@ -238,15 +261,24 @@ func (s Simulation) Run(
 		// leaves the cards least overdue standing.
 		slices.SortFunc(due, func(a, b int) int { return older(cards[a], cards[b]) })
 
+		// What closed the day is the budget that turned a card away. A day that
+		// asked for every card there was is closed by nothing.
+		closed := ClosedNothing
+		if admits.Paused {
+			closed = ClosedPaused
+		}
+
 		answered, seen := 0, 0
 		for _, i := range due {
 			if admits.Paused {
 				break
 			}
-			if admits.Closes.Reviews && seen >= admits.Reviews {
+			if admits.Closes.Reviews != ClosedNothing && seen >= admits.Reviews {
+				closed = admits.Closes.Reviews
 				break
 			}
-			if admits.Closes.Minutes && used+s.Cost.Review > admits.Minutes {
+			if admits.Closes.Minutes != ClosedNothing && used+s.Cost.Review > admits.Minutes {
+				closed = admits.Closes.Minutes
 				break
 			}
 			used += s.Cost.Review
@@ -256,10 +288,12 @@ func (s Simulation) Run(
 		}
 
 		for begun := 0; left > 0 && !admits.Paused; begun++ {
-			if admits.Closes.New && begun >= admits.New {
+			if admits.Closes.New != ClosedNothing && begun >= admits.New {
+				closed = admits.Closes.New
 				break
 			}
-			if admits.Closes.Minutes && used+s.Cost.New > admits.Minutes {
+			if admits.Closes.Minutes != ClosedNothing && used+s.Cost.New > admits.Minutes {
+				closed = admits.Closes.Minutes
 				break
 			}
 			used += s.Cost.New
@@ -272,6 +306,8 @@ func (s Simulation) Run(
 		out.Answered += answered
 		spent += used
 		out.Load = append(out.Load, answered)
+		out.Spent = append(out.Spent, used)
+		out.Closed = append(out.Closed, closed)
 		out.Through = append(out.Through, through(out.Seen, out.Faces))
 		open = ends
 	}

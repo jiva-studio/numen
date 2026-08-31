@@ -71,6 +71,8 @@ export const WORDS = {
   settings: 'What the goal produced',
   /** The knob, and what it is announced as while it is moved. */
   knob: 'The goal of this preset',
+  /** Said in the picture's place while the application works the curve out. */
+  waiting: 'Reading the vault…',
   /** The two marks on the curve. */
   now: 'where this preset stands',
   suggested: 'suggested',

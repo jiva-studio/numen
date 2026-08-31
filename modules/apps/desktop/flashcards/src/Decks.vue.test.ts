@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { Goal } from '@numen/protocol'
 
 import Decks from './Decks.vue'
+import Presets from './Presets.vue'
 import type { Owing } from './core'
 import type { Preset, Settings } from './scheduling'
 
@@ -158,6 +159,18 @@ describe('a deck with nothing waiting', () => {
 
     expect(one.find('.decks__deck').find('.owed').text()).toBe('10 to review')
     expect(one.findAll('.decks__met')).toHaveLength(0)
+  })
+})
+
+// Sitting down to a preset is the deck screen's act, carried up from the tile
+// to whatever opens a sitting.
+describe('a preset pressed', () => {
+  it('is passed on by the note it stands in', () => {
+    const one = shown([preset()])
+
+    one.findComponent(Presets).vm.$emit('start', 'Sanskrit.md')
+
+    expect(one.emitted('startPreset')).toStrictEqual([['Sanskrit.md']])
   })
 })
 

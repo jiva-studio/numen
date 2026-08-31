@@ -74,6 +74,10 @@ func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultOwing {
 }
 
 // Start opens a sitting and hands over what to ask, in order.
+//
+// A sitting is opened over one deck, over one preset, or over the whole vault.
+// A refused sitting opens no run: the file a vault's answers go to is written
+// when there is something to answer.
 func (a *API) Start(
 	ctx context.Context, r *connect.Request[v1.StartRequest],
 ) (*connect.Response[v1.StartResponse], error) {
@@ -81,9 +85,18 @@ func (a *API) Start(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
-	sitting, err := a.Session.Execute(ctx, v, r.Msg.GetDeck())
+	over := flashcards.Over{
+		Deck:     r.Msg.GetDeck(),
+		Preset:   r.Msg.GetPreset(),
+		ByPreset: r.Msg.Preset != nil,
+	}
+	sitting, err := a.Session.Execute(ctx, v, over)
 	if err != nil {
-		if errors.Is(err, flashcards.ErrUnread) {
+		switch {
+		case errors.Is(err, flashcards.ErrBothNamed):
+			return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		case errors.Is(err, flashcards.ErrUnread),
+			errors.Is(err, flashcards.ErrSchedulesNothing):
 			return nil, connect.NewError(connect.CodeFailedPrecondition, err)
 		}
 		return nil, connect.NewError(connect.CodeInternal, err)

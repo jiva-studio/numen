@@ -47,11 +47,18 @@ type Curve struct {
 
 // Point is what a preset comes to at one place of the grid.
 //
+// Reviews is the sitting a person would sit down to now, which is the day the
+// deck screen offers. A person reads a count of cards off the curve where their
+// control stands and then off the deck screen, and the two are one day of one
+// preset.
+//
+// A curve draws the whole of that day. A day already sat to part way is that
+// much further on, and the deck screen offers what is left of it.
+//
 // A goal of a date fills Minutes with what getting through the material by that
 // day costs, and Through and Enough with what the budget the preset keeps gets
-// through by it. The rest stands at zero there.
+// through by it. The other two fill Minutes with what that sitting takes.
 type Point struct {
-	// Reviews and Minutes are the daily load.
 	Reviews float64
 	Minutes float64
 	// Retained is the share of the material that comes back.
@@ -64,6 +71,9 @@ type Point struct {
 	Through float64
 	Enough  bool
 	Met     bool
+	// Closed is the budget that closed the day here, in the words the preset
+	// writes it in, and is empty where the material itself ran out.
+	Closed history.Closed
 }
 
 // Mark is one place on the curve worth pointing at.
@@ -122,7 +132,7 @@ func (u Curves) Execute(
 	if err != nil {
 		return Curve{}, err
 	}
-	schedules := projected(held, asks)
+	schedules := u.Schedules.worked(ctx, v, held, asks)
 
 	decks := make(map[string]bool)
 	at := make(map[history.CardFace]history.Schedule)
@@ -222,7 +232,8 @@ func (u Curves) pointing(
 // minutes is the curve of how long a day of review runs.
 //
 // It runs from a short day to twice what carrying the whole load costs, so the
-// place where the load is carried stands inside it.
+// place where the load is carried stands inside it. Each place is the sitting a
+// person would sit down to now, which is the day the deck screen offers.
 func (u Curves) minutes(
 	ctx context.Context, run history.Simulation, now time.Time, p history.Preset,
 	at map[history.CardFace]history.Schedule, unseen int,
@@ -235,7 +246,7 @@ func (u Curves) minutes(
 	}
 
 	out := Curve{Goal: history.GoalMinutes, Now: Nowhere, Suggested: Nowhere}
-	top := ceiling(load.MinutesADay, float64(p.MinutesADay))
+	top := ceiling(load.Spent[0].Minutes(), float64(p.MinutesADay))
 	for i := range Points {
 		out.Grid = append(out.Grid, math.Round(top*float64(i+1)/Points))
 	}
@@ -246,7 +257,7 @@ func (u Curves) minutes(
 		if err != nil {
 			return Curve{}, err
 		}
-		out.At = append(out.At, point(ran))
+		out.At = append(out.At, sitting(ran))
 	}
 
 	out.Now = Mark{At: nearest(out.Grid, float64(p.MinutesADay)), Value: float64(p.MinutesADay)}
@@ -284,7 +295,7 @@ func (u Curves) retention(
 		if err != nil {
 			return Curve{}, err
 		}
-		out.At = append(out.At, point(ran))
+		out.At = append(out.At, sitting(ran))
 	}
 
 	out.Now = Mark{At: nearest(out.Grid, p.Retention), Value: p.Retention}
@@ -342,10 +353,12 @@ func (u Curves) date(
 		out.Grid = append(out.Grid, float64(day))
 		out.Days = append(out.Days, u.Day.Names(aiming.By))
 		out.At = append(out.At, Point{
+			Reviews: float64(ran.Load[0]),
 			Minutes: ran.MinutesADay,
 			Through: standing.Through[day],
 			Enough:  standing.Through[day] >= 1,
 			Met:     ran.Through[len(ran.Through)-1] >= 1,
+			Closed:  ran.Closed[0],
 		})
 	}
 
@@ -369,7 +382,8 @@ func (u Curves) date(
 	return out, nil
 }
 
-// point is a projection as one place of a curve.
+// point is a projection as one place of a curve, at the load it carries over
+// the days projected.
 func point(p history.Projection) Point {
 	return Point{
 		Reviews:  p.ReviewsADay,
@@ -377,7 +391,17 @@ func point(p history.Projection) Point {
 		Retained: p.Retained,
 		Owed:     p.Owed,
 		Through:  p.Through[len(p.Through)-1],
+		Closed:   p.Closed[0],
 	}
+}
+
+// sitting is a projection as one place of a curve, at the day a person would
+// sit down to now. It is the day the deck screen offers, worked out by the same
+// arithmetic.
+func sitting(p history.Projection) Point {
+	out := point(p)
+	out.Reviews, out.Minutes = float64(p.Load[0]), p.Spent[0].Minutes()
+	return out
 }
 
 // spread is up to as many places as are wanted, evenly over the days, and

@@ -88,10 +88,12 @@ export const steers = (goal: Goal): Field => {
 /**
  * The settings that give a curve its shape, as one word. The value the knob
  * rides is left out, so walking the grid reads the same shape throughout and a
- * curve is asked for once for it.
+ * curve is asked for once for it. A day steers nothing unless it is the goal,
+ * so it is left out of the other two: choosing a date and coming back does not
+ * make their curves worth asking for again.
  */
 export const shapeOf = (settings: Settings): string => {
-  const own = new Set<Field>([steers(settings.goal)])
+  const own = new Set<Field>([steers(settings.goal), 'byDate'])
   const said: Record<Field, string> = {
     newADay: `${settings.newADay}`,
     reviewsADay: `${settings.reviewsADay}`,

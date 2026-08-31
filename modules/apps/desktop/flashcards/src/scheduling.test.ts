@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { Goal } from '@numen/protocol'
 
-import { goalWords, holds, load, named, paused, scheduling } from './scheduling'
+import { goalWords, holds, leftWords, load, named, paused, scheduling } from './scheduling'
 import type { Asks, Budget, Preset, Settings } from './scheduling'
 import type { Owing, PresetOwing } from './core'
 
@@ -104,6 +104,25 @@ describe('what a goal comes to in words', () => {
     )
     expect(said).toMatch(/^by /)
     expect(said).toMatch(/— 18 days$/)
+  })
+})
+
+describe('what sitting down to a preset would ask', () => {
+  // A budget in time is spent at what an answer has been costing, so what the
+  // day comes to under it is near and says so.
+  it('is near where the preset keeps a budget in time', () => {
+    expect(leftWords(preset({ cards: 34 }))).toBe('about 34 cards')
+    expect(leftWords(preset({ cards: 1 }))).toBe('about 1 card')
+  })
+
+  it('is exact where it is held to its counts alone', () => {
+    const held = budget({ minutes: 0 })
+    expect(leftWords(preset({ cards: 34, budget: held }))).toBe('34 cards')
+    expect(leftWords(preset({ cards: 1, budget: held }))).toBe('1 card')
+  })
+
+  it('is nothing at all where it would ask nothing', () => {
+    expect(leftWords(preset({ cards: 0 }))).toBe('')
   })
 })
 

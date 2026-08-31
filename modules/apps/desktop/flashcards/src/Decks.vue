@@ -32,6 +32,8 @@ const props = defineProps<{
 
 defineEmits<{
   (event: 'start', deck: string): void
+  /** Sit down to every deck one preset schedules, by the note it stands in. */
+  (event: 'startPreset', preset: string): void
   (event: 'back'): void
 }>()
 
@@ -67,7 +69,7 @@ const empty = (deck: DeckOwing): string => {
 
     <Progress :days="days" :due="due" />
 
-    <Presets :presets="presets" :today="today" />
+    <Presets :presets="presets" :today="today" @start="$emit('startPreset', $event)" />
 
     <p v-if="!vault.decks.length" class="decks__saying">This vault holds no deck.</p>
 

@@ -13,14 +13,20 @@
  * where they are read.
  */
 import { computed } from 'vue'
+import { Button } from '@numen/ui'
 
-import { goalWords, through } from './scheduling'
+import { goalWords, leftWords, through } from './scheduling'
 import type { Preset } from './scheduling'
 
 const props = defineProps<{
   presets: readonly Preset[]
   /** The day this is being read on, as the year, the month and the day. */
   today: string
+}>()
+
+defineEmits<{
+  /** Sit down to every deck this preset schedules, by the note it stands in. */
+  (event: 'start', preset: string): void
 }>()
 
 /** One preset's tile: its goal, and how far through the day it stands. */
@@ -33,8 +39,12 @@ interface Tile {
   readonly goal: string
   /** What stands at the right of the tile: the figure, or words in its place. */
   readonly says: string
+  /** What sitting down to it would ask, and empty where it would ask nothing. */
+  readonly left: string
   /** Whether the day is past its budget, which is the one thing to catch the eye. */
   readonly over: boolean
+  /** Whether it has a sitting to offer, which is what makes the tile pressable. */
+  readonly opens: boolean
 }
 
 /**
@@ -52,7 +62,9 @@ const tiles = computed<Tile[]>(() =>
       one,
       goal: one.paused || (one.settings ? goalWords(one.settings, props.today) : ''),
       says: over ? 'over budget' : percent(done),
+      left: one.paused ? '' : leftWords(one),
       over,
+      opens: !one.paused && one.cards > 0,
     }
   }),
 )
@@ -64,25 +76,32 @@ const percent = (done: number): string => `${Math.round(done * 100)}%`
 <template>
   <section v-if="tiles.length" class="presets">
     <ul class="presets__list">
-      <li
-        v-for="tile in tiles"
-        :key="tile.one.path"
-        class="presets__preset"
-        :class="{ 'presets__preset--paused': tile.one.paused }"
-      >
-        <span class="presets__said">
-          <span class="presets__name">{{ tile.one.name }}</span>
-          <span v-if="tile.goal" class="presets__goal">{{ tile.goal }}</span>
-        </span>
-
-        <!-- What today comes to under it. A preset scheduling nothing has said
-             so under its name, and stands here empty. -->
-        <span
-          v-if="!tile.one.paused"
-          class="presets__done"
-          :data-over="tile.over ? '' : undefined"
-          >{{ tile.says }}</span
+      <li v-for="tile in tiles" :key="tile.one.path" class="presets__tile">
+        <!-- Sitting down to a preset is the same act as sitting down to a deck,
+             one level up, so it is the same button. One with nothing to offer
+             is not pressed, and has said above why. -->
+        <Button
+          variant="outline"
+          class="presets__preset"
+          :class="{ 'presets__preset--paused': tile.one.paused }"
+          :disabled="!tile.opens"
+          @click="$emit('start', tile.one.path)"
         >
+          <span class="presets__said">
+            <span class="presets__name">{{ tile.one.name }}</span>
+            <span v-if="tile.goal" class="presets__goal">{{ tile.goal }}</span>
+          </span>
+
+          <!-- How far through the day it is, and under it what pressing this
+               would ask. A preset scheduling nothing has said so under its
+               name, and stands here empty. -->
+          <span v-if="!tile.one.paused" class="presets__figures">
+            <span class="presets__done" :data-over="tile.over ? '' : undefined">{{
+              tile.says
+            }}</span>
+            <span v-if="tile.left" class="presets__left">{{ tile.left }}</span>
+          </span>
+        </Button>
       </li>
     </ul>
   </section>
@@ -107,20 +126,23 @@ const percent = (done: number): string => `${Math.round(done * 100)}%`
   list-style: none;
 }
 
-/* A tile is an island of the same make as a deck in the list below it: the same
-   ground, the same rule around it, the same corner and the same inset. It reads
-   across, with what the day comes to at its right. */
-.presets__preset {
+.presets__tile {
   display: flex;
   flex: 1 1 12rem;
-  align-items: center;
+}
+
+/* A tile is a deck of the list below one level up, so it is the same button.
+   What it is painted, how it answers a hover and what it looks like with the
+   keyboard on it are the button's own. It reads across, with what the day comes
+   to at its right. */
+.presets__preset {
+  inline-size: 100%;
+  block-size: auto;
   justify-content: space-between;
   padding: var(--numen-inset);
   gap: var(--numen-inset);
-  border: 1px solid var(--numen-node-border);
-  border-radius: var(--numen-radius);
-  background: var(--numen-node-bg);
-  color: var(--numen-node-fg);
+  text-align: start;
+  white-space: normal;
 }
 
 /* The name, with the goal under it. */
@@ -139,13 +161,28 @@ const percent = (done: number): string => `${Math.round(done * 100)}%`
   color: var(--numen-hushed);
 }
 
-/* What a person looks for, so it carries the weight in the tile and stands at
-   the end of the line, against the middle of the two above it. */
-.presets__done {
+/* How far through the day it is, with what pressing it would ask under that. */
+.presets__figures {
+  display: flex;
   flex: none;
+  flex-direction: column;
+  align-items: end;
+}
+
+/* What a person looks for, so it carries the weight in the tile and stands at
+   the end of the line, against the middle of the two beside it. */
+.presets__done {
   font-size: var(--numen-title-size);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+/* What the sitting would ask, in the small print a count is read in. */
+.presets__left {
+  color: var(--numen-hushed);
+  font-size: var(--numen-edge-label-size);
+  font-weight: 400;
+  white-space: nowrap;
 }
 
 /* A day over its budget is the one thing on the tile worth catching the eye,
