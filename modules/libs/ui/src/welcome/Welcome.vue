@@ -69,15 +69,7 @@ defineEmits<{
               class="welcome__row welcome__row--vault"
               @click="$emit('opens', one.id)"
             >
-              <!-- The letter it is opened by, where the alphabet reaches it: a
-                   person reads down the list and presses what they see. Past
-                   the alphabet the mark stands where the cap would. -->
-              <KeyCap
-                v-if="vaultLetter(at)"
-                class="welcome__cap"
-                :keys="{ marks: [], letter: vaultLetter(at) }"
-              />
-              <FolderRoot v-else class="welcome__icon" />
+              <FolderRoot class="welcome__icon" />
               <span class="welcome__named">
                 <span class="welcome__what">{{ one.name }}</span>
                 <!-- The whole path is on the element, for one too long to be drawn. -->
@@ -87,6 +79,10 @@ defineEmits<{
                    end of its row. What that is belongs to the window. -->
               <slot name="vault" :vault="one" />
               <span v-if="one.detail" class="welcome__state">{{ one.detail }}</span>
+              <!-- The letter it is opened by, at the end of the row the ways in
+                   carry their keystrokes at. Past the alphabet a vault is opened
+                   with the hand and carries none. -->
+              <KeyCap v-if="vaultLetter(at)" :keys="{ marks: [], letter: vaultLetter(at) }" />
             </button>
           </li>
         </ul>
@@ -197,15 +193,6 @@ defineEmits<{
   block-size: 1rem;
   stroke-width: 1.75;
   opacity: 0.75;
-}
-
-/* The cap is held to the width of a mark, so a name on the list begins on the
-   same line as a name above it. */
-.welcome__cap {
-  flex: none;
-  inline-size: 1rem;
-  min-inline-size: 1rem;
-  padding-inline: 0;
 }
 
 /* A row is its name over what is said about it, beside the one icon. */

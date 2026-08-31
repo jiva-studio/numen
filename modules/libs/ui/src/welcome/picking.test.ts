@@ -25,10 +25,10 @@ const into = (tag: string, written = false): Partial<KeyboardEvent> => ({
 })
 
 describe('the letter a vault is drawn with', () => {
-  it('is the alphabet, from the top of the list down', () => {
-    expect(vaultLetter(0)).toBe('a')
-    expect(vaultLetter(1)).toBe('b')
-    expect(vaultLetter(25)).toBe('z')
+  it('is the alphabet in capitals, from the top of the list down', () => {
+    expect(vaultLetter(0)).toBe('A')
+    expect(vaultLetter(1)).toBe('B')
+    expect(vaultLetter(25)).toBe('Z')
   })
 
   it('is nothing at all past the alphabet', () => {

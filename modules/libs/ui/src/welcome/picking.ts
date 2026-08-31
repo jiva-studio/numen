@@ -6,8 +6,11 @@
  * works.
  */
 
-/** The letters the vaults are picked by, in the order they are listed. */
-export const VAULT_LETTERS = 'abcdefghijklmnopqrstuvwxyz'
+/**
+ * The letters the vaults are picked by, in the order they are listed. They are
+ * capitals, which is how every letter on a key cap is drawn.
+ */
+export const VAULT_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 /**
  * The letter one vault of the list is picked by, and nothing past the alphabet:
@@ -29,7 +32,7 @@ export function opensVault(press: KeyboardEvent, vaults: number): number | null 
   if (typing(press)) return null
   if (press.key.length !== 1) return null
 
-  const at = VAULT_LETTERS.indexOf(press.key.toLowerCase())
+  const at = VAULT_LETTERS.indexOf(press.key.toUpperCase())
   return at >= 0 && at < vaults ? at : null
 }
 
