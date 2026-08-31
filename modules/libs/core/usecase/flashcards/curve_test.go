@@ -686,3 +686,45 @@ func TestACurveOfRetentionNamesNoDayTheMaterialIsLearned(t *testing.T) {
 		t.Error("no place of a curve of minutes reaches the day the material is learned")
 	}
 }
+
+// The day the file names is a place of the grid, and the mark stands on it.
+//
+// The picture puts the mark on the range and the person reads the numbers
+// beneath it, so those numbers are the day they named and not the day beside
+// it.
+func TestTheMarkOfADateStandsOnTheDayTheFileNames(t *testing.T) {
+	s := opened(t, studied(30))
+	for _, days := range []int{1, 2, 7, 14, 21, 30, 90, 365} {
+		p := history.Preset{
+			Goal: history.GoalDate, By: noon.AddDate(0, 0, days).Truncate(24 * time.Hour),
+			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+			Rule: history.RuleRetention, Retention: 0.9,
+		}
+
+		got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.Now.At < 0 {
+			t.Fatalf("a date %d days off stands nowhere on its own range", days)
+		}
+		if got.Days[got.Now.At] != got.Now.Day {
+			t.Errorf("a date %d days off is marked at %s and the place under the mark is %s",
+				days, got.Now.Day, got.Days[got.Now.At])
+		}
+		if got.Grid[got.Now.At] != got.Now.Value {
+			t.Errorf("a date %d days off is marked at %v days and the place under the mark "+
+				"is %v days", days, got.Now.Value, got.Grid[got.Now.At])
+		}
+		// The range still begins tomorrow and still runs past the day named.
+		if got.Grid[0] != 1 {
+			t.Errorf("a date %d days off draws a range beginning %v days off", days, got.Grid[0])
+		}
+		for i := 1; i < len(got.Grid); i++ {
+			if got.Grid[i] <= got.Grid[i-1] {
+				t.Fatalf("a date %d days off runs %v then %v",
+					days, got.Grid[i-1], got.Grid[i])
+			}
+		}
+	}
+}

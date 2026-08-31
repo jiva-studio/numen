@@ -411,7 +411,7 @@ func (u Curves) date(
 	// Every place runs the same horizon, however near its own day is, so what it
 	// says about a backlog is the same question answered on every goal and not
 	// one asked over as many days as the place stands off.
-	for _, step := range spread(last-first+1, Points) {
+	for _, step := range naming(spread(last-first+1, Points), named-first) {
 		day := first + step
 		aiming, asks := p, run
 		aiming.By = open.AddDate(0, 0, day)
@@ -440,8 +440,8 @@ func (u Curves) date(
 		})
 	}
 
-	// The day the file names stands as a mark inside the range, at the value it
-	// holds and not at the place nearest it.
+	// The day the file names is a place of the grid, so what stands under the
+	// mark is worked out for that day.
 	out.Now = Mark{
 		At:    nearest(out.Grid, float64(named)),
 		Value: float64(named),
@@ -543,6 +543,36 @@ func spread(days, places int) []int {
 		out[i] = int(math.Round(float64(i) * float64(days-1) / float64(places-1)))
 	}
 	return out
+}
+
+// naming puts one place of the range on the grid, in place of the place
+// nearest it. The two ends stand: a range begins tomorrow and reaches as far as
+// it reaches, whatever day the file names.
+//
+// The day the preset aims at is the day a person is looking at, so the point
+// under the mark is worked out for that day and not for the day beside it.
+func naming(steps []int, at int) []int {
+	if at < 0 || len(steps) < 3 {
+		return steps
+	}
+	near := 1
+	for i := 2; i < len(steps)-1; i++ {
+		if abs(steps[i]-at) < abs(steps[near]-at) {
+			near = i
+		}
+	}
+	if at > steps[0] && at < steps[len(steps)-1] {
+		steps[near] = at
+	}
+	return steps
+}
+
+// abs is how far a whole number stands from nothing.
+func abs(one int) int {
+	if one < 0 {
+		return -one
+	}
+	return one
 }
 
 // carried is how long the first day the preset admits took, which is what
