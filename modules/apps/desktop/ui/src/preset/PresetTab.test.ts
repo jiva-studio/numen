@@ -1143,8 +1143,11 @@ describe('the settings under the control', () => {
     expect(track?.attributes('aria-labelledby')).toBe('preset-backlog')
     expect(row?.get('.preset__percent').text()).toBe(words.percent(70))
 
-    // The value is handed on, and the row is written once the handle rests.
+    // The value is handed on as the handle moves, and the row is written once
+    // the key is let go of.
     await track?.trigger('keydown', { key: 'ArrowLeft' })
+    expect(done).toStrictEqual(['types backlog 69'])
+    await track?.trigger('keyup', { key: 'ArrowLeft' })
     expect(done).toStrictEqual(['types backlog 69', 'settles'])
     // The hundred is the whole of it, and nothing outside it is taken.
     expect(BOUNDS.backlog).toStrictEqual({ least: 0, most: 100 })
